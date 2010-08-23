@@ -4,7 +4,7 @@ module bugsrad_driver
 
   implicit none
 
-  public :: compute_bugsrad_radiation
+  public :: compute_bugsrad_radiation, init_radiation
 
   ! Constant parameters
   integer, private, parameter :: &
@@ -26,7 +26,7 @@ module bugsrad_driver
                exner, rho_zm,                       &
                radht, Frad,                         &
                Frad_SW_up, Frad_LW_up,              &
-               Frad_SW_down, Frad_LW_down )          
+               Frad_SW_down, Frad_LW_down )
 
 ! Description:
 !   Does the necessary operations to interface the CLUBB model with
@@ -64,7 +64,7 @@ module bugsrad_driver
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
     use stats_type, only: stat_update_var ! Procedure(s)
-  
+
     use extend_atmosphere_module, only: &
       extend_atmos_dim, extend_alt, extend_pinmb, & ! Variable(s)
       extend_T_in_K, extend_sp_hmdty, extend_o3l
@@ -113,7 +113,7 @@ module bugsrad_driver
       p_in_Pam,     & ! Pressure on the m grid              [Pa]
       exner           ! Exner function                      [-]
 
-    
+
     integer,intent(in) ::&
       extend_atmos_bottom_level, &
       extend_atmos_top_level
@@ -167,7 +167,7 @@ module bugsrad_driver
 
     double precision, dimension(nlen) :: &
       ts  ! Surface temperature [K]
-    
+
     double precision :: z1_fact, z2_fact, tmp ! Temp storage
 
     integer :: i, z, z1, z2  ! Loop indices
@@ -208,7 +208,7 @@ module bugsrad_driver
     end do
 
     ! Setup miscellaneous variables
-    
+
     ! Ozone at < 1 km = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976.
     !   Convert from g to kg.
     o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) * 0.001 )
@@ -251,22 +251,22 @@ module bugsrad_driver
     end if
 
     ! Add the extended atmospheric profile above the linear interpolation
-     T_in_K(1,1:extend_atmos_range_size) = &
-                flip( extend_T_in_K( extend_atmos_bottom_level:extend_atmos_top_level), &
-                      extend_atmos_range_size )
+    T_in_K(1,1:extend_atmos_range_size) = &
+               flip( extend_T_in_K( extend_atmos_bottom_level:extend_atmos_top_level), &
+                     extend_atmos_range_size )
 
-     sp_humidity(1,1:extend_atmos_range_size) = &
-                flip( extend_sp_hmdty( extend_atmos_bottom_level:extend_atmos_top_level ), &
-                                       extend_atmos_range_size )
+    sp_humidity(1,1:extend_atmos_range_size) = &
+               flip( extend_sp_hmdty( extend_atmos_bottom_level:extend_atmos_top_level ), &
+                                      extend_atmos_range_size )
 
-     o3l(1,1:extend_atmos_range_size) = &
-                flip( extend_o3l( extend_atmos_bottom_level:extend_atmos_top_level ), &
-                                  extend_atmos_range_size )
+    o3l(1,1:extend_atmos_range_size) = &
+               flip( extend_o3l( extend_atmos_bottom_level:extend_atmos_top_level ), &
+                                 extend_atmos_range_size )
 
-     pinmb(1,1:extend_atmos_range_size) = &
-                flip( extend_pinmb( extend_atmos_bottom_level:extend_atmos_top_level ), &
-                    extend_atmos_range_size )
-    
+    pinmb(1,1:extend_atmos_range_size) = &
+               flip( extend_pinmb( extend_atmos_bottom_level:extend_atmos_top_level ), &
+                   extend_atmos_range_size )
+
     ! Do a linear interpolation to produce the levels between the extended
     ! atmospheric levels and the CLUBB levels;
     ! These levels should number the lin_int_buffer parameter
@@ -311,16 +311,16 @@ module bugsrad_driver
 !  Write a profile for Kurt's driver program for debugging purposes
 !  write(time_char ,*) time
 !  time_char =adjustl(time_char)
- !open(10, file="profile"//trim(time_char)//"dat")
- !write(10,'(2i4,a10)') nlen, (nz-1)+buffer, "TROPICAL"
- !do i=1, (nz-1)+buffer
-  ! write(10,'(i4,9f12.6)') i, pinmb(1,i), playerinmb(1,i),T_in_K(1,i), &
-   !sp_humidity(1,i), 100000.0*o3l(1,i), rcm_in_cloud_2d(1,i), &
-   !rcil(1,i), cloud_frac_2d(1,i), dpl(1,i)
- !end do
- !write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0
- !close(10)
- 
+    !open(10, file="profile"//trim(time_char)//"dat")
+    !write(10,'(2i4,a10)') nlen, (nz-1)+buffer, "TROPICAL"
+    !do i=1, (nz-1)+buffer
+    ! write(10,'(i4,9f12.6)') i, pinmb(1,i), playerinmb(1,i),T_in_K(1,i), &
+    !sp_humidity(1,i), 100000.0*o3l(1,i), rcm_in_cloud_2d(1,i), &
+    !rcil(1,i), cloud_frac_2d(1,i), dpl(1,i)
+    !end do
+    !write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0
+    !close(10)
+
 
 !  print *, "playerinmb = ", playerinmb
 !  print *, "sp_humidity = ", sp_humidity
@@ -382,7 +382,7 @@ module bugsrad_driver
       call stat_update_var( iFrad_LW_down, Frad_LW_down, zm )
 
       if ( l_output_rad_files ) then
-        
+
         rad_zt_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size
         rad_zm_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size+1
 
@@ -421,7 +421,7 @@ module bugsrad_driver
         call stat_update_var( iFrad_SW_down_rad, real( flip(Frad_dSW(1,:), rad_zm_dim) ), rad_zm )
 
         call stat_update_var( iFrad_LW_down_rad, real( flip(Frad_dLW(1,:), rad_zm_dim) ), rad_zm )
-      
+
       end if ! l_output_rad_files
 
     end if ! lstats_samp
@@ -460,6 +460,150 @@ module bugsrad_driver
 
     return
   end function flip
+
 !-------------------------------------------------------------------------------
+  subroutine init_radiation( iunit, namelist_file, case_info_file, debug_level )
+! Description:
+!   Setup radiation parameters
+
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    use parameters_radiation, only: &
+      rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
+      kappa, F0, F1, eff_drop_radius, gc, omega, Fs_values, &
+      cos_solar_zen_values, cos_solar_zen_times, &
+      radiation_top, l_fix_cos_solar_zen, l_sw_radiation, &
+      slr, l_rad_above_cloud, nparam
+
+    use error_code, only: clubb_at_least_debug_level ! Function
+    use text_writer, only: &
+      write_text   ! Used to write radiation settings to setup.txt file
+
+    implicit none
+
+    ! Constant parameters
+    logical, parameter :: &
+      l_write_to_file = .true. ! If true, will write case information to a file.
+
+    ! Input Variables
+    integer, intent(in) :: iunit ! File unit
+
+    character(len=*), intent(in) :: &
+      namelist_file, & ! Filename containing the namelist
+      case_info_file   ! Name of simulation info file (plain text)
+
+    integer, intent(in) :: &
+      debug_level     ! Amount of Debugging information
+
+    ! Local variables
+    integer :: k
+
+    namelist /radiation_setting/ &
+      rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
+      kappa, F0, F1, eff_drop_radius, gc, omega, Fs_values, &
+      cos_solar_zen_values, cos_solar_zen_times, &
+      radiation_top, l_fix_cos_solar_zen, l_sw_radiation, &
+      slr, l_rad_above_cloud
+
+    ! ---- Begin Code ----
+
+    ! Set default values, then read in the namelist
+    rad_scheme = "none"
+
+    ! BUGSrad parameters
+    sol_const =  1367.0 ! W/m^2
+
+    alvdf = 0.1 ! Visible diffuse surface albedo       [-]
+    alndr = 0.1 ! Near-IR direct surface albedo        [-]
+    alndf = 0.1 ! Near-IR diffuse surface albedo       [-]
+
+    ! 50000m is the top of the U.S. Standard Atmosphere data used
+    ! in CLUBB.
+    radiation_top = 50000.! [m]
+
+    ! Variables used by both schemes
+    alvdr = 0.1 ! Visible direct surface albedo        [-]
+
+    ! Simplified radiation parameters
+    F0    = 100.0  ! Coefficient for cloud top heating (see Stevens) [W/m^2]
+    F1    = 20.0   ! Coefficient for cloud base heating (see Stevens)[W/m^2]
+    kappa = 119.0  ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
+    gc    = 0.86   ! Asymmetry parameter, "g" in Duynkerke           [-]
+    omega = 0.9965 ! Single-scattering albedo                        [-]
+
+    slr  = 1.0d0  ! Fraction of daylight
+
+    l_rad_above_cloud = .false. ! For the heaviside step function
+    l_sw_radiation = .false. ! Set to true to enable shortwave radiation
+
+    ! Parameters for fixing the value of cosine of the solar zenith angle
+    l_fix_cos_solar_zen = .false.
+
+    ! The incident of incoming SW insolation at cloud top the
+    ! direction of the incoming beam (not the vertical)   [W/m^2]
+    Fs_values(:) = 0.0
+
+    cos_solar_zen_values(:) = -999.0 ! Cosine of the solar zenith angle [-]
+    cos_solar_zen_times(:)  = -999.0 ! Simulation times corresponding to above [s]
+
+    eff_drop_radius = 1.e-5 ! Effective droplet radius [m]
+
+    ! Read the namelist values in
+    open(unit=iunit, file=namelist_file, status='old',action='read')
+    read(iunit, nml=radiation_setting)
+    close(unit=iunit)
+
+    if ( clubb_at_least_debug_level( 1 ) ) then
+
+      ! This will open the cases setup.txt file and append it to include the
+      ! parameters in the radiation_setting namelist. This file was created
+      ! and written to from clubb_driver previously.
+      if ( l_write_to_file ) open(unit=iunit, file=case_info_file, &
+          status='old', action='write', position='append')
+
+      ! Write to file all parameters from the namelist microphysics_seting.
+      call write_text( "--------------------------------------------------", &
+        l_write_to_file, iunit )
+      call write_text( "&radiation_setting", l_write_to_file, iunit)
+      call write_text( "--------------------------------------------------", &
+        l_write_to_file, iunit )
+
+      call write_text ( "rad_scheme = " // rad_scheme, l_write_to_file, &
+        iunit )
+      call write_text ( "sol_const = ", real( sol_const ), l_write_to_file, iunit )
+      call write_text ( "alvdr = ", real( alvdr ), l_write_to_file, iunit )
+      call write_text ( "alvdf = ", real( alvdf ), l_write_to_file, iunit )
+      call write_text ( "alndr = ", real( alndr ), l_write_to_file, iunit )
+      call write_text ( "alndf = ", real( alndf ), l_write_to_file, iunit )
+      call write_text ( "radiation_top = ", radiation_top, l_write_to_file, iunit )
+      call write_text ( "F0 = ", F0, l_write_to_file, iunit )
+      call write_text ( "F1 = ", F1, l_write_to_file, iunit )
+      call write_text ( "kappa = ", kappa, l_write_to_file, iunit )
+      call write_text ( "gc = ", gc, l_write_to_file, iunit )
+      call write_text ( "omega = ", omega, l_write_to_file, iunit )
+      call write_text ( "slr = ", real( slr ), l_write_to_file, iunit )
+      call write_text ( "l_rad_above_cloud = ", l_rad_above_cloud, l_write_to_file, iunit )
+      call write_text ( "l_sw_radiation = ", l_sw_radiation, l_write_to_file, iunit )
+      call write_text ( "l_fix_cos_solar_zen = ", l_fix_cos_solar_zen, l_write_to_file, iunit )
+      call write_text ( "Fs_values = ", Fs_values, l_write_to_file, iunit )
+      call write_text ( "cos_solar_zen_values = ", cos_solar_zen_values, l_write_to_file, iunit )
+      call write_text ( "cos_solar_zen_times = ", cos_solar_zen_times, l_write_to_file, iunit )
+      call write_text ( "eff_drop_radius = ", eff_drop_radius, l_write_to_file, iunit )
+
+      if ( l_write_to_file ) close(unit=iunit);
+
+    end if ! clubb_at_least_debug_level(1)
+
+    do k = 1, size( cos_solar_zen_values )
+      if ( cos_solar_zen_values(k) == -999. ) then
+        exit
+      else
+        nparam = k
+      end if
+    end do
+
+    return
+  end subroutine init_radiation
 
 end module bugsrad_driver

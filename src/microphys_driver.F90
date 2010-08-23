@@ -61,9 +61,8 @@ module microphys_driver
 
   contains
 
-!-------------------------------------------------------------------------------
-  subroutine init_microphys( iunit, namelist_file, fname_prefix, &
-    debug_level, &
+  !-------------------------------------------------------------------------------
+  subroutine init_microphys( iunit, namelist_file, case_info_file, debug_level, &
     hydromet_dim )
 
     ! Description:
@@ -127,12 +126,9 @@ module microphys_driver
       cm3_per_m3
 
     use text_writer, only: &
-      write_text   ! Used to write mycrophysics settings to setup.txt file
+      write_text   ! Used to write microphysics settings to setup.txt file
 
-    use error_code, only: clubb_at_least_debug_level ! Function    
-
-    use error_code, only: &
-      set_clubb_debug_level   ! Set the debug level (procedure)
+    use error_code, only: clubb_at_least_debug_level ! Function
 
     implicit none
 
@@ -149,11 +145,8 @@ module microphys_driver
     character(len=*), intent(in) :: &
       namelist_file ! File name
 
-    character(len=100), intent(in) :: &
-      fname_prefix ! Prefix of stats filenames, followed by, e.g., "_zt"
-
-    character(len=150) :: &
-      case_info_file
+    character(len=*), intent(in) :: &
+      case_info_file ! Name of simulation info file (plain text)
 
     ! Output variables
     integer, intent(out) :: & 
@@ -274,105 +267,101 @@ module microphys_driver
 
     l_in_cloud_Nc_diff = .false. ! Don't use in cloud values of Nc for diffusion
 
-    ! The next three lines open the cases model.in file and replace values of 
-    ! the parameters if they exist in the file. 
+    ! The next three lines open the cases model.in file and replace values of
+    ! the parameters if they exist in the file.
     open(unit=iunit, file=namelist_file, status='old', action='read')
     read(iunit, nml=microphysics_setting)
     close(unit=iunit)
 
-    ! This will open the cases setup.txt file and append it to include the 
-    ! parameters in the microphysics_setting namelist. This file was created
-    ! and written to from clubb_driver previously. 
-    case_info_file = &
-      "../output/" // trim( fname_prefix ) // "_setup.txt" 
-
-    call set_clubb_debug_level ( debug_level )  ! Intent(in)
 
     ! Printing Microphysics inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
 
+      ! This will open the cases setup.txt file and append it to include the
+      ! parameters in the microphysics_setting namelist. This file was created
+      ! and written to from clubb_driver previously.
       if (l_write_to_file ) open(unit=iunit, file=case_info_file, &
           status='old', action='write', position='append')
 
-    ! Write to file all parameters from the namelist microphysics_seting.
+      ! Write to file all parameters from the namelist microphysics_seting.
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
       call write_text( "&microphysics_setting", l_write_to_file, iunit)
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
-    
-    call write_text ( "micro_scheme = " //  micro_scheme, l_write_to_file, &
-      iunit )
-    call write_text ( "l_cloud_sed = ", l_cloud_sed, l_write_to_file, iunit )
-    call write_text ( "l_graupel = ", l_graupel, l_write_to_file, iunit )
-    call write_text ( "l_hail = ", l_hail, l_write_to_file, iunit )
-    call write_text ( "l_seifert_beheng = ", l_seifert_beheng, &
-      l_write_to_file, iunit )
-    call write_text ( "l_predictnc = ", l_predictnc, l_write_to_file, iunit )
-    call write_text ( "l_specify_aerosol = ", l_specify_aerosol, &
-      l_write_to_file, iunit )
-    call write_text ( "l_subgrid_w = ", l_subgrid_w, l_write_to_file, iunit )
-    call write_text ( "l_arctic_nucl = ", l_arctic_nucl, l_write_to_file, &
-      iunit )
-    call write_text ( "l_cloud_edge_activation = ", l_cloud_edge_activation, &
-      l_write_to_file, iunit ) 
-    call write_text ( "l_fix_pgam = ", l_fix_pgam, l_write_to_file, iunit )
-    call write_text ( "l_in_cloud_Nc_diff = ", l_in_cloud_Nc_diff, &
-      l_write_to_file, iunit )
-    call write_text ( "l_latin_hypercube_sampling = ", &
-      l_latin_hypercube_sampling, l_write_to_file, iunit )
-    call write_text ( "LH_microphys_calls = ", LH_microphys_calls, &
-      l_write_to_file, iunit )
-    call write_text ( "LH_sequence_length = ", LH_sequence_length, &
-      l_write_to_file, iunit )
-    call write_text ( "l_lh_cloud_weighted_sampling = ", &
-      l_lh_cloud_weighted_sampling, l_write_to_file, iunit )
-    call write_text ( "l_lh_vert_overlap = ", l_lh_vert_overlap, &
-      l_write_to_file, iunit )
-    call write_text ( "rrp2_on_rrainm2_cloud = ", rrp2_on_rrainm2_cloud, &
-      l_write_to_file, iunit )
-    call write_text ( "Nrp2_on_Nrm2_cloud = ", Nrp2_on_Nrm2_cloud, &
-      l_write_to_file, iunit )
-    call write_text ( "Ncp2_on_Ncm2_cloud = ", Ncp2_on_Ncm2_cloud, &
-      l_write_to_file, iunit )
-    call write_text ( "corr_rrNr_LL_cloud = ", corr_rrNr_LL_cloud, &
-      l_write_to_file, iunit )
-    call write_text ( "corr_srr_NL_cloud = ", corr_srr_NL_cloud, &
-      l_write_to_file, iunit )
-    call write_text ( "corr_sNr_NL_cloud = ", corr_sNr_NL_cloud, &
-      l_write_to_file, iunit )
-    call write_text ( "corr_sNc_NL_cloud = ", corr_sNc_NL_cloud, &
-      l_write_to_file, iunit )
-    call write_text ( "rrp2_on_rrainm2_below = ", rrp2_on_rrainm2_below, &
-      l_write_to_file, iunit )
-    call write_text ( "Nrp2_on_Nrm2_below = ", Nrp2_on_Nrm2_below, &
-      l_write_to_file, iunit )
-    call write_text ( "Ncp2_on_Ncm2_below = ", Ncp2_on_Ncm2_below, &
-      l_write_to_file, iunit )
-    call write_text ( "corr_rrNr_LL_below = ", corr_rrNr_LL_below, &
-      l_write_to_file, iunit )
-    call write_text ( "corr_srr_NL_below = ", corr_srr_NL_below, &
-      l_write_to_file, iunit )
-    call write_text ( "corr_sNr_NL_below = ", corr_sNr_NL_below, &
-      l_write_to_file, iunit )
-    call write_text ( "corr_sNc_NL_below = ", corr_sNc_NL_below, &
-      l_write_to_file, iunit )
-    call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
-    call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
-    call write_text ( "microphys_start_time = ", real( microphys_start_time ), &
-      l_write_to_file, iunit )
-    call write_text ( "Ncm_initial = ", Ncm_initial, l_write_to_file, iunit )
-    call write_text ( "ccnconst = ", ccnconst, l_write_to_file, iunit )
-    call write_text ( "ccnexpnt = ", ccnexpnt, l_write_to_file, iunit )
-    call write_text ( "aer_rm1 = ", aer_rm1, l_write_to_file, iunit )
-    call write_text ( "aer_rm2 = ", aer_rm2, l_write_to_file, iunit )
-    call write_text ( "aer_n1 = ", aer_n1, l_write_to_file, iunit )
-    call write_text ( "aer_n2 = ", aer_n2, l_write_to_file, iunit )
-    call write_text ( "aer_sig1 = ", aer_sig1, l_write_to_file, iunit )
-    call write_text ( "aer_sig2 = ", aer_sig2, l_write_to_file, iunit )
-    call write_text ( "pgam_fixed = ", pgam_fixed, l_write_to_file, iunit )
 
-    if( l_write_to_file) close(unit=iunit);
+      call write_text ( "micro_scheme = " //  micro_scheme, l_write_to_file, &
+        iunit )
+      call write_text ( "l_cloud_sed = ", l_cloud_sed, l_write_to_file, iunit )
+      call write_text ( "l_graupel = ", l_graupel, l_write_to_file, iunit )
+      call write_text ( "l_hail = ", l_hail, l_write_to_file, iunit )
+      call write_text ( "l_seifert_beheng = ", l_seifert_beheng, &
+        l_write_to_file, iunit )
+      call write_text ( "l_predictnc = ", l_predictnc, l_write_to_file, iunit )
+      call write_text ( "l_specify_aerosol = ", l_specify_aerosol, &
+        l_write_to_file, iunit )
+      call write_text ( "l_subgrid_w = ", l_subgrid_w, l_write_to_file, iunit )
+      call write_text ( "l_arctic_nucl = ", l_arctic_nucl, l_write_to_file, &
+        iunit )
+      call write_text ( "l_cloud_edge_activation = ", l_cloud_edge_activation, &
+        l_write_to_file, iunit )
+      call write_text ( "l_fix_pgam = ", l_fix_pgam, l_write_to_file, iunit )
+      call write_text ( "l_in_cloud_Nc_diff = ", l_in_cloud_Nc_diff, &
+        l_write_to_file, iunit )
+      call write_text ( "l_latin_hypercube_sampling = ", &
+        l_latin_hypercube_sampling, l_write_to_file, iunit )
+      call write_text ( "LH_microphys_calls = ", LH_microphys_calls, &
+        l_write_to_file, iunit )
+      call write_text ( "LH_sequence_length = ", LH_sequence_length, &
+        l_write_to_file, iunit )
+      call write_text ( "l_lh_cloud_weighted_sampling = ", &
+        l_lh_cloud_weighted_sampling, l_write_to_file, iunit )
+      call write_text ( "l_lh_vert_overlap = ", l_lh_vert_overlap, &
+        l_write_to_file, iunit )
+      call write_text ( "rrp2_on_rrainm2_cloud = ", rrp2_on_rrainm2_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "Nrp2_on_Nrm2_cloud = ", Nrp2_on_Nrm2_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "Ncp2_on_Ncm2_cloud = ", Ncp2_on_Ncm2_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_rrNr_LL_cloud = ", corr_rrNr_LL_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_srr_NL_cloud = ", corr_srr_NL_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_sNr_NL_cloud = ", corr_sNr_NL_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_sNc_NL_cloud = ", corr_sNc_NL_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "rrp2_on_rrainm2_below = ", rrp2_on_rrainm2_below, &
+        l_write_to_file, iunit )
+      call write_text ( "Nrp2_on_Nrm2_below = ", Nrp2_on_Nrm2_below, &
+        l_write_to_file, iunit )
+      call write_text ( "Ncp2_on_Ncm2_below = ", Ncp2_on_Ncm2_below, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_rrNr_LL_below = ", corr_rrNr_LL_below, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_srr_NL_below = ", corr_srr_NL_below, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_sNr_NL_below = ", corr_sNr_NL_below, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_sNc_NL_below = ", corr_sNc_NL_below, &
+        l_write_to_file, iunit )
+      call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
+      call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
+      call write_text ( "microphys_start_time = ", real( microphys_start_time ), &
+        l_write_to_file, iunit )
+      call write_text ( "Ncm_initial = ", Ncm_initial, l_write_to_file, iunit )
+      call write_text ( "ccnconst = ", ccnconst, l_write_to_file, iunit )
+      call write_text ( "ccnexpnt = ", ccnexpnt, l_write_to_file, iunit )
+      call write_text ( "aer_rm1 = ", aer_rm1, l_write_to_file, iunit )
+      call write_text ( "aer_rm2 = ", aer_rm2, l_write_to_file, iunit )
+      call write_text ( "aer_n1 = ", aer_n1, l_write_to_file, iunit )
+      call write_text ( "aer_n2 = ", aer_n2, l_write_to_file, iunit )
+      call write_text ( "aer_sig1 = ", aer_sig1, l_write_to_file, iunit )
+      call write_text ( "aer_sig2 = ", aer_sig2, l_write_to_file, iunit )
+      call write_text ( "pgam_fixed = ", pgam_fixed, l_write_to_file, iunit )
+
+      if ( l_write_to_file ) close(unit=iunit);
 
     end if ! clubb_at_least_debug_level(1)
 
@@ -2723,7 +2712,7 @@ module microphys_driver
 
       iiLH_s_mellor = iiLH_rt
 
-      ! Initializing to zero means that correlations we don't have 
+      ! Initializing to zero means that correlations we don't have
       ! (e.g. Nc and any variable other than s_mellor ) are assumed to be 0.
       corr_varnce_array(:,:,:) = 0.0 ! Initialize to 0
 

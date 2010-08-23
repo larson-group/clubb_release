@@ -190,7 +190,7 @@ module clubb_driver
 
     use microphys_driver, only: init_microphys, cleanup_microphys ! Subroutines
 
-    use parameters_radiation, only: init_radiation ! Subroutine
+    use bugsrad_driver, only: init_radiation ! Subroutine
 
     use model_flags, only: & 
       l_pos_def, l_hole_fill, & ! Constants
@@ -346,6 +346,7 @@ module clubb_driver
 
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file
+
     character(len=150) :: &
       case_info_file ! The filename for case info
 
@@ -716,11 +717,11 @@ module clubb_driver
     dummy_dy = 0.0
 
     ! Setup microphysical fields
-    call init_microphys( iunit, runfile, fname_prefix, debug_level, &!Intent(in)
+    call init_microphys( iunit, runfile, case_info_file, debug_level, &!Intent(in)
                          hydromet_dim )                            ! Intent(out)
 
     ! Setup radiation parameters
-    call init_radiation( iunit, runfile ) ! Intent(in)
+    call init_radiation( iunit, runfile, case_info_file, debug_level ) ! Intent(in)
 
     ! Setup filenames and variables to set for setfields, if enabled
     if ( l_input_fields ) then
