@@ -2861,7 +2861,7 @@ module clubb_driver
       iiedsclr_rt, iiedsclr_thl
 
     ! Case specific modules
-    use arm, only: arm_tndcy, arm_sfclyr ! Procedure(s)
+    use arm, only: arm_sfclyr ! Procedure(s)
 
 #ifdef UNRELEASED_CODE
     use arm_0003, only: arm_0003_sfclyr ! Procedure(s)
@@ -2978,15 +2978,13 @@ module clubb_driver
     ! Set vertical velocity, w, and compute large-scale forcings
     !----------------------------------------------------------------
 
-    if ( l_t_dependent .and. trim( runtype ) /= "arm" ) then
-!   if ( l_t_dependent ) then
+    if ( l_t_dependent ) then
       ! This should include the following:
       ! "cloud_feedback_s6", "cloud_feedback_s6_p2k",
       !   "cloud_feedback_s11", "cloud_feedback_s11_p2k",
       !   "cloud_feedback_s12", "cloud_feedback_s12_p2k",
       !   "gabls3_night", "arm_97", "gabls3", "twp_ice",
-      !   "arm_0003", "arm_3year", "astex_a209", & "cobra".
-      ! TODO: Generalize the GCSS ARM case.
+      !   "arm", "arm_0003", "arm_3year", "astex_a209", & "cobra".
 
       call apply_time_dependent_forcings( time_current, gr%nnzp, rtm, rho, exner,&
         thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, wm_zt, wm_zm, ug, vg, &
@@ -3003,11 +3001,6 @@ module clubb_driver
     else ! Legacy method of setting the forcings
 
       select case ( runtype )
-
-      case ( "arm" ) ! ARM Cu case
-        call arm_tndcy( time_current, &                     ! Intent(in)   
-                        thlm_forcing, radht, rtm_forcing, & ! Intent(out)
-                        sclrm_forcing, edsclrm_forcing )    ! Intent(out)
 
 #ifdef UNRELEASED_CODE
 
