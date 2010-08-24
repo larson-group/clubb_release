@@ -9,75 +9,9 @@ module cobra
 
   private ! Default Scope
 
-  public :: & 
-    cobra_tndcy, & 
-    cobra_sfclyr
+  public :: cobra_sfclyr
 
   contains
-
-  !----------------------------------------------------------------------
-  subroutine cobra_tndcy( thlm_forcing, rtm_forcing, & 
-                          sclrm_forcing, edsclrm_forcing )
-  !       Description:
-  !       Subroutine to set theta and water tendencies for COBRA CO2 case
-
-  !       References:
-  !       None
-  !----------------------------------------------------------------------
-
-  use grid_class, only: gr ! Variable(s)
-
-  use grid_class, only: zt2zm ! Procedure(s)
-
-  use constants_clubb, only: fstderr ! Variable(s)
-
-  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
-
-  use stats_precision, only: time_precision ! Variable(s)
-
-  use array_index, only:  & 
-      iisclr_thl, iisclr_rt, iisclr_CO2, & ! Variable(s)
-      iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2
-
-  implicit none
-
-  ! Output Variables
-  real, intent(out), dimension(gr%nnzp) :: & 
-    thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
-    rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
-
-  real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-    sclrm_forcing ! Passive scalar tendency        [units vary/s]
-
-  real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
-    edsclrm_forcing ! Passive eddy-scalar tendency [units/s]
-
-  ! Local Variables
-  integer :: k
-
-  DO k = 2, gr%nnzp, 1
-     if ( gr%zt(k) < 0. ) then
-        write(fstderr,*) "cobra_tndcy:" & 
-           //" error in subsidence profile."
-        write(fstderr,*) 'Altitude gr%zt = ', gr%zt(k)
-        stop
-     end if
-  END DO
-
-  ! No large-scale water tendency or cooling
-  rtm_forcing  = 0.0
-  thlm_forcing = 0.0
-
-  ! Setup passive scalars, if they're enabled
-  if ( iisclr_CO2 > 0 ) sclrm_forcing(:,iisclr_CO2) = 0.0
-  if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-  if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt) = rtm_forcing
-  if ( iiedsclr_CO2 > 0 ) edsclrm_forcing(:,iiedsclr_CO2) = 0.0
-  if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-  if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt) = rtm_forcing
-
-  return
-  end subroutine cobra_tndcy
 
   !-----------------------------------------------------------------------
   subroutine cobra_sfclyr( time, z, dn0, thlm_sfc, ubar, & 

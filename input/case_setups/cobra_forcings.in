@@ -1,22 +1,24 @@
-!This is a dummy file that has no effect on the code. It is needed so that the cobra_surface.in file can be read in due to how CLUBB is written.
+! The vertical coordinate is entered in the first column as height (z[m]) or pressure (Press[Pa]).
+! Temperature can be entered as liquid water potential temperature (thlm_f[K\s]), potential temperature (thm_f[K\s]), or absolute temperature(T_f[K\s]).
+! Prescribed, time-independent vertical velocity can be entered as velocity (w[m\s]) or pressure velocity (omega[Pa\s] or omega[mb\hr])
+! In all cases, missing values are denoted by -999.9
+! The blanks are filled first vertically and then across time. This means that if you have a column that is completely filled with missing values
+! it will be replaced with an interpolation of the values before and after.
+! The format of this file is:
+! [Variable list ...]
+! [Time of Profile] [# of elements in profile]
+! [Vertical Coordinate] [Data ...]
+! [Vertical Coordinate] [Data ...]
+! ...
+! [Time of Profile] [# of elements in profile]
+! [Vertical Coordinate] [Data ...]
+! [Vertical Coordinate] [Data ...]
+! ...
 !
 z[m]        thlm_f[K\s]     rtm_f[kg\kg\s]   um_ref[m\s]   vm_ref[m\s]   um_f[m\s^2]   vm_f[m\s^2]   w[m\s]   ug[m\s]   vg[m\s]   
-84586.      18                                                                                                                    
-59.21       -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-524.304     -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-1008.614    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-1515.234    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-2047.661    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-2609.434    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-3203.96     -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-3835.436    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-4509.983    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-5235.93     -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-6023.204    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-6882.909    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-7828.958    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-8881.194    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-10071.93    -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9     
-11458.434   -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
-13147.343   -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9      
-15385.763   -999.9     -999.9       -999.9          -999.9           -999.9        -999.9        -999.9   -999.9    -999.9    
+57600.0		2
+0.0E+0         0.0  0.0 -999.9 -999.9 -999.9 -999.9 -999.9 -999.9  -999.9
+4000.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9 -999.9 -999.9  -999.9
+130000.0	2
+0.0E+0         0.0  0.0 -999.9 -999.9 -999.9 -999.9 -999.9 -999.9  -999.9
+4000.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9 -999.9 -999.9  -999.9

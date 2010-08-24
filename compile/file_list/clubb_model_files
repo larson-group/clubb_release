@@ -9,6 +9,7 @@
 ../src/Benchmark_cases/dycoms2_rf02.F90
 ../src/Benchmark_cases/fire.F90
 ../src/Benchmark_cases/gabls2.F90
+../src/Benchmark_cases/gabls3.F90
 ../src/Benchmark_cases/mpace_a.F90
 ../src/Benchmark_cases/mpace_b.F90
 ../src/Benchmark_cases/rad_lwsw_module.F90

@@ -13,6 +13,7 @@ dycoms2_rf02_nd
 dycoms2_rf02_so
 fire
 gabls2
+gabls3
 mpace_a
 mpace_b
 rico
@@ -30,7 +31,6 @@ cloud_feedback_s11
 cloud_feedback_s12
 !cloud_feedback_s12_p2k
 cobra
-gabls3
 gabls3_night
 jun25_altocu
 lba
