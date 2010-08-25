@@ -201,8 +201,6 @@
 #endif
 
 ! LOCAL VARIABLES:
-      ! Clear-sky radiative fluxes for intercomparison
-      real, dimension(len) :: fsntc, flntc
 
       character(len=80), save::
      &  cvs_version1
@@ -859,6 +857,12 @@
 !      print *, umco2,umch4,umn2o
 
       if ( l_stats_samp ) then
+        ! Reverse the arrays so the results are oriented correctly (ticket #190)
+        fulwcl = fulwcl(:, nlm+1:1:-1)
+        fdlwcl = fdlwcl(:, nlm+1:1:-1)
+        fdswcl = fdswcl(:, nlm+1:1:-1)
+        fuswcl = fuswcl(:, nlm+1:1:-1)
+
         call stat_update_var( ifulwcl, real(fulwcl), rad_zm )
         call stat_update_var( ifdlwcl, real(fdlwcl), rad_zm )
         call stat_update_var( ifdswcl, real(fdswcl), rad_zm )

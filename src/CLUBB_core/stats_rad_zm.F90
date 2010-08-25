@@ -78,25 +78,25 @@ module stats_rad_zm
       case('fulwcl')
         ifulwcl = k
         call stat_assign( ifulwcl, "fulwcl", &
-              "Upward clear-sky LW flux [W/m^-2]", "W/m^-2", rad_zm )
+              "Upward clear-sky LW flux [W/m^2]", "W/m^2", rad_zm )
         k = k + 1
 
       case( 'fdlwcl' )
         ifdlwcl = k
         call stat_assign( ifdlwcl, "fdlwcl", &
-              "Downward clear-sky LW flux [W/m^-2]", "W/m^-2", rad_zm )
+              "Downward clear-sky LW flux [W/m^2]", "W/m^2", rad_zm )
         k = k + 1
 
       case( 'fdswcl' )
         ifdswcl = k
         call stat_assign( ifdswcl, "fdswcl", &
-              "Downward clear-sky SW flux [W/m^-2]", "W/m^-2", rad_zm )
+              "Downward clear-sky SW flux [W/m^2]", "W/m^2", rad_zm )
         k = k + 1
 
       case( 'fuswcl' )
         ifuswcl = k
         call stat_assign( ifuswcl, "fuswcl", &
-              "Downward clear-sky LW flux [W/m^-2]", "W/m^-2", rad_zm )
+              "Upward clear-sky SW flux [W/m^2]", "W/m^2", rad_zm )
         k = k + 1
       
       case ('Frad_LW_rad')
