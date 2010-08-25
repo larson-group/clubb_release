@@ -15,7 +15,7 @@ output_path="/home/meyernr/ticket_300/nc_output/"
 pdf_path="/home/meyernr/ticket_300/cloud_feedback/"
 
 # List of cases to be converted
-CASES=( cloud_feedback_s6 cloud_feedback_s6_p2k cloud_feedback_s11 cloud_feedback_s11_p2k cloud_feedback_s12 cloud_feedback_s12_p2k )
+CASES=(  cloud_feedback_s6_p2k cloud_feedback_s11_p2k cloud_feedback_s12_p2k cloud_feedback_s6 cloud_feedback_s11 cloud_feedback_s12  )
 
 ############################################
 # Nothing below should need to be modified.
@@ -62,4 +62,13 @@ for (( i=0;i<num_cases;i++)); do
 	echo "cloud_feedback_output_creator('$input_path', '$output_path')" | sudo -u matlabuser matlab -nodisplay -nodesktop
 	# Create the verify pdfs
 	echo "cloud_feedback_timeseries_plot('$output_path', '$pdf_path')" | sudo -u matlabuser matlab -nodisplay -nodesktop
+done
+
+# This will loop through the cases as above and create a single pdf for each case by merging all created pdfs.
+# The single pdfs will all be deleted from the directory.
+cd $pdf_path
+
+for ((i=0;i<num_cases;i++));do
+        gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=verify_${CASES[${i}]}.pdf -dBATCH ${CASES[${i}]}_*
+        rm -f ./${CASES[${i}]}\_*
 done

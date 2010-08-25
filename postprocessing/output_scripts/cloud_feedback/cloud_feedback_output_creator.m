@@ -40,7 +40,7 @@ addpath '../../matlab_include/'
 % Source files of the GABLS3 case
 
 
-curr_case = 'cloud_feedback_s12_p2k';
+curr_case = 'cloud_feedback_s12';
 % Path of the GrADS input files
 %scm_path = ['/home/meyernr/ticket_303/output/submission_output/'];
 
@@ -182,8 +182,8 @@ end
 wmzt_d_rvm(1,:) = wm_array(1,:) .* (rvm_array(2,:) - rvm_array(1,:)) / (z(2) - z(1));
 wmzt_d_rvm(nz,:) = wm_array(nz,:) .* ( rvm_array(nz,:) - rvm_array(nz-1,:) ) / ( z(nz) - z(nz-1) );
 
-tdt_ls = ( thlm_f_array - thlm_mc_array - radht_array + wmzt_d_t_in_k ) .* 86400 .* exner_array;
-qdt_ls = ( rtm_f_array - rtm_mc_array + wmzt_d_rvm ) .* 86400 * 1000; % kg kg^{-1} s^{-1} * 86400 (s/day) * 1000 (g/kg)
+tdt_ls = ( thlm_f_array - thlm_mc_array - radht_array - wmzt_d_t_in_k ) .* 86400 .* exner_array;
+qdt_ls = ( rtm_f_array - rtm_mc_array - wmzt_d_rvm ) .* 86400 * 1000; % kg kg^{-1} s^{-1} * 86400 (s/day) * 1000 (g/kg)
 
 % old tdt_ls and qdt_ls that were used for submissions 1 and 2
 %tdt_ls = (thlm_f_array - thlm_mc_array) .* 86400 .* exner_array;
@@ -312,7 +312,7 @@ netcdf.putVar( ncid, tglwpvarid, lwp_array);
 netcdf.putVar( ncid, precwvarid, vwp_array);
 netcdf.putVar( ncid, tsairvarid, T_in_K_array(1,:));
 netcdf.putVar( ncid, psvarid, p_array(1,:));
-netcdf.putVar( ncid, prectvarid, rain_rate_array);
+netcdf.putVar( ncid, prectvarid, morr_rain_rate_array);
 netcdf.putVar( ncid, lhflxvarid, lh_array);
 netcdf.putVar( ncid, shflxvarid, sh_array);
 
@@ -326,10 +326,10 @@ netcdf.putVar( ncid, flnsvarid, Frad_LW_up_rad_array(1,:) - Frad_LW_down_ra_arra
 %netcdf.putVar( ncid, flntvarid, Frad_LW_up_array(w_nz,:)  - Frad_LW_down_array(w_nz,:));
 
 % Output directly by BugsRad. This code is not in the repository, but instead in condella:/home/senkbeir/Archives
-netcdf.putVar( ncid, flnscvarid, fulwcl_array(end,:) - fdlwcl_array(end,:));
-netcdf.putVar( ncid, fsnscvarid, fdswcl_array(end,:));
-netcdf.putVar( ncid, fsntcvarid, fdswcl_array(1,:) - fuswcl_array(1,:));
-netcdf.putVar( ncid, flntcvarid, fulwcl_array(1,:) - fdlwcl_array(1,:));
+netcdf.putVar( ncid, flnscvarid, fulwcl_array(1,:) - fdlwcl_array(1,:));
+netcdf.putVar( ncid, fsnscvarid, fdswcl_array(1,:) - fuswcl_array(1,:));
+netcdf.putVar( ncid, fsntcvarid, fdswcl_array(end,:) - fuswcl_array(end,:));
+netcdf.putVar( ncid, flntcvarid, fulwcl_array(end,:) - fdlwcl_array(end,:));
 
 %netcdf.putVar( ncid, preccvarid, );
 %netcdf.putVar( ncid, preclvarid, );

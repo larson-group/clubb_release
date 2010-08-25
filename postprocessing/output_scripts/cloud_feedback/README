@@ -39,4 +39,12 @@ IMPORTANT: Do not leave either of the matlab (.m) scripts open in an editor whil
 
 If you wish to only do this for certain cases, simply edit the array at the top on create_output.bash and remove the cases you do not wish to run.
 
-This script can also be generalized for other cases.  Replace the case names in the array at the top of create_output.bash with the case name to be run (e.g. the string before the .ctl or .dat in the GrADS files).  The filenames in the Matlab scripts will need to be changed if you don't want everything to be called cloud_feedback_***.  Otherwise this should be relatively easy to modify to create netcdf output for any case.
+This script can also be generalized for other cases.  Replace the case names in the array at the top of create_output.bash with the case name to be
+run (e.g. the string before the .ctl or .dat in the GrADS files).  The filenames in the Matlab scripts will need to be changed if you don't want
+everything to be called cloud_feedback_***.  Otherwise this should be relatively easy to modify to create netcdf output for any case.
+
+If you desire to only generate netcdf files or create verify pdfs, simply comment out the corresponding line and then run the script as normal.
+
+For merging pdfs, if there are multiple cases and the case names are similar (e.g. cloud_feedback_s6 and cloud_feedback_s6_p2k) put the longer names
+first in the array of case names.  If this isn't done, the longer case name plots will be included in the shorter case name plots and the longer
+case name plot file will be empty.
