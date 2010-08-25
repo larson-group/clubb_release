@@ -238,10 +238,10 @@ module clubb_driver
 
     use parameters_radiation, only: rad_scheme ! Variable(s)
 
+#ifdef UNRELEASED_CODE
     use parameters_microphys, only: &
       l_latin_hypercube_sampling ! Variable
 
-#ifdef UNRELEASED_CODE
     use latin_hypercube_driver_module, only: &
       latin_hypercube_2D_output, & ! Procedure(s)
       latin_hypercube_2D_close
@@ -2804,10 +2804,7 @@ module clubb_driver
       radht, um_ref,  & ! Variable(s)
       vm_ref, Frad,  Frad_SW_up,  &
       Frad_SW_down, Frad_LW_down, thvm, ustar, & 
-#ifdef UNRELEASED_CODE
-    ug, vg, &
-#endif
-    soil_heat_flux
+      ug, vg, soil_heat_flux
 
     use variables_diagnostic_module, only: wpedsclrp ! Passive scalar variables
 
@@ -2817,10 +2814,8 @@ module clubb_driver
       exner, rcm, rho_zm, um, p_sfc, vm, & 
       upwp_sfc, vpwp_sfc, T_sfc, & 
       wpthlp_sfc, wprtp_sfc, &
-#ifdef UNRELEASED_CODE
-    um_forcing, vm_forcing, &
-#endif
-    SE, LE
+      um_forcing, vm_forcing, &
+      SE, LE
 
     use stats_variables, only: &
       ish, & ! Variable(s)
