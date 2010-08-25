@@ -6,34 +6,38 @@
 # Script that runs a predefined set of test cases for creating an overall
 #   timing profile.
 #
-# This script will run BOMEX, COBRA, nov11_altocu, RICO, and
-#   cloud_feedback_s12 5 times (by default) each in order to ensure that
-#   consistent testing data is created. This is to give a good sampling of
-#   different types of cases that CLUBB can handle:
-#     COBRA uses neither radiation nor microphysics
-#     BOMEX uses simplified_bomex radiation
-#     nov11_altocu uses COAMPS microphysics and simplified radiation
-#     RICO uses KK microphysics
-#     cloud_feedback_s12 uses Morrison microphysics and bugsrad radiation
+# This script will run six different cases multiple times to produce a timing
+#   profile for CLUBB. Each of the cases is run with the statistics output
+#   disabled, debug level set to 0, and otherwise default settings. The
+#   multiple runs can then be aggregated together to provide a more robust
+#   statistical sample of the cases' timings.
 #
 # Additional cases can be run by adding these cases to the RUN_CASE array
-#   declared at the top of the script. If you wish to extend the time_final
-#   for better benchmarks, specify the time_final in the list where the
-#   variable TIME_FINAL is declared. The typical recommendation depends on
-#   case, but a good starting point is generally the standard value
-#   multiplied by 10 or 20.
+#   declared at the top of the script. Upon adding a case to the RUN_CASE
+#   array, a value for the number of times to run that case must be added to
+#   the NUM_TESTS array. Ideally, the number of times a case is run should
+#   be a large enough number so that the total runtime for that case is
+#   approximately equal to 7-8 minutes. This is a large enough sample time
+#   to ensure reasonably accurate data, but won't take a large amount of time
+#   to run the tests.
+#
+# WARNING: A successful run of this script will likely consume approximately
+#   25-30 GB of hard drive space! Please plan accordingly to ensure that the
+#   output does not fill up the hard drive on the host computer!
 #
 # NOTE: When running this script, it is highly recommended that the
 #   computer is doing nothing else--having any other programs running,
 #   even an instance of GVim, will likely increase the inconsistency
 #   of the results. Ideally, try to ensure that the only program running
-#   on that computer is your SSH session/terminal window that started
-#   the script.
+#   on that computer besides the script is your SSH session/terminal window
+#   that started the script, at the most. This includes programs that are run
+#   by other users.
 #
 ##########################################################################
 
-# List of the cases that will run in the profile testing suite
-RUN_CASE=( bomex cobra nov11_altocu rico cloud_feedback_s12 )
+RUN_CASE=( dycoms2_rf02_do mpace_a cobra gabls3_night jun25_altocu rico )
+
+NUM_TESTS=( "105" "16" "46" "48" "155" "215" )
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
@@ -45,20 +49,12 @@ restoreDir=`pwd`
 cd $scriptPath
 
 if [ -z $1 ]; then
-	echo "Usage: "$0" <OUTPUT DIRECTORY> [NUMBER OF TESTS]"
+	echo "Usage: "$0" <OUTPUT DIRECTORY>"
 	echo "The output directory will contain the output from"
 	echo "all of the profile tests."
-	echo ""
-	echo "The default number of tests is 5."
 	exit
 else
 	OUTPUT_DIR=$1
-fi
-
-if [ -z $2 ]; then
-	NUM_TESTS=5
-else
-	NUM_TESTS=$2
 fi
 
 echo "NOTE: It is highly recommended that no other programs are running"
@@ -73,15 +69,20 @@ else
 	exit 1
 fi
 
-echo "Running test suite--each case will run "$NUM_TESTS" times."
+echo "Running test suite..."
 
 ##########################################################################
 # Loop through the cases in the suite, setting up the parameters so testing
 # runs can be completed
 ##########################################################################
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
-	echo "Performing tests for case: "${RUN_CASE[$x]}"."
 	echo "---------------------------------------------"
+	echo "Performing tests for case: "${RUN_CASE[$x]}"."
+	echo "Tests will run "${NUM_TESTS[$x]}" times."
+	echo "---------------------------------------------"
+
+	# Create testing output subdirectory
+	mkdir $OUTPUT_DIR"/${RUN_CASE[$x]}"
 
 	# Ensure necessary namelists exist and copy them to the general
 	# input files.
@@ -101,32 +102,14 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
 	cat $PARAMS_FILE > "clubb.in"
 
-	# Determine proper end-time parameter for various cases
-	case "${RUN_CASE[$x]}" in
-		"bomex" ) FINAL_TIME="6480000\.0";;
-		"cobra" ) FINAL_TIME="2304000\.0";;
-		"nov11_altocu" ) FINAL_TIME="3780000\.0";;
-		"rico" ) FINAL_TIME="5184000\.0";;
-		"cloud_feedback_s12" ) FINAL_TIME="1296000\.0";;
-		* )
-		echo "WARNING: We should not have gotten to this point."
-		echo "Potential error in script at end-time parameters."
-		echo "The current case will run with a default time_final."
-		;;
-	esac
-
-	# Use sed to set l_stats to .false., debug_level to 0,
-	# dt = 60.0 sec, and ending time of case to FINAL_TIME
-	# which is set in the case statement above.
-	cat $MODEL_FILE | sed 's/l_stats\s*=\s*.*/l_stats = \.false\./g' | sed 's/debug_level\s*=\s*.*/debug_level = 0/g' | sed 's/dtmain\s*=\s*.*/dtmain = 60\.0/g' | sed 's/dtclosure\s*=\s*.*/dtclosure = 60\.0/g' | sed 's/time_final\s*=\s*.*/time_final = '$FINAL_TIME'/g' >> 'clubb.in'
-
-	echo "Running "$NUM_TESTS" runs of case: "${RUN_CASE[$x]}"."
+	# Use sed to set l_stats to .false. and debug_level to 0.
+	cat $MODEL_FILE | sed 's/l_stats\s*=\s*.*/l_stats = \.false\./g' | sed 's/debug_level\s*=\s*.*/debug_level = 0/g' >> 'clubb.in'
 
 	# Run collect on the CLUBB model repeatedly
 	# Produce the output within the desired output directory.
 
-	for run in `seq $NUM_TESTS`; do
-		COLLECT_OUT=$OUTPUT_DIR"/"${RUN_CASE[$x]}"-"$run".er"
+	for run in `seq ${NUM_TESTS[$x]}`; do
+		COLLECT_OUT=$OUTPUT_DIR"/"${RUN_CASE[$x]}"/"$run".er"
 		collect -p hi -A copy -o $COLLECT_OUT ../bin/clubb_standalone
 	done
 
@@ -135,8 +118,12 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 done
 
 echo "Testing is complete. The output from the tests is in:"
-echo $OUTPUT_DIR"/<case>-<run number>.er/ ."
+echo $OUTPUT_DIR"/<case>/<run number>.er/ ."
 echo "Run analyzer "$OUTPUT_DIR"/<case>-<run number>.er to view the results."
+echo "For best results, it is recommended that all runs for a particular"
+echo "case are opened simulaneously in analyzer. Use the Open Case command"
+echo "in the analyzer window, and highlight all runs for a particular case,"
+echo "and the analyzer tool will aggregate all of the results together."
 
 # Return to previous working directory.
 cd $restoreDir

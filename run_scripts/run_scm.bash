@@ -18,6 +18,7 @@ NIGHTLY=false
 TIMESTEP_TEST=false
 ZT_GRID=false
 ZM_GRID=false
+PERFORMANCE_TEST=false
 OUTPUT_DIR="/home/`whoami`/nightly_tests/output"
 NAMELISTS="clubb.in"
 
@@ -50,7 +51,7 @@ run_case()
 # Note that we use `"$@"' to let each command-line parameter expand to a 
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o z:m:l:t:s:p:nh --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,nightly,help \
+TEMP=`getopt -o z:m:l:t:s:p:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,performance_test,nightly,help \
      -n 'run_scm.bash' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -133,6 +134,10 @@ while true ; do
             NIGHTLY=true
 
             shift;;
+        -e|--performance_test)
+            PERFORMANCE_TEST=true
+
+            shift;;
         -h|--help) # Print the help message
             echo -e "Usage: run_scm.bash [OPTION]... case_name"
             echo -e "\t-z, --zt_grid=FILE\t\tThe path to the zt grid file"
@@ -141,6 +146,8 @@ while true ; do
             echo -e "\t-t, --timestep_test=LENGTH\tRun the case at specified timestep"
             echo -e "\t-s, --stats=FILE\t\tSpecify the stats file to use"
             echo -e "\t-p, --parameter_file\t\tSet the parameter file to use"
+            echo -e "\t-r, --performance_test\t\tDisable statistics output and set debug"
+            echo -e "\t\t\t\t\tlevel to 0 for performance testing"
             echo -e "\t-h, --help\t\t\tPrints this help message"
 
             exit 1 ;;
@@ -333,6 +340,15 @@ then
         	nzmax = '$grid_nz'\n \
         	zm_grid_fname ='\'$grid_path\''\n \
         	grid_type = 3\n/g' >> $NAMELISTS
+    cat $stats_file >> $NAMELISTS
+
+    run_case
+elif [ $PERFORMANCE_TEST == true ];
+then
+    cat $parameter_file > $NAMELISTS
+    cat $model_file | sed 's/l_stats\s*=\s*.*/l_stats = \.false\./g' \
+                    | sed 's/debug_level\s*=\s*.*/debug_level = 0/g' \
+                    >> $NAMELISTS
     cat $stats_file >> $NAMELISTS
 
     run_case
