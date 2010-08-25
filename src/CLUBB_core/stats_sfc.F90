@@ -40,7 +40,7 @@ module stats_sfc
         iiwp, &
         iswp, & 
         irwp, &
-        izb, & 
+        iz_cloud_base, & 
         izi, & 
         irain, & 
         irain_flux, & 
@@ -108,7 +108,7 @@ module stats_sfc
     ivwp            = 0   ! nielsenb
     iiwp            = 0   ! nielsenb
     iswp            = 0   ! nielsenb
-    izb             = 0
+    iz_cloud_base   = 0
     izi             = 0
     irain           = 0   ! Brian
     irain_flux      = 0   ! Brian
@@ -230,9 +230,9 @@ module stats_sfc
              "Rain water path [kg/m^2]","kg/m2",sfc)
         k = k + 1
 
-      case ('zb')
-        izb = k
-        call stat_assign(izb,"zb", & 
+      case ('z_cloud_base')
+        iz_cloud_base = k
+        call stat_assign(iz_cloud_base,"z_cloud_base", & 
              "Cloud base altitude [m]","m",sfc)
         k = k + 1
 

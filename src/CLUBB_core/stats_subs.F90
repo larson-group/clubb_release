@@ -1286,7 +1286,7 @@ module stats_subs
         ishear, & 
         iFrad, & 
         icc, & 
-        izb, & 
+        iz_cloud_base, & 
         ilwp, &
         ivwp, &
         iswp, &
@@ -1650,7 +1650,7 @@ module stats_subs
       call stat_update_var_pt( icc, 1, maxval( cloud_frac(1:gr%nnzp) ), sfc )
 
       ! Cloud base
-      if ( izb > 0 ) then
+      if ( iz_cloud_base > 0 ) then
 
         k = 1
         do while ( rcm(k) < rc_tol .and. k < gr%nnzp )
@@ -1661,13 +1661,13 @@ module stats_subs
 
           ! Use linear interpolation to find the exact height of the
           ! rc_tol kg/kg level.  Brian.
-          call stat_update_var_pt( izb, 1, lin_int( rc_tol, rcm(k),  &
+          call stat_update_var_pt( iz_cloud_base, 1, lin_int( rc_tol, rcm(k),  &
                                    rcm(k-1), gr%zt(k), gr%zt(k-1) ), sfc )
 
         else
 
           ! Mark the cloud base at -10 m. if it's clear.
-          call stat_update_var_pt( izb, 1, -10.0 , sfc )
+          call stat_update_var_pt( iz_cloud_base, 1, -10.0 , sfc )
 
         endif
 

@@ -3521,7 +3521,7 @@ module clubb_driver
       !    b) It seems more appropriate to declare Ncm in the same place
       !       where rcm is computed.
       !
-      ! Since cloud base (zb) is determined by the mixing ratio rc_tol,
+      ! Since cloud base (z_cloud_base) is determined by the mixing ratio rc_tol,
       ! so will cloud droplet number concentration (Ncm).
       where ( rcm >= rc_tol )
         hydromet(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
