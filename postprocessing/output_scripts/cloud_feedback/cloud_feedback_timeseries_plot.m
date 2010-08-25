@@ -22,8 +22,8 @@ profile_vars_to_plot = [ 'T     '; 'ql    '; 'qv    '; 'cloud '; 'tdt_lw'; 'tdt_
 if ( exist(sfcfilepath) )
 	% Plot the timeseries variables
 	for i=1:size(timeseries_vars_to_plot,1);
-		minVal = 0;
-		maxVal = 0;
+		minVal = 1e6;
+		maxVal = -1e6;
 
 		var_to_plot = strtrim(timeseries_vars_to_plot(i, 1:size(timeseries_vars_to_plot,2)))	
 
@@ -103,8 +103,8 @@ if ( exist(sfcfilepath) )
 	for i=1:size(profile_vars_to_plot,1);
 		plot_index = 1;
 
-		minVal = 0;
-		maxVal = 0;
+		minVal = 1e6;
+		maxVal = -1e6;
 
 		var_to_plot = strtrim(profile_vars_to_plot(i, 1:size(profile_vars_to_plot,2)))
 

@@ -166,7 +166,7 @@ tdt_sw = radht_SW_array .* 86400 .* exner_array;
 
 % Calculate wm_zt .* d(T_in_k)/dz
 for i=2:nz-1
-    wmzt_d_t_in_k(i,:) = wm_array(i,:) .* (T_in_K_array(i+1,:) - T_in_K_array(i-1,:)) / z(i+1) - z(i-1);
+    wmzt_d_t_in_k(i,:) = wm_array(i,:) .* (T_in_K_array(i+1,:) - T_in_K_array(i-1,:)) / (z(i+1) - z(i-1));
 end
 
 % Boundary Conditions
