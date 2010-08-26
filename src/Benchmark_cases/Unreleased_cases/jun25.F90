@@ -140,12 +140,12 @@
 !                                                               Unit: NONE
 ! wmax          : defines value of maximum subsidence in profile
 !                                                               Unit: cm/s
-! zi            : defines approx. height of inversion within cloud
+! z_inversion            : defines approx. height of inversion within cloud
 !                 (subsidence is equal to wmax at this height)  Unit: m
-! dazi          : defines height above inversion
+! daz_inversion          : defines height above inversion
 !                 (above this height, subsidence linearly tapers off to zero)
 !                                                               Unit: m
-! dbzi          : defines height above inversion
+! dbz_inversion          : defines height above inversion
 !                 (below this height, subsidence linearly tapers off to zero)
 !                                                               Unit: m
 ! dac           : defines height above cloud

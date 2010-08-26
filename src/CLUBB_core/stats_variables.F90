@@ -742,7 +742,7 @@ module stats_variables
     iswp, &        ! nielsenb
     irwp, &
     iz_cloud_base, & 
-    izi, & 
+    iz_inversion, & 
     irain,    &    ! Brian
     irain_flux,   &    ! Brian
     irrainm_sfc, & ! Brian
@@ -779,7 +779,7 @@ module stats_variables
     irtm_spur_src,    &
     ithlm_spur_src
 !$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
-!$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, irwp, iz_cloud_base, izi, &
+!$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, irwp, iz_cloud_base, iz_inversion, &
 !$omp   irain, irain_flux, irrainm_sfc, &
 !$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
 !$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &

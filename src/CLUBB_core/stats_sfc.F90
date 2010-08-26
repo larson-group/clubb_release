@@ -41,7 +41,7 @@ module stats_sfc
         iswp, & 
         irwp, &
         iz_cloud_base, & 
-        izi, & 
+        iz_inversion, & 
         irain, & 
         irain_flux, & 
         irrainm_sfc, &
@@ -109,7 +109,7 @@ module stats_sfc
     iiwp            = 0   ! nielsenb
     iswp            = 0   ! nielsenb
     iz_cloud_base   = 0
-    izi             = 0
+    iz_inversion             = 0
     irain           = 0   ! Brian
     irain_flux      = 0   ! Brian
     irrainm_sfc     = 0   ! Brian
@@ -236,9 +236,9 @@ module stats_sfc
              "Cloud base altitude [m]","m",sfc)
         k = k + 1
 
-      case ('zi')
-        izi = k
-        call stat_assign(izi,"zi", & 
+      case ('z_inversion')
+        iz_inversion = k
+        call stat_assign(iz_inversion,"z_inversion", & 
              "Inversion altitude [m]","m",sfc)
         k = k + 1
 

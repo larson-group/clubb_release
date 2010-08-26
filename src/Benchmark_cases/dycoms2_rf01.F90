@@ -46,7 +46,7 @@ module dycoms2_rf01
     use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
     use stats_variables, only:  & 
-        izi, iradht_LW, zt, sfc, l_stats_samp ! Variable(s)
+        iz_inversion, iradht_LW, zt, sfc, l_stats_samp ! Variable(s)
 
     use parameters_radiation, only: &
       F0,  & ! Variable(s)
@@ -92,7 +92,7 @@ module dycoms2_rf01
     real, dimension(gr%nnzp) :: lwp
 
     integer :: i
-    real :: zi
+    real :: z_inversion
 
     thlm_forcing = 0.
     rtm_forcing  = 0.
@@ -112,13 +112,13 @@ module dycoms2_rf01
       err_code = clubb_rtm_level_not_found
       return
     end if
-!zi = (gr%zt(i)-gr%zt(i-1))/(rtm(i)-rtm(i-1))*(8.0e-3-rtm(i-1)) &
+!z_inversion = (gr%zt(i)-gr%zt(i-1))/(rtm(i)-rtm(i-1))*(8.0e-3-rtm(i-1)) &
 !   + gr%zt(i-1)
-!        x_sfc(1,izi) = zi
-    zi = lin_int( 8.0e-3, rtm(i), rtm(i-1), gr%zt(i), gr%zt(i-1) )
+!        x_sfc(1,iz_inversion) = z_inversion
+    z_inversion = lin_int( 8.0e-3, rtm(i), rtm(i-1), gr%zt(i), gr%zt(i-1) )
 
     if ( l_stats_samp ) then
-      call stat_update_var_pt( izi, 1, zi, sfc )
+      call stat_update_var_pt( iz_inversion, 1, z_inversion, sfc )
     end if
 
     ! Theta-l radiative tendency
@@ -139,11 +139,11 @@ module dycoms2_rf01
       do i = 1, gr%nnzp, 1
         Frad(i) = F0 * EXP( -kappa * lwp(i) ) & 
                 + F1 * EXP( -kappa * (lwp(1)-lwp(i)) )
-        if ( zi > 0 .and. gr%zm(i) > zi ) then
+        if ( z_inversion > 0 .and. gr%zm(i) > z_inversion ) then
           Frad(i) = Frad(i) & 
                   + rho_zm(i) * cp * ls_div & 
-                    * ( 0.25*(gr%zm(i)-zi)**(4.0/3.0) & 
-                        + zi*(gr%zm(i)-zi)**(1.0/3.0) )
+                    * ( 0.25*(gr%zm(i)-z_inversion)**(4.0/3.0) & 
+                        + z_inversion*(gr%zm(i)-z_inversion)**(1.0/3.0) )
         end if
       end do
 

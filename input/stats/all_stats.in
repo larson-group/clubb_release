@@ -114,7 +114,7 @@ vars_rad_zm =
 vars_sfc = 
 'ustar', 'soil_heat_flux', 'veg_T_in_K', 'sfc_soil_T_in_K', 'deep_soil_T_in_K', 
 'lh', 'sh', 'cc', 'lwp', 'vwp',
-'swp', 'iwp', 'rwp', 'z_cloud_base', 'zi', 'rain', 'rain_flux', 'rrainm_sfc', 
+'swp', 'iwp', 'rwp', 'z_cloud_base', 'z_inversion', 'rain', 'rain_flux', 'rrainm_sfc', 
 'wpthlp_sfc', 'wprtp_sfc', 'upwp_sfc', 'vpwp_sfc',
 'morr_rain_rate', 'morr_snow_rate',
 'thlm_vert_avg', 'rtm_vert_avg', 'um_vert_avg', 'vm_vert_avg', 

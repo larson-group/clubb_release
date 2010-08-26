@@ -163,11 +163,11 @@
   ! Subsidence constant and variables
   real :: & 
   wmax,  & ! Defines value of maximum subsidence in profile  [cm/s]
-  zi,    & ! Defines approx. height of inversion within cloud 
+  z_inversion,    & ! Defines approx. height of inversion within cloud 
            ! (subsidence is equal to wmax at this height) [m]
-  dazi,  & ! Defines height above inversion (above this height 
+  daz_inversion,  & ! Defines height above inversion (above this height 
            ! subsidence linearly tapers off to zero)     [m]
-  dbzi,  & ! Defines height above inversion (below this height, 
+  dbz_inversion,  & ! Defines height above inversion (below this height, 
            ! subsidence linearly tapers off to zero)    [m]
   dbc,   & ! Defines height below cloud (at / below this height, we have NO subsidence) [m]
   dac      ! Defines height above cloud (at / above this height, we have NO subsidence) [m]
@@ -331,18 +331,18 @@ end if
   ! Subsidence Parameters
   !----------------------
   wmax =  0.016
-    zi = 2500.0 + gr%zm(1)
-  dazi = 1500.0
-  dbzi = 2000.0
+    z_inversion = 2500.0 + gr%zm(1)
+  daz_inversion = 1500.0
+  dbz_inversion = 2000.0
    dbc =  300.0
    dac =  200.0
 
   zsubs(1) = 0. + gr%zm(1)
-  zsubs(2) = zi-dbzi-dbc
-  zsubs(3) = zi-dbzi
-  zsubs(4) = zi
-  zsubs(5) = zi+dazi
-  zsubs(6) = zi+dazi+dac
+  zsubs(2) = z_inversion-dbz_inversion-dbc
+  zsubs(3) = z_inversion-dbz_inversion
+  zsubs(4) = z_inversion
+  zsubs(5) = z_inversion+daz_inversion
+  zsubs(6) = z_inversion+daz_inversion+dac
   zsubs(7) = 4500. + gr%zm(1)
 
     wt1(1) = 0.
@@ -625,21 +625,21 @@ end if
 ! -------------------------------------
 !       |      <- No subsidence in this region
 !       |
-!       ------------ Height = (zi + dazi + dac)
+!       ------------ Height = (z_inversion + daz_inversion + dac)
 !        \
 !         \    <- Subsidence tapers linearly in this region
 !          \
-!           -------- Height = (zi + dazi)
+!           -------- Height = (z_inversion + daz_inversion)
 !           |
 !           |  <- Subsidence equals wmax in this region
 !           |
-!           -------- Height = zi
+!           -------- Height = z_inversion
 !           |
-!           -------- Height = (zi - dbzi)
+!           -------- Height = (z_inversion - dbz_inversion)
 !          /
 !         /    <- Subsidence tapers linearly in this region
 !        /
-!       ------------ Height = (zi - dbzi - dbc)
+!       ------------ Height = (z_inversion - dbz_inversion - dbc)
 !       |
 !       |      <- No subsidence in this region
 !

@@ -84,7 +84,7 @@ module atex
 
   ! Internal variables
   integer :: i
-  real :: zi
+  real :: z_inversion
 
   ! Forcings are applied only after t = 5400 s
   wm_zt = 0.
@@ -109,18 +109,18 @@ module atex
        err_code = clubb_rtm_level_not_found
        return
      end if
-     zi = gr%zt(i-1)
+     z_inversion = gr%zt(i-1)
 
   !          Large scale subsidence
 
      do i = 2, gr%nnzp
 
-        if ( gr%zt(i) > 0. .and. gr%zt(i) <= zi ) then
+        if ( gr%zt(i) > 0. .and. gr%zt(i) <= z_inversion ) then
            wm_zt(i)  & 
-             = -0.0065 * gr%zt(i)/zi
-        else if ( gr%zt(i) > zi .and. gr%zt(i) <= zi+300. ) then
+             = -0.0065 * gr%zt(i)/z_inversion
+        else if ( gr%zt(i) > z_inversion .and. gr%zt(i) <= z_inversion+300. ) then
            wm_zt(i) & 
-             = - 0.0065 * ( 1. - (gr%zt(i)-zi)/300. )
+             = - 0.0065 * ( 1. - (gr%zt(i)-z_inversion)/300. )
         else
            wm_zt(i) = 0.
         end if
@@ -138,10 +138,10 @@ module atex
 
      do i = 2, gr%nnzp
 
-        if ( gr%zt(i) > 0. .and. gr%zt(i) < zi ) then
-           thlm_forcing(i) = -1.1575e-5 * ( 3. - gr%zt(i)/zi )
-        else if ( gr%zt(i) > zi .and. gr%zt(i) <= zi+300. ) then
-           thlm_forcing(i) = -2.315e-5 * ( 1. - (gr%zt(i)-zi)/300. )
+        if ( gr%zt(i) > 0. .and. gr%zt(i) < z_inversion ) then
+           thlm_forcing(i) = -1.1575e-5 * ( 3. - gr%zt(i)/z_inversion )
+        else if ( gr%zt(i) > z_inversion .and. gr%zt(i) <= z_inversion+300. ) then
+           thlm_forcing(i) = -2.315e-5 * ( 1. - (gr%zt(i)-z_inversion)/300. )
         else
            thlm_forcing(i) = 0.0
         end if
@@ -151,8 +151,8 @@ module atex
      ! Moisture tendency
      do i = 2, gr%nnzp
 
-        if ( gr%zt(i) > 0. .and. gr%zt(i) < zi ) then
-           rtm_forcing(i) = -1.58e-8 * ( 1. - gr%zt(i)/zi )  ! Brian
+        if ( gr%zt(i) > 0. .and. gr%zt(i) < z_inversion ) then
+           rtm_forcing(i) = -1.58e-8 * ( 1. - gr%zt(i)/z_inversion )  ! Brian
         else
            rtm_forcing(i) = 0.0       ! Brian
         end if
