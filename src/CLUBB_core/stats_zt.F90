@@ -1305,155 +1305,158 @@ module stats_zt
         iwp3_bt = k
 
         call stat_assign( iwp3_bt, "wp3_bt", & 
-             "wp3 time tendency [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 time tendency [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
       case ('wp3_ma')
         iwp3_ma = k
 
         call stat_assign( iwp3_ma, "wp3_ma", & 
-             "wp3 vertical mean advection [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 vertical mean advection [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
       case ('wp3_ta')
         iwp3_ta = k
 
         call stat_assign( iwp3_ta, "wp3_ta", & 
-             "wp3 turbulent advection [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 turbulent advection [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
 
         k = k + 1
 
       case ('wp3_tp')
         iwp3_tp = k
         call stat_assign( iwp3_tp, "wp3_tp", & 
-             "wp3 turbulent transport [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 turbulent transport [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
       case ('wp3_ac')
         iwp3_ac = k
         call stat_assign( iwp3_ac, "wp3_ac", & 
-             "wp3 accumulation term [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 accumulation term [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
       case ('wp3_bp')
         iwp3_bp = k
         call stat_assign( iwp3_bp, "wp3_bp", & 
-             "wp3 buoyancy production [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 buoyancy production [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
       case ('wp3_pr1')
         iwp3_pr1 = k
         call stat_assign( iwp3_pr1, "wp3_pr1", & 
-             "wp3 pressure term 1 [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 pressure term 1 [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
       case ('wp3_pr2')
         iwp3_pr2 = k
         call stat_assign( iwp3_pr2, "wp3_pr2", & 
-             "wp3 pressure term 2 [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 pressure term 2 [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
 
         k = k + 1
 
       case ('wp3_dp1')
         iwp3_dp1 = k
         call stat_assign( iwp3_dp1, "wp3_dp1", & 
-             "wp3 dissipation term 1 [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 dissipation term 1 [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
       case ('wp3_4hd')
         iwp3_4hd = k
         call stat_assign( iwp3_4hd, "wp3_4hd", & 
-             "wp3 4th-order hyper-diffusion [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 4th-order hyper-diffusion [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
       case ('wp3_cl')
         iwp3_cl = k
         call stat_assign( iwp3_cl, "wp3_cl", & 
-             "wp3 clipping term [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+             "wp3 budget: wp3 clipping term [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
       case ('rrainm_bt')
         irrainm_bt = k
         call stat_assign( irrainm_bt, "rrainm_bt", & 
-             "rrainm time tendency [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm time tendency [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_ma')
         irrainm_ma = k
 
         call stat_assign( irrainm_ma, "rrainm_ma", & 
-             "rrainm vertical mean advection [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm vertical mean advection [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_sd')
         irrainm_sd = k
 
         call stat_assign( irrainm_sd, "rrainm_sd", & 
-             "rrainm sedimentation [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm sedimentation [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_dff')
         irrainm_dff = k
 
         call stat_assign( irrainm_dff, "rrainm_dff", & 
-             "rrainm diffusion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm diffusion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_cond')
         irrainm_cond = k
 
         call stat_assign( irrainm_cond, "rrainm_cond", & 
-             "rrainm condensation/evaporation [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm condensation/evaporation [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_auto')
         irrainm_auto = k
 
         call stat_assign( irrainm_auto, "rrainm_auto", & 
-             "rrainm autoconversion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm autoconversion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_accr')
         irrainm_accr = k
         call stat_assign( irrainm_accr, "rrainm_accr", & 
-             "rrainm accretion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm accretion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_cond_adj')
         irrainm_cond_adj = k
 
         call stat_assign( irrainm_cond_adj, "rrainm_cond_adj", & 
-             "rrainm cond/evap adjustment due to over-evaporation [kg kg^{-1} s^{-1}]", & 
-             "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm cond/evap adjustment due to over-evaporation " // &
+             "[kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_src_adj')
         irrainm_src_adj = k
 
         call stat_assign( irrainm_src_adj, "rrainm_src_adj", & 
-             "rrainm source term adjustment due to over-depletion [kg kg^{-1} s^{-1}]", &
-             "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm source term adjustment due to over-depletion " // &
+             "[kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_mc')
         irrainm_mc = k
 
         call stat_assign( irrainm_mc, "rrainm_mc", & 
-             "Change in rrainm due to microphysics [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: Change in rrainm due to microphysics [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt )
 
         k = k + 1
 
       case ('rrainm_cl')
         irrainm_cl = k
         call stat_assign( irrainm_cl, "rrainm_cl", & 
-             "rrainm clipping term [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm clipping term [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
 
         k = k + 1
 
       case ('Nrm_bt')
         iNrm_bt = k
         call stat_assign( iNrm_bt, "Nrm_bt", & 
-             "Nrm time tendency [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Nrm time tendency [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1461,21 +1464,21 @@ module stats_zt
         iNrm_ma = k
 
         call stat_assign( iNrm_ma, "Nrm_ma", & 
-             "Nrm vertical mean advection [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Nrm vertical mean advection [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nrm_sd')
         iNrm_sd = k
 
         call stat_assign( iNrm_sd, "Nrm_sd", & 
-             "Nrm sedimentation [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Nrm sedimentation [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
       case ('Nrm_dff')
         iNrm_dff = k
         call stat_assign( iNrm_dff, "Nrm_dff", & 
-             "Nrm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Nrm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1483,14 +1486,14 @@ module stats_zt
         iNrm_cond = k
 
         call stat_assign( iNrm_cond, "Nrm_cond", & 
-             "Change in Nrm due to condensation [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Change in Nrm due to condensation [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nrm_auto')
         iNrm_auto = k
 
         call stat_assign( iNrm_auto, "Nrm_auto", & 
-             "Change in Nrm due to autoconversion [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Change in Nrm due to autoconversion [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1498,7 +1501,7 @@ module stats_zt
         iNrm_cond_adj = k
 
         call stat_assign( iNrm_cond_adj, "Nrm_cond_adj", & 
-             "Nrm cond/evap adjustment due to over-evaporation [(num/kg)/s]", & 
+             "Nrm budget: Nrm cond/evap adjustment due to over-evaporation [(num/kg)/s]", & 
              "(num/kg)/s", zt )
         k = k + 1
 
@@ -1506,27 +1509,27 @@ module stats_zt
         iNrm_src_adj = k
 
         call stat_assign( iNrm_src_adj, "Nrm_src_adj", & 
-             "Nrm source term adjustment due to over-depletion [(num/kg)/s]", &
+             "Nrm budget: Nrm source term adjustment due to over-depletion [(num/kg)/s]", &
              "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nrm_mc')
         iNrm_mc = k
         call stat_assign( iNrm_mc, "Nrm_mc", & 
-             "Change in Nrm due to microphysics [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Change in Nrm due to microphysics [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
       case ('Nrm_cl')
         iNrm_cl = k
         call stat_assign( iNrm_cl, "Nrm_cl", & 
-             "Nrm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Nrm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('rsnowm_bt')
         irsnowm_bt = k
         call stat_assign( irsnowm_bt, "rsnowm_bt", & 
-             "rsnowm time tendency [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rsnowm budget: rsnowm time tendency [(kg/kg)/s]", "(kg/kg)/s", zt )
 
         k = k + 1
 
@@ -1534,40 +1537,40 @@ module stats_zt
         irsnowm_ma = k
 
         call stat_assign( irsnowm_ma, "rsnowm_ma", & 
-             "rsnowm vertical mean advection [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rsnowm budget: rsnowm vertical mean advection [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rsnowm_sd')
         irsnowm_sd = k
         call stat_assign( irsnowm_sd, "rsnowm_sd", & 
-             "rsnowm sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rsnowm budget: rsnowm sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rsnowm_dff')
         irsnowm_dff = k
 
         call stat_assign( irsnowm_dff, "rsnowm_dff", & 
-             "rsnowm diffusion [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rsnowm budget: rsnowm diffusion [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rsnowm_mc')
         irsnowm_mc = k
 
         call stat_assign( irsnowm_mc, "rsnowm_mc", & 
-             "Change in rsnowm due to microphysics [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rsnowm budget: Change in rsnowm due to microphysics [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rsnowm_cl')
         irsnowm_cl = k
 
         call stat_assign( irsnowm_cl, "rsnowm_cl", & 
-             "rsnowm clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rsnowm budget: rsnowm clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('Nsnowm_bt')
         iNsnowm_bt = k
         call stat_assign( iNsnowm_bt, "Nsnowm_bt", & 
-             "Nsnowm budget [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nsnowm budget: [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1575,28 +1578,28 @@ module stats_zt
         iNsnowm_ma = k
 
         call stat_assign( iNsnowm_ma, "Nsnowm_ma", & 
-             "Nsnowm mean advection [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nsnowm budget: Nsnowm mean advection [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nsnowm_sd')
         iNsnowm_sd = k
 
         call stat_assign( iNsnowm_sd, "Nsnowm_sd", & 
-             "Nsnowm sedimentation [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nsnowm budget: Nsnowm sedimentation [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
       case ('Nsnowm_dff')
         iNsnowm_dff = k
         call stat_assign( iNsnowm_dff, "Nsnowm_dff", & 
-             "Nsnowm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nsnowm budget: Nsnowm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
       case ('Nsnowm_mc')
         iNsnowm_mc = k
         call stat_assign( iNsnowm_mc, "Nsnowm_mc", & 
-             "Nsnowm microphysics [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nsnowm budget: Nsnowm microphysics [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1604,14 +1607,14 @@ module stats_zt
         iNsnowm_cl = k
 
         call stat_assign( iNsnowm_cl, "Nsnowm_cl", & 
-             "Nsnowm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nsnowm budget: Nsnowm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('ricem_bt')
         iricem_bt = k
 
         call stat_assign( iricem_bt, "ricem_bt", & 
-             "ricem time tendency [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "ricem budget: ricem time tendency [(kg/kg)/s]", "(kg/kg)/s", zt )
 
         k = k + 1
 
@@ -1619,83 +1622,84 @@ module stats_zt
         iricem_ma = k
 
         call stat_assign( iricem_ma, "ricem_ma", & 
-             "ricem vertical mean advection [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "ricem budget: ricem vertical mean advection [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('ricem_sd')
         iricem_sd = k
 
         call stat_assign( iricem_sd, "ricem_sd", & 
-             "ricem sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "ricem budget: ricem sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('ricem_dff')
         iricem_dff = k
 
         call stat_assign( iricem_dff, "ricem_dff", & 
-             "ricem diffusion [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "ricem budget: ricem diffusion [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('ricem_mc')
         iricem_mc = k
 
         call stat_assign( iricem_mc, "ricem_mc", & 
-             "Change in ricem due to microphysics [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "ricem budget: Change in ricem due to microphysics [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('ricem_cl')
         iricem_cl = k
 
         call stat_assign( iricem_cl, "ricem_cl", & 
-             "ricem clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "ricem budget: ricem clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rgraupelm_bt')
         irgraupelm_bt = k
 
         call stat_assign( irgraupelm_bt, "rgraupelm_bt", & 
-             "rgraupelm time tendency [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rgraupelm budget: rgraupelm time tendency [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rgraupelm_ma')
         irgraupelm_ma = k
 
         call stat_assign( irgraupelm_ma, "rgraupelm_ma", & 
-             "rgraupelm vertical mean advection [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rgraupelm budget: rgraupelm vertical mean advection [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rgraupelm_sd')
         irgraupelm_sd = k
 
         call stat_assign( irgraupelm_sd, "rgraupelm_sd", & 
-             "rgraupelm sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rgraupelm budget: rgraupelm sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rgraupelm_dff')
         irgraupelm_dff = k
 
         call stat_assign( irgraupelm_dff, "rgraupelm_dff", & 
-             "rgraupelm diffusion [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rgraupelm budget: rgraupelm diffusion [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rgraupelm_mc')
         irgraupelm_mc = k
 
         call stat_assign( irgraupelm_mc, "rgraupelm_mc", & 
-             "Change in rgraupelm due to microphysics [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rgraupelm budget: Change in rgraupelm due to microphysics [(kg/kg)/s]", &
+             "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rgraupelm_cl')
         irgraupelm_cl = k
 
         call stat_assign( irgraupelm_cl, "rgraupelm_cl", & 
-             "rgraupelm clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rgraupelm budget: rgraupelm clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('Ngraupelm_bt')
         iNgraupelm_bt = k
         call stat_assign( iNgraupelm_bt, "Ngraupelm_bt", & 
-             "Ngraupelm budget [(num/kg)/s]", "(num/kg)/s", zt )
+             "Ngraupelm budget: [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1703,21 +1707,21 @@ module stats_zt
         iNgraupelm_ma = k
 
         call stat_assign( iNgraupelm_ma, "Ngraupelm_ma", & 
-             "Ngraupelm mean advection [(num/kg)/s]", "(num/kg)/s", zt )
+             "Ngraupelm budget: Ngraupelm mean advection [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Ngraupelm_sd')
         iNgraupelm_sd = k
 
         call stat_assign( iNgraupelm_sd, "Ngraupelm_sd", & 
-             "Ngraupelm sedimentation [(num/kg)/s]", "(num/kg)/s", zt )
+             "Ngraupelm budget: Ngraupelm sedimentation [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
       case ('Ngraupelm_dff')
         iNgraupelm_dff = k
         call stat_assign( iNgraupelm_dff, "Ngraupelm_dff", & 
-             "Ngraupelm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
+             "Ngraupelm budget: Ngraupelm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1725,20 +1729,20 @@ module stats_zt
         iNgraupelm_mc = k
 
         call stat_assign( iNgraupelm_mc, "Ngraupelm_mc", & 
-             "Ngraupelm microphysics term [(num/kg)/s]", "(num/kg)/s", zt )
+             "Ngraupelm budget: Ngraupelm microphysics term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Ngraupelm_cl')
         iNgraupelm_cl = k
 
         call stat_assign( iNgraupelm_cl, "Ngraupelm_cl", & 
-             "Ngraupelm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
+             "Ngraupelm budget: Ngraupelm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nim_bt')
         iNim_bt = k
         call stat_assign( iNim_bt, "Nim_bt", & 
-             "Nim budget [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nim budget: [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1746,21 +1750,21 @@ module stats_zt
         iNim_ma = k
 
         call stat_assign( iNim_ma, "Nim_ma", & 
-             "Nim mean advection [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nim budget: Nim mean advection [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nim_sd')
         iNim_sd = k
 
         call stat_assign( iNim_sd, "Nim_sd", & 
-             "Nim sedimentation [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nim budget: Nim sedimentation [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
       case ('Nim_dff')
         iNim_dff = k
         call stat_assign( iNim_dff, "Nim_dff", & 
-             "Nim diffusion [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nim budget: Nim diffusion [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1768,20 +1772,21 @@ module stats_zt
         iNim_mc = k
 
         call stat_assign( iNim_mc, "Nim_mc", & 
-             "Nim microphysics term [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "Nim budget: Nim microphysics term [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('Nim_cl')
         iNim_cl = k
 
         call stat_assign( iNim_cl, "Nim_cl", & 
-             "Nim clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "Nim budget: Nim clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('Ncm_bt')
         iNcm_bt = k
         call stat_assign( iNcm_bt, "Ncm_bt", & 
-             "Cloud droplet number concentration budget [(num/kg)/s]", "(num/kg)/s", zt )
+             "Ncm budget: Cloud droplet number concentration budget [(num/kg)/s]", &
+             "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1789,13 +1794,13 @@ module stats_zt
         iNcm_ma = k
 
         call stat_assign( iNcm_ma, "Ncm_ma", & 
-             "Ncm vertical mean advection [(num/kg)/s]", "(num/kg)/s", zt )
+             "Ncm budget: Ncm vertical mean advection [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Ncm_dff')
         iNcm_dff = k
         call stat_assign( iNcm_dff, "Ncm_dff", & 
-             "Ncm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
+             "Ncm budget: Ncm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1803,104 +1808,104 @@ module stats_zt
         iNcm_mc = k
 
         call stat_assign( iNcm_mc, "Ncm_mc", & 
-             "Change in Ncm due to microphysics [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "Ncm budget: Change in Ncm due to microphysics [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('Ncm_cl')
         iNcm_cl = k
 
         call stat_assign( iNcm_cl, "Ncm_cl", & 
-             "Ncm clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "Ncm budget: Ncm clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('vm_bt')
         ivm_bt = k
 
         call stat_assign( ivm_bt, "vm_bt", & 
-             "vm time tendency [m s^{-2}]", "m s^{-2}", zt )
+             "vm budget: vm time tendency [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('vm_ma')
         ivm_ma = k
         call stat_assign( ivm_ma, "vm_ma", & 
-             "vm vertical mean advection [m s^{-2}]", "m s^{-2}", zt )
+             "vm budget: vm vertical mean advection [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('vm_gf')
         ivm_gf = k
 
         call stat_assign( ivm_gf, "vm_gf", & 
-             "vm geostrophic forcing [m s^{-2}]", "m s^{-2}", zt )
+             "vm budget: vm geostrophic forcing [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('vm_cf')
         ivm_cf = k
 
         call stat_assign( ivm_cf, "vm_cf", & 
-             "vm coriolis forcing [m s^{-2}]", "m s^{-2}", zt )
+             "vm budget: vm coriolis forcing [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('vm_ta')
         ivm_ta = k
 
         call stat_assign( ivm_ta, "vm_ta", & 
-             "vm turbulent transport [m s^{-2}]", "m s^{-2}", zt )
+             "vm budget: vm turbulent transport [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('vm_f')
         ivm_f = k
         call stat_assign( ivm_f, "vm_f", & 
-             "vm forcing [m s^{-2}]", "m s^{-2}", zt )
+             "vm budget: vm forcing [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('vm_sdmp')
         ivm_sdmp = k
         call stat_assign( ivm_sdmp, "vm_sdmp", & 
-             "vm sponge damping [m s^{-2}]", "m s^{-2}", zt )
+             "vm budget: vm sponge damping [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('um_bt')
         ium_bt = k
 
         call stat_assign( ium_bt, "um_bt", & 
-             "um time tendency [m s^{-2}]", "m s^{-2}", zt )
+             "um budget: um time tendency [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('um_ma')
         ium_ma = k
 
         call stat_assign( ium_ma, "um_ma", & 
-             "um vertical mean advection [m s^{-2}]", "m s^{-2}", zt )
+             "um budget: um vertical mean advection [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('um_gf')
         ium_gf = k
         call stat_assign( ium_gf, "um_gf", & 
-             "um geostrophic forcing [m s^{-2}]", "m s^{-2}", zt )
+             "um budget: um geostrophic forcing [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('um_cf')
         ium_cf = k
         call stat_assign( ium_cf, "um_cf", & 
-             "um coriolis forcing [m s^{-2}]", "m s^{-2}", zt )
+             "um budget: um coriolis forcing [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('um_ta')
         ium_ta = k
         call stat_assign( ium_ta, "um_ta", & 
-             "um turbulent advection [m s^{-2}]", "m s^{-2}", zt )
+             "um budget: um turbulent advection [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('um_f')
         ium_f = k
         call stat_assign( ium_f, "um_f", & 
-             "um forcing [m s^{-2}]", "m s^{-2}", zt )
+             "um budget: um forcing [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('um_sdmp')
         ium_sdmp = k
         call stat_assign( ium_sdmp, "um_sdmp", & 
-             "um sponge damping [m s^{-2}]", "m s^{-2}", zt )
+             "um budget: um sponge damping [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('mixt_frac')
