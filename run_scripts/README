@@ -68,12 +68,20 @@ run_scm_collect_suite.bash
   should be compiled with the Sun Studio compiler to use this script. However,
   the Intel compiler has been confirmed to work as well. Each case will be run
   a few times to allow for averaging of the runtime statistics. The name of the
-  output directory and optionally the number of times to run each of the cases
-  are arguments for the script.
+  output directory is an argument for the script.  
+
+  NOTE: The output requires about 25 GB of disk space.  Please make sure 
+  that enough space is available, and delete these output files when they
+  are no longer needed.
 
   NOTE: It is highly recommended that no other programs are running on the
   computer that runs this script. If other programs are running, the results
   may be inconsistent and possibly misleading.
+
+time_scm_all.bash
+  Best used to determine the overall runtime of CLUBB.  The
+  output "user ..." lists the CPU time taken by run_scm_all.bash.
+  time_scm_all.bash sets the debug level to 0 and turns off the stats output.
 
 run_timestep_tests.bash: 
   Runs all of the cases CLUBB is set up to do. CLUBB is ran several times for 
