@@ -164,14 +164,14 @@ tdt_lw = radht_LW_array .* 86400 .* exner_array;
 tdt_sw = radht_SW_array .* 86400 .* exner_array;
 % tdt_ls and qdt_ls were changed to be what Minghua wants
 
-% Calculate wm_zt .* d(T_in_k)/dz
+% Calculate wm_zt .* d(thlm)/dz
 for i=2:nz-1
-    wmzt_d_t_in_k(i,:) = wm_array(i,:) .* (T_in_K_array(i+1,:) - T_in_K_array(i-1,:)) / (z(i+1) - z(i-1));
+    wmzt_d_t_in_k(i,:) = wm_array(i,:) .* (thlm_array(i+1,:) - thlm_array(i-1,:)) / (z(i+1) - z(i-1));
 end
 
 % Boundary Conditions
-wmzt_d_t_in_k(1,:) = wm_array(1,:) .* (T_in_K_array(2,:) - T_in_K_array(1,:)) / (z(2) - z(1));
-wmzt_d_t_in_k(nz,:) = wm_array(nz,:) .* ( T_in_K_array(nz,:) - T_in_K_array(nz-1,:) ) / ( z(nz) - z(nz-1) );
+wmzt_d_t_in_k(1,:) = wm_array(1,:) .* (thlm_array(2,:) - thlm_array(1,:)) / (z(2) - z(1));
+wmzt_d_t_in_k(nz,:) = wm_array(nz,:) .* ( thlm_array(nz,:) - thlm_array(nz-1,:) ) / ( z(nz) - z(nz-1) );
 
 % Calculate wm_zt .* d(rvm)/dz
 for i=2:nz-1
