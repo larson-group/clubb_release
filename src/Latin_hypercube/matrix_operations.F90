@@ -8,7 +8,7 @@ module matrix_operations
   end interface linear_symm_upper_eqn_solve
 
   public :: linear_eqn_solve, linear_symm_upper_eqn_solve, band_mult, &
-    covar_matrix_2_corr_matrix
+    covar_matrix_2_corr_matrix, Cholesky_factor
 
   private :: sp_lin_symm_upper_eqn_solve, dp_lin_symm_upper_eqn_solve
 
@@ -21,14 +21,14 @@ module matrix_operations
 !   Description:
 !    Solve for A * X = B for a general matrix.
 !   References:
-!     <http://www.netlib.org/lapack/double/dgesv.f> 
+!     <http://www.netlib.org/lapack/double/dgesv.f>
 !-----------------------------------------------------------------------
     implicit none
 
     ! External
     external :: dgesv   ! LAPACK subroutine
 
-    ! Parameters  
+    ! Parameters
     integer, parameter :: nrhs = 1
 
     ! Input Variables
@@ -77,14 +77,14 @@ module matrix_operations
 !   Description:
 !    Solve for A * X = B for a symmetric matrix, using the upper diagonals.
 !   References:
-!     <http://www.netlib.org/lapack/double/dsysv.f> 
+!     <http://www.netlib.org/lapack/double/dsysv.f>
 !-----------------------------------------------------------------------
     implicit none
 
     ! External
     external :: dsysv   ! LAPACK subroutine
 
-    ! Parameters  
+    ! Parameters
     integer, parameter :: nrhs = 1
 
     ! Input Variables
@@ -148,14 +148,14 @@ module matrix_operations
 !   Description:
 !    Solve for A * X = B for a symmetric matrix, using the upper diagonals.
 !   References:
-!     <http://www.netlib.org/lapack/single/ssysv.f> 
+!     <http://www.netlib.org/lapack/single/ssysv.f>
 !-----------------------------------------------------------------------
     implicit none
 
     ! External
     external :: ssysv   ! LAPACK subroutine
 
-    ! Parameters  
+    ! Parameters
     integer, parameter :: nrhs = 1
 
     ! Input Variables
@@ -306,15 +306,114 @@ module matrix_operations
 
     ! ---- Begin Code ----
     i = 1   ! These 4 lines eliminate a g95 compiler warning of uninitialized variables.
-    i = i   ! Simply initializing them to 1 is not sufficient as it generates two new 
+    i = i   ! Simply initializing them to 1 is not sufficient as it generates two new
     j = 1   ! warnings.  -meyern
     j = j
 
     forall( i = 1:ndim, j= 1:ndim )
-      corr(i,j) = cov(i,j) / sqrt( cov(i,i) * cov(j,j) )
+    corr(i,j) = cov(i,j) / sqrt( cov(i,i) * cov(j,j) )
     end forall
 
     return
   end subroutine covar_matrix_2_corr_matrix
+
+!----------------------------------------------------------------------
+  subroutine Cholesky_factor( n, a, a_Cholesky )
+!  Description:
+!    Create a Cholesky factorization of a.
+!  References:
+!    <http://www.netlib.org/lapack/explore-html-old/dpotrf.f.html>
+!-----------------------------------------------------------------------
+    implicit none
+
+    ! External
+    external :: dpotrf ! LAPACK subroutine
+
+    ! Constant Parameters
+    integer, parameter :: itermax = 5
+
+    ! Input Variables
+    integer, intent(in) :: n
+
+    double precision, dimension(n,n), intent(in) :: a
+
+    ! Output Variables
+    double precision, dimension(n,n), intent(out) :: a_Cholesky
+
+    ! Local Variables
+    double precision :: tau
+
+    integer :: info
+    integer :: i, j, iter
+
+    ! ---- Begin code ----
+
+    a_Cholesky = a ! Copy input array into output array
+!   do i = 1, n
+!     do j = 1, n
+!       write(6,'(e10.3)',advance='no') a(i,j)
+!     end do
+!     write(6,*) ""
+!   end do
+!   pause
+
+    do iter = 1, itermax
+      call dpotrf( 'Lower', n, a_Cholesky, n, info )
+
+      select case( info )
+      case( :-1 )
+        write(0,*) "Cholesky_factor " // & 
+          " illegal value for argument ", -info
+        stop
+      case( 0 )
+        ! Success!
+        exit
+      case( 1: )
+        write(0,*) "Cholesky_factor: leading minor of order ", info, " is not positive definite."
+        write(0,*) "factorization failed."
+!       write(6,*) "a="
+!       do i = 1, n
+!         do j = 1, n
+!           write(6,'(e10.3)',advance='no') a(i,j)
+!         end do
+!         write(6,*) ""
+!       end do
+!       write(6,*) "a_factor="
+!       do i = 1, n
+!         do j = 1, n
+!           write(6,'(e10.3)',advance='no') a_Cholesky(i,j)
+!         end do
+!         write(6,*) ""
+!       end do
+        if ( iter == itermax ) then
+          write(0,*) "iteration =", iter, "itermax =", itermax
+          stop
+        else
+          write(0,*) "Attempting to modify matrix to allow factorization."
+        end if
+
+        ! The number used for tau here is case specific to the Sigma covariance
+        ! matrix in the latin hypercube code and is not at all general.  
+        ! Tau should be number that is small relative to the other diagonal 
+        ! elements of the matrix to have keep the error caused by modifying 'a' low.
+        ! -dschanen 30 Aug 2010
+        tau = a(1,1) * iter ! Use the s_mellor element * iteration for now
+
+        do i = 1, n
+          do j = 1, n
+            if ( i == j ) then
+              a_Cholesky(i,j) = a(i,j) + tau ! Add tau to the diagonal 
+            else
+              a_Cholesky(i,j) = a(i,j)
+            end if
+          end do
+        end do
+
+      end select ! info
+
+    end do ! 1..itermax
+
+    return
+  end subroutine Cholesky_factor
 
 end module matrix_operations

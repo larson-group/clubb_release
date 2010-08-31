@@ -4,10 +4,10 @@ module generate_lh_sample_module
   implicit none
 
   public :: generate_lh_sample, generate_uniform_sample, &
-     ltqnorm, gaus_condt
+     ltqnorm, gaus_condt_Cholesky
 
   private :: sample_points, gaus_mixt_points, & 
-             truncate_gaus_mixt, &
+             truncate_gaus_mixt, gaus_condt, &
              st_2_rtthl, log_sqd_normalized, choose_permuted_random
 
 
@@ -963,6 +963,8 @@ module generate_lh_sample_module
     use error_code, only:  &
       clubb_at_least_debug_level  ! Procedure(s)
 
+    use matrix_operations, only: Cholesky_factor ! Procedure(s)
+
     implicit none
 
     ! Input Variables
@@ -1001,6 +1003,11 @@ module generate_lh_sample_module
     integer :: j, sample
     double precision, dimension(d_variables) :: std_normal
 
+    double precision, dimension(d_variables,d_variables) :: &
+      Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
+
+    logical :: l_Sigma1_Cholesky_init, l_Sigma2_Cholesky_init
+
     ! ---- Begin Code ----
 
     ! Handle some possible errors re: proper ranges of mixt_frac,
@@ -1029,6 +1036,12 @@ module generate_lh_sample_module
       end if
     end if
 
+    ! To avoid performing the Cholesky factorization more than is necessary, 
+    ! we use these logicals here to determine if the Sigma matrices have 
+    ! already been factored.
+    l_Sigma1_Cholesky_init = .false.
+    l_Sigma2_Cholesky_init = .false.
+
     do sample = 1, n_micro_calls
 
       ! From Latin hypercube sample, generate standard normal sample
@@ -1038,19 +1051,33 @@ module generate_lh_sample_module
 
       ! Determine which mixture fraction we are in.
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
-        call gaus_condt( d_variables, &
-                         std_normal, mu1, Sigma1, s_pts(sample), &  ! In
-                         X_gm(sample, 1:d_variables) ) ! Out
+
+        if ( .not. l_Sigma1_Cholesky_init ) then
+           call Cholesky_factor( d_variables, Sigma1, & ! In
+                                 Sigma1_Cholesky )      ! Out
+           l_Sigma1_Cholesky_init = .true.
+        end if
+
+        call gaus_condt_Cholesky &
+            ( d_variables, std_normal, mu1, Sigma1_Cholesky, s_pts(sample), &  ! In
+              X_gm(sample, 1:d_variables) ) ! Out
 
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
-        call gaus_condt( d_variables, &
-                         std_normal, mu2, Sigma2, s_pts(sample), &  ! In
-                         X_gm(sample, 1:d_variables) ) ! Out
+
+        if ( .not. l_Sigma2_Cholesky_init ) then
+           call Cholesky_factor( d_variables, Sigma2, & ! In
+                                 Sigma2_Cholesky )      ! Out
+           l_Sigma2_Cholesky_init = .true.
+        end if
+
+        call gaus_condt_Cholesky &
+             ( d_variables, std_normal, mu2, Sigma2_Cholesky, s_pts(sample), &  ! In
+               X_gm(sample, 1:d_variables) ) ! Out
 
       else
         stop "Error determining mixture component in gaus_mixt_points"
 
-      end if
+      end if ! X_mixt_comp_one_lev(sample)
 
       ! Loop to get new sample
     end do
@@ -1470,6 +1497,65 @@ module generate_lh_sample_module
     return
   end subroutine gaus_condt
 
+!-------------------------------------------------------------------------------
+  subroutine gaus_condt_Cholesky( d_variables, std_normal, mu, Sigma_Cholesky, s_pt, & 
+                                  nonstd_normal )
+! Description:
+!   Faster replacement for gaus_condt, using a Cholesky factorization.
+
+! References:
+!   M. E. Johnson (1987), ``Multivariate Normal and Related Distributions'' p50-55
+!-------------------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: dble
+
+    external :: dsymv
+
+    ! Parameters
+    double precision, parameter :: &
+      alpha = 1.d0, beta  = 1.d0 ! Scaling factors for dsymv
+
+    integer, parameter :: &
+      incxy = 1 ! Increments for x/y for dsymv
+
+    ! Input Variables
+    integer, intent(in) :: d_variables ! Number of variates (normally=5)
+
+    double precision, intent(in), dimension(d_variables) :: &
+      std_normal ! vector of d-variate standard normal distribution
+
+    real, intent(in), dimension(d_variables) :: &
+      mu ! d-dimensional column vector of means of Gaussian
+
+    double precision, intent(in), dimension(d_variables,d_variables) :: &
+      Sigma_Cholesky ! Cholesky factorization of the Sigma matrix
+
+    double precision, intent(in) :: s_pt ! Value of Mellor's s
+
+    ! Output Variables
+
+    ! nxd matrix of n samples from d-variate normal distribution
+    !   with mean mu and covariance structure Sigma
+    double precision, intent(out) :: &
+      nonstd_normal(d_variables)
+
+    ! --- Begin Code ---
+
+    ! On entry, nonstd_normal is equal to mu, but on exit it is the solution vector
+    nonstd_normal = dble( mu ) ! Copy mean values into 'y' vector
+
+    ! Call the level 3 BLAS subroutine to multiply std_normal by Sigma_Cholesky
+    call dsymv( 'Lower', d_variables, alpha, Sigma_Cholesky, d_variables, &
+                std_normal, incxy, beta, nonstd_normal, incxy )
+
+    ! Copy the stored value of s_mellor
+    nonstd_normal(1) = s_pt
+
+    return
+  end subroutine gaus_condt_Cholesky
 !-----------------------------------------------------------------------
   subroutine st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 

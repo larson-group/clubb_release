@@ -1159,7 +1159,7 @@ module latin_hypercube_driver_module
 ! Description:
 !   Re-computes X_u (uniform sample) for a single variate (e.g. s_mellor) using 
 !   an arbitrary correlation specified by the input vert_corr variable (which
-!   can vary with height), using the subroutines ltqnorm and gaus_condt.
+!   can vary with height), using the subroutines ltqnorm and gaus_condt_Cholesky.
 !   There might be a more efficient way to do this, but this works.
 
 ! References:
@@ -1174,7 +1174,9 @@ module latin_hypercube_driver_module
 #ifdef UNRELEASED_CODE
     use generate_lh_sample_module, only: &
       ltqnorm, & ! Procedure(s)
-      gaus_condt
+      gaus_condt_Cholesky
+    use matrix_operations, only: &
+      Cholesky_factor
 #endif
 
     use anl_erf, only: erf ! Function
@@ -1206,13 +1208,16 @@ module latin_hypercube_driver_module
       X_u_one_var_all_levs ! Uniform distribution of 1 variate at all levels [-]
 
     ! Local Variables
-    real(kind=genrand_real) :: rand ! random in the range (0,1)
+    real(kind=genrand_real) :: rand ! random number in the range (0,1)
 
     double precision, dimension(num_vars) :: &
       std_normal, nonstd_normal ! Standard normal and non-standard normal at 1 k level  [-]
 
     double precision, dimension(num_vars,num_vars) :: &
-      Sigma ! Correlation matrix for gaus_condt
+      Sigma ! Correlation matrix
+
+    double precision, dimension(num_vars,num_vars) :: &
+      Sigma_Cholesky ! Correlation matrix for gaus_condt_Cholesky
 
     integer :: k, kp1, km1 ! Loop iterators
 
@@ -1235,8 +1240,11 @@ module latin_hypercube_driver_module
       call genrand_real3( rand ) ! (0,1)
       std_normal(2) = ltqnorm( rand ) ! k+1 level
 
-      call gaus_condt( num_vars, std_normal, mu, Sigma, std_normal(1), & ! In
-                       nonstd_normal ) ! Out
+      call Cholesky_factor( num_vars, Sigma, & ! In 
+                            Sigma_Cholesky ) ! Out
+
+      call gaus_condt_Cholesky( num_vars, std_normal, mu, Sigma_Cholesky, std_normal(1), & ! In
+                                nonstd_normal ) ! Out
 
       ! Convert back to uniform dist.
       X_u_one_var_all_levs(kp1) = 0.5 * ( 1. + erf( nonstd_normal(2) / sqrt_2 ) )
@@ -1258,8 +1266,11 @@ module latin_hypercube_driver_module
       call genrand_real3( rand ) ! (0,1)
       std_normal(2) = ltqnorm( rand ) ! k-1 level
 
-      call gaus_condt( num_vars, std_normal, mu, Sigma, std_normal(1), & ! In
-                       nonstd_normal ) ! Out
+      call Cholesky_factor( num_vars, Sigma, & ! In 
+                            Sigma_Cholesky ) ! Out
+
+      call gaus_condt_Cholesky( num_vars, std_normal, mu, Sigma_Cholesky, std_normal(1), & ! In
+                                nonstd_normal ) ! Out
 
       ! Convert back to uniform dist.
       X_u_one_var_all_levs(km1) = 0.5 * ( 1. + erf( nonstd_normal(2) / sqrt_2 ) )
@@ -1267,8 +1278,6 @@ module latin_hypercube_driver_module
 !     print *, k, X_u_one_var_all_levs(k), kp1, X_u_one_var_all_levs(kp1)
 
     end do ! k_lh_start..nnzp-1
-
-!   pause
 
 #endif /*UNRELEASED_CODE*/
     return
