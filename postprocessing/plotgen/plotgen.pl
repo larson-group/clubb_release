@@ -72,6 +72,12 @@ my $nightly = 0;
 #   wrfgen 
 my $plotgenMode = "plotgen";
 
+# The type of data file to use.
+# Valid types:
+#   grads
+#   netcdf
+my $dataFileType = "grads";
+
 # Specifies to overwrite a directory (Default: false)
 my $overwrite = 0;
 my @inputDirs;
@@ -329,7 +335,6 @@ sub runCases()
             # Read the case file. If there is an error, display it and continue without plotting it.
             if (my $err = CaseReader->readCase($file))
             {
-
                 system("$consoleOutput -w \"$err\"");
                 $runCase = 'false';
             }
@@ -705,6 +710,13 @@ sub buildMatlabStringStd()
                 {
                     my $file = "$_/$lines[$lineNum]{'filename'}";
 
+                    if($dataFileType eq "netcdf")
+                    {
+                        # Replace all .ctl file extensions with .nc
+                        # By default, the case files have .ctl extensions
+                        $file =~ s/.ctl/.nc/g;
+                    }
+
                     if(-e $file)
                     {
                         my $title;
@@ -923,6 +935,12 @@ sub dataExists()
         {
             my $lineType = $lines[$lineNum]{'type'};
             my $filename = $lines[$lineNum]{'filename'};
+            
+            if($dataFileType eq "netcdf")
+            {
+                # Replace all .ctl file extensions with .nc
+                $filename =~ s/.ctl/.nc/g;
+            }
 
             if($lineType eq 'auto')
             {
@@ -957,7 +975,7 @@ sub readArgs()
     }
 
     my %option = ();
-    my $result = getopts("rlbdanqemhcsw?", \%option);
+    my $result = getopts("rlbdanqemhcswtg?", \%option);
 
     # A 1 will be returned from getopts if there weren't any
     # invalid options passed in.
@@ -1008,6 +1026,16 @@ sub readArgs()
         $keepEps = 1;
     }
     
+    if ($option{g})
+    {
+        $dataFileType = "grads";
+    }
+
+    if ($option{t})
+    {
+        $dataFileType = "netcdf";
+    }
+
     if ($option{m}) # Output as maff file
     {
     
@@ -1033,7 +1061,7 @@ sub readArgs()
 
     if($option{w})
     {
-	      $plotgenMode = "wrfgen";
+	    $plotgenMode = "wrfgen";
     }
 
     if ($option{h}) # Print the help message
@@ -1145,6 +1173,8 @@ sub main::HELP_MESSAGE()
     print("  -q\tOutputs high quality images (does not auto scale).\n");
     print("  -e\tDoes not delete EPS images after conversion.\n");
     print("  -m\tOutputs plots compressed inside a .maff directory.\n");
+    print("  -g\tUses GrADS data files. [DEFAULT]\n");
+    print("  -t\tUses NetCDF data files.\n");
     print("  -h\tPrints this help message.\n");
     exit(0);
 }
