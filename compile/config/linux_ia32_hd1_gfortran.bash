@@ -32,11 +32,12 @@ ARCH="-march=native -msse3 -mfpmath=sse"
 OPTIMIZE="-O2"
 
 # == NetCDF Location ==
-NETCDF="/sharedapps/LS/vlarson_group/local/gfortran/netcdf"
+NETCDF="/sharedapps/LS/vlarson_group/local/netcdf-gcc"
 
 # == LAPACK libraries ==
 #LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
-LAPACK="-L/sharedapps/LS/vlarson_group/local/gfortran/lib -llapack -lblas -L/sharedapps/LS/vlarson_group/local/gfortran/atlas/lib -lf77blas -lcblas -latlas"
+LAPACK="-L/sharedapps/LS/vlarson_group/local/atlas-gcc/lib -llapack -lf77blas -lcblas -latlas"
+
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
