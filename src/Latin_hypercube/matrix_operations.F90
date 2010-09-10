@@ -445,7 +445,6 @@ module matrix_operations
           end do
           write(6,*) ""
         end do
-        pause
 
         if ( iter == itermax ) then
           write(0,*) "iteration =", iter, "itermax =", itermax
