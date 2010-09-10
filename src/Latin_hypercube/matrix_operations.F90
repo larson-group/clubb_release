@@ -311,44 +311,57 @@ module matrix_operations
     j = j
 
     forall( i = 1:ndim, j= 1:ndim )
-    corr(i,j) = cov(i,j) / sqrt( cov(i,i) * cov(j,j) )
+      corr(i,j) = cov(i,j) / sqrt( cov(i,i) * cov(j,j) )
     end forall
 
     return
   end subroutine covar_matrix_2_corr_matrix
 
 !----------------------------------------------------------------------
-  subroutine Cholesky_factor( n, a, a_Cholesky )
+  subroutine Cholesky_factor( ndim, a_input, a_scaling, a_Cholesky, l_scaled )
 !  Description:
-!    Create a Cholesky factorization of a.
+!    Create a Cholesky factorization of a_input.
 !  References:
-!    <http://www.netlib.org/lapack/explore-html-old/dpotrf.f.html>
+!    <http://www.netlib.org/lapack/explore-html/a00868.html> dpotrf
+!    <http://www.netlib.org/lapack/explore-html/a00860.html> dpoequ
+!    <http://www.netlib.org/lapack/explore-html/a00753.html> dlaqsy
 !-----------------------------------------------------------------------
     implicit none
 
     ! External
-    external :: dpotrf ! LAPACK subroutine
+    external :: dpotrf, dpoequ, dlaqsy ! LAPACK subroutines
 
     ! Constant Parameters
     integer, parameter :: itermax = 5
 
     ! Input Variables
-    integer, intent(in) :: n
+    integer, intent(in) :: ndim
 
-    double precision, dimension(n,n), intent(in) :: a
+    double precision, dimension(ndim,ndim), intent(in) :: a_input
 
     ! Output Variables
-    double precision, dimension(n,n), intent(out) :: a_Cholesky
+    double precision, dimension(ndim), intent(out) :: a_scaling
+
+    double precision, dimension(ndim,ndim), intent(out) :: a_Cholesky
+
+    logical, intent(out) :: l_scaled
 
     ! Local Variables
-    double precision :: tau
+    double precision, dimension(ndim) :: a_eigenvalues
+    double precision, dimension(ndim,ndim) ::  a_corr, a_scaled
 
+    double precision :: tau, d_smallest
+
+    double precision :: amax, scond
     integer :: info
     integer :: i, j, iter
 
+    character :: equed
+
     ! ---- Begin code ----
 
-    a_Cholesky = a ! Copy input array into output array
+    a_scaled = a_input ! Copy input array into output array
+
 !   do i = 1, n
 !     do j = 1, n
 !       write(6,'(e10.3)',advance='no') a(i,j)
@@ -357,8 +370,27 @@ module matrix_operations
 !   end do
 !   pause
 
+    equed = 'N'
+
+    ! Compute scaling for a_input
+    call dpoequ( ndim, a_input, ndim, a_scaling, scond, amax, info ) 
+
+    if ( info == 0 ) then
+      ! Apply scaling to a_input
+      call dlaqsy( 'Lower', ndim, a_scaled, ndim, a_scaling, scond, amax, equed )
+    end if
+
+    ! Determine if scaling was necessary
+    if ( equed == 'Y' ) then
+      l_scaled = .true.
+      a_Cholesky = a_scaled
+    else
+      l_scaled = .false.
+      a_Cholesky = a_input
+    end if
+
     do iter = 1, itermax
-      call dpotrf( 'Lower', n, a_Cholesky, n, info )
+      call dpotrf( 'Lower', ndim, a_Cholesky, ndim, info )
 
       select case( info )
       case( :-1 )
@@ -367,24 +399,54 @@ module matrix_operations
         stop
       case( 0 )
         ! Success!
+        if ( iter > 1 ) then
+          write(6,*) "a_factored (worked)="
+          do i = 1, ndim
+            do j = 1, ndim
+              write(6,'(e10.3)',advance='no') a_Cholesky(i,j)
+            end do
+            write(6,*) ""
+          end do
+        end if
         exit
       case( 1: )
+        ! This shouldn't happen now that the s and t Mellor elements have been
+        ! modified to never be perfectly correlated, but it's here just in case.
+        ! -dschanen 10 Sept 2010
         write(0,*) "Cholesky_factor: leading minor of order ", info, " is not positive definite."
         write(0,*) "factorization failed."
-!       write(6,*) "a="
-!       do i = 1, n
-!         do j = 1, n
-!           write(6,'(e10.3)',advance='no') a(i,j)
-!         end do
-!         write(6,*) ""
-!       end do
-!       write(6,*) "a_factor="
-!       do i = 1, n
-!         do j = 1, n
-!           write(6,'(e10.3)',advance='no') a_Cholesky(i,j)
-!         end do
-!         write(6,*) ""
-!       end do
+        write(6,*) "a_input="
+        do i = 1, ndim
+          do j = 1, ndim
+            write(6,'(e10.3)',advance='no') a_input(i,j)
+          end do
+          write(6,*) ""
+        end do
+        write(6,*) "a_Cholesky="
+        do i = 1, ndim
+          do j = 1, ndim
+            write(6,'(e10.3)',advance='no') a_Cholesky(i,j)
+          end do
+          write(6,*) ""
+        end do
+
+        call Symm_matrix_eigenvalues( ndim, a_input, a_eigenvalues )
+        write(6,*) "a_eigenvalues="
+        do i = 1, ndim
+          write(6,'(e10.3)',advance='no') a_eigenvalues(i)
+        end do
+        write(6,*) ""
+
+        call covar_matrix_2_corr_matrix( ndim, a_input, a_corr )
+        write(6,*) "a_correlations="
+        do i = 1, ndim
+          do j = 1, ndim
+            write(6,'(g10.3)',advance='no') a_corr(i,j)
+          end do
+          write(6,*) ""
+        end do
+        pause
+
         if ( iter == itermax ) then
           write(0,*) "iteration =", iter, "itermax =", itermax
           stop
@@ -392,22 +454,39 @@ module matrix_operations
           write(0,*) "Attempting to modify matrix to allow factorization."
         end if
 
+        if ( l_scaled ) then
+          a_Cholesky = a_scaled
+        else
+          a_Cholesky = a_input
+        end if
         ! The number used for tau here is case specific to the Sigma covariance
         ! matrix in the latin hypercube code and is not at all general.  
         ! Tau should be number that is small relative to the other diagonal 
         ! elements of the matrix to have keep the error caused by modifying 'a' low.
         ! -dschanen 30 Aug 2010
-        tau = a(1,1) * iter ! Use the s_mellor element * iteration for now
+        d_smallest = a_Cholesky(1,1)
+        do i = 2, ndim
+          if ( d_smallest > a_Cholesky(i,i) ) d_smallest = a_Cholesky(i,i)
+        end do
+        tau = d_smallest * 0.01 * dble( iter ) ! Use the smallest element * 0.01 * iteration
+!       print *, "tau =", tau, "d_smallest = ", d_smallest
 
-        do i = 1, n
-          do j = 1, n
+        do i = 1, ndim
+          do j = 1, ndim
             if ( i == j ) then
-              a_Cholesky(i,j) = a(i,j) + tau ! Add tau to the diagonal 
+              a_Cholesky(i,j) = a_Cholesky(i,j) + tau ! Add tau to the diagonal 
             else
-              a_Cholesky(i,j) = a(i,j)
+              a_Cholesky(i,j) = a_Cholesky(i,j)
             end if
           end do
         end do
+
+        call Symm_matrix_eigenvalues( ndim, a_Cholesky, a_eigenvalues )
+        write(6,*) "a_modified eigenvalues="
+        do i = 1, ndim
+          write(6,'(e10.3)',advance='no') a_eigenvalues(i)
+        end do
+        write(6,*) ""
 
       end select ! info
 
@@ -415,5 +494,65 @@ module matrix_operations
 
     return
   end subroutine Cholesky_factor
+
+!----------------------------------------------------------------------
+  subroutine Symm_matrix_eigenvalues( ndim, a_input, a_eigenvalues )
+!   Description:
+!   References:
+!-----------------------------------------------------------------------
+    implicit none
+
+    ! External
+    external :: dsyev ! LAPACK subroutine
+
+    ! Parameters
+    integer, parameter :: &
+      lwork = 180 ! This is the optimal value I obtained for an n of 5 -dschanen 31 Aug 2010
+
+    ! Input Variables
+    integer, intent(in) :: ndim
+
+    double precision, dimension(ndim,ndim), intent(in) :: a_input
+
+    ! Output Variables
+    double precision, dimension(ndim), intent(out) :: a_eigenvalues
+
+    ! Local Variables
+    double precision, dimension(ndim,ndim) :: a_scratch
+
+    double precision, dimension(lwork) :: work
+
+    integer :: info
+!   integer :: i, j
+    ! ---- Begin code ----
+
+    a_scratch = a_input
+
+!   do i = 1, ndim
+!     do j = 1, ndim
+!       write(6,'(e10.3)',advance='no') a(i,j)
+!     end do
+!     write(6,*) ""
+!   end do
+!   pause
+
+    call dsyev( 'No eigenvectors', 'Lower', ndim, a_scratch, ndim, &
+                a_eigenvalues, work, lwork, info )
+
+    select case( info )
+    case( :-1 )
+      write(0,*) "Symm_matrix_eigenvalues:" // & 
+        " illegal value for argument ", -info
+      stop
+    case( 0 )
+      ! Success!
+
+    case( 1: )
+      write(0,*) "Symm_matrix_eigenvalues: Algorithm failed to converge."
+      stop
+    end select
+
+    return
+  end subroutine Symm_matrix_eigenvalues
 
 end module matrix_operations

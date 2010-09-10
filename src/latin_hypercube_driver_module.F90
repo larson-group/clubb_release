@@ -1219,7 +1219,11 @@ module latin_hypercube_driver_module
     double precision, dimension(num_vars,num_vars) :: &
       Sigma_Cholesky ! Correlation matrix for gaus_condt_Cholesky
 
+    double precision, dimension(num_vars) :: &
+      Sigma_scaling
+
     integer :: k, kp1, km1 ! Loop iterators
+    logical :: l_scaled
 
 #ifdef UNRELEASED_CODE
     ! ---- Begin Code ----
@@ -1241,9 +1245,10 @@ module latin_hypercube_driver_module
       std_normal(2) = ltqnorm( rand ) ! k+1 level
 
       call Cholesky_factor( num_vars, Sigma, & ! In 
-                            Sigma_Cholesky ) ! Out
+                            Sigma_scaling, Sigma_Cholesky, l_scaled ) ! Out
 
       call gaus_condt_Cholesky( num_vars, std_normal, mu, Sigma_Cholesky, std_normal(1), & ! In
+                                Sigma_scaling, l_scaled, & ! In
                                 nonstd_normal ) ! Out
 
       ! Convert back to uniform dist.
@@ -1267,9 +1272,10 @@ module latin_hypercube_driver_module
       std_normal(2) = ltqnorm( rand ) ! k-1 level
 
       call Cholesky_factor( num_vars, Sigma, & ! In 
-                            Sigma_Cholesky ) ! Out
+                            Sigma_scaling, Sigma_Cholesky, l_scaled ) ! Out
 
       call gaus_condt_Cholesky( num_vars, std_normal, mu, Sigma_Cholesky, std_normal(1), & ! In
+                                Sigma_scaling, l_scaled, & ! In
                                 nonstd_normal ) ! Out
 
       ! Convert back to uniform dist.
