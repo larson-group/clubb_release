@@ -4,15 +4,11 @@ module generate_lh_sample_module
   implicit none
 
   public :: generate_lh_sample, generate_uniform_sample, &
-     ltqnorm, gaus_condt_Cholesky
+     ltqnorm, multiply_Cholesky
 
   private :: sample_points, gaus_mixt_points, & 
              truncate_gaus_mixt, gaus_condt, &
              st_2_rtthl, log_sqd_normalized, choose_permuted_random
-
-  ! Constant Parameters
-  real, parameter :: &
-    g_per_kg = 1.e3
 
   private ! Default scope
 
@@ -1037,19 +1033,18 @@ module generate_lh_sample_module
     double precision, dimension(n_micro_calls,d_variables) :: &
       X_gm_cholesky ! [n by d] matrix, X_gm, each row of which is a d-dimensional sample
 
-    integer :: j, sample
-
-    double precision, dimension(d_variables) :: std_normal, Sigma1_scaling, Sigma2_scaling
+    double precision, dimension(d_variables) :: &
+      std_normal, &     ! Standard normal multiplied by the factorized Sigma    [-]
+      Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
+      Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
 
     double precision, dimension(d_variables,d_variables) :: &
       Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
 
-    double precision, dimension(d_variables,d_variables) :: &
-      Sigma1_Cholesky_g_kg, Sigma2_Cholesky_g_kg, & ! Cholesky factorization of Sigma1,2
-      Sigma1_g_kg, Sigma2_g_kg   ! Cholesky factorization of Sigma1,2
-
     logical :: l_Sigma1_Cholesky_init, l_Sigma2_Cholesky_init, &
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
+
+    integer :: j, sample ! Loop iterators
 
     ! ---- Begin Code ----
 
@@ -1096,21 +1091,17 @@ module generate_lh_sample_module
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
 
         if ( .not. l_Sigma1_Cholesky_init ) then
-           Sigma1_g_kg = s_t_mellor_g_kg( d_variables, Sigma1 )
-           call Cholesky_factor( d_variables, Sigma1_g_kg, & ! In
-                                 Sigma1_scaling, Sigma1_Cholesky_g_kg, l_Sigma1_scaling ) ! Out
+           call Cholesky_factor( d_variables, Sigma1, & ! In
+                                 Sigma1_scaling, Sigma1_Cholesky, l_Sigma1_scaling ) ! Out
            l_Sigma1_Cholesky_init = .true.
         end if
 
-        call gaus_condt_Cholesky &
-            ( d_variables, std_normal, mu1, Sigma1_Cholesky_g_kg, s_pts(sample), &  ! In
+        call multiply_Cholesky &
+            ( d_variables, std_normal, mu1, Sigma1_Cholesky, s_pts(sample), &  ! In
               Sigma1_scaling, l_Sigma1_scaling, & ! In
               X_gm_cholesky(sample, 1:d_variables) ) ! Out
 
-        ! Convert t to kg/kg
-        ! t is hardwired to be the 2nd element
-        X_gm_cholesky(sample,2) = X_gm_cholesky(sample,2) / g_per_kg
-
+        !  The older more expensive code
 !       call gaus_condt( d_variables, & 
 !                        std_normal, mu1, Sigma1, s_pts(sample), &  ! In 
 !                        X_gm(sample, 1:d_variables) ) ! Out 
@@ -1118,21 +1109,17 @@ module generate_lh_sample_module
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
 
         if ( .not. l_Sigma2_Cholesky_init ) then
-           Sigma2_g_kg = s_t_mellor_g_kg( d_variables, Sigma2 )
-           call Cholesky_factor( d_variables, Sigma2_g_kg, & ! In
-                                 Sigma2_scaling, Sigma2_Cholesky_g_kg, l_Sigma2_scaling ) ! Out
+           call Cholesky_factor( d_variables, Sigma2, & ! In
+                                 Sigma2_scaling, Sigma2_Cholesky, l_Sigma2_scaling ) ! Out
            l_Sigma2_Cholesky_init = .true.
         end if
 
-        call gaus_condt_Cholesky &
-             ( d_variables, std_normal, mu2, Sigma2_Cholesky_g_kg, s_pts(sample), &  ! In
+        call multiply_Cholesky &
+             ( d_variables, std_normal, mu2, Sigma2_Cholesky, s_pts(sample), &  ! In
                Sigma2_scaling, l_Sigma2_scaling, & ! In
                X_gm_cholesky(sample, 1:d_variables) ) ! Out
 
-        ! Convert t to kg/kg
-        ! t is hardwired to be the 2nd element
-        X_gm_cholesky(sample,2) = X_gm_cholesky(sample,2) / g_per_kg
-
+       ! The older more expensive code
 !      call gaus_condt( d_variables, & 
 !                      std_normal, mu2, Sigma2, s_pts(sample), &  ! In 
 !                      X_gm(sample, 1:d_variables) ) ! Out 
@@ -1144,15 +1131,6 @@ module generate_lh_sample_module
 
       ! Loop to get new sample
     end do
-
-!   do sample = 1, n_micro_calls
-!     if ( any( abs( X_gm_cholesky(sample,:) - X_gm(sample,:) ) > 1e-8 ) ) then
-!        do j = 1, d_variables
-!          write(6,'(I2,A14,G20.10,A5,G20.10)') j, &
-!            "X_gm_cholesky", X_gm_cholesky(sample,j) , " X_gm", X_gm(sample,j)
-!        end do
-!     end if
-!   end do
 
     X_gm = X_gm_Cholesky
 
@@ -1572,7 +1550,7 @@ module generate_lh_sample_module
   end subroutine gaus_condt
 
 !-------------------------------------------------------------------------------
-  subroutine gaus_condt_Cholesky( d_variables, std_normal, mu, Sigma_Cholesky, s_pt, & 
+  subroutine multiply_Cholesky( d_variables, std_normal, mu, Sigma_Cholesky, s_pt, & 
                                   Sigma_scaling, l_scaled, &
                                   nonstd_normal )
 ! Description:
@@ -1599,23 +1577,20 @@ module generate_lh_sample_module
     integer, intent(in) :: d_variables ! Number of variates (normally=5)
 
     double precision, intent(in), dimension(d_variables) :: &
-      std_normal ! vector of d-variate standard normal distribution
+      std_normal ! vector of d-variate standard normal distribution [-]
 
     real, intent(in), dimension(d_variables) :: &
-      mu ! d-dimensional column vector of means of Gaussian
+      mu ! d-dimensional column vector of means of Gaussian     [units vary]
 
     double precision, intent(in), dimension(d_variables,d_variables) :: &
-      Sigma_Cholesky ! Cholesky factorization of the Sigma matrix
+      Sigma_Cholesky ! Cholesky factorization of the Sigma matrix [units vary]
 
-    double precision, intent(in) :: s_pt ! Value of Mellor's s
+    double precision, intent(in) :: s_pt ! Value of Mellor's s  [(kg/kg)^2]
 
     double precision, intent(in), dimension(d_variables) :: &
-      Sigma_scaling ! Scaling for Sigma / mu
+      Sigma_scaling ! Scaling for Sigma / mu    [units vary]
 
-    double precision, dimension(d_variables) :: &
-      Sigma_times_std_normal
-
-    logical, intent(in) :: l_scaled
+    logical, intent(in) :: l_scaled ! Whether any scaling was done to Sigma
 
     ! Output Variables
 
@@ -1624,13 +1599,18 @@ module generate_lh_sample_module
     double precision, intent(out) :: &
       nonstd_normal(d_variables)
 
+    ! Local Variables
+    double precision, dimension(d_variables) :: &
+      Sigma_times_std_normal ! Sigma * std_normal [units vary]
+
     ! --- Begin Code ---
 
     Sigma_times_std_normal = std_normal ! Copy std_normal into 'x'
 
     ! Call the level 2 BLAS subroutine to multiply std_normal by Sigma_Cholesky
-    call dtrmv( 'Lower', 'N', 'N', d_variables, Sigma_Cholesky, d_variables, &
-                Sigma_times_std_normal, incx )
+    call dtrmv( 'Lower', 'N', 'N', d_variables, Sigma_Cholesky, d_variables, & ! In
+                Sigma_times_std_normal, & ! In/out
+                incx ) ! In
 
     if ( l_scaled ) then
       ! Add mu to Sigma * std_normal (scaled)
@@ -1646,7 +1626,7 @@ module generate_lh_sample_module
     nonstd_normal(1) = s_pt
 
     return
-  end subroutine gaus_condt_Cholesky
+  end subroutine multiply_Cholesky
 !-----------------------------------------------------------------------
   subroutine st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
@@ -1803,37 +1783,6 @@ module generate_lh_sample_module
 
     return
   end subroutine log_sqd_normalized
-
-!-------------------------------------------------------------------------------
-  function s_t_mellor_g_kg( d_variables, Sigma_kg_kg ) result ( Sigma_g_kg )
-
-! Description:
-!   Convert the first 2 elements of Sigma from kg/kg to g/kg 
-! References:
-!   None
-!-------------------------------------------------------------------------------
-    implicit none
-
-    integer, intent(in) :: &
-      d_variables
-
-    double precision, dimension(d_variables,d_variables), intent(in) :: &
-      Sigma_kg_kg ! Sigma with the s and t elements in kg/kg
-
-    double precision, dimension(d_variables,d_variables) :: &
-      Sigma_g_kg ! Sigma with the s and t elements converted to g/kg
-
-    ! ---- Begin Code ----
-
-    Sigma_g_kg = Sigma_kg_kg
-    Sigma_g_kg(1:d_variables,1) = Sigma_g_kg(1:d_variables,1) * g_per_kg
-    Sigma_g_kg(1:d_variables,2) = Sigma_g_kg(1:d_variables,2) * g_per_kg
-
-    Sigma_g_kg(1,1:d_variables) = Sigma_g_kg(1,1:d_variables) * g_per_kg
-    Sigma_g_kg(2,1:d_variables) = Sigma_g_kg(2,1:d_variables) * g_per_kg
-
-    return
-  end function s_t_mellor_g_kg
 
 end module generate_lh_sample_module
 
