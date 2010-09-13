@@ -67,8 +67,8 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
                  !       through a bulk formula that uses the given surface 
                  !       temperature (T_sfc) and assumes over ocean.
 
-T_sfc = 286.0     ! Temperature at model base           [K]
-!T_sfc = 282.889   ! Temperature at model base           [K]
+T_sfc = 286.0     ! Temperature of underlying surface (e.g. SST)           [K]
+!T_sfc = 282.889   ! Temperature of underlying surface (e.g. SST)           [K]
 p_sfc = 978.9e2   ! Pressure at model base              [Pa]
 fcor = 8.697e-5  ! Coriolis parameter                  [s^-1]
 T0   = 300.      ! Reference temperature (usually 300) [K]

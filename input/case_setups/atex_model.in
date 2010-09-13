@@ -62,7 +62,7 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
                  !       through a bulk formula that uses the given surface
                  !       temperature (T_sfc) and assumes over ocean.
 
-T_sfc = 298.0       ! Temperature at model base           [K]
+T_sfc = 298.0       ! Temperature of underlying surface (e.g. SST)           [K]
 p_sfc = 1015.e2     ! Pressure at model base              [Pa]
 
 fcor = 0.375e-4    ! Coriolis parameter                  [s^-1]
@@ -142,7 +142,7 @@ micro_scheme = "none"
 
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
-rad_scheme = "simplified",
+rad_scheme = "bugsrad",
 F0 = 74.0,    ! Coefficient for cloud top heating (see Stevens) [W/m^2]
 F1 = 0.,      ! Coefficient for cloud base heating (see Stevens)[W/m^2]
 kappa = 130., ! [m^2/kg]

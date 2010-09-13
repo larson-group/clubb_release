@@ -62,7 +62,7 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
                  !       through a bulk formula that uses the given surface
                  !       temperature (T_sfc) and assumes over ocean.
 
-T_sfc = 288.0     ! Temperature at model base           [K]
+T_sfc = 288.0     ! Temperature of underlying surface (e.g. SST)           [K]
 p_sfc = 1000.e2   ! Pressure at model base              [Pa]
 SE = 0.0         ! Fixed surface sensible heat flux    [K m/s]
 LE = 0.0         ! Fixed surface latent heat flux      [(kg/kg) m/s]

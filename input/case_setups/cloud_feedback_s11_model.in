@@ -63,7 +63,7 @@ sfctype = 1      ! Select surface scheme (cases without specified surface fluxes
                  !       through a bulk formula that uses the given surface
                  !       temperature (T_sfc) and assumes over ocean.
 
-T_sfc = 292.46       ! Temperature at model base           [K]
+T_sfc = 292.46       ! Temperature of underlying surface (e.g. SST)           [K]
 p_sfc = 102078.5     ! Pressure at model base              [Pa]
 
 ! LE and SE were given in the case specification as lhflx and shflx in W/m^2. To convert to the correct

@@ -55,7 +55,7 @@ time_spinup = 3600.0    ! End of spin-up period [seconds since midnight on start
 dtmain    = 60.0   ! Model timestep [s]
 dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
-T_sfc = 271.05      ! Temperature at model base           [K]
+T_sfc = 271.05      ! Temperature of underlying surface (e.g. SST)           [K]
 p_sfc = 700.00e2    ! Pressure at model base              [Pa]
 
 fcor = 0.0e-5      ! Coriolis parameter                  [s^-1]

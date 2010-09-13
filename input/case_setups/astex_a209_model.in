@@ -55,7 +55,9 @@ time_spinup = 0.0  ! End of spin-up period [seconds since midnight on start date
 dtmain    = 60.0   ! Model timestep [s]
 dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
-T_sfc = 290.3636       ! Temperature at model base           [K]
+sfctype = 1
+
+T_sfc = 290.355       ! Temperature of underlying surface           [K]
 p_sfc = 1029.e2     ! Pressure at model base              [Pa]
 
 fcor = 8.1553388e-5    ! Coriolis parameter                  [s^-1]
@@ -114,12 +116,12 @@ debug_level = 2
 ! 0 to shut off all scalar computations
 ! > 0 the specifies the number of columns in <runtype>_sclr_sounding.in 
 !	that will be read in and tracked
-sclr_dim   = 0  ! Total number of scalars
+sclr_dim   = 1  ! Total number of scalars
 
 iisclr_rt  = -1  ! Location in the array to place a scalar like total water
 iisclr_thl = -2 ! Location in the array to place a scalar like thetal
 
-sclr_tol  = 1.e-2, 1.e-8 ! Tolerances below which we consider scalar to be 0.
+sclr_tol  = 1.e-8 ! Tolerances below which we consider scalar to be 0.
 
 ! Add scalars that are computed using simple eddy diffusivity
 ! 0 to shut off all scalar computations
@@ -134,17 +136,28 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
-!micro_scheme = "khairoutdinov_kogan" 
-micro_scheme = "none" 
+micro_scheme = "khairoutdinov_kogan" 
+!micro_scheme = "none" 
 /
 
 &radiation_setting
-! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
-!rad_scheme = "bugsrad",
-rad_scheme = "none",
-! F0 = 74.0,    ! Coefficient for cloud top heating (see Stevens) [W/m^2]
-! F1 = 0.,      ! Coefficient for cloud base heating (see Stevens)[W/m^2]
-! kappa = 130., ! [m^2/kg]
+! The schemes are: "bugsrad", "simplified", "simplified_bomex", or "none"
+rad_scheme = "bugsrad"
+!rad_scheme = "none",
+!l_fix_cos_solar_zen = .true.
+l_sw_radiation = .true.
+!cos_solar_zen_values= 0.629
+!cos_solar_zen_times = 144001. ! Use the same value all simulation
+!F0 = 74.0    ! Coefficient for cloud top heating (see Stevens) [W/m^2]
+!F1 = 0.      ! Coefficient for cloud base heating (see Stevens)[W/m^2]
+!kappa = 130. ! [m^2/kg]
+slr = 1.0
+sol_const = 1376.0
+radiation_top       = 30000 ! Height of profile used for radiation [m]
+alvdf = 0.07 ! Visible diffuse surface albedo [-]
+alndr = 0.07 ! Near-IR direct surface albedo  [-]
+alndf = 0.07 ! Near-IR diffuse surface albedo [-]
+alvdr = 0.07 ! Visible direct surface albedo  [-]
 /
 
 &stats_setting

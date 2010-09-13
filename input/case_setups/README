@@ -82,7 +82,7 @@ dtclosure | real, minimum of 12 digits of precision
   Closure timestep [s] (must multiply evenly into dtmain).
 
 T_sfc | real, default precision
-  Temperature at model base [K].
+  Temperature of underlying surface (e.g. SST) [K].
 
 p_sfc | real, default precision
   Pressure at model base [Pa].
