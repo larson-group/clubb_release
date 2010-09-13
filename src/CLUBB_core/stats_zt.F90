@@ -1513,19 +1513,18 @@ module stats_zt
              "(num/kg)/s", zt )
         k = k + 1
 
-      case ('Nrm_mc')
-        iNrm_mc = k
-        call stat_assign( iNrm_mc, "Nrm_mc", & 
-             "Nrm budget: Change in Nrm due to microphysics [(num/kg)/s]", "(num/kg)/s", zt )
-
-        k = k + 1
-
       case ('Nrm_cl')
         iNrm_cl = k
         call stat_assign( iNrm_cl, "Nrm_cl", & 
              "Nrm budget: Nrm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
-
+        
+      case ('Nrm_mc')
+        iNrm_mc = k
+        call stat_assign( iNrm_mc, "Nrm_mc", & 
+             "Change in Nrm due to microphysics (Not in budget) [(num/kg)/s]", "(num/kg)/s", zt )
+        k = k + 1
+        
       case ('rsnowm_bt')
         irsnowm_bt = k
         call stat_assign( irsnowm_bt, "rsnowm_bt", & 
@@ -1808,14 +1807,14 @@ module stats_zt
         iNcm_mc = k
 
         call stat_assign( iNcm_mc, "Ncm_mc", & 
-             "Ncm budget: Change in Ncm due to microphysics [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "Ncm budget: Change in Ncm due to microphysics [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Ncm_cl')
         iNcm_cl = k
 
         call stat_assign( iNcm_cl, "Ncm_cl", & 
-             "Ncm budget: Ncm clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "Ncm budget: Ncm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('vm_bt')
