@@ -52,7 +52,7 @@ module latin_hypercube_driver_module
       iiNgraupelm
 
     use array_index, only: & 
-      iiLH_rt   ! Variables
+      iiLH_s_mellor   ! Variables
 
     use parameters_model, only: hydromet_dim ! Variable
 
@@ -253,9 +253,6 @@ module latin_hypercube_driver_module
 
     integer :: ivar ! Loop iterator
 
-    integer :: &
-      iiLH_s_mellor  ! Index of Mellor's s (extended rcm)
-
     logical :: l_cloudy_sample ! Whether a sample point is cloudy or clear air
 
     integer, dimension(1) :: tmp_loc
@@ -304,9 +301,6 @@ module latin_hypercube_driver_module
       write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
       stop "Fatal error."
     end if
-
-    ! Determine the s_mellor element of the uniform/lognormal distribution arrays
-    iiLH_s_mellor = iiLH_rt
 
     ! Initialize the sample point weights to 1.0
     LH_sample_point_weights(1:n_micro_calls)  = 1.0

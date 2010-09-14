@@ -78,8 +78,8 @@ module microphys_driver
       iiNcm, iiNsnowm, iiNim, iiNgraupelm
 
     use array_index, only: &
-      iiLH_rt, & ! Variables
-      iiLH_thl, &
+      iiLH_s_mellor, & ! Variables
+      iiLH_t_mellor, &
       iiLH_w
 
     use array_index, only: &
@@ -606,9 +606,9 @@ module microphys_driver
     ! Setup index variables for latin hypercube sampling
     if ( l_latin_hypercube_sampling ) then
 
-      iiLH_rt  = 1
-      iiLH_thl = 2
-      iiLH_w   = 3
+      iiLH_s_mellor = 1
+      iiLH_t_mellor = 2
+      iiLH_w        = 3
 
       i = iiLH_w
 
@@ -2679,7 +2679,7 @@ module microphys_driver
         corr_sNc_NL_below
 
       use array_index, only: &
-        iiLH_rt, & ! Variables
+        iiLH_s_mellor, & ! Variables
         iiLH_rrain, &
         iiLH_rsnow, &
         iiLH_rice, &
@@ -2706,11 +2706,9 @@ module microphys_driver
       real, dimension(gr%nnzp,d_variables,d_variables), intent(out) :: &
         corr_varnce_array !  The output array
 
-      integer :: iiLH_s_mellor, k
+      integer :: k
 
       ! ---- Begin Code ----
-
-      iiLH_s_mellor = iiLH_rt
 
       ! Initializing to zero means that correlations we don't have
       ! (e.g. Nc and any variable other than s_mellor ) are assumed to be 0.

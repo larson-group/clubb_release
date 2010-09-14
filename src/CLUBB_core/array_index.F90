@@ -24,7 +24,7 @@ module array_index
 
   ! Latin hypercube variables
   integer, public :: &
-    iiLH_rt, iiLH_thl, iiLH_w
+    iiLH_s_mellor, iiLH_t_mellor, iiLH_w
 
   integer, public :: &
    iiLH_rrain, iiLH_rsnow, iiLH_rice, iiLH_rgraupel

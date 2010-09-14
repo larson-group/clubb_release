@@ -55,8 +55,8 @@ module generate_lh_sample_module
       iiLH_rrain, &
       iiLH_Nr, &
       iiLH_Nc, &
-      iiLH_rt, &
-      iiLH_thl, &
+      iiLH_s_mellor, &
+      iiLH_t_mellor, &
       iiLH_w
 
     use mt95, only: genrand_real ! Constants
@@ -154,11 +154,6 @@ module generate_lh_sample_module
     real, dimension(d_variables) :: &
       mu1, mu2
 
-    ! Covariance (not correlation) matrix of rt, thl, w for plumes 1 and 2
-    double precision, dimension(3,3) :: &
-      Sigma_rtthlw_1,  & 
-      Sigma_rtthlw_2
-
     ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4 ... d_variables
     !                                      s   t   w   hydrometeors
     double precision, dimension(d_variables,d_variables) :: &
@@ -212,11 +207,11 @@ module generate_lh_sample_module
       sqrt_sp2_tp2, & ! sqrt of the product of the variances of s and t [kg/kg]
       sptp            ! Covariance of s and t   [kg/kg]
 
-    integer :: i, iiLH_s_mellor, iiLH_t_mellor
+    integer :: i
 
     ! ---- Begin Code ----
     ! Determine which variables are a lognormal distribution
-    i = max( iiLH_rt, iiLH_thl, iiLH_w )
+    i = max( iiLH_s_mellor, iiLH_t_mellor, iiLH_w )
     l_d_variable_lognormal(1:i) = .false. ! The 1st 3 variates
     l_d_variable_lognormal(i+1:d_variables) = .true.  ! Hydrometeors
 
@@ -354,9 +349,9 @@ module generate_lh_sample_module
 
     ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
 
-    mu1((/iiLH_rt,iiLH_thl,iiLH_w/)) &
+    mu1((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
       = (/ s1, 0., w1 /)
-    mu2((/iiLH_rt,iiLH_thl,iiLH_w/)) &
+    mu2((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
       = (/ s2, 0., w2 /)
 
     if ( iiLH_rrain > 0 ) then
@@ -389,36 +384,22 @@ module generate_lh_sample_module
     ! For now, assume no within-plume correlation of w with
     !    any other variables.
 
-    ! Sigma_rtthlw_1,2
-    Sigma_rtthlw_1 = 0.d0 ! Start with no covariance, and add matrix elements
-    Sigma_rtthlw_2 = 0.d0
-
     ! Sigma_stw_1,2
     Sigma_stw_1 = 0.d0 ! Start with no covariance, and add matrix elements
     Sigma_stw_2 = 0.d0
 
-    Sigma_rtthlw_1(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( varnce_rt1 ), rrtthl_reduced1 /)
-
-    Sigma_rtthlw_2(iiLH_rt,(/iiLH_rt,iiLH_thl/))  = (/ dble( varnce_rt2 ), rrtthl_reduced2 /)
-
-    Sigma_rtthlw_1(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced1, dble( varnce_thl1 ) /)
-
-    Sigma_rtthlw_2(iiLH_thl,(/iiLH_rt,iiLH_thl/)) = (/ rrtthl_reduced2, dble( varnce_thl2 ) /)
-
-    Sigma_rtthlw_1(iiLH_w,iiLH_w) = dble( varnce_w1 )
-
-    Sigma_rtthlw_2(iiLH_w,iiLH_w) = dble( varnce_w2 )
-
     ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
-    call rtpthlp_2_sptp( 3, Sigma_rtthlw_1(1:3,1:3), dble( crt1 ), dble( cthl1 ), & ! In
-                         Sigma_stw_1(1:3,1:3) ) ! Out
-    call rtpthlp_2_sptp( 3, Sigma_rtthlw_2(1:3,1:3), dble( crt2 ), dble( cthl2 ), & ! In
-                         Sigma_stw_2(1:3,1:3) ) ! Out
+    call rtpthlp_2_sptp( dble( stdev_s1 ), dble( varnce_rt1 ), dble( varnce_thl1 ), & 
+                         dble( rrtthl_reduced1 ), dble( crt1 ), dble( cthl1 ), & ! In
+                         Sigma_stw_1(1:2,1:2) ) ! Out
+    call rtpthlp_2_sptp( dble( stdev_s2 ), dble( varnce_rt2 ), dble( varnce_thl2 ), & 
+                         dble( rrtthl_reduced2 ), dble( crt2 ), dble( cthl2 ), & ! In
+                         Sigma_stw_2(1:2,1:2) ) ! Out
 
-    ! The s and t elements in Sigma_stw correspond to the rt thl element
-    !   in Sigma_rtthlw
-    iiLH_s_mellor = iiLH_rt
-    iiLH_t_mellor = iiLH_thl
+    ! Add the w element
+    Sigma_stw_1(iiLH_w,iiLH_w) = dble( varnce_w1 )
+
+    Sigma_stw_2(iiLH_w,iiLH_w) = dble( varnce_w2 )
 
     ! Reduce the correlation of s and t Mellor if it's greater than 0.99
     ! Start with Sigma1
@@ -661,8 +642,8 @@ module generate_lh_sample_module
         fstderr  ! Constant(s)
 
     use array_index, only: &
-      iiLH_rt, & ! Variable(s)
-      iiLH_thl
+      iiLH_s_mellor, & ! Variable(s)
+      iiLH_t_mellor
 
     use matrix_operations, only: &
       covar_matrix_2_corr_matrix ! Procedure(s)
@@ -731,15 +712,10 @@ module generate_lh_sample_module
     ! Sample of s points that is drawn only from normal distribution
     double precision, dimension(n_micro_calls) :: s_pts
 
-    integer :: iiLH_s_mellor, iiLH_t_mellor
-
     ! ---- Begin Code ----
 
     sample = 1       ! These lines prevent a g95 compiler error for uninitialized variable and
     sample = sample  ! unused variable. -meyern
-
-    iiLH_s_mellor = iiLH_rt  ! Mellor's s is at the same index as rt in the Sigma_stw arrays
-    iiLH_t_mellor = iiLH_thl ! Mellor's t is at the same index as thl "  "
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 
@@ -798,95 +774,55 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine rtpthlp_2_sptp( d_variables, Sigma_rtthlw, crt, cthl, Sigma_stw )
+  subroutine rtpthlp_2_sptp( stdev_s_mellor, varnce_rt, varnce_thl, &
+                             rrtthl, crt, cthl, &
+                             Sigma_st )
 
 ! Description:
 !   Transform covariance matrix from rt', theta_l' coordinates
 !   to s', t' coordinates.
 !   Use linear approximation for s', t'.
 ! References:
-!   None
+!   ``Supplying Local Microphysics Parameterizations with Information about
+!     Subgrid Variability: Latin Hypercube Sampling'', V.E. Larson et al.,
+!     JAS 62 pp. 4015
 !-----------------------------------------------------------------------
-
-    use constants_clubb, only: fstderr ! Constant(s)
 
     implicit none
 
-    ! External
-
-    intrinsic :: matmul
-
     ! Input Variables
 
-    integer, intent(in) :: d_variables ! Number of variates
-
-    double precision, intent(in), dimension(d_variables,d_variables) :: &
-      Sigma_rtthlw ! D x D dimensional covariance matrix of rt, thl, w, ...
-
     double precision, intent(in) :: &
-      crt, cthl ! Coefficients that define s', t'
+      stdev_s_mellor, & ! Standard deviation of s_mellor [(kg/kg)^2]
+      varnce_rt,      & ! Variance of rt1/rt2
+      varnce_thl,     & ! Variance of thl1/thl2
+      rrtthl,         & ! Covariance of rt, thl
+      crt, cthl         ! Coefficients that define s', t'
 
     ! Output Variables
 
-    double precision, intent(out), dimension(d_variables,d_variables) :: &
-      Sigma_stw ! Covariance matrix in terms of s', t' ordering of Sigma_stw is s, t, w, ...
+    double precision, intent(out), dimension(2,2) :: &
+      Sigma_st ! Covariance matrix in terms of s', t' ordering of Sigma_stw is s, t.
 
     ! Local Variables
 
-    integer j, k
-    double precision, dimension(d_variables,d_variables) :: &
-      T_transpose, T, M_int
+    double precision :: crt_sqd, cthl_sqd, sptp, tp2
 
     ! ---- Begin Code ----
 
-    ! Check that matrix is large enough (at least 2x2)
-    if ( d_variables < 3 ) then
-      write(fstderr,*) 'Error: Input matrix too small in rtpthlp_2_stpthlp.'
-      stop
-    end if
+    ! Simplified formula. Here we compute the variance t_mellor and covariance
+    ! of s_mellor and t_mellor using formula's derived from the matrix
+    ! multiplication on Larson, et al. See figure 14.
+    crt_sqd = crt**2
+    cthl_sqd = cthl**2
+    sptp = crt_sqd * varnce_rt - cthl_sqd * varnce_thl
+    tp2 = crt_sqd * varnce_rt + 2.d0 * crt * cthl * rrtthl &
+        + cthl_sqd * varnce_thl
 
-    ! Transform rt-thl-w matrix to s-t-w
-    !    according to Sigma_stw = T*Sigma_rtthlw*T_transpose.
-
-    ! Set up transformation matrix, T_transpose
-    T_transpose(1,1) = crt
-    T_transpose(2,1) = -1.d0*cthl
-    T_transpose(1,2) = crt
-    T_transpose(2,2) = 1.d0*cthl
-
-    ! Put zeros in the two off-diagonal blocks
-    if (d_variables > 2) then
-      do j=1,2
-        do k=3,d_variables
-          T_transpose(j,k) = 0.d0
-          T_transpose(k,j) = 0.d0
-        end do
-      end do
-    end if
-
-    ! Put identity matrix in the lower diagonal block.
-    if (d_variables > 2) then
-      do j = 3, d_variables
-        do k = 3, d_variables
-          if (j == k) then
-            T_transpose(j,k) = 1.d0
-          else
-            T_transpose(j,k) = 0.d0
-          end if
-        end do
-      end do
-    end if
-
-    ! Multiply to obtain M_int = Sigma_rtthlw * T_transpose
-    M_int = matmul( Sigma_rtthlw, T_transpose )
-
-    ! Set up other transformation matrix, T
-    T      = T_transpose
-    T(1,2) = -1.d0*cthl
-    T(2,1) = crt
-
-    ! Perform final matrix multiplication: Sigma_stw = T * M_int
-    Sigma_stw = matmul( T, M_int )
+    Sigma_st(1,1) = stdev_s_mellor**2
+    Sigma_st(2,1) = sptp
+    Sigma_st(1,2) = sptp
+    Sigma_st(2,2) = tp2
 
     return
   end subroutine rtpthlp_2_sptp

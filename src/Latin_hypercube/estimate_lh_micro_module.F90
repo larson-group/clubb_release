@@ -584,7 +584,7 @@ module estimate_lh_micro_module
       iiLH_rrain, &
       iiLH_Nr, &
       iiLH_Nc, &
-      iiLH_rt, &
+      iiLH_s_mellor, &
       iiLH_w
 
     use math_utilities, only: &
@@ -734,8 +734,8 @@ module estimate_lh_micro_module
       cloud_frac2(:) = dble( 1.0 )
     end if
 
-    ! Mellor's 's' is at the same index at iiLH_rt (total water mixing ratio)
-    s_mellor => X_nl_all_levs(:,:,iiLH_rt)
+    ! Mellor's 's' is hardwired elsewhere to be the first column
+    s_mellor => X_nl_all_levs(:,:,iiLH_s_mellor)
     w        => X_nl_all_levs(:,:,iiLH_w)
 
     ! Assertion check
