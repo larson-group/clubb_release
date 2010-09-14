@@ -38,8 +38,8 @@ LAPACK="-xlic_lib=sunperf" # Sun performance library
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # -Bstatic; for static linking of libraries
-# -xlibmopt; link the optimized version of libm (this seems not to work on GNU/Linux)
-LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK"
+# -xlibmopt; link the optimized version of libm 
+LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK -xlibmopt"
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these
