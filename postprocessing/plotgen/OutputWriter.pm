@@ -252,6 +252,24 @@ HTML
 }
 
 ###############################################################################
+# Writes the HTML header for WRF
+###############################################################################
+sub writeWrfHeader()
+{
+     shift(@_);
+     my $fh = shift(@_);
+
+    OutputWriter->writeSubHeader($fh, "WRF_CLUBB runs use a 100-km horizontal grid spacing, 3x3 grid columns, and a 60-s timestep.");
+    
+    my $text = <<HTML;
+<br />
+<br />
+HTML
+    
+    OutputWriter->writeSubHtml($fh, $text);
+}
+
+###############################################################################
 # Writes the HTML footer information and closes the file.
 ###############################################################################
 sub writeFooter()
