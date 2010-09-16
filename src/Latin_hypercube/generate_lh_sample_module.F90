@@ -7,7 +7,7 @@ module generate_lh_sample_module
      ltqnorm, multiply_Cholesky
 
   private :: sample_points, gaus_mixt_points, & 
-             truncate_gaus_mixt, gaus_condt, &
+             truncate_gaus_mixt, &
              st_2_rtthl, log_sqd_normalized, choose_permuted_random
 
   private ! Default scope
@@ -1037,11 +1037,6 @@ module generate_lh_sample_module
               Sigma1_scaling, l_Sigma1_scaling, & ! In
               X_gm_cholesky(sample, 1:d_variables) ) ! Out
 
-        !  The older more expensive code
-!       call gaus_condt( d_variables, & 
-!                        std_normal, mu1, Sigma1, s_pts(sample), &  ! In 
-!                        X_gm(sample, 1:d_variables) ) ! Out 
-
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
 
         if ( .not. l_Sigma2_Cholesky_init ) then
@@ -1054,11 +1049,6 @@ module generate_lh_sample_module
              ( d_variables, std_normal, mu2, Sigma2_Cholesky, s_pts(sample), &  ! In
                Sigma2_scaling, l_Sigma2_scaling, & ! In
                X_gm_cholesky(sample, 1:d_variables) ) ! Out
-
-       ! The older more expensive code
-!      call gaus_condt( d_variables, & 
-!                      std_normal, mu2, Sigma2, s_pts(sample), &  ! In 
-!                      X_gm(sample, 1:d_variables) ) ! Out 
 
       else
         stop "Error determining mixture component in gaus_mixt_points"
@@ -1338,152 +1328,6 @@ module generate_lh_sample_module
 
     return
   end function ltqnorm
-
-!----------------------------------------------------------------------
-  subroutine gaus_condt( d_variables, std_normal, mu, Sigma, s_pt, & 
-                         nonstd_normal )
-! Description:
-!   Using Gaussian conditional distributions given s,
-!   convert a standard, uncorrelated Gaussian to one with
-!   mean mu and covariance structure Sigma.
-
-! References:
-!   Follow M. E. Johnson, ``Multivariate Statistical Simulation," p50.
-!----------------------------------------------------------------------
-
-    use matrix_operations, only: linear_symm_upper_eqn_solve ! Procedure(s)
-
-!   use matrix_operations, only: linear_eqn_solve ! Procedure(s)
-
-    use error_code, only: clubb_at_least_debug_level
-
-    implicit none
-
-    ! External
-    intrinsic :: sqrt, matmul, reshape
-
-    ! Input Variables
-
-    integer, intent(in) :: d_variables ! Number of variates (normally=5)
-
-    double precision, intent(in), dimension(d_variables) :: &
-      std_normal ! nxd matrix of n independent samples from d-variate standard normal distribution
-
-    real, intent(in), dimension(d_variables,1) :: &
-      mu ! d-dimensional column vector of means of Gaussian
-
-    double precision, intent(in), dimension(d_variables,d_variables) :: &
-      Sigma ! dxd dimensional covariance matrix
-
-    double precision, intent(in) :: s_pt ! Value of Mellor's s
-
-    ! Output Variables
-
-    ! nxd matrix of n samples from d-variate normal distribution
-    !   with mean mu and covariance structure Sigma
-    double precision, intent(out) :: &
-      nonstd_normal(d_variables)
-
-    ! Local Variables
-
-    integer :: v, j ! Loop iterators
-
-    double precision :: mu_two, mu_condt_const
-
-    double precision, dimension(d_variables,1) :: mu_one
-
-    double precision, dimension(d_variables,d_variables) :: &
-      Sigma_oneone
-
-    double precision, dimension(d_variables,1) :: &
-      Sigma_onetwo
-
-    double precision, dimension(1,d_variables) :: &
-      Sigma_twoone
-
-    double precision :: Sigma_twotwo, Sigma_condt
-
-    ! Local intermediate quantities
-    double precision, dimension(1,d_variables) :: Sigma_int
-    double precision, dimension(1,1) :: dum
-
-!   do i = 1, d_variables
-!     do j = 1, d_variables
-!       write(6,'(g12.4)',advance='no') Sigma(i,j)
-!     end do
-!     write(6,*) ""
-!   end do
-!   write(6,*) ""
-!   pause
-
-    ! First store value of s
-    nonstd_normal(1) = s_pt
-    ! Loop over variables t, w, . . .
-    ! [Conditional distribution of
-    !      X_two given X_one] = x_one = std_normal(1:n,v)
-    ! is N [ mu_two + Sigma_twoone*Inverse(Sigma_oneone)*(x_one-mu_one),
-    !    Sigma_twotwo - Sigma_twoone*Inverse(Sigma_oneone)*Sigma_onetwo]
-    ! Here 'one' refers to given variables, 'two' refers to values to find.
-    ! Loop over all variables other than s_mellor:
-    do v=2, d_variables
-
-      ! Means
-      mu_one(1:(v-1),1) = mu(1:(v-1),1)
-      mu_two            = mu(v,1)
-
-      ! Matrices used to compute variances
-      Sigma_twoone(1,1:(v-1)) = Sigma(v,1:(v-1))
-      Sigma_onetwo(1:(v-1),1) = Sigma(1:(v-1),v)
-      Sigma_oneone( 1:(v-1) , 1:(v-1) )  & 
-           = Sigma( 1:(v-1) , 1:(v-1) )
-      Sigma_twotwo = Sigma(v,v)
-
-      ! Check whether input matrix is symmetric.
-      if ( clubb_at_least_debug_level( 2 ) ) then
-        do j=1,(v-1)
-          if ( abs( Sigma_twoone(1,j) - Sigma_onetwo(j,1) ) > epsilon( dum ) ) then
-            write(0,*) 'Error: matrix Sigma not symmetric in gaus_condt.'
-            write(0,*) 'Sigma in gaus_condt=', Sigma
-          end if
-        end do
-      end if
-
-      ! Compute an intermediate matrix, Sigma_int(1,1:(v-1)),
-      !    that is needed several times below.
-      ! Solve A * X = B for X, where X here is sigma_int.
-      call linear_symm_upper_eqn_solve &
-           ( n = v-1, a = Sigma_oneone(1:v-1,1:v-1), b = Sigma_twoone(1,1:v-1), &
-             x = Sigma_int(1,1:v-1) )
-
-      ! Constant scalar needed to compute mean of non-standard normal.
-      ! mu_condt_const = mu_two - Sigma_twoone*Sigma_oneone_inv*mu_one
-
-      dum = matmul( Sigma_int(:,1:v-1), mu_one(1:v-1,:) )
-
-      mu_condt_const = mu_two - dum(1,1)
-
-      ! Variance of non-standard normal for variable v.
-! Sigma_condt is a scalar.
-! Sigma_condt = Sigma_twotwo -
-!                    Sigma_twoone*Sigma_oneone_inv*Sigma_onetwo
-      dum = matmul( Sigma_int(:,1:v-1), Sigma_onetwo(1:v-1,:) )
-      Sigma_condt = Sigma_twotwo - dum(1,1)
-
-      ! Compute next element of nonstd_normal from prior elements
-! nonstd_normal(v) = sqrt(Sigma_condt)*std_normal(v)
-!      + mu_condt_const ...
-!      + Sigma_twoone*Sigma_oneone_inv*nonstd_normal(1:(v-1))
-      dum = matmul( Sigma_int(:,1:v-1), &
-                    reshape( nonstd_normal(1:v-1), (/v-1, 1/) ) )
-      nonstd_normal(v) = sqrt( Sigma_condt )*std_normal(v)  & 
-         + mu_condt_const  &
-         + dum(1,1)
-
-      ! Loop to obtain new variable
-    end do ! 2..d_variables
-
-    return
-  end subroutine gaus_condt
 
 !-------------------------------------------------------------------------------
   subroutine multiply_Cholesky( d_variables, std_normal, mu, Sigma_Cholesky, s_pt, & 

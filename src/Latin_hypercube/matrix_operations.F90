@@ -3,281 +3,15 @@ module matrix_operations
 
   implicit none
 
-  interface linear_symm_upper_eqn_solve
-    module procedure sp_lin_symm_upper_eqn_solve, dp_lin_symm_upper_eqn_solve
-  end interface linear_symm_upper_eqn_solve
 
-  public :: linear_eqn_solve, linear_symm_upper_eqn_solve, band_mult, &
-    covar_matrix_2_corr_matrix, Cholesky_factor
+  public :: covar_matrix_2_corr_matrix, Cholesky_factor
 
-  private :: sp_lin_symm_upper_eqn_solve, dp_lin_symm_upper_eqn_solve
+  private :: Symm_matrix_eigenvalues
 
   private ! Default scope
 
   contains
-
-!----------------------------------------------------------------------
-  subroutine linear_eqn_solve( n, a, x, b )
-!   Description:
-!    Solve for A * X = B for a general matrix.
-!   References:
-!     <http://www.netlib.org/lapack/double/dgesv.f>
-!-----------------------------------------------------------------------
-    implicit none
-
-    ! External
-    external :: dgesv   ! LAPACK subroutine
-
-    ! Parameters
-    integer, parameter :: nrhs = 1
-
-    ! Input Variables
-    integer, intent(in) :: n
-
-    double precision, dimension(n,n), intent(in) :: a
-
-    double precision, dimension(n), intent(in) :: b
-
-    ! Output Variables
-    double precision, dimension(n), intent(out) :: x
-
-    ! Local Variables
-    double precision, dimension(n,n) :: a_decomp
-
-    integer, dimension(n) :: &
-      ipiv ! Pivot indices from the permutation matrix
-
-    integer :: info
-
-    ! ---- Begin code ----
-
-    a_decomp = a
-    x = b
-
-    call dgesv( n, nrhs, a_decomp, n, ipiv, x, n, info )
-
-    select case( info )
-    case( :-1 )
-      write(0,*) "linear_eqn_solve" // & 
-        " illegal value for argument ", -info
-      stop
-    case( 0 )
-      ! Success!
-
-    case( 1: )
-      write(0,*) "linear_eqn_solve: singular matrix"
-      stop
-    end select
-
-    return
-  end subroutine linear_eqn_solve
-
-!----------------------------------------------------------------------
-  subroutine dp_lin_symm_upper_eqn_solve( n, a, x, b )
-!   Description:
-!    Solve for A * X = B for a symmetric matrix, using the upper diagonals.
-!   References:
-!     <http://www.netlib.org/lapack/double/dsysv.f>
-!-----------------------------------------------------------------------
-    implicit none
-
-    ! External
-    external :: dsysv   ! LAPACK subroutine
-
-    ! Parameters
-    integer, parameter :: nrhs = 1
-
-    ! Input Variables
-    integer, intent(in) :: n
-
-    double precision, dimension(n,n), intent(in) :: a
-
-    double precision, dimension(n), intent(in) :: b
-
-    ! Output Variables
-    double precision, dimension(n), intent(out) :: x
-
-    ! Local Variables
-    double precision, dimension(n,n) :: a_decomp
-
-    double precision, allocatable, dimension(:) :: work
-
-    integer, dimension(n) :: &
-      ipiv ! Pivot indices from the permutation matrix
-
-    integer :: info, work_dim
-!   integer :: i, j
-    ! ---- Begin code ----
-
-    work_dim = n * 128 ! Best guess for an optimal blocksize
-
-    allocate( work(work_dim) )
-
-    a_decomp = a
-    x = b
-
-!   do i = 1, n
-!     do j = 1, n
-!       write(6,'(e10.3)',advance='no') a(i,j)
-!     end do
-!     write(6,*) ""
-!   end do
-!   pause
-
-    call dsysv( 'Upper', n, nrhs, a_decomp, n, ipiv, x, n, work, work_dim, info )
-
-    select case( info )
-    case( :-1 )
-      write(0,*) "dp_lin_symm_upper_eqn_solve" // & 
-        " illegal value for argument ", -info
-      stop
-    case( 0 )
-      ! Success!
-
-    case( 1: )
-      write(0,*) "dp_lin_symm_upper_eqn_solve: singular matrix"
-      stop
-    end select
-
-    deallocate( work )
-
-    return
-  end subroutine dp_lin_symm_upper_eqn_solve
-!----------------------------------------------------------------------
-  subroutine sp_lin_symm_upper_eqn_solve( n, a, x, b )
-!   Description:
-!    Solve for A * X = B for a symmetric matrix, using the upper diagonals.
-!   References:
-!     <http://www.netlib.org/lapack/single/ssysv.f>
-!-----------------------------------------------------------------------
-    implicit none
-
-    ! External
-    external :: ssysv   ! LAPACK subroutine
-
-    ! Parameters
-    integer, parameter :: nrhs = 1
-
-    ! Input Variables
-    integer, intent(in) :: n
-
-    real(kind=4), dimension(n,n), intent(in) :: a
-
-    real(kind=4), dimension(n), intent(in) :: b
-
-    ! Output Variables
-    real(kind=4), dimension(n), intent(out) :: x
-
-    ! Local Variables
-    real(kind=4), dimension(n,n) :: a_decomp
-
-    real(kind=4), allocatable, dimension(:) :: work
-
-    integer, dimension(n) :: &
-      ipiv ! Pivot indices from the permutation matrix
-
-    integer :: info, work_dim
-!   integer :: i, j
-    ! ---- Begin code ----
-
-    work_dim = n * 128 ! Best guess for an optimal blocksize
-
-    allocate( work(work_dim) )
-
-    a_decomp = a
-    x = b
-
-!   do i = 1, n
-!     do j = 1, n
-!       write(6,'(e10.3)',advance='no') a(i,j)
-!     end do
-!     write(6,*) ""
-!   end do
-!   pause
-
-    call ssysv( 'Upper', n, nrhs, a_decomp, n, ipiv, x, n, work, work_dim, info )
-
-    select case( info )
-    case( :-1 )
-      write(0,*) "sp_lin_symm_upper_eqn_solve" // & 
-        " illegal value for argument ", -info
-      stop
-    case( 0 )
-      ! Success!
-
-    case( 1: )
-      write(0,*) "sp_lin_symm_upper_eqn_solve: singular matrix"
-      stop
-    end select
-
-    deallocate( work )
-
-    return
-  end subroutine sp_lin_symm_upper_eqn_solve
-
-!-----------------------------------------------------------------------
-  subroutine band_mult( trans, ndim, mdim, nsup, nsub, yinc, xinc, & 
-                        alpha, beta, lhs, xvec, yvec )
-!       Description:
-!       Wrapper subroutine for banded matrix by vector multiplication in
-!       the level 2 BLAS library.
-
-!       References:
-!       <http://www.netlib.org/blas/>
-!-----------------------------------------------------------------------
-
-    implicit none
-
-    ! External
-    ! Level 2 BLAS to multiply a vector by a band diagonal matrix
-    external :: sgbmv, dgbmv
-
-    intrinsic :: kind
-
-    character(len=1), intent(in) ::  & 
-      trans  ! Whether to use the transposition of the lhs matrix
-
-    integer, intent(in) :: & 
-      ndim, mdim,   & ! Dimensions of the matrix when not compact
-      nsup, nsub,   & ! Super and Sub diagonals
-      yinc, xinc   ! Increments of y and x vector
-
-    real, intent(in) :: & 
-      alpha,  & ! Coefficient of the matrix lhs
-      beta      ! Coefficient of Y vector
-
-    real, dimension(nsup+nsub+1, ndim), intent(in) :: & 
-      lhs  ! The matrix 'A' in the blas subroutine
-
-    real, dimension(ndim), intent(in) :: & 
-      xvec ! The vector X
-
-    real, dimension(ndim), intent(inout) :: & 
-      yvec ! The vector Y
-
-
-!-----------------------------------------------------------------------
-!       *** BLAS 2 routine ***
-!       SUBROUTINE DGBMV(TRANS,M,N,KL,KU,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
-!-----------------------------------------------------------------------
-    ! Multiply so that Y := alpha*A*X + beta*Y
-
-    if ( kind( lhs(1,1) ) == 4 ) then
-      call sgbmv( trans, ndim, mdim, nsub, nsup,  & 
-                  alpha, lhs, nsup+nsub+1,  & 
-                  xvec, xinc, beta, yvec, yinc )
-
-    else if ( kind( lhs(1,1) ) == 8 ) then
-      call dgbmv( trans, ndim, mdim, nsub, nsup,  & 
-                  alpha, lhs, nsup+nsub+1,  & 
-                  xvec, xinc, beta, yvec, yinc )
-    else
-      stop "Cannot multiply this precision"
-    end if
-
-    return
-  end subroutine band_mult
-
+!
 !-----------------------------------------------------------------------
   subroutine covar_matrix_2_corr_matrix( ndim, cov, corr )
 
@@ -326,6 +60,12 @@ module matrix_operations
 !    <http://www.netlib.org/lapack/explore-html/a00860.html> dpoequ
 !    <http://www.netlib.org/lapack/explore-html/a00753.html> dlaqsy
 !-----------------------------------------------------------------------
+    use error_code, only: &
+      clubb_at_least_debug_level ! Procedure
+
+    use constants_clubb, only: &
+      fstderr ! Constant
+
     implicit none
 
     ! External
@@ -373,7 +113,7 @@ module matrix_operations
     equed = 'N'
 
     ! Compute scaling for a_input
-    call dpoequ( ndim, a_input, ndim, a_scaling, scond, amax, info ) 
+    call dpoequ( ndim, a_input, ndim, a_scaling, scond, amax, info )
 
     if ( info == 0 ) then
       ! Apply scaling to a_input
@@ -394,63 +134,68 @@ module matrix_operations
 
       select case( info )
       case( :-1 )
-        write(0,*) "Cholesky_factor " // & 
+        write(fstderr,*) "Cholesky_factor " // & 
           " illegal value for argument ", -info
         stop
       case( 0 )
         ! Success!
-        if ( iter > 1 ) then
-          write(6,*) "a_factored (worked)="
+        if ( clubb_at_least_debug_level( 1 ) .and. iter > 1 ) then
+          write(fstderr,*) "a_factored (worked)="
           do i = 1, ndim
             do j = 1, ndim
-              write(6,'(e10.3)',advance='no') a_Cholesky(i,j)
+              write(fstderr,'(e10.3)',advance='no') a_Cholesky(i,j)
             end do
-            write(6,*) ""
+            write(fstderr,*) ""
           end do
         end if
         exit
       case( 1: )
-        ! This shouldn't happen now that the s and t Mellor elements have been
-        ! modified to never be perfectly correlated, but it's here just in case.
-        ! -dschanen 10 Sept 2010
-        write(0,*) "Cholesky_factor: leading minor of order ", info, " is not positive definite."
-        write(0,*) "factorization failed."
-        write(6,*) "a_input="
-        do i = 1, ndim
-          do j = 1, ndim
-            write(6,'(e10.3)',advance='no') a_input(i,j)
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          ! This shouldn't happen now that the s and t Mellor elements have been
+          ! modified to never be perfectly correlated, but it's here just in case.
+          ! -dschanen 10 Sept 2010
+          write(fstderr,*) "Cholesky_factor: leading minor of order ", &
+            info, " is not positive definite."
+          write(fstderr,*) "factorization failed."
+          write(fstderr,*) "a_input="
+          do i = 1, ndim
+            do j = 1, ndim
+              write(fstderr,'(e10.3)',advance='no') a_input(i,j)
+            end do
+            write(fstderr,*) ""
           end do
-          write(6,*) ""
-        end do
-        write(6,*) "a_Cholesky="
-        do i = 1, ndim
-          do j = 1, ndim
-            write(6,'(e10.3)',advance='no') a_Cholesky(i,j)
+          write(fstderr,*) "a_Cholesky="
+          do i = 1, ndim
+            do j = 1, ndim
+              write(fstderr,'(e10.3)',advance='no') a_Cholesky(i,j)
+            end do
+            write(fstderr,*) ""
           end do
-          write(6,*) ""
-        end do
+        end if
 
-        call Symm_matrix_eigenvalues( ndim, a_input, a_eigenvalues )
-        write(6,*) "a_eigenvalues="
-        do i = 1, ndim
-          write(6,'(e10.3)',advance='no') a_eigenvalues(i)
-        end do
-        write(6,*) ""
-
-        call covar_matrix_2_corr_matrix( ndim, a_input, a_corr )
-        write(6,*) "a_correlations="
-        do i = 1, ndim
-          do j = 1, ndim
-            write(6,'(g10.3)',advance='no') a_corr(i,j)
+        if ( clubb_at_least_debug_level( 2 ) ) then
+          call Symm_matrix_eigenvalues( ndim, a_input, a_eigenvalues )
+          write(fstderr,*) "a_eigenvalues="
+          do i = 1, ndim
+            write(fstderr,'(e10.3)',advance='no') a_eigenvalues(i)
           end do
-          write(6,*) ""
-        end do
+          write(fstderr,*) ""
+
+          call covar_matrix_2_corr_matrix( ndim, a_input, a_corr )
+          write(fstderr,*) "a_correlations="
+          do i = 1, ndim
+            do j = 1, ndim
+              write(fstderr,'(g10.3)',advance='no') a_corr(i,j)
+            end do
+            write(fstderr,*) ""
+          end do
+        end if
 
         if ( iter == itermax ) then
-          write(0,*) "iteration =", iter, "itermax =", itermax
-          stop
-        else
-          write(0,*) "Attempting to modify matrix to allow factorization."
+          write(fstderr,*) "iteration =", iter, "itermax =", itermax
+          stop "Fatal error in Cholesky_factor"
+        else if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,*) "Attempting to modify matrix to allow factorization."
         end if
 
         if ( l_scaled ) then
@@ -459,8 +204,8 @@ module matrix_operations
           a_Cholesky = a_input
         end if
         ! The number used for tau here is case specific to the Sigma covariance
-        ! matrix in the latin hypercube code and is not at all general.  
-        ! Tau should be number that is small relative to the other diagonal 
+        ! matrix in the latin hypercube code and is not at all general.
+        ! Tau should be number that is small relative to the other diagonal
         ! elements of the matrix to have keep the error caused by modifying 'a' low.
         ! -dschanen 30 Aug 2010
         d_smallest = a_Cholesky(1,1)
@@ -473,19 +218,21 @@ module matrix_operations
         do i = 1, ndim
           do j = 1, ndim
             if ( i == j ) then
-              a_Cholesky(i,j) = a_Cholesky(i,j) + tau ! Add tau to the diagonal 
+              a_Cholesky(i,j) = a_Cholesky(i,j) + tau ! Add tau to the diagonal
             else
               a_Cholesky(i,j) = a_Cholesky(i,j)
             end if
           end do
         end do
 
-        call Symm_matrix_eigenvalues( ndim, a_Cholesky, a_eigenvalues )
-        write(6,*) "a_modified eigenvalues="
-        do i = 1, ndim
-          write(6,'(e10.3)',advance='no') a_eigenvalues(i)
-        end do
-        write(6,*) ""
+        if ( clubb_at_least_debug_level( 2 ) ) then
+          call Symm_matrix_eigenvalues( ndim, a_Cholesky, a_eigenvalues )
+          write(fstderr,*) "a_modified eigenvalues="
+          do i = 1, ndim
+            write(fstderr,'(e10.3)',advance='no') a_eigenvalues(i)
+          end do
+          write(fstderr,*) ""
+        end if
 
       end select ! info
 
@@ -499,6 +246,10 @@ module matrix_operations
 !   Description:
 !   References:
 !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+      fstderr ! Constant
+
     implicit none
 
     ! External
@@ -540,14 +291,14 @@ module matrix_operations
 
     select case( info )
     case( :-1 )
-      write(0,*) "Symm_matrix_eigenvalues:" // & 
+      write(fstderr,*) "Symm_matrix_eigenvalues:" // & 
         " illegal value for argument ", -info
       stop
     case( 0 )
       ! Success!
 
     case( 1: )
-      write(0,*) "Symm_matrix_eigenvalues: Algorithm failed to converge."
+      write(fstderr,*) "Symm_matrix_eigenvalues: Algorithm failed to converge."
       stop
     end select
 
