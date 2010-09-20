@@ -336,39 +336,6 @@ module latin_hypercube_driver_module
 
     end do ! 1..nnzp
 
-    ! Latin hypercube sample generation
-    ! Generate height_time_matrix, an nnzp x nt_repeat x d_variables array of random integers
-    i_rmd = mod( iter-1, sequence_length )
-
-    if ( i_rmd == 0 ) then
-      call permute_height_time( nnzp, nt_repeat, d_variables+1, & ! intent(in)
-                                height_time_matrix )              ! intent(out)
-    end if
-    ! End Latin hypercube sample generation
-
-    ! print*, 'latin_hypercube_driver: i_rmd=', i_rmd
-
-    !--------------------------------------------------------------
-    ! Latin hypercube sampling
-    !--------------------------------------------------------------
-
-    do k = 1, nnzp
-      ! Choose which rows of LH sample to feed into closure.
-      p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
-        height_time_matrix(k, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
-                           1:d_variables+1)
-
-      ! print*, 'latin_hypercube_sampling: got past p_matrix'
-
-      ! Generate the uniform distribution using the Mersenne twister (not
-      ! currently configured to re-seed).
-      !  X_u has one extra dimension for the mixture component.
-      call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
-                                    X_u_all_levs(k,:,:) ) ! Out
-
-    end do ! 1..nnzp
-
-
     ! For a 100 level fixed grid, this looks to be about the middle of the cloud for RICO
 !   k_lh_start = 50
     tmp_loc    = maxloc( rcm )
