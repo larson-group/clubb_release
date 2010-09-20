@@ -1437,20 +1437,18 @@ module stats_zt
              "[kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
-      case ('rrainm_mc')
-        irrainm_mc = k
-
-        call stat_assign( irrainm_mc, "rrainm_mc", & 
-             "rrainm budget: Change in rrainm due to microphysics [kg kg^{-1} s^{-1}]", &
-             "kg kg^{-1} s^{-1}", zt )
-
-        k = k + 1
-
       case ('rrainm_cl')
         irrainm_cl = k
         call stat_assign( irrainm_cl, "rrainm_cl", & 
              "rrainm budget: rrainm clipping term [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+        k = k + 1
+        
+      case ('rrainm_mc')
+        irrainm_mc = k
 
+        call stat_assign( irrainm_mc, "rrainm_mc", & 
+             "Change in rrainm due to microphysics (Not in budget) [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('Nrm_bt')
