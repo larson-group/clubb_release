@@ -321,20 +321,6 @@ module latin_hypercube_driver_module
     ! Latin hypercube sampling
     !--------------------------------------------------------------
 
-    do k = 1, nnzp
-      ! Choose which rows of LH sample to feed into closure.
-      p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
-        height_time_matrix(k, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
-                           1:d_variables+1)
-
-      ! print*, 'latin_hypercube_sampling: got past p_matrix'
-
-      ! Generate the uniform distribution using the Mersenne twister
-      !  X_u has one extra dimension for the mixture component.
-      call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
-                                    X_u_all_levs(k,:,:) ) ! Out
-
-    end do ! 1..nnzp
 
     ! For a 100 level fixed grid, this looks to be about the middle of the cloud for RICO
 !   k_lh_start = 50
@@ -366,6 +352,16 @@ module latin_hypercube_driver_module
     end if ! l_lh_cloud_weighted_sampling
 
     if ( l_lh_vert_overlap ) then
+
+      ! Choose which rows of LH sample to feed into closure at the k_lh_start level
+      p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
+        height_time_matrix(k_lh_start, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
+                           1:d_variables+1)
+
+      ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level
+      !  X_u has one extra dimension for the mixture component.
+      call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
+                                    X_u_all_levs(k_lh_start,:,:) ) ! Out
 
       do sample = 1, n_micro_calls
 
@@ -421,10 +417,6 @@ module latin_hypercube_driver_module
 
       end do ! 1..n_micro_calls
 
-    end if ! l_lh_vert_overlap
-
-    if ( l_lh_vert_overlap ) then
-
       ! Use a fixed number for the vertical correlation.  
 !     X_vert_corr(1:nnzp) = 0.95_genrand_real
 
@@ -469,6 +461,20 @@ module latin_hypercube_driver_module
           end if
         end do ! 1..d_variables
       end do ! 1..n_micro_calls
+
+    else ! Random overlap
+
+      do k = 1, nnzp
+        ! Choose which rows of LH sample to feed into closure.
+        p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
+          height_time_matrix(k, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
+                             1:d_variables+1)
+
+        ! Generate the uniform distribution using the Mersenne twister
+        !  X_u has one extra dimension for the mixture component.
+        call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
+                                      X_u_all_levs(k,:,:) ) ! Out
+      end do ! 1..nnzp
 
     end if ! l_lh_vert_overlap
 
