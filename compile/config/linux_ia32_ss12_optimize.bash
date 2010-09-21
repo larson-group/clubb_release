@@ -24,7 +24,7 @@ WARNINGS="-w3 -ansi"
 # == Machine specific flags ==
 # Note that when linking to sunperf (for LAPACK) you must use -dalign
 # The -g option allows for viewing the source code in the analyzer program
-ARCH="-g -m64 -xarch=sse3 -xcache=native -xchip=native -dalign"
+ARCH="-g -xtarget=native -m64 -dalign"
 
 # == NetCDF Location ==
 NETCDF="/usr/local/netcdf-sun64"
@@ -63,5 +63,4 @@ SHAREDFLAGS="-G"
 mkmf=$dir/mkmf
 
 # gmake command to use and options: '-j 2' enables parallel compilation
-gmake="make"
-
+gmake="make -j1"
