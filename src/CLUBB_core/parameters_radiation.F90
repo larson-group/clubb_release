@@ -60,10 +60,11 @@ module parameters_radiation
 
   private ! Default Scope
 
-! OpenMP directives. These cannot be indented.
+! OpenMP directives. The first column of these cannot be indented.
 !$omp threadprivate(rad_scheme, sol_const, alvdr, alvdf, alndr, alndf, &
 !$omp   kappa, F0, F1, eff_drop_radius, gc, omega, radiation_top, Fs_values, &
-!$omp   l_rad_above_cloud, cos_solar_zen_list, l_fix_cos_solar_zen, nparam, &
-!$omp   l_sw_raditiation)
+!$omp   l_rad_above_cloud, cos_solar_zen_times, cos_solar_zen_values, &
+!$omp   l_fix_cos_solar_zen, nparam, &
+!$omp   l_sw_radiation)
 
 end module parameters_radiation
