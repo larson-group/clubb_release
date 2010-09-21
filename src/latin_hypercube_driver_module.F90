@@ -1120,8 +1120,9 @@ module latin_hypercube_driver_module
 ! Description:
 !   Re-computes X_u (uniform sample) for a single variate (e.g. s_mellor) using 
 !   an arbitrary correlation specified by the input vert_corr variable (which
-!   can vary with height), using the subroutines ltqnorm and multiply_Cholesky.
-!   There might be a more efficient way to do this, but this works.
+!   can vary with height).
+!   This is an improved algorithm that doesn't require us to convert from a
+!   unifrom distribution to a Gaussian distribution and back again.
 
 ! References:
 !   None
@@ -1132,25 +1133,9 @@ module latin_hypercube_driver_module
     use mt95, only: &
       genrand_real3 ! Procedure
 
-#ifdef UNRELEASED_CODE
-    use generate_lh_sample_module, only: &
-      ltqnorm  ! Procedure(s)
-#endif
-
-    use anl_erf, only: erf ! Function
-
-    use constants_clubb, only: sqrt_2 ! Constant
-
     implicit none
 
-    ! External
-    intrinsic :: sqrt
-
-!   external :: dtrmv ! BLAS subroutine
-
     ! Parameter Constants
-    integer, parameter :: &
-      num_vars = 2 ! Number of variables in the correlation matrix
 
     ! Input Variables
     integer, intent(in) :: &
@@ -1170,14 +1155,7 @@ module latin_hypercube_driver_module
     ! Local Variables
     real(kind=genrand_real) :: rand ! random number in the range (0,1)
 
-    double precision, dimension(num_vars) :: &
-      std_normal, nonstd_normal ! Standard normal and non-standard normal at 1 k level  [-]
-
-!   double precision, dimension(num_vars,num_vars) :: &
-!     Sigma_Cholesky ! Correlation matrix for multiply_Cholesky
-
-!   double precision, dimension(num_vars) :: &
-!     Sigma_scaling ! Unreferenced dummy array for multiply_Cholesky
+    real(kind=genrand_real) :: min_val, half_width, offset, unbounded_point
 
     integer :: k, kp1, km1 ! Loop iterators
 
@@ -1192,34 +1170,28 @@ module latin_hypercube_driver_module
 
       kp1 = k+1 ! This is the level we're computing
 
-      std_normal(1) = ltqnorm( X_u_one_var_all_levs(k) ) ! k level
+      if ( vert_corr(kp1) < 0. .or. vert_corr(kp1) > 1. ) then
+        stop "vert_corr(kp1) not between 0 and 1"
+      end if
+
+      half_width = 1.0 - vert_corr(kp1)
+      min_val = X_u_one_var_all_levs(k) - half_width
+
       call genrand_real3( rand ) ! (0,1)
-      std_normal(2) = ltqnorm( rand ) ! k+1 level
+      offset = 2.0 * half_width * rand
 
-      ! We fix Sigma to use the correlation from the k+1 level.
-      ! This is the Cholesky factorization of Sigma
-!     Sigma_Cholesky(1,:) = (/ 1.0d0, 0.d0 /)
-!     Sigma_Cholesky(2,:) = (/ vert_corr(kp1), sqrt( 1.d0 - vert_corr(kp1)**2 ) /)
+      unbounded_point = min_val + offset
 
-!     call multiply_Cholesky( num_vars, std_normal, mu, Sigma_Cholesky, std_normal(1), & ! In
-!                             Sigma_scaling, l_scaled, & ! In
-!                             nonstd_normal ) ! Out
-
-!     nonstd_normal = std_normal
-!     call dtrmv( 'Lower', 'N', 'N', num_vars, Sigma_Cholesky, num_vars, & ! In
-!                 nonstd_normal, &  ! In/out
-!                 1 ) ! In
-
-      ! Simplified formula derived from the matrix multiplication
-      ! See the matrix on p.55 M.E. Johnson 1987.
-      ! Here we have a 2x2 Cholesky decomposition which we want to multiply the
-      ! vector std_normal by, but we only need the lower element of nonstd_normal.
-      nonstd_normal(2) = std_normal(1) * vert_corr(kp1) &
-                       + std_normal(2) * sqrt( 1.d0 - vert_corr(kp1)**2 )
-                  
-      ! Convert back to uniform dist.
-      X_u_one_var_all_levs(kp1) = 0.5 * ( 1. + erf( nonstd_normal(2) / sqrt_2 ) )
-
+      ! If unbounded_point lies outside the range [0,1], 
+      ! fold it back so that it is between [0,1]
+      if ( unbounded_point > 1.0 ) then
+        X_u_one_var_all_levs(kp1) = 2.0 - unbounded_point
+      else if ( unbounded_point < 0.0 ) then
+        X_u_one_var_all_levs(kp1) = - unbounded_point
+      else
+        X_u_one_var_all_levs(kp1) = unbounded_point
+      end if
+ 
 !     print *, k, X_u_one_var_all_levs(k), kp1, X_u_one_var_all_levs(kp1)
 
     end do ! k_lh_start..nnzp-1
@@ -1229,35 +1201,32 @@ module latin_hypercube_driver_module
 
       km1 = k-1 ! This is the level we're computing
 
-      std_normal(1) = ltqnorm( X_u_one_var_all_levs(k) ) ! k level
       call genrand_real3( rand ) ! (0,1)
-      std_normal(2) = ltqnorm( rand ) ! k-1 level
+      if ( vert_corr(km1) < 0. .or. vert_corr(km1) > 1. ) then
+        stop "vert_corr(km1) not between 0 and 1"
+      end if
 
-      ! We fix Sigma to use the correlation from the k-1 level.
-      ! This is the Cholesky factorization of Sigma
-!     Sigma_Cholesky(1,:) = (/ 1.0d0, 0.d0 /)
-!     Sigma_Cholesky(2,:) = (/ vert_corr(km1), sqrt( 1.d0 - vert_corr(km1)**2 ) /)
+      half_width = 1.0 - vert_corr(km1)
+      min_val = X_u_one_var_all_levs(k) - half_width
 
-!     call multiply_Cholesky( num_vars, std_normal, mu, Sigma_Cholesky, std_normal(1), & ! In
-!                               Sigma_scaling, l_scaled, & ! In
-!                               nonstd_normal ) ! Out
+      call genrand_real3( rand ) ! (0,1)
+      offset = 2.0 * half_width * rand
 
-!     nonstd_normal = std_normal
-!     call dtrmv( 'Lower', 'N', 'N', num_vars, Sigma_Cholesky, num_vars, & ! In
-!                 nonstd_normal, &  ! In/out
-!                 1 ) ! In
+      unbounded_point = min_val + offset
 
-      ! Simplified formula derived from the matrix multiplication
-      ! See comment above
-      nonstd_normal(2) = std_normal(1) * vert_corr(km1) &
-                       + std_normal(2) * sqrt( 1.d0 - vert_corr(km1)**2 )
+      ! If unbounded_point lies outside the range [0,1], 
+      ! fold it back so that it is between [0,1]
+      if ( unbounded_point > 1.0 ) then
+        X_u_one_var_all_levs(km1) = 2.0 - unbounded_point
+      else if ( unbounded_point < 0.0 ) then
+        X_u_one_var_all_levs(km1) = - unbounded_point
+      else
+        X_u_one_var_all_levs(km1) = unbounded_point
+      end if
 
-      ! Convert back to uniform dist.
-      X_u_one_var_all_levs(km1) = 0.5 * ( 1. + erf( nonstd_normal(2) / sqrt_2 ) )
+!     print *, k, X_u_one_var_all_levs(k), km1, X_u_one_var_all_levs(km1)
 
-!     print *, k, X_u_one_var_all_levs(k), kp1, X_u_one_var_all_levs(kp1)
-
-    end do ! k_lh_start..nnzp-1
+    end do ! k_lh_start..2 decrementing
 
 #endif /*UNRELEASED_CODE*/
     return
