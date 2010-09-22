@@ -411,8 +411,10 @@ module generate_lh_sample_module
     sptp = min( max( -max_mag_correlation * sqrt_sp2_tp2, sptp ), &
                 max_mag_correlation * sqrt_sp2_tp2 &
               )
-    Sigma_stw_1(iiLH_s_mellor,iiLH_t_mellor) = sptp
-    Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) = sptp
+
+    call set_lower_triangular_matrix &
+        ( d_variables, iiLH_s_mellor, iiLH_t_mellor, sptp, & ! In
+          Sigma_stw_1 ) ! In/out
 
     ! Do the same with Sigma2
     sqrt_sp2_tp2 = sqrt( Sigma_stw_2(iiLH_s_mellor,iiLH_s_mellor) &
@@ -423,8 +425,10 @@ module generate_lh_sample_module
     sptp = min( max( -max_mag_correlation * sqrt_sp2_tp2, sptp ), &
                 max_mag_correlation * sqrt_sp2_tp2 &
               )
-    Sigma_stw_2(iiLH_s_mellor,iiLH_t_mellor) = sptp
-    Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) = sptp
+
+    call set_lower_triangular_matrix &
+        ( d_variables, iiLH_s_mellor, iiLH_t_mellor, sptp, & ! In
+          Sigma_stw_2 ) ! In/out
 
     ! Determine the correlation of s and t for the purposes of approximating
     ! the correlation of t and the other samples
@@ -466,10 +470,12 @@ module generate_lh_sample_module
                    sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
         covar_rrNr2 = covar_rrNr1
 
-        Sigma_stw_1(iiLH_rrain,iiLH_Nr) = dble( covar_rrNr1 )
-        Sigma_stw_1(iiLH_Nr,iiLH_rrain) = dble( covar_rrNr1 )
-        Sigma_stw_2(iiLH_rrain,iiLH_Nr) = dble( covar_rrNr2 )
-        Sigma_stw_2(iiLH_Nr,iiLH_rrain) = dble( covar_rrNr2 )
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_rrain, iiLH_Nr, dble( covar_rrNr1 ), & ! In
+               Sigma_stw_1 ) ! In/out
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_rrain, iiLH_Nr, dble( covar_rrNr2 ), & ! In
+               Sigma_stw_2 ) ! In/out
       end if
 
       ! Covariances involving s and Nr & rr
@@ -482,15 +488,17 @@ module generate_lh_sample_module
                    stdev_s1, &
                    sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
 
-        Sigma_stw_1(iiLH_s_mellor,iiLH_Nr) = dble( covar_sNr1 )
-        Sigma_stw_1(iiLH_Nr,iiLH_s_mellor) = dble( covar_sNr1 )
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_s_mellor, iiLH_Nr, dble( covar_sNr1 ), & ! In
+               Sigma_stw_1 ) ! In/out
 
         ! Approximate the covariance of t and Nr
         covar_tNr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_sNr1 ) ) / dble( stdev_s1 )**2
 
-        Sigma_stw_1(iiLH_t_mellor,iiLH_Nr) = dble( covar_tNr1 )
-        Sigma_stw_1(iiLH_Nr,iiLH_t_mellor) = dble( covar_tNr1 )
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_t_mellor, iiLH_Nr, dble( covar_tNr1 ), & ! In
+               Sigma_stw_1 ) ! In/out
       end if
 
       if ( stdev_s2 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
@@ -502,15 +510,17 @@ module generate_lh_sample_module
                    stdev_s2, &
                    sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
 
-        Sigma_stw_2(iiLH_s_mellor,iiLH_Nr) = dble( covar_sNr2 )
-        Sigma_stw_2(iiLH_Nr,iiLH_s_mellor) = dble( covar_sNr2 )
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_s_mellor, iiLH_Nr, dble( covar_sNr2 ), & ! In
+               Sigma_stw_2 ) ! In/out
 
         ! Approximate the covariance of t and Nr
         covar_tNr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_sNr2 ) ) / dble( stdev_s2 )**2
 
-        Sigma_stw_2(iiLH_t_mellor,iiLH_Nr) = dble( covar_tNr2 )
-        Sigma_stw_2(iiLH_Nr,iiLH_t_mellor) = dble( covar_tNr2 )
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_t_mellor, iiLH_Nr, dble( covar_tNr2 ), & ! In
+               Sigma_stw_2 ) ! In/out
       end if
 
       if ( stdev_s1 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
@@ -523,15 +533,17 @@ module generate_lh_sample_module
                    stdev_s1, &
                    sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
 
-        Sigma_stw_1(iiLH_s_mellor,iiLH_rrain) = dble( covar_srr1 )
-        Sigma_stw_1(iiLH_rrain,iiLH_s_mellor) = dble( covar_srr1 )
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_s_mellor, iiLH_rrain, dble( covar_srr1 ), & ! In
+               Sigma_stw_1 ) ! In/out
 
         ! Approximate the covariance of t and rr
         covar_trr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_srr1 ) ) / dble( stdev_s1 )**2
 
-        Sigma_stw_1(iiLH_t_mellor,iiLH_rrain) = dble( covar_trr1 )
-        Sigma_stw_1(iiLH_rrain,iiLH_t_mellor) = dble( covar_trr1 )
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_t_mellor, iiLH_rrain, dble( covar_trr1 ), & ! In
+               Sigma_stw_1 ) ! In/out
       end if
 
       if ( stdev_s2 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
@@ -543,15 +555,17 @@ module generate_lh_sample_module
                    stdev_s2, &
                    sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
 
-        Sigma_stw_2(iiLH_s_mellor,iiLH_rrain) = dble( covar_srr2 )
-        Sigma_stw_2(iiLH_rrain,iiLH_s_mellor) = dble( covar_srr2 )
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_s_mellor, iiLH_rrain, dble( covar_srr2 ), & ! In
+               Sigma_stw_2 ) ! In/out
 
         ! Approximate the covariance of t and rr
         covar_trr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_srr2 ) ) / dble( stdev_s2 )**2
 
-        Sigma_stw_2(iiLH_t_mellor,iiLH_rrain) = dble( covar_trr2 )
-        Sigma_stw_2(iiLH_rrain,iiLH_t_mellor) = dble( covar_trr2 )
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_t_mellor, iiLH_rrain, dble( covar_trr2 ), & ! In
+               Sigma_stw_2 ) ! In/out
       end if
     end if ! if iiLH_rrain > 0 .and. iiLH_Nr > 0
 
@@ -646,7 +660,7 @@ module generate_lh_sample_module
       iiLH_t_mellor
 
     use matrix_operations, only: &
-      covar_matrix_2_corr_matrix ! Procedure(s)
+      symm_covar_matrix_2_corr_matrix ! Procedure(s)
 
     use error_code, only:  &
       clubb_at_least_debug_level  ! Procedure(s)
@@ -719,8 +733,8 @@ module generate_lh_sample_module
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-      call covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Sigma_stw_1_corr )
-      call covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Sigma_stw_2_corr )
+      call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Sigma_stw_1_corr )
+      call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Sigma_stw_2_corr )
 
       if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_2_corr < -1.0 ) ) then
         write(fstderr,*) "Sigma_stw_1 has a correlation > 1 or < -1"
@@ -1563,6 +1577,43 @@ module generate_lh_sample_module
 
     return
   end subroutine log_sqd_normalized
+
+!-------------------------------------------------------------------------------
+  subroutine set_lower_triangular_matrix( d_variables, index1, index2, xpyp, &
+                                          Sigma )
+! Description:
+!   Set a value for the lower triangular portion of the Sigma matrix.
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    implicit none
+
+    ! External
+    intrinsic :: max, min
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables, & ! Number of variates
+      index1, index2 ! Indices for 2 variates (the order doesn't matter)
+
+    double precision, intent(in) :: xpyp ! A variance or covariance     [units vary]
+
+    ! Input/Output Variables
+    double precision, dimension(d_variables,d_variables), intent(inout) :: &
+      Sigma ! The covariance matrix
+
+    integer :: i,j
+
+    ! ---- Begin Code ----
+
+    ! Reverse these to set the values of upper triangular matrix
+    i = max( index1, index2 )
+    j = min( index1, index2 )
+
+    Sigma(i,j) = xpyp
+
+    return
+  end subroutine set_lower_triangular_matrix
 
 end module generate_lh_sample_module
 

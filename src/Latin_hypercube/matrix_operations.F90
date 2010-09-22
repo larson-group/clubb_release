@@ -4,7 +4,7 @@ module matrix_operations
   implicit none
 
 
-  public :: covar_matrix_2_corr_matrix, Cholesky_factor
+  public :: symm_covar_matrix_2_corr_matrix, Cholesky_factor
 
   private :: Symm_matrix_eigenvalues
 
@@ -13,10 +13,12 @@ module matrix_operations
   contains
 !
 !-----------------------------------------------------------------------
-  subroutine covar_matrix_2_corr_matrix( ndim, cov, corr )
+  subroutine symm_covar_matrix_2_corr_matrix( ndim, cov, corr )
 
 ! Description:
-!   Convert a matrix of covariances in to a matrix of correlations
+!   Convert a matrix of covariances in to a matrix of correlations.
+!   This only does the computation the lower triangular portion of the 
+!   matrix.
 ! References:
 !   None
 !-----------------------------------------------------------------------
@@ -36,20 +38,20 @@ module matrix_operations
       corr ! Correlation Matrix [-]
 
     ! Local Variables
-    integer :: i, j
+    integer :: row, col
 
     ! ---- Begin Code ----
-    i = 1   ! These 4 lines eliminate a g95 compiler warning of uninitialized variables.
-    i = i   ! Simply initializing them to 1 is not sufficient as it generates two new
-    j = 1   ! warnings.  -meyern
-    j = j
 
-    forall( i = 1:ndim, j= 1:ndim )
-      corr(i,j) = cov(i,j) / sqrt( cov(i,i) * cov(j,j) )
-    end forall
+    corr = 0. ! Initialize to 0
+
+    do col = 1, ndim
+      do row = col, ndim
+        corr(row,col) = cov(row,col) / sqrt( cov(row,col) * cov(row,col) )
+      end do
+    end do
 
     return
-  end subroutine covar_matrix_2_corr_matrix
+  end subroutine symm_covar_matrix_2_corr_matrix
 
 !----------------------------------------------------------------------
   subroutine Cholesky_factor( ndim, a_input, a_scaling, a_Cholesky, l_scaled )
@@ -181,7 +183,7 @@ module matrix_operations
           end do
           write(fstderr,*) ""
 
-          call covar_matrix_2_corr_matrix( ndim, a_input, a_corr )
+          call symm_covar_matrix_2_corr_matrix( ndim, a_input, a_corr )
           write(fstderr,*) "a_correlations="
           do i = 1, ndim
             do j = 1, ndim
