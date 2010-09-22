@@ -1207,7 +1207,6 @@ module latin_hypercube_driver_module
 
       km1 = k-1 ! This is the level we're computing
 
-      call genrand_real3( rand ) ! (0,1)
       if ( vert_corr(km1) < 0. .or. vert_corr(km1) > 1. ) then
         stop "vert_corr(km1) not between 0 and 1"
       end if
