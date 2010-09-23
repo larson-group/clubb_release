@@ -5,7 +5,7 @@ module permute_height_time_module
 
   public :: permute_height_time
 
-  private :: generate_k_order, rand_permute
+  private :: rand_permute
 
   private ! Default Scope
 
@@ -61,45 +61,6 @@ module permute_height_time_module
     return
   end subroutine permute_height_time
 !------------------------------------------------------------------------
-
-!----------------------------------------------------------------------
-  subroutine generate_k_order( i, sequence_length, k_order )
-
-! Description:
-!   Generates a vector k_order, which is a random vector of integers
-!   from 1 to sequence_length. k_order gives vertical ordering
-!   of sample points; generate a new k_order every nt/n time steps.
-! References:
-!   None
-!----------------------------------------------------------------------
-
-    implicit none
-
-    ! External
-
-    intrinsic :: mod
-
-    ! Input Variables
-
-    ! Timestep number (increases by one with each new timestep; first timestep must have i==1)
-    integer, intent(in) :: i
-
-    integer, intent(in) :: &
-      sequence_length ! Number of timesteps before sequence repeats.
-
-    ! Output Variables
-
-    integer, dimension(sequence_length), intent(out) :: &
-      k_order ! Vector of length sequence_length.
-
-    ! i==1 must be the first timestep
-    if ( mod( i-1, sequence_length ) == 0 ) then
-      call rand_permute( sequence_length, k_order )
-      k_order = k_order + 1
-    end if
-
-    return
-  end subroutine generate_k_order
 
 !------------------------------------------------------------------------
   subroutine rand_permute( n, pvect )
