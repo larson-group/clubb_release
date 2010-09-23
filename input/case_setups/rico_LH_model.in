@@ -187,7 +187,7 @@ rad_scheme = "none"
 ! Statistics Settings
 
 l_stats      = .true.   ! Flag for statistical output.
-fname_prefix = "rico"   ! Prefix of output filename.
+fname_prefix = "rico_LH"   ! Prefix of output filename.
 stats_tsamp  = 300.     ! Frequency of statistical sampling [s]
                         ! For most complete sampling, let 
                         ! stats_tsamp = dtmain
