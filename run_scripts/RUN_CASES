@@ -5,7 +5,6 @@
 
 arm
 atex
-astex_a209
 bomex
 dycoms2_rf01
 dycoms2_rf02_do
@@ -23,6 +22,7 @@ wangara
 ! The following are unreleased cases. External users should comment these
 ! lines out before running run_scm_all.bash and run_bindiff_all.bash
 arm_97
+astex_a209
 clex9_nov02
 clex9_oct14
 cloud_feedback_s6
