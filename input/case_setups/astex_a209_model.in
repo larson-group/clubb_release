@@ -52,8 +52,8 @@ time_initial = 0.0    ! Model start time [seconds since midnight on start date]
 time_final = 144000.0  ! Model end time [seconds since midnight on start date]
 time_spinup = 0.0  ! End of spin-up period [seconds since midnight on start date]
 
-dtmain    = 60.0   ! Model timestep [s]
-dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+dtmain    = 300.0   ! Model timestep [s]
+dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
 sfctype = 1
 
@@ -166,11 +166,11 @@ alvdr = 0.07 ! Visible direct surface albedo  [-]
 
 l_stats       = .true.  ! Flag for statistical output.
 fname_prefix = "astex_a209"   ! Prefix of output filename.
-stats_tsamp  = 60.      ! Frequency of statistical sampling [s]
+stats_tsamp  = 300.      ! Frequency of statistical sampling [s]
                         ! For most complete sampling, let 
                         ! stats_tsamp = dtmain
                         ! (stats_tsamp must multiply evenly into stats_tout)
-stats_tout   = 60.      ! Frequency of statistical output.  [s]
+stats_tout   = 300.      ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"  ! Type of statistical output file ("grads" or "netcdf").
 
 /

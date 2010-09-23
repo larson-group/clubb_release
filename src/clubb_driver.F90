@@ -2973,6 +2973,11 @@ module clubb_driver
     ! Set vertical velocity, w, and compute large-scale forcings
     !----------------------------------------------------------------
 
+    ! These lines were added to reset the forcing arrays to 0 each iteration.
+    ! This was previously done in the <case>_tndcy subroutine.
+    rtm_forcing = 0.0
+    thlm_forcing = 0.0
+
     if ( l_t_dependent ) then
       ! This should include the following:
       ! "cloud_feedback_s6", "cloud_feedback_s6_p2k",
