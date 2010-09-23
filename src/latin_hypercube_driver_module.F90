@@ -561,7 +561,7 @@ module latin_hypercube_driver_module
            rcm, w_std_dev, delta_zt, &              ! intent(in)
            cloud_frac, hydromet, &                  ! intent(in)
            X_mixt_comp_all_levs, &                  ! intent(in)
-           LH_hydromet_mc, LH_hydromet_vel, &       ! intent(in)
+           LH_hydromet_mc, LH_hydromet_vel, &       ! intent(inout)
            LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &      ! intent(out)
            lh_AKm, AKm, AKstd, AKstd_cld, &         ! intent(out)
            AKm_rcm, AKm_rcc, lh_rcm_avg, &          ! intent(out)
