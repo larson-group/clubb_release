@@ -579,11 +579,23 @@ module estimate_lh_micro_module
 
     use array_index, only: &
       iirrainm, & ! Variables
+      iirsnowm, & 
+      iiricem, & 
+      iirgraupelm, & 
       iiNrm, &
+      iiNsnowm, &
+      iiNim, &
+      iiNgraupelm, &
       iiNcm, &
       iiLH_rrain, &
+      iiLH_rsnow, &
+      iiLH_rice, &
+      iiLH_rgraupel, &
       iiLH_Nr, &
+      iiLH_Nsnow, &
+      iiLH_Ngraupel, &
       iiLH_Nc, &
+      iiLH_Ni, &
       iiLH_s_mellor, &
       iiLH_w
 
@@ -821,6 +833,18 @@ module estimate_lh_micro_module
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_rrain) )
 
+        else if ( ivar == iirsnowm .and. iiLH_rsnow > 0 ) then
+          ! Use a sampled value of rain water mixing ratio
+          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_rsnow) )
+
+        else if ( ivar == iiricem .and. iiLH_rice > 0 ) then
+          ! Use a sampled value of rain water mixing ratio
+          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_rice) )
+
+        else if ( ivar == iirgraupelm .and. iiLH_rgraupel > 0 ) then
+          ! Use a sampled value of rain water mixing ratio
+          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_rgraupel) )
+
         else if ( ivar == iiNcm .and. iiLH_Nc > 0 ) then
           ! Kluge for when we don't have correlations between Nc, other variables
 !         hydromet_all_points(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
@@ -828,6 +852,18 @@ module estimate_lh_micro_module
           hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
 
         else if ( ivar == iiNrm .and. iiLH_Nr > 0 ) then
+          ! Use a sampled value of rain droplet number concentration
+          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Nr) )
+
+        else if ( ivar == iiNsnowm .and. iiLH_Nsnow > 0 ) then
+          ! Use a sampled value of rain droplet number concentration
+          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Nsnow) )
+
+        else if ( ivar == iiNgraupelm .and. iiLH_Ngraupel > 0 ) then
+          ! Use a sampled value of rain droplet number concentration
+          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Ngraupel) )
+
+        else if ( ivar == iiNim .and. iiLH_Ni > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Nr) )
 
