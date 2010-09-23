@@ -243,8 +243,10 @@ l_cloud_edge_activation | logical
 l_fix_pgam | logical
   Fix pgam (Morrison)
 
-l_latin_hypercube_sampling | logical
-  Use latin hypercube sampling (K&K).
+LH_microphys_type | character
+  Determines the level of interaction between the latin hypercube samples 
+  and the microphysics (K&K).
+  Valid values are "interactive", "non-interactive", or "disabled".
 
 l_lh_vert_overlap | logical
   Use maximum overlap assumption for s_mellor latin (K&K).

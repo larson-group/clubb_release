@@ -29,7 +29,6 @@ module microphys_driver
     l_arctic_nucl,                & ! Use MPACE observations (Morrison)
     l_cloud_edge_activation,      & ! Activate on cloud edges (Morrison)
     l_fix_pgam,                   & ! Fix pgam (Morrison)
-    l_latin_hypercube_sampling,   & ! Use Latin Hypercube Sampling (K&K only)
     l_lh_vert_overlap,            & ! Assume maximum overlap for s_mellor (Latin Hypercube)
     l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (Latin Hypercube)
     LH_microphys_calls,           & ! # of latin hypercube samples to call the microphysics with 
@@ -42,6 +41,11 @@ module microphys_driver
 
   use parameters_microphys, only: &
     LH_sample_point_weights ! Weights for the averaging of LH sample points
+
+  use parameters_microphys, only: &
+   LH_microphys_interactive,     & ! Feed the subcolumns into the microphysics and allow feedback
+   LH_microphys_non_interactive, & ! Feed the subcolumns into the microphysics with no feedback
+   LH_microphys_disabled           ! Disable latin hypercube entirely
 
   implicit none
 
@@ -102,6 +106,9 @@ module microphys_driver
       corr_sNr_NL_below, corr_sNc_NL_below, &
       C_evap, r_0
 
+    use parameters_microphys, only: &
+      LH_microphys_type_int => LH_microphys_type ! Determines how the LH samples are used
+
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
       Nc0, ccnconst, ccnexpnt, & ! Variables
@@ -132,6 +139,10 @@ module microphys_driver
 
     implicit none
 
+    ! Constant Parameters
+    logical, parameter :: &
+      l_write_to_file = .true. ! If true, will write case information to a file.
+
     ! External
     intrinsic :: trim
 
@@ -152,15 +163,12 @@ module microphys_driver
     integer, intent(out) :: & 
       hydromet_dim ! Number of hydrometeor fields.
 
-    logical, parameter :: &
-      l_write_to_file = .true. ! If true, will write case information to a file.
-
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, &
       l_ice_micro, l_graupel, l_hail, &
       l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, l_in_cloud_Nc_diff, &
-      l_latin_hypercube_sampling, l_local_kk, LH_microphys_calls, LH_sequence_length, &
+      LH_microphys_type, l_local_kk, LH_microphys_calls, LH_sequence_length, &
       l_lh_cloud_weighted_sampling, l_lh_vert_overlap, &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
@@ -174,6 +182,7 @@ module microphys_driver
 
     ! Local variables
     integer :: i
+    character(len=30) :: LH_microphys_type
 
     ! ---- Begin Code ----
 
@@ -253,13 +262,13 @@ module microphys_driver
     !---------------------------------------------------------------------------
     Ncm_initial = 100. ! #/cm^3
 
-    l_latin_hypercube_sampling = .false.
     l_lh_cloud_weighted_sampling = .false.
     l_lh_vert_overlap = .false.
     l_local_kk = .false.
     LH_microphys_calls = 2
     LH_sequence_length = 1
 
+    LH_microphys_type = "disabled"
     !---------------------------------------------------------------------------
     ! Parameters for all microphysics schemes
     !---------------------------------------------------------------------------
@@ -272,7 +281,6 @@ module microphys_driver
     open(unit=iunit, file=namelist_file, status='old', action='read')
     read(iunit, nml=microphysics_setting)
     close(unit=iunit)
-
 
     ! Printing Microphysics inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
@@ -308,8 +316,8 @@ module microphys_driver
       call write_text ( "l_fix_pgam = ", l_fix_pgam, l_write_to_file, iunit )
       call write_text ( "l_in_cloud_Nc_diff = ", l_in_cloud_Nc_diff, &
         l_write_to_file, iunit )
-      call write_text ( "l_latin_hypercube_sampling = ", &
-        l_latin_hypercube_sampling, l_write_to_file, iunit )
+      call write_text ( "LH_microphys_type = " // &
+        trim( LH_microphys_type ), l_write_to_file, iunit )
       call write_text ( "LH_microphys_calls = ", LH_microphys_calls, &
         l_write_to_file, iunit )
       call write_text ( "LH_sequence_length = ", LH_sequence_length, &
@@ -603,8 +611,23 @@ module microphys_driver
       stop
     end if
 
+    select case ( trim ( LH_microphys_type ) )
+    case ( "interactive" )
+      LH_microphys_type_int = LH_microphys_interactive
+
+    case ( "non-interactive" )
+      LH_microphys_type_int = LH_microphys_non_interactive
+
+    case ( "disabled" )
+      LH_microphys_type_int = LH_microphys_disabled
+
+    case default
+      stop "Error determining LH_microphys_type"
+
+    end select
+
     ! Setup index variables for latin hypercube sampling
-    if ( l_latin_hypercube_sampling ) then
+    if ( LH_microphys_type_int /= LH_microphys_disabled ) then
 
       iiLH_s_mellor = 1
       iiLH_t_mellor = 2
@@ -782,6 +805,12 @@ module microphys_driver
 
     use fill_holes, only: vertical_avg ! Procedure(s)
 
+    use parameters_microphys, only: &
+      LH_microphys_type, & ! Determines how the LH samples are used
+      LH_microphys_interactive,     & ! Feed the subcolumns into the microphysics and allow feedback
+      LH_microphys_non_interactive, & ! Feed the subcolumns into the microphysics with no feedback
+      LH_microphys_disabled           ! Disable latin hypercube entirely
+
     implicit none
 
     ! Input Variables
@@ -913,7 +942,7 @@ module microphys_driver
     delta_zt(1:gr%nnzp) = 1./gr%invrs_dzm(1:gr%nnzp)
     delta_zm(1:gr%nnzp) = 1./gr%invrs_dzt(1:gr%nnzp)
 
-    if ( l_latin_hypercube_sampling .and. l_lh_vert_overlap ) then
+    if ( LH_microphys_type /= LH_microphys_disabled .and. l_lh_vert_overlap ) then
       ! Determine 3pt vertically averaged Lscale
       do k = 1, gr%nnzp
         kp1 = min( k+1, gr%nnzp )
@@ -983,7 +1012,7 @@ module microphys_driver
       rvm_mc(:) = 0.0
       thlm_mc(:) = 0.0
 
-      if ( l_latin_hypercube_sampling ) then
+      if ( LH_microphys_type /= LH_microphys_disabled ) then
 
 !       d_variables = 3 + hydromet_dim
         d_variables = 3 + 3 ! Kluge, since we have no correlations for ice/snow
@@ -1023,7 +1052,7 @@ module microphys_driver
           call stat_update_var( iLH_thlm_mc, thlm_mc, zt )
 
         end if
-      end if ! l_latin_hypercube_sampling
+      end if ! LH isn't disabled
 
       ! Based on YSU PBL interface to the Morrison scheme WRF driver, the standard dev. of w
       ! will be clipped to be between 0.1 m/s and 4.0 m/s in WRF.  -dschanen 23 Mar 2009
@@ -1031,11 +1060,15 @@ module microphys_driver
 !     wtmp(:) = min( 4., wtmp )
 
 !     wtmp = 0.5 ! %% debug
-      call morrison_micro_driver & 
-           ( real( dt ), gr%nnzp, l_stats_samp, .false., .false., &
-             thlm, p_in_Pa, exner, rho, pdf_params, &
-             wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
-             hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
+      ! Call the microphysics if we don't want to have feedback effects from the
+      ! latin hypercube result (above)
+      if ( LH_microphys_type /= LH_microphys_interactive ) then
+        call morrison_micro_driver & 
+             ( real( dt ), gr%nnzp, l_stats_samp, .false., .false., &
+               thlm, p_in_Pa, exner, rho, pdf_params, &
+               wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
+               hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
+      end if
 
     case ( "khairoutdinov_kogan" )
 
@@ -1045,7 +1078,7 @@ module microphys_driver
       rvm_mc(:) = 0.0
       thlm_mc(:) = 0.0
 
-      if ( l_latin_hypercube_sampling ) then
+      if ( LH_microphys_type /= LH_microphys_disabled ) then
 
         d_variables = 3 + hydromet_dim
 
@@ -1090,13 +1123,18 @@ module microphys_driver
 
         end if
 
-      end if ! l_latin_hypercube_sampling
+      end if ! LH isn't disabled
 
-      call KK_microphys & 
-           ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, .false., &
-             thlm, p_in_Pa, exner, rho, pdf_params, &
-             wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
-             hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
+      ! Call the microphysics if we don't want to have feedback effects from the
+      ! latin hypercube result (above)
+      if ( LH_microphys_type /= LH_microphys_interactive ) then
+
+        call KK_microphys & 
+             ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, .false., &
+               thlm, p_in_Pa, exner, rho, pdf_params, &
+               wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
+               hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
+      end if
 
       ! Interpolate velocity to the momentum grid
       ! Note that the interpolation functions are written such that we can

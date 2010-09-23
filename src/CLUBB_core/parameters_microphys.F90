@@ -13,6 +13,13 @@ module parameters_microphys
 
   implicit none
 
+  ! Constant Parameters
+  integer, parameter, public :: &
+    LH_microphys_interactive     = 1, & ! Feed the samples into the microphysics and allow feedback
+    LH_microphys_non_interactive = 2, & ! Feed the samples into the microphysics with no feedback
+    LH_microphys_disabled        = 3    ! Disable latin hypercube entirely
+
+  ! Local Variables
   logical, public :: & 
     l_cloud_sed,       & ! Cloud water sedimentation (K&K/No microphysics)
     l_ice_micro,       & ! Compute ice (COAMPS/Morrison)
@@ -55,6 +62,12 @@ module parameters_microphys
     LH_microphys_calls, & ! Number of latin hypercube samples to call the microphysics with
     LH_sequence_length    ! Number of timesteps before the latin hypercube seq. repeats
 !$omp threadprivate(LH_microphys_calls,LH_sequence_length)
+
+  ! Determines how the latin hypercube samples should be used with the microphysics
+  integer, public :: &
+    LH_microphys_type 
+
+!$omp threadprivate(LH_microphys_type)
 
   character(len=50), public :: &
     micro_scheme ! khairoutdinv_kogan, simplified_ice, coamps, etc.

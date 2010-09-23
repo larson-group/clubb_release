@@ -28,8 +28,6 @@ module KK_microphys_module
 
   private ! Set default scope to private
 
-  logical, parameter :: l_src_adj_enabled = .true.
-
   contains
 
   !=============================================================================
@@ -195,12 +193,15 @@ module KK_microphys_module
       rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
       Nrm_src_adj       ! Total adjustment to Nrm source terms     [{num/kg)/s]
 
+
+    logical :: l_src_adj_enabled ! Enable src_adj code below
+
     ! Array indices
     integer :: k
 
     ! --- Begin Code ---
 
-    if ( .false. .and. l_latin_hypercube ) then
+    if ( .false. ) then
       ! Make compiler warnings go away.  We want to include these arguments
       ! because then we can share an interface between Morrison and KK
       ! microphyics and use the same Latin Hypercube sampling between them.
@@ -210,6 +211,16 @@ module KK_microphys_module
       rrainm_src_adj = dzq
       rrainm_src_adj = rvm
     end if
+
+    ! In the event that we're doing latin hypercube sampling, we want to turn off
+    ! the src_adj code so that we can achieve convergence with the analytic
+    ! solution. -dschanen 23 Sept 2010
+    if ( l_latin_hypercube ) then
+      l_src_adj_enabled = .false.
+    else
+      l_src_adj_enabled = .true.
+    end if
+
     ! IMPORTANT NOTES
     !
     ! The equations for mean volume radius (and therefore sedimentation
