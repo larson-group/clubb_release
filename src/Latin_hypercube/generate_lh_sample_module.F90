@@ -203,10 +203,6 @@ module generate_lh_sample_module
       Nrp2_on_Nrm2, & ! = Nrp2 divided by Nrm^2    [-]
       rrp2_on_rrainm2 ! = rrp2 divided by rrainm^2 [-]
 
-    double precision :: &
-      sqrt_sp2_tp2, & ! sqrt of the product of the variances of s and t [kg/kg]
-      sptp            ! Covariance of s and t   [kg/kg]
-
     integer :: i
 
     ! ---- Begin Code ----
@@ -305,8 +301,6 @@ module generate_lh_sample_module
     ! X_u_one_lev(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0, &
     !             0.43642762850981d0, 0.32291562498749d0, 0.1d0, 0.1d0  / )
 
-
-
     ! Compute PDF parameters for Nc, rr.
     ! Assume that Nc, rr obey single-lognormal distributions
 
@@ -391,53 +385,17 @@ module generate_lh_sample_module
     ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
     call rtpthlp_2_sptp( dble( stdev_s1 ), dble( varnce_rt1 ), dble( varnce_thl1 ), & 
                          dble( rrtthl_reduced1 ), dble( crt1 ), dble( cthl1 ), & ! In
+                         iiLH_s_mellor, iiLH_t_mellor, & ! In
                          Sigma_stw_1(1:2,1:2) ) ! Out
     call rtpthlp_2_sptp( dble( stdev_s2 ), dble( varnce_rt2 ), dble( varnce_thl2 ), & 
                          dble( rrtthl_reduced2 ), dble( crt2 ), dble( cthl2 ), & ! In
+                         iiLH_s_mellor, iiLH_t_mellor, & ! In
                          Sigma_stw_2(1:2,1:2) ) ! Out
 
     ! Add the w element
     Sigma_stw_1(iiLH_w,iiLH_w) = dble( varnce_w1 )
 
     Sigma_stw_2(iiLH_w,iiLH_w) = dble( varnce_w2 )
-
-    ! Reduce the correlation of s and t Mellor if it's greater than 0.99
-    ! Start with Sigma1
-    sqrt_sp2_tp2 = sqrt( Sigma_stw_1(iiLH_s_mellor,iiLH_s_mellor) &
-                         * Sigma_stw_1(iiLH_t_mellor,iiLH_t_mellor) )
-
-    sptp = Sigma_stw_1(iiLH_s_mellor,iiLH_t_mellor)
-
-    sptp = min( max( -max_mag_correlation * sqrt_sp2_tp2, sptp ), &
-                max_mag_correlation * sqrt_sp2_tp2 &
-              )
-
-    call set_lower_triangular_matrix &
-        ( d_variables, iiLH_s_mellor, iiLH_t_mellor, sptp, & ! In
-          Sigma_stw_1 ) ! In/out
-
-    ! Do the same with Sigma2
-    sqrt_sp2_tp2 = sqrt( Sigma_stw_2(iiLH_s_mellor,iiLH_s_mellor) &
-                         * Sigma_stw_2(iiLH_t_mellor,iiLH_t_mellor) )
-
-    sptp = Sigma_stw_2(iiLH_s_mellor,iiLH_t_mellor)
-
-    sptp = min( max( -max_mag_correlation * sqrt_sp2_tp2, sptp ), &
-                max_mag_correlation * sqrt_sp2_tp2 &
-              )
-
-    call set_lower_triangular_matrix &
-        ( d_variables, iiLH_s_mellor, iiLH_t_mellor, sptp, & ! In
-          Sigma_stw_2 ) ! In/out
-
-    ! Determine the correlation of s and t for the purposes of approximating
-    ! the correlation of t and the other samples
-    ! We found we don't need to do this anymore -dschanen
-!     call covar_matrix_2_corr_matrix( 2, Sigma_stw_1(1:2,1:2), corr_st_mellor_1 )
-!     call covar_matrix_2_corr_matrix( 2, Sigma_stw_2(1:2,1:2), corr_st_mellor_2 )
-
-!     stdev_t1 = sqrt( real( Sigma_stw_1(iiLH_t_mellor,iiLH_t_mellor) ) ) ! Std dev of t (1st plume)
-!     stdev_t2 = sqrt( real( Sigma_stw_2(iiLH_t_mellor,iiLH_t_mellor) ) ) ! Std dev of t (2nd plume)
 
     if ( iiLH_Nc > 0 ) then
       Sigma_stw_1(iiLH_Nc,iiLH_Nc) = var_Nc1
@@ -789,7 +747,7 @@ module generate_lh_sample_module
 
 !-----------------------------------------------------------------------
   subroutine rtpthlp_2_sptp( stdev_s_mellor, varnce_rt, varnce_thl, &
-                             rrtthl, crt, cthl, &
+                             rrtthl, crt, cthl, iiLH_s_mellor, iiLH_t_mellor, &
                              Sigma_st )
 
 ! Description:
@@ -802,7 +760,13 @@ module generate_lh_sample_module
 !     JAS 62 pp. 4015
 !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+      max_mag_correlation
+
     implicit none
+
+    ! External
+    intrinsic :: min, max, sqrt
 
     ! Input Variables
 
@@ -813,6 +777,9 @@ module generate_lh_sample_module
       rrtthl,         & ! Covariance of rt, thl
       crt, cthl         ! Coefficients that define s', t'
 
+    integer, intent(in) :: &
+      iiLH_s_mellor, iiLH_t_mellor ! Index of s,t mellor in Sigma
+
     ! Output Variables
 
     double precision, intent(out), dimension(2,2) :: &
@@ -820,7 +787,12 @@ module generate_lh_sample_module
 
     ! Local Variables
 
-    double precision :: crt_sqd, cthl_sqd, sptp, tp2
+    double precision :: crt_sqd, cthl_sqd
+
+    double precision :: &
+      tp2, sp2,  &    ! Variance of s,t         [(kg/kg)^2]
+      sqrt_sp2_tp2, & ! sqrt of the product of the variances of s and t [kg/kg]
+      sptp            ! Covariance of s and t   [kg/kg]
 
     ! ---- Begin Code ----
 
@@ -832,12 +804,18 @@ module generate_lh_sample_module
     sptp = crt_sqd * varnce_rt - cthl_sqd * varnce_thl
     tp2 = crt_sqd * varnce_rt + 2.d0 * crt * cthl * rrtthl &
         + cthl_sqd * varnce_thl
+    sp2 = stdev_s_mellor**2
 
-    Sigma_st(1,1) = stdev_s_mellor**2
-    Sigma_st(2,1) = sptp
-    Sigma_st(1,2) = sptp
-    Sigma_st(2,2) = tp2
+    ! Reduce the correlation of s and t Mellor if it's greater than 0.99
+    sqrt_sp2_tp2 = sqrt( sp2 * tp2 )
+    sptp = min( max( -max_mag_correlation * sqrt_sp2_tp2, sptp ), &
+                max_mag_correlation * sqrt_sp2_tp2 )
 
+    ! Setup the Sigma matrix
+    Sigma_st(iiLH_s_mellor,iiLH_s_mellor) = sp2
+    Sigma_st(iiLH_t_mellor,iiLH_t_mellor) = tp2
+    call set_lower_triangular_matrix( 2, iiLH_s_mellor, iiLH_t_mellor, sptp, &
+                                      Sigma_st )
     return
   end subroutine rtpthlp_2_sptp
 !-------------------------------------------------------------------------------
@@ -1614,6 +1592,7 @@ module generate_lh_sample_module
 
     return
   end subroutine set_lower_triangular_matrix
+
 
 end module generate_lh_sample_module
 
