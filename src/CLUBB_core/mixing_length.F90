@@ -56,7 +56,8 @@ contains
         length_check ! Procedure(s)
 
     use saturation, only:  & 
-        sat_mixrat_liq ! Procedure(s)
+        sat_mixrat_liq, & ! Procedure(s)
+        sat_mixrat_liq_lookup
 
     use variables_diagnostic_module, only:  & 
         Lscale_up,  & ! Variable(s)
@@ -65,6 +66,9 @@ contains
     use error_code, only:  & 
         clubb_var_equals_NaN,  & ! Variable(s)
         clubb_at_least_debug_level ! Procedure(s)
+
+    use model_flags, only: &
+        l_sat_mixrat_lookup ! Variable(s)
 
     implicit none
 
@@ -270,7 +274,11 @@ contains
           ! Calculate r_c of the parcel at grid level j based on the values of
           ! theta_l of the parcel and r_t of the parcel at grid level j.
           tl_par_j = thl_par_j*exner(j)
-          rsl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
+          if ( l_sat_mixrat_lookup ) then
+            rsl_par_j = sat_mixrat_liq_lookup( p_in_Pa(j), tl_par_j )
+          else
+            rsl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
+          end if
           ! SD's beta (eqn. 8)
           beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
           ! s from Lewellen and Yoh 1993 (LY) eqn. 1
@@ -563,7 +571,11 @@ contains
           ! Calculate r_c of the parcel at grid level j based on the values of
           ! theta_l of the parcel and r_t of the parcel at grid level j.
           tl_par_j = thl_par_j*exner(j)
-          rsl_par_j = sat_mixrat_liq(p_in_Pa(j),tl_par_j)
+          if ( l_sat_mixrat_lookup ) then
+            rsl_par_j = sat_mixrat_liq_lookup( p_in_Pa(j), tl_par_j )
+          else
+            rsl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
+          end if
           ! SD's beta (eqn. 8)
           beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
           ! s from Lewellen and Yoh 1993 (LY) eqn. 1

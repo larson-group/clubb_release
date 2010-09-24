@@ -17,10 +17,48 @@ module saturation
 
   private  ! Change default so all items private
 
-  public   :: sat_mixrat_liq, sat_mixrat_ice, sat_rcm
+  public   :: sat_mixrat_liq, sat_mixrat_liq_lookup, sat_mixrat_ice, sat_rcm
 
   private  :: sat_vapor_press_liq_flatau, sat_vapor_press_liq_bolton
   private  :: sat_vapor_press_ice_flatau, sat_vapor_press_ice_bolton
+
+  ! Lookup table of values for saturation 
+  real, private, dimension(188:343) :: &
+    svp_liq_lookup_table
+
+  data svp_liq_lookup_table(188:343) / &
+    0.049560547, 0.059753418, 0.070129395, 0.083618164, 0.09814453, &
+    0.11444092, 0.13446045, 0.15686035, 0.18218994, 0.21240234, &
+    0.24725342, 0.28668213, 0.33184814, 0.3826294, 0.4416504, &
+    0.50775146, 0.58343506, 0.6694946, 0.7668457, 0.87750244, &
+    1.0023804, 1.1434937, 1.3028564, 1.482544, 1.6847534, &
+    1.9118042, 2.1671143, 2.4535522, 2.774231, 3.1330566, &
+    3.5343628, 3.9819336, 4.480713, 5.036072, 5.6540527, &
+    6.340088, 7.1015015, 7.9450684, 8.8793335, 9.91217, &
+    11.053528, 12.313049, 13.70166, 15.231018, 16.91394, &
+    18.764038, 20.795898, 23.025574, 25.470093, 28.147766, &
+    31.078003, 34.282043, 37.782593, 41.60382, 45.771606, &
+    50.31366, 55.259644, 60.641174, 66.492004, 72.84802, &
+    79.74756, 87.23126, 95.34259, 104.12747, 113.634796, &
+    123.91641, 135.02725, 147.02563, 159.97308, 173.93488, &
+    188.97995, 205.18109, 222.61517, 241.36334, 261.51108, &
+    283.14853, 306.37054, 331.27698, 357.97278, 386.56842, &
+    417.17978, 449.9286, 484.94254, 522.3556, 562.30804, &
+    604.947, 650.42645, 698.9074, 750.55835, 805.55554, &
+    864.0828, 926.3325, 992.5052, 1062.8102, 1137.4657, &
+    1216.6995, 1300.7483, 1389.8594, 1484.2896, 1584.3064, &
+    1690.1881, 1802.224, 1920.7146, 2045.9724, 2178.3218, &
+    2318.099, 2465.654, 2621.3489, 2785.5596, 2958.6758, &
+    3141.101, 3333.2534, 3535.5657, 3748.4863, 3972.4792, &
+    4208.024, 4455.616, 4715.7686, 4989.0127, 5275.8945, &
+    5576.9795, 5892.8535, 6224.116, 6571.3926, 6935.3213, &
+    7316.5674, 7715.8105, 8133.755, 8571.125, 9028.667, &
+    9507.15, 10007.367, 10530.132, 11076.282, 11646.683, &
+    12242.221, 12863.808, 13512.384, 14188.913, 14894.385, &
+    15629.823, 16396.268, 17194.799, 18026.516, 18892.55, &
+    19794.07, 20732.262, 21708.352, 22723.592, 23779.273, &
+    24876.709, 26017.258, 27202.3, 28433.256, 29711.578, &
+    31038.766 /
 
   contains
 
@@ -38,15 +76,6 @@ module saturation
       ep, & ! Variable
       fstderr
 
-    use model_flags, only: &
-      saturation_formula, & ! Variable
-      saturation_bolton, &
-#ifdef GFDL
-      saturation_gfdl, &
-#endif
-      saturation_flatau
-
-
     implicit none
 
     ! Input Variables
@@ -54,38 +83,13 @@ module saturation
       p_in_Pa,  & ! Pressure    [Pa]
       T_in_K      ! Temperature [K]
 
-
    ! Local Variables
     real :: esatv
 
     ! --- Begin Code ---
 
-    ! Undefined approximation
-    esatv = -99999.999
-
-    ! Saturation Vapor Pressure, esat, can be found to be approximated
-    ! in many different ways.
-
-    select case ( saturation_formula )
-    case ( saturation_bolton )
-      ! Using the Bolton 1980 approximations for SVP over vapor
-      esatv = sat_vapor_press_liq_bolton( T_in_K )
-
-    case ( saturation_flatau )
-      ! Using the Flatau, et al. polynomial approximation for SVP over vapor
-      esatv = sat_vapor_press_liq_flatau( T_in_K )
-
-    ! Add new cases after this
-! ---> h1g
-#ifdef GFDL
-    case ( saturation_gfdl )
-      ! Using GFDL polynomial approximation for SVP with respect to liquid
-      esatv = sat_vapor_press_liq_gfdl( T_in_K )
-#endif
-! <--- h1g
-
-    end select
-
+    ! Calculate the SVP for water vapor.
+    esatv = sat_vapor_press_liq( T_in_K )
 
 #ifdef GFDL
 
@@ -106,6 +110,151 @@ module saturation
 
     return
   end function sat_mixrat_liq
+
+!-------------------------------------------------------------------------
+  elemental real function sat_mixrat_liq_lookup( p_in_Pa, T_in_K )
+
+! Description:
+!   Used to compute the saturation mixing ratio of liquid water.
+!   This function utilizes sat_vapor_press_liq_lookup; the SVP is found
+!   using a lookup table rather than calculating it using various
+!   approximations.
+
+! References:
+!   Formula from Emanuel 1994, 4.4.14
+!-------------------------------------------------------------------------
+
+    use constants_clubb, only: & 
+      ep, & ! Variable
+      fstderr
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) ::  & 
+      p_in_Pa,  & ! Pressure    [Pa]
+      T_in_K      ! Temperature [K]
+
+   ! Local Variables
+    real :: esatv
+
+    ! --- Begin Code ---
+
+    ! Calculate the SVP for water vapor using a lookup table.
+    esatv = sat_vapor_press_liq_lookup( T_in_K )
+
+#ifdef GFDL
+
+    ! GFDL uses specific humidity
+    ! Formula for Saturation Specific Humidity
+     if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
+           sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - (1.0-ep) * esatv ) )
+     else
+           sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - esatv ) )
+     endif                     ! h1g, 2010-06-18 end mod
+#else
+    ! Formula for Saturation Mixing Ratio:
+    !
+    ! rs = (epsilon) * [ esat / ( p - esat ) ];
+    ! where epsilon = R_d / R_v
+    sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - esatv ) )
+#endif
+
+    return
+  end function sat_mixrat_liq_lookup
+
+!-----------------------------------------------------------------
+  elemental function sat_vapor_press_liq( T_in_K ) result ( esat )
+
+! Description:
+!   Computes SVP for water vapor. Calls one of the other functions
+!   that calculate an approximation to SVP.
+
+! References:
+!   None
+
+    use model_flags, only: &
+      saturation_formula, & ! Variable
+      saturation_bolton, &
+#ifdef GFDL
+      saturation_gfdl, &
+#endif
+      saturation_flatau
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: T_in_K     ! Temperature                          [K]
+
+    ! Output Variables
+    real :: esat      ! Saturation Vapor Pressure over Water [Pa]
+
+    ! Undefined approximation
+    esat = -99999.999
+
+    ! Saturation Vapor Pressure, esat, can be found to be approximated
+    ! in many different ways.
+    select case ( saturation_formula )
+    case ( saturation_bolton )
+      ! Using the Bolton 1980 approximations for SVP over vapor
+      esat = sat_vapor_press_liq_bolton( T_in_K )
+
+    case ( saturation_flatau )
+      ! Using the Flatau, et al. polynomial approximation for SVP over vapor
+      esat = sat_vapor_press_liq_flatau( T_in_K )
+
+    ! Add new cases after this
+! ---> h1g
+#ifdef GFDL
+    case ( saturation_gfdl )
+      ! Using GFDL polynomial approximation for SVP with respect to liquid
+      esat = sat_vapor_press_liq_gfdl( T_in_K )
+#endif
+! <--- h1g
+
+    end select
+
+    return
+
+  end function sat_vapor_press_liq
+
+!------------------------------------------------------------------------
+  elemental function sat_vapor_press_liq_lookup( T_in_K ) result ( esat )
+
+! Description:
+!   Computes SVP for water vapor, using a lookup table.
+!
+!   The lookup table was constructed using the Flatau approximation.
+
+! References:
+!   ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
+!     and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
+!     pp. 1507--1513
+!------------------------------------------------------------------------
+
+  implicit none
+
+  ! Input Variables
+  real, intent(in) :: T_in_K   ! Temperature   [K]
+
+  ! Output Variables
+  real :: esat  ! Saturation vapor pressure over water [Pa]
+
+  ! Local Variables
+  integer :: T_in_K_int
+
+  T_in_K_int = int( anint( T_in_K ) )
+
+  if ( T_in_K_int >= 188 .and. T_in_K_int <= 343 ) then
+    ! Use the lookup table to determine the saturation vapor pressure.
+    esat = svp_liq_lookup_table( T_in_K_int )
+  else
+    ! If we're outside the bounds of the lookup table, fall back to
+    ! using a Flatau approximation.
+    esat = sat_vapor_press_liq_flatau( T_in_K )
+  end if
+
+  end function sat_vapor_press_liq_lookup
 
 !------------------------------------------------------------------------
   elemental function sat_vapor_press_liq_flatau( T_in_K ) result ( esat )
@@ -248,13 +397,6 @@ module saturation
 
     use constants_clubb, only: & 
         ep ! Variable(s)
-    use model_flags, only: &
-      saturation_formula, & ! Variable(s)
-      saturation_bolton, &
-#ifdef GFDL
-      saturation_gfdl, &
-#endif
-      saturation_flatau
 
     implicit none
 
@@ -272,6 +414,57 @@ module saturation
     real :: esat_ice
 
     ! --- Begin Code ---
+
+    ! Determine the SVP for the given temperature
+    esat_ice = sat_vapor_press_ice( T_in_K )
+
+#ifdef GFDL
+    ! GFDL uses specific humidity
+    ! Formula for Saturation Specific Humidity
+     if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
+           sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - (1.0-ep) * esat_ice ) )
+     else
+           sat_mixrat_ice  = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
+     endif                     ! h1g, 2010-06-18 end mod
+#else
+    ! Formula for Saturation Mixing Ratio:
+    !
+    ! rs = (epsilon) * [ esat / ( p - esat ) ];
+    ! where epsilon = R_d / R_v
+
+    sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
+#endif
+
+    return
+
+  end function sat_mixrat_ice
+
+!------------------------------------------------------------------------
+  elemental function sat_vapor_press_ice( T_in_K ) result ( esat_ice )
+!
+! Description:
+!   Computes SVP for ice, using one of the various approximations.
+!
+! References:
+!   None
+!------------------------------------------------------------------------
+ 
+    use model_flags, only: &
+      saturation_formula, & ! Variable(s)
+      saturation_bolton, &
+#ifdef GFDL
+      saturation_gfdl, &
+#endif
+      saturation_flatau
+
+    implicit none
+
+    ! Input Variable
+    real, intent(in) :: &
+      T_in_K      ! Temperature     [K]
+
+    ! Output Variable
+    real :: esat_ice    ! Saturation Vapor Pressure over Ice [Pa]
 
     ! Undefined approximation
     esat_ice = -99999.999
@@ -295,27 +488,9 @@ module saturation
 ! <--- h1g, 2010-06-16
     end select
 
-
-#ifdef GFDL
-    ! GFDL uses specific humidity
-    ! Formula for Saturation Specific Humidity
-     if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-           sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - (1.0-ep) * esat_ice ) )
-     else
-           sat_mixrat_ice  = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
-     endif                     ! h1g, 2010-06-18 end mod
-#else
-    ! Formula for Saturation Mixing Ratio:
-    !
-    ! rs = (epsilon) * [ esat / ( p - esat ) ];
-    ! where epsilon = R_d / R_v
-
-    sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
-#endif
-
     return
 
-  end function sat_mixrat_ice
+  end function sat_vapor_press_ice
 
 !------------------------------------------------------------------------
   elemental function sat_vapor_press_ice_flatau( T_in_K ) result ( esati )
