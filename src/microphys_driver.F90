@@ -163,6 +163,10 @@ module microphys_driver
     integer, intent(out) :: & 
       hydromet_dim ! Number of hydrometeor fields.
 
+    ! Local variables
+    integer :: i
+    character(len=30) :: LH_microphys_type
+
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, &
       l_ice_micro, l_graupel, l_hail, &
@@ -179,10 +183,6 @@ module microphys_driver
       C_evap, r_0, microphys_start_time, &
       Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
-
-    ! Local variables
-    integer :: i
-    character(len=30) :: LH_microphys_type
 
     ! ---- Begin Code ----
 
