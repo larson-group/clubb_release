@@ -38,15 +38,15 @@ module matrix_operations
       corr ! Correlation Matrix [-]
 
     ! Local Variables
-    integer :: row, col
+    integer :: i, j
 
     ! ---- Begin Code ----
 
     corr = 0. ! Initialize to 0
 
-    do col = 1, ndim
-      do row = col, ndim
-        corr(row,col) = cov(row,col) / sqrt( cov(row,col) * cov(row,col) )
+    do i = 1, ndim
+      do j = 1, i
+        corr(i,j) = cov(i,j) / sqrt( cov(i,i) * cov(j,j) )
       end do
     end do
 
