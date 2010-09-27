@@ -1,0 +1,16 @@
+You must have Python installed to run these scripts. In addition, you need NumPy installed to
+check the balance of NetCDF formatted files. If you are running NumPy in a virtual environment, 
+you may need to edit the first line of the scripts to point to the location of your Python
+installation. For example:
+#! /home/[username]/[name of virtual environment]/bin/python
+
+checkBudget.py utilizes readBinaryData and pupynere to read binary data files and check if the
+budgets balance. It automatically detects if an input file is in NetCDF or GrADS format based
+on the extension. The script contains one global variable FILEPATH which indicates the path
+to the directory containing the data files in respect to the script. For help with arguments,
+simply type "help" as the arguement to the script.
+
+readBinaryData.py interperates binary data from GrADS .dat files.
+
+pupynere.py interperates binary data from NetCDF files. It requires that NumPy be included in your
+Python installation.

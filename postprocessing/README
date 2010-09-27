@@ -17,3 +17,5 @@ There is also a script which reads NetCDF files into MATLAB, which may
 be useful as a model for NetCDF (MexCDF/MexNC)-based programs you may 
 write.
 
+The check_budgets_balance directory contains python scripts for
+checking stats variables to see if the budgets balance.
