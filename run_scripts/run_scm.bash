@@ -264,7 +264,7 @@ then
             ;;
         * )
             case $run_case in 
-                rico )
+                rico | astex_a209 )
                     # This was added because RICO uses a 300 s timestep
                     # and cannot be run with stats_tout = 60.
                     cat $parameter_file > $NAMELISTS
