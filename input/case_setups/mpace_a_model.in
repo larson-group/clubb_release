@@ -143,7 +143,7 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
-micro_scheme = "coamps"
+micro_scheme = "morrison"
 l_graupel = .false.
 /
 
@@ -158,6 +158,7 @@ alvdr = 0.1,   ! Visible direct surface albedo        		[-]
 gc    = 0.86,  ! Asymmetry parameter, "g" in Duynkerke          [-]
 omega = 0.9965,! Single-scattering albedo                       [-] 
 Fs_values = 1212.75,
+l_sw_radiation = .true.,
 /
 
 &stats_setting
