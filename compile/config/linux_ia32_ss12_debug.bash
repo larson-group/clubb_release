@@ -15,7 +15,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 # It is sometimes helpful to turn on floating-point trapping for the 
 #  standalone program, but this will not work when using the tuner.
 # In Sun f95: remove the reference to ftrap, or use -ftrap=common
-DEBUG="-C -fns=no -stackvar -xcheck=init_local -ftrap=common"
+DEBUG="-C -fns=no -xopenmp=noopt -stackvar -xcheck=init_local -ftrap=common -traceback=common"
 
 # == Warnings ==
 # This is the preferred warning level when compiling CLUBB with Sun Studio.
@@ -25,8 +25,8 @@ WARNINGS="-w3 -ansi"
 
 # == Machine specific flags ==
 # Note that when linking to sunperf (for LAPACK) you must use -dalign
-#ARCH="-g -m64 -xopenmp=noopt -xarch=sse3 -xcache=native -xchip=native -dalign"
-ARCH="-g -m64 -xarch=sse3 -xcache=native -xchip=native -dalign"
+ARCH="-g -xtarget=native -m64 -xopenmp=noopt -dalign"
+#ARCH="-g -m64 -xtarget=native -dalign"
 
 # == NetCDF Location  ==
 NETCDF="/usr/local/netcdf-sun64"
