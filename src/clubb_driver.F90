@@ -976,7 +976,7 @@ module clubb_driver
         ! Set the value of sigma_g to be used for cloud_sed module
         ! It is set here because calling runtype into advance_clubb_microphys
         ! causes a bug. kcwhite Aug 2010
-        if (runtype == 'astex_a209') then
+        if ( trim( runtype ) == 'astex_a209') then
 
           sigma_g = 1.2
 
