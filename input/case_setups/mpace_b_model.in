@@ -157,7 +157,7 @@ alvdr = 0.1,   ! Visible direct surface albedo        		[-]
 gc    = 0.86,  ! Asymmetry parameter, "g" in Duynkerke          [-]
 omega = 0.9965,! Single-scattering albedo                       [-] 
 Fs_values = 1212.75,
-
+l_sw_radiation = .true.,
 /
 
 &stats_setting

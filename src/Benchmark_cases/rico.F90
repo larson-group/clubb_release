@@ -2,8 +2,8 @@
 !----------------------------------------------------------------------
 module rico
 !
-!       Description:
-!       Contains subroutines for the RICO case.
+! Description:
+!   Contains subroutines for the RICO case.
 !----------------------------------------------------------------------
 
   implicit none
@@ -16,14 +16,15 @@ module rico
 
 !----------------------------------------------------------------------
   subroutine rico_tndcy( exner, &
-                         thlm_forcing, rtm_forcing, radht, & 
+                         thlm_forcing, rtm_forcing, & 
                          sclrm_forcing, edsclrm_forcing )
 !
-!        Description:
-!          Subroutine to apply case-specific forcings to RICO case
-!          (Michael Falk, 13 Dec 2006).
+! Description:
+!   Subroutine to apply case-specific forcings to RICO case
+!   (Michael Falk, 13 Dec 2006).
 !
-!        References:
+! References:
+!   None.
 !-----------------------------------------------------------------------
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
@@ -47,15 +48,14 @@ module rico
 
   ! Output Variables
   real, dimension(gr%nnzp), intent(out) :: & 
-  thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
-  rtm_forcing,  & ! Large-scale rtm tendency                [kg kg^-1 s^-1]
-  radht           ! dT/dt, then d Theta/dt, due to rad.     [K s^-1]
+    thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
+    rtm_forcing     ! Large-scale rtm tendency                [kg kg^-1 s^-1]
 
   real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-  sclrm_forcing ! Passive scalar LS tendency            [units/s]
+    sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
   real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
-  edsclrm_forcing ! Passive eddy-scalar LS tendency     [units/s]
+    edsclrm_forcing ! Passive eddy-scalar LS tendency     [units/s]
 
   ! Local Variables, general
   integer :: k          ! Loop index
@@ -76,8 +76,6 @@ module rico
     ! Convert to units of [K s^-1] but potential T instead of T
 !          thlm_forcing(k) = (t_tendency * ((p_sfc/p(k)) ** (Rd/Cp)))
     thlm_forcing(k) = (t_tendency / exner(k))
-    radht(k) = 0.  !  So we don't have undefined numbers in the radht stats.  
-                   !  Radht is actually rolled into t_tendency.
   end do
 
 

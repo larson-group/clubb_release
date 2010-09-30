@@ -16,15 +16,15 @@ module atex
 
   !======================================================================
   subroutine atex_tndcy( time, time_initial, &
-                         rtm, rho, rcm, exner, &
+                         rtm, &
                          err_code, &
-                         wm_zt, wm_zm, Frad, radht, & 
+                         wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, & 
                          sclrm_forcing, edsclrm_forcing )
-  !       Description:
-  !       Subroutine to set theta-l and water tendencies for ATEX case
+  ! Description:
+  !   Subroutine to set theta-l and water tendencies for ATEX case
 
-  !       References:
+  ! References:
 
   !----------------------------------------------------------------------
 
@@ -32,13 +32,9 @@ module atex
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-  use parameters_radiation, only: rad_scheme ! Variable(s)
-
   use grid_class, only: gr ! Variable(s)
 
   use grid_class, only: zt2zm ! Procedure(s)
-
-  use cloud_rad_module, only: cloud_rad ! Procedure(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
@@ -46,10 +42,6 @@ module atex
 
   use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
    
-  use stats_type, only: stat_update_var ! Procedure(s)
-
-  use stats_variables, only: iradht_LW, zt, l_stats_samp ! Variable(s)
-
   implicit none
 
   ! Input Variables
@@ -58,10 +50,7 @@ module atex
     time_initial ! Initial time     [s]
 
   real, intent(in), dimension(gr%nnzp) :: & 
-    rtm,   & ! Total water mixing ratio        [kg/kg]
-    rho,   & ! Density                         [kg/m^3]
-    rcm,   & ! Liquid water mixing ratio       [kg/kg]
-    exner    ! Exner function                  [-]
+    rtm      ! Total water mixing ratio        [kg/kg]
 
   ! Input/output
   integer, intent(inout) :: err_code ! Diagnostic 
@@ -70,8 +59,6 @@ module atex
   real, intent(out), dimension(gr%nnzp) :: & 
     wm_zt,        & ! w wind on thermodynamic grid                [m/s]
     wm_zm,        & ! w wind on momentum grid                     [m/s]
-    Frad,         & ! Radiative flux                              [W/m^2]
-    radht,        & ! Radiative heating rate                      [K/s]
     thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
     rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
@@ -164,18 +151,6 @@ module atex
      rtm_forcing(1)  = 0.0  ! Below surface
 
   end if ! time >= time_initial + 5400.0
-
-  ! Use cloud_rad() to compute radiation
-  if ( trim( rad_scheme ) == "simplified" ) then
-
-    call cloud_rad( rho, rcm, exner, Frad, radht, thlm_forcing )
-
-    if ( l_stats_samp ) then
-      call stat_update_var( iradht_LW, radht, zt )
-    end if
-
-  end if
-
 
   ! Test scalars with thetal and rt if desired
   if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing

@@ -147,7 +147,7 @@ micro_scheme = "coamps"
 
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
-rad_scheme = "simplified",
+rad_scheme = "lba",
 /
 
 &stats_setting

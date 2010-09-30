@@ -154,6 +154,7 @@ cos_solar_zen_values = 0.0, 0.01, 0.1, 0.2, 0.3, 0.4,
 ! direction of the incoming beam (not the vertical)   [W/m^2]
 Fs_values = 0.0, 715.86, 1073.577, 1165.0905, 1204.7033, 1227.6898,
   1243.1772, 1254.5893, 1263.5491, 1270.8668, 1277.0474, 1282.3994,
+l_sw_radiation = .true.,
 /
 
 &stats_setting

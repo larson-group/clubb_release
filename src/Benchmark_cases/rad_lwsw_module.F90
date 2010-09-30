@@ -6,7 +6,7 @@ module rad_lwsw_module
 
   public :: rad_lwsw
 
-  private :: sunray_sw
+  public :: sunray_sw
 
   private ! Default Scope
 

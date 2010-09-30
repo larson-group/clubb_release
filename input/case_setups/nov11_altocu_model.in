@@ -143,12 +143,18 @@ eff_drop_radius = 1.0e-5, ! Effective droplet radius		[m]
 alvdr = 0.1,   ! Visible direct surface albedo        		[-]
 gc    = 0.86,  ! Asymmetry parameter, "g" in Duynkerke          [-]
 omega = 0.9965, ! Single-scattering albedo                      [-] 
+! The Nov.11 case uses a constant value for the cosine of the solar
+! zenith angle.  Because the simulation is only 4 hours long, and it
+! starts at 18Z (11am local time), we have rather constant sunlight
+! through the entire simulation period.  As a result, we will use a
+! constant value of xi_abs = 0.4329.  Adam Smith
 ! Cosine of the solar zenith angle	[-]
-cos_solar_zen_values = 0.0, 1.0,
+cos_solar_zen_values = 0.4329,
 ! The incident of incoming SW insolation at cloud top the
 ! direction of the incoming beam (not the vertical)   [W/m^2]
-Fs_values = 1212.75, 1212.75,
-l_fix_cos_solar_zen = .true.
+Fs_values = 1212.75,
+l_fix_cos_solar_zen = .true.,
+l_sw_radiation = .true.,
 /
 
 &stats_setting

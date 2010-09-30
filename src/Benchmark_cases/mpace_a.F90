@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
 ! $Id$
-  module mpace_a
+module mpace_a
 
 ! Description:
 !   Contains subroutines for the mpace_a intercomparison.
@@ -12,15 +12,15 @@
 
   private ! Default Scope
 
-    
-  ! These variables were moved here so that they could be 
+
+  ! These variables were moved here so that they could be
   ! accessible to all subroutines in mpace_a
   ! Joshua Fasching December 2007
 
   integer, parameter :: file_ntimes = 139
   integer, parameter :: file_nlevels = 38
   integer, parameter :: per_line = 5
-  
+
   real, dimension(file_nlevels) :: file_pressure
   real, dimension(file_nlevels) :: file_heights
   real, dimension(file_ntimes) :: file_times
@@ -43,10 +43,8 @@
   contains
 
 !----------------------------------------------------------------------
-  subroutine mpace_a_tndcy( time, xi_abs, & 
-                            rho, p_in_Pa, rcm, & 
+  subroutine mpace_a_tndcy( time, p_in_Pa, & 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
-                            Frad, radht, & 
                             um_hoc_grid, vm_hoc_grid, & 
                             sclrm_forcing, edsclrm_forcing )
 
@@ -56,348 +54,200 @@
 !          Liou, Wallace and Hobbs, Shettle and Weinman
 !-----------------------------------------------------------------------
 
-  use constants_clubb, only: Cp, Rd, Lv, p0, rc_tol, & ! Variable(s)
-                       zero_threshold, fstderr
+    use constants_clubb, only: Cp, Rd, Lv, p0, rc_tol, & ! Variable(s)
+                         zero_threshold, fstderr
 
-  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-  use grid_class, only: gr ! Variable(s)
+    use grid_class, only: gr ! Variable(s)
 
-  use grid_class, only: zt2zm ! Procedure(s)
+    use grid_class, only: zt2zm ! Procedure(s)
 
-  use interpolation, only: zlinterp_fnc, factor_interp ! Procedure(s)
+    use interpolation, only: zlinterp_fnc, factor_interp ! Procedure(s)
 
-  use stats_precision, only: time_precision ! Variable(s)
+    use stats_precision, only: time_precision ! Variable(s)
 
-  use rad_lwsw_module, only: rad_lwsw ! Procedure(s)
+    use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
-  use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
+    use error_code, only: clubb_debug, clubb_at_least_debug_level ! Procedure(s)
 
-  use error_code, only: clubb_debug, clubb_at_least_debug_level ! Procedure(s)
- 
-  use stats_type, only: stat_update_var ! Procedure(s)
+    implicit none
 
-  use stats_variables, only: iradht_LW, iradht_SW, iFrad_LW,  & ! Variable(s)
-                             iFrad_SW, zt, zm, l_stats_samp
+    ! Local constants, subsidence
+    real, parameter :: & 
+    p_sfc  = 101000.   ! Pa
 
-  use parameters_radiation, only: &
-    F0, F1, Fs_values, alvdr, kappa, omega, gc, eff_drop_radius, rad_scheme
-    
+    ! Input Variables
+    real(kind=time_precision), intent(in) ::  & 
+    time  ! Current time of simulation      [s]
 
-  implicit none
+    real, dimension(gr%nnzp), intent(in) :: & 
+    p_in_Pa  ! Pressure                               [Pa]
 
-  ! Local constants, subsidence
-  real, parameter :: & 
-!     .  grav0 = 9.8,     ! m/s
-!     .  D     = 5.8e-6,  ! 1/s
-  p_sfc  = 101000.   ! Pa
-!     .  pinv  = 85000.   ! Pa; ditto
+    ! Output Variables
+    real, dimension(gr%nnzp), intent(out) ::  & 
+    wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
+    wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
+    thlm_forcing, & ! Large-scale thlm tendency               [K/s]
+    rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
 
-  ! Local constants, LW radiation (from DYCOMS II-RF01)
-! real, parameter :: & 
-! F0  = 100.0, & 
-! F1  = 20.0, & 
-! kap = 119.0
+    real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
+    sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-! ! Local constants, SW radiation (Shettle and Weinman)
-! real, parameter :: & 
-! Fs0    = 1212.75, & 
-! radius = 1.0e-5, & 
-! A      = 0.1, & 
-! gc     = 0.86, & 
-! omega  = 0.9965
+    real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+    edsclrm_forcing ! Eddy-passive scalar forcing         [units/s]
 
-  ! Input Variables
-  real(kind=time_precision), intent(in) ::  & 
-  time  ! Current time of simulation      [s]
+    ! Local Variables, general
+    integer :: i, k ! Loop indices
 
-  real, intent(in) ::  & 
-  xi_abs ! Cosine of the solar zenith angle [-]
+    ! Local Variables, subsidence scheme
+!        real :: velocity_omega [Pa/s]
 
-  real, dimension(gr%nnzp), intent(in) :: & 
-  rho,     & ! Density of air                         [kg/m^3]
-  p_in_Pa, & ! Pressure                               [Pa]
-  rcm        ! Cloud water mixing ratio               [kg/kg]
+    ! Open external files (21 Aug 2007, Michael Falk)
 
-  ! Output Variables
-  real, dimension(gr%nnzp), intent(out) ::  & 
-  wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
-  wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
-  thlm_forcing, & ! Large-scale thlm tendency               [K/s]
-  rtm_forcing,  & ! Large-scale rtm tendency                [kg/kg/s]
-  Frad,         & ! Total radiative flux                    [W/m^2]
-  radht           ! dT/dt, then d Theta/dt, due to rad.     [K/s]
-
-  real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-  sclrm_forcing ! Passive scalar LS tendency            [units/s]
-
-  real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
-  edsclrm_forcing ! Eddy-passive scalar forcing         [units/s]
-
-  ! Local Variables, radiation scheme
-  real, dimension(gr%nnzp) ::  & 
-  radht_LW, & ! dT/dt, then d Theta/dt, due to LW rad.  [K/s]
-  radht_SW, & ! dT/dt, then d Theta/dt, due to SW rad.  [K/s]
-  Frad_LW,  & ! Longwave radiative flux                 [W/m^2]
-  Frad_SW     ! Shortwave radiative flux                [W/m^2]
-
-
-  ! Local Variables, general
-  integer :: i, k ! Loop indices
-
-
-  ! Local Variables, subsidence scheme
-!        real ::
-!     .  velocity_omega
-
-
-  real, dimension(gr%nnzp) :: & 
-  radht_theta, & 
-  radht_LW_theta, & 
-  radht_SW_theta,  & 
-!     .  LWP,            ! Liquid water path                              [kg/m^2]
-  rcm_rad,         & ! Flipped array of liq. water mixing ratio       [kg/kg]
-  rho_rad,         & ! Flipped array of air density                   [kg/m^3]
-  dsigm,           & ! Flipped array of grid spacing                  [m]
-  coamps_zm,       & ! Flipped array of momentum level altitudes      [m]
-  coamps_zt,       & ! Flipped array of thermodynamic level altitudes [m]
-  frad_out,        & ! Flipped array of radiaive flux                 [W/m^2]
-  frad_lw_out,     & ! Flipped array of LW radiative flux             [W/m^2]
-  frad_sw_out,     & ! Flipped array of SW radiative flux             [W/m^2]
-  radhtk,          & ! Flipped array of radiative heating             [K/s]
-  radht_lw_out,    & ! Flipped array of LW radiative heating          [K/s]
-  radht_sw_out       ! Flipped array of SW radiative heating          [K/s]
-
-  ! Local variables, on/off switches for individual schemes
-  logical ::  & 
-  l_lw_on, & 
-  l_sw_on, & 
-!     .  l_subs_on,
-  l_center
-
-! Open external files (21 Aug 2007, Michael Falk)
-
-integer left_time,right_time
-real :: ratio
+    integer left_time,right_time
+    real :: ratio
 
 !      real, dimension(file_nlevels) :: omega_column
-real, dimension(file_nlevels) :: dTdt_column
-real, dimension(file_nlevels) :: dqdt_column
-real, dimension(file_nlevels) :: vertT_column
-real, dimension(file_nlevels) :: vertq_column
-real, dimension(file_nlevels) :: um_column
-real, dimension(file_nlevels) :: vm_column
+    real, dimension(file_nlevels) :: dTdt_column
+    real, dimension(file_nlevels) :: dqdt_column
+    real, dimension(file_nlevels) :: vertT_column
+    real, dimension(file_nlevels) :: vertq_column
+    real, dimension(file_nlevels) :: um_column
+    real, dimension(file_nlevels) :: vm_column
 
 !      real, dimension(gr%nnzp) :: omega_hoc_grid
-real, dimension(gr%nnzp) :: dTdt_hoc_grid
-real, dimension(gr%nnzp) :: dqdt_hoc_grid
-real, dimension(gr%nnzp) :: vertT_hoc_grid
-real, dimension(gr%nnzp) :: vertq_hoc_grid
+    real, dimension(gr%nnzp) :: dTdt_hoc_grid
+    real, dimension(gr%nnzp) :: dqdt_hoc_grid
+    real, dimension(gr%nnzp) :: vertT_hoc_grid
+    real, dimension(gr%nnzp) :: vertq_hoc_grid
 
-  real, dimension(gr%nnzp), intent(out) ::  & 
-  um_hoc_grid,       & ! Observed wind, for nudging         [m/s]
-  vm_hoc_grid       ! Observed wind, for nudging         [m/s]
+    real, dimension(gr%nnzp), intent(out) ::  & 
+    um_hoc_grid,       & ! Observed wind, for nudging         [m/s]
+    vm_hoc_grid       ! Observed wind, for nudging         [m/s]
 
-! This code block takes the model time, finds the time before it and the time after it on 
-! the list, and marks them left_time and right_time for interpolation.  If the time is 
-! before the first or after the last time in the file, it just uses the first or last 
+! This code block takes the model time, finds the time before it and the time after it on
+! the list, and marks them left_time and right_time for interpolation.  If the time is
+! before the first or after the last time in the file, it just uses the first or last
 ! time without interpolation.
 
-left_time = -1
-right_time = -1
+    left_time = -1
+    right_time = -1
 
-if (time <= file_times(1)) then
-  if ( clubb_at_least_debug_level( 1 ) ) then
-     write(fstderr,*) 'Time is at or before the first time in the list.'
-  endif
-  left_time = 1
-  right_time = 1
-else if (time >= file_times(file_ntimes)) then
-  if ( clubb_at_least_debug_level( 1 ) ) then
-     write(fstderr,*) 'Time is at or after the last time in the list.'
-  endif
-  left_time = file_ntimes
-  right_time = file_ntimes
-else
-  do k=1,file_ntimes-1
-    if ((time > file_times(k)) .AND. & 
-        (time <=file_times(k+1))) then
-      left_time = k
-      right_time = k+1
+    if (time <= file_times(1)) then
+      if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) 'Time is at or before the first time in the list.'
+      endif
+      left_time = 1
+      right_time = 1
+    else if (time >= file_times(file_ntimes)) then
+      if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) 'Time is at or after the last time in the list.'
+      endif
+      left_time = file_ntimes
+      right_time = file_ntimes
+    else
+      do k=1,file_ntimes-1
+        if ((time > file_times(k)) .AND. & 
+            (time <=file_times(k+1))) then
+          left_time = k
+          right_time = k+1
+        end if
+      end do
     end if
-  end do
-end if
 
-if( left_time == -1 .or. right_time == -1 ) then
-  call clubb_debug(1, "file_times not sorted in mpace_a_tndcy.")
-endif
+    if( left_time == -1 .or. right_time == -1 ) then
+      call clubb_debug(1, "file_times not sorted in mpace_a_tndcy.")
+    endif
 
 ! This is the ratio "a" needed for linear interpolation in time.
-ratio = real((time - file_times(left_time)) /  &          ! at the first time a=0;
-        (file_times(right_time) - file_times(left_time))) ! at the second time a=1.
+    ratio = real((time - file_times(left_time)) /  &          ! at the first time a=0;
+            (file_times(right_time) - file_times(left_time))) ! at the second time a=1.
 
-do k=1,file_nlevels
+    do k=1,file_nlevels
 !        omega_column(k) = ratio *			       ! Do linear interpolation in time
 !     .                      (omega_forcing(k,right_time)
 !     .                      -omega_forcing(k,left_time))
 !     .                     + omega_forcing(k,left_time)
 
-  dTdt_column(k)  = factor_interp( ratio, dTdt_forcing(k, right_time), dTdt_forcing(k, left_time) )
-  dqdt_column(k)  = factor_interp( ratio, dqdt_forcing(k, right_time), dqdt_forcing(k, left_time) )
-  vertT_column(k) = factor_interp( ratio, vertT_forcing(k,right_time),vertT_forcing(k,left_time) )
-  vertq_column(k) = factor_interp( ratio, vertq_forcing(k,right_time),vertq_forcing(k,left_time) )
-  um_column(k)    = factor_interp( ratio, um_obs(k, right_time), um_obs(k, left_time) )
-  vm_column(k)    = factor_interp( ratio, vm_obs(k, right_time), vm_obs(k, left_time) )
-end do
+      dTdt_column(k)  = factor_interp( ratio, dTdt_forcing(k, right_time), &
+                                       dTdt_forcing(k, left_time) )
+      dqdt_column(k)  = factor_interp( ratio, dqdt_forcing(k, right_time), &
+                                       dqdt_forcing(k, left_time) )
+      vertT_column(k) = factor_interp( ratio, vertT_forcing(k,right_time), &
+                                       vertT_forcing(k,left_time) )
+      vertq_column(k) = factor_interp( ratio, vertq_forcing(k,right_time), &
+                                       vertq_forcing(k,left_time) )
+      um_column(k)    = factor_interp( ratio, um_obs(k, right_time), um_obs(k, left_time) )
+      vm_column(k)    = factor_interp( ratio, vm_obs(k, right_time), vm_obs(k, left_time) )
+    end do
 
 !     Do linear interpolation in space
 !     using zlinterp_fnc
-dTdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
-                         file_heights,dTdt_column)
-dqdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
-                         file_heights,dqdt_column)
-vertT_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
-                         file_heights,vertT_column)
-vertq_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
-                         file_heights,vertq_column)
-um_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
-                         file_heights,um_column)
-vm_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
-                         file_heights,vm_column)
+    dTdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+                             file_heights,dTdt_column)
+    dqdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+                             file_heights,dqdt_column)
+    vertT_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+                             file_heights,vertT_column)
+    vertq_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+                             file_heights,vertq_column)
+    um_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+                             file_heights,um_column)
+    vm_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+                             file_heights,vm_column)
 
-um_hoc_grid (1) = um_hoc_grid(2)
-vm_hoc_grid (1) = vm_hoc_grid(2)
+    um_hoc_grid (1) = um_hoc_grid(2)
+    vm_hoc_grid (1) = vm_hoc_grid(2)
 
 ! eMFc
 
 !-----------------------------------------------------------------------
 
-  ! Set which schemes to use
-  l_lw_on           = .TRUE.
-  l_sw_on           = .TRUE.
-! l_subs_on         = .TRUE.
-  l_center          = .TRUE.
 
-  ! Compute vertical motion
-  do i=2,gr%nnzp
+    ! Compute vertical motion
+    do i=2,gr%nnzp
 !          velocity_omega = omega_hoc_grid(i) * 100 / 3600 ! convering mb/hr to Pa/s
 !          wm_zt(i) = -velocity_omega * Rd * thvm(i) / p_in_Pa(i) / grav
-     wm_zt(i) = 0.
+      wm_zt(i) = 0.
 ! End of Michael Falk's obliteration of omega.
-  end do
-
-  ! Boundary condition
-  wm_zt(1) = 0.0        ! Below surface
-
-  ! Interpolation
-  wm_zm = zt2zm( wm_zt )
-
-  ! Boundary condition
-  wm_zm(1) = 0.0        ! At surface
-  wm_zm(gr%nnzp) = 0.0  ! Model top
-  
-
-  ! Compute large-scale tendencies
-  do i=1,gr%nnzp
-   thlm_forcing(i) = ((dTdt_hoc_grid(i) + vertT_hoc_grid(i)) & 
-                    * ((p_sfc/p_in_Pa(i)) ** (Rd/Cp))) & 
-                    / 3600. ! K/s
-   rtm_forcing(i)  = (dqdt_hoc_grid(i)+vertq_hoc_grid(i)) & 
-    / 1000. / 3600. ! g/kg/hr -> kg/kg/s
-  end do
-
-  ! Compute radiation
-
-  if ( trim( rad_scheme ) == "simplified" ) then
-
-    do k = 1, gr%nnzp
-      rcm_rad(k)  = rcm(gr%nnzp-k+1)
-      rho_rad(k) = rho(gr%nnzp-k+1)
-      dsigm(k)    = 1.0 / gr%invrs_dzt(gr%nnzp-k+1)
-      coamps_zm(k) = gr%zm(gr%nnzp-k+1)
-      coamps_zt(k) = gr%zt(gr%nnzp-k+1)
     end do
 
-    if ( xi_abs == 0. ) then
-      l_sw_on = .false.
-    end if
+    ! Boundary condition
+    wm_zt(1) = 0.0        ! Below surface
 
-    call rad_lwsw( rcm_rad, rho_rad, dsigm, & 
-                   coamps_zm, coamps_zt, & 
-                   Frad_out, Frad_LW_out, Frad_SW_out, & 
-                   radhtk, radht_LW_out, radht_SW_out, & 
-                   gr%nnzp-1, l_center, & 
-                   xi_abs, F0, F1, kappa, &
-                   eff_drop_radius, real( alvdr ), gc, Fs_values(1), omega, & 
-                   l_sw_on, l_lw_on )
+    ! Interpolation
+    wm_zm = zt2zm( wm_zt )
 
-    do k = 2, gr%nnzp-1
-      Frad(k)     = Frad_out(gr%nnzp-k+1)
-      Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
-      Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
+    ! Boundary condition
+    wm_zm(1) = 0.0        ! At surface
+    wm_zm(gr%nnzp) = 0.0  ! Model top
 
-      radht(k)    = radhtk(gr%nnzp-k+1)
-      radht_LW(k) = radht_LW_out(gr%nnzp-k+1)
-      radht_SW(k) = radht_SW_out(gr%nnzp-k+1)
 
-      radht_theta(k)    = radht(k) * ((p0/p_in_Pa(k))**(Rd/Cp))
-      radht_LW_theta(k) = radht_LW(k) * ((p0/p_in_Pa(k))**(Rd/Cp))
-      radht_SW_theta(k) = radht_SW(k) * ((p0/p_in_Pa(k))**(Rd/Cp))
-    end do ! k
-
-    Frad(1)    = Frad(2)
-    Frad_LW(1) = Frad_LW(2)
-    Frad_SW(1) = Frad_SW(2)
-    radht_theta(1)    = radht_theta(2)
-    radht_LW_theta(1) = radht_LW_theta(2)
-    radht_SW_theta(1) = radht_SW_theta(2)
-
-    Frad(gr%nnzp)    = Frad(gr%nnzp-1)
-    Frad_LW(gr%nnzp) = Frad_LW(gr%nnzp-1)
-    Frad_SW(gr%nnzp) = Frad_SW(gr%nnzp-1)
-    radht_theta(gr%nnzp)    = radht_theta(gr%nnzp-1)
-    radht_LW_theta(gr%nnzp) = radht_LW_theta(gr%nnzp-1)
-    radht_SW_theta(gr%nnzp) = radht_SW_theta(gr%nnzp-1)
-
-    radht(1:gr%nnzp)    = radht_theta(1:gr%nnzp)
-    radht_LW(1:gr%nnzp) = radht_LW_theta(1:gr%nnzp)
-    radht_SW(1:gr%nnzp) = radht_SW_theta(1:gr%nnzp)
-
-    do k = 1, gr%nnzp
-      thlm_forcing(k) = thlm_forcing(k) + radht_theta(k)
+    ! Compute large-scale tendencies
+    do i=1,gr%nnzp
+      thlm_forcing(i) = ((dTdt_hoc_grid(i) + vertT_hoc_grid(i)) & 
+                       * ((p_sfc/p_in_Pa(i)) ** (Rd/Cp))) & 
+                       / 3600. ! K/s
+      rtm_forcing(i)  = (dqdt_hoc_grid(i)+vertq_hoc_grid(i)) & 
+       / 1000. / 3600. ! g/kg/hr -> kg/kg/s
     end do
 
-    if ( l_stats_samp ) then
- 
-      call stat_update_var( iradht_LW, radht_LW, zt )
+    ! Test scalars with thetal and rt if desired
+    if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+    if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
-      call stat_update_var( iradht_SW, radht_SW, zt )
+    if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
+    if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
 
-      call stat_update_var( iFrad_SW, Frad_SW, zm )
-
-      call stat_update_var( iFrad_LW, Frad_LW, zm )
-
-    end if
-
-  end if ! rad_lwsw
-
-
-
-  ! Test scalars with thetal and rt if desired
-  if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-  if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
-
-  if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-  if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
-
-  return
+    return
   end subroutine mpace_a_tndcy
 
 !----------------------------------------------------------------------
   subroutine mpace_a_sfclyr( time, rho0, & 
                              wpthlp_sfc, wprtp_sfc, ustar )
 !        Description:
-!          Surface forcing subroutine for mpace_a case.  Written 
+!          Surface forcing subroutine for mpace_a case.  Written
 !          October 2007 by Michael Falk.
 !
 !        References:
@@ -449,13 +299,13 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
     ! choose which times to use
     if (time <= file_times(1)) then
       if ( clubb_at_least_debug_level( 1 ) ) then
-         write(fstderr,*) 'Time is at or before the first time in the list.'
+        write(fstderr,*) 'Time is at or before the first time in the list.'
       endif
       left_time = 1
       right_time = 1
     else if (time >= file_times(file_ntimes)) then
       if ( clubb_at_least_debug_level( 1 ) ) then
-         write(fstderr,*) 'Time is at or after the last time in the list.'
+        write(fstderr,*) 'Time is at or after the last time in the list.'
       endif
       left_time = file_ntimes
       right_time = file_ntimes
@@ -472,7 +322,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
     ! Sanity check to make certain that the values read into
     ! file_times are sorted. Joshua Fasching June 2008
     if ( left_time == -1 .or. right_time == -1 ) then
-            call clubb_debug(1, "file_times not sorted in MPACE_A")
+      call clubb_debug(1, "file_times not sorted in MPACE_A")
     endif
 
     ratio = real(((time-file_times(left_time)) /  & 
@@ -482,7 +332,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
 
     sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time) )
 
-   ! Compute heat and moisture fluxes
+    ! Compute heat and moisture fluxes
     wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
     wprtp_sfc  = latent_heat_flx/(rho0*Lv)
 
@@ -521,9 +371,9 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
       file_path//'mpace_a_times.dat', & 
       file_ntimes, per_line, file_times )
 
-  !      call file_read_2d( iunit,
-  !     . file_path//'mpace_a_omega.dat',
-  !     . file_nlevels, file_ntimes, per_line, omega_forcing)
+    !      call file_read_2d( iunit,
+    !     . file_path//'mpace_a_omega.dat',
+    !     . file_nlevels, file_ntimes, per_line, omega_forcing)
 
     call file_read_2d( iunit, & 
       file_path//'mpace_a_dTdt.dat', & 
@@ -557,7 +407,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
       file_path//'mpace_a_sh.dat', & 
       file_ntimes, per_line, file_SH )
 
-    return 
+    return
   end subroutine mpace_a_init
 
 end module mpace_a

@@ -470,10 +470,6 @@ module output_grads
         form='unformatted', access='direct', & 
         recl=F_RECL*abs( f%iz-f%ia+1 ), & 
         status='unknown', iostat=ios )
-!         open( f%iounit,
-!    .          file = trim(f%fdir)//trim(f%fname)//'.dat',
-!    .          form = 'unformatted', access = 'direct',
-!    .          recl = F_RECL, status = 'unknown', iostat = ios )
   if ( ios /= 0 ) then
     write(unit=fstderr,fmt=*)  & 
       "write_grads: error opening binary file"

@@ -17,7 +17,7 @@ module gabls2
 !-------------------------------------------------------------------------------
   subroutine gabls2_tndcy( time, time_initial, &
                            wm_zt, wm_zm, thlm_forcing, & 
-                           rtm_forcing, radht, & 
+                           rtm_forcing, & 
                            sclrm_forcing, edsclrm_forcing )
 
 ! Description:
@@ -50,8 +50,7 @@ module gabls2
       wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
       wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
       thlm_forcing, & ! Large-scale thlm tendency               [K/s]
-      rtm_forcing,  & ! Large-scale rtm tendency                [kg/kg/s]
-      radht           ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+      rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
 
     real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar LS tendency            [units/s]
@@ -89,7 +88,6 @@ module gabls2
     ! Compute large-scale horizontal temperature advection
     do k=1,gr%nnzp
       thlm_forcing(k) = 0.
-      radht(k) = 0.
     end do
 
 

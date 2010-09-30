@@ -30,7 +30,6 @@ module lba
 
   !----------------------------------------------------------------------
   subroutine lba_tndcy( time, & 
-                        radht, & 
                         thlm_forcing, rtm_forcing, & 
                         sclrm_forcing, edsclrm_forcing )
     !       Description:
@@ -63,7 +62,6 @@ module lba
 
     ! Output Variables
     real, intent(out), dimension(gr%nnzp) :: & 
-      radht,        & ! Radiative heating rate                       [K/s]
       thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
 
@@ -74,12 +72,13 @@ module lba
       edsclrm_forcing ! Passive eddy-scalar forcing [units vary]
 
     ! Local Variables
+    real, dimension(gr%nnzp) :: radht
     real, dimension(nzrad) :: radhtz
     real :: a
     integer :: i1, i2
 
 
-    if ( trim( rad_scheme ) == "simplified" ) then
+    if ( trim( rad_scheme ) == "lba" ) then
 
       ! Calculate radiative heating rate
       if ( time <=  600. ) then
@@ -94,7 +93,6 @@ module lba
           i2 = i1 + 1
           if ( time >= 600. * i1 .and. time < 600. * i2  ) then
             a  = real(( time - 600. * i1 )/( 600. * i2 - 600. * i1))
-            !radhtz(:) = ( 1. - a ) * krad(:,i1) + a * krad(:,i2)
             radhtz(:) = factor_interp( a, krad(:,i2), krad(:,i1) )
             i1     = ntimes
           end if

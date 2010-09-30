@@ -148,7 +148,7 @@ rad_scheme = "simplified",
 F0 = 70.0,    ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
 F1 = 22.0,    ! Coefficient for cloud base heating (see Stevens) [W/m^2] 
 kappa = 85.0, ! A constant (Duynkerke eqn. 5)                   [m^2/kg] 
-
+l_rad_above_cloud = .true.,
 /
 
 

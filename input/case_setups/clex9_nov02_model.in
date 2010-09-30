@@ -144,6 +144,8 @@ alvdr = 0.1, ! Visible direct surface albedo        		[-]
 gc = 0.86, ! Asymmetry parameter, "g" in Duynkerke           	[-]
 omega = 0.9965, ! Single-scattering albedo                      [-] 
 
+l_fix_cos_solar_zen = .false.,
+
 ! Cosine of the solar zenith angle	[-]
 cos_solar_zen_values = 0.0, 0.01, 0.1, 0.2, 0.3, 0.4,
   0.5, 0.6, 0.7, 0.8, 0.9, 1.0,

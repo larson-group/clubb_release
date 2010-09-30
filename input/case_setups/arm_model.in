@@ -149,7 +149,7 @@ micro_scheme = "none"
 
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
-rad_scheme = "simplified",
+rad_scheme = "none",
 /
 
 &stats_setting

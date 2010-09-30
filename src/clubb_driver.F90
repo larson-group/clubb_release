@@ -931,7 +931,7 @@ module clubb_driver
       ! This is a kluge added because the _tndcy subroutines will sometimes
       ! compute radht from an analytic formula and add it to thlm_forcing before
       ! we reach this point in the clubb_driver. -dschanen 17 Aug 2009
-      if ( trim( rad_scheme ) == "bugsrad" .or. trim( rad_scheme ) == "simplified_bomex" ) then
+      if ( trim( rad_scheme ) /= "none" ) then
         thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:) + radht(:)
       else
         thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:)
@@ -2801,8 +2801,8 @@ module clubb_driver
     use grid_class, only: zt2zm, zm2zt ! Procedure(s)
 
     use variables_diagnostic_module, only: &
-      radht, um_ref,  & ! Variable(s)
-      vm_ref, Frad,  Frad_SW_up,  &
+      um_ref,  & ! Variable(s)
+      vm_ref, Frad_SW_up,  &
       Frad_SW_down, Frad_LW_down, thvm, ustar, & 
       ug, vg, soil_heat_flux
 
@@ -2887,9 +2887,8 @@ module clubb_driver
     use dycoms2_rf02, only:  & 
         dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr ! Procedure(s)
 
-    use fire, only:   &                ! Procedure(s)
-        fire_tndcy, fire_sfclyr
-
+    use fire, only: &
+      fire_sfclyr ! Procedure(s)
 
     use gabls2, only: gabls2_tndcy, gabls2_sfclyr ! Procedure(s)
 
@@ -2919,10 +2918,6 @@ module clubb_driver
 
     use wangara, only: wangara_tndcy, wangara_sfclyr ! Procedure(s)
 
-    use cos_solar_zen_module, only: cos_solar_zen ! Function
-
-    use parameters_radiation, only: rad_scheme  ! Variable(s)
-
     use surface_flux, only:  &   ! Procedure(s)
       compute_momentum_flux, &
       compute_ubar,          &
@@ -2940,8 +2935,7 @@ module clubb_driver
 
     ! Local Variables
     real :: &
-      wpthep, &   ! w'theta_e'                                 [m K/s]
-      amu0        ! Cosine of the solar zenith angle           [-]
+      wpthep  ! w'theta_e'                                 [m K/s]
 
     real :: &
       ubar        ! mean sfc wind speed                        [m/s]
@@ -2958,16 +2952,6 @@ module clubb_driver
 !-----------------------------------------------------------------------
 !                    FIND ALL DIAGNOSTIC VARIABLES
 !-----------------------------------------------------------------------
-
-    !----------------------------------------------------------------
-    ! Find the cosine of the solar zenith angle if needed
-    ! The abs() clipping prevents an error with sunray_sw code.
-    !----------------------------------------------------------------
-    if ( trim( rad_scheme ) == "simplified" ) then
-      amu0 = max( real( cos_solar_zen( day, month, year, time_current, rlat, rlon ) ), 0. )
-    else
-      amu0 = -999.0
-    end if
 
     !----------------------------------------------------------------
     ! Set vertical velocity, w, and compute large-scale forcings
@@ -3012,9 +2996,9 @@ module clubb_driver
 
       case ( "atex" ) ! ATEX case
         call atex_tndcy( time_current, time_initial, &   ! Intent(in)
-                         rtm, rho, rcm, exner, &         ! Intent(in)
+                         exner, &                        ! Intent(in)
                          err_code, &                     ! Intent(inout)
-                         wm_zt, wm_zm, Frad, radht, &    ! Intent(out)
+                         wm_zt, wm_zm, &                 ! Intent(out)
                          thlm_forcing, rtm_forcing, &    ! Intent(out)
                          sclrm_forcing, edsclrm_forcing )! Intent(out)
 
@@ -3025,94 +3009,73 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
       case ( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
-        call clex9_nov02_tndcy( time_current, time_initial, rlat, rlon, &  ! Intent(in)
-                                rcm, exner, rho, &                         ! Intent(in)
+        call clex9_nov02_tndcy( time_current, time_initial, &  ! Intent(in)
                                 wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
-                                Frad, radht, &                             ! Intent(out)
                                 sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
       case ( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
-        call clex9_oct14_tndcy( time_current, time_initial, rlat, rlon, &    ! Intent(in) 
-                                rcm, exner, rho, &                           ! Intent(in)
+        call clex9_oct14_tndcy( time_current, time_initial, &    ! Intent(in) 
                                 wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
-                                Frad, radht, &                               ! Intent(out)
                                 sclrm_forcing, edsclrm_forcing )             ! Intent(out)
 #endif
 
       case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
-        call dycoms2_rf01_tndcy( rho, rho_zm, rtm, rcm, exner, &  ! Intent(in)
-                                 err_code, &                      ! Intent(inout)
-                                 Frad, radht,  &                  ! Intent(out)
-                                 thlm_forcing, rtm_forcing,  &    ! Intent(out)
+        call dycoms2_rf01_tndcy( thlm_forcing, rtm_forcing,  &    ! Intent(out)
                                  sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
       case ( "dycoms2_rf02" ) ! DYCOMS2 RF02 case
-        call dycoms2_rf02_tndcy( rho,                     &          ! Intent(in)
-                                 rtm, rcm, exner,  &                 ! Intent(in)
-                                 err_code, wm_zt, wm_zm,   &         ! Intent(inout)
-                                 thlm_forcing, rtm_forcing, &        ! Intent(out) 
-                                 Frad, radht, &                      ! Intent(out)
-                                 sclrm_forcing, edsclrm_forcing )    ! Intent(out)
+        call dycoms2_rf02_tndcy( wm_zt, wm_zm,   &                ! Intent(inout)
+                                 thlm_forcing, rtm_forcing, &     ! Intent(out) 
+                                 sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
       case ( "fire" ) ! FIRE Sc case
-        call fire_tndcy( rho, rcm, exner,  &                ! Intent(in)
-                         Frad, radht, &                     ! Intent(out)
-                         thlm_forcing, rtm_forcing, &       ! Intent(out) 
-                         sclrm_forcing, edsclrm_forcing )   ! Intent(out)
-
+        ! Analytic radiation is computed elsewhere
+        thlm_forcing = 0.
+        rtm_forcing = 0.
 
       case ( "gabls2" ) ! GABLS 2 case
         call gabls2_tndcy( time_current, time_initial,  &   ! Intent(in) 
                            wm_zt, wm_zm, thlm_forcing, &    ! Intent(out)
-                           rtm_forcing, radht, &            ! Intent(out)
+                           rtm_forcing, &                   ! Intent(out)
                            sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
 #ifdef UNRELEASED_CODE
       case ( "jun25_altocu" ) ! June 25 Altocumulus case.
-        call jun25_altocu_tndcy( time_current, time_initial, rlat, rlon,  &  ! Intent(in) 
-                                 rcm, exner, rho, &                          ! Intent(in)
+        call jun25_altocu_tndcy( time_current, time_initial, &  ! Intent(in) 
                                  wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(inout)
-                                 Frad, radht, &                              ! Intent(inout)
                                  sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
       case ( "lba" )
         call lba_tndcy( time_current, &                  ! Intent(in) 
-                        radht,  &                        ! Intent(out)
                         thlm_forcing, rtm_forcing, &     ! Intent(out)
                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 #endif
 
       case ( "mpace_a" ) ! mpace_a arctic stratus case
 
-        call mpace_a_tndcy( time_current, amu0, &                      ! Intent(in) 
-                            rho, p_in_Pa, rcm, &                       ! Intent(in)
+        call mpace_a_tndcy( time_current, p_in_Pa, &                   ! Intent(in) 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
-                            Frad, radht, um_ref, vm_ref, &             ! Intent(out)
+                            um_ref, vm_ref, &                          ! Intent(out)
                             sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
       case ( "mpace_b" ) ! mpace_b arctic stratus case
 
-        call mpace_b_tndcy( amu0, &                      ! Intent(in)
-                            rho,  p_in_Pa, thvm, rcm, &                ! Intent(in)
+        call mpace_b_tndcy( p_in_Pa, thvm, &                ! Intent(in)
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
-                            Frad, radht,  &                            ! Intent(out)
                             sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
 #ifdef UNRELEASED_CODE
       case ( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
         call nov11_altocu_tndcy( time_current, time_initial, dt, &           ! Intent(in)
-                                 day, month, year, rlat, rlon, &             ! Intent(in)
-                                 rcm, exner, rho, &                          ! Intent(in)
                                  rtm, &                                      ! Intent(inout)
                                  wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out)
-                                 Frad, radht, &                              ! Intent(out)
                                  sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 #endif
 
       case ( "rico" ) ! RICO case
-        call rico_tndcy( exner, &                            ! Intent(in)
-                         thlm_forcing, rtm_forcing, radht, & ! Intent(out)   
-                         sclrm_forcing, edsclrm_forcing )    ! Intent(out)
+        call rico_tndcy( exner, &                         ! Intent(in)
+                         thlm_forcing, rtm_forcing, &     ! Intent(out)   
+                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
       case ( "wangara" ) ! Wangara dry CBL
         call wangara_tndcy( wm_zt, wm_zm,  &                  ! Intent(out) compute_momentum
@@ -3567,10 +3530,9 @@ module clubb_driver
                Frad_SW_down, Frad_LW_down )
 ! Description:
 !   Compute a radiation tendency.
+
 ! References:
 !   None
-! TODO: Add analytic formulas that currently occur in the tndcy subroutines to
-!   this subroutine.
 !-------------------------------------------------------------------------------
 
     use constants_clubb, only: fstderr, zero_threshold  ! Constant(s)
@@ -3582,15 +3544,14 @@ module clubb_driver
       nparam, &
       l_fix_cos_solar_zen, &
       l_sw_radiation, &
-!     Fs_values, &
+      Fs_values, &
       cos_solar_zen_values, &
       cos_solar_zen_times
 
     use cos_solar_zen_module, only: cos_solar_zen ! Procedure(s)
 
     use simple_rad_module, only: &
-!     simple_rad, simple_rad_bomex
-      simple_rad_bomex
+      simple_rad, simple_rad_bomex, sunray_sw_wrap
 
     use error_code, only: & 
       clubb_at_least_debug_level ! Procedure(s)
@@ -3603,12 +3564,21 @@ module clubb_driver
 
     use grid_class, only: zt2zm ! Procedure
 
-!   use interpolation, only: binary_search, linear_interpolation ! Procdure(s)
-    use interpolation, only: binary_search ! Procdure(s)
+    use interpolation, only: binary_search, linear_interpolation ! Procdure(s)
 
 #ifdef radoffline
     use bugsrad_driver, only: compute_bugsrad_radiation ! Procedure(s)
 #endif
+
+    use stats_variables, only: iFrad_SW, l_stats_samp,  & ! Variable(s)
+      iFrad_LW, zt, zm, iradht_LW, iradht_SW
+
+    use stats_type, only: stat_update_var ! Procedure(s)
+
+    use error_code, only: clubb_no_error
+
+    use error_code, only: reportError, fatal_error
+
     implicit none
 
     ! External
@@ -3642,23 +3612,29 @@ module clubb_driver
 
     ! Local Variables
     real, dimension(gr%nnzp) ::  & 
-      rsnowm,  & ! Snow mixing ratio                         [kg/kg]
-      ricem      ! Prisitine ice water mixing ratio          [kg/kg]
+      radht_SW, & ! Radiative heating rate              [K/s]
+      radht_LW, & ! Radiative heating rate              [K/s]
+      Frad_SW,  & ! Short-wave radiative flux           [W/m^2]
+      Frad_LW,  & ! Long-wave radiative flux            [W/m^2]
+      rsnowm,   & ! Snow mixing ratio                   [kg/kg]
+      ricem       ! Prisitine ice water mixing ratio    [kg/kg]
 
-!   real :: Fs0
+    real :: Fs0, amu0_sp
 
     double precision :: amu0
 
-    integer :: i !, err_code
+    integer :: i, err_code
 
     ! ---- Begin Code ----
 
     ! Initialize all outputs to 0.
-    Frad = 0. + rho * 0.  ! The addition is to prevent an Intel compiler warning of an unused
+    Frad = 0.   ! The addition is to prevent an Intel compiler warning of an unused
     Frad_SW_up = 0.       ! variable.  May be removed if rho is used below.  -meyern
     Frad_LW_up = 0.
     Frad_SW_down = 0.
     Frad_LW_down = 0.
+
+    err_code = clubb_no_error
 
     ! If l_fix_cos_solar_zen is not set in the model.in, calculate amu0
     ! Otherwise, it was defined in cos_solar_zen_list file
@@ -3788,25 +3764,51 @@ module clubb_driver
 #endif /*radoffline*/
 
     case ( "simplified" )
-      !   Currently disabled, and handled in the tndcy subroutines
       !----------------------------------------------------------------
       ! Simplified radiation
       !----------------------------------------------------------------
 
-!     if ( l_sw_radiation ) then
-!       ! The sunray_sw code cannot handle negative values of cosine, so clip this here
-!       amu0 = max( amu0, zero_threshold )
-!       call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &
-!                                  Fs_values(1:nparam), real( amu0 ), Fs0 )
-!       call sunray_sw( rcm(gr%nnzp:1:-1), rho(gr%nnzp:1:-1), amu0,
-!     end if
+      ! The sunray_sw code cannot handle negative values of cosine
+      if ( l_sw_radiation .and. amu0 > 0.d0 ) then
+        amu0_sp = real( amu0 )
+        if ( nparam > 1 ) then
+           call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &
+                                     Fs_values(1:nparam), amu0_sp, Fs0 )
+        else
+          Fs0 = Fs_values(1)
+        end if
+        call sunray_sw_wrap( Fs0, amu0_sp, rho, rcm, & ! In
+                             Frad_SW, radht_SW ) ! Out
+      else
+        radht_SW = 0.
+        Frad_SW  = 0.
+      end if
 
-!     call simple_rad( rho, rho_zm, rtm, rcm, exner, & ! In
-!                      err_code, & ! Inout
-!                      Frad, radht ) ! Out
-!
-!  If this section is to be permanently added, please remove the addition of rho * 0 to the
-!  initialization of Frad at the beginning of executable code. -meyern
+      call simple_rad( rho, rho_zm, rtm, rcm, exner, & ! In
+                       err_code, & ! Inout
+                       Frad_LW, radht_LW ) ! Out
+
+      if ( fatal_error( err_code ) ) then
+        call reportError( err_code )
+        stop "Fatal error in simple_rad"
+      end if
+
+      Frad = Frad_SW + Frad_LW 
+      radht = radht_SW + radht_LW 
+
+      ! Save LW and SW components of radiative heating and
+      ! radiative flux based on simplified radiation.
+      if ( l_stats_samp ) then
+
+        call stat_update_var( iradht_LW, radht_LW, zt )
+
+        call stat_update_var( iradht_SW, radht_SW, zt )
+
+        call stat_update_var( iFrad_SW, Frad_SW, zm )
+
+        call stat_update_var( iFrad_LW, Frad_LW, zm )
+
+      end if
 
     case ( "simplified_bomex" )
       !----------------------------------------------------------------
@@ -3815,7 +3817,7 @@ module clubb_driver
 
       call simple_rad_bomex( radht ) ! Out
 
-    case ( "none" )
+    case ( "none", "lba" )
 
     case default
 
