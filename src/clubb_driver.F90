@@ -2811,7 +2811,7 @@ module clubb_driver
     use variables_prognostic_module, only: &
       rtm_forcing, thlm_forcing,  & ! Variable(s)
       wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
-      exner, rcm, rho_zm, um, p_sfc, vm, & 
+      exner, rho_zm, um, p_sfc, vm, & 
       upwp_sfc, vpwp_sfc, T_sfc, & 
       wpthlp_sfc, wprtp_sfc, &
       um_forcing, vm_forcing, &
@@ -2996,7 +2996,7 @@ module clubb_driver
 
       case ( "atex" ) ! ATEX case
         call atex_tndcy( time_current, time_initial, &   ! Intent(in)
-                         exner, &                        ! Intent(in)
+                         rtm, &                          ! Intent(in)
                          err_code, &                     ! Intent(inout)
                          wm_zt, wm_zm, &                 ! Intent(out)
                          thlm_forcing, rtm_forcing, &    ! Intent(out)
