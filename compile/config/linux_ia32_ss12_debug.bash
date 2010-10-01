@@ -25,7 +25,7 @@ WARNINGS="-w3 -ansi"
 
 # == Machine specific flags ==
 # Note that when linking to sunperf (for LAPACK) you must use -dalign
-ARCH="-g -xtarget=native -m64 -xopenmp=noopt -dalign"
+ARCH="-g -xtarget=native -m64 -dalign"
 #ARCH="-g -m64 -xtarget=native -dalign"
 
 # == NetCDF Location  ==
@@ -39,7 +39,7 @@ LAPACK="-xlic_lib=sunperf" # Sun performance library
 # Use -s to strip (no debugging); 
 # -Bstatic; for static linking of libraries
 # -xlibmopt; link the optimized version of libm 
-LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK -xlibmopt"
+LDFLAGS="$ARCH $DEBUG -L$NETCDF/lib -lnetcdf $LAPACK -xlibmopt"
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these
