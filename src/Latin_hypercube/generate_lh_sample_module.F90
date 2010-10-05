@@ -145,10 +145,12 @@ module generate_lh_sample_module
     ! varies between -1 < rrtthl < 1
     real :: rrtthl
 
-    ! Clip the magnitude of the correlation between rt and thl
-    real :: rrtthl_reduced
+    ! Use to clip the magnitude of the correlation between rt and thl
+    real :: rrtthl_reduced ! Correlation between rt and thl [-]
 
-    double precision :: rrtthl_reduced1, rrtthl_reduced2
+    double precision :: &
+      rrtthl_covar_reduced1, & ! Covariance of rtthl for plume 1 [K^2/kg^2]
+      rrtthl_covar_reduced2    ! Covariance of rtthl for plume 2 [K^2/kg^2]
 
     ! Means of s, t, w, & hydrometeors for plumes 1 and 2
     real, dimension(d_variables) :: &
@@ -366,12 +368,14 @@ module generate_lh_sample_module
     ! An old subroutine, gaus_rotate, couldn't handle large correlations;
     !   I assume the replacement, gaus_condt, has equal trouble.
     !   Therefore we input smaller correlations
+    !   The current code uses a Cholesky decomposition, which also cannot handle
+    !   a correlation of exactly 1. -dschanen 5 Oct 2010
     ! max_mag_correlation = 0.99 in constants.F90
     rrtthl_reduced = min( max_mag_correlation, max( rrtthl, -max_mag_correlation ) )
 
     ! Within-plume rt-thl correlation terms with rt in kg/kg
-    rrtthl_reduced1 = dble( rrtthl_reduced*sqrt( varnce_rt1*varnce_thl1 ) )
-    rrtthl_reduced2 = dble( rrtthl_reduced*sqrt( varnce_rt2*varnce_thl2 ) )
+    rrtthl_covar_reduced1 = dble( rrtthl_reduced*sqrt( varnce_rt1*varnce_thl1 ) )
+    rrtthl_covar_reduced2 = dble( rrtthl_reduced*sqrt( varnce_rt2*varnce_thl2 ) )
 
     ! Covariance (not correlation) matrices of rt-thl-w
     !    for Gaussians 1 and 2
@@ -384,11 +388,11 @@ module generate_lh_sample_module
 
     ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
     call rtpthlp_2_sptp( dble( stdev_s1 ), dble( varnce_rt1 ), dble( varnce_thl1 ), & 
-                         dble( rrtthl_reduced1 ), dble( crt1 ), dble( cthl1 ), & ! In
+                         dble( rrtthl_covar_reduced1 ), dble( crt1 ), dble( cthl1 ), & ! In
                          iiLH_s_mellor, iiLH_t_mellor, & ! In
                          Sigma_stw_1(1:2,1:2) ) ! Out
     call rtpthlp_2_sptp( dble( stdev_s2 ), dble( varnce_rt2 ), dble( varnce_thl2 ), & 
-                         dble( rrtthl_reduced2 ), dble( crt2 ), dble( cthl2 ), & ! In
+                         dble( rrtthl_covar_reduced2 ), dble( crt2 ), dble( cthl2 ), & ! In
                          iiLH_s_mellor, iiLH_t_mellor, & ! In
                          Sigma_stw_2(1:2,1:2) ) ! Out
 
@@ -747,7 +751,7 @@ module generate_lh_sample_module
 
 !-----------------------------------------------------------------------
   subroutine rtpthlp_2_sptp( stdev_s_mellor, varnce_rt, varnce_thl, &
-                             rrtthl, crt, cthl, iiLH_s_mellor, iiLH_t_mellor, &
+                             rrtthl_covar, crt, cthl, iiLH_s_mellor, iiLH_t_mellor, &
                              Sigma_st )
 
 ! Description:
@@ -774,7 +778,7 @@ module generate_lh_sample_module
       stdev_s_mellor, & ! Standard deviation of s_mellor [(kg/kg)^2]
       varnce_rt,      & ! Variance of rt1/rt2
       varnce_thl,     & ! Variance of thl1/thl2
-      rrtthl,         & ! Covariance of rt, thl
+      rrtthl_covar,   & ! Covariance of rt, thl
       crt, cthl         ! Coefficients that define s', t'
 
     integer, intent(in) :: &
@@ -802,7 +806,7 @@ module generate_lh_sample_module
     crt_sqd = crt**2
     cthl_sqd = cthl**2
     sptp = crt_sqd * varnce_rt - cthl_sqd * varnce_thl
-    tp2 = crt_sqd * varnce_rt + 2.d0 * crt * cthl * rrtthl &
+    tp2 = crt_sqd * varnce_rt + 2.d0 * crt * cthl * rrtthl_covar &
         + cthl_sqd * varnce_thl
     sp2 = stdev_s_mellor**2
 
