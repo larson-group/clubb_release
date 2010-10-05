@@ -18,7 +18,7 @@ module generate_lh_sample_module
   subroutine generate_lh_sample &
              ( n_micro_calls, d_variables, hydromet_dim, & 
                wm, rtm, thlm, pdf_params, level, & 
-               hydromet, corr_varnce_array, X_u_one_lev, &
+               hydromet, xp2_on_xm2_array, corr_array, X_u_one_lev, &
                X_mixt_comp_one_lev, &
                LH_rt, LH_thl, X_nl_one_lev )
 ! Description:
@@ -61,6 +61,10 @@ module generate_lh_sample_module
 
     use mt95, only: genrand_real ! Constants
 
+    use matrix_operations, only: &
+      set_lower_triangular_matrix, & ! Procedures
+      get_lower_triangular_matrix
+
     implicit none
 
     ! External
@@ -92,8 +96,11 @@ module generate_lh_sample_module
     integer, intent(in) :: level  ! Level info. for PDF parameters.
 
     ! From the KK_microphys_module
+    real, dimension(d_variables), intent(in) :: &
+      xp2_on_xm2_array ! Variance over mean for sampled variables    [-]
+
     real, dimension(d_variables,d_variables), intent(in) :: &
-      corr_varnce_array ! Correlations for sampled variables    [-]
+      corr_array ! Correlations for sampled variables    [-]
 
     real(kind=genrand_real), intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
@@ -316,7 +323,7 @@ module generate_lh_sample_module
 
     if ( iiLH_Nc > 0 ) then
       Ncm = dble( hydromet(iiNcm) )
-      Ncp2_on_Ncm2 = dble( corr_varnce_array(iiLH_Nc,iiLH_Nc) )
+      Ncp2_on_Ncm2 = dble( xp2_on_xm2_array(iiLH_Nc) )
 
       call log_sqd_normalized( Ncm, Ncp2_on_Ncm2, dble( Nc_tol ), & ! In
                                Nc1, Nc2, var_Nc1, var_Nc2 ) ! Out
@@ -330,14 +337,14 @@ module generate_lh_sample_module
 
     if ( iiLH_rrain > 0 ) then
       rrainm = dble( hydromet(iirrainm) )
-      rrp2_on_rrainm2 = dble( corr_varnce_array(iiLH_rrain,iiLH_rrain) )
+      rrp2_on_rrainm2 = dble( xp2_on_xm2_array(iiLH_rrain) )
       call log_sqd_normalized( rrainm, rrp2_on_rrainm2, dble( rr_tol ), & ! In
                                rr1, rr2, var_rr1, var_rr2 ) ! Out
     end if
 
     if ( iiLH_Nr > 0 ) then
       Nrm = dble( hydromet(iiNrm) )
-      Nrp2_on_Nrm2 = dble( corr_varnce_array(iiLH_Nr,iiLH_Nr) )
+      Nrp2_on_Nrm2 = dble( xp2_on_xm2_array(iiLH_Nr) )
 
       call log_sqd_normalized( Nrm, Nrp2_on_Nrm2, dble( Nr_tol ), & ! In
                                Nr1, Nr2, var_Nr1, var_Nr2 ) ! Out
@@ -418,12 +425,13 @@ module generate_lh_sample_module
 
     if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
       ! Compute standard deviation of Nr & rrain
-      stdev_rr = real( rrainm ) * sqrt( corr_varnce_array(iiLH_rrain,iiLH_rrain) )
-      stdev_Nr = real( Nrm ) * sqrt( corr_varnce_array(iiLH_Nr,iiLH_Nr) )
+      stdev_rr = real( rrainm ) * sqrt( xp2_on_xm2_array(iiLH_rrain) )
+      stdev_Nr = real( Nrm ) * sqrt( xp2_on_xm2_array(iiLH_Nr) )
 
       if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
 
-        corr_rrNr = corr_varnce_array(iiLH_rrain,iiLH_Nr)
+        call get_lower_triangular_matrix &
+             ( d_variables, iiLH_rrain, iiLH_Nr, corr_array, corr_rrNr )
 
         ! Covariance between rain water mixing ratio rain number concentration
         covar_rrNr1 = corr_LN_to_cov_gaus &
@@ -442,7 +450,9 @@ module generate_lh_sample_module
 
       ! Covariances involving s and Nr & rr
       if ( stdev_s1 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
-        corr_sNr = corr_varnce_array(iiLH_s_mellor,iiLH_Nr)
+        call get_lower_triangular_matrix &
+             ( d_variables, iiLH_s_mellor, iiLH_Nr, corr_array, & ! In
+               corr_sNr ) ! Out
 
         ! Covariance between s and rain number conc.
         covar_sNr1 = corr_gaus_LN_to_cov_gaus &
@@ -465,7 +475,9 @@ module generate_lh_sample_module
 
       if ( stdev_s2 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
 
-        corr_sNr = corr_varnce_array(iiLH_s_mellor,iiLH_Nr)
+        call get_lower_triangular_matrix &
+             ( d_variables, iiLH_s_mellor, iiLH_Nr, corr_array, & ! In
+               corr_sNr ) ! Out
 
         covar_sNr2 = corr_gaus_LN_to_cov_gaus &
                  ( corr_sNr, &
@@ -487,7 +499,9 @@ module generate_lh_sample_module
 
       if ( stdev_s1 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
 
-        corr_srr = corr_varnce_array(iiLH_s_mellor,iiLH_rrain)
+        call get_lower_triangular_matrix &
+             ( d_variables, iiLH_s_mellor, iiLH_rrain, corr_array, & ! In
+               corr_srr ) ! Out
 
         ! Covariance between s and rain water mixing ratio
         covar_srr1 = corr_gaus_LN_to_cov_gaus &
@@ -510,7 +524,10 @@ module generate_lh_sample_module
 
       if ( stdev_s2 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
 
-        corr_srr = corr_varnce_array(iiLH_s_mellor,iiLH_rrain)
+        call get_lower_triangular_matrix &
+             ( d_variables, iiLH_s_mellor, iiLH_rrain, corr_array, & ! In
+               corr_srr ) ! Out
+
 
         covar_srr2 = corr_gaus_LN_to_cov_gaus &
                  ( corr_srr, &
@@ -534,8 +551,8 @@ module generate_lh_sample_module
 !     if ( iiLH_Nc > 0 ) then
 
     ! Covariances involving s and Nc (currently disabled)
-!       corr_sNc = corr_varnce_array(iiLH_s_mellor,iiLH_Nc)
-!       stdev_Nc = real( Ncm ) * sqrt( corr_varnce_array(iiLH_Nc,iiLH_Nc) )
+!       corr_sNc = corr_array(iiLH_s_mellor,iiLH_Nc)
+!       stdev_Nc = real( Ncm ) * sqrt( xp2_on_xm2_array(iiLH_Nc) )
 
 !       if ( stdev_s1 > LH_stdev_s_tol .and. Ncm > dble( Nc_tol ) ) then
 !         ! The variable s is already Gaussian
@@ -764,8 +781,10 @@ module generate_lh_sample_module
 !     JAS 62 pp. 4015
 !-----------------------------------------------------------------------
 
+    use matrix_operations, only: set_lower_triangular_matrix ! Procedure
+
     use constants_clubb, only: &
-      max_mag_correlation
+      max_mag_correlation ! Constant
 
     implicit none
 
@@ -1559,44 +1578,6 @@ module generate_lh_sample_module
 
     return
   end subroutine log_sqd_normalized
-
-!-------------------------------------------------------------------------------
-  subroutine set_lower_triangular_matrix( d_variables, index1, index2, xpyp, &
-                                          Sigma )
-! Description:
-!   Set a value for the lower triangular portion of the Sigma matrix.
-! References:
-!   None
-!-------------------------------------------------------------------------------
-    implicit none
-
-    ! External
-    intrinsic :: max, min
-
-    ! Input Variables
-    integer, intent(in) :: &
-      d_variables, & ! Number of variates
-      index1, index2 ! Indices for 2 variates (the order doesn't matter)
-
-    double precision, intent(in) :: xpyp ! A variance or covariance     [units vary]
-
-    ! Input/Output Variables
-    double precision, dimension(d_variables,d_variables), intent(inout) :: &
-      Sigma ! The covariance matrix
-
-    integer :: i,j
-
-    ! ---- Begin Code ----
-
-    ! Reverse these to set the values of upper triangular matrix
-    i = max( index1, index2 )
-    j = min( index1, index2 )
-
-    Sigma(i,j) = xpyp
-
-    return
-  end subroutine set_lower_triangular_matrix
-
 
 end module generate_lh_sample_module
 

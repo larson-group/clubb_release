@@ -880,8 +880,11 @@ module microphys_driver
     real, dimension(gr%nnzp,hydromet_dim) :: & 
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
 
+    real, allocatable, dimension(:,:) :: & 
+      xp2_on_xm2_array ! Array containing x'^2 / xm^2 for latin hypercube
+
     real, allocatable, dimension(:,:,:) :: & 
-      corr_varnce_array  ! Array for correlations, with x'^2 /x^2 terms on the diagonal [-]
+      corr_array  ! Array for correlations [-]
 
     real, dimension(gr%nnzp) :: &
       delta_zt, &     ! Difference in thermo. height levels     [m]
@@ -1017,22 +1020,23 @@ module microphys_driver
 !       d_variables = 3 + hydromet_dim
         d_variables = 3 + 3 ! Kluge, since we have no correlations for ice/snow
 
-        allocate( corr_varnce_array(gr%nnzp,d_variables,d_variables) )
+        allocate( corr_array(gr%nnzp,d_variables,d_variables) )
+        allocate( xp2_on_xm2_array(gr%nnzp,d_variables) )
 
         call setup_corr_varnce_array( d_variables, rcm, & ! In
-                                      corr_varnce_array ) ! Out
+                                      xp2_on_xm2_array, corr_array ) ! Out
 
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
                LH_sequence_length, gr%nnzp, & ! In
                cloud_frac, thlm, p_in_Pa, exner, & ! In
                rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
-               hydromet, corr_varnce_array, Lscale_vert_avg, & ! In
+               hydromet, xp2_on_xm2_array, corr_array, Lscale_vert_avg, & ! In
                hydromet_mc, hydromet_vel, rcm_mc, & ! In/Out
                rvm_mc, thlm_mc,  & ! In/Out
                morrison_micro_driver )  ! Procedure
 
-        deallocate( corr_varnce_array )
+        deallocate( corr_array, xp2_on_xm2_array )
 
         if ( l_stats_samp ) then
 
@@ -1082,22 +1086,24 @@ module microphys_driver
 
         d_variables = 3 + hydromet_dim
 
-        allocate( corr_varnce_array(gr%nnzp,d_variables,d_variables) )
+        allocate( corr_array(gr%nnzp,d_variables,d_variables) )
+
+        allocate( xp2_on_xm2_array(gr%nnzp,d_variables) )
 
         call setup_corr_varnce_array( d_variables, rcm, & ! In
-                                      corr_varnce_array ) ! Out
+                                      xp2_on_xm2_array, corr_array ) ! Out
 
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
                LH_sequence_length, gr%nnzp, & ! In
                cloud_frac, thlm, p_in_Pa, exner, & ! In
                rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
-               hydromet, corr_varnce_array, Lscale_vert_avg, & ! In
+               hydromet, xp2_on_xm2_array, corr_array, Lscale_vert_avg, & ! In
                hydromet_mc, hydromet_vel, rcm_mc, & ! In/Out
                rvm_mc, thlm_mc, & ! In/Out
                KK_microphys ) ! Procedure
 
-        deallocate( corr_varnce_array )
+        deallocate( corr_array, xp2_on_xm2_array )
 
         if ( l_stats_samp ) then
 
@@ -2696,7 +2702,8 @@ module microphys_driver
       return
     end subroutine cleanup_microphys
 !===============================================================================
-    subroutine setup_corr_varnce_array( d_variables, rcm, corr_varnce_array )
+    subroutine setup_corr_varnce_array( d_variables, rcm, xp2_on_xm2_array, &
+                                        corr_array )
 ! Description:
 !   Setup an array with the x'^2/x variables on the diagonal and the other
 !   elements to be correlations between various variables.
@@ -2741,133 +2748,143 @@ module microphys_driver
         rcm ! Liquid water mixing ratio         [kg/kg]
 
       ! Output Variables
-      real, dimension(gr%nnzp,d_variables,d_variables), intent(out) :: &
-        corr_varnce_array !  The output array
+      real, dimension(gr%nnzp,d_variables), intent(out) :: &
+        xp2_on_xm2_array !  The output array
 
-      integer :: k
+      real, dimension(gr%nnzp,d_variables,d_variables), intent(out) :: &
+        corr_array 
+
+      integer :: i, k
 
       ! ---- Begin Code ----
 
       ! Initializing to zero means that correlations we don't have
       ! (e.g. Nc and any variable other than s_mellor ) are assumed to be 0.
-      corr_varnce_array(:,:,:) = 0.0 ! Initialize to 0
+      corr_array(:,:,:) = 0.0 ! Initialize to 0
+
+      xp2_on_xm2_array(:,:) = 0.0
+
+      ! Set main diagonal to 1
+      do i = 1, d_variables
+        corr_array(:,i,i) = 1.0
+      end do
 
       do k = 1, gr%nnzp
         if ( rcm(k) > rc_tol ) then
           if ( iiLH_Nc > 0 ) then
-            corr_varnce_array(k,iiLH_Nc,iiLH_Nc)       = Ncp2_on_Ncm2_cloud
-            corr_varnce_array(k,iiLH_Nc,iiLH_s_mellor) = corr_sNc_NL_cloud
-            corr_varnce_array(k,iiLH_s_mellor,iiLH_Nc) = corr_sNc_NL_cloud
+            xp2_on_xm2_array(k,iiLH_Nc) = Ncp2_on_Ncm2_cloud
+            corr_array(k,iiLH_Nc,iiLH_s_mellor) = corr_sNc_NL_cloud
+            corr_array(k,iiLH_s_mellor,iiLH_Nc) = corr_sNc_NL_cloud
           end if
           if ( iiLH_rrain > 0 ) then
-            corr_varnce_array(k,iiLH_rrain,iiLH_rrain)    = rrp2_on_rrainm2_cloud
-            corr_varnce_array(k,iiLH_rrain,iiLH_s_mellor) = corr_srr_NL_cloud
-            corr_varnce_array(k,iiLH_s_mellor,iiLH_rrain) = corr_srr_NL_cloud
+            xp2_on_xm2_array(k,iiLH_rrain) = rrp2_on_rrainm2_cloud 
+            corr_array(k,iiLH_rrain,iiLH_s_mellor) = corr_srr_NL_cloud
+            corr_array(k,iiLH_s_mellor,iiLH_rrain) = corr_srr_NL_cloud
             if ( iiLH_Nr > 0 ) then
-              corr_varnce_array(k,iiLH_Nr,iiLH_Nr)       = Nrp2_on_Nrm2_cloud
-              corr_varnce_array(k,iiLH_rrain,iiLH_Nr)    = corr_rrNr_LL_cloud
-              corr_varnce_array(k,iiLH_Nr,iiLH_rrain)    = corr_rrNr_LL_cloud
-              corr_varnce_array(k,iiLH_Nr,iiLH_s_mellor) = corr_sNr_NL_cloud
-              corr_varnce_array(k,iiLH_s_mellor,iiLH_Nr) = corr_sNr_NL_cloud
+              xp2_on_xm2_array(k,iiLH_Nr) = Nrp2_on_Nrm2_cloud
+              corr_array(k,iiLH_rrain,iiLH_Nr)    = corr_rrNr_LL_cloud
+              corr_array(k,iiLH_Nr,iiLH_rrain)    = corr_rrNr_LL_cloud
+              corr_array(k,iiLH_Nr,iiLH_s_mellor) = corr_sNr_NL_cloud
+              corr_array(k,iiLH_s_mellor,iiLH_Nr) = corr_sNr_NL_cloud
             end if ! iiLH_Nr > 0
           end if ! iiLH_rrain > 0
 
           ! Placeholder until we have actual numbers for the correlations/variances
           ! of ice phase hydrometeors.
           if ( iiLH_rsnow > 0 ) then
-            corr_varnce_array(k,iiLH_rsnow,iiLH_rsnow)    = rrp2_on_rrainm2_cloud
-            corr_varnce_array(k,iiLH_rsnow,iiLH_s_mellor) = corr_srr_NL_cloud
-            corr_varnce_array(k,iiLH_s_mellor,iiLH_rsnow) = corr_srr_NL_cloud
+            xp2_on_xm2_array(k,iiLH_rsnow) = rrp2_on_rrainm2_cloud
+            corr_array(k,iiLH_rsnow,iiLH_s_mellor) = corr_srr_NL_cloud
+            corr_array(k,iiLH_s_mellor,iiLH_rsnow) = corr_srr_NL_cloud
             if ( iiLH_Nsnow > 0 ) then
-              corr_varnce_array(k,iiLH_Nsnow,iiLH_Nsnow)    = Nrp2_on_Nrm2_cloud
-              corr_varnce_array(k,iiLH_rsnow,iiLH_Nsnow)    = corr_rrNr_LL_cloud
-              corr_varnce_array(k,iiLH_Nsnow,iiLH_rsnow)    = corr_rrNr_LL_cloud
-              corr_varnce_array(k,iiLH_Nsnow,iiLH_s_mellor) = corr_sNr_NL_cloud
-              corr_varnce_array(k,iiLH_s_mellor,iiLH_Nsnow) = corr_sNr_NL_cloud
+              xp2_on_xm2_array(k,iiLH_Nsnow) = Nrp2_on_Nrm2_cloud
+              corr_array(k,iiLH_rsnow,iiLH_Nsnow)    = corr_rrNr_LL_cloud
+              corr_array(k,iiLH_Nsnow,iiLH_rsnow)    = corr_rrNr_LL_cloud
+              corr_array(k,iiLH_Nsnow,iiLH_s_mellor) = corr_sNr_NL_cloud
+              corr_array(k,iiLH_s_mellor,iiLH_Nsnow) = corr_sNr_NL_cloud
             end if ! iiLH_Nsnow > 0
           end if ! iiLH_rsnow > 0
           if ( iiLH_rice > 0 ) then
-            corr_varnce_array(k,iiLH_rice,iiLH_rice)     = 1.0 ! Dimensionless made up value
-            corr_varnce_array(k,iiLH_rice,iiLH_s_mellor) = corr_sNc_NL_cloud
-            corr_varnce_array(k,iiLH_s_mellor,iiLH_rice) = corr_sNc_NL_cloud
+            xp2_on_xm2_array(k,iiLH_rice) = 1.0 ! Dimensionless made up value
+            corr_array(k,iiLH_rice,iiLH_s_mellor) = corr_sNc_NL_cloud
+            corr_array(k,iiLH_s_mellor,iiLH_rice) = corr_sNc_NL_cloud
             if ( iiLH_Ni > 0 ) then
-              corr_varnce_array(k,iiLH_Ni,iiLH_Ni)     = Ncp2_on_Ncm2_cloud
-              corr_varnce_array(k,iiLH_Ni,iiLH_s_mellor) = corr_sNc_NL_cloud
-              corr_varnce_array(k,iiLH_s_mellor,iiLH_Ni) = corr_sNc_NL_cloud
+              xp2_on_xm2_array(k,iiLH_Ni) = Ncp2_on_Ncm2_cloud
+              corr_array(k,iiLH_Ni,iiLH_s_mellor) = corr_sNc_NL_cloud
+              corr_array(k,iiLH_s_mellor,iiLH_Ni) = corr_sNc_NL_cloud
             end if ! iiLH_Ni > 0
           end if ! iiLH_rice > 0
           if ( iiLH_rgraupel > 0 ) then
-            corr_varnce_array(k,iiLH_rgraupel,iiLH_rgraupel)  = rrp2_on_rrainm2_cloud
-            corr_varnce_array(k,iiLH_rgraupel,iiLH_s_mellor) = corr_srr_NL_cloud
-            corr_varnce_array(k,iiLH_s_mellor,iiLH_rgraupel) = corr_srr_NL_cloud
+            xp2_on_xm2_array(k,iiLH_rgraupel) = rrp2_on_rrainm2_cloud
+            corr_array(k,iiLH_rgraupel,iiLH_s_mellor) = corr_srr_NL_cloud
+            corr_array(k,iiLH_s_mellor,iiLH_rgraupel) = corr_srr_NL_cloud
             if ( iiLH_Ngraupel > 0 ) then
-              corr_varnce_array(k,iiLH_Ngraupel,iiLH_Ngraupel) = Nrp2_on_Nrm2_cloud
-              corr_varnce_array(k,iiLH_rgraupel,iiLH_Ngraupel) = corr_rrNr_LL_cloud
-              corr_varnce_array(k,iiLH_Ngraupel,iiLH_rgraupel) = corr_rrNr_LL_cloud
-              corr_varnce_array(k,iiLH_Ngraupel,iiLH_s_mellor) = corr_sNr_NL_cloud
-              corr_varnce_array(k,iiLH_s_mellor,iiLH_Ngraupel) = corr_sNr_NL_cloud
+              xp2_on_xm2_array(k,iiLH_Ngraupel) = Nrp2_on_Nrm2_cloud
+              corr_array(k,iiLH_rgraupel,iiLH_Ngraupel) = corr_rrNr_LL_cloud
+              corr_array(k,iiLH_Ngraupel,iiLH_rgraupel) = corr_rrNr_LL_cloud
+              corr_array(k,iiLH_Ngraupel,iiLH_s_mellor) = corr_sNr_NL_cloud
+              corr_array(k,iiLH_s_mellor,iiLH_Ngraupel) = corr_sNr_NL_cloud
             end if ! iiLH_Ngraupel > 0
           end if ! iiLH_rgraupel > 0
 
         else ! rcm < rc_tol
           if ( iiLH_Nc > 0 ) then
             ! The epsilon is a kluge to prevent a singular matrix in generate_lh_sample
-            corr_varnce_array(k,iiLH_Nc,iiLH_Nc) = &
+            xp2_on_xm2_array(k,iiLH_Nc) = &
               max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
-            corr_varnce_array(k,iiLH_Nc,iiLH_s_mellor) = corr_sNc_NL_below
-            corr_varnce_array(k,iiLH_s_mellor,iiLH_Nc) = corr_sNc_NL_below
+            corr_array(k,iiLH_Nc,iiLH_s_mellor) = corr_sNc_NL_below
+            corr_array(k,iiLH_s_mellor,iiLH_Nc) = corr_sNc_NL_below
           end if
           if ( iiLH_rrain > 0 ) then
-            corr_varnce_array(k,iiLH_rrain,iiLH_rrain) = rrp2_on_rrainm2_below
-            corr_varnce_array(k,iiLH_rrain,iiLH_s_mellor) = corr_srr_NL_below
-            corr_varnce_array(k,iiLH_s_mellor,iiLH_rrain) = corr_srr_NL_below
+            xp2_on_xm2_array(k,iiLH_rrain) = rrp2_on_rrainm2_below
+            corr_array(k,iiLH_rrain,iiLH_s_mellor) = corr_srr_NL_below
+            corr_array(k,iiLH_s_mellor,iiLH_rrain) = corr_srr_NL_below
             if ( iiLH_Nr > 0 ) then
-              corr_varnce_array(k,iiLH_Nr,iiLH_Nr) = Nrp2_on_Nrm2_below
-              corr_varnce_array(k,iiLH_rrain,iiLH_Nr) = corr_rrNr_LL_below
-              corr_varnce_array(k,iiLH_Nr,iiLH_rrain) = corr_rrNr_LL_below
-              corr_varnce_array(k,iiLH_Nr,iiLH_s_mellor) = corr_sNr_NL_below
-              corr_varnce_array(k,iiLH_s_mellor,iiLH_Nr) = corr_sNr_NL_below
+              xp2_on_xm2_array(k,iiLH_Nr) = Nrp2_on_Nrm2_below
+              corr_array(k,iiLH_rrain,iiLH_Nr) = corr_rrNr_LL_below
+              corr_array(k,iiLH_Nr,iiLH_rrain) = corr_rrNr_LL_below
+              corr_array(k,iiLH_Nr,iiLH_s_mellor) = corr_sNr_NL_below
+              corr_array(k,iiLH_s_mellor,iiLH_Nr) = corr_sNr_NL_below
             end if ! iiLH_Nr > 0
           end if ! iiLH_rrain > 0
 
           ! Placeholder until we have actual numbers for the correlations/variances
           ! of ice phase hydrometeors.
           if ( iiLH_rsnow > 0 ) then
-            corr_varnce_array(k,iiLH_rsnow,iiLH_rsnow)    = rrp2_on_rrainm2_below
-            corr_varnce_array(k,iiLH_rsnow,iiLH_s_mellor) = corr_srr_NL_below
-            corr_varnce_array(k,iiLH_s_mellor,iiLH_rsnow) = corr_srr_NL_below
+            xp2_on_xm2_array(k,iiLH_rsnow)    = rrp2_on_rrainm2_below
+            corr_array(k,iiLH_rsnow,iiLH_s_mellor) = corr_srr_NL_below
+            corr_array(k,iiLH_s_mellor,iiLH_rsnow) = corr_srr_NL_below
             if ( iiLH_Nsnow > 0 ) then
-              corr_varnce_array(k,iiLH_Nsnow,iiLH_Nsnow)    = Nrp2_on_Nrm2_below
-              corr_varnce_array(k,iiLH_rsnow,iiLH_Nsnow)    = corr_rrNr_LL_below
-              corr_varnce_array(k,iiLH_Nsnow,iiLH_rsnow)    = corr_rrNr_LL_below
-              corr_varnce_array(k,iiLH_Nsnow,iiLH_s_mellor) = corr_sNr_NL_below
-              corr_varnce_array(k,iiLH_s_mellor,iiLH_Nsnow) = corr_sNr_NL_below
+              xp2_on_xm2_array(k,iiLH_Nsnow)    = Nrp2_on_Nrm2_below
+              corr_array(k,iiLH_rsnow,iiLH_Nsnow)    = corr_rrNr_LL_below
+              corr_array(k,iiLH_Nsnow,iiLH_rsnow)    = corr_rrNr_LL_below
+              corr_array(k,iiLH_Nsnow,iiLH_s_mellor) = corr_sNr_NL_below
+              corr_array(k,iiLH_s_mellor,iiLH_Nsnow) = corr_sNr_NL_below
             end if ! iiLH_Nsnow > 0
           end if ! iiLH_rsnow > 0
           if ( iiLH_rice > 0 ) then
-            corr_varnce_array(k,iiLH_rice,iiLH_rice)     = 2.0 ! Dimensionless made up value
-            corr_varnce_array(k,iiLH_rice,iiLH_s_mellor) = corr_sNc_NL_below
-            corr_varnce_array(k,iiLH_s_mellor,iiLH_rice) = corr_sNc_NL_below
+            xp2_on_xm2_array(k,iiLH_rice)     = 2.0 ! Dimensionless made up value
+            corr_array(k,iiLH_rice,iiLH_s_mellor) = corr_sNc_NL_below
+            corr_array(k,iiLH_s_mellor,iiLH_rice) = corr_sNc_NL_below
             if ( iiLH_Ni > 0 ) then
-              corr_varnce_array(k,iiLH_Ni,iiLH_Ni)     = Ncp2_on_Ncm2_below
-              corr_varnce_array(k,iiLH_Ni,iiLH_s_mellor) = corr_sNc_NL_below
-              corr_varnce_array(k,iiLH_s_mellor,iiLH_Ni) = corr_sNc_NL_below
+              xp2_on_xm2_array(k,iiLH_Ni)     = Ncp2_on_Ncm2_below
+              corr_array(k,iiLH_Ni,iiLH_s_mellor) = corr_sNc_NL_below
+              corr_array(k,iiLH_s_mellor,iiLH_Ni) = corr_sNc_NL_below
             end if ! iiLH_Ni > 0
           end if ! iiLH_rice > 0
           if ( iiLH_rgraupel > 0 ) then
-            corr_varnce_array(k,iiLH_rgraupel,iiLH_rgraupel) = rrp2_on_rrainm2_below
-            corr_varnce_array(k,iiLH_rgraupel,iiLH_s_mellor) = corr_srr_NL_below
-            corr_varnce_array(k,iiLH_s_mellor,iiLH_rgraupel) = corr_srr_NL_below
+            xp2_on_xm2_array(k,iiLH_rgraupel) = rrp2_on_rrainm2_below
+            corr_array(k,iiLH_rgraupel,iiLH_s_mellor) = corr_srr_NL_below
+            corr_array(k,iiLH_s_mellor,iiLH_rgraupel) = corr_srr_NL_below
             if ( iiLH_Ngraupel > 0 ) then
-              corr_varnce_array(k,iiLH_Ngraupel,iiLH_Ngraupel) = Nrp2_on_Nrm2_below
-              corr_varnce_array(k,iiLH_rgraupel,iiLH_Ngraupel) = corr_rrNr_LL_below
-              corr_varnce_array(k,iiLH_Ngraupel,iiLH_rgraupel) = corr_rrNr_LL_below
-              corr_varnce_array(k,iiLH_Ngraupel,iiLH_s_mellor) = corr_sNr_NL_below
-              corr_varnce_array(k,iiLH_s_mellor,iiLH_Ngraupel) = corr_sNr_NL_below
+              xp2_on_xm2_array(k,iiLH_Ngraupel) = Nrp2_on_Nrm2_below
+              corr_array(k,iiLH_rgraupel,iiLH_Ngraupel) = corr_rrNr_LL_below
+              corr_array(k,iiLH_Ngraupel,iiLH_rgraupel) = corr_rrNr_LL_below
+              corr_array(k,iiLH_Ngraupel,iiLH_s_mellor) = corr_sNr_NL_below
+              corr_array(k,iiLH_s_mellor,iiLH_Ngraupel) = corr_sNr_NL_below
             end if ! iiLH_Ngraupel > 0
           end if ! iiLH_rgraupel > 0
 
-        end if
+        end if ! rcm > rc_tol
       end do ! 1..gr%nnzp
 
       return

@@ -29,10 +29,10 @@ module latin_hypercube_driver_module
                sequence_length, nnzp, &
                cloud_frac, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, w_std_dev, delta_zt, delta_zm, rcm, rvm, &
-               hydromet, corr_varnce_array, Lscale_vert_avg, &
+               hydromet, xp2_on_xm2_array, corr_array, Lscale_vert_avg, &
                LH_hydromet_mc, LH_hydromet_vel, LH_rcm_mc, &
                LH_rvm_mc, LH_thlm_mc, &
-               microphys_sub ) 
+               microphys_sub )
 
 ! Description:
 !   Call a microphysics scheme or generate a estimate of Kessler autoconversion
@@ -40,7 +40,7 @@ module latin_hypercube_driver_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use array_index, only: & 
+    use array_index, only: &
       iirrainm,    & ! Variables  
       iirsnowm,    &
       iirgraupelm, &
@@ -51,7 +51,7 @@ module latin_hypercube_driver_module
       iiNsnowm,    & 
       iiNgraupelm
 
-    use array_index, only: & 
+    use array_index, only: &
       iiLH_s_mellor   ! Variables
 
     use parameters_model, only: hydromet_dim ! Variable
@@ -70,7 +70,7 @@ module latin_hypercube_driver_module
 
     use output_2D_samples_module, only: &
       output_2D_lognormal_dist_file, & ! Procedure(s)
-      output_2D_uniform_dist_file 
+      output_2D_uniform_dist_file
 #endif
 
     use variables_prognostic_module, only: &
@@ -180,8 +180,11 @@ module latin_hypercube_driver_module
     real, dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
+    real, dimension(nnzp,d_variables), intent(in) :: &
+      xp2_on_xm2_array ! Variance over mean squared array       [-]
+
     real, dimension(nnzp,d_variables,d_variables), intent(in) :: &
-      corr_varnce_array ! Correlation for hydrometeor species [-]
+      corr_array ! Correlation for hydrometeor species [-]
 
     real, dimension(nnzp), intent(in) :: &
       Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
@@ -270,11 +273,11 @@ module latin_hypercube_driver_module
 
       prior_iter = iter
 
-      ! Re-seed 
+      ! Re-seed
       if ( l_re_seed ) then
         ! This is the default seed in mt95.  Change this number to try
         ! non-default values.
-        call genrand_init( put=5489_genrand_intg ) 
+        call genrand_init( put=5489_genrand_intg )
       end if
 
       ! Check for a bug where the iteration number isn't incrementing correctly,
@@ -347,7 +350,7 @@ module latin_hypercube_driver_module
                            1:d_variables+1)
     else
       lh_start_cloud_frac = -9999.0  ! This assignment eliminates a g95 compiler warning for an
-                                     ! uninitialized variable. -meyern
+      ! uninitialized variable. -meyern
 
     end if ! l_lh_cloud_weighted_sampling
 
@@ -417,7 +420,7 @@ module latin_hypercube_driver_module
 
       end do ! 1..n_micro_calls
 
-      ! Use a fixed number for the vertical correlation.  
+      ! Use a fixed number for the vertical correlation.
 !     X_vert_corr(1:nnzp) = 0.95_genrand_real
 
       ! Compute vertical correlation using a formula based on Lscale, the
@@ -498,10 +501,10 @@ module latin_hypercube_driver_module
       if(clubb_at_least_debug_level( 2 ) .and. &
          lh_start_cloud_frac < 0.5 .and. lh_start_cloud_frac > cloud_frac_thresh ) then
 
-      call assert_check_half_cloudy &
-           ( n_micro_calls, pdf_params%cloud_frac1(k_lh_start), &
-             pdf_params%cloud_frac2(k_lh_start), X_mixt_comp_all_levs(k_lh_start,:), &
-             X_u_all_levs(k_lh_start,:,iiLH_s_mellor) )
+        call assert_check_half_cloudy &
+             ( n_micro_calls, pdf_params%cloud_frac1(k_lh_start), &
+               pdf_params%cloud_frac2(k_lh_start), X_mixt_comp_all_levs(k_lh_start,:), &
+               X_u_all_levs(k_lh_start,:,iiLH_s_mellor) )
 
       end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
     end if ! l_lh_cloud_weighted_sampling
@@ -528,7 +531,7 @@ module latin_hypercube_driver_module
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
              wm_zt(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
-             hydromet(k,:), corr_varnce_array(k,:,:), X_u_all_levs(k,:,:), & ! In
+             hydromet(k,:), xp2_on_xm2_array(k,:), corr_array(k,:,:), X_u_all_levs(k,:,:), & ! In
              X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k = k_lh_start..nnzp
@@ -538,7 +541,7 @@ module latin_hypercube_driver_module
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
              wm_zt(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
-             hydromet(k,:), corr_varnce_array(k,:,:), X_u_all_levs(k,:,:), &  !  In
+             hydromet(k,:), xp2_on_xm2_array(k,:), corr_array(k,:,:), X_u_all_levs(k,:,:), & ! In
              X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k_lh_start-1..1
@@ -661,7 +664,7 @@ module latin_hypercube_driver_module
 
     use output_2D_samples_module, only: &
       lognormal_sample_file, & ! Instance of a type
-      uniform_sample_file 
+      uniform_sample_file
 
 #endif /*UNRELEASED_CODE*/
 
@@ -832,7 +835,7 @@ module latin_hypercube_driver_module
 
     use output_2D_samples_module, only: &
       lognormal_sample_file, & ! Variable(s)
-      uniform_sample_file 
+      uniform_sample_file
 #endif
 
     implicit none
@@ -1124,7 +1127,7 @@ module latin_hypercube_driver_module
                                   X_u_one_var_k_lh_start, vert_corr, &
                                   X_u_one_var_all_levs )
 ! Description:
-!   Re-computes X_u (uniform sample) for a single variate (e.g. s_mellor) using 
+!   Re-computes X_u (uniform sample) for a single variate (e.g. s_mellor) using
 !   an arbitrary correlation specified by the input vert_corr variable (which
 !   can vary with height).
 !   This is an improved algorithm that doesn't require us to convert from a
@@ -1188,7 +1191,7 @@ module latin_hypercube_driver_module
 
       unbounded_point = min_val + offset
 
-      ! If unbounded_point lies outside the range [0,1], 
+      ! If unbounded_point lies outside the range [0,1],
       ! fold it back so that it is between [0,1]
       if ( unbounded_point > 1.0 ) then
         X_u_one_var_all_levs(kp1) = 2.0 - unbounded_point
@@ -1197,7 +1200,7 @@ module latin_hypercube_driver_module
       else
         X_u_one_var_all_levs(kp1) = unbounded_point
       end if
- 
+
 !     print *, k, X_u_one_var_all_levs(k), kp1, X_u_one_var_all_levs(kp1)
 
     end do ! k_lh_start..nnzp-1
@@ -1219,7 +1222,7 @@ module latin_hypercube_driver_module
 
       unbounded_point = min_val + offset
 
-      ! If unbounded_point lies outside the range [0,1], 
+      ! If unbounded_point lies outside the range [0,1],
       ! fold it back so that it is between [0,1]
       if ( unbounded_point > 1.0 ) then
         X_u_one_var_all_levs(km1) = 2.0 - unbounded_point
@@ -1273,7 +1276,7 @@ module latin_hypercube_driver_module
       X_u_s_mellor_k_lh_start   ! Uniform distribution for s_mellor at k_lh_start [-]
 
     ! Local Variables
-    real :: cloud_frac_n 
+    real :: cloud_frac_n
 
     integer :: number_cloudy_samples
 
