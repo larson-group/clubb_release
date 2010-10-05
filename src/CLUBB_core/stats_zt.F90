@@ -2338,7 +2338,6 @@ module stats_zt
              "Variance of the latin hypercube estimate of rrain [kg^2/kg^2]", "kg^2/kg^2", zt )
         k = k + 1
 
-
       case default
 
         l_found =.false.

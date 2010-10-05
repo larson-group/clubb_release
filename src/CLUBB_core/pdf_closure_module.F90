@@ -28,7 +28,10 @@ module pdf_closure_module
                thlprcp, rcp2, pdf_params,        &
                err_code,                         &
                wpsclrprtp, wpsclrp2, sclrpthvp,  &
-               wpsclrpthlp, sclrprcp, wp2sclrp )
+               wpsclrpthlp, sclrprcp, wp2sclrp,  &
+               sptp_mellor_1, sptp_mellor_2,     &
+               tp2_mellor_1, tp2_mellor_2,       &
+               corr_s_t_mellor_1, corr_s_t_mellor_2  )
 
 
 !       Description:
@@ -64,7 +67,8 @@ module pdf_closure_module
       thl_tol,        & ! Tolerance for th_l                  [K]
       s_mellor_tol,  & ! Tolerance for pdf parameter s       [kg/kg]
       fstderr,       &
-      zero_threshold  
+      zero_threshold, & 
+      max_mag_correlation
 
     use parameters_model, only: &
       sclr_tol,          & ! Array of passive scalar tolerances  [units vary]
@@ -104,6 +108,14 @@ module pdf_closure_module
       iwprtp2,    &
       iwprtpthlp, &
       iwpthlp2
+
+    use stats_variables, only: &
+      itp2_mellor_1, &
+      itp2_mellor_2, &
+      isptp_mellor_1, &
+      isptp_mellor_2, &
+      icorr_s_t_mellor_1, &
+      icorr_s_t_mellor_2
 
     implicit none
 
@@ -163,6 +175,13 @@ module pdf_closure_module
       thlprcp,     & ! th_l' r_c'            [(K kg)/kg]
       rcp2,        & ! r_c'^2                [(kg^2)/(kg^2)]
       wprtpthlp      ! w' r_t' th_l'         [(m kg K)/(s kg)]
+
+    ! Some variables for when we're computing the correlation or covariance of
+    ! s and t for diagnostic purposes
+    real, intent(out) ::  & 
+      sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t  [kg^2/kg^2]
+      tp2_mellor_1, tp2_mellor_2, &        ! Variance of t          [kg^2/kg^2]
+      corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation of s and t [-]
 
     type(pdf_parameter), intent(out) :: & 
       pdf_params     ! pdf paramters         [units vary]
@@ -251,6 +270,8 @@ module pdf_closure_module
     ! variables for a generalization of Chris Golaz' closure
     ! varies width of plumes in theta_l, rt
     real :: width_factor_1, width_factor_2
+
+    real :: stdev_s_times_stdev_t
 
     integer :: i   ! Index
 
@@ -542,6 +563,7 @@ module pdf_closure_module
                 + rrtthl*sqrt( varnce_rt2*varnce_thl2 ) )
     end if
 
+
     ! Scalar Addition to higher order moments
     if ( l_scalar_calc ) then
       do i=1, sclr_dim
@@ -774,6 +796,39 @@ module pdf_closure_module
 
     end if
 
+    ! Compute some diagnostics related to the s and t variables
+    if ( icorr_s_t_mellor_1 > 0 .or. isptp_mellor_1 > 0 .or. itp2_mellor_1 > 0 ) then
+      sptp_mellor_1 = crt1**2 * varnce_rt1 - cthl1**2 * varnce_thl1
+      tp2_mellor_1 = crt1**2 * varnce_rt1 + 2.0 * crt1 * cthl1 &
+                     * rrtthl * sqrt( varnce_rt1 * varnce_thl1 ) &
+                   + varnce_thl1 * cthl1**2 
+
+      stdev_s_times_stdev_t = sqrt( tp2_mellor_1 ) * stdev_s1
+
+      if ( stdev_s_times_stdev_t > 0. ) then
+        corr_s_t_mellor_1 = sptp_mellor_1 / stdev_s_times_stdev_t
+      else
+        corr_s_t_mellor_1 = 0.
+      end if
+
+    end if
+
+    if ( icorr_s_t_mellor_2 > 0 .or. isptp_mellor_2 > 0 .or. itp2_mellor_2 > 0 ) then
+      sptp_mellor_2 = crt2**2 * varnce_rt2 - cthl2**2 * varnce_thl2
+      tp2_mellor_2 = crt2**2 * varnce_rt2 + 2.0 * crt2 * cthl2 &
+                     * rrtthl * sqrt( varnce_rt2 * varnce_thl2 ) &
+                   + varnce_thl1 * cthl2**2
+
+      stdev_s_times_stdev_t = sqrt( tp2_mellor_2 ) * stdev_s2
+
+      if ( stdev_s_times_stdev_t > 0. ) then
+        corr_s_t_mellor_2 = sptp_mellor_2 / stdev_s_times_stdev_t
+      else
+        corr_s_t_mellor_1 = 0.
+      end if
+
+    end if
+
 
     ! Save PDF parameters
     pdf_params%w1(level)          = w1
@@ -783,7 +838,7 @@ module pdf_closure_module
     pdf_params%rt1(level)         = rt1
     pdf_params%rt2(level)         = rt2
     pdf_params%varnce_rt1(level)  = varnce_rt1
-    pdf_params%varnce_rt2(level)        = varnce_rt2
+    pdf_params%varnce_rt2(level)  = varnce_rt2
     pdf_params%crt1(level)        = crt1
     pdf_params%crt2(level)        = crt2
     pdf_params%cthl1(level)       = cthl1
@@ -801,8 +856,8 @@ module pdf_closure_module
     pdf_params%cloud_frac2(level) = cloud_frac2
     pdf_params%s1(level)          = s1
     pdf_params%s2(level)          = s2
-    pdf_params%stdev_s1(level)         = stdev_s1
-    pdf_params%stdev_s2(level)         = stdev_s2
+    pdf_params%stdev_s1(level)    = stdev_s1
+    pdf_params%stdev_s2(level)    = stdev_s2
     pdf_params%rrtthl(level)      = rrtthl
     pdf_params%alpha_thl(level)   = alpha_thl
     pdf_params%alpha_rt(level)    = alpha_rt

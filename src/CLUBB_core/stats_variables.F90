@@ -483,6 +483,17 @@ module stats_variables
 !$omp threadprivate(iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncp2_zt, iLH_rcp2_zt, iLH_rtp2_zt, &
 !$omp               iLH_thlp2_zt, iLH_rrainp2_zt)
 
+  integer, public :: &
+    itp2_mellor_1, &
+    itp2_mellor_2, &
+    isptp_mellor_1, &
+    isptp_mellor_2, &
+    icorr_s_t_mellor_1, &
+    icorr_s_t_mellor_2
+
+!$omp threadprivate(itp2_mellor_1, itp2_mellor_2, isptp_mellor_1, &
+!$omp   isptp_mellor_2, icorr_s_t_mellor_1, icorr_s_t_mellor_2)
+
   ! Indices for statistics in zm file
   integer, public :: & 
      iwp2, & 

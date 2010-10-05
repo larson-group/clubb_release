@@ -192,6 +192,14 @@ module stats_zm
         iwpsclrpthlp, & 
         iwpedsclrp
 
+    use stats_variables, only: &
+      itp2_mellor_1, &
+      itp2_mellor_2, &
+      isptp_mellor_1, &
+      isptp_mellor_2, &
+      icorr_s_t_mellor_1, &
+      icorr_s_t_mellor_2
+
     use stats_type, only: & 
         stat_assign ! Procedure
 
@@ -370,6 +378,15 @@ module stats_zm
     iwprtp_mfl_upper_lim = 0
     iwprtp_enter_mfl = 0
     iwprtp_exit_mfl = 0
+
+    ! Diagnostics for s and t Mellor
+    itp2_mellor_1 = 0
+    itp2_mellor_2 = 0
+    isptp_mellor_1 = 0
+    isptp_mellor_2 = 0
+
+    icorr_s_t_mellor_1 = 0
+    icorr_s_t_mellor_2 = 0
 
     allocate(isclrprtp(1:sclr_dim))
     allocate(isclrp2(1:sclr_dim))
@@ -1234,7 +1251,43 @@ module stats_zm
         iwm_zm = k
         call stat_assign( iwm_zm, "wm_zm", & 
              "Vertical (w) wind [m/s]", "m/s", zm )
-        k = k + 1        
+        k = k + 1
+
+      case ( 'tp2_mellor_1' )
+        itp2_mellor_1 = k
+        call stat_assign( itp2_mellor_1, "tp2_mellor_1", & 
+             "Variance of t_mellor_1 [kg^2/kg^2]", "kg^2/kg^2", zm )
+        k = k + 1
+
+      case ( 'tp2_mellor_2' )
+        itp2_mellor_2 = k
+        call stat_assign( itp2_mellor_2, "tp2_mellor_2", & 
+             "Variance of t_mellor_2 [kg^2/kg^2]", "kg^2/kg^2", zm )
+        k = k + 1
+
+      case ( 'sptp_mellor_1' )
+        isptp_mellor_1 = k
+        call stat_assign( isptp_mellor_1, "sptp_mellor_1", & 
+             "Covariance between s_mellor_1 and t_mellor_1 [kg^2/kg^2]", "kg^2/kg^2", zm )
+        k = k + 1
+
+      case ( 'sptp_mellor_2' )
+        isptp_mellor_2 = k
+        call stat_assign( isptp_mellor_2, "sptp_mellor_2", & 
+             "Covariance between s_mellor_2 and t_mellor_2 [kg^2/kg^2]", "kg^2/kg^2", zm )
+        k = k + 1
+
+      case ( 'corr_s_t_mellor_1' )
+        icorr_s_t_mellor_1 = k
+        call stat_assign( icorr_s_t_mellor_1, "corr_s_t_1", & 
+             "Correlation between s_mellor_1 and t_mellor_1 [-]", "count", zm )
+        k = k + 1
+
+      case ( 'corr_s_t_mellor_2' )
+        icorr_s_t_mellor_2 = k
+        call stat_assign( icorr_s_t_mellor_2, "corr_s_t_2", & 
+             "Correlation between s_mellor_2 and t_mellor_2 [-]", "count", zm )
+        k = k + 1
 
       case default
         l_found = .false.

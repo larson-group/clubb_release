@@ -175,9 +175,14 @@ module clubb_core
       wpsclrprtp,  & ! w'sclr'rt'
       wpsclrpthlp    ! w'sclr'thl'
 
-    use variables_prognostic_module, only: &
-      pdf_parameter
+    use variables_diagnostic_module, only: &
+      sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
+      tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
+      corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
 
+    use variables_prognostic_module, only: &
+      pdf_parameter ! Type
+ 
 #ifdef GFDL
     use advance_sclrm_Nd_module, only: &  ! h1g, 2010-06-16 begin mod
        advance_sclrm_Nd_diffusion_OG, &
@@ -257,6 +262,15 @@ module clubb_core
       sfc,           &
       irtm_spur_src,  &
       ithlm_spur_src
+
+    use stats_variables, only: &
+      itp2_mellor_1, & ! Variables
+      itp2_mellor_2, &
+      isptp_mellor_1, &
+      isptp_mellor_2, &
+      icorr_s_t_mellor_1, &
+      icorr_s_t_mellor_2
+
 
     use fill_holes, only: &
       vertical_integral ! Procedure(s)
@@ -624,44 +638,29 @@ module clubb_core
 
     do k = 1, gr%nnzp, 1
 
+      call pdf_closure & 
+         ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),       & ! intent(in)
+           wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),               & ! intent(in)
+           Skw_zt(k), rtm(k), rtp2_zt(k),                      & ! intent(in)
+           zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),            & ! intent(in)
+           zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),      & ! intent(in)
+           wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),  & ! intent(in)
+           sclrpthlp_zt(k,:), k,                               & ! intent(in)
 #ifdef GFDL
-      call pdf_closure & 
-         ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),       & ! intent(in)
-           wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),               & ! intent(in)
-           Skw_zt(k), rtm(k), rtp2_zt(k),                      & ! intent(in)
-           zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),            & ! intent(in)
-           zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),      & ! intent(in)
-           wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),  & ! intent(in)
-           sclrpthlp_zt(k,:), k,                               & ! intent(in)
            RH_crit(k, : , :),                                  & ! intent(in)  h1g, 2010-06-16
-           wp4_zt(k), wprtp2(k), wp2rtp(k),                    & ! intent(out)
-           wpthlp2(k), wp2thlp(k), wprtpthlp(k),               & ! intent(out)
-           cloud_frac(k), rcm(k), wpthvp_zt(k),                & ! intent(out)
-           wp2thvp(k), rtpthvp_zt(k), thlpthvp_zt(k),          & ! intent(out)
-           wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),               & ! intent(out)
-           thlprcp_zt(k), rcp2_zt(k), pdf_params,              & ! intent(out)
-           err_code,                                           & ! intent(out)
-           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),  & ! intent(out)
-           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:) )   ! intent(out)
-#else
-      call pdf_closure & 
-         ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),       & ! intent(in)
-           wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),               & ! intent(in)
-           Skw_zt(k), rtm(k), rtp2_zt(k),                      & ! intent(in)
-           zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),            & ! intent(in)
-           zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),      & ! intent(in)
-           wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),  & ! intent(in)
-           sclrpthlp_zt(k,:), k,                               & ! intent(in)
-           wp4_zt(k), wprtp2(k), wp2rtp(k),                    & ! intent(out)
-           wpthlp2(k), wp2thlp(k), wprtpthlp(k),               & ! intent(out)
-           cloud_frac(k), rcm(k), wpthvp_zt(k),                & ! intent(out)
-           wp2thvp(k), rtpthvp_zt(k), thlpthvp_zt(k),          & ! intent(out)
-           wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),               & ! intent(out)
-           thlprcp_zt(k), rcp2_zt(k), pdf_params,              & ! intent(out)
-           err_code,                                           & ! intent(out)
-           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),  & ! intent(out)
-           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:) )   ! intent(out)
 #endif
+           wp4_zt(k), wprtp2(k), wp2rtp(k),                    & ! intent(out)
+           wpthlp2(k), wp2thlp(k), wprtpthlp(k),               & ! intent(out)
+           cloud_frac(k), rcm(k), wpthvp_zt(k),                & ! intent(out)
+           wp2thvp(k), rtpthvp_zt(k), thlpthvp_zt(k),          & ! intent(out)
+           wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),               & ! intent(out)
+           thlprcp_zt(k), rcp2_zt(k), pdf_params,              & ! intent(out)
+           err_code,                                           & ! intent(out)
+           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),  & ! intent(out)
+           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),  & ! intent(out)
+           sptp_mellor_1(k), sptp_mellor_2(k),                 & ! intent(out)
+           tp2_mellor_1(k), tp2_mellor_2(k),                   & ! intent(out)
+           corr_s_t_mellor_1(k), corr_s_t_mellor_2(k)          ) ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
@@ -700,44 +699,29 @@ module clubb_core
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       do k = 1, gr%nnzp, 1
 
+        call pdf_closure & 
+           ( p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),    & ! intent(in)
+             wp2(k), wp3_zm(k), sigma_sqd_w(k),                     & ! intent(in)
+             Skw_zm(k), zt2zm( rtm, k ), rtp2(k),                   & ! intent(in)
+             wprtp(k), zt2zm( thlm, k ), thlp2(k),                  & ! intent(in)
+             wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                  & ! intent(in)
+             wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),              & ! intent(in)
+             sclrpthlp(k,:), k,                                     & ! intent(in)
 #ifdef GFDL
-        call pdf_closure & 
-           ( p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),    & ! intent(in)
-             wp2(k), wp3_zm(k), sigma_sqd_w(k),                     & ! intent(in)
-             Skw_zm(k), zt2zm( rtm, k ), rtp2(k),                   & ! intent(in)
-             wprtp(k), zt2zm( thlm, k ), thlp2(k),                  & ! intent(in)
-             wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                  & ! intent(in)
-             wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),              & ! intent(in)
-             sclrpthlp(k,:), k,                                     & ! intent(in)
              RH_crit(k, : , :),                                     & ! intent(in)  h1g, 2010-06-16
-             wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
-             wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
-             cloud_frac_zm(k), rcm_zm(k), wpthvp(k),                & ! intent(out)
-             wp2thvp_zm(k), rtpthvp(k), thlpthvp(k),                & ! intent(out)
-             wprcp(k), wp2rcp_zm(k), rtprcp(k),                     & ! intent(out)
-             thlprcp(k), rcp2(k), pdf_params_zm,                    & ! intent(out)
-             err_code,                                              & ! intent(out)
-             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
-             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:) )   ! intent(out)
-#else
-        call pdf_closure & 
-           ( p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),    & ! intent(in)
-             wp2(k), wp3_zm(k), sigma_sqd_w(k),                     & ! intent(in)
-             Skw_zm(k), zt2zm( rtm, k ), rtp2(k),                   & ! intent(in)
-             wprtp(k), zt2zm( thlm, k ), thlp2(k),                  & ! intent(in)
-             wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                  & ! intent(in)
-             wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),              & ! intent(in)
-             sclrpthlp(k,:), k,                                     & ! intent(in)
-             wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
-             wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
-             cloud_frac_zm(k), rcm_zm(k), wpthvp(k),                & ! intent(out)
-             wp2thvp_zm(k), rtpthvp(k), thlpthvp(k),                & ! intent(out)
-             wprcp(k), wp2rcp_zm(k), rtprcp(k),                     & ! intent(out)
-             thlprcp(k), rcp2(k), pdf_params_zm,                    & ! intent(out)
-             err_code,                                              & ! intent(out)
-             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
-             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:) )   ! intent(out)
 #endif
+             wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
+             wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
+             cloud_frac_zm(k), rcm_zm(k), wpthvp(k),                & ! intent(out)
+             wp2thvp_zm(k), rtpthvp(k), thlpthvp(k),                & ! intent(out)
+             wprcp(k), wp2rcp_zm(k), rtprcp(k),                     & ! intent(out)
+             thlprcp(k), rcp2(k), pdf_params_zm,                    & ! intent(out)
+             err_code,                                              & ! intent(out)
+             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
+             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),  & ! intent(out)
+             sptp_mellor_1(k), sptp_mellor_2(k),                    & ! intent(out)
+             tp2_mellor_1(k), tp2_mellor_2(k),                      & ! intent(out)
+             corr_s_t_mellor_1(k), corr_s_t_mellor_2(k)             ) ! intent(out)
 
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
@@ -768,6 +752,32 @@ module clubb_core
         rcp2(gr%nnzp) = 0.0
       end if
 
+      if ( icorr_s_t_mellor_1 > 0 ) then
+        corr_s_t_mellor_1 = zt2zm( corr_s_t_mellor_1 )
+      end if
+
+      if ( icorr_s_t_mellor_2 > 0 ) then
+        corr_s_t_mellor_2 = zt2zm( corr_s_t_mellor_2 )
+      end if
+
+      if ( isptp_mellor_1 > 0 ) then
+        sptp_mellor_1 = zt2zm( sptp_mellor_1 )
+      end if
+
+      if ( isptp_mellor_2 > 0 ) then
+        sptp_mellor_2 = zt2zm( sptp_mellor_2 )
+      end if
+
+      if ( itp2_mellor_1 > 0 ) then
+        tp2_mellor_1 = max( zt2zm( tp2_mellor_1 ), zero_threshold )
+        tp2_mellor_1(gr%nnzp) = 0.0
+      end if
+
+      if ( itp2_mellor_2 > 0 ) then
+        tp2_mellor_2 = max( zt2zm( tp2_mellor_2 ), zero_threshold )
+        tp2_mellor_2(gr%nnzp) = 0.0
+      end if
+
       wpthvp            = zt2zm( wpthvp_zt )
       wpthvp(gr%nnzp)   = 0.0
       thlpthvp          = zt2zm( thlpthvp_zt )
@@ -779,7 +789,6 @@ module clubb_core
       rtprcp            = zt2zm( rtprcp_zt )
       rtprcp(gr%nnzp)   = 0.0
       thlprcp           = zt2zm( thlprcp_zt )
-      thlprcp(gr%nnzp)  = 0.0
 
       ! Interpolate passive scalars back onto the m grid
       do i = 1, sclr_dim

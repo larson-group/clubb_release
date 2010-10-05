@@ -178,6 +178,12 @@ module variables_diagnostic_module
 !$omp threadprivate(lh_AKm, AKm, AKstd, AKstd_cld, lh_rcm_avg, AKm_rcm, &
 !$omp   AKm_rcc)
 
+  ! Diagnostics from the pdf_closure subroutine
+  real, target, allocatable, dimension(:), public :: & 
+    sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
+    tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
+    corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
+    
   contains
 
 !-----------------------------------------------------------------------
@@ -319,8 +325,17 @@ module variables_diagnostic_module
     allocate( wpsclrprtp(1:nzmax, 1:sclr_dim) )
     allocate( wpsclrpthlp(1:nzmax, 1:sclr_dim) )
 
-! Eddy Diff. Scalars
+    ! Eddy Diff. Scalars
     allocate( wpedsclrp(1:nzmax, 1:edsclr_dim) )
+
+    ! Diagnostics for s and t Mellor
+    allocate( sptp_mellor_1(1:nzmax) )
+    allocate( sptp_mellor_2(1:nzmax) )
+    allocate( tp2_mellor_1(1:nzmax) )
+    allocate( tp2_mellor_2(1:nzmax) )
+    allocate( corr_s_t_mellor_1(1:nzmax) )
+    allocate( corr_s_t_mellor_2(1:nzmax) )
+
 !   --- Initializaton ---
 
 ! Diagnostic variables
@@ -450,6 +465,14 @@ module variables_diagnostic_module
       wpedsclrp(:,:)     = 0.0
     end if
 
+    sptp_mellor_1 = 0.0
+    sptp_mellor_2 = 0.0
+    tp2_mellor_1  = 0.0
+    tp2_mellor_2  = 0.0
+
+    corr_s_t_mellor_1 = 0.0
+    corr_s_t_mellor_2 = 0.0
+
     return
   end subroutine setup_diagnostic_variables
 
@@ -577,6 +600,14 @@ module variables_diagnostic_module
     deallocate( wpsclrpthlp )
 
     deallocate( wpedsclrp )
+
+    ! Diagnostics for s and t Mellor
+    deallocate( sptp_mellor_1 )
+    deallocate( sptp_mellor_2 )
+    deallocate( tp2_mellor_1 )
+    deallocate( tp2_mellor_2 )
+    deallocate( corr_s_t_mellor_1 )
+    deallocate( corr_s_t_mellor_2 )
 
     return
   end subroutine cleanup_diagnostic_variables

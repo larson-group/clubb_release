@@ -92,6 +92,8 @@ vars_zm =
 'rtpthlp_dp1', 'rtpthlp_dp2', 'rtpthlp_cl',
 'wpthlp_enter_mfl', 'wpthlp_exit_mfl', 'wprtp_enter_mfl', 'wprtp_exit_mfl',
 'wpthlp_mfl_lower_lim', 'wpthlp_mfl_upper_lim', 'wprtp_mfl_lower_lim', 'wprtp_mfl_upper_lim',
+'corr_s_t_mellor_1', 'corr_s_t_mellor_2', 'sptp_mellor_1','sptp_mellor_2',
+'tp2_mellor_1', 'tp2_mellor_2'
 !'sclr1prtp', 'sclr2prtp', 'sclr1p2', 'sclr2p2',
 !'sclr1pthvp', 'sclr2pthvp', 'sclr1pthlp', 'sclr2pthlp', 
 !'sclr1prcp', 'sclr2prcp', 'wpsclr1p', 'wpsclr2p', 

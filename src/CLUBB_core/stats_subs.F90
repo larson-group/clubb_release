@@ -1328,6 +1328,14 @@ module stats_subs
     use stats_variables, only: &
       iLH_rcm_avg
 
+    use stats_variables, only: &
+      itp2_mellor_1, & ! Variables
+      itp2_mellor_2, &
+      isptp_mellor_1, &
+      isptp_mellor_2, &
+      icorr_s_t_mellor_1, &
+      icorr_s_t_mellor_2
+
     use grid_class, only: & 
         gr ! Variable
 
@@ -1390,6 +1398,11 @@ module stats_subs
       AKstd_cld, &
       AKm_rcm, &
       AKm_rcc
+
+    use variables_diagnostic_module, only: & 
+      sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
+      tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
+      corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
 
     use variables_prognostic_module, only: & 
       pdf_parameter ! Type
@@ -1613,6 +1626,13 @@ module stats_subs
       call stat_update_var( ithv_ds_zm, thv_ds_zm, zm )
       call stat_update_var( iem, em, zm )
       call stat_update_var( iFrad, Frad, zm )
+
+      call stat_update_var( isptp_mellor_1, sptp_mellor_1, zm )
+      call stat_update_var( isptp_mellor_2, sptp_mellor_2, zm )
+      call stat_update_var( itp2_mellor_1, tp2_mellor_1, zm )
+      call stat_update_var( itp2_mellor_2, tp2_mellor_2, zm )
+      call stat_update_var( icorr_s_t_mellor_1, corr_s_t_mellor_1, zm )
+      call stat_update_var( icorr_s_t_mellor_2, corr_s_t_mellor_2, zm )
 
       if ( sclr_dim > 0 ) then
         do i=1, sclr_dim
