@@ -789,6 +789,7 @@ module clubb_core
       rtprcp            = zt2zm( rtprcp_zt )
       rtprcp(gr%nnzp)   = 0.0
       thlprcp           = zt2zm( thlprcp_zt )
+      thlprcp(gr%nnzp)  = 0.0
 
       ! Interpolate passive scalars back onto the m grid
       do i = 1, sclr_dim
