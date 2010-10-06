@@ -6,7 +6,7 @@ module matrix_operations
 
   public :: symm_covar_matrix_2_corr_matrix, Cholesky_factor, &
     set_lower_triangular_matrix, get_lower_triangular_matrix, &
-    row_mult_lower_triangular_matrix
+    row_mult_lower_tri_matrix
 
   private :: Symm_matrix_eigenvalues
 
@@ -60,7 +60,7 @@ module matrix_operations
     return
   end subroutine symm_covar_matrix_2_corr_matrix
 !-----------------------------------------------------------------------
-  subroutine row_mult_lower_triangular_matrix( ndim, xvector, tmatrix )
+  subroutine row_mult_lower_tri_matrix( ndim, xvector, tmatrix )
 
 ! Description:
 !   Do a row-wise multiply of the elements of a lower triangular matrix.
@@ -92,7 +92,7 @@ module matrix_operations
     end do
 
     return
-  end subroutine row_mult_lower_triangular_matrix
+  end subroutine row_mult_lower_tri_matrix
 
 !----------------------------------------------------------------------
   subroutine Cholesky_factor( ndim, a_input, a_scaling, a_Cholesky, l_scaled )
