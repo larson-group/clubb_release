@@ -18,36 +18,36 @@ module pdf_closure_module
                wpsclrp, sclrp2, sclrprtp,        &
                sclrpthlp, level,                 &
 #ifdef GFDL
-    RH_crit,                          &  ! h1g, 2010-06-15
+               RH_crit,                          &  ! h1g, 2010-06-15
 #endif
-    wp4, wprtp2, wp2rtp,              &
-    wpthlp2, wp2thlp, wprtpthlp,      &
-    cloud_frac, rcm, wpthvp,          &
-    wp2thvp, rtpthvp, thlpthvp,       &
-    wprcp, wp2rcp, rtprcp,            &
-    thlprcp, rcp2, pdf_params,        &
-    err_code,                         &
-    wpsclrprtp, wpsclrp2, sclrpthvp,  &
-    wpsclrpthlp, sclrprcp, wp2sclrp,  &
-    sptp_mellor_1, sptp_mellor_2,     &
-    tp2_mellor_1, tp2_mellor_2,       &
-    corr_s_t_mellor_1, corr_s_t_mellor_2  )
+               wp4, wprtp2, wp2rtp,              &
+               wpthlp2, wp2thlp, wprtpthlp,      &
+               cloud_frac, rcm, wpthvp,          &
+               wp2thvp, rtpthvp, thlpthvp,       &
+               wprcp, wp2rcp, rtprcp,            &
+               thlprcp, rcp2, pdf_params,        &
+               err_code,                         &
+               wpsclrprtp, wpsclrp2, sclrpthvp,  &
+               wpsclrpthlp, sclrprcp, wp2sclrp,  &
+               sptp_mellor_1, sptp_mellor_2,     &
+               tp2_mellor_1, tp2_mellor_2,       &
+               corr_s_t_mellor_1, corr_s_t_mellor_2  )
 
 
-!       Description:
-!       Subroutine that computes pdf parameters analytically.
+! Description:
+!   Subroutine that computes pdf parameters analytically.
 
-!       Based of the original formulation, but with some tweaks
-!       to remove some of the less realistic assumptions and
-!       improve transport terms.
+!   Based of the original formulation, but with some tweaks
+!   to remove some of the less realistic assumptions and
+!   improve transport terms.
 
-!       Corrected version that should remove inconsistency
+!   Corrected version that should remove inconsistency
 
-!       References:
-!       Eqn. 29, 30, 31, 32 & 33  on p. 3547 of
-!       ``A PDF-Based Model for Boundary Layer Clouds. Part I:
-!         Method and Model Description'' Golaz, et al. (2002)
-!       JAS, Vol. 59, pp. 3540--3551.
+! References:
+!   Eqn. 29, 30, 31, 32 & 33  on p. 3547 of
+!   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+!   Method and Model Description'' Golaz, et al. (2002)
+!   JAS, Vol. 59, pp. 3540--3551.
 !------------------------------------------------------------------------
 
     use constants_clubb, only: & 
@@ -62,13 +62,12 @@ module pdf_closure_module
       ep,            & ! Rd / Rv;     ep  = 0.622            [-]
       ep1,           & ! (1.0-ep)/ep; ep1 = 0.61             [-]
       ep2,           & ! 1.0/ep;      ep2 = 1.61             [-]
-      w_tol_sqd,      & ! Tolerance for w'^2                  [m^2/s^2]
-      rt_tol,         & ! Tolerance for r_t                   [kg/kg]
-      thl_tol,        & ! Tolerance for th_l                  [K]
+      w_tol_sqd,     & ! Tolerance for w'^2                  [m^2/s^2]
+      rt_tol,        & ! Tolerance for r_t                   [kg/kg]
+      thl_tol,       & ! Tolerance for th_l                  [K]
       s_mellor_tol,  & ! Tolerance for pdf parameter s       [kg/kg]
       fstderr,       &
-      zero_threshold, & 
-      max_mag_correlation
+      zero_threshold
 
     use parameters_model, only: &
       sclr_tol,          & ! Array of passive scalar tolerances  [units vary]
