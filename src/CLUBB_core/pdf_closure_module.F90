@@ -7,7 +7,7 @@ module pdf_closure_module
 
   private ! Set Default Scope
 
-  contains 
+  contains
 !------------------------------------------------------------------------
   subroutine pdf_closure &
              ( p_in_Pa, exner, thv_ds, wm,       &
@@ -18,20 +18,20 @@ module pdf_closure_module
                wpsclrp, sclrp2, sclrprtp,        &
                sclrpthlp, level,                 &
 #ifdef GFDL
-               RH_crit,                          &  ! h1g, 2010-06-15
+    RH_crit,                          &  ! h1g, 2010-06-15
 #endif
-               wp4, wprtp2, wp2rtp,              &
-               wpthlp2, wp2thlp, wprtpthlp,      &
-               cloud_frac, rcm, wpthvp,          &
-               wp2thvp, rtpthvp, thlpthvp,       &
-               wprcp, wp2rcp, rtprcp,            &
-               thlprcp, rcp2, pdf_params,        &
-               err_code,                         &
-               wpsclrprtp, wpsclrp2, sclrpthvp,  &
-               wpsclrpthlp, sclrprcp, wp2sclrp,  &
-               sptp_mellor_1, sptp_mellor_2,     &
-               tp2_mellor_1, tp2_mellor_2,       &
-               corr_s_t_mellor_1, corr_s_t_mellor_2  )
+    wp4, wprtp2, wp2rtp,              &
+    wpthlp2, wp2thlp, wprtpthlp,      &
+    cloud_frac, rcm, wpthvp,          &
+    wp2thvp, rtpthvp, thlpthvp,       &
+    wprcp, wp2rcp, rtprcp,            &
+    thlprcp, rcp2, pdf_params,        &
+    err_code,                         &
+    wpsclrprtp, wpsclrp2, sclrpthvp,  &
+    wpsclrpthlp, sclrprcp, wp2sclrp,  &
+    sptp_mellor_1, sptp_mellor_2,     &
+    tp2_mellor_1, tp2_mellor_2,       &
+    corr_s_t_mellor_1, corr_s_t_mellor_2  )
 
 
 !       Description:
@@ -44,7 +44,7 @@ module pdf_closure_module
 !       Corrected version that should remove inconsistency
 
 !       References:
-!       Eqn. 29, 30, 31, 32 & 33  on p. 3547 of 
+!       Eqn. 29, 30, 31, 32 & 33  on p. 3547 of
 !       ``A PDF-Based Model for Boundary Layer Clouds. Part I:
 !         Method and Model Description'' Golaz, et al. (2002)
 !       JAS, Vol. 59, pp. 3540--3551.
@@ -77,14 +77,14 @@ module pdf_closure_module
 
     use parameters_tunable, only: & 
       beta  ! Variable(s)
-            ! Plume widths for th_l and r_t [-]
+    ! Plume widths for th_l and r_t [-]
 
     use variables_prognostic_module, only:  &
         pdf_parameter  ! type
 
     use anl_erf, only:  & 
       erf ! Procedure(s)
-          ! The error function
+    ! The error function
 
     use numerical_check, only:  & 
       pdf_closure_check ! Procedure(s)
@@ -95,7 +95,7 @@ module pdf_closure_module
 #ifdef GFDL
     ! including ice clouds
     use saturation, only:  & ! h1g, 2010-06-15
-       sat_mixrat_ice    
+       sat_mixrat_ice
 #endif
 
     use error_code, only:  & 
@@ -119,7 +119,7 @@ module pdf_closure_module
 
     implicit none
 
-    intrinsic :: sqrt, exp, min, max, abs
+    intrinsic :: sqrt, exp, min, max, abs, present
 
     ! Input Variables
     real, intent(in) ::  & 
@@ -178,7 +178,7 @@ module pdf_closure_module
 
     ! Some variables for when we're computing the correlation or covariance of
     ! s and t for diagnostic purposes
-    real, intent(out) ::  & 
+    real, optional, intent(out) ::  & 
       sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t  [kg^2/kg^2]
       tp2_mellor_1, tp2_mellor_2, &        ! Variance of t          [kg^2/kg^2]
       corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation of s and t [-]
@@ -199,11 +199,11 @@ module pdf_closure_module
       wpsclrpthlp, & 
       wp2sclrp
 
-    ! Local Variables 
+    ! Local Variables
 
     real ::  & 
-      w1_n, w2_n 
-!     thl1_n, thl2_n, 
+      w1_n, w2_n
+!     thl1_n, thl2_n,
 !     rt1_n, rt2_n
 
     ! Variables that are stored in derived data type pdf_params.
@@ -239,10 +239,10 @@ module pdf_closure_module
       alpha_thl,   & ! Factor relating to normalized variance for th_l         [-]
       alpha_rt       ! Factor relating to normalized variance for r_t          [-]
 
-                   ! Note:  alpha coefficients = 0.5 * ( 1 - correlations^2 ).
-                   !        These are used to calculate the scalar widths
-                   !        varnce_thl1, varnce_thl2, varnce_rt1, and varnce_rt2 as in Eq. (34) of
-                   !        Larson and Golaz (2005)
+    ! Note:  alpha coefficients = 0.5 * ( 1 - correlations^2 ).
+    !        These are used to calculate the scalar widths
+    !        varnce_thl1, varnce_thl2, varnce_rt1, and varnce_rt2 as in Eq. (34) of
+    !        Larson and Golaz (2005)
 
     ! Passive scalar local variables
 
@@ -252,8 +252,10 @@ module pdf_closure_module
       alpha_sclr,  & 
       rsclrthl, rsclrrt
 !     sclr1_n, sclr2_n,
- 
-    logical :: l_scalar_calc ! True if sclr_dim > 0
+
+    logical :: &
+      l_scalar_calc, & ! True if sclr_dim > 0
+      l_corr_calc      ! True if the diagnostic correlation and covariance variables are present
 
     ! Quantities needed to predict higher order moments
     real ::  & 
@@ -283,6 +285,14 @@ module pdf_closure_module
       l_scalar_calc = .true.
     else
       l_scalar_calc = .false.
+    end if
+
+    if ( present( sptp_mellor_1 ) .and. present( sptp_mellor_2 ) .and. &
+         present( tp2_mellor_1 ) .and.  present( tp2_mellor_2 ) .and. &
+         present( corr_s_t_mellor_1 ) .and. present( corr_s_t_mellor_2 ) )then
+      l_corr_calc = .true.
+    else
+      l_corr_calc = .false.
     end if
 
     ! If there is no velocity, then use single delta fnc. as pdf
@@ -382,8 +392,8 @@ module pdf_closure_module
       ! defined as alpha_x, where "x" stands for thl, rt, or sclr.
 
       ! Vince Larson added a dimensionless factor so that the
-      ! width of plumes in theta_l, rt can vary.  
-      ! beta is a constant defined in module parameters_tunable  
+      ! width of plumes in theta_l, rt can vary.
+      ! beta is a constant defined in module parameters_tunable
       !   Set 0<beta<3.
       ! beta=1.5 recovers Chris Golaz' simplified formula.
       ! 3 Nov 2003
@@ -432,12 +442,12 @@ module pdf_closure_module
 
         alpha_rt = max( min( alpha_rt, 1.0 ), zero_threshold )
 
-      ! Vince Larson multiplied original expressions by width_factor_1,2
-      !   to generalize scalar skewnesses.  05 Nov 03
+        ! Vince Larson multiplied original expressions by width_factor_1,2
+        !   to generalize scalar skewnesses.  05 Nov 03
         varnce_rt1 = ( alpha_rt / mixt_frac * rtp2 ) * width_factor_1
         varnce_rt2 = ( alpha_rt / (1.-mixt_frac) * rtp2 ) * width_factor_2
 
-      end if ! rtp2 <= rt_tol**2 
+      end if ! rtp2 <= rt_tol**2
 
       ! Compute pdf parameters for passive scalars
       if ( l_scalar_calc ) then
@@ -456,7 +466,7 @@ module pdf_closure_module
 !                        * sqrt( sclrp2(i) )) )/w2_n
 !           sclr2_n(i) = - ( wpsclrp(i) / (sqrt( wp2 ) &
 !                        * sqrt( sclrp2(i) )) )/w1_n
- 
+
             sclr1(i) = sclrm(i)  & 
                      - ( wpsclrp(i) / sqrt_wp2 ) / w2_n
             sclr2(i) = sclrm(i)  & 
@@ -529,7 +539,7 @@ module pdf_closure_module
             rsclrrt(i) = 0.0
           end if
         end do ! i=1, sclr_dim
-      end if ! l_scalar_calc 
+      end if ! l_scalar_calc
 
     end if  ! Widths non-zero
 
@@ -598,35 +608,35 @@ module pdf_closure_module
     tl2  = thl2*exner
 
 #ifdef GFDL
-      if( sclr_dim > 0 ) then ! h1g, 2010-06-16 begin mod
+    if( sclr_dim > 0 ) then ! h1g, 2010-06-16 begin mod
 
-          if( tl1 > 250.0) then
-             rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
-          else
-             rsl1 = sat_mixrat_ice( p_in_Pa, tl1 )
-             if( tl1 > 238.15)  then
-                 rsl1 = 1.2 * rsl1
-             else
-                 rsl1 = RH_crit(1, 1) * rsl1
-             endif
-          endif 
+      if( tl1 > 250.0) then
+        rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
+      else
+        rsl1 = sat_mixrat_ice( p_in_Pa, tl1 )
+        if( tl1 > 238.15)  then
+          rsl1 = 1.2 * rsl1
+        else
+          rsl1 = RH_crit(1, 1) * rsl1
+        endif
+      endif
 
-          if( tl2 > 250.0) then
-             rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
-          else
-             rsl2 = sat_mixrat_ice( p_in_Pa, tl2 )
-             if( tl2 > 238.15)  then
-                 rsl2 = 1.2 * rsl2
-             else
-                 rsl2 = RH_crit(1, 2)* rsl2
-             endif
-          endif
+      if( tl2 > 250.0) then
+        rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
+      else
+        rsl2 = sat_mixrat_ice( p_in_Pa, tl2 )
+        if( tl2 > 238.15)  then
+          rsl2 = 1.2 * rsl2
+        else
+          rsl2 = RH_crit(1, 2)* rsl2
+        endif
+      endif
 
-      else !sclr_dim <= 0
-          rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
-          rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
+    else !sclr_dim <= 0
+      rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
+      rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
 
-      endif !sclr_dim > 0
+    endif !sclr_dim > 0
 #else
     rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
     rsl2 = sat_mixrat_liq( p_in_Pa, tl2 ) ! h1g, 2010-06-16 end mod
@@ -656,7 +666,7 @@ module pdf_closure_module
 
     ! Standard deviation of s
     ! include subplume correlation of qt, thl
-    ! Because of round-off error, 
+    ! Because of round-off error,
     ! stdev_s1 (and probably stdev_s2) can become negative when rrtthl=1
     ! One could also write this as a squared term
     ! plus a postive correction; this might be a neater format
@@ -797,37 +807,39 @@ module pdf_closure_module
     end if
 
     ! Compute some diagnostics related to the s and t variables
-    if ( icorr_s_t_mellor_1 > 0 .or. isptp_mellor_1 > 0 .or. itp2_mellor_1 > 0 ) then
-      sptp_mellor_1 = crt1**2 * varnce_rt1 - cthl1**2 * varnce_thl1
-      tp2_mellor_1 = crt1**2 * varnce_rt1 + 2.0 * crt1 * cthl1 &
-                     * rrtthl * sqrt( varnce_rt1 * varnce_thl1 ) &
-                   + varnce_thl1 * cthl1**2 
+    if ( l_corr_calc ) then
+      if ( icorr_s_t_mellor_1 > 0 .or. isptp_mellor_1 > 0 .or. itp2_mellor_1 > 0 ) then
+        sptp_mellor_1 = crt1**2 * varnce_rt1 - cthl1**2 * varnce_thl1
+        tp2_mellor_1 = crt1**2 * varnce_rt1 + 2.0 * crt1 * cthl1 &
+                       * rrtthl * sqrt( varnce_rt1 * varnce_thl1 ) &
+                     + varnce_thl1 * cthl1**2
 
-      stdev_s_times_stdev_t = sqrt( tp2_mellor_1 ) * stdev_s1
+        stdev_s_times_stdev_t = sqrt( tp2_mellor_1 ) * stdev_s1
 
-      if ( stdev_s_times_stdev_t > 0. ) then
-        corr_s_t_mellor_1 = sptp_mellor_1 / stdev_s_times_stdev_t
-      else
-        corr_s_t_mellor_1 = 0.
+        if ( stdev_s_times_stdev_t > 0. ) then
+          corr_s_t_mellor_1 = sptp_mellor_1 / stdev_s_times_stdev_t
+        else
+          corr_s_t_mellor_1 = 0.
+        end if
+
       end if
 
-    end if
+      if ( icorr_s_t_mellor_2 > 0 .or. isptp_mellor_2 > 0 .or. itp2_mellor_2 > 0 ) then
+        sptp_mellor_2 = crt2**2 * varnce_rt2 - cthl2**2 * varnce_thl2
+        tp2_mellor_2 = crt2**2 * varnce_rt2 + 2.0 * crt2 * cthl2 &
+                       * rrtthl * sqrt( varnce_rt2 * varnce_thl2 ) &
+                     + varnce_thl1 * cthl2**2
 
-    if ( icorr_s_t_mellor_2 > 0 .or. isptp_mellor_2 > 0 .or. itp2_mellor_2 > 0 ) then
-      sptp_mellor_2 = crt2**2 * varnce_rt2 - cthl2**2 * varnce_thl2
-      tp2_mellor_2 = crt2**2 * varnce_rt2 + 2.0 * crt2 * cthl2 &
-                     * rrtthl * sqrt( varnce_rt2 * varnce_thl2 ) &
-                   + varnce_thl1 * cthl2**2
+        stdev_s_times_stdev_t = sqrt( tp2_mellor_2 ) * stdev_s2
 
-      stdev_s_times_stdev_t = sqrt( tp2_mellor_2 ) * stdev_s2
+        if ( stdev_s_times_stdev_t > 0. ) then
+          corr_s_t_mellor_2 = sptp_mellor_2 / stdev_s_times_stdev_t
+        else
+          corr_s_t_mellor_1 = 0.
+        end if
 
-      if ( stdev_s_times_stdev_t > 0. ) then
-        corr_s_t_mellor_2 = sptp_mellor_2 / stdev_s_times_stdev_t
-      else
-        corr_s_t_mellor_1 = 0.
       end if
-
-    end if
+    end if ! l_corr_calc
 
 
     ! Save PDF parameters
@@ -863,7 +875,7 @@ module pdf_closure_module
     pdf_params%alpha_rt(level)    = alpha_rt
 
 
-    if ( clubb_at_least_debug_level( 2 ) ) then 
+    if ( clubb_at_least_debug_level( 2 ) ) then
       call pdf_closure_check & 
            ( wp4, wprtp2, wp2rtp, wpthlp2, & 
              wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
@@ -876,18 +888,18 @@ module pdf_closure_module
 
       ! Error Reporting
       ! Joshua Fasching February 2008
-        
+
       if ( err_code == clubb_var_equals_NaN ) then
-        
-        write(fstderr,*) "Error in pdf_closure_new" 
-          
+
+        write(fstderr,*) "Error in pdf_closure_new"
+
         write(fstderr,*) "Intent(in)"
-            
-        write(fstderr,*) "p_in_Pa = ", p_in_Pa 
+
+        write(fstderr,*) "p_in_Pa = ", p_in_Pa
         write(fstderr,*) "exner = ", exner
         write(fstderr,*) "thv_ds = ", thv_ds
-        write(fstderr,*) "wm = ", wm 
-        write(fstderr,*) "wp2 = ", wp2 
+        write(fstderr,*) "wm = ", wm
+        write(fstderr,*) "wp2 = ", wp2
         write(fstderr,*) "wp3 = ", wp3
         write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
         write(fstderr,*) "rtm = ", rtm
@@ -909,7 +921,7 @@ module pdf_closure_module
         write(fstderr,*) "level = ", level
 
         write(fstderr,*) "Intent(out)"
-  
+
         write(fstderr,*) "wp4 = ", wp4
         write(fstderr,*) "wprtp2 = ", wprtp2
         write(fstderr,*) "wp2rtp = ", wp2rtp
@@ -965,9 +977,9 @@ module pdf_closure_module
           write(fstderr,*) "wpsclrpthlp = ", wpsclrpthlp
           write(fstderr,*) "wp2sclrp = ", wp2sclrp
         end if
-                
+
       end if ! err_code == clubb_var_equals_NaN
-  
+
     end if ! clubb_at_least_debug_level
 
     return
