@@ -827,14 +827,14 @@ module pdf_closure_module
         sptp_mellor_2 = crt2**2 * varnce_rt2 - cthl2**2 * varnce_thl2
         tp2_mellor_2 = crt2**2 * varnce_rt2 + 2.0 * crt2 * cthl2 &
                        * rrtthl * sqrt( varnce_rt2 * varnce_thl2 ) &
-                     + varnce_thl1 * cthl2**2
+                     + varnce_thl2 * cthl2**2
 
         stdev_s_times_stdev_t = sqrt( tp2_mellor_2 ) * stdev_s2
 
         if ( stdev_s_times_stdev_t > 0. ) then
           corr_s_t_mellor_2 = sptp_mellor_2 / stdev_s_times_stdev_t
         else
-          corr_s_t_mellor_1 = 0.
+          corr_s_t_mellor_2 = 0.
         end if
 
       end if
