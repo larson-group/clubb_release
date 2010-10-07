@@ -353,7 +353,10 @@ then
 
     run_case
 else
-    cat $parameter_file $model_file $stats_file > $NAMELISTS
+    #cat $parameter_file $model_file $stats_file > $NAMELISTS
+    # This is a kluge for Fortran compilers that the can't handle comments in 
+    # a namelist by using the sed command to remove them.
+    cat $parameter_file $model_file $stats_file | sed 's/\!.*//' > $NAMELISTS
 
     run_case
 fi
