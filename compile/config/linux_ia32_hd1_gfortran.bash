@@ -26,7 +26,7 @@ DEBUG="-g -fbounds-check -mieee-fp"
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
 # compiled accordingly.
-ARCH="-march=native -msse3 -mfpmath=sse"
+ARCH="-march=native -msse3 -mfpmath=sse -fconvert=big-endian"
 
 # == Optimization ==
 OPTIMIZE="-O2"
