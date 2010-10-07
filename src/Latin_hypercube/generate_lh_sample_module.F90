@@ -197,8 +197,6 @@ module generate_lh_sample_module
 
 !   double precision, dimension(2,2) :: corr_st_mellor_1, corr_st_mellor_2
 
-    real :: stdev_rr, stdev_Nr
-
     ! rr = specific rain content. [rr] = kg rain / kg air
     double precision :: &
       rrainm, &  ! rain water mixing ratio         [kg/kg]
@@ -424,9 +422,6 @@ module generate_lh_sample_module
     end if
 
     if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
-      ! Compute standard deviation of Nr & rrain
-      stdev_rr = real( rrainm ) * sqrt( xp2_on_xm2_array(iiLH_rrain) )
-      stdev_Nr = real( Nrm ) * sqrt( xp2_on_xm2_array(iiLH_Nr) )
 
       if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
 
@@ -436,8 +431,8 @@ module generate_lh_sample_module
         ! Covariance between rain water mixing ratio rain number concentration
         covar_rrNr1 = corr_LN_to_cov_gaus &
                  ( corr_rrNr, &
-                   sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ), &
-                   sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
+                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_rrain) ), &
+                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nr) ) )
         covar_rrNr2 = covar_rrNr1
 
         call set_lower_triangular_matrix &
@@ -458,7 +453,7 @@ module generate_lh_sample_module
         covar_sNr1 = corr_gaus_LN_to_cov_gaus &
                  ( corr_sNr, &
                    stdev_s1, &
-                   sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
+                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_rrain) ) )
 
         call set_lower_triangular_matrix &
              ( d_variables, iiLH_s_mellor, iiLH_Nr, dble( covar_sNr1 ), & ! In
@@ -482,7 +477,7 @@ module generate_lh_sample_module
         covar_sNr2 = corr_gaus_LN_to_cov_gaus &
                  ( corr_sNr, &
                    stdev_s2, &
-                   sigma_LN_to_sigma_gaus( real( stdev_Nr ), real( Nrm ) ) )
+                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nr) ) )
 
         call set_lower_triangular_matrix &
              ( d_variables, iiLH_s_mellor, iiLH_Nr, dble( covar_sNr2 ), & ! In
@@ -507,7 +502,7 @@ module generate_lh_sample_module
         covar_srr1 = corr_gaus_LN_to_cov_gaus &
                  ( corr_srr, &
                    stdev_s1, &
-                   sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
+                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_rrain) ) )
 
         call set_lower_triangular_matrix &
              ( d_variables, iiLH_s_mellor, iiLH_rrain, dble( covar_srr1 ), & ! In
@@ -532,7 +527,7 @@ module generate_lh_sample_module
         covar_srr2 = corr_gaus_LN_to_cov_gaus &
                  ( corr_srr, &
                    stdev_s2, &
-                   sigma_LN_to_sigma_gaus( real( stdev_rr ), real( rrainm ) ) )
+                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_rrain) ) )
 
         call set_lower_triangular_matrix &
              ( d_variables, iiLH_s_mellor, iiLH_rrain, dble( covar_srr2 ), & ! In
@@ -559,7 +554,7 @@ module generate_lh_sample_module
 !         stdev_sNc1 = corr_gaus_LN_to_cov_gaus &
 !                 ( corr_sNc, &
 !                   stdev_s1, &
-!                   sigma_LN_to_sigma_gaus( real( stdev_Nc ), real( Ncm ) ) )
+!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nc) ) )
 
 !         Sigma_stw_1(iiLH_s_mellor,iiLH_Nc) = dble( stdev_sNc1 )
 !         Sigma_stw_1(iiLH_Nc,iiLH_s_mellor) = dble( stdev_sNc1 )
@@ -576,7 +571,7 @@ module generate_lh_sample_module
 !         stdev_sNc2 = corr_gaus_LN_to_cov_gaus &
 !                 ( corr_sNc, &
 !                   stdev_s2, &
-!                   sigma_LN_to_sigma_gaus( real( stdev_Nc ), real( Ncm ) ) )
+!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nc) ) )
 
 !         Sigma_stw_2(iiLH_s_mellor,iiLH_Nc) = dble( stdev_sNc2 )
 !         Sigma_stw_2(iiLH_Nc,iiLH_s_mellor) = dble( stdev_sNc2 )

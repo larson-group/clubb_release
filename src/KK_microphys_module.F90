@@ -1728,15 +1728,15 @@ module KK_microphys_module
 
     ! rr is a Lognormal.  It is converted to rr(G), which is a Gaussian.
     ! rr(G) = ln rr
-    mu_rrG = mu_LN_to_mu_gaus( mu_rr, sigma_rr )
+    mu_rrG = mu_LN_to_mu_gaus( mu_rr, sigma_rr**2 / mu_rr**2 )
 
-    sigma_rrG = sigma_LN_to_sigma_gaus( sigma_rr, mu_rr )
+    sigma_rrG = sigma_LN_to_sigma_gaus( sigma_rr**2 / mu_rr**2 )
 
     ! Nr is a Lognormal.  It is converted to Nr(G), which is a Gaussian.
     ! Nr(G) = ln Nr
-    mu_NrG = mu_LN_to_mu_gaus( mu_Nr, sigma_Nr )
+    mu_NrG = mu_LN_to_mu_gaus( mu_Nr, sigma_Nr**2 / mu_Nr**2 )
 
-    sigma_NrG = sigma_LN_to_sigma_gaus( sigma_Nr, mu_Nr )
+    sigma_NrG = sigma_LN_to_sigma_gaus( sigma_Nr**2 / mu_Nr**2 )
 
     !!! Intra-Gaussian correlations.
 
@@ -3333,8 +3333,8 @@ module KK_microphys_module
     ! Input Variables
     real, intent(in) :: &
       corr_xy,      & ! Correlation of x and y    [-]
-      sigma_x_gaus, & ! Std dev of first term 'x' [units vary]
-      sigma_y_gaus    ! Std dev second term 'y'   [units vary]
+      sigma_x_gaus, & ! Std dev of first term 'x' [-]
+      sigma_y_gaus    ! Std dev second term 'y'   [-]
 
     real :: cov_xy_gaus ! Covariance for a gaussian dist. [units vary]
 
@@ -3364,7 +3364,7 @@ module KK_microphys_module
     real, intent(in) :: &
       corr_sy,     & ! Correlation of s and y    [-]
       sigma_s,     & ! Std dev of first term (usually Gaussian 's') [units vary]
-      sigma_y_gaus   ! Std dev second term 'y'   [units vary]
+      sigma_y_gaus   ! Std dev second term 'y'   [-]
 
     real :: cov_sy_gaus ! Covariance for a gaussian dist. [units vary]
 
@@ -3376,7 +3376,7 @@ module KK_microphys_module
   end function corr_gaus_LN_to_cov_gaus
 
   !-----------------------------------------------------------------------------
-  pure function mu_LN_to_mu_gaus( mu, sigma ) &
+  pure function mu_LN_to_mu_gaus( mu, sigma2_on_mu2 ) &
     result( mu_gaus )
 
   ! Description:
@@ -3392,19 +3392,20 @@ module KK_microphys_module
 
     ! Input Variables
     real, intent(in) :: &
-      mu,   & ! Mean field with a lognormal dist. [units vary]
-      sigma   ! Std dev of first term 'x'         [units vary]
+      mu, &         ! Mean term 'x'                     [-]
+      sigma2_on_mu2 ! Covariance of 'x' over mean 'x'^2 [-]
 
-    real :: mu_gaus ! Mean field converted to gaussian  [units vary]
+    real :: mu_gaus ! Mean field converted to gaussian  [-]
 
     ! ---- Begin Code ----
-    mu_gaus = log( mu * ( 1.0 + ( sigma**2 / mu**2 ) )**(-0.5) )
+
+    mu_gaus = log( mu * ( 1.0 + ( sigma2_on_mu2 ) )**(-0.5) )
 
     return
   end function mu_LN_to_mu_gaus
 
   !-----------------------------------------------------------------------------
-  pure function sigma_LN_to_sigma_gaus( sigma, mu ) result( sigma_gaus )
+  pure function sigma_LN_to_sigma_gaus( sigma2_on_mu2 ) result( sigma_gaus )
 
   ! Description:
   !
@@ -3419,14 +3420,13 @@ module KK_microphys_module
 
     ! Input Variables
     real, intent(in) :: &
-      mu,  & ! first term 'x'               [units vary]
-      sigma  ! Std dev of first term 'x'    [units vary]
+      sigma2_on_mu2 ! Covariance of 'x' over mean 'x'^2 [-]
 
-    real :: sigma_gaus ! Sigma converted to gaussian dist. [units vary]
+    real :: sigma_gaus ! Sigma converted to gaussian dist. [-]
 
     ! ---- Begin Code ----
 
-    sigma_gaus = sqrt( log( 1.0 + ( sigma**2 / mu**2 ) ) )
+    sigma_gaus = sqrt( log( 1.0 + ( sigma2_on_mu2 ) ) )
 
     return
   end function sigma_LN_to_sigma_gaus
