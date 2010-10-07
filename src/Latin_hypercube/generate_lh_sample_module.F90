@@ -453,7 +453,7 @@ module generate_lh_sample_module
         covar_sNr1 = corr_gaus_LN_to_cov_gaus &
                  ( corr_sNr, &
                    stdev_s1, &
-                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_rrain) ) )
+                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nr) ) )
 
         call set_lower_triangular_matrix &
              ( d_variables, iiLH_s_mellor, iiLH_Nr, dble( covar_sNr1 ), & ! In
