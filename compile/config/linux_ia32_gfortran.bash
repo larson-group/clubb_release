@@ -1,7 +1,7 @@
 # $Id$
 # Configuration file for a Linux machine using GNU compiler collection Fortran
-# Note that the version of gfortran that comes with RHEL5 cannot compile clubb.
-# However, following options did work on Ubuntu 8.04 LTS (with the packaged
+# Note that the version of gfortran that comes with RHEL5 (4.1.1) cannot compile clubb.
+# However, following options did work on Ubuntu 8.04 LTS (and the packaged
 # versions of netcdf and netcdf-dev)
 
 
@@ -32,11 +32,12 @@ ARCH="-march=native -msse3 -mfpmath=sse"
 OPTIMIZE="-O2"
 
 # == NetCDF Location ==
-NETCDF="/usr"
+NETCDF="/usr" # 
 
 # == LAPACK libraries ==
 #LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
 LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
+#LAPACK="-L/usr/lib/atlas-sse3 -llapack -lf77blas -lcblas -latlas" # Fedora 11 setup
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
@@ -53,7 +54,9 @@ FFLAGS="$ARCH $DEBUG"
 #   -Dradoffline and -Dnooverlap (see BUGSrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
-CPPFLAGS="-DNETCDF -I$NETCDF/include -D__GFORTRAN__ -Dnooverlap -Dradoffline"
+NETCDF_INCLUDE="$NETCDF/include/" # Ubuntu 10 LTS location
+#NETCDF_INCLUDE="$NETCDF/lib/gfortran/modules/" # Fedora Core 11 location
+CPPFLAGS="-DNETCDF -I$NETCDF_INCLUDE -D__GFORTRAN__ -Dnooverlap -Dradoffline"
 
 # == Static library processing ==
 AR=ar
