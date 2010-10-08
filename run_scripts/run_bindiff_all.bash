@@ -73,10 +73,10 @@ else
 fi
 
 # The first command-line entry is 'dir1'.
-dir1=$1
+dir1=$restoreDir/$1
 
 # The second command-line entry is 'dir2'.
-dir2=$2
+dir2=$restoreDir/$2
 
 # diff the GrADS control (*.ctl) files and the GrADS binary data (*.dat) files
 # for each statistical output type (zt, zm, and sfc) for each case in 
