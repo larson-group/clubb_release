@@ -3363,8 +3363,8 @@ module KK_microphys_module
     ! Input Variables
     real, intent(in) :: &
       corr_sy,     & ! Correlation of s and y    [-]
-      sigma_s,     & ! Std dev of first term (usually Gaussian 's') [units vary]
-      sigma_y_gaus   ! Std dev second term 'y'   [-]
+      sigma_s,     & ! Normalized std dev of first term (usually Gaussian 's') [units vary]
+      sigma_y_gaus   ! Normalized std dev second term 'y'   [-]
 
     real :: cov_sy_gaus ! Covariance for a gaussian dist. [units vary]
 
