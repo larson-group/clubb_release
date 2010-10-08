@@ -3333,10 +3333,10 @@ module KK_microphys_module
     ! Input Variables
     real, intent(in) :: &
       corr_xy,      & ! Correlation of x and y    [-]
-      sigma_x_gaus, & ! Std dev of first term 'x' [-]
-      sigma_y_gaus    ! Std dev second term 'y'   [-]
+      sigma_x_gaus, & ! Normalized std dev of first term 'x' [-]
+      sigma_y_gaus    ! Normalized std dev second term 'y'   [-]
 
-    real :: cov_xy_gaus ! Covariance for a gaussian dist. [units vary]
+    real :: cov_xy_gaus ! Covariance for a gaussian dist. [-]
 
     ! ---- Begin Code ----
 
@@ -3358,7 +3358,7 @@ module KK_microphys_module
     implicit none
 
     ! External
-    intrinsic :: sqrt, exp, log
+    intrinsic :: sqrt, exp
 
     ! Input Variables
     real, intent(in) :: &
@@ -3393,7 +3393,7 @@ module KK_microphys_module
     ! Input Variables
     real, intent(in) :: &
       mu, &         ! Mean term 'x'                     [-]
-      sigma2_on_mu2 ! Covariance of 'x' over mean 'x'^2 [-]
+      sigma2_on_mu2 ! Variance of 'x' over mean 'x'^2   [-]
 
     real :: mu_gaus ! Mean field converted to gaussian  [-]
 
@@ -3416,11 +3416,11 @@ module KK_microphys_module
     implicit none
 
     ! External
-    intrinsic :: sqrt, exp, log
+    intrinsic :: sqrt, log
 
     ! Input Variables
     real, intent(in) :: &
-      sigma2_on_mu2 ! Covariance of 'x' over mean 'x'^2 [-]
+      sigma2_on_mu2 ! Variance of 'x' over mean 'x'^2   [-]
 
     real :: sigma_gaus ! Sigma converted to gaussian dist. [-]
 
