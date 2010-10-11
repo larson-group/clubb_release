@@ -1,8 +1,7 @@
 # $Id$
 # Configuration file for a Linux machine using GNU compiler collection Fortran
+# on the computer hd1 at UWM.
 # Note that the version of gfortran that comes with RHEL5 cannot compile clubb.
-# However, following options did work on Ubuntu 8.04 LTS (with the packaged
-# versions of netcdf and netcdf-dev)
 
 
 # Fortran 95 compiler and linker
@@ -54,7 +53,7 @@ FFLAGS="$ARCH $DEBUG"
 #   -Dradoffline and -Dnooverlap (see BUGSrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
-CPPFLAGS="-DNETCDF -I$NETCDF/include -D__GFORTRAN__ -Dnooverlap -Dradoffline"
+CPPFLAGS="-DNETCDF -I$NETCDF/include -D__GFORTRAN__ -Dnooverlap -Dradoffline -DBYTESWAP_IO"
 
 # == Static library processing ==
 AR=ar
