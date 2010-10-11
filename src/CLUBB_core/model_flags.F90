@@ -34,16 +34,23 @@ module model_flags
   ! outside of the derivative in advance_wp2_wp3_module.F90
   ! and in advance_xp2_xpyp_module.F90.
 
-  logical, parameter, public :: & 
+  logical, parameter, public :: &
     l_single_C2_Skw = .false.,  & ! Use a single Skw dependent value for C2
-    l_gamma_Skw     = .true.,   & ! Use a Skw dependent gamma parameter
-    l_byteswap_io   = .false.     ! Swap byte order in GrADS output
+#ifdef BYTESWAP_IO
+    l_byteswap_io   = .true.,  & ! Don't use the native byte ordering in GrADS output
+#else
+    l_byteswap_io   = .false., & ! Use the native byte ordering in GrADS output
+#endif
+    l_gamma_Skw     = .true.      ! Use a Skw dependent gamma parameter
 
   logical, public :: & 
     l_uv_nudge,      & ! For wind speed nudging. - Michael Falk
     l_soil_veg,      & ! Simple surface scheme - Joshua Fasching
     l_tke_aniso        ! For anisotropic turbulent kinetic energy,
                        !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+
+! OpenMP directives. These cannot be indented.
+!$omp threadprivate(l_uv_nudge, l_tke_aniso, l_soil_veg)
 
   logical, parameter, public :: &
     l_use_boussinesq = .false.  ! Flag to use the Boussinesq form of the
@@ -55,11 +62,12 @@ module model_flags
   logical, public :: &
     l_host_applies_sfc_fluxes 
 
-!  character(len=6), public :: &
-!    saturation_formula ! "bolton" approx. or "flatau" approx.
+!$omp threadprivate(l_host_applies_sfc_fluxes)
 
   integer, public :: &
     saturation_formula ! Integer that stores the saturation formula to be used
+
+!$omp threadprivate(saturation_formula)
 
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,
@@ -79,10 +87,6 @@ module model_flags
   logical, public :: &
      I_sat_sphum       ! h1g, 2010-06-15
 #endif
-
-! OpenMP directives. These cannot be indented.
-!$omp threadprivate(l_uv_nudge, l_tke_aniso, l_host_applies_sfc_fluxes, &
-!$omp   saturation_formula)
 
   contains
 
