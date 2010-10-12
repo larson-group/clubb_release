@@ -685,7 +685,8 @@ module output_grads
 
     ! Since GrADs can't handle a time increment of less than a minute we assume
     ! 1 minute output for an output frequency of less than a minute.
-    dtwrite_min = max( 1., floor( dtwrite_sec/sec_per_min ) )
+    dtwrite_min = floor( dtwrite_sec/sec_per_min )
+    dtwrite_min = max( 1._time_precision, dtwrite_min )
 
     if ( dtwrite_min <= 99. ) then
       dtwrite_ctl = int( dtwrite_min )
