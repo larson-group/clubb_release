@@ -239,7 +239,7 @@ def findGradsErrorsAtTimestep(iteration, ctlFile, fileName, numVarsIndx, numVars
                 else:
                     zLevel = 0
                 
-                testSuccess = dispError(errorDifference, allowedTolerance, zLevel, termName[:-1], \
+                testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, termName[:-1], \
                     termUnits, percentError, testSuccess)
                     
                 findingBudget = False
@@ -323,7 +323,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
             else:
                 zLevel = 0
 
-            testSuccess = dispError(errorDifference, allowedTolerance, zLevel, budgetVarName[:-3], \
+            testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, budgetVarName[:-3], \
                 budgetVar.units, percentError, testSuccess)
                 
             # Clear old data
@@ -381,7 +381,7 @@ def checkGradsCompleteness(fileName, numLevels, iteration, numVars, \
     termName = termName + " completeness test"
     
     zLevel = 0
-    testSuccess = dispError(errorDifference, allowedTolerance, zLevel, termName, termUnits, percentError, testSuccess)
+    testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, termName, termUnits, percentError, testSuccess)
                     
     return testSuccess
     
@@ -422,15 +422,17 @@ def checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
             varName = varName + " completeness test"
             
             zLevel = 0
-            testSuccess = dispError(errorDifference, allowedTolerance, zLevel, varName, termUnits, percentError, testSuccess)
+            testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, varName, termUnits, percentError, testSuccess)
                     
     return testSuccess
     
 #--------------------------------------------------------------------------------------------------
-def dispError(errorDifference, allowedTolerance, zLevel, termName, termUnits, percentError, testSuccess):
+def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, termName, termUnits, percentError, testSuccess):
     """
     Find and display any budget failures to stdout
-    Input: errorDifference: list of differences between two lists being compared.
+    Input: leftHandValue: list of floats representing the left side of equation being examined
+           rightHandValue: list of floats representing the right side of equation being examined
+           errorDifference: list of differences between two lists being compared.
            allowedTolerance: Tolerance the errorDifference may be off before considered a fail
            zLevel: Starting z level. For zm grid this should be 0, for zt it should be 1.
            termName: Name of variable that is being tested
@@ -441,6 +443,12 @@ def dispError(errorDifference, allowedTolerance, zLevel, termName, termUnits, pe
         
     for value in errorDifference:
         zLevel += 1
+        
+        # Check to make sure tolerance is not smaller than a values precision
+        valuePrecision = calcPrecision(leftHandValue[zLevel-1], rightHandValue[zLevel-1])
+        allowedTolerance = max( abs(allowedTolerance), abs(valuePrecision) )
+        
+        # Display failure message for each error difference thats greater than the tolerance
         if abs(value) > abs(allowedTolerance):
             testSuccess = False
             print termName + " fails at z-level " + str(zLevel) + \
@@ -470,10 +478,10 @@ def calcTolerance(termUnits, timestep, termName):
     """
     
     # These were copied from constants_clubb.F90
-    MS_TOL = 2e-2 # m/s
-    K_TOL = 1e-2 # K
-    KGKG_TOL = 1e-8 # kg/kg
-    NUMKG_TOL = 1e-10 # num/kg
+    w_tol = 2e-2 # m/s
+    thl_tol = 1e-2 # K
+    rt_tol = 1e-8 # kg/kg
+    Nr_tol = 1e-10 # num/kg
     
     # Special Cases for tolerance
     if termName == "Ncm":
@@ -481,20 +489,55 @@ def calcTolerance(termUnits, timestep, termName):
     elif termName == "Nrm":
         tol = 5e3
     # Get error tolerance based on variable units
-    elif re.search("num", termUnits) != None:
-        tol = NUMKG_TOL
-    elif re.search("kg", termUnits) != None:
-        tol = KGKG_TOL
-    elif re.search("m", termUnits) != None:
-        tol = MS_TOL
-    elif re.search("K", termUnits) != None:
-        tol = K_TOL
+    elif termUnits == "(num/kg)/s": # num/kg
+        tol = Nr_tol
+    elif termUnits == "(kg/kg)/s" or termUnits == "kg kg^{-1} s^{-1}": # kg/kg
+        tol = rt_tol
+    elif termUnits == "(kg^2)/(kg^2 s)": # kg^2/kg^2
+        tol = rt_tol * rt_tol
+    elif termUnits == "m s^{-2}": # m/s
+        tol = w_tol
+    elif termUnits == "m^2/s^3": # m^2/s^2
+        tol = w_tol * w_tol
+    elif termUnits == "m^{3} s^{-4}": # m^3/s^3
+        tol = w_tol * w_tol * w_tol
+    elif termUnits == "K s^{-1}": # K
+        tol = thl_tol
+    elif termUnits == "(K^2)/s": # K^2
+        tol = thl_tol * thl_tol
+    elif termUnits == "(m kg)/(s^2 kg)": # m/s kg/kg
+        tol = w_tol * rt_tol
+    elif termUnits == "(kg K)/(kg s)": # K kg/kg
+        tol = thl_tol * rt_tol
+    elif termUnits == "(m K)/s^2": # K m/s
+        tol = thl_tol * w_tol
     else:
-        sys.stderr.write("Error parsing units: " + termUnits + "\n")
+        sys.stderr.write("Error parsing units: " + termUnits + "\nCheck this script's calcTolerance method")
         sys.exit(1)
     
     return tol / timestep
-
+    
+#--------------------------------------------------------------------------------------------------
+def calcPrecision(value1, value2):
+    """
+    Finds the smallest precision of a given list of numbers and
+    returns the smallest representable number with the same precision.
+    
+    Input: value1: Floating point number
+           value2: A second floating point number
+    """
+    retVal = 0
+    
+    valueStr1 = '%e' %(value1)
+    valuePrecision1 = int(valueStr1[-3:])
+        
+    valueStr2 = '%e' %(value2)
+    valuePrecision2 = int(valueStr2[-3:])
+    
+    retVal = min(valuePrecision1, valuePrecision2)
+    
+    return 10**(retVal)
+    
 #--------------------------------------------------------------------------------------------------
 # Allows this module to be run as a script
 if __name__ == "__main__":
@@ -528,7 +571,7 @@ if __name__ == "__main__":
         
         # Test all remaining files
         for dataFile in testableFiles:
-            print "Testing " + dataFile
+            print "\n----------------------------------------------------\nTesting " + dataFile
             
             # Check if file is NetCDF, otherwise assume GrADS
             if dataFile.find(".nc") != -1 or dataFile.find(".cdf") != -1:
