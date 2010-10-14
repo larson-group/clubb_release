@@ -65,6 +65,17 @@ module generate_lh_sample_module
       set_lower_triangular_matrix, & ! Procedures
       get_lower_triangular_matrix
 
+    use matrix_operations, only: Cholesky_factor ! Procedure(s)
+
+    use matrix_operations, only: &
+      symm_covar_matrix_2_corr_matrix ! Procedure(s)
+
+    use error_code, only:  &
+      clubb_at_least_debug_level  ! Procedure(s)
+
+    use constants_clubb, only:  &
+      fstderr  ! Constant(s)
+
     implicit none
 
     ! External
@@ -122,7 +133,6 @@ module generate_lh_sample_module
       l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
     real :: &
-      mixt_frac,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       w1,          & ! Mean of w for 1st normal distribution                 [m/s]
       w2,          & ! Mean of w for 2nd normal distribution                 [m/s]
       varnce_w1,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
@@ -144,7 +154,8 @@ module generate_lh_sample_module
       cthl1,       & ! Coefficient for s'                                    [1/K]
       cthl2          ! Coefficient for s'                                    [1/K]
 
-    real :: &
+    double precision :: &
+      mixt_frac,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
       cloud_frac2    ! Cloud fraction for 2nd normal distribution              [-]
 
@@ -209,6 +220,22 @@ module generate_lh_sample_module
       Ncp2_on_Ncm2, & ! = Ncp2 divided by Ncm^2    [-]
       Nrp2_on_Nrm2, & ! = Nrp2 divided by Nrm^2    [-]
       rrp2_on_rrainm2 ! = rrp2 divided by rrainm^2 [-]
+
+    double precision, dimension(d_variables,d_variables) :: &
+      Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
+
+    double precision, dimension(d_variables) :: &
+      Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
+      Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
+
+    logical :: &
+      l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
+
+    double precision, dimension(d_variables,d_variables) :: &
+      Sigma_stw_1_corr, Sigma_stw_2_corr ! Correlation matrix for Simga_stw_1,2
+
+    ! Sample of s points that is drawn only from normal distribution
+    double precision, dimension(n_micro_calls) :: s_pts ! [kg/kg]
 
     integer :: i
 
@@ -286,9 +313,9 @@ module generate_lh_sample_module
     cthl1 = pdf_params%cthl1(level)
     cthl2 = pdf_params%cthl2(level)
 
-    mixt_frac   = pdf_params%mixt_frac(level)
-    cloud_frac1 = pdf_params%cloud_frac1(level)
-    cloud_frac2 = pdf_params%cloud_frac2(level)
+    mixt_frac   = dble( pdf_params%mixt_frac(level) )
+    cloud_frac1 = dble( pdf_params%cloud_frac1(level) )
+    cloud_frac2 = dble( pdf_params%cloud_frac2(level) )
     rrtthl      = pdf_params%rrtthl(level)
 
     !---------------------------------------------------------------------------
@@ -586,17 +613,52 @@ module generate_lh_sample_module
 
 !     end if ! iiLH_Nc > 0
 
-    call sample_points( n_micro_calls, d_variables, dble( mixt_frac ), &  ! In
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+      call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Sigma_stw_1_corr )
+      call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Sigma_stw_2_corr )
+
+      if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_2_corr < -1.0 ) ) then
+        write(fstderr,*) "Sigma_stw_1 has a correlation > 1 or < -1"
+      end if
+      if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_1_corr < -1.0 ) ) then
+        write(fstderr,*) "Sigma_stw_2 has a correlation > 1 or < -1"
+      end if
+
+    end if ! clubb_at_least_debug_level( 2 )
+
+    ! Compute cholesky factorization Sigma_stw_1 / Sigma_stw_2
+    if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 1 ) ) then
+      call Cholesky_factor( d_variables, Sigma_stw_1, & ! In
+                            Sigma1_scaling, Sigma1_Cholesky, l_Sigma1_scaling ) ! Out
+
+    end if
+
+    if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 2 ) ) then
+      call Cholesky_factor( d_variables, Sigma_stw_2, & ! In
+                            Sigma2_scaling, Sigma2_Cholesky, l_Sigma2_scaling ) ! Out
+    end if
+
+    ! Let s PDF (1st column) be a truncated Gaussian.
+    ! Take sample solely from cloud points.
+    call truncate_gaus_mixt( n_micro_calls, d_variables, iiLH_s_mellor, mixt_frac, mu1, mu2, &  ! In
+                             Sigma_stw_1, Sigma_stw_2, cloud_frac1, cloud_frac2, X_u_one_lev, & ! In
+                             X_mixt_comp_one_lev, & ! In
+                             s_pts ) ! Out
+
+    call sample_points( n_micro_calls, d_variables, mixt_frac, &  ! In
                         dble( rt1 ), dble( thl1 ), &  ! In
                         dble( rt2 ), dble( thl2 ), &  ! In
                         dble( crt1 ), dble( cthl1 ), &  ! In
                         dble( crt2 ), dble( cthl2 ), &  ! In
                         mu1, mu2, &  ! In
-                        dble( cloud_frac1 ), dble( cloud_frac2 ), & ! In 
+                        cloud_frac1, cloud_frac2, & ! In 
                         l_d_variable_lognormal, & ! In
                         X_u_one_lev, & ! In
                         X_mixt_comp_one_lev, & ! In
-                        Sigma_stw_1, Sigma_stw_2, & ! In/Out
+                        Sigma1_Cholesky, Sigma2_Cholesky, & ! In
+                        Sigma1_scaling, Sigma2_scaling, s_pts, & ! In
+                        l_Sigma1_scaling, l_Sigma2_scaling, & ! In
                         LH_rt, LH_thl, X_nl_one_lev ) ! Out
 
     return
@@ -611,33 +673,27 @@ module generate_lh_sample_module
                             l_d_variable_lognormal, &
                             X_u_one_lev, &
                             X_mixt_comp_one_lev, &
-                            Sigma_stw_1, Sigma_stw_2, & 
+                            Sigma1_Cholesky, Sigma2_Cholesky, &
+                            Sigma1_scaling, Sigma2_scaling, s_pts, & 
+                            l_Sigma1_scaling, l_Sigma2_scaling, &
                             LH_rt, LH_thl, X_nl_one_lev )
 
 ! Description:
 !   Generates n random samples from a d-dim Gaussian-mixture PDF.
 !   Uses Latin hypercube method.
-!   To be called from pdf_closure of CLUBB.
 
-!   We take samples only from the cloudy part of the grid box.
-!   We use units of kg/kg.
+!   Original formulation takes samples only from the cloudy part of the grid box.
+!   Revised formulation samples in and out of cloud.
+
+!   We use MKS units on all variates.
 
 ! References:
 !   None
 !----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
-        fstderr  ! Constant(s)
-
     use array_index, only: &
-      iiLH_s_mellor, & ! Variable(s)
+      iiLH_s_mellor, & ! Variables
       iiLH_t_mellor
-
-    use matrix_operations, only: &
-      symm_covar_matrix_2_corr_matrix ! Procedure(s)
-
-    use error_code, only:  &
-      clubb_at_least_debug_level  ! Procedure(s)
 
     implicit none
 
@@ -672,65 +728,49 @@ module generate_lh_sample_module
       l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
 
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
-      X_u_one_lev ! Sample drawn from uniform distribution from particular grid level
+      X_u_one_lev ! Sample drawn from uniform distribution from particular grid level [-]
 
     integer, intent(in), dimension(n_micro_calls) :: &
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
-    ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4 ... d_variables
-    !                                      s   t   w   hydrometeors
-    double precision, intent(inout), dimension(d_variables,d_variables) :: &
-      Sigma_stw_1, &
-      Sigma_stw_2
+    ! Sample of s points that is drawn only from normal distribution
+    double precision, intent(in), dimension(n_micro_calls) :: s_pts
+
+    ! Columns of Sigma_Cholesky, X_nl_one_lev:  1   2   3   4 ... d_variables
+    !                                           s   t   w   hydrometeors
+    double precision, intent(in), dimension(d_variables,d_variables) :: &
+      Sigma1_Cholesky, & ! [units vary]
+      Sigma2_Cholesky
+
+    double precision, intent(in), dimension(d_variables) :: &
+      Sigma1_scaling, Sigma2_scaling ! Scaling factors on Sigma1,2 [units vary]
+
+    logical, intent(in) :: &
+      l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
 
     ! Output Variables
     ! Total water, theta_l: mean plus perturbations
-    real, intent(out), dimension(n_micro_calls) :: LH_rt, LH_thl
-
+    real, intent(out), dimension(n_micro_calls) :: &
+      LH_rt,  & ! Total water   [kg/kg]
+      LH_thl    ! Liquid potential temperature  [K]
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
     ! Local Variables
-    integer :: col, sample
-
-    double precision, dimension(d_variables,d_variables) :: &
-      Sigma_stw_1_corr, Sigma_stw_2_corr
-
-    ! Sample of s points that is drawn only from normal distribution
-    double precision, dimension(n_micro_calls) :: s_pts
+    integer :: sample
 
     ! ---- Begin Code ----
 
     sample = 1       ! These lines prevent a g95 compiler error for uninitialized variable and
     sample = sample  ! unused variable. -meyern
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
-
-      call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Sigma_stw_1_corr )
-      call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Sigma_stw_2_corr )
-
-      if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_2_corr < -1.0 ) ) then
-        write(fstderr,*) "Sigma_stw_1 has a correlation > 1 or < -1"
-      end if
-      if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_1_corr < -1.0 ) ) then
-        write(fstderr,*) "Sigma_stw_2 has a correlation > 1 or < -1"
-      end if
-
-    end if ! clubb_at_least_debug_level( 2 )
-
-    ! Let s PDF (1st column) be a truncated Gaussian.
-    ! Take sample solely from cloud points.
-    col = iiLH_s_mellor
-    call truncate_gaus_mixt( n_micro_calls, d_variables, col, mixt_frac, mu1, mu2, &  ! In
-                             Sigma_stw_1, Sigma_stw_2, cloud_frac1, cloud_frac2, X_u_one_lev, & ! In
-                             X_mixt_comp_one_lev, & ! In
-                             s_pts ) ! Out
-
     ! Generate n samples of a d-variate Gaussian mixture
     ! by transforming Latin hypercube points, X_u_one_lev.
     call gaus_mixt_points( n_micro_calls, d_variables, mixt_frac, mu1, mu2, &  ! In
-                           Sigma_stw_1, Sigma_stw_2, & ! In
+                           Sigma1_Cholesky, Sigma2_Cholesky, & ! In
+                           Sigma1_scaling, Sigma2_scaling, & ! In
+                           l_Sigma1_scaling, l_Sigma2_scaling, & ! In
                            cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, & ! In
                            X_mixt_comp_one_lev, & ! In
                            X_nl_one_lev ) ! Out
@@ -921,10 +961,13 @@ module generate_lh_sample_module
   end function choose_permuted_random
 
 !----------------------------------------------------------------------
-  subroutine gaus_mixt_points( n_micro_calls, d_variables, mixt_frac, mu1, mu2, Sigma1, Sigma2, &
+  subroutine gaus_mixt_points( n_micro_calls, d_variables, mixt_frac, mu1, mu2, &
+                               Sigma1_Cholesky, Sigma2_Cholesky, &
+                               Sigma1_scaling, Sigma2_scaling, &
+                               l_Sigma1_scaling, l_Sigma2_scaling, &
                                cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, &
                                X_mixt_comp_one_lev, &
-                               X_gm )
+                               X_nl_one_lev )
 ! Description:
 !   Generates n random samples from a d-dimensional Gaussian-mixture PDF.
 !   Uses Latin hypercube method.
@@ -937,8 +980,6 @@ module generate_lh_sample_module
 
     use error_code, only:  &
       clubb_at_least_debug_level  ! Procedure(s)
-
-    use matrix_operations, only: Cholesky_factor ! Procedure(s)
 
     implicit none
 
@@ -955,12 +996,19 @@ module generate_lh_sample_module
     real, intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
-    double precision, intent(in), dimension(d_variables,d_variables) :: &
-      Sigma1, Sigma2 ! dxd dimensional covariance matrices
-
     ! Latin hypercube sample from uniform distribution from a particular grid level
     double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev
+
+    double precision, dimension(d_variables,d_variables), intent(in) :: &
+      Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
+
+    double precision, dimension(d_variables), intent(in) :: &
+      Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
+      Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
+
+    logical, intent(in) :: &
+      l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
 
     double precision, intent(in), dimension(n_micro_calls) :: &
       s_pts ! n-dimensional vector giving values of s
@@ -971,24 +1019,12 @@ module generate_lh_sample_module
     ! Output Variables
 
     double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
-      X_gm ! [n by d] matrix, X_gm, each row of which is a d-dimensional sample
-
+      X_nl_one_lev ! [n by d] matrix, each row of which is a d-dimensional sample
 
     ! Local Variables
 
-    double precision, dimension(n_micro_calls,d_variables) :: &
-      X_gm_cholesky ! [n by d] matrix, X_gm, each row of which is a d-dimensional sample
-
     double precision, dimension(d_variables) :: &
-      std_normal, &     ! Standard normal multiplied by the factorized Sigma    [-]
-      Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
-      Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
-
-    double precision, dimension(d_variables,d_variables) :: &
-      Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
-
-    logical :: l_Sigma1_Cholesky_init, l_Sigma2_Cholesky_init, &
-      l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
+      std_normal  ! Standard normal multiplied by the factorized Sigma    [-]
 
     integer :: j, sample ! Loop iterators
 
@@ -1020,12 +1056,6 @@ module generate_lh_sample_module
       end if
     end if
 
-    ! To avoid performing the Cholesky factorization more than is necessary, 
-    ! we use these logicals here to determine if the Sigma matrices have 
-    ! already been factored.
-    l_Sigma1_Cholesky_init = .false.
-    l_Sigma2_Cholesky_init = .false.
-
     do sample = 1, n_micro_calls
 
       ! From Latin hypercube sample, generate standard normal sample
@@ -1036,29 +1066,17 @@ module generate_lh_sample_module
       ! Determine which mixture fraction we are in.
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
 
-        if ( .not. l_Sigma1_Cholesky_init ) then
-           call Cholesky_factor( d_variables, Sigma1, & ! In
-                                 Sigma1_scaling, Sigma1_Cholesky, l_Sigma1_scaling ) ! Out
-           l_Sigma1_Cholesky_init = .true.
-        end if
-
         call multiply_Cholesky &
             ( d_variables, std_normal, mu1, Sigma1_Cholesky, s_pts(sample), &  ! In
               Sigma1_scaling, l_Sigma1_scaling, & ! In
-              X_gm_cholesky(sample, 1:d_variables) ) ! Out
+              X_nl_one_lev(sample, 1:d_variables) ) ! Out
 
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
-
-        if ( .not. l_Sigma2_Cholesky_init ) then
-           call Cholesky_factor( d_variables, Sigma2, & ! In
-                                 Sigma2_scaling, Sigma2_Cholesky, l_Sigma2_scaling ) ! Out
-           l_Sigma2_Cholesky_init = .true.
-        end if
 
         call multiply_Cholesky &
              ( d_variables, std_normal, mu2, Sigma2_Cholesky, s_pts(sample), &  ! In
                Sigma2_scaling, l_Sigma2_scaling, & ! In
-               X_gm_cholesky(sample, 1:d_variables) ) ! Out
+               X_nl_one_lev(sample, 1:d_variables) ) ! Out
 
       else
         stop "Error determining mixture component in gaus_mixt_points"
@@ -1067,8 +1085,6 @@ module generate_lh_sample_module
 
       ! Loop to get new sample
     end do
-
-    X_gm = X_gm_Cholesky
 
     return
   end subroutine gaus_mixt_points
