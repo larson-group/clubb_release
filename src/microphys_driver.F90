@@ -2885,8 +2885,14 @@ module microphys_driver
               corr_array(k,iiLH_s_mellor,iiLH_Ngraupel) = corr_sNr_NL_below
             end if ! iiLH_Ngraupel > 0
           end if ! iiLH_rgraupel > 0
-
         end if ! rcm > rc_tol
+
+        ! Approximate the correlation between t and other variates.
+        do i = 4, d_variables
+          corr_array(k,i,iiLH_t_mellor) = &
+            corr_array(k,iiLH_s_mellor,iiLH_t_mellor) * corr_array(k,i,iiLH_s_mellor)
+        end do
+
       end do ! 1..gr%nnzp
 
       return
