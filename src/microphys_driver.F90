@@ -2725,6 +2725,7 @@ module microphys_driver
 
       use array_index, only: &
         iiLH_s_mellor, & ! Variables
+        iiLH_t_mellor, & 
         iiLH_rrain, &
         iiLH_rsnow, &
         iiLH_rice, &
@@ -2770,6 +2771,8 @@ module microphys_driver
       end do
 
       do k = 1, gr%nnzp
+        corr_array(k,iiLH_s_mellor,iiLH_t_mellor) = 0.3
+        corr_array(k,iiLH_t_mellor,iiLH_s_mellor) = 0.3
         if ( rcm(k) > rc_tol ) then
           if ( iiLH_Nc > 0 ) then
             xp2_on_xm2_array(k,iiLH_Nc) = Ncp2_on_Ncm2_cloud
@@ -2825,8 +2828,7 @@ module microphys_driver
               corr_array(k,iiLH_s_mellor,iiLH_Ngraupel) = corr_sNr_NL_cloud
             end if ! iiLH_Ngraupel > 0
           end if ! iiLH_rgraupel > 0
-
-        else ! rcm < rc_tol
+        else ! rcm <= rc_tol
           if ( iiLH_Nc > 0 ) then
             ! The epsilon is a kluge to prevent a singular matrix in generate_lh_sample
             xp2_on_xm2_array(k,iiLH_Nc) = &
