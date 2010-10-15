@@ -50,7 +50,7 @@ if [ -z $1 ]; then
 	# Set using the default config flags
 
 	CONFIG=./config/linux_ia32_g95_optimize.bash
-#       CONFIG=./config/gfdl_wks.bash
+#	CONFIG=./config/gfdl_wks.bash
 #	CONFIG=./config/darwin_powerpc_g95.bash
 #	CONFIG=./config/linux_ia32_pg.bash
 #	CONFIG=./config/linux_ia32_absoft.bash
@@ -94,11 +94,16 @@ LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -lclubb_morrison $LDFLAGS"
 
 # ------------------------------------------------------------------------------
 # Special addition for XLF, which uses the xlf for fixed format and xlf90 for 
-# free format Fortran files.  For other compilers are can just assume FC is 
+# free format Fortran files.  For other compilers we can just assume FC is 
 # good enough for fixed and free format.
-if [ -z ${F77} ]; then
-	F90="${FC}"
-	F77="${FC}"
+if [ -z "${F77}" ] || [ -z "${F90}" ]; then
+	if [ -z ${FC} ]; then
+		echo "Either FC, or F90 and F77 must be defined"
+		exit -1
+	else
+		F90="${FC}"
+		F77="${FC}"
+	fi
 fi
 
 
@@ -244,13 +249,13 @@ clean:
 distclean:
 	-rm -f $objdir/*.* \
 	$objdir/.cppdefs \
-        $libdir/lib* \
-        $bindir/clubb_standalone \
-        $bindir/clubb_tuner \
-        $bindir/int2txt \
-        $bindir/jacobian \
-        $bindir/mkmf_template \
-        $bindir/Makefile \
+	$libdir/lib* \
+	$bindir/clubb_standalone \
+	$bindir/clubb_tuner \
+	$bindir/int2txt \
+	$bindir/jacobian \
+	$bindir/mkmf_template \
+	$bindir/Makefile \
 
 EOF
 cd $dir
