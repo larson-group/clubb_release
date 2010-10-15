@@ -234,9 +234,6 @@ module generate_lh_sample_module
     double precision, dimension(d_variables,d_variables) :: &
       Sigma_stw_1_corr, Sigma_stw_2_corr ! Correlation matrix for Simga_stw_1,2
 
-    ! Sample of s points that is drawn only from normal distribution
-    double precision, dimension(n_micro_calls) :: s_pts ! [kg/kg]
-
     integer :: i
 
     ! ---- Begin Code ----
@@ -453,7 +450,8 @@ module generate_lh_sample_module
       if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
 
         call get_lower_triangular_matrix &
-             ( d_variables, iiLH_rrain, iiLH_Nr, corr_array, corr_rrNr )
+             ( d_variables, iiLH_rrain, iiLH_Nr, corr_array, & ! In
+               corr_rrNr ) ! Out
 
         ! Covariance between rain water mixing ratio rain number concentration
         covar_rrNr1 = corr_LN_to_cov_gaus &
@@ -639,13 +637,6 @@ module generate_lh_sample_module
                             Sigma2_scaling, Sigma2_Cholesky, l_Sigma2_scaling ) ! Out
     end if
 
-    ! Let s PDF (1st column) be a truncated Gaussian.
-    ! Take sample solely from cloud points.
-    call truncate_gaus_mixt( n_micro_calls, d_variables, iiLH_s_mellor, mixt_frac, mu1, mu2, &  ! In
-                             Sigma_stw_1, Sigma_stw_2, cloud_frac1, cloud_frac2, X_u_one_lev, & ! In
-                             X_mixt_comp_one_lev, & ! In
-                             s_pts ) ! Out
-
     call sample_points( n_micro_calls, d_variables, mixt_frac, &  ! In
                         dble( rt1 ), dble( thl1 ), &  ! In
                         dble( rt2 ), dble( thl2 ), &  ! In
@@ -657,7 +648,7 @@ module generate_lh_sample_module
                         X_u_one_lev, & ! In
                         X_mixt_comp_one_lev, & ! In
                         Sigma1_Cholesky, Sigma2_Cholesky, & ! In
-                        Sigma1_scaling, Sigma2_scaling, s_pts, & ! In
+                        Sigma1_scaling, Sigma2_scaling, & ! In
                         l_Sigma1_scaling, l_Sigma2_scaling, & ! In
                         LH_rt, LH_thl, X_nl_one_lev ) ! Out
 
@@ -674,7 +665,7 @@ module generate_lh_sample_module
                             X_u_one_lev, &
                             X_mixt_comp_one_lev, &
                             Sigma1_Cholesky, Sigma2_Cholesky, &
-                            Sigma1_scaling, Sigma2_scaling, s_pts, & 
+                            Sigma1_scaling, Sigma2_scaling, & 
                             l_Sigma1_scaling, l_Sigma2_scaling, &
                             LH_rt, LH_thl, X_nl_one_lev )
 
@@ -733,9 +724,6 @@ module generate_lh_sample_module
     integer, intent(in), dimension(n_micro_calls) :: &
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
-    ! Sample of s points that is drawn only from normal distribution
-    double precision, intent(in), dimension(n_micro_calls) :: s_pts
-
     ! Columns of Sigma_Cholesky, X_nl_one_lev:  1   2   3   4 ... d_variables
     !                                           s   t   w   hydrometeors
     double precision, intent(in), dimension(d_variables,d_variables) :: &
@@ -771,7 +759,7 @@ module generate_lh_sample_module
                            Sigma1_Cholesky, Sigma2_Cholesky, & ! In
                            Sigma1_scaling, Sigma2_scaling, & ! In
                            l_Sigma1_scaling, l_Sigma2_scaling, & ! In
-                           cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, & ! In
+                           cloud_frac1, cloud_frac2, X_u_one_lev, & ! In
                            X_mixt_comp_one_lev, & ! In
                            X_nl_one_lev ) ! Out
 
@@ -965,7 +953,7 @@ module generate_lh_sample_module
                                Sigma1_Cholesky, Sigma2_Cholesky, &
                                Sigma1_scaling, Sigma2_scaling, &
                                l_Sigma1_scaling, l_Sigma2_scaling, &
-                               cloud_frac1, cloud_frac2, X_u_one_lev, s_pts, &
+                               cloud_frac1, cloud_frac2, X_u_one_lev, &
                                X_mixt_comp_one_lev, &
                                X_nl_one_lev )
 ! Description:
@@ -1009,9 +997,6 @@ module generate_lh_sample_module
 
     logical, intent(in) :: &
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
-
-    double precision, intent(in), dimension(n_micro_calls) :: &
-      s_pts ! n-dimensional vector giving values of s
 
     integer, intent(in), dimension(n_micro_calls) :: &
       X_mixt_comp_one_lev ! Which mixture component we're in
@@ -1067,14 +1052,14 @@ module generate_lh_sample_module
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
 
         call multiply_Cholesky &
-            ( d_variables, std_normal, mu1, Sigma1_Cholesky, s_pts(sample), &  ! In
+            ( d_variables, std_normal, mu1, Sigma1_Cholesky, &  ! In
               Sigma1_scaling, l_Sigma1_scaling, & ! In
               X_nl_one_lev(sample, 1:d_variables) ) ! Out
 
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
 
         call multiply_Cholesky &
-             ( d_variables, std_normal, mu2, Sigma2_Cholesky, s_pts(sample), &  ! In
+             ( d_variables, std_normal, mu2, Sigma2_Cholesky, &  ! In
                Sigma2_scaling, l_Sigma2_scaling, & ! In
                X_nl_one_lev(sample, 1:d_variables) ) ! Out
 
@@ -1356,7 +1341,7 @@ module generate_lh_sample_module
   end function ltqnorm
 
 !-------------------------------------------------------------------------------
-  subroutine multiply_Cholesky( d_variables, std_normal, mu, Sigma_Cholesky, s_pt, & 
+  subroutine multiply_Cholesky( d_variables, std_normal, mu, Sigma_Cholesky, & 
                                   Sigma_scaling, l_scaled, &
                                   nonstd_normal )
 ! Description:
@@ -1390,8 +1375,6 @@ module generate_lh_sample_module
 
     double precision, intent(in), dimension(d_variables,d_variables) :: &
       Sigma_Cholesky ! Cholesky factorization of the Sigma matrix [units vary]
-
-    double precision, intent(in) :: s_pt ! Value of Mellor's s  [(kg/kg)^2]
 
     double precision, intent(in), dimension(d_variables) :: &
       Sigma_scaling ! Scaling for Sigma / mu    [units vary]
@@ -1427,9 +1410,6 @@ module generate_lh_sample_module
       ! Add mu to Sigma * std_normal
       nonstd_normal = Sigma_times_std_normal + dble( mu )
     end if
-
-    ! Copy the stored value of s_mellor
-    nonstd_normal(1) = s_pt
 
     return
   end subroutine multiply_Cholesky
@@ -1560,7 +1540,7 @@ module generate_lh_sample_module
     implicit none
 
     ! External
-    intrinsic :: log
+    intrinsic :: log, epsilon
 
     ! Input Variables
     double precision, intent(in) :: &
