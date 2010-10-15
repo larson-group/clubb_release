@@ -52,7 +52,8 @@ FFLAGS="$ARCH $DEBUG"
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-CPPFLAGS="-DNETCDF -I$MKLPATH/../../include -I$NETCDF/include -Dnooverlap -Dradoffline -DMKL" 
+CPPDEFS="-DNETCDF -I$NETCDF/include -Dnooverlap -Dradoffline -DMKL" 
+CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include" 
 
 # == Static library processing ==
 AR=ar

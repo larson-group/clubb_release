@@ -74,7 +74,8 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 #   -DMKL enables MKL solver (PARDISO and GMRES) support
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
-CPPFLAGS="-DNETCDF -I$MKLPATH/../../include -I$NETCDF/include -Dnooverlap -Dradoffline -DMKL"
+CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include"
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DMKL"
 
 # == Static library processing ==
 AR=ar

@@ -36,7 +36,7 @@ ARCH="-xarch=native64 -xcache=native -xchip=native -dalign"
 OPTIMIZE="-g -xO3 -xvector=lib -ftrap=%none"
 # This works on x86/x64 only
 #OPTIMIZE="-g -xO3 -xvector=simd -ftrap=%none"
-# These options are good for parallel tuning or OpenMP WRF-HOC.
+# These are more aggresive options that enable OpenMP
 #OPTIMIZE="-g -xopenmp -xparallel -stackvar -xipo=2 -xvector=simd -xO4 -ftrap=%none"
 
 # == NetCDF Location  ==
@@ -60,9 +60,8 @@ FFLAGS="$OPTIMIZE $ARCH"
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -M<include path> to set a module file directory
-CPPFLAGS="-DNETCDF -M$NETCDF/include -Dnooverlap -Dradoffline"
-
-
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline"
+CPPFLAGS="-M$NETCDF/include"
 
 # == Static library processing ==
 AR="ar"
@@ -73,11 +72,8 @@ RANLIB="ranlib"
 SHARED="$FC"
 SHAREDFLAGS="-G"
 
-
-
 # Location of 'mkmf' utility
 mkmf=$dir/mkmf
 
 # gmake command to use and options: '-j 2' enables parallel compilation
 gmake="gmake"
-

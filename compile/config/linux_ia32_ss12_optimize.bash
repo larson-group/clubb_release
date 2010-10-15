@@ -48,7 +48,8 @@ FFLAGS="$ARCH $OPTIMIZE"
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
-CPPFLAGS="-DNETCDF -Dnooverlap -Dradoffline -M$NETCDF/include"
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline"
+CPPFLAGS="-M$NETCDF/include"
 
 # == Static library processing ==
 AR=ar

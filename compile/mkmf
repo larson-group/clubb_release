@@ -21,6 +21,9 @@
 # For the full text of the GNU General Public License,
 # write to: Free Software Foundation, Inc.,
 #           675 Mass Ave, Cambridge, MA 02139, USA.
+#
+# Modified by David Schanen UW Milwaukee to allow for compiling a mix of 
+# .F and .F90 with XL Fortran (IBM AIX).
 #-----------------------------------------------------------------------
 
 $ENV{'LANG'} = 'C';
@@ -65,11 +68,11 @@ my @inc_suffixes = ( q/\.H/, q/\.fh/, q/\.h/, q/\.inc/, q/\.h90/ );
 my @tgt_suffixes = ( q/\.a/ );
 
 my %compile_cmd = (			# command to create .o file from a given source file suffix
-      q/.F/   => q/$(FC) $(CPPDEFS) $(CPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c/,
-      q/.F90/ => q/$(FC) $(CPPDEFS) $(CPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c/,
+      q/.F/   => q/$(F77) $(CPPDEFS) $(CPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c/,
+      q/.F90/ => q/$(F90) $(CPPDEFS) $(CPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c/,
       q/.c/   => q/$(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c/,
-      q/.f/   => q/$(FC) $(FFLAGS) $(OTHERFLAGS) -c/,
-      q/.f90/ => q/$(FC) $(FFLAGS) $(OTHERFLAGS) -c/              );
+      q/.f/   => q/$(F77) $(FFLAGS) $(OTHERFLAGS) -c/,
+      q/.f90/ => q/$(F90) $(FFLAGS) $(OTHERFLAGS) -c/              );
 my %delim_match = ( q/'/ => q/'/,	# hash to find includefile delimiter pair
 		    q/"/ => q/"/,
 		    q/</ => q/>/ );

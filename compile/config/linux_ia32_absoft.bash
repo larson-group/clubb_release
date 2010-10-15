@@ -50,7 +50,7 @@ FFLAGS="$ARCH $DEBUG"
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
-CPPFLAGS="-Dnooverlap -Dradoffline -DAbsoftUNIXFortran"
+CPPDEFS="-Dnooverlap -Dradoffline -DAbsoftUNIXFortran"
 
 # == Static library processing ==
 AR=ar
@@ -60,8 +60,6 @@ RANLIB=ranlib
 # == Shared library processing ==
 SHARED=$FC
 SHAREDFLAGS="-fPIC -shared"
-
-
 
 # Location of 'mkmf' utility
 mkmf=$dir/mkmf

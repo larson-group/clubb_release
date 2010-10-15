@@ -1,8 +1,10 @@
 # $Id$
 # Configuration file for a Linux machine using GNU compiler collection Fortran
 # Note that the version of gfortran that comes with RHEL5 (4.1.1) cannot compile clubb.
-# However, following options did work on Ubuntu 8.04 LTS (and the packaged
-# versions of netcdf and netcdf-dev)
+
+# With some small modifications this configuration should work with newer 
+# versions of netCDF and GNU Fortran, such as those that come with Ubuntu or
+# Fedora Core.
 
 
 # Fortran 95 compiler and linker
@@ -56,7 +58,8 @@ FFLAGS="$ARCH $DEBUG"
 # Use -I<include path> to set a module or header file directory
 NETCDF_INCLUDE="$NETCDF/include/" # Ubuntu 10 LTS location
 #NETCDF_INCLUDE="$NETCDF/lib/gfortran/modules/" # Fedora Core 11 location
-CPPFLAGS="-DNETCDF -I$NETCDF_INCLUDE -D__GFORTRAN__ -Dnooverlap -Dradoffline"
+CPPDEFS="-DNETCDF -D__GFORTRAN__ -Dnooverlap -Dradoffline"
+CPPFLAGS="-I$NETCDF_INCLUDE"
 
 # == Static library processing ==
 AR=ar

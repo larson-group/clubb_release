@@ -1,5 +1,7 @@
 # $Id$
 # Configuration file for a Linux machine using the Pathscale Fortran compiler.
+# Note: this configuration is no longer maintained since UWM doesn't have a
+# Pathscale compiler license.  It may or may not work correctly.
 
 # Fortran 95 compiler and linker
 FC=pathf95
@@ -53,7 +55,8 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
-CPPFLAGS="-DNETCDF -I$NETCDF/include -Dnooverlap -Dradoffline"
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline"
+CPPFLAGS="-I$NETCDF/include"
 
 # == Static library processing ==
 AR=ar
