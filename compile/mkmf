@@ -109,8 +109,8 @@ if ( $opt_c ) {
       $cppdefs_xlf =~ s/,/\\,/g; # escape any commas already there
       $cppdefs_xlf =~ s/\s+/,/g; # replace whitespace with commas
       &print_formatted_list("CPPDEFS_XLF = $cppdefs_xlf");
-      $compile_cmd{'.F'}   = q/$(FC) $(CPPDEFS_XLF) $(FFLAGS) -c/;
-      $compile_cmd{'.F90'} = q/$(FC) $(CPPDEFS_XLF) $(FFLAGS) -c/;
+      $compile_cmd{'.F'}   = q/$(F77) $(CPPDEFS_XLF) $(FFLAGS) -c/;
+      $compile_cmd{'.F90'} = q/$(F90) $(CPPDEFS_XLF) $(FFLAGS) -c/;
    }
    &print_formatted_list("CPPDEFS = $opt_c") if $opt_c;
 }
