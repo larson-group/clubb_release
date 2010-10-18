@@ -462,7 +462,7 @@ module bugsrad_driver
   end function flip
 
 !-------------------------------------------------------------------------------
-  subroutine init_radiation( iunit, namelist_file, case_info_file, debug_level )
+  subroutine init_radiation( iunit, namelist_file, case_info_file )
 ! Description:
 !   Setup radiation parameters
 
@@ -492,9 +492,6 @@ module bugsrad_driver
     character(len=*), intent(in) :: &
       namelist_file, & ! Filename containing the namelist
       case_info_file   ! Name of simulation info file (plain text)
-
-    integer, intent(in) :: &
-      debug_level     ! Amount of Debugging information
 
     ! Local variables
     integer :: k
