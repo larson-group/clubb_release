@@ -1,6 +1,6 @@
-# $Id: linux_ia32_ifort.bash 4664 2010-07-22 21:45:20Z eihoppe@uwm.edu $
-# Makefile definitions customized for Linux x86_64 using the Intel Fortran 
-# compiler 
+# $Id$
+# Makefile definitions customized for IBM AIX on PowerPC using the XL
+# Fortran compiler.
 
 
 # Fortran 95 compiler and linker
