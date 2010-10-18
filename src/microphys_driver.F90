@@ -66,8 +66,8 @@ module microphys_driver
   contains
 
   !-------------------------------------------------------------------------------
-  subroutine init_microphys( iunit, namelist_file, case_info_file, debug_level, &
-    hydromet_dim )
+  subroutine init_microphys( iunit, namelist_file, case_info_file, &
+                             hydromet_dim )
 
     ! Description:
     ! Set indices to the various hydrometeor species and define hydromet_dim for
@@ -149,9 +149,6 @@ module microphys_driver
     ! Input variables
     integer, intent(in) :: &
       iunit ! File unit
-
-    integer, intent(in) :: &
-      debug_level     ! Amount of Debugging information
 
     character(len=*), intent(in) :: &
       namelist_file ! File name
@@ -2736,6 +2733,11 @@ module microphys_driver
         iiLH_Ngraupel, &
         iiLH_Nc
 
+#ifdef UNRELEASED_CODE      
+      use matrix_operations, only: set_lower_triangular_matrix ! , & ! Procedure(s)
+        !print_lower_triangular_matrix
+#endif
+
       implicit none
 
       ! External
@@ -2765,30 +2767,39 @@ module microphys_driver
 
       xp2_on_xm2_array(:,:) = 0.0
 
+#ifdef UNRELEASED_CODE
+
       ! Set main diagonal to 1
       do i = 1, d_variables
         corr_array(:,i,i) = 1.0
       end do
 
       do k = 1, gr%nnzp
-        corr_array(k,iiLH_s_mellor,iiLH_t_mellor) = 0.3
-        corr_array(k,iiLH_t_mellor,iiLH_s_mellor) = 0.3
+        ! Use a fixed value for the correlation between s and t.
+        call set_lower_triangular_matrix &
+             ( d_variables, iiLH_s_mellor, iiLH_t_mellor, 0.3, &
+               corr_array(k,:,:) )
+
         if ( rcm(k) > rc_tol ) then
           if ( iiLH_Nc > 0 ) then
             xp2_on_xm2_array(k,iiLH_Nc) = Ncp2_on_Ncm2_cloud
-            corr_array(k,iiLH_Nc,iiLH_s_mellor) = corr_sNc_NL_cloud
-            corr_array(k,iiLH_s_mellor,iiLH_Nc) = corr_sNc_NL_cloud
+            call set_lower_triangular_matrix &
+                 ( d_variables, iiLH_s_mellor, iiLH_Nc, corr_sNc_NL_cloud, &
+                   corr_array(k,:,:) )
           end if
           if ( iiLH_rrain > 0 ) then
             xp2_on_xm2_array(k,iiLH_rrain) = rrp2_on_rrainm2_cloud 
-            corr_array(k,iiLH_rrain,iiLH_s_mellor) = corr_srr_NL_cloud
-            corr_array(k,iiLH_s_mellor,iiLH_rrain) = corr_srr_NL_cloud
+            call set_lower_triangular_matrix &
+                 ( d_variables, iiLH_s_mellor, iiLH_rrain, corr_srr_NL_cloud, &
+                   corr_array(k,:,:) )
             if ( iiLH_Nr > 0 ) then
               xp2_on_xm2_array(k,iiLH_Nr) = Nrp2_on_Nrm2_cloud
-              corr_array(k,iiLH_rrain,iiLH_Nr)    = corr_rrNr_LL_cloud
-              corr_array(k,iiLH_Nr,iiLH_rrain)    = corr_rrNr_LL_cloud
-              corr_array(k,iiLH_Nr,iiLH_s_mellor) = corr_sNr_NL_cloud
-              corr_array(k,iiLH_s_mellor,iiLH_Nr) = corr_sNr_NL_cloud
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_rrain, iiLH_Nr, corr_rrNr_LL_cloud, &
+                     corr_array(k,:,:) )
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_s_mellor, iiLH_Nr, corr_srr_NL_cloud, &
+                     corr_array(k,:,:) )
             end if ! iiLH_Nr > 0
           end if ! iiLH_rrain > 0
 
@@ -2796,36 +2807,44 @@ module microphys_driver
           ! of ice phase hydrometeors.
           if ( iiLH_rsnow > 0 ) then
             xp2_on_xm2_array(k,iiLH_rsnow) = rrp2_on_rrainm2_cloud
-            corr_array(k,iiLH_rsnow,iiLH_s_mellor) = corr_srr_NL_cloud
-            corr_array(k,iiLH_s_mellor,iiLH_rsnow) = corr_srr_NL_cloud
+            call set_lower_triangular_matrix &
+                 ( d_variables, iiLH_rsnow, iiLH_s_mellor, corr_srr_NL_cloud, &
+                   corr_array(k,:,:) )
             if ( iiLH_Nsnow > 0 ) then
               xp2_on_xm2_array(k,iiLH_Nsnow) = Nrp2_on_Nrm2_cloud
-              corr_array(k,iiLH_rsnow,iiLH_Nsnow)    = corr_rrNr_LL_cloud
-              corr_array(k,iiLH_Nsnow,iiLH_rsnow)    = corr_rrNr_LL_cloud
-              corr_array(k,iiLH_Nsnow,iiLH_s_mellor) = corr_sNr_NL_cloud
-              corr_array(k,iiLH_s_mellor,iiLH_Nsnow) = corr_sNr_NL_cloud
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_rsnow, iiLH_Nsnow, corr_rrNr_LL_cloud, &
+                     corr_array(k,:,:) )
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_Nsnow, iiLH_s_mellor, corr_sNr_NL_cloud, &
+                     corr_array(k,:,:) )
             end if ! iiLH_Nsnow > 0
           end if ! iiLH_rsnow > 0
           if ( iiLH_rice > 0 ) then
             xp2_on_xm2_array(k,iiLH_rice) = 1.0 ! Dimensionless made up value
-            corr_array(k,iiLH_rice,iiLH_s_mellor) = corr_sNc_NL_cloud
-            corr_array(k,iiLH_s_mellor,iiLH_rice) = corr_sNc_NL_cloud
+            call set_lower_triangular_matrix &
+                 ( d_variables, iiLH_rice, iiLH_s_mellor, corr_sNc_NL_cloud, &
+                   corr_array(k,:,:) )
             if ( iiLH_Ni > 0 ) then
               xp2_on_xm2_array(k,iiLH_Ni) = Ncp2_on_Ncm2_cloud
-              corr_array(k,iiLH_Ni,iiLH_s_mellor) = corr_sNc_NL_cloud
-              corr_array(k,iiLH_s_mellor,iiLH_Ni) = corr_sNc_NL_cloud
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_Ni, iiLH_s_mellor, corr_sNc_NL_cloud, &
+                     corr_array(k,:,:) )
             end if ! iiLH_Ni > 0
           end if ! iiLH_rice > 0
           if ( iiLH_rgraupel > 0 ) then
             xp2_on_xm2_array(k,iiLH_rgraupel) = rrp2_on_rrainm2_cloud
-            corr_array(k,iiLH_rgraupel,iiLH_s_mellor) = corr_srr_NL_cloud
-            corr_array(k,iiLH_s_mellor,iiLH_rgraupel) = corr_srr_NL_cloud
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_rgraupel, iiLH_s_mellor, corr_srr_NL_cloud, &
+                     corr_array(k,:,:) )
             if ( iiLH_Ngraupel > 0 ) then
               xp2_on_xm2_array(k,iiLH_Ngraupel) = Nrp2_on_Nrm2_cloud
-              corr_array(k,iiLH_rgraupel,iiLH_Ngraupel) = corr_rrNr_LL_cloud
-              corr_array(k,iiLH_Ngraupel,iiLH_rgraupel) = corr_rrNr_LL_cloud
-              corr_array(k,iiLH_Ngraupel,iiLH_s_mellor) = corr_sNr_NL_cloud
-              corr_array(k,iiLH_s_mellor,iiLH_Ngraupel) = corr_sNr_NL_cloud
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_rgraupel, iiLH_Ngraupel, corr_rrNr_LL_cloud, &
+                     corr_array(k,:,:) )
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_Ngraupel, iiLH_s_mellor, corr_sNr_NL_cloud, &
+                     corr_array(k,:,:) )
             end if ! iiLH_Ngraupel > 0
           end if ! iiLH_rgraupel > 0
         else ! rcm <= rc_tol
@@ -2833,67 +2852,83 @@ module microphys_driver
             ! The epsilon is a kluge to prevent a singular matrix in generate_lh_sample
             xp2_on_xm2_array(k,iiLH_Nc) = &
               max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
-            corr_array(k,iiLH_Nc,iiLH_s_mellor) = corr_sNc_NL_below
-            corr_array(k,iiLH_s_mellor,iiLH_Nc) = corr_sNc_NL_below
+            call set_lower_triangular_matrix &
+                 ( d_variables, iiLH_Nc, iiLH_s_mellor, corr_sNc_NL_below, &
+                   corr_array(k,:,:) )
           end if
           if ( iiLH_rrain > 0 ) then
             xp2_on_xm2_array(k,iiLH_rrain) = rrp2_on_rrainm2_below
-            corr_array(k,iiLH_rrain,iiLH_s_mellor) = corr_srr_NL_below
-            corr_array(k,iiLH_s_mellor,iiLH_rrain) = corr_srr_NL_below
+            call set_lower_triangular_matrix &
+                 ( d_variables, iiLH_rrain, iiLH_s_mellor, corr_srr_NL_below, &
+                   corr_array(k,:,:) )
             if ( iiLH_Nr > 0 ) then
               xp2_on_xm2_array(k,iiLH_Nr) = Nrp2_on_Nrm2_below
-              corr_array(k,iiLH_rrain,iiLH_Nr) = corr_rrNr_LL_below
-              corr_array(k,iiLH_Nr,iiLH_rrain) = corr_rrNr_LL_below
-              corr_array(k,iiLH_Nr,iiLH_s_mellor) = corr_sNr_NL_below
-              corr_array(k,iiLH_s_mellor,iiLH_Nr) = corr_sNr_NL_below
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_rrain, iiLH_Nr, corr_rrNr_LL_below, &
+                     corr_array(k,:,:) )
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_Nr, iiLH_s_mellor, corr_sNr_NL_below, &
+                     corr_array(k,:,:) )
             end if ! iiLH_Nr > 0
           end if ! iiLH_rrain > 0
 
           ! Placeholder until we have actual numbers for the correlations/variances
           ! of ice phase hydrometeors.
           if ( iiLH_rsnow > 0 ) then
-            xp2_on_xm2_array(k,iiLH_rsnow)    = rrp2_on_rrainm2_below
-            corr_array(k,iiLH_rsnow,iiLH_s_mellor) = corr_srr_NL_below
-            corr_array(k,iiLH_s_mellor,iiLH_rsnow) = corr_srr_NL_below
+            xp2_on_xm2_array(k,iiLH_rsnow) = rrp2_on_rrainm2_below
+            call set_lower_triangular_matrix &
+                 ( d_variables, iiLH_rsnow, iiLH_s_mellor, corr_srr_NL_below, &
+                   corr_array(k,:,:) )
             if ( iiLH_Nsnow > 0 ) then
               xp2_on_xm2_array(k,iiLH_Nsnow)    = Nrp2_on_Nrm2_below
-              corr_array(k,iiLH_rsnow,iiLH_Nsnow)    = corr_rrNr_LL_below
-              corr_array(k,iiLH_Nsnow,iiLH_rsnow)    = corr_rrNr_LL_below
-              corr_array(k,iiLH_Nsnow,iiLH_s_mellor) = corr_sNr_NL_below
-              corr_array(k,iiLH_s_mellor,iiLH_Nsnow) = corr_sNr_NL_below
+              call set_lower_triangular_matrix &
+                  ( d_variables, iiLH_rsnow, iiLH_Nsnow, corr_rrNr_LL_below, &
+                    corr_array(k,:,:) )
+              call set_lower_triangular_matrix &
+                  ( d_variables, iiLH_Nsnow, iiLH_s_mellor, corr_sNr_NL_below, &
+                    corr_array(k,:,:) )
             end if ! iiLH_Nsnow > 0
           end if ! iiLH_rsnow > 0
           if ( iiLH_rice > 0 ) then
-            xp2_on_xm2_array(k,iiLH_rice)     = 2.0 ! Dimensionless made up value
-            corr_array(k,iiLH_rice,iiLH_s_mellor) = corr_sNc_NL_below
-            corr_array(k,iiLH_s_mellor,iiLH_rice) = corr_sNc_NL_below
+            xp2_on_xm2_array(k,iiLH_rice) = 2.0 ! Dimensionless made up value
+            call set_lower_triangular_matrix &
+                 ( d_variables, iiLH_rice, iiLH_s_mellor, corr_sNc_NL_below, &
+                   corr_array(k,:,:) )
             if ( iiLH_Ni > 0 ) then
               xp2_on_xm2_array(k,iiLH_Ni)     = Ncp2_on_Ncm2_below
-              corr_array(k,iiLH_Ni,iiLH_s_mellor) = corr_sNc_NL_below
-              corr_array(k,iiLH_s_mellor,iiLH_Ni) = corr_sNc_NL_below
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_Ni, iiLH_s_mellor, corr_sNc_NL_below, &
+                     corr_array(k,:,:) )
             end if ! iiLH_Ni > 0
           end if ! iiLH_rice > 0
           if ( iiLH_rgraupel > 0 ) then
             xp2_on_xm2_array(k,iiLH_rgraupel) = rrp2_on_rrainm2_below
-            corr_array(k,iiLH_rgraupel,iiLH_s_mellor) = corr_srr_NL_below
-            corr_array(k,iiLH_s_mellor,iiLH_rgraupel) = corr_srr_NL_below
+            call set_lower_triangular_matrix &
+                 ( d_variables, iiLH_rgraupel, iiLH_s_mellor, corr_srr_NL_below, &
+                   corr_array(k,:,:) )
             if ( iiLH_Ngraupel > 0 ) then
               xp2_on_xm2_array(k,iiLH_Ngraupel) = Nrp2_on_Nrm2_below
-              corr_array(k,iiLH_rgraupel,iiLH_Ngraupel) = corr_rrNr_LL_below
-              corr_array(k,iiLH_Ngraupel,iiLH_rgraupel) = corr_rrNr_LL_below
-              corr_array(k,iiLH_Ngraupel,iiLH_s_mellor) = corr_sNr_NL_below
-              corr_array(k,iiLH_s_mellor,iiLH_Ngraupel) = corr_sNr_NL_below
+              call set_lower_triangular_matrix &
+                  ( d_variables, iiLH_rgraupel, iiLH_Ngraupel, corr_rrNr_LL_below, &
+                    corr_array(k,:,:) )
+              call set_lower_triangular_matrix &
+                   ( d_variables, iiLH_rgraupel, iiLH_s_mellor, corr_sNr_NL_below, &
+                     corr_array(k,:,:) )
             end if ! iiLH_Ngraupel > 0
           end if ! iiLH_rgraupel > 0
         end if ! rcm > rc_tol
 
         ! Approximate the correlation between t and other variates.
+        ! Since the indices are always s < t < all other variates we can use
+        ! this iterated multiplication rather than using set/get_lower_triangular_matrix
         do i = 4, d_variables
           corr_array(k,i,iiLH_t_mellor) = &
-            corr_array(k,iiLH_s_mellor,iiLH_t_mellor) * corr_array(k,i,iiLH_s_mellor)
+            corr_array(k,iiLH_t_mellor,iiLH_s_mellor) * corr_array(k,i,iiLH_s_mellor)
         end do
 
       end do ! 1..gr%nnzp
+
+#endif /*UNRELEASED_CODE*/
 
       return
     end subroutine setup_corr_varnce_array
