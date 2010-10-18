@@ -6,9 +6,11 @@ module matrix_operations
 
   public :: symm_covar_matrix_2_corr_matrix, Cholesky_factor, &
     set_lower_triangular_matrix, get_lower_triangular_matrix, &
-    row_mult_lower_tri_matrix
+    row_mult_lower_tri_matrix, print_lower_triangular_matrix
 
-  private :: Symm_matrix_eigenvalues
+  private :: Symm_matrix_eigenvalues, &
+    get_lower_triangular_matrix_sp, get_lower_triangular_matrix_dp, &
+    set_lower_triangular_matrix_sp, set_lower_triangular_matrix_dp
 
   private ! Default scope
 
@@ -16,6 +18,11 @@ module matrix_operations
     module procedure get_lower_triangular_matrix_sp
     module procedure get_lower_triangular_matrix_dp
   end interface get_lower_triangular_matrix
+
+  interface set_lower_triangular_matrix
+    module procedure set_lower_triangular_matrix_sp
+    module procedure set_lower_triangular_matrix_dp
+  end interface set_lower_triangular_matrix
 
   contains
  
@@ -348,10 +355,10 @@ module matrix_operations
     return
   end subroutine Symm_matrix_eigenvalues
 !-------------------------------------------------------------------------------
-  subroutine set_lower_triangular_matrix( d_variables, index1, index2, xpyp, &
-                                          Sigma )
+  subroutine set_lower_triangular_matrix_dp( d_variables, index1, index2, xpyp, &
+                                             matrix )
 ! Description:
-!   Set a value for the lower triangular portion of the Sigma matrix.
+!   Set a value for the lower triangular portion of a matrix.
 ! References:
 !   None
 !-------------------------------------------------------------------------------
@@ -365,11 +372,12 @@ module matrix_operations
       d_variables, & ! Number of variates
       index1, index2 ! Indices for 2 variates (the order doesn't matter)
 
-    double precision, intent(in) :: xpyp ! A variance or covariance     [units vary]
+    double precision, intent(in) :: &
+      xpyp ! Value for the matrix (usually a correlation or covariance) [units vary]
 
     ! Input/Output Variables
     double precision, dimension(d_variables,d_variables), intent(inout) :: &
-      Sigma ! The covariance matrix
+      matrix ! The lower triangular matrix
 
     integer :: i,j
 
@@ -379,15 +387,53 @@ module matrix_operations
     i = max( index1, index2 )
     j = min( index1, index2 )
 
-    Sigma(i,j) = xpyp
+    matrix(i,j) = xpyp
 
     return
-  end subroutine set_lower_triangular_matrix
+  end subroutine set_lower_triangular_matrix_dp
 !-------------------------------------------------------------------------------
-  subroutine get_lower_triangular_matrix_dp( d_variables, index1, index2, Sigma, &
+  subroutine set_lower_triangular_matrix_sp( d_variables, index1, index2, xpyp, &
+                                             matrix )
+! Description:
+!   Set a value for the lower triangular portion of a matrix.
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    implicit none
+
+    ! External
+    intrinsic :: max, min
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables, & ! Number of variates
+      index1, index2 ! Indices for 2 variates (the order doesn't matter)
+
+    real, intent(in) :: &
+      xpyp ! Value for the matrix (usually a correlation or covariance) [units vary]
+
+    ! Input/Output Variables
+    real, dimension(d_variables,d_variables), intent(inout) :: &
+      matrix ! The covariance matrix
+
+    integer :: i,j
+
+    ! ---- Begin Code ----
+
+    ! Reverse these to set the values of upper triangular matrix
+    i = max( index1, index2 )
+    j = min( index1, index2 )
+
+    matrix(i,j) = xpyp
+
+    return
+  end subroutine set_lower_triangular_matrix_sp
+
+!-------------------------------------------------------------------------------
+  subroutine get_lower_triangular_matrix_dp( d_variables, index1, index2, matrix, &
                                              xpyp )
 ! Description:
-!   Returns a value from the lower triangular portion of the Sigma matrix.
+!   Returns a value from the lower triangular portion of a matrix.
 ! References:
 !   None
 !-------------------------------------------------------------------------------
@@ -403,9 +449,10 @@ module matrix_operations
 
     ! Input/Output Variables
     double precision, dimension(d_variables,d_variables), intent(in) :: &
-      Sigma ! The covariance matrix
+      matrix ! The covariance matrix
 
-    double precision, intent(out) :: xpyp ! A variance or covariance     [units vary]
+    double precision, intent(out) :: &
+      xpyp ! Value from the matrix (usually a correlation or covariance) [units vary]
 
     integer :: i,j
 
@@ -415,16 +462,16 @@ module matrix_operations
     i = max( index1, index2 )
     j = min( index1, index2 )
 
-    xpyp = Sigma(i,j)
+    xpyp = matrix(i,j)
 
     return
   end subroutine get_lower_triangular_matrix_dp
 
 !-------------------------------------------------------------------------------
-  subroutine get_lower_triangular_matrix_sp( d_variables, index1, index2, Sigma, &
+  subroutine get_lower_triangular_matrix_sp( d_variables, index1, index2, matrix, &
                                              xpyp )
 ! Description:
-!   Returns a value from the lower triangular portion of the Sigma matrix.
+!   Returns a value from the lower triangular portion of a matrix.
 ! References:
 !   None
 !-------------------------------------------------------------------------------
@@ -440,9 +487,10 @@ module matrix_operations
 
     ! Input/Output Variables
     real, dimension(d_variables,d_variables), intent(in) :: &
-      Sigma ! The covariance matrix
+      matrix ! The covariance matrix
 
-    real, intent(out) :: xpyp ! A variance or covariance     [units vary]
+    real, intent(out) :: &
+      xpyp ! Value from the matrix (usually a correlation or covariance) [units vary]
 
     integer :: i,j
 
@@ -452,9 +500,43 @@ module matrix_operations
     i = max( index1, index2 )
     j = min( index1, index2 )
 
-    xpyp = Sigma(i,j)
+    xpyp = matrix(i,j)
 
     return
   end subroutine get_lower_triangular_matrix_sp
+
+!-----------------------------------------------------------------------
+  subroutine print_lower_triangular_matrix( iunit, ndim, matrix )
+
+! Description:
+!   Print the values of lower triangular matrix to a file or console.
+
+! References:
+!   None
+!-----------------------------------------------------------------------
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      iunit, & ! File I/O logical unit (usually 6 for stdout and 0 for stderr)
+      ndim     ! Dimension of the matrix
+
+    real, dimension(ndim,ndim), intent(in) :: &
+      matrix ! Lower triangular matrix [units vary]
+
+    ! Local Variables
+    integer :: i, j
+
+    ! ---- Begin Code ----
+
+    do i = 1, ndim
+      do j = 1, i
+        write(iunit,fmt='(g15.6)',advance='no') matrix(i,j)
+      end do
+      write(iunit,fmt=*) "" ! newline
+    end do
+
+    return
+  end subroutine print_lower_triangular_matrix
 
 end module matrix_operations
