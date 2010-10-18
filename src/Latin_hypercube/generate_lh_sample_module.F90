@@ -619,13 +619,13 @@ module generate_lh_sample_module
 
       if ( any( Corr_stw_1 > 1.0 ) .or. any( Corr_stw_1 < -1.0 ) ) then
         write(fstderr,*) "Sigma_stw_1 has a correlation > 1 or < -1"
-        write(fstderr,*) "Corr_stw_1"
+        write(fstderr,*) "Corr_stw_1 ="
          call print_lower_triangular_matrix( fstderr, d_variables, real( Corr_stw_1 ) )
       end if
       if ( any( Corr_stw_2 > 1.0 ) .or. any( Corr_stw_2 < -1.0 ) ) then
         write(fstderr,*) "Sigma_stw_2 has a correlation > 1 or < -1"
-        write(fstderr,*) "Corr_stw_2"
-        call print_lower_triangular_matrix( fstderr, d_variables, real( Corr_stw_1 ) )
+        write(fstderr,*) "Corr_stw_2 ="
+        call print_lower_triangular_matrix( fstderr, d_variables, real( Corr_stw_2 ) )
       end if
 
     end if ! clubb_at_least_debug_level( 2 )
