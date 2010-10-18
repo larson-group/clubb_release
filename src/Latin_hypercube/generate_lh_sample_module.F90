@@ -63,7 +63,8 @@ module generate_lh_sample_module
 
     use matrix_operations, only: &
       set_lower_triangular_matrix, & ! Procedures
-      get_lower_triangular_matrix
+      get_lower_triangular_matrix, &
+      print_lower_triangular_matrix
 
     use matrix_operations, only: Cholesky_factor ! Procedure(s)
 
@@ -232,7 +233,7 @@ module generate_lh_sample_module
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
 
     double precision, dimension(d_variables,d_variables) :: &
-      Sigma_stw_1_corr, Sigma_stw_2_corr ! Correlation matrix for Simga_stw_1,2
+      Corr_stw_1, Corr_stw_2 ! Correlation matrix for Sigma_stw_1,2
 
     integer :: i
 
@@ -613,14 +614,18 @@ module generate_lh_sample_module
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-      call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Sigma_stw_1_corr )
-      call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Sigma_stw_2_corr )
+      call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Corr_stw_1 )
+      call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Corr_stw_2 )
 
-      if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_2_corr < -1.0 ) ) then
+      if ( any( Corr_stw_1 > 1.0 ) .or. any( Corr_stw_1 < -1.0 ) ) then
         write(fstderr,*) "Sigma_stw_1 has a correlation > 1 or < -1"
+        write(fstderr,*) "Corr_stw_1"
+         call print_lower_triangular_matrix( fstderr, d_variables, real( Corr_stw_1 ) )
       end if
-      if ( any( Sigma_stw_1_corr > 1.0 ) .or. any( Sigma_stw_1_corr < -1.0 ) ) then
+      if ( any( Corr_stw_2 > 1.0 ) .or. any( Corr_stw_2 < -1.0 ) ) then
         write(fstderr,*) "Sigma_stw_2 has a correlation > 1 or < -1"
+        write(fstderr,*) "Corr_stw_2"
+        call print_lower_triangular_matrix( fstderr, d_variables, real( Corr_stw_1 ) )
       end if
 
     end if ! clubb_at_least_debug_level( 2 )
