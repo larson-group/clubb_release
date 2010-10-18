@@ -1011,7 +1011,7 @@ module generate_lh_sample_module
     double precision, dimension(d_variables) :: &
       std_normal  ! Standard normal multiplied by the factorized Sigma    [-]
 
-    integer :: j, sample ! Loop iterators
+    integer :: ivar, sample ! Loop iterators
 
     ! ---- Begin Code ----
 
@@ -1044,8 +1044,8 @@ module generate_lh_sample_module
     do sample = 1, n_micro_calls
 
       ! From Latin hypercube sample, generate standard normal sample
-      do j = 1, d_variables
-        std_normal(j) = ltqnorm( X_u_one_lev(sample,j) )
+      do ivar = 1, d_variables
+        std_normal(ivar) = ltqnorm( X_u_one_lev(sample,ivar) )
       end do
 
       ! Determine which mixture fraction we are in.
