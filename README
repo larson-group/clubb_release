@@ -49,40 +49,6 @@ or atex) to match; the variables to match (cloud fraction, liquid water, third
 moment of vertical velocity, etc.); the altitude and times over which to match
 these variables; and the parameters to tune (C1, beta, etc.). 
 
-The CLUBB code is written in ISO Fortran 95 and executed by scripts written in
-the GNU Bash scripting language. 
-The mkmf Makefile generating script and some other optional code checking
-scripts are written in the Perl scripting language.
-On the Microsoft Windows platform the CLUBB parameterization could be configured
-and compiled using MSYS or Cygwin with G95, but we have not tested this sort 
-of configuration.
-
-We mainly use the G95 compiler on Intel x64 processors running Redhat 
-Enterprise 5.  G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
-x64 & x86 GNU/Linux.
-
-Sun Fortran 8.x on Solaris SPARC/x86 work, but has not been as rigorously 
-tested as G95.
-
-Using Intel Fortran 9, we have been able to compile on Linux x86/x64 and
-Itanium.
-
-HP/Compaq/DEC Fortran on Alpha also appears to work but because future 
-Alpha processor development has ceased it is not extensively tested.
-
-The GNU Fortran compiler (GCC 4.1.x) may or may not work.  The version that
-comes with RHEL 5 does not.
-
-It is important to note that all these compilers use *incompatible* module
-formats for the .mod files!  If you want to use different compilers on the
-same system, you will need to build a different set of netCDF mod files for
-each compiler and use -M or -I flags to specify their location.
-
-In order to get similar results on differing architectures, platforms, and
-compilers, initially try a conservative optimization and enable 
-IEEE-754 standard style floating point math.  On x86 compatible machines 
-using SSE or SSE2 is usually the best way to do this.
-
 ***********************************************************************
 *                        Using the CLUBB Model                        *
 ***********************************************************************
@@ -97,12 +63,47 @@ using SSE or SSE2 is usually the best way to do this.
 - (1.1) Building (i.e. compiling) everything:
 -----------------------------------------------------------------------
 
+The CLUBB code is written in ISO Fortran 95 and executed by scripts written in
+the GNU Bash scripting language. 
+The mkmf Makefile generating script and some other optional code checking
+scripts are written in the Perl scripting language.
+On the Microsoft Windows platform the CLUBB parameterization could be configured
+and compiled using MSYS or Cygwin with G95, but we have not tested this sort 
+of configuration.
+
+When compiling CLUBB to a new platform there are sometimes portability 
+difficulties that arise, usually from different Fortran compilers.  When 
+possible it may be helpful to look at similar platforms in the compile/config 
+directory.  Another useful troubleshooting technique to examine the 
+configuration of other Fortran projects (e.g. WRF) on the same platform.  If you
+manage to compile CLUBB on a new configuration and would like to share it with
+other users feel free to send us an email with your configuration attached.
+
+We mainly use the G95 compiler on Intel x64 processors running Redhat 
+Enterprise 5.  G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
+x64 & x86 GNU/Linux. Other tested platforms are found in the compile/ config 
+directory.
+
+The GNU Fortran compiler (GCC) may or may not work.  The version that
+comes with RHEL 5 does not.  The versions that comes with Fedora Core 11 and 
+Ubuntu 8 LTS will both appear to work.
+
+It is important to note that all these compilers use *incompatible* module
+formats for the .mod files!  If you want to use different compilers on the
+same system, you will need to build a different set of netCDF mod files for
+each compiler and use -M or -I flags to specify their location.
+
+In order to get similar results on differing architectures, platforms, and
+compilers, initially try a conservative optimization and enable 
+IEEE-754 standard style floating point math.  On x86 compatible machines 
+using SSE or SSE2 is usually the best way to do this.
+
 Requirements:
 A. A Fortran 95 compiler with a complete implementation of the standard.
    The compile/config directory contains several scripts for 
    configurations we have tested.
 B. GNU make (we use v3.81).
-C. Perl 5 to run mkmf
+C. Perl 5 to run mkmf.
 D. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
    subroutines needed by CLUBB.  Many vendors provide optimized versions of
    these routines, which may be much faster than the reference BLAS.  To be
@@ -167,9 +168,9 @@ To set up the bash scripts for compile time real promotion, follow these steps:
 1. Edit config/linux_ia32_g95_*.bash where * is either optimize or debug.
    Comment out the line " ARCH="-march=k8 -msse3 -mfpmath=sse" " and uncomment
    the line above with the " -r8 " flag.
-2. Edit compile.bash in the clubb/compile directory.  Change l_double_precision to
-   true.Ensure that the config file edited above matches the uncommented config file
-   at the beginning of the script.
+2. Edit compile.bash in the clubb/compile directory.  Change l_double_precision
+   to true.  Ensure that the config file edited above matches the uncommented 
+   config file at the beginning of the script.
 3. In the makefile section of the script, the line
    " cd $objdir; $gmake -f Make.clubb_tuner " must be commented out for the code
    to compile at double precision.
@@ -199,8 +200,9 @@ programs such as netCDF and MPI need to be compiled using the same version
 of Fortran and with the same compiler flags.  Not using the same compiler and 
 flags may cause errors and/or spurious results. 
 
-Optionally, you can safely remove everything but libclubb_param.a from the "all" section
-of the compile.bash script if you only want to use CLUBB in a host model.
+Optionally, you can safely remove everything but libclubb_param.a from the 
+"all" section of the compile.bash script if you only want to use CLUBB in 
+a host model.
 Then, do
 
 $ ./compile.bash
@@ -267,7 +269,7 @@ by CLUBB in a host model.  These include:
 2. Choose a fast implementation of the Basic Linear Algebra Subroutines 
   (abbreviated BLAS).  This is more crucial for CLUBB than for other models
   because CLUBB uses large matrix inversions. 
-  For the LAPACK and BLAS libraries it is best to use AMD Core Math Library,
+  For the LAPACK and BLAS libraries it is best to use the AMD Core Math Library,
   Intel Math Kernel Library, or ATLAS BLAS rather than the "reference" BLAS 
   that typically comes with GNU/Linux systems, because the former will greatly 
   improve the CLUBB code's runtime.
