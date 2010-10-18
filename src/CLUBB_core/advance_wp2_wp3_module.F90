@@ -589,8 +589,6 @@ contains
     logical, parameter :: l_crank_nich_diff = .false.
 
     if (l_stats_samp) then
-      call stat_begin_update( iwp2_bt, real(wp2 / dt), zm )
-
       call stat_begin_update( iwp3_bt, real(wp3 / dt), zt )
     endif
 

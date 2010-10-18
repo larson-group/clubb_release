@@ -489,27 +489,27 @@ def calcTolerance(termUnits, timestep, termName):
     elif termName == "Nrm":
         tol = 5e3
     # Get error tolerance based on variable units
-    elif termUnits == "(num/kg)/s": # num/kg
+    elif termUnits == "(num/kg)/s":                                    # num/kg
         tol = Nr_tol
     elif termUnits == "(kg/kg)/s" or termUnits == "kg kg^{-1} s^{-1}": # kg/kg
         tol = rt_tol
-    elif termUnits == "(kg^2)/(kg^2 s)": # kg^2/kg^2
+    elif termUnits == "(kg^2)/(kg^2 s)": 					        		 	 	 	 	 # kg^2/kg^2
         tol = rt_tol * rt_tol
-    elif termUnits == "m s^{-2}": # m/s
+    elif termUnits == "m s^{-2}":                                      # m/s
         tol = w_tol
-    elif termUnits == "m^2/s^3": # m^2/s^2
+    elif termUnits == "m^2/s^3":                                       # m^2/s^2
         tol = w_tol * w_tol
-    elif termUnits == "m^{3} s^{-4}": # m^3/s^3
+    elif termUnits == "m^{3} s^{-4}":                                  # m^3/s^3
         tol = w_tol * w_tol * w_tol
-    elif termUnits == "K s^{-1}": # K
+    elif termUnits == "K s^{-1}":                                      # K
         tol = thl_tol
-    elif termUnits == "(K^2)/s": # K^2
+    elif termUnits == "(K^2)/s":                                       # K^2
         tol = thl_tol * thl_tol
-    elif termUnits == "(m kg)/(s^2 kg)": # m/s kg/kg
+    elif termUnits == "(m kg)/(s^2 kg)":                               # m/s kg/kg
         tol = w_tol * rt_tol
-    elif termUnits == "(kg K)/(kg s)": # K kg/kg
+    elif termUnits == "(kg K)/(kg s)":                                 # K kg/kg
         tol = thl_tol * rt_tol
-    elif termUnits == "(m K)/s^2": # K m/s
+    elif termUnits == "(m K)/s^2":                                     # K m/s
         tol = thl_tol * w_tol
     else:
         sys.stderr.write("Error parsing units: " + termUnits + "\nCheck this script's calcTolerance method")
@@ -528,6 +528,8 @@ def calcPrecision(value1, value2):
     """
     retVal = 0
     
+    # Convert the number in scientific notation to a string,
+    # then substring the last three digits to obtain the precision.
     valueStr1 = '%e' %(value1)
     valuePrecision1 = int(valueStr1[-3:])
         

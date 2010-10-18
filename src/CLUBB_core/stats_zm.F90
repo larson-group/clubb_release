@@ -79,7 +79,8 @@ module stats_zm
           iup2_pr1, & 
           iup2_pr2, & 
           iup2_cl, & 
-          iup2_pd, & 
+          iup2_pd, &
+          iup2_sf, &
           ivp2_bt, & 
           ivp2_ta, & 
           ivp2_tp, & 
@@ -90,6 +91,7 @@ module stats_zm
           ivp2_pr2, & 
           ivp2_cl, & 
           ivp2_pd, & 
+          ivp2_sf, &
           iVrr, & 
           iVNr, & 
           iVice, & 
@@ -109,7 +111,8 @@ module stats_zm
           iwp2_dp2, &
           iwp2_4hd, & 
           iwp2_cl, & 
-          iwp2_pd
+          iwp2_pd, &
+          iwp2_sf
 
     use stats_variables, only: & 
           iwprtp_bt, & 
@@ -148,7 +151,8 @@ module stats_zm
         irtp2_dp1, & 
         irtp2_dp2, & 
         irtp2_cl, & 
-        irtp2_pd, & 
+        irtp2_pd, &
+        irtp2_sf, &
         ithlp2_bt, & 
         ithlp2_ma, & 
         ithlp2_ta, & 
@@ -156,7 +160,8 @@ module stats_zm
         ithlp2_dp1, & 
         ithlp2_dp2, & 
         ithlp2_cl, & 
-        ithlp2_pd, & 
+        ithlp2_pd, &
+        ithlp2_sf, &
         irtpthlp_bt, & 
         irtpthlp_ma, & 
         irtpthlp_ta, & 
@@ -164,7 +169,8 @@ module stats_zm
         irtpthlp_tp2, & 
         irtpthlp_dp1, & 
         irtpthlp_dp2, & 
-        irtpthlp_cl
+        irtpthlp_cl, &
+        irtpthlp_sf
     
     use stats_variables, only: & 
         iwpthlp_enter_mfl, & ! Variable(s)
@@ -278,6 +284,7 @@ module stats_zm
     iup2_pr1 = 0
     iup2_pr2 = 0
     iup2_cl  = 0
+    iup2_sf  = 0
 
     ivp2_bt  = 0
     ivp2_ta  = 0
@@ -288,6 +295,7 @@ module stats_zm
     ivp2_pr1 = 0
     ivp2_pr2 = 0
     ivp2_cl  = 0
+    ivp2_sf  = 0
 
     ! Sedimentation velocities
     iVrr      = 0  ! Brian
@@ -310,6 +318,7 @@ module stats_zm
     iwp2_4hd  = 0
     iwp2_cl   = 0
     iwp2_pd   = 0
+    iwp2_sf   = 0
 
     ! Flux budgets
     iwprtp_bt   = 0
@@ -350,6 +359,7 @@ module stats_zm
     irtp2_dp2   = 0
     irtp2_cl    = 0
     irtp2_pd    = 0
+    irtp2_sf    = 0
 
     ithlp2_bt    = 0
     ithlp2_ma    = 0
@@ -359,6 +369,7 @@ module stats_zm
     ithlp2_dp2   = 0
     ithlp2_cl    = 0
     ithlp2_pd    = 0
+    ithlp2_sf    = 0
 
     irtpthlp_bt  = 0
     irtpthlp_ma  = 0
@@ -368,6 +379,7 @@ module stats_zm
     irtpthlp_dp1 = 0
     irtpthlp_dp2 = 0
     irtpthlp_cl  = 0
+    irtpthlp_sf  = 0
 
     !Monatonic flux limiter diagnostic output
     iwpthlp_mfl_lower_lim = 0
@@ -755,6 +767,14 @@ module stats_zm
              "wp2 budget: wp2 positive definite adjustment [m^2/s^3]","m2/s3",zm)
 
         k = k + 1
+        
+      case ('wp2_sf')
+        iwp2_sf = k
+        
+        call stat_assign( iwp2_sf, "wp2_sf", & 
+             "wp2 budget: wp2 surface variance [m^2/s^3]","m2/s3",zm)
+             
+        k = k + 1
 
       case ('wprtp_bt')
         iwprtp_bt = k
@@ -983,6 +1003,13 @@ module stats_zm
              "rtp2 budget: rtp2 positive definite adjustment [(kg^2)/(kg^2 s)]", &
              "(kg^2)/(kg^2 s)", zm )
         k = k + 1
+        
+      case ('rtp2_sf')
+        irtp2_sf = k
+        call stat_assign( irtp2_sf, "rtp2_sf", & 
+             "rtp2 budget: rtp2 surface variance [(kg^2)/(kg^2 s)]", &
+             "(kg^2)/(kg^2 s)", zm )
+        k = k + 1
 
       case ('thlp2_bt')
         ithlp2_bt = k
@@ -1025,6 +1052,12 @@ module stats_zm
         call stat_assign( ithlp2_pd, "thlp2_pd", & 
              "thlp2 budget: thlp2 positive definite adjustment [(K^2)/s]", "m^2/s^2", zm )
         k = k + 1
+        
+      case ('thlp2_sf')
+        ithlp2_sf = k
+        call stat_assign( ithlp2_sf, "thlp2_sf", & 
+             "thlp2 budget: thlp2 surface variance [(K^2)/s]", "m^2/s^2", zm )
+        k = k + 1
 
       case ('rtpthlp_bt')
         irtpthlp_bt = k
@@ -1065,6 +1098,11 @@ module stats_zm
         irtpthlp_cl = k
         call stat_assign(irtpthlp_cl,"rtpthlp_cl", & 
              "rtpthlp budget: rtpthlp clipping term [(kg K)/(kg s)]","(kg K)/(kg s)",zm)
+        k = k + 1
+      case ('rtpthlp_sf')
+        irtpthlp_sf = k
+        call stat_assign(irtpthlp_sf,"rtpthlp_sf", & 
+             "rtpthlp budget: rtpthlp surface variance [(kg K)/(kg s)]","(kg K)/(kg s)",zm)
         k = k + 1
 
       case ('up2')
@@ -1138,6 +1176,12 @@ module stats_zm
         call stat_assign( iup2_pd, "up2_pd", & 
              "up2 budget: up2 positive definite adjustment [m^2/s^3]", "m^2/s^3", zm )
         k = k + 1
+   
+      case ('up2_sf')
+        iup2_sf = k
+        call stat_assign(iup2_sf,"up2_sf", & 
+             "up2 budget: up2 surface variance [m^2/s^3]","m^2/s^3",zm)
+        k = k + 1
 
       case ('vp2_bt')
         ivp2_bt = k
@@ -1197,6 +1241,12 @@ module stats_zm
         ivp2_pd = k
         call stat_assign( ivp2_pd, "vp2_pd", & 
              "vp2 budget: vp2 positive definite adjustment [m^2/s^3]", "m^2/s^3", zm )
+        k = k + 1
+        
+      case ('vp2_sf')
+        ivp2_sf = k
+        call stat_assign( ivp2_sf, "vp2_sf", & 
+             "vp2 budget: vp2 surface variance [m^2/s^3]", "m^2/s^3", zm )
         k = k + 1
 
       case ('wpthlp_enter_mfl')

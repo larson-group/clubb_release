@@ -48,6 +48,10 @@ module surface_varnce_module
     use array_index, only: &
       iisclr_rt, & ! Index for a scalar emulating rt
       iisclr_thl   ! Index for a scalar emulating thetal
+      
+    use stats_type, only: & 
+      stat_end_update_pt, & ! Procedure(s)
+      stat_update_var_pt
 
     implicit none
 

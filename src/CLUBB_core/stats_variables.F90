@@ -562,7 +562,8 @@ module stats_variables
      iwp2_dp2, &
      iwp2_4hd, &
      iwp2_pd, & 
-     iwp2_cl
+     iwp2_cl, &
+     iwp2_sf
 
 !$omp   threadprivate(iwp2_bt, iwp2_ma, iwp2_ta, iwp2_ac, iwp2_bp)
 !$omp   threadprivate(iwp2_pr1, iwp2_pr2, iwp2_pr3)
@@ -621,7 +622,9 @@ module stats_variables
      irtp2_dp1, & 
      irtp2_dp2, & 
      irtp2_pd, & 
-     irtp2_cl
+     irtp2_cl, &
+     irtp2_sf
+     
 !$omp   threadprivate(irtp2_bt, irtp2_ma, irtp2_ta, irtp2_tp)
 !$omp   threadprivate(irtp2_dp1, irtp2_dp2, irtp2_pd, irtp2_cl)
 
@@ -633,7 +636,8 @@ module stats_variables
      ithlp2_dp1, & 
      ithlp2_dp2, & 
      ithlp2_pd, & 
-     ithlp2_cl
+     ithlp2_cl, &
+     ithlp2_sf
 
 !$omp   threadprivate(ithlp2_bt, ithlp2_ma, ithlp2_ta, ithlp2_tp)
 !$omp   threadprivate(ithlp2_dp1, ithlp2_dp2, ithlp2_pd, ithlp2_cl)
@@ -646,7 +650,8 @@ module stats_variables
     irtpthlp_tp2, & 
     irtpthlp_dp1, & 
     irtpthlp_dp2, & 
-    irtpthlp_cl
+    irtpthlp_cl, &
+    irtpthlp_sf
 
 !$omp   threadprivate(irtpthlp_bt, irtpthlp_ma, irtpthlp_ta)
 !$omp   threadprivate(irtpthlp_tp1, irtpthlp_tp2, irtpthlp_dp1)
@@ -668,7 +673,8 @@ module stats_variables
     iup2_pr1, & 
     iup2_pr2, & 
     iup2_pd, & 
-    iup2_cl, & 
+    iup2_cl, &
+    iup2_sf, &
     ivp2_bt, & 
     ivp2_ta, & 
     ivp2_tp, & 
@@ -678,7 +684,8 @@ module stats_variables
     ivp2_pr1, & 
     ivp2_pr2, & 
     ivp2_pd, & 
-    ivp2_cl
+    ivp2_cl, &
+    ivp2_sf
 
 !$omp   threadprivate(iup2_bt, iup2_ta, iup2_tp, iup2_ma, iup2_dp1)
 !$omp   threadprivate(iup2_dp2, iup2_pr1, iup2_pr2, iup2_cl)

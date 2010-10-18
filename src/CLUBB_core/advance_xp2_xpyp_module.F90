@@ -129,8 +129,7 @@ contains
       clubb_at_least_debug_level
 
     use stats_type, only: & 
-      stat_begin_update, & ! Procedure(s)
-      stat_end_update
+      stat_end_update  ! Procedure(s)
 
     use stats_variables, only: & 
       irtp2_bt,  & ! Variable(s)
@@ -312,26 +311,6 @@ contains
     wpthlp_zt = zm2zt( wpthlp )
     upwp_zt   = zm2zt( upwp )
     vpwp_zt   = zm2zt( vpwp )
-
-
-    if ( l_stats_samp ) then
-
-      call stat_begin_update( irtp2_bt, real(rtp2 / dt), &          ! Intent(in)
-                              zm )                                  ! Intent(inout)
-
-      call stat_begin_update( ithlp2_bt, real(thlp2 / dt), &        ! Intent(in)
-                              zm )                                  ! Intent(inout)
-
-      call stat_begin_update( irtpthlp_bt, real(rtpthlp / dt), &    ! Intent(in)
-                              zm )                                  ! Intent(in/out)
-
-      call stat_begin_update( ivp2_bt, real(vp2 / dt), &            ! Intent(in)
-                              zm )                                  ! Intent(inout)
-
-      call stat_begin_update( iup2_bt, real(up2 / dt),  &           ! Intent(in)
-                              zm )                                  ! Intent(inout)
-
-    endif
 
     ! Initialize tridiagonal solutions to valid
 
