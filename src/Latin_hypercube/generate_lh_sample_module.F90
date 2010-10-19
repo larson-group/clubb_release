@@ -125,6 +125,7 @@ module generate_lh_sample_module
       l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
     real :: &
+      s_mellor,    & ! Mean s_mellor (for when stdev_s1 < s_mellor_tol)    [kg/kg]
       w1,          & ! Mean of w for 1st normal distribution                 [m/s]
       w2,          & ! Mean of w for 2nd normal distribution                 [m/s]
       varnce_w1,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
@@ -236,64 +237,44 @@ module generate_lh_sample_module
 
     ! Input pdf parameters.
 
-    if ( pdf_params%varnce_w1(level) > w_tol_sqd ) then
-      varnce_w1 = pdf_params%varnce_w1(level)
-      w1 = pdf_params%w1(level)
-    else
-      varnce_w1 = w_tol_sqd
-      w1 = wm
-    end if
-    if ( pdf_params%varnce_w2(level) > w_tol_sqd ) then
-      varnce_w2 = pdf_params%varnce_w2(level)
-      w2 = pdf_params%w2(level)
-    else
-      varnce_w2 = w_tol_sqd
-      w2 = wm
-    end if
-    if ( pdf_params%varnce_rt1(level) > rt_tol**2 ) then
-      varnce_rt1 = pdf_params%varnce_rt1(level)
-      rt1 = pdf_params%rt1(level)
-    else
-      varnce_rt1 = rt_tol**2
-      rt1 = rtm
-    end if
-    if ( pdf_params%varnce_rt2(level) > rt_tol**2 ) then
-      varnce_rt2 = pdf_params%varnce_rt2(level)
-      rt2 = pdf_params%rt2(level)
-    else
-      varnce_rt2 = rt_tol**2
-      rt2 = rtm
-    end if
-    if ( pdf_params%varnce_thl1(level) > thl_tol**2 ) then
-      varnce_thl1 = pdf_params%varnce_thl1(level)
-      thl1  = pdf_params%thl1(level)
-    else
-      varnce_thl1 = thl_tol**2
-      thl1  = thlm
-    end if
-    if ( pdf_params%varnce_thl2(level) > thl_tol**2 ) then
-      varnce_thl2 = pdf_params%varnce_thl2(level)
-      thl2  = pdf_params%thl2(level)
-    else
-      varnce_thl2 = thl_tol**2
-      thl2  = thlm
-    end if
-    if ( pdf_params%stdev_s1(level) > s_mellor_tol ) then
-      stdev_s1 = pdf_params%stdev_s1(level)
-      s1       = pdf_params%s1(level)
-    else
-      stdev_s1 = s_mellor_tol
-      s1       = pdf_params%s1(level) * pdf_params%mixt_frac(level) &
-               + (1.0-pdf_params%mixt_frac(level)) * pdf_params%s2(level)
-    end if
-    if ( pdf_params%stdev_s2(level) > s_mellor_tol ) then
-      stdev_s2 = pdf_params%stdev_s2(level)
-      s2       = pdf_params%s2(level)
-    else
-      stdev_s2 = s_mellor_tol
-      s2       = pdf_params%s1(level) * pdf_params%mixt_frac(level) &
-               + (1.0-pdf_params%mixt_frac(level)) * pdf_params%s2(level)
-    end if
+    call set_min_varnce_and_mean &
+        ( wm, w_tol_sqd, pdf_params%w1(level), pdf_params%varnce_w1(level), & ! In
+          varnce_w1, w1 ) ! Out
+
+    call set_min_varnce_and_mean &
+        ( wm, w_tol_sqd, pdf_params%w2(level), pdf_params%varnce_w2(level), & ! In
+          varnce_w2, w2 ) ! Out
+
+    call set_min_varnce_and_mean &
+        ( rtm, rt_tol**2, pdf_params%rt1(level), pdf_params%varnce_rt1(level), & ! In
+          varnce_rt1, rt1 ) ! Out
+
+    call set_min_varnce_and_mean &
+        ( rtm, rt_tol**2, pdf_params%rt2(level), pdf_params%varnce_rt2(level), & ! In
+          varnce_rt2, rt2 ) ! Out
+
+    call set_min_varnce_and_mean &
+        ( thlm, thl_tol**2, pdf_params%thl1(level), pdf_params%varnce_thl1(level), & ! In
+          varnce_thl1, thl1 ) ! Out
+
+    call set_min_varnce_and_mean &
+        ( thlm, thl_tol**2, pdf_params%thl2(level), pdf_params%varnce_thl2(level), & ! In
+          varnce_thl2, thl2 ) ! Out
+
+    ! Compute the mean of s1 and s2
+    s_mellor = pdf_params%s1(level) * pdf_params%mixt_frac(level) &
+             + (1.0-pdf_params%mixt_frac(level)) * pdf_params%s2(level)
+
+    ! Here the subroutine name is a little misleading since we're imposing the
+    ! threshold on a standard deviation rather than a variance.
+    call set_min_varnce_and_mean &
+        ( s_mellor, s_mellor_tol, pdf_params%s1(level), pdf_params%stdev_s1(level), & ! In
+          stdev_s1, s1 ) ! Out
+
+    ! See comment above.
+    call set_min_varnce_and_mean &
+        ( s_mellor, s_mellor_tol, pdf_params%s2(level), pdf_params%stdev_s2(level), & ! In
+          stdev_s2, s2 ) ! Out
 
     crt1 = pdf_params%crt1(level)
     crt2 = pdf_params%crt2(level)
@@ -1602,7 +1583,7 @@ module generate_lh_sample_module
     integer, intent(in) :: &
       d_variables, & ! Total variates
       index_x,     & ! Index of variable x in l_d_variable_lognormal
-      index_y        ! Index of variable x in l_d_variable_lognormal
+      index_y        ! Index of variable y in l_d_variable_lognormal
 
     logical, intent(in), dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given variate is assumed to be lognormally distributed
@@ -1629,6 +1610,47 @@ module generate_lh_sample_module
 
     return
   end subroutine construct_Sigma_element
+
+!-------------------------------------------------------------------------------
+  subroutine set_min_varnce_and_mean( Xmean, varnce_X_tol, Xn, varnce_Xn, &
+                                      varnce_Xn_out, Xn_out )
+! Description:
+!   Here we impose a threshold on the variance of a term (usually from the PDF)
+!   so as to avoid numerical instability.  If the variance is too small we then
+!   set the variable associated with the nth mixture component to the mean
+!   value.  E.g., if varnce_rt1 is small we set it to rt_tol^2, then set rt1 = rtm.
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    implicit none
+  
+    real, intent(in) :: &
+      Xmean,            & ! Mean value of variable X             [units vary]
+      varnce_X_tol,     & ! Min tolerance on the variance of X   [units vary]
+      Xn,               & ! Value of X for the 1st norm. dist.   [units vary]
+      varnce_Xn           ! Variance of X for the 2nd norm. dist.[units vary]
+
+    real, intent(out) :: &
+      varnce_Xn_out, & ! [units vary]
+      Xn_out           ! [units vary]
+
+    ! --- Begin Code ---- 
+
+    if ( varnce_Xn > varnce_X_tol ) then
+      ! The variance is large enough, so we use it.
+      varnce_Xn_out = varnce_Xn
+      ! Keep X1
+      Xn_out = Xn
+    else
+      ! Set the variance to a small number to prevent a singular matrix
+      varnce_Xn_out = varnce_X_tol 
+      ! Set X to the mean value
+      Xn_out = Xmean 
+    end if
+
+    return
+  end subroutine set_min_varnce_and_mean
 
 end module generate_lh_sample_module
 
