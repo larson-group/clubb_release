@@ -25,7 +25,7 @@ WARNINGS="-w3 -ansi"
 
 # == Machine specific flags ==
 # Note that when linking to sunperf (for LAPACK) you must use -dalign
-ARCH="-g -xtarget=native -m64 -dalign -xopenmp=noopt"
+ARCH="-g -xtarget=native -m64 -dalign"
 #ARCH="-g -m64 -xtarget=native -dalign"
 
 # == NetCDF Location  ==
