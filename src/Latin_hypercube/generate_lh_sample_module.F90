@@ -30,14 +30,9 @@ module generate_lh_sample_module
 !     p. 4010--4026, Larson, et al. 2005.
 !-------------------------------------------------------------------------------
 
-    use KK_microphys_module, only: &
-      corr_LN_to_cov_gaus, & ! Procedure(s)
-      corr_gaus_LN_to_cov_gaus, &
-      sigma_LN_to_sigma_gaus
-
     use constants_clubb, only:  &
       max_mag_correlation, &  ! Constant
-!     s_mellor_tol,  &  ! s tolerance in kg/kg
+      s_mellor_tol,  &  ! s tolerance in kg/kg
       rt_tol, &      ! rt tolerance in kg/kg
       thl_tol, &     ! thetal tolerance in K
       w_tol_sqd, &   ! w^2 tolerance in m^2/s^2
@@ -83,10 +78,6 @@ module generate_lh_sample_module
     intrinsic :: dble, min, max, sqrt
 
     ! Constant Parameters
-
-    ! Tolerance on the standard deviation of s for latin hypercube only
-    real, parameter :: &
-      LH_stdev_s_tol = 1e-6  ! [kg/kg]
 
     ! Input Variables
     integer, intent(in) :: &
@@ -235,7 +226,7 @@ module generate_lh_sample_module
     double precision, dimension(d_variables,d_variables) :: &
       Corr_stw_1, Corr_stw_2 ! Correlation matrix for Sigma_stw_1,2
 
-    integer :: i
+    integer :: i, index1, index2
 
     ! ---- Begin Code ----
     ! Determine which variables are a lognormal distribution
@@ -287,21 +278,19 @@ module generate_lh_sample_module
       varnce_thl2 = thl_tol**2
       thl2  = thlm
     end if
-    if ( pdf_params%stdev_s1(level) > LH_stdev_s_tol ) then
+    if ( pdf_params%stdev_s1(level) > s_mellor_tol ) then
       stdev_s1 = pdf_params%stdev_s1(level)
       s1       = pdf_params%s1(level)
     else
-      ! Use a larger value than s_mellor_tol, for reasons of numerical stability
-      stdev_s1 = LH_stdev_s_tol
+      stdev_s1 = s_mellor_tol
       s1       = pdf_params%s1(level) * pdf_params%mixt_frac(level) &
                + (1.0-pdf_params%mixt_frac(level)) * pdf_params%s2(level)
     end if
-    if ( pdf_params%stdev_s2(level) > LH_stdev_s_tol ) then
+    if ( pdf_params%stdev_s2(level) > s_mellor_tol ) then
       stdev_s2 = pdf_params%stdev_s2(level)
       s2       = pdf_params%s2(level)
     else
-      ! Use a larger value than s_mellor_tol, as above.
-      stdev_s2 = LH_stdev_s_tol
+      stdev_s2 = s_mellor_tol
       s2       = pdf_params%s1(level) * pdf_params%mixt_frac(level) &
                + (1.0-pdf_params%mixt_frac(level)) * pdf_params%s2(level)
     end if
@@ -448,44 +437,52 @@ module generate_lh_sample_module
 
     if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
 
+      index1 = iiLH_rrain
+      index2 = iiLH_Nr
+
+      ! Covariance between rain water mixing ratio rain number concentration
       if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
 
         call get_lower_triangular_matrix &
-             ( d_variables, iiLH_rrain, iiLH_Nr, corr_array, & ! In
+             ( d_variables, index1, index2, corr_array, & ! In
                corr_rrNr ) ! Out
 
-        ! Covariance between rain water mixing ratio rain number concentration
-        covar_rrNr1 = corr_LN_to_cov_gaus &
-                 ( corr_rrNr, &
-                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_rrain) ), &
-                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nr) ) )
+        call construct_Sigma_element &
+             ( corr_rrNr, xp2_on_xm2_array(index1), xp2_on_xm2_array(index2), & ! In
+               d_variables, index1, index2, l_d_variable_lognormal, & ! In
+               covar_rrNr1 ) ! Out
+
+        ! rr1 = rr2 and Nr1 = Nr2, so we can just set covar_rrNr2 here
         covar_rrNr2 = covar_rrNr1
 
         call set_lower_triangular_matrix &
-             ( d_variables, iiLH_rrain, iiLH_Nr, dble( covar_rrNr1 ), & ! In
+             ( d_variables, index1, index2, dble( covar_rrNr1 ), & ! In
                Sigma_stw_1 ) ! In/out
         call set_lower_triangular_matrix &
-             ( d_variables, iiLH_rrain, iiLH_Nr, dble( covar_rrNr2 ), & ! In
+             ( d_variables, index1, index2, dble( covar_rrNr2 ), & ! In
                Sigma_stw_2 ) ! In/out
       end if
 
+      index1 = iiLH_s_mellor
+      index2 = iiLH_Nr
       ! Covariances involving s and Nr & rr
-      if ( stdev_s1 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
+      if ( stdev_s1 > s_mellor_tol .and. Nrm > dble( Nr_tol ) ) then
         call get_lower_triangular_matrix &
-             ( d_variables, iiLH_s_mellor, iiLH_Nr, corr_array, & ! In
+             ( d_variables, index1, index2, corr_array, & ! In
                corr_sNr ) ! Out
 
         ! Covariance between s and rain number conc.
-        covar_sNr1 = corr_gaus_LN_to_cov_gaus &
-                 ( corr_sNr, &
-                   stdev_s1, &
-                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nr) ) )
+        call construct_Sigma_element &
+             ( corr_sNr, stdev_s1, xp2_on_xm2_array(index2), & ! In
+               d_variables, index1, index2, l_d_variable_lognormal, & ! In
+               covar_sNr1 ) ! Out
 
         call set_lower_triangular_matrix &
-             ( d_variables, iiLH_s_mellor, iiLH_Nr, dble( covar_sNr1 ), & ! In
+             ( d_variables, index1, index2, dble( covar_sNr1 ), & ! In
                Sigma_stw_1 ) ! In/out
 
         ! Approximate the covariance of t and Nr
+        ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
         covar_tNr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_sNr1 ) ) / dble( stdev_s1 )**2
 
@@ -494,22 +491,23 @@ module generate_lh_sample_module
                Sigma_stw_1 ) ! In/out
       end if
 
-      if ( stdev_s2 > LH_stdev_s_tol .and. Nrm > dble( Nr_tol ) ) then
+      if ( stdev_s2 > s_mellor_tol .and. Nrm > dble( Nr_tol ) ) then
 
         call get_lower_triangular_matrix &
-             ( d_variables, iiLH_s_mellor, iiLH_Nr, corr_array, & ! In
+             ( d_variables, index1, index2, corr_array, & ! In
                corr_sNr ) ! Out
 
-        covar_sNr2 = corr_gaus_LN_to_cov_gaus &
-                 ( corr_sNr, &
-                   stdev_s2, &
-                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nr) ) )
+        call construct_Sigma_element &
+             ( corr_sNr, stdev_s2, xp2_on_xm2_array(index2), & ! In
+               d_variables, index1, index2, l_d_variable_lognormal, & ! In
+               covar_sNr2 ) ! Out
 
         call set_lower_triangular_matrix &
-             ( d_variables, iiLH_s_mellor, iiLH_Nr, dble( covar_sNr2 ), & ! In
+             ( d_variables, index1, index2, dble( covar_sNr2 ), & ! In
                Sigma_stw_2 ) ! In/out
 
         ! Approximate the covariance of t and Nr
+        ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
         covar_tNr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_sNr2 ) ) / dble( stdev_s2 )**2
 
@@ -518,23 +516,27 @@ module generate_lh_sample_module
                Sigma_stw_2 ) ! In/out
       end if
 
-      if ( stdev_s1 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
+      index1 = iiLH_s_mellor
+      index2 = iiLH_rrain
+      ! Covariances involving s and Nr & rr
+      if ( stdev_s1 > s_mellor_tol .and. rrainm > dble( rr_tol ) ) then
 
         call get_lower_triangular_matrix &
-             ( d_variables, iiLH_s_mellor, iiLH_rrain, corr_array, & ! In
+             ( d_variables, index1, index2, corr_array, & ! In
                corr_srr ) ! Out
 
         ! Covariance between s and rain water mixing ratio
-        covar_srr1 = corr_gaus_LN_to_cov_gaus &
-                 ( corr_srr, &
-                   stdev_s1, &
-                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_rrain) ) )
+        call construct_Sigma_element &
+             ( corr_srr, stdev_s1, xp2_on_xm2_array(index2), & ! In
+               d_variables, index1, index2, l_d_variable_lognormal, & ! In
+               covar_srr1 ) ! Out
 
         call set_lower_triangular_matrix &
              ( d_variables, iiLH_s_mellor, iiLH_rrain, dble( covar_srr1 ), & ! In
                Sigma_stw_1 ) ! In/out
 
         ! Approximate the covariance of t and rr
+        ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
         covar_trr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_srr1 ) ) / dble( stdev_s1 )**2
 
@@ -543,23 +545,23 @@ module generate_lh_sample_module
                Sigma_stw_1 ) ! In/out
       end if
 
-      if ( stdev_s2 > LH_stdev_s_tol .and. rrainm > dble( rr_tol ) ) then
+      if ( stdev_s2 > s_mellor_tol .and. rrainm > dble( rr_tol ) ) then
 
         call get_lower_triangular_matrix &
-             ( d_variables, iiLH_s_mellor, iiLH_rrain, corr_array, & ! In
+             ( d_variables, index1, index2, corr_array, & ! In
                corr_srr ) ! Out
 
-
-        covar_srr2 = corr_gaus_LN_to_cov_gaus &
-                 ( corr_srr, &
-                   stdev_s2, &
-                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_rrain) ) )
+        call construct_Sigma_element &
+             ( corr_srr, stdev_s2, xp2_on_xm2_array(index2), & ! In
+               d_variables, index1, index2, l_d_variable_lognormal, & ! In
+               covar_srr2 ) ! Out
 
         call set_lower_triangular_matrix &
-             ( d_variables, iiLH_s_mellor, iiLH_rrain, dble( covar_srr2 ), & ! In
+             ( d_variables, index1, index2, dble( covar_srr2 ), & ! In
                Sigma_stw_2 ) ! In/out
 
         ! Approximate the covariance of t and rr
+        ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
         covar_trr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_srr2 ) ) / dble( stdev_s2 )**2
 
@@ -567,6 +569,7 @@ module generate_lh_sample_module
              ( d_variables, iiLH_t_mellor, iiLH_rrain, dble( covar_trr2 ), & ! In
                Sigma_stw_2 ) ! In/out
       end if
+
     end if ! if iiLH_rrain > 0 .and. iiLH_Nr > 0
 
 !     if ( iiLH_Nc > 0 ) then
@@ -575,7 +578,7 @@ module generate_lh_sample_module
 !       corr_sNc = corr_array(iiLH_s_mellor,iiLH_Nc)
 !       stdev_Nc = real( Ncm ) * sqrt( xp2_on_xm2_array(iiLH_Nc) )
 
-!       if ( stdev_s1 > LH_stdev_s_tol .and. Ncm > dble( Nc_tol ) ) then
+!       if ( stdev_s1 > s_mellor_tol .and. Ncm > dble( Nc_tol ) ) then
 !         ! The variable s is already Gaussian
 !         stdev_sNc1 = corr_gaus_LN_to_cov_gaus &
 !                 ( corr_sNc, &
@@ -593,7 +596,7 @@ module generate_lh_sample_module
 
 !       end if
 
-!       if ( stdev_s2 > LH_stdev_s_tol .and. Ncm > dble( Nc_tol ) ) then
+!       if ( stdev_s2 > s_mellor_tol .and. Ncm > dble( Nc_tol ) ) then
 !         stdev_sNc2 = corr_gaus_LN_to_cov_gaus &
 !                 ( corr_sNc, &
 !                   stdev_s2, &
@@ -1574,6 +1577,58 @@ module generate_lh_sample_module
 
     return
   end subroutine log_sqd_normalized
+
+!-------------------------------------------------------------------------------
+  subroutine construct_Sigma_element( corr_xy, sigma_x, sigma_y, &
+                                      d_variables, index_x, index_y, l_d_variable_lognormal, &
+                                      covar_xy )
+
+! Description: Compute the covariance of 2 variables, converting from lognormal 
+!   to gaussian space as required.
+!-------------------------------------------------------------------------------
+
+    use KK_microphys_module, only: &
+      corr_LN_to_cov_gaus, & ! Procedure(s)
+      corr_gaus_LN_to_cov_gaus, &
+      sigma_LN_to_sigma_gaus
+      
+    implicit none 
+
+    real, intent(in) :: &
+      corr_xy, & ! Correlation between x and y   [-]
+      sigma_x, & ! Variance of x [units vary]
+      sigma_y    ! Variance of y [units vary]
+
+    integer, intent(in) :: &
+      d_variables, & ! Total variates
+      index_x,     & ! Index of variable x in l_d_variable_lognormal
+      index_y        ! Index of variable x in l_d_variable_lognormal
+
+    logical, intent(in), dimension(d_variables) :: &
+      l_d_variable_lognormal ! Whether a given variate is assumed to be lognormally distributed
+
+    real, intent(out) :: covar_xy
+
+    real :: sigma_x_gaus, sigma_y_gaus
+
+    ! ---- Begin Code ----
+    if ( l_d_variable_lognormal(index_x) .and. l_d_variable_lognormal(index_y) ) then
+      sigma_x_gaus = sigma_LN_to_sigma_gaus( sigma_x )
+      sigma_y_gaus = sigma_LN_to_sigma_gaus( sigma_y )
+      covar_xy = corr_LN_to_cov_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus )
+
+    else if ( .not. l_d_variable_lognormal(index_x) .and. l_d_variable_lognormal(index_y) ) then
+      sigma_x_gaus = sigma_x
+      sigma_y_gaus = sigma_LN_to_sigma_gaus( sigma_y )
+      covar_xy = corr_gaus_LN_to_cov_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus )
+
+    else
+      stop "Don't know how to handle the input of construct_Sigma_element"
+
+    end if
+
+    return
+  end subroutine construct_Sigma_element
 
 end module generate_lh_sample_module
 
