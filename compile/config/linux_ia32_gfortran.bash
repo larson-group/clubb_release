@@ -8,8 +8,8 @@
 
 
 # Fortran 95 compiler and linker
-FC=gfortran
-LD=gfortran
+FC=gfortran44
+LD=gfortran44
 
 # Define path to directories
 dir=`pwd` # dir where this script resides
@@ -28,24 +28,26 @@ DEBUG="-g -fbounds-check -mieee-fp"
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
 # compiled accordingly.
-ARCH="-march=native -msse3 -mfpmath=sse"
+ARCH="-march=native -msse3 -mfpmath=sse -fopenmp"
 
 # == Optimization ==
 OPTIMIZE="-O2"
 
 # == NetCDF Location ==
-NETCDF="/usr" # 
+#NETCDF="/usr" # Ubuntu / Fedora
+NETCDF="/usr/local/netcdf-gfortran" # RHEL5
 
 # == LAPACK libraries ==
-#LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
-LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
+LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
+#LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
 #LAPACK="-L/usr/lib/atlas-sse3 -llapack -lf77blas -lcblas -latlas" # Fedora 11 setup
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-LDFLAGS="-L$NETCDF/lib -lnetcdf -lnetcdff $LAPACK"
+#LDFLAGS="-L$NETCDF/lib -lnetcdf -lnetcdff $LAPACK" # Ubuntu
+LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf -lcurl $LAPACK" # RHEL5
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these
