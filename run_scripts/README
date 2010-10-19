@@ -79,9 +79,11 @@ run_scm_collect_suite.bash
   may be inconsistent and possibly misleading.
 
 time_scm_all.bash
-  Best used to determine the overall runtime of CLUBB.  The
-  output "user ..." lists the CPU time taken by run_scm_all.bash.
-  time_scm_all.bash sets the debug level to 0 and turns off the stats output.
+  Best used to determine the overall runtime of CLUBB. time_scm_all.bash sets
+  the debug level to 0 and turns off the stats output, and runs only the cases
+  which do not use microphysics or non-simplified radiation schemes. The script
+  requires an argument for the number of runs to perform, and will aggregate
+  the overall CPU time taken for all of the runs performed.
 
 run_timestep_tests.bash: 
   Runs all of the cases CLUBB is set up to do. CLUBB is ran several times for 
