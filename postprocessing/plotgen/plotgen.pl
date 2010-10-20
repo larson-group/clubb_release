@@ -1149,6 +1149,7 @@ sub main::HELP_MESSAGE()
     print("  -g\tUses GrADS data files. [DEFAULT]\n");
     print("  -t\tUses NetCDF data files.\n");
     print("  -h\tPrints this help message.\n");
+    print("Each option must be seperate, eg -r -a not -ra\n");
     exit(0);
 }
 
