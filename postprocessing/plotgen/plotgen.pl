@@ -70,6 +70,7 @@ my $nightly = 0;
 #   plotgen
 #   splotgen
 #   wrfgen 
+#   camgen
 my $plotgenMode = "plotgen";
 
 # The type of data file to use.
@@ -268,6 +269,10 @@ sub main()
 				OutputWriter->writeWrfHeader($outputIndex);
 			}
 	          }
+		  elsif($plotgenMode eq "camgen")
+		  {
+			OutputWriter->writeHeader($outputIndex, "CAMGen");
+		  }
     
             runCases();
 
@@ -305,6 +310,10 @@ sub getCasePath()
     elsif($plotgenMode eq "wrfgen")
     {
 	return"$casePath/wrf";
+    }
+    elsif($plotgenMode eq "camgen")
+    {
+	return"$casePath/cam";
     }
 }
 
@@ -973,6 +982,8 @@ sub dataExists()
 ###############################################################################
 sub readArgs()
 {
+    use Switch;
+    
     my $numArgs = $#ARGV + 1;
 
     if($numArgs == 0)
@@ -980,100 +991,55 @@ sub readArgs()
         main::HELP_MESSAGE();
     }
 
-    my %option = ();
-    my $result = getopts("rlbdanqemhcswtg?", \%option);
+   my $option =  '';
+   my $numOptions = 0;    
 
-    # A 1 will be returned from getopts if there weren't any
-    # invalid options passed in.
-    if($result != 1)
-    {
-        main::HELP_MESSAGE();
-    }
+   # Loop through each agrument and see if it has a '-', then see if the remaining letters
+   # are a valid option
+   foreach (@ARGV) {
+	if((substr $_, 0, 1) eq '-'){
+	$option = substr $_, 1;	
+	$numOptions++;
 
-    if ($option{r}) # Option to replace data if it already exists
-    {
-        $overwrite = 1;
-    }
-
-    if ($option{l}) # Option to plot LES data
-    {
-        $plotLes = 1;
-    }
-
-    if ($option{b}) # Option to plot Chris Golaz Best Ever Data
-    {
-        $plotBest = 1;
-    }
-
-    if ($option{d}) # Option to plot HOC Dec. 17
-    {
-        $plotDec = 1;
-    }
-
-    if ($option{a}) # Plot LES, CGBE, and HOC Dec. 17
-    {
-        $plotLes = 1;
-        $plotBest = 1;
-        $plotDec = 1;
-    }
-
-    if ($option{n}) # Run in nightly mode
-    {
-        $nightly = 1;
-    }
-
-    if ($option{q}) # Force high quality images
-    {
-        $highQuality = 1;
-    }
-
-    if ($option{e}) # Keep EPS files
-    {
-        $keepEps = 1;
-    }
-    
-    if ($option{g})
-    {
-        $dataFileType = "grads";
-    }
-
-    if ($option{t})
-    {
-        $dataFileType = "netcdf";
-    }
-
-    if ($option{m}) # Output as maff file
-    {
-    
-      if ($option{e}) # It's inconvenient for maff if eps files are kept
+   switch ($option) {
+    case 'r' { $overwrite = 1; } # Option to overwrite file or folder if it already exsists
+    case 'l' { $plotLes = 1; } # Option to plot LES data
+    case 'b' { $plotBest = 1; }# Option to plot Chris Golaz Best Ever Data
+    case 'd' { $plotDec = 1; } # Option to plot HOC Dec. 17
+    case 'a' { $plotLes = 1; $plotBest = 1; $plotDec = 1;} # Plot LES, CGBE, and HOC Dec. 17
+    case 'n' { $nightly = 1; } # Run in nightly mode
+    case 'q' { $highQuality = 1; } # Run in nightly mode
+    case 'e' { $keepEps = 1; } # Keep EPS files
+    case 'g' { $dataFileType = "grads"; } 
+    case 't' { $dataFileType = "netcdf"; }
+    case "m" { # Output as maff file       
+      if ($option eq "e") # It's inconvenient for maff if eps files are kept
       {
       print("Argument conflict: Please do not simultaneously choose to 
            save .eps files (-e) and create a .maff file (-m)\n");
       exit(1);
-      }
-      
+      } 
        $outputAsMaff = 1;
     }
+    case 's' { $plotgenMode = "splotgen"; }
+    case 'c' { $plotgenMode = "plotgen"; }
+    case 'w' { $plotgenMode = "wrfgen"; }
+    case 'cam' { $plotgenMode = "camgen"; }
+    case 'h' { main::HELP_MESSAGE(); } #Prints help message
+    else { main::HELP_MESSAGE(); }
+    }
+  }
+}
 
-    if($option{s})
-    {
-        $plotgenMode = "splotgen";
+    # Create a second array that only has the folders in it
+    my @fileArgs;
+    my $fileNum = $numArgs - $numOptions;
+    my $i;
+    for ($i = 0; $i<$fileNum; $i++){
+    	@fileArgs[$i] = @ARGV[$numOptions];
+	$numOptions++;
     }
 
-    if($option{c})
-    {
-        $plotgenMode = "plotgen";
-    }
-
-    if($option{w})
-    {
-	    $plotgenMode = "wrfgen";
-    }
-
-    if ($option{h}) # Print the help message
-    {
-        main::HELP_MESSAGE();
-    }
 
     my $currentCount = 0;
 
@@ -1081,14 +1047,14 @@ sub readArgs()
     $numArgs = $#ARGV + 1;
 
     # Parse any additional arguments
-    foreach (@ARGV)
+    foreach (@fileArgs)
     {
         # If the argument does not start with '-' and if $output was not set
         if(!$output)
         {
             my $currentDir = abs_path($_);
 
-            if((($numArgs - 1) - $currentCount) > 0)
+            if((($fileNum - 1) - $currentCount) > 0)
             {
                 if(-d $currentDir)
                 {
@@ -1170,6 +1136,7 @@ sub main::HELP_MESSAGE()
     print("  -c\tPlot CLUBB cases [DEFAULT] (equiv to plotgen)\n");
     print("  -s\tPlot SAM_CLUBB cases (equiv to splotgen)\n");
     print("  -w\tPlot WRF_CLUBB cases\n");
+    print("  -z\tPlot CAM_CLUBB cases\n");
     print("  -r\tIf the output folder already exists, replace the contents\n");    
     print("  -l\tPlot LES data for comparison.\n");    
     print("  -b\tPlot HOC Best Ever data for comparison.\n");    
