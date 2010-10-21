@@ -8,7 +8,10 @@ module generate_lh_sample_module
 
   private :: sample_points, gaus_mixt_points, & 
              truncate_gaus_mixt, &
-             st_2_rtthl, log_sqd_normalized, choose_permuted_random
+             st_2_rtthl, log_sqd_normalized, choose_permuted_random, &
+             set_min_varnce_and_mean, construct_gaus_LN_element, &
+             construct_LN_LN_element
+
 
   private ! Default scope
 
@@ -282,8 +285,13 @@ module generate_lh_sample_module
     cthl2 = pdf_params%cthl2(level)
 
     mixt_frac   = dble( pdf_params%mixt_frac(level) )
-    cloud_frac1 = dble( pdf_params%cloud_frac1(level) )
-    cloud_frac2 = dble( pdf_params%cloud_frac2(level) )
+
+!   cloud_frac1 = dble( pdf_params%cloud_frac1(level) )
+!   cloud_frac2 = dble( pdf_params%cloud_frac2(level) )
+    ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
+    cloud_frac1 = 1.0
+    cloud_frac2 = 1.0
+
     rrtthl      = pdf_params%rrtthl(level)
 
     !---------------------------------------------------------------------------
@@ -293,9 +301,6 @@ module generate_lh_sample_module
     ! We prognose rt-thl-w,
     !    but we set means, covariance of hydrometeors (e.g. rrain, Nc) to constants.
 
-    ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
-    cloud_frac1 = 1.0
-    cloud_frac2 = 1.0
 
     ! Standard sample for testing purposes when n=2
     ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, &
@@ -428,9 +433,8 @@ module generate_lh_sample_module
              ( d_variables, index1, index2, corr_array, & ! In
                corr_rrNr ) ! Out
 
-        call construct_Sigma_element &
+        call construct_LN_LN_element &
              ( corr_rrNr, xp2_on_xm2_array(index1), xp2_on_xm2_array(index2), & ! In
-               d_variables, index1, index2, l_d_variable_lognormal, & ! In
                covar_rrNr1 ) ! Out
 
         ! rr1 = rr2 and Nr1 = Nr2, so we can just set covar_rrNr2 here
@@ -453,9 +457,8 @@ module generate_lh_sample_module
                corr_sNr ) ! Out
 
         ! Covariance between s and rain number conc.
-        call construct_Sigma_element &
+        call construct_gaus_LN_element &
              ( corr_sNr, stdev_s1, xp2_on_xm2_array(index2), & ! In
-               d_variables, index1, index2, l_d_variable_lognormal, & ! In
                covar_sNr1 ) ! Out
 
         call set_lower_triangular_matrix &
@@ -478,9 +481,8 @@ module generate_lh_sample_module
              ( d_variables, index1, index2, corr_array, & ! In
                corr_sNr ) ! Out
 
-        call construct_Sigma_element &
+        call construct_gaus_LN_element &
              ( corr_sNr, stdev_s2, xp2_on_xm2_array(index2), & ! In
-               d_variables, index1, index2, l_d_variable_lognormal, & ! In
                covar_sNr2 ) ! Out
 
         call set_lower_triangular_matrix &
@@ -507,9 +509,8 @@ module generate_lh_sample_module
                corr_srr ) ! Out
 
         ! Covariance between s and rain water mixing ratio
-        call construct_Sigma_element &
+        call construct_gaus_LN_element &
              ( corr_srr, stdev_s1, xp2_on_xm2_array(index2), & ! In
-               d_variables, index1, index2, l_d_variable_lognormal, & ! In
                covar_srr1 ) ! Out
 
         call set_lower_triangular_matrix &
@@ -532,9 +533,8 @@ module generate_lh_sample_module
              ( d_variables, index1, index2, corr_array, & ! In
                corr_srr ) ! Out
 
-        call construct_Sigma_element &
+        call construct_gaus_LN_element &
              ( corr_srr, stdev_s2, xp2_on_xm2_array(index2), & ! In
-               d_variables, index1, index2, l_d_variable_lognormal, & ! In
                covar_srr2 ) ! Out
 
         call set_lower_triangular_matrix &
@@ -1117,7 +1117,6 @@ module generate_lh_sample_module
 
     integer :: sample
     double precision :: s_std
-!   double precision :: fraction_1
 
     ! ---- Begin Code ----
 
@@ -1547,6 +1546,9 @@ module generate_lh_sample_module
     if ( Xm >= X_tol ) then
       sX1 = log( 1. + Xp2_on_Xm2 )
       sX2 = sX1
+      ! Here the variables X1 & X2 have ambiguous units.  After the exp function
+      ! is applied to the result at the very end of this code the units will be
+      ! correct because of the 0.5 coefficient. I.e. sqrt( Xm^2 ) = Xm.
       X1 = 0.5 * log( Xm**2 / ( 1. + Xp2_on_Xm2 ) )
       X2 = X1
     else
@@ -1560,56 +1562,74 @@ module generate_lh_sample_module
   end subroutine log_sqd_normalized
 
 !-------------------------------------------------------------------------------
-  subroutine construct_Sigma_element( corr_xy, sigma_x, sigma_y, &
-                                      d_variables, index_x, index_y, l_d_variable_lognormal, &
-                                      covar_xy )
+  subroutine construct_gaus_LN_element( corr_sy, stdev_s, yp2_on_ym2, &
+                                        covar_sy )
 
-! Description: Compute the covariance of 2 variables, converting from lognormal 
-!   to gaussian space as required.
+! Description: 
+!   Compute the covariance of s_mellor and a lognormal variate, 
+!   converting from lognormal to gaussian space as required.
+! References:
+!   None
 !-------------------------------------------------------------------------------
 
     use KK_microphys_module, only: &
-      corr_LN_to_cov_gaus, & ! Procedure(s)
       corr_gaus_LN_to_cov_gaus, &
       sigma_LN_to_sigma_gaus
       
     implicit none 
 
     real, intent(in) :: &
-      corr_xy, & ! Correlation between x and y   [-]
-      sigma_x, & ! Variance of x [units vary]
-      sigma_y    ! Variance of y [units vary]
+      corr_sy,   & ! Correlation between x and y [-]
+      stdev_s,   & ! Standard deviation of s     [usually kg/kg]
+      yp2_on_ym2   ! Variance of y over mean y^2 [-]
 
-    integer, intent(in) :: &
-      d_variables, & ! Total variates
-      index_x,     & ! Index of variable x in l_d_variable_lognormal
-      index_y        ! Index of variable y in l_d_variable_lognormal
+    real, intent(out) :: covar_sy
 
-    logical, intent(in), dimension(d_variables) :: &
-      l_d_variable_lognormal ! Whether a given variate is assumed to be lognormally distributed
+    real :: yp2_on_ym2_gaus
+
+    ! ---- Begin Code ----
+
+    yp2_on_ym2_gaus = sigma_LN_to_sigma_gaus( yp2_on_ym2 )
+
+    covar_sy = corr_gaus_LN_to_cov_gaus( corr_sy, stdev_s, yp2_on_ym2_gaus )
+
+    return
+  end subroutine construct_gaus_LN_element
+!-------------------------------------------------------------------------------
+  subroutine construct_LN_LN_element( corr_xy, xp2_on_xm2, yp2_on_ym2, &
+                                      covar_xy )
+
+! Description:
+!   Compute the covariance of 2 variables, converting from lognormal 
+!   to gaussian space as required.
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    use KK_microphys_module, only: &
+      corr_LN_to_cov_gaus, & ! Procedure(s)
+      sigma_LN_to_sigma_gaus
+      
+    implicit none 
+
+    real, intent(in) :: &
+      corr_xy,    & ! Correlation between x and y   [-]
+      xp2_on_xm2, & ! Variance of x over mean x^2   [-]
+      yp2_on_ym2    ! Variance of y over mean y^2   [-]
 
     real, intent(out) :: covar_xy
 
-    real :: sigma_x_gaus, sigma_y_gaus
+    real :: xp2_on_xm2_gaus, yp2_on_ym2_gaus
 
     ! ---- Begin Code ----
-    if ( l_d_variable_lognormal(index_x) .and. l_d_variable_lognormal(index_y) ) then
-      sigma_x_gaus = sigma_LN_to_sigma_gaus( sigma_x )
-      sigma_y_gaus = sigma_LN_to_sigma_gaus( sigma_y )
-      covar_xy = corr_LN_to_cov_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus )
 
-    else if ( .not. l_d_variable_lognormal(index_x) .and. l_d_variable_lognormal(index_y) ) then
-      sigma_x_gaus = sigma_x
-      sigma_y_gaus = sigma_LN_to_sigma_gaus( sigma_y )
-      covar_xy = corr_gaus_LN_to_cov_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus )
+    xp2_on_xm2_gaus = sigma_LN_to_sigma_gaus( xp2_on_xm2 )
+    yp2_on_ym2_gaus = sigma_LN_to_sigma_gaus( yp2_on_ym2 )
 
-    else
-      stop "Don't know how to handle the input of construct_Sigma_element"
-
-    end if
+    covar_xy = corr_LN_to_cov_gaus( corr_xy, xp2_on_xm2_gaus, yp2_on_ym2_gaus )
 
     return
-  end subroutine construct_Sigma_element
+  end subroutine construct_LN_LN_element
 
 !-------------------------------------------------------------------------------
   subroutine set_min_varnce_and_mean( Xmean, varnce_X_tol, Xn, varnce_Xn, &
