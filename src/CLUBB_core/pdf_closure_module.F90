@@ -813,7 +813,9 @@ module pdf_closure_module
                        * rrtthl * sqrt( varnce_rt1 * varnce_thl1 ) &
                      + varnce_thl1 * cthl1**2
 
-        stdev_s_times_stdev_t = sqrt( tp2_mellor_1 ) * stdev_s1
+        ! We found that in some cases when rrtthl is -1 exactly the tp2_mellor_1 can be 
+        ! negative.  Therefore we clip the result here.
+        stdev_s_times_stdev_t = sqrt( max( tp2_mellor_1, zero_threshold ) ) * stdev_s1
 
         if ( stdev_s_times_stdev_t > 0. ) then
           corr_s_t_mellor_1 = sptp_mellor_1 / stdev_s_times_stdev_t
@@ -829,7 +831,8 @@ module pdf_closure_module
                        * rrtthl * sqrt( varnce_rt2 * varnce_thl2 ) &
                      + varnce_thl2 * cthl2**2
 
-        stdev_s_times_stdev_t = sqrt( tp2_mellor_2 ) * stdev_s2
+        ! See comment above about clipping.
+        stdev_s_times_stdev_t = sqrt( max( tp2_mellor_2, zero_threshold ) ) * stdev_s2
 
         if ( stdev_s_times_stdev_t > 0. ) then
           corr_s_t_mellor_2 = sptp_mellor_2 / stdev_s_times_stdev_t
