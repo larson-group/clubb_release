@@ -246,7 +246,6 @@ module clubb_driver
       latin_hypercube_2D_output, & ! Procedure(s)
       latin_hypercube_2D_close
 
-    use parameters_radiation, only: rad_scheme ! Variable(s)
     use simple_rad_module, only: simple_rad_lba_init ! Procedure(s)
 
 #endif
