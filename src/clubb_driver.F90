@@ -245,6 +245,10 @@ module clubb_driver
     use latin_hypercube_driver_module, only: &
       latin_hypercube_2D_output, & ! Procedure(s)
       latin_hypercube_2D_close
+
+    use parameters_radiation, only: rad_scheme ! Variable(s)
+    use simple_rad_module, only: simple_rad_lba_init ! Procedure(s)
+
 #endif
 
     implicit none
@@ -722,6 +726,11 @@ module clubb_driver
 
     ! Setup radiation parameters
     call init_radiation( iunit, runfile, case_info_file ) ! Intent(in)
+#ifdef UNRELEASED_CODE /* Special case for LBA */
+    if ( trim( rad_scheme ) == "lba" ) then
+      call simple_rad_lba_init( iunit, trim( forcings_file_path ) )
+    end if
+#endif
 
     ! Setup filenames and variables to set for setfields, if enabled
     if ( l_input_fields ) then
@@ -1002,7 +1011,7 @@ module clubb_driver
         ! radiation before the call the microphysics to change this.
         ! -dschanen 17 Aug 2009
         call advance_clubb_radiation &
-             ( rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
+             ( time_current, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
                rtm, rcm, hydromet,                       & ! Intent(in)
                radht, Frad, Frad_SW_up, Frad_LW_up,      & ! Intent(out)
                Frad_SW_down, Frad_LW_down )                ! Intent(out)
@@ -1130,12 +1139,6 @@ module clubb_driver
     use model_flags, only: &
         l_uv_nudge, & ! Variable(s)
         l_tke_aniso
-
-#ifdef UNRELEASED_CODE
-
-    use lba, only: lba_init ! Procedure(s)
-
-#endif
 
     use time_dependent_input, only: &
       initialize_t_dependent_input, & ! Procedure(s)
@@ -1603,7 +1606,6 @@ module clubb_driver
     case ( "lba" )
 
       em = 0.1
-      call lba_init( iunit, forcings_file_path )
 #endif
 
       ! Michael Falk for mpace_a Arctic Stratus case.
@@ -3046,8 +3048,7 @@ module clubb_driver
                                  sclrm_forcing, edsclrm_forcing )            ! Intent(out)
 
       case ( "lba" )
-        call lba_tndcy( time_current, &                  ! Intent(in) 
-                        thlm_forcing, rtm_forcing, &     ! Intent(out)
+        call lba_tndcy( thlm_forcing, rtm_forcing, &     ! Intent(out)
                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 #endif
 
@@ -3525,7 +3526,7 @@ module clubb_driver
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_radiation &
-             ( rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
+             ( time_current, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
                rtm, rcm, hydromet, radht, Frad, Frad_SW_up, Frad_LW_up, &
                Frad_SW_down, Frad_LW_down )
 ! Description:
@@ -3551,7 +3552,7 @@ module clubb_driver
     use cos_solar_zen_module, only: cos_solar_zen ! Procedure(s)
 
     use simple_rad_module, only: &
-      simple_rad, simple_rad_bomex, sunray_sw_wrap
+      simple_rad, simple_rad_bomex, simple_rad_lba, sunray_sw_wrap
 
     use error_code, only: & 
       clubb_at_least_debug_level ! Procedure(s)
@@ -3585,6 +3586,9 @@ module clubb_driver
     intrinsic :: trim
 
     ! Input Variables
+    real(kind=time_precision), intent(in) :: &
+      time_current ! Current time (UTC)    [s]
+
     real, dimension(gr%nnzp), intent(in) :: &
       rho,        & ! Density on thermo. grid                          [kg/m^3]
       rho_zm,     & ! Density on moment. grid                          [kg/m^3]
@@ -3817,7 +3821,11 @@ module clubb_driver
 
       call simple_rad_bomex( radht ) ! Out
 
-    case ( "none", "lba" )
+    case ( "lba"  )
+      call simple_rad_lba( time_current, & ! In
+                           radht ) ! Out
+
+    case ( "none" )
 
     case default
 

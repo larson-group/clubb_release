@@ -2,35 +2,20 @@
 ! $Id$
 module lba
 
-  !       Description:
-  !       Contains subroutines for the LBA case.
+  ! Description:
+  !   Contains subroutines for the LBA case.
   !----------------------------------------------------------------------
 
   implicit none
 
   private ! Default Scope
 
-  public :: lba_tndcy, lba_sfclyr, lba_init
-
-  private :: zrad, krad, ntimes, nzrad
-
-  ! Constant Parameters
-  integer, parameter :: ntimes = 36, nzrad = 33
-
-  real, dimension(nzrad) :: & 
-    zrad
-
-  real, dimension(nzrad, ntimes) :: & 
-    krad
-
-  integer, parameter :: per_line = 5
-
+  public :: lba_tndcy, lba_sfclyr
 
   contains
 
   !----------------------------------------------------------------------
-  subroutine lba_tndcy( time, & 
-                        thlm_forcing, rtm_forcing, & 
+  subroutine lba_tndcy( thlm_forcing, rtm_forcing, & 
                         sclrm_forcing, edsclrm_forcing )
     !       Description:
     !       Subroutine to set theta and water tendencies for LBA case.
@@ -44,21 +29,11 @@ module lba
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
-    use interpolation, only: zlinterp_fnc ! Procedure(s)
-
-    use stats_precision, only: time_precision ! Variable(s)
-
     use array_index, only:  & 
         iisclr_thl, iisclr_rt ! Variable(s)
 
-    use interpolation, only: factor_interp ! Procedure(s)
-
-    use parameters_radiation, only: rad_scheme ! Variable(s)
 
     implicit none
-
-    ! Input
-    real(kind=time_precision), intent(in) :: time ! Model time [s]
 
     ! Output Variables
     real, intent(out), dimension(gr%nnzp) :: & 
@@ -71,51 +46,12 @@ module lba
     real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
       edsclrm_forcing ! Passive eddy-scalar forcing [units vary]
 
-    ! Local Variables
-    real, dimension(gr%nnzp) :: radht
-    real, dimension(nzrad) :: radhtz
-    real :: a
-    integer :: i1, i2
+    ! ---- Begin Code ----
 
+    ! Large-scale temperature tendency
+    thlm_forcing(:) = 0.0
 
-    if ( trim( rad_scheme ) == "lba" ) then
-
-      ! Calculate radiative heating rate
-      if ( time <=  600. ) then
-        radhtz = krad(:,1)
-
-      else if ( time >= ntimes * 600. ) then
-        radhtz = krad(:,ntimes)
-
-      else
-        i1 = 1
-        do while ( i1 <= ntimes-1 )
-          i2 = i1 + 1
-          if ( time >= 600. * i1 .and. time < 600. * i2  ) then
-            a  = real(( time - 600. * i1 )/( 600. * i2 - 600. * i1))
-            radhtz(:) = factor_interp( a, krad(:,i2), krad(:,i1) )
-            i1     = ntimes
-          end if
-          i1 = i2
-        end do
-      end if ! time <= times(1)
-
-      radht = zlinterp_fnc( gr%nnzp, nzrad, gr%zt, zrad, radhtz )
-
-      ! Radiative theta-l tendency
-
-      thlm_forcing = radht
-
-    else ! Compute heating rate interactively with BUGSrad
-
-      thlm_forcing = 0.0
-
-    end if ! Simplified radiation
-
-    ! Boundary conditions
-    thlm_forcing(1) = 0.0  ! Below surface
-
-    ! Large scale advective moisture tendency
+    ! Large-scale advective moisture tendency
     rtm_forcing(:) = 0.0
 
     ! Test scalars with thetal and rt if desired
@@ -191,33 +127,6 @@ module lba
     return
   end subroutine lba_sfclyr
 
-  !----------------------------------------------------------------
-  subroutine lba_init( iunit, file_path )
-    !
-    !       Description:
-    !       This subroutine initializes the module by reading in forcing
-    !       data used in the tndcy subroutine.
-    !----------------------------------------------------------------
-
-    use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
-
-    implicit none
-
-    integer, intent(in) :: iunit ! File unit number
-
-    character(len=*), intent(in) :: &
-      file_path ! Path to the forcing files
-
-    call file_read_1d( iunit, & 
-      file_path//'lba_heights.dat', & 
-      nzrad, per_line, zrad )
-
-    call file_read_2d( iunit, & 
-      file_path//'lba_rad.dat', & 
-      nzrad, ntimes, per_line, krad )
-
-    return
-  end subroutine lba_init
 
 end module lba
 

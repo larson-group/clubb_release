@@ -3,7 +3,8 @@ module simple_rad_module
 
   implicit none
 
-  public :: simple_rad, simple_rad_bomex, sunray_sw_wrap
+  public :: simple_rad, simple_rad_bomex, sunray_sw_wrap, &
+    simple_rad_lba, simple_rad_lba_init
 
   private :: liq_water_path
 
@@ -159,6 +160,16 @@ module simple_rad_module
 !
 !
 !-----------------------------------------------------------------------
+
+  ! These variables are for the LBA radiation
+  ! Constant Parameters
+  integer, parameter, private :: lba_ntimes = 36, lba_nzrad = 33
+ 
+  real, dimension(lba_nzrad), private :: & 
+    lba_zrad ! Altitudes        [m]
+ 
+  real, dimension(lba_nzrad,lba_ntimes), private :: & 
+    lba_krad ! Radiative tendencies     [K/s]
 
   contains
 
@@ -345,6 +356,96 @@ module simple_rad_module
 
     return
   end subroutine simple_rad_bomex
+
+!-------------------------------------------------------------------------------
+  subroutine simple_rad_lba( time, radht )
+! Description:
+!   Compute radiation For the LBA TRMM case.  Uses a prescribed formula and
+!   interpolates with respect to time.
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    use grid_class, only: gr ! Type
+
+    use interpolation, only: zlinterp_fnc ! Procedure(s)
+
+    use interpolation, only: factor_interp ! Procedure(s)
+
+    use stats_precision, only: time_precision ! Constant
+
+    implicit none
+
+    ! Input Variables
+    real(kind=time_precision), intent(in) :: &
+      time ! Model time [s]
+
+    ! Output Variables
+    real, dimension(gr%nnzp), intent(out) :: radht
+
+    ! Local Variables
+    real, dimension(lba_nzrad) :: radhtz
+    real :: a
+    integer :: i1, i2
+
+    ! Calculate radiative heating rate
+    if ( time <=  600. ) then
+      radhtz = lba_krad(:,1)
+
+    else if ( time >= lba_ntimes * 600. ) then
+      radhtz = lba_krad(:,lba_ntimes)
+
+    else
+      i1 = 1
+      do while ( i1 <= lba_ntimes-1 )
+        i2 = i1 + 1
+        if ( time >= 600. * i1 .and. time < 600. * i2  ) then
+          a  = real(( time - 600. * i1 )/( 600. * i2 - 600. * i1))
+          radhtz(:) = factor_interp( a, lba_krad(:,i2), lba_krad(:,i1) )
+          i1     = lba_ntimes
+        end if
+        i1 = i2
+      end do
+    end if ! time <= times(1)
+
+    ! Radiative theta-l tendency
+    radht = zlinterp_fnc( gr%nnzp, lba_nzrad, gr%zt, lba_zrad, radhtz )
+
+    return
+  end subroutine simple_rad_lba
+
+  !----------------------------------------------------------------
+  subroutine simple_rad_lba_init( iunit, file_path )
+    !
+    !       Description:
+    !       This subroutine initializes the module by reading in forcing
+    !       data used in the tndcy subroutine.
+    !----------------------------------------------------------------
+
+    use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
+
+    implicit none
+
+    ! Constant Parameters
+    integer, parameter :: per_line = 5
+
+    integer, intent(in) :: iunit ! File unit number
+
+    character(len=*), intent(in) :: &
+      file_path ! Path to the forcing files
+
+    ! ---- Begin Code ----
+
+    call file_read_1d( iunit, & 
+      file_path//'lba_heights.dat', & 
+      lba_nzrad, per_line, lba_zrad )
+
+    call file_read_2d( iunit, & 
+      file_path//'lba_rad.dat', & 
+      lba_nzrad, lba_ntimes, per_line, lba_krad )
+
+    return
+  end subroutine simple_rad_lba_init
+
 !-------------------------------------------------------------------------------
   pure function liq_water_path( nnzp, rho, rcm, invrs_dzt )
 
