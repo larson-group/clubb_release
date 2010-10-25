@@ -314,6 +314,10 @@ module clubb_driver
     character(len=128) ::  & 
       restart_path_case,   & ! GrADS file used in case of restart
       forcings_file_path     ! Path to the forcing files
+      
+    real :: &
+      wpthlp_sfc_prev, &
+      wprtp_sfc_prev
 
     logical :: & 
       l_stats ! Whether statistics are computed and output to disk
@@ -920,6 +924,13 @@ module clubb_driver
         exit ! Leave the main loop
       end if
 
+      ! These variables change before stats begins updating. Remember the
+      ! previous values for later so the magnatude of their change can be calculated.
+      if( l_stats_samp ) then
+        wpthlp_sfc_prev = wpthlp_sfc
+        wprtp_sfc_prev = wprtp_sfc
+      endif
+
       call advance_clubb_forcings( dtmain, &  ! Intent(in)
                                    err_code ) ! Intent(inout)
 
@@ -964,7 +975,8 @@ module clubb_driver
              ( .false., dt, fcor, sfc_elevation, &                  ! Intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &      ! Intent(in)
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
+               wpthlp_sfc_prev, wprtp_sfc_prev, wpthlp_sfc, &       ! Intent(in)
+               wprtp_sfc, upwp_sfc, vpwp_sfc, &                     ! Intent(in)
                wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
                p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)

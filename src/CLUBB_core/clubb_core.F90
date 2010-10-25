@@ -45,7 +45,8 @@ module clubb_core
              ( l_implemented, dt, fcor, sfc_elevation, &
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &
+               wpthlp_sfc_prev, wprtp_sfc_prev, wpthlp_sfc, &
+               wprtp_sfc, upwp_sfc, vpwp_sfc, &
                wpsclrp_sfc, wpedsclrp_sfc, &
                p_in_Pa, rho_zm, rho, exner, &
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -243,12 +244,15 @@ module clubb_core
     use stats_type, only: & 
       stat_update_var_pt, & ! Procedure(s)
       stat_update_var,    & 
-      stat_begin_update
-
+      stat_begin_update, &
+      stat_end_update
+              
     use stats_variables, only: &
       irtp2_bt,      & ! Variable(s)
       ithlp2_bt,     & 
       irtpthlp_bt,   & 
+      iwpthlp_bt,    &
+      iwprtp_bt,     &
       iwp2_bt,       & 
       ivp2_bt,       & 
       iup2_bt,       & 
@@ -266,6 +270,8 @@ module clubb_core
       ithlp2_sf,     &
       irtp2_sf,      &
       irtpthlp_sf,   &
+      iwpthlp_sf,    &
+      iwprtp_sf,     &
       iup2_sf,       &
       ivp2_sf,       &
       iwp2_sf,       &
@@ -354,10 +360,12 @@ module clubb_core
       thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
 
     real, intent(in) ::  & 
-      wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
-      wprtp_sfc,    & ! w' r_t' at surface       [(kg m)/( kg s)]
-      upwp_sfc,     & ! u'w' at surface          [m^2/s^2]
-      vpwp_sfc        ! v'w' at surface          [m^2/s^2]
+      wpthlp_sfc_prev, & ! wpthlp_sfc from previous timestep [(m K)/s]
+      wprtp_sfc_prev,  & ! wprtp_sfc from previous timestep  [(kg m)/( kg s)]
+      wpthlp_sfc,      & ! w' theta_l' at surface            [(m K)/s]
+      wprtp_sfc,       & ! w' r_t' at surface                [(kg m)/( kg s)]
+      upwp_sfc,        & ! u'w' at surface                   [m^2/s^2]
+      vpwp_sfc           ! v'w' at surface                   [m^2/s^2]
 
     ! Passive scalar variables
     real, intent(in), dimension(gr%nnzp,sclr_dim) :: & 
@@ -579,6 +587,12 @@ module clubb_core
                               
       call stat_begin_update( iwp2_bt, real(wp2 / dt), &            ! Intent(in)
                               zm )                                  ! Intent(inout)
+                              
+      call stat_begin_update( iwprtp_bt, real( wprtp / dt ), &      ! intent(in)
+                              zm )                                  ! intent(inout)
+                                
+      call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ), &    ! intent(in)
+                              zm )                                  ! intent(inout)
 
     endif
     
@@ -1039,6 +1053,9 @@ module clubb_core
         call stat_update_var_pt( iup2_sf, 1, (up2(1) - up2_sf_temp) / real(dt), zm )
         call stat_update_var_pt( ivp2_sf, 1, (vp2(1) - vp2_sf_temp) / real(dt), zm )
         call stat_update_var_pt( iwp2_sf, 1, (wp2(1) - wp2_sf_temp) / real(dt), zm )
+        
+        call stat_update_var_pt( iwpthlp_sf, 1, (wpthlp(1) - wpthlp_sfc_prev) / real(dt), zm )
+        call stat_update_var_pt( iwprtp_sf, 1, (wprtp(1) - wprtp_sfc_prev) / real(dt), zm )
       endif
 
     else
@@ -1226,6 +1243,12 @@ module clubb_core
     !#######################################################################
     !#############            ACCUMULATE STATISTICS            #############
     !#######################################################################
+    
+    call stat_end_update( iwprtp_bt, real( wprtp / dt ),  &   ! intent(in)
+                          zm )                                ! intent(inout)
+                          
+    call stat_end_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
+                          zm )                                ! intent(inout)
 
     if ( iwpthlp_zt > 0 ) then
       wpthlp_zt  = zm2zt( wpthlp )

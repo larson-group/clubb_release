@@ -129,6 +129,7 @@ module stats_zm
           iwprtp_cl, & 
           iwprtp_sicl, & 
           iwprtp_pd, & 
+          iwprtp_sf, & 
           iwpthlp_bt, & 
           iwpthlp_ma, & 
           iwpthlp_ta, & 
@@ -141,7 +142,8 @@ module stats_zm
           iwpthlp_dp1, & 
           iwpthlp_mfl, & 
           iwpthlp_cl, & 
-          iwpthlp_sicl
+          iwpthlp_sicl, & 
+          iwpthlp_sf
 
     use stats_variables, only: & 
         irtp2_bt, & 
@@ -335,6 +337,7 @@ module stats_zm
     iwprtp_cl   = 0
     iwprtp_sicl = 0
     iwprtp_pd   = 0
+    iwprtp_sf   = 0
 
     iwpthlp_bt   = 0
     iwpthlp_ma   = 0
@@ -349,6 +352,7 @@ module stats_zm
     iwpthlp_mfl  = 0
     iwpthlp_cl   = 0
     iwpthlp_sicl = 0
+    iwpthlp_sf   = 0
 
     ! Variance budgets
     irtp2_bt    = 0
@@ -874,6 +878,12 @@ module stats_zm
              "wprtp budget: wprtp flux corrected trans. term [(m kg)/(s^2 kg)]", &
              "(m kg)/(s^2 kg)",zm)
         k = k + 1
+        
+      case ('wprtp_sf')
+        iwprtp_sf = k
+        call stat_assign(iwprtp_sf,"wprtp_sf", & 
+             "wprtp budget: wprtp surface variance [(m kg)/(s^2 kg)]","(m kg)/(s^2 kg)",zm)
+        k = k + 1
 
       case ('wpthlp_bt')
         iwpthlp_bt = k
@@ -958,6 +968,12 @@ module stats_zm
         iwpthlp_sicl = k
         call stat_assign(iwpthlp_sicl,"wpthlp_sicl", & 
              "wpthlp budget: wpthlp semi-implicit clipping term [(m K)/s^2]","(m K)/s^2",zm)
+        k = k + 1
+        
+      case ('wpthlp_sf')
+        iwpthlp_sf = k
+        call stat_assign(iwpthlp_sf,"wpthlp_sf", & 
+             "wpthlp budget: wpthlp surface variance [(m K)/s^2]","(m K)/s^2",zm)
         k = k + 1
 
         ! Variance budgets
