@@ -651,29 +651,23 @@ module KK_microphys_module
 !-------------------------------------------------------------------------------
     ! ---- Begin Code ----
 
-    IF ( l_local_kk ) THEN
+    ! Determine if rrainm or Nrm are less than the tolerances.
+    ! If one of the variables is less, we don't need to check l_local_kk. -meyern
+    ! Tolerance values are used instead of 0 in order to prevent
+    ! numerical error.
+    if ( rrainm < rr_tol .or. Nrm < Nr_tol ) then
+      mean_volume_radius = 0.0
 
-      ! Tolerance values are used instead of 0 in order to prevent
-      ! numerical error.
-      IF ( rrainm > rr_tol .AND. Nrm > Nr_tol ) THEN
-
+    ! rrainm and Nrm exceed the tolerances, use the formula determined by l_local_kk
+    else
+      ! l_local_kk = .true., use local formula
+      if ( l_local_kk ) then
         mean_volume_radius =  & 
            (  ( (4.0/3.0)*pi*rho_lw )**(-1.0/3.0)  ) & 
           * rrainm**(1.0/3.0) * Nrm**(-1.0/3.0)
 
-      ELSE
-
-        ! If either rrainm or Nrm are 0.
-        mean_volume_radius = 0.0
-
-      ENDIF
-
-    ELSEIF ( .NOT. l_local_kk ) THEN
-
-      ! Tolerance values are used instead of 0 in order to prevent
-      ! numerical error.
-      IF ( rrainm > rr_tol .AND. Nrm > Nr_tol ) THEN
-
+      ! l_local_kk = .false., use PDF
+      else
         ! Exponents on rr and Nr, respectively.
         alpha_exp = (1.0/3.0)
         beta_exp  = -(1.0/3.0)
@@ -696,15 +690,8 @@ module KK_microphys_module
            (  ( (4.0/3.0)*pi*rho_lw )**(-1.0/3.0)  ) & 
            * PDF_BIVAR_LN_LN ( mu_rr, mu_Nr, sigma_rr, sigma_Nr, & 
                                corr_rrNr, alpha_exp, beta_exp )
-
-      ELSE
-
-        ! If either rrainm or Nrm are 0.
-        mean_volume_radius = 0.0
-
-      ENDIF
-
-    ENDIF
+      end if ! l_local_kk
+    end if ! rrainm or Nrm < tol
 
     RETURN
 
