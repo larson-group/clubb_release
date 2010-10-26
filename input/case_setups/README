@@ -111,7 +111,9 @@ l_input_xpwp_sfc | logical
   fluxes upwp_sfc and vpwp_sfc.
 
 l_tke_aniso | logical
-  Flag for anisotropic tke.
+  Flag for enabling anisotropic TKE.  
+  When this is true:  TKE = ( u'^2 + v'^2 + w'^2 ) / 2.
+  When this is false: TKE =  3 ( w'^2 ) / 2.
 
 l_uv_nudge | logical
   Flag for horizontal wind speed nudging.
@@ -338,7 +340,7 @@ pgam_fixed | real, default precision
 ------------------------------------------
 
 rad_scheme | character
-  Currently only "bugsrad", "simplified", or "simplified_bomex".
+  Currently only "bugsrad", "simplified", "simplified_lba", or "simplified_bomex".
 
 sol_const | double precision
   The solar constant [W/m^2] (BUGSrad).
