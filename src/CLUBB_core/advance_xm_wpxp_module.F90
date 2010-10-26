@@ -1978,7 +1978,7 @@ module advance_xm_wpxp_module
       ! advance_xm_wpxp_module.F90, rather than being entirely contained in
       ! advance_xm_wpxp_module.F90.
       !!  wpxp total time tendency (1st calculation)
-      !call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
+      call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
 
       ! wpxp total time tendency (1st calculation in advance_xm_wpxp_module.F90)
       !call stat_modify( iwpxp_bt, real( -wpxp / dt ), zm )

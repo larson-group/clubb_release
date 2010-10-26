@@ -584,8 +584,7 @@ module stats_variables
      iwprtp_mfl, &
      iwprtp_cl, & 
      iwprtp_sicl, & 
-     iwprtp_pd, &
-     iwprtp_sf
+     iwprtp_pd
 
 !$omp   threadprivate(iwprtp_bt, iwprtp_ma, iwprtp_ta, iwprtp_tp)
 !$omp   threadprivate(iwprtp_ac, iwprtp_bp, iwprtp_pr1, iwprtp_pr2)
@@ -605,8 +604,7 @@ module stats_variables
      iwpthlp_dp1, &
      iwpthlp_mfl, &
      iwpthlp_cl, & 
-     iwpthlp_sicl, &
-     iwpthlp_sf
+     iwpthlp_sicl
 
 !$omp   threadprivate(iwpthlp_bt, iwpthlp_ma, iwpthlp_ta, iwpthlp_tp)
 !$omp   threadprivate(iwpthlp_ac, iwpthlp_bp, iwpthlp_pr1, iwpthlp_pr2)
