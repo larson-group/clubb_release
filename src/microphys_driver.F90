@@ -661,7 +661,7 @@ module microphys_driver
              ( iter, runtype, dt, time_current,  & 
                thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & 
                wm_zt, wm_zm, Kh_zm, pdf_params, & 
-               wp2_zt, Lscale, rho_ds_zt, &
+               wp2_zt, Lscale, rho_ds_zt, rho_ds_zm, &
                Ncnm, hydromet, & 
                rvm_mc, rcm_mc, thlm_mc, &
                err_code )
@@ -706,6 +706,9 @@ module microphys_driver
         fstderr, & 
         zero_threshold, &
         sec_per_day
+
+    use model_flags, only: &
+      l_hole_fill ! Variable(s)
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -800,7 +803,9 @@ module microphys_driver
         stat_update_var, stat_update_var_pt,  & ! Procedure(s)
         stat_begin_update, stat_end_update
 
-    use fill_holes, only: vertical_avg ! Procedure(s)
+    use fill_holes, only: &
+      vertical_avg, & ! Procedure(s)
+      fill_holes_driver
 
     use parameters_microphys, only: &
       LH_microphys_type, & ! Determines how the LH samples are used
@@ -842,6 +847,7 @@ module microphys_driver
     real, dimension(gr%nnzp), intent(in) :: & 
       wp2_zt,    & ! w'^2 on the thermo. grid               [m^2/s^2]
       Lscale,    & ! Length scale                           [m]
+      rho_ds_zm, & ! Dry, static density on moment. levels  [kg/m^3]
       rho_ds_zt    ! Dry, static density on thermo. levels  [kg/m^3]
 
 
@@ -917,6 +923,8 @@ module microphys_driver
     integer :: d_variables
 
     integer :: ixrm_cl, ixrm_bt, ixrm_mc
+
+    character(len=10) :: hydromet_name
 
 !-------------------------------------------------------------------------------
 
@@ -1297,7 +1305,6 @@ module microphys_driver
           ! hydrometeor tendency arrays accordingly.
           do k = 1, gr%nnzp, 1
             if ( hydromet(k,i) < 0.0 ) then
-
               call adj_microphys_tndcy & 
                  ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i),  & 
                    Kr, nu_r, dt, k, .true., & 
@@ -1365,8 +1372,34 @@ module microphys_driver
 
         end if
 
-        ! Clip all hydrometeor species to be > zero
-        where ( hydromet(:,i) < zero_threshold ) hydromet(:,i) = zero_threshold
+        ! Clip all hydrometeor species to be >= zero
+        if ( any( hydromet(:,i) < zero_threshold ) ) then
+          hydromet_name = hydromet_list(i)
+          if ( clubb_at_least_debug_level( 1 ) ) then
+            do k = 1, gr%nnzp
+              if ( hydromet(k,i) < zero_threshold ) then
+                write(fstderr,*) trim( hydromet_name ) //" < ", zero_threshold, &
+                  " in advance_microphys at k= ", k
+              end if
+            end do
+          end if
+
+          ! If we're dealing with a mixing ratio and hole filling is enabled,
+          ! then we apply the hole filling algorithm
+          if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
+            ! Apply the hole filling algorithm
+            call fill_holes_driver( 2, zero_threshold, "zt", &
+                                   rho_ds_zt, rho_ds_zm, &
+                                   hydromet(:,i) )
+
+          else
+            ! This includes the case where the variable is a number
+            ! concentration and is therefore not conserved.
+            where ( hydromet(:,i) < zero_threshold ) hydromet(:,i) = zero_threshold
+
+          end if ! Variable is a mixing ratio and l_hole_fill is true
+
+        end if ! hydromet(:,i) < 0 
 
           if ( l_stats_samp ) then
 

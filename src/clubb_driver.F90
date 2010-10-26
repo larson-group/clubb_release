@@ -999,7 +999,7 @@ module clubb_driver
              ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
                rtm, rcm, wm_zt, wm_zm,                               & ! Intent(in)
                Kh_zm, wp2_zt, Lscale, pdf_params,                    & ! Intent(in)
-               rho_ds_zt, sigma_g,                                   & ! Intent(in)
+               rho_ds_zt, rho_ds_zm, sigma_g,                        & ! Intent(in)
                Ncnm, hydromet,                                       & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(out)
 
@@ -3369,7 +3369,7 @@ module clubb_driver
              ( iter, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
                rtm, rcm, wm_zt, wm_zm, &
                Kh_zm, wp2_zt, Lscale, pdf_params, &
-               rho_ds_zt, sigma_g, & 
+               rho_ds_zt,  rho_ds_zm, sigma_g, & 
                Ncnm, hydromet, &
                rvm_mc, rcm_mc, thlm_mc, err_code )
 ! Description:
@@ -3434,7 +3434,8 @@ module clubb_driver
       pdf_params      ! PDF parameters   [units vary]
 
     real, dimension(gr%nnzp), intent(in) :: &
-      rho_ds_zt     ! Dry, static density on thermo. levels     [kg/m^3]
+      rho_ds_zt, & ! Dry, static density on thermo. levels     [kg/m^3]
+      rho_ds_zm    ! Dry, static density on moment. levels     [kg/m^3]
 
     real, intent(in) :: &
       sigma_g ! Geometric std. dev. of cloud droplets falling in a stokes regime
@@ -3454,8 +3455,8 @@ module clubb_driver
     integer, intent(inout) :: & 
       err_code
 
-
     ! ---- Begin Code ----
+
     rcm_mc  = 0.0
     rvm_mc  = 0.0
     thlm_mc = 0.0
@@ -3502,7 +3503,7 @@ module clubb_driver
            ( iter, runtype, dt, time_current, &                         ! Intent(in)
              thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
              wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
-             wp2_zt, Lscale, rho_ds_zt, &                               ! Intent(in)
+             wp2_zt, Lscale, rho_ds_zt, rho_ds_zm, &                    ! Intent(in)
              Ncnm, hydromet, &                                          ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
              err_code )                                                 ! Intent(out)
