@@ -56,6 +56,7 @@ vars_zt =
 's1', 's2', 'stdev_s1', 'stdev_s2', 'rrtthl',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
 'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt',
+''
 ! To output a scalar variable result, 
 ! follow the form <sclr_type> + <column_number> + <variable_type>
 !
@@ -63,7 +64,6 @@ vars_zt =
 !
 !'sclr1m', 'sclr1m_f', 'sclr2m', 'sclr2m_f',
 !'edsclr1m', 'edsclr2m', 'edsclr1m_f', 'edsclr2m_f',
-''
 
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4', 'up2', 'vp2',
@@ -93,14 +93,14 @@ vars_zm =
 'wpthlp_enter_mfl', 'wpthlp_exit_mfl', 'wprtp_enter_mfl', 'wprtp_exit_mfl',
 'wpthlp_mfl_lower_lim', 'wpthlp_mfl_upper_lim', 'wprtp_mfl_lower_lim', 'wprtp_mfl_upper_lim',
 'corr_s_t_mellor_1', 'corr_s_t_mellor_2', 'sptp_mellor_1','sptp_mellor_2',
-'tp2_mellor_1', 'tp2_mellor_2'
+'tp2_mellor_1', 'tp2_mellor_2',
+''
 !'sclr1prtp', 'sclr2prtp', 'sclr1p2', 'sclr2p2',
 !'sclr1pthvp', 'sclr2pthvp', 'sclr1pthlp', 'sclr2pthlp', 
 !'sclr1prcp', 'sclr2prcp', 'wpsclr1p', 'wpsclr2p', 
 !'wpsclr1p2', 'wpsclr2p2', 'wp2sclr1p', 'wp2sclr2p',
 !'wpsclr1prtp', 'wpsclr2prtp', 'wpsclr2pthlp', 'wpsclr1pthlp',
 !'wpedsclr1p', 'wpedsclr2p',
-''
 
 vars_rad_zt =
 'T_in_K_rad', 'rcil_rad', 'o3l_rad', 'rsnowm_rad', 'rcm_in_cloud_rad',
@@ -123,8 +123,9 @@ vars_sfc =
 'wp2_vert_avg', 'up2_vert_avg', 'vp2_vert_avg', 'rtp2_vert_avg', 
 'thlp2_vert_avg', 'T_sfc', 
 'rtm_spur_src', 'thlm_spur_src',
+''
 !'wp23_matrix_condt_num', 'rtm_matrix_condt_num', 'thlm_matrix_condt_num', 
 !'rtp2_matrix_condt_num', 'thlp2_matrix_condt_num', 'rtpthlp_matrix_condt_num',
 !'up2_vp2_matrix_condt_num', 'windm_matrix_condt_num',
-''
+
 /
