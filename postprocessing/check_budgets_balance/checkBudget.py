@@ -549,10 +549,18 @@ if __name__ == "__main__":
     
     # If wrong arguments were given, print a helpful message
     if len(sys.argv) != 3:
+        print "Program Help:"
         print "Arguments must be: filename iteration"
+        print ""
         print "Filename can be either a NetCDF file (.nc or .cdf) or grads files (.ctl/.dat)"
         print "Set filename to 'all' for all files in the directory specified by the FILEPATH variable"
         print "Set iteration to '0' for all iterations"
+        print ""
+        print "This script verifies that the budget variable equals the sum of the budget terms"
+        print "e.g. vm_bt = vm_ma + vm_gf + vm_cf +...+ vm_sf"
+        print "The completeness test verifies that the budgets are consistent"
+        print "e.g. rtm_bt(t=5) = ( rtm(t=6) - rtm(t=5) ) / timestep"
+        print ""
         sys.exit(1)
         
     testSuccess = True

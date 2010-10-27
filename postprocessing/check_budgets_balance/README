@@ -8,7 +8,7 @@ checkBudget.py utilizes readBinaryData and pupynere to read binary data files an
 budgets balance. It automatically detects if an input file is in NetCDF or GrADS format based
 on the extension. The script contains one global variable FILEPATH which indicates the path
 to the directory containing the data files in respect to the script. For help with arguments,
-simply type "help" as the arguement to the script.
+simply type "help" as the argument to the script.
 
 readBinaryData.py interperates binary data from GrADS .dat files.
 
