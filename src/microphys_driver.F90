@@ -1299,71 +1299,71 @@ module microphys_driver
              ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, lhs, hydromet_mc(:,i),  & 
                hydromet(:,i), err_code )
 
-        if ( i == iirrainm ) then
-!       if ( .false. ) then
-          ! Handle over-evaporation of rrainm and adjust rt and theta-l
-          ! hydrometeor tendency arrays accordingly.
-          do k = 1, gr%nnzp, 1
-            if ( hydromet(k,i) < 0.0 ) then
-              call adj_microphys_tndcy & 
-                 ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i),  & 
-                   Kr, nu_r, dt, k, .true., & 
-                   hydromet(:,i), overevap_rate )
-
-              ! overevap_rate is defined as positive.
-              ! It is a correction factor.
-              rcm_mc(k)  = rcm_mc(k) - overevap_rate
-
-              thlm_mc(k) = thlm_mc(k) + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
-
-              ! Moved from adj_microphys_tndcy
-              if ( l_stats_samp ) then
-
-                call stat_update_var_pt( irrainm_cond_adj, k,  & 
-                                         overevap_rate, zt )
-              end if
-
-            else
-
-
-              if ( l_stats_samp ) then
-
-                call stat_update_var_pt( irrainm_cond_adj, k,  & 
-                                    0.0, zt )
-              end if
-              ! Joshua Faschinj December 2007
-            end if
-
-          end do ! k=1..gr%nnzp
-
-        else if ( i == iiNrm ) then
-!       else if ( .false. ) then
-          ! Handle over-evaporation similar to rrainm.  However, in the case
-          ! of Nrm there is no effect on rtm or on thlm.
-          ! Brian Griffin.  April 14, 2007.
-          do k = 1, gr%nnzp, 1
-            if ( hydromet(k,i) < 0.0 ) then
-
-              call adj_microphys_tndcy & 
+        if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
+          if ( i == iirrainm ) then
+            ! Handle over-evaporation of rrainm and adjust rt and theta-l
+            ! hydrometeor tendency arrays accordingly.
+            do k = 1, gr%nnzp, 1
+              if ( hydromet(k,i) < 0.0 ) then
+                call adj_microphys_tndcy & 
                    ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i),  & 
                      Kr, nu_r, dt, k, .true., & 
                      hydromet(:,i), overevap_rate )
 
-              ! Moved from adj_microphys_tndcy
-              if( l_stats_samp ) then
-                call stat_update_var_pt( iNrm_cond_adj, k,  & 
-                                      overevap_rate, zt )
-              endif
-            else
-              if( l_stats_samp ) then
-                call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )
+                ! overevap_rate is defined as positive.
+                ! It is a correction factor.
+                rcm_mc(k)  = rcm_mc(k) - overevap_rate
+
+                thlm_mc(k) = thlm_mc(k) + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
+
+                ! Moved from adj_microphys_tndcy
+                if ( l_stats_samp ) then
+
+                  call stat_update_var_pt( irrainm_cond_adj, k,  & 
+                                           overevap_rate, zt )
+                end if
+
+              else
+
+
+                if ( l_stats_samp ) then
+
+                  call stat_update_var_pt( irrainm_cond_adj, k,  & 
+                                      0.0, zt )
+                end if
+                ! Joshua Faschinj December 2007
               end if
 
-            end if ! ! Nrm(k) < 0
-            ! Joshua Fasching December 2007
-          end do
+            end do ! k=1..gr%nnzp
 
-        end if
+          else if ( i == iiNrm ) then
+            ! Handle over-evaporation similar to rrainm.  However, in the case
+            ! of Nrm there is no effect on rtm or on thlm.
+            ! Brian Griffin.  April 14, 2007.
+            do k = 1, gr%nnzp, 1
+              if ( hydromet(k,i) < 0.0 ) then
+
+                call adj_microphys_tndcy & 
+                     ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i),  & 
+                       Kr, nu_r, dt, k, .true., & 
+                       hydromet(:,i), overevap_rate )
+
+                ! Moved from adj_microphys_tndcy
+                if ( l_stats_samp ) then
+                  call stat_update_var_pt( iNrm_cond_adj, k,  & 
+                                           overevap_rate, zt )
+                endif
+              else
+                if ( l_stats_samp ) then
+                  call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )
+                end if
+
+              end if ! ! Nrm(k) < 0
+              ! Joshua Fasching December 2007
+            end do
+
+          end if ! i == rrainm else if i == Nrm
+        end if ! trim( micro_scheme  ) == khairoutdinov_kogan
 
         if ( l_stats_samp ) then
 
@@ -1397,9 +1397,9 @@ module microphys_driver
             ! concentration and is therefore not conserved.
             where ( hydromet(:,i) < zero_threshold ) hydromet(:,i) = zero_threshold
 
-          end if ! Variable is a mixing ratio and l_hole_fill is true
+            end if ! Variable is a mixing ratio and l_hole_fill is true
 
-        end if ! hydromet(:,i) < 0 
+          end if ! hydromet(:,i) < 0
 
           if ( l_stats_samp ) then
 
@@ -2766,9 +2766,9 @@ module microphys_driver
         iiLH_Ngraupel, &
         iiLH_Nc
 
-#ifdef UNRELEASED_CODE      
+#ifdef UNRELEASED_CODE
       use matrix_operations, only: set_lower_triangular_matrix ! , & ! Procedure(s)
-        !print_lower_triangular_matrix
+      !print_lower_triangular_matrix
 #endif
 
       implicit none
@@ -2788,7 +2788,7 @@ module microphys_driver
         xp2_on_xm2_array !  The output array
 
       real, dimension(gr%nnzp,d_variables,d_variables), intent(out) :: &
-        corr_array 
+        corr_array
 
       integer :: i, k
 
@@ -2821,7 +2821,7 @@ module microphys_driver
                    corr_array(k,:,:) )
           end if
           if ( iiLH_rrain > 0 ) then
-            xp2_on_xm2_array(k,iiLH_rrain) = rrp2_on_rrainm2_cloud 
+            xp2_on_xm2_array(k,iiLH_rrain) = rrp2_on_rrainm2_cloud
             call set_lower_triangular_matrix &
                  ( d_variables, iiLH_s_mellor, iiLH_rrain, corr_srr_NL_cloud, &
                    corr_array(k,:,:) )
@@ -2867,9 +2867,9 @@ module microphys_driver
           end if ! iiLH_rice > 0
           if ( iiLH_rgraupel > 0 ) then
             xp2_on_xm2_array(k,iiLH_rgraupel) = rrp2_on_rrainm2_cloud
-              call set_lower_triangular_matrix &
-                   ( d_variables, iiLH_rgraupel, iiLH_s_mellor, corr_srr_NL_cloud, &
-                     corr_array(k,:,:) )
+            call set_lower_triangular_matrix &
+                 ( d_variables, iiLH_rgraupel, iiLH_s_mellor, corr_srr_NL_cloud, &
+                   corr_array(k,:,:) )
             if ( iiLH_Ngraupel > 0 ) then
               xp2_on_xm2_array(k,iiLH_Ngraupel) = Nrp2_on_Nrm2_cloud
               call set_lower_triangular_matrix &
