@@ -5,24 +5,13 @@ module matrix_operations
 
 
   public :: symm_covar_matrix_2_corr_matrix, Cholesky_factor, &
-    set_lower_triangular_matrix, get_lower_triangular_matrix, &
-    row_mult_lower_tri_matrix, print_lower_triangular_matrix
-
-  private :: Symm_matrix_eigenvalues, &
+    row_mult_lower_tri_matrix, print_lower_triangular_matrix, &
     get_lower_triangular_matrix_sp, get_lower_triangular_matrix_dp, &
     set_lower_triangular_matrix_sp, set_lower_triangular_matrix_dp
 
+  private :: Symm_matrix_eigenvalues
+
   private ! Default scope
-
-  interface get_lower_triangular_matrix
-    module procedure get_lower_triangular_matrix_sp
-    module procedure get_lower_triangular_matrix_dp
-  end interface get_lower_triangular_matrix
-
-  interface set_lower_triangular_matrix
-    module procedure set_lower_triangular_matrix_sp
-    module procedure set_lower_triangular_matrix_dp
-  end interface set_lower_triangular_matrix
 
   contains
  

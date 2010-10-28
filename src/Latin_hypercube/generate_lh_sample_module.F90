@@ -60,8 +60,8 @@ module generate_lh_sample_module
     use mt95, only: genrand_real ! Constants
 
     use matrix_operations, only: &
-      set_lower_triangular_matrix, & ! Procedures
-      get_lower_triangular_matrix, &
+      set_lower_triangular_matrix_dp, & ! Procedures
+      get_lower_triangular_matrix_sp, &
       print_lower_triangular_matrix
 
     use matrix_operations, only: Cholesky_factor ! Procedure(s)
@@ -429,7 +429,7 @@ module generate_lh_sample_module
       ! Covariance between rain water mixing ratio rain number concentration
       if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
 
-        call get_lower_triangular_matrix &
+        call get_lower_triangular_matrix_sp &
              ( d_variables, index1, index2, corr_array, & ! In
                corr_rrNr ) ! Out
 
@@ -440,10 +440,10 @@ module generate_lh_sample_module
         ! rr1 = rr2 and Nr1 = Nr2, so we can just set covar_rrNr2 here
         covar_rrNr2 = covar_rrNr1
 
-        call set_lower_triangular_matrix &
+        call set_lower_triangular_matrix_dp &
              ( d_variables, index1, index2, dble( covar_rrNr1 ), & ! In
                Sigma_stw_1 ) ! In/out
-        call set_lower_triangular_matrix &
+        call set_lower_triangular_matrix_dp &
              ( d_variables, index1, index2, dble( covar_rrNr2 ), & ! In
                Sigma_stw_2 ) ! In/out
       end if
@@ -452,7 +452,7 @@ module generate_lh_sample_module
       index2 = iiLH_Nr
       ! Covariances involving s and Nr & rr
       if ( stdev_s1 > s_mellor_tol .and. Nrm > dble( Nr_tol ) ) then
-        call get_lower_triangular_matrix &
+        call get_lower_triangular_matrix_sp &
              ( d_variables, index1, index2, corr_array, & ! In
                corr_sNr ) ! Out
 
@@ -461,7 +461,7 @@ module generate_lh_sample_module
              ( corr_sNr, stdev_s1, xp2_on_xm2_array(index2), & ! In
                covar_sNr1 ) ! Out
 
-        call set_lower_triangular_matrix &
+        call set_lower_triangular_matrix_dp &
              ( d_variables, index1, index2, dble( covar_sNr1 ), & ! In
                Sigma_stw_1 ) ! In/out
 
@@ -470,14 +470,14 @@ module generate_lh_sample_module
         covar_tNr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_sNr1 ) ) / dble( stdev_s1 )**2
 
-        call set_lower_triangular_matrix &
+        call set_lower_triangular_matrix_dp &
              ( d_variables, iiLH_t_mellor, iiLH_Nr, dble( covar_tNr1 ), & ! In
                Sigma_stw_1 ) ! In/out
       end if
 
       if ( stdev_s2 > s_mellor_tol .and. Nrm > dble( Nr_tol ) ) then
 
-        call get_lower_triangular_matrix &
+        call get_lower_triangular_matrix_sp &
              ( d_variables, index1, index2, corr_array, & ! In
                corr_sNr ) ! Out
 
@@ -485,7 +485,7 @@ module generate_lh_sample_module
              ( corr_sNr, stdev_s2, xp2_on_xm2_array(index2), & ! In
                covar_sNr2 ) ! Out
 
-        call set_lower_triangular_matrix &
+        call set_lower_triangular_matrix_dp &
              ( d_variables, index1, index2, dble( covar_sNr2 ), & ! In
                Sigma_stw_2 ) ! In/out
 
@@ -494,7 +494,7 @@ module generate_lh_sample_module
         covar_tNr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_sNr2 ) ) / dble( stdev_s2 )**2
 
-        call set_lower_triangular_matrix &
+        call set_lower_triangular_matrix_dp &
              ( d_variables, iiLH_t_mellor, iiLH_Nr, dble( covar_tNr2 ), & ! In
                Sigma_stw_2 ) ! In/out
       end if
@@ -504,7 +504,7 @@ module generate_lh_sample_module
       ! Covariances involving s and Nr & rr
       if ( stdev_s1 > s_mellor_tol .and. rrainm > dble( rr_tol ) ) then
 
-        call get_lower_triangular_matrix &
+        call get_lower_triangular_matrix_sp &
              ( d_variables, index1, index2, corr_array, & ! In
                corr_srr ) ! Out
 
@@ -513,7 +513,7 @@ module generate_lh_sample_module
              ( corr_srr, stdev_s1, xp2_on_xm2_array(index2), & ! In
                covar_srr1 ) ! Out
 
-        call set_lower_triangular_matrix &
+        call set_lower_triangular_matrix_dp &
              ( d_variables, iiLH_s_mellor, iiLH_rrain, dble( covar_srr1 ), & ! In
                Sigma_stw_1 ) ! In/out
 
@@ -522,14 +522,14 @@ module generate_lh_sample_module
         covar_trr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_srr1 ) ) / dble( stdev_s1 )**2
 
-        call set_lower_triangular_matrix &
+        call set_lower_triangular_matrix_dp &
              ( d_variables, iiLH_t_mellor, iiLH_rrain, dble( covar_trr1 ), & ! In
                Sigma_stw_1 ) ! In/out
       end if
 
       if ( stdev_s2 > s_mellor_tol .and. rrainm > dble( rr_tol ) ) then
 
-        call get_lower_triangular_matrix &
+        call get_lower_triangular_matrix_sp &
              ( d_variables, index1, index2, corr_array, & ! In
                corr_srr ) ! Out
 
@@ -537,7 +537,7 @@ module generate_lh_sample_module
              ( corr_srr, stdev_s2, xp2_on_xm2_array(index2), & ! In
                covar_srr2 ) ! Out
 
-        call set_lower_triangular_matrix &
+        call set_lower_triangular_matrix_dp &
              ( d_variables, index1, index2, dble( covar_srr2 ), & ! In
                Sigma_stw_2 ) ! In/out
 
@@ -546,7 +546,7 @@ module generate_lh_sample_module
         covar_trr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
           * dble( covar_srr2 ) ) / dble( stdev_s2 )**2
 
-        call set_lower_triangular_matrix &
+        call set_lower_triangular_matrix_dp &
              ( d_variables, iiLH_t_mellor, iiLH_rrain, dble( covar_trr2 ), & ! In
                Sigma_stw_2 ) ! In/out
       end if
@@ -793,7 +793,7 @@ module generate_lh_sample_module
 !     JAS 62 pp. 4015
 !-----------------------------------------------------------------------
 
-    use matrix_operations, only: set_lower_triangular_matrix ! Procedure
+    use matrix_operations, only: set_lower_triangular_matrix_dp ! Procedure
 
     use constants_clubb, only: &
       max_mag_correlation ! Constant
@@ -849,8 +849,8 @@ module generate_lh_sample_module
     ! Setup the Sigma matrix
     Sigma_st(iiLH_s_mellor,iiLH_s_mellor) = sp2
     Sigma_st(iiLH_t_mellor,iiLH_t_mellor) = tp2
-    call set_lower_triangular_matrix( 2, iiLH_s_mellor, iiLH_t_mellor, sptp, &
-                                      Sigma_st )
+    call set_lower_triangular_matrix_dp( 2, iiLH_s_mellor, iiLH_t_mellor, sptp, &
+                                        Sigma_st )
     return
   end subroutine rtpthlp_2_sptp
 !-------------------------------------------------------------------------------
