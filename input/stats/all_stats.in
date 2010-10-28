@@ -1,6 +1,7 @@
 ! $Id$
 ! This file contains a comprehensive listing of all the CLUBB variables that 
-! can be output to GrADS, as found in src/CLUBB_core/stats_variables.F90
+! can be output to GrADS or netCDF, as found in 
+! src/CLUBB_core/stats_variables.F90
 ! This file, as well as the statistical files for all the other cases, needs
 ! to be updated every time a new statistical parameter is added.
 
