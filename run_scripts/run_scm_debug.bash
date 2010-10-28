@@ -34,7 +34,7 @@ else
 	fi
 
 	if [ -z $3 ]; then
-		STATS_FILE="../input/stats/all_stats.in"
+		STATS_FILE="../input/stats/standard_stats.in"
 	else
 		STATS_FILE=$3
 	fi

@@ -14,7 +14,7 @@
 # amounts/orders of variables, different amounts of altitudes, or different 
 # amounts of time outputs, the binary data files will differ, regardless if the 
 # case results are the same.  For example, if the CLUBB code is compiled; and 
-# then the user runs BOMEX twice -- once with all_stats.in and once with 
+# then the user runs BOMEX twice -- once with standard_stats.in and once with 
 # nobudgets_stats.in -- the control and binary data files will be different even
 # though it is the exact same code.
 #

@@ -191,7 +191,7 @@ fi
 
 if [ -z $stats_file ];
 then
-    stats_file="../input/stats/all_stats.in"
+    stats_file="../input/stats/standard_stats.in"
 fi
 
 if [ $NIGHTLY == true ]; 

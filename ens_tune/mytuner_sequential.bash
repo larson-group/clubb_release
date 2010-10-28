@@ -42,7 +42,7 @@ function tune ( ) {
 
 	# Run standalone CLUBB with the new parameter values
 	for EXP in "${EXPERIMENTS[@]}"; do
-		cat $CLUBB/input/case_setups/${EXP}_model.in $CLUBB/input/stats/all_stats.in > clubb.in
+		cat $CLUBB/input/case_setups/${EXP}_model.in $CLUBB/input/stats/standard_stats.in > clubb.in
 		cat $CLUBB/input/tunable_parameters/tunable_parameters_*.in >> clubb.in
 		../bin/clubb_standalone >> $ENSEMBLE_DIR/tune.log
 	done

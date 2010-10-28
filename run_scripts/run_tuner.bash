@@ -120,7 +120,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 	   echo $STATS_TUNE_IN " does not exist"
 	   exit 1
    fi
-   STATS_OPT_IN=$STATS_DIR'all_stats.in'
+   STATS_OPT_IN=$STATS_DIR'standard_stats.in'
    if [ ! -e "$STATS_OPT_IN" ] ; then
 	   echo $STATS_OPT_IN " does not exist"
 	   exit 1
@@ -148,7 +148,7 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 	           echo $STATS_TUNE_IN " does not exist"
 	           exit 1
            fi
-           STATS_OPT_IN=$STATS_DIR'all_stats.in'
+           STATS_OPT_IN=$STATS_DIR'standard_stats.in'
            if [ ! -e "$STATS_OPT_IN" ] ; then
 	           echo $STATS_OPT_IN " does not exist"
 	           exit 1
