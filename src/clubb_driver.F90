@@ -1345,17 +1345,17 @@ module clubb_driver
 
     ! Initialize damping
     if( thlm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt, thlm_sponge_damp_settings, & ! Intent(in)
+      call initialize_tau_sponge_damp( dtclosure, thlm_sponge_damp_settings, & ! Intent(in)
                                        thlm_sponge_damp_profile )       ! Intent(out)
     end if
 
     if( rtm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt, rtm_sponge_damp_settings, & ! Intent(in)
+      call initialize_tau_sponge_damp( dtclosure, rtm_sponge_damp_settings, & ! Intent(in)
                                        rtm_sponge_damp_profile )       ! Intent(out)
     end if
 
     if(uv_sponge_damp_settings%l_sponge_damping) then
-      call initialize_tau_sponge_damp( dt, uv_sponge_damp_settings, &  ! Intent(in)
+      call initialize_tau_sponge_damp( dtclosure, uv_sponge_damp_settings, &  ! Intent(in)
                                        uv_sponge_damp_profile )        ! Intent(out)
     end if
 
