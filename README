@@ -1071,10 +1071,8 @@ The budgets for the mixing ratio and number concentrations when using
 the Morrison microphysics are as follows:
 
   For rain water mixing ratio and number concentration:
-  rrainm_bt = rrainm_ma + rrainm_dff + rrainm_mc + rrainm_cond_adj
-            + rrainm_src_adj + rrainm_cl
-  Nrm_bt    = Nrm_ma + Nrm_dff + Nrm_mc + Nrm_cond_adj
-            + Nrm_src_adj + Nrm_cl
+  rrainm_bt = rrainm_ma + rrainm_dff + rrainm_mc + rrainm_cond_adj + rrainm_cl
+  Nrm_bt    = Nrm_ma + Nrm_dff + Nrm_mc + Nrm_cond_adj + Nrm_cl
 
   All other species should be as follows:
   xm_bt = xm_ma + xm_dff + xm_mc + xm_cl
