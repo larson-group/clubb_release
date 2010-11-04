@@ -3327,6 +3327,9 @@ module clubb_driver
       call advance_soil_veg( real( dt ), rho_zm(1), &
                              Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
                              Frad_LW_down(1), wpthep, soil_heat_flux )
+    else
+      ! Here the value is undefined
+      soil_heat_flux = -999.
     end if
 
     ! Store values of surface fluxes for statistics
