@@ -199,8 +199,8 @@ module generate_lh_sample_module
 !     corr_sNc, & ! Correlation between s and Nc [-]
 !     covar_tNc1,    & ! Covariance of t and Nc1      []
 !     covar_tNc2,    & ! Covariance of t and Nc2      []
-!     covar_sNc1,    & ! Covariance of s and Nc1      [kg^2/kg^2]
-!     covar_sNc2       ! Covariance of s and Nc2      [kg^2/kg^2]
+!     covar_sNc1,    & ! Covariance of s and Nc1      [# kg/kg^2]
+!     covar_sNc2       ! Covariance of s and Nc2      [# kg/kg^2]
 
 !   double precision, dimension(2,2) :: corr_st_mellor_1, corr_st_mellor_2
 
@@ -317,35 +317,33 @@ module generate_lh_sample_module
     !  We must have a Ncp2_on_Ncm2 >= machine epsilon
     ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
     ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
-    ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
 
     if ( iiLH_Nc > 0 ) then
       Ncm = dble( hydromet(iiNcm) )
       Ncp2_on_Ncm2 = dble( xp2_on_xm2_array(iiLH_Nc) )
 
-      call log_sqd_normalized( Ncm, Ncp2_on_Ncm2, dble( Nc_tol ), & ! In
-                               Nc1, Nc2, var_Nc1, var_Nc2 ) ! Out
+      call log_sqd_normalized( Ncm, Ncp2_on_Ncm2, & ! In
+                               Nc1, Nc2 ) ! Out
     end if
 
     ! rr = specific rain content. [rr] = kg rain / kg air
     ! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
     ! rr1  = PDF parameter for mean of plume 1. [rr1] = (kg/kg)
     ! rr2  = PDF parameter for mean of plume 2. [rr2] = (kg/kg)
-    ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
 
     if ( iiLH_rrain > 0 ) then
       rrainm = dble( hydromet(iirrainm) )
       rrp2_on_rrainm2 = dble( xp2_on_xm2_array(iiLH_rrain) )
-      call log_sqd_normalized( rrainm, rrp2_on_rrainm2, dble( rr_tol ), & ! In
-                               rr1, rr2, var_rr1, var_rr2 ) ! Out
+      call log_sqd_normalized( rrainm, rrp2_on_rrainm2, & ! In
+                               rr1, rr2 ) ! Out
     end if
 
     if ( iiLH_Nr > 0 ) then
       Nrm = dble( hydromet(iiNrm) )
       Nrp2_on_Nrm2 = dble( xp2_on_xm2_array(iiLH_Nr) )
 
-      call log_sqd_normalized( Nrm, Nrp2_on_Nrm2, dble( Nr_tol ), & ! In
-                               Nr1, Nr2, var_Nr1, var_Nr2 ) ! Out
+      call log_sqd_normalized( Nrm, Nrp2_on_Nrm2, & ! In
+                               Nr1, Nr2 ) ! Out
     end if
 
     ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
@@ -407,16 +405,25 @@ module generate_lh_sample_module
     Sigma_stw_2(iiLH_w,iiLH_w) = dble( varnce_w2 )
 
     if ( iiLH_Nc > 0 ) then
+      ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
+      var_Nc1 = log( 1. + Xp2_on_Xm2_array(iiLH_Nc) )
+      var_Nc2 = var_Nc1
       Sigma_stw_1(iiLH_Nc,iiLH_Nc) = var_Nc1
       Sigma_stw_2(iiLH_Nc,iiLH_Nc) = var_Nc2
     end if
 
     if ( iiLH_Nr > 0 ) then
+      ! var_Nr1,2 = PDF param for width of plume 1,2. [var_Nr1,2] = (#/kg)**2
+      var_Nr1 = log( 1. + Xp2_on_Xm2_array(iiLH_Nr) )
+      var_Nr2 = var_Nr1
       Sigma_stw_1(iiLH_Nr,iiLH_Nr) = var_Nr1
       Sigma_stw_2(iiLH_Nr,iiLH_Nr) = var_Nr2
     end if
 
     if ( iiLH_rrain > 0 ) then
+      ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
+      var_rr1 = log( 1. + Xp2_on_Xm2_array(iiLH_rrain) )
+      var_rr2 = var_rr1
       Sigma_stw_1(iiLH_rrain,iiLH_rrain) = var_rr1
       Sigma_stw_2(iiLH_rrain,iiLH_rrain) = var_rr2
     end if
@@ -1518,8 +1525,8 @@ module generate_lh_sample_module
     return
   end subroutine st_2_rtthl
 !-------------------------------------------------------------------------------
-  subroutine log_sqd_normalized( Xm, Xp2_on_Xm2, X_tol, &
-                                 X1, X2, sX1, sX2 )
+  subroutine log_sqd_normalized( Xm, Xp2_on_Xm2, &
+                                 X1, X2 )
 ! Description:
 !
 ! References:
@@ -1528,35 +1535,26 @@ module generate_lh_sample_module
     implicit none
 
     ! External
-    intrinsic :: log, epsilon
+    intrinsic :: log, epsilon, max
 
     ! Input Variables
     double precision, intent(in) :: &
-      Xm,           & ! Mean X          [units vary]
-      Xp2_on_Xm2,   & ! X'^2 / X^2      [-]
-      X_tol           ! tolerance on X  [units vary]
+      Xm,         & ! Mean X          [units vary]
+      Xp2_on_Xm2    ! X'^2 / X^2      [-]
 
     ! Output Variables
     double precision, intent(out) :: &
-      X1, X2,  & ! PDF parameters for mean of plume 1, 2   [units vary]
-      sX1, sX2   ! PDF parameters for width of plume 1, 2  [units vary]
+      X1, X2  ! PDF parameters for mean of plume 1, 2   [units vary]
 
     ! ---- Begin Code ----
 
-    if ( Xm >= X_tol ) then
-      sX1 = log( 1. + Xp2_on_Xm2 )
-      sX2 = sX1
-      ! Here the variables X1 & X2 have ambiguous units.  After the exp function
-      ! is applied to the result at the very end of this code the units will be
-      ! correct because of the 0.5 coefficient. I.e. sqrt( Xm^2 ) = Xm.
-      X1 = 0.5 * log( Xm**2 / ( 1. + Xp2_on_Xm2 ) )
-      X2 = X1
-    else
-      sX1 = log( 1. + epsilon( Xp2_on_Xm2 ) )
-      sX2 = sX1
-      X1 = 0.5 * log( ( X_tol * 0.999 )**2 / ( 1. + epsilon( Xp2_on_Xm2 ) ) )
-      X2 = X1
-    end if
+    ! Here the variables X1 & X2 have ambiguous units.  After the exp function
+    ! is applied to the result at the very end of this code the units will be
+    ! correct because of the 0.5 coefficient. I.e. sqrt( Xm^2 ) = Xm.
+    ! Here we use epsilon to impose a limit on the numerator to prevent 
+    ! taking the log of 0 while still imposing an upper bound.
+    X1 = 0.5 * log( max( Xm, epsilon( Xm ) )**2 / ( 1. + Xp2_on_Xm2 ) )
+    X2 = X1
 
     return
   end subroutine log_sqd_normalized
