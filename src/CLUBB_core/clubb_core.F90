@@ -15,16 +15,16 @@ module clubb_core
 !
 !                         Copyright Notice:
 !
-!   This code and the source code it references are (C) 2006-2010 
-!   Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
+!   This code and the source code it references are (C) 2006-2010
+!   Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin,
 !   David P. Schanen, Adam J. Smith, and Michael J. Falk.
 !
-!   The distribution of this code and derived works thereof 
+!   The distribution of this code and derived works thereof
 !                   should include this notice.
 !
 !   Portions of this code derived from other sources (Hugh Morrison,
 !   ACM TOMS, Numerical Recipes, et cetera) are the intellectual
-!   property of their respective authors as noted and also subject 
+!   property of their respective authors as noted and also subject
 !   to copyright.
 !-----------------------------------------------------------------------
 
@@ -99,7 +99,7 @@ module clubb_core
       gamma_coefb, & 
       gamma_coef, & 
       taumax, & 
-      c_K    
+      c_K
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
@@ -182,7 +182,7 @@ module clubb_core
 
     use variables_prognostic_module, only: &
       pdf_parameter ! Type
- 
+
 #ifdef GFDL
     use advance_sclrm_Nd_module, only: &  ! h1g, 2010-06-16 begin mod
        advance_sclrm_Nd_diffusion_OG, &
@@ -302,35 +302,31 @@ module clubb_core
                                          ! the thermodynamic-level variables output 
                                          ! from pdf_closure.  
 
-      l_trapezoidal_rule_zm = .false., & ! If true, the trapezoidal rule is called for
+    l_trapezoidal_rule_zm = .false., & ! If true, the trapezoidal rule is called for
                                          ! three momentum-level variables - wpthvp,
-                                         ! thlpthvp, and rtpthvp - output from pdf_closure.
+                                       ! thlpthvp, and rtpthvp - output from pdf_closure.
 
-      l_call_pdf_closure_twice = .false. ! This logical flag determines whether or not to
-                                         ! call subroutine pdf_closure twice.  If true,
-                                         ! pdf_closure is called first on thermodynamic levels
-                                         ! and then on momentum levels so that each variable is 
-                                         ! computed on its native level.  If false, pdf_closure
-                                         ! is only called on thermodynamic levels, and variables
-                                         ! which belong on momentum levels are interpolated.
+    l_call_pdf_closure_twice = .false. ! This logical flag determines whether or not to
+    ! call subroutine pdf_closure twice.  If true,
+    ! pdf_closure is called first on thermodynamic levels
+    ! and then on momentum levels so that each variable is
+    ! computed on its native level.  If false, pdf_closure
+    ! is only called on thermodynamic levels, and variables
+    ! which belong on momentum levels are interpolated.
 
     logical, parameter :: &
       l_avg_Lscale = .true.  ! Lscale is calculated in subroutine compute_length; if l_avg_Lscale
-                             ! is true, compute_length is called two additional times with
-                             ! perturbed values of rtm and thlm.  An average value of Lscale
-                             ! from the three calls to compute_length is then calculated.
-                             ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
+    ! is true, compute_length is called two additional times with
+    ! perturbed values of rtm and thlm.  An average value of Lscale
+    ! from the three calls to compute_length is then calculated.
+    ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
 
     !!! Input Variables
     logical, intent(in) ::  & 
       l_implemented ! Is this part of a larger host model (T/F) ?
 
-    ! Note on dt, dmain, and dtclosure: since being moved out of
-    ! hoc.F, all subroutines within advance_clubb_core now use
-    ! dt for time dependent calculations.  The old dt is noted in
-    ! each section of the code -dschanen 20 April 2006
     real(kind=time_precision), intent(in) ::  & 
-      dt                ! Current timestep duration    [s]
+      dt  ! Current timestep duration    [s]
 
     real, intent(in) ::  & 
       fcor,  &          ! Coriolis forcing             [s^-1]
@@ -466,7 +462,7 @@ module clubb_core
       upwp_cl_num,    & ! Instance of u'w' clipping (1st or 2nd).
       vpwp_cl_num       ! Instance of v'w' clipping (1st or 2nd).
 
-    ! These local variables are declared because they originally belong on the momentum 
+    ! These local variables are declared because they originally belong on the momentum
     ! grid levels, but pdf_closure outputs them on the thermodynamic grid levels.
     real, dimension(gr%nnzp) :: &
       wp4_zt,      & ! w'^4 (on thermo. grid)           [m^4/s^4] 
@@ -476,7 +472,7 @@ module clubb_core
       wprcp_zt,    & ! w' r_c' (on thermo. grid)        [(m kg)/(s kg)] 
       rtprcp_zt,   & ! r_t' r_c' (on thermo. grid)      [(kg^2)/(kg^2)] 
       thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg] 
-      rcp2_zt        ! r_c'^2 (on thermo. grid)         [(kg^2)/(kg^2)] 
+      rcp2_zt        ! r_c'^2 (on thermo. grid)         [(kg^2)/(kg^2)]
 
     real, dimension(gr%nnzp, sclr_dim) :: &       
       sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid) 
@@ -491,7 +487,7 @@ module clubb_core
       cloud_frac_zm, & ! Cloud Fraction on momentum grid            [-]
       rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
       wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
-      wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2] 
+      wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
 
     real, dimension(gr%nnzp,sclr_dim) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
@@ -499,7 +495,7 @@ module clubb_core
       wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid 
       wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
       sclrm_zm          ! Passive scalar mean on momentum grid
-      
+
     real :: &
       rtm_integral_before, &
       rtm_integral_after, &
@@ -513,7 +509,7 @@ module clubb_core
       thlm_flux_top, &
       thlm_flux_sfc, &
       thlm_spur_src
-      
+
     ! Used for storing temporary stats data at zm surface
     real ::  &
       wp2_sf_temp,     & ! [m^2/s^2]
@@ -524,7 +520,7 @@ module clubb_core
       rtpthlp_sf_temp    ! [kg K/kg]
 
     !----- Begin Code -----
-    
+
     if ( l_stats .and. l_stats_samp ) then
       if ( l_implemented ) then
         ! Get the vertical integral of rtm and thlm before this function begins
@@ -532,13 +528,13 @@ module clubb_core
         rtm_integral_before  &
         = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                              rtm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
-                                                 
+
         thlm_integral_before  &
         = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                              thlm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
-      endif
-    endif
-     
+      end if
+    end if
+
     !----------------------------------------------------------------
     ! Test input variables
     !----------------------------------------------------------------
@@ -557,7 +553,7 @@ module clubb_core
              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
              sclrm_forcing, edsclrm, edsclrm_forcing            ) ! intent(in)
-    endif
+    end if
     !-----------------------------------------------------------------------
 
     ! Set up stats variables.
@@ -577,12 +573,12 @@ module clubb_core
 
       call stat_begin_update( iup2_bt, real(up2 / dt),  &           ! Intent(in)
                               zm )                                  ! Intent(inout)
-                              
+
       call stat_begin_update( iwp2_bt, real(wp2 / dt), &            ! Intent(in)
                               zm )                                  ! Intent(inout)
 
-    endif
-    
+    end if
+
     ! Avoid an initialization warning
     thlp2_sf_temp   = 0
     rtp2_sf_temp    = 0
@@ -590,9 +586,9 @@ module clubb_core
     up2_sf_temp     = 0
     vp2_sf_temp     = 0
     wp2_sf_temp     = 0
-    
+
     ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
-    ! We only do this for host models that do not apply the flux 
+    ! We only do this for host models that do not apply the flux
     ! elsewhere in the code (e.g. WRF).  In other cases the _sfc variables will
     ! only be used to compute the variance at the surface. -dschanen 8 Sept 2009
     if ( .not. l_host_applies_sfc_fluxes ) then
@@ -627,7 +623,7 @@ module clubb_core
         wpedsclrp(1,1:edsclr_dim) = 0.0
       end if
 
-    end if
+    end if ! ~l_host_applies_sfc_fluxes
 
     ! The right hand side of this conjunction is only for reducing cpu time,
     ! since the more complicated formula is mathematically equivalent
@@ -731,10 +727,10 @@ module clubb_core
 
     if ( l_call_pdf_closure_twice ) then
       ! Call pdf_closure a second time on momentum levels, to
-      ! output (rather than interpolate) the variables which 
+      ! output (rather than interpolate) the variables which
       ! belong on the momentum levels.
 
-      ! Interpolate sclrm to the momentum level for use in 
+      ! Interpolate sclrm to the momentum level for use in
       ! the second call to pdf_closure
       do i = 1, sclr_dim
         sclrm_zm(:,i) = zt2zm( sclrm(:,i) )
@@ -796,7 +792,7 @@ module clubb_core
       ! Set variables at top momentum level to 0.
 
       ! Only do this for wp4 and rcp2 if we're saving stats, since they are not
-      ! used elsewhere in the parameterization 
+      ! used elsewhere in the parameterization
       if ( iwp4 > 0 ) then
         wp4 = max( zt2zm( wp4_zt ), zero_threshold )  ! Pos. def. quantity
         wp4(gr%nnzp)  = 0.0
@@ -955,7 +951,7 @@ module clubb_core
     ! Subroutine may produce NaN values, and if so, exit
     ! gracefully.
     ! Joshua Fasching March 2008
-    if( err_code == clubb_var_equals_NaN ) return
+    if ( err_code == clubb_var_equals_NaN ) return
 
 
     !----------------------------------------------------------------
@@ -991,6 +987,7 @@ module clubb_core
     ! Eddy diffusivity coefficient
     !----------------------------------------------------------------
     ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
+    ! CLUBB uses a smaller value to better fit empirical data.
 
     Kh_zt = c_K * Lscale * tmp1
     Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
@@ -1005,19 +1002,19 @@ module clubb_core
     ! Surface effects should not be included with any case where the lowest
     ! level is not the ground level.  Brian Griffin.  December 22, 2005.
     if ( gr%zm(1) == sfc_elevation ) then
-    
-    ! The _sf stats need the change in e.g. rtpthlp(1) during surface_varnce
-    ! so record original value
-    if ( l_stats_samp ) then
-      
-      thlp2_sf_temp = thlp2(1)
-      rtp2_sf_temp = rtp2(1)
-      rtpthlp_sf_temp = rtpthlp(1)
-      up2_sf_temp = up2(1)
-      vp2_sf_temp = vp2(1)
-      wp2_sf_temp = wp2(1)
-      
-    endif
+
+      ! The _sf stats need the change in e.g. rtpthlp(1) during surface_varnce
+      ! so record original value
+      if ( l_stats_samp ) then
+
+        thlp2_sf_temp = thlp2(1)
+        rtp2_sf_temp = rtp2(1)
+        rtpthlp_sf_temp = rtpthlp(1)
+        up2_sf_temp = up2(1)
+        vp2_sf_temp = vp2(1)
+        wp2_sf_temp = wp2(1)
+
+      end if
 
       call surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & ! intent(in)
                            um(2), vm(2), wpsclrp_sfc,                 & ! intent(in)
@@ -1031,7 +1028,7 @@ module clubb_core
       ! gracefully.
       ! Joshua Fasching March 2008
       if( err_code == clubb_var_equals_NaN ) return
-      
+
       ! Update surface stats
       if ( l_stats_samp ) then
         call stat_update_var_pt( ithlp2_sf, 1, (thlp2(1) - thlp2_sf_temp) / real(dt), zm )
@@ -1040,7 +1037,7 @@ module clubb_core
         call stat_update_var_pt( iup2_sf, 1, (up2(1) - up2_sf_temp) / real(dt), zm )
         call stat_update_var_pt( ivp2_sf, 1, (vp2(1) - vp2_sf_temp) / real(dt), zm )
         call stat_update_var_pt( iwp2_sf, 1, (wp2(1) - wp2_sf_temp) / real(dt), zm )
-      endif
+      end if
 
     else
 
@@ -1116,8 +1113,8 @@ module clubb_core
                    rcm )                                  ! intent(inout)
 
 #ifdef GFDL
-     call  advance_sclrm_Nd_diffusion_OG( dt,  sclrm,  &  ! h1g, 2010-06-16
-         sclrm_trsport_only,  Kh_zm,  cloud_frac,  err_code) 
+    call advance_sclrm_Nd_diffusion_OG( dt,  sclrm,  &  ! h1g, 2010-06-16
+        sclrm_trsport_only,  Kh_zm,  cloud_frac,  err_code )
 #endif
 
     !----------------------------------------------------------------
@@ -1215,7 +1212,7 @@ module clubb_core
                                 rho_ds_zm, invrs_rho_ds_zt,               & ! Intent(in)
                                 fcor, l_implemented,                      & ! Intent(in)
                                 um, vm, edsclrm,                          & ! Intent(inout)
-                                upwp, vpwp, wpedsclrp,                    & ! Intent(inout)	
+                                upwp, vpwp, wpedsclrp,                    & ! Intent(inout)        
                                 err_code ) ! Intent(out)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
@@ -1227,7 +1224,7 @@ module clubb_core
     !#######################################################################
     !#############            ACCUMULATE STATISTICS            #############
     !#######################################################################
-    
+
     if ( l_stats_samp ) then
 
       call stat_end_update( irtp2_bt, real( rtp2 / dt), &       ! Intent(in)
@@ -1244,12 +1241,12 @@ module clubb_core
 
       call stat_end_update( ivp2_bt, real( vp2 / dt),&          ! Intent(in)
                             zm )                                ! Intent(inout)
-                            
+
       call stat_end_update( iwp2_bt, real( wp2 / dt ), &        ! Intent(in)
                             zm )                                ! Intent(inout)
 
-    endif
-    
+    end if ! l_stats_samp
+
 
     if ( iwpthlp_zt > 0 ) then
       wpthlp_zt  = zm2zt( wpthlp )
@@ -1303,7 +1300,7 @@ module clubb_core
              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
              sclrm_forcing, edsclrm, edsclrm_forcing            ) ! intent(in)
-    endif
+    end if
 
     if ( l_stats .and. l_stats_samp ) then
       ! Spurious Source will only be calculated if l_implemented = true because wm needs
@@ -1311,51 +1308,51 @@ module clubb_core
       if ( l_implemented ) then
         ! Calculate the spurious source for rtm
         rtm_flux_top = rho_ds_zm(gr%nnzp) * wprtp(gr%nnzp)
-        
+
         rtm_flux_sfc = rho_ds_zm(1) * wprtp_sfc
-        
+
         rtm_integral_after  &
         = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                              rtm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
-                                               
+
         rtm_integral_forcing  &
         = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                              rtm_forcing(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
-                                                 
+
         rtm_spur_src  &
         = calculate_spurious_source( rtm_integral_after, &
                                      rtm_integral_before, &
                                      rtm_flux_top, rtm_flux_sfc, &
                                      rtm_integral_forcing, &
-                                     real(dt) )     
+                                     real( dt ) )
         ! Calculate the spurious source for thlm
         thlm_flux_top = rho_ds_zm(gr%nnzp) * wpthlp(gr%nnzp)
-        thlm_flux_sfc = rho_ds_zm(1) * wpthlp_sfc      
+        thlm_flux_sfc = rho_ds_zm(1) * wpthlp_sfc
         thlm_integral_after  &
         = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                              thlm(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
-                                                
+
         thlm_integral_forcing  &
         = vertical_integral( (gr%nnzp - 2 + 1), rho_ds_zt(2:gr%nnzp), &
                              thlm_forcing(2:gr%nnzp), gr%invrs_dzt(2:gr%nnzp) )
-                                                  
+
         thlm_spur_src  &
         = calculate_spurious_source( thlm_integral_after, &
                                      thlm_integral_before, &
                                      thlm_flux_top, thlm_flux_sfc, &
                                      thlm_integral_forcing, &
-                                     real(dt) )
+                                     real( dt ) )
       else ! If l_implemented is false, we don't want spurious source output
         rtm_spur_src = -9999.0
         thlm_spur_src = -9999.0
-      endif    
-      
-      ! Write the var to stats  
+      end if
+
+      ! Write the var to stats
       call stat_update_var_pt( irtm_spur_src, 1, & 
-                               rtm_spur_src, sfc ) 
+                               rtm_spur_src, sfc )
       call stat_update_var_pt( ithlm_spur_src, 1, & 
                                thlm_spur_src, sfc )
-    endif
+    end if
 
     return
   end subroutine advance_clubb_core
@@ -1378,9 +1375,10 @@ module clubb_core
 #endif
                err_code ) ! Out
     !
-    !   Description:
-    !     Subroutine to set up the model for execution.
-    !
+    ! Description:
+    !   Subroutine to set up the model for execution.
+    ! References:
+    !   None
     !-------------------------------------------------------------------------
     use grid_class, only: & 
       setup_grid, & ! Procedure
@@ -1422,7 +1420,7 @@ module clubb_core
     use gmres_cache, only: &
       gmres_cache_temp_init, &   ! Subroutine
       gmres_idx_wp2wp3        ! Variable
-#endif
+#endif /* MKL */
 
     implicit none
 
@@ -1455,7 +1453,7 @@ module clubb_core
 
     ! If the CLUBB model is running by itself, and is using an
     ! evenly-spaced grid (grid_type = 1), it needs the vertical
-    ! grid spacing, momentum-level starting altitude, and maximum 
+    ! grid spacing, momentum-level starting altitude, and maximum
     ! altitude as input.
     real, intent(in) :: & 
       deltaz,   & ! Change in altitude per level           [m]
@@ -1495,12 +1493,12 @@ module clubb_core
     real, intent(in), dimension(nparams) :: & 
       params  ! Including C1, nu1, nu2, etc.
 
-    ! Flags 
+    ! Flags
     logical, intent(in) ::  & 
       l_soil_veg,     & ! Simple surface scheme
       l_uv_nudge,     & ! Wind nudging
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
-                        !   i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+    !                     i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
     logical, intent(in) :: & 
       l_host_applies_sfc_fluxes
@@ -1533,13 +1531,13 @@ module clubb_core
 
     case ( "flatau", "Flatau" )
       ! Using the Flatau, et al. polynomial approximation for SVP over vapor/ice
-  
+
 #ifdef GFDL
     case ( "gfdl", "GFDL" )   ! h1g, 2010-06-16
       ! Using the GFDL  formula
 #endif
 
-  ! Add new saturation formulas after this
+      ! Add new saturation formulas after this
 
     case default
       write(fstderr,*) "Error in setup_clubb_core."
@@ -1559,7 +1557,7 @@ module clubb_core
     call setup_model_flags & 
          ( l_soil_veg, l_host_applies_sfc_fluxes, & ! intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula, &  ! intent(in) 
-           I_sat_sphum)  ! intent(in)  h1g, 2010-06-16
+           I_sat_sphum )  ! intent(in)  h1g, 2010-06-16
 
 #else
     call setup_model_flags & 
@@ -1615,7 +1613,7 @@ module clubb_core
 
 #ifdef GFDL
 ! setup  prognostic_variables
-   call setup_prognostic_variables( gr%nnzp ) ! intent(in)  h1g, 2010-06-16
+    call setup_prognostic_variables( gr%nnzp ) ! intent(in)  h1g, 2010-06-16
 #else
     if ( .not. l_implemented ) then
       call setup_prognostic_variables( gr%nnzp ) ! intent(in)
@@ -1664,8 +1662,8 @@ module clubb_core
 
     !----- Begin Code -----
 #ifdef GFDL
-! cleanup  prognostic_variables
-   call  cleanup_prognostic_variables( )  ! h1g, 2010-06-16
+    ! cleanup  prognostic_variables
+    call  cleanup_prognostic_variables( )  ! h1g, 2010-06-16
 #else
     if ( .not. l_implemented ) then
       call cleanup_prognostic_variables( )
@@ -1697,9 +1695,9 @@ module clubb_core
                wp2sclrp_zm, pdf_params_zm )                   ! intent(inout)
     !
     ! Description:  This subroutine takes the output variables on the thermo.
-    ! grid and either: interpolates them to the momentum grid, or uses the 
-    ! values output from the second call to pdf_closure on momentum levels if  
-    ! l_call_pdf_closure_twice is true.  It then calls the function   
+    ! grid and either: interpolates them to the momentum grid, or uses the
+    ! values output from the second call to pdf_closure on momentum levels if
+    ! l_call_pdf_closure_twice is true.  It then calls the function
     ! trapezoid_zt to recompute the variables on the thermo. grid.
     ! ldgrant June 2009
     !
@@ -1708,7 +1706,7 @@ module clubb_core
     ! if l_call_pdf_closure_twice is true, these variables will already have
     ! values from pdf_closure on momentum levels and will not be altered in
     ! this subroutine.  However, if l_call_pdf_closure_twice is false, these
-    ! variables will not have values yet and will be interpolated to 
+    ! variables will not have values yet and will be interpolated to
     ! momentum levels in this subroutine.
     !-----------------------------------------------------------------------
 
@@ -1738,7 +1736,7 @@ module clubb_core
       cloud_frac,  & ! Cloud Fraction            [-]
       rcm,         & ! Liquid water mixing ratio [kg/kg]
       wp2thvp,     & ! w'^2 th_v'                [m^2 K/s^2]
-      wp2rcp         ! w'^2 rc'                  [m^2 kg/kg s^2]    
+      wp2rcp         ! w'^2 rc'                  [m^2 kg/kg s^2]
 
     real, dimension(gr%nnzp,sclr_dim), intent(inout) :: & 
       wpsclrprtp,  & ! w'sclr'rt' 
@@ -1879,7 +1877,7 @@ module clubb_core
     ! If it is false, the variables are interpolated to the _zm levels.
     if ( l_call_pdf_closure_twice ) then
 
-      ! Store, in locally declared variables, the pdf_params output 
+      ! Store, in locally declared variables, the pdf_params output
       ! from the second call to pdf_closure
       w1_zm          = pdf_params_zm%w1
       w2_zm          = pdf_params_zm%w2
@@ -1912,7 +1910,7 @@ module clubb_core
       alpha_thl_zm   = pdf_params_zm%alpha_thl
       alpha_rt_zm    = pdf_params_zm%alpha_rt
 
-    else      
+    else
 
       ! Interpolate thermodynamic variables to the momentum grid.
       ! Since top momentum level is higher than top thermo. level,
@@ -1952,7 +1950,7 @@ module clubb_core
       w2_zm                   = zt2zm( pdf_params%w2 )
       w2_zm(gr%nnzp)          = 0.0
       varnce_w1_zm            = zt2zm( pdf_params%varnce_w1 )
-      varnce_w1_zm(gr%nnzp)   = 0.0   
+      varnce_w1_zm(gr%nnzp)   = 0.0
       varnce_w2_zm            = zt2zm( pdf_params%varnce_w2 )
       varnce_w2_zm(gr%nnzp)   = 0.0
       rt1_zm                  = zt2zm( pdf_params%rt1 )
@@ -2018,9 +2016,9 @@ module clubb_core
     cloud_frac = trapezoid_zt( cloud_frac, cloud_frac_zm )
     rcm        = trapezoid_zt( rcm, rcm_zm )
     wp2thvp    = trapezoid_zt( wp2thvp, wp2thvp_zm )
-    wp2rcp     = trapezoid_zt( wp2rcp, wp2rcp_zm ) 
+    wp2rcp     = trapezoid_zt( wp2rcp, wp2rcp_zm )
 
-    do i = 1, sclr_dim 
+    do i = 1, sclr_dim
       wpsclrprtp(:,i)  = trapezoid_zt( wpsclrprtp(:,i), wpsclrprtp_zm(:,i) )
       wpsclrp2(:,i)    = trapezoid_zt( wpsclrp2(:,i), wpsclrp2_zm(:,i) )
       wpsclrpthlp(:,i) = trapezoid_zt( wpsclrpthlp(:,i), wpsclrpthlp_zm(:,i) )
@@ -2067,17 +2065,17 @@ module clubb_core
              ( wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
                wpthvp, thlpthvp, rtpthvp )           ! intent(inout)
     !
-    ! Description:  This subroutine recomputes three variables on the 
-    ! momentum grid from pdf_closure -- wpthvp, thlpthvp, and 
+    ! Description:  This subroutine recomputes three variables on the
+    ! momentum grid from pdf_closure -- wpthvp, thlpthvp, and
     ! rtpthvp -- by calling the function trapezoid_zm.  Only these three
     ! variables are used in this subroutine because they are the only
     ! pdf_closure momentum variables used elsewhere in CLUBB.
-    ! 
+    !
     ! The _zt variables are output from the first call to pdf_closure.
     ! The _zm variables are either output from the second call to pdf_closure
     ! if l_call_pdf_closure_twice is true, or are interpolated to their
     ! home momentum levels if l_call_pdf_closure_twice is false.
-    ! This is done before the call to this subroutine.  
+    ! This is done before the call to this subroutine.
     ! ldgrant Feb. 2010
     !-----------------------------------------------------------------------
 
@@ -2130,7 +2128,7 @@ module clubb_core
 
     ! Local Variable
     integer :: k ! Loop index
- 
+
     !------------ Begin Code --------------
 
     ! Boundary condition: trapezoidal rule not valid at zt level 1
@@ -2144,7 +2142,7 @@ module clubb_core
                              * ( gr%zt(k) - gr%zm(k-1) ) * gr%invrs_dzt(k)
     end do ! k = 2, gr%nnzp
 
-    return 
+    return
   end function trapezoid_zt
 
   !-----------------------------------------------------------------------
@@ -2171,7 +2169,7 @@ module clubb_core
 
     ! Local Variable
     integer :: k ! Loop index
- 
+
     !------------ Begin Code --------------
 
     ! Boundary conditions: trapezoidal rule not valid at top zm level, nnzp.
@@ -2187,7 +2185,7 @@ module clubb_core
                              * ( gr%zm(k) - gr%zt(k) ) * gr%invrs_dzm(k)
     end do ! k = 2, gr%nnzp-1
 
-    return 
+    return
   end function trapezoid_zm
 
   !-----------------------------------------------------------------------
@@ -2206,7 +2204,7 @@ module clubb_core
         fstderr
 
     use grid_class, only: gr ! Variable
-  
+
     use variables_prognostic_module, only: &
         pdf_parameter ! Derived data type
 
@@ -2255,15 +2253,15 @@ module clubb_core
 
         cloud_cover(k)  = cloud_frac(k)
         rcm_in_layer(k) = rcm(k)
-  
+
       else if ( ( rcm(k+1) >= rc_tol ) .and. ( rcm(k-1) >= rc_tol ) ) then
-        ! There is cloud above and below, 
+        ! There is cloud above and below,
         !   so assume cloud fills grid box from top to bottom
-  
+
         cloud_cover(k) = cloud_frac(k)
         rcm_in_layer(k) = rcm(k)
 
-      else if ( ( rcm(k+1) < rc_tol ) .or. ( rcm(k-1) < rc_tol) ) then 
+      else if ( ( rcm(k+1) < rc_tol ) .or. ( rcm(k-1) < rc_tol) ) then
         ! Cloud may fail to reach gridbox top or base or both
 
         ! First let the cloud fill the entire grid box, then overwrite
@@ -2276,9 +2274,9 @@ module clubb_core
 
           vert_cloud_frac_upper(k) = &
                    ( ( 0.5 / gr%invrs_dzm(k) ) / ( gr%zm(k) - gr%zt(k) ) ) &
-                   * ( rcm(k) / ( rcm(k) + abs( s_mean(k+1) ) ) ) 
+                   * ( rcm(k) / ( rcm(k) + abs( s_mean(k+1) ) ) )
 
-          vert_cloud_frac_upper(k) = min( 0.5, vert_cloud_frac_upper(k) ) 
+          vert_cloud_frac_upper(k) = min( 0.5, vert_cloud_frac_upper(k) )
 
         else
 
@@ -2325,11 +2323,11 @@ module clubb_core
           write(fstderr,*) "rcm(k+1) = ", rcm(k+1)
           write(fstderr,*) "rcm(k-1) = ", rcm(k-1)
 
-        endif
+        end if
 
         return
 
-      end if
+      end if ! rcm(k) < rc_tol
 
     end do ! k = 2, gr%nnzp-1, 1
 
@@ -2347,14 +2345,14 @@ module clubb_core
              rcm )    ! intent(inout)
     !
     ! Description:  Subroutine that reduces cloud water (rcm) whenever
-    ! it exceeds total water (rtm = vapor + liquid).  
+    ! it exceeds total water (rtm = vapor + liquid).
     ! This avoids negative values of rvm = water vapor mixing ratio.
     ! However, it will not ensure that rcm <= rtm if rtm <= 0.
     !---------------------------------------------------------------------
 
 
     use grid_class, only: gr ! Variable
-    
+
     use error_code, only :  & 
       clubb_at_least_debug_level ! Procedure(s)
 
@@ -2371,7 +2369,7 @@ module clubb_core
     real, dimension(gr%nnzp), intent(in) :: &
       rtm           ! Total water mixing ratio             [kg/kg]
 
-    character(len= * ), intent(in) :: message  
+    character(len= * ), intent(in) :: message
 
     real, dimension(gr%nnzp), intent(inout) :: &
       rcm           ! Cloud water mixing ratio  [kg/kg]
@@ -2427,7 +2425,7 @@ module clubb_core
     ! Input Variables
     logical, intent(in) :: &
       l_implemented    ! Flag to see if CLUBB is running on it's own,
-                       ! or if it's implemented as part of a host model.
+    !                    or if it's implemented as part of a host model.
 
     real, intent(in) :: &
       host_dx, & ! Host model's east-west horizontal grid spacing     [m]
@@ -2439,12 +2437,12 @@ module clubb_core
 
     ! Determine the maximum allowable value for Lscale (in meters).
     if ( l_implemented ) then
-       Lscale_max = 0.25 * min( host_dx, host_dy )
+      Lscale_max = 0.25 * min( host_dx, host_dy )
     else
-       Lscale_max = 1.0e5
-    endif
+      Lscale_max = 1.0e5
+    end if
 
-  return
+    return
   end subroutine set_Lscale_max
 
 !===============================================================================
