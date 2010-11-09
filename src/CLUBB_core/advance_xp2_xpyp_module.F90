@@ -128,16 +128,7 @@ contains
       lapack_error,    & ! Procedure(s)
       clubb_at_least_debug_level
 
-    use stats_type, only: & 
-      stat_end_update  ! Procedure(s)
-
     use stats_variables, only: & 
-      irtp2_bt,  & ! Variable(s)
-      ithlp2_bt, & 
-      irtpthlp_bt, & 
-      ivp2_bt, & 
-      iup2_bt, & 
-      zm, & 
       l_stats_samp
 
     use array_index, only: &
@@ -595,27 +586,6 @@ contains
     call clip_covariance( xp2_xpyp_rtpthlp, .true.,  & ! Intent(in)
                           .true., dt, rtp2, thlp2,  &  ! Intent(in)
                           rtpthlp, rtpthlp_chnge )     ! Intent(inout)
-
-
-    if ( l_stats_samp ) then
-
-      call stat_end_update( irtp2_bt, real( rtp2 / dt), & ! Intent(in)
-                            zm )                          ! Intent(inout)
-
-      call stat_end_update( ithlp2_bt, real( thlp2 / dt), & ! Intent(in) 
-                            zm )                            ! Intent(inout)
-
-      call stat_end_update( irtpthlp_bt, real( rtpthlp / dt), & ! Intent(in)
-                            zm )                                ! Intent(inout)
-
-      call stat_end_update( iup2_bt, real( up2 / dt), & ! Intent(in)
-                            zm )                        ! Intent(inout)
-
-      call stat_end_update( ivp2_bt, real( vp2 / dt),& ! Intent(in)
-                            zm )                       ! Intent(inout)
-
-    endif
-
 
     if ( l_scalar_calc ) then
 

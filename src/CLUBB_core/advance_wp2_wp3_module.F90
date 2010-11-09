@@ -401,7 +401,6 @@ contains
         zt, & 
         sfc, & 
         l_stats_samp, & 
-        iwp2_bt, & 
         iwp2_ta, & 
         iwp2_ma, & 
         iwp2_pd, & 
@@ -931,8 +930,6 @@ contains
 
 
     if (l_stats_samp) then
-      call stat_end_update( iwp2_bt, real( wp2 / dt ), zm )
-
       call stat_end_update( iwp3_bt, real( wp3 / dt ), zt )
     endif
 

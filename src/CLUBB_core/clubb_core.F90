@@ -243,7 +243,8 @@ module clubb_core
     use stats_type, only: & 
       stat_update_var_pt, & ! Procedure(s)
       stat_update_var,    & 
-      stat_begin_update
+      stat_begin_update,  &
+      stat_end_update
 
     use stats_variables, only: &
       irtp2_bt,      & ! Variable(s)
@@ -1226,6 +1227,29 @@ module clubb_core
     !#######################################################################
     !#############            ACCUMULATE STATISTICS            #############
     !#######################################################################
+    
+    if ( l_stats_samp ) then
+
+      call stat_end_update( irtp2_bt, real( rtp2 / dt), &       ! Intent(in)
+                            zm )                                ! Intent(inout)
+
+      call stat_end_update( ithlp2_bt, real( thlp2 / dt), &     ! Intent(in) 
+                            zm )                                ! Intent(inout)
+
+      call stat_end_update( irtpthlp_bt, real( rtpthlp / dt), & ! Intent(in)
+                            zm )                                ! Intent(inout)
+
+      call stat_end_update( iup2_bt, real( up2 / dt), &         ! Intent(in)
+                            zm )                                ! Intent(inout)
+
+      call stat_end_update( ivp2_bt, real( vp2 / dt),&          ! Intent(in)
+                            zm )                                ! Intent(inout)
+                            
+      call stat_end_update( iwp2_bt, real( wp2 / dt ), &        ! Intent(in)
+                            zm )                                ! Intent(inout)
+
+    endif
+    
 
     if ( iwpthlp_zt > 0 ) then
       wpthlp_zt  = zm2zt( wpthlp )
