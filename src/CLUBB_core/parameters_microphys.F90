@@ -43,14 +43,13 @@ module parameters_microphys
 
 !$omp threadprivate(l_cloud_edge_activation, l_local_kk)
 
-  ! Flags for the Latin Hypercube sampling code (currently configured to run
-  ! in diagnostic mode)
-  logical, public :: & 
-    l_latin_hypercube_sampling, &   ! Latin Hypercube Sampling (K&K)
+  ! Flags for the Latin Hypercube sampling code 
+  logical, public :: &
+    l_fix_s_t_correlations, &       ! Use a fixed correlation for s and t Mellor
     l_lh_cloud_weighted_sampling, & ! Limit noise by sampling in-cloud
     l_lh_vert_overlap               ! Assume maximum overlap for s_mellor
 
-!$omp threadprivate(l_latin_hypercube_sampling, l_lh_cloud_weighted_sampling, &
+!$omp threadprivate(l_fix_s_t_correlations, l_lh_cloud_weighted_sampling, &
 !$omp   l_lh_vert_overlap)
 
   real, allocatable, dimension(:), public :: &

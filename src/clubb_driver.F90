@@ -240,7 +240,8 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
     use parameters_microphys, only: &
-      l_latin_hypercube_sampling ! Variable
+      LH_microphys_type, & ! Variable(s)
+      LH_microphys_disabled
 
     use latin_hypercube_driver_module, only: &
       latin_hypercube_2D_output, & ! Procedure(s)
@@ -877,7 +878,7 @@ module clubb_driver
     end if
 
 #ifdef UNRELEASED_CODE
-    if ( l_latin_hypercube_sampling ) then
+    if ( LH_microphys_type /= LH_microphys_disabled ) then
       call latin_hypercube_2D_output &
            ( fname_prefix, fdir, stats_tout, gr%nnzp, &
              gr%zt, time_initial  )
@@ -1080,7 +1081,7 @@ module clubb_driver
     call stats_finalize( )
 
 #ifdef UNRELEASED_CODE
-    if ( l_latin_hypercube_sampling ) then
+    if ( LH_microphys_type /= LH_microphys_disabled ) then
       call latin_hypercube_2D_close( )
     end if
 #endif

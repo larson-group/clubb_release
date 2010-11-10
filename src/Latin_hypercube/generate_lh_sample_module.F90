@@ -99,7 +99,7 @@ module generate_lh_sample_module
 
     ! Constant Parameters
     logical, parameter :: &
-      l_fix_s_t_correlations = .false. ! Use a fixed correlation between s and t Mellor
+      l_fix_s_t_correlations = .true. ! Use a fixed correlation between s and t Mellor
 
     ! Input Variables
     integer, intent(in) :: &

@@ -29,6 +29,7 @@ module microphys_driver
     l_arctic_nucl,                & ! Use MPACE observations (Morrison)
     l_cloud_edge_activation,      & ! Activate on cloud edges (Morrison)
     l_fix_pgam,                   & ! Fix pgam (Morrison)
+    l_fix_s_t_correlations,       & ! Use a fixed correlation for s and t Mellor (Latin Hypercube)
     l_lh_vert_overlap,            & ! Assume maximum overlap for s_mellor (Latin Hypercube)
     l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (Latin Hypercube)
     LH_microphys_calls,           & ! # of latin hypercube samples to call the microphysics with 
@@ -175,7 +176,7 @@ module microphys_driver
       l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, l_in_cloud_Nc_diff, &
       LH_microphys_type, l_local_kk, LH_microphys_calls, LH_sequence_length, &
-      l_lh_cloud_weighted_sampling, l_lh_vert_overlap, &
+      l_lh_cloud_weighted_sampling, l_fix_s_t_correlations, l_lh_vert_overlap, &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, rrp2_on_rrainm2_below, &
@@ -264,6 +265,7 @@ module microphys_driver
     !---------------------------------------------------------------------------
     Ncm_initial = 100. ! #/cm^3
 
+    l_fix_s_t_correlations = .false.
     l_lh_cloud_weighted_sampling = .false.
     l_lh_vert_overlap = .false.
     l_local_kk = .false.
@@ -326,6 +328,8 @@ module microphys_driver
         l_write_to_file, iunit )
       call write_text ( "l_lh_cloud_weighted_sampling = ", &
         l_lh_cloud_weighted_sampling, l_write_to_file, iunit )
+      call write_text ( "l_fix_s_t_correlations = ", l_fix_s_t_correlations, &
+        l_write_to_file, iunit )
       call write_text ( "l_lh_vert_overlap = ", l_lh_vert_overlap, &
         l_write_to_file, iunit )
       call write_text ( "rrp2_on_rrainm2_cloud = ", rrp2_on_rrainm2_cloud, &
