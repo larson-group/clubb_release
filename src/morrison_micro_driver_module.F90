@@ -33,11 +33,11 @@ module morrison_micro_driver_module
       sfc
 
     use stats_variables, only: & 
-      irsnowm_sd, & ! Variables
-      iricem_sd, & 
-      irrainm_sd, & 
-      irsnowm_sd, &
-      irgraupelm_sd
+      irsnowm_sd_morr, & ! Variables
+      iricem_sd_morr, & 
+      irrainm_sd_morr, & 
+      irsnowm_sd_morr, &
+      irgraupelm_sd_morr
 
     use stats_variables, only: & 
       ieff_rad_cloud, & ! Variables
@@ -209,13 +209,13 @@ module morrison_micro_driver_module
 
       ! --- Mixing ratios ---
 
-      call stat_update_var( irgraupelm_sd, hydromet_sten(:,iirgraupelm), zt )
+      call stat_update_var( irgraupelm_sd_morr, hydromet_sten(:,iirgraupelm), zt )
 
-      call stat_update_var( irrainm_sd, hydromet_sten(:,iirrainm), zt )
+      call stat_update_var( irrainm_sd_morr, hydromet_sten(:,iirrainm), zt )
 
-      call stat_update_var( irsnowm_sd, hydromet_sten(:,iirsnowm), zt )
+      call stat_update_var( irsnowm_sd_morr, hydromet_sten(:,iirsnowm), zt )
 
-      call stat_update_var( iricem_sd, hydromet_sten(:,iiricem), zt )
+      call stat_update_var( iricem_sd_morr, hydromet_sten(:,iiricem), zt )
 
       ! --- Number concentrations ---
       ! No budgets for sedimentation are output

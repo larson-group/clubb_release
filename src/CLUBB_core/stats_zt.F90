@@ -155,7 +155,8 @@ module stats_zt
     use stats_variables, only: & 
         irrainm_bt, & 
         irrainm_ma, & 
-        irrainm_sd, & 
+        irrainm_sd, &
+        irrainm_sd_morr, &
         irrainm_dff, & 
         irrainm_cond, & 
         irrainm_auto, & 
@@ -176,7 +177,8 @@ module stats_zt
         iNrm_cl, & 
         irsnowm_bt, & 
         irsnowm_ma, & 
-        irsnowm_sd, & 
+        irsnowm_sd, &
+        irsnowm_sd_morr, &
         irsnowm_dff
 
     use stats_variables, only: & 
@@ -184,13 +186,15 @@ module stats_zt
         irsnowm_cl, & 
         irgraupelm_bt, & 
         irgraupelm_ma, & 
-        irgraupelm_sd, & 
+        irgraupelm_sd, &
+        irgraupelm_sd_morr, &
         irgraupelm_dff, & 
         irgraupelm_mc, & 
         irgraupelm_cl, & 
         iricem_bt, & 
         iricem_ma, & 
-        iricem_sd, & 
+        iricem_sd, &
+        iricem_sd_morr, &
         iricem_dff, & 
         iricem_mc, & 
         iricem_cl, & 
@@ -481,6 +485,7 @@ module stats_zt
     irrainm_bt       = 0
     irrainm_ma       = 0
     irrainm_sd       = 0
+    irrainm_sd_morr  = 0
     irrainm_dff      = 0
     irrainm_cond     = 0
     irrainm_auto     = 0
@@ -521,26 +526,29 @@ module stats_zt
     iNcm_mc    = 0
     iNcm_cl    = 0
 
-    irsnowm_bt    = 0
-    irsnowm_ma    = 0
-    irsnowm_sd    = 0
-    irsnowm_dff   = 0
-    irsnowm_mc    = 0
-    irsnowm_cl    = 0
+    irsnowm_bt      = 0
+    irsnowm_ma      = 0
+    irsnowm_sd      = 0
+    irsnowm_sd_morr = 0
+    irsnowm_dff     = 0
+    irsnowm_mc      = 0
+    irsnowm_cl      = 0
 
-    irgraupelm_bt = 0
-    irgraupelm_ma = 0
-    irgraupelm_sd = 0
-    irgraupelm_dff= 0
-    irgraupelm_mc = 0
-    irgraupelm_cl = 0
+    irgraupelm_bt      = 0
+    irgraupelm_ma      = 0
+    irgraupelm_sd      = 0
+    irgraupelm_sd_morr = 0
+    irgraupelm_dff     = 0
+    irgraupelm_mc      = 0
+    irgraupelm_cl      = 0
 
-    iricem_bt     = 0
-    iricem_ma     = 0
-    iricem_sd     = 0
-    iricem_dff    = 0
-    iricem_mc     = 0
-    iricem_cl     = 0
+    iricem_bt      = 0
+    iricem_ma      = 0
+    iricem_sd      = 0
+    iricem_sd_morr = 0
+    iricem_dff     = 0
+    iricem_mc      = 0
+    iricem_cl      = 0
 
     ivm_bt = 0
     ivm_ma = 0
@@ -1392,6 +1400,14 @@ module stats_zt
         call stat_assign( irrainm_sd, "rrainm_sd", & 
              "rrainm budget: rrainm sedimentation [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
+        
+      case ('rrainm_sd_morr')
+        irrainm_sd_morr = k
+
+        call stat_assign( irrainm_sd_morr, "rrainm_sd_morr", & 
+             "rrainm sedimentation when using morrision microphysics (not in budget, included" &
+             // " in rrainm_mc) [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+        k = k + 1
 
       case ('rrainm_dff')
         irrainm_dff = k
@@ -1404,7 +1420,7 @@ module stats_zt
         irrainm_cond = k
 
         call stat_assign( irrainm_cond, "rrainm_cond", & 
-             "rrainm budget: rrainm condensation/evaporation [kg kg^{-1} s^{-1}]", &
+             "rrainm condensation/evaporation [kg kg^{-1} s^{-1}]", &
              "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
@@ -1412,13 +1428,13 @@ module stats_zt
         irrainm_auto = k
 
         call stat_assign( irrainm_auto, "rrainm_auto", & 
-             "rrainm budget: rrainm autoconversion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm autoconversion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_accr')
         irrainm_accr = k
         call stat_assign( irrainm_accr, "rrainm_accr", & 
-             "rrainm budget: rrainm accretion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm accretion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_cond_adj')
@@ -1447,7 +1463,7 @@ module stats_zt
         irrainm_mc = k
 
         call stat_assign( irrainm_mc, "rrainm_mc", & 
-             "Change in rrainm due to microphysics (Not in budget) [kg kg^{-1} s^{-1}]", &
+             "rrainm budget: Change in rrainm due to microphysics [kg kg^{-1} s^{-1}]", &
              "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
@@ -1484,14 +1500,14 @@ module stats_zt
         iNrm_cond = k
 
         call stat_assign( iNrm_cond, "Nrm_cond", & 
-             "Nrm budget: Change in Nrm due to condensation [(num/kg)/s]", "(num/kg)/s", zt )
+             "Change in Nrm due to condensation [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nrm_auto')
         iNrm_auto = k
 
         call stat_assign( iNrm_auto, "Nrm_auto", & 
-             "Nrm budget: Change in Nrm due to autoconversion [(num/kg)/s]", "(num/kg)/s", zt )
+             "Change in Nrm due to autoconversion [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1520,7 +1536,8 @@ module stats_zt
       case ('Nrm_mc')
         iNrm_mc = k
         call stat_assign( iNrm_mc, "Nrm_mc", & 
-             "Change in Nrm due to microphysics (Not in budget) [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Change in Nrm due to microphysics (Not in budget) [(num/kg)/s]", &
+             "(num/kg)/s", zt )
         k = k + 1
         
       case ('rsnowm_bt')
@@ -1541,6 +1558,13 @@ module stats_zt
         irsnowm_sd = k
         call stat_assign( irsnowm_sd, "rsnowm_sd", & 
              "rsnowm budget: rsnowm sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
+        k = k + 1
+        
+      case ('rsnowm_sd_morr')
+        irsnowm_sd_morr = k
+        call stat_assign( irsnowm_sd_morr, "rsnowm_sd_morr", & 
+             "rsnowm sedimentation when using morrison microphysics (Not in budget, included in" &
+             // " rsnowm_mc) [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rsnowm_dff')
@@ -1628,6 +1652,14 @@ module stats_zt
         call stat_assign( iricem_sd, "ricem_sd", & 
              "ricem budget: ricem sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
+        
+      case ('ricem_sd_morr')
+        iricem_sd_morr = k
+
+        call stat_assign( iricem_sd_morr, "ricem_sd_morr", & 
+             "ricem sedimentation when using morrison microphysics (not in budget, included in" &
+             // " ricem_mc) [(kg/kg)/s]", "(kg/kg)/s", zt )
+        k = k + 1
 
       case ('ricem_dff')
         iricem_dff = k
@@ -1669,6 +1701,14 @@ module stats_zt
 
         call stat_assign( irgraupelm_sd, "rgraupelm_sd", & 
              "rgraupelm budget: rgraupelm sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
+        k = k + 1
+        
+      case ('rgraupelm_sd_morr')
+        irgraupelm_sd_morr = k
+
+        call stat_assign( irgraupelm_sd_morr, "rgraupelm_sd_morr", & 
+             "rgraupelm sedimentation when using morrison microphysics (not in budget, included" &
+             // " in rgraupelm_mc) [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rgraupelm_dff')
