@@ -92,14 +92,13 @@ module generate_lh_sample_module
     use constants_clubb, only:  &
       fstderr  ! Constant(s)
 
+    use parameters_microphys, only: &
+      l_fix_s_t_correlations ! Varible(s)
+
     implicit none
 
     ! External
     intrinsic :: dble, min, max, sqrt
-
-    ! Constant Parameters
-    logical, parameter :: &
-      l_fix_s_t_correlations = .true. ! Use a fixed correlation between s and t Mellor
 
     ! Input Variables
     integer, intent(in) :: &
