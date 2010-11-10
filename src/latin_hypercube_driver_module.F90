@@ -29,7 +29,8 @@ module latin_hypercube_driver_module
                sequence_length, nnzp, &
                cloud_frac, thlm, p_in_Pa, exner, &
                rho, pdf_params, wm_zt, w_std_dev, delta_zt, delta_zm, rcm, rvm, &
-               hydromet, xp2_on_xm2_array, corr_array, Lscale_vert_avg, &
+               hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
+               corr_array_cloud, corr_array_below, Lscale_vert_avg, &
                LH_hydromet_mc, LH_hydromet_vel, LH_rcm_mc, &
                LH_rvm_mc, LH_thlm_mc, &
                microphys_sub )
@@ -180,11 +181,13 @@ module latin_hypercube_driver_module
     real, dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(nnzp,d_variables), intent(in) :: &
-      xp2_on_xm2_array ! Variance over mean squared array       [-]
+    real, dimension(d_variables), intent(in) :: &
+      xp2_on_xm2_array_cloud, &! Variances over mean values squared [-]
+      xp2_on_xm2_array_below
 
-    real, dimension(nnzp,d_variables,d_variables), intent(in) :: &
-      corr_array ! Correlation for hydrometeor species [-]
+    real, dimension(d_variables,d_variables), intent(in) :: &
+      corr_array_cloud, & ! Correlation for hydrometeor species [-]
+      corr_array_below
 
     real, dimension(nnzp), intent(in) :: &
       Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
@@ -464,7 +467,11 @@ module latin_hypercube_driver_module
           end if
         end do ! 1..d_variables
       end do ! 1..n_micro_calls
-
+      ! %% Debug %% 
+      ! Testing what happens when we clip uniformally distributed variates to
+      ! avoid extreme values.
+!     where ( X_u_all_levs (:,:,2:d_variables) > 0.99 ) X_u_all_levs(:,:,2:d_variables) = 0.99
+      ! %% Debug %% 
     else ! Random overlap
 
       do k = 1, nnzp
@@ -530,9 +537,10 @@ module latin_hypercube_driver_module
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
-             wm_zt(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
-             hydromet(k,:), xp2_on_xm2_array(k,:), corr_array(k,:,:), X_u_all_levs(k,:,:), & ! In
-             X_mixt_comp_all_levs(k,:), & ! In
+             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params, k, & ! In
+             hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
+             corr_array_cloud, corr_array_below, & ! In
+             X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k = k_lh_start..nnzp
 
@@ -540,9 +548,10 @@ module latin_hypercube_driver_module
     do k = k_lh_start-1, 1, -1
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
-             wm_zt(k), rcm(k)+rvm(k), thlm(k), pdf_params, k, & ! In
-             hydromet(k,:), xp2_on_xm2_array(k,:), corr_array(k,:,:), X_u_all_levs(k,:,:), & ! In
-             X_mixt_comp_all_levs(k,:), & ! In
+             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params, k, & ! In
+             hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
+             corr_array_cloud, corr_array_below, & ! In
+             X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k_lh_start-1..1
 

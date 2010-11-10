@@ -56,7 +56,7 @@ module matrix_operations
     return
   end subroutine symm_covar_matrix_2_corr_matrix
 !-----------------------------------------------------------------------
-  subroutine row_mult_lower_tri_matrix( ndim, xvector, tmatrix )
+  subroutine row_mult_lower_tri_matrix( ndim, xvector, tmatrix_in, tmatrix_out )
 
 ! Description:
 !   Do a row-wise multiply of the elements of a lower triangular matrix.
@@ -72,9 +72,13 @@ module matrix_operations
     double precision, dimension(ndim), intent(in) :: & 
       xvector ! Factors to be multiplied across a row [units vary]
 
-    ! Input/Output Variables
+    ! Input Variables
     double precision, dimension(ndim,ndim), intent(inout) :: &
-      tmatrix ! Covariance Matrix [units vary]
+      tmatrix_in ! nxn matrix (usually a correlation matrix) [units vary]
+
+    ! Output Variables
+    double precision, dimension(ndim,ndim), intent(inout) :: &
+      tmatrix_out ! nxn matrix (usually a covariance matrix) [units vary]
 
     ! Local Variables
     integer :: i, j
@@ -83,7 +87,7 @@ module matrix_operations
 
     do i = 1, ndim
       do j = 1, i
-        tmatrix(i,j) = tmatrix(i,j) * xvector(i)
+        tmatrix_out(i,j) = tmatrix_in(i,j) * xvector(i)
       end do
     end do
 
