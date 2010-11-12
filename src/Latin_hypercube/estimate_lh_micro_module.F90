@@ -865,7 +865,7 @@ module estimate_lh_micro_module
 
         else if ( ivar == iiNim .and. iiLH_Ni > 0 ) then
           ! Use a sampled value of rain droplet number concentration
-          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Nr) )
+          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Ni) )
 
         else ! Use the mean field, rather than a sample point
           ! This is the case for ice phase fields in the Morrison microphysics
