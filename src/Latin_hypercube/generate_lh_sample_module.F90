@@ -1835,10 +1835,7 @@ module generate_lh_sample_module
 !   None.
 !-------------------------------------------------------------------------------
     use array_index, only: &
-      iiLH_rrain, &
-      iiLH_Nr, &
-      iiLH_Nc, &
-      iiLH_s_mellor, &
+      iiLH_s_mellor, & ! Variable(s)
       iiLH_t_mellor, &
       iiLH_w
 
@@ -1847,6 +1844,9 @@ module generate_lh_sample_module
       get_lower_triangular_matrix_sp
 
     implicit none
+
+    ! External
+    intrinsic :: log
 
     ! Input Variables
     integer, intent(in) :: d_variables ! Number of variates
@@ -1862,29 +1862,20 @@ module generate_lh_sample_module
       corr_stw_matrix ! Correlations between variates with some terms in lognormal space
 
     ! Local Variables
-    real :: corr_rrNr, covar_rrNr, corr_srr, corr_sNr, &
-      covar_sNr, covar_srr
-
-    double precision :: &
-      covar_trr, covar_tNr
-
-    double precision :: &
-      var_rr, & ! Lognormal variance of rr    [-]
-      var_Nr, & ! Lognormal variance of Nr    [-]
-      var_Nc    ! Lognormal variance of Nc1    [-]
-
     real :: &
       corr_st ! Correlation for s,t  [-]
 
-    integer :: i, index1, index2, lognormal_index
+    integer :: i, index1, index2, LN_index
 
     ! ---- Begin Code ----
 
-    lognormal_index = max( iiLH_s_mellor, iiLH_t_mellor, iiLH_w )
+    ! LN_index is the location of the first variate which is lognormally
+    ! distributed (e.g. rain water mixing ratio).
+    LN_index = max( iiLH_s_mellor, iiLH_t_mellor, iiLH_w )+1
 
     corr_stw_matrix = 0.0 ! Initialize to 0
 
-    do i = 1, lognormal_index, 1
+    do i = 1, LN_index-1, 1
       ! Set main diagonal to 1
       corr_stw_matrix(i,i) = 1.0
     end do
@@ -1904,105 +1895,168 @@ module generate_lh_sample_module
            corr_stw_matrix ) ! In/out
 
     ! Compute the main diagonal for each lognormal variate
-    if ( iiLH_Nc > 0 ) then
-      var_Nc = log( 1. + Xp2_on_Xm2_array(iiLH_Nc) )
-      corr_stw_matrix(iiLH_Nc,iiLH_Nc) = var_Nc
-    end if
+    forall ( i = LN_index:d_variables )
+      corr_stw_matrix(i,i) = log( 1. + Xp2_on_Xm2_array(i) )
+    end forall
 
-    if ( iiLH_Nr > 0 ) then
-      var_Nr = log( 1. + Xp2_on_Xm2_array(iiLH_Nr) )
-      corr_stw_matrix(iiLH_Nr,iiLH_Nr) = var_Nr
-    end if
+    do index1 = LN_index, d_variables
+      do index2 = LN_index, index1
+        ! Add all lognormal covariances
+        call add_corr_to_matrix_LN_LN &
+             ( d_variables, index1, index2, & ! In
+               xp2_on_xm2_array, corr_array, & ! In
+               corr_stw_matrix ) ! In/Out
+      end do
+    end do
 
-    if ( iiLH_rrain > 0 ) then
-      var_rr = log( 1. + Xp2_on_Xm2_array(iiLH_rrain) )
-      corr_stw_matrix(iiLH_rrain,iiLH_rrain) = var_rr
-    end if
-
-    if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
-
-      index1 = iiLH_rrain
-      index2 = iiLH_Nr
-
-      ! Lognormal covariance between rain water mixing ratio rain number concentration
-
-      call get_lower_triangular_matrix_sp &
-           ( d_variables, index1, index2, corr_array, & ! In
-             corr_rrNr ) ! Out
-
-      call construct_LN_LN_element &
-           ( corr_rrNr, xp2_on_xm2_array(index1), xp2_on_xm2_array(index2), & ! In
-             covar_rrNr ) ! Out
-
-      call set_lower_triangular_matrix_dp &
-           ( d_variables, index1, index2, dble( covar_rrNr ), & ! In
-             corr_stw_matrix ) ! In/out
-
-    end if ! if iiLH_rrain > 0 .and. iiLH_Nr > 0
-
-    if ( iiLH_Nr > 0 ) then
-
-      index1 = iiLH_s_mellor
-      index2 = iiLH_Nr
-
-      ! Correlations involving s and Nr
-
-      call get_lower_triangular_matrix_sp &
-           ( d_variables, index1, index2, corr_array, & ! In
-             corr_sNr ) ! Out
-
-      ! Correlation between s and rain number conc.
-      call construct_gaus_LN_element &
-           ( corr_sNr, 1.0, xp2_on_xm2_array(index2), & ! In
-             covar_sNr ) ! Out
-
-      call set_lower_triangular_matrix_dp &
-           ( d_variables, index1, index2, dble( covar_sNr ), & ! In
-             corr_stw_matrix ) ! In/out
-
-      ! Approximate the correlation of t and Nr
-      ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
-      covar_tNr = ( corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) &
-        * dble( covar_sNr ) )
-
-      call set_lower_triangular_matrix_dp &
-           ( d_variables, iiLH_t_mellor, iiLH_Nr, covar_tNr, & ! In
-             corr_stw_matrix ) ! In/out
-
-    end if ! iiLH_Nr > 0
-
-    if ( iiLH_rrain > 0 ) then
-      index1 = iiLH_s_mellor
-      index2 = iiLH_rrain
-
-      ! Correlations involving s and rr
-
-      call get_lower_triangular_matrix_sp &
-           ( d_variables, index1, index2, corr_array, & ! In
-             corr_srr ) ! Out
-
-      ! Correlation between s and rain water mixing ratio
-      call construct_gaus_LN_element &
-           ( corr_srr, 1.0, xp2_on_xm2_array(index2), & ! In
-             covar_srr ) ! Out
-
-      call set_lower_triangular_matrix_dp &
-           ( d_variables, iiLH_s_mellor, iiLH_rrain, dble( covar_srr ), & ! In
-             corr_stw_matrix ) ! In/out
-
-      ! Approximate the covariance of t and rr
-      ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
-      covar_trr = ( corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) &
-        * dble( covar_srr ) )
-
-      call set_lower_triangular_matrix_dp &
-           ( d_variables, iiLH_t_mellor, iiLH_rrain, covar_trr, & ! In
-             corr_stw_matrix ) ! In/out
-
-    end if ! if iiLH_rrain > 0
+    ! Correlations involving s,t and the lognormal variates
+    do index1 = LN_index, d_variables
+      call add_corr_to_matrix_gaus_LN &
+           ( d_variables, iiLH_s_mellor, &
+             iiLH_t_mellor, index1, &
+             xp2_on_xm2_array, corr_array, &
+             corr_stw_matrix )
+    end do 
 
     return
   end subroutine construct_corr_stw_matrix
+
+!-------------------------------------------------------------------------------
+  subroutine add_corr_to_matrix_LN_LN( d_variables, index1, index2, &
+                                       xp2_on_xm2_array, corr_array, &
+                                       corr_stw_matrix )
+! Description:
+!   Added a correlation between two lognormally distributed variates to a
+!   correlation matrix.
+! References:
+!   None
+!-------------------------------------------------------------------------------
+    use matrix_operations, only: &
+      get_lower_triangular_matrix_sp, & ! Procedure(s)
+      set_lower_triangular_matrix_dp
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables, & ! Total variates
+      index1, index2 ! Index of the 2 variates
+
+    real, dimension(d_variables), intent(in) :: &
+      xp2_on_xm2_array ! x'^2 / xm^2 array      [-]
+
+    real, dimension(d_variables,d_variables), intent(in) :: &
+      corr_array ! Array of correlations        [-]
+
+    ! Input/Output Variables
+    double precision, dimension(d_variables,d_variables), intent(inout) :: &
+      corr_stw_matrix ! Correlation matrix      [-]
+
+    ! Local Variables
+    real :: &
+      corr_xy, & ! Correlation between two variates
+      covar_xy   ! Lognormal covariance (not a dimensional covariance)
+
+    ! ---- Begin Code ----
+
+    ! Lognormal covariance between two lognormal variates (e.g. rrain and Nr )
+
+    call get_lower_triangular_matrix_sp &
+         ( d_variables, index1, index2, corr_array, & ! In
+           corr_xy ) ! Out
+
+    if ( corr_xy /= 0. ) then
+      call construct_LN_LN_element &
+           ( corr_xy, xp2_on_xm2_array(index1), xp2_on_xm2_array(index2), & ! In
+             covar_xy ) ! Out
+    else
+      covar_xy = 0.
+    end if
+
+    call set_lower_triangular_matrix_dp &
+         ( d_variables, index1, index2, dble( covar_xy ), & ! In
+           corr_stw_matrix ) ! In/out
+ 
+    return
+  end subroutine add_corr_to_matrix_LN_LN
+
+!-------------------------------------------------------------------------------
+  subroutine add_corr_to_matrix_gaus_LN( d_variables, iiLH_s_mellor, &
+                                         iiLH_t_mellor, index1, &
+                                         xp2_on_xm2_array, corr_array, &
+                                         corr_stw_matrix )
+! Description:
+!   Added a correlation between s,t Mellor and a lognormal variate to a
+!   correlation matrix.
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    use matrix_operations, only: &
+      get_lower_triangular_matrix_sp, & ! Procedure(s)
+      set_lower_triangular_matrix_dp
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables, & ! Total variates
+      iiLH_s_mellor, iiLH_t_mellor, & ! Index of s,t
+      index1 ! Index of the lognormal variate
+
+    real, dimension(d_variables), intent(in) :: &
+      xp2_on_xm2_array ! x'^2 / xm^2 array      [-]
+
+    real, dimension(d_variables,d_variables), intent(in) :: &
+      corr_array ! Array of correlations        [-]
+
+    ! Input/Output Variables
+    double precision, dimension(d_variables,d_variables), intent(inout) :: &
+      corr_stw_matrix ! Correlation matrix      [-]
+
+    ! Local Variables
+    real :: &
+      corr_sx, &! Correlation between s and a lognormal variates
+      covar_sx  ! Lognormal covariance of s_mellor and x
+
+    double precision :: &
+      covar_tx    ! Lognormal covariance of t_mellor and x
+
+    ! ---- Begin Code ----
+
+    ! Correlations involving s and lognormal variate x
+
+    call get_lower_triangular_matrix_sp &
+         ( d_variables, iiLH_s_mellor, index1, corr_array, & ! In
+           corr_sx ) ! Out
+
+    if ( corr_sx /= 0. ) then
+      ! Correlation between s and rain water mixing ratio
+      call construct_gaus_LN_element &
+           ( corr_sx, 1.0, xp2_on_xm2_array(index1), & ! In
+             covar_sx ) ! Out
+    else
+      covar_sx = 0.
+    endif
+
+    call set_lower_triangular_matrix_dp &
+         ( d_variables, iiLH_s_mellor, index1, dble( covar_sx ), & ! In
+           corr_stw_matrix ) ! In/out
+
+    if ( corr_sx /= 0 ) then
+      ! Approximate the covariance of t and x
+      ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
+      covar_tx = ( corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) * dble( covar_sx ) )
+    else
+      covar_tx = 0.
+    end if
+
+    call set_lower_triangular_matrix_dp &
+         ( d_variables, iiLH_t_mellor, index1, covar_tx, & ! In
+           corr_stw_matrix ) ! In/out
+
+    return
+  end subroutine add_corr_to_matrix_gaus_LN
 
 end module generate_lh_sample_module
 

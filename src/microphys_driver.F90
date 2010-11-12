@@ -661,7 +661,7 @@ module microphys_driver
 #ifdef UNRELEASED_CODE
       ! Allocate and set the arrays containing the correlations 
       ! and the X'^2 / X'^2 terms
-      call setup_corr_varnce_array( d_variables=i )
+      call setup_corr_varnce_array( d_variables_in=i )
 #endif
 
       ! Allocate the sample point weights array
@@ -833,7 +833,7 @@ module microphys_driver
 #ifdef UNRELEASED_CODE
     use latin_hypercube_arrays, only: &
       xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
-      corr_array_cloud, corr_array_below
+      corr_array_cloud, corr_array_below, d_variables
 #endif /* UNRELEASED_CODE */
 
     implicit none
@@ -939,8 +939,6 @@ module microphys_driver
 
     integer :: i, k, kp1, km1 ! Loop iterators / Array indices
 
-    integer :: d_variables
-
     integer :: ixrm_cl, ixrm_bt, ixrm_mc
 
     character(len=10) :: hydromet_name
@@ -1040,7 +1038,6 @@ module microphys_driver
       thlm_mc(:) = 0.0
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
-        d_variables = hydromet_dim + 3
 #ifdef UNRELEASED_CODE
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
@@ -1102,7 +1099,6 @@ module microphys_driver
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 
 #ifdef UNRELEASED_CODE
-        d_variables = hydromet_dim + 3
         call latin_hypercube_driver &
              ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
                LH_sequence_length, gr%nnzp, & ! In

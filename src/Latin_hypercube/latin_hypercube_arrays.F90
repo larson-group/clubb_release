@@ -7,6 +7,8 @@ module latin_hypercube_arrays
 
   private
 
+  integer, public :: d_variables
+
   real, public, dimension(:), allocatable :: &
     xp2_on_xm2_array_cloud, &
     xp2_on_xm2_array_below
@@ -17,9 +19,9 @@ module latin_hypercube_arrays
 
   contains
 !===============================================================================
-  subroutine setup_corr_varnce_array( d_variables )
+  subroutine setup_corr_varnce_array( d_variables_in )
 ! Description:
-!   Setup an array with the x'^2/x variables on the diagonal and the other
+!   Setup an array with the x'^2/xm^2 variables on the diagonal and the other
 !   elements to be correlations between various variables.
 ! References:
 !   None.
@@ -58,11 +60,12 @@ module latin_hypercube_arrays
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables ! Number of variates in the array
+      d_variables_in ! Number of variates in the array
 
     integer :: i
 
     ! ---- Begin Code ----
+    d_variables = d_variables_in
 
     allocate( corr_array_cloud(d_variables,d_variables) )
     allocate( corr_array_below(d_variables,d_variables) )
@@ -94,9 +97,11 @@ module latin_hypercube_arrays
 
     if ( iiLH_Nc > 0 ) then
       xp2_on_xm2_array_cloud(iiLH_Nc) = Ncp2_on_Ncm2_cloud
-      call set_lower_triangular_matrix_sp &
-           ( d_variables, iiLH_s_mellor, iiLH_Nc, corr_sNc_NL_cloud, &
-             corr_array_cloud )
+      ! Since we have no correlations between Nc and the other variates, we must
+      ! current omit the covariance of s and Nc from the matrix.
+!     call set_lower_triangular_matrix_sp &
+!          ( d_variables, iiLH_s_mellor, iiLH_Nc, corr_sNc_NL_cloud, &
+!            corr_array_cloud )
     end if
 
     if ( iiLH_rrain > 0 ) then
@@ -163,9 +168,11 @@ module latin_hypercube_arrays
         ! The epsilon is a kluge to prevent a singular matrix in generate_lh_sample
         xp2_on_xm2_array_below(iiLH_Nc) = &
           max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
-        call set_lower_triangular_matrix_sp &
-             ( d_variables, iiLH_Nc, iiLH_s_mellor, corr_sNc_NL_below, &
-               corr_array_below )
+        ! Since we have no correlations between Nc and the other variates, we must
+        ! current omit the covariance of s and Nc from the matrix.
+!       call set_lower_triangular_matrix_sp &
+!            ( d_variables, iiLH_Nc, iiLH_s_mellor, corr_sNc_NL_below, &
+!              corr_array_below )
       end if
       if ( iiLH_rrain > 0 ) then
         xp2_on_xm2_array_below(iiLH_rrain) = rrp2_on_rrainm2_below
@@ -206,7 +213,8 @@ module latin_hypercube_arrays
              ( d_variables, iiLH_rice, iiLH_s_mellor, corr_sNc_NL_below, &
                corr_array_below )
         if ( iiLH_Ni > 0 ) then
-          xp2_on_xm2_array_below(iiLH_Ni)     = Ncp2_on_Ncm2_below
+          xp2_on_xm2_array_below(iiLH_Ni) =  &
+            max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
           call set_lower_triangular_matrix_sp &
                ( d_variables, iiLH_Ni, iiLH_s_mellor, corr_sNc_NL_below, &
                  corr_array_below )
