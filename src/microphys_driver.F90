@@ -715,9 +715,10 @@ module microphys_driver
         hydromet_dim   ! Integer
 
     use constants_clubb, only:  & 
-        Lv,   & ! Constant(s)
-        Cp,  & 
-        rho_lw,  & 
+        Lv, & ! Constant(s)
+        Ls, &
+        Cp, & 
+        rho_lw, & 
         rc_tol, &
         fstderr, & 
         zero_threshold, &
@@ -932,7 +933,9 @@ module microphys_driver
       wtmp,    & ! Standard dev. of w                   [m/s]
       s_mellor   ! The variable 's' in Mellor (1977)    [kg/kg]
 
-    real :: max_velocity ! Maximum sedimentation velocity [m/s]
+    real :: &
+      max_velocity, & ! Maximum sedimentation velocity [m/s]
+      temp            ! Temporary variables     [units vary]
 
     integer :: i, k, kp1, km1 ! Loop iterators / Array indices
 
@@ -1396,6 +1399,43 @@ module microphys_driver
                                    rho_ds_zt, rho_ds_zm, &
                                    hydromet(:,i) )
 
+            ! If the hole filling algorithm failed, then we attempt to fill 
+            ! the missing mass with water vapor mixing ratio.
+            ! We noticed this is needed for ASEX A209, particularly if Latin
+            ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
+            do k = 2, gr%nnzp
+              if ( hydromet(k,i) < zero_threshold ) then
+
+                ! Set temp to the time tendency applied to vapor and removed
+                ! from the hydrometeor.
+                temp = hydromet(k,i) / real( dt )
+
+                ! Adjust the tendency rvm_mc accordingly
+                rvm_mc(k) = rvm_mc(k) + temp
+
+                ! Adjust the tendency of thlm_mc according to whether the effect
+                ! is an evaporation or sublimation tendency.
+                select case ( trim( hydromet_name ) )
+                case( "rrainm" )
+                  thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
+                case( "ricem", "rsnowm", "rgraupelm" )
+                  thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
+                case default
+                  stop "Fatal error in microphys_driver"
+                end select
+
+                ! Set the mixing ratio to 0
+                hydromet(k,i) = zero_threshold
+
+              end if ! hydromet(i,k) < 0
+            end do ! k = 2..gr%nnzp
+
+            ! Boundary condition
+            ! Rain, snow and graupel which is at the ghost point has presumably
+            ! sedimented out of the model domain, and is not conserved.
+            if ( hydromet(i,1) < zero_threshold ) then
+              hydromet(i,1) = zero_threshold
+            end if
           else
             ! This includes the case where the variable is a number
             ! concentration and is therefore not conserved.
