@@ -481,6 +481,12 @@ module microphys_driver
         stop "Fatal error."
       end if
 
+      if ( .not. l_fix_s_t_correlations .and. l_ice_micro &
+           .and. trim( LH_microphys_type ) /= "disabled" ) then
+        write(fstderr,*) "The variable l_fix_s_t_correlations must be true in order to "// &
+          "enable latin hypercube sampling and ice microphysics."
+        stop "Fatal error."
+      end if
       allocate( l_hydromet_sed(hydromet_dim) )
       ! Sedimentation is handled within the Morrison microphysics
       l_hydromet_sed(iiNrm) = .false.
@@ -617,7 +623,7 @@ module microphys_driver
       stop
     end if
 
-    select case ( trim ( LH_microphys_type ) )
+    select case ( trim( LH_microphys_type ) )
     case ( "interactive" )
       LH_microphys_type_int = LH_microphys_interactive
 
