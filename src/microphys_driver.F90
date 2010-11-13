@@ -642,21 +642,18 @@ module microphys_driver
       i = iiLH_w
 
       call return_LH_index( iiNcm, i, iiLH_Nc )
-      call return_LH_index( iiNrm, i, iiLH_Nr )
-!     call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
-      iiLH_Nsnow = -1
-!     call return_LH_index( iiNim, i, iiLH_Ni )
-      iiLH_Ni = -1
-!     call return_LH_index( iiNgraupelm, i, iiLH_Ngraupel )
-      iiLH_Ngraupel = -1
-
       call return_LH_index( iirrainm, i, iiLH_rrain )
-!     call return_LH_index( iirsnowm, i, iiLH_rsnow )
-      iiLH_rsnow = -1
-!     call return_LH_index( iiricem, i, iiLH_rice )
-      iiLH_rice = -1
-!     call return_LH_index( iirgraupelm, i, iiLH_rgraupel )
-      iiLH_rgraupel = -1
+      call return_LH_index( iiNrm, i, iiLH_Nr )
+      if ( l_ice_micro ) then
+        call return_LH_index( iiricem, i, iiLH_rice )
+        call return_LH_index( iiNim, i, iiLH_Ni )
+        call return_LH_index( iirsnowm, i, iiLH_rsnow )
+        call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
+        if ( l_graupel ) then
+          call return_LH_index( iirgraupelm, i, iiLH_rgraupel )
+          call return_LH_index( iiNgraupelm, i, iiLH_Ngraupel )
+        end if
+      end if
 
 #ifdef UNRELEASED_CODE
       ! Allocate and set the arrays containing the correlations 

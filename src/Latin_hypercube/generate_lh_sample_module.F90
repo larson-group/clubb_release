@@ -64,11 +64,23 @@ module generate_lh_sample_module
 
     use array_index, only: &
       iiNcm,    & ! Variables
+      iiNim,    &
+      iiNsnowm, &
       iiNrm,    &
       iirrainm, &
+      iiricem, &
+      iirsnowm, &
+      iiNgraupelm, &
+      iirgraupelm, &
       iiLH_rrain, &
+      iiLH_rsnow, &
+      iiLH_rice, &
+      iiLH_rgraupel, &
       iiLH_Nr, &
       iiLH_Nc, &
+      iiLH_Ni, &
+      iiLH_Nsnow, &
+      iiLH_Ngraupel, &
       iiLH_s_mellor, &
       iiLH_t_mellor, &
       iiLH_w
@@ -203,14 +215,10 @@ module generate_lh_sample_module
       Sigma_stw_2    ! Covariance of s,t, w + hydrometeors for plume 2
 
     double precision :: &
-      Ncm,     & ! Cloud droplet number concentration.[number / kg air]
-      Nc1,     & ! PDF parameter for mean of plume 1. [#/kg]
-      Nc2,     & ! PDF parameter for mean of plume 2. [#/kg]
+!     Ncm,     & ! Cloud droplet number concentration.[number / kg air]
       var_Nc1, & ! PDF param for width of plume 1.    [(#/kg)^2]
       var_Nc2, & ! PDF param for width of plume 2.    [(#/kg^2]
       Nrm,     & ! Rain droplet number concentration. [number / kg air]
-      Nr1,     & ! PDF parameter for mean of plume 1. [#/kg]
-      Nr2,     & ! PDF parameter for mean of plume 2. [#/kg]
       var_Nr1, & ! PDF param for width of plume 1.    [(#/kg)^2]
       var_Nr2    ! PDF param for width of plume 2.    [(#/kg^2]
 
@@ -233,8 +241,6 @@ module generate_lh_sample_module
     ! rr = specific rain content. [rr] = kg rain / kg air
     double precision :: &
       rrainm, &  ! rain water mixing ratio         [kg/kg]
-      rr1, &  ! PDF parameter for mean of plume 1. [kg/kg]
-      rr2, &  ! PDF parameter for mean of plume 2. [kg/kg]
       var_rr1, & ! PDF param for width of plume 1     [(kg/kg)^2]
       var_rr2    ! PDF param for width of plume 2.    [(kg/kg)^2]
 
@@ -244,11 +250,6 @@ module generate_lh_sample_module
       tp2_mellor_1, sp2_mellor_1,  & ! Variance of s,t         [(kg/kg)^2]
       sptp_mellor_1                  ! Covariance of s and t   [kg/kg]
 
-
-    double precision :: &
-      Ncp2_on_Ncm2, & ! = Ncp2 divided by Ncm^2    [-]
-      Nrp2_on_Nrm2, & ! = Nrp2 divided by Nrm^2    [-]
-      rrp2_on_rrainm2 ! = rrp2 divided by rrainm^2 [-]
 
     double precision, dimension(d_variables,d_variables) :: &
       Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
@@ -385,11 +386,9 @@ module generate_lh_sample_module
     ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
 
     if ( iiLH_Nc > 0 ) then
-      Ncm = dble( hydromet(iiNcm) )
-      Ncp2_on_Ncm2 = dble( xp2_on_xm2_array(iiLH_Nc) )
-
-      call log_sqd_normalized( Ncm, Ncp2_on_Ncm2, & ! In
-                               Nc1, Nc2 ) ! Out
+      call add_mu_element_LN &
+           ( d_variables, iiLH_Nc, dble( hydromet(iiNcm) ), xp2_on_xm2_array, & ! In
+             mu1, mu2 ) ! In/out
     end if
 
     ! rr = specific rain content. [rr] = kg rain / kg air
@@ -398,19 +397,53 @@ module generate_lh_sample_module
     ! rr2  = PDF parameter for mean of plume 2. [rr2] = (kg/kg)
 
     if ( iiLH_rrain > 0 ) then
-      rrainm = dble( hydromet(iirrainm) )
-      rrp2_on_rrainm2 = dble( xp2_on_xm2_array(iiLH_rrain) )
-      call log_sqd_normalized( rrainm, rrp2_on_rrainm2, & ! In
-                               rr1, rr2 ) ! Out
+      call add_mu_element_LN &
+           ( d_variables, iiLH_rrain, dble( hydromet(iirrainm) ), xp2_on_xm2_array, & ! In
+             mu1, mu2 ) ! In/out
     end if
 
     if ( iiLH_Nr > 0 ) then
-      Nrm = dble( hydromet(iiNrm) )
-      Nrp2_on_Nrm2 = dble( xp2_on_xm2_array(iiLH_Nr) )
-
-      call log_sqd_normalized( Nrm, Nrp2_on_Nrm2, & ! In
-                               Nr1, Nr2 ) ! Out
+      call add_mu_element_LN &
+           ( d_variables, iiLH_Nr, dble( hydromet(iiNrm) ), xp2_on_xm2_array, & ! In
+             mu1, mu2 ) ! In/out
     end if
+
+    if ( iiLH_rsnow > 0 ) then
+      call add_mu_element_LN &
+           ( d_variables, iiLH_rsnow, dble( hydromet(iirsnowm) ), xp2_on_xm2_array, & ! In
+             mu1, mu2 ) ! In/out
+    end if
+
+    if ( iiLH_Nsnow > 0 ) then
+      call add_mu_element_LN &
+           ( d_variables, iiLH_Nsnow, dble( hydromet(iiNsnowm) ), xp2_on_xm2_array, & ! In
+             mu1, mu2 ) ! In/out
+    end if
+
+    if ( iiLH_rice > 0 ) then
+      call add_mu_element_LN &
+           ( d_variables, iiLH_rice, dble( hydromet(iiricem) ), xp2_on_xm2_array, & ! In
+             mu1, mu2 ) ! In/out
+    end if
+
+    if ( iiLH_Ni > 0 ) then
+      call add_mu_element_LN &
+           ( d_variables, iiLH_Ni, dble( hydromet(iiNim) ), xp2_on_xm2_array, & ! In
+             mu1, mu2 ) ! In/out
+    end if
+
+    if ( iiLH_rgraupel > 0 ) then
+      call add_mu_element_LN &
+           ( d_variables, iiLH_rgraupel, dble( hydromet(iirgraupelm) ), xp2_on_xm2_array, & ! In
+             mu1, mu2 ) ! In/out
+    end if
+
+    if ( iiLH_Ngraupel > 0 ) then
+      call add_mu_element_LN &
+           ( d_variables, iiLH_Ngraupel, dble( hydromet(iiNgraupelm) ), xp2_on_xm2_array, & ! In
+             mu1, mu2 ) ! In/out
+    end if
+
 
     ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
 
@@ -418,21 +451,6 @@ module generate_lh_sample_module
       = (/ s1, 0., w1 /)
     mu2((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
       = (/ s2, 0., w2 /)
-
-    if ( iiLH_rrain > 0 ) then
-      mu1(iiLH_rrain) = real( rr1 )
-      mu2(iiLH_rrain) = real( rr2 )
-    end if
-
-    if ( iiLH_Nc > 0 ) then
-      mu1(iiLH_Nc) = real( Nc1 )
-      mu2(iiLH_Nc) = real( Nc2 )
-    end if
-
-    if ( iiLH_Nr > 0 ) then
-      mu1(iiLH_Nr) = real( Nr1 )
-      mu2(iiLH_Nr) = real( Nr2 )
-    end if
 
     ! An old subroutine, gaus_rotate, couldn't handle large correlations;
     !   I assume the replacement, gaus_condt, has equal trouble.
@@ -481,6 +499,7 @@ module generate_lh_sample_module
       Sigma_stw_2(iiLH_w,iiLH_w) = dble( varnce_w2 )
 
       if ( iiLH_Nc > 0 ) then
+!       Ncm = dble( hydromet(iiNcm) )
         ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
         var_Nc1 = log( 1. + Xp2_on_Xm2_array(iiLH_Nc) )
         var_Nc2 = var_Nc1
@@ -489,6 +508,7 @@ module generate_lh_sample_module
       end if
 
       if ( iiLH_Nr > 0 ) then
+        Nrm = dble( hydromet(iiNrm) )
         ! var_Nr1,2 = PDF param for width of plume 1,2. [var_Nr1,2] = (#/kg)**2
         var_Nr1 = log( 1. + Xp2_on_Xm2_array(iiLH_Nr) )
         var_Nr2 = var_Nr1
@@ -497,13 +517,13 @@ module generate_lh_sample_module
       end if
 
       if ( iiLH_rrain > 0 ) then
+        rrainm = dble( hydromet(iirrainm) )
         ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
         var_rr1 = log( 1. + Xp2_on_Xm2_array(iiLH_rrain) )
         var_rr2 = var_rr1
         Sigma_stw_1(iiLH_rrain,iiLH_rrain) = var_rr1
         Sigma_stw_2(iiLH_rrain,iiLH_rrain) = var_rr2
       end if
-
 
       if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
 
@@ -1986,7 +2006,7 @@ module generate_lh_sample_module
                                          xp2_on_xm2_array, corr_array, &
                                          corr_stw_matrix )
 ! Description:
-!   Added a correlation between s,t Mellor and a lognormal variate to a
+!   Add a correlation between s,t Mellor and a lognormal variate to a
 !   correlation matrix.
 ! References:
 !   None
@@ -2057,6 +2077,48 @@ module generate_lh_sample_module
 
     return
   end subroutine add_corr_to_matrix_gaus_LN
+
+!-------------------------------------------------------------------------------
+  subroutine add_mu_element_LN( d_variables, index1, xm, xp2_on_xm2, mu1, mu2 )
+
+! Description:
+!   Compute an element of mu1 and mu2 for a lognormal variate.
+
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    implicit none
+
+    integer, intent(in) :: &
+      d_variables, & ! Number of variates
+      index1         ! Index of x in mu1 and mu1
+
+    double precision, intent(in) :: &
+      Xm ! Mean X  [kg/kg or #/kg]
+
+    real, dimension(d_variables), intent(in) :: & 
+      xp2_on_xm2 ! X'^2 / Xm^2 array [-]
+
+    real, dimension(d_variables), intent(inout) :: &
+      mu1, mu2 ! Mu 1 and 2     [-]
+
+    double precision :: &
+      xp2_on_xm2_element, & ! X'^2 / Xm^2 array [-]
+      X1, X2  ! PDF parameter for mean of plume 1 and 2.
+
+    ! ---- Begin Code ----
+
+    xp2_on_xm2_element = dble( xp2_on_xm2(index1) )
+
+    call log_sqd_normalized( Xm, xp2_on_xm2_element, & ! In
+                             X1, X2 ) ! Out
+
+    mu1(index1) = real( X1 )
+    mu2(index1) = real( X2 )
+
+    return
+  end subroutine add_mu_element_LN
 
 end module generate_lh_sample_module
 
