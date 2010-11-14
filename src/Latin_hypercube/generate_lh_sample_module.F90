@@ -110,7 +110,7 @@ module generate_lh_sample_module
     implicit none
 
     ! External
-    intrinsic :: dble, min, max, sqrt
+    intrinsic :: dble, min, max, sqrt, null
 
     ! Input Variables
     integer, intent(in) :: &
@@ -271,13 +271,13 @@ module generate_lh_sample_module
       temp_3_elements
 
     real, pointer, dimension(:) :: &
-      xp2_on_xm2_array ! Pointer for the x'2 / xm^2 array
+      xp2_on_xm2_array => null() ! Pointer for the x'2 / xm^2 array
 
     real, pointer, dimension(:,:) :: &
-      corr_array  ! Correlation array pointer
+      corr_array => null()  ! Correlation array pointer
 
     double precision, pointer, dimension(:,:) :: &
-      corr_stw_matrix_Cholesky ! Pointer to the correct Cholesky factorization
+      corr_stw_matrix_Cholesky => null() ! Pointer to the correct Cholesky factorization
 
     logical :: l_in_cloud
 
