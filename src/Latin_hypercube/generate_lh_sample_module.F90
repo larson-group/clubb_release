@@ -2056,7 +2056,8 @@ module generate_lh_sample_module
            corr_sx ) ! Out
 
     if ( corr_sx /= 0. ) then
-      ! Correlation between s and rain water mixing ratio
+      ! Covariance between s and lognormal variate x
+      ! The variable x could be rrain, Nr, Nc, et cetera.
       call construct_gaus_LN_element &
            ( corr_sx, 1.0, xp2_on_xm2_array(index1), & ! In
              covar_sx ) ! Out
@@ -2087,7 +2088,8 @@ module generate_lh_sample_module
            corr_wx ) ! Out
 
     if ( corr_wx /= 0. ) then
-      ! Correlation between w and rain water mixing ratio
+      ! Covariance between w and lognormal variate x
+      ! The variable x could be rrain, Nr, Nc, et cetera.
       call construct_gaus_LN_element &
            ( corr_wx, 1.0, xp2_on_xm2_array(index1), & ! In
              covar_wx ) ! Out
