@@ -2087,7 +2087,7 @@ module generate_lh_sample_module
            corr_wx ) ! Out
 
     if ( corr_wx /= 0. ) then
-      ! Correlation between s and rain water mixing ratio
+      ! Correlation between w and rain water mixing ratio
       call construct_gaus_LN_element &
            ( corr_wx, 1.0, xp2_on_xm2_array(index1), & ! In
              covar_wx ) ! Out
