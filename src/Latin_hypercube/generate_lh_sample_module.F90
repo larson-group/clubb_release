@@ -508,7 +508,6 @@ module generate_lh_sample_module
       end if
 
       if ( iiLH_Nr > 0 ) then
-        Nrm = dble( hydromet(iiNrm) )
         ! var_Nr1,2 = PDF param for width of plume 1,2. [var_Nr1,2] = (#/kg)**2
         var_Nr1 = log( 1. + Xp2_on_Xm2_array(iiLH_Nr) )
         var_Nr2 = var_Nr1
@@ -517,7 +516,6 @@ module generate_lh_sample_module
       end if
 
       if ( iiLH_rrain > 0 ) then
-        rrainm = dble( hydromet(iirrainm) )
         ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
         var_rr1 = log( 1. + Xp2_on_Xm2_array(iiLH_rrain) )
         var_rr2 = var_rr1
@@ -526,6 +524,9 @@ module generate_lh_sample_module
       end if
 
       if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
+
+        rrainm = dble( hydromet(iirrainm) )
+        Nrm = dble( hydromet(iiNrm) )
 
         index1 = iiLH_rrain
         index2 = iiLH_Nr
@@ -1933,7 +1934,7 @@ module generate_lh_sample_module
     do index1 = LN_index, d_variables
       call add_corr_to_matrix_gaus_LN &
            ( d_variables, iiLH_s_mellor, &
-             iiLH_t_mellor, index1, &
+             iiLH_t_mellor, iiLH_w, index1, &
              xp2_on_xm2_array, corr_array, &
              corr_stw_matrix )
     end do 
@@ -2002,11 +2003,11 @@ module generate_lh_sample_module
 
 !-------------------------------------------------------------------------------
   subroutine add_corr_to_matrix_gaus_LN( d_variables, iiLH_s_mellor, &
-                                         iiLH_t_mellor, index1, &
+                                         iiLH_t_mellor, iiLH_w, index1, &
                                          xp2_on_xm2_array, corr_array, &
                                          corr_stw_matrix )
 ! Description:
-!   Add a correlation between s,t Mellor and a lognormal variate to a
+!   Add a correlation between s,t Mellor, w and a lognormal variate to a
 !   correlation matrix.
 ! References:
 !   None
@@ -2021,8 +2022,10 @@ module generate_lh_sample_module
     ! Input Variables
     integer, intent(in) :: &
       d_variables, & ! Total variates
-      iiLH_s_mellor, iiLH_t_mellor, & ! Index of s,t
-      index1 ! Index of the lognormal variate
+      iiLH_s_mellor, & ! Index of s_mellor
+      iiLH_t_mellor, & ! Index of t_mellor
+      iiLH_w, &        ! Index of w (vertical velocity)
+      index1           ! Index of the lognormal variate
 
     real, dimension(d_variables), intent(in) :: &
       xp2_on_xm2_array ! x'^2 / xm^2 array      [-]
@@ -2036,8 +2039,10 @@ module generate_lh_sample_module
 
     ! Local Variables
     real :: &
-      corr_sx, &! Correlation between s and a lognormal variates
-      covar_sx  ! Lognormal covariance of s_mellor and x
+      corr_sx, &  ! Correlation between s and a lognormal variate
+      corr_wx, &  ! Correlation between w and a lognormal variate
+      covar_sx, & ! Lognormal covariance of s_mellor and x
+      covar_wx    ! Lognormal covariance of w and x
 
     double precision :: &
       covar_tx    ! Lognormal covariance of t_mellor and x
@@ -2057,7 +2062,7 @@ module generate_lh_sample_module
              covar_sx ) ! Out
     else
       covar_sx = 0.
-    endif
+    end if
 
     call set_lower_triangular_matrix_dp &
          ( d_variables, iiLH_s_mellor, index1, dble( covar_sx ), & ! In
@@ -2073,6 +2078,25 @@ module generate_lh_sample_module
 
     call set_lower_triangular_matrix_dp &
          ( d_variables, iiLH_t_mellor, index1, covar_tx, & ! In
+           corr_stw_matrix ) ! In/out
+
+    ! Correlations involving w and lognormal variate x
+
+    call get_lower_triangular_matrix_sp &
+         ( d_variables, iiLH_w, index1, corr_array, & ! In
+           corr_wx ) ! Out
+
+    if ( corr_wx /= 0. ) then
+      ! Correlation between s and rain water mixing ratio
+      call construct_gaus_LN_element &
+           ( corr_wx, 1.0, xp2_on_xm2_array(index1), & ! In
+             covar_wx ) ! Out
+    else
+      covar_wx = 0.
+    end if
+
+    call set_lower_triangular_matrix_dp &
+         ( d_variables, iiLH_w, index1, dble( covar_wx ), & ! In
            corr_stw_matrix ) ! In/out
 
     return
