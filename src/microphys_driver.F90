@@ -1432,8 +1432,8 @@ module microphys_driver
             ! Boundary condition
             ! Rain, snow and graupel which is at the ghost point has presumably
             ! sedimented out of the model domain, and is not conserved.
-            if ( hydromet(i,1) < zero_threshold ) then
-              hydromet(i,1) = zero_threshold
+            if ( hydromet(1,i) < zero_threshold ) then
+              hydromet(1,i) = zero_threshold
             end if
           else
             ! This includes the case where the variable is a number
