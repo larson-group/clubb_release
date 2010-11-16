@@ -345,9 +345,12 @@ module extend_atmosphere_module
     !-----------------------------------------------------------------------------------------------
 
     use input_reader, only: &
-      read_x_profile, &
-      one_dim_read_var, &
-      read_one_dim_file
+      read_x_profile, & ! Procedure(s)
+      read_one_dim_file, &
+      deallocate_one_dim_vars
+
+    use input_reader, only: &
+      one_dim_read_var ! Derived type
 
     use input_names, only: &
       z_name, &
@@ -359,9 +362,12 @@ module extend_atmosphere_module
     implicit none
 
     ! Constant Parameters
-    integer, parameter :: nCol = 5
+    integer, parameter :: &
+      nCol = 5,  &       ! Number of columns in the text file
+      std_atmos_dim = 50 ! Dimension of the standard atmosphere table
 
-    integer, parameter :: std_atmos_dim = 50
+    character(len=*), parameter :: &
+      atm_input_file = "../input/std_atmosphere/atmosphere.in"
 
     ! Input Variable(s)
     integer, intent(in) :: iunit ! File I/O unit [-]
@@ -370,15 +376,13 @@ module extend_atmosphere_module
     ! Local Variable(s)
     type(one_dim_read_var), dimension(nCol) :: retVars
 
-    character(len=*), parameter :: atm_input_file = "../input/std_atmosphere/atmosphere.in"
-
     ! -- Begin Code --
 
     extend_atmos_dim = std_atmos_dim
 
     call read_one_dim_file( iunit, nCol, atm_input_file, retVars )
 
-    ! initializing memory
+    ! Allocate and initialize variables for standard atmosphere
 
     allocate( extend_alt(1:extend_atmos_dim) )
     allocate( extend_T_in_K(1:extend_atmos_dim) )
@@ -401,6 +405,10 @@ module extend_atmosphere_module
     extend_o3l = read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars, &
                                  atm_input_file )                           
 
+    ! Deallocate memory
+    call deallocate_one_dim_vars( nCol, retVars )
+
+    return
   end subroutine load_extend_std_atm
   !-------------------------------------------------------------------------------------------------
   subroutine finalize_extend_atm( )

@@ -1651,8 +1651,11 @@ module clubb_core
 
     use variables_diagnostic_module, only: & 
       cleanup_diagnostic_variables ! Procedure
+
     use variables_prognostic_module, only: & 
       cleanup_prognostic_variables ! Procedure
+    use grid_class, only: &
+      cleanup_grid ! Procedure
 
     implicit none
 
@@ -1677,6 +1680,9 @@ module clubb_core
 
     ! De-allocate the array for the passive scalar tolerances
     deallocate( sclr_tol )
+
+    ! De-allocate the arrays for the grid
+    call cleanup_grid( )
 
     return
   end subroutine cleanup_clubb_core

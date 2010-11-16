@@ -418,7 +418,7 @@ module sounding
     !
     !-----------------------------------------------------------------------------------------------
     use input_reader, only: read_one_dim_file, read_x_profile, fill_blanks_one_dim_vars, &
-                            one_dim_read_var
+      one_dim_read_var, deallocate_one_dim_vars
 
     use input_interpret, only: &
      read_z_profile, &
@@ -437,8 +437,8 @@ module sounding
     ! Input Variable(s)
     integer, intent(in) :: iunit ! I/O unit
 
-    character(len=*), intent(in) :: runtype ! String identifying the model case;
-    !                                         e.g. bomex
+    character(len=*), intent(in) :: &
+      runtype ! String identifying the model case; e.g. bomex
 
     real, intent(in) :: &
       p_sfc, & ! Pressure at the surface [Pa]
@@ -448,15 +448,15 @@ module sounding
     integer, intent(out) :: nlevels ! Number of levels from the sounding.in file
 
     real, intent(out), dimension(nmaxsnd) :: & 
-    z,      & ! Altitude                               [m]
-    theta,  & ! Liquid potential temperature sounding  [K]
-    rt,     & ! Total water mixing ratio sounding      [kg/kg]
-    u,      & ! u wind sounding                        [m/s] 
-    v,      & ! v wind sounding                        [m/s]
-    ug,     & ! u geostrophic wind sounding            [m/s]
-    vg,     & ! v geostrophic wind sounding            [m/s]
-    p_in_Pa,& ! Pressure sounding                      [Pa]
-    subs      ! Subsidence sounding                    [m/s or Pa/s]
+      z,      & ! Altitude                               [m]
+      theta,  & ! Liquid potential temperature sounding  [K]
+      rt,     & ! Total water mixing ratio sounding      [kg/kg]
+      u,      & ! u wind sounding                        [m/s] 
+      v,      & ! v wind sounding                        [m/s]
+      ug,     & ! u geostrophic wind sounding            [m/s]
+      vg,     & ! v geostrophic wind sounding            [m/s]
+      p_in_Pa,& ! Pressure sounding                      [Pa]
+      subs      ! Subsidence sounding                    [m/s or Pa/s]
 
     type(one_dim_read_var), intent(out), dimension(n_snd_var) :: &
       retVars ! Structure containing sounding profile
@@ -466,7 +466,7 @@ module sounding
       alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
-
+    ! ---- Begin Code ----
 
     call read_one_dim_file( iunit, n_snd_var, &
     '../input/case_setups/'//trim( runtype )//'_sounding.in', retVars )
@@ -491,7 +491,9 @@ module sounding
 
     nlevels = size( retVars(1)%values )
 
+    call deallocate_one_dim_vars( n_snd_var, retVars )
 
+    return
   end subroutine read_sounding_file
 
   !-------------------------------------------------------------------------------------------------
@@ -501,7 +503,8 @@ module sounding
     !  returns the values contained in that file.
     !
     !-----------------------------------------------------------------------------------------------
-    use input_reader, only: read_one_dim_file, one_dim_read_var
+    use input_reader, only: read_one_dim_file, one_dim_read_var, &
+                            deallocate_one_dim_vars
 
     use parameters_model, only: sclr_dim
 
@@ -555,6 +558,7 @@ module sounding
       sclr(1:size(retVars(i)%values),i) = retVars(i)%values
     end do
 
+    call deallocate_one_dim_vars( sclr_dim, retVars )
 
   end subroutine read_sclr_sounding_file
 

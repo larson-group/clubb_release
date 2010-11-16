@@ -144,7 +144,7 @@ module grid_class
 
   public :: gr, grid, zt2zm, interp_weights_zt2zm_imp, zm2zt, & 
             interp_weights_zm2zt_imp, ddzm, ddzt, & 
-            setup_grid, setup_grid_heights, &
+            setup_grid, cleanup_grid, setup_grid_heights, &
             read_grid_heights
 
   private :: interpolated_azm, interpolated_azmk, & 
@@ -472,6 +472,38 @@ module grid_class
     return
 
   end subroutine setup_grid
+
+  !=============================================================================
+  subroutine cleanup_grid
+
+  ! Description:
+  !   De-allocates the memory for the grid
+  !
+  ! References:
+  !   None
+  !------------------------------------------------------------------------------
+    use constants_clubb, only: &
+      fstderr ! Constant
+
+    implicit none
+
+    ! Local Variable(s)
+    integer :: ierr
+
+    ! ----- Begin Code -----
+
+    ! Allocate memory for grid levels
+    deallocate( gr%zm, gr%zt, & 
+              gr%invrs_dzm, gr%invrs_dzt,  & 
+              gr%weights_zm2zt, gr%weights_zt2zm, & 
+              stat=ierr )
+
+    if ( ierr /= 0 ) then
+      write(fstderr,*) "Grid deallocation failed."
+    end if
+
+    return
+  end subroutine cleanup_grid
 
   !=============================================================================
   subroutine setup_grid_heights &
