@@ -27,11 +27,28 @@ cleanupHandler = onCleanup(@()netcdf.close(nc_file));
 
 [ndims,numvars,ngatts,unlimdimid] = netcdf.inq(nc_file);
 
-z = netcdf.getVar( nc_file, 2 );
+if strfind ( filename, 'pf_gfdl' ) %Get height for pf_gfdl files
+  %Get the correct variables for height
+   varAlt = netcdf.inqVarID( nc_file, 'zf_forc' );
+   alt = netcdf.getVar ( nc_file, varAlt );
+   z(:,1) = alt(1,1,:,1);
+elseif strfind ( filename, 'ph_gfdl' )  %Get height for ph_gfdl files
+   varAlt = netcdf.inqVarID( nc_file, 'zh_forc' );
+   alt = netcdf.getVar ( nc_file, varAlt );
+   z(:,1) = alt(1,1,:,1); 
+elseif strfind ( filename, 'ps_gfdl' )  %Get height for ps_gfdl files
+   varAlt = netcdf.inqVarID( nc_file, 'time' );
+   alt = netcdf.getVar ( nc_file, varAlt );
+   z(:,1) = alt(1,1,:,1)
+else
+  z = netcdf.getVar( nc_file, 2 );
+end
 
 nz = size(z, 1);
 
-time = netcdf.getVar( nc_file, 3 );
+
+varTime = netcdf.inqVarID( nc_file, 'time' );
+time = netcdf.getVar( nc_file, varTime );
 
 t_time_steps = size(time,1);
 

@@ -71,6 +71,7 @@ my $nightly = 0;
 #   splotgen
 #   wrfgen 
 #   camgen
+#   gfdlgen
 my $plotgenMode = "plotgen";
 
 # The type of data file to use.
@@ -273,6 +274,10 @@ sub main()
 		  {
 			OutputWriter->writeHeader($outputIndex, "CAMGen");
 		  }
+		  elsif($plotgenMode eq "gfdlgen")
+		  {
+			OutputWriter->writeHeader($outputIndex, "GFDLGen");
+		  }
     
             runCases();
 
@@ -314,6 +319,10 @@ sub getCasePath()
     elsif($plotgenMode eq "camgen")
     {
 	return"$casePath/cam";
+    }
+    elsif($plotgenMode eq "gfdlgen")
+    {
+	return"$casePath/gfdl";
     }
 }
 
@@ -1025,6 +1034,7 @@ sub readArgs()
     case 'c' { $plotgenMode = "plotgen"; }
     case 'w' { $plotgenMode = "wrfgen"; }
     case 'cam' { $plotgenMode = "camgen"; }
+    case 'gfdl' { $plotgenMode = "gfdlgen"; }
     case 'h' { main::HELP_MESSAGE(); } #Prints help message
     else { main::HELP_MESSAGE(); }
     }
@@ -1136,7 +1146,8 @@ sub main::HELP_MESSAGE()
     print("  -c\tPlot CLUBB cases [DEFAULT] (equiv to plotgen)\n");
     print("  -s\tPlot SAM_CLUBB cases (equiv to splotgen)\n");
     print("  -w\tPlot WRF_CLUBB cases\n");
-    print("  -z\tPlot CAM_CLUBB cases\n");
+    print("  -cam\tPlot CAM cases\n");
+    print("  -gfdl\tPlot GFDL cases\n");
     print("  -r\tIf the output folder already exists, replace the contents\n");    
     print("  -l\tPlot LES data for comparison.\n");    
     print("  -b\tPlot HOC Best Ever data for comparison.\n");    
