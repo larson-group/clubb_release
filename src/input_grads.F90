@@ -47,7 +47,7 @@ module input_grads
   contains
 
 !-----------------------------------------------------------------------
-  subroutine open_grads_read( unit_number, fname, f, l_file_exist )
+  subroutine open_grads_read( unit_number, fname, f, l_error )
 
 ! Description:
 !   Open a GrADS data set in read-only mode
@@ -62,7 +62,8 @@ module input_grads
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: unit_number ! Fortran I/O unit
+    integer, intent(in) :: &
+      unit_number ! Fortran I/O unit
 
     character(len=*), intent(in) ::  & 
       fname ! The file name
@@ -71,9 +72,11 @@ module input_grads
     type (stat_file), intent(inout) ::  & 
       f ! The GrADS file
 
+    ! Output Variable(s)
+    logical, intent(out) :: l_error
+
     ! Local Variables
-    logical :: l_done, l_error
-    logical, intent(out) :: l_file_exist
+    logical :: l_done, l_file_exist
     integer :: ierr
 
     character(len=256) ::  & 
@@ -95,6 +98,7 @@ module input_grads
 
     if( .not.( l_file_exist ) ) then
       !if the file doesn't exist, return to the calling function to handle the error
+      l_error = .true.
       return
     end if
 
@@ -270,14 +274,19 @@ module input_grads
       write(unit=fstderr,fmt=*)  & 
         'Fatal error encountered while reading control file'
       write(unit=fstderr,fmt=*) 'Cannot do miracles...'
-      stop "Fatal error reading GrADS file"
+      return
     end if
 
 ! Open binary file for direct access
 
     f%iounit = unit_number
-    inquire( file = f%fname, exist = l_file_exist)
-    if( .not. l_file_exist) stop 'binary GrADS file does not exist'
+    inquire( file = f%fname, exist = l_file_exist )
+    if ( .not. l_file_exist ) then
+      write(fstderr,*) 'binary GrADS file does not exist'
+      l_error = .true.
+      return
+    end if
+
     open( unit = f%iounit, & 
           file = trim( f%fname ), & 
           form = 'unformatted', access = 'direct',  & 
@@ -287,7 +296,8 @@ module input_grads
       write(unit=fstderr,fmt=*)  & 
         "input_grads: error opening binary file"
       write(unit=fstderr,fmt=*) "iostat = ", ierr
-      stop
+      l_error = .true.
+      return
     end if
 
     return

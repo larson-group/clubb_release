@@ -228,7 +228,7 @@ module inputfields
     integer, intent(in) :: timestep
 
     ! Local Variables
-    logical :: l_read_error, l_fatal_error, l_file_exist
+    logical :: l_read_error, l_fatal_error
 
     type (stat_file) :: fread_var
 
@@ -278,8 +278,6 @@ module inputfields
 
       ! Initialize l_fatal_error for case clubb_input_type
       l_fatal_error = .false.
-
-       l_file_exist = .true.  ! Assume the GrADS file exists to start
 
       call get_clubb_variable_interpolated &
            ( input_um, stat_file_zt, "um", gr%nnzp, timestep, &
@@ -718,9 +716,12 @@ module inputfields
 
       ! stats_sm
       call open_grads_read( 15, stat_file_zt,  & 
-                            fread_var, l_file_exist )
+                            fread_var, l_read_error )
 
-      if( .not. l_file_exist) stop "GrADS file does not exist!"
+      if ( l_read_error ) then
+        write(fstderr,*) "Error reading file "// trim( stat_file_zt )
+        stop "Fatal error"
+      end if
 
       l_fatal_error = .false.
 
@@ -1827,9 +1828,14 @@ module inputfields
     case ( coamps_input_type )
 
       ! stats_sw
-      call open_grads_read( 15, stat_file_zm,  fread_var, l_file_exist )
+      call open_grads_read( 15, stat_file_zm, & ! In
+                            fread_var, & ! In/Out
+                            l_read_error ) ! Out
 
-      if( .not. l_file_exist) stop "GrADS file does not exist!"
+      if ( l_read_error ) then
+        write(fstderr,*) "Error reading file "// trim( stat_file_zm )
+        stop "Fatal error"
+      end if
 
       ! Temporarily store LES output in variable array LES_tmp1.
       ! Allocate LES_tmp1 based on lowest and highest vertical indices of LES
@@ -2085,27 +2091,32 @@ module inputfields
 
     real(kind=time_precision) :: delta_time   ! In seconds
 
-    logical :: l_grads_file, l_error, l_file_exist
+    logical :: l_grads_file, l_error
 
     ! ---- Begin Code ----
-
-     l_file_exist = .true.  ! Assume the GrADS file exists to start
 
     l_grads_file = .not. l_netcdf_file( filename )
 
     if ( l_grads_file ) then
       ! Read in the control file
-      call open_grads_read( iunit, trim( filename ), fread_var, l_file_exist )
-
-      if( .not. l_file_exist) stop "GrADS file does not exist!"
+      call open_grads_read( iunit, trim( filename ), & ! In
+                            fread_var,  & ! In/Out
+                            l_error ) ! Out
     
     else
 #ifdef NETCDF
-      call open_netcdf_read( 'thlm', trim( filename ), fread_var, l_error )
+      call open_netcdf_read( 'thlm', trim( filename ), & ! In
+                             fread_var, & ! In/Out
+                             l_error ) ! Out
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
 #endif
-    endif
+    end if
+
+    if ( l_error ) then
+      write(fstderr,*) "Error reading file " // trim( filename )
+      stop "Fatal error"
+    end if
 
     ! (restart time) - (initial time)
     delta_time = time - (fread_var%time - fread_var%dtwrite)
