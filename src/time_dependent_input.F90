@@ -123,9 +123,10 @@ module time_dependent_input
 
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
-    use input_reader, only: read_one_dim_file, one_dim_read_var, &
-                            fill_blanks_one_dim_vars, read_x_profile, &
-                            get_target_index
+    use input_reader, only: &
+      read_one_dim_file, one_dim_read_var, & ! Procedure(s)
+      fill_blanks_one_dim_vars, read_x_profile, &
+      get_target_index, deallocate_one_dim_vars
 
     use input_names, only: &
       time_name,     &
@@ -242,7 +243,11 @@ module time_dependent_input
       T_sfc_given = read_x_profile( nCols, dim_size, T_sfc_name, retVars, &
                                       input_file )
     end if 
- 
+
+    ! Deallocate memory
+    call deallocate_one_dim_vars( nCols, retVars )
+
+    return 
   end subroutine initialize_t_dependent_surface
 
   !================================================================================================
@@ -261,6 +266,8 @@ module time_dependent_input
 
     implicit none
 
+    ! External
+    intrinsic :: spread
 
     ! Input Variable(s)
     integer, intent(in) :: iunit ! File I/O
@@ -325,7 +332,13 @@ module time_dependent_input
 
     end do
 
+    do i = 1, nCols
+      if ( associated( t_dependent_forcing_data_f_grid(i)%values ) ) then
+        deallocate( t_dependent_forcing_data_f_grid(i)%values )
+      end if
+    end do
 
+    return
   end subroutine initialize_t_dependent_forcings
 
   !================================================================================================
@@ -337,7 +350,8 @@ module time_dependent_input
 
     implicit none
 
-    integer i
+    ! Local Variable
+    integer :: i
 
     ! ----------------- Begin Code --------------------
 
@@ -345,6 +359,9 @@ module time_dependent_input
       deallocate( t_dependent_forcing_data(i)%values )
     end do
 
+    deallocate( dimension_var%values ) 
+
+    return
   end subroutine finalize_t_dependent_forcings
   
   !================================================================================================
