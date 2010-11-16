@@ -145,7 +145,7 @@ module latin_hypercube_driver_module
     ! Find in and out of cloud points using the rejection method rather than scaling
     logical, parameter :: &
       l_use_rejection_method = .false., &
-      l_re_seed = .true.
+      l_re_seed = .true. ! Re-seed the Mersenne twister algorithm
 
     ! Input Variables
     real, intent(in) :: &
