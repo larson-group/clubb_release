@@ -449,23 +449,23 @@ module input_reader
     !------------------------------------------------------------------------------
     implicit none
 
-    ! Input Variable(s)
-    integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
-
-    type(one_dim_read_var), dimension(num_vars), intent(inout):: one_dim_vars ! Read data
-    !                                                                        that may have gaps.
-
     ! External functions
     intrinsic :: associated
 
+    ! Input Variable(s)
+    integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
+
+    type(one_dim_read_var), dimension(num_vars), intent(inout) :: &
+      one_dim_vars ! Read data that may have gaps.
+
     ! Local Variable(s)
-    integer i
+    integer :: i
 
     ! Begin Code
 
     do i=1, num_vars
 
-      if(associated(one_dim_vars(i)%values) ) then
+      if ( associated( one_dim_vars(i)%values ) ) then
 
         deallocate(one_dim_vars(i)%values)
 
@@ -473,6 +473,7 @@ module input_reader
 
     end do
 
+    return
   end subroutine deallocate_one_dim_vars
 
   !------------------------------------------------------------------------------------------------
@@ -484,24 +485,26 @@ module input_reader
     !----------------------------------------------------------------------------------------------
     implicit none
 
-    ! Input Variable(s)
-    integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
-
-    type(one_dim_read_var), intent(inout) :: other_dim
-    type(two_dim_read_var), dimension(num_vars), intent(inout):: two_dim_vars ! Read data
-    !                                                                        that may have gaps.
-
     ! External Functions
     intrinsic :: associated
 
-    ! Local Variable(s)
-    integer i
+    ! Input Variable(s)
+    integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
 
-    ! Begin Code
+    ! Input/Output Variables
+    type(one_dim_read_var), intent(inout) :: other_dim
+
+    type(two_dim_read_var), dimension(num_vars), intent(inout) :: &
+       two_dim_vars ! Read data that may have gaps.
+
+    ! Local Variable(s)
+    integer :: i
+
+    ! ---- Begin Code ----
 
     do i=1, num_vars
 
-      if(associated(two_dim_vars(i)%values) ) then
+      if ( associated( two_dim_vars(i)%values ) ) then
 
         deallocate(two_dim_vars(i)%values)
 
@@ -509,7 +512,7 @@ module input_reader
 
     end do
 
-    if(associated(other_dim%values) ) then
+    if ( associated( other_dim%values ) ) then
 
       deallocate(other_dim%values)
 
