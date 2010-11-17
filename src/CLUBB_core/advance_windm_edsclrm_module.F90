@@ -326,10 +326,13 @@ module advance_windm_edsclrm_module
     endif
 
     if( l_stats_samp ) then
-    	! Reflect nudging in budget
-    	call stat_update_var( ium_ndg, (um(1:gr%nnzp) - um_delta_ndg(1:gr%nnzp)) / real(dt), zt)
-    	call stat_update_var( ivm_ndg, (vm(1:gr%nnzp) - vm_delta_ndg(1:gr%nnzp)) / real(dt), zt)
-    	
+
+      ! Reflect nudging in budget
+      if ( l_uv_nudge ) then
+    	  call stat_update_var( ium_ndg, (um(1:gr%nnzp) - um_delta_ndg(1:gr%nnzp)) / real(dt), zt)
+    	  call stat_update_var( ivm_ndg, (vm(1:gr%nnzp) - vm_delta_ndg(1:gr%nnzp)) / real(dt), zt)
+      endif
+      
       call stat_update_var(ium_ref, um_ref, zt)
       call stat_update_var(ivm_ref, vm_ref, zt)
     end if
