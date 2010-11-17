@@ -362,9 +362,10 @@ module stats_variables
      ivm_gf, & 
      ivm_cf, &
      ivm_f, &
-     ivm_sdmp
+     ivm_sdmp, &
+     ivm_ndg
 
-!$omp   threadprivate(ivm_bt, ivm_ma, ivm_ta, ivm_gf, ivm_cf, ivm_f, ivm_sdmp)
+!$omp   threadprivate(ivm_bt, ivm_ma, ivm_ta, ivm_gf, ivm_cf, ivm_f, ivm_sdmp, ivm_ndg)
 
   integer, public :: & 
      ium_bt, & 
@@ -373,9 +374,10 @@ module stats_variables
      ium_gf, & 
      ium_cf, & 
      ium_f, &
-     ium_sdmp
+     ium_sdmp, &
+     ium_ndg
 
-!$omp   threadprivate(ium_bt, ium_ma, ium_ta, ium_gf, ium_cf, ium_f, ium_sdmp)
+!$omp   threadprivate(ium_bt, ium_ma, ium_ta, ium_gf, ium_cf, ium_f, ium_sdmp, ium_ndg)
 
 
   ! PDF parameters

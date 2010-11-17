@@ -410,7 +410,6 @@ contains
         iwp2_pr1, & 
         iwp2_pr2, &
         iwp2_4hd, &
-        iwp3_bt, & 
         iwp3_ta, & 
         iwp3_ma, & 
         iwp3_tp, & 
@@ -586,11 +585,6 @@ contains
     !        almost no effect on the boundary layer cases.  Brian; 1/4/2008.
 !    logical, parameter :: l_crank_nich_diff = .true.
     logical, parameter :: l_crank_nich_diff = .false.
-
-    if (l_stats_samp) then
-      call stat_begin_update( iwp3_bt, real(wp3 / dt), zt )
-    endif
-
 
     ! Define a_1 and a_3 (both are located on momentum levels).
     ! They are variables that are both functions of sigma_sqd_w (where
@@ -927,12 +921,6 @@ contains
 
     ! Clip w'^3 by limiting skewness.
     call clip_skewness( dt, sfc_elevation, wp2_zt, wp3 )
-
-
-    if (l_stats_samp) then
-      call stat_end_update( iwp3_bt, real( wp3 / dt ), zt )
-    endif
-
 
     return
   end subroutine wp23_solve

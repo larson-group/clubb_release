@@ -74,12 +74,12 @@ module advance_windm_edsclrm_module
       stat_update_var
 
     use stats_variables, only: &
-      ium_ref, &
+      ium_ref, & ! Variables
       ivm_ref, &
-      ivm_bt, & ! Variables
-      ium_bt, &
       ium_sdmp, &
       ivm_sdmp, &
+      ium_ndg, &
+      ivm_ndg, &
       iwindm_matrix_condt_num, &
       zt,     &
       l_stats_samp
@@ -159,6 +159,10 @@ module advance_windm_edsclrm_module
     real, dimension(gr%nnzp) ::  &
       upwp_chnge,  & ! Net change of u'w' due to clipping            [m^2/s^2]
       vpwp_chnge     ! Net change of v'w' due to clipping            [m^2/s^2]
+      
+    real, dimension(gr%nnzp) ::  &
+      um_dlta_ndg,  & ! Change in um due to nudging                  [m/s]
+      vm_dlta_ndg     ! Change in vm due to nudging                  [m/s]
 
     real, dimension(3,gr%nnzp) :: &
       lhs ! The implicit part of the tridiagonal matrix              [units vary]
@@ -179,15 +183,6 @@ module advance_windm_edsclrm_module
     integer :: i     ! Array index
 
     !--------------------------- Begin Code ------------------------------------
-
-    if ( l_stats_samp ) then
-
-      ! xm total time tendency (1st calculation)
-      call stat_begin_update( ium_bt, real( um / dt ), zt )
-
-      call stat_begin_update( ivm_bt, real( vm / dt ), zt )
-
-    endif
 
     !----------------------------------------------------------------
     ! Prepare tridiagonal system for horizontal winds, um and vm
@@ -301,11 +296,6 @@ module advance_windm_edsclrm_module
 
     if ( l_stats_samp ) then
 
-      ! xm total time tendency (2nd calculation)
-      call stat_end_update( ium_bt, real( um / dt ), zt ) ! in
-
-      call stat_end_update( ivm_bt, real( vm / dt ), zt ) ! in
-
       ! Implicit contributions to um and vm
       call windm_edsclrm_implicit_stats( windm_edsclrm_um, um ) ! in
 
@@ -328,11 +318,18 @@ module advance_windm_edsclrm_module
 
     ! Adjust um and vm if nudging is turned on.
     if ( l_uv_nudge ) then
+   	  um_dlta_ndg(1:gr%nnzp) = um(1:gr%nnzp)
+      vm_dlta_ndg(1:gr%nnzp) = vm(1:gr%nnzp)
+
       um(1:gr%nnzp) = real( um(1:gr%nnzp) - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
       vm(1:gr%nnzp) = real( vm(1:gr%nnzp) - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
     endif
 
     if( l_stats_samp ) then
+    	! Reflect nudging in budget
+    	call stat_update_var( ium_ndg, (um(1:gr%nnzp) - um_dlta_ndg(1:gr%nnzp)) / real(dt), zt)
+    	call stat_update_var( ivm_ndg, (vm(1:gr%nnzp) - vm_dlta_ndg(1:gr%nnzp)) / real(dt), zt)
+    	
       call stat_update_var(ium_ref, um_ref, zt)
       call stat_update_var(ivm_ref, vm_ref, zt)
     end if

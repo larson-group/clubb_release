@@ -205,13 +205,15 @@ module stats_zt
         ivm_ta, &
         ivm_f, & 
         ivm_sdmp, &
+        ivm_ndg, &
         ium_bt, & 
         ium_ma, & 
         ium_gf, & 
         ium_cf, & 
         ium_ta, &
         ium_f, &
-        ium_sdmp
+        ium_sdmp, &
+        ium_ndg
 
     use stats_variables, only: & 
         imixt_frac, & 
@@ -550,21 +552,23 @@ module stats_zt
     iricem_mc      = 0
     iricem_cl      = 0
 
-    ivm_bt = 0
-    ivm_ma = 0
-    ivm_gf = 0
-    ivm_cf = 0
-    ivm_ta = 0
-    ivm_f  = 0
+    ivm_bt   = 0
+    ivm_ma   = 0
+    ivm_gf   = 0
+    ivm_cf   = 0
+    ivm_ta   = 0
+    ivm_f    = 0
     ivm_sdmp = 0
+    ivm_ndg   = 0
 
-    ium_bt = 0
-    ium_ma = 0
-    ium_gf = 0
-    ium_cf = 0
-    ium_ta = 0
-    ium_f = 0
+    ium_bt   = 0
+    ium_ma   = 0
+    ium_gf   = 0
+    ium_cf   = 0
+    ium_ta   = 0
+    ium_f    = 0
     ium_sdmp = 0
+    ium_ndg  = 0
 
     imixt_frac    = 0
     iw1           = 0
@@ -1900,6 +1904,12 @@ module stats_zt
         call stat_assign( ivm_sdmp, "vm_sdmp", & 
              "vm budget: vm sponge damping [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
+        
+      case ('vm_ndg')
+        ivm_ndg = k
+        call stat_assign( ivm_ndg, "vm_ndg", & 
+             "vm budget: vm nudging [m s^{-2}]", "m s^{-2}", zt )
+        k = k + 1
 
       case ('um_bt')
         ium_bt = k
@@ -1943,6 +1953,12 @@ module stats_zt
         ium_sdmp = k
         call stat_assign( ium_sdmp, "um_sdmp", & 
              "um budget: um sponge damping [m s^{-2}]", "m s^{-2}", zt )
+        k = k + 1
+        
+      case ('um_ndg')
+        ium_ndg = k
+        call stat_assign( ium_ndg, "um_ndg", & 
+             "um budget: um nudging [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
 
       case ('mixt_frac')
