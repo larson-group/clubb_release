@@ -432,6 +432,9 @@ module sounding
       ug_name, &
       vg_name
 
+    use extend_atmosphere_module, only: &
+      l_use_default_std_atmosphere  ! Variable(s)
+
     implicit none
 
     ! Input Variable(s)
@@ -491,7 +494,12 @@ module sounding
 
     nlevels = size( retVars(1)%values )
 
-    call deallocate_one_dim_vars( n_snd_var, retVars )
+    ! This is overly complicated code, but in the case where we need these
+    ! profiles to extend the model domain for the radiation we de-allocate these
+    ! arrays elsewhere. -dschanen 17 Nov 2010
+    if ( l_use_default_std_atmosphere ) then
+      call deallocate_one_dim_vars( n_snd_var, retVars )
+    end if
 
     return
   end subroutine read_sounding_file
@@ -516,6 +524,9 @@ module sounding
       theta_name, &
       thetal_name, &
       temperature_name
+
+    use extend_atmosphere_module, only: &
+      l_use_default_std_atmosphere  ! Variable(s)
 
     implicit none
 
@@ -558,8 +569,11 @@ module sounding
       sclr(1:size(retVars(i)%values),i) = retVars(i)%values
     end do
 
-    call deallocate_one_dim_vars( sclr_dim, retVars )
+    if ( l_use_default_std_atmosphere ) then
+      call deallocate_one_dim_vars( sclr_dim, retVars )
+    end if
 
+    return
   end subroutine read_sclr_sounding_file
 
   !-------------------------------------------------------------------------------------------------
@@ -591,8 +605,8 @@ module sounding
     ! Input Variable(s)
     integer, intent(in) :: iunit ! I/O unit
 
-    character(len=*), intent(in) :: runtype ! String identifying the model case;
-    !                                         e.g. bomex
+    character(len=*), intent(in) :: &
+      runtype ! String identifying the model case; e.g. bomex
 
     ! Output Variable(s)
     real, intent(inout), dimension(nmaxsnd,sclr_max) :: & 
@@ -600,7 +614,9 @@ module sounding
 
     type(one_dim_read_var), dimension(edsclr_dim) :: retVars
 
-    integer i
+    integer :: i 
+
+    ! ---- Begin Code ----
 
     call read_one_dim_file( iunit, edsclr_dim, &
     '../input/case_setups/'//trim( runtype )//'_edsclr_sounding.in', retVars )

@@ -1145,8 +1145,10 @@ module clubb_driver
       l_t_dependent ! Variable(s)
 
     use extend_atmosphere_module, only: &
-      l_use_default_std_atmosphere, & ! Procedure(s)
-      load_extend_std_atm, &
+      l_use_default_std_atmosphere
+
+    use extend_atmosphere_module, only: &
+      load_extend_std_atm, & ! Procedure(s)
       convert_snd2extend_atm, &
       determine_extend_atmos_bounds
 
@@ -1276,7 +1278,7 @@ module clubb_driver
     else
 
       call convert_snd2extend_atm( n_snd_var, p_sfc, zm_init, sclr_dim,    & ! Intent(in)
-                                sounding_retVars, sclr_sounding_retVars )   ! Intent(in)
+                                   sounding_retVars, sclr_sounding_retVars )   ! Intent(inout)
     end if
 
     call determine_extend_atmos_bounds( gr%nnzp, gr%zt,            & ! Intent(in)

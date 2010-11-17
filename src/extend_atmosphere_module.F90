@@ -59,7 +59,12 @@ module extend_atmosphere_module
     !    none
     !
     !-----------------------------------------------------------------------------------------------
-    use input_reader, only: one_dim_read_var, read_x_profile ! Procedure(s)
+    use input_reader, only: &
+      read_x_profile, & ! Procedure(s)
+      deallocate_one_dim_vars 
+
+    use input_reader, only: &
+      one_dim_read_var ! Type
 
     use input_interpret, only: read_theta_profile, read_z_profile ! Procedure(s)
 
@@ -82,10 +87,10 @@ module extend_atmosphere_module
 
     real, intent(in) :: zm_init ! Height at zm(1) [m]
 
-    type(one_dim_read_var), dimension(n_snd_var), intent(in) :: &
+    type(one_dim_read_var), dimension(n_snd_var), intent(inout) :: &
       sounding_profiles ! Sounding profile
 
-    type(one_dim_read_var), dimension(n_sclr_var), intent(in) :: &
+    type(one_dim_read_var), dimension(n_sclr_var), intent(inout) :: &
       sclr_sounding_profiles ! Sclr Sounding profile
 
     ! Local Variables
@@ -167,6 +172,11 @@ module extend_atmosphere_module
     deallocate( theta )
     deallocate( p_in_Pa )
     deallocate( exner )
+
+    ! Deallocate sounding and scalar sounding profiles.  If this doesn't happen,
+    ! then we'll have a memory leak.
+    call deallocate_one_dim_vars( n_snd_var, sounding_profiles )
+    call deallocate_one_dim_vars( n_sclr_var, sclr_sounding_profiles )
 
     return
   end subroutine convert_snd2extend_atm
