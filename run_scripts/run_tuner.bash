@@ -13,6 +13,7 @@
 OMP_NUM_THREADS=2
 #######################################################################
 
+NIGHTLY=false
 # Select 'single' for a single case tuning run, or select 'multiple'
 # for a multiple case tuning run.
 RUN_TYPE='single'
@@ -181,12 +182,13 @@ cp $RAND_SEED .
 # ../bin/clubb_tuner
 
 # copy the output files to a directory where they will not be erased
-# should only work for hoc_browser, but should not affect manual runs
-# aside from noting some cp errors -meyern
-cp ../input/tuning_run_results* /home/hoc_browser/tuner_output
-cp ../input/error_* /home/hoc_browser/tuner_output
-cp ../input/tunable_parameters/tunable_parameters_* /home/hoc_browser/tuner_output
-mv ./*.log /home/hoc_browser/tuner_output
+# should only work for nightly tests -meyern
+if($NIGHTLY)
+	cp ../input/tuning_run_results* $HOME/tuner_output
+	cp ../input/error_* $HOME/tuner_output
+	cp ../input/tunable_parameters/tunable_parameters_* $HOME/tuner_output
+	mv ./*.log $HOME/tuner_output
+fi
 
 # Remove the temporary error.in file and the *_hoc.in file(s).
 rm -f 'error.in'
