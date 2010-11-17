@@ -13,8 +13,8 @@ module stat_file_utils
 
 !----------------------------------------------------------------------
   function stat_file_average( filename, out_nz, &
-                          t1, t2, out_heights, variable_name,  & 
-                          npower, l_spec_bound_cond, l_error )
+                              t1, t2, out_heights, variable_name,  & 
+                              npower, l_spec_bound_cond, l_error )
 ! Description:
 !   Average a GrADS or netCDF file variable over the interval t1 to t2
 
@@ -100,7 +100,7 @@ module stat_file_utils
 
     integer :: file_nz
 
-    logical :: l_interpolate, l_grads_file, l_file_exist
+    logical :: l_interpolate, l_grads_file
 
     logical, dimension(out_nz) :: l_lin_int
 
@@ -122,7 +122,6 @@ module stat_file_utils
 
     ! Initialize variables
     l_error = .false.
-    l_file_exist = .true.  ! Assume the GrADS file exists to start
 
     num_timesteps = ( t2 - t1 ) + 1
     stat_file_average = 0.0
@@ -133,12 +132,7 @@ module stat_file_utils
     ! Open GraDS file
     if ( l_grads_file ) then
 
-      call open_grads_read( iunit, filename, faverage, l_file_exist )
-
-      if( .not. l_file_exist) then
-        l_error = .true.
-        return
-      end if
+      call open_grads_read( iunit, filename, faverage, l_error )
 
     else
 
@@ -401,19 +395,15 @@ module stat_file_utils
     ! Local Variables
     type (stat_file) :: fz            ! Data file
 
-    logical :: l_grads_file, l_error, l_file_exist
+    logical :: l_grads_file, l_error
 
     ! ---- Begin Code ----
-
-     l_file_exist = .true.  ! Assume the GrADS file exists to start
 
     l_grads_file = .not. l_netcdf_file( filename )  
 
     if ( l_grads_file ) then
       ! Read in the control file
-      call open_grads_read( 10, filename, fz, l_file_exist )
-
-      if( .not. l_file_exist) stop "GrADS file does not exist!"
+      call open_grads_read( 10, filename, fz, l_error )
 
     else
 
@@ -474,7 +464,7 @@ module stat_file_utils
     ! Local Variables
     type (stat_file) :: fz  ! Data file
 
-    logical :: l_grads_file, l_error, l_file_exist
+    logical :: l_grads_file, l_error
 
     ! ---- Begin Code ----
 
@@ -482,9 +472,7 @@ module stat_file_utils
 
     if ( l_grads_file ) then
       ! Read in the control file
-      call open_grads_read( 10, filename, fz, l_file_exist )
-
-      if( .not. l_file_exist) stop "GrADS file does not exist!"
+      call open_grads_read( 10, filename, fz, l_error )
 
     else
 
