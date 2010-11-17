@@ -1760,7 +1760,6 @@ module advance_xm_wpxp_module
         zt,  & ! Variable(s)
         zm, & 
         sfc, & 
-        irtm_bt, & 
         irtm_ta, & 
         irtm_ma, & 
         irtm_matrix_condt_num, & 
@@ -1776,7 +1775,6 @@ module advance_xm_wpxp_module
         iwprtp_dp1, & 
         iwprtp_pd, & 
         iwprtp_sicl, & 
-        ithlm_bt, & 
         ithlm_ta, & 
         ithlm_ma, & 
         ithlm_cl, & 
@@ -1886,7 +1884,6 @@ module advance_xm_wpxp_module
     integer :: k_xm, k_wpxp
 
     integer :: & 
-      ixm_bt, & 
       ixm_ta, & 
       ixm_ma, & 
       ixm_matrix_condt_num, & 
@@ -1907,7 +1904,6 @@ module advance_xm_wpxp_module
 
     select case ( solve_type )
     case ( xm_wpxp_rtm ) ! rtm/wprtp budget terms
-      ixm_bt     = irtm_bt
       ixm_ta     = irtm_ta
       ixm_ma     = irtm_ma
       ixm_pd     = irtm_pd
@@ -1926,7 +1922,6 @@ module advance_xm_wpxp_module
       ! This is a diagnostic from inverting the matrix, not a budget
       ixm_matrix_condt_num = irtm_matrix_condt_num
     case ( xm_wpxp_thlm ) ! thlm/wpthlp budget terms
-      ixm_bt     = ithlm_bt
       ixm_ta     = ithlm_ta
       ixm_ma     = ithlm_ma
       ixm_pd     = 0
@@ -1946,7 +1941,6 @@ module advance_xm_wpxp_module
       ixm_matrix_condt_num = ithlm_matrix_condt_num
 
     case default  ! this includes the sclrm case
-      ixm_bt     = 0
       ixm_ta     = 0
       ixm_ma     = 0
       ixm_pd     = 0
@@ -1967,9 +1961,6 @@ module advance_xm_wpxp_module
 
 
     if ( l_stats_samp ) then
-
-      ! xm total time tendency ( 1st calculation)
-      call stat_begin_update( ixm_bt, real( xm /dt ), zt )
 
       ! wpxp is clipped after xp2 is updated in subroutine advance_xp2_xpyp and
       ! after wp2 is updated in subroutine advance_wp2_wp3.  The overall time
@@ -2213,9 +2204,6 @@ module advance_xm_wpxp_module
     endif
 
     if ( l_stats_samp ) then
-
-      ! xm time tendency (2nd calculation)
-      call stat_end_update( ixm_bt, real( xm / dt ), zt )
 
       ! wpxp is clipped after xp2 is updated in subroutine advance_xp2_xpyp and
       ! after wp2 is updated in subroutine advance_wp2_wp3.  The overall time

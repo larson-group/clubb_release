@@ -254,6 +254,8 @@ module clubb_core
       iwp3_bt,       & 
       ivp2_bt,       & 
       iup2_bt,       & 
+      irtm_bt,       &
+      ithlm_bt,      &
       ivm_bt,        &
       ium_bt,        &
       ircp2,         &
@@ -575,6 +577,10 @@ module clubb_core
       call stat_begin_update( irtpthlp_bt, real(rtpthlp / dt), &    ! Intent(in)
                               zm )                                  ! Intent(inout)
       
+      call stat_begin_update( irtm_bt, real(rtm / dt), &            ! Intent(in)
+                              zt )                                  ! Intent(inout)
+      call stat_begin_update( ithlm_bt, real(thlm / dt), &          ! Intent(in)
+                              zt )                                  ! Intent(inout)
       call stat_begin_update( ium_bt, real( um / dt ), &            ! Intent(in)
                               zt )                                  ! Intent(inout)
       call stat_begin_update( ivm_bt, real( vm / dt ), &            ! Intent(in)
@@ -1231,7 +1237,13 @@ module clubb_core
     !#######################################################################
 
     if ( l_stats_samp ) then
-
+    
+      call stat_end_update( iwp2_bt, real( wp2 / dt ), &        ! Intent(in)
+                            zm )                                ! Intent(inout)
+      call stat_end_update( ivp2_bt, real( vp2 / dt),&          ! Intent(in)
+                            zm )                                ! Intent(inout)
+      call stat_end_update( iup2_bt, real( up2 / dt), &         ! Intent(in)
+                            zm )                                ! Intent(inout)
       call stat_end_update( iwp2_bt, real( wp2 / dt ), &        ! Intent(in)
                             zm )                                ! Intent(inout)
       call stat_end_update( ivp2_bt, real( vp2 / dt),&          ! Intent(in)
@@ -1245,12 +1257,16 @@ module clubb_core
       call stat_end_update( irtpthlp_bt, real( rtpthlp / dt), & ! Intent(in)
                             zm )                                ! Intent(inout)
       
+      call stat_end_update( irtm_bt, real(rtm / dt), &          ! Intent(in)
+                            zt )                                ! Intent(inout)
+      call stat_end_update( ithlm_bt, real(thlm / dt), &        ! Intent(in)
+                            zt )                                ! Intent(inout)
       call stat_end_update( ium_bt, real( um / dt ), &          ! Intent(in)
-                              zt )                              ! Intent(inout)
+                            zt )                                ! Intent(inout)
       call stat_end_update( ivm_bt, real( vm / dt ), &          ! Intent(in)
-                              zt )                              ! Intent(inout)
+                            zt )                                ! Intent(inout)
       call stat_end_update( iwp3_bt, real(wp3 / dt), &          ! Intent(in)
-                              zt )                              ! Intent(inout)
+                            zt )                                ! Intent(inout)
 
     end if ! l_stats_samp
 

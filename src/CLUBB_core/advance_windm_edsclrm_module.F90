@@ -161,8 +161,8 @@ module advance_windm_edsclrm_module
       vpwp_chnge     ! Net change of v'w' due to clipping            [m^2/s^2]
       
     real, dimension(gr%nnzp) ::  &
-      um_dlta_ndg,  & ! Change in um due to nudging                  [m/s]
-      vm_dlta_ndg     ! Change in vm due to nudging                  [m/s]
+      um_delta_ndg,  & ! Change in um due to nudging                 [m/s]
+      vm_delta_ndg     ! Change in vm due to nudging                 [m/s]
 
     real, dimension(3,gr%nnzp) :: &
       lhs ! The implicit part of the tridiagonal matrix              [units vary]
@@ -318,8 +318,8 @@ module advance_windm_edsclrm_module
 
     ! Adjust um and vm if nudging is turned on.
     if ( l_uv_nudge ) then
-   	  um_dlta_ndg(1:gr%nnzp) = um(1:gr%nnzp)
-      vm_dlta_ndg(1:gr%nnzp) = vm(1:gr%nnzp)
+      um_delta_ndg(1:gr%nnzp) = um(1:gr%nnzp)
+      vm_delta_ndg(1:gr%nnzp) = vm(1:gr%nnzp)
 
       um(1:gr%nnzp) = real( um(1:gr%nnzp) - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
       vm(1:gr%nnzp) = real( vm(1:gr%nnzp) - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
@@ -327,8 +327,8 @@ module advance_windm_edsclrm_module
 
     if( l_stats_samp ) then
     	! Reflect nudging in budget
-    	call stat_update_var( ium_ndg, (um(1:gr%nnzp) - um_dlta_ndg(1:gr%nnzp)) / real(dt), zt)
-    	call stat_update_var( ivm_ndg, (vm(1:gr%nnzp) - vm_dlta_ndg(1:gr%nnzp)) / real(dt), zt)
+    	call stat_update_var( ium_ndg, (um(1:gr%nnzp) - um_delta_ndg(1:gr%nnzp)) / real(dt), zt)
+    	call stat_update_var( ivm_ndg, (vm(1:gr%nnzp) - vm_delta_ndg(1:gr%nnzp)) / real(dt), zt)
     	
       call stat_update_var(ium_ref, um_ref, zt)
       call stat_update_var(ivm_ref, vm_ref, zt)
