@@ -1959,25 +1959,6 @@ module advance_xm_wpxp_module
       ixm_matrix_condt_num = 0
     end select
 
-
-    if ( l_stats_samp ) then
-
-      ! wpxp is clipped after xp2 is updated in subroutine advance_xp2_xpyp and
-      ! after wp2 is updated in subroutine advance_wp2_wp3.  The overall time
-      ! tendency must include the effects of those two clippings, as well.
-      ! Therefore, the wpxp total time tendency term is just being modified in
-      ! advance_xm_wpxp_module.F90, rather than being entirely contained in
-      ! advance_xm_wpxp_module.F90.
-      !!  wpxp total time tendency (1st calculation)
-      call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
-
-      ! wpxp total time tendency (1st calculation in advance_xm_wpxp_module.F90)
-      !call stat_modify( iwpxp_bt, real( -wpxp / dt ), zm )
-      ! Brian Griffin; July 5, 2008.
-
-    end if ! l_stats_samp
-
-
     ! Copy result into output arrays
 
     do k=1, gr%nnzp, 1
@@ -2205,16 +2186,7 @@ module advance_xm_wpxp_module
 
     if ( l_stats_samp ) then
 
-      ! wpxp is clipped after xp2 is updated in subroutine advance_xp2_xpyp and
-      ! after wp2 is updated in subroutine advance_wp2_wp3.  The overall time
-      ! tendency must include the effects of those two clippings, as well.
-      ! Therefore, the wpxp total time tendency term is just being modified in
-      ! advance_xm_wpxp_module.F90, rather than being entirely contained in
-      ! advance_xm_wpxp_module.F90.
-      !! wpxp time tendency (2nd calculation)
-      !call stat_end_update( iwpxp_bt, real( wpxp / dt ), zm )
-
-      ! wpxp time tendency (2nd calculation in advance_xm_wpxp_module.F90)
+      ! wpxp time tendency
       call stat_modify( iwpxp_bt, real( wpxp / dt ), zm )
       ! Brian Griffin; July 5, 2008.
 

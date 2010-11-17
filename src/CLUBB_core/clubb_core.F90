@@ -254,6 +254,8 @@ module clubb_core
       iwp3_bt,       & 
       ivp2_bt,       & 
       iup2_bt,       & 
+      iwprtp_bt,     &
+      iwpthlp_bt,    &
       irtm_bt,       &
       ithlm_bt,      &
       ivm_bt,        &
@@ -569,6 +571,10 @@ module clubb_core
       call stat_begin_update( ivp2_bt, real(vp2 / dt), &            ! Intent(in)
                               zm )                                  ! Intent(inout)
       call stat_begin_update( iup2_bt, real(up2 / dt),  &           ! Intent(in)
+                              zm )                                  ! Intent(inout)
+      call stat_begin_update( iwprtp_bt, real(wprtp / dt), &        ! Intent(in)
+                              zm )                                  ! Intent(inout)
+      call stat_begin_update( iwpthlp_bt, real(wpthlp / dt),  &     ! Intent(in)
                               zm )                                  ! Intent(inout)
       call stat_begin_update( irtp2_bt, real(rtp2 / dt), &          ! Intent(in)
                               zm )                                  ! Intent(inout)
@@ -1243,6 +1249,10 @@ module clubb_core
       call stat_end_update( ivp2_bt, real( vp2 / dt),&          ! Intent(in)
                             zm )                                ! Intent(inout)
       call stat_end_update( iup2_bt, real( up2 / dt), &         ! Intent(in)
+                            zm )                                ! Intent(inout)
+      call stat_end_update( iwprtp_bt, real(wprtp / dt), &      ! Intent(in)
+                            zm )                                ! Intent(inout)
+      call stat_end_update( iwpthlp_bt, real(wpthlp / dt),  &   ! Intent(in)
                             zm )                                ! Intent(inout)
       call stat_end_update( irtp2_bt, real( rtp2 / dt), &       ! Intent(in)
                             zm )                                ! Intent(inout)

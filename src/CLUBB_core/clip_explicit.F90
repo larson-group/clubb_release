@@ -70,9 +70,7 @@ module clip_explicit
         time_precision ! Variable(s)
 
     use stats_type, only: &
-        stat_begin_update, & ! Procedure(s)
-        stat_modify, &
-        stat_end_update
+       stat_modify ! Procedure(s)
 
     use stats_variables, only: & 
         iwprtp_bt, &  ! Variable(s)
@@ -152,11 +150,11 @@ module clip_explicit
 
     ! Include effect of clipping in wprtp time tendency budget term.
     if ( l_stats_samp ) then
-      if ( wprtp_cl_num == 1 ) then
-        ! wprtp total time tendency (effect of clipping)
-        call stat_begin_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
-                                zm )                              ! intent(inout)
-      elseif ( wprtp_cl_num == 2 ) then
+    
+      ! if wprtp_cl_num == 1 do nothing since
+      ! iwprtp_bt stat_begin_update is called outside of this method
+      
+      if ( wprtp_cl_num == 2 ) then
         ! wprtp total time tendency (effect of clipping)
         call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
                           zm )                               ! intent(inout)
@@ -193,10 +191,9 @@ module clip_explicit
         ! wprtp total time tendency (effect of clipping)
         call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                           zm )                              ! intent(inout)
-      elseif ( wprtp_cl_num == 3 ) then
-        ! wprtp total time tendency (effect of clipping)
-        call stat_end_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
-                              zm )                              ! intent(inout)
+      ! if wprtp_cl_num == 3 do nothing since
+      ! iwprtp_bt stat_end_update is called outside of this method
+      
       endif
     endif
 
@@ -222,11 +219,11 @@ module clip_explicit
 
     ! Include effect of clipping in wpthlp time tendency budget term.
     if ( l_stats_samp ) then
-      if ( wpthlp_cl_num == 1 ) then
-        ! wpthlp total time tendency (effect of clipping)
-        call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
-                                zm )                                ! intent(inout)
-      elseif ( wpthlp_cl_num == 2 ) then
+    
+      ! if wpthlp_cl_num == 1 do nothing since
+      ! iwpthlp_bt stat_begin_update is called outside of this method
+      
+      if ( wpthlp_cl_num == 2 ) then
         ! wpthlp total time tendency (effect of clipping)
         call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
                           zm )                                 ! intent(inout)
@@ -264,10 +261,10 @@ module clip_explicit
         ! wpthlp total time tendency (effect of clipping)
         call stat_modify( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
                           zm )                                ! intent(inout)
-      elseif ( wpthlp_cl_num == 3 ) then
-        ! wpthlp total time tendency (effect of clipping)
-        call stat_end_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
-                              zm )                                ! intent(inout)
+                          
+      ! if wpthlp_cl_num == 3 do nothing since
+      ! iwpthlp_bt stat_end_update is called outside of this method
+      
       endif
     endif
 
