@@ -97,7 +97,8 @@ module input_grads
     inquire( file=fname, exist=l_file_exist )
 
     if( .not.( l_file_exist ) ) then
-      !if the file doesn't exist, return to the calling function to handle the error
+      ! if the file doesn't exist, return to the calling function to handle the error
+      write(fstderr,*) "File "//trim( fname )// " not found."
       l_error = .true.
       return
     end if
