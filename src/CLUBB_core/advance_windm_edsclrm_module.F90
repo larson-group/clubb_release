@@ -102,6 +102,9 @@ module advance_windm_edsclrm_module
 
     implicit none
 
+    ! External
+    intrinsic :: real
+
     ! Input Variables
     real(kind=time_precision), intent(in) ::  &
       dt                 ! Model timestep                             [s]
@@ -329,12 +332,12 @@ module advance_windm_edsclrm_module
 
       ! Reflect nudging in budget
       if ( l_uv_nudge ) then
-    	  call stat_update_var( ium_ndg, (um(1:gr%nnzp) - um_delta_ndg(1:gr%nnzp)) / real(dt), zt)
-    	  call stat_update_var( ivm_ndg, (vm(1:gr%nnzp) - vm_delta_ndg(1:gr%nnzp)) / real(dt), zt)
-      endif
+        call stat_update_var( ium_ndg, (um(1:gr%nnzp) - um_delta_ndg(1:gr%nnzp)) / real( dt ), zt)
+        call stat_update_var( ivm_ndg, (vm(1:gr%nnzp) - vm_delta_ndg(1:gr%nnzp)) / real( dt ), zt)
+      end if
       
-      call stat_update_var(ium_ref, um_ref, zt)
-      call stat_update_var(ivm_ref, vm_ref, zt)
+      call stat_update_var( ium_ref, um_ref, zt )
+      call stat_update_var( ivm_ref, vm_ref, zt )
     end if
 
     if ( l_tke_aniso ) then
