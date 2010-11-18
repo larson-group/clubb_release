@@ -825,6 +825,22 @@ module estimate_lh_micro_module
 
       w_all_points(:,sample)   = real( w(:,sample) )
       rv_all_points(:,sample)  = LH_rt(:,sample)- rc_all_points(:,sample)
+      ! Verify total water isn't negative
+      if ( any( rv_all_points(:,sample) < 0. ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(6,*) "rv negative, sample number = ", sample
+          write(6,'(a3,2a20)') "k", "rt", "rc"
+          do k = 1, nnzp
+            if ( rv_all_points(k,sample) < 0. ) then
+              write(6,'(i3,2g20.7)')  k, LH_rt(k,sample), rc_all_points(k,sample)
+            end if
+          end do
+        end if ! clubb_at_least_debug_level( 1 )
+        ! TODO: Find a better method of keeping vapor positive other than the
+        !  hard clipping below.
+        where ( rv_all_points(:,sample) < 0. ) rv_all_points(:,sample) = 0.
+      end if ! Some rv_all_points(:,sample) < 0
+
       thl_all_points(:,sample) = LH_thl(:,sample)
 
       ! Copy the sample points into the temporary arrays
