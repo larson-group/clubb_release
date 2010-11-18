@@ -2,7 +2,7 @@
 #######################################################################
 # $Id: run_tuner.bash,v 1.15 2008-04-30 23:11:43 dschanen Exp $
 #
-# Script to run the tuner.  
+# Script to run the clubb_tuner.  
 # Tested with BASH.  Not tested with Korn shell or Bourne(sh) shell.
 # Edit to change run
 #
@@ -18,6 +18,38 @@ NIGHTLY=false
 # for a multiple case tuning run.
 RUN_TYPE='single'
 #RUN_TYPE='multiple'
+
+# The code below is borrowed from run_scm.bash to allow command line arguments to this script
+
+# Note that we use `"$@"' to let each command-line parameter expand to a 
+# separate word. The quotes around `$@' are essential!
+# We need TEMP as the `eval set --' would nuke the return value of getopt.
+TEMP=`getopt -o nh --long nightly,help \
+     -n 'run_tuner.bash' -- "$@"`
+
+if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+
+while true ; do
+	case "$1" in
+	-n|--nightly) 
+		NIGHTLY=true
+		echo "nightly"
+		shift;;
+	-h|--help) # Print the help message
+		echo -e "Usage: run_scm.bash [OPTION]"
+		echo -e "\t-n, --nightly\t\tRun in a nightly test configuration"
+		echo -e "\t-h, --help\t\t\tPrints this help message"
+
+		exit 1 ;;
+		--) shift ; break ;;
+		*) echo "Something bad happened!" ; exit 1 ;;
+	esac
+done
+
+# end borrowed code
 
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
@@ -175,7 +207,12 @@ cp $RAND_SEED .
 
 # Run tuner, keep a log of STDOUT & STDERR
 #
-../bin/clubb_tuner 2>&1 | tee 'tuner_'$RUN_CASE'_'$DATE'.log'
+if ( $NIGHTLY ); then
+	../bin/clubb_tuner 2>&1 | tee 'tuner_'$RUN_CASE'_'$DATE'.log'
+else
+	../bin/clubb_tuner
+fi
+
 #
 # Run tuner, don't keep a log
 # Note: Tuner code has option to save results to a file or not
@@ -183,7 +220,7 @@ cp $RAND_SEED .
 
 # copy the output files to a directory where they will not be erased
 # should only work for nightly tests -meyern
-if($NIGHTLY)
+if ( $NIGHTLY ); then
 	cp ../input/tuning_run_results* $HOME/tuner_output
 	cp ../input/error_* $HOME/tuner_output
 	cp ../input/tunable_parameters/tunable_parameters_* $HOME/tuner_output
