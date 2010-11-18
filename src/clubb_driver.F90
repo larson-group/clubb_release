@@ -1465,7 +1465,8 @@ module clubb_driver
       cloud_top_height = 700. ! 700 m is the top of the cloud in FIRE
       do k=1,gr%nnzp
         if ( gr%zm(k) < cloud_top_height ) then
-          em(k) = 1.
+          !em(k) = 1.
+          em(k) = 4.5
         else
           em(k) = em_min
         end if
@@ -1496,7 +1497,8 @@ module clubb_driver
       cloud_top_height = 800. ! 800 m is the top of the cloud in RF01
       do k=1,gr%nnzp
         if ( gr%zm(k) < cloud_top_height ) then
-          em(k) = 0.5
+          !em(k) = 0.5
+          em(k) = 1.1
         else
           em(k) = em_min
         end if
