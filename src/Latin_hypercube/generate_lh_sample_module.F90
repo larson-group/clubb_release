@@ -292,46 +292,75 @@ module generate_lh_sample_module
 
     ! Input pdf parameters.
 
-    call set_min_varnce_and_mean &
-        ( wm, w_tol_sqd, pdf_params%w1(level), pdf_params%varnce_w1(level), & ! In
-          varnce_w1, w1 ) ! Out
+    if ( l_fix_s_t_correlations ) then
 
-    call set_min_varnce_and_mean &
-        ( wm, w_tol_sqd, pdf_params%w2(level), pdf_params%varnce_w2(level), & ! In
-          varnce_w2, w2 ) ! Out
+      ! For fixed correlations, these don't appear in the correlation matrix, so
+      ! we don't need them to be over some threshold.  In deep convective cases
+      ! we don't want e.g. the variance of rt aloft to be rt_tol^2 necessarily.
 
-    rtm = rvm + rcm
+      ! Set means
+      w1 = pdf_params%w1(level)
+      w2 = pdf_params%w2(level)
+      rt1 = pdf_params%rt1(level)
+      rt2 = pdf_params%rt2(level)
+      thl1 = pdf_params%thl1(level)
+      thl2 = pdf_params%thl2(level)
+      s1 = pdf_params%s1(level)
+      s2 = pdf_params%s2(level)
 
-    call set_min_varnce_and_mean &
-        ( rtm, rt_tol**2, pdf_params%rt1(level), pdf_params%varnce_rt1(level), & ! In
-          varnce_rt1, rt1 ) ! Out
+      ! Set variances
+      varnce_w1 = pdf_params%varnce_w1(level)
+      varnce_w2 = pdf_params%varnce_w2(level)
+      varnce_rt1 = pdf_params%varnce_rt1(level)
+      varnce_rt2 = pdf_params%varnce_rt2(level)
+      varnce_thl1 = pdf_params%varnce_thl1(level)
+      varnce_thl2 = pdf_params%varnce_thl2(level)
 
-    call set_min_varnce_and_mean &
-        ( rtm, rt_tol**2, pdf_params%rt2(level), pdf_params%varnce_rt2(level), & ! In
-          varnce_rt2, rt2 ) ! Out
+      ! Set standard deviation of s1/s2
+      stdev_s1 = pdf_params%stdev_s1(level)
+      stdev_s2 = pdf_params%stdev_s2(level)
+    else
+      call set_min_varnce_and_mean &
+          ( wm, w_tol_sqd, pdf_params%w1(level), pdf_params%varnce_w1(level), & ! In
+            varnce_w1, w1 ) ! Out
 
-    call set_min_varnce_and_mean &
-        ( thlm, thl_tol**2, pdf_params%thl1(level), pdf_params%varnce_thl1(level), & ! In
-          varnce_thl1, thl1 ) ! Out
+      call set_min_varnce_and_mean &
+          ( wm, w_tol_sqd, pdf_params%w2(level), pdf_params%varnce_w2(level), & ! In
+            varnce_w2, w2 ) ! Out
 
-    call set_min_varnce_and_mean &
-        ( thlm, thl_tol**2, pdf_params%thl2(level), pdf_params%varnce_thl2(level), & ! In
-          varnce_thl2, thl2 ) ! Out
+      rtm = rvm + rcm
 
-    ! Compute the mean of s1 and s2
-    s_mellor = pdf_params%s1(level) * pdf_params%mixt_frac(level) &
-             + (1.0-pdf_params%mixt_frac(level)) * pdf_params%s2(level)
+      call set_min_varnce_and_mean &
+          ( rtm, rt_tol**2, pdf_params%rt1(level), pdf_params%varnce_rt1(level), & ! In
+            varnce_rt1, rt1 ) ! Out
 
-    ! Here the subroutine name is a little misleading since we're imposing the
-    ! threshold on a standard deviation rather than a variance.
-    call set_min_varnce_and_mean &
-        ( s_mellor, s_mellor_tol, pdf_params%s1(level), pdf_params%stdev_s1(level), & ! In
-          stdev_s1, s1 ) ! Out
+      call set_min_varnce_and_mean &
+          ( rtm, rt_tol**2, pdf_params%rt2(level), pdf_params%varnce_rt2(level), & ! In
+            varnce_rt2, rt2 ) ! Out
 
-    ! See comment above.
-    call set_min_varnce_and_mean &
-        ( s_mellor, s_mellor_tol, pdf_params%s2(level), pdf_params%stdev_s2(level), & ! In
-          stdev_s2, s2 ) ! Out
+      call set_min_varnce_and_mean &
+          ( thlm, thl_tol**2, pdf_params%thl1(level), pdf_params%varnce_thl1(level), & ! In
+            varnce_thl1, thl1 ) ! Out
+
+      call set_min_varnce_and_mean &
+          ( thlm, thl_tol**2, pdf_params%thl2(level), pdf_params%varnce_thl2(level), & ! In
+            varnce_thl2, thl2 ) ! Out
+
+      ! Compute the mean of s1 and s2
+      s_mellor = pdf_params%s1(level) * pdf_params%mixt_frac(level) &
+               + (1.0-pdf_params%mixt_frac(level)) * pdf_params%s2(level)
+
+      ! Here the subroutine name is a little misleading since we're imposing the
+      ! threshold on a standard deviation rather than a variance.
+      call set_min_varnce_and_mean &
+          ( s_mellor, s_mellor_tol, pdf_params%s1(level), pdf_params%stdev_s1(level), & ! In
+            stdev_s1, s1 ) ! Out
+
+      ! See comment above.
+      call set_min_varnce_and_mean &
+          ( s_mellor, s_mellor_tol, pdf_params%s2(level), pdf_params%stdev_s2(level), & ! In
+            stdev_s2, s2 ) ! Out
+    end if ! l_fix_s_t_correlations
 
     crt1 = pdf_params%crt1(level)
     crt2 = pdf_params%crt2(level)
@@ -1937,7 +1966,7 @@ module generate_lh_sample_module
              iiLH_t_mellor, iiLH_w, index1, &
              xp2_on_xm2_array, corr_array, &
              corr_stw_matrix )
-    end do 
+    end do
 
     return
   end subroutine construct_corr_stw_matrix
@@ -1997,7 +2026,7 @@ module generate_lh_sample_module
     call set_lower_triangular_matrix_dp &
          ( d_variables, index1, index2, dble( covar_xy ), & ! In
            corr_stw_matrix ) ! In/out
- 
+
     return
   end subroutine add_corr_to_matrix_LN_LN
 
