@@ -35,7 +35,7 @@ run_case()
 {
     # Enable G95 runtime option that sets uninitialized memory to a NaN value
     G95_MEM_INIT="NAN"
-    G95_FPU_INVALID=true
+    G95_FPU_INVALID=false
     export G95_MEM_INIT G95_FPU_INVALID
 
     echo "Running $run_case"
