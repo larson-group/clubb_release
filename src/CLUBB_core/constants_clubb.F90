@@ -194,9 +194,9 @@ module constants_clubb
 
   ! Useful conversion factors.
   real(kind=time_precision), parameter ::  & 
-    sec_per_day = 86400.0, & ! Seconds in a day.
-    sec_per_hr  = 3600.0,  & ! Seconds in an hour.
-    sec_per_min = 60.0       ! Seconds in a minute.
+    sec_per_day = 86400.0_time_precision, & ! Seconds in a day.
+    sec_per_hr  = 3600.0_time_precision,  & ! Seconds in an hour.
+    sec_per_min = 60.0_time_precision       ! Seconds in a minute.
 
   real, parameter :: & 
     g_per_kg = 1000.0     ! Grams in a kilogram.
