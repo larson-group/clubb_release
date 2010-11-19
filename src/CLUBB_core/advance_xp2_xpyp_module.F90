@@ -37,9 +37,9 @@ module advance_xp2_xpyp_module
     xp2_xpyp_scalars = 7, &  ! Named constant for scalar solves
     xp2_xpyp_sclrp2 = 8, &   ! Named constant for sclrp2 solves
     xp2_xpyp_sclrprtp = 9, & ! Named constant for sclrprtp solves
-    xp2_xpyp_sclrpthlp = 10  ! Named constant for sclrpthlp solves    
+    xp2_xpyp_sclrpthlp = 10  ! Named constant for sclrpthlp solves
 
-contains
+  contains
 
   !=============================================================================
   subroutine advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, & 
@@ -66,7 +66,7 @@ contains
     !   JAS, Vol. 59, pp. 3540--3551.
 
     ! See also:
-    !   ``Equations for HOC'', Section 4:
+    !   ``Equations for CLUBB'', Section 4:
     !   /Steady-state solution for the variances/
     !-----------------------------------------------------------------------
 
@@ -102,7 +102,7 @@ contains
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
-      sclr_tol    
+      sclr_tol
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -140,6 +140,13 @@ contains
     ! Intrinsic functions
     intrinsic :: &
       exp, sqrt, min
+
+    ! Constant parameters
+    logical, parameter :: &
+      l_clip_large_rtp2 = .false. ! Clip rtp2 < rtm^2
+
+    real, parameter :: &
+      rtp2_clip_coef = 1.0 ! Coefficient appled the clipping threshold on rtp2 [-]
 
     ! Input variables
     real, intent(in), dimension(gr%nnzp) ::  & 
@@ -312,84 +319,84 @@ contains
     ! and covariances.
     do k = 1, gr%nnzp, 1
 
-       ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp, and
-       ! passive scalars.  The variances and covariances are located on the
-       ! momentum levels.  Kw2 is located on the thermodynamic levels.
-       ! Kw2 = c_K2 * Kh_zt
-       Kw2(k) = c_K2 * Kh_zt(k)
+      ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp, and
+      ! passive scalars.  The variances and covariances are located on the
+      ! momentum levels.  Kw2 is located on the thermodynamic levels.
+      ! Kw2 = c_K2 * Kh_zt
+      Kw2(k) = c_K2 * Kh_zt(k)
 
-       ! Kw9 is used for variances up2 and vp2.  The variances are located on
-       ! the momentum levels.  Kw9 is located on the thermodynamic levels.
-       ! Kw9 = c_K9 * Kh_zt
-       Kw9(k) = c_K9 * Kh_zt(k)
+      ! Kw9 is used for variances up2 and vp2.  The variances are located on
+      ! the momentum levels.  Kw9 is located on the thermodynamic levels.
+      ! Kw9 = c_K9 * Kh_zt
+      Kw9(k) = c_K9 * Kh_zt(k)
 
     enddo
 
     ! (xapxbp)^2: 3-point average diffusion coefficient.
     if ( l_3pt_sqd_dfsn ) then
 
-       ! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from the momentum levels to
-       ! the thermodynamic levels.  These will be used for extra diffusion based
-       ! on a three-point average of (var)^2.
-       rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )  ! Positive def. quantity
-       thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 )  ! Positive def. quantity
-       rtpthlp_zt = zm2zt( rtpthlp )
+      ! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from the momentum levels to
+      ! the thermodynamic levels.  These will be used for extra diffusion based
+      ! on a three-point average of (var)^2.
+      rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )  ! Positive def. quantity
+      thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 )  ! Positive def. quantity
+      rtpthlp_zt = zm2zt( rtpthlp )
 
-       do k = 1, gr%nnzp, 1
+      do k = 1, gr%nnzp, 1
 
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, gr%nnzp )
+        km1 = max( k-1, 1 )
+        kp1 = min( k+1, gr%nnzp )
 
-          ! Compute the square of rtp2_zt, averaged over 3 points.  26 Jan 2008
-          rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2  & 
-                                 + rtp2_zt(kp1)**2 ) / 3.0
-          ! Account for units (kg/kg)**4  Vince Larson 29 Jan 2008
-          rtp2_zt_sqd_3pt(k) = 1e12 * rtp2_zt_sqd_3pt(k)
+        ! Compute the square of rtp2_zt, averaged over 3 points.  26 Jan 2008
+        rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2  & 
+                               + rtp2_zt(kp1)**2 ) / 3.0
+        ! Account for units (kg/kg)**4  Vince Larson 29 Jan 2008
+        rtp2_zt_sqd_3pt(k) = 1e12 * rtp2_zt_sqd_3pt(k)
 
-          ! Compute the square of thlp2_zt, averaged over 3 points.  26 Jan 2008
-          thlp2_zt_sqd_3pt(k) = ( thlp2_zt(km1)**2 + thlp2_zt(k)**2  & 
-                                  + thlp2_zt(kp1)**2 ) / 3.0
+        ! Compute the square of thlp2_zt, averaged over 3 points.  26 Jan 2008
+        thlp2_zt_sqd_3pt(k) = ( thlp2_zt(km1)**2 + thlp2_zt(k)**2  & 
+                                + thlp2_zt(kp1)**2 ) / 3.0
 
-          ! Compute the square of rtpthlp_zt, averaged over 3 points.  26 Jan 2008
-          rtpthlp_zt_sqd_3pt(k) = ( rtpthlp_zt(km1)**2 + rtpthlp_zt(k)**2  & 
-                                    + rtpthlp_zt(kp1)**2 ) / 3.0
-          ! Account for units (kg/kg)**2 Vince Larson 29 Jan 2008
-          rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k)
+        ! Compute the square of rtpthlp_zt, averaged over 3 points.  26 Jan 2008
+        rtpthlp_zt_sqd_3pt(k) = ( rtpthlp_zt(km1)**2 + rtpthlp_zt(k)**2  & 
+                                  + rtpthlp_zt(kp1)**2 ) / 3.0
+        ! Account for units (kg/kg)**2 Vince Larson 29 Jan 2008
+        rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k)
 
-       enddo
+      enddo
 
-       ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
-       do k = 1, gr%nnzp, 1
+      ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
+      do k = 1, gr%nnzp, 1
 
-          ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has units
-          ! of kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ] in this
-          ! case.
-          Kw2_rtp2(k) = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k)
-          ! Vince Larson increased by c_Ksqd, 29Jan2008
+        ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has units
+        ! of kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ] in this
+        ! case.
+        Kw2_rtp2(k) = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k)
+        ! Vince Larson increased by c_Ksqd, 29Jan2008
 
-          ! Kw2_thlp2 must have units of m^2/s.  Since thlp2_zt_sqd_3pt has
-          ! units of K^2, c_Ksqd is given units of m^2/[ s K^2 ] in this case.
-          Kw2_thlp2(k) = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k)
-          ! Vince Larson increased by c_Ksqd, 29Jan2008
+        ! Kw2_thlp2 must have units of m^2/s.  Since thlp2_zt_sqd_3pt has
+        ! units of K^2, c_Ksqd is given units of m^2/[ s K^2 ] in this case.
+        Kw2_thlp2(k) = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k)
+        ! Vince Larson increased by c_Ksqd, 29Jan2008
 
-          ! Kw2_rtpthlp must have units of m^2/s.  Since rtpthlp_zt_sqd_3pt has
-          ! units of K (kg/kg), c_Ksqd is given units of m^2/[ s K (kg/kg) ] in
-          ! this case.
-          Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k)
-          ! Vince Larson increased by c_Ksqd, 29Jan2008
+        ! Kw2_rtpthlp must have units of m^2/s.  Since rtpthlp_zt_sqd_3pt has
+        ! units of K (kg/kg), c_Ksqd is given units of m^2/[ s K (kg/kg) ] in
+        ! this case.
+        Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k)
+        ! Vince Larson increased by c_Ksqd, 29Jan2008
 
-       enddo
+      enddo
 
     else  ! Three-point squared diffusion turned off.
 
-       ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
-       do k = 1, gr%nnzp, 1
+      ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
+      do k = 1, gr%nnzp, 1
 
-          Kw2_rtp2(k)    = Kw2(k)
-          Kw2_thlp2(k)   = Kw2(k)
-          Kw2_rtpthlp(k) = Kw2(k)
+        Kw2_rtp2(k)    = Kw2(k)
+        Kw2_thlp2(k)   = Kw2(k)
+        Kw2_rtpthlp(k) = Kw2(k)
 
-       enddo
+      enddo
 
     endif  ! l_3pt_sqd_dfsn
 
@@ -544,6 +551,16 @@ contains
     call clip_variance( xp2_xpyp_rtp2, dt, threshold, & ! Intent(in)
                         rtp2 )                          ! Intent(inout)
 
+    ! Special clipping on the variance of rt to prevent a large variance at
+    ! higher altitudes
+    if ( l_clip_large_rtp2 ) then
+      do k = 1, gr%nnzp
+        threshold = rtp2_clip_coef * rtm(k)**2
+        if ( rtp2(k) > threshold ) then
+          rtp2(k) = threshold
+        end if
+      end do ! k = 1..gr%nnzp
+    end if ! l_clip_large_rtp2
 
     ! Clipping for th_l'^2
 
@@ -622,7 +639,7 @@ contains
 
         !!!!!***** sclr'r_t' *****!!!!!
         if ( i == iisclr_rt ) then
-          ! In this case we're trying to emulate rt'^2 with sclr'rt', so we 
+          ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
           ! handle this as we would a variance, even though generally speaking
           ! the scalar is not rt
           threshold = rt_tol**2
@@ -677,8 +694,8 @@ contains
           call pos_definite_variances( xp2_xpyp_sclrp2, dt, sclr_tol(i)**2, & ! Intent(in)
                                        rho_ds_zm, rho_ds_zt, &                ! Intent(in)
                                        sclrp2(:,i) )                          ! Intent(inout)
-          if ( i == iisclr_rt ) then 
-             ! Here again, we do this kluge here to make sclr'rt' == rt'^2
+          if ( i == iisclr_rt ) then
+            ! Here again, we do this kluge here to make sclr'rt' == rt'^2
             call pos_definite_variances( xp2_xpyp_sclrprtp, dt, sclr_tol(i)**2, & ! Intent(in)
                                          rho_ds_zm, rho_ds_zt, &                  ! Intent(in)
                                          sclrprtp(:,i) )                          ! Intent(inout)
@@ -701,10 +718,10 @@ contains
 !      where ( wp2 >= w_tol_sqd ) &
 !         threshold = sclr_tol(i)*sclr_tol(i)
 
-         threshold = sclr_tol(i)**2
+        threshold = sclr_tol(i)**2
 
-         call clip_variance( clip_sclrp2, dt, threshold, & ! Intent(in)
-                             sclrp2(:,i) )                 ! Intent(inout)
+        call clip_variance( clip_sclrp2, dt, threshold, & ! Intent(in)
+                            sclrp2(:,i) )                 ! Intent(inout)
 
       enddo
 
@@ -933,16 +950,16 @@ contains
       = lhs(kp1_mdiag:km1_mdiag,k) & 
       + term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
 
-      ! LHS turbulent advection (ta) term. 
+      ! LHS turbulent advection (ta) term.
       ! Note:  An "over-implicit" weighted time step is applied to this term.
       !        The weight of the implicit portion of this term is controlled
       !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in the
       !        expression below).  A factor is added to the right-hand side of
       !        the equation in order to balance a weight that is not equal to 1,
-      !        such that: 
+      !        such that:
       !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
       !        where X is the variable that is being solved for in a predictive
-      !        equation (x'^2 or x'y' in this case), y(t) is the linearized 
+      !        equation (x'^2 or x'y' in this case), y(t) is the linearized
       !        portion of the term that gets treated implicitly, and RHS is the
       !        portion of the term that is always treated explicitly.  A weight
       !        of greater than 1 can be applied to make the term more
@@ -1123,9 +1140,9 @@ contains
     ! --- Begin Code ---
 
     select case ( solve_type )
-    !------------------------------------------------------------------------
-    ! Note that these are diagnostics from inverting the matrix, not a budget
-    !------------------------------------------------------------------------
+      !------------------------------------------------------------------------
+      ! Note that these are diagnostics from inverting the matrix, not a budget
+      !------------------------------------------------------------------------
     case ( xp2_xpyp_rtp2 )
       ixapxbp_matrix_condt_num  = irtp2_matrix_condt_num
       solve_type_str = "rtp2"
@@ -1672,7 +1689,7 @@ contains
 
 
     ! Boundary Conditions
-    ! These are set so that the surface_varnce value of u'^2 or v'^2 can be 
+    ! These are set so that the surface_varnce value of u'^2 or v'^2 can be
     ! used at the lowest boundary and the values of those variables can be
     ! set to their respective threshold minimum values at the top boundary.
     ! Fixed-point boundary conditions are used for the variances.
@@ -1999,7 +2016,7 @@ contains
     ! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent
     ! advection term is rewritten as:
     !
-    ! - (1/rho_ds) 
+    ! - (1/rho_ds)
     !   * d [ rho_ds * { (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
     !                    + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
     !                      * w'x_a' * w'x_b' } ]
@@ -2008,14 +2025,14 @@ contains
     ! which produces an implicit and an explicit portion of this term.  The
     ! implicit portion of this term is:
     !
-    ! - (1/rho_ds) 
+    ! - (1/rho_ds)
     !   * d [ rho_ds * (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ]
     !     / dz.
     !
     ! Since (1/3)*beta is a constant, it can be pulled outside of the
     ! derivative.  The implicit portion of this term becomes:
     !
-    ! - (1/3)*beta/rho_ds 
+    ! - (1/3)*beta/rho_ds
     !   * d [ rho_ds * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ] / dz.
     !
     ! Note:  When the term is brought over to the left-hand side, the sign
@@ -2126,82 +2143,82 @@ contains
 
     if ( l_standard_term_ta ) then
 
-       ! The turbulent advection term is discretized normally, in accordance
-       ! with the model equations found in the documentation and the description
-       ! listed above.
+      ! The turbulent advection term is discretized normally, in accordance
+      ! with the model equations found in the documentation and the description
+      ! listed above.
 
-       ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
-       lhs(kp1_mdiag)  &
-       = + (1.0/3.0) * beta  &
-           * invrs_rho_ds_zm  &
-             * invrs_dzm  &
-               * rho_ds_ztp1 * a1_ztp1  &
-               * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
-               * gr%weights_zm2zt(m_above,tkp1)
+      ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
+      lhs(kp1_mdiag)  &
+      = + (1.0/3.0) * beta  &
+          * invrs_rho_ds_zm  &
+            * invrs_dzm  &
+              * rho_ds_ztp1 * a1_ztp1  &
+              * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
+              * gr%weights_zm2zt(m_above,tkp1)
 
-       ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
-       lhs(k_mdiag)  &
-       = + (1.0/3.0) * beta  &
-           * invrs_rho_ds_zm  &
-             * invrs_dzm  &
-               * (   rho_ds_ztp1 * a1_ztp1  &
-                     * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
-                     * gr%weights_zm2zt(m_below,tkp1)  &
-                   - rho_ds_zt * a1_zt  &
-                     * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
-                     * gr%weights_zm2zt(m_above,tk)  &
-                 )
+      ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
+      lhs(k_mdiag)  &
+      = + (1.0/3.0) * beta  &
+          * invrs_rho_ds_zm  &
+            * invrs_dzm  &
+              * (   rho_ds_ztp1 * a1_ztp1  &
+                    * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
+                    * gr%weights_zm2zt(m_below,tkp1)  &
+                  - rho_ds_zt * a1_zt  &
+                    * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
+                    * gr%weights_zm2zt(m_above,tk)  &
+                )
 
-       ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
-       lhs(km1_mdiag)  &
-       = - (1.0/3.0) * beta  &
-           * invrs_rho_ds_zm  &
-             * invrs_dzm  &
-               * rho_ds_zt * a1_zt  &
-               * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
-               * gr%weights_zm2zt(m_below,tk)
+      ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
+      lhs(km1_mdiag)  &
+      = - (1.0/3.0) * beta  &
+          * invrs_rho_ds_zm  &
+            * invrs_dzm  &
+              * rho_ds_zt * a1_zt  &
+              * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
+              * gr%weights_zm2zt(m_below,tk)
 
     else
 
-       ! Brian tried a new discretization for the turbulent advection term, for
-       ! which the implicit portion of the term is:
-       !  - (1/rho_ds)
-       !    * d [ rho_ds * a_1 * (1/3)*beta * ( w'^3 / w'^2 ) * x_a'x_b' ] / dz.
-       ! In order to help stabilize x_a'x_b', a_1 has been pulled outside the
-       ! derivative.
+      ! Brian tried a new discretization for the turbulent advection term, for
+      ! which the implicit portion of the term is:
+      !  - (1/rho_ds)
+      !    * d [ rho_ds * a_1 * (1/3)*beta * ( w'^3 / w'^2 ) * x_a'x_b' ] / dz.
+      ! In order to help stabilize x_a'x_b', a_1 has been pulled outside the
+      ! derivative.
 
-       ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
-       lhs(kp1_mdiag)  & 
-       = + (1.0/3.0) * beta  &
-           * invrs_rho_ds_zm * a1  &
-             * invrs_dzm  &
-               * rho_ds_ztp1  &
-               * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  & 
-               * gr%weights_zm2zt(m_above,tkp1)
+      ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
+      lhs(kp1_mdiag)  & 
+      = + (1.0/3.0) * beta  &
+          * invrs_rho_ds_zm * a1  &
+            * invrs_dzm  &
+              * rho_ds_ztp1  &
+              * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  & 
+              * gr%weights_zm2zt(m_above,tkp1)
 
-       ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
-       lhs(k_mdiag)  & 
-       = + (1.0/3.0) * beta  &
-           * invrs_rho_ds_zm * a1  &
-             * invrs_dzm  &
-               * (   rho_ds_ztp1  &
-                     * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
-                     * gr%weights_zm2zt(m_below,tkp1)  &
-                   - rho_ds_zt  &
-                     * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
-                     * gr%weights_zm2zt(m_above,tk)  &
-                 )
+      ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
+      lhs(k_mdiag)  & 
+      = + (1.0/3.0) * beta  &
+          * invrs_rho_ds_zm * a1  &
+            * invrs_dzm  &
+              * (   rho_ds_ztp1  &
+                    * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
+                    * gr%weights_zm2zt(m_below,tkp1)  &
+                  - rho_ds_zt  &
+                    * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
+                    * gr%weights_zm2zt(m_above,tk)  &
+                )
 
-       ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
-       lhs(km1_mdiag)  & 
-       = - (1.0/3.0) * beta  &
-           * invrs_rho_ds_zm * a1  &
-             * invrs_dzm  &
-               * rho_ds_zt  &
-               * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
-               * gr%weights_zm2zt(m_below,tk)
+      ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
+      lhs(km1_mdiag)  & 
+      = - (1.0/3.0) * beta  &
+          * invrs_rho_ds_zm * a1  &
+            * invrs_dzm  &
+              * rho_ds_zt  &
+              * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
+              * gr%weights_zm2zt(m_below,tk)
 
-       ! End of Brian's a1 change.  14 Feb 2008.
+      ! End of Brian's a1 change.  14 Feb 2008.
 
     endif
 
@@ -2233,7 +2250,7 @@ contains
     ! where a_1 is a variable that is a function of sigma_sqd_w.  The turbulent
     ! advection term is rewritten as:
     !
-    ! - (1/rho_ds) 
+    ! - (1/rho_ds)
     !   * d [ rho_ds * { (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
     !                    + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
     !                      * w'x_a' * w'x_b' } ]
@@ -2242,7 +2259,7 @@ contains
     ! which produces an implicit and an explicit portion of this term.  The
     ! explicit portion of this term is:
     !
-    ! - (1/rho_ds) 
+    ! - (1/rho_ds)
     !   * d [ rho_ds * (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
     !         * w'x_a' * w'x_b' ] / dz.
     !
@@ -2328,45 +2345,45 @@ contains
 
     if ( l_standard_term_ta ) then
 
-       ! The turbulent advection term is discretized normally, in accordance
-       ! with the model equations found in the documentation and the description
-       ! listed above.
+      ! The turbulent advection term is discretized normally, in accordance
+      ! with the model equations found in the documentation and the description
+      ! listed above.
 
-       rhs  &
-       = - ( 1.0 - (1.0/3.0) * beta )  &
-           * invrs_rho_ds_zm  &
-             * invrs_dzm  &
-               * (   rho_ds_ztp1 * a1_ztp1**2  &
-                     * ( wp3p1 / max( wp2_ztp1, w_tol_sqd )**2 )  &
-                     * wpxap_ztp1 * wpxbp_ztp1  &
-                   - rho_ds_zt * a1_zt**2  &
-                     * ( wp3 / max( wp2_zt, w_tol_sqd )**2 )  &
-                     * wpxap_zt * wpxbp_zt  &
-                 )
+      rhs  &
+      = - ( 1.0 - (1.0/3.0) * beta )  &
+          * invrs_rho_ds_zm  &
+            * invrs_dzm  &
+              * (   rho_ds_ztp1 * a1_ztp1**2  &
+                    * ( wp3p1 / max( wp2_ztp1, w_tol_sqd )**2 )  &
+                    * wpxap_ztp1 * wpxbp_ztp1  &
+                  - rho_ds_zt * a1_zt**2  &
+                    * ( wp3 / max( wp2_zt, w_tol_sqd )**2 )  &
+                    * wpxap_zt * wpxbp_zt  &
+                )
 
     else
 
-       ! Brian tried a new discretization for the turbulent advection term, for
-       ! which the explicit portion of the term is:
-       !  - (1/rho_ds)
-       !    * d [ rho_ds * (a_1)^2 * (1-(1/3)*beta) * ( w'^3 / (w'^2)^2 )
-       !          * w'x_a' * w'x_b' ] / dz.
-       ! In order to help stabilize x_a'x_b', (a_1)^2 has been pulled outside
-       ! the derivative.
+      ! Brian tried a new discretization for the turbulent advection term, for
+      ! which the explicit portion of the term is:
+      !  - (1/rho_ds)
+      !    * d [ rho_ds * (a_1)^2 * (1-(1/3)*beta) * ( w'^3 / (w'^2)^2 )
+      !          * w'x_a' * w'x_b' ] / dz.
+      ! In order to help stabilize x_a'x_b', (a_1)^2 has been pulled outside
+      ! the derivative.
 
-       rhs & 
-       = - ( 1.0 - (1.0/3.0) * beta )  &
-           * invrs_rho_ds_zm * a1**2  &
-             * invrs_dzm  &
-               * (   rho_ds_ztp1  &
-                     * ( wp3p1 / max( wp2_ztp1, w_tol_sqd )**2 )  &
-                     * wpxap_ztp1 * wpxbp_ztp1  &
-                   - rho_ds_zt  &
-                     * ( wp3 / max( wp2_zt, w_tol_sqd )**2 )  &
-                     * wpxap_zt * wpxbp_zt  &
-                 )
+      rhs & 
+      = - ( 1.0 - (1.0/3.0) * beta )  &
+          * invrs_rho_ds_zm * a1**2  &
+            * invrs_dzm  &
+              * (   rho_ds_ztp1  &
+                    * ( wp3p1 / max( wp2_ztp1, w_tol_sqd )**2 )  &
+                    * wpxap_ztp1 * wpxbp_ztp1  &
+                  - rho_ds_zt  &
+                    * ( wp3 / max( wp2_zt, w_tol_sqd )**2 )  &
+                    * wpxap_zt * wpxbp_zt  &
+                )
 
-       ! End of Brian's a1 change.  14 Feb 2008.
+      ! End of Brian's a1 change.  14 Feb 2008.
 
     endif
 
@@ -2601,7 +2618,7 @@ contains
     !
     ! and with all substitutions applied, pressure term 1 becomes:
     !
-    ! - (2/3) * ( C_14 / tau_zm ) 
+    ! - (2/3) * ( C_14 / tau_zm )
     !         * [ (1/2) * ( u'^2 + v'^2 + w'^2 ) - (3/2) * w_tol^2 ].
     !
     ! Dissipation term 1 and pressure term 1 are combined and simplify to:
@@ -2761,7 +2778,7 @@ contains
       l_use_experimental_term_pr2 = .false., & ! If true, use experimental version
                                                ! of term_pr2 calculation
       l_use_vert_avg_winds = .true. ! If true, use vert_avg_depth average
-                                    ! calculation for d(um)/dz and d(vm)/dz
+    ! calculation for d(um)/dz and d(vm)/dz
 
     !------ Begin code ------------
 
@@ -2779,7 +2796,7 @@ contains
 
       if( l_use_vert_avg_winds ) then
         ! We found that using a 200m running average of d(um)/dz and d(vm)/dz
-        ! produces larger spikes in up2 and vp2 near the inversion for 
+        ! produces larger spikes in up2 and vp2 near the inversion for
         ! the stratocumulus cases.
         call find_endpts_for_vert_avg_winds &
              ( vert_avg_depth, k, um, vm, & ! intent(in)
@@ -2798,7 +2815,7 @@ contains
 
       ! *****NOTES on experimental version*****
       ! Leah Grant and Vince Larson eliminated the contribution from wpthvp
-      ! because terms with d(wp2)/dz include buoyancy effects and seem to 
+      ! because terms with d(wp2)/dz include buoyancy effects and seem to
       ! produce better results.
       !
       ! We also eliminated the contribution from the momentum flux terms
@@ -2807,7 +2824,7 @@ contains
       ! The constant1 line does not depend on shear.  This is important for
       ! up2 and vp2 generation in cases that have little shear such as FIRE.
       ! We also made the constant1 line proportional to d(Lscale)/dz to account
-      ! for higher spikes in up2 and vp2 near a stronger inversion.  This 
+      ! for higher spikes in up2 and vp2 near a stronger inversion.  This
       ! increases up2 and vp2 near the inversion for the stratocumulus cases,
       ! but overpredicts up2 and vp2 near cloud base in cumulus cases such
       ! as BOMEX where d(Lscale)/dz is large.  Therefore, the d(Lscale)/dz
@@ -2836,7 +2853,7 @@ contains
                     * abs( vm_high - vm_low ) / ( zt_high - zt_low ) &
                      + ( Lscalep1 + Lscale ) * 0 &     ! This line eliminates an Intel compiler
                 )                                      ! warning that Lscalep1/Lscale are not
-                                                       ! used. -meyern
+      ! used. -meyern
     end if ! .not. l_use_experimental_term_pr2
 
     return
@@ -2848,12 +2865,12 @@ contains
                     zt_high, um_high, vm_high, & ! intent(out)
                     zt_low, um_low, vm_low )     ! intent(out)
     ! Description:
-    ! This subroutine determines values of um and vm which are 
+    ! This subroutine determines values of um and vm which are
     ! +/- [vert_avg_depth/2] m above and below the current altitude zt(k).
-    ! This is for the purpose of using a running vertical average 
+    ! This is for the purpose of using a running vertical average
     ! calculation of d(um)/dz and d(vm)/dz in term_pr2 (over a depth
     ! vert_avg_depth).  E.g. If a running average over 200m is desired,
-    ! then this subroutine will determine the values of um and vm which 
+    ! then this subroutine will determine the values of um and vm which
     ! are 100m above and below the current level.
     ! ldgrant March 2010
     !---------------------------------------------------------------------------
@@ -2869,8 +2886,8 @@ contains
 
     ! Input Variables
     real, intent(in) :: &
-      vert_avg_depth ! Depth over which to average d(um)/dz 
-                     ! and d(vm)/dz in term_pr2 [m]
+      vert_avg_depth ! Depth over which to average d(um)/dz
+    ! and d(vm)/dz in term_pr2 [m]
 
     integer, intent(in) :: &
       k ! current level in xp2_xpyp_uv_rhs loop
@@ -2892,15 +2909,15 @@ contains
     real :: depth ! vert_avg_depth/2 [m]
 
     integer :: k_high, k_low
-      ! Number of levels above (below) the current level where altitude is 
-      ! [depth] greater (less) than the current altitude 
-      ! [unless zt(k) < [depth] from an upper/lower boundary]
+    ! Number of levels above (below) the current level where altitude is
+    ! [depth] greater (less) than the current altitude
+    ! [unless zt(k) < [depth] from an upper/lower boundary]
 
     !------ Begin code ------------
 
     depth = vert_avg_depth / 2.0
 
-    ! Find the grid level that contains the altitude greater than or 
+    ! Find the grid level that contains the altitude greater than or
     ! equal to the current altitude + depth
     k_high = binary_search( gr%nnzp, gr%zt, gr%zt(k)+depth )
     ! If the current altitude + depth is greater than the highest
@@ -2921,7 +2938,7 @@ contains
       um_high = um(k_high)
       vm_high = vm(k_high)
     else ! Do an interpolation to find um & vm at current altitude + depth.
-      zt_high = gr%zt(k)+depth 
+      zt_high = gr%zt(k)+depth
       um_high = lin_int( zt_high, gr%zt(k_high), gr%zt(k_high-1), &
                          um(k_high), um(k_high-1) )
       vm_high = lin_int( zt_high, gr%zt(k_high), gr%zt(k_high-1), &
@@ -2929,7 +2946,7 @@ contains
     end if ! k_high ...
 
 
-    ! Find the grid level that contains the altitude less than or 
+    ! Find the grid level that contains the altitude less than or
     ! equal to the current altitude - depth
     k_low = binary_search( gr%nnzp, gr%zt, gr%zt(k)-depth )
     ! If the current altitude - depth is less than the lowest
@@ -2949,7 +2966,7 @@ contains
       um_low = um(k_low)
       vm_low = vm(k_low)
     else ! Do an interpolation to find um at current altitude - depth.
-      zt_low = gr%zt(k)-depth 
+      zt_low = gr%zt(k)-depth
       um_low = lin_int( zt_low, gr%zt(k_low), gr%zt(k_low-1), &
                         um(k_low), um(k_low-1) )
       vm_low = lin_int( zt_low, gr%zt(k_low), gr%zt(k_low-1), &
