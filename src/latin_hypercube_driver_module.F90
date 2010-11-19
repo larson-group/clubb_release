@@ -524,8 +524,14 @@ module latin_hypercube_driver_module
       end do
       mean_weight = mean_weight / real( n_micro_calls )
 
-      ! Using more precision for mean_weight should make this work out
-      if ( abs( mean_weight - 1.0 ) > epsilon( LH_sample_point_weights ) ) then
+      ! Using more precision for mean_weight should make this work out.
+      ! The formula below could probably be redefined to estimate maximal ulps
+      ! given the precision of LH_sample_point_weights and the number of
+      ! n_micro_calls, but the formula below seems to be an ok approximation
+      ! when we're using 4 or 8 byte precision floats.
+      ! -dschanen 19 Nov 2010
+      if ( abs( mean_weight - 1.0 ) > &
+           real( n_micro_calls ) * epsilon( LH_sample_point_weights ) ) then
         write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
         stop
       end if
