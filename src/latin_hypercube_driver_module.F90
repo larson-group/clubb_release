@@ -36,7 +36,7 @@ module latin_hypercube_driver_module
                microphys_sub )
 
 ! Description:
-!   Call a microphysics scheme or generate a estimate of Kessler autoconversion
+!   Call a microphysics scheme or generate an estimate of Kessler autoconversion
 !   using latin hypercube sampling.
 ! References:
 !   None
@@ -660,12 +660,18 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use array_index, only: &
-      iiLH_rrain, & ! Variables
+      iiLH_s_mellor, & ! Variables
+      iiLH_t_mellor, &
+      iiLH_w, &
+      iiLH_rrain, & 
+      iiLH_rice, &
+      iiLH_rsnow, &
+      iiLH_rgraupel, &
       iiLH_Nr, &
+      iiLH_Ni, &
+      iiLH_Nsnow, &
+      iiLH_Ngraupel, &
       iiLH_Nc
-
-    use parameters_model, only: &
-      hydromet_dim ! Variable
 
     use parameters_microphys, only: &
       LH_microphys_calls ! Variable
@@ -680,6 +686,9 @@ module latin_hypercube_driver_module
     use output_2D_samples_module, only: &
       lognormal_sample_file, & ! Instance of a type
       uniform_sample_file
+
+    use latin_hypercube_arrays, only: &
+      d_variables ! Variable
 
 #endif /*UNRELEASED_CODE*/
 
@@ -711,53 +720,79 @@ module latin_hypercube_driver_module
 #ifdef UNRELEASED_CODE
     if ( l_output_2D_lognormal_dist ) then
 
-      allocate( variable_names(hydromet_dim+5), variable_descriptions(hydromet_dim+5), &
-                variable_units(hydromet_dim+5) )
+      allocate( variable_names(d_variables+2), variable_descriptions(d_variables+2), &
+                variable_units(d_variables+2) )
 
-      variable_names(1)        = "s_mellor"
-      variable_descriptions(1) = "The variable 's' from Mellor 1977"
-      variable_units(1)        = "kg/kg"
+      variable_names(iiLH_s_mellor)        = "s_mellor"
+      variable_descriptions(iiLH_s_mellor) = "The variable 's' from Mellor 1977"
+      variable_units(iiLH_s_mellor)        = "kg/kg"
 
-      variable_names(2)        = "t_mellor"
-      variable_descriptions(2) = "The variable 't' from Mellor 1977"
-      variable_units(2)        = "kg/kg"
+      variable_names(iiLH_t_mellor)        = "t_mellor"
+      variable_descriptions(iiLH_t_mellor) = "The variable 't' from Mellor 1977"
+      variable_units(iiLH_t_mellor)        = "kg/kg"
 
-      variable_names(3)        = "w"
-      variable_descriptions(3) = "Vertical velocity"
-      variable_units(3)        = "m/s"
+      variable_names(iiLH_w)        = "w"
+      variable_descriptions(iiLH_w) = "Vertical velocity"
+      variable_units(iiLH_w)        = "m/s"
 
-      i = 3 ! Use i to determine the position of rt, thl in the output
+      if ( iiLH_rrain > 0 ) then
+        variable_names(iiLH_rrain)        = "rrain"
+        variable_descriptions(iiLH_rrain) = "Rain water mixing ratio"
+        variable_units(iiLH_rrain)        = "kg/kg"
+      end if
+      if ( iiLH_rice > 0 ) then
+        variable_names(iiLH_rice)        = "rice"
+        variable_descriptions(iiLH_rice) = "Ice water mixing ratio"
+        variable_units(iiLH_rice)        = "kg/kg"
+      end if
+      if ( iiLH_rsnow > 0 ) then
+        variable_names(iiLH_rsnow)        = "rsnow"
+        variable_descriptions(iiLH_rsnow) = "Snow water mixing ratio"
+        variable_units(iiLH_rsnow)        = "kg/kg"
+      end if
+      if ( iiLH_rgraupel > 0 ) then
+        variable_names(iiLH_rgraupel)        = "rgraupel"
+        variable_descriptions(iiLH_rgraupel) = "Graupel water mixing ratio"
+        variable_units(iiLH_rgraupel)        = "kg/kg"
+      end if
 
       if ( iiLH_Nr > 0 ) then
-        i = i + 1
         variable_names(iiLH_Nr)        = "Nr"
         variable_descriptions(iiLH_Nr) = "Rain droplet number concentration"
         variable_units(iiLH_Nr)        = "count/kg"
       end if
       if ( iiLH_Nc > 0 ) then
-        i = i + 1
         variable_names(iiLH_Nc)        = "Nc"
         variable_descriptions(iiLH_Nc) = "Cloud droplet number concentration"
         variable_units(iiLH_Nc)        = "count/kg"
       end if
-      if ( iiLH_rrain > 0 ) then
-        i = i + 1
-        variable_names(iiLH_rrain)        = "rrain"
-        variable_descriptions(iiLH_rrain) = "Rain water mixing ratio"
-        variable_units(iiLH_rrain)        = "kg/kg"
+      if ( iiLH_Ni > 0 ) then
+        variable_names(iiLH_Ni)        = "Ni"
+        variable_descriptions(iiLH_Ni) = "Ice number concentration"
+        variable_units(iiLH_Ni)        = "count/kg"
+      end if
+      if ( iiLH_Nsnow > 0 ) then
+        variable_names(iiLH_Nsnow)        = "Nsnow"
+        variable_descriptions(iiLH_Nsnow) = "Snow number concentration"
+        variable_units(iiLH_Nsnow)        = "count/kg"
+      end if
+      if ( iiLH_Ngraupel > 0 ) then
+        variable_names(iiLH_Ngraupel)        = "Ngraupel"
+        variable_descriptions(iiLH_Ngraupel) = "Graupel number concentration"
+        variable_units(iiLH_Ngraupel)        = "count/kg"
       end if
 
-      i = i + 1
+      i = d_variables + 1
       variable_names(i)        = "rt"
       variable_descriptions(i) = "Total water mixing ratio"
       variable_units(i)        = "kg/kg"
 
-      i = i + 1
+      i = d_variables + 2
       variable_names(i)        = "thl"
       variable_descriptions(i) = "Liquid potential temperature"
       variable_units(i)        = "K"
 
-      call open_2D_samples_file( nnzp, LH_microphys_calls, i, & ! In
+      call open_2D_samples_file( nnzp, LH_microphys_calls, d_variables+2, & ! In
                                  trim( fname_prefix )//"_nl", fdir, & ! In
                                  time_initial, stats_tout, zt, variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In
@@ -769,48 +804,78 @@ module latin_hypercube_driver_module
 
     if ( l_output_2D_uniform_dist ) then
 
-      allocate( variable_names(hydromet_dim+6), variable_descriptions(hydromet_dim+6), &
-                variable_units(hydromet_dim+6) )
+      allocate( variable_names(d_variables+3), variable_descriptions(d_variables+3), &
+                variable_units(d_variables+3) )
 
       ! The uniform distribution corresponds to all the same variables as X_nl,
       ! except the d+1 component is the mixture component.
 
-      variable_names(1)        = "s_mellor"
-      variable_descriptions(1) = "Uniform dist of the variable 's' from Mellor 1977"
+      variable_names(iiLH_s_mellor)        = "s_mellor"
+      variable_descriptions(iiLH_s_mellor) = "Uniform dist of the variable 's' from Mellor 1977"
 
-      variable_names(2)        = "t_mellor"
-      variable_descriptions(2) = "Uniform dist of the variable 't' from Mellor 1977"
+      variable_names(iiLH_t_mellor)        = "t_mellor"
+      variable_descriptions(iiLH_t_mellor) = "Uniform dist of the variable 't' from Mellor 1977"
 
-      variable_names(3)        = "w"
-      variable_descriptions(3) = "Uniform dist of the vertical velocity"
+      variable_names(iiLH_w)        = "w"
+      variable_descriptions(iiLH_w) = "Uniform dist of the vertical velocity"
 
-      i = 3 ! Use i to determine the position of rt, thl in the output
+
+      if ( iiLH_rrain > 0 ) then
+        variable_names(iiLH_rrain)        = "rrain"
+        variable_descriptions(iiLH_rrain) = "Rain water mixing ratio"
+        variable_units(iiLH_rrain)        = "kg/kg"
+      end if
+      if ( iiLH_rice > 0 ) then
+        variable_names(iiLH_rice)        = "rice"
+        variable_descriptions(iiLH_rice) = "Ice water mixing ratio"
+        variable_units(iiLH_rice)        = "kg/kg"
+      end if
+      if ( iiLH_rsnow > 0 ) then
+        variable_names(iiLH_rsnow)        = "rsnow"
+        variable_descriptions(iiLH_rsnow) = "Snow water mixing ratio"
+        variable_units(iiLH_rsnow)        = "kg/kg"
+      end if
+      if ( iiLH_rgraupel > 0 ) then
+        variable_names(iiLH_rgraupel)        = "rgraupel"
+        variable_descriptions(iiLH_rgraupel) = "Graupel water mixing ratio"
+        variable_units(iiLH_rgraupel)        = "kg/kg"
+      end if
 
       if ( iiLH_Nr > 0 ) then
-        i = i + 1
         variable_names(iiLH_Nr)        = "Nr"
-        variable_descriptions(iiLH_Nr) = "Uniform dist of rain droplet number concentration"
+        variable_descriptions(iiLH_Nr) = "Rain droplet number concentration"
+        variable_units(iiLH_Nr)        = "count/kg"
       end if
       if ( iiLH_Nc > 0 ) then
-        i = i + 1
         variable_names(iiLH_Nc)        = "Nc"
-        variable_descriptions(iiLH_Nc) = "Uniform dist of cloud droplet number concentration"
+        variable_descriptions(iiLH_Nc) = "Cloud droplet number concentration"
+        variable_units(iiLH_Nc)        = "count/kg"
       end if
-      if ( iiLH_rrain > 0 ) then
-        i = i + 1
-        variable_names(iiLH_rrain)        = "rrain"
-        variable_descriptions(iiLH_rrain) = "Uniform dist of rain water mixing ratio"
+      if ( iiLH_Ni > 0 ) then
+        variable_names(iiLH_Ni)        = "Ni"
+        variable_descriptions(iiLH_Ni) = "Ice number concentration"
+        variable_units(iiLH_Ni)        = "count/kg"
+      end if
+      if ( iiLH_Nsnow > 0 ) then
+        variable_names(iiLH_Nsnow)        = "Nsnow"
+        variable_descriptions(iiLH_Nsnow) = "Snow number concentration"
+        variable_units(iiLH_Nsnow)        = "count/kg"
+      end if
+      if ( iiLH_Ngraupel > 0 ) then
+        variable_names(iiLH_Ngraupel)        = "Ngraupel"
+        variable_descriptions(iiLH_Ngraupel) = "Graupel number concentration"
+        variable_units(iiLH_Ngraupel)        = "count/kg"
       end if
 
-      i = i + 1
+      i = d_variables + 1
       variable_names(i) = "dp1"
       variable_descriptions(i) = "Uniform distribution for the mixture component"
 
-      i = i + 1
+      i = d_variables + 2
       variable_names(i) = "X_mixt_comp"
       variable_descriptions(i) = "Mixture component (should be 1 or 2)"
 
-      i = i + 1
+      i = d_variables + 3
       variable_names(i) = "p_matrix"
       variable_descriptions(i) = "P matrix elements at k_lh_start"
 
