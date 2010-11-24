@@ -832,7 +832,8 @@ module estimate_lh_micro_module
           write(fstderr,'(a3,3a20)') "k", "rt", "rv", "rc"
           do k = 1, nnzp
             if ( rv_all_points(k,sample) < 0. ) then
-              write(6,'(i3,3g20.7)')  k, LH_rt(k,sample), rv_all_points(k,sample), rc_all_points(k,sample)
+              write(6,'(i3,3g20.7)')  k, LH_rt(k,sample), rv_all_points(k,sample), &
+                rc_all_points(k,sample)
             end if
           end do
         end if ! clubb_at_least_debug_level( 1 )
