@@ -143,10 +143,10 @@ module advance_xp2_xpyp_module
 
     ! Constant parameters
     logical, parameter :: &
-      l_clip_large_rtp2 = .false. ! Clip rtp2 < rtm^2
+      l_clip_large_rtp2 = .true. ! Clip rtp2 to be < rtm^2 * coef
 
     real, parameter :: &
-      rtp2_clip_coef = 1.0 ! Coefficient appled the clipping threshold on rtp2 [-]
+      rtp2_clip_coef = 0.25 ! Coefficient appled the clipping threshold on rtp2 [-]
 
     ! Input variables
     real, intent(in), dimension(gr%nnzp) ::  & 
