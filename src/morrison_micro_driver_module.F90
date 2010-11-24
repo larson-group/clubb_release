@@ -70,6 +70,10 @@ module morrison_micro_driver_module
     ! External
     intrinsic :: max
 
+    ! Constant parameters
+    real, parameter :: &
+      w_thresh = 0.1 ! Minimum value w for latin hypercube [m/s]
+
     ! Input Variables
     real, intent(in) :: dt ! Model timestep        [s]
 
@@ -125,7 +129,9 @@ module morrison_micro_driver_module
       rcm_sten     ! Cloud dropet sedimentation tendency           [kg/kg/s]
 
     real, dimension(nnzp) :: & 
-      cloud_frac  ! Cloud fraction   [-]
+      cloud_frac, &  ! Cloud fraction   [-]
+      wm_tmp, &     ! Mean vertical velocity   [m/s]
+      w_std_dev_tmp ! Standard deviation of w  [m/s]
 
     real, dimension(nnzp,hydromet_dim) :: & 
       hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
@@ -152,12 +158,21 @@ module morrison_micro_driver_module
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
-    if ( .not. l_latin_hypercube ) then
+    if ( l_latin_hypercube ) then
+      ! Don't use sgs cloud fraction to weight the tendencies
+      cloud_frac(1:nnzp) = 0.0
+
+      wm_tmp = max( wm, w_thresh ) ! Impose a minimum value on w
+      w_std_dev_tmp = 0. ! Don't add in a standard deviation for aerosol activation
+
+    else 
+      ! Use sgs cloud fraction to weight tendencies
       cloud_frac(1:nnzp) = max( zero_threshold, &
                         pdf_params%mixt_frac * pdf_params%cloud_frac1 &
                         + (1.-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
-    else
-      cloud_frac(1:nnzp) = 0.0
+
+      wm_tmp = wm ! Use the mean value without a threshold
+      w_std_dev_tmp = w_std_dev ! Add in a standard deviation
     end if
 
     rcm_tmp = rcm
@@ -181,7 +196,7 @@ module morrison_micro_driver_module
            hydromet_mc(:,iiNrm), rcm_tmp, hydromet_tmp(:,iiricem), &
            hydromet_tmp(:,iirsnowm), hydromet_tmp(:,iirrainm), hydromet_tmp(:,iiNcm), &
            hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
-           T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm, w_std_dev, &
+           T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm_tmp, w_std_dev_tmp, &
            Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, dt, &
            1,1, 1,1, 1,nnzp, 1,1, 1,1, 1,nnzp, &
            hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
