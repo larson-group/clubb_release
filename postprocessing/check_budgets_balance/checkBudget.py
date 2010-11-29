@@ -10,6 +10,9 @@ import readBinaryData  # Reads GrADS .dat files
 # Modify this to point to the directory containing the output files
 FILEPATH = "../../output/"
 
+# Set this to false to skip the completeness tests
+COMPLETENESS_TEST = True
+
 #--------------------------------------------------------------------------------------------------
 def checkGradsBudgets(fileName, iteration):
     """
@@ -252,7 +255,7 @@ def findGradsErrorsAtTimestep(iteration, ctlFile, fileName, numVarsIndx, numVars
                 (FILEPATH + datFileName, numLevels, iteration, iteration, varNum, numVars)
 
             # Can't do completeness check when iteration is 1
-            if iteration != 1:
+            if iteration != 1 and COMPLETENESS_TEST == True:
                 # Check that the budget is consistent with previous and next time iterations
                 testSuccess = checkGradsCompleteness(fileName, numLevels, iteration, numVars, \
                               termName[:-1], termUnits, timestep, leftHandValue, numVarsIndx.end(), testSuccess)
@@ -291,7 +294,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
             leftHandValue = budgetVar.getValue(iteration-1) # First index of list is 0
             
             # Can't do completeness check when iteration is 1
-            if iteration != 1:
+            if iteration != 1 and COMPLETENESS_TEST == True:
                 # Check that the budget is consistent with previous and next time iterations
                 testSuccess = checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
                               budgetVarName[:-3], varList, budgetVar.units, timestep, leftHandValue, testSuccess)
