@@ -427,6 +427,10 @@ module stats_variables
 !$omp   threadprivate(iwp2_zt, ithlp2_zt, iwpthlp_zt, iwprtp_zt, irtp2_zt, irtpthlp_zt, &
 !$omp     iup2_zt, ivp2_zt, iupwp_zt, ivpwp_zt)
 
+  integer, public :: &
+    is_mellor
+!$omp threadprivate(is_mellor)
+
   integer, target, allocatable, dimension(:), public :: & 
     isclrm,    & ! Passive scalar mean (1)
     isclrm_f     ! Passive scalar forcing (1)

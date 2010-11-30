@@ -1243,7 +1243,8 @@ module stats_subs
         is2, & 
         istdev_s1, & 
         istdev_s2, & 
-        irrtthl
+        irrtthl, &
+        is_mellor
 
     use stats_variables, only: & 
         iwp2_zt, & 
@@ -1493,7 +1494,8 @@ module stats_subs
     integer :: i, k
 
     real, dimension(gr%nnzp) :: &
-      shear              ! Wind shear production term    [m^2/s^3]
+      shear, & ! Wind shear production term    [m^2/s^3]
+      s_mellor ! Mellor's 's'   [kg/kg]
 
     real :: xtmp
 
@@ -1583,6 +1585,13 @@ module stats_subs
       call stat_update_var( ivp2_zt, vp2_zt, zt )
       call stat_update_var( iupwp_zt, upwp_zt, zt )
       call stat_update_var( ivpwp_zt, vpwp_zt, zt )
+
+      if ( is_mellor > 0 ) then
+        ! Determine 's' from Mellor (1977) (extended liquid water)
+        s_mellor(:) = pdf_params%mixt_frac(:) * pdf_params%s1(:) &
+                    + (1.0-pdf_params%mixt_frac(:)) * pdf_params%s2(:)
+        call stat_update_var( is_mellor, s_mellor, zt )
+      end if
 
       if (sclr_dim > 0 ) then
         do i=1, sclr_dim

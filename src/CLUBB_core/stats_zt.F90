@@ -330,6 +330,9 @@ module stats_zt
       iLH_Ncp2_zt, &
       iLH_cloud_frac
 
+    use stats_variables, only: &
+      is_mellor ! Variables
+
     use stats_type, only: & 
         stat_assign ! Procedure
 
@@ -594,6 +597,8 @@ module stats_zt
     istdev_s1     = 0
     istdev_s2     = 0
     irrtthl       = 0
+
+    is_mellor = 0
 
     iwp2_zt     = 0
     ithlp2_zt   = 0
@@ -2392,6 +2397,13 @@ module stats_zt
         iLH_rrainp2_zt = k
         call stat_assign( iLH_rrainp2_zt, "LH_rrainp2_zt", & 
              "Variance of the latin hypercube estimate of rrain [kg^2/kg^2]", "kg^2/kg^2", zt )
+        k = k + 1
+
+      case ('s_mellor')
+        is_mellor = k
+
+        call stat_assign( is_mellor, "s_mellor", & 
+             "Mellor's s (extended liq) [kg/kg]", "kg/kg", zt )
         k = k + 1
 
       case default
