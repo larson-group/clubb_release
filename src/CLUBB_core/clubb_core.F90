@@ -240,11 +240,13 @@ module clubb_core
     use stats_subs, only: & 
       stats_accumulate ! Procedure
 
-    use stats_type, only: & 
-      stat_update_var_pt, & ! Procedure(s)
-      stat_update_var,    & 
-      stat_begin_update,  &
-      stat_end_update
+    use stats_type, only:   & 
+      stat_update_var_pt,   & ! Procedure(s)
+      stat_update_var,      & 
+      stat_begin_update,    &
+      stat_begin_update_pt, &
+      stat_end_update,      &
+      stat_end_update_pt
 
     use stats_variables, only: &
       irtp2_bt,      & ! Variable(s)
@@ -517,15 +519,6 @@ module clubb_core
       thlm_flux_sfc, &
       thlm_spur_src
 
-    ! Used for storing temporary stats data at zm surface
-    real ::  &
-      wp2_sf_temp,     & ! [m^2/s^2]
-      up2_sf_temp,     & ! [m^2/s^2]
-      vp2_sf_temp,     & ! [m^2/s^2]
-      thlp2_sf_temp,   & ! [K^2]
-      rtp2_sf_temp,    & ! [(kg/kg)^2]
-      rtpthlp_sf_temp    ! [kg K/kg]
-
     !----- Begin Code -----
 
     if ( l_stats .and. l_stats_samp ) then
@@ -595,14 +588,6 @@ module clubb_core
                               zt )                                  ! Intent(inout)
 
     end if
-
-    ! Avoid an initialization warning
-    thlp2_sf_temp   = 0
-    rtp2_sf_temp    = 0
-    rtpthlp_sf_temp = 0
-    up2_sf_temp     = 0
-    vp2_sf_temp     = 0
-    wp2_sf_temp     = 0
 
     ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
     ! We only do this for host models that do not apply the flux
@@ -1020,17 +1005,20 @@ module clubb_core
     ! level is not the ground level.  Brian Griffin.  December 22, 2005.
     if ( gr%zm(1) == sfc_elevation ) then
 
-      ! The _sf stats need the change in e.g. rtpthlp(1) during surface_varnce
-      ! so record original value
+      ! Reflect surface varnce changes in budget
       if ( l_stats_samp ) then
-
-        thlp2_sf_temp = thlp2(1)
-        rtp2_sf_temp = rtp2(1)
-        rtpthlp_sf_temp = rtpthlp(1)
-        up2_sf_temp = up2(1)
-        vp2_sf_temp = vp2(1)
-        wp2_sf_temp = wp2(1)
-
+        call stat_begin_update_pt( ithlp2_sf, 1, real( thlp2(1) / dt ), &         ! intent(in)
+                                   zm )                                           ! intent(inout)
+        call stat_begin_update_pt( irtp2_sf, 1, real( rtp2(1) / dt ), &           ! intent(in)
+                                   zm )                                           ! intent(inout)
+        call stat_begin_update_pt( irtpthlp_sf, 1, real( rtpthlp(1) / dt ), &     ! intent(in)
+                                   zm )                                           ! intent(inout)
+        call stat_begin_update_pt( iup2_sf, 1, real( up2(1) / dt ), &             ! intent(in)
+                                   zm )                                           ! intent(inout)
+        call stat_begin_update_pt( ivp2_sf, 1, real( vp2(1) / dt ), &             ! intent(in)
+                                   zm )                                           ! intent(inout)
+        call stat_begin_update_pt( iwp2_sf, 1, real( wp2(1) / dt ), &             ! intent(in)
+                                   zm )                                           ! intent(inout)
       end if
 
       call surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & ! intent(in)
@@ -1048,12 +1036,18 @@ module clubb_core
 
       ! Update surface stats
       if ( l_stats_samp ) then
-        call stat_update_var_pt( ithlp2_sf, 1, (thlp2(1) - thlp2_sf_temp) / real(dt), zm )
-        call stat_update_var_pt( irtp2_sf, 1, (rtp2(1) - rtp2_sf_temp) / real(dt), zm )
-        call stat_update_var_pt( irtpthlp_sf, 1, (rtpthlp(1) - rtpthlp_sf_temp) / real(dt), zm )
-        call stat_update_var_pt( iup2_sf, 1, (up2(1) - up2_sf_temp) / real(dt), zm )
-        call stat_update_var_pt( ivp2_sf, 1, (vp2(1) - vp2_sf_temp) / real(dt), zm )
-        call stat_update_var_pt( iwp2_sf, 1, (wp2(1) - wp2_sf_temp) / real(dt), zm )
+        call stat_end_update_pt( ithlp2_sf, 1, real( thlp2(1) / dt ), &           ! intent(in)
+                                 zm )                                             ! intent(inout)
+        call stat_end_update_pt( irtp2_sf, 1, real( rtp2(1) / dt ), &             ! intent(in)
+                                 zm )                                             ! intent(inout)
+        call stat_end_update_pt( irtpthlp_sf, 1, real( rtpthlp(1) / dt ), &       ! intent(in)
+                                 zm )                                             ! intent(inout)
+        call stat_end_update_pt( iup2_sf, 1, real( up2(1) / dt ), &               ! intent(in)
+                                 zm )                                             ! intent(inout)
+        call stat_end_update_pt( ivp2_sf, 1, real( vp2(1) / dt ), &               ! intent(in)
+                                 zm )                                             ! intent(inout)
+        call stat_end_update_pt( iwp2_sf, 1, real( wp2(1) / dt ), &               ! intent(in)
+                                 zm )                                             ! intent(inout)
       end if
 
     else
