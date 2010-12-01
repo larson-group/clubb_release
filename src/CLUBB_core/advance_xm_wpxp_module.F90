@@ -117,12 +117,10 @@ module advance_xm_wpxp_module
 
     use stats_type, only: &
         stat_begin_update, &
-        stat_end_update, &
-        stat_modify
+        stat_end_update
 
     use stats_variables, only: & 
         zt, &
-        ithlm_bt, irtm_bt, &
         irtm_matrix_condt_num, &  ! Variables
         ithlm_matrix_condt_num, &
         irtm_sdmp, ithlm_sdmp, & 
@@ -769,27 +767,23 @@ module advance_xm_wpxp_module
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
         call stat_begin_update( irtm_sdmp, real(rtm /dt), zt )
-        call stat_modify(irtm_bt, real(-rtm/dt),zt )
       end if
       rtm(1:gr%nnzp) = sponge_damp_xm( dt, rtm_ref(1:gr%nnzp), rtm(1:gr%nnzp), &
                                        rtm_sponge_damp_profile )
 
       if( l_stats_samp ) then
         call stat_end_update( irtm_sdmp, real(rtm /dt), zt )
-        call stat_modify(irtm_bt, real(rtm/dt),zt )
       end if
     endif
 
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
         call stat_begin_update( ithlm_sdmp, real(thlm /dt), zt )
-        call stat_modify(ithlm_bt, real(-thlm/dt),zt )
       end if
       thlm(1:gr%nnzp) = sponge_damp_xm( dt, thlm_ref(1:gr%nnzp), thlm(1:gr%nnzp), &
                                         thlm_sponge_damp_profile )
       if( l_stats_samp ) then
         call stat_end_update( ithlm_sdmp, real(thlm /dt), zt )
-        call stat_modify(ithlm_bt, real(thlm/dt),zt )
       end if
     endif
 

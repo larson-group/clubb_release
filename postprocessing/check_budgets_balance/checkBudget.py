@@ -13,6 +13,11 @@ FILEPATH = "../../output/"
 # Set this to false to skip the completeness tests
 COMPLETENESS_TEST = True
 
+# Scale for calculating budget balance tolerance since we cannot easily access the
+# frequency of statistical sampling. Completeness tests use the frequency of statistical
+# output which is obtained from the output files
+TIME_SCALE_DENOMINATOR = 60 # Seconds
+
 #--------------------------------------------------------------------------------------------------
 def checkGradsBudgets(fileName, iteration):
     """
@@ -61,7 +66,7 @@ def checkGradsBudgets(fileName, iteration):
         sys.stderr.write("Error parsing number of iterations from *.ctl file\n")
         sys.exit(1)
         
-    # Find the timestep
+    # Find the timestep and convert to seconds
     try:
         timestep = re.search("TDEF.+", text).group()
         timestep = int( re.search("[0-9]+mn", timestep).group()[:-2] ) * 60
@@ -232,7 +237,7 @@ def findGradsErrorsAtTimestep(iteration, ctlFile, fileName, numVarsIndx, numVars
             # Find error between budget term and sum of component terms
             else:
                 errorDifference = [a - b for a,b in zip(leftHandValue, rightHandValue)]
-                allowedTolerance = calcTolerance(termUnits, timestep, termName[0:-1])
+                allowedTolerance = calcTolerance(termUnits, TIME_SCALE_DENOMINATOR, termName[0:-1])
                 percentError = calcPercentError(leftHandValue, rightHandValue, allowedTolerance)
 
                 # Ignore zt(1) since it is below ground. Still use zm(1) however
@@ -316,7 +321,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
                     
             # All component terms have been summed up
             errorDifference = [a - b for a,b in zip(leftHandValue, rightHandValue)]
-            allowedTolerance = calcTolerance(budgetVar.units, timestep, budgetVarName[0:-3])
+            allowedTolerance = calcTolerance(budgetVar.units, TIME_SCALE_DENOMINATOR, budgetVarName[0:-3])
             percentError = calcPercentError(leftHandValue, rightHandValue, allowedTolerance)
 
             # Ignore zt(1) since it is below ground. Still use zm(1) however
