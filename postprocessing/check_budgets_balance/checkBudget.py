@@ -14,9 +14,13 @@ FILEPATH = "../../output/"
 COMPLETENESS_TEST = True
 
 # Scale for calculating budget balance tolerance since we cannot easily access the
-# frequency of statistical sampling. Completeness tests use the frequency of statistical
+# model timestep (dtmain). Completeness tests use the frequency of statistical
 # output which is obtained from the output files
 TIME_SCALE_DENOMINATOR = 60 # Seconds
+
+# How strict the test should be. Anything above this number will be considered
+# a failure.
+TEST_LENIENCY = 100 # Percent Error
 
 #--------------------------------------------------------------------------------------------------
 def checkGradsBudgets(fileName, iteration):
@@ -238,7 +242,6 @@ def findGradsErrorsAtTimestep(iteration, ctlFile, fileName, numVarsIndx, numVars
             else:
                 errorDifference = [a - b for a,b in zip(leftHandValue, rightHandValue)]
                 allowedTolerance = calcTolerance(termUnits, TIME_SCALE_DENOMINATOR, termName[0:-1])
-                percentError = calcPercentError(leftHandValue, rightHandValue, allowedTolerance)
 
                 # Ignore zt(1) since it is below ground. Still use zm(1) however
                 if fileName.find("_zt") != -1:
@@ -248,7 +251,7 @@ def findGradsErrorsAtTimestep(iteration, ctlFile, fileName, numVarsIndx, numVars
                     zLevel = 0
                 
                 testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, termName[:-1], \
-                    termUnits, percentError, testSuccess)
+                    termUnits, testSuccess)
                     
                 findingBudget = False
                 
@@ -322,7 +325,6 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
             # All component terms have been summed up
             errorDifference = [a - b for a,b in zip(leftHandValue, rightHandValue)]
             allowedTolerance = calcTolerance(budgetVar.units, TIME_SCALE_DENOMINATOR, budgetVarName[0:-3])
-            percentError = calcPercentError(leftHandValue, rightHandValue, allowedTolerance)
 
             # Ignore zt(1) since it is below ground. Still use zm(1) however
             if ncFile.filename.find("_zt") != -1:
@@ -332,7 +334,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
                 zLevel = 0
 
             testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, budgetVarName[:-3], \
-                budgetVar.units, percentError, testSuccess)
+                budgetVar.units, testSuccess)
                 
             # Clear old data
             rightHandValue = [0]*numLevels 
@@ -383,13 +385,12 @@ def checkGradsCompleteness(fileName, numLevels, iteration, numVars, \
     
     errorDifference = [a - b for a,b in zip(leftHandValue, rightHandValue)]
     allowedTolerance = calcTolerance(termUnits, timestep, termName)
-    percentError = calcPercentError(leftHandValue, rightHandValue, allowedTolerance)
     
     # Specify that this is the completeness test when printing to stdout
     termName = termName + " completeness test"
     
     zLevel = 0
-    testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, termName, termUnits, percentError, testSuccess)
+    testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, termName, termUnits, testSuccess)
                     
     return testSuccess
     
@@ -424,18 +425,17 @@ def checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
             
             errorDifference = [a - b for a,b in zip(leftHandValue, rightHandValue)]
             allowedTolerance = calcTolerance(termUnits, timestep, termName)
-            percentError = calcPercentError(leftHandValue, rightHandValue, allowedTolerance)
             
             # Specify that this is the completeness test when printing to stdout
             varName = varName + " completeness test"
             
             zLevel = 0
-            testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, varName, termUnits, percentError, testSuccess)
+            testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, varName, termUnits, testSuccess)
                     
     return testSuccess
     
 #--------------------------------------------------------------------------------------------------
-def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, termName, termUnits, percentError, testSuccess):
+def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, zLevel, termName, termUnits, testSuccess):
     """
     Find and display any budget failures to stdout
     Input: leftHandValue: list of floats representing the left side of equation being examined
@@ -445,7 +445,6 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
            zLevel: Starting z level. For zm grid this should be 0, for zt it should be 1.
            termName: Name of variable that is being tested
            termUnits: Units of term being tested
-           percentError: List of percent errors between two lists being compared
            testSuccess: Whether the test is succeeding or failing
     """
         
@@ -456,8 +455,10 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
         valuePrecision = calcPrecision(leftHandValue[zLevel-1], rightHandValue[zLevel-1])
         allowedTolerance = max( abs(allowedTolerance), abs(valuePrecision) )
         
+        percentError = calcPercentError(leftHandValue, rightHandValue, allowedTolerance)
+        
         # Display failure message for each error difference thats greater than the tolerance
-        if abs(value) > abs(allowedTolerance):
+        if abs(percentError[zLevel-1]) >= TEST_LENIENCY: # [zLevel-1] because array starts at 0
             testSuccess = False
             print termName + " fails at z-level " + str(zLevel) + \
                 " with a difference of " + "%e" % value + " " + termUnits \
