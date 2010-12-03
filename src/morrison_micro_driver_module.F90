@@ -90,7 +90,7 @@ module morrison_micro_driver_module
       exner,      & ! Exner function                     [-]
       rho           ! Density on thermo. grid            [kg/m^3]
 
-    type(pdf_parameter), dimension(nnzp), intent(in) :: &
+    type(pdf_parameter), target, dimension(nnzp), intent(in) :: &
       pdf_params ! PDF parameters
 
     real, dimension(nnzp), intent(in) :: &
@@ -140,6 +140,9 @@ module morrison_micro_driver_module
     real, pointer, dimension(:,:) :: &
       dummy
 
+    real, pointer, dimension(:) :: &
+      dummy_1D
+
     real :: Morr_snow_rate, Morr_rain_rate
 
     integer :: i
@@ -150,6 +153,7 @@ module morrison_micro_driver_module
       dummy => hydromet
       dummy => hydromet_mc
       dummy => hydromet_vel
+      dummy_1D => pdf_params(:)%cloud_frac1
       cloud_frac = dummy(:,1)
       cloud_frac = s_mellor
       if ( l_local_kk ) stop

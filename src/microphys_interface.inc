@@ -26,7 +26,7 @@ interface
       exner,      & ! Exner function                     [-]
       rho           ! Density on thermo. grid            [kg/m^3]
 
-    type(pdf_parameter), dimension(nnzp), intent(in) :: &
+    type(pdf_parameter), target, dimension(nnzp), intent(in) :: &
       pdf_params ! PDF parameters
 
     real, dimension(nnzp), intent(in) :: &
