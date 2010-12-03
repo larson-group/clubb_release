@@ -59,7 +59,7 @@ module generate_lh_sample_module
       Nr_tol, &         ! Nr tolerance in #/kg
       Nc_tol            ! Nc tolerance in #/kg
 
-    use variables_prognostic_module, only:  &
+    use pdf_parameter_module, only:  &
       pdf_parameter  ! type
 
     use array_index, only: &
@@ -299,83 +299,83 @@ module generate_lh_sample_module
       ! we don't want e.g. the variance of rt aloft to be rt_tol^2 necessarily.
 
       ! Set means
-      w1 = pdf_params%w1(level)
-      w2 = pdf_params%w2(level)
-      rt1 = pdf_params%rt1(level)
-      rt2 = pdf_params%rt2(level)
-      thl1 = pdf_params%thl1(level)
-      thl2 = pdf_params%thl2(level)
-      s1 = pdf_params%s1(level)
-      s2 = pdf_params%s2(level)
+      w1 = pdf_params%w1
+      w2 = pdf_params%w2
+      rt1 = pdf_params%rt1
+      rt2 = pdf_params%rt2
+      thl1 = pdf_params%thl1
+      thl2 = pdf_params%thl2
+      s1 = pdf_params%s1
+      s2 = pdf_params%s2
 
       ! Set variances
-      varnce_w1 = pdf_params%varnce_w1(level)
-      varnce_w2 = pdf_params%varnce_w2(level)
-      varnce_rt1 = pdf_params%varnce_rt1(level)
-      varnce_rt2 = pdf_params%varnce_rt2(level)
-      varnce_thl1 = pdf_params%varnce_thl1(level)
-      varnce_thl2 = pdf_params%varnce_thl2(level)
+      varnce_w1 = pdf_params%varnce_w1
+      varnce_w2 = pdf_params%varnce_w2
+      varnce_rt1 = pdf_params%varnce_rt1
+      varnce_rt2 = pdf_params%varnce_rt2
+      varnce_thl1 = pdf_params%varnce_thl1
+      varnce_thl2 = pdf_params%varnce_thl2
 
       ! Set standard deviation of s1/s2
-      stdev_s1 = pdf_params%stdev_s1(level)
-      stdev_s2 = pdf_params%stdev_s2(level)
+      stdev_s1 = pdf_params%stdev_s1
+      stdev_s2 = pdf_params%stdev_s2
     else
       call set_min_varnce_and_mean &
-          ( wm, w_tol_sqd, pdf_params%w1(level), pdf_params%varnce_w1(level), & ! In
+          ( wm, w_tol_sqd, pdf_params%w1, pdf_params%varnce_w1, & ! In
             varnce_w1, w1 ) ! Out
 
       call set_min_varnce_and_mean &
-          ( wm, w_tol_sqd, pdf_params%w2(level), pdf_params%varnce_w2(level), & ! In
+          ( wm, w_tol_sqd, pdf_params%w2, pdf_params%varnce_w2, & ! In
             varnce_w2, w2 ) ! Out
 
       rtm = rvm + rcm
 
       call set_min_varnce_and_mean &
-          ( rtm, rt_tol**2, pdf_params%rt1(level), pdf_params%varnce_rt1(level), & ! In
+          ( rtm, rt_tol**2, pdf_params%rt1, pdf_params%varnce_rt1, & ! In
             varnce_rt1, rt1 ) ! Out
 
       call set_min_varnce_and_mean &
-          ( rtm, rt_tol**2, pdf_params%rt2(level), pdf_params%varnce_rt2(level), & ! In
+          ( rtm, rt_tol**2, pdf_params%rt2, pdf_params%varnce_rt2, & ! In
             varnce_rt2, rt2 ) ! Out
 
       call set_min_varnce_and_mean &
-          ( thlm, thl_tol**2, pdf_params%thl1(level), pdf_params%varnce_thl1(level), & ! In
+          ( thlm, thl_tol**2, pdf_params%thl1, pdf_params%varnce_thl1, & ! In
             varnce_thl1, thl1 ) ! Out
 
       call set_min_varnce_and_mean &
-          ( thlm, thl_tol**2, pdf_params%thl2(level), pdf_params%varnce_thl2(level), & ! In
+          ( thlm, thl_tol**2, pdf_params%thl2, pdf_params%varnce_thl2, & ! In
             varnce_thl2, thl2 ) ! Out
 
       ! Compute the mean of s1 and s2
-      s_mellor = pdf_params%s1(level) * pdf_params%mixt_frac(level) &
-               + (1.0-pdf_params%mixt_frac(level)) * pdf_params%s2(level)
+      s_mellor = pdf_params%s1 * pdf_params%mixt_frac &
+               + (1.0-pdf_params%mixt_frac) * pdf_params%s2
 
       ! Here the subroutine name is a little misleading since we're imposing the
       ! threshold on a standard deviation rather than a variance.
       call set_min_varnce_and_mean &
-          ( s_mellor, s_mellor_tol, pdf_params%s1(level), pdf_params%stdev_s1(level), & ! In
+          ( s_mellor, s_mellor_tol, pdf_params%s1, pdf_params%stdev_s1, & ! In
             stdev_s1, s1 ) ! Out
 
       ! See comment above.
       call set_min_varnce_and_mean &
-          ( s_mellor, s_mellor_tol, pdf_params%s2(level), pdf_params%stdev_s2(level), & ! In
+          ( s_mellor, s_mellor_tol, pdf_params%s2, pdf_params%stdev_s2, & ! In
             stdev_s2, s2 ) ! Out
     end if ! l_fix_s_t_correlations
 
-    crt1 = pdf_params%crt1(level)
-    crt2 = pdf_params%crt2(level)
-    cthl1 = pdf_params%cthl1(level)
-    cthl2 = pdf_params%cthl2(level)
+    crt1 = pdf_params%crt1
+    crt2 = pdf_params%crt2
+    cthl1 = pdf_params%cthl1
+    cthl2 = pdf_params%cthl2
 
-    mixt_frac   = dble( pdf_params%mixt_frac(level) )
+    mixt_frac   = dble( pdf_params%mixt_frac )
 
-!   cloud_frac1 = dble( pdf_params%cloud_frac1(level) )
-!   cloud_frac2 = dble( pdf_params%cloud_frac2(level) )
+!   cloud_frac1 = dble( pdf_params%cloud_frac1 )
+!   cloud_frac2 = dble( pdf_params%cloud_frac2 )
     ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
     cloud_frac1 = 1.0
     cloud_frac2 = 1.0
 
-    rrtthl      = pdf_params%rrtthl(level)
+    rrtthl      = pdf_params%rrtthl
 
     !---------------------------------------------------------------------------
     ! Generate a set of sample points for a microphysics scheme

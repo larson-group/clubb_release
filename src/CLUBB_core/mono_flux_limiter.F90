@@ -1130,7 +1130,7 @@ module mono_flux_limiter
     use grid_class, only:  &
         gr  ! Variable(s)
 
-    use variables_prognostic_module, only: &
+    use pdf_parameter_module, only: &
         pdf_parameter  ! Type
 
     use stats_precision, only:  & 
@@ -1142,8 +1142,8 @@ module mono_flux_limiter
     real(kind=time_precision), intent(in) ::  &
       dt        ! Model timestep length                            [s]
 
-    type(pdf_parameter), intent(in) ::  &
-      pdf_params   ! PDF parameters
+    type(pdf_parameter), dimension(gr%nnzp), intent(in) ::  &
+      pdf_params   ! PDF parameters     [units vary]
 
     ! Output Variables
     integer, dimension(gr%nnzp), intent(out) ::  &
@@ -1631,7 +1631,7 @@ module mono_flux_limiter
         sqrt_2pi, &
         sqrt_2
 
-    use variables_prognostic_module, only: &
+    use pdf_parameter_module, only: &
         pdf_parameter  ! type
 
     use anl_erf, only:  & 
@@ -1650,7 +1650,7 @@ module mono_flux_limiter
     implicit none
 
     ! Input Variables
-    type(pdf_parameter), intent(in) ::  &
+    type(pdf_parameter), dimension(gr%nnzp), intent(in) ::  &
       pdf_params     ! PDF parameters
 
     real, intent(in) ::  &

@@ -740,8 +740,8 @@ module microphys_driver
     use coamps_micro_driver_module, only:  & 
         coamps_micro_driver ! Procedure
 
-    use variables_prognostic_module, only:  &
-        pdf_parameter  ! type
+    use pdf_parameter_module, only:  &
+        pdf_parameter  ! Type
 
     use array_index, only:  & 
         iirrainm, iirsnowm, iiricem, iirgraupelm, &
@@ -867,7 +867,7 @@ module microphys_driver
       wm_zm,      & ! w wind on thermo. grid                 [m/s]
       Kh_zm         ! Kh Eddy diffusivity on momentum grid   [m^2/s]
 
-    type(pdf_parameter), intent(in) :: & 
+    type(pdf_parameter), dimension(gr%nnzp), intent(in) :: & 
       pdf_params     ! PDF parameters
 
     real, dimension(gr%nnzp), intent(in) :: & 
@@ -960,8 +960,8 @@ module microphys_driver
     end do
 
     ! Determine 's' from Mellor (1977)
-    s_mellor(:) = pdf_params%mixt_frac(:) * pdf_params%s1(:) &
-                + (1.0-pdf_params%mixt_frac(:)) * pdf_params%s2(:)
+    s_mellor(:) = pdf_params(:)%mixt_frac * pdf_params(:)%s1 &
+                + (1.0-pdf_params(:)%mixt_frac) * pdf_params(:)%s2
 
     ! Compute standard deviation of vertical velocity in the grid column
     wtmp(:) = sqrt( wp2_zt(:) )

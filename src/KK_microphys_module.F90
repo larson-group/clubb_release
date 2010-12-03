@@ -83,7 +83,7 @@ module KK_microphys_module
 
     use array_index, only: iirrainm, iiNcm, iiNrm
 
-    use variables_prognostic_module, only: pdf_parameter
+    use pdf_parameter_module, only: pdf_parameter
 
     use parameters_model, only: hydromet_dim
 
@@ -115,7 +115,7 @@ module KK_microphys_module
       exner,      & ! Exner function                     [-]
       rho           ! Density on thermo. grid            [kg/m^3]
 
-    type(pdf_parameter), intent(in) :: &
+    type(pdf_parameter), target, dimension(nnzp), intent(in) :: &
       pdf_params ! PDF parameters
 
     real, dimension(nnzp), intent(in) :: &
@@ -304,13 +304,13 @@ module KK_microphys_module
     end where
 
     ! Assign pointers
-    thl1      => pdf_params%thl1(:)
-    thl2      => pdf_params%thl2(:)
-    mixt_frac => pdf_params%mixt_frac(:)
-    s1        => pdf_params%s1(:)
-    s2        => pdf_params%s2(:)
-    stdev_s1  => pdf_params%stdev_s1(:)
-    stdev_s2  => pdf_params%stdev_s2(:)
+    thl1      => pdf_params(:)%thl1
+    thl2      => pdf_params(:)%thl2
+    mixt_frac => pdf_params(:)%mixt_frac
+    s1        => pdf_params(:)%s1
+    s2        => pdf_params(:)%s2
+    stdev_s1  => pdf_params(:)%stdev_s1
+    stdev_s2  => pdf_params(:)%stdev_s2
 
     Ncm => hydromet(:,iiNcm)
 

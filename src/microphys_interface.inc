@@ -7,7 +7,7 @@ interface
                             wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
                             hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
-    use variables_prognostic_module, only: pdf_parameter
+    use pdf_parameter_module, only: pdf_parameter
 
     use parameters_model, only: hydromet_dim
 
@@ -26,7 +26,7 @@ interface
       exner,      & ! Exner function                     [-]
       rho           ! Density on thermo. grid            [kg/m^3]
 
-    type(pdf_parameter), intent(in) :: &
+    type(pdf_parameter), dimension(nnzp), intent(in) :: &
       pdf_params ! PDF parameters
 
     real, dimension(nnzp), intent(in) :: &

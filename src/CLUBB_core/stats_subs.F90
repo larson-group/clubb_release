@@ -1405,7 +1405,7 @@ module stats_subs
       tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
       corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
 
-    use variables_prognostic_module, only: & 
+    use pdf_parameter_module, only: & 
       pdf_parameter ! Type
 
     use T_in_K_module, only: & 
@@ -1474,7 +1474,7 @@ module stats_subs
     real, intent(in), dimension(gr%nnzp) :: &
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-] 
 
-    type(pdf_parameter), intent(in) :: & 
+    type(pdf_parameter), dimension(gr%nnzp), intent(in) :: & 
       pdf_params ! PDF parameters [units vary]
 
     real, intent(in), dimension(gr%nnzp,sclr_dim) :: & 
@@ -1588,8 +1588,8 @@ module stats_subs
 
       if ( is_mellor > 0 ) then
         ! Determine 's' from Mellor (1977) (extended liquid water)
-        s_mellor(:) = pdf_params%mixt_frac(:) * pdf_params%s1(:) &
-                    + (1.0-pdf_params%mixt_frac(:)) * pdf_params%s2(:)
+        s_mellor(:) = pdf_params%mixt_frac * pdf_params%s1 &
+                    + (1.0-pdf_params%mixt_frac) * pdf_params%s2
         call stat_update_var( is_mellor, s_mellor, zt )
       end if
 

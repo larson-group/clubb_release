@@ -78,7 +78,7 @@ module pdf_closure_module
       beta  ! Variable(s)
     ! Plume widths for th_l and r_t [-]
 
-    use variables_prognostic_module, only:  &
+    use pdf_parameter_module, only:  &
         pdf_parameter  ! type
 
     use anl_erf, only:  & 
@@ -845,36 +845,36 @@ module pdf_closure_module
 
 
     ! Save PDF parameters
-    pdf_params%w1(level)          = w1
-    pdf_params%w2(level)          = w2
-    pdf_params%varnce_w1(level)   = varnce_w1
-    pdf_params%varnce_w2(level)   = varnce_w2
-    pdf_params%rt1(level)         = rt1
-    pdf_params%rt2(level)         = rt2
-    pdf_params%varnce_rt1(level)  = varnce_rt1
-    pdf_params%varnce_rt2(level)  = varnce_rt2
-    pdf_params%crt1(level)        = crt1
-    pdf_params%crt2(level)        = crt2
-    pdf_params%cthl1(level)       = cthl1
-    pdf_params%cthl2(level)       = cthl2
-    pdf_params%thl1(level)        = thl1
-    pdf_params%thl2(level)        = thl2
-    pdf_params%varnce_thl1(level) = varnce_thl1
-    pdf_params%varnce_thl2(level) = varnce_thl2
-    pdf_params%mixt_frac(level)   = mixt_frac
-    pdf_params%rc1(level)         = rc1
-    pdf_params%rc2(level)         = rc2
-    pdf_params%rsl1(level)        = rsl1
-    pdf_params%rsl2(level)        = rsl2
-    pdf_params%cloud_frac1(level) = cloud_frac1
-    pdf_params%cloud_frac2(level) = cloud_frac2
-    pdf_params%s1(level)          = s1
-    pdf_params%s2(level)          = s2
-    pdf_params%stdev_s1(level)    = stdev_s1
-    pdf_params%stdev_s2(level)    = stdev_s2
-    pdf_params%rrtthl(level)      = rrtthl
-    pdf_params%alpha_thl(level)   = alpha_thl
-    pdf_params%alpha_rt(level)    = alpha_rt
+    pdf_params%w1          = w1
+    pdf_params%w2          = w2
+    pdf_params%varnce_w1   = varnce_w1
+    pdf_params%varnce_w2   = varnce_w2
+    pdf_params%rt1         = rt1
+    pdf_params%rt2         = rt2
+    pdf_params%varnce_rt1  = varnce_rt1
+    pdf_params%varnce_rt2  = varnce_rt2
+    pdf_params%crt1        = crt1
+    pdf_params%crt2        = crt2
+    pdf_params%cthl1       = cthl1
+    pdf_params%cthl2       = cthl2
+    pdf_params%thl1        = thl1
+    pdf_params%thl2        = thl2
+    pdf_params%varnce_thl1 = varnce_thl1
+    pdf_params%varnce_thl2 = varnce_thl2
+    pdf_params%mixt_frac   = mixt_frac
+    pdf_params%rc1         = rc1
+    pdf_params%rc2         = rc2
+    pdf_params%rsl1        = rsl1
+    pdf_params%rsl2        = rsl2
+    pdf_params%cloud_frac1 = cloud_frac1
+    pdf_params%cloud_frac2 = cloud_frac2
+    pdf_params%s1          = s1
+    pdf_params%s2          = s2
+    pdf_params%stdev_s1    = stdev_s1
+    pdf_params%stdev_s2    = stdev_s2
+    pdf_params%rrtthl      = rrtthl
+    pdf_params%alpha_thl   = alpha_thl
+    pdf_params%alpha_rt    = alpha_rt
 
 
     if ( clubb_at_least_debug_level( 2 ) ) then
@@ -944,32 +944,32 @@ module pdf_closure_module
         write(fstderr,*) "crt2 = ", crt2
         write(fstderr,*) "cthl1 = ", cthl1
         write(fstderr,*) "cthl2 = ", cthl2
-        write(fstderr,*) "pdf_params%w1 = ", pdf_params%w1(level)
-        write(fstderr,*) "pdf_params%w2 = ", pdf_params%w2(level)
-        write(fstderr,*) "pdf_params%varnce_w1 = ", pdf_params%varnce_w1(level)
-        write(fstderr,*) "pdf_params%varnce_w2 = ", pdf_params%varnce_w2(level)
-        write(fstderr,*) "pdf_params%rt1 = ", pdf_params%rt1(level)
-        write(fstderr,*) "pdf_params%rt2 = ", pdf_params%rt2(level)
-        write(fstderr,*) "pdf_params%varnce_rt1 = ", pdf_params%varnce_rt1(level)
-        write(fstderr,*) "pdf_params%varnce_rt2 = ", pdf_params%varnce_rt2(level)
-        write(fstderr,*) "pdf_params%thl1 = ", pdf_params%thl1(level)
-        write(fstderr,*) "pdf_params%thl2 = ", pdf_params%thl2(level)
-        write(fstderr,*) "pdf_params%varnce_thl1 = ", pdf_params%varnce_thl1(level)
-        write(fstderr,*) "pdf_params%varnce_thl2 = ", pdf_params%varnce_thl2(level)
-        write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac(level)
-        write(fstderr,*) "pdf_params%rrtthl = ", pdf_params%rrtthl(level)
-        write(fstderr,*) "pdf_params%rc1 = ", pdf_params%rc1(level)
-        write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2(level)
-        write(fstderr,*) "pdf_params%rsl1 = ", pdf_params%rsl1(level)
-        write(fstderr,*) "pdf_params%rsl2 = ", pdf_params%rsl2(level)
-        write(fstderr,*) "pdf_params%cloud_frac1 = ", pdf_params%cloud_frac1(level)
-        write(fstderr,*) "pdf_params%cloud_frac2 = ", pdf_params%cloud_frac2(level)
-        write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1(level)
-        write(fstderr,*) "pdf_params%s2 = ", pdf_params%s2(level)
-        write(fstderr,*) "pdf_params%stdev_s1 = ", pdf_params%stdev_s1(level)
-        write(fstderr,*) "pdf_params%stdev_s2 = ", pdf_params%stdev_s2(level)
-        write(fstderr,*) "pdf_params%alpha_thl = ", pdf_params%alpha_thl(level)
-        write(fstderr,*) "pdf_params%alpha_rt = ", pdf_params%alpha_rt(level)
+        write(fstderr,*) "pdf_params%w1 = ", pdf_params%w1
+        write(fstderr,*) "pdf_params%w2 = ", pdf_params%w2
+        write(fstderr,*) "pdf_params%varnce_w1 = ", pdf_params%varnce_w1
+        write(fstderr,*) "pdf_params%varnce_w2 = ", pdf_params%varnce_w2
+        write(fstderr,*) "pdf_params%rt1 = ", pdf_params%rt1
+        write(fstderr,*) "pdf_params%rt2 = ", pdf_params%rt2
+        write(fstderr,*) "pdf_params%varnce_rt1 = ", pdf_params%varnce_rt1
+        write(fstderr,*) "pdf_params%varnce_rt2 = ", pdf_params%varnce_rt2
+        write(fstderr,*) "pdf_params%thl1 = ", pdf_params%thl1
+        write(fstderr,*) "pdf_params%thl2 = ", pdf_params%thl2
+        write(fstderr,*) "pdf_params%varnce_thl1 = ", pdf_params%varnce_thl1
+        write(fstderr,*) "pdf_params%varnce_thl2 = ", pdf_params%varnce_thl2
+        write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
+        write(fstderr,*) "pdf_params%rrtthl = ", pdf_params%rrtthl
+        write(fstderr,*) "pdf_params%rc1 = ", pdf_params%rc1
+        write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2
+        write(fstderr,*) "pdf_params%rsl1 = ", pdf_params%rsl1
+        write(fstderr,*) "pdf_params%rsl2 = ", pdf_params%rsl2
+        write(fstderr,*) "pdf_params%cloud_frac1 = ", pdf_params%cloud_frac1
+        write(fstderr,*) "pdf_params%cloud_frac2 = ", pdf_params%cloud_frac2
+        write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1
+        write(fstderr,*) "pdf_params%s2 = ", pdf_params%s2
+        write(fstderr,*) "pdf_params%stdev_s1 = ", pdf_params%stdev_s1
+        write(fstderr,*) "pdf_params%stdev_s2 = ", pdf_params%stdev_s2
+        write(fstderr,*) "pdf_params%alpha_thl = ", pdf_params%alpha_thl
+        write(fstderr,*) "pdf_params%alpha_rt = ", pdf_params%alpha_rt
 
         if ( sclr_dim > 0 )then
           write(fstderr,*) "sclrpthvp = ", sclrpthvp

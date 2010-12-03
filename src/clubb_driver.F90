@@ -3386,6 +3386,9 @@ module clubb_driver
 !   None
 !-------------------------------------------------------------------------------
 
+    use pdf_parameter_module, only: &
+      pdf_parameter ! Derived type
+
     use parameters_microphys, only: &
       micro_scheme, l_cloud_sed, Ncm_initial  ! Variables
 
@@ -3400,7 +3403,7 @@ module clubb_driver
 
     use parameters_model, only: hydromet_dim ! Variable(s)
 
-    use variables_prognostic_module, only: &
+    use pdf_parameter_module, only: &
       pdf_parameter ! Type
 
     use error_code, only: lapack_error  ! Procedure(s)
@@ -3438,7 +3441,7 @@ module clubb_driver
       wp2_zt,     & ! w'^2 interpolated the thermo levels               [m^2/s^2]
       Lscale        ! Length scale                                      [m]
 
-    type(pdf_parameter), intent(in) :: & 
+    type(pdf_parameter), dimension(gr%nnzp), intent(in) :: & 
       pdf_params      ! PDF parameters   [units vary]
 
     real, dimension(gr%nnzp), intent(in) :: &

@@ -9,7 +9,7 @@ module variables_diagnostic_module
 ! thermodynamic and momentum grid and they have different levels
 !-----------------------------------------------------------------------
 
-  use variables_prognostic_module, only: &
+  use pdf_parameter_module, only: &
     pdf_parameter ! derived type
 
   implicit none
@@ -45,7 +45,7 @@ module variables_diagnostic_module
 
 !$omp threadprivate(rsat)
 
-  type(pdf_parameter), target, public :: &
+  type(pdf_parameter), allocatable, dimension(:), target, public :: &
     pdf_params_zm ! pdf_params on momentum levels  [units vary]
 
 !$omp threadprivate(pdf_params_zm)
@@ -235,22 +235,7 @@ module variables_diagnostic_module
     allocate( radht(1:nzmax) )     ! SW + LW heating rate
 
     ! pdf_params on momentum levels
-    allocate( pdf_params_zm%w1(1:nzmax),          pdf_params_zm%w2(1:nzmax),  &
-              pdf_params_zm%varnce_w1(1:nzmax),   pdf_params_zm%varnce_w2(1:nzmax),  &
-              pdf_params_zm%rt1(1:nzmax),         pdf_params_zm%rt2(1:nzmax),  &
-              pdf_params_zm%varnce_rt1(1:nzmax),  pdf_params_zm%varnce_rt2(1:nzmax),  &
-              pdf_params_zm%thl1(1:nzmax),        pdf_params_zm%thl2(1:nzmax),  &
-              pdf_params_zm%varnce_thl1(1:nzmax), pdf_params_zm%varnce_thl2(1:nzmax),  &
-              pdf_params_zm%mixt_frac(1:nzmax),   pdf_params_zm%rrtthl(1:nzmax),  &
-              pdf_params_zm%rc1(1:nzmax),         pdf_params_zm%rc2(1:nzmax),  &
-              pdf_params_zm%rsl1(1:nzmax),        pdf_params_zm%rsl2(1:nzmax),  &
-              pdf_params_zm%cloud_frac1(1:nzmax), pdf_params_zm%cloud_frac2(1:nzmax),  &
-              pdf_params_zm%s1(1:nzmax),          pdf_params_zm%s2(1:nzmax),  &
-              pdf_params_zm%stdev_s1(1:nzmax),    pdf_params_zm%stdev_s2(1:nzmax),  &
-              pdf_params_zm%alpha_thl(1:nzmax),   pdf_params_zm%alpha_rt(1:nzmax), &
-              pdf_params_zm%crt1(1:nzmax),        pdf_params_zm%crt2(1:nzmax), &
-              pdf_params_zm%cthl1(1:nzmax),       pdf_params_zm%cthl2(1:nzmax) )
-
+    allocate( pdf_params_zm(1:nzmax) )
 
     ! Second order moments
 
@@ -510,21 +495,7 @@ module variables_diagnostic_module
 
     deallocate( radht )     ! SW + LW heating rate
 
-    deallocate( pdf_params_zm%w1,          pdf_params_zm%w2,  &
-                pdf_params_zm%varnce_w1,   pdf_params_zm%varnce_w2,  &
-                pdf_params_zm%rt1,         pdf_params_zm%rt2,  &
-                pdf_params_zm%varnce_rt1,  pdf_params_zm%varnce_rt2,  &
-                pdf_params_zm%thl1,        pdf_params_zm%thl2,  &
-                pdf_params_zm%varnce_thl1, pdf_params_zm%varnce_thl2,  &
-                pdf_params_zm%mixt_frac,   pdf_params_zm%rrtthl,  &
-                pdf_params_zm%rc1,         pdf_params_zm%rc2,  &
-                pdf_params_zm%rsl1,        pdf_params_zm%rsl2,  &
-                pdf_params_zm%cloud_frac1, pdf_params_zm%cloud_frac2,  &
-                pdf_params_zm%s1,          pdf_params_zm%s2,  &
-                pdf_params_zm%stdev_s1,    pdf_params_zm%stdev_s2,  &
-                pdf_params_zm%alpha_thl,   pdf_params_zm%alpha_rt, &
-                pdf_params_zm%crt1,        pdf_params_zm%crt2, &
-                pdf_params_zm%cthl1,       pdf_params_zm%cthl2 )
+    deallocate( pdf_params_zm )
 
     ! Second order moments
 

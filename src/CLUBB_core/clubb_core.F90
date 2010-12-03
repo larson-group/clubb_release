@@ -180,7 +180,7 @@ module clubb_core
       tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
       corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
 
-    use variables_prognostic_module, only: &
+    use pdf_parameter_module, only: &
       pdf_parameter ! Type
 
 #ifdef GFDL
@@ -426,7 +426,7 @@ module clubb_core
     real, intent(inout), dimension(gr%nnzp) ::  &
       sigma_sqd_w     ! PDF width parameter (momentum levels)      [-]
 
-    type(pdf_parameter), intent(out) :: & 
+    type(pdf_parameter), dimension(gr%nnzp), intent(out) :: & 
       pdf_params      ! PDF parameters   [units vary]
 
     ! Variables that need to be output for use in host models
@@ -707,7 +707,7 @@ module clubb_core
            cloud_frac(k), rcm(k), wpthvp_zt(k),                & ! intent(out)
            wp2thvp(k), rtpthvp_zt(k), thlpthvp_zt(k),          & ! intent(out)
            wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),               & ! intent(out)
-           thlprcp_zt(k), rcp2_zt(k), pdf_params,              & ! intent(out)
+           thlprcp_zt(k), rcp2_zt(k), pdf_params(k),           & ! intent(out)
            err_code,                                           & ! intent(out)
            wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),  & ! intent(out)
            wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),  & ! intent(out)
@@ -768,7 +768,7 @@ module clubb_core
              cloud_frac_zm(k), rcm_zm(k), wpthvp(k),                & ! intent(out)
              wp2thvp_zm(k), rtpthvp(k), thlpthvp(k),                & ! intent(out)
              wprcp(k), wp2rcp_zm(k), rtprcp(k),                     & ! intent(out)
-             thlprcp(k), rcp2(k), pdf_params_zm,                    & ! intent(out)
+             thlprcp(k), rcp2(k), pdf_params_zm(k),                 & ! intent(out)
              err_code,                                              & ! intent(out)
              wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
              wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),  & ! intent(out)
@@ -1744,7 +1744,7 @@ module clubb_core
     use parameters_model, only: &
       sclr_dim ! Number of passive scalar variables
 
-    use variables_prognostic_module, only: &
+    use pdf_parameter_module, only: &
       pdf_parameter ! Derived data type
 
     implicit none
@@ -1771,7 +1771,7 @@ module clubb_core
       wpsclrpthlp, & ! w'sclr'thl'
       wp2sclrp       ! w'^2 sclr'
 
-    type (pdf_parameter), intent(inout) :: &
+    type (pdf_parameter), dimension(gr%nnzp), intent(inout) :: &
       pdf_params ! PDF parameters [units vary]
 
     ! Thermo. level variables brought to momentum levels either by
@@ -1794,7 +1794,7 @@ module clubb_core
       wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid 
       wp2sclrp_zm       ! w'^2 sclr' on momentum grid
 
-    type (pdf_parameter), intent(inout) :: &
+    type (pdf_parameter), dimension(gr%nnzp), intent(inout) :: &
       pdf_params_zm ! PDF parameters on momentum grid [units vary]
 
     ! Local variables
@@ -2232,7 +2232,7 @@ module clubb_core
 
     use grid_class, only: gr ! Variable
 
-    use variables_prognostic_module, only: &
+    use pdf_parameter_module, only: &
         pdf_parameter ! Derived data type
 
     use error_code, only:  &
@@ -2248,7 +2248,7 @@ module clubb_core
       cloud_frac, & ! Cloud fraction             [-]
       rcm           ! Liquid water mixing ratio  [kg/kg]
 
-    type (pdf_parameter), intent(in) :: &
+    type (pdf_parameter), dimension(gr%nnzp), intent(in) :: &
       pdf_params    ! PDF Parameters  [units vary]
 
     ! Output variables
@@ -2269,8 +2269,8 @@ module clubb_core
 
     do k = 1, gr%nnzp
 
-      s_mean(k) =      pdf_params%mixt_frac(k)  * pdf_params%s1(k) + &
-                  (1.0-pdf_params%mixt_frac(k)) * pdf_params%s2(k)
+      s_mean(k) =      pdf_params(k)%mixt_frac  * pdf_params(k)%s1 + &
+                  (1.0-pdf_params(k)%mixt_frac) * pdf_params(k)%s2
 
     end do
 
@@ -2342,9 +2342,9 @@ module clubb_core
              "Error: Should not arrive here in computation of cloud_cover"
 
           write(fstderr,*) "At grid level k = ", k
-          write(fstderr,*) "pdf_params%mixt_frac(k) = ", pdf_params%mixt_frac(k)
-          write(fstderr,*) "pdf_params%s1(k) = ", pdf_params%s1(k)
-          write(fstderr,*) "pdf_params%s2(k) = ", pdf_params%s2(k)
+          write(fstderr,*) "pdf_params(k)%mixt_frac = ", pdf_params(k)%mixt_frac
+          write(fstderr,*) "pdf_params(k)%s1 = ", pdf_params(k)%s1
+          write(fstderr,*) "pdf_params(k)%s2 = ", pdf_params(k)%s2
           write(fstderr,*) "cloud_frac(k) = ", cloud_frac(k)
           write(fstderr,*) "rcm(k) = ", rcm(k)
           write(fstderr,*) "rcm(k+1) = ", rcm(k+1)

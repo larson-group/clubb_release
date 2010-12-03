@@ -48,7 +48,7 @@ module estimate_lh_micro_module
     use anl_erf, only:  &
       erf ! Procedure(s)
 
-    use variables_prognostic_module, only:  &
+    use pdf_parameter_module, only:  &
       pdf_parameter  ! type
 
     use parameters_model, only: &
@@ -85,7 +85,8 @@ module estimate_lh_micro_module
       w_std_dev, & ! Standard deviation of vertical velocity  [m/s]
       dzq          ! Difference in height per gridbox         [m]
 
-    type(pdf_parameter), intent(in) :: pdf_params
+    type(pdf_parameter), dimension(nnzp), intent(in) :: &
+      pdf_params ! PDF parameters       [units vary]
 
     real, dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -185,29 +186,29 @@ module estimate_lh_micro_module
     do level = 2, nnzp, 1
       ! Extract PDF parameters
 
-      !w1         = pdf_params%w1(level)
-      !w2         = pdf_params%w2(level)
-      !sw1        = pdf_params%sw1(level)
-      !sw2        = pdf_params%sw2(level)
-      !rt1        = pdf_params%rt1(level)
-      !rt2        = pdf_params%rt2(level)
-      !srt1       = pdf_params%srt1(level)
-      !srt2       = pdf_params%srt2(level)
-      !thl1       = pdf_params%thl1(level)
-      !thl2       = pdf_params%thl2(level)
-      !sthl1      = pdf_params%sthl1(level)
-      !sthl2      = pdf_params%sthl2(level)
-      mixt_frac   = pdf_params%mixt_frac(level)
-!     rc1         = pdf_params%rc1(level)
-!     rc2         = pdf_params%rc2(level)
-!     cloud_frac1 = pdf_params%cloud_frac1(level)
-!     cloud_frac2 = pdf_params%cloud_frac2(level)
+      !w1         = pdf_params(level)%w1
+      !w2         = pdf_params(level)%w2
+      !sw1        = pdf_params(level)%sw1
+      !sw2        = pdf_params(level)%sw2
+      !rt1        = pdf_params(level)%rt1
+      !rt2        = pdf_params(level)%rt2
+      !srt1       = pdf_params(level)%srt1
+      !srt2       = pdf_params(level)%srt2
+      !thl1       = pdf_params(level)%thl1
+      !thl2       = pdf_params(level)%thl2
+      !sthl1      = pdf_params(level)%sthl1
+      !sthl2      = pdf_params(level)%sthl2
+      mixt_frac   = pdf_params(level)%mixt_frac
+!     rc1         = pdf_params(level)%rc1
+!     rc2         = pdf_params(level)%rc2
+!     cloud_frac1 = pdf_params(level)%cloud_frac1
+!     cloud_frac2 = pdf_params(level)%cloud_frac2
       cloud_frac1 = 1.0 ! For in and out of cloud sampling -dschanen 30 Jul 09
       cloud_frac2 = 1.0 !     "    "
-      s1          = pdf_params%s1(level)
-      s2          = pdf_params%s2(level)
-      stdev_s1    = pdf_params%stdev_s1(level)
-      stdev_s2    = pdf_params%stdev_s2(level)
+      s1          = pdf_params(level)%s1
+      s2          = pdf_params(level)%s2
+      stdev_s1    = pdf_params(level)%stdev_s1
+      stdev_s2    = pdf_params(level)%stdev_s2
 
       ! Compute mean cloud fraction and cloud water
 
@@ -603,7 +604,7 @@ module estimate_lh_micro_module
       compute_sample_variance, & ! Procedure
       compute_sample_mean
 
-    use variables_prognostic_module, only: &
+    use pdf_parameter_module, only: &
       pdf_parameter ! Type
 
     use error_code, only: &
@@ -652,7 +653,7 @@ module estimate_lh_micro_module
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in height per gridbox   [m]
 
-    type(pdf_parameter), intent(in) :: pdf_params
+    type(pdf_parameter), dimension(nnzp), intent(in) :: pdf_params
 
     real, dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -735,11 +736,11 @@ module estimate_lh_micro_module
 
     ! ---- Begin Code ----
 
-    mixt_frac(:)  = dble( pdf_params%mixt_frac(:) )
+    mixt_frac(:)  = dble( pdf_params(:)%mixt_frac )
 
     if ( l_cloud_weighted_averaging ) then
-      cloud_frac1(:) = dble( pdf_params%cloud_frac1(:) )
-      cloud_frac2(:) = dble( pdf_params%cloud_frac2(:) )
+      cloud_frac1(:) = dble( pdf_params(:)%cloud_frac1 )
+      cloud_frac2(:) = dble( pdf_params(:)%cloud_frac2 )
       zero(:) = 0
     else
       cloud_frac1(:) = dble( 1.0 )

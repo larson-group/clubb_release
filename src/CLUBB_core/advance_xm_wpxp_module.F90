@@ -106,8 +106,8 @@ module advance_xm_wpxp_module
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
 
-    use variables_prognostic_module, only: &
-        pdf_parameter  ! type
+    use pdf_parameter_module, only: &
+        pdf_parameter  ! Type
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -169,8 +169,8 @@ module advance_xm_wpxp_module
       thlp2              ! th_l'^2 (momentum levels)                [K^2]
       ! End of Vince Larson's addition.
 
-    type(pdf_parameter), intent(in) ::  &
-      pdf_params   ! PDF parameters
+    type(pdf_parameter), dimension(gr%nnzp), intent(in) ::  &
+      pdf_params   ! PDF parameters     [units vary]
 
     logical, intent(in) ::  & 
       l_implemented      ! Flag for CLUBB being implemented in a larger model.

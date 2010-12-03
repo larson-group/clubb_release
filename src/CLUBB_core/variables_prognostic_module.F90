@@ -10,6 +10,8 @@ module variables_prognostic_module
 !       thermodynamic grid and a momentum grid, and the grids have
 !       different points.
 !-----------------------------------------------------------------------
+  use pdf_parameter_module, only: &
+    pdf_parameter ! Derived type
 
   implicit none
 
@@ -154,43 +156,7 @@ module variables_prognostic_module
 
 !$omp threadprivate(sigma_sqd_w)
 
-  public :: pdf_parameter
-
-  type pdf_parameter
-    real, pointer, dimension(:) ::  &
-      w1,          & ! Mean of w for 1st normal distribution                 [m/s]
-      w2,          & ! Mean of w for 2nd normal distribution                 [m/s]
-      varnce_w1,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
-      varnce_w2,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
-      rt1,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
-      rt2,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
-      varnce_rt1,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
-      varnce_rt2,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-      crt1,        & ! Coefficient for s'                                      [-]
-      crt2,        & ! Coefficient for s'                                      [-]
-      cthl1,       & ! Coefficient for s'                                    [1/K]
-      cthl2,       & ! Coefficient for s'                                    [1/K]
-      thl1,        & ! Mean of th_l for 1st normal distribution                [K]
-      thl2,        & ! Mean of th_l for 2nd normal distribution                [K]
-      varnce_thl1, & ! Variance of th_l for 1st normal distribution          [K^2]
-      varnce_thl2, & ! Variance of th_l for 2nd normal distribution          [K^2]
-      mixt_frac,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
-      rc1,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
-      rc2,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
-      rsl1,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
-      rsl2,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
-      cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
-      cloud_frac2, & ! Cloud fraction for 2nd normal distribution              [-]
-      s1,          & ! Mean of s for 1st normal distribution               [kg/kg]
-      s2,          & ! Mean of s for 2nd normal distribution               [kg/kg]
-      stdev_s1,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
-      stdev_s2,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-      rrtthl,      & ! Within-a-normal correlation of r_t and th_l             [-]
-      alpha_thl,   & ! Factor relating to normalized variance for th_l         [-]
-      alpha_rt       ! Factor relating to normalized variance for r_t          [-]
-  end type
-
-  type(pdf_parameter), target, public :: &
+  type(pdf_parameter), target, allocatable, dimension(:), public :: &
     pdf_params
 
 !$omp threadprivate(pdf_params)
@@ -303,23 +269,7 @@ module variables_prognostic_module
     allocate( sigma_sqd_w(1:nzmax) )    ! PDF width parameter (momentum levels)
 
     ! Variables for pdf closure scheme
-    allocate( pdf_params%w1(1:nzmax),          pdf_params%w2(1:nzmax),  &
-              pdf_params%varnce_w1(1:nzmax),   pdf_params%varnce_w2(1:nzmax),  &
-              pdf_params%rt1(1:nzmax),         pdf_params%rt2(1:nzmax),  &
-              pdf_params%varnce_rt1(1:nzmax),  pdf_params%varnce_rt2(1:nzmax),  &
-              pdf_params%thl1(1:nzmax),        pdf_params%thl2(1:nzmax),  &
-              pdf_params%varnce_thl1(1:nzmax), pdf_params%varnce_thl2(1:nzmax),  &
-              pdf_params%mixt_frac(1:nzmax),   pdf_params%rrtthl(1:nzmax),  &
-              pdf_params%rc1(1:nzmax),         pdf_params%rc2(1:nzmax),  &
-              pdf_params%rsl1(1:nzmax),        pdf_params%rsl2(1:nzmax),  &
-              pdf_params%cloud_frac1(1:nzmax), pdf_params%cloud_frac2(1:nzmax),  &
-              pdf_params%s1(1:nzmax),          pdf_params%s2(1:nzmax),  &
-              pdf_params%stdev_s1(1:nzmax),    pdf_params%stdev_s2(1:nzmax),  &
-              pdf_params%alpha_thl(1:nzmax),   pdf_params%alpha_rt(1:nzmax), &
-              pdf_params%crt1(1:nzmax),        pdf_params%crt2(1:nzmax), &
-              pdf_params%cthl1(1:nzmax),       pdf_params%cthl2(1:nzmax) )
-
-
+    allocate( pdf_params(1:nzmax) )
 
 !--------- Set initial values for array variables ---------
 
@@ -376,36 +326,36 @@ module variables_prognostic_module
     sigma_sqd_w           = 0.0 ! PDF width parameter (momentum levels)
 
     ! Variables for PDF closure scheme
-    pdf_params%w1          = 0.0
-    pdf_params%w2          = 0.0
-    pdf_params%varnce_w1   = 0.0
-    pdf_params%varnce_w2   = 0.0
-    pdf_params%rt1         = 0.0
-    pdf_params%rt2         = 0.0
-    pdf_params%varnce_rt1  = 0.0
-    pdf_params%varnce_rt2  = 0.0
-    pdf_params%thl1        = 0.0
-    pdf_params%thl2        = 0.0
-    pdf_params%varnce_thl1 = 0.0
-    pdf_params%varnce_thl2 = 0.0
-    pdf_params%mixt_frac   = 0.0
-    pdf_params%rc1         = 0.0
-    pdf_params%rc2         = 0.0
-    pdf_params%rsl1        = 0.0
-    pdf_params%rsl2        = 0.0
-    pdf_params%cloud_frac1 = 0.0
-    pdf_params%cloud_frac2 = 0.0
-    pdf_params%s1          = 0.0
-    pdf_params%s2          = 0.0
-    pdf_params%stdev_s1    = 0.0
-    pdf_params%stdev_s2    = 0.0
-    pdf_params%rrtthl      = 0.0
-    pdf_params%alpha_thl   = 0.0
-    pdf_params%alpha_rt    = 0.0
-    pdf_params%crt1        = 0.0
-    pdf_params%crt2        = 0.0
-    pdf_params%cthl1       = 0.0
-    pdf_params%cthl2       = 0.0
+    pdf_params(:)%w1          = 0.0
+    pdf_params(:)%w2          = 0.0
+    pdf_params(:)%varnce_w1   = 0.0
+    pdf_params(:)%varnce_w2   = 0.0
+    pdf_params(:)%rt1         = 0.0
+    pdf_params(:)%rt2         = 0.0
+    pdf_params(:)%varnce_rt1  = 0.0
+    pdf_params(:)%varnce_rt2  = 0.0
+    pdf_params(:)%thl1        = 0.0
+    pdf_params(:)%thl2        = 0.0
+    pdf_params(:)%varnce_thl1 = 0.0
+    pdf_params(:)%varnce_thl2 = 0.0
+    pdf_params(:)%mixt_frac   = 0.0
+    pdf_params(:)%rc1         = 0.0
+    pdf_params(:)%rc2         = 0.0
+    pdf_params(:)%rsl1        = 0.0
+    pdf_params(:)%rsl2        = 0.0
+    pdf_params(:)%cloud_frac1 = 0.0
+    pdf_params(:)%cloud_frac2 = 0.0
+    pdf_params(:)%s1          = 0.0
+    pdf_params(:)%s2          = 0.0
+    pdf_params(:)%stdev_s1    = 0.0
+    pdf_params(:)%stdev_s2    = 0.0
+    pdf_params(:)%rrtthl      = 0.0
+    pdf_params(:)%alpha_thl   = 0.0
+    pdf_params(:)%alpha_rt    = 0.0
+    pdf_params(:)%crt1        = 0.0
+    pdf_params(:)%crt2        = 0.0
+    pdf_params(:)%cthl1       = 0.0
+    pdf_params(:)%cthl2       = 0.0
 
     ! Surface fluxes
     wpthlp_sfc = 0.0
@@ -504,21 +454,7 @@ module variables_prognostic_module
     deallocate( sigma_sqd_w )    ! PDF width parameter (momentum levels)
 
     ! Variable for pdf closure scheme
-    deallocate( pdf_params%w1,          pdf_params%w2,  &
-                pdf_params%varnce_w1,   pdf_params%varnce_w2,  &
-                pdf_params%rt1,         pdf_params%rt2,  &
-                pdf_params%varnce_rt1,  pdf_params%varnce_rt2,  &
-                pdf_params%thl1,        pdf_params%thl2,  &
-                pdf_params%varnce_thl1, pdf_params%varnce_thl2,  &
-                pdf_params%mixt_frac,   pdf_params%rrtthl,  &
-                pdf_params%rc1,         pdf_params%rc2,  &
-                pdf_params%rsl1,        pdf_params%rsl2,  &
-                pdf_params%cloud_frac1, pdf_params%cloud_frac2,  &
-                pdf_params%s1,          pdf_params%s2,  &
-                pdf_params%stdev_s1,    pdf_params%stdev_s2,  &
-                pdf_params%alpha_thl,   pdf_params%alpha_rt, &
-                pdf_params%crt1,        pdf_params%crt2, &
-                pdf_params%cthl1,       pdf_params%cthl2 )
+    deallocate( pdf_params )
 
     ! Passive scalars
     deallocate( wpsclrp_sfc, wpedsclrp_sfc )

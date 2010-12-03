@@ -74,7 +74,7 @@ module latin_hypercube_driver_module
       output_2D_uniform_dist_file
 #endif
 
-    use variables_prognostic_module, only: &
+    use pdf_parameter_module, only: &
       pdf_parameter  ! Type
 
     use constants_clubb, only: &
@@ -165,7 +165,7 @@ module latin_hypercube_driver_module
       exner,      & ! Exner function               [-]
       rho           ! Density on thermo. grid      [kg/m^3]
 
-    type(pdf_parameter), intent(in) :: & 
+    type(pdf_parameter), dimension(nnzp), intent(in) :: & 
       pdf_params ! PDF parameters       [units vary]
 
     real, dimension(nnzp), intent(in) :: &
@@ -344,8 +344,8 @@ module latin_hypercube_driver_module
 
       ! Determine cloud fraction at k_lh_start
       lh_start_cloud_frac = &
-      pdf_params%mixt_frac(k_lh_start) * pdf_params%cloud_frac1(k_lh_start) &
-        + (1.0-pdf_params%mixt_frac(k_lh_start)) * pdf_params%cloud_frac2(k_lh_start)
+      pdf_params(k_lh_start)%mixt_frac * pdf_params(k_lh_start)%cloud_frac1 &
+        + (1.0-pdf_params(k_lh_start)%mixt_frac) * pdf_params(k_lh_start)%cloud_frac2
 
       ! Determine p_matrix at k_lh_start
       p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
@@ -402,8 +402,8 @@ module latin_hypercube_driver_module
             if ( l_use_rejection_method ) then
               ! Use the rejection method to select points that are in or out of cloud
               call choose_X_u_reject &
-                   ( l_cloudy_sample, pdf_params%cloud_frac1(k_lh_start), & ! In
-                     pdf_params%cloud_frac2(k_lh_start), pdf_params%mixt_frac(k_lh_start), & !In
+                   ( l_cloudy_sample, pdf_params(k_lh_start)%cloud_frac1, & ! In
+                     pdf_params(k_lh_start)%cloud_frac2, pdf_params(k_lh_start)%mixt_frac, & !In
                      cloud_frac_thresh, & ! In
                      X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! In/out
 
@@ -411,8 +411,8 @@ module latin_hypercube_driver_module
               call choose_X_u_scaled &
                    ( l_cloudy_sample, & ! In
                      p_matrix(sample,iiLH_s_mellor), n_micro_calls, & ! In 
-                     pdf_params%cloud_frac1(k_lh_start), pdf_params%cloud_frac2(k_lh_start), & ! In
-                     pdf_params%mixt_frac(k_lh_start), & !In
+                     pdf_params(k_lh_start)%cloud_frac1, pdf_params(k_lh_start)%cloud_frac2, & ! In
+                     pdf_params(k_lh_start)%mixt_frac, & !In
                      X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! In/out
 
             end if
@@ -491,7 +491,7 @@ module latin_hypercube_driver_module
     ! Determine mixture component for all levels
     do k = 1, nnzp
 
-      mixt_frac_dp = dble( pdf_params%mixt_frac(k) )
+      mixt_frac_dp = dble( pdf_params(k)%mixt_frac )
 
       where ( in_mixt_comp_1(X_u_all_levs(k,:,d_variables+1), mixt_frac_dp ) )
         X_mixt_comp_all_levs(k,:) = 1
@@ -509,8 +509,8 @@ module latin_hypercube_driver_module
          lh_start_cloud_frac < 0.5 .and. lh_start_cloud_frac > cloud_frac_thresh ) then
 
         call assert_check_half_cloudy &
-             ( n_micro_calls, pdf_params%cloud_frac1(k_lh_start), &
-               pdf_params%cloud_frac2(k_lh_start), X_mixt_comp_all_levs(k_lh_start,:), &
+             ( n_micro_calls, pdf_params(k_lh_start)%cloud_frac1, &
+               pdf_params(k_lh_start)%cloud_frac2, X_mixt_comp_all_levs(k_lh_start,:), &
                X_u_all_levs(k_lh_start,:,iiLH_s_mellor) )
 
       end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
@@ -543,7 +543,7 @@ module latin_hypercube_driver_module
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
-             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params, k, & ! In
+             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params(k), k, & ! In
              hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
              corr_array_cloud, corr_array_below, & ! In
              X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In
@@ -554,7 +554,7 @@ module latin_hypercube_driver_module
     do k = k_lh_start-1, 1, -1
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
-             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params, k, & ! In
+             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params(k), k, & ! In
              hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
              corr_array_cloud, corr_array_below, & ! In
              X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In
