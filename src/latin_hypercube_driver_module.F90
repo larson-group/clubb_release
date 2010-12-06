@@ -543,7 +543,7 @@ module latin_hypercube_driver_module
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
-             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params(k), k, & ! In
+             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params(k), & ! In
              hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
              corr_array_cloud, corr_array_below, & ! In
              X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In
@@ -554,7 +554,7 @@ module latin_hypercube_driver_module
     do k = k_lh_start-1, 1, -1
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &        ! In
-             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params(k), k, & ! In
+             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params(k), & ! In
              hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
              corr_array_cloud, corr_array_below, & ! In
              X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In

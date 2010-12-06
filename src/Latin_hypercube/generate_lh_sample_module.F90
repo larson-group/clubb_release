@@ -34,7 +34,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
              ( n_micro_calls, d_variables, hydromet_dim, & 
-               wm, rcm, rvm, thlm, pdf_params, level, & 
+               wm, rcm, rvm, thlm, pdf_params, & 
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
                corr_array_cloud, corr_array_below, &
                X_u_one_lev, X_mixt_comp_one_lev, &
@@ -129,8 +129,6 @@ module generate_lh_sample_module
 
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters output by closure_new [units vary]
-
-    integer, intent(in) :: level  ! Level info. for PDF parameters.
 
     ! From the KK_microphys_module
     real, dimension(d_variables), target, intent(in) :: &
