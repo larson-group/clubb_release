@@ -883,7 +883,7 @@ module pdf_closure_module
              wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
              rtpthvp, thlpthvp, wprcp, wp2rcp, & 
              rtprcp, thlprcp, rcp2, wprtpthlp, & 
-             crt1, crt2, cthl1, cthl2, pdf_params, level, &
+             crt1, crt2, cthl1, cthl2, pdf_params, &
              err_code, & 
              sclrpthvp, sclrprcp, wpsclrp2, & 
              wpsclrprtp, wpsclrpthlp, wp2sclrp )

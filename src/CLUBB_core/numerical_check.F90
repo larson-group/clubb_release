@@ -59,7 +59,7 @@ module numerical_check
 
     ! Output Variable
     integer, intent(inout) :: & 
-    err_code
+      err_code
 
     ! Local Variables
     character(*), parameter :: proc_name = "compute_length"
@@ -76,7 +76,7 @@ module numerical_check
                           wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
                           rtpthvp, thlpthvp, wprcp, wp2rcp, & 
                           rtprcp, thlprcp, rcp2, wprtpthlp, & 
-                          crt1, crt2, cthl1, cthl2, pdf_params, k, &
+                          crt1, crt2, cthl1, cthl2, pdf_params, &
                           err_code,  & 
                           sclrpthvp, sclrprcp, wpsclrp2, & 
                           wpsclrprtp, wpsclrpthlp, wp2sclrp )
@@ -103,51 +103,51 @@ module numerical_check
 
     implicit none
 
+    ! Parameter Constants
+    character(len=*), parameter :: proc_name = &
+      "pdf_closure"
+
     ! Input Variables
     real, intent(in) :: & 
-    wp4,             & ! w'^4                  [m^4/s^4]
-    wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
-    wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
-    wpthlp2,         & ! w' th_l'^2            [(m K^2)/s]
-    wp2thlp,         & ! w'^2 th_l'            [(m^2 K)/s^2]
-    cloud_frac,      & ! Cloud fraction        [-]
-    rcm,             & ! Mean liquid water     [kg/kg]
-    wpthvp,          & ! Buoyancy flux         [(K m)/s] 
-    wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
-    rtpthvp,         & ! r_t' th_v'            [(kg K)/kg]
-    thlpthvp,        & ! th_l' th_v'           [K^2]
-    wprcp,           & ! w' r_c'               [(m kg)/(s kg)]
-    wp2rcp,          & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
-    rtprcp,          & ! r_t' r_c'             [(kg^2)/(kg^2)]
-    thlprcp,         & ! th_l' r_c'            [(K kg)/kg]
-    rcp2,            & ! r_c'^2                [(kg^2)/(kg^2)]
-    wprtpthlp,       & ! w' r_t' th_l'         [(m kg K)/(s kg)]
-    crt1, crt2,  & 
-    cthl1, cthl2
+      wp4,             & ! w'^4                  [m^4/s^4]
+      wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
+      wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
+      wpthlp2,         & ! w' th_l'^2            [(m K^2)/s]
+      wp2thlp,         & ! w'^2 th_l'            [(m^2 K)/s^2]
+      cloud_frac,      & ! Cloud fraction        [-]
+      rcm,             & ! Mean liquid water     [kg/kg]
+      wpthvp,          & ! Buoyancy flux         [(K m)/s] 
+      wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
+      rtpthvp,         & ! r_t' th_v'            [(kg K)/kg]
+      thlpthvp,        & ! th_l' th_v'           [K^2]
+      wprcp,           & ! w' r_c'               [(m kg)/(s kg)]
+      wp2rcp,          & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
+      rtprcp,          & ! r_t' r_c'             [(kg^2)/(kg^2)]
+      thlprcp,         & ! th_l' r_c'            [(K kg)/kg]
+      rcp2,            & ! r_c'^2                [(kg^2)/(kg^2)]
+      wprtpthlp,       & ! w' r_t' th_l'         [(m kg K)/(s kg)]
+      crt1, crt2,  & 
+      cthl1, cthl2
 
     type(pdf_parameter), intent(in) ::  & 
       pdf_params        ! PDF parameters          [units vary]
 
-    integer, intent(in) ::  &
-    k   ! Level for which the check is occuring (only applies to pdf_params).
-
     ! Input (Optional passive scalar variables)
     real, dimension(sclr_dim), intent(in) ::  & 
-    sclrpthvp,  & 
-    sclrprcp,  & 
-    wpsclrp2, & 
-    wpsclrprtp, & 
-    wpsclrpthlp, & 
-    wp2sclrp
+      sclrpthvp,  & 
+      sclrprcp,  & 
+      wpsclrp2, & 
+      wpsclrprtp, & 
+      wpsclrpthlp, & 
+      wp2sclrp
 
     ! Output Variable
     integer, intent(inout) ::  & 
-    err_code          ! Returns appropriate error code
-
-    ! Local Variable
-    character(*), parameter :: proc_name = "pdf_closure"
+      err_code          ! Returns appropriate error code
 
 !-------------------------------------------------------------------------------
+
+    ! ---- Begin Code ----
 
     if ( iwp4 > 0 ) call check_nan( wp4,"wp4", proc_name, err_code )
     if ( iwprtp2 > 0 ) call check_nan( wprtp2,"wprtp2", proc_name, err_code )
