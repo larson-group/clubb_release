@@ -1408,7 +1408,7 @@ module latin_hypercube_driver_module
 
     ! Parameter Constants
     real, parameter :: &
-      vert_corr_coef = 0.1 ! Empirically defined correlation constant [-]
+      vert_corr_coef = 0.03 ! Empirically defined correlation constant [-]
 
     ! Input Variables
     integer, intent(in) :: &
