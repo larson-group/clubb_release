@@ -59,6 +59,11 @@ module input_grads
 
     use text_writer, only: write_text
 
+    use constants_clubb, only: &
+      sec_per_day, & ! Constant(s)
+      sec_per_hr, &
+      sec_per_min
+
     implicit none
 
     ! Input Variables
@@ -87,6 +92,8 @@ module input_grads
       ihour, imin
 
 !-----------------------------------------------------------------------
+    ! ---- Begin Code ----
+
     !  Initialize status booleans
     f%l_byte_swapped = .false.
     l_error          = .false.
@@ -183,7 +190,7 @@ module input_grads
         read(unit=date(1:2),fmt=*) ihour
         read(unit=date(4:5),fmt=*) imin
 
-        f%time = ihour * 3600. + imin * 60.
+        f%time = ihour * sec_per_hr + imin * sec_per_min
 
         read(unit=date(7:8),fmt=*) f%day
         read(unit=date(12:15),fmt=*) f%year
@@ -217,9 +224,24 @@ module input_grads
           write(unit=fstderr,fmt=*) "Unknown month: "//date(9:11)
           l_error = .true.
         end select
-        ! Assumes minutes
-        read(dt(1:len_trim(dt)-2),*) f%dtwrite
-        f%dtwrite = f%dtwrite * 60.
+
+        i = len_trim( dt )
+
+        ! Read time variable from the string
+        read(dt(1:i-2),*) f%dtwrite
+
+        ! Determine units on time
+        select case ( dt(i-1:i) )
+        case ( 'mn' )
+          f%dtwrite = f%dtwrite * sec_per_min
+        case ( 'hr' )
+          f%dtwrite = f%dtwrite * sec_per_hr
+        case ( 'dy' )
+          f%dtwrite = f%dtwrite * sec_per_day
+        case default
+          write(unit=fstderr,fmt=*) "Unknown time increment: "//dt(i-1:i)
+          l_error = .true.
+        end select
 
       else if ( index(line,'ENDVARS') > 0 ) then
 
