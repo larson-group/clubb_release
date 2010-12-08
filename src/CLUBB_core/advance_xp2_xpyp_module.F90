@@ -122,6 +122,9 @@ module advance_xp2_xpyp_module
       clip_sclrp2, &
       clip_sclrprtp, &
       clip_sclrpthlp
+      
+    use stats_type, only: & 
+      stat_modify
 
     use error_code, only:  & 
       clubb_no_error,  & ! Variable(s)
@@ -129,6 +132,8 @@ module advance_xp2_xpyp_module
       clubb_at_least_debug_level
 
     use stats_variables, only: & 
+      zm, &
+      irtp2_cl, & 
       l_stats_samp
 
     use array_index, only: &
@@ -554,13 +559,26 @@ module advance_xp2_xpyp_module
     ! Special clipping on the variance of rt to prevent a large variance at
     ! higher altitudes
     if ( l_clip_large_rtp2 ) then
+    
+      ! This overwrites stats clipping data from clip_variance
+      if ( l_stats_samp ) then
+        call stat_modify( irtp2_cl, real( -rtp2 / dt ), zm )
+      endif
+      
       do k = 1, gr%nnzp
         threshold = rtp2_clip_coef * rtm(k)**2
         if ( rtp2(k) > threshold ) then
           rtp2(k) = threshold
         end if
       end do ! k = 1..gr%nnzp
+      
+      if ( l_stats_samp ) then
+        call stat_modify( irtp2_cl, real( rtp2 / dt ), zm )
+      endif
+      
     end if ! l_clip_large_rtp2
+    
+ 
 
     ! Clipping for th_l'^2
 
