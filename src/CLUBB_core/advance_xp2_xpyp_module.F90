@@ -557,7 +557,10 @@ module advance_xp2_xpyp_module
                         rtp2 )                          ! Intent(inout)
 
     ! Special clipping on the variance of rt to prevent a large variance at
-    ! higher altitudes
+    ! higher altitudes.  This is done because we don't want the PDF to extend
+    ! into the negative, and found that for latin hypercube sampling a large
+    ! variance aloft leads to negative samples of total water.
+    ! -dschanen 8 Dec 2010
     if ( l_clip_large_rtp2 ) then
     
       ! This overwrites stats clipping data from clip_variance
