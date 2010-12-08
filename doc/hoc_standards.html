@@ -598,9 +598,6 @@ E.g.
 
 &nbsp;&nbsp;&nbsp;&nbsp;...
 
-&nbsp;&nbsp;!&nbsp;Note&nbsp;that&nbsp;all&nbsp;these&nbsp;are&nbsp;subroutines&nbsp;called&nbsp;from&nbsp;
-&nbsp;&nbsp;!&nbsp;hoc_forcings_timestep
-
 &nbsp;&nbsp;public&nbsp;::
 &nbsp;&nbsp;&nbsp;&nbsp;cloud_rad,&nbsp;atex_tndcy,&nbsp;atex_sfclyr,&nbsp;fire_tndcy,&nbsp;&amp;
 &nbsp;&nbsp;&nbsp;&nbsp;wangara_tndcy,&nbsp;wangara_sfclyr,&nbsp;&amp;
@@ -826,6 +823,29 @@ should be enclosed in <tt>clubb_at_least_debug_level(&nbsp;1&nbsp;or&nbsp;2&nbsp
 be write statements to stderr (<tt>clubb_constants&nbsp;fstderr</tt>) with no <tt>clubb_at_least_debug_level</tt> conditional.
 <div class="p"><!----></div>
 </li>
+
+<li> When using allocatable pointers they should be deallocated in the same function or subroutine 
+in which they were allocated.  This is because unlike arrays, the memory used by pointers is not 
+automatically freed without a deallocate statement, and we want to prevent memory leaks. This includes 
+derived types that contain allocatable components. E.g. <br />
+
+<pre>
+&nbsp;&nbsp;function&nbsp;func
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
+
+&nbsp;&nbsp;&nbsp;&nbsp;allocate(&nbsp;file%z&nbsp;)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
+
+&nbsp;&nbsp;&nbsp;&nbsp;deallocate(&nbsp;file%z&nbsp;)
+
+&nbsp;&nbsp;&nbsp;&nbsp;return
+&nbsp;&nbsp;end&nbsp;function&nbsp;func
+
+</pre>
+<div class="p"><!----></div>
+</li>
 </ol>
 
 <div class="p"><!----></div>
@@ -834,5 +854,5 @@ be write statements to stderr (<tt>clubb_constants&nbsp;fstderr</tt>) with no <t
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>M</a>,
-version 3.85.<br />On 28 Jul 2010, 11:45.</small>
+version 3.85.<br />On  8 Dec 2010, 17:41.</small>
 </body></html>

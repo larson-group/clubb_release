@@ -473,9 +473,6 @@ E.g.
 
     ...
 
-  ! Note that all these are subroutines called from 
-  ! hoc_forcings_timestep
-
   public ::
     cloud_rad, atex_tndcy, atex_sfclyr, fire_tndcy, &
     wangara_tndcy, wangara_sfclyr, &
@@ -665,6 +662,25 @@ use \verb|l_cloud_sed| rather than \verb|cloud_sed|.
 \item All non-fatal print or write statements should recast as \verb|clubb_debug( 1 or 2, “message”)| or
 should be enclosed in \verb|clubb_at_least_debug_level( 1 or 2 )| conditionals. All fatal errors should
 be write statements to stderr (\verb|clubb_constants fstderr|) with no \verb|clubb_at_least_debug_level| conditional.
+
+\item When using allocatable pointers they should be deallocated in the same function or subroutine 
+in which they were allocated.  This is because unlike arrays, the memory used by pointers is not 
+automatically freed without a deallocate statement, and we want to prevent memory leaks. This includes 
+derived types that contain allocatable components. E.g. \\
+\begin{verbatim}
+  function func
+
+      ...
+
+    allocate( file%z )
+
+      ...
+
+    deallocate( file%z )
+
+    return
+  end function func
+\end{verbatim}
 
 \end{enumerate}
 
