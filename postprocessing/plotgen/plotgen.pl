@@ -263,12 +263,6 @@ sub main()
 	          elsif($plotgenMode eq "wrfgen")
 	          {
 		            OutputWriter->writeHeader($outputIndex, "WRFGen");
-		 
-		#Only print the WRF header if it is in nightly mode
-		 if($nightly == 1)
-		 	{
-				OutputWriter->writeWrfHeader($outputIndex);
-			}
 	          }
 		  elsif($plotgenMode eq "camgen")
 		  {
@@ -277,6 +271,12 @@ sub main()
 		  elsif($plotgenMode eq "gfdlgen")
 		  {
 			OutputWriter->writeHeader($outputIndex, "GFDLGen");
+		 
+		#Only print the GFDL header if it is in nightly mode
+		 if($nightly == 1)
+		 	{
+				OutputWriter->writeGfdlHeader($outputIndex);
+			}
 		  }
     
             runCases();

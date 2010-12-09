@@ -270,6 +270,24 @@ HTML
 }
 
 ###############################################################################
+# Writes the HTML header for GFDL
+###############################################################################
+sub writeGfdlHeader()
+{
+     shift(@_);
+     my $fh = shift(@_);
+
+    OutputWriter->writeSubHeader($fh, "GFDL runs use a 10-min stepstep with 48 levels");
+    
+    my $text = <<HTML;
+<br />
+<br />
+HTML
+    
+    OutputWriter->writeSubHtml($fh, $text);
+}
+
+###############################################################################
 # Writes the HTML footer information and closes the file.
 ###############################################################################
 sub writeFooter()
