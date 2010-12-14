@@ -443,8 +443,11 @@ module sounding
     !  returns the values contained in that file.
     !
     !-----------------------------------------------------------------------------------------------
-    use input_reader, only: read_one_dim_file, read_x_profile, fill_blanks_one_dim_vars, &
-      one_dim_read_var, deallocate_one_dim_vars
+    use input_reader, only: &
+      read_one_dim_file, read_x_profile, fill_blanks_one_dim_vars ! Procedure(s)
+
+    use input_reader, only: &
+      one_dim_read_var ! Type
 
     use input_interpret, only: &
      read_z_profile, &
@@ -527,10 +530,14 @@ module sounding
     !  returns the values contained in that file.
     !
     !-----------------------------------------------------------------------------------------------
-    use input_reader, only: read_one_dim_file, one_dim_read_var, &
-                            deallocate_one_dim_vars
+    use input_reader, only: &
+      read_one_dim_file, &
+      deallocate_one_dim_vars
 
-    use parameters_model, only: sclr_dim
+    use input_reader, only: &
+      one_dim_read_var ! Type
+
+    use parameters_model, only: sclr_dim ! Variable
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2
 

@@ -1138,9 +1138,7 @@ module clubb_driver
       l_t_dependent ! Variable(s)
 
     use extend_atmosphere_module, only: &
-      load_extend_std_atm, & ! Procedure(s)
-      convert_snd2extend_atm, &
-      determine_extend_atmos_bounds
+      determine_extend_atmos_bounds ! Procedure(s)
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
