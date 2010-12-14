@@ -1997,6 +1997,8 @@ module stats_subs
 
       deallocate( zm%f%var )
       deallocate( zm%f%z )
+      deallocate( zm%f%rlat )
+      deallocate( zm%f%rlon )
       deallocate( zm%l_in_update )
 
       deallocate ( zmscr01 )
@@ -2026,6 +2028,8 @@ module stats_subs
 
         deallocate( rad_zt%f%var )
         deallocate( rad_zt%f%z )
+        deallocate( rad_zt%f%rlat )
+        deallocate( rad_zt%f%rlon )
         deallocate( rad_zt%l_in_update )
 
         ! De-allocate all rad_zm variables
@@ -2066,6 +2070,8 @@ module stats_subs
 
       deallocate( sfc%f%var )
       deallocate( sfc%f%z )
+      deallocate( sfc%f%rlat )
+      deallocate( sfc%f%rlon )
 
       ! De-allocate scalar indices
       deallocate( isclrm )
