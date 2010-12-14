@@ -25,6 +25,9 @@ srcdir="$dir/../src"  # dir where the source files reside
 # floating point arithmetic
 DEBUG="-g -fbounds-check -mieee-fp"
 
+# == Warnings ==
+WARNINGS="-Wall -pedantic"
+
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
 # compiled accordingly.
