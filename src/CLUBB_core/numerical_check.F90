@@ -464,6 +464,9 @@ module numerical_check
 
     implicit none
 
+    ! Name of the subroutine calling the check
+    character(len=*), parameter :: &
+      proc_name = "surface_varnce"
 
     ! Input Variables
     real,intent(in) ::  & 
@@ -483,11 +486,9 @@ module numerical_check
     ! Input/Output Variable
     integer, intent(inout) :: err_code    ! Are these outputs valid?
 
-    ! Local Variables
-
-    ! Name of the subroutine calling the check
-    character(len=7),parameter :: proc_name = "surface_varnce"
 !-----------------------------------------------------------------------
+
+    ! ---- Begin Code ----
 
     call check_nan( wp2_sfc, "wp2_sfc", proc_name, err_code)
     call check_nan( up2_sfc, "up2_sfc", proc_name, err_code)
