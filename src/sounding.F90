@@ -11,11 +11,12 @@ module sounding
     read_edsclr_sounding_file
 
 
-  ! Constant parameter
-  integer, public, parameter :: &
-    nmaxsnd   = 600, &
-    sclr_max  = 1000, &
+  integer, private, parameter :: &
+    nmaxsnd   = 600, & ! Constant parameters
     n_snd_var = 8
+
+  integer, public, parameter :: &
+    sclr_max  = 1000 ! Maximum number of scalars
 
   private ! Default Scope
 
@@ -24,13 +25,12 @@ module sounding
   subroutine read_sounding( iunit, runtype, p_sfc, zm_init,& 
                             thlm, theta_type, rtm, um, vm, ugm, vgm, &
                             alt_type, press, subs_type, wm, &
-                            rtm_sfc, thlm_sfc, sclrm, edsclrm, &
-                            sounding_retVars, sclr_sounding_retVars )
+                            rtm_sfc, thlm_sfc, sclrm, edsclrm )
 
-    !       Description:
-    !       Subroutine to initialize model variables from a namelist file
-    !       References:
-    !       None
+    ! Description:
+    !   Subroutine to initialize model variables from a namelist file
+    ! References:
+    !   None
     !------------------------------------------------------------------------
 
     use grid_class, only:  & 
@@ -57,12 +57,22 @@ module sounding
       clubb_at_least_debug_level ! Function
 
     use input_names, only: &
-      z_name, &
+      z_name, & ! Variables
       theta_name, &
       wm_name
 
     use input_reader, only: &
-      one_dim_read_var
+      one_dim_read_var ! Type
+
+    use parameters_radiation, only: &
+      l_use_default_std_atmosphere ! Variable(s)
+
+    use input_reader, only: &
+      deallocate_one_dim_vars ! Procedure(s)
+
+    use extend_atmosphere_module, only: &
+      convert_snd2extend_atm, & ! Procedure(s)
+      load_extend_std_atm
 
     implicit none
 
@@ -76,7 +86,7 @@ module sounding
     integer, intent(in) :: iunit ! File unit to use for namelist
 
     character(len=*), intent(in) ::  & 
-    runtype      ! String for DYCOMS II RF02
+      runtype ! Used to determine if this in a DYCOMS II RF02 simulation
 
 
     real, intent(in) :: &
@@ -109,12 +119,6 @@ module sounding
     real, intent(out), dimension(gr%nnzp, edsclr_dim) ::  & 
       edsclrm ! Eddy Passive scalar output [units vary]
 
-    type(one_dim_read_var), dimension(n_snd_var), intent(out) :: &
-      sounding_retVars ! Sounding Profile
-
-    type(one_dim_read_var), dimension(sclr_dim), intent(out) :: &
-      sclr_sounding_retVars ! Sclr Sounding Profile
-
     ! Local variables
 
     ! Input variables from namelist
@@ -139,10 +143,17 @@ module sounding
     real, dimension(nmaxsnd, sclr_max) ::  & 
       sclr, edsclr ! Passive scalar input sounding    [units vary]
 
+    type(one_dim_read_var), dimension(n_snd_var) :: &
+      sounding_retVars ! Sounding Profile
+
+    type(one_dim_read_var), dimension(sclr_dim) :: &
+      sclr_sounding_retVars ! Sclr Sounding Profile
+
     integer :: i, j, k  ! Loop indices
 
     integer :: idx  ! Result of binary search -- sounding level index.
 
+    ! ---- Begin Code ----
 
     theta_type = theta_name ! Default value
     alt_type = z_name ! Default value
@@ -402,8 +413,23 @@ module sounding
        thlm_sfc &
           = lin_int( gr%zm(1), z(idx), z(idx-1), theta(idx), theta(idx-1) )
 
-    endif
+    end if
 
+    ! Prepare extended sounding for radiation
+    if ( l_use_default_std_atmosphere ) then
+
+      call load_extend_std_atm( iunit ) ! Intent(in)
+
+    else
+
+      call convert_snd2extend_atm( n_snd_var, p_sfc, zm_init, sclr_dim,    & ! Intent(in)
+                                   sounding_retVars, sclr_sounding_retVars )   ! Intent(in)
+    end if
+
+    ! Deallocate sounding and scalar sounding profiles.  If this doesn't happen,
+    ! then we'll have a memory leak.
+    call deallocate_one_dim_vars( n_snd_var, sounding_retVars )
+    call deallocate_one_dim_vars( sclr_dim, sclr_sounding_retVars )
 
     return
   end subroutine read_sounding
@@ -431,9 +457,6 @@ module sounding
       vm_name, &
       ug_name, &
       vg_name
-
-    use extend_atmosphere_module, only: &
-      l_use_default_std_atmosphere  ! Variable(s)
 
     implicit none
 
@@ -494,13 +517,6 @@ module sounding
 
     nlevels = size( retVars(1)%values )
 
-    ! This is overly complicated code, but in the case where we need these
-    ! profiles to extend the model domain for the radiation we de-allocate these
-    ! arrays elsewhere. -dschanen 17 Nov 2010
-    if ( l_use_default_std_atmosphere ) then
-      call deallocate_one_dim_vars( n_snd_var, retVars )
-    end if
-
     return
   end subroutine read_sounding_file
 
@@ -525,9 +541,6 @@ module sounding
       thetal_name, &
       temperature_name
 
-    use extend_atmosphere_module, only: &
-      l_use_default_std_atmosphere  ! Variable(s)
-
     implicit none
 
     ! Input Variable(s)
@@ -544,7 +557,7 @@ module sounding
     type(one_dim_read_var), dimension(sclr_dim), intent(out) :: &
       retVars ! Structure containing scalar sounding
 
-    integer i
+    integer :: i
 
     call read_one_dim_file( iunit, sclr_dim, &
     '../input/case_setups/'//trim( runtype )//'_sclr_sounding.in', retVars )
@@ -569,10 +582,6 @@ module sounding
       sclr(1:size(retVars(i)%values),i) = retVars(i)%values
     end do
 
-    if ( l_use_default_std_atmosphere ) then
-      call deallocate_one_dim_vars( sclr_dim, retVars )
-    end if
-
     return
   end subroutine read_sclr_sounding_file
 
@@ -591,11 +600,11 @@ module sounding
     use array_index, only: iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
 
     use input_names, only: &
-    CO2_name, &
-    rt_name, &
-    theta_name, &
-    thetal_name, &
-    temperature_name
+      CO2_name, &
+      rt_name, &
+      theta_name, &
+      thetal_name, &
+      temperature_name
 
     implicit none
 

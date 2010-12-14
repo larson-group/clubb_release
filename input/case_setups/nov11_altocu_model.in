@@ -63,11 +63,6 @@ T0   = 300.        ! Reference temperature (usually 300) [K]
 
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
-! Flag indicating if U.S. Std Atmosphere should 
-! be used to extend the grid in radiation.
-! If false, sounding data will be used.
-l_use_default_std_atmosphere = .true. 
-
 ! Sponge Damping
 !
 ! tau_sponge_damp_min : Minimum damping time-scale ( at the top0 [s]
@@ -155,6 +150,12 @@ cos_solar_zen_values = 0.4329,
 Fs_values = 1212.75,
 l_fix_cos_solar_zen = .true.,
 l_sw_radiation = .true.,
+
+! Flag indicating if U.S. Std Atmosphere should 
+! be used to extend the grid in radiation.
+! If false, sounding data will be used.
+l_use_default_std_atmosphere = .true. 
+
 /
 
 &stats_setting

@@ -86,11 +86,6 @@ forcings_file_path = '../input/case_setups/cloud_feedback_s6_forcings/'
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
-! Flag indicating if U.S. Std Atmosphere should 
-! be used to extend the grid in radiation.
-! If false, sounding data will be used.
-l_use_default_std_atmosphere = .false. 
-
 l_t_dependent = .true. ! Flag used to indicate that this case uses 
                        ! a forcings.in and surface.in file for
                        ! time dependent input.
@@ -173,6 +168,12 @@ alvdf = 0.07 ! Visible diffuse surface albedo [-]
 alndr = 0.07 ! Near-IR direct surface albedo  [-]
 alndf = 0.07 ! Near-IR diffuse surface albedo [-]
 alvdr = 0.07 ! Visible direct surface albedo  [-]
+
+! Flag indicating if U.S. Std Atmosphere should 
+! be used to extend the grid in radiation.
+! If false, sounding data will be used.
+l_use_default_std_atmosphere = .false. 
+
 /
 
 &stats_setting

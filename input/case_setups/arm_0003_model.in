@@ -81,12 +81,6 @@ forcings_file_path = '../input/case_setups/arm_0003_forcings/'
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
-
-! Flag indicating if U.S. Std Atmosphere should 
-! be used to extend the grid in radiation.
-! If false, sounding data will be used.
-l_use_default_std_atmosphere = .true. 
-
 ! Flag used to indicate that this case uses
 ! a forcings.in and surface.in file for
 ! time dependent input
@@ -154,6 +148,7 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 ! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
 micro_scheme = "coamps"
 /
+
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme = "none",

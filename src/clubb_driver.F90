@@ -233,7 +233,6 @@ module clubb_driver
       total_atmos_dim, &
       complete_alt, &
       complete_momentum, &
-      l_use_default_std_atmosphere, &
       finalize_extend_atm
 
     use parameters_radiation, only: rad_scheme ! Variable(s)
@@ -370,7 +369,6 @@ module clubb_driver
       dtmain, dtclosure, & 
       sfctype, T_sfc, p_sfc, SE, LE, fcor, T0, ts_nudge, & 
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
-      l_use_default_std_atmosphere, &
       saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
@@ -425,8 +423,6 @@ module clubb_driver
 
     l_t_dependent   = .false.
     l_input_xpwp_sfc = .false.
-
-    l_use_default_std_atmosphere = .true.
 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
@@ -614,9 +610,6 @@ module clubb_driver
 
       call write_text( "l_t_dependent = ", l_t_dependent, l_write_to_file, iunit )
       call write_text( "l_input_xpwp_sfc = ", l_input_xpwp_sfc, l_write_to_file, iunit )
-
-      call write_text( "l_use_default_std_atmosphere = ", l_use_default_std_atmosphere, &
-        l_write_to_file, iunit )
 
       call write_text( "saturation_formula = " // saturation_formula, &
         l_write_to_file, iunit )
@@ -1134,7 +1127,7 @@ module clubb_driver
 
     use grid_class, only: zm2zt, zt2zm ! Procedure(s)
 
-    use sounding, only: n_snd_var, read_sounding ! Procedure(s)
+    use sounding, only: read_sounding ! Procedure(s)
 
     use model_flags, only: &
         l_uv_nudge, & ! Variable(s)
@@ -1143,9 +1136,6 @@ module clubb_driver
     use time_dependent_input, only: &
       initialize_t_dependent_input, & ! Procedure(s)
       l_t_dependent ! Variable(s)
-
-    use extend_atmosphere_module, only: &
-      l_use_default_std_atmosphere
 
     use extend_atmosphere_module, only: &
       load_extend_std_atm, & ! Procedure(s)
@@ -1180,9 +1170,6 @@ module clubb_driver
       wm_name, &
       omega_name
 
-    use input_reader, only: &
-      one_dim_read_var
-
     implicit none
 
     intrinsic :: min, max, trim, sqrt, size
@@ -1193,7 +1180,9 @@ module clubb_driver
     character(len=*), intent(in) :: &
       forcings_file_path ! Path to the .dat files containing the forcings
 
-    real, intent(in) :: p_sfc, zm_init ! Pressure at the surface [Pa]
+    real, intent(in) :: &
+      p_sfc,  & ! Pressure at the surface        [Pa]
+      zm_init   ! Initial moment. level altitude [m]
 
     ! Output
     real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -1251,10 +1240,6 @@ module clubb_driver
 
     integer :: k, err_code
 
-    type(one_dim_read_var), dimension(n_snd_var) :: sounding_retVars
-
-    type(one_dim_read_var), dimension(sclr_dim) :: sclr_sounding_retVars
-
     character(len=50) :: &
       theta_type, & ! Type of temperature sounding 
       alt_type,   & ! Type of altitude sounding
@@ -1264,22 +1249,10 @@ module clubb_driver
     err_code = clubb_no_error
 
     ! Read sounding information
-    call read_sounding( iunit, runtype, p_sfc, zm_init, &          ! Intent(in) 
-                        thlm, theta_type, rtm, um, vm, ug, vg,  & ! Intent(out)
-                        alt_type, p_in_Pa, subs_type, wm_zt, &    ! Intent(out)
-                        rtm_sfc, thlm_sfc, sclrm, edsclrm, &      ! Intent(out)
-                        sounding_retVars, sclr_sounding_retVars ) ! Intent(out)
-
-    ! Prepare extended sounding for radiation
-    if ( l_use_default_std_atmosphere ) then
-
-      call load_extend_std_atm( iunit ) ! Intent (in)
-
-    else
-
-      call convert_snd2extend_atm( n_snd_var, p_sfc, zm_init, sclr_dim,    & ! Intent(in)
-                                   sounding_retVars, sclr_sounding_retVars )   ! Intent(inout)
-    end if
+    call read_sounding( iunit, runtype, p_sfc, zm_init, &        ! Intent(in) 
+                        thlm, theta_type, rtm, um, vm, ug, vg, & ! Intent(out)
+                        alt_type, p_in_Pa, subs_type, wm_zt, &   ! Intent(out)
+                        rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
 
     call determine_extend_atmos_bounds( gr%nnzp, gr%zt,            & ! Intent(in)
                                         gr%zm, gr%invrs_dzm,             & ! Intent(in)

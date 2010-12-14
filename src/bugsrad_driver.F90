@@ -474,9 +474,10 @@ module bugsrad_driver
       kappa, F0, F1, eff_drop_radius, gc, omega, Fs_values, &
       cos_solar_zen_values, cos_solar_zen_times, &
       radiation_top, l_fix_cos_solar_zen, l_sw_radiation, &
-      slr, l_rad_above_cloud, nparam
+      slr, l_rad_above_cloud, l_use_default_std_atmosphere, nparam
 
     use error_code, only: clubb_at_least_debug_level ! Function
+
     use text_writer, only: &
       write_text   ! Used to write radiation settings to setup.txt file
 
@@ -501,7 +502,7 @@ module bugsrad_driver
       kappa, F0, F1, eff_drop_radius, gc, omega, Fs_values, &
       cos_solar_zen_values, cos_solar_zen_times, &
       radiation_top, l_fix_cos_solar_zen, l_sw_radiation, &
-      slr, l_rad_above_cloud
+      slr, l_rad_above_cloud, l_use_default_std_atmosphere
 
     ! ---- Begin Code ----
 
@@ -533,6 +534,10 @@ module bugsrad_driver
 
     l_rad_above_cloud = .false. ! For the heaviside step function
     l_sw_radiation = .false. ! Set to true to enable shortwave radiation
+
+    ! Use the 1976 standard atmsophere table to add a buffer above the model
+    ! domain for radiation.  Otherwise, the sounding will be used.
+    l_use_default_std_atmosphere = .true. 
 
     ! Parameters for fixing the value of cosine of the solar zenith angle
     l_fix_cos_solar_zen = .false.
@@ -583,6 +588,8 @@ module bugsrad_driver
       call write_text ( "l_rad_above_cloud = ", l_rad_above_cloud, l_write_to_file, iunit )
       call write_text ( "l_sw_radiation = ", l_sw_radiation, l_write_to_file, iunit )
       call write_text ( "l_fix_cos_solar_zen = ", l_fix_cos_solar_zen, l_write_to_file, iunit )
+      call write_text ( "l_use_default_std_atmosphere = ", l_use_default_std_atmosphere, &
+                        l_write_to_file, iunit )
       call write_text ( "Fs_values = ", Fs_values, l_write_to_file, iunit )
       call write_text ( "cos_solar_zen_values = ", cos_solar_zen_values, l_write_to_file, iunit )
       call write_text ( "cos_solar_zen_times = ", cos_solar_zen_times, l_write_to_file, iunit )

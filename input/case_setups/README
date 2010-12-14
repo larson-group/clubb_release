@@ -118,10 +118,6 @@ l_tke_aniso | logical
 l_uv_nudge | logical
   Flag for horizontal wind speed nudging.
 
-l_use_default_std_atmosphere | logical 
-  Flag indicating if U.S. Std Atmosphere should be used to extend the grid in radiation.
-  If false, sounding data will be used.
-
 rtm/thlm/um/vm_sponge_damp_settings%l_sponge_damping | logical
   Enable sponge damping.
 
@@ -405,6 +401,11 @@ l_sw_radiation | logical
   Whether to compute shortwave radiation. (simplified)
   To disable shortwave radiation in BUGSrad, set cosine of the solar zenith
   angle or fraction of daylight to 0.
+
+l_use_default_std_atmosphere | logical
+  Flag indicating if U.S. Std Atmosphere should be used to extend the grid in radiation.
+  If false, sounding data will be used. (BUGSrad)
+
 
 
 --------------------------------------------------------------------------------

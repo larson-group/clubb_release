@@ -70,11 +70,6 @@ l_uv_nudge     = .false.   ! Flag for horizontal wind speed nudging.
 ! time dependent input
 l_t_dependent = .true. ! Flag for time dependent input
 
-! Flag indicating if U.S. Std Atmosphere should 
-! be used to extend the grid in radiation.
-! If false, sounding data will be used.
-l_use_default_std_atmosphere = .true. 
-
 
 ! Sponge Damping
 !
@@ -158,6 +153,12 @@ alvdf = 0.07 ! Visible diffuse surface albedo [-]
 alndr = 0.07 ! Near-IR direct surface albedo  [-]
 alndf = 0.07 ! Near-IR diffuse surface albedo [-]
 alvdr = 0.07 ! Visible direct surface albedo  [-]
+
+! Flag indicating if U.S. Std Atmosphere should 
+! be used to extend the grid in radiation.
+! If false, sounding data will be used.
+l_use_default_std_atmosphere = .true. 
+
 /
 
 &stats_setting

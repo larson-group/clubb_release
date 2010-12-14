@@ -24,9 +24,6 @@ module extend_atmosphere_module
   ! Altitude of complete momentum grid in meters
   real, public, target, allocatable, dimension(:) :: complete_momentum
 
-  ! Flag to signal the use of the U.S. Standard Atmosphere Profile, 1976
-  logical, public :: l_use_default_std_atmosphere
-
   ! Extended Atmosphere variables
 
   ! Altitude in meters
@@ -60,8 +57,7 @@ module extend_atmosphere_module
     !
     !-----------------------------------------------------------------------------------------------
     use input_reader, only: &
-      read_x_profile, & ! Procedure(s)
-      deallocate_one_dim_vars 
+      read_x_profile ! Procedure(s)
 
     use input_reader, only: &
       one_dim_read_var ! Type
@@ -87,10 +83,10 @@ module extend_atmosphere_module
 
     real, intent(in) :: zm_init ! Height at zm(1) [m]
 
-    type(one_dim_read_var), dimension(n_snd_var), intent(inout) :: &
+    type(one_dim_read_var), dimension(n_snd_var), intent(in) :: &
       sounding_profiles ! Sounding profile
 
-    type(one_dim_read_var), dimension(n_sclr_var), intent(inout) :: &
+    type(one_dim_read_var), dimension(n_sclr_var), intent(in) :: &
       sclr_sounding_profiles ! Sclr Sounding profile
 
     ! Local Variables
@@ -172,11 +168,6 @@ module extend_atmosphere_module
     deallocate( theta )
     deallocate( p_in_Pa )
     deallocate( exner )
-
-    ! Deallocate sounding and scalar sounding profiles.  If this doesn't happen,
-    ! then we'll have a memory leak.
-    call deallocate_one_dim_vars( n_snd_var, sounding_profiles )
-    call deallocate_one_dim_vars( n_sclr_var, sclr_sounding_profiles )
 
     return
   end subroutine convert_snd2extend_atm
