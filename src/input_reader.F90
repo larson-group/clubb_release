@@ -87,7 +87,7 @@ module input_reader
     !                                                    on the dimesion not stored in read_vars
 
     ! Local Variables
-    character(len=256),dimension(nCol) :: names ! Names of variables
+    character(len=30),dimension(nCol) :: names ! Names of variables
 
     integer nRowI ! Inner row
 
@@ -207,7 +207,7 @@ module input_reader
     !                                                                   from the file
 
     ! Local Variable(s)
-    character(len=256),dimension(nCol) :: names
+    character(len=30),dimension(nCol) :: names
 
     character(len=200) :: tmpline
 
