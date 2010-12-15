@@ -17,6 +17,7 @@ restoreDir=`pwd`
 # Executable for the debugging program
 #DEBUG=dbx
 DEBUG=pgdbg
+#DEBUG="valgrind --leak-check=full --show-reachable=yes"
 
 # Change directories to the one the script is located in
 cd $scriptPath
@@ -60,7 +61,7 @@ if [ ! -e "$STATS_FILE" ]; then
 	exit 1
 fi
 
-cat $PARAMS_FILE $MODEL_FILE $STATS_FILE > 'clubb.in'
+cat $PARAMS_FILE $MODEL_FILE $STATS_FILE | sed 's/\!.*//' > 'clubb.in'
 
 #######################################################################
 # State which case is being run
