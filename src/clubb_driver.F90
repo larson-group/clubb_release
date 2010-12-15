@@ -1350,6 +1350,7 @@ module clubb_driver
     case ( "generic" )
 
       em = 1.0
+      em(gr%nnzp) = em_min
 
       ! GCSS BOMEX
     case ( "bomex" )
@@ -1389,27 +1390,33 @@ module clubb_driver
     case ( "arm_0003" )
 
       em = 1.0
+      em(gr%nnzp) = em_min
 
       ! 3 year ARM case
     case ( "arm_3year" )
 
       em = 1.0
+      em(gr%nnzp) = em_min
 
       ! June 27 1997 ARM case
     case ( "arm_97" )
 
       em = 1.0
+      em(gr%nnzp) = em_min
+      
       ! twp_ice
     case ( "twp_ice" )
 
       em = 1.0
-      ! twp_ice case
-
+      em(gr%nnzp) = em_min
+      
+      ! cloud feedback cases
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
            "cloud_feedback_s12", "cloud_feedback_s12_p2k" )
 
       em = 1.0
+      em(gr%nnzp) = em_min
 
       ! ASTEX_A209 case 16 Jul, 2010 kcwhite
     case ( "astex_a209" )
@@ -1425,7 +1432,7 @@ module clubb_driver
         end if
       end do
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
+      em(gr%nnzp) = em_min
 
 
 #endif
@@ -1443,7 +1450,7 @@ module clubb_driver
         end if
       end do
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
+      em(gr%nnzp) = em_min
 
       ! GCSS ATEX
     case ( "atex" )
@@ -1475,12 +1482,13 @@ module clubb_driver
         end if
       end do
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
+      em(gr%nnzp) = em_min
 
       ! GCSS DYCOMS II RF02
     case ( "dycoms2_rf02" )
 
       em = 1.0
+      em(gr%nnzp) = em_min
 
       ! Brian for Nov. 11 altocumulus case.
     case ( "nov11_altocu" )
@@ -1504,7 +1512,7 @@ module clubb_driver
         end if
       end do
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
+      em(gr%nnzp) = em_min
       ! End Vince Larson's change.
 
       ! Adam Smith addition for June 25 altocumulus case.
@@ -1530,8 +1538,9 @@ module clubb_driver
       end do
 
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
+      
+      em(gr%nnzp) = em_min
 
       ! End of ajsmith4's addition
 
@@ -1551,8 +1560,8 @@ module clubb_driver
         end if
       end do
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
+      em(gr%nnzp) = em_min
 
       ! End of ajsmith4's addition
 
@@ -1572,8 +1581,8 @@ module clubb_driver
         end if
       end do
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
       ! End Vince Larson's change.
+      em(gr%nnzp) = em_min
 
       ! End of ajsmith4's addition
 
@@ -1581,6 +1590,7 @@ module clubb_driver
     case ( "lba" )
 
       em = 0.1
+      em(gr%nnzp) = em_min
 #endif
 
       ! Michael Falk for mpace_a Arctic Stratus case.
@@ -1597,7 +1607,7 @@ module clubb_driver
         end if
       end do
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
+      em(gr%nnzp) = em_min
 
       call mpace_a_init( iunit, forcings_file_path )
 
@@ -1616,12 +1626,13 @@ module clubb_driver
         end if
       enddo
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
+      em(gr%nnzp) = em_min
 
       ! Brian Griffin for COBRA CO2 case.
     case ( "cobra" )
 
       em = 0.1
+      em(gr%nnzp) = em_min
 
       ! Michael Falk for RICO tropical cumulus case, 13 Dec 2006
     case ( "rico" )
@@ -1637,7 +1648,7 @@ module clubb_driver
       enddo
 
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
+      em(gr%nnzp) = em_min
 
       ! Michael Falk for GABLS2 case, 29 Dec 2006
     case ( "gabls2" )
@@ -1653,7 +1664,7 @@ module clubb_driver
       end do
 
       em(1) = em(2)
-      em(gr%nnzp) = em(gr%nnzp-1)
+      em(gr%nnzp) = em_min
 
 
 #ifdef UNRELEASED_CODE
@@ -1663,6 +1674,7 @@ module clubb_driver
 
     case ( "gabls3" )
       em = 1.0
+      em(gr%nnzp) = em_min
 
       veg_T_in_K = 300.
       sfc_soil_T_in_K = 300.

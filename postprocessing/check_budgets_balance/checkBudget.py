@@ -588,7 +588,7 @@ if __name__ == "__main__":
         
         # Test all remaining files
         for dataFile in testableFiles:
-            print "\n----------------------------------------------------\nTesting " + dataFile
+            print "\nTesting " + dataFile
             
             # Check if file is NetCDF, otherwise assume GrADS
             if dataFile.find(".nc") != -1 or dataFile.find(".cdf") != -1:
