@@ -156,6 +156,7 @@ module morrison_micro_driver_module
       dummy_1D => pdf_params(:)%cloud_frac1
       cloud_frac = dummy(:,1)
       cloud_frac = s_mellor
+      cloud_frac = dummy_1D
       if ( l_local_kk ) stop
     end if
 

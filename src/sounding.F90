@@ -526,13 +526,14 @@ module sounding
   !-------------------------------------------------------------------------------------------------
   subroutine read_sclr_sounding_file( iunit, runtype, sclr, retVars )
     !
-    !  Description: This subroutine reads in a <runtype>_sclr_sounding.in file and
-    !  returns the values contained in that file.
-    !
+    ! Description: This subroutine reads in a <runtype>_sclr_sounding.in file and
+    !   returns the values contained in that file.
+
+    ! References:
+    !   None
     !-----------------------------------------------------------------------------------------------
     use input_reader, only: &
-      read_one_dim_file, &
-      deallocate_one_dim_vars
+      read_one_dim_file ! Procedure(s)
 
     use input_reader, only: &
       one_dim_read_var ! Type
@@ -567,7 +568,7 @@ module sounding
     integer :: i
 
     call read_one_dim_file( iunit, sclr_dim, &
-    '../input/case_setups/'//trim( runtype )//'_sclr_sounding.in', retVars )
+      '../input/case_setups/'//trim( runtype )//'_sclr_sounding.in', retVars )
 
 !    call fill_blanks_one_dim_vars( sclr_dim, retVars )
 
@@ -635,7 +636,7 @@ module sounding
     ! ---- Begin Code ----
 
     call read_one_dim_file( iunit, edsclr_dim, &
-    '../input/case_setups/'//trim( runtype )//'_edsclr_sounding.in', retVars )
+      '../input/case_setups/'//trim( runtype )//'_edsclr_sounding.in', retVars )
 
  !   call fill_blanks_one_dim_vars( edsclr_dim, retVars )
 
