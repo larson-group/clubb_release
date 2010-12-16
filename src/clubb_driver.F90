@@ -3532,7 +3532,7 @@ module clubb_driver
 
     use constants_clubb, only: fstderr, zero_threshold  ! Constant(s)
 
-    use numerical_check, only: isnan2d, rad_check ! Procedure(s)
+    use numerical_check, only: is_nan_2d, rad_check ! Procedure(s)
 
     use parameters_radiation, only: &
       rad_scheme, & ! Variable(s)
@@ -3686,39 +3686,39 @@ module clubb_driver
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 
-        if ( isnan2d( thlm ) ) then
+        if ( is_nan_2d( thlm ) ) then
           write(fstderr,*) "thlm before BUGSrad is NaN"
         endif
 
-        if ( isnan2d( rcm ) ) then
+        if ( is_nan_2d( rcm ) ) then
           write(fstderr,*) "rcm before BUGSrad is NaN"
         endif
 
-        if ( isnan2d( rtm ) ) then
+        if ( is_nan_2d( rtm ) ) then
           write(fstderr,*) "rtm before BUGSrad is NaN"
         endif
 
-        if ( isnan2d( rsnowm ) ) then
+        if ( is_nan_2d( rsnowm ) ) then
           write(fstderr,*) "rsnowm before BUGSrad is NaN"
         endif
 
-        if ( isnan2d( ricem ) ) then
+        if ( is_nan_2d( ricem ) ) then
           write(fstderr,*) "ricem before BUGSrad is NaN"
         endif
 
-        if ( isnan2d( cloud_frac ) ) then
+        if ( is_nan_2d( cloud_frac ) ) then
           write(fstderr,*) "cloud_frac before BUGSrad is NaN"
         endif
 
-        if ( isnan2d( p_in_Pa ) ) then
+        if ( is_nan_2d( p_in_Pa ) ) then
           write(fstderr,*) "p_in_Pa before BUGSrad is NaN"
         endif
 
-        if ( isnan2d( exner ) ) then
+        if ( is_nan_2d( exner ) ) then
           write(fstderr,*) "exner before BUGSrad is NaN"
         endif
 
-        if ( isnan2d( rho_zm ) ) then
+        if ( is_nan_2d( rho_zm ) ) then
           write(fstderr,*) "rho_zm before BUGSrad is NaN"
         endif
 
@@ -3743,12 +3743,12 @@ module clubb_driver
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 
-        if ( isnan2d( Frad ) ) then
+        if ( is_nan_2d( Frad ) ) then
           write(fstderr,*) "Frad after BUGSrad is NaN"
           !write(fstderr,*) Frad
         endif
 
-        if ( isnan2d( radht ) ) then
+        if ( is_nan_2d( radht ) ) then
           write(fstderr,*) "radht after BUGSrad is NaN"
           !write(fstderr,*) radht
         endif

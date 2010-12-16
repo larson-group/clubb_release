@@ -4,7 +4,7 @@ module numerical_check
 
   implicit none
 
-!       Made isnan2d public so it may be used
+!       Made is_nan_2d public so it may be used
 !       for finding code that cause NaNs
 !       Joshua Fasching November 2007
 
@@ -18,10 +18,10 @@ module numerical_check
 
   private ! Default scope
 
-  public :: invalid_model_arrays, isnan2d,  & 
+  public :: invalid_model_arrays, is_nan_2d,  & 
             rad_check, parameterization_check, & 
             surface_varnce_check, pdf_closure_check, & 
-            length_check, isnan, calculate_spurious_source
+            length_check, is_nan_sclr, calculate_spurious_source
 
   private :: check_negative, check_nan
 
@@ -613,77 +613,77 @@ module numerical_check
     ! Check whether any variable array contains a NaN for
     ! um, vm, thlm, rtm, rtp2, thlp2, wprtp, wpthlp, rtpthlp,
     ! wp2, & wp3.
-    if ( isnan2d( um ) ) then
+    if ( is_nan_2d( um ) ) then
       write(fstderr,*) "NaN in um model array"
 !         write(fstderr,*) "um= ", um
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( vm ) ) then
+    if ( is_nan_2d( vm ) ) then
       write(fstderr,*) "NaN in vm model array"
 !         write(fstderr,*) "vm= ", vm
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( wp2 ) ) then
+    if ( is_nan_2d( wp2 ) ) then
       write(fstderr,*) "NaN in wp2 model array"
 !         write(fstderr,*) "wp2= ", wp2
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( wp3 ) ) then
+    if ( is_nan_2d( wp3 ) ) then
       write(fstderr,*) "NaN in wp3 model array"
 !         write(fstderr,*) "wp3= ", wp3
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( rtm ) ) then
+    if ( is_nan_2d( rtm ) ) then
       write(fstderr,*) "NaN in rtm model array"
 !         write(fstderr,*) "rtm= ", rtm
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( thlm ) ) then
+    if ( is_nan_2d( thlm ) ) then
       write(fstderr,*) "NaN in thlm model array"
 !         write(fstderr,*) "thlm= ", thlm
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( rtp2 ) ) then
+    if ( is_nan_2d( rtp2 ) ) then
       write(fstderr,*) "NaN in rtp2 model array"
 !         write(fstderr,*) "rtp2= ", rtp2
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( thlp2 ) ) then
+    if ( is_nan_2d( thlp2 ) ) then
       write(fstderr,*) "NaN in thlp2 model array"
 !         write(fstderr,*) "thlp2= ", thlp2
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( wprtp ) ) then
+    if ( is_nan_2d( wprtp ) ) then
       write(fstderr,*) "NaN in wprtp model array"
 !         write(fstderr,*) "wprtp= ", wprtp
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( wpthlp ) ) then
+    if ( is_nan_2d( wpthlp ) ) then
       write(fstderr,*) "NaN in wpthlp model array"
 !         write(fstderr,*) "wpthlp= ", wpthlp
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( rtpthlp ) ) then
+    if ( is_nan_2d( rtpthlp ) ) then
       write(fstderr,*) "NaN in rtpthlp model array"
 !         write(fstderr,*) "rtpthlp= ", rtpthlp
       invalid_model_arrays = .true.
@@ -692,7 +692,7 @@ module numerical_check
 
     if ( hydromet_dim > 0 ) then
       do i = 1, hydromet_dim, 1
-        if ( isnan2d( hydromet(:,i) ) ) then
+        if ( is_nan_2d( hydromet(:,i) ) ) then
           write(fstderr,*) "NaN in a hydrometeor model array "// &
             trim( hydromet_list(i) )
 !             write(fstderr,*) "hydromet= ", hydromet
@@ -702,34 +702,34 @@ module numerical_check
       end do
     end if
 
-!       if ( isnan2d( wm_zt ) ) then
+!       if ( is_nan_2d( wm_zt ) ) then
 !         write(fstderr,*) "NaN in wm_zt model array"
 !         write(fstderr,*) "wm_zt= ", wm_zt
 !         invalid_model_arrays = .true.
 !         return
 !       end if
 
-    if ( isnan2d( wp2thvp ) ) then
+    if ( is_nan_2d( wp2thvp ) ) then
       write(fstderr,*) "NaN in wp2thvp model array"
 !         write(fstderr,*) "wp2thvp = ", wp2thvp
       invalid_model_arrays = .true.
 !         return
     end if
 
-    if ( isnan2d( rtpthvp ) ) then
+    if ( is_nan_2d( rtpthvp ) ) then
       write(fstderr,*) "NaN in rtpthvp model array"
 !         write(fstderr,*) "rtpthvp = ", rtpthvp
       invalid_model_arrays = .true.
     end if
 
-    if ( isnan2d( thlpthvp ) ) then
+    if ( is_nan_2d( thlpthvp ) ) then
       write(fstderr,*) "NaN in thlpthvp model array"
 !         write(fstderr,*) "thlpthvp = ", thlpthvp
       invalid_model_arrays = .true.
     end if
 
     do i = 1, sclr_dim, 1
-      if ( isnan2d( sclrm(:,i) ) ) then
+      if ( is_nan_2d( sclrm(:,i) ) ) then
         write(fstderr,*) "NaN in sclrm", i, "model array"
 !           write(fstderr,'(a6,i2,a1)') "sclrm(", i, ")"
 !           write(fstderr,*) sclrm(:,i)
@@ -738,7 +738,7 @@ module numerical_check
     end do
 
     do i = 1, edsclr_dim, 1
-      if ( isnan2d( edsclrm(:,i) ) ) then
+      if ( is_nan_2d( edsclrm(:,i) ) ) then
         write(fstderr,*) "NaN in edsclrm", i, "model array"
 !           write(fstderr,'(a8,i2,a1)') "edsclrm(", i, ")"
 !           write(fstderr,*) edsclrm(:,i)
@@ -750,10 +750,18 @@ module numerical_check
   end function invalid_model_arrays
 
 !------------------------------------------------------------------------
-  logical function isnan( x2d )
+  logical function is_nan_sclr( xarg )
 
-!       Description:
-!       Checks if a given scalar real is a nan, +inf or -inf.
+! Description:
+!   Checks if a given scalar real is a NaN, +inf or -inf.
+
+! Notes:
+!   I was advised by Andy Vaught to use a data statement and the transfer( )
+!   intrinsic rather than using a hex number in a parameter for portability.
+
+!   Certain compiler optimizations may cause variables with invalid
+!   results to flush to zero.  Avoid these!
+!  -dschanen 16 Dec 2010
 
 !------------------------------------------------------------------------
 
@@ -763,14 +771,19 @@ module numerical_check
     intrinsic :: transfer
 
     ! Input Variables
-    real, intent(in) :: x2d
+    real, intent(in) :: xarg
 
+#ifdef __GFORTRAN__
+    is_nan_sclr = isnan( xarg )
+#else
     ! Local Variables
     integer(kind=4) :: nanbits
 
     real(kind=4) :: PosInf, NegInf
 
     data nanbits /Z"7F800000"/
+
+    ! ---- Begin Code ---
 
     PosInf = transfer( nanbits, PosInf )
     NegInf = -( transfer( nanbits, NegInf ) )
@@ -779,87 +792,61 @@ module numerical_check
     ! because the IEEE 754 spec defines that subnormals and nans
     ! should not equal themselves.
     ! However, all compilers do not seem to follow this.
-    if (x2d /= x2d ) then
-      isnan = .true.
+    if (xarg /= xarg ) then
+      is_nan_sclr = .true.
 
       ! This a second check, assuming the above does not work as
       ! expected.
-    else if ( x2d == PosInf ) then
-      isnan = .true.
+    else if ( xarg == PosInf ) then
+      is_nan_sclr = .true.
 
       ! This may never be needed, it's here just in case.
-    else if ( x2d == NegInf ) then
-      isnan = .true.
+    else if ( xarg == NegInf ) then
+      is_nan_sclr = .true.
 
     else
-      isnan = .false. ! Our result should be a standard float
+      is_nan_sclr = .false. ! Our result should be a standard float
 
     end if
+#endif
 
     return
-  end function isnan
+  end function is_nan_sclr
 !------------------------------------------------------------------------
 
 !------------------------------------------------------------------------
-  logical function isnan2d( x2d )
+  logical function is_nan_2d( x2d )
 
 ! Description:
-!   Checks if a given real is a NaN, +inf or -inf.
+!   Checks if a given real vector is a NaN, +inf or -inf.
 
-! Notes:
-!   I was advised by Andy Vaught to use a data statement and the transfer( )
-!   intrinsic rather than using a hex number in a parameter for portability.
-
-!   Ideally this would be done with the intrinsic module for IEEE in
-!   Fortran 2003 or with the isnan( ) extension provided by some
-!   (not portland group) compilers.
-
-!   Certain compiler optimizations may cause variables with invalid
-!   results to flush to zero.  Avoid these!
 !------------------------------------------------------------------------
 
     implicit none
 
     ! External
-    intrinsic :: any, transfer
+    intrinsic :: any
 
     ! Input Variables
     real, dimension(:), intent(in) :: x2d
 
     ! Local Variables
-    integer(kind=4) :: nanbits
+    integer :: k
 
-    real(kind=4) :: PosInf, NegInf
+    ! ---- Begin Code ----
 
-    data nanbits /Z"7F800000"/
+    is_nan_2d = .false.
 
-    PosInf = transfer( nanbits, PosInf )
-    NegInf = -( transfer( nanbits, NegInf ) )
-
-    ! This works on compilers with standardized floating point,
-    ! because the IEEE 754 spec defines that subnormals and NaNs
-    ! should not equal themselves.
-    ! However, all compilers do not seem to follow this.
-    if ( any( x2d /= x2d ) ) then
-      isnan2d = .true.
-
-      ! This a second check, assuming the above does not work as
-      ! expected.
-    else if ( any( x2d == PosInf ) ) then
-      isnan2d = .true.
-
-      ! This may never be needed, it's here just in case.
-    else if ( any( x2d == NegInf ) ) then
-      isnan2d = .true.
-
-    else
-      isnan2d = .false. ! Our result should be a standard float
-
-    end if
+    do k = 1, size( x2d )
+      if ( is_nan_sclr( x2d(k) ) ) then
+        is_nan_2d = .true.
+        exit
+      end if
+    end do
 
     return
 
-  end function isnan2d
+  end function is_nan_2d
 
 !------------------------------------------------------------------------
   subroutine check_negative_total & 
@@ -979,13 +966,13 @@ module numerical_check
     real, intent(in), dimension(:) :: var ! Variable being examined
 
     character(len=*), intent(in)::  & 
-    varname,     & ! Name of variable
-    operation   ! Procedure calling check_nan
+      varname,     & ! Name of variable
+      operation   ! Procedure calling check_nan
 
     ! Optional In/Out Variable
     integer, optional, intent(inout) :: err_code
 
-    if ( isnan2d( var ) ) then
+    if ( is_nan_2d( var ) ) then
       write(fstderr,*) varname, " is NaN in ",operation
       if ( present( err_code ) ) then
         if( err_code < clubb_var_equals_NaN ) then
@@ -1017,13 +1004,13 @@ module numerical_check
     real, intent(in) :: var        ! Variable being examined
 
     character(len=*), intent(in)::  & 
-    varname,    & ! Name of variable being examined
-    operation  ! Procedure calling check_nan
+      varname,    & ! Name of variable being examined
+      operation  ! Procedure calling check_nan
 
     ! Optional In/Out variable
     integer, optional, intent(inout) :: err_code
 !--------------------------------------------------------------------
-    if ( isnan( var ) ) then
+    if ( is_nan_sclr( var ) ) then
       write(fstderr,*) varname, " is NaN in ",operation
       if ( present( err_code ) ) then
         if( err_code < clubb_var_equals_NaN ) then

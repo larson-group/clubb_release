@@ -408,7 +408,7 @@ module error
 
     use error_code, only: fatal_error ! Procedure(s)
 
-    use numerical_check, only: isnan2d ! Procedure(s)
+    use numerical_check, only: is_nan_2d ! Procedure(s)
 
     use text_writer, only: write_text ! Subroutine(s)
 
@@ -631,7 +631,7 @@ module error
 
         ! Verify that the domain that we're tuning CLUBB over is fully defined in
         ! the LES data.  If not, some points will be NaN
-        if ( isnan2d( les_zl(z_i(c_run):z_f(c_run)) ) ) then
+        if ( is_nan_2d( les_zl(z_i(c_run):z_f(c_run)) ) ) then
           write(*,*)
           write(fstderr,*) "The tuning domain exceeds the size of the LES data, "// &
             "or the LES data is NaN"

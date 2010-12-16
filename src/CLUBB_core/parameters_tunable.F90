@@ -540,7 +540,7 @@ module parameters_tunable
     !-----------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Constant
 
-    use numerical_check, only: isnan ! Procedure
+    use numerical_check, only: is_nan_sclr ! Procedure
 
     implicit none
 
@@ -651,7 +651,7 @@ module parameters_tunable
     l_error = .false.
 
     do i = 1, nparams
-      if ( isnan( params(i) ) ) then
+      if ( is_nan_sclr( params(i) ) ) then
         write(fstderr,*) "Tuning parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
@@ -677,7 +677,7 @@ module parameters_tunable
     !-----------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Constant
 
-    use numerical_check, only: isnan ! Procedure
+    use numerical_check, only: is_nan_sclr ! Procedure
 
     implicit none
 
@@ -737,7 +737,7 @@ module parameters_tunable
     l_error = .false.
 
     do i = 1, nparams
-      if ( isnan( param_spread(i) ) ) then
+      if ( is_nan_sclr( param_spread(i) ) ) then
         write(fstderr,*) "A spread parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
