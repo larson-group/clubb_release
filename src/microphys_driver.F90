@@ -108,6 +108,43 @@ module microphys_driver
       C_evap, r_0
 
     use parameters_microphys, only: &
+      rsnowp2_on_rsnowm2_cloud, & ! Variables
+      Nsnowp2_on_Nsnowm2_cloud, & 
+      ricep2_on_ricem2_cloud, & 
+      Nicep2_on_Nicem2_cloud, &
+      rsnowp2_on_rsnowm2_below, & 
+      Nsnowp2_on_Nsnowm2_below, & 
+      ricep2_on_ricem2_below, & 
+      Nicep2_on_Nicem2_below
+
+    use parameters_microphys, only: &
+      corr_srsnow_NL_cloud, &
+      corr_sNsnow_NL_cloud, &
+      corr_rsnowNsnow_LL_cloud, &
+      corr_srice_NL_cloud, &
+      corr_sNi_NL_cloud, &
+      corr_riceNi_LL_cloud, &
+      corr_wrice_NL_cloud, &
+      corr_wNi_NL_cloud, &
+      corr_wNc_NL_cloud, &
+      corr_wrsnow_NL_cloud, &
+      corr_wNsnow_NL_cloud, &
+      corr_sw_NN_cloud 
+
+    use parameters_microphys, only: &
+      corr_srsnow_NL_below, &
+      corr_sNsnow_NL_below, &
+      corr_rsnowNsnow_LL_below, &
+      corr_srice_NL_below, &
+      corr_sNi_NL_below, &
+      corr_riceNi_LL_below, &
+      corr_wrice_NL_below, &
+      corr_wNi_NL_below, &
+      corr_wNc_NL_below, &
+      corr_wrsnow_NL_below, &
+      corr_wNsnow_NL_below
+
+    use parameters_microphys, only: &
       LH_microphys_type_int => LH_microphys_type ! Determines how the LH samples are used
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
@@ -225,6 +262,105 @@ module microphys_driver
     !C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
 
     r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
+
+    ! Made up values for the variance of ice/snow
+    rsnowp2_on_rsnowm2_cloud = 0.766
+    Nsnowp2_on_Nsnowm2_cloud = 0.429
+    ricep2_on_ricem2_cloud = 1.0
+    Nicep2_on_Nicem2_cloud = 1.0
+
+    rsnowp2_on_rsnowm2_below = 0.766
+    Nsnowp2_on_Nsnowm2_below = 0.429
+    ricep2_on_ricem2_below = 1.0
+    Nicep2_on_Nicem2_below = 1.0
+
+    ! MPACE-A values for the correlation of ice/snow
+!   corr_srsnow_NL_cloud     = 0.24
+!   corr_srsnow_NL_below     = corr_srsnow_NL_cloud
+!   corr_sNsnow_NL_cloud     = 0.29
+!   corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
+!   corr_rsnowNsnow_LL_cloud = 0.88
+!   corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
+!   corr_srice_NL_cloud      = 0.31
+!   corr_srice_NL_below      = corr_srice_NL_cloud
+!   corr_sNi_NL_cloud        = 0.36
+!   corr_sNi_NL_below        = corr_sNi_NL_cloud
+!   corr_riceNi_LL_cloud     = 0.01
+!   corr_riceNi_LL_below     = corr_riceNi_LL_cloud
+!   corr_sNc_NL_cloud        = 0.67
+!   corr_sNc_NL_below        = 0.67
+
+!   corr_sw_NN_cloud         = 0.09
+
+!   corr_wrice_NL_cloud      = 0.64
+!   corr_wrice_NL_below      = corr_wrice_NL_cloud
+!   corr_wNi_NL_cloud        = -0.35
+!   corr_wNi_NL_below        = corr_wNi_NL_cloud
+!   corr_wrsnow_NL_cloud     = 0.45
+!   corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
+!   corr_wNsnow_NL_cloud     = 0.58
+!   corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
+!   corr_wNc_NL_cloud        = 0.38
+!   corr_wNc_NL_below        = 0.38
+
+
+    ! MPACE-B values for the correlation of ice/snow
+!   corr_srsnow_NL_cloud     = 0.43
+!   corr_srsnow_NL_below     = corr_srsnow_NL_cloud
+!   corr_sNsnow_NL_cloud     = 0.55
+!   corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
+!   corr_rsnowNsnow_LL_cloud = 0.91
+!   corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
+!   corr_srice_NL_cloud      = 0.61
+!   corr_srice_NL_below      = corr_srice_NL_cloud
+!   corr_sNi_NL_cloud        = 0.90
+!   corr_sNi_NL_below        = corr_sNi_NL_cloud
+!   corr_riceNi_LL_cloud     = 0.63
+!   corr_riceNi_LL_below     = corr_riceNi_LL_cloud
+!   corr_sNc_NL_cloud        = 0.94
+!   corr_sNc_NL_below        = 0.94
+
+!   corr_sw_NN_cloud         = 0.20
+
+!   corr_wrice_NL_cloud      = 0.01
+!   corr_wrice_NL_below      = corr_wrice_NL_cloud
+!   corr_wNi_NL_cloud        = 0.25
+!   corr_wNi_NL_below        = corr_wNi_NL_cloud
+!   corr_wrsnow_NL_cloud     = 0.01
+!   corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
+!   corr_wNsnow_NL_cloud     = 0.02
+!   corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
+!   corr_wNc_NL_cloud        = 0.24
+!   corr_wNc_NL_below        = corr_wNc_NL_cloud
+
+    ! ISDAC values for the correlation of ice/snow
+    corr_srsnow_NL_cloud     = 0.06
+    corr_srsnow_NL_below     = corr_srsnow_NL_cloud
+    corr_sNsnow_NL_cloud     = 0.04
+    corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
+    corr_rsnowNsnow_LL_cloud = 0.95
+    corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
+    corr_srice_NL_cloud      = -0.08
+    corr_srice_NL_below      = corr_srice_NL_cloud
+    corr_sNi_NL_cloud        = 0.28
+    corr_sNi_NL_below        = corr_sNi_NL_cloud
+    corr_riceNi_LL_cloud     = 0.77
+    corr_riceNi_LL_below     = corr_riceNi_LL_cloud
+    corr_sNc_NL_cloud        = 0.09
+    corr_sNc_NL_below        = corr_sNc_NL_cloud
+
+    corr_sw_NN_cloud         = 0.09
+
+    corr_wrice_NL_cloud      = 0.44
+    corr_wrice_NL_below      = corr_wrice_NL_cloud
+    corr_wNi_NL_cloud        = 0.55
+    corr_wNi_NL_below        = corr_wNi_NL_cloud
+    corr_wrsnow_NL_cloud     = 0.65
+    corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
+    corr_wNsnow_NL_cloud     = 0.73
+    corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
+    corr_wNc_NL_cloud        = 0.34
+    corr_wNc_NL_below        = corr_wNc_NL_cloud
 
     !---------------------------------------------------------------------------
     ! Parameters for Morrison and COAMPS microphysics
@@ -655,14 +791,18 @@ module microphys_driver
         call return_LH_index( iiNim, i, iiLH_Ni )
         call return_LH_index( iirsnowm, i, iiLH_rsnow )
         call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
-        if ( l_graupel ) then
-          call return_LH_index( iirgraupelm, i, iiLH_rgraupel )
-          call return_LH_index( iiNgraupelm, i, iiLH_Ngraupel )
-        end if
+        ! Disabled until we have values for the correlations of graupel and
+        ! other variates in the latin hypercube sampling.
+!       if ( l_graupel ) then
+!         call return_LH_index( iirgraupelm, i, iiLH_rgraupel )
+!         call return_LH_index( iiNgraupelm, i, iiLH_Ngraupel )
+          iiLH_rgraupel = -1
+          iiLH_Ngraupel = -1
+!       end if
       end if
 
 #ifdef UNRELEASED_CODE
-      ! Allocate and set the arrays containing the correlations 
+      ! Allocate and set the arrays containing the correlations
       ! and the X'^2 / X'^2 terms
       call setup_corr_varnce_array( d_variables_in=i )
 #endif
@@ -1398,7 +1538,7 @@ module microphys_driver
                                    rho_ds_zt, rho_ds_zm, &
                                    hydromet(:,i) )
 
-            ! If the hole filling algorithm failed, then we attempt to fill 
+            ! If the hole filling algorithm failed, then we attempt to fill
             ! the missing mass with water vapor mixing ratio.
             ! We noticed this is needed for ASEX A209, particularly if Latin
             ! hypercube sampling is enabled.  -dschanen 11 Nov 2010

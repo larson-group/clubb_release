@@ -1911,7 +1911,9 @@ module generate_lh_sample_module
 
     ! Local Variables
     real :: &
-      corr_st ! Correlation for s,t  [-]
+      corr_st, & ! Correlation for s,t  [-]
+      corr_sw, & ! Correlation for w,s  [-]
+      corr_tw    ! Correlation for w,t  [-]
 
     integer :: i, index1, index2, LN_index
 
@@ -1940,6 +1942,31 @@ module generate_lh_sample_module
 
     call set_lower_triangular_matrix_dp &
          ( d_variables, index1, index2, dble( corr_st ), & ! In
+           corr_stw_matrix ) ! In/out
+
+    ! The correlation between w and s,t is typically not fixed either, but for
+    ! the reasons listed above we compute it using a fixed value.
+    index1 = iiLH_s_mellor
+    index2 = iiLH_w
+
+    call get_lower_triangular_matrix_sp &
+         ( d_variables, index1, index2, corr_array, & ! In
+            corr_sw ) ! Out
+    call set_lower_triangular_matrix_dp &
+         ( d_variables, index1, index2, dble( corr_sw ), & ! In
+           corr_stw_matrix ) ! In/out
+
+    index1 = iiLH_t_mellor
+    index2 = iiLH_w
+    if ( corr_sw /= 0 ) then
+      ! Approximate the covariance of t and w
+      corr_tw = corr_st * corr_sw
+    else
+      corr_tw = 0.
+    end if
+
+    call set_lower_triangular_matrix_dp &
+         ( d_variables, index1, index2, dble( corr_tw ), & ! In
            corr_stw_matrix ) ! In/out
 
     ! Compute the main diagonal for each lognormal variate

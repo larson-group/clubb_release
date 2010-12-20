@@ -100,6 +100,9 @@ module parameters_microphys
     corr_sNr_NL_cloud,  & ! 0.285
     corr_sNc_NL_cloud     ! 0.433
 
+!$omp threadprivate( rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
+!$omp   corr_rrNr_LL_cloud, corr_srr_NL_cloud,  corr_sNr_NL_cloud,  corr_sNc_NL_cloud )
+
   ! Parameters for below-cloud (from SAM RF02 DO).
   real, public :: &       ! RF02 value
     rrp2_on_rrainm2_below, & ! 8.97
@@ -109,6 +112,9 @@ module parameters_microphys
     corr_srr_NL_below,  & ! 0.056
     corr_sNr_NL_below,  & ! 0.015
     corr_sNc_NL_below     ! 0.00 ! Not applicable below cloud.
+
+!$omp threadprivate( rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
+!$omp   corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below )
 
   ! Other needed parameters
   real, public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of
@@ -127,11 +133,86 @@ module parameters_microphys
   !                                  ! Khairoutdinov said it was okay!
   ! End Vince Larson's change.
 
-!$omp threadprivate( rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
-!$omp   corr_rrNr_LL_cloud, corr_srr_NL_cloud,  corr_sNr_NL_cloud,  corr_sNc_NL_cloud, &
-!$omp   rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
-!$omp   corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below, &
-!$omp   C_evap, r_0 )
+!$omp threadprivate( C_evap, r_0 )
+
+  ! Parameters added for correlatins between w and other variates when using
+  ! latin hypercube sampling.  
+  real, public :: &
+    corr_wrr_NL_cloud, &
+    corr_wNr_NL_cloud, &
+    corr_wNc_NL_cloud
+!$omp threadprivate( corr_wrr_NL_cloud, corr_wNr_NL_cloud, corr_wNc_NL_cloud )
+
+  real, public :: &
+    corr_wrr_NL_below, &
+    corr_wNr_NL_below, &
+    corr_wNc_NL_below
+!$omp threadprivate( corr_wrr_NL_below, corr_wNr_NL_below, corr_wNc_NL_below )
+
+  ! Parameters added for ice microphysics and latin hypercube sampling
+
+  real, public :: &
+    rsnowp2_on_rsnowm2_cloud, & 
+    Nsnowp2_on_Nsnowm2_cloud, & 
+    ricep2_on_ricem2_cloud, & 
+    Nicep2_on_Nicem2_cloud
+
+!$omp threadprivate( rsnowp2_on_rsnowm2_cloud, Nsnowp2_on_Nsnowm2_cloud, & 
+!$omp   ricep2_on_ricem2_cloud, Nicep2_on_Nicem2_cloud )
+
+   real, public :: &
+     rsnowp2_on_rsnowm2_below, & 
+     Nsnowp2_on_Nsnowm2_below, & 
+     ricep2_on_ricem2_below, & 
+     Nicep2_on_Nicem2_below
+
+!$omp threadprivate( rsnowp2_on_rsnowm2_below, Nsnowp2_on_Nsnowm2_below, & 
+!$omp   ricep2_on_ricem2_below, Nicep2_on_Nicem2_below )
+   
+  real, public :: &
+    corr_srsnow_NL_cloud, &
+    corr_sNsnow_NL_cloud, &
+    corr_rsnowNsnow_LL_cloud, &
+    corr_srice_NL_cloud, &
+    corr_sNi_NL_cloud, &
+    corr_riceNi_LL_cloud
+
+!$omp threadprivate( corr_srsnow_NL_cloud, corr_sNsnow_NL_cloud, &
+!$omp   corr_rsnowNsnow_LL_cloud, corr_srice_NL_cloud, corr_sNi_NL_cloud, corr_riceNi_LL_cloud )
+
+  real, public :: &
+    corr_wrice_NL_cloud, &
+    corr_wNi_NL_cloud, &
+    corr_wrsnow_NL_cloud, &
+    corr_wNsnow_NL_cloud
+
+!$omp threadprivate( corr_wrice_NL_cloud, corr_wNi_NL_cloud, &
+!$omp   corr_wrsnow_NL_cloud, corr_wNsnow_NL_cloud )
+
+  real, public :: &
+    corr_sw_NN_cloud 
+!$omp threadprivate( corr_sw_NN_cloud )
+
+  real, public :: &
+    corr_srsnow_NL_below, &
+    corr_sNsnow_NL_below, &
+    corr_rsnowNsnow_LL_below, &
+    corr_srice_NL_below, &
+    corr_sNi_NL_below, &
+    corr_riceNi_LL_below
+
+!$omp threadprivate( corr_srsnow_NL_below, corr_sNsnow_NL_below, &
+!$omp   corr_rsnowNsnow_LL_below, corr_srice_NL_below, &
+!$omp   corr_sNi_NL_below, corr_riceNi_LL_below )
+
+
+  real, public :: &
+    corr_wrice_NL_below, &
+    corr_wNi_NL_below, &
+    corr_wrsnow_NL_below, &
+    corr_wNsnow_NL_below
+!$omp threadprivate( corr_wrice_NL_below, corr_wNi_NL_below, &
+!$omp   corr_wrsnow_NL_below, corr_wNsnow_NL_below )
 
   private ! Default Scope
 
