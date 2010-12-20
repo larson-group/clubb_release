@@ -115,7 +115,7 @@ module matrix_operations
     external :: dpotrf, dpoequ, dlaqsy ! LAPACK subroutines
 
     ! Constant Parameters
-    integer, parameter :: itermax = 5
+    integer, parameter :: itermax = 10
 
     ! Input Variables
     integer, intent(in) :: ndim
@@ -185,8 +185,8 @@ module matrix_operations
         if ( clubb_at_least_debug_level( 1 ) .and. iter > 1 ) then
           write(fstderr,*) "a_factored (worked)="
           do i = 1, ndim
-            do j = 1, ndim
-              write(fstderr,'(e10.3)',advance='no') a_Cholesky(i,j)
+            do j = 1, i
+              write(fstderr,'(g10.3)',advance='no') a_Cholesky(i,j)
             end do
             write(fstderr,*) ""
           end do
@@ -202,15 +202,15 @@ module matrix_operations
           write(fstderr,*) "factorization failed."
           write(fstderr,*) "a_input="
           do i = 1, ndim
-            do j = 1, ndim
-              write(fstderr,'(e10.3)',advance='no') a_input(i,j)
+            do j = 1, i
+              write(fstderr,'(g10.3)',advance='no') a_input(i,j)
             end do
             write(fstderr,*) ""
           end do
           write(fstderr,*) "a_Cholesky="
           do i = 1, ndim
-            do j = 1, ndim
-              write(fstderr,'(e10.3)',advance='no') a_Cholesky(i,j)
+            do j = 1, i
+              write(fstderr,'(g10.3)',advance='no') a_Cholesky(i,j)
             end do
             write(fstderr,*) ""
           end do
@@ -220,14 +220,14 @@ module matrix_operations
           call Symm_matrix_eigenvalues( ndim, a_input, a_eigenvalues )
           write(fstderr,*) "a_eigenvalues="
           do i = 1, ndim
-            write(fstderr,'(e10.3)',advance='no') a_eigenvalues(i)
+            write(fstderr,'(g10.3)',advance='no') a_eigenvalues(i)
           end do
           write(fstderr,*) ""
 
           call symm_covar_matrix_2_corr_matrix( ndim, a_input, a_corr )
           write(fstderr,*) "a_correlations="
           do i = 1, ndim
-            do j = 1, ndim
+            do j = 1, i
               write(fstderr,'(g10.3)',advance='no') a_corr(i,j)
             end do
             write(fstderr,*) ""
@@ -248,14 +248,14 @@ module matrix_operations
         end if
         ! The number used for tau here is case specific to the Sigma covariance
         ! matrix in the latin hypercube code and is not at all general.
-        ! Tau should be number that is small relative to the other diagonal
+        ! Tau should be a number that is small relative to the other diagonal
         ! elements of the matrix to have keep the error caused by modifying 'a' low.
         ! -dschanen 30 Aug 2010
         d_smallest = a_Cholesky(1,1)
         do i = 2, ndim
           if ( d_smallest > a_Cholesky(i,i) ) d_smallest = a_Cholesky(i,i)
         end do
-        tau = d_smallest * 0.01 * dble( iter ) ! Use the smallest element * 0.01 * iteration
+        tau = d_smallest * 0.1 * dble( iter ) ! Use the smallest element * 0.1 * iteration
 !       print *, "tau =", tau, "d_smallest = ", d_smallest
 
         do i = 1, ndim
@@ -278,7 +278,6 @@ module matrix_operations
         end if
 
       end select ! info
-
     end do ! 1..itermax
 
     return
