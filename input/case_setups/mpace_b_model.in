@@ -139,6 +139,42 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
 micro_scheme = "simplified_ice"
+!micro_scheme = "morrison"
+l_graupel = .false.
+
+! Addition for using latin hypercube sampling
+! Variances / Corrlations from the RICO case
+rrp2_on_rrainm2_cloud = 0.766  
+Nrp2_on_Nrm2_cloud = 0.429  
+Ncp2_on_Ncm2_cloud = 2.2  
+corr_rrNr_LL_cloud = 0.786
+corr_srr_NL_cloud = 0.242
+corr_sNr_NL_cloud = 0.285
+
+corr_sNc_NL_cloud = 0.09 ! From ISDAC
+
+rrp2_on_rrainm2_below = 1.
+Nrp2_on_Nrm2_below = 1.
+Ncp2_on_Ncm2_below = 0.
+corr_rrNr_LL_below = 0.886
+corr_srr_NL_below = 0.056
+corr_sNr_NL_below = 0.015
+
+corr_sNc_NL_below = 0.09 ! From ISDAC
+
+LH_microphys_type = "disabled",
+l_lh_vert_overlap = .true.,
+l_lh_cloud_weighted_sampling = .true.,
+LH_microphys_calls = 4,
+LH_sequence_length = 1,
+l_fix_s_t_correlations = .true.,
+
+aer_rm1 = 0.052   ! two aerosol mode defaults from MPACE (from Hugh)
+aer_sig1 = 2.04
+aer_n1 = 72.2
+aer_rm2 = 1.3
+aer_sig2 = 2.5
+aer_n2 = 1.8
 /
 
 &radiation_setting
