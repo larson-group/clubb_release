@@ -346,8 +346,8 @@ module microphys_driver
     corr_sNi_NL_below        = corr_sNi_NL_cloud
     corr_riceNi_LL_cloud     = 0.77
     corr_riceNi_LL_below     = corr_riceNi_LL_cloud
-    corr_sNc_NL_cloud        = 0.09
-    corr_sNc_NL_below        = corr_sNc_NL_cloud
+!   corr_sNc_NL_cloud        = 0.09
+!   corr_sNc_NL_below        = corr_sNc_NL_cloud
 
     corr_sw_NN_cloud         = 0.09
 
