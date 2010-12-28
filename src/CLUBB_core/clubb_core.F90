@@ -173,7 +173,8 @@ module clubb_core
       wp2sclrp,    & ! w'^2 sclr'
       wpsclrp2,    & ! w'sclr'^2
       wpsclrprtp,  & ! w'sclr'rt'
-      wpsclrpthlp    ! w'sclr'thl'
+      wpsclrpthlp, & ! w'sclr'thl'
+      wp3_zm         ! wp3 interpolated to momentum levels
 
     use variables_diagnostic_module, only: &
       sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
@@ -461,8 +462,7 @@ module clubb_core
 
     real, dimension(gr%nnzp) :: &
       p_in_Pa_zm, &  ! Pressure interpolated to momentum levels  [Pa]
-      exner_zm,   &  ! Exner interpolated to momentum levels     [-]
-      wp3_zm         ! w'^3 interpolated to momentum levels      [m^3/s^3]
+      exner_zm       ! Exner interpolated to momentum levels     [-]
 
     integer :: &
       wprtp_cl_num,   & ! Instance of w'r_t' clipping (1st or 3rd).

@@ -75,10 +75,11 @@ module variables_diagnostic_module
     wprtp2,    & ! w'rt'^2     [m kg^2/kg^2]
     wp2rtp,    & ! w'^2rt'     [m^2 kg/kg]
     wprtpthlp, & ! w'rt'thl'   [m kg K/kg s]
-    wp2rcp       ! w'^2 rc'    [m^2 kg/kg s^2]
+    wp2rcp,    & ! w'^2 rc'    [m^2 kg/kg s^2]
+    wp3_zm       ! w'^3        [m^3/s^3]
 
 !$omp threadprivate(wpthlp2, wp2thlp, wprtp2, wp2rtp, &
-!$omp   wprtpthlp, wp2rcp )
+!$omp   wprtpthlp, wp2rcp, wp3_zm )
 
 ! Fourth order moments
   real, target, allocatable, dimension(:), public :: & 
@@ -252,6 +253,8 @@ module variables_diagnostic_module
     allocate( wprtpthlp(1:nzmax) ) ! w'rt'thl'
     allocate( wp2rcp(1:nzmax) )    ! w'^2rc'
 
+    allocate( wp3_zm(1:nzmax) )    ! w'^3
+
     ! Fourth order moments
 
     allocate( wp4(1:nzmax) )
@@ -379,7 +382,7 @@ module variables_diagnostic_module
     pdf_params_zm%cthl2       = 0.0
 
 
-! Second order moments
+    ! Second order moments
     thlprcp = 0.0
     rtprcp  = 0.0
     rcp2    = 0.0
@@ -391,6 +394,8 @@ module variables_diagnostic_module
     wp2rtp    = 0.0
     wp2rcp    = 0.0
     wprtpthlp = 0.0
+
+    wp3_zm    = 0.0
 
     ! Fourth order moments
     wp4 = 0.0
@@ -511,6 +516,8 @@ module variables_diagnostic_module
     deallocate( wp2rtp )    ! w'^2rt'
     deallocate( wprtpthlp ) ! w'rt'thl'
     deallocate( wp2rcp )    ! w'^2rc'
+
+    deallocate( wp3_zm )
 
     ! Fourth order moments
 

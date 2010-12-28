@@ -818,8 +818,9 @@ module stats_variables
 !$omp   imorr_rain_rate, imorr_snow_rate)
 
   integer, public :: &
-    iSkw_velocity ! Skewness velocity
-!$omp threadprivate(iSkw_velocity)
+    iSkw_velocity, & ! Skewness velocity
+    iwp3_zm
+!$omp threadprivate(iSkw_velocity, iwp3_zm)
 
   ! Variables that contains all the statistics
 

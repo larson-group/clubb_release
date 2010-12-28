@@ -37,6 +37,7 @@ module stats_zm
           irtpthlp, & 
           iwprtp, & 
           iwpthlp, & 
+          iwp3_zm, & 
           iwp4, & 
           iwpthvp, & 
           irtpthvp, & 
@@ -242,6 +243,7 @@ module stats_zm
     irtpthlp      = 0
     iwprtp        = 0
     iwpthlp       = 0
+    iwp3_zm       = 0
     iwp4          = 0
     iwpthvp       = 0
     irtpthvp      = 0
@@ -475,6 +477,12 @@ module stats_zm
 
         call stat_assign(iwpthlp,"wpthlp", & 
              "w'thl', Vertical turbulent flux of thl [K m/s]","(m K)/s",zm)
+        k = k + 1
+
+      case ('wp3_zm')
+        iwp3_zm = k
+        call stat_assign( iwp3_zm, "wp3_zm", & 
+             "w'^3 interpolated to moment. levels [m^3/s^3]", "(m^3)/(s^3)", zm )
         k = k + 1
 
       case ('wp4')

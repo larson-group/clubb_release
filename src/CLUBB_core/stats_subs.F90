@@ -1199,6 +1199,7 @@ module stats_subs
         ithv_ds_zt, &
         iLscale, & 
         iwp3, & 
+        iwp3_zm, & 
         iwpthlp2, & 
         iwp2thlp,  & 
         iwprtp2, & 
@@ -1402,7 +1403,8 @@ module stats_subs
       lh_rcm_avg, &
       AKstd_cld, &
       AKm_rcm, &
-      AKm_rcc
+      AKm_rcc, &
+      wp3_zm
 
     use variables_diagnostic_module, only: & 
       sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
@@ -1616,6 +1618,7 @@ module stats_subs
       ! zm variables
 
       call stat_update_var( iwp2, wp2, zm )
+      call stat_update_var( iwp3_zm, wp3_zm, zm )
       call stat_update_var( irtp2, rtp2, zm )
       call stat_update_var( ithlp2, thlp2, zm )
       call stat_update_var( irtpthlp, rtpthlp, zm )
