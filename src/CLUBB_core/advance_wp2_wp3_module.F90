@@ -41,8 +41,8 @@ contains
                               up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, &
                               Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt, &
                               invrs_rho_ds_zm, invrs_rho_ds_zt, &
-                              thv_ds_zm, thv_ds_zt, wp3_zm, mixt_frac, &
-                              wp2, wp3, wp2_zt, err_code )
+                              thv_ds_zm, thv_ds_zt, mixt_frac, &
+                              wp2, wp3, wp3_zm, wp2_zt, err_code )
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -54,7 +54,7 @@ contains
     ! JAS, Vol. 59, pp. 3540--3551.
 
     ! See also
-    ! ``Equations for HOC'', Section 6:
+    ! ``Equations for CLUBB'', Section 6:
     ! /Implict solution for the vertical velocity moments/
     !------------------------------------------------------------------------
 
@@ -123,16 +123,16 @@ contains
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
-      wp3_zm,          & ! w'^3 interpolated to momentum levels      [m^3/s^3]
       mixt_frac          ! Weight of 1st normal distribution         [-]
 
     ! Input/Output
     real, dimension(gr%nnzp), intent(inout) ::  & 
-      wp2,  & ! w'^2 (momentum levels)                               [m^2/s^2]
-      wp3     ! w'^3 (thermodynamic levels)                          [m^3/s^3]
+      wp2,  & ! w'^2 (momentum levels)                    [m^2/s^2]
+      wp3,  & ! w'^3 (thermodynamic levels)               [m^3/s^3]
+      wp3_zm  ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
     real, dimension(gr%nnzp), intent(inout) ::  &
-      wp2_zt  ! w'^2 interpolated to thermodyamic levels             [m^2/s^2]
+      wp2_zt  ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
 
     integer, intent(inout) :: err_code ! Diagnostic
 
@@ -295,8 +295,8 @@ contains
                      up2, vp2, Kw1, Kw8, Skw_zt, tau_zm, tauw3t,    & ! Intent(in)
                      C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                      invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm,   & ! Intent(in)
-                     thv_ds_zt, wp3_zm, nsub, nsup,                 & ! Intent(in)
-                     wp2, wp3, wp2_zt, err_code                     ) ! Intent(inout)
+                     thv_ds_zt, nsub, nsup,                         & ! Intent(in)
+                     wp2, wp3, wp3_zm, wp2_zt, err_code             ) ! Intent(inout)
 
 !       Error output
 !       Joshua Fasching Feb 2008
@@ -346,20 +346,23 @@ contains
                          up2, vp2, Kw1, Kw8, Skw_zt, tau1m, tauw3t, &
                          C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &
                          invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
-                         thv_ds_zt, wp3_zm, nsub, nsup, &
-                         wp2, wp3, wp2_zt, err_code )
+                         thv_ds_zt, nsub, nsup, &
+                         wp2, wp3, wp3_zm, wp2_zt, err_code )
 
     ! Description:
     ! Decompose, and back substitute the matrix for wp2/wp3
 
     ! References:
-    ! _Equations for HOC_ section 6.3
+    ! _Equations for CLUBB_ section 6.3
     !------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr,         & ! Variable(s) 
-        zm2zt,      & ! Procedure(s)
-        ddzt       ! Function
+        gr  ! Variable(s) 
+
+    use grid_class, only:  & 
+        zm2zt, & ! Function(s)
+        zt2zm, & 
+        ddzt
 
     use constants_clubb, only: & 
         w_tol_sqd,      & ! Variables(s)
@@ -519,8 +522,7 @@ contains
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
-      wp3_zm             ! w'^3 interpolated to momentum levels      [m^3/s^3]
+      thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
 
     integer, intent(in) :: &
       nsub,   & ! Number of subdiagonals in the LHS matrix.
@@ -529,7 +531,8 @@ contains
     ! Input/Output Variables
     real, dimension(gr%nnzp), intent(inout) ::  & 
       wp2,  & ! w'^2 (momentum levels)                            [m^2/s^2]
-      wp3     ! w'^3 (thermodynamic levels)                       [m^3/s^3]
+      wp3,  & ! w'^3 (thermodynamic levels)                       [m^3/s^3]
+      wp3_zm  ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
     real, dimension(gr%nnzp), intent(inout) ::  &
       wp2_zt  ! w'^2 interpolated to thermodyamic levels          [m^2/s^2]
@@ -561,8 +564,8 @@ contains
       solut ! Solution to band diagonal system.
 
     real, dimension(gr%nnzp) ::  & 
-      a1,  & ! a_1 (momentum levels); See eqn. 23 in `Equations for HOC' [-]
-      a3     ! a_3 (momentum levels); See eqn. 25 in `Equations for HOC' [-]
+      a1,  & ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
+      a3     ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
 
     real, dimension(gr%nnzp) ::  & 
       a1_zt,  & ! a_1 interpolated to thermodynamic levels        [-]
@@ -921,6 +924,9 @@ contains
 
     ! Clip w'^3 by limiting skewness.
     call clip_skewness( dt, sfc_elevation, wp2_zt, wp3 )
+
+    ! Compute wp3_zm for output purposes
+    wp3_zm = zt2zm( wp3 )
 
     return
   end subroutine wp23_solve

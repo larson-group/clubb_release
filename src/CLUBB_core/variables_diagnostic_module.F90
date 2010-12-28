@@ -185,6 +185,9 @@ module variables_diagnostic_module
     tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
     corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
     
+  real, target, allocatable, dimension(:), public :: & 
+    Skw_velocity ! Skewness velocity    [m/s]
+
   contains
 
 !-----------------------------------------------------------------------
@@ -278,7 +281,7 @@ module variables_diagnostic_module
     allocate( tau_zt(1:nzmax) ) ! Eddy dissipation time scale: thermo. levels
 
 
-! Tuning Variables
+    ! Interpolated Variables
     allocate( wp2_zt(1:nzmax) )     ! w'^2 on thermo. grid
     allocate( thlp2_zt(1:nzmax) )   ! thl'^2 on thermo. grid
     allocate( wpthlp_zt(1:nzmax) )  ! w'thl' on thermo. grid
@@ -291,10 +294,11 @@ module variables_diagnostic_module
     allocate( vpwp_zt(1:nzmax) )    ! v'w' on thermo. grid
 
 
+    ! Microphysics Variables
     allocate( Ncnm(1:nzmax) )
     allocate( hydromet(1:nzmax,1:hydromet_dim) ) ! All hydrometeor fields
 
-! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
+    ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
     allocate( lh_AKm(1:nzmax) )    ! Kessler ac estimate
     allocate( AKm(1:nzmax) )        ! Exact Kessler ac
     allocate( AKstd(1:nzmax) )      ! St dev of exact Kessler ac
@@ -302,7 +306,7 @@ module variables_diagnostic_module
     allocate( lh_rcm_avg(1:nzmax) )      ! Monte Carlo rcm estimate
     allocate( AKm_rcm(1:nzmax) )      ! Kessler ac based on rcm
     allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cloud_frac
-! End of variables for Latin hypercube.
+    ! End of variables for Latin hypercube.
 
     ! High-order passive scalars
     allocate( sclrpthvp(1:nzmax, 1:sclr_dim) )
@@ -324,9 +328,11 @@ module variables_diagnostic_module
     allocate( corr_s_t_mellor_1(1:nzmax) )
     allocate( corr_s_t_mellor_2(1:nzmax) )
 
-!   --- Initializaton ---
+    allocate( Skw_velocity(1:nzmax) )
 
-! Diagnostic variables
+    !   --- Initializaton ---
+
+    ! Diagnostic variables
 
     sigma_sqd_w_zt = 0.0 ! PDF width parameter interp. to t-levs.
     Skw_zm         = 0.0 ! Skewness of w on momentum levels
@@ -462,6 +468,8 @@ module variables_diagnostic_module
 
     corr_s_t_mellor_1 = 0.0
     corr_s_t_mellor_2 = 0.0
+
+    Skw_velocity = 0.0
 
     return
   end subroutine setup_diagnostic_variables

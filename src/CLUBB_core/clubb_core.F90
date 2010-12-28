@@ -174,7 +174,8 @@ module clubb_core
       wpsclrp2,    & ! w'sclr'^2
       wpsclrprtp,  & ! w'sclr'rt'
       wpsclrpthlp, & ! w'sclr'thl'
-      wp3_zm         ! wp3 interpolated to momentum levels
+      wp3_zm,      & ! wp3 interpolated to momentum levels
+      Skw_velocity   ! Skewness velocity        [m/s]
 
     use variables_diagnostic_module, only: &
       sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
@@ -675,6 +676,9 @@ module clubb_core
     rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
 
+    ! Compute skewness velocity for output purposes
+    Skw_velocity = ( 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) ) ) & 
+                 * ( zt2zm( wp3(1:gr%nnzp) )  / max( wp2(1:gr%nnzp), w_tol_sqd ) )
 
     !----------------------------------------------------------------
     ! Call closure scheme
@@ -1182,13 +1186,13 @@ module clubb_core
     !----------------------------------------------------------------
 
     call advance_wp2_wp3 &
-         ( dt, sfc_elevation, sigma_sqd_w, wm_zm,              & ! intent(in)
-           wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp,         & ! intent(in)
-           up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,             & ! intent(in)
-           Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,               & ! intent(in)
-           invrs_rho_ds_zm, invrs_rho_ds_zt,                   & ! intent(in)
-           thv_ds_zm, thv_ds_zt, wp3_zm, pdf_params%mixt_frac, & ! intent(in)
-           wp2, wp3, wp2_zt, err_code                          ) ! intent(inout)
+         ( dt, sfc_elevation, sigma_sqd_w, wm_zm,       & ! intent(in)
+           wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp,  & ! intent(in)
+           up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,      & ! intent(in)
+           Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,        & ! intent(in)
+           invrs_rho_ds_zm, invrs_rho_ds_zt,            & ! intent(in)
+           thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,  & ! intent(in)
+           wp2, wp3, wp3_zm, wp2_zt, err_code           ) ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.
