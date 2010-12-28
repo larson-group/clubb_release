@@ -52,6 +52,9 @@ module model_flags
 ! OpenMP directives. These cannot be indented.
 !$omp threadprivate(l_uv_nudge, l_tke_aniso, l_soil_veg)
 
+  logical, parameter, public :: & 
+    l_upwind_wpxp_ta = .false. ! Whether to use upwind rather than centered differencing for wpxp
+
   logical, parameter, public :: &
     l_use_boussinesq = .false.  ! Flag to use the Boussinesq form of the
                                 ! predictive equations.  The predictive
@@ -124,16 +127,16 @@ module model_flags
       saturation_formula_in
 
 #ifdef GFDL
-         logical, intent(in) ::  & 
-         I_sat_sphum_in           ! h1g, 2010-06-15
+    logical, intent(in) ::  & 
+      I_sat_sphum_in           ! h1g, 2010-06-15
 #endif
 
     !---- Begin Code ----
 
     ! Logicals
-    l_soil_veg     = l_soil_veg_in
-    l_uv_nudge     = l_uv_nudge_in
-    l_tke_aniso    = l_tke_aniso_in
+    l_soil_veg  = l_soil_veg_in
+    l_uv_nudge  = l_uv_nudge_in
+    l_tke_aniso = l_tke_aniso_in
 
     l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes_in
 
@@ -154,7 +157,7 @@ module model_flags
     end select
 
 #ifdef GFDL
-      I_sat_sphum = I_sat_sphum_in  ! h1g, 2010-06-15
+    I_sat_sphum = I_sat_sphum_in  ! h1g, 2010-06-15
 #endif
 
     return
