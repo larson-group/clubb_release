@@ -40,7 +40,7 @@ module advance_xm_wpxp_module
 
   !=============================================================================
   subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3, &
-                              Lscale, &
+                              wp3_zm, Lscale, &
                               Kh_zt, tau_zm, Skw_zm, rtpthvp, rtm_forcing, &
                               thlpthvp, rtm_ref, thlm_ref, thlm_forcing, &
                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -149,6 +149,7 @@ module advance_xm_wpxp_module
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
       wp2_zt,          & ! w'^2 (interpolated to thermo. levels)    [m^2/s^2]
       wp3,             & ! w'^3 (thermodynamic levels)              [m^3/s^3]
+      wp3_zm,          & ! wp3 interpolated to momentum levels      [m^3/s^3]
       Lscale,          & ! Turbulent mixing length                  [m]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
       tau_zm,          & ! Time-scale tau on momentum levels        [s]
@@ -207,8 +208,7 @@ module advance_xm_wpxp_module
 
     real, dimension(gr%nnzp) ::  & 
       a1,     & ! a_1 (momentum levels); See eqn. 24 in `Equations for CLUBB' [-]
-      a1_zt,  & ! a_1 interpolated to thermodynamic levels                    [-]
-      wp3_zm    ! wp3 interpolated to momentum levels                   [m^3/s^3]
+      a1_zt     ! a_1 interpolated to thermodynamic levels                    [-]
 
     ! Variables used for adding (wpxp)^2: 3-point average
     ! diffusion coefficient.
@@ -382,13 +382,6 @@ module advance_xm_wpxp_module
     ! Interpolate a_1 from momentum levels to thermodynamic levels.  This will
     ! be used for the w'x' turbulent advection (ta) term.
     a1_zt  = max( zm2zt( a1 ), zero_threshold )   ! Positive definite quantity
-
-    ! Setup wp3_zm if needed
-    if ( l_upwind_wpxp_ta ) then
-      wp3_zm = zt2zm( wp3 )
-    else
-      wp3_zm = -999.
-    end if
 
     ! Setup and decompose matrix for each variable.
 
