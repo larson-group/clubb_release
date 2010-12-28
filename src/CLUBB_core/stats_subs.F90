@@ -1335,10 +1335,14 @@ module stats_subs
       isptp_mellor_1, &
       isptp_mellor_2, &
       icorr_s_t_mellor_1, &
-      icorr_s_t_mellor_2
+      icorr_s_t_mellor_2, &
+      iSkw_velocity
 
     use grid_class, only: & 
         gr ! Variable
+
+    use grid_class, only: & 
+      zt2zm ! Procedure(s)
 
     use variables_diagnostic_module, only: & 
         hydromet, &
@@ -1412,7 +1416,8 @@ module stats_subs
         thlm2T_in_K ! Procedure
 
     use constants_clubb, only: & 
-        rc_tol
+        rc_tol, & ! Constant(s)
+        w_tol_sqd
 
     use parameters_model, only: & 
         sclr_dim,  &        ! Variable(s)
@@ -1494,8 +1499,9 @@ module stats_subs
     integer :: i, k
 
     real, dimension(gr%nnzp) :: &
-      shear, & ! Wind shear production term    [m^2/s^3]
-      s_mellor ! Mellor's 's'   [kg/kg]
+      Skw_velocity, & ! Skewness velocity          [m/s]
+      shear, &        ! Wind shear production term [m^2/s^3]
+      s_mellor        ! Mellor's 's'               [kg/kg]
 
     real :: xtmp
 
@@ -1642,6 +1648,11 @@ module stats_subs
       call stat_update_var( itp2_mellor_2, tp2_mellor_2, zm )
       call stat_update_var( icorr_s_t_mellor_1, corr_s_t_mellor_1, zm )
       call stat_update_var( icorr_s_t_mellor_2, corr_s_t_mellor_2, zm )
+
+      if ( iSkw_velocity > 0 ) then
+        Skw_velocity = ( 1.0 / ( 1.0 - sigma_sqd_w ) ) * ( zt2zm( wp3 )  / max( wp2, w_tol_sqd ) )
+        call stat_update_var( iSkw_velocity, Skw_velocity, zm )
+      end if
 
       if ( sclr_dim > 0 ) then
         do i=1, sclr_dim

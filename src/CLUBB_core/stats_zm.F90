@@ -204,7 +204,8 @@ module stats_zm
       isptp_mellor_1, &
       isptp_mellor_2, &
       icorr_s_t_mellor_1, &
-      icorr_s_t_mellor_2
+      icorr_s_t_mellor_2, &
+      iSkw_velocity
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -399,6 +400,9 @@ module stats_zm
 
     icorr_s_t_mellor_1 = 0
     icorr_s_t_mellor_2 = 0
+
+    ! Skewness velocity
+    iSkw_velocity = 0
 
     allocate(isclrprtp(1:sclr_dim))
     allocate(isclrp2(1:sclr_dim))
@@ -1337,6 +1341,12 @@ module stats_zm
         icorr_s_t_mellor_2 = k
         call stat_assign( icorr_s_t_mellor_2, "corr_s_t_2", & 
              "Correlation between s_mellor_2 and t_mellor_2 [-]", "count", zm )
+        k = k + 1
+
+      case ( 'Skw_velocity' )
+        iSkw_velocity = k
+        call stat_assign( iSkw_velocity, "Skw_velocity", & 
+             "Skewness velocity [m/s]", "m/s", zm )
         k = k + 1
 
       case default

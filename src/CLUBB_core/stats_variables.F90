@@ -817,6 +817,10 @@ module stats_variables
 !$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num, &
 !$omp   imorr_rain_rate, imorr_snow_rate)
 
+  integer, public :: &
+    iSkw_velocity ! Skewness velocity
+!$omp threadprivate(iSkw_velocity)
+
   ! Variables that contains all the statistics
 
   type (stats), target, public :: zt,   &    ! zt grid
