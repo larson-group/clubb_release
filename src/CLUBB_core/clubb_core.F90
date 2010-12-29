@@ -297,9 +297,11 @@ module clubb_core
       icorr_s_t_mellor_1, &
       icorr_s_t_mellor_2
 
-
     use fill_holes, only: &
       vertical_integral ! Procedure(s)
+
+    use sigma_sqd_w_module, only: &
+      compute_sigma_sqd_w ! Procedure(s)
 
     implicit none
 
@@ -313,11 +315,11 @@ module clubb_core
                                          ! the thermodynamic-level variables output 
                                          ! from pdf_closure.  
 
-    l_trapezoidal_rule_zm = .false., & ! If true, the trapezoidal rule is called for
+      l_trapezoidal_rule_zm = .false., & ! If true, the trapezoidal rule is called for
                                          ! three momentum-level variables - wpthvp,
-                                       ! thlpthvp, and rtpthvp - output from pdf_closure.
+                                         ! thlpthvp, and rtpthvp - output from pdf_closure.
 
-    l_call_pdf_closure_twice = .false. ! This logical flag determines whether or not to
+      l_call_pdf_closure_twice = .false. ! This logical flag determines whether or not to
     ! call subroutine pdf_closure twice.  If true,
     ! pdf_closure is called first on thermodynamic levels
     ! and then on momentum levels so that each variable is
@@ -644,20 +646,10 @@ module clubb_core
 
     end if
 
-    !----------------------------------------------------------------
-    ! Compute sigma_sqd_w with new formula from Vince
-    !----------------------------------------------------------------
+    ! Compute sigma_sqd_w (dimensionless PDF width parameter)
+    sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, wpthlp, wprtp )
 
-    sigma_sqd_w = gamma_Skw_fnc * &
-      ( 1.0 - min( &
-                  max( ( wpthlp / ( sqrt( wp2 * thlp2 )  &
-                      + 0.01 * w_tol * thl_tol ) )**2, &
-                       ( wprtp / ( sqrt( wp2 * rtp2 )  &
-                      + 0.01 * w_tol * rt_tol ) )**2 &
-                     ), & ! max
-             1.0 ) & ! min
-       )
-
+    ! Interpolate the the zt grid
     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
 
     !---------------------------------------------------------------------------
