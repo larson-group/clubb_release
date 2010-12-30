@@ -440,7 +440,7 @@ module clubb_core
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
-    integer, intent(out) :: err_code
+    integer, intent(inout) :: err_code
 
 #ifdef GFDL
     real, intent(inOUT), dimension(gr%nnzp, min(1,sclr_dim) , 2) :: &  ! h1g, 2010-06-16

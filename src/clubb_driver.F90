@@ -969,8 +969,9 @@ module clubb_driver
                rcm, wprcp, cloud_frac, &                            ! Intent(out)
                rcm_in_layer, cloud_cover, &                         ! Intent(out)
                sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
-               wpsclrp, edsclrm, &                                  ! Intent(out)
-               sigma_sqd_w, pdf_params, err_code )                  ! Intent(out)
+               wpsclrp, edsclrm, &                                  ! Intent(inout)
+               sigma_sqd_w, pdf_params, &                           ! Intent(out)
+               err_code )                                           ! Intent(inout)
 
         wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
