@@ -15,7 +15,7 @@ program clubb_tuner
 !      error_init      : Reads in
 !                         * GRADS parameters: filenames, z-levels, timesteps, 
 !                          variable to tune for
-!                         * HOC variables: C1,...C11, nu1,...nu8
+!                         * CLUBB tunable parameters: C1,...C11, nu1,...nu8
 !                         * Amoeba tolerance: f_tol
 !                        Initializes
 !                         * The initial dependent variable vector, i.e. the 

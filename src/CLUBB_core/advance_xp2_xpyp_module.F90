@@ -210,7 +210,7 @@ module advance_xp2_xpyp_module
       C4_C14_1d     ! Parameters C4 and C14 combined for simplicity
 
     real, dimension(gr%nnzp) :: & 
-      a1 ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
+      a1 ! a_1 (momentum levels); See eqn. 24 in `Equations for CLUBB' [-]
 
     real, dimension(gr%nnzp) :: & 
       upwp_zt,    & ! u'w' interpolated to thermodynamic levels     [m^2/s^2]

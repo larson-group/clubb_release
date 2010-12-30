@@ -165,12 +165,14 @@ module variables_prognostic_module
 !-----------------------------------------------------------------------
   subroutine setup_prognostic_variables( nzmax )
 
-!       Description:
-!       Allocates and Initializes prognostic scalar and array variables
-!       for the HOC model code
+! Description:
+!   Allocates and Initializes prognostic scalar and array variables
+!   for the  CLUBB parameterization.  Variables contained within this module
+!   will be arguments to the advance_clubb_core subroutine rather than brought
+!   in through a use statement.
 
-!       References:
-!       None
+! References:
+!   None
 !-----------------------------------------------------------------------
     use constants_clubb, only:  & 
         rt_tol, &

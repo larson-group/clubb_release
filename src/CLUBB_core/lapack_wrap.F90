@@ -407,7 +407,7 @@ module lapack_wrap
                    rcond, ferr, berr, work, iwork, info )
     else
       stop "band_solvex: Cannot resolve the precision of real datatype"
-      ! One implication of this is that HOC cannot be used with quad
+      ! One implication of this is that CLUBB cannot be used with quad
       ! precision variables without a quad precision band diagonal solver
     end if
 
@@ -590,7 +590,7 @@ module lapack_wrap
 
     else
       stop "band_solve: Cannot resolve the precision of real datatype"
-      ! One implication of this is that HOC cannot be used with quad
+      ! One implication of this is that CLUBB cannot be used with quad
       ! precision variables without a quad precision band diagonal solver
 
     end if
