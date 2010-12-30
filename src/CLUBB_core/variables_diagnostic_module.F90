@@ -595,6 +595,8 @@ module variables_diagnostic_module
     deallocate( corr_s_t_mellor_1 )
     deallocate( corr_s_t_mellor_2 )
 
+    deallocate ( Skw_velocity )
+
     return
   end subroutine cleanup_diagnostic_variables
 
