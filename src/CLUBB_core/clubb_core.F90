@@ -422,25 +422,25 @@ module clubb_core
     ! Variables that need to be output for use in other parts of the CLUBB
     ! code, such as microphysics (rcm, pdf_params), forcings (rcm), and/or
     ! BUGSrad (cloud_cover).
-    real, intent(inout), dimension(gr%nnzp) ::  & 
+    real, intent(out), dimension(gr%nnzp) ::  & 
       rcm,          & ! cloud water mixing ratio, r_c (thermo. levels)  [kg/kg]
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
 
-    real, intent(inout), dimension(gr%nnzp) ::  &
+    real, intent(out), dimension(gr%nnzp) ::  &
       sigma_sqd_w     ! PDF width parameter (momentum levels)      [-]
 
     type(pdf_parameter), dimension(gr%nnzp), intent(out) :: & 
       pdf_params      ! PDF parameters   [units vary]
 
     ! Variables that need to be output for use in host models
-    real, intent(inout), dimension(gr%nnzp) ::  &
+    real, intent(out), dimension(gr%nnzp) ::  &
       wprcp,      & ! w'r_c' (momentum levels)                [(kg/kg) m/s]
       cloud_frac    ! cloud fraction (thermodynamic levels)   [-]
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
-    integer, intent(inout) :: err_code
+    integer, intent(out) :: err_code
 
 #ifdef GFDL
     real, intent(inOUT), dimension(gr%nnzp, min(1,sclr_dim) , 2) :: &  ! h1g, 2010-06-16

@@ -966,11 +966,11 @@ module clubb_driver
                um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
                wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
-               rcm, wprcp, cloud_frac, &                            ! Intent(inout)
-               rcm_in_layer, cloud_cover, &                         ! Intent(inout)
+               rcm, wprcp, cloud_frac, &                            ! Intent(out)
+               rcm_in_layer, cloud_cover, &                         ! Intent(out)
                sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
-               wpsclrp, edsclrm, sigma_sqd_w, pdf_params, &         ! Intent(inout)
-               err_code )                                           ! Intent(inout)
+               wpsclrp, edsclrm, &                                  ! Intent(out)
+               sigma_sqd_w, pdf_params, err_code )                  ! Intent(out)
 
         wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
