@@ -477,7 +477,7 @@ The turbulence moment $\overline{w'^4}$ is given by (LG40):
 \label{eq_wp4}
 \overline{w^{'4}}
 = \overline{w^{'2}}^2
-  \left( a_3 + \frac{3}{2} \right)
+  \left( a_3 + 3 \right)
 + a_1 \frac{ \overline{w^{'3}}^2 }{ \overline{w^{'2}} }
 \end{equation}
 %
@@ -1820,13 +1820,13 @@ in (\ref{eq_wp3b}):
 & = - \ptlder{}{z}
          \left( \overline{w^{'4}} -\frac{3}{2}\overline{w^{'2}}^2 \right) \\
 & = - \ptlder{}{z} 
-      \left( a_3 \overline{w^{'2}}^2 \right)
+      \left( \tilde{a}_3 \overline{w^{'2}}^2 \right)
     - \ptlder{}{z} 
       \left( a_1 \frac{ \overline{w^{'3}}^2 }{ \overline{w^{'2}} } \right)
 \end{split}
 \end{equation}
 %
-Rearranging terms and making use of (\ref{eq_tke}):
+where $\tilde{a}_3 = a_3 +3/2$.  Rearranging terms and making use of (\ref{eq_tke}):
 %
 \begin{equation}
 \label{eq_wp2c}
@@ -1861,7 +1861,7 @@ Rearranging terms and making use of (\ref{eq_tke}):
                   \right]
   + \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}} \\
 & \qquad 
-  + \ptlder{}{z} \left( a_3 \overline{w^{'2}}^2 \right)
+  + \ptlder{}{z} \left( \tilde{a}_3 \overline{w^{'2}}^2 \right)
   + \ptlder{}{z} 
        \left(
           a_1 \frac{ \overline{w^{'3}}^2 }{ \overline{w^{'2}} }
@@ -2088,15 +2088,15 @@ In a similar fashion, let's now linearize the fourth term on the LHS of
 \begin{equation}
 \label{eq_l4a}
 \begin{split}
-& \ptlder{}{z} \left[ a_3 \left(\overline{w^{'2}}^{t+\Delta t}\right)^2 \right] \\
+& \ptlder{}{z} \left[ \tilde{a}_3 \left(\overline{w^{'2}}^{t+\Delta t}\right)^2 \right] \\
 &\approx  \ptlder{}{z} 
     \left[
-      a_3 {\overline{w^{'2}}^t}^2
-      + 2 a_3 \overline{w^{'2}}^t
+      \tilde{a}_3 {\overline{w^{'2}}^t}^2
+      + 2 \tilde{a}_3 \overline{w^{'2}}^t
               \left( \overline{w^{'2}}^{t+\Delta t} - \overline{w^{'2}}^{t} \right) 
     \right] \\
-&= \ptlder{}{z} \left( 2 a_3 \overline{w^{'2}}^t \, \overline{w^{'2}}^{t+\Delta t} \right)
- - \ptlder{}{z} \left( a_3 {\overline{w^{'2}}^t}^2 \right)
+&= \ptlder{}{z} \left( 2 \tilde{a}_3 \overline{w^{'2}}^t \, \overline{w^{'2}}^{t+\Delta t} \right)
+ - \ptlder{}{z} \left( \tilde{a}_3 {\overline{w^{'2}}^t}^2 \right)
 \end{split}
 \end{equation}
 %
@@ -2147,7 +2147,7 @@ We can now assemble the time discrete equivalent to (\ref{eq_wp3c}) using
    \left(  5 \, C_{8b} \, {Skw^t}^4 + 1 \right)
    \overline{w^{'3}}^{t + \Delta t}
 \\ &
-+ \ptlder{}{z} \left( 2 a_3 \overline{w^{'2}}^t \, \overline{w^{'2}}^{t+\Delta t} \right)
++ \ptlder{}{z} \left( 2 \tilde{a}_3 \overline{w^{'2}}^t \, \overline{w^{'2}}^{t+\Delta t} \right)
 + \ptlder{}{z}
   \left(
     2 a_1 \frac{ \overline{w^{'3}}^t \, \overline{w^{'3}}^{t+\Delta t} }
@@ -2162,7 +2162,7 @@ We can now assemble the time discrete equivalent to (\ref{eq_wp3c}) using
   +  \frac{C_8}{\tau}
       \left( 4 \, C_{8b} \, {Skw^t}^4 \right) \overline{w^{'3}}^t
 \\ & \quad
-  + \ptlder{}{z} \left( a_3 {\overline{w^{'2}}^t}^2 \right)
+  + \ptlder{}{z} \left( \tilde{a}_3 {\overline{w^{'2}}^t}^2 \right)
   + \ptlder{}{z}
     \left(
       a_1 \frac{ \left( {\overline{w^{'3}}^t}\right)^2 }
