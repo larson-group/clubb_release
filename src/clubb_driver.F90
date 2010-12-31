@@ -148,7 +148,7 @@ module clubb_driver
       invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
       thv_ds_zt, thlm_forcing, rtm_forcing, &
       um_forcing, vm_forcing, &
-      up2, vp2, wp3, rtp2, sigma_sqd_w, pdf_params, &
+      up2, vp2, wp3, rtp2, pdf_params, &
       thlp2, rtpthlp, cloud_frac, &
       rcm_in_layer, cloud_cover
 
@@ -966,12 +966,10 @@ module clubb_driver
                um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
                wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
-               rcm, wprcp, cloud_frac, &                            ! Intent(out)
-               rcm_in_layer, cloud_cover, &                         ! Intent(out)
                sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
-               wpsclrp, edsclrm, &                                  ! Intent(inout)
-               sigma_sqd_w, pdf_params, &                           ! Intent(out)
-               err_code )                                           ! Intent(inout)
+               wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
+               rcm, wprcp, cloud_frac, &                            ! Intent(out)
+               rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
 
         wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 

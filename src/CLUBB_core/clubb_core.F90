@@ -53,18 +53,18 @@ module clubb_core
                um, vm, upwp, vpwp, up2, vp2, &
                thlm, rtm, wprtp, wpthlp, &
                wp2, wp3, rtp2, thlp2, rtpthlp, &
-               rcm, wprcp, cloud_frac, & 
-               rcm_in_layer, cloud_cover, & 
                sclrm,   &
 #ifdef GFDL
                sclrm_trsport_only,  &  ! h1g, 2010-06-16
 #endif
                sclrp2, sclrprtp, sclrpthlp, &
-               wpsclrp, edsclrm, sigma_sqd_w, pdf_params, &
+               wpsclrp, edsclrm, err_code, &
 #ifdef GFDL
                RH_crit, &  ! h1g, 2010-06-16
 #endif
-               err_code )
+               rcm, wprcp, cloud_frac, & 
+               rcm_in_layer, cloud_cover, &  
+               pdf_params )
 
     ! Description:
     !   Subroutine to advance the model one timestep
@@ -427,7 +427,7 @@ module clubb_core
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
 
-    real, intent(out), dimension(gr%nnzp) ::  &
+    real, dimension(gr%nnzp) ::  &
       sigma_sqd_w     ! PDF width parameter (momentum levels)      [-]
 
     type(pdf_parameter), dimension(gr%nnzp), intent(out) :: & 
