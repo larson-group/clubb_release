@@ -226,8 +226,7 @@ module numerical_check
                um, upwp, vm, vpwp, up2, vp2, &
                rtm, wprtp, thlm, wpthlp, &
                wp2, wp3, rtp2, thlp2, rtpthlp, &
-               sigma_sqd_w, rcm, wprcp, cloud_frac, &
-               rcm_in_layer, cloud_cover, prefix, &
+               prefix, &
                wpsclrp_sfc, wpedsclrp_sfc, & 
                sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
                sclrm_forcing, edsclrm, edsclrm_forcing )
@@ -235,8 +234,7 @@ module numerical_check
 ! Description: 
 !   This subroutine determines what input variables may have NaN values.
 !   In addition it checks to see if rho_zm, rho, exner, up2, vp2, rtm, thlm,
-!   wp2, sigma_sqd_w, rtp2, thlp2, tau_zm, rcm, Ncm, Ncnm, Nim, hydromet, or 
-!   cloud_frac have negative values.
+!   wp2, rtp2, thlp2, or tau_zm have negative values.
 !-------------------------------------------------------------------------------
 
     use grid_class, only: & 
@@ -291,16 +289,6 @@ module numerical_check
       rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
       wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
-
-    real, intent(in), dimension(gr%nnzp) ::  &
-      sigma_sqd_w    ! PDF width parameter (momentum levels)      [-]
- 
-    real, intent(in), dimension(gr%nnzp) ::  & 
-      rcm,          & ! cloud water mixing ratio (thermo. levels)  [kg/kg]
-      wprcp,        & ! w'r_c' (momentum levels)                   [(kg/kg) m/s]
-      cloud_frac,   & ! cloud fraction (thermodynamic levels)      [-]
-      rcm_in_layer, & ! rcm in cloud layer                         [kg/kg]
-      cloud_cover     ! cloud cover                                [-]
 
     character(len=*), intent(in) :: prefix ! Location where subroutine is called
 
@@ -374,15 +362,6 @@ module numerical_check
     call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name )
     call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name )
 
-    call check_nan( sigma_sqd_w, "sigma_sqd_w", prefix//proc_name )
-
-    call check_nan( rcm,"rcm", prefix//proc_name )
-    call check_nan( wprcp,"wprcp", prefix//proc_name )
-    call check_nan( cloud_frac,"cloud_frac", prefix//proc_name )
-    call check_nan( rcm_in_layer,"rcm_in_layer", prefix//proc_name )
-    call check_nan( cloud_cover,"cloud_cover", prefix//proc_name )
-
-
     do i = 1, sclr_dim
 
       call check_nan( sclrm_forcing(:,i),"sclrm_forcing",  & 
@@ -414,8 +393,7 @@ module numerical_check
 !---------------------------------------------------------------------
 
 
-    rvm = rtm - rcm
-    call check_negative( rvm, gr%nnzp ,"rvm", prefix//proc_name )
+    call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name )
     call check_negative( p_in_Pa, gr%nnzp ,"p_in_Pa", prefix//proc_name )
     call check_negative( rho, gr%nnzp ,"rho", prefix//proc_name )
     call check_negative( rho_zm, gr%nnzp ,"rho_zm", prefix//proc_name )
@@ -435,13 +413,6 @@ module numerical_check
     call check_negative( thlm, gr%nnzp ,"thlm", prefix//proc_name )
     call check_negative( rtp2, gr%nnzp ,"rtp2", prefix//proc_name )
     call check_negative( thlp2, gr%nnzp ,"thlp2", prefix//proc_name )
-    call check_negative( sigma_sqd_w, gr%nnzp,"sigma_sqd_w", prefix//proc_name )
-    call check_negative( rcm, gr%nnzp ,"rcm", prefix//proc_name )
-    call check_negative( cloud_frac, gr%nnzp ,"cloud_frac", prefix//proc_name )
-    call check_negative( rcm_in_layer, gr%nnzp ,"rcm_in_layer", &
-                         prefix//proc_name )
-    call check_negative( cloud_cover, gr%nnzp ,"cloud_cover", &
-                         prefix//proc_name )
 
     return
   end subroutine parameterization_check
@@ -464,6 +435,7 @@ module numerical_check
 
     implicit none
 
+    ! Constant Parameters
     ! Name of the subroutine calling the check
     character(len=*), parameter :: &
       proc_name = "surface_varnce"
