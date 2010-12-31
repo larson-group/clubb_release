@@ -186,7 +186,9 @@ module variables_diagnostic_module
     corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
     
   real, target, allocatable, dimension(:), public :: & 
-    Skw_velocity ! Skewness velocity    [m/s]
+    Skw_velocity, & ! Skewness velocity    [m/s]
+    a3_coef,      & ! The a3 coefficient from CLUBB eqns                [-]
+    a3_coef_zt      ! The a3 coefficient interpolated to the zt grid    [-]
 
   contains
 
@@ -330,6 +332,9 @@ module variables_diagnostic_module
 
     allocate( Skw_velocity(1:nzmax) )
 
+    allocate( a3_coef(1:nzmax) )
+    allocate( a3_coef_zt(1:nzmax) )
+
     !   --- Initializaton ---
 
     ! Diagnostic variables
@@ -471,6 +476,9 @@ module variables_diagnostic_module
 
     Skw_velocity = 0.0
 
+    a3_coef    = 0.0
+    a3_coef_zt = 0.0
+
     return
   end subroutine setup_diagnostic_variables
 
@@ -595,7 +603,10 @@ module variables_diagnostic_module
     deallocate( corr_s_t_mellor_1 )
     deallocate( corr_s_t_mellor_2 )
 
-    deallocate ( Skw_velocity )
+    deallocate( Skw_velocity )
+
+    deallocate( a3_coef )
+    deallocate( a3_coef_zt )
 
     return
   end subroutine cleanup_diagnostic_variables

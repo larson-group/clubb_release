@@ -36,8 +36,9 @@ module advance_wp2_wp3_module
 contains
 
   !=============================================================================
-  subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm, &
-                              wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, &
+  subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &
+                              a3, a3_zt, &
+                              wpthvp, wp2thvp, um, vm, upwp, vpwp, &
                               up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, &
                               Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt, &
                               invrs_rho_ds_zm, invrs_rho_ds_zt, &
@@ -103,6 +104,8 @@ contains
       sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)             [-]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
+      a3,              & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
+      a3_zt,           & ! a_3 interpolated to thermodynamic levels        [-]
       wpthvp,          & ! w'th_v' (momentum levels)                 [K m/s]
       wp2thvp,         & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
       um,              & ! u wind component (thermodynamic levels)   [m/s]
@@ -290,8 +293,9 @@ contains
     endif
 
     ! Solve semi-implicitly
-    call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! Intent(in)
-                     wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp,    & ! Intent(in)
+    call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! Intent(in)
+                     a3, a3_zt, &  ! Intent(in)
+                     wpthvp, wp2thvp, um, vm, upwp, vpwp,    & ! Intent(in)
                      up2, vp2, Kw1, Kw8, Skw_zt, tau_zm, tauw3t,    & ! Intent(in)
                      C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                      invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm,   & ! Intent(in)
@@ -341,8 +345,9 @@ contains
   end subroutine advance_wp2_wp3
 
   !=============================================================================
-  subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, &
-                         wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp, &
+  subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &
+                         a3, a3_zt, &
+                         wpthvp, wp2thvp, um, vm, upwp, vpwp, &
                          up2, vp2, Kw1, Kw8, Skw_zt, tau1m, tauw3t, &
                          C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &
                          invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
@@ -502,6 +507,8 @@ contains
       sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)             [-]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
+      a3,              & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
+      a3_zt,           & ! a_3 interpolated to thermodynamic levels        [-]
       wpthvp,          & ! w'th_v' (momentum levels)                 [K m/s]
       wp2thvp,         & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
       um,              & ! u wind component (thermodynamic levels)   [m/s]
@@ -564,12 +571,8 @@ contains
       solut ! Solution to band diagonal system.
 
     real, dimension(gr%nnzp) ::  & 
-      a1,  & ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
-      a3     ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
-
-    real, dimension(gr%nnzp) ::  & 
-      a1_zt,  & ! a_1 interpolated to thermodynamic levels        [-]
-      a3_zt     ! a_3 interpolated to thermodynamic levels        [-]
+      a1,   & ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
+      a1_zt   ! a_1 interpolated to thermodynamic levels                    [-]
 
 !      real, dimension(gr%nnzp) ::  &
 !        wp2_n ! w'^2 at the previous timestep           [m^2/s^2]
@@ -592,22 +595,13 @@ contains
     ! Define a_1 and a_3 (both are located on momentum levels).
     ! They are variables that are both functions of sigma_sqd_w (where
     ! sigma_sqd_w is located on momentum levels).
-    ! Note: some compilers appear to interpret the pow function with
-    ! a positive integer exponent differently than a repeated
-    ! multiply. -dschanen 19 March 2007
 
     a1 = 1.0 / ( 1.0 - sigma_sqd_w )
 
-    a3 = 3.0 * sigma_sqd_w*sigma_sqd_w  &
-         + 6.0*(1.0-sigma_sqd_w)*sigma_sqd_w  &
-         + (1.0-sigma_sqd_w)*(1.0-sigma_sqd_w)  &
-         - 3.0
-
-    ! Interpolate a_1 and a_3 from momentum levels to thermodynamic
+    ! Interpolate a_1 from momentum levels to thermodynamic
     ! levels.  This will be used for the w'^3 turbulent advection
     ! (ta) and turbulent production (tp) combined term.
     a1_zt  = max( zm2zt( a1 ), zero_threshold )   ! Positive definite quantity
-    a3_zt  = zm2zt( a3 )
 
     ! Compute the implicit portion of the w'^2 and w'^3 equations.
     ! Build the left-hand side matrix.

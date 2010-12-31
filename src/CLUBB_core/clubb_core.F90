@@ -168,14 +168,16 @@ module clubb_core
 
     use variables_diagnostic_module, only: & 
       wpedsclrp, & 
-      sclrpthvp,   & ! sclr'th_v'
-      sclrprcp,    & ! sclr'rc'
-      wp2sclrp,    & ! w'^2 sclr'
-      wpsclrp2,    & ! w'sclr'^2
-      wpsclrprtp,  & ! w'sclr'rt'
-      wpsclrpthlp, & ! w'sclr'thl'
-      wp3_zm,      & ! wp3 interpolated to momentum levels
-      Skw_velocity   ! Skewness velocity        [m/s]
+      sclrpthvp,    & ! sclr'th_v'
+      sclrprcp,     & ! sclr'rc'
+      wp2sclrp,     & ! w'^2 sclr'
+      wpsclrp2,     & ! w'sclr'^2
+      wpsclrprtp,   & ! w'sclr'rt'
+      wpsclrpthlp,  & ! w'sclr'thl'
+      wp3_zm,       & ! wp3 interpolated to momentum levels
+      Skw_velocity, & ! Skewness velocity       [m/s]
+      a3_coef,      & ! The a3 coefficient      [-]
+      a3_coef_zt      ! The a3 coefficient interp. to the zt grid [-]
 
     use variables_diagnostic_module, only: &
       sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
@@ -651,6 +653,19 @@ module clubb_core
     ! Interpolate the the zt grid
     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
 
+    ! Compute the a3 coefficient (formula 25 in `Equations for CLUBB')
+!   a3_coef = 3.0 * sigma_sqd_w*sigma_sqd_w  &
+!      + 6.0*(1.0-sigma_sqd_w)*sigma_sqd_w  &
+!      + (1.0-sigma_sqd_w)*(1.0-sigma_sqd_w) &
+!      - 3.0
+
+    ! This is a simplified version of the formula above.
+    a3_coef = -2. * ( 1. - sigma_sqd_w )**2
+
+!   a3_coef = max( a3_coef, -1.4 )
+
+    a3_coef_zt = zm2zt( a3_coef )
+
     !---------------------------------------------------------------------------
     ! Interpolate wp2, thlp2, rtp2, and rtpthlp to thermodynamic levels,
     ! interpolate wp3 to momentum levels, and then compute Skw for m & t grid
@@ -669,7 +684,7 @@ module clubb_core
 
     ! Compute skewness velocity for output purposes
     Skw_velocity = ( 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) ) ) & 
-                 * ( zt2zm( wp3(1:gr%nnzp) )  / max( wp2(1:gr%nnzp), w_tol_sqd ) )
+                 * ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
 
     !----------------------------------------------------------------
     ! Call closure scheme
@@ -1177,12 +1192,13 @@ module clubb_core
     !----------------------------------------------------------------
 
     call advance_wp2_wp3 &
-         ( dt, sfc_elevation, sigma_sqd_w, wm_zm,       & ! intent(in)
-           wm_zt, wpthvp, wp2thvp, um, vm, upwp, vpwp,  & ! intent(in)
-           up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,      & ! intent(in)
-           Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,        & ! intent(in)
-           invrs_rho_ds_zm, invrs_rho_ds_zt,            & ! intent(in)
-           thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,  & ! intent(in)
+         ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! intent(in)
+           a3_coef, a3_coef_zt,                          & ! intent(in)
+           wpthvp, wp2thvp, um, vm, upwp, vpwp,          & ! intent(in)
+           up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,       & ! intent(in)
+           Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,         & ! intent(in)
+           invrs_rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
+           thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
            wp2, wp3, wp3_zm, wp2_zt, err_code           ) ! intent(inout)
 
     ! Wrapped LAPACK procedures may report errors, and if so, exit

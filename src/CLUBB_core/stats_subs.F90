@@ -1339,6 +1339,10 @@ module stats_subs
       icorr_s_t_mellor_2, &
       iSkw_velocity
 
+    use stats_variables, only: &
+      ia3_coef, & ! Variables
+      ia3_coef_zt
+
     use grid_class, only: & 
         gr ! Variable
 
@@ -1399,7 +1403,9 @@ module stats_subs
         wpedsclrp
 
     use variables_diagnostic_module, only: & 
-      AKstd, & ! Variable(s)
+      a3_coef, & ! Variable(s)
+      a3_coef_zt, &
+      AKstd, & 
       lh_rcm_avg, &
       AKstd_cld, &
       AKm_rcm, &
@@ -1593,6 +1599,7 @@ module stats_subs
       call stat_update_var( ivp2_zt, vp2_zt, zt )
       call stat_update_var( iupwp_zt, upwp_zt, zt )
       call stat_update_var( ivpwp_zt, vpwp_zt, zt )
+      call stat_update_var( ia3_coef_zt, a3_coef_zt, zt )
 
       if ( is_mellor > 0 ) then
         ! Determine 's' from Mellor (1977) (extended liquid water)
@@ -1653,6 +1660,7 @@ module stats_subs
       call stat_update_var( icorr_s_t_mellor_2, corr_s_t_mellor_2, zm )
 
       call stat_update_var( iSkw_velocity, Skw_velocity, zm )
+      call stat_update_var( ia3_coef, a3_coef, zm )
 
       if ( sclr_dim > 0 ) then
         do i=1, sclr_dim

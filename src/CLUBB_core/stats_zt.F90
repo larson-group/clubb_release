@@ -331,7 +331,8 @@ module stats_zt
       iLH_cloud_frac
 
     use stats_variables, only: &
-      is_mellor ! Variables
+      is_mellor, & ! Variables
+      ia3_coef_zt
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -644,6 +645,8 @@ module stats_zt
     iLH_rrainp2_zt = 0
     iLH_Nrp2_zt = 0
     iLH_Ncp2_zt = 0
+
+    ia3_coef_zt = 0
 
     allocate( isclrm(1:sclr_dim) )
     allocate( isclrm_f(1:sclr_dim) )
@@ -2404,6 +2407,12 @@ module stats_zt
 
         call stat_assign( is_mellor, "s_mellor", & 
              "Mellor's s (extended liq) [kg/kg]", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'a3_coef_zt' )
+        ia3_coef_zt = k
+        call stat_assign( ia3_coef_zt, "a3_coef_zt", & 
+             "The a3 coefficient interpolated the the zt grid [-]", "count", zt )
         k = k + 1
 
       case default

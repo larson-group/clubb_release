@@ -200,6 +200,7 @@ module stats_zm
         iwpedsclrp
 
     use stats_variables, only: &
+      ia3_coef, &
       itp2_mellor_1, &
       itp2_mellor_2, &
       isptp_mellor_1, &
@@ -405,6 +406,8 @@ module stats_zm
 
     ! Skewness velocity
     iSkw_velocity = 0
+
+    ia3_coef = 0
 
     allocate(isclrprtp(1:sclr_dim))
     allocate(isclrp2(1:sclr_dim))
@@ -1356,6 +1359,13 @@ module stats_zm
         call stat_assign( iSkw_velocity, "Skw_velocity", & 
              "Skewness velocity [m/s]", "m/s", zm )
         k = k + 1
+
+      case ( 'a3_coef' )
+        ia3_coef = k
+        call stat_assign( ia3_coef, "a3_coef", & 
+             "Quantity in formula 25 from Equations for CLUBB [-]", "count", zm )
+        k = k + 1
+
 
       case default
         l_found = .false.

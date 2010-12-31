@@ -819,8 +819,10 @@ module stats_variables
 
   integer, public :: &
     iSkw_velocity, & ! Skewness velocity
-    iwp3_zm
-!$omp threadprivate(iSkw_velocity, iwp3_zm)
+    iwp3_zm, &
+    ia3_coef, &
+    ia3_coef_zt
+!$omp threadprivate(iSkw_velocity, iwp3_zm, ia3_coef, ia3_coef_zt)
 
   ! Variables that contains all the statistics
 
