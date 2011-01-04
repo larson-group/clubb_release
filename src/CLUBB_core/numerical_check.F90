@@ -319,8 +319,6 @@ module numerical_check
 
     integer :: i
 
-    real, dimension(gr%nnzp) :: rvm
-
 !-------- Input Nan Check ----------------------------------------------
 
     call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name)
