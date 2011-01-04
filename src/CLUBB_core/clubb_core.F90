@@ -662,7 +662,9 @@ module clubb_core
     ! This is a simplified version of the formula above.
     a3_coef = -2. * ( 1. - sigma_sqd_w )**2
 
-!   a3_coef = max( a3_coef, -1.4 )
+    ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
+    ! than -1.4 -dschanen 4 Jan 2011
+    a3_coef = max( a3_coef, -1.4 )
 
     a3_coef_zt = zm2zt( a3_coef )
 
