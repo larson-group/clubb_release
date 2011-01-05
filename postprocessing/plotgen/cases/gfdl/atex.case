@@ -18,7 +18,7 @@
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/atex_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'thlm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/atex_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'thlm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'atex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'atex_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'temp .* (-1)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'atex_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'temp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [

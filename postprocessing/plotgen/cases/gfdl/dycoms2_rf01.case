@@ -225,27 +225,27 @@
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf01_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf01_sfc.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf01_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf01_sfc.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf01_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2_vert_avg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf01_sfc.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2_vert_avg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2_vert_avg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf01_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf01_sfc.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf01_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf01_sfc.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],

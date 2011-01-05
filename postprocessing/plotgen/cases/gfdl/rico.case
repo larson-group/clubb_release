@@ -16,7 +16,7 @@
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'thlm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'temp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
