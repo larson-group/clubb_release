@@ -263,7 +263,8 @@ module clubb_driver
 
     ! Constant Parameters
     logical, parameter :: &
-      l_host_applies_sfc_fluxes = .false.
+      l_host_applies_sfc_fluxes = .false., &
+      l_implemented = .false.
 
     ! Input Variables
     logical, intent(in) ::  & 
@@ -739,7 +740,7 @@ module clubb_driver
            sclr_tol(1:sclr_dim), edsclr_dim, params,    & ! Intent(in)
            l_soil_veg, l_host_applies_sfc_fluxes,       & ! Intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula, & ! Intent(in)
-           .false., grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
+           l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
            momentum_heights, thermodynamic_heights,     & ! Intent(in)
            dummy_dx, dummy_dy, sfc_elevation,           & ! Intent(in)
            err_code )                                     ! Intent(out)
