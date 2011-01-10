@@ -11,14 +11,87 @@ module nov11
 
   implicit none
 
-  public :: nov11_altocu_tndcy
+  public :: nov11_altocu_rtm_adjust
 
   ! Note: bottom point not at surface, so there is no sfc
   ! subroutine
 
+  ! Note: nov11_altocu_tndcy has been marked as private, as the subroutine
+  !       is now obsolete.
+
+  private :: nov11_altocu_tndcy
+
   private ! Default Scope
 
   contains
+
+!-----------------------------------------------------------------------
+  subroutine nov11_altocu_rtm_adjust( time, time_initial, dt, &
+                                      rtm )
+
+! Description:
+!   This subroutine performs a one-time adjustment on the total water above
+!   cloud at time = 3600 seconds after the start of the simulation.
+!
+!   This was moved from the nov11_altocu_tndcy subroutine below, as said
+!   subroutine is now obsolete and no longer needs to calculate forcings.
+!
+! References:
+!   Larson, V. E., A. J. Smith, M. J. Falk, K. E. Kotenberg
+!   and J.-C. Golaz, 2006: What determines altocumulus lifetime?
+!   J. Geophys. Res., 111, D19207, doi:10.1029/2005JD007002.
+!--------------------------------------------------------------------------
+
+    use grid_class, only: &
+      gr       ! Variable(s)
+
+    use stats_precision, only: &
+      time_precision ! Variable(s)
+
+    implicit none
+
+    ! Input variables
+    real(kind=time_precision), intent(in) :: & 
+      time,            & ! Current time          [s]
+      time_initial       ! Initial time          [s]
+
+    real(kind=time_precision), intent(in) :: & 
+      dt              ! Timestep              [s]
+
+    ! Input/Output variables
+    real, intent(inout), dimension(gr%nnzp) :: & 
+      rtm     ! Total water mixing ratio      [kg/kg]
+
+    ! Local variables
+    integer :: &
+      k       ! Used for iterating over the vertical domain
+
+    ! ---- Begin Code ----
+
+!-----------------------------------------------------------------------
+! SPECIAL NOV.11 CONDITION FOR TOTAL WATER ABOVE CLOUD
+! One hour after the initial time, the total water above cloud
+! is adjusted to be 0.89 of what it previously was.
+!
+! The conditional statement here is set so that if the timestep
+! is such that there is no timestep at exactly 3600.0 seconds,
+! then the operation still happnens at the first timestep and
+! only the first timestep after 3600.0 seconds.
+!-----------------------------------------------------------------------
+    if ( time >= time_initial + 3600.0  .and. & 
+         time <  time_initial + 3600.0 + dt ) then
+
+      do k = 1, gr%nnzp, 1
+        if ( gr%zt(k) > ( 2687.5 + gr%zm(1) ) ) then
+          rtm(k) = 0.89 * rtm(k)
+        end if
+      end do
+
+    end if
+
+    return
+
+  end subroutine nov11_altocu_rtm_adjust
 
 !-----------------------------------------------------------------------
   subroutine nov11_altocu_tndcy( time, time_initial, dt, & 
@@ -28,6 +101,12 @@ module nov11
 
 ! Description:
 !   Compute subsidence, radiation, and large-scale tendencies.
+!
+! NOTE:
+!   This subroutine is obsolete; the subsidence profile has been moved
+!   to nov11_altocu_forcings.in; and the rtm adjustment has been moved to a
+!   separate subroutine.
+!   ~EIHoppe/20110104
 
 ! References:
 !   Larson, V. E., A. J. Smith, M. J. Falk, K. E. Kotenberg
@@ -129,6 +208,12 @@ module nov11
 !
 ! Comment by Adam Smith on 26 June 2006
 !
+! NOTE:
+! The constant subsidence profile has been moved to a forcings specification
+! in the input directory.
+! Please check input/case_setups/nov11_altocu_forcings.in for the subsidence
+! profile. This code is now obsolete.
+! ~EIHoppe/20110104
 !-----------------------------------------------------------------------
 
     !----------------------

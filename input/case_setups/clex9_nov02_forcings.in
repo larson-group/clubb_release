@@ -1,0 +1,47 @@
+! $Id$
+! The vertical coordinate is entered in the first column as height (z[m]) or pressure (Press[Pa]).
+! Temperature can be entered as liquid water potential temperature (thlm_f[K\s]), potential temperature (thm_f[K\s]), or absolute temperature(T_f[K\s]).
+! Prescribed, time-independent vertical velocity can be entered as velocity (w[m\s]) or pressure velocity (omega[Pa\s] or omega[mb\hr])
+! In all cases, missing values are denoted by -999.9
+! The blanks are filled first vertically and then across time. This means that if you have a column that is completely filled with missing values
+! it will be replaced with an interpolation of the values before and after.
+! The format of this file is:
+! [Variable list ...]
+! [Time of Profile] [# of elements in profile]
+! [Vertical Coordinate] [Data ...]
+! [Vertical Coordinate] [Data ...]
+! ...
+! [Time of Profile] [# of elements in profile]
+! [Vertical Coordinate] [Data ...]
+! [Vertical Coordinate] [Data ...]
+! ...
+!
+z[m]        thlm_f[K\s]     rtm_f[kg\kg\s]   um_ref[m\s]   vm_ref[m\s]   um_f[m\s^2]   vm_f[m\s^2]   w[m\s]   ug[m\s]   vg[m\s]   
+47811.0		6
+3097.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+3397.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+3697.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+5697.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+5897.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+6072.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+51410.9		6
+3097.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+3397.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+3697.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+5697.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+5897.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+6072.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+51411.0         6
+3097.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+3397.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+3697.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.007  -999.9  -999.9
+5697.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.007  -999.9  -999.9
+5897.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+6072.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+62211.0		6
+3097.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+3397.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+3697.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.007 -999.9  -999.9
+5697.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.007 -999.9  -999.9
+5897.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9
+6072.0         0.0  0.0 -999.9 -999.9 -999.9 -999.9  0.0   -999.9  -999.9

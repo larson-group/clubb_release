@@ -2863,10 +2863,6 @@ module clubb_driver
     use bomex, only: bomex_tndcy, bomex_sfclyr ! Procedure(s)
 
 #ifdef UNRELEASED_CODE
-    use clex9_nov02, only: clex9_nov02_tndcy ! Procedure(s)
-
-    use clex9_oct14, only: clex9_oct14_tndcy ! Procedure(s)
-
     use cobra, only: cobra_sfclyr ! Procedure(s)
 #endif
 
@@ -2898,11 +2894,9 @@ module clubb_driver
     use mpace_b, only: mpace_b_tndcy, mpace_b_sfclyr ! Procedure(s)
 
 #ifdef UNRELEASED_CODE
-    use nov11, only: nov11_altocu_tndcy ! Procedure(s)
+    use nov11, only: nov11_altocu_rtm_adjust ! Procedure(s)
 
     use twp_ice, only: twp_ice_sfclyr ! Procedure(s)
-
-    use jun25, only: jun25_altocu_tndcy ! Procedure(s)
 #endif
 
     use wangara, only: wangara_tndcy, wangara_sfclyr ! Procedure(s)
@@ -2996,18 +2990,6 @@ module clubb_driver
                           thlm_forcing, rtm_forcing, &     ! Intent(out)
                           sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
-#ifdef UNRELEASED_CODE
-      case ( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
-        call clex9_nov02_tndcy( time_current, time_initial, &  ! Intent(in)
-                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
-                                sclrm_forcing, edsclrm_forcing )           ! Intent(out)
-
-      case ( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
-        call clex9_oct14_tndcy( time_current, time_initial, &    ! Intent(in) 
-                                wm_zt, wm_zm, thlm_forcing, rtm_forcing, &   ! Intent(out)
-                                sclrm_forcing, edsclrm_forcing )             ! Intent(out)
-#endif
-
       case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
         call dycoms2_rf01_tndcy( thlm_forcing, rtm_forcing,  &    ! Intent(out)
                                  sclrm_forcing, edsclrm_forcing ) ! Intent(out)
@@ -3029,11 +3011,6 @@ module clubb_driver
                            sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
 #ifdef UNRELEASED_CODE
-      case ( "jun25_altocu" ) ! June 25 Altocumulus case.
-        call jun25_altocu_tndcy( time_current, time_initial, &  ! Intent(in) 
-                                 wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(inout)
-                                 sclrm_forcing, edsclrm_forcing )            ! Intent(out)
-
       case ( "lba" )
         call lba_tndcy( thlm_forcing, rtm_forcing, &     ! Intent(out)
                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
@@ -3051,15 +3028,6 @@ module clubb_driver
         call mpace_b_tndcy( p_in_Pa, thvm, &                ! Intent(in)
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                             sclrm_forcing, edsclrm_forcing )           ! Intent(out)
-
-#ifdef UNRELEASED_CODE
-      case ( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
-        call nov11_altocu_tndcy( time_current, time_initial, dt, &           ! Intent(in)
-                                 rtm, &                                      ! Intent(inout)
-                                 wm_zt, wm_zm, thlm_forcing, rtm_forcing, &  ! Intent(out)
-                                 sclrm_forcing, edsclrm_forcing )            ! Intent(out)
-#endif
-
       case ( "rico" ) ! RICO case
         call rico_tndcy( exner, &                         ! Intent(in)
                          thlm_forcing, rtm_forcing, &     ! Intent(out)   
@@ -3153,6 +3121,16 @@ module clubb_driver
 
       ! Ensure ustar is set
       ustar = 0
+
+      ! However, the Nov. 11 Altocumulus case has a one-time adjustment
+      ! of rtm at t=3600s after the start of the simulation.
+      ! As the nov11_altocu_tndcy subroutine is now obsolete, this was
+      ! moved to a separate subroutine, nov11_altocu_rtm_adjust.
+      ! This subroutine is called here, as the surface momentum/heat fluxes
+      ! are called every timestep.
+      ! ~EIHoppe/20110104
+      call nov11_altocu_rtm_adjust( time_current, time_initial, dt, & ! (in)
+                                    rtm )                             ! (inout)
 
 #endif
 
