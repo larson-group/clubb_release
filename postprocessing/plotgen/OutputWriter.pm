@@ -277,7 +277,7 @@ sub writeGfdlHeader()
      shift(@_);
      my $fh = shift(@_);
 
-    OutputWriter->writeSubHeader($fh, "GFDL runs use a 10-min stepstep with 48 levels");
+    OutputWriter->writeSubHeader($fh, "GFDL-SCM-CLUBB and CLUBB-standalone runs use a 10-min stepstep with 48 levels");
     
     my $text = <<HTML;
 <br />
