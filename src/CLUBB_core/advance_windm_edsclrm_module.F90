@@ -265,6 +265,15 @@ module advance_windm_edsclrm_module
     !----------------------------------------------------------------
     vm(1:gr%nnzp) = solution(1:gr%nnzp,2)
 
+    if ( l_stats_samp ) then
+
+      ! Implicit contributions to um and vm
+      call windm_edsclrm_implicit_stats( windm_edsclrm_um, um ) ! in
+
+      call windm_edsclrm_implicit_stats( windm_edsclrm_vm, vm ) ! in
+
+    endif ! l_stats_samp
+    
     ! The values of um(1) and vm(1) are located below the model surface and do
     ! not effect the rest of the model.  The values of um(1) or vm(1) are simply
     ! set to the values of um(2) and vm(2), respectively, after the equation
@@ -291,17 +300,6 @@ module advance_windm_edsclrm_module
       endif
 
     endif
-
-
-    if ( l_stats_samp ) then
-
-      ! Implicit contributions to um and vm
-      call windm_edsclrm_implicit_stats( windm_edsclrm_um, um ) ! in
-
-      call windm_edsclrm_implicit_stats( windm_edsclrm_vm, vm ) ! in
-
-    endif ! l_stats_samp
-
 
     ! Second part of momentum (implicit component)
 
