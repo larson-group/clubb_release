@@ -635,6 +635,17 @@ module clubb_core
 
     end if ! ~l_host_applies_sfc_fluxes
 
+    !---------------------------------------------------------------------------
+    ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels
+    ! and then compute Skw for m & t grid
+    !---------------------------------------------------------------------------
+
+    wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
+    wp3_zm = zt2zm( wp3 )
+
+    Skw_zt(1:gr%nnzp) = Skw_func( wp2_zt(1:gr%nnzp), wp3(1:gr%nnzp) )
+    Skw_zm(1:gr%nnzp) = Skw_func( wp2(1:gr%nnzp), wp3_zm(1:gr%nnzp) )
+
     ! The right hand side of this conjunction is only for reducing cpu time,
     ! since the more complicated formula is mathematically equivalent
     if ( l_gamma_Skw .and. ( gamma_coef /= gamma_coefb ) ) then
@@ -673,15 +684,8 @@ module clubb_core
     a3_coef_zt = zm2zt( a3_coef )
 
     !---------------------------------------------------------------------------
-    ! Interpolate wp2, thlp2, rtp2, and rtpthlp to thermodynamic levels,
-    ! interpolate wp3 to momentum levels, and then compute Skw for m & t grid
+    ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels,
     !---------------------------------------------------------------------------
-
-    wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
-    wp3_zm = zt2zm( wp3 )
-
-    Skw_zt(1:gr%nnzp) = Skw_func( wp2_zt(1:gr%nnzp), wp3(1:gr%nnzp) )
-    Skw_zm(1:gr%nnzp) = Skw_func( wp2(1:gr%nnzp), wp3_zm(1:gr%nnzp) )
 
     ! Iterpolate variances to the zt grid (statistics and closure)
     thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
@@ -701,7 +705,8 @@ module clubb_core
     ! Compute wp3 / wp2
     wp3_on_wp2 = ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
 
-    ! Smooth wp3 / wp2 in the vertical using interpolation functions
+    ! Smooth wp3 / wp2 in the vertical using interpolation functions.  We use
+    ! this in the wp3_ta term since the smoothing results in less noise.
     wp3_on_wp2 = zt2zm( zm2zt( wp3_on_wp2 ) )
 
     !----------------------------------------------------------------
