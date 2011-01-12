@@ -1899,7 +1899,7 @@ module microphys_driver
       ! Boundary condition on the RHS
       rhs(1) = real( xrm(1) / dt )
       rhs(gr%nnzp) =  & 
-         real( ( xrm(gr%nnzp) / dt ) + xrm_tndcy(gr%nnzp-1) )
+         real( ( xrm(gr%nnzp) / dt ) + xrm_tndcy(gr%nnzp) )
 
 
       ! Solve system using tridag_solve. This uses LAPACK sgtsv,
