@@ -37,7 +37,7 @@ contains
 
   !=============================================================================
   subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &
-                              a3, a3_zt, &
+                              a3, a3_zt, wp3_on_wp2, &
                               wpthvp, wp2thvp, um, vm, upwp, vpwp, &
                               up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, &
                               Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt, &
@@ -105,7 +105,8 @@ contains
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
       a3,              & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
-      a3_zt,           & ! a_3 interpolated to thermodynamic levels        [-]
+      a3_zt,           & ! a_3 interpolated to thermodynamic levels  [-]
+      wp3_on_wp2,      & ! Smoothed version of wp3 / wp2             [m/s]
       wpthvp,          & ! w'th_v' (momentum levels)                 [K m/s]
       wp2thvp,         & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
       um,              & ! u wind component (thermodynamic levels)   [m/s]
@@ -294,7 +295,7 @@ contains
 
     ! Solve semi-implicitly
     call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! Intent(in)
-                     a3, a3_zt, &  ! Intent(in)
+                     a3, a3_zt, wp3_on_wp2, &  ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,    & ! Intent(in)
                      up2, vp2, Kw1, Kw8, Skw_zt, tau_zm, tauw3t,    & ! Intent(in)
                      C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
@@ -346,7 +347,7 @@ contains
 
   !=============================================================================
   subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &
-                         a3, a3_zt, &
+                         a3, a3_zt, wp3_on_wp2, &
                          wpthvp, wp2thvp, um, vm, upwp, vpwp, &
                          up2, vp2, Kw1, Kw8, Skw_zt, tau1m, tauw3t, &
                          C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &
@@ -508,7 +509,8 @@ contains
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
       a3,              & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
-      a3_zt,           & ! a_3 interpolated to thermodynamic levels        [-]
+      a3_zt,           & ! a_3 interpolated to thermodynamic levels  [-]
+      wp3_on_wp2,      & ! Smoothed version of wp3 / wp2             [m/s]
       wpthvp,          & ! w'th_v' (momentum levels)                 [K m/s]
       wp2thvp,         & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
       um,              & ! u wind component (thermodynamic levels)   [m/s]
@@ -613,13 +615,15 @@ contains
                            "at this time. l_hyper_dfsn ignored."
       end if
       call wp23_lhs_csr( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
-                   Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
-                   C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-                   invrs_rho_ds_zt, l_crank_nich_diff, & 
-                   lhs_a_csr )
+                         wp3_on_wp2, &
+                         Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                         C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                         invrs_rho_ds_zt, l_crank_nich_diff, & 
+                         lhs_a_csr )
 
       if ( .not. l_gmres_soln_ok(gmres_idx_wp2wp3) ) then
         call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                       wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
@@ -631,6 +635,7 @@ contains
     end if ! l_gmres
     if ((.not. (l_gmres))) then
       call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                     wp3_on_wp2, &
                      Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                      C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                      invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
@@ -640,7 +645,7 @@ contains
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
     call wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, &
-                   a3, a3_zt, wpthvp, wp2thvp, um, vm,  & 
+                   a3, a3_zt, wp3_on_wp2, wpthvp, wp2thvp, um, vm,  & 
                    upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
                    Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                    C11_Skw_fnc, rho_ds_zm, invrs_rho_ds_zt, &
@@ -927,6 +932,7 @@ contains
 
   !=============================================================================
   subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                       wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
@@ -1082,6 +1088,7 @@ contains
       a1_zt,           & ! a_1 interpolated to thermodynamic levels   [-]
       a3,              & ! sigma_sqd_w term a_3 (momentum levels)     [-]
       a3_zt,           & ! a_3 interpolated to thermodynamic levels   [-]
+      wp3_on_wp2,      & ! Smoothed version of wp3 / wp2              [m/s]
       Kw1,             & ! Coefficient of eddy diffusivity for w'^2   [m^2/s]
       Kw8,             & ! Coefficient of eddy diffusivity for w'^3   [m^2/s]
       Skw_zt,          & ! Skewness of w on thermodynamic levels      [-]
@@ -1372,6 +1379,7 @@ contains
                              wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1),  &
+                             wp3_on_wp2(k), wp3_on_wp2(km1), &
                              rho_ds_zm(k), rho_ds_zm(km1),  &
                              invrs_rho_ds_zt(k),  &
                              three_halves,  &
@@ -1442,6 +1450,7 @@ contains
                                  wp2(k), wp2(km1),  &
                                  a1(k), a1_zt(k), a1(km1),  &
                                  a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
+                                 wp3_on_wp2(k), wp3_on_wp2(km1), &
                                  rho_ds_zm(k), rho_ds_zm(km1),  &
                                  invrs_rho_ds_zt(k),  &
                                  0.0,  &
@@ -1467,6 +1476,7 @@ contains
                                  wp2(k), wp2(km1),  &
                                  0.0, 0.0, 0.0,  &
                                  0.0-3.0, 0.0-3.0, 0.0-3.0,  &
+                                 0.0, 0.0, &
                                  rho_ds_zm(k), rho_ds_zm(km1),  &
                                  invrs_rho_ds_zt(k),  &
                                  three_halves,  &
@@ -1598,10 +1608,11 @@ contains
 #ifdef MKL
   !=============================================================================
   subroutine wp23_lhs_csr( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
-                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
-                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-                       invrs_rho_ds_zt, l_crank_nich_diff, & 
-                       lhs_a_csr )
+                           wp3_on_wp2, &
+                           Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                           C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                           invrs_rho_ds_zt, l_crank_nich_diff, & 
+                           lhs_a_csr )
 
     ! Description:
     ! Compute LHS band diagonal matrix for w'^2 and w'^3.
@@ -1760,6 +1771,7 @@ contains
       a1_zt,           & ! a_1 interpolated to thermodynamic levels   [-]
       a3,              & ! sigma_sqd_w term a_3 (momentum levels)     [-]
       a3_zt,           & ! a_3 interpolated to thermodynamic levels   [-]
+      wp3_on_wp2,      & ! Smoothed version of wp3 / wp2              [m/s]
       Kw1,             & ! Coefficient of eddy diffusivity for w'^2   [m^2/s]
       Kw8,             & ! Coefficient of eddy diffusivity for w'^3   [m^2/s]
       Skw_zt,          & ! Skewness of w on thermodynamic levels      [-]
@@ -2116,6 +2128,7 @@ contains
                              wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1),  &
+                             wp3_on_wp2(k), wp3_on_wp2(km1), &
                              rho_ds_zm(k), rho_ds_zm(km1),  &
                              invrs_rho_ds_zt(k),  &
                              three_halves,  &
@@ -2188,6 +2201,7 @@ contains
                                  wp2(k), wp2(km1),  &
                                  a1(k), a1_zt(k), a1(km1),  &
                                  a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
+                                 wp3_on_wp2(k), wp3_on_wp2(km1), &
                                  rho_ds_zm(k), rho_ds_zm(km1),  &
                                  invrs_rho_ds_zt(k),  &
                                  0.0,  &
@@ -2213,6 +2227,7 @@ contains
                                  wp2(k), wp2(km1),  &
                                  0.0, 0.0, 0.0,  &
                                  0.0-3.0, 0.0-3.0, 0.0-3.0,  &
+                                 0.0, 0.0, &
                                  rho_ds_zm(k), rho_ds_zm(km1),  &
                                  invrs_rho_ds_zt(k),  &
                                  three_halves,  &
@@ -2363,7 +2378,7 @@ contains
 
   !=============================================================================
   subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, &
-                       a3, a3_zt, wpthvp, wp2thvp, um, vm,  & 
+                       a3, a3_zt, wp3_on_wp2, wpthvp, wp2thvp, um, vm,  & 
                        upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
                        Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, invrs_rho_ds_zt, &
@@ -2431,6 +2446,7 @@ contains
       a1_zt,           & ! a_1 interpolated to thermodynamic levels  [-]
       a3,              & ! sigma_sqd_w term a_3 (momentum levels)    [-]
       a3_zt,           & ! a_3 interpolated to thermodynamic levels  [-]
+      wp3_on_wp2,      & ! Smoothed version of wp3 / wp2             [m/s]
       wpthvp,          & ! w'th_v' (momentum levels)                 [K m/s]
       wp2thvp,         & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
       um,              & ! u wind component (thermodynamic levels)   [m/s]
@@ -2658,6 +2674,7 @@ contains
                              wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1),  &
+                             wp3_on_wp2(k), wp3_on_wp2(km1), &
                              rho_ds_zm(k), rho_ds_zm(km1),  &
                              invrs_rho_ds_zt(k),  &
                              three_halves,  &
@@ -2683,6 +2700,7 @@ contains
                              wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1),  &
+                             wp3_on_wp2(k), wp3_on_wp2(km1), &
                              rho_ds_zm(k), rho_ds_zm(km1),  &
                              invrs_rho_ds_zt(k),  &
                              three_halves,  &
@@ -2747,6 +2765,7 @@ contains
                                 wp2(k), wp2(km1),  &
                                 a1(k), a1_zt(k), a1(km1),  &
                                 a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
+                                wp3_on_wp2(k), wp3_on_wp2(km1), &
                                 rho_ds_zm(k), rho_ds_zm(km1),  &
                                 invrs_rho_ds_zt(k),  &
                                 0.0,  &
@@ -2762,6 +2781,7 @@ contains
                                wp2(k), wp2(km1),  &
                                a1(k), a1_zt(k), a1(km1),  &
                                a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
+                               wp3_on_wp2(k), wp3_on_wp2(km1), &
                                rho_ds_zm(k), rho_ds_zm(km1),  &
                                invrs_rho_ds_zt(k),  &
                                0.0,  &
@@ -2785,6 +2805,7 @@ contains
                                 wp2(k), wp2(km1),  &
                                 0.0, 0.0, 0.0,  &
                                 0.0-3.0, 0.0-3.0, 0.0-3.0,  &
+                                0.0, 0.0, &
                                 rho_ds_zm(k), rho_ds_zm(km1),  &
                                 invrs_rho_ds_zt(k),  &
                                 three_halves,  &
@@ -2800,6 +2821,7 @@ contains
                                wp2(k), wp2(km1),  &
                                0.0, 0.0, 0.0,  &
                                0.0-3.0, 0.0-3.0, 0.0-3.0,  &
+                               0.0, 0.0, &
                                rho_ds_zm(k), rho_ds_zm(km1), &
                                invrs_rho_ds_zt(k), &
                                three_halves, &
@@ -3381,6 +3403,7 @@ contains
                                      wp2, wp2m1,  &
                                      a1, a1_zt, a1m1,  &
                                      a3, a3_zt, a3m1,  &
+                                     wp3_on_wp2, wp3_on_wp2_m1, &
                                      rho_ds_zm, rho_ds_zmm1,  &
                                      invrs_rho_ds_zt,  &
                                      const_three_halves,  &
@@ -3530,6 +3553,8 @@ contains
       a3,                 & ! a_3(k)                                   [-]
       a3_zt,              & ! a_3 interpolated to thermo. level (k)    [-]
       a3m1,               & ! a_3(k-1)                                 [-]
+      wp3_on_wp2,         & ! wp3 / wp2 (k)                            [m/s]
+      wp3_on_wp2_m1,      & ! wp3 / wp2 (k-1)                          [m/s]
       rho_ds_zm,          & ! Dry, static density at moment. lev (k)   [kg/m^3]
       rho_ds_zmm1,        & ! Dry, static density at moment. lev (k-1) [kg/m^3]
       invrs_rho_ds_zt,    & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
@@ -3567,7 +3592,7 @@ contains
        = + invrs_rho_ds_zt &
            * invrs_dzt &
              * rho_ds_zm * a1 &
-             * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) &
+             * 2.0 * wp3_on_wp2 &
              * gr%weights_zt2zm(t_above,mk)
 
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -3582,10 +3607,10 @@ contains
        = + invrs_rho_ds_zt &
            * invrs_dzt &
              * (   rho_ds_zm * a1 &
-                   * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) &
+                   * 2.0 * wp3_on_wp2 &
                    * gr%weights_zt2zm(t_below,mk) &
                  - rho_ds_zmm1 * a1m1 &
-                   * ( 2.0 * wp3_zmm1 / max(wp2m1, w_tol_sqd) ) &
+                   * 2.0 * wp3_on_wp2_m1 &
                    * gr%weights_zt2zm(t_above,mkm1) &
                )
 
@@ -3601,7 +3626,7 @@ contains
        = - invrs_rho_ds_zt &
            * invrs_dzt &
              * rho_ds_zmm1 * a1m1 &
-             * ( 2.0 * wp3_zmm1 / max(wp2m1, w_tol_sqd) ) &
+             * 2.0 * wp3_on_wp2_m1 &
              * gr%weights_zt2zm(t_below,mkm1)
 
     else
@@ -3627,7 +3652,7 @@ contains
        = + invrs_rho_ds_zt &
            * a1_zt * invrs_dzt &
              * rho_ds_zm &
-             * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) &
+             * ( 2.0 * wp3_on_wp2 ) &
              * gr%weights_zt2zm(t_above,mk)
 
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -3642,10 +3667,10 @@ contains
        = + invrs_rho_ds_zt &
            * a1_zt * invrs_dzt & 
              * (   rho_ds_zm &
-                   * ( 2.0 * wp3_zm / max(wp2, w_tol_sqd) ) & 
+                   * ( 2.0 * wp3_on_wp2 ) & 
                    * gr%weights_zt2zm(t_below,mk) & 
                  - rho_ds_zmm1 &
-                   * ( 2.0 * wp3_zmm1 / max(wp2m1, w_tol_sqd) ) & 
+                   * ( 2.0 * wp3_on_wp2_m1 ) & 
                    * gr%weights_zt2zm(t_above,mkm1) & 
                )
 
@@ -3661,7 +3686,7 @@ contains
        = - invrs_rho_ds_zt &
            * a1_zt * invrs_dzt &
              * rho_ds_zmm1 &
-             * ( 2.0 * wp3_zmm1 / max(wp2m1, w_tol_sqd) ) & 
+             * ( 2.0 * wp3_on_wp2_m1 ) & 
              * gr%weights_zt2zm(t_below,mkm1)
 
        ! End of code that pulls out a3.
@@ -3820,6 +3845,7 @@ contains
                                      wp2, wp2m1,  &
                                      a1, a1_zt, a1m1,  &
                                      a3, a3_zt, a3m1,  &
+                                     wp3_on_wp2, wp3_on_wp2_m1, &
                                      rho_ds_zm, rho_ds_zmm1,  &
                                      invrs_rho_ds_zt,  &
                                      const_three_halves,  &
@@ -3949,6 +3975,8 @@ contains
       a3,                 & ! a_3(k)                                   [-]
       a3_zt,              & ! a_3 interpolated to thermo. level (k)    [-]
       a3m1,               & ! a_3(k-1)                                 [-]
+      wp3_on_wp2,         & ! (k) [m/s]
+      wp3_on_wp2_m1,      & ! (k-1)                  [m/s]
       rho_ds_zm,          & ! Dry, static density at moment. lev (k)   [kg/m^3]
       rho_ds_zmm1,        & ! Dry, static density at moment. lev (k-1) [kg/m^3]
       invrs_rho_ds_zt,    & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
@@ -3974,9 +4002,9 @@ contains
          + invrs_rho_ds_zt &
            * invrs_dzt &
              * (   rho_ds_zm * a1 &
-                   * ( wp3_zm**2 / max(wp2, w_tol_sqd) ) &
+                   * wp3_zm * wp3_on_wp2 &
                  - rho_ds_zmm1 * a1m1 &
-                   * ( wp3_zmm1**2 / max(wp2m1, w_tol_sqd) ) &
+                   * wp3_zmm1 * wp3_on_wp2_m1 &
                ) &
          + const_three_halves &
            * invrs_dzt * ( wp2**2 - wp2m1**2 )
@@ -4005,9 +4033,9 @@ contains
          + invrs_rho_ds_zt &
            * a1_zt * invrs_dzt & 
              * (   rho_ds_zm &
-                   * ( wp3_zm**2 / max(wp2, w_tol_sqd) ) & 
+                   * ( wp3_zm * wp3_on_wp2 ) & 
                  - rho_ds_zmm1 &
-                   * ( wp3_zmm1**2 / max(wp2m1, w_tol_sqd) ) & 
+                   * ( wp3_zmm1 * wp3_on_wp2_m1 ) & 
                ) &
          + const_three_halves &
            * invrs_dzt * ( wp2**2 - wp2m1**2 )

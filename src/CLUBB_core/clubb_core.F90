@@ -454,6 +454,7 @@ module clubb_core
 
     real, dimension(gr%nnzp) :: &
       tmp1, gamma_Skw_fnc, &
+      wp3_on_wp2, & ! Smoothed version of wp3 / wp3     [m/s]
       Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
       thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
       rtm_pert_1, rtm_pert_2          ! For avg. calculation of Lscale  [kg/kg]
@@ -523,6 +524,9 @@ module clubb_core
       thlm_flux_top, &
       thlm_flux_sfc, &
       thlm_spur_src
+
+!   real :: &
+!     max_mag_Skw_velocity ! Maximum skewness velocity [m/s]
 
     !----- Begin Code -----
 
@@ -687,6 +691,18 @@ module clubb_core
     ! Compute skewness velocity for output purposes
     Skw_velocity = ( 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) ) ) & 
                  * ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
+
+    ! Clip skewness velocity
+!   do k = 1, gr%nnzp
+!     max_mag_Skw_velocity = 50. * ( 1./gr%invrs_dzm(k) ) * ( 1./real( dt ) ) 
+!     Skw_velocity(k) = sign( min( abs( Skw_velocity(k) ), max_mag_Skw_velocity ), Skw_velocity(k) )
+!   end do
+
+    ! Compute wp3 / wp2
+    wp3_on_wp2 = ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
+
+    ! Smooth wp3 / wp2 in the vertical using interpolation functions
+    wp3_on_wp2 = zt2zm( zm2zt( wp3_on_wp2 ) )
 
     !----------------------------------------------------------------
     ! Call closure scheme
@@ -1195,7 +1211,7 @@ module clubb_core
 
     call advance_wp2_wp3 &
          ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! intent(in)
-           a3_coef, a3_coef_zt,                          & ! intent(in)
+           a3_coef, a3_coef_zt, wp3_on_wp2,            & ! intent(in)
            wpthvp, wp2thvp, um, vm, upwp, vpwp,          & ! intent(in)
            up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,       & ! intent(in)
            Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,         & ! intent(in)
