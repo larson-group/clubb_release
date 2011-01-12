@@ -332,6 +332,7 @@ module stats_zt
 
     use stats_variables, only: &
       is_mellor, & ! Variables
+      iwp3_on_wp2_zt, &
       ia3_coef_zt
 
     use stats_type, only: & 
@@ -647,6 +648,7 @@ module stats_zt
     iLH_Ncp2_zt = 0
 
     ia3_coef_zt = 0
+    iwp3_on_wp2_zt = 0
 
     allocate( isclrm(1:sclr_dim) )
     allocate( isclrm_f(1:sclr_dim) )
@@ -2413,6 +2415,12 @@ module stats_zt
         ia3_coef_zt = k
         call stat_assign( ia3_coef_zt, "a3_coef_zt", & 
              "The a3 coefficient interpolated the the zt grid [-]", "count", zt )
+        k = k + 1
+
+      case ( 'wp3_on_wp2_zt' )
+        iwp3_on_wp2_zt = k
+        call stat_assign( iwp3_on_wp2_zt, "wp3_on_wp2_zt", & 
+             "Smoothed version of wp3 / wp2 [m/s]", "m/s", zt )
         k = k + 1
 
       case default

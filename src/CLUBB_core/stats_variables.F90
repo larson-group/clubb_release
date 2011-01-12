@@ -824,6 +824,11 @@ module stats_variables
     ia3_coef_zt
 !$omp threadprivate(iSkw_velocity, iwp3_zm, ia3_coef, ia3_coef_zt)
 
+  integer, public :: &
+    iwp3_on_wp2, &  ! w'^3 / w'^2 [m/s]
+    iwp3_on_wp2_zt  ! w'^3 / w'^2 [m/s]
+!$omp threadprivate(iwp3_on_wp2, iwp3_on_wp2_zt)
+
   ! Variables that contains all the statistics
 
   type (stats), target, public :: zt,   &    ! zt grid

@@ -184,11 +184,21 @@ module variables_diagnostic_module
     sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
     tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
     corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
+!$omp threadprivate(sptp_mellor_1, sptp_mellor_2, tp2_mellor_1, tp2_mellor_2, &
+!$omp   corr_s_t_mellor_1, corr_s_t_mellor_2 )
     
   real, target, allocatable, dimension(:), public :: & 
     Skw_velocity, & ! Skewness velocity    [m/s]
     a3_coef,      & ! The a3 coefficient from CLUBB eqns                [-]
     a3_coef_zt      ! The a3 coefficient interpolated to the zt grid    [-]
+
+!$omp threadprivate(Skw_velocity, a3_coef, a3_coef_zt)
+
+  real, target, allocatable, dimension(:), public :: & 
+    wp3_on_wp2,   &  ! w'^3 / w'^2 on the zm grid [m/s]
+    wp3_on_wp2_zt    ! w'^3 / w'^2 on the zt grid [m/s]
+
+!$omp threadprivate(wp3_on_wp2, wp3_on_wp2_zt)
 
   contains
 
@@ -335,6 +345,9 @@ module variables_diagnostic_module
     allocate( a3_coef(1:nzmax) )
     allocate( a3_coef_zt(1:nzmax) )
 
+    allocate( wp3_on_wp2(1:nzmax) )
+    allocate( wp3_on_wp2_zt(1:nzmax) )
+
     !   --- Initializaton ---
 
     ! Diagnostic variables
@@ -479,6 +492,9 @@ module variables_diagnostic_module
     a3_coef    = 0.0
     a3_coef_zt = 0.0
 
+    wp3_on_wp2    = 0.0
+    wp3_on_wp2_zt = 0.0
+
     return
   end subroutine setup_diagnostic_variables
 
@@ -607,6 +623,9 @@ module variables_diagnostic_module
 
     deallocate( a3_coef )
     deallocate( a3_coef_zt )
+
+    deallocate( wp3_on_wp2 )
+    deallocate( wp3_on_wp2_zt )
 
     return
   end subroutine cleanup_diagnostic_variables

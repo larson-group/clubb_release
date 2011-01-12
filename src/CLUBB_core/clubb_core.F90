@@ -184,6 +184,10 @@ module clubb_core
       tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
       corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
 
+    use variables_diagnostic_module, only: & 
+      wp3_on_wp2,   & ! Variable(s)
+      wp3_on_wp2_zt
+
     use pdf_parameter_module, only: &
       pdf_parameter ! Type
 
@@ -297,7 +301,9 @@ module clubb_core
       isptp_mellor_1, &
       isptp_mellor_2, &
       icorr_s_t_mellor_1, &
-      icorr_s_t_mellor_2
+      icorr_s_t_mellor_2, &
+      iwp3_on_wp2_zt, &
+      iSkw_velocity
 
     use fill_holes, only: &
       vertical_integral ! Procedure(s)
@@ -454,7 +460,6 @@ module clubb_core
 
     real, dimension(gr%nnzp) :: &
       tmp1, gamma_Skw_fnc, &
-      wp3_on_wp2, & ! Smoothed version of wp3 / wp3     [m/s]
       Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
       thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
       rtm_pert_1, rtm_pert_2          ! For avg. calculation of Lscale  [kg/kg]
@@ -693,8 +698,10 @@ module clubb_core
     rtpthlp_zt = zm2zt( rtpthlp )
 
     ! Compute skewness velocity for output purposes
-    Skw_velocity = ( 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) ) ) & 
-                 * ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
+    if ( iSkw_velocity > 0 ) then
+      Skw_velocity = ( 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) ) ) & 
+                   * ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
+    end if
 
     ! Clip skewness velocity
 !   do k = 1, gr%nnzp
@@ -702,12 +709,20 @@ module clubb_core
 !     Skw_velocity(k) = sign( min( abs( Skw_velocity(k) ), max_mag_Skw_velocity ), Skw_velocity(k) )
 !   end do
 
-    ! Compute wp3 / wp2
+    ! Compute wp3 / wp2 on zm levels
     wp3_on_wp2 = ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
 
     ! Smooth wp3 / wp2 in the vertical using interpolation functions.  We use
     ! this in the wp3_ta term since the smoothing results in less noise.
     wp3_on_wp2 = zt2zm( zm2zt( wp3_on_wp2 ) )
+
+    ! Compute wp3 / wp2 on zt levels (currently non-interactive)
+    if ( iwp3_on_wp2_zt > 0 ) then
+      wp3_on_wp2_zt = ( wp3(1:gr%nnzp) / max( wp2_zt(1:gr%nnzp), w_tol_sqd ) )
+
+      ! Smooth as above
+      wp3_on_wp2_zt = zm2zt( zt2zm( wp3_on_wp2_zt ) )
+    end if
 
     !----------------------------------------------------------------
     ! Call closure scheme

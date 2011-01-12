@@ -201,6 +201,7 @@ module stats_zm
 
     use stats_variables, only: &
       ia3_coef, &
+      iwp3_on_wp2, &
       itp2_mellor_1, &
       itp2_mellor_2, &
       isptp_mellor_1, &
@@ -408,6 +409,7 @@ module stats_zm
     iSkw_velocity = 0
 
     ia3_coef = 0
+    iwp3_on_wp2 = 0
 
     allocate(isclrprtp(1:sclr_dim))
     allocate(isclrp2(1:sclr_dim))
@@ -1366,6 +1368,11 @@ module stats_zm
              "Quantity in formula 25 from Equations for CLUBB [-]", "count", zm )
         k = k + 1
 
+      case ( 'wp3_on_wp2' )
+        iwp3_on_wp2 = k
+        call stat_assign( iwp3_on_wp2, "wp3_on_wp2", & 
+             "Smoothed version of wp3 / wp2 [m/s]", "m/s", zm )
+        k = k + 1
 
       case default
         l_found = .false.
