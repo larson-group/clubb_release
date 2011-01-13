@@ -681,6 +681,7 @@ contains
 
         ! Generate the LHS in LAPACK format
         call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                       wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
