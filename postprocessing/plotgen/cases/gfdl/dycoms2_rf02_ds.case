@@ -4,7 +4,7 @@
     'name' => 'dycoms2_rf02_ds',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'DYCOMS II RF02 DS Minutes 301-360 Restart Run',
+    'headerText' => 'DYCOMS II RF02 DS Minutes 301-360',
     'startTime' => 181.0,  # [minutes]
     'endTime' => 240.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
