@@ -1527,7 +1527,7 @@ module advance_xp2_xpyp_module
       ! RHS turbulent advection (ta) term.
       rhs(k,1)  & 
       = rhs(k,1)  & 
-      + term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+      + term_ta_rhs( wp2_zt(kp1), wp2_zt(k),  &
                      wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
@@ -1604,7 +1604,7 @@ module advance_xp2_xpyp_module
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on term_ta_rhs.
         call stat_begin_update_pt( ixapxbp_ta, k, &                 ! Intent(in) 
-        -term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &   ! Intent(in)
+        -term_ta_rhs( wp2_zt(kp1), wp2_zt(k), &   ! Intent(in)
                       wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
                       rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
                       a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
@@ -1882,7 +1882,7 @@ module advance_xp2_xpyp_module
       ! RHS turbulent advection (ta) term.
       rhs(k,1)  & 
       = rhs(k,1)  & 
-      + term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
+      + term_ta_rhs( wp2_zt(kp1), wp2_zt(k),  &
                      wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  &
@@ -1950,7 +1950,7 @@ module advance_xp2_xpyp_module
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on term_ta_rhs.
         call stat_begin_update_pt( ixapxbp_ta, k, &                ! Intent(in) 
-        -term_ta_rhs( wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &  ! Intent(in)
+        -term_ta_rhs( wp2_zt(kp1), wp2_zt(k), &  ! Intent(in)
                       wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
                       rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
                       a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
@@ -2273,7 +2273,7 @@ module advance_xp2_xpyp_module
   end function term_ta_lhs
 
   !=============================================================================
-  pure function term_ta_rhs( wp3p1, wp3, wp2_ztp1, wp2_zt, &
+  pure function term_ta_rhs( wp2_ztp1, wp2_zt, &
                              wp3_on_wp2_ztp1, wp3_on_wp2_zt,  &
                              rho_ds_ztp1, rho_ds_zt, invrs_rho_ds_zm,  &
                              a1_ztp1, a1, a1_zt, wpxbp_ztp1, wpxbp_zt,  &
@@ -2369,8 +2369,6 @@ module advance_xp2_xpyp_module
 
     ! Input variables
     real, intent(in) :: & 
-      wp3p1,           & ! w'^3(k+1)                                  [m^3/s^3]
-      wp3,             & ! w'^3(k)                                    [m^3/s^3]
       wp2_ztp1,        & ! w'^2 interpolated to thermo. level (k+1)   [m^2/s^2]
       wp2_zt,          & ! w'^2 interpolated to thermo. level (k)     [m^2/s^2]
       wp3_on_wp2_ztp1, & ! Smoothed w'^3 / w'^2 on thermo. level (k+1)[m^2/s^2]

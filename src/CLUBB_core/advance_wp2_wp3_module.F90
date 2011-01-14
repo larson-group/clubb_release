@@ -1376,8 +1376,7 @@ contains
       lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  & 
       = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
       + gamma_over_implicit_ts  &
-      * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                             wp2(k), wp2(km1),  &
+      * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1),  &
                              wp3_on_wp2(k), wp3_on_wp2(km1), &
@@ -1447,8 +1446,7 @@ contains
         if ( iwp3_ta > 0 ) then
           tmp(1:5)  &
           = gamma_over_implicit_ts  &
-          * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                                 wp2(k), wp2(km1),  &
+          * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                                  a1(k), a1_zt(k), a1(km1),  &
                                  a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
                                  wp3_on_wp2(k), wp3_on_wp2(km1), &
@@ -1473,8 +1471,7 @@ contains
         if ( iwp3_tp > 0 ) then
           tmp(1:5)  &
           = gamma_over_implicit_ts  &
-          * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                                 wp2(k), wp2(km1),  &
+          * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                                  0.0, 0.0, 0.0,  &
                                  0.0-3.0, 0.0-3.0, 0.0-3.0,  &
                                  0.0, 0.0, &
@@ -2125,8 +2122,7 @@ contains
       lhs_a_csr(t_kp1_tdiag:t_km1_tdiag:-1)  & 
       = lhs_a_csr(t_kp1_tdiag:t_km1_tdiag:-1)  &
       + gamma_over_implicit_ts  &
-      * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                             wp2(k), wp2(km1),  &
+      * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1),  &
                              wp3_on_wp2(k), wp3_on_wp2(km1), &
@@ -2198,8 +2194,7 @@ contains
         if ( iwp3_ta > 0 ) then
           tmp(1:5)  &
           = gamma_over_implicit_ts  &
-          * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                                 wp2(k), wp2(km1),  &
+          * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                                  a1(k), a1_zt(k), a1(km1),  &
                                  a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
                                  wp3_on_wp2(k), wp3_on_wp2(km1), &
@@ -2224,8 +2219,7 @@ contains
         if ( iwp3_tp > 0 ) then
           tmp(1:5)  &
           = gamma_over_implicit_ts  &
-          * wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                                 wp2(k), wp2(km1),  &
+          * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                                  0.0, 0.0, 0.0,  &
                                  0.0-3.0, 0.0-3.0, 0.0-3.0,  &
                                  0.0, 0.0, &
@@ -2697,8 +2691,7 @@ contains
       !        the terms that is always treated explicitly.  A weight of greater
       !        than 1 can be applied to make the terms more numerically stable.
       lhs_fnc_output(1:5)  &
-      = wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                             wp2(k), wp2(km1),  &
+      = wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1),  &
                              wp3_on_wp2(k), wp3_on_wp2(km1), &
@@ -2778,8 +2771,7 @@ contains
         !        term more numerically stable (see note above for RHS turbulent
         !        advection (ta) and turbulent production (tp) terms).
         lhs_fnc_output(1:5)  &
-        = wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                               wp2(k), wp2(km1),  &
+        = wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                                a1(k), a1_zt(k), a1(km1),  &
                                a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
                                wp3_on_wp2(k), wp3_on_wp2(km1), &
@@ -2818,8 +2810,7 @@ contains
         !        term more numerically stable (see note above for RHS turbulent
         !        advection (ta) and turbulent production (tp) terms).
         lhs_fnc_output(1:5)  &
-        = wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  &
-                               wp2(k), wp2(km1),  &
+        = wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                                0.0, 0.0, 0.0,  &
                                0.0-3.0, 0.0-3.0, 0.0-3.0,  &
                                0.0, 0.0, &
@@ -3400,8 +3391,7 @@ contains
   end function wp2_term_pr1_rhs
 
   !=============================================================================
-  pure function wp3_terms_ta_tp_lhs( wp3_zm, wp3_zmm1,  &
-                                     wp2, wp2m1,  &
+  pure function wp3_terms_ta_tp_lhs( wp2, wp2m1,  &
                                      a1, a1_zt, a1m1,  &
                                      a3, a3_zt, a3m1,  &
                                      wp3_on_wp2, wp3_on_wp2_m1, &
@@ -3544,8 +3534,6 @@ contains
 
     ! Input Variables
     real, intent(in) ::  & 
-      wp3_zm,             & ! w'^3 interpolated to momentum lev. (k)   [m^3/s^3]
-      wp3_zmm1,           & ! w'^3 interpolated to momentum lev. (k-1) [m^3/s^3]
       wp2,                & ! w'^2(k)                                  [m^2/s^2]
       wp2m1,              & ! w'^2(k-1)                                [m^2/s^2]
       a1,                 & ! a_1(k)                                   [-]
