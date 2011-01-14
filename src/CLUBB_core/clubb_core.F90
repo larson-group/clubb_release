@@ -302,7 +302,6 @@ module clubb_core
       isptp_mellor_2, &
       icorr_s_t_mellor_1, &
       icorr_s_t_mellor_2, &
-      iwp3_on_wp2_zt, &
       iSkw_velocity
 
     use fill_holes, only: &
@@ -717,12 +716,10 @@ module clubb_core
     wp3_on_wp2 = zt2zm( zm2zt( wp3_on_wp2 ) )
 
     ! Compute wp3 / wp2 on zt levels (currently non-interactive)
-    if ( iwp3_on_wp2_zt > 0 ) then
-      wp3_on_wp2_zt = ( wp3(1:gr%nnzp) / max( wp2_zt(1:gr%nnzp), w_tol_sqd ) )
+    wp3_on_wp2_zt = ( wp3(1:gr%nnzp) / max( wp2_zt(1:gr%nnzp), w_tol_sqd ) )
 
-      ! Smooth as above
-      wp3_on_wp2_zt = zm2zt( zt2zm( wp3_on_wp2_zt ) )
-    end if
+    ! Smooth as above
+    wp3_on_wp2_zt = zm2zt( zt2zm( wp3_on_wp2_zt ) )
 
     !----------------------------------------------------------------
     ! Call closure scheme
@@ -1190,7 +1187,7 @@ module clubb_core
                            sigma_sqd_w, Skw_zm, Kh_zt,    & ! intent(in)
                            rho_ds_zm, rho_ds_zt,          & ! intent(in)
                            invrs_rho_ds_zm, thv_ds_zm,    & ! intent(in)
-                           Lscale,                        & ! intent(in)
+                           Lscale, wp3_on_wp2_zt,         & ! intent(in)
  ! Vince Larson used prognostic timestepping of variances 
  !    in order to increase numerical stability.  17 Jul 2007
  !                          .false., dt,                   & ! intent(in)
