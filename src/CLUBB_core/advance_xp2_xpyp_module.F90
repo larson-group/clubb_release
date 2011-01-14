@@ -410,7 +410,7 @@ module advance_xp2_xpyp_module
     !!!!!***** r_t'^2 *****!!!!!
 
     ! Implicit contributions to term rtp2
-    call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3, wp3_on_wp2_zt, & ! Intent(in)
+    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, & ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &     ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm,   &           ! Intent(in)
                        C2rt_1d, nu2, beta,           &           ! Intent(in)
@@ -418,7 +418,7 @@ module advance_xp2_xpyp_module
 
 
     call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter, a1, a1_zt, & ! Intent(in)
-                       wp2_zt, wp3, wprtp, wprtp_zt, &         ! Intent(in)
+                       wp2_zt, wprtp, wprtp_zt, &         ! Intent(in)
                        wp3_on_wp2_zt, &                        ! Intent(in)
                        wprtp, wprtp_zt, rtm, rtm, rtp2, &      ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm, &           ! Intent(in)
@@ -437,7 +437,7 @@ module advance_xp2_xpyp_module
     !!!!!***** th_l'^2 *****!!!!!
 
     ! Implicit contributions to term thlp2
-    call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3, wp3_on_wp2_zt, &    ! Intent(in)
+    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &    ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &      ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm,    &             ! Intent(in)
                        C2thl_1d, nu2, beta,           &             ! Intent(in)
@@ -445,7 +445,7 @@ module advance_xp2_xpyp_module
 
     ! Explicit contributions to thlp2
     call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter, a1, a1_zt, &     ! Intent(in)
-                       wp2_zt, wp3, wpthlp, wpthlp_zt, &            ! Intent(in)
+                       wp2_zt, wpthlp, wpthlp_zt, &            ! Intent(in)
                        wp3_on_wp2_zt, &                        ! Intent(in)
                        wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm, &                ! Intent(in)
@@ -465,7 +465,7 @@ module advance_xp2_xpyp_module
     !!!!!***** r_t'th_l' *****!!!!!
 
     ! Implicit contributions to term rtpthlp
-    call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3, wp3_on_wp2_zt, &    ! Intent(in)
+    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &    ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &    ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm,      &           ! Intent(in)
                        C2rtthl_1d, nu2, beta,           &           ! Intent(in)
@@ -473,7 +473,7 @@ module advance_xp2_xpyp_module
 
     ! Explicit contributions to rtpthlp
     call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter, a1, a1_zt, &   ! Intent(in)
-                       wp2_zt, wp3, wprtp, wprtp_zt, &              ! Intent(in)
+                       wp2_zt, wprtp, wprtp_zt, &              ! Intent(in)
                        wp3_on_wp2_zt, &                        ! Intent(in)
                        wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &     ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm, &                ! Intent(in)
@@ -493,25 +493,25 @@ module advance_xp2_xpyp_module
     !!!!!***** u'^2 / v'^2 *****!!!!!
 
     ! Implicit contributions to term up2/vp2
-    call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3, wp3_on_wp2_zt, & ! Intent(in)
+    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, & ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw9,  &         ! Intent(in)
                        rho_ds_zt, invrs_rho_ds_zm,     &         ! Intent(in)
                        C4_C14_1d, nu9, beta,           &         ! Intent(in)
                        lhs )                                     ! Intent(out)
 
     ! Explicit contributions to up2
-    call xp2_xpyp_uv_rhs( xp2_xpyp_up2, dt, l_iter, a1, a1_zt, &    ! Intent(in)
-                          wp2, wp2_zt, wp3, wpthvp, Lscale, &       ! Intent(in)
-                          wp3_on_wp2_zt, C4_C14_1d, tau_zm, &       ! Intent(in)
+    call xp2_xpyp_uv_rhs( xp2_xpyp_up2, dt, l_iter, a1, a1_zt, wp2, & ! Intent(in)
+                          wp2_zt, wpthvp, Lscale, wp3_on_wp2_zt, &  ! Intent(in)
+                          C4_C14_1d, tau_zm, &                      ! Intent(in)
                           um, vm, upwp, upwp_zt, vpwp, vpwp_zt, &   ! Intent(in)
                           up2, vp2, rho_ds_zt, invrs_rho_ds_zm, &   ! Intent(in)
                           thv_ds_zm, C4, C5, C14, beta, &           ! Intent(in)
                           uv_rhs(:,1) )                             ! Intent(out)
 
     ! Explicit contributions to vp2
-    call xp2_xpyp_uv_rhs( xp2_xpyp_vp2, dt, l_iter, a1, a1_zt, &    ! Intent(in)
-                          wp2, wp2_zt, wp3, wpthvp, Lscale, &       ! Intent(in)
-                          wp3_on_wp2_zt, C4_C14_1d, tau_zm, &       ! Intent(in)
+    call xp2_xpyp_uv_rhs( xp2_xpyp_vp2, dt, l_iter, a1, a1_zt, wp2, & ! Intent(in)
+                          wp2_zt, wpthvp, Lscale, wp3_on_wp2_zt, &  ! Intent(in)
+                          C4_C14_1d, tau_zm, &                      ! Intent(in)
                           vm, um, vpwp, vpwp_zt, upwp, upwp_zt, &   ! Intent(in)
                           vp2, up2, rho_ds_zt, invrs_rho_ds_zm, &   ! Intent(in)
                           thv_ds_zm, C4, C5, C14, beta, &           ! Intent(in)
@@ -635,7 +635,7 @@ module advance_xp2_xpyp_module
 
       !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
-      call xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3, wp3_on_wp2_zt, & ! Intent(in) 
+      call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, & ! Intent(in) 
                          a1, a1_zt, tau_zm, wm_zm, Kw2,  &  ! Intent(in)
                          rho_ds_zt, invrs_rho_ds_zm,     &  ! Intent(in)
                          C2sclr_1d, nu2, beta,           &  ! Intent(in)
@@ -654,7 +654,7 @@ module advance_xp2_xpyp_module
         !!!!!***** sclr'^2 *****!!!!!
 
         call xp2_xpyp_rhs( xp2_xpyp_sclrp2, dt, l_iter, a1, a1_zt, &  ! Intent(in)
-                           wp2_zt, wp3, wpsclrp(:,i),  &              ! Intent(in)
+                           wp2_zt, wpsclrp(:,i),  &              ! Intent(in)
                            wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  &   ! Intent(in)
                            wp3_on_wp2_zt, &                        ! Intent(in)
                            sclrm(:,i), sclrm(:,i), sclrp2(:,i), &     ! Intent(in)
@@ -674,7 +674,7 @@ module advance_xp2_xpyp_module
         end if
 
         call xp2_xpyp_rhs( xp2_xpyp_sclrprtp, dt, l_iter, a1, a1_zt, & ! Intent(in)
-                           wp2_zt, wp3, wpsclrp(:,i),  &             ! Intent(in)
+                           wp2_zt, wpsclrp(:,i),  &             ! Intent(in)
                            wpsclrp_zt, wprtp, wprtp_zt,  &           ! Intent(in)
                            wp3_on_wp2_zt, &                        ! Intent(in)
                            sclrm(:,i), rtm, sclrprtp(:,i),  &        ! Intent(in)
@@ -694,7 +694,7 @@ module advance_xp2_xpyp_module
         end if
 
         call xp2_xpyp_rhs( xp2_xpyp_sclrpthlp, dt, l_iter, a1, a1_zt, & ! Intent(in)
-                           wp2_zt, wp3, wpsclrp(:,i),  &             ! Intent(in)
+                           wp2_zt, wpsclrp(:,i),  &             ! Intent(in)
                            wpsclrp_zt, wpthlp, wpthlp_zt,  &         ! Intent(in)
                            wp3_on_wp2_zt, &                        ! Intent(in)
                            sclrm(:,i), thlm, sclrpthlp(:,i), &       ! Intent(in)
@@ -860,8 +860,7 @@ module advance_xp2_xpyp_module
   end subroutine advance_xp2_xpyp
 
   !=============================================================================
-  subroutine xp2_xpyp_lhs( dt, l_iter, wp2_zt, wp3,  & 
-                           wp3_on_wp2_zt, &
+  subroutine xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &
                            a1, a1_zt, tau_zm, wm_zm, Kw,  &
                            rho_ds_zt, invrs_rho_ds_zm,  &
                            Cn, nu, beta, lhs )
@@ -936,8 +935,6 @@ module advance_xp2_xpyp_module
 
     ! Input Variables
     real, dimension(gr%nnzp), intent(in) :: & 
-      wp2_zt,          & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
-      wp3,             & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
       wp3_on_wp2_zt,   & ! Smoothed w'^3 / w'^2 (thermo. levels)       [m/s]
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)      [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels    [-]
@@ -998,7 +995,6 @@ module advance_xp2_xpyp_module
       = lhs(kp1_mdiag:km1_mdiag,k)  &
       + gamma_over_implicit_ts  &
       * term_ta_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                     wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
 
@@ -1063,7 +1059,6 @@ module advance_xp2_xpyp_module
           tmp(1:3)  &
           = gamma_over_implicit_ts  &
           * term_ta_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                         wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
                          rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                          a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
           zmscr05(k) = -tmp(3)
@@ -1383,7 +1378,7 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine xp2_xpyp_uv_rhs( solve_type, dt, l_iter, a1, a1_zt, wp2, &
-                              wp2_zt, wp3, wpthvp, Lscale, wp3_on_wp2_zt, &
+                              wp2_zt, wpthvp, Lscale, wp3_on_wp2_zt, &
                               C4_C14_1d, tau_zm,  & 
                               xam, xbm, wpxap, wpxap_zt, wpxbp, wpxbp_zt, &
                               xap2, xbp2, rho_ds_zt, invrs_rho_ds_zm, &
@@ -1441,7 +1436,6 @@ module advance_xp2_xpyp_module
       a1_zt,           & ! a_1 interpolated to thermodynamic levels    [-]
       wp2,             & ! w'^2 (momentum levels)                      [m^2/s^2]
       wp2_zt,          & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
-      wp3,             & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
       wpthvp,          & ! w'th_v' (momentum levels)                   [K m/s]
       Lscale,          & ! Mixing Length                               [m]
       wp3_on_wp2_zt,   & ! Smoothed w'^3 / w'^2                        [m/s]
@@ -1551,7 +1545,6 @@ module advance_xp2_xpyp_module
       !        numerically stable.
       lhs_fnc_output(1:3)  &
       = term_ta_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                     wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), &
                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
       rhs(k,1)  &
@@ -1617,7 +1610,6 @@ module advance_xp2_xpyp_module
         !        advection (ta) term).
         lhs_fnc_output(1:3)  &
         = term_ta_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                       wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                        rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                        a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
         call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
@@ -1741,7 +1733,7 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine xp2_xpyp_rhs( solve_type, dt, l_iter, a1, a1_zt, &
-                           wp2_zt, wp3, wpxap, wpxap_zt, & 
+                           wp2_zt, wpxap, wpxap_zt, & 
                            wp3_on_wp2_zt, &
                            wpxbp, wpxbp_zt, xam, xbm, xapxbp, &
                            rho_ds_zt, invrs_rho_ds_zm, & 
@@ -1796,7 +1788,6 @@ module advance_xp2_xpyp_module
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)      [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels    [-]
       wp2_zt,          & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
-      wp3,             & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
       wpxap,           & ! w'x_a' (momentum levels)                    [m/s {x_am units}]
       wpxap_zt,        & ! w'x_a' interpolated to thermodynamic levels [m/s {x_am units}]
       wp3_on_wp2_zt,   &
@@ -1906,7 +1897,6 @@ module advance_xp2_xpyp_module
       !        numerically stable.
       lhs_fnc_output(1:3)  &
       = term_ta_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                     wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                      rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                      a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
       rhs(k,1)  &
@@ -1963,7 +1953,6 @@ module advance_xp2_xpyp_module
         !        advection (ta) term).
         lhs_fnc_output(1:3)  &
         = term_ta_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                       wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  &
                        rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
                        a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
         call stat_modify_pt( ixapxbp_ta, k,  &            ! Intent(in)
@@ -2038,7 +2027,6 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   pure function term_ta_lhs( wp3_on_wp2_ztp1, wp3_on_wp2_zt, &
-                             wp3p1, wp3, wp2_ztp1, wp2_zt, &
                              rho_ds_ztp1, rho_ds_zt, invrs_rho_ds_zm,  &
                              a1_ztp1, a1, a1_zt, invrs_dzm, beta, level )  & 
   result( lhs )
@@ -2129,9 +2117,6 @@ module advance_xp2_xpyp_module
     use grid_class, only:  & ! gr%weights_zm2zt
         gr ! Variable(s)
 
-    use constants_clubb, only:  &
-        w_tol_sqd
-
     use model_flags, only:  &
         l_standard_term_ta
 
@@ -2154,10 +2139,6 @@ module advance_xp2_xpyp_module
     real, intent(in) :: &
       wp3_on_wp2_ztp1, & ! w'^3 / w'^2 (k+1)                           [m/s]
       wp3_on_wp2_zt,   & ! w'^3 / w'^2 (k)                             [m/s]
-      wp3p1,           & ! w'^3(k+1)                                   [m^3/s^3]
-      wp3,             & ! w'^3(k)                                     [m^3/s^3]
-      wp2_ztp1,        & ! w'^2 interpolated to thermo. level (k+1)    [m^2/s^2]
-      wp2_zt,          & ! w'^2 interpolated to thermo. level (k)      [m^2/s^2]
       rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1)  [kg/m^3]
       rho_ds_zt,       & ! Dry, static density at thermo. level (k)    [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum lev (k) [m^3/kg]
@@ -2199,7 +2180,7 @@ module advance_xp2_xpyp_module
           * invrs_rho_ds_zm  &
             * invrs_dzm  &
               * rho_ds_ztp1 * a1_ztp1  &
-              * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
+              * wp3_on_wp2_ztp1 &
               * gr%weights_zm2zt(m_above,tkp1)
 
       ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
@@ -2208,10 +2189,10 @@ module advance_xp2_xpyp_module
           * invrs_rho_ds_zm  &
             * invrs_dzm  &
               * (   rho_ds_ztp1 * a1_ztp1  &
-                    * ( wp3p1 / max( wp2_ztp1, w_tol_sqd ) )  &
+                    * wp3_on_wp2_ztp1 &
                     * gr%weights_zm2zt(m_below,tkp1)  &
                   - rho_ds_zt * a1_zt  &
-                    * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
+                    * wp3_on_wp2_zt &
                     * gr%weights_zm2zt(m_above,tk)  &
                 )
 
@@ -2221,7 +2202,7 @@ module advance_xp2_xpyp_module
           * invrs_rho_ds_zm  &
             * invrs_dzm  &
               * rho_ds_zt * a1_zt  &
-              * ( wp3 / max( wp2_zt, w_tol_sqd ) )  &
+              * wp3_on_wp2_zt &
               * gr%weights_zm2zt(m_below,tk)
 
     else
@@ -2355,9 +2336,6 @@ module advance_xp2_xpyp_module
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use constants_clubb, only:  &
-        w_tol_sqd
 
     use model_flags, only:  &
         l_standard_term_ta
