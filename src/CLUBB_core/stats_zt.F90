@@ -1823,14 +1823,14 @@ module stats_zt
         iNim_mc = k
 
         call stat_assign( iNim_mc, "Nim_mc", & 
-             "Nim budget: Nim microphysics term [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "Nim budget: Nim microphysics term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nim_cl')
         iNim_cl = k
 
         call stat_assign( iNim_cl, "Nim_cl", & 
-             "Nim budget: Nim clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "Nim budget: Nim clipping term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Ncm_bt')
