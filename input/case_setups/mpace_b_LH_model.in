@@ -164,7 +164,7 @@ corr_sNc_NL_below = 0.09 ! From ISDAC
 LH_microphys_type = "interactive",
 l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
-LH_microphys_calls = 4,
+LH_microphys_calls = 2,
 LH_sequence_length = 1,
 l_fix_s_t_correlations = .true.,
 
