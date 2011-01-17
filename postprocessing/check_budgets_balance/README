@@ -1,4 +1,6 @@
-For accurate results, compile CLUBB using double precision before running the checkBudget script.
+IMPORTANT NOTES: For accurate results, compile CLUBB using double precision before running the
+checkBudget script. The script assumes that all budget terms are listed contiguously in the GrADS
+".ctl" file. If someone inserts a non-budget term in the wrong place, the script will break.
 
 You must have Python installed to run these scripts. In addition, you need NumPy installed to
 check the balance of NetCDF formatted files. If you are running NumPy in a virtual environment, 
