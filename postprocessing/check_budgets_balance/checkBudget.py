@@ -11,7 +11,7 @@ import readBinaryData  # Reads GrADS .dat files
 FILEPATH = "../../output/"
 
 # Set this to false to skip the completeness tests
-COMPLETENESS_TEST = False
+COMPLETENESS_TEST = True
 
 # Scale for calculating budget balance tolerance since we cannot easily access the
 # model timestep (dtmain). Completeness tests use the frequency of statistical
@@ -212,7 +212,7 @@ def findGradsErrorsAtTimestep(iteration, ctlFile, fileName, numVarsIndx, numVars
         
     # Count lines to budget term
     ctlFile.seek(numVarsIndx.end()) # Move file pointer to start of variable declarations
-    varNum = 0
+    varNum = 0 # Used for finding variables in GrADS .dat files
     rightHandValue = [0]*numLevels # RHS of budget equation. Each z level is treated separately
     
     for line in ctlFile:
@@ -488,7 +488,7 @@ def calcTolerance(termUnits, timestep, termName):
     w_tol = 2e-2 # m/s
     thl_tol = 1e-2 # K
     rt_tol = 1e-8 # kg/kg
-    Nr_tol = 1e-10 # num/kg
+    Nr_tol = 1e-7 # num/kg (increased by facter of 1000 from constants_clubb)
     
     # Special Cases for tolerance
     if termName == "Ncm":
@@ -534,6 +534,13 @@ def calcPrecision(value1, value2):
            value2: A second floating point number
     """
     retVal = 0
+    
+    # Force use of tolerance instead of precision for allowed tolerance if at least one value is 0.
+    # Otherwise we get errors.
+    if value1 == 0:
+        value1 = 1e-40
+    if value2 == 0:
+        value2 = 1e-40
     
     # Convert the number in scientific notation to a string,
     # then substring the last three digits to obtain the precision.
