@@ -50,6 +50,138 @@ moment of vertical velocity, etc.); the altitude and times over which to match
 these variables; and the parameters to tune (C1, beta, etc.). 
 
 ***********************************************************************
+*                       CLUBB Quick Start Guide                       *
+***********************************************************************
+CLUBB is a single-column atmospheric model written in ISO Fortran 95, and
+executed using scripts written in the GNU Bash scripting language.
+
+This quick start guide has instructions for checking CLUBB out from the UWM
+repositories, compiling CLUBB using the gfortran compiler, running one of the
+benchmark test cases, and creating plots using the included plotgen tool.
+
+-------------------------------------------------------
+- STEP 1: OBTAINING THE CODE FROM THE REPOSITORY
+-------------------------------------------------------
+Checking CLUBB out requires the user to have signed up for a CLUBB account.
+This can be done at http://clubb.larson-group.com/register.php and will
+require a valid e-mail address.
+
+After entering the required information in the registration page, an e-mail
+will be sent to the entered e-mail address with the password for the new
+CLUBB account.
+
+Please note that each user will only need to sign up for a CLUBB account once.
+After this, the same e-mail address and password combination will work to
+download the CLUBB code.
+
+With a valid CLUBB account, the CLUBB code can be checked out using
+subversion. At a Bash prompt, type in the following command, all on one line:
+user@computer ~$ svn co --username EMAIL
+http://carson.math.uwm.edu/repos/clubb_repos/trunk clubb
+(EMAIL is the e-mail address used to register for a CLUBB account)
+
+After entering this command, svn will prompt for a password. The password will
+have been sent via e-mail after signing up for a CLUBB account. After the
+password is entered, subversion will download the CLUBB source code into the
+directory specified as the last option in the svn command; in the example
+above, it will be downloaded to the clubb/ directory.
+
+-------------------------------------------------------
+- STEP 2: COMPILING THE CLUBB SOURCE CODE
+-------------------------------------------------------
+Before CLUBB can be run, the source code must first be compiled. CLUBB is known
+to compile properly with various Fortran 95 compilers, including g95 and
+gfortran, which are both free.
+
+To compile, change directories to the CLUBB source directory (e.g. "clubb"),
+and then to the compile directory within the CLUBB source directory.
+
+Once in the compile directory, run the compile.bash script, using the config
+file corresponding to the target platform to run CLUBB on.
+For instance, on a Linux machine, to compile with gfortran, use the following
+command:
+user@computer compile$ ./compile.bash config/linux_ia32_gfortran.bash
+
+The command line will output information relating to the compilation of CLUBB.
+
+-------------------------------------------------------
+- STEP 3: RUNNING A BENCHMARK TEST CASE
+-------------------------------------------------------
+Once CLUBB is compiled, the various benchmark test cases can be run.
+To do this, change directories to the run_scripts directory inside the CLUBB
+checkout.
+
+Once in the run_scripts directory, CLUBB is generally run using the
+run_scm.bash script. This script will run the CLUBB model for a single case,
+which can be specified on the command line. For example, to run the BOMEX case:
+user@computer run_scripts$ ./run_scm.bash bomex
+
+The command line will output information relating to the case as it runs.
+In addition, output from the case will be placed in the output directory inside
+the CLUBB checkout.
+
+-------------------------------------------------------
+- STEP 4: VIEWING THE RESULTS WITH PLOTGEN
+-------------------------------------------------------
+After a case has been run, the resulting output can be used to create graphs.
+This is done with an included perl script called plotgen. Plotgen interfaces
+with MATLAB to produce high-quality plots that allow CLUBB's output to be
+easily visualized.
+
+**************************************************************************
+                                  NOTE:
+MATLAB, Imagemagick, and Ghostscript are required for plotgen to function!
+**************************************************************************
+
+The plotgen.pl script is located in the postprocessing/plotgen directory
+inside the CLUBB checkout. Plotgen is run by running the plotgen.pl script,
+telling it where the CLUBB output directory is, and specifying the desired
+plots output directory. This must be called from the postprocessing/plotgen
+directory inside the CLUBB checkout.
+user@computer ~/clubb/postprocessing/plotgen$
+./plotgen.pl ~/clubb/output ~/plots
+
+The above line will use plotgen to create plots from the simulation output
+in ~/clubb/output, and place the resulting plots in the ~/plots directory.
+
+To view the plots, use a web browser to view index.html in the plots directory.
+user@computer ~$ firefox ~/plots/index.html
+
+Plotgen will plot only the test cases that have output; therefore, if only
+the BOMEX case has been run, for example, the resulting plotgen plots will
+only have BOMEX included.
+
+-------------------------------------------------------
+- SUMMARY
+-------------------------------------------------------
+
+To check out, compile, and run CLUBB, and use plotgen to view the results,
+follow the following steps:
+
+- Have a valid CLUBB account
+  - Sign up at: http://clubb.larson-group.com/register.php
+  - This only needs to be performed once
+- Check out the CLUBB code with subversion
+  - svn co --username EMAIL http://carson.math.uwm.edu/repos/clubb_repos/trunk
+    clubb
+    (all on one line)
+- Compile the CLUBB source code with a Fortran 95 compiler (e.g. gfortran)
+  - ./compile.bash config/linux_ia32_gfortran.bash
+    (in the clubb/compile directory)
+    (replace config/linux_ia32_gfortran.bash to match the desired platform
+     and compiler)
+- Run a benchmark case (e.g. BOMEX)
+  - ./run_scm.bash bomex
+    (in the clubb/run_scripts directory)
+- Run plotgen to create plots of the output from the benchmark case simulation
+  - ./plotgen.pl ~/clubb/output ~/plots
+    (in the clubb/postprocessing/plotgen directory, assuming CLUBB is checked
+     out to ~/clubb)
+    (NOTE: MATLAB, Imagemagick, and Ghostscript are required to use plotgen!)
+- View the plotgen plots using a web browser
+  - firefox ~/plots/index.html
+
+***********************************************************************
 *                        Using the CLUBB Model                        *
 ***********************************************************************
 
