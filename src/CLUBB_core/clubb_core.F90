@@ -669,6 +669,9 @@ module clubb_core
     ! Compute sigma_sqd_w (dimensionless PDF width parameter)
     sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, wpthlp, wprtp )
 
+    ! Smooth in the vertical
+    sigma_sqd_w = zt2zm( zm2zt( sigma_sqd_w ) )
+
     ! Interpolate the the zt grid
     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
 
@@ -1143,7 +1146,7 @@ module clubb_core
     !----------------------------------------------------------------
 
     call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,     & ! intent(in)
-                          wp3_zm, Lscale,                              & ! intent(in)
+                          wp3_zm, Lscale, wp3_on_wp2, wp3_on_wp2_zt,   & ! intent(in)
                           Kh_zt, tau_zm, Skw_zm, rtpthvp, rtm_forcing, & ! intent(in)
                           thlpthvp, rtm_ref, thlm_ref, thlm_forcing,   & ! intent(in)
                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,       & ! intent(in)
