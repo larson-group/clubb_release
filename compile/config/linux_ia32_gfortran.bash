@@ -1,11 +1,11 @@
 # $Id$
 # Configuration file for a Linux machine using GNU compiler collection Fortran
 # Note that the version of gfortran that comes with RHEL5 (4.1.1) cannot compile clubb.
+# Instead you must install gcc44-gfortran and use the command gfortran44.
 
 # With some small modifications this configuration should work with newer 
 # versions of netCDF and GNU Fortran, such as those that come with Ubuntu or
 # Fedora Core.
-
 
 # Fortran 95 compiler and linker
 FC=gfortran44
@@ -34,27 +34,29 @@ WARNINGS="-Wall -pedantic"
 ARCH="-march=native -msse3 -mfpmath=sse -fopenmp"
 
 # == Optimization ==
-OPTIMIZE="-O2"
+OPTIMIZE="-O3"
 
 # == NetCDF Location ==
 #NETCDF="/usr" # Ubuntu / Fedora
 NETCDF="/usr/local/netcdf-gfortran" # RHEL5
 
 # == LAPACK libraries ==
-LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
+#LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
 #LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
 #LAPACK="-L/usr/lib/atlas-sse3 -llapack -lf77blas -lcblas -latlas" # Fedora 11 setup
+ACML="/opt/acml4.4.0/gfortran64/lib"
+LAPACK="-L$ACML -lacml -lacml_mv -Wl,-rpath $ACML" # AMD Core Math Library
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
 #LDFLAGS="-L$NETCDF/lib -lnetcdf -lnetcdff $LAPACK" # Ubuntu
-LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf -lcurl $LAPACK" # RHEL5
+LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK" # RHEL5
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these
-FFLAGS="$ARCH $DEBUG"
+FFLAGS="$ARCH $DEBUG $OPTIMIZE"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
