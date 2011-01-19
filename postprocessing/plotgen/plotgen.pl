@@ -40,6 +40,7 @@ use File::Path;
 # The location of MATLAB. External users probably will not need the 
 # sudo -u matlabuser part.
 my $MATLAB = "sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop";
+#my $MATLAB = "/Applications/MATLAB_R2010a.app/bin/matlab -nodisplay -nodesktop"; #For Macs in W434
 
 # The pipe name used to communicate with MATLAB
 my $matlabPipe;
