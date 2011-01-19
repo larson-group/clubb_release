@@ -4,12 +4,16 @@ module KK_utilities
 
   private ! Set default scope to private
 
-  public :: mean_L2N,   &
-            stdev_L2N,  &
-            corr_NL2NN, &
-            corr_LL2NN, &
-            factorial,  &
-            Dv_fnc        ! Parabolic Cylinder Function, D.
+  public :: mean_L2N,      &
+            mean_L2N_dp,   &
+            stdev_L2N,     &
+            stdev_L2N_dp,  &
+            corr_NL2NN,    &
+            corr_NL2NN_dp, &
+            corr_LL2NN,    &
+            corr_LL2NN_dp, &
+            factorial,     &
+            Dv_fnc           ! Parabolic Cylinder Function, D.
 
   contains
 
@@ -47,6 +51,40 @@ module KK_utilities
   end function mean_L2N
 
   !=============================================================================
+  pure function mean_L2N_dp( mu_x, sigma_sqd_x )  &
+  result( mu_x_n )
+  
+    ! Description:
+    ! For a lognormally-distributed variable x, this function finds the mean of
+    ! ln x (mu_x_n) for the ith component of the PDF, given the mean of x (mu_x)
+    ! and the variance of x (sigma_sqd_x) for the ith component of the PDF.
+    ! The value ln x is distributed normally when x is distributed lognormally.
+    ! This function uses double precision variables.
+
+    ! References:
+    !  Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+    !    Marcel Dekker, 401 pp.
+    !  -- App. B.
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    double precision, intent(in) ::  &
+      mu_x,        & ! Mean of x (ith PDF component)       [-]
+      sigma_sqd_x    ! Variance of x (ith PDF component)   [-]
+
+    ! Return Variable
+    double precision ::  &
+      mu_x_n  ! Mean of ln x (ith PDF component)           [-]
+
+    ! Find the mean of ln x for the ith component of the PDF.
+    mu_x_n = log( mu_x * ( 1.0 + sigma_sqd_x / mu_x**2.0 )**(-0.5) )
+
+    return
+  end function mean_L2N_dp
+
+  !=============================================================================
   pure function stdev_L2N( mu_x, sigma_sqd_x )  &
   result( sigma_x_n )
 
@@ -79,6 +117,41 @@ module KK_utilities
 
     return
   end function stdev_L2N
+
+  !=============================================================================
+  pure function stdev_L2N_dp( mu_x, sigma_sqd_x )  &
+  result( sigma_x_n )
+
+    ! Description:
+    ! For a lognormally-distributed variable x, this function finds the standard
+    ! deviation of ln x (sigma_x_n) for the ith component of the PDF, given the
+    ! mean of x (mu_x) and the variance of x (sigma_sqd_x) for the ith component
+    ! of the PDF.  The value ln x is distributed normally when x is distributed
+    ! lognormally.
+    ! This function uses double precision variables.
+
+    ! References:
+    !  Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+    !    Marcel Dekker, 401 pp.
+    !  -- App. B.
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    double precision, intent(in) ::  &
+      mu_x,        & ! Mean of x (ith PDF component)       [-]
+      sigma_sqd_x    ! Variance of x (ith PDF component)   [-]
+
+    ! Return Variable
+    double precision ::  &
+      sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
+
+    ! Find the standard deviation of ln x for the ith component of the PDF.
+    sigma_x_n = sqrt( log( 1.0 + sigma_sqd_x / mu_x**2.0 ) )
+
+    return
+  end function stdev_L2N_dp
 
   !=============================================================================
   pure function corr_NL2NN( corr_xy, sigma_y_n )  &
@@ -114,6 +187,42 @@ module KK_utilities
 
     return
   end function corr_NL2NN
+
+  !=============================================================================
+  pure function corr_NL2NN_dp( corr_xy, sigma_y_n )  &
+  result( corr_xy_n )
+
+    ! Description:
+    ! For a normally-distributed variable x and a lognormally-distributed
+    ! variable y, this function finds the correlation between x and ln y
+    ! (corr_xy_n) for the ith component of the PDF, given the correlation
+    ! between x and y (corr_xy) and the standard deviation of ln y (sigma_y_n)
+    ! for the ith component of the PDF.  The value ln y is distributed normally
+    ! when y is distributed lognormally.
+    ! This function uses double precision variables.
+
+    ! References:
+    !  Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+    !    Marcel Dekker, 401 pp.
+    !  -- Eq. B-1.
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    double precision, intent(in) :: &
+      corr_xy,   & ! Correlation between x and y (ith PDF component)  [-]
+      sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
+
+    ! Return Variable
+    double precision ::  &
+      corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
+
+    ! Find the correlation between x and ln y for the ith component of the PDF.
+    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2.0 ) - 1.0 ) / sigma_y_n 
+
+    return
+  end function corr_NL2NN_dp
 
   !=============================================================================
   pure function corr_LL2NN( corr_xy, sigma_x_n, sigma_y_n )  &
@@ -153,6 +262,46 @@ module KK_utilities
 
     return
   end function corr_LL2NN
+
+  !=============================================================================
+  pure function corr_LL2NN_dp( corr_xy, sigma_x_n, sigma_y_n )  &
+  result( corr_xy_n )
+
+    ! Description:
+    ! For lognormally-distributed variables x and y, this function finds the
+    ! correlation between ln x and ln y (corr_xy_n) for the ith component of the
+    ! PDF, given the correlation between x and y (corr_xy), the standard
+    ! deviation of ln x (sigma_x_n), and the standard deviation of ln y
+    ! (sigma_y_n) for the ith component of the PDF.  The value of ln x (or ln y)
+    ! is distributed normally when x (or y) is distributed lognormally.
+    ! This function uses double precision variables.
+
+    ! References:
+    !  Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+    !    Marcel Dekker, 401 pp.
+    !  -- Eq. C-3.
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    double precision, intent(in) ::  &
+      corr_xy,   & ! Correlation between x and y (ith PDF component)  [-]
+      sigma_x_n, & ! Standard deviation of ln x (ith PDF component)   [-]
+      sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
+
+    ! Return Variable
+    double precision ::  &
+      corr_xy_n  ! Correlation between ln x and ln y (ith PDF component)  [-]
+
+    ! Find the correlation between ln x and ln y for the ith component of the
+    ! PDF.
+    corr_xy_n = log( 1.0 + corr_xy * sqrt( exp( sigma_x_n**2.0 ) - 1.0 )  &
+                                   * sqrt( exp( sigma_y_n**2.0 ) - 1.0 )  )  &
+                / ( sigma_x_n * sigma_y_n )
+
+    return
+  end function corr_LL2NN_dp
 
   !=============================================================================
   recursive function factorial( num )  &
