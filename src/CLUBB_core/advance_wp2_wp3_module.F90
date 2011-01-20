@@ -614,7 +614,7 @@ contains
                            "support solving with hyper diffusion", &
                            "at this time. l_hyper_dfsn ignored."
       end if
-      call wp23_lhs_csr( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+      call wp23_lhs_csr( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                          wp3_on_wp2, &
                          Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                          C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -622,7 +622,7 @@ contains
                          lhs_a_csr )
 
       if ( .not. l_gmres_soln_ok(gmres_idx_wp2wp3) ) then
-        call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+        call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -633,8 +633,8 @@ contains
       stop "This build was not compiled with PARDISO/GMRES support."
 #endif /* MKL */
     end if ! l_gmres
-    if ((.not. (l_gmres))) then
-      call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+    if ( .not. l_gmres ) then
+      call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                      wp3_on_wp2, &
                      Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                      C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -680,7 +680,7 @@ contains
         write(fstderr,*) "Falling back to LAPACK solver."
 
         ! Generate the LHS in LAPACK format
-        call wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+        call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -932,7 +932,7 @@ contains
   end subroutine wp23_solve
 
   !=============================================================================
-  subroutine wp23_lhs( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+  subroutine wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -1082,7 +1082,6 @@ contains
 
     real, dimension(gr%nnzp), intent(in) ::  & 
       wp2,             & ! w'^2 (momentum levels)                     [m^2/s^2]
-      wp3_zm,          & ! w'^3 interpolated to momentum levels       [m^3/s^3]
       wm_zm,           & ! w wind component on momentum levels        [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels   [m/s]
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)     [-]
@@ -1605,7 +1604,7 @@ contains
 
 #ifdef MKL
   !=============================================================================
-  subroutine wp23_lhs_csr( dt, wp2, wp3_zm, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+  subroutine wp23_lhs_csr( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                            wp3_on_wp2, &
                            Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                            C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
@@ -1762,7 +1761,6 @@ contains
 
     real, dimension(gr%nnzp), intent(in) ::  & 
       wp2,             & ! w'^2 (momentum levels)                     [m^2/s^2]
-      wp3_zm,          & ! w'^3 interpolated to momentum levels       [m^3/s^3]
       wm_zm,           & ! w wind component on momentum levels        [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels   [m/s]
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)     [-]

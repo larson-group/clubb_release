@@ -1145,13 +1145,13 @@ module clubb_core
     ! Advance rtm/wprtp and thlm/wpthlp one time step
     !----------------------------------------------------------------
 
-    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, wp3,     & ! intent(in)
-                          wp3_zm, Lscale, wp3_on_wp2, wp3_on_wp2_zt,   & ! intent(in)
+    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,          & ! intent(in)
+                          Lscale, wp3_on_wp2, wp3_on_wp2_zt,           & ! intent(in)
                           Kh_zt, tau_zm, Skw_zm, rtpthvp, rtm_forcing, & ! intent(in)
                           thlpthvp, rtm_ref, thlm_ref, thlm_forcing,   & ! intent(in)
                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,       & ! intent(in)
                           invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,     & ! intent(in)
-                          wp2_zt, pdf_params, l_implemented,           & ! intent(in)
+                          pdf_params, l_implemented,                   & ! intent(in)
                           sclrpthvp, sclrm_forcing, sclrp2,            & ! intent(in)
                           rtm, wprtp, thlm, wpthlp,                    & ! intent(inout)
                           err_code,                                    & ! intent(inout)
