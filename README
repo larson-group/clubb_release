@@ -116,7 +116,7 @@ run_scm.bash script. This script will run the CLUBB model for a single case,
 which can be specified on the command line. For example, to run the BOMEX case:
 user@computer run_scripts$ ./run_scm.bash bomex
 
-The command line will output information relating to the case as it runs.
+Other cases that you may run are listed in run_scripts/RUN_CASES.  The command line will output information relating to the case as it runs.
 In addition, output from the case will be placed in the output directory inside
 the CLUBB checkout.
 
