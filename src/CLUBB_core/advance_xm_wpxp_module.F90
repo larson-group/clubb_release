@@ -2235,7 +2235,7 @@ module advance_xm_wpxp_module
       xp2_relaxed = max( 1e-7 , xp2 )
 
     else if ( solve_type == xm_wpxp_thlm ) then
-      xp2_relaxed = max( 0.1, xp2 )
+      xp2_relaxed = max( 0.01, xp2 )
 
     else ! This includes the passive scalars
       xp2_relaxed = max( 1e-7 , xp2 )
