@@ -299,7 +299,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
            testSuccess: Whether the test is succeeding or failing
     """
     
-    rightHandValue = [0]*numLevels # RHS of budget equation. Each z level is treated separately
+    rightHandValue = array( [0]*numLevels ) # RHS of budget equation. Each z level is treated separately
     
     # Find a budget variable (_bt)
     for varName in varList:
@@ -312,7 +312,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
             
             # Can't do completeness check when iteration is 1
             if iteration != 1 and COMPLETENESS_TEST == True:
-                if termName[:-1] == "rtm" or termName[:-1] == "thlm": #TODO Ignore completeness test failures except for rtm and thlm. See ticket 153
+                if budgetVarName[:-3] == "rtm" or budgetVarName[:-3] == "thlm": #TODO Ignore completeness test failures except for rtm and thlm. See ticket 153
                     # Check that the budget is consistent with previous and next time iterations
                     testSuccess = checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
                                   budgetVarName[:-3], varList, budgetVar.units, timestep, leftHandValue, testSuccess)
@@ -326,8 +326,8 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
                             
                             # Vars in the budget have descriptions that include eg. "thlm budget:"
                             if var.long_name.find("budget:") != -1:
-                                componentValue = var.getValue(iteration-1)
-                                rightHandValue = [a + b for a,b in zip(rightHandValue, componentValue)]
+                                componentValue = array( var.getValue(iteration-1) )
+                                rightHandValue = rightHandValue + componentValue
                         
                 except AttributeError:
                     pass
@@ -428,12 +428,12 @@ def checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
         
             statVar = ncFile.variables[varName]
             
-            varAfter = statVar.getValue(iteration-1)  # First index in python list is 0
-            varBefore = statVar.getValue(iteration-2) # while iteration starts at t = 1
+            varAfter = array( statVar.getValue(iteration-1) )  # First index in python list is 0
+            varBefore = array( statVar.getValue(iteration-2) ) # while iteration starts at t = 1
             
-            rightHandValue = [(a - b) / timestep for a,b in zip(varAfter, varBefore)]
+            rightHandValue = (varAfter - varBefore) / timestep
             
-            errorDifference = [a - b for a,b in zip(leftHandValue, rightHandValue)]
+            errorDifference = leftHandValue - rightHandValue
             allowedTolerance = calcTolerance(termUnits, timestep, termName)
             
             # Specify that this is the completeness test when printing to stdout
