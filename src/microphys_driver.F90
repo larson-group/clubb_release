@@ -401,7 +401,11 @@ module microphys_driver
     !---------------------------------------------------------------------------
     Ncm_initial = 100. ! #/cm^3
 
-    l_fix_s_t_correlations = .false.
+    ! We fix the correlations between s and t to avoid factorizing the
+    ! correlation matrix more than once per simulation. 
+    ! -dschanen 24 Jan 2010
+    l_fix_s_t_correlations = .true. 
+
     l_lh_cloud_weighted_sampling = .false.
     l_lh_vert_overlap = .false.
     l_local_kk = .false.
