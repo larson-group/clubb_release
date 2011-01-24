@@ -38,6 +38,12 @@ run_case()
     G95_FPU_INVALID=false
     export G95_MEM_INIT G95_FPU_INVALID
 
+    # This is a kluge for Fortran compilers that the can't handle comments in 
+    # a namelist by using the sed command to remove them.
+    # Since -i is a GNU sed extension the commend might be 'gsed' on some systems.
+    sed -i 's/\!.*//' $NAMELISTS
+
+    # Echo the case name
     echo "Running $run_case"
     
     # Run the CLUBB model
@@ -354,10 +360,7 @@ then
 
     run_case
 else
-    #cat $parameter_file $model_file $stats_file > $NAMELISTS
-    # This is a kluge for Fortran compilers that the can't handle comments in 
-    # a namelist by using the sed command to remove them.
-    cat $parameter_file $model_file $stats_file | sed 's/\!.*//' > $NAMELISTS
+    cat $parameter_file $model_file $stats_file > $NAMELISTS
 
     run_case
 fi
