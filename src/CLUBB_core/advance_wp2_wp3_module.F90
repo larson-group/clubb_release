@@ -469,25 +469,6 @@ contains
         ztscr20, &
         ztscr21
 
-#ifdef MKL
-    use csr_matrix_class, only: &
-        csr_intlc_5b_5b_ia, & ! Variables
-        csr_intlc_5b_5b_ja, &
-        intlc_5d_5d_ja_size
-
-    use gmres_wrap, only: &
-        gmres_solve   ! Subroutine
-
-    use gmres_cache, only: &
-        gmres_cache_soln, & ! Subroutine
-        gmres_prev_soln, &        ! Variables
-        gmres_prev_precond_a, &
-        l_gmres_soln_ok, &
-        gmres_idx_wp2wp3, &
-        gmres_temp_intlc, &
-        gmres_tempsize_intlc
-#endif /* MKL */
-
     implicit none
 
     ! External
@@ -551,22 +532,9 @@ contains
     ! Local Variables
     real, dimension(nsup+nsub+1,2*gr%nnzp) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
-#ifdef MKL
-    real, dimension(nsup+nsub+1,2*gr%nnzp) ::  & 
-      lhs_cache
-#endif
-
-#ifdef MKL
-    real, dimension(intlc_5d_5d_ja_size) :: &
-      lhs_a_csr ! Implicit contributions to wp2/wp3 (CSR format)
-#endif
 
     real, dimension(2*gr%nnzp) ::  & 
       rhs   ! RHS of band matrix
-#ifdef MKL
-    real, dimension(2*gr%nnzp) ::  & 
-      rhs_cache
-#endif
 
 !        real, target, dimension(2*gr%nnzp) ::
     real, dimension(2*gr%nnzp) ::  & 
@@ -605,43 +573,6 @@ contains
     ! (ta) and turbulent production (tp) combined term.
     a1_zt  = max( zm2zt( a1 ), zero_threshold )   ! Positive definite quantity
 
-    ! Compute the implicit portion of the w'^2 and w'^3 equations.
-    ! Build the left-hand side matrix.
-    if (l_gmres) then
-#ifdef MKL
-      if (nsup > 2) then
-        write (fstderr, *) "WARNING: CSR-format solvers currently do not", &
-                           "support solving with hyper diffusion", &
-                           "at this time. l_hyper_dfsn ignored."
-      end if
-      call wp23_lhs_csr( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
-                         wp3_on_wp2, &
-                         Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
-                         C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-                         invrs_rho_ds_zt, l_crank_nich_diff, & 
-                         lhs_a_csr )
-
-      if ( .not. l_gmres_soln_ok(gmres_idx_wp2wp3) ) then
-        call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
-                       wp3_on_wp2, &
-                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
-                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-                       invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
-                       lhs )
-      end if ! l_wp2wp3_soln_ok
-#else
-      stop "This build was not compiled with PARDISO/GMRES support."
-#endif /* MKL */
-    end if ! l_gmres
-    if ( .not. l_gmres ) then
-      call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
-                     wp3_on_wp2, &
-                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
-                     C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-                     invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
-                     lhs )
-    end if
-
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
     call wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, &
@@ -652,65 +583,24 @@ contains
                    thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
                    rhs )
 
-    ! Solve the system of equations for w'^2 and w'^3.
-    if ( l_gmres ) then
-#ifdef MKL
-      if ( .not. l_gmres_soln_ok(gmres_idx_wp2wp3) ) then
-        ! Solve system with LAPACK to give us our first solution vector
-        lhs_cache = lhs
-        rhs_cache = rhs
-        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, &
-                         lhs, rhs, solut, err_code )
-
-        ! Use gmres_cache_wp2wp3_soln to set cache this solution for GMRES
-        call gmres_cache_soln( gr%nnzp * 2, gmres_idx_wp2wp3, solut )
-        lhs = lhs_cache
-        rhs = rhs_cache
-      end if
-      call gmres_solve( intlc_5d_5d_ja_size, (gr%nnzp * 2), &
-                        lhs_a_csr, csr_intlc_5b_5b_ia, csr_intlc_5b_5b_ja, &
-                        gmres_tempsize_intlc, &
-                        gmres_prev_soln(:,gmres_idx_wp2wp3), &
-                        gmres_prev_precond_a(:,gmres_idx_wp2wp3), rhs, &
-                        gmres_temp_intlc, &
-                        solut, err_code )
-      ! Fall back to LAPACK if GMRES returned any errors
-      if ( err_code /= 0 ) then
-        write(fstderr,*) "Errors encountered in GMRES solve."
-        write(fstderr,*) "Falling back to LAPACK solver."
-
-        ! Generate the LHS in LAPACK format
-        call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+    if (l_gmres) then
+      call wp23_gmres( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt, &
                        wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-                       invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
-                       lhs )
-
-        ! Note: The RHS does not need to be re-generated.
-
-        ! Solve the system with LAPACK as a fall-back.
-        if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
-
-          ! Perform LU decomp and solve system (LAPACK with diagnostics)
-          ! Note that this can change the answer slightly
-          call band_solvex( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
-                            lhs, rhs, solut, rcond, err_code )
-
-          ! Est. of the condition number of the w'^2/w^3 LHS matrix
-          call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0 / rcond, sfc )
-
-        else
-          ! Perform LU decomp and solve system (LAPACK)
-          call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
-                           lhs, rhs, solut, err_code )
-        end if
-
-      end if ! err_code /= 0
-#else
-      stop "This build was not compiled with GMRES support."
-#endif /* MKL */
+                       invrs_rho_ds_zt, l_crank_nich_diff, nsup, nsub, nrhs, &
+                       rhs, &
+                       solut, err_code )
     else
+      ! Compute the implicit portion of the w'^2 and w'^3 equations.
+      ! Build the left-hand side matrix.
+      call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                     wp3_on_wp2, &
+                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                     C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                     invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
+                     lhs )
+
       ! Solve the system with LAPACK
       if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
 
@@ -731,7 +621,6 @@ contains
     end if ! l_gmres
 
     if ( lapack_error( err_code ) ) return
-
 
     ! Copy result into output arrays and clip
 
@@ -930,6 +819,208 @@ contains
 
     return
   end subroutine wp23_solve
+
+  subroutine wp23_gmres( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt, &
+                         wp3_on_wp2, &
+                         Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                         C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                         invrs_rho_ds_zt, l_crank_nich_diff, nsup, nsub, nrhs, &
+                         rhs, &
+                         solut, err_code )
+    ! Description:
+    ! Perform all GMRES-specific matrix generation and solving for the
+    ! wp2/wp3 matrices.
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use grid_class, only:  & 
+        gr  ! Variable(s) 
+
+    use stats_precision, only:  & 
+        time_precision  ! Variable(s)
+
+#ifdef MKL
+    use stats_variables, only:  & 
+        iwp23_matrix_condt_num, & ! Variable(s)
+        l_stats_samp, & 
+        sfc
+
+    use constants_clubb, only: & 
+        fstderr         ! Variable(s)
+
+    use lapack_wrap, only:  & 
+        band_solve,  & ! Procedure(s) 
+        band_solvex
+
+    use stats_type, only: & 
+        stat_update_var_pt ! Procedure(s)
+
+    use csr_matrix_class, only: &
+        csr_intlc_5b_5b_ia, & ! Variables
+        csr_intlc_5b_5b_ja, &
+        intlc_5d_5d_ja_size
+
+    use gmres_wrap, only: &
+        gmres_solve   ! Subroutine
+
+    use gmres_cache, only: &
+        gmres_cache_soln, & ! Subroutine
+        gmres_prev_soln, &        ! Variables
+        gmres_prev_precond_a, &
+        l_gmres_soln_ok, &
+        gmres_idx_wp2wp3, &
+        gmres_temp_intlc, &
+        gmres_tempsize_intlc
+#endif /* MKL */
+
+    implicit none
+
+    ! Input Variables
+    real(kind=time_precision), intent(in) ::  & 
+      dt                 ! Timestep                                  [s]
+
+    real, dimension(gr%nnzp), intent(in) ::  & 
+      wp2                ! w'^2 (momentum levels)                    [m^2/s^2]
+
+    real, intent(in), dimension(gr%nnzp) ::  & 
+      wm_zm,           & ! w wind component on momentum levels       [m/s]
+      wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
+      a1,              & ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
+      a1_zt,           & ! a_1 interpolated to thermodynamic levels                    [-]
+      a3,              & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
+      a3_zt,           & ! a_3 interpolated to thermodynamic levels  [-]
+      wp3_on_wp2,      & ! Smoothed version of wp3 / wp2             [m/s]
+      Kw1,             & ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
+      Kw8,             & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
+      Skw_zt,          & ! Skewness of w on thermodynamic levels     [-]
+      tau1m,           & ! Time-scale tau on momentum levels         [s]
+      tauw3t,          & ! Time-scale tau on thermodynamic levels    [s]
+      C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied           [-]
+      C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+
+    logical, intent(in) :: & 
+      l_crank_nich_diff  ! Turns on/off Crank-Nicholson diffusion.
+
+    integer, intent(in) :: &
+      nsub,   & ! Number of subdiagonals in the LHS matrix.
+      nsup,   & ! Number of superdiagonals in the LHS matrix.
+      nrhs      ! Number of right-hand side vectors
+                ! (GMRES currently only supports 1)
+
+    ! Input/Output variables
+    real, dimension(2*gr%nnzp), intent(inout) :: &
+      rhs       ! Right hand side vector
+
+    ! Output variables
+    real, dimension(2*gr%nnzp), intent(out) :: &
+      solut     ! Solution to band diagonal system
+
+    integer, intent(out) :: err_code ! Have any errors occured?
+
+#ifdef MKL
+    ! Local variables
+    real, dimension(nsup+nsub+1,2*gr%nnzp) :: &
+      lhs, &    ! Implicit contributions to wp2/wp3 (band diag. matrix)
+      lhs_cache ! Backup cache of LHS matrix
+
+    real, dimension(intlc_5d_5d_ja_size) :: &
+      lhs_a_csr ! Implicit contributions to wp2/wp3 (CSR format)
+
+    real, dimension(2*gr%nnzp) :: &
+      rhs_cache ! Backup cache of RHS vector
+
+    real ::  & 
+      rcond  ! Est. of the reciprocal of the condition #
+
+    ! Begin code
+
+    if (nsup > 2) then
+      write (fstderr, *) "WARNING: CSR-format solvers currently do not", &
+                         "support solving with hyper diffusion", &
+                         "at this time. l_hyper_dfsn ignored."
+    end if
+    call wp23_lhs_csr( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                       wp3_on_wp2, &
+                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                       invrs_rho_ds_zt, l_crank_nich_diff, & 
+                       lhs_a_csr )
+
+    if ( .not. l_gmres_soln_ok(gmres_idx_wp2wp3) ) then
+      call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                     wp3_on_wp2, &
+                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                     C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                     invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
+                     lhs )
+
+      ! Solve system with LAPACK to give us our first solution vector
+        lhs_cache = lhs
+        rhs_cache = rhs
+        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, &
+                         lhs, rhs, solut, err_code )
+
+        ! Use gmres_cache_wp2wp3_soln to set cache this solution for GMRES
+        call gmres_cache_soln( gr%nnzp * 2, gmres_idx_wp2wp3, solut )
+        lhs = lhs_cache
+        rhs = rhs_cache
+    end if ! .not. l_gmres_soln_ok(gmres_idx_wp2wp3)
+
+    call gmres_solve( intlc_5d_5d_ja_size, (gr%nnzp * 2), &
+                      lhs_a_csr, csr_intlc_5b_5b_ia, csr_intlc_5b_5b_ja, &
+                      gmres_tempsize_intlc, &
+                      gmres_prev_soln(:,gmres_idx_wp2wp3), &
+                      gmres_prev_precond_a(:,gmres_idx_wp2wp3), rhs, &
+                      gmres_temp_intlc, &
+                      solut, err_code )
+    ! Fall back to LAPACK if GMRES returned any errors
+    if ( err_code /= 0 ) then
+      write(fstderr,*) "Errors encountered in GMRES solve."
+      write(fstderr,*) "Falling back to LAPACK solver."
+
+      ! Generate the LHS in LAPACK format
+      call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+                     wp3_on_wp2, &
+                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                     C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                     invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
+                     lhs )
+
+      ! Note: The RHS does not need to be re-generated.
+
+      ! Solve the system with LAPACK as a fall-back.
+      if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
+
+        ! Perform LU decomp and solve system (LAPACK with diagnostics)
+        ! Note that this can change the answer slightly
+        call band_solvex( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
+                          lhs, rhs, solut, rcond, err_code )
+
+        ! Est. of the condition number of the w'^2/w^3 LHS matrix
+        call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0 / rcond, sfc )
+
+      else
+        ! Perform LU decomp and solve system (LAPACK)
+        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nnzp, nrhs, & 
+                         lhs, rhs, solut, err_code )
+      end if
+
+    end if ! err_code /= 0
+
+#else
+    ! These prevent g95 compiler warnings when -DMKL not set.
+    solut = 0E0
+    err_code = 0
+    stop "This build was not compiled with PARDISO/GMRES support."
+#endif /* MKL */
+
+  end subroutine wp23_gmres
 
   !=============================================================================
   subroutine wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
