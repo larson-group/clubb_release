@@ -41,7 +41,7 @@ run_case()
     # This is a kluge for Fortran compilers that the can't handle comments in 
     # a namelist by using the sed command to remove them.
     # Since -i is a GNU sed extension the commend might be 'gsed' on some systems.
-    sed -i 's/\!.*//' $NAMELISTS
+    sed -i -e 's/\!.*//' $NAMELISTS
 
     # Echo the case name
     echo "Running $run_case"
