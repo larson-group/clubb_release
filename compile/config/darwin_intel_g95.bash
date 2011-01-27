@@ -1,4 +1,4 @@
-# $Id: linux_ia32_g95_optimize.bash 3201 2009-01-27 23:37:48Z dschanen $
+# $Id$
 # Configuration file for a MacOS X system using g95
 
 # Fortran 95 compiler and linker
@@ -29,13 +29,8 @@ DEBUG="-g -fbounds-check -ftrace=full"
 WARNINGS="-Wall -Wextra -Wno=142,165,167 -pedantic"
 
 # == Machine specific flags ==
-# Note: some of these are 64 bit architectures, so make sure NetCDF is
-# compiled accordingly.
-#ARCH="-march=pentium4 -msse2 -mfpmath=sse" # Old P4s
-#ARCH="-march=nocona -msse3 -mfpmath=sse" # New P4s
-#ARCH="-march=nocona -msse3 -mfpmath=sse -r8"# New P4s, double precision
-#ARCH="-march=k8 -msse3 -mfpmath=sse" # New Opterons
-ARCH="" # Darwin Intel / x86
+# We have only been able to make this work in 32 bit mode.
+ARCH="-m32" # Darwin Intel / x86
 
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual
@@ -47,7 +42,6 @@ NETCDF="/sw/lib/netcdf-g95"
 
 # == LAPACK libraries ==
 LAPACK="-L/usr/lib -llapack -lblas" #  The netlib reference LAPACK/BLAS
-#LAPACK="-L/usr/lib -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
