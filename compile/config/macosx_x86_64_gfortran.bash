@@ -1,4 +1,4 @@
-# $Id: linux_ia32_gfortran.bash 4919 2010-12-14 20:24:10Z dschanen@uwm.edu $
+# $Id$
 # Configuration file for Mac computers in W434.  It may work on other Macs
 # as well but is not tested.
 
