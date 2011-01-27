@@ -102,6 +102,9 @@ For instance, on a Linux machine, to compile with gfortran, use the following
 command:
 user@computer compile$ ./compile.bash config/linux_ia32_gfortran.bash
 
+To run this on a MAC OSX machine, you should use the following command:
+$ ./compile.bash config/mac_ia32_gfortran.bash
+
 The command line will output information relating to the compilation of CLUBB.
 
 -------------------------------------------------------
@@ -144,8 +147,23 @@ user@computer ~/clubb/postprocessing/plotgen$
 The above line will use plotgen to create plots from the simulation output
 in ~/clubb/output, and place the resulting plots in the ~/plots directory.
 
+NOTE: For Mac users in W434, you must change a line in plotgen.pl.  To do this
+go into the directory that plotgen.pl is located, type in:
+$ cd ~/clubb/postprocessing/plotgen
+$ nano plotgen.pl
+Locate the line starting with "my $MATLAB".  There should be two, find the one
+with the comment at the end saying "For Macs in W434" and at the beginning of
+the line remove the # symbol.  Now go to the line above it and at the beginning
+of that line insert a # symbol.  Then use Control-X to exit, then "y" to save
+the changes that are made and then enter to overwrite the current plotgen.
+Also, at the terminal type in the following command:
+$ export DYLD_LIBRARY_PATH=/usr/local/ImageMagick/lib/
+
 To view the plots, use a web browser to view index.html in the plots directory.
 user@computer ~$ firefox ~/plots/index.html
+
+MAC Users in W434 use the following command
+$ /Applications/Firefox.app/Contents/MacOS/firefox-bin ~/plots/index.html
 
 Plotgen will plot only the test cases that have output; therefore, if only
 the BOMEX case has been run, for example, the resulting plotgen plots will
