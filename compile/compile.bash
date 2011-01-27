@@ -49,19 +49,11 @@ cd $scriptPath
 if [ -z $1 ]; then
 	# Set using the default config flags
 
-	CONFIG=./config/linux_ia32_g95_optimize.bash
-#	CONFIG=./config/gfdl_wks.bash
-#	CONFIG=./config/darwin_powerpc_g95.bash
-#	CONFIG=./config/linux_ia32_pg.bash
-#	CONFIG=./config/linux_ia32_absoft.bash
-#	CONFIG=./config/linux_ia32_g95_debug.bash
-#	CONFIG=./config/linux_ia32_ss12_debug.bash
-#	CONFIG=./config/linux_ia32_ss12_optimize.bash
-#	CONFIG=./config/linux_ia32_ifort.bash
-#	CONFIG=./config/linux_ia32_gfortran.bash
-#	CONFIG=./config/linux_ia64_ifort.bash
-#	CONFIG=./config/osf1_alpha_digital.bash
-#	CONFIG=./config/solaris_generic_ss12.bash
+	CONFIG=./config/linux_x86_64_g95_optimize.bash # Linux (Redhat Enterprise 5)
+#	CONFIG=./config/macosx_x86_64_gfortran.bash # MacOS X
+#	CONFIG=./config/aix_powerpc_xlf90_bluefire.bash # IBM AIX on Bluefire
+#	CONFIG=./config/solaris_generic_oracle.bash # Oracle Solaris
+
 else
 	# Set config based on the first argument given to compile.bash
 
