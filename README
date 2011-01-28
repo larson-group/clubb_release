@@ -315,7 +315,7 @@ config files are currently set up for easy use of this promotion:
 linux_ia32_g95_optimize.bash and linux_ia32_g95_debug.bash.
 
 To set up the bash scripts for compile time real promotion, follow these steps:
-1. Edit config/linux_ia32_g95_*.bash where * is either optimize or debug.
+1. Edit config/linux_x86_64_g95_*.bash where * is either optimize or debug.
    Comment out the line " ARCH="-march=k8 -msse3 -mfpmath=sse" " and uncomment
    the line above with the " -r8 " flag.
 2. Edit compile.bash in the clubb/compile directory.  Change l_double_precision
