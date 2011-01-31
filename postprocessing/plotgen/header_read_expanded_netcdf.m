@@ -40,6 +40,12 @@ elseif strfind ( filename, 'ps_gfdl' )  %Get height for ps_gfdl files
    varAlt = netcdf.inqVarID( nc_file, 'time' );
    alt = netcdf.getVar ( nc_file, varAlt );
    z(:,1) = alt(1,1,:,1)
+elseif strfind ( filename, '_cam' ) %For cam cases
+   varAlt = netcdf.inqVarID( nc_file, 'Z3');
+   alt = netcdf.getVar( nc_file, varAlt );
+   varPhis = netcdf.inqVarID( nc_file, 'PHIS');
+   PHIS = netcdf.getVar( nc_file, varPhis );
+   z(:,1) = alt(1,1,:,1) - (PHIS(1,:,1)/9.81);
 else
   z = netcdf.getVar( nc_file, 2 );
 end
@@ -54,7 +60,7 @@ t_time_steps = size(time,1);
 
 dt = time(t_time_steps) - time(t_time_steps - 1);
 
-timeInfo = netcdf.getAtt( nc_file, 3, 'units' );
+timeInfo = netcdf.getAtt( nc_file, time, 'units' );
 
 %Now that we have the text info about the unit for time, see if we can determine
 %a proper dt
@@ -64,6 +70,9 @@ elseif findstr(timeInfo, 'minutes')
 	dt = 1 * dt;
 elseif findstr(timeInfo, 'hours')
 	dt = 60 * dt;
+elseif findstr(timeInfo, 'day')
+	dt = 24 * 60 * dt;
+	time = 24 * 60 * time;
 else
 	%Assume one dt is 1 minute
 	dt = 1 * dt;
