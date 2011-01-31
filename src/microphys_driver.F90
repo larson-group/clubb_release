@@ -57,7 +57,7 @@ module microphys_driver
   private :: adj_microphys_tndcy
 
   ! Functions
-  private :: sedimentation
+  private :: sed_centered_diff_lhs, sed_upwind_diff_lhs
 
   ! Variables
   logical, private, allocatable, dimension(:) :: l_hydromet_sed ! Whether to sediment variables
@@ -1042,13 +1042,8 @@ module microphys_driver
       lhs ! Left hand side of tridiagonal matrix
 
     real, dimension(gr%nnzp,hydromet_dim) :: &
-      hydromet_vel ! Contains vel. of the hydrometeors        [m/s]
-    !  Can contain:
-    !  Vrr      ! Rain mixing ratio sedimentation velocity     [m/s]
-    !  VNr      ! Rain number conc. sedimentation velocity     [m/s]
-    !  Vice     ! Ice mixing ratio sedimentation velocity      [m/s]
-    !  Vsnow    ! Snow mixing ratio sedimentation velocity     [m/s]
-    !  Vgraupel ! Graupel mixing ratio sedimentation velocity  [m/s]
+      hydromet_vel,    & ! Contains vel. of the hydrometeors        [m/s]
+      hydromet_vel_zt
 
     real, dimension(gr%nnzp,hydromet_dim) :: & 
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
@@ -1141,7 +1136,7 @@ module microphys_driver
       ! Initialize tendencies to zero
       hydromet_mc(:,:) = 0.0
 
-      hydromet_vel(:,:) = 0.0
+      hydromet_vel_zt(:,:) = 0.0
 
       call coamps_micro_driver & 
            ( runtype, time_current, dt, & 
@@ -1149,9 +1144,9 @@ module microphys_driver
              thlm, hydromet(:,iiricem), hydromet(:,iirrainm),  & 
              hydromet(:,iirgraupelm), hydromet(:,iirsnowm), & 
              rcm, hydromet(:,iiNcm), hydromet(:,iiNrm), Ncnm, hydromet(:,iiNim), cond, & 
-             hydromet_vel(:,iirsnowm), hydromet_vel(:,iiricem), & 
-             hydromet_vel(:,iirrainm), hydromet_vel(:,iiNrm),  & 
-             hydromet_vel(:,iirgraupelm), & 
+             hydromet_vel_zt(:,iirsnowm), hydromet_vel_zt(:,iiricem), & 
+             hydromet_vel_zt(:,iirrainm), hydromet_vel_zt(:,iiNrm),  & 
+             hydromet_vel_zt(:,iirgraupelm), & 
              hydromet_mc(:,iiricem), hydromet_mc(:,iirrainm), & 
              hydromet_mc(:,iirgraupelm), hydromet_mc(:,iirsnowm), & 
              hydromet_mc(:,iiNrm), & 
@@ -1160,20 +1155,19 @@ module microphys_driver
       if ( l_stats_samp ) then
 
         ! Sedimentation velocity for rrainm
-        call stat_update_var(iVrr, hydromet_vel(:,iirrainm), zm)
+        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zm)
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var(iVNr, hydromet_vel(:,iiNrm), zm )
+        call stat_update_var(iVNr, zt2zm( hydromet_vel(:,iiNrm) ), zm )
 
         ! Sedimentation velocity for snow
-        call stat_update_var(iVsnow, hydromet_vel(:,iirsnowm), zm )
+        call stat_update_var(iVsnow, zt2zm( hydromet_vel(:,iirsnowm) ), zm )
 
         ! Sedimentation velocity for pristine ice
-        call stat_update_var( iVice, hydromet_vel(:,iiricem), zm )
+        call stat_update_var( iVice, zt2zm( hydromet_vel(:,iiricem) ), zm )
 
         ! Sedimentation velocity for graupel
-        call stat_update_var( iVgraupel,  & 
-                              hydromet_vel(:,iirgraupelm), zm )
+        call stat_update_var( iVgraupel, zt2zm( hydromet_vel(:,iirgraupelm) ), zm )
       end if ! l_stats_samp
 
     case ( "morrison" )
@@ -1232,7 +1226,7 @@ module microphys_driver
              ( real( dt ), gr%nnzp, l_stats_samp, .false., .false., &
                thlm, p_in_Pa, exner, rho, pdf_params, &
                wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
-               hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
+               hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
       end if
 
     case ( "khairoutdinov_kogan" )
@@ -1253,7 +1247,7 @@ module microphys_driver
                rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & !In 
                corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
-               hydromet_mc, hydromet_vel, rcm_mc, & ! In/Out
+               hydromet_mc, hydromet_vel_zt, rcm_mc, & ! In/Out
                rvm_mc, thlm_mc, & ! In/Out
                KK_microphys ) ! Procedure
 #else
@@ -1278,9 +1272,9 @@ module microphys_driver
           call stat_update_var( iLH_thlm_mc, thlm_mc, zt )
 
           ! Latin hypercube estimate for sedimentation velocities
-          call stat_update_var( iLH_Vrr, zt2zm( hydromet_vel(:,iirrainm) ), zt )
+          call stat_update_var( iLH_Vrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zt )
 
-          call stat_update_var( iLH_VNr, zt2zm( hydromet_vel(:,iiNrm) ), zt )
+          call stat_update_var( iLH_VNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zt )
 
         end if
 
@@ -1294,23 +1288,15 @@ module microphys_driver
              ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, .false., &
                thlm, p_in_Pa, exner, rho, pdf_params, &
                wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
-               hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
+               hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
       end if
-
-      ! Interpolate velocity to the momentum grid
-      ! Note that the interpolation functions are written such that we can
-      ! safely have hydromet_vel reference itself here.
-      do i = 1, hydromet_dim
-        hydromet_vel(:,i) = zt2zm( hydromet_vel(:,i) )
-      end do
-      hydromet_vel(gr%nnzp,1:hydromet_dim) = 0.0
 
       if ( l_stats_samp ) then
         ! Sedimentation velocity for rrainm
-        call stat_update_var( iVrr, hydromet_vel(:,iirrainm), zm )
+        call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zm )
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var( iVNr, hydromet_vel(:,iiNrm), zm )
+        call stat_update_var( iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zm )
       end if
 
     case default
@@ -1432,18 +1418,28 @@ module microphys_driver
 
         do k = 1, gr%nnzp
           if ( clubb_at_least_debug_level( 1 ) ) then
-            if ( hydromet_vel(k,i) < max_velocity )  then
+            ! Print a warning if the velocity has a large magnitude or the
+            ! velocity is in the wrong direction.
+            if ( hydromet_vel_zt(k,i) < max_velocity .or. &   
+                 hydromet_vel_zt(k,i) > zero_threshold ) then  
+
               write(fstderr,*) trim( hydromet_list(i) )// &
-                " velocity at k = ", k, " = ", hydromet_vel(k,i), "m/s"
+                " velocity at k = ", k, " = ", hydromet_vel_zt(k,i), "m/s"
             end if
           end if
-          hydromet_vel(k,i) = max( hydromet_vel(k,i), max_velocity )
+          hydromet_vel_zt(k,i) = min( max( hydromet_vel_zt(k,i), max_velocity ), zero_threshold )
         end do
+
+        ! Interpolate velocity to the momentum grid for a centered difference
+        ! approximation of the sedimenation term.
+        hydromet_vel(:,i) = zt2zm( hydromet_vel_zt(:,i) )
+        hydromet_vel(gr%nnzp,i) = 0.0 ! Upper boundary condition
 
         ! Add implicit terms to the LHS matrix
         call microphys_lhs & 
-             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, Kr, cloud_frac, nu_r, wm_zt, & 
-               hydromet_vel(:,i), lhs )
+             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, Kr, cloud_frac, nu_r, wm_zt, &  ! In
+               hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
+               lhs ) ! Out
 
         call microphys_solve & 
              ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, lhs, hydromet_mc(:,i),  & 
@@ -1959,7 +1955,9 @@ module microphys_driver
 
 !===============================================================================
     subroutine microphys_lhs & 
-               ( solve_type, l_sed, dt, Kr, cloud_frac, nu, wm_zt, V_hm, lhs )
+               ( solve_type, l_sed, dt, Kr, cloud_frac, nu, wm_zt, &
+                 V_hm, V_hmt, &
+                 lhs )
 
 ! Description:
 !   Setup the matrix of implicit contributions to a term.
@@ -2019,6 +2017,9 @@ module microphys_driver
       implicit none
 
       ! Constant parameters
+      logical, parameter :: &
+        l_upwind_diff_sed = .false. ! Use the upwind differencing approx. for sediementation
+
       integer, parameter :: & 
         kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
         k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
@@ -2044,6 +2045,7 @@ module microphys_driver
         cloud_frac, & ! Cloud fraction                                          [-]
         wm_zt,      & ! w wind component on thermodynamic levels                [m/s]
         V_hm,       & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
+        V_hmt,      & ! Sedimentation velocity of hydrometeor (thermo. levels)  [m/s]
         Kr            ! Eddy diffusivity for hydrometeor on momentum levels     [m^2/s]
 
       real, intent(out), dimension(3,gr%nnzp) :: & 
@@ -2150,13 +2152,20 @@ module microphys_driver
         + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
 
         ! LHS hydrometeor sedimentation term.
-        ! Note: originally pristine ice did not sediment, so it was
-        ! setup to be disabled as needed, but now pristine ice does
-        ! sediment in the COAMPS case. -dschanen 12 Feb 2007
+        ! Note: the Morrison microphysics has its own sedimentation code, which
+        ! is applied through the _mc terms to each hydrometeor species.
+        ! Therefore, l_sed will always be false when the Morrison microphysics 
+        ! is enabled.  -dschanen 24 Jan 2011
         if ( l_sed ) then
-          lhs(kp1_tdiag:km1_tdiag,k) & 
-          = lhs(kp1_tdiag:km1_tdiag,k) & 
-          + sedimentation( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+          if ( .not. l_upwind_diff_sed ) then
+            lhs(kp1_tdiag:km1_tdiag,k) & 
+              = lhs(kp1_tdiag:km1_tdiag,k) & 
+              + sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+          else
+            lhs(kp1_tdiag:km1_tdiag,k) & 
+              = lhs(kp1_tdiag:km1_tdiag,k) & 
+              + sed_upwind_diff_lhs( V_hmt(k), gr%invrs_dzm(k), k )
+          end if
         end if
 
         if ( l_stats_samp ) then
@@ -2166,13 +2175,19 @@ module microphys_driver
           if ( ixrm_ma > 0 ) then
             tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
               gr%invrs_dzm(km1) )
+
             ztscr01(k) = -tmp(3)
             ztscr02(k) = -tmp(2)
             ztscr03(k) = -tmp(1)
           end if
 
           if ( ixrm_sd > 0 .and. l_sed ) then
-            tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+            if ( .not. l_upwind_diff_sed ) then
+              tmp(1:3) = sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+            else
+              tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), gr%invrs_dzm(k), k )
+            end if
+
             ztscr04(k) = -tmp(3)
             ztscr05(k) = -tmp(2)
             ztscr06(k) = -tmp(1)
@@ -2233,6 +2248,13 @@ module microphys_driver
                           gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                           gr%invrs_dzt(k), k )
 
+      ! Here we apply the upwind differencing at the lower boundary.
+      if ( l_sed .and. l_upwind_diff_sed ) then
+        lhs(kp1_tdiag:km1_tdiag,k) & 
+          = lhs(kp1_tdiag:km1_tdiag,k) & 
+          + sed_upwind_diff_lhs( V_hmt(k), gr%invrs_dzm(k), k )
+      end if
+
       if ( l_stats_samp ) then
 
         ! Statistics:  implicit contributions to hydrometeor xrm.
@@ -2245,6 +2267,14 @@ module microphys_driver
           ztscr07(k) = -tmp(3)
           ztscr08(k) = -tmp(2)
           ztscr09(k) = -tmp(1)
+        end if
+
+        if ( ixrm_sd > 0 .and. l_sed .and. l_upwind_diff_sed ) then
+          tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), gr%invrs_dzm(k), k )
+
+          ztscr04(k) = -tmp(3)
+          ztscr05(k) = -tmp(2)
+          ztscr06(k) = -tmp(1)
         end if
 
       end if  ! l_stats_samp
@@ -2284,7 +2314,7 @@ module microphys_driver
     end subroutine microphys_lhs
 
 !===============================================================================
-    pure function sedimentation( V_hm, V_hmm1, invrs_dzt, level ) & 
+    pure function sed_centered_diff_lhs( V_hm, V_hmm1, invrs_dzt, level ) & 
       result( lhs )
 
       ! Description:
@@ -2528,10 +2558,77 @@ module microphys_driver
 
       endif
 
+      return
+    end function sed_centered_diff_lhs
+
+    !---------------------------------------------------------------------------
+    pure function sed_upwind_diff_lhs( V_hmt, invrs_dzm, level ) & 
+      result( lhs )
+
+    ! Description:
+    !   Setup the LHS matrix (implicit component) for the upwind difference
+    !   approximation for the sedimentation of a hydrometeor.
+    ! 
+    ! References:
+    !   None
+    !---------------------------------------------------------------------------
+      use grid_class, only:  & 
+          gr ! Variable(s)
+
+      implicit none
+
+      ! Constant parameters
+      integer, parameter :: & 
+        kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+        k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+        km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+
+      ! Input Variables
+      real, intent(in) :: & 
+        V_hmt,    & ! Sedimentation velocity of hydrometeor (thermo. levels) (k) [m/s]
+        invrs_dzm    ! Inverse of grid spacing (k)                   [m]
+
+      integer, intent(in) ::  & 
+        level ! Central thermodynamic level (on which calculation occurs).
+
+      ! Return Variable
+      real, dimension(3) :: lhs
+
+      ! ---- Begin Code ----
+
+      ! Sedimention is always a downward process, so we omit the upward case
+      ! (i.e. the V_hmt term will always be positive).
+      if ( level == gr%nnzp ) then
+
+        ! k = gr%nnzp (top level); upper boundary level; no flux.
+
+        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+        lhs(kp1_tdiag) = 0.0
+
+        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+        lhs(k_tdiag)   = 0.0
+
+        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+        lhs(km1_tdiag) = 0.0
+
+
+      else  
+
+        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+        lhs(kp1_tdiag)  & 
+        = + invrs_dzm * V_hmt
+
+        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+        lhs(k_tdiag)  & 
+        = - invrs_dzm * V_hmt
+
+        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+        lhs(km1_tdiag) = 0.0
+
+      end if
 
       return
-    end function sedimentation
-
+    end function sed_upwind_diff_lhs
 !===============================================================================
     subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, Kr, nu, & 
                                     dt, level, l_sed, & 
@@ -2750,7 +2847,7 @@ module microphys_driver
 
         ! The implicit (LHS) value of the sedimentation component of the equation
         ! used during the timestep that was just solved for.
-        tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+        tmp(1:3) = sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
 
         sd_subdiag  = -tmp(3) ! subdiagonal
         sd_maindiag = -tmp(2) ! main diagonal
