@@ -1135,7 +1135,7 @@ module microphys_driver
 
       ! Initialize tendencies to zero
       hydromet_mc(:,:) = 0.0
-
+      hydromet_vel(:,:) = 0.0
       hydromet_vel_zt(:,:) = 0.0
 
       call coamps_micro_driver & 
