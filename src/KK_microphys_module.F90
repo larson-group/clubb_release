@@ -214,12 +214,16 @@ module KK_microphys_module
 
     ! In the event that we're doing latin hypercube sampling, we want to turn off
     ! the src_adj code so that we can achieve convergence with the analytic
-    ! solution. -dschanen 23 Sept 2010
-    if ( l_latin_hypercube ) then
-      l_src_adj_enabled = .false.
-    else
+    ! solution.
+    ! We found we can achieve a longer timestep and forego the convergence in
+    ! and non-interative simulation if we clip each subcolumn using the
+    ! src_adj code and prevent large values in accretion and autoconversion.
+    ! See ticket #397 on the CLUBB TRAC for more on this. -dschanen 31 Jan 2011.
+!   if ( l_latin_hypercube ) then
+!     l_src_adj_enabled = .false.
+!   else
       l_src_adj_enabled = .true.
-    end if
+!   end if
 
     ! IMPORTANT NOTES
     !
