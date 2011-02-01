@@ -64,6 +64,8 @@ module bugsrad_driver
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
     use stats_type, only: stat_update_var ! Procedure(s)
+    
+    use grid_class, only: flip  ! Procedure(s)
 
     use extend_atmosphere_module, only: &
       extend_atmos_dim, extend_alt, extend_pinmb, & ! Variable(s)
@@ -429,37 +431,6 @@ module bugsrad_driver
     return
   end subroutine compute_bugsrad_radiation
 !-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-  function flip( x, xdim )
-! Description:
-! Flips a single dimension array (i.e. a vector), so the first element
-! becomes the last and vice versa for the whole column.  This is a
-! necessary part of the code because BUGSrad and CLUBB store altitudes in
-! reverse order
-!-------------------------------------------------------------------------------
-    implicit none
-
-    ! Input
-    integer, intent(in) :: xdim
-
-    double precision, dimension(xdim), intent(in) :: x
-
-    ! Output
-    double precision, dimension(xdim) :: flip
-
-    ! Internal
-    double precision, dimension(xdim) :: tmp
-    integer :: indx
-
-    do indx = 1, xdim, 1
-      tmp(indx) = x((xdim+1) - (indx))
-    end do
-
-    flip = tmp
-
-    return
-  end function flip
 
 !-------------------------------------------------------------------------------
   subroutine init_radiation( iunit, namelist_file, case_info_file )

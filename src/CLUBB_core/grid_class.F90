@@ -145,7 +145,7 @@ module grid_class
   public :: gr, grid, zt2zm, interp_weights_zt2zm_imp, zm2zt, & 
             interp_weights_zm2zt_imp, ddzm, ddzt, & 
             setup_grid, cleanup_grid, setup_grid_heights, &
-            read_grid_heights
+            read_grid_heights, flip
 
   private :: interpolated_azm, interpolated_azmk, & 
              interpolated_azmk_imp, interpolated_azt, & 
@@ -1690,6 +1690,38 @@ module grid_class
     return
 
   end function gradzt
+  
+  !=============================================================================
+  function flip( x, xdim )
+  
+    ! Description:
+    ! Flips a single dimension array (i.e. a vector), so the first element
+    ! becomes the last and vice versa for the whole column.  This is a
+    ! necessary part of the code because BUGSrad and CLUBB store altitudes in
+    ! reverse order
+    !-------------------------------------------------------------------------
+    implicit none
+
+    ! Input
+    integer, intent(in) :: xdim
+
+    double precision, dimension(xdim), intent(in) :: x
+
+    ! Output
+    double precision, dimension(xdim) :: flip
+
+    ! Internal
+    double precision, dimension(xdim) :: tmp
+    integer :: indx
+
+    do indx = 1, xdim, 1
+      tmp(indx) = x((xdim+1) - (indx))
+    end do
+
+    flip = tmp
+
+    return
+  end function flip
 
 !===============================================================================
 
