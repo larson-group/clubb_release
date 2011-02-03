@@ -1187,7 +1187,7 @@ module microphys_driver
                rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & !In 
                corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
-               hydromet_mc, hydromet_vel, rcm_mc, & ! In/Out
+               hydromet_mc, hydromet_vel_zt, rcm_mc, & ! In/Out
                rvm_mc, thlm_mc,  & ! In/Out
                morrison_micro_driver )  ! Procedure
 #else
