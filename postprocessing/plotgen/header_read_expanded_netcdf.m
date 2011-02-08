@@ -60,7 +60,7 @@ t_time_steps = size(time,1);
 
 dt = time(t_time_steps) - time(t_time_steps - 1);
 
-timeInfo = netcdf.getAtt( nc_file, time, 'units' );
+timeInfo = netcdf.getAtt( nc_file, 3, 'units' );
 
 %Now that we have the text info about the unit for time, see if we can determine
 %a proper dt
