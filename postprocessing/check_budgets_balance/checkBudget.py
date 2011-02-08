@@ -32,6 +32,10 @@ SKIP_LIST = ["nov11_altocu", \
              "cloud_feedback", \
              "arm_97", \
              "gabls3_night"]
+             
+# If more failures than this are reported, the test will exit to avoid a huge failure log.
+MAX_FAILURES = 1000
+numFails = 0 # Global variable indicating the current number of errors found.
 
 #--------------------------------------------------------------------------------------------------
 def checkGradsBudgets(fileName, iteration):
@@ -457,7 +461,8 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
            termUnits: Units of term being tested
            testSuccess: Whether the test is succeeding or failing
     """
-        
+    global numFails
+    
     for value in errorDifference:
         zLevel += 1
         if(zLevel > 1): #TODO: Hides errors at z level 1. See ticket 360 for more info.
@@ -470,9 +475,14 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
             # Display failure message for each error difference thats greater than the tolerance
             if abs(percentError[zLevel-1]) >= TEST_LENIENCY: # [zLevel-1] because array starts at 0
                 testSuccess = False
+                numFails += 1
                 print >> sys.stderr, termName + " fails at t=" + str(iteration) + " and z=" + str(zLevel) + \
                     " with a difference of " + "%e" % value + " " + termUnits \
                     + " and error " + "%.9f" % percentError[zLevel-1] + " %"
+                
+                if numFails >= MAX_FAILURES:
+                    print "Too many failures: exiting test. (Change MAX_FAILURES variable to view more)"
+                    sys.exit(1)
                 
     return testSuccess
     
@@ -627,6 +637,7 @@ if __name__ == "__main__":
                     
     # Only check 1 file
     else:
+        print "\nTesting " + sys.argv[1]
         
         # Check if file is NetCDF, otherwise assume GrADS
         if sys.argv[1].find(".nc") != -1 or sys.argv[1].find(".cdf") != -1:
