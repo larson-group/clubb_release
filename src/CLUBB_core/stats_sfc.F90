@@ -128,8 +128,8 @@ module stats_sfc
     ithlp2_vert_avg = 0
     iT_sfc            = 0   ! kcwhite
     
-    ! These are estimates of the condition number on each implicit
-    ! matrices, and not located at the surface of the domain.
+    ! These are estimates of the condition number on each LHS
+    ! matrix, and not located at the surface of the domain.
     iwp23_matrix_condt_num    = 0
     irtm_matrix_condt_num     = 0
     ithlm_matrix_condt_num    = 0
