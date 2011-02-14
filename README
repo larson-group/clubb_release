@@ -2,7 +2,7 @@ $Id$
 
 ************************************************************************
 *                           Copyright Notice
-*                         This code is (C) 2006-2010 
+*                         This code is (C) 2006-2011 
 *         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
 *            David P. Schanen, Adam J. Smith, and Michael J. Falk.
 *
@@ -74,17 +74,21 @@ Please note that each user will only need to sign up for a CLUBB account once.
 After this, the same e-mail address and password combination will work to
 download the CLUBB code.
 
-With a valid CLUBB account, the CLUBB code can be checked out using
-subversion. At a Bash prompt, type in the following command, all on one line:
-user@computer ~$ svn co --username EMAIL
-http://carson.math.uwm.edu/repos/clubb_repos/trunk clubb
+With a valid CLUBB account, the CLUBB code can be checked out from its
+repository using subversion (svn).  If you have not already downloaded CLUBB,
+then at a bash prompt, type in the following command, all on one line:
+user@computer ~$ svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk 
+          clubb --username EMAIL
 (EMAIL is the e-mail address used to register for a CLUBB account)
 
 After entering this command, svn will prompt for a password. The password will
 have been sent via e-mail after signing up for a CLUBB account. After the
 password is entered, subversion will download the CLUBB source code into the
 directory specified as the last option in the svn command; in the example
-above, it will be downloaded to the clubb/ directory.
+above, it will be downloaded to the clubb/ directory.  On some computers,
+when entering the password, the cursor may remain in the same spot
+and the screen may remain blank.  Don't be confused; hit return and 
+your password will be entered.  
 
 -------------------------------------------------------
 - STEP 2: COMPILING THE CLUBB SOURCE CODE
@@ -127,9 +131,10 @@ the CLUBB checkout.
 - STEP 4: VIEWING THE RESULTS WITH PLOTGEN
 -------------------------------------------------------
 After a case has been run, the resulting output can be used to create graphs.
-This is done with an included perl script called plotgen. Plotgen interfaces
-with MATLAB to produce high-quality plots that allow CLUBB's output to be
-easily visualized.
+There are many programs available that can be used to do this, 
+but one way is to use an included perl script called plotgen. 
+Plotgen interfaces with MATLAB to produce high-quality plots that allow 
+CLUBB's output to be easily visualized.
 
 **************************************************************************
                                   NOTE:
@@ -141,11 +146,6 @@ inside the CLUBB checkout. Plotgen is run by running the plotgen.pl script,
 telling it where the CLUBB output directory is, and specifying the desired
 plots output directory. This must be called from the postprocessing/plotgen
 directory inside the CLUBB checkout.
-user@computer ~/clubb/postprocessing/plotgen$
-./plotgen.pl ~/clubb/output ~/plots
-
-The above line will use plotgen to create plots from the simulation output
-in ~/clubb/output, and place the resulting plots in the ~/plots directory.
 
 NOTE: For Mac users in W434, you must change a line in plotgen.pl.  To do this
 go into the directory that plotgen.pl is located, type in:
@@ -159,18 +159,28 @@ the changes that are made and then enter to overwrite the current plotgen.
 Also, at the terminal type in the following command:
 $ export DYLD_LIBRARY_PATH=/usr/local/ImageMagick/lib/
 
+Then, to generate a webpage containing plots, type, (if your output 
+is in ~/clubb/output and you want the plots to go in directory ~/plots):
+
+user@computer ~/clubb/postprocessing/plotgen$
+./plotgen.pl ~/clubb/output ~/plots
+
+The above line will use plotgen to create plots from the simulation output
+in ~/clubb/output, and place the resulting plots in the ~/plots directory.
+
 To view the plots, use a web browser to view index.html in the plots directory.
 user@computer ~$ firefox ~/plots/index.html
 
 MAC Users in W434 use the following command
 $ /Applications/Firefox.app/Contents/MacOS/firefox-bin ~/plots/index.html
+assuming that the index.html file is in the plots directory.
 
 Plotgen will plot only the test cases that have output; therefore, if only
 the BOMEX case has been run, for example, the resulting plotgen plots will
 only have BOMEX included.
 
 -------------------------------------------------------
-- SUMMARY
+- SUMMARY FOR LINUX
 -------------------------------------------------------
 
 To check out, compile, and run CLUBB, and use plotgen to view the results,
@@ -180,8 +190,8 @@ follow the following steps:
   - Sign up at: http://clubb.larson-group.com/register.php
   - This only needs to be performed once
 - Check out the CLUBB code with subversion
-  - svn co --username EMAIL http://carson.math.uwm.edu/repos/clubb_repos/trunk
-    clubb
+  - svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk
+    clubb --username EMAIL
     (all on one line)
 - Compile the CLUBB source code with a Fortran 95 compiler (e.g. gfortran)
   - ./compile.bash config/linux_ia32_gfortran.bash
@@ -1303,3 +1313,18 @@ vp2        = <v'2>     = Variance of v                                         [
 rrainm     = Mean rainwater mixing ratio                                       [kg/kg]
 
 ****************************************************************************
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% CHAPTER 8: TROUBLESHOOTING
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+1.  If you have trouble compiling, sometimes it helps to delete
+old object files and re-compile from scratch.  E.g., to delete 
+everything in the binary and library directories, 
+go to <CLUBB BASE DIRECTORY>/bin and type
+
+$ make distclean
+
