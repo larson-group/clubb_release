@@ -11,7 +11,8 @@ module cam_history
   public :: addfld, add_default, phys_decomp, outfld
   
   integer :: phys_decomp = 0 ! Not used in CLUBB
-
+  
+  contains
 
 !================================================================================================
   subroutine addfld (fname, units, numlev, avgflag, long_name, &
@@ -79,7 +80,7 @@ module cam_history
       integer, intent(in) :: idim           ! Longitude dimension of field array
       integer, intent(in) :: c              ! chunk (physics) or latitude (dynamics) index
 
-      real(r8), intent(in) :: field(idim,*) ! Array containing field values
+      real, intent(in) :: field(idim,*)     ! Array containing field values
       
    end subroutine outfld
    

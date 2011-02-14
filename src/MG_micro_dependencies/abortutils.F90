@@ -10,9 +10,7 @@ module abortutils
 
   public :: endrun
   
-  ! This variable is not used anywhere in MG, it is just imported. Because of this we
-  ! are setting it to a dummy value
-  integer :: endrun = 0
+  contains
   
 !================================================================================================
   subroutine endrun (msg)
@@ -25,8 +23,10 @@ module abortutils
       character(len=*), intent(in), optional :: msg    ! string to be printed
       
       ! This subroutine should never be called. It is only here to allow MG to compile correctly.
-      print(*,*) "WARNING: endrun from abortutils dummy file called. This subroutine should" &
-        + " never be called. It is only present to allow MG to compile correctly."
+      write(*,*) "WARNING: endrun from abortutils dummy file called. This subroutine should" &
+        // " never be called. It is only present to allow MG to compile correctly."
+        
+      return
 
   end subroutine endrun
   

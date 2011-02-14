@@ -10,8 +10,10 @@ module phys_control
 
   public :: phys_getopts
   
+  contains
+  
 !================================================================================================
-  subroutine phys_getopts
+  subroutine phys_getopts &
              (deep_scheme_out, shallow_scheme_out, eddy_scheme_out, microp_scheme_out, &
              macrop_scheme_out, atm_dep_flux_out, history_aerosol_out, history_microphysics_out, &
              history_budget_out, history_budget_histfile_num_out, do_tms_out, do_iss_out, &
@@ -35,8 +37,8 @@ module phys_control
        integer,           intent(out), optional :: history_budget_histfile_num_out
        logical,           intent(out), optional :: do_tms_out
        logical,           intent(out), optional :: do_iss_out
-       real(r8),          intent(out), optional :: tms_orocnst_out
-       real(r8),          intent(out), optional :: tms_z0fac_out
+       real,              intent(out), optional :: tms_orocnst_out
+       real,              intent(out), optional :: tms_z0fac_out
        integer,           intent(out), optional :: conv_water_in_rad_out
       
   end subroutine phys_getopts
