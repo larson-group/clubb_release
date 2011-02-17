@@ -8,6 +8,7 @@ import re   # Regular expressions
 import readBinaryData  # Reads GrADS .dat files
 from pupynere import NetCDFFile # Read NetCDF .cdf / .nc files
 from numpy import * # External library for handling large data sets
+from time import strftime
 
 # NOTE: This script contains some kludges to hide budget errors we don't have time to fix, marked with TODO
 
@@ -625,7 +626,8 @@ if __name__ == "__main__":
         
         # Test all remaining files
         for dataFile in testableFiles:
-            print "\nTesting " + dataFile
+            print "\n" + strftime("%H:%M:%S") + " - testing " + dataFile
+            
             
             # Check if file is NetCDF, otherwise assume GrADS
             if dataFile.find(".nc") != -1 or dataFile.find(".cdf") != -1:
