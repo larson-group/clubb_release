@@ -29,7 +29,11 @@ if max(size(dimids)) == 1
 else
    % Read in and average profiles over all timesteps
    for t=t1:t2
-      new_field = squeeze(field(1,1,1,t));
+      if strfind (filename, 'gfdl' ) %GFDL timeseries must be handled differently
+         new_field = squeeze(field(1,1,t));
+      else
+         new_field = squeeze(field(1,1,1,t));	
+      end
       avg_field(t) = new_field;
    end
 end

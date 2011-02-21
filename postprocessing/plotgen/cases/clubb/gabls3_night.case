@@ -160,7 +160,7 @@
     ],
     'nightlyOutput' =>
     {
-        'subText' => '',
+        'subText' => 'Uses a 5-min timestep with 48 levels',
         'subHtml' => ''
     },
     'additionalOutput' =>

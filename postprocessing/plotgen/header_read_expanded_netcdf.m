@@ -37,9 +37,7 @@ elseif strfind ( filename, 'ph_gfdl' )  %Get height for ph_gfdl files
    alt = netcdf.getVar ( nc_file, varAlt );
    z(:,1) = alt(1,1,:,1); 
 elseif strfind ( filename, 'ps_gfdl' )  %Get height for ps_gfdl files
-   varAlt = netcdf.inqVarID( nc_file, 'time' );
-   alt = netcdf.getVar ( nc_file, varAlt );
-   z(:,1) = alt(1,1,:,1)
+    z = netcdf.getVar( nc_file, 3);
 elseif strfind ( filename, '_cam' ) %For cam cases
    varAlt = netcdf.inqVarID( nc_file, 'Z3');
    alt = netcdf.getVar( nc_file, varAlt );
