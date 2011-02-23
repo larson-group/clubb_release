@@ -13,7 +13,7 @@ from time import strftime
 # NOTE: This script contains some kludges to hide budget errors we don't have time to fix, marked with TODO
 
 # Modify this to point to the directory containing the output files
-FILEPATH = "../../output/"
+FILEPATH = "../../../clubb225/output/"
 
 # Set this to false to skip the completeness tests
 COMPLETENESS_TEST = True
@@ -37,6 +37,9 @@ SKIP_LIST = ["nov11_altocu", \
 # If more failures than this are reported, the test will exit to avoid a huge failure log.
 MAX_FAILURES = 1000
 numFails = 0 # Global variable indicating the current number of errors found.
+
+# The current case being tested
+currentCase = ""
 
 #--------------------------------------------------------------------------------------------------
 def checkGradsBudgets(fileName, iteration):
@@ -463,6 +466,7 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
            testSuccess: Whether the test is succeeding or failing
     """
     global numFails
+    global currentCase
     
     for value in errorDifference:
         zLevel += 1
@@ -477,9 +481,9 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
             if abs(percentError[zLevel-1]) >= TEST_LENIENCY: # [zLevel-1] because array starts at 0
                 testSuccess = False
                 numFails += 1
-                print >> sys.stderr, termName + " fails at t=" + str(iteration) + " and z=" + str(zLevel) + \
-                    " with a difference of " + "%e" % value + " " + termUnits \
-                    + " and error " + "%.9f" % percentError[zLevel-1] + " %"
+                print >> sys.stderr, " ".join([ strftime("%H:%M:%S"), "in", currentCase, termName, "fails at t=", \
+                    str(iteration), "and z=", str(zLevel), "with a difference of", "%e" % value, \
+                    termUnits, "and error", "%.9f" % percentError[zLevel-1], "%" ])
                 
                 if numFails >= MAX_FAILURES:
                     print "Too many failures: exiting test. (Change MAX_FAILURES variable to view more)"
@@ -610,7 +614,6 @@ if __name__ == "__main__":
         # Make a list of all files in FILEPATH
         files = os.listdir(FILEPATH)
         
-        
         for dataFile in files:
             for case in SKIP_LIST:
                 if dataFile.find(case) > -1:
@@ -624,11 +627,18 @@ if __name__ == "__main__":
 
         testableFiles.sort()
         
+        # Make sure data exists
+        if len(testableFiles) == 0:
+            print "Unable to find testable data"
+            testSuccess = False
+        
+        global currentCase
+        
         # Test all remaining files
         for dataFile in testableFiles:
-            print "\n" + strftime("%H:%M:%S") + " - testing " + dataFile
+            print "".join(["\n", strftime("%H:%M:%S"), " - Testing ", dataFile])
             
-            
+            currentCase = dataFile
             # Check if file is NetCDF, otherwise assume GrADS
             if dataFile.find(".nc") != -1 or dataFile.find(".cdf") != -1:
                 if checkNetcdfBudgets( dataFile, int(sys.argv[2]) ) == False:
@@ -639,7 +649,7 @@ if __name__ == "__main__":
                     
     # Only check 1 file
     else:
-        print "\nTesting " + sys.argv[1]
+        print "\nTesting " +  sys.argv[1]
         
         # Check if file is NetCDF, otherwise assume GrADS
         if sys.argv[1].find(".nc") != -1 or sys.argv[1].find(".cdf") != -1:
