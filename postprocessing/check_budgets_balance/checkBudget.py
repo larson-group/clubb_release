@@ -13,7 +13,7 @@ from time import strftime
 # NOTE: This script contains some kludges to hide budget errors we don't have time to fix, marked with TODO
 
 # Modify this to point to the directory containing the output files
-FILEPATH = "../../../clubb225/output/"
+FILEPATH = "../../output/"
 
 # Set this to false to skip the completeness tests
 COMPLETENESS_TEST = True
