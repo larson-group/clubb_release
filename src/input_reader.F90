@@ -109,11 +109,11 @@ module input_reader
     isComment = .true.
 
     ! Skip all the comments at the top of the file
-    do while(isComment)
+    do while ( isComment )
       read(iunit,fmt='(A)') tmpline
       k = index(tmpline, "!")
       isComment = .false.
-      if(k > 0) then
+      if ( k > 0 ) then
         isComment = .true.
       end if
     end do
@@ -193,6 +193,10 @@ module input_reader
     !----------------------------------------------------------------------------------------------
     implicit none
 
+    ! External
+
+    intrinsic :: trim, index
+
     ! Input Variable(s)
 
     integer, intent(in) :: iunit ! I/O unit
@@ -219,17 +223,17 @@ module input_reader
 
     logical :: isComment
 
-    ! Begin Code
+    ! ---- Begin Code ----
 
     isComment = .true.
 
     ! First run through, take names and determine how large the data file is.
-    open(unit=iunit, file=trim(filename), status = 'old' )
+    open(unit=iunit, file=trim( filename ), status = 'old' )
 
     ! Skip all the comments at the top of the file
     do while(isComment)
       read(iunit,fmt='(A)') tmpline
-      k = index(tmpline, "!")
+      k = index( tmpline, "!" )
       isComment = .false.
       if(k > 0) then
         isComment = .true.
@@ -250,12 +254,12 @@ module input_reader
     77 continue
 
     ! Rewind that many rows
-    do k=0, nRow
+    do k = 0, nRow
       backspace(iunit)
     end do
 
     ! Store the names into the structure and allocate accordingly
-    do k =1, nCol
+    do k = 1, nCol
       read_vars(k)%name = names(k)
       read_vars(k)%dim_name = names(1)
       allocate( read_vars(k)%values(nRow) )
@@ -269,7 +273,9 @@ module input_reader
     close(iunit)
 
     ! Avoiding compiler warning
-    if(.false.) print *, tmp
+    if ( .false. ) print *, tmp
+
+    return
 
   end subroutine read_one_dim_file
 
@@ -284,15 +290,18 @@ module input_reader
 
     implicit none
 
+    ! External
+    intrinsic :: size
+
     ! Input Variable(s)
     integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
 
     ! Input/Output Variable(s)
-    type(one_dim_read_var), dimension(num_vars), intent(inout):: one_dim_vars ! Read data
-    !                                                                           that may have gaps.
+    type(one_dim_read_var), dimension(num_vars), intent(inout) :: &
+      one_dim_vars ! Read data that may have gaps.
 
     ! Local variable(s)
-    integer i
+    integer :: i
 
     ! Begin Code
 
@@ -301,6 +310,8 @@ module input_reader
                                                    one_dim_vars(1)%values, one_dim_vars(i)%values, &
                                                    0.0 )
     end do
+
+    return
 
   end subroutine fill_blanks_one_dim_vars
 
@@ -324,16 +335,18 @@ module input_reader
 
     implicit none
 
+    ! External
+    intrinsic :: size
+
     ! Input Variable(s)
 
     integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
 
     ! Input/Output Variable(s)
-    type(one_dim_read_var), intent(in):: other_dim ! Read data
+    type(one_dim_read_var), intent(in) :: other_dim ! Read data
 
-
-    type(two_dim_read_var), dimension(num_vars), intent(inout):: two_dim_vars ! Read data
-    !                                                                           that may have gaps.
+    type(two_dim_read_var), dimension(num_vars), intent(inout) ::  &
+      two_dim_vars ! Read data that may have gaps.
 
     ! Local variables
     integer i,j
@@ -343,9 +356,9 @@ module input_reader
 
     ! Begin Code
 
-    dim_size = size(two_dim_vars(1)%values, 1)
+    dim_size = size( two_dim_vars(1)%values, 1 )
 
-    other_dim_size = size(other_dim%values )
+    other_dim_size = size( other_dim%values )
 
     do i=2, num_vars
       ! Interpolate along main dim
@@ -363,6 +376,8 @@ module input_reader
 
 
     end do
+
+    return
 
   end subroutine fill_blanks_two_dim_vars
 
@@ -414,7 +429,7 @@ module input_reader
 
     amt = 0
     do i=1, dim_grid
-      if(var(i) > -999.0) then
+      if ( var(i) > -999.0 ) then
         amt = amt + 1
         temp_var(amt) = var(i)
         temp_grid(amt) = grid(i)
@@ -427,17 +442,18 @@ module input_reader
     end do
 
 
-    if( amt == 0 ) then
+    if ( amt == 0 ) then
       var_out = default_value
     else if (amt < dim_grid) then
       if( reversed ) then
         var_out = zlinterp_fnc(dim_grid, amt, -grid, -temp_grid(1:amt), temp_var(1:amt))
       else
         var_out = zlinterp_fnc(dim_grid, amt, grid, temp_grid(1:amt), temp_var(1:amt))
-      endif
+      end if
     else
       var_out = var
     end if
+
     return
   end function linear_fill_blanks
   !----------------------------------------------------------------------------
@@ -578,6 +594,8 @@ module input_reader
 
     end if
 
+    return
+
   end function read_x_table
 
 
@@ -598,9 +616,14 @@ module input_reader
 
     implicit none
 
+    ! External Functions
+    intrinsic :: present, size
+
     ! Input Variable(s)
-    integer, intent(in) :: nvar                  ! Number of variables in retVars
-    integer, intent(in) :: dim_size              ! Size of the array returned
+    integer, intent(in) :: & 
+      nvar,  & ! Number of variables in retVars
+      dim_size ! Size of the array returned
+
     character(len=*), intent(in) :: target_name  ! Variable that is being searched for
     type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being searched
     character(len=*), optional, intent(in) :: input_file
@@ -627,6 +650,8 @@ module input_reader
       stop
       
     end if ! target_exists_in_array
+
+    return
 
   end function read_x_profile
   
@@ -668,6 +693,8 @@ module input_reader
     if( .not. l_found ) then
       i = -1
     end if
+
+    return
 
   end function get_target_index
 
