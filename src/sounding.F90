@@ -202,7 +202,7 @@ module sounding
       if( sclr_dim > 0 ) then
         if( l_sclr_sounding_exists ) then
           call read_sclr_sounding_file( iunit, runtype, sclr, &
-          sclr_sounding_retVars )
+                                        sclr_sounding_retVars )
         else
           stop 'Cannot open <runtype>_sclr_sounding.in file'
         end if
@@ -422,8 +422,8 @@ module sounding
 
     else
 
-      call convert_snd2extend_atm( n_snd_var, p_sfc, zm_init, sclr_dim,    & ! Intent(in)
-                                   sounding_retVars, sclr_sounding_retVars )   ! Intent(in)
+      call convert_snd2extend_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, & ! Intent(in)
+                                   sounding_retVars )   ! Intent(in)
     end if
 
     ! Deallocate sounding and scalar sounding profiles.  If this doesn't happen,

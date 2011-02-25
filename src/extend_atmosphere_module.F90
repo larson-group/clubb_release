@@ -45,8 +45,8 @@ module extend_atmosphere_module
   contains
 
   !-------------------------------------------------------------------------------------------------
-  subroutine convert_snd2extend_atm( n_snd_var, p_sfc, zm_init, n_sclr_var, &
-                                  sounding_profiles, sclr_sounding_profiles )
+  subroutine convert_snd2extend_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, &
+                                     sounding_profiles )
     !
     !  Description: This subroutine converts information retrieved from the
     !  sounding files of a case into a format usable for an extended atmosphere.
@@ -57,7 +57,8 @@ module extend_atmosphere_module
     !
     !-----------------------------------------------------------------------------------------------
     use input_reader, only: &
-      read_x_profile ! Procedure(s)
+      read_x_profile,  & ! Procedure(s)
+      read_one_dim_file
 
     use input_reader, only: &
       one_dim_read_var ! Type
@@ -71,13 +72,15 @@ module extend_atmosphere_module
     implicit none
 
     ! External
-    intrinsic :: size
+    intrinsic :: size, trim
 
     ! Input Variable(s)
 
-    integer, intent(in) :: n_snd_var   ! Number of variables from sounding [-]
+    integer, intent(in) :: iunit  ! Fortran file unit
 
-    integer, intent(in) :: n_sclr_var  ! Number of variables from sclr_sounding [-]
+    character(len=*), intent(in) ::  runtype
+
+    integer, intent(in) :: n_snd_var   ! Number of variables from sounding [-]
 
     real, intent(in) :: p_sfc  ! Pressure at the surface [Pa]
 
@@ -86,14 +89,14 @@ module extend_atmosphere_module
     type(one_dim_read_var), dimension(n_snd_var), intent(in) :: &
       sounding_profiles ! Sounding profile
 
-    type(one_dim_read_var), dimension(n_sclr_var), intent(in) :: &
-      sclr_sounding_profiles ! Sclr Sounding profile
-
     ! Local Variables
 
     real,  dimension(:), allocatable :: alt, theta, p_in_Pa, exner
 
-    integer :: i, sclr_sounding_dim
+    type(one_dim_read_var), dimension(1) :: &
+      o3l_sounding_profile ! Ozone Sounding profile
+
+    integer :: i
 
     character(len=20) :: alt_type, theta_type
 
@@ -101,18 +104,7 @@ module extend_atmosphere_module
 
     ! Determine the size of the extended atmosphere buffer
     extend_atmos_dim = size( sounding_profiles(1)%values )
-    sclr_sounding_dim = size( sclr_sounding_profiles(1)%values )
-
-    ! Check for an error condition
-    if ( extend_atmos_dim /= sclr_sounding_dim ) then
-      write(fstderr,*) "Fatal error in convert_snd2extend_atm."
-      write(fstderr,*) "This code assumes the scalar sounding will be the same size"
-      write(fstderr,*) "as the main sounding data."
-      write(fstderr,*) "standard sounding dimension: ", extend_atmos_dim
-      write(fstderr,*) "scalar sounding dimension: ", sclr_sounding_dim
-      stop 
-    end if
-
+   
     ! Allocate variables
     allocate( extend_alt(extend_atmos_dim) )
     allocate( extend_T_in_K(extend_atmos_dim) )
@@ -124,6 +116,8 @@ module extend_atmosphere_module
     allocate( theta(extend_atmos_dim)  )
     allocate( p_in_Pa(extend_atmos_dim) )
     allocate( exner(extend_atmos_dim) )
+
+    allocate( o3l_sounding_profile(1)%values(extend_atmos_dim) )
 
     ! Either convert to pressure or from pressure
 
@@ -160,14 +154,20 @@ module extend_atmosphere_module
     extend_sp_hmdty = extend_sp_hmdty / ( extend_sp_hmdty +1 )
 
     ! Read in ozone
-    extend_o3l = read_x_profile( n_sclr_var, extend_atmos_dim, ozone_name, &
-                                 sclr_sounding_profiles )
+    call read_one_dim_file( iunit, 1, & ! In
+      '../input/case_setups/'//trim( runtype )//'_ozone_sounding.in', & ! In
+      o3l_sounding_profile ) ! Out
+
+    extend_o3l = read_x_profile( 1, extend_atmos_dim, ozone_name, &
+                                 o3l_sounding_profile )
 
     ! Free Memory
     deallocate( alt )
     deallocate( theta )
     deallocate( p_in_Pa )
     deallocate( exner )
+
+    deallocate( o3l_sounding_profile(1)%values )
 
     return
   end subroutine convert_snd2extend_atm

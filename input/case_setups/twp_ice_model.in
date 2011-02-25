@@ -86,8 +86,7 @@ l_t_dependent = .true. ! Flag for time dependent input
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
-sclr_dim = 3 
-sclr_tol = 1.e-8
+sclr_dim = 0 
 
 ! Sponge Damping
 !

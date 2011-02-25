@@ -601,7 +601,7 @@ module input_reader
 
   !------------------------------------------------------------------------------------------------
   function read_x_profile( nvar, dim_size, target_name, retVars, &
-                           input_file ) result(x)
+                           input_file ) result( x )
     !
     !  Description: Searches for the variable specified by target_name in the
     !  collection of retVars. If the function finds the variable then it returns

@@ -129,7 +129,7 @@ debug_level   = 0
 ! 0 to shut off all scalar computations
 ! > 0 the specifies the number of columns in <runtype>_sclr_sounding.in 
 !	that will be read in and tracked
-sclr_dim   = 1  ! Total number of scalars
+sclr_dim   = 0  ! Total number of scalars
 
 iisclr_rt  = -1  ! Location in the array to place a scalar like total water
 iisclr_thl = -2 ! Location in the array to place a scalar like thetal
