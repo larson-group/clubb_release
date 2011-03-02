@@ -8,16 +8,16 @@ set(gca, 'LineStyleOrder',{'-','--'},'NextPlot','ReplaceChildren');
 curr_case = 'astex_a209';
 sec_per_hour = 3600;
 mm_per_m = 1000;
-nz = 42;
+nz = 50;
 
 t_start = 1;
 t_end = t_start + 39;
 
 % Array of the variables to plot for each file
 file_1_vars = ['u     '; 'v     '; 'thetal'; 'qt    '; 'rho   '];
-file_2_vars = ['time        '; 'zcb         '; 'ztop        '; 'zmaxcfrac   '; 'LWP         '; 'precw       '; 'cc          '; 'shf         '; 'lhf         '; 'smf         '; 'tke         '; 'v_lowlevel  '; 'qv_lowlevel '; 'th_lowlevel '; 'prec_300    '; 'prec_150    '; 'prec_srf    '; 'Kh_150      '; 'Kh_300      '; 'Kh_500      '; 'Kh_1250     '; 'tsair       '; 'ps          '; 'fsntc       '; 'fsnt        '; 'flntc       '; 'flnt        '; 'fsnsc       '; 'fsns        '; 'flnsc       '; 'flns        '];
+file_2_vars = ['time        '; 'zcb         '; 'ztop        '; 'zmaxcfrac   '; 'LWP         '; 'precw       '; 'cc          '; 'shf         '; 'lhf         '; 'smf         '; 'tke         '; 'v_lowlevel  '; 'qv_lowlevel '; 'th_lowlevel '; 'prec_300    '; 'prec_150    '; 'prec_srf    '; 'Kh_150      '; 'Kh_300      '; 'Kh_500      '; 'Kh_1250     '; 'tsair       '; 'ps          '; 'fsntc       '; 'fsnt        '; 'flntc       '; 'flnt        '; 'fsnsc       '; 'fsns        '; 'flnsc       '; 'flns        '; 'SST         '; 'SSA         '];
 file_3_vars_zf = ['u     '; 'v     '; 'thetal'; 'qt    '; 'rho   '; 'qs    '; 'ql    '; 'qr    '; 'cf    '];
-file_3_vars_zh = ['wthl  '; 'wqt   '; 'uw    '; 'vw    '; 'prec  '; 'TKE   '];
+file_3_vars_zh = ['wthl  '; 'wqt   '; 'uw    '; 'vw    '; 'prec  '; 'TKE   '; 'SW_up '; 'SW_dn '; 'LW_up '; 'LW_dn '];
 %file_4_vars = [];
 
 sfcfilepath1 = [nc_path, 'larson_profiles_ini.nc'];
@@ -122,6 +122,7 @@ if ( exist(sfcfilepath2) )
 		%Average
 		var_avg = zeros(nz, 1);
 		for t=t_start:t_end
+			file_var(:,t)
 			var_avg = var_avg + file_var(:,t);
 		end
 		var_avg = var_avg ./ (t_end - t_start);

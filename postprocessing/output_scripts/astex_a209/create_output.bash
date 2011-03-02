@@ -8,11 +8,11 @@
 ###############################################################################
 
 # Path to the CLUBB output files
-input_path="/home/meyernr/ticket_351/output/5_min_step/"
+input_path="/home/meyernr/ticket_388/clubb_fresh/output/"
 # Desired path to place the .nc files
-output_path="/home/meyernr/ticket_351/nc_output/"
+output_path="/home/meyernr/ticket_388/nc_output/"
 # Desired path to the verify PDFs
-pdf_path="/home/meyernr/ticket_351/astex_a209/"
+pdf_path="/home/meyernr/ticket_388/verify/"
 
 # List of cases to be converted
 CASES=( astex_a209 )

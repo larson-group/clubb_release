@@ -82,7 +82,7 @@ end
 
 % Reading the header from zm file
 [w_filename,w_nz,w_z,w_ntimesteps,w_numvars,w_list_vars] = header_read([scm_path,swfile]);
- 
+
 % Read in zm file's variables into MATLAB.
 % Variables will be usable in the form <GrADS Variable Name>_array
 for i=1:w_numvars
@@ -105,7 +105,7 @@ for i=1:rm_numvars
      for timestep = 1:sizet
          stringtoeval = [rm_list_vars(i,:), ' = read_grads_clubb_endian([scm_path,rm_filename],''ieee-le'',rm_nz,t(timestep),t(timestep),i,rm_numvars);'];
          eval(stringtoeval)
-         str = rm_list_vars(i,:)
+         str = rm_list_vars(i,:);
          arraydata(1:rm_nz,timestep) = eval([str,'(1:rm_nz)']);
          eval([strtrim(str),'_array = arraydata;']);
      end
@@ -178,7 +178,7 @@ time_3600_array
 ncid_initial = netcdf.create( strcat( output_path, 'larson_profiles_ini.nc' ),'NC_WRITE' );	% File 1
 ncid_scalars = netcdf.create( strcat( output_path, 'larson_scalars.nc' ),'NC_WRITE');		% File 2
 ncid_avg = netcdf.create( strcat( output_path, 'larson_profiles_avg.nc'),'NC_WRITE');		% File 3
-ncid_forcing = netcdf.create( strcat( output_path, 'larson_profiles_forc.nc'),'NC_WRITE');	% File 4
+%ncid_forcing = netcdf.create( strcat( output_path, 'larson_profiles_forc.nc'),'NC_WRITE');	% File 4
 
 % Define Global Attributes
 
@@ -187,10 +187,10 @@ ncid_forcing = netcdf.create( strcat( output_path, 'larson_profiles_forc.nc'),'N
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
 % % Contact person
-netcdf.putAtt(ncid_initial,netcdf.getConstant('NC_GLOBAL'),'contact_person','Vince Larson (vlarson@uwm.edu) and Keith White (kcwhite@uwm.edu)');
-netcdf.putAtt(ncid_scalars,netcdf.getConstant('NC_GLOBAL'),'contact_person','Vince Larson (vlarson@uwm.edu) and Keith White (kcwhite@uwm.edu)');
-netcdf.putAtt(ncid_avg,netcdf.getConstant('NC_GLOBAL'),'contact_person','Vince Larson (vlarson@uwm.edu) and Keith White (kcwhite@uwm.edu)');
-netcdf.putAtt(ncid_forcing,netcdf.getConstant('NC_GLOBAL'),'contact_person','Vince Larson (vlarson@uwm.edu) and Keith White (kcwhite@uwm.edu)');
+netcdf.putAtt(ncid_initial,netcdf.getConstant('NC_GLOBAL'),'contact_person','Vince Larson (vlarson@uwm.edu) and Nate Meyer (meyern@uwm.edu)');
+netcdf.putAtt(ncid_scalars,netcdf.getConstant('NC_GLOBAL'),'contact_person','Vince Larson (vlarson@uwm.edu) and Nate Meyer (meyern@uwm.edu)');
+netcdf.putAtt(ncid_avg,netcdf.getConstant('NC_GLOBAL'),'contact_person','Vince Larson (vlarson@uwm.edu) and Nate Meyer (meyern@uwm.edu)');
+%netcdf.putAtt(ncid_forcing,netcdf.getConstant('NC_GLOBAL'),'contact_person','Vince Larson (vlarson@uwm.edu) and Keith White (kcwhite@uwm.edu)');
 
 % % Type of model where the SCM is derived from (climate model, mesoscale
 % weather prediction model, regional model) ?
@@ -205,12 +205,18 @@ for i=1:sizet
 	v_i_tke(i) = s;
 end
 
+% Create an array of albedo values. In the astex case, albedo is defined to be .07 in the model.in file.
+SSA_array = zeros( 1, sizet );
+SSA_array(1,:) = .07
+
+
 %%%%%%%%%%%%%%
 % FILE 1
 %%%%%%%%%%%%%%
 % Define dimensions
 % Full Levels(zt)
-levfdimid = netcdf.defdim(ncid_initial,'zf', nz );
+levfdimid = netcdf.defdim( ncid_initial, 'zf', nz );
+levhdimid = netcdf.defdim( ncid_initial, 'zh', nz );
 
 % Define variables
 zfvarid = define_variable( 'zf', 'Altitude of layer mid-points (full level)', 'm', levfdimid, ncid_initial );
@@ -262,6 +268,8 @@ Kh_150varid = define_variable( 'Kh_150', 'Eddy diffusivity for heat at 150 m', '
 Kh_300varid = define_variable( 'Kh_300', 'Eddy diffusivity for heat at 300 m', 'm^2/s^2', tdimid, ncid_scalars );
 Kh_500varid = define_variable( 'Kh_500', 'Eddy diffusivity for heat at 500 m', 'm^2/s^2', tdimid, ncid_scalars );
 Kh_1250varid = define_variable( 'Kh_1250', 'Eddy diffusivity for heat at 1250 m', 'm^2/s^2', tdimid, ncid_scalars );
+SSTvarid = define_variable( 'SST', 'Sea surface temperature', 'K', tdimid, ncid_scalars );
+SSAvarid = define_variable( 'SSA', 'Sea surface albedo', '0-1', tdimid, ncid_scalars );
 tsairvarid = define_variable( 'tsair', 'Surface air temperature', 'K', tdimid, ncid_scalars );
 psvarid = define_variable( 'ps', 'Surface pressure', 'hPa', tdimid, ncid_scalars );
 % skipping pblh
@@ -305,6 +313,8 @@ netcdf.putVar( ncid_scalars, Kh_300varid, Kh_zt_array(7,:));	% 292.11 m
 netcdf.putVar( ncid_scalars, Kh_500varid, Kh_zt_array(10,:));	% 531.58 m
 netcdf.putVar( ncid_scalars, Kh_1250varid,Kh_zt_array(17,:));	% 1265.79 m
 netcdf.putVar( ncid_scalars, tsairvarid, T_in_K_array(1,:));
+netcdf.putVar( ncid_scalars, SSTvarid, T_sfc_array );
+netcdf.putVar( ncid_scalars, SSAvarid, SSA_array );
 netcdf.putVar( ncid_scalars, psvarid, p_array(1,:));
 netcdf.putVar( ncid_scalars, fsntvarid, Frad_SW_down_ra_array(rm_nz,:) - Frad_SW_up_rad_array(rm_nz,:));
 netcdf.putVar( ncid_scalars, flntvarid, Frad_LW_up_rad_array(rm_nz,:)  - Frad_LW_down_ra_array(rm_nz,:));
@@ -350,6 +360,10 @@ precvarid = define_variable( 'prec', 'Precipitation flux (positive downward)', '
 % skipping ql_up
 % skipping thv_up
 TKEvarid = define_variable( 'TKE', 'Turbulent kinetic energy', 'm^2/s^2', [levhdimid tdimid], ncid_avg);
+SW_upvarid = define_variable( 'SW_up', 'Upward shortwave radiation', 'W/m^2', [levhdimid tdimid], ncid_avg );
+SW_dnvarid = define_variable( 'SW_dn', 'Downward shortwave radiation', 'W/m^2', [levhdimid tdimid], ncid_avg );
+LW_upvarid = define_variable( 'LW_up', 'Upward longwave radiation', 'W/m^2', [levhdimid tdimid], ncid_avg );
+LW_dnvarid = define_variable( 'LW_dn', 'Downward longwave radiation', 'W/m^2', [levhdimid tdimid], ncid_avg );
 
 % Set the file to add values
 netcdf.setFill(ncid_avg,'NC_FILL');
@@ -380,6 +394,10 @@ netcdf.putVar( ncid_avg, precvarid, time_average( Fprec_array, model_timestep, a
 % skipping ql_up
 % skipping thv_up
 netcdf.putVar( ncid_avg, TKEvarid, time_average( em_array, model_timestep, average_time_interval, sizet, nz ) );
+netcdf.putVar( ncid_avg, SW_upvarid, time_average( Frad_SW_up_array, model_timestep, average_time_interval, sizet, nz ) );
+netcdf.putVar( ncid_avg, SW_dnvarid, time_average( Frad_SW_down_array, model_timestep, average_time_interval, sizet, nz ) );
+netcdf.putVar( ncid_avg, LW_upvarid, time_average( Frad_LW_up_array, model_timestep, average_time_interval, sizet, nz ) );
+netcdf.putVar( ncid_avg, LW_dnvarid, time_average( Frad_LW_down_array, model_timestep, average_time_interval, sizet, nz ) );
 
 %%%%%%%%%%%%%%
 % FILE 4
@@ -396,7 +414,7 @@ netcdf.putVar( ncid_avg, TKEvarid, time_average( em_array, model_timestep, avera
 netcdf.close(ncid_initial);
 netcdf.close(ncid_scalars);
 netcdf.close(ncid_avg);
-netcdf.close(ncid_forcing);
+%netcdf.close(ncid_forcing);
 end
 
 function varid = define_variable( shrt_name, long_name, units, dim_ids, file_id )
