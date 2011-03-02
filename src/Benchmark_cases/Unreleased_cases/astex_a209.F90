@@ -180,7 +180,7 @@ true_time = real( time )
 T_sfc = 0.0
 
 ! We set ustar as it is set in rico
-ustar = 0.28
+ustar = 0.155
 
 if ( true_time <= time_sfc_given(1) ) then
   T_sfc = T_sfc_given(1)
