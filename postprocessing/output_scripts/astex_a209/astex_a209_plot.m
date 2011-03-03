@@ -125,7 +125,7 @@ if ( exist(sfcfilepath2) )
 			file_var(:,t)
 			var_avg = var_avg + file_var(:,t);
 		end
-		var_avg = var_avg ./ (t_end - t_start);
+		var_avg = var_avg ./ (t_end - t_start + 1);
 
 		plot(var_avg, zf);
 
@@ -157,7 +157,7 @@ if ( exist(sfcfilepath2) )
 		for t=t_start:t_end
 			var_avg = var_avg + file_var(:,t);
 		end
-		var_avg = var_avg ./ (t_end - t_start);
+		var_avg = var_avg ./ (t_end - t_start + 1);
 
 		plot(var_avg, zh);
 
