@@ -38,9 +38,6 @@ SKIP_LIST = ["nov11_altocu", \
 MAX_FAILURES = 1000
 numFails = 0 # Global variable indicating the current number of errors found.
 
-# The current case being tested
-currentCase = ""
-
 #--------------------------------------------------------------------------------------------------
 def checkGradsBudgets(fileName, iteration):
     """
@@ -466,7 +463,6 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
            testSuccess: Whether the test is succeeding or failing
     """
     global numFails
-    global currentCase
     
     for value in errorDifference:
         zLevel += 1
@@ -481,7 +477,7 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
             if abs(percentError[zLevel-1]) >= TEST_LENIENCY: # [zLevel-1] because array starts at 0
                 testSuccess = False
                 numFails += 1
-                print >> sys.stderr, " ".join([ strftime("%H:%M:%S"), "in", currentCase, termName, "fails at t=", \
+                print " ".join([ termName, "fails at t=", \
                     str(iteration), "and z=", str(zLevel), "with a difference of", "%e" % value, \
                     termUnits, "and error", "%.9f" % percentError[zLevel-1], "%" ])
                 
@@ -632,13 +628,10 @@ if __name__ == "__main__":
             print "Unable to find testable data"
             testSuccess = False
         
-        global currentCase
-        
         # Test all remaining files
         for dataFile in testableFiles:
             print "".join(["\n", strftime("%H:%M:%S"), " - Testing ", dataFile])
             
-            currentCase = dataFile
             # Check if file is NetCDF, otherwise assume GrADS
             if dataFile.find(".nc") != -1 or dataFile.find(".cdf") != -1:
                 if checkNetcdfBudgets( dataFile, int(sys.argv[2]) ) == False:
