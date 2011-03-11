@@ -339,6 +339,7 @@ tdimid = netcdf.defdim(ncid_avg,'time', sizet / ( average_time_interval / model_
 timevarid = define_variable( 'time', 'Time', 's', tdimid, ncid_avg );
 zfvarid = define_variable( 'zf', 'Altitude of layer mid-points (full level)', 'm', [levfdimid tdimid], ncid_avg );
 zhvarid = define_variable( 'zh', 'Altitude of layer bottom points (half level)', 'm', [levhdimid tdimid], ncid_avg);
+presvarid = define_variable( 'pres', 'Pressure', 'Pa', [levfdimid tdimid], ncid_avg )
 uvarid = define_variable( 'u', 'Zonal wind', 'm/s', [levfdimid tdimid], ncid_avg );
 vvarid = define_variable( 'v', 'Meridonal wind', 'm/s', [levfdimid tdimid], ncid_avg );
 thetalvarid = define_variable( 'thetal', 'Liquid water potential temperature', 'K', [levfdimid tdimid], ncid_avg );
@@ -373,6 +374,7 @@ netcdf.endDef(ncid_avg);
 netcdf.putVar( ncid_avg, timevarid, time_3600_array );
 netcdf.putVar( ncid_avg, zfvarid, time_average( full_z, model_timestep, average_time_interval, sizet, nz ) );
 netcdf.putVar( ncid_avg, zhvarid, time_average( full_w_z, model_timestep, average_time_interval, sizet, nz ) );
+netcdf.putVar( ncid_avg, presvarid, time_average( p_in_Pa_array, model_timestep, average_time_interval, sizet, nz ) );
 netcdf.putVar( ncid_avg, uvarid, time_average( um_array, model_timestep, average_time_interval, sizet, nz ) );
 netcdf.putVar( ncid_avg, vvarid, time_average( vm_array, model_timestep, average_time_interval, sizet, nz ) );
 netcdf.putVar( ncid_avg, thetalvarid, time_average( thlm_array, model_timestep, average_time_interval, sizet, nz ) );
