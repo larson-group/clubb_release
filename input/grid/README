@@ -67,3 +67,15 @@ increase in thickness until they reach 250 m. apart at an altitude of 5750 m.
 Above that level, the grid levels remain 250 m. apart.
 
 --------------------------------------------------------------------------------
+ECMWF grid 
+
+ecmwf_90lev_zt_grid.grd file:
+
+This is the L90 grid used for the ECMWF forecast model.  The levels are 
+an approximate height in meters and based on the pressure levels given here:
+
+http://www.ecmwf.int/products/data/technical/model_levels/model_def_91.html
+
+The grid has a coarser resolution than the deep convective grid and is so
+closer the grid tht might be used in an operational forecast model.
+--------------------------------------------------------------------------------
