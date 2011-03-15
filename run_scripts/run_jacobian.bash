@@ -60,7 +60,8 @@ if [ ! -e "$STATS_FILE" ]; then
 	exit 1
 fi
 
-cat "../input_misc/jacobian.in" $PARAMS_FILE $MODEL_FILE $STATS_FILE > 'jacobian.in'
+cat "../input_misc/jacobian.in" $PARAMS_FILE $MODEL_FILE $STATS_FILE \
+	| sed 's/debug_level\s*=\s*.*/debug_level = 0/g' | sed -e 's/\!.*//' > 'jacobian.in'
 #######################################################################
 # State which case is being run
 #######################################################################

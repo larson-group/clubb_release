@@ -41,85 +41,82 @@ program jacobian
 
   implicit none
 
-! Variable derived types
-!----------------------------------------------------------------------
+  !----------------------------------------------------------------------------
+  ! Variable derived types
+  !----------------------------------------------------------------------------
   type param_array
 
-  integer :: entries ! Total constant parameters
+    integer :: entries ! Total constant parameters
 
-  character(len=11), pointer :: name(:)
+    character(len=11), pointer :: name(:)
 
-  real, pointer :: value(:)
+    real, pointer :: value(:)
 
   end type param_array
-!----------------------------------------------------------------------
+  !----------------------------------------------------------------------------
   type variable_array
 
-  integer ::  & 
-  nz,      & ! Z dimension [grid boxes] 
-  entries    ! Total variables
+    integer ::  & 
+      nz,   & ! Z dimension [grid boxes] 
+      entries ! Total variables
 
-  real, pointer, dimension(:) :: z
+    real, pointer, dimension(:) :: z
 
-  character(len=12), pointer :: name(:)
+    character(len=12), pointer :: name(:)
 
-  real, pointer, dimension(:,:) :: value ! (1:nz, entries)
+    real, pointer, dimension(:,:) :: value ! (1:nz, entries)
 
   end type variable_array
-!----------------------------------------------------------------------
+  !-----------------------------------------------------------------------------
 
   ! External
   intrinsic sum, transfer, abs, int, trim
 
-  ! Local Constants
+  ! Constant Parameters
   integer, parameter :: & 
-  nvarzt = 14, & 
-  nvarzm = 40
-
-  ! 42 must be changed to be equal to nparams
-  character(len=12), parameter :: write_format = "(42(e18.10))"
+    nvarzt = 14, & 
+    nvarzm = 40
 
 ! character, parameter :: delta   = 'Δ' ! Only works on unicode terminals
 
   character, parameter :: delta   = 'D'
 
-!-----------------------------------------------------------------------
-
-  ! Other namelist Variables
-  real ::  & 
-  delta_factor ! factor constant parameters are multiplied by
-
+  ! Local Variables
   integer, dimension(10) :: & 
-  times ! Times to read in [GraDS output file units]
+    times ! Times to read in [GraDS output file units]
 
-  logical :: & 
-  l_use_standard_vars ! use standard constant parameters
-
-
-!     ! Types to hold GrADS variables and parameter constants
+  ! Types to hold GrADS variables and parameter constants
   type (param_array) :: clubb_params
 
   type (variable_array) ::  & 
-  var1zt,  & ! thermo grid GRaDS results [units vary]
-  var2zt,  & ! thermo grid GRaDS results [units vary]
-  var1zm,  & ! momentum grid GRaDS results [units vary]
-  var2zm     ! momentum grid GRaDS results [units vary]
+    var1zt,  & ! Thermo grid GrADS results   [units vary]
+    var2zt,  & ! Thermo grid GrADS results   [units vary]
+    var1zm,  & ! Momentum grid GrADS results [units vary]
+    var2zm     ! Momentum grid GrADS results [units vary]
 
 
-  real, dimension(nparams, nvarzt+nvarzm) :: jmatrix
-  real, dimension(nparams, nvarzt+nvarzm) :: impact_matrix
-  real, dimension(nparams, nvarzt+nvarzm) :: fc_impact_matrix
+  real, dimension(nparams, nvarzt+nvarzm) :: &
+    jmatrix, &           ! Jacobian matrix
+    impact_matrix, &     ! Impact matrix
+    fc_impact_matrix     !
 
-  integer :: nzt ! Thermo grid levels
-  integer :: nzm ! Momentum grid levels
-  integer :: alloc_stat ! Det. whether array allocation worked
+  ! XX must be changed to be equal to nparams
+  character(len=12), save :: write_format = "(XX(E18.10))"
 
-  real :: tmp_param ! Temp variable
+  integer :: &
+    nzt, &        ! Thermo grid levels
+    nzm, &        ! Momentum grid levels
+    alloc_stat, & ! Det. whether array allocation worked
+    i, j, k, &    ! loop variables
+    nanbits, &    ! Holds a NaN value for purposes of output
+    err_code      ! Determines whether a run went unstable
 
-  integer :: i, j, k ! loop variables
-  integer :: nanbits ! Holds a NaN value for purposes of output
+  real ::  & 
+    delta_factor, & ! Factor that tunable parameters are multiplied by
+    tmp_param       ! Temporary variable
 
-  integer :: err_code ! Determines whether a run went unstable
+  logical :: & 
+    l_use_standard_vars ! Whether to use the standard tunable parameters
 
   ! Namelists
   namelist /jcbn_nml/  & 
@@ -129,6 +126,12 @@ program jacobian
 
   ! Initialize data
   data nanbits /Z"7F800000"/
+
+  ! ---- Begin Code ----
+
+  ! Use an internal file write to specify the write format for the jacobian_matrix.txt
+  ! and impact_matrix.txt files.
+  write(unit=write_format(2:3), fmt='(i2.2)') nparams
 
   times(1:10) = 0
 
@@ -158,11 +161,11 @@ program jacobian
 
   clubb_params%name(1:nparams) = params_list(1:nparams)
 
-  write(unit=fstdout,fmt='(a11,2a12)')  & 
-    "Parameter  ", "Initial     ", "Varied      "
+  write(unit=fstdout,fmt='(a12,2a12)')  & 
+    "Parameter   ", "Initial     ", "Varied      "
 
   do i = 1, clubb_params%entries, 1
-    write(unit=*,fmt='(a11,2f12.5)') clubb_params%name(i),  & 
+    write(unit=*,fmt='(a12,2f12.5)') clubb_params%name(i),  & 
       clubb_params%value(i), clubb_params%value(i) * delta_factor
   end do
 
@@ -174,10 +177,10 @@ program jacobian
 
   end if
 
-  ! Obtain nz from the generated GrADS files
+  ! Obtain number of vertical levels from the generated GrADS files
 
-  nzt = stat_file_num_vertical_levels( var1zt%name(1), "../output/"//trim( fname_zt )//".ctl" )
-  nzm = stat_file_num_vertical_levels( var1zm%name(1), "../output/"//trim( fname_zm )//".ctl" )
+  nzt = stat_file_num_vertical_levels( "thlm", "../output/"//trim( fname_zt )//".ctl" )
+  nzm = stat_file_num_vertical_levels( "thlm", "../output/"//trim( fname_zm )//".ctl" )
 
   ! Initialize the structures holding the variables
 
@@ -220,8 +223,6 @@ program jacobian
     ( var1zm%name(1), "../output/"//trim( fname_zm )//".ctl", nzm )
   var2zm%z = stat_file_vertical_levels &
     ( var1zm%name(1), "../output/"//trim( fname_zm )//".ctl", nzm )
-
-
 
   var1zt%name(1:nvarzt) =  & 
   (/"cloud_frac  ", "rcm         ", "rtm         ",  & 
@@ -269,7 +270,7 @@ program jacobian
     ! Print a period so the user knows something is happening
     write(unit=fstdout, fmt='(a1)', advance='no') "."
 
-    if ( fatal_error(err_code) ) then
+    if ( fatal_error( err_code ) ) then
 
       ! Pos. Infinity bit pattern
       jmatrix(i, :) & 
@@ -318,6 +319,9 @@ program jacobian
 
   end do !i = 1..clubb_params%entries
 
+  ! Write a newline
+  write(6,*) ""
+
   ! Output Results to the terminal
   do i = 1, clubb_params%entries
 
@@ -343,7 +347,7 @@ program jacobian
 
   end do ! 1..clubb_params%entries
 
-  ! Output results to an ASCII file
+  ! Output results to ASCII text files
 
   ! Jacobian Matrix
   open(unit=20, file="jacobian_matrix.txt", action="write" )
@@ -363,23 +367,32 @@ program jacobian
 
   close(unit=20)
 
+  ! Deallocate memory
+  deallocate( var1zt%value, var2zt%value, & 
+              var1zt%name, var2zt%name, & 
+              var1zt%z, var2zt%z )
+
+  deallocate( var1zm%value, var2zm%value, & 
+              var1zm%name, var2zm%name, & 
+              var1zm%z, var2zm%z )
+
   stop "Program exited normally"
 
   contains
 !-----------------------------------------------------------------------
   subroutine getvariables( varray, fname_zx )
 
-!       Description:
-!       Returns a variable_array structure over namelist defined
-!       time intervals
+! Description:
+!   Returns a variable_array structure over namelist defined
+!   time intervals
 
-!       References:
-!       None
+! References:
+!   None
 !-----------------------------------------------------------------------
 
     implicit none
 
-    ! Input
+    ! Input Variables
     type (variable_array), intent(inout) :: varray
 
     character(len=*), intent(in) :: fname_zx
@@ -387,7 +400,7 @@ program jacobian
     ! Local Variable
     logical :: l_error
 
-
+    ! ---- Begin Code ----
 
     do k = 1, varray%entries, 1
 
