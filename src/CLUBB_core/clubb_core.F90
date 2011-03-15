@@ -699,17 +699,11 @@ module clubb_core
     rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
 
-    ! Compute skewness velocity for output purposes
+    ! Compute skewness velocity for stats output purposes
     if ( iSkw_velocity > 0 ) then
       Skw_velocity = ( 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) ) ) & 
                    * ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
     end if
-
-    ! Clip skewness velocity
-!   do k = 1, gr%nnzp
-!     max_mag_Skw_velocity = 50. * ( 1./gr%invrs_dzm(k) ) * ( 1./real( dt ) ) 
-!     Skw_velocity(k) = sign( min( abs( Skw_velocity(k) ), max_mag_Skw_velocity ), Skw_velocity(k) )
-!   end do
 
     ! Compute wp3 / wp2 on zm levels
     wp3_on_wp2 = ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
@@ -718,7 +712,7 @@ module clubb_core
     ! this in the wp3_ta term since the smoothing results in less noise.
     wp3_on_wp2 = zt2zm( zm2zt( wp3_on_wp2 ) )
 
-    ! Compute wp3 / wp2 on zt levels (currently non-interactive)
+    ! Compute wp3 / wp2 on zt levels.
     wp3_on_wp2_zt = ( wp3(1:gr%nnzp) / max( wp2_zt(1:gr%nnzp), w_tol_sqd ) )
 
     ! Smooth as above
