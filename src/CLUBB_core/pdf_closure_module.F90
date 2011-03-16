@@ -298,22 +298,22 @@ module pdf_closure_module
     ! Otherwise width parameters (e.g. varnce_w1, varnce_w2, etc.) are non-zero.
     if ( wp2 <= w_tol_sqd )  then
 
-      mixt_frac = 0.5
-      w1        = wm
-      w2        = wm
-      varnce_w1 = 0.
-      varnce_w2 = 0.
-      rt1       = rtm
-      rt2       = rtm
-      alpha_rt  = 0.5
-      varnce_rt1      = 0.
-      varnce_rt2      = 0.
-      thl1      = thlm
-      thl2      = thlm
-      alpha_thl = 0.5
-      varnce_thl1     = 0.
-      varnce_thl2     = 0.
-      rrtthl    = 0.
+      mixt_frac   = 0.5
+      w1          = wm
+      w2          = wm
+      varnce_w1   = 0.
+      varnce_w2   = 0.
+      rt1         = rtm
+      rt2         = rtm
+      alpha_rt    = 0.5
+      varnce_rt1  = 0.
+      varnce_rt2  = 0.
+      thl1        = thlm
+      thl2        = thlm
+      alpha_thl   = 0.5
+      varnce_thl1 = 0.
+      varnce_thl2 = 0.
+      rrtthl      = 0.
 
       if ( l_scalar_calc ) then
         do i = 1, sclr_dim, 1
