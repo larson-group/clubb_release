@@ -254,10 +254,11 @@ Not this:
 
 \item Do not use assumed size or assumed shape arrays in CLUBB.  
 Generally speaking, the grid class defines the length of model arrays, 
-and the use of assumed size arrays introduces 
-another level of complexity that can cause bugs.  An exception may occur
-if you need to interface with code developed by external contributors that
-contains assumed shape arrays.
+and the use of assumed size arrays introduces another level of complexity 
+that can contribute to introducing bugs.  An exception to this rule is
+that should you need to interface with code developed by external contributors 
+that contains assumed size or shape arrays you may have to declare your arrays
+the same way.
 \newline
 
 \item When a logical expression or a do loop extends more than ten lines, put a
@@ -297,7 +298,7 @@ logical operators and use the Fortran 90 style logical operators. \newline
  E.g.
 \begin{verbatim}
   ! Like this
-  if ( x == y ) .and. ( y >= z ) .or. ( z /= 0.0 ) then
+  if ( ( x == y ) .and. ( y >= z ) .or. ( z /= 0.0 ) ) then
 
     ...
 
