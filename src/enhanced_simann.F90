@@ -19,6 +19,9 @@ module enhanced_simann
 
   private ! Default scope
 
+  logical, parameter :: &
+    l_esa_debug_statements = .false. ! Verbose debugging output
+
   contains
 
   !-----------------------------------------------------------------------------
@@ -29,6 +32,10 @@ module enhanced_simann
   ! References:
   !   None
   !-----------------------------------------------------------------------------
+    use mt95, only: genrand_real1 ! Procedure
+
+    use mt95, only: genrand_real ! Constant
+
     implicit none
 
     ! External
@@ -36,6 +43,21 @@ module enhanced_simann
       epsilon, & ! Machine dependent epsilon
       log,     & ! Log_e( x )
       size       ! Array size
+
+    ! Define the interface for the minimization function `FOBJ' in the paper.
+    ! It uses Fortran 90 assumed shape arrays to be compatable with the existing
+    ! cost function used with Numerical Recipes' algorithms
+    interface
+      function fobj( x )
+
+      implicit none
+
+      real, dimension(:), intent(in) :: x
+
+      real :: fobj
+
+      end function fobj
+    end interface
 
     ! Parameter constants
     integer, parameter :: &
@@ -59,21 +81,6 @@ module enhanced_simann
       x0min,  & ! Minimum values for the x vector
       x0max,  & ! Maximum values for the x vector
       xinit     ! Initial argument for fobj
-
-    ! Define the interface for the minimization function `FOBJ' in the paper.
-    ! It uses Fortran 90 assumed shape arrays to be compatable with the existing
-    ! cost function used with Numerical Recipes' algorithms
-    interface
-      function fobj( x )
-
-      implicit none
-
-      real, dimension(:), intent(in) :: x
-
-      real :: fobj
-
-      end function fobj
-    end interface
     
     ! Output variables
     real, dimension(:), intent(out) :: &
@@ -129,13 +136,13 @@ module enhanced_simann
       nmvst    ! Number of attempted moves at current temp stage
 
     real :: &
+      rok,    & ! Step vector adjustment variable
       elowst, & ! Minimal fobj value at current temp stage
       avgyst, & ! Sum of successive fobj values at current temp stage
       sdgyup    ! Sum of accepted uphill fobj variations at current temp stage
 
-    real :: &
-      rand, & ! random number from [0,1]
-      rok     ! Step vector adjustment variable
+    real(kind=genrand_real) :: &
+      rand ! random number from [0,1]
 
     logical :: l_accept_xtry
 
@@ -184,7 +191,8 @@ module enhanced_simann
       ! -dschanen 8 Dec 2008
       do i = 1, size( init_moves ), 1
         xtry = xinit
-        call exec_movement( spartition, x0max, x0min, stpini, fobj, xtry, init_moves(i) )
+        call exec_movement( spartition, x0max, x0min, stpini, fobj, & ! In
+                            xtry, init_moves(i) ) ! In/Out, Out
       end do ! 1 .. size of init_moves
 
       ! Compute std dev
@@ -192,22 +200,34 @@ module enhanced_simann
       dgyini = sqrt( sum( ( init_moves-init_avg )**2 ) &
                      / real( size( init_moves ) ) &
                    )
+      if ( l_esa_debug_statements ) then
+        print *, "Intial moves", init_moves
+      end if
 
-      print *, "Intial moves", init_moves
       ! Compute initial temperature.  Value of probok comes from Siarry, et al.
       tmpini = -dgyini / log( probok )
-      print *, "Initial temp = ", tmpini
+
+      if ( l_esa_debug_statements ) then
+        print *, "Initial temp = ", tmpini
+      end if
 
       ! Formula from pp 220
       tstop = -( epsrel * dgyini + epsabs/log( epsrel * probok + epsabs ) )
-      print *, "Stop temp = ", tstop
+
+      if ( l_esa_debug_statements ) then
+        print *, "Stop temp = ", tstop
+      end if
 
       nfobj = 1
 
+      ! Initial optimal point
       xopt(:) = xinit(:)
+
+      ! Initial optimal fobj value
       enopt   = einit
 
       xstart = xinit 
+
       oldrgy = einit
 
       temp = tmpini
@@ -230,18 +250,22 @@ module enhanced_simann
       nm2 = 3 ! n-2th "    "
       nm3 = 4 ! n-3th "    "
 
-      do  ! Exit conditions are handled elsewhere
+      do  ! The 4 exit conditions for this loop are handled later in the loop
 
         l_accept_xtry = .false. ! Initialize
 
         ! Step 2: Space paritioning
         ! This should be random, uniform, and not over select an element of x
-        call select_partition( spartition, mtotst )
+        call select_partition( mtotst, &  ! In
+                               spartition ) ! Out
+
         !spartition(:) = .true. ! uncomment to turn off partitioning
 
         xtry = xstart
         ! Step 3: Execution of One Movement
-        call exec_movement( spartition, x0max, x0min, stpmst, fobj, xtry, rnewgy )
+        call exec_movement( spartition, x0max, x0min, stpmst, fobj, & ! In
+                            xtry, rnewgy ) ! In/Out, Out
+
         !print *, "x = ", xtry, "f(x) = ", rnewgy, "xopt", xopt
         !pause
 
@@ -263,7 +287,7 @@ module enhanced_simann
               elowst = rnewgy
             end if
          else
-           call random_number( rand )
+           call genrand_real1( rand )
 
            ! Accept the number with probability of exp(-deltae / temp)
            if ( rand  <= exp( -deltae/temp ) ) then
@@ -321,34 +345,50 @@ module enhanced_simann
 
         ! (1) No uphill changes in the last 4 temperature stages
         if ( all( mokst(:,1:4) == 0 ) ) then
-          write(6,*) "exit on condition 1"
-          write(6,*) "temp", temp
-          write(6,*) "stpmst", stpmst
-          write(6,*) "stpini", stpini
+
+          if ( l_esa_debug_statements ) then
+            write(6,*) "Exit on condition 1"
+            write(6,*) "temp", temp
+            write(6,*) "stpmst", stpmst
+            write(6,*) "stpini", stpini
+          end if
+
           exit
         end if
            
         ! (2) temp < tstop
         if ( temp < tstop ) then
-          write(6,*) "exit on condition 2"
-          write(6,*) "temp", temp
-          write(6,*) "stpmst", stpmst
-          write(6,*) "stpini", stpini
+
+          if ( l_esa_debug_statements ) then
+            write(6,*) "Exit on condition 2"
+            write(6,*) "temp", temp
+            write(6,*) "stpmst", stpmst
+            write(6,*) "stpini", stpini
+          end if
+
           exit
         end if
 
         ! (3) Too close to machine epsilon
         if ( any( stpmst < epsrel * stpini + epsabs ) ) then
-          write(6,*) "exit on condition 3"
-          write(6,*) "temp", temp
-          write(6,*) "stpmst", stpmst
-          write(6,*) "stpini", stpini
+
+          if ( l_esa_debug_statements ) then
+            write(6,*) "Exit on condition 3"
+            write(6,*) "temp", temp
+            write(6,*) "stpmst", stpmst
+            write(6,*) "stpini", stpini
+          end if
+
           exit
         end if
 
         ! (4) Too many iterations
         if ( nfobj >= nfmax*np ) then
-          write(6,*) "exit on condition 4"
+
+          if ( l_esa_debug_statements ) then
+            write(6,*) "Exit on condition 4"
+          end if
+
           exit
         end if
 
@@ -362,12 +402,16 @@ module enhanced_simann
 
       end do
 
-      print *, "mtotst = ", mtotst
+      if ( l_esa_debug_statements ) then
+        print *, "mtotst = ", mtotst
+      end if
+
     return
   end subroutine esa_driver
 
   !-----------------------------------------------------------------------------
-  subroutine exec_movement( spartition, x0max, x0min, step, fobj, x, cost )
+  subroutine exec_movement( spartition, x0max, x0min, step, fobj, &
+                            x, cost )
   ! Description:
   !   Execute one movement in domain space
 
@@ -375,15 +419,14 @@ module enhanced_simann
   !   Step 3 in Siarry, et al.
   !-----------------------------------------------------------------------------
 
+    use mt95, only: genrand_real1 ! Procedure
+
+    use mt95, only: genrand_real ! Constant
+
     implicit none
 
-    intrinsic :: random_number, size
-
-    logical, dimension(:), intent(in) :: spartition
-
-    real, dimension(:), intent(in) :: x0max, x0min, step
-
-    real, dimension(:), intent(inout) :: x
+    ! External
+    intrinsic :: size
 
     interface
       function fobj( x )
@@ -397,31 +440,42 @@ module enhanced_simann
       end function fobj
     end interface
 
+    ! Input Variables
+    logical, dimension(:), intent(in) :: spartition
+
+    real, dimension(:), intent(in) :: x0max, x0min, step
+
+    ! Input/Output Variables
+    real, dimension(:), intent(inout) :: x
+
+    ! Output Variables
     real, intent(out) :: cost
 
     ! Local variables
-    real, dimension(size( x )) :: xrand, srand
+    real(kind=genrand_real), dimension(size( x )) :: xrand, srand
 
     real :: xtmp
 
     integer :: k
 
     ! --- Begin Code ---
-    ! The Fortran 90 random_number range is [0.,1.], so we can uses the results
-    ! directly for the ESA algorithm
 
-    call random_number( xrand ) ! Used for the value of x
-    call random_number( srand ) ! Used for the sign of x
+    ! The random range should be from [0,1]
+
+    call genrand_real1( xrand ) ! Used for the value of x
+
+    ! There is probably a more efficient way to get a random bit in Fortran, but this is easy
+    call genrand_real1( srand ) ! Used for the sign of x
+
     do k = 1, size( x )
 
       if ( spartition(k) ) then ! Augment only values within the partition
 
-        ! Apply a random sign to each xrand value.  There is probably a 
-        ! more efficient way to get a random bit in Fortran, but this is easy
+        ! Apply a random sign to each xrand value. 
         if ( srand(k) >= 0.5 ) then
-          xtmp = x(k) + xrand(k) * step(k)
+          xtmp = x(k) + real( xrand(k) ) * step(k)
         else
-          xtmp = x(k) - xrand(k) * step(k)
+          xtmp = x(k) - real( xrand(k) ) * step(k)
         end if
 
         ! According to Siarry pp 216 if a number is outside the x range, we
@@ -444,32 +498,40 @@ module enhanced_simann
   end subroutine exec_movement
 
   !-----------------------------------------------------------------------------
-  subroutine select_partition( spartition, mtotst )
+  subroutine select_partition( mtotst, spartition )
   ! Description:
   !   Select a partition of p dimension within x
   ! References:
   !  pp. 221-222, Siarry et al. ``SA Parameter Adjustment''
   !-----------------------------------------------------------------------------
 
+    use mt95, only: genrand_real1 ! Procedure
+
+    use mt95, only: genrand_real ! Constant
+
     implicit none
 
     intrinsic :: &
-      random_number, size, int, ceiling, real, maxval, all, count
+      size, int, ceiling, real, maxval, all, count
 
-    logical, dimension(:), intent(out) :: &
-      spartition  ! Vector of which variables to include
-
+    ! Input Variables
     integer, dimension(:), intent(in) :: &
       mtotst ! Vector of which variables were tried in prior iterations
 
-    real :: rand
+    ! Output Variables
+    logical, dimension(:), intent(out) :: &
+      spartition  ! Vector of which variables to include
+
+    ! Local Variables
+    real(genrand_real) :: rand
+
     integer :: pdim, ndim, elem
 
     !---- Begin Code ----
     ndim = size( mtotst ) ! size( mtotst ) = size( x )
 
     ! According to experiments done by Siarry p = n/3 is most efficient for 
-    ! complex circuit problems, so for now I'll just use that.
+    ! complex circuit problems, so for now we'll just use that.
     pdim = max( ndim / 3, 1 ) 
 
     spartition(:) = .false.
@@ -477,7 +539,7 @@ module enhanced_simann
     ! Terminate when we have pdim true entries
     do while ( count( spartition ) < pdim ) 
 
-      call random_number( rand )
+      call genrand_real1( rand )
 
       elem = int( ceiling( rand * real( ndim ) ) ) ! Pick a random element
       !print *, elem
