@@ -1,4 +1,5 @@
 !-------------------------------------------------------------------------------
+! $Id$
 module enhanced_simann
 ! Description:
 !   Implementation of Siarry's Enhanced simulated annealing algorthm in
@@ -13,6 +14,8 @@ module enhanced_simann
   implicit none
 
   public :: esa_driver
+
+  private :: select_partition, exec_movement
 
   private ! Default scope
 
@@ -29,9 +32,10 @@ module enhanced_simann
     implicit none
 
     ! External
-    intrinsic :: epsilon, & ! Machine dependent epsilon
-                 log,     & ! Log_e( x )
-                 size       ! Array size
+    intrinsic :: &
+      epsilon, & ! Machine dependent epsilon
+      log,     & ! Log_e( x )
+      size       ! Array size
 
     ! Parameter constants
     integer, parameter :: &
@@ -56,20 +60,20 @@ module enhanced_simann
       x0max,  & ! Maximum values for the x vector
       xinit     ! Initial argument for fobj
 
-  ! Define the interface for the minimization function `FOBJ' in the paper
-  ! It uses Fortran 90 assumed shape arrays to be compatable with the existing
-  ! cost function used with Numerical Recipes' algorithms
-  interface
-    function fobj( x )
+    ! Define the interface for the minimization function `FOBJ' in the paper.
+    ! It uses Fortran 90 assumed shape arrays to be compatable with the existing
+    ! cost function used with Numerical Recipes' algorithms
+    interface
+      function fobj( x )
 
-    implicit none
+      implicit none
 
-    real, dimension(:), intent(in) :: x
+      real, dimension(:), intent(in) :: x
 
-    real :: fobj
+      real :: fobj
 
-    end function fobj
-  end interface
+      end function fobj
+    end interface
     
     ! Output variables
     real, dimension(:), intent(out) :: &
@@ -79,7 +83,6 @@ module enhanced_simann
       enopt   ! Optimal value of the cost function
 
     ! Local variables
-
 
     ! Variable names based on the paper
     real, dimension(size( xinit )) :: &
@@ -95,7 +98,7 @@ module enhanced_simann
       oldrgy, & ! Old energy level
       rnewgy, & ! New energy level
       deltae, & ! Change in energy, i.e. delta fobj( xtry )
-      probok, &
+      probok, & ! User chosen initial acceptance probability
       init_avg, &
       dgyini, &
       tmpini, & ! Initial temperature
@@ -119,7 +122,7 @@ module enhanced_simann
     integer :: &
       np,   &! Size of the a partion
       n1, n2, & ! Annealing schedule
-      inorm,  &
+      inorm,  & ! Normalization
       nfobj, &
       mvokst, &
       nmvust, & ! Number of accepted uphill moves at current temperature stage
@@ -147,12 +150,13 @@ module enhanced_simann
       ! Attempt to make these machine independent (variable names from paper)
       epsrel = 2. * epsilon( xinit )
       epsabs = epsilon( xinit )
+
       ! Siarry's epsilon's
       !epsrel = 10E-6
       !epsabs = 10E-8
 
       ! Set temperature stage parameters
-      np = size( xinit )  ! np = number of in x variables
+      np = size( xinit )  ! np = number of variables in x
 
       ! Suggested values from the paper
       n1 = 12
@@ -260,8 +264,7 @@ module enhanced_simann
             end if
          else
            call random_number( rand )
-           !rand = 0.0 ! never accept a lower number
-           !print *, "rand/prob", rand, exp( -deltae/temp )
+
            ! Accept the number with probability of exp(-deltae / temp)
            if ( rand  <= exp( -deltae/temp ) ) then
              ! Accept xtry
