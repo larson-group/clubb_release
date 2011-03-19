@@ -1,0 +1,495 @@
+!-------------------------------------------------------------------------------
+module enhanced_simann
+! Description:
+!   Implementation of Siarry's Enhanced simulated annealing algorthm in
+!   Fortran 90/95. 
+
+! References: 
+!   ``Enhanced Simulated Annealing for Many Globally Minimized Functions
+!   of Many-Continuous Variables'', Siarry, et al. ACMS TOMS Vol. 23,
+!   No. 2, June 1997, pp. 209--228.
+!-------------------------------------------------------------------------------
+
+  implicit none
+
+  public :: esa_driver
+
+  private ! Default scope
+
+  contains
+
+  !-----------------------------------------------------------------------------
+  subroutine esa_driver( xinit, x0min, x0max, fobj, xopt, enopt )
+
+  ! Description:
+  !   Driver subroutine
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------------
+    implicit none
+
+    ! External
+    intrinsic :: epsilon, & ! Machine dependent epsilon
+                 log,     & ! Log_e( x )
+                 size       ! Array size
+
+    ! Parameter constants
+    integer, parameter :: &
+      nfmax = 5000, & ! Stopping parameter from Siarry
+      nvariations = 50 ! Number of points in the problem space used for dgyini
+
+    ! Parameters for temperature adjustment
+    real, parameter :: &
+      rmxtmp = 0.9, &
+      rmitmp = 0.1
+
+    ! Parameters for step vector adjustment
+    real, parameter :: &
+      ratmax = 0.2,  &
+      ratmin = 0.05, &
+      extstp = 2.0,  &
+      shrstp = 0.5
+
+    ! Input variables
+    real, dimension(:), intent(in) :: &
+      x0min,  & ! Minimum values for the x vector
+      x0max,  & ! Maximum values for the x vector
+      xinit     ! Initial argument for fobj
+
+  ! Define the interface for the minimization function `FOBJ' in the paper
+  ! It uses Fortran 90 assumed shape arrays to be compatable with the existing
+  ! cost function used with Numerical Recipes' algorithms
+  interface
+    function fobj( x )
+
+    implicit none
+
+    real, dimension(:), intent(in) :: x
+
+    real :: fobj
+
+    end function fobj
+  end interface
+    
+    ! Output variables
+    real, dimension(:), intent(out) :: &
+      xopt  ! Optimal point for x
+
+    real, intent(out) :: &
+      enopt   ! Optimal value of the cost function
+
+    ! Local variables
+
+
+    ! Variable names based on the paper
+    real, dimension(size( xinit )) :: &
+      xstart, & ! Starting point for x 
+      xtry, &   ! Test point for x 
+      stpini, & ! Initial step vector
+      rostep, & ! Increments for step vector
+      stpmst    ! Current step vector
+
+    real :: &
+      epsrel, epsabs, & ! Stop conditions from paper
+      einit, & ! Initial value of the cost function
+      oldrgy, & ! Old energy level
+      rnewgy, & ! New energy level
+      deltae, & ! Change in energy, i.e. delta fobj( xtry )
+      probok, &
+      init_avg, &
+      dgyini, &
+      tmpini, & ! Initial temperature
+      tstop,  & ! Final temperarture
+      temp,   & ! Anneal temperature
+      rftmp
+
+    real, dimension(nvariations) :: &
+      init_moves ! Initial vector of moves
+
+    integer, dimension(size( xinit ),4) :: &
+      mokst    ! Initial vector of number of accepted moves (one number for each
+               ! variable) at the last 4 temperature stages ( 4 stages added by dschanen )
+
+    integer, dimension(size( xinit )) :: &
+      mtotst   ! Vector of numbers of attempted moves at current temp stage
+
+    logical, dimension(size( xinit )) :: &
+      spartition ! Parts of R^n space in the current partition
+
+    integer :: &
+      np,   &! Size of the a partion
+      n1, n2, & ! Annealing schedule
+      inorm,  &
+      nfobj, &
+      mvokst, &
+      nmvust, & ! Number of accepted uphill moves at current temperature stage
+      nmvst    ! Number of attempted moves at current temp stage
+
+    real :: &
+      elowst, & ! Minimal fobj value at current temp stage
+      avgyst, & ! Sum of successive fobj values at current temp stage
+      sdgyup    ! Sum of accepted uphill fobj variations at current temp stage
+
+    real :: &
+      rand, & ! random number from [0,1]
+      rok     ! Step vector adjustment variable
+
+    logical :: l_accept_xtry
+
+    integer :: i
+
+    integer :: n, nm1, nm2, nm3, ntmp ! Indices for the last 4 temperature stages
+
+      ! ---- Begin Code ----
+
+      ! Step 1: Initializations 
+
+      ! Attempt to make these machine independent (variable names from paper)
+      epsrel = 2. * epsilon( xinit )
+      epsabs = epsilon( xinit )
+      ! Siarry's epsilon's
+      !epsrel = 10E-6
+      !epsabs = 10E-8
+
+      ! Set temperature stage parameters
+      np = size( xinit )  ! np = number of in x variables
+
+      ! Suggested values from the paper
+      n1 = 12
+      n2 = 100
+
+      ! Set inorm for linear normalization
+      ! TODO: Normalization is missing for now
+      inorm = 1
+
+      probok = 0.5 ! Probability of accepting an uphill move
+
+      ! Compute initial cost function
+      einit = fobj( xinit )
+
+      ! Suggested value from the paper
+      rostep(:) = 0.25
+
+      ! Step vector
+      stpini(:) = ( x0max(:) - x0min(:) ) * rostep
+
+      spartition(:) = .true. ! Partitioning off for average generation
+
+      ! Obtain the ``variation average'' of fobj, called dgyini.
+      ! Is this the standard deviation?  It looks like it should be. 
+      ! -dschanen 8 Dec 2008
+      do i = 1, size( init_moves ), 1
+        xtry = xinit
+        call exec_movement( spartition, x0max, x0min, stpini, fobj, xtry, init_moves(i) )
+      end do ! 1 .. size of init_moves
+
+      ! Compute std dev
+      init_avg = sum( init_moves ) / real( size( init_moves ) )
+      dgyini = sqrt( sum( ( init_moves-init_avg )**2 ) &
+                     / real( size( init_moves ) ) &
+                   )
+
+      print *, "Intial moves", init_moves
+      ! Compute initial temperature.  Value of probok comes from Siarry, et al.
+      tmpini = -dgyini / log( probok )
+      print *, "Initial temp = ", tmpini
+
+      ! Formula from pp 220
+      tstop = -( epsrel * dgyini + epsabs/log( epsrel * probok + epsabs ) )
+      print *, "Stop temp = ", tstop
+
+      nfobj = 1
+
+      xopt(:) = xinit(:)
+      enopt   = einit
+
+      xstart = xinit 
+      oldrgy = einit
+
+      temp = tmpini
+
+      stpmst = stpini
+
+      mvokst = 0 ! Number of accepted moves at current temperature stage
+
+      mokst(:,:) = 0 ! Vector of numbers of accepted moves at current & 3 prior temp stage
+      nmvust = 0     ! Number of accepted uphill moves at current temperature stage
+      nmvst = 0      ! Number of attempted moves at current temp stage
+      mtotst(:) = 0  ! Vector with numbers of attempted moves at current temp stage
+      elowst = einit ! Minimal fobj value at current temp stage
+      avgyst = 0.    ! Sum of successive fobj values at current temp stage
+      sdgyup = 0.    ! Sum of accepted uphill fobj variations at current temp stage
+
+      ! Added by dschanen for non-exclusive stop test number 1 pp 217
+      n   = 1    ! nth temperature stage
+      nm1 = 2 ! n-1th temp stage
+      nm2 = 3 ! n-2th "    "
+      nm3 = 4 ! n-3th "    "
+
+      do  ! Exit conditions are handled elsewhere
+
+        l_accept_xtry = .false. ! Initialize
+
+        ! Step 2: Space paritioning
+        ! This should be random, uniform, and not over select an element of x
+        call select_partition( spartition, mtotst )
+        !spartition(:) = .true. ! uncomment to turn off partitioning
+
+        xtry = xstart
+        ! Step 3: Execution of One Movement
+        call exec_movement( spartition, x0max, x0min, stpmst, fobj, xtry, rnewgy )
+        !print *, "x = ", xtry, "f(x) = ", rnewgy, "xopt", xopt
+        !pause
+
+        deltae = rnewgy - oldrgy
+        where ( spartition ) mtotst = mtotst + 1
+        nmvst = nmvst + 1
+        nfobj = nfobj + 1
+        avgyst = avgyst + rnewgy
+
+        ! Step 4: Acceptance or Rejection of this movement
+        if ( deltae <= 0.0 ) then  
+            ! Accept xtry
+            l_accept_xtry = .true.
+            if ( rnewgy < enopt ) then
+              xopt = xtry
+              enopt = rnewgy
+            end if
+            if ( rnewgy < elowst ) then
+              elowst = rnewgy
+            end if
+         else
+           call random_number( rand )
+           !rand = 0.0 ! never accept a lower number
+           !print *, "rand/prob", rand, exp( -deltae/temp )
+           ! Accept the number with probability of exp(-deltae / temp)
+           if ( rand  <= exp( -deltae/temp ) ) then
+             ! Accept xtry
+             l_accept_xtry = .true.
+             nmvust = nmvust + 1
+             sdgyup = sdgyup + deltae
+           end if
+        end if ! deltae <= 0.0
+
+        if ( l_accept_xtry ) then
+          xstart = xtry
+          oldrgy = rnewgy
+          where ( spartition ) mokst(:,n) = mokst(:,n) + 1
+          mvokst = mvokst + 1
+        end if
+
+        ! Step 5: Test for the End of the Temperature Stage
+
+        if ( mvokst <  n1*np .and. nmvst < n2*np ) then
+          !print *, "cycling"
+          cycle 
+        else
+          ! Cycle indices on mokst (accepted moves)
+          ntmp = nm3
+          nm3  = nm2
+          nm2  = nm1
+          nm1  = n
+          n    = ntmp
+
+          mokst(:,n) = 0 ! Overwrite the old n-3
+
+          !print *, "new temperature level"
+        end if
+
+        ! Step 6: Temperature Adjustment
+
+        avgyst = avgyst / nmvst
+        rftmp = max( min( elowst/avgyst, rmxtmp), rmitmp )
+        temp = rftmp * temp
+
+        ! Step 7: Step Vector Adjustment
+        do i = 1, np, 1
+          if ( spartition(i) ) then
+            rok = real( mokst(i,n) ) / real( mtotst(i) )
+            if ( rok > ratmax ) then
+              stpmst(i) = stpmst(i) * extstp
+            else if ( rok < ratmin ) then
+              stpmst(i) = stpmst(i) * shrstp
+            end if
+          end if
+        end do ! i = 1 .. np
+
+        ! Step 8: Four non-exclusive stopping tests 
+
+        ! (1) No uphill changes in the last 4 temperature stages
+        if ( all( mokst(:,1:4) == 0 ) ) then
+          write(6,*) "exit on condition 1"
+          write(6,*) "temp", temp
+          write(6,*) "stpmst", stpmst
+          write(6,*) "stpini", stpini
+          exit
+        end if
+           
+        ! (2) temp < tstop
+        if ( temp < tstop ) then
+          write(6,*) "exit on condition 2"
+          write(6,*) "temp", temp
+          write(6,*) "stpmst", stpmst
+          write(6,*) "stpini", stpini
+          exit
+        end if
+
+        ! (3) Too close to machine epsilon
+        if ( any( stpmst < epsrel * stpini + epsabs ) ) then
+          write(6,*) "exit on condition 3"
+          write(6,*) "temp", temp
+          write(6,*) "stpmst", stpmst
+          write(6,*) "stpini", stpini
+          exit
+        end if
+
+        ! (4) Too many iterations
+        if ( nfobj >= nfmax*np ) then
+          write(6,*) "exit on condition 4"
+          exit
+        end if
+
+        ! Step 9: Initialization of the new temperature stage
+        mvokst = 0
+        nmvust = 0
+        nmvst  = 0
+        elowst = oldrgy
+        avgyst = 0
+        sdgyup = 0
+
+      end do
+
+      print *, "mtotst = ", mtotst
+    return
+  end subroutine esa_driver
+
+  !-----------------------------------------------------------------------------
+  subroutine exec_movement( spartition, x0max, x0min, step, fobj, x, cost )
+  ! Description:
+  !   Execute one movement in domain space
+
+  ! References:
+  !   Step 3 in Siarry, et al.
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    intrinsic :: random_number, size
+
+    logical, dimension(:), intent(in) :: spartition
+
+    real, dimension(:), intent(in) :: x0max, x0min, step
+
+    real, dimension(:), intent(inout) :: x
+
+    interface
+      function fobj( x )
+
+      implicit none
+
+      real, dimension(:), intent(in) :: x
+
+      real :: fobj
+
+      end function fobj
+    end interface
+
+    real, intent(out) :: cost
+
+    ! Local variables
+    real, dimension(size( x )) :: xrand, srand
+
+    real :: xtmp
+
+    integer :: k
+
+    ! --- Begin Code ---
+    ! The Fortran 90 random_number range is [0.,1.], so we can uses the results
+    ! directly for the ESA algorithm
+
+    call random_number( xrand ) ! Used for the value of x
+    call random_number( srand ) ! Used for the sign of x
+    do k = 1, size( x )
+
+      if ( spartition(k) ) then ! Augment only values within the partition
+
+        ! Apply a random sign to each xrand value.  There is probably a 
+        ! more efficient way to get a random bit in Fortran, but this is easy
+        if ( srand(k) >= 0.5 ) then
+          xtmp = x(k) + xrand(k) * step(k)
+        else
+          xtmp = x(k) - xrand(k) * step(k)
+        end if
+
+        ! According to Siarry pp 216 if a number is outside the x range, we
+        ! should change the sign of the step accordingly
+        if ( xtmp > x0max(k) ) then
+          xtmp = x(k) - xrand(k) * step(k)
+        else if ( xtmp < x0min(k) ) then
+          xtmp = x(k) + xrand(k) * step(k)
+        end if
+
+        x(k) = xtmp
+
+      end if  ! Points in the partition
+
+    end do ! 1 .. size( k )
+
+    cost = fobj( x )
+
+    return
+  end subroutine exec_movement
+
+  !-----------------------------------------------------------------------------
+  subroutine select_partition( spartition, mtotst )
+  ! Description:
+  !   Select a partition of p dimension within x
+  ! References:
+  !  pp. 221-222, Siarry et al. ``SA Parameter Adjustment''
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    intrinsic :: &
+      random_number, size, int, ceiling, real, maxval, all, count
+
+    logical, dimension(:), intent(out) :: &
+      spartition  ! Vector of which variables to include
+
+    integer, dimension(:), intent(in) :: &
+      mtotst ! Vector of which variables were tried in prior iterations
+
+    real :: rand
+    integer :: pdim, ndim, elem
+
+    !---- Begin Code ----
+    ndim = size( mtotst ) ! size( mtotst ) = size( x )
+
+    ! According to experiments done by Siarry p = n/3 is most efficient for 
+    ! complex circuit problems, so for now I'll just use that.
+    pdim = max( ndim / 3, 1 ) 
+
+    spartition(:) = .false.
+
+    ! Terminate when we have pdim true entries
+    do while ( count( spartition ) < pdim ) 
+
+      call random_number( rand )
+
+      elem = int( ceiling( rand * real( ndim ) ) ) ! Pick a random element
+      !print *, elem
+      !pause
+      ! Attempt to meet Siarry's condition that no element be over-selected
+!     if ( mtotst(elem) /= maxval( mtotst ) .or. &
+!          all( mtotst == maxval( mtotst ) ) ) then
+      spartition(elem) = .true.
+!     else
+!       print *, mtotst, elem, rand
+!     end if
+
+    end do
+
+    return
+  end subroutine select_partition
+
+end module enhanced_simann
