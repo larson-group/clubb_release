@@ -10,32 +10,6 @@ program clubb_tuner
 !     References:
 !     _Numerical Recipes in Fortran 90_ (Chapter 10) 
 !     (Amoeba & Amebsa subroutine)
-
-!     Subroutines Called :
-!      error_init      : Reads in
-!                         * GRADS parameters: filenames, z-levels, timesteps, 
-!                          variable to tune for
-!                         * CLUBB tunable parameters: C1,...C11, nu1,...nu8
-!                         * Amoeba tolerance: f_tol
-!                        Initializes
-!                         * The initial dependent variable vector, i.e. the 
-!                          total error between the les and clubb models
-!                         * The initial independent variable array, formed
-!                           from C1,...C11, and nu1,...nu8
-
-!     AMOEBA    : The downhill simplex tuner from _Numerical Recipes_
-!     AMEBSA    : The simulated annealing tuner from _Numerical Recipes_
-!
-!   Functions Called :
-!      min_les_clubb_diff  : A parameter of the amoeba subroutine, and 
-!                        strictly speaking is directly called from
-!                        the clubb_tuner program only initially.  
-!                        This is the counterpart to the
-!                        minimization function `funk' in amoeba. It returns
-!                        the error vector and takes the independent variable
-!                        vector as a parameter.
-
-!           Portability module from _Numerical Recipes In Fortran 90_ 
 !----------------------------------------------------------------------
   use error, only:  & 
     tuner_init, min_les_clubb_diff,                & ! Subroutines 
@@ -45,6 +19,11 @@ program clubb_tuner
     l_results_stdout, l_save_tuning_run,           & ! Variables
     l_results_file, tune_type, f_tol, ndim,         & ! Variables
     tuning_filename, file_unit                       ! Variable
+
+  use error, only:  & 
+    iamoeba, & ! Constants
+    iamebsa, &
+    iesa
 
   use constants_clubb, only: & 
     fstdout ! Variable
@@ -81,11 +60,16 @@ program clubb_tuner
 
   ! Attempt to find the optimal parameter set
   do
-    if ( tune_type == 0 ) then 
+    select case ( tune_type )
+    case ( iamoeba )
       call amoeba_driver( )
-    else
+    case ( iamebsa )
       call amebsa_driver( )
-    end if
+    case ( iesa )
+      call enhanced_simann_driver( )
+    case default
+       stop "Unknown tuning type"
+    end select
 
     ! Print to stdout if specified
     if ( l_results_stdout ) call write_results( fstdout )
@@ -114,15 +98,19 @@ program clubb_tuner
     end if
 
     ! Save tuning results in file if specified
-    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
-      action="write", position="append")
-    call write_text( "Current f_tol= ", f_tol, l_save_tuning_run, file_unit )
+    if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
 
-    write(fstdout,fmt='(A)', advance='no') "Enter new f_tol=   "
-    read(*,*) f_tol
-    ! Save tuning results in file if specified
-    if( l_save_tuning_run ) write(file_unit,*) "Enter new f_tol=   ", f_tol
-    if( l_save_tuning_run ) close(unit=file_unit)
+      if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+        action="write", position="append")
+
+      call write_text( "Current f_tol= ", f_tol, l_save_tuning_run, file_unit )
+
+      write(fstdout,fmt='(A)', advance='no') "Enter new f_tol=   "
+      read(*,*) f_tol
+      ! Save tuning results in file if specified
+      if ( l_save_tuning_run ) write(file_unit,*) "Enter new f_tol=   ", f_tol
+      if ( l_save_tuning_run ) close(unit=file_unit)
+    end if
 
     call tuner_init( l_read_files=.false. )
 
@@ -203,9 +191,6 @@ program clubb_tuner
 
 
   implicit none
-
-  ! External
-  intrinsic :: minval
 
   call amoeba( param_vals_matrix(1:ndim+1,1:ndim),  & 
                cost_fnc_vector(1:ndim+1),  & 
@@ -301,3 +286,56 @@ program clubb_tuner
 #endif
 end subroutine amebsa_driver
 !----------------------------------------------------------------------
+  subroutine enhanced_simann_driver
+
+  !     Description:
+  !     Wrapper subroutine for the ESA driver
+
+  ! References: 
+  !   ``Enhanced Simulated Annealing for Many Globally Minimized Functions
+  !   of Many-Continuous Variables'', Siarry, et al. ACMS TOMS Vol. 23,
+  !   No. 2, June 1997, pp. 209--228.
+  !------------------------------------------------------------------------
+
+  use enhanced_simann, only: esa_driver ! Procedure(s)
+
+  use error, only:  & 
+    ! Variable(s)
+    ndim,               & ! Array dimensions
+    param_vals_matrix,  & ! The 'p' matrix
+    param_vals_spread,  & ! Used here for the initial value of rostep
+    min_les_clubb_diff, & ! Cost function
+    min_err               ! Minimum value of the cost function
+
+  implicit none
+
+  ! Local Variables
+
+  real, dimension(ndim) :: &
+    xinit,  & ! Initial values for the tunable parameters
+    x0min,  & ! Minimum value for the tunable parameters
+    x0max,  & ! Maximum value for the tunable parameters
+    rostep, & ! Initial step size
+    xopt      ! Final values for the tunable parameters
+
+  real :: enopt ! Optimal cost
+
+  xinit = param_vals_matrix(1,1:ndim)
+
+  ! Assume no parameter is < 0 for now
+  x0min(1:ndim) = 0. 
+
+  ! Assume the maximum is at most 5 times the current value
+  x0max(1:ndim) = 5. * param_vals_matrix(1,1:ndim) 
+
+  rostep(1:ndim) = param_vals_spread(1:ndim)
+
+  call esa_driver( xinit, x0min, x0max, rostep, min_les_clubb_diff, & ! In
+                   xopt, enopt ) ! Out
+
+  param_vals_matrix(1,1:ndim) = xopt(1:ndim)
+  min_err = enopt
+
+  return
+  end subroutine enhanced_simann_driver
+

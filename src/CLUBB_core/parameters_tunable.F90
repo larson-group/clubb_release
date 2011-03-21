@@ -1114,6 +1114,10 @@ module parameters_tunable
 
     implicit none
 
+    ! External
+    intrinsic :: transfer
+
+    ! Local Variables
     integer(kind=4) :: nanbits
 
     real(kind=4) :: PosInf

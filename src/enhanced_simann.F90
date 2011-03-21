@@ -25,7 +25,7 @@ module enhanced_simann
   contains
 
   !-----------------------------------------------------------------------------
-  subroutine esa_driver( xinit, x0min, x0max, fobj, xopt, enopt )
+  subroutine esa_driver( xinit, x0min, x0max, rostep, fobj, xopt, enopt )
 
   ! Description:
   !   Driver subroutine
@@ -66,10 +66,16 @@ module enhanced_simann
       extstp = 2.0,  &
       shrstp = 0.5
 
+    ! Call the cost function 50 times to determine the correct temperature
+    ! based on Siarry, et al.
+    logical, parameter :: &
+      l_compute_optimal_temp = .false. 
+
     ! Input variables
     real, dimension(:), intent(in) :: &
       x0min,  & ! Minimum values for the x vector
       x0max,  & ! Maximum values for the x vector
+      rostep, & ! Increments for step vector
       xinit     ! Initial argument for fobj
     
     ! Output variables
@@ -86,7 +92,6 @@ module enhanced_simann
       xstart, & ! Starting point for x 
       xtry, &   ! Test point for x 
       stpini, & ! Initial step vector
-      rostep, & ! Increments for step vector
       stpmst    ! Current step vector
 
     real :: &
@@ -119,7 +124,7 @@ module enhanced_simann
     integer :: &
       np,   &! Size of the a partion
       n1, n2, & ! Annealing schedule
-      inorm,  & ! Normalization
+!     inorm,  & ! Normalization
       nfobj, &
       mvokst, &
       nmvust, & ! Number of accepted uphill moves at current temperature stage
@@ -145,10 +150,10 @@ module enhanced_simann
       ! Step 1: Initializations 
 
       ! Attempt to make these machine independent (variable names from paper)
-      epsrel = 2. * epsilon( xinit )
+      epsrel = 1.e2 * epsilon( xinit )
       epsabs = epsilon( xinit )
 
-      ! Siarry's epsilon's
+      ! Siarry's epsilon values in the paper
       !epsrel = 10E-6
       !epsabs = 10E-8
 
@@ -160,8 +165,8 @@ module enhanced_simann
       n2 = 100
 
       ! Set inorm for linear normalization
-      ! TODO: Normalization is missing for now
-      inorm = 1
+      ! Normalization is handled wthin min_les_clubb_diff
+!     inorm = 1
 
       probok = 0.5 ! Probability of accepting an uphill move
 
@@ -169,40 +174,50 @@ module enhanced_simann
       einit = fobj( xinit )
 
       ! Suggested value from the paper
-      rostep(:) = 0.25
+!     rostep(:) = 0.25
 
       ! Step vector
       stpini(:) = ( x0max(:) - x0min(:) ) * rostep
 
       spartition(:) = .true. ! Partitioning off for average generation
 
-      ! Obtain the ``variation average'' of fobj, called dgyini.
-      ! Is this the standard deviation?  It looks like it should be. 
-      ! -dschanen 8 Dec 2008
-      do i = 1, size( init_moves ), 1
-        xtry = xinit
-        call exec_movement( spartition, x0max, x0min, stpini, fobj, & ! In
-                            xtry, init_moves(i) ) ! In/Out, Out
-      end do ! 1 .. size of init_moves
+      if ( l_compute_optimal_temp ) then
+        ! Obtain the ``variation average'' of fobj, called dgyini.
+        ! Is this the standard deviation?  It looks like it should be. 
+        ! -dschanen 8 Dec 2008
+        do i = 1, size( init_moves ), 1
+          xtry = xinit
+          call exec_movement( spartition, x0max, x0min, stpini, fobj, & ! In
+                              xtry, init_moves(i) ) ! In/Out, Out
+        end do ! 1 .. size of init_moves
 
-      ! Compute std dev
-      init_avg = sum( init_moves ) / real( size( init_moves ) )
-      dgyini = sqrt( sum( ( init_moves-init_avg )**2 ) &
-                     / real( size( init_moves ) ) &
-                   )
-      if ( l_esa_debug_statements ) then
-        print *, "Intial moves", init_moves
+        ! Compute std dev
+        init_avg = sum( init_moves ) / real( size( init_moves ) )
+        dgyini = sqrt( sum( ( init_moves-init_avg )**2 ) &
+                       / real( size( init_moves ) ) &
+                     )
+        if ( l_esa_debug_statements ) then
+          write(6,*) "Intial moves ="
+          write(6,'(8g10.4)') init_moves
+        end if
+
+        ! Compute initial temperature.  Value of probok comes from Siarry, et al.
+        tmpini = -dgyini / log( probok )
+      else
+        tmpini = 100. ! Use a fixed constant
       end if
-
-      ! Compute initial temperature.  Value of probok comes from Siarry, et al.
-      tmpini = -dgyini / log( probok )
 
       if ( l_esa_debug_statements ) then
         print *, "Initial temp = ", tmpini
       end if
 
       ! Formula from pp 220
-      tstop = -( epsrel * dgyini + epsabs/log( epsrel * probok + epsabs ) )
+      ! Something about this formula seems wrong. The tstop value it gives is
+      ! generally much too low, and so the algorithm never exits on condition 2.
+      ! -dschanen 21 March 2011
+!     tstop = -( epsrel * dgyini + epsabs/log( epsrel * probok + epsabs ) )
+
+      tstop = 1. ! Use a fixed value
 
       if ( l_esa_debug_statements ) then
         print *, "Stop temp = ", tstop
@@ -235,7 +250,7 @@ module enhanced_simann
       sdgyup = 0.    ! Sum of accepted uphill fobj variations at current temp stage
 
       ! Added by dschanen for non-exclusive stop test number 1 pp 217
-      n   = 1    ! nth temperature stage
+      n   = 1 ! nth temperature stage
       nm1 = 2 ! n-1th temp stage
       nm2 = 3 ! n-2th "    "
       nm3 = 4 ! n-3th "    "
@@ -337,7 +352,7 @@ module enhanced_simann
         if ( all( mokst(:,1:4) == 0 ) ) then
 
           if ( l_esa_debug_statements ) then
-            write(6,*) "Exit on condition 1"
+            write(6,*) "Exit on condition 1, No uphill changes for the last 4 temperature stages"
             write(6,*) "temp", temp
             write(6,*) "stpmst", stpmst
             write(6,*) "stpini", stpini
@@ -350,7 +365,7 @@ module enhanced_simann
         if ( temp < tstop ) then
 
           if ( l_esa_debug_statements ) then
-            write(6,*) "Exit on condition 2"
+            write(6,*) "Exit on condition 2, temperature < tstop"
             write(6,*) "temp", temp
             write(6,*) "stpmst", stpmst
             write(6,*) "stpini", stpini
@@ -363,7 +378,7 @@ module enhanced_simann
         if ( any( stpmst < epsrel * stpini + epsabs ) ) then
 
           if ( l_esa_debug_statements ) then
-            write(6,*) "Exit on condition 3"
+            write(6,*) "Exit on condition 3, too close to machine epsilon"
             write(6,*) "temp", temp
             write(6,*) "stpmst", stpmst
             write(6,*) "stpini", stpini
@@ -376,7 +391,7 @@ module enhanced_simann
         if ( nfobj >= nfmax*np ) then
 
           if ( l_esa_debug_statements ) then
-            write(6,*) "Exit on condition 4"
+            write(6,*) "Exit on condition 4, too many iterations"
           end if
 
           exit

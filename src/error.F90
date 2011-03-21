@@ -35,6 +35,17 @@ module error
 
   implicit none
 
+  ! Constant Parameters
+  integer, parameter, private ::  & 
+    max_run = 12,  & ! Maximum model runs the tuner can handle at a time
+    max_variables = 32 ! This number / 2 is maximum variables to tune for
+
+  integer, parameter, public :: &
+    iamoeba = 0, & ! Numerical Recipes downhill simplex
+    iamebsa = 1, & ! Numerical Recipes simulated annealing
+    iesa    = 2    ! ESA tuning type
+
+  ! Variables
   integer, public :: ndim ! Size of the simplex
 
   ! 'err_code' is an important integer used by the min_diff to
@@ -49,9 +60,6 @@ module error
 
   !-----------------------------------------------------------------------
 
-  integer, parameter, private ::  & 
-    max_run = 12,  & ! Maximum model runs the tuner can handle at a time
-    max_variables = 32 ! This number / 2 is maximum variables to tune for
 
   real, public ::  & 
     f_tol,        & ! The precision to tune for
@@ -135,6 +143,7 @@ module error
   real(kind=genrand_real), allocatable, dimension(:), private ::  & 
     rand_vect ! A vector of random reals for initializing the x array
 
+  ! Procedures
   public :: tuner_init, min_les_clubb_diff, write_results, & 
     output_nml_standalone, output_nml_tuner
 
@@ -313,9 +322,14 @@ module error
         stop
       end if
 
-      allocate( rand_vect(ndim), param_vals_matrix(ndim+1,ndim), & 
-                param_vals_spread(ndim), cost_fnc_vector(ndim+1) )
+      if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
+        ! Numerical recipes simulated annealing or downhill simplex
+        allocate( rand_vect(ndim), param_vals_matrix(ndim+1,ndim), & 
+                  param_vals_spread(ndim), cost_fnc_vector(ndim+1) )
 
+      else ! ESA algorithm
+        allocate( param_vals_matrix(1,ndim), param_vals_spread(ndim), cost_fnc_vector(1) )
+      end if
       ! Initialize the CLUBB parameter spread
       param_vals_spread(1:ndim)  = rtmp(params_index(1:ndim))
 
@@ -330,23 +344,25 @@ module error
     end if  ! l_read_files
     !-----------------------------------------------------------------------
 
-    ! Fill in the remaining values of the array by varying the initial
-    ! vector (i.e. the first column of the array) by a small multiple
-    do j = 1, ndim
+    if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
+      ! Fill in the remaining values of the array by varying the initial
+      ! vector (i.e. the first column of the array) by a small multiple
+      do j = 1, ndim
 
-      call genrand_real1( rand_vect(1:ndim) )
+        call genrand_real1( rand_vect(1:ndim) )
 
-      do i = 2, ndim+1, 1
-        ! Vince Larson made entries of param_vals_matrix random  10 Feb 2005
-        ! param_vals_matrix(i,j) = param_vals_matrix(1,j)*
-        !                             (1.0+((real(i)-1.)/real(ndim)*0.5))
-        param_vals_matrix(i,j) = param_vals_matrix(1,j)* & 
-        ( (1.0 - param_vals_spread(j))  & 
-         + real( rand_vect(i-1) )*param_vals_spread(j)*2 )
-        ! End of Vince Larson's change
-      end do ! i..ndim+1
+        do i = 2, ndim+1, 1
+          ! Vince Larson made entries of param_vals_matrix random  10 Feb 2005
+          ! param_vals_matrix(i,j) = param_vals_matrix(1,j)*
+          !                             (1.0+((real(i)-1.)/real(ndim)*0.5))
+          param_vals_matrix(i,j) = param_vals_matrix(1,j)* & 
+          ( (1.0 - param_vals_spread(j))  & 
+           + real( rand_vect(i-1) )*param_vals_spread(j)*2 )
+          ! End of Vince Larson's change
+        end do ! i..ndim+1
 
-    end do ! j..ndim
+      end do ! j..ndim
+    end if
 
 
     ! First call is used to initialize weights
@@ -371,12 +387,14 @@ module error
 
     ! Other initialization runs
 
-    ! Initialize the 'y' vector for amoeba
-    ! This is done by calling min_les_clubb_diff with the initial vector
-    do i = 2, ndim+1, 1
-      cost_fnc_vector(i) =  & 
-           min_les_clubb_diff( param_vals_matrix(i,1:ndim) )
-    end do
+    if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
+      ! Initialize the 'y' vector for amoeba
+      ! This is done by calling min_les_clubb_diff with the initial vector
+      do i = 2, ndim+1, 1
+        cost_fnc_vector(i) =  & 
+             min_les_clubb_diff( param_vals_matrix(i,1:ndim) )
+      end do
+    end if
 
     ! Save tuning results in file if specified
     if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
