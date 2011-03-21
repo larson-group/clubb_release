@@ -481,9 +481,9 @@ module enhanced_simann
         ! According to Siarry pp 216 if a number is outside the x range, we
         ! should change the sign of the step accordingly
         if ( xtmp > x0max(k) ) then
-          xtmp = x(k) - xrand(k) * step(k)
+          xtmp = x(k) - real( xrand(k) ) * step(k)
         else if ( xtmp < x0min(k) ) then
-          xtmp = x(k) + xrand(k) * step(k)
+          xtmp = x(k) + real( xrand(k) ) * step(k)
         end if
 
         x(k) = xtmp
