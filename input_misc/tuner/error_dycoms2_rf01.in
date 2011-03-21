@@ -1,39 +1,4 @@
 ! $Id$
-! Parameter file for subroutine tuner_init in there error module. 
-! All parameters are used by amoeba or amebsa to "tune" CLUBB.
-
-! f_tol is the degree of accuracy in "tuning" (i.e. the # of digits).
-!   Decreasing f_tol results in a tighter criterion of convergence.
-! l_results_stdout print all results of tuning to the terminal if true
-! l_results_file will generate a new error.in based on the new constants if true
-! anneal_temp and anneal_iter are only used in amebsa runs;  they determine
-!  the starting temperature for the algorithm, and number of times the
-!  subroutine is called, respectively.
-! tune_type is either 0 for amoeba(downhill simplex method with random restart)
-!   or any other integer for amebsa(downhill simplex with simulated annealing)
-
-! Setting t_variables:
-! Most variables are named in the same fashion in both CLUBB and the LES, but
-!   because some are not they must be specified as an ordered pair of strings.
-
-! Known values of the CLUBB variables and LES variables are listed in the 
-! following table:
-!  Variables
-!  CLUBB | COAMPS-LES
-!  ------------
-!  cloud_frac | cf
-!  rcm   | qcm
-!  wp3	 | wp3
-!  thlm	 | thlm
-!  rtm   | qtm
-!  um    | um  
-!  vm    | vm
-!  wp2zt | wp2
-!
-!  Values of CLUBB_v and les_v for other variables can be found in the .ctl files.
-!
-!  Key variables for UWM: qcm/rcm, cloud_frac, rtm/qtm, thlm, um, vm, wp3
-
 &stats
 f_tol              = 1.0,
 l_results_stdout    = .true.,
@@ -65,9 +30,6 @@ time_nl(1,:)         = 120, 240
 weight_case_nl(1)    = 1.0
 /
 
-! Numbers applied to the parameters are used in the equation:
-! Parameter * ( (1 - spread) + rannum * spread * 2 )
-! thus a spread of 0 will keep a constant static through the run
 &initspread
 C1          = 0.41
 C1b         = 0.
