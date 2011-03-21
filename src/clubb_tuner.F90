@@ -299,13 +299,15 @@ end subroutine amebsa_driver
 
   use enhanced_simann, only: esa_driver ! Procedure(s)
 
-  use error, only:  & 
-    ! Variable(s)
+  use error, only: & ! Variable(s)
     ndim,               & ! Array dimensions
     param_vals_matrix,  & ! The 'p' matrix
     param_vals_spread,  & ! Used here for the initial value of rostep
-    min_les_clubb_diff, & ! Cost function
+    anneal_temp,        & ! Start annealing temperature
     min_err               ! Minimum value of the cost function
+
+  use error, only:  & ! Procedure(s)
+    min_les_clubb_diff  ! Cost function
 
   implicit none
 
@@ -330,7 +332,8 @@ end subroutine amebsa_driver
 
   rostep(1:ndim) = param_vals_spread(1:ndim)
 
-  call esa_driver( xinit, x0min, x0max, rostep, min_les_clubb_diff, & ! In
+  call esa_driver( xinit, x0min, x0max, rostep, & ! In
+                   anneal_temp, min_les_clubb_diff, & ! In/out, Function
                    xopt, enopt ) ! Out
 
   param_vals_matrix(1,1:ndim) = xopt(1:ndim)

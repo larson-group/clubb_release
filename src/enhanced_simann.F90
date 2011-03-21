@@ -25,7 +25,7 @@ module enhanced_simann
   contains
 
   !-----------------------------------------------------------------------------
-  subroutine esa_driver( xinit, x0min, x0max, rostep, fobj, xopt, enopt )
+  subroutine esa_driver( xinit, x0min, x0max, rostep, tmpini, fobj, xopt, enopt )
 
   ! Description:
   !   Driver subroutine
@@ -77,7 +77,10 @@ module enhanced_simann
       x0max,  & ! Maximum values for the x vector
       rostep, & ! Increments for step vector
       xinit     ! Initial argument for fobj
-    
+   
+    real, intent(inout) :: &
+      tmpini ! Initial temperature
+
     ! Output variables
     real, dimension(:), intent(out) :: &
       xopt  ! Optimal point for x
@@ -103,7 +106,6 @@ module enhanced_simann
       probok, & ! User chosen initial acceptance probability
       init_avg, &
       dgyini, &
-      tmpini, & ! Initial temperature
       tstop,  & ! Final temperarture
       temp,   & ! Anneal temperature
       rftmp
@@ -203,8 +205,6 @@ module enhanced_simann
 
         ! Compute initial temperature.  Value of probok comes from Siarry, et al.
         tmpini = -dgyini / log( probok )
-      else
-        tmpini = 100. ! Use a fixed constant
       end if
 
       if ( l_esa_debug_statements ) then
