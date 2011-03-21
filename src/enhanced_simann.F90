@@ -47,17 +47,7 @@ module enhanced_simann
     ! Define the interface for the minimization function `FOBJ' in the paper.
     ! It uses Fortran 90 assumed shape arrays to be compatable with the existing
     ! cost function used with Numerical Recipes' algorithms
-    interface
-      function fobj( x )
-
-      implicit none
-
-      real, dimension(:), intent(in) :: x
-
-      real :: fobj
-
-      end function fobj
-    end interface
+#include "enhanced_simann_fobj.inc"
 
     ! Parameter constants
     integer, parameter :: &
@@ -428,17 +418,7 @@ module enhanced_simann
     ! External
     intrinsic :: size
 
-    interface
-      function fobj( x )
-
-      implicit none
-
-      real, dimension(:), intent(in) :: x
-
-      real :: fobj
-
-      end function fobj
-    end interface
+#include "enhanced_simann_fobj.inc"
 
     ! Input Variables
     logical, dimension(:), intent(in) :: spartition
