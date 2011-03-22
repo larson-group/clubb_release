@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: mytuner_messner.bash,v 1.5 2007-06-28 16:38:13 griffinb Exp $
+# $Id$
 ################################################################################
 #
 # Description: 
@@ -26,13 +26,13 @@ function tune ( ) {
 	local member=$1
 
 	# Create random seed data
-	$CLUBB/bin/int2txt /dev/random > $CLUBB/ens_tune/rand_seed.dat
+	$CLUBB/bin/int2txt /dev/urandom > $CLUBB/ens_tune/rand_seed.dat
 
 	# Create model namelist files
 	for EXP in "${EXPERIMENTS[@]}"; do
-		cat $CLUBB/input/case_setups/${EXP}_model.in $CLUBB/ens_tune/${EXP}_stats_tune.in > $CLUBB/ens_tune/${EXP}_hoc.in
+		cat $CLUBB/input/case_setups/${EXP}_model.in | sed 's/debug_level\s*=\s*.*/debug_level = 0/g' > $CLUBB/ens_tune/${EXP}_hoc.in
+		cat $CLUBB/ens_tune/${EXP}_stats_tune.in >> $CLUBB/ens_tune/${EXP}_hoc.in
 	done
-
 	# Execute tuning run
 	echo Tuning ensemble member $member on `hostname`
 	cd $ENSEMBLE_DIR && echo no | ../bin/clubb_tuner &> tune.log
