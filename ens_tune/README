@@ -27,10 +27,11 @@ Doing a basic `at' job:
     MEMBERMAX, CLUBB, CASE, ARCHIVE, and EXPERIMENTS as needed.
 
     MEMBERMAX is the total number of times the tuner will be run.
-    CLUBB is location of your clubb installation.
+    CLUBB is the location of your clubb installation.
     ARCHIVE is the where the tunable parameters and GrADS data will be copied
     to, along with the script to sort the results.
-    EXPERIMENTS is any array containing all the cases you wish to run.
+    EXPERIMENTS is any array containing the names of all the simulations you 
+    wish to run.
 
     In ens_tuen you must have:
     error_<CASE>.in containing the namelists for the tuner, setup as the files
@@ -38,8 +39,8 @@ Doing a basic `at' job:
     <EXPERIMENT ...>_stats_tune.in which you will only want to include
     variables you're tuning for.
 
-    You will probably also want to do typical tuner simplifications like
-    setting the debug_level to 0.
+    The script should now set the debug_level to 0 for you automatically during
+    the tuning run.
     
 2.) at -f ./atjob.bash now
 
