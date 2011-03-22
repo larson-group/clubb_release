@@ -49,7 +49,7 @@ program clubb_tuner
   if ( l_save_tuning_run ) then
     ! File where tuning run results are written
     tuning_filename = "../input/tuning_run_results_"// &
-      current_date//'_'//current_time(1:4)//".in"
+      current_date//'_'//current_time(1:4)//".log"
     open(unit=file_unit, file=tuning_filename, action="write")
     write(file_unit,*) "Tuning..."
     close(unit=file_unit)
@@ -324,10 +324,11 @@ end subroutine amebsa_driver
 
   xinit = param_vals_matrix(1,1:ndim)
 
-  ! Assume no parameter is < 0 for now
+  ! Set the minimum for the parameters.  Assume no parameter is < 0 for now
   x0min(1:ndim) = 0. 
 
-  ! Assume the maximum is at most 5 times the current value
+  ! Set the maximum for the parameters.  Assume parameters will be most 5 
+  ! times the current value.
   x0max(1:ndim) = 5. * param_vals_matrix(1,1:ndim) 
 
   rostep(1:ndim) = param_vals_spread(1:ndim)
