@@ -984,15 +984,18 @@ module error
 
     ! Input variables
     character(len=*), intent(in) :: & 
-    results_f ! Results file to write to
+      results_f ! Results file to write to
 
     real, intent(in), dimension(ndim) :: & 
-    param_vals_vector ! the current constants
+      param_vals_vector ! the current constants
 
     ! Local variables
     real, dimension(nparams) :: params_local
 
     integer   :: i, j  ! loop variables
+
+    ! ---- Begin Code ---
+    write(6,*) "Writing parameters for namelist to "//results_f
 
     ! Open new file
     open(unit=20, file=results_f,  & 
