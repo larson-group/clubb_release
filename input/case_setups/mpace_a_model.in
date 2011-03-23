@@ -140,6 +140,7 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 ! The schemes are: "khairoutdinov_kogan", "morrison", "coamps", "simplified_ice", "none"  
 micro_scheme = "morrison",
 l_graupel = .false.,
+l_arctic_nucl = .true. ! Use MPACE observations for ice nucleation.
 
 ! Addition for using latin hypercube sampling
 ! Variances / Corrlations from the RICO case
