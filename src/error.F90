@@ -443,7 +443,7 @@ module error
     intrinsic :: achar, modulo, minval, maxval, trim, any, real
 
     ! Constant Parameters
-    logical, parameter :: l_implemented = .false.
+    logical, parameter :: l_stdout = .false.
 
     ! Input Variables
 
@@ -583,7 +583,7 @@ module error
       ! Run the CLUBB model with parameters as input
 
       call run_clubb & 
-           ( params_local, run_file(c_run), run_stat(c_run), l_implemented )
+           ( params_local, run_file(c_run), run_stat(c_run), l_stdout )
 
     end do ! 1..c_run
 !$omp end parallel do
