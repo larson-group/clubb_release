@@ -997,6 +997,8 @@ module clubb_driver
                Ncnm, hydromet,                                       & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(out)
 
+        if ( fatal_error( err_code ) ) exit
+
         ! Advance a radiation scheme
         ! With this call ordering, snow and ice water mixing ratio will be
         ! updated by the microphysics, but thlm and rtm will not.  This
@@ -1007,7 +1009,9 @@ module clubb_driver
              ( time_current, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
                rtm, rcm, hydromet,                       & ! Intent(in)
                radht, Frad, Frad_SW_up, Frad_LW_up,      & ! Intent(out)
-               Frad_SW_down, Frad_LW_down )                ! Intent(out)
+               Frad_SW_down, Frad_LW_down, err_code )      ! Intent(out)
+
+        if ( fatal_error( err_code ) ) exit
 
         ! End statistics timestep
         call stats_end_timestep( )
@@ -3500,7 +3504,7 @@ module clubb_driver
   subroutine advance_clubb_radiation &
              ( time_current, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
                rtm, rcm, hydromet, radht, Frad, Frad_SW_up, Frad_LW_up, &
-               Frad_SW_down, Frad_LW_down )
+               Frad_SW_down, Frad_LW_down, err_code )
 ! Description:
 !   Compute a radiation tendency.
 
@@ -3586,6 +3590,8 @@ module clubb_driver
       Frad_SW_down, & ! Short-wave upwelling radiative flux    [W/m^2]
       Frad_LW_down    ! Long-wave upwelling radiative flux     [W/m^2]
 
+    integer, intent(out) :: err_code
+
     ! Local Variables
     real, dimension(gr%nnzp) ::  & 
       radht_SW, & ! Radiative heating rate              [K/s]
@@ -3599,7 +3605,7 @@ module clubb_driver
 
     double precision :: amu0
 
-    integer :: i, err_code
+    integer :: i 
 
     ! ---- Begin Code ----
 
@@ -3766,7 +3772,7 @@ module clubb_driver
 
       if ( fatal_error( err_code ) ) then
         call reportError( err_code )
-        stop "Fatal error in simple_rad"
+        return
       end if
 
       Frad = Frad_SW + Frad_LW 
