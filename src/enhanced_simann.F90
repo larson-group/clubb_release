@@ -500,14 +500,14 @@ module enhanced_simann
   !  pp. 221-222, Siarry et al. ``SA Parameter Adjustment''
   !-----------------------------------------------------------------------------
 
-    use mt95, only: genrand_real1 ! Procedure
+    use mt95, only: genrand_int31 ! Procedure
 
-    use mt95, only: genrand_real ! Constant
+    use mt95, only: genrand_intg ! Constant
 
     implicit none
 
     intrinsic :: &
-      size, int, ceiling, real, maxval, all, count
+      size, maxval, all, count, mod
 
     ! Input Variables
     integer, dimension(:), intent(in) :: &
@@ -518,7 +518,7 @@ module enhanced_simann
       spartition  ! Vector of which variables to include
 
     ! Local Variables
-    real(genrand_real) :: rand
+    integer(kind=genrand_intg) :: irand
 
     integer :: pdim, ndim, elem
 
@@ -534,9 +534,10 @@ module enhanced_simann
     ! Terminate when we have pdim true entries
     do while ( count( spartition ) < pdim ) 
 
-      call genrand_real1( rand )
+      call genrand_int31( irand )
 
-      elem = int( ceiling( rand * real( ndim ) ) ) ! Pick a random element
+      elem = mod( irand, ndim ) + 1  ! Pick a random element
+
       !print *, elem
       !pause
       ! Attempt to meet Siarry's condition that no element be over-selected
