@@ -6,8 +6,8 @@
     'enabled' => 'true',
     'type' => 'standard',
     'headerText' => 'Bomex Minutes 181-360',
-    'startTime' =>0.0,  # [minutes]
-    'endTime' => 5.0,    # [minutes]
+    'startTime' =>181.,  # [min]
+    'endTime' => 360.,    # [min]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 2500.0, # [m]
     'plots' =>
@@ -26,15 +26,14 @@
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/bomex_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rtm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/bomex_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}','expression' => 'QT','lineWidth' => 'auto','lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/bomex_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/bomex_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'wpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/bomex_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wpthlp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'wpthlp * 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #Should not computed on Z3(lev), need to be computed on ilev
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp * 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
@@ -42,7 +41,7 @@
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/bomex_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'wprtp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/bomex_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wprtp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'QTFLX ./ (1 * 2.5e6)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #Should not compute on Z3(lev), need to be computed on ilev, replace denominator by (rho * Lv)
+          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'QTFLX ./ (RHO* 2.5e6)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #Should not compute on Z3(lev), need to be computed on ilev
        ]},
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
@@ -202,7 +201,7 @@
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/bomex_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'Nim', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/bomex_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Nim', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'Nim * 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AWNI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
        [

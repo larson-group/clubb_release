@@ -6,10 +6,10 @@
     'enabled' => 'true',
     'type' => 'standard',
     'headerText' => 'DYCOMS II RF01 Minutes 181-240',
-    'startTime' => 0.0,  # [minutes]
-    'endTime' => 3.95,    # [minutes]
+    'startTime' => 181.0,  # [minutes]
+    'endTime' => 240.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
-    'endHeight' => 5000.0, # [m]
+    'endHeight' => 1200.0, # [m]
     'plots' =>
     [
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thlm [K]', 'type' => 'profile', 'lines' =>

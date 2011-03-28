@@ -58,7 +58,8 @@ t_time_steps = size(time,1);
 
 dt = time(t_time_steps) - time(t_time_steps - 1);
 
-timeInfo = netcdf.getAtt( nc_file, 3, 'units' );
+timeInfo = netcdf.getAtt( nc_file, varTime, 'units' );
+
 
 %Now that we have the text info about the unit for time, see if we can determine
 %a proper dt
@@ -68,7 +69,7 @@ elseif findstr(timeInfo, 'minutes')
 	dt = 1 * dt;
 elseif findstr(timeInfo, 'hours')
 	dt = 60 * dt;
-elseif findstr(timeInfo, 'day')
+elseif findstr(timeInfo, 'days')
 	dt = 24 * 60 * dt;
 	time = 24 * 60 * time;
 else
