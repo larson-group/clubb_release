@@ -1473,7 +1473,7 @@ module microphys_driver
             do k = 1, gr%nnzp, 1
               if ( hydromet(k,i) < 0.0 ) then
                 call adj_microphys_tndcy & 
-                   ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i),  & 
+                   ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
                      Kr, nu_r, dt, k, .true., & 
                      hydromet(:,i), overevap_rate )
 
@@ -1511,7 +1511,7 @@ module microphys_driver
               if ( hydromet(k,i) < 0.0 ) then
 
                 call adj_microphys_tndcy & 
-                     ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i),  & 
+                     ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
                        Kr, nu_r, dt, k, .true., & 
                        hydromet(:,i), overevap_rate )
 
@@ -2652,7 +2652,7 @@ module microphys_driver
       return
     end function sed_upwind_diff_lhs
 !===============================================================================
-    subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, Kr, nu, & 
+    subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, V_hmt, Kr, nu, & 
                                     dt, level, l_sed, & 
                                     xrm, overevap_rate )
 
@@ -2770,6 +2770,9 @@ module microphys_driver
       use mean_adv, only:  & 
           term_ma_zt_lhs ! Procedure(s)
 
+      use parameters_microphys, only: &
+        l_upwind_diff_sed ! Variable(s)
+
       implicit none
 
       ! Input variables.
@@ -2777,7 +2780,8 @@ module microphys_driver
       real, dimension(gr%nnzp), intent(in) :: &
         xrm_tndcy, & ! Hydrometeor microphysical tendency.                      [hm_units/s]
         wm_zt,     & ! Vertical velocity (thermo. levels).                      [m/s]
-        V_hm,      & ! Sedimentation velocity (interpolated to thermo. levels). [m/s]
+        V_hm,      & ! Sedimentation velocity (interpolated to moment. levels). [m/s]
+        V_hmt,     & ! Sedimentation velocity (thermo. levels).                 [m/s]
         Kr           ! Eddy diffusivity for hydrometeors (m-lev).               [m^2/s]
 
       real, intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
@@ -2867,18 +2871,34 @@ module microphys_driver
 
       if ( l_sed ) then
 
-        ! The implicit (LHS) value of the sedimentation component of the equation
-        ! used during the timestep that was just solved for.
-        tmp(1:3) = sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+        if ( .not. l_upwind_diff_sed ) then
+          ! The implicit (LHS) value of the sedimentation component of the equation
+          ! used during the timestep that was just solved for.
+          tmp(1:3) = sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
 
-        sd_subdiag  = -tmp(3) ! subdiagonal
-        sd_maindiag = -tmp(2) ! main diagonal
-        sd_supdiag  = -tmp(1) ! superdiagonal
+          sd_subdiag  = -tmp(3) ! subdiagonal
+          sd_maindiag = -tmp(2) ! main diagonal
+          sd_supdiag  = -tmp(1) ! superdiagonal
 
-        sd_tndcy =  & 
-           + sd_subdiag  * xrm(km1) & 
-           + sd_maindiag * xrm(k) & 
-           + sd_supdiag  * xrm(kp1)
+          sd_tndcy =  & 
+             + sd_subdiag  * xrm(km1) & 
+             + sd_maindiag * xrm(k) & 
+             + sd_supdiag  * xrm(kp1)
+
+        else ! Upwind differencing approximation
+
+          ! The implicit (LHS) value of the sedimentation component of the equation
+          ! used during the timestep that was just solved for.
+          tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
+
+          sd_maindiag = -tmp(2) ! main diagonal
+          sd_supdiag  = -tmp(1) ! superdiagonal
+
+          sd_tndcy =  & 
+             + sd_supdiag  * xrm(kp1) & 
+             + sd_maindiag * xrm(k)
+
+        end if ! ~l_upwind_diff_sed 
 
       else
 
