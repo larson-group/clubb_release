@@ -228,6 +228,7 @@ module microphys_driver
     ! ---- Begin Code ----
 
     ! Set default values, then read in the namelist
+
     micro_scheme = "none"
 
     ! Cloud water sedimentation from the RF02 case
@@ -237,7 +238,22 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for Khairoutdinov and Kogan microphysics
     !---------------------------------------------------------------------------
+    l_local_kk = .false. ! Use the local parameterization for K&K
 
+    C_evap = 0.86    ! Khairoutdinov and Kogan (2000) ratio of
+    ! drizzle drop mean geometric radius to
+    ! drizzle drop mean volume radius.
+    ! Khairoutdinov and Kogan (2000); p. 233.
+    !C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
+    !C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
+
+    r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
+
+    !---------------------------------------------------------------------------
+    ! Parameters for Khairoutdinov and Kogan microphysics analytic solution
+    ! (local_kk = .false.), or latin hypercube sampling (using either Khairoutdinov
+    !  Kogan or Morrison microphysics).
+    !---------------------------------------------------------------------------
     ! Parameters for in-cloud (from SAM RF02 DO).
     rrp2_on_rrainm2_cloud = 0.766
     Nrp2_on_Nrm2_cloud    = 0.429
@@ -255,16 +271,9 @@ module microphys_driver
     corr_sNr_NL_below  = 0.015
     corr_sNc_NL_below  = 0.00 ! Not applicable below cloud.
     ! Other needed parameters
-    C_evap = 0.86    ! Khairoutdinov and Kogan (2000) ratio of
-    ! drizzle drop mean geometric radius to
-    ! drizzle drop mean volume radius.
-    ! Khairoutdinov and Kogan (2000); p. 233.
-    !C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
-    !C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
 
-    r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
-
-    ! Made up values for the variance of ice/snow
+    ! Made up values for the variance of ice/snow, since we currently lack data
+    ! for this.
     rsnowp2_on_rsnowm2_cloud = 0.766
     Nsnowp2_on_Nsnowm2_cloud = 0.429
     ricep2_on_ricem2_cloud = 1.0
@@ -366,20 +375,25 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for Morrison and COAMPS microphysics
     !---------------------------------------------------------------------------
-    l_ice_micro = .true.
-    l_graupel = .true.
+    l_ice_micro = .true. ! Enable non-sedimenting ice and snow
+    l_graupel = .true.   ! Enable graupel formation
 
     !---------------------------------------------------------------------------
     ! Parameters for Khairoutdinov & Kogan and COAMPS microphysics
     !---------------------------------------------------------------------------
-    l_upwind_diff_sed =.false.
+    ! Enable to use an upwind differencing approximation for sedimentation 
+    ! rather than a 3 point difference approximation.
+    l_upwind_diff_sed =.false. 
 
     !---------------------------------------------------------------------------
     ! Parameters for Morrison microphysics only
     !---------------------------------------------------------------------------
-    l_hail = .false.
-    l_seifert_beheng = .false.
-    l_predictnc = .true.
+    l_hail = .false. ! Graupel will have properties of hail when true
+
+    ! Enable to Use Seifert and Beheng (2001) warm rain parameterization 
+    ! rather than Khairoutdinov Kogan (2000)
+    l_seifert_beheng = .false. 
+    l_predictnc = .true. ! Predict cloud droplet number concentration
     l_specify_aerosol = .true.
     l_subgrid_w = .true.
     l_arctic_nucl = .false.
@@ -414,7 +428,6 @@ module microphys_driver
 
     l_lh_cloud_weighted_sampling = .false.
     l_lh_vert_overlap = .false.
-    l_local_kk = .false.
     LH_microphys_calls = 2
     LH_sequence_length = 1
 
@@ -465,6 +478,8 @@ module microphys_driver
         l_write_to_file, iunit )
       call write_text ( "l_fix_pgam = ", l_fix_pgam, l_write_to_file, iunit )
       call write_text ( "l_in_cloud_Nc_diff = ", l_in_cloud_Nc_diff, &
+        l_write_to_file, iunit )
+      call write_text ( "l_upwind_diff_sed = ", l_upwind_diff_sed, &
         l_write_to_file, iunit )
       call write_text ( "LH_microphys_type = " // &
         trim( LH_microphys_type ), l_write_to_file, iunit )
