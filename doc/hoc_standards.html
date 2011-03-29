@@ -287,10 +287,11 @@ Not this:
 
 <li> Do not use assumed size or assumed shape arrays in CLUBB.  
 Generally speaking, the grid class defines the length of model arrays, 
-and the use of assumed size arrays introduces 
-another level of complexity that can cause bugs.  An exception may occur
-if you need to interface with code developed by external contributors that
-contains assumed shape arrays.
+and the use of assumed size arrays introduces another level of complexity 
+that can contribute to introducing bugs.  An exception to this rule is
+that should you need to interface with code developed by external contributors 
+that contains assumed size or shape arrays you may have to declare your arrays
+the same way.
 
 <div class="p"><!----></div>
 
@@ -349,7 +350,7 @@ logical operators and use the Fortran 90 style logical operators.
 
 <pre>
 &nbsp;&nbsp;!&nbsp;Like&nbsp;this
-&nbsp;&nbsp;if&nbsp;(&nbsp;x&nbsp;==&nbsp;y&nbsp;)&nbsp;.and.&nbsp;(&nbsp;y&nbsp;&#62;=&nbsp;z&nbsp;)&nbsp;.or.&nbsp;(&nbsp;z&nbsp;/=&nbsp;0.0&nbsp;)&nbsp;then
+&nbsp;&nbsp;if&nbsp;(&nbsp;(&nbsp;x&nbsp;==&nbsp;y&nbsp;)&nbsp;.and.&nbsp;(&nbsp;y&nbsp;&#62;=&nbsp;z&nbsp;)&nbsp;.or.&nbsp;(&nbsp;z&nbsp;/=&nbsp;0.0&nbsp;)&nbsp;)&nbsp;then
 
 &nbsp;&nbsp;&nbsp;&nbsp;...
 
@@ -824,10 +825,10 @@ be write statements to stderr (<tt>clubb_constants&nbsp;fstderr</tt>) with no <t
 <div class="p"><!----></div>
 </li>
 
-<li> When using allocatable pointers they should be deallocated in the same function or subroutine 
+<li> When using allocatable pointers or derived types they should be deallocated in the same function or subroutine 
 in which they were allocated.  This is because unlike arrays, the memory used by pointers is not 
 automatically freed without a deallocate statement, and we want to prevent memory leaks. This includes 
-derived types that contain allocatable components. E.g. <br />
+derived types that contain allocatable pointer components. E.g. <br />
 
 <pre>
 &nbsp;&nbsp;function&nbsp;func
@@ -854,5 +855,5 @@ derived types that contain allocatable components. E.g. <br />
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>M</a>,
-version 3.85.<br />On  8 Dec 2010, 17:41.</small>
+version 3.85.<br />On 29 Mar 2011, 16:57.</small>
 </body></html>

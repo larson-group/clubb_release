@@ -664,10 +664,10 @@ use \verb|l_cloud_sed| rather than \verb|cloud_sed|.
 should be enclosed in \verb|clubb_at_least_debug_level( 1 or 2 )| conditionals. All fatal errors should
 be write statements to stderr (\verb|clubb_constants fstderr|) with no \verb|clubb_at_least_debug_level| conditional.
 
-\item When using allocatable pointers they should be deallocated in the same function or subroutine 
+\item When using allocatable pointers or derived types they should be deallocated in the same function or subroutine 
 in which they were allocated.  This is because unlike arrays, the memory used by pointers is not 
 automatically freed without a deallocate statement, and we want to prevent memory leaks. This includes 
-derived types that contain allocatable components. E.g. \\
+derived types that contain allocatable pointer components. E.g. \\
 \begin{verbatim}
   function func
 
