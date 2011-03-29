@@ -210,7 +210,7 @@ l_cloud_sed | logical
   This uses the formula from the DYCOMS II RF02 specification.
 
 l_ice_micro | logical
-  Compute ice (COAMPS / Morrison)
+  Compute ice and snow (COAMPS / Morrison)
 
 l_graupel | logical
   Compute graupel (COAMPS / Morrison)
@@ -233,10 +233,10 @@ l_subgrid_w | logical
   true, since there is no way to account for updrafts like an LES.
 
 l_arctic_nucl | logical
-  Use MPACE observations (Morrison)
+  Use MPACE observations for ice nucleation (Morrison)
 
 l_cloud_edge_activation | logical
-  Activate on cloud edges (Morrison)
+  Activate droplets on cloud edges (Morrison)
 
 l_fix_pgam | logical
   Fix pgam (Morrison)
@@ -247,11 +247,12 @@ LH_microphys_type | character
   Valid values are "interactive", "non-interactive", or "disabled".
 
 l_lh_vert_overlap | logical
-  Use maximum overlap assumption for s_mellor latin (K&K).
+  Use a vertical overlap assumption for generating latin hypercube sample 
+  points rather than random overlap (K&K / Morrison).
 
 l_lh_cloud_weighted_sampling | logical
   Pick points in and out of cloud Latin Hypercube sampling (K&K).  Note that
-  LH_microphys_calls must be even, and sequence length must be 1 in
+  LH_microphys_calls must be an even number, and sequence length must be 1 in
   order to enable this.
 
 LH_microphys_calls | integer
@@ -263,6 +264,10 @@ LH_sequence_length | integer
 l_local_kk | logical
   Use the local formulas for K&K microphyics, rather than the analytic formulas.
 
+l_upwind_diff_sed | logical
+  Use an upwind differencing approximation for sedimenation, rather than 
+  the centered differencing approximation (K&K / COAMPS).
+
 microphys_start_time | real, minimum 12 digits of precision
   Model time to start calling the microphysics scheme [s]
   Useful for artificially creating a delayed onset of ice/rain in idealized
@@ -270,35 +275,35 @@ microphys_start_time | real, minimum 12 digits of precision
 
 Ncm_initial 
   Initial value for Ncm (cloud droplet number concentration) in cc/m^3 
-  (K&K, l_cloud_sed, Morrison).
+  (K&K, l_cloud_sed = .true., Morrison).
 
 rrp2_on_rrainm2_cloud | real, default precision
 rrp2_on_rrainm2_below | real, default precision
-  Variance of rain water mixing ratio divided by the mean squared (K&K).
+  Variance of rain water mixing ratio divided by the mean squared (K&K / latin hypercube).
 
 Nrp2_on_Nrm2_cloud | real, default precision
 Nrp2_on_Nrm2_below | real, default precision
-  Variance of rain water num. conc. divided by the mean squared (K&K).
+  Variance of rain water num. conc. divided by the mean squared (K&K / latin hypercube).
 
 Ncp2_on_Ncm2_cloud | real, default precision
 Ncp2_on_Ncm2_below | real, default precision
-  Variance of cloud water num. conc. divided by the mean squared (K&K).
+  Variance of cloud water num. conc. divided by the mean squared (K&K / latin hypercube).
 
 corr_rrNr_LL_cloud | real, default precision
 corr_rrNr_LL_below | real, default precision
-  Correlation between rain water mixing ratio and number conc. (K&K)
+  Correlation between rain water mixing ratio and number conc. (K&K / latin hypercube)
 
 corr_srr_NL_cloud | real, default precision
 corr_srr_NL_below | real, default precision
-  Correlation between rain water mixing ratio and 's' in Mellor (K&K).
+  Correlation between rain water mixing ratio and 's' in Mellor (K&K / latin hypercube).
 
 corr_sNr_NL_cloud | real, default precision
 corr_sNr_NL_below | real, default precision
-  Correlation between rain water num. conc. ratio and 's' in Mellor (K&K).
+  Correlation between rain water num. conc. ratio and 's' in Mellor (K&K / latin hypercube).
 
 corr_sNc_NL_cloud | real, default precision
 corr_sNc_NL_below | real, default precision
-  Correlation between cloud droplet number conc. and 's' in Mellor (K&K).
+  Correlation between cloud droplet number conc. and 's' in Mellor (K&K / latin hypercube).
 
 C_evap | real, default precision
   Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric radius to
