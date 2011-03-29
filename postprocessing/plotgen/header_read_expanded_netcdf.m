@@ -35,7 +35,7 @@ if strfind ( filename, 'pf_gfdl' ) %Get height for pf_gfdl files
 elseif strfind ( filename, 'ph_gfdl' )  %Get height for ph_gfdl files
    varAlt = netcdf.inqVarID( nc_file, 'zh_forc' );
    alt = netcdf.getVar ( nc_file, varAlt );
-   z(:,1) = alt(1,1,:,1); 
+   z(:,1) = alt(1,1,:,1);
 elseif strfind ( filename, 'ps_gfdl' )  %Get height for ps_gfdl files
     z = netcdf.getVar( nc_file, 3);
 elseif strfind ( filename, '_cam' ) %For cam cases
@@ -70,7 +70,7 @@ elseif findstr(timeInfo, 'minutes')
 elseif findstr(timeInfo, 'hours')
 	dt = 60 * dt;
 elseif findstr(timeInfo, 'days')
-	dt = 24 * 60 * dt;
+	dt = ceil(24 * 60 * dt);
 	time = 24 * 60 * time;
 else
 	%Assume one dt is 1 minute
