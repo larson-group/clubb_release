@@ -2059,7 +2059,7 @@ module microphys_driver
         cloud_frac_zm    ! Cloud fraction on momentum levels       [-]
 
       ! Array indices
-      integer :: k, km1
+      integer :: k, km1, kp1
 
       !integer kp1
 
@@ -2119,7 +2119,7 @@ module microphys_driver
       do k = 2, gr%nnzp-1, 1
 
         km1 = max( k-1, 1 )
-        !kp1 = min( k+1, gr%nnzp )
+        kp1 = min( k+1, gr%nnzp )
 
         ! Main diagonal
 
@@ -2164,7 +2164,7 @@ module microphys_driver
           else
             lhs(kp1_tdiag:km1_tdiag,k) & 
               = lhs(kp1_tdiag:km1_tdiag,k) & 
-              + sed_upwind_diff_lhs( V_hmt(k), gr%invrs_dzm(k), k )
+              + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
           end if
         end if
 
@@ -2185,7 +2185,7 @@ module microphys_driver
             if ( .not. l_upwind_diff_sed ) then
               tmp(1:3) = sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
             else
-              tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), gr%invrs_dzm(k), k )
+              tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
             end if
 
             ztscr04(k) = -tmp(3)
@@ -2235,6 +2235,7 @@ module microphys_driver
       ! Lower Boundary
       k   = 1
       km1 = max( k-1, 1 )
+      kp1 = k+1
       ! Note:  In function diffusion_zt_lhs, at the k=1 (lower boundary) level,
       !        variables referenced at the km1 level don't factor into the equation.
 
@@ -2252,7 +2253,7 @@ module microphys_driver
       if ( l_sed .and. l_upwind_diff_sed ) then
         lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) & 
-          + sed_upwind_diff_lhs( V_hmt(k), gr%invrs_dzm(k), k )
+          + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
       end if
 
       if ( l_stats_samp ) then
@@ -2270,7 +2271,7 @@ module microphys_driver
         end if
 
         if ( ixrm_sd > 0 .and. l_sed .and. l_upwind_diff_sed ) then
-          tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), gr%invrs_dzm(k), k )
+          tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
 
           ztscr04(k) = -tmp(3)
           ztscr05(k) = -tmp(2)
@@ -2562,7 +2563,7 @@ module microphys_driver
     end function sed_centered_diff_lhs
 
     !---------------------------------------------------------------------------
-    pure function sed_upwind_diff_lhs( V_hmt, invrs_dzm, level ) & 
+    pure function sed_upwind_diff_lhs( V_hmt, V_hmtp1, invrs_dzm, level ) & 
       result( lhs )
 
     ! Description:
@@ -2585,8 +2586,9 @@ module microphys_driver
 
       ! Input Variables
       real, intent(in) :: & 
-        V_hmt,    & ! Sedimentation velocity of hydrometeor (thermo. levels) (k) [m/s]
-        invrs_dzm    ! Inverse of grid spacing (k)                   [m]
+        V_hmt,   & ! Sedimentation velocity of hydrometeor (thermo. levels) (k)   [m/s]
+        V_hmtp1, & ! Sedimentation velocity of hydrometeor (thermo. levels) (k+1) [m/s]
+        invrs_dzm  ! Inverse of grid spacing (k)                   [m]
 
       integer, intent(in) ::  & 
         level ! Central thermodynamic level (on which calculation occurs).
@@ -2616,7 +2618,7 @@ module microphys_driver
 
         ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
         lhs(kp1_tdiag)  & 
-        = + invrs_dzm * V_hmt
+        = + invrs_dzm * V_hmtp1
 
         ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
         lhs(k_tdiag)  & 
