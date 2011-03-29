@@ -35,6 +35,7 @@ module microphys_driver
     LH_microphys_calls,           & ! # of latin hypercube samples to call the microphysics with 
     LH_sequence_length,           & ! Number of timesteps before the latin hypercube seq. repeats
     l_local_kk,                   & ! Use local formula for K&K
+    l_upwind_diff_sed,            & ! Use the upwind differencing approx. for sediementation
     micro_scheme,                 & ! The microphysical scheme in use
     hydromet_list,                & ! Names of the hydrometeor species
     microphys_start_time,         & ! When to start the microphysics [s]
@@ -209,7 +210,7 @@ module microphys_driver
 
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, &
-      l_ice_micro, l_graupel, l_hail, &
+      l_ice_micro, l_graupel, l_hail, l_upwind_diff_sed, &
       l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, l_in_cloud_Nc_diff, &
       LH_microphys_type, l_local_kk, LH_microphys_calls, LH_sequence_length, &
@@ -367,6 +368,11 @@ module microphys_driver
     !---------------------------------------------------------------------------
     l_ice_micro = .true.
     l_graupel = .true.
+
+    !---------------------------------------------------------------------------
+    ! Parameters for Khairoutdinov & Kogan and COAMPS microphysics
+    !---------------------------------------------------------------------------
+    l_upwind_diff_sed =.false.
 
     !---------------------------------------------------------------------------
     ! Parameters for Morrison microphysics only
@@ -2017,9 +2023,6 @@ module microphys_driver
       implicit none
 
       ! Constant parameters
-      logical, parameter :: &
-        l_upwind_diff_sed = .false. ! Use the upwind differencing approx. for sediementation
-
       integer, parameter :: & 
         kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
         k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
@@ -2344,7 +2347,8 @@ module microphys_driver
       ! timestep index (t+1) stands for the index of the next timestep, which is
       ! being advanced to in solving the d(hm)/dt equation.
       !
-      ! This term is discretized as follows:
+      ! This term is discretized as follows when using the centered-difference
+      ! approximation:
       !
       ! The values of hm are found on the thermodynamic levels, while the values
       ! of V_hm are found on the momentum levels.  The variable hm is
@@ -2440,10 +2444,11 @@ module microphys_driver
       ! References:
       ! None
 
-      ! Notes:  Both COAMPS Microphysics and Brian Griffin's implementation use
-      !         Khairoutdinov and Kogan (2000) for the calculation of rain
-      !         mixing ratio and rain droplet number concentration sedimentation
-      !         velocities.
+      ! Notes:  
+      !   Both COAMPS Microphysics and Brian Griffin's implementation use
+      !   Khairoutdinov and Kogan (2000) for the calculation of rain
+      !   mixing ratio and rain droplet number concentration sedimentation
+      !   velocities, but COAMPS has only the local parameterization.
       !-----------------------------------------------------------------------
 
       use grid_class, only:  & 
@@ -2599,7 +2604,7 @@ module microphys_driver
       ! ---- Begin Code ----
 
       ! Sedimention is always a downward process, so we omit the upward case
-      ! (i.e. the V_hmt term will always be positive).
+      ! (i.e. the V_hmt variable will always be negative).
       if ( level == gr%nnzp ) then
 
         ! k = gr%nnzp (top level); upper boundary level; no flux.

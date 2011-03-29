@@ -23,6 +23,7 @@ module parameters_microphys
   logical, public :: & 
     l_cloud_sed,       & ! Cloud water sedimentation (K&K/No microphysics)
     l_ice_micro,       & ! Compute ice (COAMPS/Morrison)
+    l_upwind_diff_sed, & ! Use the upwind differencing approximation for sedimentation (K&K/COAMPS)
     l_graupel,         & ! Compute graupel (COAMPS/Morrison)
     l_hail,            & ! Assumption about graupel/hail? (Morrison)
     l_seifert_beheng,  & ! Use Seifert and Behneng warm drizzle (Morrison)
@@ -33,7 +34,7 @@ module parameters_microphys
     l_fix_pgam,        & ! Fix pgam (Morrison)
     l_in_cloud_Nc_diff   ! Use in cloud values of Nc for diffusion
 
-!$omp threadprivate(l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
+!$omp threadprivate(l_cloud_sed, l_ice_micro, l_graupel, l_hail, l_upwind_diff_sed, &
 !$omp   l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
 !$omp   l_arctic_nucl, l_fix_pgam, l_in_cloud_Nc_diff)
 
