@@ -383,7 +383,7 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Enable to use an upwind differencing approximation for sedimentation 
     ! rather than a 3 point difference approximation.
-    l_upwind_diff_sed =.false. 
+    l_upwind_diff_sed = .false.
 
     !---------------------------------------------------------------------------
     ! Parameters for Morrison microphysics only
@@ -1596,10 +1596,11 @@ module microphys_driver
             if ( hydromet(1,i) < zero_threshold ) then
               hydromet(1,i) = zero_threshold
             end if
-          else
-            ! This includes the case where the variable is a number
-            ! concentration and is therefore not conserved.
-            where ( hydromet(:,i) < zero_threshold ) hydromet(:,i) = zero_threshold
+
+            else
+              ! This includes the case where the variable is a number
+              ! concentration and is therefore not conserved.
+              where ( hydromet(:,i) < zero_threshold ) hydromet(:,i) = zero_threshold
 
             end if ! Variable is a mixing ratio and l_hole_fill is true
 
