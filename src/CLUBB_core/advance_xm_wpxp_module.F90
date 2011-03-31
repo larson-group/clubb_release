@@ -1863,6 +1863,7 @@ module advance_xm_wpxp_module
     ! Constant Parameters
     logical, parameter :: &
       l_mono_flux_lim = .true., &  ! Flag for monotonic turbulent flux limiter
+      l_enable_relaxed_clipping = .true., & ! Flag to relax clipping
       l_first_clip_ts = .true., &
       l_last_clip_ts  = .false.
 
@@ -2231,14 +2232,20 @@ module advance_xm_wpxp_module
     ! and the simulation gets "stuck" at the rt_tol^2 value.
     ! See ticket #389 on the CLUBB TRAC for further details.
     ! -dschanen 10 Jan 2011
-    if ( solve_type == xm_wpxp_rtm ) then
-      xp2_relaxed = max( 1e-7 , xp2 )
+    if ( l_enable_relaxed_clipping ) then
+      if ( solve_type == xm_wpxp_rtm ) then
+        xp2_relaxed = max( 1e-7 , xp2 )
 
-    else if ( solve_type == xm_wpxp_thlm ) then
-      xp2_relaxed = max( 0.01, xp2 )
+      else if ( solve_type == xm_wpxp_thlm ) then
+        xp2_relaxed = max( 0.01, xp2 )
 
-    else ! This includes the passive scalars
-      xp2_relaxed = max( 1e-7 , xp2 )
+      else ! This includes the passive scalars
+        xp2_relaxed = max( 1e-7 , xp2 )
+
+      end if
+
+    else  ! Don't relax clipping
+      xp2_relaxed = xp2
 
     end if
 
