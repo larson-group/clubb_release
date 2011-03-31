@@ -100,6 +100,12 @@ my $keepEps = 0;
 # Whether or not to compress output into a maff file. Default (0) is no.
 my $outputAsMaff = 0;
 
+# Whether or not to display legens.  Default (1) is yes.
+my $displayLegend = 1;
+
+# Whether or not to use smaller lines for ensemble runs.  Default (0) is no.
+my $thinLines = 0;
+
 # Custom Color Definitions for "CLUBB_current" and "CLUBB_previous"
 my $lt_blue = "[ 0.00, 0.63, 1.00 ]";
 my $orange = "[ 0.94, 0.50, 0.16 ]";
@@ -157,6 +163,13 @@ main();
 sub main()
 {
     readArgs();
+
+    # If thinLines is enabled then make it so we only use thin solid lines
+    if($thinLines == 1){
+	@lineStyles = ("-");
+	@lineWidths = (2);
+    }
+
 
     $matlabPipe = "matlab_pipe_$randInt";
 
@@ -717,7 +730,7 @@ sub buildMatlabStringStd()
             $endTime = $endTimeOverride;
         }
 
-        my $matlabArgs = "\'$caseName\', \'$plotTitle\', $count, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
+        my $matlabArgs = "\'$caseName\', \'$plotTitle\', $count, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt, $displayLegend";
         my $tempMatlabArgs = $matlabArgs;
 
         my @lines;
@@ -1022,7 +1035,7 @@ sub readArgs()
     case 'e' { $keepEps = 1; } # Keep EPS files
     case 'g' { $dataFileType = "grads"; } 
     case 't' { $dataFileType = "netcdf"; }
-    case "m" { # Output as maff file       
+    case "m" { # Output as maff file
       if ($option eq "e") # It's inconvenient for maff if eps files are kept
       {
       print("Argument conflict: Please do not simultaneously choose to 
@@ -1031,6 +1044,8 @@ sub readArgs()
       } 
        $outputAsMaff = 1;
     }
+    case 'thin' { $thinLines = 1; }      
+    case 'nolegend' { $displayLegend = 0; }      
     case 's' { $plotgenMode = "splotgen"; }
     case 'c' { $plotgenMode = "plotgen"; }
     case 'w' { $plotgenMode = "wrfgen"; }
@@ -1160,6 +1175,8 @@ sub main::HELP_MESSAGE()
     print("  -m\tOutputs plots compressed inside a .maff directory.\n");
     print("  -g\tUses GrADS data files. [DEFAULT]\n");
     print("  -t\tUses NetCDF data files.\n");
+    print("  -thin\tUses thin solid lines\n");
+    print("  -nolegend\tPlot without legends\n");
     print("  -h\tPrints this help message.\n");
     print("Each option must be seperate, eg -r -a not -ra\n");
     exit(0);

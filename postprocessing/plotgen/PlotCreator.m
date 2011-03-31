@@ -1,4 +1,4 @@
-function PlotCreator( caseName, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, tickCount, varargin )
+function PlotCreator( caseName, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, tickCount, dispLegend, varargin )
 
 %Add functions to be used in case files
 addpath('CaseFunctions');
@@ -165,12 +165,16 @@ if strcmp(plotType, 'profile')
 	ProfileFunctions.setTitle(plotTitle);
 	ProfileFunctions.setAxisLabels(plotUnits, 'Height [m]'); 
 	ProfileFunctions.setAxis(min(minVals), max(maxVals), startHeight, endHeight);
-	ProfileFunctions.addLegend(lines, legendText);
+        if(dispLegend == 1)
+		ProfileFunctions.addLegend(lines, legendText);
+	end
 elseif strcmp(plotType, 'timeseries')		
 	TimeseriesFunctions.setTitle(plotTitle);
 	TimeseriesFunctions.setAxisLabels('Time [min]', plotUnits); 	
 	TimeseriesFunctions.setAxis(min(minVals), max(maxVals), startTime, endTime);
-	TimeseriesFunctions.addLegend(lines, legendText);
+	if(dispLegend == 1)
+		TimeseriesFunctions.addLegend(lines, legendText);
+	end
 end
 
 %Output the EPS file
