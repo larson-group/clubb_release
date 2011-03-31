@@ -52,8 +52,13 @@ module model_flags
 ! OpenMP directives. These cannot be indented.
 !$omp threadprivate(l_uv_nudge, l_tke_aniso, l_soil_veg)
 
+  ! These 2 flags determine whether we want to use an upwind differencing approximation 
+  ! rather than a centered differencing for turbulent advection terms.
+  ! wpxp = wprtp, wpthlp, & wpsclrp
+  ! xpyp = rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp
   logical, parameter, public :: & 
-    l_upwind_wpxp_ta = .false. ! Whether to use upwind rather than centered differencing for wpxp
+    l_upwind_wpxp_ta = .false., & 
+    l_upwind_xpyp_ta = .false.    
 
   logical, parameter, public :: &
     l_use_boussinesq = .false.  ! Flag to use the Boussinesq form of the

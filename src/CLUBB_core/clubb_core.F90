@@ -1184,7 +1184,7 @@ module clubb_core
                            sigma_sqd_w, Skw_zm, Kh_zt,    & ! intent(in)
                            rho_ds_zm, rho_ds_zt,          & ! intent(in)
                            invrs_rho_ds_zm, thv_ds_zm,    & ! intent(in)
-                           Lscale, wp3_on_wp2_zt,         & ! intent(in)
+                           Lscale, wp3_on_wp2, wp3_on_wp2_zt, & ! intent(in)
  ! Vince Larson used prognostic timestepping of variances 
  !    in order to increase numerical stability.  17 Jul 2007
  !                          .false., dt,                   & ! intent(in)
