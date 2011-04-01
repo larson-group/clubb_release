@@ -869,8 +869,10 @@ module microphys_driver
     use morrison_micro_driver_module, only: &
       morrison_micro_driver
 
+#ifdef UNRELEASED_CODE
     use latin_hypercube_driver_module, only: &
       latin_hypercube_driver ! Procedure
+#endif /*UNRELEASED_CODE*/
 
     use ice_dfsn_module, only: & 
         ice_dfsn ! Procedure(s)
@@ -1109,6 +1111,11 @@ module microphys_driver
 !-------------------------------------------------------------------------------
 
     ! ---- Begin code ----
+
+    ! Make some compiler warnings go away for external users
+    if ( runtype == "" .or. iter == -1 ) then
+      stop "Runtype is null or iter is -1, neither of which should happen."
+    end if
 
     ! Return if there is delay between the model start time and start of the
     ! microphysics

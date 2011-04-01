@@ -4,11 +4,6 @@ module latin_hypercube_driver_module
 
   implicit none
 
-  public :: latin_hypercube_driver, latin_hypercube_2D_output, &
-    latin_hypercube_2D_close
-
-  private ! Default scope
-
   ! Constant Parameters
   logical, parameter, private :: &
     l_diagnostic_iter_check      = .true., &  ! Check for a problem in iteration
@@ -20,6 +15,12 @@ module latin_hypercube_driver_module
 
   integer, private :: &
     prior_iter ! Prior iteration number (for diagnostic purposes)
+
+  private ! Default scope
+
+#ifdef UNRELEASED_CODE
+  public :: latin_hypercube_driver, latin_hypercube_2D_output, &
+    latin_hypercube_2D_close
 
   contains
 
@@ -57,7 +58,6 @@ module latin_hypercube_driver_module
 
     use parameters_model, only: hydromet_dim ! Variable
 
-#ifdef UNRELEASED_CODE
     use permute_height_time_module, only: & 
       permute_height_time ! Procedure
 
@@ -72,7 +72,6 @@ module latin_hypercube_driver_module
     use output_2D_samples_module, only: &
       output_2D_lognormal_dist_file, & ! Procedure(s)
       output_2D_uniform_dist_file
-#endif
 
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
@@ -263,7 +262,6 @@ module latin_hypercube_driver_module
 
     integer, dimension(1) :: tmp_loc
 
-#ifdef UNRELEASED_CODE
     ! ---- Begin Code ----
 
     nt_repeat = n_micro_calls * sequence_length
@@ -641,16 +639,6 @@ module latin_hypercube_driver_module
 
     return
 
-#else
-    stop "This code was not compiled with support for Latin Hypercube sampling"
-
-    ! This is simply to avoid a compiler warning
-    LH_rcm_mc  = -999.999
-    LH_rvm_mc  = -999.999
-    LH_thlm_mc = -999.999
-
-#endif /* UNRELEASED_CODE */
-
   end subroutine latin_hypercube_driver
 
 !-------------------------------------------------------------------------------
@@ -679,7 +667,6 @@ module latin_hypercube_driver_module
     use stats_precision, only: &
       time_precision ! Constant
 
-#ifdef UNRELEASED_CODE
     use output_2D_samples_module, only: &
       open_2D_samples_file ! Procedure
 
@@ -690,7 +677,6 @@ module latin_hypercube_driver_module
     use latin_hypercube_arrays, only: &
       d_variables ! Variable
 
-#endif /*UNRELEASED_CODE*/
 
     implicit none
 
@@ -717,7 +703,6 @@ module latin_hypercube_driver_module
 
     ! ---- Begin Code ----
 
-#ifdef UNRELEASED_CODE
     if ( l_output_2D_lognormal_dist ) then
 
       allocate( variable_names(d_variables+2), variable_descriptions(d_variables+2), &
@@ -893,12 +878,7 @@ module latin_hypercube_driver_module
 
     end if
 
-
     return
-#else
-    stop "This code was not compiled with support for Latin Hypercube sampling"
-#endif
-
   end subroutine latin_hypercube_2D_output
 
 !-------------------------------------------------------------------------------
@@ -909,29 +889,23 @@ module latin_hypercube_driver_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-#ifdef UNRELEASED_CODE
     use output_2D_samples_module, only: &
       close_2D_samples_file ! Procedure
 
     use output_2D_samples_module, only: &
       lognormal_sample_file, & ! Variable(s)
       uniform_sample_file
-#endif
 
     implicit none
 
     ! ---- Begin Code ----
 
-#ifdef UNRELEASED_CODE
     if ( l_output_2D_lognormal_dist ) then
       call close_2D_samples_file( lognormal_sample_file )
     end if
     if ( l_output_2D_uniform_dist ) then
       call close_2D_samples_file( uniform_sample_file )
     end if
-#else
-    stop "This code was not compiled with support for Latin Hypercube sampling"
-#endif
 
     return
   end subroutine latin_hypercube_2D_close
@@ -986,7 +960,6 @@ module latin_hypercube_driver_module
 
 !   integer :: X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
 
-#ifdef UNRELEASED_CODE
     ! ---- Begin code ----
 
     ! Maximum iterations searching for the cloudy/clear part of the gridbox
@@ -1039,8 +1012,6 @@ module latin_hypercube_driver_module
       end if ! Looking for a clear or cloudy point
 
     end do ! Loop until we either find what we want or reach itermax
-
-#endif
 
     return
   end subroutine choose_X_u_reject
@@ -1100,7 +1071,6 @@ module latin_hypercube_driver_module
 
 !   integer :: X_mixt_comp_one_lev
 
-#ifdef UNRELEASED_CODE
     ! ---- Begin code ----
 
     ! Pick a new mixture component value between (0,1)
@@ -1165,8 +1135,6 @@ module latin_hypercube_driver_module
       end if
 
     end if
-
-#endif
 
     return
   end subroutine choose_X_u_scaled
@@ -1248,7 +1216,6 @@ module latin_hypercube_driver_module
 
     integer :: k, kp1, km1 ! Loop iterators
 
-#ifdef UNRELEASED_CODE
     ! ---- Begin Code ----
 
     ! Set the value at k_lh_start using a special value we've selected
@@ -1316,7 +1283,6 @@ module latin_hypercube_driver_module
 
     end do ! k_lh_start..2 decrementing
 
-#endif /*UNRELEASED_CODE*/
     return
   end subroutine compute_arb_overlap
 
@@ -1427,5 +1393,7 @@ module latin_hypercube_driver_module
 
     return
   end function compute_vert_corr
+
+#endif /*UNRELEASED_CODE*/
 
 end module latin_hypercube_driver_module
