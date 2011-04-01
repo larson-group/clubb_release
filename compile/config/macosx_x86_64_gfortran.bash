@@ -33,21 +33,17 @@ OPTIMIZE="-O2"
 
 # == NetCDF Location ==
 # No netCDF for the Macs in W343
-#NETCDF="/usr" # Ubuntu / Fedora
-#NETCDF="/usr/local/netcdf-gfortran" # RHEL5
-#NETCDF="/usr/local/netcdf-gfortran" # MACOSX
+#NETCDF="/Users/dschanen/netcdf-gfortran" # MacOS X
 
 # == LAPACK libraries ==
 LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
 #LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
-#LAPACK="-L/usr/lib/atlas-sse3 -llapack -lf77blas -lcblas -latlas" # Fedora 11 setup
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-#LDFLAGS="-L$NETCDF/lib -lnetcdf -lnetcdff $LAPACK" # Ubuntu
-#LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK" # RHEL5
+#LDFLAGS="$ARCH $LAPACK -L$NETCDF/lib -Wl,-rpath $NETCDF/lib -lnetcdf -lnetcdff"
 LDFLAGS="$ARCH $LAPACK" # OSX
 
 # == Compiler flags ==
@@ -59,11 +55,10 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 #   -Dradoffline and -Dnooverlap (see BUGSrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
-NETCDF_INCLUDE="$NETCDF/include/" # Ubuntu 10 LTS location
-#NETCDF_INCLUDE="$NETCDF/lib/gfortran/modules/" # Fedora Core 11 location
-#CPPDEFS="-DNETCDF -D__GFORTRAN__ -Dnooverlap -Dradoffline"
-#CPPFLAGS="-I$NETCDF/include"
-CPPDEFS="-Dradoffline -Dnooverlap" # MacOS X
+#NETCDF_INCLUDE="$NETCDF/include/"
+#CPPFLAGS="-I$NETCDF_INCLUDE"
+#CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline"
+CPPDEFS="-Dradoffline -Dnooverlap" # MacOS X (no netCDF)
 
 # == Static library processing ==
 AR=ar
