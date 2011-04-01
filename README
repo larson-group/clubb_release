@@ -111,6 +111,10 @@ $ ./compile.bash config/macosx_x86_64_gfortran.bash
 
 The command line will output information relating to the compilation of CLUBB.
 
+If you change something in the configuration and need to remove the old 
+executables and object files you can type:
+$ ./clean_all.bash
+
 -------------------------------------------------------
 - STEP 3: RUNNING A BENCHMARK TEST CASE
 -------------------------------------------------------
