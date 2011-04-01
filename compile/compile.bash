@@ -83,7 +83,7 @@ fi
 if [ -e $srcdir/SCM_Activation ]; then
 	#CPPDEFS="${CPPDEFS} -DAERSOL_ACT"
 	LDFLAGS="${LDFLAGS} -lclubb_gfdlact"
-	AEROSOL_LIB="libclubb_gfdlact.a"
+	GFDLACT_LIB="libclubb_gfdlact.a"
 fi
 
 # ------------------------------------------------------------------------------
@@ -135,7 +135,7 @@ ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > $dir/file_list/clubb_optiona
 ls $srcdir/CLUBB_core/*.F90 > $dir/file_list/clubb_param_files
 ls $srcdir/Latin_hypercube/*.* >> $dir/file_list/clubb_optional_files
 ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
-ls $srcdir/SCM_Activation/*.F90 > $dir/file_list/clubb_gfdl_activation_files
+ls $srcdir/SCM_Activation/aer_ccn_act_k.F90 > $dir/file_list/clubb_gfdl_activation_files
 
 if [ "$l_double_precision" == "false" ]	# Excludes numerical recipes if using double precision
 then
@@ -165,7 +165,7 @@ $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_morrison.a -m Make.clubb_morrison -c "${CPPDEFS} -DCLUBB" $dir/file_list/clubb_morrison_files
 
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_gfdlact.a -m Make.clubb_gfdlact -c "${CPPDEFS} -DCLUBB" $dir/file_list/clubb_gfdl_activiation_files
+  -p $libdir/libclubb_gfdlact.a -m Make.clubb_gfdlact -c "${CPPDEFS} -DCLUBB" $dir/file_list/clubb_gfdl_activation_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   -m Make.clubb_standalone -c "${CPPDEFS} ${WARNINGS}" $clubb_standalone_mods \
@@ -232,15 +232,15 @@ libclubb_morrison.a: libclubb_param.a
 libclubb_gfdlact.a: 
 	cd $objdir; $gmake -f Make.clubb_gfdlact
 
-clubb_standalone: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a libclubb_gfdlact.a
+clubb_standalone: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a $GFDLACT_LIB
 	-rm -f $bindir/clubb_standalone
 	cd $objdir; $gmake -f Make.clubb_standalone
 
-clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a libclubb_gfdlact.a
+clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a $GFDLACT_LIB
 	-rm -f $bindir/clubb_tuner
 	cd $objdir; $gmake -f Make.clubb_tuner		# Comment out if using double precision
 
-jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
+jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a $GFDLACT_LIB
 	-rm -f $bindir/jacobian
 	cd $objdir; $gmake -f Make.jacobian
 
