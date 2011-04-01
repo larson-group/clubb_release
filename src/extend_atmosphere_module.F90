@@ -74,6 +74,10 @@ module extend_atmosphere_module
     ! External
     intrinsic :: size, trim
 
+    ! Constant Parameters
+    integer, parameter :: &
+      n_rad_scalars = 1
+
     ! Input Variable(s)
 
     integer, intent(in) :: iunit  ! Fortran file unit
@@ -93,10 +97,10 @@ module extend_atmosphere_module
 
     real,  dimension(:), allocatable :: alt, theta, p_in_Pa, exner
 
-    type(one_dim_read_var), dimension(1) :: &
-      o3l_sounding_profile ! Ozone Sounding profile
+    type(one_dim_read_var), dimension(n_rad_scalars) :: &
+      rad_scalars_sounding_profile ! Ozone Sounding profile
 
-    integer :: i
+    integer :: i, ivar
 
     character(len=20) :: alt_type, theta_type
 
@@ -117,7 +121,9 @@ module extend_atmosphere_module
     allocate( p_in_Pa(extend_atmos_dim) )
     allocate( exner(extend_atmos_dim) )
 
-    allocate( o3l_sounding_profile(1)%values(extend_atmos_dim) )
+    do ivar = 1, n_rad_scalars
+      allocate( rad_scalars_sounding_profile(ivar)%values(extend_atmos_dim) )
+    end do
 
     ! Either convert to pressure or from pressure
 
@@ -153,13 +159,17 @@ module extend_atmosphere_module
 
     extend_sp_hmdty = extend_sp_hmdty / ( extend_sp_hmdty +1 )
 
-    ! Read in ozone
-    call read_one_dim_file( iunit, 1, & ! In
+    ! Read in radiation scalars sounding (currently it only holds O3)
+    call read_one_dim_file( iunit, n_rad_scalars, & ! In
       '../input/case_setups/'//trim( runtype )//'_ozone_sounding.in', & ! In
-      o3l_sounding_profile ) ! Out
+      rad_scalars_sounding_profile ) ! Out
 
+    ! Set the array holding the values of o3l (ozone)
     extend_o3l = read_x_profile( 1, extend_atmos_dim, ozone_name, &
-                                 o3l_sounding_profile )
+                                 rad_scalars_sounding_profile )
+
+    ! We would add the setting of new radiation scalar arrays like O3 right
+    ! after this. New variable names would have to be added to input_names.
 
     ! Free Memory
     deallocate( alt )
@@ -167,7 +177,9 @@ module extend_atmosphere_module
     deallocate( p_in_Pa )
     deallocate( exner )
 
-    deallocate( o3l_sounding_profile(1)%values )
+    do ivar = 1, n_rad_scalars
+      deallocate( rad_scalars_sounding_profile(ivar)%values )
+    end do
 
     return
   end subroutine convert_snd2extend_atm
