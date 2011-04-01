@@ -52,7 +52,7 @@ LDFLAGS="$ARCH $LAPACK" # OSX
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these
-FFLAGS="$ARCH $DEBUG"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
@@ -63,7 +63,7 @@ NETCDF_INCLUDE="$NETCDF/include/" # Ubuntu 10 LTS location
 #NETCDF_INCLUDE="$NETCDF/lib/gfortran/modules/" # Fedora Core 11 location
 #CPPDEFS="-DNETCDF -D__GFORTRAN__ -Dnooverlap -Dradoffline"
 #CPPFLAGS="-I$NETCDF/include"
-CPPDEFS="-Dradoffline" #OSX
+CPPDEFS="-Dradoffline -Dnooverlap" # MacOS X
 
 # == Static library processing ==
 AR=ar
