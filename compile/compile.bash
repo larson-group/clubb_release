@@ -80,10 +80,15 @@ if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
 	CPPDEFS="${CPPDEFS} -DUNRELEASED_CODE"
 fi
 
+if [ -e $srcdir/SCM_Activation ]; then
+	#CPPDEFS="${CPPDEFS} -DAERSOL_ACT"
+	LDFLAGS="${LDFLAGS} -lclubb_gfdlact"
+	AEROSOL_LIB="libclubb_gfdlact.a"
+fi
 
 # ------------------------------------------------------------------------------
 # Required libraries + platform specific libraries from LDFLAGS
-LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -lclubb_morrison -lclubb_gfdlact $LDFLAGS"
+LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -lclubb_morrison $LDFLAGS"
 
 # ------------------------------------------------------------------------------
 # Special addition for XLF, which uses the xlf for fixed format and xlf90 for 
@@ -130,6 +135,8 @@ ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > $dir/file_list/clubb_optiona
 ls $srcdir/CLUBB_core/*.F90 > $dir/file_list/clubb_param_files
 ls $srcdir/Latin_hypercube/*.* >> $dir/file_list/clubb_optional_files
 ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
+ls $srcdir/SCM_Activation/*.F90 > $dir/file_list/clubb_gfdl_activation_files
+
 if [ "$l_double_precision" == "false" ]	# Excludes numerical recipes if using double precision
 then
 	ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
