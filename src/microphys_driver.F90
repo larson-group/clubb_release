@@ -1158,7 +1158,7 @@ module microphys_driver
       hydromet_mc(:,:) = 0.0
       hydromet_vel(:,:) = 0.0
       hydromet_vel_zt(:,:) = 0.0
-
+#ifdef COAMPS_MICRO
       call coamps_micro_driver & 
            ( runtype, time_current, dt, & 
              rtm, wm_zm, p_in_Pa, exner, rho, & 
@@ -1172,6 +1172,10 @@ module microphys_driver
              hydromet_mc(:,iirgraupelm), hydromet_mc(:,iirsnowm), & 
              hydromet_mc(:,iiNrm), & 
              rvm_mc, rcm_mc, thlm_mc )
+#else
+      stop "Not compiled with COAMPS microphysics"
+      cond = -999.
+#endif
 
       if ( l_stats_samp ) then
 
