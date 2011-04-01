@@ -217,7 +217,7 @@ module enhanced_simann
       ! -dschanen 21 March 2011
 !     tstop = -( epsrel * dgyini + epsabs/log( epsrel * probok + epsabs ) )
 
-      tstop = 1. ! Use a fixed value
+      tstop = 0.1 ! Use a fixed value
 
       if ( l_esa_debug_statements ) then
         print *, "Stop temp = ", tstop
