@@ -224,6 +224,8 @@ module KK_microphys_module
 !   else
       l_src_adj_enabled = .true.
 !   end if
+    ! Remove a compiler warning
+    if ( l_latin_hypercube .and. .false. ) print *, "!"
 
     ! IMPORTANT NOTES
     !

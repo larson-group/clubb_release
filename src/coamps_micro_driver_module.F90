@@ -13,6 +13,7 @@ module coamps_micro_driver_module
 
   contains
 
+#ifdef COAMPS_MICRO
   subroutine coamps_micro_driver & 
          ( runtype, timea_in, deltf_in, & 
            rtm, wm_zm, p_in_Pa, exner, rho, & 
@@ -69,11 +70,9 @@ module coamps_micro_driver_module
     implicit none
 
 ! External Calls
-#ifdef COAMPS_MICRO
     external ::  & 
       gamma,  & ! From COAMPS, and not the same gamma approx. used in CLUBB
       adjtq  ! COAMPS microphysics subroutine
-#endif
 
 ! COAMPS parameters
     integer, parameter ::  & 
@@ -408,7 +407,6 @@ module coamps_micro_driver_module
       kmax  ! Maximum array size (kk + ??)
 
 !----------------------------------------------------------------------
-#ifdef COAMPS_MICRO
 
 ! Begin coamps_micro_driver code
 
@@ -909,27 +907,18 @@ module coamps_micro_driver_module
       end if
 
 
-#else /* COAMPS_MICRO not defined */
-      stop "Not compiled with COAMPS Microphysics"
-
-! Avoid a compiler error on ifort for ia64
-      ritend = 0
-      rrtend = 0
-      rgtend = 0
-      rsnowtend = 0
-      rvm_mc = 0
-      rcm_mc = 0
-      thlm_mc = 0
-      nrmtend = 0
-      Vrr = 0
-      VNr = 0
-      Vsnow = 0
-      Vgraupel = 0
-      Vice = 0
-
-#endif
 
       return
     end subroutine coamps_micro_driver
+
+#else /* COAMPS_MICRO not defined */
+   subroutine coamps_micro_driver( )
+
+     implicit none
+
+     stop "Not compiled with COAMPS Microphysics"
+
+   end subroutine coamps_micro_driver
+#endif
 
   end module coamps_micro_driver_module
