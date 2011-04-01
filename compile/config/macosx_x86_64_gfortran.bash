@@ -17,23 +17,25 @@ srcdir="$dir/../src"  # dir where the source files reside
 # It is sometimes helpful to turn on floating-point trapping for the 
 #  standalone program, but this will not work when using the tuner.
 # These are the options for debugging symbols, bounds checking & IEEE-754 
-# floating point arithmetic
+# standard floating-point arithmetic (for consistency).
 DEBUG="-g -fbounds-check -mieee-fp"
 
 # == Warnings ==
-WARNINGS="-Wall -pedantic"
+WARNINGS="-Wall -pedantic" # This enabled most compiler warnings
 
 # == Machine specific flags ==
-# Note: some of these are 64 bit architectures, so make sure NetCDF is
-# compiled accordingly.
+# Note: If the native architecture is 64 bit (most newer Mac's) then the 
+# netCDF and LAPACK libraries used must be 64 bit too
 ARCH="-march=native -msse3 -mfpmath=sse -fopenmp"
 
 # == Optimization ==
 OPTIMIZE="-O2"
 
 # == NetCDF Location ==
-# No netCDF for the Macs in W343
-#NETCDF="/Users/dschanen/netcdf-gfortran" # MacOS X
+# There's currently no netCDF for the Macs in W343.
+# Point this to the location of your copy of netCDF if you're using a 
+# different computer and use the lines below that have "netCDF v4" after them.
+#NETCDF="/Users/dschanen/netcdf-gfortran" # netCDF v4
 
 # == LAPACK libraries ==
 LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
@@ -43,11 +45,11 @@ LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-#LDFLAGS="$ARCH $LAPACK -L$NETCDF/lib -Wl,-rpath $NETCDF/lib -lnetcdf -lnetcdff"
-LDFLAGS="$ARCH $LAPACK" # OSX
+#LDFLAGS="$ARCH $LAPACK -L$NETCDF/lib -Wl,-rpath $NETCDF/lib -lnetcdf -lnetcdff" # netCDF v4
+LDFLAGS="$ARCH $LAPACK" # No netCDF
 
 # == Compiler flags ==
-# You will need to `make clean' if you change these
+# You will need to `make clean' if you change these.
 FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 
 # Preprocessing Directives:
@@ -55,9 +57,9 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 #   -Dradoffline and -Dnooverlap (see BUGSrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
-#NETCDF_INCLUDE="$NETCDF/include/"
-#CPPFLAGS="-I$NETCDF_INCLUDE"
-#CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline"
+#NETCDF_INCLUDE="$NETCDF/include/" # netCDF v4
+#CPPFLAGS="-I$NETCDF_INCLUDE" # netCDF v4
+#CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline" # netCDF v4
 CPPDEFS="-Dradoffline -Dnooverlap" # MacOS X (no netCDF)
 
 # == Static library processing ==
