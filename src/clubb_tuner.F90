@@ -15,7 +15,7 @@ program clubb_tuner
     tuner_init, min_les_clubb_diff,                & ! Subroutines 
     write_results,                                 & ! Subroutine
     output_nml_standalone, output_nml_tuner,       & ! Subroutines
-    param_vals_matrix,                             & ! Variable
+    param_vals_matrix, anneal_temp,                & ! Variables
     l_results_stdout, l_save_tuning_run,           & ! Variables
     l_results_file, tune_type, f_tol, ndim,         & ! Variables
     tuning_filename, file_unit                       ! Variable
@@ -110,6 +110,10 @@ program clubb_tuner
       ! Save tuning results in file if specified
       if ( l_save_tuning_run ) write(file_unit,*) "Enter new f_tol=   ", f_tol
       if ( l_save_tuning_run ) close(unit=file_unit)
+    end if
+    if ( tune_type == iesa .or. tune_type == iamebsa ) then
+      write(fstdout,fmt='(A)', advance='no') "New annealing temp =   "
+      read(*,*) anneal_temp
     end if
 
     call tuner_init( l_read_files=.false. )
