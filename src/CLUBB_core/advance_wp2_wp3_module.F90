@@ -1014,10 +1014,35 @@ contains
     end if ! err_code /= 0
 
 #else
-    ! These prevent g95 compiler warnings when -DMKL not set.
-    solut = 0E0
-    err_code = 0
     stop "This build was not compiled with PARDISO/GMRES support."
+
+    ! These prevent compiler warnings when -DMKL not set.
+    if ( l_crank_nich_diff .or. .true. ) print *, "This should be unreachable"
+    solut = rhs
+    solut(1:gr%nnzp) = a1
+    solut(1:gr%nnzp) = a1_zt
+    solut(1:gr%nnzp) = a3
+    solut(1:gr%nnzp) = a3_zt
+    solut(1:gr%nnzp) = C11_Skw_fnc
+    solut(1:gr%nnzp) = C1_Skw_fnc
+    solut(1:gr%nnzp) = invrs_rho_ds_zm
+    solut(1:gr%nnzp) = invrs_rho_ds_zt
+    solut(1:gr%nnzp) = rho_ds_zm
+    solut(1:gr%nnzp) = rho_ds_zt
+    solut(1:gr%nnzp) = Kw1
+    solut(1:gr%nnzp) = Kw8
+    solut(1:gr%nnzp) = Skw_zt
+    solut(1:gr%nnzp) = tau1m
+    solut(1:gr%nnzp) = tauw3t
+    solut(1:gr%nnzp) = wm_zt
+    solut(1:gr%nnzp) = wm_zm
+    solut(1:gr%nnzp) = wp2
+    solut(1:gr%nnzp) = wp3_on_wp2
+    err_code = int( dt )
+    err_code = nsup
+    err_code = nsub
+    err_code = nrhs
+
 #endif /* MKL */
 
   end subroutine wp23_gmres
