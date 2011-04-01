@@ -333,6 +333,12 @@ module mono_flux_limiter
 
     implicit none
 
+    ! Constant Parameters
+
+    ! Flag for using a semi-implicit, tridiagonal method to solve for xm(t+1)
+    ! if xm(t+1) needs to be changed.
+    logical, parameter :: l_mfl_xm_imp_adj = .true.
+
     ! Input Variables
     integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
@@ -402,10 +408,6 @@ module mono_flux_limiter
     real, dimension(gr%nnzp) ::  &
       rhs_mfl_xm  ! Right hand side of tridiagonal matrix equation
 
-    ! Flag for using a semi-implicit, tridiagonal method to solve for xm(t+1)
-    ! if xm(t+1) needs to be changed.
-    logical, parameter :: l_mfl_xm_imp_adj = .true.
-
     integer ::  &
       k, km1  ! Array indices
 
@@ -435,8 +437,8 @@ module mono_flux_limiter
        ixm_mfl   = ithlm_mfl
        max_xp2   = 5.0
     case default    ! passive scalars are involved
-       iwpxp_mfl = 0.0
-       ixm_mfl   = 0.0
+       iwpxp_mfl = 0
+       ixm_mfl   = 0
        max_xp2   = 5.0
     end select
 
