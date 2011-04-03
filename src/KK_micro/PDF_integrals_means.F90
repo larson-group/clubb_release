@@ -8,7 +8,7 @@ module PDF_integrals_means
             trivar_NLL_mean_const_x1, &
             bivar_NL_mean, &
             bivar_NL_mean_const_x1, &
-            bivar_LL mean
+            bivar_LL_mean
 
   contains
 
@@ -191,7 +191,7 @@ module PDF_integrals_means
       bivar_NL_mean_const_x1
 
     bivar_NL_mean_const_x1  &
-    = mu_x1**alpha_exp
+    = mu_x1**alpha_exp  &
       * exp( mu_x2_n * beta_exp  &
              + 0.5 * sigma_x2_n**2.0 * beta_exp**2.0 )
 
