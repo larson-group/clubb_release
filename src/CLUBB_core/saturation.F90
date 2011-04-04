@@ -232,28 +232,32 @@ module saturation
 !     pp. 1507--1513
 !------------------------------------------------------------------------
 
-  implicit none
+    implicit none
 
-  ! Input Variables
-  real, intent(in) :: T_in_K   ! Temperature   [K]
+    ! External
+    intrinsic :: max, min, int, anint
 
-  ! Output Variables
-  real :: esat  ! Saturation vapor pressure over water [Pa]
+    ! Input Variables
+    real, intent(in) :: T_in_K   ! Temperature   [K]
 
-  ! Local Variables
-  integer :: T_in_K_int
+    ! Output Variables
+    real :: esat  ! Saturation vapor pressure over water [Pa]
 
-  T_in_K_int = int( anint( T_in_K ) )
+    ! Local Variables
+    integer :: T_in_K_int
 
-  if ( T_in_K_int >= 188 .and. T_in_K_int <= 343 ) then
+    ! ---- Begin Code ----
+
+    T_in_K_int = int( anint( T_in_K ) )
+
+    ! Since this approximation is only good out to -85 degrees Celsius we
+    ! truncate the result here
+    T_in_K_int = min( max( T_in_K_int, 188 ), 343 )
+
     ! Use the lookup table to determine the saturation vapor pressure.
     esat = svp_liq_lookup_table( T_in_K_int )
-  else
-    ! If we're outside the bounds of the lookup table, fall back to
-    ! using a Flatau approximation.
-    esat = sat_vapor_press_liq_flatau( T_in_K )
-  end if
 
+    return
   end function sat_vapor_press_liq_lookup
 
 !------------------------------------------------------------------------
@@ -296,8 +300,14 @@ module saturation
     real :: T_in_C
 !   integer :: i ! Loop index
 
+    ! ---- Begin Code ----
+
     ! Determine deg K - 273.15
     T_in_C = T_in_K - T_freeze_K
+
+    ! Since this approximation is only good out to -85 degrees Celsius we
+    ! truncate the result here
+    T_in_C = max( T_in_C, -85. )
 
     ! Polynomial approx. (Flatau, et al. 1992)
 
@@ -508,6 +518,9 @@ module saturation
 
     implicit none
 
+    ! External
+    intrinsic :: max
+
     ! Relative error norm expansion (-90 to 0 deg_C) from
     ! Table 4 of pp. 1511 of Flatau et al. 1992 (Ice)
     real, dimension(9), parameter :: a = & 
@@ -529,6 +542,10 @@ module saturation
 
     ! Determine deg K - 273.15
     T_in_C = T_in_K - T_freeze_K
+
+    ! Since this approximation is only good out to -90 degrees Celsius we
+    ! truncate the result here
+    T_in_C = max( T_in_C, -90. )
 
     ! Polynomial approx. (Flatau, et al. 1992)
 !   esati = a(1)
