@@ -1595,10 +1595,8 @@ module clubb_core
     case ( "flatau", "Flatau" )
       ! Using the Flatau, et al. polynomial approximation for SVP over vapor/ice
 
-#ifdef GFDL
     case ( "gfdl", "GFDL" )   ! h1g, 2010-06-16
       ! Using the GFDL  formula
-#endif
 
       ! Add new saturation formulas after this
 

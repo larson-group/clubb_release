@@ -176,9 +176,7 @@ module saturation
     use model_flags, only: &
       saturation_formula, & ! Variable
       saturation_bolton, &
-#ifdef GFDL
       saturation_gfdl, &
-#endif
       saturation_flatau
 
     implicit none
@@ -205,11 +203,9 @@ module saturation
 
     ! Add new cases after this
 ! ---> h1g
-#ifdef GFDL
     case ( saturation_gfdl )
       ! Using GFDL polynomial approximation for SVP with respect to liquid
       esat = sat_vapor_press_liq_gfdl( T_in_K )
-#endif
 ! <--- h1g
 
     end select
@@ -362,7 +358,6 @@ module saturation
 
 
 ! ---> h1g, 2010-06-16
-#ifdef GFDL
 !------------------------------------------------------------------------
   elemental function sat_vapor_press_liq_gfdl( T_in_K ) result ( esat )
 ! Description:
@@ -392,7 +387,6 @@ module saturation
 
     return
   end function sat_vapor_press_liq_gfdl
-#endif
 ! <--- h1g, 2010-06-16
 
 !------------------------------------------------------------------------
@@ -462,9 +456,7 @@ module saturation
     use model_flags, only: &
       saturation_formula, & ! Variable(s)
       saturation_bolton, &
-#ifdef GFDL
       saturation_gfdl, &
-#endif
       saturation_flatau
 
     implicit none
@@ -490,11 +482,9 @@ module saturation
 
     ! Add new cases after this
 ! ---> h1g, 2010-06-16
-#ifdef GFDL
     case ( saturation_gfdl )
       ! Using GFDL polynomial approximation for SVP with respect to ice
       esat_ice = sat_vapor_press_ice_gfdl( T_in_K )
-#endif
 ! <--- h1g, 2010-06-16
     end select
 
@@ -592,7 +582,6 @@ module saturation
 
 
 ! ---> h1g, 2010-06-16
-#ifdef GFDL
 !------------------------------------------------------------------------
   elemental function sat_vapor_press_ice_gfdl( T_in_K ) result ( esati )
 ! Description:
@@ -621,7 +610,6 @@ module saturation
     return
 
   end function sat_vapor_press_ice_gfdl
-#endif
 ! <--- h1g, 2010-06-16
 
 !-------------------------------------------------------------------------

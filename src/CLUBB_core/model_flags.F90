@@ -85,9 +85,7 @@ module model_flags
 
   integer, parameter, public :: &
     saturation_bolton = 1, & ! Constant for Bolton approximations of saturation
-#ifdef GFDL
     saturation_gfdl   = 2, & ! Constant for the GFDL approximation of saturation
-#endif
     saturation_flatau = 3    ! Constant for Flatau approximations of saturation
 
  
@@ -152,19 +150,19 @@ module model_flags
     select case ( trim( saturation_formula_in ) )
     case ( "bolton", "Bolton" )
       saturation_formula = saturation_bolton
+
     case ( "flatau", "Flatau" )
       saturation_formula = saturation_flatau
-#ifdef GDFL
+
     case ( "gfdl", "GFDL" )
       saturation_formula = saturation_gfdl
-#endif
-    ! Add new saturation formulas after this.
+
+      ! Add new saturation formulas after this.
     end select
 
 #ifdef GFDL
     I_sat_sphum = I_sat_sphum_in  ! h1g, 2010-06-15
 #endif
-
     return
   end subroutine setup_model_flags
 
