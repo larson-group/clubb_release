@@ -1827,12 +1827,9 @@ module KK_microphys_module
         (mu_siG)**alpha_exp  & 
       * EXP( mu_rrG*beta_exp + mu_NrG*gamma_exp ) & 
       * EXP( (1.0/2.0) * ( & 
-                             ( 1.0 - corr_sirrG**2.0 ) & 
-                            *(sigma_rrG**2.0)*(beta_exp**2.0) & 
-                          +  ( 1.0 - corr_siNrG**2.0 ) & 
-                            *(sigma_NrG**2.0)*(gamma_exp**2.0) & 
-                          + 2.0 & 
-                            *( corr_rrNrG - corr_sirrG*corr_siNrG ) & 
+                            (sigma_rrG**2.0)*(beta_exp**2.0) & 
+                          + (sigma_NrG**2.0)*(gamma_exp**2.0) & 
+                          + 2.0 * corr_rrNrG & 
                             *sigma_rrG*beta_exp*sigma_NrG*gamma_exp & 
                          ) & 
            )
