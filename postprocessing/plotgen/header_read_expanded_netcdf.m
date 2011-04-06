@@ -70,7 +70,7 @@ elseif findstr(timeInfo, 'minutes')
 elseif findstr(timeInfo, 'hours')
 	dt = 60 * dt;
 elseif findstr(timeInfo, 'days')
-	dt = ceil(24 * 60 * dt);
+	dt = 24 * 60 * dt;
 	time = 24 * 60 * time;
 else
 	%Assume one dt is 1 minute
