@@ -1286,6 +1286,15 @@ module clubb_driver
 
       ! Upper boundary condition
       hydromet(gr%nnzp,iiNcm) = 0.
+      
+    case ( "morrison-gettelman" )
+      ! Lower boundary condition
+      hydromet(1,iiNcm) = 0.
+
+      hydromet(2:gr%nnzp-1,iiNcm) = cm3_per_m3 * Ncm_initial / rho(2:gr%nnzp-1)
+
+      ! Upper boundary condition
+      hydromet(gr%nnzp,iiNcm) = 0.
 
     case ( "coamps" )
       ! Initialize Ncnm as in COAMPS
@@ -2700,6 +2709,16 @@ module clubb_driver
       input_Ncnm = .false.
       input_Ncm = .true.
       input_Nrm = .true.
+      input_Nim =  .true.
+      
+    case ( "morrison-gettelman" )
+      input_rrainm = .false.
+      input_rsnowm = .false.
+      input_ricem = .true.
+      input_rgraupelm = .false.
+      input_Ncnm = .false.
+      input_Ncm = .true.
+      input_Nrm = .false.
       input_Nim =  .true.
 
     case ( "khairoutdinov_kogan" )

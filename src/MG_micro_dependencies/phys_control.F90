@@ -40,6 +40,23 @@ module phys_control
        real,              intent(out), optional :: tms_orocnst_out
        real,              intent(out), optional :: tms_z0fac_out
        integer,           intent(out), optional :: conv_water_in_rad_out
+       
+       ! Avoid compiler warnings
+       deep_scheme_out = ''
+       shallow_scheme_out = ''
+       eddy_scheme_out = ''
+       microp_scheme_out = ''
+       macrop_scheme_out = ''
+       atm_dep_flux_out = .false.
+       history_aerosol_out = .false.
+       history_microphysics_out = .false.
+       history_budget_out = .false.
+       history_budget_histfile_num_out = 0
+       do_tms_out = .false.
+       do_iss_out = .false.
+       tms_orocnst_out = 0
+       tms_z0fac_out = 0
+       conv_water_in_rad_out = 0
       
   end subroutine phys_getopts
   

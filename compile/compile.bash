@@ -88,7 +88,7 @@ fi
 
 # ------------------------------------------------------------------------------
 # Required libraries + platform specific libraries from LDFLAGS
-LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -lclubb_morrison $LDFLAGS"
+LDFLAGS="-L$libdir -lclubb_param -lclubb_bugsrad -lclubb_morrison -lclubb_mg $LDFLAGS"
 
 # ------------------------------------------------------------------------------
 # Special addition for XLF, which uses the xlf for fixed format and xlf90 for 
@@ -127,7 +127,7 @@ cd $dir
 # Generate file lists
 # It would be nice to generate file lists for clubb_standalone / clubb_tuner 
 # dynamically, but this not possible without some major re-factoring of 
-# the CLUBB the source directories.
+# the CLUBB source directories.
 
 # ------------------------------------------------------------------------------
 #  Determine which restricted files are in the source directory and make a list
@@ -163,6 +163,9 @@ $mkmf -t $bindir/mkmf_template \
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_morrison.a -m Make.clubb_morrison -c "${CPPDEFS} -DCLUBB" $dir/file_list/clubb_morrison_files
+  
+$mkmf -t $bindir/mkmf_template \
+  -p $libdir/libclubb_mg.a -m Make.clubb_mg -c "${CPPDEFS} -DCLUBB" $dir/file_list/clubb_mg_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_gfdlact.a -m Make.clubb_gfdlact -c "${CPPDEFS} -DCLUBB" $dir/file_list/clubb_gfdl_activation_files
@@ -228,23 +231,27 @@ libclubb_coamps.a:
 
 libclubb_morrison.a: libclubb_param.a
 	cd $objdir; $gmake -f Make.clubb_morrison
+	
+libclubb_mg.a: libclubb_param.a
+	cd $objdir; $gmake -f Make.clubb_mg
 
 libclubb_gfdlact.a: 
 	cd $objdir; $gmake -f Make.clubb_gfdlact
 
-clubb_standalone: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a $GFDLACT_LIB
+clubb_standalone: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB
 	-rm -f $bindir/clubb_standalone
 	cd $objdir; $gmake -f Make.clubb_standalone
 
-clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a $GFDLACT_LIB
+clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB
 	-rm -f $bindir/clubb_tuner
 	cd $objdir; $gmake -f Make.clubb_tuner		# Comment out if using double precision
 
-jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a $GFDLACT_LIB
+
+jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB
 	-rm -f $bindir/jacobian
 	cd $objdir; $gmake -f Make.jacobian
 
-int2txt: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a
+int2txt: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a
 	-rm -rf $bindir/int2txt
 	cd $objdir; $gmake -f Make.int2txt
 

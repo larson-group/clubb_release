@@ -166,6 +166,9 @@ module microphys_driver
 
     use module_mp_Graupel, only: &
       GRAUPEL_INIT ! Subroutine
+      
+    use cldwat2m_micro, only: &
+      ini_micro ! Subroutine
 
     use constants_clubb, only: &
       fstderr,   & ! Constant
@@ -670,7 +673,39 @@ module microphys_driver
 
       ! Setup the Morrison scheme
       call GRAUPEL_INIT()
+      
+    case ( "morrison-gettelman" )
+    ! TODO
+      iirrainm    = -1
+      iirsnowm    = 1
+      iiricem     = 2
+      iirgraupelm = -1
 
+      iiNrm       = -1
+      iiNsnowm    = -1
+      iiNim       = 3
+      iiNgraupelm = -1
+      iiNcm       = 4
+
+      hydromet_dim = 5
+      
+      allocate( hydromet_list(hydromet_dim) )
+      
+      hydromet_list(iirsnowm)    = "rsnowm"
+      hydromet_list(iiricem)     = "ricem"
+      hydromet_list(iiNim)       = "Nim"
+      hydromet_list(iiNcm)       = "Ncm"
+      
+      allocate( l_hydromet_sed(hydromet_dim) )
+      ! Sedimentation is handled within the MG microphysics
+      l_hydromet_sed(iiricem)  = .false.
+      l_hydromet_sed(iiNim)    = .false.
+      l_hydromet_sed(iiNcm)    = .false.
+      l_hydromet_sed(iirsnowm) = .false.
+
+      ! Setup the MG scheme
+      call ini_micro()
+      
     case ( "coamps" )
       iirrainm    = 1
       iirsnowm    = 2
@@ -868,6 +903,9 @@ module microphys_driver
 
     use morrison_micro_driver_module, only: &
       morrison_micro_driver
+      
+    use mg_micro_driver_module, only: &
+      mg_microphys_driver
 
 #ifdef UNRELEASED_CODE
     use latin_hypercube_driver_module, only: &
@@ -1260,7 +1298,61 @@ module microphys_driver
                wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
                hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
       end if
+      
 
+    case ( "morrison-gettelman" )
+
+      ! Initialize tendencies to zero
+      hydromet_mc(:,:) = 0.0
+      rcm_mc(:) = 0.0
+      rvm_mc(:) = 0.0
+      thlm_mc(:) = 0.0
+
+      if ( LH_microphys_type /= LH_microphys_disabled ) then
+#ifdef UNRELEASED_CODE
+        call latin_hypercube_driver &
+             ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
+               LH_sequence_length, gr%nnzp, & ! In
+               cloud_frac, thlm, p_in_Pa, exner, & ! In
+               rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
+               hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & !In 
+               corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
+               hydromet_mc, hydromet_vel_zt, rcm_mc, & ! In/Out
+               rvm_mc, thlm_mc,  & ! In/Out
+               morrison_micro_driver )  ! Procedure
+#else
+        stop "Latin hypercube was not enabled at compile time"
+#endif
+        if ( l_stats_samp ) then
+
+          ! Latin hypercube estimate for cloud water mixing ratio microphysical tendency
+          call stat_update_var( iLH_rcm_mc, rcm_mc, zt )
+
+          ! Latin hypercube estimate for vapor water mixing ratio microphysical tendency
+          call stat_update_var( iLH_rvm_mc, rvm_mc, zt )
+
+          ! Latin hypercube estimate for rain water mixing ratio microphysical tendency
+          call stat_update_var( iLH_rrainm_mc, hydromet_mc(:,iirrainm), zt )
+
+          ! Latin hypercube estimate for rain water number concentration microphysical tendency
+          call stat_update_var( iLH_Nrm_mc, hydromet_mc(:,iiNrm), zt )
+
+          ! Latin hypercube estimate for liquid potential temperature
+          call stat_update_var( iLH_thlm_mc, thlm_mc, zt )
+
+        end if
+      end if ! LH isn't disabled
+
+      ! Call the microphysics if we don't want to have feedback effects from the
+      ! latin hypercube result (above)
+      if ( LH_microphys_type /= LH_microphys_interactive ) then
+        call mg_microphys_driver &
+          ( real( dt ), gr%nnzp, l_stats_samp, .false., .false., &
+              thlm, p_in_Pa, exner, rho, pdf_params, &
+              rcm, rtm-rcm, Ncnm, hydromet, hydromet_mc, &
+              hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc)
+      end if
+          
     case ( "khairoutdinov_kogan" )
 
       ! Initialize tendencies to zero
@@ -1339,6 +1431,7 @@ module microphys_driver
     !       Loop over all hydrometeor species and apply sedimentation,
     !       advection and diffusion.
     !-----------------------------------------------------------------------
+
     if ( hydromet_dim > 0 ) then
 
       do i = 1, hydromet_dim

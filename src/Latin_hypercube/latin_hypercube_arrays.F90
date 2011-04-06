@@ -446,8 +446,10 @@ module latin_hypercube_arrays
     end if
 
     ! Assume rr and Nr are uncorrelated with w for now.
-    corr_array_cloud(iiLH_rrain,iiLH_w) = 0.0
-    corr_array_cloud(iiLH_Nr,iiLH_w) = 0.0
+    if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
+      corr_array_cloud(iiLH_rrain,iiLH_w) = 0.0
+      corr_array_cloud(iiLH_Nr,iiLH_w) = 0.0
+    end if
 
     ! Fill in values for t_mellor using s_mellor correlations
     do i = 3, d_variables

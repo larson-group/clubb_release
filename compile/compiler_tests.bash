@@ -3,7 +3,7 @@
 ###############################################################################
 # compiler_tests.bash 
 # This script runs a set of compiler tests similar to the way the nightly tests
-# do. This script will run the g95, SunStudio, and Intel compilers. Most of 
+# do. This script will run the g95, OracleSolarisStudio, and Intel compilers. Most of 
 # this script was taken directly from the nightly tests version, but combined
 # into one script.
 #
@@ -59,11 +59,11 @@ clean()
 compile()
 {
 	case $1 in			  
-		"sunstudio" ) compiler="./config/linux_ia32_ss12_debug.bash"
+		"oracle" ) compiler="./config/linux_x86_64_oracle_debug.bash"
 		              ;;
-		"ifort" ) compiler="./config/linux_ia32_ifort.bash"
+		"ifort" ) compiler="./config/linux_x86_64_ifort.bash"
 			  ;;
-		"g95" ) compiler="./config/linux_ia32_g95_optimize.bash"
+		"g95" ) compiler="./config/linux_x86_64_g95_optimize.bash"
 		        ;;
 	esac
 
@@ -78,11 +78,11 @@ set_args $*
 echo -e "Running the compiler tests. Output will be placed in compiler_output."
 echo -e "Use 'tail -f compiler_output' to view the progress."
 
-# Compile with SunStudio
-echo -e "\nSun Studio Compiler Warnings/Errors:" > $outputFile
+# Compile with OracleSolarisStudio
+echo -e "\nOracle Solaris Studio Compiler Warnings/Errors:" > $outputFile
 echo "------------------------------------" >> $outputFile
 clean
-compile sunstudio
+compile oracle
 
 # Compile with Intel
 echo -e "\nIntel Fortran Compiler Warnings/Errors:" >> $outputFile

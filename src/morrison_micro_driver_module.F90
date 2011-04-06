@@ -186,7 +186,7 @@ module morrison_micro_driver_module
     do i = 1, hydromet_dim, 1
       hydromet_tmp(1:nnzp,i) = hydromet(1:nnzp,i)
     end do
-
+    
     ! Initialize tendencies to zero
     T_in_K_mc(1:nnzp) = 0.0
     rcm_mc(1:nnzp) = 0.0
@@ -209,7 +209,7 @@ module morrison_micro_driver_module
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
            hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
            rcm_sten, cloud_frac )
-
+           
     ! Update hydrometeor tendencies
     ! This done because the hydromet_mc arrays that are produced by
     ! M2005MICRO_GRAUPEL don't include the clipping term.
