@@ -400,7 +400,7 @@ module error
     if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
       action="write", position='append')
     call write_text( "cost_fnc_vector:", l_save_tuning_run, file_unit )
-    call write_text( '', cost_fnc_vector, l_save_tuning_run, file_unit, '(a,6e12.5)' )
+    call write_text( '', cost_fnc_vector, l_save_tuning_run, file_unit )
     if( l_save_tuning_run ) close(unit=file_unit)
 
     return
