@@ -956,7 +956,7 @@ module clubb_driver
       do i1=1, niterlong
         ! Call the parameterization one timestep
         call advance_clubb_core & 
-             ( .false., dt, fcor, sfc_elevation, &                  ! Intent(in)
+             ( l_implemented, dt, fcor, sfc_elevation, &                  ! Intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &      ! Intent(in)
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
@@ -1071,7 +1071,7 @@ module clubb_driver
 
     call finalize_extend_atm( )
 
-    call cleanup_clubb_core( .false. )
+    call cleanup_clubb_core( l_implemented )
 
     call cleanup_microphys( )
 
