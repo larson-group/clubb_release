@@ -13,7 +13,9 @@ subroutine gffgch(t       ,es      ,itype   )
     real, intent(out) :: es ! Saturation vapor pressure
     
     ! Avoid compiler warnings
-    es = 0
+    if(.false.) then
+      es = 0
+    end if
     
     ! This subroutine should never be called. It is only here to allow MG to compile correctly.
     write(*,*) "WARNING: gffgch dummy file called. This subroutine should" &
