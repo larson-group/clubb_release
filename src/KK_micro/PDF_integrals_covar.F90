@@ -20,7 +20,7 @@ module PDF_integrals_covariances
                                sigma_x1, sigma_x2, sigma_x3_n, sigma_x4_n, &
                                rho_x1x2, rho_x1x3_n, rho_x1x4_n, &
                                rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
-                               x1_bar, x2_alpha_x3_beta_x4_gamma_bar, &
+                               x1_mean, x2_alpha_x3_beta_x4_gamma_mean, &
                                alpha_exp, beta_exp, gamma_exp )
 
     ! Description:
@@ -55,8 +55,8 @@ module PDF_integrals_covariances
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
     double precision, intent(in) :: &
-      x1_bar,                        & ! Mean of x1 (overall)               [-]
-      x2_alpha_x3_beta_x4_gamma_bar    ! Mean of x2^alpha x3^beta x4^gamma  [-]
+      x1_mean,                        & ! Mean of x1 (overall)              [-]
+      x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -90,7 +90,7 @@ module PDF_integrals_covariances
                  + 0.5 * ( mu_x2**2.0 / sigma_x2**2.0 ) )  &
           * ( - rho_x1x2 * sigma_x1 * gamma( alpha_exp + 2.0 )  &
               * Dv_fnc( -(alpha_exp + 2.0), s_cc )  &
-            + ( mu_x1 - x1_bar  &
+            + ( mu_x1 - x1_mean  &
                 - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
                 + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
                          * sigma_x1 * sigma_x3_n * beta_exp  &
@@ -99,15 +99,15 @@ module PDF_integrals_covariances
               * gamma( alpha_exp + 1.0 )  &
               * Dv_fnc( -(alpha_exp + 1.0), s_cc )  &
             )  &
-        - x2_alpha_x3_beta_x4_gamma_bar  &
+        - x2_alpha_x3_beta_x4_gamma_mean  &
           * ( - rho_x1x2 * sigma_x1  &
               * exp( -0.5 * ( mu_x2 / sigma_x2 )**2.0 )  &
-            + sqrt(pi_dp/2.0) * ( mu_x1 - x1_bar )  &
+            + sqrt(pi_dp/2.0) * ( mu_x1 - x1_mean )  &
               * erfc( mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
             )  &
         )
 
-  return
+    return
 
   end function quadrivar_NNLL_cov
 
@@ -115,7 +115,8 @@ module PDF_integrals_covariances
   function quadrivar_NNLL_cov_const_x1( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
                                         sigma_x2, sigma_x3_n, sigma_x4_n, &
                                         rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
-                                        x1_bar, x2_alpha_x3_beta_x4_gamma_bar, &
+                                        x1_mean, &
+                                        x2_alpha_x3_beta_x4_gamma_mean, &
                                         alpha_exp, beta_exp, gamma_exp )
 
     ! Description:
@@ -146,8 +147,8 @@ module PDF_integrals_covariances
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
     double precision, intent(in) :: &
-      x1_bar,                        & ! Mean of x1 (overall)               [-]
-      x2_alpha_x3_beta_x4_gamma_bar    ! Mean of x2^alpha x3^beta x4^gamma  [-]
+      x1_mean,                        & ! Mean of x1 (overall)              [-]
+      x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -167,7 +168,7 @@ module PDF_integrals_covariances
            + rho_x2x4_n * sigma_x4_n * gamma_exp
 
     quadrivar_NNLL_cov_const_x1  &
-    = ( 1.0 / sqrt( 2.0*pi_dp ) ) * ( mu_x1 - x1_bar )  &
+    = ( 1.0 / sqrt( 2.0*pi_dp ) ) * ( mu_x1 - x1_mean )  &
       * ( ( - sigma_x2 )**alpha_exp  &
           * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
                  + 0.5 * ( 1.0 - rho_x2x3_n**2.0 )  &
@@ -181,11 +182,11 @@ module PDF_integrals_covariances
                  + 0.5 * ( mu_x2**2.0 / sigma_x2**2.0 ) )  &
           * gamma( alpha_exp + 1.0 )  &
           * Dv_fnc( -(alpha_exp + 1.0), s_cc )  &
-        - x2_alpha_x3_beta_x4_gamma_bar  &
+        - x2_alpha_x3_beta_x4_gamma_mean  &
           * sqrt(pi_dp/2.0) * erfc( mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
         )
 
-  return
+    return
 
   end function quadrivar_NNLL_cov_const_x1
 
@@ -193,7 +194,8 @@ module PDF_integrals_covariances
   function quadrivar_NNLL_cov_const_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
                                         sigma_x1, sigma_x3_n, sigma_x4_n, &
                                         rho_x1x3_n, rho_x1x4_n, rho_x3x4_n, &
-                                        x1_bar, x2_alpha_x3_beta_x4_gamma_bar, &
+                                        x1_mean, &
+                                        x2_alpha_x3_beta_x4_gamma_mean, &
                                         alpha_exp, beta_exp, gamma_exp )
 
     ! Description:
@@ -218,8 +220,8 @@ module PDF_integrals_covariances
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
     double precision, intent(in) :: &
-      x1_bar,                        & ! Mean of x1 (overall)               [-]
-      x2_alpha_x3_beta_x4_gamma_bar    ! Mean of x2^alpha x3^beta x4^gamma  [-]
+      x1_mean,                        & ! Mean of x1 (overall)              [-]
+      x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -232,7 +234,7 @@ module PDF_integrals_covariances
 
     quadrivar_NNLL_cov_const_x2  &
     = mu_x2**alpha_exp  &
-      * ( mu_x1 - x1_bar  &
+      * ( mu_x1 - x1_mean  &
           + rho_x1x3_n * sigma_x1 * sigma_x3_n * beta_exp  &
           + rho_x1x4_n * sigma_x1 * sigma_x4_n * gamma_exp )  &
       * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
@@ -240,17 +242,17 @@ module PDF_integrals_covariances
              + 0.5 * sigma_x4_n**2.0 * gamma_exp**2.0  &
              + rho_x3x4_n * sigma_x3_n * beta_exp  &
                           * sigma_x4_n * gamma_exp )  &
-      - x2_alpha_x3_beta_x4_gamma_bar * ( mu_x1 - x1_bar )
+      - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
 
-  return
+    return
 
   end function quadrivar_NNLL_cov_const_x2
 
   !=============================================================================
   function quadrivar_NNLL_cov_const_x1_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
                                            sigma_x3_n, sigma_x4_n, &
-                                           rho_x3x4_n, x1_bar, &
-                                           x2_alpha_x3_beta_x4_gamma_bar, &
+                                           rho_x3x4_n, x1_mean, &
+                                           x2_alpha_x3_beta_x4_gamma_mean, &
                                            alpha_exp, beta_exp, gamma_exp )
 
     ! Description:
@@ -272,8 +274,8 @@ module PDF_integrals_covariances
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
     double precision, intent(in) :: &
-      x1_bar,                        & ! Mean of x1 (overall)               [-]
-      x2_alpha_x3_beta_x4_gamma_bar    ! Mean of x2^alpha x3^beta x4^gamma  [-]
+      x1_mean,                        & ! Mean of x1 (overall)              [-]
+      x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -285,16 +287,16 @@ module PDF_integrals_covariances
       quadrivar_NNLL_cov_const_x1_x2
 
     quadrivar_NNLL_cov_const_x1_x2  &
-    = ( mu_x1 - x1_bar )  &
+    = ( mu_x1 - x1_mean )  &
       * ( mu_x2**alpha_exp  &
           * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
                  + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0  &
                  + 0.5 * sigma_x4_n**2.0 * gamma_exp**2.0  &
                  + rho_x3x4_n * sigma_x3_n * beta_exp  &
                               * sigma_x4_n * gamma_exp )  &
-        - x2_alpha_x3_beta_x4_gamma_bar )
+        - x2_alpha_x3_beta_x4_gamma_mean )
 
-  return
+    return
 
   end function quadrivar_NNLL_cov_const_x1_x2
 
@@ -302,7 +304,7 @@ module PDF_integrals_covariances
   function trivar_NNL_cov( mu_x1, mu_x2, mu_x3_n, &
                            sigma_x1, sigma_x2, sigma_x3_n, &
                            rho_x1x2, rho_x1x3_n, rho_x2x3_n, &
-                           x1_bar, x2_alpha_x3_beta_bar, &
+                           x1_mean, x2_alpha_x3_beta_mean, &
                            alpha_exp, beta_exp )
 
     ! Description:
@@ -332,8 +334,8 @@ module PDF_integrals_covariances
       rho_x2x3_n    ! Correlation between x2 and ln x3 (ith PDF component)  [-]
 
     double precision, intent(in) :: &
-      x1_bar,               & ! Mean of x1 (overall)                        [-]
-      x2_alpha_x3_beta_bar    ! Mean of x2^alpha x3^beta                    [-]
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -357,28 +359,28 @@ module PDF_integrals_covariances
                  - 0.25 * s_c**2.0 )  &
           * ( rho_x1x2 * sigma_x1 * gamma( alpha_exp + 2.0 )  &
               * Dv_fnc( -(alpha_exp + 2.0), -s_c )  &
-            + ( mu_x1 - x1_bar  &
+            + ( mu_x1 - x1_mean  &
                 - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
                 + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
                          * sigma_x1 * sigma_x3_n * beta_exp )  &
               * gamma( alpha_exp + 1.0 )  &
               * Dv_fnc( -(alpha_exp + 1.0), -s_c )  &
             )  &
-        - x2_alpha_x3_beta_bar  &
+        - x2_alpha_x3_beta_mean  &
           * ( rho_x1x2 * sigma_x1 * exp( -0.5 * ( mu_x2 / sigma_x2 )**2.0 )  &
-            + sqrt(pi_dp/2.0) * ( mu_x1 - x1_bar )  &
+            + sqrt(pi_dp/2.0) * ( mu_x1 - x1_mean )  &
               * erfc( - mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
             )  &
         )
 
-  return
+    return
 
   end function trivar_NNL_cov
 
   !=============================================================================
   function trivar_NNL_cov_const_x1( mu_x1, mu_x2, mu_x3_n, &
                                     sigma_x2, sigma_x3_n, rho_x2x3_n, &
-                                    x1_bar, x2_alpha_x3_beta_bar, &
+                                    x1_mean, x2_alpha_x3_beta_mean, &
                                     alpha_exp, beta_exp )
 
     ! Description:
@@ -405,8 +407,8 @@ module PDF_integrals_covariances
       rho_x2x3_n    ! Correlation between x2 and ln x3 (ith PDF component)  [-]
 
     double precision, intent(in) :: &
-      x1_bar,               & ! Mean of x1 (overall)                        [-]
-      x2_alpha_x3_beta_bar    ! Mean of x2^alpha x3^beta                    [-]
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -423,25 +425,25 @@ module PDF_integrals_covariances
     s_c = ( mu_x2 / sigma_x2 ) + rho_x2x3_n * sigma_x3_n * beta_exp;
    
     trivar_NNL_cov_const_x1  &
-    = ( 1.0 / sqrt( 2.0*pi_dp ) ) * ( mu_x1 - x1_bar )  &
+    = ( 1.0 / sqrt( 2.0*pi_dp ) ) * ( mu_x1 - x1_mean )  &
       * ( sigma_x2**alpha_exp  &
           * exp( mu_x3_n * beta_exp  &
                  + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0  &
                  - 0.25 * s_c**2.0 )  &
           * gamma( alpha_exp + 1.0 )  &
           * Dv_fnc( -(alpha_exp + 1.0), -s_c )  &
-        - x2_alpha_x3_beta_bar  &
+        - x2_alpha_x3_beta_mean  &
           * sqrt(pi_dp/2.0) * erfc( - mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
         )
 
-  return
+    return
 
   end function trivar_NNL_cov_const_x1
 
   !=============================================================================
   function trivar_NNL_cov_const_x2( mu_x1, mu_x2, mu_x3_n, &
                                     sigma_x1, sigma_x3_n, rho_x1x3_n, &
-                                    x1_bar, x2_alpha_x3_beta_bar, &
+                                    x1_mean, x2_alpha_x3_beta_mean, &
                                     alpha_exp, beta_exp )
 
     ! Description:
@@ -462,8 +464,8 @@ module PDF_integrals_covariances
       rho_x1x3_n    ! Correlation between x1 and ln x3 (ith PDF component)  [-]
 
     double precision, intent(in) :: &
-      x1_bar,               & ! Mean of x1 (overall)                        [-]
-      x2_alpha_x3_beta_bar    ! Mean of x2^alpha x3^beta                    [-]
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -475,19 +477,19 @@ module PDF_integrals_covariances
 
       trivar_NNL_cov_const_x2  &
       = mu_x2**alpha_exp  &
-        * ( mu_x1 - x1_bar  &
+        * ( mu_x1 - x1_mean  &
             + rho_x1x3_n * sigma_x1 * sigma_x3_n * beta_exp )  &
         * exp( mu_x3_n * beta_exp  &
                  + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 )  &
-        - x2_alpha_x3_beta_bar * ( mu_x1 - x1_bar )
+        - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
   
-  return
+    return
 
   end function trivar_NNL_cov_const_x2
 
   !=============================================================================
   function trivar_NNL_cov_const_x1_x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
-                                       x1_bar, x2_alpha_x3_beta_bar, &
+                                       x1_mean, x2_alpha_x3_beta_mean, &
                                        alpha_exp, beta_exp )
 
     ! Description:
@@ -506,8 +508,8 @@ module PDF_integrals_covariances
       sigma_x3_n    ! Standard deviation of ln x3 (ith PDF component)       [-]
 
     double precision, intent(in) :: &
-      x1_bar,               & ! Mean of x1 (overall)                        [-]
-      x2_alpha_x3_beta_bar    ! Mean of x2^alpha x3^beta                    [-]
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -518,13 +520,13 @@ module PDF_integrals_covariances
       trivar_NNL_cov_const_x1_x2
 
     trivar_NNL_cov_const_x1_x2  &
-    = ( mu_x1 - x1_bar )  &
+    = ( mu_x1 - x1_mean )  &
       * ( mu_x2**alpha_exp  &
           * exp( mu_x3_n * beta_exp  &
                  + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 )  &
-        - x2_alpha_x3_beta_bar )
+        - x2_alpha_x3_beta_mean )
   
-  return
+    return
 
   end function trivar_NNL_cov_const_x1_x2
 

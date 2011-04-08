@@ -13,7 +13,8 @@ module KK_utilities
             corr_LL2NN,    &
             corr_LL2NN_dp, &
             factorial,     &
-            Dv_fnc           ! Parabolic Cylinder Function, D.
+            Dv_fnc,        & ! Parabolic Cylinder Function, D.
+            calc_corr_sx
 
   contains
 
@@ -303,17 +304,45 @@ module KK_utilities
     return
   end function corr_LL2NN_dp
 
+!  !=============================================================================
+!  recursive function factorial( num )  &
+!  result( fact )
+!
+!    ! Description:
+!    ! Calculates the factorial of an integer (num).
+!    !
+!    ! Note:  Performing this operation on an integer data type means that
+!    !        overflow occurs at any integer higher than 12.
+!    !        In the future, this function may be better replaced by a simple
+!    !        call to the gamma function.
+!
+!    ! References:
+!    !-----------------------------------------------------------------------
+!
+!    implicit none
+!
+!    ! Input Variable
+!    integer, intent(in) :: &
+!      num  ! Integer of which to take the factorial.
+!
+!    ! Return Variable
+!    integer ::  &
+!      fact  ! Factorial of num.
+!
+!    if ( num == 0 ) then
+!       fact = 1
+!    else
+!       fact = num * factorial( num - 1 )
+!    endif
+!
+!    return
+!  end function factorial
+!
   !=============================================================================
-  recursive function factorial( num )  &
-  result( fact )
+  pure function factorial( num )
 
     ! Description:
     ! Calculates the factorial of an integer (num).
-    !
-    ! Note:  Performing this operation on an integer data type means that
-    !        overflow occurs at any integer higher than 12.
-    !        In the future, this function may be better replaced by a simple
-    !        call to the gamma function.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -322,19 +351,18 @@ module KK_utilities
 
     ! Input Variable
     integer, intent(in) :: &
-      num  ! Integer of which to take the factorial.
+      num
 
     ! Return Variable
-    integer ::  &
-      fact  ! Factorial of num.
+    double precision :: &
+      factorial
 
-    if ( num == 0 ) then
-       fact = 1
-    else
-       fact = num * factorial( num - 1 )
-    endif
+
+    factorial = gamma( dble( num+1 ) )
+
 
     return
+
   end function factorial
 
   !=============================================================================
@@ -399,6 +427,88 @@ module KK_utilities
 
     return
   end function Dv_fnc
+
+  !=============================================================================
+  pure function calc_corr_sx( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &
+                              sigma_s_i, corr_rtx_i, corr_thlx_i )  &
+  result( corr_sx_i )
+
+    ! Description:
+    ! This function calculates the correlation between extended liquid water
+    ! mixing ratio, s, and a generic variable x, within the ith component of the
+    ! PDF.  The variable s can be split into mean and turbulent components, such
+    ! that:
+    !
+    ! s = <s> + s';
+    !
+    ! where < > denotes a mean field an ' denotes a turbulent component.
+    !
+    ! The linearized equation for s' is given in Larson et al. (2001), where
+    ! within the ith component of the PDF:
+    !
+    ! s_(i)' = Coef_rt(i) * r_t(i)' - Coef_thl(i) * th_l(i)'.
+    !
+    ! The equation for s' can be multiplied by x'.  The equation becomes:
+    !
+    ! s'x'_(i) = Coef_rt(i) * r_t'x'_(i) - Coef_thl(i) * th_l'x'_(i).
+    !
+    ! Averaging both sides, the covariance <s'x'> is given by the equation:
+    !
+    ! <s'x'_(i)> = Coef_rt(i) * <r_t'x'_(i)> - Coef_thl(i) * <th_l'x'_(i)>.
+    !
+    ! This equation can be rewritten as:
+    !
+    ! sigma_s(i) * sigma_x(i) * corr_sx(i)
+    !   = Coef_rt(i) * sigma_rt(i) * sigma_x(i) * corr_rtx(i)
+    !     - Coef_thl(i) * sigma_thl(i) * sigma_x(i) * corr_thlx(i).
+    !
+    ! This equation can be solved for corr_sx(i):
+    !
+    ! corr_sx(i) = Coef_rt(i) * ( sigma_rt(i) / sigma_s(i) ) * corr_rtx(i)
+    !              - Coef_thl(i) * ( sigma_thl(i) / sigma_s(i) ) * corr_thlx(i).
+    !
+    ! The correlation between s and x within the ith component of the PDF is
+    ! calculated.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      crt_i,       & ! Coefficient of r_t for s' (ith PDF component)         [-]
+      cthl_i,      & ! Coefficient of th_l for s' (ith PDF component)      [1/K]
+      sigma_rt_i,  & ! Standard deviation of r_t (ith PDF component)     [kg/kg]
+      sigma_thl_i, & ! Standard deviation of th_l (ith PDF component)        [K]
+      sigma_s_i,   & ! Standard deviation of s (ith PDF component)       [kg/kg]
+      corr_rtx_i,  & ! Correlation between r_t and x (ith PDF component)     [-]
+      corr_thlx_i    ! Correlation between th_l and x (ith PDF component)    [-]
+
+    ! Return Variable
+    real :: &
+      corr_sx_i  ! Correlation of s and x (ith PDF component)   [-]
+
+
+    ! Calculate the correlation of s and x in the ith PDF component.
+    if ( sigma_s_i > 0.0 ) then
+
+       corr_sx_i = crt_i * ( sigma_rt_i / sigma_s_i ) * corr_rtx_i  &
+                   - cthl_i * ( sigma_thl_i / sigma_s_i ) * corr_thlx_i
+
+    else  ! sigma_s_i = 0
+
+       ! The variance of s_(i) is 0.  This means that s is constant within the
+       ! ith PDF component and covariance <s'x'_(i)> is also 0.  The correlation
+       ! between s and x is 0 in the ith PDF component.
+       corr_sx_i = 0.0
+
+    endif
+
+
+    return
+
+  end function calc_corr_sx
 
 !===============================================================================
 

@@ -20,7 +20,7 @@ module PDF_integrals_all_mixed_moments
                               sigma_x1, sigma_x2, sigma_x3_n, sigma_x4_n, &
                               rho_x1x2, rho_x1x3_n, rho_x1x4_n, &
                               rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
-                              x1_bar, x2_alpha_x3_beta_x4_gamma_bar, &
+                              x1_mean, x2_alpha_x3_beta_x4_gamma_mean, &
                               alpha_exp, beta_exp, gamma_exp, a_exp, b_exp )
 
     ! Description:
@@ -56,8 +56,8 @@ module PDF_integrals_all_mixed_moments
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
     double precision, intent(in) :: &
-      x1_bar,                        & ! Mean of x1 (overall)               [-]
-      x2_alpha_x3_beta_x4_gamma_bar    ! Mean of x2^alpha x3^beta x4^gamma  [-]
+      x1_mean,                        & ! Mean of x1 (overall)              [-]
+      x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -102,11 +102,11 @@ module PDF_integrals_all_mixed_moments
                  / ( factorial( a_exp - 2*p - r ) * factorial( r ) )  &
                * factorial( b_exp )  &
                  / ( factorial( b_exp - q ) * factorial( q ) )  &
-               * ( - x2_alpha_x3_beta_x4_gamma_bar )**(b_exp-q)  &
+               * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
                * ( - sigma_x2 )**(alpha_exp*q)  &
                * ( 0.5 * ( 1.0 - rho_x1x2**2.0 ) * sigma_x1**2.0 )**p  &
                * ( - rho_x1x2 * sigma_x1 )**r  &
-               * ( mu_x1 - x1_bar  &
+               * ( mu_x1 - x1_mean  &
                    - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
                    + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
                      * sigma_x1 * sigma_x3_n * beta_exp * q  &
@@ -140,7 +140,8 @@ module PDF_integrals_all_mixed_moments
   function quadrivar_NNLL_MM_const_x1( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
                                        sigma_x2, sigma_x3_n, sigma_x4_n, &
                                        rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
-                                       x1_bar, x2_alpha_x3_beta_x4_gamma_bar, &
+                                       x1_mean, &
+                                       x2_alpha_x3_beta_x4_gamma_mean, &
                                        alpha_exp, beta_exp, gamma_exp, &
                                        a_exp, b_exp )
 
@@ -173,8 +174,8 @@ module PDF_integrals_all_mixed_moments
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
     double precision, intent(in) :: &
-      x1_bar,                        & ! Mean of x1 (overall)               [-]
-      x2_alpha_x3_beta_x4_gamma_bar    ! Mean of x2^alpha x3^beta x4^gamma  [-]
+      x1_mean,                        & ! Mean of x1 (overall)              [-]
+      x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -209,10 +210,10 @@ module PDF_integrals_all_mixed_moments
        sigma_sum  &
        = sigma_sum  &
        + 1.0 / sqrt( 2.0*pi_dp )  &
-         * ( mu_x1 - x1_bar )**a_exp  &
+         * ( mu_x1 - x1_mean )**a_exp  &
          * factorial( b_exp )  &
            / ( factorial( b_exp - q ) * factorial( q ) )  &
-         * ( - x2_alpha_x3_beta_x4_gamma_bar )**(b_exp-q)  &
+         * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
          * ( - sigma_x2 )**(alpha_exp*q)  &
          * exp( mu_x3_n * beta_exp * q + mu_x4_n * gamma_exp * q  &
                 + 0.5 * ( 1.0 - rho_x2x3_n**2.0 )  &
@@ -240,7 +241,8 @@ module PDF_integrals_all_mixed_moments
   function quadrivar_NNLL_MM_const_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
                                        sigma_x1, sigma_x3_n, sigma_x4_n, &
                                        rho_x1x3_n, rho_x1x4_n, rho_x3x4_n, &
-                                       x1_bar, x2_alpha_x3_beta_x4_gamma_bar, &
+                                       x1_mean, &
+                                       x2_alpha_x3_beta_x4_gamma_mean, &
                                        alpha_exp, beta_exp, gamma_exp, &
                                        a_exp, b_exp )
 
@@ -269,8 +271,8 @@ module PDF_integrals_all_mixed_moments
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
     double precision, intent(in) :: &
-      x1_bar,                        & ! Mean of x1 (overall)               [-]
-      x2_alpha_x3_beta_x4_gamma_bar    ! Mean of x2^alpha x3^beta x4^gamma  [-]
+      x1_mean,                        & ! Mean of x1 (overall)              [-]
+      x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -305,10 +307,10 @@ module PDF_integrals_all_mixed_moments
               / ( factorial( a_exp - 2*p ) * factorial( p ) )  &
             * factorial( b_exp )  &
               / ( factorial( b_exp - q ) * factorial( q ) )  &
-            * ( - x2_alpha_x3_beta_x4_gamma_bar )**(b_exp-q)  &
+            * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
             * mu_x2**(alpha_exp*q)  &
             * ( 0.5 * sigma_x1**2.0 )**p  &
-            * ( mu_x1 - x1_bar  &
+            * ( mu_x1 - x1_mean  &
                 + rho_x1x3_n * sigma_x1  &
                   * sigma_x3_n * beta_exp * q  &
                 + rho_x1x4_n * sigma_x1  &
@@ -332,8 +334,8 @@ module PDF_integrals_all_mixed_moments
   !=============================================================================
   function quadrivar_NNLL_MM_const_x1_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
                                           sigma_x3_n, sigma_x4_n, &
-                                          rho_x3x4_n, x1_bar, &
-                                          x2_alpha_x3_beta_x4_gamma_bar, &
+                                          rho_x3x4_n, x1_mean, &
+                                          x2_alpha_x3_beta_x4_gamma_mean, &
                                           alpha_exp, beta_exp, gamma_exp, &
                                           a_exp, b_exp )
 
@@ -359,8 +361,8 @@ module PDF_integrals_all_mixed_moments
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
     double precision, intent(in) :: &
-      x1_bar,                        & ! Mean of x1 (overall)               [-]
-      x2_alpha_x3_beta_x4_gamma_bar    ! Mean of x2^alpha x3^beta x4^gamma  [-]
+      x1_mean,                        & ! Mean of x1 (overall)              [-]
+      x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -389,10 +391,10 @@ module PDF_integrals_all_mixed_moments
 
        sigma_sum  &
        = sigma_sum  &
-       + ( mu_x1 - x1_bar )**a_exp  &
+       + ( mu_x1 - x1_mean )**a_exp  &
          * factorial( b_exp )  &
            / ( factorial( b_exp - q ) * factorial( q ) )  &
-         * ( - x2_alpha_x3_beta_x4_gamma_bar )**(b_exp-q)  &
+         * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
          * mu_x2**(alpha_exp*q)  &
          * exp( mu_x3_n * beta_exp * q + mu_x4_n * gamma_exp * q  &
                 + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0  &
@@ -413,7 +415,7 @@ module PDF_integrals_all_mixed_moments
   function trivar_NNL_MM( mu_x1, mu_x2, mu_x3_n, &
                           sigma_x1, sigma_x2, sigma_x3_n, &
                           rho_x1x2, rho_x1x3_n, rho_x2x3_n, &
-                          x1_bar, x2_alpha_x3_beta_bar, &
+                          x1_mean, x2_alpha_x3_beta_mean, &
                           alpha_exp, beta_exp, a_exp, b_exp )
 
     ! Description:
@@ -444,8 +446,8 @@ module PDF_integrals_all_mixed_moments
       rho_x2x3_n    ! Correlation between x2 and ln x3 (ith PDF component)  [-]
 
     double precision, intent(in) :: &
-      x1_bar,               & ! Mean of x1 (overall)                        [-]
-      x2_alpha_x3_beta_bar    ! Mean of x2^alpha x3^beta                    [-]
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -488,11 +490,11 @@ module PDF_integrals_all_mixed_moments
                  / ( factorial( a_exp - 2*p - r ) * factorial( r ) )  &
                * factorial( b_exp )  &
                  / ( factorial( b_exp - q ) * factorial( q ) )  &
-               * ( - x2_alpha_x3_beta_bar )**(b_exp-q)  &
+               * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
                * sigma_x2**(alpha_exp*q)  &
                * ( 0.5 * ( 1.0 - rho_x1x2**2.0 ) * sigma_x1**2.0 )**p  &
                * ( rho_x1x2 * sigma_x1 )**r  &
-               * ( mu_x1 - x1_bar  &
+               * ( mu_x1 - x1_mean  &
                    - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
                    + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
                      * sigma_x1 * sigma_x3_n * beta_exp * q )**(a_exp-2*p-r)  &
@@ -515,7 +517,7 @@ module PDF_integrals_all_mixed_moments
   !=============================================================================
   function trivar_NNL_MM_const_x1( mu_x1, mu_x2, mu_x3_n, &
                                    sigma_x2, sigma_x3_n, rho_x2x3_n, &
-                                   x1_bar, x2_alpha_x3_beta_bar, &
+                                   x1_mean, x2_alpha_x3_beta_mean, &
                                    alpha_exp, beta_exp, a_exp, b_exp )
 
     ! Description:
@@ -543,8 +545,8 @@ module PDF_integrals_all_mixed_moments
       rho_x2x3_n    ! Correlation between x2 and ln x3 (ith PDF component)  [-]
 
     double precision, intent(in) :: &
-      x1_bar,               & ! Mean of x1 (overall)                        [-]
-      x2_alpha_x3_beta_bar    ! Mean of x2^alpha x3^beta                    [-]
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -577,10 +579,10 @@ module PDF_integrals_all_mixed_moments
        sigma_sum  &
        = sigma_sum  &
        + 1.0 / sqrt( 2.0*pi_dp )  &
-         * ( mu_x1 - x1_bar )**a_exp  &
+         * ( mu_x1 - x1_mean )**a_exp  &
          * factorial( b_exp )  &
            / ( factorial( b_exp - q ) * factorial( q ) )  &
-         * ( - x2_alpha_x3_beta_bar )**(b_exp-q)  &
+         * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
          * sigma_x2**(alpha_exp*q)  &
          * exp( mu_x3_n * beta_exp * q  &
                 + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0  &
@@ -599,7 +601,7 @@ module PDF_integrals_all_mixed_moments
   !=============================================================================
   function trivar_NNL_MM_const_x2( mu_x1, mu_x2, mu_x3_n, &
                                    sigma_x1, sigma_x3_n, rho_x1x3_n, &
-                                   x1_bar, x2_alpha_x3_beta_bar, &
+                                   x1_mean, x2_alpha_x3_beta_mean, &
                                    alpha_exp, beta_exp, a_exp, b_exp )
 
     ! Description:
@@ -623,8 +625,8 @@ module PDF_integrals_all_mixed_moments
       rho_x1x3_n    ! Correlation between x1 and ln x3 (ith PDF component)  [-]
 
     double precision, intent(in) :: &
-      x1_bar,               & ! Mean of x1 (overall)                        [-]
-      x2_alpha_x3_beta_bar    ! Mean of x2^alpha x3^beta                    [-]
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -658,10 +660,10 @@ module PDF_integrals_all_mixed_moments
               / ( factorial( a_exp - 2*p ) * factorial( p ) )  &
             * factorial( b_exp )  &
               / ( factorial( b_exp - q ) * factorial( q ) )  &
-            * ( - x2_alpha_x3_beta_bar )**(b_exp-q)  &
+            * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
             * mu_x2**(alpha_exp*q)  &
             * ( 0.5 * sigma_x1**2.0 )**p  &
-            * ( mu_x1 - x1_bar  &
+            * ( mu_x1 - x1_mean  &
                 + rho_x1x3_n * sigma_x1  &
                   * sigma_x3_n * beta_exp * q )**(a_exp-2*p)  &
             * exp( mu_x3_n * beta_exp * q  &
@@ -678,7 +680,7 @@ module PDF_integrals_all_mixed_moments
 
   !=============================================================================
   function trivar_NNL_MM_const_x1_x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
-                                      x1_bar, x2_alpha_x3_beta_bar, &
+                                      x1_mean, x2_alpha_x3_beta_mean, &
                                       alpha_exp, beta_exp, a_exp, b_exp )
 
     ! Description:
@@ -700,8 +702,8 @@ module PDF_integrals_all_mixed_moments
       sigma_x3_n    ! Standard deviation of ln x3 (ith PDF component)       [-]
 
     double precision, intent(in) :: &
-      x1_bar,               & ! Mean of x1 (overall)                        [-]
-      x2_alpha_x3_beta_bar    ! Mean of x2^alpha x3^beta                    [-]
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
     double precision, intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
@@ -729,10 +731,10 @@ module PDF_integrals_all_mixed_moments
 
        sigma_sum  &
        = sigma_sum  &
-       + ( mu_x1 - x1_bar )**a_exp  &
+       + ( mu_x1 - x1_mean )**a_exp  &
          * factorial( b_exp )  &
            / ( factorial( b_exp - q ) * factorial( q ) )  &
-         * ( - x2_alpha_x3_beta_bar )**(b_exp-q)  &
+         * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
          * mu_x2**(alpha_exp*q)  &
          * exp( mu_x3_n * beta_exp * q  &
                 + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0 )
