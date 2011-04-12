@@ -1,0 +1,608 @@
+! $Id$
+!===============================================================================
+module KK_upscaled_means
+
+  private
+
+  public :: KK_evap_upscaled_mean, &
+            KK_auto_upscaled_mean, &
+            KK_accr_upscaled_mean, &
+            KK_mvr_upscaled_mean
+
+  private :: trivar_NLL_mean_eq, &
+             bivar_NL_mean_eq, &
+             bivar_LL_mean_eq
+
+  contains
+
+  !=============================================================================
+  function KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                  sigma_s_1, sigma_s_2, sigma_rr_n, &
+                                  sigma_Nr_n, corr_srr_1_n, corr_srr_2_n, &
+                                  corr_sNr_1_n, corr_sNr_2_n, corr_rrNr_n, &
+                                  KK_evap_coef, mixt_frac )
+
+    ! Description:
+    ! This function calculates the mean value of the upscaled KK rain water
+    ! evaporation tendency.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,        & ! Mean of x (2nd PDF component)                       [-]
+      mu_rr_n,       & ! Mean of ln rr (both components)                     [-]
+      mu_Nr_n,       & ! Mean of ln Nr (both components)                     [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_rr_n,    & ! Standard deviation of ln rr (both components)       [-]
+      sigma_Nr_n,    & ! Standard deviation of ln Nr (both components)       [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF component) [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF component) [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF component) [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF component) [-]
+      corr_rrNr_n,   & ! Correlation between ln rr & ln Nr (both components) [-]
+      KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
+      mixt_frac        ! Mixture fraction                                    [-]
+
+    ! Return Variable
+    double precision :: &
+      KK_evap_upscaled_mean  ! Mean of KK evaporation tendency       [(kg/kg)/s]
+
+    ! Constant Parameters
+    real, parameter :: &
+      alpha_exp = 1.0,       & ! Exponent on s                               [-]
+      beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
+      gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
+
+
+    ! Calculate the mean KK evaporation tendency.
+    KK_evap_upscaled_mean  &
+    = KK_evap_coef &
+      * ( mixt_frac &
+          * trivar_NLL_mean_eq( mu_s_1, mu_rr_n, mu_Nr_n, &
+                                sigma_s_1, sigma_rr_n, sigma_Nr_n, &
+                                corr_srr_1_n, corr_sNr_1_n, corr_rrNr_n, &
+                                alpha_exp, beta_exp, gamma_exp ) &
+        + ( 1.0 - mixt_frac ) &
+          * trivar_NLL_mean_eq( mu_s_2, mu_rr_n, mu_Nr_n, &
+                                sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                                corr_srr_2_n, corr_sNr_2_n, corr_rrNr_n, &
+                                alpha_exp, beta_exp, gamma_exp ) &
+        )
+
+
+    return
+
+  end function KK_evap_upscaled_mean
+
+  !=============================================================================
+  function KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_n, sigma_s_1, &
+                                  sigma_s_2, sigma_Nc_n, corr_sNc_1_n, &
+                                  corr_sNc_2_n, KK_auto_coef, mixt_frac )
+
+    ! Description:
+    ! This function calculates the mean value of the upscaled KK rain water
+    ! autoconversion tendency.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu_s_1,       & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,       & ! Mean of s (2nd PDF component)                       [-]
+      mu_Nc_n,      & ! Mean of ln Nc (both components)                     [-]
+      sigma_s_1,    & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_Nc_n,   & ! Standard deviation of ln Nc (both components)       [-]
+      corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component) [-]
+      corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component) [-]
+      KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
+      mixt_frac       ! Mixture fraction                                    [-]
+
+    ! Return Variable
+    double precision :: &
+      KK_auto_upscaled_mean  ! Mean of KK autoconversion tendency   [(kg/kg)/s]
+
+    ! Constant Parameters
+    real, parameter :: &
+      alpha_exp = 2.47,  & ! Exponent on s                                  [-]
+      beta_exp  = -1.79    ! Exponent on r_r                                [-]
+
+
+    ! Calculate the mean KK autoconversion tendency.
+    KK_auto_upscaled_mean  &
+    = KK_auto_coef &
+      * ( mixt_frac &
+        * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                            corr_sNc_1_n, alpha_exp, beta_exp ) &
+        + ( 1.0 - mixt_frac ) &
+        * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                            corr_sNc_2_n, alpha_exp, beta_exp ) &
+        )
+
+
+    return
+
+  end function KK_auto_upscaled_mean
+
+  !=============================================================================
+  function KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
+                                  sigma_s_2, sigma_rr_n, corr_srr_1_n, &
+                                  corr_srr_2_n, KK_accr_coef, mixt_frac )
+
+    ! Description:
+    ! This function calculates the mean value of the upscaled KK rain water
+    ! accretion tendency.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu_s_1,       & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,       & ! Mean of s (2nd PDF component)                       [-]
+      mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
+      sigma_s_1,    & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_rr_n,   & ! Standard deviation of ln rr (both components)       [-]
+      corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component) [-]
+      corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component) [-]
+      KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
+      mixt_frac       ! Mixture fraction                                    [-]
+
+    ! Return Variable
+    double precision :: &
+      KK_accr_upscaled_mean  ! Mean of KK accretion tendency        [(kg/kg)/s]
+
+    ! Constant Parameters
+    real, parameter :: &
+      alpha_exp = 1.15, & ! Exponent on s                                   [-]
+      beta_exp  = 1.15    ! Exponent on r_r                                 [-]
+
+
+    ! Calculate the mean KK accretion tendency.
+    KK_accr_upscaled_mean  &
+    = KK_accr_coef &
+      * ( mixt_frac &
+        * bivar_NL_mean_eq( mu_s_1, mu_rr_n, sigma_s_1, sigma_rr_n, &
+                            corr_srr_1_n, alpha_exp, beta_exp ) &
+        + ( 1.0 - mixt_frac ) &
+        * bivar_NL_mean_eq( mu_s_2, mu_rr_n, sigma_s_2, sigma_rr_n, &
+                            corr_srr_2_n, alpha_exp, beta_exp ) &
+        )
+
+
+    return
+
+  end function KK_accr_upscaled_mean
+
+  !=============================================================================
+  function KK_mvr_upscaled_mean( mu_rr_n, mu_Nr_n, sigma_rr_n, &
+                                 sigma_Nr_n, corr_rrNr_n, KK_mvr_coef )
+
+    ! Description:
+    ! This function calculates the mean value of the upscaled KK rain drop mean
+    ! volume radius.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu_rr_n,     & ! Mean of ln rr (both components)                     [-]
+      mu_Nr_n,     & ! Mean of ln Nr (both components)                     [-]
+      sigma_rr_n,  & ! Standard deviation of ln rr (both components)       [-]
+      sigma_Nr_n,  & ! Standard deviation of ln Nr (both components)       [-]
+      corr_rrNr_n, & ! Correlation between ln rr & ln Nr (both components) [-]
+      KK_mvr_coef    ! KK mean volume radius coefficient                   [m]
+
+    ! Return Variable
+    double precision :: &
+      KK_mvr_upscaled_mean  ! Mean of KK rain drop mean volume radius      [m]
+
+    ! Constant Parameters
+    real, parameter :: &
+      alpha_exp = (1.0/3.0),  & ! Exponent on r_r                          [-]
+      beta_exp  = (-1.0/3.0)    ! Exponent on N_r                          [-]
+
+
+    ! Calculate the KK mean volume radius of rain drops.
+    KK_mvr_upscaled_mean  &
+    = KK_mvr_coef &
+      * bivar_LL_mean_eq( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
+                          corr_rrNr_n, alpha_exp, beta_exp )
+
+
+    return
+
+  end function KK_mvr_upscaled_mean
+
+  !=============================================================================
+  function trivar_NLL_mean_eq( mu_s_i, mu_rr_n, mu_Nr_n, &
+                               sigma_s_i, sigma_rr_n, sigma_Nr_n, &
+                               corr_srr_i_n, corr_sNr_i_n, corr_rrNr_n, &
+                               alpha_exp_in, beta_exp_in, gamma_exp_in )
+
+    ! Description:
+    ! This function calculates the contribution by the ith PDF component to the
+    ! expression < x1^alpha x2^beta x3^gamma >, where x1 = s, x2 = r_r, and
+    ! x3 = N_r.  The total value of KK mean evaporation tendency is given by:
+    !
+    ! < KK_evap >
+    !    = KK_evap_coef
+    !      * ( mixt_frac < s^alpha r_r^beta N_r^gamma (1) >
+    !          + ( 1 - mixt_frac ) < s^alpha r_r^beta N_r^gamma (2) > ).
+    !
+    ! One of two functions is called, based on whether x1 (s) varies.  Each one
+    ! of these two functions is the result of an evaluated integral based on the
+    ! specific situation.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use PDF_integrals_means, only: &
+        trivar_NLL_mean, & ! Procedure(s)
+        trivar_NLL_mean_const_x1
+
+    use constants_clubb, only: &
+        s_mellor_tol, & ! Constant(s)
+        parab_cyl_max_input
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu_s_i,       & ! Mean of s (ith PDF component)                       [-]
+      mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
+      mu_Nr_n,      & ! Mean of ln Nr (both components)                     [-]
+      sigma_s_i,    & ! Standard deviation of s (ith PDF component)         [-]
+      sigma_rr_n,   & ! Standard deviation of ln rr (both components)       [-]
+      sigma_Nr_n,   & ! Standard deviation of ln Nr (both components)       [-]
+      corr_srr_i_n, & ! Correlation between s and ln rr (ith PDF component) [-]
+      corr_sNr_i_n, & ! Correlation between s and ln Nr (ith PDF component) [-]
+      corr_rrNr_n     ! Correlation between ln rr & ln Nr (both components) [-]
+
+    real, intent(in) :: &
+      alpha_exp_in,  & ! Exponent alpha, corresponding to s                 [-]
+      beta_exp_in,   & ! Exponent beta, corresponding to rr                 [-]
+      gamma_exp_in     ! Exponent gamma, corresponding to Nr                [-]
+
+    ! Return Variable
+    double precision :: &
+      trivar_NLL_mean_eq
+
+    ! Local Variables
+    double precision :: &
+      mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
+      mu_x2_n,    & ! Mean of ln x2 (ith PDF component)                     [-]
+      mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
+      sigma_x1,   & ! Standard deviation of x1 (ith PDF component)          [-]
+      sigma_x2_n, & ! Standard deviation of ln x2 (ith PDF component)       [-]
+      sigma_x3_n, & ! Standard deviation of ln x3 (ith PDF component)       [-]
+      rho_x1x2_n, & ! Correlation between x1 and ln x2 (ith PDF component)  [-]
+      rho_x1x3_n, & ! Correlation between x1 and ln x3 (ith PDF component)  [-]
+      rho_x2x3_n    ! Correlation between ln x2 & ln x3 (ith PDF component) [-]
+
+    double precision :: &
+      alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
+      beta_exp,   & ! Exponent beta, corresponding to x2                    [-]
+      gamma_exp     ! Exponent gamma, corresponding to x3                   [-]
+
+    double precision :: &
+      x1_tol, & ! Tolerance value of x1                                     [-]
+      s_cc      ! Parabolic cylinder function input value                   [-]
+
+
+    ! Means for the ith PDF component. 
+    mu_x1   = mu_s_i
+    mu_x2_n = mu_rr_n ! The same for both PDF components.
+    mu_x3_n = mu_Nr_n ! The same for both PDF components.
+
+    ! Standard deviations for the ith PDF component.
+    sigma_x1   = sigma_s_i
+    sigma_x2_n = sigma_rr_n ! The same for both PDF components.
+    sigma_x3_n = sigma_Nr_n ! The same for both PDF components.
+
+    ! Correlations for the ith PDF component.
+    rho_x1x2_n = corr_srr_i_n
+    rho_x1x3_n = corr_sNr_i_n
+    rho_x2x3_n = corr_rrNr_n  ! The same for both PDF components.
+
+    ! Exponents.
+    alpha_exp = alpha_exp_in
+    beta_exp  = beta_exp_in
+    gamma_exp = gamma_exp_in
+
+    ! Tolerance values.
+    ! When the standard deviation of a variable is below the tolerance values,
+    ! it is considered to be zero, and the variable is considered to have a
+    ! constant value.
+    x1_tol = s_mellor_tol
+
+    ! Determine the value of the parabolic cylinder function input value, s_cc.
+    ! The value s_cc is being fed into the parabolic cylinder function.  When
+    ! the value of s_cc is too large in magnitude (depending on the order of the
+    ! parabolic cylinder function), overflow occurs, and the output of the
+    ! parabolic cylinder function is +/-Inf.  This is primarily due to a large
+    ! ratio of mu_x1 to sigma_x1.  When the value of s_cc is very large, the
+    ! distribution of x1 is basically a spike near the mean, so x1 is treated as
+    ! a constant.
+    s_cc = ( mu_x1 / sigma_x1 )  &
+           + rho_x1x2_n * sigma_x2_n * beta_exp  &
+           + rho_x1x3_n * sigma_x3_n * gamma_exp
+
+
+    ! Based on the value of sigma_x1 (including the value of s_cc compared to
+    ! parab_cyl_max_input), find the correct form of the trivariate equation to
+    ! use.
+
+    if ( sigma_x1 <= x1_tol .or. abs( s_cc ) > parab_cyl_max_input ) then
+
+       ! The ith PDF component variance of s is 0.
+
+       if ( mu_x1 <= 0.0 ) then
+
+          ! There is all clear air in the ith component ( s <= 0 everywhere ).
+          trivar_NLL_mean_eq  &
+          = trivar_NLL_mean_const_x1( mu_x1, mu_x2_n, mu_x3_n, &
+                                      sigma_x2_n, sigma_x3_n, rho_x2x3_n, &
+                                      alpha_exp, beta_exp, gamma_exp )
+
+
+       else  ! mu_x1 > 0
+
+          ! There is all cloudy air in the ith component ( s > 0 everywhere ).
+          trivar_NLL_mean_eq = 0.0
+
+
+       endif
+
+
+    else  ! sigma_x1 > 0
+
+       ! All fields vary in the ith PDF component.
+       trivar_NLL_mean_eq  &
+       = trivar_NLL_mean( mu_x1, mu_x2_n, mu_x3_n, &
+                          sigma_x1, sigma_x2_n, sigma_x3_n, &
+                          rho_x1x2_n, rho_x1x3_n, rho_x2x3_n, &
+                          alpha_exp, beta_exp, gamma_exp )
+
+
+    endif
+
+
+    return
+
+  end function trivar_NLL_mean_eq
+
+  !=============================================================================
+  function bivar_NL_mean_eq( mu_s_i, mu_y_n, sigma_s_i, sigma_y_n, &
+                             corr_sy_i_n, alpha_exp_in, beta_exp_in )
+
+    ! Description:
+    ! This function calculates the contribution by the ith PDF component to the
+    ! expression < x1^alpha x2^beta >, where x1 = s and x2 = N_c or r_r,
+    ! depending on whether this function is being called for autoconversion or
+    ! accretion, respectively.  The total value of KK mean microphysics tendency
+    ! is given by:
+    !
+    ! < KK_mc > = KK_mc_coef
+    !             * ( mixt_frac < s^alpha y^beta (1) >
+    !                 + ( 1 - mixt_frac ) < s^alpha y^beta (2) > );
+    !
+    ! where y stands for either N_c or r_r.  One of two functions is called,
+    ! based on whether x1 (s) varies.  Each one of these two functions is the
+    ! result of an evaluated integral based on the specific situation.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use PDF_integrals_means, only: &
+        bivar_NL_mean, &
+        bivar_NL_mean_const_x1
+
+    use constants_clubb, only: &
+        s_mellor_tol, & ! Constant(s)
+        parab_cyl_max_input
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu_s_i,      & ! Mean of s (ith PDF component)                        [-]
+      mu_y_n,      & ! Mean of ln y (both components)                       [-]
+      sigma_s_i,   & ! Standard deviation of s (ith PDF component)          [-]
+      sigma_y_n,   & ! Standard deviation of ln y (both components)         [-]
+      corr_sy_i_n    ! Correlation between s and ln y (ith PDF component)   [-]
+
+    real, intent(in) :: &
+      alpha_exp_in,  & ! Exponent alpha, corresponding to s                 [-]
+      beta_exp_in      ! Exponent beta, corresponding to y                  [-]
+
+    ! Return Variable
+    double precision :: &
+      bivar_NL_mean_eq
+
+    ! Local Variables
+    double precision :: &
+      mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
+      mu_x2_n,    & ! Mean of ln x2 (ith PDF component)                     [-]
+      sigma_x1,   & ! Standard deviation of x1 (ith PDF component)          [-]
+      sigma_x2_n, & ! Standard deviation of ln x2 (ith PDF component)       [-]
+      rho_x1x2_n    ! Correlation between x1 and ln x2 (ith PDF component)  [-]
+    
+    double precision :: &
+      alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
+      beta_exp      ! Exponent beta, corresponding to x2                    [-]
+
+    double precision :: &
+      x1_tol, & ! Tolerance value of x1                                     [-]
+      s_c       ! Parabolic cylinder function input value                   [-]
+
+
+    ! Means for the ith PDF component. 
+    mu_x1   = mu_s_i
+    mu_x2_n = mu_y_n ! y is N_c (autoconversion) or r_r (accretion).
+                     ! The same for both PDF components.
+
+    ! Standard deviations for the ith PDF component.
+    sigma_x1   = sigma_s_i
+    sigma_x2_n = sigma_y_n ! y is N_c (autoconversion) or r_r (accretion).
+                           ! The same for both PDF components.
+
+    ! Correlations for the ith PDF component.
+    rho_x1x2_n = corr_sy_i_n  ! y is N_c (autoconversion) or r_r (accretion).
+
+    ! Exponents.
+    alpha_exp = alpha_exp_in
+    beta_exp  = beta_exp_in
+
+    ! Tolerance values.
+    ! When the standard deviation of a variable is below the tolerance values,
+    ! it is considered to be zero, and the variable is considered to have a
+    ! constant value.
+    x1_tol = s_mellor_tol
+
+    ! Determine the value of the parabolic cylinder function input value, s_c.
+    ! The value s_c is being fed into the parabolic cylinder function.  When
+    ! the value of s_c is too large in magnitude (depending on the order of the
+    ! parabolic cylinder function), overflow occurs, and the output of the
+    ! parabolic cylinder function is +/-Inf.  This is primarily due to a large
+    ! ratio of mu_x1 to sigma_x1.  When the value of s_c is very large, the
+    ! distribution of x1 is basically a spike near the mean, so x1 is treated as
+    ! a constant.
+    s_c = ( mu_x1 / sigma_x1 ) + rho_x1x2_n * sigma_x2_n * beta_exp
+
+
+    ! Based on the value of sigma_x1 (including the value of s_c compared to
+    ! parab_cyl_max_input), find the correct form of the bivariate equation to
+    ! use.
+
+    if ( sigma_x1 <= x1_tol .or. abs( s_c ) > parab_cyl_max_input ) then
+
+       ! The ith PDF component variance of s is 0.
+
+       if ( mu_x1 > 0.0 ) then
+
+          ! There is all cloudy air in the ith component ( s > 0 everywhere ).
+          bivar_NL_mean_eq  &
+          = bivar_NL_mean_const_x1( mu_x1, mu_x2_n, sigma_x2_n, &
+                                    alpha_exp, beta_exp )
+
+
+       else  ! mu_x1 <= 0
+
+          ! There is all clear air in the ith component ( s <= 0 everywhere ).
+          bivar_NL_mean_eq = 0.0
+
+
+       endif
+
+
+    else  ! sigma_x1 > 0
+
+       ! All fields vary in the ith PDF component.
+       bivar_NL_mean_eq  &
+       = bivar_NL_mean( mu_x1, mu_x2_n, sigma_x1, sigma_x2_n, &
+                        rho_x1x2_n, alpha_exp, beta_exp )
+
+
+    endif
+
+
+    return
+
+  end function bivar_NL_mean_eq
+
+  !=============================================================================
+  function bivar_LL_mean_eq( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
+                             corr_rrNr_n, alpha_exp_in, beta_exp_in )
+
+    ! Description:
+    ! This function calculates the expression < x1^alpha x2^beta >, where
+    ! x1 = r_r and x2 = N_r.  The value of mean volume radius is given by:
+    !
+    ! < KK_mvr > = KK_mvr_coef * < r_r^alpha N_r^beta >.
+    !
+    ! Since both r_r and N_r are the same for both components of the PDF, this
+    ! function only needs to be called once, rather than once for each PDF
+    ! component.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use PDF_integrals_means, only: &
+        bivar_LL_mean  ! Procedure(s)
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
+      mu_Nr_n,      & ! Mean of ln Nr (both components)                     [-]
+      sigma_rr_n,   & ! Standard deviation of ln rr (both components)       [-]
+      sigma_Nr_n,   & ! Standard deviation of ln Nr (both components)       [-]
+      corr_rrNr_n     ! Correlation between ln rr & ln Nr (both components) [-]
+
+    real, intent(in) :: &
+      alpha_exp_in,  & ! Exponent alpha, corresponding to rr                [-]
+      beta_exp_in      ! Exponent beta, corresponding to Nr                 [-]
+
+    ! Return Variable
+    double precision :: &
+      bivar_LL_mean_eq
+
+    ! Local Variables
+    double precision :: &
+      mu_x1_n,    & ! Mean of ln x1 (ith PDF component)                     [-]
+      mu_x2_n,    & ! Mean of ln x2 (ith PDF component)                     [-]
+      sigma_x1_n, & ! Standard deviation of ln x1 (ith PDF component)       [-]
+      sigma_x2_n, & ! Standard deviation of ln x2 (ith PDF component)       [-]
+      rho_x1x2_n    ! Correlation between ln x1 & ln x2 (ith PDF component) [-]
+
+    double precision :: &
+      alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
+      beta_exp      ! Exponent beta, corresponding to x2                    [-]
+
+
+    ! Means for the ith PDF component.
+    mu_x1_n = mu_rr_n  ! The same for both PDF components.
+    mu_x2_n = mu_Nr_n  ! The same for both PDF components.
+
+    ! Standard deviations for the ith PDF component.
+    sigma_x1_n = sigma_rr_n  ! The same for both PDF components.
+    sigma_x2_n = sigma_Nr_n  ! The same for both PDF components.
+
+    ! Correlations for the ith PDF component.
+    rho_x1x2_n = corr_rrNr_n  ! The same for both PDF components.
+
+    ! Exponents.
+    alpha_exp = alpha_exp_in
+    beta_exp  = beta_exp_in
+
+
+    ! Calculate the mean of the bivariate lognormal equation.
+    bivar_LL_mean_eq  &
+    = bivar_LL_mean( mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, &
+                     rho_x1x2_n, alpha_exp, beta_exp )
+
+
+    return
+
+  end function bivar_LL_mean_eq
+
+!===============================================================================
+
+end module KK_upscaled_means
