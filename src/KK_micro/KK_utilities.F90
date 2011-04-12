@@ -14,7 +14,8 @@ module KK_utilities
             corr_LL2NN_dp, &
             factorial,     &
             Dv_fnc,        & ! Parabolic Cylinder Function, D.
-            calc_corr_sx
+            calc_corr_sx,  &
+            G_T_p
 
   contains
 
@@ -351,13 +352,14 @@ module KK_utilities
 
     ! Input Variable
     integer, intent(in) :: &
-      num
+      num  ! Integer of which to take the factorial.
 
     ! Return Variable
     double precision :: &
-      factorial
+      factorial  ! Factorial of num.
 
 
+    ! Calculate the factorial of integer num using the gamma function.
     factorial = gamma( dble( num+1 ) )
 
 
@@ -471,6 +473,11 @@ module KK_utilities
     ! calculated.
 
     ! References:
+    !  Larson, V. E., R. Wood, P. R. Field, J.-C. Golaz, T. H. Vonder Haar,
+    !    W. R. Cotton, 2001: Systematic Biases in the Microphysics and
+    !    Thermodynamics of Numerical Models That Ignore Subgrid-Scale
+    !    Variability. J. Atmos. Sci., 58, 1117--1128.
+    !  -- Eq. 13 and 14.
     !-----------------------------------------------------------------------
 
     implicit none
@@ -509,6 +516,85 @@ module KK_utilities
     return
 
   end function calc_corr_sx
+
+  !=============================================================================
+  function G_T_p( T_in_K, p_in_Pa )
+
+    ! Description:
+    ! Calculate G(T,p) from the drop radius growth equation.  This is used as a
+    ! coefficient in the KK evaporation equation.  The equation for G(T,p) is
+    ! taken from Rogers and Yau (1989).
+
+    ! References:
+    !  Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    !    Parameterization in a Large-Eddy Simulation Model of Marine
+    !    Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
+    !  -- Eq. 22.
+    !  Rogers, R. R. and M. K. Yau, 1989:  A Short Course in Cloud Physics. 3rd
+    !    edition, Butterworth-Heinemann, 290 pp.
+    !  -- Eq. 7.17 and 7.18.
+    !-----------------------------------------------------------------------
+
+    use saturation, only: & 
+        sat_mixrat_liq ! Procedure(s)
+
+    use constants_clubb, only: & 
+        T_freeze_K, & ! Constant(s)
+        ep,         &
+        rho_lw,     & 
+        Lv,         & 
+        Rv
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      T_in_K,  & ! Mean temperature  [K]
+      p_in_Pa    ! Pressure          [Pa]
+
+    ! Return Variable
+    real :: &
+      G_T_p  ! Function G(T,p) as found in the evaporation equation  [m^2/s]
+
+    ! Local Variables
+    real :: &
+      Ka,      & ! Coefficient of thermal conductivity of air          [J/(msK)]
+      Dv,      & ! Coefficient of diffusion of water vapor in air      [m^2/s]
+      Fk,      & ! Term in denominator associated with heat conduction [s/m^2]
+      Fd,      & ! Term in denominator associated with vapor diffusion [s/m^2]
+      esat,    & ! Saturation vapor pressure                           [Pa]
+      rs,      & ! Saturation mixing ratio                             [kg/kg]
+      Celsius    ! Temperature in Celsius                              [deg C]
+
+
+    ! Temperature in degrees Celsius.
+    Celsius = T_in_K - T_freeze_K
+
+    ! Coefficient of thermal conductivity of air.
+    Ka = ( 5.69 + 0.017 * Celsius ) * 0.00001  ! Ka in cal./(cm.*sec.*C)
+    Ka = 4.1868 * 100.0 * Ka                   ! Ka in J./(m.*sec.*K)
+
+    ! Coefficient of diffusion of water vapor in air.
+    Dv = 0.221 * ( (T_in_K/273.16)**1.94 ) * ( 101325.0 / p_in_Pa )
+                       ! Dv in (cm.^2)/sec.  ! .221 is correct.
+    Dv = Dv / 10000.0  ! Dv in (m.^2)/sec.
+
+    ! Calculate saturation mixing ratio and saturation vapor pressure.
+    rs   = sat_mixrat_liq( p_in_Pa, T_in_K )
+    esat = ( p_in_Pa * rs ) / ( ep + rs )
+
+    ! The values of F_k and F_d are found in Rogers and Yau (1989);
+    ! Eq. 7.17 and 7.18.
+    Fk = ( Lv / ( Rv * T_in_K ) - 1.0 ) * ( Lv * rho_lw ) / ( Ka * T_in_K )
+    Fd = ( rho_lw * Rv * T_in_K ) / ( Dv * esat )
+
+    ! Calculate G(T,p).
+    G_T_p = 1.0 / (Fk + Fd)
+
+
+    return
+
+  end function G_T_p
 
 !===============================================================================
 

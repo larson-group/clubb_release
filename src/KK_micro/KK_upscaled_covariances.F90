@@ -65,7 +65,7 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    double precision :: &
       covar_x_KK_evap  ! Covariance between x and KK evaporation tendency    [-]
 
     ! Constant Parameters
@@ -85,7 +85,7 @@ module KK_upscaled_covariances
                                    corr_xNr_1_n, corr_srr_1_n, &
                                    corr_sNr_1_n, corr_rrNr_n, x_mean, &
                                    KK_evap_tndcy, KK_evap_coef, x_tol, &
-                                   alpha_exp, beta_exp, gamma_exp )
+                                   alpha_exp, beta_exp, gamma_exp ) &
         + ( 1.0 - mixt_frac ) &
           * quadrivar_NNLL_cov_eq( mu_x_2, mu_s_2, mu_rr_n, mu_Nr_n, &
                                    sigma_x_2, sigma_s_2, sigma_rr_n, &
@@ -93,7 +93,7 @@ module KK_upscaled_covariances
                                    corr_xNr_2_n, corr_srr_2_n, &
                                    corr_sNr_2_n, corr_rrNr_n, x_mean, &
                                    KK_evap_tndcy, KK_evap_coef, x_tol, &
-                                   alpha_exp, beta_exp, gamma_exp )
+                                   alpha_exp, beta_exp, gamma_exp ) &
         )
 
 
@@ -144,7 +144,7 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    double precision :: &
       covar_x_KK_auto  ! Covariance between x and KK autoconversion tendency [-]
 
     ! Constant Parameters
@@ -161,13 +161,13 @@ module KK_upscaled_covariances
                                sigma_x_1, sigma_s_1, sigma_Nc_n, &
                                corr_xs_1, corr_xNc_1_n, corr_sNc_1_n, &
                                x_mean, KK_auto_tndcy, KK_auto_coef, &
-                               x_tol, alpha_exp, beta_exp )
+                               x_tol, alpha_exp, beta_exp ) &
         + ( 1.0 - mixt_frac ) &
           * trivar_NNL_cov_eq( mu_x_2, mu_s_2, mu_Nc_n, &
                                sigma_x_2, sigma_s_2, sigma_Nc_n, &
                                corr_xs_2, corr_xNc_2_n, corr_sNc_2_n, &
                                x_mean, KK_auto_tndcy, KK_auto_coef, &
-                               x_tol, alpha_exp, beta_exp )
+                               x_tol, alpha_exp, beta_exp ) &
         )
 
 
@@ -218,7 +218,7 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    double precision :: &
       covar_x_KK_accr  ! Covariance between x and KK accretion tendency      [-]
 
     ! Constant Parameters
@@ -228,20 +228,20 @@ module KK_upscaled_covariances
 
 
     ! Calculate the covariance of x and KK accretion tendency.
-    covar_x_KK_auto  &
+    covar_x_KK_accr  &
     = KK_accr_coef &
       * ( mixt_frac &
           * trivar_NNL_cov_eq( mu_x_1, mu_s_1, mu_rr_n, &
                                sigma_x_1, sigma_s_1, sigma_rr_n, &
                                corr_xs_1, corr_xrr_1_n, corr_srr_1_n, &
                                x_mean, KK_accr_tndcy, KK_accr_coef, &
-                               x_tol, alpha_exp, beta_exp )
+                               x_tol, alpha_exp, beta_exp ) &
         + ( 1.0 - mixt_frac ) &
           * trivar_NNL_cov_eq( mu_x_2, mu_s_2, mu_rr_n, &
                                sigma_x_2, sigma_s_2, sigma_rr_n, &
                                corr_xs_2, corr_xrr_2_n, corr_srr_2_n, &
                                x_mean, KK_accr_tndcy, KK_accr_coef, &
-                               x_tol, alpha_exp, beta_exp )
+                               x_tol, alpha_exp, beta_exp ) &
         )
 
 
@@ -284,12 +284,12 @@ module KK_upscaled_covariances
 
     use constants_clubb, only: &
         s_mellor_tol, & ! Constant(s)
-        parab_cyl_max
+        parab_cyl_max_input
 
     implicit none
 
     ! Input Variables
-    real :: &
+    real, intent(in) :: &
       mu_x_i,       & ! Mean of x (ith PDF component)                       [-]
       mu_s_i,       & ! Mean of s (ith PDF component)                       [-]
       mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
@@ -317,7 +317,7 @@ module KK_upscaled_covariances
       gamma_exp_in     ! Exponent gamma, corresponding to Nr                [-]
 
     ! Return Variable
-    real :: &
+    double precision :: &
       quadrivar_NNLL_cov_eq
 
     ! Local Variables
@@ -361,20 +361,20 @@ module KK_upscaled_covariances
     ! Standard deviations for the ith PDF component.
     sigma_x1   = sigma_x_i  ! x is r_t, th_l, or w (ith component).
     sigma_x2   = sigma_s_i
-    sigma_x3_n = sigma_rr_n  ! The same for both PDF components.
-    sigma_x4_n = sigma_Nr_n  ! The same for both PDF components.
+    sigma_x3_n = sigma_rr_n ! The same for both PDF components.
+    sigma_x4_n = sigma_Nr_n ! The same for both PDF components.
 
     ! Correlations for the ith PDF component.
-    rho_x1x2   = corr_xs_i     ! x is r_t, th_l, or w (ith component).
-    rho_x1x3_n = corr_xrr_i_n  ! x is r_t, th_l, or w (ith component).
-    rho_x1x4_n = corr_xNr_i_n  ! x is r_t, th_l, or w (ith component).
+    rho_x1x2   = corr_xs_i    ! x is r_t, th_l, or w (ith component).
+    rho_x1x3_n = corr_xrr_i_n ! x is r_t, th_l, or w (ith component).
+    rho_x1x4_n = corr_xNr_i_n ! x is r_t, th_l, or w (ith component).
     rho_x2x3_n = corr_srr_i_n
     rho_x2x4_n = corr_sNr_i_n
-    rho_x3x4_n = corr_rrNr_n   ! The same for both PDF components.
+    rho_x3x4_n = corr_rrNr_n  ! The same for both PDF components.
 
     ! Overall means.
     x1_mean = x_mean  ! x is r_t, th_l, or w.
-    x2_alpha_x3_beta_x4_gamma_mean = ( mc_tndcy_mean / mc_coef )
+    x2_alpha_x3_beta_x4_gamma_mean = mc_tndcy_mean / mc_coef
 
     ! Exponents.
     alpha_exp = alpha_exp_in
@@ -385,7 +385,7 @@ module KK_upscaled_covariances
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = x_tol
+    x1_tol = x_tol  ! x is r_t, th_l, or w.
     x2_tol = s_mellor_tol
 
     ! Determine the value of the parabolic cylinder function input value, s_cc.
@@ -402,11 +402,11 @@ module KK_upscaled_covariances
 
 
     ! Based on the values of sigma_x1 and sigma_x2 (including the value of s_cc
-    ! compared to parab_cyl_max), find the correct form of the quadrivariate
-    ! equation to use.
+    ! compared to parab_cyl_max_input), find the correct form of the
+    ! quadrivariate equation to use.
 
     if ( sigma_x1 <= x1_tol .and.  &
-         ( sigma_x2 <= x2_tol .or. abs( s_cc ) > parab_cyl_max ) ) then
+         ( sigma_x2 <= x2_tol .or. abs( s_cc ) > parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of both x (r_t, th_l, or w) and s is 0.
 
@@ -442,7 +442,7 @@ module KK_upscaled_covariances
                                       alpha_exp, beta_exp, gamma_exp )
 
 
-    elseif ( ( sigma_x2 <= x2_tol .or. abs( s_cc ) > parab_cyl_max ) ) then
+    elseif ( sigma_x2 <= x2_tol .or. abs( s_cc ) > parab_cyl_max_input ) then
 
        ! The ith PDF component variance of s is 0.
 
@@ -522,12 +522,12 @@ module KK_upscaled_covariances
 
     use constants_clubb, only: &
         s_mellor_tol, & ! Constant(s)
-        parab_cyl_max
+        parab_cyl_max_input
 
     implicit none
 
     ! Input Variables
-    real :: &
+    real, intent(in) :: &
       mu_x_i,      & ! Mean of x (ith PDF component)                        [-]
       mu_s_i,      & ! Mean of s (ith PDF component)                        [-]
       mu_y_n,      & ! Mean of ln y (both components)                       [-]
@@ -549,7 +549,7 @@ module KK_upscaled_covariances
       beta_exp_in      ! Exponent beta, corresponding to y                  [-]
 
     ! Return Variable
-    real :: &
+    double precision :: &
       trivar_NNL_cov_eq
 
     ! Local Variables
@@ -598,7 +598,7 @@ module KK_upscaled_covariances
 
     ! Overall means.
     x1_mean = x_mean  ! x is r_t, th_l, or w.
-    x2_alpha_x3_beta_mean = ( mc_tndcy_mean / mc_coeff )
+    x2_alpha_x3_beta_mean = ( mc_tndcy_mean / mc_coef )
 
     ! Exponents.
     alpha_exp = alpha_exp_in
@@ -608,7 +608,7 @@ module KK_upscaled_covariances
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = x_tol
+    x1_tol = x_tol  ! x is r_t, th_l, or w.
     x2_tol = s_mellor_tol
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
@@ -623,11 +623,11 @@ module KK_upscaled_covariances
 
 
     ! Based on the values of sigma_x1 and sigma_x2 (including the value of s_c
-    ! compared to parab_cyl_max), find the correct form of the quadrivariate
+    ! compared to parab_cyl_max_input), find the correct form of the trivariate
     ! equation to use.
 
     if ( sigma_x1 <= x1_tol .and.  &
-         ( sigma_x2 <= x2_tol .or. abs( s_c ) > parab_cyl_max ) ) then
+         ( sigma_x2 <= x2_tol .or. abs( s_c ) > parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of both x (r_t, th_l, or w) and s is 0.
 
@@ -659,7 +659,7 @@ module KK_upscaled_covariances
                                   alpha_exp, beta_exp )
 
 
-    elseif ( ( sigma_x2 <= x2_tol .or. abs( s_c ) > parab_cyl_max ) ) then
+    elseif ( sigma_x2 <= x2_tol .or. abs( s_c ) > parab_cyl_max_input ) then
 
        ! The ith PDF component variance of s is 0.
 
