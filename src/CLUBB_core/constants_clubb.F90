@@ -24,7 +24,7 @@ module constants_clubb
     eps, zero_threshold, max_mag_correlation, sec_per_day, &
     sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
     Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
-    cm3_per_m3, pascal_per_mb,  &
+    cm3_per_m3, pascal_per_mb, parab_cyl_max_input,  &
     gamma_over_implicit_ts, Lscale_pert_coef
 
   private ! Default scope
@@ -146,6 +146,25 @@ module constants_clubb
   ! greater than 1, so the maximum magnitude would be 1.
   real, parameter :: &
     max_mag_correlation = 0.99
+
+  ! The parameter parab_cyl_max_input is the largest magnitude that the input to
+  ! the parabolic cylinder function is allowed to have.  When the value of the
+  ! input to the parabolic cylinder function is too large in magnitude
+  ! (depending on the order of the parabolic cylinder function), overflow
+  ! occurs, and the output of the parabolic cylinder function is +/-Inf.  The
+  ! parameter parab_cyl_max_input places a limit on the absolute value of the
+  ! input to the parabolic cylinder function.  When the value of the potential
+  ! input exceeds this parameter (usually due to a very large ratio of ith PDF
+  ! component mean of x to ith PDF component standard deviation of x), the
+  ! variable x is considered to be constant and a different version of the
+  ! equation called.
+  !
+  ! The largest allowable magnitude of the input to the parabolic cylinder
+  ! function (before overflow occurs) is dependent on the order of parabolic
+  ! cylinder function.  However, after a lot of testing, it was determined that
+  ! an absolute value of 375 works well for an order of 12 or less.
+  real, parameter :: &
+    parab_cyl_max_input = 375  ! Largest allowable input to parab. cyl. fnct.
 
   ! "Over-implicit" weighted time step.
   !
