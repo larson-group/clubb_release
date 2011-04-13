@@ -675,7 +675,6 @@ module microphys_driver
       call GRAUPEL_INIT()
       
     case ( "morrison-gettelman" )
-    ! TODO
       iirrainm    = -1
       iirsnowm    = 1
       iiricem     = 2
@@ -687,7 +686,7 @@ module microphys_driver
       iiNgraupelm = -1
       iiNcm       = 4
 
-      hydromet_dim = 5
+      hydromet_dim = 4
       
       allocate( hydromet_list(hydromet_dim) )
       
