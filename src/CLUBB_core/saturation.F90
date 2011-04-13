@@ -480,12 +480,14 @@ module saturation
       ! Using the Flatau, et al. polynomial approximation for SVP over ice
       esat_ice = sat_vapor_press_ice_flatau( T_in_K )
 
-    ! Add new cases after this
 ! ---> h1g, 2010-06-16
     case ( saturation_gfdl )
       ! Using GFDL polynomial approximation for SVP with respect to ice
       esat_ice = sat_vapor_press_ice_gfdl( T_in_K )
 ! <--- h1g, 2010-06-16
+
+      ! Add new cases after this
+
     end select
 
     return

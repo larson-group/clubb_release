@@ -33,7 +33,7 @@ module advance_wp2_wp3_module
                   ! NOTE: This must be the same as the clip_wp2 declared in
                   ! clip_explicit!
 
-contains
+  contains
 
   !=============================================================================
   subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &
@@ -796,6 +796,12 @@ contains
                               wp2 )
 
     endif ! wp2
+
+    ! Here we attempt to clip extreme values of wp2 to prevent a crash of the
+    ! type found on the Climate Process Team ticket #49.  Chris Golaz found that
+    ! instability caused by large wp2 in CLUBB led unrealistic results in AM3.
+    ! -dschanen 11 Apr 2011
+    where ( wp2 > 1000. ) wp2 = 1000.
 
     if ( l_stats_samp ) then
       ! Store updated value for effect of the positive definite scheme
