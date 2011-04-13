@@ -1,0 +1,25 @@
+This directory contains files with statistics that can be output from CLUBB.
+
+Important notes:
+
+Some variables are only non-zero when code options are enabled.  For example, 
+the hydrometeors rrainm, ricem, etc. will only be non-zero when a microphysics
+scheme is enabled.  Many radiation variables (e.g. upwelling short-wave 
+radiative flux) will only be output if BUGSrad is being used.
+
+Attempting to output passive scalar variables (e.g. sclr1m) will only work
+if the model is actually transporting a passive scalar (you will get an error
+otherwise).
+
+Outputting matrix condition numbers can change your results.  This is because
+the subroutines used to obtain those numbers (the LAPACK expert subroutines) 
+perform an additional iterative refinement step after computing the solution
+that isn't done by the standard subroutines.  Note that these variables also
+greatly increase the computational expense of a simulation.  The matrix 
+condition number variables are:
+'wp23_matrix_condt_num', 'rtm_matrix_condt_num', 'thlm_matrix_condt_num', 
+'rtp2_matrix_condt_num', 'thlp2_matrix_condt_num', 'rtpthlp_matrix_condt_num',
+'up2_vp2_matrix_condt_num',  and 'windm_matrix_condt_num'.
+
+Some Fortran compilers don't deal well with comments in namelists.  Avoid 
+commenting out variable names within the stats namelist when possible.
