@@ -708,12 +708,18 @@ module clubb_core
     ! Compute wp3 / wp2 on zm levels
     wp3_on_wp2 = ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
 
+    ! Clip wp3_on_wp2 if it's too large
+    wp3_on_wp2 = min( 1000., wp3_on_wp2 )
+
     ! Smooth wp3 / wp2 in the vertical using interpolation functions.  We use
     ! this in the wp3_ta term since the smoothing results in less noise.
     wp3_on_wp2 = zt2zm( zm2zt( wp3_on_wp2 ) )
 
     ! Compute wp3 / wp2 on zt levels.
     wp3_on_wp2_zt = ( wp3(1:gr%nnzp) / max( wp2_zt(1:gr%nnzp), w_tol_sqd ) )
+
+    ! Clip wp3_on_wp2_zt if it's too large
+    wp3_on_wp2_zt = min( 1000., wp3_on_wp2_zt )
 
     ! Smooth as above
     wp3_on_wp2_zt = zm2zt( zt2zm( wp3_on_wp2_zt ) )
