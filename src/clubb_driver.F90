@@ -1069,7 +1069,9 @@ module clubb_driver
       call finalize_t_dependent_input()
     end if
 
-    call finalize_extend_atm( )
+    if ( trim( rad_scheme ) == "bugsrad" ) then
+      call finalize_extend_atm( )
+    end if
 
     call cleanup_clubb_core( l_implemented )
 
@@ -1125,7 +1127,7 @@ module clubb_driver
       Ncm_initial,     & ! Variable(s)
       micro_scheme
 
-    use parameters_radiation, only: radiation_top ! Variable(s)
+    use parameters_radiation, only: radiation_top, rad_scheme ! Variable(s)
 
     use grid_class, only: gr ! Variable(s)
 
@@ -1256,13 +1258,21 @@ module clubb_driver
                         alt_type, p_in_Pa, subs_type, wm_zt, &   ! Intent(out)
                         rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
 
-    call determine_extend_atmos_bounds( gr%nnzp, gr%zt,            & ! Intent(in)
-                                        gr%zm, gr%invrs_dzm,             & ! Intent(in)
-                                        radiation_top,             & ! Intent(in)
-                                        extend_atmos_bottom_level, & ! Intent(out)
-                                        extend_atmos_top_level,    & ! Intent(out)
-                                        extend_atmos_range_size,   & ! Intent(out)
-                                        lin_int_buffer )             ! Intent(out)
+    if ( trim( rad_scheme ) == "bugsrad" ) then
+      call determine_extend_atmos_bounds( gr%nnzp, gr%zt,            & ! Intent(in)
+                                          gr%zm, gr%invrs_dzm,       & ! Intent(in)
+                                          radiation_top,             & ! Intent(in)
+                                          extend_atmos_bottom_level, & ! Intent(out)
+                                          extend_atmos_top_level,    & ! Intent(out)
+                                          extend_atmos_range_size,   & ! Intent(out)
+                                          lin_int_buffer )             ! Intent(out)
+
+    else
+      extend_atmos_bottom_level = 0
+      extend_atmos_top_level    = 0
+      extend_atmos_range_size   = 0
+      lin_int_buffer            = 0
+    end if
 
 
     ! Covert sounding input to CLUBB compatible input
