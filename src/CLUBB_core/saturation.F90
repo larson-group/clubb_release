@@ -107,6 +107,9 @@ module saturation
     ! where epsilon = R_d / R_v
     sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - esatv ) )
 #endif
+    ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
+    !   and set rsat = ep = 0.622
+    if ( p_in_Pa-esatv < 1.0 ) sat_mixrat_liq = ep
 
     return
   end function sat_mixrat_liq
@@ -159,6 +162,10 @@ module saturation
     ! where epsilon = R_d / R_v
     sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - esatv ) )
 #endif
+
+    ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
+    !   and set rsat = ep = 0.622
+    if ( p_in_Pa-esatv < 1.0 ) sat_mixrat_liq_lookup = ep
 
     return
   end function sat_mixrat_liq_lookup
@@ -318,7 +325,7 @@ module saturation
 !   end do
 
     ! The 8th order polynomial fit.  When running deep 
-    ! convective cases I noted that absolute temperature often dips below
+    ! convective cases I noticed that absolute temperature often dips below
     ! -50 deg_C at higher altitudes, where the 6th order approximation is
     ! not accurate.  -dschanen 20 Nov 2008
     esat = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
@@ -439,8 +446,11 @@ module saturation
     sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
 #endif
 
-    return
+    ! If esat_ice exceeds the air pressure, then assume esat_ice~=0.5*pressure 
+    !   and set rsat = ep = 0.622
+    if ( p_in_Pa-esat_ice < 1.0 ) sat_mixrat_ice = ep
 
+    return
   end function sat_mixrat_ice
 
 !------------------------------------------------------------------------
