@@ -34,6 +34,7 @@ C11c        = 0.500000 ! Degree of Slope of C11 Skewness Function.
 C12         = 1.000000 ! Constant applied to vertical velocity diffusion.
 C13         = 0.100000 ! Not currently used in model.
 C14         = 1.000000 ! Constant applied to up2 and vp2.
+C15         = 0.300000 ! Constant applied to wp3_bp2.
 !c_K         = 0.548000 ! From Duynkerke and Driedonks (1987).
 c_K         = 0.200000 ! Tuned by Michael Falk for new wp2 formulation.
 c_K1        = 0.750000 ! Coefficient of Eddy Diffusion for wp2.

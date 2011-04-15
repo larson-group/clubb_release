@@ -25,7 +25,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 52 ! Total tunable parameters
+    nparams = 53 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -64,34 +64,35 @@ module parameter_indices
     iC11c           = 26, & 
     iC12            = 27, & 
     iC13            = 28, & 
-    iC14            = 29
+    iC14            = 29, &
+    iC15            = 30
 
   integer, parameter, public :: & 
-    ic_K            = 30, & 
-    ic_K1           = 31, & 
-    inu1            = 32, & 
-    ic_K2           = 33, & 
-    inu2            = 34, & 
-    ic_K6           = 35, & 
-    inu6            = 36, & 
-    ic_K8           = 37, & 
-    inu8            = 38, & 
-    ic_K9           = 39, & 
-    inu9            = 40, & 
-    ic_Krrainm      = 41, & 
-    inu_r           = 42, & 
-    ic_Ksqd         = 43, &
-    inu_hd          = 44
+    ic_K            = 31, & 
+    ic_K1           = 32, & 
+    inu1            = 33, & 
+    ic_K2           = 34, & 
+    inu2            = 35, & 
+    ic_K6           = 36, & 
+    inu6            = 37, & 
+    ic_K8           = 38, & 
+    inu8            = 39, & 
+    ic_K9           = 40, & 
+    inu9            = 41, & 
+    ic_Krrainm      = 42, & 
+    inu_r           = 43, & 
+    ic_Ksqd         = 44, &
+    inu_hd          = 45
 
   integer, parameter, public :: & 
-    igamma_coef     = 45, & 
-    igamma_coefb    = 46, & 
-    igamma_coefc    = 47, & 
-    imu             = 48, & 
-    ibeta           = 49, & 
-    ilmin_coef      = 50, & 
-    itaumin         = 51, & 
-    itaumax         = 52
+    igamma_coef     = 46, & 
+    igamma_coefb    = 47, & 
+    igamma_coefc    = 48, & 
+    imu             = 49, & 
+    ibeta           = 50, & 
+    ilmin_coef      = 51, & 
+    itaumin         = 52, & 
+    itaumax         = 53
 
 end module parameter_indices
 !-----------------------------------------------------------------------

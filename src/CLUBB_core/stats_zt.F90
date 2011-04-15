@@ -130,7 +130,8 @@ module stats_zt
         iwp3_ta, & 
         iwp3_tp, & 
         iwp3_ac, & 
-        iwp3_bp, & 
+        iwp3_bp1, & 
+        iwp3_bp2, & 
         iwp3_pr1, & 
         iwp3_pr2, & 
         iwp3_dp1, &
@@ -482,7 +483,8 @@ module stats_zt
     iwp3_ta       = 0
     iwp3_tp       = 0
     iwp3_ac       = 0
-    iwp3_bp       = 0
+    iwp3_bp1      = 0
+    iwp3_bp2      = 0
     iwp3_pr1      = 0
     iwp3_pr2      = 0
     iwp3_dp1      = 0
@@ -1357,10 +1359,16 @@ module stats_zt
              "wp3 budget: wp3 accumulation term [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
-      case ('wp3_bp')
-        iwp3_bp = k
-        call stat_assign( iwp3_bp, "wp3_bp", & 
+      case ('wp3_bp1')
+        iwp3_bp1 = k
+        call stat_assign( iwp3_bp1, "wp3_bp1", & 
              "wp3 budget: wp3 buoyancy production [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
+        k = k + 1
+
+      case ('wp3_bp2')
+        iwp3_bp2 = k
+        call stat_assign( iwp3_bp2, "wp3_bp2", & 
+             "wp3 budget: wp3 2nd buoyancy production term [m^{3} s^{-4}]", "m^{3} s^{-4}", zt )
         k = k + 1
 
       case ('wp3_pr1')

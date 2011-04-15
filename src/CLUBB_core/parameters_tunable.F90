@@ -50,7 +50,8 @@ module parameters_tunable
     C11c,        & ! Degree of Slope of C11 Skewness Function.
     C12,         & ! Constant in w'^3 Crank-Nicholson diffusional term.
     C13,         & ! Not currently used in model.
-    C14            ! Constant for u'^2 and v'^2 terms.
+    C14,         & ! Constant for u'^2 and v'^2 terms.
+    C15            ! Coefficient for the wp3_bp2 term
 
   real, public :: & 
     c_K,         & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
@@ -80,7 +81,7 @@ module parameters_tunable
 !$omp   threadprivate(C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc)
 !$omp   threadprivate(C6thl, C6thlb, C6thlc)
 !$omp   threadprivate(C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12)
-!$omp   threadprivate(C13, C14)
+!$omp   threadprivate(C13, C14, C15)
 !$omp   threadprivate(c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6)
 !$omp   threadprivate(c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd)
 !$omp   threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
@@ -113,7 +114,7 @@ module parameters_tunable
     C2rt, C2thl, C2rtthl, C4, C5, & 
     C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-    C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2,  & 
+    C12, C13, C14, C15, c_K, c_K1, nu1, c_K2, nu2,  & 
     c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
     lmin_coef, taumin, taumax, mu
@@ -137,7 +138,8 @@ module parameters_tunable
        "C6thlc     ", "C7         ", "C7b        ", "C7c        ", & 
        "C8         ", "C8b        ", "C10        ", "C11        ", & 
        "C11b       ", "C11c       ", "C12        ", "C13        ", & 
-       "C14        ", "c_K        ", "c_K1       ", "nu1        ", & 
+       "C14        ", "C15        ", "c_K        ", "c_K1       ", &
+       "nu1        ", &
        "c_K2       ", "nu2        ", "c_K6       ", "nu6        ", & 
        "c_K8       ", "nu8        ", "c_K9       ", "nu9        ", & 
        "c_Krrainm  ", "nu_r       ", "c_Ksqd     ", "nu_hd      ", &
@@ -216,7 +218,7 @@ module parameters_tunable
                             C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                             C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                             C7, C7b, C7c, C8, C8b, C10, & 
-                            C11, C11b, C11c, C12, C13, C14, & 
+                            C11, C11b, C11c, C12, C13, C14, C15, & 
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                             c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -242,14 +244,14 @@ module parameters_tunable
       write(fstderr,*) "beta cannot be < 0 or > 3"
       err_code = clubb_var_out_of_bounds
 
-    elseif ( mu < 0.0 ) then
+    else if ( mu < 0.0 ) then
 
       ! Constraints on entrainment rate, mu.
       write(fstderr,*) "mu = ", mu
       write(fstderr,*) "mu cannot be < 0"
       err_code = clubb_var_out_of_bounds
 
-    elseif ( lmin < 4.0 ) then
+    else if ( lmin < 4.0 ) then
 
       ! Constraints on mixing length
       write(fstderr,*) "lmin = ", lmin
@@ -260,7 +262,7 @@ module parameters_tunable
 
       err_code = clubb_no_error
 
-    endif
+    end if ! A parameter is outside the acceptable range
 
 !    write(*,nml=initvars) ! %% debug
 
@@ -592,6 +594,7 @@ module parameters_tunable
       C12         = 1.0
       C13         = 0.1
       C14         = 1.0
+      C15         = 0.02
       !c_K         = 0.548
       c_K         = 0.2
       c_K1        = 0.75
@@ -626,7 +629,7 @@ module parameters_tunable
 
       close(unit=iunit)
 
-    endif
+    end if
 
     ! Save initial values of background eddy diffusivities in case they need to be
     ! adjusted multiple times in subroutine adj_low_res_nu.  --ldgrant Jul 2010
@@ -637,12 +640,12 @@ module parameters_tunable
     nu9_init   = nu9
     nu_r_init  = nu_r
     nu_hd_init = nu_hd
-
+ 
     ! Put the variables in the output array
     call pack_parameters( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
-                          C11, C11b, C11c, C12, C13, C14, & 
+                          C11, C11b, C11c, C12, C13, C14, C15, & 
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -709,7 +712,7 @@ module parameters_tunable
       C2rt, C2thl, C2rtthl, C4, C5, & 
       C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-      C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2,  & 
+      C12, C13, C14, C15, c_K, c_K1, nu1, c_K2, nu2,  & 
       c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, taumin, taumax, mu
@@ -728,7 +731,7 @@ module parameters_tunable
     call pack_parameters( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
-                          C11, C11b, C11c, C12, C13, C14, & 
+                          C11, C11b, C11c, C12, C13, C14, C15, & 
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -769,7 +772,7 @@ module parameters_tunable
              ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, &
+               C11, C11b, C11c, C12, C13, C14, C15, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
                c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, &
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
@@ -813,7 +816,8 @@ module parameters_tunable
       iC11c, & 
       iC12, & 
       iC13, & 
-      iC14
+      iC14, &
+      iC15
 
     use parameter_indices, only: & 
       ic_K,  & 
@@ -848,7 +852,7 @@ module parameters_tunable
       C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
       C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
-      C11, C11b, C11c, C12, C13, C14, & 
+      C11, C11b, C11c, C12, C13, C14, C15, & 
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, taumin, taumax
@@ -885,6 +889,7 @@ module parameters_tunable
     params(iC12)     = C12
     params(iC13)     = C13
     params(iC14)     = C14
+    params(iC15)     = C15
 
     params(ic_K)       = c_K
     params(ic_K1)      = c_K1
@@ -924,7 +929,7 @@ module parameters_tunable
                C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
                C7, C7b, C7c, C8, C8b, C10, & 
-               C11, C11b, C11c, C12, C13, C14, & 
+               C11, C11b, C11c, C12, C13, C14, C15, & 
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
                c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -968,7 +973,8 @@ module parameters_tunable
       iC11c, & 
       iC12, & 
       iC13, & 
-      iC14
+      iC14, &
+      iC15
 
     use parameter_indices, only: & 
       ic_K,  & 
@@ -1006,7 +1012,7 @@ module parameters_tunable
       C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
       C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
-      C11, C11b, C11c, C12, C13, C14, & 
+      C11, C11b, C11c, C12, C13, C14, C15, & 
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
       c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -1041,6 +1047,7 @@ module parameters_tunable
     C12     = params(iC12)
     C13     = params(iC13)
     C14     = params(iC14)
+    C15     = params(iC15)
 
     c_K       = params(ic_K)
     c_K1      = params(ic_K1)
@@ -1092,7 +1099,7 @@ module parameters_tunable
     call pack_parameters( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
-                          C11, C11b, C11c, C12, C13, C14, & 
+                          C11, C11b, C11c, C12, C13, C14, C15, & 
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -1157,6 +1164,7 @@ module parameters_tunable
     C12         = PosInf
     C13         = PosInf
     C14         = PosInf
+    C15         = PosInf
     c_K         = PosInf
     c_K1        = PosInf
     nu1         = PosInf

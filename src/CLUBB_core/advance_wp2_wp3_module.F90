@@ -25,7 +25,8 @@ module advance_wp2_wp3_module
              wp3_term_pr1_lhs, & 
              wp3_terms_ta_tp_rhs, & 
              wp3_terms_bp_pr2_rhs, & 
-             wp3_term_pr1_rhs
+             wp3_term_pr1_rhs, &
+             wp3_term_bp2_rhs
 
   ! Private named constants to avoid string comparisons
   integer, parameter, private :: &
@@ -297,7 +298,7 @@ module advance_wp2_wp3_module
     call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! Intent(in)
                      a3, a3_zt, wp3_on_wp2, &  ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,    & ! Intent(in)
-                     up2, vp2, Kw1, Kw8, Skw_zt, tau_zm, tauw3t,    & ! Intent(in)
+                     up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt, tau_zm, tauw3t,    & ! Intent(in)
                      C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                      invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm,   & ! Intent(in)
                      thv_ds_zt, nsub, nsup,                         & ! Intent(in)
@@ -349,7 +350,7 @@ module advance_wp2_wp3_module
   subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &
                          a3, a3_zt, wp3_on_wp2, &
                          wpthvp, wp2thvp, um, vm, upwp, vpwp, &
-                         up2, vp2, Kw1, Kw8, Skw_zt, tau1m, tauw3t, &
+                         up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt, tau1m, tauw3t, &
                          C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &
                          invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
                          thv_ds_zt, nsub, nsup, &
@@ -502,6 +503,7 @@ module advance_wp2_wp3_module
       vp2,             & ! v'^2 (momentum levels)                    [m^2/s^2]
       Kw1,             & ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
       Kw8,             & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
+      Kh_zt,           & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
       Skw_zt,          & ! Skewness of w on thermodynamic levels     [-]
       tau1m,           & ! Time-scale tau on momentum levels         [s]
       tauw3t,          & ! Time-scale tau on thermodynamic levels    [s]
@@ -577,7 +579,7 @@ module advance_wp2_wp3_module
     ! Build the right-hand side vector.
     call wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, &
                    a3, a3_zt, wp3_on_wp2, wpthvp, wp2thvp, um, vm,  & 
-                   upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
+                   upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt,  & 
                    Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                    C11_Skw_fnc, rho_ds_zm, invrs_rho_ds_zt, &
                    thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
@@ -1553,7 +1555,7 @@ module advance_wp2_wp3_module
                                       gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
       endif
 
-      if (l_stats_samp) then
+      if ( l_stats_samp ) then
 
         ! Statistics: implicit contributions for wp3.
 
@@ -2494,7 +2496,7 @@ module advance_wp2_wp3_module
   !=============================================================================
   subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, &
                        a3, a3_zt, wp3_on_wp2, wpthvp, wp2thvp, um, vm,  & 
-                       upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
+                       upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt, & 
                        Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, invrs_rho_ds_zt, &
                        thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
@@ -2517,6 +2519,7 @@ module advance_wp2_wp3_module
         C8,  & 
         C8b, & 
         C12, & 
+        C15, & 
         nu1, & 
         nu8
 
@@ -2539,7 +2542,7 @@ module advance_wp2_wp3_module
     use stats_variables, only:  & 
         l_stats_samp, iwp2_dp1, iwp2_dp2, zm, iwp2_bp,   & ! Variable(s)
         iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, zt, & 
-        iwp3_tp, iwp3_bp, iwp3_pr2, iwp3_pr1, iwp3_dp1
+        iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_bp2
 
     use stats_type, only:  &
         stat_update_var_pt,  & ! Procedure(s)
@@ -2548,6 +2551,10 @@ module advance_wp2_wp3_module
 
 
     implicit none
+
+    ! Constant parameters
+    logical, parameter :: &
+      l_wp3_2nd_buoyancy_term = .true.
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
@@ -2572,6 +2579,7 @@ module advance_wp2_wp3_module
       vp2,             & ! v'^2 (momentum levels)                    [m^2/s^2]
       Kw1,             & ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
       Kw8,             & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
+      Kh_zt,           & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
       Skw_zt,          & ! Skewness of w on thermodynamic levels     [-]
       tau1m,           & ! Time-scale tau on momentum levels         [s]
       tauw3t,          & ! Time-scale tau on thermodynamic levels    [s]
@@ -2603,8 +2611,8 @@ module advance_wp2_wp3_module
     ! the RHS in order to balance the weight.
     real, dimension(5) :: lhs_fnc_output
 
-    ! For use in Crank-Nicholson eddy diffusion.
-    real, dimension(3) :: rhs_diff
+    real, dimension(3) :: &
+      rhs_diff ! For use in Crank-Nicholson eddy diffusion.
 
 
     ! Initialize the right-hand side vector to 0.
@@ -2864,7 +2872,14 @@ module advance_wp2_wp3_module
                        - rhs_diff(1) * wp3(kp1)
       endif
 
-      if (l_stats_samp) then
+      if ( l_wp3_2nd_buoyancy_term ) then
+        ! RHS 2nd bouyancy term
+        rhs(k_wp3) = rhs(k_wp3) &
+                   + wp3_term_bp2_rhs( C15, Kh_zt(k), wpthvp(k), &
+                                       wpthvp(km1), thv_ds_zt(k), gr%invrs_dzt(k) )
+      end if
+
+      if ( l_stats_samp ) then
 
         ! Statistics: explicit contributions for wp3.
 
@@ -2946,7 +2961,7 @@ module advance_wp2_wp3_module
         ! w'^3 term bp is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
         !        C_11 skewness function input to function wp3_terms_bp_pr2_rhs.
-        call stat_update_var_pt( iwp3_bp, k, & 
+        call stat_update_var_pt( iwp3_bp1, k, & 
           wp3_terms_bp_pr2_rhs( 0.0, thv_ds_zt(k), wp2thvp(k) ), zt )
 
         ! w'^3 term pr2 has both implicit and explicit components; call
@@ -2988,6 +3003,11 @@ module advance_wp2_wp3_module
             + rhs_diff(2) * wp3(k) & 
             + rhs_diff(1) * wp3(kp1), zt )
         endif
+                  
+        if ( l_wp3_2nd_buoyancy_term ) then
+          call stat_update_var_pt( iwp3_bp2, k, wp3_term_bp2_rhs( C15, Kh_zt(k), &
+                                   wpthvp(k), wpthvp(km1), thv_ds_zt(k), gr%invrs_dzt(k) ), zt )
+        end if
 
       endif
 
@@ -4184,7 +4204,7 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: & ! Variable(s) 
+    use constants_clubb, only: & ! Constant(s) 
         grav ! Gravitational acceleration [m/s^2]
 
     implicit none
@@ -4203,6 +4223,47 @@ module advance_wp2_wp3_module
 
     return
   end function wp3_terms_bp_pr2_rhs
+
+  !=============================================================================
+  pure function wp3_term_bp2_rhs( C15, Kh_zt, wpthvp, wpthvp_m1, thv_ds_zt, invrs_dzt ) & 
+    result( rhs )
+
+    ! Description:
+    !   Experimental term from CLUBB TRAC ticket #411. The derivative here is of
+    !   the form:
+    !   - C_15 * Kh * ∂{ grav / thv_ds * [w'th_v'(k) - w'th_v'(k-1)] }/∂z.
+    !
+    !   This does not appear in Andre et al. 1976 or Bougeault et al. 1981, but
+    !   is based on experiments in matching LES data.
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: & ! Constant(s) 
+        grav ! Gravitational acceleration [m/s^2]
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      C15,       & ! Model parameter C15                 [-]
+      Kh_zt,     & ! Eddy-diffusivity on moment. levels  [m^2/s]
+      wpthvp,    & ! w'th_v'(k)                          [K m/s]
+      wpthvp_m1, & ! w'th_v'(k-1)                        [K m/s]
+      thv_ds_zt, & ! Dry, base-state theta_v at thermo. lev. (k) [K]
+      invrs_dzt    ! Inverse of grid spacing (k)         [1/m]
+
+    ! Return Variable
+    real :: rhs
+
+    ! ---- Begin Code ----
+
+    rhs =  - C15 * Kh_zt * invrs_dzt * grav / thv_ds_zt * ( wpthvp - wpthvp_m1 )
+
+    return
+  end function wp3_term_bp2_rhs
+
 
   !=============================================================================
   pure function wp3_term_pr1_rhs( C8, C8b, tauw3t, Skw_zt, wp3 ) & 
