@@ -3145,7 +3145,7 @@ module clubb_driver
 
     case ( "astex_a209" )
       l_compute_momentum_flux = .true.
-      call astex_a209_sfclyr( time_current, rho_zm(1), ubar, rtm(2), &   ! Intent(in)
+      call astex_a209_sfclyr( time_current, ubar, rtm(2), &   ! Intent(in)
                           thlm(2), gr%zt(2), exner(1), p_sfc, &! Intent(in) 
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )   ! Intent(out)
     case ( "nov11_altocu" )
