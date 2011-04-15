@@ -170,7 +170,13 @@ user@computer ~/clubb/postprocessing/plotgen$
 ./plotgen.pl ~/clubb/output ~/plots
 
 The above line will use plotgen to create plots from the simulation output
-in ~/clubb/output, and place the resulting plots in the ~/plots directory.
+in ~/clubb/output, and place the resulting plots in the ~/plots directory.  
+If you want to overplot two simulations, move each set of output files to 
+its own directory, e.g. ~/clubb/output/sim1 and ~/clubb/output/sim2, and
+type the command
+
+user@computer ~/clubb/postprocessing/plotgen$
+./plotgen.pl ~/clubb/output/sim1 ~/clubb/output/sim2 ~/plots
 
 To view the plots, use a web browser to view index.html in the plots directory.
 user@computer ~$ firefox ~/plots/index.html
