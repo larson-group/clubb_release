@@ -38,6 +38,17 @@ module mg_micro_driver_module
     use cldwat2m_micro, only: &
       mmicro_pcond ! Procedure
       
+    use wv_saturation, only: &
+      gestbl ! Procedure
+      
+    use physconst, only: &
+      cpair,  &
+      rh2o,   &
+      tmelt,  &
+      latice, &
+      latvap, &
+      epsil
+      
     use ppgrid, only: &
       init_ppgrid ! Procedure
       
@@ -259,6 +270,9 @@ module mg_micro_driver_module
     
     ! Initialize grid variables. These are imported in the MG code.
     call init_ppgrid()
+    
+    call gestbl(173.16, 375.16, 20.00, .true., epsil, &
+                 latvap, latice, rh2o, cpair, tmelt)
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond &
@@ -297,13 +311,7 @@ module mg_micro_driver_module
       hydromet_mc(2:nnzp, i) = hydromet_mc_flip(nnzp-1:1:-1, i)
     end do
     
-    ! Update hydrometeor tendencies
-    ! This done because the hydromet_mc arrays that are produced by
-    ! mmicro_pcond don't include the clipping term.
-    do i = 1, hydromet_dim, 1
-      hydromet_mc(:,i) = ( hydromet_tmp(:,i) - hydromet(:,i)  ) / real( dt )
-    end do
-    
+
     ! Update thetal based on absolute temperature
     thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt )
     

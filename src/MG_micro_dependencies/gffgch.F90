@@ -3,7 +3,8 @@ subroutine gffgch(t       ,es      ,itype   )
     !
     !  Description: The original subroutine computes saturation vapor pressure over
     !               water and/or ice using Goff & Gratch (1946) relationships.
-    !               In our case, we don't use this, so this subroutine does nothing.
+    !               In our case, we don't directly use this, so this subroutine does
+    !               nothing.
     !
     !---------------------------------------------------------------------------------
     implicit none
@@ -16,10 +17,6 @@ subroutine gffgch(t       ,es      ,itype   )
     if(.false.) then
       es = 0
     end if
-    
-    ! This subroutine should never be called. It is only here to allow MG to compile correctly.
-    write(*,*) "WARNING: gffgch dummy file called. This subroutine should" &
-      // " never be called. It is only present to allow MG to compile correctly."
     
     return
     
