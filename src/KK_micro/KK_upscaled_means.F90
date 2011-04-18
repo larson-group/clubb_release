@@ -34,7 +34,7 @@ module KK_upscaled_means
     ! Input Variables
     real, intent(in) :: &
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
-      mu_s_2,        & ! Mean of x (2nd PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
       mu_rr_n,       & ! Mean of ln rr (both components)                     [-]
       mu_Nr_n,       & ! Mean of ln Nr (both components)                     [-]
       sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
@@ -50,7 +50,7 @@ module KK_upscaled_means
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    double precision :: &
+    real :: &
       KK_evap_upscaled_mean  ! Mean of KK evaporation tendency       [(kg/kg)/s]
 
     ! Constant Parameters
@@ -108,7 +108,7 @@ module KK_upscaled_means
       mixt_frac       ! Mixture fraction                                    [-]
 
     ! Return Variable
-    double precision :: &
+    real :: &
       KK_auto_upscaled_mean  ! Mean of KK autoconversion tendency   [(kg/kg)/s]
 
     ! Constant Parameters
@@ -161,7 +161,7 @@ module KK_upscaled_means
       mixt_frac       ! Mixture fraction                                    [-]
 
     ! Return Variable
-    double precision :: &
+    real :: &
       KK_accr_upscaled_mean  ! Mean of KK accretion tendency        [(kg/kg)/s]
 
     ! Constant Parameters
@@ -209,7 +209,7 @@ module KK_upscaled_means
       KK_mvr_coef    ! KK mean volume radius coefficient                   [m]
 
     ! Return Variable
-    double precision :: &
+    real :: &
       KK_mvr_upscaled_mean  ! Mean of KK rain drop mean volume radius      [m]
 
     ! Constant Parameters
@@ -280,7 +280,7 @@ module KK_upscaled_means
       gamma_exp_in     ! Exponent gamma, corresponding to Nr                [-]
 
     ! Return Variable
-    double precision :: &
+    real :: &
       trivar_NLL_mean_eq
 
     ! Local Variables
@@ -306,30 +306,30 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1   = mu_s_i
-    mu_x2_n = mu_rr_n ! The same for both PDF components.
-    mu_x3_n = mu_Nr_n ! The same for both PDF components.
+    mu_x1   = dble( mu_s_i )
+    mu_x2_n = dble( mu_rr_n ) ! The same for both PDF components.
+    mu_x3_n = dble( mu_Nr_n ) ! The same for both PDF components.
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = sigma_s_i
-    sigma_x2_n = sigma_rr_n ! The same for both PDF components.
-    sigma_x3_n = sigma_Nr_n ! The same for both PDF components.
+    sigma_x1   = dble( sigma_s_i )
+    sigma_x2_n = dble( sigma_rr_n ) ! The same for both PDF components.
+    sigma_x3_n = dble( sigma_Nr_n ) ! The same for both PDF components.
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = corr_srr_i_n
-    rho_x1x3_n = corr_sNr_i_n
-    rho_x2x3_n = corr_rrNr_n  ! The same for both PDF components.
+    rho_x1x2_n = dble( corr_srr_i_n )
+    rho_x1x3_n = dble( corr_sNr_i_n )
+    rho_x2x3_n = dble( corr_rrNr_n )  ! The same for both PDF components.
 
     ! Exponents.
-    alpha_exp = alpha_exp_in
-    beta_exp  = beta_exp_in
-    gamma_exp = gamma_exp_in
+    alpha_exp = dble( alpha_exp_in )
+    beta_exp  = dble( beta_exp_in )
+    gamma_exp = dble( gamma_exp_in )
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = s_mellor_tol
+    x1_tol = dble( s_mellor_tol )
 
     ! Determine the value of the parabolic cylinder function input value, s_cc.
     ! The value s_cc is being fed into the parabolic cylinder function.  When
@@ -356,9 +356,10 @@ module KK_upscaled_means
 
           ! There is all clear air in the ith component ( s <= 0 everywhere ).
           trivar_NLL_mean_eq  &
-          = trivar_NLL_mean_const_x1( mu_x1, mu_x2_n, mu_x3_n, &
+          = real( &
+            trivar_NLL_mean_const_x1( mu_x1, mu_x2_n, mu_x3_n, &
                                       sigma_x2_n, sigma_x3_n, rho_x2x3_n, &
-                                      alpha_exp, beta_exp, gamma_exp )
+                                      alpha_exp, beta_exp, gamma_exp ) )
 
 
        else  ! mu_x1 > 0
@@ -374,10 +375,10 @@ module KK_upscaled_means
 
        ! All fields vary in the ith PDF component.
        trivar_NLL_mean_eq  &
-       = trivar_NLL_mean( mu_x1, mu_x2_n, mu_x3_n, &
-                          sigma_x1, sigma_x2_n, sigma_x3_n, &
-                          rho_x1x2_n, rho_x1x3_n, rho_x2x3_n, &
-                          alpha_exp, beta_exp, gamma_exp )
+       = real( trivar_NLL_mean( mu_x1, mu_x2_n, mu_x3_n, &
+                                sigma_x1, sigma_x2_n, sigma_x3_n, &
+                                rho_x1x2_n, rho_x1x3_n, rho_x2x3_n, &
+                                alpha_exp, beta_exp, gamma_exp ) )
 
 
     endif
@@ -432,7 +433,7 @@ module KK_upscaled_means
       beta_exp_in      ! Exponent beta, corresponding to y                  [-]
 
     ! Return Variable
-    double precision :: &
+    real :: &
       bivar_NL_mean_eq
 
     ! Local Variables
@@ -453,27 +454,27 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1   = mu_s_i
-    mu_x2_n = mu_y_n ! y is N_c (autoconversion) or r_r (accretion).
-                     ! The same for both PDF components.
+    mu_x1   = dble( mu_s_i )
+    mu_x2_n = dble( mu_y_n ) ! y is N_c (autoconversion) or r_r (accretion).
+                             ! The same for both PDF components.
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = sigma_s_i
-    sigma_x2_n = sigma_y_n ! y is N_c (autoconversion) or r_r (accretion).
-                           ! The same for both PDF components.
+    sigma_x1   = dble( sigma_s_i )
+    sigma_x2_n = dble( sigma_y_n ) ! y is N_c (auto.) or r_r (accr.).
+                                   ! The same for both PDF components.
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = corr_sy_i_n  ! y is N_c (autoconversion) or r_r (accretion).
+    rho_x1x2_n = dble( corr_sy_i_n ) ! y is N_c (auto.) or r_r (accr.).
 
     ! Exponents.
-    alpha_exp = alpha_exp_in
-    beta_exp  = beta_exp_in
+    alpha_exp = dble( alpha_exp_in )
+    beta_exp  = dble( beta_exp_in )
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = s_mellor_tol
+    x1_tol = dble( s_mellor_tol )
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When
@@ -498,8 +499,8 @@ module KK_upscaled_means
 
           ! There is all cloudy air in the ith component ( s > 0 everywhere ).
           bivar_NL_mean_eq  &
-          = bivar_NL_mean_const_x1( mu_x1, mu_x2_n, sigma_x2_n, &
-                                    alpha_exp, beta_exp )
+          = real( bivar_NL_mean_const_x1( mu_x1, mu_x2_n, sigma_x2_n, &
+                                          alpha_exp, beta_exp ) )
 
 
        else  ! mu_x1 <= 0
@@ -515,8 +516,8 @@ module KK_upscaled_means
 
        ! All fields vary in the ith PDF component.
        bivar_NL_mean_eq  &
-       = bivar_NL_mean( mu_x1, mu_x2_n, sigma_x1, sigma_x2_n, &
-                        rho_x1x2_n, alpha_exp, beta_exp )
+       = real( bivar_NL_mean( mu_x1, mu_x2_n, sigma_x1, sigma_x2_n, &
+                              rho_x1x2_n, alpha_exp, beta_exp ) )
 
 
     endif
@@ -561,7 +562,7 @@ module KK_upscaled_means
       beta_exp_in      ! Exponent beta, corresponding to Nr                 [-]
 
     ! Return Variable
-    double precision :: &
+    real :: &
       bivar_LL_mean_eq
 
     ! Local Variables
@@ -578,25 +579,25 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component.
-    mu_x1_n = mu_rr_n  ! The same for both PDF components.
-    mu_x2_n = mu_Nr_n  ! The same for both PDF components.
+    mu_x1_n = dble( mu_rr_n ) ! The same for both PDF components.
+    mu_x2_n = dble( mu_Nr_n ) ! The same for both PDF components.
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1_n = sigma_rr_n  ! The same for both PDF components.
-    sigma_x2_n = sigma_Nr_n  ! The same for both PDF components.
+    sigma_x1_n = dble( sigma_rr_n ) ! The same for both PDF components.
+    sigma_x2_n = dble( sigma_Nr_n ) ! The same for both PDF components.
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = corr_rrNr_n  ! The same for both PDF components.
+    rho_x1x2_n = dble( corr_rrNr_n ) ! The same for both PDF components.
 
     ! Exponents.
-    alpha_exp = alpha_exp_in
-    beta_exp  = beta_exp_in
+    alpha_exp = dble( alpha_exp_in )
+    beta_exp  = dble( beta_exp_in )
 
 
     ! Calculate the mean of the bivariate lognormal equation.
     bivar_LL_mean_eq  &
-    = bivar_LL_mean( mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, &
-                     rho_x1x2_n, alpha_exp, beta_exp )
+    = real( bivar_LL_mean( mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, &
+                           rho_x1x2_n, alpha_exp, beta_exp ) )
 
 
     return

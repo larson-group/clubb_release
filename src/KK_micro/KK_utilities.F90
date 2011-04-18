@@ -549,8 +549,8 @@ module KK_utilities
 
     ! Input Variables
     real, intent(in) :: &
-      T_in_K,  & ! Mean temperature  [K]
-      p_in_Pa    ! Pressure          [Pa]
+      T_in_K,  & ! Temperature  [K]
+      p_in_Pa    ! Pressure     [Pa]
 
     ! Return Variable
     real :: &
