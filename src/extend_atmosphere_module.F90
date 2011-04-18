@@ -433,17 +433,43 @@ module extend_atmosphere_module
     !    none
     !
     !-----------------------------------------------------------------------------------------------
+
     implicit none
 
-    ! -- Begin Code --
+    ! External 
+    intrinsic :: allocated
 
-    deallocate( extend_alt )
-    deallocate( extend_T_in_K )
-    deallocate( extend_sp_hmdty )
-    deallocate( extend_pinmb )
-    deallocate( extend_o3l )
-    deallocate( complete_alt )
-    deallocate( complete_momentum )
+    ! ---- Begin Code ----
 
+    if ( allocated( extend_alt ) ) then
+      deallocate( extend_alt )
+    end if
+
+    if ( allocated( extend_T_in_K ) ) then
+      deallocate( extend_T_in_K )
+    end if
+
+    if ( allocated( extend_sp_hmdty ) ) then
+      deallocate( extend_sp_hmdty )
+    end if
+
+    if ( allocated( extend_pinmb ) ) then
+      deallocate( extend_pinmb )
+    end if
+
+    if ( allocated( extend_o3l ) ) then
+      deallocate( extend_o3l )
+    end if
+
+    if ( allocated( complete_alt ) ) then
+      deallocate( complete_alt )
+    end if
+
+    if ( allocated( complete_momentum ) ) then
+      deallocate( complete_momentum )
+    end if
+
+    return
   end subroutine finalize_extend_atm
+
 end module extend_atmosphere_module

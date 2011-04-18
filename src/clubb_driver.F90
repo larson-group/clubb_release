@@ -1069,9 +1069,7 @@ module clubb_driver
       call finalize_t_dependent_input()
     end if
 
-    if ( trim( rad_scheme ) == "bugsrad" ) then
-      call finalize_extend_atm( )
-    end if
+    call finalize_extend_atm( )
 
     call cleanup_clubb_core( l_implemented )
 
