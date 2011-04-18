@@ -10,7 +10,9 @@ module generate_lh_sample_module
     truncate_gaus_mixt, &
     st_2_rtthl, log_sqd_normalized, choose_permuted_random, &
     set_min_varnce_and_mean, construct_gaus_LN_element, &
-    construct_LN_LN_element
+    construct_LN_LN_element, corr_LN_to_cov_gaus, &
+    corr_gaus_LN_to_cov_gaus, mu_LN_to_mu_gaus, &
+    sigma_LN_to_sigma_gaus
 
   logical, public :: &
     l_fixed_corr_initialized = .false.
@@ -1772,10 +1774,6 @@ module generate_lh_sample_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use KK_microphys_module, only: &
-      corr_gaus_LN_to_cov_gaus, &
-      sigma_LN_to_sigma_gaus
-
     implicit none
 
     real, intent(in) :: &
@@ -1805,10 +1803,6 @@ module generate_lh_sample_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-
-    use KK_microphys_module, only: &
-      corr_LN_to_cov_gaus, & ! Procedure(s)
-      sigma_LN_to_sigma_gaus
 
     implicit none
 
@@ -2200,5 +2194,122 @@ module generate_lh_sample_module
     return
   end subroutine add_mu_element_LN
 
-end module generate_lh_sample_module
+  !-----------------------------------------------------------------------------
+  pure function corr_LN_to_cov_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus ) &
+    result( cov_xy_gaus )
+  ! Description:
 
+  ! References:
+
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: sqrt, exp, log
+
+    ! Input Variables
+    real, intent(in) :: &
+      corr_xy,      & ! Correlation of x and y    [-]
+      sigma_x_gaus, & ! Normalized std dev of first term 'x' [-]
+      sigma_y_gaus    ! Normalized std dev second term 'y'   [-]
+
+    real :: cov_xy_gaus ! Covariance for a gaussian dist. [-]
+
+    ! ---- Begin Code ----
+
+    cov_xy_gaus = log( 1.0 + corr_xy * sqrt( exp( sigma_x_gaus**2 ) - 1.0 ) &
+                                     * sqrt( exp( sigma_y_gaus**2 ) - 1.0 ) &
+                     )
+
+    return
+  end function corr_LN_to_cov_gaus
+
+  !-----------------------------------------------------------------------------
+  pure function corr_gaus_LN_to_cov_gaus( corr_sy, sigma_s, sigma_y_gaus ) &
+    result( cov_sy_gaus )
+  ! Description:
+
+  ! References:
+
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: sqrt, exp
+
+    ! Input Variables
+    real, intent(in) :: &
+      corr_sy,     & ! Correlation of s and y    [-]
+      sigma_s,     & ! Normalized std dev of first term (usually Gaussian 's') [units vary]
+      sigma_y_gaus   ! Normalized std dev second term 'y'   [-]
+
+    real :: cov_sy_gaus ! Covariance for a gaussian dist. [units vary]
+
+    ! ---- Begin Code ----
+
+    cov_sy_gaus = corr_sy * sigma_s * sqrt( exp( sigma_y_gaus**2 ) - 1.0 )
+
+    return
+  end function corr_gaus_LN_to_cov_gaus
+
+  !-----------------------------------------------------------------------------
+  pure function mu_LN_to_mu_gaus( mu, sigma2_on_mu2 ) &
+    result( mu_gaus )
+
+  ! Description:
+  !
+  ! References:
+  ! 
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: log
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu, &         ! Mean term 'x'                     [-]
+      sigma2_on_mu2 ! Variance of 'x' over mean 'x'^2   [-]
+
+    real :: mu_gaus ! Mean field converted to gaussian  [-]
+
+    ! ---- Begin Code ----
+
+    mu_gaus = log( mu * ( 1.0 + ( sigma2_on_mu2 ) )**(-0.5) )
+
+    return
+  end function mu_LN_to_mu_gaus
+
+  !-----------------------------------------------------------------------------
+  pure function sigma_LN_to_sigma_gaus( sigma2_on_mu2 ) result( sigma_gaus )
+
+  ! Description:
+  !
+  ! References:
+  ! 
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: sqrt, log
+
+    ! Input Variables
+    real, intent(in) :: &
+      sigma2_on_mu2 ! Variance of 'x' over mean 'x'^2   [-]
+
+    real :: sigma_gaus ! Sigma converted to gaussian dist. [-]
+
+    ! ---- Begin Code ----
+
+    sigma_gaus = sqrt( log( 1.0 + ( sigma2_on_mu2 ) ) )
+
+    return
+  end function sigma_LN_to_sigma_gaus
+
+!-----------------------------------------------------------------------------
+
+end module generate_lh_sample_module
