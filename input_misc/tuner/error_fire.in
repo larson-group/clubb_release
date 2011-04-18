@@ -7,9 +7,9 @@ l_results_file      = .true.,
 l_stdout_on_invalid = .true.,
 t_variables       = "cloud_frac", "cf", "rcm", "qcm",
 weight_var_nl     = 0.5, 0.5,
-anneal_temp       = 50.,
+anneal_temp       = 40.,
 anneal_iter       = 100,
-tune_type         = 0
+tune_type         = 2
 
 /
 
@@ -62,6 +62,8 @@ C11c        = 0.
 C12         = 0.
 C13         = 0.
 C14         = 0.
+C15         = 0.
+C15         = 0.
 c_K         = 0.
 c_K1        = 0.
 nu1         = 0.
