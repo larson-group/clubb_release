@@ -2,6 +2,8 @@
 !===============================================================================
 module KK_utilities
 
+  implicit none
+
   private ! Set default scope to private
 
   public :: mean_L2N,      &

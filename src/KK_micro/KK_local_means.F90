@@ -2,6 +2,8 @@
 !===============================================================================
 module KK_local_means
 
+  implicit none
+
   private
 
   public :: KK_evap_local_mean, &

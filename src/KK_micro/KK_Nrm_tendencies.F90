@@ -2,6 +2,8 @@
 !===============================================================================
 module KK_Nrm_tendencies
 
+  implicit none
+
   private
 
   public :: KK_Nrm_evap, &

@@ -2,6 +2,8 @@
 !===============================================================================
 module PDF_integrals_covariances
 
+  implicit none
+
   private
 
   public :: quadrivar_NNLL_cov, &

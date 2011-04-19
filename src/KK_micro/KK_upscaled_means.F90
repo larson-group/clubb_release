@@ -2,6 +2,8 @@
 !===============================================================================
 module KK_upscaled_means
 
+  implicit none
+
   private
 
   public :: KK_evap_upscaled_mean, &

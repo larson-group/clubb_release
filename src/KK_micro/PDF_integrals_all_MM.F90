@@ -2,6 +2,8 @@
 !===============================================================================
 module PDF_integrals_all_mixed_moments
 
+  implicit none
+
   private
 
   public :: quadrivar_NNLL_MM, &

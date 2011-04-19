@@ -2,6 +2,8 @@
 !===============================================================================
 module PDF_integrals_means
 
+  implicit none
+
   private
 
   public :: trivar_NLL_mean, &
