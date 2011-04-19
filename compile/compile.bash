@@ -218,6 +218,7 @@ all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/CLUBB_core/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/*.F90
 	$CLUBBStandardsCheck_unreleased_cases
+	perl ../utilities/CLUBBStandardsCheck.pl ../src/KK_micro/*.F90
 	$CLUBBStandardsCheck_latin_hypercube
 
 libclubb_param.a:
