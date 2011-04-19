@@ -898,7 +898,7 @@ module microphys_driver
         zt2zm
 
     use KK_microphys_module, only: & 
-      KK_microphys ! Procedure(s)
+        KK_micro_driver  ! Procedure(s)
 
     use morrison_micro_driver_module, only: &
       morrison_micro_driver
@@ -1372,7 +1372,7 @@ module microphys_driver
                corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
                hydromet_mc, hydromet_vel_zt, rcm_mc, & ! In/Out
                rvm_mc, thlm_mc, & ! In/Out
-               KK_microphys ) ! Procedure
+               KK_micro_driver ) ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
 #endif
@@ -1407,12 +1407,18 @@ module microphys_driver
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
 
-        call KK_microphys & 
-             ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, .false., &
-               thlm, p_in_Pa, exner, rho, pdf_params, &
-               wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
-               hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
-      end if
+!         call KK_micro_driver( real( dt ), l_local_kk, thlm, rho, p_in_Pa, &
+!                               exner, s_mellor, rcm, hydromet, &
+!                               pdf_params, hydromet_mc, hydromet_vel_zt, &
+!                               rcm_mc, rvm_mc, thlm_mc )
+         call KK_micro_driver &
+                 ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, &
+                   .false., thlm, p_in_Pa, exner, rho, &
+                   pdf_params, wm_zt, wtmp, delta_zt, rcm, s_mellor, &
+                   rtm-rcm, hydromet, hydromet_mc, hydromet_vel_zt, &
+                   rcm_mc, rvm_mc, thlm_mc )
+
+      endif
 
       if ( l_stats_samp ) then
         ! Sedimentation velocity for rrainm
