@@ -37,6 +37,9 @@ module PDF_integrals_covariances
     use KK_utilities, only:  &
         Dv_fnc  ! Procedure(s)
 
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
+
     implicit none
 
     ! Input Variables
@@ -132,6 +135,9 @@ module PDF_integrals_covariances
 
     use KK_utilities, only:  &
         Dv_fnc  ! Procedure(s)
+
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
 
     implicit none
 
@@ -321,6 +327,9 @@ module PDF_integrals_covariances
     use KK_utilities, only:  &
         Dv_fnc  ! Procedure(s)
 
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
+
     implicit none
 
     ! Input Variables
@@ -396,6 +405,9 @@ module PDF_integrals_covariances
 
     use KK_utilities, only:  &
         Dv_fnc  ! Procedure(s)
+
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
 
     implicit none
 

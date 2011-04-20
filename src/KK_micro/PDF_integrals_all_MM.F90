@@ -38,6 +38,9 @@ module PDF_integrals_all_mixed_moments
         factorial, & ! Procedure(s)
         Dv_fnc
 
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
+
     implicit none
 
     ! Input Variables
@@ -159,6 +162,9 @@ module PDF_integrals_all_mixed_moments
     use KK_utilities, only:  &
         factorial, & ! Procedure(s)
         Dv_fnc
+
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
 
     implicit none
 
@@ -433,6 +439,9 @@ module PDF_integrals_all_mixed_moments
         factorial, & ! Procedure(s)
         Dv_fnc
 
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
+
     implicit none
 
     ! Input Variables
@@ -534,6 +543,9 @@ module PDF_integrals_all_mixed_moments
     use KK_utilities, only:  &
         factorial, & ! Procedure(s)
         Dv_fnc
+
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
 
     implicit none
 

@@ -32,6 +32,9 @@ module PDF_integrals_means
     use KK_utilities, only:  &
         Dv_fnc  ! Procedure(s)
 
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
+
     implicit none
 
     ! Input Variables
@@ -134,6 +137,9 @@ module PDF_integrals_means
 
     use KK_utilities, only:  &
         Dv_fnc  ! Procedure(s)
+
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
 
     implicit none
 

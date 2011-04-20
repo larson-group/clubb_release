@@ -350,6 +350,9 @@ module KK_utilities
     ! References:
     !-----------------------------------------------------------------------
 
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
+
     implicit none
 
     ! Input Variable
