@@ -15,7 +15,7 @@ module clubb_core
 !
 !                         Copyright Notice:
 !
-!   This code and the source code it references are (C) 2006-2010
+!   This code and the source code it references are (C) 2006-2011
 !   Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin,
 !   David P. Schanen, Adam J. Smith, and Michael J. Falk.
 !
@@ -313,7 +313,7 @@ module clubb_core
     implicit none
 
     !!! External
-    intrinsic :: sqrt, min, max, exp, mod
+    intrinsic :: sqrt, min, max, exp, mod, real
 
     ! Constant Parameters
     ! ldgrant June 2009
@@ -340,6 +340,9 @@ module clubb_core
     ! perturbed values of rtm and thlm.  An average value of Lscale
     ! from the three calls to compute_length is then calculated.
     ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
+
+    logical, parameter :: &
+      l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
 
     !!! Input Variables
     logical, intent(in) ::  & 
@@ -1171,11 +1174,14 @@ module clubb_core
 #endif
 
     !----------------------------------------------------------------
-    ! Diagnose variances
+    ! Compute some of the variances and covariances.  These include the variance of
+    ! total water (rtp2), liquid potential termperature (thlp2), their
+    ! covariance (rtpthlp), and the variance of horizontal wind (up2 and vp2).
+    ! The variance of vertical velocity is computed later.
     !----------------------------------------------------------------
 
     ! We found that certain cases require a time tendency to run
-    ! at shorter timesteps.
+    ! at shorter timesteps so these are prognosed now.
 
     ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
     call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp,     & ! intent(in)
@@ -1188,7 +1194,7 @@ module clubb_core
  ! Vince Larson used prognostic timestepping of variances 
  !    in order to increase numerical stability.  17 Jul 2007
  !                          .false., dt,                   & ! intent(in)
-                           .true., dt,                    & ! intent(in)
+                           l_iter_xp2_xpyp, dt,           & ! intent(in)
                            sclrm, wpsclrp,                & ! intent(in) 
                            rtp2, thlp2, rtpthlp,          & ! intent(inout)
                            up2, vp2,                      & ! intent(inout)
@@ -1220,7 +1226,8 @@ module clubb_core
 
 
     !----------------------------------------------------------------
-    ! Advance wp2/wp3 one timestep
+    ! Advance 2nd and 3rd order moment of vertical velocity (wp2 / wp3) 
+    ! by one timestep
     !----------------------------------------------------------------
 
     call advance_wp2_wp3 &
@@ -1257,7 +1264,9 @@ module clubb_core
 
 
     !----------------------------------------------------------------
-    ! Advance um, vm, and edsclrm one time step
+    ! Advance the horizontal mean of the wind in the x-y directions 
+    ! (i.e. um, vm) and the mean of the eddy-diffusivity scalars 
+    ! (i.e. edsclrm) by one time step
     !----------------------------------------------------------------
 
     call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref, & ! Intent(in)
@@ -1596,7 +1605,7 @@ module clubb_core
       ! Using the Flatau, et al. polynomial approximation for SVP over vapor/ice
 
     case ( "gfdl", "GFDL" )   ! h1g, 2010-06-16
-      ! Using the GFDL  formula
+      ! Using the GFDL SVP formula (Goff-Gratch)
 
       ! Add new saturation formulas after this
 
