@@ -342,7 +342,7 @@ module KK_utilities
 !  end function factorial
 !
   !=============================================================================
-  pure function factorial( num )
+  function factorial( num )
 
     ! Description:
     ! Calculates the factorial of an integer (num).
