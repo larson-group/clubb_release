@@ -726,11 +726,6 @@ module clubb_driver
     end if
 #endif
 
-    ! Setup filenames and variables to set for setfields, if enabled
-    if ( l_input_fields ) then
-      call inputfields_init( iunit, runfile ) ! Intent(in)
-    end if
-
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
 
@@ -883,6 +878,10 @@ module clubb_driver
     ! Call advance_clubb_core once per each statistics output time
     ifinal = floor( ( time_final - time_initial ) / dtmain )
 
+    ! Setup filenames and variables to set for setfields, if enabled
+    if ( l_input_fields ) then
+      call inputfields_init( iunit, runfile ) ! Intent(in)
+    end if
 
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
@@ -3030,7 +3029,7 @@ module clubb_driver
                                  thlm_forcing, rtm_forcing, &     ! Intent(out) 
                                  sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
-      case ( "fire" ) ! FIRE Sc case
+      case ( "fire", "generic" ) ! FIRE Sc case
         ! Analytic radiation is computed elsewhere
         thlm_forcing = 0.
         rtm_forcing = 0.
