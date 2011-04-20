@@ -24,7 +24,7 @@ module advance_wp2_wp3_module
              wp3_terms_ac_pr2_lhs, & 
              wp3_term_pr1_lhs, & 
              wp3_terms_ta_tp_rhs, & 
-             wp3_terms_bp_pr2_rhs, & 
+             wp3_terms_bp1_pr2_rhs, & 
              wp3_term_pr1_rhs, &
              wp3_term_bp2_rhs
 
@@ -2791,17 +2791,17 @@ module advance_wp2_wp3_module
       real( + ( 1.0 / dt ) * wp3(k) )
 
       ! RHS turbulent advection (ta) and turbulent production (tp) terms.
-      rhs(k_wp3)  & 
-      = rhs(k_wp3)  & 
-      + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
-                             wp2(k), wp2(km1),  &
-                             a1(k), a1_zt(k), a1(km1),  &
-                             a3(k), a3_zt(k), a3(km1),  &
-                             wp3_on_wp2(k), wp3_on_wp2(km1), &
-                             rho_ds_zm(k), rho_ds_zm(km1),  &
-                             invrs_rho_ds_zt(k),  &
-                             three_halves,  &
-                             gr%invrs_dzt(k) )
+!     rhs(k_wp3)  & 
+!     = rhs(k_wp3)  & 
+!     + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
+!                            wp2(k), wp2(km1),  &
+!                            a1(k), a1_zt(k), a1(km1),  &
+!                            a3(k), a3_zt(k), a3(km1),  &
+!                            wp3_on_wp2(k), wp3_on_wp2(km1), &
+!                            rho_ds_zm(k), rho_ds_zm(km1),  &
+!                            invrs_rho_ds_zt(k),  &
+!                            three_halves,  &
+!                            gr%invrs_dzt(k) )
 
       ! RHS contribution from "over-implicit" weighted time step
       ! for LHS turbulent advection (ta) and turbulent production (tp) terms.
@@ -2839,7 +2839,7 @@ module advance_wp2_wp3_module
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
       rhs(k_wp3) & 
       = rhs(k_wp3) & 
-      + wp3_terms_bp_pr2_rhs( C11_Skw_fnc(k), thv_ds_zt(k), wp2thvp(k) )
+      + wp3_terms_bp1_pr2_rhs( C11_Skw_fnc(k), thv_ds_zt(k), wp2thvp(k) )
 
       ! RHS pressure term 1 (pr1).
       rhs(k_wp3) & 
@@ -2889,17 +2889,18 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^3 term ta, add 3 to all of the
         !        a_3 inputs and substitute 0 for the three_halves input to
         !        function wp3_terms_ta_tp_rhs.
-        call stat_begin_update_pt( iwp3_ta, k, &
-          -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
-                                wp2(k), wp2(km1),  &
-                                a1(k), a1_zt(k), a1(km1),  &
-                                a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
-                                wp3_on_wp2(k), wp3_on_wp2(km1), &
-                                rho_ds_zm(k), rho_ds_zm(km1),  &
-                                invrs_rho_ds_zt(k),  &
-                                0.0,  &
-                                gr%invrs_dzt(k) ),  &
-                                   zt )
+!       call stat_begin_update_pt( iwp3_ta, k, &
+!         -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
+!                               wp2(k), wp2(km1),  &
+!                               a1(k), a1_zt(k), a1(km1),  &
+!                               a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
+!                               wp3_on_wp2(k), wp3_on_wp2(km1), &
+!                               rho_ds_zm(k), rho_ds_zm(km1),  &
+!                               invrs_rho_ds_zt(k),  &
+!                               0.0,  &
+!                               gr%invrs_dzt(k) ),  &
+!                                  zt )
+        call stat_begin_update_pt( iwp3_ta, k, 0.0, zt )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -2928,17 +2929,18 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^3 term tp, substitute 0 for all
         !        of the a_1 and a_3 inputs and subtract 3 from all of the a_3
         !        inputs to function wp3_terms_ta_tp_rhs.
-        call stat_begin_update_pt( iwp3_tp, k,  &
-          -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
-                                wp2(k), wp2(km1),  &
-                                0.0, 0.0, 0.0,  &
-                                0.0-3.0, 0.0-3.0, 0.0-3.0,  &
-                                0.0, 0.0, &
-                                rho_ds_zm(k), rho_ds_zm(km1),  &
-                                invrs_rho_ds_zt(k),  &
-                                three_halves,  &
-                                gr%invrs_dzt(k) ),  &
-                                   zt )
+!       call stat_begin_update_pt( iwp3_tp, k,  &
+!         -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
+!                               wp2(k), wp2(km1),  &
+!                               0.0, 0.0, 0.0,  &
+!                               0.0-3.0, 0.0-3.0, 0.0-3.0,  &
+!                               0.0, 0.0, &
+!                               rho_ds_zm(k), rho_ds_zm(km1),  &
+!                               invrs_rho_ds_zt(k),  &
+!                               three_halves,  &
+!                               gr%invrs_dzt(k) ),  &
+!                                  zt )
+        call stat_begin_update_pt( iwp3_tp, k,  0.0, zt )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -2960,17 +2962,17 @@ module advance_wp2_wp3_module
 
         ! w'^3 term bp is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
-        !        C_11 skewness function input to function wp3_terms_bp_pr2_rhs.
+        !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
         call stat_update_var_pt( iwp3_bp1, k, & 
-          wp3_terms_bp_pr2_rhs( 0.0, thv_ds_zt(k), wp2thvp(k) ), zt )
+          wp3_terms_bp1_pr2_rhs( 0.0, thv_ds_zt(k), wp2thvp(k) ), zt )
 
         ! w'^3 term pr2 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-        ! subtracts the value sent in, reverse the sign on wp3_terms_bp_pr2_rhs.
+        ! subtracts the value sent in, reverse the sign on wp3_terms_bp1_pr2_rhs.
         ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
-        !        C_11 skewness function input to function wp3_terms_bp_pr2_rhs.
+        !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
         call stat_begin_update_pt( iwp3_pr2, k, & 
-          -wp3_terms_bp_pr2_rhs( (1.0+C11_Skw_fnc(k)), thv_ds_zt(k), &
+          -wp3_terms_bp1_pr2_rhs( (1.0+C11_Skw_fnc(k)), thv_ds_zt(k), &
                                  wp2thvp(k) ), & 
                                    zt )
 
@@ -3721,41 +3723,41 @@ module advance_wp2_wp3_module
        = + invrs_rho_ds_zt &
            * invrs_dzt &
              * rho_ds_zm * a1 &
-             * 2.0 * wp3_on_wp2 &
+             * wp3_on_wp2 &
              * gr%weights_zt2zm(t_above,mk)
 
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
        lhs(k_mdiag) &
        = + invrs_rho_ds_zt &
-           * invrs_dzt * rho_ds_zm * a3 * 2.0 * wp2 &
+           * invrs_dzt * rho_ds_zm * a3 * wp2 &
          + const_three_halves &
-           * invrs_dzt * 2.0 * wp2
+           * invrs_dzt * wp2
 
        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
        lhs(k_tdiag) &
        = + invrs_rho_ds_zt &
            * invrs_dzt &
              * (   rho_ds_zm * a1 &
-                   * 2.0 * wp3_on_wp2 &
+                   * wp3_on_wp2 &
                    * gr%weights_zt2zm(t_below,mk) &
                  - rho_ds_zmm1 * a1m1 &
-                   * 2.0 * wp3_on_wp2_m1 &
+                   * wp3_on_wp2_m1 &
                    * gr%weights_zt2zm(t_above,mkm1) &
                )
 
        ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
        lhs(km1_mdiag) &
        = - invrs_rho_ds_zt &
-           * invrs_dzt * rho_ds_zmm1 * a3m1 * 2.0 * wp2m1 &
+           * invrs_dzt * rho_ds_zmm1 * a3m1 * wp2m1 &
          - const_three_halves &
-           * invrs_dzt * 2.0 * wp2m1
+           * invrs_dzt * wp2m1
 
        ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
        lhs(km1_tdiag) &
        = - invrs_rho_ds_zt &
            * invrs_dzt &
              * rho_ds_zmm1 * a1m1 &
-             * 2.0 * wp3_on_wp2_m1 &
+             * wp3_on_wp2_m1 &
              * gr%weights_zt2zm(t_below,mkm1)
 
     else
@@ -3781,47 +3783,47 @@ module advance_wp2_wp3_module
        = + invrs_rho_ds_zt &
            * a1_zt * invrs_dzt &
              * rho_ds_zm &
-             * ( 2.0 * wp3_on_wp2 ) &
+             * wp3_on_wp2 &
              * gr%weights_zt2zm(t_above,mk)
 
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
        lhs(k_mdiag) & 
        = + invrs_rho_ds_zt &
-           * a3_zt * invrs_dzt * rho_ds_zm * 2.0 * wp2 &
+           * a3_zt * invrs_dzt * rho_ds_zm * wp2 &
          + const_three_halves &
-           * invrs_dzt * 2.0 * wp2
+           * invrs_dzt * wp2
 
        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
        lhs(k_tdiag) & 
        = + invrs_rho_ds_zt &
            * a1_zt * invrs_dzt & 
              * (   rho_ds_zm &
-                   * ( 2.0 * wp3_on_wp2 ) & 
+                   * wp3_on_wp2 & 
                    * gr%weights_zt2zm(t_below,mk) & 
                  - rho_ds_zmm1 &
-                   * ( 2.0 * wp3_on_wp2_m1 ) & 
+                   * wp3_on_wp2_m1 & 
                    * gr%weights_zt2zm(t_above,mkm1) & 
                )
 
        ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
        lhs(km1_mdiag) & 
        = - invrs_rho_ds_zt &
-           * a3_zt * invrs_dzt * rho_ds_zmm1 * 2.0 * wp2m1 &
+           * a3_zt * invrs_dzt * rho_ds_zmm1 * wp2m1 &
          - const_three_halves &
-           * invrs_dzt * 2.0 * wp2m1
+           * invrs_dzt * wp2m1
 
        ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
        lhs(km1_tdiag) & 
        = - invrs_rho_ds_zt &
            * a1_zt * invrs_dzt &
              * rho_ds_zmm1 &
-             * ( 2.0 * wp3_on_wp2_m1 ) & 
+             * wp3_on_wp2_m1 & 
              * gr%weights_zt2zm(t_below,mkm1)
 
        ! End of code that pulls out a3.
        ! End of Brian's a1 change.  Feb. 14, 2008.
 
-    endif
+    end if ! l_standard_term_ta
 
 
     return
@@ -4172,14 +4174,14 @@ module advance_wp2_wp3_module
        ! End of code that pulls out a3.
        ! End of Brian's a1 change.  Feb. 14, 2008.
 
-    endif
+    endif ! l_standard_term_ta
 
 
     return
   end function wp3_terms_ta_tp_rhs
 
   !=============================================================================
-  pure function wp3_terms_bp_pr2_rhs( C11_Skw_fnc, thv_ds_zt, wp2thvp ) & 
+  pure function wp3_terms_bp1_pr2_rhs( C11_Skw_fnc, thv_ds_zt, wp2thvp ) & 
   result( rhs )
 
     ! Description:
@@ -4222,7 +4224,7 @@ module advance_wp2_wp3_module
     = + ( 1.0 - C11_Skw_fnc ) * 3.0 * ( grav / thv_ds_zt ) * wp2thvp
 
     return
-  end function wp3_terms_bp_pr2_rhs
+  end function wp3_terms_bp1_pr2_rhs
 
   !=============================================================================
   pure function wp3_term_bp2_rhs( C15, Kh_zt, wpthvp, wpthvp_m1, thv_ds_zt, invrs_dzt ) & 

@@ -434,9 +434,6 @@ module clubb_core
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
 
-    real, dimension(gr%nnzp) ::  &
-      sigma_sqd_w     ! PDF width parameter (momentum levels)      [-]
-
     type(pdf_parameter), dimension(gr%nnzp), intent(out) :: & 
       pdf_params      ! PDF parameters   [units vary]
 
@@ -458,7 +455,9 @@ module clubb_core
     integer :: i, k
 
     real, dimension(gr%nnzp) :: &
-      tmp1, gamma_Skw_fnc, &
+      sigma_sqd_w,   & ! PDF width parameter (momentum levels)    [-]
+      sqrt_em_zt,    & ! sqrt( em ) on zt levels; where em is TKE [m/s] 
+      gamma_Skw_fnc, & ! Gamma as a function of skewness          [???]
       Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
       thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
       rtm_pert_1, rtm_pert_2          ! For avg. calculation of Lscale  [kg/kg]
@@ -705,24 +704,18 @@ module clubb_core
                    * ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
     end if
 
-    ! Compute wp3 / wp2 on zm levels
-    wp3_on_wp2 = ( wp3_zm(1:gr%nnzp) / max( wp2(1:gr%nnzp), w_tol_sqd ) )
-
-    ! Clip wp3_on_wp2 if it's too large
-    wp3_on_wp2 = min( 1000., wp3_on_wp2 )
-
-    ! Smooth wp3 / wp2 in the vertical using interpolation functions.  We use
-    ! this in the wp3_ta term since the smoothing results in less noise.
-    wp3_on_wp2 = zt2zm( zm2zt( wp3_on_wp2 ) )
-
-    ! Compute wp3 / wp2 on zt levels.
+    ! Compute wp3 / wp2 on zt levels.  Always use the interpolated value in the
+    ! denominator since it's less likely to create spikes
     wp3_on_wp2_zt = ( wp3(1:gr%nnzp) / max( wp2_zt(1:gr%nnzp), w_tol_sqd ) )
 
     ! Clip wp3_on_wp2_zt if it's too large
     wp3_on_wp2_zt = min( 1000., wp3_on_wp2_zt )
 
-    ! Smooth as above
-    wp3_on_wp2_zt = zm2zt( zt2zm( wp3_on_wp2_zt ) )
+    ! Compute wp3_on_wp2 by interpolating wp3_on_wp2_zt
+    wp3_on_wp2 = zt2zm( wp3_on_wp2_zt )
+
+    ! Smooth again as above
+    wp3_on_wp2_zt = zm2zt( wp3_on_wp2 )
 
     !----------------------------------------------------------------
     ! Call closure scheme
@@ -1010,14 +1003,15 @@ module clubb_core
 ! Vince Larson replaced the cutoff of em_min by w_tol**2.  7 Jul 2007
 !     This is to prevent tau from being too large (producing little damping)
 !     in stably stratified layers with little turbulence.
-!       tmp1 = SQRT( MAX( em_min, zm2zt( em ) ) )
-!       tau_zt = MIN( Lscale / tmp1, taumax )
+!       sqrt_em_zt = SQRT( MAX( em_min, zm2zt( em ) ) )
+!       tau_zt = MIN( Lscale / sqrt_em_zt, taumax )
 !       tau_zm &
 !       = MIN( ( zt2zm( Lscale ) / SQRT( MAX( em_min, em ) ) ), taumax )
 !   Addition by Brian:  Model constant em_min is now set to (3/2)*w_tol_sqd.
 !                       Thus, em_min can replace w_tol_sqd here.
-    tmp1   = SQRT( MAX( em_min, zm2zt( em ) ) )
-    tau_zt = MIN( Lscale / tmp1, taumax )
+    sqrt_em_zt = SQRT( MAX( em_min, zm2zt( em ) ) )
+
+    tau_zt = MIN( Lscale / sqrt_em_zt, taumax )
     tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  & 
                    / SQRT( MAX( em_min, em ) ) ), taumax )
 ! End Vince Larson's replacement.
@@ -1039,7 +1033,7 @@ module clubb_core
     ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
     ! CLUBB uses a smaller value to better fit empirical data.
 
-    Kh_zt = c_K * Lscale * tmp1
+    Kh_zt = c_K * Lscale * sqrt_em_zt
     Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
                 * sqrt( max( em, em_min ) )
 
@@ -1334,11 +1328,11 @@ module clubb_core
       vp2_zt = max( zm2zt( vp2 ), w_tol_sqd )
     end if
 
-    if (iupwp_zt > 0 ) then
+    if ( iupwp_zt > 0 ) then
       upwp_zt = zm2zt( upwp )
     end if
 
-    if (ivpwp_zt > 0 ) then
+    if ( ivpwp_zt > 0 ) then
       vpwp_zt = zm2zt( vpwp )
     end if
 
@@ -2266,10 +2260,18 @@ module clubb_core
            ( pdf_params, cloud_frac, rcm, & ! intent(in)
              cloud_cover, rcm_in_layer )    ! intent(out)
     !
-    ! Description:  Subroutine to compute cloud cover (the amount of sky
-    ! covered by cloud) and rcm in layer (liquid water mixing ratio in
-    ! the portion of the grid box filled by cloud).
-    ! Added July 2009
+    ! Description:  
+    !   Subroutine to compute cloud cover (the amount of sky
+    !   covered by cloud) and rcm in layer (liquid water mixing ratio in
+    !   the portion of the grid box filled by cloud).
+    !
+    ! References:
+    !   Definition of 's' comes from:
+    !   ``The Gaussian Cloud Model Relations'' G. L. Mellor (1977)
+    !   JAS, Vol. 34, pp. 356--358.
+    !
+    ! Notes:
+    !   Added July 2009
     !---------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -2304,7 +2306,8 @@ module clubb_core
 
     ! Local variables
     real, dimension(gr%nnzp) :: &
-      s_mean,                & ! Mean of the two Gaussian distributions
+      s_mean,                & ! Mean extended cloud water mixing ratio of the 
+    !                            two Gaussian distributions
       vert_cloud_frac_upper, & ! Fraction of cloud in top half of grid box
       vert_cloud_frac_lower, & ! Fraction of cloud in bottom half of grid box
       vert_cloud_frac          ! Fraction of cloud filling the grid box in the vertical
@@ -2417,10 +2420,14 @@ module clubb_core
            ( rtm, message, & ! intent(in)
              rcm )    ! intent(inout)
     !
-    ! Description:  Subroutine that reduces cloud water (rcm) whenever
-    ! it exceeds total water (rtm = vapor + liquid).
-    ! This avoids negative values of rvm = water vapor mixing ratio.
-    ! However, it will not ensure that rcm <= rtm if rtm <= 0.
+    ! Description:  
+    !   Subroutine that reduces cloud water (rcm) whenever
+    !   it exceeds total water (rtm = vapor + liquid).
+    !   This avoids negative values of rvm = water vapor mixing ratio.
+    !   However, it will not ensure that rcm <= rtm if rtm <= 0.
+    !
+    ! References:
+    !   None
     !---------------------------------------------------------------------
 
 
@@ -2491,6 +2498,7 @@ module clubb_core
     ! variation in meteorological quantities than large areas.
 
     ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     implicit none
@@ -2507,6 +2515,8 @@ module clubb_core
     ! Output Variable
     real, intent(out) :: &
       Lscale_max    ! Maximum allowable value for Lscale   [m]
+
+    ! ---- Begin Code ----
 
     ! Determine the maximum allowable value for Lscale (in meters).
     if ( l_implemented ) then
