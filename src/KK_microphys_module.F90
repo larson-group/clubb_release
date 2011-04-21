@@ -271,6 +271,15 @@ module KK_microphys_module
     integer :: &
       k   ! Loop index
 
+    ! ---- Begin Code ----
+
+    ! Remove compiler warnings
+    if ( .false. .and. l_latin_hypercube ) then
+      rrainm_src_adj = dzq
+      rrainm_src_adj = rvm
+      rrainm_src_adj = w_std_dev
+      rrainm_src_adj = wm
+    end if
 
     ! Assign pointers for hydrometeor variables.
 
@@ -795,9 +804,6 @@ module KK_microphys_module
 
     rrainm_mc_tndcy(nnzp) = 0.0
     Nrm_mc_tndcy(nnzp)    = 0.0
-
-    !print *, mean_vol_rad(:)
-    !pause
 
     ! Boundary conditions
     mean_vol_rad(1)    = 0.0
