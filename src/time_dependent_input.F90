@@ -439,9 +439,11 @@ module time_dependent_input
   end function read_to_grid
 
   !================================================================================================
-  subroutine apply_time_dependent_forcings( time, grid_size, rtm, rho, exner,  &
-    thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, wm_zt, wm_zm,  ug, vg, &
-    sclrm_forcing, edsclrm_forcing )
+  subroutine apply_time_dependent_forcings &
+            ( time, grid_size, rtm, rho, exner,  &
+              thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
+              wm_zt, wm_zm,  ug, vg, &
+              sclrm_forcing, edsclrm_forcing )
     !
     !  Description: This subroutine converts the time dependent information stored in
     !  memory (time_dependent_forcing_data) into the format used by CLUBB.
@@ -657,6 +659,7 @@ module time_dependent_input
 
     end do ! 1 .. nCols
 
+    return
   end subroutine apply_time_dependent_forcings
 
   !================================================================================================

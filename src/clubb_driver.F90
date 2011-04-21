@@ -718,6 +718,17 @@ module clubb_driver
     call init_microphys( iunit, runfile, case_info_file, & !Intent(in)
                          hydromet_dim )                    ! Intent(out)
 
+    ! Set the value of sigma_g to be used for cloud_sed module
+    ! It is set here because calling runtype into advance_clubb_microphys
+    ! causes a bug. kcwhite Aug 2010
+    if ( trim( runtype ) == 'astex_a209' ) then
+      sigma_g = 1.2
+
+    else
+      sigma_g = 1.5
+
+    end if
+
     ! Setup radiation parameters
     call init_radiation( iunit, runfile, case_info_file ) ! Intent(in)
 #ifdef UNRELEASED_CODE /* Special case for LBA */
@@ -914,6 +925,7 @@ module clubb_driver
         exit ! Leave the main loop
       end if
 
+      ! Set large-scale tendencies and subsidence profiles
       call advance_clubb_forcings( dtmain, &  ! Intent(in)
                                    err_code ) ! Intent(inout)
 
@@ -972,20 +984,6 @@ module clubb_driver
                rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
 
         wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
-
-
-        ! Set the value of sigma_g to be used for cloud_sed module
-        ! It is set here because calling runtype into advance_clubb_microphys
-        ! causes a bug. kcwhite Aug 2010
-        if ( trim( runtype ) == 'astex_a209') then
-
-          sigma_g = 1.2
-
-        else
-
-          sigma_g = 1.5
-
-        end if
 
         ! Advance a microphysics scheme
         call advance_clubb_microphys &
@@ -2983,9 +2981,11 @@ module clubb_driver
       !   "gabls3_night", "arm_97", "gabls3", "twp_ice",
       !   "arm", "arm_0003", "arm_3year", "astex_a209", & "cobra".
 
-      call apply_time_dependent_forcings( time_current, gr%nnzp, rtm, rho, exner,&
-        thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, wm_zt, wm_zm, ug, vg, &
-        sclrm_forcing, edsclrm_forcing )
+      call apply_time_dependent_forcings &
+          ( time_current, gr%nnzp, rtm, rho, exner,& ! In
+            thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, & ! In/Out
+            wm_zt, wm_zm, ug, vg, & ! In/Out
+        sclrm_forcing, edsclrm_forcing ) ! In/Out
 
       ! Vince Larson set forcing to zero at the top point so that we don't need
       ! so much sponge damping, which is associated with sawtooth noise
