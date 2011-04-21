@@ -31,7 +31,7 @@ module parameters_tunable
     C2rtthl,     & ! C2 coefficient for the rtpthlp_dp1 term.
     C2b,         & ! High Skewness in C2 Skewness Function.  
     C2c,         & ! Degree of Slope of C2 Skewness Function.
-    C4,          & ! Used only when l_Kh_zm_aniso is true.
+    C4,          & ! Used only when l_tke_aniso is true.
     C5,          & ! Coefficient in pressure terms in the w'^2 eqn.
     C6rt,        & ! Low Skewness in C6rt Skewness Function.
     C6rtb,       & ! High Skewness in C6rt Skewness Function.
