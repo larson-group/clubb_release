@@ -796,6 +796,21 @@ module KK_microphys_module
     rrainm_mc_tndcy(nnzp) = 0.0
     Nrm_mc_tndcy(nnzp)    = 0.0
 
+    !print *, mean_vol_rad(:)
+    !pause
+
+    ! Boundary conditions
+    mean_vol_rad(1)    = 0.0
+    mean_vol_rad(nnzp) = 0.0
+
+    rvm_mc(1)    = 0.0
+    rvm_mc(nnzp) = 0.0
+
+    rcm_mc(1)    = 0.0
+    rcm_mc(nnzp) = 0.0
+
+    thlm_mc(1)    = 0.0
+    thlm_mc(nnzp) = 0.0
 
     !!! Sedimentation velocities
     forall ( k = 1:nnzp-1 )
