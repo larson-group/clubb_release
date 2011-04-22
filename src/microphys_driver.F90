@@ -676,21 +676,20 @@ module microphys_driver
       
     case ( "morrison-gettelman" )
       iirrainm    = -1
-      iirsnowm    = 1
-      iiricem     = 2
+      iirsnowm    = -1
+      iiricem     = 1
       iirgraupelm = -1
 
       iiNrm       = -1
       iiNsnowm    = -1
-      iiNim       = 3
+      iiNim       = 2
       iiNgraupelm = -1
-      iiNcm       = 4
+      iiNcm       = 3
 
-      hydromet_dim = 4
+      hydromet_dim = 3
       
       allocate( hydromet_list(hydromet_dim) )
       
-      hydromet_list(iirsnowm)    = "rsnowm"
       hydromet_list(iiricem)     = "ricem"
       hydromet_list(iiNim)       = "Nim"
       hydromet_list(iiNcm)       = "Ncm"
@@ -700,7 +699,6 @@ module microphys_driver
       l_hydromet_sed(iiricem)  = .false.
       l_hydromet_sed(iiNim)    = .false.
       l_hydromet_sed(iiNcm)    = .false.
-      l_hydromet_sed(iirsnowm) = .false.
 
       ! Setup the MG scheme
       call ini_micro()

@@ -29,11 +29,18 @@ module mg_micro_driver_module
       thlm2T_in_K
 
     use array_index, only:  &
-      iiricem, iiNim, iiNcm, iirsnowm
+      iiricem, iiNim, iiNcm
 
     use constants_clubb, only: &
       zero_threshold, &
       T_freeze_K
+      
+    use stats_variables, only: & 
+      zt, &
+      irsnowm
+
+    use stats_type, only:  & 
+       stat_update_var
       
     use cldwat2m_micro, only: &
       mmicro_pcond ! Procedure
@@ -110,9 +117,6 @@ module mg_micro_driver_module
       cloud_frac,   & ! Liquid Cloud fraction                   [-]
       rcm_tmp         ! Temporary variable                      [kg/kg]
       
-    real, dimension(nnzp,hydromet_dim) :: & 
-      hydromet_tmp     ! Temporary variable
-      
     ! MG Input Variables
     ! Note that the MG grid is flipped with respect to CLUBB.
     real, dimension(nnzp-1) :: &
@@ -147,6 +151,7 @@ module mg_micro_driver_module
     ! TODO temp output variables
     real, dimension(nnzp-1) :: &
       cldo, & ! Old cloud fraction
+      qsout, & ! snow mixing ratio							kg/kg
       rate1ord_cw2pr_st, & ! first order rate for direct cw to precip conversion
       tlat, &           !latent heating rate from microphysics					W kg-1
       qvlat, &  !qv tendency from microphysics						kg/kg/s
@@ -210,6 +215,7 @@ module mg_micro_driver_module
     rcm_mc(1:nnzp) = 0.0
     rvm_mc(1:nnzp) = 0.0
     hydromet_mc(1:nnzp,:) = 0.0
+    hydromet_mc_flip(1:nnzp-1,:) = 0.0
     
     ! MG's grid is flipped with respect to CLUBB.
     ! Flip CLUBB variables before inputting them into MG.
@@ -291,7 +297,7 @@ module mg_micro_driver_module
          effc_fn, effi, prect, preci,             &  
          nevapr, evapsnow,      &
          prain, prodsnow, cmeout, deffi, pgamrad, &
-         lamcrad, hydromet_flip(:,iirsnowm), dsout, &
+         lamcrad, qsout, dsout, &
          qcsevap,qisevap,qvres,cmeiout, &
          unused,unused,qcsedten,qisedten, &
          prao,prco,mnuccco,mnuccto,msacwio,psacwso,&
@@ -304,10 +310,8 @@ module mg_micro_driver_module
       
     do i = 1, hydromet_dim, 1
       ! MG doesn't take CLUBB's lowest level into account
-      hydromet_tmp(1, i) = 0
       hydromet_mc(1, i) = 0
       
-      hydromet_tmp(2:nnzp, i) = hydromet_flip(nnzp-1:1:-1, i)
       hydromet_mc(2:nnzp, i) = hydromet_mc_flip(nnzp-1:1:-1, i)
     end do
     
@@ -319,6 +323,7 @@ module mg_micro_driver_module
     hydromet_vel(:,:) = 0.0
     
     if ( l_stats_samp ) then
+      call stat_update_var( irsnowm, qsout, zt )
     end if ! l_stats_samp
 
     return
