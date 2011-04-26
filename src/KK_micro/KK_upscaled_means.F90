@@ -341,9 +341,13 @@ module KK_upscaled_means
     ! ratio of mu_x1 to sigma_x1.  When the value of s_cc is very large, the
     ! distribution of x1 is basically a spike near the mean, so x1 is treated as
     ! a constant.
-    s_cc = ( mu_x1 / sigma_x1 )  &
-           + rho_x1x2_n * sigma_x2_n * beta_exp  &
-           + rho_x1x3_n * sigma_x3_n * gamma_exp
+    if( sigma_x1 > 0. ) then
+      s_cc = ( mu_x1 / sigma_x1 )  &
+             + rho_x1x2_n * sigma_x2_n * beta_exp  &
+             + rho_x1x3_n * sigma_x3_n * gamma_exp
+    else
+      s_cc = huge( s_cc )
+    end if
 
 
     ! Based on the value of sigma_x1 (including the value of s_cc compared to
