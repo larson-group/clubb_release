@@ -49,21 +49,34 @@ module KK_microphys_module
         Nrp2_on_Nrm2_below,    &
         Ncp2_on_Ncm2_cloud,    &
         Ncp2_on_Ncm2_below,    &
-        corr_srr_NL_cloud,     &
-        corr_srr_NL_below,     &
-        corr_sNr_NL_cloud,     &
-        corr_sNr_NL_below,     &
-        corr_sNc_NL_cloud,     &
-        corr_sNc_NL_below,     &
+!        corr_srr_NL_cloud,     &
+!        corr_srr_NL_below,     &
+!        corr_sNr_NL_cloud,     &
+!        corr_sNr_NL_below,     &
+!        corr_sNc_NL_cloud,     &
+!        corr_sNc_NL_below,     &
         corr_rrNr_LL_cloud,    &
         corr_rrNr_LL_below,    &
+        corr_rtrr_NL_cloud,    &
+        corr_rtrr_NL_below,    &
+        corr_rtNr_NL_cloud,    &
+        corr_rtNr_NL_below,    &
+        corr_rtNc_NL_cloud,    &
+        corr_rtNc_NL_below,    &
+        corr_thlrr_NL_cloud,   &
+        corr_thlrr_NL_below,   &
+        corr_thlNr_NL_cloud,   &
+        corr_thlNr_NL_below,   &
+        corr_thlNc_NL_cloud,   &
+        corr_thlNc_NL_below,   &
         C_evap
 
     use KK_utilities, only: &
-        mean_L2N,   & ! Procedure(s)
-        stdev_L2N,  &
-        corr_NL2NN, &
-        corr_LL2NN, &
+        mean_L2N,     & ! Procedure(s)
+        stdev_L2N,    &
+        corr_NL2NN,   &
+        corr_LL2NN,   &
+        calc_corr_sx, &
         G_T_p
 
     use KK_upscaled_means, only: &
@@ -186,19 +199,19 @@ module KK_microphys_module
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
 
     real, dimension(:), pointer :: &
-      s1,        & ! Mean of s (1st PDF component)                      [kg/kg]
-      s2,        & ! Mean of s (2nd PDF component)                      [kg/kg]
-      stdev_s1,  & ! Standard deviation of s (1st PDF component)        [kg/kg]
-      stdev_s2,  & ! Standard deviation of s (2nd PDF component)        [kg/kg]
-      mixt_frac    ! Mixture fraction                                   [-]
-!      varnce_rt1
-!      varnce_rt2
-!      varnce_thl1
-!      varnce_thl2
-!      crt1
-!      crt2
-!      cthl1
-!      cthl2
+      varnce_rt1,  & ! Variance of r_t (1st PDF component)           [kg^2/kg^2]
+      varnce_rt2,  & ! Variance of r_t (2nd PDF component)           [kg^2/kg^2]
+      varnce_thl1, & ! Variance of theta_l (1st PDF component)       [K^2]
+      varnce_thl2, & ! Variance of theta_l (2nd PDF component)       [K^2]
+      crt1,        & ! Coefficient of r_t for s' (1st PDF component) [-]
+      crt2,        & ! Coefficient of r_t for s' (2nd PDF component) [-]
+      cthl1,       & ! Coefficient of th_l for s' (1st PDF comp.)    [1/K]
+      cthl2,       & ! Coefficient of th_l for s' (2nd PDF comp.)    [1/K]
+      s1,          & ! Mean of s (1st PDF component)                 [kg/kg]
+      s2,          & ! Mean of s (2nd PDF component)                 [kg/kg]
+      stdev_s1,    & ! Standard deviation of s (1st PDF component)   [kg/kg]
+      stdev_s2,    & ! Standard deviation of s (2nd PDF component)   [kg/kg]
+      mixt_frac      ! Mixture fraction                              [-]
 
     real :: &
       mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
@@ -215,35 +228,33 @@ module KK_microphys_module
       corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component) [-]
       corr_rrNr_n     ! Correlation between ln rr & ln Nr (both components) [-]
 
+    real :: &
+      sigma_rt_1,  & ! Standard deviation of r_t (1st PDF component)     [kg/kg]
+      sigma_rt_2,  & ! Standard deviation of r_t (2nd PDF component)     [kg/kg]
+      sigma_thl_1, & ! Standard deviation of theta_l (1st PDF component) [K]
+      sigma_thl_2, & ! Standard deviation of theta_l (2nd PDF component) [K]
+      corr_srr_1,  & ! Correlation between s and rr (1st PDF component)  [-]
+      corr_srr_2,  & ! Correlation between s and rr (2nd PDF component)  [-]
+      corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component)  [-]
+      corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component)  [-]
+      corr_sNc_1,  & ! Correlation between s and Nc (1st PDF component)  [-]
+      corr_sNc_2     ! Correlation between s and Nc (2nd PDF component)  [-]
+
     real, dimension(nnzp) :: &
       rrp2_on_rrainm2, & ! Specified ratio of < r_r >^2 to < r_r'^2 >       [-]
       Nrp2_on_Nrm2,    & ! Specified ratio of < N_r >^2 to < N_r'^2 >       [-]
       Ncp2_on_Ncm2,    & ! Specified ratio of < N_c >^2 to < N_c'^2 >       [-]
-      corr_srr_NL,     & ! Specified correlation between s and r_r          [-]
-      corr_sNr_NL,     & ! Specified correlation between s and N_r          [-]
-      corr_sNc_NL,     & ! Specified correlation between s and N_c          [-]
-      corr_rrNr_LL       ! Specified correlation between r_r and N_r        [-]
+      corr_rrNr_LL,    & ! Specified correlation between r_r and N_r        [-]
+      corr_rtrr_NL,    & ! Specified correlation between r_t and r_r        [-]
+      corr_rtNr_NL,    & ! Specified correlation between r_t and N_r        [-]
+      corr_rtNc_NL,    & ! Specified correlation between r_t and N_c        [-]
+      corr_thlrr_NL,   & ! Specified correlation between theta_l and r_r    [-]
+      corr_thlNr_NL,   & ! Specified correlation between theta_l and N_r    [-]
+      corr_thlNc_NL      ! Specified correlation between theta_l and N_c    [-]
+!      corr_srr_NL,     & ! Specified correlation between s and r_r          [-]
+!      corr_sNr_NL,     & ! Specified correlation between s and N_r          [-]
+!      corr_sNc_NL        ! Specified correlation between s and N_c          [-]
 
-!      ! Standard Deviations
-!      sigma_rt_1
-!      sigma_rt_2
-!      sigma_thl_1
-!      sigma_thl_2
-!      ! Specified Correlations
-!      corr_rtrr
-!      corr_thlrr
-!      corr_rtNr
-!      corr_thlNr
-!      corr_rtNc
-!      corr_thlNc
-!      corr_rrNr
-!      ! Calculated Correlations
-!      corr_srr_1
-!      corr_srr_2
-!      corr_sNr_1
-!      corr_sNr_2
-!      corr_sNc_1
-!      corr_sNc_2
 !      ! Normalized Correlations
 !      corr_rtrr_n
 !      corr_thlrr_n
@@ -299,11 +310,19 @@ module KK_microphys_module
     ! Assign pointers for PDF parameters.
     ! Note:  these are only necessary for upscaled KK microphysics; however,
     !        they need to be initialized here to avoid a compiler warning.
-    mixt_frac => pdf_params(:)%mixt_frac
-    s1        => pdf_params(:)%s1
-    s2        => pdf_params(:)%s2
-    stdev_s1  => pdf_params(:)%stdev_s1
-    stdev_s2  => pdf_params(:)%stdev_s2
+    varnce_rt1  => pdf_params(:)%varnce_rt1
+    varnce_rt2  => pdf_params(:)%varnce_rt2
+    varnce_thl1 => pdf_params(:)%varnce_thl1
+    varnce_thl2 => pdf_params(:)%varnce_thl2
+    crt1        => pdf_params(:)%crt1
+    crt2        => pdf_params(:)%crt2
+    cthl1       => pdf_params(:)%cthl1
+    cthl2       => pdf_params(:)%cthl2
+    mixt_frac   => pdf_params(:)%mixt_frac
+    s1          => pdf_params(:)%s1
+    s2          => pdf_params(:)%s2
+    stdev_s1    => pdf_params(:)%stdev_s1
+    stdev_s2    => pdf_params(:)%stdev_s2
 
 
     if ( .not. l_local_kk ) then
@@ -340,17 +359,29 @@ module KK_microphys_module
           Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
           Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
           corr_rrNr_LL    = corr_rrNr_LL_cloud
-          corr_srr_NL     = corr_srr_NL_cloud
-          corr_sNr_NL     = corr_sNr_NL_cloud
-          corr_sNc_NL     = corr_sNc_NL_cloud
+          corr_rtrr_NL    = corr_rtrr_NL_cloud
+          corr_rtNr_NL    = corr_rtNr_NL_cloud
+          corr_rtNc_NL    = corr_rtNc_NL_cloud
+          corr_thlrr_NL   = corr_thlrr_NL_cloud
+          corr_thlNr_NL   = corr_thlNr_NL_cloud
+          corr_thlNc_NL   = corr_thlNc_NL_cloud
+!          corr_srr_NL     = corr_srr_NL_cloud
+!          corr_sNr_NL     = corr_sNr_NL_cloud
+!          corr_sNc_NL     = corr_sNc_NL_cloud
        else where
           rrp2_on_rrainm2 = rrp2_on_rrainm2_below
           Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
           Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
           corr_rrNr_LL    = corr_rrNr_LL_below
-          corr_srr_NL     = corr_srr_NL_below
-          corr_sNr_NL     = corr_sNr_NL_below
-          corr_sNc_NL     = corr_sNc_NL_below
+          corr_rtrr_NL    = corr_rtrr_NL_below
+          corr_rtNr_NL    = corr_rtNr_NL_below
+          corr_rtNc_NL    = corr_rtNc_NL_below
+          corr_thlrr_NL   = corr_thlrr_NL_below
+          corr_thlNr_NL   = corr_thlNr_NL_below
+          corr_thlNc_NL   = corr_thlNc_NL_below
+!          corr_srr_NL     = corr_srr_NL_below
+!          corr_sNr_NL     = corr_sNr_NL_below
+!          corr_sNc_NL     = corr_sNc_NL_below
        end where
 
     endif  ! l_upscaled
@@ -414,22 +445,22 @@ module KK_microphys_module
              mu_Nc_n = mean_L2N( Ncm(k), Ncp2_on_Ncm2(k) * Ncm(k)**2.0 )
           endif
 
-!          !!! Calculate the standard deviation of variables that have an assumed
-!          !!! normal distribution for the ith PDF component.
-!
-!          ! Standard deviation of liquid water potential temperature in PDF
-!          ! component 1.
-!          sigma_thl_1 = sqrt( varnce_thl1 )
-!
-!          ! Standard deviation of liquid water potential temperature in PDF
-!          ! component 2.
-!          sigma_thl_2 = sqrt( varnce_thl2 )
-!
-!          ! Standard deviation of total water mixing ratio in PDF component 1.
-!          sigma_rt_1 = sqrt( varnce_rt1 )
-!
-!          ! Standard deviation of total water mixing ratio in PDF component 2.
-!          sigma_rt_2 = sqrt( varnce_rt2 )
+          !!! Calculate the standard deviation of variables that have an assumed
+          !!! normal distribution for the ith PDF component.
+
+          ! Standard deviation of liquid water potential temperature in PDF
+          ! component 1.
+          sigma_thl_1 = sqrt( varnce_thl1(k) )
+
+          ! Standard deviation of liquid water potential temperature in PDF
+          ! component 2.
+          sigma_thl_2 = sqrt( varnce_thl2(k) )
+
+          ! Standard deviation of total water mixing ratio in PDF component 1.
+          sigma_rt_1 = sqrt( varnce_rt1(k) )
+
+          ! Standard deviation of total water mixing ratio in PDF component 2.
+          sigma_rt_2 = sqrt( varnce_rt2(k) )
 
           !!! Calculate the normalized standard deviation of variables that have
           !!! an assumed (single) lognormal distribution, given the mean and
@@ -455,41 +486,38 @@ module KK_microphys_module
           !        s, is given by stdev_s1 for PDF component 1 and stdev_s2 for
           !        PDF component 2.
 
-!          !!! Specify the following correlations
-!          corr_rtrr  = 
-!          corr_thlrr = 
-!          corr_rtNr  = 
-!          corr_thlNr = 
-!          corr_rtNc  = 
-!          corr_thlNc = 
-!          corr_rrNr  =
-!
-!          !!! Calculate correlations between extended liquid water mixing ratio
-!          !!! and another variable.
-!
-!          ! Calculate the correlation between s and r_r in PDF component 1.
-!          corr_srr_1 = calc_corr_sx( crt1, cthl1, sigma_rt_1, sigma_thl_1,  &
-!                                     stdev_s1, corr_rtrr, corr_thlrr )
-!
-!          ! Calculate the correlation between s and r_r in PDF component 2.
-!          corr_srr_2 = calc_corr_sx( crt2, cthl2, sigma_rt_2, sigma_thl_2,  &
-!                                     stdev_s2, corr_rtrr, corr_thlrr )
-!
-!          ! Calculate the correlation between s and N_r in PDF component 1.
-!          corr_sNr_1 = calc_corr_sx( crt1, cthl1, sigma_rt_1, sigma_thl_1,  &
-!                                     stdev_s1, corr_rtNr, corr_thlNr )
-!
-!          ! Calculate the correlation between s and N_r in PDF component 2.
-!          corr_sNr_2 = calc_corr_sx( crt2, cthl2, sigma_rt_2, sigma_thl_2,  &
-!                                     stdev_s2, corr_rtNr, corr_thlNr )
-!
-!          ! Calculate the correlation between s and N_c in PDF component 1.
-!          corr_sNc_1 = calc_corr_sx( crt1, cthl1, sigma_rt_1, sigma_thl_1,  &
-!                                     stdev_s1, corr_rtNc, corr_thlNc )
-!
-!          ! Calculate the correlation between s and N_c in PDF component 2.
-!          corr_sNc_2 = calc_corr_sx( crt2, cthl2, sigma_rt_2, sigma_thl_2,  &
-!                                     stdev_s2, corr_rtNc, corr_thlNc )
+          !!! Calculate correlations between extended liquid water mixing ratio
+          !!! and another variable.
+
+          ! Calculate the correlation between s and r_r in PDF component 1.
+          corr_srr_1  &
+          = calc_corr_sx( crt1(k), cthl1(k), sigma_rt_1, sigma_thl_1,  &
+                          stdev_s1(k), corr_rtrr_NL(k), corr_thlrr_NL(k) )
+
+          ! Calculate the correlation between s and r_r in PDF component 2.
+          corr_srr_2  &
+          = calc_corr_sx( crt2(k), cthl2(k), sigma_rt_2, sigma_thl_2,  &
+                          stdev_s2(k), corr_rtrr_NL(k), corr_thlrr_NL(k) )
+
+          ! Calculate the correlation between s and N_r in PDF component 1.
+          corr_sNr_1  &
+          = calc_corr_sx( crt1(k), cthl1(k), sigma_rt_1, sigma_thl_1,  &
+                          stdev_s1(k), corr_rtNr_NL(k), corr_thlNr_NL(k) )
+
+          ! Calculate the correlation between s and N_r in PDF component 2.
+          corr_sNr_2  &
+          = calc_corr_sx( crt2(k), cthl2(k), sigma_rt_2, sigma_thl_2,  &
+                          stdev_s2(k), corr_rtNr_NL(k), corr_thlNr_NL(k) )
+
+          ! Calculate the correlation between s and N_c in PDF component 1.
+          corr_sNc_1  &
+          = calc_corr_sx( crt1(k), cthl1(k), sigma_rt_1, sigma_thl_1,  &
+                          stdev_s1(k), corr_rtNc_NL(k), corr_thlNc_NL(k) )
+
+          ! Calculate the correlation between s and N_c in PDF component 2.
+          corr_sNc_2  &
+          = calc_corr_sx( crt2(k), cthl2(k), sigma_rt_2, sigma_thl_2,  &
+                          stdev_s2(k), corr_rtNc_NL(k), corr_thlNc_NL(k) )
 
           !!! Calculate the normalized correlation between variables that have
           !!! an assumed normal distribution and variables that have an assumed
@@ -497,53 +525,65 @@ module KK_microphys_module
           !!! their correlation and the normalized standard deviation of the
           !!! variable with the assumed lognormal distribution.
 
-!          ! Normalize the correlation between s and r_r in PDF component 1.
-!          corr_srr_1_n = corr_NL2NN( corr_srr_1, sigma_rr_n )
-!
-!          ! Normalize the correlation between s and r_r in PDF component 2.
-!          corr_srr_2_n = corr_NL2NN( corr_srr_2, sigma_rr_n )
-!
-!          ! Normalize the correlation between s and N_r in PDF component 1.
-!          corr_sNr_1_n = corr_NL2NN( corr_sNr_1, sigma_Nr_n )
-!
-!          ! Normalize the correlation between s and N_r in PDF component 2.
-!          corr_sNr_2_n = corr_NL2NN( corr_sNr_2, sigma_Nr_n )
-!
-!          ! Normalize the correlation between s and N_c in PDF component 1.
-!          corr_sNc_1_n = corr_NL2NN( corr_sNc_1, sigma_Nc_n )
-!
-!          ! Normalize the correlation between s and N_c in PDF component 2.
-!          corr_sNc_2_n = corr_NL2NN( corr_sNc_2, sigma_Nc_n )
-
           if ( rrainm(k) > rr_tol ) then
 
              ! Normalize the correlation between s and r_r in PDF component 1.
-             corr_srr_1_n = corr_NL2NN( corr_srr_NL(k), sigma_rr_n )
+             corr_srr_1_n = corr_NL2NN( corr_srr_1, sigma_rr_n )
 
              ! Normalize the correlation between s and r_r in PDF component 2.
-             corr_srr_2_n = corr_srr_1_n
+             corr_srr_2_n = corr_NL2NN( corr_srr_2, sigma_rr_n )
 
-          endif
+           endif
 
           if ( Nrm(k) > Nr_tol ) then
 
              ! Normalize the correlation between s and N_r in PDF component 1.
-             corr_sNr_1_n = corr_NL2NN( corr_sNr_NL(k), sigma_Nr_n )
+             corr_sNr_1_n = corr_NL2NN( corr_sNr_1, sigma_Nr_n )
 
              ! Normalize the correlation between s and N_r in PDF component 2.
-             corr_sNr_2_n = corr_sNr_1_n
+             corr_sNr_2_n = corr_NL2NN( corr_sNr_2, sigma_Nr_n )
 
           endif
 
           if ( Ncm(k) > Nc_tol ) then
 
              ! Normalize the correlation between s and N_c in PDF component 1.
-             corr_sNc_1_n = corr_NL2NN( corr_sNc_NL(k), sigma_Nc_n )
+             corr_sNc_1_n = corr_NL2NN( corr_sNc_1, sigma_Nc_n )
 
              ! Normalize the correlation between s and N_c in PDF component 2.
-             corr_sNc_2_n = corr_sNc_1_n
+             corr_sNc_2_n = corr_NL2NN( corr_sNc_2, sigma_Nc_n )
 
           endif
+
+!          if ( rrainm(k) > rr_tol ) then
+!
+!             ! Normalize the correlation between s and r_r in PDF component 1.
+!             corr_srr_1_n = corr_NL2NN( corr_srr_NL(k), sigma_rr_n )
+!
+!             ! Normalize the correlation between s and r_r in PDF component 2.
+!             corr_srr_2_n = corr_srr_1_n
+!
+!          endif
+!
+!          if ( Nrm(k) > Nr_tol ) then
+!
+!             ! Normalize the correlation between s and N_r in PDF component 1.
+!             corr_sNr_1_n = corr_NL2NN( corr_sNr_NL(k), sigma_Nr_n )
+!
+!             ! Normalize the correlation between s and N_r in PDF component 2.
+!             corr_sNr_2_n = corr_sNr_1_n
+!
+!          endif
+!
+!          if ( Ncm(k) > Nc_tol ) then
+!
+!             ! Normalize the correlation between s and N_c in PDF component 1.
+!             corr_sNc_1_n = corr_NL2NN( corr_sNc_NL(k), sigma_Nc_n )
+!
+!             ! Normalize the correlation between s and N_c in PDF component 2.
+!             corr_sNc_2_n = corr_sNc_1_n
+!
+!          endif
 
           !!! Calculate the normalized correlation between two variables that
           !!! both have an assumed lognormal distribution, given their
