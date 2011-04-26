@@ -341,13 +341,20 @@ module KK_upscaled_means
     ! ratio of mu_x1 to sigma_x1.  When the value of s_cc is very large, the
     ! distribution of x1 is basically a spike near the mean, so x1 is treated as
     ! a constant.
-    if( sigma_x1 > 0. ) then
-      s_cc = ( mu_x1 / sigma_x1 )  &
-             + rho_x1x2_n * sigma_x2_n * beta_exp  &
-             + rho_x1x3_n * sigma_x3_n * gamma_exp
-    else
-      s_cc = huge( s_cc )
-    end if
+    if ( sigma_x1 > x1_tol ) then
+       s_cc = ( mu_x1 / sigma_x1 )  &
+              + rho_x1x2_n * sigma_x2_n * beta_exp  &
+              + rho_x1x3_n * sigma_x3_n * gamma_exp
+    else  ! sigma_x1 = 0
+       ! Note:  s_cc is +inf when mu_x1 > 0 and sigma_x1 = 0, and s_cc is -inf
+       !        when mu_x1 < 0 and sigma_x1 = 0.  Furthermore, s_cc is undefined
+       !        when mu_x1 = 0 and sigma_x1 = 0.  However, within the context of
+       !        this particular function, only the absolute value of s_cc is
+       !        relevant, and furthermore the absolute value of s_cc is only
+       !        relevant when sigma_x1 > 0.  Therefore, this statement only
+       !        serves as divide-by-zero and compiler warning prevention.
+       s_cc = huge( s_cc )
+    endif
 
 
     ! Based on the value of sigma_x1 (including the value of s_cc compared to
@@ -426,9 +433,6 @@ module KK_upscaled_means
 
     implicit none
 
-    ! External
-    intrinsic :: huge
-
     ! Input Variables
     real, intent(in) :: &
       mu_s_i,      & ! Mean of s (ith PDF component)                        [-]
@@ -493,11 +497,18 @@ module KK_upscaled_means
     ! ratio of mu_x1 to sigma_x1.  When the value of s_c is very large, the
     ! distribution of x1 is basically a spike near the mean, so x1 is treated as
     ! a constant.
-    if ( sigma_x1 > 0. ) then
-      s_c = ( mu_x1 / sigma_x1 ) + rho_x1x2_n * sigma_x2_n * beta_exp
-    else
-      s_c = huge ( s_c )
-    end if
+    if ( sigma_x1 > x1_tol ) then
+       s_c = ( mu_x1 / sigma_x1 ) + rho_x1x2_n * sigma_x2_n * beta_exp
+    else  ! sigma_x1 = 0
+       ! Note:  s_c is +inf when mu_x1 > 0 and sigma_x1 = 0, and s_c is -inf
+       !        when mu_x1 < 0 and sigma_x1 = 0.  Furthermore, s_c is undefined
+       !        when mu_x1 = 0 and sigma_x1 = 0.  However, within the context of
+       !        this particular function, only the absolute value of s_c is
+       !        relevant, and furthermore the absolute value of s_c is only
+       !        relevant when sigma_x1 > 0.  Therefore, this statement only
+       !        serves as divide-by-zero and compiler warning prevention.
+       s_c = huge( s_c )
+    endif
 
 
     ! Based on the value of sigma_x1 (including the value of s_c compared to

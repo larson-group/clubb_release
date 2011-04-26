@@ -271,7 +271,6 @@ module KK_microphys_module
     integer :: &
       k   ! Loop index
 
-    ! ---- Begin Code ----
 
     ! Remove compiler warnings
     if ( .false. .and. l_latin_hypercube ) then

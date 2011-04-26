@@ -40,7 +40,7 @@ module KK_upscaled_covariances
       mu_x_1,        & ! Mean of x (1st PDF component)                       [-]
       mu_x_2,        & ! Mean of x (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
-      mu_s_2,        & ! Mean of x (2nd PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
       mu_rr_n,       & ! Mean of ln rr (both components)                     [-]
       mu_Nr_n,       & ! Mean of ln Nr (both components)                     [-]
       sigma_x_1,     & ! Standard deviation of x (1st PDF component)         [-]
@@ -126,7 +126,7 @@ module KK_upscaled_covariances
       mu_x_1,        & ! Mean of x (1st PDF component)                       [-]
       mu_x_2,        & ! Mean of x (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
-      mu_s_2,        & ! Mean of x (2nd PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
       mu_Nc_n,       & ! Mean of ln Nc (both components)                     [-]
       sigma_x_1,     & ! Standard deviation of x (1st PDF component)         [-]
       sigma_x_2,     & ! Standard deviation of x (2nd PDF component)         [-]
@@ -200,7 +200,7 @@ module KK_upscaled_covariances
       mu_x_1,        & ! Mean of x (1st PDF component)                       [-]
       mu_x_2,        & ! Mean of x (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
-      mu_s_2,        & ! Mean of x (2nd PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
       mu_rr_n,       & ! Mean of ln rr (both components)                     [-]
       sigma_x_1,     & ! Standard deviation of x (1st PDF component)         [-]
       sigma_x_2,     & ! Standard deviation of x (2nd PDF component)         [-]
@@ -398,9 +398,20 @@ module KK_upscaled_covariances
     ! ratio of mu_x2 to sigma_x2.  When the value of s_cc is very large, the
     ! distribution of x2 is basically a spike near the mean, so x2 is treated as
     ! a constant.
-    s_cc = ( mu_x2 / sigma_x2 )  &
-           + rho_x2x3_n * sigma_x3_n * beta_exp  &
-           + rho_x2x4_n * sigma_x4_n * gamma_exp
+    if ( sigma_x2 > x2_tol ) then
+       s_cc = ( mu_x2 / sigma_x2 )  &
+              + rho_x2x3_n * sigma_x3_n * beta_exp  &
+              + rho_x2x4_n * sigma_x4_n * gamma_exp
+    else  ! sigma_x2 = 0
+       ! Note:  s_cc is +inf when mu_x2 > 0 and sigma_x2 = 0, and s_cc is -inf
+       !        when mu_x2 < 0 and sigma_x2 = 0.  Furthermore, s_cc is undefined
+       !        when mu_x2 = 0 and sigma_x2 = 0.  However, within the context of
+       !        this particular function, only the absolute value of s_cc is
+       !        relevant, and furthermore the absolute value of s_cc is only
+       !        relevant when sigma_x2 > 0.  Therefore, this statement only
+       !        serves as divide-by-zero and compiler warning prevention.
+       s_cc = huge( s_cc )
+    endif
 
 
     ! Based on the values of sigma_x1 and sigma_x2 (including the value of s_cc
@@ -624,7 +635,18 @@ module KK_upscaled_covariances
     ! ratio of mu_x2 to sigma_x2.  When the value of s_c is very large, the
     ! distribution of x2 is basically a spike near the mean, so x2 is treated as
     ! a constant.
-    s_c = ( mu_x2 / sigma_x2 )  + rho_x2x3_n * sigma_x3_n * beta_exp
+    if ( sigma_x2 > x2_tol ) then
+       s_c = ( mu_x2 / sigma_x2 )  + rho_x2x3_n * sigma_x3_n * beta_exp
+    else  ! sigma_x2 = 0
+       ! Note:  s_c is +inf when mu_x2 > 0 and sigma_x2 = 0, and s_c is -inf
+       !        when mu_x2 < 0 and sigma_x2 = 0.  Furthermore, s_c is undefined
+       !        when mu_x2 = 0 and sigma_x2 = 0.  However, within the context of
+       !        this particular function, only the absolute value of s_c is
+       !        relevant, and furthermore the absolute value of s_c is only
+       !        relevant when sigma_x2 > 0.  Therefore, this statement only
+       !        serves as divide-by-zero and compiler warning prevention.
+       s_c = huge( s_c )
+    endif
 
 
     ! Based on the values of sigma_x1 and sigma_x2 (including the value of s_c
