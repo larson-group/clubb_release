@@ -96,26 +96,42 @@ module parameters_microphys
     rrp2_on_rrainm2_cloud, & ! 0.766
     Nrp2_on_Nrm2_cloud,    & ! 0.429
     Ncp2_on_Ncm2_cloud,    & ! 0.003
-    corr_rrNr_LL_cloud, & ! 0.786
-    corr_srr_NL_cloud,  & ! 0.242
-    corr_sNr_NL_cloud,  & ! 0.285
-    corr_sNc_NL_cloud     ! 0.433
+    corr_rrNr_LL_cloud,    & ! 0.786
+    corr_rtrr_NL_cloud,    & ! 0.268
+    corr_rtNr_NL_cloud,    & ! 0.295
+    corr_rtNc_NL_cloud,    & ! 0.413
+    corr_thlrr_NL_cloud,   & ! -0.185
+    corr_thlNr_NL_cloud,   & ! -0.258
+    corr_thlNc_NL_cloud,   & ! -0.420
+    corr_srr_NL_cloud,     & ! 0.242
+    corr_sNr_NL_cloud,     & ! 0.285
+    corr_sNc_NL_cloud        ! 0.433
 
 !$omp threadprivate( rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
-!$omp   corr_rrNr_LL_cloud, corr_srr_NL_cloud,  corr_sNr_NL_cloud,  corr_sNc_NL_cloud )
+!$omp   corr_rrNr_LL_cloud, corr_rtrr_NL_cloud, corr_rtNr_NL_cloud, corr_rtNc_NL_cloud, &
+!$omp   corr_thlrr_NL_cloud, corr_thlNr_NL_cloud, corr_thlNc_NL_cloud, &
+!$omp   corr_srr_NL_cloud,  corr_sNr_NL_cloud,  corr_sNc_NL_cloud )
 
   ! Parameters for below-cloud (from SAM RF02 DO).
   real, public :: &       ! RF02 value
     rrp2_on_rrainm2_below, & ! 8.97
     Nrp2_on_Nrm2_below,    & ! 12.03
     Ncp2_on_Ncm2_below,    & ! 0.00 ! Not applicable below cloud.
-    corr_rrNr_LL_below, & ! 0.886
-    corr_srr_NL_below,  & ! 0.056
-    corr_sNr_NL_below,  & ! 0.015
-    corr_sNc_NL_below     ! 0.00 ! Not applicable below cloud.
+    corr_rrNr_LL_below,    & ! 0.886
+    corr_rtrr_NL_below,    & ! -0.005
+    corr_rtNr_NL_below,    & ! -0.041
+    corr_rtNc_NL_below,    & ! 0.00 ! Not applicable below cloud.
+    corr_thlrr_NL_below,   & ! -0.241
+    corr_thlNr_NL_below,   & ! -0.217
+    corr_thlNc_NL_below,   & ! 0.00 ! Not applicable below cloud.
+    corr_srr_NL_below,     & ! 0.056
+    corr_sNr_NL_below,     & ! 0.015
+    corr_sNc_NL_below        ! 0.00 ! Not applicable below cloud.
 
 !$omp threadprivate( rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
-!$omp   corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below )
+!$omp   corr_rrNr_LL_below, corr_rtrr_NL_below, corr_rtNr_NL_below, corr_rtNc_NL_below, &
+!$omp   corr_thlrr_NL_below, corr_thlNr_NL_below, corr_thlNc_NL_below, &
+!$omp   corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below )
 
   ! Other needed parameters
   real, public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of
