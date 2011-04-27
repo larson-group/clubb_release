@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 ###########################################################################
-# Plotgen v3.53
+# Plotgen v3.63
 #
 # Documentation is available here:
 # http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
@@ -39,7 +39,7 @@ use File::Path;
 
 # The location of MATLAB. External users probably will not need the 
 # sudo -u matlabuser part.
-my $MATLAB = "sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop";
+my $MATLAB = "sudo -H -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop";
 #my $MATLAB = "/Applications/MATLAB_R2010a.app/bin/matlab -nodisplay -nodesktop"; #For Macs in W434
 
 # The pipe name used to communicate with MATLAB
