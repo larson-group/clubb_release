@@ -76,7 +76,7 @@ fi
 if [ -e $srcdir/Numerical_recipes ]; then
 	CPPDEFS="${CPPDEFS} -DTUNER"
 fi
-if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
+if [ -e $srcdir/Benchmark_cases/Unreleased_cases ] && [ -e $srcdir/Latin_hypercube ]; then
 	CPPDEFS="${CPPDEFS} -DUNRELEASED_CODE"
 fi
 
@@ -131,14 +131,28 @@ cd $dir
 
 # ------------------------------------------------------------------------------
 #  Determine which restricted files are in the source directory and make a list
-ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
-ls $srcdir/CLUBB_core/*.F90 > $dir/file_list/clubb_param_files
-ls $srcdir/Latin_hypercube/*.* >> $dir/file_list/clubb_optional_files
-ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
-ls $srcdir/SCM_Activation/aer_ccn_act_k.F90 > $dir/file_list/clubb_gfdl_activation_files
+if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
+	ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
+fi
+if [ -e $srcdir/Latin_hypercube ]; then
+	ls $srcdir/Latin_hypercube/*.* >> $dir/file_list/clubb_optional_files
+fi
+if [ -e $srcdir/COAMPS_micro ]; then
+	ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
+fi
+if [ -e $srcdir/SCM_Activation/aer_ccn_act_k.F90 ]; then 
+	ls $srcdir/SCM_Activation/aer_ccn_act_k.F90 > $dir/file_list/clubb_gfdl_activation_files
+fi
+if [ -e  $srcdir/CLUBB_core ]; then
+	ls $srcdir/CLUBB_core/*.F90 > $dir/file_list/clubb_param_files
+else
+	echo "Fatal error, CLUBB_core directory is missing"
+	exit -1
+fi
 
-if [ "$l_double_precision" == "false" ]	# Excludes numerical recipes if using double precision
-then
+
+# Exclude numerical recipes if using double precision or numerical recipes doesn't exist
+if [ "$l_double_precision" == "false" ] && [ -e $srcdir/Numerical_recipes ]; then
 	ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
 fi
 
