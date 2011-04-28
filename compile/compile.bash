@@ -62,8 +62,12 @@ else
 fi
 
 # Load desired configuration file
-
-source $CONFIG
+if [ -e $CONFIG ]; then
+	source $CONFIG
+else
+	echo "Cannot find " $CONFIG
+	exit -1
+fi
 
 # ------------------------------------------------------------------------------
 # Append preprocessor flags and libraries as needed
