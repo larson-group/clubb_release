@@ -65,6 +65,8 @@ compile()
 			  ;;
 		"g95" ) compiler="./config/linux_x86_64_g95_optimize.bash"
 		        ;;
+		"gfortran" ) compiler="./config/linux_x86_64_gfortran.bash"
+		        ;;
 	esac
 
 	# Change to CLUBB's compile directory
@@ -95,6 +97,13 @@ echo -e "\ng95 Compiler Warnings/Errors:" >> $outputFile
 echo "-----------------------------" >> $outputFile
 clean
 compile g95
+
+# Compile with g95
+echo -e "\nGNU Fortran Compiler Warnings/Errors:" >> $outputFile
+echo "-----------------------------" >> $outputFile
+clean
+compile gfortran
+
 
 echo -e "\nDone! View the file 'compiler_output' to see the results."
 
