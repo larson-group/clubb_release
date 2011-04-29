@@ -540,8 +540,19 @@ module latin_hypercube_driver_module
     do k = k_lh_start, nnzp, 1
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
-           ( n_micro_calls, d_variables, hydromet_dim, &        ! In
-             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params(k), & ! In
+           ( n_micro_calls, d_variables, hydromet_dim, &  ! In
+             wm_zt(k), rcm(k), rvm(k), thlm(k), & ! In
+             pdf_params(k)%mixt_frac, pdf_params(k)%rrtthl, & ! In
+             pdf_params(k)%w1, pdf_params(k)%w2, & ! In
+             pdf_params(k)%varnce_w1, pdf_params(k)%varnce_w2, & ! In
+             pdf_params(k)%thl1, pdf_params(k)%thl2, & ! In
+             pdf_params(k)%varnce_thl1, pdf_params(k)%varnce_thl2, & ! In
+             pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
+             pdf_params(k)%varnce_rt1, pdf_params(k)%varnce_rt2, & ! In
+             pdf_params(k)%s1, pdf_params(k)%s2, & ! In
+             pdf_params(k)%stdev_s1, pdf_params(k)%stdev_s2, & ! In
+             pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
+             pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
              hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
              corr_array_cloud, corr_array_below, & ! In
              X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In
@@ -551,8 +562,19 @@ module latin_hypercube_driver_module
     ! Downwards loop
     do k = k_lh_start-1, 1, -1
       call generate_lh_sample &
-           ( n_micro_calls, d_variables, hydromet_dim, &        ! In
-             wm_zt(k), rcm(k), rvm(k), thlm(k), pdf_params(k), & ! In
+           ( n_micro_calls, d_variables, hydromet_dim, &  ! In
+             wm_zt(k), rcm(k), rvm(k), thlm(k), & ! In
+             pdf_params(k)%mixt_frac, pdf_params(k)%rrtthl, & ! In
+             pdf_params(k)%w1, pdf_params(k)%w2, & ! In
+             pdf_params(k)%varnce_w1, pdf_params(k)%varnce_w2, & ! In
+             pdf_params(k)%thl1, pdf_params(k)%thl2, & ! In
+             pdf_params(k)%varnce_thl1, pdf_params(k)%varnce_thl2, & ! In
+             pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
+             pdf_params(k)%varnce_rt1, pdf_params(k)%varnce_rt2, & ! In
+             pdf_params(k)%s1, pdf_params(k)%s2, & ! In
+             pdf_params(k)%stdev_s1, pdf_params(k)%stdev_s2, & ! In
+             pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
+             pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
              hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
              corr_array_cloud, corr_array_below, & ! In
              X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In

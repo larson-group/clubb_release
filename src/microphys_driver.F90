@@ -3210,6 +3210,8 @@ module microphys_driver
 
       implicit none
 
+      intrinsic :: allocated
+
       ! ---- Begin Code ----
 
       if ( allocated( hydromet_list ) ) then

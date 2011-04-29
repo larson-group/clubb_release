@@ -36,7 +36,13 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
              ( n_micro_calls, d_variables, hydromet_dim, & 
-               wm, rcm, rvm, thlm, pdf_params, & 
+               wm, rcm, rvm, thlm, & 
+               mixt_frac, rrtthl, &
+               w1_in, w2_in, varnce_w1_in, varnce_w2_in, &
+               thl1_in, thl2_in, varnce_thl1_in, varnce_thl2_in, &
+               rt1_in, rt2_in, varnce_rt1_in, varnce_rt2_in, &
+               s1_in, s2_in, stdev_s1_in, stdev_s2_in, &
+               crt1, crt2, cthl1, cthl2, &
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
                corr_array_cloud, corr_array_below, &
                X_u_one_lev, X_mixt_comp_one_lev, &
@@ -60,9 +66,6 @@ module generate_lh_sample_module
       rr_tol, &         ! rr tolerance in kg/kg
       Nr_tol, &         ! Nr tolerance in #/kg
       Nc_tol            ! Nc tolerance in #/kg
-
-    use pdf_parameter_module, only:  &
-      pdf_parameter  ! type
 
     use array_index, only: &
       iiNcm,    & ! Variables
@@ -129,8 +132,30 @@ module generate_lh_sample_module
       rvm,        & ! Mean vapor water mixing ratio       [kg/kg]
       thlm          ! Mean liquid potential temperature   [K]
 
-    type(pdf_parameter), intent(in) :: &
-      pdf_params ! PDF parameters output by closure_new [units vary]
+    real, intent(in) :: &
+      mixt_frac,      & ! Mixture fraction					[-]
+      rrtthl,         & ! Sub-plume correlation coefficient between rt, thl 
+      !			  varies between -1 < rrtthl < 1			[-]
+      w1_in,          & ! Mean of w for 1st normal distribution                 [m/s]
+      w2_in,          & ! Mean of w for 2nd normal distribution                 [m/s]
+      varnce_w1_in,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
+      varnce_w2_in,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+      thl1_in,        & ! Mean of th_l for 1st normal distribution                [K]
+      thl2_in,        & ! Mean of th_l for 2nd normal distribution                [K]
+      varnce_thl1_in, & ! Variance of th_l for 1st normal distribution          [K^2]
+      varnce_thl2_in, & ! Variance of th_l for 2nd normal distribution          [K^2]
+      rt1_in,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
+      rt2_in,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+      varnce_rt1_in,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+      varnce_rt2_in,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+      s1_in,          & ! Mean of s for 1st normal distribution               [kg/kg]
+      s2_in,          & ! Mean of s for 2nd normal distribution               [kg/kg]
+      stdev_s1_in,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
+      stdev_s2_in,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      crt1,           & ! Coefficient for s'                                      [-]
+      crt2,           & ! Coefficient for s'                                      [-]
+      cthl1,          & ! Coefficient for s'                                    [1/K]
+      cthl2             ! Coefficient for s'                                    [1/K]
 
     ! From the KK_microphys_module
     real, dimension(d_variables), target, intent(in) :: &
@@ -178,24 +203,16 @@ module generate_lh_sample_module
       s1,          & ! Mean of s for 1st normal distribution               [kg/kg]
       s2,          & ! Mean of s for 2nd normal distribution               [kg/kg]
       stdev_s1,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
-      stdev_s2,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-      crt1,        & ! Coefficient for s'                                      [-]
-      crt2,        & ! Coefficient for s'                                      [-]
-      cthl1,       & ! Coefficient for s'                                    [1/K]
-      cthl2          ! Coefficient for s'                                    [1/K]
+      stdev_s2       ! Standard deviation of s for 2nd normal distribution [kg/kg]
 
     double precision :: &
       stdev_t1, &  ! Standard deviation of t for the 1st normal distribution [kg/kg]
       stdev_t2     ! Standard deviation of t for the 1st normal distribution [kg/kg]
 
     double precision :: &
-      mixt_frac,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
       cloud_frac2    ! Cloud fraction for 2nd normal distribution              [-]
 
-    ! sub-plume correlation coefficient between rt, thl
-    ! varies between -1 < rrtthl < 1
-    real :: rrtthl
 
     ! Use to clip the magnitude of the correlation between rt and thl
     real :: rrtthl_reduced ! Correlation between rt and thl [-]
@@ -299,83 +316,73 @@ module generate_lh_sample_module
       ! we don't want e.g. the variance of rt aloft to be rt_tol^2 necessarily.
 
       ! Set means
-      w1 = pdf_params%w1
-      w2 = pdf_params%w2
-      rt1 = pdf_params%rt1
-      rt2 = pdf_params%rt2
-      thl1 = pdf_params%thl1
-      thl2 = pdf_params%thl2
-      s1 = pdf_params%s1
-      s2 = pdf_params%s2
+      w1 = w1_in
+      w2 = w2_in
+      rt1 = rt1_in
+      rt2 = rt2_in
+      thl1 = thl1_in
+      thl2 = thl2_in
+      s1 = s1_in
+      s2 = s2_in
 
       ! Set variances
-      varnce_w1 = pdf_params%varnce_w1
-      varnce_w2 = pdf_params%varnce_w2
-      varnce_rt1 = pdf_params%varnce_rt1
-      varnce_rt2 = pdf_params%varnce_rt2
-      varnce_thl1 = pdf_params%varnce_thl1
-      varnce_thl2 = pdf_params%varnce_thl2
+      varnce_w1 = varnce_w1_in
+      varnce_w2 = varnce_w2_in
+      varnce_rt1 = varnce_rt1_in
+      varnce_rt2 = varnce_rt2_in
+      varnce_thl1 = varnce_thl1_in
+      varnce_thl2 = varnce_thl2_in
 
       ! Set standard deviation of s1/s2
-      stdev_s1 = pdf_params%stdev_s1
-      stdev_s2 = pdf_params%stdev_s2
+      stdev_s1 = stdev_s1_in
+      stdev_s2 = stdev_s2_in
     else
       call set_min_varnce_and_mean &
-          ( wm, w_tol_sqd, pdf_params%w1, pdf_params%varnce_w1, & ! In
+          ( wm, w_tol_sqd, w1_in, varnce_w1_in, & ! In
             varnce_w1, w1 ) ! Out
 
       call set_min_varnce_and_mean &
-          ( wm, w_tol_sqd, pdf_params%w2, pdf_params%varnce_w2, & ! In
+          ( wm, w_tol_sqd, w2_in, varnce_w2_in, & ! In
             varnce_w2, w2 ) ! Out
 
       rtm = rvm + rcm
 
       call set_min_varnce_and_mean &
-          ( rtm, rt_tol**2, pdf_params%rt1, pdf_params%varnce_rt1, & ! In
+          ( rtm, rt_tol**2, rt1_in, varnce_rt1_in, & ! In
             varnce_rt1, rt1 ) ! Out
 
       call set_min_varnce_and_mean &
-          ( rtm, rt_tol**2, pdf_params%rt2, pdf_params%varnce_rt2, & ! In
+          ( rtm, rt_tol**2, rt2_in, varnce_rt2_in, & ! In
             varnce_rt2, rt2 ) ! Out
 
       call set_min_varnce_and_mean &
-          ( thlm, thl_tol**2, pdf_params%thl1, pdf_params%varnce_thl1, & ! In
+          ( thlm, thl_tol**2, thl1_in, varnce_thl1_in, & ! In
             varnce_thl1, thl1 ) ! Out
 
       call set_min_varnce_and_mean &
-          ( thlm, thl_tol**2, pdf_params%thl2, pdf_params%varnce_thl2, & ! In
+          ( thlm, thl_tol**2, thl2_in, varnce_thl2_in, & ! In
             varnce_thl2, thl2 ) ! Out
 
       ! Compute the mean of s1 and s2
-      s_mellor = pdf_params%s1 * pdf_params%mixt_frac &
-               + (1.0-pdf_params%mixt_frac) * pdf_params%s2
+      s_mellor = s1_in * mixt_frac + (1.0-mixt_frac) * s2_in
 
       ! Here the subroutine name is a little misleading since we're imposing the
       ! threshold on a standard deviation rather than a variance.
       call set_min_varnce_and_mean &
-          ( s_mellor, s_mellor_tol, pdf_params%s1, pdf_params%stdev_s1, & ! In
+          ( s_mellor, s_mellor_tol, s1_in, stdev_s1_in, & ! In
             stdev_s1, s1 ) ! Out
 
       ! See comment above.
       call set_min_varnce_and_mean &
-          ( s_mellor, s_mellor_tol, pdf_params%s2, pdf_params%stdev_s2, & ! In
+          ( s_mellor, s_mellor_tol, s2_in, stdev_s2_in, & ! In
             stdev_s2, s2 ) ! Out
     end if ! l_fix_s_t_correlations
 
-    crt1 = pdf_params%crt1
-    crt2 = pdf_params%crt2
-    cthl1 = pdf_params%cthl1
-    cthl2 = pdf_params%cthl2
-
-    mixt_frac   = dble( pdf_params%mixt_frac )
-
-!   cloud_frac1 = dble( pdf_params%cloud_frac1 )
-!   cloud_frac2 = dble( pdf_params%cloud_frac2 )
+!   cloud_frac1 = dble( cloud_frac1_in )
+!   cloud_frac2 = dble( cloud_frac2_in )
     ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
     cloud_frac1 = 1.0
     cloud_frac2 = 1.0
-
-    rrtthl      = pdf_params%rrtthl
 
     !---------------------------------------------------------------------------
     ! Generate a set of sample points for a microphysics scheme
@@ -846,7 +853,7 @@ module generate_lh_sample_module
 
     end if ! l_fix_s_t_correlations
 
-    call sample_points( n_micro_calls, d_variables, mixt_frac, &  ! In
+    call sample_points( n_micro_calls, d_variables, dble( mixt_frac ), &  ! In
                         dble( rt1 ), dble( thl1 ), &  ! In
                         dble( rt2 ), dble( thl2 ), &  ! In
                         dble( crt1 ), dble( cthl1 ), &  ! In
