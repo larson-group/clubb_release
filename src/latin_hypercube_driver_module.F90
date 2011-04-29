@@ -32,8 +32,8 @@ module latin_hypercube_driver_module
                rho, pdf_params, wm_zt, w_std_dev, delta_zt, delta_zm, rcm, rvm, &
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
                corr_array_cloud, corr_array_below, Lscale_vert_avg, &
-               LH_hydromet_mc, LH_hydromet_vel, LH_rcm_mc, &
-               LH_rvm_mc, LH_thlm_mc, &
+               LH_hydromet_mc, LH_hydromet_vel, &
+               LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &
                microphys_sub )
 
 ! Description:
@@ -640,11 +640,11 @@ module latin_hypercube_driver_module
       if ( iiNgraupelm > 0 ) then
         call stat_update_var( iLH_Ngraupelm, lh_hydromet(:,iiNgraupelm), zt )
       end if
-
-      call stat_update_var( iLH_rcm, lh_rcm, zt )
       if ( iiNcm > 0 ) then
         call stat_update_var( iLH_Ncm, lh_hydromet(:,iiNcm), zt )
       end if
+
+      call stat_update_var( iLH_rcm, lh_rcm, zt )
       call stat_update_var( iLH_thlm, lh_thlm, zt )
       call stat_update_var( iLH_rvm, lh_rvm, zt )
       call stat_update_var( iLH_wm, lh_wm, zt )

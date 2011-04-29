@@ -1315,8 +1315,8 @@ module microphys_driver
                rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & !In 
                corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
-               hydromet_mc, hydromet_vel_zt, rcm_mc, & ! In/Out
-               rvm_mc, thlm_mc,  & ! In/Out
+               hydromet_mc, hydromet_vel_zt, & ! In/Out
+               rcm_mc, rvm_mc, thlm_mc,  & ! Out
                morrison_micro_driver )  ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
@@ -1368,16 +1368,16 @@ module microphys_driver
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef UNRELEASED_CODE
-        call latin_hypercube_driver &
-             ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
-               LH_sequence_length, gr%nnzp, & ! In
-               cloud_frac, thlm, p_in_Pa, exner, & ! In
-               rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
-               hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & !In 
-               corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
-               hydromet_mc, hydromet_vel_zt, rcm_mc, & ! In/Out
-               rvm_mc, thlm_mc,  & ! In/Out
-               morrison_micro_driver )  ! Procedure
+!       call latin_hypercube_driver &
+!            ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
+!              LH_sequence_length, gr%nnzp, & ! In
+!              cloud_frac, thlm, p_in_Pa, exner, & ! In
+!              rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
+!              hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & !In 
+!              corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
+!              hydromet_mc, hydromet_vel_zt, & ! In/Out
+!              rcm_mc, rvm_mc, thlm_mc,  & ! Out
+!              mg_microphys_driver )  ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
 #endif
@@ -1429,8 +1429,8 @@ module microphys_driver
                rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & !In 
                corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
-               hydromet_mc, hydromet_vel_zt, rcm_mc, & ! In/Out
-               rvm_mc, thlm_mc, & ! In/Out
+               hydromet_mc, hydromet_vel_zt, & ! In/Out
+               rcm_mc, rvm_mc, thlm_mc,  & ! Out
                KK_micro_driver ) ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
