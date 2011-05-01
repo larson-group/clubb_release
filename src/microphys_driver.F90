@@ -1315,6 +1315,11 @@ module microphys_driver
                morrison_micro_driver )  ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
+        ! Get rid of compiler warnings
+        if ( .false. .and. size( X_nl_all_levs ) < 1 ) then
+           rcm_mc(1) = + LH_rt(1,1) + LH_thl(1,1) &
+             + LH_sample_point_weights(1) + real( X_mixt_comp_all_levs(1,1) )
+        end if
 #endif
         if ( l_stats_samp ) then
 
