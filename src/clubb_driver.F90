@@ -240,7 +240,6 @@ module clubb_driver
 #ifdef UNRELEASED_CODE
     use parameters_microphys, only: &
       LH_microphys_type, & ! Variable(s)
-      LH_microphys_calls, &
       LH_microphys_disabled
 
     use latin_hypercube_driver_module, only: &

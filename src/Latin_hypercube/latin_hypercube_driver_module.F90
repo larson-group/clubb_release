@@ -582,7 +582,7 @@ module latin_hypercube_driver_module
     implicit none
 
     ! Interface block
-#include "./microphys_interface.inc"
+#include "../microphys_interface.inc"
 
     ! Input Variables
     real, intent(in) :: &
