@@ -3388,7 +3388,8 @@ module clubb_driver
       pdf_parameter ! Derived type
 
     use parameters_microphys, only: &
-      micro_scheme, l_cloud_sed, Ncm_initial  ! Variables
+      micro_scheme, l_cloud_sed, Ncm_initial, &  ! Variables
+      LH_microphys_calls, LH_sequence_length
 
     use constants_clubb, only: & 
       rc_tol, fstderr, cm3_per_m3 ! Variable(s)
@@ -3422,7 +3423,6 @@ module clubb_driver
 
     use parameters_microphys, only: &
       LH_microphys_type, LH_microphys_disabled, & ! Variable(s)
-      LH_microphys_calls, LH_sequence_length, &
       l_lh_vert_overlap
 
     use latin_hypercube_driver_module, only: &
@@ -3430,6 +3430,8 @@ module clubb_driver
 
     use fill_holes, only: &
       vertical_avg  ! Procedure(s)
+#else
+#define d_variables 0
 #endif
 
     implicit none
@@ -3543,6 +3545,7 @@ module clubb_driver
     LH_thl = -999.
     X_mixt_comp_all_levs = -999
     LH_sample_point_weights = -999.
+    if ( .false. .or. Lscale(1) < 0 ) print *, ""
 #endif /* UNRELEASED_CODE */
 
     !----------------------------------------------------------------

@@ -1101,6 +1101,8 @@ module microphys_driver
 #ifdef UNRELEASED_CODE
     use latin_hypercube_arrays, only: &
       d_variables ! Variable(s)
+#else
+#define d_variables 0
 #endif /* UNRELEASED_CODE */
 
     implicit none
