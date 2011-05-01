@@ -19,22 +19,19 @@ module latin_hypercube_driver_module
   private ! Default scope
 
 #ifdef UNRELEASED_CODE
-  public :: latin_hypercube_driver, latin_hypercube_2D_output, &
+  public :: LH_subcolumn_generator, LH_microphys_driver, latin_hypercube_2D_output, &
     latin_hypercube_2D_close
 
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine latin_hypercube_driver &
-             ( dt, iter, d_variables, n_micro_calls, &
-               sequence_length, nnzp, &
-               cloud_frac, thlm, p_in_Pa, exner, &
-               rho, pdf_params, wm_zt, w_std_dev, delta_zt, delta_zm, rcm, rvm, &
+  subroutine LH_subcolumn_generator &
+             ( iter, d_variables, n_micro_calls, sequence_length, nnzp, &
+               thlm, pdf_params, wm_zt, delta_zm, rcm, rvm, &
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
                corr_array_cloud, corr_array_below, Lscale_vert_avg, &
-               LH_hydromet_mc, LH_hydromet_vel, &
-               LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &
-               microphys_sub )
+               X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &
+               LH_sample_point_weights )
 
 ! Description:
 !   Call a microphysics scheme or generate an estimate of Kessler autoconversion
@@ -42,17 +39,7 @@ module latin_hypercube_driver_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use array_index, only: &
-      iirrainm,    & ! Variables  
-      iirsnowm,    &
-      iirgraupelm, &
-      iiricem,     &
-      iiNcm,       & 
-      iiNrm,       & 
-      iiNim,       & 
-      iiNsnowm,    & 
-      iiNgraupelm
-
+ 
     use array_index, only: &
       iiLH_s_mellor   ! Variables
 
@@ -66,7 +53,6 @@ module latin_hypercube_driver_module
       generate_uniform_sample
 
     use estimate_lh_micro_module, only: & 
-      estimate_lh_micro, & ! Procedure
       k_lh_start ! Variable
 
     use output_2D_samples_module, only: &
@@ -80,46 +66,8 @@ module latin_hypercube_driver_module
       fstderr, & ! Constant
       cm3_per_m3
 
-    use variables_diagnostic_module, only: & 
-      lh_AKm,  & 
-      AKm, & 
-      AKstd, & 
-      AKstd_cld, & 
-      AKm_rcm, & 
-      AKm_rcc, & 
-      lh_rcm_avg
-
-    use stats_variables, only: &
-      l_stats_samp, & ! Variables
-      iLH_rrainm, &
-      iLH_Nrm, &
-      iLH_ricem, &
-      iLH_Nim, &
-      iLH_rsnowm, &
-      iLH_Nsnowm, &
-      iLH_rgraupelm, &
-      iLH_Ngraupelm, &
-      iLH_thlm, &
-      iLH_rcm, &
-      iLH_Ncm, &
-      iLH_rvm, &
-      iLH_wm, &
-      iLH_wp2_zt, &
-      iLH_Nrp2_zt, &
-      iLH_Ncp2_zt, &
-      iLH_rrainp2_zt, &
-      iLH_rcp2_zt, &
-      iLH_rtp2_zt, &
-      iLH_thlp2_zt, &
-      iLH_cloud_frac, &
-      zt
-
-    use stats_type, only: &
-      stat_update_var ! Procedure(s)
-
     use parameters_microphys, only: &
       l_lh_vert_overlap, &  ! Variables
-      LH_sample_point_weights, &
       l_lh_cloud_weighted_sampling
 
     use error_code, only: &
@@ -134,9 +82,6 @@ module latin_hypercube_driver_module
     ! External
     intrinsic :: allocated, mod, maxloc, dble, epsilon
 
-    ! Interface block
-#include "./microphys_interface.inc"
-
     ! Parameter Constants
     real, parameter :: &
       cloud_frac_thresh = 0.001 ! Threshold for sampling preferentially within cloud
@@ -147,9 +92,6 @@ module latin_hypercube_driver_module
       l_re_seed = .true. ! Re-seed the Mersenne twister algorithm
 
     ! Input Variables
-    real, intent(in) :: &
-      dt ! Model timestep       [s]
-
     integer, intent(in) :: &
       iter,            & ! Model iteration number
       d_variables,     & ! Number of variables to sample
@@ -157,20 +99,12 @@ module latin_hypercube_driver_module
       sequence_length, & ! nt_repeat/n_micro_call; number of timesteps before sequence repeats.
       nnzp               ! Number of vertical model levels
 
-    real, dimension(nnzp), intent(in) :: &
-      cloud_frac, & ! Cloud fraction               [-]
-      thlm,       & ! Liquid potential temperature [K]
-      p_in_Pa,    & ! Pressure                     [Pa]
-      exner,      & ! Exner function               [-]
-      rho           ! Density on thermo. grid      [kg/m^3]
-
     type(pdf_parameter), dimension(nnzp), intent(in) :: & 
       pdf_params ! PDF parameters       [units vary]
 
     real, dimension(nnzp), intent(in) :: &
+      thlm,      & ! Liquid potential temperature 	[K]
       wm_zt,     & ! Mean w                             [m/s]
-      w_std_dev, & ! Standard deviation of w            [m/s]
-      delta_zt,  & ! Difference in thermo. altitudes    [m]
       delta_zm     ! Difference in moment. altitudes    [m]
 
     real, dimension(nnzp), intent(in) :: &
@@ -191,48 +125,25 @@ module latin_hypercube_driver_module
     real, dimension(nnzp), intent(in) :: &
       Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
 
-    ! Input/Output Variables
-    real, dimension(nnzp,hydromet_dim), intent(inout) :: &
-      LH_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
-      LH_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
-
     ! Output Variables
-    real, dimension(nnzp), intent(out) :: &
-      LH_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
-      LH_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
-      LH_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
+    double precision, intent(out), dimension(nnzp,n_micro_calls,d_variables) :: &
+      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+
+    integer, intent(out), dimension(nnzp,n_micro_calls) :: &
+      X_mixt_comp_all_levs ! Which mixture component we're in
+
+    real, intent(out), dimension(nnzp,n_micro_calls) :: &
+      LH_rt, LH_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
+
+    real, intent(out), dimension(n_micro_calls) :: &
+      LH_sample_point_weights
 
     ! Local variables
-    integer :: p_matrix(n_micro_calls,d_variables+1)
 
     real(kind=genrand_real), dimension(nnzp,n_micro_calls,(d_variables+1)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
 
-    double precision, dimension(nnzp,n_micro_calls,d_variables) :: &
-      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-
-    integer, dimension(nnzp,n_micro_calls) :: &
-      X_mixt_comp_all_levs ! Which mixture component we're in
-
-    real, dimension(nnzp,n_micro_calls) :: &
-      LH_rt, LH_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
-
-    real, dimension(nnzp,hydromet_dim) :: &
-      lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
-
-    real, dimension(nnzp) :: &
-      lh_thlm,       & ! Average value of the latin hypercube est. of theta_l           [K]
-      lh_rcm,        & ! Average value of the latin hypercube est. of rc                [kg/kg]
-      lh_rvm,        & ! Average value of the latin hypercube est. of rv                [kg/kg]
-      lh_wm,         & ! Average value of the latin hypercube est. of vertical velocity [m/s]
-      lh_wp2_zt,     & ! Average value of the variance of the LH est. of vert. vel.     [m^2/s^2]
-      lh_rrainp2_zt, & ! Average value of the variance of the LH est. of rrain.         [(kg/kg)^2]
-      lh_rcp2_zt,    & ! Average value of the variance of the LH est. of rc.            [(kg/kg)^2]
-      lh_rtp2_zt,    & ! Average value of the variance of the LH est. of rt             [kg^2/kg^2]
-      lh_thlp2_zt,   & ! Average value of the variance of the LH est. of thetal         [K^2]
-      lh_Nrp2_zt,    & ! Average value of the variance of the LH est. of Nr.            [#^2/kg^2]
-      lh_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
-      lh_cloud_frac    ! Average value of the latin hypercube est. of cloud fraction    [-]
+    integer :: p_matrix(n_micro_calls,d_variables+1)
 
     real :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
 
@@ -590,6 +501,158 @@ module latin_hypercube_driver_module
                                         X_u_all_levs, X_mixt_comp_all_levs, &
                                         p_matrix )
     end if
+
+    return
+  end subroutine LH_subcolumn_generator
+
+  !=============================================================================
+  subroutine LH_microphys_driver &
+             ( dt, nnzp, n_micro_calls, d_variables, &
+               X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, &
+               pdf_params, p_in_Pa, exner, rho, &
+               rcm, w_std_dev, delta_zt, cloud_frac, &
+               hydromet, X_mixt_comp_all_levs, &
+               LH_hydromet_mc, LH_hydromet_vel, &
+               LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &
+               microphys_sub )
+
+    ! Description:
+    !   Computes an estimate of the change due to microphysics given a set of 
+    !   subcolumns of thlm, rtm, et cetera from the subcolumn generator
+    !
+    ! References:
+    !   None
+    !---------------------------------------------------------------------------
+    use array_index, only: &
+      iirrainm,    & ! Variables  
+      iirsnowm,    &
+      iirgraupelm, &
+      iiricem,     &
+      iiNcm,       & 
+      iiNrm,       & 
+      iiNim,       & 
+      iiNsnowm,    & 
+      iiNgraupelm
+
+    use variables_diagnostic_module, only: & 
+      lh_AKm,  & 
+      AKm, & 
+      AKstd, & 
+      AKstd_cld, & 
+      AKm_rcm, & 
+      AKm_rcc, & 
+      lh_rcm_avg
+
+    use parameters_model, only: hydromet_dim ! Variable
+
+    use pdf_parameter_module, only: &
+      pdf_parameter  ! Type
+
+    use estimate_lh_micro_module, only: & 
+      estimate_lh_micro ! Procedure(s)
+
+    use stats_type, only: &
+      stat_update_var ! Procedure(s)
+
+    use stats_variables, only: &
+      l_stats_samp, & ! Variables
+      iLH_rrainm, &
+      iLH_Nrm, &
+      iLH_ricem, &
+      iLH_Nim, &
+      iLH_rsnowm, &
+      iLH_Nsnowm, &
+      iLH_rgraupelm, &
+      iLH_Ngraupelm, &
+      iLH_thlm, &
+      iLH_rcm, &
+      iLH_Ncm, &
+      iLH_rvm, &
+      iLH_wm, &
+      iLH_wp2_zt, &
+      iLH_Nrp2_zt, &
+      iLH_Ncp2_zt, &
+      iLH_rrainp2_zt, &
+      iLH_rcp2_zt, &
+      iLH_rtp2_zt, &
+      iLH_thlp2_zt, &
+      iLH_cloud_frac, &
+      zt
+
+    implicit none
+
+    ! Interface block
+#include "./microphys_interface.inc"
+
+    ! Input Variables
+    real, intent(in) :: &
+      dt ! Model timestep       [s]
+
+    integer, intent(in) :: &
+      d_variables,     & ! Number of variables to sample
+      n_micro_calls,   & ! Number of calls to microphysics per timestep (normally=2)
+      nnzp               ! Number of vertical model levels
+
+    ! Input Variables
+    double precision, intent(in), dimension(nnzp,n_micro_calls,d_variables) :: &
+      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+
+    integer, intent(in), dimension(nnzp,n_micro_calls) :: &
+      X_mixt_comp_all_levs ! Which mixture component we're in
+
+    real, intent(in), dimension(nnzp,n_micro_calls) :: &
+      LH_rt, LH_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
+
+    real, intent(in), dimension(n_micro_calls) :: &
+      LH_sample_point_weights ! Weight given the individual sample points
+
+    type(pdf_parameter), dimension(nnzp), intent(in) :: & 
+      pdf_params ! PDF parameters       [units vary]
+
+    real, dimension(nnzp,hydromet_dim), intent(in) :: &
+      hydromet ! Hydrometeor species    [units vary]
+
+    real, dimension(nnzp), intent(in) :: &
+      cloud_frac,  & ! Cloud fraction               [-]
+      w_std_dev,   & ! Standard deviation of w      [m/s]
+      delta_zt,    & ! Change in meters with height [m]
+      rcm,         & ! Liquid water mixing ratio    [kg/kg]
+      p_in_Pa,     & ! Pressure                     [Pa]
+      exner,       & ! Exner function               [-]
+      rho            ! Density on thermo. grid      [kg/m^3]
+
+    ! Input/Output Variables
+    real, dimension(nnzp,hydromet_dim), intent(inout) :: &
+      LH_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
+      LH_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
+
+    ! Output Variables
+    real, dimension(nnzp), intent(out) :: &
+      LH_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
+      LH_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
+      LH_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
+
+    ! Local Variables
+    real, dimension(nnzp,hydromet_dim) :: &
+      lh_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
+
+    real, dimension(nnzp) :: &
+      lh_thlm,       & ! Average value of the latin hypercube est. of theta_l           [K]
+      lh_rcm,        & ! Average value of the latin hypercube est. of rc                [kg/kg]
+      lh_rvm,        & ! Average value of the latin hypercube est. of rv                [kg/kg]
+      lh_wm,         & ! Average value of the latin hypercube est. of vertical velocity [m/s]
+      lh_wp2_zt,     & ! Average value of the variance of the LH est. of vert. vel.     [m^2/s^2]
+      lh_rrainp2_zt, & ! Average value of the variance of the LH est. of rrain.         [(kg/kg)^2]
+      lh_rcp2_zt,    & ! Average value of the variance of the LH est. of rc.            [(kg/kg)^2]
+      lh_rtp2_zt,    & ! Average value of the variance of the LH est. of rt             [kg^2/kg^2]
+      lh_thlp2_zt,   & ! Average value of the variance of the LH est. of thetal         [K^2]
+      lh_Nrp2_zt,    & ! Average value of the variance of the LH est. of Nr.            [#^2/kg^2]
+      lh_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
+      lh_cloud_frac    ! Average value of the latin hypercube est. of cloud fraction    [-]
+
+
+    ! ---- Begin Code ----
+
     ! Perform LH and analytic microphysical calculations
     call estimate_lh_micro &
          ( dt, nnzp, n_micro_calls, d_variables, &  ! intent(in)
@@ -598,7 +661,7 @@ module latin_hypercube_driver_module
            p_in_Pa, exner, rho, &                   ! intent(in)
            rcm, w_std_dev, delta_zt, &              ! intent(in)
            cloud_frac, hydromet, &                  ! intent(in)
-           X_mixt_comp_all_levs, &                  ! intent(in)
+           X_mixt_comp_all_levs, LH_sample_point_weights, & ! intent(in)
            LH_hydromet_mc, LH_hydromet_vel, &       ! intent(inout)
            LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &      ! intent(out)
            lh_AKm, AKm, AKstd, AKstd_cld, &         ! intent(out)
@@ -609,8 +672,6 @@ module latin_hypercube_driver_module
            lh_cloud_frac, & ! intent(out)
            microphys_sub )  ! Procedure
 
-    ! print*, 'latin_hypercube_driver: AKm=', AKm
-    ! print*, 'latin_hypercube_driver: lh_AKm=', lh_AKm
 
     if ( l_stats_samp ) then
 
@@ -660,9 +721,7 @@ module latin_hypercube_driver_module
     end if ! l_stats_samp
 
     return
-
-  end subroutine latin_hypercube_driver
-
+  end subroutine LH_microphys_driver
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_2D_output &
              ( fname_prefix, fdir, stats_tout, nnzp, &

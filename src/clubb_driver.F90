@@ -240,11 +240,15 @@ module clubb_driver
 #ifdef UNRELEASED_CODE
     use parameters_microphys, only: &
       LH_microphys_type, & ! Variable(s)
+      LH_microphys_calls, &
       LH_microphys_disabled
 
     use latin_hypercube_driver_module, only: &
       latin_hypercube_2D_output, & ! Procedure(s)
       latin_hypercube_2D_close
+
+    use latin_hypercube_arrays, only: &
+      cleanup_latin_hypercube_arrays ! Procedure(s)
 
     use simple_rad_module, only: simple_rad_lba_init ! Procedure(s)
 
@@ -754,7 +758,6 @@ module clubb_driver
 
     if ( err_code == clubb_var_out_of_bounds ) return
 
-
     ! Deallocate stretched grid altitude arrays
     deallocate( momentum_heights, thermodynamic_heights )
 
@@ -879,9 +882,12 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
     if ( LH_microphys_type /= LH_microphys_disabled ) then
+
+      ! Setup 2D output of all subcolumns (if enabled)
       call latin_hypercube_2D_output &
            ( fname_prefix, fdir, stats_tout, gr%nnzp, &
              gr%zt, time_initial  )
+
     end if
 #endif /*UNRELEASED_CODE*/
 
@@ -1077,6 +1083,7 @@ module clubb_driver
 #ifdef UNRELEASED_CODE
     if ( LH_microphys_type /= LH_microphys_disabled ) then
       call latin_hypercube_2D_close( )
+      call cleanup_latin_hypercube_arrays( )
     end if
 #endif
 
@@ -3403,7 +3410,27 @@ module clubb_driver
       gr ! Instance of a type
 
     use array_index, only: & 
-      iiNcm
+      iiNcm ! Variable
+
+#ifdef UNRELEASED_CODE
+    use latin_hypercube_arrays, only: &
+      xp2_on_xm2_array_cloud, &
+      xp2_on_xm2_array_below, &
+      corr_array_cloud, &
+      corr_array_below, &
+      d_variables
+
+    use parameters_microphys, only: &
+      LH_microphys_type, LH_microphys_disabled, & ! Variable(s)
+      LH_microphys_calls, LH_sequence_length, &
+      l_lh_vert_overlap
+
+    use latin_hypercube_driver_module, only: &
+      LH_subcolumn_generator ! Procedure(s)
+
+    use fill_holes, only: &
+      vertical_avg  ! Procedure(s)
+#endif
 
     implicit none
 
@@ -3457,11 +3484,66 @@ module clubb_driver
     integer, intent(inout) :: & 
       err_code
 
+    double precision, dimension(gr%nnzp,LH_microphys_calls,d_variables) :: &
+      X_nl_all_levs ! Lognormally distributed hydrometeors
+
+    integer, dimension(gr%nnzp,LH_microphys_calls) :: &
+      X_mixt_comp_all_levs ! Which mixture component the sample is in
+
+    real, dimension(gr%nnzp,LH_microphys_calls) :: &
+      LH_rt, LH_thl ! Samples of rt, thl	[kg/kg,K]
+
+    real, dimension(LH_microphys_calls) :: &
+      LH_sample_point_weights ! Weights for cloud weighted sampling
+
+#ifdef UNRELEASED_CODE
+    ! Local Variables
+    real, dimension(gr%nnzp) :: &
+      Lscale_vert_avg ! 3pt vertically averaged Lscale          [m]
+
+    integer :: k, kp1, km1 
+#endif
+
     ! ---- Begin Code ----
 
     rcm_mc  = 0.0
     rvm_mc  = 0.0
     thlm_mc = 0.0
+
+#ifdef UNRELEASED_CODE
+    !----------------------------------------------------------------
+    ! Compute subcolumns if enabled
+    !----------------------------------------------------------------
+    if ( LH_microphys_type /= LH_microphys_disabled ) then
+      if ( l_lh_vert_overlap ) then
+        ! Determine 3pt vertically averaged Lscale
+        do k = 1, gr%nnzp
+          kp1 = min( k+1, gr%nnzp )
+          km1 = max( k-1, 1 )
+          Lscale_vert_avg(k) = vertical_avg &
+                             ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
+                               Lscale(km1:kp1), gr%invrs_dzt(km1:kp1))
+         end do
+       else
+         ! If vertical overlap is disabled, this calculation won't be needed
+         Lscale_vert_avg = -999.
+       end if
+
+           call LH_subcolumn_generator &
+                ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nnzp, & ! In
+                  thlm, pdf_params, wm_zt, 1./gr%invrs_dzt, rcm, rtm-rcm, & ! In
+                  hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
+                  corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
+                  X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out 
+                  LH_sample_point_weights )
+    end if ! LH_microphys_enabled
+#else
+    X_nl_all_levs = -999.
+    LH_rt = -999.
+    LH_thl = -999.
+    X_mixt_comp_all_levs = -999
+    LH_sample_point_weights = -999.
+#endif /* UNRELEASED_CODE */
 
     !----------------------------------------------------------------
     ! Compute Microphysics
@@ -3505,7 +3587,8 @@ module clubb_driver
            ( iter, runtype, dt, time_current, &                         ! Intent(in)
              thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
              wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
-             wp2_zt, Lscale, rho_ds_zt, rho_ds_zm, &                    ! Intent(in)
+             wp2_zt, rho_ds_zt, rho_ds_zm, LH_sample_point_weights, &   ! Intent(in)
+             X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
              Ncnm, hydromet, &                                          ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
              err_code )                                                 ! Intent(out)

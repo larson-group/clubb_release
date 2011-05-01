@@ -53,11 +53,6 @@ module parameters_microphys
 !$omp threadprivate(l_fix_s_t_correlations, l_lh_cloud_weighted_sampling, &
 !$omp   l_lh_vert_overlap)
 
-  real, allocatable, dimension(:), public :: &
-    LH_sample_point_weights
-
-!$omp threadprivate(LH_sample_point_weights)
-
   integer, public :: &
     LH_microphys_calls, & ! Number of latin hypercube samples to call the microphysics with
     LH_sequence_length    ! Number of timesteps before the latin hypercube seq. repeats

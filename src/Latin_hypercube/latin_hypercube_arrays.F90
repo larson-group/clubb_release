@@ -3,11 +3,12 @@ module latin_hypercube_arrays
 
   implicit none
 
-  public :: setup_corr_varnce_array
+  public :: setup_corr_varnce_array, cleanup_latin_hypercube_arrays
 
   private
 
   integer, public :: d_variables
+!omp threadprivate(d_variables)
 
   real, public, dimension(:), allocatable :: &
     xp2_on_xm2_array_cloud, &
@@ -16,6 +17,9 @@ module latin_hypercube_arrays
   real, public, dimension(:,:), allocatable :: &
     corr_array_cloud, &
     corr_array_below
+!$omp threadprivate(xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
+!$omp   corr_array_cloud, corr_array_below)
+
 
   contains
 !===============================================================================
@@ -461,5 +465,39 @@ module latin_hypercube_arrays
 
     return
   end subroutine setup_corr_varnce_array
+
+  !-----------------------------------------------------------------------------
+  subroutine cleanup_latin_hypercube_arrays( )
+
+  ! Description:
+  !   De-allocate latin hypercube arrays
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------------
+    implicit none
+
+    ! External
+    intrinsic :: allocated
+
+    ! ---- Begin Code ----
+
+    if ( allocated( corr_array_cloud ) ) then
+      deallocate( corr_array_cloud )
+    end if
+
+    if ( allocated( corr_array_below ) ) then
+      deallocate( corr_array_below )
+    end if
+
+    if ( allocated( xp2_on_xm2_array_cloud ) ) then
+      deallocate( xp2_on_xm2_array_cloud )
+    end if
+
+    if ( allocated( xp2_on_xm2_array_below ) ) then
+      deallocate( xp2_on_xm2_array_below )
+    end if
+
+    return
+  end subroutine cleanup_latin_hypercube_arrays
 
 end module latin_hypercube_arrays

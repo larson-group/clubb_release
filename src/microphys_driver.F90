@@ -42,9 +42,6 @@ module microphys_driver
     Ncm_initial                     ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
 
   use parameters_microphys, only: &
-    LH_sample_point_weights ! Weights for the averaging of LH sample points
-
-  use parameters_microphys, only: &
    LH_microphys_interactive,     & ! Feed the subcolumns into the microphysics and allow feedback
    LH_microphys_non_interactive, & ! Feed the subcolumns into the microphysics with no feedback
    LH_microphys_disabled           ! Disable latin hypercube entirely
@@ -202,7 +199,7 @@ module microphys_driver
 
 #ifdef UNRELEASED_CODE
     use latin_hypercube_arrays, only: &
-      setup_corr_varnce_array ! Procedure
+      setup_corr_varnce_array   ! Procedure(s)
 #endif /* UNRELEASED_CODE */
 
     implicit none
@@ -923,10 +920,8 @@ module microphys_driver
       ! Allocate and set the arrays containing the correlations
       ! and the X'^2 / X'^2 terms
       call setup_corr_varnce_array( d_variables_in=i )
-#endif
 
-      ! Allocate the sample point weights array
-      allocate( LH_sample_point_weights(LH_microphys_calls) )
+#endif
 
     end if
 
@@ -938,7 +933,8 @@ module microphys_driver
              ( iter, runtype, dt, time_current,  & 
                thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & 
                wm_zt, wm_zm, Kh_zm, pdf_params, & 
-               wp2_zt, Lscale, rho_ds_zt, rho_ds_zm, &
+               wp2_zt, rho_ds_zt, rho_ds_zm, LH_sample_point_weights, &
+               X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &
                Ncnm, hydromet, & 
                rvm_mc, rcm_mc, thlm_mc, &
                err_code )
@@ -967,7 +963,13 @@ module microphys_driver
 
 #ifdef UNRELEASED_CODE
     use latin_hypercube_driver_module, only: &
-      latin_hypercube_driver ! Procedure
+      LH_microphys_driver ! Procedure
+
+!   use latin_hypercube_arrays, only: &
+!     X_nl_all_levs, & ! Variable(s)
+!     X_mixt_comp_all_levs, &
+!     LH_rt, LH_thl
+
 #endif /*UNRELEASED_CODE*/
 
     use ice_dfsn_module, only: & 
@@ -1098,8 +1100,7 @@ module microphys_driver
 
 #ifdef UNRELEASED_CODE
     use latin_hypercube_arrays, only: &
-      xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
-      corr_array_cloud, corr_array_below, d_variables
+      d_variables ! Variable(s)
 #endif /* UNRELEASED_CODE */
 
     implicit none
@@ -1135,10 +1136,20 @@ module microphys_driver
 
     real, dimension(gr%nnzp), intent(in) :: & 
       wp2_zt,    & ! w'^2 on the thermo. grid               [m^2/s^2]
-      Lscale,    & ! Length scale                           [m]
       rho_ds_zm, & ! Dry, static density on moment. levels  [kg/m^3]
       rho_ds_zt    ! Dry, static density on thermo. levels  [kg/m^3]
 
+    double precision, dimension(gr%nnzp,LH_microphys_calls,d_variables), intent(in) :: &
+      X_nl_all_levs ! Lognormally distributed hydrometeors
+
+    integer, dimension(gr%nnzp,LH_microphys_calls), intent(in) :: &
+      X_mixt_comp_all_levs ! Which mixture component the sample is in
+
+    real, dimension(gr%nnzp,LH_microphys_calls), intent(in) :: &
+      LH_rt, LH_thl ! Samples of rt, thl	[kg/kg,K]
+
+    real, dimension(LH_microphys_calls), intent(in) :: &
+      LH_sample_point_weights ! Weights for cloud weighted sampling
 
     ! Note:
     ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
@@ -1168,9 +1179,7 @@ module microphys_driver
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
 
     real, dimension(gr%nnzp) :: &
-      delta_zt, &     ! Difference in thermo. height levels     [m]
-      delta_zm, &     ! Difference in moment. height levels     [m]
-      Lscale_vert_avg ! 3pt vertically averaged Lscale          [m]
+      delta_zt  ! Difference in thermo. height levels     [m]
 
 !   real, dimension(gr%nnzp) :: &
 !     T_in_K  ! Temperature          [K]
@@ -1198,7 +1207,7 @@ module microphys_driver
       max_velocity, & ! Maximum sedimentation velocity [m/s]
       temp            ! Temporary variables     [units vary]
 
-    integer :: i, k, kp1, km1 ! Loop iterators / Array indices
+    integer :: i, k ! Loop iterators / Array indices
 
     integer :: ixrm_cl, ixrm_bt, ixrm_mc
 
@@ -1231,21 +1240,6 @@ module microphys_driver
 
     ! Compute difference in thermodynamic height levels
     delta_zt(1:gr%nnzp) = 1./gr%invrs_dzm(1:gr%nnzp)
-    delta_zm(1:gr%nnzp) = 1./gr%invrs_dzt(1:gr%nnzp)
-
-    if ( LH_microphys_type /= LH_microphys_disabled .and. l_lh_vert_overlap ) then
-      ! Determine 3pt vertically averaged Lscale
-      do k = 1, gr%nnzp
-        kp1 = min( k+1, gr%nnzp )
-        km1 = max( k-1, 1 )
-        Lscale_vert_avg(k) = vertical_avg &
-                             ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
-                               Lscale(km1:kp1), gr%invrs_dzt(km1:kp1))
-      end do
-    else
-      ! If vertical overlap is disabled, this calculation won't be needed
-      Lscale_vert_avg = -999.
-    end if
 
     ! Begin by calling Brian Griffin's implementation of the
     ! Khairoutdinov and Kogan microphysics (analytic or local formulas),
@@ -1308,13 +1302,12 @@ module microphys_driver
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef UNRELEASED_CODE
-        call latin_hypercube_driver &
-             ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
-               LH_sequence_length, gr%nnzp, & ! In
-               cloud_frac, thlm, p_in_Pa, exner, & ! In
-               rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
-               hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & !In 
-               corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
+        call LH_microphys_driver &
+             ( real( dt ), gr%nnzp, LH_microphys_calls, d_variables, & ! In
+               X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
+               pdf_params, p_in_Pa, exner, rho, & ! In
+               rcm, wtmp, delta_zt, cloud_frac, & ! In
+               hydromet, X_mixt_comp_all_levs, & !In 
                hydromet_mc, hydromet_vel_zt, & ! In/Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                morrison_micro_driver )  ! Procedure
@@ -1368,16 +1361,16 @@ module microphys_driver
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef UNRELEASED_CODE
-!       call latin_hypercube_driver &
-!            ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
-!              LH_sequence_length, gr%nnzp, & ! In
-!              cloud_frac, thlm, p_in_Pa, exner, & ! In
-!              rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
-!              hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & !In 
-!              corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
+!       call LH_microphys_driver &
+!            ( real( dt ), gr%nnzp, LH_microphys_calls, d_variables, & ! In
+!              X_nl_all_levs, LH_rt, LH_thl, & ! In
+!              pdf_params, p_in_Pa, exner, rho, & ! In
+!              rcm, wtmp, delta_zt, cloud_frac, & ! In
+!              hydromet, X_mixt_comp_all_levs, & !In 
 !              hydromet_mc, hydromet_vel_zt, & ! In/Out
 !              rcm_mc, rvm_mc, thlm_mc,  & ! Out
 !              mg_microphys_driver )  ! Procedure
+        stop "Latin hypercube is not setup for MG yet"
 #else
         stop "Latin hypercube was not enabled at compile time"
 #endif
@@ -1422,13 +1415,12 @@ module microphys_driver
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 
 #ifdef UNRELEASED_CODE
-        call latin_hypercube_driver &
-             ( real( dt ), iter, d_variables, LH_microphys_calls, & ! In
-               LH_sequence_length, gr%nnzp, & ! In
-               cloud_frac, thlm, p_in_Pa, exner, & ! In
-               rho, pdf_params, wm_zt, wtmp, delta_zt, delta_zm, rcm, rtm-rcm, & ! In
-               hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & !In 
-               corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
+        call LH_microphys_driver &
+             ( real( dt ), gr%nnzp, LH_microphys_calls, d_variables, & ! In
+               X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
+               pdf_params, p_in_Pa, exner, rho, & ! In
+               rcm, wtmp, delta_zt, cloud_frac, & ! In
+               hydromet, X_mixt_comp_all_levs, & !In 
                hydromet_mc, hydromet_vel_zt, & ! In/Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                KK_micro_driver ) ! Procedure
@@ -3205,9 +3197,6 @@ module microphys_driver
       !   None
       !-------------------------------------------------------------------------
 
-      use parameters_microphys, only: &
-        LH_sample_point_weights ! Variables
-
       implicit none
 
       intrinsic :: allocated
@@ -3220,10 +3209,6 @@ module microphys_driver
 
       if ( allocated( l_hydromet_sed ) ) then
         deallocate( l_hydromet_sed )
-      end if
-
-      if ( allocated( LH_sample_point_weights ) ) then
-        deallocate( LH_sample_point_weights )
       end if
 
       return

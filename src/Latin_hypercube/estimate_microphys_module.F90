@@ -13,7 +13,7 @@ module estimate_microphys_module
   subroutine lh_microphys_estimate &
              ( dt, nnzp, n_micro_calls, d_variables, &
                k_lh_start, LH_rt, LH_thl, &
-               X_nl_all_levs, &
+               X_nl_all_levs, LH_sample_point_weights, &
                p_in_Pa, exner, rho, w_std_dev, &
                dzq, pdf_params, hydromet,  &
                X_mixt_comp_all_levs, &
@@ -43,7 +43,6 @@ module estimate_microphys_module
 !     Ncm_initial
 
     use parameters_microphys, only: &
-      LH_sample_point_weights, & ! Variables
       l_lh_cloud_weighted_sampling
 
     use array_index, only: &
@@ -129,6 +128,9 @@ module estimate_microphys_module
 
     integer, dimension(nnzp,n_micro_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
+
+    real, dimension(n_micro_calls), intent(in) :: &
+       LH_sample_point_weights ! Weight for cloud weighted sampling
 
     ! Output Variables
 

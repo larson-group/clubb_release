@@ -23,7 +23,7 @@ module estimate_lh_micro_module
                p_in_Pa, exner, rho, &
                rcm, w_std_dev, dzq, &        
                cloud_frac, hydromet, &
-               X_mixt_comp_all_levs, &
+               X_mixt_comp_all_levs, LH_sample_point_weights, &
                lh_hydromet_mc, lh_hydromet_vel, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                lh_AKm, AKm, AKstd, AKstd_cld, & 
@@ -96,6 +96,9 @@ module estimate_lh_micro_module
 
     integer, dimension(nnzp,n_micro_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
+
+    real, dimension(n_micro_calls), intent(in) :: &
+      LH_sample_point_weights ! Weight for cloud weighted sampling
 
     ! Output Variables
     real, dimension(nnzp,hydromet_dim), intent(inout) :: &
@@ -238,7 +241,7 @@ module estimate_lh_micro_module
              dble( cloud_frac1 ), dble( cloud_frac2 ), &
              rcm_sample, & 
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(level,:), lh_AKm_dp )
+             X_mixt_comp_all_levs(level,:), LH_sample_point_weights, lh_AKm_dp )
 
       ! Convert to real number
       lh_AKm(level) = real( lh_AKm_dp )
@@ -317,7 +320,7 @@ module estimate_lh_micro_module
     ! Call the latin hypercube microphysics driver for microphys_sub
     call lh_microphys_estimate( dt, nnzp, n_micro_calls, d_variables, & ! In
                                 k_lh_start, LH_rt, LH_thl, & ! In
-                                X_nl_all_levs, & ! In
+                                X_nl_all_levs, LH_sample_point_weights, & ! In
                                 p_in_Pa, exner, rho, w_std_dev, & ! In
                                 dzq, pdf_params, hydromet, & ! In
                                 X_mixt_comp_all_levs, & ! In
@@ -335,7 +338,7 @@ module estimate_lh_micro_module
   subroutine autoconv_estimate( n_micro_calls, mixt_frac, &
                               cloud_frac1, cloud_frac2, rc, &
                              !w, Nc, rr, &
-                              X_mixt_comp_one_lev, ac_m )
+                              X_mixt_comp_one_lev, LH_sample_point_weights, ac_m )
 ! Description:
 !   Compute Kessler grid box avg autoconversion (kg/kg)/s.
 ! References:
@@ -350,8 +353,7 @@ module estimate_lh_micro_module
 !     clubb_at_least_debug_level  ! Procedure(s)
 
     use parameters_microphys, only: &
-      LH_sample_point_weights, & ! Variables
-      l_lh_cloud_weighted_sampling
+      l_lh_cloud_weighted_sampling ! Variable(s)
 
     implicit none
 
@@ -379,6 +381,9 @@ module estimate_lh_micro_module
 
     integer, dimension(n_micro_calls), intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
+
+    real, dimension(n_micro_calls), intent(in) :: &
+       LH_sample_point_weights ! Weight for cloud weighted sampling
 
     ! Output Variables
 
