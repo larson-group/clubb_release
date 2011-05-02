@@ -106,6 +106,10 @@ my $displayLegend = 1;
 # Whether or not to use smaller lines for ensemble runs.  Default (0) is no.
 my $thinLines = 0;
 
+# Is used for plotting emsemble tuner runs, it will show a set of plots as the same color.
+# Default (0) is no
+my $ensembleTuner = 0;
+
 # Custom Color Definitions for "CLUBB_current" and "CLUBB_previous"
 my $lt_blue = "[ 0.00, 0.63, 1.00 ]";
 my $orange = "[ 0.94, 0.50, 0.16 ]";
@@ -167,7 +171,13 @@ sub main()
     # If thinLines is enabled then make it so we only use thin solid lines
     if($thinLines == 1){
 	@lineStyles = ("-");
-	@lineWidths = (2);
+	@lineWidths = (1);
+    }
+
+    # If ensembleTuner is enabled then change the colors to match that of 
+    # the other ensemble plotter
+    if($ensembleTuner == 1){
+	@lineColors = ("[1,.65,0.]","[0.,0.,1]","[0.,1,0.]","[.63,.13,.94]","[0,0,0]");
     }
 
 
@@ -710,6 +720,7 @@ sub buildMatlabStringStd()
         $lineStyleCounter = 0;
         $lineColorCounter = 0;
         $lineWidthCounter = 0;
+	my $fileCounter 	  = 0;
 
         my $plotTitle = $plots[$count]{'plotTitle'};
         my $units = $plots[$count]{'axisLabel'};
@@ -778,11 +789,21 @@ sub buildMatlabStringStd()
                         my $lineColor = $lineColors[$lineColorCounter];
                         
                         $matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
-                    }
 
-                    incrementLineTypes();
-                }
-            }
+			# Used for ensemble runs to make a group of plots all the same color
+			# The five(5) is used to set the number of files per group
+			if($ensembleTuner == 1){
+			    if(((($fileCounter+1) % 10) == 0) && ($fileCounter != 0)){
+				incrementLineTypes();
+			    }
+    	                    $fileCounter++;
+			}
+			else{
+				incrementLineTypes();
+			}
+		    } 
+		 }
+            }  
             elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
             {
                 my $file = "$lines[$lineNum]{'filename'}";
@@ -1045,6 +1066,7 @@ sub readArgs()
        $outputAsMaff = 1;
     }
     case 'thin' { $thinLines = 1; }      
+    case 'ensemble' { $ensembleTuner = 1; }      
     case 'nolegend' { $displayLegend = 0; }      
     case 's' { $plotgenMode = "splotgen"; }
     case 'c' { $plotgenMode = "plotgen"; }
@@ -1066,6 +1088,10 @@ sub readArgs()
 	$numOptions++;
     }
 
+    if($ensembleTuner == 1){
+	$thinLines = 1;
+	$displayLegend = 0;
+    }
 
     my $currentCount = 0;
 
@@ -1177,6 +1203,7 @@ sub main::HELP_MESSAGE()
     print("  -t\tUses NetCDF data files.\n");
     print("  -thin\tUses thin solid lines\n");
     print("  -nolegend\tPlot without legends\n");
+    print("  -ensemble\tUsed for plotting ensemble tuner runs\n");
     print("  -h\tPrints this help message.\n");
     print("Each option must be seperate, eg -r -a not -ra\n");
     exit(0);
