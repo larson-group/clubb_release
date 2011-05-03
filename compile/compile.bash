@@ -35,7 +35,8 @@
 # ------------------------------------------------------------------------------
 
 # Flag to allow for promotion of reals to double precision at compile time
-# This will exclude numerical recipes files which will preculde use of the tuner
+# This will exclude the Numerical Recipes files, so only the Siarry, et al. 
+# ESA algorithm will be usable for tuning runs.
 l_double_precision=false
 
 # Figure out the directory where the script is located
@@ -77,8 +78,10 @@ if [ -e $srcdir/COAMPS_micro ]; then
 	LDFLAGS="${LDFLAGS} -lclubb_coamps"
 	COAMPS_LIB="libclubb_coamps.a"
 fi
-if [ -e $srcdir/Numerical_recipes ]; then
-	CPPDEFS="${CPPDEFS} -DTUNER"
+if ! "$l_double_precision"; then
+	if [ -e $srcdir/Numerical_recipes ]; then
+		CPPDEFS="${CPPDEFS} -DTUNER"
+	fi
 fi
 if [ -e $srcdir/Benchmark_cases/Unreleased_cases ] && [ -e $srcdir/Latin_hypercube ]; then
 	CPPDEFS="${CPPDEFS} -DUNRELEASED_CODE"
@@ -108,6 +111,12 @@ if [ -z "${F77}" ] || [ -z "${F90}" ]; then
 	fi
 fi
 
+# ------------------------------------------------------------------------------
+# If the user sets l_double_precision of true, then we add the double precision 
+# flags here.
+if "$l_double_precision"; then
+	FFLAGS="${FFLAGS} ${DOUBLE_PRECISION}"
+fi
 
 # ------------------------------------------------------------------------------
 # Generate template for makefile generating tool 'mkmf'
@@ -139,7 +148,7 @@ if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
 	ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
 fi
 if [ -e $srcdir/Latin_hypercube ]; then
-	ls $srcdir/Latin_hypercube/*.* >> $dir/file_list/clubb_optional_files
+	ls $srcdir/Latin_hypercube/*.F90 >> $dir/file_list/clubb_optional_files
 fi
 if [ -e $srcdir/COAMPS_micro ]; then
 	ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
@@ -156,8 +165,10 @@ fi
 
 
 # Exclude numerical recipes if using double precision or numerical recipes doesn't exist
-if [ "$l_double_precision" == "false" ] && [ -e $srcdir/Numerical_recipes ]; then
-	ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
+if ! "$l_double_precision"; then
+	if [ -e $srcdir/Numerical_recipes ]; then
+		ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
+	fi
 fi
 
 # ------------------------------------------------------------------------------
@@ -193,13 +204,10 @@ $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   $dir/file_list/clubb_standalone_files $dir/file_list/clubb_optional_files \
   $dir/file_list/clubb_model_files
 
-if [ "$l_double_precision" == "false" ] # Excludes the tuner if using double precision
-then
-	$mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
-  	  -m Make.clubb_tuner -c "${CPPDEFS} ${WARNINGS}" $dir/file_list/clubb_tuner_files \
-  	  $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files \
-  	  $dir/file_list/numerical_recipes_files
-fi
+$mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
+	-m Make.clubb_tuner -c "${CPPDEFS} ${WARNINGS}" $dir/file_list/clubb_tuner_files \
+	$dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files \
+	$dir/file_list/numerical_recipes_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/jacobian \
   -m Make.jacobian -c "${CPPDEFS} ${WARNINGS}" $dir/file_list/jacobian_files \
@@ -263,8 +271,7 @@ clubb_standalone: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morri
 
 clubb_tuner: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB
 	-rm -f $bindir/clubb_tuner
-	cd $objdir; $gmake -f Make.clubb_tuner		# Comment out if using double precision
-
+	cd $objdir; $gmake -f Make.clubb_tuner		
 
 jacobian: libclubb_bugsrad.a libclubb_param.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB
 	-rm -f $bindir/jacobian

@@ -32,11 +32,10 @@ WARNINGS="-Wall -Wextra -Wno=142,165,167 -pedantic"
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
 # compiled accordingly.
-#ARCH="-march=pentium4 -msse2 -mfpmath=sse" # Old P4s
-#ARCH="-march=nocona -msse3 -mfpmath=sse" # New P4s
-#ARCH="-march=nocona -msse3 -mfpmath=sse -r8"# New P4s, double precision
-#ARCH="-march=k8 -msse3 -r8 -mfpmath=sse" # New Opterons, double precision
 ARCH="-march=k8 -msse3 -mfpmath=sse" # New Opterons
+
+# == Used to promote all real's to double precision ==
+DOUBLE_PRECISION="-r8"
 
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual

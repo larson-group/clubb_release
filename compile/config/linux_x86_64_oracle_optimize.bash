@@ -26,6 +26,9 @@ WARNINGS="-w3 -ansi"
 # The -g option allows for viewing the source code in the analyzer program
 ARCH="-g -xtarget=native -m64 -dalign"
 
+# == Used to promote all real's to double precision ==
+DOUBLE_PRECISION="-xtypemap=real:64,double:64,integer:32"
+
 # == NetCDF Location ==
 NETCDF="/usr/local/netcdf-sun64"
 

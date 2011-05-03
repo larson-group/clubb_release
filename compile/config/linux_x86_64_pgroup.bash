@@ -21,6 +21,9 @@ DEBUG="-g -C -Kieee"
 #ARCH="-tp p7"#	PGF90, Pentium IV
 ARCH="-tp amd64" # PGF90, amd64
 
+# == Used to promote all real's to double precision ==
+DOUBLE_PRECISION="-r8"
+
 # == Optimization ==
 OPTIMIZE="-O2"
 

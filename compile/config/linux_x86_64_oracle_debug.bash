@@ -28,6 +28,9 @@ WARNINGS="-w3 -ansi"
 ARCH="-g -xtarget=native -m64 -dalign"
 #ARCH="-g -m64 -xtarget=native -dalign"
 
+# == Used to promote all real's to double precision ==
+DOUBLE_PRECISION="-xtypemap=real:64,double:64,integer:32"
+
 # == NetCDF Location  ==
 NETCDF="/usr/local/netcdf-sun64"
 

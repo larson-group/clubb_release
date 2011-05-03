@@ -19,6 +19,9 @@ DEBUG="-g -C"
 ARCH="-msse3" # Most AMD and Intel CPU's these days
 #ARCH="-msse3 -mp" # Add OpenMP support
 
+# == Used to promote all real's to double precision ==
+DOUBLE_PRECISION="-r8"
+
 # == Optimization ==
 OPTIMIZE="-O3"
 

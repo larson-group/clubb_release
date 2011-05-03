@@ -22,6 +22,8 @@ WARNINGS="-warn -warn notruncated_source"
 # == Machine specific options ==
 ARCH="-msse2 -fp-model precise" # This should work on carson/steele (AMD Opteron)
 #ARCH="-mssse3 -fp-model precise"# Core2 Duo (overlie)
+# == Used to promote all real's to double precision ==
+DOUBLE_PRECISION="-real-size 64"
 
 # == Optimization ==
 OPTIMIZE="-O3 -vec-report0"

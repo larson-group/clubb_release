@@ -33,6 +33,9 @@ WARNINGS="-Wall -pedantic"
 # compiled accordingly.
 ARCH="-march=native -msse3 -mfpmath=sse -fopenmp"
 
+# == Used to promote all real's to double precision ==
+DOUBLE_PRECISION="-fdefault-real-8"
+
 # == Optimization ==
 OPTIMIZE="-O3"
 
