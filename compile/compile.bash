@@ -169,6 +169,8 @@ if ! "$l_double_precision"; then
 	if [ -e $srcdir/Numerical_recipes ]; then
 		ls $srcdir/Numerical_recipes/*.f90 > $dir/file_list/numerical_recipes_files
 	fi
+else
+	echo "" > $dir/file_list/numerical_recipes_files
 fi
 
 # ------------------------------------------------------------------------------
