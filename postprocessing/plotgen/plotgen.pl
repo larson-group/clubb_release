@@ -801,7 +801,15 @@ sub buildMatlabStringStd()
 			else{
 				incrementLineTypes();
 			}
-		    } 
+		    }
+		    else{		
+		    	if($ensembleTuner == 1){
+			    if(((($fileCounter+1) % 10) == 0) && ($fileCounter != 0)){
+				incrementLineTypes();
+			    }
+    	                    $fileCounter++;
+		        }
+		    }	
 		 }
             }  
             elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
