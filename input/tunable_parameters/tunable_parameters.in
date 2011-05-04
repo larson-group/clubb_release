@@ -1,7 +1,7 @@
 ! $Id: tunable_parameters.in 3461 2009-05-12 15:43:02Z bmg2@uwm.edu $
 ! Description:
 ! This file contains tunable model parameters.
-! C4, C14, and nu9 are only relevant when ltke_aniso is enabled.
+! C4, C14, and nu9 are only relevant when l_tke_aniso is true.
 ! C2, C2b, & C2c are not used unless l_single_C2_Skw is true.
 
 &initvars 
@@ -34,7 +34,7 @@ C11c        = 0.500000 ! Degree of Slope of C11 Skewness Function.
 C12         = 1.000000 ! Constant applied to vertical velocity diffusion.
 C13         = 0.100000 ! Not currently used in model.
 C14         = 1.000000 ! Constant applied to up2 and vp2.
-C15         = 0.300000 ! Constant applied to wp3_bp2.
+C15         = 0.400000 ! Constant applied to wp3_bp2.
 !c_K         = 0.548000 ! From Duynkerke and Driedonks (1987).
 c_K         = 0.200000 ! Tuned by Michael Falk for new wp2 formulation.
 c_K1        = 0.750000 ! Coefficient of Eddy Diffusion for wp2.

@@ -2513,6 +2513,9 @@ module advance_wp2_wp3_module
     use grid_class, only:  & 
         gr ! Variable
 
+    use grid_class, only:  & 
+        ddzt ! Procedure
+
     use parameters_tunable, only:  & 
         C4,  & ! Variables
         C5,  & 
@@ -2598,6 +2601,8 @@ module advance_wp2_wp3_module
       rhs   ! RHS of band matrix
 
     ! Local Variables
+    real, dimension(gr%nnzp) :: & 
+      dum_dz, dvm_dz ! Vertical derivatives of um and vm
 
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3
@@ -2614,9 +2619,20 @@ module advance_wp2_wp3_module
     real, dimension(3) :: &
       rhs_diff ! For use in Crank-Nicholson eddy diffusion.
 
+    real :: temp
+
 
     ! Initialize the right-hand side vector to 0.
     rhs = 0.0
+
+    if ( l_wp3_2nd_buoyancy_term ) then
+      ! Compute the vertical derivative of the u and v winds
+      dum_dz = ddzt( um )
+      dvm_dz = ddzt( vm )
+    else
+      dum_dz = -999.
+      dvm_dz = -999.
+    end if
 
     do k = 2, gr%nnzp-1, 1
 
@@ -2875,8 +2891,10 @@ module advance_wp2_wp3_module
       if ( l_wp3_2nd_buoyancy_term ) then
         ! RHS 2nd bouyancy term
         rhs(k_wp3) = rhs(k_wp3) &
-                   + wp3_term_bp2_rhs( C15, Kh_zt(k), wpthvp(k), &
-                                       wpthvp(km1), thv_ds_zt(k), gr%invrs_dzt(k) )
+                   + wp3_term_bp2_rhs( C15, Kh_zt(k), wpthvp(k), wpthvp(km1), &
+                                       dum_dz(k), dum_dz(km1), dvm_dz(k), dvm_dz(km1), &
+                                       upwp(k), upwp(km1), vpwp(k), vpwp(km1), &
+                                       thv_ds_zt(k), gr%invrs_dzt(k), gr%invrs_dzm(k) )
       end if
 
       if ( l_stats_samp ) then
@@ -3007,13 +3025,16 @@ module advance_wp2_wp3_module
         endif
                   
         if ( l_wp3_2nd_buoyancy_term ) then
-          call stat_update_var_pt( iwp3_bp2, k, wp3_term_bp2_rhs( C15, Kh_zt(k), &
-                                   wpthvp(k), wpthvp(km1), thv_ds_zt(k), gr%invrs_dzt(k) ), zt )
+          temp = wp3_term_bp2_rhs( C15, Kh_zt(k), wpthvp(k), wpthvp(km1), &
+                                   um(kp1), um(k), um(km1), vm(kp1), vm(k), vm(km1), &
+                                   upwp(k), vpwp(k), &
+                                   thv_ds_zt(k), gr%invrs_dzt(k), gr%invrs_dzm(k) )
+          call stat_update_var_pt( iwp3_bp2, k, temp, zt )
         end if
 
-      endif
+      endif ! l_stats_samp
 
-    enddo
+    enddo ! k = 2..gr%nnzp-1
 
 
     ! Boundary conditions
@@ -4227,13 +4248,18 @@ module advance_wp2_wp3_module
   end function wp3_terms_bp1_pr2_rhs
 
   !=============================================================================
-  pure function wp3_term_bp2_rhs( C15, Kh_zt, wpthvp, wpthvp_m1, thv_ds_zt, invrs_dzt ) & 
+  pure function wp3_term_bp2_rhs( C15, Kh_zt, wpthvp, wpthvp_m1, &
+                                  dum_dz, dum_dz_m1, dvm_dz, dvm_dz_m1, &
+                                  upwp, upwp_m1, vpwp, vpwp_m1, &
+                                  thv_ds_zt, invrs_dzt, invrs_dzm ) & 
     result( rhs )
 
     ! Description:
     !   Experimental term from CLUBB TRAC ticket #411. The derivative here is of
     !   the form:
-    !   - C_15 * Kh * ∂{ grav / thv_ds * [w'th_v'(k) - w'th_v'(k-1)] }/∂z.
+    !   - C_15 * Kh * ∂{ grav / thv_ds * [w'th_v'(k) - w'th_v'(k-1)] 
+    !                    -[ u'w'(k) * ∂u(k)/∂z - u'w'(k-1) * ∂u(k-1)/∂z ]
+    !                    -[ v'w'(k) * ∂v(k)/∂z - v'w'(k-1) * ∂v(k-1)/∂z ]  }/∂z.
     !
     !   This does not appear in Andre et al. 1976 or Bougeault et al. 1981, but
     !   is based on experiments in matching LES data.
@@ -4249,19 +4275,33 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real, intent(in) :: &
-      C15,       & ! Model parameter C15                 [-]
-      Kh_zt,     & ! Eddy-diffusivity on moment. levels  [m^2/s]
-      wpthvp,    & ! w'th_v'(k)                          [K m/s]
-      wpthvp_m1, & ! w'th_v'(k-1)                        [K m/s]
+      C15,       & ! Model parameter C15                [-]
+      Kh_zt,     & ! Eddy-diffusivity on moment. levels [m^2/s]
+      wpthvp,    & ! w'th_v'(k)                         [K m/s]
+      wpthvp_m1, & ! w'th_v'(k-1)                       [K m/s]
+      dum_dz,    & ! d u wind dz (k)                    [m/s]
+      dvm_dz,    & ! d v wind dz (k)                    [m/s]
+      dum_dz_m1, & ! d u wind dz (k-1)                  [m/s]
+      dvm_dz_m1, & ! d v wind dz (k-1)                  [m/s]
+      upwp,      & ! u'v'(k)                            [m^2/s^2]
+      upwp_m1,   & ! u'v'(k-1)				[m^2/s^2]
+      vpwp,      & ! v'w'(k)                            [m^2/s^2]
+      vpwp_m1,   & ! v'w'(k-1)                          [m^2/s^2]
       thv_ds_zt, & ! Dry, base-state theta_v at thermo. lev. (k) [K]
-      invrs_dzt    ! Inverse of grid spacing (k)         [1/m]
+      invrs_dzt, & ! Inverse of grid spacing (k)        [1/m]
+      invrs_dzm    ! Inverse of grid spacing (k)        [1/m]
 
     ! Return Variable
     real :: rhs
 
     ! ---- Begin Code ----
 
-    rhs =  - C15 * Kh_zt * invrs_dzt * grav / thv_ds_zt * ( wpthvp - wpthvp_m1 )
+!   rhs =  - C15 * Kh_zt * invrs_dzt * grav / thv_ds_zt * ( wpthvp - wpthvp_m1 )
+
+    rhs =  - C15 * Kh_zt * invrs_dzt * &
+      ( grav / thv_ds_zt * ( wpthvp - wpthvp_m1 ) &
+      - ( upwp * dum_dz - upwp_m1 * dum_dz_m1 ) &
+      - ( vpwp * dvm_dz - vpwp_m1 * dvm_dz_m1 ) )
 
     return
   end function wp3_term_bp2_rhs
