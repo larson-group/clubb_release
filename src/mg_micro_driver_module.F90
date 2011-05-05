@@ -131,12 +131,14 @@ module mg_micro_driver_module
       naai_flip,    & ! number of activated ice nuclei                       [1/kg]
       rho_flip,     & ! Density on thermo. grid                              [kg/m^3]
       Ncnm_flip,    & ! Number of cloud nuclei                               [count/m^3]
-      unused          ! Represents MG variables that are not used in the current code
+      unused_in       ! Represents MG variables that are not used in the current code
+      
       
     ! MG Output Variables
     ! Note that the MG grid is flipped with respect to CLUBB
     real, dimension(nnzp-1) :: &
-      rcm_mc_flip     ! Time tendency of liquid water mixing ratio           [kg/kg/s]
+      rcm_mc_flip,  & ! Time tendency of liquid water mixing ratio           [kg/kg/s]
+      unused_out      ! MG variables that are not used in CLUBB
       
     real, dimension(nnzp-1,hydromet_dim) :: &
        hydromet_flip, &  ! Hydrometeor species                               [units vary]
@@ -270,7 +272,7 @@ module mg_micro_driver_module
       nacon_flip(i,1:4) = 0
       
       ! Initialize unused MG variables
-      unused(i) = -9999.9
+      unused_in(i) = -9999.9
       
     end do
     
@@ -282,27 +284,26 @@ module mg_micro_driver_module
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond &
-         ( 0, 1, dt, T_in_K_flip, unused, & ! Input
-         rvm_flip, unused, unused, rcm_flip, & !in
-         hydromet_flip(:,iiricem), hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), & !in/out
-         p_in_Pa_flip, pdel_flip, cldn_flip, & !in
-         liqcldf_flip, icecldf_flip, &
-         cldo, unused, unused, unused, unused, & !output
+         ( 0, 1, dt, T_in_K_flip, unused_in, & ! Input
+         rvm_flip, unused_in, unused_in, rcm_flip, hydromet_flip(:,iiricem), & !in
+         hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, & !in
+         liqcldf_flip, icecldf_flip, & !in
+         cldo, unused_in, unused_in, unused_in, unused_in, & !in
          rate1ord_cw2pr_st, & !out
          naai_flip, Ncnm_flip, rndst_flip, nacon_flip, & !in
-         unused, unused, unused, &
+         unused_in, unused_in, unused_in, & !in
          tlat, qvlat, & ! Output
-         rcm_mc_flip, hydromet_mc_flip(:,iiricem), hydromet_mc_flip(:,iiNcm), &
-         hydromet_mc_flip(:,iiNim), effc, &
-         effc_fn, effi, prect, preci,             &  
-         nevapr, evapsnow,      &
-         prain, prodsnow, cmeout, deffi, pgamrad, &
-         lamcrad, qsout, dsout, &
-         qcsevap,qisevap,qvres,cmeiout, &
-         unused,unused,qcsedten,qisedten, &
-         prao,prco,mnuccco,mnuccto,msacwio,psacwso,&
-         unused,unused,melto,homoo,qcreso,prcio,praio,qireso,&
-         mnuccro,pracso,meltsdt,frzrdt )
+         rcm_mc_flip, hydromet_mc_flip(:,iiricem), hydromet_mc_flip(:,iiNcm), & !out
+         hydromet_mc_flip(:,iiNim), effc, & !out
+         effc_fn, effi, prect, preci,             &  !out
+         nevapr, evapsnow,      & !out
+         prain, prodsnow, cmeout, deffi, pgamrad, & !out
+         lamcrad, qsout, dsout, & !out
+         qcsevap,qisevap,qvres,cmeiout, & !out
+         unused_out, unused_out, qcsedten, qisedten, & !out
+         prao,prco,mnuccco,mnuccto,msacwio,psacwso,& !out
+         unused_out,unused_out,melto,homoo,qcreso,prcio,praio,qireso,& !out
+         mnuccro,pracso,meltsdt,frzrdt ) !out
 
     rcm_mc(2:nnzp) = real( flip( dble(rcm_mc_flip(1:nnzp-1) ), nnzp-1 ) )
     T_in_K(2:nnzp) = real( flip( dble(T_in_K_flip(1:nnzp-1) ), nnzp-1 ) )
