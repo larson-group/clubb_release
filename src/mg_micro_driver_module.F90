@@ -281,6 +281,10 @@ module mg_micro_driver_module
     
     call gestbl(173.16, 375.16, 20.00, .true., epsil, &
                  latvap, latice, rh2o, cpair, tmelt)
+                 
+    do i=1, hydromet_dim, 1
+      hydromet_flip(:,i) = max(1e-8, hydromet_flip(:,i))
+    end do
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond &
@@ -305,8 +309,8 @@ module mg_micro_driver_module
          unused_out,unused_out,melto,homoo,qcreso,prcio,praio,qireso,& !out
          mnuccro,pracso,meltsdt,frzrdt ) !out
 
+    rcm_tmp(1) = 0
     rcm_mc(2:nnzp) = real( flip( dble(rcm_mc_flip(1:nnzp-1) ), nnzp-1 ) )
-    T_in_K(2:nnzp) = real( flip( dble(T_in_K_flip(1:nnzp-1) ), nnzp-1 ) )
     rcm_tmp(2:nnzp) = real( flip( dble(rcm_flip(1:nnzp-1) ), nnzp-1 ) )
       
     do i = 1, hydromet_dim, 1
