@@ -36,8 +36,10 @@ module mg_micro_driver_module
       T_freeze_K
       
     use stats_variables, only: & 
-      zt, &
-      irsnowm
+      zt, &  ! Variables
+      irsnowm, &
+      ieff_rad_cloud, &
+      ieff_rad_ice
 
     use stats_type, only:  & 
        stat_update_var
@@ -110,12 +112,12 @@ module mg_micro_driver_module
 
     ! Local Variables
     real, dimension(nnzp) :: & 
-      effc, effi ! Effective droplet radii [μ]
-
-    real, dimension(nnzp) :: & 
-      T_in_K,       & ! Temperature                             [K]
-      cloud_frac,   & ! Liquid Cloud fraction                   [-]
-      rcm_tmp         ! Temporary variable                      [kg/kg]
+      T_in_K,       & ! Temperature                                                   [K]
+      cloud_frac,   & ! Liquid Cloud fraction                                         [-]
+      rcm_tmp,      & ! Temporary variable                                            [kg/kg]
+      rsnowm,       & ! Snow mixing ratio (not in hydromet, output straight to stats) [kg/kg]
+      effc,         & ! Droplet effective radius                                      [μ]
+      effi            ! cloud ice effective radius                                    [μ]
       
     ! MG Input Variables
     ! Note that the MG grid is flipped with respect to CLUBB.
@@ -138,6 +140,12 @@ module mg_micro_driver_module
     ! Note that the MG grid is flipped with respect to CLUBB
     real, dimension(nnzp-1) :: &
       rcm_mc_flip,  & ! Time tendency of liquid water mixing ratio           [kg/kg/s]
+      cldo_flip,    & ! Old cloud fraction.                                  [-]
+      rsnowm_flip,  & ! snow mixing ratio                                    [kg/kg]
+      effc_flip,    & ! Droplet effective radius                             [μ]
+      effi_flip,    & ! cloud ice effective radius                           [μ]
+      tlat, &
+      qvlat, &
       unused_out      ! MG variables that are not used in CLUBB
       
     real, dimension(nnzp-1,hydromet_dim) :: &
@@ -149,55 +157,22 @@ module mg_micro_driver_module
       nacon_flip      ! number of 4 dust bins for contact nucleation [units unknown]
 
     integer :: i
-    
-    ! TODO temp output variables
-    real, dimension(nnzp-1) :: &
-      cldo, & ! Old cloud fraction
-      qsout, & ! snow mixing ratio							kg/kg
-      rate1ord_cw2pr_st, & ! first order rate for direct cw to precip conversion
-      tlat, &           !latent heating rate from microphysics					W kg-1
-      qvlat, &  !qv tendency from microphysics						kg/kg/s
-      effc_fn, & !	droplet effective radius, assuming nc = 1.e8 kg-1				micron
-      prect, &  !surface precip rate							m s-1
-      preci, &  !cloud ice/snow surface precip rate					m s-1
-      nevapr, & !	evaporation rate of rain+snow						s-1
-      evapsnow, &!	sublimation rate of snow						s-1
-      prain, &  !production of rain+snow						s-1
-      prodsnow, &!	production rate of snow						s-1
-      cmeout, & !	dep/sublimation of cloud ice						s-1
-      deffi, &  !effective ice diameter for Mitchell optics				micron
-      pgamrad, & ! 	droplet size distribution shape parameter
-      lamcrad, & !slope of droplet size distribution					m-1
-      dsout, &  !snow effective diameter for Mitchell optics (after bug fix…)		micron
-      qcsevap, & !	evaporation rate of droplets during sedimentation			s-1
-      qisevap, & !		sublimation rate of ice during sedimentation				s-1
-      qvres, &  !cond rate due to residual removal of excess supersaturation		s-1
-      cmeiout, & !	cloud ice sub/dep rate	(same as cmeout)				s-1
-      qcsedten, &!	tendency of cloud water due to sedimentation				s-1
-      qisedten, & !	tendency of cloud ice due to sedimentation				s-1
-      prao, & ! accretion of cloud by rain 
-      prco, & ! autoconversion of cloud to rain
-      mnuccco, & ! mixing rat tend due to immersion freezing
-      mnuccto, & ! mixing ratio tend due to contact freezing
-      msacwio, & ! mixing ratio tend due to H-M splintering
-      psacwso, & ! collection of cloud water by snow
-      melto, & ! melting of cloud ice
-      homoo, & ! homogeneos freezign cloud water
-      qcreso, & ! residual cloud condensation due to removal of excess supersat
-      prcio, & ! autoconversion of cloud ice to snow
-      praio, & ! accretion of cloud ice by snow
-      qireso, & ! residual ice deposition due to removal of excess supersat
-      mnuccro, & ! mixing ratio tendency due to heterogeneous freezing of rain to snow (1/s)
-      pracso , & ! mixing ratio tendency due to accretion of rain by snow (1/s)
-      meltsdt, & ! latent heating rate due to melting of snow  (W/kg)
-      frzrdt  ! latent heating rate due to homogeneous freezing of rain (W/kg
-
 
     ! ---- Begin Code ----
     ! Some dummy assignments to make compiler warnings go away...
     if ( .false. ) then
       if ( l_local_kk ) stop
     end if
+    
+    ! Initialize output arrays to zero
+    effc(:) = 0.0
+    effi(:) = 0.0
+    rsnowm(:) = 0.0
+    rcm_tmp(:) = 0.0
+    rcm_mc(1:nnzp) = 0.0
+    rvm_mc(1:nnzp) = 0.0
+    hydromet_mc(1:nnzp,:) = 0.0
+    hydromet_mc_flip(1:nnzp-1,:) = 0.0
 
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
@@ -212,12 +187,6 @@ module mg_micro_driver_module
                         pdf_params%mixt_frac * pdf_params%cloud_frac1 &
                         + (1.-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
     end if
-
-    ! Initialize tendencies to zero
-    rcm_mc(1:nnzp) = 0.0
-    rvm_mc(1:nnzp) = 0.0
-    hydromet_mc(1:nnzp,:) = 0.0
-    hydromet_mc_flip(1:nnzp-1,:) = 0.0
     
     ! MG's grid is flipped with respect to CLUBB.
     ! Flip CLUBB variables before inputting them into MG.
@@ -282,45 +251,44 @@ module mg_micro_driver_module
     call gestbl(173.16, 375.16, 20.00, .true., epsil, &
                  latvap, latice, rh2o, cpair, tmelt)
                  
+    ! TODO: Ensure no hydromet arrays are input as 0, because this makes MG crash.
     do i=1, hydromet_dim, 1
       hydromet_flip(:,i) = max(1e-8, hydromet_flip(:,i))
     end do
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond &
-         ( 0, 1, dt, T_in_K_flip, unused_in, & ! Input
-         rvm_flip, unused_in, unused_in, rcm_flip, hydromet_flip(:,iiricem), & !in
-         hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, & !in
-         liqcldf_flip, icecldf_flip, & !in
-         cldo, unused_in, unused_in, unused_in, unused_in, & !in
-         rate1ord_cw2pr_st, & !out
-         naai_flip, Ncnm_flip, rndst_flip, nacon_flip, & !in
-         unused_in, unused_in, unused_in, & !in
-         tlat, qvlat, & ! Output
-         rcm_mc_flip, hydromet_mc_flip(:,iiricem), hydromet_mc_flip(:,iiNcm), & !out
-         hydromet_mc_flip(:,iiNim), effc, & !out
-         effc_fn, effi, prect, preci,             &  !out
-         nevapr, evapsnow,      & !out
-         prain, prodsnow, cmeout, deffi, pgamrad, & !out
-         lamcrad, qsout, dsout, & !out
-         qcsevap,qisevap,qvres,cmeiout, & !out
-         unused_out, unused_out, qcsedten, qisedten, & !out
-         prao,prco,mnuccco,mnuccto,msacwio,psacwso,& !out
-         unused_out,unused_out,melto,homoo,qcreso,prcio,praio,qireso,& !out
-         mnuccro,pracso,meltsdt,frzrdt ) !out
+         ( 0, 1, dt, T_in_K_flip, unused_in, &                                                ! in
+         rvm_flip, unused_in, unused_in, rcm_flip, hydromet_flip(:,iiricem), &                ! in
+         hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
+         liqcldf_flip, icecldf_flip, &                                                        ! in
+         cldo_flip, unused_in, unused_in, unused_in, unused_in, &                             ! in
+         unused_out, &
+         naai_flip, Ncnm_flip, rndst_flip, nacon_flip, &                                      ! in
+         unused_in, unused_in, unused_in, tlat, qvlat, &
+         rcm_mc_flip, hydromet_mc_flip(:,iiricem), hydromet_mc_flip(:,iiNcm), &               ! out
+         hydromet_mc_flip(:,iiNim), effc_flip, &                                              ! out
+         unused_out, effi_flip, unused_out, unused_out,             &
+         unused_out, unused_out,      &
+         unused_out, unused_out, unused_out, unused_out, unused_out, &
+         unused_out, rsnowm_flip, unused_out, & !out
+         unused_out,unused_out,unused_out,unused_out, &
+         unused_out, unused_out, unused_out, unused_out, &
+         unused_out,unused_out,unused_out,unused_out,unused_out,unused_out,& 
+         unused_out,unused_out,unused_out,unused_out,unused_out,unused_out,unused_out,unused_out,&
+         unused_out,unused_out,unused_out,unused_out )
 
-    rcm_tmp(1) = 0
+    ! Flip MG variables into CLUBB grid
     rcm_mc(2:nnzp) = real( flip( dble(rcm_mc_flip(1:nnzp-1) ), nnzp-1 ) )
     rcm_tmp(2:nnzp) = real( flip( dble(rcm_flip(1:nnzp-1) ), nnzp-1 ) )
+    effc(2:nnzp) = real( flip( dble(effc_flip(1:nnzp-1) ), nnzp-1 ) )
+    effi(2:nnzp) = real( flip( dble(effi_flip(1:nnzp-1) ), nnzp-1 ) )
+    rsnowm(2:nnzp) = real( flip( dble(rsnowm_flip(1:nnzp-1) ), nnzp-1 ) )
       
-    do i = 1, hydromet_dim, 1
-      ! MG doesn't take CLUBB's lowest level into account
-      hydromet_mc(1, i) = 0
-      
+    do i = 1, hydromet_dim, 1      
       hydromet_mc(2:nnzp, i) = hydromet_mc_flip(nnzp-1:1:-1, i)
     end do
     
-
     ! Update thetal based on absolute temperature
     thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt )
     
@@ -328,7 +296,12 @@ module mg_micro_driver_module
     hydromet_vel(:,:) = 0.0
     
     if ( l_stats_samp ) then
-      call stat_update_var( irsnowm, qsout, zt )
+      call stat_update_var( irsnowm, rsnowm, zt )
+      
+      ! Effective radii of hydrometeor species
+      call stat_update_var( ieff_rad_cloud, effc(:), zt )
+      call stat_update_var( ieff_rad_ice, effi(:), zt )
+      
     end if ! l_stats_samp
 
     return
