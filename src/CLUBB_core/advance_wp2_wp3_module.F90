@@ -23,10 +23,11 @@ module advance_wp2_wp3_module
              wp3_terms_ta_tp_lhs, & 
              wp3_terms_ac_pr2_lhs, & 
              wp3_term_pr1_lhs, & 
-             wp3_terms_ta_tp_rhs, & 
              wp3_terms_bp1_pr2_rhs, & 
              wp3_term_pr1_rhs, &
              wp3_term_bp2_rhs
+
+! private :: wp3_terms_ta_tp_rhs
 
   ! Private named constants to avoid string comparisons
   integer, parameter, private :: &
@@ -3993,16 +3994,16 @@ module advance_wp2_wp3_module
   end function wp3_term_pr1_lhs
 
   !=============================================================================
-  pure function wp3_terms_ta_tp_rhs( wp3_zm, wp3_zmm1,  &
-                                     wp2, wp2m1,  &
-                                     a1, a1_zt, a1m1,  &
-                                     a3, a3_zt, a3m1,  &
-                                     wp3_on_wp2, wp3_on_wp2_m1, &
-                                     rho_ds_zm, rho_ds_zmm1,  &
-                                     invrs_rho_ds_zt,  &
-                                     const_three_halves,  &
-                                     invrs_dzt )  &
-  result( rhs )
+! pure function wp3_terms_ta_tp_rhs( wp3_zm, wp3_zmm1,  &
+!                                    wp2, wp2m1,  &
+!                                    a1, a1_zt, a1m1,  &
+!                                    a3, a3_zt, a3m1,  &
+!                                    wp3_on_wp2, wp3_on_wp2_m1, &
+!                                    rho_ds_zm, rho_ds_zmm1,  &
+!                                    invrs_rho_ds_zt,  &
+!                                    const_three_halves,  &
+!                                    invrs_dzt )  &
+! result( rhs )
 
     ! Description:
     ! Turbulent advection and turbulent production of wp3:  explicit portion of 
@@ -4107,61 +4108,61 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
-        w_tol_sqd
+!   use constants_clubb, only:  &
+!       w_tol_sqd
 
-    use model_flags, only:  &
-        l_standard_term_ta
+!   use model_flags, only:  &
+!       l_standard_term_ta
 
-    implicit none
+!   implicit none
 
     ! Input Variables
-    real, intent(in) ::  & 
-      wp3_zm,             & ! w'^3 interpolated to momentum lev. (k)   [m^3/s^3]
-      wp3_zmm1,           & ! w'^3 interpolated to momentum lev. (k-1) [m^3/s^3]
-      wp2,                & ! w'^2(k)                                  [m^2/s^2]
-      wp2m1,              & ! w'^2(k-1)                                [m^2/s^2]
-      a1,                 & ! a_1(k)                                   [-]
-      a1_zt,              & ! a_1 interpolated to thermo. level (k)    [-]
-      a1m1,               & ! a_1(k-1)                                 [-]
-      a3,                 & ! a_3(k)                                   [-]
-      a3_zt,              & ! a_3 interpolated to thermo. level (k)    [-]
-      a3m1,               & ! a_3(k-1)                                 [-]
-      wp3_on_wp2,         & ! (k) [m/s]
-      wp3_on_wp2_m1,      & ! (k-1)                  [m/s]
-      rho_ds_zm,          & ! Dry, static density at moment. lev (k)   [kg/m^3]
-      rho_ds_zmm1,        & ! Dry, static density at moment. lev (k-1) [kg/m^3]
-      invrs_rho_ds_zt,    & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
-      const_three_halves, & ! "3/2" ("0" is sent in for wp3_ta budget) [-]
-      invrs_dzt             ! Inverse of grid spacing (k)              [1/m]
+!   real, intent(in) ::  & 
+!     wp3_zm,             & ! w'^3 interpolated to momentum lev. (k)   [m^3/s^3]
+!     wp3_zmm1,           & ! w'^3 interpolated to momentum lev. (k-1) [m^3/s^3]
+!     wp2,                & ! w'^2(k)                                  [m^2/s^2]
+!     wp2m1,              & ! w'^2(k-1)                                [m^2/s^2]
+!     a1,                 & ! a_1(k)                                   [-]
+!     a1_zt,              & ! a_1 interpolated to thermo. level (k)    [-]
+!     a1m1,               & ! a_1(k-1)                                 [-]
+!     a3,                 & ! a_3(k)                                   [-]
+!     a3_zt,              & ! a_3 interpolated to thermo. level (k)    [-]
+!     a3m1,               & ! a_3(k-1)                                 [-]
+!     wp3_on_wp2,         & ! (k) [m/s]
+!     wp3_on_wp2_m1,      & ! (k-1)                  [m/s]
+!     rho_ds_zm,          & ! Dry, static density at moment. lev (k)   [kg/m^3]
+!     rho_ds_zmm1,        & ! Dry, static density at moment. lev (k-1) [kg/m^3]
+!     invrs_rho_ds_zt,    & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
+!     const_three_halves, & ! "3/2" ("0" is sent in for wp3_ta budget) [-]
+!     invrs_dzt             ! Inverse of grid spacing (k)              [1/m]
 
     ! Return Variable
-    real :: rhs
+!   real :: rhs
 
 
-    if ( l_standard_term_ta ) then
+!   if ( l_standard_term_ta ) then
 
        ! The turbulent advection term is discretized normally, in accordance
        ! with the model equations found in the documentation and the description
        ! listed above.
 
-       rhs & 
-       = + invrs_rho_ds_zt &
-           * invrs_dzt &
-             * (   rho_ds_zm * a3 * wp2**2 &
-                 - rho_ds_zmm1 * a3m1 * wp2m1**2 &
-               ) &
-         + invrs_rho_ds_zt &
-           * invrs_dzt &
-             * (   rho_ds_zm * a1 &
-                   * wp3_zm * wp3_on_wp2 &
-                 - rho_ds_zmm1 * a1m1 &
-                   * wp3_zmm1 * wp3_on_wp2_m1 &
-               ) &
-         + const_three_halves &
-           * invrs_dzt * ( wp2**2 - wp2m1**2 )
+!      rhs & 
+!      = + invrs_rho_ds_zt &
+!          * invrs_dzt &
+!            * (   rho_ds_zm * a3 * wp2**2 &
+!                - rho_ds_zmm1 * a3m1 * wp2m1**2 &
+!              ) &
+!        + invrs_rho_ds_zt &
+!          * invrs_dzt &
+!            * (   rho_ds_zm * a1 &
+!                  * wp3_zm * wp3_on_wp2 &
+!                - rho_ds_zmm1 * a1m1 &
+!                  * wp3_zmm1 * wp3_on_wp2_m1 &
+!              ) &
+!        + const_three_halves &
+!          * invrs_dzt * ( wp2**2 - wp2m1**2 )
 
-    else
+!   else
 
        ! Brian tried a new discretization for the turbulent advection term, 
        ! which contains the term:
@@ -4177,29 +4178,29 @@ module advance_wp2_wp3_module
        ! order to help stabilize w'^3.  This effects the right-hand side of the 
        ! equation, as well as the left-hand side.
 
-       rhs & 
-       = + invrs_rho_ds_zt &
-           * a3_zt * invrs_dzt &
-             * (   rho_ds_zm * wp2**2 &
-                 - rho_ds_zmm1 * wp2m1**2 ) &
-         + invrs_rho_ds_zt &
-           * a1_zt * invrs_dzt & 
-             * (   rho_ds_zm &
-                   * ( wp3_zm * wp3_on_wp2 ) & 
-                 - rho_ds_zmm1 &
-                   * ( wp3_zmm1 * wp3_on_wp2_m1 ) & 
-               ) &
-         + const_three_halves &
-           * invrs_dzt * ( wp2**2 - wp2m1**2 )
+!      rhs & 
+!      = + invrs_rho_ds_zt &
+!          * a3_zt * invrs_dzt &
+!            * (   rho_ds_zm * wp2**2 &
+!                - rho_ds_zmm1 * wp2m1**2 ) &
+!        + invrs_rho_ds_zt &
+!          * a1_zt * invrs_dzt & 
+!            * (   rho_ds_zm &
+!                  * ( wp3_zm * wp3_on_wp2 ) & 
+!                - rho_ds_zmm1 &
+!                  * ( wp3_zmm1 * wp3_on_wp2_m1 ) & 
+!              ) &
+!        + const_three_halves &
+!          * invrs_dzt * ( wp2**2 - wp2m1**2 )
 
        ! End of code that pulls out a3.
        ! End of Brian's a1 change.  Feb. 14, 2008.
 
-    endif ! l_standard_term_ta
+!   endif ! l_standard_term_ta
 
 
-    return
-  end function wp3_terms_ta_tp_rhs
+!   return
+! end function wp3_terms_ta_tp_rhs
 
   !=============================================================================
   pure function wp3_terms_bp1_pr2_rhs( C11_Skw_fnc, thv_ds_zt, wp2thvp ) & 
