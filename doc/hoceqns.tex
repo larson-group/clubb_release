@@ -2022,10 +2022,11 @@ Separating out the contributions:
 
 \subsection{$\overline{w^{'3}}$}
 
-The first two terms on the LHS of (\ref{eq_wp3c}) are treated implicitly,
+The first two terms on the LHS of (\ref{eq_wp3c}) (i.e. mean advection dissipation )
+are treated implicitly, and
 the last three terms on the LHS are teated semi-implicitly (they are linearized
-and the linearized portion is treated implicitly, the rest explicitly)
-and terms on the RHS explicitly. Let's focus first on the third term on the LHS, 
+and the linearized portion is treated implicitly, the rest explicitly).
+The terms on the RHS are treated fully explicit discretization. Let's focus first on the third term on the LHS, 
 $L_3$:
 %
 \begin{equation}
@@ -2082,7 +2083,8 @@ Combining (\ref{eq_l3a}), (\ref{eq_l3c}) with (\ref{eq_l3b}):
 \end{split}
 \end{equation}
 %
-In a similar fashion, let's now linearize the fourth term on the LHS of
+For reasons of numerical stability we now linearize the fourth term on the LHS 
+in a formulation that is fully implicit
 (\ref{eq_wp3c}):
 %
 \begin{equation}
@@ -2147,11 +2149,11 @@ We can now assemble the time discrete equivalent to (\ref{eq_wp3c}) using
    \left(  5 \, C_{8b} \, {Skw^t}^4 + 1 \right)
    \overline{w^{'3}}^{t + \Delta t}
 \\ &
-+ \ptlder{}{z} \left( 2 \tilde{a}_3 \overline{w^{'2}}^t \, \overline{w^{'2}}^{t+\Delta t} \right)
++ \ptlder{}{z} \left( \tilde{a}_3 \overline{w^{'2}}^t \, \overline{w^{'2}}^{t+\Delta t} \right)
 + \ptlder{}{z}
   \left(
-    2 a_1 \frac{ \overline{w^{'3}}^t \, \overline{w^{'3}}^{t+\Delta t} }
-               { \overline{w^{'2}}^t }
+    a_1 \frac{ \overline{w^{'3}}^t \, \overline{w^{'3}}^{t+\Delta t} }
+             { \overline{w^{'2}}^t }
   \right)
 \\
 &=
@@ -2161,13 +2163,6 @@ We can now assemble the time discrete equivalent to (\ref{eq_wp3c}) using
                             \right]
   +  \frac{C_8}{\tau}
       \left( 4 \, C_{8b} \, {Skw^t}^4 \right) \overline{w^{'3}}^t
-\\ & \quad
-  + \ptlder{}{z} \left( \tilde{a}_3 {\overline{w^{'2}}^t}^2 \right)
-  + \ptlder{}{z}
-    \left(
-      a_1 \frac{ \left( {\overline{w^{'3}}^t}\right)^2 }
-               { \overline{w^{'2}}^t }
-    \right)
   + \left. \overline{w^{'3}} \right|_{\rm expl}
 \end{split}
 \end{equation}
@@ -2206,7 +2201,7 @@ Finally, we derive the finite difference form of (\ref{eq_wp3d}):
    \left(  5 \, C_{8b} \, {Skwt(k)}^4 + 1 \right) wp3^{new}(k)
   } \\
 & \mathtt{
-  + \frac{2}{dzt(k)} 
+  + \frac{1}{dzt(k)} 
     \left(a3m(k) wp2(k) wp2^{new}(k) - a3m(k-1) wp2(k-1) wp2^{new}(k-1) \right)
   } \\
 & \mathtt{
@@ -2237,26 +2232,7 @@ Finally, we derive the finite difference form of (\ref{eq_wp3d}):
   } \\
 & \mathtt{
 + \frac{C_8}{taut(k)}
-   \left( 4 \, C_{8b} \, {Skwt(k)}^4 \right) wp3(k)
-  } \\
-& \mathtt{
-  + \frac{a3m(k) wp2(k)^2 - a3m(k-1) wp2(k-1)^2 }
-         {dzt(k)}
-  } \\
-& \mathtt{
-  + \frac{1}{4 \, dzt(k)}
-    \bigg(
-      \frac{ a1m(k) 
-             \left(wp3(k)+wp3(k+1)\right)^2 }
-           { \max\left( wp2(k), \epsilon \right) }
-     -\frac{ a1m(k-1)
-             \left(wp3(k-1)+wp3(k)\right)^2 }
-           { \max\left( wp2(k-1), \epsilon \right) }
-    \bigg)
-  } \\
-& \mathtt{
-+ wp3t(k)
-  }
+   \left( 4 \, C_{8b} \, {Skwt(k)}^4 \right) wp3(k) + wp3t(k) }
 \end{split}
 \end{equation}
 %
