@@ -143,10 +143,54 @@ module mg_micro_driver_module
       cldo_flip,    & ! Old cloud fraction.                                  [-]
       rsnowm_flip,  & ! snow mixing ratio                                    [kg/kg]
       effc_flip,    & ! Droplet effective radius                             [μ]
-      effi_flip,    & ! cloud ice effective radius                           [μ]
-      tlat, &
-      qvlat, &
-      unused_out      ! MG variables that are not used in CLUBB
+      effi_flip       ! cloud ice effective radius                           [μ]
+      
+    ! MG variables that are not used in CLUBB.
+    ! A separate variables needs to be passed in for every intent_out variable in MG,
+    ! otherwise Fortran treats all the variables are if they point to the same memory
+    ! location.
+    real, dimension(nnzp-1) :: &
+      unused_out01, &
+      unused_out02, &
+      unused_out03, &
+      unused_out04, &
+      unused_out05, &
+      unused_out06, &
+      unused_out07, &
+      unused_out08, &
+      unused_out09, &
+      unused_out10, &
+      unused_out11, &
+      unused_out12, &
+      unused_out13, &
+      unused_out14, &
+      unused_out15, &
+      unused_out16, &
+      unused_out17, &
+      unused_out18, &
+      unused_out19, &
+      unused_out20, &
+      unused_out21, &
+      unused_out22, &
+      unused_out23, &
+      unused_out24, &
+      unused_out25, &
+      unused_out26, &
+      unused_out27, &
+      unused_out28, &
+      unused_out29, &
+      unused_out30, &
+      unused_out31, &
+      unused_out32, &
+      unused_out33, &
+      unused_out34, &
+      unused_out35, &
+      unused_out36, &
+      unused_out37, &
+      unused_out38, &
+      unused_out39, &
+      unused_out40, &
+      unused_out41
       
     real, dimension(nnzp-1,hydromet_dim) :: &
        hydromet_flip, &  ! Hydrometeor species                               [units vary]
@@ -263,20 +307,21 @@ module mg_micro_driver_module
          hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
          liqcldf_flip, icecldf_flip, &                                                        ! in
          cldo_flip, unused_in, unused_in, unused_in, unused_in, &                             ! in
-         unused_out, &
+         unused_out01, &
          naai_flip, Ncnm_flip, rndst_flip, nacon_flip, &                                      ! in
-         unused_in, unused_in, unused_in, tlat, qvlat, &
+         unused_in, unused_in, unused_in, unused_out02, unused_out03, &
          rcm_mc_flip, hydromet_mc_flip(:,iiricem), hydromet_mc_flip(:,iiNcm), &               ! out
          hydromet_mc_flip(:,iiNim), effc_flip, &                                              ! out
-         unused_out, effi_flip, unused_out, unused_out,             &
-         unused_out, unused_out,      &
-         unused_out, unused_out, unused_out, unused_out, unused_out, &
-         unused_out, rsnowm_flip, unused_out, & !out
-         unused_out,unused_out,unused_out,unused_out, &
-         unused_out, unused_out, unused_out, unused_out, &
-         unused_out,unused_out,unused_out,unused_out,unused_out,unused_out,& 
-         unused_out,unused_out,unused_out,unused_out,unused_out,unused_out,unused_out,unused_out,&
-         unused_out,unused_out,unused_out,unused_out )
+         unused_out04, effi_flip, unused_out05, unused_out06,             &
+         unused_out07, unused_out08,      &
+         unused_out09, unused_out10, unused_out11, unused_out12, unused_out13, &
+         unused_out14, rsnowm_flip, unused_out15, & !out
+         unused_out16,unused_out17,unused_out18,unused_out19, &
+         unused_out20, unused_out21, unused_out22, unused_out23, &
+         unused_out24,unused_out25,unused_out26,unused_out27,unused_out28,unused_out29,& 
+         unused_out30,unused_out31,unused_out32,unused_out33,unused_out34,unused_out35, &
+         unused_out36,unused_out37,&
+         unused_out38,unused_out39,unused_out40,unused_out41 )
 
     ! Flip MG variables into CLUBB grid
     rcm_mc(2:nnzp) = real( flip( dble(rcm_mc_flip(1:nnzp-1) ), nnzp-1 ) )
