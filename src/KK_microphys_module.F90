@@ -432,17 +432,17 @@ module KK_microphys_module
           ! Normalized mean of rain water mixing ratio.
           if ( rrainm(k) > rr_tol ) then
              mu_rr_n = mean_L2N( rrainm(k), &
-                                 rrp2_on_rrainm2(k) * rrainm(k)**2.0 )
+                                 rrp2_on_rrainm2(k) * rrainm(k)**2 )
           endif
 
           ! Normalized mean of rain drop concentration.
           if ( Nrm(k) > Nr_tol ) then
-             mu_Nr_n = mean_L2N( Nrm(k), Nrp2_on_Nrm2(k) * Nrm(k)**2.0 )
+             mu_Nr_n = mean_L2N( Nrm(k), Nrp2_on_Nrm2(k) * Nrm(k)**2 )
           endif
 
           ! Normalized mean of cloud droplet concentration.
           if ( Ncm(k) > Nc_tol ) then
-             mu_Nc_n = mean_L2N( Ncm(k), Ncp2_on_Ncm2(k) * Ncm(k)**2.0 )
+             mu_Nc_n = mean_L2N( Ncm(k), Ncp2_on_Ncm2(k) * Ncm(k)**2 )
           endif
 
           !!! Calculate the standard deviation of variables that have an assumed
@@ -469,17 +469,17 @@ module KK_microphys_module
           ! Normalized standard deviation of rain water mixing ratio.
           if ( rrainm(k) > rr_tol ) then
              sigma_rr_n = stdev_L2N( rrainm(k), &
-                                     rrp2_on_rrainm2(k) * rrainm(k)**2.0 )
+                                     rrp2_on_rrainm2(k) * rrainm(k)**2 )
           endif
 
           ! Normalized standard deviation of rain drop concentration.
           if ( Nrm(k) > Nr_tol ) then
-             sigma_Nr_n = stdev_L2N( Nrm(k), Nrp2_on_Nrm2(k) * Nrm(k)**2.0 )
+             sigma_Nr_n = stdev_L2N( Nrm(k), Nrp2_on_Nrm2(k) * Nrm(k)**2 )
           endif
 
           ! Normalized standard deviation of cloud droplet concentration.
           if ( Ncm(k) > Nc_tol ) then
-             sigma_Nc_n = stdev_L2N( Ncm(k), Ncp2_on_Ncm2(k) * Ncm(k)**2.0 )
+             sigma_Nc_n = stdev_L2N( Ncm(k), Ncp2_on_Ncm2(k) * Ncm(k)**2 )
           endif
 
           ! Note:  the standard deviation of extended liquid water mixing ratio,
