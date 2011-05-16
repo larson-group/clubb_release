@@ -56,19 +56,12 @@ module parameters_tunable
   real, public :: & 
     c_K,         & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
     c_K1,        & ! Coefficient of Eddy Diffusion for wp2.
-    nu1,         & ! Background Coefficient of Eddy Diffusion for wp2.
     c_K2,        & ! Coefficient of Eddy Diffusion for xp2.
-    nu2,         & ! Background Coefficient of Eddy Diffusion for xp2.
     c_K6,        & ! Coefficient of Eddy Diffusion for wpthlp and wprtp.
-    nu6,         & ! Background Coefficient of Eddy Diffusion for wpxp.
     c_K8,        & ! Coefficient of Eddy Diffusion for wp3.
-    nu8,         & ! Background Coefficient of Eddy Diffusion for wp3.
     c_K9,        & ! Coefficient of Eddy Diffusion for up2 and vp2.
-    nu9,         & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
     c_Krrainm,   & ! Coefficient of Eddy Diffusion for hydrometeors.
-    nu_r,        & ! Background Coefficient of Eddy Diffusion for hydrometeors.
     c_Ksqd,      & ! Constant for scaling effect of value-squared diffusion.
-    nu_hd,       & ! Constant coefficient for 4th-order hyper-diffusion.
     gamma_coef,  & ! Low Skewness in gamma coefficient Skewness Function.
     gamma_coefb, & ! High Skewness in gamma coefficient Skewness Function.
     gamma_coefc, & ! Degree of Slope of gamma coefficient Skewness Function.
@@ -77,35 +70,48 @@ module parameters_tunable
     taumax,      & ! Maximum allowable value of time-scale tau.
     lmin           ! Minimum value for the length scale.
 
-!$omp   threadprivate(C1, C1b, C1c, C2, C2b, C2c)
-!$omp   threadprivate(C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc)
-!$omp   threadprivate(C6thl, C6thlb, C6thlc)
-!$omp   threadprivate(C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12)
-!$omp   threadprivate(C13, C14, C15)
-!$omp   threadprivate(c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6)
-!$omp   threadprivate(c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd)
-!$omp   threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
-!$omp   threadprivate(taumin, taumax, mu, lmin)
+  real, private :: & 
+    nu1,   & ! Background Coefficient of Eddy Diffusion for wp2.
+    nu2,   & ! Background Coefficient of Eddy Diffusion for xp2.
+    nu6,   & ! Background Coefficient of Eddy Diffusion for wpxp.
+    nu8,   & ! Background Coefficient of Eddy Diffusion for wp3.
+    nu9,   & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
+    nu_r,  & ! Background Coefficient of Eddy Diffusion for hydrometeors.
+    nu_hd    ! Constant coefficient for 4th-order hyper-diffusion.
+
+!$omp   threadprivate(C1, C1b, C1c, C2, C2b, C2c, &
+!$omp     C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc, &
+!$omp     C6thl, C6thlb, C6thlc, &
+!$omp     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, &
+!$omp     C13, C14, C15, &
+!$omp     c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, &
+!$omp     c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd, &
+!$omp     gamma_coef, gamma_coefb, gamma_coefc, &
+!$omp     taumin, taumax, mu, lmin)
+
+  real, public :: & 
+    nu1_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp2.
+    nu2_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for xp2.
+    nu6_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wpxp.
+    nu8_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp3.
+    nu9_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
+    nu_r_vert_res_dep,  & ! Background Coefficient of Eddy Diffusion for hydrometeors.
+    nu_hd_vert_res_dep    ! Constant coefficient for 4th-order hyper-diffusion.
+
+!$omp threadprivate(nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep, & 
+!$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu_r_vert_res_dep,  & 
+!$omp   nu_hd_vert_res_dep )
 
   ! Vince Larson added a constant to set plume widths for theta_l and rt
   ! beta should vary between 0 and 3, with 1.5 the standard value
 
   real, public :: beta
 
-!$omp   threadprivate(beta)
-
-  ! Initial values of background eddy diffusivity read in from the
-  ! namelist.  These need to be saved in case they are adjusted
-  ! multiple times in subroutine adj_low_res_nu.  --ldgrant Jul 2010
-  real :: nu1_init, nu2_init, nu6_init, nu8_init, &
-          nu9_init, nu_r_init, nu_hd_init
-
-!$omp   threadprivate(nu1_init, nu2_init, nu6_init, nu8_init)
-!$omp   threadprivate(nu9_init, nu_r_init, nu_hd_init)
+!$omp threadprivate(beta)
 
   real :: lmin_coef ! Coefficient of lmin
 
-!$omp   threadprivate(lmin_coef)
+!$omp threadprivate(lmin_coef)
 
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
@@ -396,14 +402,14 @@ module parameters_tunable
 
           mult_factor = 1.0 + mult_coef * log( avg_deltaz / grid_spacing_thresh )
 
-          nu1  =  nu1_init * mult_factor
-          nu2  =  nu2_init * mult_factor
-          nu6  =  nu6_init * mult_factor
-          nu8  =  nu8_init * mult_factor
-          nu9  =  nu9_init * mult_factor
-          nu_r =  nu_r_init * mult_factor
+          nu1_vert_res_dep  =  nu1 * mult_factor
+          nu2_vert_res_dep  =  nu2 * mult_factor
+          nu6_vert_res_dep  =  nu6 * mult_factor
+          nu8_vert_res_dep  =  nu8 * mult_factor
+          nu9_vert_res_dep  =  nu9 * mult_factor
+          nu_r_vert_res_dep =  nu_r * mult_factor
 
-        endif
+        end if
 
         ! The value of nu_hd is based on an average grid box spacing of 40 m.
         ! The value of nu_hd should be adjusted proportionally to the average
@@ -413,7 +419,7 @@ module parameters_tunable
         ! substantially smaller for small grid boxes, the grid spacing
         ! adjuster is squared.
 
-        nu_hd = nu_hd_init * ( avg_deltaz / grid_spacing_thresh )**2
+        nu_hd_vert_res_dep = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
 
       else
 
@@ -430,14 +436,14 @@ module parameters_tunable
 
             mult_factor = 1.0 + mult_coef * log( deltaz / grid_spacing_thresh )
 
-            nu1  =  nu1_init * mult_factor
-            nu2  =  nu2_init * mult_factor
-            nu6  =  nu6_init * mult_factor
-            nu8  =  nu8_init * mult_factor
-            nu9  =  nu9_init * mult_factor
-            nu_r =  nu_r_init * mult_factor
+            nu1_vert_res_dep  =  nu1 * mult_factor
+            nu2_vert_res_dep  =  nu2 * mult_factor
+            nu6_vert_res_dep  =  nu6 * mult_factor
+            nu8_vert_res_dep  =  nu8 * mult_factor
+            nu9_vert_res_dep  =  nu9 * mult_factor
+            nu_r_vert_res_dep =  nu_r * mult_factor
 
-          endif
+          end if
 
           ! The value of nu_hd is based on a grid box spacing of 40 m.  The
           ! value of nu_hd should be adjusted proportionally to the grid box
@@ -447,7 +453,7 @@ module parameters_tunable
           ! substantially smaller for small grid boxes, the grid spacing
           ! adjuster is squared.
 
-          nu_hd = nu_hd_init * ( deltaz / grid_spacing_thresh )**2
+          nu_hd_vert_res_dep = nu_hd * ( deltaz / grid_spacing_thresh )**2
 
         elseif ( grid_type == 2 ) then
 
@@ -468,14 +474,14 @@ module parameters_tunable
 
             mult_factor = 1.0 + mult_coef * log( avg_deltaz / grid_spacing_thresh )
 
-            nu1  =  nu1_init * mult_factor
-            nu2  =  nu2_init * mult_factor
-            nu6  =  nu6_init * mult_factor
-            nu8  =  nu8_init * mult_factor
-            nu9  =  nu9_init * mult_factor
-            nu_r =  nu_r_init * mult_factor
+            nu1_vert_res_dep  =  nu1 * mult_factor
+            nu2_vert_res_dep  =  nu2 * mult_factor
+            nu6_vert_res_dep  =  nu6 * mult_factor
+            nu8_vert_res_dep  =  nu8 * mult_factor
+            nu9_vert_res_dep  =  nu9 * mult_factor
+            nu_r_vert_res_dep =  nu_r * mult_factor
 
-          endif
+          end if
 
           ! The value of nu_hd is based on an average grid box spacing of
           ! 40 m.  The value of nu_hd should be adjusted proportionally to
@@ -485,7 +491,7 @@ module parameters_tunable
           ! substantially smaller for small grid boxes, the grid spacing
           ! adjuster is squared.
 
-          nu_hd = nu_hd_init * ( avg_deltaz / grid_spacing_thresh )**2
+          nu_hd_vert_res_dep = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
 
         elseif ( grid_type == 3 ) then
 
@@ -506,14 +512,14 @@ module parameters_tunable
 
             mult_factor = 1.0 + mult_coef * log( avg_deltaz / grid_spacing_thresh )
 
-            nu1  =  nu1_init * mult_factor
-            nu2  =  nu2_init * mult_factor
-            nu6  =  nu6_init * mult_factor
-            nu8  =  nu8_init * mult_factor
-            nu9  =  nu9_init * mult_factor
-            nu_r =  nu_r_init * mult_factor
+            nu1_vert_res_dep  =  nu1 * mult_factor
+            nu2_vert_res_dep  =  nu2 * mult_factor
+            nu6_vert_res_dep  =  nu6 * mult_factor
+            nu8_vert_res_dep  =  nu8 * mult_factor
+            nu9_vert_res_dep  =  nu9 * mult_factor
+            nu_r_vert_res_dep =  nu_r * mult_factor
 
-          endif
+          end if
 
           ! The value of nu_hd is based on an average grid box spacing of
           ! 40 m.  The value of nu_hd should be adjusted proportionally to
@@ -523,13 +529,22 @@ module parameters_tunable
           ! substantially smaller for small grid boxes, the grid spacing
           ! adjuster is squared.
 
-          nu_hd = nu_hd_init * ( avg_deltaz / grid_spacing_thresh )**2
+          nu_hd_vert_res_dep = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
 
-        endif ! grid_type
+        end if ! grid_type
 
-      endif  ! l_implemented
+      end if  ! l_implemented
 
-    endif  ! l_adj_low_res_nu
+    else ! nu values are not adjusted
+
+      nu1_vert_res_dep  =  nu1
+      nu2_vert_res_dep  =  nu2
+      nu6_vert_res_dep  =  nu6
+      nu8_vert_res_dep  =  nu8
+      nu9_vert_res_dep  =  nu9
+      nu_r_vert_res_dep =  nu_r
+
+    end if  ! l_adj_low_res_nu
 
     return
   end subroutine adj_low_res_nu
@@ -633,16 +648,6 @@ module parameters_tunable
       close(unit=iunit)
 
     end if
-
-    ! Save initial values of background eddy diffusivities in case they need to be
-    ! adjusted multiple times in subroutine adj_low_res_nu.  --ldgrant Jul 2010
-    nu1_init   = nu1
-    nu2_init   = nu2
-    nu6_init   = nu6
-    nu8_init   = nu8
-    nu9_init   = nu9
-    nu_r_init  = nu_r
-    nu_hd_init = nu_hd
  
     ! Put the variables in the output array
     call pack_parameters( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &

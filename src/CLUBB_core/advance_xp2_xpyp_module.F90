@@ -89,9 +89,9 @@ module advance_xp2_xpyp_module
       C2thl,    &
       C2rtthl,  &
       c_K2,     &
-      nu2,      &
+      nu2_vert_res_dep, &
       c_K9,     &
-      nu9,      &
+      nu9_vert_res_dep, &
       c_Ksqd,   &
       beta,     &
       C4,       &
@@ -416,7 +416,7 @@ module advance_xp2_xpyp_module
                        wp3_on_wp2,  & ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &     ! Intent(in)
                        rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm,   &           ! Intent(in)
-                       C2rt_1d, nu2, beta,           &           ! Intent(in)
+                       C2rt_1d, nu2_vert_res_dep, beta,      &           ! Intent(in)
                        lhs )                                     ! Intent(out)
 
 
@@ -444,7 +444,7 @@ module advance_xp2_xpyp_module
                        wp3_on_wp2, & ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &      ! Intent(in)
                        rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &     ! Intent(in)
-                       C2thl_1d, nu2, beta,           &             ! Intent(in)
+                       C2thl_1d, nu2_vert_res_dep, beta,   &             ! Intent(in)
                        lhs )                                        ! Intent(out)
 
     ! Explicit contributions to thlp2
@@ -473,7 +473,7 @@ module advance_xp2_xpyp_module
                        wp3_on_wp2, & ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &    ! Intent(in)
                        rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm,  &    ! Intent(in)
-                       C2rtthl_1d, nu2, beta,           &           ! Intent(in)
+                       C2rtthl_1d, nu2_vert_res_dep, beta,           &           ! Intent(in)
                        lhs )                                        ! Intent(out)
 
     ! Explicit contributions to rtpthlp
@@ -502,7 +502,7 @@ module advance_xp2_xpyp_module
                        wp3_on_wp2, & ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw9,  &         ! Intent(in)
                        rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &  ! Intent(in)
-                       C4_C14_1d, nu9, beta,           &         ! Intent(in)
+                       C4_C14_1d, nu9_vert_res_dep, beta, &      ! Intent(in)
                        lhs )                                     ! Intent(out)
 
     ! Explicit contributions to up2
@@ -647,7 +647,7 @@ module advance_xp2_xpyp_module
                          wp3_on_wp2, & ! Intent(in)
                          a1, a1_zt, tau_zm, wm_zm, Kw2,  &  ! Intent(in)
                          rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &  ! Intent(in)
-                         C2sclr_1d, nu2, beta,           &  ! Intent(in)
+                         C2sclr_1d, nu2_vert_res_dep, beta,           &  ! Intent(in)
                          lhs )                              ! Intent(out)
 
 

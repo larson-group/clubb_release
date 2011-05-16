@@ -826,7 +826,7 @@ module advance_xm_wpxp_module
     !------------------------------------------------------------------------
 
     use parameters_tunable, only:  & 
-        nu6 ! Variable(s)
+        nu6_vert_res_dep ! Variable(s)
 
     use grid_class, only:  & 
         gr,  & ! Variable(s)
@@ -1140,7 +1140,7 @@ module advance_xm_wpxp_module
       ! LHS eddy diffusion term: dissipation term 1 (dp1).
       lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
       = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp) & 
-      + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6, & 
+      + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6_vert_res_dep, & 
                           gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                           gr%invrs_dzm(k), k )
 
@@ -1234,7 +1234,7 @@ module advance_xm_wpxp_module
 
         if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
           tmp(1:3) = & 
-          + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6, & 
+          + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6_vert_res_dep, & 
                               gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                               gr%invrs_dzm(k), k )
           zmscr12(k) = - tmp(3)

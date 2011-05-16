@@ -1085,9 +1085,9 @@ module advance_wp2_wp3_module
         C8,  & 
         C8b, & 
         C12, & 
-        nu1, & 
-        nu8, &
-        nu_hd
+        nu1_vert_res_dep, & 
+        nu8_vert_res_dep, &
+        nu_hd_vert_res_dep
 
     use constants_clubb, only:  & 
         eps,          & ! Variable(s)
@@ -1320,14 +1320,14 @@ module advance_wp2_wp3_module
         lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         + (1.0/2.0) & 
-        * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+        * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                             gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                             gr%invrs_dzm(k), k )
       else
         ! Eddy diffusion for wp2 using a completely implicit time step.
         lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
-        + diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+        + diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                             gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                             gr%invrs_dzm(k), k )
       endif
@@ -1352,7 +1352,7 @@ module advance_wp2_wp3_module
               k_wp2 )  &
          = lhs( (/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/), &
                 k_wp2 )  &
-         + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%invrs_dzm(k),  &
+         + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzm(k),  &
                                       gr%invrs_dzt(kp1), gr%invrs_dzt(k),     &
                                       gr%invrs_dzm(kp1), gr%invrs_dzm(km1),   &
                                       gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
@@ -1377,13 +1377,13 @@ module advance_wp2_wp3_module
             ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
             tmp(1:3) & 
             = (1.0/2.0) & 
-            * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+            * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                                 gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                                 gr%invrs_dzm(k), k )
           else
             ! Eddy diffusion for wp2 using a completely implicit time step.
             tmp(1:3) & 
-            = diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+            = diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                                 gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                                 gr%invrs_dzm(k), k )
           endif
@@ -1437,7 +1437,7 @@ module advance_wp2_wp3_module
 
         if ( iwp2_4hd > 0 .and. l_hyper_dfsn ) then
           tmp(1:5) = &
-          hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%invrs_dzm(k),  &
+          hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzm(k),  &
                                      gr%invrs_dzt(kp1), gr%invrs_dzt(k),     &
                                      gr%invrs_dzm(kp1), gr%invrs_dzm(km1),   &
                                      gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
@@ -1530,7 +1530,7 @@ module advance_wp2_wp3_module
         lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         + C12 * (1.0/2.0) & 
-        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                             gr%invrs_dzt(k), k )
       else
@@ -1538,7 +1538,7 @@ module advance_wp2_wp3_module
         lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         + C12  & 
-        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                             gr%invrs_dzt(k), k )
       endif
@@ -1550,7 +1550,7 @@ module advance_wp2_wp3_module
               k_wp3 )  &
          = lhs( (/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/), &
                 k_wp3 )  &
-         + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%invrs_dzt(k),  &
+         + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzt(k),  &
                                       gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
                                       gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
                                       gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
@@ -1646,14 +1646,14 @@ module advance_wp2_wp3_module
             ! Eddy diffusion for wp3 using a Crank-Nicholson time step.
             tmp(1:3) & 
             = C12 * (1.0/2.0) & 
-            * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+            * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                                 gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                                 gr%invrs_dzt(k), k )
           else
             ! Eddy diffusion for wp3 using a completely implicit time step.
             tmp(1:3) & 
             = C12  & 
-            * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+            * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                                 gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                                 gr%invrs_dzt(k), k )
           endif
@@ -1666,7 +1666,7 @@ module advance_wp2_wp3_module
 
         if ( iwp3_4hd > 0 .and. l_hyper_dfsn ) then
           tmp(1:5) = &
-          hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%invrs_dzt(k),  &
+          hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzt(k),  &
                                      gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
                                      gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
                                      gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
@@ -1759,9 +1759,9 @@ module advance_wp2_wp3_module
         C8,  & 
         C8b, & 
         C12, & 
-        nu1, & 
-        nu8, &
-        nu_hd
+        nu1_vert_res_dep, & 
+        nu8_vert_res_dep, &
+        nu_hd_vert_res_dep
 
     use constants_clubb, only:  & 
         eps,          & ! Variable(s)
@@ -2032,14 +2032,14 @@ module advance_wp2_wp3_module
         lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
         = lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
         + (1.0/2.0) & 
-        * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+        * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                             gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                             gr%invrs_dzm(k), k )
       else
         ! Eddy diffusion for wp2 using a completely implicit time step.
         lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
         = lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
-        + diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+        + diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                             gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                             gr%invrs_dzm(k), k )
       endif
@@ -2066,7 +2066,7 @@ module advance_wp2_wp3_module
       !        k_wp2) &
       !   = lhs( (/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/), &
       !          k_wp2) &
-      !   + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%invrs_dzm(k),  &
+      !   + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzm(k),  &
       !                                gr%invrs_dzt(kp1), gr%invrs_dzt(k),     &
       !                                gr%invrs_dzm(kp1), gr%invrs_dzm(km1),   &
       !                                gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
@@ -2091,13 +2091,13 @@ module advance_wp2_wp3_module
             ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
             tmp(1:3) & 
             = (1.0/2.0) & 
-            * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+            * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                               gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                               gr%invrs_dzm(k), k )
           else
             ! Eddy diffusion for wp2 using a completely implicit time step.
             tmp(1:3) & 
-            = diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+            = diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                                 gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                                 gr%invrs_dzm(k), k )
           endif
@@ -2151,7 +2151,7 @@ module advance_wp2_wp3_module
 
         if ( iwp2_4hd > 0 .and. l_hyper_dfsn ) then
           tmp(1:5) = &
-          hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd, gr%invrs_dzm(k),  &
+          hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzm(k),  &
                                      gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                                      gr%invrs_dzm(kp1), gr%invrs_dzm(km1), &
                                      gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
@@ -2275,7 +2275,7 @@ module advance_wp2_wp3_module
         lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
         = lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
         + C12 * (1.0/2.0) & 
-        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                             gr%invrs_dzt(k), k )
       else
@@ -2283,7 +2283,7 @@ module advance_wp2_wp3_module
         lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
         = lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
         + C12  & 
-        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                             gr%invrs_dzt(k), k )
       endif
@@ -2297,7 +2297,7 @@ module advance_wp2_wp3_module
       !        k_wp3) &
       !   = lhs( (/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/), &
       !          k_wp3) &
-      !   + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%invrs_dzt(k),  &
+      !   + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzt(k),  &
       !                                gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
       !                                gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
       !                                gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
@@ -2393,14 +2393,14 @@ module advance_wp2_wp3_module
             ! Eddy diffusion for wp3 using a Crank-Nicholson time step.
             tmp(1:3) & 
             = C12 * (1.0/2.0) & 
-            * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+            * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                                 gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                                 gr%invrs_dzt(k), k )
           else
             ! Eddy diffusion for wp3 using a completely implicit time step.
             tmp(1:3) & 
             = C12  & 
-            * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+            * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                                 gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                                 gr%invrs_dzt(k), k )
           endif
@@ -2413,7 +2413,7 @@ module advance_wp2_wp3_module
 
         if ( iwp3_4hd > 0 .and. l_hyper_dfsn ) then
           tmp(1:5) = &
-          hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd, gr%invrs_dzt(k),  &
+          hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzt(k),  &
                                      gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
                                      gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
                                      gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
@@ -2524,8 +2524,8 @@ module advance_wp2_wp3_module
         C8b, & 
         C12, & 
         C15, & 
-        nu1, & 
-        nu8
+        nu1_vert_res_dep, & 
+        nu8_vert_res_dep
 
     use constants_clubb, only: & 
         w_tol_sqd,     & ! Variable(s)
@@ -2691,7 +2691,7 @@ module advance_wp2_wp3_module
         ! time step.  They are not used for completely implicit diffusion.
         rhs_diff(1:3) & 
         = (1.0/2.0) & 
-        * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+        * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                             gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                             gr%invrs_dzm(k), k )
         rhs(k_wp2)   =   rhs(k_wp2) & 
@@ -2880,7 +2880,7 @@ module advance_wp2_wp3_module
         ! time step.  They are not used for completely implicit diffusion.
         rhs_diff(1:3) & 
         = C12 * (1.0/2.0) & 
-        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                             gr%invrs_dzt(k), k )
         rhs(k_wp3)   =   rhs(k_wp3) & 
