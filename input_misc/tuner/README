@@ -88,10 +88,14 @@ run_file_nl | character array
  Specifies the filename of file holding the &model_settings, etc. namelists.
 
 z_i_nl | integer array
- Specifies the initial altitudes to average over.
+ Specifies the lowest altitude levels to average over, based on where those altitudes
+ reside on the CLUBB grid.  The LES variable will be iterpolated to the CLUBB grid
+ to compute the difference between the two.
 
 z_f_nl | integer array
- Specifies the final altitudes to average over.
+ Specifies the highest altitude levels to average over, based on where those altitudes
+ reside on the CLUBB grid.  The LES variable will be iterpolated to the CLUBB grid
+ to compute the difference between the two.
 
 time_nl | integer array
  Specifies the time periods to average over in ordered pairs.
