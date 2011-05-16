@@ -977,7 +977,7 @@ module microphys_driver
 
     use parameters_tunable, only: & 
         c_Krrainm,  & ! Variable(s) 
-        nu_r
+        nu_r_vert_res_dep
 
     use parameters_model, only: & 
         hydromet_dim   ! Integer
@@ -1625,7 +1625,8 @@ module microphys_driver
 
         ! Add implicit terms to the LHS matrix
         call microphys_lhs & 
-             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, Kr, cloud_frac, nu_r, wm_zt, &  ! In
+             ( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
+               dt, Kr, cloud_frac, nu_r_vert_res_dep, wm_zt, &  ! In
                hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
                lhs ) ! Out
 
@@ -1641,7 +1642,7 @@ module microphys_driver
               if ( hydromet(k,i) < 0.0 ) then
                 call adj_microphys_tndcy & 
                    ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
-                     Kr, nu_r, dt, k, .true., & 
+                     Kr, nu_r_vert_res_dep, dt, k, .true., & 
                      hydromet(:,i), overevap_rate )
 
                 ! overevap_rate is defined as positive.
@@ -1679,7 +1680,7 @@ module microphys_driver
 
                 call adj_microphys_tndcy & 
                      ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
-                       Kr, nu_r, dt, k, .true., & 
+                       Kr, nu_r_vert_res_dep, dt, k, .true., & 
                        hydromet(:,i), overevap_rate )
 
                 ! Moved from adj_microphys_tndcy
