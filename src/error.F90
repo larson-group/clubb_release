@@ -175,7 +175,7 @@ module error
     ! Constant Variables
 
     integer, parameter ::  & 
-      max_times = 10 ! max number of timesteps to compare (arbitrary)
+      max_times = 50 ! max number of timesteps to compare (arbitrary)
 
     character(len=8), parameter :: & 
       filename = "error.in"
