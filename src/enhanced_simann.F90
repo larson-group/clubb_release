@@ -36,6 +36,8 @@ module enhanced_simann
 
     use mt95, only: genrand_real ! Constant
 
+    use error, only: nfobj => iter ! Variable
+
     implicit none
 
     ! External
@@ -127,7 +129,7 @@ module enhanced_simann
       np,   &! Size of the a partion
       n1, n2, & ! Annealing schedule
 !     inorm,  & ! Normalization
-      nfobj, &
+!     nfobj, & ! Number of function evaluations
       mvokst, &
       nmvust, & ! Number of accepted uphill moves at current temperature stage
       nmvst    ! Number of attempted moves at current temp stage
