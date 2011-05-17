@@ -450,6 +450,15 @@ module parameters_tunable
             nu9_vert_res_dep  =  nu9 * mult_factor
             nu_r_vert_res_dep =  nu_r * mult_factor
 
+          else
+
+            nu1_vert_res_dep  =  nu1
+            nu2_vert_res_dep  =  nu2
+            nu6_vert_res_dep  =  nu6
+            nu8_vert_res_dep  =  nu8
+            nu9_vert_res_dep  =  nu9
+            nu_r_vert_res_dep =  nu_r
+
           end if
 
           ! The value of nu_hd is based on a grid box spacing of 40 m.  The
@@ -462,7 +471,7 @@ module parameters_tunable
 
           nu_hd_vert_res_dep = nu_hd * ( deltaz / grid_spacing_thresh )**2
 
-        elseif ( grid_type == 2 ) then
+        else if ( grid_type == 2 ) then
 
           ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
           ! input.
@@ -488,6 +497,15 @@ module parameters_tunable
             nu9_vert_res_dep  =  nu9 * mult_factor
             nu_r_vert_res_dep =  nu_r * mult_factor
 
+          else
+
+            nu1_vert_res_dep  =  nu1
+            nu2_vert_res_dep  =  nu2
+            nu6_vert_res_dep  =  nu6
+            nu8_vert_res_dep  =  nu8
+            nu9_vert_res_dep  =  nu9
+            nu_r_vert_res_dep =  nu_r
+
           end if
 
           ! The value of nu_hd is based on an average grid box spacing of
@@ -500,7 +518,7 @@ module parameters_tunable
 
           nu_hd_vert_res_dep = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
 
-        elseif ( grid_type == 3 ) then
+        else if ( grid_type == 3 ) then
 
           ! Stretched (unevenly-spaced) grid:  stretched momentum level
           ! input.
@@ -525,6 +543,15 @@ module parameters_tunable
             nu8_vert_res_dep  =  nu8 * mult_factor
             nu9_vert_res_dep  =  nu9 * mult_factor
             nu_r_vert_res_dep =  nu_r * mult_factor
+
+          else
+
+            nu1_vert_res_dep  =  nu1
+            nu2_vert_res_dep  =  nu2
+            nu6_vert_res_dep  =  nu6
+            nu8_vert_res_dep  =  nu8
+            nu9_vert_res_dep  =  nu9
+            nu_r_vert_res_dep =  nu_r
 
           end if
 
@@ -1204,6 +1231,14 @@ module parameters_tunable
     taumax      = PosInf
     lmin_coef   = PosInf
     mu          = PosInf
+
+    nu1_vert_res_dep   = PosInf
+    nu2_vert_res_dep   = PosInf
+    nu6_vert_res_dep   = PosInf
+    nu8_vert_res_dep   = PosInf
+    nu9_vert_res_dep   = PosInf
+    nu_r_vert_res_dep  = PosInf
+    nu_hd_vert_res_dep = PosInf
 
     return
   end subroutine init_parameters_nan
