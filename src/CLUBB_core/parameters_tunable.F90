@@ -550,6 +550,7 @@ module parameters_tunable
       nu8_vert_res_dep  =  nu8
       nu9_vert_res_dep  =  nu9
       nu_r_vert_res_dep =  nu_r
+      nu_hd_vert_res_dep = nu_hd
 
     end if  ! l_adj_low_res_nu
 
