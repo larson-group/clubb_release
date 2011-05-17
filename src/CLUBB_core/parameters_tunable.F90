@@ -4,13 +4,13 @@
 module parameters_tunable
 
   ! Description:
-  !   This module contains tunable model parameters.  The purpose of the module is to make it 
-  !   easier for the clubb_tuner code to use the params vector without "knowing" any information 
-  !   about the individual parameters contained in the vector itself.  It makes it easier to add 
+  !   This module contains tunable model parameters.  The purpose of the module is to make it
+  !   easier for the clubb_tuner code to use the params vector without "knowing" any information
+  !   about the individual parameters contained in the vector itself.  It makes it easier to add
   !   new parameters to be tuned for, but does not make the CLUBB_core code itself any simpler.
-  !   The parameters within the vector do not need to be the same variables used in the rest of 
-  !   CLUBB_core (see for e.g. nu1_vert_res_dep or lmin_coef). 
-  !   The parameters in the params vector only need to be those parameters for which we're not 
+  !   The parameters within the vector do not need to be the same variables used in the rest of
+  !   CLUBB_core (see for e.g. nu1_vert_res_dep or lmin_coef).
+  !   The parameters in the params vector only need to be those parameters for which we're not
   !   sure the correct value and we'd like to tune for.
   !
   ! References:
@@ -105,8 +105,8 @@ module parameters_tunable
     nu_r_vert_res_dep,  & ! Background Coefficient of Eddy Diffusion for hydrometeors.
     nu_hd_vert_res_dep    ! Constant coefficient for 4th-order hyper-diffusion.
 
-!$omp threadprivate(nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep, & 
-!$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu_r_vert_res_dep,  & 
+!$omp threadprivate(nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep, &
+!$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu_r_vert_res_dep,  &
 !$omp   nu_hd_vert_res_dep )
 
   ! Vince Larson added a constant to set plume widths for theta_l and rt
@@ -247,7 +247,7 @@ module parameters_tunable
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
     call adj_low_res_nu &
            ( l_implemented, nzmax, grid_type, deltaz,  & ! Intent(in)
-             momentum_heights, thermodynamic_heights )   ! Intent(in) 
+             momentum_heights, thermodynamic_heights )   ! Intent(in)
 
     ! Sanity check
     if ( beta < 0.0 .or. beta > 3.0 ) then
@@ -289,16 +289,19 @@ module parameters_tunable
                ( l_implemented, nzmax, grid_type, deltaz, & ! Intent(in)
                  momentum_heights, thermodynamic_heights )  ! Intent(in)
 
-  ! Description:  
-  !   Adjust the values of background eddy diffusivity based on 
-  !   vertical grid spacing.
-  !   This code was made into a public subroutine so that it may be
-  !   called multiple times per model run in scenarios where grid
-  !   altitudes, and hence average grid spacing, change through space
-  !   and/or time.  This occurs, for example, when CLUBB is 
-  !   implemented in WRF.  --ldgrant Jul 2010
-  !----------------------------------------------------------------------
- 
+    ! Description:
+    !   Adjust the values of background eddy diffusivity based on
+    !   vertical grid spacing.
+    !   This code was made into a public subroutine so that it may be
+    !   called multiple times per model run in scenarios where grid
+    !   altitudes, and hence average grid spacing, change through space
+    !   and/or time.  This occurs, for example, when CLUBB is
+    !   implemented in WRF.  --ldgrant Jul 2010
+    !----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+      fstderr ! Constant(s)
+
     implicit none
 
     ! Constant Parameters
@@ -357,7 +360,7 @@ module parameters_tunable
     ! it needs to use the momentum level altitudes as input.
     real, intent(in), dimension(nzmax) :: &
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m] 
+      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     ! Local Variables
     real :: avg_deltaz  ! Average grid box height   [m]
@@ -366,7 +369,6 @@ module parameters_tunable
     ! diffusivity if the grid spacing threshold is exceeded and l_adj_low_res_nu
     ! is turned on.
     real :: mult_factor
-
 
     !--------------- Begin code -------------------------
 
@@ -386,188 +388,81 @@ module parameters_tunable
       ! is based on avg_deltaz, which is the average grid spacing over the
       ! vertical domain.
 
-      if ( l_implemented ) then
+      if ( l_implemented .or. grid_type == 3 ) then
 
-        ! CLUBB is implemented in a host model.
+        ! CLUBB is implemented in a host model, or is using grid_type = 3
 
         ! Find the average deltaz over the grid based on momentum level
         ! inputs.
-        ! Note:  The use of momentum level inputs will avoid any
-        !        descrepancy between the CLUBB thermodynamic level profile,
-        !        which places the first thermodynamic level below the model
-        !        surface, and many host models, which place the first
-        !        thermodynamic level above the model surface.
+        ! Note on the use of l_implemented here:
+        !   The use of momentum level inputs will avoid any
+        !   descrepancy between the CLUBB thermodynamic level profile,
+        !   which places the first thermodynamic level below the model
+        !   surface, and many host models, which place the first
+        !   thermodynamic level above the model surface.
 
         avg_deltaz  &
            = ( momentum_heights(nzmax) - momentum_heights(1) )  &
-             / ( nzmax - 1 )
+             / real( nzmax - 1 )
 
-        ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must
-        ! be adjusted for larger grid spacings (Vince Larson)
- 
-        if ( avg_deltaz > grid_spacing_thresh ) then
+      else if ( grid_type == 1 ) then
 
-          mult_factor = 1.0 + mult_coef * log( avg_deltaz / grid_spacing_thresh )
+        ! Evenly-spaced grid.
 
-          nu1_vert_res_dep  =  nu1 * mult_factor
-          nu2_vert_res_dep  =  nu2 * mult_factor
-          nu6_vert_res_dep  =  nu6 * mult_factor
-          nu8_vert_res_dep  =  nu8 * mult_factor
-          nu9_vert_res_dep  =  nu9 * mult_factor
-          nu_r_vert_res_dep =  nu_r * mult_factor
+        avg_deltaz = deltaz
 
-        end if
+      else if ( grid_type == 2 ) then
 
-        ! The value of nu_hd is based on an average grid box spacing of 40 m.
-        ! The value of nu_hd should be adjusted proportionally to the average
-        ! grid box size, whether the average grid box size is less than 40 m.
-        ! or greater than 40 m.
-        ! Since nu_hd should be very large for large grid boxes, but
-        ! substantially smaller for small grid boxes, the grid spacing
-        ! adjuster is squared.
+        ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
+        ! input.
 
-        nu_hd_vert_res_dep = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
+        ! Find the average deltaz over the stretched grid based on
+        ! thermodynamic level inputs.
+
+        avg_deltaz  &
+          = ( thermodynamic_heights(nzmax) - thermodynamic_heights(1) )  &
+             / real( nzmax - 1 )
+      else
+
+        write(fstderr,*) "Invalid grid_type:", grid_type
+        stop "Fatal error"
+
+      end if ! grid_type / l_implemented
+
+      ! The nu's are chosen for deltaz <= 40 m. Looks like they must
+      ! be adjusted for larger grid spacings (Vince Larson)
+
+      if ( avg_deltaz > grid_spacing_thresh ) then
+
+        mult_factor = 1.0 + mult_coef * log( avg_deltaz / grid_spacing_thresh )
+
+        nu1_vert_res_dep  =  nu1 * mult_factor
+        nu2_vert_res_dep  =  nu2 * mult_factor
+        nu6_vert_res_dep  =  nu6 * mult_factor
+        nu8_vert_res_dep  =  nu8 * mult_factor
+        nu9_vert_res_dep  =  nu9 * mult_factor
+        nu_r_vert_res_dep =  nu_r * mult_factor
 
       else
 
-        ! CLUBB model is running on it's own.
+        nu1_vert_res_dep  =  nu1
+        nu2_vert_res_dep  =  nu2
+        nu6_vert_res_dep  =  nu6
+        nu8_vert_res_dep  =  nu8
+        nu9_vert_res_dep  =  nu9
+        nu_r_vert_res_dep =  nu_r
 
-        if ( grid_type == 1 ) then
+      end if
 
-          ! Evenly-spaced grid.
+      ! The value of nu_hd is based on an average grid box spacing of
+      ! 40 m.  The value of nu_hd should be adjusted proportionally to
+      ! the average grid box size, whether the average grid box size is
+      ! less than 40 m. or greater than 40 m.
+      ! Since nu_hd should be very large for large grid boxes, but
+      ! substantially smaller for small grid boxes, the grid spacing
+      ! adjuster is squared.
 
-          ! The nu's are chosen for deltaz <= 40 m. Looks like they must
-          ! be adjusted for larger grid spacings (Vince Larson)
-
-          if ( deltaz > grid_spacing_thresh ) then
-
-            mult_factor = 1.0 + mult_coef * log( deltaz / grid_spacing_thresh )
-
-            nu1_vert_res_dep  =  nu1 * mult_factor
-            nu2_vert_res_dep  =  nu2 * mult_factor
-            nu6_vert_res_dep  =  nu6 * mult_factor
-            nu8_vert_res_dep  =  nu8 * mult_factor
-            nu9_vert_res_dep  =  nu9 * mult_factor
-            nu_r_vert_res_dep =  nu_r * mult_factor
-
-          else
-
-            nu1_vert_res_dep  =  nu1
-            nu2_vert_res_dep  =  nu2
-            nu6_vert_res_dep  =  nu6
-            nu8_vert_res_dep  =  nu8
-            nu9_vert_res_dep  =  nu9
-            nu_r_vert_res_dep =  nu_r
-
-          end if
-
-          ! The value of nu_hd is based on a grid box spacing of 40 m.  The
-          ! value of nu_hd should be adjusted proportionally to the grid box
-          ! size, whether the grid box size is less than 40 m. or greater
-          ! than 40 m.
-          ! Since nu_hd should be very large for large grid boxes, but
-          ! substantially smaller for small grid boxes, the grid spacing
-          ! adjuster is squared.
-
-          nu_hd_vert_res_dep = nu_hd * ( deltaz / grid_spacing_thresh )**2
-
-        else if ( grid_type == 2 ) then
-
-          ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
-          ! input.
-
-          ! Find the average deltaz over the stretched grid based on
-          ! thermodynamic level inputs.
-
-          avg_deltaz  &
-             = ( thermodynamic_heights(nzmax) - thermodynamic_heights(1) )  &
-               / ( nzmax - 1 )
-
-          ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must
-          ! be adjusted for larger grid spacings (Vince Larson)
-
-          if ( avg_deltaz > grid_spacing_thresh ) then
-
-            mult_factor = 1.0 + mult_coef * log( avg_deltaz / grid_spacing_thresh )
-
-            nu1_vert_res_dep  =  nu1 * mult_factor
-            nu2_vert_res_dep  =  nu2 * mult_factor
-            nu6_vert_res_dep  =  nu6 * mult_factor
-            nu8_vert_res_dep  =  nu8 * mult_factor
-            nu9_vert_res_dep  =  nu9 * mult_factor
-            nu_r_vert_res_dep =  nu_r * mult_factor
-
-          else
-
-            nu1_vert_res_dep  =  nu1
-            nu2_vert_res_dep  =  nu2
-            nu6_vert_res_dep  =  nu6
-            nu8_vert_res_dep  =  nu8
-            nu9_vert_res_dep  =  nu9
-            nu_r_vert_res_dep =  nu_r
-
-          end if
-
-          ! The value of nu_hd is based on an average grid box spacing of
-          ! 40 m.  The value of nu_hd should be adjusted proportionally to
-          ! the average grid box size, whether the average grid box size is
-          ! less than 40 m. or greater than 40 m.
-          ! Since nu_hd should be very large for large grid boxes, but
-          ! substantially smaller for small grid boxes, the grid spacing
-          ! adjuster is squared.
-
-          nu_hd_vert_res_dep = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
-
-        else if ( grid_type == 3 ) then
-
-          ! Stretched (unevenly-spaced) grid:  stretched momentum level
-          ! input.
-
-          ! Find the average deltaz over the stretched grid based on momentum
-          ! level inputs.
-
-          avg_deltaz  &
-             = ( momentum_heights(nzmax) - momentum_heights(1) )  &
-               / ( nzmax - 1 )
-
-          ! The nu's are chosen for avg_deltaz <= 40 m. Looks like they must
-          ! be adjusted for larger grid spacings (Vince Larson)
-
-          if ( avg_deltaz > grid_spacing_thresh ) then
-
-            mult_factor = 1.0 + mult_coef * log( avg_deltaz / grid_spacing_thresh )
-
-            nu1_vert_res_dep  =  nu1 * mult_factor
-            nu2_vert_res_dep  =  nu2 * mult_factor
-            nu6_vert_res_dep  =  nu6 * mult_factor
-            nu8_vert_res_dep  =  nu8 * mult_factor
-            nu9_vert_res_dep  =  nu9 * mult_factor
-            nu_r_vert_res_dep =  nu_r * mult_factor
-
-          else
-
-            nu1_vert_res_dep  =  nu1
-            nu2_vert_res_dep  =  nu2
-            nu6_vert_res_dep  =  nu6
-            nu8_vert_res_dep  =  nu8
-            nu9_vert_res_dep  =  nu9
-            nu_r_vert_res_dep =  nu_r
-
-          end if
-
-          ! The value of nu_hd is based on an average grid box spacing of
-          ! 40 m.  The value of nu_hd should be adjusted proportionally to
-          ! the average grid box size, whether the average grid box size is
-          ! less than 40 m. or greater than 40 m.
-          ! Since nu_hd should be very large for large grid boxes, but
-          ! substantially smaller for small grid boxes, the grid spacing
-          ! adjuster is squared.
-
-          nu_hd_vert_res_dep = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
-
-        end if ! grid_type
-
-      end if  ! l_implemented
+      nu_hd_vert_res_dep = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
 
     else ! nu values are not adjusted
 
@@ -683,7 +578,7 @@ module parameters_tunable
       close(unit=iunit)
 
     end if
- 
+
     ! Put the variables in the output array
     call pack_parameters( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
