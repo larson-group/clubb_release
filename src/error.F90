@@ -732,6 +732,10 @@ module error
 
     !---------------------------------------------------------------
     ! Compute normalization factors to satisfy imposed weights
+    ! This non-dimensionlizes each term in the cost function so 
+    ! that the units in the variables(eg. rcm, cloud_frac) don't matter
+    ! Invsigma2 is computed once and then reused in all later 
+    ! calculations because invsigma2 is declared in the module
     !---------------------------------------------------------------
     if ( l_initialize_sigma ) then
       do c_run=1,c_total
