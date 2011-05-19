@@ -1,4 +1,5 @@
 ../src/MG_micro/cldwat2m_micro.F90
+../src/MG_micro/microp_aero.F90
 ../src/MG_micro/wv_saturation.F90
 ../src/MG_micro_dependencies/abortutils.F90
 ../src/MG_micro_dependencies/cam_history.F90

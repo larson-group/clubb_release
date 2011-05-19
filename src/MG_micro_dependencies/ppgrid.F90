@@ -11,9 +11,11 @@ module ppgrid
   public :: pcols, pver, pverp, init_ppgrid
 
   integer :: &
-    pcols = 1,   &  ! number of points in the “i” direction. CLUBB is a single column model.
-    pver,        &  ! number of points in the vertical
-    pverp           ! pver + 1
+    pcols,   &  ! number of points in the “i” direction.
+    pver,    &  ! number of points in the vertical
+    pverp       ! pver + 1
+    
+  parameter(pcols = 1) ! CLUBB is a single column model.
     
   contains
   

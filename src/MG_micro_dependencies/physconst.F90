@@ -13,13 +13,13 @@ module physconst
     rhoh2o => rho_lw,    &   ! Density of liquid water                          [kg m-3]
     latvap => Lv,        &   ! latent heat of vaporization                      [J kg-1]
     latice => Lf,        &   ! latent heat of fusion                            [J kg-1]
-    epsil => ep              ! Ratio of h2o to dry air molecular weights        [-]
+    epsilo => ep             ! Ratio of h2o to dry air molecular weights        [-]
 
   implicit none
 
   private
 
-  public :: gravit, rair, tmelt, cpair, rh2o, r_universal, mwh2o, rhoh2o, latvap, latice, epsil
+  public :: gravit, rair, tmelt, cpair, rh2o, r_universal, mwh2o, rhoh2o, latvap, latice, epsilo
     
   ! These variables are not used anywhere in MG, they are just imported. Because of this we
   ! are setting them to dummy values

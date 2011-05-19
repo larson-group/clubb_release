@@ -187,6 +187,9 @@ module microphys_driver
       
     use cldwat2m_micro, only: &
       ini_micro ! Subroutine
+      
+    use microp_aero, only: &
+      ini_microp_aero ! Subroutine
 
     use constants_clubb, only: &
       fstderr,   & ! Constant
@@ -757,6 +760,9 @@ module microphys_driver
       l_hydromet_sed(iiricem)  = .false.
       l_hydromet_sed(iiNim)    = .false.
       l_hydromet_sed(iiNcm)    = .false.
+      
+      ! Initialize constants for aerosols
+      call ini_microp_aero()
 
       ! Setup the MG scheme
       call ini_micro()
