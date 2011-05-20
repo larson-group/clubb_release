@@ -109,6 +109,9 @@ user@computer compile$ ./compile.bash config/linux_ia32_gfortran.bash
 To run this on a MAC OS X machine, you should use the following command:
 $ ./compile.bash config/macosx_x86_64_gfortran.bash
 
+(If you want a primer on using the command line shell on Macs, see
+http://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/OSX_Technology_Overview/CommandLine/CommandLine.html#//apple_ref/doc/uid/TP40001067-CH271-BBCBEAJD .)
+
 The command line will output information relating to the compilation of CLUBB.
 
 If you change something in the configuration and need to remove the old 
