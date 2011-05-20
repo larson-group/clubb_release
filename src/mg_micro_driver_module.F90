@@ -145,7 +145,7 @@ module mg_micro_driver_module
       liqcldf_flip, & ! Liquid cloud fraction                                [-]
       icecldf_flip, & ! Ice cloud fraction                                   [-]
       naai_flip,    & ! number of activated ice nuclei                       [1/kg]
-      rho_flip,     & ! Density on thermo. grid                              [kg/m^3]
+      !rho_flip,     & ! Density on thermo. grid                              [kg/m^3]
       npccn_flip,   & ! Number of cloud nuclei                               [count/m^3]
       unused_in       ! Represents MG variables that are not used in the current code
       
@@ -168,7 +168,7 @@ module mg_micro_driver_module
     ! otherwise Fortran treats all the variables are if they point to the same memory
     ! location.
     real, dimension(nnzp-1) :: &
-      unused_out01, unused_out02, unused_out03, &
+      unused_out01, unused_out02, &
       unused_out04, unused_out05, unused_out06, &
       unused_out07, unused_out08, unused_out09, &
       unused_out10, unused_out11, unused_out12, &
@@ -233,7 +233,6 @@ module mg_micro_driver_module
     rcm_flip(1:nnzp-1) = real( flip( dble(rcm(2:nnzp) ), nnzp-1 ) )
     p_in_Pa_flip(1:nnzp-1) = real( flip( dble(p_in_Pa(2:nnzp) ), nnzp-1 ) )
     liqcldf_flip(1:nnzp-1) = real( flip( dble(cloud_frac(2:nnzp) ), nnzp-1 ) )
-    rho_flip(1:nnzp-1) = real( flip( dble(rho(2:nnzp) ), nnzp-1 ) )
     
     ! Hydromet is 2 dimensional, so flip function doesn't work
     do i = 1, hydromet_dim, 1
@@ -283,6 +282,8 @@ module mg_micro_driver_module
     ! The following code blocks initialize values in case you choose to comment out the call
     ! to microp_aero_ts.
     !
+    !rho_flip(1:nnzp-1) = real( flip( dble(rho(2:nnzp) ), nnzp-1 ) )
+    !    
     ! Ncnm_flip(1:nnzp-1) = real( flip( dble(Ncnm(2:nnzp) ), nnzp-1 ) )
     !
     ! Determine ice nulceation number using Meyers formula found in the Morrison microphysics
@@ -350,7 +351,7 @@ module mg_micro_driver_module
     
     ! TODO: WE NEED TO FIGURE OUT HOW TO UPDATE THLM
     ! Update thetal based on absolute temperature
-    !thlm_mc = ( T_in_K2thlm( !TEMPERATURE OUTPUT!, exner, rcm_tmp ) - thlm ) / real( dt )
+    thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt )
     
     ! Sedimentation is handled within the MG microphysics
     hydromet_vel(:,:) = 0.0
