@@ -170,7 +170,7 @@
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'BOMEX_4x1x80_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Droplet Number Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
@@ -218,7 +218,7 @@
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'BOMEX_4x1x80_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Buoyancy flux', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Buoyancy flux', 'axisLabel' => 'wpthvp tlflux [K m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(TVFLUX + TVFLUXS) ./ (RHO * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
