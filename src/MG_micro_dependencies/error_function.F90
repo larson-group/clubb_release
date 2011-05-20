@@ -12,17 +12,17 @@ public :: erf, erfc, erfcx
 
 interface erf
    module procedure erf_r4
-   module procedure derf
+   module procedure erf_r8
 end interface
 
 interface erfc
    module procedure erfc_r4
-   module procedure derfc
+   module procedure erfc_r8
 end interface
 
 interface erfcx
    module procedure erfcx_r4
-   module procedure derfcx
+   module procedure erfcx_r8
 end interface
 
 ! Private variables
@@ -487,7 +487,7 @@ end SUBROUTINE CALERF_r4
 
 !------------------------------------------------------------------------------------------
 
-FUNCTION DERF(X)
+FUNCTION ERF_r8(X)
 !--------------------------------------------------------------------
 !
 ! This subprogram computes approximate values for erf(x).
@@ -502,14 +502,14 @@ FUNCTION DERF(X)
    real(rk), intent(in) :: X
 
    ! return value
-   real(rk) :: DERF
+   real(rk) :: ERF_r8
 
    ! local variables
    INTEGER :: JINT = 0
    !------------------------------------------------------------------
 
-   CALL CALERF_r8(X, DERF, JINT)
-END FUNCTION DERF
+   CALL CALERF_r8(X, ERF_r8, JINT)
+END FUNCTION ERF_r8
 
 !------------------------------------------------------------------------------------------
 
@@ -539,7 +539,7 @@ END FUNCTION ERF_r4
 
 !------------------------------------------------------------------------------------------
 
-FUNCTION DERFC(X)
+FUNCTION ERFC_r8(X)
 !--------------------------------------------------------------------
 !
 ! This subprogram computes approximate values for erfc(x).
@@ -554,14 +554,14 @@ FUNCTION DERFC(X)
    real(rk), intent(in) :: X
 
    ! return value
-   real(rk) :: DERFC
+   real(rk) :: ERFC_r8
 
    ! local variables
    INTEGER :: JINT = 1
    !------------------------------------------------------------------
 
-   CALL CALERF_r8(X, DERFC, JINT)
-END FUNCTION DERFC
+   CALL CALERF_r8(X, ERFC_r8, JINT)
+END FUNCTION ERFC_r8
 
 !------------------------------------------------------------------------------------------
 
@@ -591,7 +591,7 @@ END FUNCTION ERFC_r4
 
 !------------------------------------------------------------------------------------------
 
-FUNCTION DERFCX(X)
+FUNCTION ERFCX_r8(X)
 !--------------------------------------------------------------------
 !
 ! This subprogram computes approximate values for exp(x*x) * erfc(x).
@@ -606,14 +606,14 @@ FUNCTION DERFCX(X)
    real(rk), intent(in) :: X
 
    ! return value
-   real(rk) :: DERFCX
+   real(rk) :: ERFCX_r8
 
    ! local variables
    INTEGER :: JINT = 2
    !------------------------------------------------------------------
 
-   CALL CALERF_r8(X, DERFCX, JINT)
-END FUNCTION DERFCX
+   CALL CALERF_r8(X, ERFCX_r8, JINT)
+END FUNCTION ERFCX_r8
 
 !------------------------------------------------------------------------------------------
 
