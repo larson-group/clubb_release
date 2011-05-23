@@ -7,4 +7,4 @@
 # Output:
 # rand_seed.dat: text file that may be edited by hand.
 #----------------------------------------------------------------------
-../bin/int2txt /dev/random > ../input_misc/tuner/rand_seed.dat
+../bin/int2txt /dev/urandom > ../input_misc/tuner/rand_seed.dat
