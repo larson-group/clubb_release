@@ -578,7 +578,7 @@ module advance_wp2_wp3_module
 
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
-    call wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, &
+    call wp23_rhs( dt, wp2, wp3, a1, a1_zt, &
                    a3, a3_zt, wp3_on_wp2, wpthvp, wp2thvp, um, vm,  & 
                    upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt,  & 
                    Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
@@ -2495,7 +2495,7 @@ module advance_wp2_wp3_module
 #endif /* MKL */
 
   !=============================================================================
-  subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, &
+  subroutine wp23_rhs( dt, wp2, wp3, a1, a1_zt, &
                        a3, a3_zt, wp3_on_wp2, wpthvp, wp2thvp, um, vm,  & 
                        upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt, & 
                        Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
@@ -2567,7 +2567,6 @@ module advance_wp2_wp3_module
     real, dimension(gr%nnzp), intent(in) ::  & 
       wp2,             & ! w'^2 (momentum levels)                    [m^2/s^2]
       wp3,             & ! w'^3 (thermodynamic levels)               [m^3/s^3]
-      wp3_zm,          & ! w'^3 interpolated to momentum levels      [m^3/s^3]
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)    [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels  [-]
       a3,              & ! sigma_sqd_w term a_3 (momentum levels)    [-]
@@ -2895,7 +2894,7 @@ module advance_wp2_wp3_module
                    + wp3_term_bp2_rhs( C15, Kh_zt(k), wpthvp(k), wpthvp(km1), &
                                        dum_dz(k), dum_dz(km1), dvm_dz(k), dvm_dz(km1), &
                                        upwp(k), upwp(km1), vpwp(k), vpwp(km1), &
-                                       thv_ds_zt(k), gr%invrs_dzt(k), gr%invrs_dzm(k) )
+                                       thv_ds_zt(k), gr%invrs_dzt(k) )
       end if
 
       if ( l_stats_samp ) then
@@ -3027,9 +3026,9 @@ module advance_wp2_wp3_module
                   
         if ( l_wp3_2nd_buoyancy_term ) then
           temp = wp3_term_bp2_rhs( C15, Kh_zt(k), wpthvp(k), wpthvp(km1), &
-                                   um(kp1), um(k), um(km1), vm(kp1), vm(k), vm(km1), &
-                                   upwp(k), vpwp(k), &
-                                   thv_ds_zt(k), gr%invrs_dzt(k), gr%invrs_dzm(k) )
+                                   dum_dz(k), dum_dz(km1), dvm_dz(k), dvm_dz(km1), &
+                                   upwp(k), upwp(km1), vpwp(k), vpwp(km1), &
+                                   thv_ds_zt(k), gr%invrs_dzt(k) )
           call stat_update_var_pt( iwp3_bp2, k, temp, zt )
         end if
 
@@ -4252,7 +4251,7 @@ module advance_wp2_wp3_module
   pure function wp3_term_bp2_rhs( C15, Kh_zt, wpthvp, wpthvp_m1, &
                                   dum_dz, dum_dz_m1, dvm_dz, dvm_dz_m1, &
                                   upwp, upwp_m1, vpwp, vpwp_m1, &
-                                  thv_ds_zt, invrs_dzt, invrs_dzm ) & 
+                                  thv_ds_zt, invrs_dzt ) & 
     result( rhs )
 
     ! Description:
@@ -4289,8 +4288,7 @@ module advance_wp2_wp3_module
       vpwp,      & ! v'w'(k)                            [m^2/s^2]
       vpwp_m1,   & ! v'w'(k-1)                          [m^2/s^2]
       thv_ds_zt, & ! Dry, base-state theta_v at thermo. lev. (k) [K]
-      invrs_dzt, & ! Inverse of grid spacing (k)        [1/m]
-      invrs_dzm    ! Inverse of grid spacing (k)        [1/m]
+      invrs_dzt    ! Inverse of grid spacing (k)        [1/m]
 
     ! Return Variable
     real :: rhs
