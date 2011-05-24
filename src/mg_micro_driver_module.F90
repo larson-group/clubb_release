@@ -128,17 +128,19 @@ module mg_micro_driver_module
       rsnowm,       & ! Snow mixing ratio (not in hydromet, output straight to stats) [kg/kg]
       effc,         & ! Droplet effective radius                                      [μ]
       effi,         & ! cloud ice effective radius                                    [μ]
-      turbtype,     & ! Turbulence type at each interface                             [-]
-      smaw,         & ! Normalized instability function of momentum                   [???]
-      wsub,         & ! Diagnosed sub-grid vertical velocity st. dev.                 [m/s]
-      wsubi           ! Diagnosed sub-grid vertical velocity ice                      [m/s]
+      turbtype_flip,& ! Turbulence type at each interface                             [-]
+      smaw_flip,    & ! Normalized instability function of momentum                   [???]
+      wsub_flip,    & ! Diagnosed sub-grid vertical velocity st. dev.                 [m/s]
+      wsubi_flip      ! Diagnosed sub-grid vertical velocity ice                      [m/s]
       
     real, dimension(1, nnzp-1, 0) :: &
-      aer_mmr
+      aer_mmr_flip
 
     ! MG Input Variables
     ! Note that the MG grid is flipped with respect to CLUBB.
     real, dimension(nnzp-1) :: &
+      Kh_zm_flip,   & ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
+      em_flip,      & ! Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
       T_in_K_flip,  & ! Air temperature                                      [K]
       rvm_flip,     & ! Vapor water mixing ratio                             [kg/kg]
       rcm_flip,     & ! Cloud water mixing ratio                             [kg/kg]
@@ -234,6 +236,8 @@ module mg_micro_driver_module
     ! MG's grid is flipped with respect to CLUBB.
     ! Flip CLUBB variables before inputting them into MG.
     ! In addition, MG does not include CLUBB's bottom level
+    Kh_zm_flip(1:nnzp-1) = real( flip( dble(Kh_zm(2:nnzp) ), nnzp-1 ) )
+    em_flip(1:nnzp-1) = real( flip( dble(em(2:nnzp) ), nnzp-1 ) )
     T_in_K_flip(1:nnzp-1) = real( flip( dble(T_in_K(2:nnzp) ), nnzp-1 ) )
     rvm_flip(1:nnzp-1) = real( flip( dble(rvm(2:nnzp) ), nnzp-1 ) )
     rcm_flip(1:nnzp-1) = real( flip( dble(rcm(2:nnzp) ), nnzp-1 ) )
@@ -307,9 +311,9 @@ module mg_micro_driver_module
 
     ! These variables are unused in CLUBB, so they are initialized to 1 before input into
     ! microp_aero_ts. 
-    aer_mmr(:,:,:) = 1
-    turbtype(:) = 1
-    smaw(:) = 1
+    aer_mmr_flip(:,:,:) = 1
+    turbtype_flip(:) = 1
+    smaw_flip(:) = 1
     
     ! Calculate aerosol activiation, dust size, and number for contact nucleation
     call microp_aero_ts &
@@ -318,8 +322,8 @@ module mg_micro_driver_module
          hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
          liqcldf_flip, icecldf_flip, &                                                        ! in
          cldo_flip, unused_in, unused_in, unused_in, unused_in, &                             ! in
-         aer_mmr, &
-         Kh_zm, em, turbtype, smaw, wsub, wsubi, &
+         aer_mmr_flip, &
+         Kh_zm_flip, em_flip, turbtype_flip, smaw_flip, wsub_flip, wsubi_flip, &
          naai_flip, npccn_flip, rndst_flip, nacon_flip )                                     ! out
 
     ! Call the Morrison-Gettelman microphysics
