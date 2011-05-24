@@ -159,8 +159,9 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 	   exit 1
    fi
 
-   # Concatenate *_model.in and *_stats.in into *_hoc.in
-   cat $MODEL_IN $STATS_TUNE_IN > $RUN_CASE'_hoc.in'
+	# Concatenate *_model.in and *_stats.in into *_hoc.in
+	cat $MODEL_IN $STATS_TUNE_IN > $RUN_CASE'_hoc.in'
+	sed -i -e 's/\!.*//' $RUN_CASE'_hoc.in'
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
@@ -187,8 +188,9 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 	           exit 1
            fi
 
-           # Concatenate *_model.in and *_stats.in into *_hoc.in
-           cat $MODEL_IN $STATS_TUNE_IN > $EACH_CASE'_hoc.in'
+        # Concatenate *_model.in and *_stats.in into *_hoc.in
+	cat $MODEL_IN $STATS_TUNE_IN > $EACH_CASE'_hoc.in'
+	sed -i -e 's/\!.*//' $EACH_CASE'_hoc.in'
 
    done
 
@@ -196,6 +198,7 @@ fi
 
 # Copy error_*.in file and tunable_parameters to error.in
 cat $ERROR_IN $PARAMS_FILE> 'error.in'
+sed -i -e 's/\!.*//' 'error.in'
 
 # Copy random seed
 cp $RAND_SEED .
@@ -241,22 +244,16 @@ PARAMS_IN=`ls -t ../input/tunable_parameters/tunable_parameters* | head -n 1`
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
    # Concatenate *_model.in and *_stats.in into hoc.in
-   # Note:  The <CASE>_hoc.in file is not used because
-   #        when the tuner writes standalone_<DATE>.in,
-   #        it makes a generic reference to hoc.in
-   cat $PARAMS_IN $MODEL_IN $STATS_OPT_IN > 'clubb.in'
+   cat $PARAMS_IN $MODEL_IN $STATS_OPT_IN | sed -e 's/\!.*//' > 'clubb.in'
    ../bin/clubb_standalone
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
    for EACH_CASE in "${MODEL_MULT[@]}"; do
-           MODEL_IN=$MODEL_DIR$EACH_CASE'_model.in'
-           # Concatenate *_model.in and *_stats.in into hoc.in
-           # Note:  The <CASE>_hoc.in file is not used because
-           #        when the tuner writes standalone_<DATE>.in,
-           #        it makes a generic reference to hoc.in
-           cat $PARAMS_IN $MODEL_IN $STATS_OPT_IN > 'clubb.in'
-           ../bin/clubb_standalone
+		MODEL_IN=$MODEL_DIR$EACH_CASE'_model.in'
+		# Concatenate *_model.in and *_stats.in into hoc.in
+		cat $PARAMS_IN $MODEL_IN $STATS_OPT_IN | sed -e 's/\!.*//' > 'clubb.in'
+		../bin/clubb_standalone
    done
 
 fi
