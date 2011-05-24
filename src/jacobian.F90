@@ -46,7 +46,7 @@ program jacobian
   !----------------------------------------------------------------------------
   type param_array
 
-    integer :: entries ! Total constant parameters
+    integer :: entries ! Total tunable parameters
 
     character(len=11), pointer :: name(:)
 
@@ -74,7 +74,7 @@ program jacobian
 
   ! Constant Parameters
   integer, parameter :: & 
-    nvarzt = 14, & 
+    nvarzt = 15, & 
     nvarzm = 40
 
 ! character, parameter :: delta   = 'Δ' ! Only works on unicode terminals
@@ -225,14 +225,14 @@ program jacobian
     ( var1zm%name(1), "../output/"//trim( fname_zm )//".ctl", nzm )
 
   var1zt%name(1:nvarzt) =  & 
-  (/"cloud_frac  ", "rcm         ", "rtm         ",  & 
+  (/"cloud_frac  ", "rcm         ", "rtm         ", & 
     "thlm        ", "um          ", "vm          ", & 
     "wp3         ", "wp3_ta      ", "wp3_tp      ", & 
-    "wp3_bp      ", "wp3_cl      ", & 
+    "wp3_bp1     ", "wp3_bp2     ", "wp3_cl      ", & 
     "wp3_pr1     ", "wp3_pr2     ", "wp3_dp1     "/)
 
   var1zm%name(1:nvarzm) =  & 
-  (/"wp2         ", "rtp2        ", "thlp2       ",  & 
+  (/"wp2         ", "rtp2        ", "thlp2       ", & 
     "rtpthlp     ", "wprtp       ", "wpthlp      ", & 
     "wp2_ta      ", "wp2_bp      ", "wp2_pr2     ", & 
     "wp2_pr3     ", "wp2_dp1     ", "wp2_dp2     ", & 
