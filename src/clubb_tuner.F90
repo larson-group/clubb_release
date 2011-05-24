@@ -210,7 +210,7 @@ program clubb_tuner
 
   return
 #else
-  stop "Tuner was disabled at compile time"
+  stop "Numerical recipes subroutines were disabled at compile time"
 #endif
   end subroutine amoeba_driver
 
@@ -286,14 +286,14 @@ program clubb_tuner
   return
 
 #else
-  stop "Tuner was disabled at compile time"
+  stop "Numerical recipes subroutines were disabled at compile time"
 #endif
 end subroutine amebsa_driver
 !----------------------------------------------------------------------
   subroutine enhanced_simann_driver
 
-  !     Description:
-  !     Wrapper subroutine for the ESA driver
+  ! Description:
+  !   Wrapper subroutine for the ESA driver
 
   ! References: 
   !   ``Enhanced Simulated Annealing for Many Globally Minimized Functions
