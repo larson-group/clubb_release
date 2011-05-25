@@ -127,7 +127,7 @@ debug_level   = 2
 
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
-"coamps", "simplified_ice", or "none"
+! "coamps", "simplified_ice", or "none"
 micro_scheme = "morrison"
 /
 
