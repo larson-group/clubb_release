@@ -875,6 +875,8 @@ An ensemble tuning run generates a set ("ensemble") of optimal parameter
 values.  This is useful if you want to see the range of parameter values that
 will yield good results.
 
+More detailed instructions of how to execute an ensemble tuning run
+can be found in ens_tune/README
 
 Notes and instructions for the CLUBB ensemble tuner
 ---------------------------------------------------
@@ -942,10 +944,10 @@ Go to the main CLUBB directory and follow these instructions:
          there is only ONE error*.in file in the ens_tune_xyz directory when
          you start the ensemble tuning run.
 
-6)  Edit the mytuner_messner.bash file:
+6)  Edit the mytuner_sequential.bash file:
 
          Only the Global variables section of this file needs to be edited.
-         There are 6 global variables to edit:
+         There are 7 global variables to edit:
 
          a) EXPERIMENTS:  List the names of the cases that you are tuning for.
                           This should match the <CASE NAME> model, stats, and
@@ -963,12 +965,9 @@ Go to the main CLUBB directory and follow these instructions:
                   directory above ens_tune_xyz, where the tuner is being run
                   from.
 
-         e) NODES:  The nodes on the Messner cluster which are going to run
-                    these tuning iterations.
+         f) MEMBERMAX:  The total number of tuning members to run.  
 
-         f) ITERMAX:  The total number of tuning iterations to run.  ITERMAX
-                      needs to be a multiple of the total number of nodes
-                      that are being used in the tuning run.
+	 g) ENSEMBLE_DIR: The directory that the tuner script is located in.	
 
          Whenever you are setting up a run, you need to take into account the
          amount of disk space you will need.  You need to take into account
@@ -1014,7 +1013,7 @@ Go to the main CLUBB directory and follow these instructions:
 
 7)  Starting the ensemble tuning run:
 
-         A simple ./mytuner_messner.bash would start the tuning run.  However,
+         A simple ./mytuner_sequential.bash would start the tuning run.  However,
          that would require leaving a session open until the job is finished
          (which could take days).  Therefore, the special atjob.bash script
          has been created in order to have the job run in the background.
@@ -1033,6 +1032,13 @@ Go to the main CLUBB directory and follow these instructions:
          best to look at the results for the top handful of tuning iterations.
          First, to see if they look good for all the cases that were tuned for,
          and then to see if they look good for all the cases we have in CLUBB.
+
+9)  Analyzing the results:
+
+	 The python script analyze_tuner.py will create a scatter plot,
+	 box plot and Plotgen plots of the ensemble members.  This can 
+	 help you see if the members with lower cost functions actually
+	 look good, or if they tuned to an undesired result.
 
 -----------------------------------------------------------------------
 - (3.4) Executing a Jacobian analysis:

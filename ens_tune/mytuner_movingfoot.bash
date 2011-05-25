@@ -1,11 +1,13 @@
 #!/bin/bash
-# $Id$
+# $Id: mytuner_sequential.bash 5071 2011-03-30 19:20:26Z roehl@uwm.edu $
 ################################################################################
 #
 # Description: 
 #   This is a sequential version of Chris Golaz's ensemble tuning script,
 #   which was created after the Messner cluster was dismantled.
 #   Each ensemable member is run in sequence.
+#   It will move the first foot to match the previous member if that member
+#   tuned with a lower cost function than the previous.
 ################################################################################
 
 ################################################################################
@@ -49,6 +51,25 @@ function tune ( ) {
 
 	# Move results data
 	mkdir -p $ARCHIVE/$CASE/ens_tune_$member
+
+	# Move foot if current cost is less than previous cost
+        currCost=$(grep -i '\$' tune.log | tr -d '$''[:blank:]')
+        if [ `echo "$currCost < $prevCost" |bc ` == 1 ] ; then
+                PREVTUNER=`ls $CLUBB/input/tunable_parameters/tunable_parameters_*.in`
+                cat "error_"$CASE".in" $PREVTUNER &> "error.in"
+                echo -en '\E[47;34m'"\033[1mRecreating error.in with new parameter values\033[0m\n"
+                prevCost=$currCost
+                counter=0
+        fi
+        counter=$(expr $counter + 1)
+        if [ $counter -gt 15 ]; then
+                counter=0
+                prevCost=1
+                cat "error_"$CASE".in" $CLUBB/input/tunable_parameters/tunable_parameters.in &> "error.in"
+                echo -en '\E[47;34m'"\033[1mReverting to original parameter values\033[0m\n"
+
+        fi
+
 	mv $CLUBB/input/tunable_parameters/tunable_parameters_*.in  $ARCHIVE/$CASE/ens_tune_$member
 	mv $ENSEMBLE_DIR/tune.log  $ARCHIVE/$CASE/ens_tune_$member
 	# for GrADS output
@@ -74,6 +95,10 @@ fi
 cat "error_"$CASE".in" $CLUBB/input/tunable_parameters/tunable_parameters.in > "error.in"
 
 cd $ENSEMBLE_DIR
+
+# Setup variables
+counter=0
+prevCost=1.
 
 #Make the les_data folder if it doesn't exsist
 mkdir $CLUBB/les_data &> $CLUBB/ens_tune/tuner.log
