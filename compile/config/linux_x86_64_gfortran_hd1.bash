@@ -5,8 +5,8 @@
 
 
 # Fortran 95 compiler and linker
-FC=/usr/local/gcc/4.4.3/bin/gfortran
-LD=/usr/local/gcc/4.4.3/bin/gfortran
+FC=/sharedapps/uwm/common/gcc-compiler/4.4.3-v1/bin/gfortran
+LD=/sharedapps/uwm/common/gcc-compiler/4.4.3-v1/bin/gfortran
 
 # Define path to directories
 dir=`pwd` # dir where this script resides
