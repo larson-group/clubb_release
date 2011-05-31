@@ -2494,17 +2494,17 @@ module clubb_core
                              Lscale_max )
 
     ! Description:
-    ! This subroutine sets the value of Lscale_max, which is the maximum
-    ! allowable value of Lscale.  For standard CLUBB, it is set to a very large
-    ! value so that Lscale will not be limited.  However, when CLUBB is running
-    ! as part of a host model, the value of Lscale_max is dependent on the size
-    ! of the host model's horizontal grid spacing.  The smaller the host model's
-    ! horizontal grid spacing, the smaller the value of Lscale_max.  When Lscale
-    ! is limited to a small value, the value of time-scale Tau is reduced, which
-    ! in turn produces greater damping on CLUBB's turbulent parameters.  This
-    ! is the desired effect on turbulent parameters for a host model with small
-    ! horizontal grid spacing, for small areas usually contain much less
-    ! variation in meteorological quantities than large areas.
+    !   This subroutine sets the value of Lscale_max, which is the maximum
+    !   allowable value of Lscale.  For standard CLUBB, it is set to a very large
+    !   value so that Lscale will not be limited.  However, when CLUBB is running
+    !   as part of a host model, the value of Lscale_max is dependent on the size
+    !   of the host model's horizontal grid spacing.  The smaller the host model's
+    !   horizontal grid spacing, the smaller the value of Lscale_max.  When Lscale
+    !   is limited to a small value, the value of time-scale Tau is reduced, which
+    !   in turn produces greater damping on CLUBB's turbulent parameters.  This
+    !   is the desired effect on turbulent parameters for a host model with small
+    !   horizontal grid spacing, for small areas usually contain much less
+    !   variation in meteorological quantities than large areas.
 
     ! References:
     !   None
@@ -2540,3 +2540,4 @@ module clubb_core
 !===============================================================================
 
 end module clubb_core
+! vim: set expandtab tabstop=2 shiftwidth=2 textwidth=100 autoindent:
