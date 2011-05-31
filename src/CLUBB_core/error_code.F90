@@ -4,18 +4,21 @@
 
 module error_code
 
-!       Description:
-!       Since f90/95 lacks enumeration, we're stuck numbering each
-!       parameter by hand like this.
+! Description:
+!   Since f90/95 lacks enumeration, we're stuck numbering each
+!   error code by hand like this.
 
-!       We are "enumerating" error codes to be used with CLUBB. Adding
-!       additional codes is as simple adding an additional integer
-!       parameter. The error codes are ranked by severity, the higher
-!       number being more servere. When two errors occur, assign the
-!       most servere to the output.
+!   We are "enumerating" error codes to be used with CLUBB. Adding
+!   additional codes is as simple adding an additional integer
+!   parameter. The error codes are ranked by severity, the higher
+!   number being more servere. When two errors occur, assign the
+!   most servere to the output.
 
-!       This code also handles subroutines related to debug_level. See
-!       the 'set_clubb_debug_level' description for more detail.
+!   This code also handles subroutines related to debug_level. See
+!   the 'set_clubb_debug_level' description for more detail.
+
+! References:
+!   None
 !-----------------------------------------------------------------------
 
   implicit none
@@ -39,12 +42,12 @@ module error_code
 
   private :: clubb_debug_level
 
-! Model-Wide Debug Level
+  ! Model-Wide Debug Level
   integer :: clubb_debug_level = 0
 
 !$omp threadprivate(clubb_debug_level)
 
-! Error Code Values
+  ! Error Code Values
   integer, parameter :: & 
     clubb_no_error                 =  0,  & 
     clubb_var_less_than_zero       =  1, & 
@@ -59,7 +62,8 @@ module error_code
 !-----------------------------------------------
   subroutine reportError( err_code )
 !
-!       Description: Reports meaning of error code to console.
+! Description: 
+!   Reports meaning of error code to console.
 !
 !-----------------------------------------------
 
@@ -68,7 +72,7 @@ module error_code
 
     implicit none
 
-! Input Variable
+    ! Input Variable
     integer, intent(in) :: err_code ! Error Code being examined
 
     select case ( err_code )
@@ -102,7 +106,7 @@ module error_code
 
   end subroutine reportError
 !---------------------------------------------------------------------
-  logical function lapack_error( err_code )
+  elemental function lapack_error( err_code )
 !
 ! Description: 
 !   Checks to see if the err_code is equal to one
@@ -115,13 +119,19 @@ module error_code
     ! Input variable
     integer,intent(in) :: err_code ! Error Code being examined
 
+    ! Output variable
+    logical :: lapack_error
+
+    ! ---- Begin Code ----
+
     lapack_error = (err_code == clubb_singular_matrix .or. & 
         err_code == clubb_bad_lapack_arg )
+
     return
   end function lapack_error
 
 !---------------------------------------------------------------------
-  logical function fatal_error( err_code )
+  elemental function fatal_error( err_code )
 !
 ! Description: Checks to see if the err_code is one that usually
 !   causes an exit in other parts of CLUBB.
@@ -133,7 +143,12 @@ module error_code
     ! Input Variable
     integer, intent(in) :: err_code ! Error Code being examined
 
-    fatal_error = ( err_code == clubb_singular_matrix     .or. & 
+    ! Output variable
+    logical :: fatal_error
+
+    ! ---- Begin Code ----
+
+    fatal_error = ( err_code == clubb_singular_matrix   .or. & 
                   err_code == clubb_bad_lapack_arg      .or. & 
                   err_code == clubb_var_equals_NaN      .or. & 
                   err_code == clubb_rtm_level_not_found .or. & 
@@ -152,6 +167,8 @@ module error_code
 
     ! Input variable
     integer, intent(in) :: level   ! The debug level being checked against the current setting
+
+    ! ---- Begin Code ----
 
     clubb_at_least_debug_level = ( level <= clubb_debug_level )
 
@@ -175,6 +192,9 @@ module error_code
 
     ! Input variable
     integer, intent(in) :: level ! The debug level being checked against the current setting
+
+    ! ---- Begin Code ----
+
     clubb_debug_level = level
 
     return
@@ -183,26 +203,27 @@ module error_code
 !----------------------------------------------------------------------
   subroutine clubb_debug( level, str )
 !
-!       Description:
-!       Prints a message to file unit fstderr if the level is greater
-!       than or equal to the current debug level.
+! Description:
+!   Prints a message to file unit fstderr if the level is greater
+!   than or equal to the current debug level.
 !----------------------------------------------------------------------
     use constants_clubb, only: & 
         fstderr ! Variable(s)
 
     implicit none
 
-! Input Variable(s)
+    ! Input Variable(s)
 
-! The message being reported
     character(len=*), intent(in) :: str ! The message being reported
 
-! The debug level being checked against the current setting
+    ! The debug level being checked against the current setting
     integer, intent(in) :: level
+
+    ! ---- Begin Code ----
 
     if (level <= clubb_debug_level) then
       write(fstderr,*) str
-    endif
+    end if
 
     return
   end subroutine clubb_debug

@@ -129,6 +129,9 @@ module advance_xp2_xpyp_module
 
     use error_code, only:  & 
       clubb_no_error,  & ! Variable(s)
+      clubb_singular_matrix
+
+    use error_code, only:  & 
       lapack_error,    & ! Procedure(s)
       clubb_at_least_debug_level
 
@@ -238,7 +241,7 @@ module advance_xp2_xpyp_module
       sclr_solution ! Solution to tridiagonal system for the passive scalars
 
     integer, dimension(5+1) :: & 
-      Valid_arr
+      err_code_array ! Array containing the error codes for each variable
 
     ! Eddy Diffusion for Variances and Covariances.
     real, dimension(gr%nnzp) ::  & 
@@ -320,7 +323,7 @@ module advance_xp2_xpyp_module
 
     ! Initialize tridiagonal solutions to valid
 
-    Valid_arr(:) = clubb_no_error
+    err_code_array(:) = clubb_no_error
 
 
     ! Define the Coefficent of Eddy Diffusivity for the variances
@@ -431,7 +434,7 @@ module advance_xp2_xpyp_module
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_rtp2, 1, &   ! Intent(in)
                          rhs, lhs, rtp2, &     ! Intent(inout)
-                         Valid_arr(1) )        ! Intent(out)
+                         err_code_array(1) )        ! Intent(out)
 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_rtp2, rtp2 ) ! Intent(in)
@@ -459,7 +462,7 @@ module advance_xp2_xpyp_module
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_thlp2, 1, &   ! Intent(in)
                          rhs, lhs, thlp2, &     ! Intent(inout)
-                         Valid_arr(2) )         ! Intent(out)
+                         err_code_array(2) )         ! Intent(out)
 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_thlp2, thlp2 ) ! Intent(in)
@@ -488,7 +491,7 @@ module advance_xp2_xpyp_module
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_rtpthlp, 1, &     ! Intent(in)
                          rhs, lhs, rtpthlp, &       ! Intent(inout)
-                         Valid_arr(3) )             ! Intent(out)
+                         err_code_array(3) )             ! Intent(out)
 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_rtpthlp, rtpthlp ) ! Intent(in)
@@ -528,7 +531,7 @@ module advance_xp2_xpyp_module
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_up2_vp2, 2,       & ! Intent(in)
                          uv_rhs, lhs,               & ! Intent(inout)
-                         uv_solution, Valid_arr(4) )  ! Intent(out)
+                         uv_solution, err_code_array(4) )  ! Intent(out)
 
     up2(1:gr%nnzp) = uv_solution(1:gr%nnzp,1)
     vp2(1:gr%nnzp) = uv_solution(1:gr%nnzp,2)
@@ -717,7 +720,7 @@ module advance_xp2_xpyp_module
 
       call xp2_xpyp_solve( xp2_xpyp_scalars, 3*sclr_dim, &   ! Intent(in)
                            sclr_rhs, lhs, sclr_solution, &  ! Intent(inout)
-                           Valid_arr(6) )                   ! Intent(out)
+                           err_code_array(6) )                   ! Intent(out)
 
       sclrp2(:,1:sclr_dim) = sclr_solution(:,1:sclr_dim)
 
@@ -810,10 +813,10 @@ module advance_xp2_xpyp_module
     endif ! l_scalar_calc
 
 
-    ! Check for singular matrices
-    do i = 1, 5+1
-      if( Valid_arr(i) > err_code ) err_code = Valid_arr(i)
-    enddo
+    ! Check for singular matrices and bad LAPACK arguments
+    if ( any( lapack_error( err_code_array ) ) ) then
+      err_code = clubb_singular_matrix
+    end if
 
     if ( lapack_error( err_code ) .and.  & 
          clubb_at_least_debug_level( 1 ) ) then
