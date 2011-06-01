@@ -107,6 +107,7 @@ command:
 user@computer compile$ ./compile.bash config/linux_ia32_gfortran.bash
 
 To run this on a MAC OS X machine, you should use the following command:
+
 $ ./compile.bash config/macosx_x86_64_gfortran.bash
 
 (If you want a primer on using the command line shell on Macs, see
@@ -302,13 +303,21 @@ To build, perform the following three steps:
    line in the file compile.bash. Depending on your platform you may need 
    to create a new file based on the existing configurations, and add a new
    line to compile.bash.  Add or uncomment the "source" statement
-   for your <PLATFORM>.bash in the file ./compile/compile.bash, and comment
+   for your <PLATFORM>.bash in the file ./compile.bash, and comment
    out the other "source" statements with a # character.
+
+   Alternatively, compile.bash can take in an argument specifying the
+   config file to use. In this case, the ./config/<PLATFORM>.bash file
+   would still need to be edited/created according to your platform, but
+   ./compile.bash would not need to be edited at all.
 
    Note that the variables libdir and bindir determine where
    your executables and libraries will end up, so make sure you set it
    to the correct location (the default is one directory up).
 3. $ ./compile.bash
+   if you edited compile.bash, or
+   $ ./compile.bash ./config/<PLATFORM>.bash
+   if you wish to pass in the config file as a parameter
 
 The executables and Makefile will appear in <CLUBB BASE DIRECTORY>/bin 
 and libraries in <CLUBB BASE DIRECTORY>/lib.  The object (.o) and 
