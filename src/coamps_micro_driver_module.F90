@@ -437,13 +437,6 @@ module coamps_micro_driver_module
 ! an individual case, in order to allow the user to use specific
 ! model settings and forcings.
 !
-! Ideally, we would use the character string "runtype" to identify
-! a simulation, since the variable is already used in hoc.F.
-! However, with the current structure of CLUBB, it is not realistic
-! to pass the variable into this driver.  Therefore, we must hard-code
-! the icase value for now.  Perhaps in the future, it will be possible
-! to have the "icase" value set automatically based on the cloud case.
-!
 ! Specific icase values used in COAMPS:
 ! icase = 75:   M-PACE: period B
 ! icase = 1000: Nov.11, 1999 altocu
@@ -453,9 +446,17 @@ module coamps_micro_driver_module
 !------------------------------------------
 ! End of ajsmith4's comment
 !------------------------------------------
-! dschanen on 27 Mar 2008 made icase as function of runtype
+
     select case ( trim( runtype ) )
-    case ( "mpace_a", "mpace_b" )
+! It appears that using icase = 75 for MPACE B gives spurious results (i.e. no
+! ice or snow forms but thlm_mc and rtm_mc are non-zero).
+! Therefore, to get results that resemble the COAMPS-LES results, setting 
+! icase /= 75 seems to be the best option. 
+! Perhaps some bug was introduced in the CLUBB branch of the COAMPS microphysics
+! that made icase code different between COAMPS-LES and CLUBB.
+! -dschanen 2 June 2011
+!   case ( "mpace_a", "mpace_b" )
+    case ( "mpace_a" )
       icase  = 75
       nrdamp = 15
 
@@ -476,13 +477,14 @@ module coamps_micro_driver_module
       nrdamp = 15
 
     case default
-      icase = -1 ! No idea what to do in this case. -dschanen
+      icase = -1 ! No special conditions. -dschanen
       nrdamp = 15
 
     end select
 
-! Something related to ice.  In regular COAMPS it is a parameter but is
-! then set to another value, which is illegal.
+! The eic variable is something related to ice.  In regular COAMPS it is
+! declared as a parameter but it is then set to another value, which is illegal.
+! -dschanen
     eic      = 1.0
 
 ! Brian set regular precision variables "timea" and "deltf" to the values
@@ -517,7 +519,7 @@ module coamps_micro_driver_module
       ! Determine absolute temperature
       T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
-! Setup COAMPS w grid variables
+      ! Setup COAMPS verical velocity / mass grid variables
       w3(1,1,1:kk+1) = wm_zm(1:kk+1)
 
 
