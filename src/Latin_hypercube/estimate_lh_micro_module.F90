@@ -54,8 +54,8 @@ module estimate_lh_micro_module
     use parameters_model, only: &
       hydromet_dim ! Variable
 
-    use estimate_microphys_module, only: &
-      lh_microphys_estimate ! Procedure(s)
+    use estimate_scm_microphys_module, only: &
+      est_single_column_tndcy ! Procedure(s)
 
     implicit none
 
@@ -318,7 +318,7 @@ module estimate_lh_micro_module
     end do ! level = 2, nnzp
 
     ! Call the latin hypercube microphysics driver for microphys_sub
-    call lh_microphys_estimate( dt, nnzp, n_micro_calls, d_variables, & ! In
+    call est_single_column_tndcy( dt, nnzp, n_micro_calls, d_variables, & ! In
                                 k_lh_start, LH_rt, LH_thl, & ! In
                                 X_nl_all_levs, LH_sample_point_weights, & ! In
                                 p_in_Pa, exner, rho, w_std_dev, & ! In

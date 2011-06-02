@@ -1,16 +1,16 @@
 ! $Id$
-module estimate_microphys_module
+module estimate_scm_microphys_module
 
   implicit none
 
-  public :: lh_microphys_estimate
+  public :: est_single_column_tndcy
 
   private ! Default scope
 
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine lh_microphys_estimate &
+  subroutine est_single_column_tndcy &
              ( dt, nnzp, n_micro_calls, d_variables, &
                k_lh_start, LH_rt, LH_thl, &
                X_nl_all_levs, LH_sample_point_weights, &
@@ -238,7 +238,7 @@ module estimate_microphys_module
           end if
         end do ! 1..n_micro_calls
         if ( in_cloud_points /= out_of_cloud_points ) then
-          write(fstderr,*) "In lh_microphys_estimate:"
+          write(fstderr,*) "In est_single_column_tndcy:"
           write(fstderr,*) "The cloudy sample points do not equal the out of cloud points"
           write(fstderr,*) "in_cloud_points =", in_cloud_points
           write(fstderr,*) "out_of_cloud_points =", out_of_cloud_points
@@ -479,7 +479,7 @@ module estimate_microphys_module
     do k = 1, nnzp
       if ( n1(k) == 0 .and. n2(k) == 0 ) then
         l_error = .true.
-        write(fstderr,*) 'Error:  no sample points in lh_microphys_estimate, k =', k
+        write(fstderr,*) 'Error:  no sample points in est_single_column_tndcy, k =', k
       end if
     end do
     if ( l_error ) stop
@@ -572,6 +572,6 @@ module estimate_microphys_module
     end if ! l_cloud_weighted_averaging
 
     return
-  end subroutine lh_microphys_estimate
+  end subroutine est_single_column_tndcy
 
-end module estimate_microphys_module
+end module estimate_scm_microphys_module
