@@ -29,11 +29,11 @@ cleanupHandler = onCleanup(@()netcdf.close(nc_file));
 
 if strfind ( filename, 'pf_gfdl' ) %Get height for pf_gfdl files
   %Get the correct variables for height
-   varAlt = netcdf.inqVarID( nc_file, 'zf_forc' );
+   varAlt = netcdf.inqVarID( nc_file, 'zfull' );
    alt = netcdf.getVar ( nc_file, varAlt );
    z(:,1) = alt(1,1,:,1);
 elseif strfind ( filename, 'ph_gfdl' )  %Get height for ph_gfdl files
-   varAlt = netcdf.inqVarID( nc_file, 'zh_forc' );
+   varAlt = netcdf.inqVarID( nc_file, 'zhalf' );
    alt = netcdf.getVar ( nc_file, varAlt );
    z(:,1) = alt(1,1,:,1);
 elseif strfind ( filename, 'ps_gfdl' )  %Get height for ps_gfdl files
