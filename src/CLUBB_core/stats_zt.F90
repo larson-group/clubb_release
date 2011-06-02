@@ -74,6 +74,7 @@ module stats_zt
         isnowslope, & 
         ised_rcm, & 
         irsat, & 
+        irsati, & 
         irrainm, & 
         iNrm, & 
         irain_rate, & 
@@ -1038,6 +1039,12 @@ module stats_zt
         irsat = k
         call stat_assign( irsat, "rsat", & 
              "Saturation mixing ratio over liquid [kg/kg]", "kg/kg", zt )
+        k = k + 1
+
+      case ('rsati')
+        irsati = k
+        call stat_assign( irsati, "rsati", & 
+             "Saturation mixing ratio over ice [kg/kg]", "kg/kg", zt )
         k = k + 1
 
       case ('rrainm')           ! Brian

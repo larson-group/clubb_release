@@ -95,6 +95,7 @@ module stats_variables
      isnowslope,      & ! Adam Smith, 22 April 2008
      ised_rcm,        & ! Brian
      irsat,           & ! Brian
+     irsati, & 
      irrainm,         & ! Brian
      imean_vol_rad_rain,   & ! Brian
      imean_vol_rad_cloud,  & ! COAMPS only. dschanen 6 Dec 2006
@@ -117,7 +118,7 @@ module stats_variables
 !$omp   threadprivate(iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down)
 !$omp   threadprivate(itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt)
 !$omp   threadprivate(irho, irel_humidity, iNcm, iNcnm, isnowslope)
-!$omp   threadprivate(ised_rcm, irsat, irrainm)
+!$omp   threadprivate(ised_rcm, irsat, irsati, irrainm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
 !$omp   threadprivate(irain_rate, iAKm, iLH_AKm)
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)

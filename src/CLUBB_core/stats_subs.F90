@@ -1210,18 +1210,19 @@ module stats_subs
         iKh_zt
 
     use stats_variables, only: & 
-        iwp2thvp, & 
+        iwp2thvp, &  ! Variable(s)
         iwp2rcp, & 
         iwprtpthlp, & 
         isigma_sqd_w_zt, & 
         irho, & 
         irsat, & 
+        irsati, & 
         iAKm, & 
         iLH_AKm, & 
         iradht
 
     use stats_variables, only: & 
-        imixt_frac, & 
+        imixt_frac, &  ! Variable(s)
         iw1, & 
         iw2, & 
         ivarnce_w1, & 
@@ -1248,7 +1249,7 @@ module stats_subs
         is_mellor
 
     use stats_variables, only: & 
-        iwp2_zt, & 
+        iwp2_zt, &  ! Variable(s)
         ithlp2_zt, & 
         iwpthlp_zt, & 
         iwprtp_zt, & 
@@ -1285,7 +1286,7 @@ module stats_subs
         iem
 
     use stats_variables, only: & 
-        ishear, & 
+        ishear, &  ! Variable(s)
         iFrad, & 
         icc, & 
         iz_cloud_base, & 
@@ -1305,7 +1306,7 @@ module stats_subs
         ithlp2_vert_avg
 
     use stats_variables, only: & 
-        isclrm, & 
+        isclrm, &  ! Variable(s)
         isclrm_f, & 
         iedsclrm, & 
         iedsclrm_f, & 
@@ -1322,7 +1323,7 @@ module stats_subs
         iwpedsclrp
 
     use stats_variables, only: &
-      iAKstd, &
+      iAKstd, & ! Variable(s)
       iAKstd_cld, &
       iAKm_rcm, &
       iAKm_rcc
@@ -1375,7 +1376,7 @@ module stats_subs
         radht
 
     use variables_diagnostic_module, only: & 
-        wp2_zt, & 
+        wp2_zt, &  ! Variable(s)
         thlp2_zt, & 
         wpthlp_zt, & 
         wprtp_zt, & 
@@ -1448,7 +1449,10 @@ module stats_subs
         lin_int             ! Procedure
 
     use array_index, only: & 
-        iirsnowm, iiricem, iirrainm
+        iirsnowm, iiricem, iirrainm ! Variable(s)
+
+    use saturation, only: &
+      sat_mixrat_ice ! Procedure
 
     implicit none
 
@@ -1512,8 +1516,10 @@ module stats_subs
     integer :: i, k
 
     real, dimension(gr%nnzp) :: &
-      shear, &        ! Wind shear production term [m^2/s^3]
-      s_mellor        ! Mellor's 's'               [kg/kg]
+      T_in_K, &  ! Absolute temperature [K]
+      rsati,  &  ! Saturation w.r.t ice [kg/kg]
+      shear,  &  ! Wind shear production term [m^2/s^3]
+      s_mellor   ! Mellor's 's'               [kg/kg]
 
     real :: xtmp
 
@@ -1523,9 +1529,16 @@ module stats_subs
 
       ! zt variables
 
+
+      if ( iT_in_K > 0 .or. irsati > 0 ) then
+        T_in_K = thlm2T_in_K( thlm, exner, rcm)
+      else
+        T_in_K = -999.
+      end if
+
+      call stat_update_var( iT_in_K, T_in_K, zt )
+
       call stat_update_var( ithlm, thlm, zt )
-      call stat_update_var( iT_in_K,  & 
-                            thlm2T_in_K( thlm, exner, rcm), zt )
       call stat_update_var( ithvm, thvm, zt )
       call stat_update_var( irtm, rtm, zt )
       call stat_update_var( ircm, rcm, zt )
@@ -1558,6 +1571,10 @@ module stats_subs
       call stat_update_var( isigma_sqd_w_zt, sigma_sqd_w_zt, zt )
       call stat_update_var( irho, rho, zt )
       call stat_update_var( irsat, rsat, zt )
+      if ( irsati > 0 ) then
+        rsati = sat_mixrat_ice( p_in_Pa, T_in_K )
+        call stat_update_var( irsati, rsati, zt )
+      end if
 
       call stat_update_var( iAKm, AKm, zt )
       call stat_update_var( iLH_AKm, lh_AKm, zt)

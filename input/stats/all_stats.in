@@ -18,7 +18,7 @@ vars_zt =
 'Lscale', 'T_in_K', 'rel_humidity', 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
-'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'Ngraupelm', 'sed_rcm', 'rsat',
+'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'Ngraupelm', 'sed_rcm', 'rsat', 'rsati',
 'rrainm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
 'eff_rad_cloud', 'eff_rad_ice', 'eff_rad_snow', 'eff_rad_rain', 'eff_rad_graupel',
 'rain_rate', 'AKm', 'LH_AKm', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',
