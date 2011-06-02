@@ -219,7 +219,7 @@
     ],
     'nightlyOutput' =>
     {
-        'subText' => '',
+        'subText' => '**The nightly simulation uses COAMPS microphysics**',
         'subHtml' => ''
     },
     'additionalOutput' =>
