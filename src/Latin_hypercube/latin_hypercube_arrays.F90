@@ -4,7 +4,7 @@ module latin_hypercube_arrays
   implicit none
 
   public :: setup_corr_varnce_array, cleanup_latin_hypercube_arrays
-
+  private :: return_LH_index
   private
 
   integer, public :: d_variables
@@ -20,13 +20,28 @@ module latin_hypercube_arrays
 !$omp threadprivate(xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
 !$omp   corr_array_cloud, corr_array_below)
 
+  ! Latin hypercube indices
+  integer, public :: &
+    iiLH_s_mellor, iiLH_t_mellor, iiLH_w
+!$omp threadprivate(iiLH_s_mellor, iiLH_t_mellor, iiLH_w)
+
+  integer, public :: &
+   iiLH_rrain, iiLH_rsnow, iiLH_rice, iiLH_rgraupel
+!$omp threadprivate(iiLH_rrain, iiLH_rsnow, iiLH_rice, iiLH_rgraupel)
+
+  integer, public :: &
+   iiLH_Nr, iiLH_Nsnow, iiLH_Ni, iiLH_Ngraupel, iiLH_Nc
+!$omp threadprivate(iiLH_Nr, iiLH_Nsnow, iiLH_Ni, iiLH_Ngraupel, iiLH_Nc)
+
 
   contains
 !===============================================================================
-  subroutine setup_corr_varnce_array( d_variables_in )
+  subroutine setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm )
+
 ! Description:
 !   Setup an array with the x'^2/xm^2 variables on the diagonal and the other
 !   elements to be correlations between various variables.
+
 ! References:
 !   None.
 !-------------------------------------------------------------------------------
@@ -74,20 +89,6 @@ module latin_hypercube_arrays
       corr_wrsnow_NL_below, &
       corr_wNsnow_NL_below
 
-    use array_index, only: &
-      iiLH_s_mellor, & ! Variables
-      iiLH_t_mellor, & 
-      iiLH_w, & 
-      iiLH_rrain, &
-      iiLH_rsnow, &
-      iiLH_rice, &
-      iiLH_rgraupel, &
-      iiLH_Nr, &
-      iiLH_Nsnow, &
-      iiLH_Ni, &
-      iiLH_Ngraupel, &
-      iiLH_Nc
-
     use matrix_operations, only: set_lower_triangular_matrix_sp ! Procedure(s)
 
     implicit none
@@ -100,12 +101,36 @@ module latin_hypercube_arrays
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables_in ! Number of variates in the array
+      iiNcm,    & ! Index of cloud droplet number conc.
+      iirrainm, & ! Index of rain water mixing ratio
+      iiNrm,    & ! Index of rain droplet number conc.
+      iiricem,  & ! Index of ice water mixing ratio
+      iiNim,    & ! Index of ice crystal number conc.
+      iirsnowm, & ! Index snow mixing ratio
+      iiNsnowm    ! Index of snow number conc.
 
     integer :: i
 
     ! ---- Begin Code ----
-    d_variables = d_variables_in
+    iiLH_s_mellor = 1 ! Extended rcm
+    iiLH_t_mellor = 2 ! 't' orthogonal to 's'
+    iiLH_w        = 3 ! vertical velocity
+
+    i = iiLH_w
+
+    call return_LH_index( iiNcm, i, iiLH_Nc )
+    call return_LH_index( iirrainm, i, iiLH_rrain )
+    call return_LH_index( iiNrm, i, iiLH_Nr )
+    call return_LH_index( iiricem, i, iiLH_rice )
+    call return_LH_index( iiNim, i, iiLH_Ni )
+    call return_LH_index( iirsnowm, i, iiLH_rsnow )
+    call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
+    ! Disabled until we have values for the correlations of graupel and
+    ! other variates in the latin hypercube sampling.
+    iiLH_rgraupel = -1
+    iiLH_Ngraupel = -1
+
+    d_variables = i
 
     allocate( corr_array_cloud(d_variables,d_variables) )
     allocate( corr_array_below(d_variables,d_variables) )
@@ -469,11 +494,11 @@ module latin_hypercube_arrays
   !-----------------------------------------------------------------------------
   subroutine cleanup_latin_hypercube_arrays( )
 
-  ! Description:
-  !   De-allocate latin hypercube arrays
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------------
+    ! Description:
+    !   De-allocate latin hypercube arrays
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------------
     implicit none
 
     ! External
@@ -499,5 +524,40 @@ module latin_hypercube_arrays
 
     return
   end subroutine cleanup_latin_hypercube_arrays
+
+!-------------------------------------------------------------------------------
+  subroutine return_LH_index( hydromet_index, LH_count, LH_index )
+
+    ! Description:
+    !   Set the Latin hypercube variable index if the hydrometeor exists
+    ! References:
+    !   None
+    !-------------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      hydromet_index
+
+    ! Input/Output Variables
+    integer, intent(inout) :: &
+      LH_count
+
+    ! Output Variables
+    integer, intent(out) :: &
+      LH_index
+
+    ! ---- Begin Code ----
+
+    if ( hydromet_index > 0 ) then
+      LH_count = LH_count + 1
+      LH_index = LH_count
+    else
+      LH_index = -1
+    end if
+
+    return
+  end subroutine return_LH_index
 
 end module latin_hypercube_arrays

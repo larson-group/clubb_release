@@ -40,7 +40,7 @@ module latin_hypercube_driver_module
 !   None
 !-------------------------------------------------------------------------------
  
-    use array_index, only: &
+    use latin_hypercube_arrays, only: &
       iiLH_s_mellor   ! Variables
 
     use parameters_model, only: hydromet_dim ! Variable
@@ -728,7 +728,7 @@ module latin_hypercube_driver_module
                zt, time_initial )
 !-------------------------------------------------------------------------------
 
-    use array_index, only: &
+    use latin_hypercube_arrays, only: &
       iiLH_s_mellor, & ! Variables
       iiLH_t_mellor, &
       iiLH_w, &

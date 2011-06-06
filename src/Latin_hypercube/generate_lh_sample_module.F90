@@ -76,7 +76,9 @@ module generate_lh_sample_module
       iiricem, &
       iirsnowm, &
       iiNgraupelm, &
-      iirgraupelm, &
+      iirgraupelm
+
+    use latin_hypercube_arrays, only: &
       iiLH_rrain, &
       iiLH_rsnow, &
       iiLH_rice, &
@@ -898,7 +900,7 @@ module generate_lh_sample_module
 !   None
 !----------------------------------------------------------------------
 
-    use array_index, only: &
+    use latin_hypercube_arrays, only: &
       iiLH_s_mellor, & ! Variables
       iiLH_t_mellor
 
@@ -1883,7 +1885,7 @@ module generate_lh_sample_module
 ! References:
 !   None.
 !-------------------------------------------------------------------------------
-    use array_index, only: &
+    use latin_hypercube_arrays, only: &
       iiLH_s_mellor, & ! Variable(s)
       iiLH_t_mellor, &
       iiLH_w

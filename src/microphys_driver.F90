@@ -42,9 +42,9 @@ module microphys_driver
     Ncm_initial                     ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
 
   use parameters_microphys, only: &
-   LH_microphys_interactive,     & ! Feed the subcolumns into the microphysics and allow feedback
-   LH_microphys_non_interactive, & ! Feed the subcolumns into the microphysics with no feedback
-   LH_microphys_disabled           ! Disable latin hypercube entirely
+    LH_microphys_interactive,     & ! Feed the subcolumns into the microphysics and allow feedback
+    LH_microphys_non_interactive, & ! Feed the subcolumns into the microphysics with no feedback
+    LH_microphys_disabled           ! Disable latin hypercube entirely
 
   implicit none
 
@@ -79,22 +79,6 @@ module microphys_driver
     use array_index, only: & 
       iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
       iiNcm, iiNsnowm, iiNim, iiNgraupelm
-
-    use array_index, only: &
-      iiLH_s_mellor, & ! Variables
-      iiLH_t_mellor, &
-      iiLH_w
-
-    use array_index, only: &
-      iiLH_rrain, & ! Variables
-      iiLH_rsnow, &
-      iiLH_rice, &
-      iiLH_rgraupel, &
-      iiLH_Nr, &
-      iiLH_Nsnow, &
-      iiLH_Ni, &
-      iiLH_Ngraupel, &
-      iiLH_Nc
 
     use parameters_microphys, only: &
       rrp2_on_rrainm2_cloud, & ! Variable(s)
@@ -229,7 +213,6 @@ module microphys_driver
       hydromet_dim ! Number of hydrometeor fields.
 
     ! Local variables
-    integer :: i
     character(len=30) :: LH_microphys_type
 
     namelist /microphysics_setting/ &
@@ -898,34 +881,10 @@ module microphys_driver
     ! Setup index variables for latin hypercube sampling
     if ( LH_microphys_type_int /= LH_microphys_disabled ) then
 
-      iiLH_s_mellor = 1
-      iiLH_t_mellor = 2
-      iiLH_w        = 3
-
-      i = iiLH_w
-
-      call return_LH_index( iiNcm, i, iiLH_Nc )
-      call return_LH_index( iirrainm, i, iiLH_rrain )
-      call return_LH_index( iiNrm, i, iiLH_Nr )
-      if ( l_ice_micro ) then
-        call return_LH_index( iiricem, i, iiLH_rice )
-        call return_LH_index( iiNim, i, iiLH_Ni )
-        call return_LH_index( iirsnowm, i, iiLH_rsnow )
-        call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
-        ! Disabled until we have values for the correlations of graupel and
-        ! other variates in the latin hypercube sampling.
-!       if ( l_graupel ) then
-!         call return_LH_index( iirgraupelm, i, iiLH_rgraupel )
-!         call return_LH_index( iiNgraupelm, i, iiLH_Ngraupel )
-          iiLH_rgraupel = -1
-          iiLH_Ngraupel = -1
-!       end if
-      end if
-
 #ifdef UNRELEASED_CODE
       ! Allocate and set the arrays containing the correlations
       ! and the X'^2 / X'^2 terms
-      call setup_corr_varnce_array( d_variables_in=i )
+      call setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm )
 
 #endif
 
@@ -3167,40 +3126,6 @@ module microphys_driver
       return
     end subroutine adj_microphys_tndcy
 
-!-------------------------------------------------------------------------------
-    subroutine return_LH_index( hydromet_index, LH_count, LH_index )
-
-      ! Description:
-      !   Set the Latin hypercube variable index if the hydrometeor exists
-      ! References:
-      !   None
-      !-------------------------------------------------------------------------
-
-      implicit none
-
-      ! Input Variables
-      integer, intent(in) :: &
-        hydromet_index
-
-      ! Input/Output Variables
-      integer, intent(inout) :: &
-        LH_count
-
-      ! Output Variables
-      integer, intent(out) :: &
-        LH_index
-
-      ! ---- Begin Code ----
-
-      if ( hydromet_index > 0 ) then
-        LH_count = LH_count + 1
-        LH_index = LH_count
-      else
-        LH_index = -1
-      end if
-
-      return
-    end subroutine return_LH_index
 !===============================================================================
 
     subroutine cleanup_microphys( )

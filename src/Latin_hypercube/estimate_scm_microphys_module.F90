@@ -54,7 +54,9 @@ module estimate_scm_microphys_module
       iiNsnowm, &
       iiNim, &
       iiNgraupelm, &
-      iiNcm, &
+      iiNcm
+
+    use latin_hypercube_arrays, only: &
       iiLH_rrain, &
       iiLH_rsnow, &
       iiLH_rice, &
