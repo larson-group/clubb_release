@@ -74,13 +74,14 @@ module cam_history
     !               In our case, we don't use this, so this subroutine does nothing.
     !
     !---------------------------------------------------------------------------------
-   
+      use shr_kind_mod, only: r8 => shr_kind_r8 
+
       character(len=*), intent(in) :: fname ! Field name--should be 8 chars long
 
       integer, intent(in) :: idim           ! Longitude dimension of field array
       integer, intent(in) :: c              ! chunk (physics) or latitude (dynamics) index
 
-      real, intent(in) :: field(idim,*)     ! Array containing field values
+      real(kind=r8), intent(in) :: field(idim,*)     ! Array containing field values
       
    end subroutine outfld
    

@@ -92,41 +92,43 @@ module rad_constituents
     !               subroutine does nothing.
     !
     !---------------------------------------------------------------------------------
-    
+   
+    use shr_kind_mod, only: r8 => shr_kind_r8
+
     implicit none
      
      integer,                     intent(in)  :: list_idx
      integer,           optional, intent(in)  :: diagnosticindex ! index to rad diagnostic call
-     real,          optional, pointer     :: sw_hygro_ext(:,:) 
-     real,          optional, pointer     :: sw_hygro_ssa(:,:) 
-     real,          optional, pointer     :: sw_hygro_asm(:,:) 
-     real,          optional, pointer     :: lw_hygro_ext(:,:)         
-     real,          optional, pointer     :: sw_nonhygro_ext(:)
-     real,          optional, pointer     :: sw_nonhygro_ssa(:)
-     real,          optional, pointer     :: sw_nonhygro_asm(:)
-     real,          optional, pointer     :: sw_nonhygro_scat(:)
-     real,          optional, pointer     :: sw_nonhygro_ascat(:)
-     real,          optional, pointer     :: lw_ext(:)         
-     real,          optional, pointer     :: refindex_real_aer_sw(:)
-     real,          optional, pointer     :: refindex_im_aer_sw(:)
-     real,          optional, pointer     :: refindex_real_aer_lw(:)
-     real,          optional, pointer     :: refindex_im_aer_lw(:)
-     real,          optional, pointer     :: refindex_real_water_sw(:)
-     real,          optional, pointer     :: refindex_im_water_sw(:)
-     real,          optional, pointer     :: refindex_real_water_lw(:)
-     real,          optional, pointer     :: refindex_im_water_lw(:)
+     real(r8),          optional, pointer     :: sw_hygro_ext(:,:) 
+     real(r8),          optional, pointer     :: sw_hygro_ssa(:,:) 
+     real(r8),          optional, pointer     :: sw_hygro_asm(:,:) 
+     real(r8),          optional, pointer     :: lw_hygro_ext(:,:)         
+     real(r8),          optional, pointer     :: sw_nonhygro_ext(:)
+     real(r8),          optional, pointer     :: sw_nonhygro_ssa(:)
+     real(r8),          optional, pointer     :: sw_nonhygro_asm(:)
+     real(r8),          optional, pointer     :: sw_nonhygro_scat(:)
+     real(r8),          optional, pointer     :: sw_nonhygro_ascat(:)
+     real(r8),          optional, pointer     :: lw_ext(:)         
+     real(r8),          optional, pointer     :: refindex_real_aer_sw(:)
+     real(r8),          optional, pointer     :: refindex_im_aer_sw(:)
+     real(r8),          optional, pointer     :: refindex_real_aer_lw(:)
+     real(r8),          optional, pointer     :: refindex_im_aer_lw(:)
+     real(r8),          optional, pointer     :: refindex_real_water_sw(:)
+     real(r8),          optional, pointer     :: refindex_im_water_sw(:)
+     real(r8),          optional, pointer     :: refindex_real_water_lw(:)
+     real(r8),          optional, pointer     :: refindex_im_water_lw(:)
      character(len=20), optional, intent(out) :: aername           
-     real,          optional, intent(out) :: density_aer
-     real,          optional, intent(out) :: hygro_aer
-     real,          optional, intent(out) :: dryrad_aer        
-     real,          optional, intent(out) :: dispersion_aer    
-     real,          optional, intent(out) :: num_to_mass_aer   
+     real(r8),          optional, intent(out) :: density_aer
+     real(r8),          optional, intent(out) :: hygro_aer
+     real(r8),          optional, intent(out) :: dryrad_aer        
+     real(r8),          optional, intent(out) :: dispersion_aer    
+     real(r8),          optional, intent(out) :: num_to_mass_aer   
 
-     real,          optional, pointer     :: r_sw_ext(:,:)         
-     real,          optional, pointer     :: r_sw_scat(:,:)         
-     real,          optional, pointer     :: r_sw_ascat(:,:)         
-     real,          optional, pointer     :: r_lw_abs(:,:)         
-     real,          optional, pointer     :: mu(:)
+     real(r8),          optional, pointer     :: r_sw_ext(:,:)         
+     real(r8),          optional, pointer     :: r_sw_scat(:,:)         
+     real(r8),          optional, pointer     :: r_sw_ascat(:,:)         
+     real(r8),          optional, pointer     :: r_lw_abs(:,:)         
+     real(r8),          optional, pointer     :: mu(:)
      
      ! Dummy values
      if (present(aername)) then

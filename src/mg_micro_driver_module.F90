@@ -75,6 +75,8 @@ module mg_micro_driver_module
     use constants_clubb, only: &
       rc_tol ! Variable
 
+    use shr_kind_mod, only: r8 => shr_kind_r8 
+
     implicit none
 
     ! External
@@ -127,18 +129,20 @@ module mg_micro_driver_module
       rcm_new,      & ! Cloud water mixing ratio after microphysics                   [kg/kg]
       rsnowm,       & ! Snow mixing ratio (not in hydromet, output straight to stats) [kg/kg]
       effc,         & ! Droplet effective radius                                      [μ]
-      effi,         & ! cloud ice effective radius                                    [μ]
+      effi            ! cloud ice effective radius                                    [μ]
+
+    real(r8), dimension(nnzp) :: & 
       turbtype_flip,& ! Turbulence type at each interface                             [-]
       smaw_flip,    & ! Normalized instability function of momentum                   [???]
       wsub_flip,    & ! Diagnosed sub-grid vertical velocity st. dev.                 [m/s]
       wsubi_flip      ! Diagnosed sub-grid vertical velocity ice                      [m/s]
       
-    real, dimension(1, nnzp-1, 0) :: &
+    real(r8), dimension(1, nnzp-1, 0) :: &
       aer_mmr_flip
 
     ! MG Input Variables
     ! Note that the MG grid is flipped with respect to CLUBB.
-    real, dimension(nnzp-1) :: &
+    real(r8), dimension(nnzp-1) :: &
       Kh_zm_flip,   & ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
       em_flip,      & ! Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
       T_in_K_flip,  & ! Air temperature                                      [K]
@@ -154,13 +158,13 @@ module mg_micro_driver_module
       npccn_flip,   & ! Number of cloud nuclei                               [count/m^3]
       unused_in       ! Represents MG variables that are not used in the current code
       
-    real, dimension(nnzp-1,4) :: &
+    real(r8), dimension(nnzp-1,4) :: &
       rndst_flip,   & ! radius of 4 dust bins for contact freezing [units unknown, our guess is mm]
       nacon_flip      ! number of 4 dust bins for contact nucleation [units unknown]
       
     ! MG Output Variables
     ! Note that the MG grid is flipped with respect to CLUBB
-    real, dimension(nnzp-1) :: &
+    real(r8), dimension(nnzp-1) :: &
       tlat_flip,    & ! Latent heating rate                                  [W/kg]
       rcm_mc_flip,  & ! Time tendency of liquid water mixing ratio           [kg/kg/s]
       rvm_mc_flip,  & ! Time tendency of vapor water mixing ratio            [kg/kg/s]
@@ -173,7 +177,7 @@ module mg_micro_driver_module
     ! A separate variables needs to be passed in for every intent_out variable in MG,
     ! otherwise Fortran treats all the variables are if they point to the same memory
     ! location.
-    real, dimension(nnzp-1) :: &
+    real(r8), dimension(nnzp-1) :: &
       unused_out01, unused_out02, unused_out03, &
       unused_out04, unused_out05, unused_out06, &
       unused_out07, unused_out08, unused_out09, &
@@ -188,7 +192,7 @@ module mg_micro_driver_module
       unused_out34, unused_out35, unused_out36, &
       unused_out37, unused_out38, unused_out39
       
-    real, dimension(nnzp-1,hydromet_dim) :: &
+    real(r8), dimension(nnzp-1,hydromet_dim) :: &
        hydromet_flip, &  ! Hydrometeor species                               [units vary]
        hydromet_mc_flip  ! Hydrometeor time tendency                         [units vary]
 
@@ -203,21 +207,21 @@ module mg_micro_driver_module
     unused_in(:) = -9999.9
     
     ! Initialize output arrays to zero
-    naai_flip = 0.0
-    npccn_flip = 0.0
-    rndst_flip = 0.0
-    nacon_flip = 0.0
-    effc(:) = 0.0
-    effi(:) = 0.0
-    rsnowm(:) = 0.0
-    tlat(:) = 0.0
-    rcm_new(:) = 0.0
-    T_in_K_new(:) = 0.0
-    rcm_mc(1:nnzp) = 0.0
-    rvm_mc(1:nnzp) = 0.0
-    hydromet_mc(1:nnzp,:) = 0.0
-    hydromet_mc_flip(1:nnzp-1,:) = 0.0
-    hydromet_vel(:,:) = 0.0
+    naai_flip = 0.0_r8
+    npccn_flip = 0.0_r8
+    rndst_flip = 0.0_r8
+    nacon_flip = 0.0_r8
+    effc(:) = 0.0_r8
+    effi(:) = 0.0_r8
+    rsnowm(:) = 0.0_r8
+    tlat(:) = 0.0_r8
+    rcm_new(:) = 0.0_r8
+    T_in_K_new(:) = 0.0_r8
+    rcm_mc(1:nnzp) = 0.0_r8
+    rvm_mc(1:nnzp) = 0.0_r8
+    hydromet_mc(1:nnzp,:) = 0.0_r8
+    hydromet_mc_flip(1:nnzp-1,:) = 0.0_r8
+    hydromet_vel(:,:) = 0.0_r8
 
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
@@ -278,8 +282,9 @@ module mg_micro_driver_module
     ! Initialize grid variables. These are imported in the MG code.
     call init_ppgrid()
     
-    call gestbl(173.16, 375.16, 20.00, .true., epsilo, &
-                 latvap, latice, rh2o, cpair, tmelt)
+    call gestbl(173.16_r8, 375.16_r8, 20.00_r8, .true., real( epsilo, kind=r8), &
+                 real( latvap, kind=r8), real( latice, kind=r8), real( rh2o, kind=r8), &
+                 real( cpair, kind=r8), real( tmelt, kind=r8) )
                  
     ! Ensure no hydromet arrays are input as 0, because this makes MG crash.
     do i=1, hydromet_dim, 1
@@ -317,7 +322,7 @@ module mg_micro_driver_module
     
     ! Calculate aerosol activiation, dust size, and number for contact nucleation
     call microp_aero_ts &
-         ( 0, 1, dt, T_in_K_flip, unused_in, &                                                ! in
+         ( 0, 1, real( dt, kind=r8), T_in_K_flip, unused_in, &                                ! in
          rvm_flip, rcm_flip, hydromet_flip(:,iiricem), &                                      ! in
          hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
          liqcldf_flip, icecldf_flip, &                                                        ! in
@@ -328,7 +333,7 @@ module mg_micro_driver_module
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond &
-         ( 0, 1, dt, T_in_K_flip, unused_in, &                                                ! in
+         ( 0, 1, real( dt, kind=r8), T_in_K_flip, unused_in, &                                ! in
          rvm_flip, unused_in, unused_in, rcm_flip, hydromet_flip(:,iiricem), &                ! in
          hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
          liqcldf_flip, icecldf_flip, &                                                        ! in
