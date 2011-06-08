@@ -472,6 +472,10 @@ module microphys_driver
     ! This flag is typically used only in Morrison microphysics, but has been adapted
     ! for use with KK microphysics.  It is used to turn off the budget terms for Ncm
     ! since Ncm is essentially clipped every timestep when using KK microphysics.
+    if ( trim( micro_scheme ) == "khairoutdinov_kogan" .and. l_predictnc) then
+      call write_text("WARNING: l_predictnc has been set to .false. for KK microphysics.", &
+        l_write_to_file, iunit )
+    end if
     if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
       l_predictnc = .false.
     end if
@@ -488,7 +492,7 @@ module microphys_driver
       ! Write to file all parameters from the namelist microphysics_seting.
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
-      call write_text( "&microphysics_setting", l_write_to_file, iunit)
+      call write_text( "&microphysics_setting", l_write_to_file, iunit )
       call write_text( "--------------------------------------------------", &
         l_write_to_file, iunit )
 
