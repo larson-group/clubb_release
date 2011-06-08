@@ -468,6 +468,14 @@ module microphys_driver
     read(iunit, nml=microphysics_setting)
     close(unit=iunit)
 
+    ! Change l_predictnc if we are using KK microphysics
+    ! This flag is typically used only in Morrison microphysics, but has been adapted
+    ! for use with KK microphysics.  It is used to turn off the budget terms for Ncm
+    ! since Ncm is essentially clipped every timestep when using KK microphysics.
+    if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
+      l_predictnc = .false.
+    end if
+
     ! Printing Microphysics inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
 
@@ -1581,23 +1589,28 @@ module microphys_driver
             end if
           end if
           hydromet_vel_zt(k,i) = min( max( hydromet_vel_zt(k,i), max_velocity ), zero_threshold )
-        end do
+        end do ! k = 1..gr%nnzp
 
         ! Interpolate velocity to the momentum grid for a centered difference
         ! approximation of the sedimenation term.
         hydromet_vel(:,i) = zt2zm( hydromet_vel_zt(:,i) )
         hydromet_vel(gr%nnzp,i) = 0.0 ! Upper boundary condition
 
-        ! Add implicit terms to the LHS matrix
-        call microphys_lhs & 
-             ( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
-               dt, Kr, cloud_frac, nu_r_vert_res_dep, wm_zt, &  ! In
-               hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
-               lhs ) ! Out
+        ! Don't calculate if we aren't trying to predict Ncm in a meaningful way
+        if( trim( hydromet_list(i) ) /= "Ncm" .or. l_predictnc ) then
 
-        call microphys_solve & 
-             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, lhs, hydromet_mc(:,i),  & 
-               hydromet(:,i), err_code )
+          ! Add implicit terms to the LHS matrix
+          call microphys_lhs & 
+               ( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
+                 dt, Kr, cloud_frac, nu_r_vert_res_dep, wm_zt, &  ! In
+                 hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
+                 lhs ) ! Out
+
+          call microphys_solve & 
+               ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, lhs, hydromet_mc(:,i),  & 
+                 hydromet(:,i), err_code )
+
+        end if ! l_predictnc
 
         if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
           if ( i == iirrainm ) then
@@ -1658,9 +1671,9 @@ module microphys_driver
                   call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )
                 end if
 
-              end if ! ! Nrm(k) < 0
+              end if ! Nrm(k) < 0
               ! Joshua Fasching December 2007
-            end do
+            end do ! k = 1..gr%nnzp
 
           end if ! i == rrainm else if i == Nrm
         end if ! trim( micro_scheme  ) == khairoutdinov_kogan
@@ -1672,1486 +1685,1489 @@ module microphys_driver
 
         end if
 
-        ! Clip all hydrometeor species to be >= zero
-        if ( any( hydromet(:,i) < zero_threshold ) ) then
-          hydromet_name = hydromet_list(i)
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            do k = 1, gr%nnzp
-              if ( hydromet(k,i) < zero_threshold ) then
-                write(fstderr,*) trim( hydromet_name ) //" < ", zero_threshold, &
-                  " in advance_microphys at k= ", k
-              end if
-            end do
-          end if
+        ! Don't clip Ncm if we aren't trying to predict Ncm in a meaningful way
+        if ( trim( hydromet_list(i) ) /= "Ncm" .or. l_predictnc ) then
 
-          ! If we're dealing with a mixing ratio and hole filling is enabled,
-          ! then we apply the hole filling algorithm
-          if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
-            ! Apply the hole filling algorithm
-            call fill_holes_driver( 2, zero_threshold, "zt", &
-                                   rho_ds_zt, rho_ds_zm, &
-                                   hydromet(:,i) )
-
-            ! If the hole filling algorithm failed, then we attempt to fill
-            ! the missing mass with water vapor mixing ratio.
-            ! We noticed this is needed for ASEX A209, particularly if Latin
-            ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
-            do k = 2, gr%nnzp
-              if ( hydromet(k,i) < zero_threshold ) then
-
-                ! Set temp to the time tendency applied to vapor and removed
-                ! from the hydrometeor.
-                temp = hydromet(k,i) / real( dt )
-
-                ! Adjust the tendency rvm_mc accordingly
-                rvm_mc(k) = rvm_mc(k) + temp
-
-                ! Adjust the tendency of thlm_mc according to whether the effect
-                ! is an evaporation or sublimation tendency.
-                select case ( trim( hydromet_name ) )
-                case( "rrainm" )
-                  thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
-                case( "ricem", "rsnowm", "rgraupelm" )
-                  thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
-                case default
-                  stop "Fatal error in microphys_driver"
-                end select
-
-                ! Set the mixing ratio to 0
-                hydromet(k,i) = zero_threshold
-
-              end if ! hydromet(i,k) < 0
-            end do ! k = 2..gr%nnzp
-
-            ! Boundary condition
-            ! Rain, snow and graupel which is at the ghost point has presumably
-            ! sedimented out of the model domain, and is not conserved.
-            if ( hydromet(1,i) < zero_threshold ) then
-              hydromet(1,i) = zero_threshold
+          ! Clip all hydrometeor species to be >= zero
+          if ( any( hydromet(:,i) < zero_threshold ) ) then
+            hydromet_name = hydromet_list(i)
+            if ( clubb_at_least_debug_level( 1 ) ) then
+              do k = 1, gr%nnzp
+                if ( hydromet(k,i) < zero_threshold ) then
+                  write(fstderr,*) trim( hydromet_name ) //" < ", zero_threshold, &
+                    " in advance_microphys at k= ", k
+                end if
+              end do
             end if
 
+            ! If we're dealing with a mixing ratio and hole filling is enabled,
+            ! then we apply the hole filling algorithm
+            if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
+              ! Apply the hole filling algorithm
+              call fill_holes_driver( 2, zero_threshold, "zt", &
+                                     rho_ds_zt, rho_ds_zm, &
+                                     hydromet(:,i) )
+
+              ! If the hole filling algorithm failed, then we attempt to fill
+              ! the missing mass with water vapor mixing ratio.
+              ! We noticed this is needed for ASEX A209, particularly if Latin
+              ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
+              do k = 2, gr%nnzp
+                if ( hydromet(k,i) < zero_threshold ) then
+
+                  ! Set temp to the time tendency applied to vapor and removed
+                  ! from the hydrometeor.
+                  temp = hydromet(k,i) / real( dt )
+
+                  ! Adjust the tendency rvm_mc accordingly
+                  rvm_mc(k) = rvm_mc(k) + temp
+
+                  ! Adjust the tendency of thlm_mc according to whether the effect
+                  ! is an evaporation or sublimation tendency.
+                  select case ( trim( hydromet_name ) )
+                  case( "rrainm" )
+                    thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
+                  case( "ricem", "rsnowm", "rgraupelm" )
+                    thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
+                  case default
+                    stop "Fatal error in microphys_driver"
+                  end select
+
+                  ! Set the mixing ratio to 0
+                  hydromet(k,i) = zero_threshold
+
+                end if ! hydromet(k,i) < 0
+              end do ! k = 2..gr%nnzp
+
+              ! Boundary condition
+              ! Rain, snow and graupel which is at the ghost point has presumably
+              ! sedimented out of the model domain, and is not conserved.
+              if ( hydromet(1,i) < zero_threshold ) then
+                hydromet(1,i) = zero_threshold
+              end if
+
             else
-              ! This includes the case where the variable is a number
-              ! concentration and is therefore not conserved.
-              where ( hydromet(:,i) < zero_threshold ) hydromet(:,i) = zero_threshold
+            ! This includes the case where the variable is a number
+            ! concentration and is therefore not conserved.
+            where ( hydromet(:,i) < zero_threshold ) hydromet(:,i) = zero_threshold
 
             end if ! Variable is a mixing ratio and l_hole_fill is true
 
           end if ! hydromet(:,i) < 0
 
-          if ( l_stats_samp ) then
+        end if ! hydromet_list(i) /= Ncm .or. l_predictnc
 
-            ! Effects of clipping
-            call stat_end_update( ixrm_cl, real( hydromet(:,i) / dt ), zt )
+        if ( l_stats_samp ) then
 
-            ! Total time tendency
-            call stat_end_update( ixrm_bt, real(hydromet(:,i) / dt), zt )
+          ! Effects of clipping
+          call stat_end_update( ixrm_cl, real( hydromet(:,i) / dt ), zt )
 
-          end if ! l_stats_samp
+          ! Total time tendency
+          call stat_end_update( ixrm_bt, real(hydromet(:,i) / dt), zt )
 
-        end do ! i=1..hydromet_dim
+        end if ! l_stats_samp
 
-      end if ! hydromet_dim > 0
+      end do ! i=1..hydromet_dim
+
+    end if ! hydromet_dim > 0
 
 
-      ! Call the ice diffusion scheme
-      if ( trim( micro_scheme ) == "simplified_ice" ) then
-        call ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, rcm_mc, thlm_mc )
+    ! Call the ice diffusion scheme
+    if ( trim( micro_scheme ) == "simplified_ice" ) then
+      call ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, rcm_mc, thlm_mc )
+    end if
+
+    if ( l_stats_samp ) then
+
+      if ( iiNcm > 0 ) then
+        call stat_update_var( iNcm, hydromet(:,iiNcm), zt )
       end if
 
-      if ( l_stats_samp ) then
+      call stat_update_var( iNcnm, Ncnm, zt )
 
-        if ( iiNcm > 0 ) then
-          call stat_update_var( iNcm, hydromet(:,iiNcm), zt )
-        end if
-
-        call stat_update_var( iNcnm, Ncnm, zt )
-
-        if ( iirrainm > 0 ) then
-          call stat_update_var( irrainm, hydromet(:,iirrainm), zt )
-        end if
-
-        if ( iirsnowm > 0 ) then
-          call stat_update_var( irsnowm, hydromet(:,iirsnowm), zt )
-        end if
-
-        if ( iiricem > 0 ) then
-          call stat_update_var( iricem, hydromet(:,iiricem), zt )
-        end if
-
-        if ( iirgraupelm > 0 ) then
-          call stat_update_var( irgraupelm,  & 
-                                hydromet(:,iirgraupelm), zt )
-        end if
-
-
-        if ( iiNim > 0 ) then
-          call stat_update_var( iNim, hydromet(:,iiNim), zt )
-        end if
-
-        if ( iiNrm > 0 ) then
-          call stat_update_var( iNrm, hydromet(:,iiNrm), zt )
-        end if
-
-        if ( iiNsnowm > 0 ) then
-          call stat_update_var( iNsnowm, hydromet(:,iiNsnowm), zt )
-        end if
-
-        if ( iiNgraupelm > 0 ) then
-          call stat_update_var( iNgraupelm, hydromet(:,iiNgraupelm), zt )
-        end if
-
+      if ( iirrainm > 0 ) then
+        call stat_update_var( irrainm, hydromet(:,iirrainm), zt )
       end if
 
-      if ( l_stats_samp .and. iirrainm > 0 ) then
-        ! Rainfall rate (mm/day) should be defined on thermodynamic
-        ! levels.  -Brian
-        ! The absolute value of Vrr is taken because rainfall rate
-        ! is a scalar quantity, and is therefore positive.
-        call stat_update_var( irain_rate,  & 
-           ( hydromet(:,iirrainm)  & 
-             * zm2zt( abs( hydromet_vel(:,iirrainm) ) ) ) & 
-              * ( rho / rho_lw ) & 
-            * real( sec_per_day * 1000.0 ), zt )
+      if ( iirsnowm > 0 ) then
+        call stat_update_var( irsnowm, hydromet(:,iirsnowm), zt )
+      end if
 
-        ! Precipitation Flux (W/m^2) should be defined on
-        ! momentum levels.  -Brian
-        ! Normally, a flux is a vector quantity.  Since rain obviously
-        ! falls downward, the sign of the flux would normally be negative.
-        ! However, it is generally a convention in meteorology to show
-        ! Precipitation Flux as a positive downward quantity.  Thus, the
-        ! absolute value of vrr is taken.
-        call stat_update_var( iFprec,  & 
-          ( zt2zm( hydromet(:,iirrainm) )  & 
-            * abs( hydromet_vel(:,iirrainm) ) ) & 
-          * ( rho_zm / rho_lw ) * rho_lw * Lv, zm )
+      if ( iiricem > 0 ) then
+        call stat_update_var( iricem, hydromet(:,iiricem), zt )
+      end if
 
-        ! Store values of surface fluxes for statistics
-        ! See notes above.
-        call stat_update_var_pt( irain, 1,  & 
-            ( hydromet(2,iirrainm) & 
-              * abs( zm2zt( hydromet_vel(:,iirrainm), 2 ) ) ) & 
-                * ( rho(2) / rho_lw ) & 
-            * real( sec_per_day * 1000.0 ), sfc )
+      if ( iirgraupelm > 0 ) then
+        call stat_update_var( irgraupelm,  & 
+                              hydromet(:,iirgraupelm), zt )
+      end if
 
-        call stat_update_var_pt( irain_flux, 1, & 
+      if ( iiNim > 0 ) then
+        call stat_update_var( iNim, hydromet(:,iiNim), zt )
+      end if
+
+      if ( iiNrm > 0 ) then
+        call stat_update_var( iNrm, hydromet(:,iiNrm), zt )
+      end if
+
+      if ( iiNsnowm > 0 ) then
+        call stat_update_var( iNsnowm, hydromet(:,iiNsnowm), zt )
+      end if
+
+      if ( iiNgraupelm > 0 ) then
+        call stat_update_var( iNgraupelm, hydromet(:,iiNgraupelm), zt )
+      end if
+
+    end if ! l_stats_samp
+
+    if ( l_stats_samp .and. iirrainm > 0 ) then
+      ! Rainfall rate (mm/day) should be defined on thermodynamic
+      ! levels.  -Brian
+      ! The absolute value of Vrr is taken because rainfall rate
+      ! is a scalar quantity, and is therefore positive.
+      call stat_update_var( irain_rate,  & 
+         ( hydromet(:,iirrainm)  & 
+           * zm2zt( abs( hydromet_vel(:,iirrainm) ) ) ) & 
+           * ( rho / rho_lw ) & 
+           * real( sec_per_day * 1000.0 ), zt )
+
+      ! Precipitation Flux (W/m^2) should be defined on
+      ! momentum levels.  -Brian
+      ! Normally, a flux is a vector quantity.  Since rain obviously
+      ! falls downward, the sign of the flux would normally be negative.
+      ! However, it is generally a convention in meteorology to show
+      ! Precipitation Flux as a positive downward quantity.  Thus, the
+      ! absolute value of vrr is taken.
+      call stat_update_var( iFprec,  & 
+           ( zt2zm( hydromet(:,iirrainm) )  & 
+             * abs( hydromet_vel(:,iirrainm) ) ) & 
+             * ( rho_zm / rho_lw ) * rho_lw * Lv, zm )
+
+      ! Store values of surface fluxes for statistics
+      ! See notes above.
+      call stat_update_var_pt( irain, 1,  & 
+           ( hydromet(2,iirrainm) & 
+             * abs( zm2zt( hydromet_vel(:,iirrainm), 2 ) ) ) & 
+             * ( rho(2) / rho_lw ) & 
+             * real( sec_per_day * 1000.0 ), sfc )
+
+      call stat_update_var_pt( irain_flux, 1, & 
            ( zt2zm( hydromet(:,iirrainm), 1 )  & 
              * abs( hydromet_vel(1,iirrainm) ) ) * ( rho_zm(1) / rho_lw )  & 
              * rho_lw * Lv, sfc )
 
-        ! Also store the value of surface rain water mixing ratio.
-        call stat_update_var_pt( irrainm_sfc, 1,  & 
-               ( zt2zm( hydromet(:,iirrainm), 1 ) ), sfc )
+      ! Also store the value of surface rain water mixing ratio.
+      call stat_update_var_pt( irrainm_sfc, 1,  & 
+           ( zt2zm( hydromet(:,iirrainm), 1 ) ), sfc )
 
-      end if ! l_stats_samp
+    end if ! l_stats_samp
 
 
 !       Error Report
 !       Joshua Fasching Feb 2008
 
-      if ( lapack_error( err_code ) .and.  &
-           clubb_at_least_debug_level( 1 ) ) then
+    if ( lapack_error( err_code ) .and.  &
+         clubb_at_least_debug_level( 1 ) ) then
 
-        write(fstderr,*) "Error in advance_microphys"
+      write(fstderr,*) "Error in advance_microphys"
 
-        write(fstderr,*) "Intent(in)"
+      write(fstderr,*) "Intent(in)"
 
-        write(fstderr,*) "thlm = ", thlm
-        write(fstderr,*) "p_in_Pa = ", p_in_Pa
-        write(fstderr,*) "exner = ", exner
-        write(fstderr,*) "rho = ", rho
-        write(fstderr,*) "rho_zm = ", rho_zm
-        write(fstderr,*) "rtm = ", rtm
-        write(fstderr,*) "rcm = ", rcm
-        write(fstderr,*) "wm_zt = ", wm_zt
-        write(fstderr,*) "wm_zm = ", wm_zm
-        write(fstderr,*) "Kh_zm = ", Kh_zm
-        write(fstderr,*) "pdf_params%thl1 = ", pdf_params%thl1
-        write(fstderr,*) "pdf_params%thl2 = ", pdf_params%thl2
-        write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
-        write(fstderr,*) "pdf_params%rc1 = ", pdf_params%rc1
-        write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2
-        write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1
-        write(fstderr,*) "pdf_params%s2 = ", pdf_params%s2
-        write(fstderr,*) "pdf_params%stdev_s1 = ", pdf_params%stdev_s1
-        write(fstderr,*) "pdf_params%stdev_s2 = ", pdf_params%stdev_s2
+      write(fstderr,*) "thlm = ", thlm
+      write(fstderr,*) "p_in_Pa = ", p_in_Pa
+      write(fstderr,*) "exner = ", exner
+      write(fstderr,*) "rho = ", rho
+      write(fstderr,*) "rho_zm = ", rho_zm
+      write(fstderr,*) "rtm = ", rtm
+      write(fstderr,*) "rcm = ", rcm
+      write(fstderr,*) "wm_zt = ", wm_zt
+      write(fstderr,*) "wm_zm = ", wm_zm
+      write(fstderr,*) "Kh_zm = ", Kh_zm
+      write(fstderr,*) "pdf_params%thl1 = ", pdf_params%thl1
+      write(fstderr,*) "pdf_params%thl2 = ", pdf_params%thl2
+      write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
+      write(fstderr,*) "pdf_params%rc1 = ", pdf_params%rc1
+      write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2
+      write(fstderr,*) "pdf_params%s1 = ", pdf_params%s1
+      write(fstderr,*) "pdf_params%s2 = ", pdf_params%s2
+      write(fstderr,*) "pdf_params%stdev_s1 = ", pdf_params%stdev_s1
+      write(fstderr,*) "pdf_params%stdev_s2 = ", pdf_params%stdev_s2
 
-        write(fstderr,*) "Intent(inout)"
+      write(fstderr,*) "Intent(inout)"
 
-        write(fstderr,*) "Ncnm = ", Ncnm
-        write(fstderr,*) "hydromet = ", hydromet
-        write(fstderr,*) "Intent(out)"
-        write(fstderr,*) "rcm_mc = ", rcm_mc
-        write(fstderr,*) "rvm_mc = ", rvm_mc
-        write(fstderr,*) "thlm_mc = ", thlm_mc
+      write(fstderr,*) "Ncnm = ", Ncnm
+      write(fstderr,*) "hydromet = ", hydromet
+      write(fstderr,*) "Intent(out)"
+      write(fstderr,*) "rcm_mc = ", rcm_mc
+      write(fstderr,*) "rvm_mc = ", rvm_mc
+      write(fstderr,*) "thlm_mc = ", thlm_mc
 
-      end if
+    end if
 
-      return
-    end subroutine advance_microphys
+    return
+  end subroutine advance_microphys
 
 !===============================================================================
-    subroutine microphys_solve( solve_type, l_sed, dt, lhs, & 
+  subroutine microphys_solve( solve_type, l_sed, dt, lhs, & 
                                 xrm_tndcy, xrm, err_code )
 
-      ! Description:
-      ! Solve the tridiagonal system for hydrometeor variable.
+    ! Description:
+    ! Solve the tridiagonal system for hydrometeor variable.
 
-      ! References:
-      !  None
-      !-----------------------------------------------------------------------
+    ! References:
+    !  None
+    !---------------------------------------------------------------------------
 
-      use grid_class, only: & 
-          gr ! Variable(s)
+    use grid_class, only: & 
+        gr ! Variable(s)
 
-      use stats_precision, only:  & 
-          time_precision ! Variable(s)
+    use stats_precision, only:  & 
+        time_precision ! Variable(s)
 
-      use lapack_wrap, only:  & 
-          tridag_solve !,& ! Procedure(s)
-!         band_solve
-
-
-      use stats_variables, only: & 
-          zt,  & ! Variable(s)
-          irrainm_ma, & 
-          irrainm_sd, & 
-          irrainm_dff, & 
-          iricem_ma, & 
-          iricem_sd, & 
-          iricem_dff, & 
-          irsnowm_ma, & 
-          irsnowm_sd, & 
-          irsnowm_dff, & 
-          irgraupelm_ma, & 
-          irgraupelm_sd, & 
-          irgraupelm_dff, & 
-          l_stats_samp, & 
-          ztscr01, & 
-          ztscr02, & 
-          ztscr03, & 
-          ztscr04, & 
-          ztscr05, & 
-          ztscr06, & 
-          ztscr07, & 
-          ztscr08, & 
-          ztscr09
-
-      use stats_variables, only: & 
-          iNrm_ma, & 
-          iNrm_sd, & 
-          iNrm_dff, & 
-          iNim_ma, & 
-          iNim_sd, & 
-          iNim_dff, & 
-          iNsnowm_ma, & 
-          iNsnowm_sd, & 
-          iNsnowm_dff, & 
-          iNgraupelm_ma, & 
-          iNgraupelm_sd, & 
-          iNgraupelm_dff
-
-      use stats_variables, only: & 
-          iNcm_ma, & 
-          iNcm_dff
+    use lapack_wrap, only:  & 
+        tridag_solve !,& ! Procedure(s)
+!       band_solve
 
 
-      use stats_type, only: stat_update_var_pt ! Procedure(s)
+    use stats_variables, only: & 
+        zt,  & ! Variable(s)
+        irrainm_ma, & 
+        irrainm_sd, & 
+        irrainm_dff, & 
+        iricem_ma, & 
+        iricem_sd, & 
+        iricem_dff, & 
+        irsnowm_ma, & 
+        irsnowm_sd, & 
+        irsnowm_dff, & 
+        irgraupelm_ma, & 
+        irgraupelm_sd, & 
+        irgraupelm_dff, & 
+        l_stats_samp, & 
+        ztscr01, & 
+        ztscr02, & 
+        ztscr03, & 
+        ztscr04, & 
+        ztscr05, & 
+        ztscr06, & 
+        ztscr07, & 
+        ztscr08, & 
+        ztscr09
 
-      implicit none
+    use stats_variables, only: & 
+        iNrm_ma, & 
+        iNrm_sd, & 
+        iNrm_dff, & 
+        iNim_ma, & 
+        iNim_sd, & 
+        iNim_dff, & 
+        iNsnowm_ma, & 
+        iNsnowm_sd, & 
+        iNsnowm_dff, & 
+        iNgraupelm_ma, & 
+        iNgraupelm_sd, & 
+        iNgraupelm_dff
 
-      ! Input Variables
-      character(len=*), intent(in) :: solve_type
-
-      real(kind=time_precision), intent(in) :: dt ! Timestep     [s]
-
-      logical, intent(in) :: &
-        l_sed ! Whether sedimentation is included in lhs (T/F)
-
-      ! Explicit contrbution to the hydrometeor, e.g. evaporation
-      ! from Brian Griffin's K & K microphysics implementation
-      real, intent(in), dimension(gr%nnzp) :: & 
-        xrm_tndcy !                                     [units/s]
-
-      ! Input/Output Variables
-      real, intent(inout), dimension(3,gr%nnzp) :: & 
-        lhs ! Left hand side
-
-      real, intent(inout), dimension(gr%nnzp) :: & 
-        xrm ! Hydrometeor being solved for              [units vary]
-
-      ! Output Variables
-      integer, intent(out) :: err_code
-
-      ! Local Variables
-      real, dimension(gr%nnzp) :: & 
-        rhs ! Right hand side
-
-      integer :: k, kp1, km1 ! Array indices
+    use stats_variables, only: & 
+        iNcm_ma, & 
+        iNcm_dff
 
 
-      integer :: & 
-        ixrm_ma,  & ! Mean advection budget stats toggle
-        ixrm_sd,  & ! Sedimentation budget stats toggle
-        ixrm_dff    ! Diffusion budget stats toggle
+    use stats_type, only: stat_update_var_pt ! Procedure(s)
 
-      ! Initializing ixrm_ma, ixrm_sd, and ixrm_dff in order to avoid compiler
-      ! warnings.
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) :: solve_type
+
+    real(kind=time_precision), intent(in) :: dt ! Timestep     [s]
+
+    logical, intent(in) :: &
+      l_sed ! Whether sedimentation is included in lhs (T/F)
+
+    ! Explicit contrbution to the hydrometeor, e.g. evaporation
+    ! from Brian Griffin's K & K microphysics implementation
+    real, intent(in), dimension(gr%nnzp) :: & 
+      xrm_tndcy !                                     [units/s]
+
+    ! Input/Output Variables
+    real, intent(inout), dimension(3,gr%nnzp) :: & 
+      lhs ! Left hand side
+
+    real, intent(inout), dimension(gr%nnzp) :: & 
+      xrm ! Hydrometeor being solved for              [units vary]
+
+    ! Output Variables
+    integer, intent(out) :: err_code
+
+    ! Local Variables
+    real, dimension(gr%nnzp) :: & 
+      rhs ! Right hand side
+
+    integer :: k, kp1, km1 ! Array indices
+
+    integer :: & 
+      ixrm_ma,  & ! Mean advection budget stats toggle
+      ixrm_sd,  & ! Sedimentation budget stats toggle
+      ixrm_dff    ! Diffusion budget stats toggle
+
+    ! Initializing ixrm_ma, ixrm_sd, and ixrm_dff in order to avoid compiler
+    ! warnings.
+    ixrm_ma  = 0
+    ixrm_sd  = 0
+    ixrm_dff = 0
+
+    select case( solve_type )
+    case( "rrainm" )
+      ixrm_ma  = irrainm_ma
+      ixrm_sd  = irrainm_sd
+      ixrm_dff = irrainm_dff
+    case( "ricem" )
+      ixrm_ma  = iricem_ma
+      ixrm_sd  = iricem_sd
+      ixrm_dff = iricem_dff
+    case( "rsnowm" )
+      ixrm_ma  = irsnowm_ma
+      ixrm_sd  = irsnowm_sd
+      ixrm_dff = irsnowm_dff
+    case( "rgraupelm" )
+      ixrm_ma  = irgraupelm_ma
+      ixrm_sd  = irgraupelm_sd
+      ixrm_dff = irgraupelm_dff
+    case( "Ncm" )
+      ixrm_ma  = iNcm_ma
+      ixrm_sd  = 0
+      ixrm_dff = iNcm_dff
+    case( "Nrm" )
+      ixrm_ma  = iNrm_ma
+      ixrm_sd  = iNrm_sd
+      ixrm_dff = iNrm_dff
+    case( "Nim" )
+      ixrm_ma  = iNim_ma
+      ixrm_sd  = iNim_sd
+      ixrm_dff = iNim_dff
+    case( "Nsnowm" )
+      ixrm_ma  = iNsnowm_ma
+      ixrm_sd  = iNsnowm_sd
+      ixrm_dff = iNsnowm_dff
+    case( "Ngraupelm" )
+      ixrm_ma  = iNgraupelm_ma
+      ixrm_sd  = iNgraupelm_sd
+      ixrm_dff = iNgraupelm_dff
+    case default
       ixrm_ma  = 0
       ixrm_sd  = 0
       ixrm_dff = 0
-
-      select case( solve_type )
-      case( "rrainm" )
-        ixrm_ma  = irrainm_ma
-        ixrm_sd  = irrainm_sd
-        ixrm_dff = irrainm_dff
-      case( "ricem" )
-        ixrm_ma  = iricem_ma
-        ixrm_sd  = iricem_sd
-        ixrm_dff = iricem_dff
-      case( "rsnowm" )
-        ixrm_ma  = irsnowm_ma
-        ixrm_sd  = irsnowm_sd
-        ixrm_dff = irsnowm_dff
-      case( "rgraupelm" )
-        ixrm_ma  = irgraupelm_ma
-        ixrm_sd  = irgraupelm_sd
-        ixrm_dff = irgraupelm_dff
-      case( "Ncm" )
-        ixrm_ma  = iNcm_ma
-        ixrm_sd  = 0
-        ixrm_dff = iNcm_dff
-      case( "Nrm" )
-        ixrm_ma  = iNrm_ma
-        ixrm_sd  = iNrm_sd
-        ixrm_dff = iNrm_dff
-      case( "Nim" )
-        ixrm_ma  = iNim_ma
-        ixrm_sd  = iNim_sd
-        ixrm_dff = iNim_dff
-      case( "Nsnowm" )
-        ixrm_ma  = iNsnowm_ma
-        ixrm_sd  = iNsnowm_sd
-        ixrm_dff = iNsnowm_dff
-      case( "Ngraupelm" )
-        ixrm_ma  = iNgraupelm_ma
-        ixrm_sd  = iNgraupelm_sd
-        ixrm_dff = iNgraupelm_dff
-      case default
-        ixrm_ma  = 0
-        ixrm_sd  = 0
-        ixrm_dff = 0
-      end select
+    end select
 
 
-      ! RHS of equation, following Brian's method from the rain subroutine
-      rhs(2:gr%nnzp-1)  & 
+    ! RHS of equation, following Brian's method from the rain subroutine
+    rhs(2:gr%nnzp-1)  & 
       = real((xrm(2:gr%nnzp-1) / dt )  & ! Time tendency
       + xrm_tndcy(2:gr%nnzp-1))
 
 
-      ! Boundary condition on the RHS
-      rhs(1) = real( xrm(1) / dt )
-      rhs(gr%nnzp) =  & 
-         real( ( xrm(gr%nnzp) / dt ) + xrm_tndcy(gr%nnzp) )
+    ! Boundary condition on the RHS
+    rhs(1) = real( xrm(1) / dt )
+    rhs(gr%nnzp) =  & 
+       real( ( xrm(gr%nnzp) / dt ) + xrm_tndcy(gr%nnzp) )
 
 
-      ! Solve system using tridag_solve. This uses LAPACK sgtsv,
-      ! which relies on Gaussian elimination to decompose the matrix.
-      call tridag_solve & 
-           ( solve_type, gr%nnzp, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
-             rhs, xrm, err_code )
+    ! Solve system using tridag_solve. This uses LAPACK sgtsv,
+    ! which relies on Gaussian elimination to decompose the matrix.
+    call tridag_solve & 
+         ( solve_type, gr%nnzp, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
+           rhs, xrm, err_code )
 
-      if ( l_stats_samp ) then
+    if ( l_stats_samp ) then
 
-        do k = 1, gr%nnzp, 1
-
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, gr%nnzp )
-
-          ! Finalize implicit contributions
-
-          ! xrm term ma is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( ixrm_ma, k, & 
-                ztscr01(k) * xrm(km1) & 
-              + ztscr02(k) * xrm(k) & 
-              + ztscr03(k) * xrm(kp1), zt)
-
-          ! xrm term sd is completely implicit; call stat_update_var_pt.
-          if ( l_sed ) then
-            call stat_update_var_pt( ixrm_sd, k, & 
-                  ztscr04(k) * xrm(km1) & 
-                + ztscr05(k) * xrm(k) & 
-                + ztscr06(k) * xrm(kp1), zt )
-          end if
-
-          ! xrm term dff is completely implicit; call stat_update_var_pt.
-          call stat_update_var_pt( ixrm_dff, k, & 
-                ztscr07(k) * xrm(km1) & 
-              + ztscr08(k) * xrm(k) & 
-              + ztscr09(k) * xrm(kp1), zt )
-
-        enddo ! 1..gr%nnzp
-
-      endif ! l_stats_samp
-
-
-      ! Boundary conditions on results
-      !xrm(1) = xrm(2)
-      ! Michael Falk, 7 Sep 2007, made this change to eliminate problems
-      ! with anomalous rain formation at the top boundary.
-      !        xrm(gr%nnzp) = 0
-      !xrm(gr%nnzp) = xrm(gr%nnzp-1)
-      ! eMFc
-
-      return
-    end subroutine microphys_solve
-
-!===============================================================================
-    subroutine microphys_lhs & 
-               ( solve_type, l_sed, dt, Kr, cloud_frac, nu, wm_zt, &
-                 V_hm, V_hmt, &
-                 lhs )
-
-! Description:
-!   Setup the matrix of implicit contributions to a term.
-!   Can include the effects of sedimentation, diffusion, and advection.
-!   The Morrison microphysics has an explicit sedimentation code, which is
-!   handled elsewhere.
-!
-! Notes:
-!   Setup for tridiagonal system and boundary conditions should be the same as
-!   the original rain subroutine code.
-!-------------------------------------------------------------------------------
-
-      use grid_class, only:  & 
-          gr,    & ! Variable(s)
-          zm2zt, & ! Procedure(s)
-          zt2zm    ! Procedure(s)
-
-      use stats_precision, only:  & 
-          time_precision ! Variable(s)
-
-      use diffusion, only:  & 
-          diffusion_zt_lhs, & ! Procedure(s)
-          diffusion_cloud_frac_zt_lhs
-
-      use mean_adv, only:  & 
-          term_ma_zt_lhs ! Procedure(s)
-
-      use constants_clubb, only: sec_per_day ! Variable(s)
-
-      use stats_variables, only: & 
-          irrainm_ma,   & ! Variable(s)
-          irrainm_sd, & 
-          irrainm_dff, & 
-          iNrm_ma, & 
-          iNrm_sd, & 
-          iNrm_dff, & 
-          iricem_ma, & 
-          iricem_sd, & 
-          iricem_dff, & 
-          irsnowm_ma, & 
-          irsnowm_sd, & 
-          irsnowm_dff, & 
-          irgraupelm_ma, & 
-          irgraupelm_sd, & 
-          irgraupelm_dff, & 
-          ztscr01, & 
-          ztscr02, & 
-          ztscr03, & 
-          ztscr04, & 
-          ztscr05, & 
-          ztscr06, & 
-          ztscr07, & 
-          ztscr08, & 
-          ztscr09, & 
-          l_stats_samp
-
-      implicit none
-
-      ! Constant parameters
-      integer, parameter :: & 
-        kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-        k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-        km1_tdiag = 3       ! Thermodynamic subdiagonal index.
-
-      real, parameter :: &
-        cloud_frac_thresh = 1.e-3 ! Minimum threshold on cloud fraction
-
-      ! Input Variables
-      character(len=*), intent(in) :: &
-        solve_type  ! Description of which hydrometeor is being solved for.
-
-      logical, intent(in) ::  & 
-        l_sed    ! Whether to add a hydrometeor sedimentation term.
-
-      real(kind=time_precision), intent(in) ::  & 
-        dt       ! Model timestep                                           [s]
-
-      real, intent(in) ::  & 
-        nu       ! Background diffusion coefficient                         [m^2/s]
-
-      real, intent(in), dimension(gr%nnzp) ::  & 
-        cloud_frac, & ! Cloud fraction                                          [-]
-        wm_zt,      & ! w wind component on thermodynamic levels                [m/s]
-        V_hm,       & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
-        V_hmt,      & ! Sedimentation velocity of hydrometeor (thermo. levels)  [m/s]
-        Kr            ! Eddy diffusivity for hydrometeor on momentum levels     [m^2/s]
-
-      real, intent(out), dimension(3,gr%nnzp) :: & 
-        lhs      ! Left hand side of tridiagonal matrix.
-
-      ! Local Variables
-      real, dimension(3) :: tmp
-
-      real, dimension(gr%nnzp) :: & 
-        cloud_frac_zt, & ! Cloud fraction on thermodynamic levels  [-]
-        cloud_frac_zm    ! Cloud fraction on momentum levels       [-]
-
-      ! Array indices
-      integer :: k, km1, kp1
-
-      !integer kp1
-
-      integer :: & 
-        ixrm_ma,  & ! Mean advection budget stats toggle
-        ixrm_sd,  & ! Sedimentation budget stats toggle
-        ixrm_dff    ! Diffusion budget stats toggle
-
-      ! ----- Begin Code -----
-
-      ! Initializing ixrm_ma, ixrm_sd, and ixrm_dff in order to avoid compiler
-      ! warnings.
-      ixrm_ma  = 0
-      ixrm_sd  = 0
-      ixrm_dff = 0
-
-      select case( solve_type )
-      case ( "rrainm" )
-        ixrm_ma  = irrainm_ma
-        ixrm_sd  = irrainm_sd
-        ixrm_dff = irrainm_dff
-      case ( "Nrm" )
-        ixrm_ma  = iNrm_ma
-        ixrm_sd  = iNrm_sd
-        ixrm_dff = iNrm_dff
-      case ( "ricem" )
-        ixrm_ma  = iricem_ma
-        ixrm_sd  = iricem_sd
-        ixrm_dff = iricem_dff
-      case ( "rsnowm" )
-        ixrm_ma  = irsnowm_ma
-        ixrm_sd  = irsnowm_sd
-        ixrm_dff = irsnowm_dff
-      case ( "rgraupelm" )
-        ixrm_ma  = irgraupelm_ma
-        ixrm_sd  = irgraupelm_sd
-        ixrm_dff = irgraupelm_dff
-      case default
-        ixrm_ma  = 0
-        ixrm_sd  = 0
-        ixrm_dff = 0
-      end select
-
-      ! Determine cloud fraction for diffusion of Ncm
-      if ( solve_type == "Ncm".and. l_in_cloud_Nc_diff ) then
-        ! Impose a threshold on cloud fract to avoid a divide by 0.
-        cloud_frac_zt = max( cloud_frac, cloud_frac_thresh )
-!       cloud_frac_zt = 1.0 ! %% Debug
-        ! Don't impose a threshold on cloud_frac_zm in the numerator.
-        cloud_frac_zm = zt2zm( cloud_frac )
-      end if
-
-      ! Reset LHS Matrix for current timestep.
-      lhs = 0.0
-
-      ! Setup LHS Matrix
-      do k = 2, gr%nnzp-1, 1
+      do k = 1, gr%nnzp, 1
 
         km1 = max( k-1, 1 )
         kp1 = min( k+1, gr%nnzp )
 
-        ! Main diagonal
+        ! Finalize implicit contributions
 
-        ! LHS time tendency.
-        lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+        ! xrm term ma is completely implicit; call stat_update_var_pt.
+        call stat_update_var_pt( ixrm_ma, k, & 
+              ztscr01(k) * xrm(km1) & 
+              + ztscr02(k) * xrm(k) & 
+              + ztscr03(k) * xrm(kp1), zt)
+
+        ! xrm term sd is completely implicit; call stat_update_var_pt.
+        if ( l_sed ) then
+          call stat_update_var_pt( ixrm_sd, k, & 
+                ztscr04(k) * xrm(km1) & 
+                + ztscr05(k) * xrm(k) & 
+                + ztscr06(k) * xrm(kp1), zt )
+        end if
+
+        ! xrm term dff is completely implicit; call stat_update_var_pt.
+        call stat_update_var_pt( ixrm_dff, k, & 
+              ztscr07(k) * xrm(km1) & 
+              + ztscr08(k) * xrm(k) & 
+              + ztscr09(k) * xrm(kp1), zt )
+
+      enddo ! 1..gr%nnzp
+
+    end if ! l_stats_samp
 
 
-        ! All diagonals
+    ! Boundary conditions on results
+    !xrm(1) = xrm(2)
+    ! Michael Falk, 7 Sep 2007, made this change to eliminate problems
+    ! with anomalous rain formation at the top boundary.
+    !        xrm(gr%nnzp) = 0
+    !xrm(gr%nnzp) = xrm(gr%nnzp-1)
+    ! eMFc
 
-        ! LHS eddy-diffusion term.
-        if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
-          lhs(kp1_tdiag:km1_tdiag,k) & 
+    return
+  end subroutine microphys_solve
+
+!===============================================================================
+  subroutine microphys_lhs & 
+             ( solve_type, l_sed, dt, Kr, cloud_frac, nu, wm_zt, &
+               V_hm, V_hmt, &
+               lhs )
+
+  ! Description:
+  !   Setup the matrix of implicit contributions to a term.
+  !   Can include the effects of sedimentation, diffusion, and advection.
+  !   The Morrison microphysics has an explicit sedimentation code, which is
+  !   handled elsewhere.
+  !
+  ! Notes:
+  !   Setup for tridiagonal system and boundary conditions should be the same as
+  !   the original rain subroutine code.
+  !-------------------------------------------------------------------------------
+
+    use grid_class, only:  & 
+        gr,    & ! Variable(s)
+        zm2zt, & ! Procedure(s)
+        zt2zm    ! Procedure(s)
+
+    use stats_precision, only:  & 
+        time_precision ! Variable(s)
+
+    use diffusion, only:  & 
+        diffusion_zt_lhs, & ! Procedure(s)
+        diffusion_cloud_frac_zt_lhs
+
+    use mean_adv, only:  & 
+        term_ma_zt_lhs ! Procedure(s)
+
+    use constants_clubb, only: sec_per_day ! Variable(s)
+
+    use stats_variables, only: & 
+        irrainm_ma,   & ! Variable(s)
+        irrainm_sd, & 
+        irrainm_dff, & 
+        iNrm_ma, & 
+        iNrm_sd, & 
+        iNrm_dff, & 
+        iricem_ma, & 
+        iricem_sd, & 
+        iricem_dff, & 
+        irsnowm_ma, & 
+        irsnowm_sd, & 
+        irsnowm_dff, & 
+        irgraupelm_ma, & 
+        irgraupelm_sd, & 
+        irgraupelm_dff, & 
+        ztscr01, & 
+        ztscr02, & 
+        ztscr03, & 
+        ztscr04, & 
+        ztscr05, & 
+        ztscr06, & 
+        ztscr07, & 
+        ztscr08, & 
+        ztscr09, & 
+        l_stats_samp
+
+    implicit none
+
+    ! Constant parameters
+    integer, parameter :: & 
+      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+
+    real, parameter :: &
+      cloud_frac_thresh = 1.e-3 ! Minimum threshold on cloud fraction
+
+    ! Input Variables
+    character(len=*), intent(in) :: &
+      solve_type  ! Description of which hydrometeor is being solved for.
+
+    logical, intent(in) ::  & 
+      l_sed    ! Whether to add a hydrometeor sedimentation term.
+
+    real(kind=time_precision), intent(in) ::  & 
+      dt       ! Model timestep                                           [s]
+
+    real, intent(in) ::  & 
+      nu       ! Background diffusion coefficient                         [m^2/s]
+
+    real, intent(in), dimension(gr%nnzp) ::  & 
+      cloud_frac, & ! Cloud fraction                                          [-]
+      wm_zt,      & ! w wind component on thermodynamic levels                [m/s]
+      V_hm,       & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
+      V_hmt,      & ! Sedimentation velocity of hydrometeor (thermo. levels)  [m/s]
+      Kr            ! Eddy diffusivity for hydrometeor on momentum levels     [m^2/s]
+
+    real, intent(out), dimension(3,gr%nnzp) :: & 
+      lhs      ! Left hand side of tridiagonal matrix.
+
+    ! Local Variables
+    real, dimension(3) :: tmp
+
+    real, dimension(gr%nnzp) :: & 
+      cloud_frac_zt, & ! Cloud fraction on thermodynamic levels  [-]
+      cloud_frac_zm    ! Cloud fraction on momentum levels       [-]
+
+    ! Array indices
+    integer :: k, km1, kp1
+
+    !integer kp1
+
+    integer :: & 
+      ixrm_ma,  & ! Mean advection budget stats toggle
+      ixrm_sd,  & ! Sedimentation budget stats toggle
+      ixrm_dff    ! Diffusion budget stats toggle
+
+    ! ----- Begin Code -----
+
+    ! Initializing ixrm_ma, ixrm_sd, and ixrm_dff in order to avoid compiler
+    ! warnings.
+    ixrm_ma  = 0
+    ixrm_sd  = 0
+    ixrm_dff = 0
+
+    select case( solve_type )
+    case ( "rrainm" )
+      ixrm_ma  = irrainm_ma
+      ixrm_sd  = irrainm_sd
+      ixrm_dff = irrainm_dff
+    case ( "Nrm" )
+      ixrm_ma  = iNrm_ma
+      ixrm_sd  = iNrm_sd
+      ixrm_dff = iNrm_dff
+    case ( "ricem" )
+      ixrm_ma  = iricem_ma
+      ixrm_sd  = iricem_sd
+      ixrm_dff = iricem_dff
+    case ( "rsnowm" )
+      ixrm_ma  = irsnowm_ma
+      ixrm_sd  = irsnowm_sd
+      ixrm_dff = irsnowm_dff
+    case ( "rgraupelm" )
+      ixrm_ma  = irgraupelm_ma
+      ixrm_sd  = irgraupelm_sd
+      ixrm_dff = irgraupelm_dff
+    case default
+      ixrm_ma  = 0
+      ixrm_sd  = 0
+      ixrm_dff = 0
+    end select
+
+    ! Determine cloud fraction for diffusion of Ncm
+    if ( solve_type == "Ncm".and. l_in_cloud_Nc_diff ) then
+      ! Impose a threshold on cloud fract to avoid a divide by 0.
+      cloud_frac_zt = max( cloud_frac, cloud_frac_thresh )
+!     cloud_frac_zt = 1.0 ! %% Debug
+      ! Don't impose a threshold on cloud_frac_zm in the numerator.
+      cloud_frac_zm = zt2zm( cloud_frac )
+    end if
+
+    ! Reset LHS Matrix for current timestep.
+    lhs = 0.0
+
+    ! Setup LHS Matrix
+    do k = 2, gr%nnzp-1, 1
+
+      km1 = max( k-1, 1 )
+      kp1 = min( k+1, gr%nnzp )
+
+      ! Main diagonal
+
+      ! LHS time tendency.
+      lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+
+
+      ! All diagonals
+
+      ! LHS eddy-diffusion term.
+      if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
+        lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) & 
           + diffusion_cloud_frac_zt_lhs &
             ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
               cloud_frac_zt(k+1), cloud_frac_zm(k), &
               cloud_frac_zm(k-1), &
               nu, gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
-        else ! All other cases
-          lhs(kp1_tdiag:km1_tdiag,k) & 
+      else ! All other cases
+        lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) & 
           + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
                               gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                               gr%invrs_dzt(k), k )
-        end if
+      end if
 
-        ! LHS mean advection term.
-        lhs(kp1_tdiag:km1_tdiag,k) & 
+      ! LHS mean advection term.
+      lhs(kp1_tdiag:km1_tdiag,k) & 
         = lhs(kp1_tdiag:km1_tdiag,k) & 
         + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
 
-        ! LHS hydrometeor sedimentation term.
-        ! Note: the Morrison microphysics has its own sedimentation code, which
-        ! is applied through the _mc terms to each hydrometeor species.
-        ! Therefore, l_sed will always be false when the Morrison microphysics 
-        ! is enabled.  -dschanen 24 Jan 2011
-        if ( l_sed ) then
-          if ( .not. l_upwind_diff_sed ) then
-            lhs(kp1_tdiag:km1_tdiag,k) & 
-              = lhs(kp1_tdiag:km1_tdiag,k) & 
-              + sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
-          else
-            lhs(kp1_tdiag:km1_tdiag,k) & 
-              = lhs(kp1_tdiag:km1_tdiag,k) & 
-              + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
-          end if
+      ! LHS hydrometeor sedimentation term.
+      ! Note: the Morrison microphysics has its own sedimentation code, which
+      ! is applied through the _mc terms to each hydrometeor species.
+      ! Therefore, l_sed will always be false when the Morrison microphysics 
+      ! is enabled.  -dschanen 24 Jan 2011
+      if ( l_sed ) then
+        if ( .not. l_upwind_diff_sed ) then
+          lhs(kp1_tdiag:km1_tdiag,k) & 
+            = lhs(kp1_tdiag:km1_tdiag,k) & 
+            + sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+        else
+          lhs(kp1_tdiag:km1_tdiag,k) & 
+            = lhs(kp1_tdiag:km1_tdiag,k) & 
+            + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
         end if
-
-        if ( l_stats_samp ) then
-
-          ! Statistics:  implicit contributions to hydrometeor xrm.
-
-          if ( ixrm_ma > 0 ) then
-            tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
-              gr%invrs_dzm(km1) )
-
-            ztscr01(k) = -tmp(3)
-            ztscr02(k) = -tmp(2)
-            ztscr03(k) = -tmp(1)
-          end if
-
-          if ( ixrm_sd > 0 .and. l_sed ) then
-            if ( .not. l_upwind_diff_sed ) then
-              tmp(1:3) = sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
-            else
-              tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
-            end if
-
-            ztscr04(k) = -tmp(3)
-            ztscr05(k) = -tmp(2)
-            ztscr06(k) = -tmp(1)
-          end if
-
-          if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff &
-               .and. ixrm_dff > 0 ) then
-            tmp(1:3) &
-            = diffusion_cloud_frac_zt_lhs &
-              ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
-                cloud_frac_zt(k+1), cloud_frac_zm(k), &
-                cloud_frac_zm(k-1), &
-                nu, gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
-            ztscr07(k) = -tmp(3)
-            ztscr08(k) = -tmp(2)
-            ztscr09(k) = -tmp(1)
-
-          else if ( ixrm_dff > 0 ) then
-            tmp(1:3) & 
-            = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                                gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                                gr%invrs_dzt(k), k )
-            ztscr07(k) = -tmp(3)
-            ztscr08(k) = -tmp(2)
-            ztscr09(k) = -tmp(1)
-          end if
-
-        end if ! l_stats_samp
-
-      end do ! 2..gr%nnzp-1
-
-
-      ! Boundary Conditions
-
-      ! The hydrometeor eddy-diffusion term has zero-flux boundary conditions, meaning
-      ! that amounts of a hydrometeor are not allowed to escape the model boundaries
-      ! through the process of eddy-diffusion.  It should be noted that amounts of a
-      ! hydrometeor are allowed to leave the model at the lower boundary through the
-      ! process of hydrometeor sedimentation.  However, only the eddy-diffusion term
-      ! contributes to the LHS matrix at the k=1 and k=gr%nnzp levels.  Thus, function
-      ! diffusion_zt_lhs needs to be called at both the upper boundary level and the
-      ! lower boundary level.
-
-
-      ! Lower Boundary
-      k   = 1
-      km1 = max( k-1, 1 )
-      kp1 = k+1
-      ! Note:  In function diffusion_zt_lhs, at the k=1 (lower boundary) level,
-      !        variables referenced at the km1 level don't factor into the equation.
-
-      ! LHS time tendency at the lower boundary.
-      lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
-
-      ! LHS eddy-diffusion term at the lower boundary.
-      lhs(kp1_tdiag:km1_tdiag,k) &
-      = lhs(kp1_tdiag:km1_tdiag,k) &
-      + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
-                          gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                          gr%invrs_dzt(k), k )
-
-      ! Here we apply the upwind differencing at the lower boundary.
-      if ( l_sed .and. l_upwind_diff_sed ) then
-        lhs(kp1_tdiag:km1_tdiag,k) & 
-          = lhs(kp1_tdiag:km1_tdiag,k) & 
-          + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
       end if
 
       if ( l_stats_samp ) then
 
         ! Statistics:  implicit contributions to hydrometeor xrm.
 
-        if ( ixrm_dff > 0 ) then
-          tmp(1:3) & 
-          = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                              gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                              gr%invrs_dzt(k), k )
-          ztscr07(k) = -tmp(3)
-          ztscr08(k) = -tmp(2)
-          ztscr09(k) = -tmp(1)
+        if ( ixrm_ma > 0 ) then
+          tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
+            gr%invrs_dzm(km1) )
+
+          ztscr01(k) = -tmp(3)
+          ztscr02(k) = -tmp(2)
+          ztscr03(k) = -tmp(1)
         end if
 
-        if ( ixrm_sd > 0 .and. l_sed .and. l_upwind_diff_sed ) then
-          tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
+        if ( ixrm_sd > 0 .and. l_sed ) then
+          if ( .not. l_upwind_diff_sed ) then
+            tmp(1:3) = sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+          else
+            tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
+          end if
 
           ztscr04(k) = -tmp(3)
           ztscr05(k) = -tmp(2)
           ztscr06(k) = -tmp(1)
         end if
 
-      end if  ! l_stats_samp
+        if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff &
+             .and. ixrm_dff > 0 ) then
+          tmp(1:3) &
+            = diffusion_cloud_frac_zt_lhs &
+              ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
+                cloud_frac_zt(k+1), cloud_frac_zm(k), &
+                cloud_frac_zm(k-1), &
+                nu, gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+          ztscr07(k) = -tmp(3)
+          ztscr08(k) = -tmp(2)
+          ztscr09(k) = -tmp(1)
 
-
-      ! Upper Boundary
-      k   = gr%nnzp
-      km1 = max( k-1, 1 )
-
-      ! LHS time tendency at the upper boundary.
-      lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
-
-      ! LHS eddy-diffusion term at the upper boundary.
-      lhs(kp1_tdiag:km1_tdiag,k) &
-      = lhs(kp1_tdiag:km1_tdiag,k) &
-      + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
-                          gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                          gr%invrs_dzt(k), k )
-
-      if ( l_stats_samp ) then
-
-        ! Statistics:  implicit contributions to hydrometeor xrm.
-
-        if ( ixrm_dff > 0 ) then
+        else if ( ixrm_dff > 0 ) then
           tmp(1:3) & 
-          = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                              gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                              gr%invrs_dzt(k), k )
+            = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+                                gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                                gr%invrs_dzt(k), k )
           ztscr07(k) = -tmp(3)
           ztscr08(k) = -tmp(2)
           ztscr09(k) = -tmp(1)
         end if
 
-      end if  ! l_stats_samp
+      end if ! l_stats_samp
 
-      return
-    end subroutine microphys_lhs
+    end do ! 2..gr%nnzp-1
+
+
+    ! Boundary Conditions
+
+    ! The hydrometeor eddy-diffusion term has zero-flux boundary conditions, meaning
+    ! that amounts of a hydrometeor are not allowed to escape the model boundaries
+    ! through the process of eddy-diffusion.  It should be noted that amounts of a
+    ! hydrometeor are allowed to leave the model at the lower boundary through the
+    ! process of hydrometeor sedimentation.  However, only the eddy-diffusion term
+    ! contributes to the LHS matrix at the k=1 and k=gr%nnzp levels.  Thus, function
+    ! diffusion_zt_lhs needs to be called at both the upper boundary level and the
+    ! lower boundary level.
+
+
+    ! Lower Boundary
+    k   = 1
+    km1 = max( k-1, 1 )
+    kp1 = k+1
+    ! Note:  In function diffusion_zt_lhs, at the k=1 (lower boundary) level,
+    !        variables referenced at the km1 level don't factor into the equation.
+
+    ! LHS time tendency at the lower boundary.
+    lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+
+    ! LHS eddy-diffusion term at the lower boundary.
+    lhs(kp1_tdiag:km1_tdiag,k) &
+      = lhs(kp1_tdiag:km1_tdiag,k) &
+      + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                          gr%invrs_dzt(k), k )
+
+    ! Here we apply the upwind differencing at the lower boundary.
+    if ( l_sed .and. l_upwind_diff_sed ) then
+      lhs(kp1_tdiag:km1_tdiag,k) & 
+        = lhs(kp1_tdiag:km1_tdiag,k) & 
+        + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
+    end if
+
+    if ( l_stats_samp ) then
+
+      ! Statistics:  implicit contributions to hydrometeor xrm.
+
+      if ( ixrm_dff > 0 ) then
+        tmp(1:3) & 
+          = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+                              gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                              gr%invrs_dzt(k), k )
+        ztscr07(k) = -tmp(3)
+        ztscr08(k) = -tmp(2)
+        ztscr09(k) = -tmp(1)
+      end if
+
+      if ( ixrm_sd > 0 .and. l_sed .and. l_upwind_diff_sed ) then
+        tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
+
+        ztscr04(k) = -tmp(3)
+        ztscr05(k) = -tmp(2)
+        ztscr06(k) = -tmp(1)
+      end if
+
+    end if  ! l_stats_samp
+
+
+    ! Upper Boundary
+    k   = gr%nnzp
+    km1 = max( k-1, 1 )
+
+    ! LHS time tendency at the upper boundary.
+    lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+
+    ! LHS eddy-diffusion term at the upper boundary.
+    lhs(kp1_tdiag:km1_tdiag,k) &
+      = lhs(kp1_tdiag:km1_tdiag,k) &
+      + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                          gr%invrs_dzt(k), k )
+
+    if ( l_stats_samp ) then
+
+      ! Statistics:  implicit contributions to hydrometeor xrm.
+
+      if ( ixrm_dff > 0 ) then
+        tmp(1:3) & 
+          = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+                              gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                              gr%invrs_dzt(k), k )
+        ztscr07(k) = -tmp(3)
+        ztscr08(k) = -tmp(2)
+        ztscr09(k) = -tmp(1)
+      end if
+
+    end if  ! l_stats_samp
+
+    return
+  end subroutine microphys_lhs
 
 !===============================================================================
-    pure function sed_centered_diff_lhs( V_hm, V_hmm1, invrs_dzt, level ) & 
-      result( lhs )
+  pure function sed_centered_diff_lhs( V_hm, V_hmm1, invrs_dzt, level ) & 
+    result( lhs )
 
-      ! Description:
-      ! Sedimentation of a hydrometeor:  implicit portion of the code.
-      !
-      ! The variable "hm" stands for one of the five hydrometeor variables
-      ! currently in the code:  mean rain mixing ratio (rrainm), mean rain drop
-      ! concentration (Nrm), mean ice mixing ratio (ricem), mean snow mixing
-      ! ratio (rsnowm), or mean graupel mixing ratio (rgraupelm).  The variable
-      ! "V_hm" stands for the sedimentation velocity of the appropriate
-      ! hydrometeor.
-      !
-      ! The d(hm)/dt equation contains a sedimentation term:
-      !
-      ! - d(V_hm*hm)/dz.
-      !
-      ! This term is solved for completely implicitly, such that:
-      !
-      ! - d( V_hm(t) * hm(t+1) )/dz.
-      !
-      ! Note:  When the term is brought over to the left-hand side, the sign is
-      !        reversed and the leading "-" in front of the term is changed to
-      !        a "+".
-      !
-      ! Timestep index (t) stands for the index of the current timestep, while
-      ! timestep index (t+1) stands for the index of the next timestep, which is
-      ! being advanced to in solving the d(hm)/dt equation.
-      !
-      ! This term is discretized as follows when using the centered-difference
-      ! approximation:
-      !
-      ! The values of hm are found on the thermodynamic levels, while the values
-      ! of V_hm are found on the momentum levels.  The variable hm is
-      ! interpolated to the intermediate momentum levels.  At the intermediate
-      ! momentum levels, the interpolated values of hm are multiplied by the
-      ! values of V_hm.  Then, the derivative of (hm*V_hm) is taken over the
-      ! central thermodynamic level.
-      !
-      ! -----hmp1------------------------------------------------ t(k+1)
-      !
-      ! =============hm(interp)=====V_hm========================= m(k)
-      !
-      ! -----hm--------------------------------d(V_hm*hm)/dz----- t(k)
-      !
-      ! =============hm(interp)=====V_hmm1======================= m(k-1)
-      !
-      ! -----hmm1------------------------------------------------ t(k-1)
-      !
-      ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond
-      ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1),
-      ! respectively.  The letter "t" is used for thermodynamic levels and the
-      ! letter "m" is used for momentum levels.
-      !
-      ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
-      !
-      !
-      ! Conservation Properties:
-      !
-      ! When a hydrometeor is sedimented to the ground (or out the lower
-      ! boundary of the model), it is removed from the atmosphere (or from the
-      ! model domain).  Thus, the quantity of the hydrometeor over the entire
-      ! vertical domain should not be conserved due to the process of
-      ! sedimentation.  Thus, not all of the column totals in the left-hand side
-      ! matrix should be equal to 0.  Instead, the sum of all the column totals
-      ! should equal the flux of hm out the bottom (zm(1) level) of the domain,
-      ! -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in parentheses
-      ! is the interpolated value of hm at the zm(1) level.  Furthermore, most
-      ! of the individual column totals should sum to 0, but the 1st and 2nd
-      ! (from the left) columns should combine to sum to the flux out the bottom
-      ! of the domain.
-      !
-      ! To see that this modified conservation law is satisfied, compute the
-      ! sedimentation of hm and integrate vertically.  In discretized matrix
-      ! notation (where "i" stands for the matrix column and "j" stands for the
-      ! matrix row):
-      !
-      !  -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
-      !     =
-      !  Sum_j Sum_i ( 1/invrs_dzt )_i ( d (V_hm * weights_hm) / dz )_ij hm_j.
-      !
-      ! The left-hand side matrix, ( d (V_hm * weights_hm) / dz )_ij, is
-      ! partially written below.  The sum over i in the above equation removes
-      ! invrs_dzt everywhere from the matrix below.  The sum over j leaves the
-      ! column totals and the flux at zm(1) that are desired.
-      !
-      ! Left-hand side matrix contributions from the sedimentation term (only);
-      ! first four vertical levels:
-      !
-      !     ------------------------------------------------------------------->
-      !k=1 |           0                     0                       0
-      !    |
-      !k=2 |   -invrs_dzt(k)       +invrs_dzt(k)           +invrs_dzt(k)
-      !    |     *V_hm(k-1)*D(k)     *[ V_hm(k)*B(k)         *V_hm(k)*A(k)
-      !    |                           -V_hm(k-1)*C(k) ]
-      !    |
-      !k=3 |           0           -invrs_dzt(k)           +invrs_dzt(k)
-      !    |                         *V_hm(k-1)*D(k)         *[ V_hm(k)*B(k)
-      !    |                                                   -V_hm(k-1)*C(k) ]
-      !    |
-      !k=4 |           0                     0             -invrs_dzt(k)
-      !    |                                                 *V_hm(k-1)*D(k)
-      !    |
-      !   \ /
-      !
-      ! The variables A(k), B(k), C(k), and D(k) are weights of interpolation
-      ! around the central thermodynamic level (k), such that:
-      !
-      ! A(k) = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
-      ! B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
-      !      = 1 - A(k);
-      ! C(k) = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
-      ! D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
-      !      = 1 - C(k).
-      !
-      ! Furthermore, for all intermediate thermodynamic grid levels (as long as
-      ! k /= gr%nnzp and k /= 1), the four weighting factors have the following
-      ! relationships:  A(k) = C(k+1) and B(k) = D(k+1).
-      !
-      ! Note:  The superdiagonal term from level 3 and both the main diagonal
-      !        and superdiagonal terms from level 4 are not shown on this
-      !        diagram.
+    ! Description:
+    ! Sedimentation of a hydrometeor:  implicit portion of the code.
+    !
+    ! The variable "hm" stands for one of the five hydrometeor variables
+    ! currently in the code:  mean rain mixing ratio (rrainm), mean rain drop
+    ! concentration (Nrm), mean ice mixing ratio (ricem), mean snow mixing
+    ! ratio (rsnowm), or mean graupel mixing ratio (rgraupelm).  The variable
+    ! "V_hm" stands for the sedimentation velocity of the appropriate
+    ! hydrometeor.
+    !
+    ! The d(hm)/dt equation contains a sedimentation term:
+    !
+    ! - d(V_hm*hm)/dz.
+    !
+    ! This term is solved for completely implicitly, such that:
+    !
+    ! - d( V_hm(t) * hm(t+1) )/dz.
+    !
+    ! Note:  When the term is brought over to the left-hand side, the sign is
+    !        reversed and the leading "-" in front of the term is changed to
+    !        a "+".
+    !
+    ! Timestep index (t) stands for the index of the current timestep, while
+    ! timestep index (t+1) stands for the index of the next timestep, which is
+    ! being advanced to in solving the d(hm)/dt equation.
+    !
+    ! This term is discretized as follows when using the centered-difference
+    ! approximation:
+    !
+    ! The values of hm are found on the thermodynamic levels, while the values
+    ! of V_hm are found on the momentum levels.  The variable hm is
+    ! interpolated to the intermediate momentum levels.  At the intermediate
+    ! momentum levels, the interpolated values of hm are multiplied by the
+    ! values of V_hm.  Then, the derivative of (hm*V_hm) is taken over the
+    ! central thermodynamic level.
+    !
+    ! -----hmp1------------------------------------------------ t(k+1)
+    !
+    ! =============hm(interp)=====V_hm========================= m(k)
+    !
+    ! -----hm--------------------------------d(V_hm*hm)/dz----- t(k)
+    !
+    ! =============hm(interp)=====V_hmm1======================= m(k-1)
+    !
+    ! -----hmm1------------------------------------------------ t(k-1)
+    !
+    ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond
+    ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1),
+    ! respectively.  The letter "t" is used for thermodynamic levels and the
+    ! letter "m" is used for momentum levels.
+    !
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
+    !
+    !
+    ! Conservation Properties:
+    !
+    ! When a hydrometeor is sedimented to the ground (or out the lower
+    ! boundary of the model), it is removed from the atmosphere (or from the
+    ! model domain).  Thus, the quantity of the hydrometeor over the entire
+    ! vertical domain should not be conserved due to the process of
+    ! sedimentation.  Thus, not all of the column totals in the left-hand side
+    ! matrix should be equal to 0.  Instead, the sum of all the column totals
+    ! should equal the flux of hm out the bottom (zm(1) level) of the domain,
+    ! -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in parentheses
+    ! is the interpolated value of hm at the zm(1) level.  Furthermore, most
+    ! of the individual column totals should sum to 0, but the 1st and 2nd
+    ! (from the left) columns should combine to sum to the flux out the bottom
+    ! of the domain.
+    !
+    ! To see that this modified conservation law is satisfied, compute the
+    ! sedimentation of hm and integrate vertically.  In discretized matrix
+    ! notation (where "i" stands for the matrix column and "j" stands for the
+    ! matrix row):
+    !
+    !  -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
+    !     =
+    !  Sum_j Sum_i ( 1/invrs_dzt )_i ( d (V_hm * weights_hm) / dz )_ij hm_j.
+    !
+    ! The left-hand side matrix, ( d (V_hm * weights_hm) / dz )_ij, is
+    ! partially written below.  The sum over i in the above equation removes
+    ! invrs_dzt everywhere from the matrix below.  The sum over j leaves the
+    ! column totals and the flux at zm(1) that are desired.
+    !
+    ! Left-hand side matrix contributions from the sedimentation term (only);
+    ! first four vertical levels:
+    !
+    !     ------------------------------------------------------------------->
+    !k=1 |           0                     0                       0
+    !    |
+    !k=2 |   -invrs_dzt(k)       +invrs_dzt(k)           +invrs_dzt(k)
+    !    |     *V_hm(k-1)*D(k)     *[ V_hm(k)*B(k)         *V_hm(k)*A(k)
+    !    |                           -V_hm(k-1)*C(k) ]
+    !    |
+    !k=3 |           0           -invrs_dzt(k)           +invrs_dzt(k)
+    !    |                         *V_hm(k-1)*D(k)         *[ V_hm(k)*B(k)
+    !    |                                                   -V_hm(k-1)*C(k) ]
+    !    |
+    !k=4 |           0                     0             -invrs_dzt(k)
+    !    |                                                 *V_hm(k-1)*D(k)
+    !    |
+    !   \ /
+    !
+    ! The variables A(k), B(k), C(k), and D(k) are weights of interpolation
+    ! around the central thermodynamic level (k), such that:
+    !
+    ! A(k) = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
+    ! B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
+    !      = 1 - A(k);
+    ! C(k) = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
+    ! D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
+    !      = 1 - C(k).
+    !
+    ! Furthermore, for all intermediate thermodynamic grid levels (as long as
+    ! k /= gr%nnzp and k /= 1), the four weighting factors have the following
+    ! relationships:  A(k) = C(k+1) and B(k) = D(k+1).
+    !
+    ! Note:  The superdiagonal term from level 3 and both the main diagonal
+    !        and superdiagonal terms from level 4 are not shown on this
+    !        diagram.
 
-      ! References:
-      ! None
+    ! References:
+    ! None
 
-      ! Notes:  
-      !   Both COAMPS Microphysics and Brian Griffin's implementation use
-      !   Khairoutdinov and Kogan (2000) for the calculation of rain
-      !   mixing ratio and rain droplet number concentration sedimentation
-      !   velocities, but COAMPS has only the local parameterization.
-      !-----------------------------------------------------------------------
+    ! Notes:  
+    !   Both COAMPS Microphysics and Brian Griffin's implementation use
+    !   Khairoutdinov and Kogan (2000) for the calculation of rain
+    !   mixing ratio and rain droplet number concentration sedimentation
+    !   velocities, but COAMPS has only the local parameterization.
+    !-----------------------------------------------------------------------
 
-      use grid_class, only:  & 
-          gr ! Variable(s)
+    use grid_class, only:  & 
+        gr ! Variable(s)
 
-      implicit none
+    implicit none
 
-      ! Constant parameters
-      integer, parameter :: & 
-        kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-        k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-        km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+    ! Constant parameters
+    integer, parameter :: & 
+      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
-      integer, parameter :: & 
-        t_above = 1,    & ! Index for upper thermodynamic level grid weight.
-        t_below = 2       ! Index for lower thermodynamic level grid weight.
+    integer, parameter :: & 
+      t_above = 1,    & ! Index for upper thermodynamic level grid weight.
+      t_below = 2       ! Index for lower thermodynamic level grid weight.
 
-      ! Input Variables
-      real, intent(in) :: & 
-        V_hm,      & ! Sedimentation velocity of hydrometeor (k)     [m/s]
-        V_hmm1,    & ! Sedimentation velocity of hydrometeor (k-1)   [m/s]
-        invrs_dzt    ! Inverse of grid spacing (k)                   [m]
+    ! Input Variables
+    real, intent(in) :: & 
+      V_hm,      & ! Sedimentation velocity of hydrometeor (k)     [m/s]
+      V_hmm1,    & ! Sedimentation velocity of hydrometeor (k-1)   [m/s]
+      invrs_dzt    ! Inverse of grid spacing (k)                   [m]
 
-      integer, intent(in) ::  & 
-        level ! Central thermodynamic level (on which calculation occurs).
+    integer, intent(in) ::  & 
+      level ! Central thermodynamic level (on which calculation occurs).
 
-      ! Return Variable
-      real, dimension(3) :: lhs
+    ! Return Variable
+    real, dimension(3) :: lhs
 
-      ! Local Variables
-      integer :: & 
-        mk,    & ! Momentum level directly above central thermodynamic level.
-        mkm1     ! Momentum level directly below central thermodynamic level.
+    ! Local Variables
+    integer :: & 
+      mk,    & ! Momentum level directly above central thermodynamic level.
+      mkm1     ! Momentum level directly below central thermodynamic level.
 
-      ! ---- Begin Code ----
+    ! ---- Begin Code ----
 
-      ! Momentum level (k) is between thermodynamic level (k+1)
-      ! and thermodynamic level (k).
-      mk   = level
-      ! Momentum level (k-1) is between thermodynamic level (k)
-      ! and thermodynamic level (k-1).
-      mkm1 = level - 1
+    ! Momentum level (k) is between thermodynamic level (k+1)
+    ! and thermodynamic level (k).
+    mk   = level
+    ! Momentum level (k-1) is between thermodynamic level (k)
+    ! and thermodynamic level (k-1).
+    mkm1 = level - 1
 
-      ! Note:  The code is now written so that V_hm has been pulled inside of the
-      !        derivative.  The sedimentation term is now of the form -d(V_hm*hm)/dz,
-      !        rather than of the form -V_hm d(hm)/dz.  The term has been
-      !        re-discretized in a conservative manner and the results are listed
-      !        below, with the old code commented out.
+    ! Note:  The code is now written so that V_hm has been pulled inside of the
+    !        derivative.  The sedimentation term is now of the form -d(V_hm*hm)/dz,
+    !        rather than of the form -V_hm d(hm)/dz.  The term has been
+    !        re-discretized in a conservative manner and the results are listed
+    !        below, with the old code commented out.
 
-      if ( level == 1 ) then
+    if ( level == 1 ) then
 
-        ! k = 1 (bottom level); lower boundary level; no effects.
+      ! k = 1 (bottom level); lower boundary level; no effects.
 
-        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-        lhs(kp1_tdiag) = 0.0
+      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+      lhs(kp1_tdiag) = 0.0
 
-        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-        lhs(k_tdiag)   = 0.0
+      ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+      lhs(k_tdiag)   = 0.0
 
-        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-        lhs(km1_tdiag) = 0.0
+      ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+      lhs(km1_tdiag) = 0.0
 
 
-      elseif ( level > 1 .and. level < gr%nnzp ) then
+    else if ( level > 1 .and. level < gr%nnzp ) then
 
-        ! Most of the interior model; normal conditions.
+      ! Most of the interior model; normal conditions.
 
-        ! Vince Larson pulled V_hm inside derivative to make conservative.
-        ! 13 Dec 2007
-        !
-        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-!       lhs(kp1_tdiag)  &
+      ! Vince Larson pulled V_hm inside derivative to make conservative.
+      ! 13 Dec 2007
+      !
+      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+!     lhs(kp1_tdiag)  &
 !       = + V_hmzt * invrs_dzt * gr%weights_zt2zm(t_above,mk)
 
-!       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-!       lhs(k_tdiag)  &
+!     ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+!     lhs(k_tdiag)  &
 !       = + V_hmzt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk)  &
 !                                  - gr%weights_zt2zm(t_above,mkm1)  )
 !
-!       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-!       lhs(km1_tdiag)  &
+!     ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+!     lhs(km1_tdiag)  &
 !       = - V_hmzt * invrs_dzt * gr%weights_zt2zm(t_below,mkm1)
 
-        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-        lhs(kp1_tdiag)  & 
+      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+      lhs(kp1_tdiag)  & 
         = + invrs_dzt * V_hm * gr%weights_zt2zm(t_above,mk)
 
-        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-        lhs(k_tdiag)  & 
+      ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+      lhs(k_tdiag)  & 
         = + invrs_dzt * (   V_hm * gr%weights_zt2zm(t_below,mk) & 
                           - V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
 
-        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-        lhs(km1_tdiag)  & 
+      ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+      lhs(km1_tdiag)  & 
         = - invrs_dzt * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
 
-        !  End Vince Larson change
+      !  End Vince Larson change
 
 
-      elseif ( level == gr%nnzp ) then
+    else if ( level == gr%nnzp ) then
 
-        ! k = gr%nnzp (top level); upper boundary level; no flux.
+      ! k = gr%nnzp (top level); upper boundary level; no flux.
 
-        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-        lhs(kp1_tdiag) = 0.0
+      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+      lhs(kp1_tdiag) = 0.0
 
-        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-        lhs(k_tdiag)   = 0.0
+      ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+      lhs(k_tdiag)   = 0.0
 
-        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-        lhs(km1_tdiag) = 0.0
-
-
-      endif
-
-      return
-    end function sed_centered_diff_lhs
-
-    !---------------------------------------------------------------------------
-    pure function sed_upwind_diff_lhs( V_hmt, V_hmtp1, invrs_dzm, level ) & 
-      result( lhs )
-
-    ! Description:
-    !   Setup the LHS matrix (implicit component) for the upwind difference
-    !   approximation for the sedimentation of a hydrometeor.
-    ! 
-    ! References:
-    !   None
-    !---------------------------------------------------------------------------
-      use grid_class, only:  & 
-          gr ! Variable(s)
-
-      implicit none
-
-      ! Constant parameters
-      integer, parameter :: & 
-        kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-        k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-        km1_tdiag = 3       ! Thermodynamic subdiagonal index.
-
-      ! Input Variables
-      real, intent(in) :: & 
-        V_hmt,   & ! Sedimentation velocity of hydrometeor (thermo. levels) (k)   [m/s]
-        V_hmtp1, & ! Sedimentation velocity of hydrometeor (thermo. levels) (k+1) [m/s]
-        invrs_dzm  ! Inverse of grid spacing (k)                   [m]
-
-      integer, intent(in) ::  & 
-        level ! Central thermodynamic level (on which calculation occurs).
-
-      ! Return Variable
-      real, dimension(3) :: lhs
-
-      ! ---- Begin Code ----
-
-      ! Sedimention is always a downward process, so we omit the upward case
-      ! (i.e. the V_hmt variable will always be negative).
-      if ( level == gr%nnzp ) then
-
-        ! k = gr%nnzp (top level); upper boundary level; no flux.
-
-        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-        lhs(kp1_tdiag) = 0.0
-
-        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-        lhs(k_tdiag)   = 0.0
-
-        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-        lhs(km1_tdiag) = 0.0
+      ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+      lhs(km1_tdiag) = 0.0
 
 
-      else  
+    end if
 
-        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-        lhs(kp1_tdiag)  & 
+    return
+  end function sed_centered_diff_lhs
+
+!---------------------------------------------------------------------------
+  pure function sed_upwind_diff_lhs( V_hmt, V_hmtp1, invrs_dzm, level ) & 
+    result( lhs )
+
+  ! Description:
+  !   Setup the LHS matrix (implicit component) for the upwind difference
+  !   approximation for the sedimentation of a hydrometeor.
+  ! 
+  ! References:
+  !   None
+  !---------------------------------------------------------------------------
+    use grid_class, only:  & 
+        gr ! Variable(s)
+
+    implicit none
+
+    ! Constant parameters
+    integer, parameter :: & 
+      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+
+    ! Input Variables
+    real, intent(in) :: & 
+      V_hmt,   & ! Sedimentation velocity of hydrometeor (thermo. levels) (k)   [m/s]
+      V_hmtp1, & ! Sedimentation velocity of hydrometeor (thermo. levels) (k+1) [m/s]
+      invrs_dzm  ! Inverse of grid spacing (k)                   [m]
+
+    integer, intent(in) ::  & 
+      level ! Central thermodynamic level (on which calculation occurs).
+
+    ! Return Variable
+    real, dimension(3) :: lhs
+
+    ! ---- Begin Code ----
+
+    ! Sedimention is always a downward process, so we omit the upward case
+    ! (i.e. the V_hmt variable will always be negative).
+    if ( level == gr%nnzp ) then
+
+      ! k = gr%nnzp (top level); upper boundary level; no flux.
+
+      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+      lhs(kp1_tdiag) = 0.0
+
+      ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+      lhs(k_tdiag)   = 0.0
+
+      ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+      lhs(km1_tdiag) = 0.0
+
+
+    else  
+
+      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+      lhs(kp1_tdiag)  & 
         = + invrs_dzm * V_hmtp1
 
-        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-        lhs(k_tdiag)  & 
+      ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+      lhs(k_tdiag)  & 
         = - invrs_dzm * V_hmt
 
-        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-        lhs(km1_tdiag) = 0.0
+      ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+      lhs(km1_tdiag) = 0.0
 
-      end if
+    end if
 
-      return
-    end function sed_upwind_diff_lhs
+    return
+  end function sed_upwind_diff_lhs
 !===============================================================================
-    subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, V_hmt, Kr, nu, & 
-                                    dt, level, l_sed, & 
-                                    xrm, overevap_rate )
+  subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, V_hmt, Kr, nu, & 
+                                  dt, level, l_sed, & 
+                                  xrm, overevap_rate )
 
-      ! DESCRIPTION:  Correction for the over-evaporation of a hydrometeor.
-      !
-      ! If a small amount of a hydrometeor (such as rain water) gets diffused
-      ! into an area that is very dry (such as right above the cloud top), the
-      ! hydrometeor (rain water) will have a very high rate of evaporation and
-      ! will evaporate entirely in a short amount of time.  However, the
-      ! evaporation rate is computed instantaneously at a given moment in time.
-      !  This rate is then projected over the entire length of the given
-      ! timestep.  Therefore, a high-enough rate of evaporation combined with a
-      ! small-enough amount of the hydrometeor (rain water) and a long-enough
-      ! timestep will cause the hydrometeor value (rain water mixing ratio) to
-      ! be negative by the end of the timestep.  Therefore, a correction factor
-      ! needs to be imposed on the evaporation rate so that the amount of the
-      ! hydrometeor (rain water mixing ratio) does not fall below 0.
-      !
-      ! Besides over-evaporation of a hydrometeor, other factors may come into
-      ! play that cause the value of a hydrometeor to fall below 0.  These
-      ! factors are due to the nature of implicit discretization and numerical
-      ! errors.  In a nutshell, the eddy diffusion parameter used currently in
-      ! this model smooths out the entire hydrometeor profile as a whole at
-      ! every timestep.  This smoothing may cause negative values at certain
-      ! levels.  Also, mean advection and hydrometeor sedimentation can cause
-      ! negative values to occur in the hydrometeor.  This can happen in places
-      ! where the profile abruptly goes from a large positive value to 0 (such
-      ! as at cloud top).  The nature of the discretization of taking a
-      ! derivative at these levels may cause negative values of a hydrometeor.
-      !
-      ! This subroutine is called only if a hydrometeor at a certain level
-      ! contains a negative value.  First, this subroutine uses the same methods
-      ! that the model statistical code uses in computing budget terms in order
-      ! to determine what factors effected the value of the given hydrometeor
-      ! during the timestep that was just solved for.  The mean advection,
-      ! sedimentation, and diffusion budget terms are all computed.  These three
-      ! terms are then added together to make up the total transport and
-      ! sedimentation tendency.  This tendency is then added to the total
-      ! microphysical tendency to find the overall hydrometeor tendency.  The
-      ! overall hydrometeor tendency is then multiplied by the timestep length
-      ! to find the net change in the hydrometeor over the last timestep.  This
-      ! net change is then added to the current value of the hydrometeor in
-      ! order to find the value of the hydrometeor at the previous timestep.
-      ! This method has been well tested and produces accurate results.
-      !
-      ! Once the value of the hydrometeor at the previous timestep has been
-      ! found, the net change in the hydrometeor due to ONLY mean advection,
-      ! diffusion, and sedimentation is calculated.  This net change is added to
-      ! the value of the hydrometeor at the previous timestep.  If the new value
-      ! is below zero, then the negative value of the hydrometeor was caused by
-      ! the mean advection, diffusion, and sedimentation terms.  The
-      ! microphysical terms (evaporation) did not cause the negative value.
-      ! There was no over-evaporation and the evaporation rate can be set to 0.
-      ! However, if the new value of the hydrometeor is greater than or equal to
-      ! 0, then the microphysical tendencies (evaporation) did cause the
-      ! hydrometeor array to have negative values.  The amount of hydrometeor
-      ! evaporated is set equal to the amount that was left-over after the
-      ! transport and sedimentation effects were added in.  The evaporation rate
-      ! is that amount divided by the timestep.  This can be viewed as the
-      ! timestep-average evaporation rate, whereas the rate previously
-      ! calculated can be viewed as the instantaneous evaporation rate.  The
-      ! amount of the hydrometeor that was over-evaporated is the amount of the
-      ! hydrometeor that is negative.  The over-evaporation rate is that amount
-      ! divided by the timestep.
-      !
-      ! It should be noted that this is important because the rain water mixing
-      ! ratio time tendency (drr/dt) due to microphysics at every level is
-      ! incorporated into the total water mixing ratio (rtm) and liquid water
-      ! potential temperature (thlm) equations.  Any artificial excess in
-      ! evaporation will artificially increase water vapor, and thus rtm, and
-      ! artificially decrease thlm (due to evaporative cooling).  This may
-      ! result in an artificial increase in cloud water.
-      !
-      ! rrainm_mc_tndcy = rrainm_cond + rrainm_auto + rrainm_accr
-      ! rtm_mc  = - rrainm_mc_tndcy
-      ! thlm_mc = ( Lv / (Cp*exner) ) * rrainm_mc_tndcy
-      !
-      ! Anyplace where rrainm drops below zero due to microphysics, there is too
-      ! much evaporation rate for the timestep, so rrainm_cond is too negative.
-      ! We must add in the over-evaporated amount of rrainm/dt to make the rate
-      ! accurate.  The over-evaporated amount is being defined as a positive
-      ! scalar, so that:  overevap_rrainm = -rrainm (where rrainm < 0) -- this
-      ! makes overevap_rrainm positive.
-      !
-      ! New cond/evap rate = rrainm_cond + overevap_rrainm/dt
-      ! (overevap_rate = overevap_rrainm/dt)
-      ! -- since rrainm_cond can only be negative (we don't allow rain droplets
-      ! to grow by condensation) and overevap_rrainm/dt can only be positive (we
-      ! define it that way), the new cond/evap rate will be less negative, which
-      ! is what we want.
-      !
-      ! To update the effects of microphysics on rtm and thl:
-      !
-      ! rtm_mc = rtm_mc - overevap_rate
-      ! thlm_mc = thlm_mc + ( Lv / (Cp*exner) ) * overevap_rate
-      !
-      ! This is done in the subroutine which calls this one.
-      !
-      ! If the hydrometeor is negative due to reasons besides over-evaporation,
-      ! the value is clipped.  This is statistically stored in the clipping
-      ! array.  This is also done in the subroutine which calls this one.
-      !
-      ! Brian Griffin.
+    ! DESCRIPTION:  Correction for the over-evaporation of a hydrometeor.
+    !
+    ! If a small amount of a hydrometeor (such as rain water) gets diffused
+    ! into an area that is very dry (such as right above the cloud top), the
+    ! hydrometeor (rain water) will have a very high rate of evaporation and
+    ! will evaporate entirely in a short amount of time.  However, the
+    ! evaporation rate is computed instantaneously at a given moment in time.
+    !  This rate is then projected over the entire length of the given
+    ! timestep.  Therefore, a high-enough rate of evaporation combined with a
+    ! small-enough amount of the hydrometeor (rain water) and a long-enough
+    ! timestep will cause the hydrometeor value (rain water mixing ratio) to
+    ! be negative by the end of the timestep.  Therefore, a correction factor
+    ! needs to be imposed on the evaporation rate so that the amount of the
+    ! hydrometeor (rain water mixing ratio) does not fall below 0.
+    !
+    ! Besides over-evaporation of a hydrometeor, other factors may come into
+    ! play that cause the value of a hydrometeor to fall below 0.  These
+    ! factors are due to the nature of implicit discretization and numerical
+    ! errors.  In a nutshell, the eddy diffusion parameter used currently in
+    ! this model smooths out the entire hydrometeor profile as a whole at
+    ! every timestep.  This smoothing may cause negative values at certain
+    ! levels.  Also, mean advection and hydrometeor sedimentation can cause
+    ! negative values to occur in the hydrometeor.  This can happen in places
+    ! where the profile abruptly goes from a large positive value to 0 (such
+    ! as at cloud top).  The nature of the discretization of taking a
+    ! derivative at these levels may cause negative values of a hydrometeor.
+    !
+    ! This subroutine is called only if a hydrometeor at a certain level
+    ! contains a negative value.  First, this subroutine uses the same methods
+    ! that the model statistical code uses in computing budget terms in order
+    ! to determine what factors effected the value of the given hydrometeor
+    ! during the timestep that was just solved for.  The mean advection,
+    ! sedimentation, and diffusion budget terms are all computed.  These three
+    ! terms are then added together to make up the total transport and
+    ! sedimentation tendency.  This tendency is then added to the total
+    ! microphysical tendency to find the overall hydrometeor tendency.  The
+    ! overall hydrometeor tendency is then multiplied by the timestep length
+    ! to find the net change in the hydrometeor over the last timestep.  This
+    ! net change is then added to the current value of the hydrometeor in
+    ! order to find the value of the hydrometeor at the previous timestep.
+    ! This method has been well tested and produces accurate results.
+    !
+    ! Once the value of the hydrometeor at the previous timestep has been
+    ! found, the net change in the hydrometeor due to ONLY mean advection,
+    ! diffusion, and sedimentation is calculated.  This net change is added to
+    ! the value of the hydrometeor at the previous timestep.  If the new value
+    ! is below zero, then the negative value of the hydrometeor was caused by
+    ! the mean advection, diffusion, and sedimentation terms.  The
+    ! microphysical terms (evaporation) did not cause the negative value.
+    ! There was no over-evaporation and the evaporation rate can be set to 0.
+    ! However, if the new value of the hydrometeor is greater than or equal to
+    ! 0, then the microphysical tendencies (evaporation) did cause the
+    ! hydrometeor array to have negative values.  The amount of hydrometeor
+    ! evaporated is set equal to the amount that was left-over after the
+    ! transport and sedimentation effects were added in.  The evaporation rate
+    ! is that amount divided by the timestep.  This can be viewed as the
+    ! timestep-average evaporation rate, whereas the rate previously
+    ! calculated can be viewed as the instantaneous evaporation rate.  The
+    ! amount of the hydrometeor that was over-evaporated is the amount of the
+    ! hydrometeor that is negative.  The over-evaporation rate is that amount
+    ! divided by the timestep.
+    !
+    ! It should be noted that this is important because the rain water mixing
+    ! ratio time tendency (drr/dt) due to microphysics at every level is
+    ! incorporated into the total water mixing ratio (rtm) and liquid water
+    ! potential temperature (thlm) equations.  Any artificial excess in
+    ! evaporation will artificially increase water vapor, and thus rtm, and
+    ! artificially decrease thlm (due to evaporative cooling).  This may
+    ! result in an artificial increase in cloud water.
+    !
+    ! rrainm_mc_tndcy = rrainm_cond + rrainm_auto + rrainm_accr
+    ! rtm_mc  = - rrainm_mc_tndcy
+    ! thlm_mc = ( Lv / (Cp*exner) ) * rrainm_mc_tndcy
+    !
+    ! Anyplace where rrainm drops below zero due to microphysics, there is too
+    ! much evaporation rate for the timestep, so rrainm_cond is too negative.
+    ! We must add in the over-evaporated amount of rrainm/dt to make the rate
+    ! accurate.  The over-evaporated amount is being defined as a positive
+    ! scalar, so that:  overevap_rrainm = -rrainm (where rrainm < 0) -- this
+    ! makes overevap_rrainm positive.
+    !
+    ! New cond/evap rate = rrainm_cond + overevap_rrainm/dt
+    ! (overevap_rate = overevap_rrainm/dt)
+    ! -- since rrainm_cond can only be negative (we don't allow rain droplets
+    ! to grow by condensation) and overevap_rrainm/dt can only be positive (we
+    ! define it that way), the new cond/evap rate will be less negative, which
+    ! is what we want.
+    !
+    ! To update the effects of microphysics on rtm and thl:
+    !
+    ! rtm_mc = rtm_mc - overevap_rate
+    ! thlm_mc = thlm_mc + ( Lv / (Cp*exner) ) * overevap_rate
+    !
+    ! This is done in the subroutine which calls this one.
+    !
+    ! If the hydrometeor is negative due to reasons besides over-evaporation,
+    ! the value is clipped.  This is statistically stored in the clipping
+    ! array.  This is also done in the subroutine which calls this one.
+    !
+    ! Brian Griffin.
 
-      use grid_class, only:  & 
-          gr,  & ! Variable(s) 
-          zm2zt ! Procedure(s)
+    use grid_class, only:  & 
+        gr,  & ! Variable(s) 
+        zm2zt ! Procedure(s)
 
-      use stats_precision, only: & 
-          time_precision ! Variable(s)
+    use stats_precision, only: & 
+        time_precision ! Variable(s)
 
-      use diffusion, only:  & 
-          diffusion_zt_lhs ! Procedure(s)
+    use diffusion, only:  & 
+        diffusion_zt_lhs ! Procedure(s)
 
-      use mean_adv, only:  & 
-          term_ma_zt_lhs ! Procedure(s)
+    use mean_adv, only:  & 
+        term_ma_zt_lhs ! Procedure(s)
 
-      use parameters_microphys, only: &
+    use parameters_microphys, only: &
         l_upwind_diff_sed ! Variable(s)
 
-      implicit none
+    implicit none
 
-      ! Input variables.
+    ! Input variables.
 
-      real, dimension(gr%nnzp), intent(in) :: &
-        xrm_tndcy, & ! Hydrometeor microphysical tendency.                      [hm_units/s]
-        wm_zt,     & ! Vertical velocity (thermo. levels).                      [m/s]
-        V_hm,      & ! Sedimentation velocity (interpolated to moment. levels). [m/s]
-        V_hmt,     & ! Sedimentation velocity (thermo. levels).                 [m/s]
-        Kr           ! Eddy diffusivity for hydrometeors (m-lev).               [m^2/s]
+    real, dimension(gr%nnzp), intent(in) :: &
+      xrm_tndcy, & ! Hydrometeor microphysical tendency.                      [hm_units/s]
+      wm_zt,     & ! Vertical velocity (thermo. levels).                      [m/s]
+      V_hm,      & ! Sedimentation velocity (interpolated to moment. levels). [m/s]
+      V_hmt,     & ! Sedimentation velocity (thermo. levels).                 [m/s]
+      Kr           ! Eddy diffusivity for hydrometeors (m-lev).               [m^2/s]
 
-      real, intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
+    real, intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
 
-      real(kind=time_precision), intent(in) :: dt  ! Timestep   [s]
+    real(kind=time_precision), intent(in) :: dt  ! Timestep   [s]
 
-      integer, intent(in) :: level  ! Vertical grid index
+    integer, intent(in) :: level  ! Vertical grid index
 
-      logical, intent(in) :: l_sed   ! Whether to add a sedimentation term
-
-
-      ! Input/output variable.
-
-      real, dimension(gr%nnzp), intent(inout) :: &
-        xrm  ! Hydrometeor.  [hm_units]
-
-      ! Output variable.
-
-      ! Excess evaporation rate.
-      real, intent(out) :: overevap_rate                 ! [hm_units/s]
-
-      ! Local variables.
-      real :: ma_subdiag   ! Term to be multiplied by xrm(k-1) in m.a. eq.
-      real :: ma_maindiag  ! Term to be multiplied by xrm(k) in m.a. eq.
-      real :: ma_supdiag   ! Term to be multiplied by xrm(k+1) in m.a. eq.
-      real :: sd_subdiag   ! Term to be multiplied by xrm(k-1) in sed. eq.
-      real :: sd_maindiag  ! Term to be multiplied by xrm(k) in sed. eq.
-      real :: sd_supdiag   ! Term to be multiplied by xrm(k+1) in sed. eq.
-      real :: df_subdiag   ! Term to be multiplied by xrm(k-1) in diff. eq.
-      real :: df_maindiag  ! Term to be multiplied by xrm(k) in diff. eq.
-      real :: df_supdiag   ! Term to be multiplied by xrm(k+1) in diff. eq.
-
-      real :: ma_tndcy     ! Mean advection tendency  [hm_units/s]
-      real :: sd_tndcy     ! Sedimentation tendency   [hm_units/s]
-      real :: df_tndcy     ! Diffusion tendency       [hm_units/s]
-
-      real :: trnsprt_sed_tndcy ! Total transport and sedimentation tendency.
-      real :: tot_tndcy         ! Overall hydrometeor total tendency.
-      real :: xrm_chge          ! Total change in hydrometeor over last t.s.
-      real :: xrm_old           ! Value of hydrometeor at previous timestep.
-      real :: xrm_chge_trsed    ! Net change in hm. due to only transport/sed.
-      real :: xrm_trsed_only    ! New hm. val. due only to transport/sed.
-
-!     real :: evap_amt          ! The actual evaporation amount over the t.s.
-!     real :: evap_rate         ! The time-averaged rate.
-      real :: overevap_amt      ! The amount of h.m. that was over-evap.
-
-      real, dimension(1:3) :: tmp
-
-      integer :: k, km1, kp1
-
-      !
-      !integer ::  &
-      !ixrm_cond_adj  ! Adjustment to xrm evaporation rate due to over-evap.
-
-      !select case( solve_type )
-      !case( "rrainm" )
-      !  ixrm_cond_adj  = irrainm_cond_adj
-      !case( "Nrm" )
-      !  ixrm_cond_adj  = iNrm_cond_adj
-      !end select
-      !
-      ! Joshua Fasching 2007
-
-      k = level
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nnzp )
+    logical, intent(in) :: l_sed   ! Whether to add a sedimentation term
 
 
-      ! Mean advection tendency component
+    ! Input/output variable.
 
-      ! The implicit (LHS) value of the mean advection component of the equation
-      ! used during the timestep that was just solved for.
-      tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
+    real, dimension(gr%nnzp), intent(inout) :: &
+      xrm  ! Hydrometeor.  [hm_units]
 
-      ma_subdiag  = -tmp(3) ! subdiagonal
-      ma_maindiag = -tmp(2) ! main diagonal
-      ma_supdiag  = -tmp(1) ! superdiagonal
+    ! Output variable.
 
-      ma_tndcy = & 
-         + ma_subdiag  * xrm(km1) & 
-         + ma_maindiag * xrm(k) & 
-         + ma_supdiag  * xrm(kp1)
+    ! Excess evaporation rate.
+    real, intent(out) :: overevap_rate                 ! [hm_units/s]
 
+    ! Local variables.
+    real :: ma_subdiag   ! Term to be multiplied by xrm(k-1) in m.a. eq.
+    real :: ma_maindiag  ! Term to be multiplied by xrm(k) in m.a. eq.
+    real :: ma_supdiag   ! Term to be multiplied by xrm(k+1) in m.a. eq.
+    real :: sd_subdiag   ! Term to be multiplied by xrm(k-1) in sed. eq.
+    real :: sd_maindiag  ! Term to be multiplied by xrm(k) in sed. eq.
+    real :: sd_supdiag   ! Term to be multiplied by xrm(k+1) in sed. eq.
+    real :: df_subdiag   ! Term to be multiplied by xrm(k-1) in diff. eq.
+    real :: df_maindiag  ! Term to be multiplied by xrm(k) in diff. eq.
+    real :: df_supdiag   ! Term to be multiplied by xrm(k+1) in diff. eq.
 
-      ! Sedimentation tendency component
+    real :: ma_tndcy     ! Mean advection tendency  [hm_units/s]
+    real :: sd_tndcy     ! Sedimentation tendency   [hm_units/s]
+    real :: df_tndcy     ! Diffusion tendency       [hm_units/s]
 
-      if ( l_sed ) then
+    real :: trnsprt_sed_tndcy ! Total transport and sedimentation tendency.
+    real :: tot_tndcy         ! Overall hydrometeor total tendency.
+    real :: xrm_chge          ! Total change in hydrometeor over last t.s.
+    real :: xrm_old           ! Value of hydrometeor at previous timestep.
+    real :: xrm_chge_trsed    ! Net change in hm. due to only transport/sed.
+    real :: xrm_trsed_only    ! New hm. val. due only to transport/sed.
 
-        if ( .not. l_upwind_diff_sed ) then
-          ! The implicit (LHS) value of the sedimentation component of the equation
-          ! used during the timestep that was just solved for.
-          tmp(1:3) = sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+!   real :: evap_amt          ! The actual evaporation amount over the t.s.
+!   real :: evap_rate         ! The time-averaged rate.
+    real :: overevap_amt      ! The amount of h.m. that was over-evap.
 
-          sd_subdiag  = -tmp(3) ! subdiagonal
-          sd_maindiag = -tmp(2) ! main diagonal
-          sd_supdiag  = -tmp(1) ! superdiagonal
+    real, dimension(1:3) :: tmp
 
-          sd_tndcy =  & 
-             + sd_subdiag  * xrm(km1) & 
-             + sd_maindiag * xrm(k) & 
-             + sd_supdiag  * xrm(kp1)
+    integer :: k, km1, kp1
 
-        else ! Upwind differencing approximation
+    !
+    !integer ::  &
+    !ixrm_cond_adj  ! Adjustment to xrm evaporation rate due to over-evap.
 
-          ! The implicit (LHS) value of the sedimentation component of the equation
-          ! used during the timestep that was just solved for.
-          tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
+    !select case( solve_type )
+    !case( "rrainm" )
+    !  ixrm_cond_adj  = irrainm_cond_adj
+    !case( "Nrm" )
+    !  ixrm_cond_adj  = iNrm_cond_adj
+    !end select
+    !
+    ! Joshua Fasching 2007
 
-          sd_maindiag = -tmp(2) ! main diagonal
-          sd_supdiag  = -tmp(1) ! superdiagonal
-
-          sd_tndcy =  & 
-             + sd_supdiag  * xrm(kp1) & 
-             + sd_maindiag * xrm(k)
-
-        end if ! ~l_upwind_diff_sed 
-
-      else
-
-        sd_tndcy = 0.0
-
-      endif
-
-
-      ! Diffusion tendency component
-
-      ! The implicit (LHS) value of the diffusion component of the equation used
-      ! during the timestep that was just solved for.
-      tmp(1:3) & 
-         = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                             gr%invrs_dzt(k), k )
-
-      df_subdiag  = -tmp(3) ! subdiagonal
-      df_maindiag = -tmp(2) ! main diagonal
-      df_supdiag  = -tmp(1) ! superdiagonal
-
-      df_tndcy =  & 
-         + df_subdiag  * xrm(km1) & 
-         + df_maindiag * xrm(k) & 
-         + df_supdiag  * xrm(kp1)
+    k = level
+    km1 = max( k-1, 1 )
+    kp1 = min( k+1, gr%nnzp )
 
 
-      ! Total transport and sedimentation tendency
-      trnsprt_sed_tndcy = ma_tndcy + df_tndcy + sd_tndcy
+    ! Mean advection tendency component
 
-      ! Overall hydrometeor tendency
-      tot_tndcy = trnsprt_sed_tndcy + xrm_tndcy(k)
+    ! The implicit (LHS) value of the mean advection component of the equation
+    ! used during the timestep that was just solved for.
+    tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
 
-      ! The net amount of change in the hydrometeor over the last timestep.
-      xrm_chge = real( tot_tndcy * dt )
+    ma_subdiag  = -tmp(3) ! subdiagonal
+    ma_maindiag = -tmp(2) ! main diagonal
+    ma_supdiag  = -tmp(1) ! superdiagonal
 
-      ! The value of xrm at the previous timestep.
-      xrm_old = xrm(k) - xrm_chge
+    ma_tndcy = & 
+      + ma_subdiag  * xrm(km1) & 
+      + ma_maindiag * xrm(k) & 
+      + ma_supdiag  * xrm(kp1)
 
-      ! The net amount of change in the hydrometeor due to only the transport
-      ! (mean advection and diffusion) and sedimentation terms.
-      xrm_chge_trsed = real( trnsprt_sed_tndcy * dt )
 
-      ! The new value of the hydrometeor at this timestep due to only
-      ! the transport and sedimentation terms.
-      xrm_trsed_only = xrm_old + xrm_chge_trsed
+    ! Sedimentation tendency component
 
-      if ( xrm_trsed_only >= 0.0 ) then
-        ! The negative value of hydrometeor (xrm) is due ONLY to microphysical
-        ! tendencies, namely the over-evaporation of xrm.
-        ! Find the actual amount of the hydrometeor that evaporated during the
-        ! timestep to make the value of xrm go to 0.
-        !evap_amt = -xrm_trsed_only
-        ! Divide by the timestep to find the actual evaporation rate.
-        !evap_rate = evap_amt / dt
-        ! The amount of the hydrometeor that was artificially excessively
-        ! evaporated.  Define as positive.
-        overevap_amt = -xrm(k)
-        ! Divide by the timestep to find the over-evaporation rate.  Define as
-        ! positive.  This rate should also be the difference between the
-        ! computed evaporation rate (xrm_tndcy) and the actual evaporation rate
-        ! (evap_rate).
-        overevap_rate = real( overevap_amt / dt )
-        ! Reset the value of the hydrometeor (xrm) to 0.
-        xrm(k) = 0.0
-      else
-        ! The negative value of hydrometeor (xrm) is due to transport (mean
-        ! advection and diffusion) and sedimentation.  Find the actual amount of
-        ! the hydrometeor that evaporated during the timestep to make the value
-        ! of xrm go to 0.  Even though the microphysical tendency portion of the
-        ! code may have computed an evaporation rate, we figure that the
-        ! transport and sedimentation terms made the value of the hydrometeor
-        ! negative, so we say that the evaporation amount and rate is 0.
-        !evap_amt = 0.0
-        !evap_rate = 0.0
-        ! The amount of the hydrometeor that was artificially excessively
-        ! evaporated.  Define as positive.  In this case, any evaporation that
-        ! was computed is considered to be over-evaporation.
-        overevap_amt = real( -xrm_tndcy(k) * dt )
-        overevap_rate = -xrm_tndcy(k)
-        ! Currently reset xrm to xrm_trsed_only.  This is done to make the
-        ! statistical budget for xrm balance correctly.  The value of xrm(k)
-        ! will still be negative at this this point.  However, it will be less
-        ! negative because it has been adjusted for over-evaporation.  The
-        ! remaining negative value of hydrometeor xrm, which is due to transport
-        ! and sedimentation, will be zeroed out in clipping in the subroutine
-        ! that calls this one.
-        xrm(k) = xrm_trsed_only
-      endif
+    if ( l_sed ) then
 
-      return
-    end subroutine adj_microphys_tndcy
+      if ( .not. l_upwind_diff_sed ) then
+        ! The implicit (LHS) value of the sedimentation component of the equation
+        ! used during the timestep that was just solved for.
+        tmp(1:3) = sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+
+        sd_subdiag  = -tmp(3) ! subdiagonal
+        sd_maindiag = -tmp(2) ! main diagonal
+        sd_supdiag  = -tmp(1) ! superdiagonal
+
+        sd_tndcy =  & 
+          + sd_subdiag  * xrm(km1) & 
+          + sd_maindiag * xrm(k) & 
+          + sd_supdiag  * xrm(kp1)
+
+      else ! Upwind differencing approximation
+
+        ! The implicit (LHS) value of the sedimentation component of the equation
+        ! used during the timestep that was just solved for.
+        tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
+
+        sd_maindiag = -tmp(2) ! main diagonal
+        sd_supdiag  = -tmp(1) ! superdiagonal
+
+        sd_tndcy =  & 
+          + sd_supdiag  * xrm(kp1) & 
+          + sd_maindiag * xrm(k)
+
+      end if ! ~l_upwind_diff_sed 
+
+    else
+
+      sd_tndcy = 0.0
+
+    end if
+
+
+    ! Diffusion tendency component
+
+    ! The implicit (LHS) value of the diffusion component of the equation used
+    ! during the timestep that was just solved for.
+    tmp(1:3) & 
+      = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+                          gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                          gr%invrs_dzt(k), k )
+
+    df_subdiag  = -tmp(3) ! subdiagonal
+    df_maindiag = -tmp(2) ! main diagonal
+    df_supdiag  = -tmp(1) ! superdiagonal
+
+    df_tndcy =  & 
+      + df_subdiag  * xrm(km1) & 
+      + df_maindiag * xrm(k) & 
+      + df_supdiag  * xrm(kp1)
+
+
+    ! Total transport and sedimentation tendency
+    trnsprt_sed_tndcy = ma_tndcy + df_tndcy + sd_tndcy
+
+    ! Overall hydrometeor tendency
+    tot_tndcy = trnsprt_sed_tndcy + xrm_tndcy(k)
+
+    ! The net amount of change in the hydrometeor over the last timestep.
+    xrm_chge = real( tot_tndcy * dt )
+
+    ! The value of xrm at the previous timestep.
+    xrm_old = xrm(k) - xrm_chge
+
+    ! The net amount of change in the hydrometeor due to only the transport
+    ! (mean advection and diffusion) and sedimentation terms.
+    xrm_chge_trsed = real( trnsprt_sed_tndcy * dt )
+
+    ! The new value of the hydrometeor at this timestep due to only
+    ! the transport and sedimentation terms.
+    xrm_trsed_only = xrm_old + xrm_chge_trsed
+
+    if ( xrm_trsed_only >= 0.0 ) then
+      ! The negative value of hydrometeor (xrm) is due ONLY to microphysical
+      ! tendencies, namely the over-evaporation of xrm.
+      ! Find the actual amount of the hydrometeor that evaporated during the
+      ! timestep to make the value of xrm go to 0.
+      !evap_amt = -xrm_trsed_only
+      ! Divide by the timestep to find the actual evaporation rate.
+      !evap_rate = evap_amt / dt
+      ! The amount of the hydrometeor that was artificially excessively
+      ! evaporated.  Define as positive.
+      overevap_amt = -xrm(k)
+      ! Divide by the timestep to find the over-evaporation rate.  Define as
+      ! positive.  This rate should also be the difference between the
+      ! computed evaporation rate (xrm_tndcy) and the actual evaporation rate
+      ! (evap_rate).
+      overevap_rate = real( overevap_amt / dt )
+      ! Reset the value of the hydrometeor (xrm) to 0.
+      xrm(k) = 0.0
+    else
+      ! The negative value of hydrometeor (xrm) is due to transport (mean
+      ! advection and diffusion) and sedimentation.  Find the actual amount of
+      ! the hydrometeor that evaporated during the timestep to make the value
+      ! of xrm go to 0.  Even though the microphysical tendency portion of the
+      ! code may have computed an evaporation rate, we figure that the
+      ! transport and sedimentation terms made the value of the hydrometeor
+      ! negative, so we say that the evaporation amount and rate is 0.
+      !evap_amt = 0.0
+      !evap_rate = 0.0
+      ! The amount of the hydrometeor that was artificially excessively
+      ! evaporated.  Define as positive.  In this case, any evaporation that
+      ! was computed is considered to be over-evaporation.
+      overevap_amt = real( -xrm_tndcy(k) * dt )
+      overevap_rate = -xrm_tndcy(k)
+      ! Currently reset xrm to xrm_trsed_only.  This is done to make the
+      ! statistical budget for xrm balance correctly.  The value of xrm(k)
+      ! will still be negative at this this point.  However, it will be less
+      ! negative because it has been adjusted for over-evaporation.  The
+      ! remaining negative value of hydrometeor xrm, which is due to transport
+      ! and sedimentation, will be zeroed out in clipping in the subroutine
+      ! that calls this one.
+      xrm(k) = xrm_trsed_only
+    end if
+
+    return
+  end subroutine adj_microphys_tndcy
 
 !===============================================================================
 
-    subroutine cleanup_microphys( )
+  subroutine cleanup_microphys( )
 
-      ! Description:
-      !   De-allocate arrays used by the microphysics
-      ! References:
-      !   None
-      !-------------------------------------------------------------------------
+    ! Description:
+    !   De-allocate arrays used by the microphysics
+    ! References:
+    !   None
+    !-------------------------------------------------------------------------
 
-      implicit none
+    implicit none
 
-      intrinsic :: allocated
+    intrinsic :: allocated
 
-      ! ---- Begin Code ----
+    ! ---- Begin Code ----
 
-      if ( allocated( hydromet_list ) ) then
-        deallocate( hydromet_list )
-      end if
+    if ( allocated( hydromet_list ) ) then
+      deallocate( hydromet_list )
+    end if
 
-      if ( allocated( l_hydromet_sed ) ) then
-        deallocate( l_hydromet_sed )
-      end if
+    if ( allocated( l_hydromet_sed ) ) then
+      deallocate( l_hydromet_sed )
+    end if
 
-      return
-    end subroutine cleanup_microphys
+    return
+  end subroutine cleanup_microphys
 !===============================================================================
 
-  end module microphys_driver
+end module microphys_driver
