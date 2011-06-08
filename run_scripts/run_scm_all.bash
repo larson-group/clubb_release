@@ -11,6 +11,8 @@
 #######################################################################
 
 NIGHTLY=false
+SHORT_CASES=false
+
 OUTPUT_DIR="/home/`whoami`/nightly_tests/output"
 
 # Figure out the directory where the script is located
@@ -34,20 +36,24 @@ eval set -- "$TEMP"
 
 while true ; do
 	case "$1" in
-		-n|--nightly) # Use nightly mode
+	-n|--nightly) # Use nightly mode
             NIGHTLY=true
             shift ;;
         -h|--help) # Print the help message
             echo -e "Usage: run_scm_all.bash [OPTION]..."
             echo -e "\t-n, --nightly\t\t\tRun in nightly mode"
+	    echo -e "\t-c, --short-cases\t\tRun short cases. This will omit the gabls2, cloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12, and twp_ice cases"
             echo -e "\t-h, --help\t\t\tPrints this help message"
 
             # Since the options for run_scm.bash are also valid, print those too:
             ./run_scm.bash --help | grep -v "Usage: run_scm.bash" | grep -v "\-\-help"
 
             exit 1 ;;
-		--) shift ; break ;;
-		*) echo "Something bad happened!" ; exit 1 ;;
+	-c|--short-cases) # Omit the longest cases to perform a shorter run
+	    SHORT_CASES=true
+	    shift ;;
+	--) shift ; break ;;
+	*) echo "Something bad happened!" ; exit 1 ;;
 	esac
 done
 
@@ -55,21 +61,61 @@ done
 declare -a RUN_CASE
 declare -a EXIT_CODES
 
-a=0
-while read line
-do
-    # If the line is not commented out (does not start with '!')
-    if [[ $line != !* ]] && [[ ! -z $line ]] ; then
-        RUN_CASE[$a]=$line
-        a=$(($a+1));
-    fi
-done < "RUN_CASES"
+if [ $SHORT_CASES==true ] ; then # Run only short cases
+    # Remove -c and --short-cases from the options so they aren't
+    # passed to the run_scm.bash script
+    OPTIONS=${OPTIONS#-c}
+    OPTIONS=${OPTIONS#--short-cases}
+    SHORT_CASES=true
+
+    declare -a IGNORE_CASES
+
+    # Populate the list of cases to ingore here. These ignored cases are the
+    # cases that take the longest to run.
+    IGNORE_CASES[0]=gabls2
+    IGNORE_CASES[1]=cloud_feedback_s6
+    IGNORE_CASES[2]=cloud_feedback_s11
+    IGNORE_CASES[3]=cloud_feedback_s12
+    IGNORE_CASES[4]=twp_ice
+
+    a=0
+    while read line
+    do
+	# If the line is not commented out (does not start with '!')
+	if [[ $line != !* ]] && [[ ! -z $line ]] ; then
+	    # Check to see if this case should be ignored
+	    ignore=0
+        for (( x=0; x<${#IGNORE_CASES[@]}; x++ )); do
+            if [ $line == ${IGNORE_CASES[$x]} ] ; then
+                ignore=1
+            fi
+        done
+        
+        # If the case was found in IGNORE_CASES, don't add it.
+        if [ $ignore == 0 ]; then
+		RUN_CASE[$a]=$line
+		a=$(($a+1));
+	    fi
+	fi
+    done < "RUN_CASES"
+else # Populate the RUN_CASE array normally
+    a=0
+    while read line
+    do
+	# If the line is not commented out (does not start with '!')
+	if [[ $line != !* ]] && [[ ! -z $line ]] ; then
+	    RUN_CASE[$a]=$line
+	    a=$(($a+1));
+	fi
+    done < "RUN_CASES"
+fi
 
 # Initialize all elements in EXIT_CODES to 0
 # There will be one EXIT_CODE element for each RUN_CASE
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
     EXIT_CODES[$x]=0
 done
+
 
 if [ $NIGHTLY == true ] ; then
     echo -e "\nPerforming nightly run...\n"
@@ -85,6 +131,8 @@ if [ $NIGHTLY == true ] ; then
 
     mv $OUTPUT_DIR/CLUBB_current/*.ctl $OUTPUT_DIR/CLUBB_previous/
     mv $OUTPUT_DIR/CLUBB_current/*.dat $OUTPUT_DIR/CLUBB_previous/
+elif [ $SHORT_CASES == true ] ; then
+    echo -e "\nPerforming short-cases run\n"
 else
     echo -e "\nPerforming standard run\n"
 fi
@@ -93,7 +141,7 @@ fi
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); 
 do
     echo -e "Running ${RUN_CASE[$x]}"
-    
+
     if [ $NIGHTLY == true ] ; then
       RESULT=`./run_scm.bash $OPTIONS ${RUN_CASE[$x]} 2>&1`
       echo -e "$RESULT"
