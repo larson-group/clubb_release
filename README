@@ -1311,6 +1311,8 @@ _zm = interpolated to the       E.g., rho_zm is the density on the
       momentum grid.                momentum grid.
 _zt = interpolated to the       E.g., wp2_zt is wp2 on the
       thermodynamic grid.           thermodynamic grid
+_sfc= ground or ocean surface  E.g., T_sfc is the temperature of 
+				    the ground or ocean
 
 -------------------------------------------------------------------------                            
 - (7.2) Some important variables in CLUBB:
