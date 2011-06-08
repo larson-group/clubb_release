@@ -364,11 +364,11 @@ module mg_micro_driver_module
     rsnowm(2:nnzp) = real( flip( dble(rsnowm_flip(1:nnzp-1) ), nnzp-1 ) )
       
     do i = 1, hydromet_dim, 1      
-      hydromet_mc(2:nnzp, i) = hydromet_mc_flip(nnzp-1:1:-1, i)
+      hydromet_mc(2:nnzp, i) = real( hydromet_mc_flip(nnzp-1:1:-1, i) )
     end do
     
     ! Update thetal based on absolute temperature
-    T_in_K_new = T_in_K + (tlat/Cp) * real(dt)
+    T_in_K_new = T_in_K + (tlat/Cp) * real( dt )
     
     ! TODO: To remove compile warnings:
     unused_out01 = T_in_K_new(1:nnzp-1)
