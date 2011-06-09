@@ -29,7 +29,7 @@ OPTIONS=$*
 # Note that we use `"$@"' to let each command-line parameter expand to a 
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o :nh --long nightly,help -n 'run_scm_all.bash' -- "$@"`
+TEMP=`getopt -o :nhc --long nightly,help,short-cases -n 'run_scm_all.bash' -- "$@"`
 
 # Note the quotes around `$TEMP': they are essential!
 eval set -- "$TEMP"
@@ -61,7 +61,7 @@ done
 declare -a RUN_CASE
 declare -a EXIT_CODES
 
-if [ $SHORT_CASES==true ] ; then # Run only short cases
+if [ $SHORT_CASES == true ] ; then # Run only short cases
     # Remove -c and --short-cases from the options so they aren't
     # passed to the run_scm.bash script
     OPTIONS=${OPTIONS#-c}
