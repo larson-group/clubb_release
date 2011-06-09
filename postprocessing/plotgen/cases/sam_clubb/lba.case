@@ -164,7 +164,7 @@
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x1x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'LBA_16x1x128_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -172,7 +172,7 @@
        ]},
        {'plotTitle' => 'Cloud Droplet Number Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x1x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'LBA_16x1x128_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -180,7 +180,7 @@
        ]},
        {'plotTitle' => 'Graupel Mixing Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QG / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x1x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QG / 1000', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'LBA_16x1x128_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QG / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -188,7 +188,7 @@
        ]},
        {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QI / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x1x128_100m_noprbuoy.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QI / 1000', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
           {'filename' => 'LBA_16x1x128_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QI / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
