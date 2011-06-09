@@ -2169,6 +2169,8 @@ module microphys_driver
         iNrm_ma, & 
         iNrm_sd, & 
         iNrm_dff, & 
+        iNcm_ma, &
+        iNcm_dff, &
         iricem_ma, & 
         iricem_sd, & 
         iricem_dff, & 
@@ -2269,6 +2271,10 @@ module microphys_driver
       ixrm_ma  = irgraupelm_ma
       ixrm_sd  = irgraupelm_sd
       ixrm_dff = irgraupelm_dff
+    case ( "Ncm" )
+      ixrm_ma  = iNcm_ma
+      ixrm_sd  = 0
+      ixrm_dff = iNcm_dff
     case default
       ixrm_ma  = 0
       ixrm_sd  = 0
