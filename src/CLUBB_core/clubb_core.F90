@@ -230,10 +230,10 @@ module clubb_core
       time_precision ! Variable(s)
 
     use error_code, only :  & 
-      clubb_var_equals_NaN, & ! Variable(s)
-      clubb_var_out_of_bounds, & 
-      lapack_error,  & ! Procedure(s)
-      clubb_at_least_debug_level
+      clubb_no_error ! Constant(s)
+
+    use error_code, only :  & 
+      clubb_at_least_debug_level ! Procedure(s)
 
     use Skw_module, only:  & 
       Skw_func ! Procedure
@@ -763,7 +763,7 @@ module clubb_core
       ! gracefully.
       ! Joshua Fasching March 2008
 
-      if ( err_code == clubb_var_equals_NaN ) then
+      if ( err_code /= clubb_no_error ) then
         write(fstderr,*) "At grid level = ",k
         return
       end if
@@ -824,7 +824,7 @@ module clubb_core
         ! gracefully.
         ! Joshua Fasching March 2008
 
-        if ( err_code == clubb_var_equals_NaN ) then
+        if ( err_code /= clubb_no_error ) then
           write(fstderr,*) "At grid level = ",k
           return
         end if
@@ -976,10 +976,14 @@ module clubb_core
                            err_code, &                          ! intent(inout)
                            Lscale_pert_1 )                      ! intent(out)
 
+      if ( err_code /= clubb_no_error ) return
+
       call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, &         ! intent(in)
                            err_code, &                          ! intent(inout)
                            Lscale_pert_2 )                      ! intent(out)
+
+      if ( err_code /= clubb_no_error ) return
     end if ! l_avg_Lscale
 
     ! ********** NOTE: **********
@@ -997,7 +1001,7 @@ module clubb_core
     ! Subroutine may produce NaN values, and if so, exit
     ! gracefully.
     ! Joshua Fasching March 2008
-    if ( err_code == clubb_var_equals_NaN ) return
+    if ( err_code /= clubb_no_error ) return
 
 
     !----------------------------------------------------------------
@@ -1077,7 +1081,7 @@ module clubb_core
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
       ! Joshua Fasching March 2008
-      if( err_code == clubb_var_equals_NaN ) return
+      if ( err_code /= clubb_no_error ) return
 
       ! Update surface stats
       if ( l_stats_samp ) then
@@ -1158,8 +1162,7 @@ module clubb_core
     ! gracefully.
     ! Joshua Fasching March 2008
 
-    if ( lapack_error( err_code ) ) return
-
+    if ( err_code /= clubb_no_error ) return
 
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
@@ -1205,7 +1208,7 @@ module clubb_core
     ! Changed from a logical flag to an integer indicating nature of
     ! error.
     ! Joshua Fasching March 2008
-    if ( lapack_error( err_code ) ) return
+    if ( err_code /= clubb_no_error ) return
 
 
     !----------------------------------------------------------------
@@ -1243,7 +1246,7 @@ module clubb_core
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.
     ! Joshua Fasching March 2008
-    if ( lapack_error( err_code ) ) return
+    if ( err_code /= clubb_no_error ) return
 
 
     !----------------------------------------------------------------
@@ -1281,7 +1284,7 @@ module clubb_core
     ! Wrapped LAPACK procedures may report errors, and if so, exit
     ! gracefully.
     ! Joshua Fasching March 2008
-    if ( lapack_error( err_code ) ) return
+    if ( err_code /= clubb_no_error ) return
 
 
     !#######################################################################
@@ -1475,7 +1478,7 @@ module clubb_core
       fstderr  ! Variable(s)
 
     use error_code, only:  & 
-      clubb_var_out_of_bounds ! Variable(s)
+      clubb_no_error ! Costant(s)
 
     use model_flags, only: & 
       setup_model_flags, & ! Subroutine
@@ -1661,7 +1664,7 @@ module clubb_core
 
     ! Error Report
     ! Joshua Fasching February 2008
-    if ( err_code == clubb_var_out_of_bounds ) then
+    if ( err_code /= clubb_no_error ) then
 
       write(fstderr,*) "Error in setup_clubb_core"
 

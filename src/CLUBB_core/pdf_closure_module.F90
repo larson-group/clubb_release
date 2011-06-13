@@ -98,7 +98,10 @@ module pdf_closure_module
 #endif
 
     use error_code, only:  & 
-      clubb_var_equals_NaN,  & ! Variable(s)
+      clubb_var_equals_NaN,  & ! Constant(s)
+      clubb_no_error
+
+    use error_code, only:  & 
       clubb_at_least_debug_level ! Procedure(s)
 
     use stats_variables, only: &
@@ -293,6 +296,8 @@ module pdf_closure_module
     else
       l_corr_calc = .false.
     end if
+
+    err_code = clubb_no_error ! Initialize to the value for no errors
 
     ! If there is no velocity, then use single delta fnc. as pdf
     ! Otherwise width parameters (e.g. varnce_w1, varnce_w2, etc.) are non-zero.
@@ -878,6 +883,7 @@ module pdf_closure_module
 
 
     if ( clubb_at_least_debug_level( 2 ) ) then
+
       call pdf_closure_check & 
            ( wp4, wprtp2, wp2rtp, wpthlp2, & 
              wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
