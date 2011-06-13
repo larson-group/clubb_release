@@ -55,8 +55,8 @@ module coamps_micro_driver_module
     use stats_type, only: stat_update_var_pt ! Procedure(s)
 
     use stats_variables, only: zt, l_stats_samp,  & ! Variable(s)
-        imean_vol_rad_rain, & 
-        imean_vol_rad_cloud, & 
+        im_vol_rad_rain, & 
+        im_vol_rad_cloud, & 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration and snowslope
        isnowslope, & 
@@ -887,9 +887,9 @@ module coamps_micro_driver_module
       if ( l_stats_samp ) then
         ! Mean volume radius of rain and cloud droplets
         do k=2,kk+1
-          call stat_update_var_pt( imean_vol_rad_rain, k, &
+          call stat_update_var_pt( im_vol_rad_rain, k, &
                rvr(1,1,k-1) / 100.0, zt )
-          call stat_update_var_pt( imean_vol_rad_cloud, k, &
+          call stat_update_var_pt( im_vol_rad_cloud, k, &
                rvc(1,1,k-1) / 100.0, zt )
         end do
 

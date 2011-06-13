@@ -115,7 +115,7 @@ module KK_microphys_module
     use stats_variables, only: & 
         zt,                 & ! Variable(s)
 !        l_stats_samp,       &
-        imean_vol_rad_rain, &
+        im_vol_rad_rain, &
         irrainm_cond,       &
         irrainm_auto,       &
         irrainm_accr,       &
@@ -746,7 +746,7 @@ module KK_microphys_module
        if ( l_stats_samp ) then
 
           ! Rain drop mean volume radius.
-          call stat_update_var_pt( imean_vol_rad_rain, k, mean_vol_rad(k), zt )
+          call stat_update_var_pt( im_vol_rad_rain, k, mean_vol_rad(k), zt )
 
           ! Explicit contributions to rrainm.
           call stat_update_var_pt( irrainm_cond, k, rrainm_cond(k), zt )

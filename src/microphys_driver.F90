@@ -995,7 +995,7 @@ module microphys_driver
       iVsnow, & 
       iVice, & 
       iVgraupel, & 
-      irain_rate, & 
+      irain_rate_zt, & 
       iFprec, & 
       irrainm_bt, & 
       irrainm_mc, & 
@@ -1006,7 +1006,7 @@ module microphys_driver
       iNrm_cond_adj, & 
       iNrm_cl, & 
       iNcnm, & 
-      irrainm, & 
+      irrainm_zt, & 
       irsnowm, & 
       iricem, & 
       irgraupelm, & 
@@ -1019,8 +1019,8 @@ module microphys_driver
       irsnowm_bt, & 
       irsnowm_mc, & 
       irsnowm_cl, & 
-      irain, & 
-      irain_flux, & 
+      irain_rate_sfc, & 
+      irain_flux_sfc, & 
       irrainm_sfc
 
     use stats_variables, only: & 
@@ -1790,7 +1790,7 @@ module microphys_driver
       call stat_update_var( iNcnm, Ncnm, zt )
 
       if ( iirrainm > 0 ) then
-        call stat_update_var( irrainm, hydromet(:,iirrainm), zt )
+        call stat_update_var( irrainm_zt, hydromet(:,iirrainm), zt )
       end if
 
       if ( iirsnowm > 0 ) then
@@ -1829,7 +1829,7 @@ module microphys_driver
       ! levels.  -Brian
       ! The absolute value of Vrr is taken because rainfall rate
       ! is a scalar quantity, and is therefore positive.
-      call stat_update_var( irain_rate,  & 
+      call stat_update_var( irain_rate_zt,  & 
          ( hydromet(:,iirrainm)  & 
            * zm2zt( abs( hydromet_vel(:,iirrainm) ) ) ) & 
            * ( rho / rho_lw ) & 
@@ -1849,13 +1849,13 @@ module microphys_driver
 
       ! Store values of surface fluxes for statistics
       ! See notes above.
-      call stat_update_var_pt( irain, 1,  & 
+      call stat_update_var_pt( irain_rate_sfc, 1,  & 
            ( hydromet(2,iirrainm) & 
              * abs( zm2zt( hydromet_vel(:,iirrainm), 2 ) ) ) & 
              * ( rho(2) / rho_lw ) & 
              * real( sec_per_day * 1000.0 ), sfc )
 
-      call stat_update_var_pt( irain_flux, 1, & 
+      call stat_update_var_pt( irain_flux_sfc, 1, & 
            ( zt2zm( hydromet(:,iirrainm), 1 )  & 
              * abs( hydromet_vel(1,iirrainm) ) ) * ( rho_zm(1) / rho_lw )  & 
              * rho_lw * Lv, sfc )

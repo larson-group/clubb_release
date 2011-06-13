@@ -1,7 +1,7 @@
 &statsnl
 vars_zt =
 'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3',
-'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
+'um', 'vm', 'wm_zt', 'rrainm_zt', 'Nrm',
 'Ncm', 'rgraupelm', 'ricem', 'Nim',
 'rsnowm', 'Nsnowm',
 ''
@@ -13,6 +13,6 @@ vars_zm =
 
 vars_sfc =
 'wp2_vert_avg', 'lwp', 'swp', 'iwp', 'rwp',
-'rain', 'morr_rain_rate',
+'rain_rate_sfc', 'morr_rain_rate',
 ''
 /

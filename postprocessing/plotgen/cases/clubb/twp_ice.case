@@ -101,10 +101,10 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'V2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm_zt [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qr', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
@@ -151,7 +151,7 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'lwpmean ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Total precip fallout rate from Morrison scheme', 'axisLabel' => 'morr\_rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       {'plotTitle' => 'Total precip fallout rate from Morrison scheme', 'axisLabel' => 'morr\_rain\_rate\_zt [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
          {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'PRECIP', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'}, 
          {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'morr_rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}

@@ -75,9 +75,9 @@ module stats_zt
         ised_rcm, & 
         irsat, & 
         irsati, & 
-        irrainm, & 
+        irrainm_zt, & 
         iNrm, & 
-        irain_rate, & 
+        irain_rate_zt, & 
         iAKm, & 
         iLH_AKm, & 
         iAKstd, & 
@@ -91,8 +91,8 @@ module stats_zt
         imass_ice_cryst, & 
         ircm_icedfs, & 
         iu_T_cm, & 
-        imean_vol_rad_rain, & 
-        imean_vol_rad_cloud, & 
+        im_vol_rad_rain, & 
+        im_vol_rad_cloud, & 
         irsnowm, & 
         irgraupelm, & 
         iricem
@@ -141,10 +141,10 @@ module stats_zt
 
     ! Monotonic flux limiter diagnostic variables    
     use stats_variables, only: &
-        ithlm_mfl_lower_lim, &
-        ithlm_mfl_upper_lim, &
-        irtm_mfl_lower_lim, &
-        irtm_mfl_upper_lim, &
+        ithlm_mfl_min, &
+        ithlm_mfl_max, &
+        irtm_mfl_min, &
+        irtm_mfl_max, &
         ithlm_enter_mfl, &
         ithlm_exit_mfl, &
         ithlm_old, &
@@ -406,8 +406,8 @@ module stats_zt
     isnowslope      = 0  ! Adam Smith, 22 April 2008
     ised_rcm        = 0  ! Brian
     irsat           = 0  ! Brian
-    irrainm         = 0  ! Brian
-    irain_rate      = 0  ! Brian
+    irrainm_zt      = 0  ! Brian
+    irain_rate_zt   = 0  ! Brian
     iAKm            = 0  ! analytic Kessler.  Vince Larson 22 May 2005
     iLH_AKm         = 0  ! LH Kessler.  Vince Larson 22 May 2005
     iAKstd          = 0
@@ -430,8 +430,8 @@ module stats_zt
     iu_T_cm         = 0
 
 ! From K&K microphysics
-    imean_vol_rad_rain  = 0  ! Brian
-    imean_vol_rad_cloud = 0
+    im_vol_rad_rain  = 0  ! Brian
+    im_vol_rad_cloud = 0
 
 ! From Morrison microphysics
     ieff_rad_cloud   = 0
@@ -466,10 +466,10 @@ module stats_zt
     ithlm_tacl    = 0
     ithlm_cl      = 0 ! Josh
 
-    ithlm_mfl_lower_lim = 0
-    ithlm_mfl_upper_lim = 0
-    irtm_mfl_lower_lim = 0
-    irtm_mfl_upper_lim = 0
+    ithlm_mfl_min = 0
+    ithlm_mfl_max = 0
+    irtm_mfl_min = 0
+    irtm_mfl_max = 0
     ithlm_enter_mfl = 0
     ithlm_exit_mfl = 0
     ithlm_old = 0
@@ -796,7 +796,7 @@ module stats_zt
         k = k + 1
       case ('thlm_forcing')
         ithlm_forcing = k
-        call stat_assign( ithlm_forcing, "thlm_f", & 
+        call stat_assign( ithlm_forcing, "thlm_forcing", & 
              "thlm budget: thetal forcing [K s^{-1}]", "K s^{-1}", zt )
         k = k + 1
       case ('thlm_mc')
@@ -806,7 +806,7 @@ module stats_zt
         k = k + 1
       case ('rtm_forcing')
         irtm_forcing = k
-        call stat_assign( irtm_forcing, "rtm_f", & 
+        call stat_assign( irtm_forcing, "rtm_forcing", & 
              "rtm budget: rt forcing [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
@@ -830,15 +830,15 @@ module stats_zt
              "kg/kg/s", zt )
         k = k + 1
 
-      case ('thlm_mfl_lower_lim')
-        ithlm_mfl_lower_lim = k
-        call stat_assign( ithlm_mfl_lower_lim, "thlm_mfl_min", & 
+      case ('thlm_mfl_min')
+        ithlm_mfl_min = k
+        call stat_assign( ithlm_mfl_min, "thlm_mfl_min", & 
              "Minimum allowable thlm [K]", "K", zt )
         k = k + 1
 
-      case ('thlm_mfl_upper_lim')
-        ithlm_mfl_upper_lim = k
-        call stat_assign( ithlm_mfl_upper_lim, "thlm_mfl_max", & 
+      case ('thlm_mfl_max')
+        ithlm_mfl_max = k
+        call stat_assign( ithlm_mfl_max, "thlm_mfl_max", & 
              "Maximum allowable thlm [K]", "K", zt )
         k = k + 1
 
@@ -862,19 +862,19 @@ module stats_zt
 
       case ('thlm_without_ta')
         ithlm_without_ta = k
-        call stat_assign( ithlm_without_ta, "thlm_wo_ta", & 
+        call stat_assign( ithlm_without_ta, "thlm_without_ta", & 
              "Thlm without turbulent advection contribution [K]", "K", zt )
         k = k + 1    
 
-      case ('rtm_mfl_lower_lim')
-        irtm_mfl_lower_lim = k
-        call stat_assign( irtm_mfl_lower_lim, "rtm_mfl_min", & 
+      case ('rtm_mfl_min')
+        irtm_mfl_min = k
+        call stat_assign( irtm_mfl_min, "rtm_mfl_min", & 
              "Minimum allowable rtm  [kg/kg]", "kg/kg", zt )
         k = k + 1
 
-      case ('rtm_mfl_upper_lim')
-        irtm_mfl_upper_lim = k
-        call stat_assign( irtm_mfl_upper_lim, "rtm_mfl_max", & 
+      case ('rtm_mfl_max')
+        irtm_mfl_max = k
+        call stat_assign( irtm_mfl_max, "rtm_mfl_max", & 
              "Maximum allowable rtm  [kg/kg]", "kg/kg", zt )
         k = k + 1
 
@@ -898,7 +898,7 @@ module stats_zt
 
       case ('rtm_without_ta')
         irtm_without_ta = k
-        call stat_assign( irtm_without_ta, "rtm_wo_ta", & 
+        call stat_assign( irtm_without_ta, "rtm_without_ta", & 
              "Rtm without turbulent advection contribution  [kg/kg]", "kg/kg", zt )
         k = k + 1   
 
@@ -1047,9 +1047,9 @@ module stats_zt
              "Saturation mixing ratio over ice [kg/kg]", "kg/kg", zt )
         k = k + 1
 
-      case ('rrainm')           ! Brian
-        irrainm = k
-        call stat_assign( irrainm, "rrainm", & 
+      case ('rrainm_zt')           ! Brian
+        irrainm_zt = k
+        call stat_assign( irrainm_zt, "rrainm_zt", & 
              "Rain water mixing ratio [kg/kg]", "kg/kg", zt )
         k = k + 1
 
@@ -1078,15 +1078,15 @@ module stats_zt
              "num/kg", zt )
         k = k + 1
 
-      case ('mean_vol_rad_rain')  ! Brian
-        imean_vol_rad_rain = k
-        call stat_assign( imean_vol_rad_rain, "mvrr", & 
+      case ('m_vol_rad_rain')  ! Brian
+        im_vol_rad_rain = k
+        call stat_assign( im_vol_rad_rain, "mvrr", & 
              "Rain drop mean volume radius [m]", "m", zt )
         k = k + 1
 
-      case ('mean_vol_rad_cloud')
-        imean_vol_rad_cloud = k
-        call stat_assign( imean_vol_rad_cloud, "mvrc", & 
+      case ('m_vol_rad_cloud')
+        im_vol_rad_cloud = k
+        call stat_assign( im_vol_rad_cloud, "m_vol_rad_cloud", & 
              "Cloud drop mean volume radius [m]", "m", zt )
         k = k + 1
 
@@ -1121,10 +1121,10 @@ module stats_zt
              "Graupel effective volume radius [microns]", "microns", zt )
         k = k + 1
 
-      case ('rain_rate')     ! Brian
-        irain_rate = k
+      case ('rain_rate_zt')     ! Brian
+        irain_rate_zt = k
 
-        call stat_assign( irain_rate, "rain_rate", & 
+        call stat_assign( irain_rate_zt, "rain_rate_zt", & 
              "Rain rate [mm/day]", "mm/day", zt )
         k = k + 1
 

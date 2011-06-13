@@ -174,14 +174,14 @@ module stats_zm
         irtpthlp_sf
     
     use stats_variables, only: & 
-        iwpthlp_enter_mfl, & ! Variable(s)
+        iwpthlp_entermfl, & ! Variable(s)
         iwpthlp_exit_mfl, &
-        iwpthlp_mfl_lower_lim, &
-        iwpthlp_mfl_upper_lim, &
+        iwpthlp_mfl_min, &
+        iwpthlp_mfl_max, &
         iwprtp_enter_mfl, &
         iwprtp_exit_mfl, &
-        iwprtp_mfl_lower_lim, &
-        iwprtp_mfl_upper_lim
+        iwprtp_mfl_min, &
+        iwprtp_mfl_max
 
     use stats_variables, only: & 
       iwm_zm ! Variable
@@ -206,8 +206,8 @@ module stats_zm
       itp2_mellor_2, &
       isptp_mellor_1, &
       isptp_mellor_2, &
-      icorr_s_t_mellor_1, &
-      icorr_s_t_mellor_2, &
+      icorr_st_mellor1, &
+      icorr_st_mellor2, &
       iSkw_velocity
 
     use stats_type, only: & 
@@ -387,12 +387,12 @@ module stats_zm
     irtpthlp_sf  = 0
 
     !Monatonic flux limiter diagnostic output
-    iwpthlp_mfl_lower_lim = 0
-    iwpthlp_mfl_upper_lim = 0
-    iwpthlp_enter_mfl = 0
+    iwpthlp_mfl_min = 0
+    iwpthlp_mfl_max = 0
+    iwpthlp_entermfl = 0
     iwpthlp_exit_mfl = 0
-    iwprtp_mfl_lower_lim = 0
-    iwprtp_mfl_upper_lim = 0
+    iwprtp_mfl_min = 0
+    iwprtp_mfl_max = 0
     iwprtp_enter_mfl = 0
     iwprtp_exit_mfl = 0
 
@@ -402,8 +402,8 @@ module stats_zm
     isptp_mellor_1 = 0
     isptp_mellor_2 = 0
 
-    icorr_s_t_mellor_1 = 0
-    icorr_s_t_mellor_2 = 0
+    icorr_st_mellor1 = 0
+    icorr_st_mellor2 = 0
 
     ! Skewness velocity
     iSkw_velocity = 0
@@ -1266,51 +1266,51 @@ module stats_zm
              "vp2 budget: vp2 surface variance [m^2/s^3]", "m^2/s^3", zm )
         k = k + 1
 
-      case ('wpthlp_enter_mfl')
-        iwpthlp_enter_mfl = k
-        call stat_assign( iwpthlp_enter_mfl, "wpthlp_in_mfl", & 
+      case ('wpthlp_entermfl')
+        iwpthlp_entermfl = k
+        call stat_assign( iwpthlp_entermfl, "wpthlp_entermfl", & 
              "Wpthlp entering flux limiter [(m K)/s]", "(m K)/s", zm )
         k = k + 1
 
       case ('wpthlp_exit_mfl')
         iwpthlp_exit_mfl = k
-        call stat_assign( iwpthlp_exit_mfl, "wpthlp_out_mfl", & 
+        call stat_assign( iwpthlp_exit_mfl, "wpthlp_exit_mfl", & 
              "Wpthlp exiting flux limiter [](m K)/s", "(m K)/s", zm )
         k = k + 1
 
-      case ('wpthlp_mfl_lower_lim')
-        iwpthlp_mfl_lower_lim = k
-        call stat_assign( iwpthlp_mfl_lower_lim, "wpthlp_mfl_min", & 
+      case ('wpthlp_mfl_min')
+        iwpthlp_mfl_min = k
+        call stat_assign( iwpthlp_mfl_min, "wpthlp_mfl_min", & 
              "Minimum allowable wpthlp [(m K)/s]", "(m K)/s", zm )
         k = k + 1
 
-      case ('wpthlp_mfl_upper_lim')
-        iwpthlp_mfl_upper_lim = k
-        call stat_assign( iwpthlp_mfl_upper_lim, "wpthlp_mfl_max", & 
+      case ('wpthlp_mfl_max')
+        iwpthlp_mfl_max = k
+        call stat_assign( iwpthlp_mfl_max, "wpthlp_mfl_max", & 
              "Maximum allowable wpthlp ((m K)/s) [(m K)/s]", "(m K)/s", zm )
         k = k + 1
 
-      case ('wprtp_mfl_lower_lim')
-        iwprtp_mfl_lower_lim = k
-        call stat_assign( iwprtp_mfl_lower_lim, "wprtp_mfl_min", & 
+      case ('wprtp_mfl_min')
+        iwprtp_mfl_min = k
+        call stat_assign( iwprtp_mfl_min, "wprtp_mfl_min", & 
              "Minimum allowable wprtp [(m kg)/(s kg)]", "(m kg)/(s kg)", zm )
         k = k + 1
 
-      case ('wprtp_mfl_upper_lim')
-        iwprtp_mfl_upper_lim = k
-        call stat_assign( iwprtp_mfl_upper_lim, "wprtp_mfl_max", & 
+      case ('wprtp_mfl_max')
+        iwprtp_mfl_max = k
+        call stat_assign( iwprtp_mfl_max, "wprtp_mfl_max", & 
              "Maximum allowable wprtp [(m kg)/(s kg)]", "(m kg)/(s kg)", zm )
         k = k + 1
 
       case ('wprtp_enter_mfl')
         iwprtp_enter_mfl = k
-        call stat_assign( iwprtp_enter_mfl, "wprtp_in_mfl", & 
+        call stat_assign( iwprtp_enter_mfl, "wprtp_enter_mfl", & 
              "Wprtp entering flux limiter [(m kg)/(s kg)]", "(m kg)/(s kg)", zm )
         k = k + 1
 
       case ('wprtp_exit_mfl')
         iwprtp_exit_mfl = k
-        call stat_assign( iwprtp_exit_mfl, "wprtp_out_mfl", & 
+        call stat_assign( iwprtp_exit_mfl, "wprtp_exit_mfl", & 
              "Wprtp exiting flux limiter [(m kg)/(s kg)]", "(m kg)/(s kg)", zm )
         k = k + 1        
 
@@ -1344,15 +1344,15 @@ module stats_zm
              "Covariance between s_mellor_2 and t_mellor_2 [kg^2/kg^2]", "kg^2/kg^2", zm )
         k = k + 1
 
-      case ( 'corr_s_t_mellor_1' )
-        icorr_s_t_mellor_1 = k
-        call stat_assign( icorr_s_t_mellor_1, "corr_s_t_1", & 
+      case ( 'corr_st_mellor1' )
+        icorr_st_mellor1 = k
+        call stat_assign( icorr_st_mellor1, "corr_st_mellor1", & 
              "Correlation between s_mellor_1 and t_mellor_1 [-]", "count", zm )
         k = k + 1
 
-      case ( 'corr_s_t_mellor_2' )
-        icorr_s_t_mellor_2 = k
-        call stat_assign( icorr_s_t_mellor_2, "corr_s_t_2", & 
+      case ( 'corr_st_mellor2' )
+        icorr_st_mellor2 = k
+        call stat_assign( icorr_st_mellor2, "corr_st_mellor2", & 
              "Correlation between s_mellor_2 and t_mellor_2 [-]", "count", zm )
         k = k + 1
 

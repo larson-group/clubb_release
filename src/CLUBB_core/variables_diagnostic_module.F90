@@ -183,9 +183,9 @@ module variables_diagnostic_module
   real, target, allocatable, dimension(:), public :: & 
     sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
     tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
-    corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
+    corr_st_mellor1, corr_st_mellor2 ! Correlation between s and t [-]
 !$omp threadprivate(sptp_mellor_1, sptp_mellor_2, tp2_mellor_1, tp2_mellor_2, &
-!$omp   corr_s_t_mellor_1, corr_s_t_mellor_2 )
+!$omp   corr_st_mellor1, corr_st_mellor2 )
     
   real, target, allocatable, dimension(:), public :: & 
     Skw_velocity, & ! Skewness velocity    [m/s]
@@ -337,8 +337,8 @@ module variables_diagnostic_module
     allocate( sptp_mellor_2(1:nzmax) )
     allocate( tp2_mellor_1(1:nzmax) )
     allocate( tp2_mellor_2(1:nzmax) )
-    allocate( corr_s_t_mellor_1(1:nzmax) )
-    allocate( corr_s_t_mellor_2(1:nzmax) )
+    allocate( corr_st_mellor1(1:nzmax) )
+    allocate( corr_st_mellor2(1:nzmax) )
 
     allocate( Skw_velocity(1:nzmax) )
 
@@ -484,8 +484,8 @@ module variables_diagnostic_module
     tp2_mellor_1  = 0.0
     tp2_mellor_2  = 0.0
 
-    corr_s_t_mellor_1 = 0.0
-    corr_s_t_mellor_2 = 0.0
+    corr_st_mellor1 = 0.0
+    corr_st_mellor2 = 0.0
 
     Skw_velocity = 0.0
 
@@ -616,8 +616,8 @@ module variables_diagnostic_module
     deallocate( sptp_mellor_2 )
     deallocate( tp2_mellor_1 )
     deallocate( tp2_mellor_2 )
-    deallocate( corr_s_t_mellor_1 )
-    deallocate( corr_s_t_mellor_2 )
+    deallocate( corr_st_mellor1 )
+    deallocate( corr_st_mellor2 )
 
     deallocate( Skw_velocity )
 

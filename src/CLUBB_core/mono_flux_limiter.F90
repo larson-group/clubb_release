@@ -311,22 +311,22 @@ module mono_flux_limiter
         ithlm_mfl,  &
         ithlm_old, &
         ithlm_without_ta, &
-        ithlm_mfl_lower_lim, &
-        ithlm_mfl_upper_lim, &
+        ithlm_mfl_min, &
+        ithlm_mfl_max, &
         irtm_old, &
         irtm_without_ta, &
-        irtm_mfl_lower_lim, &
-        irtm_mfl_upper_lim, &
+        irtm_mfl_min, &
+        irtm_mfl_max, &
         ithlm_enter_mfl, &
         ithlm_exit_mfl, &
         irtm_enter_mfl, &
         irtm_exit_mfl, &
-        iwpthlp_mfl_lower_lim, &
-        iwpthlp_mfl_upper_lim, &
-        iwpthlp_enter_mfl, &
+        iwpthlp_mfl_min, &
+        iwpthlp_mfl_max, &
+        iwpthlp_entermfl, &
         iwpthlp_exit_mfl, &
-        iwprtp_mfl_lower_lim, &
-        iwprtp_mfl_upper_lim, &
+        iwprtp_mfl_min, &
+        iwprtp_mfl_max, &
         iwprtp_enter_mfl, &
         iwprtp_exit_mfl, &
         l_stats_samp
@@ -389,8 +389,8 @@ module mono_flux_limiter
       max_x_allowable_lev, & ! Largest usuable value of x at lev k  [units vary]
       min_x_allowable, & ! Smallest usuable x within k +/- num_levs [units vary]
       max_x_allowable, & ! Largest usuable x within k +/- num_levs  [units vary]
-      wpxp_mfl_upper_lim, & ! Upper limit on w'x'(k)                [units vary]
-      wpxp_mfl_lower_lim    ! Lower limit on w'x'(k)                [units vary]
+      wpxp_mfl_max, & ! Upper limit on w'x'(k)                [units vary]
+      wpxp_mfl_min    ! Lower limit on w'x'(k)                [units vary]
 
     real ::  &
       max_xp2,             & ! Maximum allowable x'^2                        [units vary]
@@ -450,7 +450,7 @@ module mono_flux_limiter
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
        call stat_update_var( ithlm_enter_mfl, xm, zt )
        call stat_update_var( ithlm_old, xm_old, zt )
-       call stat_update_var( iwpthlp_enter_mfl, xm, zm )
+       call stat_update_var( iwpthlp_entermfl, xm, zm )
     elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
        call stat_update_var( irtm_enter_mfl, xm, zt )
        call stat_update_var( irtm_old, xm_old, zt )
@@ -554,20 +554,20 @@ module mono_flux_limiter
        max_x_allowable(k) = maxval( max_x_allowable_lev(low_lev:high_lev) )
 
        ! Find the upper limit for w'x' for a monotonic turbulent flux.
-       wpxp_mfl_upper_lim(k)  &
+       wpxp_mfl_max(k)  &
        = real( invrs_rho_ds_zm(k)  &
                   * (   ( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )  &
                         * ( xm_without_ta(k) - min_x_allowable(k) )  &
                       + rho_ds_zm(km1) * wpxp(km1)  )           )
 
        ! Find the lower limit for w'x' for a monotonic turbulent flux.
-       wpxp_mfl_lower_lim(k)  &
+       wpxp_mfl_min(k)  &
        = real( invrs_rho_ds_zm(k)  &
                   * (   ( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )  &
                         * ( xm_without_ta(k) - max_x_allowable(k) )  &
                       + rho_ds_zm(km1) * wpxp(km1)  )           )
 
-       if ( wpxp(k) > wpxp_mfl_upper_lim(k) ) then
+       if ( wpxp(k) > wpxp_mfl_max(k) ) then
 
           ! This block of print statements can be uncommented for debugging.
           !print *, "k = ", k
@@ -586,17 +586,17 @@ module mono_flux_limiter
           !print *, "rho_ds_zm(km1) = ", rho_ds_zm(km1)
           !print *, "wpxp(km1) = ", wpxp(km1)
           !print *, "rho_ds_zm(km1) * wpxp(km1) = ", rho_ds_zm(km1) * wpxp(km1)
-          !print *, "wpxp upper lim = ", wpxp_mfl_upper_lim(k)
+          !print *, "wpxp upper lim = ", wpxp_mfl_max(k)
           !print *, "wpxp before adjustment = ", wpxp(k)
 
           ! Determine the net amount of adjustment needed for w'x'.
-          wpxp_net_adjust(k) = wpxp_mfl_upper_lim(k) - wpxp(k)
+          wpxp_net_adjust(k) = wpxp_mfl_max(k) - wpxp(k)
 
           ! Reset the value of w'x' to the upper limit allowed by the
           ! monotonic flux limiter.
-          wpxp(k) = wpxp_mfl_upper_lim(k)
+          wpxp(k) = wpxp_mfl_max(k)
 
-       elseif ( wpxp(k) < wpxp_mfl_lower_lim(k) ) then
+       elseif ( wpxp(k) < wpxp_mfl_min(k) ) then
 
           ! This block of print statements can be uncommented for debugging.
           !print *, "k = ", k
@@ -615,15 +615,15 @@ module mono_flux_limiter
           !print *, "rho_ds_zm(km1) = ", rho_ds_zm(km1)
           !print *, "wpxp(km1) = ", wpxp(km1)
           !print *, "rho_ds_zm(km1) * wpxp(km1) = ", rho_ds_zm(km1) * wpxp(km1)
-          !print *, "wpxp lower lim = ", wpxp_mfl_lower_lim(k)
+          !print *, "wpxp lower lim = ", wpxp_mfl_min(k)
           !print *, "wpxp before adjustment = ", wpxp(k)
 
           ! Determine the net amount of adjustment needed for w'x'.
-          wpxp_net_adjust(k) = wpxp_mfl_lower_lim(k) - wpxp(k)
+          wpxp_net_adjust(k) = wpxp_mfl_min(k) - wpxp(k)
 
           ! Reset the value of w'x' to the lower limit allowed by the
           ! monotonic flux limiter.
-          wpxp(k) = wpxp_mfl_lower_lim(k)
+          wpxp(k) = wpxp_mfl_min(k)
 
        ! This block of code can be uncommented for debugging.
        !else
@@ -649,8 +649,8 @@ module mono_flux_limiter
        !      print *, "wpxp(km1) = ", wpxp(km1)
        !      print *, "rho_ds_zm(km1) * wpxp(km1) = ",  &
        !                   rho_ds_zm(km1) * wpxp(km1)
-       !      print *, "wpxp upper lim = ", wpxp_mfl_upper_lim(k)
-       !      print *, "wpxp lower lim = ", wpxp_mfl_lower_lim(k)
+       !      print *, "wpxp upper lim = ", wpxp_mfl_max(k)
+       !      print *, "wpxp lower lim = ", wpxp_mfl_min(k)
        !      print *, "wpxp (stays the same) = ", wpxp(k)
        !   endif
        !
@@ -665,24 +665,24 @@ module mono_flux_limiter
     min_x_allowable(gr%nnzp) = 0.
     max_x_allowable(gr%nnzp) = 0.
 
-    wpxp_mfl_lower_lim(1) = 0.
-    wpxp_mfl_upper_lim(1) = 0.
+    wpxp_mfl_min(1) = 0.
+    wpxp_mfl_max(1) = 0.
 
-    wpxp_mfl_lower_lim(gr%nnzp) = 0.
-    wpxp_mfl_upper_lim(gr%nnzp) = 0.
+    wpxp_mfl_min(gr%nnzp) = 0.
+    wpxp_mfl_max(gr%nnzp) = 0.
 
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
        call stat_update_var( ithlm_without_ta, xm_without_ta, zt )
-       call stat_update_var( ithlm_mfl_lower_lim, min_x_allowable, zt )
-       call stat_update_var( ithlm_mfl_upper_lim, max_x_allowable, zt )
-       call stat_update_var( iwpthlp_mfl_lower_lim, wpxp_mfl_lower_lim, zm )
-       call stat_update_var( iwpthlp_mfl_upper_lim, wpxp_mfl_upper_lim, zm )
+       call stat_update_var( ithlm_mfl_min, min_x_allowable, zt )
+       call stat_update_var( ithlm_mfl_max, max_x_allowable, zt )
+       call stat_update_var( iwpthlp_mfl_min, wpxp_mfl_min, zm )
+       call stat_update_var( iwpthlp_mfl_max, wpxp_mfl_max, zm )
     elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
        call stat_update_var( irtm_without_ta, xm_without_ta, zt )
-       call stat_update_var( irtm_mfl_lower_lim, min_x_allowable, zt )
-       call stat_update_var( irtm_mfl_upper_lim, max_x_allowable, zt )
-       call stat_update_var( iwprtp_mfl_lower_lim, wpxp_mfl_lower_lim, zm )
-       call stat_update_var( iwprtp_mfl_upper_lim, wpxp_mfl_upper_lim, zm )
+       call stat_update_var( irtm_mfl_min, min_x_allowable, zt )
+       call stat_update_var( irtm_mfl_max, max_x_allowable, zt )
+       call stat_update_var( iwprtp_mfl_min, wpxp_mfl_min, zm )
+       call stat_update_var( iwprtp_mfl_max, wpxp_mfl_max, zm )
     endif
 
 

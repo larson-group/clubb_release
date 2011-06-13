@@ -138,12 +138,12 @@
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_nd_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'vp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'dycoms2_rf02_nd_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm_zt [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_nd_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_nd_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rrainm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_nd_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rrainm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_nd_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rrainm_zt', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_nd_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rrainm_zt', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
+          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
@@ -199,9 +199,9 @@
        [
           {'filename' => 'dycoms2_rf02_nd_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_zt [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_nd_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_nd_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate_sfc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [

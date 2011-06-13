@@ -52,10 +52,10 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wlsm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_wm, wm )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm_zt [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_rrainm, rrainm )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_rrainm_zt, rrainm_zt )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [

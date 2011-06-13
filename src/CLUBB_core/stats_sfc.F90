@@ -42,8 +42,8 @@ module stats_sfc
         irwp, &
         iz_cloud_base, & 
         iz_inversion, & 
-        irain, & 
-        irain_flux, & 
+        irain_rate_sfc, & 
+        irain_flux_sfc, & 
         irrainm_sfc, &
         iwpthlp_sfc, &
         iwprtp_sfc, &
@@ -110,8 +110,8 @@ module stats_sfc
     iswp            = 0   ! nielsenb
     iz_cloud_base   = 0
     iz_inversion             = 0
-    irain           = 0   ! Brian
-    irain_flux      = 0   ! Brian
+    irain_rate_sfc  = 0   ! Brian
+    irain_flux_sfc  = 0   ! Brian
     irrainm_sfc     = 0   ! Brian
     iwpthlp_sfc     = 0
     iwprtp_sfc      = 0
@@ -242,16 +242,16 @@ module stats_sfc
              "Inversion altitude [m]","m",sfc)
         k = k + 1
 
-      case ('rain')          ! Brian
-        irain = k
-        call stat_assign(irain,"rain_rate", & 
+      case ('rain_rate_sfc')          ! Brian
+        irain_rate_sfc = k
+        call stat_assign(irain_rate_sfc,"rain_rate_sfc", & 
              "Surface rainfall rate [mm/day]","mm/day",sfc)
         k = k + 1
 
-      case ('rain_flux')         ! Brian
-        irain_flux = k
+      case ('rain_flux_sfc')         ! Brian
+        irain_flux_sfc = k
 
-        call stat_assign( irain_flux,"rain_flux", & 
+        call stat_assign( irain_flux_sfc,"rain_flux_sfc", & 
              "Surface rain flux [W/m^2]", "W/m^2", sfc )
         k = k + 1
 

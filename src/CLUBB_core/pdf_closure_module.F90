@@ -31,7 +31,7 @@ module pdf_closure_module
                wpsclrpthlp, sclrprcp, wp2sclrp,  &
                sptp_mellor_1, sptp_mellor_2,     &
                tp2_mellor_1, tp2_mellor_2,       &
-               corr_s_t_mellor_1, corr_s_t_mellor_2  )
+               corr_st_mellor1, corr_st_mellor2  )
 
 
 ! Description:
@@ -113,8 +113,8 @@ module pdf_closure_module
       itp2_mellor_2, &
       isptp_mellor_1, &
       isptp_mellor_2, &
-      icorr_s_t_mellor_1, &
-      icorr_s_t_mellor_2
+      icorr_st_mellor1, &
+      icorr_st_mellor2
 
     implicit none
 
@@ -180,7 +180,7 @@ module pdf_closure_module
     real, optional, intent(out) ::  & 
       sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t  [kg^2/kg^2]
       tp2_mellor_1, tp2_mellor_2, &        ! Variance of t          [kg^2/kg^2]
-      corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation of s and t [-]
+      corr_st_mellor1, corr_st_mellor2 ! Correlation of s and t [-]
 
     type(pdf_parameter), intent(out) :: & 
       pdf_params     ! pdf paramters         [units vary]
@@ -288,7 +288,7 @@ module pdf_closure_module
 
     if ( present( sptp_mellor_1 ) .and. present( sptp_mellor_2 ) .and. &
          present( tp2_mellor_1 ) .and.  present( tp2_mellor_2 ) .and. &
-         present( corr_s_t_mellor_1 ) .and. present( corr_s_t_mellor_2 ) )then
+         present( corr_st_mellor1 ) .and. present( corr_st_mellor2 ) )then
       l_corr_calc = .true.
     else
       l_corr_calc = .false.
@@ -807,7 +807,7 @@ module pdf_closure_module
 
     ! Compute some diagnostics related to the s and t variables
     if ( l_corr_calc ) then
-      if ( icorr_s_t_mellor_1 > 0 .or. isptp_mellor_1 > 0 .or. itp2_mellor_1 > 0 ) then
+      if ( icorr_st_mellor1 > 0 .or. isptp_mellor_1 > 0 .or. itp2_mellor_1 > 0 ) then
         sptp_mellor_1 = crt1**2 * varnce_rt1 - cthl1**2 * varnce_thl1
         tp2_mellor_1 = crt1**2 * varnce_rt1 + 2.0 * crt1 * cthl1 &
                        * rrtthl * sqrt( varnce_rt1 * varnce_thl1 ) &
@@ -818,14 +818,14 @@ module pdf_closure_module
         stdev_s_times_stdev_t = sqrt( max( tp2_mellor_1, zero_threshold ) ) * stdev_s1
 
         if ( stdev_s_times_stdev_t > 0. ) then
-          corr_s_t_mellor_1 = sptp_mellor_1 / stdev_s_times_stdev_t
+          corr_st_mellor1 = sptp_mellor_1 / stdev_s_times_stdev_t
         else
-          corr_s_t_mellor_1 = 0.
+          corr_st_mellor1 = 0.
         end if
 
       end if
 
-      if ( icorr_s_t_mellor_2 > 0 .or. isptp_mellor_2 > 0 .or. itp2_mellor_2 > 0 ) then
+      if ( icorr_st_mellor2 > 0 .or. isptp_mellor_2 > 0 .or. itp2_mellor_2 > 0 ) then
         sptp_mellor_2 = crt2**2 * varnce_rt2 - cthl2**2 * varnce_thl2
         tp2_mellor_2 = crt2**2 * varnce_rt2 + 2.0 * crt2 * cthl2 &
                        * rrtthl * sqrt( varnce_rt2 * varnce_thl2 ) &
@@ -835,9 +835,9 @@ module pdf_closure_module
         stdev_s_times_stdev_t = sqrt( max( tp2_mellor_2, zero_threshold ) ) * stdev_s2
 
         if ( stdev_s_times_stdev_t > 0. ) then
-          corr_s_t_mellor_2 = sptp_mellor_2 / stdev_s_times_stdev_t
+          corr_st_mellor2 = sptp_mellor_2 / stdev_s_times_stdev_t
         else
-          corr_s_t_mellor_2 = 0.
+          corr_st_mellor2 = 0.
         end if
 
       end if

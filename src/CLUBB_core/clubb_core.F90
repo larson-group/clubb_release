@@ -182,7 +182,7 @@ module clubb_core
     use variables_diagnostic_module, only: &
       sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
       tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
-      corr_s_t_mellor_1, corr_s_t_mellor_2 ! Correlation between s and t [-]
+      corr_st_mellor1, corr_st_mellor2 ! Correlation between s and t [-]
 
     use variables_diagnostic_module, only: & 
       wp3_on_wp2,   & ! Variable(s)
@@ -300,8 +300,8 @@ module clubb_core
       itp2_mellor_2, &
       isptp_mellor_1, &
       isptp_mellor_2, &
-      icorr_s_t_mellor_1, &
-      icorr_s_t_mellor_2, &
+      icorr_st_mellor1, &
+      icorr_st_mellor2, &
       iSkw_velocity
 
     use fill_holes, only: &
@@ -757,7 +757,7 @@ module clubb_core
            wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),  & ! intent(out)
            sptp_mellor_1(k), sptp_mellor_2(k),                 & ! intent(out)
            tp2_mellor_1(k), tp2_mellor_2(k),                   & ! intent(out)
-           corr_s_t_mellor_1(k), corr_s_t_mellor_2(k)          ) ! intent(out)
+           corr_st_mellor1(k), corr_st_mellor2(k)          ) ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
@@ -818,7 +818,7 @@ module clubb_core
              wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),  & ! intent(out)
              sptp_mellor_1(k), sptp_mellor_2(k),                    & ! intent(out)
              tp2_mellor_1(k), tp2_mellor_2(k),                      & ! intent(out)
-             corr_s_t_mellor_1(k), corr_s_t_mellor_2(k)             ) ! intent(out)
+             corr_st_mellor1(k), corr_st_mellor2(k)             ) ! intent(out)
 
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
@@ -849,12 +849,12 @@ module clubb_core
         rcp2(gr%nnzp) = 0.0
       end if
 
-      if ( icorr_s_t_mellor_1 > 0 ) then
-        corr_s_t_mellor_1 = zt2zm( corr_s_t_mellor_1 )
+      if ( icorr_st_mellor1 > 0 ) then
+        corr_st_mellor1 = zt2zm( corr_st_mellor1 )
       end if
 
-      if ( icorr_s_t_mellor_2 > 0 ) then
-        corr_s_t_mellor_2 = zt2zm( corr_s_t_mellor_2 )
+      if ( icorr_st_mellor2 > 0 ) then
+        corr_st_mellor2 = zt2zm( corr_st_mellor2 )
       end if
 
       if ( isptp_mellor_1 > 0 ) then

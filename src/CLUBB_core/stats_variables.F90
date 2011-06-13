@@ -96,10 +96,10 @@ module stats_variables
      ised_rcm,        & ! Brian
      irsat,           & ! Brian
      irsati, & 
-     irrainm,         & ! Brian
-     imean_vol_rad_rain,   & ! Brian
-     imean_vol_rad_cloud,  & ! COAMPS only. dschanen 6 Dec 2006
-     irain_rate,      & ! Brian
+     irrainm_zt,         & ! Brian
+     im_vol_rad_rain,   & ! Brian
+     im_vol_rad_cloud,  & ! COAMPS only. dschanen 6 Dec 2006
+     irain_rate_zt,      & ! Brian
      iAKm,            & ! analytic Kessler.  Vince Larson 22 May 2005 
      iLH_AKm,        & ! LH Kessler.  Vince Larson  22 May 2005
      iradht,          & ! Radiative heating.
@@ -118,9 +118,9 @@ module stats_variables
 !$omp   threadprivate(iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down)
 !$omp   threadprivate(itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt)
 !$omp   threadprivate(irho, irel_humidity, iNcm, iNcnm, isnowslope)
-!$omp   threadprivate(ised_rcm, irsat, irsati, irrainm)
-!$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
-!$omp   threadprivate(irain_rate, iAKm, iLH_AKm)
+!$omp   threadprivate(ised_rcm, irsat, irsati, irrainm_zt)
+!$omp   threadprivate(im_vol_rad_rain, im_vol_rad_cloud)
+!$omp   threadprivate(irain_rate_zt, iAKm, iLH_AKm)
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
 !$omp   threadprivate(iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc)
 
@@ -195,18 +195,18 @@ module stats_variables
 
   !monatonic flux limiter diagnostic terms
   integer, public :: &
-    ithlm_mfl_lower_lim, &
-    ithlm_mfl_upper_lim, &
-    iwpthlp_enter_mfl, &
+    ithlm_mfl_min, &
+    ithlm_mfl_max, &
+    iwpthlp_entermfl, &
     iwpthlp_exit_mfl, &
-    iwpthlp_mfl_lower_lim, &
-    iwpthlp_mfl_upper_lim, &
-    irtm_mfl_lower_lim, &
-    irtm_mfl_upper_lim, &
+    iwpthlp_mfl_min, &
+    iwpthlp_mfl_max, &
+    irtm_mfl_min, &
+    irtm_mfl_max, &
     iwprtp_enter_mfl, &
     iwprtp_exit_mfl, &
-    iwprtp_mfl_lower_lim, &
-    iwprtp_mfl_upper_lim, &
+    iwprtp_mfl_min, &
+    iwprtp_mfl_max, &
     ithlm_enter_mfl, &
     ithlm_exit_mfl, &
     ithlm_old, &
@@ -216,10 +216,10 @@ module stats_variables
     irtm_old, &
     irtm_without_ta
 
-!$omp   threadprivate(ithlm_mfl_lower_lim, ithlm_mfl_upper_lim, iwpthlp_enter_mfl)
-!$omp   threadprivate(iwpthlp_exit_mfl, iwpthlp_mfl_lower_lim, iwpthlp_mfl_upper_lim)
-!$omp   threadprivate(irtm_mfl_lower_lim, irtm_mfl_upper_lim, iwprtp_enter_mfl)
-!$omp   threadprivate(iwprtp_exit_mfl, iwprtp_mfl_lower_lim, iwprtp_mfl_upper_lim)
+!$omp   threadprivate(ithlm_mfl_min, ithlm_mfl_max, iwpthlp_entermfl)
+!$omp   threadprivate(iwpthlp_exit_mfl, iwpthlp_mfl_min, iwpthlp_mfl_max)
+!$omp   threadprivate(irtm_mfl_min, irtm_mfl_max, iwprtp_enter_mfl)
+!$omp   threadprivate(iwprtp_exit_mfl, iwprtp_mfl_min, iwprtp_mfl_max)
 !$omp   threadprivate(ithlm_enter_mfl, ithlm_exit_mfl, ithlm_old, ithlm_without_ta)
 !$omp   threadprivate(irtm_enter_mfl, irtm_exit_mfl, irtm_old, irtm_without_ta)
 
@@ -500,11 +500,11 @@ module stats_variables
     itp2_mellor_2, &
     isptp_mellor_1, &
     isptp_mellor_2, &
-    icorr_s_t_mellor_1, &
-    icorr_s_t_mellor_2
+    icorr_st_mellor1, &
+    icorr_st_mellor2
 
 !$omp threadprivate(itp2_mellor_1, itp2_mellor_2, isptp_mellor_1, &
-!$omp   isptp_mellor_2, icorr_s_t_mellor_1, icorr_s_t_mellor_2)
+!$omp   isptp_mellor_2, icorr_st_mellor1, icorr_st_mellor2)
 
   ! Indices for statistics in zm file
   integer, public :: & 
@@ -773,8 +773,8 @@ module stats_variables
     irwp, &
     iz_cloud_base, & 
     iz_inversion, & 
-    irain,    &    ! Brian
-    irain_flux,   &    ! Brian
+    irain_rate_sfc,    &    ! Brian
+    irain_flux_sfc,   &    ! Brian
     irrainm_sfc, & ! Brian
     iwpthlp_sfc, &
     iwprtp_sfc, &
@@ -810,7 +810,7 @@ module stats_variables
     ithlm_spur_src
 !$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
 !$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, irwp, iz_cloud_base, iz_inversion, &
-!$omp   irain, irain_flux, irrainm_sfc, &
+!$omp   irain_rate_sfc, irain_flux_sfc, irrainm_sfc, &
 !$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
 !$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &
 !$omp   iwp2_vert_avg, iup2_vert_avg, ivp2_vert_avg, irtp2_vert_avg, ithlp2_vert_avg, iT_sfc, &
