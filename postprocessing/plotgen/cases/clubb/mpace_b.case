@@ -200,7 +200,7 @@
        [
           {'filename' => 'mpace_b_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_zt [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'mpace_b_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate_sfc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},

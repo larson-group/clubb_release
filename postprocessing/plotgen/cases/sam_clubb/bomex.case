@@ -234,7 +234,7 @@
           {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'CWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'BOMEX_4x1x80_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'CWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc[mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'bomex_sfc.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate_sfc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'PREC', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},

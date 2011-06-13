@@ -228,7 +228,7 @@
           {'filename' => 'dycoms2_rf01_sfc.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2rf01_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TGCLDLWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc[mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'dycoms2_rf01_sfc.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate_sfc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2rf01_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRECT.*1000.*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}

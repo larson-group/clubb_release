@@ -235,7 +235,7 @@
           {'filename' => 'DYCOMS_RF02_4x1x40_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'CWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
-       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc[mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'dycoms2_rf02_so_sfc.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate_sfc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/DYCOMS_RF02/DYCOMS_RF02_128x128x128_50m.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'PREC', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
