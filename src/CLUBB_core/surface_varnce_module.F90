@@ -43,7 +43,8 @@ module surface_varnce_module
 
     use error_code, only:  & 
       clubb_var_equals_NaN,  & ! Variable(s)
-      clubb_at_least_debug_level
+      clubb_at_least_debug_level, &
+      clubb_no_error  ! Constant
 
     use array_index, only: &
       iisclr_rt, & ! Index for a scalar emulating rt
@@ -125,6 +126,8 @@ module surface_varnce_module
     integer :: i ! Loop index
 
     ! ---- Begin Code ----
+
+    err_code = clubb_no_error
 
     IF ( l_andre_1978 ) THEN
 

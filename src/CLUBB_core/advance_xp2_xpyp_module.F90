@@ -276,6 +276,7 @@ module advance_xp2_xpyp_module
 
     !---------------------------- Begin Code ----------------------------------
 
+    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     if ( l_single_C2_Skw ) then
       ! Use a single value of C2 for all equations.
@@ -1162,6 +1163,9 @@ module advance_xp2_xpyp_module
       iup2_vp2_matrix_condt_num, & 
       l_stats_samp  ! Logical
 
+    use error_code, only: &
+      clubb_no_error ! Constant
+
     implicit none
 
     ! External
@@ -1203,6 +1207,7 @@ module advance_xp2_xpyp_module
       solve_type_str ! solve_type in string format for debug output purposes
 
     ! --- Begin Code ---
+    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     select case ( solve_type )
       !------------------------------------------------------------------------

@@ -292,7 +292,8 @@ module mono_flux_limiter
         time_precision ! Variable(s)
 
     use error_code, only:  &
-        lapack_error  ! Procedure(s)
+        lapack_error, &  ! Procedure(s)
+        clubb_no_error   ! Constant
         
     use fill_holes, only: &
         vertical_integral ! Procedure(s)
@@ -422,6 +423,9 @@ module mono_flux_limiter
     integer ::  &
       iwpxp_mfl,  &
       ixm_mfl
+
+    !--- Begin Code ---
+    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     ! Default Initialization required due to G95 compiler warning
     max_xp2 = 0.0
@@ -1039,7 +1043,8 @@ module mono_flux_limiter
         tridag_solve  ! Procedure(s)
 
     use error_code, only:  &
-        lapack_error  ! Procedure(s)
+        lapack_error, &  ! Procedure(s)
+        clubb_no_error   ! Constant
 
     implicit none
 
@@ -1071,6 +1076,8 @@ module mono_flux_limiter
       solve_type_str ! solve_type as a string for debug output purposes
 
     !-----------------------------------------------------------------------
+
+    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     select case( solve_type )
     case ( mono_flux_rtm )

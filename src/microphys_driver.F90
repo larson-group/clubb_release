@@ -977,7 +977,8 @@ module microphys_driver
 
     use error_code, only:  & 
         lapack_error, & ! Procedure
-        clubb_at_least_debug_level
+        clubb_at_least_debug_level, &
+        clubb_no_error  ! Constant
 
     use coamps_micro_driver_module, only:  & 
         coamps_micro_driver ! Procedure
@@ -1195,6 +1196,8 @@ module microphys_driver
 !-------------------------------------------------------------------------------
 
     ! ---- Begin code ----
+
+    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     ! Make some compiler warnings go away for external users
     if ( runtype == "" .or. iter == -1 ) then
@@ -1932,6 +1935,8 @@ module microphys_driver
         tridag_solve !,& ! Procedure(s)
 !       band_solve
 
+    use error_code, only: &
+        clubb_no_error ! Constant
 
     use stats_variables, only: & 
         zt,  & ! Variable(s)
@@ -2014,6 +2019,8 @@ module microphys_driver
       ixrm_ma,  & ! Mean advection budget stats toggle
       ixrm_sd,  & ! Sedimentation budget stats toggle
       ixrm_dff    ! Diffusion budget stats toggle
+
+    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     ! Initializing ixrm_ma, ixrm_sd, and ixrm_dff in order to avoid compiler
     ! warnings.

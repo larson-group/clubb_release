@@ -1703,6 +1703,9 @@ module advance_xm_wpxp_module
       band_solve,  & ! Procedure(s)
       band_solvex
 
+    use error_code, only: &
+      clubb_no_error ! Constant
+
     implicit none
 
     ! Input Variables
@@ -1724,6 +1727,7 @@ module advance_xm_wpxp_module
 
     real, optional, intent(out) :: rcond ! Est. of the reciprocal of the condition #
 
+    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     if ( present( rcond ) ) then
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
@@ -1792,7 +1796,8 @@ module advance_xm_wpxp_module
 
     use error_code, only: &
         clubb_at_least_debug_level, & ! Procedure(s)
-        lapack_error
+        lapack_error, &
+        clubb_no_error   ! Constant
 
     use stats_type, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -1953,6 +1958,7 @@ module advance_xm_wpxp_module
       iwpxp_sicl
 
     ! ----- Begin code ------
+    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     select case ( solve_type )
     case ( xm_wpxp_rtm ) ! rtm/wprtp budget terms

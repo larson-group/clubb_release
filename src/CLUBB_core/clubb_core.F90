@@ -1163,7 +1163,7 @@ module clubb_core
     ! Joshua Fasching March 2008
 
     if ( err_code /= clubb_no_error ) return
-
+ 
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
     ! We do not clip rcm_in_layer because rcm_in_layer only influences
@@ -1207,7 +1207,7 @@ module clubb_core
     ! Check stability
     ! Changed from a logical flag to an integer indicating nature of
     ! error.
-    ! Joshua Fasching March 2008
+    ! Joshua Fasching March 2008    
     if ( err_code /= clubb_no_error ) return
 
 
