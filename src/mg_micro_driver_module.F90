@@ -288,11 +288,11 @@ module mg_micro_driver_module
                  
     ! Ensure no hydromet arrays are input as 0, because this makes MG crash.
     do i=1, hydromet_dim, 1
-      hydromet_flip(:,i) = max(1e-8, hydromet_flip(:,i))
+      hydromet_flip(:,i) = max(1e-8_r8, hydromet_flip(:,i))
     end do
     
     ! Prescribe droplet concentration
-    hydromet_flip(:,iiNcm) = 1e8
+    hydromet_flip(:,iiNcm) = 1e8_r8
     
     !---------------------------------------------------------------------------------------
     ! This code block initializes outputs of the microp_aero_ts subroutine in case we
