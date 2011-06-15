@@ -4,6 +4,9 @@ module gabls3_night
 
   !       Description:
   !       Contains subroutines for the GABLS3 LES.
+  !
+  !       References:
+  !       http://www4.ncsu.edu/~sbasu5/GABLS3/
   !----------------------------------------------------------------------
 
   implicit none
@@ -26,7 +29,7 @@ module gabls3_night
     !       heat and moisture according to GCSS ATEX specifications
     !
     !       References:
-    !
+    !       http://www4.ncsu.edu/~sbasu5/GABLS3/
     !----------------------------------------------------------------------
 
     use constants_clubb, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)

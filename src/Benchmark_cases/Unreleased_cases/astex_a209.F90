@@ -4,6 +4,8 @@ module astex_a209
 
   ! Description:
   !   Contains subroutines for the ASTEX KK case.
+  ! References:
+  !   http://www.euclipse.nl/wp3/ASTEX_Lagrangian/Introduction.shtml
   !----------------------------------------------------------------------
 
   implicit none
@@ -22,7 +24,7 @@ module astex_a209
     ! Description:
     !   Subroutine to set theta and water tendencies for ASTEX KK case
     ! References:
-    !   None
+    !   http://www.euclipse.nl/wp3/ASTEX_Lagrangian/Introduction.shtml
     !----------------------------------------------------------------------
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
@@ -101,7 +103,7 @@ module astex_a209
     !   alteration.
 
     ! References:
-    !   None
+    !   http://www.euclipse.nl/wp3/ASTEX_Lagrangian/Introduction.shtml
     !----------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Lv, fstdout ! Variable(s)

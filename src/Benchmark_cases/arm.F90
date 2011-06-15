@@ -4,6 +4,13 @@ module arm
 
   !       Description:
   !       Contains subroutines for the GCSS ARM case.
+  ! 
+  !       References:
+  !       Brown et al., 2002:  Large-eddy simulation of the diurnal cycle
+  !       of shallow cumulus convection over land. Quart. J. Roy. 
+  !       Meteor.  Soc., 128, 1075-1093. 
+  !       http://www.atmos.washington.edu/~breth/GCSS/Brown_etal_
+  !       DiurnalShCu_QJ2002.pdf
   !----------------------------------------------------------------------
 
   implicit none
@@ -21,6 +28,9 @@ module arm
   !       Description:
   !       This subroutine computes surface fluxes of horizontal momentum,
   !       heat and moisture according to GCSS ARM specifications
+  !   
+  !       References:
+  !       See module comments.
   !----------------------------------------------------------------------
 
   use constants_clubb, only: Cp, Lv, grav ! Variable(s)

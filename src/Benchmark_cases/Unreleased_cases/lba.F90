@@ -4,6 +4,8 @@ module lba
 
   ! Description:
   !   Contains subroutines for the LBA case.
+  ! References:
+  !   http://www.mmm.ucar.edu/gcss-wg4/gcss/case4.html
   !----------------------------------------------------------------------
 
   implicit none
@@ -21,6 +23,7 @@ module lba
     !       Subroutine to set theta and water tendencies for LBA case.
 
     !       References:
+    !       http://www.mmm.ucar.edu/gcss-wg4/gcss/case4.html
     !----------------------------------------------------------------------
 
     use grid_class, only: gr !  Variable(s)
@@ -75,6 +78,7 @@ module lba
 
     !       References:
     !       Grabowski, et al. (2005)
+    !       http://www.mmm.ucar.edu/gcss-wg4/gcss/case4.html
     !----------------------------------------------------------------------
 
     use constants_clubb, only: pi, grav, Lv, Cp ! Variable(s)

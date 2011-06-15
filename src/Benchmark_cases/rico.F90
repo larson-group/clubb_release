@@ -24,7 +24,8 @@ module rico
 !   (Michael Falk, 13 Dec 2006).
 !
 ! References:
-!   None.
+!   ATEX: http://www.atmos.ucla.edu/~bstevens/gcss/setup.html
+!   RICO: http://www.knmi.nl/samenw/rico/setup3d.html
 !-----------------------------------------------------------------------
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)

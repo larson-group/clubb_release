@@ -4,6 +4,9 @@ module twp_ice
   !
   !       Description:
   !       Contains subroutines for the Jan. 2006 TWP_ICE case.
+  !
+  !       References:
+  !       http://users.monash.edu.au/~ladavies/gcss.html
   !----------------------------------------------------------------------
 
   implicit none
@@ -21,6 +24,9 @@ module twp_ice
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
     !       heat and moisture according to GCSS ARM specifications
+    !
+    !       References:
+    !       http://users.monash.edu.au/~ladavies/gcss.html
     !----------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Lv, grav ! Variable(s)

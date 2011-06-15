@@ -25,6 +25,7 @@ module dycoms2_rf02
     !  ``Dynamics and Chemistry of Marine Stratocumulus -- DYCOMS-II''
     !  Stevens, Bjorn, et al., (2003)
     !  Bull. Amer. Meteorol. Soc., 84, 579-593.
+    !  http://www.atmos.ucla.edu/~bstevens/Documents/dycoms.pdf 
     !----------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable(s)
@@ -87,7 +88,10 @@ module dycoms2_rf02
   !   heat and moisture according to GCSS DYCOMS II RF 02 specifications
 
   ! References:
-  !   None
+  !  ``Dynamics and Chemistry of Marine Stratocumulus -- DYCOMS-II''
+  !  Stevens, Bjorn, et al., (2003)
+  !  Bull. Amer. Meteorol. Soc., 84, 579-593.
+  !  http://www.atmos.ucla.edu/~bstevens/Documents/dycoms.pdf 
   !----------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Lv ! Variable(s)

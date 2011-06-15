@@ -4,6 +4,14 @@ module arm_0003
 
 !       Description:
 !       Contains subroutines for the March 2000 IOP ARM case.
+!
+!       References:
+!       Xie, S., et al. (2005), Simulations of midlatitude frontal 
+!       clouds by single-column and cloud-resolving models during the
+!       Atmospheric Radiation Measurement March 2000 cloud intensive
+!       operational period, J. Geophys. Res., 110, D15S03, 
+!       doi:10.1029/2004JD005119.
+!       http://www.agu.org/journals/jd/jd0506/2004JD005119/2004JD005119.pdf
 !----------------------------------------------------------------------
 
   implicit none
@@ -22,6 +30,14 @@ module arm_0003
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
     !       heat and moisture according to GCSS ARM specifications
+    !
+    !       References:
+    !       Xie, S., et al. (2005), Simulations of midlatitude frontal 
+    !       clouds by single-column and cloud-resolving models during the
+    !       Atmospheric Radiation Measurement March 2000 cloud intensive
+    !       operational period, J. Geophys. Res., 110, D15S03, 
+    !       doi:10.1029/2004JD005119.
+    !       http://www.agu.org/journals/jd/jd0506/2004JD005119/2004JD005119.pdf
     !----------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Lv, grav ! Variable(s)

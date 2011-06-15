@@ -25,6 +25,10 @@ module atex
   !   Subroutine to set theta-l and water tendencies for ATEX case
 
   ! References:
+  !   B. Stevens et al., 2000: Simulations of trade-wind cumuli 
+  !   under a strong inversion, J. Atmos. Sci, 58,1870-1891.
+  !   http://www.atmos.washington.edu/~breth/GCSS/Stevens_etal_
+  !   ATEX_JAS2001.pdf
 
   !----------------------------------------------------------------------
 
@@ -170,8 +174,11 @@ module atex
   !   This subroutine computes surface fluxes of
   !   heat and moisture according to GCSS ATEX specifications
 
-  ! References:
-  !   None
+  ! References:   
+  !   B. Stevens et al., 2000: Simulations of trade-wind cumuli 
+  !   under a strong inversion, J. Atmos. Sci, 58,1870-1891.
+  !   http://www.atmos.washington.edu/~breth/GCSS/Stevens_etal_
+  !   ATEX_JAS2001.pdf
   !----------------------------------------------------------------------
 
   use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc

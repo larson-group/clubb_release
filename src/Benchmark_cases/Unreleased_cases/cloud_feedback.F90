@@ -4,6 +4,9 @@ module cloud_feedback
 
   !       Description:
   !       Contains subroutines for the Cloud Feedback cases.
+  !
+  !       References:
+  !       http://atmgcm.msrc.sunysb.edu/cfmip_figs/Case_specification.html
   !----------------------------------------------------------------------
 
   implicit none
@@ -23,7 +26,9 @@ module cloud_feedback
   !       Description:
   !       Sets up surface information for the cloud feedback case
 
-  !       References:
+  !       References: 
+  !       http://cfmip.metoffice.com/
+  !       http://atmgcm.msrc.sunysb.edu/cfmip_figs/Case_specification.html
   !----------------------------------------------------------------------
 
   use constants_clubb, only: pi, grav, Lv, Cp, p0, kappa ! Variable(s)

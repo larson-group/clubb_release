@@ -4,6 +4,9 @@ module gabls3
 
   !       Description:
   !       Contains subroutines for the GABLS3.
+  !     
+  !       References:
+  !       http://www.knmi.nl/samenw/gabls/   
   !----------------------------------------------------------------------
 
   implicit none
@@ -23,7 +26,7 @@ module gabls3
     !       heat and moisture according to GCSS ATEX specifications
 
     !       References:
-
+    !       http://www.knmi.nl/samenw/gabls/
     !----------------------------------------------------------------------
 
     use constants_clubb, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)

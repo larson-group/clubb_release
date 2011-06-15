@@ -4,6 +4,9 @@ module arm_97
 
   !       Description:
   !       Contains subroutines for the July 26-30 1997 ARM IOP A case.
+  !       
+  !       References:
+  !       http://www.mmm.ucar.edu/gcss-wg4/gcss/case3.html
   !----------------------------------------------------------------------
 
   implicit none
@@ -22,6 +25,9 @@ module arm_97
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
     !       heat and moisture according to GCSS ARM specifications
+    !
+    !       References:
+    !       http://www.mmm.ucar.edu/gcss-wg4/gcss/case3.html
     !----------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Lv, grav ! Variable(s)

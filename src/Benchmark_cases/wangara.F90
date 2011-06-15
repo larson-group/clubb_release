@@ -2,6 +2,9 @@
 ! $Id$
 module wangara
 
+! References:
+!   See below
+!----------------------------------------------------------------------
   implicit none
 
   public :: wangara_tndcy, wangara_sfclyr
@@ -16,7 +19,9 @@ module wangara
 ! Description:
 !   Subroutine to set theta and water tendencies for Wangara case
 ! References:
-!   None
+!   ``A PDF-Based Model for Boundary Layer Clouds. Part II:
+!   Model results'' Golaz, et al. (2002)
+!   JAS, Vol. 59, pp. 3552--3571.
 !----------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable(s)
@@ -67,6 +72,11 @@ module wangara
 ! Description:
 !   This subroutine computes surface fluxes of horizontal momentum,
 !   heat and moisture for Wangara day 33
+!
+! References:
+!   ``A PDF-Based Model for Boundary Layer Clouds. Part II:
+!   Model results'' Golaz, et al. (2002)
+!   JAS, Vol. 59, pp. 3552--3571.
 !----------------------------------------------------------------------
 
     use constants_clubb, only: pi, fstderr, sec_per_day ! Variable(s)

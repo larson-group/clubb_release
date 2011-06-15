@@ -40,6 +40,7 @@ module nov11
 !   Larson, V. E., A. J. Smith, M. J. Falk, K. E. Kotenberg
 !   and J.-C. Golaz, 2006: What determines altocumulus lifetime?
 !   J. Geophys. Res., 111, D19207, doi:10.1029/2005JD007002.
+!   https://pantherfile.uwm.edu/vlarson/www/journal_articles/JGR_09_smith_clex_LES.pdf
 !--------------------------------------------------------------------------
 
     use grid_class, only: &
@@ -112,6 +113,7 @@ module nov11
 !   Larson, V. E., A. J. Smith, M. J. Falk, K. E. Kotenberg
 !   and J.-C. Golaz, 2006: What determines altocumulus lifetime?
 !   J. Geophys. Res., 111, D19207, doi:10.1029/2005JD007002.
+!   https://pantherfile.uwm.edu/vlarson/www/journal_articles/JGR_09_smith_clex_LES.pdf
 !----------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable(s)

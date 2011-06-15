@@ -4,6 +4,9 @@ module dycoms2_rf01
 
 !       Description:
 !       Contains subroutines for the DYCOMS II RF01 case.
+!
+!       References:
+!       <http://www.atmos.ucla.edu/~bstevens/dycoms/rf01/rf01.html>
 !----------------------------------------------------------------------
   implicit none
 
@@ -20,6 +23,7 @@ module dycoms2_rf01
 !   Subroutine to set theta and water tendencies for DYCOMS RF01 case.
 
 ! References:
+!   <http://www.atmos.ucla.edu/~bstevens/dycoms/rf01/rf01.html>
 !----------------------------------------------------------------------
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
@@ -64,7 +68,7 @@ module dycoms2_rf01
   !   heat and moisture according to GCSS DYCOMS II RF 01 specifications
 
   ! References:
-  !   None
+  !   <http://www.atmos.ucla.edu/~bstevens/dycoms/rf01/rf01.html>
   !----------------------------------------------------------------------
   use constants_clubb, only: Cp, fstderr, Lv ! Variable(s)
 

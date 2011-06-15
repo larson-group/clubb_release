@@ -4,6 +4,9 @@ module mpace_b
 
 !       Description:
 !       Contains subroutines for the mpace_b intercomparison.
+!      
+!       References:
+!       http://science.arm.gov/wg/cpm/scm/scmic5/index.html
 !----------------------------------------------------------------------
 
   implicit none
@@ -27,6 +30,7 @@ module mpace_b
   !
   !        References:
   !          Liou, Wallace and Hobbs, Shettle and Weinman
+  !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
   !-----------------------------------------------------------------------
 
     use constants_clubb, only: Rd, Cp, Lv, p0, rc_tol, zero_threshold, grav ! Variable(s)
@@ -123,7 +127,7 @@ module mpace_b
   !          November 2006 by Michael Falk.
   !
   !        References:
-  !          mpace_b specification, arm.gov
+  !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
   !-----------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Lv ! Variable(s)

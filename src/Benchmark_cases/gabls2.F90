@@ -4,6 +4,8 @@ module gabls2
 
 ! Description:
 !   Contains subroutines for the GABLS2 case.
+! References:
+!   http://www.misu.su.se/~gunilla/gabls/
 !-------------------------------------------------------------------------------
 
   implicit none
@@ -120,7 +122,7 @@ module gabls2
 !   29 December 2006 by Michael Falk.
 !
 ! References:
-!   <http://people.su.se/~gsven/gabls/>
+!   http://people.su.se/~gsven/gabls/
 !-------------------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Rd, p0, grav ! Variable(s)

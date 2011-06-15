@@ -4,6 +4,9 @@ module bomex
 
 !       Description:
 !       Contains subroutines for the GCSS BOMEX case.
+!
+!       References:
+!       <http://www.knmi.nl/~siebesma/gcss/bomexcomp.init.html>
 !----------------------------------------------------------------------
 
   implicit none
@@ -109,6 +112,7 @@ module bomex
 !       heat and moisture according to GCSS BOMEX specifications
 
 !       References:
+!       <http://www.knmi.nl/~siebesma/gcss/bomexcomp.init.html>
 !----------------------------------------------------------------------
 
     use spec_hum_to_mixing_ratio, only: &

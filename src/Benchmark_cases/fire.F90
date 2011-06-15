@@ -4,6 +4,12 @@ module fire
 
   !       Description:
   !       Contains subroutines for the GCSS FIRE case.
+  !
+  !       References:
+  !       Moeng, C.-H., and coauthors, 1996: Simulation of a
+  !       stratocumulus-topped PBL: Intercomparison among different 
+  !       numerical codes. Bull. Amer. Meteor. Soc., 77, 261-278.
+  !       ftp://eos.atmos.washington.edu/pub/breth/papers/1996/GCSS1-Moeng.pdf
   !----------------------------------------------------------------------
 
   implicit none
@@ -24,7 +30,10 @@ module fire
   !       using aerodynamic formulas.
 
   !       References:
-  !       None
+  !       Moeng, C.-H., and coauthors, 1996: Simulation of a
+  !       stratocumulus-topped PBL: Intercomparison among different 
+  !       numerical codes. Bull. Amer. Meteor. Soc., 77, 261-278.
+  !       ftp://eos.atmos.washington.edu/pub/breth/papers/1996/GCSS1-Moeng.pdf
   !------------------------------------------------------------------------
 
   use saturation, only: sat_mixrat_liq ! Procedure(s)
