@@ -12,7 +12,7 @@ contains
 
   !=============================================================================
   subroutine compute_length( thvm, thlm, rtm, em, &
-                             p_in_Pa, exner, thv_ds, &
+                             p_in_Pa, exner, thv_ds, l_implemented, &
                              err_code, &
                              Lscale )
     ! Description:
@@ -90,6 +90,9 @@ contains
       p_in_Pa, & ! Pressure on thermodynamic level                [Pa]
       thv_ds     ! Dry, base-state theta_v on thermodynamic level [K]
                  ! Note:  thv_ds used as a reference theta_l here
+
+    logical, intent(in) :: &
+      l_implemented ! Flag for CLUBB being implemented in a larger model 
 
     ! Output Variables
     integer, intent(inout) :: & 
@@ -731,7 +734,13 @@ contains
        ! Make lminh a linear function starting at value lmin at the bottom
        ! and going to zero at 500 meters in altitude.
        ! -dschanen 27 April 2007
-       lminh = max( zero_threshold, 500. - gr%zt(i) ) * ( lmin / 500. )
+       if( l_implemented ) then
+         ! Within a host model, increase mixing length in 500 m layer above *ground*
+         lminh = max( zero_threshold, 500. - (gr%zt(i) - gr%zm(1)) ) * ( lmin / 500. )
+       else
+         ! In standalone mode, increase mixing length in 500 m layer above *mean sea level*
+         lminh = max( zero_threshold, 500. - gr%zt(i) ) * ( lmin / 500. )
+       end if
 
        Lscale_up(i)    = max( lminh, Lscale_up(i) )
        Lscale_down(i)  = max( lminh, Lscale_down(i) )

@@ -774,7 +774,7 @@ module clubb_driver
       iinit = 1
 
       call initialize_clubb &
-           ( iunit, trim( forcings_file_path ), p_sfc, zm_init, & ! Intent(in)
+           ( iunit, trim( forcings_file_path ), p_sfc, zm_init, l_implemented, & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,    & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                          & ! Intent(inout)
              tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
@@ -794,17 +794,17 @@ module clubb_driver
       ! There for it should be executed prior to a restart. The restart should overwrite
       ! the initial sounding anyway.
       call initialize_clubb &
-           ( iunit, trim( forcings_file_path ), p_sfc, zm_init, & ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,    & ! Intent(inout)
-             wm_zt, wm_zm, em, exner,                          & ! Intent(inout)
-             tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
-             rho, rho_zm, rho_ds_zm, rho_ds_zt,                & ! Intent(inout)
-             invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! Intent(inout)
-             thv_ds_zm, thv_ds_zt, Lscale,                     & ! Intent(inout)
-             rtm_ref, thlm_ref,                                & ! Intent(inout) 
-             Kh_zt, Kh_zm, um_ref, vm_ref,                     & ! Intent(inout)
-             hydromet, Ncnm,                                   & ! Intent(inout)
-             sclrm, edsclrm )                                    ! Intent(out)
+           ( iunit, trim( forcings_file_path ), p_sfc, zm_init, l_implemented, & ! Intent(in)
+             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                    & ! Intent(inout)
+             wm_zt, wm_zm, em, exner,                                          & ! Intent(inout)
+             tau_zt, tau_zm, thvm, p_in_Pa,                                    & ! Intent(inout)
+             rho, rho_zm, rho_ds_zm, rho_ds_zt,                                & ! Intent(inout)
+             invrs_rho_ds_zm, invrs_rho_ds_zt,                                 & ! Intent(inout)
+             thv_ds_zm, thv_ds_zt, Lscale,                                     & ! Intent(inout)
+             rtm_ref, thlm_ref,                                                & ! Intent(inout) 
+             Kh_zt, Kh_zm, um_ref, vm_ref,                                     & ! Intent(inout)
+             hydromet, Ncnm,                                                   & ! Intent(inout)
+             sclrm, edsclrm )                                                    ! Intent(out)
 
 
       time_current = time_restart
@@ -972,7 +972,7 @@ module clubb_driver
       do i1=1, niterlong
         ! Call the parameterization one timestep
         call advance_clubb_core & 
-             ( l_implemented, dt, fcor, sfc_elevation, &                  ! Intent(in)
+             ( l_implemented, dt, fcor, sfc_elevation, &            ! Intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
                sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &      ! Intent(in)
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
@@ -1091,7 +1091,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine initialize_clubb &
-             ( iunit, forcings_file_path, p_sfc, zm_init, &
+             ( iunit, forcings_file_path, p_sfc, zm_init, l_implemented, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                tau_zt, tau_zm, thvm, p_in_Pa, &
@@ -1188,6 +1188,9 @@ module clubb_driver
     real, intent(in) :: &
       p_sfc,  & ! Pressure at the surface        [Pa]
       zm_init   ! Initial moment. level altitude [m]
+
+    logical, intent(in) :: &
+      l_implemented ! Flag for CLUBB being implemented in a larger model
 
     ! Output
     real, dimension(gr%nnzp), intent(inout) ::  & 
@@ -1729,10 +1732,10 @@ module clubb_driver
     endif
 
     ! Compute mixing length
-    call compute_length( thvm, thlm, rtm, em,   & ! Intent(in)
-                         p_in_Pa, exner, thv_ds_zt,  & ! Intent(in)    
-                         err_code,                   & ! Intent(inout)
-                         Lscale )                      ! Intent(out)
+    call compute_length( thvm, thlm, rtm, em,   &                    ! Intent(in)
+                         p_in_Pa, exner, thv_ds_zt, l_implemented, & ! Intent(in)    
+                         err_code,                   &               ! Intent(inout)
+                         Lscale )                                    ! Intent(out)
 
     ! Dissipation time
     tmp1 = sqrt( max( em_min, zm2zt( em ) ) )
