@@ -88,11 +88,15 @@ module advance_windm_edsclrm_module
       clip_covariance  ! Procedure(s)
 
     use error_code, only:  & 
-      lapack_error,  & ! Procedure(s)
-      clubb_at_least_debug_level
+      clubb_at_least_debug_level, & ! Procedure(s)
+      lapack_error
+
+    use error_code, only:  & 
+      clubb_no_error, &  ! Constant(s)
+      clubb_singular_matrix
 
     use constants_clubb, only:  & 
-        fstderr, &  ! Constant
+        fstderr, &  ! Constant(s)
         eps
 
     use sponge_layer_damping, only: &
@@ -179,6 +183,9 @@ module advance_windm_edsclrm_module
     logical :: &
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
+    integer :: &
+      err_code_windm, err_code_edsclrm ! Error code for each LAPACK solve
+
     integer :: i     ! Array index
 
     !--------------------------- Begin Code ------------------------------------
@@ -253,7 +260,7 @@ module advance_windm_edsclrm_module
     ! Decompose and back substitute for um and vm
     call windm_edsclrm_solve( 2, iwindm_matrix_condt_num, & ! in
                               lhs, rhs, &                   ! in/out
-                              solution, err_code )          ! out
+                              solution, err_code_windm )    ! out
 
     !----------------------------------------------------------------
     ! Update zonal (west-to-east) component of mean wind, um
@@ -447,7 +454,7 @@ module advance_windm_edsclrm_module
       ! Decompose and back substitute for all eddy-scalar variables
       call windm_edsclrm_solve( edsclr_dim, 0, &     ! in
                                 lhs, rhs, &          ! in/out
-                                solution, err_code ) ! out
+                                solution, err_code_edsclrm ) ! out
 
       !----------------------------------------------------------------
       ! Update Eddy-diff. Passive Scalars
@@ -477,6 +484,10 @@ module advance_windm_edsclrm_module
 
     endif
 
+    ! Check for singular matrices and bad LAPACK arguments
+    if ( err_code_windm /= clubb_no_error .or. err_code_edsclrm /= clubb_no_error ) then
+      err_code = clubb_singular_matrix
+    end if
 
     ! Error report
     ! Joshua Fasching February 2008
