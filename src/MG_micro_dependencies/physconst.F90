@@ -15,16 +15,16 @@ module physconst
     latice => Lf,        &   ! latent heat of fusion                            [J kg-1]
     epsilo => ep             ! Ratio of h2o to dry air molecular weights        [-]
 
+  use shr_kind_mod, only: r8 => shr_kind_r8
+
   implicit none
 
   private
 
   public :: gravit, rair, tmelt, cpair, rh2o, r_universal, mwh2o, rhoh2o, latvap, latice, epsilo
-    
-  ! These variables are not used anywhere in MG, they are just imported. Because of this we
-  ! are setting them to dummy values
-  integer :: &
-    r_universal = 0, &
-    mwh2o = 0
+   
+  real(r8) :: &
+    r_universal = 8314.472_r8, &
+    mwh2o = 18.016_r8
 
 end module physconst
