@@ -190,6 +190,10 @@ module advance_windm_edsclrm_module
 
     !--------------------------- Begin Code ------------------------------------
 
+    ! Initialize to no errors
+    err_code_windm   = clubb_no_error
+    err_code_edsclrm = clubb_no_error
+
     !----------------------------------------------------------------
     ! Prepare tridiagonal system for horizontal winds, um and vm
     !----------------------------------------------------------------
