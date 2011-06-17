@@ -468,25 +468,13 @@ module microphys_driver
     read(iunit, nml=microphysics_setting)
     close(unit=iunit)
 
-    ! Change l_predictnc if we are using KK microphysics
-    ! This flag is typically used only in Morrison microphysics, but has been adapted
-    ! for use with KK microphysics.  It is used to turn off the budget terms for Ncm
-    ! since Ncm is essentially clipped every timestep when using KK microphysics.
-    if ( trim( micro_scheme ) == "khairoutdinov_kogan" .and. l_predictnc) then
-      call write_text("WARNING: l_predictnc has been set to .false. for KK microphysics.", &
-        l_write_to_file, iunit )
-    end if
-    if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
-      l_predictnc = .false.
-    end if
-
     ! Printing Microphysics inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
 
       ! This will open the cases setup.txt file and append it to include the
       ! parameters in the microphysics_setting namelist. This file was created
       ! and written to from clubb_driver previously.
-      if (l_write_to_file ) open(unit=iunit, file=case_info_file, &
+      if ( l_write_to_file ) open(unit=iunit, file=case_info_file, &
           status='old', action='write', position='append')
 
       ! Write to file all parameters from the namelist microphysics_seting.
@@ -595,9 +583,22 @@ module microphys_driver
       call write_text ( "aer_sig2 = ", aer_sig2, l_write_to_file, iunit )
       call write_text ( "pgam_fixed = ", pgam_fixed, l_write_to_file, iunit )
 
+      if ( trim( micro_scheme ) == "khairoutdinov_kogan" .and. l_predictnc ) then
+        call write_text("WARNING: l_predictnc has been set to .false. for KK microphysics.", &
+          l_write_to_file, iunit )
+      end if
+
       if ( l_write_to_file ) close(unit=iunit);
 
     end if ! clubb_at_least_debug_level(1)
+
+    ! Change l_predictnc if we are using KK microphysics
+    ! This flag is typically used only in Morrison microphysics, but has been adapted
+    ! for use with KK microphysics.  It is used to turn off the budget terms for Ncm
+    ! since Ncm is essentially clipped every timestep when using KK microphysics.
+    if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
+      l_predictnc = .false.
+    end if
 
     ! The location of the fields in the hydromet array are arbitrary,
     ! and don't need to be set consistently among schemes so long as
