@@ -123,7 +123,7 @@ end function xyzzy
 \verb|!----- Begin Code -----| after the declarative portion of the code.
 This is to make it clear where the algorithmic portion of the procedure starts.
 
-\item Write lots of code comments.  Make sure your code is understandable to an outsider 
+\item Be generous with code comments.  Make sure your code is understandable to an outsider 
 looking at it for the first time.  When writing a code comment, leave your name 
 at the end of the comment.
 This will allow other users to contact you with any questions about the section of code.
@@ -682,6 +682,8 @@ derived types that contain allocatable pointer components. E.g. \\
     return
   end function func
 \end{verbatim}
+
+\item  Append a grid label to a variable name when the variable has been interpolated to a different grid.  For instance, wp2 is natively on the zm grid.  When it is interpolated to the zt grid, we call it ``wp2\_zt."  However, when wp2 is kept on the zm, we simply call it ``wp2" without appending ``\_zm."
 
 \end{enumerate}
 
