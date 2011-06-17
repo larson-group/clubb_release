@@ -96,6 +96,8 @@ module dycoms2_rf02
 
     use constants_clubb, only: Cp, Lv ! Variable(s)
 
+    use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Function(s)
+
     implicit none
 
     ! External
@@ -115,8 +117,8 @@ module dycoms2_rf02
     ! Declare the value of ustar.
     ustar = 0.25
 
-    wpthlp_sfc = SH / (1.21 * Cp)
-    wprtp_sfc  = LH / (1.21 * Lv)
+    wpthlp_sfc = convert_SH_to_km_s( SH, 1.21 )
+    wprtp_sfc  = convert_LH_to_m_s( LH, 1.21 )
 
     return
   end subroutine dycoms2_rf02_sfclyr

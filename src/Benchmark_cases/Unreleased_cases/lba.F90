@@ -81,11 +81,13 @@ module lba
     !       http://www.mmm.ucar.edu/gcss-wg4/gcss/case4.html
     !----------------------------------------------------------------------
 
-    use constants_clubb, only: pi, grav, Lv, Cp ! Variable(s)
+    use constants_clubb, only: pi, grav ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
+
+    use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Procedure(s)
 
     implicit none
 
@@ -120,8 +122,8 @@ module lba
                  cos( 0.5 * pi * ( (5.25 - ( time/3600.)) / 5.25 ) ) & 
             ) )
 
-    wpthlp_sfc =  ( 270. * ft**1.5 ) / ( rho0 * Cp )
-    wprtp_sfc  =  ( 554. * ft**1.3 ) / ( rho0 * Lv )
+    wpthlp_sfc =  convert_SH_to_km_s( ( 270. * ft**1.5 ), rho0 )
+    wprtp_sfc  =  convert_LH_to_m_S( ( 554. * ft**1.3 ), rho0 )
 
     bflx = grav/thlm_sfc * wpthlp_sfc
 

@@ -40,13 +40,14 @@ module arm_0003
     !       http://www.agu.org/journals/jd/jd0506/2004JD005119/2004JD005119.pdf
     !----------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, Lv, grav ! Variable(s)
+    use constants_clubb, only: grav ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
-    use surface_flux, only: compute_ht_mostr_flux ! Procedures
+    use surface_flux, only: compute_ht_mostr_flux, &
+                            convert_SH_to_km_s, convert_LH_to_m_s ! Procedures
     
     use time_dependent_input, only: time_sfc_given ! Variable(s)
 
@@ -82,8 +83,8 @@ module arm_0003
                                 heat_flx, moisture_flx )
 
     ! Convert W/m^2 into w'thl' w'rt' units
-    wpthlp_sfc = heat_flx / ( Cp * rho0 )     ! (K m/s)
-    wprtp_sfc  = moisture_flx / ( Lv * rho0 ) ! (kg m/ kg s)
+    wpthlp_sfc = convert_SH_to_km_s( heat_flx, rho0 )     ! (K m/s)
+    wprtp_sfc  = convert_LH_to_m_s( moisture_flx, rho0 )  ! (kg m/ kg s)
 
     ! Compute momentum fluxes using ARM Cu formulae
 

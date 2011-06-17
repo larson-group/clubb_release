@@ -523,7 +523,7 @@ module time_dependent_input
       edsclrm_forcing ! Edscalar forcing [-]
 
     ! Local Variable(s)
-    integer :: i, j, i1, i2
+    integer :: i, j, before_time, after_time
 
     real, dimension(grid_size) :: temp_array
 
@@ -533,11 +533,8 @@ module time_dependent_input
 
     time_frac = -1.0 ! Default initialization
 
-    call time_select( time, size(dimension_var%values), dimension_var%values, i1, i2 )
-
-    ! Determine time interpolation factor
-    time_frac =  real( ( time-dimension_var%values(i1) )/ &
-                      ( dimension_var%values(i2) - dimension_var%values(i1) ) )
+    call time_select( time, size(dimension_var%values), dimension_var%values, &
+                                 before_time, after_time, time_frac )
 
     if( time_frac == -1.0 ) then
       call clubb_debug(1,"times are not sorted in forcing")
@@ -547,8 +544,8 @@ module time_dependent_input
     ! data.
     do i=2, nCols
 
-      temp_array = factor_interp( time_frac, t_dependent_forcing_data(i)%values(:,i2), &
-                                         t_dependent_forcing_data(i)%values(:,i1) )
+      temp_array = factor_interp( time_frac, t_dependent_forcing_data(i)%values(:,after_time), &
+                                         t_dependent_forcing_data(i)%values(:,before_time) )
 
       ! Check to see if temp_array is an actual profile or a dummy profile
       ! If it is a dummy profile we dont want it to apply itself as it may
@@ -663,16 +660,20 @@ module time_dependent_input
   end subroutine apply_time_dependent_forcings
 
   !================================================================================================
-  subroutine time_select( time, nvar, time_array, left_time, right_time )
+  subroutine time_select( time, nvar, time_array, &
+                          before_time, after_time, time_frac )
     !
     !   Description: This subroutine determines which indexes of the given
     !                time_array should be used when interpolating a value
-    !                at the specified time.
+    !                at the specified time and the location of time between
+    !                these indexes.
     !
     !
     !---------------------------------------------------------------------------------
 
     use stats_precision, only: time_precision ! Variable(s)
+
+    use constants_clubb, only: fstderr ! Constant(s)
 
     implicit none
 
@@ -687,9 +688,12 @@ module time_dependent_input
     ! Output Variable(s)
 
     integer, intent(out) :: &
-      right_time, &  ! Index of a time later than the target time [-]
-      left_time      ! Index of time before the target time       [-]
+      after_time, &  ! Index of a time later than the target time [-]
+      before_time      ! Index of time before the target time       [-]
 
+    real, intent(out) :: &
+      time_frac      ! The fraction representing the point where time
+                     ! is located between after_time and before_time [-]
 
     ! Local Variable(s)
 
@@ -697,31 +701,52 @@ module time_dependent_input
 
     ! ----------------- Begin Code --------------------
 
-    if( time <= time_array(1)) then
+    ! convert time to a real so it has the same precision as the values
+    ! in time_array   
+    if( real(time) < time_array(1) ) then
+      
+      ! If time is less than the lowest value in time_array, an invalid
+      ! time has been provided. Stop execution.
+      write(fstderr,*) 'Time is before the first time in the list. Stopping'
+      stop
 
-      left_time = 1
-      right_time = 2
+    else if ( real(time) == time_array(1) ) then
 
-    else if ( time >= time_array(nvar) ) then
+      before_time = 1
+      after_time = 2
 
-      left_time = nvar
-      right_time = nvar - 1
+    else if ( real(time) > time_array(nvar) ) then
+
+      ! If time is greater than the highest value in time_array, an invalid
+      ! time has been provided. Stop execution.
+      write(fstderr,*) 'Time is after the last time in the list. Stopping'
+      stop
+      
+    else if ( real(time) == time_array(nvar) ) then
+      
+      before_time = nvar - 1
+      after_time = nvar
 
     else
 
       do k=1,nvar-1
 
-        if ((time > time_array(k)) .and. &
-         (time <= time_array(k+1))) then
+        if ((real(time) > time_array(k)) .and. &
+         (real(time) <= time_array(k+1))) then
 
-          left_time = k
-          right_time = k+1
+          before_time = k
+          after_time = k+1
 
         end if
 
       end do
 
     endif
+
+    ! Compute the position of time between before_time and after_time
+    ! as a fraction.
+    time_frac = real(( real(time) - time_array(before_time) ) / &
+                ( time_array(after_time) - time_array(before_time) ))
 
     return
 

@@ -30,7 +30,7 @@ module arm_97
     !       http://www.mmm.ucar.edu/gcss-wg4/gcss/case3.html
     !----------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, Lv, grav ! Variable(s)
+    use constants_clubb, only: grav ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -39,6 +39,8 @@ module arm_97
     use interpolation, only: factor_interp ! Procedure(s)
 
     use error_code, only: clubb_debug ! Procedure(s)
+
+    use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Procedure(s)
 
     use time_dependent_input, only: &
       time_select, &
@@ -72,7 +74,7 @@ module arm_97
 
     ! Local variables
     real :: bflx, heat_flx, moisture_flx, time_frac
-    integer :: i1, i2
+    integer :: before_time, after_time
     !----------------------------------------------------------------------
     if( l_t_dependent ) then
       ! Default initialization
@@ -81,21 +83,20 @@ module arm_97
 
       time_frac = -1.0 ! Default initialization
 
-      call time_select( time, size(time_sfc_given), time_sfc_given, i1, i2 )
-
-      time_frac = real((time-time_sfc_given(i1))/(time_sfc_given(i2)-time_sfc_given(i1)))
+      call time_select( time, size(time_sfc_given), time_sfc_given, &
+                                   before_time, after_time, time_frac )
 
       if( time_frac == -1.0 ) then
         call clubb_debug(1,"times is not sorted in arm_97_tndcy")
       endif
 
 
-      heat_flx = factor_interp( time_frac, SH_given(i2), SH_given(i1) )
-      moisture_flx = factor_interp( time_frac, LH_given(i2), LH_given(i1) )
+      heat_flx = factor_interp( time_frac, SH_given(after_time), SH_given(before_time) )
+      moisture_flx = factor_interp( time_frac, LH_given(after_time), LH_given(before_time) )
 
       ! Convert W/m^2 into w'thl' w'rt' units
-      wpthlp_sfc = heat_flx / ( Cp * rho0 )     ! (K m/s)
-      wprtp_sfc  = moisture_flx / ( Lv * rho0 ) ! (kg m/ kg s)
+      wpthlp_sfc = convert_SH_to_km_s( heat_flx, rho0 )     ! (K m/s)
+      wprtp_sfc  = convert_LH_to_m_s( moisture_flx, rho0 ) ! (kg m/ kg s)
 
       ! Compute momentum fluxes using ARM Cu formulae
 

@@ -10,7 +10,8 @@ module surface_flux
   implicit none
 
   public :: compute_momentum_flux, compute_ubar, compute_ht_mostr_flux, &
-            compute_wprtp_sfc, compute_wpthlp_sfc, set_sclr_sfc_rtm_thlm
+            compute_wprtp_sfc, compute_wpthlp_sfc, set_sclr_sfc_rtm_thlm, &
+            convert_SH_to_km_s, convert_LH_to_m_s
 
   private
 
@@ -245,5 +246,52 @@ module surface_flux
     return
   end subroutine set_sclr_sfc_rtm_thlm
 
+ 
+!==============================================================================
+  real function convert_SH_to_km_s ( SH, rho0 )
+
+!   This function converts sensible heat flux in W/m^2 to
+!   natural units of k m/s for the wpthlp_sfc variable.
+!-----------------------------------------------------------------------------  
+
+    use constants_clubb, only: Cp ! Variable(s)
+
+    implicit none
+
+    real, intent(in) :: &
+      SH,               & ! Sensible heat flux     [W/m^2]
+      rho0                ! Density at the surface [kg/m^3]
+
+    !--------------------BEGIN CODE-----------------------
+
+    convert_SH_to_km_s = SH / ( rho0 * Cp)
+
+    return
+  
+  end function convert_SH_to_km_s
+
+
+!==============================================================================
+  real function convert_LH_to_m_s ( LH, rho0 )
+
+!   This function converts latent heat flux in W/m^2 to
+!   natural units of m/s for the wprtp_sfc variable.
+!-----------------------------------------------------------------------------  
+
+    use constants_clubb, only: Lv ! Variable(s)
+
+    implicit none
+    
+    real, intent(in) :: &
+      LH,               & ! Sensible heat flux     [W/m^2]
+      rho0                ! Density at the surface [kg/m^3]
+
+    !--------------------BEGIN CODE-----------------------
+
+    convert_LH_to_m_s = LH / ( rho0 * Lv)
+
+    return
+  
+  end function convert_LH_to_m_s
 
 end module surface_flux

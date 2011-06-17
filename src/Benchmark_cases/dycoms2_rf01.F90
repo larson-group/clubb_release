@@ -70,11 +70,12 @@ module dycoms2_rf01
   ! References:
   !   <http://www.atmos.ucla.edu/~bstevens/dycoms/rf01/rf01.html>
   !----------------------------------------------------------------------
-  use constants_clubb, only: Cp, fstderr, Lv ! Variable(s)
+  use constants_clubb, only: fstderr ! Variable(s)
 
   use saturation, only: sat_mixrat_liq ! Variable(s)
 
-  use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc ! Procedure(s)
+  use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc, &
+                          convert_SH_to_km_s, convert_LH_to_m_s ! Procedure(s)
 
   implicit none
 
@@ -109,8 +110,8 @@ module dycoms2_rf01
   ! Compute heat and moisture fluxes
   if ( sfctype == 0 ) then
 
-    wpthlp_sfc =  15.0 / ( rho_zm_sfc * Cp )
-    wprtp_sfc  = 115.0 / ( rho_zm_sfc * Lv )
+    wpthlp_sfc = convert_SH_to_km_s( 15.0, rho_zm_sfc )
+    wprtp_sfc  = convert_LH_to_m_s( 115.0, rho_zm_sfc )
 
   else if ( sfctype == 1 ) then
 

@@ -72,7 +72,11 @@ module mpace_a
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
-    use error_code, only: clubb_debug, clubb_at_least_debug_level ! Procedure(s)
+    use error_code, only: clubb_debug ! Procedure(s)
+
+    ! Note that this subroutine is from the time_dependent_input module, but
+    ! mpace_a does not have time dependent input.
+    use time_dependent_input, only: time_select !Procedure(s)
 
     implicit none
 
@@ -108,7 +112,7 @@ module mpace_a
 
     ! Open external files (21 Aug 2007, Michael Falk)
 
-    integer left_time,right_time
+    integer before_time,after_time
     real :: ratio
 
 !      real, dimension(file_nlevels) :: omega_column
@@ -129,60 +133,37 @@ module mpace_a
     um_hoc_grid,       & ! Observed wind, for nudging         [m/s]
     vm_hoc_grid       ! Observed wind, for nudging         [m/s]
 
-! This code block takes the model time, finds the time before it and the time after it on
-! the list, and marks them left_time and right_time for interpolation.  If the time is
-! before the first or after the last time in the file, it just uses the first or last
-! time without interpolation.
+    !----------------BEGIN CODE------------------------
+   
+    before_time = -1
+    after_time = -1
 
-    left_time = -1
-    right_time = -1
+    ! Use time_select to get the indexes before and after the specified time
+    ! and to get the ratio necessary for interpolation.
+    call time_select(time, file_ntimes, file_times, &
+                     before_time, after_time, ratio)
 
-    if (time <= file_times(1)) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) 'Time is at or before the first time in the list.'
-      endif
-      left_time = 1
-      right_time = 1
-    else if (time >= file_times(file_ntimes)) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) 'Time is at or after the last time in the list.'
-      endif
-      left_time = file_ntimes
-      right_time = file_ntimes
-    else
-      do k=1,file_ntimes-1
-        if ((time > file_times(k)) .AND. & 
-            (time <=file_times(k+1))) then
-          left_time = k
-          right_time = k+1
-        end if
-      end do
-    end if
-
-    if( left_time == -1 .or. right_time == -1 ) then
+    ! Sanity check to ensure that time_times is sorted.
+    if( before_time == -1 .or. after_time == -1 ) then
       call clubb_debug(1, "file_times not sorted in mpace_a_tndcy.")
-    endif
-
-! This is the ratio "a" needed for linear interpolation in time.
-    ratio = real((time - file_times(left_time)) /  &          ! at the first time a=0;
-            (file_times(right_time) - file_times(left_time))) ! at the second time a=1.
+    endif 
 
     do k=1,file_nlevels
 !        omega_column(k) = ratio *			       ! Do linear interpolation in time
-!     .                      (omega_forcing(k,right_time)
-!     .                      -omega_forcing(k,left_time))
-!     .                     + omega_forcing(k,left_time)
+!     .                      (omega_forcing(k,after_time)
+!     .                      -omega_forcing(k,before_time))
+!     .                     + omega_forcing(k,before_time)
 
-      dTdt_column(k)  = factor_interp( ratio, dTdt_forcing(k, right_time), &
-                                       dTdt_forcing(k, left_time) )
-      dqdt_column(k)  = factor_interp( ratio, dqdt_forcing(k, right_time), &
-                                       dqdt_forcing(k, left_time) )
-      vertT_column(k) = factor_interp( ratio, vertT_forcing(k,right_time), &
-                                       vertT_forcing(k,left_time) )
-      vertq_column(k) = factor_interp( ratio, vertq_forcing(k,right_time), &
-                                       vertq_forcing(k,left_time) )
-      um_column(k)    = factor_interp( ratio, um_obs(k, right_time), um_obs(k, left_time) )
-      vm_column(k)    = factor_interp( ratio, vm_obs(k, right_time), vm_obs(k, left_time) )
+      dTdt_column(k)  = factor_interp( ratio, dTdt_forcing(k, after_time), &
+                                       dTdt_forcing(k, before_time) )
+      dqdt_column(k)  = factor_interp( ratio, dqdt_forcing(k, after_time), &
+                                       dqdt_forcing(k, before_time) )
+      vertT_column(k) = factor_interp( ratio, vertT_forcing(k,after_time), &
+                                       vertT_forcing(k,before_time) )
+      vertq_column(k) = factor_interp( ratio, vertq_forcing(k,after_time), &
+                                       vertq_forcing(k,before_time) )
+      um_column(k)    = factor_interp( ratio, um_obs(k, after_time), um_obs(k, before_time) )
+      vm_column(k)    = factor_interp( ratio, vm_obs(k, after_time), vm_obs(k, before_time) )
     end do
 
 !     Do linear interpolation in space
@@ -261,9 +242,13 @@ module mpace_a
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use error_code, only: clubb_debug, clubb_at_least_debug_level ! Procedure(s)
+    use error_code, only: clubb_debug ! Procedure(s)
 
     use interpolation, only: factor_interp ! Procedure(s)
+
+    ! Note that this subroutine is from time_dependent_input, but 
+    ! mpace_a does not have time_dependent input.
+    use time_dependent_input, only: time_select ! Procedure(s)
 
     implicit none
 
@@ -288,52 +273,28 @@ module mpace_a
       latent_heat_flx, & 
       sensible_heat_flx
 
-    integer :: k
-
     integer :: & 
-      left_time, right_time
+      before_time, after_time
 
     real :: ratio
     !-----------------------------------------------------------------------
 
-    left_time = -1
-    right_time = -1
+    before_time = -1
+    after_time = -1
 
     ! choose which times to use
-    if (time <= file_times(1)) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) 'Time is at or before the first time in the list.'
-      endif
-      left_time = 1
-      right_time = 1
-    else if (time >= file_times(file_ntimes)) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) 'Time is at or after the last time in the list.'
-      endif
-      left_time = file_ntimes
-      right_time = file_ntimes
-    else
-      do k=1,file_ntimes-1
-        if ((time > file_times(k)) .AND. & 
-            (time <= file_times(k+1))) then
-          left_time = k
-          right_time = k+1
-        end if
-      end do
-    end if
+    call time_select( time, file_ntimes, file_times, &
+                      before_time, after_time, ratio )
 
     ! Sanity check to make certain that the values read into
     ! file_times are sorted. Joshua Fasching June 2008
-    if ( left_time == -1 .or. right_time == -1 ) then
+    if ( before_time == -1 .or. after_time == -1 ) then
       call clubb_debug(1, "file_times not sorted in MPACE_A")
     endif
 
-    ratio = real(((time-file_times(left_time)) /  & 
-         (file_times(right_time)-file_times(left_time))))
+    latent_heat_flx = factor_interp( ratio, file_LH(after_time), file_LH(before_time) )
 
-    latent_heat_flx = factor_interp( ratio, file_LH(right_time), file_LH(left_time) )
-
-    sensible_heat_flx = factor_interp( ratio, file_SH(right_time), file_SH(left_time) )
+    sensible_heat_flx = factor_interp( ratio, file_SH(after_time), file_SH(before_time) )
 
     ! Compute heat and moisture fluxes
     wpthlp_sfc = sensible_heat_flx/(rho0*Cp)

@@ -84,19 +84,19 @@ module gabls3_night
 
     real :: time_frac ! time interpolation factor
 
-    integer :: i1, i2
+    integer :: before_time, after_time
 
     if( l_t_dependent ) then
 
-      call time_select( time, size(time_sfc_given), time_sfc_given, i1, i2 )
+      ! Use time_select to determine the time indexes before and after 'time', as well as
+      ! the time fraction necessary for factor_interp
+      call time_select( time, size(time_sfc_given), time_sfc_given, &
+                        before_time, after_time, time_frac )
 
-      time_frac = real( (time - time_sfc_given(i1)) /  &  ! at the first time, time_frac=0;
-            (time_sfc_given(i2) - time_sfc_given(i1)) )   ! at the second time, time_frac=1.
 
+      ts = factor_interp( time_frac, thlm_sfc_given(after_time), thlm_sfc_given(before_time) )
 
-      ts = factor_interp( time_frac, thlm_sfc_given(i2), thlm_sfc_given(i1) )
-
-      qs = factor_interp( time_frac, rtm_sfc_given(i2), rtm_sfc_given(i1) )
+      qs = factor_interp( time_frac, rtm_sfc_given(after_time), rtm_sfc_given(before_time) )
 
       ! Compute heat and moisture fluxes
       call landflx( thlm_sfc, ts, rtm_sfc, qs, um_sfc, vm_sfc, lowest_level, z0, & ! Intent(in)
@@ -104,8 +104,10 @@ module gabls3_night
 
       if ( l_input_xpwp_sfc ) then
         ! Feed in momentum fluxes
-        upwp_sfc = factor_interp( time_frac, upwp_sfc_given(i2), upwp_sfc_given(i1) )
-        vpwp_sfc = factor_interp( time_frac, vpwp_sfc_given(i2), vpwp_sfc_given(i1) )
+        upwp_sfc = factor_interp( time_frac, upwp_sfc_given(after_time), &
+                                  upwp_sfc_given(before_time) )
+        vpwp_sfc = factor_interp( time_frac, vpwp_sfc_given(after_time), &
+                                  vpwp_sfc_given(before_time) )
 
       else
         ! Compute momentum fluxes

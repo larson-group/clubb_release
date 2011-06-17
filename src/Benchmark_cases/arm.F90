@@ -33,13 +33,14 @@ module arm
   !       See module comments.
   !----------------------------------------------------------------------
 
-  use constants_clubb, only: Cp, Lv, grav ! Variable(s)
+  use constants_clubb, only: grav ! Variable(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
   use diag_ustar_module, only: diag_ustar ! Variable(s)
 
-  use surface_flux, only: compute_ht_mostr_flux ! Procedures
+  use surface_flux, only: compute_ht_mostr_flux, &
+                          convert_SH_to_km_s, convert_LH_to_m_s ! Procedures
 
   implicit none
 
@@ -82,8 +83,8 @@ module arm
   ! Compute momentum fluxes
 
   ! Convert heat_flx and moisture_flx to natural units
-  heat_flx2     = heat_flx / ( Cp * dn0 )    ! (K m/s)
-  moisture_flx2 = moisture_flx / ( Lv * dn0 )! (m/s)
+  heat_flx2     = convert_SH_to_km_s(heat_flx, dn0)    ! (K m/s)
+  moisture_flx2 = convert_LH_to_m_s(moisture_flx, dn0) ! (m/s)
 
   ! Heat flux in units of (m2/s3) (needed by diag_ustar)
   bflx = grav/thlm_sfc * heat_flx2

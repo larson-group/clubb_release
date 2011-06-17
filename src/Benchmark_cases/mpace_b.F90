@@ -132,6 +132,8 @@ module mpace_b
 
     use constants_clubb, only: Cp, Lv ! Variable(s)
 
+    use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Functions(s)
+
     implicit none
 
     ! External
@@ -160,8 +162,8 @@ module mpace_b
     ustar = 0.25
 
     ! Compute heat and moisture fluxes
-    wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
-    wprtp_sfc  = latent_heat_flx/(rho0*Lv)
+    wpthlp_sfc = convert_SH_to_km_s( sensible_heat_flx, rho0 )
+    wprtp_sfc  = convert_LH_to_m_s( latent_heat_flx, rho0 )
 
     return
   end subroutine mpace_b_sfclyr

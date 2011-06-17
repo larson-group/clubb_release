@@ -108,7 +108,8 @@ module astex_a209
 
     use constants_clubb, only: Cp, Lv, fstdout ! Variable(s)
 
-    use time_dependent_input, only: T_sfc_given, time_sfc_given ! Variable(s)
+    use time_dependent_input, only: T_sfc_given, time_sfc_given, &
+                                    time_select ! Variable(s)
 
     use surface_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc   !Procedure(s)
 
@@ -154,12 +155,12 @@ module astex_a209
 
     ! Local variables
     integer :: &
-      i1, i2
+      before_time, after_time
 
     real :: &
       Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
       Cq,   & ! This is C_q_20 scaled to the height of the lowest model level.
-      true_time, time_frac
+      time_frac
 
     !-----------------BEGIN CODE-------------------------
 
@@ -176,37 +177,22 @@ module astex_a209
 
     !sensible_heat_flx = 10.0
     !latent_heat_flx = 25.0
-    true_time = real( time )
+
 
     T_sfc = 0.0
 
     ! We set ustar as it is set in rico
     ustar = 0.155
 
-    if ( true_time <= time_sfc_given(1) ) then
-      T_sfc = T_sfc_given(1)
+    ! Use time_select to determine the time indexes before and after time
+    ! and to calculate the time fraction necessary for factor_interp
+    call time_select(time, ntimes, time_sfc_given, &
+                before_time, after_time, time_frac)
 
-    else if (true_time >= time_sfc_given(ntimes) ) then
-      T_sfc = T_sfc_given(ntimes)
-
-    else ! true_time > time_sfc_given(1) and true_time < time_sfc_given(ntimes)
-      i1 = 1
-
-      do while ( i1 <= ntimes-1 )
-        i2 = i1 + 1
-
-        if ( true_time >= time_sfc_given(i1) .and. true_time < time_sfc_given(i2) ) then
-          time_frac = (true_time-time_sfc_given(i1))/(time_sfc_given(i2)-time_sfc_given(i1))
-
-          T_sfc = factor_interp( time_frac, T_sfc_given(i2), T_sfc_given(i1) )
-          i1 = ntimes
-        end if ! true_time >= time_sfc_given(i1) & true_time < time_sfc_given(i2)
-
-        i1 = i2
-      end do ! while i1 <= ntimes-1
-
-    endif ! else
-
+    ! Interpolate the value for T_sfc based on time.
+    T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                           T_sfc_given(before_time) )
+   
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm, T_sfc, exner_sfc )
     wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(psfc,T_sfc) )
 
