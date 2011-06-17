@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 ###########################################################################
-# Plotgen v3.75
+# Plotgen v3.78
 #
 # Documentation is available here:
 # http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
