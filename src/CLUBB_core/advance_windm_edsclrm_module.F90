@@ -495,6 +495,8 @@ module advance_windm_edsclrm_module
     ! Check for singular matrices and bad LAPACK arguments
     if ( err_code_windm /= clubb_no_error .or. err_code_edsclrm /= clubb_no_error ) then
       err_code = clubb_singular_matrix
+    else
+      err_code = clubb_no_error
     end if
 
     ! Error report
