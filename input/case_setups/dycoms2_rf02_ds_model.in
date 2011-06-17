@@ -132,6 +132,7 @@ l_cloud_sed    = .true.  ! Flag for cloud water sedimentation.
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "khairoutdinov_kogan"
 Ncm_initial  = 55. ! #/cm3
+l_predictnc = .false.,
 
 /
 
