@@ -33,6 +33,10 @@
 #
 # Ryan Senkbeil added if statements to check if files exist before diffing them
 # July 6, 2009.
+#
+# Kenneth Connor modified the script so the output directories don't need to be
+# subdirectories of the location you called the script from.
+# June 17, 2011.
 #-------------------------------------------------------------------------------
 
 # Figure out the directory where the script is located
@@ -64,19 +68,28 @@ if [ -z $1 ]; then
     echo 'Two directories need to be entered on the command line.'
     exit
 elif [ -z $2 ]; then
-    echo 'Directory 1 is '$1'.'
+    echo 'Directory 1 is '$(readlink -f "$1")'.'
     echo 'Two directories need to be entered on the command line.'
     exit
 else
-    echo 'Directory 1 is '$1'.'
-    echo 'Directory 2 is '$2'.'
+    # The first command-line entry is 'dir1'.
+    dir1=$(readlink -f "$1")
+
+    # The second command-line entry is 'dir2'.
+    dir2=$(readlink -f "$2")
+    
+    echo 'Directory 1 is '$dir1'.'
+    echo 'Directory 2 is '$dir2'.'
+
+    if [ ! -d "$dir1" ]; then
+      echo $dir1' does not exist or is not a directory.'
+      exit
+    elif [ ! -d "$dir2" ]; then
+      echo $dir2' does not exist or is not a directory.'
+      exit
+    fi
 fi
 
-# The first command-line entry is 'dir1'.
-dir1=$restoreDir/$1
-
-# The second command-line entry is 'dir2'.
-dir2=$restoreDir/$2
 
 # diff the GrADS control (*.ctl) files and the GrADS binary data (*.dat) files
 # for each statistical output type (zt, zm, and sfc) for each case in 
@@ -87,6 +100,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
     # State which case is being diffed.
     echo 'Diffing '"${RUN_CASE[$x]}"' GrADS control (*.ctl) and binary data (*.dat) files'
 
+    dataFound=false
+
     if [ -e $dir1/"${RUN_CASE[$x]}"'_zt.ctl' -a -e $dir2/"${RUN_CASE[$x]}"'_zt.ctl' ] ; then
         # Compare the zt GrADS control (*_zt.ctl) files
         diffZtCtl=$(diff $dir1/"${RUN_CASE[$x]}"'_zt.ctl' $dir2/"${RUN_CASE[$x]}"'_zt.ctl')
@@ -95,6 +110,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
             differences=true
             echo "*** Differences detected in ${RUN_CASE[$x]}_zt.ctl! ***" >&2
         fi
+  
+        dataFound=true
     fi
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_zt.dat' -a -e $dir2/"${RUN_CASE[$x]}"'_zt.dat' ] ; then
@@ -105,6 +122,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
             differences=true
             echo "*** Differences detected in ${RUN_CASE[$x]}_zt.dat! ***" >&2
         fi
+
+        dataFound=true
     fi
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_zm.ctl' -a -e $dir2/"${RUN_CASE[$x]}"'_zm.ctl' ] ; then
@@ -115,6 +134,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
             differences=true
             echo "*** Differences detected in ${RUN_CASE[$x]}_zm.ctl! ***" >&2
         fi
+        
+        dataFound=true
     fi
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_zm.dat' -a -e $dir2/"${RUN_CASE[$x]}"'_zm.dat' ] ; then
@@ -125,6 +146,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
             differences=true
             echo "*** Differences detected in ${RUN_CASE[$x]}_zm.dat! ***" >&2
         fi
+        
+        dataFound=true
     fi
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_sfc.ctl' -a -e $dir2/"${RUN_CASE[$x]}"'_sfc.ctl' ] ; then
@@ -135,6 +158,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
             differences=true
             echo "*** Differences detected in ${RUN_CASE[$x]}_sfc.ctl! ***" >&2
         fi
+        
+        dataFound=true
     fi
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_sfc.dat' -a -e $dir2/"${RUN_CASE[$x]}"'_sfc.dat' ] ; then
@@ -145,6 +170,12 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
             differences=true
             echo "*** Differences detected in ${RUN_CASE[$x]}_sfc.dat! ***" >&2
         fi
+        
+        dataFound=true
+    fi
+
+    if [ $dataFound == false ]; then
+      echo 'No data found for '${RUN_CASE[$x]}
     fi
 done
 
