@@ -35,7 +35,9 @@
 # July 6, 2009.
 #
 # Kenneth Connor modified the script so the output directories don't need to be
-# subdirectories of the location you called the script from.
+# subdirectories of the location you called the script from. Also added checks
+# to confirm that the directories exist and if they have any data. The script
+# now only outputs that it is checking a case if the data for that case exists.
 # June 17, 2011.
 #-------------------------------------------------------------------------------
 
@@ -45,23 +47,11 @@ scriptPath=`dirname $0`
 # Store the current directory location so it can be restored
 restoreDir=`pwd`
 
-# Change directories to the one the script is located in
-cd $scriptPath
-
 # If true, differences were detected. This is used to set the exit status
 differences=false
 
-declare -a RUN_CASE
-
-a=0
-while read line
-do
-    # If the line is not commented out (does not start with '!')
-    if [[ $line != !* ]] && [[ ! -z $line ]] ; then
-        RUN_CASE[$a]=$line
-        a=$(($a+1));
-    fi
-done < "RUN_CASES"
+# If true, there was no data found. This is used to set the exit status
+noData=true
 
 # The user needs to enter the paths/names for two directories on the command line.
 if [ -z $1 ]; then
@@ -90,6 +80,20 @@ else
     fi
 fi
 
+# Change directories to the one the script is located in
+cd $scriptPath
+
+declare -a RUN_CASE
+
+a=0
+while read line
+do
+    # If the line is not commented out (does not start with '!')
+    if [[ $line != !* ]] && [[ ! -z $line ]] ; then
+        RUN_CASE[$a]=$line
+        a=$(($a+1));
+    fi
+done < "RUN_CASES"
 
 # diff the GrADS control (*.ctl) files and the GrADS binary data (*.dat) files
 # for each statistical output type (zt, zm, and sfc) for each case in 
@@ -97,8 +101,7 @@ fi
 # This will loop over all runs in sequence.
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
-    # State which case is being diffed.
-    echo 'Diffing '"${RUN_CASE[$x]}"' GrADS control (*.ctl) and binary data (*.dat) files'
+    declare -a DIFF_LIST
 
     dataFound=false
 
@@ -108,9 +111,9 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffZtCtl" ] ; then
             differences=true
-            echo "*** Differences detected in ${RUN_CASE[$x]}_zt.ctl! ***" >&2
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_zt.ctl"
         fi
-  
+        
         dataFound=true
     fi
 
@@ -120,9 +123,9 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffZtDat" ] ; then
             differences=true
-            echo "*** Differences detected in ${RUN_CASE[$x]}_zt.dat! ***" >&2
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_zt.dat"
         fi
-
+        
         dataFound=true
     fi
 
@@ -132,7 +135,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffZmCtl" ] ; then
             differences=true
-            echo "*** Differences detected in ${RUN_CASE[$x]}_zm.ctl! ***" >&2
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_zm.ctl"
         fi
         
         dataFound=true
@@ -144,7 +147,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffZmDat" ] ; then
             differences=true
-            echo "*** Differences detected in ${RUN_CASE[$x]}_zm.dat! ***" >&2
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_zm.dat"
         fi
         
         dataFound=true
@@ -156,7 +159,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffSfcCtl" ] ; then
             differences=true
-            echo "*** Differences detected in ${RUN_CASE[$x]}_sfc.ctl! ***" >&2
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_sfc.ctl"
         fi
         
         dataFound=true
@@ -168,20 +171,30 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffSfcDat" ] ; then
             differences=true
-            echo "*** Differences detected in ${RUN_CASE[$x]}_sfc.dat! ***" >&2
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_sfc.dat"
         fi
         
         dataFound=true
     fi
 
-    if [ $dataFound == false ]; then
-      echo 'No data found for '${RUN_CASE[$x]}
+    if [ $dataFound == "true" ] ; then
+      echo 'Diffing '"${RUN_CASE[$x]}"' GrADS control (*.ctl) and binary data (*.dat) files'
+
+      for (( y=0; y < "${#DIFF_LIST[@]}"; y++ )); do
+        echo "*** Differences detected in ${DIFF_LIST[$y]}! ***" >&2
+      done
+
+      noData=false
     fi
+
 done
 
 # Determine exit status and exit
 if [ $differences == "true" ] ; then
     echo -e "\nThere were some differences detected!"
+    exit 1
+elif [ $noData == "true" ] ; then
+    echo -e "\nNo data was found!"
     exit 1
 else
     echo -e "\nThere were no differences detected!"
