@@ -666,14 +666,13 @@ module advance_xp2_xpyp_module
 
         !!!!!***** sclr'^2 *****!!!!!
 
-        call xp2_xpyp_rhs( xp2_xpyp_sclrp2, dt, l_iter, a1, a1_zt, &  ! Intent(in)
-                           wp2_zt, wpsclrp(:,i),  &              ! Intent(in)
-                           wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  &   ! Intent(in)
-                           wp3_on_wp2, wp3_on_wp2_zt, &           ! Intent(in)
-                           sclrm(:,i), sclrm(:,i), sclrp2(:,i), &     ! Intent(in)
-                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &  ! Intent(in)
-                           C2sclr_1d, tau_zm, sclr_tol(i)**2, beta, & ! Intent(in)
-                           sclr_rhs(:,i) )                            ! Intent(out)
+        call xp2_xpyp_rhs( xp2_xpyp_sclrp2, dt, l_iter, a1, a1_zt, & ! In
+                           wp2_zt, wpsclrp(:,i), wpsclrp_zt, & ! In
+                           wp3_on_wp2, wp3_on_wp2_zt, & ! In
+                           wpsclrp(:,i), wpsclrp_zt, sclrm(:,i), sclrm(:,i), sclrp2(:,i), &  ! In
+                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &  ! In
+                           C2sclr_1d, tau_zm, sclr_tol(i)**2, beta, & ! In
+                           sclr_rhs(:,i) ) ! Out
 
 
         !!!!!***** sclr'r_t' *****!!!!!
@@ -686,14 +685,13 @@ module advance_xp2_xpyp_module
           threshold = 0.0
         end if
 
-        call xp2_xpyp_rhs( xp2_xpyp_sclrprtp, dt, l_iter, a1, a1_zt, & ! Intent(in)
-                           wp2_zt, wpsclrp(:,i),  &             ! Intent(in)
-                           wpsclrp_zt, wprtp, wprtp_zt,  &           ! Intent(in)
-                           wp3_on_wp2, wp3_on_wp2_zt, &           ! Intent(in)
-                           sclrm(:,i), rtm, sclrprtp(:,i),  &        ! Intent(in)
-                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &  ! Intent(in)
-                           C2sclr_1d, tau_zm, threshold, beta, &     ! Intent(in)
-                           sclr_rhs(:,i+sclr_dim) )                  ! Intent(out)
+        call xp2_xpyp_rhs( xp2_xpyp_sclrprtp, dt, l_iter, a1, a1_zt, & ! In
+                           wp2_zt, wpsclrp(:,i), wpsclrp_zt,  & ! In
+                           wp3_on_wp2, wp3_on_wp2_zt, & ! In
+                           wprtp, wprtp_zt, sclrm(:,i), rtm, sclrprtp(:,i), & ! In
+                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &  ! In
+                           C2sclr_1d, tau_zm, threshold, beta, &  ! In
+                           sclr_rhs(:,i+sclr_dim) ) ! In
 
 
         !!!!!***** sclr'th_l' *****!!!!!
@@ -706,14 +704,13 @@ module advance_xp2_xpyp_module
           threshold = 0.0
         end if
 
-        call xp2_xpyp_rhs( xp2_xpyp_sclrpthlp, dt, l_iter, a1, a1_zt, & ! Intent(in)
-                           wp2_zt, wpsclrp(:,i),  &             ! Intent(in)
-                           wpsclrp_zt, wpthlp, wpthlp_zt,  &         ! Intent(in)
-                           wp3_on_wp2, wp3_on_wp2_zt, &           ! Intent(in)
-                           sclrm(:,i), thlm, sclrpthlp(:,i), &       ! Intent(in)
-                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &  ! Intent(in)
-                           C2sclr_1d, tau_zm, threshold, beta, &     ! Intent(in)
-                           sclr_rhs(:,i+2*sclr_dim) )                ! Intent(out)
+        call xp2_xpyp_rhs( xp2_xpyp_sclrpthlp, dt, l_iter, a1, a1_zt, & ! In
+                           wp2_zt, wpsclrp(:,i), wpsclrp_zt, &  ! In
+                           wp3_on_wp2, wp3_on_wp2_zt, & ! In
+                           wpthlp, wpthlp_zt, sclrm(:,i), thlm, sclrpthlp(:,i), & ! In
+                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! In
+                           C2sclr_1d, tau_zm, threshold, beta, & ! In
+                           sclr_rhs(:,i+2*sclr_dim) ) ! Out
       end do ! 1..sclr_dim
 
 

@@ -1202,7 +1202,7 @@ module clubb_core
                            rtp2, thlp2, rtpthlp,          & ! intent(inout)
                            up2, vp2,                      & ! intent(inout)
                            err_code,                      & ! intent(out)
-                           sclrp2, sclrprtp, sclrpthlp    ) ! intent(out)
+                           sclrp2, sclrprtp, sclrpthlp    ) ! intent(inout)
 
     ! Check stability
     ! Changed from a logical flag to an integer indicating nature of

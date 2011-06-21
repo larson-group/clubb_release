@@ -288,15 +288,14 @@ module stats_type
 
        else
 
-          write(char_index(1:3),'(i3.3)') var_index
-          call clubb_debug( 1, & 
-          "Beginning an update before finishing previous.  "// & 
-          "Var index = "// char_index   )
-
+          call clubb_debug( 1, &
+            "Beginning an update before finishing previous for variable: "// & 
+            trim( grid_kind%f%var(var_index)%name ) )
        endif
 
     endif
 
+    return
   end subroutine stat_begin_update_pt
 
   !=============================================================================
