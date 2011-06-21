@@ -16,7 +16,7 @@ module arm_3year
   contains
 
   !----------------------------------------------------------------------
-  subroutine arm_3year_sfclyr( time, z, rho0, & 
+  subroutine arm_3year_sfclyr( time, z, rho_sfc, & 
                                thlm_sfc, ubar,  & 
                                wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
@@ -48,7 +48,7 @@ module arm_3year
 
     real, intent(in) ::  & 
       z,         & ! Height at zt=2      [s] 
-      rho0,      & ! Density at zm=1     [kg/m^3] 
+      rho_sfc,      & ! Density at zm=1     [kg/m^3] 
       ubar,      & ! mean sfc wind speed [m/s]
       thlm_sfc     ! thlm at (2)         [m/s]
 
@@ -68,8 +68,8 @@ module arm_3year
                                 heat_flx, moisture_flx )
 
     ! Convert W/m^2 into w'thl' w'rt' units
-    wpthlp_sfc = convert_SH_to_km_s( heat_flx, rho0 )     ! (K m/s)
-    wprtp_sfc  = convert_LH_to_m_s( moisture_flx, rho0 ) ! (kg m/ kg s)
+    wpthlp_sfc = convert_SH_to_km_s( heat_flx, rho_sfc )     ! (K m/s)
+    wprtp_sfc  = convert_LH_to_m_s( moisture_flx, rho_sfc ) ! (kg m/ kg s)
 
     ! Compute momentum fluxes using ARM Cu formulae
 

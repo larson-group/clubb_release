@@ -22,7 +22,7 @@ module arm
   contains
 
   !----------------------------------------------------------------------
-  subroutine arm_sfclyr( time, z, dn0, thlm_sfc, ubar,  & 
+  subroutine arm_sfclyr( time, z, rho_sfc, thlm_sfc, ubar,  & 
                          wpthlp_sfc, wprtp_sfc, ustar )
 
   !       Description:
@@ -58,12 +58,12 @@ module arm
 
   real, intent(in) ::  & 
     z,               & ! Height at zt(2)       [m]
-    dn0,             & ! Density at zm(1)      [kg/m^3]
+    rho_sfc,             & ! Density at zm(1)      [kg/m^3]
     thlm_sfc,        & ! Theta_l at zt(2)      [K]
     ubar
 
   ! Output variables
-  real, intent(out) ::  & 
+ real, intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
     ustar          ! surface friction velocity [m/s]
@@ -83,8 +83,8 @@ module arm
   ! Compute momentum fluxes
 
   ! Convert heat_flx and moisture_flx to natural units
-  heat_flx2     = convert_SH_to_km_s(heat_flx, dn0)    ! (K m/s)
-  moisture_flx2 = convert_LH_to_m_s(moisture_flx, dn0) ! (m/s)
+  heat_flx2     = convert_SH_to_km_s(heat_flx, rho_sfc)    ! (K m/s)
+  moisture_flx2 = convert_LH_to_m_s(moisture_flx, rho_sfc) ! (m/s)
 
   ! Heat flux in units of (m2/s3) (needed by diag_ustar)
   bflx = grav/thlm_sfc * heat_flx2

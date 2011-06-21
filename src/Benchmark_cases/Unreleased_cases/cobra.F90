@@ -14,7 +14,7 @@ module cobra
   contains
 
   !-----------------------------------------------------------------------
-  subroutine cobra_sfclyr( time, z, dn0, thlm_sfc, ubar, & 
+  subroutine cobra_sfclyr( time, z, rho_sfc, thlm_sfc, ubar, & 
                            wpthlp_sfc, wprtp_sfc, ustar, & 
                            wpsclrp_sfc, wpedsclrp_sfc )
 
@@ -63,7 +63,7 @@ module cobra
 
   real, intent(in) :: & 
     z,         & ! Elevation at zt=2           [m]
-    dn0,       & ! Air density at surface      [kg/m^3]
+    rho_sfc,       & ! Air density at surface      [kg/m^3]
     thlm_sfc,  & ! Theta_l at zt(2)            [K]
     ubar         ! mean sfc wind speed         [m/s]
 
@@ -116,8 +116,8 @@ module cobra
   CO2_flx = factor_interp( time_frac, CO2_sfc_given(after_time), CO2_sfc_given(before_time) )
 
   ! Convert heat_flx and moisture_flx to natural units
-  heat_flx2     = convert_SH_to_km_s( heat_flx, dn0 )    ! (K m/s)
-  moisture_flx2 = convert_LH_to_m_s( moisture_flx, dn0 )! (m/s)
+  heat_flx2     = convert_SH_to_km_s( heat_flx, rho_sfc )    ! (K m/s)
+  moisture_flx2 = convert_LH_to_m_s( moisture_flx, rho_sfc )! (m/s)
 
   !       Convert CO2 surface flux to natural units.
   !       The CO2 flux has been given in units of:  umol/(m^2 s).
@@ -127,7 +127,7 @@ module cobra
   !       The units are:  10^6 * [ mol (CO2) / mol (dry air) ].
   !       w'CO2' = (Flux) * [ M (dry air) / rho (dry air) ];
   !       where M is the molecular weight of dry air.
-  CO2_flx2 = CO2_flx * ( M_da / dn0 )
+  CO2_flx2 = CO2_flx * ( M_da / rho_sfc )
 
   ! Heat flux in units of (m2/s3) (needed by diag_ustar)
   bflx = grav/thlm_sfc * heat_flx2

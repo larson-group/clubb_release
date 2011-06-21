@@ -105,8 +105,9 @@ module dycoms2_rf02
 
     ! Constant parameters
     real, parameter ::  & 
-      SH = 16.0, & 
-      LH = 93.0
+      SH = 16.0, &   ! Sensible heat flux
+      LH = 93.0, &   ! Latent heat flux
+      rho_sfc = 1.21 ! Air density at surface
 
     ! Output
     real, intent(out) ::  & 
@@ -117,8 +118,8 @@ module dycoms2_rf02
     ! Declare the value of ustar.
     ustar = 0.25
 
-    wpthlp_sfc = convert_SH_to_km_s( SH, 1.21 )
-    wprtp_sfc  = convert_LH_to_m_s( LH, 1.21 )
+    wpthlp_sfc = convert_SH_to_km_s( SH, rho_sfc )
+    wprtp_sfc  = convert_LH_to_m_s( LH, rho_sfc )
 
     return
   end subroutine dycoms2_rf02_sfclyr

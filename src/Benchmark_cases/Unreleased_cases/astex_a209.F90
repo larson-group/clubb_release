@@ -196,8 +196,8 @@ module astex_a209
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm, T_sfc, exner_sfc )
     wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(psfc,T_sfc) )
 
-    !wpthlp_sfc = sensible_heat_flx / ( rho0 * Cp )
-    !wprtp_sfc  = latent_heat_flx / ( rho0 * Lv )
+    !wpthlp_sfc = sensible_heat_flx / ( rho_sfc * Cp )
+    !wprtp_sfc  = latent_heat_flx / ( rho_sfc * Lv )
 
     ! Momentum fluxes are computed elsewhere
 

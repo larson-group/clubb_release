@@ -68,7 +68,7 @@ module lba
   end subroutine lba_tndcy
 
   !----------------------------------------------------------------------
-  subroutine lba_sfclyr( time, z, rho0, & 
+  subroutine lba_sfclyr( time, z, rho_sfc, & 
                          thlm_sfc, ubar,  & 
                          wpthlp_sfc, wprtp_sfc, ustar )
 
@@ -103,7 +103,7 @@ module lba
 
     real, intent(in) ::  & 
       z,         & ! Height at zt=2      [m] 
-      rho0,      & ! Density at zm=1     [kg/m^3] 
+      rho_sfc,      & ! Density at zm=1     [kg/m^3] 
       thlm_sfc,  & ! thlm at (2)         [m/s]
       ubar
 
@@ -122,8 +122,8 @@ module lba
                  cos( 0.5 * pi * ( (5.25 - ( time/3600.)) / 5.25 ) ) & 
             ) )
 
-    wpthlp_sfc =  convert_SH_to_km_s( ( 270. * ft**1.5 ), rho0 )
-    wprtp_sfc  =  convert_LH_to_m_S( ( 554. * ft**1.3 ), rho0 )
+    wpthlp_sfc =  convert_SH_to_km_s( ( 270. * ft**1.5 ), rho_sfc )
+    wprtp_sfc  =  convert_LH_to_m_s( ( 554. * ft**1.3 ), rho_sfc )
 
     bflx = grav/thlm_sfc * wpthlp_sfc
 

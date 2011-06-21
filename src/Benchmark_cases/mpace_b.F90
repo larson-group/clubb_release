@@ -119,7 +119,7 @@ module mpace_b
   end subroutine mpace_b_tndcy
 
 !----------------------------------------------------------------------
-  subroutine mpace_b_sfclyr( rho0, & 
+  subroutine mpace_b_sfclyr( rho_sfc, & 
                            wpthlp_sfc, wprtp_sfc, ustar )
 
   !        Description:
@@ -148,7 +148,7 @@ module mpace_b
 
     ! Input Variables
     real, intent(in)  :: & 
-      rho0    ! Air density at surface       [kg/m^3
+      rho_sfc    ! Air density at surface       [kg/m^3
 
     ! Output Variables
     real, intent(out) ::  & 
@@ -162,8 +162,8 @@ module mpace_b
     ustar = 0.25
 
     ! Compute heat and moisture fluxes
-    wpthlp_sfc = convert_SH_to_km_s( sensible_heat_flx, rho0 )
-    wprtp_sfc  = convert_LH_to_m_s( latent_heat_flx, rho0 )
+    wpthlp_sfc = convert_SH_to_km_s( sensible_heat_flx, rho_sfc )
+    wprtp_sfc  = convert_LH_to_m_s( latent_heat_flx, rho_sfc )
 
     return
   end subroutine mpace_b_sfclyr

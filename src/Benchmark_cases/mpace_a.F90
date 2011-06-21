@@ -228,7 +228,7 @@ module mpace_a
   end subroutine mpace_a_tndcy
 
 !----------------------------------------------------------------------
-  subroutine mpace_a_sfclyr( time, rho0, & 
+  subroutine mpace_a_sfclyr( time, rho_sfc, & 
                              wpthlp_sfc, wprtp_sfc, ustar )
 !        Description:
 !          Surface forcing subroutine for mpace_a case.  Written
@@ -260,7 +260,7 @@ module mpace_a
     time     ! current model time           [s]
 
     real, intent(in)  :: & 
-    rho0     ! Air density at surface       [kg/m^3]
+    rho_sfc     ! Air density at surface       [kg/m^3]
 
     ! Output Variables
     real, intent(out) ::  & 
@@ -297,8 +297,8 @@ module mpace_a
     sensible_heat_flx = factor_interp( ratio, file_SH(after_time), file_SH(before_time) )
 
     ! Compute heat and moisture fluxes
-    wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
-    wprtp_sfc  = latent_heat_flx/(rho0*Lv)
+    wpthlp_sfc = sensible_heat_flx/(rho_sfc*Cp)
+    wprtp_sfc  = latent_heat_flx/(rho_sfc*Lv)
 
     ! Declare the value of ustar.
     ustar = 0.25

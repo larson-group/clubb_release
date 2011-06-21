@@ -248,7 +248,7 @@ module surface_flux
 
  
 !==============================================================================
-  real function convert_SH_to_km_s ( SH, rho0 )
+  real function convert_SH_to_km_s ( SH, rho_sfc )
 
 !   This function converts sensible heat flux in W/m^2 to
 !   natural units of k m/s for the wpthlp_sfc variable.
@@ -260,11 +260,11 @@ module surface_flux
 
     real, intent(in) :: &
       SH,               & ! Sensible heat flux     [W/m^2]
-      rho0                ! Density at the surface [kg/m^3]
+      rho_sfc                ! Density at the surface [kg/m^3]
 
     !--------------------BEGIN CODE-----------------------
 
-    convert_SH_to_km_s = SH / ( rho0 * Cp)
+    convert_SH_to_km_s = SH / ( rho_sfc * Cp)
 
     return
   
@@ -272,7 +272,7 @@ module surface_flux
 
 
 !==============================================================================
-  real function convert_LH_to_m_s ( LH, rho0 )
+  real function convert_LH_to_m_s ( LH, rho_sfc )
 
 !   This function converts latent heat flux in W/m^2 to
 !   natural units of m/s for the wprtp_sfc variable.
@@ -284,11 +284,11 @@ module surface_flux
     
     real, intent(in) :: &
       LH,               & ! Sensible heat flux     [W/m^2]
-      rho0                ! Density at the surface [kg/m^3]
+      rho_sfc                ! Density at the surface [kg/m^3]
 
     !--------------------BEGIN CODE-----------------------
 
-    convert_LH_to_m_s = LH / ( rho0 * Lv)
+    convert_LH_to_m_s = LH / ( rho_sfc * Lv)
 
     return
   

@@ -61,7 +61,7 @@ module dycoms2_rf01
   !======================================================================
   subroutine dycoms2_rf01_sfclyr( sfctype, T_sfc, p_sfc,  & 
                                     exner_sfc, ubar, & 
-                                    thlm_sfc, rtm_sfc, rho_zm_sfc, &
+                                    thlm_sfc, rtm_sfc, rho_sfc, &
                                     wpthlp_sfc, wprtp_sfc, ustar )
   ! Description:
   !   This subroutine computes surface fluxes of
@@ -89,7 +89,7 @@ module dycoms2_rf01
     ubar,      & ! mean sfc wind speed                           [m/s]
     thlm_sfc,  & ! theta_l at first model layer                  [K]
     rtm_sfc,   & ! Total water mixing ratio at first model layer [kg/kg]
-    rho_zm_sfc   ! Density at the surface                        [kg/m^3]
+    rho_sfc   ! Density at the surface                        [kg/m^3]
 
   ! Output variables
   real, intent(out) ::  & 
@@ -98,20 +98,20 @@ module dycoms2_rf01
     ustar
     
   ! Local Variable
-  real :: & 
-    Cd  ! Coefficient
+  real, parameter :: & 
+    Cd = 0.0011, &  ! Coefficient
+    SH = 15.0, &  ! Sensible heat flux
+    LH = 115.0  ! Latent heat flux
 
   !-----------------BEGIN CODE-----------------------
-
-  Cd = 0.0011
 
   ustar = 0.25
 
   ! Compute heat and moisture fluxes
   if ( sfctype == 0 ) then
 
-    wpthlp_sfc = convert_SH_to_km_s( 15.0, rho_zm_sfc )
-    wprtp_sfc  = convert_LH_to_m_s( 115.0, rho_zm_sfc )
+    wpthlp_sfc = convert_SH_to_km_s( SH, rho_sfc )
+    wprtp_sfc  = convert_LH_to_m_s( LH, rho_sfc )
 
   else if ( sfctype == 1 ) then
 
