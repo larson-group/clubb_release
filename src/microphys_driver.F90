@@ -981,8 +981,10 @@ module microphys_driver
         clubb_at_least_debug_level, &
         clubb_no_error  ! Constant
 
+#ifdef COAMPS_MICRO
     use coamps_micro_driver_module, only:  & 
         coamps_micro_driver ! Procedure
+#endif
 
     use pdf_parameter_module, only:  &
         pdf_parameter  ! Type
@@ -1255,6 +1257,7 @@ module microphys_driver
 #else
       stop "Not compiled with COAMPS microphysics"
       cond = -999.
+      if ( cond(1,1,1) /= cond(1,1,1) ) stop
 #endif
 
       if ( l_stats_samp ) then

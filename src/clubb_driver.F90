@@ -3391,7 +3391,7 @@ module clubb_driver
 
     use parameters_microphys, only: &
       micro_scheme, l_cloud_sed, Ncm_initial, &  ! Variables
-      LH_microphys_calls, LH_sequence_length
+      LH_microphys_calls  
 
     use constants_clubb, only: & 
       rc_tol, fstderr, cm3_per_m3 ! Variable(s)
@@ -3425,7 +3425,7 @@ module clubb_driver
 
     use parameters_microphys, only: &
       LH_microphys_type, LH_microphys_disabled, & ! Variable(s)
-      l_lh_vert_overlap
+      l_lh_vert_overlap, LH_sequence_length
 
     use latin_hypercube_driver_module, only: &
       LH_subcolumn_generator ! Procedure(s)
