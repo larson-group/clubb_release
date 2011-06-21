@@ -49,7 +49,7 @@ module error_code
 
   ! Error Code Values
   integer, parameter :: & 
-    clubb_no_error                 =  0,  & 
+    clubb_no_error                 =  0, & 
     clubb_var_less_than_zero       =  1, & 
     clubb_var_equals_NaN           =  2, & 
     clubb_singular_matrix          =  3, & 
@@ -148,12 +148,8 @@ module error_code
 
     ! ---- Begin Code ----
 
-    fatal_error = ( err_code == clubb_singular_matrix   .or. & 
-                  err_code == clubb_bad_lapack_arg      .or. & 
-                  err_code == clubb_var_equals_NaN      .or. & 
-                  err_code == clubb_rtm_level_not_found .or. & 
-                  err_code == clubb_var_out_of_bounds )
-
+    fatal_error = err_code /= clubb_no_error .and. & 
+                  err_code /= clubb_var_less_than_zero
     return
   end function fatal_error
 
