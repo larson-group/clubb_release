@@ -227,7 +227,7 @@ follow the following steps:
 *                        Using the CLUBB Model                        *
 ***********************************************************************
 
-%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % CHAPTER 1: COMPILING 
 %
@@ -260,7 +260,7 @@ directory.
 
 The GNU Fortran compiler (GCC) may or may not work.  The version that
 comes with RHEL 5 does not.  The versions that comes with Fedora Core 11 and 
-Ubuntu 8 LTS will both appear to work.
+Ubuntu 8 LTS both appear to work.
 
 It is important to note that all these compilers use *incompatible* module
 formats for the .mod files!  If you want to use different compilers on the
@@ -270,20 +270,20 @@ each compiler and use -M or -I flags to specify their location.
 In order to get similar results on differing architectures, platforms, and
 compilers, initially try a conservative optimization and enable 
 IEEE-754 standard style floating point math.  On x86 compatible machines 
-using SSE or SSE2 is usually the best way to do this.
+enabling SSE or SSE2 with a compiler flag is usually the best way to do this.
 
-Requirements:
+Requirements for compiling and running CLUBB:
 A. A Fortran 95 compiler with a complete implementation of the standard.
    The compile/config directory contains several scripts for 
    configurations we have tested.
 B. GNU make (we use v3.81).
-C. Perl 5 to run mkmf.
+C. Perl 5 to run the mkmf script (called by compile.bash to create the makefiles).
 D. LAPACK & BLAS.  These provide the tri and band diagonal matrix solver
    subroutines needed by CLUBB.  Many vendors provide optimized versions of
-   these routines, which may be much faster than the reference BLAS.  To be
-   safe, we recommend you use a LAPACK and BLAS library compiled with the 
-   same compiler you compile the CLUBB code with (E.g. don't compile LAPACK
-   with GNU Fortran and CLUBB with Portland Group's Fortran)
+   these routines, which are typically much faster than the reference BLAS.  
+   To be safe, we recommend you use a LAPACK and BLAS library compiled with the 
+   same compiler you compile the CLUBB code with (e.g. don't compile LAPACK
+   with GNU Fortran and CLUBB with Portland Group's Fortran).
 E. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
    See <http://http://www.gnu.org/software/bash/>.
 
@@ -295,7 +295,7 @@ G. netCDF >= v3.5.1;  We have not tested our code with anything older.
    remove -lnetcdf from the LDFLAGS.
 H. MATLAB or NCAR graphics for viewing the netCDF output data.
 
-To build, perform the following three steps:
+To compile the code, perform the following three steps:
 1. $ cd <CLUBB BASE DIRECTORY>/compile
    (<CLUBB BASE DIRECTORY> is the directory to which you checked out CLUBB.  
     Usually it is called "clubb" or some variant.)
@@ -338,26 +338,17 @@ to one of the file lists in directory compile/file_list.
 - (1.1.1) Promoting real to double precision at compile time
 -----------------------------------------------------------------------
 
-The g95 compiler allows for promotion of real variables without a "kind="
+Several compilers allows for promotion of real variables without a "kind="
 statement to double precision at compile time through the use of a compiler
-flag.  This will not currently work with the tuner because the numerical recipes
-routines throw compiler interface errors.  Therefore, it is necessary to modify
-compile.bash and corresponding config file of the compiler being used.  Two
-config files are currently set up for easy use of this promotion: 
-linux_ia32_g95_optimize.bash and linux_ia32_g95_debug.bash.
+flag.  This will not currently work with the the numerical recipes subroutines
+referenced by the tuner because they use operator overloading (therefore you can
+only use tune_type = 2 when all real variables are promoted)
 
-To set up the bash scripts for compile time real promotion, follow these steps:
-1. Edit config/linux_x86_64_g95_*.bash where * is either optimize or debug.
-   Comment out the line " ARCH="-march=k8 -msse3 -mfpmath=sse" " and uncomment
-   the line above with the " -r8 " flag.
-2. Edit compile.bash in the clubb/compile directory.  Change l_double_precision
-   to true.  Ensure that the config file edited above matches the uncommented 
-   config file at the beginning of the script.
-3. In the makefile section of the script, the line
-   " cd $objdir; $gmake -f Make.clubb_tuner " must be commented out for the code
-   to compile at double precision.
-4. Compile as described in section 1.1.  Note again that the tuner code will not
-   function as the numerical recipes code is excluded in this compilation.
+To do this:
+
+1. Do a clean_all.bash if have object files and programs from a prior compile.
+2. Edit compile.bash so that l_double_precision=true.
+3. ./compile.bash
 
 -----------------------------------------------------------------------
 - (1.2) Building (i.e. compiling) for use in a host model:
@@ -504,6 +495,9 @@ If this doesn't help, then to additionally delete everything in the binary
 and library directories, go to <CLUBB BASE DIRECTORY>/bin and type
 
 $ make distclean
+
+To save time we have a script clean_all.bash in the compile directory that will
+also do make distclean without the need to change directories.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -771,11 +765,11 @@ enabled.
 -----------------------------------------------------------------------
 
 The "tuner" code is used to optimize CLUBB's parameters in order to better match
-output from a 3D large-eddy simulation (LES) model.  The optimization technique 
-is the downhill-simplex method of Needler and Mead, as implemented in 
-_Numerical Recipes In Fortran 90_ (amoeba.f90).  You will either need special
+output from a 3D large-eddy simulation (LES) model.  The default optimization 
+technique is the downhill-simplex method of Needler and Mead, as implemented in 
+Numerical Recipes In Fortran 90, 3rd Ed. (amoeba.f90).  You will either need special
 access to the CLUBB repository, or your own license from Numerical Recipes to
-use the tuner.  In the latter case, the files that need to be placed in
+use the default algorithm.  In the latter case, the files that need to be placed in
 the directory src/Numerical_recipes are:
 amebsa.f90  nr.f90      nrutil.f90  ran1_v.f90
 amoeba.f90  nrtype.f90  ran1_s.f90  ran_state.f90
