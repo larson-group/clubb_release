@@ -1851,7 +1851,6 @@ module advance_xm_wpxp_module
 
     use error_code, only: &
         clubb_at_least_debug_level, & ! Procedure(s)
-        fatal_error, &
         clubb_no_error   ! Constant
 
     use stats_type, only: & 
