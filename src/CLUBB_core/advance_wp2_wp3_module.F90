@@ -3468,7 +3468,8 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: & ! Variables 
-        grav ! Gravitational acceleration [m/s^2]
+        grav, & ! Gravitational acceleration [m/s^2]
+        zero_threshold
 
     implicit none
 
@@ -3503,6 +3504,12 @@ module advance_wp2_wp3_module
 !                      - 0. * vpwp * invrs_dzm * ( vmp1 - vm ) &
 !                    )
 !    eMFc
+
+    ! Added by dschanen for ticket #36
+    ! We have found that when shear generation is zero this term will only be
+    ! offset by hole-filling (wp2_pd) and reduces turbulence 
+    ! unrealistically at lower altitudes to make up the difference.
+    rhs = max( rhs, zero_threshold )
 
     return
   end function wp2_term_pr3_rhs

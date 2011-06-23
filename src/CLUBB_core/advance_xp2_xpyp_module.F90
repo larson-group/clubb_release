@@ -2898,13 +2898,17 @@ module advance_xp2_xpyp_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: & ! Variables 
-      grav ! Gravitational acceleration [m/s^2]
+    use constants_clubb, only: & ! Constants 
+      grav, & ! Gravitational acceleration [m/s^2]
+      zero_threshold
 
     use grid_class, only: &
       gr ! Variable(s)
 
     implicit none
+
+    ! External
+    intrinsic :: abs, max
 
     ! Input Variables
     real, intent(in) :: & 
@@ -3030,6 +3034,12 @@ module advance_xp2_xpyp_module
                 )                                      ! warning that Lscalep1/Lscale are not
       ! used. -meyern
     end if ! .not. l_use_experimental_term_pr2
+
+    ! Added by dschanen for ticket #36
+    ! We have found that when shear generation is zero this term will only be
+    ! offset by hole-filling (up2_pd/vp2_pd) and reduces turbulence 
+    ! unrealistically at lower altitudes to make up the difference.
+    rhs = max( rhs, zero_threshold )
 
     return
   end function term_pr2
