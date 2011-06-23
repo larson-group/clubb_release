@@ -64,8 +64,11 @@ contains
         Lscale_down
 
     use error_code, only:  & 
-        clubb_var_equals_NaN,  & ! Variable(s)
-        clubb_at_least_debug_level ! Procedure(s)
+        clubb_at_least_debug_level, & ! Procedure(s)
+        fatal_error
+
+    use error_code, only:  & 
+      clubb_no_error ! Constant
 
     use model_flags, only: &
         l_sat_mixrat_lookup ! Variable(s)
@@ -102,7 +105,8 @@ contains
       Lscale  ! Mixing length                 [m]
 
     ! Local Variables
-    integer :: i, j
+    integer :: i, j, &
+      err_code_Lscale
 
     real :: tke_i, CAPE_incr
 
@@ -129,6 +133,9 @@ contains
 
     ! Variables to make L nonlocal
     real :: Lscale_up_max_alt, Lscale_down_min_alt
+
+    ! ---- Begin Code ----
+    err_code_Lscale = clubb_no_error
 
     !---------- Mixing length computation ----------------------------------
 
@@ -762,15 +769,13 @@ contains
     if( clubb_at_least_debug_level( 2 ) ) then
         
        ! Ensure that the output from this subroutine is valid.
-       call length_check( Lscale, Lscale_up, Lscale_down, err_code )
+       call length_check( Lscale, Lscale_up, Lscale_down, err_code_Lscale )
        ! Joshua Fasching January 2008
 
        ! Error Reporting
        ! Joshua Fasching February 2008
         
-       ! isValid replaced with err_code
-       ! Joshua Fasching March 2008
-       if ( err_code == clubb_var_equals_NaN ) then
+       if ( fatal_error( err_code_Lscale ) ) then
                 
           write(fstderr,*) "Errors in length subroutine"
            
@@ -788,8 +793,11 @@ contains
 
           write(fstderr,*) "Lscale = ", Lscale
           write(fstderr,*) "Lscale_up = ", Lscale_up
+
+          ! Overwrite the last error code with this new fatal error
+          err_code = err_code_Lscale
            
-       endif ! err_code == clubb_var_equals_NaN
+       endif ! Fatal error
 
     endif ! clubb_debug_level
 

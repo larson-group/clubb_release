@@ -88,7 +88,7 @@ module advance_wp2_wp3_module
         time_precision ! Variable(s)
 
     use error_code, only:  & 
-        lapack_error,  & ! Procedure(s)
+        fatal_error,  & ! Procedure(s)
         clubb_at_least_debug_level
 
     implicit none
@@ -169,6 +169,8 @@ module advance_wp2_wp3_module
       nsup      ! Number of superdiagonals in the LHS matrix.
 
     integer :: k, km1, kp1  ! Array indices
+
+    integer :: wp2_wp3_err_code ! Error code from solving for wp2/wp3
 
 
     !-----------------------------------------------------------------------
@@ -303,45 +305,48 @@ module advance_wp2_wp3_module
                      C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                      invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm,   & ! Intent(in)
                      thv_ds_zt, nsub, nsup,                         & ! Intent(in)
-                     wp2, wp3, wp3_zm, wp2_zt, err_code             ) ! Intent(inout)
+                     wp2, wp3, wp3_zm, wp2_zt, wp2_wp3_err_code     ) ! Intent(inout)
 
 !       Error output
 !       Joshua Fasching Feb 2008
-    if ( lapack_error( err_code ) .and.  & 
-         clubb_at_least_debug_level( 1 ) ) then
+    if ( fatal_error( wp2_wp3_err_code ) ) then  
+     
+      if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) "Errors in advance_wp2_wp3"
 
-      write(fstderr,*) "Errors in advance_wp2_wp3"
+        write(fstderr,*) "Intent(in)"
 
-      write(fstderr,*) "Intent(in)"
+        write(fstderr,*) "dt = ", dt
+        write(fstderr,*) "sfc_elevation = ", sfc_elevation
+        write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
+        write(fstderr,*) "wm_zm = ", wm_zm
+        write(fstderr,*) "wm_zt = ", wm_zt
+        write(fstderr,*) "wpthvp = ", wpthvp
+        write(fstderr,*) "wp2thvp = ", wp2thvp
+        write(fstderr,*) "um = ", um
+        write(fstderr,*) "vm = ", vm
+        write(fstderr,*) "upwp = ", upwp
+        write(fstderr,*) "vpwp = ", vpwp
+        write(fstderr,*) "up2 = ", up2
+        write(fstderr,*) "vp2 = ", vp2
+        write(fstderr,*) "Kh_zm = ", Kh_zm
+        write(fstderr,*) "Kh_zt = ", Kh_zt
+        write(fstderr,*) "tau_zm = ", tau_zm
+        write(fstderr,*) "tau_zt = ", tau_zt
+        write(fstderr,*) "Skw_zm = ", Skw_zm
+        write(fstderr,*) "Skw_zt = ", Skw_zt
+        write(fstderr,*) "mixt_frac = ", mixt_frac
+        write(fstderr,*) "wp2zt = ", wp2_zt
 
-      write(fstderr,*) "dt = ", dt
-      write(fstderr,*) "sfc_elevation = ", sfc_elevation
-      write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-      write(fstderr,*) "wm_zm = ", wm_zm
-      write(fstderr,*) "wm_zt = ", wm_zt
-      write(fstderr,*) "wpthvp = ", wpthvp
-      write(fstderr,*) "wp2thvp = ", wp2thvp
-      write(fstderr,*) "um = ", um
-      write(fstderr,*) "vm = ", vm
-      write(fstderr,*) "upwp = ", upwp
-      write(fstderr,*) "vpwp = ", vpwp
-      write(fstderr,*) "up2 = ", up2
-      write(fstderr,*) "vp2 = ", vp2
-      write(fstderr,*) "Kh_zm = ", Kh_zm
-      write(fstderr,*) "Kh_zt = ", Kh_zt
-      write(fstderr,*) "tau_zm = ", tau_zm
-      write(fstderr,*) "tau_zt = ", tau_zt
-      write(fstderr,*) "Skw_zm = ", Skw_zm
-      write(fstderr,*) "Skw_zt = ", Skw_zt
-      write(fstderr,*) "mixt_frac = ", mixt_frac
-      write(fstderr,*) "wp2zt = ", wp2_zt
+        write(fstderr,*) "Intent(in/out)"
 
-      write(fstderr,*) "Intent(in/out)"
+        write(fstderr,*) "wp2 = ", wp2
+        write(fstderr,*) "wp3 = ", wp3
 
-      write(fstderr,*) "wp2 = ", wp2
-      write(fstderr,*) "wp3 = ", wp3
+      end if
 
-    endif
+      err_code = wp2_wp3_err_code
+    end if ! fatal error
 
     return
 
@@ -393,9 +398,6 @@ module advance_wp2_wp3_module
 
     use fill_holes, only: & 
         fill_holes_driver
-
-    use error_code, only:  & 
-        lapack_error ! Procedure(s)
 
     use clip_explicit, only: &
         clip_variance, & ! Procedure(s)
@@ -623,8 +625,6 @@ module advance_wp2_wp3_module
 
     end if ! l_gmres
 
-    if ( lapack_error( err_code ) ) return
-
     ! Copy result into output arrays and clip
 
     do k = 1, gr%nnzp
@@ -851,6 +851,9 @@ module advance_wp2_wp3_module
         time_precision  ! Variable(s)
 
 #ifdef MKL
+    use error_code, only: &
+      fatal_error ! Procedure(s)
+
     use stats_variables, only:  & 
         iwp23_matrix_condt_num, & ! Variable(s)
         l_stats_samp, & 
@@ -989,7 +992,7 @@ module advance_wp2_wp3_module
                       gmres_temp_intlc, &
                       solut, err_code )
     ! Fall back to LAPACK if GMRES returned any errors
-    if ( err_code /= 0 ) then
+    if ( fatal_error( err_code ) ) then
       write(fstderr,*) "Errors encountered in GMRES solve."
       write(fstderr,*) "Falling back to LAPACK solver."
 
@@ -1020,7 +1023,7 @@ module advance_wp2_wp3_module
                          lhs, rhs, solut, err_code )
       end if
 
-    end if ! err_code /= 0
+    end if ! fatal_error
 
 #else
     stop "This build was not compiled with PARDISO/GMRES support."

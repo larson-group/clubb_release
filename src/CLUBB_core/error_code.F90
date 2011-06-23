@@ -104,6 +104,7 @@ module error_code
 
     end select
 
+    return
   end subroutine reportError
 !---------------------------------------------------------------------
   elemental function lapack_error( err_code )

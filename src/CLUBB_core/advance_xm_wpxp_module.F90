@@ -113,7 +113,9 @@ module advance_xm_wpxp_module
         time_precision ! Variable(s)
 
     use error_code, only:  & 
-        lapack_error     ! Procedure(s)
+      clubb_at_least_debug_level, & ! Procedure(s)
+      reportError, &
+      fatal_error
 
     use stats_type, only: &
         stat_begin_update, &
@@ -193,7 +195,7 @@ module advance_xm_wpxp_module
       thlm,      & ! th_l (liquid water potential temperature) [K]
       wpthlp       ! w'th_l'                                   [K m/s]
 
-    integer, intent(inout) :: err_code ! Model status
+    integer, intent(inout) :: err_code ! Error code for the model's status
 
     ! Input/Output Variables
     real, intent(inout), dimension(gr%nnzp,sclr_dim) ::  & 
@@ -247,7 +249,9 @@ module advance_xm_wpxp_module
 
     ! Constant parameters as a function of Skw.
 
-    integer :: nrhs ! Number of RHS vectors
+    integer :: &
+      nrhs, &          ! Number of RHS vectors
+      err_code_xm_wpxp ! Error code
 
     real :: rcond
 
@@ -423,18 +427,23 @@ module advance_xm_wpxp_module
       if ( l_stats_samp .and. irtm_matrix_condt_num > 0 ) then
         call xm_wpxp_solve( nrhs, &                     ! Intent(in)
                             lhs, rhs, &                 ! Intent(inout)
-                            solution, err_code, rcond ) ! Intent(out)
+                            solution, err_code_xm_wpxp, rcond ) ! Intent(out)
       else
         call xm_wpxp_solve( nrhs, &              ! Intent(in)
                             lhs, rhs, &          ! Intent(inout)
-                            solution, err_code ) ! Intent(out)
+                            solution, err_code_xm_wpxp ) ! Intent(out)
       endif
 
-      if ( lapack_error( err_code ) ) then
-        write(fstderr,'(a)') "rt LU decomp. failed"
-        deallocate( rhs, solution )
-        return
-      endif
+      if ( fatal_error( err_code_xm_wpxp ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,'(a)') "Mean total water & total water flux LU decomp. failed"
+          call reportError( err_code_xm_wpxp )
+        end if
+
+        ! Overwrite the current error status with the new fatal error
+        err_code = err_code_xm_wpxp
+
+      end if
 
       call xm_wpxp_clipping_and_stats &
            ( xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
@@ -443,13 +452,20 @@ module advance_xm_wpxp_module
              rt_tol**2, rt_tol, rcond, &            ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1), &        ! Intent(in)
-             rtm, rt_tol_mfl, wprtp, err_code )     ! Intent(inout)
+             rtm, rt_tol_mfl, wprtp, & ! Intent(inout)
+             err_code_xm_wpxp )  ! Intent(out)
 
-      if ( lapack_error( err_code ) ) then
-        write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
-        deallocate( rhs, solution )
-        return
-      endif
+      if ( fatal_error( err_code_xm_wpxp ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
+          call reportError( err_code_xm_wpxp )
+        end if
+
+        ! Overwrite the current error status with the new fatal error
+        err_code = err_code_xm_wpxp
+
+      end if
+
 
       ! Compute the upper and lower limits of w'th_l' at every level,
       ! based on the correlation of w and th_l, such that:
@@ -484,18 +500,23 @@ module advance_xm_wpxp_module
       if ( l_stats_samp .and. ithlm_matrix_condt_num > 0 ) then
         call xm_wpxp_solve( nrhs, &                     ! Intent(in)
                             lhs, rhs, &                 ! Intent(inout)
-                            solution, err_code, rcond ) ! Intent(out)
+                            solution, err_code_xm_wpxp, rcond ) ! Intent(out)
       else
         call xm_wpxp_solve( nrhs, &              ! Intent(in)
                             lhs, rhs, &          ! Intent(inout)
-                            solution, err_code ) ! Intent(out)
+                            solution, err_code_xm_wpxp ) ! Intent(out)
       endif
 
-      if ( lapack_error( err_code ) ) then
-        write(fstderr,'(a)') "thetal LU decomp. failed"
-        deallocate( rhs, solution )
-        return
-      endif
+      if ( fatal_error( err_code_xm_wpxp ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,'(a)') "Liquid pot. temp & thetal flux LU decomp. failed"
+          call reportError( err_code_xm_wpxp )
+        end if
+
+        ! Overwrite the current error status with the new fatal error
+        err_code = err_code_xm_wpxp
+
+      end if
 
       call xm_wpxp_clipping_and_stats &
            ( xm_wpxp_thlm, dt, wp2, thlp2, wm_zt,  & ! Intent(in)
@@ -504,13 +525,19 @@ module advance_xm_wpxp_module
              thl_tol**2, thl_tol, rcond, &           ! Intent(in)
              low_lev_effect, high_lev_effect, &      ! Intent(in)
              l_implemented, solution(:,1),  &        ! Intent(in)
-             thlm, thl_tol_mfl, wpthlp, err_code )   ! Intent(inout)
+             thlm, thl_tol_mfl, wpthlp, & ! Intent(inout)
+             err_code_xm_wpxp ) ! Intent(out)
 
-      if ( lapack_error( err_code ) ) then
-        write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
-        deallocate( rhs, solution )
-        return
-      endif
+      if ( fatal_error( err_code_xm_wpxp ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
+          call reportError( err_code_xm_wpxp )
+        end if
+
+        ! Overwrite the current error status with the new fatal error
+        err_code = err_code_xm_wpxp
+
+      end if
 
       ! Solve sclrm / wpsclrp
       ! If sclr_dim is 0, then this loop will execute 0 times.
@@ -556,13 +583,18 @@ module advance_xm_wpxp_module
         ! Solve for sclrm / w'sclr'
         call xm_wpxp_solve( nrhs, &              ! Intent(in)
                             lhs, rhs, &          ! Intent(inout)
-                            solution, err_code ) ! Intent(out)
+                            solution, err_code_xm_wpxp ) ! Intent(out)
 
-        if ( lapack_error( err_code ) ) then
-          write(fstderr,'(a)') "Passive scalar ", i, " LU decomp. failed."
-          deallocate( rhs, solution )
-          return
-        endif
+        if ( fatal_error( err_code_xm_wpxp ) ) then
+          if ( clubb_at_least_debug_level( 1 ) ) then
+            write(fstderr,*) "Passive scalar # ", i, " LU decomp. failed."
+            call reportError( err_code_xm_wpxp )
+          end if
+
+          ! Overwrite the current error status with the new fatal error
+          err_code = err_code_xm_wpxp
+
+        end if
 
         call xm_wpxp_clipping_and_stats &
              ( xm_wpxp_scalar, dt, wp2, sclrp2(:,i),  & ! Intent(in)
@@ -572,14 +604,19 @@ module advance_xm_wpxp_module
                sclr_tol(i)**2, sclr_tol(i), rcond, &    ! Intent(in)
                low_lev_effect, high_lev_effect, &       ! Intent(in)
                l_implemented, solution(:,1),  &         ! Intent(in)
-               sclrm(:,i), sclr_tol(i), wpsclrp(:,i), err_code ) ! Intent(inout)
+               sclrm(:,i), sclr_tol(i), wpsclrp(:,i), & ! Intent(inout)
+               err_code_xm_wpxp ) ! Intent(out)
 
-        if ( lapack_error( err_code ) ) then
-          write(fstderr,'(a)') "sclrm monotonic flux limiter:  tridag failed"
-          write(fstderr,*) "sclrm integer = ", i
-          deallocate( rhs, solution )
-          return
-        endif
+       if ( fatal_error( err_code_xm_wpxp ) ) then
+         if ( clubb_at_least_debug_level( 1 ) ) then
+           write(fstderr,*) "sclrm # ", i, "monotonic flux limiter: tridag failed"
+           call reportError( err_code_xm_wpxp )
+         end if
+
+         ! Overwrite the current error status with the new fatal error
+         err_code = err_code_xm_wpxp
+
+       end if
 
       enddo ! passive scalars
 
@@ -641,18 +678,23 @@ module advance_xm_wpxp_module
       if ( l_stats_samp .and. ithlm_matrix_condt_num + irtm_matrix_condt_num > 0 ) then
         call xm_wpxp_solve( nrhs, &                     ! Intent(in)
                             lhs, rhs, &                 ! Intent(inout)
-                            solution, err_code, rcond ) ! Intent(out)
+                            solution, err_code_xm_wpxp, rcond ) ! Intent(out)
       else
         call xm_wpxp_solve( nrhs, &              ! Intent(in)
                             lhs, rhs, &          ! Intent(inout)
-                            solution, err_code ) ! Intent(out)
+                            solution, err_code_xm_wpxp ) ! Intent(out)
       endif
 
-      if ( lapack_error( err_code ) ) then
-        write(fstderr,'(a)') "xm_wpxp LU decomp. failed."
-        deallocate( rhs, solution )
-        return
-      endif
+      if ( fatal_error( err_code_xm_wpxp ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,'(a)') "xm_wpxp matrix LU decomp. failed"
+          call reportError( err_code_xm_wpxp )
+        end if
+
+        ! Overwrite the current error status with the new fatal error
+        err_code = err_code_xm_wpxp
+
+      end if
 
       call xm_wpxp_clipping_and_stats &
            ( xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
@@ -661,13 +703,19 @@ module advance_xm_wpxp_module
              rt_tol**2, rt_tol, rcond, &            ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,1),  &       ! Intent(in)
-             rtm, rt_tol_mfl, wprtp, err_code )     ! Intent(inout)
+             rtm, rt_tol_mfl, wprtp,  & ! Intent(inout)
+             err_code_xm_wpxp ) ! Intent(out)
 
-      if ( lapack_error( err_code ) ) then
-        write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
-        deallocate( rhs, solution )
-        return
-      endif
+      if ( fatal_error( err_code_xm_wpxp ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
+          call reportError( err_code_xm_wpxp )
+        end if
+
+        ! Overwrite the current error status with the new fatal error
+        err_code = err_code_xm_wpxp
+
+      end if
 
       call xm_wpxp_clipping_and_stats &
            ( xm_wpxp_thlm, dt, wp2, thlp2, wm_zt, & ! Intent(in)
@@ -676,13 +724,19 @@ module advance_xm_wpxp_module
              thl_tol**2, thl_tol, rcond, &          ! Intent(in)
              low_lev_effect, high_lev_effect, &     ! Intent(in)
              l_implemented, solution(:,2),  &       ! Intent(in)
-             thlm, thl_tol_mfl, wpthlp, err_code )  ! Intent(inout)
+             thlm, thl_tol_mfl, wpthlp, & ! Intent(inout)
+             err_code_xm_wpxp ) ! Intent(out)
 
-      if ( lapack_error( err_code ) ) then
-        write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
-        deallocate( rhs, solution )
-        return
-      endif
+      if ( fatal_error( err_code_xm_wpxp ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
+          call reportError( err_code_xm_wpxp )
+        end if
+
+        ! Overwrite the current error status with the new fatal error
+        err_code = err_code_xm_wpxp
+
+      end if
 
 ! ---> h1g, 2010-06-15
 ! scalar transport, e.g, droplet and ice number concentration
@@ -702,83 +756,84 @@ module advance_xm_wpxp_module
                sclr_tol(i)**2, sclr_tol(i), rcond, &    ! Intent(in)
                low_lev_effect, high_lev_effect, &       ! Intent(in)
                l_implemented, solution(:,2+i),  &       ! Intent(in)
-               sclrm(:,i), sclr_tol(i), wpsclrp(:,i), err_code ) ! Intent(inout)
+               sclrm(:,i), sclr_tol(i), wpsclrp(:,i), & ! Intent(inout)
+               err_code_xm_wpxp ) ! Intent(out)
 
-        if ( lapack_error( err_code ) ) then
-          write(fstderr,'(a)') "sclrm monotonic flux limiter:  tridag failed"
-          write(fstderr,*) "sclrm integer = ", i
-          deallocate( rhs, solution )
-          return
-        endif
+        if ( fatal_error( err_code_xm_wpxp ) ) then
+          if ( clubb_at_least_debug_level( 1 ) ) then
+            write(fstderr,*) "sclrm # ", i, "monotonic flux limiter: tridag failed"
+            call reportError( err_code_xm_wpxp )
+          end if
 
-      enddo ! 1..sclr_dim
+          ! Overwrite the current error status with the new fatal error
+          err_code = err_code_xm_wpxp
 
-    endif ! l_clip_semi_implicit .and. l_3pt_sqd_dfsn
+        end if
 
+      end do ! 1..sclr_dim
+
+    end if ! l_clip_semi_implicit .and. l_3pt_sqd_dfsn
+
+    ! De-allocate memory
     deallocate( rhs, solution )
 
     ! Error Report
-    ! (This code is unreachable)
     ! Joshua Fasching Feb 2008
-    !
-    !if ( lapack_error( err_code ) .and.  &
-    !     clubb_at_least_debug_level( 1 ) ) then
-    !
-    !   write(fstderr,*) "Error in advance_xm_wpxp"
-    !
-    !   write(fstderr,*) "Intent(in)"
-    !
-    !   write(fstderr,*) "dt = ", dt
-    !   write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-    !   write(fstderr,*) "wm_zm = ", wm_zm
-    !   write(fstderr,*) "wm_zt = ", wm_zt
-    !   write(fstderr,*) "wp2 = ", wp2
-    !   write(fstderr,*) "wp3 = ", wp3
-    !   write(fstderr,*) "Kh_zt = ", Kh_zt
-    !   write(fstderr,*) "tau_zm = ", tau_zm
-    !   write(fstderr,*) "Skw_zm = ", Skw_zm
-    !   write(fstderr,*) "rtpthvp = ", rtpthvp
-    !   write(fstderr,*) "rtm_forcing = ", rtm_forcing
-    !   write(fstderr,*) "thlpthvp = ", thlpthvp
-    !   write(fstderr,*) "thlm_forcing = ", thlm_forcing
-    !   write(fstderr,*) "rtp2 = ", rtp2
-    !   write(fstderr,*) "thlp2 = ", thlp2
-    !   write(fstderr,*) "wp2_zt = ", wp2_zt
-    !   write(fstderr,*) "pdf_params%w1 = ", pdf_params%w1
-    !   write(fstderr,*) "pdf_params%w2 = ", pdf_params%w2
-    !   write(fstderr,*) "pdf_params%sw1 = ", pdf_params%sw1
-    !   write(fstderr,*) "pdf_params%sw2 = ", pdf_params%sw2
-    !   write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
-    !   write(fstderr,*) "l_implemented = ", l_implemented
-    !
-    !   if ( present( sclrpthvp ) ) then
-    !      write(fstderr,*) "sclrpthvp = ", sclrpthvp
-    !   endif
-    !
-    !   if ( present( sclrm_forcing ) ) then
-    !      write(fstderr,*) "sclrm_forcing = ", sclrm_forcing
-    !   endif
-    !
-    !   if ( present( sclrp2 ) ) then
-    !      write(fstderr,*) "sclrp2 = ", sclrp2
-    !   endif
-    !
-    !   write(fstderr,*) "Intent(inout)"
-    !
-    !   write(fstderr,*) "rtm = ", rtm
-    !   write(fstderr,*) "wprtp = ", wprtp
-    !   write(fstderr,*) "thlm = ", thlm
-    !   write(fstderr,*) "wpthlp =", wpthlp
-    !
-    !   if ( present( sclrm ) ) then
-    !      write(fstderr,*) "sclrm = ", sclrm
-    !   endif
-    !
-    !   if ( present( wpsclrp ) ) then
-    !      write(fstderr,*) "wpsclrp = ", wpsclrp
-    !   endif
-    !
-    !endif
+    if ( fatal_error( err_code ) .and. clubb_at_least_debug_level( 1 ) ) then
+
+      write(fstderr,*) "Error in advance_xm_wpxp"
+
+      write(fstderr,*) "Intent(in)"
+
+      write(fstderr,*) "dt = ", dt
+      write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
+      write(fstderr,*) "wm_zm = ", wm_zm
+      write(fstderr,*) "wm_zt = ", wm_zt
+      write(fstderr,*) "wp2 = ", wp2
+      write(fstderr,*) "wp3_on_wp2 = ", wp3_on_wp2
+      write(fstderr,*) "wp3_on_wp2_zt = ", wp3_on_wp2_zt
+      write(fstderr,*) "Kh_zt = ", Kh_zt
+      write(fstderr,*) "tau_zm = ", tau_zm
+      write(fstderr,*) "Skw_zm = ", Skw_zm
+      write(fstderr,*) "rtpthvp = ", rtpthvp
+      write(fstderr,*) "rtm_ref = ", rtm_ref
+      write(fstderr,*) "thlm_ref = ", thlm_ref
+      write(fstderr,*) "rtm_forcing = ", rtm_forcing
+      write(fstderr,*) "thlpthvp = ", thlpthvp
+      write(fstderr,*) "thlm_forcing = ", thlm_forcing
+      write(fstderr,*) "rho_ds_zm = ", rho_ds_zm
+      write(fstderr,*) "rho_ds_zt = ", rho_ds_zt
+      write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm
+      write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt
+      write(fstderr,*) "thv_ds_zm = ", thv_ds_zm
+      write(fstderr,*) "rtp2 = ", rtp2
+      write(fstderr,*) "thlp2 = ", thlp2
+      write(fstderr,*) "pdf_params%w1 = ", pdf_params%w1
+      write(fstderr,*) "pdf_params%w2 = ", pdf_params%w2
+      write(fstderr,*) "pdf_params%sw1 = ", pdf_params%varnce_w1
+      write(fstderr,*) "pdf_params%sw2 = ", pdf_params%varnce_w2
+      write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
+      write(fstderr,*) "l_implemented = ", l_implemented
+ 
+      if ( sclr_dim > 0 )  then
+        write(fstderr,*) "sclrp2 = ", sclrp2
+        write(fstderr,*) "sclrpthvp = ", sclrpthvp
+        write(fstderr,*) "sclrm_forcing = ", sclrm_forcing
+      end if
+    
+      write(fstderr,*) "Intent(inout)"
+ 
+      write(fstderr,*) "rtm = ", rtm
+      write(fstderr,*) "wprtp = ", wprtp
+      write(fstderr,*) "thlm = ", thlm
+      write(fstderr,*) "wpthlp =", wpthlp
+
+      if ( sclr_dim > 0 )  then
+        write(fstderr,*) "sclrm = ", sclrm
+        write(fstderr,*) "wpsclrp = ", wpsclrp
+      end if
+
+    end if ! Fatal error and debug_level >= 1
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
@@ -1796,7 +1851,7 @@ module advance_xm_wpxp_module
 
     use error_code, only: &
         clubb_at_least_debug_level, & ! Procedure(s)
-        lapack_error, &
+        fatal_error, &
         clubb_no_error   ! Constant
 
     use stats_type, only: & 
@@ -2149,7 +2204,7 @@ module advance_xm_wpxp_module
                                            xm, xm_tol, wpxp, err_code )
 
       ! Check for errors
-      if ( lapack_error( err_code ) ) return
+      if ( fatal_error( err_code ) ) return
 
     endif
 

@@ -51,6 +51,9 @@ module numerical_check
         gr ! Variable
     implicit none
 
+    ! Constant Parameters
+    character(*), parameter :: proc_name = "compute_length"
+
     ! Input Variables
     real, dimension(gr%nnzp), intent(in) ::  & 
       Lscale,     & ! Mixing length                 [m]
@@ -61,9 +64,8 @@ module numerical_check
     integer, intent(inout) :: & 
       err_code
 
-    ! Local Variables
-    character(*), parameter :: proc_name = "compute_length"
 !-----------------------------------------------------------------------------
+
     call check_nan( Lscale, "Lscale", proc_name, err_code )
     call check_nan( Lscale_up, "Lscale_up", proc_name, err_code )
     call check_nan( Lscale_down, "Lscale_down", proc_name, err_code )
@@ -229,7 +231,7 @@ module numerical_check
                prefix, &
                wpsclrp_sfc, wpedsclrp_sfc, & 
                sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
-               sclrm_forcing, edsclrm, edsclrm_forcing )
+               sclrm_forcing, edsclrm, edsclrm_forcing, err_code )
 !
 ! Description: 
 !   This subroutine determines what input variables may have NaN values.
@@ -246,8 +248,12 @@ module numerical_check
 
     implicit none
 
-    ! Input variables
+    ! Constant Parameters
+    ! Name of the procedure using parameterization_check
+    character(len=25), parameter ::  & 
+      proc_name = "parameterization_timestep"
 
+    ! Input variables
     real, intent(in), dimension(gr%nnzp) ::  & 
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
@@ -310,107 +316,105 @@ module numerical_check
       edsclrm,         & ! Eddy passive scalar mean    [units vary]
       edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
 
+    ! In / Out Variables
+    integer, intent(inout) :: &
+      err_code ! Error code
+
     ! Local Variables
-
-    ! Name of the procedure using parameterization_check
-
-    character(len=25), parameter ::  & 
-      proc_name = "parameterization_timestep"
-
-    integer :: i
+    integer :: i ! Loop iterator for the scalars
 
 !-------- Input Nan Check ----------------------------------------------
 
-    call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name)
-    call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name )
-    call check_nan( um_forcing,"um_forcing", prefix//proc_name )
-    call check_nan( vm_forcing,"vm_forcing", prefix//proc_name )
+    call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name, err_code)
+    call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name, err_code )
+    call check_nan( um_forcing,"um_forcing", prefix//proc_name, err_code )
+    call check_nan( vm_forcing,"vm_forcing", prefix//proc_name, err_code )
 
-    call check_nan( wm_zm,"wm_zm", prefix//proc_name )
-    call check_nan( wm_zt,"wm_zt", prefix//proc_name )
-    call check_nan( p_in_Pa,"p_in_Pa", prefix//proc_name )
-    call check_nan( rho_zm,"rho_zm", prefix//proc_name )
-    call check_nan( rho,"rho", prefix//proc_name )
-    call check_nan( exner,"exner", prefix//proc_name )
-    call check_nan( rho_ds_zm,"rho_ds_zm", prefix//proc_name )
-    call check_nan( rho_ds_zt,"rho_ds_zt", prefix//proc_name )
-    call check_nan( invrs_rho_ds_zm,"invrs_rho_ds_zm", prefix//proc_name )
-    call check_nan( invrs_rho_ds_zt,"invrs_rho_ds_zt", prefix//proc_name )
-    call check_nan( thv_ds_zm,"thv_ds_zm", prefix//proc_name )
-    call check_nan( thv_ds_zt,"thv_ds_zt", prefix//proc_name )
+    call check_nan( wm_zm, "wm_zm", prefix//proc_name, err_code )
+    call check_nan( wm_zt, "wm_zt", prefix//proc_name, err_code )
+    call check_nan( p_in_Pa, "p_in_Pa", prefix//proc_name, err_code )
+    call check_nan( rho_zm, "rho_zm", prefix//proc_name, err_code )
+    call check_nan( rho, "rho", prefix//proc_name, err_code )
+    call check_nan( exner, "exner", prefix//proc_name, err_code )
+    call check_nan( rho_ds_zm, "rho_ds_zm", prefix//proc_name, err_code )
+    call check_nan( rho_ds_zt, "rho_ds_zt", prefix//proc_name, err_code )
+    call check_nan( invrs_rho_ds_zm, "invrs_rho_ds_zm", prefix//proc_name, err_code )
+    call check_nan( invrs_rho_ds_zt, "invrs_rho_ds_zt", prefix//proc_name, err_code )
+    call check_nan( thv_ds_zm, "thv_ds_zm", prefix//proc_name, err_code )
+    call check_nan( thv_ds_zt, "thv_ds_zt", prefix//proc_name, err_code )
 
-    call check_nan( um,"um", prefix//proc_name )
-    call check_nan( upwp,"upwp", prefix//proc_name )
-    call check_nan( vm,"vm", prefix//proc_name )
-    call check_nan( vpwp,"vpwp", prefix//proc_name )
-    call check_nan( up2,"up2", prefix//proc_name )
-    call check_nan( vp2,"vp2", prefix//proc_name )
-    call check_nan( rtm,"rtm", prefix//proc_name )
-    call check_nan( wprtp,"wprtp", prefix//proc_name )
-    call check_nan( thlm,"thlm", prefix//proc_name )
-    call check_nan( wpthlp,"wpthlp", prefix//proc_name )
-    call check_nan( wp2,"wp2", prefix//proc_name )
-    call check_nan( wp3,"wp3", prefix//proc_name )
-    call check_nan( rtp2,"rtp2", prefix//proc_name )
-    call check_nan( thlp2,"thlp2", prefix//proc_name )
-    call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
+    call check_nan( um, "um", prefix//proc_name, err_code )
+    call check_nan( upwp, "upwp", prefix//proc_name, err_code )
+    call check_nan( vm, "vm", prefix//proc_name, err_code )
+    call check_nan( vpwp, "vpwp", prefix//proc_name, err_code )
+    call check_nan( up2, "up2", prefix//proc_name, err_code )
+    call check_nan( vp2, "vp2", prefix//proc_name, err_code )
+    call check_nan( rtm, "rtm", prefix//proc_name, err_code )
+    call check_nan( wprtp, "wprtp", prefix//proc_name, err_code )
+    call check_nan( thlm, "thlm", prefix//proc_name, err_code )
+    call check_nan( wpthlp, "wpthlp", prefix//proc_name, err_code )
+    call check_nan( wp2, "wp2", prefix//proc_name, err_code )
+    call check_nan( wp3, "wp3", prefix//proc_name, err_code )
+    call check_nan( rtp2, "rtp2", prefix//proc_name, err_code )
+    call check_nan( thlp2, "thlp2", prefix//proc_name, err_code )
+    call check_nan( rtpthlp, "rtpthlp", prefix//proc_name, err_code )
 
-    call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name )
-    call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name )
-    call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name )
-    call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name )
+    call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name, err_code )
+    call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name, err_code )
+    call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name, err_code )
+    call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name, err_code )
 
     do i = 1, sclr_dim
 
       call check_nan( sclrm_forcing(:,i),"sclrm_forcing",  & 
-                      prefix//proc_name )
+                      prefix//proc_name, err_code )
 
       call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & 
-                      prefix//proc_name )
+                      prefix//proc_name, err_code )
 
-      call check_nan( sclrm(:,i),"sclrm", prefix//proc_name )
-      call check_nan( wpsclrp(:,i),"wpsclrp", prefix//proc_name )
-      call check_nan( sclrp2(:,i),"sclrp2", prefix//proc_name )
-      call check_nan( sclrprtp(:,i),"sclrprtp", prefix//proc_name )
-      call check_nan( sclrpthlp(:,i),"sclrpthlp", prefix//proc_name )
+      call check_nan( sclrm(:,i),"sclrm", prefix//proc_name, err_code )
+      call check_nan( wpsclrp(:,i),"wpsclrp", prefix//proc_name, err_code )
+      call check_nan( sclrp2(:,i),"sclrp2", prefix//proc_name, err_code )
+      call check_nan( sclrprtp(:,i),"sclrprtp", prefix//proc_name, err_code )
+      call check_nan( sclrpthlp(:,i),"sclrpthlp", prefix//proc_name, err_code )
 
     end do
 
 
     do i = 1, edsclr_dim
 
-      call check_nan( edsclrm_forcing(:,i),"edsclrm_forcing", prefix//proc_name )
+      call check_nan( edsclrm_forcing(:,i),"edsclrm_forcing", prefix//proc_name, err_code )
 
       call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
-                      prefix//proc_name )
+                      prefix//proc_name, err_code )
 
-      call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
+      call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name, err_code )
 
     enddo
 
 !---------------------------------------------------------------------
 
 
-    call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name )
-    call check_negative( p_in_Pa, gr%nnzp ,"p_in_Pa", prefix//proc_name )
-    call check_negative( rho, gr%nnzp ,"rho", prefix//proc_name )
-    call check_negative( rho_zm, gr%nnzp ,"rho_zm", prefix//proc_name )
-    call check_negative( exner, gr%nnzp ,"exner", prefix//proc_name )
-    call check_negative( rho_ds_zm, gr%nnzp ,"rho_ds_zm", prefix//proc_name )
-    call check_negative( rho_ds_zt, gr%nnzp ,"rho_ds_zt", prefix//proc_name )
+    call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name, err_code )
+    call check_negative( p_in_Pa, gr%nnzp ,"p_in_Pa", prefix//proc_name, err_code )
+    call check_negative( rho, gr%nnzp ,"rho", prefix//proc_name, err_code )
+    call check_negative( rho_zm, gr%nnzp ,"rho_zm", prefix//proc_name, err_code )
+    call check_negative( exner, gr%nnzp ,"exner", prefix//proc_name, err_code )
+    call check_negative( rho_ds_zm, gr%nnzp ,"rho_ds_zm", prefix//proc_name, err_code )
+    call check_negative( rho_ds_zt, gr%nnzp ,"rho_ds_zt", prefix//proc_name, err_code )
     call check_negative( invrs_rho_ds_zm, gr%nnzp ,"invrs_rho_ds_zm", &
-                         prefix//proc_name )
+                         prefix//proc_name, err_code )
     call check_negative( invrs_rho_ds_zt, gr%nnzp ,"invrs_rho_ds_zt", &
-                         prefix//proc_name )
-    call check_negative( thv_ds_zm, gr%nnzp ,"thv_ds_zm", prefix//proc_name )
-    call check_negative( thv_ds_zt, gr%nnzp ,"thv_ds_zt", prefix//proc_name )
-    call check_negative( up2, gr%nnzp ,"up2", prefix//proc_name )
-    call check_negative( vp2, gr%nnzp ,"vp2", prefix//proc_name )
-    call check_negative( wp2, gr%nnzp ,"wp2", prefix//proc_name )
-    call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name )
-    call check_negative( thlm, gr%nnzp ,"thlm", prefix//proc_name )
-    call check_negative( rtp2, gr%nnzp ,"rtp2", prefix//proc_name )
-    call check_negative( thlp2, gr%nnzp ,"thlp2", prefix//proc_name )
+                         prefix//proc_name, err_code )
+    call check_negative( thv_ds_zm, gr%nnzp ,"thv_ds_zm", prefix//proc_name, err_code )
+    call check_negative( thv_ds_zt, gr%nnzp ,"thv_ds_zt", prefix//proc_name, err_code )
+    call check_negative( up2, gr%nnzp ,"up2", prefix//proc_name, err_code )
+    call check_negative( vp2, gr%nnzp ,"vp2", prefix//proc_name, err_code )
+    call check_negative( wp2, gr%nnzp ,"wp2", prefix//proc_name, err_code )
+    call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name, err_code )
+    call check_negative( thlm, gr%nnzp ,"thlm", prefix//proc_name, err_code )
+    call check_negative( rtp2, gr%nnzp ,"rtp2", prefix//proc_name, err_code )
+    call check_negative( thlp2, gr%nnzp ,"thlp2", prefix//proc_name, err_code )
 
     return
   end subroutine parameterization_check
@@ -440,18 +444,18 @@ module numerical_check
 
     ! Input Variables
     real,intent(in) ::  & 
-    wp2_sfc,     & ! Vertical velocity variance        [m^2/s^2]
-    up2_sfc,     & ! u'^2                              [m^2/s^2]
-    vp2_sfc,     & ! u'^2                              [m^2/s^2]
-    thlp2_sfc,   & ! thetal variance                   [K^2]
-    rtp2_sfc,    & ! rt variance                       [(kg/kg)^2]
-    rtpthlp_sfc    ! thetal rt covariance              [kg K/kg]
+      wp2_sfc,     & ! Vertical velocity variance        [m^2/s^2]
+      up2_sfc,     & ! u'^2                              [m^2/s^2]
+      vp2_sfc,     & ! u'^2                              [m^2/s^2]
+      thlp2_sfc,   & ! thetal variance                   [K^2]
+      rtp2_sfc,    & ! rt variance                       [(kg/kg)^2]
+      rtpthlp_sfc    ! thetal rt covariance              [kg K/kg]
 
 
     real, dimension(sclr_dim), intent(in) :: & 
-    sclrp2_sfc,    & ! Passive scalar variance                 [units^2]
-    sclrprtp_sfc,  & ! Passive scalar r_t covariance           [units kg/kg]
-    sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
+      sclrp2_sfc,    & ! Passive scalar variance                 [units^2]
+      sclrprtp_sfc,  & ! Passive scalar r_t covariance           [units kg/kg]
+      sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
 
     ! Input/Output Variable
     integer, intent(inout) :: err_code    ! Are these outputs valid?
@@ -485,9 +489,9 @@ module numerical_check
 !-----------------------------------------------------------------------
   subroutine rad_check( thlm, rcm, rtm, ricem,  & 
                         cloud_frac, p_in_Pa, exner, rho_zm )
-!       Description:
-!       Checks radiation input variables. If they are < 0 it reports
-!       to the console.
+! Description:
+!   Checks radiation input variables. If they are < 0 it reports
+!   to the console.
 !------------------------------------------------------------------------
 
     use constants_clubb, only:  & 
@@ -498,25 +502,28 @@ module numerical_check
 
     implicit none
 
-    !Input/Output variables
-    real, dimension(gr%nnzp), intent(in) :: & 
-    thlm,           & ! Liquid Water Potential Temperature   [K/s]
-    rcm,            & ! Liquid Water Mixing Ratio            [Kg/Kg]
-    rtm,            & ! Total Water Mixing Ratio             [Kg/Kg]
-    ricem,          & ! Ice Water Mixing Ratio               [Kg/Kg]
-    cloud_frac,     & ! Cloud Fraction                       [-]
-    p_in_Pa,        & ! Pressure                             [Pa]
-    exner,          & ! Exner Function                       [-]
-    rho_zm           ! Density                              [-]
-
-! Local variables
+    ! Constant Parameters
     character(len=*), parameter ::  & 
-    proc_name = "Before BUGSrad."
+      proc_name = "Before BUGSrad."
 
+    ! Input/Output variables
+    real, dimension(gr%nnzp), intent(in) :: & 
+      thlm,           & ! Liquid Water Potential Temperature   [K/s]
+      rcm,            & ! Liquid Water Mixing Ratio            [kg/kg]
+      rtm,            & ! Total Water Mixing Ratio             [kg/kg]
+      ricem,          & ! Ice Water Mixing Ratio               [kg/kg]
+      cloud_frac,     & ! Cloud Fraction                       [-]
+      p_in_Pa,        & ! Pressure                             [Pa]
+      exner,          & ! Exner Function                       [-]
+      rho_zm            ! Air Density                          [kg/m^3]
+
+    ! Local variables
     real,dimension(gr%nnzp) :: rvm
 
 !-------------------------------------------------------------------------
+
     rvm = rtm - rcm
+
     call check_negative( thlm, gr%nnzp ,"thlm", proc_name )
     call check_negative( rcm, gr%nnzp ,"rcm", proc_name )
     call check_negative( rtm, gr%nnzp ,"rtm", proc_name )
@@ -743,7 +750,7 @@ module numerical_check
     ! Input Variables
     real, intent(in) :: xarg
 
-#ifdef __GFORTRAN__
+#ifdef __GFORTRAN__  /* if the isnan extension is available, we use it here */
     is_nan_sclr = isnan( xarg )
 #else
     ! Local Variables
@@ -822,8 +829,8 @@ module numerical_check
   subroutine check_negative_total & 
             ( var, varname, operation, err_code )
 !
-!       Description: Checks for negative values in the var array and reports
-!       them.
+! Description: 
+!   Checks for negative values in the var array and reports them.
 !
 !-----------------------------------------------------------------------
     use constants_clubb, only: & 
@@ -848,13 +855,15 @@ module numerical_check
     integer, optional, intent(inout) :: err_code
 
     if ( any( var < 0.0 ) ) then
+
       write(fstderr,*) varname, " < 0 in ", operation
       if ( present( err_code ) ) then
         if (err_code < clubb_var_less_than_zero ) then
           err_code = clubb_var_less_than_zero
-        endif
-      endif
-    end if
+        end if
+      end if
+
+    end if ! any ( var < 0 )
 
     return
 
@@ -863,14 +872,16 @@ module numerical_check
 
 !------------------------------------------------------------------------
   subroutine check_negative_index & 
-            ( var, n, varname, operation, err_code )
+            ( var, ndim, varname, operation, err_code )
 !
-!       Description: Checks for negative values in the var array and reports
-!                    the index in which the negative values occur.
+! Description: 
+!   Checks for negative values in the var array and reports
+!   the index in which the negative values occur.
 !
 !-----------------------------------------------------------------------
     use constants_clubb, only: & 
         fstderr ! Variable
+
     use error_code, only:  & 
         clubb_var_less_than_zero ! Variable
 
@@ -880,9 +891,9 @@ module numerical_check
     intrinsic :: any, present
 
     ! Input Variables
-    integer, intent(in) :: n
+    integer, intent(in) :: ndim
 
-    real, intent(in), dimension(n) :: var
+    real, intent(in), dimension(ndim) :: var
 
     character(len=*), intent(in)::  & 
     varname,     & ! Varible being examined
@@ -892,9 +903,10 @@ module numerical_check
     integer, optional, intent(inout) :: err_code
 
     ! Local Variable
-    integer :: k
+    integer :: k ! Loop iterator
 
-    do k=1, n,1
+    do k=1,ndim,1
+
       if ( var(k) < 0.0 )  then
 
         write(fstderr,*) varname, " < 0 in ", operation,  & 
@@ -903,12 +915,12 @@ module numerical_check
         if ( present( err_code ) ) then
           if (err_code < clubb_var_less_than_zero ) then
             err_code = clubb_var_less_than_zero
-          endif
-        endif
+          end if
+        end if
 
-      endif
+      end if
 
-    end do
+    end do ! 1..n
 
     return
 
@@ -918,7 +930,8 @@ module numerical_check
 !------------------------------------------------------------------------
   subroutine check_nan_2d( var, varname, operation, err_code )
 !
-!       Description: Checks for a NaN in the var array and reports it.
+!  Description: 
+!    Checks for a NaN in the var array and reports it.
 !
 !
 !------------------------------------------------------------------------
@@ -936,7 +949,7 @@ module numerical_check
     real, intent(in), dimension(:) :: var ! Variable being examined
 
     character(len=*), intent(in)::  & 
-      varname,     & ! Name of variable
+      varname,  & ! Name of variable
       operation   ! Procedure calling check_nan
 
     ! Optional In/Out Variable
@@ -947,8 +960,8 @@ module numerical_check
       if ( present( err_code ) ) then
         if( err_code < clubb_var_equals_NaN ) then
           err_code = clubb_var_equals_NaN
-        endif
-      endif
+        end if
+      end if
     end if
 
     return
@@ -957,7 +970,8 @@ module numerical_check
 !-----------------------------------------------------------------------
   subroutine check_nan_sclr( var, varname, operation, err_code )
 !
-!       Description: Checks for a NaN in the scalar var then reports it.
+! Description: 
+!   Checks for a NaN in the scalar var then reports it.
 !
 !-----------------------------------------------------------------------
     use constants_clubb, only:  & 
@@ -985,8 +999,8 @@ module numerical_check
       if ( present( err_code ) ) then
         if( err_code < clubb_var_equals_NaN ) then
           err_code = clubb_var_equals_NAN
-        endif
-      endif
+        end if
+      end if
     end if
 
     return
@@ -1000,10 +1014,10 @@ module numerical_check
                                            integral_forcing, dt ) &
   result( spurious_source )
 !
-!       Description: Checks whether there is conservation within the 
-!                    column and returns any imbalance as spurious_source
-!                    where spurious_source is defined negative for a spurious 
-!                    sink. 
+! Description: 
+!   Checks whether there is conservation within the column and returns any 
+!   imbalance as spurious_source where spurious_source is defined negative 
+!   for a spurious sink. 
 !
 !-----------------------------------------------------------------------
 
@@ -1011,16 +1025,20 @@ module numerical_check
 
     ! Input Variables
     real, intent(in) :: & 
-      integral_after, &
-      integral_before, &
-      flux_top, &
-      flux_sfc, &
-      integral_forcing, &
-      dt
+      integral_after, &   ! Vertically-integrated quantity after dt time  [units vary]
+      integral_before, &  ! Vertically-integrated quantity before dt time [units vary]
+      flux_top, &         ! Total flux at the top of the domain           [units vary]
+      flux_sfc, &         ! Total flux at the bottom of the domain        [units vary]
+      integral_forcing, & ! Vertically-integrated forcing                 [units vary] 
+      dt                  ! Timestep size                                 [s]
     
     ! Return Variable
-    real :: spurious_source
+    real :: spurious_source ! [units vary]
+
 !--------------------------------------------------------------------
+
+    ! ---- Begin Code ----
+
     spurious_source = (integral_after - integral_before) / dt & 
                         + flux_top - flux_sfc - integral_forcing
                       

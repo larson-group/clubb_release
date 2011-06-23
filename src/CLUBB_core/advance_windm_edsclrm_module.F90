@@ -89,7 +89,7 @@ module advance_windm_edsclrm_module
 
     use error_code, only:  & 
       clubb_at_least_debug_level, & ! Procedure(s)
-      lapack_error
+      fatal_error
 
     use error_code, only:  & 
       clubb_no_error, &  ! Constant(s)
@@ -159,7 +159,7 @@ module advance_windm_edsclrm_module
     real, dimension(gr%nnzp,edsclr_dim), intent(inout) ::  &
       wpedsclrp      ! w'edsclr' (momentum levels)                   [units vary]
 
-    integer, intent(out) :: &
+    integer, intent(inout) :: &
       err_code       ! clubb_singular_matrix when matrix is singular
 
     ! Local Variables
@@ -493,15 +493,23 @@ module advance_windm_edsclrm_module
     endif
 
     ! Check for singular matrices and bad LAPACK arguments
-    if ( err_code_windm /= clubb_no_error .or. err_code_edsclrm /= clubb_no_error ) then
-      err_code = clubb_singular_matrix
-    else
-      err_code = clubb_no_error
+    if ( fatal_error( err_code_windm ) ) then
+      if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) "Fatal error solving for um/vm"
+      end if
+      err_code = err_code_windm
+    end if
+
+    if ( fatal_error( err_code_edsclrm ) ) then
+      if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) "Fatal error solving for eddsclrm"
+      end if
+      err_code = err_code_edsclrm
     end if
 
     ! Error report
     ! Joshua Fasching February 2008
-    if ( lapack_error( err_code ) .and.  &
+    if ( ( fatal_error( err_code_windm ) .or. fatal_error( err_code_edsclrm ) ) .and. &
          clubb_at_least_debug_level( 1 ) ) then
 
       write(fstderr,*) "Error in advance_windm_edsclrm"
@@ -518,6 +526,11 @@ module advance_windm_edsclrm_module
       write(fstderr,*) "wp2 = ", wp2
       write(fstderr,*) "up2 = ", up2
       write(fstderr,*) "vp2 = ", vp2
+      write(fstderr,*) "um_forcing = ", um_forcing
+      write(fstderr,*) "vm_forcing = ", vm_forcing
+      do i = 1, edsclr_dim
+        write(fstderr,*) "edsclrm_forcing # = ", i, edsclrm_forcing
+      end do
       write(fstderr,*) "fcor = ", fcor
       write(fstderr,*) "l_implemented = ", l_implemented
 
@@ -525,18 +538,18 @@ module advance_windm_edsclrm_module
 
       write(fstderr,*) "um = ", um
       write(fstderr,*) "vm = ", vm
-      write(fstderr,*) "edsclrm = ", edsclrm
-
+      do i = 1, edsclr_dim
+        write(fstderr,*) "edsclrm # ", i, "=", edsclrm(:,i)
+      end do
       write(fstderr,*) "upwp = ", upwp
       write(fstderr,*) "vpwp = ", vpwp
       write(fstderr,*) "wpedsclrp = ", wpedsclrp
 
-      write(fstderr,*) "Intent(out)"
-
+      !write(fstderr,*) "Intent(out)"
 
       return
 
-    endif
+    end if
 
     return
   end subroutine advance_windm_edsclrm

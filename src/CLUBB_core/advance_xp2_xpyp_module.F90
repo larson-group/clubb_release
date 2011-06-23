@@ -132,7 +132,7 @@ module advance_xp2_xpyp_module
       clubb_singular_matrix
 
     use error_code, only:  & 
-      lapack_error,    & ! Procedure(s)
+      fatal_error,    & ! Procedure(s)
       clubb_at_least_debug_level
 
     use stats_variables, only: & 
@@ -204,7 +204,7 @@ module advance_xp2_xpyp_module
       vp2        ! v'^2                          [m^2/s^2]
 
     ! Output variable for singular matrices
-    integer, intent(out) :: err_code
+    integer, intent(inout) :: err_code
 
     ! Passive scalar output
     real, intent(inout), dimension(gr%nnzp, sclr_dim) ::  & 
@@ -275,8 +275,6 @@ module advance_xp2_xpyp_module
     integer :: i, k, km1, kp1
 
     !---------------------------- Begin Code ----------------------------------
-
-    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     if ( l_single_C2_Skw ) then
       ! Use a single value of C2 for all equations.
@@ -812,11 +810,11 @@ module advance_xp2_xpyp_module
 
 
     ! Check for singular matrices and bad LAPACK arguments
-    if ( any( lapack_error( err_code_array ) ) ) then
+    if ( any( fatal_error( err_code_array ) ) ) then
       err_code = clubb_singular_matrix
     end if
 
-    if ( lapack_error( err_code ) .and.  & 
+    if ( fatal_error( err_code ) .and.  & 
          clubb_at_least_debug_level( 1 ) ) then
 
       write(fstderr,*) "Error in advance_xp2_xpyp"

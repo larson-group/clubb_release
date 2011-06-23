@@ -233,7 +233,9 @@ module clubb_core
       clubb_no_error ! Constant(s)
 
     use error_code, only :  & 
-      clubb_at_least_debug_level ! Procedure(s)
+      clubb_at_least_debug_level, & ! Procedure(s)
+      reportError, &
+      fatal_error
 
     use Skw_module, only:  & 
       Skw_func ! Procedure
@@ -455,7 +457,8 @@ module clubb_core
 #endif
 
     !!! Local Variables
-    integer :: i, k
+    integer :: i, k, &
+      err_code_pdf_closure, err_code_surface
 
     real, dimension(gr%nnzp) :: &
       sigma_sqd_w,   & ! PDF width parameter (momentum levels)    [-]
@@ -531,9 +534,6 @@ module clubb_core
       thlm_flux_sfc, &
       thlm_spur_src
 
-!   real :: &
-!     max_mag_Skw_velocity ! Maximum skewness velocity [m/s]
-
     !----- Begin Code -----
 
     if ( l_stats .and. l_stats_samp ) then
@@ -566,7 +566,8 @@ module clubb_core
              "beginning of ",        & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
-             sclrm_forcing, edsclrm, edsclrm_forcing            ) ! intent(in)
+             sclrm_forcing, edsclrm, edsclrm_forcing,           & ! intent(in)
+             err_code ) ! Intent(inout)
     end if
     !-----------------------------------------------------------------------
 
@@ -752,7 +753,7 @@ module clubb_core
            wp2thvp(k), rtpthvp_zt(k), thlpthvp_zt(k),          & ! intent(out)
            wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),               & ! intent(out)
            thlprcp_zt(k), rcp2_zt(k), pdf_params(k),           & ! intent(out)
-           err_code,                                           & ! intent(out)
+           err_code_pdf_closure,                               & ! intent(out)
            wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),  & ! intent(out)
            wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),  & ! intent(out)
            sptp_mellor_1(k), sptp_mellor_2(k),                 & ! intent(out)
@@ -763,9 +764,13 @@ module clubb_core
       ! gracefully.
       ! Joshua Fasching March 2008
 
-      if ( err_code /= clubb_no_error ) then
-        write(fstderr,*) "At grid level = ",k
-        return
+      if ( fatal_error( err_code_pdf_closure ) ) then
+
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,*) "At grid level = ",k
+        end if
+
+        err_code = err_code_pdf_closure
       end if
 
     end do ! k = 1, gr%nnzp, 1
@@ -813,7 +818,7 @@ module clubb_core
              wp2thvp_zm(k), rtpthvp(k), thlpthvp(k),                & ! intent(out)
              wprcp(k), wp2rcp_zm(k), rtprcp(k),                     & ! intent(out)
              thlprcp(k), rcp2(k), pdf_params_zm(k),                 & ! intent(out)
-             err_code,                                              & ! intent(out)
+             err_code_pdf_closure,                                  & ! intent(out)
              wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
              wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),  & ! intent(out)
              sptp_mellor_1(k), sptp_mellor_2(k),                    & ! intent(out)
@@ -824,10 +829,16 @@ module clubb_core
         ! gracefully.
         ! Joshua Fasching March 2008
 
-        if ( err_code /= clubb_no_error ) then
-          write(fstderr,*) "At grid level = ",k
-          return
+
+        if ( fatal_error( err_code_pdf_closure ) ) then
+
+          if ( clubb_at_least_debug_level( 1 ) ) then
+            write(fstderr,*) "At grid level = ",k
+          end if
+
+          err_code = err_code_pdf_closure
         end if
+
       end do ! k = 1, gr%nnzp, 1
 
     else ! l_call_pdf_closure_twice is false
@@ -976,14 +987,11 @@ module clubb_core
                            err_code, &                                 ! intent(inout)
                            Lscale_pert_1 )                             ! intent(out)
 
-      if ( err_code /= clubb_no_error ) return
-
       call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, &        ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, l_implemented, & ! intent(in)
                            err_code, &                                 ! intent(inout)
                            Lscale_pert_2 )                             ! intent(out)
 
-      if ( err_code /= clubb_no_error ) return
     end if ! l_avg_Lscale
 
     ! ********** NOTE: **********
@@ -997,12 +1005,6 @@ module clubb_core
     if ( l_avg_Lscale ) then
       Lscale = (1.0/3.0) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
     end if
-
-    ! Subroutine may produce NaN values, and if so, exit
-    ! gracefully.
-    ! Joshua Fasching March 2008
-    if ( err_code /= clubb_no_error ) return
-
 
     !----------------------------------------------------------------
     ! Dissipation time
@@ -1070,18 +1072,18 @@ module clubb_core
                                    zm )                                           ! intent(inout)
       end if
 
-      call surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & ! intent(in)
-                           um(2), vm(2), wpsclrp_sfc,                 & ! intent(in)
-                           wp2(1), up2(1), vp2(1),                    & ! intent(out)
-                           thlp2(1), rtp2(1), rtpthlp(1), err_code,   & ! intent(out)
-                           sclrp2(1,1:sclr_dim),                      & ! intent(out)
-                           sclrprtp(1,1:sclr_dim),                    & ! intent(out) 
-                           sclrpthlp(1,1:sclr_dim) )                    ! intent(out)
+      call surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
+                           um(2), vm(2), wpsclrp_sfc,                 &      ! intent(in)
+                           wp2(1), up2(1), vp2(1),                    &      ! intent(out)
+                           thlp2(1), rtp2(1), rtpthlp(1), err_code_surface,& ! intent(out)
+                           sclrp2(1,1:sclr_dim),                      &      ! intent(out)
+                           sclrprtp(1,1:sclr_dim),                    &      ! intent(out) 
+                           sclrpthlp(1,1:sclr_dim) )                         ! intent(out)
 
-      ! Subroutine may produce NaN values, and if so, exit
-      ! gracefully.
-      ! Joshua Fasching March 2008
-      if ( err_code /= clubb_no_error ) return
+      if ( fatal_error( err_code_surface ) ) then
+        call reportError( err_code_surface )
+        err_code = err_code_surface
+      end if
 
       ! Update surface stats
       if ( l_stats_samp ) then
@@ -1157,12 +1159,6 @@ module clubb_core
                           rtm, wprtp, thlm, wpthlp,                    & ! intent(inout)
                           err_code,                                    & ! intent(inout)
                           sclrm, wpsclrp                               ) ! intent(inout)
-
-    ! Wrapped LAPACK procedures may report errors, and if so, exit
-    ! gracefully.
-    ! Joshua Fasching March 2008
-
-    if ( err_code /= clubb_no_error ) return
  
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
@@ -1201,15 +1197,8 @@ module clubb_core
                            sclrm, wpsclrp,                & ! intent(in) 
                            rtp2, thlp2, rtpthlp,          & ! intent(inout)
                            up2, vp2,                      & ! intent(inout)
-                           err_code,                      & ! intent(out)
+                           err_code,                      & ! intent(inout)
                            sclrp2, sclrprtp, sclrpthlp    ) ! intent(inout)
-
-    ! Check stability
-    ! Changed from a logical flag to an integer indicating nature of
-    ! error.
-    ! Joshua Fasching March 2008    
-    if ( err_code /= clubb_no_error ) return
-
 
     !----------------------------------------------------------------
     ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
@@ -1243,12 +1232,6 @@ module clubb_core
            thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
            wp2, wp3, wp3_zm, wp2_zt, err_code           ) ! intent(inout)
 
-    ! Wrapped LAPACK procedures may report errors, and if so, exit
-    ! gracefully.
-    ! Joshua Fasching March 2008
-    if ( err_code /= clubb_no_error ) return
-
-
     !----------------------------------------------------------------
     ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
     ! after subroutine advance_wp2_wp3 updated wp2.
@@ -1265,7 +1248,6 @@ module clubb_core
                                  wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
                                  wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
-
     !----------------------------------------------------------------
     ! Advance the horizontal mean of the wind in the x-y directions 
     ! (i.e. um, vm) and the mean of the eddy-diffusivity scalars 
@@ -1279,13 +1261,7 @@ module clubb_core
                                 fcor, l_implemented,                      & ! Intent(in)
                                 um, vm, edsclrm,                          & ! Intent(inout)
                                 upwp, vpwp, wpedsclrp,                    & ! Intent(inout)        
-                                err_code ) ! Intent(out)
-
-    ! Wrapped LAPACK procedures may report errors, and if so, exit
-    ! gracefully.
-    ! Joshua Fasching March 2008
-    if ( err_code /= clubb_no_error ) return
-
+                                err_code ) ! Intent(inout)
 
     !#######################################################################
     !#############            ACCUMULATE STATISTICS            #############
@@ -1374,7 +1350,8 @@ module clubb_core
              "end of ",              & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
-             sclrm_forcing, edsclrm, edsclrm_forcing            ) ! intent(in)
+             sclrm_forcing, edsclrm, edsclrm_forcing,           & ! intent(in)
+             err_code ) ! intent(out)
     end if
 
     if ( l_stats .and. l_stats_samp ) then
@@ -1478,7 +1455,7 @@ module clubb_core
       fstderr  ! Variable(s)
 
     use error_code, only:  & 
-      clubb_no_error ! Costant(s)
+      clubb_no_error ! Constant(s)
 
     use model_flags, only: & 
       setup_model_flags, & ! Subroutine
