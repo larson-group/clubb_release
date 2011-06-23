@@ -23,7 +23,8 @@ srcdir="$dir/../src"  # dir where the source files reside
 #  standalone program, but this will not work when using the tuner.
 # These are the options for debugging symbols, bounds checking & IEEE-754 
 # floating point arithmetic
-DEBUG="-g -fbounds-check -mieee-fp"
+DEBUG="-g -fbounds-check -mieee-fp -finit-real=nan -finit-integer=-99999 -finit-logical=false"
+#DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false" # Floating point trapping enabled
 
 # == Warnings ==
 WARNINGS="-Wall -pedantic"
