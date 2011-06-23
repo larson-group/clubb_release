@@ -652,7 +652,17 @@ module lapack_wrap
 !-----------------------------------------------------------------------
 
     implicit none
+#ifdef __sun
 
+    integer, intent(in) :: &
+      ndim, & ! Size of variable
+      nrhs    ! Number of right hand sides
+
+    real, dimension(ndim,nrhs), intent(in) :: &
+      variable ! Variable to check
+
+    lapack_isnan = any( variable(:,1:nrhs) /= variable(:,1:nrhs) )
+#else
     logical, external :: sisnan, disnan 
 
     integer, intent(in) :: &
@@ -687,6 +697,7 @@ module lapack_wrap
     else
       stop "lapack_isnan: Cannot resolve the precision of real datatype"
     end if
+#endif
 
     return
   end function lapack_isnan
