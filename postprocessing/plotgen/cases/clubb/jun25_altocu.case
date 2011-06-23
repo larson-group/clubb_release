@@ -117,6 +117,10 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/jun25_altocu_qc3_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'ncm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},
           {'filename' => 'jun25_altocu_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Ncm\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'jun25_altocu_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm_in_cloud', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/jun25_altocu_qc3_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qgm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => 'red'},

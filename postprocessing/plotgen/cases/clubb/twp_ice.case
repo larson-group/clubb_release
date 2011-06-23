@@ -116,6 +116,10 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Nc .* RHO .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Ncm\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm_in_cloud', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qg', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},          

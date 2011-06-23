@@ -96,6 +96,10 @@
        [
           {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Ncm\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm_in_cloud', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
