@@ -1351,7 +1351,7 @@ module clubb_core
              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
              sclrm_forcing, edsclrm, edsclrm_forcing,           & ! intent(in)
-             err_code ) ! intent(out)
+             err_code ) ! intent(inout)
     end if
 
     if ( l_stats .and. l_stats_samp ) then
