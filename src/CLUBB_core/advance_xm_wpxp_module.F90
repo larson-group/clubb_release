@@ -2202,11 +2202,7 @@ module advance_xm_wpxp_module
                                            xp2_threshold, l_implemented, &
                                            low_lev_effect, high_lev_effect, &
                                            xm, xm_tol, wpxp, err_code )
-
-      ! Check for errors
-      if ( fatal_error( err_code ) ) return
-
-    endif
+    end if ! l_mono_flux_lim
 
     ! Apply a flux limiting positive definite scheme if the solution
     ! for the mean field is negative and we're determining total water

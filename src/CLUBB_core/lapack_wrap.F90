@@ -7,8 +7,8 @@ module lapack_wrap
 !   solvers contained in the LAPACK library.
 
 ! References:
-!   LAPACK--Linear Algebra PACKage version 3.0
-!   URL: <http://netlib2.cs.utk.edu/lapack/>
+!   LAPACK--Linear Algebra PACKage
+!   URL: <http://www.netlib.org/lapack/>
 !-----------------------------------------------------------------------
   use constants_clubb, only:  & 
     fstderr ! Variable(s)
@@ -16,6 +16,7 @@ module lapack_wrap
   use error_code, only:  & 
     clubb_singular_matrix,  & ! Variable(s)
     clubb_bad_lapack_arg, & 
+    clubb_var_equals_NaN, &
     clubb_no_error
 
   implicit none
@@ -25,6 +26,8 @@ module lapack_wrap
 
   ! Expert routines
   public :: tridag_solvex, band_solvex
+
+  private :: lapack_isnan
 
   private ! Set Default Scope
 
@@ -76,7 +79,7 @@ module lapack_wrap
 
     ! The estimate of the reciprocal of the condition number on the LHS matrix.
     ! If rcond is < machine precision the matrix is singular to working
-    ! precision, and info == ndim+1.  If rcond == 0, then the LHS matrix 
+    ! precision, and info == ndim+1.  If rcond == 0, then the LHS matrix
     ! is singular.  This condition is indicated by a return code of info > 0.
     real, intent(out) :: rcond
 
@@ -142,7 +145,7 @@ module lapack_wrap
 
       write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
 
-      do i = 1, nrhs, 1 
+      do i = 1, nrhs, 1
         write(fstderr,*) "rhs # ", i, "tridag forward error est. =", ferr(i)
         write(fstderr,*) "rhs # ", i, "tridag backward error est. =", berr(i)
       end do
@@ -159,7 +162,13 @@ module lapack_wrap
 
     case( 0 )
       ! Success!
-      err_code = clubb_no_error
+      if ( lapack_isnan( ndim, nrhs, rhs ) ) then
+        err_code = clubb_var_equals_NaN 
+      else
+        err_code = clubb_no_error
+      end if
+
+      solution = rhs
 
     case( 1: )
       if ( info == ndim+1 ) then
@@ -185,23 +194,23 @@ module lapack_wrap
                supd, diag, subd, rhs, &
                solution, err_code )
 
-!       Description:
-!       Solves a tridiagonal system of equations (simple routine)
+! Description:
+!   Solves a tridiagonal system of equations (simple routine)
 
-!       References:
-!       <http://www.netlib.org/lapack/single/sgtsv.f>
-!       <http://www.netlib.org/lapack/double/dgtsv.f>
+! References:
+!   <http://www.netlib.org/lapack/single/sgtsv.f>
+!   <http://www.netlib.org/lapack/double/dgtsv.f>
 !-----------------------------------------------------------------------
     implicit none
 
-! External
+    ! External
     external ::  & 
       sgtsv,  & ! Single-prec. General Tridiagonal Solver eXpert
       dgtsv     ! Double-prec. General Tridiagonal Solver eXpert
 
     intrinsic :: kind
 
-! Input variables
+    ! Input variables
     character(len=*), intent(in) ::  & 
       solve_type ! Used to write a message if this fails
 
@@ -209,7 +218,7 @@ module lapack_wrap
       ndim,  & ! N-dimension of matrix
       nrhs     ! # of right hand sides to back subst. after LU-decomp.
 
-! Input/Output variables
+    ! Input/Output variables
     real, intent(inout), dimension(ndim) ::  & 
       diag,       & ! Main diagonal
       subd, supd ! Sub and super diagonal
@@ -217,7 +226,7 @@ module lapack_wrap
     real, intent(inout), dimension(ndim,nrhs) ::  & 
       rhs ! RHS input
 
-! Output variables
+    ! Output variables
     real, intent(out), dimension(ndim,nrhs) ::  & 
       solution ! Solution
 
@@ -225,7 +234,7 @@ module lapack_wrap
     integer, intent(out) ::  & 
       err_code ! Used to determine when a decomp. failed
 
-! Local Variables
+    ! Local Variables
 
     integer :: info ! Diagnostic output
 
@@ -255,8 +264,13 @@ module lapack_wrap
 
     case( 0 )
       ! Success!
+      if ( lapack_isnan( ndim, nrhs, rhs ) ) then
+        err_code = clubb_var_equals_NaN 
+      else
+        err_code = clubb_no_error
+      end if
+
       solution = rhs
-      err_code = clubb_no_error
 
     case( 1: )
       write(fstderr,*) trim( solve_type )//" singular matrix."
@@ -436,7 +450,7 @@ module lapack_wrap
 
       write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
 
-      do i = 1, nrhs, 1 
+      do i = 1, nrhs, 1
         write(fstderr,*) "rhs # ", i, "band_solvex forward error est. =", ferr(i)
         write(fstderr,*) "rhs # ", i, "band_solvex backward error est. =", berr(i)
       end do
@@ -454,8 +468,13 @@ module lapack_wrap
 
     case( 0 )
       ! Success!
-      err_code = clubb_no_error
+      if ( lapack_isnan( ndim, nrhs, rhs ) ) then
+        err_code = clubb_var_equals_NaN 
+      else
+        err_code = clubb_no_error
+      end if
 
+      solution = rhs
     case( 1: )
       if ( info == ndim+1 ) then
         write(fstderr,*) trim( solve_type )// & 
@@ -604,8 +623,13 @@ module lapack_wrap
 
     case( 0 )
       ! Success!
+      if ( lapack_isnan( ndim, nrhs, rhs ) ) then
+        err_code = clubb_var_equals_NaN 
+      else
+        err_code = clubb_no_error
+      end if
+
       solution = rhs
-      err_code = clubb_no_error
 
     case( 1: )
       write(fstderr,*) trim( solve_type )//" band solver: singular matrix"
@@ -617,5 +641,54 @@ module lapack_wrap
   end subroutine band_solve
 
 !-----------------------------------------------------------------------
+  logical function lapack_isnan( ndim, nrhs, variable )
+
+! Description:
+!   Check for NaN values in a variable using the LAPACK subroutines
+
+! References:
+!   <http://www.netlib.org/lapack/single/sisnan.f>
+!   <http://www.netlib.org/lapack/double/disnan.f>
+!-----------------------------------------------------------------------
+
+    implicit none
+
+    logical, external :: sisnan, disnan 
+
+    integer, intent(in) :: &
+      ndim, & ! Size of variable
+      nrhs    ! Number of right hand sides
+
+    real, dimension(ndim,nrhs), intent(in) :: &
+      variable ! Variable to check
+
+    integer :: k, j
+
+    ! ---- Begin Code ----
+
+    lapack_isnan = .false.
+
+    if ( kind( variable ) == 4 ) then
+      do k = 1, ndim
+        do j = 1, nrhs
+          lapack_isnan = sisnan( variable(k,j) )
+          if ( lapack_isnan ) exit
+        end do
+        if ( lapack_isnan ) exit
+      end do
+    else if ( kind( variable ) == 8 ) then
+      do k = 1, ndim
+        do j = 1, nrhs
+          lapack_isnan = disnan( variable(k,j) )
+          if ( lapack_isnan ) exit
+        end do
+        if ( lapack_isnan ) exit
+      end do
+    else
+      stop "lapack_isnan: Cannot resolve the precision of real datatype"
+    end if
+
+    return
+  end function lapack_isnan
 
 end module lapack_wrap
