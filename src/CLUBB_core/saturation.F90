@@ -17,7 +17,8 @@ module saturation
 
   private  ! Change default so all items private
 
-  public   :: sat_mixrat_liq, sat_mixrat_liq_lookup, sat_mixrat_ice, sat_rcm
+  public   :: sat_mixrat_liq, sat_mixrat_liq_lookup, sat_mixrat_ice, sat_rcm, &
+              sat_vapor_press_liq
 
   private  :: sat_vapor_press_liq_flatau, sat_vapor_press_liq_bolton
   private  :: sat_vapor_press_ice_flatau, sat_vapor_press_ice_bolton
@@ -91,6 +92,12 @@ module saturation
     ! Calculate the SVP for water vapor.
     esatv = sat_vapor_press_liq( T_in_K )
 
+    ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
+    !   and set rsat = ep = 0.622
+    if ( p_in_Pa-esatv < 1.0 ) then
+      sat_mixrat_liq = ep
+    else
+
 #ifdef GFDL
 
     ! GFDL uses specific humidity
@@ -107,9 +114,8 @@ module saturation
     ! where epsilon = R_d / R_v
     sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - esatv ) )
 #endif
-    ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
-    !   and set rsat = ep = 0.622
-    if ( p_in_Pa-esatv < 1.0 ) sat_mixrat_liq = ep
+
+    end if
 
     return
   end function sat_mixrat_liq
@@ -146,6 +152,12 @@ module saturation
     ! Calculate the SVP for water vapor using a lookup table.
     esatv = sat_vapor_press_liq_lookup( T_in_K )
 
+    ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
+    !   and set rsat = ep = 0.622
+    if ( p_in_Pa-esatv < 1.0 ) then
+      sat_mixrat_liq_lookup = ep
+    else
+
 #ifdef GFDL
 
     ! GFDL uses specific humidity
@@ -163,9 +175,7 @@ module saturation
     sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - esatv ) )
 #endif
 
-    ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
-    !   and set rsat = ep = 0.622
-    if ( p_in_Pa-esatv < 1.0 ) sat_mixrat_liq_lookup = ep
+    end if
 
     return
   end function sat_mixrat_liq_lookup
@@ -429,6 +439,12 @@ module saturation
     ! Determine the SVP for the given temperature
     esat_ice = sat_vapor_press_ice( T_in_K )
 
+    ! If esat_ice exceeds the air pressure, then assume esat_ice~=0.5*pressure 
+    !   and set rsat = ep = 0.622
+    if ( p_in_Pa-esat_ice < 1.0 ) then
+      sat_mixrat_ice = ep
+    else
+
 #ifdef GFDL
     ! GFDL uses specific humidity
     ! Formula for Saturation Specific Humidity
@@ -446,9 +462,7 @@ module saturation
     sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
 #endif
 
-    ! If esat_ice exceeds the air pressure, then assume esat_ice~=0.5*pressure 
-    !   and set rsat = ep = 0.622
-    if ( p_in_Pa-esat_ice < 1.0 ) sat_mixrat_ice = ep
+    end if
 
     return
   end function sat_mixrat_ice

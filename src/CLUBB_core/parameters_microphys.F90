@@ -19,6 +19,12 @@ module parameters_microphys
     LH_microphys_non_interactive = 2, & ! Feed the samples into the microphysics with no feedback
     LH_microphys_disabled        = 3    ! Disable latin hypercube entirely
 
+  ! Morrison aerosol parameters
+  integer, parameter, public :: &
+    morrison_no_aerosol = 0, &
+    morrison_power_law  = 1, &
+    morrison_lognormal  = 2
+
   ! Local Variables
   logical, public :: & 
     l_cloud_sed,       & ! Cloud water sedimentation (K&K/No microphysics)
@@ -28,14 +34,13 @@ module parameters_microphys
     l_hail,            & ! Assumption about graupel/hail? (Morrison)
     l_seifert_beheng,  & ! Use Seifert and Behneng warm drizzle (Morrison)
     l_predictnc,       & ! Predict cloud droplet number conc (Morrison)
-    l_specify_aerosol, & ! Specify aerosol (Morrison)
     l_subgrid_w,       & ! Use subgrid w (Morrison)
     l_arctic_nucl,     & ! Use MPACE observations (Morrison)
     l_fix_pgam,        & ! Fix pgam (Morrison)
     l_in_cloud_Nc_diff   ! Use in cloud values of Nc for diffusion
 
 !$omp threadprivate(l_cloud_sed, l_ice_micro, l_graupel, l_hail, l_upwind_diff_sed, &
-!$omp   l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
+!$omp   l_seifert_beheng, l_predictnc, l_subgrid_w, &
 !$omp   l_arctic_nucl, l_fix_pgam, l_in_cloud_Nc_diff)
 
   logical, public :: & 
@@ -43,6 +48,9 @@ module parameters_microphys
     l_local_kk                    ! Local drizzle for Khairoutdinov & Kogan microphysics
 
 !$omp threadprivate(l_cloud_edge_activation, l_local_kk)
+
+  character(len=30), public :: &
+    specify_aerosol  ! Specify aerosol (Morrison)
 
   ! Flags for the Latin Hypercube sampling code 
   logical, public :: &

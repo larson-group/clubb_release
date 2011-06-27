@@ -24,7 +24,7 @@ module microphys_driver
     l_hail,                       & ! See module_mp_graupel for a description
     l_seifert_beheng,             & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
     l_predictnc,                  & ! Predict cloud droplet number conc (Morrison)
-    l_specify_aerosol,            & ! Specify aerosol (Morrison)
+    specify_aerosol,              & ! Specify aerosol (Morrison)
     l_subgrid_w,                  & ! Use subgrid w  (Morrison)
     l_arctic_nucl,                & ! Use MPACE observations (Morrison)
     l_cloud_edge_activation,      & ! Activate on cloud edges (Morrison)
@@ -59,6 +59,8 @@ module microphys_driver
 
   ! Variables
   logical, private, allocatable, dimension(:) :: l_hydromet_sed ! Whether to sediment variables
+  logical :: l_gfdl_activation ! Flag for GFDL activation code
+  real, parameter :: cloud_frac_min = 0.005 ! Threshold on cloud fraction for GFDL activation
 
   private ! Default Scope
 
@@ -79,6 +81,11 @@ module microphys_driver
     use array_index, only: & 
       iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
       iiNcm, iiNsnowm, iiNim, iiNgraupelm
+
+    use parameters_microphys, only: &
+      morrison_no_aerosol, &  ! Constants
+      morrison_power_law,  &
+      morrison_lognormal
 
     use parameters_microphys, only: &
       rrp2_on_rrainm2_cloud, & ! Variable(s)
@@ -160,7 +167,7 @@ module microphys_driver
       dohail, &             ! make graupel species have properties of hail
       dosb_warm_rain, &     ! use Seifert & Beheng (2001) warm rain parameterization
       dopredictNc, &        ! prediction of cloud droplet number
-      dospecifyaerosol, &   ! specify two modes of (sulfate) aerosol
+      aerosol_mode, &       ! specify two modes of (sulfate) aerosol
       dosubgridw, &         ! input estimate of subgrid w to microphysics
       doarcticicenucl, &    ! use arctic parameter values for ice nucleation
       docloudedgeactivation,& ! activate cloud droplets throughout the cloud
@@ -183,6 +190,17 @@ module microphys_driver
       write_text   ! Used to write microphysics settings to setup.txt file
 
     use error_code, only: clubb_at_least_debug_level ! Function
+
+    use gfdl_activation, only: nooc, sul_concen, & ! Variables
+      low_concen, high_concen, &
+      lowup, highup, lowup2, highup2, &
+      lowmass2, highmass2, lowmass3, highmass3, &
+      lowmass4, highmass4, lowmass5, highmass5, &
+      lowT2, highT2, aeromass_value
+
+    use aer_ccn_act_k_mod, only: aer_ccn_act_k_init ! Procedure
+
+    use gfdl_activation, only: Loading ! Procedure
 
 #ifdef UNRELEASED_CODE
     use latin_hypercube_arrays, only: &
@@ -212,13 +230,17 @@ module microphys_driver
     integer, intent(out) :: & 
       hydromet_dim ! Number of hydrometeor fields.
 
-    ! Local variables
+    ! Local variables 
     character(len=30) :: LH_microphys_type
+    integer, parameter :: res = 20   ! Used for lookup tables with GFDL activation
+    integer, parameter :: res2 = 20  ! Used for lookup tables with GFDL activation
+    real, dimension( res, res, res, res, res ) :: &
+      droplets, droplets2            ! Used for lookup tables with GFDL activation
 
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, &
       l_ice_micro, l_graupel, l_hail, l_upwind_diff_sed, &
-      l_seifert_beheng, l_predictnc, l_specify_aerosol, l_subgrid_w, &
+      l_seifert_beheng, l_predictnc, specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, l_in_cloud_Nc_diff, &
       LH_microphys_type, l_local_kk, LH_microphys_calls, LH_sequence_length, &
       l_lh_cloud_weighted_sampling, l_fix_s_t_correlations, l_lh_vert_overlap, &
@@ -236,11 +258,20 @@ module microphys_driver
       Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
 
+    namelist /gfdl_activation_setting/ &
+      nooc, sul_concen, low_concen, high_concen, &
+      lowup, highup, lowup2, highup2, lowmass2, &
+      highmass2, lowmass3, highmass3,  &
+      lowmass4, highmass4, lowmass5, highmass5, &
+      lowT2, highT2, aeromass_value, l_gfdl_activation
+
     ! ---- Begin Code ----
 
     ! Set default values, then read in the namelist
 
     micro_scheme = "none"
+
+    l_gfdl_activation = .false.
 
     ! Cloud water sedimentation from the RF02 case
     ! This has no effect on Morrison's cloud water sedimentation
@@ -417,7 +448,7 @@ module microphys_driver
     ! rather than Khairoutdinov Kogan (2000)
     l_seifert_beheng = .false. 
     l_predictnc = .true. ! Predict cloud droplet number concentration
-    l_specify_aerosol = .true.
+    specify_aerosol = "morrison_lognormal"
     l_subgrid_w = .true.
     l_arctic_nucl = .false.
     l_fix_pgam  = .false.
@@ -492,7 +523,7 @@ module microphys_driver
       call write_text ( "l_seifert_beheng = ", l_seifert_beheng, &
         l_write_to_file, iunit )
       call write_text ( "l_predictnc = ", l_predictnc, l_write_to_file, iunit )
-      call write_text ( "l_specify_aerosol = ", l_specify_aerosol, &
+      call write_text ( "specify_aerosol = "// specify_aerosol, &
         l_write_to_file, iunit )
       call write_text ( "l_subgrid_w = ", l_subgrid_w, l_write_to_file, iunit )
       call write_text ( "l_arctic_nucl = ", l_arctic_nucl, l_write_to_file, &
@@ -600,6 +631,31 @@ module microphys_driver
       l_predictnc = .false.
     end if
 
+    ! Read in the name list for initialization, if it exists
+    open(unit=iunit, file=namelist_file, status='old', action='read')
+    read(iunit, nml=gfdl_activation_setting)
+    close(unit=iunit)
+
+    ! Initialize the GFDL activation code, if necessary
+    if( l_gfdl_activation ) then
+      ! Ensure a microphysics that has Ncm is being used
+      if( trim( micro_scheme ) == "coamps" .or. trim( micro_scheme ) == "morrison" & 
+            .or. trim( micro_scheme ) == "morrison-gettelman") then
+
+          ! Read in the lookup tables
+          call Loading( droplets, droplets2 )
+
+          ! Initialize the activation variables
+          call aer_ccn_act_k_init                            &
+                 ( droplets, droplets2, res, res2, nooc,     &
+                   sul_concen, low_concen, high_concen,      &
+                   lowup, highup, lowup2, highup2, lowmass2, &
+                   highmass2, lowmass3, highmass3,           &
+                   lowmass4, highmass4, lowmass5, highmass5, &
+                   lowT2, highT2 )
+      end if ! coamps .or. morrison .or. khairoutdinov_kogan
+    end if ! l_gfdl_activation
+
     ! The location of the fields in the hydromet array are arbitrary,
     ! and don't need to be set consistently among schemes so long as
     ! the 'i' indices point to the correct parts of the array.
@@ -642,10 +698,15 @@ module microphys_driver
         dopredictNc = .false.
       end if
 
-      if ( l_specify_aerosol ) then
-        dospecifyaerosol = .true.
+      ! Set the mode of aerosol to be used
+      if ( trim( specify_aerosol ) == "morrison_no_aerosol" ) then
+        aerosol_mode = morrison_no_aerosol
+      else if ( trim( specify_aerosol ) == "morrison_power_law" ) then
+        aerosol_mode = morrison_power_law
+      else if ( trim( specify_aerosol ) == "morrison_lognormal" ) then
+        aerosol_mode = morrison_lognormal
       else
-        dospecifyaerosol = .false.
+        stop "Unknown Morrison aerosol mode." 
       end if
 
       if ( l_cloud_edge_activation ) then
@@ -934,7 +995,7 @@ module microphys_driver
         KK_micro_driver  ! Procedure(s)
 
     use morrison_micro_driver_module, only: &
-      morrison_micro_driver
+        morrison_micro_driver
       
     use mg_micro_driver_module, only: &
       mg_microphys_driver
@@ -953,6 +1014,13 @@ module microphys_driver
     use ice_dfsn_module, only: & 
         ice_dfsn ! Procedure(s)
 
+    use T_in_K_module, only: &
+        thlm2T_in_K ! Procedure
+
+    use gfdl_activation, only: &
+        aer_act_clubb_quadrature_Gauss, & ! Procedure
+        aeromass_value                    ! Variable
+
     use parameters_tunable, only: & 
         c_Krrainm,  & ! Variable(s) 
         nu_r_vert_res_dep
@@ -968,7 +1036,8 @@ module microphys_driver
         rc_tol, &
         fstderr, & 
         zero_threshold, &
-        sec_per_day
+        sec_per_day, &
+        cm3_per_m3
 
     use model_flags, only: &
       l_hole_fill ! Variable(s)
@@ -1008,7 +1077,9 @@ module microphys_driver
       iNrm_bt, & 
       iNrm_mc, & 
       iNrm_cond_adj, & 
-      iNrm_cl, & 
+      iNrm_cl, &
+      iNcm_in_cloud, &
+      iNc_activated, &
       iNcnm, & 
       irrainm_zt, & 
       irsnowm, & 
@@ -1039,7 +1110,8 @@ module microphys_driver
       iNgraupelm_mc, &
       iNcm_bt, & 
       iNcm_cl, &
-      iNcm_mc
+      iNcm_mc, &
+      iNcm_act
 
     use stats_variables, only: & 
       iNcm, & 
@@ -1164,8 +1236,8 @@ module microphys_driver
     real, dimension(gr%nnzp) :: &
       delta_zt  ! Difference in thermo. height levels     [m]
 
-!   real, dimension(gr%nnzp) :: &
-!     T_in_K  ! Temperature          [K]
+   real, dimension(gr%nnzp) :: &
+     T_in_K  ! Temperature          [K]
 
     real, dimension(1,1,gr%nnzp) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
@@ -1194,11 +1266,25 @@ module microphys_driver
 
     integer :: ixrm_cl, ixrm_bt, ixrm_mc
 
+    real, dimension(gr%nnzp) :: Ndrop_max  ! GFDL droplet activation concentration [#/kg]
+
+    !Input aerosol mass concentration: the unit is 10^12 ug/m3.
+    !For example, aeromass=2.25e-12 means that the aerosol mass concentration is 2.25 ug/m3.
+    !This value of aeromass was recommended by Huan Guo
+    !See http://carson.math.uwm.edu/trac/climate_process_team/ticket/46#comment:12
+    real, dimension(gr%nnzp, 4) :: aeromass ! ug/m^3
+
+    real, dimension(gr%nnzp) :: Ncm_in_cloud ! cloud average droplet concentration [#/kg]
+
     character(len=10) :: hydromet_name
 
 !-------------------------------------------------------------------------------
 
     ! ---- Begin code ----
+
+    Ndrop_max = 0
+    ! Set the value of the aerosol mass array to a constant
+    aeromass = aeromass_value
 
     err_code = clubb_no_error  ! Initialize to the value for no errors
 
@@ -1225,6 +1311,62 @@ module microphys_driver
 
     ! Compute difference in thermodynamic height levels
     delta_zt(1:gr%nnzp) = 1./gr%invrs_dzm(1:gr%nnzp)
+
+    ! Calculate T_in_K
+    T_in_K = thlm2T_in_K( thlm, exner, rcm )
+
+    ! Start Ncm budget to capture Ncm_act term
+    if( l_stats_samp ) then
+      call stat_begin_update( iNcm_bt, real( hydromet(:, iiNcm) / dt ), zt )
+    end if
+    
+    ! Call GFDL activation code
+    if( l_gfdl_activation ) then
+      ! Ensure a microphysics that has Ncm is being used
+      ! Note: KK micro is not used because it resets Ncm every timestep 
+      if( trim( micro_scheme ) == "coamps" .or. trim( micro_scheme ) == "morrison" & 
+            .or. trim( micro_scheme ) == "morrison-gettelman" ) then
+
+        ! Save the initial Ncm value for the Ncm_act term
+        if( l_stats_samp ) then
+          call stat_begin_update( iNcm_act, real( hydromet(:, iiNcm) / dt ), zt )
+        end if
+
+        call aer_act_clubb_quadrature_Gauss( aeromass, T_in_K, Ndrop_max)
+
+        ! Convert to #/kg
+        Ndrop_max = Ndrop_max * cm3_per_m3 / rho
+
+        if( l_stats_samp ) then
+          call stat_update_var( iNc_activated, Ndrop_max, zt)
+        end if
+
+        ! Clip Ncm values that are outside of cloud by CLUBB standards
+        do k=1, gr%nnzp
+
+! ---> h1g, 2011-04-20,   no liquid drop nucleation if T < -40 C
+          if( T_in_K(k) <= 233.15 )  Ndrop_max(k) = 0.0  ! if T<-40C, no liquid drop nucleation
+! <--- h1g, 2011-04-20
+
+          ! Clip Ncm to only be where there is cloud to avoid divide by zero errors
+          if( cloud_frac(k) > cloud_frac_min ) then
+                hydromet(k, iiNcm) = max( Ndrop_max(k), hydromet(k, iiNcm) )
+          else
+                hydromet(k, iiNcm) = 0.0
+          end if
+        end do
+
+        ! Update the Ncm_act term
+        if( l_stats_samp ) then
+          call stat_end_update( iNcm_act, real( hydromet(:,iiNcm) / dt ), zt )
+        end if
+
+      else
+
+        stop "Unsupported microphysics scheme for GFDL activation."
+
+      end if  ! coamps .or. morrison .or. khairoutdinov_kogan
+    end if ! l_gfdl_activation
 
     ! Begin by calling Brian Griffin's implementation of the
     ! Khairoutdinov and Kogan microphysics (analytic or local formulas),
@@ -1581,7 +1723,13 @@ module microphys_driver
 
           ! Save prior value of the hydrometeors for determining total time
           ! tendency
-          call stat_begin_update( ixrm_bt, real( hydromet(:,i) / dt ), zt )
+          ! This kludge is to allow Ncm_bt to include the Ncm_act budget term
+          ! that is calculated before microphysics is called.  The stat_begin_update
+          ! subroutine is called prior to the GFDL activation code, so we can't call
+          ! it here again. -meyern
+          if(ixrm_bt /= iNcm_bt) then
+            call stat_begin_update( ixrm_bt, real( hydromet(:,i) / dt ), zt )
+          end if
 
         end if
 
@@ -1616,10 +1764,20 @@ module microphys_driver
                  dt, Kr, cloud_frac, nu_r_vert_res_dep, wm_zt, &  ! In
                  hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
                  lhs ) ! Out
+          if( trim( hydromet_list(i) ) == "Ncm" ) then
+            Ncm_in_cloud = hydromet(:,iiNcm) / max( cloud_frac, cloud_frac_min )
+            call microphys_solve &
+                 ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, lhs, &
+                   hydromet_mc(:,i)/max( cloud_frac, cloud_frac_min ),  & 
+                   Ncm_in_cloud, err_code )
 
-          call microphys_solve & 
-               ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, lhs, hydromet_mc(:,i),  & 
-                 hydromet(:,i), err_code )
+            hydromet(:,iiNcm) = Ncm_in_cloud * max(cloud_frac, cloud_frac_min)
+
+          else
+            call microphys_solve & 
+                 ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, &
+                   lhs, hydromet_mc(:,i), hydromet(:,i), err_code )
+          end if
 
         end if ! l_predictnc
 
@@ -1794,6 +1952,9 @@ module microphys_driver
         call stat_update_var( iNcm, hydromet(:,iiNcm), zt )
       end if
 
+      call stat_update_var( iNcm_in_cloud, &
+             hydromet(:, iiNcm) / max( cloud_frac, cloud_frac_min ) , zt )
+
       call stat_update_var( iNcnm, Ncnm, zt )
 
       if ( iirrainm > 0 ) then
@@ -1919,7 +2080,7 @@ module microphys_driver
   end subroutine advance_microphys
 
 !===============================================================================
-  subroutine microphys_solve( solve_type, l_sed, dt, lhs, & 
+  subroutine microphys_solve( solve_type, l_sed, dt, cloud_frac, lhs, & 
                                 xrm_tndcy, xrm, err_code )
 
     ! Description:
@@ -2001,7 +2162,8 @@ module microphys_driver
     ! Explicit contrbution to the hydrometeor, e.g. evaporation
     ! from Brian Griffin's K & K microphysics implementation
     real, intent(in), dimension(gr%nnzp) :: & 
-      xrm_tndcy !                                     [units/s]
+      xrm_tndcy, &  !                                 [units/s]
+      cloud_frac    ! Cloud fraction                  [-]
 
     ! Input/Output Variables
     real, intent(inout), dimension(3,gr%nnzp) :: & 
@@ -2104,10 +2266,20 @@ module microphys_driver
         ! Finalize implicit contributions
 
         ! xrm term ma is completely implicit; call stat_update_var_pt.
-        call stat_update_var_pt( ixrm_ma, k, & 
-              ztscr01(k) * xrm(km1) & 
-              + ztscr02(k) * xrm(k) & 
-              + ztscr03(k) * xrm(kp1), zt)
+        if ( solve_type == "Ncm" ) then
+          ! For Ncm, we divide by cloud_frac when entering the subroutine, but
+          ! do not multiply until we return from the subroutine, so we must
+          ! account for this here for the budget to balance
+          call stat_update_var_pt( ixrm_ma, k, & 
+                ztscr01(k) * xrm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
+                + ztscr02(k) * xrm(k) * max( cloud_frac(k), cloud_frac_min ) & 
+                + ztscr03(k) * xrm(kp1) * max( cloud_frac(k), cloud_frac_min ), zt)
+        else
+          call stat_update_var_pt( ixrm_ma, k, & 
+                ztscr01(k) * xrm(km1) & 
+                + ztscr02(k) * xrm(k) & 
+                + ztscr03(k) * xrm(kp1), zt)
+        end if
 
         ! xrm term sd is completely implicit; call stat_update_var_pt.
         if ( l_sed ) then
@@ -2118,10 +2290,20 @@ module microphys_driver
         end if
 
         ! xrm term dff is completely implicit; call stat_update_var_pt.
-        call stat_update_var_pt( ixrm_dff, k, & 
-              ztscr07(k) * xrm(km1) & 
-              + ztscr08(k) * xrm(k) & 
-              + ztscr09(k) * xrm(kp1), zt )
+        if ( solve_type == "Ncm" ) then
+          ! For Ncm, we divide by cloud_frac when entering the subroutine, but
+          ! do not multiply until we return from the subroutine, so we must
+          ! account for this here for the budget to balance
+          call stat_update_var_pt( ixrm_dff, k, & 
+                ztscr07(k) * xrm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
+                + ztscr08(k) * xrm(k) * max( cloud_frac(k), cloud_frac_min ) & 
+                + ztscr09(k) * xrm(kp1) * max( cloud_frac(k), cloud_frac_min ), zt )
+        else
+          call stat_update_var_pt( ixrm_dff, k, & 
+                ztscr07(k) * xrm(km1) & 
+                + ztscr08(k) * xrm(k) & 
+                + ztscr09(k) * xrm(kp1), zt )
+        end if
 
       enddo ! 1..gr%nnzp
 
@@ -2361,7 +2543,15 @@ module microphys_driver
 
         ! Statistics:  implicit contributions to hydrometeor xrm.
 
-        if ( ixrm_ma > 0 ) then
+        if ( solve_type == "Ncm" .and. ixrm_ma > 0 ) then
+          tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
+            gr%invrs_dzm(km1) )
+
+          ztscr01(k) = -tmp(3)
+          ztscr02(k) = -tmp(2)
+          ztscr03(k) = -tmp(1)
+
+        else if ( ixrm_ma > 0 ) then
           tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
             gr%invrs_dzm(km1) )
 
@@ -2390,6 +2580,15 @@ module microphys_driver
                 cloud_frac_zt(k+1), cloud_frac_zm(k), &
                 cloud_frac_zm(k-1), &
                 nu, gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+          ztscr07(k) = -tmp(3)
+          ztscr08(k) = -tmp(2)
+          ztscr09(k) = -tmp(1)
+
+        else if ( solve_type == "Ncm" .and. ixrm_dff > 0 ) then
+          tmp(1:3) & 
+            = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+                                gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                                gr%invrs_dzt(k), k )
           ztscr07(k) = -tmp(3)
           ztscr08(k) = -tmp(2)
           ztscr09(k) = -tmp(1)

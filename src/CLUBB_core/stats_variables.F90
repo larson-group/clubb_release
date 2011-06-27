@@ -91,7 +91,9 @@ module stats_variables
 
   integer, public :: & 
      iNcm,            & ! Brian
-     iNcnm, & 
+     iNcnm,           & 
+     iNcm_in_cloud,   &
+     iNc_activated,   &
      isnowslope,      & ! Adam Smith, 22 April 2008
      ised_rcm,        & ! Brian
      irsat,           & ! Brian
@@ -101,7 +103,7 @@ module stats_variables
      im_vol_rad_cloud,  & ! COAMPS only. dschanen 6 Dec 2006
      irain_rate_zt,      & ! Brian
      iAKm,            & ! analytic Kessler.  Vince Larson 22 May 2005 
-     iLH_AKm,        & ! LH Kessler.  Vince Larson  22 May 2005
+     iLH_AKm,         & ! LH Kessler.  Vince Larson  22 May 2005
      iradht,          & ! Radiative heating.
      iradht_LW,       & !   "           "   Long-wave component
      iradht_SW          !   "           "   Short-wave component
@@ -350,7 +352,8 @@ module stats_variables
     iNcm_ma,  &
     iNcm_dff, &
     iNcm_mc,  &
-    iNcm_cl
+    iNcm_cl,  &
+    iNcm_act
 
 !$omp threadprivate(iNcm_bt, iNcm_ma, iNcm_dff, &
 !$omp   iNcm_mc, iNcm_cl)

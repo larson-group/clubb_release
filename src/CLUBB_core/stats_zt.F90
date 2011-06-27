@@ -69,7 +69,9 @@ module stats_zt
     use stats_variables, only: & 
         irel_humidity, &
         irho, & 
-        iNcm, & 
+        iNcm, &
+        iNcm_in_cloud, &
+        iNc_activated, &
         iNcnm, & 
         isnowslope, & 
         ised_rcm, & 
@@ -288,7 +290,8 @@ module stats_zt
       iNcm_mc, &
       iNcm_ma, &
       iNcm_dff, &
-      iNcm_cl
+      iNcm_cl, &
+      iNcm_act
 
     use stats_variables, only: & 
       ieff_rad_cloud, &
@@ -401,6 +404,8 @@ module stats_zt
     irho            = 0
     irel_humidity   = 0
     iNcm            = 0  ! Brian
+    iNcm_in_cloud   = 0
+    iNc_activated   = 0
     iNcnm           = 0
     iNim            = 0
     isnowslope      = 0  ! Adam Smith, 22 April 2008
@@ -535,6 +540,7 @@ module stats_zt
     iNcm_dff   = 0
     iNcm_mc    = 0
     iNcm_cl    = 0
+    iNcm_act   = 0
 
     irsnowm_bt      = 0
     irsnowm_ma      = 0
@@ -991,6 +997,22 @@ module stats_zt
         call stat_assign( iNcm, "Ncm", & 
              "Cloud droplet number concentration [num/kg]", & 
              "num/kg", zt )
+        k = k + 1
+
+      case ('Ncm_in_cloud')
+        iNcm_in_cloud = k
+
+        call stat_assign( iNcm_in_cloud, "Ncm_in_cloud", &
+             "In cloud droplet concentration [num/kg]", "num/kg", zt )
+
+        k = k + 1
+
+      case ('Nc_activated')
+        iNc_activated = k
+
+        call stat_assign( iNc_activated, "Nc_activated", &
+             "Droplets activated by GFDL activation [num/kg]", "num/kg", zt )
+
         k = k + 1
 
       case ('Ncnm')
@@ -1861,6 +1883,14 @@ module stats_zt
 
         call stat_assign( iNcm_ma, "Ncm_ma", & 
              "Ncm budget: Ncm vertical mean advection [(num/kg)/s]", "(num/kg)/s", zt )
+        k = k + 1
+
+      case ('Ncm_act')
+        iNcm_act = k
+
+        call stat_assign( iNcm_act, "Ncm_act", &
+             "Ncm budget: Change in Ncm due to activation [(num/kg)/s]", "(num/kg)/s", zt )
+
         k = k + 1
 
       case ('Ncm_dff')

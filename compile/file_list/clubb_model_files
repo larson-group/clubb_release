@@ -49,3 +49,4 @@
 ../src/input_interpret.F90
 ../src/inputfields.F90
 ../src/input_grads.F90
+../src/gfdl_activation.F90

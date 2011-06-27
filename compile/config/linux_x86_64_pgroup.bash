@@ -15,6 +15,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 
 # == Debugging ==
 DEBUG="-g -C -Kieee"
+#DEBUG="-g -C -Kieee -Ktrap=fp"
 
 # == Machine specific options ==
 #ARCH="-tp piii"# PGF90, Pentium III

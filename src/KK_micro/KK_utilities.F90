@@ -541,7 +541,7 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use saturation, only: & 
-        sat_mixrat_liq ! Procedure(s)
+        sat_vapor_press_liq ! Procedure(s)
 
     use constants_clubb, only: & 
         T_freeze_K, & ! Constant(s)
@@ -567,8 +567,8 @@ module KK_utilities
       Dv,      & ! Coefficient of diffusion of water vapor in air      [m^2/s]
       Fk,      & ! Term in denominator associated with heat conduction [s/m^2]
       Fd,      & ! Term in denominator associated with vapor diffusion [s/m^2]
-      esat,    & ! Saturation vapor pressure                           [Pa]
-      rs,      & ! Saturation mixing ratio                             [kg/kg]
+      esatv,   & ! Saturation vapor pressure                           [Pa]
+      rsat,    & ! Saturation mixing ratio                             [kg/kg]
       Celsius    ! Temperature in Celsius                              [deg C]
 
 
@@ -585,13 +585,18 @@ module KK_utilities
     Dv = Dv / 10000.0  ! Dv in (m.^2)/sec.
 
     ! Calculate saturation mixing ratio and saturation vapor pressure.
-    rs   = sat_mixrat_liq( p_in_Pa, T_in_K )
-    esat = ( p_in_Pa * rs ) / ( ep + rs )
+    esatv = sat_vapor_press_liq( T_in_K )
+
+    if ( p_in_Pa - esatv < 1.0 ) then
+      rsat = ep
+    else
+      rsat = ep * ( esatv / ( p_in_Pa - esatv ) )
+    end if
 
     ! The values of F_k and F_d are found in Rogers and Yau (1989);
     ! Eq. 7.17 and 7.18.
     Fk = ( Lv / ( Rv * T_in_K ) - 1.0 ) * ( Lv * rho_lw ) / ( Ka * T_in_K )
-    Fd = ( rho_lw * Rv * T_in_K ) / ( Dv * esat )
+    Fd = ( rho_lw * Rv * T_in_K ) / ( Dv * esatv )
 
     ! Calculate G(T,p).
     G_T_p = 1.0 / (Fk + Fd)
