@@ -184,7 +184,7 @@ end subroutine aer_act_clubb_quadrature_Gauss
     res = size(droplets,1)
     res2 = size(droplets2,1)
     unit = get_unit()
-    open(unit, FILE='../src/SCM_Activation/droplets.dat')
+    open(unit, FILE='../input/scm_activation/droplets.dat')
     do k=1,res
       do i=1,res
         do j=1, res
@@ -200,7 +200,7 @@ end subroutine aer_act_clubb_quadrature_Gauss
     close(unit)
 
     unit = get_unit()
-    open(unit, FILE='../src/SCM_Activation/droplets2.dat')
+    open(unit, FILE='../input/scm_activation/droplets2.dat')
     do k=1,res2
       do i=1,res2
         do j=1, res2
