@@ -202,7 +202,7 @@
     ],
     'nightlyOutput' =>
     {
-        'subText' => '',
+        'subText' => 'ARM 97 is ran with a 3 minute timestep',
         'subHtml' => ''
     },
     'additionalOutput' =>
