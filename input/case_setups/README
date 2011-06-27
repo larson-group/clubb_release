@@ -224,9 +224,10 @@ l_seifert_beheng | logical
 l_predictnc | logical
   Predict cloud droplet number conc (Morrison)
 
-specify_aerosol | integer
+specify_aerosol | character
   Specify aerosol mode to be used (Morrison)
-  0 - none, 1 - powerlaw, 2 - lognormal
+  morrison_no_aerosol - none, morrison_power_law - powerlaw,
+    morrison_lognormal - lognormal
 
 l_subgrid_w | logical
   Use subgrid-scale w for cloud droplet activation (Morrison).
