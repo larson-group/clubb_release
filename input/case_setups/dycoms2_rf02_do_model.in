@@ -125,6 +125,9 @@ edsclr_dim  = 0
 iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
 
+/
+
+&gfdl_activation_setting
 
 /
 
@@ -134,7 +137,7 @@ l_cloud_sed  = .false.  ! Flag for cloud water sedimentation.
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "khairoutdinov_kogan"
 Ncm_initial  = 55. ! #/cm3
-l_predictnc = .false.,
+l_predictnc = .false.
 /
 
 &radiation_setting

@@ -125,6 +125,10 @@ debug_level   = 2
 
 /
 
+&gfdl_activation_setting
+
+/
+
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
 ! "coamps", "simplified_ice", or "none"

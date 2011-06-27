@@ -139,6 +139,9 @@ edsclr_dim  = 0
 iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
 
+/
+
+&gfdl_activation_setting
 
 /
 

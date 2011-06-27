@@ -122,6 +122,10 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 
 /
 
+&gfdl_activation_setting
+
+/
+
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
 ! "coamps", "simplified_ice", "none"

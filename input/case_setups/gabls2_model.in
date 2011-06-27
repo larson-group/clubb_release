@@ -135,7 +135,9 @@ iiedsclr_rt  = 2 ! Location in the edsclrm array to place a scalar like total wa
 iiedsclr_CO2 = -1
 
 
+/
 
+&gfdl_activation_setting
 
 /
 

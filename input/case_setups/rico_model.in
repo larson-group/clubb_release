@@ -132,6 +132,9 @@ edsclr_dim  = 0
 iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
 
+/
+
+&gfdl_activation_setting
 
 /
 
@@ -174,8 +177,8 @@ corr_thlNc_NL_below   = 0.0
 C_evap = 0.5
 r_0 = 100.0e-6
 !!!!!!! END RICO COMMENTS --modified by Leah Grant, Apr. 2010
-Ncm_initial = 70. ! #/cm3 
-l_predictnc = .false.,
+Ncm_initial = 70. ! #/cm3
+l_predictnc = .false.
 /
 
 &radiation_setting

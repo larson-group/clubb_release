@@ -130,6 +130,10 @@ iiedsclr_rt = 2 ! Location in the edsclrm array to place a scalar like total wat
 
 /
 
+&gfdl_activation_setting
+
+/
+
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
 ! "coamps", "simplified_ice", "none"
