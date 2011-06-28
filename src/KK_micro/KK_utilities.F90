@@ -568,7 +568,6 @@ module KK_utilities
       Fk,      & ! Term in denominator associated with heat conduction [s/m^2]
       Fd,      & ! Term in denominator associated with vapor diffusion [s/m^2]
       esatv,   & ! Saturation vapor pressure                           [Pa]
-      rsat,    & ! Saturation mixing ratio                             [kg/kg]
       Celsius    ! Temperature in Celsius                              [deg C]
 
 
@@ -586,12 +585,6 @@ module KK_utilities
 
     ! Calculate saturation mixing ratio and saturation vapor pressure.
     esatv = sat_vapor_press_liq( T_in_K )
-
-    if ( p_in_Pa - esatv < 1.0 ) then
-      rsat = ep
-    else
-      rsat = ep * ( esatv / ( p_in_Pa - esatv ) )
-    end if
 
     ! The values of F_k and F_d are found in Rogers and Yau (1989);
     ! Eq. 7.17 and 7.18.
