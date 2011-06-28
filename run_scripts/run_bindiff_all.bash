@@ -186,6 +186,9 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
       noData=false
     fi
+    
+    # Clear the array
+    DIFF_LIST=( )
 
 done
 
