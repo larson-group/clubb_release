@@ -18,7 +18,7 @@ module latin_hypercube_driver_module
 
   private ! Default scope
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
   public :: LH_subcolumn_generator, LH_microphys_driver, latin_hypercube_2D_output, &
     latin_hypercube_2D_close
 
@@ -1475,6 +1475,6 @@ module latin_hypercube_driver_module
     return
   end function compute_vert_corr
 
-#endif /*UNRELEASED_CODE*/
+#endif /*LATIN_HYPERCUBE*/
 
 end module latin_hypercube_driver_module

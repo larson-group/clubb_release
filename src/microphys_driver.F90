@@ -202,10 +202,10 @@ module microphys_driver
 
     use gfdl_activation, only: Loading ! Procedure
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
       setup_corr_varnce_array   ! Procedure(s)
-#endif /* UNRELEASED_CODE */
+#endif /* LATIN_HYPERCUBE */
 
     implicit none
 
@@ -955,7 +955,7 @@ module microphys_driver
     ! Setup index variables for latin hypercube sampling
     if ( LH_microphys_type_int /= LH_microphys_disabled ) then
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
       ! Allocate and set the arrays containing the correlations
       ! and the X'^2 / X'^2 terms
       call setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm )
@@ -1000,7 +1000,7 @@ module microphys_driver
     use mg_micro_driver_module, only: &
       mg_microphys_driver
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
     use latin_hypercube_driver_module, only: &
       LH_microphys_driver ! Procedure
 
@@ -1009,7 +1009,7 @@ module microphys_driver
 !     X_mixt_comp_all_levs, &
 !     LH_rt, LH_thl
 
-#endif /*UNRELEASED_CODE*/
+#endif /*LATIN_HYPERCUBE*/
 
     use ice_dfsn_module, only: & 
         ice_dfsn ! Procedure(s)
@@ -1151,12 +1151,12 @@ module microphys_driver
       LH_microphys_non_interactive, & ! Feed the subcolumns into the microphysics with no feedback
       LH_microphys_disabled           ! Disable latin hypercube entirely
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
       d_variables ! Variable(s)
 #else
 #define d_variables 0
-#endif /* UNRELEASED_CODE */
+#endif /* LATIN_HYPERCUBE */
 
     implicit none
 
@@ -1429,7 +1429,7 @@ module microphys_driver
       thlm_mc(:) = 0.0
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
         call LH_microphys_driver &
              ( real( dt ), gr%nnzp, LH_microphys_calls, d_variables, & ! In
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
@@ -1493,7 +1493,7 @@ module microphys_driver
       thlm_mc(:) = 0.0
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
 !       call LH_microphys_driver &
 !            ( real( dt ), gr%nnzp, LH_microphys_calls, d_variables, & ! In
 !              X_nl_all_levs, LH_rt, LH_thl, & ! In
@@ -1547,7 +1547,7 @@ module microphys_driver
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
         call LH_microphys_driver &
              ( real( dt ), gr%nnzp, LH_microphys_calls, d_variables, & ! In
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In

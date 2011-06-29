@@ -241,7 +241,7 @@ module clubb_driver
 
     use parameters_radiation, only: rad_scheme ! Variable(s)
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
     use parameters_microphys, only: &
       LH_microphys_type, & ! Variable(s)
       LH_microphys_disabled
@@ -559,6 +559,11 @@ module clubb_driver
       call write_text( "-DUNRELEASED_CODE enabled", l_write_to_file, iunit )
 #else
       call write_text( "-DUNRELEASED_CODE disabled", l_write_to_file, iunit )
+#endif
+#ifdef LATIN_HYPERCUBE
+      call write_text( "-DLATIN_HYPERCUBE enabled", l_write_to_file, iunit )
+#else
+      call write_text( "-DLATIN_HYPERCUBE disabled", l_write_to_file, iunit )
 #endif
 #ifdef nooverlap
       call write_text( "-Dnooverlap enabled", l_write_to_file, iunit )
@@ -885,7 +890,7 @@ module clubb_driver
                        (/rlat/), (/rlon/), time_current, dtmain ) ! Intent(in)
     end if
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
     if ( LH_microphys_type /= LH_microphys_disabled ) then
 
       ! Setup 2D output of all subcolumns (if enabled)
@@ -894,7 +899,7 @@ module clubb_driver
              gr%zt, time_initial  )
 
     end if
-#endif /*UNRELEASED_CODE*/
+#endif /*LATIN_HYPERCUBE*/
 
     ! Time integration
     ! Call advance_clubb_core once per each statistics output time
@@ -1092,7 +1097,7 @@ module clubb_driver
 
     call stats_finalize( )
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
     if ( LH_microphys_type /= LH_microphys_disabled ) then
       call latin_hypercube_2D_close( )
       call cleanup_latin_hypercube_arrays( )
@@ -3431,7 +3436,7 @@ module clubb_driver
     use array_index, only: & 
       iiNcm ! Variable
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
       xp2_on_xm2_array_cloud, &
       xp2_on_xm2_array_below, &
@@ -3517,7 +3522,7 @@ module clubb_driver
     real, dimension(LH_microphys_calls) :: &
       LH_sample_point_weights ! Weights for cloud weighted sampling
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
     real, dimension(gr%nnzp) :: &
       Lscale_vert_avg ! 3pt vertically averaged Lscale          [m]
 
@@ -3531,7 +3536,7 @@ module clubb_driver
     rvm_mc  = 0.0
     thlm_mc = 0.0
 
-#ifdef UNRELEASED_CODE
+#ifdef LATIN_HYPERCUBE
     !----------------------------------------------------------------
     ! Compute subcolumns if enabled
     !----------------------------------------------------------------
@@ -3556,7 +3561,7 @@ module clubb_driver
                   hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
                   corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
                   X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out 
-                  LH_sample_point_weights )
+                  LH_sample_point_weights ) ! Out
     end if ! LH_microphys_enabled
 #else
     X_nl_all_levs = -999.
@@ -3565,7 +3570,7 @@ module clubb_driver
     X_mixt_comp_all_levs = -999
     LH_sample_point_weights = -999.
     if ( .false. .or. Lscale(1) < 0 ) print *, ""
-#endif /* UNRELEASED_CODE */
+#endif /* LATIN_HYPERCUBE */
 
     !----------------------------------------------------------------
     ! Compute Microphysics
