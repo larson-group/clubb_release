@@ -72,11 +72,15 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# Append preprocessor flags and libraries as needed
+# Required libraries + platform specific libraries from LDFLAGS
+REQ_LIBS="-lclubb_param -lclubb_bugsrad -lclubb_morrison -lclubb_mg"
 
+OPT_LIBS=""
+# ------------------------------------------------------------------------------
+# Append preprocessor flags and libraries as needed
 if [ -e $srcdir/COAMPS_micro ]; then
 	CPPDEFS="${CPPDEFS} -DCOAMPS_MICRO"
-	LDFLAGS="${LDFLAGS} -lclubb_coamps"
+	OPT_LIBS="${OPT_LIBS} -lclubb_coamps"
 	COAMPS_LIB="libclubb_coamps.a"
 fi
 if ! "$l_double_precision"; then
@@ -90,18 +94,19 @@ fi
 
 if [ -e $srcdir/SCM_Activation ]; then
 	#CPPDEFS="${CPPDEFS} -DAERSOL_ACT"
-	LDFLAGS="${LDFLAGS} -lclubb_gfdlact"
+	OPT_LIBS="${OPT_LIBS} -lclubb_gfdlact"
 	GFDLACT_LIB="libclubb_gfdlact.a"
 fi
 
 if [ -e $srcdir/Latin_hypercube ]; then
 	CPPDEFS="${CPPDEFS} -DLATIN_HYPERCUBE"
-	LDFLAGS="${LDFLAGS} -llatin_hypercube"
+	OPT_LIBS="${OPT_LIBS} -llatin_hypercube"
 	LH_LIB="liblatin_hypercube.a"
 fi
-# ------------------------------------------------------------------------------
-# Required libraries + platform specific libraries from LDFLAGS
-LDFLAGS="${LDFLAGS} -L$libdir -lclubb_param -lclubb_bugsrad -lclubb_morrison -lclubb_mg"
+
+# Add all flags together.  These must be linked by order of dependence, so 
+# So liblatin_hypercube comes before libclubb comes before liblapack.
+LDFLAGS="-L$libdir $OPT_LIBS $REQ_LIBS ${LDFLAGS}"
 
 # ------------------------------------------------------------------------------
 # Special addition for XLF, which uses the xlf for fixed format and xlf90 for 
