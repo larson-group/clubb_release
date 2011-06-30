@@ -16,7 +16,7 @@ module cobra
   !-----------------------------------------------------------------------
   subroutine cobra_sfclyr( time, z, rho_sfc, thlm_sfc, ubar, & 
                            wpthlp_sfc, wprtp_sfc, ustar, & 
-                           wpsclrp_sfc, wpedsclrp_sfc )
+                           wpsclrp_sfc, wpedsclrp_sfc, T_sfc )
 
   !       Description:
   !       This subroutine computes surface fluxes of horizontal momentum,
@@ -45,7 +45,8 @@ module cobra
     iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
 
   use time_dependent_input, only: LH_given, SH_given, time_sfc_given, &
-                                  CO2_sfc_given, time_select ! Variable(s)
+                                  CO2_sfc_given, T_sfc_given,& ! Variable (s)
+                                  time_select ! Procedure(s)
 
   implicit none
 
@@ -71,7 +72,8 @@ module cobra
   real, intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
-    ustar          ! surface friction velocity [m/s]
+    ustar,       & ! surface friction velocity [m/s]
+    T_sfc          ! Temperature at the surface [K]
 
   ! Output variables
   real, intent(out), dimension(sclr_dim) ::  & 
@@ -114,6 +116,7 @@ module cobra
   heat_flx = factor_interp( time_frac, SH_given(after_time), SH_given(before_time) )
   moisture_flx = factor_interp( time_frac, LH_given(after_time), LH_given(before_time) )
   CO2_flx = factor_interp( time_frac, CO2_sfc_given(after_time), CO2_sfc_given(before_time) )
+  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), T_sfc_given(before_time) )
 
   ! Convert heat_flx and moisture_flx to natural units
   heat_flx2     = convert_SH_to_km_s( heat_flx, rho_sfc )    ! (K m/s)

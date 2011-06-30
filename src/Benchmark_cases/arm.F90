@@ -23,7 +23,7 @@ module arm
 
   !----------------------------------------------------------------------
   subroutine arm_sfclyr( time, z, rho_sfc, thlm_sfc, ubar,  & 
-                         wpthlp_sfc, wprtp_sfc, ustar )
+                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
 
   !       Description:
   !       This subroutine computes surface fluxes of horizontal momentum,
@@ -41,6 +41,11 @@ module arm
 
   use surface_flux, only: compute_ht_mostr_flux, &
                           convert_SH_to_km_s, convert_LH_to_m_s ! Procedures
+
+  use interpolation, only: factor_interp ! Procedure(s)
+
+  use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
+                                  time_select                    ! Procedure(s)
 
   implicit none
 
@@ -66,13 +71,17 @@ module arm
  real, intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
-    ustar          ! surface friction velocity [m/s]
+    ustar,       & ! surface friction velocity [m/s]
+    T_sfc
 
   ! Local variables
   real ::  & 
     heat_flx, moisture_flx, & 
     heat_flx2, moisture_flx2, & 
-    bflx
+    bflx, time_frac
+
+  integer :: &
+    before_time, after_time
 
   !-----------------BEGIN CODE-------------------------
 
@@ -98,6 +107,12 @@ module arm
 
   wpthlp_sfc = heat_flx2
   wprtp_sfc  = moisture_flx2
+
+  call time_select( time, size(time_sfc_given), time_sfc_given, &
+                    before_time, after_time, time_frac )
+
+  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                                    T_sfc_given(before_time) )
 
   return
   end subroutine arm_sfclyr

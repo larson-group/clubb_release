@@ -229,7 +229,7 @@ module mpace_a
 
 !----------------------------------------------------------------------
   subroutine mpace_a_sfclyr( time, rho_sfc, & 
-                             wpthlp_sfc, wprtp_sfc, ustar )
+                             wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
 !        Description:
 !          Surface forcing subroutine for mpace_a case.  Written
 !          October 2007 by Michael Falk.
@@ -248,7 +248,8 @@ module mpace_a
 
     ! Note that this subroutine is from time_dependent_input, but 
     ! mpace_a does not have time_dependent input.
-    use time_dependent_input, only: time_select ! Procedure(s)
+    use time_dependent_input, only: time_select, & ! Procedure(s)
+                                    T_sfc_given, time_sfc_given ! Variable(s)
 
     implicit none
 
@@ -266,7 +267,8 @@ module mpace_a
     real, intent(out) ::  & 
     wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
     wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
-    ustar           ! surface friction velocity [m/s]
+    ustar,        & ! surface friction velocity [m/s]
+    T_sfc           ! surface temperature [K]
 
     ! Local Variables
     real :: & 
@@ -295,6 +297,13 @@ module mpace_a
     latent_heat_flx = factor_interp( ratio, file_LH(after_time), file_LH(before_time) )
 
     sensible_heat_flx = factor_interp( ratio, file_SH(after_time), file_SH(before_time) )
+
+    ! Get input from the _surface.in file
+
+    call time_select( time, size(time_sfc_given), time_sfc_given, &
+                      before_time, after_time, ratio )
+
+    T_sfc = factor_interp( ratio, T_sfc_given(after_time), T_sfc_given(before_time) )
 
     ! Compute heat and moisture fluxes
     wpthlp_sfc = sensible_heat_flx/(rho_sfc*Cp)

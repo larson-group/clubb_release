@@ -18,7 +18,7 @@ module cloud_feedback
   contains
 
   !----------------------------------------------------------------------
-  subroutine cloud_feedback_sfclyr( runtype, sfctype,                &
+  subroutine cloud_feedback_sfclyr( time, runtype, sfctype,                &
                                     thlm_sfc, rtm_sfc, lowest_level, &
                                     ubar, p_sfc, T_sfc,                &
                                     wpthlp_sfc, wprtp_sfc, ustar )
@@ -39,6 +39,11 @@ module cloud_feedback
 
   use surface_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc
 
+  use time_dependent_input, only: time_sfc_given, T_sfc_given, &! Variable(s)
+                                  time_select                   ! Procedure(s)
+
+  use interpolation, only: factor_interp ! Procedure(s)
+
   implicit none
 
   intrinsic :: max, sqrt
@@ -48,16 +53,19 @@ module cloud_feedback
 
   integer, intent(in) :: sfctype
 
+  real(time_precision), intent(in) :: &
+    time ! The current time [s]
+
   real, intent(in) ::  & 
     thlm_sfc,  & ! thlm at (2)         [m/s]
     rtm_sfc,   & ! rtm at (2)          [kg/kg]
-    T_sfc,      & ! Temperature         [K]
     p_sfc,      & ! Surface pressure    [Pa]
     ubar,      & ! This is root (u^2 + v^2), per ATEX and RICO spec.
     lowest_level ! This is z at the lowest above-ground model level.  [m]
 
   ! Output variables
   real, intent(out) ::  & 
+    T_sfc,      & ! Temperature         [K]
     wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
     wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
     ustar           ! surface friction velocity [m/s]
@@ -74,9 +82,19 @@ module cloud_feedback
   real :: &
     Ch,   &                ! This is C_h_20 scaled to the height of the lowest model level.
     Cq,   &                ! This is C_q_20 scaled to the height of the lowest model level.
-    exner_sfc ! Value of exner at the surface [-]
-    
+    exner_sfc, & ! Value of exner at the surface [-]
+    time_frac ! The time fraction used for interpolation
+   
+  integer :: &
+    before_time, after_time ! The times used for interpolation
+ 
   !--------------BEGIN CODE---------------------
+
+  call time_select( time, size(time_sfc_given), time_sfc_given, &
+                    before_time, after_time, time_frac )
+
+  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                                    T_sfc_given(before_time) )
 
   ! Calculate exner_sfc based on p_sfc.
   exner_sfc = ( p_sfc / p0 )**kappa

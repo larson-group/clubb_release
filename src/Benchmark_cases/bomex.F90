@@ -104,8 +104,8 @@ module bomex
   end subroutine bomex_tndcy
 
 !----------------------------------------------------------------------
-  subroutine bomex_sfclyr( rtm_sfc, & 
-                           wpthlp_sfc, wprtp_sfc, ustar )
+  subroutine bomex_sfclyr( time, rtm_sfc, & 
+                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
 
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -118,30 +118,56 @@ module bomex
     use spec_hum_to_mixing_ratio, only: &
         flux_spec_hum_to_mixing_ratio ! Procedure(s)
 
+    use time_dependent_input, only: &
+        time_select, &  ! Procedure(s)
+        wpthlp_sfc_given, wpqtp_sfc_given, T_sfc_given, &
+        time_sfc_given ! Variable(s)
+
+    use interpolation, only: &
+        factor_interp ! Procedure(s)
+
+    use stats_precision, only: time_precision ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) ::  & 
+    real(time_precision), intent(in) ::  & 
+      time    ! the current time [s]
+
+    real, intent(in) :: &
       rtm_sfc    ! rtm(2) [kg/kg]
 
     ! Output variables
     real, intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
-      ustar           ! surface friction velocity [m/s]
+      ustar,        & ! surface friction velocity [m/s]
+      T_sfc           ! surface temperature [K]
 
     ! Local variables
-    real :: wpqtp_sfc  ! w'q_t' at (1)         [(m kg)/(s kg)]   
+    real :: wpqtp_sfc, &  ! w'q_t' at (1)         [(m kg)/(s kg)]   
+            time_frac ! The time fraction used for interpolation.
+
+    integer :: before_time, after_time ! The time bounds used for interpolation
 
     ! Declare the value of ustar.
     ustar = 0.28
 
     ! Compute heat and moisture fluxes
 
-    wpthlp_sfc = 8.e-3
+    call time_select(time, size(time_sfc_given), time_sfc_given, &
+                before_time, after_time, time_frac)
+
+    wpthlp_sfc = factor_interp(time_frac, wpthlp_sfc_given(after_time), &
+                               wpthlp_sfc_given(before_time))
+
     ! The BOMEX specifications give surface moisture flux in terms of total water
     ! specific humidity.
-    wpqtp_sfc  = 5.2e-5
+    wpqtp_sfc  = factor_interp(time_frac, wpqtp_sfc_given(after_time), &
+                               wpqtp_sfc_given(before_time))
+
+    T_sfc = factor_interp(time_frac, T_sfc_given(after_time), &
+                               T_sfc_given(before_time))
 
     ! Convert flux from terms of total water specific humidity to terms of total
     ! water mixing ratio.

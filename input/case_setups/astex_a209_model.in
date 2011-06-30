@@ -57,7 +57,6 @@ dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
 sfctype = 1
 
-T_sfc = 290.355       ! Temperature of underlying surface           [K]
 p_sfc = 1029.e2     ! Pressure at model base              [Pa]
 
 fcor = 8.1553388e-5    ! Coriolis parameter                  [s^-1]

@@ -34,7 +34,9 @@ module time_dependent_input
     CO2_sfc_given,  &
     upwp_sfc_given, &
     vpwp_sfc_given, &
-    T_sfc_given
+    T_sfc_given,    &
+    wpthlp_sfc_given, &
+    wpqtp_sfc_given
 
   type(two_dim_read_var), private, dimension(nCols) :: &
     t_dependent_forcing_data ! Data structure that defines the change in input
@@ -52,6 +54,8 @@ module time_dependent_input
   logical, public :: l_input_xpwp_sfc ! Flag used to determine whether or not to read 
                                       ! in the surface momentum fluxes, upwp_sfc and vpwp_sfc.
 
+  logical, public :: l_ignore_forcings ! Flag used to determine if the forcings
+                                       ! should be ignored for this case.
 
   ! File path constants
   character(len=*), private, parameter :: input_path = "../input/case_setups/"
@@ -87,8 +91,10 @@ module time_dependent_input
 
     ! ----------------- Begin Code --------------------
 
-    call initialize_t_dependent_forcings &
+    if ( .not. l_ignore_forcings ) then
+      call initialize_t_dependent_forcings &
                    ( iunit, input_path//trim(runtype)//forcings_path, grid_size, grid, p_in_Pa )
+    end if
 
     call initialize_t_dependent_surface &
                    ( iunit, input_path//trim(runtype)//surface_path )
@@ -107,7 +113,10 @@ module time_dependent_input
 
     ! ----------------- Begin Code --------------------
 
-    call finalize_t_dependent_forcings()
+    if ( .not. l_ignore_forcings ) then
+      call finalize_t_dependent_forcings()
+    end if
+
     call finalize_t_dependent_surface()
 
   end subroutine finalize_t_dependent_input
@@ -138,7 +147,9 @@ module time_dependent_input
       CO2_umol_name, &
       upwp_sfc_name, &
       vpwp_sfc_name, &
-      T_sfc_name
+      T_sfc_name,    &
+      wpthlp_sfc_name, &
+      wpqtp_sfc_name
 
     implicit none
 
@@ -244,6 +255,19 @@ module time_dependent_input
                                       input_file )
     end if 
 
+
+    if( get_target_index(nCols, wpthlp_sfc_name, retVars) > 0 ) then
+      allocate( wpthlp_sfc_given(1:dim_size) )
+      wpthlp_sfc_given = read_x_profile( nCols, dim_size, wpthlp_sfc_name, &
+                                      retVars, input_file )
+    end if 
+
+    if( get_target_index(nCols, wpqtp_sfc_name, retVars) > 0 ) then
+      allocate( wpqtp_sfc_given(1:dim_size) )
+      wpqtp_sfc_given = read_x_profile( nCols, dim_size, wpqtp_sfc_name, &
+                                      retVars, input_file )
+    end if
+ 
     ! Deallocate memory
     call deallocate_one_dim_vars( nCols, retVars )
 
@@ -385,7 +409,9 @@ module time_dependent_input
     if ( allocated( CO2_sfc_given ) )  deallocate( CO2_sfc_given )
     if ( allocated( upwp_sfc_given ) ) deallocate( upwp_sfc_given )
     if ( allocated( vpwp_sfc_given ) ) deallocate( vpwp_sfc_given )
-    if ( allocated( T_sfc_given ) )      deallocate( T_sfc_given )
+    if ( allocated( T_sfc_given ) )    deallocate( T_sfc_given )
+    if ( allocated( wpthlp_sfc_given ) ) deallocate( wpthlp_sfc_given )
+    if ( allocated( wpqtp_sfc_given ) )  deallocate( wpqtp_sfc_given )
 
   end subroutine finalize_t_dependent_surface
 

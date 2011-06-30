@@ -119,8 +119,8 @@ module mpace_b
   end subroutine mpace_b_tndcy
 
 !----------------------------------------------------------------------
-  subroutine mpace_b_sfclyr( rho_sfc, & 
-                           wpthlp_sfc, wprtp_sfc, ustar )
+  subroutine mpace_b_sfclyr( time, rho_sfc, & 
+                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
 
   !        Description:
   !          Surface forcing subroutine for mpace_b case.  Written July-
@@ -134,19 +134,23 @@ module mpace_b
 
     use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Functions(s)
 
+    use time_dependent_input, only: SH_given, LH_given, time_sfc_given,& !Variable(s)
+                                    T_sfc_given, &
+                                    time_select ! Procedure(s)
+
+    use interpolation, only: factor_interp ! Procedure(s)
+
+    use stats_precision, only: time_precision ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: max, sqrt
 
-    ! Parameter Constants
-    real, parameter :: &
-    ! The values of these are from the mpace_b specification.
-      sensible_heat_flx  = 136.5,  & ! Sensible Heat Flux     [W m^-2] 
-      latent_heat_flx    = 107.7     ! Latent Heat Flux       [W m^-2] 
-    ! eMFc
-
     ! Input Variables
+    real(time_precision), intent(in) :: &
+      time ! The current time [s]
+
     real, intent(in)  :: & 
       rho_sfc    ! Air density at surface       [kg/m^3
 
@@ -154,9 +158,33 @@ module mpace_b
     real, intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-      ustar           ! surface friction velocity [m/s]
+      ustar,        & ! surface friction velocity [m/s]
+      T_sfc           ! surface tempearture [K]
+
+    real :: &
+    ! The values of these are from the mpace_b specification.
+      sensible_heat_flx,  & ! Sensible Heat Flux     [W m^-2] 
+      latent_heat_flx, &    ! Latent Heat Flux       [W m^-2] 
+      time_frac ! The time fraction used for interpolation
+    ! eMFc
+
+    integer :: &
+      before_time, after_time ! The time used for interpolation
 
     !-----------------------------------------------------------------------
+
+    call time_select( time, size(time_sfc_given), time_sfc_given, &
+                     before_time, after_time, time_frac )
+
+    ! Get SH and LH from the input.
+    sensible_heat_flx = factor_interp( time_frac, SH_given(after_time), &
+                                       SH_given(before_time) )
+    latent_heat_flx = factor_interp( time_frac, LH_given(after_time), &
+                                       LH_given(before_time) )
+
+    T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                                       T_sfc_given(before_time) )
+
 
     ! Declare the value of ustar.
     ustar = 0.25

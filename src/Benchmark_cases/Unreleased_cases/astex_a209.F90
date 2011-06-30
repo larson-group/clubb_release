@@ -94,7 +94,7 @@ module astex_a209
 
   !----------------------------------------------------------------------
   subroutine astex_a209_sfclyr( time, ubar, rtm, thlm, &
-                                lowestlevel, exner_sfc, psfc, & 
+                                lowestlevel, exner_sfc, p_sfc, & 
                                 wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
 
     ! Description:
@@ -143,7 +143,8 @@ module astex_a209
                  ! (DOES THIS NEED A CORRECTION FOR THETA-L TO THETA?)  [K]
       lowestlevel, & ! This is z at the lowest above-ground model level.  [m]
       exner_sfc,   & ! This is the surface pressure [Pa].
-      psfc
+      p_sfc           ! Sea surface pressure [Pa].
+      
 
     ! Output variables
 
@@ -152,6 +153,7 @@ module astex_a209
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar,        & ! surface friction velocity     [m/s]
       T_sfc           ! Sea surface temperature [K].
+
 
     ! Local variables
     integer :: &
@@ -194,7 +196,7 @@ module astex_a209
                            T_sfc_given(before_time) )
    
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm, T_sfc, exner_sfc )
-    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(psfc,T_sfc) )
+    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
 
     !wpthlp_sfc = sensible_heat_flx / ( rho_sfc * Cp )
     !wprtp_sfc  = latent_heat_flx / ( rho_sfc * Lv )

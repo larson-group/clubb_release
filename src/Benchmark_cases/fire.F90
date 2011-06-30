@@ -21,9 +21,9 @@ module fire
   contains
 
   !======================================================================
-  subroutine fire_sfclyr( ubar, T_sfc, p_sfc, & 
+  subroutine fire_sfclyr( time, ubar, p_sfc, & 
                           thlm_sfc, rtm_sfc, exner_sfc, & 
-                          wpthlp_sfc, wprtp_sfc, ustar )
+                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
                                           
   !       Description:
   !       This subroutine computes surface fluxes of heat and moisture 
@@ -37,14 +37,24 @@ module fire
   !------------------------------------------------------------------------
 
   use saturation, only: sat_mixrat_liq ! Procedure(s)
+ 
   use surface_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc
+
+  use stats_precision, only: time_precision ! Variable(s)
+
+  use interpolation, only: factor_interp ! Procedure(s)
+
+  use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
+                                  time_select ! Procedure(s)
 
   implicit none
 
   ! Input Variables
+  real(time_precision), intent(in) :: &
+    time   ! current time [s]
+
   real, intent(in) ::  & 
     ubar,    & ! mean sfc wind speed                           [m/s]
-    T_sfc,    & ! Surface temperature                           [K]
     p_sfc,    & ! Surface pressure                              [Pa]
     thlm_sfc,& ! theta_l at first model layer                  [K]
     rtm_sfc, & ! Total water mixing ratio at first model layer [kg/kg]
@@ -52,15 +62,30 @@ module fire
 
   ! Output Variables
   real, intent(out) ::  & 
-    wpthlp_sfc, & ! surface thetal flux        [K m/s]
-    wprtp_sfc, &     ! surface moisture flux      [kg/kg m/s]
-    ustar
-    
+    wpthlp_sfc, &   ! surface thetal flux        [K m/s]
+    wprtp_sfc,  &   ! surface moisture flux      [kg/kg m/s]
+    ustar,      &
+    T_sfc           ! Surface temperature        [K]
+
   ! Local Variable
   real :: & 
-    Cz  ! Coefficient
+    Cz, &  ! Coefficient
+    time_frac ! the time fraction used for interpolation
+
+  integer :: &
+    before_time, after_time ! the time indexes used for interpolation
 
   !--------------BEGIN CODE---------------
+
+  ! Interpolate variables from time_dependent_input
+
+  call time_select( time, size(time_sfc_given), time_sfc_given, &
+                    before_time, after_time, time_frac )
+
+  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                                    T_sfc_given(before_time) )
+
+  ! Compute wpthlp_sfc and wprtp_sfc
 
   Cz = 0.0013
 

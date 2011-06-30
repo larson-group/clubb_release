@@ -72,6 +72,10 @@ module input_names
   character(len=*), public, parameter :: &
     T_sfc_name = 'T_sfc[K]'
 
+  character(len=*), public, parameter :: &
+    wpthlp_sfc_name = 'wpthlp_sfc[mK\s]', &
+    wpqtp_sfc_name = 'wpqtp_sfc[(kg\kg)m\s]'
+
   private ! Default Scope
 
 end module input_names

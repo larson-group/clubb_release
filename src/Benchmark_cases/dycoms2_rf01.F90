@@ -59,10 +59,10 @@ module dycoms2_rf01
   end subroutine dycoms2_rf01_tndcy
   
   !======================================================================
-  subroutine dycoms2_rf01_sfclyr( sfctype, T_sfc, p_sfc,  & 
+  subroutine dycoms2_rf01_sfclyr( time, sfctype, p_sfc,  & 
                                     exner_sfc, ubar, & 
                                     thlm_sfc, rtm_sfc, rho_sfc, &
-                                    wpthlp_sfc, wprtp_sfc, ustar )
+                                    wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
   ! Description:
   !   This subroutine computes surface fluxes of
   !   heat and moisture according to GCSS DYCOMS II RF 01 specifications
@@ -77,13 +77,22 @@ module dycoms2_rf01
   use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc, &
                           convert_SH_to_km_s, convert_LH_to_m_s ! Procedure(s)
 
+  use time_dependent_input, only: SH_given, LH_given, time_sfc_given,& ! Variable(s)
+                                  T_sfc_given, &
+                                  time_select ! Procedure(s)
+
+  use stats_precision, only: time_precision ! Variable(s)
+  
+  use interpolation, only: factor_interp ! Procedure(s)
+
   implicit none
 
   ! Input variables
+  real(time_precision), intent(in) :: &
+    time ! The current time [s]
   integer, intent(in) :: &
     sfctype
   real, intent(in) ::  &
-    T_sfc,      & ! Surface temperature                           [K]
     p_sfc,      & ! Surface pressure                              [Pa]
     exner_sfc, & ! Exner function                                [-]
     ubar,      & ! mean sfc wind speed                           [m/s]
@@ -93,19 +102,34 @@ module dycoms2_rf01
 
   ! Output variables
   real, intent(out) ::  & 
-    wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
-    wprtp_sfc, &      ! w'rt' surface flux        [(m kg)/(kg s)]
-    ustar
+    wpthlp_sfc,  &  ! w'theta_l' surface flux   [(m K)/s]
+    wprtp_sfc,   &  ! w'rt' surface flux        [(m kg)/(kg s)]
+    ustar,       &
+    T_sfc           ! Surface temperature       [K]
     
   ! Local Variable
   real, parameter :: & 
-    Cd = 0.0011, &  ! Coefficient
-    SH = 15.0, &  ! Sensible heat flux
-    LH = 115.0  ! Latent heat flux
+    Cd = 0.0011   ! Coefficient
+    
+  real :: &
+    SH, &  ! Sensible heat flux
+    LH, &  ! Latent heat flux
+    time_frac ! The time fraction used for interpolation
+
+  integer :: &
+    before_time, after_time ! The times used for interpolation
 
   !-----------------BEGIN CODE-----------------------
 
   ustar = 0.25
+
+  call time_select( time, size(time_sfc_given), time_sfc_given, &
+                    before_time, after_time, time_frac )
+
+  SH = factor_interp( time_frac, SH_given(after_time), SH_given(before_time) )
+  LH = factor_interp( time_frac, LH_given(after_time), LH_given(before_time) )
+  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                                    T_sfc_given(before_time) )
 
   ! Compute heat and moisture fluxes
   if ( sfctype == 0 ) then

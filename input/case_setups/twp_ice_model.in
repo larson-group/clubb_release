@@ -61,12 +61,11 @@ dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
 sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
-                 !       as defined by SE and LE, respectively.
+                 !       as defined by SH and LH, respectively.
                  ! 1 ==> determine surface sensible and latent heat fluxes 
                  !       through a bulk formula that uses the given surface 
                  !       temperature (T_sfc) and assumes over ocean.
 
-T_sfc = 302.15     ! Temperature of underlying surface (e.g. SST)           [K]
 !p_sfc = 978.9e2   ! Pressure at model base              [Pa]
 p_sfc = 1004.4e2   ! Pressure at model base              [Pa]
 fcor = -3.1379e-5  ! Coriolis parameter                  [s^-1]

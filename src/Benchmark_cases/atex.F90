@@ -167,9 +167,9 @@ module atex
   end subroutine atex_tndcy
 
   !======================================================================
-  subroutine atex_sfclyr( ubar, T_sfc, & 
+  subroutine atex_sfclyr( time, ubar, & 
                           thlm_sfc, rtm_sfc, exner_sfc, & 
-                          wpthlp_sfc, wprtp_sfc, ustar )
+                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
   ! Description:
   !   This subroutine computes surface fluxes of
   !   heat and moisture according to GCSS ATEX specifications
@@ -183,12 +183,20 @@ module atex
 
   use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc
 
+  use interpolation, only: factor_interp ! Procedure(s)
+
+  use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
+                                  time_select                    ! Procedure(s)
+
+  use stats_precision, only: time_precision ! Variable(s)
+
   implicit none
 
   ! Input variables
+  real(time_precision), intent(in) :: &
+    time       ! the current time [s]
   real, intent(in) ::  &
     ubar,    & ! mean sfc wind speed                           [m/s]
-    T_sfc,    & ! Surface temperature                           [K]
     thlm_sfc,& ! theta_l at first model layer                  [K]
     rtm_sfc, & ! Total water mixing ratio at first model layer [kg/kg]
     exner_sfc  ! Exner function                                [-]
@@ -196,14 +204,29 @@ module atex
   ! Output variables
   real, intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
-    wprtp_sfc, &      ! w'rt' surface flux        [(m kg)/(kg s)]
-    ustar
+    wprtp_sfc,   &    ! w'rt' surface flux        [(m kg)/(kg s)]
+    ustar,       &
+    T_sfc          ! Surface temperature                           [K]
     
   ! Local Variable
   real :: & 
-    C_10  ! Coefficient
+    C_10, &  ! Coefficient
+    time_frac ! Time fraction used for interpolation
+
+  integer :: &
+    before_time, after_time ! The 
 
   !-----------------BEGIN CODE-----------------------
+
+  ! Interpolate T_sfc from time_dependent_input
+
+  call time_select( time, size(time_sfc_given), time_sfc_given, &
+                    before_time, after_time, time_frac )
+
+  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                                    T_sfc_given(before_time) )
+
+  ! Compute wpthlp_sfc and wprtp_sfc
 
   C_10 = 0.0013
   ustar = 0.3

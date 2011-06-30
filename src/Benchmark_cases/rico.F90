@@ -108,10 +108,10 @@ module rico
 
 
  !----------------------------------------------------------------------
-  subroutine rico_sfclyr( um_sfc, vm_sfc, thlm, rtm, &
-                          lowestlevel, T_sfc, p_sfc, exner_sfc, & 
+  subroutine rico_sfclyr( time, um_sfc, vm_sfc, thlm, rtm, &
+                          lowestlevel, p_sfc, exner_sfc, & 
                           upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
-                          wprtp_sfc, ustar )
+                          wprtp_sfc, ustar, T_sfc, SH, LH )
   !----------------------------------------------------------------------
   !        Description:
   !          Surface forcing subroutine for RICO case.  Written
@@ -133,6 +133,14 @@ module rico
   use surface_flux, only: compute_ubar, compute_momentum_flux, &
                           compute_wpthlp_sfc, compute_wprtp_sfc
 
+  use time_dependent_input, only: time_sfc_given, T_sfc_given, &  ! Variable(s)
+                                  SH_given, LH_given, &
+                                  time_select                     ! Procedure(s)
+
+  use interpolation, only: factor_interp   ! Procedure(s)
+
+  use stats_precision, only: time_precision ! Variable(s)
+
   implicit none
 
   intrinsic :: max, log, sqrt
@@ -151,19 +159,25 @@ module rico
     Cz,   & ! This is C_10 scaled to the height of the lowest model level.
     Cm,   & ! This is C_m_20 scaled to the height of the lowest model level.
     Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
-    Cq      ! This is C_q_20 scaled to the height of the lowest model level.
+    Cq,   & ! This is C_q_20 scaled to the height of the lowest model level.
+    time_frac ! The time fraction used for interpolation
+
+  integer :: &
+      before_time, after_time  ! time indexes used for interpolation
 
   logical :: & 
     l_use_old_atex  ! if true, use ATEX version; if not, use RICO-specific
 
   ! Input variables
+  real(time_precision), intent(in) :: &
+    time ! the current time
+
   real, intent(in) :: & 
     um_sfc,        & ! This is u at the lowest above-ground model level.  [m/s]
     vm_sfc,        & ! This is v at the lowest above-ground model level.  [m/s]
     thlm,          & ! This is theta-l at the lowest above-ground model level.  
                      ! (DOES THIS NEED A CORRECTION FOR THETA-L TO THETA?)  [K]
     rtm,           & ! This is rt at the lowest above-ground model level.  [kg/kg]
-    T_sfc,          & ! This is the sea surface temperature [K].
     lowestlevel,   & ! This is z at the lowest above-ground model level.  [m]
     p_sfc,          & ! This is the surface pressure [Pa].
     exner_sfc
@@ -174,7 +188,26 @@ module rico
     vpwp_sfc,   & ! The Upward flux of v-momentum         [(m^2 s^-2]
     wpthlp_sfc, & ! The upward flux of theta-l            [K m s^-1]
     wprtp_sfc,  & ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
-    ustar         ! surface friction velocity             [m/s]
+    ustar,      & ! surface friction velocity             [m/s]
+    T_sfc,      & ! This is the sea surface temperature   [K]
+    SH,         & ! surface heat flux                     [W/m^2]
+    LH            ! latent heat flux                      [W/m^2]
+
+  !--------------------BEGIN CODE----------------------------
+
+  ! interpolate variables from time_dependent_input
+
+  call time_select( time, size(time_sfc_given), time_sfc_given, &
+                       before_time, after_time, time_frac )
+
+  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                                       T_sfc_given(before_time) )
+
+  SH = factor_interp( time_frac, SH_given(after_time), &
+                                   SH_given(before_time) )
+
+  LH = factor_interp( time_frac, LH_given(after_time), &
+                                   LH_given(before_time) )
 
   ! Declare the value of ustar.
   ustar = 0.3

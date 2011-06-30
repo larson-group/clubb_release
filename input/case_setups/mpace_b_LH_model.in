@@ -53,20 +53,20 @@ time_final   = 104400.0  ! Model end time [seconds since midnight on start date]
 !time_final   = 61320.0   ! Model end time [seconds since midnight on start date]
 time_spinup  = 0.0       ! End of spin-up period [seconds since midnight on start date]
 
+l_t_dependent = .true. ! Model uses a _surface.in file for input, so this must be true
+l_ignore_forcings = .true. ! Forcings are not read from a file
+
 dtmain    = 60.0   ! Model timestep [s]
 dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
-                 !       as defined by SE and LE, respectively.
+                 !       as defined by SH and LH, respectively.
                  ! 1 ==> determine surface sensible and latent heat fluxes
                  !       through a bulk formula that uses the given surface
                  !       temperature (T_sfc) and assumes over ocean.
 
-T_sfc = 274.01     ! Temperature of underlying surface (e.g. SST)           [K]
 p_sfc = 1010.e2    ! Pressure at model base              [Pa]
-SE = 0.           ! Fixed surface sensible heat flux    [K m/s]
-LE = 0.           ! Fixed surface latent heat flux      [(kg/kg) m/s]
 
 fcor = 1.e-4      ! Coriolis parameter                  [s^-1]
 T0   = 300.       ! Reference temperature (usually 300) [K]

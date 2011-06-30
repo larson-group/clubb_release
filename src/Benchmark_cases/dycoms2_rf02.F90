@@ -82,7 +82,7 @@ module dycoms2_rf02
 
 !----------------------------------------------------------------------
 
-  subroutine dycoms2_rf02_sfclyr( wpthlp_sfc, wprtp_sfc, ustar )
+  subroutine dycoms2_rf02_sfclyr( time, wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
   ! Description:
   !   This subroutine computes surface fluxes of
   !   heat and moisture according to GCSS DYCOMS II RF 02 specifications
@@ -96,24 +96,52 @@ module dycoms2_rf02
 
     use constants_clubb, only: Cp, Lv ! Variable(s)
 
-    use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Function(s)
+    use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Procedure(s)
+
+    use time_dependent_input, only: SH_given, LH_given, time_sfc_given,& ! Variable(s)
+                                    T_sfc_given, &
+                                    time_select ! Procedure(s)
+
+    use interpolation, only: factor_interp ! Procedure(s)
+
+    use stats_precision, only: time_precision ! Variable(s)
 
     implicit none
 
-    ! External
-    intrinsic :: sqrt
-
-    ! Constant parameters
-    real, parameter ::  & 
-      SH = 16.0, &   ! Sensible heat flux
-      LH = 93.0, &   ! Latent heat flux
-      rho_sfc = 1.21 ! Air density at surface
+    real(time_precision), intent(in) :: &
+      time ! The current time [s]
 
     ! Output
     real, intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-      ustar           ! surface friction velocity [m/s]
+      ustar,        & ! surface friction velocity [m/s]
+      T_sfc           ! surface temperature [K]
+
+    ! External
+    intrinsic :: sqrt
+
+    ! Constant parameters
+    real ::  & 
+      SH, &   ! Sensible heat flux
+      LH, &   ! Latent heat fluxi
+      time_frac ! The time fraction for interpolation
+
+    integer :: &
+      before_time, after_time ! The times used for interpolation
+
+    real, parameter :: &
+      rho_sfc = 1.21 ! Air density at surface
+
+    !------------------------BEGIN CODE-----------------------------------
+
+    call time_select( time, size(time_sfc_given), time_sfc_given, &
+                      before_time, after_time, time_frac )
+
+    SH = factor_interp( time_frac, SH_given(after_time), SH_given(before_time) )
+    LH = factor_interp( time_frac, LH_given(after_time), LH_given(before_time) )
+    T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                                      T_sfc_given(before_time) )
 
     ! Declare the value of ustar.
     ustar = 0.25
