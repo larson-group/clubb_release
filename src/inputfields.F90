@@ -317,7 +317,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rrainm, stat_file_zt, "rrainm_zt", gr%nnzp, timestep, & 
+           ( input_rrainm, stat_file_zt, "rrainm", gr%nnzp, timestep, & 
              gr%zt, tmp1(1:gr%nnzp), l_read_error )
       if ( input_rrainm ) then
         hydromet(1:gr%nnzp,iirrainm) = tmp1(1:gr%nnzp)

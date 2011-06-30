@@ -1081,7 +1081,7 @@ module microphys_driver
       iNcm_in_cloud, &
       iNc_activated, &
       iNcnm, & 
-      irrainm_zt, & 
+      irrainm, & 
       irsnowm, & 
       iricem, & 
       irgraupelm, & 
@@ -1958,7 +1958,7 @@ module microphys_driver
       call stat_update_var( iNcnm, Ncnm, zt )
 
       if ( iirrainm > 0 ) then
-        call stat_update_var( irrainm_zt, hydromet(:,iirrainm), zt )
+        call stat_update_var( irrainm, hydromet(:,iirrainm), zt )
       end if
 
       if ( iirsnowm > 0 ) then

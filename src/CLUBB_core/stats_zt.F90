@@ -77,7 +77,7 @@ module stats_zt
         ised_rcm, & 
         irsat, & 
         irsati, & 
-        irrainm_zt, & 
+        irrainm, & 
         iNrm, & 
         irain_rate_zt, & 
         iAKm, & 
@@ -411,7 +411,7 @@ module stats_zt
     isnowslope      = 0  ! Adam Smith, 22 April 2008
     ised_rcm        = 0  ! Brian
     irsat           = 0  ! Brian
-    irrainm_zt      = 0  ! Brian
+    irrainm      = 0  ! Brian
     irain_rate_zt   = 0  ! Brian
     iAKm            = 0  ! analytic Kessler.  Vince Larson 22 May 2005
     iLH_AKm         = 0  ! LH Kessler.  Vince Larson 22 May 2005
@@ -1069,9 +1069,9 @@ module stats_zt
              "Saturation mixing ratio over ice [kg/kg]", "kg/kg", zt )
         k = k + 1
 
-      case ('rrainm_zt')           ! Brian
-        irrainm_zt = k
-        call stat_assign( irrainm_zt, "rrainm_zt", & 
+      case ('rrainm')           ! Brian
+        irrainm = k
+        call stat_assign( irrainm, "rrainm", & 
              "Rain water mixing ratio [kg/kg]", "kg/kg", zt )
         k = k + 1
 

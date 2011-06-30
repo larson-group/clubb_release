@@ -86,7 +86,7 @@
        ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm\_zt [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [

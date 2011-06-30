@@ -9,7 +9,7 @@ vars_zt =
 'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'sed_rcm', 'rsat',
-'rrainm_zt', 'Nrm', 'm_vol_rad_rain', 'm_vol_rad_cloud',
+'rrainm', 'Nrm', 'm_vol_rad_rain', 'm_vol_rad_cloud',
 'rain_rate_zt', 'rsnowm', 'ricem', 'rgraupelm',
 'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
 'rtm_bt', 'rtm_ma', 'rtm_ta', 'rtm_mfl', 'rtm_tacl', 'rtm_cl',
