@@ -52,7 +52,8 @@ cd $scriptPath
 if [ -z $1 ]; then
 	# Set using the default config flags
 
-	CONFIG=./config/linux_x86_64_g95_optimize.bash # Linux (Redhat Enterprise 5)
+	CONFIG=./config/linux_x86_64_gfortran.bash # Linux (RedhatEnterprise 5)
+#	CONFIG=./config/linux_x86_64_g95_optimize.bash # Linux (Redhat Enterprise 5)
 #	CONFIG=./config/macosx_x86_64_gfortran.bash # MacOS X
 #	CONFIG=./config/aix_powerpc_xlf90_bluefire.bash # IBM AIX on Bluefire
 #	CONFIG=./config/solaris_generic_oracle.bash # Oracle Solaris
