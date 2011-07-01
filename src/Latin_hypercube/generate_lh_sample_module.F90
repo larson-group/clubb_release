@@ -17,17 +17,25 @@ module generate_lh_sample_module
   logical, public :: &
     l_fixed_corr_initialized = .false.
 
+!$omp threadprivate(l_fixed_corr_initialized)
+
   double precision, allocatable, dimension(:,:), target, private :: &
     corr_stw_cloud_Cholesky, & ! Cholesky factorization of the correlation matrix
     corr_stw_below_Cholesky    ! Cholesky factorization of the correlation matrix
+
+!$omp threadprivate(corr_stw_cloud_Cholesky, corr_stw_below_Cholesky)
 
   double precision, allocatable, dimension(:), private :: &
     corr_stw_cloud_scaling, & ! Scaling factors for the correlation matrix [-]
     corr_stw_below_scaling    ! Scaling factors for the correlation matrix [-]
 
+!$omp threadprivate(corr_stw_cloud_scaling, corr_stw_below_scaling)
+
   logical, private :: &
     l_corr_stw_cloud_scaling, & ! Whether we're scaling the correlation matrix
     l_corr_stw_below_scaling
+
+!$omp threadprivate(l_corr_stw_cloud_scaling, l_corr_stw_below_scaling)
 
   private ! Default scope
 
