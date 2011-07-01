@@ -2955,6 +2955,12 @@ module clubb_driver
     use nov11, only: nov11_altocu_rtm_adjust, nov11_altocu_read_t_dependent ! Procedure(s)
 
     use twp_ice, only: twp_ice_sfclyr ! Procedure(s)
+
+    use clex9_nov02, only: clex9_nov02_read_t_dependent ! Procedure(s)
+
+    use clex9_oct14, only: clex9_oct14_read_t_dependent ! Procedure(s)
+
+    use jun25, only: jun25_altocu_read_t_dependent ! Procedure(s)
 #endif
 
     use wangara, only: wangara_tndcy, wangara_sfclyr ! Procedure(s)
@@ -2964,11 +2970,7 @@ module clubb_driver
       compute_ubar,          &
       set_sclr_sfc_rtm_thlm
 
-    use clex9_nov02, only: clex9_nov02_read_t_dependent ! Procedure(s)
 
-    use clex9_oct14, only: clex9_oct14_read_t_dependent ! Procedure(s)
-
-    use jun25, only: jun25_altocu_read_t_dependent ! Procedure(s)
     implicit none
 
     ! Input Variables
