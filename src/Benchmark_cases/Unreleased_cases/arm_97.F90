@@ -40,13 +40,13 @@ module arm_97
 
     use error_code, only: clubb_debug ! Procedure(s)
 
-    use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Procedure(s)
+    use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
 
     use time_dependent_input, only: &
       time_select, &
       time_sfc_given, &
-      LH_given, &
-      SH_given, &
+      latent_ht_given, &
+      sens_ht_given, &
       T_sfc_given, &
       l_t_dependent
 
@@ -93,13 +93,16 @@ module arm_97
       endif
 
 
-      heat_flx = factor_interp( time_frac, SH_given(after_time), SH_given(before_time) )
-      moisture_flx = factor_interp( time_frac, LH_given(after_time), LH_given(before_time) )
-      T_sfc = factor_interp( time_frac, T_sfc_given(after_time), T_sfc_given(before_time) )
+      heat_flx = factor_interp( time_frac, sens_ht_given(after_time), &
+                                sens_ht_given(before_time) )
+      moisture_flx = factor_interp( time_frac, latent_ht_given(after_time), &
+                                    latent_ht_given(before_time) )
+      T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                             T_sfc_given(before_time) )
 
       ! Convert W/m^2 into w'thl' w'rt' units
-      wpthlp_sfc = convert_SH_to_km_s( heat_flx, rho_sfc )     ! (K m/s)
-      wprtp_sfc  = convert_LH_to_m_s( moisture_flx, rho_sfc ) ! (kg m/ kg s)
+      wpthlp_sfc = convert_sens_ht_to_km_s( heat_flx, rho_sfc )     ! (K m/s)
+      wprtp_sfc  = convert_latent_ht_to_m_s( moisture_flx, rho_sfc ) ! (kg m/ kg s)
 
       ! Compute momentum fluxes using ARM Cu formulae
 

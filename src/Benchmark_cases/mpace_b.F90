@@ -132,9 +132,9 @@ module mpace_b
 
     use constants_clubb, only: Cp, Lv ! Variable(s)
 
-    use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Functions(s)
+    use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Functions(s)
 
-    use time_dependent_input, only: SH_given, LH_given, time_sfc_given,& !Variable(s)
+    use time_dependent_input, only: sens_ht_given, latent_ht_given, time_sfc_given,& !Variable(s)
                                     T_sfc_given, &
                                     time_select ! Procedure(s)
 
@@ -176,11 +176,11 @@ module mpace_b
     call time_select( time, size(time_sfc_given), time_sfc_given, &
                      before_time, after_time, time_frac )
 
-    ! Get SH and LH from the input.
-    sensible_heat_flx = factor_interp( time_frac, SH_given(after_time), &
-                                       SH_given(before_time) )
-    latent_heat_flx = factor_interp( time_frac, LH_given(after_time), &
-                                       LH_given(before_time) )
+    ! Get sens_ht and latent_ht from the input.
+    sensible_heat_flx = factor_interp( time_frac, sens_ht_given(after_time), &
+                                       sens_ht_given(before_time) )
+    latent_heat_flx = factor_interp( time_frac, latent_ht_given(after_time), &
+                                       latent_ht_given(before_time) )
 
     T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
                                        T_sfc_given(before_time) )
@@ -190,8 +190,8 @@ module mpace_b
     ustar = 0.25
 
     ! Compute heat and moisture fluxes
-    wpthlp_sfc = convert_SH_to_km_s( sensible_heat_flx, rho_sfc )
-    wprtp_sfc  = convert_LH_to_m_s( latent_heat_flx, rho_sfc )
+    wpthlp_sfc = convert_sens_ht_to_km_s( sensible_heat_flx, rho_sfc )
+    wprtp_sfc  = convert_latent_ht_to_m_s( latent_heat_flx, rho_sfc )
 
     return
   end subroutine mpace_b_sfclyr

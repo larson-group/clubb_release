@@ -38,13 +38,13 @@ module cobra
 
   use diag_ustar_module, only: diag_ustar ! Variable(s)
 
-  use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Procedure(s)
+  use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
 
   use array_index, only: &
     iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variable(s)
     iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
 
-  use time_dependent_input, only: LH_given, SH_given, time_sfc_given, &
+  use time_dependent_input, only: latent_ht_given, sens_ht_given, time_sfc_given, &
                                   CO2_sfc_given, T_sfc_given,& ! Variable (s)
                                   time_select ! Procedure(s)
 
@@ -113,14 +113,18 @@ module cobra
                     before_time, after_time, time_frac )
 
   ! Interpolate fluxes
-  heat_flx = factor_interp( time_frac, SH_given(after_time), SH_given(before_time) )
-  moisture_flx = factor_interp( time_frac, LH_given(after_time), LH_given(before_time) )
-  CO2_flx = factor_interp( time_frac, CO2_sfc_given(after_time), CO2_sfc_given(before_time) )
-  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), T_sfc_given(before_time) )
+  heat_flx = factor_interp( time_frac, sens_ht_given(after_time), &
+                                       sens_ht_given(before_time) )
+  moisture_flx = factor_interp( time_frac, latent_ht_given(after_time), &
+                                           latent_ht_given(before_time) )
+  CO2_flx = factor_interp( time_frac, CO2_sfc_given(after_time), &
+                                      CO2_sfc_given(before_time) )
+  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+                                    T_sfc_given(before_time) )
 
   ! Convert heat_flx and moisture_flx to natural units
-  heat_flx2     = convert_SH_to_km_s( heat_flx, rho_sfc )    ! (K m/s)
-  moisture_flx2 = convert_LH_to_m_s( moisture_flx, rho_sfc )! (m/s)
+  heat_flx2     = convert_sens_ht_to_km_s( heat_flx, rho_sfc )    ! (K m/s)
+  moisture_flx2 = convert_latent_ht_to_m_s( moisture_flx, rho_sfc )! (m/s)
 
   !       Convert CO2 surface flux to natural units.
   !       The CO2 flux has been given in units of:  umol/(m^2 s).

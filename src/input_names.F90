@@ -62,8 +62,8 @@ module input_names
     time_name = 'Time[s]'
 
   character(len=*), public, parameter :: &
-    LH_name = 'LH[W\m^2]', &
-    SH_name = 'SH[W\m^2]'
+    latent_ht_name = 'latent_ht[W\m^2]', &
+    sens_ht_name = 'sens_ht[W\m^2]'
 
   character(len=*), public, parameter :: &
     upwp_sfc_name = 'upwp_sfc[(m\s)^2]', &

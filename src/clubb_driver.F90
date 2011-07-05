@@ -140,7 +140,7 @@ module clubb_driver
       Frad_LW_up, Frad_SW_down, Frad_LW_down
 
     use variables_prognostic_module, only:  & 
-      T_sfc, p_sfc, SH, LH, thlm, rtm,     & ! Variable(s)
+      T_sfc, p_sfc, sens_ht, latent_ht, thlm, rtm,     & ! Variable(s)
       um, vm, wp2, rcm, wm_zt, wm_zm, exner, &
       p_in_Pa, rho_zm, upwp, vpwp, wpthlp, &
       wprcp, rho, wprtp, wpthlp_sfc, wprtp_sfc, &
@@ -378,7 +378,7 @@ module clubb_driver
       day, month, year, rlat, rlon, sfc_elevation, & 
       time_initial, time_final, time_spinup, & 
       dtmain, dtclosure, & 
-      sfctype, T_sfc, p_sfc, SH, LH, fcor, T0, ts_nudge, & 
+      sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, & 
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
@@ -424,8 +424,8 @@ module clubb_driver
     sfctype  = 0
     T_sfc     = 288.
     p_sfc     = 1000.e2
-    SH       = 0.
-    LH       = 0.
+    sens_ht       = 0.
+    latent_ht       = 0.
     fcor     = 1.e-4
     T0       = 300.
     ts_nudge = 86400.
@@ -617,8 +617,8 @@ module clubb_driver
       call write_text( "sfctype = ", sfctype, l_write_to_file, iunit )
       call write_text( "T_sfc = ", T_sfc, l_write_to_file, iunit )
       call write_text( "p_sfc = ", p_sfc, l_write_to_file, iunit )
-      call write_text( "SH = ", SH, l_write_to_file, iunit )
-      call write_text( "LH = ", LH, l_write_to_file, iunit )
+      call write_text( "sens_ht = ", sens_ht, l_write_to_file, iunit )
+      call write_text( "latent_ht = ", latent_ht, l_write_to_file, iunit )
       call write_text( "fcor = ", fcor, l_write_to_file, iunit )
       call write_text( "T0 = ", T0, l_write_to_file, iunit )
       call write_text( "ts_nudge = ", ts_nudge, l_write_to_file, iunit )
@@ -2861,7 +2861,7 @@ module clubb_driver
       upwp_sfc, vpwp_sfc, T_sfc, & 
       wpthlp_sfc, wprtp_sfc, &
       um_forcing, vm_forcing, &
-      SH, LH
+      sens_ht, latent_ht
 
     use stats_variables, only: &
       ish, & ! Variable(s)
@@ -3136,7 +3136,7 @@ module clubb_driver
                           !gr%zt(2), 299.8, 101540.,  &           ! Intent(in)
                         gr%zt(2), p_sfc, exner(1), &              ! Intent(in)
                         upwp_sfc, vpwp_sfc, wpthlp_sfc, &         ! Intent(out) 
-                        wprtp_sfc, ustar, T_sfc, SH, LH )         ! Intent(out)
+                        wprtp_sfc, ustar, T_sfc, sens_ht, latent_ht )         ! Intent(out)
 
     case ( "gabls3" )
       l_compute_momentum_flux = .true.
@@ -3159,7 +3159,7 @@ module clubb_driver
 
       ! Read in time dependent inputs
       call jun25_altocu_read_t_dependent( time_current, & ! Intent(in)
-                                         T_sfc, SH, LH )  ! Intent(out)
+                                         T_sfc, sens_ht, latent_ht )  ! Intent(out)
 
     case ( "cobra" )
       l_compute_momentum_flux = .true.
@@ -3176,7 +3176,7 @@ module clubb_driver
 
       ! Read in time dependent inputs
       call clex9_nov02_read_t_dependent( time_current, & ! Intent(in)
-                                         T_sfc, SH, LH ) ! Intent(out)
+                                         T_sfc, sens_ht, latent_ht ) ! Intent(out)
 
     case ( "clex9_oct14" )
       ! There are no surface momentum or heat fluxes
@@ -3187,7 +3187,7 @@ module clubb_driver
 
       ! Read in time dependent inputs
       call clex9_oct14_read_t_dependent( time_current, & ! Intent(in)
-                                         T_sfc, SH, LH ) ! Intent(out)
+                                         T_sfc, sens_ht, latent_ht ) ! Intent(out)
 
     case ( "astex_a209" )
       l_compute_momentum_flux = .true.
@@ -3214,7 +3214,7 @@ module clubb_driver
 
       ! Read in time dependent inputs
       call nov11_altocu_read_t_dependent( time_current, & ! Intent(in)
-                                         T_sfc, SH, LH )  ! Intent(out)
+                                         T_sfc, sens_ht, latent_ht )  ! Intent(out)
 
 #endif
 
@@ -3362,12 +3362,12 @@ module clubb_driver
 
     ! If the surface type is 0, use fixed fluxes
     if ( sfctype == 0 .and. l_fixed_flux ) then
-      wpthlp_sfc = SH
-      wprtp_sfc  = LH
-      if ( iisclr_thl > 0 ) wpsclrp(:,iisclr_thl) = SH
-      if ( iisclr_rt > 0 ) wpsclrp(:,iisclr_rt)   = LH
-      if ( iiedsclr_thl > 0 ) wpedsclrp(:,iiedsclr_thl) = SH
-      if ( iiedsclr_rt > 0 ) wpedsclrp(:,iiedsclr_rt)   = LH
+      wpthlp_sfc = sens_ht
+      wprtp_sfc  = latent_ht
+      if ( iisclr_thl > 0 ) wpsclrp(:,iisclr_thl) = sens_ht
+      if ( iisclr_rt > 0 ) wpsclrp(:,iisclr_rt)   = latent_ht
+      if ( iiedsclr_thl > 0 ) wpedsclrp(:,iiedsclr_thl) = sens_ht
+      if ( iiedsclr_rt > 0 ) wpedsclrp(:,iiedsclr_rt)   = latent_ht
     end if
 
     !---------------------------------------------------------------

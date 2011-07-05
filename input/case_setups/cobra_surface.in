@@ -4,9 +4,9 @@
 ! Notes:
 ! The data has been altered so it can be used for the COBRA CO2 case.
 ! H = sensible heat flux at surface   [W m^{-2}]
-! LH = latent heat flux at surface    [W m^{-2}]
+! latent_ht = latent heat flux at surface    [W m^{-2}]
 ! Every hour (3 half-hour point weighted average)
-! Note:  For H and LH, the "***" symbol next to certain rows indicates 
+! Note:  For H and latent_ht, the "***" symbol next to certain rows indicates 
 !        that the values were missing from the data listed in those 
 !        rows.  The values listed here were interpolated from what was 
 !        provided in order to follow the general trend.
@@ -29,7 +29,7 @@
 !     .             0.0,   5.0,  15.0,  30.0, ! Hrs 40, 41, 42, 43 ***
 !     .           154.5, 268.7, 263.7, 265.8, ! Hrs 44, 45, 46, 47
 !     .           361.5 /),                   ! Hr  48
-!     .  LH  = (/ 121.2, 119.1, 122.9, 102.7, ! Hrs 0, 1, 2, 3
+!     .  latent_ht  = (/ 121.2, 119.1, 122.9, 102.7, ! Hrs 0, 1, 2, 3
 !     .           104.8,  87.1,  80.8,  77.9, ! Hrs 4, 5, 6, 7
 !     .            23.6,  -1.3,  -3.8,   4.0, ! Hrs 8, 9, 10, 11
 !     .            -0.1,  -4.1,   3.1,  -0.8, ! Hrs 12, 13, 14, 15
@@ -58,7 +58,7 @@
 !     .            -7.3, -19.4, -16.4, -13.1, ! Hrs 44, 45, 46, 47
 !     .           -11.2 /)                    ! Hr  48
 !
-Time[s]    LH[W\m^2]   SH[W\m^2]   CO2[umol\m^2\s]   T_sfc[K]
+Time[s]    latent_ht[W\m^2]   sens_ht[W\m^2]   CO2[umol\m^2\s]   T_sfc[K]
 57600.     116.8       257.5       -12.0             284.25
 61200.     117.8       274.0       -12.1             284.25
 64800.     116.7       234.5       -10.8             284.25

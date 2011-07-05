@@ -58,17 +58,17 @@ dtclosure = 300.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
 sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
-                 !       as defined by SH and LH, respectively.
+                 !       as defined by sens_ht and latent_ht, respectively.
                  ! 1 ==> determine surface sensible and latent heat fluxes
                  !       through a bulk formula that uses the given surface
                  !       temperature (T_sfc) and assumes over ocean.
 
 p_sfc = 101407.8     ! (1014.1 mb) Pressure at model base              [Pa]
 
-! LH and SH were given in the case specification as lhflx and shflx in W/m^2. To convert to the correct
+! latent_ht and sens_ht were given in the case specification as lhflx and shflx in W/m^2. To convert to the correct
 ! units, use this formula:
-!    LH = lhflx / (rho_sfc_flux * Lv) [(m/s) * (kg/kg)]
-!    SH = shflx / (rho_sfc_flux * Cp) [(m/s) * K]
+!    latent_ht = lhflx / (rho_sfc_flux * Lv) [(m/s) * (kg/kg)]
+!    sens_ht = shflx / (rho_sfc_flux * Cp) [(m/s) * K]
 !LE = 0.000042593 ! Using rho_sfc_flux = 1.0 kg/m^3
 !SE = 0.011806494 ! Using rho_sfc_flux = 1.0 kg/m^3
 

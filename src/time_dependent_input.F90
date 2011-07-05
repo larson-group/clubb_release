@@ -26,8 +26,8 @@ module time_dependent_input
 
   real, public, target, allocatable, dimension(:) :: & ! Module variables used to describe 
     time_sfc_given, &                                  ! the surface over time.
-    LH_given,       &
-    SH_given,       &
+    latent_ht_given,       &
+    sens_ht_given,       &
     thlm_sfc_given, &
     rtm_sfc_given,  &
     p_sfc_given,     &
@@ -141,8 +141,8 @@ module time_dependent_input
       time_name,     &
       thetal_name,   &
       rt_name,       &
-      LH_name,       &
-      SH_name,       &
+      latent_ht_name,       &
+      sens_ht_name,       &
       pressure_name, &
       CO2_umol_name, &
       upwp_sfc_name, &
@@ -193,15 +193,15 @@ module time_dependent_input
                                      input_file )
     end if
 
-    if( get_target_index(nCols, LH_name, retVars) > 0 ) then
-      allocate( LH_given(1:dim_size) )
-      LH_given = read_x_profile( nCols, dim_size, LH_name, retVars, &
+    if( get_target_index(nCols, latent_ht_name, retVars) > 0 ) then
+      allocate( latent_ht_given(1:dim_size) )
+      latent_ht_given = read_x_profile( nCols, dim_size, latent_ht_name, retVars, &
                                input_file )
     end if
     
-    if( get_target_index(nCols, SH_name, retVars) > 0 ) then
-      allocate( SH_given(1:dim_size) )
-      SH_given = read_x_profile( nCols, dim_size, SH_name, retVars, &
+    if( get_target_index(nCols, sens_ht_name, retVars) > 0 ) then
+      allocate( sens_ht_given(1:dim_size) )
+      sens_ht_given = read_x_profile( nCols, dim_size, sens_ht_name, retVars, &
                                input_file )
     end if
     
@@ -401,8 +401,8 @@ module time_dependent_input
     ! ----------------- Begin Code --------------------
 
     if ( allocated( time_sfc_given ) ) deallocate( time_sfc_given )
-    if ( allocated( LH_given ) )       deallocate( LH_given )
-    if ( allocated( SH_given ) )       deallocate( SH_given )
+    if ( allocated( latent_ht_given ) )       deallocate( latent_ht_given )
+    if ( allocated( sens_ht_given ) )       deallocate( sens_ht_given )
     if ( allocated( thlm_sfc_given ) ) deallocate( thlm_sfc_given )
     if ( allocated( rtm_sfc_given ) )  deallocate( rtm_sfc_given )
     if ( allocated( p_sfc_given ) )     deallocate( p_sfc_given )

@@ -40,7 +40,7 @@ module arm
   use diag_ustar_module, only: diag_ustar ! Variable(s)
 
   use surface_flux, only: compute_ht_mostr_flux, &
-                          convert_SH_to_km_s, convert_LH_to_m_s ! Procedures
+                          convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedures
 
   use interpolation, only: factor_interp ! Procedure(s)
 
@@ -92,8 +92,8 @@ module arm
   ! Compute momentum fluxes
 
   ! Convert heat_flx and moisture_flx to natural units
-  heat_flx2     = convert_SH_to_km_s(heat_flx, rho_sfc)    ! (K m/s)
-  moisture_flx2 = convert_LH_to_m_s(moisture_flx, rho_sfc) ! (m/s)
+  heat_flx2     = convert_sens_ht_to_km_s(heat_flx, rho_sfc)    ! (K m/s)
+  moisture_flx2 = convert_latent_ht_to_m_s(moisture_flx, rho_sfc) ! (m/s)
 
   ! Heat flux in units of (m2/s3) (needed by diag_ustar)
   bflx = grav/thlm_sfc * heat_flx2

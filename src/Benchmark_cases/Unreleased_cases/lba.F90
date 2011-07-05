@@ -87,7 +87,7 @@ module lba
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
-    use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Procedure(s)
+    use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
 
     use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
                                     time_select                   ! Procedure(s)
@@ -132,8 +132,8 @@ module lba
                  cos( 0.5 * pi * ( (5.25 - ( time/3600.)) / 5.25 ) ) & 
             ) )
 
-    wpthlp_sfc =  convert_SH_to_km_s( ( 270. * ft**1.5 ), rho_sfc )
-    wprtp_sfc  =  convert_LH_to_m_s( ( 554. * ft**1.3 ), rho_sfc )
+    wpthlp_sfc =  convert_sens_ht_to_km_s( ( 270. * ft**1.5 ), rho_sfc )
+    wprtp_sfc  =  convert_latent_ht_to_m_s( ( 554. * ft**1.3 ), rho_sfc )
 
     bflx = grav/thlm_sfc * wpthlp_sfc
 

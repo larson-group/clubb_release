@@ -11,7 +11,7 @@ module surface_flux
 
   public :: compute_momentum_flux, compute_ubar, compute_ht_mostr_flux, &
             compute_wprtp_sfc, compute_wpthlp_sfc, set_sclr_sfc_rtm_thlm, &
-            convert_SH_to_km_s, convert_LH_to_m_s
+            convert_sens_ht_to_km_s, convert_latent_ht_to_m_s
 
   private
 
@@ -92,7 +92,7 @@ module surface_flux
 !-------------------------------------------------------------------------------
     use stats_precision, only: time_precision ! Variable(s)
     
-    use time_dependent_input, only: LH_given, SH_given, time_sfc_given ! Variable(s)
+    use time_dependent_input, only: latent_ht_given, sens_ht_given, time_sfc_given ! Variable(s)
     
     use interpolation, only: factor_interp ! Procedure(s)
     
@@ -124,12 +124,12 @@ module surface_flux
     
     ! Compute heat and moisture fluxes from ARM data in (W/m2)
     if ( time <= time_sfc_given(1) ) then
-      heat_flx     = SH_given(1)
-      moisture_flx = LH_given(1)
+      heat_flx     = sens_ht_given(1)
+      moisture_flx = latent_ht_given(1)
       
     else if ( time >= time_sfc_given(ntimes) ) then
-      heat_flx     = SH_given(ntimes)
-      moisture_flx = LH_given(ntimes)
+      heat_flx     = sens_ht_given(ntimes)
+      moisture_flx = latent_ht_given(ntimes)
       
     else
       i1 = 1
@@ -138,10 +138,10 @@ module surface_flux
         
         if ( time >= time_sfc_given(i1) .and. time < time_sfc_given(i2) ) then
           time_frac = real((time-time_sfc_given(i1))/(time_sfc_given(i2) - time_sfc_given(i1)))
-!          heat_flx     = ( 1. - time_frac ) * SH_given(i1) + time_frac * SH_given(i2)
-          heat_flx = factor_interp( time_frac, SH_given(i2), SH_given(i1) )
-!          moisture_flx = ( 1. - time_frac ) * LH_given(i1) + time_frac * LH_given(i2)
-          moisture_flx = factor_interp( time_frac, LH_given(i2), LH_given(i1) )
+!          heat_flx     = ( 1. - time_frac ) * sens_ht_given(i1) + time_frac * sens_ht_given(i2)
+          heat_flx = factor_interp( time_frac, sens_ht_given(i2), sens_ht_given(i1) )
+!          moisture_flx = ( 1. - time_frac ) * latent_ht_given(i1) + time_frac * latent_ht_given(i2)
+          moisture_flx = factor_interp( time_frac, latent_ht_given(i2), latent_ht_given(i1) )
           i1 = ntimes
         end if
         
@@ -248,7 +248,7 @@ module surface_flux
 
  
 !==============================================================================
-  real function convert_SH_to_km_s ( SH, rho_sfc )
+  real function convert_sens_ht_to_km_s ( sens_ht, rho_sfc )
 
 !   This function converts sensible heat flux in W/m^2 to
 !   natural units of k m/s for the wpthlp_sfc variable.
@@ -259,20 +259,20 @@ module surface_flux
     implicit none
 
     real, intent(in) :: &
-      SH,               & ! Sensible heat flux     [W/m^2]
+      sens_ht,               & ! Sensible heat flux     [W/m^2]
       rho_sfc                ! Density at the surface [kg/m^3]
 
     !--------------------BEGIN CODE-----------------------
 
-    convert_SH_to_km_s = SH / ( rho_sfc * Cp)
+    convert_sens_ht_to_km_s = sens_ht / ( rho_sfc * Cp)
 
     return
   
-  end function convert_SH_to_km_s
+  end function convert_sens_ht_to_km_s
 
 
 !==============================================================================
-  real function convert_LH_to_m_s ( LH, rho_sfc )
+  real function convert_latent_ht_to_m_s ( latent_ht, rho_sfc )
 
 !   This function converts latent heat flux in W/m^2 to
 !   natural units of m/s for the wprtp_sfc variable.
@@ -283,15 +283,15 @@ module surface_flux
     implicit none
     
     real, intent(in) :: &
-      LH,               & ! Sensible heat flux     [W/m^2]
+      latent_ht,               & ! Latent heat flux     [W/m^2]
       rho_sfc                ! Density at the surface [kg/m^3]
 
     !--------------------BEGIN CODE-----------------------
 
-    convert_LH_to_m_s = LH / ( rho_sfc * Lv)
+    convert_latent_ht_to_m_s = latent_ht / ( rho_sfc * Lv)
 
     return
   
-  end function convert_LH_to_m_s
+  end function convert_latent_ht_to_m_s
 
 end module surface_flux

@@ -1,3 +1,3 @@
-Time[s]     LH[W\m^2]    SH[W\m^2]    thlm[K]      rt[kg\kg]    Press[Pa]   T_sfc[K]
+Time[s]     latent_ht[W\m^2]    sens_ht[W\m^2]    thlm[K]      rt[kg\kg]    Press[Pa]   T_sfc[K]
 0.0         0.000020902  0.00845655   0.000000     0.000000     0.000000    292.46
 2592000.0   0.000020902  0.00845655   0.000000     0.000000     0.000000    292.46

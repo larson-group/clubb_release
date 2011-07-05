@@ -1,4 +1,4 @@
 ! $Id$
-Time[s]          T_sfc[K]   SH[W\m^2]    LH[W\m^2]
+Time[s]          T_sfc[K]   sens_ht[W\m^2]    latent_ht[W\m^2]
 61200.000000     278.61     0.0          0.0
 75600.000000     278.61     0.0          0.0

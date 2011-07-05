@@ -39,8 +39,8 @@ module mpace_a
   real, dimension(file_nlevels,file_ntimes) :: vertq_forcing  ! g/kg/hr
   real, dimension(file_nlevels,file_ntimes) :: um_obs  ! m/s
   real, dimension(file_nlevels,file_ntimes) :: vm_obs  ! m/s
-  real, dimension(file_ntimes) :: file_LH
-  real, dimension(file_ntimes) :: file_SH
+  real, dimension(file_ntimes) :: file_latent_ht
+  real, dimension(file_ntimes) :: file_sens_ht
 
   contains
 
@@ -294,9 +294,11 @@ module mpace_a
       call clubb_debug(1, "file_times not sorted in MPACE_A")
     endif
 
-    latent_heat_flx = factor_interp( ratio, file_LH(after_time), file_LH(before_time) )
+    latent_heat_flx = factor_interp( ratio, file_latent_ht(after_time), &
+                                            file_latent_ht(before_time) )
 
-    sensible_heat_flx = factor_interp( ratio, file_SH(after_time), file_SH(before_time) )
+    sensible_heat_flx = factor_interp( ratio, file_sens_ht(after_time), &
+                                              file_sens_ht(before_time) )
 
     ! Get input from the _surface.in file
 
@@ -374,11 +376,11 @@ module mpace_a
 
     call file_read_1d( iunit, & 
       file_path//'mpace_a_lh.dat', & 
-      file_ntimes, per_line, file_LH )
+      file_ntimes, per_line, file_latent_ht )
 
     call file_read_1d( iunit, & 
       file_path//'mpace_a_sh.dat', & 
-      file_ntimes, per_line, file_SH )
+      file_ntimes, per_line, file_sens_ht )
 
     return
   end subroutine mpace_a_init

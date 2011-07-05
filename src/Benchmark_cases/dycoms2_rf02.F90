@@ -96,9 +96,9 @@ module dycoms2_rf02
 
     use constants_clubb, only: Cp, Lv ! Variable(s)
 
-    use surface_flux, only: convert_SH_to_km_s, convert_LH_to_m_s ! Procedure(s)
+    use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
 
-    use time_dependent_input, only: SH_given, LH_given, time_sfc_given,& ! Variable(s)
+    use time_dependent_input, only: sens_ht_given, latent_ht_given, time_sfc_given,& ! Variable(s)
                                     T_sfc_given, &
                                     time_select ! Procedure(s)
 
@@ -123,8 +123,8 @@ module dycoms2_rf02
 
     ! Constant parameters
     real ::  & 
-      SH, &   ! Sensible heat flux
-      LH, &   ! Latent heat fluxi
+      sens_ht, &   ! Sensible heat flux
+      latent_ht, &   ! Latent heat fluxi
       time_frac ! The time fraction for interpolation
 
     integer :: &
@@ -138,16 +138,17 @@ module dycoms2_rf02
     call time_select( time, size(time_sfc_given), time_sfc_given, &
                       before_time, after_time, time_frac )
 
-    SH = factor_interp( time_frac, SH_given(after_time), SH_given(before_time) )
-    LH = factor_interp( time_frac, LH_given(after_time), LH_given(before_time) )
+    sens_ht = factor_interp( time_frac, sens_ht_given(after_time), sens_ht_given(before_time) )
+    latent_ht = factor_interp( time_frac, latent_ht_given(after_time), &
+                                          latent_ht_given(before_time) )
     T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
                                       T_sfc_given(before_time) )
 
     ! Declare the value of ustar.
     ustar = 0.25
 
-    wpthlp_sfc = convert_SH_to_km_s( SH, rho_sfc )
-    wprtp_sfc  = convert_LH_to_m_s( LH, rho_sfc )
+    wpthlp_sfc = convert_sens_ht_to_km_s( sens_ht, rho_sfc )
+    wprtp_sfc  = convert_latent_ht_to_m_s( latent_ht, rho_sfc )
 
     return
   end subroutine dycoms2_rf02_sfclyr
