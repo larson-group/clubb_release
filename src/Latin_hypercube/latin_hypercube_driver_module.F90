@@ -1615,11 +1615,6 @@ module latin_hypercube_driver_module
                                               LH_sample_point_weights, LH_hydromet(:,iiNrm) )
       end if
 
-      if ( iLH_rcm + iLH_rcp2_zt > 0 ) then
-        LH_rcm = compute_sample_mean( nnzp, n_micro_calls, LH_sample_point_weights, &
-                                       real( X_nl_all_levs(:,:,iiLH_s_mellor) ) )
-      end if
-
       ! Averages of points being fed into the microphysics
       ! These are for diagnostic purposes, and are not needed for anything
       if ( iirrainm > 0 ) then
