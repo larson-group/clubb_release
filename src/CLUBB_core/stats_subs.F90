@@ -7,7 +7,7 @@ module stats_subs
   private ! Set Default Scope
 
   public :: stats_init, stats_begin_timestep, stats_end_timestep, & 
-    stats_accumulate, stats_finalize
+    stats_accumulate, stats_finalize, stats_accumulate_hydromet
 
   private :: stats_zero, stats_avg
 
@@ -1878,7 +1878,91 @@ module stats_subs
 
     return
   end subroutine stats_accumulate
+!------------------------------------------------------------------------------
+  subroutine stats_accumulate_hydromet( hydromet )
+! Description:
+!   Compute stats related the hydrometeors
 
+! References:
+!   None
+!------------------------------------------------------------------------------
+   use parameters_model, only: &
+     hydromet_dim ! Variable(s)
+
+   use grid_class, only: &
+     gr ! Variable(s)
+
+   use array_index, only:  & 
+     iirrainm, iirsnowm, iiricem, iirgraupelm, & ! Variable(s)
+     iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
+
+    use stats_variables, only: &
+      irrainm, & ! Variable(s)
+      irsnowm, & 
+      iricem, & 
+      irgraupelm, & 
+      iNcm, &
+      iNim, & 
+      iNrm, & 
+      iNsnowm, &
+      iNgraupelm
+
+    use stats_type, only: & 
+        stat_update_var ! Procedure(s)
+
+    use stats_variables, only: &
+      zt, & ! Variables
+      l_stats_samp
+
+    implicit none
+
+    ! Input Variables
+    real, dimension(gr%nnzp,hydromet_dim) :: &
+      hydromet ! All hydrometeors except for rcm        [units vary]
+
+    if ( l_stats_samp ) then
+
+      if ( iiNcm > 0 ) then
+        call stat_update_var( iNcm, hydromet(:,iiNcm), zt )
+      end if
+
+      if ( iirrainm > 0 ) then
+        call stat_update_var( irrainm, hydromet(:,iirrainm), zt )
+      end if
+
+      if ( iirsnowm > 0 ) then
+        call stat_update_var( irsnowm, hydromet(:,iirsnowm), zt )
+      end if
+
+      if ( iiricem > 0 ) then
+        call stat_update_var( iricem, hydromet(:,iiricem), zt )
+      end if
+
+      if ( iirgraupelm > 0 ) then
+        call stat_update_var( irgraupelm,  & 
+                              hydromet(:,iirgraupelm), zt )
+      end if
+
+      if ( iiNim > 0 ) then
+        call stat_update_var( iNim, hydromet(:,iiNim), zt )
+      end if
+
+      if ( iiNrm > 0 ) then
+        call stat_update_var( iNrm, hydromet(:,iiNrm), zt )
+      end if
+
+      if ( iiNsnowm > 0 ) then
+        call stat_update_var( iNsnowm, hydromet(:,iiNsnowm), zt )
+      end if
+
+      if ( iiNgraupelm > 0 ) then
+        call stat_update_var( iNgraupelm, hydromet(:,iiNgraupelm), zt )
+      end if
+
+    end if ! l_stats_samp
+
+    return
+  end subroutine stats_accumulate_hydromet
   !-----------------------------------------------------------------------
   subroutine stats_finalize( )
 

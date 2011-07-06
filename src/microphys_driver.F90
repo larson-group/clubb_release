@@ -1046,7 +1046,7 @@ module microphys_driver
         time_precision ! Variable(s)
 
     use error_code, only:  & 
-        lapack_error, & ! Procedure
+        fatal_error, & ! Procedure
         clubb_at_least_debug_level, &
         clubb_no_error  ! Constant
 
@@ -1081,10 +1081,6 @@ module microphys_driver
       iNcm_in_cloud, &
       iNc_activated, &
       iNcnm, & 
-      irrainm, & 
-      irsnowm, & 
-      iricem, & 
-      irgraupelm, & 
       iricem_bt, & 
       iricem_mc, & 
       iricem_cl, & 
@@ -1114,11 +1110,7 @@ module microphys_driver
       iNcm_act
 
     use stats_variables, only: & 
-      iNcm, & 
-      iNim, & 
-      iNrm, & 
-      iNsnowm, &
-      iNgraupelm
+      iNcm
 
     use stats_variables, only: & 
       iLH_rcm_mc, &
@@ -1137,9 +1129,12 @@ module microphys_driver
         sfc, & 
         l_stats_samp
 
-    use stats_type, only:  & 
-        stat_update_var, stat_update_var_pt,  & ! Procedure(s)
+    use stats_type, only: & 
+        stat_update_var, stat_update_var_pt, & ! Procedure(s)
         stat_begin_update, stat_end_update
+
+    use stats_subs, only: &
+        stats_accumulate_hydromet
 
     use fill_holes, only: &
       vertical_avg, & ! Procedure(s)
@@ -1947,48 +1942,13 @@ module microphys_driver
     end if
 
     if ( l_stats_samp ) then
-
       if ( iiNcm > 0 ) then
-        call stat_update_var( iNcm, hydromet(:,iiNcm), zt )
+        call stat_update_var( iNcm_in_cloud, &
+               hydromet(:, iiNcm) / max( cloud_frac, cloud_frac_min ) , zt )
       end if
-
-      call stat_update_var( iNcm_in_cloud, &
-             hydromet(:, iiNcm) / max( cloud_frac, cloud_frac_min ) , zt )
 
       call stat_update_var( iNcnm, Ncnm, zt )
 
-      if ( iirrainm > 0 ) then
-        call stat_update_var( irrainm, hydromet(:,iirrainm), zt )
-      end if
-
-      if ( iirsnowm > 0 ) then
-        call stat_update_var( irsnowm, hydromet(:,iirsnowm), zt )
-      end if
-
-      if ( iiricem > 0 ) then
-        call stat_update_var( iricem, hydromet(:,iiricem), zt )
-      end if
-
-      if ( iirgraupelm > 0 ) then
-        call stat_update_var( irgraupelm,  & 
-                              hydromet(:,iirgraupelm), zt )
-      end if
-
-      if ( iiNim > 0 ) then
-        call stat_update_var( iNim, hydromet(:,iiNim), zt )
-      end if
-
-      if ( iiNrm > 0 ) then
-        call stat_update_var( iNrm, hydromet(:,iiNrm), zt )
-      end if
-
-      if ( iiNsnowm > 0 ) then
-        call stat_update_var( iNsnowm, hydromet(:,iiNsnowm), zt )
-      end if
-
-      if ( iiNgraupelm > 0 ) then
-        call stat_update_var( iNgraupelm, hydromet(:,iiNgraupelm), zt )
-      end if
 
     end if ! l_stats_samp
 
@@ -2034,11 +1994,12 @@ module microphys_driver
 
     end if ! l_stats_samp
 
+    call stats_accumulate_hydromet( hydromet )
 
 !       Error Report
 !       Joshua Fasching Feb 2008
 
-    if ( lapack_error( err_code ) .and.  &
+    if ( fatal_error( err_code ) .and.  &
          clubb_at_least_debug_level( 1 ) ) then
 
       write(fstderr,*) "Error in advance_microphys"
