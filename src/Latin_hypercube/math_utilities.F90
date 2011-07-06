@@ -90,30 +90,29 @@ module math_utilities
     real :: cov
 
     ! Local variables
-    real, dimension(n) :: weight
-    real :: sum, avg1, avg2
+    real :: total, avg1, avg2
     integer :: j
 
     ! ---- Begin Code ----
-    weight(1:n) = 1.0
 
-    avg1 = compute_sample_mean( n, weight, vect1 )
-    avg2 = compute_sample_mean( n, weight, vect2 )
+    avg1 = sum( vect1 ) / real( n ) 
+    avg2 = sum( vect2 ) / real( n ) 
 
-    sum = 0.
+    total = 0.
     do j = 1, n
-      sum = sum + (vect1(j) - avg1) * (vect2(j) - avg2)
+      total = total + (vect1(j) - avg1) * (vect2(j) - avg2)
     enddo
 
-    cov = sum / real( n )
+    cov = total / real( n )
 
     return
   end function cov
 
 !-----------------------------------------------------------------------
-  pure function compute_sample_mean( n_dim, weight, vector )
+  pure function compute_sample_mean( n_levels, n_samples, weight, x_sample ) &
+    result( mean )
 ! Description:
-!   Find the mean of the vector
+!   Find the mean of a set of sample points
 
 ! References:
 !   None
@@ -125,18 +124,25 @@ module math_utilities
     intrinsic :: real, sum
 
     ! Input Varibles
-    integer, intent(in) :: n_dim
+    integer, intent(in) :: &
+      n_levels, &
+      n_samples
 
-    real, dimension(n_dim), intent(in) :: &
-      weight, & ! Weights for individual points of the vector
-      vector    ! Vector to find the mean of
+    real,dimension(n_levels,n_samples), intent(in) :: &
+      x_sample ! Collection of sample points    [units vary]
+
+    real, dimension(n_samples), intent(in) :: &
+      weight   ! Weights for individual points of the vector
 
     ! Return type
-    real :: compute_sample_mean
+    real, dimension(n_levels) :: mean
 
+    integer :: k
     ! ---- Begin Code ----
 
-    compute_sample_mean = sum( weight(1:n_dim) * vector(1:n_dim) ) / real( n_dim )
+    forall( k = 1:n_levels )
+      mean(k) = sum( weight(1:n_samples) * x_sample(k,1:n_samples) ) / real( n_samples )
+    end forall
 
     return
   end function compute_sample_mean
