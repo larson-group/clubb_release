@@ -179,3 +179,7 @@ stats_fmt    = "grads"      ! Type of statistical output file ("grads" or "netcd
 
 /
 
+&gfdl_activation_setting
+
+/
+
