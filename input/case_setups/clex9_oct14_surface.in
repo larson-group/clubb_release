@@ -1,4 +1,8 @@
 ! $Id$
+!
+! Note that T_sfc is included here, but it is not currently used. It is
+! included here to facilitate a transition to using T_sfc in the future
+! if needed.
 Time[s]         T_sfc[K]   sens_ht[W\m^2]    latent_ht[W\m^2]
-51262.500000    270.45     0.0          0.0
-65662.500000    270.45     0.0          0.0
+51262.500000    270.45     0.0               0.0
+65662.500000    270.45     0.0               0.0

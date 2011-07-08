@@ -18,7 +18,7 @@ module arm_3year
   !----------------------------------------------------------------------
   subroutine arm_3year_sfclyr( time, z, rho_sfc, & 
                                thlm_sfc, ubar,  & 
-                               wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
+                               wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
     !       heat and moisture according to GCSS ARM specifications
@@ -33,10 +33,7 @@ module arm_3year
     use surface_flux, only: compute_ht_mostr_flux, &
                             convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedures
 
-    use time_dependent_input, only: time_sfc_given, T_sfc_given, & !Variable(s)
-                                    time_select                    !Procedure(s)
-
-    use interpolation, only: factor_interp ! Procedure(s)
+    use time_dependent_input, only: time_sfc_given ! Variable(s)
 
     implicit none
 
@@ -59,13 +56,11 @@ module arm_3year
     real, intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-      ustar,        & ! surface friction velocity [m/s]
-      T_sfc           ! temperature at surface [K]
+      ustar           ! surface friction velocity [m/s]
 
     ! Local variables
-    real :: bflx, heat_flx, moisture_flx, time_frac
+    real :: bflx, heat_flx, moisture_flx
 
-    integer :: before_time, after_time
     
     !-------------BEGIN CODE--------------
 
@@ -83,12 +78,6 @@ module arm_3year
 
     ! Compute ustar
     ustar = diag_ustar( z, bflx, ubar, z0 )
-
-    call time_select( time, size(time_sfc_given), time_sfc_given, &
-                      before_time, after_time, time_frac )
-
-    T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
-                                      T_sfc_given(before_time) )
 
     return
   end subroutine arm_3year_sfclyr

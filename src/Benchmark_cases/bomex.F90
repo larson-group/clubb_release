@@ -105,7 +105,7 @@ module bomex
 
 !----------------------------------------------------------------------
   subroutine bomex_sfclyr( time, rtm_sfc, & 
-                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
+                           wpthlp_sfc, wprtp_sfc, ustar )
 
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -120,7 +120,7 @@ module bomex
 
     use time_dependent_input, only: &
         time_select, &  ! Procedure(s)
-        wpthlp_sfc_given, wpqtp_sfc_given, T_sfc_given, &
+        wpthlp_sfc_given, wpqtp_sfc_given, &
         time_sfc_given ! Variable(s)
 
     use interpolation, only: &
@@ -141,8 +141,7 @@ module bomex
     real, intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
-      ustar,        & ! surface friction velocity [m/s]
-      T_sfc           ! surface temperature [K]
+      ustar           ! surface friction velocity [m/s]
 
     ! Local variables
     real :: wpqtp_sfc, &  ! w'q_t' at (1)         [(m kg)/(s kg)]   
@@ -166,8 +165,6 @@ module bomex
     wpqtp_sfc  = factor_interp(time_frac, wpqtp_sfc_given(after_time), &
                                wpqtp_sfc_given(before_time))
 
-    T_sfc = factor_interp(time_frac, T_sfc_given(after_time), &
-                               T_sfc_given(before_time))
 
     ! Convert flux from terms of total water specific humidity to terms of total
     ! water mixing ratio.

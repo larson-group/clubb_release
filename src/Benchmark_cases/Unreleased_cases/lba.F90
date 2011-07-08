@@ -70,7 +70,7 @@ module lba
   !----------------------------------------------------------------------
   subroutine lba_sfclyr( time, z, rho_sfc, & 
                          thlm_sfc, ubar,  & 
-                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
+                         wpthlp_sfc, wprtp_sfc, ustar )
 
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
@@ -88,11 +88,6 @@ module lba
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
     use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
-
-    use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
-                                    time_select                   ! Procedure(s)
-
-    use interpolation, only: factor_interp ! Procedure(s)
 
     implicit none
 
@@ -116,15 +111,10 @@ module lba
     real, intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-      ustar,        & ! surface friction velocity [m/s]
-      T_sfc           ! surface temperature [K]
+      ustar           ! surface friction velocity [m/s]
 
     ! Local variables
-    real :: ft, bflx, &
-            time_frac ! time fraction used for interpolation
-
-    integer :: &
-      before_time, after_time  ! time indexes used for interpolation
+    real :: ft, bflx
 
     ! Compute heat and moisture fluxes
     ! From Table A.1.
@@ -140,13 +130,6 @@ module lba
     ! Compute ustar
     ustar = diag_ustar( z, bflx, ubar, z0 )
 
-    ! interpolate T_sfc from time_dependent_input
-
-     call time_select( time, size(time_sfc_given), time_sfc_given, &
-                       before_time, after_time, time_frac )
-
-     T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
-                                       T_sfc_given(before_time) )
 
     return
   end subroutine lba_sfclyr

@@ -111,7 +111,7 @@ module rico
   subroutine rico_sfclyr( time, um_sfc, vm_sfc, thlm, rtm, &
                           lowestlevel, p_sfc, exner_sfc, & 
                           upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
-                          wprtp_sfc, ustar, T_sfc, sens_ht, latent_ht )
+                          wprtp_sfc, ustar, T_sfc )
   !----------------------------------------------------------------------
   !        Description:
   !          Surface forcing subroutine for RICO case.  Written
@@ -134,7 +134,6 @@ module rico
                           compute_wpthlp_sfc, compute_wprtp_sfc
 
   use time_dependent_input, only: time_sfc_given, T_sfc_given, &  ! Variable(s)
-                                  sens_ht_given, latent_ht_given, &
                                   time_select                     ! Procedure(s)
 
   use interpolation, only: factor_interp   ! Procedure(s)
@@ -189,9 +188,7 @@ module rico
     wpthlp_sfc, & ! The upward flux of theta-l            [K m s^-1]
     wprtp_sfc,  & ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
     ustar,      & ! surface friction velocity             [m/s]
-    T_sfc,      & ! This is the sea surface temperature   [K]
-    sens_ht,         & ! surface heat flux                     [W/m^2]
-    latent_ht            ! latent heat flux                      [W/m^2]
+    T_sfc         ! This is the sea surface temperature   [K]
 
   !--------------------BEGIN CODE----------------------------
 
@@ -202,12 +199,6 @@ module rico
 
   T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
                                        T_sfc_given(before_time) )
-
-  sens_ht = factor_interp( time_frac, sens_ht_given(after_time), &
-                                   sens_ht_given(before_time) )
-
-  latent_ht = factor_interp( time_frac, latent_ht_given(after_time), &
-                                   latent_ht_given(before_time) )
 
   ! Declare the value of ustar.
   ustar = 0.3

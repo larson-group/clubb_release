@@ -3136,20 +3136,20 @@ module clubb_driver
                           !gr%zt(2), 299.8, 101540.,  &           ! Intent(in)
                         gr%zt(2), p_sfc, exner(1), &              ! Intent(in)
                         upwp_sfc, vpwp_sfc, wpthlp_sfc, &         ! Intent(out) 
-                        wprtp_sfc, ustar, T_sfc, sens_ht, latent_ht )         ! Intent(out)
+                        wprtp_sfc, ustar, T_sfc )         ! Intent(out)
 
     case ( "gabls3" )
       l_compute_momentum_flux = .true.
-      call gabls3_sfclyr( time_current, ubar, veg_T_in_K,      & ! Intent(in)
+      call gabls3_sfclyr( ubar, veg_T_in_K,      & ! Intent(in)
                           thlm(2), rtm(2), gr%zt(2), exner(1), & ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
 
 #ifdef UNRELEASED_CODE
     case ( "gabls3_night" )
       call gabls3_night_sfclyr( time_current, um(2), vm(2),    & ! Intent(in)
                           thlm(2), rtm(2), gr%zt(2),           & ! Intent(in)
                           upwp_sfc, vpwp_sfc,                  & ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
     case ( "jun25_altocu" )
       ! There are no surface momentum or heat fluxes
       ! for the Jun. 25 Altocumulus case.
@@ -3159,7 +3159,7 @@ module clubb_driver
 
       ! Read in time dependent inputs
       call jun25_altocu_read_t_dependent( time_current, & ! Intent(in)
-                                         T_sfc, sens_ht, latent_ht )  ! Intent(out)
+                                          sens_ht, latent_ht )  ! Intent(out)
 
     case ( "cobra" )
       l_compute_momentum_flux = .true.
@@ -3176,7 +3176,7 @@ module clubb_driver
 
       ! Read in time dependent inputs
       call clex9_nov02_read_t_dependent( time_current, & ! Intent(in)
-                                         T_sfc, sens_ht, latent_ht ) ! Intent(out)
+                                         sens_ht, latent_ht ) ! Intent(out)
 
     case ( "clex9_oct14" )
       ! There are no surface momentum or heat fluxes
@@ -3187,7 +3187,7 @@ module clubb_driver
 
       ! Read in time dependent inputs
       call clex9_oct14_read_t_dependent( time_current, & ! Intent(in)
-                                         T_sfc, sens_ht, latent_ht ) ! Intent(out)
+                                         sens_ht, latent_ht ) ! Intent(out)
 
     case ( "astex_a209" )
       l_compute_momentum_flux = .true.
@@ -3214,7 +3214,7 @@ module clubb_driver
 
       ! Read in time dependent inputs
       call nov11_altocu_read_t_dependent( time_current, & ! Intent(in)
-                                         T_sfc, sens_ht, latent_ht )  ! Intent(out)
+                                          sens_ht, latent_ht )  ! Intent(out)
 
 #endif
 
@@ -3246,7 +3246,7 @@ module clubb_driver
       l_set_sclr_sfc_rtm_thlm = .true.
       call arm_sfclyr( time_current, gr%zt(2), 1.1,  &       ! Intent(in)
                         thlm(2), ubar,               &       ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar, T_sfc )! Intent(out)
+                        wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
 
 #ifdef UNRELEASED_CODE
 
@@ -3255,20 +3255,19 @@ module clubb_driver
       l_set_sclr_sfc_rtm_thlm = .true.
       call arm_0003_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
                             thlm(2), ubar,                     &  ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar,      &  ! Intent(out)
-                            T_sfc )                               ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar )        ! Intent(out)
    case ( "arm_3year" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), & ! Intent(in)
                               thlm(2), ubar,                    & ! Intent(in)
-                              wpthlp_sfc, wprtp_sfc, ustar, T_sfc) ! Intent(out)
+                              wpthlp_sfc, wprtp_sfc, ustar) ! Intent(out)
     case ( "arm_97" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
                           thlm(2), ubar,                     &   ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc )         ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
 
 #endif
 
@@ -3294,7 +3293,7 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call bomex_sfclyr( time_current, rtm(2),                      &  ! Intent(in) 
-                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
+                         wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
     case ( "dycoms2_rf01" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
@@ -3306,7 +3305,7 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call dycoms2_rf02_sfclyr( time_current, & ! Intent(in)
-                                wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
+                                wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
     case ( "gabls2" )
       l_compute_momentum_flux = .true.
@@ -3319,12 +3318,12 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call mpace_a_sfclyr( time_current, rho_zm(1),      & ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
     case ( "mpace_b" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call mpace_b_sfclyr( time_current, rho_zm(1), &      ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
 #ifdef UNRELEASED_CODE
 
@@ -3333,7 +3332,7 @@ module clubb_driver
       l_set_sclr_sfc_rtm_thlm = .true.
       call lba_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
                         thlm(2), ubar, &                     ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar, T_sfc )       ! Intent(out)
+                        wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
 
 #endif
 
@@ -3341,7 +3340,7 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call wangara_sfclyr( time_current, &                 ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
+                            wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
     case default
       write(unit=fstderr,fmt=*)  & 
         "Invalid value of runtype = ", runtype

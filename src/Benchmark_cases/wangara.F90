@@ -68,7 +68,7 @@ module wangara
 
 !----------------------------------------------------------------------
   subroutine wangara_sfclyr( time, & 
-                             wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
+                             wpthlp_sfc, wprtp_sfc, ustar )
 ! Description:
 !   This subroutine computes surface fluxes of horizontal momentum,
 !   heat and moisture for Wangara day 33
@@ -83,11 +83,6 @@ module wangara
 
     use stats_precision, only: time_precision ! Variable(s)
 
-    use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
-                                    time_select                   ! Procedure(s)
-
-    use interpolation, only: factor_interp ! Procedure(s)
-
     implicit none
 
     intrinsic :: mod, max, cos, sqrt, present
@@ -100,17 +95,12 @@ module wangara
     real, intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-      ustar,        & ! surface friction velocity [m/s]
-      T_sfc           ! surface temperature [K]
+      ustar           ! surface friction velocity [m/s]
 
     ! Local variables
     real(kind=time_precision) :: time_utc, time_est
 
-    real :: &
-      time_frac ! time fraction used for interpolation
 
-    integer :: &
-      before_time, after_time  ! time indexes used for interpolation
 
 !---------------------BEGIN CODE-------------------------
 
@@ -137,14 +127,6 @@ module wangara
 
     wpthlp_sfc = real(0.18 * cos( (time_est-45000.0)/36000.0 * pi ))
     wprtp_sfc  = 1.3e-4 * wpthlp_sfc
-
-    ! interpolate T_sfc from time_dependent_input
-
-    call time_select( time, size(time_sfc_given), time_sfc_given, &
-                       before_time, after_time, time_frac )
-
-    T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
-                                       T_sfc_given(before_time) )
 
 
     return

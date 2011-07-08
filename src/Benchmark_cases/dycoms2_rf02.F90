@@ -82,7 +82,7 @@ module dycoms2_rf02
 
 !----------------------------------------------------------------------
 
-  subroutine dycoms2_rf02_sfclyr( time, wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
+  subroutine dycoms2_rf02_sfclyr( time, wpthlp_sfc, wprtp_sfc, ustar )
   ! Description:
   !   This subroutine computes surface fluxes of
   !   heat and moisture according to GCSS DYCOMS II RF 02 specifications
@@ -99,7 +99,6 @@ module dycoms2_rf02
     use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
 
     use time_dependent_input, only: sens_ht_given, latent_ht_given, time_sfc_given,& ! Variable(s)
-                                    T_sfc_given, &
                                     time_select ! Procedure(s)
 
     use interpolation, only: factor_interp ! Procedure(s)
@@ -115,8 +114,7 @@ module dycoms2_rf02
     real, intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-      ustar,        & ! surface friction velocity [m/s]
-      T_sfc           ! surface temperature [K]
+      ustar           ! surface friction velocity [m/s]
 
     ! External
     intrinsic :: sqrt
@@ -141,8 +139,6 @@ module dycoms2_rf02
     sens_ht = factor_interp( time_frac, sens_ht_given(after_time), sens_ht_given(before_time) )
     latent_ht = factor_interp( time_frac, latent_ht_given(after_time), &
                                           latent_ht_given(before_time) )
-    T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
-                                      T_sfc_given(before_time) )
 
     ! Declare the value of ustar.
     ustar = 0.25

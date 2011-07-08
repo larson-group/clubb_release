@@ -21,7 +21,7 @@ module arm_97
   !----------------------------------------------------------------------
   subroutine arm_97_sfclyr( time, z, rho_sfc, & 
                             thlm_sfc, ubar,  & 
-                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
+                            wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
     !       heat and moisture according to GCSS ARM specifications
@@ -47,7 +47,6 @@ module arm_97
       time_sfc_given, &
       latent_ht_given, &
       sens_ht_given, &
-      T_sfc_given, &
       l_t_dependent
 
     implicit none
@@ -71,8 +70,7 @@ module arm_97
     real, intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-      ustar,        & ! surface friction velocity [m/s]
-      T_sfc           ! surface temperature [K]
+      ustar           ! surface friction velocity [m/s]
 
     ! Local variables
     real :: bflx, heat_flx, moisture_flx, time_frac
@@ -97,8 +95,6 @@ module arm_97
                                 sens_ht_given(before_time) )
       moisture_flx = factor_interp( time_frac, latent_ht_given(after_time), &
                                     latent_ht_given(before_time) )
-      T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
-                             T_sfc_given(before_time) )
 
       ! Convert W/m^2 into w'thl' w'rt' units
       wpthlp_sfc = convert_sens_ht_to_km_s( heat_flx, rho_sfc )     ! (K m/s)

@@ -30,7 +30,6 @@ module time_dependent_input
     sens_ht_given,       &
     thlm_sfc_given, &
     rtm_sfc_given,  &
-    p_sfc_given,     &
     CO2_sfc_given,  &
     upwp_sfc_given, &
     vpwp_sfc_given, &
@@ -143,7 +142,6 @@ module time_dependent_input
       rt_name,       &
       latent_ht_name,       &
       sens_ht_name,       &
-      pressure_name, &
       CO2_umol_name, &
       upwp_sfc_name, &
       vpwp_sfc_name, &
@@ -215,16 +213,6 @@ module time_dependent_input
       allocate( rtm_sfc_given(1:dim_size) )
       rtm_sfc_given = read_x_profile( nCols, dim_size, rt_name, retVars, &
                                     input_file )
-    end if
-    
-    if( get_target_index(nCols, pressure_name, retVars) > 0 ) then
-      allocate( p_sfc_given(1:dim_size) )
-      p_sfc_given = read_x_profile( nCols, dim_size, pressure_name, retVars, &
-                                 input_file )
-    ! Added a warning because p_sfc_given is not used anywhere else in the code.
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) 'Warning: Pressure data has been read in and ignored.'
-      end if
     end if
     
     ! As of July 2010, this is only in cobra
@@ -405,7 +393,6 @@ module time_dependent_input
     if ( allocated( sens_ht_given ) )       deallocate( sens_ht_given )
     if ( allocated( thlm_sfc_given ) ) deallocate( thlm_sfc_given )
     if ( allocated( rtm_sfc_given ) )  deallocate( rtm_sfc_given )
-    if ( allocated( p_sfc_given ) )     deallocate( p_sfc_given )
     if ( allocated( CO2_sfc_given ) )  deallocate( CO2_sfc_given )
     if ( allocated( upwp_sfc_given ) ) deallocate( upwp_sfc_given )
     if ( allocated( vpwp_sfc_given ) ) deallocate( vpwp_sfc_given )

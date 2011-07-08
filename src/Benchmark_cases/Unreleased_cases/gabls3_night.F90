@@ -23,7 +23,7 @@ module gabls3_night
   subroutine gabls3_night_sfclyr( time, um_sfc, vm_sfc,  &
                             thlm_sfc, rtm_sfc, lowest_level, & 
                             upwp_sfc, vpwp_sfc, &
-                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
+                            wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
     !       heat and moisture according to GCSS ATEX specifications
@@ -45,7 +45,6 @@ module gabls3_night
                                     rtm_sfc_given,    &
                                     upwp_sfc_given,   &
                                     vpwp_sfc_given,   &
-                                    T_sfc_given,      &
                                     time_select         ! Procedure(s)
 
     use interpolation, only: factor_interp ! Procedure(s)
@@ -73,8 +72,7 @@ module gabls3_night
       vpwp_sfc,    & ! turbulent upward flux of v-momentum  [m^2/s^2]
       wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
       wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
-      ustar,       & ! surface friction velocity            [m/s]
-      T_sfc          ! surface temperature [s]
+      ustar          ! surface friction velocity            [m/s]
 
     ! Local Variables
     real :: &
@@ -97,9 +95,7 @@ module gabls3_night
       ts = factor_interp( time_frac, thlm_sfc_given(after_time), thlm_sfc_given(before_time) )
 
       qs = factor_interp( time_frac, rtm_sfc_given(after_time), rtm_sfc_given(before_time) )
-
-      T_sfc = factor_interp( time_frac, T_sfc_given(after_time), T_sfc_given(before_time) )
-
+     
 
       ! Compute heat and moisture fluxes
       call landflx( thlm_sfc, ts, rtm_sfc, qs, um_sfc, vm_sfc, lowest_level, z0, & ! Intent(in)

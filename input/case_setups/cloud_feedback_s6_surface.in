@@ -1,3 +1,8 @@
-Time[s]     latent_ht[W\m^2]    sens_ht[W\m^2]    thlm[K]      rt[kg\kg]    Press[Pa]   T_sfc[K]
-0.0         0.000036654  0.010160232  0.000000     0.000000     0.000000    298.76
-2592000.0   0.000036654  0.010160232  0.000000     0.000000     0.000000    298.76
+! $Id$
+!
+! The latent_ht and sens_ht values are currently not used for this case.
+! They are included here to provide an easier transition if they are used at
+! some point in the future.
+Time[s]     latent_ht[W\m^2]    sens_ht[W\m^2]    T_sfc[K]
+0.0         106.4823            11.86163          298.76
+2592000.0   106.4823            11.86163          298.76

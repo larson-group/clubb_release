@@ -18,9 +18,9 @@ module gabls3
   contains
 
   !-----------------------------------------------------------------------
-  subroutine gabls3_sfclyr( time, ubar, veg_t_in_K, &
+  subroutine gabls3_sfclyr( ubar, veg_t_in_K, &
                             thlm_sfc, rtm_sfc, lowest_level, exner_sfc, &
-                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
+                            wpthlp_sfc, wprtp_sfc, ustar )
     !       Description:
     !       This subroutine computes surface fluxes of horizontal momentum,
     !       heat and moisture according to GCSS ATEX specifications
@@ -33,14 +33,8 @@ module gabls3
 
     use diag_ustar_module, only: diag_ustar ! Procedure(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
-
     use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc ! Procedure(s)
 
-    use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
-                                    time_select                   ! Procedure(s)
-
-    use interpolation, only: factor_interp  ! Procedure(s)
 
     implicit none
 
@@ -69,10 +63,6 @@ module gabls3
 !                                        115200., 118800., 122400., 126000., 129600./)
 
 
-    ! Input variables
-    real(time_precision), intent(in) :: &
-      time  ! the current time [s]
-
     real, intent(in) ::  &
       ubar,         & ! mean sfc wind speed    [m/s]
       thlm_sfc,     & ! Theta_l at zt(2)       [K]
@@ -87,15 +77,10 @@ module gabls3
       wprtp_sfc      ! w'rt' surface flux        [(m kg)/(kg s)]
 
     real, intent(out) ::  & 
-      ustar, &       ! surface friction velocity [m/s]
-      T_sfc          ! surface temperature [K]
+      ustar          ! surface friction velocity [m/s]
 
     ! Local Variables
-    real :: veg_theta_in_K, bflx, &
-            time_frac  ! the time fraction used for interpolation
-
-    integer :: &
-      before_time, after_time  ! the time indexes used for interpolation
+    real :: veg_theta_in_K, bflx
 
     ! Compute heat and moisture fluxes
 
@@ -109,12 +94,6 @@ module gabls3
     bflx = wpthlp_sfc * grav / veg_theta_in_K
 
     ustar = diag_ustar( lowest_level, bflx, ubar, z0)
-
-    call time_select( time, size(time_sfc_given), time_sfc_given, &
-                      before_time, after_time, time_frac )
-
-    T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
-                                      T_sfc_given(before_time) )
 
     return
   end subroutine gabls3_sfclyr

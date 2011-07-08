@@ -1,4 +1,6 @@
 ! $Id$
+!
+! Note that sens_ht, latent_ht, and T_sfc are all used for this case.
 Time[s]        sens_ht[W\m^2]   latent_ht[W\m^2]   T_sfc[K]
-21600.00       15.00000    115.0000    292.5
-36000.00       15.00000    115.0000    292.5
+21600.00       15.00000         115.0000           292.5
+36000.00       15.00000         115.0000           292.5

@@ -120,7 +120,7 @@ module mpace_b
 
 !----------------------------------------------------------------------
   subroutine mpace_b_sfclyr( time, rho_sfc, & 
-                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
+                           wpthlp_sfc, wprtp_sfc, ustar )
 
   !        Description:
   !          Surface forcing subroutine for mpace_b case.  Written July-
@@ -135,7 +135,6 @@ module mpace_b
     use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Functions(s)
 
     use time_dependent_input, only: sens_ht_given, latent_ht_given, time_sfc_given,& !Variable(s)
-                                    T_sfc_given, &
                                     time_select ! Procedure(s)
 
     use interpolation, only: factor_interp ! Procedure(s)
@@ -158,8 +157,7 @@ module mpace_b
     real, intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-      ustar,        & ! surface friction velocity [m/s]
-      T_sfc           ! surface tempearture [K]
+      ustar           ! surface friction velocity [m/s]
 
     real :: &
     ! The values of these are from the mpace_b specification.
@@ -181,9 +179,6 @@ module mpace_b
                                        sens_ht_given(before_time) )
     latent_heat_flx = factor_interp( time_frac, latent_ht_given(after_time), &
                                        latent_ht_given(before_time) )
-
-    T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
-                                       T_sfc_given(before_time) )
 
 
     ! Declare the value of ustar.
