@@ -25,7 +25,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 53 ! Total tunable parameters
+    nparams = 57 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -67,32 +67,38 @@ module parameter_indices
     iC14            = 29, &
     iC15            = 30
 
-  integer, parameter, public :: & 
-    ic_K            = 31, & 
-    ic_K1           = 32, & 
-    inu1            = 33, & 
-    ic_K2           = 34, & 
-    inu2            = 35, & 
-    ic_K6           = 36, & 
-    inu6            = 37, & 
-    ic_K8           = 38, & 
-    inu8            = 39, & 
-    ic_K9           = 40, & 
-    inu9            = 41, & 
-    ic_Krrainm      = 42, & 
-    inu_r           = 43, & 
-    ic_Ksqd         = 44, &
-    inu_hd          = 45
+  integer, parameter, public :: &
+    iC6rt_Lscale0       = 31, &
+    iC6thl_Lscale0      = 32, &
+    iC7_Lscale0         = 33, &
+    iwpxp_Lscale_thresh = 34
 
   integer, parameter, public :: & 
-    igamma_coef     = 46, & 
-    igamma_coefb    = 47, & 
-    igamma_coefc    = 48, & 
-    imu             = 49, & 
-    ibeta           = 50, & 
-    ilmin_coef      = 51, & 
-    itaumin         = 52, & 
-    itaumax         = 53
+    ic_K            = 35, & 
+    ic_K1           = 36, & 
+    inu1            = 37, & 
+    ic_K2           = 38, & 
+    inu2            = 39, & 
+    ic_K6           = 40, & 
+    inu6            = 41, & 
+    ic_K8           = 42, & 
+    inu8            = 43, & 
+    ic_K9           = 44, & 
+    inu9            = 45, & 
+    ic_Krrainm      = 46, & 
+    inu_r           = 47, & 
+    ic_Ksqd         = 48, &
+    inu_hd          = 49
+
+  integer, parameter, public :: & 
+    igamma_coef     = 50, & 
+    igamma_coefb    = 51, & 
+    igamma_coefc    = 52, & 
+    imu             = 53, & 
+    ibeta           = 54, & 
+    ilmin_coef      = 55, & 
+    itaumin         = 56, & 
+    itaumax         = 57
 
 end module parameter_indices
 !-----------------------------------------------------------------------

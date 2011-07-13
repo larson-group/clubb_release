@@ -26,7 +26,8 @@ module advance_xm_wpxp_module
              wpxp_terms_ac_pr2_lhs, & 
              wpxp_term_pr1_lhs, & 
              wpxp_terms_bp_pr3_rhs, &
-             xm_correction_wpxp_cl
+             xm_correction_wpxp_cl, &
+             damp_coefficient
 
   ! Parameter Constants
   integer, parameter, private :: & 
@@ -76,7 +77,11 @@ module advance_xm_wpxp_module
         C7b,  & 
         C7c,  & 
         c_K6,  & 
-        c_Ksqd
+        c_Ksqd, &
+        C6rt_Lscale0, &
+        C6thl_Lscale0, &
+        C7_Lscale0, &
+        wpxp_Lscale_thresh
 
     use constants_clubb, only:  & 
         fstderr, &  ! Constant
@@ -295,15 +300,10 @@ module advance_xm_wpxp_module
       C7_Skw_fnc(1:gr%nnzp) = C7b
     endif
 
-! Vince Larson increased C7 in stably stratified regions
-! in order to damp gravity waves
-    where ( Lscale < 10. )
-      C7_Skw_fnc = 0.825
-
-    else where ( (Lscale > 10.) .and. (Lscale < 40.) )
-      C7_Skw_fnc = 0.775
-    end where
-! End Vince Larson's comment
+    ! Damp C6 and C7 as a function of Lscale in stably stratified regions
+    C7_Skw_fnc = damp_coefficient( C7, C7_Lscale0, wpxp_Lscale_thresh, Lscale )
+    C6rt_Skw_fnc = damp_coefficient( C6rt, C6rt_Lscale0, wpxp_Lscale_thresh, Lscale )
+    C6thl_Skw_fnc = damp_coefficient( C6thl, C6thl_Lscale0, wpxp_Lscale_thresh, Lscale )
 
     !        C6rt_Skw_fnc = C6rt
     !        C6thl_Skw_fnc = C6thl
@@ -3098,6 +3098,39 @@ module advance_xm_wpxp_module
 
   end subroutine xm_correction_wpxp_cl
 
+
+  !=============================================================================
+
+  pure function damp_coefficient( coefficient, max_coeff_value, threshold, Lscale ) &
+    result( damped_value )
+
+    ! Description:
+    ! Damps a given coefficient linearly based on the value of Lscale.
+    ! For additional information see CLUBB ticket #431.
+
+    use grid_class, only: & 
+        gr ! Variable(s)
+
+    implicit none
+
+    ! Input variables
+    real, intent(in) :: &
+      coefficient,     & ! The coefficient to be damped
+      max_coeff_value, & ! Maximum value the damped coefficient should have
+      threshold          ! Value of Lscale below which the damping should occur
+    real, dimension(gr%nnzp), intent(in) :: &
+      Lscale             ! Current value of Lscale
+
+    ! Return Variable
+    real, dimension(gr%nnzp) :: damped_value
+
+    where( Lscale < threshold )
+      damped_value = max_coeff_value + ( ( coefficient - max_coeff_value ) / threshold ) * Lscale
+    end where
+
+    return
+
+  end function damp_coefficient
 !===============================================================================
 
 end module advance_xm_wpxp_module

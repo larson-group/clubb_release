@@ -60,6 +60,12 @@ module parameters_tunable
     C14,         & ! Constant for u'^2 and v'^2 terms.
     C15            ! Coefficient for the wp3_bp2 term
 
+  real, public ::      &
+    C6rt_Lscale0,      & ! Damp C6rt as a function of Lscale
+    C6thl_Lscale0,     & ! Damp C6thl as a function of Lscale
+    C7_Lscale0,        & ! Damp C7 as a function of Lscale
+    wpxp_Lscale_thresh   ! Lscale threshold for damping C6 and C7 coefficients
+
   real, public :: & 
     c_K,         & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
     c_K1,        & ! Coefficient of Eddy Diffusion for wp2.
@@ -127,7 +133,8 @@ module parameters_tunable
     C2rt, C2thl, C2rtthl, C4, C5, & 
     C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-    C12, C13, C14, C15, c_K, c_K1, nu1, c_K2, nu2,  & 
+    C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
+    C7_Lscale0, wpxp_Lscale_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
     c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
     lmin_coef, taumin, taumax, mu
@@ -142,22 +149,23 @@ module parameters_tunable
   ! tuner will break!
   !                    ***** IMPORTANT *****
   !***************************************************************
-  character(len=11), dimension(nparams), parameter, public ::  & 
+  character(len=18), dimension(nparams), parameter, public ::  & 
   params_list = & 
-     (/"C1         ", "C1b        ", "C1c        ", "C2         ", & 
-       "C2b        ", "C2c        ", "C2rt       ", "C2thl      ", & 
-       "C2rtthl    ", "C4         ", "C5         ", "C6rt       ", & 
-       "C6rtb      ", "C6rtc      ", "C6thl      ", "C6thlb     ", & 
-       "C6thlc     ", "C7         ", "C7b        ", "C7c        ", & 
-       "C8         ", "C8b        ", "C10        ", "C11        ", & 
-       "C11b       ", "C11c       ", "C12        ", "C13        ", & 
-       "C14        ", "C15        ", "c_K        ", "c_K1       ", &
-       "nu1        ", &
-       "c_K2       ", "nu2        ", "c_K6       ", "nu6        ", & 
-       "c_K8       ", "nu8        ", "c_K9       ", "nu9        ", & 
-       "c_Krrainm  ", "nu_r       ", "c_Ksqd     ", "nu_hd      ", &
-       "gamma_coef ", "gamma_coefb", "gamma_coefc", "mu         ", &
-       "beta       ", "lmin_coef  ", "taumin     ", "taumax     " /)
+     (/"C1                ", "C1b               ", "C1c               ", "C2                ", & 
+       "C2b               ", "C2c               ", "C2rt              ", "C2thl             ", & 
+       "C2rtthl           ", "C4                ", "C5                ", "C6rt              ", & 
+       "C6rtb             ", "C6rtc             ", "C6thl             ", "C6thlb            ", & 
+       "C6thlc            ", "C7                ", "C7b               ", "C7c               ", & 
+       "C8                ", "C8b               ", "C10               ", "C11               ", & 
+       "C11b              ", "C11c              ", "C12               ", "C13               ", & 
+       "C14               ", "C15               ", "C6rt_Lscale0      ", "C6thl_Lscale0     ", &
+       "C7_Lscale0        ", "wpxp_Lscale_thresh", "c_K               ", "c_K1              ", &
+       "nu1               ", &
+       "c_K2              ", "nu2               ", "c_K6              ", "nu6               ", & 
+       "c_K8              ", "nu8               ", "c_K9              ", "nu9               ", & 
+       "c_Krrainm         ", "nu_r              ", "c_Ksqd            ", "nu_hd             ", &
+       "gamma_coef        ", "gamma_coefb       ", "gamma_coefc       ", "mu                ", &
+       "beta              ", "lmin_coef         ", "taumin            ", "taumax            " /)
 
   contains
 
@@ -232,6 +240,7 @@ module parameters_tunable
                             C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                             C7, C7b, C7c, C8, C8b, C10, & 
                             C11, C11b, C11c, C12, C13, C14, C15, & 
+                            C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                             c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -513,60 +522,64 @@ module parameters_tunable
     ! If the filename is empty, assume we're using a `working' set of
     ! parameters that are set statically here (handy for host models).
     if ( filename == "" ) then
-      C1          = 2.5
-      C1b         = 2.5
-      C1c         = 1.0
-      C2rt        = 1.0
-      C2thl       = 1.0
-      C2rtthl     = 2.0
-      C2          = 1.3
-      C2b         = 1.3
-      C2c         = 5.0
-      C4          = 5.2
-      C5          = 0.3
-      C6rt        = 6.0
-      C6rtb       = 6.0
-      C6rtc       = 1.0
-      C6thl       = 6.0
-      C6thlb      = 6.0
-      C6thlc      = 1.0
-      C7          = 0.1
-      C7b         = 0.8
-      C7c         = 0.5
-      C8          = 3.0
-      C8b         = 0.005
-      C10         = 3.3
-      C11         = 0.75
-      C11b        = 0.35
-      C11c        = 0.5
-      C12         = 1.0
-      C13         = 0.1
-      C14         = 1.0
-      C15         = 0.4
-      !c_K         = 0.548
-      c_K         = 0.2
-      c_K1        = 0.75
-      nu1         = 20.0
-      c_K2        = 0.125
-      nu2         = 5.0
-      c_K6        = 0.375
-      nu6         = 5.0
-      c_K8        = 1.25
-      nu8         = 20.0
-      c_K9        = 0.25
-      nu9         = 20.0
-      c_Krrainm   = 0.2
-      nu_r        = 1.5
-      c_Ksqd      = 10.0
-      nu_hd       = 20000.0
-      beta        = 1.75
-      gamma_coef  = 0.32
-      gamma_coefb = 0.32
-      gamma_coefc = 5.0
-      taumin      = 90.0
-      taumax      = 3600.0
-      lmin_coef   = 0.5
-      mu          = 1.000E-3
+      C1                 = 2.5
+      C1b                = 2.5
+      C1c                = 1.0
+      C2rt               = 1.0
+      C2thl              = 1.0
+      C2rtthl            = 2.0
+      C2                 = 1.3
+      C2b                = 1.3
+      C2c                = 5.0
+      C4                 = 5.2
+      C5                 = 0.3
+      C6rt               = 6.0
+      C6rtb              = 6.0
+      C6rtc              = 1.0
+      C6thl              = 6.0
+      C6thlb             = 6.0
+      C6thlc             = 1.0
+      C7                 = 0.1
+      C7b                = 0.8
+      C7c                = 0.5
+      C8                 = 3.0
+      C8b                = 0.005
+      C10                = 3.3
+      C11                = 0.75
+      C11b               = 0.35
+      C11c               = 0.5
+      C12                = 1.0
+      C13                = 0.1
+      C14                = 1.0
+      C15                = 0.4
+      C6rt_Lscale0       = 14.0
+      C6thl_Lscale0      = 14.0
+      C7_Lscale0         = 0.85
+      wpxp_Lscale_thresh = 60.0
+      !c_K                = 0.548
+      c_K                = 0.2
+      c_K1               = 0.75
+      nu1                = 20.0
+      c_K2               = 0.125
+      nu2                = 5.0
+      c_K6               = 0.375
+      nu6                = 5.0
+      c_K8               = 1.25
+      nu8                = 20.0
+      c_K9               = 0.25
+      nu9                = 20.0
+      c_Krrainm          = 0.2
+      nu_r               = 1.5
+      c_Ksqd             = 10.0
+      nu_hd              = 20000.0
+      beta               = 1.75
+      gamma_coef         = 0.32
+      gamma_coefb        = 0.32
+      gamma_coefc        = 5.0
+      taumin             = 90.0
+      taumax             = 3600.0
+      lmin_coef          = 0.5
+      mu                 = 1.000E-3
 
     else
 
@@ -584,6 +597,7 @@ module parameters_tunable
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
                           C11, C11b, C11c, C12, C13, C14, C15, & 
+                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -650,7 +664,8 @@ module parameters_tunable
       C2rt, C2thl, C2rtthl, C4, C5, & 
       C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-      C12, C13, C14, C15, c_K, c_K1, nu1, c_K2, nu2,  & 
+      C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
+      C7_Lscale0, wpxp_Lscale_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
       c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, taumin, taumax, mu
@@ -670,6 +685,7 @@ module parameters_tunable
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
                           C11, C11b, C11c, C12, C13, C14, C15, & 
+                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -711,6 +727,7 @@ module parameters_tunable
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
                C11, C11b, C11c, C12, C13, C14, C15, &
+               C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
                c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, &
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
@@ -757,6 +774,12 @@ module parameters_tunable
       iC14, &
       iC15
 
+    use parameter_indices, only: &
+      iC6rt_Lscale0, &
+      iC6thl_Lscale0, &
+      iC7_Lscale0, &
+      iwpxp_Lscale_thresh
+
     use parameter_indices, only: & 
       ic_K,  & 
       ic_K1, & 
@@ -791,6 +814,7 @@ module parameters_tunable
       C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
       C11, C11b, C11c, C12, C13, C14, C15, & 
+      C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, taumin, taumax
@@ -828,6 +852,11 @@ module parameters_tunable
     params(iC13)     = C13
     params(iC14)     = C14
     params(iC15)     = C15
+
+    params(iC6rt_Lscale0)       = C6rt_Lscale0
+    params(iC6thl_Lscale0)      = C6thl_Lscale0
+    params(iC7_Lscale0)         = C7_Lscale0
+    params(iwpxp_Lscale_thresh) = wpxp_Lscale_thresh
 
     params(ic_K)       = c_K
     params(ic_K1)      = c_K1
@@ -868,6 +897,7 @@ module parameters_tunable
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
                C7, C7b, C7c, C8, C8b, C10, & 
                C11, C11b, C11c, C12, C13, C14, C15, & 
+               C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
                c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -914,6 +944,12 @@ module parameters_tunable
       iC14, &
       iC15
 
+    use parameter_indices, only: &
+      iC6rt_Lscale0, &
+      iC6thl_Lscale0, &
+      iC7_Lscale0, &
+      iwpxp_Lscale_thresh
+
     use parameter_indices, only: & 
       ic_K,  & 
       ic_K1, & 
@@ -951,6 +987,7 @@ module parameters_tunable
       C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
       C11, C11b, C11c, C12, C13, C14, C15, & 
+      C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
       c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -986,6 +1023,11 @@ module parameters_tunable
     C13     = params(iC13)
     C14     = params(iC14)
     C15     = params(iC15)
+
+    C6rt_Lscale0       = params(iC6rt_Lscale0)
+    C6thl_Lscale0      = params(iC6thl_Lscale0)
+    C7_Lscale0         = params(iC7_Lscale0)
+    wpxp_Lscale_thresh = params(iwpxp_Lscale_thresh)
 
     c_K       = params(ic_K)
     c_K1      = params(ic_K1)
@@ -1038,6 +1080,7 @@ module parameters_tunable
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
                           C11, C11b, C11c, C12, C13, C14, C15, & 
+                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -1073,59 +1116,63 @@ module parameters_tunable
 
     PosInf = transfer( nanbits, PosInf )
 
-    C1          = PosInf
-    C1b         = PosInf
-    C1c         = PosInf
-    C2rt        = PosInf
-    C2thl       = PosInf
-    C2rtthl     = PosInf
-    C2          = PosInf
-    C2b         = PosInf
-    C2c         = PosInf
-    C4          = PosInf
-    C5          = PosInf
-    C6rt        = PosInf
-    C6rtb       = PosInf
-    C6rtc       = PosInf
-    C6thl       = PosInf
-    C6thlb      = PosInf
-    C6thlc      = PosInf
-    C7          = PosInf
-    C7b         = PosInf
-    C7c         = PosInf
-    C8          = PosInf
-    C8b         = PosInf
-    C10         = PosInf
-    C11         = PosInf
-    C11b        = PosInf
-    C11c        = PosInf
-    C12         = PosInf
-    C13         = PosInf
-    C14         = PosInf
-    C15         = PosInf
-    c_K         = PosInf
-    c_K1        = PosInf
-    nu1         = PosInf
-    c_K2        = PosInf
-    nu2         = PosInf
-    c_K6        = PosInf
-    nu6         = PosInf
-    c_K8        = PosInf
-    nu8         = PosInf
-    c_K9        = PosInf
-    nu9         = PosInf
-    c_Krrainm   = PosInf
-    nu_r        = PosInf
-    c_Ksqd      = PosInf
-    nu_hd       = PosInf
-    beta        = PosInf
-    gamma_coef  = PosInf
-    gamma_coefb = PosInf
-    gamma_coefc = PosInf
-    taumin      = PosInf
-    taumax      = PosInf
-    lmin_coef   = PosInf
-    mu          = PosInf
+    C1                 = PosInf
+    C1b                = PosInf
+    C1c                = PosInf
+    C2rt               = PosInf
+    C2thl              = PosInf
+    C2rtthl            = PosInf
+    C2                 = PosInf
+    C2b                = PosInf
+    C2c                = PosInf
+    C4                 = PosInf
+    C5                 = PosInf
+    C6rt               = PosInf
+    C6rtb              = PosInf
+    C6rtc              = PosInf
+    C6thl              = PosInf
+    C6thlb             = PosInf
+    C6thlc             = PosInf
+    C7                 = PosInf
+    C7b                = PosInf
+    C7c                = PosInf
+    C8                 = PosInf
+    C8b                = PosInf
+    C10                = PosInf
+    C11                = PosInf
+    C11b               = PosInf
+    C11c               = PosInf
+    C12                = PosInf
+    C13                = PosInf
+    C14                = PosInf
+    C15                = PosInf
+    C6rt_Lscale0       = PosInf
+    C6thl_Lscale0      = PosInf
+    C7_Lscale0         = PosInf
+    wpxp_Lscale_thresh = PosInf
+    c_K                = PosInf
+    c_K1               = PosInf
+    nu1                = PosInf
+    c_K2               = PosInf
+    nu2                = PosInf
+    c_K6               = PosInf
+    nu6                = PosInf
+    c_K8               = PosInf
+    nu8                = PosInf
+    c_K9               = PosInf
+    nu9                = PosInf
+    c_Krrainm          = PosInf
+    nu_r               = PosInf
+    c_Ksqd             = PosInf
+    nu_hd              = PosInf
+    beta               = PosInf
+    gamma_coef         = PosInf
+    gamma_coefb        = PosInf
+    gamma_coefc        = PosInf
+    taumin             = PosInf
+    taumax             = PosInf
+    lmin_coef          = PosInf
+    mu                 = PosInf
 
     nu1_vert_res_dep   = PosInf
     nu2_vert_res_dep   = PosInf
