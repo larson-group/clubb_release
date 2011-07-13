@@ -161,7 +161,8 @@ module clubb_driver
     use numerical_check, only: invalid_model_arrays ! Procedure(s)
 
     use inputfields, only: &
-      inputfields_init, compute_timestep, stat_fields_reader ! Procedure(s)
+      inputfields_init, compute_timestep, stat_fields_reader, & ! Procedure(s)
+      input_wp3                                                 ! Variable(s)
 
     use inputfields, only: stat_file_zt
 
@@ -241,6 +242,8 @@ module clubb_driver
       finalize_extend_atm
 
     use parameters_radiation, only: rad_scheme ! Variable(s)
+
+    use clip_explicit, only: clip_skewness_core !Procedure(s)
 
 #ifdef LATIN_HYPERCUBE
     use parameters_microphys, only: &
@@ -936,6 +939,12 @@ module clubb_driver
                                itime_nearest )                                  ! Intent(out)
 
         call stat_fields_reader( max( itime_nearest, 1 ) )                     ! Intent(in)
+
+        ! clip wp3 if it is input from inputfields
+        ! this helps restrict the skewness of wp3_on_wp2
+        if( input_wp3 ) then
+          call clip_skewness_core( dt, sfc_elevation, wp2_zt, wp3 )
+        end if
       end if
 
       ! Check for NaN values in the model arrays

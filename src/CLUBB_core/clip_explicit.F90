@@ -10,7 +10,8 @@ module clip_explicit
   public :: clip_covariances_denom, &
             clip_covariance, & 
             clip_variance, & 
-            clip_skewness
+            clip_skewness, &
+            clip_skewness_core
 
   ! Named constants to avoid string comparisons
   integer, parameter, public :: &
@@ -727,6 +728,58 @@ module clip_explicit
     use stats_variables, only: & 
       zt,  & ! Variable(s)
       iwp3_cl, & 
+      l_stats_samp     
+
+    implicit none
+
+    ! External
+    intrinsic :: sign, sqrt, real
+
+    ! Input Variables
+    real(kind=time_precision), intent(in) :: & 
+      dt               ! Model timestep; used here for STATS        [s]
+
+    real, intent(in) ::  &
+      sfc_elevation    ! Elevation of ground level                  [m AMSL]
+
+    real, dimension(gr%nnzp), intent(in) :: &
+      wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
+
+    ! Input/Output Variables
+    real, dimension(gr%nnzp), intent(inout) :: &
+      wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
+
+    ! ---- Begin Code ----
+
+    if ( l_stats_samp ) then
+      call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
+    endif
+
+    call clip_skewness_core( dt, sfc_elevation, wp2_zt, wp3 )
+
+    if ( l_stats_samp ) then
+      call stat_end_update( iwp3_cl, real( wp3 / dt ), zt )
+    endif
+
+    return
+  end subroutine clip_skewness
+
+!=============================================================================
+  subroutine clip_skewness_core( dt, sfc_elevation, wp2_zt, wp3 )
+
+    use grid_class, only: & 
+      gr ! Variable(s)
+
+    use stats_precision, only: & 
+      time_precision ! Variable(s)
+
+    use stats_type, only: &
+      stat_begin_update,  & ! Procedure(s)
+      stat_end_update
+
+    use stats_variables, only: & 
+      zt,  & ! Variable(s)
+      iwp3_cl, & 
       l_stats_samp
 
     use constants_clubb, only: &
@@ -760,10 +813,6 @@ module clip_explicit
 
     ! ---- Begin Code ----
 
-    if ( l_stats_samp ) then
-      call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
-    endif
-
     ! Compute the upper and lower limits of w'^3 at every level,
     ! based on the skewness of w, Sk_w, such that:
     ! Sk_w = w'^3 / (w'^2)^(3/2);
@@ -785,15 +834,15 @@ module clip_explicit
     wp2_zt_cubed(1:gr%nnzp) = wp2_zt(1:gr%nnzp)**3
 
     do k = 1, gr%nnzp, 1
-      if ( gr%zt(k) - sfc_elevation <= 100.0 ) then ! Clip for 100 m. AGL.
+      !if ( gr%zt(k) - sfc_elevation <= 100.0 ) then ! Clip for 100 m. AGL.
 !       wp3_upper_lim(k) =  0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
 !       wp3_lower_lim(k) = -0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
         wp3_lim_sqd(k) = 0.08 * wp2_zt_cubed(k) ! Where 0.08 == (sqrt(2)*0.2)**2
-      else                          ! Clip skewness consistently with a.
+      !else                          ! Clip skewness consistently with a.
 !       wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
 !       wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
         wp3_lim_sqd(k) = Skw_max_mag_sqd * wp2_zt_cubed(k) ! Skw_max_mag = 4.5^2
-      endif
+      !endif
     enddo
 
     ! Clipping for w'^3 at an upper and lower limit corresponding with
@@ -807,13 +856,8 @@ module clip_explicit
     where ( abs(wp3) > 100.) &
       wp3 = sign( 100. , wp3 )
 
-      if ( l_stats_samp ) then
-        call stat_end_update( iwp3_cl, real( wp3 / dt ), zt )
-      endif
-
-      return
-    end subroutine clip_skewness
+  end subroutine clip_skewness_core
 
 !===============================================================================
 
-  end module clip_explicit
+end module clip_explicit
