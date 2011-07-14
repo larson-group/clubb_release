@@ -301,9 +301,12 @@ module advance_xm_wpxp_module
     endif
 
     ! Damp C6 and C7 as a function of Lscale in stably stratified regions
-    C7_Skw_fnc = damp_coefficient( C7, C7_Lscale0, wpxp_Lscale_thresh, Lscale )
-    C6rt_Skw_fnc = damp_coefficient( C6rt, C6rt_Lscale0, wpxp_Lscale_thresh, Lscale )
-    C6thl_Skw_fnc = damp_coefficient( C6thl, C6thl_Lscale0, wpxp_Lscale_thresh, Lscale )
+    C7_Skw_fnc = damp_coefficient( C7, C7_Skw_fnc, &
+                                   C7_Lscale0, wpxp_Lscale_thresh, Lscale )
+    C6rt_Skw_fnc = damp_coefficient( C6rt, C6rt_Skw_fnc, &
+                                     C6rt_Lscale0, wpxp_Lscale_thresh, Lscale )
+    C6thl_Skw_fnc = damp_coefficient( C6thl, C6thl_Skw_fnc, &
+                                      C6thl_Lscale0, wpxp_Lscale_thresh, Lscale )
 
     !        C6rt_Skw_fnc = C6rt
     !        C6thl_Skw_fnc = C6thl
@@ -3101,7 +3104,7 @@ module advance_xm_wpxp_module
 
   !=============================================================================
 
-  pure function damp_coefficient( coefficient, max_coeff_value, threshold, Lscale ) &
+  pure function damp_coefficient( coefficient, Cx_Skw_fnc, max_coeff_value, threshold, Lscale ) &
     result( damped_value )
 
     ! Description:
@@ -3115,14 +3118,17 @@ module advance_xm_wpxp_module
 
     ! Input variables
     real, intent(in) :: &
-      coefficient,     & ! The coefficient to be damped
-      max_coeff_value, & ! Maximum value the damped coefficient should have
-      threshold          ! Value of Lscale below which the damping should occur
+      coefficient,      &   ! The coefficient to be damped
+      max_coeff_value,  &   ! Maximum value the damped coefficient should have
+      threshold             ! Value of Lscale below which the damping should occur
     real, dimension(gr%nnzp), intent(in) :: &
-      Lscale             ! Current value of Lscale
+      Lscale,           &   ! Current value of Lscale
+      Cx_Skw_fnc            ! Initial skewness function before damping
 
     ! Return Variable
     real, dimension(gr%nnzp) :: damped_value
+
+    damped_value = Cx_Skw_fnc
 
     where( Lscale < threshold )
       damped_value = max_coeff_value + ( ( coefficient - max_coeff_value ) / threshold ) * Lscale
