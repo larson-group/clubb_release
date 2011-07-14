@@ -12,3 +12,6 @@ them to a NetCDF file GrADS can open. The resulting file will be close to
 COARDS convention. The to_convert and new_file variables will need to be
 adjusted for your own use. It takes around an hour to convert most NetCDF
 files.
+
+check_for_errors.py checks CLUBB source code files for common mistakes or
+CLUBB standards violations. It checks for uninitialized output variables, magic flags, and magic numbers. USAGE: "python check_for_errors.py <filename>.F90"

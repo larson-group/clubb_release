@@ -15,6 +15,7 @@
 
 
 import sys # Handles command line arguments
+sys.path.append( './check_scripts/' )
 import check_uninitialized_output_variables
 import check_magic_numbers
 
@@ -38,7 +39,12 @@ def split_into_subroutines_and_functions(lines):
          (line.find("end") == -1 )) or (len(current_subroutine) > 0) ):
       # Remove all comments
       if( line.find("!") != -1 ):
-        line = line[:line.find("!")].strip()
+        # Remove any lines that are marked as known magic numbers
+        if(line.lower().find("known magic number") != -1 or
+           line.lower().find("known magic flag") != -1 ):
+          line = ""
+        else:
+          line = line[:line.find("!")].strip()
       if( line.find("#ifdef") != -1 ):
         line = ""
       if( line.find("#endif") != -1 ):
