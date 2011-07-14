@@ -64,7 +64,7 @@ module parameters_tunable
     C6rt_Lscale0,      & ! Damp C6rt as a function of Lscale
     C6thl_Lscale0,     & ! Damp C6thl as a function of Lscale
     C7_Lscale0,        & ! Damp C7 as a function of Lscale
-    wpxp_Lscale_thresh   ! Lscale threshold for damping C6 and C7 coefficients
+    wpxp_L_thresh   ! Lscale threshold for damping C6 and C7 coefficients
 
   real, public :: & 
     c_K,         & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
@@ -134,7 +134,7 @@ module parameters_tunable
     C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
     C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
-    C7_Lscale0, wpxp_Lscale_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
+    C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
     c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
     lmin_coef, taumin, taumax, mu
@@ -149,23 +149,23 @@ module parameters_tunable
   ! tuner will break!
   !                    ***** IMPORTANT *****
   !***************************************************************
-  character(len=18), dimension(nparams), parameter, public ::  & 
+  character(len=13), dimension(nparams), parameter, public ::  & 
   params_list = & 
-     (/"C1                ", "C1b               ", "C1c               ", "C2                ", & 
-       "C2b               ", "C2c               ", "C2rt              ", "C2thl             ", & 
-       "C2rtthl           ", "C4                ", "C5                ", "C6rt              ", & 
-       "C6rtb             ", "C6rtc             ", "C6thl             ", "C6thlb            ", & 
-       "C6thlc            ", "C7                ", "C7b               ", "C7c               ", & 
-       "C8                ", "C8b               ", "C10               ", "C11               ", & 
-       "C11b              ", "C11c              ", "C12               ", "C13               ", & 
-       "C14               ", "C15               ", "C6rt_Lscale0      ", "C6thl_Lscale0     ", &
-       "C7_Lscale0        ", "wpxp_Lscale_thresh", "c_K               ", "c_K1              ", &
-       "nu1               ", &
-       "c_K2              ", "nu2               ", "c_K6              ", "nu6               ", & 
-       "c_K8              ", "nu8               ", "c_K9              ", "nu9               ", & 
-       "c_Krrainm         ", "nu_r              ", "c_Ksqd            ", "nu_hd             ", &
-       "gamma_coef        ", "gamma_coefb       ", "gamma_coefc       ", "mu                ", &
-       "beta              ", "lmin_coef         ", "taumin            ", "taumax            " /)
+     (/"C1           ", "C1b          ", "C1c          ", "C2           ", & 
+       "C2b          ", "C2c          ", "C2rt         ", "C2thl        ", & 
+       "C2rtthl      ", "C4           ", "C5           ", "C6rt         ", & 
+       "C6rtb        ", "C6rtc        ", "C6thl        ", "C6thlb       ", & 
+       "C6thlc       ", "C7           ", "C7b          ", "C7c          ", & 
+       "C8           ", "C8b          ", "C10          ", "C11          ", & 
+       "C11b         ", "C11c         ", "C12          ", "C13          ", & 
+       "C14          ", "C15          ", "C6rt_Lscale0 ", "C6thl_Lscale0", &
+       "C7_Lscale0   ", "wpxp_L_thresh", "c_K          ", "c_K1         ", &
+       "nu1          ", &
+       "c_K2         ", "nu2          ", "c_K6         ", "nu6          ", & 
+       "c_K8         ", "nu8          ", "c_K9         ", "nu9          ", & 
+       "c_Krrainm    ", "nu_r         ", "c_Ksqd       ", "nu_hd        ", &
+       "gamma_coef   ", "gamma_coefb  ", "gamma_coefc  ", "mu           ", &
+       "beta         ", "lmin_coef    ", "taumin       ", "taumax       " /)
 
   contains
 
@@ -240,7 +240,7 @@ module parameters_tunable
                             C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                             C7, C7b, C7c, C8, C8b, C10, & 
                             C11, C11b, C11c, C12, C13, C14, C15, & 
-                            C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
+                            C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                             c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -555,7 +555,7 @@ module parameters_tunable
       C6rt_Lscale0       = 14.0
       C6thl_Lscale0      = 14.0
       C7_Lscale0         = 0.85
-      wpxp_Lscale_thresh = 60.0
+      wpxp_L_thresh    = 60.0
       !c_K                = 0.548
       c_K                = 0.2
       c_K1               = 0.75
@@ -597,7 +597,7 @@ module parameters_tunable
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
                           C11, C11b, C11c, C12, C13, C14, C15, & 
-                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
+                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -665,7 +665,7 @@ module parameters_tunable
       C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
       C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
-      C7_Lscale0, wpxp_Lscale_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
+      C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
       c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, taumin, taumax, mu
@@ -685,7 +685,7 @@ module parameters_tunable
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
                           C11, C11b, C11c, C12, C13, C14, C15, & 
-                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
+                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -727,7 +727,7 @@ module parameters_tunable
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
                C11, C11b, C11c, C12, C13, C14, C15, &
-               C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
+               C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
                c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, &
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
@@ -778,7 +778,7 @@ module parameters_tunable
       iC6rt_Lscale0, &
       iC6thl_Lscale0, &
       iC7_Lscale0, &
-      iwpxp_Lscale_thresh
+      iwpxp_L_thresh
 
     use parameter_indices, only: & 
       ic_K,  & 
@@ -814,7 +814,7 @@ module parameters_tunable
       C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
       C11, C11b, C11c, C12, C13, C14, C15, & 
-      C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
+      C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, taumin, taumax
@@ -856,7 +856,7 @@ module parameters_tunable
     params(iC6rt_Lscale0)       = C6rt_Lscale0
     params(iC6thl_Lscale0)      = C6thl_Lscale0
     params(iC7_Lscale0)         = C7_Lscale0
-    params(iwpxp_Lscale_thresh) = wpxp_Lscale_thresh
+    params(iwpxp_L_thresh)    = wpxp_L_thresh
 
     params(ic_K)       = c_K
     params(ic_K1)      = c_K1
@@ -897,7 +897,7 @@ module parameters_tunable
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
                C7, C7b, C7c, C8, C8b, C10, & 
                C11, C11b, C11c, C12, C13, C14, C15, & 
-               C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
+               C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
                c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -948,7 +948,7 @@ module parameters_tunable
       iC6rt_Lscale0, &
       iC6thl_Lscale0, &
       iC7_Lscale0, &
-      iwpxp_Lscale_thresh
+      iwpxp_L_thresh
 
     use parameter_indices, only: & 
       ic_K,  & 
@@ -987,7 +987,7 @@ module parameters_tunable
       C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
       C11, C11b, C11c, C12, C13, C14, C15, & 
-      C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
+      C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
       c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -1027,7 +1027,7 @@ module parameters_tunable
     C6rt_Lscale0       = params(iC6rt_Lscale0)
     C6thl_Lscale0      = params(iC6thl_Lscale0)
     C7_Lscale0         = params(iC7_Lscale0)
-    wpxp_Lscale_thresh = params(iwpxp_Lscale_thresh)
+    wpxp_L_thresh    = params(iwpxp_L_thresh)
 
     c_K       = params(ic_K)
     c_K1      = params(ic_K1)
@@ -1080,7 +1080,7 @@ module parameters_tunable
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                           C7, C7b, C7c, C8, C8b, C10, & 
                           C11, C11b, C11c, C12, C13, C14, C15, & 
-                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_Lscale_thresh, &
+                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
@@ -1149,7 +1149,7 @@ module parameters_tunable
     C6rt_Lscale0       = PosInf
     C6thl_Lscale0      = PosInf
     C7_Lscale0         = PosInf
-    wpxp_Lscale_thresh = PosInf
+    wpxp_L_thresh      = PosInf
     c_K                = PosInf
     c_K1               = PosInf
     nu1                = PosInf

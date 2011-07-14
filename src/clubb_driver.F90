@@ -943,7 +943,7 @@ module clubb_driver
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
         if( input_wp3 ) then
-          call clip_skewness_core( dt, sfc_elevation, wp2_zt, wp3 )
+          call clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
         end if
       end if
 

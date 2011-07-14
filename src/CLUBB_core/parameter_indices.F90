@@ -68,10 +68,10 @@ module parameter_indices
     iC15            = 30
 
   integer, parameter, public :: &
-    iC6rt_Lscale0       = 31, &
-    iC6thl_Lscale0      = 32, &
-    iC7_Lscale0         = 33, &
-    iwpxp_Lscale_thresh = 34
+    iC6rt_Lscale0   = 31, &
+    iC6thl_Lscale0  = 32, &
+    iC7_Lscale0     = 33, &
+    iwpxp_L_thresh  = 34
 
   integer, parameter, public :: & 
     ic_K            = 35, & 

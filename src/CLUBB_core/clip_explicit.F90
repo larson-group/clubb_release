@@ -755,7 +755,7 @@ module clip_explicit
       call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
     endif
 
-    call clip_skewness_core( dt, sfc_elevation, wp2_zt, wp3 )
+    call clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
 
     if ( l_stats_samp ) then
       call stat_end_update( iwp3_cl, real( wp3 / dt ), zt )
@@ -765,22 +765,10 @@ module clip_explicit
   end subroutine clip_skewness
 
 !=============================================================================
-  subroutine clip_skewness_core( dt, sfc_elevation, wp2_zt, wp3 )
-
+  subroutine clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
+!
     use grid_class, only: & 
       gr ! Variable(s)
-
-    use stats_precision, only: & 
-      time_precision ! Variable(s)
-
-    use stats_type, only: &
-      stat_begin_update,  & ! Procedure(s)
-      stat_end_update
-
-    use stats_variables, only: & 
-      zt,  & ! Variable(s)
-      iwp3_cl, & 
-      l_stats_samp
 
     use constants_clubb, only: &
       Skw_max_mag_sqd ! [-]      
@@ -791,9 +779,6 @@ module clip_explicit
     intrinsic :: sign, sqrt, real
 
     ! Input Variables
-    real(kind=time_precision), intent(in) :: & 
-      dt               ! Model timestep; used here for STATS        [s]
-
     real, intent(in) ::  &
       sfc_elevation    ! Elevation of ground level                  [m AMSL]
 
@@ -834,15 +819,15 @@ module clip_explicit
     wp2_zt_cubed(1:gr%nnzp) = wp2_zt(1:gr%nnzp)**3
 
     do k = 1, gr%nnzp, 1
-      !if ( gr%zt(k) - sfc_elevation <= 100.0 ) then ! Clip for 100 m. AGL.
-!       wp3_upper_lim(k) =  0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
-!       wp3_lower_lim(k) = -0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
+      if ( gr%zt(k) - sfc_elevation <= 100.0 ) then ! Clip for 100 m. AGL.
+       !wp3_upper_lim(k) =  0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
+       !wp3_lower_lim(k) = -0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
         wp3_lim_sqd(k) = 0.08 * wp2_zt_cubed(k) ! Where 0.08 == (sqrt(2)*0.2)**2
-      !else                          ! Clip skewness consistently with a.
-!       wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
-!       wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
+      else                          ! Clip skewness consistently with a.
+       !wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
+       !wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
         wp3_lim_sqd(k) = Skw_max_mag_sqd * wp2_zt_cubed(k) ! Skw_max_mag = 4.5^2
-      !endif
+      endif
     enddo
 
     ! Clipping for w'^3 at an upper and lower limit corresponding with

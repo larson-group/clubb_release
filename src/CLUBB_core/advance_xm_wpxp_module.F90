@@ -81,7 +81,7 @@ module advance_xm_wpxp_module
         C6rt_Lscale0, &
         C6thl_Lscale0, &
         C7_Lscale0, &
-        wpxp_Lscale_thresh
+        wpxp_L_thresh
 
     use constants_clubb, only:  & 
         fstderr, &  ! Constant
@@ -302,11 +302,11 @@ module advance_xm_wpxp_module
 
     ! Damp C6 and C7 as a function of Lscale in stably stratified regions
     C7_Skw_fnc = damp_coefficient( C7, C7_Skw_fnc, &
-                                   C7_Lscale0, wpxp_Lscale_thresh, Lscale )
+                                   C7_Lscale0, wpxp_L_thresh, Lscale )
     C6rt_Skw_fnc = damp_coefficient( C6rt, C6rt_Skw_fnc, &
-                                     C6rt_Lscale0, wpxp_Lscale_thresh, Lscale )
+                                     C6rt_Lscale0, wpxp_L_thresh, Lscale )
     C6thl_Skw_fnc = damp_coefficient( C6thl, C6thl_Skw_fnc, &
-                                      C6thl_Lscale0, wpxp_Lscale_thresh, Lscale )
+                                      C6thl_Lscale0, wpxp_L_thresh, Lscale )
 
     !        C6rt_Skw_fnc = C6rt
     !        C6thl_Skw_fnc = C6thl
