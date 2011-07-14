@@ -25,7 +25,7 @@ module constants_clubb
     sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
     Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
     cm3_per_m3, pascal_per_mb, parab_cyl_max_input,  &
-    gamma_over_implicit_ts, Lscale_pert_coef
+    gamma_over_implicit_ts, Lscale_pert_coef, cloud_frac_min
 
   private ! Default scope
 
@@ -225,6 +225,9 @@ module constants_clubb
 
   real, parameter :: & 
     cm3_per_m3 = 1.e6 ! Cubic centimeters per cubic meter
+
+  real, parameter :: &
+    cloud_frac_min = 0.005 ! Threshold for cloud fractions
 
 !=============================================================================
 

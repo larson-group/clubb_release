@@ -55,7 +55,7 @@ module bugsrad_driver
 ! All code external to this based on the BUGSrad source from 2004/7/10
 !-------------------------------------------------------------------------------
 
-    use constants_clubb, only: fstderr, grav, Cp ! Variable(s)
+    use constants_clubb, only: fstderr, grav, Cp, cloud_frac_min ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -190,7 +190,7 @@ module bugsrad_driver
     playerinmb(1,1:nz) = dble( p_in_Pam / 100.0 ) ! m grid in CLUBB
 
     ! Determine rcm in cloud
-    rcm_in_cloud = rcm / max( cloud_frac, 0.01 )
+    rcm_in_cloud = rcm / max( cloud_frac, cloud_frac_min )
 
     ! Convert theta_l to temperature
 

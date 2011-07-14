@@ -46,6 +46,9 @@ module microphys_driver
     LH_microphys_non_interactive, & ! Feed the subcolumns into the microphysics with no feedback
     LH_microphys_disabled           ! Disable latin hypercube entirely
 
+  use constants_clubb, only: &
+    cloud_frac_min
+
   implicit none
 
   ! Subroutines
@@ -60,7 +63,6 @@ module microphys_driver
   ! Variables
   logical, private, allocatable, dimension(:) :: l_hydromet_sed ! Whether to sediment variables
   logical :: l_gfdl_activation ! Flag for GFDL activation code
-  real, parameter :: cloud_frac_min = 0.005 ! Threshold on cloud fraction for GFDL activation
 
   private ! Default Scope
 
