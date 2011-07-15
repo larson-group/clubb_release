@@ -32,7 +32,6 @@ def is_magic_number_used(line):
   found = False
 
   equals_index = line.find("=")
-  assignment_index = line.find("==")
   call_index = line.find("call")
 
   # trimmed contains the trimmed line
@@ -79,8 +78,8 @@ def is_magic_number_used(line):
       for separator in separators:
         index = trimmed.find(separator, before_index)
         
-        while( index > -1 and (separator == '-' and (trimmed[index-1] == 'e' 
-              or string.digits.find(trimmed[index+1]) != -1 )) ):
+        while( index > -1 and ((separator == '-' or separator == '+') and 
+              (trimmed[index-1].lower() == 'e' )) ):
           index = trimmed.find(separator, index+1)
 
         if( index > -1 and (index < after_index or after_index == -1) ):
@@ -97,6 +96,7 @@ def is_magic_number_used(line):
       variable = trimmed[before_index:after_index].strip()
       vars_found += 1
 
+      # check for double precision
       double_index = variable.lower().find("d")
       if( double_index != -1 and (variable[double_index-1] == '.' or
           string.digits.find(variable[double_index-1]) != -1) ):
@@ -113,6 +113,11 @@ def is_magic_number_used(line):
         # If there is a colon, this is not a variable
         elif( (string.digits.find(variable[0]) != -1 or variable[0] == '-') and
               variable.find(":") == -1 ):
+          # If there is an underscore at the end of the number, the underscore
+          # is indicating a special precision. If this is the case, trim off the
+          # precision identifier
+          if( variable.find("_") != -1 ):
+            variable = variable[:variable.find("_")]
           try:
             num = float(variable)
             # integer values of -6 to 6 are not magic numbers
@@ -120,7 +125,9 @@ def is_magic_number_used(line):
               found = True
               break
           except ValueError:
-            print variable + ": " + line
+            # Uncomment the following line for debug information
+            #print variable + ": " + line
+            pass
           
       # remove this variable from trimmed
       trimmed = trimmed[after_index:]
@@ -128,10 +135,38 @@ def is_magic_number_used(line):
   return found
 # END is_magic_number_used
 
+
+#----------------------------------------------------------------------
 def get_line_number(line):
+
+#
+# Get the line number for a given line.
+#
+# INPUT
+#
+# line: a string containing a line of code
+#
+# OUTPUT
+#
+# The line number as a string
+#----------------------------------------------------------------------
+ 
   return line[:line.find(":")]
 
+#---------------------------------------------------------------------
 def check_magic_numbers(subroutine):
+#
+# Checks a subroutine for magic numbers and magic flags.
+#
+# INPUT
+#
+# subroutine: a list of strings containing the lines of a subroutine
+#
+# OUTPUT
+#
+# A list of strings containing all of the magic nubmers and magic flags found
+# along with the line number that each appears on.
+#------------------------------------------------------------------------
   output = []
 
   for line in subroutine:

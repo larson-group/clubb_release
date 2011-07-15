@@ -20,10 +20,24 @@
 import string # Used for string comparison
 
 
+# Define constants
+NOT_SET = 0
+SET = 1
+SET_BY_SUBROUTINE = 2
+
 #---------------------------------------------------------------------------
 def find_output_vars(subroutine):
 
 # Finds all of the intent(out) variables in a subroutine.
+#
+# INPUT:
+#
+# subroutine: a list of strings making up the lines of a subroutine
+#
+# OUTPUT:
+#
+# A list of strings containing the names of all intent(out) variables in 
+# subroutine.
 #---------------------------------------------------------------------------
 
   outputs = []
@@ -36,14 +50,6 @@ def find_output_vars(subroutine):
       # strip the whitespace off of the end
       stripped_line = line.rstrip()
       
-#      j = i # temporary index
-      # while the last character in the lind is '&', the next line is
-      # technically part of this one, so include it
-#     while( stripped_line[len(stripped_line) - 1] == '&' ):
-#       stripped_line = stripped_line.rstrip('&') # remove the '&'
-#       stripped_line += subroutine[j + 1].rstrip() # add the next line and remove whitespace
-#       j += 1
-
       index = stripped_line.find("::") + 2
       outvars = stripped_line[index:] # leave only the variable names
 
@@ -151,7 +157,7 @@ def is_var_set_by_subroutine(var, line):
       # a subroutine name before the parenthesis
       if( line.find("call", open_paren_index) != -1 or 
           string.ascii_letters.find(trim[len(trim)-1]) != -1 or
-          string.digits.find(trim[len(trim)-1]) ):
+          string.digits.find(trim[len(trim)-1]) != -1 ):
         # check to make sure this is actually the variable we're looking for
         # and not part of another variable's name
         if( (line[var_index-1] == ' ' or line[var_index-1] == ',') and
@@ -179,12 +185,12 @@ def is_var_set(var, subroutine):
 #
 # OUTPUT
 #
-# 0 - var is not set
-# 1 - var is set
-# 2 - var is set in subroutine
+# NOT_SET - var is not set
+# SET - var is set
+# SET_BY_SUBROUTINE - var is set by a subroutine or function call
 #---------------------------------------------------------------------------
 
-  var_set = 0
+  var_set = NOT_SET
   
   skip_if = False
   skip_case = False
@@ -209,10 +215,8 @@ def is_var_set(var, subroutine):
         end_if_index += 1
       
       check = check_var_in_if( var, subroutine[i:end_if_index] )
-      if( check != 0 ):
+      if( check != NOT_SET ):
         var_set = check
-      #else:
-      #  var_set = 0 # not set
 
       i = end_if_index - 1
 
@@ -230,24 +234,22 @@ def is_var_set(var, subroutine):
         end_select_index += 1
 
       check = check_var_in_case( var, subroutine[i:end_select_index] )
-      if( check != 0 ):
+      if( check != NOT_SET ):
         var_set = check
-      #else:
-      #  var_set = 0 # not set
 
       i = end_select_index - 1
 
 
     # if the variable is set in this line
     elif( is_var_set_in_line(var, line) ):
-      var_set = 1
+      var_set = SET
 
     # If the variable is called in a subroutine, set the subroutine_warning flag
     elif( is_var_set_by_subroutine(var, line) ):
-        var_set = 2 # set in subroutine
+        var_set = SET_BY_SUBROUTINE # set in subroutine
 
     # If var has been deemed as set, stop looking
-    if( var_set == 1 ):
+    if( var_set == SET ):
       break
 
     i += 1
@@ -259,7 +261,8 @@ def is_var_set(var, subroutine):
 #---------------------------------------------------------------------------
 def check_var_in_if(var, if_statement):
 
-# Check if var is set in all sections of an if-block
+# Check if var is set in all sections of an if-block. This can be called
+# recursively.
 #
 # INPUT
 #
@@ -268,12 +271,12 @@ def check_var_in_if(var, if_statement):
 #
 # OUTPUT
 #
-# 0 - var is not set
-# 1 - var is set
-# 2 - var is set in subroutine
+# NOT_SET - var is not set
+# SET - var is set
+# SET_BY_SUBROUTINE - var is set by a subroutine or function call
 #--------------------------------------------------------------------------
 
-  found = 0
+  found = NOT_SET
   warning = False
   else_found = False
 
@@ -281,9 +284,11 @@ def check_var_in_if(var, if_statement):
   while( i < len(if_statement) ):
     line = if_statement[i]
 
+    # if this is an else statement, set else_found to True
     if( line.lower().find("else") != -1 and line.lower().find("if") == -1 ):
       else_found = True
 
+    # if statement
     if( line.lower().find("if") != -1 and line.lower().find("then") != -1 and
         line.lower().find("else") == -1 and line.lower().find("end") == -1 ): 
       end_if_index = i+1
@@ -299,15 +304,15 @@ def check_var_in_if(var, if_statement):
 
         end_if_index += 1
 
-      if( found == 0 ):
+      # call this method recursively only if var has not been found yet
+      if( found == NOT_SET ):
         check = check_var_in_if( var, if_statement[i:end_if_index] )
-        if( check == 1 ):
-          found = 1 # set
-        elif( check == 2 ):
-          found = 2 # set in subroutine
+        found = check
      
+      # advance the index to the end of the if block
       i = end_if_index - 1
 
+    # case statement
     elif( line.lower().find("selectcase") != -1 or line.lower().find("select case") != -1 ):
       end_select_index = i+1
       num_cases = 1
@@ -320,46 +325,47 @@ def check_var_in_if(var, if_statement):
           num_cases -= 1
         end_select_index += 1
 
-      if( found == 0 ):
+      # check if the var is set in the case statement only if var has not been
+      # found yet
+      if( found == NOT_SET ):
         check = check_var_in_case( var, if_statement[i:end_select_index] )
-        if( check == 1 ):
-          found = 1 # set
-        elif( check == 2 ):
-          found = 2 # set in subroutine
+        found = check
 
+      # advance the idnex to the end of the case block
       i = end_select_index - 1
 
 
     # if var is set in this section, set found to 1
     elif( is_var_set_in_line(var, line) ):
-      found = 1 # set
+      found = SET
     # check if var is set in a subroutine
     elif( is_var_set_by_subroutine(var, line) ):
-        found = 2 # set in subroutine
+        found = SET
         warning = True
     # if the program stops execution in an if block, ignore this block
     elif( line.lower().find("stop") != -1 ):
       templine = line.lower()[line.find(":")+1:].strip()
       if( templine[0:4] == "stop" ):
-        found = 1
+        found = SET
 
     # if we have reached the beginning of a new section
     elif( (line.lower().find("elseif") != -1) or
           (line.lower().find("else if") != -1) or
           (line.lower().find("else") != -1) ):
       # if var was not set in the previous section, break and return false
-      if( found == 0 ):
+      if( found == NOT_SET ):
         break
       # if var was set, reset found to False and continue with the next section
       else:
-        found = 0
+        found = NOT_SET
     i += 1
 
   if( not else_found ):
-    found = 0
+    found = NOT_SET
 
-  if( warning and found == 1 ):
-    found = 2
+  # If warning is true and var is set, switch to SET_BY_SUBROUTINE
+  if( warning and found == SET ):
+    found = SET_BY_SUBROUTINE
 
 
   return found
@@ -368,7 +374,8 @@ def check_var_in_if(var, if_statement):
 #-------------------------------------------------------------------------
 def check_var_in_case(var, case_statement):
 
-# Check if var is set in all cases of a select-case block
+# Check if var is set in all cases of a select-case block. This can be
+# called recursively.
 #
 # INPUT
 #
@@ -377,18 +384,19 @@ def check_var_in_case(var, case_statement):
 #
 # OUTPUT
 #
-# 0 - var is not set
-# 1 - var is set
-# 2 - var is set in subroutine
+# NOT_SET - var is not set
+# SET - var is set
+# SET_BY_SUBROUTINE - var is set by a subroutine or function call
 #-------------------------------------------------------------------------
 
-  found = 0
+  found = NOT_SET
   warning = False
   # loop through all but the first line
   i = 2
   while( i < len(case_statement) ):
     line = case_statement[i]
 
+    # if statement
     if( line.lower().find("if") != -1 and line.lower().find("then") != -1 and
         line.lower().find("else") == -1 and line.lower().find("end") == -1 ):
       end_if_index = i+1
@@ -404,17 +412,14 @@ def check_var_in_case(var, case_statement):
 
         end_if_index += 1
 
-      if( found == 0 ):
+      # check if var is set in the if statement only if it has not been found
+      if( found == NOT_SET ):
         check = check_var_in_if( var, case_statement[i:end_if_index] )
-        if( check == 1 ):
-          found = 1 # set
-        elif( check == 2 ):
-          found = 2 # set in subroutine
-        #else:
-        #  found = 0 # not set
-     
+        found = check
+      # advance the index to the end of the if block
       i = end_if_index - 1
 
+    # case statement
     elif( line.lower().find("selectcase") != -1 or line.lower().find("select case") != -1 ):
       end_select_index = i+1
       num_cases = 1
@@ -427,42 +432,41 @@ def check_var_in_case(var, case_statement):
           num_cases -= 1
         end_select_index += 1
 
-      if( found == 0 ):
+      # check if var is set in the case statement only if it has not been found
+      if( found == NOT_SET ):
         check = check_var_in_case( var, case_statement[i:end_select_index] )
-        if( check == 1 ):
-          found = 1 # set
-        elif( check == 2 ):
-          found = 2 # set in subroutine
-        #else:
-        #  found = 0 # not set
+        found = check
+      # advance the index to the end of the case block
       i = end_select_index - 1
 
 
     # if var was set in this case, set found to 1
     elif( is_var_set_in_line(var, line) ):
-      found = 1 # set
+      found = SET 
     # check if var is set in a subroutine
     elif( is_var_set_by_subroutine(var, line) ):
-        found = 2 # set in a subroutine
+        found = SET
         warning = True
     # if the program stops execution in a case, ignore this case
     elif( line.lower().find("stop") != -1 ):
       templine = line.lower()[line.find(":")+1:].strip()
       if( templine[0:4] == "stop" ):
-        found = 1
+        found = SET
 
     # if this line is the start of a new case
     elif( line.lower().find("case") != -1 ):
       # if var was not set in the previous case, return false
-      if( found == 0 ):
+      if( found == NOT_SET ):
         break
       # if var was set in the previous case, set found to 0 and keep looking
       else:
-        found = 0
+        found = NOT_SET
     i += 1
-    
-  if( warning and found == 1 ):
-    found = 2
+
+  # If warning is true and var is set, switch to SET_BY_SUBROUTINE
+  if( warning and found == SET ):
+    found = SET_BY_SUBROUTINE
+
   return found
 # END check_var_in_case
       
@@ -507,8 +511,24 @@ def get_subroutine_line(subroutine):
 # END get_subroutine_line
 
 
-#----------------------------------------------------------------------
-def check_output_variables(subroutine):
+#-------------------------------------------------------------------------
+def check_output_variables(subroutine, show_warnings):
+
+# This function is the entry-point for this module. It checks for uninitialized
+# intent(out) variables in a given subroutine.
+#
+# INPUT
+#
+# subroutine: a list of strings representing the lines of a subroutine
+# show_warnings: If True, output a warning when a variable is set by a
+#   subroutine or function call. 
+#
+# OUTPUT
+#
+# A list of strings representing the output, which contains all intent(out)
+# varaibles that are not set and warnings when a variable is set by a 
+# subroutine or function call, if specified.
+#-------------------------------------------------------------------------
 
   subroutine_name_printed = False
   output_text = []
@@ -516,25 +536,25 @@ def check_output_variables(subroutine):
   outputs = find_output_vars(subroutine)
 
   for output in outputs:
+    # check if output set set in this subroutine
     var_set = is_var_set(output, subroutine)
-    if( var_set == 0 or var_set == 2):
 
+    # only return output for a variable that's not set or set by a subroutine
+    if( var_set == NOT_SET or var_set == SET_BY_SUBROUTINE ):
+      # print the subroutine's name
       if( not subroutine_name_printed ):
         line_number = get_subroutine_line(subroutine)
         output_text.append( "\n  In subroutine " + get_subroutine_name(subroutine) + 
             " (line " + str(line_number) + ")" )
         subroutine_name_printed = True
-
-      if( var_set == 0 ):
+      # if output is not set, output that
+      if( var_set == NOT_SET ):
         output_text.append( "    " + output + ": Not Set" )
-      elif( var_set == 2 ):
+      # only print a warning if show_warnings is true
+      elif( var_set == SET_BY_SUBROUTINE and show_warnings ):
         # If the variable was called in a subroutine and not set anywhere else
         # , print a warning
         output_text.append( "    WARNING: " + output + 
                             " is initialized in a subroutine or function." )
-        var_set = True # set var_set to get rid of extra outputa
-
-    #else:
-      #print output + ": Set"
 
   return output_text

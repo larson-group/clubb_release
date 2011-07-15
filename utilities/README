@@ -14,4 +14,14 @@ adjusted for your own use. It takes around an hour to convert most NetCDF
 files.
 
 check_for_errors.py checks CLUBB source code files for common mistakes or
-CLUBB standards violations. It checks for uninitialized output variables, magic flags, and magic numbers. USAGE: "python check_for_errors.py <filename>.F90"
+CLUBB standards violations. It checks for uninitialized output variables,
+magic flags, and magic numbers. An output variable is only initialized if it
+is set in every part of an if or select case statement or if it is set outside
+of these statements. A magic number is any number that appears
+in a subroutine or function call or appears in an equation on the right-hand
+side of an equals sign. Integers from -6 to +6 are not considered magic numbers,
+and nothing in an if statement is considered a magic number. If the argument -w
+or --show-warnings is provided, warnings will be printed when a variable is set
+by a subroutine or function call.
+USAGE: "python check_for_errors.py [-w or --show-warnings] <filename>.F90"
+

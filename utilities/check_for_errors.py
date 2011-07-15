@@ -15,7 +15,7 @@
 
 
 import sys # Handles command line arguments
-sys.path.append( './check_scripts/' )
+sys.path.append( './check_scripts/' ) # use modules from this subdirectory
 import check_uninitialized_output_variables
 import check_magic_numbers
 
@@ -23,8 +23,18 @@ import check_magic_numbers
 def split_into_subroutines_and_functions(lines):
 
 # Splits a list of lines from a file into a list of lists, where each list
-# contains the lines of one subroutine or function
+# contains the lines of one subroutine or function.
+#
+# INPUT
+#
+# lines: a list of strings containing all of the lines from a .F90 file.
+#
+# OUTPUT
+#
+# A list of subroutines. Each subroutine is a list of strings containing the
+# lines of a subroutine.
 #----------------------------------------------------------------------------
+
   subroutines = []
   current_subroutine = []
 
@@ -45,15 +55,16 @@ def split_into_subroutines_and_functions(lines):
           line = ""
         else:
           line = line[:line.find("!")].strip()
+      # ignore ifdefs and endifs
       if( line.find("#ifdef") != -1 ):
         line = ""
       if( line.find("#endif") != -1 ):
         line = ""
       
-
+      # ignore blank lines
       if( line != "" ):
 
-        # while the last character in the lind is '&', the next line is
+        # while the last character in the line is '&', the next line is
         # technically part of this one, so include it
         while( line[len(line) - 1] == '&' ):
           line = line.rstrip('&') # remove the '&'
@@ -71,6 +82,7 @@ def split_into_subroutines_and_functions(lines):
             nextline = "&"
 
           line += nextline.strip() # add the next line and remove whitespace
+          
           i += 1
 
         # add the line number to the begining of the line and append it
@@ -89,56 +101,70 @@ def split_into_subroutines_and_functions(lines):
 
 
 
+#-------------------BEGIN MAIN CODE-------------------------
+
+# local variables
 total_not_set = 0
 warnings = 0
 magic_numbers = 0
 
+# if True, warnings will be printed when an intent(out) variable is set by
+# a subroutine or function call
+show_warnings = False
+
 # sys.argv[0] is this file, so skip it
 for arg in sys.argv[1:]:
-  # open the file for reading
-  f = open(arg, "r")
-  try:
-    # read all lines
-    lines = f.readlines()
-  finally:
-    f.close()
+  # check for the option to show warnings
+  if( arg == "-w" or arg == "--show-warnings" ):
+    show_warnings = True
+  # ignore any files that are not .F90 files
+  elif( arg.find(".F90") != -1 ):
+    # open the file for reading
+    f = open(arg, "r")
+    try:
+      # read all lines
+      lines = f.readlines()
+    finally:
+      f.close()
 
-  file_name_printed = False
+    file_name_printed = False
 
-  # split the lines into subroutines
-  subroutines = split_into_subroutines_and_functions(lines) 
+    # split the lines into subroutines
+    subroutines = split_into_subroutines_and_functions(lines) 
 
-  for subroutine in subroutines:
-    # check for uninitialized output variables in this subroutine
-    outputs = check_uninitialized_output_variables.check_output_variables(subroutine)
-    # print the current file name if it has not yet been printed
-    if len(outputs) > 0 and not file_name_printed:
-      print "\n\nFile: " + f.name
-      file_name_printed = True
-    # print out each line of output and increment counters
-    for output in outputs:
-      if output.find("WARNING") != -1:
-        warnings += 1
-      elif output.find("Not Set") != -1:
-        total_not_set += 1
-
-      print output
-
-    # checkf or magic numbers and magic flags
-    magic_output = check_magic_numbers.check_magic_numbers(subroutine)
-    if( len(magic_output) > 0 ):
-      # print out the current file name if it has not yet been printed
-      if( not file_name_printed ):
+    for subroutine in subroutines:
+      # check for uninitialized output variables in this subroutine
+      outputs = check_uninitialized_output_variables.check_output_variables(subroutine,
+        show_warnings)
+      # print the current file name if it has not yet been printed
+      if( len(outputs) > 0 and not file_name_printed ):
         print "\n\nFile: " + f.name
         file_name_printed = True
-      # print each line of output and increment the counter
-      for line in magic_output:
-        print line
-        magic_numbers += 1
+      # print out each line of output and increment counters
+      for output in outputs:
+        if( output.find("WARNING") != -1 ):
+          warnings += 1
+        elif output.find("Not Set") != -1:
+          total_not_set += 1
+
+        print output
+
+      # check for magic numbers and magic flags
+      magic_output = check_magic_numbers.check_magic_numbers(subroutine)
+      if( len(magic_output) > 0 ):
+        # print out the current file name if it has not yet been printed
+        if( not file_name_printed ):
+          print "\n\nFile: " + f.name
+          file_name_printed = True
+        # print each line of output and increment the counter
+        for line in magic_output:
+          print line
+          magic_numbers += 1
 
 
 # print out totals
 print "\nTotal Not Set: " + str(total_not_set)
-print "Total Warnings: " + str(warnings)
+if( show_warnings ):
+  print "Total Warnings: " + str(warnings)
 print "Total Magic Numbers: " + str(magic_numbers)
 

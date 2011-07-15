@@ -437,6 +437,14 @@ Instead, do this:
   rtm = rtm * g_per_kg
 \end{verbatim}
 
+If you absolutely need to use a magic number, perhaps because a case 
+specificaton uses one, include a comment on that line saying:
+\begin{verbatim}
+  ! known magic number
+\end{verbatim}
+This will cause the check_for_errors.py script from saying that there is a 
+magic number on this line.
+
 \item  Do not use magic flags, i.e. undefined input arguments to subroutines or 
 functions.  Instead, define the argument just above the call to the subroutine.
 
@@ -450,6 +458,14 @@ This is better documented:
   l_enable_damping = .true.
   call complex_function( wp2, wp3, l_enable_damping )
 \end{verbatim}
+
+If you absolutely need to use a magic flag, include a comment on that line
+saying:
+\begin{verbatim}
+  ! known magic flag
+\end{verbatim}
+This will prevent the check_for_errors.py script from saying that there is a
+magic flag on this line.
 
 \item Do not use the prognostic or diagnostic variable modules anywhere they
 are not used already.  Currently the module \texttt{prognostic\_variables} 
