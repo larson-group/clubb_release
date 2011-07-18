@@ -25,3 +25,10 @@ or --show-warnings is provided, warnings will be printed when a variable is set
 by a subroutine or function call.
 USAGE: "python check_for_errors.py [-w or --show-warnings] <filename>.F90"
 
+check_division.py checks CLUBB source code files for any division that could
+potentially result in a divide-by-zero or divide-by-small-number error. It will
+simply print out any line that contains a division symbol after an equals sign,
+omitting any division that has a max() or has only a constant value in the
+denominator.
+USAGE: "python check_division.py <filename>.F90"
+
