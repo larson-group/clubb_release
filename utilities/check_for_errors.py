@@ -18,6 +18,7 @@ import sys # Handles command line arguments
 sys.path.append( './check_scripts/' ) # use modules from this subdirectory
 import check_uninitialized_output_variables
 import check_magic_numbers
+import glob
 
 #----------------------------------------------------------------------------
 def split_into_subroutines_and_functions(lines):
@@ -112,8 +113,31 @@ magic_numbers = 0
 # a subroutine or function call
 show_warnings = False
 
+files_to_check = []
+
+# If there are no arguments other than the show warnings option, 
+# check all of the CLUBB code
+if( len(sys.argv) == 2 and 
+     (sys.argv[1] == "-w" or sys.argv[1] == "--show-warnings") ):
+  files_to_check.append("-w")
+  files_to_check += glob.glob("../src/*.F90")
+  files_to_check += glob.glob("../src/Benchmark_cases/*.F90")
+  files_to_check += glob.glob("../src/Benchmark_cases/Unreleased_cases/*.F90")
+  files_to_check += glob.glob("../src/CLUBB_core/*.F90")
+  files_to_check += glob.glob("../src/KK_micro/*.F90")
+  files_to_check += glob.glob("../src/Latin_hypercube/*.F90")
+elif( len(sys.argv) == 1 ):
+  files_to_check += glob.glob("../src/*.F90")
+  files_to_check += glob.glob("../src/Benchmark_cases/*.F90")
+  files_to_check += glob.glob("../src/Benchmark_cases/Unreleased_cases/*.F90")
+  files_to_check += glob.glob("../src/CLUBB_core/*.F90")
+  files_to_check += glob.glob("../src/KK_micro/*.F90")
+  files_to_check += glob.glob("../src/Latin_hypercube/*.F90")
+else:
+  files_to_check = sys.argv[1:]
+
 # sys.argv[0] is this file, so skip it
-for arg in sys.argv[1:]:
+for arg in files_to_check:
   # check for the option to show warnings
   if( arg == "-w" or arg == "--show-warnings" ):
     show_warnings = True

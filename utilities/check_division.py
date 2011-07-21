@@ -14,8 +14,8 @@
 # potential errors.
 
 
-import sys
-import pdb
+import sys # for command line arguments
+import glob # to get all files in a directory
 
 #---------------------------------------------------------------------------
 def remove_comments_and_continuations(lines):
@@ -200,8 +200,21 @@ def line_has_division(line):
 
 total_divisions = 0
 
+files_to_check = []
+
+# If there are no arguments, check all of the CLUBB code
+if( len(sys.argv) == 1 ):
+  files_to_check += glob.glob("../src/*.F90")
+  files_to_check += glob.glob("../src/Benchmark_cases/*.F90")
+  files_to_check += glob.glob("../src/Benchmark_cases/Unreleased_cases/*.F90")
+  files_to_check += glob.glob("../src/CLUBB_core/*.F90")
+  files_to_check += glob.glob("../src/KK_micro/*.F90")
+  files_to_check += glob.glob("../src/Latin_hypercube/*.F90")
+else:
+  files_to_check = sys.argv[1:]
+
 # sys.argv[0] is this file, so skip it
-for arg in sys.argv[1:]:
+for arg in files_to_check:
   # ignore any files that are not .F90 files
   if( arg.find(".F90") != -1 ):
     # open the file for reading
