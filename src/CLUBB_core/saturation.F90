@@ -320,7 +320,7 @@ module saturation
 
     ! Since this approximation is only good out to -85 degrees Celsius we
     ! truncate the result here
-    T_in_C = max( T_in_C, -85. )
+    T_in_C = max( T_in_C, -85. ) ! Known magic number
 
     ! Polynomial approx. (Flatau, et al. 1992)
 
@@ -368,7 +368,7 @@ module saturation
 
     ! (Bolton 1980) approx.
     ! Generally this more computationally expensive than the Flatau polnomial expansion
-    esat = 611.2 * exp( (17.67*(T_in_K-T_freeze_K)) / (T_in_K-29.65) )
+    esat = 611.2 * exp( (17.67*(T_in_K-T_freeze_K)) / (T_in_K-29.65) ) ! Known magic number
 
     return
   end function sat_vapor_press_liq_bolton
@@ -400,7 +400,7 @@ module saturation
              5.02808*log10(373.16/T_in_K)- &
              1.3816e-7*(10.**(11.344*(1.-T_in_K/373.16))-1.)+ &
              8.1328e-3*(10.**(-3.49149*(373.16/T_in_K-1.))-1.)+ &
-             log10(1013.246))*100.
+             log10(1013.246))*100. ! Known magic number
 
     return
   end function sat_vapor_press_liq_gfdl
@@ -561,7 +561,7 @@ module saturation
 
     ! Since this approximation is only good out to -90 degrees Celsius we
     ! truncate the result here
-    T_in_C = max( T_in_C, -90. )
+    T_in_C = max( T_in_C, -90. ) ! Known magic number
 
     ! Polynomial approx. (Flatau, et al. 1992)
 !   esati = a(1)
@@ -631,7 +631,7 @@ module saturation
 
           esati = 10.**(-9.09718*(273.16/T_in_k-1.)-3.56654* &
           log10(273.16/T_in_k)+0.876793*(1.-T_in_k/273.16)+ &
-          log10(6.1071))*100.
+          log10(6.1071))*100. ! Known magic number
 
     return
 

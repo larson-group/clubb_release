@@ -84,7 +84,7 @@ module nov11
 
       do k = 1, gr%nnzp, 1
         if ( gr%zt(k) > ( 2687.5 + gr%zm(1) ) ) then
-          rtm(k) = 0.89 * rtm(k)
+          rtm(k) = 0.89 * rtm(k) ! Known magic number
         end if
       end do
 
@@ -259,7 +259,7 @@ module nov11
 
       do k = 1, gr%nnzp, 1
         if ( gr%zt(k) > ( 2687.5 + gr%zm(1) ) ) then
-          rtm(k) = 0.89 * rtm(k)
+          rtm(k) = 0.89 * rtm(k) ! Known magic number
         end if
       end do
 

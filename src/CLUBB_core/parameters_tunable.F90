@@ -251,7 +251,7 @@ module parameters_tunable
     ! way to produce grid independent results is to set lmin to be
     ! some fixed value at the surface. -dschanen 21 May 2007
     !lmin = lmin_coef * deltaz  ! Old
-    lmin = lmin_coef * 40.0 ! New fixed value
+    lmin = lmin_coef * 40.0 ! New fixed value - Known magic number
 
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
     call adj_low_res_nu &

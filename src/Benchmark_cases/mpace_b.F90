@@ -33,7 +33,8 @@ module mpace_b
   !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
   !-----------------------------------------------------------------------
 
-    use constants_clubb, only: Rd, Cp, Lv, p0, rc_tol, zero_threshold, grav ! Variable(s)
+    use constants_clubb, only: Rd, Cp, Lv, p0, rc_tol, zero_threshold, &
+                               grav, sec_per_day, g_per_kg ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -101,11 +102,11 @@ module mpace_b
 
     ! Compute large-scale tendencies
     do k=1,gr%nnzp
-     t_tendency = min( -4.,-15.*(1.-((p_sfc-p_in_Pa(k))/21818.)) ) ! K/day
+     t_tendency = min( -4.,-15.*(1.-((p_sfc-p_in_Pa(k))/21818.)) ) ! K/day - known magic number
      thlm_forcing(k) = (t_tendency * ((p_sfc/p_in_Pa(k)) ** (Rd/Cp)))  & 
-                      / 86400. ! K/s
+                      / sec_per_day ! K/s
      rtm_forcing(k)  = min( 0.164,-3*(1-((p_sfc-p_in_Pa(k))/15171.)) ) /  & 
-                   1000. / 86400. ! g/kg/day -> kg/kg/s
+                   g_per_kg / sec_per_day ! g/kg/day -> kg/kg/s - known magic number
     end do
 
     ! Test scalars with thetal and rt if desired

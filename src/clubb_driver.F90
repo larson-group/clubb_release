@@ -374,6 +374,8 @@ module clubb_driver
 
     real :: sigma_g
 
+    logical :: l_restart_input
+
     ! Definition of namelists
     namelist /model_setting/  & 
       runtype, nzmax, grid_type, deltaz, zm_init, zm_top, & 
@@ -487,7 +489,7 @@ module clubb_driver
 
     ! Figure out which I/O unit to use for OpenMP runs
 #ifdef _OPENMP
-    iunit = omp_get_thread_num( ) + 10
+    iunit = omp_get_thread_num( ) + 10 ! Known magic number
 #else
     iunit = 10
 #endif
@@ -862,7 +864,7 @@ module clubb_driver
 
 
 #ifdef _OPENMP
-    iunit = omp_get_thread_num( ) + 50
+    iunit = omp_get_thread_num( ) + 50 ! Known magic number
 #else
     iunit = 50
 #endif
@@ -935,7 +937,8 @@ module clubb_driver
       ! If we're doing an inputfields run, get the values for our
       ! model arrays from a netCDF or GrADS file
       if ( l_input_fields ) then
-        call compute_timestep( iunit, stat_file_zt, .false., time_current, &    ! Intent(in)
+        l_restart_input = .false.
+        call compute_timestep( iunit, stat_file_zt, l_restart_input, time_current, &  ! Intent(in)
                                itime_nearest )                                  ! Intent(out)
 
         call stat_fields_reader( max( itime_nearest, 1 ) )                     ! Intent(in)
@@ -1341,7 +1344,8 @@ module clubb_driver
 
     case ( "coamps" )
       ! Initialize Ncnm as in COAMPS
-      Ncnm(1:gr%nnzp) = 30.0 * (1.0 + exp( -gr%zt(1:gr%nnzp)/2000.0 )) * cm3_per_m3
+      Ncnm(1:gr%nnzp) = 30.0 * (1.0 + exp( -gr%zt(1:gr%nnzp)/2000.0 )) * &
+             cm3_per_m3 ! Known magic number
     end select
 
 
@@ -1553,7 +1557,7 @@ module clubb_driver
 !          em = 1.0
 !          em = 0.1
       ! 4150 + 2800 m is the top of the cloud in Nov11
-      cloud_top_height = 2800. + gr%zm(1)
+      cloud_top_height = 2800. + gr%zm(1) ! Known magic number
       do k=1,gr%nnzp
         if ( gr%zm(k) < cloud_top_height ) then
 
@@ -1607,7 +1611,7 @@ module clubb_driver
 !          em = 1.0
 !          em = 0.1
       ! 4150 + 1400 m is the top of the cloud in Nov11
-      cloud_top_height = 2200. + gr%zm(1)
+      cloud_top_height = 2200. + gr%zm(1) ! Known magic number
       do k=1,gr%nnzp
         if ( gr%zm(k) < cloud_top_height ) then
           em(k) = 0.01
@@ -1628,7 +1632,7 @@ module clubb_driver
 !          em = 1.0
 !          em = 0.1
       ! 4150 + 1400 m is the top of the cloud in Nov11
-      cloud_top_height = 3500. + gr%zm(1)
+      cloud_top_height = 3500. + gr%zm(1) ! Known magic number
       do k=1,gr%nnzp
         if ( gr%zm(k) < cloud_top_height ) then
           em(k) = 0.01
@@ -2691,6 +2695,8 @@ module clubb_driver
     ! Local variables
     integer :: timestep
 
+    logical :: l_restart
+
 
     ! --- Begin Code ---
 
@@ -2814,8 +2820,9 @@ module clubb_driver
     call set_filenames( "../"//trim( restart_path_case ) )
     ! Determine the nearest timestep in the GRADS file to the
     ! restart time.
+    l_restart = .true.
     call compute_timestep &
-      ( iunit, stat_file_zt, .true., time_restart, &! Intent(in)
+      ( iunit, stat_file_zt, l_restart, time_restart, &! Intent(in)
         timestep )                                                                 ! Intent(out)
 
     ! Sanity check for input time_restart
@@ -2995,7 +3002,8 @@ module clubb_driver
       wpthep  ! w'theta_e'                                 [m K/s]
 
     real :: &
-      ubar        ! mean sfc wind speed                        [m/s]
+      ubar, &     ! mean sfc wind speed                        [m/s]
+      rho_sfc     ! Density at zm(1)      [kg/m^3]
 
     ! Flags to help avoid code duplication
     logical :: &
@@ -3253,7 +3261,8 @@ module clubb_driver
     case ( "arm" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_sfclyr( time_current, gr%zt(2), 1.1,  &       ! Intent(in)
+      rho_sfc = 1.1
+      call arm_sfclyr( time_current, gr%zt(2), rho_sfc,  &   ! Intent(in)
                         thlm(2), ubar,               &       ! Intent(in)
                         wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
 

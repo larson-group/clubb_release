@@ -266,7 +266,8 @@ module inputfields
     logical, dimension(:), allocatable ::  &
       l_lin_int_zm  ! Flag that is turned on if linear interpolation is needed.
 
-    integer :: k  ! Array index
+    integer :: k, &  ! Array index
+               unit_number ! file unit number
 
     ! ---- Begin Code ----
 
@@ -712,10 +713,11 @@ module inputfields
 
       if ( l_fatal_error ) stop "oops, get_grads_var failed in stat_fields_reader"
 
-    case ( coamps_input_type ) ! COAMPS LES stats data
+    case ( coamps_input_type ) ! COAMPS LES stats data     
+      unit_number = 15
 
       ! stats_sm
-      call open_grads_read( 15, stat_file_zt,  & 
+      call open_grads_read( unit_number, stat_file_zt,  & 
                             fread_var, l_read_error )
 
       if ( l_read_error ) then
@@ -1826,9 +1828,10 @@ module inputfields
     select case ( stats_input_type )
 
     case ( coamps_input_type )
+      unit_number = 15
 
       ! stats_sw
-      call open_grads_read( 15, stat_file_zm, & ! In
+      call open_grads_read( unit_number, stat_file_zm, & ! In
                             fread_var, & ! In/Out
                             l_read_error ) ! Out
 

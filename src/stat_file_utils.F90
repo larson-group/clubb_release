@@ -321,6 +321,8 @@ module stat_file_utils
       tdim,    & ! Dimension to read over for t variable
       divisor
 
+    logical :: l_spec_bound_cond ! special boundary condition for stat_file_average
+
 !-------------------------------------------------------------------------
     l_error = .false.
 
@@ -338,19 +340,22 @@ module stat_file_utils
       tdim = i
     end do
 
+    l_spec_bound_cond = .false.
     stat_file_average_interval & 
-    = stat_file_average & 
-      ( filename, nz, t(1), t(2), out_heights, variable_name, npower, .false., l_error )  & 
-      * ( t(2) - t(1) )
+    = stat_file_average( filename, nz, &
+                         t(1), t(2), out_heights, variable_name, &
+                         npower, l_spec_bound_cond, l_error )  & 
+          * ( t(2) - t(1) )
 
     divisor = t(2) - t(1)
 
     if ( l_error ) return
 
     do i=3, tdim, 2
-      stat_file_temp = stat_file_average & 
-                   ( filename, nz, t(i), t(i+1), out_heights,  & 
-                     variable_name, npower, .false., l_error )
+      l_spec_bound_cond = .false.
+      stat_file_temp = stat_file_average( filename, nz, &
+                               t(i), t(i+1), out_heights, variable_name, &
+                               npower, l_spec_bound_cond, l_error )
       stat_file_average_interval  & 
       = stat_file_average_interval + stat_file_temp * ( t(i+1) - t(i) )
       divisor = divisor + ( t(i+1) - t(i) )
@@ -397,13 +402,16 @@ module stat_file_utils
 
     logical :: l_grads_file, l_error
 
+    integer :: unit_number ! file unit number
+
     ! ---- Begin Code ----
 
     l_grads_file = .not. l_netcdf_file( filename )  
 
     if ( l_grads_file ) then
       ! Read in the control file
-      call open_grads_read( 10, filename, fz, l_error )
+      unit_number = 10
+      call open_grads_read( unit_number, filename, fz, l_error )
 
     else
 
@@ -466,13 +474,16 @@ module stat_file_utils
 
     logical :: l_grads_file, l_error
 
+    integer :: unit_number ! file unit number
+
     ! ---- Begin Code ----
 
     l_grads_file = .not. l_netcdf_file( filename )  
 
     if ( l_grads_file ) then
       ! Read in the control file
-      call open_grads_read( 10, filename, fz, l_error )
+      unit_number = 10
+      call open_grads_read( unit_number, filename, fz, l_error )
 
     else
 

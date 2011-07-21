@@ -140,7 +140,7 @@ module surface_varnce_module
 
       ! Find Monin-Obukhov Length (Andre et al., 1978, p. 1866).
       Lngth = - ( ustar**3 ) /  & 
-                ( 0.35 * (1.0/T0) * grav * wpthlp_sfc )
+                ( 0.35 * (1.0/T0) * grav * wpthlp_sfc ) ! Known magic number
 
       ! Find the value of dimensionless height zeta
       ! (Andre et al., 1978, p. 1866).
@@ -160,23 +160,23 @@ module surface_varnce_module
       IF ( zeta < 0.0 ) THEN
         thlp2_sfc   = reduce_coef  & 
                      * ( wpthlp_sfc**2 / ustar**2 ) & 
-                     * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
+                     * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0) ! Known magic number
         rtp2_sfc    = reduce_coef  & 
                      * ( wprtp_sfc**2 / ustar**2 ) & 
-                     * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
+                     * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0) ! Known magic number
         rtpthlp_sfc = reduce_coef  & 
                      * ( wprtp_sfc*wpthlp_sfc / ustar**2 ) & 
-                     * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
+                     * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0) ! Known magic number
         wp2_sfc     = ( ustar**2 ) & 
-                     * ( 1.75 + 2.0*(-zeta)**(2.0/3.0) )
+                     * ( 1.75 + 2.0*(-zeta)**(2.0/3.0) ) ! Known magic number
       ELSE
         thlp2_sfc   = reduce_coef  & 
-                     * 4.0 * ( wpthlp_sfc**2 / ustar**2 )
+                     * 4.0 * ( wpthlp_sfc**2 / ustar**2 ) ! Known magic number
         rtp2_sfc    = reduce_coef  & 
-                     * 4.0 * ( wprtp_sfc**2 / ustar**2 )
+                     * 4.0 * ( wprtp_sfc**2 / ustar**2 ) ! Known magic number
         rtpthlp_sfc = reduce_coef  & 
-                     * 4.0 * ( wprtp_sfc*wpthlp_sfc / ustar**2 )
-        wp2_sfc     = 1.75 * ustar**2
+                     * 4.0 * ( wprtp_sfc*wpthlp_sfc / ustar**2 ) ! Known magic number
+        wp2_sfc     = 1.75 * ustar**2 ! Known magic number
       ENDIF
 
       ! Calculate wstar following Andre et al., 1978, p. 1866.
@@ -192,11 +192,11 @@ module surface_varnce_module
       ! <u_s'^2> (usp2_sfc in the code), and the formula for the variance of
       ! v_s, which is <v_s'^2> (vsp2_sfc in the code).
       IF ( wpthlp_sfc > 0.0 ) THEN
-        usp2_sfc = 4.0 * ustar**2 + 0.3 * wstar**2
-        vsp2_sfc = 1.75 * ustar**2 + 0.3 * wstar**2
+        usp2_sfc = 4.0 * ustar**2 + 0.3 * wstar**2 ! Known magic number
+        vsp2_sfc = 1.75 * ustar**2 + 0.3 * wstar**2 
       ELSE
-        usp2_sfc = 4.0 * ustar**2
-        vsp2_sfc = 1.75 * ustar**2
+        usp2_sfc = 4.0 * ustar**2 ! Known magic number
+        vsp2_sfc = 1.75 * ustar**2 ! Known magic number
       ENDIF
 
       ! Variance of u, <u'^2>, at the surface can be found from <u_s'^2>,
@@ -235,25 +235,25 @@ module surface_varnce_module
             sclrprtp_sfc(i)  & 
             = reduce_coef  & 
              * ( wpsclrp_sfc(i)*wprtp_sfc / ustar**2 ) & 
-             * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
+             * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0) ! Known magic number
             sclrpthlp_sfc(i)  & 
             = reduce_coef  & 
              * ( wpsclrp_sfc(i)*wpthlp_sfc / ustar**2 ) & 
-             * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
+             * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0) ! Known magic number
             sclrp2_sfc(i)  & 
             = reduce_coef   & 
              * ( wpsclrp_sfc(i)**2 / ustar**2 ) & 
-             * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
+             * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0) ! Known magic number
           ELSE
             sclrprtp_sfc(i)  & 
             = reduce_coef  & 
-             * 4.0 * ( wpsclrp_sfc(i)*wprtp_sfc / ustar**2 )
+             * 4.0 * ( wpsclrp_sfc(i)*wprtp_sfc / ustar**2 ) ! Known magic number
             sclrpthlp_sfc(i)  & 
             = reduce_coef  & 
-             * 4.0 * ( wpsclrp_sfc(i)*wpthlp_sfc / ustar**2 )
+             * 4.0 * ( wpsclrp_sfc(i)*wpthlp_sfc / ustar**2 ) ! Known magic number
             sclrp2_sfc(i)  & 
             = reduce_coef & 
-             * 4.0 * ( wpsclrp_sfc(i)**2 / ustar**2 )
+             * 4.0 * ( wpsclrp_sfc(i)**2 / ustar**2 ) ! Known magic number
           ENDIF
         ENDDO ! 1,...sclr_dim
       ENDIF
@@ -274,7 +274,7 @@ module surface_varnce_module
 
       ! Surface friction velocity following Andre et al. 1978
 
-      uf = sqrt( ustar2 + 0.3 * wstar * wstar )
+      uf = sqrt( ustar2 + 0.3 * wstar * wstar ) ! Known magic number
       uf = max( ufmin, uf )
 
       ! Compute estimate for surface second order moments
@@ -291,11 +291,11 @@ module surface_varnce_module
       !         2) The surface correlation of rt & thl is 0.5.
       ! Brian Griffin; February 2, 2008.
 
-      thlp2_sfc = 0.4 * a * ( wpthlp_sfc / uf )**2
+      thlp2_sfc = 0.4 * a * ( wpthlp_sfc / uf )**2 ! Known magic number
 
-      rtp2_sfc = 0.4 * a * ( wprtp_sfc / uf )**2
+      rtp2_sfc = 0.4 * a * ( wprtp_sfc / uf )**2 ! Known magic number
 
-      rtpthlp_sfc = 0.2 * a * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
+      rtpthlp_sfc = 0.2 * a * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf ) ! Known magic number
 
       ! End Vince Larson's change.
 
@@ -322,16 +322,18 @@ module surface_varnce_module
           if ( i == iisclr_rt ) then
             ! If we are trying to imitate rt with the scalar, then we 
             ! use the variance coefficient from above
-            sclrprtp_sfc(i) = 0.4 * a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)
+            sclrprtp_sfc(i) = 0.4 * a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)!Known magic number
           else
-            sclrprtp_sfc(i) = 0.2 * a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)
+            sclrprtp_sfc(i) = 0.2 * a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)!Known magic number
           end if
 
           if ( i == iisclr_thl ) then
             ! As above, but for thetal
-            sclrpthlp_sfc(i) = 0.4 * a * (wpthlp_sfc / uf) * (wpsclrp_sfc(i) / uf)
+            sclrpthlp_sfc(i) = 0.4 * a * (wpthlp_sfc / uf) &
+                                * (wpsclrp_sfc(i) / uf) ! Known magic number
           else
-            sclrpthlp_sfc(i) = 0.2 * a * (wpthlp_sfc / uf) * (wpsclrp_sfc(i) / uf)
+            sclrpthlp_sfc(i) = 0.2 * a * (wpthlp_sfc / uf) &
+                                * (wpsclrp_sfc(i) / uf) ! Known magic number
           end if
 
           sclrp2_sfc(i) = sclr_var_coef * a * ( wpsclrp_sfc(i) / uf )**2

@@ -68,7 +68,7 @@ module gabls2
       ! per GABLS2 specification
       do k=1,gr%nnzp
         if (gr%zt(k) <= 1000) then
-          wm_zt(k) = -0.005 * (gr%zt(k) / 1000)
+          wm_zt(k) = -0.005 * (gr%zt(k) / 1000) ! Known magic number
         else
           wm_zt(k) = -0.005
         end if
@@ -125,7 +125,7 @@ module gabls2
 !   http://people.su.se/~gsven/gabls/
 !-------------------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, Rd, p0, grav ! Variable(s)
+    use constants_clubb, only: Cp, Rd, p0, grav, sec_per_hr ! Variable(s)
 
     use saturation, only: sat_mixrat_liq ! Procedure(s)
 
@@ -167,6 +167,7 @@ module gabls2
                            ! model level. (Per ATEX spec)
       time_in_hours,       & ! time in hours from 00 local on first day of experiment 
                            ! (experiment starts at 14)
+      time_in_hours_init, & ! Initial time in hours is 14
       sstheta,             & ! Sea surface potential temperature [K].
       bflx                   ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
 
@@ -174,22 +175,25 @@ module gabls2
            ((log( 10/z0 ))/(log( lowest_level/z0 ))) ! Modification in case
     ! lowest model level isn't at 10 m,
     ! from ATEX specification
-    time_in_hours = real((time - time_initial) / 3600. + 14.) ! at initial time,
+    time_in_hours_init = 14
+    time_in_hours = real((time - time_initial) / sec_per_hr + time_in_hours_init) 
+    ! at initial time,
     ! time_in_hours = 14
     ! (14 local; 19 UTC)
 
 
     ! Compute sea surface temperature
     if (time_in_hours <= 17.4) then
-      T_sfc = -10 - (25*cos(time_in_hours*0.22 + 0.2)) ! SST in celsius per GABLS2 spec
+      ! SST in celsius per GABLS2 spec
+      T_sfc = -10 - (25*cos(time_in_hours*0.22 + 0.2)) ! Known magic number
     else if (time_in_hours <= 30.0) then
-      T_sfc = (-0.54 * time_in_hours) + 15.2
+      T_sfc = (-0.54 * time_in_hours) + 15.2 ! Known magic number
     else if (time_in_hours <= 41.9) then
-      T_sfc = -7 - (25*cos(time_in_hours*0.21 + 1.8))
+      T_sfc = -7 - (25*cos(time_in_hours*0.21 + 1.8)) ! Known magic number
     else if (time_in_hours <= 53.3) then
-      T_sfc = (-0.37 * time_in_hours) + 18.0
+      T_sfc = (-0.37 * time_in_hours) + 18.0 ! Known magic number
     else if (time_in_hours <= 65.6) then
-      T_sfc = -4 - (25*cos(time_in_hours*0.22 + 2.5))
+      T_sfc = -4 - (25*cos(time_in_hours*0.22 + 2.5)) ! Known magic number
     else
       T_sfc = 4.4
     end if
@@ -199,10 +203,9 @@ module gabls2
 
     ! Compute heat and moisture fluxes
     wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm, T_sfc, exner_sfc ) 
-    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) ) * 0.025
-
-    ! 2.5% factor from
-    ! GABLS2 specification
+    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
+    ! The latent heat flux at the surface is 2.5% of its potential value
+    wprtp_sfc = wprtp_sfc * 0.025 ! Known magic number
 
     ! Compute momentum fluxes
     bflx  = wpthlp_sfc * grav / sstheta

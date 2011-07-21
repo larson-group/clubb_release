@@ -269,7 +269,7 @@ module advance_xp2_xpyp_module
       sclrprtp_chnge, & ! Net change in sclr'r_t' due to clipping  [{units vary}]
       sclrpthlp_chnge   ! Net change in sclr'th_l' due to clipping [{units vary}]
 
-    logical :: l_scalar_calc
+    logical :: l_scalar_calc, l_first_clip_ts, l_last_clip_ts
 
     ! Loop indices
     integer :: i, k, km1, kp1
@@ -361,7 +361,7 @@ module advance_xp2_xpyp_module
         rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2  & 
                                + rtp2_zt(kp1)**2 ) / 3.0
         ! Account for units (kg/kg)**4  Vince Larson 29 Jan 2008
-        rtp2_zt_sqd_3pt(k) = 1e12 * rtp2_zt_sqd_3pt(k)
+        rtp2_zt_sqd_3pt(k) = 1e12 * rtp2_zt_sqd_3pt(k) ! Known magic number
 
         ! Compute the square of thlp2_zt, averaged over 3 points.  26 Jan 2008
         thlp2_zt_sqd_3pt(k) = ( thlp2_zt(km1)**2 + thlp2_zt(k)**2  & 
@@ -371,7 +371,7 @@ module advance_xp2_xpyp_module
         rtpthlp_zt_sqd_3pt(k) = ( rtpthlp_zt(km1)**2 + rtpthlp_zt(k)**2  & 
                                   + rtpthlp_zt(kp1)**2 ) / 3.0
         ! Account for units (kg/kg)**2 Vince Larson 29 Jan 2008
-        rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k)
+        rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k) ! Known magic number
 
       enddo
 
@@ -635,8 +635,10 @@ module advance_xp2_xpyp_module
     ! -1 <= corr_(r_t,th_l) <= 1.
     ! Since r_t'^2, th_l'^2, and r_t'th_l' are all computed in the
     ! same place, clipping for r_t'th_l' only has to be done once.
-    call clip_covariance( xp2_xpyp_rtpthlp, .true.,  & ! Intent(in)
-                          .true., dt, rtp2, thlp2,  &  ! Intent(in)
+    l_first_clip_ts = .true.
+    l_last_clip_ts = .true.
+    call clip_covariance( xp2_xpyp_rtpthlp, l_first_clip_ts,  & ! Intent(in)
+                          l_last_clip_ts, dt, rtp2, thlp2,  &  ! Intent(in)
                           rtpthlp, rtpthlp_chnge )     ! Intent(inout)
 
     if ( l_scalar_calc ) then
@@ -778,8 +780,10 @@ module advance_xp2_xpyp_module
           call clip_variance( clip_sclrprtp, dt, threshold, & ! Intent(in)
                               sclrprtp(:,i) )                 ! Intent(inout)
         else
-          call clip_covariance( clip_sclrprtp, .true.,  &            ! Intent(in) 
-                                .true., dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
+          l_first_clip_ts = .true.
+          l_last_clip_ts = .true.
+          call clip_covariance( clip_sclrprtp, l_first_clip_ts,  &            ! Intent(in) 
+                                l_last_clip_ts, dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
                                 sclrprtp(:,i), sclrprtp_chnge(:,i) ) ! Intent(inout)
         end if
       enddo
@@ -799,9 +803,10 @@ module advance_xp2_xpyp_module
           call clip_variance( clip_sclrpthlp, dt, threshold, & ! Intent(in)
                               sclrpthlp(:,i) )                 ! Intent(inout)
         else
-
-          call clip_covariance( clip_sclrpthlp, .true.,  &            ! Intent(in) 
-                                .true., dt, sclrp2(:,i), thlp2(:), &   ! Intent(in) 
+          l_first_clip_ts = .true.
+          l_last_clip_ts = .true.
+          call clip_covariance( clip_sclrpthlp, l_first_clip_ts,  &            ! Intent(in) 
+                                l_last_clip_ts, dt, sclrp2(:,i), thlp2(:), &   ! Intent(in) 
                                 sclrpthlp(:,i), sclrpthlp_chnge(:,i) ) ! Intent(inout)
         end if
       enddo

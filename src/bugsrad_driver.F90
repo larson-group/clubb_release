@@ -55,7 +55,7 @@ module bugsrad_driver
 ! All code external to this based on the BUGSrad source from 2004/7/10
 !-------------------------------------------------------------------------------
 
-    use constants_clubb, only: fstderr, grav, Cp, cloud_frac_min ! Variable(s)
+    use constants_clubb, only: fstderr, grav, Cp, cloud_frac_min, pascal_per_mb ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -185,9 +185,9 @@ module bugsrad_driver
     buffer = lin_int_buffer + extend_atmos_range_size
 
     ! Convert to millibars
-    pinmb(1,1:(nz-1))  = dble( p_in_Pa(2:nz) / 100.0 ) ! t grid in CLUBB
+    pinmb(1,1:(nz-1))  = dble( p_in_Pa(2:nz) / pascal_per_mb ) ! t grid in CLUBB
 
-    playerinmb(1,1:nz) = dble( p_in_Pam / 100.0 ) ! m grid in CLUBB
+    playerinmb(1,1:nz) = dble( p_in_Pam / pascal_per_mb ) ! m grid in CLUBB
 
     ! Determine rcm in cloud
     rcm_in_cloud = rcm / max( cloud_frac, cloud_frac_min )
@@ -213,7 +213,7 @@ module bugsrad_driver
 
     ! Ozone at < 1 km = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976.
     !   Convert from g to kg.
-    o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) * 0.001 )
+    o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) * 0.001 ) !Known magic number
 
     ! Convert and transpose as needed
     rcil(1,buffer+1:(nz-1)+buffer)            = flip( dble( rim(2:nz) ), nz-1 )

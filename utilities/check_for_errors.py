@@ -44,18 +44,19 @@ def split_into_subroutines_and_functions(lines):
     line = lines[i].rstrip()
     line_number = i + 1
 
+    known_item = False
+
     # Append this line if it is the start of a subroutine or if the start
     # of the subroutine has already been found
     if( (((line.find("subroutine") != -1) or (line.find("function") != -1)) and
          (line.find("end") == -1 )) or (len(current_subroutine) > 0) ):
       # Remove all comments
       if( line.find("!") != -1 ):
-        # Remove any lines that are marked as known magic numbers
+        # Mark any lines that are marked as known magic numbers
         if(line.lower().find("known magic number") != -1 or
            line.lower().find("known magic flag") != -1 ):
-          line = ""
-        else:
-          line = line[:line.find("!")].strip()
+          known_item = True
+        line = line[:line.find("!")].strip()
       # ignore ifdefs and endifs
       if( line.find("#ifdef") != -1 ):
         line = ""
@@ -71,8 +72,16 @@ def split_into_subroutines_and_functions(lines):
           line = line.rstrip('&') # remove the '&'
 
           nextline = lines[i+1].strip()
+          # continue over empty lines
+          if( nextline == "" ):
+            nextline = "&"
           # Remove all comments
           if( nextline.find("!") != -1 ):
+            # Mark any lines that are marked as known magic numbers
+            if(nextline.lower().find("known magic number") != -1 or
+                nextline.lower().find("known magic flag") != -1 ):
+              known_item = True
+
             index = nextline.find("!")
             nextline = nextline[:nextline.find("!")].strip()
             if( index == 0 ):
@@ -85,6 +94,10 @@ def split_into_subroutines_and_functions(lines):
           line += nextline.strip() # add the next line and remove whitespace
           
           i += 1
+     
+        # re-insert a comment indicating a known magic item if needed
+        if( known_item ):
+          line += " ! known magic item"
 
         # add the line number to the begining of the line and append it
         current_subroutine.append(str(line_number) + ": " + line)

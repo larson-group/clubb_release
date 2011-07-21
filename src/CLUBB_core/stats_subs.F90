@@ -1738,7 +1738,7 @@ module stats_subs
         else
 
           ! Mark the cloud base at -10 m. if it's clear.
-          call stat_update_var_pt( iz_cloud_base, 1, -10.0 , sfc )
+          call stat_update_var_pt( iz_cloud_base, 1, -10.0 , sfc ) ! Known magic number
 
         endif
 

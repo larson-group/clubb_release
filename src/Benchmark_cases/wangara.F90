@@ -125,8 +125,8 @@ module wangara
 
     ! Compute heat and moisture fluxes
 
-    wpthlp_sfc = real(0.18 * cos( (time_est-45000.0)/36000.0 * pi ))
-    wprtp_sfc  = 1.3e-4 * wpthlp_sfc
+    wpthlp_sfc = real(0.18 * cos( (time_est-45000.0)/36000.0 * pi )) ! Known magic number
+    wprtp_sfc  = 1.3e-4 * wpthlp_sfc ! Known magic number
 
 
     return

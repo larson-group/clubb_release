@@ -189,7 +189,7 @@ module latin_hypercube_driver_module
       if ( l_re_seed ) then
         ! This is the default seed in mt95.  Change this number to try
         ! non-default values.
-        call genrand_init( put=5489_genrand_intg )
+        call genrand_init( put=5489_genrand_intg ) ! Known magic number
       end if
 
       ! Check for a bug where the iteration number isn't incrementing correctly,

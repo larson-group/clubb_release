@@ -308,7 +308,7 @@ module gmres_wrap
           !   print *, "Tempvec before, idx",i,"=",temp(ipar(22)+i-1)
           ! end do
           call mkl_dcsrgemv( 'N', numeqns, csr_dbl_a, csr_ia, csr_ja, &
-                             temp(ipar(22)), temp(ipar(23)) )
+                             temp(ipar(22)), temp(ipar(23)) ) ! Known magic number
           ! do i=1,numeqns,1
           !   print *, "Tempvec after, idx",i,"=",temp(ipar(23)+i-1)
           ! end do
@@ -326,10 +326,10 @@ module gmres_wrap
           !end do
           call mkl_dcsrtrsv( 'L', 'N', 'U', numeqns, &
                              prev_lu, csr_ia, csr_ja, &
-                             temp(ipar(22)), tempvec )
+                             temp(ipar(22)), tempvec ) ! Known magic number
           call mkl_dcsrtrsv( 'U', 'N', 'N', numeqns, &
                              prev_lu, csr_ia, csr_ja, &
-                             tempvec, temp(ipar(23)) )
+                             tempvec, temp(ipar(23)) ) ! Known magic number
           !do i=1,numeqns,1
           !  print *, "Tempvec after, idx",i,"=",temp(ipar(23)+i-1)
           !end do

@@ -192,6 +192,8 @@ module advance_windm_edsclrm_module
 
     integer :: i     ! Array index
 
+    logical :: l_first_clip_ts, l_last_clip_ts ! flags for clip_covariance
+
     !--------------------------- Begin Code ------------------------------------
 
     ! Initialize to no errors
@@ -370,9 +372,11 @@ module advance_windm_edsclrm_module
       ! each other in advance_clubb_core, clipping for u'w' has to be done three
       ! times during each timestep (once after each variable has been updated).
       ! This is the third instance of u'w' clipping.
-      call clip_covariance( clip_upwp, .false.,      & ! intent(in)
-                            .true., dt, wp2, up2, & ! intent(in)
-                            upwp, upwp_chnge )      ! intent(inout)
+      l_first_clip_ts = .false.
+      l_last_clip_ts = .true.
+      call clip_covariance( clip_upwp, l_first_clip_ts,      & ! intent(in)
+                            l_last_clip_ts, dt, wp2, up2,    & ! intent(in)
+                            upwp, upwp_chnge )                 ! intent(inout)
 
       ! Clipping for v'w'
       !
@@ -385,23 +389,26 @@ module advance_windm_edsclrm_module
       ! each other in advance_clubb_core, clipping for v'w' has to be done three
       ! times during each timestep (once after each variable has been updated).
       ! This is the third instance of v'w' clipping.
-      call clip_covariance( clip_vpwp, .false.,      & ! intent(in)
-                            .true., dt, wp2, vp2, & ! intent(in)
-                            vpwp, vpwp_chnge )      ! intent(inout)
+      l_first_clip_ts = .false.
+      l_last_clip_ts = .true.
+      call clip_covariance( clip_vpwp, l_first_clip_ts,      & ! intent(in)
+                            l_last_clip_ts, dt, wp2, vp2,    & ! intent(in)
+                            vpwp, vpwp_chnge )                 ! intent(inout)
 
     else
 
       ! In this case, it is assumed that
       !   u'^2 == v'^2 == w'^2, and the variables `up2' and `vp2' do not interact with
       !   any other variables.
+      l_first_clip_ts = .false.
+      l_last_clip_ts = .true.
+      call clip_covariance( clip_upwp, l_first_clip_ts,      & ! intent(in)
+                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
+                            upwp, upwp_chnge )                 ! intent(inout)
 
-      call clip_covariance( clip_upwp, .false.,      & ! intent(in)
-                            .true., dt, wp2, wp2, & ! intent(in)
-                            upwp, upwp_chnge )      ! intent(inout)
-
-      call clip_covariance( clip_vpwp, .false.,      & ! intent(in)
-                            .true., dt, wp2, wp2, & ! intent(in)
-                            vpwp, vpwp_chnge )      ! intent(inout)
+      call clip_covariance( clip_vpwp, l_first_clip_ts,      & ! intent(in)
+                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
+                            vpwp, vpwp_chnge )                 ! intent(inout)
 
     endif ! l_tke_aniso
 

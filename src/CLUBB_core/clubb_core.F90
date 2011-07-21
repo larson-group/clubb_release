@@ -689,7 +689,7 @@ module clubb_core
 
     ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
     ! than -1.4 -dschanen 4 Jan 2011
-    a3_coef = max( a3_coef, -1.4 )
+    a3_coef = max( a3_coef, -1.4 ) ! Known magic number
 
     a3_coef_zt = zm2zt( a3_coef )
 
@@ -963,7 +963,7 @@ module clubb_core
 
     if ( .not. l_tke_aniso ) then
       ! tke is assumed to be 3/2 of wp2
-      em = 1.5 * wp2
+      em = 1.5 * wp2 ! Known magic number
     else
       em = 0.5 * ( wp2 + vp2 + up2 )
     end if

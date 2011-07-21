@@ -191,7 +191,8 @@ module error
 
     real, dimension(nparams) :: rtmp ! Scratch space
 
-    integer :: i, j ! looping variables
+    integer :: i, j, & ! looping variables
+               iunit ! file unit
 
     !-----------------------------------------------------------------------
 
@@ -250,20 +251,22 @@ module error
       ! Initialize variable names to spaces
       t_variables(1:max_variables)  = "          "
 
+      iunit = 10
+
       ! Open our namelist input file
-      open(unit=10, file=filename, status='old')
+      open(unit=iunit, file=filename, status='old')
 
       ! Determine which files to read data from based on namelist
-      read(unit=10, nml=stats)
+      read(unit=iunit, nml=stats)
 
       ! Read in the models to be run
-      read(unit=10, nml=cases)
+      read(unit=iunit, nml=cases)
 
       ! Close our input namelist file
-      close(unit=10)
+      close(unit=iunit)
 
       ! Read in initial constant values
-      call read_parameters( 10, filename, params )
+      call read_parameters( iunit, filename, params )
 
       ! Allocate the arrays for the tuning variables
 
@@ -314,7 +317,7 @@ module error
 
       ! Setup the simplex
 
-      call read_param_spread( 10, filename, params_index,  & 
+      call read_param_spread( iunit, filename, params_index,  & 
                               rtmp, ndim )
 
       if ( ndim == 0 ) then
@@ -854,65 +857,68 @@ module error
     ! Local Variables
     real, dimension(nparams) :: params_local
 
-    integer :: i, j    ! loop variable
+    integer :: i, j, & ! loop variable
+               iunit   ! file unit
 
     character :: i_c   ! loop variable in ASCII
+    
+    iunit = 20
 
     ! Open a new file
-    open(unit=20, file=results_f,  & 
+    open(unit=iunit, file=results_f,  & 
          action="write", access="sequential")
 
     ! Write variables to results file
     ! All this is based on the previous namelists in error.in,
     ! except for the constants parameters for CLUBB
 
-    write(unit=20,fmt=*) "! Parameter file " // results_f
-    write(unit=20,fmt=*) "&stats"
-    write(unit=20,fmt=*) "f_tol = ", f_tol
+    write(unit=iunit,fmt=*) "! Parameter file " // results_f
+    write(unit=iunit,fmt=*) "&stats"
+    write(unit=iunit,fmt=*) "f_tol = ", f_tol
     if (l_results_stdout) then
-      write(unit=20,fmt=*) "l_results_stdout = " // ".true."
+      write(unit=iunit,fmt=*) "l_results_stdout = " // ".true."
     else
-      write(unit=20,fmt=*) "l_results_stdout = " // ".false."
+      write(unit=iunit,fmt=*) "l_results_stdout = " // ".false."
     end if
     if (l_results_file) then
-      write(unit=20,fmt=*) "l_results_file = " // ".true."
+      write(unit=iunit,fmt=*) "l_results_file = " // ".true."
     else
-      write(unit=20,fmt=*) "l_results_file = " // ".false."
+      write(unit=iunit,fmt=*) "l_results_file = " // ".false."
     end if
     if (l_stdout_on_invalid) then
-      write(unit=20,fmt=*) "l_stdout_on_invalid = " // ".true."
+      write(unit=iunit,fmt=*) "l_stdout_on_invalid = " // ".true."
     else
-      write(unit=20,fmt=*) "l_stdout_on_invalid = " // ".false."
+      write(unit=iunit,fmt=*) "l_stdout_on_invalid = " // ".false."
     end if
-    write(unit=20,fmt=*) "t_variables = "
+    write(unit=iunit,fmt=*) "t_variables = "
     do i=1, v_total
-      write(unit=20,fmt=*) dbqt, hoc_v(i), dbqt, ",",  & 
+      write(unit=iunit,fmt=*) dbqt, hoc_v(i), dbqt, ",",  & 
         dbqt, les_v(i), dbqt, ","
     end do
-    write(unit=20,fmt=*) "weight_var_nl = ", weight_var
-    write(unit=20,fmt=*) "anneal_temp = " , anneal_temp
-    write(unit=20,fmt=*) "anneal_iter = " , anneal_iter
-    write(unit=20,fmt=*) "tune_type   = " , tune_type
-    write(unit=20,fmt=*) "/"
+    write(unit=iunit,fmt=*) "weight_var_nl = ", weight_var
+    write(unit=iunit,fmt=*) "anneal_temp = " , anneal_temp
+    write(unit=iunit,fmt=*) "anneal_iter = " , anneal_iter
+    write(unit=iunit,fmt=*) "tune_type   = " , tune_type
+    write(unit=iunit,fmt=*) "/"
 
-    write(unit=20,fmt=*) "&cases"
+    write(unit=iunit,fmt=*) "&cases"
     do i = 1, c_total
       i_c = achar( i + 48 )
-      write(unit=20,fmt=*) "les_stats_file_nl("// i_c //") = ",  & 
+      write(unit=iunit,fmt=*) "les_stats_file_nl("// i_c //") = ",  & 
         dbqt, trim( les_stats_file(i) ), dbqt
-      write(unit=20,fmt=*) "hoc_stats_file_nl("// i_c //") = ",  & 
+      write(unit=iunit,fmt=*) "hoc_stats_file_nl("// i_c //") = ",  & 
         dbqt, trim( hoc_stats_file(i) ), dbqt
-      write(unit=20,fmt=*) "run_file_nl("// i_c //") = ",  & 
+      write(unit=iunit,fmt=*) "run_file_nl("// i_c //") = ",  & 
         dbqt, trim( run_file(i) ), dbqt
-      write(unit=20,fmt=*) "z_i_nl("// i_c //")  = " , z_i(i)
-      write(unit=20,fmt=*) "z_f_nl("// i_c //")  = " ,  z_f(i)
-      write(unit=20,fmt=*) "weight_case_nl("// i_c //") = " ,  & 
+      write(unit=iunit,fmt=*) "z_i_nl("// i_c //")  = " , z_i(i)
+      write(unit=iunit,fmt=*) "z_f_nl("// i_c //")  = " ,  z_f(i)
+      write(unit=iunit,fmt=*) "weight_case_nl("// i_c //") = " ,  & 
         weight_case(i)
-      write(unit=20,fmt=*) "time_nl("// i_c //",:)  = " , time(i,:)
+      write(unit=iunit,fmt=*) "time_nl("// i_c //",:)  = " , time(i,:)
     end do
-    write(unit=20,fmt=*) "/"
+    write(unit=iunit,fmt=*) "/"
 
-    write(unit=20,fmt=*) "&initvars"
+    write(unit=iunit,fmt=*) "&initvars"
 
     ! Copy simplex into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
@@ -931,12 +937,12 @@ module error
 
     ! Output optimal values and all possible CLUBB parameters
     do i=1, nparams, 1
-      write(unit=20,fmt='(A18,F27.20)') & 
+      write(unit=iunit,fmt='(A18,F27.20)') & 
         trim( params_list(i) )//" = ", params_local(i)
     end do
-    write(unit=20,fmt=*) "/"
+    write(unit=iunit,fmt=*) "/"
 
-    write(unit=20,fmt=*) "&initspread"
+    write(unit=iunit,fmt=*) "&initspread"
     ! Copy the spread into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
       ! If the variable isn't being changed, set it to zero
@@ -954,13 +960,13 @@ module error
 
     ! Output the amount each variable was changed for the simplex
     do i=1, nparams, 1
-      write(unit=20,fmt='(a18,f12.5)') & 
+      write(unit=iunit,fmt='(a18,f12.5)') & 
         trim( params_list(i) )//" = ", params_local(i)
     end do
-    write(unit=20,fmt=*) "/"
+    write(unit=iunit,fmt=*) "/"
 
     ! Close new namelist file
-    close(unit=20)
+    close(unit=iunit)
 
     return
   end subroutine output_nml_tuner
@@ -998,19 +1004,22 @@ module error
 
     integer   :: i, j  ! loop variables
 
+    integer :: iunit ! file unit
+
     ! ---- Begin Code ---
     write(6,*) "Writing parameters for namelist to "//results_f
 
+    iunit = 20
     ! Open new file
-    open(unit=20, file=results_f,  & 
+    open(unit=iunit, file=results_f,  & 
          action="write", access="sequential")
 
     ! Write variables to namelist for standalone CLUBB.
     ! All this is based on the previous error.in, except the constants
 
-    write(unit=20,fmt=*) "! Parameter file " // results_f
+    write(unit=iunit,fmt=*) "! Parameter file " // results_f
 
-    write(unit=20,fmt=*) "&initvars"
+    write(unit=iunit,fmt=*) "&initvars"
     ! Copy simplex into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
       ! If the variable isn't in the simplex, leave it as is
@@ -1028,13 +1037,13 @@ module error
 
     ! Output optimal values and all possible CLUBB parameters
     do i=1, nparams, 1
-      write(unit=20,fmt='(A18,F27.20)') & 
+      write(unit=iunit,fmt='(A18,F27.20)') & 
         trim( params_list(i) )//" = ", params_local(i)
     end do
-    write(unit=20,fmt=*) "/"
+    write(unit=iunit,fmt=*) "/"
 
     ! Close new file
-    close(unit=20)
+    close(unit=iunit)
 
     return
   end subroutine output_nml_standalone
@@ -1181,20 +1190,22 @@ module error
       rand_seed  ! Set of 32 bit integers for seeding the generator
 
     integer :: & 
-      InputStatus
+      InputStatus, iunit
 
 !-----------------------------------------------------------------------
 
-    ! ASCII formatted file, usually generated by int2txt
-    open(unit=30, file=seed_file, action='read')
+    iunit = 30
 
-    read(unit=30, fmt=*, iostat=InputStatus) rand_seed(1:rand_size)
+    ! ASCII formatted file, usually generated by int2txt
+    open(unit=iunit, file=seed_file, action='read')
+
+    read(unit=iunit, fmt=*, iostat=InputStatus) rand_seed(1:rand_size)
     if ( InputStatus /= 0 ) then
       write(fstderr,*) "Error reading "//seed_file
       stop
     end if
 
-    close(unit=30)
+    close(unit=iunit)
 
     call genrand_init( put=rand_seed )
 

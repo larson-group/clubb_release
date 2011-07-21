@@ -105,7 +105,8 @@ module parameters_model
     ! Skw_max_mag in this formula.  Note that this is constant, but can't appear
     ! with a Fortran parameter attribute, so we define it here. 
     mixt_frac_max_mag = 1.0 &
-      - ( 0.5 * ( 1.0 - Skw_max_mag / sqrt( 4.0 * ( 1.0 - 0.4 )**3 + Skw_max_mag_sqd ) ) )
+      - ( 0.5 * ( 1.0 - Skw_max_mag / sqrt( 4.0 * ( 1.0 - 0.4 )**3 &
+      + Skw_max_mag_sqd ) ) ) ! Known magic number
 
     Lscale_max = Lscale_max_in
 

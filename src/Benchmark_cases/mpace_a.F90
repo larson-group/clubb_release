@@ -58,7 +58,7 @@ module mpace_a
 !-----------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Rd, Lv, p0, rc_tol, & ! Variable(s)
-                         zero_threshold, fstderr
+                         zero_threshold, fstderr, sec_per_hr, g_per_kg
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -212,9 +212,9 @@ module mpace_a
     do i=1,gr%nnzp
       thlm_forcing(i) = ((dTdt_hoc_grid(i) + vertT_hoc_grid(i)) & 
                        * ((p_sfc/p_in_Pa(i)) ** (Rd/Cp))) & 
-                       / 3600. ! K/s
+                       / sec_per_hr ! K/s
       rtm_forcing(i)  = (dqdt_hoc_grid(i)+vertq_hoc_grid(i)) & 
-       / 1000. / 3600. ! g/kg/hr -> kg/kg/s
+       / g_per_kg / sec_per_hr ! g/kg/hr -> kg/kg/s
     end do
 
     ! Test scalars with thetal and rt if desired

@@ -108,10 +108,10 @@ module atex
 
         if ( gr%zt(i) > 0. .and. gr%zt(i) <= z_inversion ) then
            wm_zt(i)  & 
-             = -0.0065 * gr%zt(i)/z_inversion
+             = -0.0065 * gr%zt(i)/z_inversion ! Known magic number
         else if ( gr%zt(i) > z_inversion .and. gr%zt(i) <= z_inversion+300. ) then
            wm_zt(i) & 
-             = - 0.0065 * ( 1. - (gr%zt(i)-z_inversion)/300. )
+             = - 0.0065 * ( 1. - (gr%zt(i)-z_inversion)/300. ) ! Known magic number
         else
            wm_zt(i) = 0.
         end if
@@ -130,9 +130,9 @@ module atex
      do i = 2, gr%nnzp
 
         if ( gr%zt(i) > 0. .and. gr%zt(i) < z_inversion ) then
-           thlm_forcing(i) = -1.1575e-5 * ( 3. - gr%zt(i)/z_inversion )
+           thlm_forcing(i) = -1.1575e-5 * ( 3. - gr%zt(i)/z_inversion ) ! Known magic number
         else if ( gr%zt(i) > z_inversion .and. gr%zt(i) <= z_inversion+300. ) then
-           thlm_forcing(i) = -2.315e-5 * ( 1. - (gr%zt(i)-z_inversion)/300. )
+           thlm_forcing(i) = -2.315e-5 * ( 1. - (gr%zt(i)-z_inversion)/300. ) ! Known magic number
         else
            thlm_forcing(i) = 0.0
         end if
@@ -143,7 +143,7 @@ module atex
      do i = 2, gr%nnzp
 
         if ( gr%zt(i) > 0. .and. gr%zt(i) < z_inversion ) then
-           rtm_forcing(i) = -1.58e-8 * ( 1. - gr%zt(i)/z_inversion )  ! Brian
+           rtm_forcing(i) = -1.58e-8 * ( 1. - gr%zt(i)/z_inversion )  ! Brian - known magic number
         else
            rtm_forcing(i) = 0.0       ! Brian
         end if
@@ -210,8 +210,9 @@ module atex
     
   ! Local Variable
   real :: & 
-    C_10, &  ! Coefficient
-    time_frac ! Time fraction used for interpolation
+    C_10, &      ! Coefficient
+    time_frac, & ! Time fraction used for interpolation
+    adjustment   ! The adjustment for compute_wprtp_sfc
 
   integer :: &
     before_time, after_time ! The 
@@ -230,9 +231,10 @@ module atex
 
   C_10 = 0.0013
   ustar = 0.3
+  adjustment = 0.0198293
 
   wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, T_sfc, exner_sfc )
-  wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, 0.0198293 )
+  wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, adjustment )
 
   return
   end subroutine atex_sfclyr

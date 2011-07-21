@@ -822,7 +822,7 @@ module clip_explicit
       if ( gr%zt(k) - sfc_elevation <= 100.0 ) then ! Clip for 100 m. AGL.
        !wp3_upper_lim(k) =  0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
        !wp3_lower_lim(k) = -0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
-        wp3_lim_sqd(k) = 0.08 * wp2_zt_cubed(k) ! Where 0.08 == (sqrt(2)*0.2)**2
+        wp3_lim_sqd(k) = 0.08 * wp2_zt_cubed(k) ! Where 0.08 == (sqrt(2)*0.2)**2 known magic number
       else                          ! Clip skewness consistently with a.
        !wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
        !wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
@@ -839,7 +839,7 @@ module clip_explicit
     ! Clipping abs(wp3) to 100. This keeps wp3 from growing too large in some 
     ! deep convective cases, which helps prevent these cases from blowing up.
     where ( abs(wp3) > 100.) &
-      wp3 = sign( 100. , wp3 )
+      wp3 = sign( 100. , wp3 ) ! Known magic number
 
   end subroutine clip_skewness_core
 

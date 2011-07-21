@@ -92,10 +92,11 @@ module gmres_cache
     ! http://www.intel.com/software/products/mkl/docs/webhelp/ssr/functn_rci_dfgmres.html
     ! All of the ipar(15)s have been replaced with "numeqns", as the code
     ! examples seemed to use N (numeqns) in place of ipar(15).
-    gmres_tempsize_norm = ((((2*numeqns + 1)*numeqns)+(numeqns*(numeqns+9))/2) + 1)
+    gmres_tempsize_norm = ((((2*numeqns + 1)*numeqns) &
+                          + (numeqns*(numeqns+9))/2) + 1) ! Known magic number
 
     gmres_tempsize_intlc = ((((2*numeqns_intlc + 1)*numeqns_intlc) &
-                       + (numeqns_intlc*(numeqns_intlc+9))/2) + 1)
+                       + (numeqns_intlc*(numeqns_intlc+9))/2) + 1) ! Known magic number
 
     ! Allocate the temporary arrays
     allocate( gmres_temp_intlc(1:gmres_tempsize_intlc), &

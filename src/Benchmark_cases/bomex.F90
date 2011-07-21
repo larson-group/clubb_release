@@ -77,7 +77,7 @@ module bomex
       else if ( gr%zt(k) >= 300. .and. gr%zt(k) < 500. ) then
         qtm_forcing(k)  & 
           = - 1.2e-8  & 
-              * ( 1. - ( gr%zt(k) - 300. )/( 500. - 300. ) )
+              * ( 1. - ( gr%zt(k) - 300. )/( 500. - 300. ) ) !Known magic number
       else
         qtm_forcing(k) = 0.
       end if

@@ -46,7 +46,7 @@ def is_magic_number_used(line):
       trimmed = line[call_index+4:].strip()
   
   # if trimmed is still blank, then there was no call or assignment on this line
-  if( trimmed != "" ):
+  if( trimmed != "" and line.lower().find("parameter") == -1 ):
     # these are all of the possible characters that could separate two variables
     separators = ['(', ')', '*', '/', '+', '-', ',', '.and.', '.or.']
     
@@ -78,8 +78,10 @@ def is_magic_number_used(line):
       for separator in separators:
         index = trimmed.find(separator, before_index)
         
+        # ignore symbols in scientific notation and ignore - or + signs if
+        # this is the first variable on the line
         while( index > -1 and ((separator == '-' or separator == '+') and 
-              (trimmed[index-1].lower() == 'e' )) ):
+              (trimmed[index-1].lower() == 'e' or vars_found == 0 )) ):
           index = trimmed.find(separator, index+1)
 
         if( index > -1 and (index < after_index or after_index == -1) ):
@@ -120,8 +122,17 @@ def is_magic_number_used(line):
             variable = variable[:variable.find("_")]
           try:
             num = float(variable)
+
+            # -999 is our special number indicating an undefined value
+            # Since this code parses values by minus signs, negative numbers
+            # are read as positive numbers, so check if any instance of 999
+            # is actually -999.
+            if( num == 999 and trimmed[before_index-1] == '-' ):
+              num = -999
+
             # integer values of -6 to 6 are not magic numbers
-            if( (int(num) != num or num < -6 or num > 6) and num != 0.5 ):
+            if( (int(num) != num or num < -6 or num > 6) and num != 0.5 and
+                 num != -999.0 ):
               found = True
               break
           except ValueError:
@@ -170,9 +181,10 @@ def check_magic_numbers(subroutine):
   output = []
 
   for line in subroutine:
-    if( is_magic_number_used(line) ):
-      output.append("    Magic Number or Magic Flag found at line " + 
-                     get_line_number(line))
+    if( line.find("known magic item") == -1 ):
+      if( is_magic_number_used(line) ):
+        output.append("    Magic Number or Magic Flag found at line " + 
+                       get_line_number(line))
 
   return output
 

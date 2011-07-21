@@ -36,6 +36,8 @@ module rico
 
   use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
+  use constants_clubb, only: g_per_kg ! Variable(s)
+
  
 !  use stats_variables
 
@@ -93,7 +95,7 @@ module rico
     else
       rtm_forcing(k) = 0.  ! Units [g kg^-1 s^-1]
     end if
-    rtm_forcing(k) = rtm_forcing(k) / 1000.  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
+    rtm_forcing(k) = rtm_forcing(k) / g_per_kg  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
   end do
 
   ! Test scalars with thetal and rt if desired

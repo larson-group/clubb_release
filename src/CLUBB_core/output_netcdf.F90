@@ -158,7 +158,8 @@ module output_netcdf
     use stat_file_module, only: & 
         stat_file ! Variable
     use constants_clubb, only:  & 
-        fstderr ! Variable
+        fstderr, & ! Variable
+        sec_per_min
 
     implicit none
 
@@ -188,7 +189,7 @@ module output_netcdf
 
     allocate( stat( ncf%nvar ) )
 
-    time = nint( ncf%ntimes * dble( ncf%dtwrite / 60.0 ) ) !  minutes(rounded)
+    time = nint( ncf%ntimes * dble( ncf%dtwrite / sec_per_min ) ) !  minutes(rounded)
 !      time = dble( ncf%ntimes ) * ncf%dtwrite ! seconds
 
     stat(1) = nf90_put_var( ncid=ncf%iounit, varid=ncf%TimeVarId,  & 

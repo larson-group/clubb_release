@@ -1021,6 +1021,8 @@ module advance_xm_wpxp_module
 
     real, dimension(3) :: tmp
 
+    logical :: l_upper_thresh, l_lower_thresh ! flags for clip_semi_imp_lhs
+
 
     ! Initialize the left-hand side matrix to 0.
     lhs = 0.0
@@ -1208,12 +1210,14 @@ module advance_xm_wpxp_module
 
       ! LHS portion of semi-implicit clipping term.
       if ( l_clip_semi_implicit ) then
+        l_upper_thresh = .true.
+        l_lower_thresh = .true.
 
         lhs(m_k_mdiag,k_wpxp) & 
         = lhs(m_k_mdiag,k_wpxp) & 
         + clip_semi_imp_lhs( dt, wpxp(k),  & 
-                             .true., wpxp_upper_lim(k),  & 
-                             .true., wpxp_lower_lim(k) )
+                             l_upper_thresh, wpxp_upper_lim(k),  & 
+                             l_lower_thresh, wpxp_lower_lim(k) )
 
       endif
 
@@ -1302,10 +1306,12 @@ module advance_xm_wpxp_module
 
         if ( l_clip_semi_implicit ) then
           if ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) then
+            l_upper_thresh = .true.
+            l_lower_thresh = .true.
             zmscr15(k) = & 
             - clip_semi_imp_lhs( dt, wpxp(k),  & 
-                                 .true., wpxp_upper_lim(k),  & 
-                                 .true., wpxp_lower_lim(k) )
+                                 l_upper_thresh, wpxp_upper_lim(k),  & 
+                                 l_lower_thresh, wpxp_lower_lim(k) )
           endif
         endif
 
@@ -1469,6 +1475,8 @@ module advance_xm_wpxp_module
       iwpxp_ta, &
       iwpxp_pr1
 
+    logical :: l_upper_thresh, l_lower_thresh ! flags for clip_semi_imp_lhs
+
     ! ---- Begin Code ----
 
     select case ( solve_type )
@@ -1567,12 +1575,14 @@ module advance_xm_wpxp_module
 
       ! RHS portion of semi-implicit clipping (sicl) term.
       if ( l_clip_semi_implicit ) then
+        l_upper_thresh = .true.
+        l_lower_thresh = .true.
 
         rhs(k_wpxp) & 
         = rhs(k_wpxp) & 
         + clip_semi_imp_rhs( dt, wpxp(k), & 
-                             .true., wpxp_upper_lim(k), & 
-                             .true., wpxp_lower_lim(k) )
+                             l_upper_thresh, wpxp_upper_lim(k), & 
+                             l_lower_thresh, wpxp_lower_lim(k) )
 
       endif
 
@@ -1649,10 +1659,12 @@ module advance_xm_wpxp_module
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on clip_semi_imp_rhs.
         if ( l_clip_semi_implicit ) then
+          l_upper_thresh = .true.
+          l_lower_thresh = .true.
           call stat_begin_update_pt( iwpxp_sicl, k, & 
              -clip_semi_imp_rhs( dt, wpxp(k), & 
-                                 .true., wpxp_upper_lim(k), & 
-                                 .true., wpxp_lower_lim(k) ), zm )
+                                 l_upper_thresh, wpxp_upper_lim(k), & 
+                                 l_lower_thresh, wpxp_lower_lim(k) ), zm )
         endif
 
         if ( l_upwind_wpxp_ta ) then ! Use upwind differencing

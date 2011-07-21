@@ -200,7 +200,9 @@ module output_grads
 
     use constants_clubb, only:  & 
         fstderr,  & ! Variable 
-        fstdout
+        fstdout,  &
+        sec_per_hr, &
+        sec_per_min
 
     implicit none
 
@@ -297,7 +299,7 @@ module output_grads
         read(unit=line,fmt=*) tmp, ntimes_in, tmp, date, dt
         read(unit=date(1:2),fmt=*) ihour
         read(unit=date(4:5),fmt=*) imin
-        time_in = ihour * 3600.0 + imin * 60.0
+        time_in = ihour * sec_per_hr + imin * sec_per_min
         read(unit=date(7:8),fmt=*) day_in
         read(unit=date(12:15),fmt=*) year_in
 
@@ -599,6 +601,10 @@ module output_grads
     use calendar, only: & 
       month ! Variable(s)
 
+    use constants_clubb, only: &
+      sec_per_hr, & ! Variable(s)
+      sec_per_min
+
     implicit none
 
     ! Input Variables
@@ -638,9 +644,9 @@ module output_grads
     write(unit=date(7:8),fmt='(i2.2)') iday
     write(unit=date(9:11),fmt='(a3)') month(imonth)
     write(unit=date(12:15),fmt='(i4.4)') iyear
-    write(unit=date(1:2),fmt='(i2.2)') floor( time/3600 )
+    write(unit=date(1:2),fmt='(i2.2)') floor( time/sec_per_hr )
     write(unit=date(4:5),fmt='(i2.2)')  & 
-      int( mod( nint( time ),3600 ) / 60 )
+      int( mod( nint( time ), nint(sec_per_hr) ) / sec_per_min )
 
     return
   end subroutine format_date

@@ -543,10 +543,12 @@ def check_output_variables(subroutine, show_warnings):
     if( var_set == NOT_SET or var_set == SET_BY_SUBROUTINE ):
       # print the subroutine's name
       if( not subroutine_name_printed ):
-        line_number = get_subroutine_line(subroutine)
-        output_text.append( "\n  In subroutine " + get_subroutine_name(subroutine) + 
-            " (line " + str(line_number) + ")" )
-        subroutine_name_printed = True
+        if( (var_set == SET_BY_SUBROUTINE and show_warnings) or
+             var_set == NOT_SET ):
+          line_number = get_subroutine_line(subroutine)
+          output_text.append( "\n  In subroutine " + get_subroutine_name(subroutine) + 
+              " (line " + str(line_number) + ")" )
+          subroutine_name_printed = True
       # if output is not set, output that
       if( var_set == NOT_SET ):
         output_text.append( "    " + output + ": Not Set" )

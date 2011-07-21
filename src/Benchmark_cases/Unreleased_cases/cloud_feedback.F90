@@ -139,7 +139,9 @@ module cloud_feedback
     wprtp_sfc = compute_wprtp_sfc( Cq, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, & 
                                      T_sfc, exner_sfc )
-
+  else
+    wprtp_sfc = -999.0
+    wpthlp_sfc = -999.0
   end if
 
 

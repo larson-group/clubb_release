@@ -122,8 +122,8 @@ module lba
                  cos( 0.5 * pi * ( (5.25 - ( time/3600.)) / 5.25 ) ) & 
             ) )
 
-    wpthlp_sfc =  convert_sens_ht_to_km_s( ( 270. * ft**1.5 ), rho_sfc )
-    wprtp_sfc  =  convert_latent_ht_to_m_s( ( 554. * ft**1.3 ), rho_sfc )
+    wpthlp_sfc =  convert_sens_ht_to_km_s( ( 270. * ft**1.5 ), rho_sfc ) ! Known magic number
+    wprtp_sfc  =  convert_latent_ht_to_m_s( ( 554. * ft**1.3 ), rho_sfc ) ! Known magic number
 
     bflx = grav/thlm_sfc * wpthlp_sfc
 

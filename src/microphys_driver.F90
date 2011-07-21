@@ -186,7 +186,8 @@ module microphys_driver
 
     use constants_clubb, only: &
       fstderr,   & ! Constant
-      cm3_per_m3
+      cm3_per_m3, &
+      um_per_m
 
     use text_writer, only: &
       write_text   ! Used to write microphysics settings to setup.txt file
@@ -785,8 +786,8 @@ module microphys_driver
       l_hydromet_sed(iirgraupelm) = .false.
 
       ! Convert from μ to m as in SAM
-      aer_rm1 = 1.e-6*aer_rm1
-      aer_rm2 = 1.e-6*aer_rm2
+      aer_rm1 = aer_rm1*(1/um_per_m)
+      aer_rm2 = aer_rm2*(1/um_per_m)
       ! Convert from #/cm3 to #/m3
       aer_n1 = cm3_per_m3 * aer_n1
       aer_n2 = cm3_per_m3 * aer_n2
@@ -1275,6 +1276,8 @@ module microphys_driver
 
     character(len=10) :: hydromet_name
 
+    logical :: l_local_kk_input, l_latin_hypercube_input, l_sed
+
 !-------------------------------------------------------------------------------
 
     ! ---- Begin code ----
@@ -1473,8 +1476,10 @@ module microphys_driver
       ! Call the microphysics if we don't want to have feedback effects from the
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
+        l_local_kk_input = .false.
+        l_latin_hypercube_input = .false.
         call morrison_micro_driver & 
-             ( real( dt ), gr%nnzp, l_stats_samp, .false., .false., &
+             ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
                thlm, p_in_Pa, exner, rho, pdf_params, &
                wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
                hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
@@ -1527,8 +1532,10 @@ module microphys_driver
       ! Call the microphysics if we don't want to have feedback effects from the
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
+        l_local_kk_input = .false.
+        l_latin_hypercube_input = .false.
         call mg_microphys_driver &
-          ( real( dt ), gr%nnzp, l_stats_samp, .false., .false., &
+          ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
               thlm, p_in_Pa, exner, rho, pdf_params, &
               rcm, rtm-rcm, Ncnm, hydromet, hydromet_mc, &
               hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc)
@@ -1592,9 +1599,10 @@ module microphys_driver
 !                               exner, s_mellor, rcm, hydromet, &
 !                               pdf_params, hydromet_mc, hydromet_vel_zt, &
 !                               rcm_mc, rvm_mc, thlm_mc )
+         l_latin_hypercube_input = .false.
          call KK_micro_driver &
                  ( real( dt ), gr%nnzp, l_stats_samp, l_local_kk, &
-                   .false., thlm, p_in_Pa, exner, rho, &
+                   l_latin_hypercube_input, thlm, p_in_Pa, exner, rho, &
                    pdf_params, wm_zt, wtmp, delta_zt, rcm, s_mellor, &
                    rtm-rcm, hydromet, hydromet_mc, hydromet_vel_zt, &
                    rcm_mc, rvm_mc, thlm_mc )
@@ -1784,9 +1792,10 @@ module microphys_driver
             ! hydrometeor tendency arrays accordingly.
             do k = 1, gr%nnzp, 1
               if ( hydromet(k,i) < 0.0 ) then
+                l_sed = .true.
                 call adj_microphys_tndcy & 
                    ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
-                     Kr, nu_r_vert_res_dep, dt, k, .true., & 
+                     Kr, nu_r_vert_res_dep, dt, k, l_sed, & 
                      hydromet(:,i), overevap_rate )
 
                 ! overevap_rate is defined as positive.
@@ -1821,10 +1830,10 @@ module microphys_driver
             ! Brian Griffin.  April 14, 2007.
             do k = 1, gr%nnzp, 1
               if ( hydromet(k,i) < 0.0 ) then
-
+                l_sed = .true.
                 call adj_microphys_tndcy & 
                      ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
-                       Kr, nu_r_vert_res_dep, dt, k, .true., & 
+                       Kr, nu_r_vert_res_dep, dt, k, l_sed, & 
                        hydromet(:,i), overevap_rate )
 
                 ! Moved from adj_microphys_tndcy

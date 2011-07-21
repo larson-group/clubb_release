@@ -152,7 +152,7 @@ DO k = 2, gr%nnzp-1, 1
                                  *zt2zm( Ncm, k )*rho_zm(k) )  ) & 
                    **(2.0/3.0)   ) & 
                 * ( ( rho_zm(k)*zt2zm( rcm, k ) )**(5.0/3.0) ) & 
-                * EXP( 5.0*( (LOG( sigma_g ))**(2) ) )
+                * EXP( 5.0*( (LOG( sigma_g ))**(2) ) ) ! Known magic number
   ELSE
     Fcsed(k) = 0.0
   END IF

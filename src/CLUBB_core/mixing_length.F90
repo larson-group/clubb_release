@@ -743,10 +743,11 @@ contains
        ! -dschanen 27 April 2007
        if( l_implemented ) then
          ! Within a host model, increase mixing length in 500 m layer above *ground*
-         lminh = max( zero_threshold, 500. - (gr%zt(i) - gr%zm(1)) ) * ( lmin / 500. )
+         lminh = max( zero_threshold, 500. - (gr%zt(i) - gr%zm(1)) ) &
+                         * ( lmin / 500. ) ! Known magic number
        else
          ! In standalone mode, increase mixing length in 500 m layer above *mean sea level*
-         lminh = max( zero_threshold, 500. - gr%zt(i) ) * ( lmin / 500. )
+         lminh = max( zero_threshold, 500. - gr%zt(i) ) * ( lmin / 500. ) ! Known magic number
        end if
 
        Lscale_up(i)    = max( lminh, Lscale_up(i) )
