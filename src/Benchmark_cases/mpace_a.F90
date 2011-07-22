@@ -212,9 +212,9 @@ module mpace_a
     do i=1,gr%nnzp
       thlm_forcing(i) = ((dTdt_hoc_grid(i) + vertT_hoc_grid(i)) & 
                        * ((p_sfc/p_in_Pa(i)) ** (Rd/Cp))) & 
-                       / sec_per_hr ! K/s
+                       / real(sec_per_hr) ! K/s
       rtm_forcing(i)  = (dqdt_hoc_grid(i)+vertq_hoc_grid(i)) & 
-       / g_per_kg / sec_per_hr ! g/kg/hr -> kg/kg/s
+       / g_per_kg / real(sec_per_hr) ! g/kg/hr -> kg/kg/s
     end do
 
     ! Test scalars with thetal and rt if desired

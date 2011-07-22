@@ -603,7 +603,7 @@ module output_grads
 
     use constants_clubb, only: &
       sec_per_hr, & ! Variable(s)
-      sec_per_min
+      min_per_hr
 
     implicit none
 
@@ -646,7 +646,7 @@ module output_grads
     write(unit=date(12:15),fmt='(i4.4)') iyear
     write(unit=date(1:2),fmt='(i2.2)') floor( time/sec_per_hr )
     write(unit=date(4:5),fmt='(i2.2)')  & 
-      int( mod( nint( time ), nint(sec_per_hr) ) / sec_per_min )
+      int( mod( nint( time ), nint(sec_per_hr) ) / nint(min_per_hr) )
 
     return
   end subroutine format_date

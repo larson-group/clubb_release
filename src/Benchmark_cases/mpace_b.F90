@@ -104,9 +104,9 @@ module mpace_b
     do k=1,gr%nnzp
      t_tendency = min( -4.,-15.*(1.-((p_sfc-p_in_Pa(k))/21818.)) ) ! K/day - known magic number
      thlm_forcing(k) = (t_tendency * ((p_sfc/p_in_Pa(k)) ** (Rd/Cp)))  & 
-                      / sec_per_day ! K/s
+                      / real(sec_per_day) ! K/s
      rtm_forcing(k)  = min( 0.164,-3*(1-((p_sfc-p_in_Pa(k))/15171.)) ) /  & 
-                   g_per_kg / sec_per_day ! g/kg/day -> kg/kg/s - known magic number
+                   g_per_kg / real(sec_per_day) ! g/kg/day -> kg/kg/s - known magic number
     end do
 
     ! Test scalars with thetal and rt if desired

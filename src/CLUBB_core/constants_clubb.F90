@@ -22,7 +22,7 @@ module constants_clubb
     w_tol, thl_tol, rt_tol, s_mellor_tol, thl_tol_mfl, rt_tol_mfl, & 
     w_tol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, em_min, &
     eps, zero_threshold, max_mag_correlation, sec_per_day, &
-    sec_per_hr, sec_per_min, g_per_kg, T_freeze_K, &
+    sec_per_hr, sec_per_min, min_per_hr, g_per_kg, T_freeze_K, &
     Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
     cm3_per_m3, um_per_m, pascal_per_mb, parab_cyl_max_input,  &
     gamma_over_implicit_ts, Lscale_pert_coef, cloud_frac_min
@@ -215,7 +215,8 @@ module constants_clubb
   real(kind=time_precision), parameter ::  & 
     sec_per_day = 86400.0_time_precision, & ! Seconds in a day.
     sec_per_hr  = 3600.0_time_precision,  & ! Seconds in an hour.
-    sec_per_min = 60.0_time_precision       ! Seconds in a minute.
+    sec_per_min = 60.0_time_precision,    & ! Seconds in a minute.
+    min_per_hr = 60.0_time_precision        ! Minutes in an hour.
 
   real, parameter :: & 
     g_per_kg = 1000.0     ! Grams in a kilogram.
