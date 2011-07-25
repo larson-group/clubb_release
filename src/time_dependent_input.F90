@@ -795,6 +795,7 @@ module time_dependent_input
     character(len=200) :: tmp                     ! Temporary char buffer
     character(len=200), dimension(50) :: colArray ! Max of 50 columns
     logical :: isComment
+    integer :: status_var ! IO status for read statement
 
 
     ! -------------------------BEGIN CODE-------------------------------------
@@ -819,10 +820,11 @@ module time_dependent_input
     ! Count the number of columns
     nCols = 0
     colArray = ""
-    read(iunit,fmt='(A)',end=999) tmp
-    999 continue
-    read(tmp,*,end=888) (colArray(i), i=1,size(colArray)) ! Move all words into an array
-    888 continue
+    read(iunit,fmt='(A)',iostat=status_var) tmp
+    ! only continue if there was no IO error or end of data
+    if( status_var == 0 ) then
+      read(tmp,*,iostat=status_var) (colArray(i), i=1,size(colArray)) ! Move all words into an array
+    end if
     
     do i=1,size(colArray)
       if( colArray(i) /= "" ) then ! Increment number of columns until array is blank

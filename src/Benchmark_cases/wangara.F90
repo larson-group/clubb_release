@@ -100,6 +100,8 @@ module wangara
     ! Local variables
     real(kind=time_precision) :: time_utc, time_est
 
+    real :: est_offset ! The offset for Australia EST time [s]
+
 
 
 !---------------------BEGIN CODE-------------------------
@@ -113,8 +115,8 @@ module wangara
     time_utc = mod( time, sec_per_day )
 
     ! Now convert UTC time to Australia EST (local time)
-
-    time_est = mod( time_utc + 36000., sec_per_day )
+    est_offset = 36000.
+    time_est = mod( time_utc + est_offset, sec_per_day )
 
     if ( time_est < 27000 .or. time_est > 63000 ) then
       write(fstderr,*) "wangara_sfclyr: error local time must" & 

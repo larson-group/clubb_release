@@ -588,18 +588,18 @@ module coamps_micro_driver_module
       call gamma( 4.0, gm4 )
       call gamma( 5.0, gm5 )
       call gamma( 6.0, gm6 )
-      call gamma( 7.0, gm7 )
-      call gamma( 8.0, gm8 )
-      call gamma( 9.0, gm9 )
+      call gamma( 7.0, gm7 ) ! Known magic number
+      call gamma( 8.0, gm8 ) ! Known magic number
+      call gamma( 9.0, gm9 ) ! Known magic number
       call gamma( bsnow+3.0, gmbp3 )
-      call gamma( bsnow*0.5 + 2.5, gmbov2 )
-      call gamma( bgrp*0.5 + 2.5, gmbov2g )
+      call gamma( bsnow*0.5 + 2.5, gmbov2 ) ! Known magic number
+      call gamma( bgrp*0.5 + 2.5, gmbov2g ) ! Known magic number
 
-      ex2  = bsnow * 0.5 + 2.5
-      ex2g = bgrp * 0.5 + 2.5
+      ex2  = bsnow * 0.5 + 2.5 ! Known magic number
+      ex2g = bgrp * 0.5 + 2.5 ! Known magic number
       ex3  = bsnow + 3.0
-      ex7  = 0.44 * gmbov2
-      ex7g = 0.31 * gmbov2g
+      ex7  = 0.44 * gmbov2 ! Known magic number
+      ex7g = 0.31 * gmbov2g ! Known magic number
       ex4  = aprpr/visair
       ex4g = abar/visair
       ex5  = pi*aprpr*snzero*gmbp3/4.0

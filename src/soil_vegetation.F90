@@ -113,11 +113,11 @@ module soil_vegetation
     cs=2.00e3  ! cs
     rs=1.00e3  ! ps 
     ks=2.00e-7 ! as
-    d1=sqrt(ks*3600.e0*24.e0)
+    d1=sqrt(ks*3600.e0*24.e0) ! Known magic number
     c1=2.e0*sqrt(pi)/(rs*cs*d1) 
-    c2=2.e0*pi/(3600.e0*24.e0) ! Omega
+    c2=2.e0*pi/(3600.e0*24.e0) ! Omega - known magic number
     c3=sqrt(pi*2.e0)/(exp(pi/4.e0)*rs*cs*sqrt(ks*3600.e0*24.e0* &
-                     365.e0))
+                     365.e0)) ! Known magic number
 
     if( l_stats_samp ) then
       call stat_update_var_pt( iveg_T_in_K, 1, veg_T_in_K, sfc )
@@ -135,10 +135,11 @@ module soil_vegetation
     !
     ! Equation 19 p.328
     
-    soil_heat_flux = 10.0 * ( veg_T_in_K - sfc_soil_T_in_K ) + 0.05 * Frad_SW_down_sfc
+    soil_heat_flux = 10.0 * ( veg_T_in_K - sfc_soil_T_in_K ) &
+                     + 0.05 * Frad_SW_down_sfc ! Known magic number
 
     ! Update surf veg temp
-    veg_T_in_K = veg_T_in_K + dt * 5.e-5 * ( veg_heat_flux - soil_heat_flux )
+    veg_T_in_K = veg_T_in_K + dt * 5.e-5 * ( veg_heat_flux - soil_heat_flux ) ! Known magic number
 
     ! Update soil temp
     sfc_soil_T_in_K = sfc_soil_T_in_K & 

@@ -341,10 +341,11 @@ module simple_rad_module
       if ( gr%zt(k) >= 0. .and. gr%zt(k) < 1500. ) then
         radht(k) = -2.315e-5
       else if ( gr%zt(k) >= 1500. .and. gr%zt(k) < 2500. ) then
+        ! From bomex specification, section 3.4
         radht(k) & 
           = - 2.315e-5  & 
             + 2.315e-5  & 
-              * ( gr%zt(k) - 1500. ) / ( 2500. - 1500. )
+              * ( gr%zt(k) - 1500. ) / ( 2500. - 1500. ) ! Known magic number
       else
         radht(k) = 0.
       end if
@@ -399,7 +400,7 @@ module simple_rad_module
       do while ( i1 <= lba_ntimes-1 )
         i2 = i1 + 1
         if ( time >= 600. * i1 .and. time < 600. * i2  ) then
-          a  = real(( time - 600. * i1 )/( 600. * i2 - 600. * i1))
+          a  = real(( time - 600. * i1 )/( 600. * i2 - 600. * i1)) ! Known magic number
           radhtz(:) = factor_interp( a, lba_krad(:,i2), lba_krad(:,i1) )
           i1     = lba_ntimes
         end if

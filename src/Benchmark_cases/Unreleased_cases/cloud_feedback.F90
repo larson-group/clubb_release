@@ -127,13 +127,13 @@ module cloud_feedback
   !                                     T_sfc, exner_sfc )
   !end if
 
-  !
+  ! (Stevens, et al. 2000, eq 3)
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
   Ch   = C_h_20 * ((log(20/z0))/(log(lowest_level/z0))) * & 
-         ((log(20/z0))/(log(lowest_level/z0)))
+         ((log(20/z0))/(log(lowest_level/z0))) ! Known magic number
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
   Cq   = C_q_20 * ((log(20/z0))/(log(lowest_level/z0))) * & 
-         ((log(20/z0))/(log(lowest_level/z0)))
+         ((log(20/z0))/(log(lowest_level/z0))) ! Known magic number
  
   if ( sfctype == 1 ) then
     wprtp_sfc = compute_wprtp_sfc( Cq, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )

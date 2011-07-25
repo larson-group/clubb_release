@@ -333,7 +333,7 @@ module input_grads
 !   Read binary data from file units and return the result as
 !   as 4 byte float 'x'
 !----------------------------------------------------------------------
-    use constants_clubb, only: fstderr
+    use constants_clubb, only: fstderr, sec_per_min
     use stat_file_module, only: stat_file
 
     implicit none
@@ -346,7 +346,7 @@ module input_grads
       varname ! The variable name as it occurs in the control file
 
     integer, intent(in) :: & 
-      itime ! Obtain variable varname at time itime [m]
+      itime ! Obtain variable varname at time itime [min]
 
     ! Output Variables
     real(kind=4), dimension(:), intent(out) ::  & 
@@ -365,7 +365,7 @@ module input_grads
 
     ! Check time index
     ! Now assumes itime is in minutes
-    if ( itime < 1 .or. (itime/(f%dtwrite/60.)) > f%ntimes ) then
+    if ( itime < 1 .or. (itime/(f%dtwrite/sec_per_min)) > f%ntimes ) then
       l_error = .true.
       write(unit=fstderr,fmt=*)  & 
         "get_4byte_var: itime < 1 .or. itime > f%ntimes"
@@ -415,7 +415,7 @@ module input_grads
     ! _model.in to restart
     ! Joshua Fasching March 2008
 
-    nrec = (max(nint(itime/(f%dtwrite/60.)),1)-1)*f%nvar*(f%iz-f%ia+1)  & 
+    nrec = (max(nint(itime/(f%dtwrite/sec_per_min)),1)-1)*f%nvar*(f%iz-f%ia+1)  & 
          + (ivar-1)*(f%iz-f%ia+1)
     nrec = nrec + 1
 

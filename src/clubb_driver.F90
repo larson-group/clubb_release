@@ -1515,7 +1515,7 @@ module clubb_driver
       ! GCSS ATEX
     case ( "atex" )
 
-      um = max( um, -8. )
+      um = max( um, -8. ) ! Known magic number (Stevens, et al. 2001, eq. 1)
 
 !---> Reduction of initial sounding for stability
 !         do k = 1, gr%nnzp

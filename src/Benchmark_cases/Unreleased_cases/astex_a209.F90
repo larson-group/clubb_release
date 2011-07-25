@@ -169,12 +169,13 @@ module astex_a209
 
     ! Compute heat and moisture fluxes
 
+    ! (Stevens, et al. 2000, eq 3)
     ! Modification in case lowest model level isn't at 10 m, from ATEX specification
     Ch   = C_h_20 * ((log(20/z0))/(log(lowestlevel/z0))) * &
-           ((log(20/z0))/(log(lowestlevel/z0)))
+           ((log(20/z0))/(log(lowestlevel/z0))) ! Known magic number
     ! Modification in case lowest model level isn't at 10 m, from ATEX specification
     Cq   = C_q_20 * ((log(20/z0))/(log(lowestlevel/z0))) * &
-           ((log(20/z0))/(log(lowestlevel/z0)))
+           ((log(20/z0))/(log(lowestlevel/z0))) ! Known magic number
 
 
     !sensible_heat_flx = 10.0

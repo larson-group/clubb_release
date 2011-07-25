@@ -29,7 +29,8 @@ module cos_solar_zen_module
 !     Table 2.2 and Eqn. 2.2.10
 !-----------------------------------------------------------------------
 
-    use constants_clubb, only: pi_dp, fstderr, sec_per_day, sec_per_hr ! Variable(s)
+    use constants_clubb, only: pi_dp, fstderr, sec_per_day, sec_per_hr,&
+                               radians_per_deg_dp ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -123,17 +124,17 @@ module cos_solar_zen_module
 
     select case ( int( hour ) )
     case ( 0:11 )
-      zln = 180.00 - hour*15.00
+      zln = 180.00 - hour*15.00 ! Known magic number
     case ( 12:23 )
-      zln = 540.00 - hour*15.00
+      zln = 540.00 - hour*15.00 ! Known magic number
     case default
       zln = 0.0
       write(unit=fstderr,fmt=*) "Hour=", hour
       stop " > 24 hours in cosine solar zenith code"
     end select
 
-    longang = abs( lon_in_degrees - zln ) * pi_dp/180.0
-    latang  = lat_in_degrees * pi_dp/180.0
+    longang = abs( lon_in_degrees - zln ) * radians_per_deg_dp
+    latang  = lat_in_degrees * radians_per_deg_dp
 
 
     ! Cosine of the solar zenith angle (sometimes denoted amu0).

@@ -38,7 +38,8 @@ module sounding
 
     use constants_clubb, only:  & 
         fstderr, & ! Constant
-        fstdout
+        fstdout, &
+        g_per_kg
 
     use parameters_model, only: & 
         sclr_dim, &! Variable(s)
@@ -333,12 +334,13 @@ module sounding
         ELSE  ! DYCOMS II RF02 case
 
           IF ( gr%zt(i) < 795.0 ) THEN
-            um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0
-            vm(i)   = -9.0 + (5.6*gr%zt(i))/1000.0
+            ! (Wyant, et al. 2007, eq 1--4)
+            um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0 ! Known magic number
+            vm(i)   = -9.0 + (5.6*gr%zt(i))/1000.0 ! Known magic number
             ugm(i)  = um(i)
             vgm(i)  = vm(i)
             thlm(i) = 288.3
-            rtm(i)  = (9.45)/1000.0
+            rtm(i)  = (9.45)/g_per_kg ! Known magic number
             ! Passive Scalars
             ! Change this if they are not equal to theta_l and rt in RF02
             if ( iisclr_thl > 0  ) then
@@ -352,13 +354,14 @@ module sounding
             press(i) = lin_int( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
             wm(i) = lin_int( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
           ELSE
-            um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0
-            vm(i)   = -9.0 + (5.6*gr%zt(i))/1000.0
+            ! (Wyant, et al. 2007, eq 1--4)
+            um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0 ! Known magic number
+            vm(i)   = -9.0 + (5.6*gr%zt(i))/1000.0 ! Known magic number
             ugm(i)  = um(i)
             vgm(i)  = vm(i)
-            thlm(i) = 295.0 + ( (gr%zt(i) - 795.0)**(1.0/3.0) )
+            thlm(i) = 295.0 + ( (gr%zt(i) - 795.0)**(1.0/3.0) ) ! Known magic number
             rtm(i)  = (  5.0 - 3.0  & 
-            * ( 1.0 - EXP( (795.0 - gr%zt(i))/500.0 ) )  )/1000.0
+            * ( 1.0 - EXP( (795.0 - gr%zt(i))/500.0 ) )  )/g_per_kg ! Known magic number
             ! Passive Scalars
             ! Same as above
             if ( iisclr_thl > 0  ) then

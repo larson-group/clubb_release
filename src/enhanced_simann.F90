@@ -154,7 +154,8 @@ module enhanced_simann
       ! Step 1: Initializations 
 
       ! Attempt to make these machine independent (variable names from paper)
-      epsrel = 1.e2 * epsilon( xinit )
+      ! epsrel is 1e2 times that of epsabs
+      epsrel = 1.e2 * epsilon( xinit ) ! Known magic number
       epsabs = epsilon( xinit )
 
       ! Siarry's epsilon values in the paper

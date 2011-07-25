@@ -129,7 +129,7 @@ module PDF_integrals_all_mixed_moments
                * exp( 0.25 * s_cc**2.0 - ( mu_x2 / sigma_x2 ) * s_cc  &
                       + 0.5 * ( mu_x2**2.0 / sigma_x2**2.0 ) )  &
                * gamma( alpha_exp*q + r + 1 )  &
-               * Dv_fnc( -(alpha_exp*q + r + 1), s_cc )
+               * Dv_fnc( -(alpha_exp*q + r + 1), s_cc ) ! Known magic numbers
 
           enddo
        enddo
@@ -235,7 +235,7 @@ module PDF_integrals_all_mixed_moments
          * exp( 0.25 * s_cc**2.0 - ( mu_x2 / sigma_x2 ) * s_cc  &
                 + 0.5 * ( mu_x2**2.0 / sigma_x2**2.0 ) )  &
          * gamma( alpha_exp*q + 1 )  &
-         * Dv_fnc( -(alpha_exp*q + 1), s_cc )
+         * Dv_fnc( -(alpha_exp*q + 1), s_cc ) ! Known magic number
 
     enddo
 
@@ -513,7 +513,7 @@ module PDF_integrals_all_mixed_moments
                       + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0  &
                       - 0.25 * s_c**2.0 )  &
                * gamma( alpha_exp*q + r + 1 )  &
-               * Dv_fnc( -( alpha_exp*q + r + 1 ), -s_c )
+               * Dv_fnc( -( alpha_exp*q + r + 1 ), -s_c ) ! Known magic number
 
           enddo
        enddo
@@ -602,7 +602,7 @@ module PDF_integrals_all_mixed_moments
                 + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0  &
                 - 0.25 * s_c**2.0 )  &
          * gamma( alpha_exp*q + 1 )  &
-         * Dv_fnc( -(alpha_exp*q + 1), -s_c )
+         * Dv_fnc( -(alpha_exp*q + 1), -s_c ) ! Known magic number
 
     enddo
 

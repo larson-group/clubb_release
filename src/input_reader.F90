@@ -101,6 +101,8 @@ module input_reader
 
     real, dimension(nCol) :: tmp
 
+    integer :: input_status ! The status of a read statement
+
     ! Begin Code
 
     ! First run through, take names and determine how large the data file is.
@@ -125,7 +127,12 @@ module input_reader
 
     nRowO = 0
     do while(.true.)
-      read(iunit, *, end=77, err=77) tmp(1), nRowI
+      read(iunit, *, iostat=input_status) tmp(1), nRowI
+
+      ! If input_status shows an error or end of data, just exit the loop
+      if( input_status /= 0 ) then
+        exit
+      end if
 
       if( nRowI < 1 ) then
         stop "Number of elements must be an integer and greater than zero in two-dim  input file."
@@ -136,8 +143,6 @@ module input_reader
       end do
       nRowO = nRowO + 1
     end do
-
-    77 continue
 
     do i=1, nRowO
 
@@ -223,6 +228,8 @@ module input_reader
 
     logical :: isComment
 
+    integer :: input_status ! The status of a read statement
+
     ! ---- Begin Code ----
 
     isComment = .true.
@@ -248,10 +255,15 @@ module input_reader
     ! Count up the number of rows
     nRow = 0
     do while(.true.)
-      read(iunit, *, end=77) tmp
+      read(iunit, *, iostat=input_status) tmp
+
+      ! If input_status shows an end of file, exit the loop
+      if( input_status < 0 ) then
+        exit
+      end if
+
       nRow = nRow+1
     end do
-    77 continue
 
     ! Rewind that many rows
     do k = 0, nRow

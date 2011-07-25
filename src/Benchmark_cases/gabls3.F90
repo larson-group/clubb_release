@@ -80,15 +80,15 @@ module gabls3
       ustar          ! surface friction velocity [m/s]
 
     ! Local Variables
-    real :: veg_theta_in_K, bflx
+    real :: veg_theta_in_K, bflx, offset
 
     ! Compute heat and moisture fluxes
 
     veg_theta_in_K = veg_T_in_K / exner_sfc
 
     wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, veg_T_in_K, exner_sfc)
-
-    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, 9.9e-3 ) * 10
+    offset = 9.9e-3
+    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, offset ) * 10 ! Known magic number
   
     ! Compute momentum fluxes
     bflx = wpthlp_sfc * grav / veg_theta_in_K

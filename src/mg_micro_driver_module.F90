@@ -73,7 +73,8 @@ module mg_micro_driver_module
       flip ! Procedure
       
     use constants_clubb, only: &
-      rc_tol ! Variable
+      rc_tol, & ! Variable
+      rt_tol
 
     use shr_kind_mod, only: r8 => shr_kind_r8 
 
@@ -284,11 +285,11 @@ module mg_micro_driver_module
     
     call gestbl(173.16_r8, 375.16_r8, 20.00_r8, .true., real( epsilo, kind=r8), &
                  real( latvap, kind=r8), real( latice, kind=r8), real( rh2o, kind=r8), &
-                 real( cpair, kind=r8), real( tmelt, kind=r8) )
+                 real( cpair, kind=r8), real( tmelt, kind=r8) ) ! Known magic flag
                  
     ! Ensure no hydromet arrays are input as 0, because this makes MG crash.
     do i=1, hydromet_dim, 1
-      hydromet_flip(:,i) = max(1e-8_r8, hydromet_flip(:,i))
+      hydromet_flip(:,i) = max(1e-8_r8, hydromet_flip(:,i)) ! Known magic number
     end do
     
     ! Prescribe droplet concentration

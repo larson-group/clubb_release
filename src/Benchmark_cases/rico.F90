@@ -66,13 +66,14 @@ module rico
 
   ! Compute large-scale horizontal temperature advection
   ! NEW-- "And Radiation"... 15 Dec 2006, Michael Falk
+  ! Equations located in 1D models > Set up short composite run on reference site
   do k=1,gr%nnzp
     if (gr%zt(k) < 4000) then
       t_tendency = -2.51 / 86400 + & 
-        (-2.18 + 2.51) / (86400*4000) * gr%zt(k)  ! Units [K s^-1]
+        (-2.18 + 2.51) / (86400*4000) * gr%zt(k)  ! Units [K s^-1] - known magic number
     else if (gr%zt(k) < 5000) then
       t_tendency = -2.18 / 86400 + & 
-        (2.18) / (86400*(5000-4000)) * (gr%zt(k)-4000)  ! Units [K s^-1]
+        (2.18) / (86400*(5000-4000)) * (gr%zt(k)-4000)  ! Units [K s^-1] - known magic number
     else
       t_tendency = 0.  ! Units [K s^-1]
     end if
@@ -83,15 +84,16 @@ module rico
 
 
   ! Compute large-scale horizontal moisture advection [g kg^-1 s^-1]
+  ! Equations located in 1D models > Set up short composite run on reference site
   do k=1,gr%nnzp
     if (gr%zt(k) < 3000) then
       rtm_forcing(k) = - 1.0 / 86400 + & 
-        (0.345+1.0) / (86400 * 3000) * gr%zt(k)  ! Units [g kg^-1 s^-1]
+        (0.345+1.0) / (86400 * 3000) * gr%zt(k)  ! Units [g kg^-1 s^-1] - known magic number
     else if (gr%zt(k) < 4000) then
-      rtm_forcing(k) = 0.345 / 86400  ! Units [g kg^-1 s^-1]
+      rtm_forcing(k) = 0.345 / 86400  ! Units [g kg^-1 s^-1] - known magic number
     else if (gr%zt(k) < 5000) then
       rtm_forcing(k) = 0.345 / 86400 + & 
-        (-0.345) / (86400*(5000-4000)) * (gr%zt(k) - 4000) ! Units [g kg^-1 s^-1]
+       (-0.345) / (86400*(5000-4000)) * (gr%zt(k) - 4000) ! Units [g kg^-1 s^-1] known magic number
     else
       rtm_forcing(k) = 0.  ! Units [g kg^-1 s^-1]
     end if
@@ -211,18 +213,19 @@ module rico
   ! Define variable values
   ubar = compute_ubar( um_sfc, vm_sfc )
 
+  ! (Stevens, et al. 2000, eq 3)
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
   Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) * & 
-         ((log(10/z0))/(log(lowestlevel/z0)))         
+         ((log(10/z0))/(log(lowestlevel/z0))) ! Known magic number        
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
   Cm   = C_m_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-         ((log(20/z0))/(log(lowestlevel/z0)))             
+         ((log(20/z0))/(log(lowestlevel/z0))) ! Known magic number
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
   Ch   = C_h_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-         ((log(20/z0))/(log(lowestlevel/z0)))          
+         ((log(20/z0))/(log(lowestlevel/z0))) ! Known magic number
          ! Modification in case lowest model level isn't at 10 m, from ATEX specification
   Cq   = C_q_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-         ((log(20/z0))/(log(lowestlevel/z0)))            
+         ((log(20/z0))/(log(lowestlevel/z0))) ! Known magic number
 
 ! Compute heat and moisture fluxes
   if (l_use_old_atex) then ! Use ATEX version

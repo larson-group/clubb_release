@@ -81,7 +81,7 @@ module lba
     !       http://www.mmm.ucar.edu/gcss-wg4/gcss/case4.html
     !----------------------------------------------------------------------
 
-    use constants_clubb, only: pi, grav ! Variable(s)
+    use constants_clubb, only: pi, grav, sec_per_hr ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -119,8 +119,8 @@ module lba
     ! Compute heat and moisture fluxes
     ! From Table A.1.
     ft = real( max( 0._time_precision,  & 
-                 cos( 0.5 * pi * ( (5.25 - ( time/3600.)) / 5.25 ) ) & 
-            ) )
+                 cos( 0.5 * pi * ( (5.25 - ( time/sec_per_hr)) / 5.25 ) ) & 
+            ) ) ! Known magic number
 
     wpthlp_sfc =  convert_sens_ht_to_km_s( ( 270. * ft**1.5 ), rho_sfc ) ! Known magic number
     wprtp_sfc  =  convert_latent_ht_to_m_s( ( 554. * ft**1.3 ), rho_sfc ) ! Known magic number

@@ -609,7 +609,7 @@ module error
 
       if ( l_stdout_on_invalid ) then
         inv_count = modulo( inv_count, 3 ) + 1 ! 1,2,3,1,2,3...
-        errorfile = "error_crash_"// achar( inv_count+48 ) // ".in"
+        errorfile = "error_crash_"// achar( inv_count+48 ) // ".in" ! Known magic number
         call output_nml_tuner( errorfile,  & 
                                param_vals_vector(1:ndim) )
       end if
@@ -816,7 +816,7 @@ module error
     write(unit=iunit,fmt='(A3,F15.6)') "$$ ", min_err
 
     write(unit=iunit,fmt=*) "Approx. percent increase in accuracy:",  & 
-      ((init_err - min_err) / init_err*100.0), "%"
+      ((init_err - min_err) / init_err*100.0), "%" ! Known magic number
 
     return
   end subroutine write_results

@@ -193,7 +193,7 @@ module surface_varnce_module
       ! v_s, which is <v_s'^2> (vsp2_sfc in the code).
       IF ( wpthlp_sfc > 0.0 ) THEN
         usp2_sfc = 4.0 * ustar**2 + 0.3 * wstar**2 ! Known magic number
-        vsp2_sfc = 1.75 * ustar**2 + 0.3 * wstar**2 
+        vsp2_sfc = 1.75 * ustar**2 + 0.3 * wstar**2 ! Known magic number
       ELSE
         usp2_sfc = 4.0 * ustar**2 ! Known magic number
         vsp2_sfc = 1.75 * ustar**2 ! Known magic number

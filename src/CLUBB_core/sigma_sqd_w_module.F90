@@ -52,7 +52,7 @@ module sigma_sqd_w_module
                        ( wprtp / ( sqrt( wp2 * rtp2 )  &
                       + 0.01 * w_tol * rt_tol ) )**2 &
                      ), & ! max
-             1.0 ) & ! min
+             1.0 ) & ! min - Known magic number (eq. 22 from "Equations for CLUBB")
        )
 
     return

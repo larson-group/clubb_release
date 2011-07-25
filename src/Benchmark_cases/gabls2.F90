@@ -172,9 +172,9 @@ module gabls2
       bflx                   ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
 
     Cz   = C_10 * ((log( 10/z0 ))/(log( lowest_level/z0 ))) * & 
-           ((log( 10/z0 ))/(log( lowest_level/z0 ))) ! Modification in case
+           ((log( 10/z0 ))/(log( lowest_level/z0 ))) ! Modification in case - known magic number
     ! lowest model level isn't at 10 m,
-    ! from ATEX specification
+    ! from ATEX specification (Stevens, et al. 2000, eq 3)
     time_in_hours_init = 14
     time_in_hours = real((time - time_initial) / sec_per_hr + time_in_hours_init) 
     ! at initial time,

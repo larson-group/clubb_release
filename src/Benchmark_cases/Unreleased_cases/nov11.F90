@@ -189,6 +189,8 @@ module nov11
 
     integer :: k
 
+    integer :: nparam ! input for linear_interpolation subroutine
+
     ! ---- Begin Code ----
 !
 !-----------------------------------------------------------------------
@@ -314,7 +316,8 @@ module nov11
     do k=2,gr%nnzp
       if ( (time >= time_initial + 3600.0) .and. l_subs_on ) then
         if ( gr%zt(k) <= zsubs(7) ) then
-          call linear_interpolation( 7, zsubs, wt1, gr%zt(k), wm_zt(k) )
+          nparam = 7
+          call linear_interpolation( nparam, zsubs, wt1, gr%zt(k), wm_zt(k) )
         else
           wm_zt(k) = 0.0
           if ( clubb_at_least_debug_level( 1 ) ) then

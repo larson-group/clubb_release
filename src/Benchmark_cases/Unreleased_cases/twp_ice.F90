@@ -94,12 +94,14 @@ module twp_ice
     ! Modification in case lowest model level isn't at 10 m, from ATEX specification
     !Cm   = C_m_20 * ((log(20/z0))/(log(z/z0))) * &
     !       ((log(20/z0))/(log(z/z0)))
+
+    ! (Stevens, et al. 2000, eq 3)
     ! Modification in case lowest model level isn't at 10 m, from ATEX specification
     Ch   = C_h_20 * ((log(20/z0))/(log(z/z0))) * & 
-           ((log(20/z0))/(log(z/z0)))
+           ((log(20/z0))/(log(z/z0))) ! Known magic number
     ! Modification in case lowest model level isn't at 10 m, from ATEX specification
     Cq   = C_q_20 * ((log(20/z0))/(log(z/z0))) * & 
-           ((log(20/z0))/(log(z/z0)))
+           ((log(20/z0))/(log(z/z0))) ! Known magic number
 
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, T_sfc, exner_sfc )
     wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )

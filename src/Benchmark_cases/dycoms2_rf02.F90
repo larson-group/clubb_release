@@ -22,6 +22,11 @@ module dycoms2_rf02
     !   Compute thlm_ls, rtm_ls and adjust subsidence as needed.
 
     ! References:
+    !  "A single-column model intercomparison of a heavily drizzling
+    !  stratocumulus-topped boundary layer" Wyant, Matthew C., et al., (2007)
+    !  J, Geophys. Res., 112, D24204,
+    !  ftp://eos.atmos.washington.edu/pub/breth/papers/2007/GCSS-DYCOMS2-SCM.pdf
+    !
     !  ``Dynamics and Chemistry of Marine Stratocumulus -- DYCOMS-II''
     !  Stevens, Bjorn, et al., (2003)
     !  Bull. Amer. Meteorol. Soc., 84, 579-593.

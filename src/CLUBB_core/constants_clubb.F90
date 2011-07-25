@@ -16,7 +16,7 @@ module constants_clubb
   implicit none
 
   public :: fstderr, fstdin, fstdout, var_length, &
-    pi_dp, pi, sqrt_2pi, sqrt_2, three_halves, &
+    pi_dp, pi, radians_per_deg_dp, sqrt_2pi, sqrt_2, three_halves, &
     Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
     kappa, grav, p0, vonk, rho_lw, &
     w_tol, thl_tol, rt_tol, s_mellor_tol, thl_tol_mfl, rt_tol_mfl, & 
@@ -43,6 +43,9 @@ module constants_clubb
 
   real, parameter ::  & 
     pi = 3.141592654 ! The ratio of radii to their circumference
+
+  double precision, parameter:: &
+    radians_per_deg_dp = pi_dp / 180.0
 
   real, parameter :: &
     sqrt_2pi = 2.5066282746310005024, &  ! sqrt(2*pi)

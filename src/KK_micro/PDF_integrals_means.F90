@@ -76,7 +76,7 @@ module PDF_integrals_means
            )  &
       * exp( 0.25 * s_cc**2.0 - ( mu_x1 / sigma_x1 ) * s_cc  &
              + 0.5 * ( mu_x1**2.0 / sigma_x1**2.0 ) )  &
-      * gamma( alpha_exp + 1.0 ) * Dv_fnc( -(alpha_exp + 1.0), s_cc )
+      * gamma( alpha_exp + 1.0 ) * Dv_fnc( -(alpha_exp + 1.0), s_cc ) ! Known magic number
 
     return
 
@@ -167,7 +167,7 @@ module PDF_integrals_means
     = ( 1.0 / sqrt( 2.0*pi_dp ) ) * sigma_x1**alpha_exp  &
       * exp( mu_x2_n * beta_exp  &
              + 0.5 * sigma_x2_n**2.0 * beta_exp**2.0 - 0.25 * s_c**2.0 )  &
-      * gamma( alpha_exp + 1.0 ) * Dv_fnc( -(alpha_exp + 1.0), -s_c )
+      * gamma( alpha_exp + 1.0 ) * Dv_fnc( -(alpha_exp + 1.0), -s_c ) ! Known magic number
 
     return
 

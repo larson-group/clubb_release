@@ -66,6 +66,7 @@ module calendar
 !       Reference: 
 !       Fliegel, H. F. and van Flandern, T. C., 
 !       Communications of the ACM, Vol. 11, No. 10 (October, 1968)
+!       http://portal.acm.org/citation.cfm?id=364097
 !------------------------------------------------------------------
   implicit none
 
@@ -81,16 +82,16 @@ module calendar
   ! Local Variables
   integer :: i, j, k, n, l
 
-  L = julian_date+68569
-  N = 4*L/146097
-  L = L-(146097*N+3)/4
-  I = 4000*(L+1)/1461001
-  L = L-1461*I/4+31
-  J = 80*L/2447
-  K = L-2447*J/80
-  L = J/11
-  J = J+2-12*L
-  I = 100*(N-49)+I+L
+  L = julian_date+68569 ! Known magic number
+  N = 4*L/146097 ! Known magic number
+  L = L-(146097*N+3)/4 ! Known magic number
+  I = 4000*(L+1)/1461001 ! Known magic number
+  L = L-1461*I/4+31 ! Known magic number
+  J = 80*L/2447 ! Known magic number
+  K = L-2447*J/80 ! Known magic number
+  L = J/11 ! Known magic number
+  J = J+2-12*L ! Known magic number
+  I = 100*(N-49)+I+L ! Known magic number
 
   year = I
   month = J
