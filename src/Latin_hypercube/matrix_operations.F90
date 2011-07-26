@@ -16,7 +16,7 @@ module matrix_operations
   contains
  
 !-----------------------------------------------------------------------
-  subroutine symm_covar_matrix_2_corr_matrix( ndim, cov, corr )
+  subroutine symm_covar_matrix_2_corr_matrix( ndim, covar, corr )
 
 ! Description:
 !   Convert a matrix of covariances in to a matrix of correlations.
@@ -34,7 +34,7 @@ module matrix_operations
     integer, intent(in) :: ndim
 
     double precision, dimension(ndim,ndim), intent(in) :: &
-      cov ! Covariance Matrix [units vary]
+      covar ! Covariance Matrix [units vary]
 
     ! Output Variables
     double precision, dimension(ndim,ndim), intent(out) :: & 
@@ -49,7 +49,7 @@ module matrix_operations
 
     do i = 1, ndim
       do j = 1, i
-        corr(i,j) = cov(i,j) / sqrt( cov(i,i) * cov(j,j) )
+        corr(i,j) = covar(i,j) / sqrt( covar(i,i) * covar(j,j) )
       end do
     end do
 

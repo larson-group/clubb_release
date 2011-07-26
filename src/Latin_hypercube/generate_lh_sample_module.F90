@@ -10,8 +10,8 @@ module generate_lh_sample_module
     truncate_gaus_mixt, &
     st_2_rtthl, log_sqd_normalized, choose_permuted_random, &
     set_min_varnce_and_mean, construct_gaus_LN_element, &
-    construct_LN_LN_element, corr_LN_to_cov_gaus, &
-    corr_gaus_LN_to_cov_gaus, mu_LN_to_mu_gaus, &
+    construct_LN_LN_element, corr_LN_to_covar_gaus, &
+    corr_gaus_LN_to_covar_gaus, mu_LN_to_mu_gaus, &
     sigma_LN_to_sigma_gaus
 
   logical, public :: &
@@ -712,7 +712,7 @@ module generate_lh_sample_module
 
 !       if ( stdev_s1 > s_mellor_tol .and. Ncm > dble( Nc_tol ) ) then
 !         ! The variable s is already Gaussian
-!         stdev_sNc1 = corr_gaus_LN_to_cov_gaus &
+!         stdev_sNc1 = corr_gaus_LN_to_covar_gaus &
 !                 ( corr_sNc, &
 !                   stdev_s1, &
 !                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nc) ) )
@@ -729,7 +729,7 @@ module generate_lh_sample_module
 !       end if
 
 !       if ( stdev_s2 > s_mellor_tol .and. Ncm > dble( Nc_tol ) ) then
-!         stdev_sNc2 = corr_gaus_LN_to_cov_gaus &
+!         stdev_sNc2 = corr_gaus_LN_to_covar_gaus &
 !                 ( corr_sNc, &
 !                   stdev_s2, &
 !                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nc) ) )
@@ -1806,7 +1806,7 @@ module generate_lh_sample_module
 
     yp2_on_ym2_gaus = sigma_LN_to_sigma_gaus( yp2_on_ym2 )
 
-    covar_sy = corr_gaus_LN_to_cov_gaus( corr_sy, stdev_s, yp2_on_ym2_gaus )
+    covar_sy = corr_gaus_LN_to_covar_gaus( corr_sy, stdev_s, yp2_on_ym2_gaus )
 
     return
   end subroutine construct_gaus_LN_element
@@ -1837,7 +1837,7 @@ module generate_lh_sample_module
     xp2_on_xm2_gaus = sigma_LN_to_sigma_gaus( xp2_on_xm2 )
     yp2_on_ym2_gaus = sigma_LN_to_sigma_gaus( yp2_on_ym2 )
 
-    covar_xy = corr_LN_to_cov_gaus( corr_xy, xp2_on_xm2_gaus, yp2_on_ym2_gaus )
+    covar_xy = corr_LN_to_covar_gaus( corr_xy, xp2_on_xm2_gaus, yp2_on_ym2_gaus )
 
     return
   end subroutine construct_LN_LN_element
@@ -2212,8 +2212,8 @@ module generate_lh_sample_module
   end subroutine add_mu_element_LN
 
   !-----------------------------------------------------------------------------
-  pure function corr_LN_to_cov_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus ) &
-    result( cov_xy_gaus )
+  pure function corr_LN_to_covar_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus ) &
+    result( covar_xy_gaus )
   ! Description:
 
   ! References:
@@ -2231,20 +2231,20 @@ module generate_lh_sample_module
       sigma_x_gaus, & ! Normalized std dev of first term 'x' [-]
       sigma_y_gaus    ! Normalized std dev second term 'y'   [-]
 
-    real :: cov_xy_gaus ! Covariance for a gaussian dist. [-]
+    real :: covar_xy_gaus ! Covariance for a gaussian dist. [-]
 
     ! ---- Begin Code ----
 
-    cov_xy_gaus = log( 1.0 + corr_xy * sqrt( exp( sigma_x_gaus**2 ) - 1.0 ) &
+    covar_xy_gaus = log( 1.0 + corr_xy * sqrt( exp( sigma_x_gaus**2 ) - 1.0 ) &
                                      * sqrt( exp( sigma_y_gaus**2 ) - 1.0 ) &
                      )
 
     return
-  end function corr_LN_to_cov_gaus
+  end function corr_LN_to_covar_gaus
 
   !-----------------------------------------------------------------------------
-  pure function corr_gaus_LN_to_cov_gaus( corr_sy, sigma_s, sigma_y_gaus ) &
-    result( cov_sy_gaus )
+  pure function corr_gaus_LN_to_covar_gaus( corr_sy, sigma_s, sigma_y_gaus ) &
+    result( covar_sy_gaus )
   ! Description:
 
   ! References:
@@ -2262,14 +2262,14 @@ module generate_lh_sample_module
       sigma_s,     & ! Normalized std dev of first term (usually Gaussian 's') [units vary]
       sigma_y_gaus   ! Normalized std dev second term 'y'   [-]
 
-    real :: cov_sy_gaus ! Covariance for a gaussian dist. [units vary]
+    real :: covar_sy_gaus ! Covariance for a gaussian dist. [units vary]
 
     ! ---- Begin Code ----
 
-    cov_sy_gaus = corr_sy * sigma_s * sqrt( exp( sigma_y_gaus**2 ) - 1.0 )
+    covar_sy_gaus = corr_sy * sigma_s * sqrt( exp( sigma_y_gaus**2 ) - 1.0 )
 
     return
-  end function corr_gaus_LN_to_cov_gaus
+  end function corr_gaus_LN_to_covar_gaus
 
   !-----------------------------------------------------------------------------
   pure function mu_LN_to_mu_gaus( mu, sigma2_on_mu2 ) &

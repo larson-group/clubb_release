@@ -1848,7 +1848,7 @@ module advance_xm_wpxp_module
         pos_definite_adj ! Procedure(s)
 
     use clip_explicit, only: & 
-        clip_covariance, & ! Procedure(s)
+        clip_covar, & ! Procedure(s)
         clip_wprtp, &      ! Variable(s)
         clip_wpthlp, &
         clip_wpsclrp
@@ -2278,7 +2278,7 @@ module advance_xm_wpxp_module
     end if
 
     ! Use solve_type to find solve_type_cl, which is used
-    ! in subroutine clip_covariance.
+    ! in subroutine clip_covar.
     select case ( solve_type )
     case ( xm_wpxp_rtm )
       solve_type_cl = clip_wprtp
@@ -2320,7 +2320,7 @@ module advance_xm_wpxp_module
 
     end if
 
-    call clip_covariance( solve_type_cl, l_first_clip_ts, &  ! In
+    call clip_covar( solve_type_cl, l_first_clip_ts, &  ! In
                           l_last_clip_ts, dt, wp2, xp2_relaxed, &  ! In
                           wpxp, wpxp_chnge ) ! In/Out
 

@@ -85,7 +85,7 @@ module advance_windm_edsclrm_module
       l_stats_samp
 
     use clip_explicit, only:  &
-      clip_covariance  ! Procedure(s)
+      clip_covar  ! Procedure(s)
 
     use error_code, only:  & 
       clubb_at_least_debug_level, & ! Procedure(s)
@@ -192,7 +192,7 @@ module advance_windm_edsclrm_module
 
     integer :: i     ! Array index
 
-    logical :: l_first_clip_ts, l_last_clip_ts ! flags for clip_covariance
+    logical :: l_first_clip_ts, l_last_clip_ts ! flags for clip_covar
 
     !--------------------------- Begin Code ------------------------------------
 
@@ -374,7 +374,7 @@ module advance_windm_edsclrm_module
       ! This is the third instance of u'w' clipping.
       l_first_clip_ts = .false.
       l_last_clip_ts = .true.
-      call clip_covariance( clip_upwp, l_first_clip_ts,      & ! intent(in)
+      call clip_covar( clip_upwp, l_first_clip_ts,      & ! intent(in)
                             l_last_clip_ts, dt, wp2, up2,    & ! intent(in)
                             upwp, upwp_chnge )                 ! intent(inout)
 
@@ -391,7 +391,7 @@ module advance_windm_edsclrm_module
       ! This is the third instance of v'w' clipping.
       l_first_clip_ts = .false.
       l_last_clip_ts = .true.
-      call clip_covariance( clip_vpwp, l_first_clip_ts,      & ! intent(in)
+      call clip_covar( clip_vpwp, l_first_clip_ts,      & ! intent(in)
                             l_last_clip_ts, dt, wp2, vp2,    & ! intent(in)
                             vpwp, vpwp_chnge )                 ! intent(inout)
 
@@ -402,11 +402,11 @@ module advance_windm_edsclrm_module
       !   any other variables.
       l_first_clip_ts = .false.
       l_last_clip_ts = .true.
-      call clip_covariance( clip_upwp, l_first_clip_ts,      & ! intent(in)
+      call clip_covar( clip_upwp, l_first_clip_ts,      & ! intent(in)
                             l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
                             upwp, upwp_chnge )                 ! intent(inout)
 
-      call clip_covariance( clip_vpwp, l_first_clip_ts,      & ! intent(in)
+      call clip_covar( clip_vpwp, l_first_clip_ts,      & ! intent(in)
                             l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
                             vpwp, vpwp_chnge )                 ! intent(inout)
 

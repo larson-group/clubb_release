@@ -241,7 +241,7 @@ module clubb_core
       Skw_func ! Procedure
 
     use clip_explicit, only: & 
-      clip_covariances_denom ! Procedure(s)
+      clip_covars_denom ! Procedure(s)
 
     use T_in_K_module, only: &
       ! Read values from namelist
@@ -1211,7 +1211,7 @@ module clubb_core
     upwp_cl_num    = 1 ! First instance of u'w' clipping.
     vpwp_cl_num    = 1 ! First instance of v'w' clipping.
 
-    call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
+    call clip_covars_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
                                  sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
                                  wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
                                  wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
@@ -1243,7 +1243,7 @@ module clubb_core
     upwp_cl_num    = 2 ! Second instance of u'w' clipping.
     vpwp_cl_num    = 2 ! Second instance of v'w' clipping.
 
-    call clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
+    call clip_covars_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
                                  sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
                                  wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
                                  wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)

@@ -7,8 +7,8 @@ module clip_explicit
 
   private
 
-  public :: clip_covariances_denom, &
-            clip_covariance, & 
+  public :: clip_covars_denom, &
+            clip_covar, & 
             clip_variance, & 
             clip_skewness, &
             clip_skewness_core
@@ -34,7 +34,7 @@ module clip_explicit
   contains
 
   !=============================================================================
-  subroutine clip_covariances_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
+  subroutine clip_covars_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
                                      sclrp2, wprtp_cl_num, wpthlp_cl_num, &
                                      wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
                                      wprtp, wpthlp, upwp, vpwp, wpsclrp )
@@ -166,7 +166,7 @@ module clip_explicit
       endif
     endif
 
-    ! Used within subroutine clip_covariance.
+    ! Used within subroutine clip_covar.
     if ( wprtp_cl_num == 1 ) then
       l_first_clip_ts = .true.
       l_last_clip_ts  = .false.
@@ -179,7 +179,7 @@ module clip_explicit
     endif
 
     ! Clip w'r_t'
-    call clip_covariance( clip_wprtp, l_first_clip_ts,   & ! intent(in) 
+    call clip_covar( clip_wprtp, l_first_clip_ts,   & ! intent(in) 
                           l_last_clip_ts, dt, wp2, rtp2, & ! intent(in)
                           wprtp, wprtp_chnge )             ! intent(inout)
 
@@ -235,7 +235,7 @@ module clip_explicit
       endif
     endif
 
-    ! Used within subroutine clip_covariance.
+    ! Used within subroutine clip_covar.
     if ( wpthlp_cl_num == 1 ) then
       l_first_clip_ts = .true.
       l_last_clip_ts  = .false.
@@ -248,7 +248,7 @@ module clip_explicit
     endif
 
     ! Clip w'th_l'
-    call clip_covariance( clip_wpthlp, l_first_clip_ts,   & ! intent(in)
+    call clip_covar( clip_wpthlp, l_first_clip_ts,   & ! intent(in)
                           l_last_clip_ts, dt, wp2, thlp2, & ! intent(in)
                           wpthlp, wpthlp_chnge )            ! intent(inout)
 
@@ -289,7 +289,7 @@ module clip_explicit
     ! The third instance of w'sclr' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-    ! Used within subroutine clip_covariance.
+    ! Used within subroutine clip_covar.
     if ( wpsclrp_cl_num == 1 ) then
       l_first_clip_ts = .true.
       l_last_clip_ts  = .false.
@@ -303,7 +303,7 @@ module clip_explicit
 
     ! Clip w'sclr'
     do i = 1, sclr_dim, 1
-      call clip_covariance( clip_wpsclrp, l_first_clip_ts,           & ! intent(in)
+      call clip_covar( clip_wpsclrp, l_first_clip_ts,           & ! intent(in)
                             l_last_clip_ts, dt, wp2(:), sclrp2(:,i), & ! intent(in)
                             wpsclrp(:,i), wpsclrp_chnge(:,i) )         ! intent(inout)
     enddo
@@ -328,7 +328,7 @@ module clip_explicit
     ! The second instance of u'w' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-    ! Used within subroutine clip_covariance.
+    ! Used within subroutine clip_covar.
     if ( upwp_cl_num == 1 ) then
       l_first_clip_ts = .true.
       l_last_clip_ts  = .false.
@@ -342,12 +342,12 @@ module clip_explicit
 
     ! Clip u'w'
     if ( l_tke_aniso ) then
-      call clip_covariance( clip_upwp, l_first_clip_ts,   & ! intent(in)
+      call clip_covar( clip_upwp, l_first_clip_ts,   & ! intent(in)
                             l_last_clip_ts, dt, wp2, up2, & ! intent(in)
                             upwp, upwp_chnge )              ! intent(inout)
     else
       ! In this case, up2 = wp2, and the variable `up2' does not interact
-      call clip_covariance( clip_upwp, l_first_clip_ts,   & ! intent(in)
+      call clip_covar( clip_upwp, l_first_clip_ts,   & ! intent(in)
                             l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
                             upwp, upwp_chnge )              ! intent(inout)
     end if
@@ -373,7 +373,7 @@ module clip_explicit
     ! The second instance of v'w' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-    ! Used within subroutine clip_covariance.
+    ! Used within subroutine clip_covar.
     if ( vpwp_cl_num == 1 ) then
       l_first_clip_ts = .true.
       l_last_clip_ts  = .false.
@@ -386,22 +386,22 @@ module clip_explicit
     endif
 
     if ( l_tke_aniso ) then
-      call clip_covariance( clip_vpwp, l_first_clip_ts,   & ! intent(in)
+      call clip_covar( clip_vpwp, l_first_clip_ts,   & ! intent(in)
                             l_last_clip_ts, dt, wp2, vp2, & ! intent(in)
                             vpwp, vpwp_chnge )              ! intent(inout)
     else
       ! In this case, vp2 = wp2, and the variable `vp2' does not interact
-      call clip_covariance( clip_vpwp, l_first_clip_ts,   & ! intent(in)
+      call clip_covar( clip_vpwp, l_first_clip_ts,   & ! intent(in)
                             l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
                             vpwp, vpwp_chnge )              ! intent(inout)
     end if
 
 
     return
-  end subroutine clip_covariances_denom
+  end subroutine clip_covars_denom
 
   !=============================================================================
-  subroutine clip_covariance( solve_type, l_first_clip_ts,  & 
+  subroutine clip_covar( solve_type, l_first_clip_ts,  & 
                               l_last_clip_ts, dt, xp2, yp2,  & 
                               xpyp, xpyp_chnge )
 
@@ -568,7 +568,7 @@ module clip_explicit
 
 
     return
-  end subroutine clip_covariance
+  end subroutine clip_covar
 
   !=============================================================================
   subroutine clip_variance( solve_type, dt, threshold, &

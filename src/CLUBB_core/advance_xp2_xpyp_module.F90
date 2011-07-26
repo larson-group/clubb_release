@@ -113,7 +113,7 @@ module advance_xp2_xpyp_module
       time_precision ! Variable(s)
 
     use clip_explicit, only: & 
-      clip_covariance,  & ! Procedure(s)
+      clip_covar,  & ! Procedure(s)
       clip_variance, &
       clip_rtp2, &        ! Variable(s)
       clip_thlp2, &
@@ -326,11 +326,11 @@ module advance_xp2_xpyp_module
 
 
     ! Define the Coefficent of Eddy Diffusivity for the variances
-    ! and covariances.
+    ! and covars.
     do k = 1, gr%nnzp, 1
 
-      ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp, and
-      ! passive scalars.  The variances and covariances are located on the
+      ! Kw2 is used for variances and covars rtp2, thlp2, rtpthlp, and
+      ! passive scalars.  The variances and covars are located on the
       ! momentum levels.  Kw2 is located on the thermodynamic levels.
       ! Kw2 = c_K2 * Kh_zt
       Kw2(k) = c_K2 * Kh_zt(k)
@@ -637,7 +637,7 @@ module advance_xp2_xpyp_module
     ! same place, clipping for r_t'th_l' only has to be done once.
     l_first_clip_ts = .true.
     l_last_clip_ts = .true.
-    call clip_covariance( xp2_xpyp_rtpthlp, l_first_clip_ts,  & ! Intent(in)
+    call clip_covar( xp2_xpyp_rtpthlp, l_first_clip_ts,  & ! Intent(in)
                           l_last_clip_ts, dt, rtp2, thlp2,  &  ! Intent(in)
                           rtpthlp, rtpthlp_chnge )     ! Intent(inout)
 
@@ -782,7 +782,7 @@ module advance_xp2_xpyp_module
         else
           l_first_clip_ts = .true.
           l_last_clip_ts = .true.
-          call clip_covariance( clip_sclrprtp, l_first_clip_ts,  &            ! Intent(in) 
+          call clip_covar( clip_sclrprtp, l_first_clip_ts,  &            ! Intent(in) 
                                 l_last_clip_ts, dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
                                 sclrprtp(:,i), sclrprtp_chnge(:,i) ) ! Intent(inout)
         end if
@@ -805,7 +805,7 @@ module advance_xp2_xpyp_module
         else
           l_first_clip_ts = .true.
           l_last_clip_ts = .true.
-          call clip_covariance( clip_sclrpthlp, l_first_clip_ts,  &            ! Intent(in) 
+          call clip_covar( clip_sclrpthlp, l_first_clip_ts,  &            ! Intent(in) 
                                 l_last_clip_ts, dt, sclrp2(:,i), thlp2(:), &   ! Intent(in) 
                                 sclrpthlp(:,i), sclrpthlp_chnge(:,i) ) ! Intent(inout)
         end if
@@ -880,7 +880,7 @@ module advance_xp2_xpyp_module
                            Cn, nu, beta, lhs )
 
     ! Description:
-    ! Compute LHS tridiagonal matrix for a variance or covariance term
+    ! Compute LHS tridiagonal matrix for a variance or covar term
 
     ! References:
     ! None
@@ -1120,11 +1120,11 @@ module advance_xp2_xpyp_module
 
 
     ! Boundary Conditions
-    ! These are set so that the surface_varnce value of the variances and covariances
+    ! These are set so that the surface_varnce value of the variances and covars
     ! can be used at the lowest boundary and the values of those variables can
     ! be set to their respective threshold minimum values at the top boundary.
     ! Fixed-point boundary conditions are used for both the variances and the
-    ! covariances.
+    ! covars.
     lhs(:,1) = 0.0
     lhs(:,gr%nnzp) = 0.0
 
@@ -1186,10 +1186,10 @@ module advance_xp2_xpyp_module
 
     ! Input/Ouput variables
     real, dimension(gr%nnzp,nrhs), intent(inout) :: & 
-      rhs  ! Explicit contributions to x variance/covariance term [units vary]
+      rhs  ! Explicit contributions to x variance/covar term [units vary]
 
     real, dimension(3,gr%nnzp), intent(inout) :: & 
-      lhs  ! Implicit contributions to x variance/covariance term [units vary]
+      lhs  ! Implicit contributions to x variance/covar term [units vary]
 
     ! Output Variables
     real, dimension(gr%nnzp,nrhs), intent(out) ::  & 
@@ -1510,7 +1510,7 @@ module advance_xp2_xpyp_module
 
     ! Output Variable
     real, dimension(gr%nnzp,1), intent(out) :: & 
-      rhs    ! Explicit contributions to x variance/covariance terms
+      rhs    ! Explicit contributions to x variance/covar terms
 
     ! Local Variables
 
@@ -1872,7 +1872,7 @@ module advance_xp2_xpyp_module
 
     ! Output Variable
     real, dimension(gr%nnzp,1), intent(out) :: & 
-      rhs     ! Explicit contributions to x variance/covariance terms
+      rhs     ! Explicit contributions to x variance/covar terms
 
     ! Local Variables
 
@@ -2086,9 +2086,9 @@ module advance_xp2_xpyp_module
     ! These are set so that the surface_varnce value of rtp2, thlp2, or rtpthlp
     ! (or sclrp2, sclrprtp, or sclrpthlp) can be used at the lowest boundary and the
     ! values of those variables can be set to their respective threshold minimum
-    ! values (which is 0 in the case of the covariances) at the top boundary.
+    ! values (which is 0 in the case of the covars) at the top boundary.
     ! Fixed-point boundary conditions are used for both the variances and the
-    ! covariances.
+    ! covars.
 
     rhs(1,1) = xapxbp(1)
     ! The value of the field at the upper boundary will be set to it's threshold
@@ -2651,12 +2651,12 @@ module advance_xp2_xpyp_module
     ! Thus, for u'^2 and v'^2, function 'term_dp1_lhs' is called, but function
     ! 'term_dp1_rhs' is not called, as function 'term_pr1' is called instead.
     !
-    ! For cases where x_a'x_b' is a covariance (in other words, where x_a and
+    ! For cases where x_a'x_b' is a covar (in other words, where x_a and
     ! x_b are different variables), threshold is set to 0, and the expression
     ! reverts to the form found in the first equation.
     !
     ! This term is broken into implicit and explicit portions.  The equations
-    ! for u'^2, v'^2, and any covariances only include the implicit portion.
+    ! for u'^2, v'^2, and any covars only include the implicit portion.
     ! The implicit portion of this term is:
     !
     ! - ( C_n / tau_zm ) x_a'x_b'(t+1).
@@ -2719,12 +2719,12 @@ module advance_xp2_xpyp_module
     ! Thus, for u'^2 and v'^2, function 'term_dp1_lhs' is called, but function
     ! 'term_dp1_rhs' is not called, as function 'term_pr1' is called instead.
     !
-    ! For cases where x_a'x_b' is a covariance (in other words, where x_a and
+    ! For cases where x_a'x_b' is a covar (in other words, where x_a and
     ! x_b are different variables), threshold is set to 0, and the expression
     ! reverts to the form found in the first equation.
     !
     ! This term is broken into implicit and explicit portions.  The equations
-    ! for u'^2, v'^2, and any covariances only include the implicit portion.
+    ! for u'^2, v'^2, and any covars only include the implicit portion.
     ! The explicit portion of this term is:
     !
     ! + ( C_n / tau_zm ) * threshold.

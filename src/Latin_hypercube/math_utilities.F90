@@ -5,7 +5,7 @@ module math_utilities
 !-----------------------------------------------------------------------
   implicit none
 
-  public :: corrcoef, std, cov, compute_sample_mean, compute_sample_variance
+  public :: corrcoef, std, covar, compute_sample_mean, compute_sample_variance
 
   private
 
@@ -35,8 +35,8 @@ module math_utilities
     ! Return type
     real :: corrcoef
 
-    corrcoef = cov( vect1, vect2, n ) / & 
-           sqrt( cov( vect1, vect1, n ) * cov( vect2, vect2, n ) )
+    corrcoef = covar( vect1, vect2, n ) / & 
+           sqrt( covar( vect1, vect1, n ) * covar( vect2, vect2, n ) )
 
     return
   end function corrcoef
@@ -63,14 +63,14 @@ module math_utilities
     ! Return type
     real std
 
-    std = sqrt( cov( vector, vector, n )*( n/(n-1) ) )
+    std = sqrt( covar( vector, vector, n )*( n/(n-1) ) )
 
     return
   end function std
 
 
 !-----------------------------------------------------------------------
-  function cov( vect1, vect2, n )
+  function covar( vect1, vect2, n )
 
 ! Description:
 !   Covariance of two vectors
@@ -87,7 +87,7 @@ module math_utilities
       vect1, vect2
 
     ! Return type
-    real :: cov
+    real :: covar
 
     ! Local variables
     real :: total, avg1, avg2
@@ -103,10 +103,10 @@ module math_utilities
       total = total + (vect1(j) - avg1) * (vect2(j) - avg2)
     enddo
 
-    cov = total / real( n )
+    covar = total / real( n )
 
     return
-  end function cov
+  end function covar
 
 !-----------------------------------------------------------------------
   pure function compute_sample_mean( n_levels, n_samples, weight, x_sample ) &

@@ -10,8 +10,8 @@ module KK_upscaled_covariances
             covar_x_KK_auto, &
             covar_x_KK_accr
 
-  private :: quadrivar_NNLL_cov_eq, &
-             trivar_NNL_cov_eq
+  private :: quadrivar_NNLL_covar_eq, &
+             trivar_NNL_covar_eq
 
   contains
 
@@ -81,7 +81,7 @@ module KK_upscaled_covariances
     covar_x_KK_evap  &
     = KK_evap_coef &
       * ( mixt_frac &
-          * quadrivar_NNLL_cov_eq( mu_x_1, mu_s_1, mu_rr_n, mu_Nr_n, &
+          * quadrivar_NNLL_covar_eq( mu_x_1, mu_s_1, mu_rr_n, mu_Nr_n, &
                                    sigma_x_1, sigma_s_1, sigma_rr_n, &
                                    sigma_Nr_n, corr_xs_1, corr_xrr_1_n, &
                                    corr_xNr_1_n, corr_srr_1_n, &
@@ -89,7 +89,7 @@ module KK_upscaled_covariances
                                    KK_evap_tndcy, KK_evap_coef, x_tol, &
                                    alpha_exp, beta_exp, gamma_exp ) &
         + ( 1.0 - mixt_frac ) &
-          * quadrivar_NNLL_cov_eq( mu_x_2, mu_s_2, mu_rr_n, mu_Nr_n, &
+          * quadrivar_NNLL_covar_eq( mu_x_2, mu_s_2, mu_rr_n, mu_Nr_n, &
                                    sigma_x_2, sigma_s_2, sigma_rr_n, &
                                    sigma_Nr_n, corr_xs_2, corr_xrr_2_n, &
                                    corr_xNr_2_n, corr_srr_2_n, &
@@ -159,13 +159,13 @@ module KK_upscaled_covariances
     covar_x_KK_auto  &
     = KK_auto_coef &
       * ( mixt_frac &
-          * trivar_NNL_cov_eq( mu_x_1, mu_s_1, mu_Nc_n, &
+          * trivar_NNL_covar_eq( mu_x_1, mu_s_1, mu_Nc_n, &
                                sigma_x_1, sigma_s_1, sigma_Nc_n, &
                                corr_xs_1, corr_xNc_1_n, corr_sNc_1_n, &
                                x_mean, KK_auto_tndcy, KK_auto_coef, &
                                x_tol, alpha_exp, beta_exp ) &
         + ( 1.0 - mixt_frac ) &
-          * trivar_NNL_cov_eq( mu_x_2, mu_s_2, mu_Nc_n, &
+          * trivar_NNL_covar_eq( mu_x_2, mu_s_2, mu_Nc_n, &
                                sigma_x_2, sigma_s_2, sigma_Nc_n, &
                                corr_xs_2, corr_xNc_2_n, corr_sNc_2_n, &
                                x_mean, KK_auto_tndcy, KK_auto_coef, &
@@ -233,13 +233,13 @@ module KK_upscaled_covariances
     covar_x_KK_accr  &
     = KK_accr_coef &
       * ( mixt_frac &
-          * trivar_NNL_cov_eq( mu_x_1, mu_s_1, mu_rr_n, &
+          * trivar_NNL_covar_eq( mu_x_1, mu_s_1, mu_rr_n, &
                                sigma_x_1, sigma_s_1, sigma_rr_n, &
                                corr_xs_1, corr_xrr_1_n, corr_srr_1_n, &
                                x_mean, KK_accr_tndcy, KK_accr_coef, &
                                x_tol, alpha_exp, beta_exp ) &
         + ( 1.0 - mixt_frac ) &
-          * trivar_NNL_cov_eq( mu_x_2, mu_s_2, mu_rr_n, &
+          * trivar_NNL_covar_eq( mu_x_2, mu_s_2, mu_rr_n, &
                                sigma_x_2, sigma_s_2, sigma_rr_n, &
                                corr_xs_2, corr_xrr_2_n, corr_srr_2_n, &
                                x_mean, KK_accr_tndcy, KK_accr_coef, &
@@ -252,7 +252,7 @@ module KK_upscaled_covariances
   end function covar_x_KK_accr
 
   !=============================================================================
-  function quadrivar_NNLL_cov_eq( mu_x_i, mu_s_i, mu_rr_n, mu_Nr_n, &
+  function quadrivar_NNLL_covar_eq( mu_x_i, mu_s_i, mu_rr_n, mu_Nr_n, &
                                   sigma_x_i, sigma_s_i, sigma_rr_n, &
                                   sigma_Nr_n, corr_xs_i, corr_xrr_i_n, &
                                   corr_xNr_i_n, corr_srr_i_n, &
@@ -278,11 +278,11 @@ module KK_upscaled_covariances
     ! References:
     !-----------------------------------------------------------------------
 
-    use PDF_integrals_covariances, only: &
-        quadrivar_NNLL_cov,              & ! Procedure(s)
-        quadrivar_NNLL_cov_const_x1,     &
-        quadrivar_NNLL_cov_const_x2,     &
-        quadrivar_NNLL_cov_const_x1_x2
+    use PDF_integrals_covars, only: &
+        quadrivar_NNLL_covar,              & ! Procedure(s)
+        quadrivar_NNLL_covar_const_x1,     &
+        quadrivar_NNLL_covar_const_x2,     &
+        quadrivar_NNLL_covar_const_x1_x2
 
     use constants_clubb, only: &
         s_mellor_tol, & ! Constant(s)
@@ -320,7 +320,7 @@ module KK_upscaled_covariances
 
     ! Return Variable
     real :: &
-      quadrivar_NNLL_cov_eq
+      quadrivar_NNLL_covar_eq
 
     ! Local Variables
     double precision :: &
@@ -426,9 +426,9 @@ module KK_upscaled_covariances
        if ( mu_x2 <= 0.0 ) then
 
           ! There is all clear air in the ith component ( s <= 0 everywhere ).
-          quadrivar_NNLL_cov_eq  &
+          quadrivar_NNLL_covar_eq  &
           = real( &
-            quadrivar_NNLL_cov_const_x1_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
+            quadrivar_NNLL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
                                             sigma_x3_n, sigma_x4_n, &
                                             rho_x3x4_n, x1_mean, &
                                             x2_alpha_x3_beta_x4_gamma_mean, &
@@ -438,7 +438,7 @@ module KK_upscaled_covariances
        else  ! mu_x2 > 0
 
           ! There is all cloudy air in the ith component ( s > 0 everywhere ).
-          quadrivar_NNLL_cov_eq = 0.0
+          quadrivar_NNLL_covar_eq = 0.0
 
 
        endif
@@ -447,9 +447,9 @@ module KK_upscaled_covariances
     elseif ( sigma_x1 <= x1_tol ) then
 
        ! The ith PDF component variance of x (r_t, th_l, or w) is 0.
-       quadrivar_NNLL_cov_eq  &
+       quadrivar_NNLL_covar_eq  &
        = real( &
-         quadrivar_NNLL_cov_const_x1( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
+         quadrivar_NNLL_covar_const_x1( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
                                       sigma_x2, sigma_x3_n, sigma_x4_n, &
                                       rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
                                       x1_mean, &
@@ -464,9 +464,9 @@ module KK_upscaled_covariances
        if ( mu_x2 <= 0.0 ) then
 
           ! There is all clear air in the ith component ( s <= 0 everywhere ).
-          quadrivar_NNLL_cov_eq  &
+          quadrivar_NNLL_covar_eq  &
           = real( &
-            quadrivar_NNLL_cov_const_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
+            quadrivar_NNLL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
                                          sigma_x1, sigma_x3_n, sigma_x4_n, &
                                          rho_x1x3_n, rho_x1x4_n, rho_x3x4_n, &
                                          x1_mean, &
@@ -477,7 +477,7 @@ module KK_upscaled_covariances
        else  ! mu_x2 > 0
 
           ! There is all cloudy air in the ith component ( s > 0 everywhere ).
-          quadrivar_NNLL_cov_eq = 0.0
+          quadrivar_NNLL_covar_eq = 0.0
 
 
        endif
@@ -487,8 +487,8 @@ module KK_upscaled_covariances
 
        ! This is the complete value of the quadrivariate.
        ! All fields vary in the ith PDF component.
-       quadrivar_NNLL_cov_eq  &
-       = real( quadrivar_NNLL_cov( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
+       quadrivar_NNLL_covar_eq  &
+       = real( quadrivar_NNLL_covar( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
                                    sigma_x1, sigma_x2, sigma_x3_n, sigma_x4_n, &
                                    rho_x1x2, rho_x1x3_n, rho_x1x4_n, &
                                    rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
@@ -501,10 +501,10 @@ module KK_upscaled_covariances
 
     return
 
-  end function quadrivar_NNLL_cov_eq
+  end function quadrivar_NNLL_covar_eq
 
   !=============================================================================
-  function trivar_NNL_cov_eq( mu_x_i, mu_s_i, mu_y_n, &
+  function trivar_NNL_covar_eq( mu_x_i, mu_s_i, mu_y_n, &
                               sigma_x_i, sigma_s_i, sigma_y_n, &
                               corr_xs_i, corr_xy_i_n, corr_sy_i_n, &
                               x_mean, mc_tndcy_mean, mc_coef, &
@@ -530,11 +530,11 @@ module KK_upscaled_covariances
     ! References:
     !-----------------------------------------------------------------------
 
-    use PDF_integrals_covariances, only: &
-        trivar_NNL_cov,            & ! Procedure(s)
-        trivar_NNL_cov_const_x1,   &
-        trivar_NNL_cov_const_x2,   &
-        trivar_NNL_cov_const_x1_x2
+    use PDF_integrals_covars, only: &
+        trivar_NNL_covar,            & ! Procedure(s)
+        trivar_NNL_covar_const_x1,   &
+        trivar_NNL_covar_const_x2,   &
+        trivar_NNL_covar_const_x1_x2
 
     use constants_clubb, only: &
         s_mellor_tol, & ! Constant(s)
@@ -566,7 +566,7 @@ module KK_upscaled_covariances
 
     ! Return Variable
     real :: &
-      trivar_NNL_cov_eq
+      trivar_NNL_covar_eq
 
     ! Local Variables
     double precision :: &
@@ -661,9 +661,9 @@ module KK_upscaled_covariances
        if ( mu_x2 > 0.0 ) then
 
           ! There is all cloudy air in the ith component ( s > 0 everywhere ).
-          trivar_NNL_cov_eq  &
+          trivar_NNL_covar_eq  &
           = real( &
-            trivar_NNL_cov_const_x1_x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
+            trivar_NNL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
                                         x1_mean, x2_alpha_x3_beta_mean, &
                                         alpha_exp, beta_exp ) )
 
@@ -671,7 +671,7 @@ module KK_upscaled_covariances
        else  ! mu_x2 <= 0
 
           ! There is all clear air in the ith component ( s <= 0 everywhere ).
-          trivar_NNL_cov_eq = 0.0
+          trivar_NNL_covar_eq = 0.0
 
 
        endif
@@ -680,8 +680,8 @@ module KK_upscaled_covariances
     elseif ( sigma_x1 <= x1_tol ) then
 
        ! The ith PDF component variance of x (r_t, th_l, or w) is 0.
-       trivar_NNL_cov_eq  &
-       = real( trivar_NNL_cov_const_x1( mu_x1, mu_x2, mu_x3_n, &
+       trivar_NNL_covar_eq  &
+       = real( trivar_NNL_covar_const_x1( mu_x1, mu_x2, mu_x3_n, &
                                         sigma_x2, sigma_x3_n, rho_x2x3_n, &
                                         x1_mean, x2_alpha_x3_beta_mean, &
                                         alpha_exp, beta_exp ) )
@@ -694,8 +694,8 @@ module KK_upscaled_covariances
        if ( mu_x2 > 0.0 ) then
 
           ! There is all cloudy air in the ith component ( s > 0 everywhere ).
-          trivar_NNL_cov_eq  &
-          = real( trivar_NNL_cov_const_x2( mu_x1, mu_x2, mu_x3_n, &
+          trivar_NNL_covar_eq  &
+          = real( trivar_NNL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, &
                                            sigma_x1, sigma_x3_n, rho_x1x3_n, &
                                            x1_mean, x2_alpha_x3_beta_mean, &
                                            alpha_exp, beta_exp ) )
@@ -704,7 +704,7 @@ module KK_upscaled_covariances
        else  ! mu_x2 <= 0
 
           ! There is all clear air in the ith component ( s <= 0 everywhere ).
-          trivar_NNL_cov_eq = 0.0
+          trivar_NNL_covar_eq = 0.0
 
 
        endif
@@ -714,8 +714,8 @@ module KK_upscaled_covariances
 
        ! This is the complete value of the trivariate.
        ! All fields vary in the ith PDF component.
-       trivar_NNL_cov_eq  &
-       = real( trivar_NNL_cov( mu_x1, mu_x2, mu_x3_n, &
+       trivar_NNL_covar_eq  &
+       = real( trivar_NNL_covar( mu_x1, mu_x2, mu_x3_n, &
                                sigma_x1, sigma_x2, sigma_x3_n, &
                                rho_x1x2, rho_x1x3_n, rho_x2x3_n, &
                                x1_mean, x2_alpha_x3_beta_mean, &
@@ -727,7 +727,7 @@ module KK_upscaled_covariances
 
     return
 
-  end function trivar_NNL_cov_eq
+  end function trivar_NNL_covar_eq
 
 !===============================================================================
 
