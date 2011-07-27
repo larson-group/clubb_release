@@ -292,7 +292,7 @@ module mono_flux_limiter
         time_precision ! Variable(s)
 
     use error_code, only:  &
-        lapack_error, &  ! Procedure(s)
+        fatal_error, &  ! Procedure(s)
         clubb_no_error   ! Constant
         
     use fill_holes, only: &
@@ -713,7 +713,7 @@ module mono_flux_limiter
                              xm, err_code )
 
           ! Check for errors
-          if ( lapack_error( err_code ) ) return
+          if ( fatal_error( err_code ) ) return
 
        else  ! l_mfl_xm_imp_adj = .false.
 
@@ -1043,7 +1043,7 @@ module mono_flux_limiter
         tridag_solve  ! Procedure(s)
 
     use error_code, only:  &
-        lapack_error, &  ! Procedure(s)
+        fatal_error, &  ! Procedure(s)
         clubb_no_error   ! Constant
 
     implicit none
@@ -1095,7 +1095,7 @@ module mono_flux_limiter
            xm, err_code )                                    ! Intent(out)
 
     ! Check for errors
-    if ( lapack_error( err_code ) ) return
+    if ( fatal_error( err_code ) ) return
 
     ! Boundary condition on xm
     xm(1) = xm(2)
