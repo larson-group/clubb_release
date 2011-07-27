@@ -5,7 +5,7 @@ module extrapolation
 
   public :: lin_ext_zm_bottom, lin_ext_zt_bottom
 
-  private
+  private ! Default scope
 
   contains
 !===============================================================================
@@ -14,11 +14,13 @@ module extrapolation
   result( var_zm )
 
     ! Description:
-    ! This function computes the value of a momentum-level variable at a bottom
-    ! grid level by using a linear extension of the values of the variable at
-    ! the two levels immediately above the level where the result value is
-    ! needed.
+    !   This function computes the value of a momentum-level variable at a bottom
+    !   grid level by using a linear extension of the values of the variable at
+    !   the two levels immediately above the level where the result value is
+    !   needed.
 
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     implicit none
@@ -35,6 +37,8 @@ module extrapolation
     ! Return Variable
     real :: var_zm   ! Momentum level variable at level (k)    [units vary]
 
+    ! ---- Begin Code -----
+
     var_zm = ( ( var_zmp2 - var_zmp1 ) / ( zmp2 - zmp1 ) ) & 
              * ( zm - zmp1 ) + var_zmp1
 
@@ -47,11 +51,13 @@ module extrapolation
   result( var_zt )
 
     ! Description:
-    ! This function computes the value of a thermodynamic-level variable at a
-    ! bottom grid level by using a linear extension of the values of the
-    ! variable at the two levels immediately above the level where the result
-    ! value is needed.
-
+    !   This function computes the value of a thermodynamic-level variable at a
+    !   bottom grid level by using a linear extension of the values of the
+    !   variable at the two levels immediately above the level where the result
+    !   value is needed.
+    !
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     implicit none
@@ -67,9 +73,12 @@ module extrapolation
     ! Return Variable
     real :: var_zt   ! Thermodynamic level variable at level (k)    [units vary]
 
+    ! ---- Begin Code -----
+
     var_zt = ( ( var_ztp2 - var_ztp1 ) / ( ztp2 - ztp1 ) ) & 
              * ( zt - ztp1 ) + var_ztp1
 
     return
   end function lin_ext_zt_bottom
+
 end module extrapolation

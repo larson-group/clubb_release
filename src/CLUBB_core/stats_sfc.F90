@@ -20,6 +20,8 @@ module stats_sfc
 
 ! Description:
 !   Initializes array indices for sfc
+! References:
+!   None
 !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -91,6 +93,8 @@ module stats_sfc
 
     ! Local Varables
     integer :: i, k
+
+    ! ---- Begin Code ----
 
     ! Default initialization for array indices for sfc
 

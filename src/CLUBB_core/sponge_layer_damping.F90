@@ -1,8 +1,10 @@
 !$Id$
 module sponge_layer_damping
+! Description:
+!   This module is used for damping variables in upper altitudes of the grid.
 !
-! This module is used for damping variables in upper altitudes of the grid.
-!
+! References:
+!   None
 !---------------------------------------------------------------------------------------------------
   implicit none
 
@@ -50,9 +52,12 @@ module sponge_layer_damping
   !---------------------------------------------------------------------------------------------
   function sponge_damp_xm( dt, xm_ref, xm, damping_profile ) result( xm_p )
     !
-    !  Description: Damps specified variable. The module must be initialized for
-    !  this function to work. Otherwise a stop is issued.
+    ! Description:
+    !   Damps specified variable. The module must be initialized for
+    !   this function to work. Otherwise a stop is issued.
     !
+    ! References:
+    !   None
     !-------------------------------------------------------------------------------------------
 
     !  "Sponge"-layer damping at the domain top region
@@ -62,6 +67,9 @@ module sponge_layer_damping
     use stats_precision, only: time_precision ! Variable(s)
 
     implicit none
+
+    ! External
+    intrinsic :: associated
 
     ! Input Variable(s)
     real(kind=time_precision), intent(in) :: dt ! Model Timestep
@@ -80,9 +88,11 @@ module sponge_layer_damping
 
     real :: dt_on_tau ! Ratio of timestep to damping timescale [-]
 
-    integer k
+    integer :: k
 
-    if( associated( damping_profile%tau_sponge_damp ) ) then
+    ! ---- Begin Code ----
+
+    if ( associated( damping_profile%tau_sponge_damp ) ) then
 
       xm_p = xm
 
@@ -107,15 +117,17 @@ module sponge_layer_damping
 
     end if
 
+    return
   end function sponge_damp_xm
 
   !---------------------------------------------------------------------------------------------
   subroutine initialize_tau_sponge_damp( dt, settings, damping_profile )
     !
-    !  Description:
-    !    Initialize tau_sponge_damp used for damping
+    ! Description:
+    !   Initialize tau_sponge_damp used for damping
     !
-    !
+    ! References:
+    !   None
     !-------------------------------------------------------------------------------------------
     use stats_precision, only: time_precision ! Variable(s)
     
@@ -128,7 +140,7 @@ module sponge_layer_damping
     implicit none
 
     ! Input Variable(s)
-    real(kind=time_precision), intent(in) :: dt ! Model Timestep [s}
+    real(kind=time_precision), intent(in) :: dt ! Model Timestep [s]
 
     type(sponge_damp_settings), intent(in) :: &
         settings
@@ -136,7 +148,9 @@ module sponge_layer_damping
     type(sponge_damp_profile), intent(out) :: &
       damping_profile
 
-    integer k
+    integer :: k ! Loop iterator
+
+    ! ---- Begin Code ----
 
     allocate( damping_profile%tau_sponge_damp(1:gr%nnzp))
 
@@ -164,22 +178,29 @@ module sponge_layer_damping
 ! End Vince Larson's change
     end do
 
+    return
   end subroutine initialize_tau_sponge_damp
 
   !---------------------------------------------------------------------------------------------
   subroutine finalize_tau_sponge_damp( damping_profile )
     !
-    !  Description:
-    !    Frees memory allocated in initialize_tau_sponge_damp
-    !
+    ! Description:
+    !   Frees memory allocated in initialize_tau_sponge_damp
+    ! 
+    ! References:
+    !   None
     !-------------------------------------------------------------------------------------------
     implicit none
 
+    ! Input/Output Variable(s)
     type(sponge_damp_profile), intent(inout) :: &
-        damping_profile
+      damping_profile ! Information for damping the profile
+
+    ! ---- Begin Code ----
 
     deallocate( damping_profile%tau_sponge_damp )
 
+    return
   end subroutine finalize_tau_sponge_damp
 
 

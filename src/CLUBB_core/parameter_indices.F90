@@ -1,24 +1,24 @@
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 ! $Id$
 module parameter_indices
 
-!       Description:
-!       Since f90/95 lacks enumeration, we're stuck numbering each
-!       parameter by hand like this.
+! Description:
+!   Since f90/95 lacks enumeration, we're stuck numbering each
+!   parameter by hand like this.
 
-!       Adding new parameters is relatively simple.  First, the
-!       parameter should be added in the common block of the parameters
-!       module so it can be used in other parts of the code. Each
-!       variable needs a unique number in this module, and nparams must
-!       be incremented for the new variable.  Next, the params_list
-!       variable in module parameters should have new variable added to
-!       it.  The subroutines pack_parameters and uppack_parameters will
-!       need to have the variable added to their list, but the order
-!       doesn't actually matter, since the i variables in here determine
-!       where in the params vector the number is placed.
-!       Finally, the namelists initvars and initspread will need to
-!       have the parameter added to them.
-!-----------------------------------------------------------------------
+!   Adding new parameters is relatively simple.  First, the
+!   parameter should be added in the common block of the parameters
+!   module so it can be used in other parts of the code. Each
+!   variable needs a unique number in this module, and nparams must
+!   be incremented for the new variable.  Next, the params_list
+!   variable in module parameters should have new variable added to
+!   it.  The subroutines pack_parameters and uppack_parameters will
+!   need to have the variable added to their list, but the order
+!   doesn't actually matter, since the i variables in here determine
+!   where in the params vector the number is placed.
+!   Finally, the namelists initvars and initspread will need to
+!   have the parameter added to them.
+!-------------------------------------------------------------------------------
 
   implicit none
 

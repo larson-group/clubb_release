@@ -20,7 +20,7 @@ module hyper_diffusion_4th_ord
   public :: hyper_dfsn_4th_ord_zt_lhs,  &
             hyper_dfsn_4th_ord_zm_lhs
 
-contains
+  contains
 
   !=============================================================================
   pure function hyper_dfsn_4th_ord_zt_lhs( boundary_cond, nu, invrs_dzt,  &
@@ -54,12 +54,12 @@ contains
     !
     ! - nu * d^4( var_zt(t+1) )/dz^4.
     !
-    ! Note:  When the term is brought over to the left-hand side, the sign 
-    !        is reversed and the leading "-" in front of the term is changed 
+    ! Note:  When the term is brought over to the left-hand side, the sign
+    !        is reversed and the leading "-" in front of the term is changed
     !        to a "+".
     !
     ! The timestep index (t+1) means that the value of var_zt being used is from
-    ! the next timestep, which is being advanced to in solving the d(var_zt)/dt 
+    ! the next timestep, which is being advanced to in solving the d(var_zt)/dt
     ! equation.
     !
     ! The term is discretized as follows:
@@ -137,7 +137,7 @@ contains
     !    d(var_zt)/dt = -dF/dz.
     !
     !    For the 4th-order numerical diffusion term, -nu*d^4(var_zt)/dz^4 (which
-    !    is actually -d[nu*d^3(var_zt)/dz^3]/dz with a constant coefficient, 
+    !    is actually -d[nu*d^3(var_zt)/dz^3]/dz with a constant coefficient,
     !    nu), the flux is:
     !
     !    F = +nu*d^3(var_zt)/dz^3.
@@ -514,7 +514,7 @@ contains
     ! Input Variables
     character (len=*), intent(in) :: &
       boundary_cond   ! Type of boundary conditions being used
-                      ! ('zero-flux' or 'fixed-point').
+    !                   ('zero-flux' or 'fixed-point').
 
     real, intent(in) ::  &
       nu,          & ! Constant coef. of 4th-order numerical diffusion   [m^4/s]
@@ -535,316 +535,316 @@ contains
 
     if ( level == 1 ) then
 
-       ! Lowest level
-       ! k = 1; lower boundery level at surface.
-       ! Only relevant if zero-flux boundary conditions are used.
+      ! Lowest level
+      ! k = 1; lower boundery level at surface.
+      ! Only relevant if zero-flux boundary conditions are used.
 
-       if ( trim( boundary_cond ) == 'zero-flux' ) then
+      if ( trim( boundary_cond ) == 'zero-flux' ) then
 
-          ! Zero-flux boundary conditions
+        ! Zero-flux boundary conditions
 
-          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) &
-          = 0.0
+        ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+        lhs(km2_tdiag) &
+        = 0.0
 
-          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) &
-          = 0.0
+        ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) &
+        = 0.0
 
-          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   &
-          = +nu*invrs_dzt  &
-                  *invrs_dzm*(invrs_dztp1*invrs_dzm + invrs_dzt*invrs_dzm)
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag)   &
+        = +nu*invrs_dzt  &
+                *invrs_dzm*(invrs_dztp1*invrs_dzm + invrs_dzt*invrs_dzm)
 
-          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) &
-          = -nu*invrs_dzt  &
-                  *invrs_dzm*( invrs_dztp1*(invrs_dzmp1 + invrs_dzm)  &
-                              +invrs_dzt*invrs_dzm )
+        ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) &
+        = -nu*invrs_dzt  &
+                *invrs_dzm*( invrs_dztp1*(invrs_dzmp1 + invrs_dzm)  &
+                            +invrs_dzt*invrs_dzm )
 
-          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) &
-          = +nu*invrs_dzt  &
-                  *invrs_dzm*invrs_dztp1*invrs_dzmp1
+        ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+        lhs(kp2_tdiag) &
+        = +nu*invrs_dzt  &
+                *invrs_dzm*invrs_dztp1*invrs_dzmp1
 
-       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+      elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
-          ! Fixed-point boundary conditions
-          ! The left-hand side matrix contributions from level 1 are
-          ! over-written or set in the parent subroutine.
+        ! Fixed-point boundary conditions
+        ! The left-hand side matrix contributions from level 1 are
+        ! over-written or set in the parent subroutine.
 
-          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) &
-          = 0.0
+        ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+        lhs(km2_tdiag) &
+        = 0.0
 
-          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) &
-          = 0.0
+        ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) &
+        = 0.0
 
-          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   &
-          = 0.0
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag)   &
+        = 0.0
 
-          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) &
-          = 0.0
+        ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) &
+        = 0.0
 
-          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) &
-          = 0.0
+        ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+        lhs(kp2_tdiag) &
+        = 0.0
 
-       endif
+      endif
 
 
     elseif ( level == 2 ) then
 
-       ! Second-lowest level
+      ! Second-lowest level
 
-       if ( trim( boundary_cond ) == 'zero-flux' ) then
+      if ( trim( boundary_cond ) == 'zero-flux' ) then
 
-          ! Zero-flux boundary conditions
+        ! Zero-flux boundary conditions
 
-          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) &
-          = 0.0
+        ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+        lhs(km2_tdiag) &
+        = 0.0
 
-          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) &
-          = -nu*invrs_dzt  &
-                  *( invrs_dzm*invrs_dzt*invrs_dzmm1  &
-                    +invrs_dzmm1*( invrs_dzt*invrs_dzmm1  &
-                                  +invrs_dztm1*invrs_dzmm1 ) )
+        ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) &
+        = -nu*invrs_dzt  &
+                *( invrs_dzm*invrs_dzt*invrs_dzmm1  &
+                  +invrs_dzmm1*( invrs_dzt*invrs_dzmm1  &
+                                +invrs_dztm1*invrs_dzmm1 ) )
 
-          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   &
-          = +nu*invrs_dzt  &
-                  *( invrs_dzm*( invrs_dztp1*invrs_dzm  &
-                                +invrs_dzt*(invrs_dzm + invrs_dzmm1) )  &
-                    +invrs_dzmm1*( invrs_dzt*(invrs_dzm + invrs_dzmm1)  &
-                                  +invrs_dztm1*invrs_dzmm1 ) )
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag)   &
+        = +nu*invrs_dzt  &
+                *( invrs_dzm*( invrs_dztp1*invrs_dzm  &
+                              +invrs_dzt*(invrs_dzm + invrs_dzmm1) )  &
+                  +invrs_dzmm1*( invrs_dzt*(invrs_dzm + invrs_dzmm1)  &
+                                +invrs_dztm1*invrs_dzmm1 ) )
 
-          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) &
-          = -nu*invrs_dzt  &
-                  *( invrs_dzm*( invrs_dztp1*(invrs_dzmp1 + invrs_dzm)  &
-                                +invrs_dzt*invrs_dzm )  &
-                    +invrs_dzmm1*invrs_dzt*invrs_dzm )
+        ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) &
+        = -nu*invrs_dzt  &
+                *( invrs_dzm*( invrs_dztp1*(invrs_dzmp1 + invrs_dzm)  &
+                              +invrs_dzt*invrs_dzm )  &
+                  +invrs_dzmm1*invrs_dzt*invrs_dzm )
 
-          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) &
-          = +nu*invrs_dzt &
-                  *invrs_dzm*invrs_dztp1*invrs_dzmp1
+        ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+        lhs(kp2_tdiag) &
+        = +nu*invrs_dzt &
+                *invrs_dzm*invrs_dztp1*invrs_dzmp1
 
-       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+      elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
-          ! Fixed-point boundary conditions
+        ! Fixed-point boundary conditions
 
-          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) &
-          = 0.0
+        ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+        lhs(km2_tdiag) &
+        = 0.0
 
-          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) &
-          = -nu*invrs_dzt  &
-                  *( invrs_dzm*invrs_dzt*invrs_dzmm1  &
-                    +invrs_dzmm1*invrs_dzt*invrs_dzmm1 )
+        ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) &
+        = -nu*invrs_dzt  &
+                *( invrs_dzm*invrs_dzt*invrs_dzmm1  &
+                  +invrs_dzmm1*invrs_dzt*invrs_dzmm1 )
 
-          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   &
-          = +nu*invrs_dzt  &
-                  *( invrs_dzm*( invrs_dztp1*invrs_dzm  &
-                                +invrs_dzt*(invrs_dzm + invrs_dzmm1) )  &
-                    +invrs_dzmm1*( invrs_dzt*(invrs_dzm + invrs_dzmm1) ) )
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag)   &
+        = +nu*invrs_dzt  &
+                *( invrs_dzm*( invrs_dztp1*invrs_dzm  &
+                              +invrs_dzt*(invrs_dzm + invrs_dzmm1) )  &
+                  +invrs_dzmm1*( invrs_dzt*(invrs_dzm + invrs_dzmm1) ) )
 
-          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) &
-          = -nu*invrs_dzt  &
-                  *( invrs_dzm*( invrs_dztp1*(invrs_dzmp1 + invrs_dzm)  &
-                                +invrs_dzt*invrs_dzm )  &
-                    +invrs_dzmm1*invrs_dzt*invrs_dzm )
+        ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) &
+        = -nu*invrs_dzt  &
+                *( invrs_dzm*( invrs_dztp1*(invrs_dzmp1 + invrs_dzm)  &
+                              +invrs_dzt*invrs_dzm )  &
+                  +invrs_dzmm1*invrs_dzt*invrs_dzm )
 
-          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) &
-          = +nu*invrs_dzt  &
-                  *invrs_dzm*invrs_dztp1*invrs_dzmp1
+        ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+        lhs(kp2_tdiag) &
+        = +nu*invrs_dzt  &
+                *invrs_dzm*invrs_dztp1*invrs_dzmp1
 
-       endif
+      endif
 
 
     elseif ( level > 2 .and. level < gr%nnzp-1 ) then
 
-       ! k > 2 and k < num_levels-1
-       ! These interior level are not effected by boundary conditions.
+      ! k > 2 and k < num_levels-1
+      ! These interior level are not effected by boundary conditions.
 
-       ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-       lhs(km2_tdiag) &
-       = +nu*invrs_dzt  &
-               *invrs_dzmm1*invrs_dztm1*invrs_dzmm2
+      ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+      lhs(km2_tdiag) &
+      = +nu*invrs_dzt  &
+              *invrs_dzmm1*invrs_dztm1*invrs_dzmm2
 
-       ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-       lhs(km1_tdiag) &
-       = -nu*invrs_dzt  &
-               *( invrs_dzm*invrs_dzt*invrs_dzmm1  &
-                 +invrs_dzmm1*( invrs_dzt*invrs_dzmm1  &
-                               +invrs_dztm1*(invrs_dzmm1 + invrs_dzmm2) ) )
+      ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag) &
+      = -nu*invrs_dzt  &
+              *( invrs_dzm*invrs_dzt*invrs_dzmm1  &
+                +invrs_dzmm1*( invrs_dzt*invrs_dzmm1  &
+                              +invrs_dztm1*(invrs_dzmm1 + invrs_dzmm2) ) )
 
-       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-       lhs(k_tdiag)   &
-       = +nu*invrs_dzt  &
-               *( invrs_dzm*( invrs_dztp1*invrs_dzm  &
-                             +invrs_dzt*(invrs_dzm + invrs_dzmm1) )  &
-                 +invrs_dzmm1*( invrs_dzt*(invrs_dzm + invrs_dzmm1)  &
-                               +invrs_dztm1*invrs_dzmm1 ) )
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag)   &
+      = +nu*invrs_dzt  &
+              *( invrs_dzm*( invrs_dztp1*invrs_dzm  &
+                            +invrs_dzt*(invrs_dzm + invrs_dzmm1) )  &
+                +invrs_dzmm1*( invrs_dzt*(invrs_dzm + invrs_dzmm1)  &
+                              +invrs_dztm1*invrs_dzmm1 ) )
 
-       ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-       lhs(kp1_tdiag) &
-       = -nu*invrs_dzt  &
-               *( invrs_dzm*( invrs_dztp1*(invrs_dzmp1 + invrs_dzm)  &
-                             +invrs_dzt*invrs_dzm )  &
-                 +invrs_dzmm1*invrs_dzt*invrs_dzm )
+      ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag) &
+      = -nu*invrs_dzt  &
+              *( invrs_dzm*( invrs_dztp1*(invrs_dzmp1 + invrs_dzm)  &
+                            +invrs_dzt*invrs_dzm )  &
+                +invrs_dzmm1*invrs_dzt*invrs_dzm )
 
-       ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-       lhs(kp2_tdiag) &
-       = +nu*invrs_dzt  &
-               *invrs_dzm*invrs_dztp1*invrs_dzmp1
+      ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+      lhs(kp2_tdiag) &
+      = +nu*invrs_dzt  &
+              *invrs_dzm*invrs_dztp1*invrs_dzmp1
 
 
     elseif ( level == gr%nnzp-1 ) then
 
-       ! Second-highest level
+      ! Second-highest level
 
-       if ( trim( boundary_cond ) == 'zero-flux' ) then
+      if ( trim( boundary_cond ) == 'zero-flux' ) then
 
-          ! Zero-flux boundary conditions
+        ! Zero-flux boundary conditions
 
-          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) &
-          = +nu*invrs_dzt  &
-                  *invrs_dzmm1*invrs_dztm1*invrs_dzmm2
+        ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+        lhs(km2_tdiag) &
+        = +nu*invrs_dzt  &
+                *invrs_dzmm1*invrs_dztm1*invrs_dzmm2
 
-          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) &
-          = -nu*invrs_dzt  &
-                  *( invrs_dzm*invrs_dzt*invrs_dzmm1  &
-                    +invrs_dzmm1*( invrs_dzt*invrs_dzmm1  &
-                                  +invrs_dztm1*(invrs_dzmm1 + invrs_dzmm2) ) )
+        ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) &
+        = -nu*invrs_dzt  &
+                *( invrs_dzm*invrs_dzt*invrs_dzmm1  &
+                  +invrs_dzmm1*( invrs_dzt*invrs_dzmm1  &
+                                +invrs_dztm1*(invrs_dzmm1 + invrs_dzmm2) ) )
 
-          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   &
-          = +nu*invrs_dzt  &
-                  *( invrs_dzm*( invrs_dztp1*invrs_dzm  &
-                                +invrs_dzt*(invrs_dzm + invrs_dzmm1) )  &
-                    +invrs_dzmm1*( invrs_dzt*(invrs_dzm + invrs_dzmm1)  &
-                                  +invrs_dztm1*invrs_dzmm1 ) )
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag)   &
+        = +nu*invrs_dzt  &
+                *( invrs_dzm*( invrs_dztp1*invrs_dzm  &
+                              +invrs_dzt*(invrs_dzm + invrs_dzmm1) )  &
+                  +invrs_dzmm1*( invrs_dzt*(invrs_dzm + invrs_dzmm1)  &
+                                +invrs_dztm1*invrs_dzmm1 ) )
 
-          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) &
-          = -nu*invrs_dzt  &
-                  *( invrs_dzm*( invrs_dztp1*invrs_dzm  &
-                                +invrs_dzt*invrs_dzm )  &
-                    +invrs_dzmm1*invrs_dzt*invrs_dzm )
+        ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) &
+        = -nu*invrs_dzt  &
+                *( invrs_dzm*( invrs_dztp1*invrs_dzm  &
+                              +invrs_dzt*invrs_dzm )  &
+                  +invrs_dzmm1*invrs_dzt*invrs_dzm )
 
-          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) &
-          = 0.0
+        ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+        lhs(kp2_tdiag) &
+        = 0.0
 
-       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+      elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
-          ! Fixed-point boundary conditions
+        ! Fixed-point boundary conditions
 
-          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) &
-          = +nu*invrs_dzt  &
-                  *invrs_dzmm1*invrs_dztm1*invrs_dzmm2
+        ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+        lhs(km2_tdiag) &
+        = +nu*invrs_dzt  &
+                *invrs_dzmm1*invrs_dztm1*invrs_dzmm2
 
-          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) &
-          = -nu*invrs_dzt  &
-                  *( invrs_dzm*invrs_dzt*invrs_dzmm1  &
-                    +invrs_dzmm1*( invrs_dzt*invrs_dzmm1  &
-                                  +invrs_dztm1*(invrs_dzmm1 + invrs_dzmm2) ) )
+        ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) &
+        = -nu*invrs_dzt  &
+                *( invrs_dzm*invrs_dzt*invrs_dzmm1  &
+                  +invrs_dzmm1*( invrs_dzt*invrs_dzmm1  &
+                                +invrs_dztm1*(invrs_dzmm1 + invrs_dzmm2) ) )
 
-          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   &
-          = +nu*invrs_dzt  &
-                  *( invrs_dzm*( invrs_dzt*(invrs_dzm + invrs_dzmm1) )  &
-                    +invrs_dzmm1*( invrs_dzt*(invrs_dzm + invrs_dzmm1)  &
-                                  +invrs_dztm1*invrs_dzmm1 ) )
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag)   &
+        = +nu*invrs_dzt  &
+                *( invrs_dzm*( invrs_dzt*(invrs_dzm + invrs_dzmm1) )  &
+                  +invrs_dzmm1*( invrs_dzt*(invrs_dzm + invrs_dzmm1)  &
+                                +invrs_dztm1*invrs_dzmm1 ) )
 
-          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) &
-          = -nu*invrs_dzt  &
-                  *( invrs_dzm*invrs_dzt*invrs_dzm  &
-                    +invrs_dzmm1*invrs_dzt*invrs_dzm )
+        ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) &
+        = -nu*invrs_dzt  &
+                *( invrs_dzm*invrs_dzt*invrs_dzm  &
+                  +invrs_dzmm1*invrs_dzt*invrs_dzm )
 
-          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) &
-          = 0.0
+        ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+        lhs(kp2_tdiag) &
+        = 0.0
 
-       endif
+      endif
 
 
     elseif ( level == gr%nnzp ) then
 
-       ! Highest level
-       ! k = gr%nnzp; upper boundery level at model top.
-       ! Only relevant if zero-flux boundary conditions are used.
+      ! Highest level
+      ! k = gr%nnzp; upper boundery level at model top.
+      ! Only relevant if zero-flux boundary conditions are used.
 
-       if ( trim( boundary_cond ) == 'zero-flux' ) then
+      if ( trim( boundary_cond ) == 'zero-flux' ) then
 
-          ! Zero-flux boundary conditions
+        ! Zero-flux boundary conditions
 
-          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) &
-          = +nu*invrs_dzt  &
-                  *invrs_dzmm1*invrs_dztm1*invrs_dzmm2
+        ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+        lhs(km2_tdiag) &
+        = +nu*invrs_dzt  &
+                *invrs_dzmm1*invrs_dztm1*invrs_dzmm2
 
-          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) &
-          = -nu*invrs_dzt  &
-                  *invrs_dzmm1*( invrs_dzt*invrs_dzmm1  &
-                                +invrs_dztm1*(invrs_dzmm1 + invrs_dzmm2) )
+        ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) &
+        = -nu*invrs_dzt  &
+                *invrs_dzmm1*( invrs_dzt*invrs_dzmm1  &
+                              +invrs_dztm1*(invrs_dzmm1 + invrs_dzmm2) )
 
-          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   &
-          = +nu*invrs_dzt  &
-                  *invrs_dzmm1*(invrs_dzt*invrs_dzmm1 + invrs_dztm1*invrs_dzmm1)
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag)   &
+        = +nu*invrs_dzt  &
+                *invrs_dzmm1*(invrs_dzt*invrs_dzmm1 + invrs_dztm1*invrs_dzmm1)
 
-          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) &
-          = 0.0
+        ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) &
+        = 0.0
 
-          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) &
-          = 0.0
+        ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+        lhs(kp2_tdiag) &
+        = 0.0
 
-       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+      elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
-          ! Fixed-point boundary conditions
-          ! The left-hand side matrix contributions from level gr%nnzp are
-          ! over-written or set in the parent subroutine.
+        ! Fixed-point boundary conditions
+        ! The left-hand side matrix contributions from level gr%nnzp are
+        ! over-written or set in the parent subroutine.
 
-          ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
-          lhs(km2_tdiag) &
-          = 0.0
+        ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
+        lhs(km2_tdiag) &
+        = 0.0
 
-          ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs(km1_tdiag) &
-          = 0.0
+        ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) &
+        = 0.0
 
-          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs(k_tdiag)   &
-          = 0.0
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag)   &
+        = 0.0
 
-          ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs(kp1_tdiag) &
-          = 0.0
+        ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) &
+        = 0.0
 
-          ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
-          lhs(kp2_tdiag) &
-          = 0.0
+        ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
+        lhs(kp2_tdiag) &
+        = 0.0
 
-       endif
+      endif
 
     endif
 
@@ -884,12 +884,12 @@ contains
     !
     ! - nu * d^4( var_zm(t+1) )/dz^4.
     !
-    ! Note:  When the term is brought over to the left-hand side, the sign 
-    !        is reversed and the leading "-" in front of the term is changed 
+    ! Note:  When the term is brought over to the left-hand side, the sign
+    !        is reversed and the leading "-" in front of the term is changed
     !        to a "+".
     !
     ! The timestep index (t+1) means that the value of var_zm being used is from
-    ! the next timestep, which is being advanced to in solving the d(var_zm)/dt 
+    ! the next timestep, which is being advanced to in solving the d(var_zm)/dt
     ! equation.
     !
     ! The term is discretized as follows:
@@ -966,7 +966,7 @@ contains
     !    d(var_zm)/dt = -dF/dz.
     !
     !    For the 4th-order numerical diffusion term, -nu*d^4(var_zm)/dz^4 (which
-    !    is actually -d[nu*d^3(var_zm)/dz^3]/dz with a constant coefficient, 
+    !    is actually -d[nu*d^3(var_zm)/dz^3]/dz with a constant coefficient,
     !    nu), the flux is:
     !
     !    F = +nu*d^3(var_zm)/dz^3.
@@ -1334,7 +1334,7 @@ contains
     ! Input Variables
     character (len=*), intent(in) :: &
       boundary_cond   ! Type of boundary conditions being used
-                      ! ('zero-flux' or 'fixed-point').
+    ! ('zero-flux' or 'fixed-point').
 
     real, intent(in) ::  &
       nu,          & ! Constant coef. of 4th-order numerical diffusion   [m^4/s]
@@ -1355,316 +1355,316 @@ contains
 
     if ( level == 1 ) then
 
-       ! Lowest level
-       ! k = 1; lower boundery level at surface.
-       ! Only relevant if zero-flux boundary conditions are used.
+      ! Lowest level
+      ! k = 1; lower boundery level at surface.
+      ! Only relevant if zero-flux boundary conditions are used.
 
-       if ( trim( boundary_cond ) == 'zero-flux' ) then
+      if ( trim( boundary_cond ) == 'zero-flux' ) then
 
-          ! Zero-flux boundary conditions
+        ! Zero-flux boundary conditions
 
-          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) &
-          = 0.0
+        ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+        lhs(km2_mdiag) &
+        = 0.0
 
-          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) &
-          = 0.0
+        ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+        lhs(km1_mdiag) &
+        = 0.0
 
-          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   &
-          = +nu*invrs_dzm  &
-                  *invrs_dztp1*(invrs_dzmp1*invrs_dztp1 + invrs_dzm*invrs_dztp1)
+        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+        lhs(k_mdiag)   &
+        = +nu*invrs_dzm  &
+                *invrs_dztp1*(invrs_dzmp1*invrs_dztp1 + invrs_dzm*invrs_dztp1)
 
-          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) &
-          = -nu*invrs_dzm  &
-                  *invrs_dztp1*( invrs_dzmp1*(invrs_dztp2 + invrs_dztp1)  &
-                                +invrs_dzm*invrs_dztp1 )
+        ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+        lhs(kp1_mdiag) &
+        = -nu*invrs_dzm  &
+                *invrs_dztp1*( invrs_dzmp1*(invrs_dztp2 + invrs_dztp1)  &
+                              +invrs_dzm*invrs_dztp1 )
 
-          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) &
-          = +nu*invrs_dzm  &
-                  *invrs_dztp1*invrs_dzmp1*invrs_dztp2
+        ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+        lhs(kp2_mdiag) &
+        = +nu*invrs_dzm  &
+                *invrs_dztp1*invrs_dzmp1*invrs_dztp2
 
-       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+      elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
-          ! Fixed-point boundary conditions
-          ! The left-hand side matrix contributions from level 1 are
-          ! over-written or set in the parent subroutine.
+        ! Fixed-point boundary conditions
+        ! The left-hand side matrix contributions from level 1 are
+        ! over-written or set in the parent subroutine.
 
-          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) &
-          = 0.0
+        ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+        lhs(km2_mdiag) &
+        = 0.0
 
-          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) &
-          = 0.0
+        ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+        lhs(km1_mdiag) &
+        = 0.0
 
-          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   &
-          = 0.0
+        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+        lhs(k_mdiag)   &
+        = 0.0
 
-          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) &
-          = 0.0
+        ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+        lhs(kp1_mdiag) &
+        = 0.0
 
-          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) &
-          = 0.0
+        ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+        lhs(kp2_mdiag) &
+        = 0.0
 
-       endif
+      endif
 
 
     elseif ( level == 2 ) then
 
-       ! Second-lowest level
+      ! Second-lowest level
 
-       if ( trim( boundary_cond ) == 'zero-flux' ) then
+      if ( trim( boundary_cond ) == 'zero-flux' ) then
 
-          ! Zero-flux boundary conditions
+        ! Zero-flux boundary conditions
 
-          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) &
-          = 0.0
+        ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+        lhs(km2_mdiag) &
+        = 0.0
 
-          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) &
-          = -nu*invrs_dzm  &
-                  *( invrs_dztp1*invrs_dzm*invrs_dzt  &
-                    +invrs_dzt*( invrs_dzm*invrs_dzt  &
-                                +invrs_dzmm1*invrs_dzt ) )
+        ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+        lhs(km1_mdiag) &
+        = -nu*invrs_dzm  &
+                *( invrs_dztp1*invrs_dzm*invrs_dzt  &
+                  +invrs_dzt*( invrs_dzm*invrs_dzt  &
+                              +invrs_dzmm1*invrs_dzt ) )
 
-          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   &
-          = +nu*invrs_dzm  &
-                  *( invrs_dztp1*( invrs_dzmp1*invrs_dztp1  &
-                                  +invrs_dzm*(invrs_dztp1 + invrs_dzt) )  &
-                    +invrs_dzt*( invrs_dzm*(invrs_dztp1 + invrs_dzt)  &
-                                +invrs_dzmm1*invrs_dzt ) )
+        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+        lhs(k_mdiag)   &
+        = +nu*invrs_dzm  &
+                *( invrs_dztp1*( invrs_dzmp1*invrs_dztp1  &
+                                +invrs_dzm*(invrs_dztp1 + invrs_dzt) )  &
+                  +invrs_dzt*( invrs_dzm*(invrs_dztp1 + invrs_dzt)  &
+                              +invrs_dzmm1*invrs_dzt ) )
 
-          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) &
-          = -nu*invrs_dzm  &
-                  *( invrs_dztp1*( invrs_dzmp1*(invrs_dztp2 + invrs_dztp1)  &
-                                  +invrs_dzm*invrs_dztp1 )  &
-                    +invrs_dzt*invrs_dzm*invrs_dztp1 )
+        ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+        lhs(kp1_mdiag) &
+        = -nu*invrs_dzm  &
+                *( invrs_dztp1*( invrs_dzmp1*(invrs_dztp2 + invrs_dztp1)  &
+                                +invrs_dzm*invrs_dztp1 )  &
+                  +invrs_dzt*invrs_dzm*invrs_dztp1 )
 
-          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) &
-          = +nu*invrs_dzm  &
-                  *invrs_dztp1*invrs_dzmp1*invrs_dztp2
+        ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+        lhs(kp2_mdiag) &
+        = +nu*invrs_dzm  &
+                *invrs_dztp1*invrs_dzmp1*invrs_dztp2
 
-       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+      elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
-          ! Fixed-point boundary conditions
+        ! Fixed-point boundary conditions
 
-          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) &
-          = 0.0
+        ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+        lhs(km2_mdiag) &
+        = 0.0
 
-          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) &
-          = -nu*invrs_dzm  &
-                  *( invrs_dztp1*invrs_dzm*invrs_dzt  &
-                    +invrs_dzt*invrs_dzm*invrs_dzt )
+        ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+        lhs(km1_mdiag) &
+        = -nu*invrs_dzm  &
+                *( invrs_dztp1*invrs_dzm*invrs_dzt  &
+                  +invrs_dzt*invrs_dzm*invrs_dzt )
 
-          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   &
-          = +nu*invrs_dzm  &
-                  *( invrs_dztp1*( invrs_dzmp1*invrs_dztp1  &
-                                  +invrs_dzm*(invrs_dztp1 + invrs_dzt) )  &
-                    +invrs_dzt*invrs_dzm*(invrs_dztp1 + invrs_dzt) )
+        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+        lhs(k_mdiag)   &
+        = +nu*invrs_dzm  &
+                *( invrs_dztp1*( invrs_dzmp1*invrs_dztp1  &
+                                +invrs_dzm*(invrs_dztp1 + invrs_dzt) )  &
+                  +invrs_dzt*invrs_dzm*(invrs_dztp1 + invrs_dzt) )
 
-          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) &
-          = -nu*invrs_dzm  &
-                  *( invrs_dztp1*( invrs_dzmp1*(invrs_dztp2 + invrs_dztp1)  &
-                                  +invrs_dzm*invrs_dztp1 )  &
-                    +invrs_dzt*invrs_dzm*invrs_dztp1 )
+        ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+        lhs(kp1_mdiag) &
+        = -nu*invrs_dzm  &
+                *( invrs_dztp1*( invrs_dzmp1*(invrs_dztp2 + invrs_dztp1)  &
+                                +invrs_dzm*invrs_dztp1 )  &
+                  +invrs_dzt*invrs_dzm*invrs_dztp1 )
 
-          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) &
-          = +nu*invrs_dzm  &
-                  *invrs_dztp1*invrs_dzmp1*invrs_dztp2
-   
-       endif
+        ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+        lhs(kp2_mdiag) &
+        = +nu*invrs_dzm  &
+                *invrs_dztp1*invrs_dzmp1*invrs_dztp2
+
+      endif
 
 
     elseif ( level > 2 .and. level < gr%nnzp-1 ) then
 
-       ! k > 2 and k < num_levels-1
-       ! These interior level are not effected by boundary conditions.
+      ! k > 2 and k < num_levels-1
+      ! These interior level are not effected by boundary conditions.
 
-       ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-       lhs(km2_mdiag) &
-       = +nu*invrs_dzm  &
-               *invrs_dzt*invrs_dzmm1*invrs_dztm1
+      ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+      lhs(km2_mdiag) &
+      = +nu*invrs_dzm  &
+              *invrs_dzt*invrs_dzmm1*invrs_dztm1
 
-       ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-       lhs(km1_mdiag) &
-       = -nu*invrs_dzm  &
-               *( invrs_dztp1*invrs_dzm*invrs_dzt  &
-                 +invrs_dzt*( invrs_dzm*invrs_dzt  &
-                             +invrs_dzmm1*(invrs_dzt + invrs_dztm1) ) )
+      ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs(km1_mdiag) &
+      = -nu*invrs_dzm  &
+              *( invrs_dztp1*invrs_dzm*invrs_dzt  &
+                +invrs_dzt*( invrs_dzm*invrs_dzt  &
+                            +invrs_dzmm1*(invrs_dzt + invrs_dztm1) ) )
 
-       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-       lhs(k_mdiag)   &
-       = +nu*invrs_dzm  &
-               *( invrs_dztp1*( invrs_dzmp1*invrs_dztp1  &
-                               +invrs_dzm*(invrs_dztp1 + invrs_dzt) )  &
-                 +invrs_dzt*( invrs_dzm*(invrs_dztp1 + invrs_dzt)  &
-                             +invrs_dzmm1*invrs_dzt ) )
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs(k_mdiag)   &
+      = +nu*invrs_dzm  &
+              *( invrs_dztp1*( invrs_dzmp1*invrs_dztp1  &
+                              +invrs_dzm*(invrs_dztp1 + invrs_dzt) )  &
+                +invrs_dzt*( invrs_dzm*(invrs_dztp1 + invrs_dzt)  &
+                            +invrs_dzmm1*invrs_dzt ) )
 
-       ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-       lhs(kp1_mdiag) &
-       = -nu*invrs_dzm  &
-               *( invrs_dztp1*( invrs_dzmp1*(invrs_dztp2 + invrs_dztp1)  &
-                               +invrs_dzm*invrs_dztp1 )  &
-                 +invrs_dzt*invrs_dzm*invrs_dztp1 )
+      ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs(kp1_mdiag) &
+      = -nu*invrs_dzm  &
+              *( invrs_dztp1*( invrs_dzmp1*(invrs_dztp2 + invrs_dztp1)  &
+                              +invrs_dzm*invrs_dztp1 )  &
+                +invrs_dzt*invrs_dzm*invrs_dztp1 )
 
-       ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-       lhs(kp2_mdiag) &
-       = +nu*invrs_dzm  &
-               *invrs_dztp1*invrs_dzmp1*invrs_dztp2
-   
+      ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+      lhs(kp2_mdiag) &
+      = +nu*invrs_dzm  &
+              *invrs_dztp1*invrs_dzmp1*invrs_dztp2
+
 
     elseif ( level == gr%nnzp-1 ) then
 
-       ! Second-highest level
+      ! Second-highest level
 
-       if ( trim( boundary_cond ) == 'zero-flux' ) then
+      if ( trim( boundary_cond ) == 'zero-flux' ) then
 
-          ! Zero-flux boundary conditions
+        ! Zero-flux boundary conditions
 
-          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) &
-          = +nu*invrs_dzm  &
-                  *invrs_dzt*invrs_dzmm1*invrs_dztm1
+        ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+        lhs(km2_mdiag) &
+        = +nu*invrs_dzm  &
+                *invrs_dzt*invrs_dzmm1*invrs_dztm1
 
-          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) &
-          = -nu*invrs_dzm  &
-                  *( invrs_dztp1*invrs_dzm*invrs_dzt  &
-                    +invrs_dzt*( invrs_dzm*invrs_dzt  &
-                                +invrs_dzmm1*(invrs_dzt + invrs_dztm1) ) )
+        ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+        lhs(km1_mdiag) &
+        = -nu*invrs_dzm  &
+                *( invrs_dztp1*invrs_dzm*invrs_dzt  &
+                  +invrs_dzt*( invrs_dzm*invrs_dzt  &
+                              +invrs_dzmm1*(invrs_dzt + invrs_dztm1) ) )
 
-          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   &
-          = +nu*invrs_dzm  &
-                  *( invrs_dztp1*( invrs_dzmp1*invrs_dztp1  &
-                                  +invrs_dzm*(invrs_dztp1 + invrs_dzt) )  &
-                    +invrs_dzt*( invrs_dzm*(invrs_dztp1 + invrs_dzt)  &
-                                +invrs_dzmm1*invrs_dzt ) )
+        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+        lhs(k_mdiag)   &
+        = +nu*invrs_dzm  &
+                *( invrs_dztp1*( invrs_dzmp1*invrs_dztp1  &
+                                +invrs_dzm*(invrs_dztp1 + invrs_dzt) )  &
+                  +invrs_dzt*( invrs_dzm*(invrs_dztp1 + invrs_dzt)  &
+                              +invrs_dzmm1*invrs_dzt ) )
 
-          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) &
-          = -nu*invrs_dzm  &
-                  *( invrs_dztp1*( invrs_dzmp1*invrs_dztp1  &
-                                  +invrs_dzm*invrs_dztp1 )  &
-                    +invrs_dzt*invrs_dzm*invrs_dztp1 )
+        ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+        lhs(kp1_mdiag) &
+        = -nu*invrs_dzm  &
+                *( invrs_dztp1*( invrs_dzmp1*invrs_dztp1  &
+                                +invrs_dzm*invrs_dztp1 )  &
+                  +invrs_dzt*invrs_dzm*invrs_dztp1 )
 
-          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) &
-          = 0.0
+        ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+        lhs(kp2_mdiag) &
+        = 0.0
 
-       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+      elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
-          ! Fixed-point boundary conditions
+        ! Fixed-point boundary conditions
 
-          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) &
-          = +nu*invrs_dzm  &
-                  *invrs_dzt*invrs_dzmm1*invrs_dztm1
+        ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+        lhs(km2_mdiag) &
+        = +nu*invrs_dzm  &
+                *invrs_dzt*invrs_dzmm1*invrs_dztm1
 
-          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) &
-          = -nu*invrs_dzm  &
-                  *( invrs_dztp1*invrs_dzm*invrs_dzt  &
-                    +invrs_dzt*( invrs_dzm*invrs_dzt  &
-                                +invrs_dzmm1*(invrs_dzt + invrs_dztm1) ) )
+        ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+        lhs(km1_mdiag) &
+        = -nu*invrs_dzm  &
+                *( invrs_dztp1*invrs_dzm*invrs_dzt  &
+                  +invrs_dzt*( invrs_dzm*invrs_dzt  &
+                              +invrs_dzmm1*(invrs_dzt + invrs_dztm1) ) )
 
-          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   &
-          = +nu*invrs_dzm  &
-                  *( invrs_dztp1*( invrs_dzm*(invrs_dztp1 + invrs_dzt) )  &
-                    +invrs_dzt*( invrs_dzm*(invrs_dztp1 + invrs_dzt)  &
-                                +invrs_dzmm1*invrs_dzt ) )
+        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+        lhs(k_mdiag)   &
+        = +nu*invrs_dzm  &
+                *( invrs_dztp1*( invrs_dzm*(invrs_dztp1 + invrs_dzt) )  &
+                  +invrs_dzt*( invrs_dzm*(invrs_dztp1 + invrs_dzt)  &
+                              +invrs_dzmm1*invrs_dzt ) )
 
-          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) &
-          = -nu*invrs_dzm  &
-                  *( invrs_dztp1*invrs_dzm*invrs_dztp1  &
-                    +invrs_dzt*invrs_dzm*invrs_dztp1 )
+        ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+        lhs(kp1_mdiag) &
+        = -nu*invrs_dzm  &
+                *( invrs_dztp1*invrs_dzm*invrs_dztp1  &
+                  +invrs_dzt*invrs_dzm*invrs_dztp1 )
 
-          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) &
-          = 0.0
+        ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+        lhs(kp2_mdiag) &
+        = 0.0
 
-       endif
+      endif
 
 
     elseif ( level == gr%nnzp ) then
 
-       ! Highest level
-       ! k = gr%nnzp; upper boundery level at model top.
-       ! Only relevant if zero-flux boundary conditions are used.
+      ! Highest level
+      ! k = gr%nnzp; upper boundery level at model top.
+      ! Only relevant if zero-flux boundary conditions are used.
 
-       if ( trim( boundary_cond ) == 'zero-flux' ) then
+      if ( trim( boundary_cond ) == 'zero-flux' ) then
 
-          ! Zero-flux boundary conditions
+        ! Zero-flux boundary conditions
 
-          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) &
-          = +nu*invrs_dzm  &
-                  *invrs_dzt*invrs_dzmm1*invrs_dztm1
+        ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+        lhs(km2_mdiag) &
+        = +nu*invrs_dzm  &
+                *invrs_dzt*invrs_dzmm1*invrs_dztm1
 
-          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) &
-          = -nu*invrs_dzm  &
-                  *invrs_dzt*( invrs_dzm*invrs_dzt  &
-                              +invrs_dzmm1*(invrs_dzt + invrs_dztm1) )
+        ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+        lhs(km1_mdiag) &
+        = -nu*invrs_dzm  &
+                *invrs_dzt*( invrs_dzm*invrs_dzt  &
+                            +invrs_dzmm1*(invrs_dzt + invrs_dztm1) )
 
-          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   &
-          = +nu*invrs_dzm  &
-                  *invrs_dzt*(invrs_dzm*invrs_dzt + invrs_dzmm1*invrs_dzt)
+        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+        lhs(k_mdiag)   &
+        = +nu*invrs_dzm  &
+                *invrs_dzt*(invrs_dzm*invrs_dzt + invrs_dzmm1*invrs_dzt)
 
-          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) &
-          = 0.0
+        ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+        lhs(kp1_mdiag) &
+        = 0.0
 
-          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) &
-          = 0.0
+        ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+        lhs(kp2_mdiag) &
+        = 0.0
 
-       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
+      elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
-          ! Fixed-point boundary conditions
-          ! The left-hand side matrix contributions from level gr%nnzp are
-          ! over-written or set in the parent subroutine.
+        ! Fixed-point boundary conditions
+        ! The left-hand side matrix contributions from level gr%nnzp are
+        ! over-written or set in the parent subroutine.
 
-          ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
-          lhs(km2_mdiag) &
-          = 0.0
+        ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
+        lhs(km2_mdiag) &
+        = 0.0
 
-          ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
-          lhs(km1_mdiag) &
-          = 0.0
+        ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
+        lhs(km1_mdiag) &
+        = 0.0
 
-          ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-          lhs(k_mdiag)   &
-          = 0.0
+        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+        lhs(k_mdiag)   &
+        = 0.0
 
-          ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
-          lhs(kp1_mdiag) &
-          = 0.0
+        ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
+        lhs(kp1_mdiag) &
+        = 0.0
 
-          ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
-          lhs(kp2_mdiag) &
-          = 0.0
+        ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
+        lhs(kp2_mdiag) &
+        = 0.0
 
-       endif
+      endif
 
 
     endif

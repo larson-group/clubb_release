@@ -233,7 +233,7 @@ module numerical_check
                sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
                sclrm_forcing, edsclrm, edsclrm_forcing, err_code )
 !
-! Description: 
+! Description:
 !   This subroutine determines what input variables may have NaN values.
 !   In addition it checks to see if rho_zm, rho, exner, up2, vp2, rtm, thlm,
 !   wp2, rtp2, thlp2, or tau_zm have negative values.
@@ -829,7 +829,7 @@ module numerical_check
   subroutine check_negative_total & 
             ( var, varname, operation, err_code )
 !
-! Description: 
+! Description:
 !   Checks for negative values in the var array and reports them.
 !
 !-----------------------------------------------------------------------
@@ -874,7 +874,7 @@ module numerical_check
   subroutine check_negative_index & 
             ( var, ndim, varname, operation, err_code )
 !
-! Description: 
+! Description:
 !   Checks for negative values in the var array and reports
 !   the index in which the negative values occur.
 !
@@ -930,7 +930,7 @@ module numerical_check
 !------------------------------------------------------------------------
   subroutine check_nan_2d( var, varname, operation, err_code )
 !
-!  Description: 
+!  Description:
 !    Checks for a NaN in the var array and reports it.
 !
 !
@@ -970,7 +970,7 @@ module numerical_check
 !-----------------------------------------------------------------------
   subroutine check_nan_sclr( var, varname, operation, err_code )
 !
-! Description: 
+! Description:
 !   Checks for a NaN in the scalar var then reports it.
 !
 !-----------------------------------------------------------------------
@@ -1014,10 +1014,10 @@ module numerical_check
                                            integral_forcing, dt ) &
   result( spurious_source )
 !
-! Description: 
-!   Checks whether there is conservation within the column and returns any 
-!   imbalance as spurious_source where spurious_source is defined negative 
-!   for a spurious sink. 
+! Description:
+!   Checks whether there is conservation within the column and returns any
+!   imbalance as spurious_source where spurious_source is defined negative
+!   for a spurious sink.
 !
 !-----------------------------------------------------------------------
 
@@ -1031,7 +1031,7 @@ module numerical_check
       flux_sfc, &         ! Total flux at the bottom of the domain        [units vary]
       integral_forcing, & ! Vertically-integrated forcing                 [units vary] 
       dt                  ! Timestep size                                 [s]
-    
+
     ! Return Variable
     real :: spurious_source ! [units vary]
 
@@ -1041,7 +1041,7 @@ module numerical_check
 
     spurious_source = (integral_after - integral_before) / dt & 
                         + flux_top - flux_sfc - integral_forcing
-                      
+
     return
 
   end function calculate_spurious_source

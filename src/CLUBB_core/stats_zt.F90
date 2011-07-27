@@ -141,7 +141,7 @@ module stats_zt
         iwp3_4hd, & 
         iwp3_cl
 
-    ! Monotonic flux limiter diagnostic variables    
+    ! Monotonic flux limiter diagnostic variables
     use stats_variables, only: &
         ithlm_mfl_min, &
         ithlm_mfl_max, &
@@ -154,7 +154,7 @@ module stats_zt
         irtm_enter_mfl, &
         irtm_exit_mfl, &
         irtm_old, &
-        irtm_without_ta    
+        irtm_without_ta
 
     use stats_variables, only: & 
         irrainm_bt, & 
@@ -355,7 +355,7 @@ module stats_zt
     ! Input Variable
     character(len= * ), dimension(nvarmax_zt), intent(in) :: vars_zt
 
-    ! Output Variable	
+    ! Output Variable        
     logical, intent(inout) :: l_error
 
 ! Local Varables
@@ -649,7 +649,7 @@ module stats_zt
     iLH_cloud_frac = 0
 
     iLH_wp2_zt = 0
-    iLH_rcp2_zt = 0  
+    iLH_rcp2_zt = 0
     iLH_rtp2_zt = 0
     iLH_thlp2_zt = 0
     iLH_rrainp2_zt = 0
@@ -724,7 +724,7 @@ module stats_zt
         irel_humidity = k
         call stat_assign( irel_humidity, "rel_humidity", & 
               "Relative humidity w.r.t. liquid (range [0,1]) [-]", "[-]", zt )
-        k = k + 1         
+        k = k + 1
       case ('um')
         ium = k
         call stat_assign( ium, "um", & 
@@ -870,7 +870,7 @@ module stats_zt
         ithlm_without_ta = k
         call stat_assign( ithlm_without_ta, "thlm_without_ta", & 
              "Thlm without turbulent advection contribution [K]", "K", zt )
-        k = k + 1    
+        k = k + 1
 
       case ('rtm_mfl_min')
         irtm_mfl_min = k
@@ -906,7 +906,7 @@ module stats_zt
         irtm_without_ta = k
         call stat_assign( irtm_without_ta, "rtm_without_ta", & 
              "Rtm without turbulent advection contribution  [kg/kg]", "kg/kg", zt )
-        k = k + 1   
+        k = k + 1
 
       case ('wp3')
         iwp3 = k
@@ -1177,7 +1177,7 @@ module stats_zt
              "Exact w/in cloud std of gba Kessler [kg/kg/s]", "kg/kg/s", zt )
         k = k + 1
 
-     case ( 'AKm_rcm' )
+      case ( 'AKm_rcm' )
         iAKm_rcm = k
 
         call stat_assign( iAKm_rcm, "AKm_rcm", & 
@@ -1451,7 +1451,7 @@ module stats_zt
         call stat_assign( irrainm_sd, "rrainm_sd", & 
              "rrainm budget: rrainm sedimentation [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
-        
+
       case ('rrainm_sd_morr')
         irrainm_sd_morr = k
 
@@ -1509,7 +1509,7 @@ module stats_zt
         call stat_assign( irrainm_cl, "rrainm_cl", & 
              "rrainm budget: rrainm clipping term [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
-        
+
       case ('rrainm_mc')
         irrainm_mc = k
 
@@ -1583,14 +1583,14 @@ module stats_zt
         call stat_assign( iNrm_cl, "Nrm_cl", & 
              "Nrm budget: Nrm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
-        
+
       case ('Nrm_mc')
         iNrm_mc = k
         call stat_assign( iNrm_mc, "Nrm_mc", & 
              "Nrm budget: Change in Nrm due to microphysics (Not in budget) [(num/kg)/s]", &
              "(num/kg)/s", zt )
         k = k + 1
-        
+
       case ('rsnowm_bt')
         irsnowm_bt = k
         call stat_assign( irsnowm_bt, "rsnowm_bt", & 
@@ -1610,7 +1610,7 @@ module stats_zt
         call stat_assign( irsnowm_sd, "rsnowm_sd", & 
              "rsnowm budget: rsnowm sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
-        
+
       case ('rsnowm_sd_morr')
         irsnowm_sd_morr = k
         call stat_assign( irsnowm_sd_morr, "rsnowm_sd_morr", & 
@@ -1703,7 +1703,7 @@ module stats_zt
         call stat_assign( iricem_sd, "ricem_sd", & 
              "ricem budget: ricem sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
-        
+
       case ('ricem_sd_morr')
         iricem_sd_morr = k
 
@@ -1753,7 +1753,7 @@ module stats_zt
         call stat_assign( irgraupelm_sd, "rgraupelm_sd", & 
              "rgraupelm budget: rgraupelm sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
-        
+
       case ('rgraupelm_sd_morr')
         irgraupelm_sd_morr = k
 
@@ -1959,7 +1959,7 @@ module stats_zt
         call stat_assign( ivm_sdmp, "vm_sdmp", & 
              "vm budget: vm sponge damping [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
-        
+
       case ('vm_ndg')
         ivm_ndg = k
         call stat_assign( ivm_ndg, "vm_ndg", & 
@@ -2009,7 +2009,7 @@ module stats_zt
         call stat_assign( ium_sdmp, "um_sdmp", & 
              "um budget: um sponge damping [m s^{-2}]", "m s^{-2}", zt )
         k = k + 1
-        
+
       case ('um_ndg')
         ium_ndg = k
         call stat_assign( ium_ndg, "um_ndg", & 
@@ -2553,16 +2553,6 @@ module stats_zt
       end select
 
     end do
-
-!   Non-interative diagnostics (zt)
-!   iwprtp2, iwprtpthlp, iwpthlp2
-!   if ( .not. clubb_at_least_debug_level( 1 ) ) then
-!     if ( iwprtp2 + iwprtpthlp + iwpthlp2 + irsat > 0 ) then
-!       write(fstderr,'(a)') &
-!         "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
-!       write(fstderr,'(a)') "but some appear in the stats_zt namelist variable."
-!     end if
-!   end if
 
     return
   end subroutine stats_init_zt

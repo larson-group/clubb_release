@@ -18,7 +18,7 @@ module interpolation
 ! Description:
 ! This function computes a linear interpolation of the value of variable.
 ! Given two known values of a variable at two height values, the value
-! of that variable at a height between those two height levels (rather 
+! of that variable at a height between those two height levels (rather
 ! than a height outside of those two height levels) is computed.
 !
 ! Here is a diagram:
@@ -71,9 +71,14 @@ module interpolation
     return
   end function lin_int
 
-!-------------------------------------------------------------------------------------------------
- elemental real function factor_interp( factor, var_high, var_low )
-!-------------------------------------------------------------------------------------------------
+  !-------------------------------------------------------------------------------------------------
+  elemental real function factor_interp( factor, var_high, var_low )
+  ! Description:
+  !   Determines the coefficient for a linear interpolation
+  ! 
+  ! References:
+  !   None
+  !-------------------------------------------------------------------------------------------------
     implicit none
 
     real, intent(in) :: &
@@ -88,14 +93,14 @@ module interpolation
 
 !-------------------------------------------------------------------------------
   pure integer function binary_search( n, array, var ) & 
-    result( i ) 
+    result( i )
 
     ! Description:
     ! This subroutine performs a binary search to find the closest value greater
     ! than or equal to var in the array.  This function returns the index of the
     ! closest value of array that is greater than or equal to var.  It returns a
     ! value of -1 if var is outside the bounds of array.
-    !        
+    !
     !-----------------------------------------------------------------------
 
     implicit none
@@ -145,47 +150,47 @@ module interpolation
 
     low = 2
 
-    high = n 
+    high = n
 
     ! This line is here to avoid a false compiler warning about "i" being used
     ! uninitialized in this function.
     i = (low + high) / 2
 
     do while( .not. l_found .and. low <= high )
-        
-       i = (low + high) / 2
 
-       if ( var > array( i - 1 ) .and. var <= array( i ) ) then
+      i = (low + high) / 2
 
-          l_found = .true.
+      if ( var > array( i - 1 ) .and. var <= array( i ) ) then
 
-       elseif ( var == array(1) ) then
+        l_found = .true.
 
-          ! Special case where var falls exactly on the lowest value in the
-          ! array, which is array(1).  This case is not covered by the statement
-          ! above.
-          l_found = .true.
-          ! The value of "i" must be set to 2 because an interpolation is
-          ! performed in the subroutine that calls this function that uses
-          ! indices "i" and "i-1".
-          i = 2
+      elseif ( var == array(1) ) then
 
-       elseif ( var < array( i ) ) then
+        ! Special case where var falls exactly on the lowest value in the
+        ! array, which is array(1).  This case is not covered by the statement
+        ! above.
+        l_found = .true.
+        ! The value of "i" must be set to 2 because an interpolation is
+        ! performed in the subroutine that calls this function that uses
+        ! indices "i" and "i-1".
+        i = 2
 
-          high = i - 1
+      elseif ( var < array( i ) ) then
 
-       elseif ( var > array( i ) ) then
+        high = i - 1
 
-          low = i + 1
+      elseif ( var > array( i ) ) then
 
-      endif              
+        low = i + 1
+
+      endif
 
     enddo  ! while ( ~l_found & low <= high )
-        
-    if ( .not. l_found ) i = -1 
+
+    if ( .not. l_found ) i = -1
 
     return
-  
+
   end function binary_search
 
 !-------------------------------------------------------------------------------
@@ -193,7 +198,7 @@ module interpolation
                        grid_src, var_src )  & 
   result( var_out )
 ! Description:
-!   Do a linear interpolation in the vertical with pressures.  Assumes 
+!   Do a linear interpolation in the vertical with pressures.  Assumes
 !   values that are less than lowest source point are zero and above the
 !   highest source point are zero. Also assumes altitude increases linearly.
 !   This function just calls zlinterp_fnc, but negates grid_out and grid_src.
@@ -218,11 +223,13 @@ module interpolation
     real, dimension(dim_out) :: &
       var_out ! [units vary]
 
+    ! ---- Begin Code ----
+
     var_out = zlinterp_fnc( dim_out, dim_src, -grid_out, &
                             -grid_src, var_src )
 
     return
-end function plinterp_fnc
+  end function plinterp_fnc
 !-------------------------------------------------------------------------------
   function zlinterp_fnc( dim_out, dim_src, grid_out,  & 
                        grid_src, var_src )  & 
@@ -257,6 +264,8 @@ end function plinterp_fnc
 
 !   integer :: tst, kp1
 
+    ! ---- Begin Code ----
+
     k = 1
 
     do kint = 1, dim_out, 1
@@ -267,24 +276,24 @@ end function plinterp_fnc
         cycle
       end if
 
-  ! Increment k until the level is correct
-!          do while ( grid_out(kint) > grid_src(k) 
+      ! Increment k until the level is correct
+!          do while ( grid_out(kint) > grid_src(k)
 !     .                .and. k < dim_src )
 !            k = k + 1
 !          end do
 
-  ! Changed so a binary search is used instead of a sequential search
+      ! Changed so a binary search is used instead of a sequential search
 !          tst = binary_search(dim_src, grid_src, grid_out(kint))
       k = binary_search(dim_src, grid_src, grid_out(kint))
-  ! Joshua Fasching April 2008
+      ! Joshua Fasching April 2008
 
 !          print *, "k = ", k
 !          print *, "tst = ", tst
 !          print *, "dim_src = ", dim_src
 !          print *,"------------------------------"
-  
-    ! If the increment leads to a level above the data, set this
-    ! point and all those above it to zero
+
+      ! If the increment leads to a level above the data, set this
+      ! point and all those above it to zero
       !if( k > dim_src ) then
       if ( k == -1 ) then
         var_out(kint:dim_out) = 0.0
@@ -297,15 +306,15 @@ end function plinterp_fnc
       ! Interpolate
       var_out(kint) = lin_int( grid_out(kint), grid_src(k),  & 
         grid_src(km1), var_src(k), var_src(km1) )
-  
+
 !          ( var_src(k) - var_src(km1) ) / &
 !          ( grid_src(k) - grid_src(km1) ) &
 !            * ( grid_out(kint) - grid_src(km1) ) + var_src(km1) &
 !            Changed to use a standard function for interpolation
 
-     !! Note this ends up changing the results slightly because
-     !the placement of variables has been changed.
-  
+      !! Note this ends up changing the results slightly because
+      !the placement of variables has been changed.
+
 !            Joshua Fasching April 2008
 
     end do ! kint = 1..dim_out
@@ -318,7 +327,7 @@ end function plinterp_fnc
              ( nparam, xlist, tlist, xvalue, tvalue )
 
 ! Description:
-!   Linear interpolation for 25 June 1996 altocumulus case.  
+!   Linear interpolation for 25 June 1996 altocumulus case.
 
 !   For example, to interpolate between two temperatures in space, put
 !   your spatial coordinates in x-list and your temperature values in
@@ -329,7 +338,7 @@ end function plinterp_fnc
 !-------------------------------------------------------------------------------
 
     use error_code, only: clubb_debug ! Procedure
-    
+
     use constants_clubb, only: fstderr ! Constant
 
     implicit none
@@ -353,7 +362,7 @@ end function plinterp_fnc
       i,  & ! Loop control variable for bubble sort- number of the 
             ! lowest yet-unsorted data point.
       j  ! Loop control variable for bubble sort- index of value
-         ! currently being tested
+    ! currently being tested
     integer ::  & 
       bottombound, & ! Index of the smaller value in the linear interpolation
       topbound,    & ! Index of the larger value in the linear interpolation
@@ -422,9 +431,9 @@ end function plinterp_fnc
 
     tvalue =  & 
     lin_int( xvalue, xlist(topbound), xlist(bottombound),  & 
-            tlist(topbound), tlist(bottombound) )       
+            tlist(topbound), tlist(bottombound) )
 
     return
   end subroutine linear_interpolation
- 
+
 end module interpolation

@@ -42,8 +42,8 @@ module hydrostatic_module
     !
     ! Furthermore, the moist equation of state can be written as:
     !
-    ! theta = 
-    ! [ { p0^(R_d/C_p) * p^(C_v/C_p) } 
+    ! theta =
+    ! [ { p0^(R_d/C_p) * p^(C_v/C_p) }
     !   / { R_d * rho_d * ( 1 + (R_v/R_d)*r_v ) } ].
     !
     ! The relationship between theta and theta_v (including water vapor and
@@ -55,7 +55,7 @@ module hydrostatic_module
     ! state to:
     !
     ! theta_v =
-    ! [ { p0^(R_d/C_p) * p^(C_v/C_p) } 
+    ! [ { p0^(R_d/C_p) * p^(C_v/C_p) }
     !   / { R_d * rho_d * ( 1 + r_v + r_c ) } ].
     !
     ! This equation is substituted into the d(exner)/dz form of the hydrostatic
@@ -147,29 +147,29 @@ module hydrostatic_module
     ! as well as at intermediate momentum level k-1.
     do k = 3, gr%nnzp
 
-       dthvm_dz = gr%invrs_dzm(k-1) * ( thvm(k) - thvm(k-1) )
+      dthvm_dz = gr%invrs_dzm(k-1) * ( thvm(k) - thvm(k-1) )
 
-       if ( dthvm_dz /= 0.0 ) then
+      if ( dthvm_dz /= 0.0 ) then
 
-          exner(k) &
-          = calc_exner_linear_thvm( thvm(k-1), dthvm_dz, &
-                                    gr%zt(k-1), gr%zt(k), exner(k-1) )
+        exner(k) &
+        = calc_exner_linear_thvm( thvm(k-1), dthvm_dz, &
+                                  gr%zt(k-1), gr%zt(k), exner(k-1) )
 
-          exner_zm(k-1) &
-          = calc_exner_linear_thvm( thvm(k-1), dthvm_dz, &
-                                    gr%zt(k-1), gr%zm(k-1), exner(k-1) )
+        exner_zm(k-1) &
+        = calc_exner_linear_thvm( thvm(k-1), dthvm_dz, &
+                                  gr%zt(k-1), gr%zm(k-1), exner(k-1) )
 
-       else ! dthvm_dz = 0
+      else ! dthvm_dz = 0
 
-          exner(k) &
-          = calc_exner_const_thvm &
-               ( thvm(k), gr%zt(k), gr%zt(k-1), exner(k-1) )
+        exner(k) &
+        = calc_exner_const_thvm &
+             ( thvm(k), gr%zt(k), gr%zt(k-1), exner(k-1) )
 
-          exner_zm(k-1) &
-          = calc_exner_const_thvm &
-               ( thvm(k), gr%zm(k-1), gr%zt(k-1), exner(k-1) )
+        exner_zm(k-1) &
+        = calc_exner_const_thvm &
+             ( thvm(k), gr%zm(k-1), gr%zt(k-1), exner(k-1) )
 
-       endif
+      endif
 
     enddo ! k = 3, gr%nnzp
 
@@ -181,31 +181,31 @@ module hydrostatic_module
 
     if ( dthvm_dz /= 0.0 ) then
 
-       exner_zm(gr%nnzp) &
-       = calc_exner_linear_thvm &
-            ( thvm(gr%nnzp), dthvm_dz, &
-              gr%zt(gr%nnzp), gr%zm(gr%nnzp), exner(gr%nnzp) )
+      exner_zm(gr%nnzp) &
+      = calc_exner_linear_thvm &
+           ( thvm(gr%nnzp), dthvm_dz, &
+             gr%zt(gr%nnzp), gr%zm(gr%nnzp), exner(gr%nnzp) )
 
     else ! dthvm_dz = 0
 
-       exner_zm(gr%nnzp) &
-       = calc_exner_const_thvm &
-            ( thvm(gr%nnzp), gr%zm(gr%nnzp), gr%zt(gr%nnzp), exner(gr%nnzp) )
+      exner_zm(gr%nnzp) &
+      = calc_exner_const_thvm &
+           ( thvm(gr%nnzp), gr%zm(gr%nnzp), gr%zt(gr%nnzp), exner(gr%nnzp) )
 
     endif
 
     ! Calculate pressure based on the values of exner.
 
     do k = 1, gr%nnzp
-       p_in_Pa(k) = p0 * exner(k)**( 1./kappa )
-       p_in_Pa_zm(k) = p0 * exner_zm(k)**( 1./kappa )
+      p_in_Pa(k) = p0 * exner(k)**( 1./kappa )
+      p_in_Pa_zm(k) = p0 * exner_zm(k)**( 1./kappa )
     enddo
 
     ! Calculate density based on pressure, exner, and thvm.
 
     do k = 1, gr%nnzp
-       rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
-       rho_zm(k) = p_in_Pa_zm(k) / ( Rd * thvm_zm(k) * exner_zm(k) )
+      rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
+      rho_zm(k) = p_in_Pa_zm(k) / ( Rd * thvm_zm(k) * exner_zm(k) )
     enddo
 
 
@@ -263,7 +263,7 @@ module hydrostatic_module
       ref_z_sfc,    & ! Alt. diff between surface and lowest snd. level  [m]
       z_snd_bottom, & ! Altitude of the bottom of the input sounding     [m]
       dthvm_dexner    ! Constant rate of change of thvm with respect to
-                      ! exner between sounding levels k-1 and k          [K]
+    ! exner between sounding levels k-1 and k          [K]
 
     integer ::  &
       rev_low_idx, &
@@ -283,21 +283,21 @@ module hydrostatic_module
 
     do k = 2, nlevels
 
-       ! The value of thvm is given at two successive sounding levels.  For
-       ! purposes of achieving a quality estimate of altitude at each pressure
-       ! sounding level, the value of thvm is considered to vary linearly
-       ! with respect to exner between two successive sounding levels.  Thus,
-       ! there is a constant d(thvm)/d(exner) between the two successive
-       ! sounding levels.  If thvm is constant, then d(thvm)/d(exner) is 0.
-       dthvm_dexner = ( thvm(k) - thvm(k-1) ) / ( exner(k) - exner(k-1) )
+      ! The value of thvm is given at two successive sounding levels.  For
+      ! purposes of achieving a quality estimate of altitude at each pressure
+      ! sounding level, the value of thvm is considered to vary linearly
+      ! with respect to exner between two successive sounding levels.  Thus,
+      ! there is a constant d(thvm)/d(exner) between the two successive
+      ! sounding levels.  If thvm is constant, then d(thvm)/d(exner) is 0.
+      dthvm_dexner = ( thvm(k) - thvm(k-1) ) / ( exner(k) - exner(k-1) )
 
-       ! Calculate the value of the reference height at sounding level k, based
-       ! the value of thvm at sounding level k-1, the constant value of
-       ! d(thvm)/d(exner), the value of exner at sounding levels k-1 and k, and
-       ! the reference altitude at sounding level k-1.
-       ref_z_snd(k) &
-       = calc_z_linear_thvm( thvm(k-1), dthvm_dexner, &
-                             exner(k-1), exner(k), ref_z_snd(k-1) )
+      ! Calculate the value of the reference height at sounding level k, based
+      ! the value of thvm at sounding level k-1, the constant value of
+      ! d(thvm)/d(exner), the value of exner at sounding levels k-1 and k, and
+      ! the reference altitude at sounding level k-1.
+      ref_z_snd(k) &
+      = calc_z_linear_thvm( thvm(k-1), dthvm_dexner, &
+                            exner(k-1), exner(k), ref_z_snd(k-1) )
 
     enddo
 
@@ -315,80 +315,80 @@ module hydrostatic_module
 
     if ( exner_sfc < exner(nlevels) ) then
 
-       ! Since the values of exner decrease monotonically with height (and thus
-       ! with sounding level), the value of exner_sfc is less than all the
-       ! values of exner in the sounding (and thus the surface is located above
-       ! all the levels of the sounding), then there is insufficient information
-       ! to run the model.  Stop the run.
+      ! Since the values of exner decrease monotonically with height (and thus
+      ! with sounding level), the value of exner_sfc is less than all the
+      ! values of exner in the sounding (and thus the surface is located above
+      ! all the levels of the sounding), then there is insufficient information
+      ! to run the model.  Stop the run.
 
-       write(fstderr,*) "The entire sounding is below the model surface."
-       stop
+      write(fstderr,*) "The entire sounding is below the model surface."
+      stop
 
     elseif ( exner_sfc > exner(1) ) then
 
-       ! Since the values of exner decrease monotonically with height (and thus
-       ! with sounding level), the value of exner_sfc is greater than all the
-       ! values of exner in the sounding (and thus the surface is located below
-       ! all the levels of the sounding), use a linear extension of thvm to find
-       ! thvm at the surface.  Thus, d(thvm)/d(exner) is the same as its value
-       ! between sounding levels 1 and 2.  If the surface is so far below the
-       ! sounding that gr%zt(2) is below the first sounding level, the code in
-       ! subroutine read_sounding (found in sounding.F90) will stop the run.
+      ! Since the values of exner decrease monotonically with height (and thus
+      ! with sounding level), the value of exner_sfc is greater than all the
+      ! values of exner in the sounding (and thus the surface is located below
+      ! all the levels of the sounding), use a linear extension of thvm to find
+      ! thvm at the surface.  Thus, d(thvm)/d(exner) is the same as its value
+      ! between sounding levels 1 and 2.  If the surface is so far below the
+      ! sounding that gr%zt(2) is below the first sounding level, the code in
+      ! subroutine read_sounding (found in sounding.F90) will stop the run.
 
-       ! Calculate the appropriate d(thvm)/d(exner).
-       dthvm_dexner = ( thvm(2) - thvm(1) ) / ( exner(2) - exner(1) )
+      ! Calculate the appropriate d(thvm)/d(exner).
+      dthvm_dexner = ( thvm(2) - thvm(1) ) / ( exner(2) - exner(1) )
 
-       ! Calculate the difference between the altitude of the surface (or model
-       ! lower boundary) and the altitude of the lowest level of the sounding.
-       ref_z_sfc  &
-       = calc_z_linear_thvm( thvm(1), dthvm_dexner, &
-                             exner(1), exner_sfc, ref_z_snd(1) )
+      ! Calculate the difference between the altitude of the surface (or model
+      ! lower boundary) and the altitude of the lowest level of the sounding.
+      ref_z_sfc  &
+      = calc_z_linear_thvm( thvm(1), dthvm_dexner, &
+                            exner(1), exner_sfc, ref_z_snd(1) )
 
     else  ! exner(nlevels) < exner_sfc < exner(1)
 
-       ! Since the values of exner decrease monotonically with height (and thus
-       ! with sounding level), the value of exner_sfc is between two values of
-       ! exner (at some levels k-1 and k) in the sounding, and the value of
-       ! d(thvm)/d(exner) is the same as between those two levels in the above
-       ! calculation.
+      ! Since the values of exner decrease monotonically with height (and thus
+      ! with sounding level), the value of exner_sfc is between two values of
+      ! exner (at some levels k-1 and k) in the sounding, and the value of
+      ! d(thvm)/d(exner) is the same as between those two levels in the above
+      ! calculation.
 
-       ! The value of exner_sfc is between two levels of the exner sounding.
-       ! Find the index of the lower level.
+      ! The value of exner_sfc is between two levels of the exner sounding.
+      ! Find the index of the lower level.
 
-       ! In order to use the binary search, the array must be sorted from least
-       ! value to greatest value.  Since exner decreases with altitude (and
-       ! vertical level), the array that is sent to function binary_search must
-       ! be the exact reverse of exner.
-       ! Thus, exner(1) becomes exner_reverse_array(nlevels), exner(nlevels)
-       ! becomes exner_reverse_array(1), etc.
-       do k = 1, nlevels, 1
-          exner_reverse_array(k) = exner(nlevels-k+1)
-       enddo
-       ! The output from the binary search yields the first value in the
-       ! exner_reverse_array that is greater than or equal to exner_sfc.  Thus,
-       ! in regards to the regular exner array, this is the reverse index of
-       ! the lower sounding level for exner_sfc.  For example, if exner_sfc
-       ! is found between exner(1) and exner(2), the binary search for exner_sfc
-       ! in regards to exner_reverse_index will return a value of nlevels.
-       ! Once the actual lower level index is calculated, the result will be 1.
-       rev_low_idx = binary_search( nlevels, exner_reverse_array, exner_sfc )
+      ! In order to use the binary search, the array must be sorted from least
+      ! value to greatest value.  Since exner decreases with altitude (and
+      ! vertical level), the array that is sent to function binary_search must
+      ! be the exact reverse of exner.
+      ! Thus, exner(1) becomes exner_reverse_array(nlevels), exner(nlevels)
+      ! becomes exner_reverse_array(1), etc.
+      do k = 1, nlevels, 1
+        exner_reverse_array(k) = exner(nlevels-k+1)
+      enddo
+      ! The output from the binary search yields the first value in the
+      ! exner_reverse_array that is greater than or equal to exner_sfc.  Thus,
+      ! in regards to the regular exner array, this is the reverse index of
+      ! the lower sounding level for exner_sfc.  For example, if exner_sfc
+      ! is found between exner(1) and exner(2), the binary search for exner_sfc
+      ! in regards to exner_reverse_index will return a value of nlevels.
+      ! Once the actual lower level index is calculated, the result will be 1.
+      rev_low_idx = binary_search( nlevels, exner_reverse_array, exner_sfc )
 
-       ! Find the lower level index for the regular exner profile from the
-       ! lower level index for the reverse exner profile.
-       low_idx = nlevels - rev_low_idx + 1
+      ! Find the lower level index for the regular exner profile from the
+      ! lower level index for the reverse exner profile.
+      low_idx = nlevels - rev_low_idx + 1
 
-       ! Find the index of the upper level.
-       high_idx = low_idx + 1
+      ! Find the index of the upper level.
+      high_idx = low_idx + 1
 
-       ! Calculate the appropriate d(thvm)/d(exner).
-       dthvm_dexner = ( thvm(high_idx) - thvm(low_idx) )  &
-                        /  ( exner(high_idx) - exner(low_idx) )
+      ! Calculate the appropriate d(thvm)/d(exner).
+      dthvm_dexner = ( thvm(high_idx) - thvm(low_idx) )  &
+                       /  ( exner(high_idx) - exner(low_idx) )
 
-       ! Calculate the difference between the altitude of the surface (or model
-       ! lower boundary) and the altitude of the lowest level of the sounding.
-       ref_z_sfc  &
-       = calc_z_linear_thvm( thvm(low_idx), dthvm_dexner, &
-                             exner(low_idx), exner_sfc, ref_z_snd(low_idx) )
+      ! Calculate the difference between the altitude of the surface (or model
+      ! lower boundary) and the altitude of the lowest level of the sounding.
+      ref_z_sfc  &
+      = calc_z_linear_thvm( thvm(low_idx), dthvm_dexner, &
+                            exner(low_idx), exner_sfc, ref_z_snd(low_idx) )
 
     endif  ! exner_sfc
 
@@ -398,7 +398,7 @@ module hydrostatic_module
     ! Calculate the sounding altitude profile based
     ! on z_snd_bottom and ref_z_snd.
     do k = 1, nlevels, 1
-       z(k) = z_snd_bottom + ref_z_snd(k)
+      z(k) = z_snd_bottom + ref_z_snd(k)
     enddo
 
 
@@ -420,7 +420,7 @@ module hydrostatic_module
     !
     ! This equation is integrated to solve for exner, such that:
     !
-    ! INT(exner_1:exner_2) d(exner) 
+    ! INT(exner_1:exner_2) d(exner)
     ! = - ( grav / Cp ) INT(z_1:z_2) (1/thvm) dz.
     !
     ! Since thvm is considered to be a constant over the depth of the layer
@@ -493,7 +493,7 @@ module hydrostatic_module
     !
     ! where:
     !
-    ! C_a 
+    ! C_a
     ! = ( thvm_up - thvm_low ) / ( z_up - z_low )
     ! = d(thvm)/dz;
     !
@@ -505,7 +505,7 @@ module hydrostatic_module
     !
     ! The integral becomes:
     !
-    ! INT(exner_1:exner_2) d(exner) 
+    ! INT(exner_1:exner_2) d(exner)
     ! = - ( grav / Cp ) INT(z_1:z_2) [ 1 / ( C_a*z + C_b ) ] dz.
     !
     ! Performing a u-substitution ( u = C_a*z + C_b ), the equation becomes:
@@ -515,14 +515,14 @@ module hydrostatic_module
     !
     ! Solving the integral, and then re-substituting for u:
     !
-    ! exner_2 = exner_1 
+    ! exner_2 = exner_1
     !           - ( grav / Cp ) * ( 1 / C_a )
     !             * ln [ ( C_a*z_2 + C_b ) / ( C_a*z_1 + C_b ) ].
     !
     ! Re-substituting for C_a and C_b:
     !
-    ! exner_2 
-    ! = exner_1 
+    ! exner_2
+    ! = exner_1
     !   - ( grav / Cp ) * ( 1 / {d(thvm)/dz} )
     !     * ln [   ( {d(thvm)/dz}*z_2 + thvm_low - {d(thvm)/dz}*z_low )
     !            / ( {d(thvm)/dz}*z_1 + thvm_low - {d(thvm)/dz}*z_low ) ].
@@ -531,7 +531,7 @@ module hydrostatic_module
     ! same level as z_1.  Furthermore, thvm_low and z_low are taken from the
     ! same level as z_1 and exner_1.  Thus, z_1 = z_low.  Therefore:
     !
-    ! exner_2 
+    ! exner_2
     ! = exner_low
     !   - ( grav / Cp ) * ( 1 / {d(thvm)/dz} )
     !     * ln [ ( thvm_low + {d(thvm)/dz}*(z_2-z_low) ) / thvm_low ].
@@ -620,20 +620,20 @@ module hydrostatic_module
     !
     ! where:
     !
-    ! C_a 
+    ! C_a
     ! = ( thvm_up - thvm_low ) / ( exner_up - exner_low )
     ! = d(thvm)/d(exner);
     !
     ! and:
     !
     ! C_b
-    ! = thvm_low 
+    ! = thvm_low
     !   - [ ( thvm_up - thvm_low ) / ( exner_up - exner_low ) ] * exner_low
     ! = thvm_low - [ d(thvm)/d(exner) ] * exner_low.
     !
     ! The integral becomes:
     !
-    ! INT(exner_1:exner_2) ( C_a*exner + C_b ) d(exner) 
+    ! INT(exner_1:exner_2) ( C_a*exner + C_b ) d(exner)
     ! = - ( grav / Cp ) INT(z_1:z_2) dz.
     !
     ! Solving the integral:

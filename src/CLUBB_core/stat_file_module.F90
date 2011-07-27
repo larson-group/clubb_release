@@ -1,11 +1,12 @@
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 ! $Id$
 module stat_file_module
  
 
-!     Description:
-!     Contains two derived types for either NetCDF or GrADS files.
-!-----------------------------------------------------------------------
+! Description:
+!   Contains two derived types for describing the contents and location of
+!   either NetCDF or GrADS files.
+!-------------------------------------------------------------------------------
    use stats_precision, only: & 
        stat_rknd,  & ! Variable
        time_precision

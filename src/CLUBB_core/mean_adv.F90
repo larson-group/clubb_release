@@ -28,7 +28,7 @@ module mean_adv
 
   !=============================================================================
   pure function term_ma_zt_lhs( wm_zt, invrs_dzt, level, invrs_dzm_k, invrs_dzm_km1 ) & 
-  result( lhs )
+    result( lhs )
 
     ! Description:
     ! Mean advection of var_zt:  implicit portion of the code.
@@ -295,41 +295,41 @@ module mean_adv
 
       if ( l_ub_const_deriv ) then
 
-         ! Special discretization for constant derivative method (or "one-sided"
-         ! derivative method).
+        ! Special discretization for constant derivative method (or "one-sided"
+        ! derivative method).
 
-         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-         lhs(kp1_tdiag) & 
-         = 0.0
+        ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) & 
+        = 0.0
 
-         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-         lhs(k_tdiag) & 
-         = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_above,mk) &
-                                   - gr%weights_zt2zm(t_above,mkm1)   )
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag) & 
+        = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_above,mk) &
+                                  - gr%weights_zt2zm(t_above,mkm1)   )
 
-         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-         lhs(km1_tdiag) & 
-         = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk) &
-                                   - gr%weights_zt2zm(t_below,mkm1)   )
+        ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) & 
+        = + wm_zt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk) &
+                                  - gr%weights_zt2zm(t_below,mkm1)   )
 
       else
 
-         ! Special discretization for zero derivative method, where the
-         ! derivative d(var_zt)/dz over the model top is set to 0, in order to
-         ! stay consistent with the zero-flux boundary condition option in the
-         ! eddy diffusion code.
+        ! Special discretization for zero derivative method, where the
+        ! derivative d(var_zt)/dz over the model top is set to 0, in order to
+        ! stay consistent with the zero-flux boundary condition option in the
+        ! eddy diffusion code.
 
-         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-         lhs(kp1_tdiag) & 
-         = 0.0
+        ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag) & 
+        = 0.0
 
-         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-         lhs(k_tdiag) & 
-         = + wm_zt * invrs_dzt * ( 1.0 - gr%weights_zt2zm(t_above,mkm1) )
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag) & 
+        = + wm_zt * invrs_dzt * ( 1.0 - gr%weights_zt2zm(t_above,mkm1) )
 
-         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-         lhs(km1_tdiag) & 
-         = - wm_zt * invrs_dzt * gr%weights_zt2zm(t_below,mkm1)
+        ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag) & 
+        = - wm_zt * invrs_dzt * gr%weights_zt2zm(t_below,mkm1)
 
       endif
 

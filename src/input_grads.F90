@@ -1,20 +1,25 @@
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 ! $Id$
 
 module input_grads
 
-!       Description:
-!       This module contains structure and subroutine definitions to
-!       open a GrADS data file a read it.
+! Description:
+!   This module contains structure and subroutine definitions to
+!   open a GrADS data file a read it.
 !
-!       Chris Golaz, 9/12/2000
-
-!       Modifications:
-!       * Uses functions rather than subroutines to get endian type.
-!       * Other cosmetic changes.
-!       * Overloaded subroutine get_grads_var to allow for 8 byte real output.
-!       * Added preprocesing for RECL
-!-----------------------------------------------------------------------
+! References:
+!   None
+!
+! Original Author:
+!   Chris Golaz, 9/12/2000
+!
+! Modifications:
+!   * Uses functions rather than subroutines to get endian type.
+!   * Other cosmetic changes.
+!   * Overloaded subroutine get_grads_var to allow for 8 byte real output.
+!   * Added preprocesing for RECL
+! Other modifications have been tracked via subversion.
+!-------------------------------------------------------------------------------
 #include "CLUBB_core/recl.inc"
   use endian, only: & 
     little_endian, & ! Variable(s)
@@ -37,21 +42,23 @@ module input_grads
             close_grads_read
 
 
-! Overloaded interface for get_grads_var.  All GrADS files are assumed
-! to store variable as 4 byte IEEE floats, but the model may be
-! using double or extended precision.
+  ! Overloaded interface for get_grads_var.  All GrADS files are assumed
+  ! to store variable as 4 byte IEEE floats, but the model may be
+  ! using double or extended precision.
   interface get_grads_var
     module procedure get_4byte_var, get_8byte_var
   end interface
 
   contains
 
-!-----------------------------------------------------------------------
-  subroutine open_grads_read( unit_number, fname, f, l_error )
+!-------------------------------------------------------------------------------
+  subroutine open_grads_read( unit_number, fname, grads_file, l_error )
 
 ! Description:
 !   Open a GrADS data set in read-only mode
-!-----------------------------------------------------------------------
+! References:
+!   None
+!-------------------------------------------------------------------------------
 
     use model_flags, only: l_byteswap_io
 
@@ -66,6 +73,10 @@ module input_grads
 
     implicit none
 
+    ! Constant Parameters
+    logical, parameter :: &
+      l_extra_debugging = .false.
+
     ! Input Variables
     integer, intent(in) :: &
       unit_number ! Fortran I/O unit
@@ -75,7 +86,7 @@ module input_grads
 
     ! Input / Output
     type (stat_file), intent(inout) ::  & 
-      f ! The GrADS file
+      grads_file ! Derived data type containing info on the GrADS file
 
     ! Output Variable(s)
     logical, intent(out) :: l_error
@@ -91,11 +102,12 @@ module input_grads
       i, nx, ny, nz, & 
       ihour, imin
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+
     ! ---- Begin Code ----
 
     !  Initialize status booleans
-    f%l_byte_swapped = .false.
+    grads_file%l_byte_swapped = .false.
     l_error          = .false.
     l_done           = .false.
     l_file_exist     = .false.
@@ -121,22 +133,22 @@ module input_grads
 
       if ( index(line,'DSET') > 0 ) then
 
-        read(unit=line,fmt=*) tmp, f%fname
+        read(unit=line,fmt=*) tmp, grads_file%fname
         if ( .false. ) dt = tmp ! Dummy code to eliminate a compiler warning
-        if ( f%fname(1:1) == '^' ) then
+        if ( grads_file%fname(1:1) == '^' ) then
           ! Get the name of the associated .dat file
-          f%fname = f%fname(2:len_trim(f%fname))
+          grads_file%fname = grads_file%fname(2:len_trim(grads_file%fname))
           ! Figure out the file path
           i = index( fname, '/', back = .true. )
           if ( i > 0 ) then
             ! Construct a path for the .date file
-            f%fname = fname(1:i) // f%fname
+            grads_file%fname = fname(1:i) // grads_file%fname
           end if
         end if
 
       else if ( index(line,'BYTESWAPPED') > 0 ) then
 
-        f%l_byte_swapped = .true.
+        grads_file%l_byte_swapped = .true.
 
       else if ( index(line,'BIG_ENDIAN') > 0 ) then
 
@@ -144,7 +156,7 @@ module input_grads
         ! big_endian
 
         if ( little_endian .or. ( l_byteswap_io .and. big_endian ) ) then
-          f%l_byte_swapped = .true.
+          grads_file%l_byte_swapped = .true.
         end if
 
       else if ( index(line,'LITTLE_ENDIAN') > 0 ) then
@@ -153,7 +165,7 @@ module input_grads
         ! little_endian
 
         if ( big_endian .or. ( l_byteswap_io .and. little_endian ) ) then
-          f%l_byte_swapped = .true.
+          grads_file%l_byte_swapped = .true.
         end if
 
       else if ( index(line,'XDEF') > 0 ) then
@@ -174,52 +186,52 @@ module input_grads
 
       else if ( index(line,'ZDEF') > 0 ) then
 
-        read(unit=line,fmt=*) tmp, f%iz
-        f%ia = 1
-        allocate( f%z(f%ia:f%iz) )
+        read(unit=line,fmt=*) tmp, grads_file%iz
+        grads_file%ia = 1
+        allocate( grads_file%z(grads_file%ia:grads_file%iz) )
         ! Implied Do Loop with the purpose of reading in
         ! altitudes
-        if(f%iz == 1) then
-          f%z(1) = 1
+        if(grads_file%iz == 1) then
+          grads_file%z(1) = 1
         else
-          read(unit=unit_number,fmt=*) (f%z(i),i=f%ia,f%iz)
-        endif
+          read(unit=unit_number,fmt=*) (grads_file%z(i),i=grads_file%ia,grads_file%iz)
+        end if
       else if ( index(line,'TDEF') > 0 ) then
 
-        read(unit=line,fmt=*) tmp, f%ntimes, tmp, date, dt
+        read(unit=line,fmt=*) tmp, grads_file%ntimes, tmp, date, dt
         read(unit=date(1:2),fmt=*) ihour
         read(unit=date(4:5),fmt=*) imin
 
-        f%time = ihour * sec_per_hr + imin * sec_per_min
+        grads_file%time = ihour * sec_per_hr + imin * sec_per_min
 
-        read(unit=date(7:8),fmt=*) f%day
-        read(unit=date(12:15),fmt=*) f%year
+        read(unit=date(7:8),fmt=*) grads_file%day
+        read(unit=date(12:15),fmt=*) grads_file%year
 
         select case( date(9:11) )
         case( 'JAN' )
-          f%month = 1
+          grads_file%month = 1
         case( 'FEB' )
-          f%month = 2
+          grads_file%month = 2
         case( 'MAR' )
-          f%month = 3
+          grads_file%month = 3
         case( 'APR' )
-          f%month = 4
+          grads_file%month = 4
         case( 'MAY' )
-          f%month = 5
+          grads_file%month = 5
         case( 'JUN' )
-          f%month = 6
+          grads_file%month = 6
         case( 'JUL' )
-          f%month = 7
+          grads_file%month = 7
         case( 'AUG' )
-          f%month = 8
+          grads_file%month = 8
         case( 'SEP' )
-          f%month = 9
+          grads_file%month = 9
         case( 'OCT' )
-          f%month = 10
+          grads_file%month = 10
         case( 'NOV' )
-          f%month = 11
+          grads_file%month = 11
         case( 'DEC' )
-          f%month = 12
+          grads_file%month = 12
         case default
           write(unit=fstderr,fmt=*) "Unknown month: "//date(9:11)
           l_error = .true.
@@ -228,16 +240,16 @@ module input_grads
         i = len_trim( dt )
 
         ! Read time variable from the string
-        read(dt(1:i-2),*) f%dtwrite
+        read(dt(1:i-2),*) grads_file%dtwrite
 
         ! Determine units on time
         select case ( dt(i-1:i) )
         case ( 'mn' )
-          f%dtwrite = f%dtwrite * sec_per_min
+          grads_file%dtwrite = grads_file%dtwrite * sec_per_min
         case ( 'hr' )
-          f%dtwrite = f%dtwrite * sec_per_hr
+          grads_file%dtwrite = grads_file%dtwrite * sec_per_hr
         case ( 'dy' )
-          f%dtwrite = f%dtwrite * sec_per_day
+          grads_file%dtwrite = grads_file%dtwrite * sec_per_day
         case default
           write(unit=fstderr,fmt=*) "Unknown time increment: "//dt(i-1:i)
           l_error = .true.
@@ -249,23 +261,23 @@ module input_grads
 
       else if ( index(line,'VARS') > 0 ) then
 
-        read(unit=line,fmt=*) tmp, f%nvar
-        allocate( f%var(f%nvar) )
+        read(unit=line,fmt=*) tmp, grads_file%nvar
+        allocate( grads_file%var(grads_file%nvar) )
 
-        do i = 1, f%nvar, 1
+        do i = 1, grads_file%nvar, 1
 
           read(unit=unit_number,iostat=ierr,fmt='(a256)') line
-          read(unit=line,fmt=*) f%var(i)%name, nz
+          read(unit=line,fmt=*) grads_file%var(i)%name, nz
 
-          if ( nz /= f%iz ) then
+          if ( nz /= grads_file%iz ) then
             write(unit=fstderr,fmt=*) "Error reading ",  & 
-              trim( f%var(i)%name )
+              trim( grads_file%var(i)%name )
             l_error = .true.
           end if
 
-          f%var(i)%indx = i
+          grads_file%var(i)%indx = i
 
-        end do ! 1..f%nvar
+        end do ! 1..grads_file%nvar
 
       end if
 
@@ -276,42 +288,45 @@ module input_grads
 
     close( unit_number )
 
-!--------- Debug -------------------------------------------------------
-!         write(*,*) 'f%fname = ',trim(f%fname)
-!         write(*,*) 'f%l_byte_swapped = ',f%l_byte_swapped
-!         write(*,*) 'f%ia = ',f%ia
-!         write(*,*) 'f%iz = ',f%iz
-!         write(*,'(8f8.1)') (f%z(i),i=f%ia,f%iz)
-!         write(*,*) 'f%ntimes = ',f%ntimes
-!         write(*,*) 'f%day = ',f%day
-!         write(*,*) 'f%month = ',f%month
-!         write(*,*) 'f%year = ',f%year
-!         write(*,*) 'f%time = ',f%time
-!         write(*,*) 'f%dtwrite = ',f%dtwrite
-!         write(*,*) 'f%nvar = ',f%nvar
-!         do i=1,f%nvar
-!            write(*,*) trim(f%var(i)%name)
-!         end do
-!--------- Debug -------------------------------------------------------
+!--------- Debugging information -----------------------------------------------
+    if ( l_extra_debugging ) then
+      write(*,*) 'grads_file%fname = ',trim(grads_file%fname)
+      write(*,*) 'grads_file%l_byte_swapped = ',grads_file%l_byte_swapped
+      write(*,*) 'grads_file%ia = ',grads_file%ia
+      write(*,*) 'grads_file%iz = ',grads_file%iz
+      write(*,'(8f8.1)') (grads_file%z(i),i=grads_file%ia,grads_file%iz)
+      write(*,*) 'grads_file%ntimes = ',grads_file%ntimes
+      write(*,*) 'grads_file%day = ',grads_file%day
+      write(*,*) 'grads_file%month = ',grads_file%month
+      write(*,*) 'grads_file%year = ',grads_file%year
+      write(*,*) 'grads_file%time = ',grads_file%time
+      write(*,*) 'grads_file%dtwrite = ',grads_file%dtwrite
+      write(*,*) 'grads_file%nvar = ',grads_file%nvar
+      do i=1,grads_file%nvar
+         write(*,*) trim(grads_file%var(i)%name)
+      end do
+    end if ! l_extra_debugging
+!--------- End debugging information -------------------------------------------
+
     if ( l_error ) then
       write(unit=fstderr,fmt=*)  & 
-        'Fatal error encountered while reading control file'
+        'Fatal error encountered while reading control file in open_grads_read'
       write(unit=fstderr,fmt=*) 'Cannot do miracles...'
       return
     end if
 
-! Open binary file for direct access
+    ! Open binary file for direct access
 
-    f%iounit = unit_number
-    inquire( file = f%fname, exist = l_file_exist )
+    grads_file%iounit = unit_number
+    inquire( file = grads_file%fname, exist = l_file_exist )
     if ( .not. l_file_exist ) then
       write(fstderr,*) 'binary GrADS file does not exist'
       l_error = .true.
       return
     end if
 
-    open( unit = f%iounit, & 
-          file = trim( f%fname ), & 
+    open( unit = grads_file%iounit, & 
+          file = trim( grads_file%fname ), & 
           form = 'unformatted', access = 'direct',  & 
           recl = F_RECL, status='old', iostat=ierr )
 
@@ -326,13 +341,13 @@ module input_grads
     return
   end subroutine open_grads_read
 
-!----------------------------------------------------------------------
-  subroutine get_4byte_var( f, varname, itime, x, l_error )
+!-------------------------------------------------------------------------------
+  subroutine get_4byte_var( grads_file, varname, itime, x, l_error )
 
 ! Description:
 !   Read binary data from file units and return the result as
 !   as 4 byte float 'x'
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
     use constants_clubb, only: fstderr, sec_per_min
     use stat_file_module, only: stat_file
 
@@ -340,7 +355,7 @@ module input_grads
 
     ! Input Variables
     type (stat_file), intent(in) :: & 
-      f ! The file to read data from
+      grads_file ! The file to read data from
 
     character(len=*), intent(in) ::  & 
       varname ! The variable name as it occurs in the control file
@@ -365,12 +380,12 @@ module input_grads
 
     ! Check time index
     ! Now assumes itime is in minutes
-    if ( itime < 1 .or. (itime/(f%dtwrite/sec_per_min)) > f%ntimes ) then
+    if ( itime < 1 .or. (itime/(grads_file%dtwrite/sec_per_min)) > grads_file%ntimes ) then
       l_error = .true.
       write(unit=fstderr,fmt=*)  & 
-        "get_4byte_var: itime < 1 .or. itime > f%ntimes"
+        "get_4byte_var: itime < 1 .or. itime > grads_file%ntimes"
       write(unit=fstderr,fmt=*) "itime = ", itime
-      write(unit=fstderr,fmt=*) "f%ntimes = ", f%ntimes
+      write(unit=fstderr,fmt=*) "grads_file%ntimes = ", grads_file%ntimes
 
       return
     end if
@@ -380,20 +395,20 @@ module input_grads
     i    = 1
     ivar = -1 ! Initialization to avoid a compiler warning
     do while ( .not. l_done )
-      if ( trim( varname ) == trim( f%var(i)%name ) ) then
+      if ( trim( varname ) == trim( grads_file%var(i)%name ) ) then
         ivar = i
         l_done = .true.
       else
         i = i + 1
-        if ( i > f%nvar ) l_done = .true.
+        if ( i > grads_file%nvar ) l_done = .true.
       end if
     end do ! .not. l_done
 
-    if ( i > f%nvar ) then
+    if ( i > grads_file%nvar ) then
       l_error = .true.
-!     write(*,*) 'get_4byte_var: i > f%nvar'
+!     write(*,*) 'get_4byte_var: i > grads_file%nvar'
 !     write(*,*) 'i = ',i
-!     write(*,*) 'f%nvar = ',f%nvar
+!     write(*,*) 'grads_file%nvar = ',grads_file%nvar
       write(fstderr,*) "input_grads get_4byte_var: "//trim( varname ), " variable not found."
       return
     end if
@@ -402,21 +417,22 @@ module input_grads
 
     ! dschanen changed this to take into account varying dtwrite
     ! numbers 22 March 2007
-!         nrec = (itime-1)*f%nvar*(f%iz-f%ia+1)
-!    .         + (ivar-1)*(f%iz-f%ia+1) + 1
+!         nrec = (itime-1)*grads_file%nvar*(grads_file%iz-grads_file%ia+1)
+!    .         + (ivar-1)*(grads_file%iz-grads_file%ia+1) + 1
 
-!          print *, "Division check", nint(itime/(f%dtwrite/60.))-1
-!          print *, "f%nvar", f%nvar
+!          print *, "Division check", nint(itime/(grads_file%dtwrite/60.))-1
+!          print *, "grads_file%nvar", grads_file%nvar
 !          print *, "varindex", ivar-1
-!          print *, "nlevels", (f%iz-f%ia+1)
+!          print *, "nlevels", (grads_file%iz-grads_file%ia+1)
 
     ! Probably not the most elegant to round but it does allow
     ! cases like arm_3year with their default _stats.in and
     ! _model.in to restart
     ! Joshua Fasching March 2008
 
-    nrec = (max(nint(itime/(f%dtwrite/sec_per_min)),1)-1)*f%nvar*(f%iz-f%ia+1)  & 
-         + (ivar-1)*(f%iz-f%ia+1)
+    nrec = (max(nint(itime/(grads_file%dtwrite/sec_per_min)),1)-1) &
+      *grads_file%nvar*(grads_file%iz-grads_file%ia+1)  & 
+         + (ivar-1)*(grads_file%iz-grads_file%ia+1)
     nrec = nrec + 1
 
     ! Debug
@@ -424,22 +440,23 @@ module input_grads
 !          print *, "ivar = ", ivar
 !          print *, "nrec = ", nrec
 
-    do k=f%ia,f%iz
-      read(unit=f%iounit,rec=nrec) x(k)
-      if ( f%l_byte_swapped ) call byte_order_swap( x(k) )
+    do k=grads_file%ia,grads_file%iz
+      read(unit=grads_file%iounit,rec=nrec) x(k)
+      if ( grads_file%l_byte_swapped ) call byte_order_swap( x(k) )
       nrec = nrec + 1
     end do
 
     return
   end subroutine get_4byte_var
 
-!----------------------------------------------------------------------
-  subroutine get_8byte_var( f, varname, itime, x, l_error )
+!-------------------------------------------------------------------------------
+  subroutine get_8byte_var( grads_file, varname, itime, x, l_error )
 
-!         Description:
-!         Takes the result from get_4byte_var and returns it as a double
-!         precision type, allowing for compile time promotion.
-!----------------------------------------------------------------------
+! Description:
+!   Takes the result from get_4byte_var and returns it as a double
+!   precision type, allowing for compile time promotion.
+!-------------------------------------------------------------------------------
+
     use stat_file_module, only: stat_file
 
     implicit none
@@ -449,50 +466,56 @@ module input_grads
 
     ! Input Variables
     type (stat_file), intent(in) :: & 
-      f ! The GrADS file
+      grads_file ! The GrADS file
 
     character(len=*), intent(in) :: & 
-    varname ! The variable name as it occurs in the control file
+      varname ! The variable name as it occurs in the control file
 
     integer, intent(in) :: & 
-    itime   ! Obtain variable varname at time itime
+      itime   ! Obtain variable varname at time itime
 
     ! Output Variables
     real(kind=8), intent(out) :: x(:)
 
     logical, intent(out) :: l_error
 
-    ! Internal
+    ! Local Variable(s)
     real(kind=4), dimension(size( x )) :: tmp
 
-    call get_4byte_var( f, varname, itime, tmp, l_error )
+    ! ----Begin Code ----
+
+    call get_4byte_var( grads_file, varname, itime, tmp, l_error )
 
     x = dble( tmp )
 
     return
   end subroutine get_8byte_var
 
-!-----------------------------------------------------------------------
-  subroutine close_grads_read( f )
+!-------------------------------------------------------------------------------
+  subroutine close_grads_read( grads_file )
 
-!         Description:
-!         Close a previously opened GrADS file
-!-----------------------------------------------------------------------
+! Description:
+!   Close a previously opened GrADS file
+!-------------------------------------------------------------------------------
 
     use stat_file_module, only: stat_file
 
     implicit none
 
-    ! Input Variables
-    type (stat_file), intent(inout) :: f
+    ! Input/Output Variables
+    type (stat_file), intent(inout) :: &
+      grads_file ! Derived data type with information on the GrADS file
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+
+    ! ---- Begin Code ----
+
     ! Close file
-    close( unit=f%iounit )
+    close( unit=grads_file%iounit )
 
     ! Deallocate
-    deallocate( f%var )
-    deallocate( f%z )
+    deallocate( grads_file%var )
+    deallocate( grads_file%z )
 
     return
   end subroutine close_grads_read

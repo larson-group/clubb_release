@@ -165,29 +165,30 @@ module grid_class
   type grid
 
     integer :: nnzp ! Number of points in the grid
-    !   Note: Fortran 90/95 prevent an allocatable array from appearing
+    !   Note: Fortran 90/95 prevents an allocatable array from appearing
     !   within a derived type.  However, a pointer can be used in the same
     !   manner as an allocatable array, as we have done here (the grid
     !   pointers are always allocated rather than assigned and nullified
-    !   like real pointers).
+    !   like real pointers).  Note that these must be de-allocated to prevent
+    !   memory leaks.
     real, pointer, dimension(:) :: &
       zm, & ! Momentum grid
       zt    ! Thermo grid
     real, pointer, dimension(:) :: &
       invrs_dzm, & ! The inverse spacing between thermodynamic grid
-      !              levels; centered over momentum grid levels.
+    !                levels; centered over momentum grid levels.
       invrs_dzt    ! The inverse spacing between momentum grid levels;
-      !              centered over thermodynamic grid levels.
+    !                centered over thermodynamic grid levels.
 
     ! These weights are normally used in situations
-    ! where a momentum level variable is being 
-    ! solved for implicitly in an equation and 
+    ! where a momentum level variable is being
+    ! solved for implicitly in an equation and
     ! needs to be interpolated to the thermodynamic grid levels.
     real, pointer, dimension(:,:) :: weights_zm2zt, & 
     ! These weights are normally used in situations where a
     ! thermodynamic level variable is being solved for implicitly in an equation
     ! and needs to be interpolated to the momentum grid levels.
-                                     weights_zt2zm    
+                                     weights_zt2zm
 
   end type grid
 
@@ -296,7 +297,7 @@ module grid_class
       deltaz,   & ! Vertical grid spacing                  [m]
       zm_init,  & ! Initial grid altitude (momentum level) [m]
       zm_top      ! Maximum grid altitude (momentum level) [m]
-      
+
     ! If the CLUBB parameterization is implemented in a host model, it needs to
     ! use the host model's momentum level altitudes and thermodynamic level
     ! altitudes.
@@ -317,7 +318,7 @@ module grid_class
     ! Local Variables
     integer :: ierr, & ! Allocation stat
                i       ! Loop index
-    
+
 
     ! ---- Begin Code ----
 
@@ -341,7 +342,7 @@ module grid_class
 
       if( grid_type == 1 ) then
 
-        ! Determine the number of grid points given the spacing 
+        ! Determine the number of grid points given the spacing
         ! to fit within the bounds without going over.
         gr%nnzp = floor( ( zm_top - zm_init + deltaz ) / deltaz )
 
@@ -353,7 +354,7 @@ module grid_class
 
         do while( thermodynamic_heights(i) >= zm_init .and. i > 1 )
 
-           i = i - 1
+          i = i - 1
 
         end do
 
@@ -362,11 +363,11 @@ module grid_class
           stop "Stretched zt grid cannot fulfill zm_init requirement"
 
         else
-      
+
           begin_height = i
 
         end if
-        
+
         ! Find end_height (upper bound)
 
         i = gr%nnzp
@@ -376,7 +377,7 @@ module grid_class
           i = i - 1
 
         end do
-        
+
         if( zm_top < thermodynamic_heights(i) ) then
 
           stop "Stretched zt grid cannot fulfill zm_top requirement"
@@ -405,7 +406,7 @@ module grid_class
 
           stop "Stretched zm grid cannot fulfill zm_init requirement"
 
-        else 
+        else
 
           begin_height = i
 
@@ -428,7 +429,7 @@ module grid_class
         else
 
           end_height = i
-         
+
           gr%nnzp = size( momentum_heights(begin_height:end_height) )
 
         end if
@@ -460,13 +461,13 @@ module grid_class
                  thermodynamic_heights(begin_height:end_height) )
 
     if ( sfc_elevation > gr%zm(1) ) then
-       write(fstderr,*) "The altitude of the lowest momentum level, "        &
-                        // "gr%zm(1), must be at or above the altitude of "  &
-                        // "the surface, sfc_elevation.  The lowest model "  &
-                        // "momentum level cannot be below the surface."
-       write(fstderr,*) "Altitude of lowest momentum level =", gr%zm(1)
-       write(fstderr,*) "Altitude of the surface =", sfc_elevation
-       stop "Fatal error."
+      write(fstderr,*) "The altitude of the lowest momentum level, "        &
+                       // "gr%zm(1), must be at or above the altitude of "  &
+                       // "the surface, sfc_elevation.  The lowest model "  &
+                       // "momentum level cannot be below the surface."
+      write(fstderr,*) "Altitude of lowest momentum level =", gr%zm(1)
+      write(fstderr,*) "Altitude of the surface =", sfc_elevation
+      stop "Fatal error."
     endif
 
     return
@@ -476,12 +477,12 @@ module grid_class
   !=============================================================================
   subroutine cleanup_grid
 
-  ! Description:
-  !   De-allocates the memory for the grid
-  !
-  ! References:
-  !   None
-  !------------------------------------------------------------------------------
+    ! Description:
+    !   De-allocates the memory for the grid
+    !
+    ! References:
+    !   None
+    !------------------------------------------------------------------------------
     use constants_clubb, only: &
       fstderr ! Constant
 
@@ -494,9 +495,9 @@ module grid_class
 
     ! Allocate memory for grid levels
     deallocate( gr%zm, gr%zt, & 
-              gr%invrs_dzm, gr%invrs_dzt,  & 
-              gr%weights_zm2zt, gr%weights_zt2zm, & 
-              stat=ierr )
+                gr%invrs_dzm, gr%invrs_dzt,  & 
+                gr%weights_zm2zt, gr%weights_zt2zm, & 
+                stat=ierr )
 
     if ( ierr /= 0 ) then
       write(fstderr,*) "Grid deallocation failed."
@@ -511,13 +512,13 @@ module grid_class
                deltaz, zm_init, momentum_heights,  & 
                thermodynamic_heights )
 
-  ! Description:
-  !   Sets the heights and interpolation weights of the column.
-  !   This is seperated from setup_grid for those host models that have heights
-  !   that vary with time.
-  ! References: 
-  !   None
-  !------------------------------------------------------------------------------
+    ! Description:
+    !   Sets the heights and interpolation weights of the column.
+    !   This is seperated from setup_grid for those host models that have heights
+    !   that vary with time.
+    ! References:
+    !   None
+    !------------------------------------------------------------------------------
 
     use constants_clubb, only: fstderr ! Constant
 
@@ -544,7 +545,7 @@ module grid_class
     real, intent(in) ::  & 
       deltaz,   & ! Vertical grid spacing                  [m]
       zm_init     ! Initial grid altitude (momentum level) [m]
-      
+
 
     ! If the CLUBB parameterization is implemented in a host model, it needs to
     ! use the host model's momentum level altitudes and thermodynamic level
@@ -1031,10 +1032,10 @@ module grid_class
 
     ! Do the actual interpolation.
     ! Use linear interpolation.
-    do k = 1, gr%nnzp-1, 1
+    forall( k = 1 : gr%nnzp-1 : 1 )
       interpolated_azm(k) = &
          factor_interp( gr%weights_zt2zm( 1, k ), azt(k+1), azt(k) )
-    enddo
+    end forall
 
 !    ! Set the value of azm at level gr%nnzp (the uppermost level in the model)
 !    ! to the value of azt at level gr%nnzp.
@@ -1329,10 +1330,10 @@ module grid_class
 
     ! Do actual interpolation.
     ! Use a linear interpolation.
-    do k = gr%nnzp, 2, -1
+    forall( k = gr%nnzp : 2 : -1 )
       interpolated_azt(k) = &
          factor_interp( gr%weights_zm2zt( 1, k ), azm(k), azm(k-1) )
-    enddo
+    end forall ! gr%nnzp .. 2
 !    ! Set the value of azt at level 1 (the lowermost level in the model) to the
 !    ! value of azm at level 1.
 !    interpolated_azt(1) = azm(1)
@@ -1620,11 +1621,11 @@ module grid_class
     ! ---- Begin Code ----
 
     ! Compute vertical derivatives.
-    do k = gr%nnzp, 2, -1
+    forall( k = gr%nnzp : 2 : -1 )
       ! Take derivative of momentum-level variable azm over the central
       ! thermodynamic level (k).
       gradzm(k) = ( azm(k) - azm(k-1) ) * gr%invrs_dzt(k)
-    enddo
+    end forall ! gr%nnzp .. 2
 !    ! Thermodynamic level 1 is located below momentum level 1, so there is not
 !    ! enough information to calculate the derivative over thermodynamic
 !    ! level 1.  Thus, the value of the derivative at thermodynamic level 1 is
@@ -1667,11 +1668,11 @@ module grid_class
     ! ---- Begin Code ----
 
     ! Compute vertical derivative.
-    do k = 1, gr%nnzp-1, 1
+    forall( k = 1 : gr%nnzp-1 : 1 )
       ! Take derivative of thermodynamic-level variable azt over the central
       ! momentum level (k).
       gradzt(k) = ( azt(k+1) - azt(k) ) * gr%invrs_dzm(k)
-    enddo
+    end forall ! 1 .. gr%nnzp-1
 !    ! Momentum level gr%nnzp is located above thermodynamic level gr%nnzp, so
 !    ! there is not enough information to calculate the derivative over momentum
 !    ! level gr%nnzp.  Thus, the value of the derivative at momentum level
@@ -1690,10 +1691,10 @@ module grid_class
     return
 
   end function gradzt
-  
+
   !=============================================================================
   function flip( x, xdim )
-  
+
     ! Description:
     ! Flips a single dimension array (i.e. a vector), so the first element
     ! becomes the last and vice versa for the whole column.  This is a

@@ -1,33 +1,27 @@
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 ! $Id$
 module output_grads
 
 
-!       Description:
-!       This module contains structure and subroutine definitions to
-!       create GrADS output data files for one dimensional arrays.
+! Description:
+!   This module contains structure and subroutine definitions to
+!   create GrADS output data files for one dimensional arrays.
 !
-!       The structure type (stat_file) contains all necessay information
-!       to generate a GrADS file and a list of variables to be output
-!       in the data file.
+!   The structure type (stat_file) contains all necessay information
+!   to generate a GrADS file and a list of variables to be output
+!   in the data file.
 !
-!       Two subroutines are needed to create a GrADS file
+! References:
+!   None
 !
-!        subroutine open_grads( f )     Open initialize structure
-!                                       If GrADS files already exist,
-!                                       open_grads will attempt to
-!                                       append data to them
-!
-!        subroutine write_grads( f )    Write data to file and update
-!                                       control file. Can be callled as
-!                                       many times as necessary
-!       Author:
-!        Chris Golaz, updated 2/18/2003
-!-----------------------------------------------------------------------
+! Original Author:
+!   Chris Golaz, updated 2/18/2003
+!-------------------------------------------------------------------------------
 
   implicit none
 
   public  :: open_grads, write_grads
+
   private :: format_date, check_grads, &
     determine_time_inc
 
@@ -38,14 +32,19 @@ module output_grads
 
   contains
 
-!-----------------------------------------------------------------------
-  subroutine open_grads( unit, fdir, fname,  & 
+!-------------------------------------------------------------------------------
+  subroutine open_grads( iunit, fdir, fname,  & 
                          ia, iz, z, & 
                          day, month, year, rlat, rlon, & 
                          time, dtwrite, & 
-                         nvar, f )
+                         nvar, grads_file )
+! Description:
+!   Opens and initialize variable components for derived type 'grads_file'
+!   If the GrADS file already exists, open_grads will overwrite it.
 
-!-----------------------------------------------------------------------
+! References:
+!   None
+!-------------------------------------------------------------------------------
     use constants_clubb, only:  & 
         fstderr,  & ! Variable 
         fstdout
@@ -60,78 +59,87 @@ module output_grads
 
     ! Input Variables
 
-    integer, intent(IN) :: unit   ! File unit being written to            [-]
+    integer, intent(in) :: iunit   ! File unit being written to            [-]
 
-    character(len=*), intent(IN) ::  & 
-    fdir,                         & ! Directory where file is stored        [-]
-    fname                           ! Name of file                          [-]
+    character(len=*), intent(in) ::  & 
+      fdir,  & ! Directory where file is stored        [-]
+      fname    ! Name of file                          [-]
 
-    integer, intent(IN) :: & 
-    ia,                    & ! Lower Bound of z      [-]
-    iz                       ! Upper Bound of z      [-]
+    integer, intent(in) :: & 
+      ia,                    & ! Lower Bound of z      [-]
+      iz                       ! Upper Bound of z      [-]
 
-    real, dimension(:), intent(IN) :: z
+    real, dimension(:), intent(in) :: z
 
-    integer, intent(IN) ::  & 
-    day,           & ! Day of Month at Model Start    [dd]
-    month,         & ! Month of Year at Model start   [mm]
-    year             ! Year at Model Start            [yyyy]
+    integer, intent(in) ::  & 
+      day,           & ! Day of Month at Model Start    [dd]
+      month,         & ! Month of Year at Model start   [mm]
+      year             ! Year at Model Start            [yyyy]
 
-    real, dimension(1), intent(in) :: rlat, rlon ! Latitude and Longitude [Degrees N/E]
+    real, dimension(1), intent(in) :: &
+      rlat, rlon ! Latitude and Longitude [Degrees N/E]
 
-    real(kind=time_precision), intent(IN) ::  & 
-    time,          & ! Time since Model start          [s]
-    dtwrite       ! Time interval                   [s]
+    real(kind=time_precision), intent(in) ::  & 
+      time,     & ! Time since Model start          [s]
+      dtwrite     ! Time interval for output        [s]
 
-    ! Number of variables to store                  [#]
-    integer, intent(IN) :: nvar
+    ! Number of GrADS variables to store            [#]
+    integer, intent(in) :: nvar
 
     ! Input/Output Variables
-    type (stat_file), intent(INOUT) :: f ! File data [-]
+    type (stat_file), intent(inout) :: &
+      grads_file ! File data [-]
 
     ! Local Variables
 
     integer :: k
     logical :: l_ctl, l_dat, l_error
 
-    ! Define parameters
+    ! ---- Begin Code ----
 
-    f%iounit = unit
-    f%fdir   = fdir
-    f%fname  = fname
-    f%ia     = ia
-    f%iz     = iz
+    ! Define parameters for the GrADS ctl and dat files
 
+    grads_file%iounit = iunit
+    grads_file%fdir   = fdir
+    grads_file%fname  = fname
+    grads_file%ia     = ia
+    grads_file%iz     = iz
+
+    ! Determine if the altitudes are ascending or descending and setup the
+    ! variable z accordingly.
     if ( ia <= iz ) then
       do k=1,iz-ia+1
-        f%z(k) = z(ia+k-1)
+        grads_file%z(k) = z(ia+k-1)
       end do
     else
       do k=1,ia-iz+1
-        f%z(k) = z(ia-k+1)
+        grads_file%z(k) = z(ia-k+1)
       end do
     end if
 
-    f%day   = day
-    f%month = month
-    f%year  = year
+    grads_file%day   = day
+    grads_file%month = month
+    grads_file%year  = year
 
-    allocate( f%rlat(1), f%rlon(1) )
+    allocate( grads_file%rlat(1), grads_file%rlon(1) )
 
-    f%rlat  = rlat
-    f%rlon  = rlon
+    grads_file%rlat  = rlat
+    grads_file%rlon  = rlon
 
-    f%dtwrite = dtwrite
+    grads_file%dtwrite = dtwrite
 
-    f%nvar = nvar
+    grads_file%nvar = nvar
 
-!         Check whether GrADS files already exists
+    ! Check whether GrADS files already exists
 
-!         We don't need this feature for the single-column model
-!         since there is no history restart feature
-!
-!          inquire( file=trim(fdir)//trim(fname)//'.ctl', exist=l_ctl )
-!          inquire( file=trim(fdir)//trim(fname)//'.dat', exist=l_dat )
+    ! We don't use this feature for the single-column model.  The
+    ! clubb_standalone program will simply overwrite existing data files if they
+    ! exist.  The restart function will create a new GrADS file starting from
+    ! the restart time in the output directory.
+
+    ! inquire( file=trim(fdir)//trim(fname)//'.ctl', exist=l_ctl )
+    ! inquire( file=trim(fdir)//trim(fname)//'.dat', exist=l_dat )
+
     l_ctl = .false.
     l_dat = .false.
 
@@ -140,9 +148,9 @@ module output_grads
 
     if ( .not.l_ctl .and. .not.l_dat ) then
 
-      f%time = time
-      f%ntimes = 0
-      f%nrecord = 1
+      grads_file%time = time
+      grads_file%ntimes = 0
+      grads_file%nrecord = 1
       return
 
       ! If both files exists, attempt to append to existing files
@@ -151,11 +159,12 @@ module output_grads
 
       !  Check existing ctl file
 
-      call check_grads( unit, fdir, fname,  & 
+      call check_grads( iunit, fdir, fname,  & 
                         ia, iz, & 
                         day, month, year, time, dtwrite, & 
                         nvar,  & 
-                        l_error, f%ntimes, f%nrecord, f%time )
+                        l_error, grads_file%ntimes, grads_file%nrecord, &
+                        grads_file%time )
 
       if ( l_error ) then
         write(unit=fstderr,fmt=*) "Error in open_grads:"
@@ -181,17 +190,18 @@ module output_grads
     return
   end subroutine open_grads
 
-!-----------------------------------------------------------------------
-  subroutine check_grads( unit, fdir, fname,  & 
+!-------------------------------------------------------------------------------
+  subroutine check_grads( iunit, fdir, fname,  & 
                           ia, iz, & 
                           day, month, year, time, dtwrite, & 
                           nvar,  & 
-                          l_error, ntimes, nrecord, time_in )
-!         Description:
-!         For existing GrADS file, this subroutine will attempt
-!         to determine whether data can be safely appended to
-!         existing file.
-!-----------------------------------------------------------------------
+                          l_error, ntimes, nrecord, time_grads )
+! Description:
+!   Given a GrADS file that already exists, this subroutine will attempt
+!   to determine whether data can be safely appended to existing file.
+! References:
+!   None
+!-------------------------------------------------------------------------------
     use stat_file_module, only: & 
         variable ! Type
 
@@ -209,28 +219,28 @@ module output_grads
     ! Input Variables
 
     integer, intent(in) ::  & 
-    unit,              & ! Fortran file unit
-    ia, iz,            & ! First and last level
-    day, month, year,  & ! Day, month and year numbers
-    nvar              ! Number of variables in the file
+      iunit,              & ! Fortran file unit
+      ia, iz,            & ! First and last level
+      day, month, year,  & ! Day, month and year numbers
+      nvar              ! Number of variables in the file
 
     character(len=*), intent(in) :: & 
-    fdir, fname ! File directory and name
+      fdir, fname ! File directory and name
 
     real(kind=time_precision), intent(in) :: & 
-    time    ! Current time        [s]
+      time    ! Current model time        [s]
 
     real(kind=time_precision), intent(in) :: & 
-    dtwrite ! Time interval between writes to the file    [s]
+      dtwrite ! Time interval between writes to the file    [s]
 
     ! Output Variables
     logical, intent(out) ::  & 
-    l_error
+      l_error
 
     integer, intent(out) ::  & 
-    ntimes, nrecord
+      ntimes, nrecord
 
-    real(kind=time_precision), intent(out) :: time_in
+    real(kind=time_precision), intent(out) :: time_grads
 
     ! Local Variables
     logical :: l_done
@@ -238,10 +248,10 @@ module output_grads
     character(len = 256) :: line, tmp, date, dt
 
     integer ::  & 
-    i, nx, ny, nz, & 
-    ihour, imin, & 
-    ia_in, iz_in, ntimes_in, nvar_in, & 
-    day_in, month_in, year_in
+      i, nx, ny, nz, & 
+      ihour, imin, & 
+      ia_in, iz_in, ntimes_in, nvar_in, & 
+      day_in, month_in, year_in
 
     real(kind=time_precision) :: dtwrite_in
 
@@ -249,21 +259,23 @@ module output_grads
 
     type (variable), dimension(:), pointer :: var_in
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
-    ! Initialize logicals
+    ! ---- Begin Code ----
+
+    ! Initialize logical variables
     l_error = .false.
     l_done  = .false.
 
     ! Open control file
-    open( unit, & 
+    open( unit = iunit, & 
           file = trim( fdir )//trim( fname )//'.ctl', & 
           status = 'old', iostat = ierr )
     if ( ierr < 0 ) l_done = .true.
 
     ! Read and process it
 
-    read(unit=unit,iostat=ierr,fmt='(a256)') line
+    read(unit=iunit,iostat=ierr,fmt='(a256)') line
     if ( ierr < 0 ) l_done = .true.
 
     do while ( .not. l_done )
@@ -291,7 +303,7 @@ module output_grads
         if ( index(line,'LEVELS') > 0 ) then
           ia_in = 1
           allocate( z_in(ia_in:iz_in) )
-          read(unit=unit,fmt=*) (z_in(i),i=ia_in,iz_in)
+          read(unit=iunit,fmt=*) (z_in(i),i=ia_in,iz_in)
         end if
 
       else if ( index(line,'TDEF') > 0 ) then
@@ -299,7 +311,7 @@ module output_grads
         read(unit=line,fmt=*) tmp, ntimes_in, tmp, date, dt
         read(unit=date(1:2),fmt=*) ihour
         read(unit=date(4:5),fmt=*) imin
-        time_in = ihour * sec_per_hr + imin * sec_per_min
+        time_grads = ihour * sec_per_hr + imin * sec_per_min
         read(unit=date(7:8),fmt=*) day_in
         read(unit=date(12:15),fmt=*) year_in
 
@@ -345,7 +357,7 @@ module output_grads
         read(line,*) tmp, nvar_in
         allocate( var_in(nvar_in) )
         do i=1, nvar_in
-          read(unit=unit,iostat=ierr,fmt='(a256)') line
+          read(unit=iunit,iostat=ierr,fmt='(a256)') line
           read(unit=line,fmt=*) var_in(i)%name, nz
           if ( nz /= iz_in ) then
             write(unit=fstderr,fmt=*)  & 
@@ -355,12 +367,12 @@ module output_grads
         end do ! 1..nvar_in
       end if
 
-      read(unit,iostat=ierr,fmt='(a256)') line
+      read(unit=iunit,iostat=ierr,fmt='(a256)') line
       if ( ierr < 0 ) l_done = .true.
 
     end do ! while ( .not. l_done )
 
-    close( unit=unit )
+    close( unit=iunit )
 
     ! Perform some error check
 
@@ -384,7 +396,7 @@ module output_grads
       l_error = .true.
     end if
 
-    if ( int( time_in + ntimes_in*dtwrite_in )  & 
+    if ( int( time_grads + ntimes_in*dtwrite_in )  & 
          /= int( time ) ) then
       write(unit=fstderr,fmt=*) "check_grads: time mismatch"
       l_error = .true.
@@ -407,7 +419,7 @@ module output_grads
       write(unit=fstderr,fmt=*) "day     = ", day_in, day
       write(unit=fstderr,fmt=*) "month   = ", month_in, month
       write(unit=fstderr,fmt=*) "year    = ", year_in, year
-      write(unit=fstderr,fmt=*) "time    = ", time_in, time
+      write(unit=fstderr,fmt=*) "time_grads / time    = ", time_grads, time
       write(unit=fstderr,fmt=*) "dtwrite = ", dtwrite_in, dtwrite
       write(unit=fstderr,fmt=*) "nvar    = ", nvar_in, nvar
     end if
@@ -417,24 +429,26 @@ module output_grads
     ntimes  = ntimes_in
     nrecord = ntimes_in * nvar_in * iz_in + 1
 
-    deallocate ( z_in )
+    deallocate( z_in )
 
     ! The purpose of this statement is to avoid a compiler warning
     ! for tmp
     if (tmp =="") then
-    endif
+    end if
     ! Joshua Fasching June 2008
-
 
     return
   end subroutine check_grads
 
-!---------------------------------------------------------
-  subroutine write_grads( f )
+!-------------------------------------------------------------------------------
+  subroutine write_grads( grads_file )
 
 ! Description:
-!   Write part of a GrADS file to disk
-!---------------------------------------------------------
+!   Write part of a GrADS file to data (.dat) file update control file (.ctl. 
+!   Can be called as many times as necessary
+! References:
+!   None
+!-------------------------------------------------------------------------------
 
     use constants_clubb, only: & 
       fstderr ! Variable(s)
@@ -455,7 +469,8 @@ module output_grads
     implicit none
 
     ! Input Variables
-    type (stat_file), intent(inout) :: f
+    type (stat_file), intent(inout) :: &
+      grads_file ! Contains all information on the files to be written to
 
     ! Local Variables
     integer ::  & 
@@ -470,15 +485,15 @@ module output_grads
     ! ---- Begin Code ----
     ! Check number of variables and write nothing if less than 1
 
-    if ( f%nvar < 1 ) return
+    if ( grads_file%nvar < 1 ) return
 
 #include "recl.inc"
 
     ! Output data to file
-    open( unit=f%iounit, & 
-          file=trim( f%fdir )//trim( f%fname )//'.dat', & 
+    open( unit=grads_file%iounit, & 
+          file=trim( grads_file%fdir )//trim( grads_file%fname )//'.dat', & 
           form='unformatted', access='direct', & 
-          recl=F_RECL*abs( f%iz-f%ia+1 ), & 
+          recl=F_RECL*abs( grads_file%iz-grads_file%ia+1 ), & 
           status='unknown', iostat=ios )
     if ( ios /= 0 ) then
       write(unit=fstderr,fmt=*)  & 
@@ -487,23 +502,24 @@ module output_grads
       stop
     end if
 
-    if ( f%ia <= f%iz ) then
-      do i=1,f%nvar
-        write(f%iounit,rec=f%nrecord)  & 
-          real( f%var(i)%ptr(1,1,f%ia:f%iz), kind=4)
-        f%nrecord = f%nrecord + 1
+    if ( grads_file%ia <= grads_file%iz ) then
+      do i=1,grads_file%nvar
+        write(grads_file%iounit,rec=grads_file%nrecord)  & 
+          real( grads_file%var(i)%ptr(1,1,grads_file%ia:grads_file%iz), kind=4)
+        grads_file%nrecord = grads_file%nrecord + 1
       end do
 
     else
-      do i=1, f%nvar
-        write(f%iounit,rec=f%nrecord) & 
-          real( f%var(i)%ptr(1,1,f%ia:f%iz:-1), kind=4)
-        f%nrecord = f%nrecord + 1
+      do i=1, grads_file%nvar
+        write(grads_file%iounit,rec=grads_file%nrecord) & 
+          real( grads_file%var(i)%ptr(1,1,grads_file%ia:grads_file%iz:-1), kind=4)
+        grads_file%nrecord = grads_file%nrecord + 1
       end do
 
-    end if ! f%ia <= f%iz
+    end if ! grads_file%ia <= grads_file%iz
 
-    close( f%iounit, iostat = ios )
+    close( unit=grads_file%iounit, iostat = ios )
+
     if ( ios /= 0 ) then
       write(unit=fstderr,fmt=*)  & 
         "write_grads: error closing binary file"
@@ -511,12 +527,12 @@ module output_grads
       stop
     end if
 
-    f%ntimes = f%ntimes + 1
+    grads_file%ntimes = grads_file%ntimes + 1
 
     ! Write control file
 
-    open(unit=f%iounit, & 
-         file=trim( f%fdir )//trim( f%fname )//'.ctl', & 
+    open(unit=grads_file%iounit, & 
+         file=trim( grads_file%fdir )//trim( grads_file%fname )//'.ctl', & 
          status='unknown', iostat=ios)
     if ( ios > 0 ) then
       write(unit=fstderr,fmt=*)  & 
@@ -528,52 +544,53 @@ module output_grads
     ! Write file header
     if ( ( big_endian .and. .not. l_byteswap_io ) &
       .or. ( little_endian .and. l_byteswap_io ) ) then
-      write(unit=f%iounit,fmt='(a)') 'OPTIONS BIG_ENDIAN'
+      write(unit=grads_file%iounit,fmt='(a)') 'OPTIONS BIG_ENDIAN'
 
     else
-      write(unit=f%iounit,fmt='(a)') 'OPTIONS LITTLE_ENDIAN'
+      write(unit=grads_file%iounit,fmt='(a)') 'OPTIONS LITTLE_ENDIAN'
 
     end if
 
-    write(unit=f%iounit,fmt='(a)') 'DSET ^'//trim(f%fname)//'.dat'
-    write(unit=f%iounit,fmt='(a,e11.5)') 'UNDEF ',undef
-    write(unit=f%iounit,fmt='(a,f8.3,a)') 'XDEF    1 LINEAR ', f%rlon, ' 1.'
-    write(unit=f%iounit,fmt='(a,f8.3,a)') 'YDEF    1 LINEAR ', f%rlat, ' 1.'
-    if ( f%ia == f%iz ) then
-      write(unit=f%iounit,fmt='(a)') 'ZDEF    1 LEVELS 0.'
-    else if ( f%ia < f%iz ) then
-      write(unit=f%iounit,fmt='(a,i5,a)')  & 
-        'ZDEF', abs(f%iz-f%ia)+1,' LEVELS '
-      write(unit=f%iounit,fmt='(8f10.2)')  & 
-        (f%z(i-f%ia+1),i=f%ia,f%iz)
+    write(unit=grads_file%iounit,fmt='(a)') 'DSET ^'//trim( grads_file%fname )//'.dat'
+    write(unit=grads_file%iounit,fmt='(a,e11.5)') 'UNDEF ',undef
+    write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'XDEF    1 LINEAR ', grads_file%rlon, ' 1.'
+    write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'YDEF    1 LINEAR ', grads_file%rlat, ' 1.'
+    if ( grads_file%ia == grads_file%iz ) then
+      write(unit=grads_file%iounit,fmt='(a)') 'ZDEF    1 LEVELS 0.'
+    else if ( grads_file%ia < grads_file%iz ) then
+      write(unit=grads_file%iounit,fmt='(a,i5,a)')  & 
+        'ZDEF', abs(grads_file%iz-grads_file%ia)+1,' LEVELS '
+      write(unit=grads_file%iounit,fmt='(8f10.2)')  & 
+        (grads_file%z(i-grads_file%ia+1),i=grads_file%ia,grads_file%iz)
     else
-      write(unit=f%iounit,fmt='(a,i5,a)')  & 
-        'ZDEF',abs(f%iz-f%ia)+1,' LEVELS '
-      write(f%iounit,'(8f10.2)') (f%z(f%ia-i+1),i=f%ia,f%iz,-1)
+      write(unit=grads_file%iounit,fmt='(a,i5,a)')  & 
+        'ZDEF',abs(grads_file%iz-grads_file%ia)+1,' LEVELS '
+      write(grads_file%iounit,'(8f10.2)') (grads_file%z(grads_file%ia-i+1), &
+        i=grads_file%ia,grads_file%iz,-1)
     end if
 
-    call format_date( f%day, f%month, f%year, f%time, & ! In
+    call format_date( grads_file%day, grads_file%month, grads_file%year, grads_file%time, & ! In
                       date ) ! Out
 
-    call determine_time_inc( f%dtwrite, & ! In
+    call determine_time_inc( grads_file%dtwrite, & ! In
                              dtwrite_ctl, dtwrite_units ) ! Out
 
-    write(unit=f%iounit,fmt='(a,i6,a,a,i5,a)') 'TDEF    ', & 
-      f%ntimes, ' LINEAR ', date, dtwrite_ctl, dtwrite_units
+    write(unit=grads_file%iounit,fmt='(a,i6,a,a,i5,a)') 'TDEF    ', & 
+      grads_file%ntimes, ' LINEAR ', date, dtwrite_ctl, dtwrite_units
 
     ! Variables description
-    write(unit=f%iounit,fmt='(a,i5)') 'VARS', f%nvar
+    write(unit=grads_file%iounit,fmt='(a,i5)') 'VARS', grads_file%nvar
 
-    do i=1, f%nvar, 1
-      write(unit=f%iounit,fmt='(a,i5,a,a)') & 
-        f%var(i)%name(1:len_trim(f%var(i)%name)), & 
-        abs(f%iz-f%ia)+1,' 99 ', & 
-        f%var(i)%description(1:len_trim(f%var(i)%description))
+    do i=1, grads_file%nvar, 1
+      write(unit=grads_file%iounit,fmt='(a,i5,a,a)') & 
+        grads_file%var(i)%name(1:len_trim(grads_file%var(i)%name)), & 
+        abs(grads_file%iz-grads_file%ia)+1,' 99 ', & 
+        grads_file%var(i)%description(1:len_trim(grads_file%var(i)%description))
     end do
 
-    write(unit=f%iounit,fmt='(a)') 'ENDVARS'
+    write(unit=grads_file%iounit,fmt='(a)') 'ENDVARS'
 
-    close( unit=f%iounit, iostat=ios )
+    close( unit=grads_file%iounit, iostat=ios )
     if ( ios > 0 ) then
       write(unit=fstderr,fmt=*)  & 
         "write_grads: error closing control file"
@@ -585,12 +602,14 @@ module output_grads
   end subroutine write_grads
 
 !---------------------------------------------------------
-  subroutine format_date( day_in, month_in, year_in,  time_in, &
+  subroutine format_date( day_in, month_in, year_in, time_in, &
                           date )
 !
-! Description: This subroutine formats the current
-!   time of the model to a date usable as GrADS output.
-!
+! Description: 
+!   This subroutine formats the current time of the model (given in seconds 
+!   since the start time) to a date format usable as GrADS output.
+! References:
+!   None
 !---------------------------------------------------------
     use stats_precision, only:  & 
       time_precision ! Variable(s)
@@ -611,7 +630,7 @@ module output_grads
     integer, intent(in) :: & 
       day_in,   & ! Day of the Month at Model Start  [dd]
       month_in, & ! Month of the Year at Model Start [mm]
-      year_in     ! Year at Model Start                 [yyyy]
+      year_in     ! Year at Model Start              [yyyy]
 
     real(kind=time_precision), intent(in) ::  & 
       time_in ! Time since Model Start              [s]
@@ -657,6 +676,8 @@ module output_grads
 ! Description:
 !   Determine the units on the time increment, since GrADS only allows a 2 digit
 !   time increment.
+! References:
+!   None
 !-------------------------------------------------------------------------------
     use constants_clubb, only: &
       sec_per_day, & ! Constants
@@ -715,5 +736,6 @@ module output_grads
 
     return
   end subroutine determine_time_inc
+
 end module output_grads
-!------------------------------------------------------------------------
+!-------------------------------------------------------------------------------

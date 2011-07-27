@@ -49,7 +49,7 @@ module surface_varnce_module
     use array_index, only: &
       iisclr_rt, & ! Index for a scalar emulating rt
       iisclr_thl   ! Index for a scalar emulating thetal
-      
+
     use stats_type, only: & 
       stat_end_update_pt, & ! Procedure(s)
       stat_update_var_pt
@@ -129,7 +129,7 @@ module surface_varnce_module
 
     err_code = clubb_no_error
 
-    IF ( l_andre_1978 ) THEN
+    if ( l_andre_1978 ) then
 
       ! Calculate <u>^2 and <v>^2.
       um_sfc_sqd = um_sfc**2
@@ -157,7 +157,7 @@ module surface_varnce_module
       !            zeta <= -0.212.
       !         3) The surface correlation of rt & thl is 1.
       ! Brian Griffin; February 2, 2008.
-      IF ( zeta < 0.0 ) THEN
+      if ( zeta < 0.0 ) then
         thlp2_sfc   = reduce_coef  & 
                      * ( wpthlp_sfc**2 / ustar**2 ) & 
                      * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0) ! Known magic number
@@ -169,7 +169,7 @@ module surface_varnce_module
                      * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0) ! Known magic number
         wp2_sfc     = ( ustar**2 ) & 
                      * ( 1.75 + 2.0*(-zeta)**(2.0/3.0) ) ! Known magic number
-      ELSE
+      else
         thlp2_sfc   = reduce_coef  & 
                      * 4.0 * ( wpthlp_sfc**2 / ustar**2 ) ! Known magic number
         rtp2_sfc    = reduce_coef  & 
@@ -177,7 +177,7 @@ module surface_varnce_module
         rtpthlp_sfc = reduce_coef  & 
                      * 4.0 * ( wprtp_sfc*wpthlp_sfc / ustar**2 ) ! Known magic number
         wp2_sfc     = 1.75 * ustar**2 ! Known magic number
-      ENDIF
+      end if
 
       ! Calculate wstar following Andre et al., 1978, p. 1866.
       wstar = ( (1.0/T0) * grav * wpthlp_sfc * z )**(1.0/3.0)
@@ -191,13 +191,13 @@ module surface_varnce_module
       ! is 0.  Equation 29 gives the formula for the variance of u_s, which is
       ! <u_s'^2> (usp2_sfc in the code), and the formula for the variance of
       ! v_s, which is <v_s'^2> (vsp2_sfc in the code).
-      IF ( wpthlp_sfc > 0.0 ) THEN
+      if ( wpthlp_sfc > 0.0 ) then
         usp2_sfc = 4.0 * ustar**2 + 0.3 * wstar**2 ! Known magic number
         vsp2_sfc = 1.75 * ustar**2 + 0.3 * wstar**2 ! Known magic number
-      ELSE
+      else
         usp2_sfc = 4.0 * ustar**2 ! Known magic number
         vsp2_sfc = 1.75 * ustar**2 ! Known magic number
-      ENDIF
+      end if
 
       ! Variance of u, <u'^2>, at the surface can be found from <u_s'^2>,
       ! <v_s'^2>, and mean winds (at the surface) <u> and <v>, such that:
@@ -218,8 +218,8 @@ module surface_varnce_module
            + usp2_sfc * ( vm_sfc_sqd / max( um_sfc_sqd + vm_sfc_sqd , eps ) )
 
       ! Passive scalars
-      IF ( sclr_dim > 0 ) THEN
-        DO i = 1, sclr_dim
+      if ( sclr_dim > 0 ) then
+        do i = 1, sclr_dim
           ! Notes:  1) "reduce_coef" is a reduction coefficient intended to
           !            make the values of sclrprtp, sclrpthlp, and sclrp2
           !            smaller at the surface.
@@ -231,7 +231,7 @@ module surface_varnce_module
           !         3) The surface correlations of both rt & sclr and
           !            thl & sclr are 1.
           ! Brian Griffin; February 2, 2008.
-          IF ( zeta < 0.0 ) THEN
+          if ( zeta < 0.0 ) then
             sclrprtp_sfc(i)  & 
             = reduce_coef  & 
              * ( wpsclrp_sfc(i)*wprtp_sfc / ustar**2 ) & 
@@ -244,7 +244,7 @@ module surface_varnce_module
             = reduce_coef   & 
              * ( wpsclrp_sfc(i)**2 / ustar**2 ) & 
              * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0) ! Known magic number
-          ELSE
+          else
             sclrprtp_sfc(i)  & 
             = reduce_coef  & 
              * 4.0 * ( wpsclrp_sfc(i)*wprtp_sfc / ustar**2 ) ! Known magic number
@@ -254,11 +254,11 @@ module surface_varnce_module
             sclrp2_sfc(i)  & 
             = reduce_coef & 
              * 4.0 * ( wpsclrp_sfc(i)**2 / ustar**2 ) ! Known magic number
-          ENDIF
-        ENDDO ! 1,...sclr_dim
-      ENDIF
+          end if
+        end do ! 1,...sclr_dim
+      end if
 
-    ELSE ! Previous code.
+    else ! Previous code.
 
       ! Compute ustar^2
 
@@ -270,7 +270,7 @@ module surface_varnce_module
         wstar = ( 1.0/T0 * grav * wpthlp_sfc * z ) ** (1./3.)
       else
         wstar = 0.
-      endif
+      end if
 
       ! Surface friction velocity following Andre et al. 1978
 
@@ -317,10 +317,10 @@ module surface_varnce_module
           !            thl & sclr are 0.5.
           ! Brian Griffin; February 2, 2008.
 
-          ! We use the following if..then's to make sclr_rt and sclr_thl close to 
+          ! We use the following if..then's to make sclr_rt and sclr_thl close to
           ! the actual thlp2/rtp2 at the surface. -dschanen 25 Sep 08
           if ( i == iisclr_rt ) then
-            ! If we are trying to imitate rt with the scalar, then we 
+            ! If we are trying to imitate rt with the scalar, then we
             ! use the variance coefficient from above
             sclrprtp_sfc(i) = 0.4 * a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)!Known magic number
           else
@@ -343,7 +343,7 @@ module surface_varnce_module
         end do ! 1,...sclr_dim
       end if ! sclr_dim > 0
 
-    END IF
+    end if
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 
@@ -366,7 +366,7 @@ module surface_varnce_module
 
         if ( sclr_dim > 0 ) then
           write(fstderr,*) "wpsclrp_sfc = ", wpsclrp_sfc
-        endif
+        end if
 
         write(fstderr,*) "Intent(out)"
 
@@ -381,11 +381,11 @@ module surface_varnce_module
           write(fstderr,*) "sclrp2_sfc = ", sclrp2_sfc
           write(fstderr,*) "sclrprtp_sfc = ", sclrprtp_sfc
           write(fstderr,*) "sclrpthlp_sfc = ", sclrpthlp_sfc
-        endif
+        end if
 
-      endif ! err_code == clubb_var_equals_NaN
+      end if ! err_code == clubb_var_equals_NaN
 
-    endif ! clubb_at_least_debug_level ( 2 )
+    end if ! clubb_at_least_debug_level ( 2 )
 
     return
 

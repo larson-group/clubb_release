@@ -39,22 +39,21 @@ module stats_rad_zm
     use stats_type, only: & 
         stat_assign ! Procedure
 
-!use error_code, only: &
-!    clubb_at_least_debug_level ! Function
-
 
     implicit none
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_rad_zm), intent(in) :: vars_rad_zm
 
-    ! Output Variable	
+    ! Input/Output Variable        
     logical, intent(inout) :: l_error
 
-! Local Varables
+    ! Local Varables
     integer :: i, k
 
-! Default initialization for array indices for rad_zm
+    ! ---- Begin Code ----
+
+    ! Default initialization for array indices for rad_zm
 
     iFrad_LW_rad = 0
     iFrad_SW_rad = 0
@@ -98,7 +97,7 @@ module stats_rad_zm
         call stat_assign( ifuswcl, "fuswcl", &
               "Upward clear-sky SW flux [W/m^2]", "W/m^2", rad_zm )
         k = k + 1
-      
+
       case ('Frad_LW_rad')
         iFrad_LW_rad = k
 
@@ -139,8 +138,8 @@ module stats_rad_zm
 
         call stat_assign( iFrad_LW_down_rad, "Frad_LW_down_rad", & 
              "Long-wave downwelling radiative flux [W/m^2]", "W/m^2", rad_zm )
-        k = k + 1        
-        
+        k = k + 1
+
       case default
 
         write(fstderr,*) 'Error:  unrecognized variable in vars_rad_zm:  ', trim( vars_rad_zm(i) )

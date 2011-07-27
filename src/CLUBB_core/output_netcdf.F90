@@ -1,5 +1,5 @@
 ! $Id$
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 module output_netcdf
 #ifdef NETCDF
 
@@ -8,7 +8,7 @@ module output_netcdf
 
 ! References:
 !   <http://www.unidata.ucar.edu/software/netcdf/docs/>
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
   implicit none
 
@@ -19,7 +19,7 @@ module output_netcdf
   private ! Default scope
 
   contains
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine open_netcdf( nlat, nlon, fdir, fname, ia, iz, zgrid,  & 
                           day, month, year, rlat, rlon, & 
                           time, dtwrite, nvar, ncf )
@@ -29,7 +29,7 @@ module output_netcdf
 
 ! References:
 !   None
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
     use netcdf, only: & 
       NF90_CLOBBER, & ! Variable(s)
       NF90_NOERR,   & 
@@ -79,7 +79,7 @@ module output_netcdf
     ! Local Variables
     integer :: stat  ! Error status
     integer :: k     ! Array index
-   
+
     ! ---- Begin Code ----
 
     ncf%nvar    = nvar
@@ -142,13 +142,16 @@ module output_netcdf
     return
   end subroutine open_netcdf
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
   subroutine write_netcdf( ncf )
 
-!      Description:
-!      Writes some data to the NetCDF dataset, but doesn't close it.
-!-----------------------------------------------------------------------
+! Description:
+!   Writes some data to the NetCDF dataset, but doesn't close it.
+!
+! References:
+!   None   
+!-------------------------------------------------------------------------------
 
     use netcdf, only: & 
         NF90_NOERR,  & ! Variable(s)
@@ -190,7 +193,7 @@ module output_netcdf
     allocate( stat( ncf%nvar ) )
 
     time = nint( ncf%ntimes * dble( ncf%dtwrite / sec_per_min ) ) !  minutes(rounded)
-!      time = dble( ncf%ntimes ) * ncf%dtwrite ! seconds
+!   time = dble( ncf%ntimes ) * ncf%dtwrite ! seconds
 
     stat(1) = nf90_put_var( ncid=ncf%iounit, varid=ncf%TimeVarId,  & 
                             values=time(1), start=(/ncf%ntimes/) )
@@ -223,7 +226,7 @@ module output_netcdf
     return
   end subroutine write_netcdf
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine define_netcdf( ncid, nlat, nlon, iz, &
                             day, month, year, time, & 
                             LatDimId, LongDimId, AltDimId, TimeDimId, & 
@@ -234,7 +237,7 @@ module output_netcdf
 !
 ! References:
 !   None
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
     use netcdf, only: & 
       NF90_NOERR,   & ! Constants
       NF90_FLOAT, & 
@@ -384,17 +387,17 @@ module output_netcdf
     return
   end subroutine define_netcdf
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine close_netcdf( ncf )
 
-!      Description:
-!      Close a previously opened stats file.
+! Description:
+!   Close a previously opened stats file.
 
-!      Notes:
-!      I assume nf90_close() exists so that the NetCDF libraries can do a
-!      form of buffered I/O, but I don't know the implementation
-!      details. -dschanen
-!-----------------------------------------------------------------------
+! Notes:
+!   I assume nf90_close() exists so that the NetCDF libraries can do a
+!   form of buffered I/O, but I don't know the implementation
+!   details. -dschanen
+!-------------------------------------------------------------------------------
 
     use stat_file_module, only: & 
         stat_file ! Type
@@ -432,7 +435,7 @@ module output_netcdf
     return
   end subroutine close_netcdf
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine first_write( ncf )
 
 ! Description:
@@ -440,7 +443,7 @@ module output_netcdf
 !   for the dataset, including the attributes for variable records.
 ! References:
 !   None
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
     use netcdf, only: & 
       NF90_NOERR,  & ! Constants
@@ -511,7 +514,7 @@ module output_netcdf
     ! Dimensions for variables
     integer, dimension(4) :: var_dim
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !      Typical valid ranges (IEEE 754)
 
 !      real(kind=4): +/- 3.4028235E+38
@@ -519,7 +522,7 @@ module output_netcdf
 !      real(kind=16):+/- 1.189731495357231765085759326628007E+4932
 
 !      We use a 4 byte data model for NetCDF and GrADS to save disk space
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
     var_range(1) = -huge( var_range(1) )
     var_range(2) =  huge( var_range(2) )
 
@@ -673,12 +676,14 @@ module output_netcdf
     return
   end subroutine first_write
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine write_grid( ncf )
 
-!      Description:
-!      Writes inforation about latitude, longitude and the grid
-!-----------------------------------------------------------------------
+! Description:
+!   Writes inforation about latitude, longitude and the grid
+! References:
+!   None
+!-------------------------------------------------------------------------------
 
     use netcdf, only: & 
         NF90_NOERR,   & ! Variable(s)
@@ -691,14 +696,12 @@ module output_netcdf
 
     implicit none
 
-!      Constants
-!      real, parameter, dimension(1) :: deg_east  = 0.0
-!      real, parameter, dimension(1) :: deg_north = 0.0
-
-!      Input
+    ! Input Variable(s)
     type (stat_file), intent(inout) :: ncf
 
     integer :: stat
+
+    ! ---- Begin Code ----
 
     stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%AltVarId,  & 
                          values=ncf%z(ncf%ia:ncf%iz) )
@@ -727,20 +730,20 @@ module output_netcdf
     return
   end subroutine write_grid
 
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
   subroutine format_date & 
              ( day_in, month_in, year_in, time_in, date )
 
-!      Description:
-!      Put the model date in a format that udunits and NetCDF can easily
-!      handle.  GrADSnc is dumb and apparently cannot handle time
-!      intervals < 1 minute.
+! Description:
+!   Put the model date in a format that udunits and NetCDF can easily
+!   handle.  GrADSnc is dumb and apparently cannot handle time
+!   intervals < 1 minute.
 
-!      Notes:
-!      Adapted from the original GrADS version written by Chris Golaz.
-!      Uses Fortran `internal' files to write the string output.
-!-----------------------------------------------------------------------
+! Notes:
+!   Adapted from the original GrADS version written by Chris Golaz.
+!   Uses Fortran `internal' files to write the string output.
+!-------------------------------------------------------------------------------
 
     use calendar, only: compute_current_date
 
@@ -796,6 +799,7 @@ module output_netcdf
   character function lchar( l_input )
 ! Description:
 !   Cast a logical to a character data type
+!
 ! References:
 !   None
 !-------------------------------------------------------------------------------

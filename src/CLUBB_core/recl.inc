@@ -16,11 +16,11 @@
 !   results in a performance hit, even on newer chips.
 !-------------------------------------------------------------------------------
 #if defined GFDL  /* F_RECL should be 4 for the GFDL SCM-CLUBB */
-#define F_RECL 4
+#  define F_RECL 4
 #elif defined __INTEL_COMPILER && __INTEL_COMPILER >= 800 /* Versions of Intel fortran > 8.0 */
-#define F_RECL 1
+#  define F_RECL 1
 #elif defined(__alpha) /* Assume 4 byte word on Alpha processors */
-#define F_RECL 1
+#  define F_RECL 1
 #else
-#define F_RECL 4
+#  define F_RECL 4 /* Most compilers and computers */
 #endif

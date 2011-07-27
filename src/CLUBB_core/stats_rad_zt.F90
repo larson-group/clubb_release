@@ -9,7 +9,7 @@ module stats_rad_zt
 
   public :: stats_init_rad_zt
 
-! Constant parameters
+  ! Constant parameters
   integer, parameter, public :: nvarmax_rad_zt = 250 ! Maximum variables allowed
 
   contains
@@ -17,8 +17,11 @@ module stats_rad_zt
 !-----------------------------------------------------------------------
   subroutine stats_init_rad_zt( vars_rad_zt, l_error )
 
-!     Description:
-!     Initializes array indices for zt
+! Description:
+!   Initializes array indices for zt
+!
+! References:
+!   None
 !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -39,22 +42,20 @@ module stats_rad_zt
     use stats_type, only: & 
         stat_assign ! Procedure
 
-!use error_code, only: &
-!    clubb_at_least_debug_level ! Function
-
-
     implicit none
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_rad_zt), intent(in) :: vars_rad_zt
 
-    ! Output Variable	
+    ! Input/Output Variable
     logical, intent(inout) :: l_error
 
-! Local Varables
+    ! Local Varables
     integer :: i, k
 
-! Default initialization for array indices for rad_zt
+    ! ---- Begin Code ----
+
+    ! Default initialization for array indices for rad_zt
 
     iT_in_K_rad = 0
     ircil_rad = 0
@@ -66,20 +67,20 @@ module stats_rad_zt
     iradht_LW_rad = 0
     iradht_SW_rad = 0
 
-!     Assign pointers for statistics variables rad_zt
+    ! Assign pointers for statistics variables rad_zt
 
     k = 1
     do i=1,rad_zt%nn
 
       select case ( trim(vars_rad_zt(i)) )
-      
+
       case ('T_in_K_rad')
         iT_in_K_rad = k
 
         call stat_assign( iT_in_K_rad, "T_in_K_rad", & 
              "Temperature [K]", "K", rad_zt )
         k = k + 1
-     
+
       case ('rcil_rad')
         ircil_rad = k
 
@@ -106,7 +107,7 @@ module stats_rad_zt
 
         call stat_assign( ircm_in_cloud_rad, "rcm_in_cloud_rad", & 
              "rcm in cloud layer [kg/kg]", "kg/kg", rad_zt )
-        k = k + 1        
+        k = k + 1
 
       case ('cloud_frac_rad')
         icloud_frac_rad = k
@@ -134,8 +135,8 @@ module stats_rad_zt
 
         call stat_assign( iradht_SW_rad, "radht_SW_rad", & 
              "Short-wave radiative heating rate [K/s]", "K/s", rad_zt )
-        k = k + 1      
-        
+        k = k + 1
+
       case default
 
         write(fstderr,*) 'Error:  unrecognized variable in vars_rad_zt:  ', trim( vars_rad_zt(i) )

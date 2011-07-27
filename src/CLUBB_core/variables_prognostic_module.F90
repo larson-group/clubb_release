@@ -142,8 +142,8 @@ module variables_prognostic_module
 
 !---> h1g, 2010-06-16
 #ifdef GFDL
-   real, target, allocatable, dimension( : , : , : ), public :: & 
-     RH_crit  ! critical relative humidity for droplet and ice nucleation
+  real, target, allocatable, dimension( : , : , : ), public :: & 
+    RH_crit  ! critical relative humidity for droplet and ice nucleation
 #endif
 !<--- h1g, 2010-06-16
 
@@ -264,7 +264,7 @@ module variables_prognostic_module
 
 !---> h1g, 2010-06-16
 #ifdef GFDL
-     allocate( RH_crit(1:nzmax, 1:min(1,sclr_dim), 2) )
+    allocate( RH_crit(1:nzmax, 1:min(1,sclr_dim), 2) )
 #endif
 !<--- h1g, 2010-06-16
 

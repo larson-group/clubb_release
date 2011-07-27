@@ -20,9 +20,11 @@ module stats_subs
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
                          rlat, rlon, time_current, delt )
     !
-    ! Description: Initializes the statistics saving functionality of
-    !   the CLUBB model.
-    
+    ! Description:
+    !   Initializes the statistics saving functionality of the CLUBB model.
+    !
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
@@ -110,7 +112,7 @@ module stats_subs
 
     use stats_rad_zm, only: & 
       nvarmax_rad_zm, & ! Constant(s)
-      stats_init_rad_zm ! Procedure(s)       
+      stats_init_rad_zm ! Procedure(s)
 
     use stats_sfc, only: &
       nvarmax_sfc, & ! Constant(s)
@@ -151,7 +153,7 @@ module stats_subs
 
     integer, intent(in) :: nnrad_zt ! Grid points in the radiation grid [count]
 
-    real, intent(in), dimension(nnrad_zt) :: grad_zt ! Radiation levels [m]  
+    real, intent(in), dimension(nnrad_zt) :: grad_zt ! Radiation levels [m]
 
     integer, intent(in) :: nnrad_zm ! Grid points in the radiation grid [count]
 
@@ -550,7 +552,7 @@ module stats_subs
     ! Initialize rad_zt (radiation points)
 
     if (l_output_rad_files) then
-    
+
       i = 1
       do while ( ichar(vars_rad_zt(i)(1:1)) /= 0  & 
                  .and. len_trim(vars_rad_zt(i)) /= 0 & 
@@ -1056,7 +1058,7 @@ module stats_subs
 
         enddo
       enddo
-    
+
       ! Look for errors by checking the number of sampling points
       ! for each variable in the rad_zm statistics at each vertical level.
       do i = 1, rad_zm%nn
@@ -1135,7 +1137,7 @@ module stats_subs
       if (l_output_rad_files) then
         call write_netcdf( rad_zt%f  )
         call write_netcdf( rad_zm%f  )
-      end if  
+      end if
       call write_netcdf( sfc%f  )
 #else
       stop "This program was not compiled with netCDF support"
@@ -1494,7 +1496,7 @@ module stats_subs
       cloud_cover     ! Cloud cover                              [-]
 
     real, intent(in), dimension(gr%nnzp) :: &
-      sigma_sqd_w    ! PDF width parameter (momentum levels)    [-] 
+      sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
 
     type(pdf_parameter), dimension(gr%nnzp), intent(in) :: & 
       pdf_params ! PDF parameters [units vary]
@@ -1707,11 +1709,11 @@ module stats_subs
 
       ! Calculate shear production
       if ( ishear > 0 ) then
-         do k = 1, gr%nnzp-1, 1
-            shear(k) = - upwp(k) * ( um(k+1) - um(k) ) * gr%invrs_dzm(k)  &
-                       - vpwp(k) * ( vm(k+1) - vm(k) ) * gr%invrs_dzm(k)
-         enddo
-         shear(gr%nnzp) = 0.0
+        do k = 1, gr%nnzp-1, 1
+          shear(k) = - upwp(k) * ( um(k+1) - um(k) ) * gr%invrs_dzm(k)  &
+                     - vpwp(k) * ( vm(k+1) - vm(k) ) * gr%invrs_dzm(k)
+        enddo
+        shear(gr%nnzp) = 0.0
       endif
       call stat_update_var( ishear, shear, zm )
 
@@ -1886,15 +1888,15 @@ module stats_subs
 ! References:
 !   None
 !------------------------------------------------------------------------------
-   use parameters_model, only: &
-     hydromet_dim ! Variable(s)
+    use parameters_model, only: &
+      hydromet_dim ! Variable(s)
 
-   use grid_class, only: &
-     gr ! Variable(s)
+    use grid_class, only: &
+      gr ! Variable(s)
 
-   use array_index, only:  & 
-     iirrainm, iirsnowm, iiricem, iirgraupelm, & ! Variable(s)
-     iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
+    use array_index, only:  & 
+      iirrainm, iirsnowm, iiricem, iirgraupelm, & ! Variable(s)
+      iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
 
     use stats_variables, only: &
       irrainm, & ! Variable(s)
@@ -2023,24 +2025,24 @@ module stats_subs
         zmscr16, & 
         zmscr17
 
-    !use stats_variables, only: & 
+    !use stats_variables, only: &
     !    radscr01, &  ! Variable(s)
-    !    radscr02, & 
-    !    radscr03, & 
-    !    radscr04, & 
-    !    radscr05, & 
-    !    radscr06, & 
-    !    radscr07, & 
-    !    radscr08, & 
-    !    radscr09, & 
-    !    radscr10, & 
-    !    radscr11, & 
-    !    radscr12, & 
-    !    radscr13, & 
-    !    radscr14, & 
-    !    radscr15, & 
-    !    radscr16, & 
-    !    radscr17        
+    !    radscr02, &
+    !    radscr03, &
+    !    radscr04, &
+    !    radscr05, &
+    !    radscr06, &
+    !    radscr07, &
+    !    radscr08, &
+    !    radscr09, &
+    !    radscr10, &
+    !    radscr11, &
+    !    radscr12, &
+    !    radscr13, &
+    !    radscr14, &
+    !    radscr15, &
+    !    radscr16, &
+    !    radscr17
 
     use stats_variables, only: & 
       isclrm, & 
@@ -2221,7 +2223,7 @@ module stats_subs
 
     return
   end subroutine stats_finalize
-  
+
 !===============================================================================
-  
+
 end module stats_subs

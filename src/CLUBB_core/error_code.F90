@@ -1,6 +1,6 @@
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 ! $Id$
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
 module error_code
 
@@ -19,7 +19,7 @@ module error_code
 
 ! References:
 !   None
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
   implicit none
 
@@ -43,7 +43,7 @@ module error_code
   private :: clubb_debug_level
 
   ! Model-Wide Debug Level
-  integer :: clubb_debug_level = 0
+  integer, save :: clubb_debug_level = 0
 
 !$omp threadprivate(clubb_debug_level)
 
@@ -59,13 +59,13 @@ module error_code
 
   contains
 
-!-----------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine reportError( err_code )
 !
 ! Description: 
 !   Reports meaning of error code to console.
 !
-!-----------------------------------------------
+!-------------------------------------------------------------------------------
 
     use constants_clubb, only: & 
         fstderr ! Variable(s)
@@ -74,6 +74,8 @@ module error_code
 
     ! Input Variable
     integer, intent(in) :: err_code ! Error Code being examined
+
+    ! ---- Begin Code ----
 
     select case ( err_code )
 
@@ -106,7 +108,7 @@ module error_code
 
     return
   end subroutine reportError
-!---------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   elemental function lapack_error( err_code )
 !
 ! Description: 
@@ -114,7 +116,7 @@ module error_code
 !   caused by an error encountered using LAPACK.
 ! Reference:
 !   None
-!---------------------------------------------------------------------
+!-------------------------------------------------------------------------------
     implicit none
 
     ! Input variable
@@ -131,14 +133,14 @@ module error_code
     return
   end function lapack_error
 
-!---------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   elemental function fatal_error( err_code )
 !
 ! Description: Checks to see if the err_code is one that usually
 !   causes an exit in other parts of CLUBB.
 ! References:
 !   None
-!---------------------------------------------------------------------
+!-------------------------------------------------------------------------------
     implicit none
 
     ! Input Variable
@@ -172,7 +174,7 @@ module error_code
     return
   end function clubb_at_least_debug_level
 
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine set_clubb_debug_level( level )
 !
 !  Description:
@@ -184,7 +186,7 @@ module error_code
 !        e.g. checks for NaNs and spurious negative values.
 !  References:
 !    None
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
     implicit none
 
     ! Input variable
@@ -197,13 +199,13 @@ module error_code
     return
   end subroutine set_clubb_debug_level
 
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine clubb_debug( level, str )
 !
 ! Description:
 !   Prints a message to file unit fstderr if the level is greater
 !   than or equal to the current debug level.
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
     use constants_clubb, only: & 
         fstderr ! Variable(s)
 
@@ -218,7 +220,7 @@ module error_code
 
     ! ---- Begin Code ----
 
-    if (level <= clubb_debug_level) then
+    if ( level <= clubb_debug_level ) then
       write(fstderr,*) str
     end if
 
@@ -226,4 +228,4 @@ module error_code
   end subroutine clubb_debug
 
 end module error_code
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------

@@ -4,11 +4,11 @@
 module parameters_model
 
 ! Description:
-! Contains model parameters that are determined at run time rather than
-! compile time.
+!   Contains model parameters that are determined at run time rather than
+!   compile time.
 !
 ! References:
-! None
+!   None
 !-------------------------------------------------------------------------------
   implicit none
 
@@ -131,7 +131,6 @@ module parameters_model
 #ifdef GFDL
      cloud_frac_min = cloud_frac_min_in  ! h1g, 2010-06-15
 #endif
-
 
     return
   end subroutine setup_parameters_model

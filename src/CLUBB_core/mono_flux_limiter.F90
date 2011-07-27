@@ -34,7 +34,7 @@ module mono_flux_limiter
                                              xm, xm_tol, wpxp, err_code )
 
     ! Description:
-    ! Limits the value of w'x' and corrects the value of xm if the xm turbulent
+    ! Limits the value of w'x' and corrects the value of xm when the xm turbulent
     ! advection term is not monotonic.  A monotonic turbulent advection scheme
     ! will not create new extrema for variable x, based only on turbulent
     ! advection (not considering mean advection and xm forcings).
@@ -337,7 +337,7 @@ module mono_flux_limiter
     ! Constant Parameters
 
     ! Flag for using a semi-implicit, tridiagonal method to solve for xm(t+1)
-    ! if xm(t+1) needs to be changed.
+    ! when xm(t+1) needs to be changed.
     logical, parameter :: l_mfl_xm_imp_adj = .true.
 
     ! Input Variables

@@ -1,12 +1,13 @@
 ! $Id$
 module variables_diagnostic_module
 
-! This module contains definitions of all diagnostic
-! arrays used in the single column model, as well as subroutines
-! to allocate, deallocate and initialize them.
+! Description:
+!   This module contains definitions of all diagnostic
+!   arrays used in the single column model, as well as subroutines
+!   to allocate, deallocate and initialize them.
 
-! Note that while these are all same dimension, there is a
-! thermodynamic and momentum grid and they have different levels
+!   Note that while these are all same dimension, there is a
+!   thermodynamic and momentum grid and they have different levels
 !-----------------------------------------------------------------------
 
   use pdf_parameter_module, only: &
@@ -20,7 +21,7 @@ module variables_diagnostic_module
             cleanup_diagnostic_variables
 
 
-! Diagnostic variables
+  ! Diagnostic variables
 
   real, target, allocatable, dimension(:), public :: &
     sigma_sqd_w_zt, & ! PDF width parameter interpolated to t-levs.  [-]
@@ -186,7 +187,7 @@ module variables_diagnostic_module
     corr_st_mellor1, corr_st_mellor2 ! Correlation between s and t [-]
 !$omp threadprivate(sptp_mellor_1, sptp_mellor_2, tp2_mellor_1, tp2_mellor_2, &
 !$omp   corr_st_mellor1, corr_st_mellor2 )
-    
+
   real, target, allocatable, dimension(:), public :: & 
     Skw_velocity, & ! Skewness velocity    [m/s]
     a3_coef,      & ! The a3 coefficient from CLUBB eqns                [-]
@@ -204,7 +205,7 @@ module variables_diagnostic_module
 
 !-----------------------------------------------------------------------
   subroutine setup_diagnostic_variables( nzmax )
-! Description: 
+! Description:
 !   Allocates and initializes prognostic scalar and array variables
 !   for the CLUBB model code
 !-----------------------------------------------------------------------
@@ -288,7 +289,7 @@ module variables_diagnostic_module
     allocate( Lscale(1:nzmax) )
     allocate( Lscale_up(1:nzmax) )
     allocate( Lscale_down(1:nzmax) )
-    
+
     allocate( tau_zm(1:nzmax) ) ! Eddy dissipation time scale: momentum levels
     allocate( tau_zt(1:nzmax) ) ! Eddy dissipation time scale: thermo. levels
 
