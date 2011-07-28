@@ -10,9 +10,6 @@ module latin_hypercube_driver_module
     l_output_2D_lognormal_dist   = .false., & ! Output a 2D netCDF file of the lognormal variates
     l_output_2D_uniform_dist     = .false.    ! Output a 2D netCDF file of the uniform distribution
 
-  integer, allocatable, dimension(:,:,:), private :: & 
-    height_time_matrix ! matrix of rand ints
-
   integer, private :: &
     prior_iter ! Prior iteration number (for diagnostic purposes)
 
@@ -41,7 +38,8 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use latin_hypercube_arrays, only: &
-      iiLH_s_mellor   ! Variables
+      iiLH_s_mellor, & ! Variables
+      height_time_matrix
 
     use parameters_model, only: hydromet_dim ! Variable
 

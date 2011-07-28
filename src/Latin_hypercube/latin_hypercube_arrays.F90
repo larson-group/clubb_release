@@ -20,6 +20,34 @@ module latin_hypercube_arrays
 !$omp threadprivate(xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
 !$omp   corr_array_cloud, corr_array_below)
 
+  logical, public :: &
+    l_fixed_corr_initialized = .false.
+
+!$omp threadprivate(l_fixed_corr_initialized)
+
+  double precision, allocatable, dimension(:,:), target, public :: &
+    corr_stw_cloud_Cholesky, & ! Cholesky factorization of the correlation matrix
+    corr_stw_below_Cholesky    ! Cholesky factorization of the correlation matrix
+
+!$omp threadprivate(corr_stw_cloud_Cholesky, corr_stw_below_Cholesky)
+
+  double precision, allocatable, dimension(:), public :: &
+    corr_stw_cloud_scaling, & ! Scaling factors for the correlation matrix [-]
+    corr_stw_below_scaling    ! Scaling factors for the correlation matrix [-]
+
+!$omp threadprivate(corr_stw_cloud_scaling, corr_stw_below_scaling)
+
+  logical, public :: &
+    l_corr_stw_cloud_scaling, & ! Whether we're scaling the correlation matrix
+    l_corr_stw_below_scaling
+
+!$omp threadprivate(l_corr_stw_cloud_scaling, l_corr_stw_below_scaling)
+
+  integer, allocatable, dimension(:,:,:), public :: & 
+    height_time_matrix ! matrix of rand ints
+
+!$omp threadprivate(height_time_matrix)
+
   ! Latin hypercube indices
   integer, public :: &
     iiLH_s_mellor, iiLH_t_mellor, iiLH_w
@@ -498,7 +526,7 @@ module latin_hypercube_arrays
     !   De-allocate latin hypercube arrays
     ! References:
     !   None
-    !-----------------------------------------------------------------------------
+    !---------------------------------------------------------------------------
     implicit none
 
     ! External
@@ -520,6 +548,26 @@ module latin_hypercube_arrays
 
     if ( allocated( xp2_on_xm2_array_below ) ) then
       deallocate( xp2_on_xm2_array_below )
+    end if
+
+    if ( allocated( corr_stw_cloud_Cholesky ) ) then
+      deallocate( corr_stw_cloud_Cholesky )
+    end if
+
+    if ( allocated( corr_stw_below_Cholesky ) ) then
+      deallocate( corr_stw_below_Cholesky )
+    end if
+
+    if ( allocated( corr_stw_cloud_scaling ) ) then
+      deallocate( corr_stw_cloud_scaling )
+    end if
+
+    if ( allocated( corr_stw_below_scaling ) ) then
+      deallocate( corr_stw_below_scaling )
+    end if
+
+    if ( allocated( height_time_matrix ) ) then
+      deallocate( height_time_matrix )
     end if
 
     return
