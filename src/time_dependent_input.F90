@@ -715,8 +715,8 @@ module time_dependent_input
     ! ----------------- Begin Code --------------------
 
     ! Default initialization
-    before_time = -1
-    after_time = -1
+    before_time = -999
+    after_time = -999
 
     ! convert time to a real so it has the same precision as the values
     ! in time_array   

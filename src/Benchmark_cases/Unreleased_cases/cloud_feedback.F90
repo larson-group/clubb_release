@@ -87,6 +87,9 @@ module cloud_feedback
    
   integer :: &
     before_time, after_time ! The times used for interpolation
+
+  integer, parameter :: &
+    standard_flux_alt = 20 ! default height at which the surface flux is computed [m]
  
   !--------------BEGIN CODE---------------------
 
@@ -129,19 +132,18 @@ module cloud_feedback
 
   ! (Stevens, et al. 2000, eq 3)
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-  Ch   = C_h_20 * ((log(20/z0))/(log(lowest_level/z0))) * & 
-         ((log(20/z0))/(log(lowest_level/z0))) ! Known magic number
+  Ch   = C_h_20 * ((log(standard_flux_alt/z0))/(log(lowest_level/z0))) * & 
+         ((log(standard_flux_alt/z0))/(log(lowest_level/z0)))
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-  Cq   = C_q_20 * ((log(20/z0))/(log(lowest_level/z0))) * & 
-         ((log(20/z0))/(log(lowest_level/z0))) ! Known magic number
+  Cq   = C_q_20 * ((log(standard_flux_alt/z0))/(log(lowest_level/z0))) * & 
+         ((log(standard_flux_alt/z0))/(log(lowest_level/z0)))
  
   if ( sfctype == 1 ) then
     wprtp_sfc = compute_wprtp_sfc( Cq, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, & 
                                      T_sfc, exner_sfc )
   else
-    wprtp_sfc = -999.0
-    wpthlp_sfc = -999.0
+    stop "Invalid value for sfctype."
   end if
 
 

@@ -198,8 +198,8 @@ module ice_dfsn_module
         e_s(k) = ( r_s(k)*p_in_Pa(k) ) / ( ep + r_s(k) )
 
         ! Saturation vapor pressure over ice in Pa, Eq. 2.15 Rogers and Yau
-        e_i(k) = e_s(k) / EXP( ( Lf/(Rv*273.16) ) & 
-                            * ( 273.16/T_in_K(k) - 1.0 ) )
+        e_i(k) = e_s(k) / EXP( ( Lf/(Rv*T_freeze_K) ) & 
+                            * ( T_freeze_K/T_in_K(k) - 1.0 ) )
 
         ! Saturation ratio in a liquid-saturated cloud, p. 158 Rogers and Yau
         !---------------Brian's comment--------------------------------------!

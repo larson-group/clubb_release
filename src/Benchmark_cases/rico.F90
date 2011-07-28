@@ -156,6 +156,10 @@ module rico
     C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
     z0      = 0.00015      ! Roughness length, defined by ATEX specification
 
+  integer, parameter :: &
+    standard_flux_alt = 20 ! default height at which surface flux is computed [m]
+
+
   ! Internal variables
   real :: & 
     ubar, & ! This is root (u^2 + v^2), per ATEX and RICO spec.
@@ -218,14 +222,14 @@ module rico
   Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) * & 
          ((log(10/z0))/(log(lowestlevel/z0))) ! Known magic number        
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-  Cm   = C_m_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-         ((log(20/z0))/(log(lowestlevel/z0))) ! Known magic number
+  Cm   = C_m_20 * ((log(standard_flux_alt/z0))/(log(lowestlevel/z0))) * & 
+         ((log(standard_flux_alt/z0))/(log(lowestlevel/z0)))
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-  Ch   = C_h_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-         ((log(20/z0))/(log(lowestlevel/z0))) ! Known magic number
+  Ch   = C_h_20 * ((log(standard_flux_alt/z0))/(log(lowestlevel/z0))) * & 
+         ((log(standard_flux_alt/z0))/(log(lowestlevel/z0)))
          ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-  Cq   = C_q_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-         ((log(20/z0))/(log(lowestlevel/z0))) ! Known magic number
+  Cq   = C_q_20 * ((log(standard_flux_alt/z0))/(log(lowestlevel/z0))) * & 
+         ((log(standard_flux_alt/z0))/(log(lowestlevel/z0)))
 
 ! Compute heat and moisture fluxes
   if (l_use_old_atex) then ! Use ATEX version

@@ -134,6 +134,8 @@ module mixing_length
     ! Variables to make L nonlocal
     real :: Lscale_up_max_alt, Lscale_down_min_alt
 
+    real, parameter :: Lscale_sfclyr_depth = 500. ! [m]
+
     ! ---- Begin Code ----
     err_code_Lscale = clubb_no_error
 
@@ -743,11 +745,12 @@ module mixing_length
       ! -dschanen 27 April 2007
       if( l_implemented ) then
         ! Within a host model, increase mixing length in 500 m layer above *ground*
-        lminh = max( zero_threshold, 500. - (gr%zt(i) - gr%zm(1)) ) &
-                        * ( lmin / 500. ) ! Known magic number
+        lminh = max( zero_threshold, Lscale_sfclyr_depth - (gr%zt(i) - gr%zm(1)) ) &
+                        * ( lmin / Lscale_sfclyr_depth )
       else
         ! In standalone mode, increase mixing length in 500 m layer above *mean sea level*
-        lminh = max( zero_threshold, 500. - gr%zt(i) ) * ( lmin / 500. ) ! Known magic number
+        lminh = max( zero_threshold, Lscale_sfclyr_depth - gr%zt(i) ) &
+                 * ( lmin / Lscale_sfclyr_depth )
       end if
 
       Lscale_up(i)    = max( lminh, Lscale_up(i) )

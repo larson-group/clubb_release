@@ -78,6 +78,9 @@ module twp_ice
 
     integer :: &
       before_time, after_time  ! time indexes used for interpolation
+
+    integer, parameter :: &
+      standard_flux_alt = 20 ! default height at which the surface flux is computed [m]
     !----------------------------------------------------------------------
 
     ! interpolate T_sfc from time_dependent_input
@@ -97,11 +100,11 @@ module twp_ice
 
     ! (Stevens, et al. 2000, eq 3)
     ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-    Ch   = C_h_20 * ((log(20/z0))/(log(z/z0))) * & 
-           ((log(20/z0))/(log(z/z0))) ! Known magic number
+    Ch   = C_h_20 * ((log(standard_flux_alt/z0))/(log(z/z0))) * & 
+           ((log(standard_flux_alt/z0))/(log(z/z0)))
     ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-    Cq   = C_q_20 * ((log(20/z0))/(log(z/z0))) * & 
-           ((log(20/z0))/(log(z/z0))) ! Known magic number
+    Cq   = C_q_20 * ((log(standard_flux_alt/z0))/(log(z/z0))) * & 
+           ((log(standard_flux_alt/z0))/(log(z/z0)))
 
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, T_sfc, exner_sfc )
     wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )

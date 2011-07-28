@@ -187,7 +187,7 @@ module microphys_driver
     use constants_clubb, only: &
       fstderr,   & ! Constant
       cm3_per_m3, &
-      um_per_m
+      micron_per_m
 
     use text_writer, only: &
       write_text   ! Used to write microphysics settings to setup.txt file
@@ -786,8 +786,8 @@ module microphys_driver
       l_hydromet_sed(iirgraupelm) = .false.
 
       ! Convert from μ to m as in SAM
-      aer_rm1 = aer_rm1*(1/um_per_m)
-      aer_rm2 = aer_rm2*(1/um_per_m)
+      aer_rm1 = aer_rm1 / micron_per_m
+      aer_rm2 = aer_rm2 / micron_per_m
       ! Convert from #/cm3 to #/m3
       aer_n1 = cm3_per_m3 * aer_n1
       aer_n2 = cm3_per_m3 * aer_n2

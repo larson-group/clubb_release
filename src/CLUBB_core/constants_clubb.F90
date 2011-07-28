@@ -24,7 +24,7 @@ module constants_clubb
     eps, zero_threshold, max_mag_correlation, sec_per_day, &
     sec_per_hr, sec_per_min, min_per_hr, g_per_kg, T_freeze_K, &
     Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
-    cm3_per_m3, um_per_m, pascal_per_mb, parab_cyl_max_input,  &
+    cm3_per_m3, micron_per_m, pascal_per_mb, parab_cyl_max_input,  &
     gamma_over_implicit_ts, Lscale_pert_coef, cloud_frac_min
 
   private ! Default scope
@@ -229,7 +229,7 @@ module constants_clubb
 
   real, parameter :: & 
     cm3_per_m3 = 1.e6, & ! Cubic centimeters per cubic meter
-    um_per_m = 1.e6 ! micrometers per meter
+    micron_per_m = 1.e6 ! micrometers per meter
 
   real, parameter :: &
     cloud_frac_min = 0.005 ! Threshold for cloud fractions

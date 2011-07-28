@@ -55,7 +55,8 @@ module bugsrad_driver
 ! All code external to this based on the BUGSrad source from 2004/7/10
 !-------------------------------------------------------------------------------
 
-    use constants_clubb, only: fstderr, grav, Cp, cloud_frac_min, pascal_per_mb ! Variable(s)
+    use constants_clubb, only: fstderr, grav, Cp, cloud_frac_min, &
+                               pascal_per_mb, g_per_kg ! Variable(s)
 
     use stats_precision, only: time_precision ! Variable(s)
 
@@ -213,7 +214,7 @@ module bugsrad_driver
 
     ! Ozone at < 1 km = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976.
     !   Convert from g to kg.
-    o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) * 0.001 ) !Known magic number
+    o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) / g_per_kg ) !Known magic number
 
     ! Convert and transpose as needed
     rcil(1,buffer+1:(nz-1)+buffer)            = flip( dble( rim(2:nz) ), nz-1 )

@@ -319,7 +319,7 @@ module saturation
     T_in_C = T_in_K - T_freeze_K
 
     ! Since this approximation is only good out to -85 degrees Celsius we
-    ! truncate the result here
+    ! truncate the result here (Flatau, et al. 1992)
     T_in_C = max( T_in_C, -85. ) ! Known magic number
 
     ! Polynomial approx. (Flatau, et al. 1992)
@@ -560,7 +560,7 @@ module saturation
     T_in_C = T_in_K - T_freeze_K
 
     ! Since this approximation is only good out to -90 degrees Celsius we
-    ! truncate the result here
+    ! truncate the result here (Flatau, et al. 1992)
     T_in_C = max( T_in_C, -90. ) ! Known magic number
 
     ! Polynomial approx. (Flatau, et al. 1992)

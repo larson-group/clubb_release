@@ -92,7 +92,8 @@ module clubb_core
       kappa, &
       fstderr, &
       zero_threshold, &
-      Lscale_pert_coef
+      Lscale_pert_coef, &
+      three_halves
 
     use parameters_tunable, only: & 
       gamma_coefc,  & ! Variable(s)
@@ -963,7 +964,7 @@ module clubb_core
 
     if ( .not. l_tke_aniso ) then
       ! tke is assumed to be 3/2 of wp2
-      em = 1.5 * wp2 ! Known magic number
+      em = three_halves * wp2 ! Known magic number
     else
       em = 0.5 * ( wp2 + vp2 + up2 )
     end if

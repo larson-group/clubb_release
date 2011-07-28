@@ -17,7 +17,7 @@ subroutine cloud_drop_sed( rcm, Ncm, rho_zm, rho, exner, sigma_g, &
 !       Account for cloud droplet sedimentation in cases like DYCOMS II RF 02
 
 !       References:
-!       None
+!       http://journals.ametsoc.org/doi/abs/10.1175/2008MWR2582.1
 !----------------------------------------------------------------------
 
 use grid_class, only: gr ! Variable(s)
@@ -153,6 +153,7 @@ DO k = 2, gr%nnzp-1, 1
                    **(2.0/3.0)   ) & 
                 * ( ( rho_zm(k)*zt2zm( rcm, k ) )**(5.0/3.0) ) & 
                 * EXP( 5.0*( (LOG( sigma_g ))**(2) ) ) ! Known magic number
+                                 ! See Ackerman - eq. no. 7
   ELSE
     Fcsed(k) = 0.0
   END IF

@@ -233,6 +233,10 @@ module parameters_tunable
     integer, intent(out) ::  &
       err_code ! Error condition
 
+    ! Local Variables
+    real, parameter :: &
+      lmin_deltaz = 40.0 ! Fixed value for minimum value for the length scale.
+
     !-------------------- Begin code --------------------
 
     call unpack_parameters( params, & 
@@ -249,9 +253,9 @@ module parameters_tunable
 
     ! It was decided after some experimentation, that the best
     ! way to produce grid independent results is to set lmin to be
-    ! some fixed value at the surface. -dschanen 21 May 2007
+    ! some fixed value. -dschanen 21 May 2007
     !lmin = lmin_coef * deltaz  ! Old
-    lmin = lmin_coef * 40.0 ! New fixed value - Known magic number
+    lmin = lmin_coef * lmin_deltaz ! New fixed value
 
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
     call adj_low_res_nu &

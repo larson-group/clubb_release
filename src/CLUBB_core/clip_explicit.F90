@@ -771,7 +771,7 @@ module clip_explicit
       gr ! Variable(s)
 
     use constants_clubb, only: &
-      Skw_max_mag_sqd ! [-]      
+      Skw_max_mag_sqd ! [-]
 
     implicit none
 
@@ -795,6 +795,9 @@ module clip_explicit
       wp3_lim_sqd     ! Keeps absolute value of Sk_w from becoming > limit [m^6/s^6]
 
     integer :: k       ! Vertical array index.
+
+    real, parameter :: &  
+      wp3_max = 100. ! Threshold for wp3 [m^3/s^3]      
 
     ! ---- Begin Code ----
 
@@ -838,8 +841,8 @@ module clip_explicit
 
     ! Clipping abs(wp3) to 100. This keeps wp3 from growing too large in some 
     ! deep convective cases, which helps prevent these cases from blowing up.
-    where ( abs(wp3) > 100.) &
-      wp3 = sign( 100. , wp3 ) ! Known magic number
+    where ( abs(wp3) > wp3_max ) &
+      wp3 = sign( wp3_max , wp3 ) ! Known magic number
 
   end subroutine clip_skewness_core
 

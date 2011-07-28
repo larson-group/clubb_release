@@ -171,8 +171,11 @@ module gabls2
       sstheta,             & ! Sea surface potential temperature [K].
       bflx                   ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
 
-    Cz   = C_10 * ((log( 10/z0 ))/(log( lowest_level/z0 ))) * & 
-           ((log( 10/z0 ))/(log( lowest_level/z0 ))) ! Modification in case - known magic number
+    integer, parameter :: &
+      standard_flux_alt = 10 ! default height at which the surface flux is computed [m]
+
+    Cz   = C_10 * ((log( standard_flux_alt/z0 ))/(log( lowest_level/z0 ))) * & 
+           ((log( standard_flux_alt/z0 ))/(log( lowest_level/z0 ))) ! Modification in case
     ! lowest model level isn't at 10 m,
     ! from ATEX specification (Stevens, et al. 2000, eq 3)
     time_in_hours_init = 14

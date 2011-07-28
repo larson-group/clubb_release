@@ -164,6 +164,9 @@ module astex_a209
       Cq,   & ! This is C_q_20 scaled to the height of the lowest model level.
       time_frac
 
+    integer, parameter :: &
+      standard_flux_alt = 20 ! default height at which the surface flux is computed [m]
+
     !-----------------BEGIN CODE-------------------------
 
 
@@ -171,11 +174,11 @@ module astex_a209
 
     ! (Stevens, et al. 2000, eq 3)
     ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-    Ch   = C_h_20 * ((log(20/z0))/(log(lowestlevel/z0))) * &
-           ((log(20/z0))/(log(lowestlevel/z0))) ! Known magic number
+    Ch   = C_h_20 * ((log(standard_flux_alt/z0))/(log(lowestlevel/z0))) * &
+           ((log(standard_flux_alt/z0))/(log(lowestlevel/z0)))
     ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-    Cq   = C_q_20 * ((log(20/z0))/(log(lowestlevel/z0))) * &
-           ((log(20/z0))/(log(lowestlevel/z0))) ! Known magic number
+    Cq   = C_q_20 * ((log(standard_flux_alt/z0))/(log(lowestlevel/z0))) * &
+           ((log(standard_flux_alt/z0))/(log(lowestlevel/z0)))
 
 
     !sensible_heat_flx = 10.0
