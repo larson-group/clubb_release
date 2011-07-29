@@ -218,7 +218,7 @@ module gabls3_night
     zody=alog(h/z0)
 
     vel = sqrt(max(0.5,uh**2+vh**2))
-    r=9.81/ts*(th*(1+ep1*qh)-ts*(1.+ep1*qs))*h/vel**2
+    r=9.81/ts*(th*(1.+ep1*qh)-ts*(1.+ep1*qs))*h/vel**2
     iter=0
 
     if( r < 0. ) then
@@ -254,7 +254,7 @@ module gabls3_night
       a=4.8*4.8*r-1.00*6.35
       b=(2.*r*4.8-1.00)*zody
       c=r*zody**2
-      d=sqrt(b*b-4*a*c)
+      d=sqrt(b*b-4.*a*c)
       xsi1=(-b+d)/a/2.
       xsi2=(-b-d)/a/2.
       xsi=amax1(xsi1,xsi2)

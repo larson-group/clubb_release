@@ -45,7 +45,7 @@ module constants_clubb
     pi = 3.141592654 ! The ratio of radii to their circumference
 
   double precision, parameter:: &
-    radians_per_deg_dp = pi_dp / 180.0
+    radians_per_deg_dp = pi_dp / 180.d0
 
   real, parameter :: &
     sqrt_2pi = 2.5066282746310005024, &  ! sqrt(2*pi)
@@ -167,7 +167,7 @@ module constants_clubb
   ! cylinder function.  However, after a lot of testing, it was determined that
   ! an absolute value of 375 works well for an order of 12 or less.
   real, parameter :: &
-    parab_cyl_max_input = 375  ! Largest allowable input to parab. cyl. fnct.
+    parab_cyl_max_input = 375.  ! Largest allowable input to parab. cyl. fnct.
 
   ! "Over-implicit" weighted time step.
   !

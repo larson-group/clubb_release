@@ -46,13 +46,13 @@ module cos_solar_zen_module
 
     ! Liou's coefficients
     double precision, parameter :: & 
-      c0 =  0.006918,   & ! [-]
-      c1 = -0.399912,   & ! [-]
-      c2 = -0.006758,   & ! [-]
-      c3 = -0.002697,   & ! [-]
-      d1 =  0.070257,   & ! [-]
-      d2 =  0.000907,   & ! [-]
-      d3 =  0.000148      ! [-]
+      c0 =  0.006918d0,   & ! [-]
+      c1 = -0.399912d0,   & ! [-]
+      c2 = -0.006758d0,   & ! [-]
+      c3 = -0.002697d0,   & ! [-]
+      d1 =  0.070257d0,   & ! [-]
+      d2 =  0.000907d0,   & ! [-]
+      d3 =  0.000148d0      ! [-]
 
     ! Input Variables
     integer, intent(in) ::  & 
@@ -105,12 +105,12 @@ module cos_solar_zen_module
     ! Determine the number of hours
     hour = present_time / sec_per_hr
 
-    t = 2*pi_dp*(jul_day-1)/days_in_year
+    t = 2.d0*pi_dp*dble( jul_day-1 )/dble( days_in_year )
 
     delta = c0  & 
           + c1*cos( t ) + d1*sin( t ) & 
-          + c2*cos( 2*t ) + d2*sin( 2*t ) & 
-          + c3*cos( 3*t ) + d3*sin( 3*t )
+          + c2*cos( 2.d0*t ) + d2*sin( 2.d0*t ) & 
+          + c3*cos( 3.d0*t ) + d3*sin( 3.d0*t )
 
 ! The angle  longang  is equivalent to the
 ! hour angle in the formula for cosZ .
@@ -124,17 +124,17 @@ module cos_solar_zen_module
 
     select case ( int( hour ) )
     case ( 0:11 )
-      zln = 180.00 - hour*15.00 ! Known magic number
+      zln = 180.00d0 - hour*15.00d0 ! Known magic number
     case ( 12:23 )
-      zln = 540.00 - hour*15.00 ! Known magic number
+      zln = 540.00d0 - hour*15.00d0 ! Known magic number
     case default
-      zln = 0.0
+      zln = 0.0d0
       write(unit=fstderr,fmt=*) "Hour=", hour
       stop " > 24 hours in cosine solar zenith code"
     end select
 
-    longang = abs( lon_in_degrees - zln ) * radians_per_deg_dp
-    latang  = lat_in_degrees * radians_per_deg_dp
+    longang = abs( dble( lon_in_degrees ) - zln ) * radians_per_deg_dp
+    latang  = dble( lat_in_degrees ) * radians_per_deg_dp
 
 
     ! Cosine of the solar zenith angle (sometimes denoted amu0).

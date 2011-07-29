@@ -266,7 +266,7 @@ module surface_varnce_module
 
       ! Compute wstar following Andre et al., 1976
 
-      if ( wpthlp_sfc > 0 ) then
+      if ( wpthlp_sfc > 0. ) then
         wstar = ( 1.0/T0 * grav * wpthlp_sfc * z ) ** (1./3.)
       else
         wstar = 0.

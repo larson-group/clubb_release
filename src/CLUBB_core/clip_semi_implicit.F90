@@ -199,6 +199,9 @@ module clip_semi_implicit
   ! References:
   !-----------------------------------------------------------------------
 
+  use stats_precision, only:  & 
+    time_precision ! Variable(s)
+
   implicit none
 
   private
@@ -225,7 +228,7 @@ module clip_semi_implicit
   !                       timestep, dt.  The smaller the value of dt_clip_coef,
   !                       the smaller the value of dt_clip, and the larger the
   !                       magnitude of (df/dt)_clipping.
-  real, parameter :: dt_clip_coef = 1.0
+  real(kind=time_precision), parameter :: dt_clip_coef = 1.0_time_precision
 
   contains
 
@@ -266,14 +269,11 @@ module clip_semi_implicit
     ! References:
     !-----------------------------------------------------------------------
 
-    use stats_precision, only:  & 
-        time_precision ! Variable(s)
-
     implicit none
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
-      dt                    ! Model timestep.                                    [s]
+      dt  ! Model timestep.  [s]
 
     real, intent(in) :: & 
       f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
@@ -381,9 +381,6 @@ module clip_semi_implicit
     ! References:
     !-----------------------------------------------------------------------
 
-    use stats_precision, only:  & 
-        time_precision ! Variable(s)
-
     implicit none
 
     ! Input Variables
@@ -399,7 +396,7 @@ module clip_semi_implicit
 
     ! Main diagonal: [ x f_unclipped(k,<t+1>) ]
     lhs_contribution & 
-    = real( + (1.0/dt_clip) * B_fnc )
+    = + (1.0/real( dt_clip ) * B_fnc )
 
 
   end function compute_clip_lhs
@@ -436,9 +433,6 @@ module clip_semi_implicit
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use stats_precision, only:  & 
-        time_precision ! Variable(s)
 
     implicit none
 
@@ -491,7 +485,7 @@ module clip_semi_implicit
       ! Compute the explicit (RHS) contribution from clipping for the upper
       ! threshold.
       rhs_upper  & 
-      = real( + (1.0/dt_clip)  & 
+      = + (1.0/real( dt_clip )  & 
           * ( A_fnc - B_fnc * f_diff + B_fnc * upper_threshold ) )
 
     else
@@ -518,8 +512,8 @@ module clip_semi_implicit
       ! Compute the explicit (RHS) contribution from clipping for the lower
       ! threshold.
       rhs_lower  & 
-      = real( - (1.0/dt_clip)  & 
-          * ( A_fnc - B_fnc * f_diff - B_fnc * lower_threshold ) )
+      = - (1.0/ real( dt_clip ))  & 
+          * ( A_fnc - B_fnc * f_diff - B_fnc * lower_threshold )
 
     else
 

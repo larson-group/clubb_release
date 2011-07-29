@@ -257,7 +257,7 @@ module rad_lwsw_module
       ! The value of liquid water path (lwp) at momentum (or w)
       ! level 1 (the uppermost level) is defined to be 1/2 of the
       ! value of liquid water path at thermodynamic level 1.
-      lwp_coamps_zm(1) = lwp(1)/2
+      lwp_coamps_zm(1) = lwp(1)/2.
 
       if ( l_center ) then
         Frad_LW(1) = F0 * exp( -kay * lwp_coamps_zm(1) ) & 

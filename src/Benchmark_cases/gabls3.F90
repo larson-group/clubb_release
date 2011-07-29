@@ -88,7 +88,7 @@ module gabls3
 
     wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, veg_T_in_K, exner_sfc)
     offset = 9.9e-3
-    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, offset ) * 10 ! Known magic number
+    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, offset ) * 10. ! Known magic number
   
     ! Compute momentum fluxes
     bflx = wpthlp_sfc * grav / veg_theta_in_K

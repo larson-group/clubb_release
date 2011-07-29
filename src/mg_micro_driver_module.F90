@@ -205,24 +205,24 @@ module mg_micro_driver_module
       if ( l_local_kk ) stop
     end if
     
-    unused_in(:) = -9999.9
+    unused_in(:) = -9999.9_r8
     
     ! Initialize output arrays to zero
     naai_flip = 0.0_r8
     npccn_flip = 0.0_r8
     rndst_flip = 0.0_r8
     nacon_flip = 0.0_r8
-    effc(:) = 0.0_r8
-    effi(:) = 0.0_r8
-    rsnowm(:) = 0.0_r8
-    tlat(:) = 0.0_r8
-    rcm_new(:) = 0.0_r8
-    T_in_K_new(:) = 0.0_r8
-    rcm_mc(1:nnzp) = 0.0_r8
-    rvm_mc(1:nnzp) = 0.0_r8
-    hydromet_mc(1:nnzp,:) = 0.0_r8
+    effc(:) = 0.0
+    effi(:) = 0.0
+    rsnowm(:) = 0.0
+    tlat(:) = 0.0
+    rcm_new(:) = 0.0
+    T_in_K_new(:) = 0.0
+    rcm_mc(1:nnzp) = 0.0
+    rvm_mc(1:nnzp) = 0.0
+    hydromet_mc(1:nnzp,:) = 0.0
     hydromet_mc_flip(1:nnzp-1,:) = 0.0_r8
-    hydromet_vel(:,:) = 0.0_r8
+    hydromet_vel(:,:) = 0.0
 
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
@@ -241,17 +241,17 @@ module mg_micro_driver_module
     ! MG's grid is flipped with respect to CLUBB.
     ! Flip CLUBB variables before inputting them into MG.
     ! In addition, MG does not include CLUBB's bottom level
-    Kh_zm_flip(1:nnzp-1) = real( flip( dble(Kh_zm(2:nnzp) ), nnzp-1 ) )
-    em_flip(1:nnzp-1) = real( flip( dble(em(2:nnzp) ), nnzp-1 ) )
-    T_in_K_flip(1:nnzp-1) = real( flip( dble(T_in_K(2:nnzp) ), nnzp-1 ) )
-    rvm_flip(1:nnzp-1) = real( flip( dble(rvm(2:nnzp) ), nnzp-1 ) )
-    rcm_flip(1:nnzp-1) = real( flip( dble(rcm(2:nnzp) ), nnzp-1 ) )
-    p_in_Pa_flip(1:nnzp-1) = real( flip( dble(p_in_Pa(2:nnzp) ), nnzp-1 ) )
-    liqcldf_flip(1:nnzp-1) = real( flip( dble(cloud_frac(2:nnzp) ), nnzp-1 ) )
+    Kh_zm_flip(1:nnzp-1) = real( flip( dble(Kh_zm(2:nnzp) ), nnzp-1 ), kind=r8 )
+    em_flip(1:nnzp-1) = real( flip( dble(em(2:nnzp) ), nnzp-1 ), kind=r8 )
+    T_in_K_flip(1:nnzp-1) = real( flip( dble(T_in_K(2:nnzp) ), nnzp-1 ), kind=r8 )
+    rvm_flip(1:nnzp-1) = real( flip( dble(rvm(2:nnzp) ), nnzp-1 ), kind=r8 )
+    rcm_flip(1:nnzp-1) = real( flip( dble(rcm(2:nnzp) ), nnzp-1 ), kind=r8 )
+    p_in_Pa_flip(1:nnzp-1) = real( flip( dble(p_in_Pa(2:nnzp) ), nnzp-1 ), kind=r8 )
+    liqcldf_flip(1:nnzp-1) = real( flip( dble(cloud_frac(2:nnzp) ), nnzp-1 ), kind=r8 )
     
     ! Hydromet is 2 dimensional, so flip function doesn't work
     do i = 1, hydromet_dim, 1
-      hydromet_flip(1:nnzp-1, i) = hydromet(nnzp:2:-1, i)
+      hydromet_flip(1:nnzp-1, i) = real( hydromet(nnzp:2:-1, i), kind=r8 )
     end do
     
     ! Initialize MG input variables. The top level is skipped because MG's grid is flipped with
@@ -268,12 +268,13 @@ module mg_micro_driver_module
       ! Cloud fraction. In MG there is no difference between ice cloud fraction and
       ! liquid cloud fraction. However, just setting icecldf equal to CLUBBs cloud_frac
       ! won't work for all ice, no liquid clouds.
-      if ( rcm_flip(i) > 0 ) then
+      if ( rcm_flip(i) > 0._r8 ) then
         cldn_flip(i) = liqcldf_flip(i)
-      else if ( rcm_flip(i) < rc_tol .and. hydromet_flip(i,iiricem) > rc_tol ) then
-        cldn_flip(i) = 1
+      else if ( rcm_flip(i) < real( rc_tol, kind=r8 ) &
+                .and. hydromet_flip(i,iiricem) > real( rc_tol, kind=r8 ) ) then
+        cldn_flip(i) = 1._r8
       else
-        cldn_flip(i) = 0
+        cldn_flip(i) = 0._r8
       end if
       liqcldf_flip(i) = cldn_flip(i)
       icecldf_flip(i) = cldn_flip(i)
@@ -317,9 +318,9 @@ module mg_micro_driver_module
 
     ! These variables are unused in CLUBB, so they are initialized to 1 before input into
     ! microp_aero_ts. 
-    aer_mmr_flip(:,:,:) = 1
-    turbtype_flip(:) = 1
-    smaw_flip(:) = 1
+    aer_mmr_flip(:,:,:) = 1._r8
+    turbtype_flip(:) = 1._r8
+    smaw_flip(:) = 1._r8
     
     ! Calculate aerosol activiation, dust size, and number for contact nucleation
     call microp_aero_ts &
@@ -372,7 +373,7 @@ module mg_micro_driver_module
     T_in_K_new = T_in_K + (tlat/Cp) * real( dt )
     
     ! TODO: To remove compile warnings:
-    unused_out01 = T_in_K_new(1:nnzp-1)
+    unused_out01 = real( T_in_K_new(1:nnzp-1), kind=r8 )
     ! TODO: T_in_K is not changed within MG, so the change in temperature will need to be
     ! calculated another way. However, using the eqution above does not seem to work correctly.
     thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_new ) - thlm ) / real( dt )

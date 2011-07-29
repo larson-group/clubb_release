@@ -311,7 +311,8 @@ module output_grads
         read(unit=line,fmt=*) tmp, ntimes_in, tmp, date, dt
         read(unit=date(1:2),fmt=*) ihour
         read(unit=date(4:5),fmt=*) imin
-        time_grads = ihour * sec_per_hr + imin * sec_per_min
+        time_grads = real( ihour, kind=time_precision ) * sec_per_hr &
+                   + real( imin, kind=time_precision ) * sec_per_min
         read(unit=date(7:8),fmt=*) day_in
         read(unit=date(12:15),fmt=*) year_in
 
@@ -346,7 +347,7 @@ module output_grads
         end select
 
         read(unit=dt(1:len_trim(dt)-2),fmt=*) dtwrite_in
-        dtwrite_in = dtwrite_in * 60.0
+        dtwrite_in = dtwrite_in * sec_per_min
 
       else if ( index(line,'ENDVARS') > 0 ) then
 
@@ -396,7 +397,7 @@ module output_grads
       l_error = .true.
     end if
 
-    if ( int( time_grads + ntimes_in*dtwrite_in )  & 
+    if ( int( time_grads ) + ntimes_in*int( dtwrite_in )  & 
          /= int( time ) ) then
       write(unit=fstderr,fmt=*) "check_grads: time mismatch"
       l_error = .true.
@@ -712,20 +713,20 @@ module output_grads
 
     ! Since GrADs can't handle a time increment of less than a minute we assume
     ! 1 minute output for an output frequency of less than a minute.
-    dtwrite_min = floor( dtwrite_sec/sec_per_min )
+    dtwrite_min = real( floor( dtwrite_sec/sec_per_min ), kind=time_precision )
     dtwrite_min = max( 1._time_precision, dtwrite_min )
 
-    if ( dtwrite_min <= 99. ) then
+    if ( dtwrite_min <= 99._time_precision ) then
       dtwrite_ctl = int( dtwrite_min )
       units = 'mn'
     else
       dtwrite_hrs = dtwrite_sec / sec_per_hr
-      if ( dtwrite_hrs <= 99. ) then
+      if ( dtwrite_hrs <= 99._time_precision ) then
         dtwrite_ctl = int( dtwrite_hrs )
         units = 'hr'
       else
         dtwrite_days = dtwrite_sec / sec_per_day
-        if ( dtwrite_days <= 99. ) then
+        if ( dtwrite_days <= 99._time_precision ) then
           dtwrite_ctl = int( dtwrite_days )
           units = 'dy'
         else

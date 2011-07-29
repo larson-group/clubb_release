@@ -577,7 +577,7 @@ module grid_class
         ! Define momentum level altitudes. The first momentum level is at
         ! altitude zm_init.
         do k = 1, gr%nnzp, 1
-          gr%zm(k) = zm_init + (k-1) * deltaz
+          gr%zm(k) = zm_init + real( k-1 ) * deltaz
         enddo
 
         ! Define thermodynamic level altitudes.  Thermodynamic level altitudes

@@ -84,7 +84,7 @@ module atex
   thlm_forcing = 0.
   rtm_forcing  = 0.
 
-  if ( time >= time_initial + 5400.0 ) then
+  if ( time >= time_initial + 5400.0_time_precision ) then
 
   !  Identify height of 6.5 g/kg moisture level
 

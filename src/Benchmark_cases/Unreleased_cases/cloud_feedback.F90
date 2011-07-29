@@ -88,8 +88,8 @@ module cloud_feedback
   integer :: &
     before_time, after_time ! The times used for interpolation
 
-  integer, parameter :: &
-    standard_flux_alt = 20 ! default height at which the surface flux is computed [m]
+  real, parameter :: &
+    standard_flux_alt = 20. ! default height at which the surface flux is computed [m]
  
   !--------------BEGIN CODE---------------------
 
@@ -106,9 +106,9 @@ module cloud_feedback
   ustar = 0.3
 
   ! Get rid of a compiler warning
-  if( runtype == "anything" .or. thlm_sfc == 1 .or. rtm_sfc == 1 .or. &
-          exner_sfc == 1 .or. p_sfc == 1 .or. T_sfc == 1) then
-      ustar = 0.3
+  if ( runtype == "anything" .or. thlm_sfc == 1. .or. rtm_sfc == 1. .or. &
+       exner_sfc == 1. .or. p_sfc == 1. .or. T_sfc == 1. ) then
+    ustar = 0.3
   end if
 
   !--------------------------------------------------------------------------------

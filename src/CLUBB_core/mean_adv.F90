@@ -257,7 +257,7 @@ module mean_adv
 
       else    ! l_upwind_xm_ma == .true.  Use upwind differencing
 
-        if ( wm_zt > 0 ) then  ! Wind is in upward direction
+        if ( wm_zt > 0. ) then  ! Wind is in upward direction
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
           lhs(kp1_tdiag) &

@@ -840,24 +840,24 @@ module advance_xm_wpxp_module
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( irtm_sdmp, real(rtm /dt), zt )
+        call stat_begin_update( irtm_sdmp, rtm / real( dt ), zt )
       end if
       rtm(1:gr%nnzp) = sponge_damp_xm( dt, rtm_ref(1:gr%nnzp), rtm(1:gr%nnzp), &
                                        rtm_sponge_damp_profile )
 
       if( l_stats_samp ) then
-        call stat_end_update( irtm_sdmp, real(rtm /dt), zt )
+        call stat_end_update( irtm_sdmp, rtm / real( dt ), zt )
       end if
     endif
 
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( ithlm_sdmp, real(thlm /dt), zt )
+        call stat_begin_update( ithlm_sdmp, thlm / real( dt ), zt )
       end if
       thlm(1:gr%nnzp) = sponge_damp_xm( dt, thlm_ref(1:gr%nnzp), thlm(1:gr%nnzp), &
                                         thlm_sponge_damp_profile )
       if( l_stats_samp ) then
-        call stat_end_update( ithlm_sdmp, real(thlm /dt), zt )
+        call stat_end_update( ithlm_sdmp, thlm / real( dt ), zt )
       end if
     endif
 
@@ -1078,7 +1078,7 @@ module advance_xm_wpxp_module
 
       ! LHS time tendency.
       lhs(t_k_tdiag,k_xm) & 
-      = real( lhs(t_k_tdiag,k_xm) + 1.0 / dt )
+      = lhs(t_k_tdiag,k_xm) + 1.0 / real( dt )
 
       if (l_stats_samp) then
 
@@ -1205,8 +1205,9 @@ module advance_xm_wpxp_module
                           gr%invrs_dzm(k), k )
 
       ! LHS time tendency.
-      if (l_iter) lhs(m_k_mdiag,k_wpxp)  &
-                  = real( lhs(m_k_mdiag,k_wpxp) + 1.0 / dt )
+      if ( l_iter ) then
+        lhs(m_k_mdiag,k_wpxp) = lhs(m_k_mdiag,k_wpxp) + 1.0 / real( dt )
+      end if
 
       ! LHS portion of semi-implicit clipping term.
       if ( l_clip_semi_implicit ) then
@@ -1524,7 +1525,7 @@ module advance_xm_wpxp_module
       ! xm: Right-hand side (explicit xm portion of the code).
 
       ! RHS time tendency.
-      rhs(k_xm) = real( rhs(k_xm) + xm(k) / dt )
+      rhs(k_xm) = rhs(k_xm) + xm(k) / real( dt )
 
       ! RHS xm forcings.
       ! Note: xm forcings include the effects of microphysics,
@@ -1570,8 +1571,9 @@ module advance_xm_wpxp_module
       + wpxp_terms_bp_pr3_rhs( C7_Skw_fnc(k), thv_ds_zm(k), xpthvp(k) )
 
       ! RHS time tendency.
-      if ( l_iter ) rhs(k_wpxp) =  & 
-           real( rhs(k_wpxp) + wpxp(k) / dt )
+      if ( l_iter ) then
+        rhs(k_wpxp) = rhs(k_wpxp) + wpxp(k) / real( dt )
+      end if
 
       ! RHS portion of semi-implicit clipping (sicl) term.
       if ( l_clip_semi_implicit ) then
@@ -2242,7 +2244,7 @@ module advance_xm_wpxp_module
 
     ! Computed value before clipping
     if ( l_stats_samp ) then
-      call stat_begin_update( ixm_cl, real( xm / dt ), & ! Intent(in)
+      call stat_begin_update( ixm_cl, xm / real( dt ), & ! Intent(in)
                               zt )                       ! Intent(inout)
     end if
 
@@ -2273,7 +2275,7 @@ module advance_xm_wpxp_module
     end if !  any( xm < xm_threshold ) .and. l_hole_fill
 
     if ( l_stats_samp ) then
-      call stat_end_update( ixm_cl, real( xm / dt ), & ! Intent(in) 
+      call stat_end_update( ixm_cl, xm / real( dt ), & ! Intent(in) 
                             zt )                       ! Intent(inout)
     end if
 
@@ -2333,7 +2335,7 @@ module advance_xm_wpxp_module
     if ( l_stats_samp ) then
 
       ! wpxp time tendency
-      call stat_modify( iwpxp_bt, real( wpxp / dt ), zm )
+      call stat_modify( iwpxp_bt, wpxp / real( dt ), zm )
       ! Brian Griffin; July 5, 2008.
 
     endif
@@ -3099,7 +3101,7 @@ module advance_xm_wpxp_module
     ! highest.
     do k = 2, gr%nnzp, 1
       xm_tndcy_wpxp_cl(k) = - invrs_dzt(k) * ( wpxp_chnge(k) - wpxp_chnge(k-1) )
-      xm(k) = real( xm(k) + xm_tndcy_wpxp_cl(k) * dt )
+      xm(k) = xm(k) + xm_tndcy_wpxp_cl(k) * real( dt )
     enddo
 
     if ( l_stats_samp ) then

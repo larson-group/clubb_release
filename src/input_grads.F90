@@ -191,8 +191,8 @@ module input_grads
         allocate( grads_file%z(grads_file%ia:grads_file%iz) )
         ! Implied Do Loop with the purpose of reading in
         ! altitudes
-        if(grads_file%iz == 1) then
-          grads_file%z(1) = 1
+        if ( grads_file%iz == 1 ) then
+          grads_file%z(1) = 1.
         else
           read(unit=unit_number,fmt=*) (grads_file%z(i),i=grads_file%ia,grads_file%iz)
         end if
@@ -202,7 +202,8 @@ module input_grads
         read(unit=date(1:2),fmt=*) ihour
         read(unit=date(4:5),fmt=*) imin
 
-        grads_file%time = ihour * sec_per_hr + imin * sec_per_min
+        grads_file%time = real( ihour, kind=time_precision ) * sec_per_hr &
+                        + real( imin, kind=time_precision ) * sec_per_min
 
         read(unit=date(7:8),fmt=*) grads_file%day
         read(unit=date(12:15),fmt=*) grads_file%year
@@ -380,7 +381,7 @@ module input_grads
 
     ! Check time index
     ! Now assumes itime is in minutes
-    if ( itime < 1 .or. (itime/(grads_file%dtwrite/sec_per_min)) > grads_file%ntimes ) then
+    if ( itime < 1 .or. (itime/int( grads_file%dtwrite/sec_per_min )) > grads_file%ntimes ) then
       l_error = .true.
       write(unit=fstderr,fmt=*)  & 
         "get_4byte_var: itime < 1 .or. itime > grads_file%ntimes"
@@ -430,7 +431,11 @@ module input_grads
     ! _model.in to restart
     ! Joshua Fasching March 2008
 
-    nrec = (max(nint(itime/(grads_file%dtwrite/sec_per_min)),1)-1) &
+    nrec = ( max( nint( real( itime, kind=time_precision ) &
+                        /(grads_file%dtwrite/sec_per_min) &
+                      ), & ! nint &
+              1 ) & ! max
+            -1 ) &
       *grads_file%nvar*(grads_file%iz-grads_file%ia+1)  & 
          + (ivar-1)*(grads_file%iz-grads_file%ia+1)
     nrec = nrec + 1

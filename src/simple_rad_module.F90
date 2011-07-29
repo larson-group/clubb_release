@@ -244,7 +244,7 @@ module simple_rad_module
 
     do k = 1, gr%nnzp, 1
 
-      if ( F1 /= 0 ) then
+      if ( F1 /= 0. ) then
         Frad_LW(k) = F0 * exp( -kappa * LWP(k) ) & 
                 + F1 * exp( -kappa * (LWP(1) - LWP(k)) )
 
@@ -359,7 +359,7 @@ module simple_rad_module
   end subroutine simple_rad_bomex
 
 !-------------------------------------------------------------------------------
-  subroutine simple_rad_lba( time, radht )
+  subroutine simple_rad_lba( time_in, radht )
 ! Description:
 !   Compute radiation For the LBA TRMM case.  Uses a prescribed formula and
 !   interpolates with respect to time.
@@ -378,31 +378,34 @@ module simple_rad_module
 
     ! Input Variables
     real(kind=time_precision), intent(in) :: &
-      time ! Model time [s]
+      time_in ! Model time [s]
 
     ! Output Variables
     real, dimension(gr%nnzp), intent(out) :: radht
 
     ! Local Variables
     real, dimension(lba_nzrad) :: radhtz
-    real :: a
+    real :: a, time
     integer :: i1, i2
+
+    time = real( time_in )
 
     ! Calculate radiative heating rate
     if ( time <=  600. ) then
       radhtz = lba_krad(:,1)
 
-    else if ( time >= lba_ntimes * 600. ) then
+    else if ( time >= real( lba_ntimes ) * 600. ) then
       radhtz = lba_krad(:,lba_ntimes)
 
     else
       i1 = 1
       do while ( i1 <= lba_ntimes-1 )
         i2 = i1 + 1
-        if ( time >= 600. * i1 .and. time < 600. * i2  ) then
-          a  = real(( time - 600. * i1 )/( 600. * i2 - 600. * i1)) ! Known magic number
+        if ( time >= 600. * real( i1 ) .and. time < 600. * real( i2 )  ) then
+          a  = ( time - 600. * real( i1 ) ) & ! Known magic number
+            /( 600. * real( i2 ) - 600. * real( i1 )) ! Known magic number
           radhtz(:) = factor_interp( a, lba_krad(:,i2), lba_krad(:,i1) )
-          i1     = lba_ntimes
+          i1 = lba_ntimes
         end if
         i1 = i2
       end do

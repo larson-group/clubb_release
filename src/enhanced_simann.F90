@@ -298,7 +298,7 @@ module enhanced_simann
            call genrand_real1( rand )
 
            ! Accept the number with probability of exp(-deltae / temp)
-           if ( rand  <= exp( -deltae/temp ) ) then
+           if ( real( rand ) <= exp( -deltae/temp ) ) then
              ! Accept xtry
              l_accept_xtry = .true.
              nmvust = nmvust + 1
@@ -333,7 +333,7 @@ module enhanced_simann
 
         ! Step 6: Temperature Adjustment
 
-        avgyst = avgyst / nmvst
+        avgyst = avgyst / real( nmvst )
         rftmp = max( min( elowst/avgyst, rmxtmp), rmitmp )
         temp = rftmp * temp
 
@@ -405,8 +405,8 @@ module enhanced_simann
         nmvust = 0
         nmvst  = 0
         elowst = oldrgy
-        avgyst = 0
-        sdgyup = 0
+        avgyst = 0.
+        sdgyup = 0.
 
       end do
 
@@ -470,7 +470,7 @@ module enhanced_simann
       if ( spartition(k) ) then ! Augment only values within the partition
 
         ! Apply a random sign to each xrand value. 
-        if ( srand(k) >= 0.5 ) then
+        if ( srand(k) >= 0.5_genrand_real ) then
           xtmp = x(k) + real( xrand(k) ) * step(k)
         else
           xtmp = x(k) - real( xrand(k) ) * step(k)

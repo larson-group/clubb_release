@@ -327,8 +327,8 @@ module stats_subs
 
     ! The model time step length, delt (which is dtmain), should multiply
     ! evenly into the statistical sampling time step length, stats_tsamp.
-    if ( abs( stats_tsamp/delt - floor(stats_tsamp/delt) )  & 
-           > 1.e-8 ) then
+    if ( abs( stats_tsamp/delt - real( floor( stats_tsamp/delt ), kind=time_precision ) )  & 
+           > 1.e-8_time_precision ) then
       l_error = .true.  ! This will cause the run to stop.
       write(fstderr,*) 'Error:  stats_tsamp should be an even multiple of ',  &
                        'delt (which is dtmain).  Check the appropriate ',  &
@@ -339,8 +339,9 @@ module stats_subs
 
     ! The statistical sampling time step length, stats_tsamp, should multiply
     ! evenly into the statistical output time step length, stats_tout.
-    if ( abs( stats_tout/stats_tsamp - floor(stats_tout/stats_tsamp) ) & 
-           > 1.e-8 ) then
+    if ( abs( stats_tout/stats_tsamp &
+           - real( floor( stats_tout/stats_tsamp ), kind=time_precision ) ) & 
+         > 1.e-8_time_precision ) then
       l_error = .true.  ! This will cause the run to stop.
       write(fstderr,*) 'Error:  stats_tout should be an even multiple of ',  &
                        'stats_tsamp.  Check the appropriate model.in file.'
@@ -847,8 +848,8 @@ module stats_subs
     ! Zero out arrays
 
     if ( nn > 0 ) then
-      x(:,:,:,:) = 0.0
-      n(:,:,:,:) = 0
+      x(:,:,:,:) = 0.0_stat_rknd
+      n(:,:,:,:) = 0_stat_nknd
       l_in_update(:,:,:,:) = .false.
     end if
 
@@ -884,7 +885,7 @@ module stats_subs
       do k=1,kk
 
         if ( n(1,1,k,m) > 0 ) then
-          x(1,1,k,m) = x(1,1,k,m) / real( n(1,1,k,m) )
+          x(1,1,k,m) = x(1,1,k,m) / real( n(1,1,k,m), kind=stat_rknd )
         end if
 
       end do
@@ -923,14 +924,14 @@ module stats_subs
 
     ! Only sample time steps that are multiples of "stats_tsamp"
     ! in a case's "model.in" file to shorten length of run
-    if ( mod( time_elapsed, stats_tsamp ) < 1.e-8 ) then
+    if ( mod( time_elapsed, stats_tsamp ) < 1.e-8_time_precision ) then
       l_stats_samp = .true.
     else
       l_stats_samp = .false.
     end if
 
     ! Indicates the end of the sampling time period. Signals to start writing to the file
-    if ( mod( time_elapsed, stats_tout ) < 1.e-8 ) then
+    if ( mod( time_elapsed, stats_tout ) < 1.e-8_time_precision ) then
       l_stats_last = .true.
     else
       l_stats_last = .false.

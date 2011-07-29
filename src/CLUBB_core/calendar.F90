@@ -193,8 +193,8 @@ module calendar
     days_since_1jan4713bc = days_since_1jan4713bc + days_since_start
 
     ! Set Present time to be seconds since the Julian date
-    seconds_since_current_date =  & 
-    seconds_since_previous_date - ( days_since_start * sec_per_day )
+    seconds_since_current_date = seconds_since_previous_date &
+      - ( real( days_since_start, kind=time_precision ) * sec_per_day )
 
     call julian2gregorian_date & 
            ( days_since_1jan4713bc, & 

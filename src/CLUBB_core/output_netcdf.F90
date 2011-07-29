@@ -65,7 +65,7 @@ module output_netcdf
       rlon ! Longitudes  [degrees_N]
 
     real(kind=time_precision), intent(in) :: & 
-     dtwrite ! Time between write intervals   [s]
+      dtwrite ! Time between write intervals   [s]
 
     real(kind=time_precision), intent(in) ::  & 
      time   ! Current time                    [s]
@@ -160,9 +160,13 @@ module output_netcdf
 
     use stat_file_module, only: & 
         stat_file ! Variable
+
     use constants_clubb, only:  & 
         fstderr, & ! Variable
         sec_per_min
+
+    use stats_precision, only: &
+      time_precision ! Constant(s)
 
     implicit none
 
@@ -192,7 +196,8 @@ module output_netcdf
 
     allocate( stat( ncf%nvar ) )
 
-    time = nint( ncf%ntimes * dble( ncf%dtwrite / sec_per_min ) ) !  minutes(rounded)
+    time = real( nint( real( ncf%ntimes, kind=time_precision ) &
+                     * ncf%dtwrite / sec_per_min ), kind=time_precision ) !  minutes(rounded)
 !   time = dble( ncf%ntimes ) * ncf%dtwrite ! seconds
 
     stat(1) = nf90_put_var( ncid=ncf%iounit, varid=ncf%TimeVarId,  & 
@@ -745,7 +750,8 @@ module output_netcdf
 !   Uses Fortran `internal' files to write the string output.
 !-------------------------------------------------------------------------------
 
-    use calendar, only: compute_current_date
+    use calendar, only:  &
+      compute_current_date ! Procedure(s)
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -787,7 +793,7 @@ module output_netcdf
 !   write(date(22),'(a1)') '-'
     write(date(23:24),'(i2.2)') iday
 !   write(date(25),'(a1)') ' '
-    write(date(26:27),'(i2.2)') floor( st_time / 3600 )
+    write(date(26:27),'(i2.2)') floor( st_time / 3600._time_precision )
 !   write(date(28),'(a1)') ":"
     write(date(29:30),'(i2.2)') int( mod( nint( st_time ),3600 ) / 60 )
 !   write(date(30:35),'(a5)') ":00.0"

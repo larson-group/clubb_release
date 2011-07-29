@@ -98,9 +98,9 @@ module wangara
       ustar           ! surface friction velocity [m/s]
 
     ! Local variables
-    real(kind=time_precision) :: time_utc, time_est
-
-    real :: est_offset ! The offset for Australia EST time [s]
+    real(kind=time_precision) :: &
+      time_utc, time_est, &
+      est_offset ! The offset for Australia EST time [s]
 
 
 
@@ -115,10 +115,10 @@ module wangara
     time_utc = mod( time, sec_per_day )
 
     ! Now convert UTC time to Australia EST (local time)
-    est_offset = 36000.
+    est_offset = 36000._time_precision
     time_est = mod( time_utc + est_offset, sec_per_day )
 
-    if ( time_est < 27000 .or. time_est > 63000 ) then
+    if ( time_est < 27000._time_precision .or. time_est > 63000._time_precision ) then
       write(fstderr,*) "wangara_sfclyr: error local time must" & 
         //" be between 730 and 1730."
       write(fstderr,*) 'time_est = ',time_est
@@ -127,9 +127,8 @@ module wangara
 
     ! Compute heat and moisture fluxes
 
-    wpthlp_sfc = real(0.18 * cos( (time_est-45000.0)/36000.0 * pi )) ! Known magic number
+    wpthlp_sfc = real(0.18 * cos( (real( time_est )-45000.0)/36000.0 * pi )) ! Known magic number
     wprtp_sfc  = 1.3e-4 * wpthlp_sfc ! Known magic number
-
 
     return
   end subroutine wangara_sfclyr

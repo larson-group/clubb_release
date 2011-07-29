@@ -83,7 +83,7 @@ module input_netcdf
     ! Initialize l_error to false
     l_error = .false.
 
-    multiplier = 0  !initialized to eliminate g95 compiler warning -meyern
+    multiplier = 0.  ! Initialized to eliminate g95 compiler warning -meyern
 
     ierr = nf90_open( path=trim( path ), mode=NF90_NOWRITE, ncid=ncf%iounit )
 
@@ -194,24 +194,29 @@ module input_netcdf
       ierr = nf90_get_att( ncid=ncf%iounit, varid=ncf%TimeVarId, name="units", & ! In
                            values=time ) ! Out
 
-      time = trim ( time )
-      length = len ( trim ( time ) )
+      time = trim( time )
+      length = len( trim( time ) )
       read(time( length-10:length-8 ), *) hours
       read(time( length-6:length-5 ), *) minutes
       read(time( length-3:length - 2 ), *) seconds
-      ncf%time =  (hours * sec_per_hr) + (minutes * sec_per_min) + seconds
+      ncf%time = real( hours * real( sec_per_hr ) + minutes * real( sec_per_min ) + seconds, &
+                       kind=time_precision )
 
       ! Figure out what units Time is in so dtwrite can be set correctly
       select case ( time( 1:index ( time, ' ' ) ) )
       case ( "hours" )
-        multiplier = sec_per_hr
+        multiplier = real( sec_per_hr )
+
       case ( "minutes" )
-        multiplier = sec_per_min
+        multiplier = real( sec_per_min )
+
       case ( "seconds" )
         multiplier = 1.
+
       case default
         l_error = .true.
         return
+
       end select
 
       ierr = nf90_get_var( ncid=ncf%iounit, varid=ncf%TimeVarId, & ! In

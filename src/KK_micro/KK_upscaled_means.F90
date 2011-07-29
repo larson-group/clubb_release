@@ -361,11 +361,11 @@ module KK_upscaled_means
     ! parab_cyl_max_input), find the correct form of the trivariate equation to
     ! use.
 
-    if ( sigma_x1 <= x1_tol .or. abs( s_cc ) > parab_cyl_max_input ) then
+    if ( sigma_x1 <= x1_tol .or. abs( s_cc ) > dble( parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of s is 0.
 
-       if ( mu_x1 <= 0.0 ) then
+       if ( mu_x1 <= 0.0d0 ) then
 
           ! There is all clear air in the ith component ( s <= 0 everywhere ).
           trivar_NLL_mean_eq  &
@@ -515,11 +515,11 @@ module KK_upscaled_means
     ! parab_cyl_max_input), find the correct form of the bivariate equation to
     ! use.
 
-    if ( sigma_x1 <= x1_tol .or. abs( s_c ) > parab_cyl_max_input ) then
+    if ( sigma_x1 <= x1_tol .or. abs( s_c ) > dble( parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of s is 0.
 
-       if ( mu_x1 > 0.0 ) then
+       if ( mu_x1 > 0.0d0 ) then
 
           ! There is all cloudy air in the ith component ( s > 0 everywhere ).
           bivar_NL_mean_eq  &

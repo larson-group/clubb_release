@@ -788,7 +788,7 @@ module advance_wp2_wp3_module
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
-      call stat_begin_update( iwp2_pd, real( wp2 / dt ), zm )
+      call stat_begin_update( iwp2_pd, wp2 / real( dt ), zm )
     endif
 
     if ( l_hole_fill .and. any( wp2 < w_tol_sqd ) ) then
@@ -808,7 +808,7 @@ module advance_wp2_wp3_module
 
     if ( l_stats_samp ) then
       ! Store updated value for effect of the positive definite scheme
-      call stat_end_update( iwp2_pd, real( wp2 / dt ), zm )
+      call stat_end_update( iwp2_pd, wp2 / real( dt ), zm )
     endif
 
 
@@ -1289,7 +1289,7 @@ module advance_wp2_wp3_module
 
       ! LHS time tendency.
       lhs(m_k_mdiag,k_wp2) & 
-      = real( + 1.0 / dt )
+      = + 1.0 / real( dt )
 
       ! LHS mean advection (ma) term.
       lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
@@ -1480,7 +1480,7 @@ module advance_wp2_wp3_module
 
       ! LHS time tendency.
       lhs(t_k_tdiag,k_wp3) & 
-      = real( + 1.0 / dt )
+      =  + 1.0 / real( dt )
 
       ! LHS mean advection (ma) term.
       lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
@@ -2655,7 +2655,7 @@ module advance_wp2_wp3_module
 
       ! RHS time tendency.
       rhs(k_wp2) & 
-      = real( + ( 1.0 / dt ) * wp2(k) )
+      = + ( 1.0 / real( dt ) ) * wp2(k)
 
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
       rhs(k_wp2) & 
@@ -2807,7 +2807,7 @@ module advance_wp2_wp3_module
 
       ! RHS time tendency.
       rhs(k_wp3) = & 
-      real( + ( 1.0 / dt ) * wp3(k) )
+      + ( 1.0 / real( dt ) * wp3(k) )
 
       ! RHS turbulent advection (ta) and turbulent production (tp) terms.
 !     rhs(k_wp3)  & 

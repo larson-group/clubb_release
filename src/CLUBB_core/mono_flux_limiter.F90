@@ -448,8 +448,8 @@ module mono_flux_limiter
 
 
     if ( l_stats_samp ) then
-       call stat_begin_update( iwpxp_mfl, real( wpxp / dt ), zm )
-       call stat_begin_update( ixm_mfl, real( xm / dt ), zt )
+       call stat_begin_update( iwpxp_mfl, wpxp / real( dt ), zm )
+       call stat_begin_update( ixm_mfl, xm / real( dt ), zt )
     endif
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
        call stat_update_var( ithlm_enter_mfl, xm, zt )
@@ -517,7 +517,7 @@ module mono_flux_limiter
        ! Find the value of xm without the contribution from the turbulent
        ! advection term.
        ! Note:  the contribution of xm_forcing at level gr%nnzp should be 0.
-       xm_without_ta(k) = real( xm_old(k) + dt*xm_forcing(k) + dt*m_adv_term )
+       xm_without_ta(k) = xm_old(k) + real( dt )*xm_forcing(k) + real( dt )*m_adv_term
 
        ! Find the minimum usuable value of variable x at each vertical level.
        ! Since variable x must be one of theta_l, r_t, or a scalar, all of
@@ -559,17 +559,17 @@ module mono_flux_limiter
 
        ! Find the upper limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_max(k)  &
-       = real( invrs_rho_ds_zm(k)  &
-                  * (   ( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )  &
+       = invrs_rho_ds_zm(k)  &
+                  * (   ( rho_ds_zt(k) / (real( dt )*gr%invrs_dzt(k)) )  &
                         * ( xm_without_ta(k) - min_x_allowable(k) )  &
-                      + rho_ds_zm(km1) * wpxp(km1)  )           )
+                      + rho_ds_zm(km1) * wpxp(km1)  )
 
        ! Find the lower limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_min(k)  &
-       = real( invrs_rho_ds_zm(k)  &
-                  * (   ( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )  &
+       = invrs_rho_ds_zm(k)  &
+                  * (   ( rho_ds_zt(k) / (real( dt )*gr%invrs_dzt(k)) )  &
                         * ( xm_without_ta(k) - max_x_allowable(k) )  &
-                      + rho_ds_zm(km1) * wpxp(km1)  )           )
+                      + rho_ds_zm(km1) * wpxp(km1)  )
 
        if ( wpxp(k) > wpxp_mfl_max(k) ) then
 
@@ -737,7 +737,7 @@ module mono_flux_limiter
              ! rate of change multiplied by the time step length.  Add the
              ! product to xm to find the new xm resulting from the monotonic
              ! flux limiter.
-             xm(k) = real( xm(k) + dxm_dt_mfl_adjust(k) * dt )
+             xm(k) = xm(k) + dxm_dt_mfl_adjust(k) * real( dt )
 
           enddo
 
@@ -752,7 +752,7 @@ module mono_flux_limiter
        !enddo
 
        !Ensure there are no spikes at the top of the domain
-       if (abs((xm(gr%nnzp) - xm_enter_mfl(gr%nnzp))) > 10 * xm_tol) then
+       if (abs( xm(gr%nnzp) - xm_enter_mfl(gr%nnzp) ) > 10. * xm_tol) then
           dz = gr%zm(gr%nnzp) - gr%zm(gr%nnzp - 1)
 
           xm_density_weighted = rho_ds_zt(gr%nnzp) &
@@ -784,7 +784,7 @@ module mono_flux_limiter
              endif
 
              !Apply the adjustment
-             xm = xm * (1 + xm_adj_coef)
+             xm = xm * (1. + xm_adj_coef)
 
              !Remove the spike at the top of the domain
              xm(gr%nnzp) = xm_enter_mfl(gr%nnzp)
@@ -811,9 +811,9 @@ module mono_flux_limiter
 
     if ( l_stats_samp ) then
 
-       call stat_end_update( iwpxp_mfl, real( wpxp / dt ), zm )
+       call stat_end_update( iwpxp_mfl, wpxp / real( dt ), zm )
 
-       call stat_end_update( ixm_mfl, real( xm / dt ), zt )
+       call stat_end_update( ixm_mfl, xm / real( dt ), zt )
 
        if ( solve_type == mono_flux_thlm ) then
           call stat_update_var( ithlm_exit_mfl, xm, zt )
@@ -910,7 +910,7 @@ module mono_flux_limiter
 
        ! LHS xm time tendency.
        lhs(k_tdiag,k) &
-       = real( lhs(k_tdiag,k) + 1.0 / dt )
+       = lhs(k_tdiag,k) + 1.0 / real( dt )
 
     enddo ! xm loop: 2..gr%nnzp
 
@@ -982,7 +982,7 @@ module mono_flux_limiter
        km1 = max( k-1, 1 )
 
        ! RHS xm time tendency.
-       rhs(k) = real( rhs(k) + xm_old(k) / dt )
+       rhs(k) = rhs(k) + xm_old(k) / real( dt )
 
        ! RHS xm turbulent advection (ta) term.
        ! Note:  Normally, the turbulent advection (ta) term is treated
@@ -1291,7 +1291,7 @@ module mono_flux_limiter
           j = k - 1
 
           ! Initialize the overall delta t counter to 0.
-          dt_all_grid_levs = 0.0
+          dt_all_grid_levs = 0.0_time_precision
 
           do ! loop downwards until answer is found.
 
@@ -1300,7 +1300,8 @@ module mono_flux_limiter
 
                 ! Compute the amount of time it takes to travel one grid level
                 ! upwards:  delta_t = delta_z / vert_vel_up.
-                dt_one_grid_lev = (1.0/gr%invrs_dzm(j)) / vert_vel_up(j)
+                dt_one_grid_lev = real( (1.0/gr%invrs_dzm(j)) / vert_vel_up(j), &
+                                        kind=time_precision )
 
                 ! Total time elapsed for crossing all grid levels that have been
                 ! passed, thus far.
@@ -1364,7 +1365,7 @@ module mono_flux_limiter
           j = k + 1
 
           ! Initialize the overall delta t counter to 0.
-          dt_all_grid_levs = 0.0
+          dt_all_grid_levs = 0.0_time_precision
 
           do ! loop upwards until answer is found.
 
@@ -1377,11 +1378,12 @@ module mono_flux_limiter
                 !        distance traveled is downwards.  Since vert_vel_down
                 !        has a negative value, dt_one_grid_lev will be a
                 !        positive value.
-                dt_one_grid_lev = -(1.0/gr%invrs_dzm(j-1)) / vert_vel_down(j-1)
+                dt_one_grid_lev = real( -(1.0/gr%invrs_dzm(j-1)) / vert_vel_down(j-1), &
+                                        kind=time_precision )
 
                 ! Total time elapsed for crossing all grid levels that have been
                 ! passed, thus far.
-                dt_all_grid_levs = dt_all_grid_levs + dt_one_grid_lev
+                dt_all_grid_levs = real( dt_all_grid_levs + dt_one_grid_lev, kind=time_precision )
 
                 ! Stop if has taken more than one model time step (overall) to
                 ! travel the entire extent of the current vertical grid level.
@@ -1715,13 +1717,13 @@ module mono_flux_limiter
 
 
        ! Contributions from the 1st normal distribution.
-       if ( w1(k) + 3*sigma_w1 <= w_ref ) then
+       if ( w1(k) + 3.*sigma_w1 <= w_ref ) then
 
           ! The entire 1st normal is on the negative side of w|_ref.
           mean_w_down_1st = w1(k)
           mean_w_up_1st   = 0.0
 
-       elseif ( w1(k) - 3*sigma_w1 >= w_ref ) then
+       elseif ( w1(k) - 3.*sigma_w1 >= w_ref ) then
 
           ! The entire 1st normal is on the positive side of w|_ref.
           mean_w_down_1st = 0.0
@@ -1762,13 +1764,13 @@ module mono_flux_limiter
 
 
        ! Contributions from the 2nd normal distribution.
-       if ( w2(k) + 3*sigma_w2 <= w_ref ) then
+       if ( w2(k) + 3.*sigma_w2 <= w_ref ) then
 
           ! The entire 2nd normal is on the negative side of w|_ref.
           mean_w_down_2nd = w2(k)
           mean_w_up_2nd   = 0.0
 
-       elseif ( w2(k) - 3*sigma_w2 >= w_ref ) then
+       elseif ( w2(k) - 3.*sigma_w2 >= w_ref ) then
 
           ! The entire 2nd normal is on the positive side of w|_ref.
           mean_w_down_2nd = 0.0

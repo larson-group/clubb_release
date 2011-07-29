@@ -345,7 +345,7 @@ module stat_file_utils
     = stat_file_average( filename, nz, &
                          t(1), t(2), out_heights, variable_name, &
                          npower, l_spec_bound_cond, l_error )  & 
-          * ( t(2) - t(1) )
+          * real( t(2) - t(1) )
 
     divisor = t(2) - t(1)
 
@@ -357,7 +357,7 @@ module stat_file_utils
                                t(i), t(i+1), out_heights, variable_name, &
                                npower, l_spec_bound_cond, l_error )
       stat_file_average_interval  & 
-      = stat_file_average_interval + stat_file_temp * ( t(i+1) - t(i) )
+        = stat_file_average_interval + stat_file_temp * real( t(i+1) - t(i) )
       divisor = divisor + ( t(i+1) - t(i) )
     end do
 

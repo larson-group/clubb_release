@@ -419,12 +419,12 @@ module clubb_driver
 
     sfc_elevation = 0.
 
-    time_initial = 0.
-    time_final   = 3600.
-    time_spinup  = 0.
+    time_initial = 0._time_precision
+    time_final   = 3600._time_precision
+    time_spinup  = 0._time_precision
 
-    dtmain    = 30.
-    dtclosure = 30.
+    dtmain    = 30._time_precision
+    dtclosure = 30._time_precision
 
     sfctype  = 0
     T_sfc     = 288.
@@ -463,7 +463,7 @@ module clubb_driver
     l_restart      = .false.
     l_input_fields  = .false.
     restart_path_case = "none"
-    time_restart  = 0.
+    time_restart  = 0._time_precision
     debug_level   = 2
 
     saturation_formula = "flatau" ! Flatau polynomial approx.
@@ -484,8 +484,8 @@ module clubb_driver
     l_stats       = .false.
     fname_prefix = ''
     stats_fmt    = ''
-    stats_tsamp  = 0.
-    stats_tout   = 0.
+    stats_tsamp  = 0._time_precision
+    stats_tout   = 0._time_precision
 
     ! Figure out which I/O unit to use for OpenMP runs
 #ifdef _OPENMP
@@ -833,7 +833,7 @@ module clubb_driver
 
       ! Ensure that iteration num, iinit, is an integer, so that model time is
       !   incremented correctly by iteration number at end of timestep
-      if ( mod( (time_restart-time_initial) , dtmain ) /= 0 ) then
+      if ( mod( (time_restart-time_initial) , dtmain ) /= 0._time_precision ) then
 
         write(fstderr,*) "Error: (time_restart-time_initial) ",  & 
           "is not a multiple of dtmain."
@@ -1056,10 +1056,10 @@ module clubb_driver
         ! A host model, e.g. WRF, would advance time outside
         ! of advance_clubb_core.  Vince Larson 7 Feb 2006
         if ( i1 < niterlong ) then
-          time_current = time_initial + (i-1) * dtmain  & 
-                       + i1 * dtclosure
+          time_current = time_initial + real( i-1, kind=time_precision ) * dtmain  & 
+                       + real( i1, kind=time_precision ) * dtclosure
         else if ( i1 == niterlong ) then
-          time_current = time_initial + i * dtmain
+          time_current = time_initial + real( i, kind=time_precision ) * dtmain
         end if
 
         ! This was moved from above to be less confusing to the user,
@@ -1481,7 +1481,7 @@ module clubb_driver
       ! ASTEX_A209 case 16 Jul, 2010 kcwhite
     case ( "astex_a209" )
 
-      cloud_top_height = 700
+      cloud_top_height = 700.
       em_max = 1.0
 
       do k=1,gr%nnzp
@@ -1717,7 +1717,7 @@ module clubb_driver
       em_max = 0.5
       do k=1,gr%nnzp
         if ( gr%zm(k) < cloud_top_height ) then
-          em(k) = em_max * (1 - (gr%zm(k)/cloud_top_height))
+          em(k) = em_max * (1. - (gr%zm(k)/cloud_top_height))
         else
           em(k) = em_min
         end if
@@ -3172,7 +3172,7 @@ module clubb_driver
       ! for the Jun. 25 Altocumulus case.
 
       ! Ensure ustar is set
-      ustar = 0
+      ustar = 0.
 
       ! Read in time dependent inputs
       call jun25_altocu_read_t_dependent( time_current, & ! Intent(in)
@@ -3189,7 +3189,7 @@ module clubb_driver
       ! for the CLEX-9: Nov. 02 Altocumulus case.
 
       ! Ensure ustar is set
-      ustar = 0
+      ustar = 0.
 
       ! Read in time dependent inputs
       call clex9_nov02_read_t_dependent( time_current, & ! Intent(in)
@@ -3200,7 +3200,7 @@ module clubb_driver
       ! for the CLEX-9: Oct. 14 Altocumulus case.
 
       ! Ensure ustar is set.
-      ustar = 0
+      ustar = 0.
 
       ! Read in time dependent inputs
       call clex9_oct14_read_t_dependent( time_current, & ! Intent(in)
@@ -3217,7 +3217,7 @@ module clubb_driver
       ! for the Nov. 11 Altocumulus case.
 
       ! Ensure ustar is set
-      ustar = 0
+      ustar = 0.
 
       ! However, the Nov. 11 Altocumulus case has a one-time adjustment
       ! of rtm at t=3600s after the start of the simulation.
@@ -3822,7 +3822,7 @@ module clubb_driver
           i = 1
         end if
         if ( i /= -1 ) then
-          amu0 = cos_solar_zen_values(i)
+          amu0 = dble( cos_solar_zen_values(i) )
         else
           write(fstderr,*) "Time not found in cos_solar_zen_times"
           stop "Critical error."
@@ -3833,7 +3833,7 @@ module clubb_driver
 
       end if ! l_fix_cos_solar_zen
     else
-      amu0 = 0.0 ! This should disable shortwave radiation
+      amu0 = 0.d0 ! This should disable shortwave radiation
 
     end if ! l_sw_radiation
 

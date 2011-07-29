@@ -157,11 +157,11 @@ module clip_explicit
       
       if ( wprtp_cl_num == 2 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
+        call stat_modify( iwprtp_bt,  -wprtp / real( dt ),  & ! intent(in)
                           zm )                               ! intent(inout)
       elseif ( wprtp_cl_num == 3 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
+        call stat_modify( iwprtp_bt, -wprtp / real( dt ),  & ! intent(in)
                           zm )                               ! intent(inout)
       endif
     endif
@@ -186,11 +186,11 @@ module clip_explicit
     if ( l_stats_samp ) then
       if ( wprtp_cl_num == 1 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
+        call stat_modify( iwprtp_bt,  wprtp / real( dt ),  & ! intent(in)
                           zm )                              ! intent(inout)
       elseif ( wprtp_cl_num == 2 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
+        call stat_modify( iwprtp_bt, wprtp / real( dt ),  & ! intent(in)
                           zm )                              ! intent(inout)
       ! if wprtp_cl_num == 3 do nothing since
       ! iwprtp_bt stat_end_update is called outside of this method
@@ -226,11 +226,11 @@ module clip_explicit
       
       if ( wpthlp_cl_num == 2 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, -wpthlp / real( dt ),  & ! intent(in)
                           zm )                                 ! intent(inout)
       elseif ( wpthlp_cl_num == 3 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, -wpthlp / real( dt ),  & ! intent(in)
                           zm )                                 ! intent(inout)
       endif
     endif
@@ -256,11 +256,11 @@ module clip_explicit
     if ( l_stats_samp ) then
       if ( wpthlp_cl_num == 1 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, wpthlp / real( dt ),  & ! intent(in)
                           zm )                                ! intent(inout)
       elseif ( wpthlp_cl_num == 2 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, wpthlp / real( dt ),  & ! intent(in)
                           zm )                                ! intent(inout)
                           
       ! if wpthlp_cl_num == 3 do nothing since
@@ -512,9 +512,9 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( l_first_clip_ts ) then
-        call stat_begin_update( ixpyp_cl, real( xpyp / dt ), zm )
+        call stat_begin_update( ixpyp_cl, xpyp / real( dt ), zm )
       else
-        call stat_modify( ixpyp_cl, real( -xpyp / dt ), zm )
+        call stat_modify( ixpyp_cl, -xpyp / real( dt ), zm )
       endif
     endif
 
@@ -560,9 +560,9 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( l_last_clip_ts ) then
-        call stat_end_update( ixpyp_cl, real( xpyp / dt ), zm )
+        call stat_end_update( ixpyp_cl, xpyp / real( dt ), zm )
       else
-        call stat_modify( ixpyp_cl, real( xpyp / dt ), zm )
+        call stat_modify( ixpyp_cl, xpyp / real( dt ), zm )
       endif
     endif
 
@@ -650,7 +650,7 @@ module clip_explicit
 
 
     if ( l_stats_samp ) then
-      call stat_begin_update( ixp2_cl, real( xp2 / dt ), zm )
+      call stat_begin_update( ixp2_cl, xp2 / real( dt ), zm )
     endif
 
     ! Limit the value of x'^2 at threshold.
@@ -666,7 +666,7 @@ module clip_explicit
     enddo
 
     if ( l_stats_samp ) then
-      call stat_end_update( ixp2_cl, real( xp2 / dt ), zm )
+      call stat_end_update( ixp2_cl, xp2 / real( dt ), zm )
     endif
 
 
@@ -752,13 +752,13 @@ module clip_explicit
     ! ---- Begin Code ----
 
     if ( l_stats_samp ) then
-      call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
+      call stat_begin_update( iwp3_cl, wp3 / real( dt ), zt )
     endif
 
     call clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
 
     if ( l_stats_samp ) then
-      call stat_end_update( iwp3_cl, real( wp3 / dt ), zt )
+      call stat_end_update( iwp3_cl, wp3 / real( dt ), zt )
     endif
 
     return

@@ -287,7 +287,7 @@ program jacobian
     do j = 1, nvarzt
       impact_matrix(i, j) =  & 
       sum(  var2zt%value(1:nzt,j) - var1zt%value(1:nzt,j) ) & 
-      / nzt
+      / real( nzt )
 
       fc_impact_matrix(i, j) =  & 
       sum(  var2zt%value(1:nzt, j) - var1zt%value(1:nzt, j) ) & 
@@ -302,7 +302,7 @@ program jacobian
     do j = 1, nvarzm
       impact_matrix(i, j+nvarzt)  & 
       = sum( var2zm%value(1:nzm, j) - var1zm%value(1:nzm, j) ) & 
-      / nzm
+      / real( nzm )
 
       fc_impact_matrix(i, j+nvarzt)  & 
       = sum( var2zm%value(1:nzm, j) - var1zm%value(1:nzm, j) ) & 

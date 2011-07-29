@@ -205,6 +205,9 @@ module microphys_driver
 
     use gfdl_activation, only: Loading ! Procedure
 
+    use stats_precision, only:  & 
+        time_precision ! Variable(s)
+
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
       setup_corr_varnce_array   ! Procedure(s)
@@ -492,7 +495,7 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for all microphysics schemes
     !---------------------------------------------------------------------------
-    microphys_start_time = 0.0 ! [s]
+    microphys_start_time = 0.0_time_precision ! [s]
 
     l_in_cloud_Nc_diff = .false. ! Don't use in cloud values of Nc for diffusion
 
@@ -1282,7 +1285,7 @@ module microphys_driver
 
     ! ---- Begin code ----
 
-    Ndrop_max = 0
+    Ndrop_max = 0.
     ! Set the value of the aerosol mass array to a constant
     aeromass = aeromass_value
 
@@ -1317,7 +1320,7 @@ module microphys_driver
 
     ! Start Ncm budget to capture Ncm_act term
     if( l_stats_samp ) then
-      call stat_begin_update( iNcm_bt, real( hydromet(:, iiNcm) / dt ), zt )
+      call stat_begin_update( iNcm_bt, hydromet(:, iiNcm) / real( dt ), zt )
     end if
     
     ! Call GFDL activation code
@@ -1329,10 +1332,10 @@ module microphys_driver
 
         ! Save the initial Ncm value for the Ncm_act term
         if( l_stats_samp ) then
-          call stat_begin_update( iNcm_act, real( hydromet(:, iiNcm) / dt ), zt )
+          call stat_begin_update( iNcm_act, hydromet(:, iiNcm) / real( dt ), zt )
         end if
 
-        call aer_act_clubb_quadrature_Gauss( aeromass, T_in_K, Ndrop_max)
+        call aer_act_clubb_quadrature_Gauss( aeromass, T_in_K, Ndrop_max )
 
         ! Convert to #/kg
         Ndrop_max = Ndrop_max * cm3_per_m3 / rho
@@ -1358,7 +1361,7 @@ module microphys_driver
 
         ! Update the Ncm_act term
         if( l_stats_samp ) then
-          call stat_end_update( iNcm_act, real( hydromet(:,iiNcm) / dt ), zt )
+          call stat_end_update( iNcm_act, hydromet(:,iiNcm) / real( dt ), zt )
         end if
 
       else
@@ -1732,8 +1735,8 @@ module microphys_driver
           ! that is calculated before microphysics is called.  The stat_begin_update
           ! subroutine is called prior to the GFDL activation code, so we can't call
           ! it here again. -meyern
-          if(ixrm_bt /= iNcm_bt) then
-            call stat_begin_update( ixrm_bt, real( hydromet(:,i) / dt ), zt )
+          if ( ixrm_bt /= iNcm_bt ) then
+            call stat_begin_update( ixrm_bt, hydromet(:,i) / real( dt ), zt )
           end if
 
         end if
@@ -1856,7 +1859,7 @@ module microphys_driver
         if ( l_stats_samp ) then
 
           call stat_begin_update & 
-             ( ixrm_cl, real( hydromet(:,i) / dt ), zt )
+             ( ixrm_cl, hydromet(:,i) / real( dt ), zt )
 
         end if
 
@@ -1935,10 +1938,10 @@ module microphys_driver
         if ( l_stats_samp ) then
 
           ! Effects of clipping
-          call stat_end_update( ixrm_cl, real( hydromet(:,i) / dt ), zt )
+          call stat_end_update( ixrm_cl, hydromet(:,i) / real( dt ), zt )
 
           ! Total time tendency
-          call stat_end_update( ixrm_bt, real(hydromet(:,i) / dt), zt )
+          call stat_end_update( ixrm_bt, hydromet(:,i) / real( dt ), zt )
 
         end if ! l_stats_samp
 
@@ -1972,7 +1975,7 @@ module microphys_driver
          ( hydromet(:,iirrainm)  & 
            * zm2zt( abs( hydromet_vel(:,iirrainm) ) ) ) & 
            * ( rho / rho_lw ) & 
-           * real( sec_per_day * 1000.0 ), zt )
+           * real( sec_per_day ) * 1000.0, zt )
 
       ! Precipitation Flux (W/m^2) should be defined on
       ! momentum levels.  -Brian
@@ -1992,7 +1995,7 @@ module microphys_driver
            ( hydromet(2,iirrainm) & 
              * abs( zm2zt( hydromet_vel(:,iirrainm), 2 ) ) ) & 
              * ( rho(2) / rho_lw ) & 
-             * real( sec_per_day * 1000.0 ), sfc )
+             * real( sec_per_day ) * 1000.0, sfc )
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
            ( zt2zm( hydromet(:,iirrainm), 1 )  & 
@@ -2212,14 +2215,14 @@ module microphys_driver
 
     ! RHS of equation, following Brian's method from the rain subroutine
     rhs(2:gr%nnzp-1)  & 
-      = real((xrm(2:gr%nnzp-1) / dt )  & ! Time tendency
+      = (xrm(2:gr%nnzp-1) / real( dt )  & ! Time tendency
       + xrm_tndcy(2:gr%nnzp-1))
 
 
     ! Boundary condition on the RHS
-    rhs(1) = real( xrm(1) / dt )
+    rhs(1) = xrm(1) / real( dt )
     rhs(gr%nnzp) =  & 
-       real( ( xrm(gr%nnzp) / dt ) + xrm_tndcy(gr%nnzp) )
+       ( xrm(gr%nnzp) / real( dt ) + xrm_tndcy(gr%nnzp) )
 
 
     ! Solve system using tridag_solve. This uses LAPACK sgtsv,
@@ -2467,7 +2470,7 @@ module microphys_driver
       ! Main diagonal
 
       ! LHS time tendency.
-      lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+      lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0 / real( dt ) )
 
 
       ! All diagonals
@@ -2600,7 +2603,7 @@ module microphys_driver
     !        variables referenced at the km1 level don't factor into the equation.
 
     ! LHS time tendency at the lower boundary.
-    lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+    lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0 / real( dt ) )
 
     ! LHS eddy-diffusion term at the lower boundary.
     lhs(kp1_tdiag:km1_tdiag,k) &
@@ -2646,7 +2649,7 @@ module microphys_driver
     km1 = max( k-1, 1 )
 
     ! LHS time tendency at the upper boundary.
-    lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+    lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0 / real( dt ) )
 
     ! LHS eddy-diffusion term at the upper boundary.
     lhs(kp1_tdiag:km1_tdiag,k) &
@@ -3275,14 +3278,14 @@ module microphys_driver
     tot_tndcy = trnsprt_sed_tndcy + xrm_tndcy(k)
 
     ! The net amount of change in the hydrometeor over the last timestep.
-    xrm_chge = real( tot_tndcy * dt )
+    xrm_chge = tot_tndcy * real( dt )
 
     ! The value of xrm at the previous timestep.
     xrm_old = xrm(k) - xrm_chge
 
     ! The net amount of change in the hydrometeor due to only the transport
     ! (mean advection and diffusion) and sedimentation terms.
-    xrm_chge_trsed = real( trnsprt_sed_tndcy * dt )
+    xrm_chge_trsed = trnsprt_sed_tndcy * real( dt )
 
     ! The new value of the hydrometeor at this timestep due to only
     ! the transport and sedimentation terms.
@@ -3303,7 +3306,7 @@ module microphys_driver
       ! positive.  This rate should also be the difference between the
       ! computed evaporation rate (xrm_tndcy) and the actual evaporation rate
       ! (evap_rate).
-      overevap_rate = real( overevap_amt / dt )
+      overevap_rate = overevap_amt / real( dt )
       ! Reset the value of the hydrometeor (xrm) to 0.
       xrm(k) = 0.0
     else
@@ -3319,7 +3322,7 @@ module microphys_driver
       ! The amount of the hydrometeor that was artificially excessively
       ! evaporated.  Define as positive.  In this case, any evaporation that
       ! was computed is considered to be over-evaporation.
-      overevap_amt = real( -xrm_tndcy(k) * dt )
+      overevap_amt = -xrm_tndcy(k) * real( dt )
       overevap_rate = -xrm_tndcy(k)
       ! Currently reset xrm to xrm_trsed_only.  This is done to make the
       ! statistical budget for xrm balance correctly.  The value of xrm(k)

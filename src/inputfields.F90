@@ -2139,8 +2139,8 @@ module inputfields
       print *, "GrADS file output time interval [s]: ",  & 
                fread_var%dtwrite
 
-      if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8 ) .or.  & 
-           ( mod( delta_time, fread_var%dtwrite ) < -1e-8 ) ) then
+      if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8_time_precision ) .or.  & 
+           ( mod( delta_time, fread_var%dtwrite ) < -1e-8_time_precision ) ) then
         write(fstderr,*) "Error: Elapsed time is not a multiple ", & 
                 "of the reference GrADS output time interval."
         write(fstderr,*) "Elapsed time [s] = ", delta_time
@@ -2148,8 +2148,8 @@ module inputfields
         stop
       end if
 
-      if ( mod( delta_time , sec_per_min ) > 1e-8 & 
-            .or. mod( delta_time, sec_per_min ) < -1e-8 ) then
+      if ( mod( delta_time , sec_per_min ) > 1e-8_time_precision & 
+            .or. mod( delta_time, sec_per_min ) < -1e-8_time_precision ) then
         write(fstderr,*) "Error: Elapsed time is not a multiple ", & 
                 "of one minute."
         write(fstderr,*) "Elapsed time [s] = ", delta_time
@@ -2171,8 +2171,8 @@ module inputfields
       ! Print the actual record being recalled.
       ! Joshua Fasching March 2008
       print *, "Nearest GrADS output time iteration [ ]: ", & 
-               nint( nearest_timestep /  & 
-                     (fread_var%dtwrite/sec_per_min) ) - 1
+               nint( real( nearest_timestep, kind=time_precision ) /  & 
+                     fread_var%dtwrite/sec_per_min ) - 1
     end if ! l_restart
 
     if ( l_grads_file ) then

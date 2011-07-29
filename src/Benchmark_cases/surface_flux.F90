@@ -81,7 +81,7 @@ module surface_flux
   end function compute_ubar
   
 !===============================================================================
-  subroutine compute_ht_mostr_flux( time, ntimes, &
+  subroutine compute_ht_mostr_flux( time_in, ntimes, &
                                     heat_flx, moisture_flx )
 
 !
@@ -100,7 +100,8 @@ module surface_flux
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
-      time     ! Current time        [s]
+      time_in    ! Current time simulation time [s]
+
     integer, intent(in) :: &
       ntimes
 
@@ -113,15 +114,18 @@ module surface_flux
     integer :: &
       i1, &
       i2
+
     real ::  & 
-      time_frac
+      time_frac, time
 
 !---------------------BEGIN CODE-------------------------
 
     ! Default Initialization
     heat_flx = 0.0
     moisture_flx = 0.0
-    
+   
+    time = real( time_in ) 
+
     ! Compute heat and moisture fluxes from ARM data in (W/m2)
     if ( time <= time_sfc_given(1) ) then
       heat_flx     = sens_ht_given(1)

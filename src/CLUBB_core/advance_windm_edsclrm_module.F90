@@ -303,8 +303,8 @@ module advance_windm_edsclrm_module
 
     if ( uv_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( ium_sdmp, real( um/dt ), zt )
-        call stat_begin_update( ivm_sdmp, real( vm/dt ), zt )
+        call stat_begin_update( ium_sdmp, um/real( dt ), zt )
+        call stat_begin_update( ivm_sdmp, vm/real( dt ), zt )
       endif
 
       um(1:gr%nnzp) = sponge_damp_xm( dt, um_ref(1:gr%nnzp), um(1:gr%nnzp), &
@@ -312,8 +312,8 @@ module advance_windm_edsclrm_module
       vm(1:gr%nnzp) = sponge_damp_xm( dt, vm_ref(1:gr%nnzp), vm(1:gr%nnzp), &
                                       uv_sponge_damp_profile )
       if( l_stats_samp ) then
-        call stat_end_update( ium_sdmp, real( um/dt ), zt )
-        call stat_end_update( ivm_sdmp, real( vm/dt ), zt )
+        call stat_end_update( ium_sdmp, um/real( dt ), zt )
+        call stat_end_update( ivm_sdmp, vm/real( dt ), zt )
       endif
 
     endif
@@ -335,23 +335,25 @@ module advance_windm_edsclrm_module
 
       ! Reflect nudging in budget
       if( l_stats_samp ) then
-        call stat_begin_update( ium_ndg, real(um / dt), &         ! Intent(in)
+        call stat_begin_update( ium_ndg, um / real( dt ), &         ! Intent(in)
                                 zt )                              ! Intent(inout)
-        call stat_begin_update( ivm_ndg, real(vm / dt), &         ! Intent(in)
+        call stat_begin_update( ivm_ndg, vm / real( dt ), &         ! Intent(in)
                                 zt )                              ! Intent(inout)
       end if
       
-      um(1:gr%nnzp) = real( um(1:gr%nnzp) - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
-      vm(1:gr%nnzp) = real( vm(1:gr%nnzp) - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
+      um(1:gr%nnzp) = um(1:gr%nnzp) &
+        - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (real( dt )/ts_nudge))
+      vm(1:gr%nnzp) = vm(1:gr%nnzp) &
+        - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (real( dt )/ts_nudge))
     endif
 
     if( l_stats_samp ) then
 
       ! Reflect nudging in budget
       if ( l_uv_nudge ) then
-        call stat_end_update( ium_ndg, real(um / dt), &         ! Intent(in)
+        call stat_end_update( ium_ndg, um / real( dt ), &         ! Intent(in)
                               zt )                              ! Intent(inout)
-        call stat_end_update( ivm_ndg, real(vm / dt), &         ! Intent(in)
+        call stat_end_update( ivm_ndg, vm / real( dt ), &         ! Intent(in)
                               zt )                              ! Intent(inout)
       end if
       
@@ -1514,7 +1516,7 @@ module advance_windm_edsclrm_module
 
       ! LHS time tendency.
       lhs(k_tdiag,k)  &
-      = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
+      = lhs(k_tdiag,k) + 1.0 / real( dt )
 
       if ( l_stats_samp ) then
 
@@ -1726,7 +1728,7 @@ module advance_windm_edsclrm_module
       rhs(k) = rhs(k) + xm_tndcy(k)
 
       ! RHS time tendency
-      rhs(k) = real( rhs(k) + ( 1.0 / dt ) * xm(k) )
+      rhs(k) = rhs(k) + 1.0 / real ( dt ) * xm(k)
 
       if ( l_stats_samp ) then
 
@@ -1745,7 +1747,7 @@ module advance_windm_edsclrm_module
 
       endif  ! l_stats_samp
 
-    enddo
+    enddo ! 2..gr%nnzp-1
 
 
     ! Boundary Conditions
@@ -1818,7 +1820,7 @@ module advance_windm_edsclrm_module
     rhs(k) = rhs(k) + xm_tndcy(k)
 
     ! RHS time tendency term at the upper boundary.
-    rhs(k) = real( rhs(k) + ( 1.0 / dt ) * xm(k) )
+    rhs(k) = rhs(k) + 1.0 / real( dt ) * xm(k)
 
     if ( l_stats_samp ) then
 

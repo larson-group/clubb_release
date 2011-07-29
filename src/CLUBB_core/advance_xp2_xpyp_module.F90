@@ -579,7 +579,7 @@ module advance_xp2_xpyp_module
     
       ! This overwrites stats clipping data from clip_variance
       if ( l_stats_samp ) then
-        call stat_modify( irtp2_cl, real( -rtp2 / dt ), zm )
+        call stat_modify( irtp2_cl, -rtp2 / real( dt ), zm )
       endif
       
       do k = 1, gr%nnzp
@@ -590,7 +590,7 @@ module advance_xp2_xpyp_module
       end do ! k = 1..gr%nnzp
       
       if ( l_stats_samp ) then
-        call stat_modify( irtp2_cl, real( rtp2 / dt ), zm )
+        call stat_modify( irtp2_cl, rtp2 / real( dt ), zm )
       endif
       
     end if ! l_clip_large_rtp2
@@ -1044,7 +1044,7 @@ module advance_xp2_xpyp_module
 
       ! LHS time tendency.
       if ( l_iter ) then
-        lhs(k_mdiag,k) = real( lhs(k_mdiag,k) + ( 1.0 / dt ) )
+        lhs(k_mdiag,k) = lhs(k_mdiag,k) + ( 1.0 / real( dt ) )
       endif
 
       if ( l_stats_samp ) then
@@ -1645,7 +1645,7 @@ module advance_xp2_xpyp_module
 
       ! RHS time tendency.
       if ( l_iter ) then
-        rhs(k,1) = real( rhs(k,1) + 1.0/dt * xap2(k) )
+        rhs(k,1) = rhs(k,1) + 1.0/real( dt ) * xap2(k)
       endif
 
       if ( l_stats_samp ) then
@@ -2002,7 +2002,7 @@ module advance_xp2_xpyp_module
 
       ! RHS time tendency.
       if ( l_iter ) then
-        rhs(k,1) = real( rhs(k,1) + 1.0/dt * xapxbp(k) )
+        rhs(k,1) = rhs(k,1) + 1.0/real( dt ) * xapxbp(k)
       endif
 
       if ( l_stats_samp ) then
@@ -3035,8 +3035,8 @@ module advance_xp2_xpyp_module
                     ! * abs( Lscalep1 - Lscale ) * invrs_dzm &
                   + constant2 * abs( wp2_ztp1 - wp2_zt ) * invrs_dzm &
                     * abs( vm_high - vm_low ) / ( zt_high - zt_low ) &
-                     + ( Lscalep1 + Lscale ) * 0 &     ! This line eliminates an Intel compiler
-                )                                      ! warning that Lscalep1/Lscale are not
+                     + ( Lscalep1 + Lscale ) * 0. &     ! This line eliminates an Intel compiler
+                )                                       ! warning that Lscalep1/Lscale are not
       ! used. -meyern
     end if ! .not. l_use_experimental_term_pr2
 
@@ -3228,7 +3228,7 @@ module advance_xp2_xpyp_module
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
-      call stat_begin_update( ixp2_pd, real( xp2_np1 / dt ), &   ! Intent(in)
+      call stat_begin_update( ixp2_pd, xp2_np1 / real( dt ), &   ! Intent(in)
                               zm )                               ! Intent(inout)
     endif
 
@@ -3246,7 +3246,7 @@ module advance_xp2_xpyp_module
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
-      call stat_end_update( ixp2_pd, real( xp2_np1 / dt ), & ! Intent(in)
+      call stat_end_update( ixp2_pd, xp2_np1 / real( dt ), & ! Intent(in)
                             zm )                             ! Intent(inout)
     endif
 

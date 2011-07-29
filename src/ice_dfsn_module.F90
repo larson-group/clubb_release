@@ -79,6 +79,11 @@ module ice_dfsn_module
 
     implicit none
 
+    ! Constant Parameters
+    ! Number of ice crystals per unit volume of air    [m^{-3}]
+    ! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
+    REAL, PARAMETER:: N_i = 2000.
+
     ! Input variables
     REAL(KIND=time_precision), INTENT(IN)::  & 
       dt      ! Model timestep                                     [s]
@@ -114,10 +119,6 @@ module ice_dfsn_module
       k_u_coef,   & ! Pre-factor for fallspeed-diameter formula                  [m s^{-1}]
       q_expn,     & ! Exponential of density in fallspeed-diameter formula       []   
       n_expn        ! Exponential of diameter in fallspeed-diameter formula      []
-
-! Number of ice crystals per unit volume of air    [m^{-3}]
-! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
-    REAL, PARAMETER:: N_i = 2000
 
     INTEGER :: k
 
@@ -229,19 +230,19 @@ module ice_dfsn_module
         ! concentration yields the overall change in mixing ratio over time. !
         !--------------------------------------------------------------------!
         rcm_icedfsn(k) = - (N_i/rho(k)) & 
-           * ( 4 * (S_i(k) - 1) / Denom(k) ) & 
-           * (mass_ice_cryst(k)/a_coef)**(1/b_expn)
+           * ( 4. * (S_i(k) - 1.) / Denom(k) ) & 
+           * (mass_ice_cryst(k)/a_coef)**(1./b_expn)
 
         ! Ensure that liquid is not over-depleted
-        IF ( rcm(k) + rcm_icedfsn(k)*dt < 0.0 ) THEN
-          rcm_icedfsn(k) = real(-rcm(k)/dt)
+        IF ( rcm(k) + rcm_icedfsn(k)*real( dt ) < 0.0 ) THEN
+          rcm_icedfsn(k) = -rcm(k)/real( dt )
         END IF
 
         !---------------Brian's comment-----------------------------------!
         ! dm = (dm/dt)*(dt/dz)*dz                                         !
         ! dm = (dm/dt)*(1/u_T)*dz                                         !
         !-----------------------------------------------------------------!
-        dmass_ice_cryst(k) = ( 4 * (S_i(k) - 1) / Denom(k) ) & 
+        dmass_ice_cryst(k) = ( 4. * (S_i(k) - 1.) / Denom(k) ) & 
            * (k_u_coef**(-1.0)) * ( rho(k)**q_expn ) & 
            * ( (mass_ice_cryst(k)/a_coef)**((1.0-n_expn)/b_expn) ) & 
            * (1.0/gr%invrs_dzm(k-1))
@@ -249,7 +250,7 @@ module ice_dfsn_module
                                      + dmass_ice_cryst(k)
 
         ! Diameter of ice crystal in meters.
-        diam(k) = (mass_ice_cryst(k)/a_coef)**(1/b_expn)
+        diam(k) = (mass_ice_cryst(k)/a_coef)**(1./b_expn)
 
         ! Fallspeed of ice crystal in cm/s.
         u_T_cm(k) = 100. * k_u_coef * & 

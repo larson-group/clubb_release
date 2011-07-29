@@ -79,8 +79,8 @@ module nov11
 ! then the operation still happnens at the first timestep and
 ! only the first timestep after 3600.0 seconds.
 !-----------------------------------------------------------------------
-    if ( time >= time_initial + 3600.0  .and. & 
-         time <  time_initial + 3600.0 + dt ) then
+    if ( time >= time_initial + 3600.0_time_precision  .and. & 
+         time <  time_initial + 3600.0_time_precision + dt ) then
 
       do k = 1, gr%nnzp, 1
         if ( gr%zt(k) > ( 2687.5 + gr%zm(1) ) ) then
@@ -256,8 +256,8 @@ module nov11
 ! then the operation still happnens at the first timestep and
 ! only the first timestep after 3600.0 seconds.
 !-----------------------------------------------------------------------
-    if ( time >= time_initial + 3600.0  .and. & 
-         time <  time_initial + 3600.0 + dt ) then
+    if ( time >= time_initial + 3600.0_time_precision  .and. & 
+         time <  time_initial + 3600.0_time_precision + dt ) then
 
       do k = 1, gr%nnzp, 1
         if ( gr%zt(k) > ( 2687.5 + gr%zm(1) ) ) then
@@ -314,7 +314,7 @@ module nov11
 !-----------------------------------------------------------------------
 
     do k=2,gr%nnzp
-      if ( (time >= time_initial + 3600.0) .and. l_subs_on ) then
+      if ( (time >= time_initial + 3600.0_time_precision ) .and. l_subs_on ) then
         if ( gr%zt(k) <= zsubs(7) ) then
           nparam = 7
           call linear_interpolation( nparam, zsubs, wt1, gr%zt(k), wm_zt(k) )

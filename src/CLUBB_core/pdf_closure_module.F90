@@ -491,7 +491,7 @@ module pdf_closure_module
 
       ! We include sub-plume correlation with coeff rrtthl.
 
-      if ( varnce_rt1*varnce_thl1 > 0 .and. varnce_rt2*varnce_thl2 > 0) then
+      if ( varnce_rt1*varnce_thl1 > 0. .and. varnce_rt2*varnce_thl2 > 0. ) then
         rrtthl = ( rtpthlp - mixt_frac * ( rt1-rtm ) * ( thl1-thlm ) & 
                    - (1.-mixt_frac) * ( rt2-rtm ) * ( thl2-thlm ) ) & 
                 / ( mixt_frac*sqrt( varnce_rt1*varnce_thl1 ) &
@@ -528,7 +528,7 @@ module pdf_closure_module
           ! Sub-plume correlation, rsclrrt, between passive scalar
           !   and total water.
 
-          if ( varnce_sclr1(i)*varnce_rt1 > 0 .and. varnce_sclr2(i)*varnce_rt2 > 0 ) then
+          if ( varnce_sclr1(i)*varnce_rt1 > 0. .and. varnce_sclr2(i)*varnce_rt2 > 0. ) then
             rsclrrt(i) = ( sclrprtp(i) - mixt_frac * ( sclr1(i)-sclrm(i) ) * ( rt1-rtm )&
                          - (1.-mixt_frac) * ( sclr2(i)-sclrm(i) ) * ( rt2-rtm ) ) & 
                        / ( mixt_frac*sqrt( varnce_sclr1(i)*varnce_rt1 ) &

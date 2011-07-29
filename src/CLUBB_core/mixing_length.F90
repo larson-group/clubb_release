@@ -294,7 +294,7 @@ module mixing_length
         ! SD's beta (eqn. 8)
         beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
         ! s from Lewellen and Yoh 1993 (LY) eqn. 1
-        s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
+        s_par_j = (rt_par_j-rsl_par_j)/(1.+beta_par_j*rsl_par_j)
         rc_par_j = max( s_par_j, zero_threshold )
 
         ! theta_v of entraining parcel at grid level j.
@@ -591,7 +591,7 @@ module mixing_length
         ! SD's beta (eqn. 8)
         beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
         ! s from Lewellen and Yoh 1993 (LY) eqn. 1
-        s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
+        s_par_j = (rt_par_j-rsl_par_j)/(1.+beta_par_j*rsl_par_j)
         rc_par_j = max( s_par_j, zero_threshold )
 
         ! theta_v of the entraining parcel at grid level j.

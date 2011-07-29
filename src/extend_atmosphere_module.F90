@@ -130,34 +130,34 @@ module extend_atmosphere_module
     call read_z_profile( n_snd_var, extend_atmos_dim, sounding_profiles, p_sfc, zm_init, &
                          alt , p_in_Pa, alt_type )
 
-    extend_alt = alt
+    extend_alt = dble( alt )
 
     if ( alt_type == z_name ) then
       write(fstderr,*) "Fatal error in convert_snd2extend_atm."
       stop "Feature not implemented"
     end if
 
-    extend_pinmb = p_in_Pa/ 100.
+    extend_pinmb = dble( p_in_Pa/ 100. )
 
     ! Convert to temperature from thlm or theta
 
     call read_theta_profile( n_snd_var, extend_atmos_dim, sounding_profiles, theta_type, theta  )
-    extend_T_in_K = theta
+    extend_T_in_K = dble( theta )
 
     if( theta_type /= temperature_name ) then
       exner(1) = ( p_sfc/p0 ) ** kappa
       do i = 2, extend_atmos_dim
         exner(i) = (p_in_Pa(i)/p0) ** kappa
       end do
-      extend_T_in_K = extend_T_in_K * exner
+      extend_T_in_K = extend_T_in_K * dble( exner )
     end if
 
     ! Convert rtm to specific humidity
 
-    extend_sp_hmdty = read_x_profile( n_snd_var, extend_atmos_dim, rt_name, &
-                      sounding_profiles )
+    extend_sp_hmdty = dble( read_x_profile( n_snd_var, extend_atmos_dim, rt_name, &
+                                            sounding_profiles ) )
 
-    extend_sp_hmdty = extend_sp_hmdty / ( extend_sp_hmdty +1 )
+    extend_sp_hmdty = extend_sp_hmdty / ( extend_sp_hmdty +1.d0 )
 
     ! Read in radiation scalars sounding (currently it only holds O3)
     call read_one_dim_file( iunit, n_rad_scalars, & ! In
@@ -165,8 +165,8 @@ module extend_atmosphere_module
       rad_scalars_sounding_profile ) ! Out
 
     ! Set the array holding the values of o3l (ozone)
-    extend_o3l = read_x_profile( 1, extend_atmos_dim, ozone_name, &
-                                 rad_scalars_sounding_profile )
+    extend_o3l = dble( read_x_profile( 1, extend_atmos_dim, ozone_name, &
+                                       rad_scalars_sounding_profile ) )
 
     ! We would add the setting of new radiation scalar arrays like O3 right
     ! after this. New variable names would have to be added to input_names.
@@ -245,15 +245,15 @@ module extend_atmosphere_module
     ! Determine the bounds to use for the extended atmosphere
 
     j=1
-    do while( extend_alt(j) < zm_grid(grid_size) .and. j < extend_atmos_dim )
+    do while( extend_alt(j) < dble( zm_grid(grid_size) ) .and. j < extend_atmos_dim )
       j= j+1
     end do
 
-    if(extend_alt(j) < zm_grid(grid_size)) then
+    if ( extend_alt(j) < dble( zm_grid(grid_size) ) ) then
       stop "Extended atmosphere is below the top of the computational grid"
     end if
 
-    if( extend_alt(extend_atmos_dim) < radiation_top   ) then
+    if ( extend_alt(extend_atmos_dim) < dble( radiation_top ) ) then
       write(fstderr,*) "Atmosphere cannot be extended because extension data does ", &
                          "not reach radiation_top"
       stop
@@ -263,13 +263,13 @@ module extend_atmosphere_module
 
     if( j <= extend_atmos_dim ) then
 
-      do while( extend_alt(k) < radiation_top .and. k < extend_atmos_dim )
+      do while( extend_alt(k) < dble( radiation_top ) .and. k < extend_atmos_dim )
         k= k+1
       end do
 
       ! It is possible we could be above the specified radiation top, check
       ! and roll back if neccessary
-      if( extend_alt(k) > radiation_top) then
+      if( extend_alt(k) > dble( radiation_top ) ) then
         k= k-1
       end if
 
@@ -288,18 +288,18 @@ module extend_atmosphere_module
 
     ! Get the altitudes for a couple of key points so we can calculate a buffer
     ! size
-    zm_grid_top =  zm_grid(grid_size) !Altitude at top of normal grid
+    zm_grid_top =  dble( zm_grid(grid_size) ) !Altitude at top of normal grid
     extend_bottom = extend_alt(extend_atmos_bottom_level) !Altitude at bottom of
                                                           !extended atmos
     
     ! Determine the spacing of the lin_int_buffer, it should have no more than
     ! 10 levels.
-    dz10 = (extend_bottom - zm_grid_top) / 10
-    dz_model = zm_grid_spacing(grid_size)
-    dz = max(dz10, dz_model)
+    dz10 = (extend_bottom - zm_grid_top) / 10.d0
+    dz_model = dble( zm_grid_spacing(grid_size) )
+    dz = max( dz10, dz_model )
     ! Calculate the size of the lin_int_buffer
     buffer_size = (extend_bottom - zm_grid_top) / dz
-    lin_int_buffer_size = int(buffer_size)
+    lin_int_buffer_size = int( buffer_size )
 
     ! Calculate the dimension of the entire atmosphere
     total_atmos_dim = grid_size + lin_int_buffer_size + extend_atmos_range_size
@@ -316,9 +316,9 @@ module extend_atmosphere_module
       elseif(j > grid_size .and. j <= (grid_size + lin_int_buffer_size)) then 
         !Interpolate between the top of the computational grid and the bottom
         !of the extended altitude
-        complete_momentum(j) = real(zm_grid_top + ((extend_bottom - zm_grid_top) / & 
-                          (lin_int_buffer_size + 1)) * &
-                          (j - grid_size))
+        complete_momentum(j) = real(zm_grid_top  + (extend_bottom - zm_grid_top) )/ & 
+                          real( lin_int_buffer_size + 1 ) * &
+                          real( j - grid_size )
       elseif(i < extend_atmos_range_size) then
         !Take values from the extended atmosphere    
         complete_momentum(j) = real(extend_alt(extend_atmos_bottom_level + i))
@@ -327,8 +327,8 @@ module extend_atmosphere_module
       else
         !We should only get here for the absolute topmost point, which is a
         !linear extension
-        dz_extension = complete_momentum(j-1) - complete_momentum(j-2)
-        complete_momentum(j) = real(complete_momentum(j-1) + dz_extension)
+        dz_extension = dble( complete_momentum(j-1) - complete_momentum(j-2) )
+        complete_momentum(j) = complete_momentum(j-1) + real( dz_extension )
       endif 
     end do
     
@@ -340,7 +340,7 @@ module extend_atmosphere_module
         complete_alt(j) = zt_grid(j)
       else    
         !Linear extension above zt_grid so points are between momentum levels
-        complete_alt(j) = (complete_momentum(j - 1) + complete_momentum(j)) / 2
+        complete_alt(j) = (complete_momentum(j - 1) + complete_momentum(j)) / 2.
       endif 
     end do
 
@@ -403,20 +403,20 @@ module extend_atmosphere_module
     allocate( extend_pinmb(1:extend_atmos_dim) )
     allocate( extend_o3l(1:extend_atmos_dim) )
 
-    extend_alt = read_x_profile( nCol, extend_atmos_dim, z_name, retVars, &
-                                 atm_input_file )
+    extend_alt = dble( read_x_profile( nCol, extend_atmos_dim, z_name, retVars, &
+                                 atm_input_file ) )
 
-    extend_T_in_K = read_x_profile( nCol, extend_atmos_dim, temperature_name, retVars, &
-                                    atm_input_file )
+    extend_T_in_K = dble( read_x_profile( nCol, extend_atmos_dim, temperature_name, retVars, &
+                                    atm_input_file ) )
 
-    extend_sp_hmdty = read_x_profile( nCol, extend_atmos_dim, sp_humidity_name, retVars, &
-                                      atm_input_file )
+    extend_sp_hmdty = dble( read_x_profile( nCol, extend_atmos_dim, sp_humidity_name, retVars, &
+                                      atm_input_file ) )
 
-    extend_pinmb = read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars, &
-                                   atm_input_file )
+    extend_pinmb = dble( read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars, &
+                                   atm_input_file ) )
 
-    extend_o3l = read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars, &
-                                 atm_input_file )                           
+    extend_o3l = dble( read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars, &
+                                 atm_input_file ) )
 
     ! Deallocate memory
     call deallocate_one_dim_vars( nCol, retVars )

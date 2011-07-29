@@ -102,7 +102,7 @@ module sponge_layer_damping
 ! reduce noise in rtm in cloud_feedback_s12 (CGILS) 
 !        xm_p(k) = xm(k) - real( ( ( xm(k) - xm_ref(k) ) / & 
 !                        damping_profile%tau_sponge_damp(k) ) * dt )
-        dt_on_tau = real( dt / damping_profile%tau_sponge_damp(k) )
+        dt_on_tau = real( dt ) / damping_profile%tau_sponge_damp(k)
 
 ! Really, we should be using xm_ref at time n+1 rather than n.
 ! However, for steady profiles of xm_ref, it won't matter.        
@@ -154,7 +154,7 @@ module sponge_layer_damping
 
     allocate( damping_profile%tau_sponge_damp(1:gr%nnzp))
 
-    if( settings%tau_sponge_damp_min < 2 * dt) then
+    if( settings%tau_sponge_damp_min < 2. * real( dt ) ) then
       write(fstderr,*) 'Error: in damping() tau_sponge_damp_min is too small!'
       stop
     end if

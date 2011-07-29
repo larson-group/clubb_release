@@ -64,11 +64,12 @@ module gabls2
     integer :: k ! Loop index
 
     ! Compute vertical motion
-    if (time > (time_initial + 93600.)) then ! That is, after 26 hours of model time;
+    ! 93600 seconds = 26 hours of simulation time;
+    if ( time > (time_initial + 93600._time_precision ) ) then 
       ! per GABLS2 specification
       do k=1,gr%nnzp
-        if (gr%zt(k) <= 1000) then
-          wm_zt(k) = -0.005 * (gr%zt(k) / 1000) ! Known magic number
+        if ( gr%zt(k) <= 1000. ) then
+          wm_zt(k) = -0.005 * (gr%zt(k) / 1000. ) ! Known magic number
         else
           wm_zt(k) = -0.005
         end if
@@ -137,9 +138,10 @@ module gabls2
     implicit none
 
     ! Local constants
-    real, parameter ::     & 
-      C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
-      z0      = 0.03         ! Roughness length, defined by GABLS2 specification
+    real, parameter :: & 
+      standard_flux_alt = 10., & ! Default height at which the surface flux is computed [m]
+      C_10    = 0.0013,        & ! Drag coefficient, defined by ATEX specification
+      z0      = 0.03             ! Roughness length, defined by GABLS2 specification
 
     ! Input variables
     real(kind=time_precision), intent(in) :: & 
@@ -161,42 +163,43 @@ module gabls2
       wprtp_sfc,  & ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
       ustar,      & ! surface friction velocity                       [m/s]
       T_sfc          ! Sea surface temperature [K].
+
     ! Local variables
     real :: & 
-      Cz,                  & ! C_10 scaled to the height of the lowest 
-                           ! model level. (Per ATEX spec)
       time_in_hours,       & ! time in hours from 00 local on first day of experiment 
                            ! (experiment starts at 14)
-      time_in_hours_init, & ! Initial time in hours is 14
+      Cz,                  & ! C_10 scaled to the height of the lowest 
+                           ! model level. (Per ATEX spec)
       sstheta,             & ! Sea surface potential temperature [K].
       bflx                   ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
 
-    integer, parameter :: &
-      standard_flux_alt = 10 ! default height at which the surface flux is computed [m]
+    real(kind=time_precision) :: & 
+      time_in_hours_init ! Initial time in hours is 14
+
+    ! ---- Begin Code ----
 
     Cz   = C_10 * ((log( standard_flux_alt/z0 ))/(log( lowest_level/z0 ))) * & 
            ((log( standard_flux_alt/z0 ))/(log( lowest_level/z0 ))) ! Modification in case
     ! lowest model level isn't at 10 m,
     ! from ATEX specification (Stevens, et al. 2000, eq 3)
-    time_in_hours_init = 14
-    time_in_hours = real((time - time_initial) / sec_per_hr + time_in_hours_init) 
+    time_in_hours_init = 14._time_precision
+    time_in_hours = real( (time - time_initial) / sec_per_hr + time_in_hours_init ) 
     ! at initial time,
     ! time_in_hours = 14
     ! (14 local; 19 UTC)
 
-
     ! Compute sea surface temperature
-    if (time_in_hours <= 17.4) then
+    if ( time_in_hours <= 17.4 ) then
       ! SST in celsius per GABLS2 spec
-      T_sfc = -10 - (25*cos(time_in_hours*0.22 + 0.2)) ! Known magic number
+      T_sfc = -10. - (25.*cos(time_in_hours*0.22 + 0.2)) ! Known magic number
     else if (time_in_hours <= 30.0) then
       T_sfc = (-0.54 * time_in_hours) + 15.2 ! Known magic number
     else if (time_in_hours <= 41.9) then
-      T_sfc = -7 - (25*cos(time_in_hours*0.21 + 1.8)) ! Known magic number
+      T_sfc = -7. - (25.*cos(time_in_hours*0.21 + 1.8)) ! Known magic number
     else if (time_in_hours <= 53.3) then
       T_sfc = (-0.37 * time_in_hours) + 18.0 ! Known magic number
     else if (time_in_hours <= 65.6) then
-      T_sfc = -4 - (25*cos(time_in_hours*0.22 + 2.5)) ! Known magic number
+      T_sfc = -4. - (25.*cos(time_in_hours*0.22 + 2.5)) ! Known magic number
     else
       T_sfc = 4.4
     end if

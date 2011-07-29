@@ -131,6 +131,8 @@ module astex_a209
       C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
       z0      = 0.00015      ! Roughness length, defined by ATEX specification
 
+    real, parameter :: &
+      standard_flux_alt = 20. ! default height at which the surface flux is computed [m]
 
     ! Input variables
 
@@ -163,9 +165,6 @@ module astex_a209
       Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
       Cq,   & ! This is C_q_20 scaled to the height of the lowest model level.
       time_frac
-
-    integer, parameter :: &
-      standard_flux_alt = 20 ! default height at which the surface flux is computed [m]
 
     !-----------------BEGIN CODE-------------------------
 

@@ -360,7 +360,7 @@ module error
           !                             (1.0+((real(i)-1.)/real(ndim)*0.5))
           param_vals_matrix(i,j) = param_vals_matrix(1,j)* & 
           ( (1.0 - param_vals_spread(j))  & 
-           + real( rand_vect(i-1) )*param_vals_spread(j)*2 )
+           + real( rand_vect(i-1) )*param_vals_spread(j)*2. )
           ! End of Vince Larson's change
         end do ! i..ndim+1
 
@@ -604,7 +604,7 @@ module error
     ! Amoeba (the downhill simplex)
     if ( fatal_error( err_code ) ) then
 
-      min_les_clubb_diff = 2 * maxval( cost_fnc_vector )  & 
+      min_les_clubb_diff = 2. * maxval( cost_fnc_vector )  & 
                        - minval( cost_fnc_vector )
 
       if ( l_stdout_on_invalid ) then

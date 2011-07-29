@@ -56,7 +56,7 @@ module KK_utilities
 
   !=============================================================================
   pure function mean_L2N_dp( mu_x, sigma_sqd_x )  &
-  result( mu_x_n )
+    result( mu_x_n )
   
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the mean of
@@ -83,14 +83,14 @@ module KK_utilities
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x * ( 1.0 + sigma_sqd_x / mu_x**2.0 )**(-0.5) )
+    mu_x_n = log( mu_x * ( 1.0d0 + sigma_sqd_x / mu_x**2.0d0 )**(-0.5d0) )
 
     return
   end function mean_L2N_dp
 
   !=============================================================================
   pure function stdev_L2N( mu_x, sigma_sqd_x )  &
-  result( sigma_x_n )
+    result( sigma_x_n )
 
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the standard
@@ -152,7 +152,7 @@ module KK_utilities
       sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
 
     ! Find the standard deviation of ln x for the ith component of the PDF.
-    sigma_x_n = sqrt( log( 1.0 + sigma_sqd_x / mu_x**2.0 ) )
+    sigma_x_n = sqrt( log( 1.0d0 + sigma_sqd_x / mu_x**2.0d0 ) )
 
     return
   end function stdev_L2N_dp
@@ -223,7 +223,7 @@ module KK_utilities
       corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
 
     ! Find the correlation between x and ln y for the ith component of the PDF.
-    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2.0 ) - 1.0 ) / sigma_y_n 
+    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2.0d0 ) - 1.0d0 ) / sigma_y_n 
 
     return
   end function corr_NL2NN_dp
@@ -300,8 +300,8 @@ module KK_utilities
 
     ! Find the correlation between ln x and ln y for the ith component of the
     ! PDF.
-    corr_xy_n = log( 1.0 + corr_xy * sqrt( exp( sigma_x_n**2.0 ) - 1.0 )  &
-                                   * sqrt( exp( sigma_y_n**2.0 ) - 1.0 )  )  &
+    corr_xy_n = log( 1.0d0 + corr_xy * sqrt( exp( sigma_x_n**2.0d0 ) - 1.0d0 )  &
+                                     * sqrt( exp( sigma_y_n**2.0d0 ) - 1.0d0 )  )  &
                 / ( sigma_x_n * sigma_y_n )
 
     return
@@ -419,11 +419,11 @@ module KK_utilities
     integer :: ierr ! Error condition
 
     if ( argument <= 0.0d0 ) then
-      call parab( -order-0.5, -argument, scaling, uaxx, vaxx, ierr )
+      call parab( -order-0.5d0, -argument, scaling, uaxx, vaxx, ierr )
       Dv_fnc = vaxx(1) / ( (1.0d0/pi_dp) * gamma( -order ) ) & 
-             - sin( pi_dp * ( -order-0.5 ) ) * uaxx(1)
+             - sin( pi_dp * ( -order-0.5d0 ) ) * uaxx(1)
     else
-      call parab( -order-0.5, argument, scaling, uaxx, vaxx, ierr )
+      call parab( -order-0.5d0, argument, scaling, uaxx, vaxx, ierr )
       Dv_fnc = uaxx(1)
     end if
 

@@ -195,7 +195,7 @@ module bugsrad_driver
 
     ! Convert theta_l to temperature
 
-    T_in_K(1,1:(nz-1)) = thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) )
+    T_in_K(1,1:(nz-1)) = dble( thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) ) )
 
     ! Derive Specific humidity from rc & rt.
     do z = 2, nz
@@ -237,7 +237,7 @@ module bugsrad_driver
     rcm_in_cloud_2d(1,1:buffer) = 0.0d0
     cloud_frac_2d(1,1:buffer)   = 0.0d0
 
-    if ( alt(nz) > extend_alt(extend_atmos_dim) ) then
+    if ( dble( alt(nz) ) > extend_alt(extend_atmos_dim) ) then
 
       write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
                        "altitude above the top of the extended atmosphere ",  &
@@ -250,7 +250,7 @@ module bugsrad_driver
       stop "compute_bugsrad_radiation: cannot handle this altitude"
 
     else
-
+      ! Continue
     end if
 
     ! Add the extended atmospheric profile above the linear interpolation
@@ -293,16 +293,16 @@ module bugsrad_driver
     ! defined on momentum levels above the top of the CLUBB model, which are
     ! being defined here at points half-way inbetween the thermodynamic levels
     ! above the top of the CLUBB model.  Brian Griffin; May 13, 2008.
-    playerinmb(1,2:buffer+1) = ( pinmb(1,1:buffer) + pinmb(1,2:buffer+1) ) / 2.
+    playerinmb(1,2:buffer+1) = ( pinmb(1,1:buffer) + pinmb(1,2:buffer+1) ) / 2.d0
 
     ! Do a linear extension to find playerinmb at the uppermost standard
     ! atmosphere momentum level.  The grid is evenly-spaced at these points.
     ! Brian Griffin; May 13, 2008.
-    tmp = 2. * playerinmb(1,2) - playerinmb(1,3)
-    if ( tmp > 0. ) then
+    tmp = 2.d0 * playerinmb(1,2) - playerinmb(1,3)
+    if ( tmp > 0.d0 ) then
       playerinmb(1,1) = tmp
     else ! Assuming a linear extension didn't work
-      playerinmb(1,1) = .5 * playerinmb(1,2)
+      playerinmb(1,1) = 0.5d0 * playerinmb(1,2)
     end if
 
     ! Calculate the difference in pressure layers (including buffer levels)
@@ -482,18 +482,18 @@ module bugsrad_driver
     rad_scheme = "none"
 
     ! BUGSrad parameters
-    sol_const =  1367.0 ! W/m^2
+    sol_const =  1367.d0 ! W/m^2
 
-    alvdf = 0.1 ! Visible diffuse surface albedo       [-]
-    alndr = 0.1 ! Near-IR direct surface albedo        [-]
-    alndf = 0.1 ! Near-IR diffuse surface albedo       [-]
+    alvdf = 0.1d0 ! Visible diffuse surface albedo       [-]
+    alndr = 0.1d0 ! Near-IR direct surface albedo        [-]
+    alndf = 0.1d0 ! Near-IR diffuse surface albedo       [-]
 
     ! 50000m is the top of the U.S. Standard Atmosphere data used
     ! in CLUBB.
     radiation_top = 50000.! [m]
 
     ! Variables used by both schemes
-    alvdr = 0.1 ! Visible direct surface albedo        [-]
+    alvdr = 0.1d0 ! Visible direct surface albedo        [-]
 
     ! Simplified radiation parameters
     F0    = 100.0  ! Coefficient for cloud top heating (see Stevens) [W/m^2]

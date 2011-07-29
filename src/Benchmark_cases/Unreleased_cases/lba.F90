@@ -118,8 +118,8 @@ module lba
 
     ! Compute heat and moisture fluxes
     ! From Table A.1.
-    ft = real( max( 0._time_precision,  & 
-                 cos( 0.5 * pi * ( (5.25 - ( time/sec_per_hr)) / 5.25 ) ) & 
+    ft = real( max( 0.,  & 
+                 cos( 0.5 * pi * ( (5.25 - real( time/sec_per_hr )) / 5.25 ) ) & 
             ) ) ! Known magic number
 
     wpthlp_sfc =  convert_sens_ht_to_km_s( ( 270. * ft**1.5 ), rho_sfc ) ! Known magic number

@@ -117,6 +117,9 @@ module stats_type
     ! once it has been calculated.
     !---------------------------------------------------------------------
 
+    use stats_precision, only: &
+      stat_rknd ! Constant
+
     implicit none
 
     ! Input Variables(s)
@@ -139,7 +142,7 @@ module stats_type
     if ( var_index > 0 ) then
       do k = 1, grid_kind%kk
         grid_kind%x(1,1,k,var_index) =  & 
-             grid_kind%x(1,1,k,var_index) + value(k)
+             grid_kind%x(1,1,k,var_index) + real( value(k), kind=stat_rknd )
         grid_kind%n(1,1,k,var_index) =  & 
              grid_kind%n(1,1,k,var_index) + 1
       end do
@@ -158,6 +161,9 @@ module stats_type
     ! See the description of stat_update_var for more details.
     !---------------------------------------------------------------------
 
+    use stats_precision, only: &
+      stat_rknd ! Constant
+
     implicit none
 
     ! Input Variables(s)
@@ -175,7 +181,8 @@ module stats_type
 
     if ( var_index > 0 ) then
 
-      grid_kind%x(1,1,grid_level,var_index) = grid_kind%x(1,1,grid_level,var_index) + value
+      grid_kind%x(1,1,grid_level,var_index) = grid_kind%x(1,1,grid_level,var_index) &
+                                            + real( value, kind=stat_rknd )
 
       grid_kind%n(1,1,grid_level,var_index) = grid_kind%n(1,1,grid_level,var_index) + 1
 
@@ -266,6 +273,9 @@ module stats_type
 
     use error_code, only: clubb_debug ! Procedure(s)
 
+    use stats_precision, only: &
+      stat_rknd ! Constant
+
     implicit none
 
     ! Input Variables(s)
@@ -288,7 +298,7 @@ module stats_type
       if ( .not. grid_kind%l_in_update(1,1,grid_level,var_index) ) then ! Can we begin an update?
 
         grid_kind%x(1,1,grid_level, var_index) =  & 
-                grid_kind%x(1,1,grid_level, var_index) - value
+                grid_kind%x(1,1,grid_level, var_index) - real( value, kind=stat_rknd )
 
         grid_kind%l_in_update(1,1,grid_level, var_index) = .true.  ! Start Record
 
@@ -475,6 +485,9 @@ module stats_type
     ! description of stat_modify for more details.
     !---------------------------------------------------------------------
 
+    use stats_precision, only: &
+      stat_rknd ! Constant
+
     implicit none
 
     ! Input Variables(s)
@@ -498,9 +511,9 @@ module stats_type
     if ( var_index > 0 ) then
 
       grid_kind%x(1,1,grid_level,var_index )  & 
-         = grid_kind%x(1,1,grid_level,var_index ) + value
+         = grid_kind%x(1,1,grid_level,var_index ) + real( value, kind=stat_rknd )
 
-    endif
+    end if
 
     return
   end subroutine stat_modify_pt

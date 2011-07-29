@@ -52,6 +52,9 @@ module twp_ice
       C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
       z0      = 0.00015      ! Roughness length, defined by ATEX specification
 
+    real, parameter :: &
+      standard_flux_alt = 20. ! default height at which the surface flux is computed [m]
+
     real(time_precision), intent(in) :: &
       time  ! current time [s]
 
@@ -79,8 +82,6 @@ module twp_ice
     integer :: &
       before_time, after_time  ! time indexes used for interpolation
 
-    integer, parameter :: &
-      standard_flux_alt = 20 ! default height at which the surface flux is computed [m]
     !----------------------------------------------------------------------
 
     ! interpolate T_sfc from time_dependent_input
