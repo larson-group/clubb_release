@@ -27,7 +27,7 @@ DEBUG="-g -fbounds-check -mieee-fp -finit-real=nan -finit-integer=-99999 -finit-
 #DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false" # Floating point trapping enabled
 
 # == Warnings ==
-WARNINGS="-Wall -pedantic"
+WARNINGS="-Wall -Wconversion -pedantic"
 
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
