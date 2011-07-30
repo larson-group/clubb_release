@@ -354,6 +354,9 @@ module input_grads
 
     implicit none
 
+    ! External
+    intrinsic :: floor, trim, real, nint
+
     ! Input Variables
     type (stat_file), intent(in) :: & 
       grads_file ! The file to read data from
@@ -381,7 +384,7 @@ module input_grads
 
     ! Check time index
     ! Now assumes itime is in minutes
-    if ( itime < 1 .or. (itime/int( grads_file%dtwrite/sec_per_min )) > grads_file%ntimes ) then
+    if ( itime < 1 .or. (itime/floor( grads_file%dtwrite/sec_per_min )) > grads_file%ntimes ) then
       l_error = .true.
       write(unit=fstderr,fmt=*)  & 
         "get_4byte_var: itime < 1 .or. itime > grads_file%ntimes"

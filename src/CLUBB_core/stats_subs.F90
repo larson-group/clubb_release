@@ -1920,7 +1920,7 @@ module stats_subs
     implicit none
 
     ! Input Variables
-    real, dimension(gr%nnzp,hydromet_dim) :: &
+    real, dimension(gr%nnzp,hydromet_dim), intent(in) :: &
       hydromet ! All hydrometeors except for rcm        [units vary]
 
     if ( l_stats_samp ) then

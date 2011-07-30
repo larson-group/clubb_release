@@ -129,8 +129,6 @@ module time_dependent_input
 
     use constants_clubb, only: fstderr ! Variable(s)
 
-    use error_code, only: clubb_at_least_debug_level ! Procedure(s)
-
     use input_reader, only: &
       read_one_dim_file, one_dim_read_var, & ! Procedure(s)
       fill_blanks_one_dim_vars, read_x_profile, &

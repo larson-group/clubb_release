@@ -1065,8 +1065,8 @@ module microphys_driver
         pdf_parameter  ! Type
 
     use array_index, only:  & 
-        iirrainm, iirsnowm, iiricem, iirgraupelm, &
-        iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
+        iirrainm, iirsnowm, iiricem, iirgraupelm, & ! Variable(s)
+        iiNrm, iiNim, iiNcm
 
     use stats_variables, only: & 
       iVrr,  & ! Variable(s)
