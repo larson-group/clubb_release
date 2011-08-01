@@ -1501,7 +1501,7 @@ module latin_hypercube_driver_module
     ! ---- Begin Code ----
 
     ! Clip 's' from Mellor to obtain cloud-water mixing ratio
-    rc_all_points = max( zero_threshold, X_nl_all_levs(:,:,iiLH_s_mellor) )
+    rc_all_points = max( zero_threshold, real( X_nl_all_levs(:,:,iiLH_s_mellor) ) )
 
     ! Verify total water isn't negative
     if ( any( LH_rt < 0. ) ) then
