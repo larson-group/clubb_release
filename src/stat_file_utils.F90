@@ -24,6 +24,8 @@ module stat_file_utils
 
     use constants_clubb, only: fstderr ! Variable(s)
 
+    use parameters_model, only: PosInf ! Variable(s)
+
     use stat_file_module, only: stat_file ! Type(s)
 
     use input_grads, only: &
@@ -112,11 +114,7 @@ module stat_file_utils
     integer :: & 
       num_timesteps,  & ! steps between t1 and t2
       k_lowest_input, &
-      k_highest_input, &
-      nanbits
-
-    ! Set nanbits to NaN
-    data nanbits /Z"7F800000"/
+      k_highest_input
 
 !-----------------------------------------------------------------------
 
@@ -216,7 +214,7 @@ module stat_file_utils
             interp_variable(k) = file_variable(1)
           else
             ! Set undefined points to NaN
-            interp_variable(k) = transfer( nanbits, interp_variable(k) )
+            interp_variable(k) = PosInf
           end if
         end do
 
@@ -226,7 +224,7 @@ module stat_file_utils
 !         interp_variable(k) = interp_variable(k-1)
 
           ! Set undefined points to NaN
-          interp_variable(k) = transfer( nanbits, interp_variable(k) )
+          interp_variable(k) = PosInf
         end do
 
       else

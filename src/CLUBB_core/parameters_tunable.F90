@@ -1104,21 +1104,12 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
 
+    use parameters_model, only: &
+      PosInf ! Variable(s)
+
     implicit none
 
-    ! External
-    intrinsic :: transfer
-
-    ! Local Variables
-    integer(kind=4) :: nanbits
-
-    real(kind=4) :: PosInf
-
-    data nanbits /Z"7F800000"/
-
     ! --- Begin Code ---
-
-    PosInf = transfer( nanbits, PosInf )
 
     C1                 = PosInf
     C1b                = PosInf

@@ -39,6 +39,9 @@ program jacobian
       clubb_no_error,  & ! Variable(s)
       fatal_error ! Procedure(s)
 
+  use parameters_model, only: &
+    PosInf ! Variable(s)
+
   implicit none
 
   !----------------------------------------------------------------------------
@@ -108,7 +111,6 @@ program jacobian
     nzm, &        ! Momentum grid levels
     alloc_stat, & ! Det. whether array allocation worked
     i, j, k, &    ! loop variables
-    nanbits, &    ! Holds a NaN value for purposes of output
     err_code      ! Determines whether a run went unstable
 
   real ::  & 
@@ -123,9 +125,6 @@ program jacobian
     times, delta_factor, l_use_standard_vars
 
 !-----------------------------------------------------------------------
-
-  ! Initialize data
-  data nanbits /Z"7F800000"/
 
   ! ---- Begin Code ----
 
@@ -273,8 +272,7 @@ program jacobian
     if ( fatal_error( err_code ) ) then
 
       ! Pos. Infinity bit pattern
-      jmatrix(i, :) & 
-      = transfer( int( nanbits ), jmatrix(1,1) )
+      jmatrix(i,:) = PosInf
       clubb_params%value(i) = tmp_param
       cycle
     end if

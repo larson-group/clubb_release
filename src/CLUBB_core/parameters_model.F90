@@ -50,6 +50,10 @@ module parameters_model
 
 !$omp threadprivate(sclr_tol)
 
+  real(kind=4), public :: PosInf
+
+!$omp threadprivate(PosInf)
+
   public :: setup_parameters_model 
 
   contains
@@ -78,7 +82,10 @@ module parameters_model
     implicit none
 
     ! External
-    intrinsic :: sqrt, allocated
+    intrinsic :: sqrt, allocated, transfer
+
+    ! Constants
+    integer(kind=4), parameter :: nanbits = 2139095040
 
     ! Input Variables
     real, intent(in) ::  & 
@@ -99,7 +106,7 @@ module parameters_model
     real, intent(in), dimension(sclr_dim_in) :: & 
       sclr_tol_in     ! Threshold on passive scalars
 
-    ! --- Begin Code --- !
+    ! --- Begin Code --- 
      
     ! Formula from subroutine pdf_closure, where sigma_sqd_w = 0.4 and Skw =
     ! Skw_max_mag in this formula.  Note that this is constant, but can't appear
@@ -127,6 +134,7 @@ module parameters_model
 
     sclr_tol(1:sclr_dim) = sclr_tol_in(1:sclr_dim)
 
+    PosInf = transfer( nanbits, PosInf )
 
 #ifdef GFDL
      cloud_frac_min = cloud_frac_min_in  ! h1g, 2010-06-15

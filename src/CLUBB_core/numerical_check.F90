@@ -742,10 +742,11 @@ module numerical_check
 
 !------------------------------------------------------------------------
 
+#ifndef __GFORTRAN__
+    use parameters_model, only: &
+      PosInf ! Variable(s)
+#endif
     implicit none
-
-    ! External
-    intrinsic :: transfer
 
     ! Input Variables
     real, intent(in) :: xarg
@@ -753,17 +754,7 @@ module numerical_check
 #ifdef __GFORTRAN__  /* if the isnan extension is available, we use it here */
     is_nan_sclr = isnan( xarg )
 #else
-    ! Local Variables
-    integer(kind=4) :: nanbits
-
-    real(kind=4) :: PosInf, NegInf
-
-    data nanbits /Z"7F800000"/
-
     ! ---- Begin Code ---
-
-    PosInf = transfer( nanbits, PosInf )
-    NegInf = -( transfer( nanbits, NegInf ) )
 
     ! This works on compilers with standardized floating point,
     ! because the IEEE 754 spec defines that subnormals and nans
@@ -775,10 +766,6 @@ module numerical_check
       ! This a second check, assuming the above does not work as
       ! expected.
     else if ( xarg == PosInf ) then
-      is_nan_sclr = .true.
-
-      ! This may never be needed, it's here just in case.
-    else if ( xarg == NegInf ) then
       is_nan_sclr = .true.
 
     else

@@ -1116,9 +1116,6 @@ module microphys_driver
       iNcm_act
 
     use stats_variables, only: & 
-      iNcm
-
-    use stats_variables, only: & 
       iLH_rcm_mc, &
       iLH_rvm_mc, &
       iLH_thlm_mc, &
