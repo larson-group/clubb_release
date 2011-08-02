@@ -4,7 +4,7 @@
     'name' => 'dycoms2_rf02_ds',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'DYCOMS II RF02 DS Minutes 301-360',
+    'headerText' => 'DYCOMS II RF02 DS Minutes 181-240',
     'startTime' => 181.0,  # [minutes]
     'endTime' => 240.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
@@ -25,7 +25,7 @@
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rtm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/dycoms2_rf02_ds_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'dycoms2_rf02_ds_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'sphum', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'sphum./(1.0-sphum) + liq_wat + ice_wat', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
        [
