@@ -2282,7 +2282,7 @@ module generate_lh_sample_module
 
     ! ---- Begin Code ----
 
-    mu_gaus = log( mu * ( 1.0 + ( sigma2_on_mu2 ) )**(-0.5) )
+    mu_gaus = log( mu / sqrt( 1.0 + ( sigma2_on_mu2 ) ) )
 
     return
   end function mu_LN_to_mu_gaus
