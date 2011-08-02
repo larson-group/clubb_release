@@ -109,7 +109,7 @@ module PDF_integrals_all_mixed_moments
                  / ( factorial( b_exp - q ) * factorial( q ) )  &
                * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
                * ( - sigma_x2 )**(alpha_exp*q)  &
-               * ( 0.5 * ( 1.0 - rho_x1x2**2.0 ) * sigma_x1**2.0 )**p  &
+               * ( 0.5 * ( 1.0 - rho_x1x2**2 ) * sigma_x1**2 )**p  &
                * ( - rho_x1x2 * sigma_x1 )**r  &
                * ( mu_x1 - x1_mean  &
                    - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
@@ -118,16 +118,16 @@ module PDF_integrals_all_mixed_moments
                    + ( rho_x1x4_n - rho_x1x2 * rho_x2x4_n )  &
                      * sigma_x1 * sigma_x4_n * gamma_exp * q )**(a_exp-2*p-r)  &
                * exp( mu_x3_n * beta_exp * q + mu_x4_n * gamma_exp * q  &
-                      + 0.5 * ( 1.0 - rho_x2x3_n**2.0 )  &
-                            * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0  &
-                      + 0.5 * ( 1.0 - rho_x2x4_n**2.0 )  &
-                            * sigma_x4_n**2.0 * gamma_exp**2.0 * q**2.0  &
+                      + 0.5 * ( 1.0 - rho_x2x3_n**2 )  &
+                            * sigma_x3_n**2 * beta_exp**2 * q**2  &
+                      + 0.5 * ( 1.0 - rho_x2x4_n**2 )  &
+                            * sigma_x4_n**2 * gamma_exp**2 * q**2  &
                       + ( rho_x3x4_n - rho_x2x3_n * rho_x2x4_n )  &
                             * sigma_x3_n * beta_exp  &
-                            * sigma_x4_n * gamma_exp * q**2.0  &
+                            * sigma_x4_n * gamma_exp * q**2  &
                     )  &
-               * exp( 0.25 * s_cc**2.0 - ( mu_x2 / sigma_x2 ) * s_cc  &
-                      + 0.5 * ( mu_x2**2.0 / sigma_x2**2.0 ) )  &
+               * exp( 0.25 * s_cc**2 - ( mu_x2 / sigma_x2 ) * s_cc  &
+                      + 0.5 * ( mu_x2**2 / sigma_x2**2 ) )  &
                * gamma( alpha_exp*q + r + 1 )  &
                * Dv_fnc( -(alpha_exp*q + r + 1), s_cc ) ! Known magic numbers
 
@@ -224,16 +224,16 @@ module PDF_integrals_all_mixed_moments
          * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
          * ( - sigma_x2 )**(alpha_exp*q)  &
          * exp( mu_x3_n * beta_exp * q + mu_x4_n * gamma_exp * q  &
-                + 0.5 * ( 1.0 - rho_x2x3_n**2.0 )  &
-                      * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0  &
-                + 0.5 * ( 1.0 - rho_x2x4_n**2.0 )  &
-                      * sigma_x4_n**2.0 * gamma_exp**2.0 * q**2.0  &
+                + 0.5 * ( 1.0 - rho_x2x3_n**2 )  &
+                      * sigma_x3_n**2 * beta_exp**2 * q**2  &
+                + 0.5 * ( 1.0 - rho_x2x4_n**2 )  &
+                      * sigma_x4_n**2 * gamma_exp**2 * q**2  &
                 + ( rho_x3x4_n - rho_x2x3_n * rho_x2x4_n )  &
                       * sigma_x3_n * beta_exp  &
-                      * sigma_x4_n * gamma_exp * q**2.0  &
+                      * sigma_x4_n * gamma_exp * q**2  &
               )  &
-         * exp( 0.25 * s_cc**2.0 - ( mu_x2 / sigma_x2 ) * s_cc  &
-                + 0.5 * ( mu_x2**2.0 / sigma_x2**2.0 ) )  &
+         * exp( 0.25 * s_cc**2 - ( mu_x2 / sigma_x2 ) * s_cc  &
+                + 0.5 * ( mu_x2**2 / sigma_x2**2 ) )  &
          * gamma( alpha_exp*q + 1 )  &
          * Dv_fnc( -(alpha_exp*q + 1), s_cc ) ! Known magic number
 
@@ -317,17 +317,17 @@ module PDF_integrals_all_mixed_moments
               / ( factorial( b_exp - q ) * factorial( q ) )  &
             * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
             * mu_x2**(alpha_exp*q)  &
-            * ( 0.5 * sigma_x1**2.0 )**p  &
+            * ( 0.5 * sigma_x1**2 )**p  &
             * ( mu_x1 - x1_mean  &
                 + rho_x1x3_n * sigma_x1  &
                   * sigma_x3_n * beta_exp * q  &
                 + rho_x1x4_n * sigma_x1  &
                   * sigma_x4_n * gamma_exp * q )**(a_exp-2*p)  &
             * exp( mu_x3_n * beta_exp * q + mu_x4_n * gamma_exp * q  &
-                   + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0  &
-                   + 0.5 * sigma_x4_n**2.0 * gamma_exp**2.0 * q**2.0  &
+                   + 0.5 * sigma_x3_n**2 * beta_exp**2 * q**2  &
+                   + 0.5 * sigma_x4_n**2 * gamma_exp**2 * q**2  &
                    + rho_x3x4_n * sigma_x3_n * beta_exp  &
-                     * sigma_x4_n * gamma_exp * q**2.0  &
+                     * sigma_x4_n * gamma_exp * q**2  &
                  )
 
        enddo
@@ -405,10 +405,10 @@ module PDF_integrals_all_mixed_moments
          * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
          * mu_x2**(alpha_exp*q)  &
          * exp( mu_x3_n * beta_exp * q + mu_x4_n * gamma_exp * q  &
-                + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0  &
-                + 0.5 * sigma_x4_n**2.0 * gamma_exp**2.0 * q**2.0  &
+                + 0.5 * sigma_x3_n**2 * beta_exp**2 * q**2  &
+                + 0.5 * sigma_x4_n**2 * gamma_exp**2 * q**2  &
                 + rho_x3x4_n * sigma_x3_n * beta_exp  &
-                      * sigma_x4_n * gamma_exp * q**2.0  &
+                      * sigma_x4_n * gamma_exp * q**2  &
               )
 
     enddo
@@ -503,15 +503,15 @@ module PDF_integrals_all_mixed_moments
                  / ( factorial( b_exp - q ) * factorial( q ) )  &
                * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
                * sigma_x2**(alpha_exp*q)  &
-               * ( 0.5 * ( 1.0 - rho_x1x2**2.0 ) * sigma_x1**2.0 )**p  &
+               * ( 0.5 * ( 1.0 - rho_x1x2**2 ) * sigma_x1**2 )**p  &
                * ( rho_x1x2 * sigma_x1 )**r  &
                * ( mu_x1 - x1_mean  &
                    - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
                    + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
                      * sigma_x1 * sigma_x3_n * beta_exp * q )**(a_exp-2*p-r)  &
                * exp( mu_x3_n * beta_exp * q  &
-                      + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0  &
-                      - 0.25 * s_c**2.0 )  &
+                      + 0.5 * sigma_x3_n**2 * beta_exp**2 * q**2  &
+                      - 0.25 * s_c**2 )  &
                * gamma( alpha_exp*q + r + 1 )  &
                * Dv_fnc( -( alpha_exp*q + r + 1 ), -s_c ) ! Known magic number
 
@@ -599,8 +599,8 @@ module PDF_integrals_all_mixed_moments
          * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
          * sigma_x2**(alpha_exp*q)  &
          * exp( mu_x3_n * beta_exp * q  &
-                + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0  &
-                - 0.25 * s_c**2.0 )  &
+                + 0.5 * sigma_x3_n**2 * beta_exp**2 * q**2  &
+                - 0.25 * s_c**2 )  &
          * gamma( alpha_exp*q + 1 )  &
          * Dv_fnc( -(alpha_exp*q + 1), -s_c ) ! Known magic number
 
@@ -676,12 +676,12 @@ module PDF_integrals_all_mixed_moments
               / ( factorial( b_exp - q ) * factorial( q ) )  &
             * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
             * mu_x2**(alpha_exp*q)  &
-            * ( 0.5 * sigma_x1**2.0 )**p  &
+            * ( 0.5 * sigma_x1**2 )**p  &
             * ( mu_x1 - x1_mean  &
                 + rho_x1x3_n * sigma_x1  &
                   * sigma_x3_n * beta_exp * q )**(a_exp-2*p)  &
             * exp( mu_x3_n * beta_exp * q  &
-                   + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0 )
+                   + 0.5 * sigma_x3_n**2 * beta_exp**2 * q**2 )
 
        enddo
     enddo 
@@ -751,7 +751,7 @@ module PDF_integrals_all_mixed_moments
          * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
          * mu_x2**(alpha_exp*q)  &
          * exp( mu_x3_n * beta_exp * q  &
-                + 0.5 * sigma_x3_n**2.0 * beta_exp**2.0 * q**2.0 )
+                + 0.5 * sigma_x3_n**2 * beta_exp**2 * q**2 )
 
     enddo
 

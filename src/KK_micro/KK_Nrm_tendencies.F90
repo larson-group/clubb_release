@@ -115,7 +115,7 @@ module KK_Nrm_tendencies
 
 
     ! Production of N_r through autoconversion.
-    KK_Nrm_auto = KK_rrm_auto_tndcy / ( (4.0/3.0) * pi * rho_lw * r_0**3.0 )
+    KK_Nrm_auto = KK_rrm_auto_tndcy / ( (4.0/3.0) * pi * rho_lw * r_0**3 )
 
 
     return

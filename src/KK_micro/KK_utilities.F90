@@ -49,7 +49,7 @@ module KK_utilities
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x * ( 1.0 + sigma_sqd_x / mu_x**2.0 )**(-0.5) )
+    mu_x_n = log( mu_x * ( 1.0 + sigma_sqd_x / mu_x**2 )**(-0.5) )
 
     return
   end function mean_L2N
@@ -83,7 +83,7 @@ module KK_utilities
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x * ( 1.0d0 + sigma_sqd_x / mu_x**2.0d0 )**(-0.5d0) )
+    mu_x_n = log( mu_x * ( 1.0d0 + sigma_sqd_x / mu_x**2 )**(-0.5d0) )
 
     return
   end function mean_L2N_dp
@@ -117,7 +117,7 @@ module KK_utilities
       sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
 
     ! Find the standard deviation of ln x for the ith component of the PDF.
-    sigma_x_n = sqrt( log( 1.0 + sigma_sqd_x / mu_x**2.0 ) )
+    sigma_x_n = sqrt( log( 1.0 + sigma_sqd_x / mu_x**2 ) )
 
     return
   end function stdev_L2N
@@ -152,7 +152,7 @@ module KK_utilities
       sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
 
     ! Find the standard deviation of ln x for the ith component of the PDF.
-    sigma_x_n = sqrt( log( 1.0d0 + sigma_sqd_x / mu_x**2.0d0 ) )
+    sigma_x_n = sqrt( log( 1.0d0 + sigma_sqd_x / mu_x**2 ) )
 
     return
   end function stdev_L2N_dp
@@ -187,7 +187,7 @@ module KK_utilities
       corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
 
     ! Find the correlation between x and ln y for the ith component of the PDF.
-    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2.0 ) - 1.0 ) / sigma_y_n 
+    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2 ) - 1.0 ) / sigma_y_n 
 
     return
   end function corr_NL2NN
@@ -223,7 +223,7 @@ module KK_utilities
       corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
 
     ! Find the correlation between x and ln y for the ith component of the PDF.
-    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2.0d0 ) - 1.0d0 ) / sigma_y_n 
+    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2 ) - 1.0d0 ) / sigma_y_n 
 
     return
   end function corr_NL2NN_dp
@@ -260,8 +260,8 @@ module KK_utilities
 
     ! Find the correlation between ln x and ln y for the ith component of the
     ! PDF.
-    corr_xy_n = log( 1.0 + corr_xy * sqrt( exp( sigma_x_n**2.0 ) - 1.0 )  &
-                                   * sqrt( exp( sigma_y_n**2.0 ) - 1.0 )  )  &
+    corr_xy_n = log( 1.0 + corr_xy * sqrt( exp( sigma_x_n**2 ) - 1.0 )  &
+                                   * sqrt( exp( sigma_y_n**2 ) - 1.0 )  )  &
                 / ( sigma_x_n * sigma_y_n )
 
     return
@@ -300,8 +300,8 @@ module KK_utilities
 
     ! Find the correlation between ln x and ln y for the ith component of the
     ! PDF.
-    corr_xy_n = log( 1.0d0 + corr_xy * sqrt( exp( sigma_x_n**2.0d0 ) - 1.0d0 )  &
-                                     * sqrt( exp( sigma_y_n**2.0d0 ) - 1.0d0 )  )  &
+    corr_xy_n = log( 1.0d0 + corr_xy * sqrt( exp( sigma_x_n**2 ) - 1.0d0 )  &
+                                     * sqrt( exp( sigma_y_n**2 ) - 1.0d0 )  )  &
                 / ( sigma_x_n * sigma_y_n )
 
     return

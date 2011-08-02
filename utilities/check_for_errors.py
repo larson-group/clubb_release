@@ -18,6 +18,7 @@ import sys # Handles command line arguments
 sys.path.append( './check_scripts/' ) # use modules from this subdirectory
 import check_uninitialized_output_variables
 import check_magic_numbers
+import check_exponents
 import glob
 
 #----------------------------------------------------------------------------
@@ -121,6 +122,7 @@ def split_into_subroutines_and_functions(lines):
 total_not_set = 0
 warnings = 0
 magic_numbers = 0
+bad_exponents = 0
 
 # if True, warnings will be printed when an intent(out) variable is set by
 # a subroutine or function call
@@ -200,10 +202,23 @@ for arg in files_to_check:
           print line
           magic_numbers += 1
 
+      # check for bad exponents
+      exponent_output = check_exponents.check_exponents(subroutine)
+      if( len(exponent_output) > 0 ):
+        # print out the current file name if it has not yet been printed
+        if( not file_name_printed ):
+          print "\n\nFile: " + f.name
+          file_name_printed = True
+        # print each line of output and increment the counter
+        for line in exponent_output:
+          print line
+          bad_exponents += 1
+
 
 # print out totals
 print "\nTotal Not Set: " + str(total_not_set)
 if( show_warnings ):
   print "Total Warnings: " + str(warnings)
 print "Total Magic Numbers: " + str(magic_numbers)
+print "Total Bad Exponents: " + str(bad_exponents)
 

@@ -68,14 +68,14 @@ module PDF_integrals_means
     = ( 1.0d0 / sqrt( 2.0d0*pi_dp ) ) * ( - sigma_x1 )**alpha_exp  &
       * exp( mu_x2_n * beta_exp + mu_x3_n * gamma_exp )  &
       * exp( 0.5d0 *  &
-             (   ( 1.0d0 - rho_x1x2_n**2.0d0 ) * sigma_x2_n**2.0d0 * beta_exp**2.0d0  &
-               + ( 1.0d0 - rho_x1x3_n**2.0d0 ) * sigma_x3_n**2.0d0 * gamma_exp**2.0d0  &
+             (   ( 1.0d0 - rho_x1x2_n**2 ) * sigma_x2_n**2 * beta_exp**2  &
+               + ( 1.0d0 - rho_x1x3_n**2 ) * sigma_x3_n**2 * gamma_exp**2  &
                + 2.0d0 * ( rho_x2x3_n - rho_x1x2_n * rho_x1x3_n )  &
                      * sigma_x2_n * beta_exp * sigma_x3_n * gamma_exp  &
              )  &
            )  &
-      * exp( 0.25d0 * s_cc**2.0d0 - ( mu_x1 / sigma_x1 ) * s_cc  &
-             + 0.5d0 * ( mu_x1**2.0d0 / sigma_x1**2.0d0 ) )  &
+      * exp( 0.25d0 * s_cc**2 - ( mu_x1 / sigma_x1 ) * s_cc  &
+             + 0.5d0 * ( mu_x1**2 / sigma_x1**2 ) )  &
       * gamma( alpha_exp + 1.0d0 ) * Dv_fnc( -(alpha_exp + 1.0d0), s_cc ) ! Known magic number
 
     return
@@ -114,8 +114,8 @@ module PDF_integrals_means
     trivar_NLL_mean_const_x1  &
     = mu_x1**alpha_exp  &
       * exp( mu_x2_n * beta_exp + mu_x3_n * gamma_exp  &
-             + 0.5d0 * sigma_x2_n**2.0d0 * beta_exp**2.0d0  &
-             + 0.5d0 * sigma_x3_n**2.0d0 * gamma_exp**2.0d0  &
+             + 0.5d0 * sigma_x2_n**2 * beta_exp**2  &
+             + 0.5d0 * sigma_x3_n**2 * gamma_exp**2  &
              + rho_x2x3_n * sigma_x2_n * beta_exp * sigma_x3_n * gamma_exp )
 
     return
@@ -166,7 +166,7 @@ module PDF_integrals_means
     bivar_NL_mean  &
     = ( 1.0d0 / sqrt( 2.0d0*pi_dp ) ) * sigma_x1**alpha_exp  &
       * exp( mu_x2_n * beta_exp  &
-             + 0.5d0 * sigma_x2_n**2.0d0 * beta_exp**2.0d0 - 0.25d0 * s_c**2.0d0 )  &
+             + 0.5d0 * sigma_x2_n**2 * beta_exp**2 - 0.25d0 * s_c**2 )  &
       * gamma( alpha_exp + 1.0d0 ) * Dv_fnc( -(alpha_exp + 1.0d0), -s_c ) ! Known magic number
 
     return
@@ -201,7 +201,7 @@ module PDF_integrals_means
     bivar_NL_mean_const_x1  &
     = mu_x1**alpha_exp  &
       * exp( mu_x2_n * beta_exp  &
-             + 0.5d0 * sigma_x2_n**2.0d0 * beta_exp**2.0d0 )
+             + 0.5d0 * sigma_x2_n**2 * beta_exp**2 )
 
     return
 
@@ -235,8 +235,8 @@ module PDF_integrals_means
 
     bivar_LL_mean  &
     = exp( mu_x1_n * alpha_exp + mu_x2_n * beta_exp  &
-           + 0.5d0 * sigma_x1_n**2.0d0 * alpha_exp**2.0d0  &
-           + 0.5d0 * sigma_x2_n**2.0d0 * beta_exp**2.0d0  &
+           + 0.5d0 * sigma_x1_n**2 * alpha_exp**2  &
+           + 0.5d0 * sigma_x2_n**2 * beta_exp**2  &
            + rho_x1x2_n * sigma_x1_n * alpha_exp * sigma_x2_n * beta_exp )
 
     return
