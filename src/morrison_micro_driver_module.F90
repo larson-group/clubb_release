@@ -203,7 +203,7 @@ module morrison_micro_driver_module
            hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
            T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm_tmp, w_std_dev_tmp, &
            Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, dt, &
-           1,1, 1,1, 1,nnzp, 1,1, 1,1, 1,nnzp, &
+           1,1, 1,1, 1,nnzp, 1,1, 1,1, 2,nnzp, &
            hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
            hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
@@ -214,8 +214,9 @@ module morrison_micro_driver_module
     ! This done because the hydromet_mc arrays that are produced by
     ! M2005MICRO_GRAUPEL don't include the clipping term.
     do i = 1, hydromet_dim, 1
-      hydromet_mc(:,i) = ( hydromet_tmp(:,i) - hydromet(:,i)  ) / real( dt )
+      hydromet_mc(2:,i) = ( hydromet_tmp(2:,i) - hydromet(2:,i)  ) / real( dt )
     end do
+    hydromet_mc(1,:) = 0.0 ! Boundary condition
 
     ! Update thetal based on absolute temperature
     thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt )
