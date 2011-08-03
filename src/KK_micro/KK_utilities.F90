@@ -49,7 +49,7 @@ module KK_utilities
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x * ( 1.0 + sigma_sqd_x / mu_x**2 )**(-0.5) )
+    mu_x_n = log( mu_x / sqrt( 1.0 + sigma_sqd_x / mu_x**2 ) )
 
     return
   end function mean_L2N
@@ -83,7 +83,7 @@ module KK_utilities
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x * ( 1.0d0 + sigma_sqd_x / mu_x**2 )**(-0.5d0) )
+    mu_x_n = log( mu_x / sqrt( 1.0d0 + sigma_sqd_x / mu_x**2 ) )
 
     return
   end function mean_L2N_dp

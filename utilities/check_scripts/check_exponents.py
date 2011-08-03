@@ -98,7 +98,7 @@ def line_has_bad_exponent(line):
       # If float_value is the same as int_value and the exponent is written
       # as an integer, or if the exponent is 0.5, this is a bad exponent
       if( (float_value == int_value and str(int_value) != exponent) or
-           float_value == 0.5 ):
+           abs(float_value) == 0.5 ):
         bad_exponent = True
     except:
       pass
