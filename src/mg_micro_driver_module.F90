@@ -138,7 +138,7 @@ module mg_micro_driver_module
       wsub_flip,    & ! Diagnosed sub-grid vertical velocity st. dev.                 [m/s]
       wsubi_flip      ! Diagnosed sub-grid vertical velocity ice                      [m/s]
       
-    real(r8), dimension(1, nnzp-1, 0) :: &
+    real(r8), dimension(1, nnzp-1, 1) :: &
       aer_mmr_flip
 
     ! MG Input Variables

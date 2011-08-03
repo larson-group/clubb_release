@@ -38,7 +38,7 @@ module rad_constituents
      
      ! Dummy values
      if (present(naero)) then
-       naero = 0
+       naero = 1
      end if
      
      if (present(ngas)) then
@@ -136,23 +136,23 @@ module rad_constituents
      end if
      
      if (present(density_aer)) then
-       density_aer = 1
+       density_aer = 1._r8
      end if
      
      if (present(hygro_aer)) then
-       hygro_aer = 1
+       hygro_aer = 1._r8
      end if
      
      if (present(dryrad_aer)) then
-       dryrad_aer = 1
+       dryrad_aer = 1._r8
      end if
      
      if (present(dispersion_aer)) then
-       dispersion_aer = 1
+       dispersion_aer = 10._r8
      end if
      
      if (present(num_to_mass_aer)) then
-       num_to_mass_aer = 1
+       num_to_mass_aer = 1._r8
      end if
      
      return
