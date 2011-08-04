@@ -193,6 +193,13 @@ module morrison_micro_driver_module
     rvm_mc(1:nnzp) = 0.0
     hydromet_mc(1:nnzp,:) = 0.0
 
+    ! Initialize effective radius to zero
+    effc = 0.0 
+    effi = 0.0 
+    effg = 0.0 
+    effs = 0.0 
+    effr = 0.0
+
     ! Call the Morrison microphysics
     call M2005MICRO_GRAUPEL &
          ( rcm_mc, hydromet_mc(:,iiricem), hydromet_mc(:,iirsnowm), &
