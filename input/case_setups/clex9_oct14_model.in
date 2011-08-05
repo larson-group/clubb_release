@@ -52,8 +52,8 @@ time_initial = 51262.5  ! Model start time [GMT, seconds since midnight on start
 time_final   = 65662.5  ! Model end time [GMT, seconds since midnight on start date]
 time_spinup = 3600.0    ! End of spin-up period [seconds since midnight on start date]
 
-dtmain    = 60.0   ! Model timestep [s]
-dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+dt_main    = 60.0   ! Model timestep [s]
+dt_rad = 60.0   ! Closure timestep [s] (must multiply evenly into dt_main).
 
 p_sfc = 771.70e2    ! Pressure at model base              [Pa]
 
@@ -169,7 +169,7 @@ l_stats       = .true.        ! Flag for statistical output.
 fname_prefix = "clex9_oct14"  ! Prefix of output filename.
 stats_tsamp  = 60.          ! Frequency of statistical sampling [s]
                             ! For most complete sampling, let 
-                            ! stats_tsamp = dtmain
+                            ! stats_tsamp = dt_main
                             ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 60.            ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"        ! Type of statistical output file ("grads" or "netcdf").

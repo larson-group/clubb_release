@@ -56,8 +56,8 @@ time_spinup  = 0.0       ! End of spin-up period [seconds since midnight on star
 l_t_dependent = .true. ! Model uses a _surface.in file for input, so this must be true
 l_ignore_forcings = .true. ! Model does not read forcings from a file.
 
-dtmain    = 60.0   ! Model timestep [s]
-dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+dt_main    = 60.0   ! Model timestep [s]
+dt_rad = 60.0   ! Closure timestep [s] (must multiply evenly into dt_main).
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -176,7 +176,7 @@ l_stats       = .true.    ! Flag for statistical output.
 fname_prefix = "mpace_b"  ! Prefix of output filename.
 stats_tsamp  = 60.        ! Frequency of statistical sampling [s]
                           ! For most complete sampling, let 
-                          ! stats_tsamp = dtmain
+                          ! stats_tsamp = dt_main
                           ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 60.        ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"    ! Type of statistical output file ("grads" or "netcdf").

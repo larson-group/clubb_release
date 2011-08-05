@@ -109,10 +109,9 @@ module clubb_driver
 !$omp               time_current)
 
   real(kind=time_precision), private ::  & 
-    dtmain,      & ! Main model timestep                      [s]
-    dtclosure,   & ! Closure model timestep                   [s]
-    dt             ! Current model timestep (based on spinup) [s]
-!$omp threadprivate(dtmain, dtclosure, dt)
+    dt_main,      & ! Main model timestep                      [s]
+    dt_rad          ! Closure model timestep                   [s]
+!$omp threadprivate(dt_main, dt_rad)
 
   contains
 
@@ -203,6 +202,7 @@ module clubb_driver
 
     use stats_variables, only: l_stats_last, l_stats_samp, & ! Variable(s)
       l_output_rad_files
+
     use stats_variables, only: zt ! Type
 
     use stats_variables, only: &
@@ -259,6 +259,8 @@ module clubb_driver
 
     use simple_rad_module, only: simple_rad_lba_init ! Procedure(s)
 
+    use variables_radiation_module, only: setup_radiation_variables ! Procedure(s)
+
 #endif
 
     implicit none
@@ -298,8 +300,7 @@ module clubb_driver
     ! Local Variables
     ! Internal Timing Variables
     integer :: & 
-      ifinal, & 
-      niterlong
+      ifinal    
 
     integer :: & 
       debug_level     ! Amount of debugging information
@@ -352,7 +353,7 @@ module clubb_driver
     real :: dummy_dx, dummy_dy  ! [m]
 
     integer :: &
-      i, i1, j, & ! Local Loop Variables
+      itime, j, & ! Local Loop Variables
       iinit,    & ! initial iteration
       err_code_forcings
 
@@ -382,7 +383,7 @@ module clubb_driver
       zt_grid_fname, zm_grid_fname,  & 
       day, month, year, rlat, rlon, sfc_elevation, & 
       time_initial, time_final, time_spinup, & 
-      dtmain, dtclosure, & 
+      dt_main, dt_rad, & 
       sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, & 
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, saturation_formula, &
@@ -423,8 +424,8 @@ module clubb_driver
     time_final   = 3600._time_precision
     time_spinup  = 0._time_precision
 
-    dtmain    = 30._time_precision
-    dtclosure = 30._time_precision
+    dt_main    = 30._time_precision
+    dt_rad = 30._time_precision
 
     sfctype  = 0
     T_sfc     = 288.
@@ -616,8 +617,8 @@ module clubb_driver
       call write_text( "time_final = ", real( time_final ), l_write_to_file, iunit )
       call write_text( "time_spinup = ", real( time_spinup ), l_write_to_file, iunit )
 
-      call write_text( "dtmain = ", real( dtmain ), l_write_to_file, iunit )
-      call write_text( "dtclosure = ", real( dtclosure ), l_write_to_file, iunit )
+      call write_text( "dt_main = ", real( dt_main ), l_write_to_file, iunit )
+      call write_text( "dt_rad = ", real( dt_rad ), l_write_to_file, iunit )
 
       call write_text( "sfctype = ", sfctype, l_write_to_file, iunit )
       call write_text( "T_sfc = ", T_sfc, l_write_to_file, iunit )
@@ -833,18 +834,18 @@ module clubb_driver
 
       ! Ensure that iteration num, iinit, is an integer, so that model time is
       !   incremented correctly by iteration number at end of timestep
-      if ( mod( (time_restart-time_initial) , dtmain ) /= 0._time_precision ) then
+      if ( mod( (time_restart-time_initial) , dt_main ) /= 0._time_precision ) then
 
         write(fstderr,*) "Error: (time_restart-time_initial) ",  & 
-          "is not a multiple of dtmain."
+          "is not a multiple of dt_main."
         write(fstderr,*) "time_restart = ", time_restart
         write(fstderr,*) "time_initial = ", time_initial
-        write(fstderr,*) "dtmain = ", dtmain
+        write(fstderr,*) "dt_main = ", dt_main
         stop "Fatal error"
 
-      end if ! mod( (time_restart-time_initial) , dtmain ) /= 0
+      end if ! mod( (time_restart-time_initial) , dt_main ) /= 0
 
-      iinit = floor( ( time_current - time_initial ) / dtmain ) + 1
+      iinit = floor( ( time_current - time_initial ) / dt_main ) + 1
 
       call restart_clubb &
            ( iunit, runfile,                  &            ! Intent(in)
@@ -861,7 +862,8 @@ module clubb_driver
 
     end if ! ~l_restart
 
-
+    call setup_radiation_variables(gr%nnzp, lin_int_buffer, &
+                              extend_atmos_range_size )
 
 #ifdef _OPENMP
     iunit = omp_get_thread_num( ) + 50 ! Known magic number
@@ -886,7 +888,7 @@ module clubb_driver
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
                        complete_momentum(2:total_atmos_dim + 1), & ! Intent(in)
                        day, month, year, & ! Intent(in)
-                       (/rlat/), (/rlon/), time_current, dtmain ) ! Intent(in)
+                       (/rlat/), (/rlon/), time_current, dt_main ) ! Intent(in)
     else
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
@@ -894,7 +896,7 @@ module clubb_driver
                        gr%nnzp, gr%zt, gr%zm, total_atmos_dim, & ! Intent(in)
                        complete_alt, total_atmos_dim + 1, complete_momentum, & ! Intent(in)
                        day, month, year, & ! Intent(in)
-                       (/rlat/), (/rlon/), time_current, dtmain ) ! Intent(in)
+                       (/rlat/), (/rlon/), time_current, dt_main ) ! Intent(in)
     end if
 
 #ifdef LATIN_HYPERCUBE
@@ -910,28 +912,34 @@ module clubb_driver
 
     ! Time integration
     ! Call advance_clubb_core once per each statistics output time
-    ifinal = floor( ( time_final - time_initial ) / dtmain )
+    ifinal = floor( ( time_final - time_initial ) / dt_main )
 
     ! Setup filenames and variables to set for setfields, if enabled
     if ( l_input_fields ) then
       call inputfields_init( iunit, runfile ) ! Intent(in)
     end if
 
+    ! check to make sure dt_rad is a mutliple of dt_main
+    if ( (dt_rad/dt_main) /= &
+          real(floor(dt_rad/dt_main), kind=selected_real_kind(p=12)) ) then
+      stop "dt_rad must be a multiple of dt_main"
+    end if
+
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------
 
-    do i = iinit, ifinal, 1
+    do itime = iinit, ifinal, 1
 
-      ! When this time step is over, the time will be time + dtmain
+      ! When this time step is over, the time will be time + dt_main
 
       ! We use elapsed time for stats_begin_step
       if ( .not. l_restart ) then
-        call stats_begin_timestep( time_current-time_initial+dtmain ) ! Intent(in)
+        call stats_begin_timestep( time_current-time_initial+dt_main ) ! Intent(in)
       else
         ! Different elapsed time for restart
         ! Joshua Fasching March 2008
-        call stats_begin_timestep( time_current-time_restart+dtmain ) ! Intent(in)
+        call stats_begin_timestep( time_current-time_restart+dt_main ) ! Intent(in)
       end if
 
       ! If we're doing an inputfields run, get the values for our
@@ -960,7 +968,7 @@ module clubb_driver
 
       ! Set large-scale tendencies and subsidence profiles
       err_code_forcings = clubb_no_error
-      call advance_clubb_forcings( dtmain, &  ! Intent(in)
+      call advance_clubb_forcings( dt_main, &  ! Intent(in)
                                    err_code_forcings ) ! Intent(inout)
 
       if ( fatal_error( err_code_forcings ) ) then
@@ -991,48 +999,40 @@ module clubb_driver
         thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:)
       end if
 
-      ! Compute number of iterations for closure loop
-      if ( time_current > time_spinup ) then
-        niterlong = 1
-        dt        = dtmain
-      else
-        niterlong = floor( dtmain / dtclosure )
-        dt        = dtclosure
-      end if
+      ! Call the parameterization one timestep
+      call advance_clubb_core & 
+           ( l_implemented, dt_main, fcor, sfc_elevation, &            ! Intent(in)
+             thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
+             sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &      ! Intent(in)
+             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
+             wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
+             p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
+             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
+             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in)
+             um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
+             thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
+             wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
+             sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
+             wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
+             rcm, wprcp, cloud_frac, &                            ! Intent(out)
+             rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
 
-!-------------------------------------------------------------------------------
-!                                Closure loop
-!-------------------------------------------------------------------------------
+      if ( fatal_error( err_code ) ) write(*,*) "exit1"
 
-      do i1=1, niterlong
-        ! Call the parameterization one timestep
-        call advance_clubb_core & 
-             ( l_implemented, dt, fcor, sfc_elevation, &            ! Intent(in)
-               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
-               sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &      ! Intent(in)
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
-               wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
-               p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
-               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in)
-               um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
-               thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
-               wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
-               sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
-               wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
-               rcm, wprcp, cloud_frac, &                            ! Intent(out)
-               rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
+      wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
-        wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
+      ! Advance a microphysics scheme
+      call advance_clubb_microphys &
+           ( itime, dt_main, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
+             rtm, rcm, wm_zt, wm_zm,                               & ! Intent(in)
+             Kh_zm, wp2_zt, Lscale, pdf_params,                    & ! Intent(in)
+             rho_ds_zt, rho_ds_zm, sigma_g,                        & ! Intent(in)
+             Ncnm, hydromet,                                       & ! Intent(inout)
+             rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(inout)
 
-        ! Advance a microphysics scheme
-        call advance_clubb_microphys &
-             ( i, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
-               rtm, rcm, wm_zt, wm_zm,                               & ! Intent(in)
-               Kh_zm, wp2_zt, Lscale, pdf_params,                    & ! Intent(in)
-               rho_ds_zt, rho_ds_zm, sigma_g,                        & ! Intent(in)
-               Ncnm, hydromet,                                       & ! Intent(inout)
-               rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(inout)
+      if ( fatal_error( err_code ) ) write(*,*) "exit2"
+
+      if ( mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1 ) then
 
         ! Advance a radiation scheme
         ! With this call ordering, snow and ice water mixing ratio will be
@@ -1047,40 +1047,33 @@ module clubb_driver
                radht, Frad, Frad_SW_up, Frad_LW_up, &         ! Intent(out)
                Frad_SW_down, Frad_LW_down )                   ! Intent(out)
 
-        ! End statistics timestep
-        call stats_end_timestep( )
+      end if
 
-        ! Set Time
-        ! Advance time here, not in advance_clubb_core,
-        ! in order to facilitate use of stats.
-        ! A host model, e.g. WRF, would advance time outside
-        ! of advance_clubb_core.  Vince Larson 7 Feb 2006
-        if ( i1 < niterlong ) then
-          time_current = time_initial + real( i-1, kind=time_precision ) * dtmain  & 
-                       + real( i1, kind=time_precision ) * dtclosure
-        else if ( i1 == niterlong ) then
-          time_current = time_initial + real( i, kind=time_precision ) * dtmain
-        end if
+      ! Update the radiation variables here so they are updated every timestep
+      call update_radiation_variables( gr%nnzp )
 
-        ! This was moved from above to be less confusing to the user,
-        ! since before it would appear as though the last timestep
-        ! was not executed. -dschanen 19 May 08
-        if ( l_stats_last .and. l_stdout ) then
-          write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',  & 
-            i, '; time = ', time_current
-        end if
+      ! End statistics timestep
+      call stats_end_timestep( )
+      if ( fatal_error( err_code ) ) write(*,*) "exit3"
 
-        if ( fatal_error( err_code ) ) exit
+      ! Set Time
+      ! Advance time here, not in advance_clubb_core,
+      ! in order to facilitate use of stats.
+      ! A host model, e.g. WRF, would advance time outside
+      ! of advance_clubb_core.  Vince Larson 7 Feb 2006
+      time_current = time_initial + real( itime, kind=time_precision ) * dt_main
 
-      end do ! i1=1..niterlong
-
-!-------------------------------------------------------------------------------
-!                             End Closure Loop
-!-------------------------------------------------------------------------------
+      ! This was moved from above to be less confusing to the user,
+      ! since before it would appear as though the last timestep
+      ! was not executed. -dschanen 19 May 08
+      if ( l_stats_last .and. l_stdout ) then
+        write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',  & 
+          itime, '; time = ', time_current
+      end if
 
       if ( fatal_error( err_code ) ) exit
 
-    end do ! i=1, ifinal
+    end do ! itime=1, ifinal
 
 !-------------------------------------------------------------------------------
 !                       End Main Time Stepping Loop
@@ -1379,17 +1372,17 @@ module clubb_driver
 
     ! Initialize damping
     if( thlm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dtclosure, thlm_sponge_damp_settings, & ! Intent(in)
+      call initialize_tau_sponge_damp( dt_main, thlm_sponge_damp_settings, & ! Intent(in)
                                        thlm_sponge_damp_profile )       ! Intent(out)
     end if
 
     if( rtm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dtclosure, rtm_sponge_damp_settings, & ! Intent(in)
+      call initialize_tau_sponge_damp( dt_main, rtm_sponge_damp_settings, & ! Intent(in)
                                        rtm_sponge_damp_profile )       ! Intent(out)
     end if
 
     if(uv_sponge_damp_settings%l_sponge_damping) then
-      call initialize_tau_sponge_damp( dtclosure, uv_sponge_damp_settings, &  ! Intent(in)
+      call initialize_tau_sponge_damp( dt_main, uv_sponge_damp_settings, &  ! Intent(in)
                                        uv_sponge_damp_profile )        ! Intent(out)
     end if
 
@@ -3740,14 +3733,12 @@ module clubb_driver
     use bugsrad_driver, only: compute_bugsrad_radiation ! Procedure(s)
 #endif
 
-    use stats_variables, only: iFrad_SW, l_stats_samp,  & ! Variable(s)
-      iFrad_LW, zt, zm, iradht_LW, iradht_SW
-
-    use stats_type, only: stat_update_var ! Procedure(s)
-
     use error_code, only: clubb_no_error, clubb_var_equals_NaN
 
     use error_code, only: reportError, fatal_error
+
+    use variables_radiation_module, only: &
+      radht_LW, radht_SW, Frad_SW, Frad_LW
 
     implicit none
 
@@ -3787,10 +3778,6 @@ module clubb_driver
 
     ! Local Variables
     real, dimension(gr%nnzp) ::  & 
-      radht_SW, & ! Radiative heating rate              [K/s]
-      radht_LW, & ! Radiative heating rate              [K/s]
-      Frad_SW,  & ! Short-wave radiative flux           [W/m^2]
-      Frad_LW,  & ! Long-wave radiative flux            [W/m^2]
       rsnowm,   & ! Snow mixing ratio                   [kg/kg]
       ricem       ! Prisitine ice water mixing ratio    [kg/kg]
 
@@ -3976,20 +3963,6 @@ module clubb_driver
       Frad = Frad_SW + Frad_LW 
       radht = radht_SW + radht_LW 
 
-      ! Save LW and SW components of radiative heating and
-      ! radiative flux based on simplified radiation.
-      if ( l_stats_samp ) then
-
-        call stat_update_var( iradht_LW, radht_LW, zt )
-
-        call stat_update_var( iradht_SW, radht_SW, zt )
-
-        call stat_update_var( iFrad_SW, Frad_SW, zm )
-
-        call stat_update_var( iFrad_LW, Frad_LW, zm )
-
-      end if
-
     case ( "simplified_bomex" )
       !----------------------------------------------------------------
       ! GCSS BOMEX specifiction radiation
@@ -4020,5 +3993,123 @@ module clubb_driver
 
     return
   end subroutine advance_clubb_radiation
+
+
+  !-----------------------------------------------------------------------------
+  subroutine update_radiation_variables( nzmax )
+
+  ! Description:
+  !   Updates the radiation variables using the stat_var_update() subroutine.
+  !
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------------
+
+    use stats_variables, only: &
+      iradht_LW, iradht_SW, iFrad_SW, iFrad_LW, iFrad_SW_up, & ! Variables
+      iFrad_LW_up, iFrad_SW_down, iFrad_LW_down, iT_in_k_rad, ircil_rad, &
+      io3l_rad, irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad, &
+      iradht_rad, iradht_LW_rad, iradht_SW_rad, iFrad_SW_rad, &
+      iFrad_LW_rad, iFrad_SW_up_rad, iFrad_LW_up_rad, iFrad_SW_down_rad, &
+      iFrad_LW_down_rad, ifdswcl, ifuswcl, ifdlwcl, ifulwcl
+
+    use variables_radiation_module, only: &
+      radht_LW, radht_SW, Frad_SW, Frad_LW, T_in_k, rcil, o3l, & ! Variables
+      rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, radht_LW_2d, &
+      radht_SW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
+      fdswcl, fuswcl, fdlwcl, fulwcl
+
+    use variables_diagnostic_module, only: &
+      Frad_LW_down, Frad_LW_up, Frad_SW_down, Frad_SW_up ! Variables
+
+    use grid_class, only: flip ! Prodecure(s)
+
+    use stats_variables, only: zt, zm, rad_zt, rad_zm ! Type
+
+    use stats_variables, only: l_stats_samp, l_output_rad_files ! Variable(s)
+
+    use stats_type, only: &
+      stat_update_var ! Procedure
+
+    implicit none
+
+    ! Input Variables
+
+    integer, intent(in) :: nzmax
+
+    ! Local Variables
+
+    integer :: rad_zt_dim, rad_zm_dim ! Dimensions of the radiation grid
+
+
+    if ( l_stats_samp ) then
+     
+      call stat_update_var( iradht_LW, radht_LW, zt )
+
+      call stat_update_var( iradht_SW, radht_SW, zt )
+
+      call stat_update_var( iFrad_SW, Frad_SW, zm )
+
+      call stat_update_var( iFrad_LW, Frad_LW, zm )
+
+      call stat_update_var( iFrad_SW_up, Frad_SW_up, zm )
+
+      call stat_update_var( iFrad_LW_up, Frad_LW_up, zm )
+
+      call stat_update_var( iFrad_SW_down, Frad_SW_down, zm )
+
+      call stat_update_var( iFrad_LW_down, Frad_LW_down, zm )
+
+      if ( l_output_rad_files ) then
+
+        rad_zt_dim = (nzmax-1)+lin_int_buffer+extend_atmos_range_size
+        rad_zm_dim = (nzmax-1)+lin_int_buffer+extend_atmos_range_size+1
+
+        call stat_update_var( iT_in_K_rad, real( flip(T_in_K(1,:), rad_zt_dim) ), rad_zt )
+
+        call stat_update_var( ircil_rad, real( flip(rcil(1,:), rad_zt_dim) ), rad_zt )
+
+        call stat_update_var( io3l_rad, real( flip(o3l(1,:), rad_zt_dim) ), rad_zt )
+
+        call stat_update_var( irsnowm_rad, real( flip(rsnowm_2d(1,:), rad_zt_dim) ), rad_zt )
+
+        call stat_update_var( ircm_in_cloud_rad, real( flip(rcm_in_cloud_2d(1,:), rad_zt_dim) ), &
+                              rad_zt )
+
+        call stat_update_var( icloud_frac_rad, real( flip(cloud_frac_2d(1,:), rad_zt_dim) ), &
+                              rad_zt )
+
+        call stat_update_var( iradht_rad, &
+                              real(flip((radht_SW_2d(1,:) + radht_LW_2d(1,:)), rad_zt_dim) ), & 
+                              rad_zt )
+
+        call stat_update_var( iradht_LW_rad, real( flip(radht_LW_2d(1,:), rad_zt_dim) ), rad_zt )
+
+        call stat_update_var( iradht_SW_rad, real( flip(radht_SW_2d(1,:), rad_zt_dim) ), rad_zt )
+
+        call stat_update_var( iFrad_SW_rad, &
+                              real( flip((Frad_uSW(1,:) - Frad_dSW(1,:)), rad_zm_dim) ), rad_zm )
+
+        call stat_update_var( iFrad_LW_rad, & 
+                              real( flip((Frad_uLW(1,:) - Frad_dLW(1,:)), rad_zm_dim) ), rad_zm )
+
+        call stat_update_var( iFrad_SW_up_rad, real( flip(Frad_uSW(1,:), rad_zm_dim) ), rad_zm )
+
+        call stat_update_var( iFrad_LW_up_rad, real( flip(Frad_uLW(1,:), rad_zm_dim) ), rad_zm )
+
+        call stat_update_var( iFrad_SW_down_rad, real( flip(Frad_dSW(1,:), rad_zm_dim) ), rad_zm )
+
+        call stat_update_var( iFrad_LW_down_rad, real( flip(Frad_dLW(1,:), rad_zm_dim) ), rad_zm )
+
+        call stat_update_var( ifdswcl, real( flip(fdswcl(1,:), rad_zm_dim) ), rad_zm )
+        call stat_update_var( ifuswcl, real( flip(fuswcl(1,:), rad_zm_dim) ), rad_zm )
+        call stat_update_var( ifdlwcl, real( flip(fdlwcl(1,:), rad_zm_dim) ), rad_zm )
+        call stat_update_var( ifulwcl, real( flip(fulwcl(1,:), rad_zm_dim) ), rad_zm )
+
+      end if ! l_output_rad_files
+
+    end if ! lstats_samp
+
+  end subroutine update_radiation_variables
 
 end module clubb_driver

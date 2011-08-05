@@ -33,9 +33,8 @@
 #endif
       
       use kinds
-      use stats_type, only: stat_update_var ! Procedure(s)
-      use stats_variables, only: rad_zm, l_stats_samp, ifulwcl, ifdlwcl
-     +, ifdswcl, ifuswcl
+      use variables_radiation_module, only: fdswcl, fuswcl 
+     +,                                     fdlwcl, fulwcl
 
 #ifdef USE_BUGSrad_ocast_random
       use bugs_cloud_correlate
@@ -167,10 +166,6 @@
      &, fusw       !Upward SW flux                             (W/m^-2).
      &, fdlw       !Downward LW flux                           (W/m^-2).
      &, fulw       !Upward LW flux                             (W/m^-2).
-     &, fdswcl     !Downward clear-sky SW flux                 (W/m^-2).
-     &, fuswcl     !Upward clear-sky SW flux                   (W/m^-2).
-     &, fdlwcl     !Downward clear-sky LW flux                 (W/m^-2).
-     &, fulwcl     !Upward clear-sky LW flux                   (W/m^-2).
       real (kind=dbl_kind), dimension(nlen,nlm)::
      &  atl        !All-sky LW radiative heating rate             (K/s).
      &, asl        !All-sky SW radiative heating rate             (K/s).      
@@ -855,19 +850,6 @@
 
 !     print*,'---- exit subroutine bugs_rad:'
 !      print *, umco2,umch4,umn2o
-
-      if ( l_stats_samp ) then
-        ! Reverse the arrays so the results are oriented correctly (ticket #190)
-        fulwcl = fulwcl(:, nlm+1:1:-1)
-        fdlwcl = fdlwcl(:, nlm+1:1:-1)
-        fdswcl = fdswcl(:, nlm+1:1:-1)
-        fuswcl = fuswcl(:, nlm+1:1:-1)
-
-        call stat_update_var( ifulwcl, real(fulwcl), rad_zm )
-        call stat_update_var( ifdlwcl, real(fdlwcl), rad_zm )
-        call stat_update_var( ifdswcl, real(fdswcl), rad_zm )
-        call stat_update_var( ifuswcl, real(fuswcl), rad_zm )
-      end if
 
       return
       end subroutine bugs_rad

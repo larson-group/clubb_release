@@ -7,6 +7,8 @@ check the balance of NetCDF formatted files. If you are running NumPy in a virtu
 you may need to edit the first line of the scripts to point to the location of your Python
 installation. For example:
 #! /home/[username]/[name of virtual environment]/bin/python
+To run the script, use the command 
+/home/[username]/[name of virtual environment]/bin/python checkBudget.py
 
 checkBudget.py utilizes readBinaryData and pupynere to read binary data files and check if the
 budgets balance. It automatically detects if an input file is in NetCDF or GrADS format based

@@ -51,8 +51,8 @@ time_initial = 0.0     ! Model start time [seconds since midnight on start date]
 time_final =  21600.0  ! Model end time [seconds since midnight on start date]
 time_spinup = 30000.0  ! End of spin-up period [seconds since midnight on start date]
 
-dtmain    = 20.0   ! Model timestep [s]
-dtclosure = 20.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+dt_main    = 20.0   ! Model timestep [s]
+dt_rad = 20.0   ! Closure timestep [s] (must multiply evenly into dt_main).
 
 T_sfc = 292.0       ! Temperature of underlying surface (e.g. SST)           [K]
 p_sfc = 1017.8e2    ! Pressure at model base              [Pa]
@@ -105,7 +105,7 @@ l_stats       = .true.               ! Flag for statistical output.
 fname_prefix = "dycoms2_rf02_nd_LR"  ! Prefix of output filename.
 stats_tsamp  = 20.          ! Frequency of statistical sampling [s]
                             ! For most complete sampling, let 
-                            ! stats_tsamp = dtmain
+                            ! stats_tsamp = dt_main
                             ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 20.                   ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"               ! Type of statistical output file ("grads" or "netcdf").

@@ -1705,6 +1705,10 @@ module clubb_core
 
     use variables_prognostic_module, only: & 
       cleanup_prognostic_variables ! Procedure
+
+    use variables_radiation_module, only: &
+      cleanup_radiation_variables ! Prodecure
+
     use grid_class, only: &
       cleanup_grid ! Procedure
 
@@ -1728,6 +1732,8 @@ module clubb_core
     ! declared, allocated, initialized, and deallocated whether CLUBB
     ! is part of a larger model or not.
     call cleanup_diagnostic_variables( )
+
+    call cleanup_radiation_variables( )
 
     ! De-allocate the array for the passive scalar tolerances
     deallocate( sclr_tol )

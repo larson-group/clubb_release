@@ -44,7 +44,6 @@ module bugsrad_driver
 !                                  .
 ! ///////////////          Top of CLUBB Grid                         ///////////////
 ! ///////////////          Dimension: nz                             ///////////////
-
 ! References:
 ! Stevens, et al., (2001) _Journal of Atmospheric Science_, Vol 58, p.3391-3409
 ! McClatchey, et al., (1972) _Environmental Research Papers_, No. 411, p.94
@@ -64,21 +63,11 @@ module bugsrad_driver
 
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
-    use stats_type, only: stat_update_var ! Procedure(s)
-    
     use grid_class, only: flip  ! Procedure(s)
 
     use extend_atmosphere_module, only: &
       extend_atmos_dim, extend_alt, extend_pinmb, & ! Variable(s)
       extend_T_in_K, extend_sp_hmdty, extend_o3l
-
-    use stats_variables, only: zt, zm, rad_zt, rad_zm, l_stats_samp, & ! Variable(s)
-      iT_in_K_rad, ircil_rad, io3l_rad, irsnowm_rad, ircm_in_cloud_rad, &
-      icloud_frac_rad, iFrad_SW, iFrad_SW_rad, iFrad_LW, iFrad_LW_rad, &
-      iradht_rad, iradht_SW, iradht_SW_rad, iradht_LW, iradht_LW_rad, &
-      iFrad_SW_up, iFrad_SW_up_rad, iFrad_LW_up, iFrad_LW_up_rad, &
-      iFrad_SW_down, iFrad_SW_down_rad, iFrad_LW_down, iFrad_LW_down_rad, &
-      l_output_rad_files
 
     use parameters_radiation, only: &
       sol_const, &
@@ -87,6 +76,10 @@ module bugsrad_driver
       alndr, &
       alndf, &
       slr
+
+    use variables_radiation_module, only: radht_LW, radht_SW, Frad_SW, Frad_LW,&
+      T_in_K, rcil, o3l, rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, &
+      radht_SW_2d, radht_LW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW
 
     implicit none
 
@@ -131,26 +124,9 @@ module bugsrad_driver
       radht           ! Total heating rate            [K/s]
 
     ! Local Variables
-    real, dimension(nz) :: &
-      Frad_SW, & ! SW radiative flux [W/m^2]
-      Frad_LW, & ! LW radiative flux [W/m^2]
-      radht_SW,& ! SW heating rate   [K/s]
-      radht_LW   ! LW heating rate   [K/s]
 
     real, dimension(nz) :: &
       rcm_in_cloud  ! Liquid water mixing ratio in cloud  [kg/kg]
-
-    ! Altered 3 Oct 2005 to be buffer levels higher
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
-      T_in_K,& ! Temperature        [K]
-      rcil, &  ! Ice mixing ratio    [kg/kg]
-      o3l      ! Ozone mixing ratio  [kg/kg]
-
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
-      Frad_uLW, & ! LW upwelling flux         [W/m^2]
-      Frad_dLW, & ! LW downwelling flux       [W/m^2]
-      Frad_uSW, & ! SW upwelling flux         [W/m^2]
-      Frad_dSW    ! SW downwelling flux       [W/m^2]
 
     double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
       sp_humidity, & ! Specific humidity      [kg/kg]
@@ -161,12 +137,7 @@ module bugsrad_driver
       playerinmb ! [hPa]
 
     double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
-      dpl, &                                  ! Difference in pressure levels       [hPa]
-      rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d ! Two-dimensional copies of the input parameters
-
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
-      radht_SW_2d, & ! SW Radiative heating rate        [W/m^2]
-      radht_LW_2d    ! LW Radiative heating rate        [W/m^2]
+      dpl                      ! Difference in pressure levels       [hPa]
 
     double precision, dimension(nlen) :: &
       ts  ! Surface temperature [K]
@@ -176,8 +147,6 @@ module bugsrad_driver
     integer :: i, z, z1, z2  ! Loop indices
 
     integer :: buffer ! The sum of the two buffers
-
-    integer :: rad_zt_dim, rad_zm_dim ! Dimensions of the radiation grid
 
     !character(len=40) :: time_char
 
@@ -365,69 +334,6 @@ module bugsrad_driver
     Frad_LW(1:nz) = Frad_LW_up - Frad_LW_down
 
     Frad(1:nz) = Frad_SW(1:nz) + Frad_LW(1:nz)
-
-    if ( l_stats_samp ) then
-
-      call stat_update_var( iradht_LW, radht_LW, zt )
-
-      call stat_update_var( iradht_SW, radht_SW, zt )
-
-      call stat_update_var( iFrad_SW, Frad_SW, zm )
-
-      call stat_update_var( iFrad_LW, Frad_LW, zm )
-
-      call stat_update_var( iFrad_SW_up, Frad_SW_up, zm )
-
-      call stat_update_var( iFrad_LW_up, Frad_LW_up, zm )
-
-      call stat_update_var( iFrad_SW_down, Frad_SW_down, zm )
-
-      call stat_update_var( iFrad_LW_down, Frad_LW_down, zm )
-
-      if ( l_output_rad_files ) then
-
-        rad_zt_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size
-        rad_zm_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size+1
-
-        call stat_update_var( iT_in_K_rad, real( flip(T_in_K(1,:), rad_zt_dim) ), rad_zt )
-
-        call stat_update_var( ircil_rad, real( flip(rcil(1,:), rad_zt_dim) ), rad_zt )
-
-        call stat_update_var( io3l_rad, real( flip(o3l(1,:), rad_zt_dim) ), rad_zt )
-
-        call stat_update_var( irsnowm_rad, real( flip(rsnowm_2d(1,:), rad_zt_dim) ), rad_zt )
-
-        call stat_update_var( ircm_in_cloud_rad, real( flip(rcm_in_cloud_2d(1,:), rad_zt_dim) ), &
-                              rad_zt )
-
-        call stat_update_var( icloud_frac_rad, real( flip(cloud_frac_2d(1,:), rad_zt_dim) ), &
-                              rad_zt )
-
-        call stat_update_var( iradht_rad, &
-                              real(flip((radht_SW_2d(1,:) + radht_LW_2d(1,:)), rad_zt_dim) ), & 
-                              rad_zt )
-
-        call stat_update_var( iradht_LW_rad, real( flip(radht_LW_2d(1,:), rad_zt_dim) ), rad_zt )
-
-        call stat_update_var( iradht_SW_rad, real( flip(radht_SW_2d(1,:), rad_zt_dim) ), rad_zt )
-
-        call stat_update_var( iFrad_SW_rad, &
-                              real( flip((Frad_uSW(1,:) - Frad_dSW(1,:)), rad_zm_dim) ), rad_zm )
-
-        call stat_update_var( iFrad_LW_rad, & 
-                              real( flip((Frad_uLW(1,:) - Frad_dLW(1,:)), rad_zm_dim) ), rad_zm )
-
-        call stat_update_var( iFrad_SW_up_rad, real( flip(Frad_uSW(1,:), rad_zm_dim) ), rad_zm )
-
-        call stat_update_var( iFrad_LW_up_rad, real( flip(Frad_uLW(1,:), rad_zm_dim) ), rad_zm )
-
-        call stat_update_var( iFrad_SW_down_rad, real( flip(Frad_dSW(1,:), rad_zm_dim) ), rad_zm )
-
-        call stat_update_var( iFrad_LW_down_rad, real( flip(Frad_dLW(1,:), rad_zm_dim) ), rad_zm )
-
-      end if ! l_output_rad_files
-
-    end if ! lstats_samp
 
     return
   end subroutine compute_bugsrad_radiation
