@@ -258,10 +258,10 @@ module clubb_driver
       cleanup_latin_hypercube_arrays ! Procedure(s)
 
     use simple_rad_module, only: simple_rad_lba_init ! Procedure(s)
+ 
+#endif
 
     use variables_radiation_module, only: setup_radiation_variables ! Procedure(s)
-
-#endif
 
     implicit none
 
