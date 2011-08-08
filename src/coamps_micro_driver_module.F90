@@ -160,7 +160,7 @@ module coamps_micro_driver_module
 !       that are passed throughout COAMPS microphysics.  Brian; 4/5/2008.
     real(kind=time_precision), intent(in) :: & 
       timea_in,         & ! Current model time                   [s]
-      deltf_in         ! Timestep (i.e. dtmain in CLUBB)      [s]
+      deltf_in         ! Timestep (i.e. dt_main in CLUBB)      [s]
 
     real, dimension(gr%nnzp), intent(in) :: & 
       rtm,     & ! Total water mixing ratio                        [kg/kg]
@@ -400,7 +400,7 @@ module coamps_micro_driver_module
 
     real ::  & ! Regular precision to be passed into COAMPS micro. Brian.
       timea,         & ! Current model time                      [s]
-      deltf         ! Timestep (i.e. dtmain in CLUBB)         [s]
+      deltf         ! Timestep (i.e. dt_main in CLUBB)         [s]
 
     integer :: & 
       kk,     & ! Number of COAMPS m gridpoints in the vertical (gr%nnzp-1)

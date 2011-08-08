@@ -75,11 +75,11 @@ time_spinup | real, minimum of 12 digits of precision
   is not treated specially, and therefore we can set
   time_spinup to some time greater than time_final.
 
-dtmain | real, minimum of 12 digits of precision 
+dt_main | real, minimum of 12 digits of precision 
   Model timestep [s].
 
-dtclosure | real, minimum of 12 digits of precision
-  Closure timestep [s] (must multiply evenly into dtmain).
+dt_rad | real, minimum of 12 digits of precision
+  Radiation timestep [s] (must be a multiple of dt_main).
 
 T_sfc | real, default precision
   Temperature of underlying surface (e.g. SST) [K].

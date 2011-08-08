@@ -19,7 +19,7 @@ FILEPATH = "../../output/"
 COMPLETENESS_TEST = True
 
 # Scale for calculating budget balance tolerance since we cannot easily access the
-# model timestep (dtmain). Completeness tests use the frequency of statistical
+# model timestep (dt_main). Completeness tests use the frequency of statistical
 # output which is obtained from the output files
 TIME_SCALE_DENOMINATOR = 60 # Seconds
 

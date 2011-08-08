@@ -168,7 +168,7 @@ module stats_subs
       time_current ! Model time                         [s]
 
     real(kind=time_precision), intent(in) ::  & 
-      delt         ! Timestep (dtmain in CLUBB)         [s]
+      delt         ! Timestep (dt_main in CLUBB)         [s]
 
 
     ! Local Variables
@@ -325,13 +325,13 @@ module stats_subs
 
     ! Check sampling and output frequencies
 
-    ! The model time step length, delt (which is dtmain), should multiply
+    ! The model time step length, delt (which is dt_main), should multiply
     ! evenly into the statistical sampling time step length, stats_tsamp.
     if ( abs( stats_tsamp/delt - real( floor( stats_tsamp/delt ), kind=time_precision ) )  & 
            > 1.e-8_time_precision ) then
       l_error = .true.  ! This will cause the run to stop.
       write(fstderr,*) 'Error:  stats_tsamp should be an even multiple of ',  &
-                       'delt (which is dtmain).  Check the appropriate ',  &
+                       'delt (which is dt_main).  Check the appropriate ',  &
                        'model.in file.'
       write(fstderr,*) 'stats_tsamp = ', stats_tsamp
       write(fstderr,*) 'delt = ', delt

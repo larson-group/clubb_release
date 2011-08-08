@@ -44,7 +44,7 @@ cat $PARAMS_FILE > 'clubb.in'
 # The following sed commands set l_stats to .false., debug_level to 0,
 # and dt = 1.0 sec for profiling purposes.
 #######################################################################
-cat $MODEL_FILE | sed 's/l_stats\s*=\s*.*/l_stats = \.false\./g' | sed 's/debug_level\s*=\s*.*/debug_level = 0/g' | sed 's/dtmain\s*=\s*.*/dtmain = 1\.0/g' | sed 's/dtclosure\s*=\s*.*/dtclosure = 1\.0/g'  >> 'clubb.in'
+cat $MODEL_FILE | sed 's/l_stats\s*=\s*.*/l_stats = \.false\./g' | sed 's/debug_level\s*=\s*.*/debug_level = 0/g' | sed 's/dt_main\s*=\s*.*/dt_main = 1\.0/g' | sed 's/dt_rad\s*=\s*.*/dt_rad = 1\.0/g'  >> 'clubb.in'
 
 echo "Running benchmark"
 

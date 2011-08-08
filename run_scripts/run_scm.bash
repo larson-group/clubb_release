@@ -316,13 +316,13 @@ then
 	# unless l_stats is overwritten to .false.) to timestep test_ts.
 	cat $parameter_file > $NAMELISTS
 	# Use this version if statistical output is desired.
-	#cat $MODEL_IN | sed -e 's/dtmain\s*=\s*.*/dtmain = '$test_ts'/g' \
-	#                    -e 's/dtclosure\s*=\s*.*/dtclosure = '$test_ts'/g' \
+	#cat $MODEL_IN | sed -e 's/dt_main\s*=\s*.*/dt_main = '$test_ts'/g' \
+	#                    -e 's/dt_rad\s*=\s*.*/dt_rad = '$test_ts'/g' \
 	#                    -e 's/stats_tsamp\s*=\s*.*/stats_tsamp = '$test_ts'/g' \
 	#                    -e 's/stats_tout\s*=\s*.*/stats_tout = '$test_ts'/g' >> $NAMELISTS
 	# Use this version if statistical output is not desired.
-	cat $model_file | sed -e 's/dtmain\s*=\s*.*/dtmain = '$test_ts'/g' \
-						-e 's/dtclosure\s*=\s*.*/dtclosure = '$test_ts'/g' \
+	cat $model_file | sed -e 's/dt_main\s*=\s*.*/dt_main = '$test_ts'/g' \
+						-e 's/dt_rad\s*=\s*.*/dt_rad = '$test_ts'/g' \
 						-e 's/l_stats\s*=\s*.*/l_stats = .false./g' >> $NAMELISTS
 	cat $stats_file >> $NAMELISTS
 
