@@ -66,7 +66,7 @@ module sounding
       one_dim_read_var ! Type
 
     use parameters_radiation, only: &
-      l_use_default_std_atmosphere ! Variable(s)
+      l_use_default_std_atmosphere, rad_scheme ! Variable(s)
 
     use input_reader, only: &
       deallocate_one_dim_vars ! Procedure(s)
@@ -418,17 +418,18 @@ module sounding
 
     end if
 
-    ! Prepare extended sounding for radiation
-    if ( l_use_default_std_atmosphere ) then
+    if ( rad_scheme == "bugsrad" ) then
+      ! Prepare extended sounding for radiation
+      if ( l_use_default_std_atmosphere ) then
 
-      call load_extend_std_atm( iunit ) ! Intent(in)
+        call load_extend_std_atm( iunit ) ! Intent(in)
 
-    else
+      else
 
-      call convert_snd2extend_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, & ! Intent(in)
+        call convert_snd2extend_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, & ! Intent(in)
                                    sounding_retVars )   ! Intent(in)
-    end if
-
+      end if
+    end if ! rad_scheme == "bugsrad"
     ! Deallocate sounding and scalar sounding profiles.  If this doesn't happen,
     ! then we'll have a memory leak.
     call deallocate_one_dim_vars( n_snd_var, sounding_retVars )
