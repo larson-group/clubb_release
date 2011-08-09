@@ -232,13 +232,18 @@ module stats_subs
     vars_rad_zm = ''
     vars_sfc = ''
 
-    ! Reads list of variables that should be output to GrADS/NetCDF (namelist $statsnl)
+    ! Reads list of variables that should be output to GrADS/NetCDF (namelist &statsnl)
 
     open(unit=iunit, file=fnamelist)
     read(unit=iunit, nml=statsnl, iostat=read_status, end=100)
-    if ( read_status > 0 ) then
-      write(fstderr,*) "Error reading stats namelist in file ",  &
-                       trim( fnamelist )
+    if ( read_status /= 0 ) then
+      if ( read_status > 0 ) then
+        write(fstderr,*) "Error reading stats namelist in file ",  &
+                         trim( fnamelist )
+      else ! Read status < 0
+        write(fstderr,*) "End of file marker reached while reading stats namelist in file ", &
+          trim( fnamelist )
+      end if
       write(fstderr,*) "One cause is having more statistical variables ",  &
                        "listed in the namelist for var_zt, var_zm, or ",  &
                        "var_sfc than allowed by nvarmax_zt, nvarmax_zm, ",  &
@@ -248,8 +253,8 @@ module stats_subs
       write(fstderr,*) "Maximum variables allowed for var_rad_zt = ", nvarmax_rad_zt
       write(fstderr,*) "Maximum variables allowed for var_rad_zm = ", nvarmax_rad_zm
       write(fstderr,*) "Maximum variables allowed for var_sfc = ", nvarmax_sfc
-      stop "stats_init:  error reading stats namelist."
-    endif
+      stop "stats_init: Error reading stats namelist."
+    end if
     close(unit=iunit)
 
     if ( clubb_at_least_debug_level( 1 ) ) then
@@ -335,7 +340,7 @@ module stats_subs
                        'model.in file.'
       write(fstderr,*) 'stats_tsamp = ', stats_tsamp
       write(fstderr,*) 'delt = ', delt
-    endif
+    end if
 
     ! The statistical sampling time step length, stats_tsamp, should multiply
     ! evenly into the statistical output time step length, stats_tout.
@@ -347,7 +352,7 @@ module stats_subs
                        'stats_tsamp.  Check the appropriate model.in file.'
       write(fstderr,*) 'stats_tout = ', stats_tout
       write(fstderr,*) 'stats_tsamp = ', stats_tsamp
-    endif
+    end if
 
     ! Initialize zt (mass points)
 
@@ -365,7 +370,7 @@ module stats_subs
                        "in the stats namelist, or change nvarmax_zt."
       write(fstderr,*) "nvarmax_zt = ", nvarmax_zt
       stop "stats_init:  number of zt statistical variables exceeds limit"
-    endif
+    end if
 
     zt%nn = ntot
     zt%kk = nnzp
@@ -470,7 +475,7 @@ module stats_subs
                        "in the stats namelist, or change nvarmax_zm."
       write(fstderr,*) "nvarmax_zm = ", nvarmax_zm
       stop "stats_init:  number of zm statistical variables exceeds limit"
-    endif
+    end if
 
     zm%nn = ntot
     zm%kk = nnzp
@@ -568,7 +573,7 @@ module stats_subs
                          "in the stats namelist, or change nvarmax_rad_zt."
         write(fstderr,*) "nvarmax_rad_zt = ", nvarmax_rad_zt
         stop "stats_init:  number of rad_zt statistical variables exceeds limit"
-      endif
+      end if
 
       rad_zt%nn = ntot
       rad_zt%kk = nnrad_zt
@@ -665,7 +670,7 @@ module stats_subs
                          "in the stats namelist, or change nvarmax_rad_zm."
         write(fstderr,*) "nvarmax_rad_zm = ", nvarmax_rad_zm
         stop "stats_init:  number of rad_zm statistical variables exceeds limit"
-      endif
+      end if
 
       rad_zm%nn = ntot
       rad_zm%kk = nnrad_zm
@@ -764,7 +769,7 @@ module stats_subs
                        "in the stats namelist, or change nvarmax_sfc."
       write(fstderr,*) "nvarmax_sfc = ", nvarmax_sfc
       stop "stats_init:  number of sfc statistical variables exceeds limit"
-    endif
+    end if
 
     sfc%nn = ntot
     sfc%kk = 1
