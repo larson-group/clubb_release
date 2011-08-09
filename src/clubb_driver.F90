@@ -1017,7 +1017,7 @@ module clubb_driver
              rcm, wprcp, cloud_frac, &                            ! Intent(out)
              rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
 
-      if ( fatal_error( err_code ) ) write(*,*) "exit1"
+      if ( fatal_error( err_code ) ) write(fstderr,*) "exit1"
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
@@ -1030,7 +1030,7 @@ module clubb_driver
              Ncnm, hydromet,                                       & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(inout)
 
-      if ( fatal_error( err_code ) ) write(*,*) "exit2"
+      if ( fatal_error( err_code ) ) write(fstderr,*) "exit2"
 
       if ( mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1 ) then
 
@@ -1054,7 +1054,8 @@ module clubb_driver
 
       ! End statistics timestep
       call stats_end_timestep( )
-      if ( fatal_error( err_code ) ) write(*,*) "exit3"
+
+      if ( fatal_error( err_code ) ) write(fstderr,*) "exit3"
 
       ! Set Time
       ! Advance time here, not in advance_clubb_core,
