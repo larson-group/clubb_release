@@ -63,12 +63,16 @@ module input_reader
     !              and time.
     !
     !-----------------------------------------------------------------------------------------------
-
+    use constants_clubb, only: &
+      fstderr ! Constant(s)
 
     use input_names, only: &
-      time_name
+      time_name ! Constant(s)
 
     implicit none
+
+    ! External
+    intrinsic :: trim, index
 
     ! Input Variable(s)
 
@@ -103,17 +107,17 @@ module input_reader
 
     integer :: input_status ! The status of a read statement
 
-    ! Begin Code
+    ! ---- Begin Code ----
 
     ! First run through, take names and determine how large the data file is.
-    open(unit=iunit, file=trim(filename), status = 'old' )
+    open(unit=iunit, file=trim( filename ), status = 'old', action='read' )
 
     isComment = .true.
 
     ! Skip all the comments at the top of the file
     do while ( isComment )
       read(iunit,fmt='(A)') tmpline
-      k = index(tmpline, "!")
+      k = index( tmpline, "!" )
       isComment = .false.
       if ( k > 0 ) then
         isComment = .true.
@@ -129,9 +133,12 @@ module input_reader
     do while(.true.)
       read(iunit, *, iostat=input_status) tmp(1), nRowI
 
-      ! If input_status shows an error or end of data, just exit the loop
-      if( input_status /= 0 ) then
+      ! If input_status shows an end of data, then exit the loop
+      if( input_status < 0 ) then
         exit
+      else if ( input_status > 0 ) then
+        write(fstderr,*) "Error reading data from file: " //trim( filename )
+        stop "Fatal error input_reader"
       end if
 
       if( nRowI < 1 ) then
@@ -182,9 +189,8 @@ module input_reader
 
     close(iunit)
 
-
-    ! Avoiding compiler warning
-    if(.false.) print *, tmp
+    ! Eliminate a compiler warning
+    if ( .false. ) print *, tmp
 
     return
   end subroutine read_two_dim_file
