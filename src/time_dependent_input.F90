@@ -819,9 +819,15 @@ module time_dependent_input
     nCols = 0
     colArray = ""
     read(iunit,fmt='(A)',iostat=status_var) tmp
-    ! only continue if there was no IO error or end of data
+    ! Only continue if there was no IO error or end of data
     if( status_var == 0 ) then
-      read(tmp,*,iostat=status_var) (colArray(i), i=1,size(colArray)) ! Move all words into an array
+      ! Move all words into an array
+      read(tmp,*,iostat=status_var) (colArray(i), i=1,size( colArray )) 
+
+    else if ( status_var > 0 ) then
+      ! Handle the case where we have an error before the EOF marker is found
+      stop "Fatal error reading data in time_dependent_input function count_columns"
+
     end if
     
     do i=1,size(colArray)
