@@ -261,7 +261,9 @@ module clubb_driver
  
 #endif
 
-    use variables_radiation_module, only: setup_radiation_variables ! Procedure(s)
+    use variables_radiation_module, only: &
+      setup_radiation_variables, & ! Procedure(s)
+      cleanup_radiation_variables
 
     implicit none
 
@@ -862,8 +864,8 @@ module clubb_driver
 
     end if ! ~l_restart
 
-    call setup_radiation_variables(gr%nnzp, lin_int_buffer, &
-                              extend_atmos_range_size )
+    call setup_radiation_variables( gr%nnzp, lin_int_buffer, &
+                                    extend_atmos_range_size )
 
 #ifdef _OPENMP
     iunit = omp_get_thread_num( ) + 50 ! Known magic number
@@ -1100,6 +1102,8 @@ module clubb_driver
     call finalize_extend_atm( )
 
     call cleanup_clubb_core( l_implemented )
+
+    call cleanup_radiation_variables( )
 
     call cleanup_microphys( )
 
