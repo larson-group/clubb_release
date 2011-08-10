@@ -2302,7 +2302,7 @@ module stats_zt
       case('LH_Nrm_mc')
         iLH_Nrm_mc = k
 
-        call stat_assign( iLH_Ncm_mc, "LH_Nrm_mc", & 
+        call stat_assign( iLH_Nrm_mc, "LH_Nrm_mc", & 
              "Latin hypercube estimate of Nrm_mc [kg/kg/s]", "kg/kg/s", zt )
         k = k + 1
 
