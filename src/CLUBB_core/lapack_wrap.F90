@@ -162,13 +162,11 @@ module lapack_wrap
 
     case( 0 )
       ! Success!
-      if ( lapack_isnan( ndim, nrhs, rhs ) ) then
+      if ( lapack_isnan( ndim, nrhs, solution ) ) then
         err_code = clubb_var_equals_NaN 
       else
         err_code = clubb_no_error
       end if
-
-      solution = rhs
 
     case( 1: )
       if ( info == ndim+1 ) then
@@ -468,13 +466,12 @@ module lapack_wrap
 
     case( 0 )
       ! Success!
-      if ( lapack_isnan( ndim, nrhs, rhs ) ) then
+      if ( lapack_isnan( ndim, nrhs, solution ) ) then
         err_code = clubb_var_equals_NaN 
       else
         err_code = clubb_no_error
       end if
 
-      solution = rhs
     case( 1: )
       if ( info == ndim+1 ) then
         write(fstderr,*) trim( solve_type )// & 
