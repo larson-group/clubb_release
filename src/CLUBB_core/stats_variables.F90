@@ -3,8 +3,8 @@
 !-------------------------------------------------------------------------------
 
 ! Description:
-!  Holds pointers and other variables for statistics to be written to 
-!  GrADS files or netCDF files.
+!   Holds pointers and other variables for statistics to be written to 
+!   GrADS files and netCDF files.
 !-------------------------------------------------------------------------------
 module stats_variables
 
@@ -42,11 +42,11 @@ module stats_variables
 !$omp   threadprivate(l_stats_samp, l_stats_last)
 
   character(len=200), public ::  & 
-  fname_zt,  & ! Name of the stats file for thermodynamic grid fields
-  fname_zm,  & ! Name of the stats file for momentum grid fields
-  fname_rad_zt, & ! Name of the stats file for the zt radiation grid fields
-  fname_rad_zm, & ! Name of the stats file for the zm radiation grid fields
-  fname_sfc    ! Name of the stats file for surface only fields
+    fname_zt,  &    ! Name of the stats file for thermodynamic grid fields
+    fname_zm,  &    ! Name of the stats file for momentum grid fields
+    fname_rad_zt, & ! Name of the stats file for the zt radiation grid fields
+    fname_rad_zm, & ! Name of the stats file for the zm radiation grid fields
+    fname_sfc       ! Name of the stats file for surface only fields
 
 !$omp   threadprivate(fname_zt, fname_zm, fname_rad_zt, fname_rad_zm, fname_sfc)
 
@@ -454,13 +454,21 @@ module stats_variables
 !$omp   threadprivate(iedsclrm, iedsclrm_f)
 
   integer, public :: &
-    iLH_rrainm_mc, & ! Latin hypercube estimate of rrainm_mc
-    iLH_Nrm_mc,    & ! Latin hypercube estimate of Nrm_mc
-    iLH_thlm_mc,   & ! Latin hypercube estimate of thlm_mc
-    iLH_rcm_mc,    & ! Latin hypercube estimate of rcm_mc
-    iLH_rvm_mc       ! Latin hypercube estimate of rvm_mc
-!$omp   threadprivate(iLH_rrainm_mc,  iLH_Nrm_mc, &
-!$omp     iLH_thlm_mc, iLH_rcm_mc, iLH_rvm_mc)
+    iLH_thlm_mc,      & ! Latin hypercube estimate of thlm_mc
+    iLH_rvm_mc,       & ! Latin hypercube estimate of rvm_mc
+    iLH_rcm_mc,       & ! Latin hypercube estimate of rcm_mc
+    iLH_Ncm_mc,       & ! Latin hypercube estimate of Ncm_mc
+    iLH_rrainm_mc,    & ! Latin hypercube estimate of rrainm_mc
+    iLH_Nrm_mc,       & ! Latin hypercube estimate of Nrm_mc
+    iLH_rsnowm_mc,    & ! Latin hypercube estimate of rsnowm_mc
+    iLH_Nsnowm_mc,    & ! Latin hypercube estimate of Nsnowm_mc
+    iLH_rgraupelm_mc, & ! Latin hypercube estimate of rgraupelm_mc
+    iLH_Ngraupelm_mc, & ! Latin hypercube estimate of Ngraupelm_mc
+    iLH_ricem_mc,     & ! Latin hypercube estimate of ricem_mc
+    iLH_Nim_mc          ! Latin hypercube estimate of Nim_mc
+!$omp   threadprivate( iLH_thlm_mc, iLH_rvm_mc, iLH_rcm_mc, iLH_Ncm_mc, &
+!$omp     iLH_rrainm_mc,  iLH_Nrm_mc, iLH_rsnowm_mc, iLH_Nsnowm_mc, &
+!$omp     iLH_rgraupelm_mc, iLH_Ngraupelm_mc, iLH_ricem_mc, iLH_Nim_mc )
 
   integer, public :: &
     iLH_Vrr, & ! Latin hypercube estimate of rrainm sedimentation velocity

@@ -220,7 +220,7 @@ module stats_zt
         ium_ndg
 
     use stats_variables, only: & 
-        imixt_frac, & 
+        imixt_frac, & ! Variable(s) 
         iw1, & 
         iw2, & 
         ivarnce_w1, & 
@@ -263,7 +263,7 @@ module stats_zt
         iedsclrm_f
 
     use stats_variables, only: & 
-      iNsnowm, &
+      iNsnowm, & ! Variable(s)
       iNgraupelm, &
       iNim, & 
       iNsnowm_bt, &
@@ -301,11 +301,18 @@ module stats_zt
       ieff_rad_graupel
 
     use stats_variables, only: &
-      iLH_rvm_mc, &
-      iLH_rcm_mc, &
-      iLH_thlm_mc, &
-      iLH_rrainm_mc, &
-      iLH_Nrm_mc, &
+      iLH_thlm_mc, &  ! Variable(s)
+      iLH_rvm_mc, & 
+      iLH_rcm_mc, & 
+      iLH_Ncm_mc, & 
+      iLH_rrainm_mc, & 
+      iLH_Nrm_mc, & 
+      iLH_rsnowm_mc, & 
+      iLH_Nsnowm_mc, & 
+      iLH_rgraupelm_mc, & 
+      iLH_Ngraupelm_mc, & 
+      iLH_ricem_mc, & 
+      iLH_Nim_mc, & 
       iLH_Vrr, &
       iLH_VNr
 
@@ -313,7 +320,7 @@ module stats_zt
       iLH_rcm_avg
 
     use stats_variables, only: &
-      iLH_rrainm, &
+      iLH_rrainm, & ! Variable(s)
       iLH_Nrm, &
       iLH_ricem, &
       iLH_Nim, &
@@ -622,10 +629,18 @@ module stats_zt
     iupwp_zt    = 0
     ivpwp_zt    = 0
 
-    iLH_rcm_mc = 0
-    iLH_rvm_mc = 0
-    iLH_rrainm_mc = 0
-    iLH_Nrm_mc = 0
+    iLH_thlm_mc      = 0
+    iLH_rvm_mc       = 0
+    iLH_rcm_mc       = 0
+    iLH_Ncm_mc       = 0
+    iLH_rrainm_mc    = 0
+    iLH_Nrm_mc       = 0
+    iLH_rsnowm_mc    = 0
+    iLH_Nsnowm_mc    = 0   
+    iLH_rgraupelm_mc = 0 
+    iLH_Ngraupelm_mc = 0 
+    iLH_ricem_mc     = 0
+    iLH_Nim_mc       = 0
 
     iLH_rcm_avg = 0
 
@@ -2249,27 +2264,6 @@ module stats_zt
              "v'w' interpolated to thermodynamic levels [m^2/s^2]", "m^2/s^2", zt )
         k = k + 1
 
-      case('LH_rrainm_mc')
-        iLH_rrainm_mc = k
-
-        call stat_assign( iLH_rrainm_mc, "LH_rrainm_mc", & 
-             "Latin hypercube estimate of rrainm_mc [kg/kg/s]", "kg/kg/s", zt )
-        k = k + 1
-
-      case('LH_Nrm_mc')
-        iLH_Nrm_mc = k
-
-        call stat_assign( iLH_Nrm_mc, "LH_Nrm_mc", & 
-             "Latin hypercube estimate of Nrm_mc [kg/kg/s]", "kg/kg/s", zt )
-        k = k + 1
-
-      case('LH_rcm_mc')
-        iLH_rcm_mc = k
-
-        call stat_assign( iLH_rcm_mc, "LH_rcm_mc", & 
-             "Latin hypercube estimate of rcm_mc [kg/kg/s]", "kg/kg/s", zt )
-        k = k + 1
-
       case('LH_rvm_mc')
         iLH_rvm_mc = k
 
@@ -2282,6 +2276,76 @@ module stats_zt
 
         call stat_assign( iLH_thlm_mc, "LH_thlm_mc", & 
              "Latin hypercube estimate of thlm_mc [kg/kg/s]", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_rcm_mc')
+        iLH_rcm_mc = k
+
+        call stat_assign( iLH_rcm_mc, "LH_rcm_mc", & 
+             "Latin hypercube estimate of rcm_mc [kg/kg/s]", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_Ncm_mc')
+        iLH_Ncm_mc = k
+
+        call stat_assign( iLH_Ncm_mc, "LH_Ncm_mc", & 
+             "Latin hypercube estimate of Ncm_mc [kg/kg/s]", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_rrainm_mc')
+        iLH_rrainm_mc = k
+
+        call stat_assign( iLH_rrainm_mc, "LH_rrainm_mc", & 
+             "Latin hypercube estimate of rrainm_mc [kg/kg/s]", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_Nrm_mc')
+        iLH_Nrm_mc = k
+
+        call stat_assign( iLH_Ncm_mc, "LH_Nrm_mc", & 
+             "Latin hypercube estimate of Nrm_mc [kg/kg/s]", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_rsnowm_mc')
+        iLH_rsnowm_mc = k
+
+        call stat_assign( iLH_rsnowm_mc, "LH_rsnowm_mc", & 
+             "Latin hypercube estimate of rsnowm_mc [kg/kg/s]", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_Nsnowm_mc')
+        iLH_Nsnowm_mc = k
+
+        call stat_assign( iLH_Nsnowm_mc, "LH_Nsnowm_mc", & 
+             "Latin hypercube estimate of Nsnowm_mc [kg/kg/s]", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_rgraupelm_mc')
+        iLH_rgraupelm_mc = k
+
+        call stat_assign( iLH_rgraupelm_mc, "LH_rgraupelm_mc", & 
+             "Latin hypercube estimate of rgraupelm_mc [kg/kg/s]", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_Ngraupelm_mc')
+        iLH_Ngraupelm_mc = k
+
+        call stat_assign( iLH_Ngraupelm_mc, "LH_Ngraupelm_mc", & 
+             "Latin hypercube estimate of Ngraupelm_mc [kg/kg/s]", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_ricem_mc')
+        iLH_ricem_mc = k
+
+        call stat_assign( iLH_ricem_mc, "LH_ricem_mc", & 
+             "Latin hypercube estimate of ricem_mc [kg/kg/s]", "kg/kg/s", zt )
+        k = k + 1
+
+      case('LH_Nim_mc')
+        iLH_Nim_mc = k
+
+        call stat_assign( iLH_Nim_mc, "LH_Nim_mc", & 
+             "Latin hypercube estimate of Nim_mc [kg/kg/s]", "kg/kg/s", zt )
         k = k + 1
 
       case ( 'LH_Vrr' )

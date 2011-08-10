@@ -7,7 +7,8 @@ module stats_subs
   private ! Set Default Scope
 
   public :: stats_init, stats_begin_timestep, stats_end_timestep, & 
-    stats_accumulate, stats_finalize, stats_accumulate_hydromet
+    stats_accumulate, stats_finalize, stats_accumulate_hydromet, &
+    stats_accumulate_LH_tend
 
   private :: stats_zero, stats_avg
 
@@ -1971,6 +1972,103 @@ module stats_subs
 
     return
   end subroutine stats_accumulate_hydromet
+!------------------------------------------------------------------------------
+  subroutine stats_accumulate_LH_tend( LH_hydromet_mc, LH_thlm_mc, LH_rvm_mc, LH_rcm_mc )
+! Description:
+!   Compute stats for the tendency of latin hypercube sample points.
+
+! References:
+!   None
+!------------------------------------------------------------------------------
+    use parameters_model, only: &
+      hydromet_dim ! Variable(s)
+
+    use grid_class, only: &
+      gr ! Variable(s)
+
+    use array_index, only:  & 
+      iirrainm, iirsnowm, iiricem, iirgraupelm, & ! Variable(s)
+      iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
+
+    use stats_variables, only: &
+      iLH_rrainm_mc, & ! Variable(s)
+      iLH_rsnowm_mc, & 
+      iLH_ricem_mc, & 
+      iLH_rgraupelm_mc, & 
+      iLH_Ncm_mc, &
+      iLH_Nim_mc, & 
+      iLH_Nrm_mc, & 
+      iLH_Nsnowm_mc, &
+      iLH_Ngraupelm_mc, &
+      iLH_rcm_mc, &
+      iLH_rvm_mc, &
+      iLH_thlm_mc
+
+    use stats_type, only: & 
+        stat_update_var ! Procedure(s)
+
+    use stats_variables, only: &
+      zt, & ! Variables
+      l_stats_samp
+
+    implicit none
+
+    ! Input Variables
+    real, dimension(gr%nnzp,hydromet_dim), intent(in) :: &
+      LH_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
+
+    real, dimension(gr%nnzp), intent(in) :: &
+      LH_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
+      LH_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
+      LH_rvm_mc     ! Tendency of vapor                        [kg/kg/s]
+
+    if ( l_stats_samp ) then
+
+      call stat_update_var( iLH_thlm_mc, LH_thlm_mc, zt )
+      call stat_update_var( iLH_rcm_mc, LH_rcm_mc, zt )
+      call stat_update_var( iLH_rvm_mc, LH_rvm_mc, zt )
+
+      if ( iiNcm > 0 ) then
+        call stat_update_var( iLH_Ncm_mc, LH_hydromet_mc(:,iiNcm), zt )
+      end if
+
+      if ( iirrainm > 0 ) then
+        call stat_update_var( iLH_rrainm_mc, LH_hydromet_mc(:,iirrainm), zt )
+      end if
+
+      if ( iirsnowm > 0 ) then
+        call stat_update_var( iLH_rsnowm_mc, LH_hydromet_mc(:,iirsnowm), zt )
+      end if
+
+      if ( iiricem > 0 ) then
+        call stat_update_var( iLH_ricem_mc, LH_hydromet_mc(:,iiricem), zt )
+      end if
+
+      if ( iirgraupelm > 0 ) then
+        call stat_update_var( iLH_rgraupelm_mc, LH_hydromet_mc(:,iirgraupelm), zt )
+      end if
+
+      if ( iiNim > 0 ) then
+        call stat_update_var( iLH_Nim_mc, LH_hydromet_mc(:,iiNim), zt )
+      end if
+
+      if ( iiNrm > 0 ) then
+        call stat_update_var( iLH_Nrm_mc, LH_hydromet_mc(:,iiNrm), zt )
+      end if
+
+      if ( iiNsnowm > 0 ) then
+        call stat_update_var( iLH_Nsnowm_mc, LH_hydromet_mc(:,iiNsnowm), zt )
+      end if
+
+      if ( iiNgraupelm > 0 ) then
+        call stat_update_var( iLH_Ngraupelm_mc, LH_hydromet_mc(:,iiNgraupelm), zt )
+      end if
+
+    end if ! l_stats_samp
+
+    return
+  end subroutine stats_accumulate_LH_tend
+
   !-----------------------------------------------------------------------
   subroutine stats_finalize( )
 
