@@ -120,7 +120,7 @@ if ( exist(sfcfilepath2) )
 		file_var = netcdf.getVar(file3, varid);
 
 		%Average
-		var_avg = zeros(nz, 1);
+		var_avg = zeros(nzmax, 1);
 		for t=t_start:t_end
 			file_var(:,t)
 			var_avg = var_avg + file_var(:,t);
@@ -153,7 +153,7 @@ if ( exist(sfcfilepath2) )
 		file_var = netcdf.getVar(file3, varid);
 
 		%Average
-		var_avg = zeros(nz, 1);
+		var_avg = zeros(nzmax, 1);
 		for t=t_start:t_end
 			var_avg = var_avg + file_var(:,t);
 		end

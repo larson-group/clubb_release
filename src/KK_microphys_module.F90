@@ -15,7 +15,7 @@ module KK_microphys_module
 !                              exner, s_mellor, rcm, hydromet, &
 !                              pdf_params, hydromet_mc, hydromet_vel, &
 !                              rcm_mc, rvm_mc, thlm_mc )
-  subroutine KK_micro_driver( dt, nnzp, l_stats_samp, l_local_kk, &
+  subroutine KK_micro_driver( dt, nzmax, l_stats_samp, l_local_kk, &
                               l_latin_hypercube, thlm, p_in_Pa, exner, rho, &
                               pdf_params, wm, w_std_dev, dzq, rcm, s_mellor, &
                               rvm, hydromet, hydromet_mc, hydromet_vel, &
@@ -131,14 +131,14 @@ module KK_microphys_module
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
-      nnzp        ! Number of model vertical grid levels
+      nzmax        ! Number of model vertical grid levels
 
     logical, intent(in) :: &
       l_stats_samp,      & ! Flag to sample statistics
       l_local_kk,        & ! Flag to use the local form of KK microphysics
       l_latin_hypercube    ! Flag to use Latin Hypercube interface
 
-    real, dimension(nnzp), intent(in) :: &
+    real, dimension(nzmax), intent(in) :: &
       thlm,     & ! Mean liquid water potential temperature  [K]
       rho,      & ! Density                                  [kg/m^3]
       p_in_Pa,  & ! Pressure                                 [Pa]
@@ -146,25 +146,25 @@ module KK_microphys_module
       s_mellor, & ! Mean extended liquid water mixing ratio  [kg/kg]
       rcm         ! Mean cloud water mixing ratio            [kg/kg]
 
-    real, dimension(nnzp), intent(in) :: &
+    real, dimension(nzmax), intent(in) :: &
       wm,        & ! Mean vertical velocity, w (for LH interface)        [m/s] 
       w_std_dev, & ! Standard deviation of w (for LH interface)          [m/s]
       dzq,       & ! Thickness between thermo. levels (for LH interface) [m]
       rvm          ! Mean water vapor mixing ratio (for LH interface)    [kg/kg]
 
-    real, dimension(nnzp,hydromet_dim), target, intent(in) :: &
+    real, dimension(nzmax,hydromet_dim), target, intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
 
-    type(pdf_parameter), dimension(nnzp), target, intent(in) :: &
+    type(pdf_parameter), dimension(nzmax), target, intent(in) :: &
       pdf_params    ! PDF parameters                         [units vary]
 
     ! Input / Output Variables
-    real, dimension(nnzp,hydromet_dim), target, intent(inout) :: &
+    real, dimension(nzmax,hydromet_dim), target, intent(inout) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
-    real, dimension(nnzp), intent(out) :: &
+    real, dimension(nzmax), intent(out) :: &
       rcm_mc,  & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc    ! Time tendency of liquid potential temperature [K/s]
@@ -179,7 +179,7 @@ module KK_microphys_module
       rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
       Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
 
-    real, dimension(nnzp) :: &
+    real, dimension(nzmax) :: &
       rrainm_cond,  & ! Mean KK (dr_r/dt) due to evaporation      [(kg/kg)/s]
       rrainm_auto,  & ! Mean KK (dr_r/dt) due to autoconversion   [(kg/kg)/s]
       rrainm_accr,  & ! Mean KK (dr_r/dt) due to accretion        [(kg/kg)/s]
@@ -240,7 +240,7 @@ module KK_microphys_module
       corr_sNc_1,  & ! Correlation between s and Nc (1st PDF component)  [-]
       corr_sNc_2     ! Correlation between s and Nc (2nd PDF component)  [-]
 
-    real, dimension(nnzp) :: &
+    real, dimension(nzmax) :: &
       rrp2_on_rrainm2, & ! Specified ratio of < r_r >^2 to < r_r'^2 >       [-]
       Nrp2_on_Nrm2,    & ! Specified ratio of < N_r >^2 to < N_r'^2 >       [-]
       Ncp2_on_Ncm2,    & ! Specified ratio of < N_c >^2 to < N_c'^2 >       [-]
@@ -271,7 +271,7 @@ module KK_microphys_module
       total_rc_needed      ! Amount of r_c needed to over the timestep
                            ! for rain source terms                       [kg/kg]
 
-    real, dimension(nnzp) ::  &
+    real, dimension(nzmax) ::  &
       rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
       Nrm_src_adj       ! Total adjustment to Nrm source terms     [{num/kg)/s]
 
@@ -389,7 +389,7 @@ module KK_microphys_module
 
     ! Microphysics tendency loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
-    do k = 2, nnzp-1, 1
+    do k = 2, nzmax-1, 1
 
        ! Compute supersaturation via s1, s2.
        !     Larson et al 2002, JAS, Vol 59, p 3534.
@@ -831,7 +831,7 @@ module KK_microphys_module
        thlm_mc(k) = ( Lv / ( Cp * exner(k) ) ) * rrainm_mc_tndcy(k)
 
 
-    enddo  ! Microphysics tendency loop: k = 2, nnzp-1, 1
+    enddo  ! Microphysics tendency loop: k = 2, nzmax-1, 1
 
 
     !!! Boundary conditions for microphysics tendencies.
@@ -841,24 +841,24 @@ module KK_microphys_module
     rrainm_mc_tndcy(1) = 0.0
     Nrm_mc_tndcy(1)    = 0.0
 
-    rrainm_mc_tndcy(nnzp) = 0.0
-    Nrm_mc_tndcy(nnzp)    = 0.0
+    rrainm_mc_tndcy(nzmax) = 0.0
+    Nrm_mc_tndcy(nzmax)    = 0.0
 
     ! Boundary conditions
     mean_vol_rad(1)    = 0.0
-    mean_vol_rad(nnzp) = 0.0
+    mean_vol_rad(nzmax) = 0.0
 
     rvm_mc(1)    = 0.0
-    rvm_mc(nnzp) = 0.0
+    rvm_mc(nzmax) = 0.0
 
     rcm_mc(1)    = 0.0
-    rcm_mc(nnzp) = 0.0
+    rcm_mc(nzmax) = 0.0
 
     thlm_mc(1)    = 0.0
-    thlm_mc(nnzp) = 0.0
+    thlm_mc(nzmax) = 0.0
 
     !!! Sedimentation velocities
-    forall ( k = 1:nnzp-1 )
+    forall ( k = 1:nzmax-1 )
 
        ! Sedimentation velocity of rrainm.
 !       Vrr(k) = 0.012 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.2
@@ -874,14 +874,14 @@ module KK_microphys_module
        ! Sedimentation velocity is positive upwards.
        VNr(k) = -max( VNr(k), zero_threshold )
 
-    end forall ! 1..nnzp-1
+    end forall ! 1..nzmax-1
 
     !!! Boundary conditions for sedimentation velocities.
 
     ! The flux of rain water through the model top is 0.
     ! Vrr and VNr are set to 0 at the highest model level.
-    Vrr(nnzp) = 0.0
-    VNr(nnzp) = 0.0
+    Vrr(nzmax) = 0.0
+    VNr(nzmax) = 0.0
 
 
     return

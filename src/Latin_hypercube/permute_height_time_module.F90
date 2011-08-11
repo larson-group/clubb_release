@@ -12,11 +12,11 @@ module permute_height_time_module
   contains
 !-----------------------------------------------------------------------
 
-  subroutine permute_height_time( nnzp, nt_repeat, dp1,  & 
+  subroutine permute_height_time( nzmax, nt_repeat, dp1,  & 
                                   height_time_matrix )
 
 ! Description:
-!   Generates a matrix height_time_matrix, which is a nnzp x nt_repeat x dp1
+!   Generates a matrix height_time_matrix, which is a nzmax x nt_repeat x dp1
 !   matrix whose 2nd index is random permutations of the integer sequence 
 !   (0,...,nt_repeat-1).  from 1 to sequence_length. 
 !   k_order gives vertical ordering
@@ -32,14 +32,14 @@ module permute_height_time_module
     ! Input Variables
 
     integer, intent(in) :: &
-      nnzp,       & ! Total number of vertical levels in the model timestep. 
+      nzmax,       & ! Total number of vertical levels in the model timestep. 
       nt_repeat,  & ! Total number of sample points before sequence repeats.
       dp1           ! The number of variates + 1
 
     ! Output Variables
 
-    integer, dimension(nnzp,nt_repeat,dp1), intent(out) :: &
-      height_time_matrix ! nnzp x nt_repeat x dp1 matrix of integers
+    integer, dimension(nzmax,nt_repeat,dp1), intent(out) :: &
+      height_time_matrix ! nzmax x nt_repeat x dp1 matrix of integers
 
     ! Local Variables
 
@@ -47,7 +47,7 @@ module permute_height_time_module
 
     ! Choose elements of height_time_matrix, with a random integer LH sample
     ! for each altitude and for each variate
-    do k = 1, nnzp
+    do k = 1, nzmax
       do i = 1, dp1
         call rand_permute( nt_repeat, height_time_matrix(k,1:nt_repeat,i) )
       end do

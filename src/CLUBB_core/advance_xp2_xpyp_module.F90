@@ -158,7 +158,7 @@ module advance_xp2_xpyp_module
       rtp2_clip_coef = 0.5 ! Coefficient appled the clipping threshold on rtp2 [-]
 
     ! Input variables
-    real, intent(in), dimension(gr%nnzp) ::  & 
+    real, intent(in), dimension(gr%nzmax) ::  & 
       tau_zm,          & ! Time-scale tau on momentum levels     [s]
       wm_zm,           & ! w-wind component on momentum levels   [m/s]
       rtm,             & ! Total water mixing ratio (t-levs)     [kg/kg]
@@ -190,13 +190,13 @@ module advance_xp2_xpyp_module
       dt             ! Model timestep                                [s]
 
     ! Passive scalar input
-    real, intent(in), dimension(gr%nnzp, sclr_dim) ::  & 
+    real, intent(in), dimension(gr%nzmax, sclr_dim) ::  & 
       sclrm, wpsclrp
 
     ! Input/Output variables
     ! An attribute of (inout) is also needed to import the value of the variances
     ! at the surface.  Brian.  12/18/05.
-    real, intent(inout), dimension(gr%nnzp) ::  & 
+    real, intent(inout), dimension(gr%nzmax) ::  & 
       rtp2,    & ! r_t'^2                        [(kg/kg)^2]
       thlp2,   & ! th_l'^2                       [K^2]
       rtpthlp, & ! r_t' th_l'                    [(kg K)/kg]
@@ -207,18 +207,18 @@ module advance_xp2_xpyp_module
     integer, intent(inout) :: err_code
 
     ! Passive scalar output
-    real, intent(inout), dimension(gr%nnzp, sclr_dim) ::  & 
+    real, intent(inout), dimension(gr%nzmax, sclr_dim) ::  & 
       sclrp2, sclrprtp, sclrpthlp
 
     ! Local Variables
-    real, dimension(gr%nnzp) :: & 
+    real, dimension(gr%nzmax) :: & 
       C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d, &
       C4_C14_1d     ! Parameters C4 and C14 combined for simplicity
 
-    real, dimension(gr%nnzp) :: & 
+    real, dimension(gr%nzmax) :: & 
       a1 ! a_1 (momentum levels); See eqn. 24 in `Equations for CLUBB' [-]
 
-    real, dimension(gr%nnzp) :: & 
+    real, dimension(gr%nzmax) :: & 
       upwp_zt,    & ! u'w' interpolated to thermodynamic levels     [m^2/s^2]
       vpwp_zt,    & ! v'w' interpolated to thermodynamic levels     [m^2/s^2]
       wpsclrp_zt    ! w'sclr' interpolated to thermodynamic levels  [m/s {sclrm units}]
@@ -226,17 +226,17 @@ module advance_xp2_xpyp_module
     real :: & 
       threshold     ! Minimum value for variances                   [units vary]
 
-    real, dimension(3,gr%nnzp) ::  & 
+    real, dimension(3,gr%nzmax) ::  & 
       lhs ! Tridiagonal matrix
 
-    real, dimension(gr%nnzp,1) :: & 
+    real, dimension(gr%nzmax,1) :: & 
       rhs ! RHS vector of tridiagonal matrix
 
-    real, dimension(gr%nnzp,2) :: & 
+    real, dimension(gr%nzmax,2) :: & 
       uv_rhs,    &! RHS vectors of tridiagonal system for up2/vp2
       uv_solution ! Solution to the tridiagonal system for up2/vp2
 
-    real, dimension(gr%nnzp,sclr_dim*3) ::  & 
+    real, dimension(gr%nzmax,sclr_dim*3) ::  & 
       sclr_rhs,   & ! RHS vectors of tridiagonal system for the passive scalars
       sclr_solution ! Solution to tridiagonal system for the passive scalars
 
@@ -244,11 +244,11 @@ module advance_xp2_xpyp_module
       err_code_array ! Array containing the error codes for each variable
 
     ! Eddy Diffusion for Variances and Covariances.
-    real, dimension(gr%nnzp) ::  & 
+    real, dimension(gr%nzmax) ::  & 
       Kw2,      & ! For rtp2, thlp2, rtpthlp, and passive scalars  [m^2/s]
       Kw9         ! For up2 and vp2                                [m^2/s]
 
-    real, dimension(gr%nnzp) :: & 
+    real, dimension(gr%nzmax) :: & 
       a1_zt,      & ! a_1 interpolated to thermodynamic levels       [-]
       wprtp_zt,   & ! w'r_t' interpolated to thermodynamic levels    [(kg/kg) m/s]
       wpthlp_zt,  & ! w'th_l' interpolated to thermodyamnic levels   [K m/s]
@@ -262,10 +262,10 @@ module advance_xp2_xpyp_module
       Kw2_thlp2, & 
       Kw2_rtpthlp
 
-    real, dimension(gr%nnzp) :: &
+    real, dimension(gr%nzmax) :: &
       rtpthlp_chnge  ! Net change in r_t'th_l' due to clipping [(kg/kg) K]
 
-    real, dimension(gr%nnzp,sclr_dim) :: &
+    real, dimension(gr%nzmax,sclr_dim) :: &
       sclrprtp_chnge, & ! Net change in sclr'r_t' due to clipping  [{units vary}]
       sclrpthlp_chnge   ! Net change in sclr'th_l' due to clipping [{units vary}]
 
@@ -278,8 +278,8 @@ module advance_xp2_xpyp_module
 
     if ( l_single_C2_Skw ) then
       ! Use a single value of C2 for all equations.
-      C2rt_1d(1:gr%nnzp)  & 
-      = C2b + (C2-C2b) *exp( -0.5 * (Skw_zm(1:gr%nnzp)/C2c)**2 )
+      C2rt_1d(1:gr%nzmax)  & 
+      = C2b + (C2-C2b) *exp( -0.5 * (Skw_zm(1:gr%nzmax)/C2c)**2 )
 
       C2thl_1d   = C2rt_1d
       C2rtthl_1d = C2rt_1d
@@ -287,15 +287,15 @@ module advance_xp2_xpyp_module
       C2sclr_1d  = C2rt_1d
     else
       ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
-      C2rt_1d(1:gr%nnzp)    = C2rt
-      C2thl_1d(1:gr%nnzp)   = C2thl
-      C2rtthl_1d(1:gr%nnzp) = C2rtthl
+      C2rt_1d(1:gr%nzmax)    = C2rt
+      C2thl_1d(1:gr%nzmax)   = C2thl
+      C2rtthl_1d(1:gr%nzmax) = C2rtthl
 
-      C2sclr_1d(1:gr%nnzp)  = C2rt  ! Use rt value for now
+      C2sclr_1d(1:gr%nzmax)  = C2rt  ! Use rt value for now
     end if
 
     ! Combine C4 and C14 for simplicity
-    C4_C14_1d(1:gr%nnzp) = ( 2.0/3.0 * C4 ) + ( 1.0/3.0 * C14 )
+    C4_C14_1d(1:gr%nzmax) = ( 2.0/3.0 * C4 ) + ( 1.0/3.0 * C14 )
 
     ! Are we solving for passive scalars as well?
     if ( sclr_dim > 0 ) then
@@ -308,7 +308,7 @@ module advance_xp2_xpyp_module
     ! Define a_1 (located on momentum levels).
     ! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is
     ! located on the momentum levels).
-    a1(1:gr%nnzp) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nnzp) )
+    a1(1:gr%nzmax) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nzmax) )
 
 
     ! Interpolate a_1, w'r_t', w'th_l', u'w', and v'w' from the momentum levels
@@ -327,7 +327,7 @@ module advance_xp2_xpyp_module
 
     ! Define the Coefficent of Eddy Diffusivity for the variances
     ! and covars.
-    do k = 1, gr%nnzp, 1
+    do k = 1, gr%nzmax, 1
 
       ! Kw2 is used for variances and covars rtp2, thlp2, rtpthlp, and
       ! passive scalars.  The variances and covars are located on the
@@ -352,10 +352,10 @@ module advance_xp2_xpyp_module
       thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 )  ! Positive def. quantity
       rtpthlp_zt = zm2zt( rtpthlp )
 
-      do k = 1, gr%nnzp, 1
+      do k = 1, gr%nzmax, 1
 
         km1 = max( k-1, 1 )
-        kp1 = min( k+1, gr%nnzp )
+        kp1 = min( k+1, gr%nzmax )
 
         ! Compute the square of rtp2_zt, averaged over 3 points.  26 Jan 2008
         rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2  & 
@@ -376,7 +376,7 @@ module advance_xp2_xpyp_module
       enddo
 
       ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
-      do k = 1, gr%nnzp, 1
+      do k = 1, gr%nzmax, 1
 
         ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has units
         ! of kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ] in this
@@ -400,7 +400,7 @@ module advance_xp2_xpyp_module
     else  ! Three-point squared diffusion turned off.
 
       ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
-      do k = 1, gr%nnzp, 1
+      do k = 1, gr%nzmax, 1
 
         Kw2_rtp2(k)    = Kw2(k)
         Kw2_thlp2(k)   = Kw2(k)
@@ -532,8 +532,8 @@ module advance_xp2_xpyp_module
                          uv_rhs, lhs,               & ! Intent(inout)
                          uv_solution, err_code_array(4) )  ! Intent(out)
 
-    up2(1:gr%nnzp) = uv_solution(1:gr%nnzp,1)
-    vp2(1:gr%nnzp) = uv_solution(1:gr%nnzp,2)
+    up2(1:gr%nzmax) = uv_solution(1:gr%nzmax,1)
+    vp2(1:gr%nzmax) = uv_solution(1:gr%nzmax,2)
 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_up2, up2 ) ! Intent(in)
@@ -582,12 +582,12 @@ module advance_xp2_xpyp_module
         call stat_modify( irtp2_cl, -rtp2 / real( dt ), zm )
       endif
       
-      do k = 1, gr%nnzp
+      do k = 1, gr%nzmax
         threshold = rtp2_clip_coef * rtm(k)**2
         if ( rtp2(k) > threshold ) then
           rtp2(k) = threshold
         end if
-      end do ! k = 1..gr%nnzp
+      end do ! k = 1..gr%nzmax
       
       if ( l_stats_samp ) then
         call stat_modify( irtp2_cl, rtp2 / real( dt ), zm )
@@ -951,7 +951,7 @@ module advance_xp2_xpyp_module
     logical, intent(in) :: & 
       l_iter  ! Whether the variances are prognostic (T/F)
 
-    real, dimension(gr%nnzp), intent(in) :: & 
+    real, dimension(gr%nzmax), intent(in) :: & 
       wp3_on_wp2,      & ! Smoothed w'^3 / w'^2 (moment. levels)       [m/s]
       wp3_on_wp2_zt,   & ! Smoothed w'^3 / w'^2 (thermo. levels)       [m/s]
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)      [-]
@@ -969,7 +969,7 @@ module advance_xp2_xpyp_module
       beta       ! Constant model parameter beta                  [-]
 
     ! Output Variables
-    real, dimension(3,gr%nnzp), intent(out) :: & 
+    real, dimension(3,gr%nzmax), intent(out) :: & 
       lhs ! Implicit contributions to the term
 
     ! Local Variables
@@ -984,10 +984,10 @@ module advance_xp2_xpyp_module
     lhs = 0.0
 
     ! Setup LHS of the tridiagonal system
-    do k = 2, gr%nnzp-1, 1
+    do k = 2, gr%nzmax-1, 1
 
       km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nnzp )
+      kp1 = min( k+1, gr%nzmax )
 
       ! LHS mean advection (ma) term.
       lhs(kp1_mdiag:km1_mdiag,k) & 
@@ -1116,7 +1116,7 @@ module advance_xp2_xpyp_module
 
       endif ! l_stats_samp
 
-    enddo ! k=2..gr%nnzp-1
+    enddo ! k=2..gr%nzmax-1
 
 
     ! Boundary Conditions
@@ -1126,10 +1126,10 @@ module advance_xp2_xpyp_module
     ! Fixed-point boundary conditions are used for both the variances and the
     ! covars.
     lhs(:,1) = 0.0
-    lhs(:,gr%nnzp) = 0.0
+    lhs(:,gr%nzmax) = 0.0
 
     lhs(k_mdiag,1) = 1.0
-    lhs(k_mdiag,gr%nnzp) = 1.0
+    lhs(k_mdiag,gr%nzmax) = 1.0
 
     return
   end subroutine xp2_xpyp_lhs
@@ -1185,14 +1185,14 @@ module advance_xp2_xpyp_module
       solve_type ! Variable(s) description
 
     ! Input/Ouput variables
-    real, dimension(gr%nnzp,nrhs), intent(inout) :: & 
+    real, dimension(gr%nzmax,nrhs), intent(inout) :: & 
       rhs  ! Explicit contributions to x variance/covar term [units vary]
 
-    real, dimension(3,gr%nnzp), intent(inout) :: & 
+    real, dimension(3,gr%nzmax), intent(inout) :: & 
       lhs  ! Implicit contributions to x variance/covar term [units vary]
 
     ! Output Variables
-    real, dimension(gr%nnzp,nrhs), intent(out) ::  & 
+    real, dimension(gr%nzmax,nrhs), intent(out) ::  & 
       xapxbp ! Computed value of the variable(s) at <t+1> [units vary]
 
     integer, intent(out) :: & 
@@ -1233,7 +1233,7 @@ module advance_xp2_xpyp_module
 
     if ( l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
       call tridag_solvex & 
-           ( solve_type_str, gr%nnzp, nrhs, &                                      ! Intent(in) 
+           ( solve_type_str, gr%nzmax, nrhs, &                                      ! Intent(in) 
              lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
              xapxbp(:,1:nrhs), rcond, err_code )                                   ! Intent(out)
 
@@ -1243,7 +1243,7 @@ module advance_xp2_xpyp_module
 
     else
       call tridag_solve & 
-           ( solve_type_str, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  &    ! Intent(in)
+           ( solve_type_str, gr%nzmax, nrhs, lhs(kp1_mdiag,:),  &    ! Intent(in)
              lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  &    ! Intent(inout)
              xapxbp(:,1:nrhs), err_code )                           ! Intent(out)
     end if
@@ -1314,7 +1314,7 @@ module advance_xp2_xpyp_module
     integer, intent(in) ::  & 
       solve_type ! Variable(s) description
 
-    real, dimension(gr%nnzp), intent(in) ::  & 
+    real, dimension(gr%nzmax), intent(in) ::  & 
       xapxbp ! Computed value of the variable at <t+1> [units vary]
 
     ! Local variables
@@ -1375,10 +1375,10 @@ module advance_xp2_xpyp_module
 
     end select
 
-    do k = 2, gr%nnzp-1
+    do k = 2, gr%nzmax-1
 
       km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nnzp )
+      kp1 = min( k+1, gr%nzmax )
 
       ! x'y' term dp1 has both implicit and explicit components;
       ! call stat_end_update_pt.
@@ -1414,7 +1414,7 @@ module advance_xp2_xpyp_module
                                  zmscr11(k) * xapxbp(k), &  ! Intent(in)
                                zm )                         ! Intent(inout)
 
-    end do ! k=2..gr%nnzp-1
+    end do ! k=2..gr%nzmax-1
 
     return
   end subroutine xp2_xpyp_implicit_stats
@@ -1478,7 +1478,7 @@ module advance_xp2_xpyp_module
     logical, intent(in) :: & 
       l_iter  ! Whether x is prognostic (T/F)
 
-    real, dimension(gr%nnzp), intent(in) :: & 
+    real, dimension(gr%nzmax), intent(in) :: & 
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)      [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels    [-]
       wp2,             & ! w'^2 (momentum levels)                      [m^2/s^2]
@@ -1509,7 +1509,7 @@ module advance_xp2_xpyp_module
       beta               ! Model parameter beta                        [-]
 
     ! Output Variable
-    real, dimension(gr%nnzp,1), intent(out) :: & 
+    real, dimension(gr%nzmax,1), intent(out) :: & 
       rhs    ! Explicit contributions to x variance/covar terms
 
     ! Local Variables
@@ -1562,10 +1562,10 @@ module advance_xp2_xpyp_module
     ! Initialize RHS vector to 0.
     rhs = 0.0
 
-    do k = 2, gr%nnzp-1, 1
+    do k = 2, gr%nzmax-1, 1
 
       km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nnzp )
+      kp1 = min( k+1, gr%nzmax )
 
       ! RHS turbulent advection (ta) term.
       rhs(k,1)  & 
@@ -1773,7 +1773,7 @@ module advance_xp2_xpyp_module
 
       endif ! l_stats_samp
 
-    enddo ! k=2..gr%nnzp-1
+    enddo ! k=2..gr%nzmax-1
 
 
     ! Boundary Conditions
@@ -1785,7 +1785,7 @@ module advance_xp2_xpyp_module
     rhs(1,1) = xap2(1)
     ! The value of u'^2 or v'^2 at the upper boundary will be set to the
     ! threshold minimum value of w_tol_sqd.
-    rhs(gr%nnzp,1) = w_tol_sqd
+    rhs(gr%nzmax,1) = w_tol_sqd
 
     return
   end subroutine xp2_xpyp_uv_rhs
@@ -1846,7 +1846,7 @@ module advance_xp2_xpyp_module
     logical, intent(in) :: & 
       l_iter   ! Whether x is prognostic (T/F)
 
-    real, dimension(gr%nnzp), intent(in) :: & 
+    real, dimension(gr%nzmax), intent(in) :: & 
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)      [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels    [-]
       wp2_zt,          & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
@@ -1871,7 +1871,7 @@ module advance_xp2_xpyp_module
       beta               ! Model parameter beta                        [-]
 
     ! Output Variable
-    real, dimension(gr%nnzp,1), intent(out) :: & 
+    real, dimension(gr%nzmax,1), intent(out) :: & 
       rhs     ! Explicit contributions to x variance/covar terms
 
     ! Local Variables
@@ -1928,10 +1928,10 @@ module advance_xp2_xpyp_module
     ! Initialize RHS vector to 0.
     rhs = 0.0
 
-    do k = 2, gr%nnzp-1, 1
+    do k = 2, gr%nzmax-1, 1
 
       km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nnzp )
+      kp1 = min( k+1, gr%nzmax )
 
       ! RHS turbulent advection (ta) term.
       rhs(k,1)  & 
@@ -2079,7 +2079,7 @@ module advance_xp2_xpyp_module
 
       endif ! l_stats_samp
 
-    enddo ! k=2..gr%nnzp-1
+    enddo ! k=2..gr%nzmax-1
 
 
     ! Boundary Conditions
@@ -2093,7 +2093,7 @@ module advance_xp2_xpyp_module
     rhs(1,1) = xapxbp(1)
     ! The value of the field at the upper boundary will be set to it's threshold
     ! minimum value, as contained in the variable 'threshold'.
-    rhs(gr%nnzp,1) = threshold
+    rhs(gr%nzmax,1) = threshold
 
     return
   end subroutine xp2_xpyp_rhs
@@ -2931,7 +2931,7 @@ module advance_xp2_xpyp_module
     ! Note: Entire arrays of um and vm are now required rather than um and vm
     ! only at levels k and k+1.  The entire array is necessary when a vertical
     ! average calculation of d(um)/dz and d(vm)/dz is used. --ldgrant March 2010
-    real, dimension(gr%nnzp), intent(in) :: &
+    real, dimension(gr%nzmax), intent(in) :: &
       um,  & ! mean zonal wind       [m/s]
       vm     ! mean meridional wind  [m/s]
 
@@ -3082,7 +3082,7 @@ module advance_xp2_xpyp_module
     integer, intent(in) :: &
       k ! current level in xp2_xpyp_uv_rhs loop
 
-    real, dimension(gr%nnzp), intent(in) :: &
+    real, dimension(gr%nzmax), intent(in) :: &
       um,  & ! mean zonal wind       [m/s]
       vm     ! mean meridional wind  [m/s]
 
@@ -3109,15 +3109,15 @@ module advance_xp2_xpyp_module
 
     ! Find the grid level that contains the altitude greater than or
     ! equal to the current altitude + depth
-    k_high = binary_search( gr%nnzp, gr%zt, gr%zt(k)+depth )
+    k_high = binary_search( gr%nzmax, gr%zt, gr%zt(k)+depth )
     ! If the current altitude + depth is greater than the highest
     ! altitude, binary_search returns a value of -1
-    if ( k_high == -1 ) k_high = gr%nnzp
+    if ( k_high == -1 ) k_high = gr%nzmax
 
-    if ( k_high == gr%nnzp ) then
+    if ( k_high == gr%nzmax ) then
       ! Current altitude + depth is higher than or exactly at the top grid level.
-      ! Since this is a ghost point, use the altitude at grid level nnzp-1
-      k_high = gr%nnzp-1
+      ! Since this is a ghost point, use the altitude at grid level nzmax-1
+      k_high = gr%nzmax-1
       zt_high = gr%zt(k_high)
       um_high = um(k_high)
       vm_high = vm(k_high)
@@ -3138,7 +3138,7 @@ module advance_xp2_xpyp_module
 
     ! Find the grid level that contains the altitude less than or
     ! equal to the current altitude - depth
-    k_low = binary_search( gr%nnzp, gr%zt, gr%zt(k)-depth )
+    k_low = binary_search( gr%nzmax, gr%zt, gr%zt(k)-depth )
     ! If the current altitude - depth is less than the lowest
     ! altitude, binary_search returns a value of -1
     if ( k_low == -1 ) k_low = 2
@@ -3201,12 +3201,12 @@ module advance_xp2_xpyp_module
     real, intent(in) :: & 
       tolerance ! Threshold for xp2_np1       [units vary]
 
-    real, dimension(gr%nnzp), intent(in) :: &
+    real, dimension(gr%nzmax), intent(in) :: &
       rho_ds_zm, & ! Dry, static density on momentum levels         [kg/m^3]
       rho_ds_zt    ! Dry, static density on thermodynamic levels    [kg/m^3]
 
     ! Input/Output variables
-    real, intent(inout), dimension(gr%nnzp) ::  & 
+    real, intent(inout), dimension(gr%nzmax) ::  & 
       xp2_np1   ! Variance for <n+1>          [units vary]
 
     ! Local variables

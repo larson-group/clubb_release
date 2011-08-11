@@ -33,15 +33,15 @@ sizet = size(t);
 sizet = max(sizet);
 
 % Load GABLS2 data from mass grid files
-[filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
+[filename,nzmax,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
 kmax = max(size(z))
 
 for i=1:numvars
     for timestep = 1:sizet-1
-        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nz,t(timestep),t(timestep+1),i,numvars);'];
+        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nzmax,t(timestep),t(timestep+1),i,numvars);'];
         eval(stringtoeval)
         str = list_vars(i,:);
-        for j=1:nz
+        for j=1:nzmax
             arraydata(j,timestep) = eval([str,'(j)']);
         end
     end
@@ -116,7 +116,7 @@ for i=1:wnumvars
         stringtoeval = [wlist_vars(i,:), ' = read_grads_hoc_endian([scm_path,wfilename],''ieee-le'',wnz,t(timestep),t(timestep+1),i,wnumvars);'];
         eval(stringtoeval)
         str = wlist_vars(i,:);
-        for j=1:nz
+        for j=1:nzmax
             arraydata(j,timestep) = eval([str,'(j)']);
         end
     end

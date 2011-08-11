@@ -16,7 +16,7 @@ module output_2D_samples_module
 
   contains
 !-------------------------------------------------------------------------------
-  subroutine open_2D_samples_file( nnzp, n_micro_calls, n_2D_variables, &
+  subroutine open_2D_samples_file( nzmax, n_micro_calls, n_2D_variables, &
                                    fname_prefix, fdir, &
                                    time, dtwrite, zgrid, variable_names, &
                                    variable_descriptions, variable_units, &
@@ -42,7 +42,7 @@ module output_2D_samples_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nnzp,          & ! Number of vertical levels
+      nzmax,          & ! Number of vertical levels
       n_micro_calls, & ! Number of calls to the microphysics
       n_2D_variables   ! Number variables to output
 
@@ -59,7 +59,7 @@ module output_2D_samples_module
       time,   & ! Start time                      [s]
       dtwrite   ! Interval for writing to disk    [s]
 
-    real, intent(in), dimension(nnzp) :: &
+    real, intent(in), dimension(nzmax) :: &
       zgrid ! Vertical grid levels [m]
 
     ! Input/Output Variables
@@ -88,7 +88,7 @@ module output_2D_samples_module
 
     allocate( sample_file%rlat(n_micro_calls), sample_file%rlon(1) )
     allocate( sample_file%var(n_2D_variables) )
-    allocate( sample_file%z(nnzp) )
+    allocate( sample_file%z(nzmax) )
 
     forall( i=1:n_micro_calls )
       rlat(i) = real( i ) ! Use made up arbitrary values for degrees north
@@ -103,7 +103,7 @@ module output_2D_samples_module
     end forall
 
 #ifdef NETCDF
-    call open_netcdf( nlat, nlon, fdir, fname, 1, nnzp, zgrid, &
+    call open_netcdf( nlat, nlon, fdir, fname, 1, nzmax, zgrid, &
                       day, month, year, rlat, rlon, &
                       time, dtwrite, n_2D_variables, sample_file )
 #else
@@ -115,7 +115,7 @@ module output_2D_samples_module
 
 !-------------------------------------------------------------------------------
   subroutine output_2D_lognormal_dist_file &
-             ( nnzp, n_micro_calls, d_variables, X_nl_all_levs, &
+             ( nzmax, n_micro_calls, d_variables, X_nl_all_levs, &
                LH_rt, LH_thl )
 ! Description:
 !   Output a 2D snapshot of latin hypercube samples
@@ -132,14 +132,14 @@ module output_2D_samples_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nnzp,          & ! Number of vertical levels
+      nzmax,          & ! Number of vertical levels
       n_micro_calls, & ! Number of calls to the microphysics
       d_variables      ! Number variates being sampled
 
-    real(kind=stat_rknd), intent(in), dimension(nnzp,n_micro_calls,d_variables) :: &
+    real(kind=stat_rknd), intent(in), dimension(nzmax,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real, intent(in), dimension(nnzp,n_micro_calls) :: &
+    real, intent(in), dimension(nzmax,n_micro_calls) :: &
       LH_rt, & ! Sample of total water mixing ratio             [kg/kg]
       LH_thl   ! Sample of liquid potential temperature         [K]
 
@@ -148,24 +148,24 @@ module output_2D_samples_module
     ! ---- Begin Code ----
 
     do j = 1, d_variables+2
-      allocate( lognormal_sample_file%var(j)%ptr(n_micro_calls,1,nnzp) )
+      allocate( lognormal_sample_file%var(j)%ptr(n_micro_calls,1,nzmax) )
     end do
 
     do sample = 1, n_micro_calls
       do j = 1, d_variables
-        lognormal_sample_file%var(j)%ptr(sample,1,1:nnzp) = X_nl_all_levs(1:nnzp,sample,j)
+        lognormal_sample_file%var(j)%ptr(sample,1,1:nzmax) = X_nl_all_levs(1:nzmax,sample,j)
       end do
     end do
 
     ! Append rt, thl at the end of the variables
     j = d_variables+1
     do sample = 1, n_micro_calls
-      lognormal_sample_file%var(j)%ptr(sample,1,1:nnzp) = LH_rt(1:nnzp,sample)
+      lognormal_sample_file%var(j)%ptr(sample,1,1:nzmax) = LH_rt(1:nzmax,sample)
     end do
 
     j = d_variables+2
     do sample = 1, n_micro_calls
-      lognormal_sample_file%var(j)%ptr(sample,1,1:nnzp) = LH_thl(1:nnzp,sample)
+      lognormal_sample_file%var(j)%ptr(sample,1,1:nzmax) = LH_thl(1:nzmax,sample)
     end do
 
 #ifdef NETCDF
@@ -183,7 +183,7 @@ module output_2D_samples_module
 
 !-------------------------------------------------------------------------------
   subroutine output_2D_uniform_dist_file &
-             ( nnzp, n_micro_calls, dp1, X_u_all_levs, X_mixt_comp_all_levs, &
+             ( nzmax, n_micro_calls, dp1, X_u_all_levs, X_mixt_comp_all_levs, &
                p_matrix_s_element )
 ! Description:
 !   Output a 2D snapshot of latin hypercube uniform distribution, i.e. (0,1)
@@ -200,14 +200,14 @@ module output_2D_samples_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nnzp,          & ! Number of vertical levels
+      nzmax,          & ! Number of vertical levels
       n_micro_calls, & ! Number of calls to the microphysics
       dp1              ! Number of variates being sampled + 1
 
-    real(kind=genrand_real), intent(in), dimension(nnzp,n_micro_calls,dp1) :: &
+    real(kind=genrand_real), intent(in), dimension(nzmax,n_micro_calls,dp1) :: &
       X_u_all_levs ! Uniformly distributed numbers between (0,1)
 
-    integer, intent(in), dimension(nnzp,n_micro_calls) :: &
+    integer, intent(in), dimension(nzmax,n_micro_calls) :: &
       X_mixt_comp_all_levs ! Either 1 or 2
 
     integer, intent(in), dimension(n_micro_calls) :: &
@@ -218,16 +218,16 @@ module output_2D_samples_module
     ! ---- Begin Code ----
 
     do j = 1, dp1+2
-      allocate( uniform_sample_file%var(j)%ptr(n_micro_calls,1,nnzp) )
+      allocate( uniform_sample_file%var(j)%ptr(n_micro_calls,1,nzmax) )
     end do
 
     do sample = 1, n_micro_calls
       do j = 1, dp1
-        uniform_sample_file%var(j)%ptr(sample,1,1:nnzp) = X_u_all_levs(1:nnzp,sample,j)
+        uniform_sample_file%var(j)%ptr(sample,1,1:nzmax) = X_u_all_levs(1:nzmax,sample,j)
       end do
-      uniform_sample_file%var(dp1+1)%ptr(sample,1,1:nnzp) = &
-        real( X_mixt_comp_all_levs(1:nnzp,sample) )
-      do k = 1, nnzp 
+      uniform_sample_file%var(dp1+1)%ptr(sample,1,1:nzmax) = &
+        real( X_mixt_comp_all_levs(1:nzmax,sample) )
+      do k = 1, nzmax 
         uniform_sample_file%var(dp1+2)%ptr(sample,1,k) = real( p_matrix_s_element(sample) )
       end do
     end do

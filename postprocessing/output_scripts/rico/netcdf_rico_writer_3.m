@@ -48,15 +48,15 @@ sizet = size(t);
 sizet = max(sizet);
 
 % mass (zt) file
-[filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
+[filename,nzmax,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
 
 for i=1:numvars
     i
     for timestep = 1:sizet-1
-        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nz,t(timestep),t(timestep+1),i,numvars);'];
+        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nzmax,t(timestep),t(timestep+1),i,numvars);'];
         eval(stringtoeval)
         str = list_vars(i,:);
-        for j=1:nz
+        for j=1:nzmax
             arraydata(j,timestep) = eval([str,'(j)']);
         end
         eval([strtrim(str),'_array = arraydata;']);
@@ -117,7 +117,7 @@ status = mexnc('ATTPUT',ncid,'NC_GLOBAL','Run_type','CHAR',-1,'composite')
 % Define dimensions
 
 [tdimid,status] = mexnc('def_dim',ncid,'time',(tmax/12))
-[zfdimid,status] = mexnc('def_dim',ncid,'zf',nz)
+[zfdimid,status] = mexnc('def_dim',ncid,'zf',nzmax)
 [zhdimid,status] = mexnc('def_dim',ncid,'zh',w_nz)
 
 % Define variables
@@ -151,7 +151,7 @@ status = mexnc('end_def',ncid)
 
 % Write data
 
-for k=1:nz
+for k=1:nzmax
     for i=1:sizet-1
     % k-1 comes from NetCDF starting variables at 0 and MATLAB starting
     % them at 1.

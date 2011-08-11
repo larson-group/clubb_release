@@ -88,7 +88,7 @@ module ice_dfsn_module
     REAL(KIND=time_precision), INTENT(IN)::  & 
       dt      ! Model timestep                                     [s]
 
-    REAL, DIMENSION(gr%nnzp), INTENT(IN)::  & 
+    REAL, DIMENSION(gr%nzmax), INTENT(IN)::  & 
       thlm,    & ! Liquid potential temperature         [K]
       rcm,     & ! Cloud water mixing ratio             [kg kg^{-1}]
       exner,   & ! Exner function                       [-]
@@ -96,12 +96,12 @@ module ice_dfsn_module
       rho        ! Air density on thermodynamic grid    [kg m^{-3}]
 
 ! Output variables
-    REAL, DIMENSION(gr%nnzp), INTENT(OUT)::  & 
+    REAL, DIMENSION(gr%nzmax), INTENT(OUT)::  & 
       rcm_icedfsn, & ! Time tendency of rcm due to ice diffusional growth  [kg kg^{-1} s^{-1}]
       thlm_icedfsn   ! Time tendency of thlm due to ice diffusional growth [K/s]
 
 ! Local variables
-    REAL, DIMENSION(gr%nnzp)::  & 
+    REAL, DIMENSION(gr%nzmax)::  & 
       T_in_K,           & ! Absolute temperature                        [K]
       mass_ice_cryst,   & ! Mass of a single ice crystal                [kg]
       r_s,              & ! Saturation mixing ratio over vapor          [kg kg^{-1}] 
@@ -179,11 +179,11 @@ module ice_dfsn_module
 !                                                                     !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    DO k = 1, gr%nnzp, 1
+    DO k = 1, gr%nzmax, 1
       mass_ice_cryst(k) = 1.0e-11
     END DO
 
-    DO k = gr%nnzp, 2, -1
+    DO k = gr%nzmax, 2, -1
 
       ! Check whether we're in cloud and below freezing.
       ! Note:  A value of 1.0E-5 kg/kg is used as a threshold value
@@ -295,7 +295,7 @@ module ice_dfsn_module
     end if
 
     ! Determine time tendency of liquid potential temperature
-    thlm_icedfsn(1:gr%nnzp) = - ( Lv/(Cp*exner(1:gr%nnzp)) ) * rcm_icedfsn(1:gr%nnzp)
+    thlm_icedfsn(1:gr%nzmax) = - ( Lv/(Cp*exner(1:gr%nzmax)) ) * rcm_icedfsn(1:gr%nzmax)
 
     RETURN
   END SUBROUTINE ice_dfsn

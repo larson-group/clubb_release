@@ -38,30 +38,30 @@ t = [1380 1860 2100];
 sizet = size(t);
 sizet = max(sizet);
 
-[filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
+[filename,nzmax,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
 kmax = max(size(z))
 
 for i=1:numvars
     for timestep = 1:sizet
-        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nz,t(timestep),t(timestep)+60,i,numvars);'];
+        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nzmax,t(timestep),t(timestep)+60,i,numvars);'];
         eval(stringtoeval)
         str = list_vars(i,:);
-        for j=1:nz
+        for j=1:nzmax
             arraydata(j,timestep) = eval([str,'(j)']);
         end
     end
     eval([strtrim(str),'_array_true = arraydata;']);
 end
 
-[filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path2,smfile2]);
+[filename,nzmax,z,ntimesteps,numvars,list_vars] = header_read([scm_path2,smfile2]);
 kmax = max(size(z))
 
 for i=1:numvars
     for timestep = 1:sizet
-        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path2,filename],''ieee-le'',nz,t(timestep),t(timestep)+60,i,numvars);'];
+        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path2,filename],''ieee-le'',nzmax,t(timestep),t(timestep)+60,i,numvars);'];
         eval(stringtoeval)
         str = list_vars(i,:);
-        for j=1:nz
+        for j=1:nzmax
             arraydata(j,timestep) = eval([str,'(j)']);
         end
     end

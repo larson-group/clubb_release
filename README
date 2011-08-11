@@ -1313,7 +1313,7 @@ _sfc= ground or ocean surface  E.g., T_sfc is the temperature of
 -------------------------------------------------------------------------
 
 gr         = <grid>    = Main grid class reference for CLUBB                   [-]
-gr%nnzp    = Number of vertical levels in grid                                 [-]
+gr%nzmax    = Number of vertical levels in grid                                 [-]
 gr%zm      = Grid levels (altitudes) of "momentum" variables (wp2, etc.)       [m]
 gr%zt      = Grid levels (altitudes) of "thermodynamic" variables (rtm, etc.)  [m]
 thlm       = <thl>     = Liquid water potential temperature                    [K]

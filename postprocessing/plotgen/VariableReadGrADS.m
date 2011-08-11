@@ -1,7 +1,7 @@
 function [varData, levData] = VariableReadGrADS( filePath, variableToRead, startTime, endTime, plotType )
 
 %Read in some necessary information about the GRaDS file
-[dataFileName, nz, z, numTimesteps, dt, numVars, listofparams] = header_read_expanded(filePath);
+[dataFileName, nzmax, z, numTimesteps, dt, numVars, listofparams] = header_read_expanded(filePath);
 
 %Determine the endianness
 fid = fopen(filePath, 'rt');
@@ -43,22 +43,22 @@ lastSlash = max(regexp( filePath, '\/' ));
 dataFilePath = filePath(1:lastSlash);
 
 %Set a default value if the passed in variable is not found
-varData(1:nz) = 0;
+varData(1:nzmax) = 0;
 
 for i = 1:numVars
 	%See if the variable we found is the variable we are interested in
 	if ( strcmp( strtrim(listofparams(i, :)), variableToRead ) )
 		if strcmp(plotType, 'profile')
 			if strcmp(endianness, 'BIG_ENDIAN')
-				varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-be', nz, t_start, t_end, i, numVars);
+				varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-be', nzmax, t_start, t_end, i, numVars);
 			elseif strcmp(endianness, 'LITTLE_ENDIAN')
-				varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-le', nz, t_start, t_end, i, numVars);
+				varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-le', nzmax, t_start, t_end, i, numVars);
 			end
 		elseif strcmp(plotType, 'timeseries')
 			if strcmp(endianness, 'BIG_ENDIAN')
-				varData = read_grads_hoc_sfc_endian([dataFilePath, dataFileName], 'ieee-be', nz, t_start, t_end, i, numVars);
+				varData = read_grads_hoc_sfc_endian([dataFilePath, dataFileName], 'ieee-be', nzmax, t_start, t_end, i, numVars);
 			elseif strcmp(endianness, 'LITTLE_ENDIAN')
-				varData = read_grads_hoc_sfc_endian([dataFilePath, dataFileName], 'ieee-le', nz, t_start, t_end, i, numVars);
+				varData = read_grads_hoc_sfc_endian([dataFilePath, dataFileName], 'ieee-le', nzmax, t_start, t_end, i, numVars);
 			end
 
 		end

@@ -98,11 +98,11 @@ module hydrostatic_module
     real, intent(in) :: &
       p_sfc    ! Pressure at the surface                     [Pa]
 
-    real, intent(in), dimension(gr%nnzp) ::  & 
+    real, intent(in), dimension(gr%nzmax) ::  & 
       thvm    ! Virtual potential temperature               [K]
 
     ! Output Variables
-    real, intent(out), dimension(gr%nnzp) ::  & 
+    real, intent(out), dimension(gr%nzmax) ::  & 
       p_in_Pa,    & ! Pressure (thermodynamic levels)         [Pa]
       p_in_Pa_zm, & ! Pressure on momentum levels             [Pa]
       exner,      & ! Exner function (thermodynamic levels)   [-]
@@ -111,7 +111,7 @@ module hydrostatic_module
       rho_zm        ! Density on momentum levels              [kg/m^3]
 
     !  Local Variables
-    real, dimension(gr%nnzp) ::  &
+    real, dimension(gr%nzmax) ::  &
       thvm_zm       ! Theta_v interpolated to momentum levels  [K]
 
     real :: &
@@ -145,7 +145,7 @@ module hydrostatic_module
     ! thvm to vary linearly between its values at thermodynamic levels k
     ! and k-1, the value of exner can be found at thermodynamic level k,
     ! as well as at intermediate momentum level k-1.
-    do k = 3, gr%nnzp
+    do k = 3, gr%nzmax
 
       dthvm_dz = gr%invrs_dzm(k-1) * ( thvm(k) - thvm(k-1) )
 
@@ -171,39 +171,39 @@ module hydrostatic_module
 
       endif
 
-    enddo ! k = 3, gr%nnzp
+    enddo ! k = 3, gr%nzmax
 
-    ! Find the value of exner_zm at momentum level gr%nnzp by using a linear
+    ! Find the value of exner_zm at momentum level gr%nzmax by using a linear
     ! extension of thvm from the two thermodynamic level immediately below
-    ! momentum level gr%nnzp.
-    dthvm_dz = ( thvm_zm(gr%nnzp) - thvm(gr%nnzp) ) &
-               / ( gr%zm(gr%nnzp) - gr%zt(gr%nnzp) )
+    ! momentum level gr%nzmax.
+    dthvm_dz = ( thvm_zm(gr%nzmax) - thvm(gr%nzmax) ) &
+               / ( gr%zm(gr%nzmax) - gr%zt(gr%nzmax) )
 
     if ( dthvm_dz /= 0.0 ) then
 
-      exner_zm(gr%nnzp) &
+      exner_zm(gr%nzmax) &
       = calc_exner_linear_thvm &
-           ( thvm(gr%nnzp), dthvm_dz, &
-             gr%zt(gr%nnzp), gr%zm(gr%nnzp), exner(gr%nnzp) )
+           ( thvm(gr%nzmax), dthvm_dz, &
+             gr%zt(gr%nzmax), gr%zm(gr%nzmax), exner(gr%nzmax) )
 
     else ! dthvm_dz = 0
 
-      exner_zm(gr%nnzp) &
+      exner_zm(gr%nzmax) &
       = calc_exner_const_thvm &
-           ( thvm(gr%nnzp), gr%zm(gr%nnzp), gr%zt(gr%nnzp), exner(gr%nnzp) )
+           ( thvm(gr%nzmax), gr%zm(gr%nzmax), gr%zt(gr%nzmax), exner(gr%nzmax) )
 
     endif
 
     ! Calculate pressure based on the values of exner.
 
-    do k = 1, gr%nnzp
+    do k = 1, gr%nzmax
       p_in_Pa(k) = p0 * exner(k)**( 1./kappa )
       p_in_Pa_zm(k) = p0 * exner_zm(k)**( 1./kappa )
     enddo
 
     ! Calculate density based on pressure, exner, and thvm.
 
-    do k = 1, gr%nnzp
+    do k = 1, gr%nzmax
       rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
       rho_zm(k) = p_in_Pa_zm(k) / ( Rd * thvm_zm(k) * exner_zm(k) )
     enddo

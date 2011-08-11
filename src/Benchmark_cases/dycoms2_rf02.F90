@@ -43,36 +43,36 @@ module dycoms2_rf02
     implicit none
 
     ! Input/Output Variables
-    real, dimension(gr%nnzp), intent(inout) :: &
+    real, dimension(gr%nzmax), intent(inout) :: &
       wm_zt, & ! W wind component at thermodynamic levels   [m/s]
       wm_zm    ! W wind component at momentum levels        [m/s]
 
     ! Output Variables
-    real, intent(out), dimension(gr%nnzp) ::  & 
+    real, intent(out), dimension(gr%nzmax) ::  & 
       thlm_forcing, & ! theta_l forcing                [K/s]
       rtm_forcing     ! r_t forcing                    [(kg/kg)/s] 
 
-    real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
+    real, intent(out), dimension(gr%nzmax,sclr_dim) :: & 
       sclrm_forcing    ! Passive scalar tendency        [units/s]
 
-    real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+    real, intent(out), dimension(gr%nzmax,edsclr_dim) :: & 
       edsclrm_forcing  ! Eddy-passive scalar tendency   [units/s]
 
     ! ---- Begin Code ----
 
     ! Enter the final thlm and rtm tendency
 
-    thlm_forcing(1:gr%nnzp) = 0.0
-    rtm_forcing(1:gr%nnzp) = 0.0
+    thlm_forcing(1:gr%nzmax) = 0.0
+    rtm_forcing(1:gr%nzmax) = 0.0
 
     ! Imposed large-scale subsidence at the uppermost level.
     ! CLUBB used a "one-sided" derivative method to compute mean advection at
     ! the uppermost thermodynamic level.  In order to avoid bringing in large
     ! amounts of various quantities from above the top of the domain, set wm_zt
-    ! to 0 at level gr%nnzp.  To stay consistent, set wm_zm to 0 at level
-    ! gr%nnzp.
-    wm_zt(gr%nnzp) = 0.0
-    wm_zm(gr%nnzp) = 0.0
+    ! to 0 at level gr%nzmax.  To stay consistent, set wm_zm to 0 at level
+    ! gr%nzmax.
+    wm_zt(gr%nzmax) = 0.0
+    wm_zm(gr%nzmax) = 0.0
 
     ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing

@@ -180,17 +180,17 @@ subroutine&nbsp;mulmul(&nbsp;x,&nbsp;y,&nbsp;z&nbsp;)
 &nbsp;&nbsp;&nbsp;&nbsp;euler_const&nbsp;&nbsp;&nbsp;!&nbsp;Made&nbsp;up&nbsp;constant&nbsp;[no&nbsp;units]
 
 &nbsp;&nbsp;use&nbsp;dimensions,&nbsp;only:&nbsp;&amp;
-&nbsp;&nbsp;&nbsp;&nbsp;nnzp&nbsp;!&nbsp;Number&nbsp;of&nbsp;data&nbsp;points&nbsp;of&nbsp;our&nbsp;model&nbsp;[count]
+&nbsp;&nbsp;&nbsp;&nbsp;nzmax&nbsp;!&nbsp;Number&nbsp;of&nbsp;data&nbsp;points&nbsp;of&nbsp;our&nbsp;model&nbsp;[count]
 
 &nbsp;&nbsp;implicit&nbsp;none
 
 &nbsp;&nbsp;!&nbsp;First&nbsp;list&nbsp;input&nbsp;variables
-&nbsp;&nbsp;real,&nbsp;dimension(nnzp),&nbsp;intent(in)&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;real,&nbsp;dimension(nzmax),&nbsp;intent(in)&nbsp;::&nbsp;&amp;
 &nbsp;&nbsp;&nbsp;&nbsp;x,&nbsp;&amp;!&nbsp;First&nbsp;factor&nbsp;&nbsp;&nbsp;[no&nbsp;units]
 &nbsp;&nbsp;&nbsp;&nbsp;y&nbsp;&nbsp;&nbsp;!&nbsp;Second&nbsp;factor&nbsp;&nbsp;[no&nbsp;units]
 
 &nbsp;&nbsp;!&nbsp;Then&nbsp;list&nbsp;inout&nbsp;variables,&nbsp;and&nbsp;then&nbsp;outputs&nbsp;
-&nbsp;&nbsp;real,&nbsp;dimension(nnzp),&nbsp;intent(out)&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;real,&nbsp;dimension(nzmax),&nbsp;intent(out)&nbsp;::&nbsp;&amp;
 &nbsp;&nbsp;&nbsp;&nbsp;z&nbsp;&nbsp;!&nbsp;output&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[no&nbsp;units]
 !-----------------------------------------------------------------------
 
@@ -200,7 +200,7 @@ subroutine&nbsp;mulmul(&nbsp;x,&nbsp;y,&nbsp;z&nbsp;)
 &nbsp;&nbsp;!&nbsp;independently&nbsp;of&nbsp;other&nbsp;elements&nbsp;of&nbsp;the&nbsp;subroutine
 &nbsp;&nbsp;!&nbsp;allowing&nbsp;for&nbsp;parallelism&nbsp;if&nbsp;possible.
 
-&nbsp;&nbsp;z(1:nnzp)&nbsp;=&nbsp;(&nbsp;x(1:nnzp)&nbsp;/&nbsp;pi&nbsp;)&nbsp;*&nbsp;(&nbsp;y(1:nnzp)&nbsp;/&nbsp;euler_const&nbsp;)
+&nbsp;&nbsp;z(1:nzmax)&nbsp;=&nbsp;(&nbsp;x(1:nzmax)&nbsp;/&nbsp;pi&nbsp;)&nbsp;*&nbsp;(&nbsp;y(1:nzmax)&nbsp;/&nbsp;euler_const&nbsp;)
 
 &nbsp;&nbsp;return
 end&nbsp;subroutine&nbsp;mulmul
@@ -448,8 +448,8 @@ E.g. Do this:
 <div class="p"><!----></div>
 
 <pre>
-&nbsp;xyzzy(1:gr%nnzp)&nbsp;=&nbsp;variable_arr1(1:gr%nnzp)&nbsp;*&nbsp;variable_scl1&nbsp;&amp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;variable_arr2(1:gr%nnzp)**2
+&nbsp;xyzzy(1:gr%nzmax)&nbsp;=&nbsp;variable_arr1(1:gr%nzmax)&nbsp;*&nbsp;variable_scl1&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;variable_arr2(1:gr%nzmax)**2
 
 </pre>
 
@@ -706,7 +706,7 @@ E.g.
 
 &nbsp;&nbsp;&nbsp;&nbsp;...
 
-&nbsp;&nbsp;do&nbsp;k&nbsp;=&nbsp;1,&nbsp;gr%nnzp,&nbsp;1
+&nbsp;&nbsp;do&nbsp;k&nbsp;=&nbsp;1,&nbsp;gr%nzmax,&nbsp;1
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
 

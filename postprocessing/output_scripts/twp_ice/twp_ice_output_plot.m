@@ -104,7 +104,7 @@ for i=0:99
 		file_height = profilefile{'h'}(:);
 
 		%Average
-		w_avg = zeros(1, nz);
+		w_avg = zeros(1, nzmax);
 		for t=t_start:t_end
 			w_avg = w_avg + file_w(t,:);
 		end
@@ -136,7 +136,7 @@ if ( exist(profilefilepath) )
 	file_height = profilefile{'h'}(:);
 
 	%Average
-	w_avg = zeros(1, nz);
+	w_avg = zeros(1, nzmax);
 	for t=t_start:t_end
 		w_avg = w_avg + file_w(t,:);
 	end
@@ -184,7 +184,7 @@ for i=0:99
 		file_height = profilefile{'h'}(:);
 
 		%Average
-		w_avg = zeros(1, nz);
+		w_avg = zeros(1, nzmax);
 		for t=t_start:t_end
 			w_avg = w_avg + file_w(t,:);
 		end
@@ -216,7 +216,7 @@ if ( exist(profilefilepath) )
 	file_height = profilefile{'h'}(:);
 
 	%Average
-	w_avg = zeros(1, nz);
+	w_avg = zeros(1, nzmax);
 	for t=t_start:t_end
 		w_avg = w_avg + file_w(t,:);
 	end
@@ -263,7 +263,7 @@ for i=0:99
 		file_height = profilefile{'h'}(:);
 
 		%Average
-		w_avg = zeros(1, nz);
+		w_avg = zeros(1, nzmax);
 		for t=t_start:t_end
 			w_avg = w_avg + file_w(t,:);
 		end
@@ -295,7 +295,7 @@ if ( exist(profilefilepath) )
 	file_height = profilefile{'h'}(:);
 
 	%Average
-	w_avg = zeros(1, nz);
+	w_avg = zeros(1, nzmax);
 	for t=t_start:t_end
 		w_avg = w_avg + file_w(t,:);
 	end
@@ -342,7 +342,7 @@ for i=0:99
 		file_height = profilefile{'h'}(:);
 
 		%Average
-		w_avg = zeros(1, nz);
+		w_avg = zeros(1, nzmax);
 		for t=t_start:t_end
 			w_avg = w_avg + file_w(t,:);
 		end
@@ -374,7 +374,7 @@ if ( exist(profilefilepath) )
 	file_height = profilefile{'h'}(:);
 
 	%Average
-	w_avg = zeros(1, nz);
+	w_avg = zeros(1, nzmax);
 	for t=t_start:t_end
 		w_avg = w_avg + file_w(t,:);
 	end

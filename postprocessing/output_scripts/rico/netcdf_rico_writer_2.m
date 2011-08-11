@@ -44,15 +44,15 @@ sizet = size(t);
 sizet = max(sizet);
 
 % mass (zt) file
-[filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
+[filename,nzmax,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
 for i=1:numvars
     i
     % Note: RICO data is now output to GrADS every 5 minutes.
     for timestep = 1:sizet
-        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nz,t(timestep),t(timestep),i,numvars);'];
+        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nzmax,t(timestep),t(timestep),i,numvars);'];
         eval(stringtoeval)
         str = list_vars(i,:);
-        for j=1:nz
+        for j=1:nzmax
             arraydata(j,timestep) = eval([str,'(j)']);
         end
         eval([strtrim(str),'_array = arraydata;']);
@@ -140,7 +140,7 @@ Kh_300_array  = Kh_zt_array(7,:);
 % Note: RICO data is now output to GrADS every 5 minutes.
 for timestep = 1:(sizet)
     zcb_unset = 1;
-    for k = 1:nz
+    for k = 1:nzmax
         if ((zcb_unset) & (cloud_frac_array(k,timestep) > 0.))
             zcb(timestep) = z(k);
             zcb_unset = 0;
@@ -152,7 +152,7 @@ end
 % Note: RICO data is now output to GrADS every 5 minutes.
 for timestep = 1:(sizet)
     ztop_unset = 1;
-    for k = nz:-1:1
+    for k = nzmax:-1:1
         if ((ztop_unset) & (cloud_frac_array(k,timestep) > 0.))
             ztop(timestep) = z(k);
             ztop_unset = 0;
@@ -165,7 +165,7 @@ end
 for timestep = 1:(sizet)
     cloud_frac_max = 0.0
     cloud_frac_z   = 0.0
-    for k = 1:nz
+    for k = 1:nzmax
         if ((cloud_frac_array(k,timestep) > cloud_frac_max))
             cloud_frac_max = cloud_frac_array(k,timestep);
             cloud_frac_z   = z(k);

@@ -92,7 +92,7 @@ if ( exist(sfcfilepath) )
 	end
 
 	% Read in the pressure to use as the y-axis in the profile plots
-	pressure = zeros(1,nz);
+	pressure = zeros(1,nzmax);
 
 	var_to_plot = strtrim(press(1))
 	profilefile = netcdf.open(sfcfilepath,'NC_NOWRITE');
@@ -118,7 +118,7 @@ if ( exist(sfcfilepath) )
 		file_var = netcdf.getVar(sfcfile, varid);
 
 		%Average
-		var_avg = zeros(nz, 1);
+		var_avg = zeros(nzmax, 1);
 		for t=t_start:t_end
 			var_avg = var_avg + file_var(:,t);
 		end

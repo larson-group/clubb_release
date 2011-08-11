@@ -99,7 +99,7 @@ module input_grads
       line, tmp, date, dt
 
     integer ::  & 
-      i, nx, ny, nz, & 
+      i, nx, ny, nzmax, & 
       ihour, imin
 
 !-------------------------------------------------------------------------------
@@ -268,9 +268,9 @@ module input_grads
         do i = 1, grads_file%nvar, 1
 
           read(unit=unit_number,iostat=ierr,fmt='(a256)') line
-          read(unit=line,fmt=*) grads_file%var(i)%name, nz
+          read(unit=line,fmt=*) grads_file%var(i)%name, nzmax
 
-          if ( nz /= grads_file%iz ) then
+          if ( nzmax /= grads_file%iz ) then
             write(unit=fstderr,fmt=*) "Error reading ",  & 
               trim( grads_file%var(i)%name )
             l_error = .true.

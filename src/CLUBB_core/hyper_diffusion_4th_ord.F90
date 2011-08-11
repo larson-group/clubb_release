@@ -499,7 +499,7 @@ module hyper_diffusion_4th_ord
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        gr  ! Variable(s)   gr%nnzp
+        gr  ! Variable(s)   gr%nzmax
 
     implicit none
 
@@ -671,7 +671,7 @@ module hyper_diffusion_4th_ord
       endif
 
 
-    elseif ( level > 2 .and. level < gr%nnzp-1 ) then
+    elseif ( level > 2 .and. level < gr%nzmax-1 ) then
 
       ! k > 2 and k < num_levels-1
       ! These interior level are not effected by boundary conditions.
@@ -709,7 +709,7 @@ module hyper_diffusion_4th_ord
               *invrs_dzm*invrs_dztp1*invrs_dzmp1
 
 
-    elseif ( level == gr%nnzp-1 ) then
+    elseif ( level == gr%nzmax-1 ) then
 
       ! Second-highest level
 
@@ -784,10 +784,10 @@ module hyper_diffusion_4th_ord
       endif
 
 
-    elseif ( level == gr%nnzp ) then
+    elseif ( level == gr%nzmax ) then
 
       ! Highest level
-      ! k = gr%nnzp; upper boundery level at model top.
+      ! k = gr%nzmax; upper boundery level at model top.
       ! Only relevant if zero-flux boundary conditions are used.
 
       if ( trim( boundary_cond ) == 'zero-flux' ) then
@@ -821,7 +821,7 @@ module hyper_diffusion_4th_ord
       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
         ! Fixed-point boundary conditions
-        ! The left-hand side matrix contributions from level gr%nnzp are
+        ! The left-hand side matrix contributions from level gr%nzmax are
         ! over-written or set in the parent subroutine.
 
         ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
@@ -1319,7 +1319,7 @@ module hyper_diffusion_4th_ord
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        gr  ! Variable(s)   gr%nnzp
+        gr  ! Variable(s)   gr%nzmax
 
     implicit none
 
@@ -1491,7 +1491,7 @@ module hyper_diffusion_4th_ord
       endif
 
 
-    elseif ( level > 2 .and. level < gr%nnzp-1 ) then
+    elseif ( level > 2 .and. level < gr%nzmax-1 ) then
 
       ! k > 2 and k < num_levels-1
       ! These interior level are not effected by boundary conditions.
@@ -1529,7 +1529,7 @@ module hyper_diffusion_4th_ord
               *invrs_dztp1*invrs_dzmp1*invrs_dztp2
 
 
-    elseif ( level == gr%nnzp-1 ) then
+    elseif ( level == gr%nzmax-1 ) then
 
       ! Second-highest level
 
@@ -1604,10 +1604,10 @@ module hyper_diffusion_4th_ord
       endif
 
 
-    elseif ( level == gr%nnzp ) then
+    elseif ( level == gr%nzmax ) then
 
       ! Highest level
-      ! k = gr%nnzp; upper boundery level at model top.
+      ! k = gr%nzmax; upper boundery level at model top.
       ! Only relevant if zero-flux boundary conditions are used.
 
       if ( trim( boundary_cond ) == 'zero-flux' ) then
@@ -1641,7 +1641,7 @@ module hyper_diffusion_4th_ord
       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
         ! Fixed-point boundary conditions
-        ! The left-hand side matrix contributions from level gr%nnzp are
+        ! The left-hand side matrix contributions from level gr%nzmax are
         ! over-written or set in the parent subroutine.
 
         ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]

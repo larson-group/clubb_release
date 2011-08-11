@@ -289,7 +289,7 @@ module diffusion
       lhs(km1_tdiag) = 0.0
 
 
-    elseif ( level > 1 .and. level < gr%nnzp ) then
+    elseif ( level > 1 .and. level < gr%nzmax ) then
 
       ! Most of the interior model; normal conditions.
 
@@ -303,9 +303,9 @@ module diffusion
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
       lhs(km1_tdiag) = - invrs_dzt * (K_zmm1+nu) * invrs_dzmm1
 
-    elseif ( level == gr%nnzp ) then
+    elseif ( level == gr%nzmax ) then
 
-      ! k = gr%nnzp (top level); upper boundary level.
+      ! k = gr%nzmax (top level); upper boundary level.
       ! Only relevant if zero-flux boundary conditions are used.
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -405,7 +405,7 @@ module diffusion
       lhs(km1_tdiag) = 0.0
 
 
-    else if ( level > 1 .and. level < gr%nnzp ) then
+    else if ( level > 1 .and. level < gr%nzmax ) then
 
       ! Most of the interior model; normal conditions.
 
@@ -454,9 +454,9 @@ module diffusion
                                     cf_ratio ) &
                              + nu ) * invrs_dzmm1
 
-    else if ( level == gr%nnzp ) then
+    else if ( level == gr%nzmax ) then
 
-      ! k = gr%nnzp (top level); upper boundary level.
+      ! k = gr%nzmax (top level); upper boundary level.
       ! Only relevant if zero-flux boundary conditions are used.
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -746,7 +746,7 @@ module diffusion
       lhs(km1_mdiag) = 0.0
 
 
-    elseif ( level > 1 .and. level < gr%nnzp ) then
+    elseif ( level > 1 .and. level < gr%nzmax ) then
 
       ! Most of the interior model; normal conditions.
 
@@ -761,9 +761,9 @@ module diffusion
       lhs(km1_mdiag) = - invrs_dzm * (K_zt+nu) * invrs_dzt
 
 
-    elseif ( level == gr%nnzp ) then
+    elseif ( level == gr%nzmax ) then
 
-      ! k = gr%nnzp (top level); upper boundary level.
+      ! k = gr%nzmax (top level); upper boundary level.
       ! Only relevant if zero-flux boundary conditions are used.
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]

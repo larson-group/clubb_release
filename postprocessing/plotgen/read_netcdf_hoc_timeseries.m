@@ -1,8 +1,8 @@
-function avg_field = read_netcdf_hoc_timeseries(filename,nz,t1,t2,varnum,numvars)
+function avg_field = read_netcdf_hoc_timeseries(filename,nzmax,t1,t2,varnum,numvars)
 
 % Reads and time-averages profiles from 3D NETCDF *.nc files.
 % thlm = read_netcdf_hoc('tune/arm_zt.dat',110,1,1,1,28)
-% nz = number of z levels in profile
+% nzmax = number of z levels in profile
 % t1 = beginning timestep to look at
 % t2 = ending timestep to look at
 % varnum = which variable to read (see .ctl file)

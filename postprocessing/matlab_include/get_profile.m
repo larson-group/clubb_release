@@ -1,4 +1,4 @@
-function stat_profile = get_profile(les_path,datfile,numvars,list_vars,nz,t1,t2, ...
+function stat_profile = get_profile(les_path,datfile,numvars,list_vars,nzmax,t1,t2, ...
                                variable,sim)
 
 %GET_PROFILE   Accesses stats files, calls read_grads_clubb_endian to get profiles.
@@ -27,7 +27,7 @@ function stat_profile = get_profile(les_path,datfile,numvars,list_vars,nz,t1,t2,
 %   datfile   -> Name of the simulation's GrADS data file (usually stats_sm.dat)
 %   numvars   -> Total number of variables in the GrADS data file
 %   list_vars -> Array of all variables contained in the GrADS data file
-%   nz        -> Total number of altitudes in the GrADS data file
+%   nzmax        -> Total number of altitudes in the GrADS data file
 %   t1        -> Initial time to examine in simulation
 %   t2        -> Final time to examine in simulation; if t1 and t2 are different,
 %                we obtain an averaged profile over the period from t1 to t2.
@@ -62,10 +62,10 @@ for i=1:numvars
     % If varname is the variable we are looking for, call read_grads_clubb_endian
     % to get the profile
     if (strcmp(varname,variable) & sim == 1)
-        stringtoeval = ['stat_profile = read_grads_clubb_endian(filename,''ieee-le'',nz,t1,t2,i,numvars);'];    
+        stringtoeval = ['stat_profile = read_grads_clubb_endian(filename,''ieee-le'',nzmax,t1,t2,i,numvars);'];    
         eval(stringtoeval);
     elseif (strcmp(varname,variable) & sim == 0)
-        stringtoeval = ['stat_profile = read_grads_clubb_endian(filename,''ieee-be'',nz,t1,t2,i,numvars);'];
+        stringtoeval = ['stat_profile = read_grads_clubb_endian(filename,''ieee-be'',nzmax,t1,t2,i,numvars);'];
         eval(stringtoeval);
     end
 end

@@ -38,7 +38,7 @@ implicit none
 intrinsic :: exp, log
 
 ! Input Variables
-real, intent(in), dimension(gr%nnzp) :: & 
+real, intent(in), dimension(gr%nzmax) :: & 
   rcm,    & ! Liquid water mixing ratio.   [kg/kg]
   rho_zm, & ! Density on moment. grid      [kg/m^3]
   rho,    & ! Density on thermo. grid      [kg/m^3]
@@ -55,13 +55,13 @@ real, intent(in) :: &
 ! as 1.5 for all others. 
 
 ! Input/Output Variables
-real, intent(inout), dimension(gr%nnzp) ::  & 
+real, intent(inout), dimension(gr%nzmax) ::  & 
   rcm_mc, & ! r_t change due to microphysics     [kg/kg)/s] 
   thlm_mc   ! thlm change due to microphysics    [K/s] 
 
 ! Local Variables
 ! Addition for DYCOMS_2
-real, dimension(gr%nnzp) ::  & 
+real, dimension(gr%nzmax) ::  & 
   Fcsed, & ! Cloud water sedimentation flux       [kg/(m^2 s)]
   sed_rcm  ! d(rcm)/dt due to cloud sedimentation [kg/(m^2 s)]
 
@@ -144,7 +144,7 @@ integer :: k
 
 ! Define cloud water sedimentation flux on momentum levels.
 
-DO k = 2, gr%nnzp-1, 1
+DO k = 2, gr%nzmax-1, 1
 
   IF ( zt2zm(rcm,k) > 0.0 .AND. zt2zm( Ncm, k ) > 0.0 ) THEN
     Fcsed(k) = 1.19E8 & 
@@ -158,11 +158,11 @@ DO k = 2, gr%nnzp-1, 1
     Fcsed(k) = 0.0
   END IF
 
-END DO ! k=2..gr%nnzp-1
+END DO ! k=2..gr%nzmax-1
 
 ! Boundary conditions.
 Fcsed(1)       = 0.0
-Fcsed(gr%nnzp) = 0.0
+Fcsed(gr%nzmax) = 0.0
 
 ! Find drc/dt due to cloud water sedimentation flux.
 ! This value is defined on thermodynamic levels.

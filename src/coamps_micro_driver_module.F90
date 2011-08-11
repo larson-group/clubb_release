@@ -162,7 +162,7 @@ module coamps_micro_driver_module
       timea_in,         & ! Current model time                   [s]
       deltf_in         ! Timestep (i.e. dt_main in CLUBB)      [s]
 
-    real, dimension(gr%nnzp), intent(in) :: & 
+    real, dimension(gr%nzmax), intent(in) :: & 
       rtm,     & ! Total water mixing ratio                        [kg/kg]
       rcm,     & ! Cloud water mixing ratio                        [kg/kg]
       wm_zm,   & ! Vertical wind                                   [m/s]
@@ -171,23 +171,23 @@ module coamps_micro_driver_module
       rho,     & ! Mean density                                    [kg/m^3]
       thlm       ! Liquid potential temperature                    [K]
 
-    real, dimension(gr%nnzp), intent(in) :: & 
+    real, dimension(gr%nzmax), intent(in) :: & 
       ricem,      & ! Ice water mixing ratio     [kg/kg]
       rrainm,     & ! Rain water mixing ratio    [kg/kg]
       rgraupelm,  & ! Graupel water mixing ratio [kg/kg]
       rsnowm,     & ! Snow water mixing ratio    [kg/kg]
       Nrm           ! Number of rain drops       [count/kg]
 
-    real, dimension(gr%nnzp), intent(inout) :: & 
+    real, dimension(gr%nzmax), intent(inout) :: & 
       Ncm,        & ! Number of cloud droplets   [count/kg]
       Ncnm,       & ! Number of cloud nuclei     [count/m^3]
       Nim           ! Number of ice crystals     [count/kg]
 
-    real, dimension(1,1,gr%nnzp-1), intent(inout) :: &
+    real, dimension(1,1,gr%nzmax-1), intent(inout) :: &
       cond ! condensation/evaporation of liquid water
 
 ! Output Variables
-    real, dimension(gr%nnzp), intent(out) :: & 
+    real, dimension(gr%nzmax), intent(out) :: & 
       ritend,     & ! d(ri)/dt                   [kg/kg/s]
       rrtend,     & ! d(rr)/dt                   [kg/kg/s]
       rgtend,     & ! d(rg)/dt                   [kg/kg/s]
@@ -197,7 +197,7 @@ module coamps_micro_driver_module
       thlm_mc,    & ! d(thlm)/dt                 [K/s]
       nrmtend       ! d(Nrm)/dt                  [count/kg/s]
 
-    real, dimension(gr%nnzp), intent(out) :: & 
+    real, dimension(gr%nzmax), intent(out) :: & 
       Vrr,      & ! Rain mixing ratio fall speed   [m/s]
       VNr,      & ! Rain conc. fall speed          [m/s]
       Vsnow,    & ! Snow fall speed                [m/s]
@@ -206,16 +206,16 @@ module coamps_micro_driver_module
 
 ! Local Variables
 
-    real, dimension(gr%nnzp) :: &
+    real, dimension(gr%nzmax) :: &
       T_in_K     ! Temperature                                     [K]
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration
-    real, dimension(gr%nnzp) :: Nsnowm ! [count/kg]
+    real, dimension(gr%nzmax) :: Nsnowm ! [count/kg]
 ! End of ajsmith4's addition
 
 ! Variables on the w grid
-    real, dimension(1,1,gr%nnzp) :: & 
+    real, dimension(1,1,gr%nzmax) :: & 
       w3,       & ! Vertical wind on the w grid          [m/s]
       pr3d,     & ! Pressure on w grid                   [Pa]
       qsatv3d,  & ! Saturation mr array?                 [kg/kg]
@@ -234,7 +234,7 @@ module coamps_micro_driver_module
 ! eMFc
 
 ! Variables on the m grid
-    real, dimension(1,1,gr%nnzp-1) :: & 
+    real, dimension(1,1,gr%nzmax-1) :: & 
       qi3,    & ! Pristine ice mixing ratio               [kg/kg]
       qr3,    & ! Rain water mixing ratio                 [kg/kg]
       qg3,    & ! Graupel mixing ratio                    [kg/kg]
@@ -281,11 +281,11 @@ module coamps_micro_driver_module
       eic, & 
       sat
 
-    real, dimension(gr%nnzp) :: & 
+    real, dimension(gr%nzmax) :: & 
       thm, & 
       rvm
 
-    real, dimension(1,1,gr%nnzp-1) :: & 
+    real, dimension(1,1,gr%nzmax-1) :: & 
       qt3,         & ! Total water mixing ratio
       qv3,         & ! Water vapor mixing ratio
       qc3,         & ! Cloud water mixing ratio
@@ -320,7 +320,7 @@ module coamps_micro_driver_module
       pmltge,      & ! ???
       pgmlt          ! ???
 
-    real, dimension(1,1,gr%nnzp-1) :: & 
+    real, dimension(1,1,gr%nzmax-1) :: & 
       psmlt,       & ! melting of snow
       pgacrm,      & ! ???
       pgacwm,      & ! ???
@@ -344,7 +344,7 @@ module coamps_micro_driver_module
       rbm_flip
 ! eMFc
 
-    real, dimension(1,1,gr%nnzp) :: & 
+    real, dimension(1,1,gr%nzmax) :: & 
       fallr,   & ! Fall speed for rain mixing ratio              [m/s]
       falln,   & ! Fall speed for rain drop number conc.         [m/s]
       falli,   & ! Fall speed for pristine ice mixing ratio      [m/s]
@@ -370,11 +370,11 @@ module coamps_micro_driver_module
       fallg_in_cloud
 ! eMFc
 
-    real, dimension(1,1,gr%nnzp-1) :: & 
+    real, dimension(1,1,gr%nzmax-1) :: & 
       rvc,      & ! Cloud droplet radius         [cm]
       rvr      ! Rain droplet radius          [cm]
 
-    real, dimension(1,gr%nnzp-1,1) :: & 
+    real, dimension(1,gr%nzmax-1,1) :: & 
       ary1d        ! 1d graphics parameters
 
     integer :: & 
@@ -390,7 +390,7 @@ module coamps_micro_driver_module
     integer, dimension(1) :: & 
       nkpts
 
-    integer, dimension(gr%nnzp-1) :: & 
+    integer, dimension(gr%nzmax-1) :: & 
       icomp,          & !
       kcomp          !
 
@@ -403,15 +403,15 @@ module coamps_micro_driver_module
       deltf         ! Timestep (i.e. dt_main in CLUBB)         [s]
 
     integer :: & 
-      kk,     & ! Number of COAMPS m gridpoints in the vertical (gr%nnzp-1)
+      kk,     & ! Number of COAMPS m gridpoints in the vertical (gr%nzmax-1)
       kmax  ! Maximum array size (kk + ??)
 
 !----------------------------------------------------------------------
 
 ! Begin coamps_micro_driver code
 
-    kk = gr%nnzp-1
-    kmax = gr%nnzp
+    kk = gr%nzmax-1
+    kmax = gr%nzmax
 
 ! Comment by Adam Smith, 25 March 2008
 ! These variables activate rain/drizzle in the COAMPS

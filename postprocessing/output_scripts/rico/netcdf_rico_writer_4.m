@@ -48,15 +48,15 @@ sizet = size(t);
 sizet = max(sizet);
 
 %mass (zt) file
-[filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
+[filename,nzmax,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
 
 for i=1:numvars
     i
     for timestep = 1:sizet-1
-        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nz,t(timestep),t(timestep+1),i,numvars);'];
+        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nzmax,t(timestep),t(timestep+1),i,numvars);'];
         eval(stringtoeval)
         str = list_vars(i,:);
-        for j=1:nz
+        for j=1:nzmax
             arraydata(j,timestep) = eval([str,'(j)']);
         end
         eval([strtrim(str),'_array = arraydata;']);
@@ -78,18 +78,18 @@ rho_array = p_in_Pa_array ./ (R .* T_array);
 
 % centered difference of thlm
 
-for k=2:nz-1
+for k=2:nzmax-1
     dthlm_dz(k,:) = (thlm_array(k+1,:) - thlm_array(k-1,:)) ./ (z(k+1) - z(k-1));
 end
 dthlm_dz(1,:) = (thlm_array(2,:) - thlm_array(1,:)) ./ (z(2) - z(1));
-dthlm_dz(nz,:) = (thlm_array(nz,:) - thlm_array(nz-1,:)) ./ (z(nz) - z(nz-1));
+dthlm_dz(nzmax,:) = (thlm_array(nzmax,:) - thlm_array(nzmax-1,:)) ./ (z(nzmax) - z(nzmax-1));
 
 rvm_array = rtm_array - rcm_array;
-for k=2:nz-1
+for k=2:nzmax-1
     drvm_dz(k,:) = (rvm_array(k+1,:) - rvm_array(k-1,:)) ./ (z(k+1) - z(k-1));
 end
 drvm_dz(1,:) = (rvm_array(2,:) - rvm_array(1,:)) ./ (z(2) - z(1));
-drvm_dz(nz,:) = (rvm_array(nz,:) - rvm_array(nz-1,:)) ./ (z(nz) - z(nz-1));
+drvm_dz(nzmax,:) = (rvm_array(nzmax,:) - rvm_array(nzmax-1,:)) ./ (z(nzmax) - z(nzmax-1));
 
 t_subsidence = -wm_array .* dthlm_dz .* exner_array;
 % t_forcing = (-2.51 / 86400) + ( (-2.18 + 2.51 ) / (86400 * 4000) .* z ); ... % due to radiation and advection
@@ -121,7 +121,7 @@ status = mexnc('ATTPUT',ncid,'NC_GLOBAL','Run_type','CHAR',-1,'composite')
 % Define dimensions
 
 [tdimid,status] = mexnc('def_dim',ncid,'time',(tmax/12))
-[zfdimid,status] = mexnc('def_dim',ncid,'zf',nz)
+[zfdimid,status] = mexnc('def_dim',ncid,'zf',nzmax)
 
 % Define variables
 
@@ -135,7 +135,7 @@ status = mexnc('end_def',ncid)
 
 % Write data
 
-for k=1:nz
+for k=1:nzmax
     for i=1:sizet-1
     % k-1 comes from NetCDF starting variables at 0 and MATLAB starting
     % them at 1.

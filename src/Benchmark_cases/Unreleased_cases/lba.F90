@@ -39,14 +39,14 @@ module lba
     implicit none
 
     ! Output Variables
-    real, intent(out), dimension(gr%nnzp) :: & 
+    real, intent(out), dimension(gr%nzmax) :: & 
       thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
 
-    real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
+    real, intent(out), dimension(gr%nzmax,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar forcing [units vary]
 
-    real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+    real, intent(out), dimension(gr%nzmax,edsclr_dim) :: & 
       edsclrm_forcing ! Passive eddy-scalar forcing [units vary]
 
     ! ---- Begin Code ----

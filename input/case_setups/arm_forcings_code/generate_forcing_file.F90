@@ -7,7 +7,7 @@ program generate_forcing_file
   implicit none
 
   integer, parameter :: &
-    nnzp   = 5, & ! Number of forcing levels
+    nzmax   = 5, & ! Number of forcing levels
     ntimes = 6    ! Number of times
 
   real, parameter :: &
@@ -22,7 +22,7 @@ program generate_forcing_file
     rtheta = (/-0.125, 0.000,  0.000,  0.000,  0.000, -0.100/), & ! K/h
     art    = (/ 0.080, 0.020, -0.040, -0.100, -0.160, -0.300/)    ! g/kg/h
 
-  real, dimension(nnzp) :: &
+  real, dimension(nzmax) :: &
     heights, &     ! [m]
     rtm_forcing, & ! [kg/kg/s]
     thlm_forcing   ! [K/s]
@@ -55,7 +55,7 @@ program generate_forcing_file
 
     ! Interpolate with respect to height above 1000m
     ! This is more elaborate than in needs to be
-    do k = 1, nnzp
+    do k = 1, nzmax
       select case( int( heights(k) ) )
       case ( 0:999 )
         rtm_forcing(k)  = rt_tmp
@@ -71,11 +71,11 @@ program generate_forcing_file
         thlm_forcing(k) = 0.0
 
       end select
-    end do ! k=1..nnzp
+    end do ! k=1..nzmax
 
     ! Write time data
-    write(6,'(f10.1,i3)') time, nnzp
-    do k = 1, nnzp
+    write(6,'(f10.1,i3)') time, nzmax
+    do k = 1, nzmax
       write(6,'(f10.1,9(g12.4))') heights(k), thlm_forcing(k), rtm_forcing(k), &
         -999.9, -999.9, -999.9, -999.9, 0.0, -999.0, -999.0
     end do

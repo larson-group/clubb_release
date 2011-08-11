@@ -54,7 +54,7 @@ for i=1:size(vars_to_plot,1);
 			end
 
 			%Average
-			var_avg = zeros(1, nz);
+			var_avg = zeros(1, nzmax);
 			for t=t_start:t_end
 				var_avg = var_avg + file_var(t,:);
 			end
@@ -111,7 +111,7 @@ for i=1:size(vars_to_plot,1);
 		end
 
 		%Average
-		var_avg = zeros(1, nz);
+		var_avg = zeros(1, nzmax);
 		for t=t_start:t_end
 			var_avg = var_avg + file_var(t,:);
 		end

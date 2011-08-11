@@ -1,7 +1,7 @@
 function [varData, levData] = VariableReadNC( filePath, variableToRead, startTime, endTime, plotType )
 
 %Read in some necessary information about the NETCDF file
-[dataFileName, nz, z, numTimesteps, dt, numVars, listofparams] = header_read_expanded_netcdf(filePath);
+[dataFileName, nzmax, z, numTimesteps, dt, numVars, listofparams] = header_read_expanded_netcdf(filePath);
 
 % open NETCDF file
 fid = netcdf.open(filePath,'NC_NOWRITE');
@@ -25,14 +25,14 @@ elseif ( t_end > numTimesteps )
 end
 
 %Set a default value if the passed in variable is not found
-varData(1:nz) = 0;
+varData(1:nzmax) = 0;
 
 varNum = netcdf.inqVarID(fid, variableToRead);
 	
 if strcmp(plotType, 'profile')
-	varData = read_netcdf_hoc(filePath, nz, t_start, t_end, varNum, numVars);
+	varData = read_netcdf_hoc(filePath, nzmax, t_start, t_end, varNum, numVars);
 elseif strcmp(plotType, 'timeseries')
-	varData = read_netcdf_hoc_timeseries(filePath, nz, t_start, t_end, varNum, numVars);
+	varData = read_netcdf_hoc_timeseries(filePath, nzmax, t_start, t_end, varNum, numVars);
 end
 
 %Determine if the data is in terms of ascending or descending height, adjust if necessary

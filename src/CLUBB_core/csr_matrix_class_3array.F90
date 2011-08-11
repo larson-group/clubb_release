@@ -118,7 +118,7 @@ module csr_matrix_class
     ! PARDISO matrix array initialization
     !
     ! This subroutine creates the _ia and _ja arrays, and calculates their
-    ! required values for the current gr%nnzp.
+    ! required values for the current gr%nzmax.
     !
     ! References:
     !   None
@@ -151,28 +151,28 @@ module csr_matrix_class
     ! ---- Begin Code ----
 
     ! Define the array sizes
-    ia_size = gr%nnzp + 1
-    intlc_ia_size = (2 * gr%nnzp) + 1
+    ia_size = gr%nzmax + 1
+    intlc_ia_size = (2 * gr%nzmax) + 1
     
     ! Tridiagonal case and 5-band with 2 empty diagonals have 3 full diagonals
     num_diags = 3
-    tridiag_ja_size = (gr%nnzp * num_diags) - 2
-    band135_ja_size = (gr%nnzp * num_diags) - 4
+    tridiag_ja_size = (gr%nzmax * num_diags) - 2
+    band135_ja_size = (gr%nzmax * num_diags) - 4
 
     ! 5-band with all diagonals has 5 full diagonals
     num_diags = 5
-    band12345_ja_size = (gr%nnzp * num_diags) - 6
+    band12345_ja_size = (gr%nzmax * num_diags) - 6
 
     ! Interlaced arrays are tricky--there is an average of 4 diagonals for
     ! the 3/5band, but we need to take into account the fact that the
     ! tridiagonal and spaced 3-band will have different boundary indices.
     num_diags = 4
-    intlc_td_5d_ja_size = (gr%nnzp * 2 * num_diags) - 4
-    intlc_s3d_5d_ja_size = (gr%nnzp * 2 * num_diags) - 5
+    intlc_td_5d_ja_size = (gr%nzmax * 2 * num_diags) - 4
+    intlc_s3d_5d_ja_size = (gr%nzmax * 2 * num_diags) - 5
 
     ! The double-sized "interlaced" 5-band is similar to the standard 5-band
     num_diags = 5
-    intlc_5d_5d_ja_size = (gr%nnzp * 2 * num_diags) - 6
+    intlc_5d_5d_ja_size = (gr%nzmax * 2 * num_diags) - 6
 
     ! Allocate the correct amount of space for the actual _ia and _ja arrays
     allocate( csr_tridiag_ia(1:ia_size), &
@@ -196,39 +196,39 @@ module csr_matrix_class
 
     ! Initialize the tridiagonal matrix arrays
     num_bands = 3
-    do i = 2, (gr%nnzp - 1), 1
+    do i = 2, (gr%nzmax - 1), 1
       cur_row = (i - 1) * num_bands
       do j = 1, num_bands, 1
         cur_diag = j - 1
         csr_tridiag_ja(cur_row + cur_diag) = i + j - 2
       end do
       csr_tridiag_ia(i) = cur_row
-    end do ! i = 2...gr%nnzp-1
+    end do ! i = 2...gr%nzmax-1
 
     ! Handle boundary conditions for the tridiagonal matrix arrays
     ! These conditions have been hand-calculated bearing in mind that the
     ! matrix in question is tridiagonal.
     
-    ! Make sure we don't crash if someone sets up gr%nnzp as 1.
-    if ( gr%nnzp > 1 ) then
+    ! Make sure we don't crash if someone sets up gr%nzmax as 1.
+    if ( gr%nzmax > 1 ) then
       ! Lower boundaries
       csr_tridiag_ja(1) = 1
       csr_tridiag_ja(2) = 2
       csr_tridiag_ia(1) = 1
 
       ! Upper boundaries
-      csr_tridiag_ja(tridiag_ja_size - 1) = gr%nnzp - 1
-      csr_tridiag_ja(tridiag_ja_size) = gr%nnzp
+      csr_tridiag_ja(tridiag_ja_size - 1) = gr%nzmax - 1
+      csr_tridiag_ja(tridiag_ja_size) = gr%nzmax
       csr_tridiag_ia(ia_size - 1) = tridiag_ja_size - 1
 
       ! This final boundary is to signify the end of the matrix, and is
       ! intended to be beyond the bound of the ja array.
       csr_tridiag_ia(ia_size) = tridiag_ja_size + 1
-    end if ! gr%nnzp > 1
+    end if ! gr%nzmax > 1
 
     ! Initialize the 5-band matrix arrays
     num_bands = 5
-    do i = 3, (gr%nnzp - 2), 1
+    do i = 3, (gr%nzmax - 2), 1
 
       ! Full 5-band matrix has 5 diagonals to initialize
       num_diags = 5
@@ -253,14 +253,14 @@ module csr_matrix_class
 
       csr_banddiag5_135_ia(i) = cur_row - 1
 
-    end do ! i = 3...gr%nnzp-2
+    end do ! i = 3...gr%nzmax-2
 
     ! Handle boundary conditions for the 5-band matrix arrays
     ! These values have been hand-calculated bearing in mind the two different
     ! types of 5-band matrices.
 
-    ! Make sure we don't crash if someone sets up gr%nnzp as less than 3.
-    if ( gr%nnzp > 2 ) then
+    ! Make sure we don't crash if someone sets up gr%nzmax as less than 3.
+    if ( gr%nzmax > 2 ) then
 
       ! -------------- (full) 5-band matrix boundaries ---------------
 
@@ -284,10 +284,10 @@ module csr_matrix_class
       ! row, it is necessary to offset for the last row as well (hence,
       ! 7 = 4+3).
       do i = 1, 4, 1
-        csr_banddiag5_12345_ja(band12345_ja_size - 7 + i) = gr%nnzp + i - 4
+        csr_banddiag5_12345_ja(band12345_ja_size - 7 + i) = gr%nzmax + i - 4
       end do
       do i = 1, 3, 1
-        csr_banddiag5_12345_ja(band12345_ja_size - 3 + i) = gr%nnzp + i - 3
+        csr_banddiag5_12345_ja(band12345_ja_size - 3 + i) = gr%nzmax + i - 3
       end do
       csr_banddiag5_12345_ia(ia_size - 2) = band12345_ja_size - 6
       csr_banddiag5_12345_ia(ia_size - 1) = band12345_ja_size - 2
@@ -316,8 +316,8 @@ module csr_matrix_class
       ! The values, on the other hand, are different, because of the
       ! aforementioned space, this time between the main and subdiagonal.
       do i = 1, 2, 1
-        csr_banddiag5_135_ja(band135_ja_size - 4 + i) = gr%nnzp + (i * 2) - 5
-        csr_banddiag5_135_ja(band135_ja_size - 2 + i) = gr%nnzp + (i * 2) - 4
+        csr_banddiag5_135_ja(band135_ja_size - 4 + i) = gr%nzmax + (i * 2) - 5
+        csr_banddiag5_135_ja(band135_ja_size - 2 + i) = gr%nzmax + (i * 2) - 4
       end do
       csr_banddiag5_135_ia(ia_size - 2) = band135_ja_size - 3
       csr_banddiag5_135_ia(ia_size - 1) = band135_ja_size + 1
@@ -328,7 +328,7 @@ module csr_matrix_class
 
       ! ------- end 5-band matrix w/ empty first bands boundaries --------
 
-    end if ! gr%nnzp > 2
+    end if ! gr%nzmax > 2
 
     ! Initialize the interlaced arrays--all of them are 5-band right now.
     num_bands = 5
@@ -338,7 +338,7 @@ module csr_matrix_class
     ! it becomes 7.
     counter = 2
 
-    do i = 3, ((gr%nnzp * 2) - 2), 1
+    do i = 3, ((gr%nzmax * 2) - 2), 1
       if (mod( i,2 ) == 1) then
         ! Odd row, this is the potentially non 5-band row.
         ! Increment counter. Last row was an even row, so we'll need to add 5.
@@ -399,14 +399,14 @@ module csr_matrix_class
         csr_intlc_5b_5b_ia(i) = cur_row - 2
 
       end if ! mod(i,2) == 1
-    end do ! i = 3...(gr%nnzp*2)-2
+    end do ! i = 3...(gr%nzmax*2)-2
 
     ! Handle boundary conditions for the interlaced matrix arrays
     ! These conditions have been hand-calculated bearing in mind
     ! the structure of the interlaced matrices.
 
-    ! Make sure we don't crash if someone sets up gr%nnzp as less than 3.
-    if (gr%nnzp > 2) then
+    ! Make sure we don't crash if someone sets up gr%nzmax as less than 3.
+    if (gr%nzmax > 2) then
       ! Lower boundaries
 
       ! First row
@@ -476,7 +476,7 @@ module csr_matrix_class
       csr_intlc_5b_5b_ia(intlc_ia_size) = intlc_5d_5d_ja_size + 1
 
         
-    end if ! gr%nnzp > 2
+    end if ! gr%nzmax > 2
 
     ! Enable printing the ia/ja arrays for debug purposes
     l_print_ia_ja = .false.

@@ -46,18 +46,18 @@ module rico
 
   ! Input Variables
 
-  real, dimension(gr%nnzp), intent(in) :: & 
+  real, dimension(gr%nzmax), intent(in) :: & 
   exner    ! Exner function                         [-]
 
   ! Output Variables
-  real, dimension(gr%nnzp), intent(out) :: & 
+  real, dimension(gr%nzmax), intent(out) :: & 
     thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
     rtm_forcing     ! Large-scale rtm tendency                [kg kg^-1 s^-1]
 
-  real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
+  real, intent(out), dimension(gr%nzmax,sclr_dim) :: & 
     sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-  real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+  real, intent(out), dimension(gr%nzmax,edsclr_dim) :: & 
     edsclrm_forcing ! Passive eddy-scalar LS tendency     [units/s]
 
   ! Local Variables, general
@@ -67,7 +67,7 @@ module rico
   ! Compute large-scale horizontal temperature advection
   ! NEW-- "And Radiation"... 15 Dec 2006, Michael Falk
   ! Equations located in 1D models > Set up short composite run on reference site
-  do k=1,gr%nnzp
+  do k=1,gr%nzmax
     if (gr%zt(k) < 4000. ) then
       t_tendency = -2.51 / 86400. + & 
         (-2.18 + 2.51) / (86400.*4000.) * gr%zt(k)  ! Units [K s^-1] - known magic number
@@ -85,7 +85,7 @@ module rico
 
   ! Compute large-scale horizontal moisture advection [g kg^-1 s^-1]
   ! Equations located in 1D models > Set up short composite run on reference site
-  do k=1,gr%nnzp
+  do k=1,gr%nzmax
     if (gr%zt(k) < 3000.) then
       rtm_forcing(k) = - 1.0 / 86400. + & 
         (0.345+1.0) / (86400. * 3000.) * gr%zt(k)  ! Units [g kg^-1 s^-1] - known magic number

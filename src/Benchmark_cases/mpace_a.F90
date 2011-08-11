@@ -88,20 +88,20 @@ module mpace_a
     real(kind=time_precision), intent(in) ::  & 
     time  ! Current time of simulation      [s]
 
-    real, dimension(gr%nnzp), intent(in) :: & 
+    real, dimension(gr%nzmax), intent(in) :: & 
     p_in_Pa  ! Pressure                               [Pa]
 
     ! Output Variables
-    real, dimension(gr%nnzp), intent(out) ::  & 
+    real, dimension(gr%nzmax), intent(out) ::  & 
     wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
     wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
     thlm_forcing, & ! Large-scale thlm tendency               [K/s]
     rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
 
-    real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
+    real, intent(out), dimension(gr%nzmax,sclr_dim) :: & 
     sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-    real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+    real, intent(out), dimension(gr%nzmax,edsclr_dim) :: & 
     edsclrm_forcing ! Eddy-passive scalar forcing         [units/s]
 
     ! Local Variables, general
@@ -123,13 +123,13 @@ module mpace_a
     real, dimension(file_nlevels) :: um_column
     real, dimension(file_nlevels) :: vm_column
 
-!      real, dimension(gr%nnzp) :: omega_hoc_grid
-    real, dimension(gr%nnzp) :: dTdt_hoc_grid
-    real, dimension(gr%nnzp) :: dqdt_hoc_grid
-    real, dimension(gr%nnzp) :: vertT_hoc_grid
-    real, dimension(gr%nnzp) :: vertq_hoc_grid
+!      real, dimension(gr%nzmax) :: omega_hoc_grid
+    real, dimension(gr%nzmax) :: dTdt_hoc_grid
+    real, dimension(gr%nzmax) :: dqdt_hoc_grid
+    real, dimension(gr%nzmax) :: vertT_hoc_grid
+    real, dimension(gr%nzmax) :: vertq_hoc_grid
 
-    real, dimension(gr%nnzp), intent(out) ::  & 
+    real, dimension(gr%nzmax), intent(out) ::  & 
     um_hoc_grid,       & ! Observed wind, for nudging         [m/s]
     vm_hoc_grid       ! Observed wind, for nudging         [m/s]
 
@@ -168,17 +168,17 @@ module mpace_a
 
 !     Do linear interpolation in space
 !     using zlinterp_fnc
-    dTdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+    dTdt_hoc_grid  = zlinterp_fnc(gr%nzmax, file_nlevels, gr%zt, & 
                              file_heights,dTdt_column)
-    dqdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+    dqdt_hoc_grid  = zlinterp_fnc(gr%nzmax, file_nlevels, gr%zt, & 
                              file_heights,dqdt_column)
-    vertT_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+    vertT_hoc_grid  = zlinterp_fnc(gr%nzmax, file_nlevels, gr%zt, & 
                              file_heights,vertT_column)
-    vertq_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+    vertq_hoc_grid  = zlinterp_fnc(gr%nzmax, file_nlevels, gr%zt, & 
                              file_heights,vertq_column)
-    um_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+    um_hoc_grid  = zlinterp_fnc(gr%nzmax, file_nlevels, gr%zt, & 
                              file_heights,um_column)
-    vm_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
+    vm_hoc_grid  = zlinterp_fnc(gr%nzmax, file_nlevels, gr%zt, & 
                              file_heights,vm_column)
 
     um_hoc_grid (1) = um_hoc_grid(2)
@@ -190,7 +190,7 @@ module mpace_a
 
 
     ! Compute vertical motion
-    do i=2,gr%nnzp
+    do i=2,gr%nzmax
 !          velocity_omega = omega_hoc_grid(i) * 100 / 3600 ! convering mb/hr to Pa/s
 !          wm_zt(i) = -velocity_omega * Rd * thvm(i) / p_in_Pa(i) / grav
       wm_zt(i) = 0.
@@ -205,11 +205,11 @@ module mpace_a
 
     ! Boundary condition
     wm_zm(1) = 0.0        ! At surface
-    wm_zm(gr%nnzp) = 0.0  ! Model top
+    wm_zm(gr%nzmax) = 0.0  ! Model top
 
 
     ! Compute large-scale tendencies
-    do i=1,gr%nnzp
+    do i=1,gr%nzmax
       thlm_forcing(i) = ((dTdt_hoc_grid(i) + vertT_hoc_grid(i)) & 
                        * ((p_sfc/p_in_Pa(i)) ** (Rd/Cp))) & 
                        / real(sec_per_hr) ! K/s

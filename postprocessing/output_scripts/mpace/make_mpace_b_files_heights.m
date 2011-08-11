@@ -31,16 +31,16 @@ sizet = size(t);
 sizet = max(sizet);
 
 % Load mpace_b data from mass grid files
-[filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
+[filename,nzmax,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
 
 for i=1:numvars
     for timestep = 1:sizet-1
-        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nz,t(timestep),t(timestep+1),i,numvars);'];
+        stringtoeval = [list_vars(i,:), ' = read_grads_hoc_endian([scm_path,filename],''ieee-le'',nzmax,t(timestep),t(timestep+1),i,numvars);'];
         eval(stringtoeval);
         str = list_vars(i,:);
             sprintf('%s','Pressure File');
-            sprintf('%d %d',nz,sizet-1');
-        for j=1:nz
+            sprintf('%d %d',nzmax,sizet-1');
+        for j=1:nzmax
             arraydata(j,timestep) = eval([str,'(j)']);
         end
     end
@@ -133,7 +133,7 @@ for v=1:sizevars(1)
     % write header and max/min
     string = ['#',str,'  UWM  ',descriptions(v,:),'  mjfalk  19 Oct 2006'];
     fprintf(fid,'%s\n',string);
-    fprintf(fid,'%d %d\n',nz,sizet-1);
+    fprintf(fid,'%d %d\n',nzmax,sizet-1);
     
     string   = ['max(max(',str,'_array))'];
     maxvalue = eval(string);
@@ -143,7 +143,7 @@ for v=1:sizevars(1)
     eval(string);
     
     % write vertical column of pressures
-    for j=1:nz
+    for j=1:nzmax
         fprintf(fid,'%07.1f %s',p(j,1)/100,' '); % Converting from Pa to mb
         if (mod(j,10) == 0)
             fprintf(fid,'%s\n','');
@@ -163,7 +163,7 @@ for v=1:sizevars(1)
     fprintf(fid,'%s\n','');
 
     % write data in half-hour averages
-    for j=1:nz
+    for j=1:nzmax
         for timestep=1:sizet-1
             string = ['value = ',str,'_array(',num2str(j),',',num2str(timestep),');'];
             eval(string);
@@ -251,7 +251,7 @@ for v=1:3
    
     string = ['#',num2str(idstr),'  UWM  mjfalk  19 Oct 2006'];
     fprintf(fid,'%s\n',string);
-    fprintf(fid,'%d\n',nz);
+    fprintf(fid,'%d\n',nzmax);
     
     for timestep=1:sizet-1
         listoftimes(timestep) = (1/60)*((t(timestep+1)-t(timestep))/2 + t(timestep));
@@ -304,7 +304,7 @@ for v=1:3
         lwp(numberoftimes) = 0;
         cip(numberoftimes) = 0;  %% THIS ACTUALLY IS VERTICALLY INTEGRATED SNOW.
         
-        for zz=1:nz-1
+        for zz=1:nzmax-1
             for tt=1:numberoftimes
                 rho = rhom_array(zz,tt);
                 q   = 0.5*(rvm_array(zz,tt)+rvm_array(zz+1,tt));

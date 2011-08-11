@@ -34,10 +34,10 @@ module gmres_cache
 
   double precision, public, pointer, dimension(:) :: &
     gmres_temp_intlc, &   ! Temporary array that stores GMRES internal values
-                          ! for the interlaced matrices (2 x gr%nnzp grid
+                          ! for the interlaced matrices (2 x gr%nzmax grid
                           ! levels)
     gmres_temp_norm       ! Temporary array that stores GMRES internal values
-                          ! for the non-interlaced matrices (gr%nnzp grid
+                          ! for the non-interlaced matrices (gr%nzmax grid
                           ! levels)
 
   integer, public :: &
@@ -80,7 +80,7 @@ module gmres_cache
 
     ! Input Variables
     integer, intent(in) :: &
-      numeqns    ! Number of equations for non-interlaced matrices (gr%nnzp)
+      numeqns    ! Number of equations for non-interlaced matrices (gr%nzmax)
 
     integer :: &
       numeqns_intlc     ! Number of equations for interlaced matrices

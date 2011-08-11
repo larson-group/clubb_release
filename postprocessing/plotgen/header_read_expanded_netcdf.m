@@ -4,14 +4,14 @@
 % addition to everything else that the original version read and output.
 % Another change is this version is for a NETCDF file. It us used for replicating a similar behavior
 % to the functions used for GrADs files.
-function [filename, nz, z, t_time_steps, time_step_length, numvars, listofparams] ...
+function [filename, nzmax, z, t_time_steps, time_step_length, numvars, listofparams] ...
    = header_read_expanded_netcdf(file_header)
-%function [filename,nz,z,t_time_steps,numvars,listofparams] = header_read(file_header)
+%function [filename,nzmax,z,t_time_steps,numvars,listofparams] = header_read(file_header)
 % header_read('gabls3_night.nc')
 % Opens file and initializes some of the values.  
 % Input: file_header       --    The header file provided by moments code
 % Output: filename         --    The file containing data to be plotted
-%         nz               --    The total number of z levels
+%         nzmax               --    The total number of z levels
 %         z                --    The heights in the sounding, in vector form
 %         t_time_steps     --    The total number of time steps for the run
 %         time_step_length --    The length of the time steps in minutes

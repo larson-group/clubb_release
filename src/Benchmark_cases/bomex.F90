@@ -42,22 +42,22 @@ module bomex
     implicit none
 
     ! Input Variable
-    real, intent(in), dimension(gr%nnzp) :: &
+    real, intent(in), dimension(gr%nzmax) :: &
       rtm    ! Total water mixing ratio (thermodynamic levels)        [kg/kg]
 
     ! Output Variables
-    real, intent(out), dimension(gr%nnzp) :: & 
+    real, intent(out), dimension(gr%nzmax) :: & 
       thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing      ! Total water mixing ratio tendency            [kg/kg/s]
 
-    real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
+    real, intent(out), dimension(gr%nzmax,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar forcing        [units vary/s]
 
-    real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+    real, intent(out), dimension(gr%nzmax,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar forcing [units vary/s]
 
     ! Local Variables
-    real, dimension(gr%nnzp) :: &
+    real, dimension(gr%nzmax) :: &
       qtm_forcing  ! Specified total water spec. humidity tendency    [kg/kg/s]
 
     integer :: k
@@ -70,7 +70,7 @@ module bomex
     ! Large scale advective moisture tendency
     ! The BOMEX specifications give large-scale advective moisture tendency in
     ! terms of total water specific humidity.
-    do k = 2, gr%nnzp
+    do k = 2, gr%nzmax
 
       if ( gr%zt(k) >= 0. .and. gr%zt(k) < 300. ) then
         qtm_forcing(k) = -1.2e-8

@@ -773,16 +773,16 @@ can be computed using a tridiagonal solver:
 \begin{displaymath}
 \underbrace{
 \begin{bmatrix}
-\phantom{(x,x)} & (1,2) & \cdots & (1,\mathrm{nnzp}-1) & (1,\mathrm{nnzp}) \\
-(2,1)           & (2,2) & \cdots & (2,\mathrm{nnzp}-1) & (2,\mathrm{nnzp}) \\
-(3,1)           & (3,2) & \cdots & (3,\mathrm{nnzp}-1) & \phantom{(x,nnzp)}\\
+\phantom{(x,x)} & (1,2) & \cdots & (1,\mathrm{nzmax}-1) & (1,\mathrm{nzmax}) \\
+(2,1)           & (2,2) & \cdots & (2,\mathrm{nzmax}-1) & (2,\mathrm{nzmax}) \\
+(3,1)           & (3,2) & \cdots & (3,\mathrm{nzmax}-1) & \phantom{(x,nzmax)}\\
 \end{bmatrix}}_{\mathtt{LHS} \textrm{(Stored in compact format)}}
 \begin{bmatrix}
 \mathtt{rtp2}(1) \\
 \mathtt{rtp2}(2) \\
 \vdots \\
-\mathtt{rtp2}(\mathrm{nnzp}-1) \\
-\mathtt{rtp2}(\mathrm{nnzp}) \\
+\mathtt{rtp2}(\mathrm{nzmax}-1) \\
+\mathtt{rtp2}(\mathrm{nzmax}) \\
 \end{bmatrix}
 =
 \underbrace{
@@ -790,8 +790,8 @@ can be computed using a tridiagonal solver:
 (1) \\
 (2) \\
 \vdots \\
-(\mathrm{nnzp-1}) \\
-(\mathrm{nnzp}) \\
+(\mathrm{nzmax-1}) \\
+(\mathrm{nzmax}) \\
 \end{bmatrix}}_{\mathtt{RHS}}
 \end{displaymath}
 %
@@ -1545,8 +1545,8 @@ and $\overline{w'r'_t}$ and can therefore be rewritten in matrix form:
 The matrix $lhs$ is obtained by vertical discretization of the LHSs,
 and the vector $rhs$ by discretization of the RHSs. $lhs$ is band-diagonal
 with two rows above and two below the main diagonal. $lhs$ is stored
-in compact form in an array with dimensions $\mathtt{(5, 2\,nnzp)}$.
-$rhs$ is a vector with dimension $\mathtt{(2\,nnzp)}$.
+in compact form in an array with dimensions $\mathtt{(5, 2\,nzmax)}$.
+$rhs$ is a vector with dimension $\mathtt{(2\,nzmax)}$.
 $lhs$ can be inverted efficiently using an LU decomposition algorithm for 
 band diagonal matrices.
 The construction of the matrix $lhs$ and vector $rhs$ are as follows. 
@@ -2394,8 +2394,8 @@ form:
 %
 $lhs_{\mathtt{wp23}}$ is a band-diagonal matrix with two rows above and two below 
 the main diagonal. $lhs_{\mathtt{wp23}}$ is stored in compact form in an array 
-with dimensions $\mathtt{(5,2\,nnzp)}$. $rhs_{\mathtt{wp23}}$ is a vector 
-with dimension $\mathtt{(2\,nnzp)}$. $lhs_{\mathtt{wp23}}$ can be inverted 
+with dimensions $\mathtt{(5,2\,nzmax)}$. $rhs_{\mathtt{wp23}}$ is a vector 
+with dimension $\mathtt{(2\,nzmax)}$. $lhs_{\mathtt{wp23}}$ can be inverted 
 efficiently using a LU decomposition algorithm for band diagonal matrices.
 
 Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
@@ -3175,16 +3175,16 @@ reside on the momentum levels ($\mathtt{zm}$).
 \begin{center}
 %
 \psline[linewidth=2pt](-4,18)(4,18)
-\rput*[b]{0}(0,17.8){zm(nnzp)}
+\rput*[b]{0}(0,17.8){zm(nzmax)}
 %
 \psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,17)(4,17)
-\rput*[b]{0}(0,16.8){zt(nnzp)}
+\rput*[b]{0}(0,16.8){zt(nzmax)}
 %
 \psline[linewidth=2pt](-4,16)(4,16)
-\rput*[b]{0}(0,15.8){zm(nnzp-1)}
+\rput*[b]{0}(0,15.8){zm(nzmax-1)}
 %
 \psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,15)(4,15)
-\rput*[b]{0}(0,14.8){zt(nnzp-1)}
+\rput*[b]{0}(0,14.8){zt(nzmax-1)}
 %
 %
 \psline[linewidth=2pt](-4,12)(4,12)
@@ -3234,7 +3234,7 @@ $\overline{w^{'3}}$, $\overline{w^{'2}\theta_v'}$, $\ldots$}
 % delta zt
 %
 \psline[]{|-|}(5,16)(5,18)
-\rput*[b]{0}(5,16.8){$\Delta$zt(nnzp)}
+\rput*[b]{0}(5,16.8){$\Delta$zt(nzmax)}
 %
 \psline[]{|-|}(5,10)(5,12)
 \rput*[b]{0}(5,10.8){$\Delta$zt(k+1)}
@@ -3248,7 +3248,7 @@ $\overline{w^{'3}}$, $\overline{w^{'2}\theta_v'}$, $\ldots$}
 % delta zm
 %
 \psline[]{|-|}(-5,15)(-5,17)
-\rput*[b]{0}(-5,15.8){$\Delta$zm(nnzp-1)}
+\rput*[b]{0}(-5,15.8){$\Delta$zm(nzmax-1)}
 %
 \psline[]{|-|}(-5,9)(-5,11)
 \rput*[b]{0}(-5,9.8){$\Delta$zm(k)}
@@ -3420,15 +3420,15 @@ to momentum levels (as $\mathtt{var_m}$) on any type of grid configuration.
      + \mathtt{var_t(k)}
 \end{equation}
 When converting a variable from thermodynamic levels to momentum levels, there
-is one instance on the grid, at the uppermost level ($\mathtt{k=nnzp}$), where 
+is one instance on the grid, at the uppermost level ($\mathtt{k=nzmax}$), where 
 a linear extension, equation~\ref{eq_zt2zm_ext}, is required.
 \begin{equation}
 \label{eq_zt2zm_ext}
-\mathtt{var_m(nnzp)}
-   = \left( \frac{ \mathtt{var_t(nnzp)} - \mathtt{var_t(nnzp-1)} }
-                 { \mathtt{zt(nnzp)} - \mathtt{zt(nnzp-1)} } \right)
-     \Big( \mathtt{zm(nnzp)} - \mathtt{zt(nnzp)} \Big)
-     + \mathtt{var_t(nnzp)}
+\mathtt{var_m(nzmax)}
+   = \left( \frac{ \mathtt{var_t(nzmax)} - \mathtt{var_t(nzmax-1)} }
+                 { \mathtt{zt(nzmax)} - \mathtt{zt(nzmax-1)} } \right)
+     \Big( \mathtt{zm(nzmax)} - \mathtt{zt(nzmax)} \Big)
+     + \mathtt{var_t(nzmax)}
 \end{equation}
 When a variable that is being solved for implicitly in an equation is also being
 interpolated from thermodynamic levels to intermediate momentum levels, the 

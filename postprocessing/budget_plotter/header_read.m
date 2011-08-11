@@ -1,10 +1,10 @@
-function [filename,nz,z,t_time_steps,numvars,listofparams] = header_read(file_header)
-%function [filename,nz,z,t_time_steps,numvars,listofparams] = header_read(file_header,prefix)
+function [filename,nzmax,z,t_time_steps,numvars,listofparams] = header_read(file_header)
+%function [filename,nzmax,z,t_time_steps,numvars,listofparams] = header_read(file_header,prefix)
 % header_read('les_fire.ctl')
 % Opens file and initializes some of the values.  
 % Input: file_header       --    The header file provided by moments code
 % Output: filename         --    The file containing data to be plotted
-%         nz               --    The total number of z levels
+%         nzmax               --    The total number of z levels
 %         z                --    The heights in the sounding, in vector form
 %         t_time_steps     --    The total number of time steps for the run
 %         numvars          --    The total number of variables
@@ -39,7 +39,7 @@ while feof(fid) == 0
     if findstr(tline, 'ZDEF');  
        [remainder_1,tline] = strtok(tline);
        [remainder_2,tline] = strtok(tline);
-       nz = str2num(remainder_2);
+       nzmax = str2num(remainder_2);
        tline = fgetl(fid);
       
        while isempty(findstr(tline, 'TDEF'));

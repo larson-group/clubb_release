@@ -55,21 +55,21 @@ module mpace_b
       pinv  = 85000.     ! Pa; ditto
 
     ! Input Variables
-    real, dimension(gr%nnzp), intent(in) :: & 
+    real, dimension(gr%nzmax), intent(in) :: & 
       p_in_Pa, & ! Pressure                               [Pa]
       thvm       ! Virtual potential temperature          [K]
 
     ! Output Variables
-    real, dimension(gr%nnzp), intent(out) ::  & 
+    real, dimension(gr%nzmax), intent(out) ::  & 
       wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
       wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
       thlm_forcing, & ! Large-scale thlm tendency               [K/s]
       rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
 
-    real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
+    real, intent(out), dimension(gr%nzmax,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-    real, intent(out), dimension(gr%nnzp,edsclr_dim) :: & 
+    real, intent(out), dimension(gr%nzmax,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar LS tendency     [units/s]
 
     ! Local Variables, subsidence scheme
@@ -84,7 +84,7 @@ module mpace_b
     !-----------------------------------------------------------------------
 
     ! Compute vertical motion
-    do k=2,gr%nnzp
+    do k=2,gr%nzmax
       velocity_omega = min( D*(p_sfc-p_in_Pa(k)), D*(p_sfc-pinv) )
       wm_zt(k) = -velocity_omega * Rd * thvm(k) / p_in_Pa(k) / grav
     end do
@@ -97,11 +97,11 @@ module mpace_b
 
     ! Boundary conditions
     wm_zm(1) = 0.0        ! At surface
-    wm_zm(gr%nnzp) = 0.0  ! Model top
+    wm_zm(gr%nzmax) = 0.0  ! Model top
 
 
     ! Compute large-scale tendencies
-    do k=1,gr%nnzp
+    do k=1,gr%nzmax
      t_tendency = min( -4.,-15.*(1.-((p_sfc-p_in_Pa(k))/21818.)) ) ! K/day - known magic number
      thlm_forcing(k) = (t_tendency * ((p_sfc/p_in_Pa(k)) ** (Rd/Cp)))  & 
                       / real(sec_per_day) ! K/s

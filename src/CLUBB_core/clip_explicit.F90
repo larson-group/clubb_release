@@ -85,14 +85,14 @@ module clip_explicit
     real(kind=time_precision), intent(in) :: &
       dt ! Timestep [s]
 
-    real, dimension(gr%nnzp), intent(in) :: &
+    real, dimension(gr%nzmax), intent(in) :: &
       rtp2,  & ! r_t'^2         [(kg/kg)^2]
       thlp2, & ! theta_l'^2     [K^2]
       up2,   & ! u'^2           [m^2/s^2]
       vp2,   & ! v'^2           [m^2/s^2]
       wp2      ! w'^2           [m^2/s^2]
 
-    real, dimension(gr%nnzp,sclr_dim), intent(in) :: &
+    real, dimension(gr%nzmax,sclr_dim), intent(in) :: &
       sclrp2 ! sclr'^2  [{units vary}^2]
 
     integer, intent(in) :: &
@@ -103,13 +103,13 @@ module clip_explicit
       vpwp_cl_num
 
     ! Input/Output Variables
-    real, dimension(gr%nnzp), intent(inout) :: &
+    real, dimension(gr%nzmax), intent(inout) :: &
       wprtp,  & ! w'r_t'        [(kg/kg) m/s]
       wpthlp, & ! w'theta_l'    [K m/s]
       upwp,   & ! u'w'          [m^2/s^2]
       vpwp      ! v'w'          [m^2/s^2]
 
-    real, dimension(gr%nnzp,sclr_dim), intent(inout) :: &
+    real, dimension(gr%nzmax,sclr_dim), intent(inout) :: &
       wpsclrp ! w'sclr'         [units m/s]
 
     ! Local Variables
@@ -117,13 +117,13 @@ module clip_explicit
       l_first_clip_ts, & ! First instance of clipping in a timestep.
       l_last_clip_ts     ! Last instance of clipping in a timestep.
 
-    real, dimension(gr%nnzp) :: &
+    real, dimension(gr%nzmax) :: &
       wprtp_chnge,  & ! Net change in w'r_t' due to clipping  [(kg/kg) m/s]
       wpthlp_chnge, & ! Net change in w'th_l' due to clipping [K m/s]
       upwp_chnge,   & ! Net change in u'w' due to clipping    [m^2/s^2]
       vpwp_chnge      ! Net change in v'w' due to clipping    [m^2/s^2]
 
-    real, dimension(gr%nnzp,sclr_dim) :: &
+    real, dimension(gr%nzmax,sclr_dim) :: &
       wpsclrp_chnge   ! Net change in w'sclr' due to clipping [{units vary}]
 
     integer :: i  ! scalar array index.
@@ -478,15 +478,15 @@ module clip_explicit
     real(kind=time_precision), intent(in) ::  & 
       dt     ! Model timestep; used here for STATS           [s]
 
-    real, dimension(gr%nnzp), intent(in) :: & 
+    real, dimension(gr%nzmax), intent(in) :: & 
       xp2, & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
       yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
 
     ! Output Variable
-    real, dimension(gr%nnzp), intent(inout) :: & 
+    real, dimension(gr%nzmax), intent(inout) :: & 
       xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
 
-    real, dimension(gr%nnzp), intent(out) :: &
+    real, dimension(gr%nzmax), intent(out) :: &
       xpyp_chnge  ! Net change in x'y' due to clipping [{x units}*{y units}]
 
 
@@ -527,7 +527,7 @@ module clip_explicit
     ! code does not need to be invoked at the upper boundary.
     ! Note that if clipping were applied at the lower boundary, momentum will
     ! not be conserved, therefore it should never be added.
-    do k = 2, gr%nnzp-1, 1
+    do k = 2, gr%nzmax-1, 1
 
       ! Clipping for xpyp at an upper limit corresponding with a correlation
       ! between x and y of max_mag_correlation.
@@ -551,12 +551,12 @@ module clip_explicit
 
       endif
 
-    enddo ! k = 2..gr%nnzp
+    enddo ! k = 2..gr%nzmax
 
     ! Since there is no covariance clipping at the upper or lower boundaries,
     ! the change in x'y' due to covariance clipping at those levels is 0.
     xpyp_chnge(1)       = 0.0
-    xpyp_chnge(gr%nnzp) = 0.0
+    xpyp_chnge(gr%nzmax) = 0.0
 
     if ( l_stats_samp ) then
       if ( l_last_clip_ts ) then
@@ -621,7 +621,7 @@ module clip_explicit
       threshold   ! Minimum value of x'^2                   [{x units}^2]
 
     ! Output Variable
-    real, dimension(gr%nnzp), intent(inout) :: & 
+    real, dimension(gr%nzmax), intent(inout) :: & 
       xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
 
     ! Local Variables
@@ -659,7 +659,7 @@ module clip_explicit
     ! clipping code does not need to be invoked at the lower boundary.
     ! Likewise, the value of x'^2 is set at the upper boundary, so the variance
     ! clipping code does not need to be invoked at the upper boundary.
-    do k = 2, gr%nnzp-1, 1
+    do k = 2, gr%nzmax-1, 1
       if ( xp2(k) < threshold ) then
         xp2(k) = threshold
       endif
@@ -742,11 +742,11 @@ module clip_explicit
     real, intent(in) ::  &
       sfc_elevation    ! Elevation of ground level                  [m AMSL]
 
-    real, dimension(gr%nnzp), intent(in) :: &
+    real, dimension(gr%nzmax), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
 
     ! Input/Output Variables
-    real, dimension(gr%nnzp), intent(inout) :: &
+    real, dimension(gr%nzmax), intent(inout) :: &
       wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
 
     ! ---- Begin Code ----
@@ -782,15 +782,15 @@ module clip_explicit
     real, intent(in) ::  &
       sfc_elevation    ! Elevation of ground level                  [m AMSL]
 
-    real, dimension(gr%nnzp), intent(in) :: &
+    real, dimension(gr%nzmax), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
 
     ! Input/Output Variables
-    real, dimension(gr%nnzp), intent(inout) :: &
+    real, dimension(gr%nzmax), intent(inout) :: &
       wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
 
     ! Local Variables
-    real, dimension(gr%nnzp) :: &
+    real, dimension(gr%nzmax) :: &
       wp2_zt_cubed, & ! Variance of vertical velocity cubed (w^2_{zt}^3)   [m^6/s^6]
       wp3_lim_sqd     ! Keeps absolute value of Sk_w from becoming > limit [m^6/s^6]
 
@@ -819,9 +819,9 @@ module clip_explicit
     ! To lower compute time, we squared both sides of the equation and compute
     ! wp2^3 only once. -dschanen 9 Oct 2008
 
-    wp2_zt_cubed(1:gr%nnzp) = wp2_zt(1:gr%nnzp)**3
+    wp2_zt_cubed(1:gr%nzmax) = wp2_zt(1:gr%nzmax)**3
 
-    do k = 1, gr%nnzp, 1
+    do k = 1, gr%nzmax, 1
       if ( gr%zt(k) - sfc_elevation <= 100.0 ) then ! Clip for 100 m. AGL.
        !wp3_upper_lim(k) =  0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
        !wp3_lower_lim(k) = -0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)

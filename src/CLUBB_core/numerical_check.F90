@@ -55,7 +55,7 @@ module numerical_check
     character(*), parameter :: proc_name = "compute_length"
 
     ! Input Variables
-    real, dimension(gr%nnzp), intent(in) ::  & 
+    real, dimension(gr%nzmax), intent(in) ::  & 
       Lscale,     & ! Mixing length                 [m]
       Lscale_up,  & ! Upward mixing length          [m]
       Lscale_down   ! Downward mixing length        [m]
@@ -254,7 +254,7 @@ module numerical_check
       proc_name = "parameterization_timestep"
 
     ! Input variables
-    real, intent(in), dimension(gr%nnzp) ::  & 
+    real, intent(in), dimension(gr%nzmax) ::  & 
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
       um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
@@ -279,7 +279,7 @@ module numerical_check
       vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
 
     ! These are prognostic or are planned to be in the future
-    real, intent(in), dimension(gr%nnzp) ::  & 
+    real, intent(in), dimension(gr%nzmax) ::  & 
       um,      & ! u mean wind component (thermodynamic levels)   [m/s]
       upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
       vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
@@ -304,7 +304,7 @@ module numerical_check
     real, intent(in), dimension(edsclr_dim) :: & 
       wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
 
-    real, intent(in),dimension(gr%nnzp,sclr_dim) :: & 
+    real, intent(in),dimension(gr%nzmax,sclr_dim) :: & 
       sclrm,         & ! Passive scalar mean      [units vary]
       wpsclrp,       & ! w'sclr'                  [units vary]
       sclrp2,        & ! sclr'^2                  [units vary]
@@ -312,7 +312,7 @@ module numerical_check
       sclrpthlp,     & ! sclr'thl'                [units vary]
       sclrm_forcing    ! Passive scalar forcing   [units / s]
 
-    real, intent(in),dimension(gr%nnzp,edsclr_dim) :: & 
+    real, intent(in),dimension(gr%nzmax,edsclr_dim) :: & 
       edsclrm,         & ! Eddy passive scalar mean    [units vary]
       edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
 
@@ -395,26 +395,26 @@ module numerical_check
 !---------------------------------------------------------------------
 
 
-    call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name, err_code )
-    call check_negative( p_in_Pa, gr%nnzp ,"p_in_Pa", prefix//proc_name, err_code )
-    call check_negative( rho, gr%nnzp ,"rho", prefix//proc_name, err_code )
-    call check_negative( rho_zm, gr%nnzp ,"rho_zm", prefix//proc_name, err_code )
-    call check_negative( exner, gr%nnzp ,"exner", prefix//proc_name, err_code )
-    call check_negative( rho_ds_zm, gr%nnzp ,"rho_ds_zm", prefix//proc_name, err_code )
-    call check_negative( rho_ds_zt, gr%nnzp ,"rho_ds_zt", prefix//proc_name, err_code )
-    call check_negative( invrs_rho_ds_zm, gr%nnzp ,"invrs_rho_ds_zm", &
+    call check_negative( rtm, gr%nzmax ,"rtm", prefix//proc_name, err_code )
+    call check_negative( p_in_Pa, gr%nzmax ,"p_in_Pa", prefix//proc_name, err_code )
+    call check_negative( rho, gr%nzmax ,"rho", prefix//proc_name, err_code )
+    call check_negative( rho_zm, gr%nzmax ,"rho_zm", prefix//proc_name, err_code )
+    call check_negative( exner, gr%nzmax ,"exner", prefix//proc_name, err_code )
+    call check_negative( rho_ds_zm, gr%nzmax ,"rho_ds_zm", prefix//proc_name, err_code )
+    call check_negative( rho_ds_zt, gr%nzmax ,"rho_ds_zt", prefix//proc_name, err_code )
+    call check_negative( invrs_rho_ds_zm, gr%nzmax ,"invrs_rho_ds_zm", &
                          prefix//proc_name, err_code )
-    call check_negative( invrs_rho_ds_zt, gr%nnzp ,"invrs_rho_ds_zt", &
+    call check_negative( invrs_rho_ds_zt, gr%nzmax ,"invrs_rho_ds_zt", &
                          prefix//proc_name, err_code )
-    call check_negative( thv_ds_zm, gr%nnzp ,"thv_ds_zm", prefix//proc_name, err_code )
-    call check_negative( thv_ds_zt, gr%nnzp ,"thv_ds_zt", prefix//proc_name, err_code )
-    call check_negative( up2, gr%nnzp ,"up2", prefix//proc_name, err_code )
-    call check_negative( vp2, gr%nnzp ,"vp2", prefix//proc_name, err_code )
-    call check_negative( wp2, gr%nnzp ,"wp2", prefix//proc_name, err_code )
-    call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name, err_code )
-    call check_negative( thlm, gr%nnzp ,"thlm", prefix//proc_name, err_code )
-    call check_negative( rtp2, gr%nnzp ,"rtp2", prefix//proc_name, err_code )
-    call check_negative( thlp2, gr%nnzp ,"thlp2", prefix//proc_name, err_code )
+    call check_negative( thv_ds_zm, gr%nzmax ,"thv_ds_zm", prefix//proc_name, err_code )
+    call check_negative( thv_ds_zt, gr%nzmax ,"thv_ds_zt", prefix//proc_name, err_code )
+    call check_negative( up2, gr%nzmax ,"up2", prefix//proc_name, err_code )
+    call check_negative( vp2, gr%nzmax ,"vp2", prefix//proc_name, err_code )
+    call check_negative( wp2, gr%nzmax ,"wp2", prefix//proc_name, err_code )
+    call check_negative( rtm, gr%nzmax ,"rtm", prefix//proc_name, err_code )
+    call check_negative( thlm, gr%nzmax ,"thlm", prefix//proc_name, err_code )
+    call check_negative( rtp2, gr%nzmax ,"rtp2", prefix//proc_name, err_code )
+    call check_negative( thlp2, gr%nzmax ,"thlp2", prefix//proc_name, err_code )
 
     return
   end subroutine parameterization_check
@@ -507,7 +507,7 @@ module numerical_check
       proc_name = "Before BUGSrad."
 
     ! Input/Output variables
-    real, dimension(gr%nnzp), intent(in) :: & 
+    real, dimension(gr%nzmax), intent(in) :: & 
       thlm,           & ! Liquid Water Potential Temperature   [K/s]
       rcm,            & ! Liquid Water Mixing Ratio            [kg/kg]
       rtm,            & ! Total Water Mixing Ratio             [kg/kg]
@@ -518,21 +518,21 @@ module numerical_check
       rho_zm            ! Air Density                          [kg/m^3]
 
     ! Local variables
-    real,dimension(gr%nnzp) :: rvm
+    real,dimension(gr%nzmax) :: rvm
 
 !-------------------------------------------------------------------------
 
     rvm = rtm - rcm
 
-    call check_negative( thlm, gr%nnzp ,"thlm", proc_name )
-    call check_negative( rcm, gr%nnzp ,"rcm", proc_name )
-    call check_negative( rtm, gr%nnzp ,"rtm", proc_name )
-    call check_negative( rvm, gr%nnzp ,"rvm", proc_name )
-    call check_negative( ricem, gr%nnzp ,"ricem", proc_name )
-    call check_negative( cloud_frac, gr%nnzp ,"cloud_frac", proc_name )
-    call check_negative( p_in_Pa, gr%nnzp ,"p_in_Pa", proc_name )
-    call check_negative( exner, gr%nnzp ,"exner", proc_name )
-    call check_negative( rho_zm, gr%nnzp ,"rho_zm", proc_name )
+    call check_negative( thlm, gr%nzmax ,"thlm", proc_name )
+    call check_negative( rcm, gr%nzmax ,"rcm", proc_name )
+    call check_negative( rtm, gr%nzmax ,"rtm", proc_name )
+    call check_negative( rvm, gr%nzmax ,"rvm", proc_name )
+    call check_negative( ricem, gr%nzmax ,"ricem", proc_name )
+    call check_negative( cloud_frac, gr%nzmax ,"cloud_frac", proc_name )
+    call check_negative( p_in_Pa, gr%nzmax ,"p_in_Pa", proc_name )
+    call check_negative( exner, gr%nzmax ,"exner", proc_name )
+    call check_negative( rho_zm, gr%nzmax ,"rho_zm", proc_name )
 
     return
 

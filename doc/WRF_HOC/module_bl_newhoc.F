@@ -1333,7 +1333,7 @@ IF (.not. restart) THEN
             time = time_initial
 
 !           Initialize statistics output
-            CALL stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,          &
+            CALL stats_init( 50, runfile, gr%nzmax, gr%zt, gr%zm,          &
                              day, month, year, rlat, rlon, time, DT )
 
          ENDIF

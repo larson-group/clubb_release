@@ -16,7 +16,7 @@ module bugsrad_driver
   contains
 
   subroutine compute_bugsrad_radiation &
-             ( alt, nz, lin_int_buffer,             &
+             ( alt, nzmax, lin_int_buffer,             &
                extend_atmos_range_size,             &
                extend_atmos_bottom_level,           &
                extend_atmos_top_level,              &
@@ -43,7 +43,7 @@ module bugsrad_driver
 !                                  .
 !                                  .
 ! ///////////////          Top of CLUBB Grid                         ///////////////
-! ///////////////          Dimension: nz                             ///////////////
+! ///////////////          Dimension: nzmax                             ///////////////
 ! References:
 ! Stevens, et al., (2001) _Journal of Atmospheric Science_, Vol 58, p.3391-3409
 ! McClatchey, et al., (1972) _Environmental Research Papers_, No. 411, p.94
@@ -90,13 +90,13 @@ module bugsrad_driver
       amu0  ! Cosine of the solar zenith angle  [-]
 
     integer, intent(in) :: &
-      nz ! Vertical extent;  i.e. nnzp in the grid class
+      nzmax ! Vertical extent;  i.e. nzmax in the grid class
 
     ! Number of levels to interpolate from the bottom of extend_atmos to the top
     ! of the CLUBB profile, hopefully enough to eliminate cooling spikes, etc.
     integer, intent(in) :: lin_int_buffer, extend_atmos_range_size
 
-    real, intent(in), dimension(nz) :: &
+    real, intent(in), dimension(nzmax) :: &
       alt,          & ! Altitudes of the model              [m]
       thlm,         & ! Liquid potential temp.              [K]
       rcm,          & ! Liquid water mixing ratio           [kg/kg]
@@ -115,7 +115,7 @@ module bugsrad_driver
       extend_atmos_top_level
 
     ! Output Variables
-    real, intent(out), dimension(nz) :: &
+    real, intent(out), dimension(nzmax) :: &
       Frad,         & ! Total radiative flux          [W/m^2]
       Frad_SW_up,   & ! SW radiative upwelling flux   [W/m^2]
       Frad_LW_up,   & ! LW radiative upwelling flux   [W/m^2]
@@ -125,18 +125,18 @@ module bugsrad_driver
 
     ! Local Variables
 
-    real, dimension(nz) :: &
+    real, dimension(nzmax) :: &
       rcm_in_cloud  ! Liquid water mixing ratio in cloud  [kg/kg]
 
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
+    double precision, dimension(nlen,(nzmax-1)+lin_int_buffer+extend_atmos_range_size) :: &
       sp_humidity, & ! Specific humidity      [kg/kg]
       pinmb          ! Pressure in millibars  [hPa]
 
     ! Pressure in millibars for layers (calculated as an average of pinmb)
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
+    double precision, dimension(nlen,(nzmax-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
       playerinmb ! [hPa]
 
-    double precision, dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
+    double precision, dimension(nlen,(nzmax-1)+lin_int_buffer+extend_atmos_range_size) :: &
       dpl                      ! Difference in pressure levels       [hPa]
 
     double precision, dimension(nlen) :: &
@@ -155,19 +155,19 @@ module bugsrad_driver
     buffer = lin_int_buffer + extend_atmos_range_size
 
     ! Convert to millibars
-    pinmb(1,1:(nz-1))  = dble( p_in_Pa(2:nz) / pascal_per_mb ) ! t grid in CLUBB
+    pinmb(1,1:(nzmax-1))  = dble( p_in_Pa(2:nzmax) / pascal_per_mb ) ! t grid in CLUBB
 
-    playerinmb(1,1:nz) = dble( p_in_Pam / pascal_per_mb ) ! m grid in CLUBB
+    playerinmb(1,1:nzmax) = dble( p_in_Pam / pascal_per_mb ) ! m grid in CLUBB
 
     ! Determine rcm in cloud
     rcm_in_cloud = rcm / max( cloud_frac, cloud_frac_min )
 
     ! Convert theta_l to temperature
 
-    T_in_K(1,1:(nz-1)) = dble( thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) ) )
+    T_in_K(1,1:(nzmax-1)) = dble( thlm2T_in_K( thlm(2:nzmax), exner(2:nzmax), rcm(2:nzmax) ) )
 
     ! Derive Specific humidity from rc & rt.
-    do z = 2, nz
+    do z = 2, nzmax
       if ( rtm(z) < rcm(z) ) then
         sp_humidity(1,z-1) = 0.0d0
         if ( clubb_at_least_debug_level(1) ) then
@@ -183,22 +183,22 @@ module bugsrad_driver
 
     ! Ozone at < 1 km = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976.
     !   Convert from g to kg.
-    o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) / g_per_kg ) !Known magic number
+    o3l(1,1:(nzmax-1)) = dble( ( 5.4e-5 / rho_zm(1:(nzmax-1)) ) / g_per_kg ) !Known magic number
 
     ! Convert and transpose as needed
-    rcil(1,buffer+1:(nz-1)+buffer)            = flip( dble( rim(2:nz) ), nz-1 )
-    rsnowm_2d(1,buffer+1:(nz-1)+buffer)       = flip( dble( rsnowm(2:nz) ), nz-1 )
-    rcm_in_cloud_2d(1,buffer+1:(nz-1)+buffer) = flip( dble( rcm_in_cloud(2:nz) ), nz-1 )
-    cloud_frac_2d(1,buffer+1:(nz-1)+buffer)   = flip( dble( cloud_frac(2:nz) ), nz-1 )
+    rcil(1,buffer+1:(nzmax-1)+buffer)            = flip( dble( rim(2:nzmax) ), nzmax-1 )
+    rsnowm_2d(1,buffer+1:(nzmax-1)+buffer)       = flip( dble( rsnowm(2:nzmax) ), nzmax-1 )
+    rcm_in_cloud_2d(1,buffer+1:(nzmax-1)+buffer) = flip( dble( rcm_in_cloud(2:nzmax) ), nzmax-1 )
+    cloud_frac_2d(1,buffer+1:(nzmax-1)+buffer)   = flip( dble( cloud_frac(2:nzmax) ), nzmax-1 )
 
-    T_in_K(1,buffer+1:(nz-1)+buffer) = flip( T_in_K(1,1:(nz-1)), nz-1 )
+    T_in_K(1,buffer+1:(nzmax-1)+buffer) = flip( T_in_K(1,1:(nzmax-1)), nzmax-1 )
 
-    sp_humidity(1,buffer+1:(nz-1)+buffer) = flip( sp_humidity(1,1:(nz-1)), nz-1 )
+    sp_humidity(1,buffer+1:(nzmax-1)+buffer) = flip( sp_humidity(1,1:(nzmax-1)), nzmax-1 )
 
-    pinmb(1,(buffer+1):(nz-1+buffer))        = flip( pinmb(1,1:(nz-1)), nz-1 )
-    playerinmb(1,(buffer+1):(nz-1+buffer+1)) = flip( playerinmb(1,1:nz), nz )
+    pinmb(1,(buffer+1):(nzmax-1+buffer))        = flip( pinmb(1,1:(nzmax-1)), nzmax-1 )
+    playerinmb(1,(buffer+1):(nzmax-1+buffer+1)) = flip( playerinmb(1,1:nzmax), nzmax )
 
-    o3l(1,buffer+1:(nz-1)+buffer) = flip( o3l(1,1:(nz-1)), nz-1 )
+    o3l(1,buffer+1:(nzmax-1)+buffer) = flip( o3l(1,1:(nzmax-1)), nzmax-1 )
 
     ! Assume these are all zero above the CLUBB profile
     rsnowm_2d(1,1:buffer)       = 0.0d0
@@ -206,12 +206,12 @@ module bugsrad_driver
     rcm_in_cloud_2d(1,1:buffer) = 0.0d0
     cloud_frac_2d(1,1:buffer)   = 0.0d0
 
-    if ( dble( alt(nz) ) > extend_alt(extend_atmos_dim) ) then
+    if ( dble( alt(nzmax) ) > extend_alt(extend_atmos_dim) ) then
 
       write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
                        "altitude above the top of the extended atmosphere ",  &
                        "profile."
-      write(fstderr,*) "Top of CLUBB model zm grid =", alt(nz), "m."
+      write(fstderr,*) "Top of CLUBB model zm grid =", alt(nzmax), "m."
       write(fstderr,*) "Top of extended atmosphere profile =",  &
                        extend_alt(extend_atmos_dim), "m."
       write(fstderr,*) "Reduce the vertical extent of the CLUBB model grid."
@@ -275,29 +275,29 @@ module bugsrad_driver
     end if
 
     ! Calculate the difference in pressure layers (including buffer levels)
-    do i = 1, (nz-1)+buffer
+    do i = 1, (nzmax-1)+buffer
       dpl(1,i) = playerinmb(1,i+1) - playerinmb(1,i)
     end do
 
-    ts(1) = T_in_K(1,(nz-1)+buffer)
+    ts(1) = T_in_K(1,(nzmax-1)+buffer)
 !  Write a profile for Kurt's driver program for debugging purposes
 !  write(time_char ,*) time
 !  time_char =adjustl(time_char)
     !open(10, file="profile"//trim(time_char)//"dat")
-    !write(10,'(2i4,a10)') nlen, (nz-1)+buffer, "TROPICAL"
-    !do i=1, (nz-1)+buffer
+    !write(10,'(2i4,a10)') nlen, (nzmax-1)+buffer, "TROPICAL"
+    !do i=1, (nzmax-1)+buffer
     ! write(10,'(i4,9f12.6)') i, pinmb(1,i), playerinmb(1,i),T_in_K(1,i), &
     !sp_humidity(1,i), 100000.0*o3l(1,i), rcm_in_cloud_2d(1,i), &
     !rcil(1,i), cloud_frac_2d(1,i), dpl(1,i)
     !end do
-    !write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0
+    !write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nzmax+buffer), ts(1), amu0
     !close(10)
 
 
 !  print *, "playerinmb = ", playerinmb
 !  print *, "sp_humidity = ", sp_humidity
 
-    call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb,              &
+    call bugs_rad( nlen, slen, (nzmax-1)+buffer, playerinmb,              &
                    pinmb, dpl, T_in_K, sp_humidity,                    &
                    rcm_in_cloud_2d, rcil, rsnowm_2d, o3l,              &
                    ts, amu0, slr, alvdf,                               &
@@ -308,11 +308,11 @@ module bugsrad_driver
 
     ! Michael pointed out that this was a temperature tendency, not a theta_l
     ! tendency.  The 2nd line should fix both.  -dschanen 28 July 2006
-    radht_SW(2:nz) = real( flip( radht_SW_2d(1,buffer+1:(nz-1)+buffer), nz-1 ) ) &
-                     * ( 1.0 / exner(2:nz) )
+    radht_SW(2:nzmax) = real( flip( radht_SW_2d(1,buffer+1:(nzmax-1)+buffer), nzmax-1 ) ) &
+                     * ( 1.0 / exner(2:nzmax) )
 
-    radht_LW(2:nz) = real( flip( radht_LW_2d(1,buffer+1:(nz-1)+buffer), nz-1 ) ) &
-                     * ( 1.0 / exner(2:nz) )
+    radht_LW(2:nzmax) = real( flip( radht_LW_2d(1,buffer+1:(nzmax-1)+buffer), nzmax-1 ) ) &
+                     * ( 1.0 / exner(2:nzmax) )
 
     ! No radiative heating below ground
     radht_SW(1) = 0.0
@@ -321,19 +321,19 @@ module bugsrad_driver
     radht = radht_SW + radht_LW
 
     ! These are on the m grid, and require no adjusting
-    Frad_SW_up = real( flip( Frad_uSW(1,buffer+1:nz+buffer), nz ) )
+    Frad_SW_up = real( flip( Frad_uSW(1,buffer+1:nzmax+buffer), nzmax ) )
 
-    Frad_LW_up = real( flip( Frad_uLW(1,buffer+1:nz+buffer), nz ) )
+    Frad_LW_up = real( flip( Frad_uLW(1,buffer+1:nzmax+buffer), nzmax ) )
 
-    Frad_SW_down = real( flip( Frad_dSW(1,buffer+1:nz+buffer), nz ) )
+    Frad_SW_down = real( flip( Frad_dSW(1,buffer+1:nzmax+buffer), nzmax ) )
 
-    Frad_LW_down = real( flip( Frad_dLW(1,buffer+1:nz+buffer), nz ) )
+    Frad_LW_down = real( flip( Frad_dLW(1,buffer+1:nzmax+buffer), nzmax ) )
 
-    Frad_SW(1:nz) = Frad_SW_up - Frad_SW_down
+    Frad_SW(1:nzmax) = Frad_SW_up - Frad_SW_down
 
-    Frad_LW(1:nz) = Frad_LW_up - Frad_LW_down
+    Frad_LW(1:nzmax) = Frad_LW_up - Frad_LW_down
 
-    Frad(1:nz) = Frad_SW(1:nz) + Frad_LW(1:nz)
+    Frad(1:nzmax) = Frad_SW(1:nzmax) + Frad_LW(1:nzmax)
 
     return
   end subroutine compute_bugsrad_radiation

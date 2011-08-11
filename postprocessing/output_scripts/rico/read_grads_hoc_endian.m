@@ -1,5 +1,5 @@
 
-function avg_field = read_grads_hoc_endian(filename,MachineFormat,nz,t1,t2,varnum,numvars)
+function avg_field = read_grads_hoc_endian(filename,MachineFormat,nzmax,t1,t2,varnum,numvars)
 
 % READ_GRADS_HOC_ENDIAN   Reads and time-averages profiles from 1D GrADS *.dat files.
 %
@@ -15,7 +15,7 @@ function avg_field = read_grads_hoc_endian(filename,MachineFormat,nz,t1,t2,varnu
 %   filename      -> Full filepath to the GRADS data file
 %   MachineFormat -> String that specifies big-endian ('ieee-be', Linux COAMPS output) 
 %                    or little-endian ('ieee-le', WINDOWS PC)
-%   nz            -> Number of z levels in profile
+%   nzmax            -> Number of z levels in profile
 %   t1            -> Beginning timestep to look at
 %   t2            -> Ending timestep to look at
 %   varnum        -> Which variable to read (see .ctl file)
@@ -35,12 +35,12 @@ fid = fopen(filename,'r',MachineFormat);
 num_timesteps = (t2-t1) + 1;
 
 % Read in and average profiles over all timesteps
-avg_field = zeros(nz,1);
+avg_field = zeros(nzmax,1);
 for t=t1:t2
    % 4 bytes per 32 bit float
    byte_position = 4*( (varnum-1)*nz+numvars*nz*(t-1) );
    status = fseek(fid,byte_position,'bof');
-   field = fread(fid,nz,'float32');
+   field = fread(fid,nzmax,'float32');
    avg_field = avg_field + field;
 end
 avg_field = avg_field/num_timesteps;

@@ -85,19 +85,19 @@ module mean_adv
     !
     ! The values of var_zt are found on the thermodynamic levels, as are the
     ! values of wm_zt (mean vertical velocity on the thermodynamic levels).  The
-    ! variable var_zt is interpolated to momentum level gr%nnzp-1, based on
-    ! the values of var_zt at thermodynamic levels gr%nnzp and gr%nnzp-1.
+    ! variable var_zt is interpolated to momentum level gr%nzmax-1, based on
+    ! the values of var_zt at thermodynamic levels gr%nzmax and gr%nzmax-1.
     ! However, the variable var_zt cannot be interpolated to momentum level
-    ! gr%nnzp.  Rather, a linear extension is used to find the value of var_zt
-    ! at momentum level gr%nnzp, based on the values of var_zt at thermodynamic
-    ! levels gr%nnzp and gr%nnzp-1.  The derivative of the extended and
+    ! gr%nzmax.  Rather, a linear extension is used to find the value of var_zt
+    ! at momentum level gr%nzmax, based on the values of var_zt at thermodynamic
+    ! levels gr%nzmax and gr%nzmax-1.  The derivative of the extended and
     ! interpolated values, d(var_zt)/dz, is taken over the central thermodynamic
     ! level.  Of course, this derivative will be the same as the derivative of
-    ! var_zt between thermodynamic levels gr%nnzp and gr%nnzp-1.  The derivative
+    ! var_zt between thermodynamic levels gr%nzmax and gr%nzmax-1.  The derivative
     ! is multiplied by wm_zt at the central thermodynamic level to get the
     ! desired result.
     !
-    ! For the following diagram, k = gr%nnzp, which is the uppermost level of
+    ! For the following diagram, k = gr%nzmax, which is the uppermost level of
     ! the model:
     !
     ! =================var_zt(extend)========================== m(k)   Boundary
@@ -117,28 +117,28 @@ module mean_adv
     ! boundary.
     !
     ! In order to discretize the upper boundary condition, consider a new level
-    ! outside the model (thermodynamic level gr%nnzp+1) just above the upper
-    ! boundary level (thermodynamic level gr%nnzp).  The value of var_zt at the
+    ! outside the model (thermodynamic level gr%nzmax+1) just above the upper
+    ! boundary level (thermodynamic level gr%nzmax).  The value of var_zt at the
     ! level just outside the model is defined to be the same as the value of
-    ! var_zt at thermodynamic level gr%nnzp.  Therefore, the value of
+    ! var_zt at thermodynamic level gr%nzmax.  Therefore, the value of
     ! d(var_zt)/dz between the level just outside the model and the uppermost
     ! thermodynamic level is 0, staying consistent with the zero-flux boundary
     ! condition option for the eddy diffusion portion of the code.  Therefore,
-    ! the value of var_zt at momentum level gr%nnzp, which is the upper boundary
+    ! the value of var_zt at momentum level gr%nzmax, which is the upper boundary
     ! of the model, would be the same as the value of var_zt at the uppermost
     ! thermodynamic level.
     !
     ! The values of var_zt are found on the thermodynamic levels, as are the
     ! values of wm_zt (mean vertical velocity on the thermodynamic levels).  The
-    ! variable var_zt is interpolated to momentum level gr%nnzp-1, based on
-    ! the values of var_zt at thermodynamic levels gr%nnzp and gr%nnzp-1.  The
-    ! value of var_zt at momentum level gr%nnzp is set equal to the value of
-    ! var_zt at thermodynamic level gr%nnzp, as described above.  The derivative
+    ! variable var_zt is interpolated to momentum level gr%nzmax-1, based on
+    ! the values of var_zt at thermodynamic levels gr%nzmax and gr%nzmax-1.  The
+    ! value of var_zt at momentum level gr%nzmax is set equal to the value of
+    ! var_zt at thermodynamic level gr%nzmax, as described above.  The derivative
     ! of the set and interpolated values, d(var_zt)/dz, is taken over the
     ! central thermodynamic level.  The derivative is multiplied by wm_zt at the
     ! central thermodynamic level to get the desired result.
     !
-    ! For the following diagram, k = gr%nnzp, which is the uppermost level of
+    ! For the following diagram, k = gr%nzmax, which is the uppermost level of
     ! the model:
     !
     ! --[var_zt(kp1) = var_zt(k)]----(level outside model)----- t(k+1)
@@ -151,7 +151,7 @@ module mean_adv
     !
     ! -----var_zt(km1)----------------------------------------- t(k-1)
     !
-    ! where (top) stands for the grid index of momentum level k = gr%nnzp, which
+    ! where (top) stands for the grid index of momentum level k = gr%nzmax, which
     ! is the upper boundary of the model.
     !
     ! This method of boundary discretization is also similar to the method
@@ -236,7 +236,7 @@ module mean_adv
       = 0.0
 
 
-    elseif ( level > 1 .and. level < gr%nnzp ) then
+    elseif ( level > 1 .and. level < gr%nzmax ) then
 
       ! Most of the interior model; normal conditions.
 
@@ -289,9 +289,9 @@ module mean_adv
 
       end if ! l_upwind_xm_ma
 
-    elseif ( level == gr%nnzp ) then
+    elseif ( level == gr%nzmax ) then
 
-      ! k = gr%nnzp (top level); upper boundary level.
+      ! k = gr%nzmax (top level); upper boundary level.
 
       if ( l_ub_const_deriv ) then
 
@@ -334,7 +334,7 @@ module mean_adv
       endif
 
 
-    endif ! level = gr%nnzp
+    endif ! level = gr%nzmax
 
 
     return
@@ -451,7 +451,7 @@ module mean_adv
       = 0.0
 
 
-    elseif ( level > 1 .and. level < gr%nnzp ) then
+    elseif ( level > 1 .and. level < gr%nzmax ) then
 
       ! Most of the interior model; normal conditions.
 
@@ -469,9 +469,9 @@ module mean_adv
       = - wm_zm * invrs_dzm * gr%weights_zm2zt(m_below,tk)
 
 
-    elseif ( level == gr%nnzp ) then
+    elseif ( level == gr%nzmax ) then
 
-      ! k = gr%nnzp (top level); upper boundary level.
+      ! k = gr%nzmax (top level); upper boundary level.
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
       lhs(kp1_mdiag) & 

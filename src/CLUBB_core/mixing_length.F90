@@ -84,7 +84,7 @@ module mixing_length
     !zeps  = 1.e-10
 
     ! Input Variables
-    real, dimension(gr%nnzp), intent(in) ::  & 
+    real, dimension(gr%nzmax), intent(in) ::  & 
       thvm,    & ! Virtual potential temp. on themodynamic level  [K]
       thlm,    & ! Liquid potential temp. on themodynamic level   [K]
       rtm,     & ! Total water mixing ratio on themodynamic level [kg/kg]
@@ -101,7 +101,7 @@ module mixing_length
     integer, intent(inout) :: & 
       err_code
 
-    real, dimension(gr%nnzp), intent(out) ::  & 
+    real, dimension(gr%nzmax), intent(out) ::  & 
       Lscale  ! Mixing length                 [m]
 
     ! Local Variables
@@ -113,7 +113,7 @@ module mixing_length
     real :: dCAPE_dz_j, dCAPE_dz_j_minus_1, dCAPE_dz_j_plus_1
 
     ! Temporary arrays to store calculations to speed runtime
-    real, dimension(gr%nnzp) :: exp_mu_dzm, invrs_dzm_on_mu
+    real, dimension(gr%nzmax) :: exp_mu_dzm, invrs_dzm_on_mu
 
     ! Minimum value for Lscale that will taper off with height
     real :: lminh
@@ -163,7 +163,7 @@ module mixing_length
     ! Upwards loop
 
     Lscale_up_max_alt = 0.
-    do i = 2, gr%nnzp, 1
+    do i = 2, gr%nzmax, 1
 
       tke_i = zm2zt( em, i )   ! TKE interpolated to thermodynamic level
 
@@ -174,7 +174,7 @@ module mixing_length
       rt_par_j_minus_1  = rtm(i)
       dCAPE_dz_j_minus_1 = 0.0
 
-      do while ((tke_i > 0.) .and. (j < gr%nnzp))
+      do while ((tke_i > 0.) .and. (j < gr%nzmax))
 
         ! thl, rt of parcel are conserved except for entrainment
 
@@ -439,8 +439,8 @@ module mixing_length
     ! Chris Golaz modification to include effects on latent heating
     ! on Lscale_down
 
-    Lscale_down_min_alt = gr%zt(gr%nnzp)
-    do i = gr%nnzp, 2, -1
+    Lscale_down_min_alt = gr%zt(gr%nzmax)
+    do i = gr%nzmax, 2, -1
 
       tke_i = zm2zt( em, i )   ! TKE interpolated to thermodynamic level
 
@@ -734,7 +734,7 @@ module mixing_length
 
     !!!!! Compute Lscale for every vertical level.
 
-    do i = 2, gr%nnzp, 1
+    do i = 2, gr%nzmax, 1
 
       ! The equation for Lscale is:
       !
@@ -762,7 +762,7 @@ module mixing_length
 
     ! Set the value of Lscale at the upper and lower boundaries.
     Lscale(1) = Lscale(2)
-    Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
+    Lscale(gr%nzmax) = Lscale(gr%nzmax-1)
 
     ! Vince Larson limited Lscale to allow host
     ! model to take over deep convection.  13 Feb 2008.

@@ -248,7 +248,7 @@ module output_grads
     character(len = 256) :: line, tmp, date, dt
 
     integer ::  & 
-      i, nx, ny, nz, & 
+      i, nx, ny, nzmax, & 
       ihour, imin, & 
       ia_in, iz_in, ntimes_in, nvar_in, & 
       day_in, month_in, year_in
@@ -359,12 +359,12 @@ module output_grads
         allocate( var_in(nvar_in) )
         do i=1, nvar_in
           read(unit=iunit,iostat=ierr,fmt='(a256)') line
-          read(unit=line,fmt=*) var_in(i)%name, nz
-          if ( nz /= iz_in ) then
+          read(unit=line,fmt=*) var_in(i)%name, nzmax
+          if ( nzmax /= iz_in ) then
             write(unit=fstderr,fmt=*)  & 
               "Error reading ", trim( var_in(i)%name )
             l_error = .true.
-          end if ! nz /= iz_in
+          end if ! nzmax /= iz_in
         end do ! 1..nvar_in
       end if
 

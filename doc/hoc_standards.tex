@@ -168,17 +168,17 @@ subroutine mulmul( x, y, z )
     euler_const   ! Made up constant [no units]
 
   use dimensions, only: &
-    nnzp ! Number of data points of our model [count]
+    nzmax ! Number of data points of our model [count]
 
   implicit none
 
   ! First list input variables
-  real, dimension(nnzp), intent(in) :: &
+  real, dimension(nzmax), intent(in) :: &
     x, &! First factor   [no units]
     y   ! Second factor  [no units]
 
   ! Then list inout variables, and then outputs 
-  real, dimension(nnzp), intent(out) :: &
+  real, dimension(nzmax), intent(out) :: &
     z  ! output         [no units]
 !-----------------------------------------------------------------------
 
@@ -188,7 +188,7 @@ subroutine mulmul( x, y, z )
   ! independently of other elements of the subroutine
   ! allowing for parallelism if possible.
 
-  z(1:nnzp) = ( x(1:nnzp) / pi ) * ( y(1:nnzp) / euler_const )
+  z(1:nzmax) = ( x(1:nzmax) / pi ) * ( y(1:nzmax) / euler_const )
 
   return
 end subroutine mulmul
@@ -380,8 +380,8 @@ though Fortran 90 allows you to omit them. \newline
 E.g. Do this:
 
 \begin{verbatim}
- xyzzy(1:gr%nnzp) = variable_arr1(1:gr%nnzp) * variable_scl1 &
-                    * variable_arr2(1:gr%nnzp)**2
+ xyzzy(1:gr%nzmax) = variable_arr1(1:gr%nzmax) * variable_scl1 &
+                    * variable_arr2(1:gr%nzmax)**2
 \end{verbatim}
 
 Not this:
@@ -574,7 +574,7 @@ E.g.
 
     ...
 
-  do k = 1, gr%nnzp, 1
+  do k = 1, gr%nzmax, 1
 
            ...
 
@@ -638,7 +638,7 @@ E.g. \\
 \verb|| \\
 \verb*|  subroutine|\verb| advect_2D( ... )| \\
 \verb*|    use|\verb| grid, only: & | {\small 2+2 columns within the scope of \texttt{dynamics/advect\_2D}} \\
-\verb*|      nz,|\verb| & | {\small 2+2+2 columns since we're continuing the \texttt{use} statement}  \\
+\verb*|      nzmax,|\verb| & | {\small 2+2+2 columns since we're continuing the \texttt{use} statement}  \\
 \verb*|      nx| \\
 \verb|| \\
 \verb*|    if|\verb| ( l_do_something ) then| \\
