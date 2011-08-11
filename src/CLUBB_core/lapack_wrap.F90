@@ -29,6 +29,13 @@ module lapack_wrap
 
   private :: lapack_isnan
 
+  ! A best guess for what the precision of a single precision and double
+  ! precision float is in LAPACK.  Hopefully this will work more portably on
+  ! architectures like Itanium than the old code -dschanen 11 Aug 2011
+  integer, parameter, private :: &
+    sp = selected_real_kind( precision( 0.0 ) ), &
+    dp = selected_real_kind( precision( 0.d0 ) )
+
   private ! Set Default Scope
 
   contains
@@ -121,14 +128,14 @@ module lapack_wrap
 !    $                   WORK, IWORK, INFO )
 !-----------------------------------------------------------------------
 
-    if ( kind( diag(1) ) == 4 ) then
+    if ( kind( diag(1) ) == sp ) then
       call sgtsvx( "Not Factored", "No Transpose lhs", ndim, nrhs,  & 
                    subd(2:ndim), diag, supd(1:ndim-1),  & 
                    dlf, df, duf, du2, ipivot,  & 
                    rhs, ndim, solution, ndim, rcond, & 
                    ferr, berr, work, iwork, info )
 
-    else if ( kind( diag(1) ) == 8 ) then
+    else if ( kind( diag(1) ) == dp ) then
       call dgtsvx( "Not Factored", "No Transpose lhs", ndim, nrhs,  & 
                    subd(2:ndim), diag, supd(1:ndim-1),  & 
                    dlf, df, duf, du2, ipivot,  & 
@@ -241,11 +248,11 @@ module lapack_wrap
 !       SUBROUTINE DGTSV( N, NRHS, DL, D, DU, B, LDB, INFO )
 !-----------------------------------------------------------------------
 
-    if ( kind( diag(1) ) == 4 ) then
+    if ( kind( diag(1) ) == sp ) then
       call sgtsv( ndim, nrhs, subd(2:ndim), diag, supd(1:ndim-1),  & 
                   rhs, ndim, info )
 
-    else if ( kind( diag(1) ) == 8 ) then
+    else if ( kind( diag(1) ) == dp ) then
       call dgtsv( ndim, nrhs, subd(2:ndim), diag, supd(1:ndim-1),  & 
                   rhs, ndim, info )
 
@@ -403,14 +410,14 @@ module lapack_wrap
 !    $                   RCOND, FERR, BERR, WORK, IWORK, INFO )
 !-----------------------------------------------------------------------
 
-    if ( kind( lhs(1,1) ) == 4 ) then
+    if ( kind( lhs(1,1) ) == sp ) then
       call sgbsvx( 'Equilibrate lhs', 'No Transpose lhs', & 
                    ndim, nsub, nsup, nrhs, & 
                    lhs, nsup+nsub+1, lulhs, 2*nsub+nsup+1,  & 
                    ipivot, equed, rscale, cscale, & 
                    rhs, ndim, solution, ndim, & 
                    rcond, ferr, berr, work, iwork, info )
-    else if ( kind( lhs(1,1) ) == 8 ) then
+    else if ( kind( lhs(1,1) ) == dp ) then
       call dgbsvx( 'Equilibrate lhs', 'No Transpose lhs', & 
                    ndim, nsub, nsup, nrhs, & 
                    lhs, nsup+nsub+1, lulhs, 2*nsub+nsup+1, & 
@@ -596,11 +603,11 @@ module lapack_wrap
 !       SUBROUTINE DGBSV( N, KL, KU, NRHS, AB, LDAB, IPIV, B, LDB, INFO )
 !-----------------------------------------------------------------------
 
-    if ( kind( lhs(1,1) ) == 4 ) then
+    if ( kind( lhs(1,1) ) == sp ) then
       call sgbsv( ndim, nsub, nsup, nrhs, lulhs, nsub*2+nsup+1,  & 
                   ipivot, rhs, ndim, info )
 
-    else if ( kind( lhs(1,1) ) == 8 ) then
+    else if ( kind( lhs(1,1) ) == dp ) then
       call dgbsv( ndim, nsub, nsup, nrhs, lulhs, nsub*2+nsup+1,  & 
                   ipivot, rhs, ndim, info )
 
@@ -675,7 +682,7 @@ module lapack_wrap
 
     lapack_isnan = .false.
 
-    if ( kind( variable ) == 4 ) then
+    if ( kind( variable ) == sp ) then
       do k = 1, ndim
         do j = 1, nrhs
           lapack_isnan = sisnan( variable(k,j) )
@@ -683,7 +690,7 @@ module lapack_wrap
         end do
         if ( lapack_isnan ) exit
       end do
-    else if ( kind( variable ) == 8 ) then
+    else if ( kind( variable ) == dp ) then
       do k = 1, ndim
         do j = 1, nrhs
           lapack_isnan = disnan( variable(k,j) )
