@@ -128,15 +128,15 @@ module lapack_wrap
 !    $                   WORK, IWORK, INFO )
 !-----------------------------------------------------------------------
 
-    if ( kind( diag(1) ) == sp ) then
-      call sgtsvx( "Not Factored", "No Transpose lhs", ndim, nrhs,  & 
+    if ( kind( diag(1) ) == dp ) then
+      call dgtsvx( "Not Factored", "No Transpose lhs", ndim, nrhs,  & 
                    subd(2:ndim), diag, supd(1:ndim-1),  & 
                    dlf, df, duf, du2, ipivot,  & 
                    rhs, ndim, solution, ndim, rcond, & 
                    ferr, berr, work, iwork, info )
 
-    else if ( kind( diag(1) ) == dp ) then
-      call dgtsvx( "Not Factored", "No Transpose lhs", ndim, nrhs,  & 
+    else if ( kind( diag(1) ) == sp ) then
+      call sgtsvx( "Not Factored", "No Transpose lhs", ndim, nrhs,  & 
                    subd(2:ndim), diag, supd(1:ndim-1),  & 
                    dlf, df, duf, du2, ipivot,  & 
                    rhs, ndim, solution, ndim, rcond, & 
@@ -248,12 +248,12 @@ module lapack_wrap
 !       SUBROUTINE DGTSV( N, NRHS, DL, D, DU, B, LDB, INFO )
 !-----------------------------------------------------------------------
 
-    if ( kind( diag(1) ) == sp ) then
-      call sgtsv( ndim, nrhs, subd(2:ndim), diag, supd(1:ndim-1),  & 
+    if ( kind( diag(1) ) == dp ) then
+      call dgtsv( ndim, nrhs, subd(2:ndim), diag, supd(1:ndim-1),  & 
                   rhs, ndim, info )
 
-    else if ( kind( diag(1) ) == dp ) then
-      call dgtsv( ndim, nrhs, subd(2:ndim), diag, supd(1:ndim-1),  & 
+    else if ( kind( diag(1) ) == sp ) then
+      call sgtsv( ndim, nrhs, subd(2:ndim), diag, supd(1:ndim-1),  & 
                   rhs, ndim, info )
 
     else
@@ -410,20 +410,22 @@ module lapack_wrap
 !    $                   RCOND, FERR, BERR, WORK, IWORK, INFO )
 !-----------------------------------------------------------------------
 
-    if ( kind( lhs(1,1) ) == sp ) then
-      call sgbsvx( 'Equilibrate lhs', 'No Transpose lhs', & 
+    if ( kind( lhs(1,1) ) == dp ) then
+      call dgbsvx( 'Equilibrate lhs', 'No Transpose lhs', & 
                    ndim, nsub, nsup, nrhs, & 
                    lhs, nsup+nsub+1, lulhs, 2*nsub+nsup+1,  & 
                    ipivot, equed, rscale, cscale, & 
                    rhs, ndim, solution, ndim, & 
                    rcond, ferr, berr, work, iwork, info )
-    else if ( kind( lhs(1,1) ) == dp ) then
-      call dgbsvx( 'Equilibrate lhs', 'No Transpose lhs', & 
+
+    else if ( kind( lhs(1,1) ) == sp ) then
+      call sgbsvx( 'Equilibrate lhs', 'No Transpose lhs', & 
                    ndim, nsub, nsup, nrhs, & 
                    lhs, nsup+nsub+1, lulhs, 2*nsub+nsup+1, & 
                    ipivot, equed, rscale, cscale, & 
                    rhs, ndim, solution, ndim, & 
                    rcond, ferr, berr, work, iwork, info )
+
     else
       stop "band_solvex: Cannot resolve the precision of real datatype"
       ! One implication of this is that CLUBB cannot be used with quad
@@ -603,12 +605,12 @@ module lapack_wrap
 !       SUBROUTINE DGBSV( N, KL, KU, NRHS, AB, LDAB, IPIV, B, LDB, INFO )
 !-----------------------------------------------------------------------
 
-    if ( kind( lhs(1,1) ) == sp ) then
-      call sgbsv( ndim, nsub, nsup, nrhs, lulhs, nsub*2+nsup+1,  & 
+    if ( kind( lhs(1,1) ) == dp ) then
+      call dgbsv( ndim, nsub, nsup, nrhs, lulhs, nsub*2+nsup+1,  & 
                   ipivot, rhs, ndim, info )
 
-    else if ( kind( lhs(1,1) ) == dp ) then
-      call dgbsv( ndim, nsub, nsup, nrhs, lulhs, nsub*2+nsup+1,  & 
+    else if ( kind( lhs(1,1) ) == sp ) then
+      call sgbsv( ndim, nsub, nsup, nrhs, lulhs, nsub*2+nsup+1,  & 
                   ipivot, rhs, ndim, info )
 
     else
@@ -682,18 +684,18 @@ module lapack_wrap
 
     lapack_isnan = .false.
 
-    if ( kind( variable ) == sp ) then
+    if ( kind( variable ) == dp ) then
       do k = 1, ndim
         do j = 1, nrhs
-          lapack_isnan = sisnan( variable(k,j) )
+          lapack_isnan = disnan( variable(k,j) )
           if ( lapack_isnan ) exit
         end do
         if ( lapack_isnan ) exit
       end do
-    else if ( kind( variable ) == dp ) then
+    else if ( kind( variable ) == sp ) then
       do k = 1, ndim
         do j = 1, nrhs
-          lapack_isnan = disnan( variable(k,j) )
+          lapack_isnan = sisnan( variable(k,j) )
           if ( lapack_isnan ) exit
         end do
         if ( lapack_isnan ) exit
