@@ -57,7 +57,7 @@ time_final = 1296000.0
 time_spinup = 10800.0   ! End of spin-up period [seconds since midnight on start date]
 
 dt_main    = 300.0   ! Model timestep [s]
-dt_rad = 300.0   ! Closure timestep [s] (must multiply evenly into dt_main).
+dt_rad = 1800.0   ! Closure timestep [s] (must multiply evenly into dt_main).
 
 sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
