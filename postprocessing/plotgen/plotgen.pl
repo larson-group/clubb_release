@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 ###########################################################################
-# Plotgen v3.87
+# Plotgen v3.88
 #
 # Documentation is available here:
 # http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
@@ -783,10 +783,7 @@ sub buildMatlabStringStd()
                             # Replace any '{0}' with the folder name
                             $title =~ s/\{0\}/$folderName/;
                         }
-                        if($expression eq "rain_rate_sfc")
-			{
-			    print(STDERR "$expression\n");
-			}
+
                         my $lineWidth = $lineWidths[$lineWidthCounter];
                         my $lineStyle = $lineStyles[$lineStyleCounter];
                         my $lineColor = $lineColors[$lineColorCounter];

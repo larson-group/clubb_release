@@ -48,7 +48,7 @@ else
   z = netcdf.getVar( nc_file, 2 );
 end
 
-nz = size(z, 1);
+nzmax = size(z, 1);
 
 
 varTime = netcdf.inqVarID( nc_file, 'time' );
