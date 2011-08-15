@@ -1174,6 +1174,7 @@ module advance_wp2_wp3_module
         iwp3_dp1, &
         iwp3_4hd
 
+    use advance_helper_module, only: set_boundary_conditions ! Procedure(s)
 
     implicit none
 
@@ -1243,7 +1244,8 @@ module advance_wp2_wp3_module
     ! Local Variables
 
     ! Array indices
-    integer :: k, km1, km2, kp1, kp2, k_wp2, k_wp3
+    integer :: k, km1, km2, kp1, kp2, k_wp2, k_wp3, k_wp2_low, k_wp2_high, &
+               k_wp3_low, k_wp3_high
 
     real, dimension(5) :: tmp
 
@@ -1704,30 +1706,21 @@ module advance_wp2_wp3_module
 
     ! Lower boundary
     k = 1
-    k_wp3 = 2*k - 1
-    k_wp2 = 2*k
-
-    ! w'^2
-    lhs(:,k_wp2)         = 0.0
-    lhs(m_k_mdiag,k_wp2) = 1.0
-    ! w'^3
-    lhs(:,k_wp3)         = 0.0
-    lhs(t_k_tdiag,k_wp3) = 1.0
+    k_wp3_low = 2*k - 1
+    k_wp2_low = 2*k
 
     ! Upper boundary
     k = gr%nzmax
-    k_wp3 = 2*k - 1
-    k_wp2 = 2*k
+    k_wp3_high = 2*k - 1
+    k_wp2_high = 2*k
 
-    ! w'^2
-    lhs(:,k_wp2)         = 0.0
-    lhs(m_k_mdiag,k_wp2) = 1.0
-    ! w'^3
-    lhs(:,k_wp3)         = 0.0
-    lhs(t_k_tdiag,k_wp3) = 1.0
-
+    ! t_k_tdiag and m_k_mdiag need to be adjusted because the dimensions of lhs
+    ! are offset
+    call set_boundary_conditions( t_k_tdiag - nsup, k_wp3_low, k_wp3_high, lhs, &
+                                  m_k_mdiag - nsup, k_wp2_low, k_wp2_high)
 
     return
+
   end subroutine wp23_lhs
 
 #ifdef MKL

@@ -955,6 +955,8 @@ module advance_xm_wpxp_module
         iwprtp_dp1, & 
         iwprtp_sicl
 
+    use advance_helper_module, only: set_boundary_conditions ! Procedure(s)
+
 
     implicit none
 
@@ -1018,6 +1020,7 @@ module advance_xm_wpxp_module
     ! Indices
     integer :: k, kp1, km1
     integer :: k_xm, k_wpxp
+    integer :: k_wpxp_low, k_wpxp_high
 
     real, dimension(3) :: tmp
 
@@ -1343,26 +1346,18 @@ module advance_xm_wpxp_module
     ! Lower boundary
     k      = 1
     k_xm   = 2*k - 1
-    k_wpxp = 2*k
-
-    ! xm
-    lhs(:,k_xm)           = 0.0
-    lhs(t_k_tdiag,k_xm)   = 1.0
-    ! w'x'
-    lhs(:,k_wpxp)         = 0.0
-    lhs(m_k_mdiag,k_wpxp) = 1.0
+    k_wpxp_low = 2*k
 
     ! Upper boundary
     k      = gr%nzmax
     !k_xm is 2*k - 1
-    k_wpxp = 2*k
+    k_wpxp_high = 2*k
 
-    ! w'x'
-    lhs(:,k_wpxp)         = 0.0
-    lhs(m_k_mdiag,k_wpxp) = 1.0
-
+    call set_boundary_conditions( m_k_mdiag, k_wpxp_low, k_wpxp_high, lhs, &
+                                  t_k_tdiag, k_xm)
 
     return
+
   end subroutine xm_wpxp_lhs
 
   !=============================================================================

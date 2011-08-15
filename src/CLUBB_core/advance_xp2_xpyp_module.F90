@@ -935,6 +935,8 @@ module advance_xp2_xpyp_module
         ivp2_ta, & 
         ivp2_dp2
 
+    use advance_helper_module, only: set_boundary_conditions
+
 
     implicit none
 
@@ -975,7 +977,7 @@ module advance_xp2_xpyp_module
     ! Local Variables
 
     ! Array indices
-    integer :: k, kp1, km1
+    integer :: k, kp1, km1, low_bound, high_bound
 
     real, dimension(3) :: & 
       tmp
@@ -1125,13 +1127,13 @@ module advance_xp2_xpyp_module
     ! be set to their respective threshold minimum values at the top boundary.
     ! Fixed-point boundary conditions are used for both the variances and the
     ! covars.
-    lhs(:,1) = 0.0
-    lhs(:,gr%nzmax) = 0.0
+    low_bound = 1
+    high_bound = gr%nzmax
 
-    lhs(k_mdiag,1) = 1.0
-    lhs(k_mdiag,gr%nzmax) = 1.0
+    call set_boundary_conditions( k_mdiag, low_bound, high_bound, lhs )
 
     return
+
   end subroutine xp2_xpyp_lhs
 
   !=============================================================================
