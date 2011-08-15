@@ -24,7 +24,7 @@ avg_field(t1:t2) = 0.0;
 % Read in and average profiles over all timesteps
 for t=t1:t2
    % 4 bytes per 32 bit float
-   byte_position = 4*( (varnum-1)*nz+numvars*nz*(t-1) );
+   byte_position = 4*( (varnum-1)*nzmax+numvars*nzmax*(t-1) );
    status = fseek(fid,byte_position,'bof');
    field = fread(fid,nzmax,'float32');
    avg_field(t) = field;

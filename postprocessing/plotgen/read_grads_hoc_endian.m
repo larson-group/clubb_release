@@ -24,7 +24,7 @@ num_timesteps = (t2-t1) + 1;
 avg_field = zeros(nzmax,1);
 for t=t1:t2
    % 4 bytes per 32 bit float
-   byte_position = 4*( (varnum-1)*nz+numvars*nz*(t-1) );
+   byte_position = 4*( (varnum-1)*nzmax+numvars*nzmax*(t-1) );
    status = fseek(fid,byte_position,'bof');
    field = fread(fid,nzmax,'float32');
    avg_field = avg_field + field;
