@@ -922,9 +922,17 @@ module clubb_driver
     end if
 
     ! check to make sure dt_rad is a mutliple of dt_main
-    if ( (dt_rad/dt_main) /= &
-          real(floor(dt_rad/dt_main), kind=selected_real_kind(p=12)) ) then
+    if ( abs(dt_rad/dt_main - real(floor(dt_rad/dt_main), kind=time_precision)) &
+          > 1.e-8_time_precision) then
       stop "dt_rad must be a multiple of dt_main"
+    end if
+
+    if ( .not. (( abs(dt_rad/stats_tout - real(floor(dt_rad/stats_tout), kind=time_precision)) &
+          < 1.e-8_time_precision) .or. &
+       ( abs(stats_tout/dt_rad - real(floor(stats_tout/dt_rad), kind=time_precision)) &
+          < 1.e-8_time_precision)) ) then
+      stop "Either dt_rad must be a multiple of stats_tout or stats_tout must &
+        be a mulitple of dt_rad"
     end if
 
 !-------------------------------------------------------------------------------
@@ -1030,6 +1038,9 @@ module clubb_driver
              Ncnm, hydromet,                                       & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(inout)
 
+      ! Radiation is always called on the first timestep in order to ensure 
+      ! that the simulation is subject to radiative heating and cooling from 
+      ! the first timestep.
       if ( mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1 ) then
 
         ! Advance a radiation scheme
