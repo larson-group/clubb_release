@@ -955,7 +955,7 @@ module advance_xm_wpxp_module
         iwprtp_dp1, & 
         iwprtp_sicl
 
-    use advance_helper_module, only: set_boundary_conditions ! Procedure(s)
+    use advance_helper_module, only: set_boundary_conditions_lhs ! Procedure(s)
 
 
     implicit none
@@ -1353,7 +1353,7 @@ module advance_xm_wpxp_module
     !k_xm is 2*k - 1
     k_wpxp_high = 2*k
 
-    call set_boundary_conditions( m_k_mdiag, k_wpxp_low, k_wpxp_high, lhs, &
+    call set_boundary_conditions_lhs( m_k_mdiag, k_wpxp_low, k_wpxp_high, lhs, &
                                   t_k_tdiag, k_xm)
 
     return
@@ -1413,6 +1413,7 @@ module advance_xm_wpxp_module
         iwpthlp_pr1, &
         l_stats_samp
 
+    use advance_helper_module, only: set_boundary_conditions_rhs
 
     implicit none
 
@@ -1460,7 +1461,7 @@ module advance_xm_wpxp_module
     real, dimension(3) :: lhs_fnc_output
 
     ! Indices
-    integer :: k, km1, kp1, k_xm, k_wpxp
+    integer :: k, km1, kp1, k_xm, k_wpxp, k_xm_low, k_wpxp_low, k_wpxp_high
 
 
     integer :: & 
@@ -1731,24 +1732,29 @@ module advance_xm_wpxp_module
 
     ! Lower boundary
     k      = 1
-    k_xm   = 2*k - 1
-    k_wpxp = 2*k
-    ! The value of xm at the lower boundary will remain the same.
-    ! However, the value of xm at the lower boundary gets overwritten
-    ! after the matrix is solved for the next timestep, such
-    ! that xm(1) = xm(2).
-    rhs(k_xm)   = xm(k)
-    ! The value of w'x' at the lower boundary will remain the same.
-    ! The surface value of w'x' is set elsewhere
-    ! (case-specific information).
-    rhs(k_wpxp) = wpxp(k)
+    k_xm_low   = 2*k - 1
+    k_wpxp_low = 2*k
 
     ! Upper boundary
     k      = gr%nzmax
     !k_xm is 2*k - 1
-    k_wpxp = 2*k
+    k_wpxp_high = 2*k
+
+
+    ! The value of xm at the lower boundary will remain the same.
+    ! However, the value of xm at the lower boundary gets overwritten
+    ! after the matrix is solved for the next timestep, such
+    ! that xm(1) = xm(2).
+
+    ! The value of w'x' at the lower boundary will remain the same.
+    ! The surface value of w'x' is set elsewhere
+    ! (case-specific information).
+
     ! The value of w'x' at the upper boundary will be 0.
-    rhs(k_wpxp) = 0.0
+    call set_boundary_conditions_rhs( &
+            wpxp(1), k_wpxp_low, 0.0, k_wpxp_high, &
+            rhs, &
+            xm(1), k_xm_low )
 
 
   end subroutine xm_wpxp_rhs

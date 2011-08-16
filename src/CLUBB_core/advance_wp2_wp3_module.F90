@@ -1174,7 +1174,7 @@ module advance_wp2_wp3_module
         iwp3_dp1, &
         iwp3_4hd
 
-    use advance_helper_module, only: set_boundary_conditions ! Procedure(s)
+    use advance_helper_module, only: set_boundary_conditions_lhs ! Procedure(s)
 
     implicit none
 
@@ -1716,7 +1716,7 @@ module advance_wp2_wp3_module
 
     ! t_k_tdiag and m_k_mdiag need to be adjusted because the dimensions of lhs
     ! are offset
-    call set_boundary_conditions( t_k_tdiag - nsup, k_wp3_low, k_wp3_high, lhs, &
+    call set_boundary_conditions_lhs( t_k_tdiag - nsup, k_wp3_low, k_wp3_high, lhs, &
                                   m_k_mdiag - nsup, k_wp2_low, k_wp2_high)
 
     return
@@ -2549,6 +2549,8 @@ module advance_wp2_wp3_module
         stat_begin_update_pt,  &
         stat_modify_pt
 
+    use advance_helper_module, only: set_boundary_conditions_rhs
+
 
     implicit none
 
@@ -2601,7 +2603,8 @@ module advance_wp2_wp3_module
       dum_dz, dvm_dz ! Vertical derivatives of um and vm
 
     ! Array indices
-    integer :: k, km1, kp1, k_wp2, k_wp3
+    integer :: k, km1, kp1, k_wp2, k_wp3, k_wp2_low, k_wp2_high, &
+               k_wp3_low, k_wp3_high
 
     ! For "over-implicit" weighted time step.
     ! This vector holds output from the LHS (implicit) portion of a term at a
@@ -3045,26 +3048,29 @@ module advance_wp2_wp3_module
 
     ! Lower boundary
     k = 1
-    k_wp3 = 2*k - 1
-    k_wp2 = 2*k
+    k_wp3_low = 2*k - 1
+    k_wp2_low = 2*k
+
+    ! Upper boundary
+    k = gr%nzmax
+    k_wp3_high = 2*k - 1
+    k_wp2_high = 2*k
+
 
     ! The value of w'^2 at the lower boundary will remain the same.
     ! When the lower boundary is at the surface, the surface value of
     ! w'^2 is set in subroutine surface_varnce (surface_varnce_module.F).
-    rhs(k_wp2)   = wp2(k)
+
     ! The value of w'^3 at the lower boundary will be 0.
-    rhs(k_wp3)   = 0.0
-
-    ! Upper boundary
-    k = gr%nzmax
-    k_wp3 = 2*k - 1
-    k_wp2 = 2*k
-
+ 
     ! The value of w'^2 at the upper boundary will be set to the threshold
     ! minimum value of w_tol_sqd.
-    rhs(k_wp2)   = w_tol_sqd
+
     ! The value of w'^3 at the upper boundary will be set to 0.
-    rhs(k_wp3)   = 0.0
+    call set_boundary_conditions_rhs( &
+            wp2(1), k_wp2_low, w_tol_sqd, k_wp2_high, & ! Intent(in)
+            rhs, & ! Intent(inout)
+            0.0, k_wp3_low, 0.0, k_wp3_high )
 
     return
 

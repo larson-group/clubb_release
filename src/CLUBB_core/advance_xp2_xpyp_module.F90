@@ -935,7 +935,7 @@ module advance_xp2_xpyp_module
         ivp2_ta, & 
         ivp2_dp2
 
-    use advance_helper_module, only: set_boundary_conditions
+    use advance_helper_module, only: set_boundary_conditions_lhs
 
 
     implicit none
@@ -1130,7 +1130,7 @@ module advance_xp2_xpyp_module
     low_bound = 1
     high_bound = gr%nzmax
 
-    call set_boundary_conditions( k_mdiag, low_bound, high_bound, lhs )
+    call set_boundary_conditions_lhs( k_mdiag, low_bound, high_bound, lhs )
 
     return
 
@@ -1836,6 +1836,8 @@ module advance_xp2_xpyp_module
         irtpthlp_dp1, & 
         zm, & 
         l_stats_samp
+  
+    use advance_helper_module, only: set_boundary_conditions_rhs
 
     implicit none
 
@@ -1879,7 +1881,7 @@ module advance_xp2_xpyp_module
     ! Local Variables
 
     ! Array indices
-    integer :: k, kp1, km1
+    integer :: k, kp1, km1, k_low, k_high
 
     ! For "over-implicit" weighted time step.
     ! This vector holds output from the LHS (implicit) portion of a term at a
@@ -2092,10 +2094,14 @@ module advance_xp2_xpyp_module
     ! Fixed-point boundary conditions are used for both the variances and the
     ! covars.
 
-    rhs(1,1) = xapxbp(1)
+    k_low = 1
+    k_high = gr%nzmax
+
     ! The value of the field at the upper boundary will be set to it's threshold
     ! minimum value, as contained in the variable 'threshold'.
-    rhs(gr%nzmax,1) = threshold
+    call set_boundary_conditions_rhs( &
+            xapxbp(1), k_low, threshold, k_high, &
+            rhs(:,1) )
 
     return
   end subroutine xp2_xpyp_rhs
