@@ -931,8 +931,7 @@ module clubb_driver
           < 1.e-8_time_precision) .or. &
        ( abs(stats_tout/dt_rad - real(floor(stats_tout/dt_rad), kind=time_precision)) &
           < 1.e-8_time_precision)) ) then
-      stop "Either dt_rad must be a multiple of stats_tout or stats_tout must &
-        be a mulitple of dt_rad"
+      stop "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
     end if
 
 !-------------------------------------------------------------------------------
