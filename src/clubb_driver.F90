@@ -927,11 +927,15 @@ module clubb_driver
       stop "dt_rad must be a multiple of dt_main"
     end if
 
-    if ( .not. (( abs(dt_rad/stats_tout - real(floor(dt_rad/stats_tout), kind=time_precision)) &
-          < 1.e-8_time_precision) .or. &
-       ( abs(stats_tout/dt_rad - real(floor(stats_tout/dt_rad), kind=time_precision)) &
-          < 1.e-8_time_precision)) ) then
-      stop "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
+    if( l_stats ) then
+
+      if ( .not. (( abs(dt_rad/stats_tout - real(floor(dt_rad/stats_tout), kind=time_precision)) &
+            < 1.e-8_time_precision) .or. &
+         ( abs(stats_tout/dt_rad - real(floor(stats_tout/dt_rad), kind=time_precision)) &
+            < 1.e-8_time_precision)) ) then
+        stop "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
+      end if
+
     end if
 
 !-------------------------------------------------------------------------------
