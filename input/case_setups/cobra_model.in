@@ -57,7 +57,7 @@ time_final   = 230400.0 ! 48 hour run  ! Model end time [seconds since midnight 
 time_spinup  =  57600.0                ! End of spin-up period [seconds since midnight on start date]
 
 dt_main    = 60.0   ! Model timestep [s]
-dt_rad = 60.0   ! Closure timestep [s] (must multiply evenly into dt_main).
+dt_rad = 60.0   ! Radiation timestep [s] 
 
 p_sfc = 977.5e2     ! Pressure at model base              [Pa]
 
