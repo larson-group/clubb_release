@@ -629,7 +629,7 @@ The sounding files:
     <CASE NAME>_edsclr_sounding.in, <CASE NAME>_ozone_sounding.in
   These files contain the sounding data by level for a case.
 
-  All cases need a _surface.in file. _sclr_soudning.in, _edsclr_sounding.in,
+  All cases need a _surface.in file. _sclr_sounding.in, _edsclr_sounding.in,
   and _ozone_sounding.in files are optional.
 
 Current cases:
@@ -660,11 +660,11 @@ How to create a new case:
 
 The randomization files (only needed for the tuner described below):
 
-  run_scripts/generate_seed.bash, input/tuner/rand_seed.dat, bin/int2txt
+  run_scripts/generate_seed.bash, input_misc/tuner/rand_seed.dat, bin/int2txt
   The script uses intrinsic functionality in the Linux kernel to generate
   a pseudo random seed (the .dat) used by the tuner for randomizing initial
   parameters.  This works on any operating system with a Linux style 
-  /dev/random (Solaris, Tru64, etc.) as well.  The seed file is now plain text 
+  /dev/urandom (Solaris, Tru64, etc.) as well.  The seed file is now plain text 
   text and can be edited by hand.
 
 
@@ -1264,9 +1264,9 @@ Morrison microphysics code:
 -----------------------------|--------------------------------------------------
 Logical flag                 |  If true then:
 
-  l_ice_micro      = .true.   Calculate ice mixing ratio.
+  l_ice_micro      = .true.   Allow ice and snow to form.
 
-  l_graupel        = .true.   Calculate graupel mixing ratio.
+  l_graupel        = .true.   Allow graupel to form.
 
   l_hail           = .true.   Dense precipitating ice is hail rather than 
     graupel.
@@ -1296,7 +1296,7 @@ Logical flag                 |  If true then:
   Other parameters:
 
   Ncm_initial      =  #/cc    Either the initial value of cloud droplet number
-    concentration, or the constant value, depending on l_predictnc.
+    concentration, or the constant value if l_predictnc is true.
 
   pgam_fixed  = #  Value to use for a fixed pgam
 
@@ -1310,15 +1310,15 @@ The budgets for the mixing ratio and number concentrations when using
 the Morrison microphysics are as follows:
 
   For rain water mixing ratio and number concentration:
-  rrainm_bt = rrainm_ma + rrainm_dff + rrainm_mc + rrainm_cond_adj + rrainm_cl
-  Nrm_bt    = Nrm_ma + Nrm_dff + Nrm_mc + Nrm_cond_adj + Nrm_cl
+  rrainm_bt = rrainm_ma + rrainm_dff + rrainm_mc + rrainm_cl
+  Nrm_bt    = Nrm_ma + Nrm_dff + Nrm_mc + Nrm_cl
 
   All other species should be as follows:
   xm_bt = xm_ma + xm_dff + xm_mc + xm_cl
 
-  Note that unlike the other two schemes, the Morrison scheme contains its 
-  own sedimentation code.  Therefore, xm_mc includes xm_sd in addition to
-  local processes and clipping.
+  Note that unlike COAMPS and Khairoutdinov Kogan microphysics, the Morrison 
+  code handles its own sedimentation.  Therefore, xm_mc includes xm_sd in 
+  addition to local processes and clipping.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -1362,7 +1362,7 @@ _zm = interpolated to the       E.g., rho_zm is the density on the
       momentum grid.                momentum grid.
 _zt = interpolated to the       E.g., wp2_zt is wp2 on the
       thermodynamic grid.           thermodynamic grid
-_sfc= ground or ocean surface  E.g., T_sfc is the temperature of 
+_sfc= ground or ocean surface   E.g., T_sfc is the temperature of 
 				    the ground or ocean
 
 -------------------------------------------------------------------------                            
@@ -1405,7 +1405,7 @@ rrainm     = Mean rainwater mixing ratio                                       [
 1.  If you have trouble compiling, sometimes it helps to delete
 old object files and re-compile from scratch.  E.g., to delete 
 everything in the binary and library directories, 
-go to <CLUBB BASE DIRECTORY>/bin and type
+go to <CLUBB BASE DIRECTORY>/compile and type
 
-$ make distclean
+$ ./clean_all.bash
 
