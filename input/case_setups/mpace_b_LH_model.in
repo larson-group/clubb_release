@@ -53,8 +53,10 @@ time_final   = 104400.0  ! Model end time [seconds since midnight on start date]
 !time_final   = 61320.0   ! Model end time [seconds since midnight on start date]
 time_spinup  = 0.0       ! End of spin-up period [seconds since midnight on start date]
 
-l_t_dependent = .true. ! Model uses a _surface.in file for input, so this must be true
-l_ignore_forcings = .true. ! Forcings are not read from a file
+l_t_dependent = .true. ! Read values from _surface.in file. Also read 
+                       ! _forcings.in file if l_ignore_forcings = .false.
+l_ignore_forcings = .true. ! Do not read values from _forcings.in file, 
+                           ! even if l_t_dependent = .true.
 
 dt_main    = 60.0   ! Model timestep [s]
 dt_rad = 60.0   ! Closure timestep [s] (must multiply evenly into dt_main).

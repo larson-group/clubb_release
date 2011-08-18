@@ -79,10 +79,8 @@ forcings_file_path = '../input/case_setups/arm_0003_forcings/'
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
-! Flag used to indicate that this case uses
-! a forcings.in and surface.in file for
-! time dependent input
-l_t_dependent = .true.
+l_t_dependent = .true. ! Read values from _surface.in file. Also read 
+                       ! _forcings.in file if l_ignore_forcings = .false.
 
 ! Sponge Damping
 !

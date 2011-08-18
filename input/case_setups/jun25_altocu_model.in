@@ -60,7 +60,9 @@ p_sfc = 574.87e2    ! Pressure at model base              [Pa]
 fcor = 8.9763e-5   ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
-l_t_dependent  = .true    ! Flag for time dependent input
+l_t_dependent  = .true ! Read values from _surface.in file. Also read
+                       ! _forcings.in file if 
+
 l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
 ! Sponge Damping
