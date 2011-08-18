@@ -590,17 +590,73 @@ files into one file, named clubb.in, which is then fed into the CLUBB main code.
   
 The namelist files:
 
-  input/case_setups/bomex_model.in, fire_model.in, arm_model.in & atex_model.in.
+  input/case_setups/<CASE NAME>_model.in
   These files specify the standard CLUBB model parameters.  Usually these 
   do not need to be modified unless a new case is being set up.
 
   input/stats/all_stats.in, nobudgets_stats.in, etc.
   These files specify statistics output for each simulation.  See
   all_stats.in for a complete list of the all output supported.
+
+The surface files:
+
+  input/case_setups/<CASE NAME>_surface.in
+  These files contain the time-dependent surface fluxes and conditions for a case. 
+  The variables that can be included here are Time[s], thlm[k], rt[kg/kg],
+  latent_ht[W/m^2], sens_ht[W/m^2], CO2[umol/m^2/s], upwp_sfc[(m/s)^2],
+  vpwp_sfc[(m/s)^2], T_sfc[K], wpthlp_sfc[mK/s], and wpqtp_sfc[(kg/kg)m/s].
+  A surface.in file must contain the Time variable, but all others are
+  optional. 
+
+  Not all cases have a _surface.in file. Some cases compute surface 
+  variables from an equation provided in the case specification. For
+  these cases, the surface variables are computed within 
+  src/Benchmark_cases/<CASE NAME>.F90, subroutine <CASE_NAME>_sfclyr().
+
+The forcings files:
+
+  input/case_setups/<CASE NAME>_forcings.in
+  These files contain the time-dependent forcing data for a case. 
+
+  Not all cases have a _forcings.in file. Some case compute forcings
+  variables from an equation provided in the case specification. For
+  these cases, the forcings variables are computed within
+  src/Benchmark_cases/<CASE NAME>.F90, subroutine <CASE NAME>_tndcy().
+
+The sounding files:
+
+  input/case_setups/<CASE NAME>_sounding.in, <CASE NAME>_sclr_sounding.in,
+    <CASE NAME>_edsclr_sounding.in, <CASE NAME>_ozone_sounding.in
+  These files contain the sounding data by level for a case.
+
+  All cases need a _surface.in file. _sclr_soudning.in, _edsclr_sounding.in,
+  and _ozone_sounding.in files are optional.
+
+Current cases:
+  arm
+  atex
+  bomex
+  dycoms2_rf01
+  dycoms2_rf02_do
+  dycoms2_rf02_ds
+  dycoms2_rf02_nd
+  dycoms2_rf02_so
+  fire
+  gabls2
+  gabls3
+  mpace_a
+  mpace_b
+  rico
+  wangara
+
+How to create a new case:
+
+  The easiest way to create a new case is to copy and then modify one of the 
+  "current" cases shown above. The typical files that need to modified are the
+  files mentioned above: namelist file, surface file, forcing file, and 
+  sounding file, as well as the <CASE NAME>.F90 file located in 
+  src/Benchmark_cases.
   
-  input_misc/tuner/error_all.in, error_<CASE NAME>.in, error_<DATE>.in.
-  These specify tunable parameters, the initial spread of the simplex
-  containing the tunable parameters, and which cases to "tune" for.
 
 The randomization files (only needed for the tuner described below):
 
@@ -610,6 +666,7 @@ The randomization files (only needed for the tuner described below):
   parameters.  This works on any operating system with a Linux style 
   /dev/random (Solaris, Tru64, etc.) as well.  The seed file is now plain text 
   text and can be edited by hand.
+
 
 -----------------------------------------------------------------------
 - (2.3) Plotting output from a single-column run:
