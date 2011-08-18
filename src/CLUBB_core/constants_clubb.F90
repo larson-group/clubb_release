@@ -29,6 +29,10 @@ module constants_clubb
 
   private ! Default scope
 
+  !-----------------------------------------------------------------------------
+  ! Numerical/Arbitrary Constants
+  !-----------------------------------------------------------------------------
+
   ! Fortran file unit I/O constants
   integer, parameter ::  & 
     fstderr = 0, fstdin = 5, fstdout = 6
@@ -36,119 +40,6 @@ module constants_clubb
   ! Maximum variable name length in CLUBB GrADS or netCDF output
   integer, parameter ::  & 
     var_length = 30
-
-  ! Mathematical Constants
-  double precision, parameter ::  & 
-    pi_dp = 3.14159265358979323846d0
-
-  real, parameter ::  & 
-    pi = 3.141592654 ! The ratio of radii to their circumference
-
-  double precision, parameter:: &
-    radians_per_deg_dp = pi_dp / 180.d0
-
-  real, parameter :: &
-    sqrt_2pi = 2.5066282746310005024, &  ! sqrt(2*pi)
-    sqrt_2   = 1.4142135623730950488     ! sqrt(2)
-
-  real, parameter :: &
-    three_halves = 3.0/2.0   ! 3/2
-
-  ! Physical constants
-  real, parameter ::  & 
-    Cp = 1004.67,  & ! Dry air specific heat at constant p [J/kg/K]
-    Lv = 2.5e6,    & ! Latent heat of vaporization         [J/kg]
-    Ls = 2.834e6,  & ! Latent heat of sublimation          [J/kg]
-    Lf = 3.33e5,   & ! Latent heat of fusion               [J/kg]
-    Rd = 287.04,   & ! Dry air gas constant                [J/kg/K]
-    Rv = 461.5       ! Water vapor gas constant            [J/kg/K]
-
-
-  real, parameter :: &
-    stefan_boltzmann = 5.6704e-8 ! Stefan-Boltzmann constant [W/(m^2 K^4)]
-
-  real, parameter :: &
-    T_freeze_K = 273.15 ! Freezing point of water [K]
-
-  ! Useful combinations of Rd and Rv
-  real, parameter ::  & 
-    ep  = Rd / Rv,    & ! ep  = 0.622  [-]
-    ep1 = (1.0-ep)/ep,& ! ep1 = 0.61   [-]
-    ep2 = 1.0/ep        ! ep2 = 1.61   [-]
-
-  real, parameter :: & 
-    kappa = Rd / Cp     ! kappa        [-]
-
-  ! Changed g to grav to make it easier to find in the code 5/25/05
-  ! real, parameter :: grav  = 9.80665 ! Gravitational acceleration [m/s^2]
-  real, parameter :: & 
-    grav = 9.81, & ! Gravitational acceleration     [m/s^2]
-    p0   = 1.0e5   ! Reference pressure             [Pa]
-
-  ! Von Karman's constant
-  ! Constant of the logarithmic wind profile in the surface layer
-  real, parameter :: & 
-    vonk   = 0.4,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
-    rho_lw = 1000.0    ! Density of liquid water                [kg/m^3]
-
-  ! Tolerances below which we consider moments to be zero
-  real, parameter ::  & 
-    w_tol    = 2.e-2,  & ! [m/s]
-    thl_tol  = 1.e-2,  & ! [K]
-    rt_tol   = 1.e-8,  & ! [kg/kg]
-    s_mellor_tol   = 1.e-8     ! [kg/kg]
-
-  ! Tolerances for use by the monatonic flux limiter.
-  ! rt_tol_mfl is larger than rt_tol. rt_tol is extremely small
-  ! (1e-8) to prevent spurious cloud formation aloft in LBA.
-  ! rt_tol_mfl is larger (1e-4) to prevent the mfl from
-  ! depositing moisture at the top of the domain.
-  real, parameter :: &
-    thl_tol_mfl = 1.e-2, & ! [K]
-    rt_tol_mfl = 1.e-4     ! [kg/kg]
-
-  ! The tolerance for w'^2 is the square of the tolerance for w.
-  real, parameter :: &
-    w_tol_sqd = w_tol**2 ! [m^2/s^2]
-
-  real, parameter :: &
-    Skw_max_mag = 4.5  ! Max magnitude of skewness     [-]
-
-  real, parameter :: &
-    Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]
-
-  ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
-  ! against numerical errors.  The tolerance values for Nc, rr, and Nr insure
-  ! against underflow errors in computing the PDF for l_kk_rain.  Basically,
-  ! they insure that those values squared won't be less then 10^-38, which is
-  ! the lowest number that can be numerically represented.  However, the
-  ! tolerance value for rc doubles as the lowest mixing ratio there can be to
-  ! still officially have a cloud at that level.  This is figured to be about
-  ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
-  real, parameter :: & 
-    rc_tol = 1.0E-7,  & ! [kg/kg]
-    Nc_tol = 1.0E-10, & ! [#/kg]
-    rr_tol = 1.0E-10, & ! [kg/kg]
-    Nr_tol = 1.0E-10    ! [#/kg]
-
-  ! Minimum value for em (turbulence kinetic energy)
-  ! If anisotropic TKE is enabled, em = (1/2) * ( up2 + vp2 + wp2 );
-  ! otherwise, em = (3/2) * wp2.  Since up2, vp2, and wp2 all have
-  ! the same minimum threshold value of w_tol_sqd, em cannot be less
-  ! than (3/2) * w_tol_sqd.  Thus, em_min = (3/2) * w_tol_sqd.
-  real, parameter :: em_min = 1.5 * w_tol_sqd  ! [m^2/s^2]
-
-  real, parameter ::  & 
-    eps = 1.0e-10 ! Small value to prevent a divide by zero
-
-  real, parameter ::  &
-    zero_threshold = 0.0 ! Defining a threshold to be 0.
-
-  ! The maximum absolute value (or magnitude) that a correlation is allowed to
-  ! have.  Statistically, a correlation is not allowed to be less than -1 or
-  ! greater than 1, so the maximum magnitude would be 1.
-  real, parameter :: &
-    max_mag_correlation = 0.99
 
   ! The parameter parab_cyl_max_input is the largest magnitude that the input to
   ! the parabolic cylinder function is allowed to have.  When the value of the
@@ -214,7 +105,129 @@ module constants_clubb
   ! Coefficient to perterb thlm and rtm for an average calculation of Lscale
   real, parameter :: Lscale_pert_coef = 0.1  ! [-]
 
+  !-----------------------------------------------------------------------------
+  ! Mathematical Constants
+  !-----------------------------------------------------------------------------
+  double precision, parameter ::  & 
+    pi_dp = 3.14159265358979323846d0
+
+  real, parameter ::  & 
+    pi = 3.141592654 ! The ratio of radii to their circumference
+
+  double precision, parameter:: &
+    radians_per_deg_dp = pi_dp / 180.d0
+
+  real, parameter :: &
+    sqrt_2pi = 2.5066282746310005024, &  ! sqrt(2*pi)
+    sqrt_2   = 1.4142135623730950488     ! sqrt(2)
+
+  real, parameter :: &
+    three_halves = 3.0/2.0   ! 3/2
+
+  !-----------------------------------------------------------------------------
+  ! Physical constants
+  !-----------------------------------------------------------------------------
+  real, parameter ::  & 
+    Cp = 1004.67,  & ! Dry air specific heat at constant p [J/kg/K]
+    Lv = 2.5e6,    & ! Latent heat of vaporization         [J/kg]
+    Ls = 2.834e6,  & ! Latent heat of sublimation          [J/kg]
+    Lf = 3.33e5,   & ! Latent heat of fusion               [J/kg]
+    Rd = 287.04,   & ! Dry air gas constant                [J/kg/K]
+    Rv = 461.5       ! Water vapor gas constant            [J/kg/K]
+
+
+  real, parameter :: &
+    stefan_boltzmann = 5.6704e-8 ! Stefan-Boltzmann constant [W/(m^2 K^4)]
+
+  real, parameter :: &
+    T_freeze_K = 273.15 ! Freezing point of water [K]
+
+  ! Useful combinations of Rd and Rv
+  real, parameter ::  & 
+    ep  = Rd / Rv,    & ! ep  = 0.622  [-]
+    ep1 = (1.0-ep)/ep,& ! ep1 = 0.61   [-]
+    ep2 = 1.0/ep        ! ep2 = 1.61   [-]
+
+  real, parameter :: & 
+    kappa = Rd / Cp     ! kappa        [-]
+
+  ! Changed g to grav to make it easier to find in the code 5/25/05
+  ! real, parameter :: grav  = 9.80665 ! Gravitational acceleration [m/s^2]
+  real, parameter :: & 
+    grav = 9.81, & ! Gravitational acceleration     [m/s^2]
+    p0   = 1.0e5   ! Reference pressure             [Pa]
+
+  ! Von Karman's constant
+  ! Constant of the logarithmic wind profile in the surface layer
+  real, parameter :: & 
+    vonk   = 0.4,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
+    rho_lw = 1000.0    ! Density of liquid water                [kg/m^3]
+
+  ! Tolerances below which we consider moments to be zero
+  real, parameter ::  & 
+    w_tol        = 2.e-2,  & ! [m/s]
+    thl_tol      = 1.e-2,  & ! [K]
+    rt_tol       = 1.e-8,  & ! [kg/kg]
+    s_mellor_tol = 1.e-8     ! [kg/kg]
+
+  ! Tolerances for use by the monatonic flux limiter.
+  ! rt_tol_mfl is larger than rt_tol. rt_tol is extremely small
+  ! (1e-8) to prevent spurious cloud formation aloft in LBA.
+  ! rt_tol_mfl is larger (1e-4) to prevent the mfl from
+  ! depositing moisture at the top of the domain.
+  real, parameter :: &
+    thl_tol_mfl = 1.e-2, & ! [K]
+    rt_tol_mfl = 1.e-4     ! [kg/kg]
+
+  ! The tolerance for w'^2 is the square of the tolerance for w.
+  real, parameter :: &
+    w_tol_sqd = w_tol**2 ! [m^2/s^2]
+
+  real, parameter :: &
+    Skw_max_mag = 4.5  ! Max magnitude of skewness     [-]
+
+  real, parameter :: &
+    Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]
+
+  ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
+  ! against numerical errors.  The tolerance values for Nc, rr, and Nr insure
+  ! against underflow errors in computing the PDF for l_kk_rain.  Basically,
+  ! they insure that those values squared won't be less then 10^-38, which is
+  ! the lowest number that can be numerically represented.  However, the
+  ! tolerance value for rc doubles as the lowest mixing ratio there can be to
+  ! still officially have a cloud at that level.  This is figured to be about
+  ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
+  real, parameter :: & 
+    rc_tol = 1.0E-7,  & ! [kg/kg]
+    Nc_tol = 1.0E-10, & ! [#/kg]
+    rr_tol = 1.0E-10, & ! [kg/kg]
+    Nr_tol = 1.0E-10    ! [#/kg]
+
+  ! Minimum value for em (turbulence kinetic energy)
+  ! If anisotropic TKE is enabled, em = (1/2) * ( up2 + vp2 + wp2 );
+  ! otherwise, em = (3/2) * wp2.  Since up2, vp2, and wp2 all have
+  ! the same minimum threshold value of w_tol_sqd, em cannot be less
+  ! than (3/2) * w_tol_sqd.  Thus, em_min = (3/2) * w_tol_sqd.
+  real, parameter :: em_min = 1.5 * w_tol_sqd  ! [m^2/s^2]
+
+  real, parameter ::  & 
+    eps = 1.0e-10 ! Small value to prevent a divide by zero
+
+  real, parameter ::  &
+    zero_threshold = 0.0 ! Defining a threshold on a physical quantity to be 0.
+
+  ! The maximum absolute value (or magnitude) that a correlation is allowed to
+  ! have.  Statistically, a correlation is not allowed to be less than -1 or
+  ! greater than 1, so the maximum magnitude would be 1.
+  real, parameter :: &
+    max_mag_correlation = 0.99
+
+  real, parameter :: &
+    cloud_frac_min = 0.005 ! Threshold for cloud fractions
+
+  !-----------------------------------------------------------------------------
   ! Useful conversion factors.
+  !-----------------------------------------------------------------------------
   real(kind=time_precision), parameter ::  & 
     sec_per_day = 86400.0_time_precision, & ! Seconds in a day.
     sec_per_hr  = 3600.0_time_precision,  & ! Seconds in an hour.
@@ -228,11 +241,9 @@ module constants_clubb
     pascal_per_mb = 100.0 ! Pascals per Millibar
 
   real, parameter :: & 
-    cm3_per_m3 = 1.e6, & ! Cubic centimeters per cubic meter
-    micron_per_m = 1.e6 ! micrometers per meter
-
-  real, parameter :: &
-    cloud_frac_min = 0.005 ! Threshold for cloud fractions
+    cm3_per_m3   = 1.e6, & ! Cubic centimeters per cubic meter
+    micron_per_m = 1.e6, & ! Micrometers per meter
+    mm_per_m     = 1000.   ! Millimeters per meter  
 
 !=============================================================================
 
