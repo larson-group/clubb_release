@@ -1034,7 +1034,7 @@ module microphys_driver
     use parameters_model, only: & 
         hydromet_dim   ! Integer
 
-    use constants_clubb, only:  & 
+    use constants_clubb, only: & 
         Lv, & ! Constant(s)
         Ls, &
         Cp, & 
@@ -1043,7 +1043,8 @@ module microphys_driver
         fstderr, & 
         zero_threshold, &
         sec_per_day, &
-        cm3_per_m3
+        cm3_per_m3, &
+        mm_per_m
 
     use model_flags, only: &
       l_hole_fill ! Variable(s)
@@ -1557,7 +1558,7 @@ module microphys_driver
                    rtm-rcm, hydromet, hydromet_mc, hydromet_vel_zt, &
                    rcm_mc, rvm_mc, thlm_mc )
 
-      endif
+      end if
 
       if ( l_stats_samp ) then
         ! Sedimentation velocity for rrainm
@@ -1711,7 +1712,7 @@ module microphys_driver
         hydromet_vel(gr%nzmax,i) = 0.0 ! Upper boundary condition
 
         ! Don't calculate if we aren't trying to predict Ncm in a meaningful way
-        if( trim( hydromet_list(i) ) /= "Ncm" .or. l_predictnc ) then
+        if ( trim( hydromet_list(i) ) /= "Ncm" .or. l_predictnc ) then
 
           ! Add implicit terms to the LHS matrix
           call microphys_lhs & 
@@ -1719,14 +1720,15 @@ module microphys_driver
                  dt, Kr, cloud_frac, nu_r_vert_res_dep, wm_zt, &  ! In
                  hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
                  lhs ) ! Out
-          if( trim( hydromet_list(i) ) == "Ncm" ) then
+
+          if ( trim( hydromet_list(i) ) == "Ncm" ) then
             Ncm_in_cloud = hydromet(:,iiNcm) / max( cloud_frac, cloud_frac_min )
             call microphys_solve &
                  ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, lhs, &
                    hydromet_mc(:,i)/max( cloud_frac, cloud_frac_min ),  & 
                    Ncm_in_cloud, err_code )
 
-            hydromet(:,iiNcm) = Ncm_in_cloud * max(cloud_frac, cloud_frac_min)
+            hydromet(:,iiNcm) = Ncm_in_cloud * max( cloud_frac, cloud_frac_min )
 
           else
             call microphys_solve & 
@@ -1734,7 +1736,7 @@ module microphys_driver
                    lhs, hydromet_mc(:,i), hydromet(:,i), err_code )
           end if
 
-        end if ! l_predictnc
+        end if ! hydromet /= Ncm .or. l_predictnc
 
         if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
           if ( i == iirrainm ) then
@@ -1790,7 +1792,7 @@ module microphys_driver
                 if ( l_stats_samp ) then
                   call stat_update_var_pt( iNrm_cond_adj, k,  & 
                                            overevap_rate, zt )
-                endif
+                end if
               else
                 if ( l_stats_samp ) then
                   call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )
@@ -1922,7 +1924,7 @@ module microphys_driver
          ( hydromet(:,iirrainm)  & 
            * zm2zt( abs( hydromet_vel(:,iirrainm) ) ) ) & 
            * ( rho / rho_lw ) & 
-           * real( sec_per_day ) * 1000.0, zt )
+           * real( sec_per_day ) * mm_per_m, zt )
 
       ! Precipitation Flux (W/m^2) should be defined on
       ! momentum levels.  -Brian
@@ -2275,7 +2277,8 @@ module microphys_driver
     use mean_adv, only:  & 
         term_ma_zt_lhs ! Procedure(s)
 
-    use constants_clubb, only: sec_per_day ! Variable(s)
+    use constants_clubb, only: &
+      sec_per_day ! Variable(s)
 
     use stats_variables, only: & 
         irrainm_ma,   & ! Variable(s)
