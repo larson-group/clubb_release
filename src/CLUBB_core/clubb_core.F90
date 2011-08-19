@@ -24,7 +24,7 @@ module clubb_core
 !
 !   Portions of this code derived from other sources (Hugh Morrison,
 !   ACM TOMS, Numerical Recipes, et cetera) are the intellectual
-!   property of their respective authors as noted and also subject
+!   property of their respective authors as noted and are also subject
 !   to copyright.
 !-----------------------------------------------------------------------
 
@@ -1213,9 +1213,9 @@ module clubb_core
     vpwp_cl_num    = 1 ! First instance of v'w' clipping.
 
     call clip_covars_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
-                                 sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
-                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
-                                 wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
+                            sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
+                            wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
+                            wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
 
     !----------------------------------------------------------------
@@ -1245,9 +1245,9 @@ module clubb_core
     vpwp_cl_num    = 2 ! Second instance of v'w' clipping.
 
     call clip_covars_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
-                                 sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
-                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
-                                 wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
+                            sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
+                            wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
+                            wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
     !----------------------------------------------------------------
     ! Advance the horizontal mean of the wind in the x-y directions 
