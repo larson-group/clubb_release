@@ -2,7 +2,7 @@ $Id$
 
 ************************************************************************
 *                           Copyright Notice
-*                         This code is (C) 2006-2011 
+*                       This code is (C) 2006-2011 
 *         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
 *            David P. Schanen, Adam J. Smith, and Michael J. Falk.
 *
@@ -11,8 +11,8 @@ $Id$
 *
 *         Portions of this code derived from other sources (Hugh Morrison,
 *         ACM TOMS, Numerical Recipes, et cetera) are the intellectual
-*         property of their respective authors as noted and also subject 
-*         to copyright.
+*         property of their respective authors as noted and are also 
+*         subject to copyright.
 ************************************************************************
 
 
@@ -104,7 +104,7 @@ Once in the compile directory, run the compile.bash script, using the config
 file corresponding to the target platform to run CLUBB on.
 For instance, on a Linux machine, to compile with gfortran, use the following
 command:
-user@computer compile$ ./compile.bash config/linux_ia32_gfortran.bash
+user@computer compile$ ./compile.bash config/linux_x86_64_gfortran.bash
 
 To run this on a MAC OS X machine, you should use the following command:
 
@@ -208,9 +208,9 @@ follow the following steps:
     clubb --username EMAIL
     (all on one line)
 - Compile the CLUBB source code with a Fortran 95 compiler (e.g. gfortran)
-  - ./compile.bash config/linux_ia32_gfortran.bash
+  - ./compile.bash config/linux_x86_64_gfortran.bash
     (in the clubb/compile directory)
-    (replace config/linux_ia32_gfortran.bash to match the desired platform
+    (replace config/linux_x86_64_gfortran.bash to match the desired platform
      and compiler)
 - Run a benchmark case (e.g. BOMEX)
   - ./run_scm.bash bomex
@@ -253,14 +253,15 @@ configuration of other Fortran projects (e.g. WRF) on the same platform.  If you
 manage to compile CLUBB on a new configuration and would like to share it with
 other users feel free to send us an email with your configuration attached.
 
-We mainly use the G95 compiler on Intel x64 processors running Redhat 
-Enterprise 5.  G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
-x64 & x86 GNU/Linux. Other tested platforms are found in the compile/ config 
-directory.
+We mainly use the GNU Fortran compiler on Intel and AMD x64 processors running 
+Redhat Enterprise 5.  GNU Fortran <http://gcc.gnu.org/fortran/> has been tested 
+on x64 & x86 GNU/Linux and MacOS X. Other configurations that have been used to
+compile CLUBB can be found in the compile/ config directory.
 
-The GNU Fortran compiler (GCC) may or may not work.  The version that
-comes with RHEL 5 does not.  The versions that comes with Fedora Core 11 and 
-Ubuntu 8 LTS both appear to work.
+Older versions of the GNU Fortran compiler (GCC) may not work.  The default 
+version on Redhat Enterprise 5 does not. Install and use gfortran44 instead.
+The versions that comes with Fedora Core 11 and Ubuntu 8 LTS and later should 
+be able to compile CLUBB properly.
 
 It is important to note that all these compilers use *incompatible* module
 formats for the .mod files!  If you want to use different compilers on the
@@ -269,7 +270,7 @@ each compiler and use -M or -I flags to specify their location.
 
 In order to get similar results on differing architectures, platforms, and
 compilers, initially try a conservative optimization and enable 
-IEEE-754 standard style floating point math.  On x86 compatible machines 
+IEEE-754 standard style floating point math.  On x86 compatible computers 
 enabling SSE or SSE2 with a compiler flag is usually the best way to do this.
 
 Requirements for compiling and running CLUBB:
@@ -291,9 +292,9 @@ Optionally:
 F. GrADS for viewing the GrADS output data.
 G. netCDF >= v3.5.1;  We have not tested our code with anything older.
    If you do not use netCDF, you must remove -DNETCDF from the preprocessor
-   flags, found in the compile/config/<platform>.bash file, and
+   flags, found in the compile/config/<PLATFORM>.bash file, and
    remove -lnetcdf from the LDFLAGS.
-H. MATLAB or NCAR graphics for viewing the netCDF output data.
+H. MATLAB, Octave or NCAR graphics for viewing the netCDF output data.
 
 To compile the code, perform the following three steps:
 1. $ cd <CLUBB BASE DIRECTORY>/compile
@@ -328,7 +329,7 @@ should work as well.  E.g. for 3 threads, append gmake="gmake -j 3" to the
 file source'd from compile.bash.
 
 The mkmf script may or may not generate files that are compatible with
-other versions of make.
+non GNU versions of make.
 
 If you add a new source file to CLUBB, then in order for mkmf to be
 able to find it, you will need to add the filename 
@@ -510,7 +511,7 @@ also do make distclean without the need to change directories.
 -----------------------------------------------------------------------
 
    Before you can execute CLUBB, you must compile it (see Build section 
-above.)
+   above.)
    <CLUBB BASE DIRECTORY> refers the the directory where clubb is installed.
    <CASE NAME> refers to the cloud case, e.g. arm, atex, bomex, etc.
 
@@ -1148,7 +1149,7 @@ complete list (commented out by default).
 Currently the code contains eddy-diffusivity scalar code (edsclr1m, edsclr2m)
 and the more sophisticated high-order scalars (sclr1m, sclr2m).  Both use two
 dimensional arrays, but the code and results for each is separated.
-The high-order scalars require a tolerance, called `sclrtol' to set in the
+The high-order scalars require a tolerance, called `sclrtol' to be set in the
 namelist file. Generally this value should be larger than machine epsilon.
 
 Initially, the scalar arrays were configured to contain two vertical columns
