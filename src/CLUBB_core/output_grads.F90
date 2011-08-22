@@ -469,6 +469,13 @@ module output_grads
 
     implicit none
 
+    ! External
+    intrinsic :: selected_real_kind
+
+    ! Constant parameters
+    integer, parameter :: &
+      r4 = selected_real_kind( p=5 ) ! Specify 5 decimal digits of precision
+
     ! Input Variables
     type (stat_file), intent(inout) :: &
       grads_file ! Contains all information on the files to be written to
@@ -506,14 +513,14 @@ module output_grads
     if ( grads_file%ia <= grads_file%iz ) then
       do i=1,grads_file%nvar
         write(grads_file%iounit,rec=grads_file%nrecord)  & 
-          real( grads_file%var(i)%ptr(1,1,grads_file%ia:grads_file%iz), kind=4)
+          real( grads_file%var(i)%ptr(1,1,grads_file%ia:grads_file%iz), kind=r4)
         grads_file%nrecord = grads_file%nrecord + 1
       end do
 
     else
       do i=1, grads_file%nvar
         write(grads_file%iounit,rec=grads_file%nrecord) & 
-          real( grads_file%var(i)%ptr(1,1,grads_file%ia:grads_file%iz:-1), kind=4)
+          real( grads_file%var(i)%ptr(1,1,grads_file%ia:grads_file%iz:-1), kind=r4)
         grads_file%nrecord = grads_file%nrecord + 1
       end do
 

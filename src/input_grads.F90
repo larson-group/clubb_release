@@ -16,7 +16,6 @@ module input_grads
 ! Modifications:
 !   * Uses functions rather than subroutines to get endian type.
 !   * Other cosmetic changes.
-!   * Overloaded subroutine get_grads_var to allow for 8 byte real output.
 !   * Added preprocesing for RECL
 ! Other modifications have been tracked via subversion.
 !-------------------------------------------------------------------------------
@@ -45,9 +44,6 @@ module input_grads
   ! Overloaded interface for get_grads_var.  All GrADS files are assumed
   ! to store variable as 4 byte IEEE floats, but the model may be
   ! using double or extended precision.
-  interface get_grads_var
-    module procedure get_4byte_var, get_8byte_var
-  end interface
 
   contains
 
@@ -343,19 +339,23 @@ module input_grads
   end subroutine open_grads_read
 
 !-------------------------------------------------------------------------------
-  subroutine get_4byte_var( grads_file, varname, itime, x, l_error )
+  subroutine get_grads_var( grads_file, varname, itime, variable, l_error )
 
 ! Description:
-!   Read binary data from file units and return the result as
-!   as 4 byte float 'x'
+!   Read binary data from a 1D GrADS file and return the result 'variable'
+!   in CLUBB's default precision.
 !-------------------------------------------------------------------------------
-    use constants_clubb, only: fstderr, sec_per_min
-    use stat_file_module, only: stat_file
+    use constants_clubb, only: fstderr, sec_per_min ! Constant(s)
+
+    use stat_file_module, only: stat_file ! Variable
 
     implicit none
 
     ! External
-    intrinsic :: floor, trim, real, nint
+    intrinsic :: floor, trim, real, nint, selected_real_kind
+
+    ! Constant Parameters
+    integer, parameter :: r4 = selected_real_kind( p=5 )
 
     ! Input Variables
     type (stat_file), intent(in) :: & 
@@ -368,12 +368,14 @@ module input_grads
       itime ! Obtain variable varname at time itime [min]
 
     ! Output Variables
-    real(kind=4), dimension(:), intent(out) ::  & 
-      x ! Result variable
+    real, dimension(:), intent(out) ::  & 
+      variable ! Result variable
 
     logical, intent(out) :: l_error
 
     ! Local Variables
+    real(kind=r4), dimension(size( variable )) :: grads_variable
+
     logical :: l_done
     integer :: i, k, nrec, ivar
 
@@ -413,7 +415,7 @@ module input_grads
 !     write(*,*) 'get_4byte_var: i > grads_file%nvar'
 !     write(*,*) 'i = ',i
 !     write(*,*) 'grads_file%nvar = ',grads_file%nvar
-      write(fstderr,*) "input_grads get_4byte_var: "//trim( varname ), " variable not found."
+      write(fstderr,*) "input_grads get_var: "//trim( varname ), " variable not found."
       return
     end if
 
@@ -449,55 +451,15 @@ module input_grads
 !          print *, "nrec = ", nrec
 
     do k=grads_file%ia,grads_file%iz
-      read(unit=grads_file%iounit,rec=nrec) x(k)
-      if ( grads_file%l_byte_swapped ) call byte_order_swap( x(k) )
+      read(unit=grads_file%iounit,rec=nrec) grads_variable(k)
+      if ( grads_file%l_byte_swapped ) call byte_order_swap( grads_variable(k) )
       nrec = nrec + 1
     end do
 
-    return
-  end subroutine get_4byte_var
-
-!-------------------------------------------------------------------------------
-  subroutine get_8byte_var( grads_file, varname, itime, x, l_error )
-
-! Description:
-!   Takes the result from get_4byte_var and returns it as a double
-!   precision type, allowing for compile time promotion.
-!-------------------------------------------------------------------------------
-
-    use stat_file_module, only: stat_file
-
-    implicit none
-
-    ! External
-    intrinsic :: dble, size
-
-    ! Input Variables
-    type (stat_file), intent(in) :: & 
-      grads_file ! The GrADS file
-
-    character(len=*), intent(in) :: & 
-      varname ! The variable name as it occurs in the control file
-
-    integer, intent(in) :: & 
-      itime   ! Obtain variable varname at time itime
-
-    ! Output Variables
-    real(kind=8), intent(out) :: x(:)
-
-    logical, intent(out) :: l_error
-
-    ! Local Variable(s)
-    real(kind=4), dimension(size( x )) :: tmp
-
-    ! ----Begin Code ----
-
-    call get_4byte_var( grads_file, varname, itime, tmp, l_error )
-
-    x = dble( tmp )
+    variable = real( grads_variable ) ! Convert to default precision
 
     return
-  end subroutine get_8byte_var
+  end subroutine get_grads_var
 
 !-------------------------------------------------------------------------------
   subroutine close_grads_read( grads_file )
