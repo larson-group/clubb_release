@@ -19,8 +19,7 @@ module time_dependent_input
              finalize_t_dependent_forcings,   & 
              initialize_t_dependent_surface,  &
              finalize_t_dependent_surface,    &
-             read_to_grid,                    &
-             count_columns
+             read_to_grid                      
 
   integer, parameter :: nCols = 10 ! Number of columns in the input file
 
@@ -132,7 +131,8 @@ module time_dependent_input
     use input_reader, only: &
       read_one_dim_file, one_dim_read_var, & ! Procedure(s)
       fill_blanks_one_dim_vars, read_x_profile, &
-      get_target_index, deallocate_one_dim_vars
+      get_target_index, deallocate_one_dim_vars, &
+      count_columns
 
     use input_names, only: &
       time_name,     &
@@ -766,79 +766,6 @@ module time_dependent_input
     return
 
   end subroutine time_select
-  
-  !================================================================================================
-  function count_columns( iunit, filename ) result( nCols )
-  ! Description:
-  !   This function counts the number of columns in a file, assuming that the
-  !   first line of the file contains only column headers. (Comments are OK)
-
-  ! References:
-  !   None
-
-  ! Created by Cavyn, July 2010
-  !-------------------------------------------------------------------------------
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: iunit ! I/O unit
-    character(len=*), intent(in) :: filename ! Name of the file being read from
-    
-    ! Output Variable
-    integer :: nCols ! The number of data columns in the selected file
-    
-    ! Local Variables
-    integer :: i, k                               ! Loop Counter
-    character(len=200) :: tmp                     ! Temporary char buffer
-    character(len=200), dimension(50) :: colArray ! Max of 50 columns
-    logical :: isComment
-    integer :: status_var ! IO status for read statement
-
-
-    ! -------------------------BEGIN CODE-------------------------------------
-    
-    isComment = .true.
-
-    open(unit=iunit, file=trim(filename), status = 'old' )
-
-    ! Skip all the comments at the top of the file
-    do while(isComment)
-      read(iunit,fmt='(A)') tmp
-      k = index(tmp, "!")
-      isComment = .false.
-      if(k > 0) then
-        isComment = .true.
-      end if
-    end do
-
-    ! Go back to the line that wasn't a comment.
-    backspace(iunit)
-    
-    ! Count the number of columns
-    nCols = 0
-    colArray = ""
-    read(iunit,fmt='(A)',iostat=status_var) tmp
-    ! Only continue if there was no IO error or end of data
-    if( status_var == 0 ) then
-      ! Move all words into an array
-      read(tmp,*,iostat=status_var) (colArray(i), i=1,size( colArray )) 
-
-    else if ( status_var > 0 ) then
-      ! Handle the case where we have an error before the EOF marker is found
-      stop "Fatal error reading data in time_dependent_input function count_columns"
-
-    end if
-    
-    do i=1,size(colArray)
-      if( colArray(i) /= "" ) then ! Increment number of columns until array is blank
-        nCols = nCols+1
-      end if
-    end do
-    
-    close(iunit)
-
-  end function count_columns
 
 !===========================================================================================
 end module time_dependent_input

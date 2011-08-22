@@ -22,7 +22,8 @@ module input_reader
             deallocate_two_dim_vars, &
             read_x_table, &
             read_x_profile, &
-            get_target_index
+            get_target_index, &
+            count_columns
 
   ! Derived type for representing a rank 1 variable that has been read in by one
   ! of the procedures.
@@ -715,6 +716,79 @@ module input_reader
     return
 
   end function get_target_index
+
+  !=============================================================================
+  function count_columns( iunit, filename ) result( nCols )
+  ! Description:
+  !   This function counts the number of columns in a file, assuming that the
+  !   first line of the file contains only column headers. (Comments are OK)
+
+  ! References:
+  !   None
+
+  ! Created by Cavyn, July 2010
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: iunit ! I/O unit
+    character(len=*), intent(in) :: filename ! Name of the file being read from
+    
+    ! Output Variable
+    integer :: nCols ! The number of data columns in the selected file
+    
+    ! Local Variables
+    integer :: i, k                               ! Loop Counter
+    character(len=200) :: tmp                     ! Temporary char buffer
+    character(len=200), dimension(50) :: colArray ! Max of 50 columns
+    logical :: isComment
+    integer :: status_var ! IO status for read statement
+
+
+    ! -------------------------BEGIN CODE-------------------------------------
+    
+    isComment = .true.
+
+    open(unit=iunit, file=trim(filename), status = 'old' )
+
+    ! Skip all the comments at the top of the file
+    do while(isComment)
+      read(iunit,fmt='(A)') tmp
+      k = index(tmp, "!")
+      isComment = .false.
+      if(k > 0) then
+        isComment = .true.
+      end if
+    end do
+
+    ! Go back to the line that wasn't a comment.
+    backspace(iunit)
+    
+    ! Count the number of columns
+    nCols = 0
+    colArray = ""
+    read(iunit,fmt='(A)',iostat=status_var) tmp
+    ! Only continue if there was no IO error or end of data
+    if( status_var == 0 ) then
+      ! Move all words into an array
+      read(tmp,*,iostat=status_var) (colArray(i), i=1,size( colArray )) 
+
+    else if ( status_var > 0 ) then
+      ! Handle the case where we have an error before the EOF marker is found
+      stop "Fatal error reading data in time_dependent_input function count_columns"
+
+    end if
+    
+    do i=1,size(colArray)
+      if( colArray(i) /= "" ) then ! Increment number of columns until array is blank
+        nCols = nCols+1
+      end if
+    end do
+    
+    close(iunit)
+
+  end function count_columns
 
 !------------------------------------------------------------------------------
 end module input_reader

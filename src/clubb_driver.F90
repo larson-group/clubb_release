@@ -739,7 +739,7 @@ module clubb_driver
     dummy_dy = 0.0
 
     ! Setup microphysical fields
-    call init_microphys( iunit, runfile, case_info_file, & !Intent(in)
+    call init_microphys( iunit, trim(runtype), runfile, case_info_file, & !Intent(in)
                          hydromet_dim )                    ! Intent(out)
 
     ! Set the value of sigma_g to be used for cloud_sed module

@@ -379,7 +379,9 @@ module matrix_operations
     i = max( index1, index2 )
     j = min( index1, index2 )
 
-    matrix(i,j) = xpyp
+    if( i > 0 .and. j > 0 ) then
+      matrix(i,j) = xpyp
+    end if
 
     return
   end subroutine set_lower_triangular_matrix_dp
@@ -416,7 +418,9 @@ module matrix_operations
     i = max( index1, index2 )
     j = min( index1, index2 )
 
-    matrix(i,j) = xpyp
+    if( i > 0 .and. j > 0 ) then
+      matrix(i,j) = xpyp
+    end if
 
     return
   end subroutine set_lower_triangular_matrix_sp

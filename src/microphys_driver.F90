@@ -69,7 +69,7 @@ module microphys_driver
   contains
 
   !-------------------------------------------------------------------------------
-  subroutine init_microphys( iunit, namelist_file, case_info_file, &
+  subroutine init_microphys( iunit, runtype, namelist_file, case_info_file, &
                              hydromet_dim )
 
     ! Description:
@@ -227,6 +227,9 @@ module microphys_driver
       iunit ! File unit
 
     character(len=*), intent(in) :: &
+      runtype
+
+    character(len=*), intent(in) :: &
       namelist_file ! File name
 
     character(len=*), intent(in) :: &
@@ -313,9 +316,9 @@ module microphys_driver
     corr_thlrr_NL_cloud   = -0.185
     corr_thlNr_NL_cloud   = -0.258
     corr_thlNc_NL_cloud   = -0.420
-    corr_srr_NL_cloud     = 0.242
-    corr_sNr_NL_cloud     = 0.285
-    corr_sNc_NL_cloud     = 0.433
+!    corr_srr_NL_cloud     = 0.242
+!    corr_sNr_NL_cloud     = 0.285
+!    corr_sNc_NL_cloud     = 0.433
     ! Parameters for below-cloud (from SAM RF02 DO).
     rrp2_on_rrainm2_below = 8.97
     Nrp2_on_Nrm2_below    = 12.03
@@ -327,9 +330,9 @@ module microphys_driver
     corr_thlrr_NL_below   = -0.241
     corr_thlNr_NL_below   = -0.217
     corr_thlNc_NL_below   = 0.00  ! Not applicable below cloud.
-    corr_srr_NL_below     = 0.056
-    corr_sNr_NL_below     = 0.015
-    corr_sNc_NL_below     = 0.00  ! Not applicable below cloud.
+!    corr_srr_NL_below     = 0.056
+!    corr_sNr_NL_below     = 0.015
+!    corr_sNc_NL_below     = 0.00  ! Not applicable below cloud.
     ! Other needed parameters
 
     ! Made up values for the variance of ice/snow, since we currently lack data
@@ -403,34 +406,38 @@ module microphys_driver
 !   corr_wNc_NL_cloud        = 0.24
 !   corr_wNc_NL_below        = corr_wNc_NL_cloud
 
+! NOTE: These values are commented out because they have been
+!       moved to *_corr_array_cloud.in and *_corr_array_below.in
+!       files. - Kenneth Connor, August 22, 2011
+
     ! ISDAC values for the correlation of ice/snow
-    corr_srsnow_NL_cloud     = 0.06
-    corr_srsnow_NL_below     = corr_srsnow_NL_cloud
-    corr_sNsnow_NL_cloud     = 0.04
-    corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
-    corr_rsnowNsnow_LL_cloud = 0.95
-    corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
-    corr_srice_NL_cloud      = -0.08
-    corr_srice_NL_below      = corr_srice_NL_cloud
-    corr_sNi_NL_cloud        = 0.28
-    corr_sNi_NL_below        = corr_sNi_NL_cloud
-    corr_riceNi_LL_cloud     = 0.77
-    corr_riceNi_LL_below     = corr_riceNi_LL_cloud
+!    corr_srsnow_NL_cloud     = 0.06
+!    corr_srsnow_NL_below     = corr_srsnow_NL_cloud
+!    corr_sNsnow_NL_cloud     = 0.04
+!    corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
+!    corr_rsnowNsnow_LL_cloud = 0.95
+!    corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
+!    corr_srice_NL_cloud      = -0.08
+!    corr_srice_NL_below      = corr_srice_NL_cloud
+!    corr_sNi_NL_cloud        = 0.28
+!    corr_sNi_NL_below        = corr_sNi_NL_cloud
+!    corr_riceNi_LL_cloud     = 0.77
+!    corr_riceNi_LL_below     = corr_riceNi_LL_cloud
 !   corr_sNc_NL_cloud        = 0.09
 !   corr_sNc_NL_below        = corr_sNc_NL_cloud
 
-    corr_sw_NN_cloud         = 0.09
+!    corr_sw_NN_cloud         = 0.09
 
-    corr_wrice_NL_cloud      = 0.44
-    corr_wrice_NL_below      = corr_wrice_NL_cloud
-    corr_wNi_NL_cloud        = 0.55
-    corr_wNi_NL_below        = corr_wNi_NL_cloud
-    corr_wrsnow_NL_cloud     = 0.65
-    corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
-    corr_wNsnow_NL_cloud     = 0.73
-    corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
-    corr_wNc_NL_cloud        = 0.34
-    corr_wNc_NL_below        = corr_wNc_NL_cloud
+!    corr_wrice_NL_cloud      = 0.44
+!    corr_wrice_NL_below      = corr_wrice_NL_cloud
+!    corr_wNi_NL_cloud        = 0.55
+!    corr_wNi_NL_below        = corr_wNi_NL_cloud
+!    corr_wrsnow_NL_cloud     = 0.65
+!    corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
+!    corr_wNsnow_NL_cloud     = 0.73
+!    corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
+!    corr_wNc_NL_cloud        = 0.34
+!    corr_wNc_NL_below        = corr_wNc_NL_cloud
 
     !---------------------------------------------------------------------------
     ! Parameters for Morrison and COAMPS microphysics
@@ -964,7 +971,8 @@ module microphys_driver
 #ifdef LATIN_HYPERCUBE
       ! Allocate and set the arrays containing the correlations
       ! and the X'^2 / X'^2 terms
-      call setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm )
+      call setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
+            iunit, runtype )
 
 #endif
 
