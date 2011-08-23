@@ -714,7 +714,13 @@ module clubb_core
     wp3_on_wp2_zt = ( wp3(1:gr%nzmax) / max( wp2_zt(1:gr%nzmax), w_tol_sqd ) )
 
     ! Clip wp3_on_wp2_zt if it's too large
-    wp3_on_wp2_zt = min( 1000., wp3_on_wp2_zt )
+    do k=1, gr%nzmax
+      if( wp3_on_wp2_zt(k) < 0. ) then
+        wp3_on_wp2_zt = max( -1000., wp3_on_wp2_zt )
+      else
+        wp3_on_wp2_zt = min( 1000., wp3_on_wp2_zt )
+      end if
+    end do
 
     ! Compute wp3_on_wp2 by interpolating wp3_on_wp2_zt
     wp3_on_wp2 = zt2zm( wp3_on_wp2_zt )
