@@ -779,7 +779,7 @@ module inputfields
       ! Initialize l_read_error for case ( "les" )
       l_read_error = .false.
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_um, fread_var, "um", timestep, gr%nzmax, &               ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -800,7 +800,7 @@ module inputfields
         endif
       endif
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_vm, fread_var, "vm", timestep, gr%nzmax, &               ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -821,7 +821,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_rtm, fread_var, "qtm", timestep, gr%nzmax, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -840,7 +840,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_thlm, fread_var, "thlm", timestep, gr%nzmax, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -860,7 +860,7 @@ module inputfields
 
       ! We obtain wp2 from stats_sw
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_wp3, fread_var, "wp3", timestep, gr%nzmax, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -878,7 +878,7 @@ module inputfields
         endif
       endif
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_wprtp, fread_var, "wpqtp", timestep, gr%nzmax, &         ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -900,7 +900,7 @@ module inputfields
         endif
       endif
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_wpthlp, fread_var, "wpthltp", timestep, gr%nzmax, &      ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -923,7 +923,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_rtp2, fread_var, "qtp2", timestep, gr%nzmax, &           ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -946,7 +946,7 @@ module inputfields
         endif
       endif
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_thlp2, fread_var, "thlp2", timestep, gr%nzmax, &         ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -970,7 +970,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_rtpthlp, fread_var, "qtpthlp", timestep, gr%nzmax, &     ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1006,7 +1006,7 @@ module inputfields
       end if
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_rcm, fread_var, "qcm", timestep, gr%nzmax, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1015,7 +1015,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_wm_zt, fread_var, "wlsm", timestep, gr%nzmax, &          ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1024,7 +1024,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_exner, fread_var, "ex0", timestep, gr%nzmax, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1033,7 +1033,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_em, fread_var, "em", timestep, gr%nzmax, &               ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1043,7 +1043,7 @@ module inputfields
 
       temp = 0.0 ! Initialize temp to 0.0
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_em, fread_var, "tke", timestep, gr%nzmax, &              ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1061,7 +1061,7 @@ module inputfields
 
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_p, fread_var, "pm", timestep, gr%nzmax, &                ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1071,7 +1071,7 @@ module inputfields
 
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_rho, fread_var, "dn0", timestep, gr%nzmax, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1101,7 +1101,7 @@ module inputfields
 
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_Kh_zt, fread_var, "kh", timestep, gr%nzmax, &            ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1129,7 +1129,7 @@ module inputfields
       end if
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_wpthvp, fread_var, "wpthvp", timestep, gr%nzmax, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1193,7 +1193,7 @@ module inputfields
       end if
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_thvm, fread_var, "thvm", timestep, gr%nzmax, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1208,7 +1208,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interpolated( &
+          call get_coamps_variable_interp( &
                   input_rrainm, fread_var, "qrm", timestep, gr%nzmax, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1224,7 +1224,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interpolated( &
+          call get_coamps_variable_interp( &
                   input_Nrm, fread_var, "nrm", timestep, gr%nzmax, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1241,7 +1241,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interpolated( &
+          call get_coamps_variable_interp( &
                   input_Ncm, fread_var, "ncm", timestep, gr%nzmax, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1258,7 +1258,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interpolated( &
+          call get_coamps_variable_interp( &
                   input_rsnowm, fread_var, "qsm", timestep, gr%nzmax, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1275,7 +1275,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interpolated( &
+          call get_coamps_variable_interp( &
                   input_ricem, fread_var, "qim", timestep, gr%nzmax, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1292,7 +1292,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interpolated( &
+          call get_coamps_variable_interp( &
                   input_rgraupelm, fread_var, "qgm", timestep, gr%nzmax, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1303,7 +1303,7 @@ module inputfields
       end if
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_Ncnm, fread_var, "ncnm", timestep, gr%nzmax, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1318,7 +1318,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interpolated( &
+          call get_coamps_variable_interp( &
                   input_Nim, fread_var, "nim", timestep, gr%nzmax, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1342,7 +1342,7 @@ module inputfields
       end if
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_up2, fread_var, "up2", timestep, gr%nzmax, &             ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1356,7 +1356,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_vp2, fread_var, "vp2", timestep, gr%nzmax, &             ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1471,7 +1471,7 @@ module inputfields
       ! Note:  wpup_sgs and wpvp_sgs must be added to make the u'w' and v'w' terms
       !        as they are in CLUBB.
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_upwp, fread_var, "wpup", timestep, gr%nzmax, &           ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1480,7 +1480,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       temp = 0.0  ! clear temp
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_upwp, fread_var, "wpup_sgs", timestep, gr%nzmax, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1495,7 +1495,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_vpwp, fread_var, "wpvp", timestep, gr%nzmax, &           ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1504,7 +1504,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       temp = 0.0  ! clear temp
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_vpwp, fread_var, "wpvp_sgs", timestep, gr%nzmax, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1519,7 +1519,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_wp2, fread_var, "wp2", timestep, gr%nzmax, &            ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1536,7 +1536,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interpolated( &
+      call get_coamps_variable_interp( &
               input_rho_zm, fread_var, "dn0", timestep, gr%nzmax, &          ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1768,7 +1768,7 @@ module inputfields
   end subroutine get_clubb_variable_interpolated
 
   !--------------------------------------------------------------------------
-  subroutine get_coamps_variable_interpolated( &
+  subroutine get_coamps_variable_interp( &
                  l_input_var, fread_var, var_name, timestep, vardim, &
                  clubb_heights, k_lowest, k_highest, l_lin_int, &
                  upper_lev_idx, lower_lev_idx, exact_lev_idx, &
@@ -1854,7 +1854,7 @@ module inputfields
 
     end if
 
-  end subroutine get_coamps_variable_interpolated
+  end subroutine get_coamps_variable_interp
         
 
 
