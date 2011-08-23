@@ -203,12 +203,8 @@ module inputfields
        CLUBB_levels_within_LES_domain
 
     use input_grads, only: & 
-        get_grads_var,  & ! Procedure(s)
-        open_grads_read, & 
+        open_grads_read, & ! Procedure(s)
         close_grads_read
-
-    use interpolation, only: &
-        lin_int ! Procedure(s)
 
     use extrapolation, only: &
       lin_ext_zt_bottom, &
@@ -268,6 +264,9 @@ module inputfields
 
     integer :: k, &  ! Array index
                unit_number ! file unit number
+
+    real, dimension(gr%nzmax) :: &
+      temp ! temporary variable
 
     ! ---- Begin Code ----
 
@@ -780,28 +779,15 @@ module inputfields
       ! Initialize l_read_error for case ( "les" )
       l_read_error = .false.
 
+      call get_coamps_variable_interpolated( &
+              input_um, fread_var, "um", timestep, gr%nzmax, &               ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              um, l_read_error )                           ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_um ) then
-        call get_grads_var( fread_var, "um", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of um from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            um(k) = lin_int( gr%zt(k),  &
-                             fread_var%z(upper_lev_idx_zt(k)),  &
-                             fread_var%z(lower_lev_idx_zt(k)),  &
-                             LES_tmp1(upper_lev_idx_zt(k)),  &
-                             LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            um(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
         ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
         ! the first thermodynamic level at or above the lowest LES level, use the
         ! values of um at thermodynamic levels 3 and 2 to find the value at
@@ -814,28 +800,15 @@ module inputfields
         endif
       endif
 
+      call get_coamps_variable_interpolated( &
+              input_vm, fread_var, "vm", timestep, gr%nzmax, &               ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              vm, l_read_error )                           ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_vm ) then
-        call get_grads_var( fread_var, "vm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of vm from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            vm(k) = lin_int( gr%zt(k),  &
-                             fread_var%z(upper_lev_idx_zt(k)),  &
-                             fread_var%z(lower_lev_idx_zt(k)),  &
-                             LES_tmp1(upper_lev_idx_zt(k)),  &
-                             LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            vm(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
         ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
         ! the first thermodynamic level at or above the lowest LES level, use the
         ! values of vm at thermodynamic levels 3 and 2 to find the value at
@@ -847,28 +820,16 @@ module inputfields
         endif
       endif
 
+
+      call get_coamps_variable_interpolated( &
+              input_rtm, fread_var, "qtm", timestep, gr%nzmax, &             ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              rtm, l_read_error )                          ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_rtm ) then
-        call get_grads_var( fread_var, "qtm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rtm from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            rtm(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            rtm(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
         ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
         ! the first thermodynamic level at or above the lowest LES level, set the
         ! value of rtm at thermodynamic level 1 to the value at thermodynamic
@@ -878,28 +839,16 @@ module inputfields
         endif
       endif
 
+
+      call get_coamps_variable_interpolated( &
+              input_thlm, fread_var, "thlm", timestep, gr%nzmax, &           ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              thlm, l_read_error )                         ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_thlm ) then
-        call get_grads_var( fread_var, "thlm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of thlm from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            thlm(k) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            thlm(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
         ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
         ! the first thermodynamic level at or above the lowest LES level, set the
         ! value of thlm at thermodynamic level 1 to the value at thermodynamic
@@ -911,28 +860,15 @@ module inputfields
 
       ! We obtain wp2 from stats_sw
 
+      call get_coamps_variable_interpolated( &
+              input_wp3, fread_var, "wp3", timestep, gr%nzmax, &             ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              wp3, l_read_error )                          ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_wp3 ) then
-        call get_grads_var( fread_var, "wp3", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of wp3 from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            wp3(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            wp3(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
         ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
         ! the first thermodynamic level at or above the lowest LES level, set the
         ! value of wp3 at thermodynamic level 1 to 0, as it is done in
@@ -942,28 +878,15 @@ module inputfields
         endif
       endif
 
+      call get_coamps_variable_interpolated( &
+              input_wprtp, fread_var, "wpqtp", timestep, gr%nzmax, &         ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              wprtp, l_read_error )                        ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_wprtp ) then
-        call get_grads_var( fread_var, "wpqtp", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of wprtp from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            wprtp(k) = lin_int( gr%zm(k),  &
-                                fread_var%z(upper_lev_idx_zm(k)),  &
-                                fread_var%z(lower_lev_idx_zm(k)),  &
-                                LES_tmp1(upper_lev_idx_zm(k)),  &
-                                LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            wprtp(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
         ! When this is a standard scenario, where CLUBB momentum level 2 is the
         ! first momentum level above the lowest LES level, use the values of
         ! wprtp at momentum levels 3 and 2 to find the value at momentum level 1
@@ -977,28 +900,15 @@ module inputfields
         endif
       endif
 
+      call get_coamps_variable_interpolated( &
+              input_wpthlp, fread_var, "wpthltp", timestep, gr%nzmax, &      ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              wpthlp, l_read_error )                       ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_wpthlp ) then
-        call get_grads_var( fread_var, "wpthlp", timestep,  &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of wpthlp from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            wpthlp(k) = lin_int( gr%zm(k),  &
-                                 fread_var%z(upper_lev_idx_zm(k)),  &
-                                 fread_var%z(lower_lev_idx_zm(k)),  &
-                                 LES_tmp1(upper_lev_idx_zm(k)),  &
-                                 LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            wpthlp(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
         ! When this is a standard scenario, where CLUBB momentum level 2 is the
         ! first momentum level above the lowest LES level, use the values of
         ! wpthlp at momentum levels 3 and 2 to find the value at momentum level 1
@@ -1012,28 +922,16 @@ module inputfields
         endif
       endif
 
+
+      call get_coamps_variable_interpolated( &
+              input_rtp2, fread_var, "qtp2", timestep, gr%nzmax, &           ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              rtp2, l_read_error )                         ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_rtp2 ) then
-        call get_grads_var( fread_var, "qtp2", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rtp2 from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            rtp2(k) = lin_int( gr%zm(k),  &
-                               fread_var%z(upper_lev_idx_zm(k)),  &
-                               fread_var%z(lower_lev_idx_zm(k)),  &
-                               LES_tmp1(upper_lev_idx_zm(k)),  &
-                               LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            rtp2(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
         ! When this is a standard scenario, where CLUBB momentum level 2 is the
         ! first momentum level above the lowest LES level, set the value of rtp2
         ! at momentum level 1 to the value at momentum level 2.
@@ -1048,28 +946,15 @@ module inputfields
         endif
       endif
 
+      call get_coamps_variable_interpolated( &
+              input_thlp2, fread_var, "thlp2", timestep, gr%nzmax, &         ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              thlp2, l_read_error )                        ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_thlp2 ) then
-        call get_grads_var( fread_var, "thlp2", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of thlp2 from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            thlp2(k) = lin_int( gr%zm(k),  &
-                                fread_var%z(upper_lev_idx_zm(k)),  &
-                                fread_var%z(lower_lev_idx_zm(k)),  &
-                                LES_tmp1(upper_lev_idx_zm(k)),  &
-                                LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            thlp2(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
         ! When this is a standard scenario, where CLUBB momentum level 2 is the
         ! first momentum level above the lowest LES level, set the value of thlp2
         ! at momentum level 1 to the value at momentum level 2.
@@ -1084,28 +969,16 @@ module inputfields
         endif
       endif
 
+
+      call get_coamps_variable_interpolated( &
+              input_rtpthlp, fread_var, "qtpthlp", timestep, gr%nzmax, &     ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              rtpthlp, l_read_error )                      ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_rtpthlp) then
-        call get_grads_var( fread_var, "qtpthlp", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rtpthlp from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            rtpthlp(k) = lin_int( gr%zm(k),  &
-                                  fread_var%z(upper_lev_idx_zm(k)),  &
-                                  fread_var%z(lower_lev_idx_zm(k)),  &
-                                  LES_tmp1(upper_lev_idx_zm(k)),  &
-                                  LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            rtpthlp(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
         ! When this is a standard scenario, where CLUBB momentum level 2 is the
         ! first momentum level above the lowest LES level, use the values of
         ! rtpthlp at momentum levels 3 and 2 to find the value at momentum level 1
@@ -1132,177 +1005,79 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-      if ( input_rcm ) then
-        call get_grads_var( fread_var, "qcm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
-        l_fatal_error = l_fatal_error .or. l_read_error
+      call get_coamps_variable_interpolated( &
+              input_rcm, fread_var, "qcm", timestep, gr%nzmax, &             ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              rcm, l_read_error )                          ! Intent(in/out), Intent(out)
 
-        ! LES_tmp1 is the value of rcm from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            rcm(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            rcm(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_wm_zt ) then
-        call get_grads_var( fread_var, "wlsm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
-        l_fatal_error = l_fatal_error .or. l_read_error
+      call get_coamps_variable_interpolated( &
+              input_wm_zt, fread_var, "wlsm", timestep, gr%nzmax, &          ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              wm_zt, l_read_error )                        ! Intent(in/out), Intent(out)
 
-        ! LES_tmp1 is the value of wm_zt from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            wm_zt(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            wm_zt(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_exner ) then
-        call get_grads_var( fread_var, "ex0", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
-        l_fatal_error = l_fatal_error .or. l_read_error
+      call get_coamps_variable_interpolated( &
+              input_exner, fread_var, "ex0", timestep, gr%nzmax, &           ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              exner, l_read_error )                        ! Intent(in/out), Intent(out)
 
-        ! LES_tmp1 is the value of exner from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            exner(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            exner(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_em ) then
 
-        ! Read in SGS TKE
-        call get_grads_var( fread_var, "em", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+      call get_coamps_variable_interpolated( &
+              input_em, fread_var, "em", timestep, gr%nzmax, &               ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              em, l_read_error )                           ! Intent(in/out), Intent(out)
 
-        l_fatal_error = l_fatal_error .or. l_read_error
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-        ! LES_tmp1 is the value of em from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            em(k) = lin_int( gr%zm(k),  &
-                              fread_var%z(upper_lev_idx_zm(k)),  &
-                              fread_var%z(lower_lev_idx_zm(k)),  &
-                              LES_tmp1(upper_lev_idx_zm(k)),  &
-                              LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            em(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
+      temp = 0.0 ! Initialize temp to 0.0
 
-        ! Read in Resolved TKE
-        call get_grads_var( fread_var, "tke", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+      call get_coamps_variable_interpolated( &
+              input_em, fread_var, "tke", timestep, gr%nzmax, &              ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              temp, l_read_error )                         ! Intent(in/out), Intent(out)
 
-        l_fatal_error = l_fatal_error .or. l_read_error
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-        ! LES_tmp1 is the value of em from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            em(k) = em(k) + lin_int( gr%zm(k),  &
-                              fread_var%z(upper_lev_idx_zm(k)),  &
-                              fread_var%z(lower_lev_idx_zm(k)),  &
-                              LES_tmp1(upper_lev_idx_zm(k)),  &
-                              LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            em(k) = em(k) + LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
+      if( input_em ) then
+        do k=k_lowest_zm_input, k_highest_zm_input, 1
+          em(k) = em(k) + temp(k)
+        end do
 
         where ( em < em_min ) em = em_min
+      end if
 
-      endif ! input_em
 
-      if ( input_p ) then
-        call get_grads_var( fread_var, "pm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
-        l_fatal_error = l_fatal_error .or. l_read_error
+      call get_coamps_variable_interpolated( &
+              input_p, fread_var, "pm", timestep, gr%nzmax, &                ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              p_in_Pa, l_read_error )                      ! Intent(in/out), Intent(out)
 
-        ! LES_tmp1 is the value of pressure from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            p_in_Pa(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            p_in_Pa(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_rho ) then
-        call get_grads_var( fread_var, "dn0", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
-        l_fatal_error = l_fatal_error .or. l_read_error
 
-        ! LES_tmp1 is the value of rho from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            rho(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            rho(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+      call get_coamps_variable_interpolated( &
+              input_rho, fread_var, "dn0", timestep, gr%nzmax, &             ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              rho, l_read_error )                          ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
 
       ! rho_zm is in stats_sw
 
@@ -1324,26 +1099,16 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-      if ( input_Kh_zt ) then
-        call get_grads_var( fread_var, "kh", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-        ! LES_tmp1 is the value of mixing length from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            Kh_zt(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zt(k)),  &
-                              fread_var%z(lower_lev_idx_zt(k)),  &
-                              LES_tmp1(upper_lev_idx_zt(k)),  &
-                              LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            Kh_zt(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+
+
+      call get_coamps_variable_interpolated( &
+              input_Kh_zt, fread_var, "kh", timestep, gr%nzmax, &            ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              Kh_zt, l_read_error )                        ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
 
       if ( input_Kh_zm ) then
         write(fstderr,*) "The variable Kh_zm is not setup for input_type" &
@@ -1363,26 +1128,15 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-      if ( input_wpthvp ) then
-        call get_grads_var( fread_var, "wpthvp", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_fatal_error )
-        ! LES_tmp1 is the value of wpthvp from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            wpthvp(k) = lin_int( gr%zm(k),  &
-                              fread_var%z(upper_lev_idx_zm(k)),  &
-                              fread_var%z(lower_lev_idx_zm(k)),  &
-                              LES_tmp1(upper_lev_idx_zm(k)),  &
-                              LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            wpthvp(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-      endif
+
+      call get_coamps_variable_interpolated( &
+              input_wpthvp, fread_var, "wpthvp", timestep, gr%nzmax, &       ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              wpthvp, l_read_error )                       ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
 
       if ( input_thl1 ) then
         write(fstderr,*) "The variable thl1 is not setup for input_type" &
@@ -1438,270 +1192,142 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-      if ( input_thvm ) then
-        call get_grads_var( fread_var, "thvm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
-        l_fatal_error = l_fatal_error .or. l_read_error
+      call get_coamps_variable_interpolated( &
+              input_thvm, fread_var, "thvm", timestep, gr%nzmax, &           ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              thvm, l_read_error )                         ! Intent(in/out), Intent(out)
 
-        ! LES_tmp1 is the value of thvm from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            thvm(k) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            thvm(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
+
 
       if ( input_rrainm ) then
-        call get_grads_var( fread_var, "qrm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-
-          if ( iirrainm < 1 ) then
+        if ( iirrainm < 1 ) then
             write(fstderr,*) "Rain water mixing ratio cannot be input with"// &
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
-            exit
-          end if
+        else
+          call get_coamps_variable_interpolated( &
+                  input_rrainm, fread_var, "qrm", timestep, gr%nzmax, &          ! Intent(in)
+                  gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+                  upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+                  hydromet(:,iirrainm), l_read_error )         ! Intent(in/out), Intent(out)
 
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            hydromet(k,iirrainm) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            hydromet(k,iirrainm) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+          l_fatal_error = l_fatal_error .or. l_read_error
+        end if
+      end if
 
       if ( input_Nrm ) then
-        call get_grads_var( fread_var, "nrm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-
-          if ( iiNrm < 1 ) then
+        if ( iiNrm < 1 ) then
             write(fstderr,*) "Rain droplet number conc. cannot be input with"// &
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
-            exit
-          end if
+        else
+          call get_coamps_variable_interpolated( &
+                  input_Nrm, fread_var, "nrm", timestep, gr%nzmax, &          ! Intent(in)
+                  gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+                  upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+                  hydromet(:,iiNrm), l_read_error )         ! Intent(in/out), Intent(out)
 
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            hydromet(k,iiNrm) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            hydromet(k,iiNrm) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+          l_fatal_error = l_fatal_error .or. l_read_error
+        end if
+      end if
+
 
       if ( input_Ncm ) then
-        call get_grads_var( fread_var, "ncm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-
-          if ( iiNcm < 1 ) then
+        if ( iiNcm < 1 ) then
             write(fstderr,*) "Cloud droplet number conc. cannot be input with"// &
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
-            exit
-          end if
+        else
+          call get_coamps_variable_interpolated( &
+                  input_Ncm, fread_var, "ncm", timestep, gr%nzmax, &          ! Intent(in)
+                  gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+                  upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+                  hydromet(:,iiNcm), l_read_error )         ! Intent(in/out), Intent(out)
 
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            hydromet(k,iiNcm) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            hydromet(k,iiNcm) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+          l_fatal_error = l_fatal_error .or. l_read_error
+        end if
+      end if
 
 
       if ( input_rsnowm ) then
-        call get_grads_var( fread_var, "qsm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( iirsnowm < 1 ) then
+        if ( iirsnowm < 1 ) then
             write(fstderr,*) "Snow mixing ratio cannot be input with"// &
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
-            exit
-          end if
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            hydromet(k,iirsnowm) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            hydromet(k,iirsnowm) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+        else
+          call get_coamps_variable_interpolated( &
+                  input_rsnowm, fread_var, "qsm", timestep, gr%nzmax, &          ! Intent(in)
+                  gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+                  upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+                  hydromet(:,iirsnowm), l_read_error )         ! Intent(in/out), Intent(out)
+
+          l_fatal_error = l_fatal_error .or. l_read_error
+        end if
+      end if
+
 
       if ( input_ricem ) then
-        call get_grads_var( fread_var, "qim", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( iiricem < 1 ) then
+        if ( iiricem < 1 ) then
             write(fstderr,*) "Ice mixing ratio cannot be input with"// &
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
-            exit
-          end if
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            hydromet(k,iiricem) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            hydromet(k,iiricem) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+        else
+          call get_coamps_variable_interpolated( &
+                  input_ricem, fread_var, "qim", timestep, gr%nzmax, &          ! Intent(in)
+                  gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+                  upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+                  hydromet(:,iiricem), l_read_error )         ! Intent(in/out), Intent(out)
+
+          l_fatal_error = l_fatal_error .or. l_read_error
+        end if
+      end if
+
 
       if ( input_rgraupelm ) then
-        call get_grads_var( fread_var, "qgm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( iirgraupelm < 1 ) then
+        if ( iirgraupelm < 1 ) then
             write(fstderr,*) "Graupel mixing ratio cannot be input with"// &
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
-            exit
-          end if
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            hydromet(k,iirgraupelm) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            hydromet(k,iirgraupelm) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+        else
+          call get_coamps_variable_interpolated( &
+                  input_rgraupelm, fread_var, "qgm", timestep, gr%nzmax, &          ! Intent(in)
+                  gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+                  upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+                  hydromet(:,iirgraupelm), l_read_error )         ! Intent(in/out), Intent(out)
 
-      if ( input_Ncnm ) then
-        call get_grads_var( fread_var, "ncnm", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
+          l_fatal_error = l_fatal_error .or. l_read_error
+        end if
+      end if
 
-        l_fatal_error = l_fatal_error .or. l_read_error
 
-        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            Ncnm(k) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            Ncnm(k) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+      call get_coamps_variable_interpolated( &
+              input_Ncnm, fread_var, "ncnm", timestep, gr%nzmax, &           ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              Ncnm, l_read_error )                         ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
 
       if ( input_Nim ) then
-        call get_grads_var( fread_var, "nim", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of rain water mixing ratio from the LES GrADS file.
-        do k = k_lowest_zt_input, k_highest_zt_input, 1
-          if ( iiNim < 1 ) then
+        if ( iiNim < 1 ) then
             write(fstderr,*) "Ice number conc. cannot be input with"// &
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
-            exit
-          end if
-          if ( l_lin_int_zt(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            hydromet(k,iiNim) = lin_int( gr%zt(k),  &
-                               fread_var%z(upper_lev_idx_zt(k)),  &
-                               fread_var%z(lower_lev_idx_zt(k)),  &
-                               LES_tmp1(upper_lev_idx_zt(k)),  &
-                               LES_tmp1(lower_lev_idx_zt(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            hydromet(k,iiNim) = LES_tmp1(exact_lev_idx_zt(k))
-          endif
-        enddo
-      endif
+        else
+          call get_coamps_variable_interpolated( &
+                  input_Nim, fread_var, "nim", timestep, gr%nzmax, &          ! Intent(in)
+                  gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+                  upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+                  hydromet(:,iiNim), l_read_error )         ! Intent(in/out), Intent(out)
+
+          l_fatal_error = l_fatal_error .or. l_read_error
+        end if
+      end if
+
 
       if ( input_thlm_forcing ) then
         write(fstderr,*) "The variable thlm_forcing is not setup for input_type" &
@@ -1715,59 +1341,31 @@ module inputfields
         l_fatal_error = .true.
       end if
 
+
+      call get_coamps_variable_interpolated( &
+              input_up2, fread_var, "up2", timestep, gr%nzmax, &             ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              up2, l_read_error )                          ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_up2 ) then
-        call get_grads_var( fread_var, "up2", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of up2 from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            up2(k) = lin_int( gr%zm(k),  &
-                              fread_var%z(upper_lev_idx_zm(k)),  &
-                              fread_var%z(lower_lev_idx_zm(k)),  &
-                              LES_tmp1(upper_lev_idx_zm(k)),  &
-                              LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            up2(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-
         ! Clip up2 to be no smaller than w_tol_sqd
         where ( up2 < w_tol_sqd ) up2 = w_tol_sqd
-
       endif
 
+
+      call get_coamps_variable_interpolated( &
+              input_vp2, fread_var, "vp2", timestep, gr%nzmax, &             ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              vp2, l_read_error )                          ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_vp2 ) then
-        call get_grads_var( fread_var, "vp2", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of vp2 from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            vp2(k) = lin_int( gr%zm(k),  &
-                              fread_var%z(upper_lev_idx_zm(k)),  &
-                              fread_var%z(lower_lev_idx_zm(k)),  &
-                              LES_tmp1(upper_lev_idx_zm(k)),  &
-                              LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            vp2(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-
-        where ( vp2 < w_tol_sqd ) vp2 = w_tol_sqd
-
+         where ( vp2 < w_tol_sqd ) vp2 = w_tol_sqd
       endif
 
       if ( input_sigma_sqd_w ) then
@@ -1873,156 +1471,79 @@ module inputfields
       ! Note:  wpup_sgs and wpvp_sgs must be added to make the u'w' and v'w' terms
       !        as they are in CLUBB.
 
+      call get_coamps_variable_interpolated( &
+              input_upwp, fread_var, "wpup", timestep, gr%nzmax, &           ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              upwp, l_read_error )                         ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      temp = 0.0  ! clear temp
+      call get_coamps_variable_interpolated( &
+              input_upwp, fread_var, "wpup_sgs", timestep, gr%nzmax, &       ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              temp, l_read_error )                         ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_upwp) then
-
-        call get_grads_var( fread_var, "wpup", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of upwp from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            upwp(k) = lin_int( gr%zm(k),  &
-                               fread_var%z(upper_lev_idx_zm(k)),  &
-                               fread_var%z(lower_lev_idx_zm(k)),  &
-                               LES_tmp1(upper_lev_idx_zm(k)),  &
-                               LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            upwp(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-
-        call get_grads_var( fread_var, "wpup_sgs", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of upwp_sgs from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            upwp(k) = lin_int( gr%zm(k),  &
-                               fread_var%z(upper_lev_idx_zm(k)),  &
-                               fread_var%z(lower_lev_idx_zm(k)),  &
-                               LES_tmp1(upper_lev_idx_zm(k)),  &
-                               LES_tmp1(lower_lev_idx_zm(k)) )  &
-                      + upwp(k)
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            upwp(k) = LES_tmp1(exact_lev_idx_zm(k)) + upwp(k)
-          endif
-        enddo
-
+        do k=k_lowest_zm_input, k_highest_zm_input, 1
+          upwp(k) = temp(k)
+        end do
       endif
+
+
+      call get_coamps_variable_interpolated( &
+              input_vpwp, fread_var, "wpvp", timestep, gr%nzmax, &           ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              vpwp, l_read_error )                         ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      temp = 0.0  ! clear temp
+      call get_coamps_variable_interpolated( &
+              input_vpwp, fread_var, "wpvp_sgs", timestep, gr%nzmax, &       ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              temp, l_read_error )                         ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
 
       if ( input_vpwp) then
-
-        call get_grads_var( fread_var, "wpvp", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of vpwp from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            vpwp(k) = lin_int( gr%zm(k),  &
-                               fread_var%z(upper_lev_idx_zm(k)),  &
-                               fread_var%z(lower_lev_idx_zm(k)),  &
-                               LES_tmp1(upper_lev_idx_zm(k)),  &
-                               LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            vpwp(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-
-        call get_grads_var( fread_var, "wpvp_sgs", timestep, &
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of vpwp_sgs from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            vpwp(k) = lin_int( gr%zm(k),  &
-                               fread_var%z(upper_lev_idx_zm(k)),  &
-                               fread_var%z(lower_lev_idx_zm(k)),  &
-                               LES_tmp1(upper_lev_idx_zm(k)),  &
-                               LES_tmp1(lower_lev_idx_zm(k)) )  &
-                      + vpwp(k)
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            vpwp(k) = LES_tmp1(exact_lev_idx_zm(k)) + vpwp(k)
-          endif
-        enddo
-
+        do k=k_lowest_zm_input, k_highest_zm_input, 1
+          vpwp(k) = temp(k)
+        end do
       endif
 
+
+      call get_coamps_variable_interpolated( &
+              input_wp2, fread_var, "wp2", timestep, gr%nzmax, &            ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              wp2, l_read_error )                          ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       if ( input_wp2 ) then
-        call get_grads_var( fread_var, "wp2", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
-
-        l_fatal_error = l_fatal_error .or. l_read_error
-
-        ! LES_tmp1 is the value of wp2 from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB momentum level k is found at an altitude that is between two
-            ! LES levels.  Linear interpolation is required.
-            wp2(k) = lin_int( gr%zm(k),  &
-                              fread_var%z(upper_lev_idx_zm(k)),  &
-                              fread_var%z(lower_lev_idx_zm(k)),  &
-                              LES_tmp1(upper_lev_idx_zm(k)),  &
-                              LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB momentum level k is found at an altitude that is an exact
-            ! match with an LES level altitude.
-            wp2(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-        if ( any( wp2(1:gr%nzmax) < w_tol_sqd ) ) then
+         if ( any( wp2(1:gr%nzmax) < w_tol_sqd ) ) then
           do k=1, gr%nzmax
             wp2(k) = max( wp2(k), w_tol_sqd )
           enddo
         endif
       endif
 
-      if ( input_rho_zm ) then
-        call get_grads_var( fread_var, "dn0", timestep, & 
-                      LES_tmp1(fread_var%ia:fread_var%iz), l_read_error )
 
-        l_fatal_error = l_fatal_error .or. l_read_error
+      call get_coamps_variable_interpolated( &
+              input_rho_zm, fread_var, "dn0", timestep, gr%nzmax, &          ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              rho_zm, l_read_error )                       ! Intent(in/out), Intent(out)
 
-        ! LES_tmp1 is the value of rho_zm from the LES GrADS file.
-        do k = k_lowest_zm_input, k_highest_zm_input, 1
-          if ( l_lin_int_zm(k) ) then
-            ! CLUBB thermodynamic level k is found at an altitude that is
-            ! between two LES levels.  Linear interpolation is required.
-            rho_zm(k) = lin_int( gr%zt(k),  &
-                              fread_var%z(upper_lev_idx_zm(k)),  &
-                              fread_var%z(lower_lev_idx_zm(k)),  &
-                              LES_tmp1(upper_lev_idx_zm(k)),  &
-                              LES_tmp1(lower_lev_idx_zm(k)) )
-          else
-            ! CLUBB thermodynamic level k is found at an altitude that is an
-            ! exact match with an LES level altitude.
-            rho_zm(k) = LES_tmp1(exact_lev_idx_zm(k))
-          endif
-        enddo
-      endif
+      l_fatal_error = l_fatal_error .or. l_read_error
+
 
       if ( l_fatal_error ) stop "get_grads_var failed for stats_sw in stat_fields_reader"
 
@@ -2245,6 +1766,97 @@ module inputfields
 
     return
   end subroutine get_clubb_variable_interpolated
+
+  !--------------------------------------------------------------------------
+  subroutine get_coamps_variable_interpolated( &
+                 l_input_var, fread_var, var_name, timestep, vardim, &
+                 clubb_heights, k_lowest, k_highest, l_lin_int, &
+                 upper_lev_idx, lower_lev_idx, exact_lev_idx, &
+                 variable_interpolated, l_error )
+
+  ! Description:
+  !   Obtain a profile of a COAMPS variable from a GrADS file and interpolate if
+  !   needed.
+  ! References:
+  !   None
+  !--------------------------------------------------------------------------------
+
+
+    use stat_file_module, only: stat_file
+
+    use input_grads, only: get_grads_var
+
+    use interpolation, only: lin_int
+
+    implicit none
+
+    logical, intent(in) :: &
+      l_input_var ! If .true., this variable needs to be read in.
+
+    type (stat_file), intent(in) :: &
+      fread_var ! The grads data.
+
+    character(len=*), intent(in) :: &
+      var_name ! The name of the variable to read and interpolate
+
+    integer, intent(in) :: &
+      timestep, & ! The current timestep
+      vardim, &   ! The dimension of the variable
+      k_lowest, & ! The lowest level from the LES output
+      k_highest   ! The highest level from the LES output
+
+    real, dimension(vardim), intent(in) :: &
+      clubb_heights ! The heights for each level
+
+    logical, dimension(k_lowest:k_highest), intent(in) :: &
+      l_lin_int ! Flag that is turned on if linear interpolation is needed.
+
+    integer, dimension(k_lowest:k_highest), intent(in) :: &
+      upper_lev_idx, &
+      lower_lev_idx, &
+      exact_lev_idx
+
+    real, dimension(vardim), intent(inout) :: &
+      variable_interpolated ! The resulting interpolated variable
+  
+    logical, intent(out) :: &
+      l_error ! Error flag
+
+    ! Local variables
+
+    real, dimension(fread_var%ia:fread_var%iz) :: &
+      LES_tmp ! Temporary variable
+
+    integer :: &
+      k ! index variable
+
+    !--------------------------- BEGIN CODE ---------------------------------
+
+    if( l_input_var ) then
+      call get_grads_var( fread_var, var_name, timestep, &
+                    LES_tmp(fread_var%ia:fread_var%iz), l_error )
+      !LES_tmp is the value of the variable from teh LES GrADS file.
+      do k = k_lowest, k_highest, 1
+        if( l_lin_int(k) ) then
+          ! CLUBB level k is found at an altitude that is between two
+          ! LES levels.  Linear interpolation is required.
+          variable_interpolated(k) = lin_int( clubb_heights(k), &
+                                        fread_var%z(upper_lev_idx(k)), &
+                                        fread_var%z(lower_lev_idx(k)), &
+                                        LES_tmp(upper_lev_idx(k)), &
+                                        LES_tmp(lower_lev_idx(k)) )
+        else
+          ! CLUBB level k is found at an altitude that is an exact
+          ! match with an LES level altitude.
+          variable_interpolated(k) = LES_tmp(exact_lev_idx(k))
+        end if
+      end do
+
+    end if
+
+  end subroutine get_coamps_variable_interpolated
+        
+
 
 !-------------------------------------------------------------------------------
   subroutine inputfields_init( iunit, namelist_filename )
