@@ -130,33 +130,6 @@ module microphys_driver
       Nicep2_on_Nicem2_below
 
     use parameters_microphys, only: &
-      corr_srsnow_NL_cloud, &
-      corr_sNsnow_NL_cloud, &
-      corr_rsnowNsnow_LL_cloud, &
-      corr_srice_NL_cloud, &
-      corr_sNi_NL_cloud, &
-      corr_riceNi_LL_cloud, &
-      corr_wrice_NL_cloud, &
-      corr_wNi_NL_cloud, &
-      corr_wNc_NL_cloud, &
-      corr_wrsnow_NL_cloud, &
-      corr_wNsnow_NL_cloud, &
-      corr_sw_NN_cloud 
-
-    use parameters_microphys, only: &
-      corr_srsnow_NL_below, &
-      corr_sNsnow_NL_below, &
-      corr_rsnowNsnow_LL_below, &
-      corr_srice_NL_below, &
-      corr_sNi_NL_below, &
-      corr_riceNi_LL_below, &
-      corr_wrice_NL_below, &
-      corr_wNi_NL_below, &
-      corr_wNc_NL_below, &
-      corr_wrsnow_NL_below, &
-      corr_wNsnow_NL_below
-
-    use parameters_microphys, only: &
       LH_microphys_type_int => LH_microphys_type ! Determines how the LH samples are used
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
