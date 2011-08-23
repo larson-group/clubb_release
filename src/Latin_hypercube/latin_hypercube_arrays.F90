@@ -76,11 +76,7 @@ module latin_hypercube_arrays
 
     use parameters_microphys, only: &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
-      corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
-      corr_sNc_NL_cloud, &
-      rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
-      corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, &
-      corr_sNc_NL_below
+      rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below
 
     use parameters_microphys, only: &
       rsnowp2_on_rsnowm2_cloud, & ! Variables
@@ -91,32 +87,7 @@ module latin_hypercube_arrays
       Nsnowp2_on_Nsnowm2_below, & 
       ricep2_on_ricem2_below, & 
       Nicep2_on_Nicem2_below
-
-    use parameters_microphys, only: &
-      corr_srsnow_NL_cloud, &
-      corr_sNsnow_NL_cloud, &
-      corr_rsnowNsnow_LL_cloud, &
-      corr_srice_NL_cloud, &
-      corr_sNi_NL_cloud, &
-      corr_riceNi_LL_cloud, &
-      corr_wrice_NL_cloud, &
-      corr_wNi_NL_cloud, &
-      corr_wrsnow_NL_cloud, &
-      corr_wNsnow_NL_cloud, &
-      corr_sw_NN_cloud
-
-    use parameters_microphys, only: &
-      corr_srsnow_NL_below, &
-      corr_sNsnow_NL_below, &
-      corr_rsnowNsnow_LL_below, &
-      corr_srice_NL_below, &
-      corr_sNi_NL_below, &
-      corr_riceNi_LL_below, &
-      corr_wrice_NL_below, &
-      corr_wNi_NL_below, &
-      corr_wrsnow_NL_below, &
-      corr_wNsnow_NL_below
-
+ 
     use matrix_operations, only: set_lower_triangular_matrix_sp ! Procedure(s)
 
     use constants_clubb, only: fstdout
@@ -127,7 +98,6 @@ module latin_hypercube_arrays
     intrinsic :: max, epsilon
 
     ! Constant Parameters
-    real, parameter :: corr_s_t = 0.3
 
     character(len=*), parameter :: &
       cloud_file_name = "_corr_array_cloud.in", & ! File names

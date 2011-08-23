@@ -155,20 +155,6 @@ module parameters_microphys
 
 !$omp threadprivate( C_evap, r_0 )
 
-  ! Parameters added for correlatins between w and other variates when using
-  ! latin hypercube sampling.  
-  real, public :: &
-    corr_wrr_NL_cloud, &
-    corr_wNr_NL_cloud, &
-    corr_wNc_NL_cloud
-!$omp threadprivate( corr_wrr_NL_cloud, corr_wNr_NL_cloud, corr_wNc_NL_cloud )
-
-  real, public :: &
-    corr_wrr_NL_below, &
-    corr_wNr_NL_below, &
-    corr_wNc_NL_below
-!$omp threadprivate( corr_wrr_NL_below, corr_wNr_NL_below, corr_wNc_NL_below )
-
   ! Parameters added for ice microphysics and latin hypercube sampling
 
   real, public :: &
@@ -189,51 +175,6 @@ module parameters_microphys
 !$omp threadprivate( rsnowp2_on_rsnowm2_below, Nsnowp2_on_Nsnowm2_below, & 
 !$omp   ricep2_on_ricem2_below, Nicep2_on_Nicem2_below )
    
-  real, public :: &
-    corr_srsnow_NL_cloud, &
-    corr_sNsnow_NL_cloud, &
-    corr_rsnowNsnow_LL_cloud, &
-    corr_srice_NL_cloud, &
-    corr_sNi_NL_cloud, &
-    corr_riceNi_LL_cloud
-
-!$omp threadprivate( corr_srsnow_NL_cloud, corr_sNsnow_NL_cloud, &
-!$omp   corr_rsnowNsnow_LL_cloud, corr_srice_NL_cloud, corr_sNi_NL_cloud, corr_riceNi_LL_cloud )
-
-  real, public :: &
-    corr_wrice_NL_cloud, &
-    corr_wNi_NL_cloud, &
-    corr_wrsnow_NL_cloud, &
-    corr_wNsnow_NL_cloud
-
-!$omp threadprivate( corr_wrice_NL_cloud, corr_wNi_NL_cloud, &
-!$omp   corr_wrsnow_NL_cloud, corr_wNsnow_NL_cloud )
-
-  real, public :: &
-    corr_sw_NN_cloud 
-!$omp threadprivate( corr_sw_NN_cloud )
-
-  real, public :: &
-    corr_srsnow_NL_below, &
-    corr_sNsnow_NL_below, &
-    corr_rsnowNsnow_LL_below, &
-    corr_srice_NL_below, &
-    corr_sNi_NL_below, &
-    corr_riceNi_LL_below
-
-!$omp threadprivate( corr_srsnow_NL_below, corr_sNsnow_NL_below, &
-!$omp   corr_rsnowNsnow_LL_below, corr_srice_NL_below, &
-!$omp   corr_sNi_NL_below, corr_riceNi_LL_below )
-
-
-  real, public :: &
-    corr_wrice_NL_below, &
-    corr_wNi_NL_below, &
-    corr_wrsnow_NL_below, &
-    corr_wNsnow_NL_below
-!$omp threadprivate( corr_wrice_NL_below, corr_wNi_NL_below, &
-!$omp   corr_wrsnow_NL_below, corr_wNsnow_NL_below )
-
   private ! Default Scope
 
 
