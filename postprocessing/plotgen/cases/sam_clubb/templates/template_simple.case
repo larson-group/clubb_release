@@ -36,9 +36,9 @@
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm / qcl [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'CLUBB_CASE_NAME_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'RCM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'RCM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'RCM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QCL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QCL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'QCL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
@@ -99,16 +99,16 @@
        {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um / u [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'CLUBB_CASE_NAME_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'UM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'UM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'UM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Meridonal Wind Component, v', 'axisLabel' => 'vm / v [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'CLUBB_CASE_NAME_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'VM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'VM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'VM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'SAM_CASE_NAME_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'SAM_CASE_NAME_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp / uw [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [

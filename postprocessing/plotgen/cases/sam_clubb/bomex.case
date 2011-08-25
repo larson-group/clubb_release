@@ -57,8 +57,8 @@
           {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QCL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/BOMEX/BOMEX_64x1x80_100m_40m_LES.nc', 'type' => 'les', 'name' => '2D SAM Standalone', 'expression' => 'QCL / 1000', 'lineWidth' => '4', 'lineType' => '-', 'lineColor' => '[ 0., 0.90, 0. ]'},
-          {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'RCM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'BOMEX_4x1x80_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'RCM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_16x1x80_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QCL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_4x1x80_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QCL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
