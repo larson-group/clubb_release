@@ -192,6 +192,11 @@ module microphys_driver
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file.
 
+#ifdef LATIN_HYPERCUBE
+    character(len=21), parameter :: &
+      LH_input_path = "../input/case_setups/"
+#endif
+
     ! External
     intrinsic :: trim
 
@@ -945,7 +950,7 @@ module microphys_driver
       ! Allocate and set the arrays containing the correlations
       ! and the X'^2 / X'^2 terms
       call setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
-            iunit, runtype )
+                                    LH_input_path, iunit, runtype )
 
 #endif
 

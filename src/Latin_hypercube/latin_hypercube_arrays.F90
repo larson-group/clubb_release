@@ -4,7 +4,7 @@ module latin_hypercube_arrays
   implicit none
 
   public :: setup_corr_varnce_array, cleanup_latin_hypercube_arrays
-  private :: return_LH_index, read_corr_varnce_array
+  private :: return_LH_index, read_correlation_matrix
   private
 
   integer, public :: d_variables
@@ -64,7 +64,7 @@ module latin_hypercube_arrays
   contains
 !===============================================================================
   subroutine setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
-              iunit, runtype )
+                                      input_path, iunit, runtype )
 
 ! Description:
 !   Setup an array with the x'^2/xm^2 variables on the diagonal and the other
@@ -101,9 +101,8 @@ module latin_hypercube_arrays
 
     character(len=*), parameter :: &
       cloud_file_name = "_corr_array_cloud.in", & ! File names
-      below_file_name = "_corr_array_below.in", &
-      input_path      = "../input/case_setups/"
-
+      below_file_name = "_corr_array_below.in"
+ 
     ! Input Variables
     integer, intent(in) :: &
       iiNcm,    & ! Index of cloud droplet number conc.
@@ -118,7 +117,8 @@ module latin_hypercube_arrays
       iunit ! The file unit
 
     character(len=*), intent(in) :: &
-      runtype ! The type of this run.
+      input_path, & ! Path to the correlation files
+      runtype          ! The type of this run.
 
     ! Local variables
 
@@ -156,17 +156,15 @@ module latin_hypercube_arrays
     xp2_on_xm2_array_cloud(:) = 0.0
     xp2_on_xm2_array_below(:) = 0.0
 
-    file_path = input_path//trim(runtype)//cloud_file_name
+    file_path = input_path//trim( runtype )//cloud_file_name
 
-    call read_corr_varnce_array( iunit, file_path, d_variables, &
-          corr_array_cloud )
+    call read_correlation_matrix( iunit, file_path, d_variables, &
+                                  corr_array_cloud )
 
-    file_path = input_path//trim(runtype)//below_file_name
+    file_path = input_path//trim( runtype )//below_file_name
 
-    call read_corr_varnce_array( iunit, file_path, d_variables, &
-          corr_array_below )
-
-
+    call read_correlation_matrix( iunit, file_path, d_variables, &
+                                  corr_array_below )
 
     if ( iiLH_Nc > 0 ) then
       xp2_on_xm2_array_cloud(iiLH_Nc) = Ncp2_on_Ncm2_cloud
@@ -261,118 +259,6 @@ module latin_hypercube_arrays
 
       end if ! iiLH_Ngraupel > 0
     end if ! iiLH_rgraupel > 0
-
-    ! Here we've hardwired the location and values for the ice variates.
-    ! TODO: parameterize these properly.
-
-    ! MPACE-A
-!     corr_array_cloud(iiLH_Nsnow,iiLH_rice) = 0.93
-!     corr_array_below(iiLH_Nsnow,iiLH_rice) = 0.93
-!     corr_array_cloud(iiLH_Nsnow,iiLH_Ni) = 0.02
-!     corr_array_below(iiLH_Nsnow,iiLH_Ni) = 0.02
-!     corr_array_cloud(iiLH_rsnow,iiLH_Ni) = -0.10
-!     corr_array_below(iiLH_rsnow,iiLH_Ni) = -0.10
-!     corr_array_cloud(iiLH_rsnow,iiLH_rice) = 0.74
-!     corr_array_below(iiLH_rsnow,iiLH_rice) = 0.74
-
-!     corr_array_below(iiLH_Nc,iiLH_w) = 0.38
-!     corr_array_below(iiLH_Nc,iiLH_s_mellor) = 0.67
-!     corr_array_below(iiLH_rsnow,iiLH_Nc) = 0.30
-!     corr_array_below(iiLH_Nsnow,iiLH_Nc) = 0.41
-!     corr_array_below(iiLH_rice,iiLH_Nc) = 0.49
-!     corr_array_below(iiLH_Ni,iiLH_Nc) = 0.08
-
-!     corr_array_cloud(iiLH_Nc,iiLH_w) = 0.38
-!     corr_array_cloud(iiLH_Nc,iiLH_s_mellor) = 0.67
-!     corr_array_cloud(iiLH_rsnow,iiLH_Nc) = 0.30
-!     corr_array_cloud(iiLH_Nsnow,iiLH_Nc) = 0.41
-!     corr_array_cloud(iiLH_rice,iiLH_Nc) = 0.49
-!     corr_array_cloud(iiLH_Ni,iiLH_Nc) = 0.08
-
-    ! MPACE-B
-!     corr_array_cloud(iiLH_Nsnow,iiLH_rice) = 0.87
-!     corr_array_below(iiLH_Nsnow,iiLH_rice) = 0.87
-!     corr_array_cloud(iiLH_Nsnow,iiLH_Ni) = 0.66
-!     corr_array_below(iiLH_Nsnow,iiLH_Ni) = 0.66
-!     corr_array_cloud(iiLH_rsnow,iiLH_Ni) = 0.50
-!     corr_array_below(iiLH_rsnow,iiLH_Ni) = 0.50
-!     corr_array_cloud(iiLH_rsnow,iiLH_rice) = 0.84
-!     corr_array_below(iiLH_rsnow,iiLH_rice) = 0.84
-
-!     corr_array_below(iiLH_Nc,iiLH_w) = 0.24
-!     corr_array_below(iiLH_Nc,iiLH_s_mellor) = 0.94
-!     corr_array_below(iiLH_rsnow,iiLH_Nc) = 0.44
-!     corr_array_below(iiLH_Nsnow,iiLH_Nc) = 0.58
-!     corr_array_below(iiLH_rice,iiLH_Nc) = 0.61
-!     corr_array_below(iiLH_Ni,iiLH_Nc) = 0.89
-
-!     corr_array_cloud(iiLH_Nc,iiLH_w) = 0.24
-!     corr_array_cloud(iiLH_Nc,iiLH_s_mellor) = 0.94
-!     corr_array_cloud(iiLH_rsnow,iiLH_Nc) = 0.44
-!     corr_array_cloud(iiLH_Nsnow,iiLH_Nc) = 0.58
-!     corr_array_cloud(iiLH_rice,iiLH_Nc) = 0.61
-!     corr_array_cloud(iiLH_Ni,iiLH_Nc) = 0.89
-
-! TODO
-    ! If ISDAC Values are not used, clear all ISDAC correlations
-    if ( .not. (iiLH_Nsnow > 0 .and. iiLH_Ni > 0 .and. iiLH_Nc > 0) ) then
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_Nsnow, iiLH_rice, 0.0, &
-              corr_array_cloud )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_Nsnow, iiLH_rice, 0.0, &
-              corr_array_below )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_Nsnow, iiLH_Ni, 0.0, &
-              corr_array_cloud )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_Nsnow, iiLH_Ni, 0.0, &
-              corr_array_below )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_rsnow, iiLH_Ni, 0.0, &
-              corr_array_cloud )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_rsnow, iiLH_Ni, 0.0, &
-              corr_array_below )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_rsnow, iiLH_rice, 0.0, &
-              corr_array_cloud )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_rsnow, iiLH_rice, 0.0, &
-              corr_array_below )
-
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_Nc, iiLH_w, 0.0, &
-              corr_array_below )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_rsnow, iiLH_Nc, 0.0, &
-              corr_array_below )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_Nsnow, iiLH_Nc, 0.0, &
-              corr_array_below )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_rice, iiLH_Nc, 0.0, &
-              corr_array_below )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_Ni, iiLH_Nc, 0.0, &
-              corr_array_below )
-
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_Nc, iiLH_w, 0.0, &
-              corr_array_cloud )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_rsnow, iiLH_Nc, 0.0, &
-              corr_array_cloud )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_Nsnow, iiLH_Nc, 0.0, &
-              corr_array_cloud )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_rice, iiLH_Nc, 0.0, &
-              corr_array_cloud )
-      call set_lower_triangular_matrix_sp &
-            ( d_variables, iiLH_Ni, iiLH_Nc, 0.0, &
-              corr_array_cloud )
-    end if
 
     ! Assume rr and Nr are uncorrelated with w for now.
     if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
@@ -481,7 +367,7 @@ module latin_hypercube_arrays
   end subroutine return_LH_index
 
   !-----------------------------------------------------------------------------
-  subroutine read_corr_varnce_array( iunit, input_file, d_variables, &
+  subroutine read_correlation_matrix( iunit, input_file, d_variables, &
                                      corr_array )
 
   ! Description:
@@ -569,7 +455,7 @@ module latin_hypercube_arrays
 
     deallocate( retVars )
 
-  end subroutine read_corr_varnce_array
+  end subroutine read_correlation_matrix
 
   !--------------------------------------------------------------------------
   function get_corr_var_index( var_name ) result( i )
