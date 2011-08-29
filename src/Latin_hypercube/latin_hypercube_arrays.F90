@@ -124,7 +124,7 @@ module latin_hypercube_arrays
 
     integer :: i
 
-    character(len=50) :: file_path
+    character(len=128) :: file_path
 
     ! ---- Begin Code ----
     iiLH_s_mellor = 1 ! Extended rcm
