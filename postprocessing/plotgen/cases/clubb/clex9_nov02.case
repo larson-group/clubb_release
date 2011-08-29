@@ -156,7 +156,7 @@
        ]},
        {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'clex9_nov02_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rain_rate_sfc + (morr_rain_rate - morr_snow_rate)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'clex9_nov02_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfNonZero( morr_rain_rate, rain_rate_sfc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
