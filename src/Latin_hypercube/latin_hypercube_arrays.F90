@@ -90,12 +90,14 @@ module latin_hypercube_arrays
  
     use matrix_operations, only: set_lower_triangular_matrix_sp ! Procedure(s)
 
+!   use matrix_operations, only: print_lower_triangular_matrix ! Procedure(s)
+
     use constants_clubb, only: fstdout
 
     implicit none
 
     ! External
-    intrinsic :: max, epsilon
+    intrinsic :: max, epsilon, trim
 
     ! Constant Parameters
 
@@ -259,12 +261,6 @@ module latin_hypercube_arrays
 
       end if ! iiLH_Ngraupel > 0
     end if ! iiLH_rgraupel > 0
-
-    ! Assume rr and Nr are uncorrelated with w for now.
-    if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
-      corr_array_cloud(iiLH_rrain,iiLH_w) = 0.0
-      corr_array_cloud(iiLH_Nr,iiLH_w) = 0.0
-    end if
 
     ! Fill in values for t_mellor using s_mellor correlations
     do i = 3, d_variables
@@ -434,15 +430,12 @@ module latin_hypercube_arrays
 
     ! Start at 2 because the first index is always just 1.0 in the first row
     ! and the rest of the rows are ignored
-    write(fstderr, *) d_variables
     do i=2, nCols
       var_index1 = get_corr_var_index( retVars(i)%name )
-      write(fstderr, *) retVars(i)%name
       if( var_index1 > -1 ) then
         do j=1, (i-1)
           var_index2 = get_corr_var_index( retVars(j)%name )
           if( var_index2 > -1 ) then
-            write(fstderr, *) var_index1,", ",var_index2,": ",retVars(i)%values(j)
             call set_lower_triangular_matrix_sp &
                  ( d_variables, var_index1, var_index2, retVars(i)%values(j), &
                    corr_array )
