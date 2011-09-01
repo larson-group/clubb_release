@@ -321,15 +321,15 @@ module clubb_core
     ! Constant Parameters
     ! ldgrant June 2009
     logical, parameter :: &
-      l_trapezoidal_rule_zt = .false., & ! If true, the trapezoidal rule is called for
+      l_trapezoidal_rule_zt = .true., & ! If true, the trapezoidal rule is called for
                                          ! the thermodynamic-level variables output 
                                          ! from pdf_closure.  
 
-      l_trapezoidal_rule_zm = .false., & ! If true, the trapezoidal rule is called for
+      l_trapezoidal_rule_zm = .true., & ! If true, the trapezoidal rule is called for
                                          ! three momentum-level variables - wpthvp,
                                          ! thlpthvp, and rtpthvp - output from pdf_closure.
 
-      l_call_pdf_closure_twice = .false. ! This logical flag determines whether or not to
+      l_call_pdf_closure_twice = .true. ! This logical flag determines whether or not to
     ! call subroutine pdf_closure twice.  If true,
     ! pdf_closure is called first on thermodynamic levels
     ! and then on momentum levels so that each variable is

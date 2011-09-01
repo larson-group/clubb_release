@@ -58,7 +58,7 @@ module model_flags
   ! xpyp = rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp
   logical, parameter, public :: & 
     l_upwind_wpxp_ta = .false., & 
-    l_upwind_xpyp_ta = .false.    
+    l_upwind_xpyp_ta = .true.    
 
   logical, parameter, public :: &
     l_use_boussinesq = .false.  ! Flag to use the Boussinesq form of the
