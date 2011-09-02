@@ -414,26 +414,26 @@ module advance_xp2_xpyp_module
     !!!!!***** r_t'^2 *****!!!!!
 
     ! Implicit contributions to term rtp2
-    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, & ! Intent(in)
-                       wp3_on_wp2,  & ! Intent(in)
+    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &              ! Intent(in)
+                       wp3_on_wp2, &                             ! Intent(in)
                        a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &     ! Intent(in)
-                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm,   &           ! Intent(in)
-                       C2rt_1d, nu2_vert_res_dep, beta,      &           ! Intent(in)
+                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &  ! Intent(in)
+                       C2rt_1d, nu2_vert_res_dep, beta, &        ! Intent(in)
                        lhs )                                     ! Intent(out)
 
 
-    call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter, a1, a1_zt, & ! Intent(in)
-                       wp2_zt, wprtp, wprtp_zt, &         ! Intent(in)
-                       wp3_on_wp2, wp3_on_wp2_zt, &           ! Intent(in)
-                       wprtp, wprtp_zt, rtm, rtm, rtp2, &      ! Intent(in)
-                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &  ! Intent(in)
-                       C2rt_1d, tau_zm, rt_tol**2, beta, &     ! Intent(in)
-                       rhs )                                   ! Intent(out)
+    call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter, a1, a1_zt, &  ! Intent(in)
+                       wp2_zt, wprtp, wprtp_zt, &               ! Intent(in)
+                       wp3_on_wp2, wp3_on_wp2_zt, &             ! Intent(in)
+                       wprtp, wprtp_zt, rtm, rtm, rtp2, &       ! Intent(in)
+                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
+                       C2rt_1d, tau_zm, rt_tol**2, beta, &      ! Intent(in)
+                       rhs )                                    ! Intent(out)
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( xp2_xpyp_rtp2, 1, &   ! Intent(in)
-                         rhs, lhs, rtp2, &     ! Intent(inout)
-                         err_code_array(1) )        ! Intent(out)
+    call xp2_xpyp_solve( xp2_xpyp_rtp2, 1, & ! Intent(in)
+                         rhs, lhs, rtp2, &   ! Intent(inout)
+                         err_code_array(1) ) ! Intent(out)
 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_rtp2, rtp2 ) ! Intent(in)
@@ -442,26 +442,26 @@ module advance_xp2_xpyp_module
     !!!!!***** th_l'^2 *****!!!!!
 
     ! Implicit contributions to term thlp2
-    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &    ! Intent(in)
-                       wp3_on_wp2, & ! Intent(in)
-                       a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2,  &      ! Intent(in)
-                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &     ! Intent(in)
-                       C2thl_1d, nu2_vert_res_dep, beta,   &             ! Intent(in)
-                       lhs )                                        ! Intent(out)
+    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &             ! Intent(in)
+                       wp3_on_wp2, &                            ! Intent(in)
+                       a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2, &   ! Intent(in)
+                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! Intent(in)
+                       C2thl_1d, nu2_vert_res_dep, beta, &      ! Intent(in)
+                       lhs )                                    ! Intent(out)
 
     ! Explicit contributions to thlp2
-    call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter, a1, a1_zt, &     ! Intent(in)
-                       wp2_zt, wpthlp, wpthlp_zt, &            ! Intent(in)
-                       wp3_on_wp2, wp3_on_wp2_zt, &           ! Intent(in)
-                       wpthlp, wpthlp_zt, thlm, thlm, thlp2, &      ! Intent(in)
-                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &  ! Intent(in)
-                       C2thl_1d, tau_zm, thl_tol**2, beta, &        ! Intent(in)
-                       rhs )                                        ! Intent(out)
+    call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter, a1, a1_zt, & ! Intent(in)
+                       wp2_zt, wpthlp, wpthlp_zt, &             ! Intent(in)
+                       wp3_on_wp2, wp3_on_wp2_zt, &             ! Intent(in)
+                       wpthlp, wpthlp_zt, thlm, thlm, thlp2, &  ! Intent(in)
+                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
+                       C2thl_1d, tau_zm, thl_tol**2, beta, &    ! Intent(in)
+                       rhs )                                    ! Intent(out)
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( xp2_xpyp_thlp2, 1, &   ! Intent(in)
-                         rhs, lhs, thlp2, &     ! Intent(inout)
-                         err_code_array(2) )         ! Intent(out)
+    call xp2_xpyp_solve( xp2_xpyp_thlp2, 1, & ! Intent(in)
+                         rhs, lhs, thlp2, &   ! Intent(inout)
+                         err_code_array(2) )  ! Intent(out)
 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_thlp2, thlp2 ) ! Intent(in)
@@ -471,26 +471,26 @@ module advance_xp2_xpyp_module
     !!!!!***** r_t'th_l' *****!!!!!
 
     ! Implicit contributions to term rtpthlp
-    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &    ! Intent(in)
-                       wp3_on_wp2, & ! Intent(in)
-                       a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp,  &    ! Intent(in)
-                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm,  &    ! Intent(in)
-                       C2rtthl_1d, nu2_vert_res_dep, beta,           &           ! Intent(in)
-                       lhs )                                        ! Intent(out)
+    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &             ! Intent(in)
+                       wp3_on_wp2, &                            ! Intent(in)
+                       a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp, & ! Intent(in)
+                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! Intent(in)
+                       C2rtthl_1d, nu2_vert_res_dep, beta, &    ! Intent(in)
+                       lhs )                                    ! Intent(out)
 
     ! Explicit contributions to rtpthlp
-    call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter, a1, a1_zt, &   ! Intent(in)
-                       wp2_zt, wprtp, wprtp_zt, &              ! Intent(in)
-                       wp3_on_wp2, wp3_on_wp2_zt, &           ! Intent(in)
-                       wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &     ! Intent(in)
-                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &  ! Intent(in)
-                       C2rtthl_1d, tau_zm, zero_threshold, beta, &  ! Intent(in)
-                       rhs )                                        ! Intent(out)
+    call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter, a1, a1_zt, &  ! Intent(in)
+                       wp2_zt, wprtp, wprtp_zt, &                  ! Intent(in)
+                       wp3_on_wp2, wp3_on_wp2_zt, &                ! Intent(in)
+                       wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, &    ! Intent(in)
+                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &    ! Intent(in)
+                       C2rtthl_1d, tau_zm, zero_threshold, beta, & ! Intent(in)
+                       rhs )                                       ! Intent(out)
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( xp2_xpyp_rtpthlp, 1, &     ! Intent(in)
-                         rhs, lhs, rtpthlp, &       ! Intent(inout)
-                         err_code_array(3) )             ! Intent(out)
+    call xp2_xpyp_solve( xp2_xpyp_rtpthlp, 1, & ! Intent(in)
+                         rhs, lhs, rtpthlp, &   ! Intent(inout)
+                         err_code_array(3) )    ! Intent(out)
 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_rtpthlp, rtpthlp ) ! Intent(in)
@@ -1385,7 +1385,7 @@ module advance_xp2_xpyp_module
       ! x'y' term dp1 has both implicit and explicit components;
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixapxbp_dp1, k, &            ! Intent(in)
-                                 zmscr01(k) * xapxbp(k), &  ! Intent(in)
+                               zmscr01(k) * xapxbp(k), &  ! Intent(in)
                                zm )                         ! Intent(inout)
 
       ! x'y' term dp2 is completely implicit; call stat_update_var_pt.
@@ -1413,7 +1413,7 @@ module advance_xp2_xpyp_module
       ! x'y' term pr1 has both implicit and explicit components;
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixapxbp_pr1, k, &            ! Intent(in)
-                                 zmscr11(k) * xapxbp(k), &  ! Intent(in)
+                               zmscr11(k) * xapxbp(k), &  ! Intent(in)
                                zm )                         ! Intent(inout)
 
     end do ! k=2..gr%nzmax-1
