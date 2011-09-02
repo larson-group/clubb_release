@@ -2337,9 +2337,9 @@ module advance_xp2_xpyp_module
   !-----------------------------------------------------------------------------
   pure function term_ta_lhs_upwind( a1_zm, a1_zm_p1, a1_zm_m1, &
                                     wp3_on_wp2_p1, wp3_on_wp2, wp3_on_wp2_m1, &
-                                    invrs_dzt, invrs_dztkp1, &
+                                    invrs_dzt, invrs_dzt_p1, &
                                     invrs_rho_ds_zm, & 
-                                    rho_ds_zmp1, rho_ds_zm, rho_ds_zmm1, beta ) &
+                                    rho_ds_zm_p1, rho_ds_zm, rho_ds_zm_m1, beta ) &
   result( lhs )
 
   ! Description:
@@ -2366,11 +2366,11 @@ module advance_xp2_xpyp_module
       wp3_on_wp2,        & ! Smoothed wp3 / wp2 on moment. levels (k)      [m/s]
       wp3_on_wp2_m1,     & ! Smoothed wp3 / wp2 on moment. levels (k-1)    [m/s]
       invrs_dzt,         & ! Inverse of grid spacing (k)                   [1/m]
-      invrs_dztkp1,      & ! Inverse of grid spacing (k+1)                 [1/m]
+      invrs_dzt_p1,      & ! Inverse of grid spacing (k+1)                 [1/m]
       invrs_rho_ds_zm,   & ! Inv. dry, static density @ momentum lev (k)   [m^3/kg]
       rho_ds_zm,         & ! Density of air (k)                            [kg/m^3]
-      rho_ds_zmp1,       & ! Density of air (k+1)                          [kg/m^3]
-      rho_ds_zmm1,       & ! Density of air (k-1)                          [kg/m^3]
+      rho_ds_zm_p1,      & ! Density of air (k+1)                          [kg/m^3]
+      rho_ds_zm_m1,      & ! Density of air (k-1)                          [kg/m^3]
       beta                 ! Model parameter                               [-]
 
     ! Return Variable
@@ -2392,20 +2392,20 @@ module advance_xp2_xpyp_module
       lhs(km1_mdiag)  & 
       = - (1.0/3.0) * beta &
           * invrs_dzt * invrs_rho_ds_zm  &
-          * rho_ds_zmm1 * a1_zm_m1 * wp3_on_wp2_m1
+          * rho_ds_zm_m1 * a1_zm_m1 * wp3_on_wp2_m1
 
     else ! "Wind" is blowing downward
 
       ! Momentum main diagonal: [ x xapxbp(k+1,<t+1>) ]
       lhs(kp1_mdiag) & 
       = + (1.0/3.0) * beta &
-        * invrs_dztkp1 * invrs_rho_ds_zm &
-        * rho_ds_zmp1 * a1_zm_p1 * wp3_on_wp2_p1
+        * invrs_dzt_p1 * invrs_rho_ds_zm &
+        * rho_ds_zm_p1 * a1_zm_p1 * wp3_on_wp2_p1
 
       ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
       lhs(k_mdiag) & 
       = - (1.0/3.0) * beta &
-        * invrs_dztkp1 * invrs_rho_ds_zm & 
+        * invrs_dzt_p1 * invrs_rho_ds_zm & 
         * rho_ds_zm * a1_zm * wp3_on_wp2
 
       ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
