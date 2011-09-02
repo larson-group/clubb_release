@@ -1669,10 +1669,20 @@ module advance_xp2_xpyp_module
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for RHS turbulent
         !        advection (ta) term).
-        lhs_fnc_output(1:3)  &
-        = term_ta_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                       rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
-                       a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
+        if ( .not. l_upwind_xpyp_ta ) then
+          lhs_fnc_output(1:3)  &
+          = term_ta_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                         rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
+                         a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
+        else ! turbulent advection is using an upwind discretization
+          lhs_fnc_output(1:3)  &
+          = term_ta_lhs_upwind( a1(k), a1(kp1), a1(km1), &
+                                wp3_on_wp2(kp1), wp3_on_wp2(k), wp3_on_wp2(km1), &
+                                gr%invrs_dzt(k), gr%invrs_dzt(kp1), &
+                                invrs_rho_ds_zm(k), &
+                                rho_ds_zm(kp1), rho_ds_zm(k), rho_ds_zm(km1), beta )
+        end if ! ~l_upwind_xpyp_ta
+
         call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
               + ( 1.0 - gamma_over_implicit_ts )  &     ! Intent(in)
               * ( - lhs_fnc_output(1) * xap2(kp1)  &
@@ -2028,10 +2038,19 @@ module advance_xp2_xpyp_module
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for RHS turbulent
         !        advection (ta) term).
-        lhs_fnc_output(1:3)  &
-        = term_ta_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                       rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
-                       a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
+        if ( .not. l_upwind_xpyp_ta ) then
+          lhs_fnc_output(1:3)  &
+          = term_ta_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                         rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k),  &
+                         a1_zt(kp1), a1(k), a1_zt(k), gr%invrs_dzm(k), beta, k )
+        else
+          lhs_fnc_output(1:3)  &
+          = term_ta_lhs_upwind( a1(k), a1(kp1), a1(km1), &
+                                wp3_on_wp2(kp1), wp3_on_wp2(k), wp3_on_wp2(km1), &
+                                gr%invrs_dzt(k), gr%invrs_dzt(kp1), &
+                                invrs_rho_ds_zm(k), &
+                                rho_ds_zm(kp1), rho_ds_zm(k), rho_ds_zm(km1), beta )
+        end if
         call stat_modify_pt( ixapxbp_ta, k,  &            ! Intent(in)
               + ( 1.0 - gamma_over_implicit_ts )  &       ! Intent(in)
               * ( - lhs_fnc_output(1) * xapxbp(kp1)  &
