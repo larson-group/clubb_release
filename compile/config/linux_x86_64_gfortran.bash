@@ -30,9 +30,8 @@ DEBUG="-g -fbounds-check -mieee-fp -finit-real=nan -finit-integer=-99999 -finit-
 WARNINGS="-Wall -Wconversion -Wunderflow -Wcharacter-truncation -pedantic"
 
 # == Machine specific flags ==
-# Note: some of these are 64 bit architectures, so make sure NetCDF is
-# compiled accordingly.
-ARCH="-march=native -msse3 -mfpmath=sse -fopenmp"
+#ARCH="-march=native -msse3 -mfpmath=sse -fopenmp"
+ARCH="-mtune=native -msse3 -mfpmath=sse -fopenmp"
 
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-fdefault-real-8"
