@@ -1,5 +1,7 @@
 module microp_aero
 
+
+
 !---------------------------------------------------------------------------------
 ! Purpose:
 !   CAM Interface for aerosol activation 
@@ -10,9 +12,6 @@ module microp_aero
 ! Description in: Morrison and Gettelman, 2008. J. Climate (MG2008)
 !                 Gettelman et al., 2010 J. Geophys. Res. - Atmospheres (G2010)         
 ! for questions contact Andrew Gettelman  (andrew@ucar.edu)
-! Modifications: A. Gettelman Nov 2010  - changed to support separation of 
-!                microphysics and macrophysics and concentrate aerosol information here
-!
 !---------------------------------------------------------------------------------
 
   use shr_kind_mod,  only: r8=>shr_kind_r8
@@ -26,7 +25,7 @@ module microp_aero
                             vqsatd2, vqsatd2_single,polysvp
   use cam_history,    only: addfld, add_default, phys_decomp, outfld 
   use cam_logfile,    only: iulog
-  use rad_constituents, only: rad_cnst_get_info, rad_cnst_get_aer_props
+  use rad_constituents, only: rad_cnst_get_clim_info, rad_cnst_get_clim_aer_props
   use phys_control,   only: phys_getopts
   use cldwat2m_macro, only: rhmini, rhmaxi
 
@@ -41,7 +40,6 @@ module microp_aero
 
    logical             :: wsubTKE  ! If .true. (.false.), use UW's TKE (kkvh) for computing wsub
 
-   character(len=16)   :: macrop_scheme  ! Macrophysics scheme
 
       real(r8), private:: rn_dst1, rn_dst2, rn_dst3, rn_dst4 !dust number mean radius for contact freezing
       real(r8), private:: pi    ! pi
@@ -86,10 +84,6 @@ module microp_aero
 
       integer :: idxbcphi = -1 ! index in aerosol list for Soot (BCPHIL)
 
-! Define indicees for wind variances computed from CLUBB, needed
-!   for aerosol activation      
-      integer :: wp2_idx  
-
       ! aerosol properties
       character(len=20), allocatable :: aername(:)
       real(r8), allocatable :: dryrad_aer(:)
@@ -114,26 +108,6 @@ subroutine ini_microp_aero
 ! 
 !-----------------------------------------------------------------------
 
-    use phys_buffer,     only: pbuf_get_fld_idx
-
-#ifdef MODAL_AERO
-    use ndrop,           only: activate_init
-    use constituents,    only: cnst_name
-    use cam_history,     only: fieldname_len
-    use spmd_utils,      only: masterproc
-    use modal_aero_data, only: cnst_name_cw, &
-                               lmassptr_amode, lmassptrcw_amode, &
-                               nspec_amode, ntot_amode, numptr_amode, numptrcw_amode, ntot_amode
-
-    integer                        :: lphase, lspec
-    character(len=fieldname_len)   :: tmpname
-    character(len=fieldname_len+3) :: fieldname
-    character(128)                 :: long_name
-    character(8)                   :: unit
-    logical                        :: history_aerosol      ! Output the MAM aerosol tendencies
-
-#endif
-
    integer k
 
    integer l,m, iaer
@@ -146,21 +120,14 @@ subroutine ini_microp_aero
 
    ! Query the PBL eddy scheme
    call phys_getopts(eddy_scheme_out              = eddy_scheme,           &
-                     history_microphysics_out     = history_microphysics,  &
-                     macrop_scheme_out            = macrop_scheme)
+                     history_microphysics_out     = history_microphysics   )
    wsubTKE = .false.
    if (trim(eddy_scheme) .eq. 'diag_TKE') wsubTKE = .true.
-   
-   if (trim(macrop_scheme) .eq. 'CLUBB_SGS') then
-      wsubTKE=.false.  ! If using CLUBB then set to false so that the SGS vertical 
-                       ! velocity and TKE will be taken from CLUBB computation.  
-                       ! Probably not needed, but just in case.  
-   endif
 
    ! Access the physical properties of the aerosols that are affecting the climate
    ! by using routines from the rad_constituents module.
 
-   call rad_cnst_get_info(0, naero=naer_all)
+   call rad_cnst_get_clim_info(naero=naer_all)
    allocate( &
       aername(naer_all),        &
       dryrad_aer(naer_all),     &
@@ -170,7 +137,7 @@ subroutine ini_microp_aero
       num_to_mass_aer(naer_all) )
 
    do iaer = 1, naer_all
-      call rad_cnst_get_aer_props(0, iaer, &
+      call rad_cnst_get_clim_aer_props(iaer, &
          aername         = aername(iaer), &
          dryrad_aer      = dryrad_aer(iaer), &
          density_aer     = density_aer(iaer), &
@@ -213,8 +180,6 @@ subroutine ini_microp_aero
    call addfld ('CCN4    ','#/cm3   ',pver, 'A','CCN concentration at S=0.2%',phys_decomp)
    call addfld ('CCN5    ','#/cm3   ',pver, 'A','CCN concentration at S=0.5%',phys_decomp)
    call addfld ('CCN6    ','#/cm3   ',pver, 'A','CCN concentration at S=1.0%',phys_decomp)
-
-   call add_default('CCN3',  1, ' ' )
 
    call addfld ('NIHF    ','#/m3   ',pver, 'A','Activated Ice Number Concentation due to homogenous freezing',phys_decomp)
    call addfld ('NIDEP    ','#/m3   ',pver, 'A','Activated Ice Number Concentation due to deposition nucleation',phys_decomp)
@@ -298,58 +263,6 @@ subroutine ini_microp_aero
           enddo
       end do
 
-#ifdef MODAL_AERO
-
- call phys_getopts( history_aerosol_out        = history_aerosol)
-    
- call activate_init
-
-! Add dropmixnuc tendencies for all modal aerosol species
-    do m = 1, ntot_amode
-    do lphase = 1, 2
-    do lspec = 0, nspec_amode(m)+1   ! loop over number + chem constituents + water
-       unit = 'kg/m2/s'
-       if (lspec == 0) then   ! number
-          unit = '#/m2/s'
-          if (lphase == 1) then
-             l = numptr_amode(m)
-          else
-             l = numptrcw_amode(m)
-          endif
-       else if (lspec <= nspec_amode(m)) then   ! non-water mass
-          if (lphase == 1) then
-             l = lmassptr_amode(lspec,m)
-          else
-             l = lmassptrcw_amode(lspec,m)
-          endif
-       else   ! water mass
-          cycle
-       end if
-       if (lphase == 1) then
-          tmpname = cnst_name(l)
-       else
-          tmpname = cnst_name_cw(l)
-       end if
-
-       fieldname = trim(tmpname) // '_mixnuc1'
-       long_name = trim(tmpname) // ' dropmixnuc mixnuc column tendency'
-       call addfld( fieldname, unit, 1, 'A', long_name, phys_decomp )
-       if ( history_aerosol ) then
-          call add_default( fieldname, 1, ' ' )
-          if ( masterproc ) write(*,'(2a)') 'microp_driver_init addfld - ', fieldname
-       endif
-
-    end do   ! lspec
-    end do   ! lphase
-    end do   ! m
-#endif
-
-! get components needed for the tke from CLUBB, 
-! these would be the wind variances.  Here get indicees
-  if (trim(macrop_scheme) .eq. 'CLUBB_SGS') then
-     wp2_idx=pbuf_get_fld_idx('WP2')  ! used for aerosol activation
-  endif
-
  return
  end subroutine ini_microp_aero
 
@@ -364,28 +277,20 @@ subroutine ini_microp_aero
    liqcldf, icecldf,                        &
    cldo, pint, rpdel, zm, omega,            &
 #ifdef MODAL_AERO
-   qaer, cflx, qaertend, dgnumwet,dgnum, &
+   qaer, cflx, qaertend, qqcw,dgnumwet,dgnum, &
 #else
    aer_mmr,                                 &
 #endif
-
-! Read in pbuf for aerosol activation (wp2)
-   pbuf,                                    &
-
    kkvh, tke, turbtype, smaw, wsub, wsubi, &
-   naai, naai_hom, npccn, rndst, nacon)
+   naai, npccn, rndst, nacon)
 
    use wv_saturation, only: vqsatd, vqsatd_water
    use constituents,  only: pcnst
 #ifdef MODAL_AERO
    use ndrop,         only: dropmixnuc
    use modal_aero_data, only: numptr_amode, modeptr_accum, modeptr_coarse, modeptr_aitken, &
-                              lptr_dust_a_amode,lptr_nacl_a_amode,ntot_amode
+                              lptr_dust_a_amode,lptr_nacl_a_amode,maxd_amode
 #endif
-
-! Define the variables needed from CLUBB for aerosol activation
-   use phys_buffer, only: pbuf_old_tim_idx, pbuf_next_tim_idx, pbuf_fld, pbuf_size_max
-   type(pbuf_fld), intent(in), dimension(pbuf_size_max) :: pbuf
 
    ! input arguments
    integer,  intent(in) :: lchnk
@@ -413,8 +318,9 @@ subroutine ini_microp_aero
    real(r8), intent(in) :: qaer(pcols,pver,pcnst) ! aerosol number and mass mixing ratios
    real(r8), intent(in) :: cflx(pcols,pcnst)      ! constituent flux from surface
    real(r8), intent(inout) :: qaertend(pcols,pver,pcnst) ! qaer tendency (1/s)
-   real(r8), intent(in) :: dgnumwet(pcols,pver,ntot_amode) ! aerosol mode diameter
-   real(r8), intent(in) :: dgnum(pcols,pver,ntot_amode) ! aerosol mode dry diameter
+   real(r8), intent(inout) :: qqcw(pcols,pver,pcnst) ! cloud-borne aerosol
+   real(r8), intent(in) :: dgnumwet(pcols,pver,maxd_amode) ! aerosol mode diameter
+   real(r8), intent(in) :: dgnum(pcols,pver,maxd_amode) ! aerosol mode dry diameter
 #else
    real(r8), intent(in) :: aer_mmr(:,:,:)       ! aerosol mass mixing ratio
 #endif
@@ -427,8 +333,7 @@ subroutine ini_microp_aero
 
    real(r8), intent(out) :: wsub(pcols,pver)    ! diagnosed sub-grid vertical velocity st. dev. (m/s)
    real(r8), intent(out) :: wsubi(pcols,pver)   ! diagnosed sub-grid vertical velocity ice (m/s)
-   real(r8), intent(out) :: naai(pcols,pver)    ! number of activated aerosol for ice nucleation
-   real(r8), intent(out) :: naai_hom(pcols,pver)! number of activated aerosol for ice nucleation (homogeneous freezing only)
+   real(r8), intent(out) :: naai(pcols,pver)    ! number of activated aerosol for ice nulceation 
    real(r8), intent(out) :: npccn(pcols,pver)   ! number of CCN (liquid activated)
    real(r8), intent(out) :: rndst(pcols,pver,4) ! radius of 4 dust bins for contact freezing (from microp_aero_ts)
    real(r8), intent(out) :: nacon(pcols,pver,4) ! number in 4 dust bins for contact freezing  (from microp_aero_ts)
@@ -437,7 +342,6 @@ subroutine ini_microp_aero
 ! local workspace
 ! all units mks unless otherwise stated
 
-   real(r8) :: tke_clubb(pcols,pverp)! dummy variables for clubb tke
    real(r8) :: tkem(pcols,pver)     ! Layer-mean TKE
    real(r8) :: smm(pcols,pver)      ! Layer-mean instability function
    real(r8) :: relhum(pcols,pver) ! relative humidity
@@ -500,10 +404,6 @@ subroutine ini_microp_aero
          integer i,k,nstep,n, l
 	 integer ii,kk, m
          integer, allocatable :: ntype(:)
-	
-! pointers for the SGS TKE
-  integer :: itim, itimn
-  real(r8), pointer, dimension(:,:) :: wp2   ! vertical velocity variance 
 
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -514,8 +414,7 @@ subroutine ini_microp_aero
     niimm(1:ncol,1:pver)=0._r8  
 
 ! initialize output
-    naai(1:ncol,1:pver)=0._r8
-    naai_hom(1:ncol,1:pver)=0._r8
+    naai(1:ncol,1:pver)=0._r8  
     npccn(1:ncol,1:pver)=0._r8  
     nacon(1:ncol,1:pver,:)=0._r8
 
@@ -551,13 +450,6 @@ subroutine ini_microp_aero
               rho(i,k)=p(i,k)/(r*t(i,k))
            end do
         end do
-	
-! point to the variables needed to compute the SGS TKE
-        if(trim(macrop_scheme) .eq. 'CLUBB_SGS') then
-          itim=pbuf_old_tim_idx()
-          itimn=pbuf_next_tim_idx(itim)
-          wp2 => pbuf(wp2_idx)%fld_ptr(1,1:pcols,1:pverp,lchnk,itimn)
-        endif
 
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ! More refined computation of sub-grid vertical velocity 
@@ -582,20 +474,6 @@ subroutine ini_microp_aero
             end do
 
         endif
-	
-        if(trim(macrop_scheme) .eq. 'CLUBB_SGS') then
-
-           if (.not. wsubTKE) then
-	  
-              do i = 1, ncol
-                 do k = 1, pver
-                    tke_clubb(i,k)=(3._r8/2._r8)*wp2(i,k)
-              	 end do
-              end do
-	  
-           endif
-
-        endif
 
            do i=1,ncol
 	      ftrue=0
@@ -614,14 +492,6 @@ subroutine ini_microp_aero
                   wsub(i,k) = sqrt(0.5_r8*(tke(i,k)+tke(i,k+1))*(2._r8/3._r8))
                   wsub(i,k) = min(wsub(i,k),10._r8)
               endif
-	      
-              if(trim(macrop_scheme) .eq. 'CLUBB_SGS') then
-                 if (.not. wsubTKE) then
-                   wsub(i,k)=sqrt(0.5_r8*(tke_clubb(i,k)+tke_clubb(i,k+1))*(2._r8/3._r8))
-                   wsub(i,k)=min(wsub(i,k),10._r8)
-                 endif
-              endif	      
-	      
               wsubi(i,k) = max(0.001_r8,wsub(i,k))
               wsubi(i,k) = min(wsubi(i,k),0.2_r8)
               wsub(i,k)  = max(0.20_r8,wsub(i,k))
@@ -678,8 +548,7 @@ subroutine ini_microp_aero
 !   or Na(m-3)= 1.e6* 340.*(1.e9ug/kg)^0.58 * (massSO4[kg/m3])^0.58
 
            if(m .eq. idxsul) then
-!              naer2(i,k,m)= 5.64259e13_r8 * maerosol(1,m)**0.58
-              naer2(i,k,m)=maerosol(1,m)*num_to_mass_aer(m)*2._r8
+              naer2(i,k,m)= 5.64259e13_r8 * maerosol(1,m)**0.58
            else
               naer2(i,k,m)=maerosol(1,m)*num_to_mass_aer(m)
            endif
@@ -698,11 +567,10 @@ subroutine ini_microp_aero
 #ifdef MODAL_AERO
                          qaer(i,k,:)*rho(i,k),dgnum(i,k,:),1,naer_all,dum2,nihf2,niimm2,nidep2,nimey2)
 #else
-                         naer2(i,k,:)/25._r8,1,naer_all,dum2,nihf2,niimm2,nidep2,nimey2)
+                         naer2(i,k,:),1,naer_all,dum2,nihf2,niimm2,nidep2,nimey2)
 #endif
 
            naai(i,k)=dum2
-           naai_hom(i,k)=nihf2
            nihf(i,k)=nihf2
            niimm(i,k)=niimm2
            nidep(i,k)=nidep2
@@ -755,7 +623,8 @@ subroutine ini_microp_aero
 
       call dropmixnuc(lchnk, ncol, ncloc, nctend_mixnuc, t, omega,  &
                     p, pint, pdel, rpdel, zm, kkvh, wsub, lcldn, lcldo,     &
-                    qaer, cflx, qaertend, deltat)
+                    qaer, cflx, qaertend, qqcw,  &
+		    deltat)
 
       npccn(:ncol,:)= nctend_mixnuc(:ncol,:)
 #endif
@@ -1151,7 +1020,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
 !----------------------------------------------------------------
 #ifdef MODAL_AERO
       use modal_aero_data, only: numptr_amode, modeptr_accum, modeptr_coarse, modeptr_aitken, &
-                                 ntot_amode, sigmag_amode, &
+                                 maxd_amode, sigmag_amode, &
                                  lptr_dust_a_amode,lptr_nacl_a_amode
       use constituents, only: pcnst
 #endif
@@ -1169,7 +1038,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
   real(r8), intent(in) :: rhoair              ! air density (kg/m3)
 #ifdef MODAL_AERO
   real(r8), intent(in) :: qaerpt(pcnst) ! aerosol number and mass mixing ratios 
-  real(r8), intent(in) :: dgnum(ntot_amode)   ! aerosol mode dry diameter (m)
+  real(r8), intent(in) :: dgnum(maxd_amode)   ! aerosol mode dry diameter (m)
 #else      
   real(r8), intent(in) :: na(naer_all)        ! aerosol number concentration (/m3)
 #endif
