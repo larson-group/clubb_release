@@ -966,8 +966,9 @@ module advance_xp2_xpyp_module
       invrs_rho_ds_zm, & ! Inv. dry, static density on momentum levs.  [m^3/kg]
       Cn                 ! Coefficient C_n                             [-]
 
-    real, intent(in) :: & 
-      nu,      & ! Background constant coef. of eddy diff.        [-]
+    real, intent(in), dimension(gr%nzmax) :: & 
+      nu         ! Background constant coef. of eddy diff.        [-]
+    real, intent(in) :: &
       beta       ! Constant model parameter beta                  [-]
 
     ! Output Variables

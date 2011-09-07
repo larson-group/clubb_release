@@ -180,6 +180,12 @@ module grid_class
       invrs_dzt    ! The inverse spacing between momentum grid levels;
     !                centered over thermodynamic grid levels.
 
+    real, pointer, dimension(:) :: &
+      dzm, &  ! Spacing between thermodynamic grid levels; centered over
+              ! momentum grid levels
+      dzt     ! Spcaing between momentum grid levels; centered over
+              ! thermodynamic grid levels
+
     ! These weights are normally used in situations
     ! where a momentum level variable is being
     ! solved for implicitly in an equation and
@@ -442,6 +448,7 @@ module grid_class
 
     ! Allocate memory for grid levels
     allocate( gr%zm(1:gr%nzmax), gr%zt(1:gr%nzmax), & 
+              gr%dzm(1:gr%nzmax), gr%dzt(1:gr%nzmax), &
               gr%invrs_dzm(1:gr%nzmax), gr%invrs_dzt(1:gr%nzmax),  & 
               gr%weights_zm2zt(m_above:m_below,1:gr%nzmax), & 
               gr%weights_zt2zm(t_above:t_below,1:gr%nzmax), & 
@@ -495,6 +502,7 @@ module grid_class
 
     ! Allocate memory for grid levels
     deallocate( gr%zm, gr%zt, & 
+                gr%dzm, gr%dzt, &
                 gr%invrs_dzm, gr%invrs_dzt,  & 
                 gr%weights_zm2zt, gr%weights_zt2zm, & 
                 stat=ierr )
@@ -671,6 +679,20 @@ module grid_class
 
     endif ! not l_implemented
 
+
+    ! Define dzm, the spacing between thermodynamic grid levels; centered over
+    ! momentum grid levels
+    do k=1,gr%nzmax-1
+      gr%dzm(k) = gr%zt(k+1) - gr%zt(k)
+    enddo
+    gr%dzm(gr%nzmax) = gr%dzm(gr%nzmax-1)
+
+    ! Define dzt, the spacing between momentum grid levels; centered over
+    ! thermodynamic grid levels
+    do k=2,gr%nzmax
+      gr%dzt(k) = gr%zm(k) - gr%zm(k-1)
+    enddo
+    gr%dzt(1) = gr%dzt(2)
 
     ! Define invrs_dzm, which is the inverse spacing between thermodynamic grid
     ! levels; centered over momentum grid levels.

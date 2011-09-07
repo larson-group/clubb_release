@@ -19,13 +19,15 @@ module parameters_tunable
 
   use parameter_indices, only: nparams ! Variable(s)
 
+  use grid_class, only: gr ! Variable(s)
+
   implicit none
 
   ! Default to private
   private
 
   public :: setup_parameters, read_parameters, read_param_spread, &
-            get_parameters, adj_low_res_nu
+            get_parameters, adj_low_res_nu, cleanup_nu
 
   ! Model constant parameters
   real, public :: & 
@@ -102,13 +104,15 @@ module parameters_tunable
 !$omp     gamma_coef, gamma_coefb, gamma_coefc, &
 !$omp     taumin, taumax, mu, lmin)
 
-  real, public :: & 
+  real, public, pointer, dimension(:) :: & 
     nu1_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp2.
     nu2_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for xp2.
     nu6_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wpxp.
     nu8_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp3.
     nu9_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
-    nu_r_vert_res_dep,  & ! Background Coefficient of Eddy Diffusion for hydrometeors.
+    nu_r_vert_res_dep     ! Background Coefficient of Eddy Diffusion for hydrometeors.
+
+  real, public :: &
     nu_hd_vert_res_dep    ! Constant coefficient for 4th-order hyper-diffusion.
 
 !$omp threadprivate(nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep, &
@@ -381,9 +385,23 @@ module parameters_tunable
     ! The factor by which to multiply the coefficients of background eddy
     ! diffusivity if the grid spacing threshold is exceeded and l_adj_low_res_nu
     ! is turned on.
-    real :: mult_factor
+    real,dimension(gr%nzmax) :: &
+      mult_factor_zt, &  ! Uses gr%dzt for nu values on zt levels
+      mult_factor_zm     ! Uses gr%dzm for nu values on zm levels
+
+    ! Flag to enable nu values that are a function of grid spacing
+    logical, parameter :: l_nu_grid_dependent = .false.
+
+    integer :: k  ! Loop variable
 
     !--------------- Begin code -------------------------
+
+    allocate( nu1_vert_res_dep(1:gr%nzmax) )
+    allocate( nu2_vert_res_dep(1:gr%nzmax) )
+    allocate( nu6_vert_res_dep(1:gr%nzmax) )
+    allocate( nu8_vert_res_dep(1:gr%nzmax) )
+    allocate( nu9_vert_res_dep(1:gr%nzmax) )
+    allocate( nu_r_vert_res_dep(1:gr%nzmax) )
 
     ! Flag for adjusting the values of the constant diffusivity coefficients
     ! based on the grid spacing.  If this flag is turned off, the values of the
@@ -444,28 +462,39 @@ module parameters_tunable
 
       ! The nu's are chosen for deltaz <= 40 m. Looks like they must
       ! be adjusted for larger grid spacings (Vince Larson)
+      if( .not. l_nu_grid_dependent ) then
+        ! Use a constant mult_factor so nu does not depend on grid spacing
+        if( avg_deltaz > grid_spacing_thresh ) then
+          mult_factor_zt = 1.0 + mult_coef * log( avg_deltaz / grid_spacing_thresh )
+          mult_factor_zm = mult_factor_zt
+        else
+          mult_factor_zt = 1.0
+          mult_factor_zm = 1.0
+        end if
+      else  ! l_nu_grid_dependent = .true.
+        ! mult_factor will vary to create nu values that vary with grid spacing
+        do k = 1, gr%nzmax
+          if( gr%dzm(k) > grid_spacing_thresh ) then
+            mult_factor_zm(k) = 1.0 + mult_coef * log( gr%dzm(k) / grid_spacing_thresh )
+          else
+            mult_factor_zm(k) = 1.0
+          end if
 
-      if ( avg_deltaz > grid_spacing_thresh ) then
+          if( gr%dzt(k) > grid_spacing_thresh ) then
+            mult_factor_zt(k) = 1.0 + mult_coef * log( gr%dzt(k) / grid_spacing_thresh )
+          else
+            mult_factor_zt(k) = 1.0
+          end if
+        end do
+      end if ! l_nu_grid_dependent
 
-        mult_factor = 1.0 + mult_coef * log( avg_deltaz / grid_spacing_thresh )
-
-        nu1_vert_res_dep  =  nu1 * mult_factor
-        nu2_vert_res_dep  =  nu2 * mult_factor
-        nu6_vert_res_dep  =  nu6 * mult_factor
-        nu8_vert_res_dep  =  nu8 * mult_factor
-        nu9_vert_res_dep  =  nu9 * mult_factor
-        nu_r_vert_res_dep =  nu_r * mult_factor
-
-      else
-
-        nu1_vert_res_dep  =  nu1
-        nu2_vert_res_dep  =  nu2
-        nu6_vert_res_dep  =  nu6
-        nu8_vert_res_dep  =  nu8
-        nu9_vert_res_dep  =  nu9
-        nu_r_vert_res_dep =  nu_r
-
-      end if
+      !mult_factor = 1.0 + mult_coef * log( avg_deltaz / grid_spacing_thresh )
+      nu1_vert_res_dep  =  nu1 * mult_factor_zm
+      nu2_vert_res_dep  =  nu2 * mult_factor_zm
+      nu6_vert_res_dep  =  nu6 * mult_factor_zm
+      nu8_vert_res_dep  =  nu8 * mult_factor_zt
+      nu9_vert_res_dep  =  nu9 * mult_factor_zm
+      nu_r_vert_res_dep =  nu_r * mult_factor_zt
 
       ! The value of nu_hd is based on an average grid box spacing of
       ! 40 m.  The value of nu_hd should be adjusted proportionally to
@@ -1168,17 +1197,44 @@ module parameters_tunable
     taumax             = PosInf
     lmin_coef          = PosInf
     mu                 = PosInf
-
-    nu1_vert_res_dep   = PosInf
-    nu2_vert_res_dep   = PosInf
-    nu6_vert_res_dep   = PosInf
-    nu8_vert_res_dep   = PosInf
-    nu9_vert_res_dep   = PosInf
-    nu_r_vert_res_dep  = PosInf
+ 
     nu_hd_vert_res_dep = PosInf
 
     return
   end subroutine init_parameters_nan
+
+  !=============================================================================
+  subroutine cleanup_nu( )
+
+    ! Description:
+    !  De-allocates memory used for the nu arrays
+    !
+    ! References:
+    !  None
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+      fstderr  ! Constant
+
+    implicit none
+
+    ! Local Variable(s)
+    integer :: ierr
+
+    ! ----- Begin Code -----
+
+    deallocate( nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep,  &
+                nu8_vert_res_dep, nu9_vert_res_dep, nu_r_vert_res_dep, &
+                stat = ierr )
+
+    if ( ierr /= 0 ) then
+      write(fstderr,*) "Nu deallocation failed."
+    end if
+
+    return
+
+  end subroutine cleanup_nu
+
 !===============================================================================
 
 end module parameters_tunable

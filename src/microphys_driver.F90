@@ -2316,7 +2316,7 @@ module microphys_driver
     real(kind=time_precision), intent(in) ::  & 
       dt       ! Model timestep                                           [s]
 
-    real, intent(in) ::  & 
+    real, dimension(gr%nzmax), intent(in) ::  & 
       nu       ! Background diffusion coefficient                         [m^2/s]
 
     real, intent(in), dimension(gr%nzmax) ::  & 
@@ -3065,7 +3065,7 @@ module microphys_driver
       V_hmt,     & ! Sedimentation velocity (thermo. levels).                 [m/s]
       Kr           ! Eddy diffusivity for hydrometeors (m-lev).               [m^2/s]
 
-    real, intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
+    real, dimension(gr%nzmax), intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
 
     real(kind=time_precision), intent(in) :: dt  ! Timestep   [s]
 

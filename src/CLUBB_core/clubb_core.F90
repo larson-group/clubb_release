@@ -1715,6 +1715,9 @@ module clubb_core
     use grid_class, only: &
       cleanup_grid ! Procedure
 
+    use parameters_tunable, only: &
+      cleanup_nu ! Procedure
+
     implicit none
 
     ! Flag to see if CLUBB is running on it's own,
@@ -1741,6 +1744,9 @@ module clubb_core
 
     ! De-allocate the arrays for the grid
     call cleanup_grid( )
+
+    ! De-allocate the arrays for nu
+    call cleanup_nu( )
 
     return
   end subroutine cleanup_clubb_core

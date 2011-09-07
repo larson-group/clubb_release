@@ -110,8 +110,9 @@ module advance_windm_edsclrm_module
     intrinsic :: real
 
     ! Constant Parameters
-    real, parameter :: &
-      nu10 = 0. ! Background constant coef. of eddy diffusivity (disabled) [m^2/s]
+    real, dimension(gr%nzmax) :: &
+      nu10, &
+      dummy_nu  ! Used to feed zero values into function calls
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  &
@@ -200,6 +201,9 @@ module advance_windm_edsclrm_module
     err_code_windm   = clubb_no_error
     err_code_edsclrm = clubb_no_error
 
+    nu10 = 0. ! Background constant coef. of eddy diffusivity (disabled) [m^2/s]
+    dummy_nu = 0.
+
     !----------------------------------------------------------------
     ! Prepare tridiagonal system for horizontal winds, um and vm
     !----------------------------------------------------------------
@@ -247,11 +251,13 @@ module advance_windm_edsclrm_module
     ! Solve for x'w' at all intermediate model levels.
     ! A Crank-Nicholson timestep is used.
 
-    upwp(2:gr%nzmax-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nzmax-1)+nu10, um(2:gr%nzmax-1), & ! in
-                                          um(3:gr%nzmax), gr%invrs_dzm(2:gr%nzmax-1) ) ! in
+    upwp(2:gr%nzmax-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nzmax-1)+nu10(2:gr%nzmax-1),  & ! in
+                                          um(2:gr%nzmax-1), um(3:gr%nzmax), & ! in
+                                          gr%invrs_dzm(2:gr%nzmax-1) )
 
-    vpwp(2:gr%nzmax-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nzmax-1)+nu10, vm(2:gr%nzmax-1), & ! in
-                                          vm(3:gr%nzmax), gr%invrs_dzm(2:gr%nzmax-1) ) ! in
+    vpwp(2:gr%nzmax-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nzmax-1)+nu10(2:gr%nzmax-1),  & ! in
+                                          vm(2:gr%nzmax-1), vm(3:gr%nzmax), & ! in
+                                          gr%invrs_dzm(2:gr%nzmax-1) )
 
     ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
     ! means that x'w' at the top model level is 0,
@@ -323,10 +329,12 @@ module advance_windm_edsclrm_module
     ! Solve for x'w' at all intermediate model levels.
     ! A Crank-Nicholson timestep is used.
 
-    upwp(2:gr%nzmax-1) = upwp(2:gr%nzmax-1) - 0.5 * xpwp_fnc( Kh_zm(2:gr%nzmax-1)+nu10, &
+    upwp(2:gr%nzmax-1) = upwp(2:gr%nzmax-1)  &
+      - 0.5 * xpwp_fnc( Kh_zm(2:gr%nzmax-1)+nu10(2:gr%nzmax-1), &
       um(2:gr%nzmax-1), um(3:gr%nzmax), gr%invrs_dzm(2:gr%nzmax-1) ) !in
 
-    vpwp(2:gr%nzmax-1) = vpwp(2:gr%nzmax-1) - 0.5 * xpwp_fnc( Kh_zm(2:gr%nzmax-1)+nu10, &
+    vpwp(2:gr%nzmax-1) = vpwp(2:gr%nzmax-1)  &
+      - 0.5 * xpwp_fnc( Kh_zm(2:gr%nzmax-1)+nu10(2:gr%nzmax-1), &
       vm(2:gr%nzmax-1), vm(3:gr%nzmax), gr%invrs_dzm(2:gr%nzmax-1) ) !in
 
 
@@ -432,7 +440,7 @@ module advance_windm_edsclrm_module
 !HPF$ INDEPENDENT
       do i = 1, edsclr_dim
         rhs(1:gr%nzmax,i)  &
-        = windm_edsclrm_rhs( windm_edsclrm_scalar, dt, 0.0, Kh_zm, &            ! in
+        = windm_edsclrm_rhs( windm_edsclrm_scalar, dt, dummy_nu, Kh_zm, &            ! in
                              edsclrm(:,i), edsclrm_forcing,  &             ! in
                              rho_ds_zm, invrs_rho_ds_zt,  &                ! in
                              l_imp_sfc_momentum_flux, wpedsclrp(1,i) )     ! in
@@ -463,7 +471,7 @@ module advance_windm_edsclrm_module
 
       ! Compute the implicit portion of the xm (eddy-scalar) equations.
       ! Build the left-hand side matrix.
-      call windm_edsclrm_lhs( dt, 0.0, wm_zt, Kh_zm, wind_speed, u_star_sqd,  & ! in
+      call windm_edsclrm_lhs( dt, dummy_nu, wm_zt, Kh_zm, wind_speed, u_star_sqd,  & ! in
                               rho_ds_zm, invrs_rho_ds_zt,  &               ! in
                               l_implemented, l_imp_sfc_momentum_flux,  &   ! in
                               lhs )                                        ! out
@@ -1440,7 +1448,7 @@ module advance_windm_edsclrm_module
     real(kind=time_precision), intent(in) :: & 
       dt                 ! Model timestep                             [s]
 
-    real, intent(in) :: &
+    real, dimension(gr%nzmax), intent(in) :: &
       nu ! Background constant coef. of eddy diffusivity        [m^2/s]
 
     real, dimension(gr%nzmax), intent(in) :: &
@@ -1648,7 +1656,7 @@ module advance_windm_edsclrm_module
     real(kind=time_precision), intent(in) :: & 
       dt                 ! Model timestep                             [s]
 
-    real, intent(in) :: &
+    real, dimension(gr%nzmax), intent(in) :: &
       nu ! Background constant coef. of eddy diffusivity        [m^2/s]
 
     real, dimension(gr%nzmax), intent(in) :: &
