@@ -370,6 +370,8 @@ module clubb_driver
     character(len=150) :: &
       case_info_file ! The filename for case info
 
+    real, dimension(0) :: rad_dummy ! Dummy variable for radiation levels
+
     real, allocatable, dimension(:) :: &
       rcm_mc, & ! Tendency of liquid water due to microphysics     [kg/kg/s]
       rvm_mc, & ! Tendency of vapor water due to microphysics      [kg/kg/s]
@@ -895,8 +897,8 @@ module clubb_driver
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
-                       gr%nzmax, gr%zt, gr%zm, total_atmos_dim, & ! Intent(in)
-                       complete_alt, total_atmos_dim + 1, complete_momentum, & ! Intent(in)
+                       gr%nzmax, gr%zt, gr%zm, 0, & ! Intent(in)
+                       rad_dummy, 0, rad_dummy, & ! Intent(in)
                        day, month, year, & ! Intent(in)
                        (/rlat/), (/rlon/), time_current, dt_main ) ! Intent(in)
     end if
@@ -1301,7 +1303,7 @@ module clubb_driver
                         rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
 
     if ( trim( rad_scheme ) == "bugsrad" ) then
-      call determine_extend_atmos_bounds( gr%nzmax, gr%zt,            & ! Intent(in)
+      call determine_extend_atmos_bounds( gr%nzmax, gr%zt,           & ! Intent(in)
                                           gr%zm, gr%invrs_dzm,       & ! Intent(in)
                                           radiation_top,             & ! Intent(in)
                                           extend_atmos_bottom_level, & ! Intent(out)
