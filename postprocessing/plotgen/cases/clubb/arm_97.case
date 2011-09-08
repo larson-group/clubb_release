@@ -147,7 +147,7 @@
        ]},
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(TVFLUX + TVFLUXS) ./ ( RHO * 1004)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(TVFLUX) ./ ( RHO * 1004)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'arm_97_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
