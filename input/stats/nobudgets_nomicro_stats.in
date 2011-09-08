@@ -1,6 +1,6 @@
-! $Id: nobudgets_stats.in 5294 2011-06-30 20:41:35Z connork@uwm.edu $
-! Stats for the prognostic and diagnostic variables, but omitting the 
-! budget terms and some of the microphyics stats.
+! $Id$
+! Stats for the prognostic and diagnostic variables, but omitting terms
+! not computed when running in a host model.
 &statsnl
 
 vars_zt = 
