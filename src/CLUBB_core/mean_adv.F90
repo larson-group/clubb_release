@@ -174,6 +174,9 @@ module mean_adv
     use grid_class, only: & 
         gr ! Variable(s)
 
+    use model_flags, only: &
+      l_upwind_xm_ma ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -202,8 +205,7 @@ module mean_adv
 
     ! Local Variables
     logical, parameter ::  &
-      l_ub_const_deriv = .true., &  ! Flag to use the "one-sided" upper boundary.
-      l_upwind_xm_ma = .false.       ! Flag to use upwind differencing.
+      l_ub_const_deriv = .true.  ! Flag to use the "one-sided" upper boundary.
 
     integer :: & 
       mk,    & ! Momentum level directly above central thermodynamic level.
