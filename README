@@ -549,7 +549,10 @@ also do make distclean without the need to change directories.
    $ ./run_scm.bash <CASE NAME> -p <PARAMETER FILE> -s <STATS FILE>
 
    Where the parameter file and stats file are optional arguments. The default
-   is all_stats.in and tunable_parameters.in.
+   is standard_stats.in and tunable_parameters.in.
+
+   For a complete list of options type:
+   $ ./run_scm.bash --help
 
    The resulting data will be written in the directory clubb/output.
 
@@ -1371,10 +1374,10 @@ _sfc= ground or ocean surface   E.g., T_sfc is the temperature of
 -------------------------------------------------------------------------
 
 gr         = <grid>    = Main grid class reference for CLUBB                   [-]
-gr%nzmax    = Number of vertical levels in grid                                 [-]
+gr%nzmax   = Number of vertical levels in grid                                 [-]
 gr%zm      = Grid levels (altitudes) of "momentum" variables (wp2, etc.)       [m]
 gr%zt      = Grid levels (altitudes) of "thermodynamic" variables (rtm, etc.)  [m]
-thlm       = <thl>     = Liquid water potential temperature                    [K]
+thlm       = <θ_l>     = Liquid water potential temperature                    [K]
 rtm        = <rt>      = Total water mixing ratio                              [kg/kg]
 cloud_frac = Cloud fraction                                                    [-]
 rcm        = <rc>      = Cloud water mixing ratio                              [kg/kg]
@@ -1382,7 +1385,7 @@ wp2        = <w'2>     = Variance of vertical velocity                         [
 wp3        = <w'3>     = Third order moment of vertical velocity               [m^3/s^3]
 wpthlp     = <w'thl'>  = Vertical turbulent flux of thl                        [(m/s) K] 
 wprtp      = <w'rt'>   = Vertical turbulent flux of rt                         [(kg/kg) (m/s)]
-thlp2      = <thl'2>   = Variance of thl                                       [K^2]
+thlp2      = <θ_l'2>   = Variance of thl                                       [K^2]
 rtp2       = <rt'2>    = Variance of rt                                        [(kg/kg)^2]
 rtpthlp    = <rt'thl'> = Covariance of rt and thl                              [(kg/kg) K]
 wm         = <w>       = Mean vertical wind                                    [m/s]
