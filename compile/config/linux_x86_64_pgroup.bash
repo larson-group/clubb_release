@@ -20,7 +20,7 @@ DEBUG="-g -C -Kieee"
 # == Machine specific options ==
 #ARCH="-tp piii"# PGF90, Pentium III
 #ARCH="-tp p7"#	PGF90, Pentium IV
-ARCH="-tp amd64" # PGF90, amd64
+ARCH="-tp amd64 -Mcache_align" # PGF90, amd64
 
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-r8"
@@ -35,7 +35,7 @@ NETCDF="/usr/local/netcdf-pgi"
 # == LAPACK libraries ==
 # Portland group usually has static versions of these
 #LAPACK="-llapack -lblas"
-LAPACK="-lacml -lacml_mv"
+LAPACK="-L/opt/acml5.0.0/pgi64 -lacml"
 
 # == Linking Flags ==
 LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
