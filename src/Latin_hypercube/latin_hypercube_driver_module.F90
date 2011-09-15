@@ -17,7 +17,7 @@ module latin_hypercube_driver_module
 
 #ifdef LATIN_HYPERCUBE
   public :: LH_subcolumn_generator, LH_microphys_driver, latin_hypercube_2D_output, &
-    latin_hypercube_2D_close
+    latin_hypercube_2D_close, stats_accumulate_LH
 
   contains
 
@@ -62,7 +62,8 @@ module latin_hypercube_driver_module
 
     use constants_clubb, only: &
       fstderr, & ! Constant
-      cm3_per_m3
+      cm3_per_m3, &
+      zero_threshold
 
     use parameters_microphys, only: &
       l_lh_vert_overlap, &  ! Variables
@@ -400,7 +401,7 @@ module latin_hypercube_driver_module
 
       mixt_frac_dp = dble( pdf_params(k)%mixt_frac )
 
-      where ( in_mixt_comp_1(X_u_all_levs(k,:,d_variables+1), mixt_frac_dp ) )
+      where ( in_mixt_comp_1( X_u_all_levs(k,:,d_variables+1), mixt_frac_dp ) )
         X_mixt_comp_all_levs(k,:) = 1
       else where
         X_mixt_comp_all_levs(k,:) = 2
@@ -500,9 +501,16 @@ module latin_hypercube_driver_module
                                         p_matrix )
     end if
 
-    call LH_clipping_and_stats( nzmax, n_micro_calls, d_variables, & ! In
-                                LH_sample_point_weights,  X_nl_all_levs, LH_thl, & ! In
-                                LH_rt ) ! In/out
+    ! Verify total water isn't negative
+    if ( any( LH_rt < 0. ) ) then
+      if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) "Total water negative in LH sample"
+        write(fstderr,*) "Applying non-conservative hard clipping to rv sample."
+      end if ! clubb_at_least_debug_level( 1 )
+      where ( LH_rt < 0. )
+        LH_rt = zero_threshold
+      end where
+    end if ! Some rv_all_points(:,sample) < 0
 
     return
   end subroutine LH_subcolumn_generator
@@ -1369,9 +1377,9 @@ module latin_hypercube_driver_module
   end function compute_vert_corr
 
 !-------------------------------------------------------------------------------
-  subroutine LH_clipping_and_stats( nzmax, n_micro_calls, d_variables, &
-                                    LH_sample_point_weights, X_nl_all_levs, LH_thl, &
-                                    LH_rt )
+  subroutine stats_accumulate_LH &
+             ( nzmax, n_micro_calls, d_variables, &
+               LH_sample_point_weights, X_nl_all_levs, LH_thl, LH_rt )
 ! Description:
 !   Clip subcolumns from latin hypercube and create stats for diagnostic
 !   purposes.
@@ -1440,9 +1448,6 @@ module latin_hypercube_driver_module
       iiLH_s_mellor, &
       iiLH_w
 
-    use error_code, only: &
-      clubb_at_least_debug_level ! Procedure(s)
-
     use estimate_scm_microphys_module, only: &
       copy_X_nl_into_hydromet ! Procedure(s)
 
@@ -1462,14 +1467,11 @@ module latin_hypercube_driver_module
       LH_sample_point_weights
 
     double precision, intent(in), dimension(nzmax,n_micro_calls,d_variables) :: &
-       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real, intent(in), dimension(nzmax,n_micro_calls) :: &
-      LH_thl ! Sample of liquid potential temperature [K]
-
-    ! Input/Output Variables
-    real, intent(inout), dimension(nzmax,n_micro_calls) :: &
-      LH_rt ! Sample of total water mixing ratio    [kg/kg]
+      LH_thl, & ! Sample of liquid potential temperature [K]
+      LH_rt     ! Sample of total water mixing ratio     [kg/kg]
 
     ! Local variables
     real, dimension(nzmax,n_micro_calls) :: &
@@ -1502,17 +1504,6 @@ module latin_hypercube_driver_module
 
     ! Clip 's' from Mellor to obtain cloud-water mixing ratio
     rc_all_points = max( zero_threshold, real( X_nl_all_levs(:,:,iiLH_s_mellor) ) )
-
-    ! Verify total water isn't negative
-    if ( any( LH_rt < 0. ) ) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) "Total water negative in LH sample"
-        write(fstderr,*) "Applying non-conservative hard clipping to rv sample."
-      end if ! clubb_at_least_debug_level( 1 )
-      where ( LH_rt < 0. )
-        LH_rt = zero_threshold
-      end where
-    end if ! Some rv_all_points(:,sample) < 0
 
     if ( l_stats_samp ) then
 
@@ -1659,7 +1650,7 @@ module latin_hypercube_driver_module
     end if ! l_stats_samp
 
     return
-  end subroutine LH_clipping_and_stats
+  end subroutine stats_accumulate_LH
 
 #endif /*LATIN_HYPERCUBE*/
 
