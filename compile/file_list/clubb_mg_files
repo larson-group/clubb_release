@@ -3,6 +3,7 @@
 ../src/MG_micro/wv_saturation.F90
 ../src/MG_micro_dependencies/abortutils.F90
 ../src/MG_micro_dependencies/cam_history.F90
+../src/MG_micro_dependencies/cam_history_support.F90
 ../src/MG_micro_dependencies/cam_logfile.F90
 ../src/MG_micro_dependencies/cldwat2m_macro.F90
 ../src/MG_micro_dependencies/cloud_fraction.F90

@@ -8,11 +8,11 @@ module rad_constituents
 
   private
 
-  public :: rad_cnst_get_clim_info, rad_cnst_get_clim_aer_props
+  public :: rad_cnst_get_info, rad_cnst_get_aer_props
   
   contains
   
-  subroutine rad_cnst_get_clim_info( naero, aernames, aersources, aerindices, &
+  subroutine rad_cnst_get_info( naero, aernames, aersources, aerindices, &
                                    ngas,  gasnames, gassources, gasindices, &
                                    use_data_o3, diagnosticindex )
      !
@@ -75,9 +75,9 @@ module rad_constituents
      
      return
      
-  end subroutine rad_cnst_get_clim_info
+  end subroutine rad_cnst_get_info
   
-  subroutine rad_cnst_get_clim_aer_props( &
+  subroutine rad_cnst_get_aer_props( &
      list_idx, diagnosticindex, &
      sw_hygro_ext, sw_hygro_ssa, sw_hygro_asm, lw_hygro_ext, &
      sw_nonhygro_ext, sw_nonhygro_ssa, sw_nonhygro_asm, &
@@ -157,6 +157,6 @@ module rad_constituents
      
      return
      
-  end subroutine rad_cnst_get_clim_aer_props
+  end subroutine rad_cnst_get_aer_props
 
 end module rad_constituents

@@ -1,6 +1,6 @@
 See trac ticket 365 for more information.
 
-This folder holes "fake" modules for interfacing with the
+This folder holds "fake" modules for interfacing with the
 Morrison-Gettelman microphysics. cldwat2m_micro contains
 multiple import (use) statements, and to avoid possibly
 breaking the CAM code, we've decided to, rather than edit

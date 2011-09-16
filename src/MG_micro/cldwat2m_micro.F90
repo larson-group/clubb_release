@@ -12,21 +12,21 @@ module cldwat2m_micro
 ! for questions contact Hugh Morrison, Andrew Gettelman
 ! e-mail: morrison@ucar.edu, andrew@ucar.edu
 !---------------------------------------------------------------------------------
+! modification for sub-columns, HM, (orig 8/11/10)
+! This is done using the logical 'sub_column' set to .true. = subcolumns
+!---------------------------------------------------------------------------------
 
   use shr_kind_mod,  only: r8=>shr_kind_r8
   use spmd_utils,    only: masterproc
   use ppgrid,        only: pcols, pver, pverp
-  use physconst,     only: gravit, rair, tmelt, cpair, rh2o, r_universal, mwh2o, rhoh2o
+  use physconst,     only: gravit, rair, tmelt, cpair, rh2o, rhoh2o
   use physconst,     only: latvap, latice
-  use abortutils,    only: endrun
-  use error_function, only: erf,erfc
-  use wv_saturation,  only: estblf, hlatv, tmin, hlatf, rgasv, pcf, cp, epsqs, ttrice, &
-                            vqsatd2, vqsatd2_single,polysvp
-  use cam_history,    only: addfld, add_default, phys_decomp, outfld 
+  use wv_saturation,  only: polysvp, epsqs 
+  use cam_history,    only: addfld, add_default, phys_decomp, outfld
+  use cam_history_support, only : fillvalue
   use cam_logfile,    only: iulog
-  use rad_constituents, only: rad_cnst_get_clim_info, rad_cnst_get_clim_aer_props
   use phys_control,   only: phys_getopts
-  use cldwat2m_macro, only: rhmini, rhmaxi
+  use cldwat2m_macro, only: rhmini
 
   implicit none
   private
@@ -35,13 +35,12 @@ module cldwat2m_micro
   logical, public :: liu_in = .true.   ! True = Liu et al 2007 Ice nucleation 
                                        ! False = cooper fixed ice nucleation (MG2008)
 
-   public :: ini_micro, mmicro_pcond,gamma,derf
+   public :: ini_micro, mmicro_pcond,gamma
 
 !constants remaped
   real(r8), private::  g              !gravity
   real(r8), private::  r              !Dry air Gas constant
   real(r8), private::  rv             !water vapor gas contstant
-  real(r8), private::  rr             !universal gas constant
   real(r8), private::  cpp            !specific heat of dry air
   real(r8), private::  rhow           !density of liquid water
   real(r8), private::  xxlv           ! latent heat of vaporization
@@ -107,8 +106,8 @@ real(r8), private:: lammins
 real(r8), private:: lammaxs
 
 ! parameters for snow/rain fraction for convective clouds
-real(r8), private, parameter :: tmax_fsnow = tmelt            ! max temperature for transition to convective snow
-real(r8), private, parameter :: tmin_fsnow = tmelt-5._r8         ! min temperature for transition to convective snow
+real(r8), private:: tmax_fsnow ! max temperature for transition to convective snow
+real(r8), private:: tmin_fsnow ! min temperature for transition to convective snow
 
 !needed for findsp
 real(r8), private:: tt0       ! Freezing temperature
@@ -131,14 +130,11 @@ subroutine ini_micro
 ! 
 !-----------------------------------------------------------------------
 
-   use cloud_fraction, only: cldfrc_getparams
-
    integer k
 
    integer l,m, iaer
    real(r8) surften       ! surface tension of water w/respect to air (N/m)
    real(r8) arg
-   real(r8) derf
 
    character(len=16) :: eddy_scheme = ' '
    logical           :: history_microphysics     ! output variables for microphysics diagnostics package
@@ -157,10 +153,6 @@ subroutine ini_micro
    call addfld ('RERCLD   ','m      ',pver, 'A','Diagnostic effective radius of Liquid Cloud and Rain' ,phys_decomp)
 
    call addfld ('DSNOW   ','m       ',pver, 'A','Diagnostic grid-mean snow diameter'         ,phys_decomp)	
-
-   ! precip flux variables for ciccs (instrument simulator package)
-   call addfld ('MGFLXPRC   ','kg/m2/s   ',pver+1, 'A','Diagnostic grid-mean rain flux at layer interface', phys_decomp)	
-   call addfld ('MGFLXSNW   ','kg/m2/s   ',pver+1, 'A','Diagnostic grid-mean snow flux at layer interface', phys_decomp)
 
    ! diagnostic radar reflectivity, cloud-averaged 
    call addfld ('REFL  ','DBz  ',pver, 'A','94 GHz radar reflectivity'       ,phys_decomp)
@@ -204,7 +196,6 @@ subroutine ini_micro
    g= gravit                  !gravity
    r= rair       	      !Dry air Gas constant: note units(phys_constants are in J/K/kmol)
    rv= rh2o                   !water vapor gas contstant
-   rr = r_universal           !universal gas constant
    cpp = cpair                 !specific heat of dry air
    rhow = rhoh2o              !density of liquid water
 
@@ -214,10 +205,15 @@ subroutine ini_micro
    xlf = latice          ! latent heat freezing
    xxls = xxlv + xlf     ! latent heat of sublimation
 
+! parameters for snow/rain fraction for convective clouds
+
+   tmax_fsnow = tmelt
+   tmin_fsnow = tmelt-5._r8
+
 ! parameters below from Reisner et al. (1998)
 ! density parameters (kg/m3)
 
-      rhosn = 100._r8    ! bulk density snow
+      rhosn = 250._r8    ! bulk density snow  (++ ceh)
       rhoi = 500._r8     ! bulk density ice
       rhow = 1000._r8    ! bulk density liquid
 
@@ -283,7 +279,7 @@ subroutine ini_micro
 
 ! autoconversion size threshold for cloud ice to snow (m)
 
-	Dcs = 325.e-6_r8   
+       Dcs = 400.e-6_r8
 
 ! smallest mixing ratio considered in microphysics
 
@@ -366,41 +362,40 @@ subroutine ini_micro
 !===============================================================================
 !microphysics routine for each timestep goes here...
 
-subroutine mmicro_pcond (                   &
-   lchnk, ncol, deltatin, tn, ttend,        &
-   qn, qtend, cwtend, qc, qi,               &
+subroutine mmicro_pcond ( sub_column,       &
+   lchnk, ncol, deltatin, tn,               &
+   qn, qc, qi,                              &
    nc, ni, p, pdel, cldn,                   &
    liqcldf, icecldf,                        &
-   cldo, pint, rpdel, zm, omega,            &
+   cldo,                                    &
    rate1ord_cw2pr_st,                       &   
    naai, npccnin, rndst,nacon,              &
-   rhdfda, rhu00, fice, tlat, qvlat,        &
+   tlat, qvlat,        &
    qctend, qitend, nctend, nitend, effc,    &
    effc_fn, effi, prect, preci,             &  
    nevapr, evapsnow,      &
    prain, prodsnow, cmeout, deffi, pgamrad, &
    lamcrad,qsout,dsout, &
+         rflx,sflx, qrout,reff_rain,reff_snow,  &
    qcsevap,qisevap,qvres,cmeiout, &
    vtrmc,vtrmi,qcsedten,qisedten, &
    prao,prco,mnuccco,mnuccto,msacwio,psacwso,&
    bergso,bergo,melto,homoo,qcreso,prcio,praio,qireso,&
-   mnuccro,pracso,meltsdt,frzrdt)
+   mnuccro,pracso,meltsdt,frzrdt,mnuccdo)
 
 !Author: Hugh Morrison, Andrew Gettelman, NCAR
 ! e-mail: morrison@ucar.edu, andrew@ucar.edu
 
-   use wv_saturation, only: vqsatd, vqsatd_water
-   use constituents,  only: pcnst
+   use wv_saturation, only: vqsatd_water
 
    ! input arguments
+   logical,  intent(in) :: sub_column  ! True = configure for sub-columns  False = use w/o sub-columns (standard)
    integer,  intent(in) :: lchnk
    integer,  intent(in) :: ncol
    real(r8), intent(in) :: deltatin             ! time step (s)
    real(r8), intent(in) :: tn(pcols,pver)       ! input temperature (K)
-   real(r8), intent(in) :: ttend(pcols,pver)    ! non-microphysical temperature tendency (K/s)
    real(r8), intent(in) :: qn(pcols,pver)       ! input h20 vapor mixing ratio (kg/kg)
-   real(r8), intent(in) :: qtend(pcols,pver)    ! non-microphysical qv tendency (1/s)
-   real(r8), intent(in) :: cwtend(pcols,pver)   ! non-microphysical tendency of cloud water (1/s)	
+
    ! note: all input cloud variables are grid-averaged
    real(r8), intent(inout) :: qc(pcols,pver)    ! cloud water mixing ratio (kg/kg)
    real(r8), intent(inout) :: qi(pcols,pver)    ! cloud ice mixing ratio (kg/kg)
@@ -412,22 +407,14 @@ subroutine mmicro_pcond (                   &
    real(r8), intent(in) :: icecldf(pcols,pver)  ! ice cloud fraction   
    real(r8), intent(in) :: liqcldf(pcols,pver)  ! liquid cloud fraction
    real(r8), intent(inout) :: cldo(pcols,pver)  ! old cloud fraction
-   real(r8), intent(in) :: pint(pcols,pverp)    ! air pressure layer interfaces (pa)
-   real(r8), intent(in) :: rpdel(pcols,pver)    ! inverse pressure difference across level (pa)
-   real(r8), intent(in) :: zm(pcols,pver)       ! geopotential height of model levels (m)
-   real(r8), intent(in) :: omega(pcols,pver)    ! vertical velocity (Pa/s)
 
    real(r8), intent(out) :: rate1ord_cw2pr_st(pcols,pver) ! 1st order rate for direct cw to precip conversion 
                                                           ! used for scavenging
 ! Inputs for aerosol activation
    real(r8), intent(in) :: naai(pcols,pver)      ! ice nulceation number (from microp_aero_ts) 
-   real(r8), intent(in) :: npccnin(pcols,pver)   ! ccn activated number  (from microp_aero_ts)
+   real(r8), intent(in) :: npccnin(pcols,pver)   ! ccn activated number tendency (from microp_aero_ts)
    real(r8), intent(in) :: rndst(pcols,pver,4)   ! radius of 4 dust bins for contact freezing (from microp_aero_ts)
    real(r8), intent(in) :: nacon(pcols,pver,4)   ! number in 4 dust bins for contact freezing  (from microp_aero_ts)
-
-   real(r8), intent(in) :: rhdfda(pcols,pver)   ! dA/dRH
-   real(r8), intent(in) :: rhu00(pcols,pver)    ! threshold rh for cloud
-   real(r8), intent(in) :: fice(pcols,pver)     ! fraction of ice/liquid
 
    ! output arguments
 
@@ -450,7 +437,8 @@ subroutine mmicro_pcond (                   &
    real(r8), intent(out) :: deffi(pcols,pver)   ! ice effective diameter for optics (radiation)
    real(r8), intent(out) :: pgamrad(pcols,pver) ! ice gamma parameter for optics (radiation)
    real(r8), intent(out) :: lamcrad(pcols,pver) ! slope of droplet distribution for optics (radiation)
-
+   real(r8), intent(out) :: rflx(pcols,pver+1)  ! grid-box average rain flux (kg m^-2 s^-1)
+   real(r8), intent(out) :: sflx(pcols,pver+1)  ! grid-box average snow flux (kg m^-2 s^-1)
    real(r8), intent(out) :: qcsevap(pcols,pver) ! cloud water evaporation due to sedimentation
    real(r8), intent(out) :: qisevap(pcols,pver) ! cloud ice sublimation due to sublimation
    real(r8), intent(out) :: qvres(pcols,pver) ! residual condensation term to ensure RH < 100%
@@ -478,6 +466,7 @@ subroutine mmicro_pcond (                   &
    real(r8), intent(out) :: pracso (pcols,pver) ! mixing ratio tendency due to accretion of rain by snow (1/s)
    real(r8), intent(out) :: meltsdt(pcols,pver) ! latent heating rate due to melting of snow  (W/kg)
    real(r8), intent(out) :: frzrdt (pcols,pver) ! latent heating rate due to homogeneous freezing of rain (W/kg)
+   real(r8), intent(out) :: mnuccdo(pcols,pver) ! mass tendency from ice nucleation
 
 ! local workspace
 ! all units mks unless otherwise stated
@@ -535,7 +524,7 @@ subroutine mmicro_pcond (                   &
         real(r8) :: cwml(pcols,pver) ! cloud water mixing ratio
         real(r8) :: cwmi(pcols,pver) ! cloud ice mixing ratio
         real(r8) :: nnuccd(pver)   ! ice nucleation rate from deposition/cond.-freezing
-        real(r8) :: mnuccd(pver)   ! mass tendency from ice nucleation 
+        real(r8) :: mnuccd(pver)   ! mass tendency from ice nucleation
         real(r8) :: qcld              ! total cloud water
         real(r8) :: lcldn(pcols,pver) ! fractional coverage of new liquid cloud
         real(r8) :: lcldo(pcols,pver) ! fractional coverage of old liquid cloud
@@ -683,10 +672,7 @@ subroutine mmicro_pcond (                   &
 !fice variable
 	real(r8) :: nfice(pcols,pver)
 
-!add variables for rain and snow flux at layer interfaces
-        real(r8) :: rflx(pcols,pver+1)
-        real(r8) :: sflx(pcols,pver+1)
-	!! also add precip flux variables for sub-stepping
+	!! add precip flux variables for sub-stepping
 	real(r8) :: rflx1(pcols,pver+1)
         real(r8) :: sflx1(pcols,pver+1)
 
@@ -729,12 +715,14 @@ subroutine mmicro_pcond (                   &
 ! diagnostic rain/snow for output to history
 ! values are in-precip (local) !!!!
 
-	real(r8) :: qrout(pcols,pver) ! rain mixing ratio (kg/kg)
+        real(r8), intent(out) :: qrout(pcols,pver)     ! grid-box average rain mixing ratio (kg/kg)
+	real(r8), intent(out) :: reff_rain(pcols,pver) ! rain effective radius (micron)
+	real(r8), intent(out) :: reff_snow(pcols,pver) ! snow effective radius (micron)
+	real(r8) 	      :: drout(pcols,pver)     ! rain diameter (m)
 	real(r8) :: nrout(pcols,pver) ! rain number concentration (1/m3)
 	real(r8) :: nsout(pcols,pver) ! snow number concentration (1/m3)
 	real(r8), intent(out) :: dsout(pcols,pver) ! snow diameter (m)
 	real(r8), intent(out) :: qsout(pcols,pver) ! snow mixing ratio (kg/kg)
-
 
 !averageed rain/snow for history
 	real(r8) :: qrout2(pcols,pver)
@@ -849,6 +837,7 @@ subroutine mmicro_pcond (                   &
         pracso (1:ncol,1:pver)=0._r8 
         meltsdt(1:ncol,1:pver)=0._r8
         frzrdt (1:ncol,1:pver)=0._r8
+        mnuccdo(1:ncol,1:pver)=0._r8
 
 ! assign variable deltat for sub-stepping...
 	deltat=deltatin	
@@ -917,6 +906,11 @@ subroutine mmicro_pcond (                   &
 	nsout(1:ncol,1:pver)=0._r8
         dsout(1:ncol,1:pver)=0._r8
 
+        drout(1:ncol,1:pver)=0._r8
+        !! initialize as fillvalue to avoid Floating Exceptions
+	reff_rain(1:ncol,1:pver)=fillvalue
+        reff_snow(1:ncol,1:pver)=fillvalue
+
 ! initialize variables for trop_mozart
 	nevapr(1:ncol,1:pver) = 0._r8
 	evapsnow(1:ncol,1:pver) = 0._r8
@@ -966,6 +960,31 @@ subroutine mmicro_pcond (                   &
 
            icldm(i,k)=max(icecldf(i,k),mincld)
            lcldm(i,k)=max(liqcldf(i,k),mincld)
+
+! subcolumns, set cloud fraction variables to one
+! if cloud water or ice is present, if not present
+! set to mincld (mincld used instead of zero, to prevent
+! possible division by zero errors
+
+           if (sub_column) then
+
+              cldm(i,k)=mincld
+              cldmw(i,k)=mincld
+              icldm(i,k)=mincld
+              lcldm(i,k)=mincld
+              
+              if (qc(i,k).ge.qsmall) then
+                 lcldm(i,k)=1.           
+                 cldm(i,k)=1.
+                 cldmw(i,k)=1.
+              end if
+              
+              if (qi(i,k).ge.qsmall) then             
+                 cldm(i,k)=1.
+                 icldm(i,k)=1.
+              end if
+              
+           end if               ! sub-columns
 
 ! calculate nfice based on liquid and ice mmr (no rain and snow mmr available yet)
 
@@ -1367,6 +1386,10 @@ subroutine mmicro_pcond (                   &
 
 ! calculate precip fraction based on maximum overlap assumption
 
+! for sub-columns cldm has already been set to 1 if cloud
+! water or ice is present, so cldmax will be correctly set below
+! and nothing extra needs to be done here
+
            if (k.eq.1) then
 		cldmax(i,k)=cldm(i,k)
 	   else
@@ -1467,16 +1490,16 @@ subroutine mmicro_pcond (                   &
 ! droplet activation
 ! calculate potential for droplet activation if cloud water is present
 ! formulation from Abdul-Razzak and Ghan (2000) and Abdul-Razzak et al. (1998), AR98
-! number (npccnin) is read in from companion routine
+! number tendency (npccnin) is read in from companion routine
 
 ! assume aerosols already activated are equal to number of existing droplets for simplicity
 ! multiply by cloud fraction to obtain grid-average tendency
 
            if (qcic(i,k).ge.qsmall) then   
               npccn(k) = max(0._r8,npccnin(i,k))  
-	      dum2l(i,k)=(nc(i,k)+npccn(k)*deltat)/cldm(i,k)
+	      dum2l(i,k)=(nc(i,k)+npccn(k)*deltat)/lcldm(i,k)
               dum2l(i,k)=max(dum2l(i,k),cdnl/rho(i,k)) ! sghan minimum in #/cm3  
-	      ncmax = dum2l(i,k)*cldm(i,k)
+	      ncmax = dum2l(i,k)*lcldm(i,k)
            else
               npccn(k)=0._r8
               dum2l(i,k)=0._r8
@@ -1580,10 +1603,23 @@ subroutine mmicro_pcond (                   &
 ! assume exponential sub-grid distribution of qc, resulting in additional
 ! factor related to qcvar below
 
-        prc(k) = cons2/(cons3*cons18)*1350._r8*qcic(i,k)**2.47_r8* &
-          (ncic(i,k)/1.e6_r8*rho(i,k))**(-1.79_r8)
-	nprc(k) = prc(k)/cons22
-	nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
+ ! hm switch for sub-columns, don't include sub-grid qc
+           if (sub_column) then
+ 
+              prc(k) = 1350._r8*qcic(i,k)**2.47_r8* &
+              (ncic(i,k)/1.e6_r8*rho(i,k))**(-1.79_r8)
+              nprc(k) = prc(k)/(4._r8/3._r8*pi*rhow*(25.e-6_r8)**3)
+              nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
+ 
+           else
+
+              prc(k) = cons2/(cons3*cons18)*1350._r8*qcic(i,k)**2.47_r8* &
+              (ncic(i,k)/1.e6_r8*rho(i,k))**(-1.79_r8)
+              nprc(k) = prc(k)/cons22
+              nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
+ 
+           end if               ! sub-column switch
+
         else
            prc(k)=0._r8
            nprc(k)=0._r8
@@ -1765,16 +1801,36 @@ subroutine mmicro_pcond (                   &
 
 ! immersion freezing (Bigg, 1953)
 
-           mnuccc(k) = cons9/(cons3*cons19)* &
+ 
+! subcolumns
+           
+           if (sub_column) then
+ 
+              mnuccc(k) = &
+                       pi*pi/36._r8*rhow* &
+                   cdist1(k)*gamma(7._r8+pgam(k))* &
+                    bimm*(exp(aimm*(273.15_r8-t(i,k)))-1._r8)/ &
+                    lamc(k)**3/lamc(k)**3
+ 
+              nnuccc(k) = &
+                    pi/6._r8*cdist1(k)*gamma(pgam(k)+4._r8) &
+                    *bimm* &
+                    (exp(aimm*(273.15_r8-t(i,k)))-1._r8)/lamc(k)**3
+ 
+           else
+ 
+              mnuccc(k) = cons9/(cons3*cons19)* &
                       pi*pi/36._r8*rhow* &
                   cdist1(k)*gamma(7._r8+pgam(k))* &
-                   bimm*exp(aimm*(273.15_r8-t(i,k)))/ &
+                   bimm*(exp(aimm*(273.15_r8-t(i,k)))-1._r8)/ &
                    lamc(k)**3/lamc(k)**3
 
-           nnuccc(k) = cons10/(cons3*qcvar)* &
-            pi/6._r8*cdist1(k)*gamma(pgam(k)+4._r8) &
-                *bimm* &
-                 exp(aimm*(273.15_r8-t(i,k)))/lamc(k)**3
+              nnuccc(k) = cons10/(cons3*qcvar)* &
+                  pi/6._r8*cdist1(k)*gamma(pgam(k)+4._r8) &
+                  *bimm* &
+                  (exp(aimm*(273.15_r8-t(i,k)))-1._r8)/lamc(k)**3
+           end if           ! sub-columns
+
 
 ! contact freezing (-40<T<-3 C) (Young, 1974) with hooks into simulated dust
 ! dust size and number in 4 bins are read in from companion routine
@@ -1794,14 +1850,27 @@ subroutine mmicro_pcond (                   &
            ndfaer3=1.381e-23_r8*t(i,k)*nslip3/(6._r8*pi*viscosity*rndst(i,k,3))
            ndfaer4=1.381e-23_r8*t(i,k)*nslip4/(6._r8*pi*viscosity*rndst(i,k,4))
 
-           mnucct(k) = cons10/(cons3*qcvar)*  &
-                       (ndfaer1*(nacon(i,k,1)*tcnt)+ndfaer2*(nacon(i,k,2)*tcnt)+ndfaer3*(nacon(i,k,3)*tcnt) &
-                       +ndfaer4*(nacon(i,k,4)*tcnt))*pi*pi/3._r8*rhow* &
-                       cdist1(k)*gamma(pgam(k)+5._r8)/lamc(k)**4
 
-           nnucct(k) = (ndfaer1*(nacon(i,k,1)*tcnt)+ndfaer2*(nacon(i,k,2)*tcnt)+ndfaer3*(nacon(i,k,3)*tcnt) &
-                       +ndfaer4*(nacon(i,k,4)*tcnt))*2._r8*pi*  &
-                       cdist1(k)*gamma(pgam(k)+2._r8)/lamc(k)
+           if (sub_column) then
+ 
+               mnucct(k) = &
+                        (ndfaer1*(nacon(i,k,1)*tcnt)+ndfaer2*(nacon(i,k,2)*tcnt)+ndfaer3*(nacon(i,k,3)*tcnt)+ndfaer4* &
+                        (nacon(i,k,4)*tcnt))*pi*pi/3._r8*rhow*cdist1(k)*gamma(pgam(k)+5._r8)/lamc(k)**4
+ 
+               nnucct(k) = (ndfaer1*(nacon(i,k,1)*tcnt)+ndfaer2*(nacon(i,k,2)*tcnt)+ndfaer3*(nacon(i,k,3)*tcnt)+ndfaer4* &
+                        (nacon(i,k,4)*tcnt))*2._r8*pi*cdist1(k)*gamma(pgam(k)+2._r8)/lamc(k)
+ 
+           else
+
+               mnucct(k) = gamma(qcvar+4._r8/3._r8)/(cons3*qcvar**(4._r8/3._r8))*  &
+                       (ndfaer1*(nacon(i,k,1)*tcnt)+ndfaer2*(nacon(i,k,2)*tcnt)+ndfaer3*(nacon(i,k,3)*tcnt)+ndfaer4* &
+                       (nacon(i,k,4)*tcnt))*pi*pi/3._r8*rhow*cdist1(k)*gamma(pgam(k)+5._r8)/lamc(k)**4
+
+                nnucct(k) =  gamma(qcvar+1._r8/3._r8)/(cons3*qcvar**(1._r8/3._r8))*  &
+                         (ndfaer1*(nacon(i,k,1)*tcnt)+ndfaer2*(nacon(i,k,2)*tcnt)+ndfaer3*(nacon(i,k,3)*tcnt)+ndfaer4* &
+                         (nacon(i,k,4)*tcnt))*2._r8*pi*cdist1(k)*gamma(pgam(k)+2._r8)/lamc(k)
+
+           end if      ! sub-column switch
 
 ! make sure number of droplets frozen does not exceed available ice nuclei concentration
 ! this prevents 'runaway' droplet freezing
@@ -1924,11 +1993,11 @@ subroutine mmicro_pcond (                   &
 	if (t(i,k).lt.269.15_r8 .and. qric(i,k).ge.qsmall) then
 
 	mnuccr(k) = 20._r8*pi*pi*rhow*nric(i,k)*bimm* &
-                  exp(aimm*(273.15_r8-t(i,k)))/lamr(k)**3 &
+                  (exp(aimm*(273.15_r8-t(i,k)))-1._r8)/lamr(k)**3 &
                  /lamr(k)**3
 
 	nnuccr(k) = pi*nric(i,k)*bimm* &
-                   exp(aimm*(273.15_r8-t(i,k)))/lamr(k)**3
+                   (exp(aimm*(273.15_r8-t(i,k)))-1._r8)/lamr(k)**3
         else
            mnuccr(k)=0._r8
            nnuccr(k)=0._r8
@@ -1943,9 +2012,21 @@ subroutine mmicro_pcond (                   &
 
 ! include sub-grid distribution of cloud water
 
-           pra(k) = cons12/(cons3*cons20)* &
+! add sub-column switch
+ 
+           if (sub_column) then
+ 
+              pra(k) = &
+                       67._r8*(qcic(i,k)*qric(i,k))**1.15_r8
+              npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
+ 
+           else
+
+              pra(k) = cons12/(cons3*cons20)* &
                       67._r8*(qcic(i,k)*qric(i,k))**1.15_r8
-	   npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
+              npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
+
+           end if               ! sub-column switch
 
          else
            pra(k)=0._r8
@@ -2321,6 +2402,7 @@ subroutine mmicro_pcond (                   &
         prco(i,k)=prco(i,k)+prc(k)*lcldm(i,k)
         mnuccco(i,k)=mnuccco(i,k)+mnuccc(k)*lcldm(i,k)
         mnuccto(i,k)=mnuccto(i,k)+mnucct(k)*lcldm(i,k)
+        mnuccdo(i,k)=mnuccdo(i,k)+mnuccd(k)*lcldm(i,k)
         msacwio(i,k)=msacwio(i,k)+msacwi(k)*lcldm(i,k)
         psacwso(i,k)=psacwso(i,k)+psacws(k)*lcldm(i,k)
         bergso(i,k)=bergso(i,k)+bergs(k)*lcldm(i,k)
@@ -2419,14 +2501,14 @@ subroutine mmicro_pcond (                   &
 
 ! melt snow at +2 C
 
-        if (t(i,k)+tlat(i,k)/cp*deltat > 275.15_r8) then
+        if (t(i,k)+tlat(i,k)/cpp*deltat > 275.15_r8) then
            if (qstot > 0._r8) then
 
 ! make sure melting snow doesn't reduce temperature below threshold
-	      dum = -xlf/cp*qstot/(dz(i,k)*rho(i,k))
-	      if (t(i,k)+tlat(i,k)/cp*deltat+dum.lt.275.15_r8) then
-	       dum = (t(i,k)+tlat(i,k)/cp*deltat-275.15_r8)*cp/xlf
-	       dum = dum/(xlf/cp*qstot/(dz(i,k)*rho(i,k)))
+	      dum = -xlf/cpp*qstot/(dz(i,k)*rho(i,k))
+	      if (t(i,k)+tlat(i,k)/cpp*deltat+dum.lt.275.15_r8) then
+	       dum = (t(i,k)+tlat(i,k)/cpp*deltat-275.15_r8)*cpp/xlf
+	       dum = dum/(xlf/cpp*qstot/(dz(i,k)*rho(i,k)))
 	       dum = max(0._r8,dum)
 	       dum = min(1._r8,dum)
 	      else
@@ -2452,15 +2534,15 @@ subroutine mmicro_pcond (                   &
 
 ! freeze all rain at -5C for Arctic
 
-        if (t(i,k)+tlat(i,k)/cp*deltat < (tmelt - 5._r8)) then
+        if (t(i,k)+tlat(i,k)/cpp*deltat < (tmelt - 5._r8)) then
 
            if (qrtot > 0._r8) then
 
 ! make sure freezing rain doesn't increase temperature above threshold
-          dum = xlf/cp*qrtot/(dz(i,k)*rho(i,k))
-          if (t(i,k)+tlat(i,k)/cp*deltat+dum.gt.(tmelt - 5._r8)) then
-           dum = -(t(i,k)+tlat(i,k)/cp*deltat-(tmelt-5._r8))*cp/xlf
-           dum = dum/(xlf/cp*qrtot/(dz(i,k)*rho(i,k)))
+          dum = xlf/cpp*qrtot/(dz(i,k)*rho(i,k))
+          if (t(i,k)+tlat(i,k)/cpp*deltat+dum.gt.(tmelt - 5._r8)) then
+           dum = -(t(i,k)+tlat(i,k)/cpp*deltat-(tmelt-5._r8))*cpp/xlf
+           dum = dum/(xlf/cpp*qrtot/(dz(i,k)*rho(i,k)))
            dum = max(0._r8,dum)
            dum = min(1._r8,dum)
           else
@@ -2745,6 +2827,8 @@ subroutine mmicro_pcond (                   &
         mnuccro(i,k)=mnuccro(i,k)/real(iter)
         pracso (i,k)=pracso (i,k)/real(iter)
 
+        mnuccdo(i,k)=mnuccdo(i,k)/real(iter)
+
 ! modify to include snow. in prain & evap (diagnostic here: for wet dep)
         nevapr(i,k) = nevapr(i,k) + evapsnow(i,k)
         prain(i,k) = prain(i,k) + prodsnow(i,k)
@@ -2970,14 +3054,14 @@ subroutine mmicro_pcond (                   &
 	
 ! calculate instantaneous processes (melting, homogeneous freezing)
 
-        if (t(i,k)+tlat(i,k)/cp*deltat > tmelt) then
+        if (t(i,k)+tlat(i,k)/cpp*deltat > tmelt) then
            if (dumi(i,k) > 0._r8) then
 
 ! limit so that melting does not push temperature below freezing
-	      dum = -dumi(i,k)*xlf/cp
-	      if (t(i,k)+tlat(i,k)/cp*deltat+dum.lt.tmelt) then
-	       dum = (t(i,k)+tlat(i,k)/cp*deltat-tmelt)*cp/xlf
-	       dum = dum/dumi(i,k)*xlf/cp 
+	      dum = -dumi(i,k)*xlf/cpp
+	      if (t(i,k)+tlat(i,k)/cpp*deltat+dum.lt.tmelt) then
+	       dum = (t(i,k)+tlat(i,k)/cpp*deltat-tmelt)*cpp/xlf
+	       dum = dum/dumi(i,k)*xlf/cpp 
 	       dum = max(0._r8,dum)
 	       dum = min(1._r8,dum)
 	      else
@@ -3003,14 +3087,14 @@ subroutine mmicro_pcond (                   &
 
 ! homogeneously freeze droplets at -40 C
 
-        if (t(i,k)+tlat(i,k)/cp*deltat < 233.15_r8) then
+        if (t(i,k)+tlat(i,k)/cpp*deltat < 233.15_r8) then
            if (dumc(i,k) > 0._r8) then
 
 ! limit so that freezing does not push temperature above threshold
-	      dum = dumc(i,k)*xlf/cp
-	      if (t(i,k)+tlat(i,k)/cp*deltat+dum.gt.233.15_r8) then
-	       dum = -(t(i,k)+tlat(i,k)/cp*deltat-233.15_r8)*cp/xlf
-	       dum = dum/dumc(i,k)*xlf/cp
+	      dum = dumc(i,k)*xlf/cpp
+	      if (t(i,k)+tlat(i,k)/cpp*deltat+dum.gt.233.15_r8) then
+	       dum = -(t(i,k)+tlat(i,k)/cpp*deltat-233.15_r8)*cpp/xlf
+	       dum = dum/dumc(i,k)*xlf/cpp
 	       dum = max(0._r8,dum)
 	       dum = min(1._r8,dum)
 	      else
@@ -3128,7 +3212,7 @@ subroutine mmicro_pcond (                   &
 ! after update by microphysics, except when lambda exceeds bounds on mean drop
 ! size or if there is no cloud water
            if (dumnc(i,k).lt.cdnl/rho(i,k)) then   
-              nctend(i,k)=(cdnl/rho(i,k)*cldm(i,k)-nc(i,k))/deltat   
+              nctend(i,k)=(cdnl/rho(i,k)*lcldm(i,k)-nc(i,k))/deltat   
            end if
            dumnc(i,k)=max(dumnc(i,k),cdnl/rho(i,k)) ! sghan minimum in #/cm3 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3232,15 +3316,26 @@ subroutine mmicro_pcond (                   &
       do i = 1,ncol
          do k=1,pver
             if (qsout(i,k).gt.1.e-7_r8.and.nsout(i,k).gt.0._r8) then
-               dsout(i,k)=(pi * rhosn * nsout(i,k)/qsout(i,k))**(-1._r8/3._r8)
+               dsout(i,k)=3._r8*rhosn/917._r8*(pi * rhosn * nsout(i,k)/qsout(i,k))**(-1._r8/3._r8)
             endif
          end do
       end do
       call outfld('DSNOW',dsout,   pcols, lchnk)
-     
-! add precip fluxes as output fields
-      call outfld('MGFLXPRC',rflx,   pcols, lchnk)
-      call outfld('MGFLXSNW',sflx,   pcols, lchnk)
+ 
+!calculate effective radius of rain and snow in microns for COSP using Eq. 9 of COSP v1.3 manual
+      do i = 1,ncol
+         do k=1,pver
+	   !! RAIN
+            if (qrout(i,k).gt.1.e-7_r8.and.nrout(i,k).gt.0._r8) then
+		reff_rain(i,k)=1.5_r8*(pi * rhow * nrout(i,k)/qrout(i,k))**(-1._r8/3._r8)*1.e6_r8 
+            endif
+	    !! SNOW
+            if (qsout(i,k).gt.1.e-7_r8.and.nsout(i,k).gt.0._r8) then
+		reff_snow(i,k)=1.5_r8*(pi * rhosn * nsout(i,k)/qsout(i,k))**(-1._r8/3._r8)*1.e6_r8 
+
+            endif
+         end do
+      end do
 
       ! analytic radar reflectivity
       ! formulas from Matthew Shupe, NOAA/CERES
@@ -3388,9 +3483,15 @@ subroutine mmicro_pcond (                   &
         	dumc(i,k) = (qc(i,k)+qctend(i,k)*deltat)
         	dumi(i,k) = (qi(i,k)+qitend(i,k)*deltat)
 		dumfice=qsout(i,k) + qrout(i,k) + dumc(i,k) + dumi(i,k)  
-		if (dumfice.gt.0._r8) then
-		  nfice(i,k)=(qsout(i,k) + dumi(i,k))/dumfice
-	        endif	
+
+                if (dumfice.gt.qsmall.and.(qsout(i,k)+dumi(i,k).gt.qsmall)) then
+                  nfice(i,k)=(qsout(i,k) + dumi(i,k))/dumfice
+                endif
+
+                if (nfice(i,k).gt.1._r8) then
+                   nfice(i,k)=1._r8
+                endif
+
 	   enddo
 	enddo
 
@@ -3399,684 +3500,6 @@ subroutine mmicro_pcond (                   &
 return
 end subroutine mmicro_pcond
 
-!##############################################################################
-
-subroutine findsp1 (lchnk, ncol, q, t, p, tsp, qsp)
-!----------------------------------------------------------------------- 
-! 
-! Purpose: 
-!     find the wet bulb temperature for a given t and q
-!     in a longitude height section
-!     wet bulb temp is the temperature and spec humidity that is 
-!     just saturated and has the same enthalpy
-!     if q > qs(t) then tsp > t and qsp = qs(tsp) < q
-!     if q < qs(t) then tsp < t and qsp = qs(tsp) > q
-!
-! Method: 
-! a Newton method is used
-! first guess uses an algorithm provided by John Petch from the UKMO
-! we exclude points where the physical situation is unrealistic
-! e.g. where the temperature is outside the range of validity for the
-!      saturation vapor pressure, or where the water vapor pressure
-!      exceeds the ambient pressure, or the saturation specific humidity is 
-!      unrealistic
-! 
-! Author: P. Rasch
-! 
-!-----------------------------------------------------------------------
-!
-!     input arguments
-!
-   integer, intent(in) :: lchnk                 ! chunk identifier
-   integer, intent(in) :: ncol                  ! number of atmospheric columns
-
-   real(r8), intent(in) :: q(pcols,pver)        ! water vapor (kg/kg)
-   real(r8), intent(in) :: t(pcols,pver)        ! temperature (K)
-   real(r8), intent(in) :: p(pcols,pver)        ! pressure    (Pa)
-!
-! output arguments
-!
-   real(r8), intent(out) :: tsp(pcols,pver)      ! saturation temp (K)
-   real(r8), intent(out) :: qsp(pcols,pver)      ! saturation mixing ratio (kg/kg)
-!
-! local variables
-!
-   integer i                 ! work variable
-   integer k                 ! work variable
-   logical lflg              ! work variable
-   integer iter              ! work variable
-   integer l                 ! work variable
-   logical :: error_found
-
-   real(r8) omeps                ! 1 minus epsilon
-   real(r8) trinv                ! work variable
-   real(r8) es                   ! sat. vapor pressure
-   real(r8) desdt                ! change in sat vap pressure wrt temperature
-!     real(r8) desdp                ! change in sat vap pressure wrt pressure
-   real(r8) dqsdt                ! change in sat spec. hum. wrt temperature
-   real(r8) dgdt                 ! work variable
-   real(r8) g                    ! work variable
-   real(r8) weight(pcols)        ! work variable
-   real(r8) hlatsb               ! (sublimation)
-   real(r8) hlatvp               ! (vaporization)
-   real(r8) hltalt(pcols,pver)   ! lat. heat. of vap.
-   real(r8) tterm                ! work var.
-   real(r8) qs                   ! spec. hum. of water vapor
-   real(r8) tc                   ! crit temp of transition to ice
-
-! work variables
-   real(r8) t1, q1, dt, dq
-   real(r8) dtm, dqm
-   real(r8) qvd, a1, tmp
-   real(r8) rair
-   real(r8) r1b, c1, c2, c3
-   real(r8) denom
-   real(r8) dttol
-   real(r8) dqtol
-   integer doit(pcols) 
-   real(r8) enin(pcols), enout(pcols)
-   real(r8) tlim(pcols)
-
-   omeps = 1.0_r8 - epsqs
-   trinv = 1.0_r8/ttrice
-   a1 = 7.5_r8*log(10._r8)
-   rair =  287.04_r8
-   c3 = rair*a1/cp
-   dtm = 0._r8    ! needed for iter=0 blowup with f90 -ei
-   dqm = 0._r8    ! needed for iter=0 blowup with f90 -ei
-   dttol = 1.e-4_r8 ! the relative temp error tolerance required to quit the iteration
-   dqtol = 1.e-4_r8 ! the relative moisture error tolerance required to quit the iteration
-!  tmin = 173.16 ! the coldest temperature we can deal with
-!
-! max number of times to iterate the calculation
-   iter = 8
-!
-   do k = 1,pver
-
-!
-! first guess on the wet bulb temperature
-!
-      do i = 1,ncol
-
-#ifdef DEBUG
-         if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
-            write (iulog,*) ' '
-            write (iulog,*) ' level, t, q, p', k, t(i,k), q(i,k), p(i,k)
-         endif
-#endif
-
-! limit the temperature range to that relevant to the sat vap pres tables
-#if ( defined WACCM_PHYS )
-         tlim(i) = min(max(t(i,k),128._r8),373._r8)
-#else
-         tlim(i) = min(max(t(i,k),173._r8),373._r8)
-#endif
-         es = estblf(tlim(i))
-         denom = p(i,k) - omeps*es
-         qs = epsqs*es/denom
-         doit(i) = 0
-         enout(i) = 1._r8
-! make sure a meaningful calculation is possible
-         if (p(i,k) > 5._r8*es .and. qs > 0._r8 .and. qs < 0.5_r8) then
-!
-! Saturation specific humidity
-!
-             qs = min(epsqs*es/denom,1._r8)
-!
-! "generalized" analytic expression for t derivative of es
-!  accurate to within 1 percent for 173.16 < t < 373.16
-!
-! Weighting of hlat accounts for transition from water to ice
-! polynomial expression approximates difference between es over
-! water and es over ice from 0 to -ttrice (C) (min of ttrice is
-! -40): required for accurate estimate of es derivative in transition
-! range from ice to water also accounting for change of hlatv with t
-! above freezing where const slope is given by -2369 j/(kg c) = cpv - cw
-!
-             tc     = tlim(i) - tt0
-             lflg   = (tc >= -ttrice .and. tc < 0.0_r8)
-             weight(i) = min(-tc*trinv,1.0_r8)
-             hlatsb = hlatv + weight(i)*hlatf
-             hlatvp = hlatv - 2369.0_r8*tc
-             if (tlim(i) < tt0) then
-                hltalt(i,k) = hlatsb
-             else
-                hltalt(i,k) = hlatvp
-             end if
-             enin(i) = cp*tlim(i) + hltalt(i,k)*q(i,k)
-
-! make a guess at the wet bulb temp using a UKMO algorithm (from J. Petch)
-             tmp =  q(i,k) - qs
-             c1 = hltalt(i,k)*c3
-             c2 = (tlim(i) + 36._r8)**2
-             r1b    = c2/(c2 + c1*qs)
-             qvd   = r1b*tmp
-             tsp(i,k) = tlim(i) + ((hltalt(i,k)/cp)*qvd)
-#ifdef DEBUG
-             if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
-                write (iulog,*) ' relative humidity ', q(i,k)/qs
-                write (iulog,*) ' first guess ', tsp(i,k)
-             endif
-#endif
-             es = estblf(tsp(i,k))
-             qsp(i,k) = min(epsqs*es/(p(i,k) - omeps*es),1._r8)
-          else
-             doit(i) = 1
-             tsp(i,k) = tlim(i)
-             qsp(i,k) = q(i,k)
-             enin(i) = 1._r8
-          endif
-       end do   ! end do i
-!
-! now iterate on first guess
-!
-      do l = 1, iter
-         dtm = 0
-         dqm = 0
-         do i = 1,ncol
-            if (doit(i) == 0) then
-               es = estblf(tsp(i,k))
-!
-! Saturation specific humidity
-!
-               qs = min(epsqs*es/(p(i,k) - omeps*es),1._r8)
-!
-! "generalized" analytic expression for t derivative of es
-! accurate to within 1 percent for 173.16 < t < 373.16
-!
-! Weighting of hlat accounts for transition from water to ice
-! polynomial expression approximates difference between es over
-! water and es over ice from 0 to -ttrice (C) (min of ttrice is
-! -40): required for accurate estimate of es derivative in transition
-! range from ice to water also accounting for change of hlatv with t
-! above freezing where const slope is given by -2369 j/(kg c) = cpv - cw
-!
-               tc     = tsp(i,k) - tt0
-               lflg   = (tc >= -ttrice .and. tc < 0.0_r8)
-               weight(i) = min(-tc*trinv,1.0_r8)
-               hlatsb = hlatv + weight(i)*hlatf
-               hlatvp = hlatv - 2369.0_r8*tc
-               if (tsp(i,k) < tt0) then
-                  hltalt(i,k) = hlatsb
-               else
-                  hltalt(i,k) = hlatvp
-               end if
-               if (lflg) then
-                  tterm = pcf(1) + tc*(pcf(2) + tc*(pcf(3)+tc*(pcf(4) + tc*pcf(5))))
-               else
-                  tterm = 0.0_r8
-               end if
-               desdt = hltalt(i,k)*es/(rgasv*tsp(i,k)*tsp(i,k)) + tterm*trinv
-               dqsdt = (epsqs + omeps*qs)/(p(i,k) - omeps*es)*desdt
-!              g = cp*(tlim(i)-tsp(i,k)) + hltalt(i,k)*q(i,k)- hltalt(i,k)*qsp(i,k)
-               g = enin(i) - (cp*tsp(i,k) + hltalt(i,k)*qsp(i,k))
-               dgdt = -(cp + hltalt(i,k)*dqsdt)
-               t1 = tsp(i,k) - g/dgdt
-               dt = abs(t1 - tsp(i,k))/t1
-               tsp(i,k) = max(t1,tmin)
-               es = estblf(tsp(i,k))
-               q1 = min(epsqs*es/(p(i,k) - omeps*es),1._r8)
-               dq = abs(q1 - qsp(i,k))/max(q1,1.e-12_r8)
-               qsp(i,k) = q1
-#ifdef DEBUG
-               if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
-                  write (iulog,*) ' rel chg lev, iter, t, q ', k, l, dt, dq, g
-               endif
-#endif
-               dtm = max(dtm,dt)
-               dqm = max(dqm,dq)
-! if converged at this point, exclude it from more iterations
-               if (dt < dttol .and. dq < dqtol) then
-                  doit(i) = 2
-               endif
-               enout(i) = cp*tsp(i,k) + hltalt(i,k)*qsp(i,k)
-! bail out if we are too near the end of temp range
-#if ( defined WACCM_PHYS )
-               if (tsp(i,k) < 130.16_r8) then
-#else
-               if (tsp(i,k) < 174.16_r8) then
-#endif
-                  doit(i) = 4
-               endif
-            else
-            endif
-         end do              ! do i = 1,ncol
-
-         if (dtm < dttol .and. dqm < dqtol) then
-            go to 10
-         endif
-
-      end do                 ! do l = 1,iter
-10    continue
-
-      error_found = .false.
-      if (dtm > dttol .or. dqm > dqtol) then
-         do i = 1,ncol
-            if (doit(i) == 0) error_found = .true.
-         end do
-         if (error_found) then
-            do i = 1,ncol
-               if (doit(i) == 0) then
-                  write (iulog,*) ' findsp not converging at point i, k ', i, k
-                  write (iulog,*) ' t, q, p, enin ', t(i,k), q(i,k), p(i,k), enin(i)
-                  write (iulog,*) ' tsp, qsp, enout ', tsp(i,k), qsp(i,k), enout(i)
-                  call endrun ('FINDSP')
-               endif
-            end do
-         endif
-      endif
-      do i = 1,ncol
-         if (doit(i) == 2 .and. abs((enin(i)-enout(i))/(enin(i)+enout(i))) > 1.e-4_r8) then
-            error_found = .true.
-         endif
-      end do
-      if (error_found) then
-         do i = 1,ncol
-            if (doit(i) == 2 .and. abs((enin(i)-enout(i))/(enin(i)+enout(i))) > 1.e-4_r8) then
-               write (iulog,*) ' the enthalpy is not conserved for point ', &
-                  i, k, enin(i), enout(i)
-               write (iulog,*) ' t, q, p, enin ', t(i,k), q(i,k), p(i,k), enin(i)
-               write (iulog,*) ' tsp, qsp, enout ', tsp(i,k), qsp(i,k), enout(i)
-               call endrun ('FINDSP')
-            endif
-         end do
-      endif
-      
-   end do                    ! level loop (k=1,pver)
-
-   return
-end subroutine findsp1
-
-
-subroutine findsp1_water (lchnk, ncol, q, t, p, tsp, qsp)
-!-----------------------------------------------------------------------
-!
-! Purpose:
-!     find the wet bulb temperature for a given t and q
-!     in a longitude height section
-!     wet bulb temp is the temperature and spec humidity that is
-!     just saturated and has the same enthalpy
-!     if q > qs(t) then tsp > t and qsp = qs(tsp) < q
-!     if q < qs(t) then tsp < t and qsp = qs(tsp) > q
-!
-! Method:
-! a Newton method is used
-! first guess uses an algorithm provided by John Petch from the UKMO
-! we exclude points where the physical situation is unrealistic
-! e.g. where the temperature is outside the range of validity for the
-!      saturation vapor pressure, or where the water vapor pressure
-!      exceeds the ambient pressure, or the saturation specific humidity is
-!      unrealistic
-!
-! Author: P. Rasch
-!
-!-----------------------------------------------------------------------
-!
-!     input arguments
-!
-   integer, intent(in) :: lchnk                 ! chunk identifier
-   integer, intent(in) :: ncol                  ! number of atmospheric columns
-
-   real(r8), intent(in) :: q(pcols,pver)        ! water vapor (kg/kg)
-   real(r8), intent(in) :: t(pcols,pver)        ! temperature (K)
-   real(r8), intent(in) :: p(pcols,pver)        ! pressure    (Pa)
-!
-! output arguments
-!
-   real(r8), intent(out) :: tsp(pcols,pver)      ! saturation temp (K)
-   real(r8), intent(out) :: qsp(pcols,pver)      ! saturation mixing ratio (kg/kg)
-!
-! local variables
-!
-   integer i                 ! work variable
-   integer k                 ! work variable
-   logical lflg              ! work variable
-   integer iter              ! work variable
-   integer l                 ! work variable
-   logical :: error_found
-
-   real(r8) omeps                ! 1 minus epsilon
-   real(r8) trinv                ! work variable
-   real(r8) es                   ! sat. vapor pressure
-   real(r8) desdt                ! change in sat vap pressure wrt temperature
-!     real(r8) desdp                ! change in sat vap pressure wrt pressure
-   real(r8) dqsdt                ! change in sat spec. hum. wrt temperature
-   real(r8) dgdt                 ! work variable
-   real(r8) g                    ! work variable
-   real(r8) weight(pcols)        ! work variable
-   real(r8) hlatsb               ! (sublimation)
-   real(r8) hlatvp               ! (vaporization)
-   real(r8) hltalt(pcols,pver)   ! lat. heat. of vap.
-   real(r8) tterm                ! work var.
-   real(r8) qs                   ! spec. hum. of water vapor
-   real(r8) tc                   ! crit temp of transition to ice
-
-! work variables
-   real(r8) t1, q1, dt, dq
-   real(r8) dtm, dqm
-   real(r8) qvd, a1, tmp
-   real(r8) rair
-   real(r8) r1b, c1, c2, c3
-   real(r8) denom
-   real(r8) dttol
-   real(r8) dqtol
-   integer doit(pcols)
-   real(r8) enin(pcols), enout(pcols)
-   real(r8) tlim(pcols)
-
-   omeps = 1.0_r8 - epsqs
-   a1 = 7.5_r8*log(10._r8)
-   rair =  287.04_r8
-   c3 = rair*a1/cp
-   dtm = 0._r8    ! needed for iter=0 blowup with f90 -ei
-   dqm = 0._r8    ! needed for iter=0 blowup with f90 -ei
-   dttol = 1.e-4_r8 ! the relative temp error tolerance required to quit the iteration
-   dqtol = 1.e-4_r8 ! the relative moisture error tolerance required to quit the iteration
-!
-! max number of times to iterate the calculation
-   iter = 8
-!
-   do k = 1,pver
-
-!
-! first guess on the wet bulb temperature
-!
-      do i = 1,ncol
-
-#ifdef DEBUG
-         if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
-            write (iulog,*) ' '
-            write (iulog,*) ' level, t, q, p', k, t(i,k), q(i,k), p(i,k)
-         endif
-#endif
-! limit the temperature range to that relevant to the sat vap pres tables
-#if ( defined WACCM_PHYS )
-         tlim(i) = min(max(t(i,k),128._r8),373._r8)
-#else
-         tlim(i) = min(max(t(i,k),173._r8),373._r8)
-#endif
-
-         es = polysvp(tlim(i),0) 
-         denom = p(i,k) - omeps*es
-         qs = epsqs*es/denom
-         doit(i) = 0
-         enout(i) = 1._r8
-! make sure a meaningful calculation is possible
-         if (p(i,k) > 5._r8*es .and. qs > 0._r8 .and. qs < 0.5_r8) then
-!
-! Saturation specific humidity
-!
-             qs = min(epsqs*es/denom,1._r8)
-!
-! "generalized" analytic expression for t derivative of es
-!  accurate to within 1 percent for 173.16 < t < 373.16
-
-!
-! No icephs or water to ice transition
-!
-             hlatvp = hlatv - 2369.0*(tlim(i)-tt0)
-             hlatsb = hlatv
-             if (tlim(i) < tt0) then
-               hltalt(i,k) = hlatsb
-             else
-               hltalt(i,k) = hlatvp
-             end if
-!--xl
-             enin(i) = cp*tlim(i) + hltalt(i,k)*q(i,k)
-
-! make a guess at the wet bulb temp using a UKMO algorithm (from J. Petch)
-             tmp =  q(i,k) - qs
-             c1 = hltalt(i,k)*c3
-             c2 = (tlim(i) + 36._r8)**2
-             r1b    = c2/(c2 + c1*qs)
-             qvd   = r1b*tmp
-             tsp(i,k) = tlim(i) + ((hltalt(i,k)/cp)*qvd)
-#ifdef DEBUG
-             if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
-                write (iulog,*) ' relative humidity ', q(i,k)/qs
-                write (iulog,*) ' first guess ', tsp(i,k)
-             endif
-#endif
-             es = polysvp(tsp(i,k),0) 
-             qsp(i,k) = min(epsqs*es/(p(i,k) - omeps*es),1._r8)
-          else
-             doit(i) = 1
-             tsp(i,k) = tlim(i)
-             qsp(i,k) = q(i,k)
-             enin(i) = 1._r8
-          endif
-       end do   ! end do i
-!
-! now iterate on first guess
-!
-      do l = 1, iter
-         dtm = 0
-         dqm = 0
-         do i = 1,ncol
-            if (doit(i) == 0) then
-               es = polysvp(tsp(i,k),0)  
-!
-! Saturation specific humidity
-!
-               qs = min(epsqs*es/(p(i,k) - omeps*es),1._r8)
-!
-! "generalized" analytic expression for t derivative of es
-! accurate to within 1 percent for 173.16 < t < 373.16
-!
-!
-! No icephs or water to ice transition
-!
-               hlatvp = hlatv - 2369.0*(tsp(i,k)-tt0)
-               hlatsb = hlatv
-               if (tsp(i,k) < tt0) then
-                 hltalt(i,k) = hlatsb
-               else
-                 hltalt(i,k) = hlatvp
-               end if
-               desdt = hltalt(i,k)*es/(rgasv*tsp(i,k)*tsp(i,k))
-               dqsdt = (epsqs + omeps*qs)/(p(i,k) - omeps*es)*desdt
-               g = enin(i) - (cp*tsp(i,k) + hltalt(i,k)*qsp(i,k))
-               dgdt = -(cp + hltalt(i,k)*dqsdt)
-               t1 = tsp(i,k) - g/dgdt
-               dt = abs(t1 - tsp(i,k))/t1
-               tsp(i,k) = max(t1,tmin)
-
-               es = polysvp(tsp(i,k),0)  
-               q1 = min(epsqs*es/(p(i,k) - omeps*es),1._r8)
-               dq = abs(q1 - qsp(i,k))/max(q1,1.e-12_r8)
-               qsp(i,k) = q1
-#ifdef DEBUG
-               if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
-                  write (iulog,*) ' rel chg lev, iter, t, q ', k, l, dt, dq, g
-               endif
-#endif
-               dtm = max(dtm,dt)
-               dqm = max(dqm,dq)
-! if converged at this point, exclude it from more iterations
-               if (dt < dttol .and. dq < dqtol) then
-                  doit(i) = 2
-               endif
-               enout(i) = cp*tsp(i,k) + hltalt(i,k)*qsp(i,k)
-! bail out if we are too near the end of temp range
-#if ( defined WACCM_PHYS )
-               if (tsp(i,k) < 130.16_r8) then
-#else
-               if (tsp(i,k) < 174.16_r8) then
-#endif
-                  doit(i) = 4
-               endif
-            else
-            endif
-         end do              ! do i = 1,ncol
-
-         if (dtm < dttol .and. dqm < dqtol) then
-            go to 10
-         endif
-
-      end do                 ! do l = 1,iter
-10    continue
-
-      error_found = .false.
-      if (dtm > dttol .or. dqm > dqtol) then
-         do i = 1,ncol
-            if (doit(i) == 0) error_found = .true.
-         end do
-         if (error_found) then
-            do i = 1,ncol
-               if (doit(i) == 0) then
-                  write (iulog,*) ' findsp not converging at point i, k ', i, k
-                  write (iulog,*) ' t, q, p, enin ', t(i,k), q(i,k), p(i,k), enin(i)
-                  write (iulog,*) ' tsp, qsp, enout ', tsp(i,k), qsp(i,k), enout(i)
-                  call endrun ('FINDSP')
-               endif
-            end do
-         endif
-      endif
-      do i = 1,ncol
-         if (doit(i) == 2 .and. abs((enin(i)-enout(i))/(enin(i)+enout(i))) > 1.e-4_r8) then
-            error_found = .true.
-         endif
-      end do
-      if (error_found) then
-         do i = 1,ncol
-            if (doit(i) == 2 .and. abs((enin(i)-enout(i))/(enin(i)+enout(i))) > 1.e-4_r8) then
-               write (iulog,*) ' the enthalpy is not conserved for point ', &
-                  i, k, enin(i), enout(i)
-               write (iulog,*) ' t, q, p, enin ', t(i,k), q(i,k), p(i,k), enin(i)
-               write (iulog,*) ' tsp, qsp, enout ', tsp(i,k), qsp(i,k), enout(i)
-               call endrun ('FINDSP')
-            endif
-         end do
-      endif
-      
-   end do                    ! level loop (k=1,pver)
-
-   return
-end subroutine findsp1_water
-
-
-!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-! error function in single precision
-!
-!    Copyright(C) 1996 Takuya OOURA (email: ooura@mmm.t.u-tokyo.ac.jp).
-!    You may use, copy, modify this code for any purpose and 
-!    without fee. You may distribute this ORIGINAL package.
-
-      function derf(x)
-      implicit real (a - h, o - z)
-      real(r8) a,b,x
-      dimension a(0 : 64), b(0 : 64)
-      integer i,k
-      data (a(i), i = 0, 12) / & 
-         0.00000000005958930743d0, -0.00000000113739022964d0, & 
-         0.00000001466005199839d0, -0.00000016350354461960d0, &
-         0.00000164610044809620d0, -0.00001492559551950604d0, &
-         0.00012055331122299265d0, -0.00085483269811296660d0, &
-         0.00522397762482322257d0, -0.02686617064507733420d0, &
-         0.11283791670954881569d0, -0.37612638903183748117d0, &
-         1.12837916709551257377d0 / 
-      data (a(i), i = 13, 25) / &
-         0.00000000002372510631d0, -0.00000000045493253732d0, &
-         0.00000000590362766598d0, -0.00000006642090827576d0, &
-         0.00000067595634268133d0, -0.00000621188515924000d0, &
-         0.00005103883009709690d0, -0.00037015410692956173d0, &
-         0.00233307631218880978d0, -0.01254988477182192210d0, &
-         0.05657061146827041994d0, -0.21379664776456006580d0, &
-         0.84270079294971486929d0 / 
-      data (a(i), i = 26, 38) / &
-         0.00000000000949905026d0, -0.00000000018310229805d0, &
-         0.00000000239463074000d0, -0.00000002721444369609d0, &
-         0.00000028045522331686d0, -0.00000261830022482897d0, &
-         0.00002195455056768781d0, -0.00016358986921372656d0, &
-         0.00107052153564110318d0, -0.00608284718113590151d0, &
-         0.02986978465246258244d0, -0.13055593046562267625d0, &
-         0.67493323603965504676d0 / 
-      data (a(i), i = 39, 51) / &
-         0.00000000000382722073d0, -0.00000000007421598602d0, &
-         0.00000000097930574080d0, -0.00000001126008898854d0, &
-         0.00000011775134830784d0, -0.00000111992758382650d0, &
-         0.00000962023443095201d0, -0.00007404402135070773d0, &
-         0.00050689993654144881d0, -0.00307553051439272889d0, &
-         0.01668977892553165586d0, -0.08548534594781312114d0, &
-         0.56909076642393639985d0 / 
-      data (a(i), i = 52, 64) / &
-         0.00000000000155296588d0, -0.00000000003032205868d0, &
-         0.00000000040424830707d0, -0.00000000471135111493d0, &
-         0.00000005011915876293d0, -0.00000048722516178974d0, &
-         0.00000430683284629395d0, -0.00003445026145385764d0, &
-         0.00024879276133931664d0, -0.00162940941748079288d0, &
-         0.00988786373932350462d0, -0.05962426839442303805d0, &
-         0.49766113250947636708d0 / 
-      data (b(i), i = 0, 12) / &
-         -0.00000000029734388465d0, 0.00000000269776334046d0, &
-         -0.00000000640788827665d0, -0.00000001667820132100d0, &
-         -0.00000021854388148686d0, 0.00000266246030457984d0, &
-         0.00001612722157047886d0, -0.00025616361025506629d0, &
-         0.00015380842432375365d0, 0.00815533022524927908d0, &
-         -0.01402283663896319337d0, -0.19746892495383021487d0,& 
-         0.71511720328842845913d0 / 
-      data (b(i), i = 13, 25) / &
-         -0.00000000001951073787d0, -0.00000000032302692214d0, &
-         0.00000000522461866919d0, 0.00000000342940918551d0, &
-         -0.00000035772874310272d0, 0.00000019999935792654d0, &
-         0.00002687044575042908d0, -0.00011843240273775776d0, &
-         -0.00080991728956032271d0, 0.00661062970502241174d0, &
-         0.00909530922354827295d0, -0.20160072778491013140d0, &
-         0.51169696718727644908d0 / 
-      data (b(i), i = 26, 38) / &
-         0.00000000003147682272d0, -0.00000000048465972408d0, &
-         0.00000000063675740242d0, 0.00000003377623323271d0, &
-         -0.00000015451139637086d0, -0.00000203340624738438d0,& 
-         0.00001947204525295057d0, 0.00002854147231653228d0, &
-         -0.00101565063152200272d0, 0.00271187003520095655d0, &
-         0.02328095035422810727d0, -0.16725021123116877197d0, &
-         0.32490054966649436974d0 / 
-      data (b(i), i = 39, 51) / &
-         0.00000000002319363370d0, -0.00000000006303206648d0, &
-         -0.00000000264888267434d0, 0.00000002050708040581d0, &
-         0.00000011371857327578d0, -0.00000211211337219663d0, &
-         0.00000368797328322935d0, 0.00009823686253424796d0, &
-         -0.00065860243990455368d0, -0.00075285814895230877d0,& 
-         0.02585434424202960464d0, -0.11637092784486193258d0, &
-         0.18267336775296612024d0 / 
-      data (b(i), i = 52, 64) / &
-         -0.00000000000367789363d0, 0.00000000020876046746d0, &
-         -0.00000000193319027226d0, -0.00000000435953392472d0, &
-         0.00000018006992266137d0, -0.00000078441223763969d0, &
-         -0.00000675407647949153d0, 0.00008428418334440096d0, &
-         -0.00017604388937031815d0, -0.00239729611435071610d0, &
-         0.02064129023876022970d0, -0.06905562880005864105d0, &
-         0.09084526782065478489d0 / 
-      w = abs(x)
-      if (w .lt. 2.2d0) then
-          t = w * w
-          k = int(t)
-          t = t - k
-          k = k * 13
-          y = ((((((((((((a(k) * t + a(k + 1)) * t + &
-             a(k + 2)) * t + a(k + 3)) * t + a(k + 4)) * t + &
-             a(k + 5)) * t + a(k + 6)) * t + a(k + 7)) * t + &
-             a(k + 8)) * t + a(k + 9)) * t + a(k + 10)) * t + &
-             a(k + 11)) * t + a(k + 12)) * w
-      else if (w .lt. 6.9d0) then
-          k = int(w)
-          t = w - k
-          k = 13 * (k - 2)
-          y = (((((((((((b(k) * t + b(k + 1)) * t + &
-             b(k + 2)) * t + b(k + 3)) * t + b(k + 4)) * t + &
-             b(k + 5)) * t + b(k + 6)) * t + b(k + 7)) * t + &
-             b(k + 8)) * t + b(k + 9)) * t + b(k + 10)) * t + &
-             b(k + 11)) * t + b(k + 12)
-          y = y * y
-          y = y * y
-          y = y * y
-          y = 1 - y * y
-      else
-          y = 1
-      end if
-      if (x .lt. 0) y = -y
-      derf = y
-      end function derf
 !
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
