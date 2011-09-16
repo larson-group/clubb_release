@@ -3619,7 +3619,7 @@ module clubb_driver
              LH_sample_point_weights ) ! Out
 
       call stats_accumulate_LH &
-           ( nzmax, LH_microphys_calls, d_variables, & ! In
+           ( gr%nzmax, LH_microphys_calls, d_variables, & ! In
              LH_sample_point_weights,  X_nl_all_levs, LH_thl, LH_rt ) ! In
     end if ! LH_microphys_enabled
 
