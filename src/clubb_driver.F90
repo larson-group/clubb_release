@@ -9,9 +9,6 @@ module clubb_driver
 !   being the clubb_standalone program).
 !-----------------------------------------------------------------------
 
-  use stats_precision, only: time_precision ! Variable(s)
-  use text_writer, only: write_text, write_date
-
   implicit none
 
   ! Setup run_clubb() as the sole external interface
@@ -25,93 +22,6 @@ module clubb_driver
     run_clubb
 
   private ! Default to private
-
-  ! Model settings
-
-  ! Grid definition
-  integer, private ::  & 
-    nzmax,     & ! Vertical extent in levels( relevant for 
-  !                                         grid type 2 and 3 only )  [#]
-    grid_type    ! 1 ==> evenly-spaced grid levels
-  !                2 ==> stretched (unevenly-spaced) grid entered on
-  !                      thermodynamic grid levels; momentum levels
-  !                      halfway between thermodynamic levels (style
-  !                      of SAM stretched grid).
-  !                3 ==> stretched (unevenly-spaced) grid entered on
-  !                      momentum grid levels; thermodynamic levels
-  !                      halfway between momentum levels (style
-  !                      of WRF stretched grid).
-
-  ! Radiation variables
-  integer, private :: &
-    extend_atmos_bottom_level, & ! Bottom level of the extended atmosphere
-    extend_atmos_top_level,    & ! Top level of the extended atmosphere
-    extend_atmos_range_size      ! The number of levels in the extended atmosphere
-
-  ! The number of interpolated levels between the computational grid
-  ! and the extended atmosphere
-  integer, private :: &
-    lin_int_buffer
-
-! Note: Do not indent these omp directives, they must begin in the 2nd column
-!$omp threadprivate(extend_atmos_bottom_level, extend_atmos_top_level)
-!$omp threadprivate(extend_atmos_range_size, lin_int_buffer)
-
-  real, private ::  & 
-    deltaz,  & ! Change per grid level                 [m]
-    zm_init, & ! Initial point on the momentum grid    [m]
-    zm_top     ! Maximum point on the momentum grid    [m]
-
-!$omp threadprivate(nzmax, grid_type, zm_init, deltaz)
-
-  ! For grid_type 2 or 3 (stretched grid cases)
-  character(len=100), private :: & 
-    zt_grid_fname, & ! Path and filename of thermodynamic level altitudes
-    zm_grid_fname    ! Path and filename of momentum level altitudes
-
-!$omp threadprivate(zt_grid_fname, zm_grid_fname)
-
-  integer, private ::  & 
-    day, month, year ! Day of start of simulation
-
-!$omp threadprivate(day, month, year)
-
-  real, private ::  & 
-    rlat,  & ! Latitude  [Degrees North]
-    rlon     ! Longitude [Degrees East]
-
-!$omp threadprivate(rlat, rlon)
-
-  real, private ::  &
-    sfc_elevation  ! Elevation of ground level  [m AMSL]
-
-!$omp threadprivate(sfc_elevation)
-
-  character(len=50), private ::  & 
-    runtype ! String identifying the model case; e.g. bomex
-
-!$omp threadprivate(runtype)
-
-  integer, private :: &
-    sfctype ! 0: fixed sfc sensible and latent heat fluxes as
-  !              given in namelist
-  !           1: bulk formula: uses given surface temperature
-  !              and assumes over ocean
-
-!$omp threadprivate(sfctype)
-
-  real(kind=time_precision), private :: & 
-    time_initial,  & ! Time of start of simulation     [s]
-    time_final,    & ! Time end of simulation          [s]
-    time_spinup,   & ! Time end of spin up period      [s]
-    time_current     ! Current time of simulation      [s]
-!$omp threadprivate(time_initial, time_final, time_spinup, &
-!$omp               time_current)
-
-  real(kind=time_precision), private ::  & 
-    dt_main,      & ! Main model timestep                      [s]
-    dt_rad          ! Closure model timestep                   [s]
-!$omp threadprivate(dt_main, dt_rad)
 
   contains
 
@@ -264,6 +174,31 @@ module clubb_driver
     use variables_radiation_module, only: &
       setup_radiation_variables, & ! Procedure(s)
       cleanup_radiation_variables
+
+    use text_writer, only: write_text, write_date ! Procedure(s)
+
+    use clubb_model_settings, only: &
+      time_initial, & ! Variable(s)
+      time_final, &
+      time_spinup, &
+      time_current, &
+      nzmax, &
+      grid_type, &
+      extend_atmos_range_size, &
+      lin_int_buffer, &
+      zt_grid_fname, &
+      zm_grid_fname, &
+      zm_top, &
+      zm_init, &
+      deltaz, &
+      day, month, year, &
+      rlat, &
+      rlon, &
+      sfc_elevation, &
+      runtype, &
+      sfctype, &
+      dt_rad, &
+      dt_main
 
     implicit none
 
@@ -1214,6 +1149,14 @@ module clubb_driver
     use input_names, only: &
       wm_name, &
       omega_name
+
+    use clubb_model_settings, only: &
+      extend_atmos_bottom_level, &
+      extend_atmos_top_level, &
+      extend_atmos_range_size, &
+      lin_int_buffer, &
+      runtype, &
+      dt_main
 
     implicit none
 
@@ -2994,6 +2937,11 @@ module clubb_driver
       compute_ubar,          &
       set_sclr_sfc_rtm_thlm
 
+    use clubb_model_settings, only: &
+      runtype, & ! Variable(s)
+      sfctype, &
+      time_current, &
+      time_initial
 
     implicit none
 
@@ -3490,6 +3438,10 @@ module clubb_driver
     use array_index, only: & 
       iiNcm ! Variable
 
+    use clubb_model_settings, only: &
+      time_current, & ! Variable(s)
+      runtype
+
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
       xp2_on_xm2_array_cloud, &
@@ -3760,6 +3712,18 @@ module clubb_driver
 
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW
+
+    use stats_precision, only: &
+      time_precision ! Variable(s)
+
+    use clubb_model_settings, only: &
+      day, month, year, & ! Variable(s)
+      extend_atmos_bottom_level, &
+      extend_atmos_top_level, &
+      extend_atmos_range_size, &
+      lin_int_buffer, &
+      rlat, &
+      rlon
 
     implicit none
 
@@ -4051,6 +4015,10 @@ module clubb_driver
 
     use stats_type, only: &
       stat_update_var ! Procedure
+
+    use clubb_model_settings, only: &
+      extend_atmos_range_size, &
+      lin_int_buffer
 
     implicit none
 
