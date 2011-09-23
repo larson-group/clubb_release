@@ -18,6 +18,7 @@
 ../src/Benchmark_cases/surface_flux.F90
 ../src/Benchmark_cases/wangara.F90
 ../src/clubb_driver.F90
+../src/clubb_model_settings.F90
 ../src/bugsrad_driver.F90
 ../src/coamps_micro_driver_module.F90
 ../src/cos_solar_zen_module.F90
