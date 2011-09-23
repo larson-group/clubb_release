@@ -13,7 +13,7 @@ module mg_micro_driver_module
              ( dt, nzmax, l_stats_samp, l_local_kk, l_latin_hypercube, &
                thlm, p_in_Pa, exner, rho, pdf_params, &
                rcm, rvm, Ncnm, hydromet, hydromet_mc, &
-               hydromet_vel, rcm_mc, rvm_mc, thlm_mc)
+               hydromet_vel, rcm_mc, rvm_mc, thlm_mc, wp2_zt)
 ! Description:
 !   Wrapper for the Morrison-Gettelman microphysics
 ! References:
@@ -54,7 +54,7 @@ module mg_micro_driver_module
     use variables_diagnostic_module, only: &
       Kh_zm, &
       em
-      
+
     use wv_saturation, only: &
       gestbl ! Procedure
       
@@ -68,6 +68,10 @@ module mg_micro_driver_module
       
     use ppgrid, only: &
       init_ppgrid ! Procedure
+
+    use phys_buffer, only: &
+      pbuf, &      ! Variable
+      pbuf_setval  ! Procedure
       
     use grid_class, only: &
       flip ! Procedure
@@ -105,7 +109,8 @@ module mg_micro_driver_module
     real, dimension(nzmax), intent(in) :: &
       rcm,      & ! Liquid water mixing ratio          [kg/kg]
       rvm,      & ! Vapor water mixing ratio           [kg/kg]
-      Ncnm        ! Cloud nuclei number concentration  [count/m^3]
+      Ncnm,     & ! Cloud nuclei number concentration  [count/m^3]
+      wp2_zt      ! w'^2 on the thermo. grid           [m^2/s^2]
 
     real, dimension(nzmax,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -191,7 +196,10 @@ module mg_micro_driver_module
       unused_out28, unused_out29, unused_out30, &
       unused_out31, unused_out32, unused_out33, &
       unused_out34, unused_out35, unused_out36, &
-      unused_out37, unused_out38, unused_out39
+      unused_out37, unused_out38, unused_out39, &
+      unused_out40, unused_out41, unused_out42, &
+      unused_out43, unused_out44, unused_out45, &
+      unused_out46
       
     real(r8), dimension(nzmax-1,hydromet_dim) :: &
        hydromet_flip, &  ! Hydrometeor species                               [units vary]
@@ -287,10 +295,13 @@ module mg_micro_driver_module
     call gestbl(173.16_r8, 375.16_r8, 20.00_r8, .true., real( epsilo, kind=r8), &
                  real( latvap, kind=r8), real( latice, kind=r8), real( rh2o, kind=r8), &
                  real( cpair, kind=r8), real( tmelt, kind=r8) ) ! Known magic flag
+
+    ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
+    call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
                  
     ! Ensure no hydromet arrays are input as 0, because this makes MG crash.
     do i=1, hydromet_dim, 1
-      hydromet_flip(:,i) = max(1e-8_r8, hydromet_flip(:,i)) ! Known magic number
+      hydromet_flip(:,i) = max( 1e-8_r8, hydromet_flip(:,i) ) ! Known magic number
     end do
     
     ! Prescribe droplet concentration
@@ -324,37 +335,40 @@ module mg_micro_driver_module
     
     ! Calculate aerosol activiation, dust size, and number for contact nucleation
     call microp_aero_ts &
-         ( 0, 1, real( dt, kind=r8), T_in_K_flip, unused_in, &                                ! in
+         ( 1, 1, real( dt, kind=r8), T_in_K_flip, unused_in, &                                ! in
          rvm_flip, rcm_flip, hydromet_flip(:,iiricem), &                                      ! in
          hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
          liqcldf_flip, icecldf_flip, &                                                        ! in
          cldo_flip, unused_in, unused_in, unused_in, unused_in, &                             ! in
          aer_mmr_flip, &
+         pbuf, &
          Kh_zm_flip, em_flip, turbtype_flip, smaw_flip, wsub_flip, wsubi_flip, &
-         naai_flip, npccn_flip, rndst_flip, nacon_flip )                                     ! out
+         naai_flip, unused_out46, npccn_flip, rndst_flip, nacon_flip )                        ! out
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond &
-         ( 0, 1, real( dt, kind=r8), T_in_K_flip, unused_in, &                                ! in
-         rvm_flip, unused_in, unused_in, rcm_flip, hydromet_flip(:,iiricem), &                ! in
+         (.false., &                                                                          ! in
+         0, 1, real( dt, kind=r8), T_in_K_flip, &                                             ! in
+         rvm_flip, rcm_flip, hydromet_flip(:,iiricem), &                                      ! in
          hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
          liqcldf_flip, icecldf_flip, &                                                        ! in
-         cldo_flip, unused_in, unused_in, unused_in, unused_in, &                             ! in
-         unused_out01, &
+         cldo_flip, &                                                                         ! in
+         unused_out01, &                                                                      ! out
          naai_flip, npccn_flip, rndst_flip, nacon_flip, &                                     ! in
-         unused_in, unused_in, unused_in, tlat_flip, rvm_mc_flip, &
+         tlat_flip, rvm_mc_flip, &                                                            ! out
          rcm_mc_flip, hydromet_mc_flip(:,iiricem), hydromet_mc_flip(:,iiNcm), &               ! out
          hydromet_mc_flip(:,iiNim), effc_flip, &                                              ! out
          unused_out02, effi_flip, unused_out03, unused_out04,             &
          unused_out05, unused_out06,      &
          unused_out07, unused_out08, unused_out09, unused_out10, unused_out11, &
          unused_out12, rsnowm_flip, unused_out13, & !out
+         unused_out41, unused_out42, unused_out43, unused_out44, unused_out45, &
          unused_out14,unused_out15,unused_out16,unused_out17, &
          unused_out18, unused_out19, unused_out20, unused_out21, &
          unused_out22,unused_out23,unused_out24,unused_out25,unused_out26,unused_out27,& 
          unused_out28,unused_out29,unused_out30,unused_out31,unused_out32,unused_out33, &
          unused_out34,unused_out35,&
-         unused_out36,unused_out37,unused_out38,unused_out39 )
+         unused_out36,unused_out37,unused_out38,unused_out39,unused_out40 )
 
     ! Flip MG variables into CLUBB grid
     rcm_mc(2:nzmax) = real( flip( dble(rcm_mc_flip(1:nzmax-1) ), nzmax-1 ) )

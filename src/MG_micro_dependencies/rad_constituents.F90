@@ -12,7 +12,7 @@ module rad_constituents
   
   contains
   
-  subroutine rad_cnst_get_info( naero, aernames, aersources, aerindices, &
+  subroutine rad_cnst_get_info( list_idx, naero, aernames, aersources, aerindices, &
                                    ngas,  gasnames, gassources, gasindices, &
                                    use_data_o3, diagnosticindex )
      !
@@ -25,6 +25,7 @@ module rad_constituents
      implicit none
 
      ! Arguments
+     integer,                     intent(in)  :: list_idx    ! index of the climate or a diagnostic list
      integer,           optional, intent(out) :: naero
      integer,           optional, intent(out) :: ngas
      character(len=64), optional, intent(out) :: aernames(:)

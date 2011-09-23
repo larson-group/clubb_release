@@ -49,6 +49,12 @@ module microphys_driver
   use constants_clubb, only: &
     cloud_frac_min
 
+  use phys_buffer, only: & ! Used for placing wp2_zt in morrison-gettelman microphysics
+    pbuf_init,           &
+    pbuf_add,            &
+    pbuf_allocate,       &
+    pbuf_deallocate
+
   implicit none
 
   ! Subroutines
@@ -79,6 +85,9 @@ module microphys_driver
     ! References:
     ! None
     !---------------------------------------------------------------------------
+
+    use grid_class, only: & 
+      gr
 
     use array_index, only: & 
       iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
@@ -814,6 +823,9 @@ module microphys_driver
 
       ! Setup the MG scheme
       call ini_micro()
+      call pbuf_init()
+      call pbuf_add('WP2', 1, gr%nzmax, 1)
+      call pbuf_allocate()
       
     case ( "coamps" )
       iirrainm    = 1
@@ -1489,7 +1501,7 @@ module microphys_driver
           ( real( dt ), gr%nzmax, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
               thlm, p_in_Pa, exner, rho, pdf_params, &
               rcm, rtm-rcm, Ncnm, hydromet, hydromet_mc, &
-              hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc)
+              hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc, wp2_zt)
       end if
           
     case ( "khairoutdinov_kogan" )
@@ -3295,6 +3307,10 @@ module microphys_driver
 
     if ( allocated( l_hydromet_sed ) ) then
       deallocate( l_hydromet_sed )
+    end if
+
+    if ( trim( micro_scheme ) == "morrison-gettelman" ) then
+      call pbuf_deallocate()
     end if
 
     return

@@ -47,7 +47,7 @@ module phys_control
          shallow_scheme_out = ' '
          eddy_scheme_out = 'diag_TKE' ! Sets wsubTKE to true in subroutine ini_microp_aero
          microp_scheme_out = ' '
-         macrop_scheme_out = ' '
+         macrop_scheme_out = 'CLUBB_SGS'
          atm_dep_flux_out = .false.
          history_aerosol_out = .false.
          history_microphysics_out = .false.
