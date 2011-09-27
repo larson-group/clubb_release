@@ -180,7 +180,6 @@ module clubb_driver
     use clubb_model_settings, only: &
       time_initial, & ! Variable(s)
       time_final, &
-      time_spinup, &
       time_current, &
       nzmax, &
       grid_type, &
@@ -321,7 +320,7 @@ module clubb_driver
       runtype, nzmax, grid_type, deltaz, zm_init, zm_top, & 
       zt_grid_fname, zm_grid_fname,  & 
       day, month, year, rlat, rlon, sfc_elevation, & 
-      time_initial, time_final, time_spinup, & 
+      time_initial, time_final, & 
       dt_main, dt_rad, & 
       sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, & 
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
@@ -361,7 +360,6 @@ module clubb_driver
 
     time_initial = 0._time_precision
     time_final   = 3600._time_precision
-    time_spinup  = 0._time_precision
 
     dt_main    = 30._time_precision
     dt_rad = 30._time_precision
@@ -554,7 +552,6 @@ module clubb_driver
 
       call write_text( "time_initial = ", real( time_initial ), l_write_to_file, iunit )
       call write_text( "time_final = ", real( time_final ), l_write_to_file, iunit )
-      call write_text( "time_spinup = ", real( time_spinup ), l_write_to_file, iunit )
 
       call write_text( "dt_main = ", real( dt_main ), l_write_to_file, iunit )
       call write_text( "dt_rad = ", real( dt_rad ), l_write_to_file, iunit )

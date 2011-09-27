@@ -54,7 +54,7 @@ time_initial = 10800.0  ! Model start time [seconds since midnight on start date
 !The line below is used for submission, the shorter run is for comparison with LES
 !time_final = 2160000.0  ! Model end time [seconds since midnight on start date]
 time_final = 1296000.0
-time_spinup = 10800.0   ! End of spin-up period [seconds since midnight on start date]
+
 
 dt_main    = 300.0   ! Model timestep [s]
 dt_rad = 1800.0   ! Radiation timestep [s] 

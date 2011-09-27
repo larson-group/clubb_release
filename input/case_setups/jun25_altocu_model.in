@@ -50,7 +50,7 @@ sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level
 
 time_initial = 35799.1 ! Model start time [GMT, seconds since midnight on start date]
 time_final   = 71799.1 ! Model end time [GMT, seconds since midnight on start date]
-time_spinup =  3600.0  ! End of spin-up period [seconds since midnight on start date]
+
 
 dt_main    = 60.0   ! Model timestep [s]
 dt_rad = 60.0   ! Radiation timestep [s] 
