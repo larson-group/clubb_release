@@ -52,7 +52,7 @@ module pos_definite_module
       eps, & ! Variable(s)
       zero_threshold
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
       time_precision ! Variable(s)
 
     use error_code, only: &

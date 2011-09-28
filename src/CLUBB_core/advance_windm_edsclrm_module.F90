@@ -65,7 +65,7 @@ module advance_windm_edsclrm_module
       l_uv_nudge,  & ! Variable(s)
       l_tke_aniso
 
-    use stats_precision, only:  &
+    use clubb_precision, only:  &
       time_precision  ! Variable(s)
 
     use stats_type, only: &
@@ -1170,7 +1170,7 @@ module advance_windm_edsclrm_module
     use constants_clubb, only:  & 
       fstderr ! Variable(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
       time_precision ! Variable(s)
 
     use grid_class, only: &
@@ -1414,7 +1414,7 @@ module advance_windm_edsclrm_module
     use grid_class, only:  & 
         gr  ! Variable(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use diffusion, only:  & 
@@ -1625,7 +1625,7 @@ module advance_windm_edsclrm_module
     ! None
     !-----------------------------------------------------------------------
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use diffusion, only:  & 

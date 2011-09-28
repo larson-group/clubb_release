@@ -288,7 +288,7 @@ module mono_flux_limiter
         eps, &
         fstderr
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use error_code, only:  &
@@ -851,7 +851,7 @@ module mono_flux_limiter
     use mean_adv, only: & 
         term_ma_zt_lhs ! Procedure(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     implicit none
@@ -944,7 +944,7 @@ module mono_flux_limiter
     use grid_class, only: & 
         gr  ! Variable(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     implicit none
@@ -1143,7 +1143,7 @@ module mono_flux_limiter
     use pdf_parameter_module, only: &
         pdf_parameter  ! Type
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
     
     implicit none

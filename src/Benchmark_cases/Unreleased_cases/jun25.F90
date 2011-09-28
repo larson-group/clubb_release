@@ -32,7 +32,7 @@ module jun25
 !   None
 !--------------------------------------------------------------------------
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
       time_precision ! Variable(s)
 
     use time_dependent_input, only: time_sfc_given, &             ! Variable(s)

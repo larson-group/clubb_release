@@ -32,7 +32,7 @@ module arm_97
 
     use constants_clubb, only: grav ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 

@@ -41,10 +41,13 @@ module PDF_integrals_all_mixed_moments
     use parabolic, only:  &
         gamma  ! Procedure(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
@@ -60,11 +63,11 @@ module PDF_integrals_all_mixed_moments
       rho_x2x4_n, & ! Correlation between x2 and ln x4 (ith PDF component)  [-]
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       x1_mean,                        & ! Mean of x1 (overall)              [-]
       x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
       beta_exp,   & ! Exponent beta, corresponding to x3                    [-]
       gamma_exp     ! Exponent gamma, corresponding to x4                   [-]
@@ -74,7 +77,7 @@ module PDF_integrals_all_mixed_moments
       b_exp    ! Order prime of x2^alpha x3^beta - < x2^alpha x3^beta >     [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       quadrivar_NNLL_MM
 
     ! Local Variables
@@ -83,7 +86,7 @@ module PDF_integrals_all_mixed_moments
       q, & !
       r    !
 
-    double precision ::  &
+    real( kind = dp ) ::  &
       sigma_sum, & !
       s_cc         !
 
@@ -166,10 +169,13 @@ module PDF_integrals_all_mixed_moments
     use parabolic, only:  &
         gamma  ! Procedure(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
@@ -181,11 +187,11 @@ module PDF_integrals_all_mixed_moments
       rho_x2x4_n, & ! Correlation between x2 and ln x4 (ith PDF component)  [-]
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       x1_mean,                        & ! Mean of x1 (overall)              [-]
       x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
       beta_exp,   & ! Exponent beta, corresponding to x3                    [-]
       gamma_exp     ! Exponent gamma, corresponding to x4                   [-]
@@ -195,14 +201,14 @@ module PDF_integrals_all_mixed_moments
       b_exp    ! Order prime of x2^alpha x3^beta - < x2^alpha x3^beta >     [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       quadrivar_NNLL_MM_const_x1
 
     ! Local Variables
     integer :: &
       q    !
 
-    double precision ::  &
+    real( kind = dp ) ::  &
       sigma_sum, & !
       s_cc         !
 
@@ -263,10 +269,13 @@ module PDF_integrals_all_mixed_moments
     use KK_utilities, only:  &
         factorial    ! Procedure(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
@@ -278,11 +287,11 @@ module PDF_integrals_all_mixed_moments
       rho_x1x4_n, & ! Correlation between x1 and ln x4 (ith PDF component)  [-]
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       x1_mean,                        & ! Mean of x1 (overall)              [-]
       x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
       beta_exp,   & ! Exponent beta, corresponding to x3                    [-]
       gamma_exp     ! Exponent gamma, corresponding to x4                   [-]
@@ -292,7 +301,7 @@ module PDF_integrals_all_mixed_moments
       b_exp    ! Order prime of x2^alpha x3^beta - < x2^alpha x3^beta >     [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       quadrivar_NNLL_MM_const_x2
 
     ! Local Variables
@@ -300,7 +309,7 @@ module PDF_integrals_all_mixed_moments
       p, & !
       q    !
 
-    double precision ::  &
+    real( kind = dp ) ::  &
       sigma_sum    !
 
     ! Initialize sigma_sum
@@ -356,10 +365,13 @@ module PDF_integrals_all_mixed_moments
     use KK_utilities, only:  &
         factorial    ! Procedure(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
@@ -368,11 +380,11 @@ module PDF_integrals_all_mixed_moments
       sigma_x4_n, & ! Standard deviation of ln x4 (ith PDF component)       [-]
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       x1_mean,                        & ! Mean of x1 (overall)              [-]
       x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
       beta_exp,   & ! Exponent beta, corresponding to x3                    [-]
       gamma_exp     ! Exponent gamma, corresponding to x4                   [-]
@@ -382,14 +394,14 @@ module PDF_integrals_all_mixed_moments
       b_exp    ! Order prime of x2^alpha x3^beta - < x2^alpha x3^beta >     [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       quadrivar_NNLL_MM_const_x1_x2
 
     ! Local Variables
     integer :: &
       q    !
 
-    double precision ::  &
+    real( kind = dp ) ::  &
       sigma_sum    !
 
     ! Initialize sigma_sum
@@ -442,10 +454,13 @@ module PDF_integrals_all_mixed_moments
     use parabolic, only:  &
         gamma  ! Procedure(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
@@ -456,11 +471,11 @@ module PDF_integrals_all_mixed_moments
       rho_x1x3_n, & ! Correlation between x1 and ln x3 (ith PDF component)  [-]
       rho_x2x3_n    ! Correlation between x2 and ln x3 (ith PDF component)  [-]
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       x1_mean,               & ! Mean of x1 (overall)                       [-]
       x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
       beta_exp      ! Exponent beta, corresponding to x3                    [-]
 
@@ -469,7 +484,7 @@ module PDF_integrals_all_mixed_moments
       b_exp    ! Order prime of x2^alpha x3^beta - < x2^alpha x3^beta >     [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       trivar_NNL_MM
 
     ! Local Variables
@@ -478,7 +493,7 @@ module PDF_integrals_all_mixed_moments
       q, & !
       r    !
 
-    double precision ::  &
+    real( kind = dp ) ::  &
       sigma_sum, & !
       s_c          !
 
@@ -547,10 +562,13 @@ module PDF_integrals_all_mixed_moments
     use parabolic, only:  &
         gamma  ! Procedure(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
@@ -558,11 +576,11 @@ module PDF_integrals_all_mixed_moments
       sigma_x3_n, & ! Standard deviation of ln x3 (ith PDF component)       [-]
       rho_x2x3_n    ! Correlation between x2 and ln x3 (ith PDF component)  [-]
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       x1_mean,               & ! Mean of x1 (overall)                       [-]
       x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
       beta_exp      ! Exponent beta, corresponding to x3                    [-]
 
@@ -571,14 +589,14 @@ module PDF_integrals_all_mixed_moments
       b_exp    ! Order prime of x2^alpha x3^beta - < x2^alpha x3^beta >     [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       trivar_NNL_MM_const_x1
 
     ! Local Variables
     integer :: &
       q    !
 
-    double precision ::  &
+    real( kind = dp ) ::  &
       sigma_sum, & !
       s_c          !
 
@@ -627,10 +645,13 @@ module PDF_integrals_all_mixed_moments
     use KK_utilities, only:  &
         factorial    ! Procedure(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
@@ -638,11 +659,11 @@ module PDF_integrals_all_mixed_moments
       sigma_x3_n, & ! Standard deviation of ln x3 (ith PDF component)       [-]
       rho_x1x3_n    ! Correlation between x1 and ln x3 (ith PDF component)  [-]
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       x1_mean,               & ! Mean of x1 (overall)                       [-]
       x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
       beta_exp      ! Exponent beta, corresponding to x3                    [-]
 
@@ -651,7 +672,7 @@ module PDF_integrals_all_mixed_moments
       b_exp    ! Order prime of x2^alpha x3^beta - < x2^alpha x3^beta >     [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       trivar_NNL_MM_const_x2
 
     ! Local Variables
@@ -659,7 +680,7 @@ module PDF_integrals_all_mixed_moments
       p, & !
       q    !
 
-    double precision ::  &
+    real( kind = dp ) ::  &
       sigma_sum    !
 
     ! Initialize sigma_sum
@@ -706,20 +727,23 @@ module PDF_integrals_all_mixed_moments
     use KK_utilities, only:  &
         factorial    ! Procedure(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ) intent(in) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
       sigma_x3_n    ! Standard deviation of ln x3 (ith PDF component)       [-]
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       x1_mean,               & ! Mean of x1 (overall)                       [-]
       x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
       beta_exp      ! Exponent beta, corresponding to x3                    [-]
 
@@ -728,14 +752,14 @@ module PDF_integrals_all_mixed_moments
       b_exp    ! Order prime of x2^alpha x3^beta - < x2^alpha x3^beta >     [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       trivar_NNL_MM_const_x1_x2
 
     ! Local Variables
     integer :: &
       q    !
 
-    double precision ::  &
+    real( kind = dp ) ::  &
       sigma_sum    !
 
     ! Initialize sigma_sum

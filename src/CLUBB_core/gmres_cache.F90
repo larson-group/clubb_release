@@ -5,6 +5,9 @@ module gmres_cache
 
 #ifdef MKL
 
+  use clubb_precision, only: &
+    dp ! double precision
+
   ! Description:
   ! This module contains cache data structures for the GMRES wrapper class.
   !
@@ -19,7 +22,7 @@ module gmres_cache
 
   private ! Default scope
 
-  double precision, public, pointer, dimension(:,:) :: &
+  real( kind = dp ), public, pointer, dimension(:,:) :: &
     gmres_prev_soln, &    ! Stores the previous solution vectors from earlier
                           ! GMRES solve runs. The first dimension is for the
                           ! actual vector; the second dimension is to determine
@@ -32,7 +35,7 @@ module gmres_cache
                           ! done via the GMRES indices for each of the
                           ! different matrices.
 
-  double precision, public, pointer, dimension(:) :: &
+  real( kind = dp ), public, pointer, dimension(:) :: &
     gmres_temp_intlc, &   ! Temporary array that stores GMRES internal values
                           ! for the interlaced matrices (2 x gr%nzmax grid
                           ! levels)

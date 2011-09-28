@@ -227,7 +227,7 @@ module clubb_core
     use advance_wp2_wp3_module, only:  & 
       advance_wp2_wp3 ! Procedure
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
       time_precision ! Variable(s)
 
     use error_code, only :  & 

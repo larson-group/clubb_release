@@ -71,19 +71,22 @@ module KK_utilities
     !  -- App. B.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) ::  &
+    real( kind = dp ), intent(in) ::  &
       mu_x,        & ! Mean of x (ith PDF component)       [-]
       sigma_sqd_x    ! Variance of x (ith PDF component)   [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x / sqrt( 1.0d0 + sigma_sqd_x / mu_x**2 ) )
+    mu_x_n = log( mu_x / sqrt( 1.0_dp + sigma_sqd_x / mu_x**2 ) )
 
     return
   end function mean_L2N_dp
@@ -140,19 +143,22 @@ module KK_utilities
     !  -- App. B.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) ::  &
+    real( kind = dp ), intent(in) ::  &
       mu_x,        & ! Mean of x (ith PDF component)       [-]
       sigma_sqd_x    ! Variance of x (ith PDF component)   [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
 
     ! Find the standard deviation of ln x for the ith component of the PDF.
-    sigma_x_n = sqrt( log( 1.0d0 + sigma_sqd_x / mu_x**2 ) )
+    sigma_x_n = sqrt( log( 1.0_dp + sigma_sqd_x / mu_x**2 ) )
 
     return
   end function stdev_L2N_dp
@@ -211,19 +217,22 @@ module KK_utilities
     !  -- Eq. B-1.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       corr_xy,   & ! Correlation between x and y (ith PDF component)  [-]
       sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
 
     ! Find the correlation between x and ln y for the ith component of the PDF.
-    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2 ) - 1.0d0 ) / sigma_y_n 
+    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2 ) - 1.0_dp ) / sigma_y_n 
 
     return
   end function corr_NL2NN_dp
@@ -286,22 +295,25 @@ module KK_utilities
     !  -- Eq. C-3.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input Variables
-    double precision, intent(in) ::  &
+    real( kind = dp ), intent(in) ::  &
       corr_xy,   & ! Correlation between x and y (ith PDF component)  [-]
       sigma_x_n, & ! Standard deviation of ln x (ith PDF component)   [-]
       sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
 
     ! Return Variable
-    double precision ::  &
+    real( kind = dp ) ::  &
       corr_xy_n  ! Correlation between ln x and ln y (ith PDF component)  [-]
 
     ! Find the correlation between ln x and ln y for the ith component of the
     ! PDF.
-    corr_xy_n = log( 1.0d0 + corr_xy * sqrt( exp( sigma_x_n**2 ) - 1.0d0 )  &
-                                     * sqrt( exp( sigma_y_n**2 ) - 1.0d0 )  )  &
+    corr_xy_n = log( 1.0_dp + corr_xy * sqrt( exp( sigma_x_n**2 ) - 1.0_dp )  &
+                                     * sqrt( exp( sigma_y_n**2 ) - 1.0_dp )  )  &
                 / ( sigma_x_n * sigma_y_n )
 
     return
@@ -353,6 +365,9 @@ module KK_utilities
     use parabolic, only:  &
         gamma  ! Procedure(s)
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input Variable
@@ -360,7 +375,7 @@ module KK_utilities
       num  ! Integer of which to take the factorial.
 
     ! Return Variable
-    double precision :: &
+    real( kind = dp ) :: &
       factorial  ! Factorial of num.
 
 
@@ -373,7 +388,7 @@ module KK_utilities
   end function factorial
 
   !=============================================================================
-  double precision function Dv_fnc( order, argument )
+  function Dv_fnc( order, argument )
 
     ! Description:
     ! Compute the parabolic cylinder function in terms of Dv
@@ -394,6 +409,9 @@ module KK_utilities
     use constants_clubb, only:  & 
         pi_dp ! Variable(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! External
@@ -403,27 +421,31 @@ module KK_utilities
     integer, parameter :: & 
       scaling = 0 ! 0 = Unscaled functions, 1 = scaled functions
 
-    double precision, parameter :: limit = 10.0d0**308
+    real( kind = dp ), parameter :: limit = 10.0_dp**308
 
     ! Input Variables
-    double precision, intent(in) :: & 
+    real( kind = dp ), intent(in) :: & 
       order,    & ! Order 'a' of Dv(a,x)         [-]
       argument    ! Argument 'x' of Dv(a,x)      [-]
 
+    ! Return Variable
+    real( kind = dp ) :: &
+      Dv_fnc
+
     ! Local Variables
-    double precision, dimension(2) :: & 
+    real( kind = dp ), dimension(2) :: & 
       uaxx, & ! U(a,x), U'(a,x)                [-]
       vaxx    ! V(a,x), V'(a,x)                [-]
     ! Where a is the order and x is the argument
 
     integer :: ierr ! Error condition
 
-    if ( argument <= 0.0d0 ) then
-      call parab( -order-0.5d0, -argument, scaling, uaxx, vaxx, ierr )
-      Dv_fnc = vaxx(1) / ( (1.0d0/pi_dp) * gamma( -order ) ) & 
-             - sin( pi_dp * ( -order-0.5d0 ) ) * uaxx(1)
+    if ( argument <= 0.0_dp ) then
+      call parab( -order-0.5_dp, -argument, scaling, uaxx, vaxx, ierr )
+      Dv_fnc = vaxx(1) / ( (1.0_dp/pi_dp) * gamma( -order ) ) & 
+             - sin( pi_dp * ( -order-0.5_dp ) ) * uaxx(1)
     else
-      call parab( -order-0.5d0, argument, scaling, uaxx, vaxx, ierr )
+      call parab( -order-0.5_dp, argument, scaling, uaxx, vaxx, ierr )
       Dv_fnc = uaxx(1)
     end if
 

@@ -25,6 +25,10 @@ module matrix_operations
 ! References:
 !   None
 !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -33,11 +37,11 @@ module matrix_operations
     ! Input Variables
     integer, intent(in) :: ndim
 
-    double precision, dimension(ndim,ndim), intent(in) :: &
+    real( kind = dp ), dimension(ndim,ndim), intent(in) :: &
       covar ! Covariance Matrix [units vary]
 
     ! Output Variables
-    double precision, dimension(ndim,ndim), intent(out) :: & 
+    real( kind = dp ), dimension(ndim,ndim), intent(out) :: & 
       corr ! Correlation Matrix [-]
 
     ! Local Variables
@@ -63,21 +67,25 @@ module matrix_operations
 ! References:
 !   None
 !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
 
     ! Input Variables
     integer, intent(in) :: ndim
 
-    double precision, dimension(ndim), intent(in) :: & 
+    real( kind = dp ), dimension(ndim), intent(in) :: & 
       xvector ! Factors to be multiplied across a row [units vary]
 
     ! Input Variables
-    double precision, dimension(ndim,ndim), intent(inout) :: &
+    real( kind = dp ), dimension(ndim,ndim), intent(inout) :: &
       tmatrix_in ! nxn matrix (usually a correlation matrix) [units vary]
 
     ! Output Variables
-    double precision, dimension(ndim,ndim), intent(inout) :: &
+    real( kind = dp ), dimension(ndim,ndim), intent(inout) :: &
       tmatrix_out ! nxn matrix (usually a covariance matrix) [units vary]
 
     ! Local Variables
@@ -109,6 +117,9 @@ module matrix_operations
     use constants_clubb, only: &
       fstderr ! Constant
 
+    use clubb_precision, only: & 
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -120,22 +131,22 @@ module matrix_operations
     ! Input Variables
     integer, intent(in) :: ndim
 
-    double precision, dimension(ndim,ndim), intent(in) :: a_input
+    real( kind = dp ), dimension(ndim,ndim), intent(in) :: a_input
 
     ! Output Variables
-    double precision, dimension(ndim), intent(out) :: a_scaling
+    real( kind = dp ), dimension(ndim), intent(out) :: a_scaling
 
-    double precision, dimension(ndim,ndim), intent(out) :: a_Cholesky
+    real( kind = dp ), dimension(ndim,ndim), intent(out) :: a_Cholesky
 
     logical, intent(out) :: l_scaled
 
     ! Local Variables
-    double precision, dimension(ndim) :: a_eigenvalues
-    double precision, dimension(ndim,ndim) ::  a_corr, a_scaled
+    real( kind = dp ), dimension(ndim) :: a_eigenvalues
+    real( kind = dp ), dimension(ndim,ndim) ::  a_corr, a_scaled
 
-    double precision :: tau, d_smallest
+    real( kind = dp ) :: tau, d_smallest
 
-    double precision :: amax, scond
+    real( kind = dp ) :: amax, scond
     integer :: info
     integer :: i, j, iter
 
@@ -292,6 +303,9 @@ module matrix_operations
     use constants_clubb, only: &
       fstderr ! Constant
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -304,15 +318,15 @@ module matrix_operations
     ! Input Variables
     integer, intent(in) :: ndim
 
-    double precision, dimension(ndim,ndim), intent(in) :: a_input
+    real( kind = dp ), dimension(ndim,ndim), intent(in) :: a_input
 
     ! Output Variables
-    double precision, dimension(ndim), intent(out) :: a_eigenvalues
+    real( kind = dp ), dimension(ndim), intent(out) :: a_eigenvalues
 
     ! Local Variables
-    double precision, dimension(ndim,ndim) :: a_scratch
+    real( kind = dp ), dimension(ndim,ndim) :: a_scratch
 
-    double precision, dimension(lwork) :: work
+    real( kind = dp ), dimension(lwork) :: work
 
     integer :: info
 !   integer :: i, j
@@ -354,6 +368,10 @@ module matrix_operations
 ! References:
 !   None
 !-------------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -364,11 +382,11 @@ module matrix_operations
       d_variables, & ! Number of variates
       index1, index2 ! Indices for 2 variates (the order doesn't matter)
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       xpyp ! Value for the matrix (usually a correlation or covariance) [units vary]
 
     ! Input/Output Variables
-    double precision, dimension(d_variables,d_variables), intent(inout) :: &
+    real( kind = dp ), dimension(d_variables,d_variables), intent(inout) :: &
       matrix ! The lower triangular matrix
 
     integer :: i,j
@@ -433,6 +451,10 @@ module matrix_operations
 ! References:
 !   None
 !-------------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -444,10 +466,10 @@ module matrix_operations
       index1, index2 ! Indices for 2 variates (the order doesn't matter)
 
     ! Input/Output Variables
-    double precision, dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
       matrix ! The covariance matrix
 
-    double precision, intent(out) :: &
+    real( kind = dp ), intent(out) :: &
       xpyp ! Value from the matrix (usually a correlation or covariance) [units vary]
 
     integer :: i,j

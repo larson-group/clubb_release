@@ -57,7 +57,7 @@ module bugsrad_driver
     use constants_clubb, only: fstderr, grav, Cp, cloud_frac_min, &
                                pascal_per_mb, g_per_kg ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, dp ! Variable(s)
 
     use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 
@@ -86,7 +86,7 @@ module bugsrad_driver
     intrinsic :: dble, real
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       amu0  ! Cosine of the solar zenith angle  [-]
 
     integer, intent(in) :: &
@@ -128,21 +128,21 @@ module bugsrad_driver
     real, dimension(nzmax) :: &
       rcm_in_cloud  ! Liquid water mixing ratio in cloud  [kg/kg]
 
-    double precision, dimension(nlen,(nzmax-1)+lin_int_buffer+extend_atmos_range_size) :: &
+    real( kind = dp ), dimension(nlen,(nzmax-1)+lin_int_buffer+extend_atmos_range_size) :: &
       sp_humidity, & ! Specific humidity      [kg/kg]
       pinmb          ! Pressure in millibars  [hPa]
 
     ! Pressure in millibars for layers (calculated as an average of pinmb)
-    double precision, dimension(nlen,(nzmax-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
+    real( kind = dp ), dimension(nlen,(nzmax-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
       playerinmb ! [hPa]
 
-    double precision, dimension(nlen,(nzmax-1)+lin_int_buffer+extend_atmos_range_size) :: &
+    real( kind = dp ), dimension(nlen,(nzmax-1)+lin_int_buffer+extend_atmos_range_size) :: &
       dpl                      ! Difference in pressure levels       [hPa]
 
-    double precision, dimension(nlen) :: &
+    real( kind = dp ), dimension(nlen) :: &
       ts  ! Surface temperature [K]
 
-    double precision :: z1_fact, z2_fact, tmp ! Temp storage
+    real( kind = dp ) :: z1_fact, z2_fact, tmp ! Temp storage
 
     integer :: i, z, z1, z2  ! Loop indices
 
@@ -169,7 +169,7 @@ module bugsrad_driver
     ! Derive Specific humidity from rc & rt.
     do z = 2, nzmax
       if ( rtm(z) < rcm(z) ) then
-        sp_humidity(1,z-1) = 0.0d0
+        sp_humidity(1,z-1) = 0.0_dp
         if ( clubb_at_least_debug_level(1) ) then
           write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0."
         endif
@@ -201,10 +201,10 @@ module bugsrad_driver
     o3l(1,buffer+1:(nzmax-1)+buffer) = flip( o3l(1,1:(nzmax-1)), nzmax-1 )
 
     ! Assume these are all zero above the CLUBB profile
-    rsnowm_2d(1,1:buffer)       = 0.0d0
-    rcil(1,1:buffer)            = 0.0d0
-    rcm_in_cloud_2d(1,1:buffer) = 0.0d0
-    cloud_frac_2d(1,1:buffer)   = 0.0d0
+    rsnowm_2d(1,1:buffer)       = 0.0_dp
+    rcil(1,1:buffer)            = 0.0_dp
+    rcm_in_cloud_2d(1,1:buffer) = 0.0_dp
+    cloud_frac_2d(1,1:buffer)   = 0.0_dp
 
     if ( dble( alt(nzmax) ) > extend_alt(extend_atmos_dim) ) then
 
@@ -262,16 +262,16 @@ module bugsrad_driver
     ! defined on momentum levels above the top of the CLUBB model, which are
     ! being defined here at points half-way inbetween the thermodynamic levels
     ! above the top of the CLUBB model.  Brian Griffin; May 13, 2008.
-    playerinmb(1,2:buffer+1) = ( pinmb(1,1:buffer) + pinmb(1,2:buffer+1) ) / 2.d0
+    playerinmb(1,2:buffer+1) = ( pinmb(1,1:buffer) + pinmb(1,2:buffer+1) ) / 2._dp
 
     ! Do a linear extension to find playerinmb at the uppermost standard
     ! atmosphere momentum level.  The grid is evenly-spaced at these points.
     ! Brian Griffin; May 13, 2008.
-    tmp = 2.d0 * playerinmb(1,2) - playerinmb(1,3)
-    if ( tmp > 0.d0 ) then
+    tmp = 2._dp * playerinmb(1,2) - playerinmb(1,3)
+    if ( tmp > 0._dp ) then
       playerinmb(1,1) = tmp
     else ! Assuming a linear extension didn't work
-      playerinmb(1,1) = 0.5d0 * playerinmb(1,2)
+      playerinmb(1,1) = 0.5_dp * playerinmb(1,2)
     end if
 
     ! Calculate the difference in pressure layers (including buffer levels)
@@ -359,6 +359,9 @@ module bugsrad_driver
     use text_writer, only: &
       write_text   ! Used to write radiation settings to setup.txt file
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Constant parameters
@@ -388,18 +391,18 @@ module bugsrad_driver
     rad_scheme = "none"
 
     ! BUGSrad parameters
-    sol_const =  1367.d0 ! W/m^2
+    sol_const =  1367._dp ! W/m^2
 
-    alvdf = 0.1d0 ! Visible diffuse surface albedo       [-]
-    alndr = 0.1d0 ! Near-IR direct surface albedo        [-]
-    alndf = 0.1d0 ! Near-IR diffuse surface albedo       [-]
+    alvdf = 0.1_dp ! Visible diffuse surface albedo       [-]
+    alndr = 0.1_dp ! Near-IR direct surface albedo        [-]
+    alndf = 0.1_dp ! Near-IR diffuse surface albedo       [-]
 
     ! 50000m is the top of the U.S. Standard Atmosphere data used
     ! in CLUBB.
     radiation_top = 50000.! [m]
 
     ! Variables used by both schemes
-    alvdr = 0.1d0 ! Visible direct surface albedo        [-]
+    alvdr = 0.1_dp ! Visible direct surface albedo        [-]
 
     ! Simplified radiation parameters
     F0    = 100.0  ! Coefficient for cloud top heating (see Stevens) [W/m^2]
@@ -408,7 +411,7 @@ module bugsrad_driver
     gc    = 0.86   ! Asymmetry parameter, "g" in Duynkerke           [-]
     omega = 0.9965 ! Single-scattering albedo                        [-]
 
-    slr  = 1.0d0  ! Fraction of daylight
+    slr  = 1.0_dp  ! Fraction of daylight
 
     l_rad_above_cloud = .false. ! For the heaviside step function
     l_sw_radiation = .false. ! Set to true to enable shortwave radiation

@@ -39,7 +39,7 @@ module output_netcdf
     use stat_file_module, only: & 
       stat_file ! Type
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
       time_precision ! Variable(s)
 
     use constants_clubb, only:  & 
@@ -165,7 +165,7 @@ module output_netcdf
         fstderr, & ! Variable
         sec_per_min
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
       time_precision ! Constant(s)
 
     implicit none
@@ -255,7 +255,7 @@ module output_netcdf
       nf90_def_var, & 
       nf90_put_att
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
       time_precision ! Variable(s)
 
     use constants_clubb, only:  & 
@@ -753,7 +753,7 @@ module output_netcdf
     use calendar, only:  &
       compute_current_date ! Procedure(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     implicit none

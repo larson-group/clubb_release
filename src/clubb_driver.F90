@@ -9,6 +9,9 @@ module clubb_driver
 !   being the clubb_standalone program).
 !-----------------------------------------------------------------------
 
+  use clubb_precision, only: time_precision ! Variable(s)
+  use text_writer, only: write_text
+
   implicit none
 
   ! Setup run_clubb() as the sole external interface
@@ -97,7 +100,7 @@ module clubb_driver
       set_clubb_debug_level, &
       reportError
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
@@ -2603,7 +2606,7 @@ module clubb_driver
 
     use constants_clubb, only: fstderr ! Variables(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use model_flags, only: &
       l_soil_veg ! Variable(s)
@@ -2853,7 +2856,7 @@ module clubb_driver
       wpsclrp_sfc,  &
       wpedsclrp_sfc
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use time_dependent_input, only: &
       apply_time_dependent_forcings, &
@@ -3413,7 +3416,7 @@ module clubb_driver
     use constants_clubb, only: & 
       rc_tol, fstderr, cm3_per_m3 ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, dp ! Variable(s)
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
@@ -3514,7 +3517,7 @@ module clubb_driver
       err_code ! Error code from the microphysics
 
     ! Local Variables
-    double precision, dimension(gr%nzmax,LH_microphys_calls,d_variables) :: &
+    real( kind = dp ), dimension(gr%nzmax,LH_microphys_calls,d_variables) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
     integer, dimension(gr%nzmax,LH_microphys_calls) :: &
@@ -3710,7 +3713,8 @@ module clubb_driver
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
+      dp, & ! double precision
       time_precision ! Variable(s)
 
     use clubb_model_settings, only: &
@@ -3721,6 +3725,7 @@ module clubb_driver
       lin_int_buffer, &
       rlat, &
       rlon
+
 
     implicit none
 
@@ -3765,7 +3770,7 @@ module clubb_driver
 
     real :: Fs0, amu0_sp
 
-    double precision :: amu0
+    real( kind = dp ) :: amu0
 
     integer :: i, err_code_radiation
 
@@ -3802,7 +3807,7 @@ module clubb_driver
 
       end if ! l_fix_cos_solar_zen
     else
-      amu0 = 0.d0 ! This should disable shortwave radiation
+      amu0 = 0._dp ! This should disable shortwave radiation
 
     end if ! l_sw_radiation
 
@@ -3922,7 +3927,7 @@ module clubb_driver
       !----------------------------------------------------------------
 
       ! The sunray_sw code cannot handle negative values of cosine
-      if ( l_sw_radiation .and. amu0 > 0.d0 ) then
+      if ( l_sw_radiation .and. amu0 > 0._dp ) then
         amu0_sp = real( amu0 )
         if ( nparam > 1 ) then
            call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &

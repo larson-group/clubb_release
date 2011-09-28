@@ -109,7 +109,7 @@ module advance_xp2_xpyp_module
       gr,  & ! Variable(s)
       zm2zt ! Procedure(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
       time_precision ! Variable(s)
 
     use clip_explicit, only: & 
@@ -895,7 +895,7 @@ module advance_xp2_xpyp_module
     use model_flags, only: &
       l_upwind_xpyp_ta ! Constant(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use diffusion, only:  & 
@@ -1446,7 +1446,7 @@ module advance_xp2_xpyp_module
     use model_flags, only: &
       l_upwind_xpyp_ta ! Constant(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use stats_type, only: & 
@@ -1826,7 +1826,7 @@ module advance_xp2_xpyp_module
     use model_flags, only: &
       l_upwind_xpyp_ta ! Constant(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use stats_type, only: & 
@@ -3205,7 +3205,7 @@ module advance_xp2_xpyp_module
 
     use fill_holes, only: fill_holes_driver
     use grid_class, only: gr
-    use stats_precision, only: time_precision
+    use clubb_precision, only: time_precision
 
     use stats_variables, only:  & 
         zm, l_stats_samp, & 

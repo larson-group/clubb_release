@@ -493,7 +493,7 @@ module time_dependent_input
 
     use grid_class, only : zt2zm ! Procedure(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -682,7 +682,7 @@ module time_dependent_input
     !
     !---------------------------------------------------------------------------------
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use constants_clubb, only: fstderr ! Constant(s)
 

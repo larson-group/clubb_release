@@ -76,6 +76,9 @@ module latin_hypercube_driver_module
 
     use mt95, only: genrand_init ! Procedure
 
+    use clubb_precision, only: & 
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -125,7 +128,7 @@ module latin_hypercube_driver_module
       Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
 
     ! Output Variables
-    double precision, intent(out), dimension(nzmax,n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(out), dimension(nzmax,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     integer, intent(out), dimension(nzmax,n_micro_calls) :: &
@@ -149,7 +152,7 @@ module latin_hypercube_driver_module
     ! Try to obtain 12 digit accuracy for a diagnostic mean
     real(kind=selected_real_kind( p=12 ) ) :: mean_weight
 
-    double precision :: mixt_frac_dp
+    real( kind = dp ) :: mixt_frac_dp
 
     real(kind=genrand_real), dimension(n_micro_calls) :: &
       X_u_dp1_k_lh_start, X_u_s_mellor_k_lh_start
@@ -551,6 +554,9 @@ module latin_hypercube_driver_module
     use estimate_lh_micro_module, only: & 
       estimate_lh_micro ! Procedure(s)
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Interface block
@@ -566,7 +572,7 @@ module latin_hypercube_driver_module
       nzmax               ! Number of vertical model levels
 
     ! Input Variables
-    double precision, intent(in), dimension(nzmax,n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(in), dimension(nzmax,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     integer, intent(in), dimension(nzmax,n_micro_calls) :: &
@@ -646,7 +652,7 @@ module latin_hypercube_driver_module
     use parameters_microphys, only: &
       LH_microphys_calls ! Variable
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
       time_precision ! Constant
 
     use output_2D_samples_module, only: &
@@ -1455,6 +1461,9 @@ module latin_hypercube_driver_module
       zero_threshold, & ! Constant(s)
       fstderr
 
+    use clubb_precision, only: & 
+      dp ! double precision
+
     implicit none
 
     ! Input Variables
@@ -1466,7 +1475,7 @@ module latin_hypercube_driver_module
     real, intent(in), dimension(n_micro_calls) :: &
       LH_sample_point_weights
 
-    double precision, intent(in), dimension(nzmax,n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(in), dimension(nzmax,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real, intent(in), dimension(nzmax,n_micro_calls) :: &

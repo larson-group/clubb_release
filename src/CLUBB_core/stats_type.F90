@@ -11,7 +11,7 @@ module stats_type
   use stat_file_module, only: & 
       stat_file ! Type
 
-  use stats_precision, only: & 
+  use clubb_precision, only: & 
       stat_rknd,  & ! Variable(s)
       stat_nknd
 
@@ -117,7 +117,7 @@ module stats_type
     ! once it has been calculated.
     !---------------------------------------------------------------------
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
       stat_rknd ! Constant
 
     implicit none
@@ -161,7 +161,7 @@ module stats_type
     ! See the description of stat_update_var for more details.
     !---------------------------------------------------------------------
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
       stat_rknd ! Constant
 
     implicit none
@@ -273,7 +273,7 @@ module stats_type
 
     use error_code, only: clubb_debug ! Procedure(s)
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
       stat_rknd ! Constant
 
     implicit none
@@ -485,7 +485,7 @@ module stats_type
     ! description of stat_modify for more details.
     !---------------------------------------------------------------------
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
       stat_rknd ! Constant
 
     implicit none

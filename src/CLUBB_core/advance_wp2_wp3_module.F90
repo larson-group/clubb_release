@@ -84,7 +84,7 @@ module advance_wp2_wp3_module
         l_hyper_dfsn,  & ! Variable(s)
         l_3pt_sqd_dfsn
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use error_code, only:  & 
@@ -389,7 +389,7 @@ module advance_wp2_wp3_module
         l_hole_fill,  &
         l_gmres
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision  ! Variable(s)
 
     use lapack_wrap, only:  & 
@@ -847,7 +847,7 @@ module advance_wp2_wp3_module
     use grid_class, only:  & 
         gr  ! Variable(s) 
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision  ! Variable(s)
 
 #ifdef MKL
@@ -1113,7 +1113,7 @@ module advance_wp2_wp3_module
         hyper_dfsn_4th_ord_zm_lhs,  &
         hyper_dfsn_4th_ord_zt_lhs
 
-    use stats_precision, only: time_precision
+    use clubb_precision, only: time_precision
 
     use stats_variables, only: & 
         zmscr01,    &
@@ -1780,7 +1780,7 @@ module advance_wp2_wp3_module
         hyper_dfsn_4th_ord_zm_lhs,  &
         hyper_dfsn_4th_ord_zt_lhs
 
-    use stats_precision, only: time_precision
+    use clubb_precision, only: time_precision
 
     use stats_variables, only: & 
         zmscr01,    &
@@ -2536,7 +2536,7 @@ module advance_wp2_wp3_module
         diffusion_zm_lhs,  & ! Procedures
         diffusion_zt_lhs
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable
 
     use stats_variables, only:  & 

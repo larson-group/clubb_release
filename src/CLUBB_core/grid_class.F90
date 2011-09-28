@@ -1723,18 +1723,22 @@ module grid_class
     ! necessary part of the code because BUGSrad and CLUBB store altitudes in
     ! reverse order
     !-------------------------------------------------------------------------
+    
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input
     integer, intent(in) :: xdim
 
-    double precision, dimension(xdim), intent(in) :: x
+    real( kind = dp ), dimension(xdim), intent(in) :: x
 
     ! Output
-    double precision, dimension(xdim) :: flip
+    real( kind = dp ), dimension(xdim) :: flip
 
     ! Internal
-    double precision, dimension(xdim) :: tmp
+    real( kind = dp ), dimension(xdim) :: tmp
     integer :: indx
 
     do indx = 1, xdim, 1

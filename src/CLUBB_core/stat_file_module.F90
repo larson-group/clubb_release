@@ -7,7 +7,7 @@ module stat_file_module
 !   Contains two derived types for describing the contents and location of
 !   either NetCDF or GrADS files.
 !-------------------------------------------------------------------------------
-   use stats_precision, only: & 
+   use clubb_precision, only: & 
        stat_rknd,  & ! Variable
        time_precision
  

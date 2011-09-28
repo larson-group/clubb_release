@@ -108,7 +108,7 @@ module dycoms2_rf02
 
     use interpolation, only: factor_interp ! Procedure(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     implicit none
 

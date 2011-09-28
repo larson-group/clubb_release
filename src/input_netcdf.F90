@@ -42,7 +42,7 @@ module input_netcdf
 
     use stat_file_module, only: stat_file ! Type
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
       time_precision
 
     implicit none

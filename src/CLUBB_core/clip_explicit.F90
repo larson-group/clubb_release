@@ -67,7 +67,7 @@ module clip_explicit
     use model_flags, only: &
         l_tke_aniso ! Logical
 
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
         time_precision ! Variable(s)
 
     use stats_type, only: &
@@ -450,7 +450,7 @@ module clip_explicit
     use constants_clubb, only: &
         max_mag_correlation ! Constant(s)
 
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
         time_precision ! Variable(s)
 
     use stats_type, only: & 
@@ -592,7 +592,7 @@ module clip_explicit
     use grid_class, only: & 
         gr ! Variable(s)
 
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
         time_precision ! Variable(s)
 
     use stats_type, only: & 
@@ -718,7 +718,7 @@ module clip_explicit
     use grid_class, only: & 
       gr ! Variable(s)
 
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
       time_precision ! Variable(s)
 
     use stats_type, only: &

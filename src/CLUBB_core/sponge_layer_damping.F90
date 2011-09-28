@@ -64,7 +64,7 @@ module sponge_layer_damping
 
     use grid_class, only: gr ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     implicit none
 
@@ -129,7 +129,7 @@ module sponge_layer_damping
     ! References:
     !   None
     !-------------------------------------------------------------------------------------------
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
     
     use constants_clubb, only: fstderr ! Constant(s)
 

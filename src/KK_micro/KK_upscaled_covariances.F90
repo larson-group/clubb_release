@@ -288,6 +288,9 @@ module KK_upscaled_covariances
         s_mellor_tol, & ! Constant(s)
         parab_cyl_max_input
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
@@ -323,7 +326,7 @@ module KK_upscaled_covariances
       quadrivar_NNLL_covar_eq
 
     ! Local Variables
-    double precision :: &
+    real( kind = dp ) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
@@ -339,16 +342,16 @@ module KK_upscaled_covariances
       rho_x2x4_n, & ! Correlation between x2 and ln x4 (ith PDF component)  [-]
       rho_x3x4_n    ! Correlation between ln x3 & ln x4 (ith PDF component) [-]
 
-    double precision :: &
+    real( kind = dp ) :: &
       x1_mean,                        & ! Mean of x1 (overall)              [-]
       x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
     
-    double precision :: &
+    real( kind = dp ) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
       beta_exp,   & ! Exponent beta, corresponding to x3                    [-]
       gamma_exp     ! Exponent gamma, corresponding to x4                   [-]
 
-    double precision :: &
+    real( kind = dp ) :: &
       x1_tol, & ! Tolerance value of x1                                     [-]
       x2_tol, & ! Tolerance value of x2                                     [-]
       s_cc      ! Parabolic cylinder function input value                   [-]
@@ -540,6 +543,9 @@ module KK_upscaled_covariances
         s_mellor_tol, & ! Constant(s)
         parab_cyl_max_input
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
@@ -569,7 +575,7 @@ module KK_upscaled_covariances
       trivar_NNL_covar_eq
 
     ! Local Variables
-    double precision :: &
+    real( kind = dp ) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
@@ -580,15 +586,15 @@ module KK_upscaled_covariances
       rho_x1x3_n, & ! Correlation between x1 and ln x3 (ith PDF component)  [-]
       rho_x2x3_n    ! Correlation between x2 and ln x3 (ith PDF component)  [-]
 
-    double precision :: &
+    real( kind = dp ) :: &
       x1_mean,               & ! Mean of x1 (overall)                       [-]
       x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
     
-    double precision :: &
+    real( kind = dp ) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
       beta_exp      ! Exponent beta, corresponding to x3                    [-]
 
-    double precision :: &
+    real( kind = dp ) :: &
       x1_tol, & ! Tolerance value of x1                                     [-]
       x2_tol, & ! Tolerance value of x2                                     [-]
       s_c       ! Parabolic cylinder function input value                   [-]

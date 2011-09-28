@@ -68,7 +68,7 @@ module mpace_a
 
     use interpolation, only: zlinterp_fnc, factor_interp ! Procedure(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
@@ -240,7 +240,7 @@ module mpace_a
 
     use constants_clubb, only: Cp, Lv, fstderr ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use error_code, only: clubb_debug ! Procedure(s)
 

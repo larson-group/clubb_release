@@ -262,6 +262,9 @@ module KK_upscaled_means
         s_mellor_tol, & ! Constant(s)
         parab_cyl_max_input
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
@@ -286,7 +289,7 @@ module KK_upscaled_means
       trivar_NLL_mean_eq
 
     ! Local Variables
-    double precision :: &
+    real( kind = dp ) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2_n,    & ! Mean of ln x2 (ith PDF component)                     [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
@@ -297,12 +300,12 @@ module KK_upscaled_means
       rho_x1x3_n, & ! Correlation between x1 and ln x3 (ith PDF component)  [-]
       rho_x2x3_n    ! Correlation between ln x2 & ln x3 (ith PDF component) [-]
 
-    double precision :: &
+    real( kind = dp ) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
       beta_exp,   & ! Exponent beta, corresponding to x2                    [-]
       gamma_exp     ! Exponent gamma, corresponding to x3                   [-]
 
-    double precision :: &
+    real( kind = dp ) :: &
       x1_tol, & ! Tolerance value of x1                                     [-]
       s_cc      ! Parabolic cylinder function input value                   [-]
 
@@ -365,7 +368,7 @@ module KK_upscaled_means
 
        ! The ith PDF component variance of s is 0.
 
-       if ( mu_x1 <= 0.0d0 ) then
+       if ( mu_x1 <= 0.0_dp ) then
 
           ! There is all clear air in the ith component ( s <= 0 everywhere ).
           trivar_NLL_mean_eq  &
@@ -431,6 +434,9 @@ module KK_upscaled_means
         s_mellor_tol, & ! Constant(s)
         parab_cyl_max_input
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
@@ -450,18 +456,18 @@ module KK_upscaled_means
       bivar_NL_mean_eq
 
     ! Local Variables
-    double precision :: &
+    real( kind = dp ) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2_n,    & ! Mean of ln x2 (ith PDF component)                     [-]
       sigma_x1,   & ! Standard deviation of x1 (ith PDF component)          [-]
       sigma_x2_n, & ! Standard deviation of ln x2 (ith PDF component)       [-]
       rho_x1x2_n    ! Correlation between x1 and ln x2 (ith PDF component)  [-]
     
-    double precision :: &
+    real( kind = dp ) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
       beta_exp      ! Exponent beta, corresponding to x2                    [-]
 
-    double precision :: &
+    real( kind = dp ) :: &
       x1_tol, & ! Tolerance value of x1                                     [-]
       s_c       ! Parabolic cylinder function input value                   [-]
 
@@ -519,7 +525,7 @@ module KK_upscaled_means
 
        ! The ith PDF component variance of s is 0.
 
-       if ( mu_x1 > 0.0d0 ) then
+       if ( mu_x1 > 0.0_dp ) then
 
           ! There is all cloudy air in the ith component ( s > 0 everywhere ).
           bivar_NL_mean_eq  &
@@ -571,6 +577,9 @@ module KK_upscaled_means
     use PDF_integrals_means, only: &
         bivar_LL_mean  ! Procedure(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input Variables
@@ -590,14 +599,14 @@ module KK_upscaled_means
       bivar_LL_mean_eq
 
     ! Local Variables
-    double precision :: &
+    real( kind = dp ) :: &
       mu_x1_n,    & ! Mean of ln x1 (ith PDF component)                     [-]
       mu_x2_n,    & ! Mean of ln x2 (ith PDF component)                     [-]
       sigma_x1_n, & ! Standard deviation of ln x1 (ith PDF component)       [-]
       sigma_x2_n, & ! Standard deviation of ln x2 (ith PDF component)       [-]
       rho_x1x2_n    ! Correlation between ln x1 & ln x2 (ith PDF component) [-]
 
-    double precision :: &
+    real( kind = dp ) :: &
       alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
       beta_exp      ! Exponent beta, corresponding to x2                    [-]
 

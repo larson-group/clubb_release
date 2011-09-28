@@ -55,6 +55,9 @@ module estimate_lh_micro_module
     use estimate_scm_microphys_module, only: &
       est_single_column_tndcy ! Procedure(s)
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -69,7 +72,7 @@ module estimate_lh_micro_module
       n_micro_calls, & ! Number of calls to the microphysics
       d_variables      ! Number of variates
 
-    double precision, dimension(nzmax,n_micro_calls,d_variables), intent(in) :: &
+    real( kind = dp ), dimension(nzmax,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real, dimension(nzmax,n_micro_calls), intent(in) :: &
@@ -140,11 +143,11 @@ module estimate_lh_micro_module
 !   real :: cloud_frac, rcm
 
     ! Double precision version of Monte Carlo Kessler ac
-    double precision :: lh_AKm_dp
+    real( kind = dp ) :: lh_AKm_dp
     ! Double precision version of Monte Carlo avg liquid water
-    double precision :: lh_rcm_avg_dp
+    real( kind = dp ) :: lh_rcm_avg_dp
 
-    double precision, dimension(n_micro_calls) :: &
+    real( kind = dp ), dimension(n_micro_calls) :: &
       rcm_sample ! Sample points of rcm         [kg/kg]
 
     ! Variables needed for exact Kessler autoconversion, AKm
@@ -213,7 +216,7 @@ module estimate_lh_micro_module
       !    but we set means, covariance of hydromet mixing ratio's and number
       !    concentrations to constants.
 
-      rcm_sample(1:n_micro_calls) = max( X_nl_all_levs(level,1:n_micro_calls,1), 0.d0)
+      rcm_sample(1:n_micro_calls) = max( X_nl_all_levs(level,1:n_micro_calls,1), 0._dp)
 
       ! Call microphysics, i.e. Kessler autoconversion.
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
@@ -332,6 +335,9 @@ module estimate_lh_micro_module
     use parameters_microphys, only: &
       l_lh_cloud_weighted_sampling ! Variable(s)
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -346,11 +352,11 @@ module estimate_lh_micro_module
     integer, intent(in) :: &
       n_micro_calls  ! Number of calls to microphysics (normally=2)
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mixt_frac,               & ! Mixture fraction of Gaussians
       cloud_frac1, cloud_frac2   ! Cloud fraction associated w/ 1st, 2nd mixture component
 
-    double precision, dimension(n_micro_calls), intent(in) :: &
+    real( kind = dp ), dimension(n_micro_calls), intent(in) :: &
       rc !, & ! n in-cloud values of spec liq water content (when positive) [kg/kg].
 !     w,  & ! n in-cloud values of vertical velocity (m/s)
 !     Nc, & ! n in-cloud values of droplet number (#/mg air)
@@ -367,34 +373,34 @@ module estimate_lh_micro_module
     ! a scalar representing grid box average autoconversion;
     ! has same units as rc; divide by total cloud fraction to obtain
     ! within-cloud autoconversion
-    double precision, intent(out) :: &
+    real( kind = dp ), intent(out) :: &
       ac_m
 
     ! Local Variables
 
     integer :: sample
     integer :: n1, n2
-    double precision :: ac_m1, ac_m2
-    double precision :: coeff, r_crit
-    ! double precision expn
-!   double precision :: fraction_1
+    real( kind = dp ) :: ac_m1, ac_m2
+    real( kind = dp ) :: coeff, r_crit
+    ! real( kind = dp ) expn
+!   real( kind = dp ) :: fraction_1
 
     ! ---- Begin Code ----
 
     ! Handle some possible errors re: proper ranges of mixt_frac, cloud_frac1, cloud_frac2.
-    if ( mixt_frac > 1.0d0 .or. mixt_frac < 0.0d0 ) then
+    if ( mixt_frac > 1.0_dp .or. mixt_frac < 0.0_dp ) then
       write(fstderr,*) 'Error in autoconv_estimate:  ',  &
                        'mixture fraction, mixt_frac, does not lie in [0,1].'
       write(fstderr,*) 'mixt_frac = ', mixt_frac
       stop
     end if
-    if ( cloud_frac1 > 1.0d0 .or. cloud_frac1 < 0.0d0 ) then
+    if ( cloud_frac1 > 1.0_dp .or. cloud_frac1 < 0.0_dp ) then
       write(fstderr,*) 'Error in autoconv_estimate:  ',  &
                        'cloud fraction 1, cloud_frac1, does not lie in [0,1].'
       write(fstderr,*) 'cloud_frac1 = ', cloud_frac1
       stop
     end if
-    if ( cloud_frac2 > 1.0d0 .or. cloud_frac2 < 0.0d0 ) then
+    if ( cloud_frac2 > 1.0_dp .or. cloud_frac2 < 0.0_dp ) then
       write(fstderr,*) 'Error in autoconv_estimate:  ',  &
                        'cloud fraction 2, cloud_frac2, does not lie in [0,1].'
       write(fstderr,*) 'cloud_frac2 = ', cloud_frac2
@@ -404,7 +410,7 @@ module estimate_lh_micro_module
     ! Make sure there is some cloud.
     ! Disable this for now, so we can loop over the whole domain.
     ! -dschanen 3 June 2009
-!   if ( mixt_frac*cloud_frac1 < 0.001d0 .and. (1-mixt_frac)*cloud_frac2 < 0.001d0 ) then
+!   if ( mixt_frac*cloud_frac1 < 0.001_dp .and. (1-mixt_frac)*cloud_frac2 < 0.001_dp ) then
 !     if ( clubb_at_least_debug_level( 1 ) ) then
 !       write(fstderr,*) 'Error in autoconv_estimate:  ',  &
 !                        'there is no cloud or almost no cloud!'
@@ -414,14 +420,14 @@ module estimate_lh_micro_module
     ! Autoconversion formula prefactor and exponent.
     ! These are for Kessler autoconversion in (kg/kg)/s.
     coeff  = 1.d-3
-    ! expn   = 1.d0
-    ! r_crit = 0.3d0
-    ! r_crit = 0.7d0
-    r_crit = 0.2d0 / g_per_kg
+    ! expn   = 1._dp
+    ! r_crit = 0.3_dp
+    ! r_crit = 0.7_dp
+    r_crit = 0.2_dp / g_per_kg
 
     ! Initialize autoconversion in each mixture component
-    ac_m1 = 0.d0
-    ac_m2 = 0.d0
+    ac_m1 = 0._dp
+    ac_m2 = 0._dp
 
     ! Initialize numbers of sample points corresponding
     !    to each mixture component
@@ -450,9 +456,9 @@ module estimate_lh_micro_module
 ! This is the first of two lines where
 !      a user must add a new microphysics scheme.
         if ( l_lh_cloud_weighted_sampling ) then
-          ac_m1 = ac_m1 + coeff*max(0.d0,rc(sample)-r_crit) * LH_sample_point_weights(sample)
+          ac_m1 = ac_m1 + coeff*max(0._dp,rc(sample)-r_crit) * LH_sample_point_weights(sample)
         else
-          ac_m1 = ac_m1 + coeff*max(0.d0,rc(sample)-r_crit)
+          ac_m1 = ac_m1 + coeff*max(0._dp,rc(sample)-r_crit)
         end if
         n1 = n1 + 1
       else
@@ -463,9 +469,9 @@ module estimate_lh_micro_module
 !      a user must add a new microphysics scheme.
 
         if ( l_lh_cloud_weighted_sampling ) then
-          ac_m2 = ac_m2 + coeff*max(0.d0,rc(sample)-r_crit) * LH_sample_point_weights(sample)
+          ac_m2 = ac_m2 + coeff*max(0._dp,rc(sample)-r_crit) * LH_sample_point_weights(sample)
         else
-          ac_m2 = ac_m2 + coeff*max(0.d0,rc(sample)-r_crit)
+          ac_m2 = ac_m2 + coeff*max(0._dp,rc(sample)-r_crit)
         end if
 
         n2 = n2 + 1
@@ -477,13 +483,13 @@ module estimate_lh_micro_module
 !! Convert sums to averages.
 !! Old code that underestimates if a plume has no sample points
 !       if (n1 .eq. 0) then
-!          ac_m1 = 0.d0
+!          ac_m1 = 0._dp
 !       else
 !          ac_m1 = ac_m1/n1
 !       end if
 
 !       if (n2 .eq. 0) then
-!         ac_m2 = 0.d0
+!         ac_m2 = 0._dp
 !       else
 !          ac_m2 = ac_m2/n2
 !       end if
@@ -539,6 +545,9 @@ module estimate_lh_micro_module
     use constants_clubb, only:  &
         fstderr  ! Constant(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
 !   use error_code, only:  &
 !       clubb_at_least_debug_level  ! Procedure(s)
 
@@ -552,11 +561,11 @@ module estimate_lh_micro_module
     integer, intent(in) :: &
       n_micro_calls ! Number of calls to microphysics (normally=2)
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mixt_frac, & ! Mixture fraction of Gaussians
       C1, C2       ! Cloud fraction associated w/ 1st, 2nd mixture component
 
-    double precision, dimension(n_micro_calls), intent(in) :: &
+    real( kind = dp ), dimension(n_micro_calls), intent(in) :: &
       rc !, & ! n in-cloud values of spec liq water content [kg/kg].
 !     w,  & ! n in-cloud values of vertical velocity (m/s)
 !     Npts, & ! n in-cloud values of droplet number (#/kg air)
@@ -569,30 +578,30 @@ module estimate_lh_micro_module
 
     ! A scalar representing grid box avg specific liquid water;
     ! divide by total cloud fraction to obtain within-cloud liquid water
-    double precision, intent(out) :: rc_m
+    real( kind = dp ), intent(out) :: rc_m
 
     ! Local Variables
 
     integer :: sample
     integer :: n1, n2
-    double precision :: rc_m1, rc_m2
-    double precision :: coeff, expn
-!   double precision :: fraction_1
+    real( kind = dp ) :: rc_m1, rc_m2
+    real( kind = dp ) :: coeff, expn
+!   real( kind = dp ) :: fraction_1
 
     ! ---- Begin Code ----
 
     ! Handle some possible errors re: proper ranges of mixt_frac, C1, C2.
-    if ( mixt_frac > 1.0d0 .or. mixt_frac < 0.0d0 ) then
+    if ( mixt_frac > 1.0_dp .or. mixt_frac < 0.0_dp ) then
       write(fstderr,*) 'Error in rc_estimate:  ',  &
                        'mixture fraction, mixt_frac, does not lie in [0,1].'
       stop
     end if
-    if ( C1 > 1.0d0 .or. C1 < 0.0d0 ) then
+    if ( C1 > 1.0_dp .or. C1 < 0.0_dp ) then
       write(fstderr,*) 'Error in rc_estimate:  ',  &
                        'cloud fraction 1, C1, does not lie in [0,1].'
       stop
     end if
-    if ( C2 > 1.0d0 .or. C2 < 0.0d0 ) then
+    if ( C2 > 1.0_dp .or. C2 < 0.0_dp ) then
       write(fstderr,*) 'Error in rc_estimate:  ',  &
                        'cloud fraction 2, C2, does not lie in [0,1].'
       stop
@@ -601,7 +610,7 @@ module estimate_lh_micro_module
     ! Make sure there is some cloud.
     ! Disable this for now, so we can loop over the whole domain.
     ! -dschanen 3 June 2009
-!   if ( mixt_frac*C1 < 0.001d0 .and. (1-mixt_frac)*C2 < 0.001d0 ) then
+!   if ( mixt_frac*C1 < 0.001_dp .and. (1-mixt_frac)*C2 < 0.001_dp ) then
 !     if ( clubb_at_least_debug_level( 1 ) ) then
 !       write(fstderr,*) 'Error in rc_estimate:  ',  &
 !                        'there is no cloud or almost no cloud!'
@@ -609,12 +618,12 @@ module estimate_lh_micro_module
 !   end if
 
     ! To compute liquid water, need to set coeff=expn=1.
-    coeff = 1.d0
-    expn  = 1.d0
+    coeff = 1._dp
+    expn  = 1._dp
 
     ! Initialize liquid in each mixture component
-    rc_m1 = 0.d0
-    rc_m2 = 0.d0
+    rc_m1 = 0._dp
+    rc_m2 = 0._dp
 
     ! Initialize numbers of sample points corresponding
     !    to each mixture component
@@ -645,13 +654,13 @@ module estimate_lh_micro_module
 !! Convert sums to averages.
 !! Old code that underestimates if n1 or n2 = 0.
 !   if ( n1 == 0 ) then
-!     rc_m1 = 0.d0
+!     rc_m1 = 0._dp
 !   else
 !     rc_m1 = rc_m1/n1
 !   end if
 
 !   if ( n2 == 0 ) then
-!     rc_m2 = 0.d0
+!     rc_m2 = 0._dp
 !   else
 !     rc_m2 = rc_m2/n2
 !   end if

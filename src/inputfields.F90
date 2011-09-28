@@ -1585,7 +1585,7 @@ module inputfields
         sec_per_min, & ! Variable(s)
         fstderr ! Constant(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision
 
 #ifdef NETCDF

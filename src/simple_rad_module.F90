@@ -372,7 +372,7 @@ module simple_rad_module
 
     use interpolation, only: factor_interp ! Procedure(s)
 
-    use stats_precision, only: time_precision ! Constant
+    use clubb_precision, only: time_precision ! Constant
 
     implicit none
 

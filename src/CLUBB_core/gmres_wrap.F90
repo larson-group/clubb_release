@@ -90,6 +90,8 @@ module gmres_wrap
     ! References:
     !   None
 
+    use clubb_precision, only: &
+      dp ! double precision
 
     implicit none
 
@@ -125,16 +127,16 @@ module gmres_wrap
     real, dimension(numeqns), intent(inout) :: &
       rhs          ! Right-hand-side vectors to solve the equation for.
 
-    double precision, dimension(numeqns), intent(inout) :: &
+    real( kind = dp ), dimension(numeqns), intent(inout) :: &
       prev_soln    ! Previous solution cache vector for the matrix to be solved
                    ! for--pass the proper handle from the gmres_cache module
 
-    double precision, dimension(elements), intent(inout) :: &
+    real( kind = dp ), dimension(elements), intent(inout) :: &
       prev_lu      ! Previous LU-decomposition a-array for the matrix to be
                    ! solved for--pass the proper handle from the gmres_cache
                    ! module
 
-    double precision, dimension(tempsize), intent(inout) :: &
+    real( kind = dp ), dimension(tempsize), intent(inout) :: &
       temp         ! Temporary array that stores working values while the GMRES
                    ! solver iterates
 
@@ -157,17 +159,17 @@ module gmres_wrap
     integer, dimension(128) :: &
       ipar         ! Parameter array for the GMRES iterative solver
 
-    double precision, dimension(128) :: &
+    real( kind = dp ), dimension(128) :: &
       dpar         ! Parameter array for the GMRES iterative solver
 
     ! The following local variables are double-precision so we can use GMRES
     ! as there is only double-precision support for GMRES. 
     ! We will need to convert our single-precision numbers to double precision
     ! for the duration of the calculations.
-    double precision, dimension(elements) :: &
+    real( kind = dp ), dimension(elements) :: &
       csr_dbl_a    ! Double-precision version of the CSR-format A array
 
-    double precision, dimension(numeqns) :: &
+    real( kind = dp ), dimension(numeqns) :: &
       dbl_rhs, &   ! Double-precision version of the rhs vector
       dbl_soln, &  ! Double-precision version of the solution vector
       tempvec      ! Temporary vector for applying inverse LU-decomp matrix
@@ -203,7 +205,7 @@ module gmres_wrap
 
     ! DEBUG: Set our a_array so it represents the identity matrix, and
     ! set the RHS so we can get a meaningful answer.
-!    csr_dbl_a = 1D0
+!    csr_dbl_a = 1_dp
 !    csr_dbl_a(1) = 1D1
 !    csr_dbl_a(5) = 1D1
 !    csr_dbl_a(elements) = 1D1
@@ -212,7 +214,7 @@ module gmres_wrap
 !      csr_dbl_a(i) = 1D1
 !    end do
 !    do i=1,numeqns,1
-!      dbl_rhs(i) = i * 1D0
+!      dbl_rhs(i) = i * 1_dp
 !    end do
 !    dbl_rhs = 9D3
 !    dbl_rhs = 1D1
@@ -260,7 +262,7 @@ module gmres_wrap
 !    end if !iteration_num == 1
 
     !DEBUG: Set apporximate solution vector to 0.9 (?) for now
-    !prev_soln(:) = 0.9D0
+    !prev_soln(:) = 0.9_dp
 
     !do i=1,numeqns,1
     !  print *, "Current approximate solution idx",i,"=",prev_soln(i)

@@ -33,7 +33,7 @@ module astex_a209
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
@@ -117,7 +117,7 @@ module astex_a209
 
     use interpolation, only: factor_interp ! Procedure(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     implicit none
 

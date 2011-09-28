@@ -10,8 +10,9 @@ module constants_clubb
   ! None
   !---------------------------------------------------------------------------
 
-  use stats_precision, only:  & 
-      time_precision ! Variable(s)
+  use clubb_precision, only:  & 
+      time_precision, & ! Variable(s)
+      dp
 
   implicit none
 
@@ -108,14 +109,14 @@ module constants_clubb
   !-----------------------------------------------------------------------------
   ! Mathematical Constants
   !-----------------------------------------------------------------------------
-  double precision, parameter ::  & 
-    pi_dp = 3.14159265358979323846d0
+  real( kind = dp ), parameter ::  & 
+    pi_dp = 3.14159265358979323846_dp
 
   real, parameter ::  & 
     pi = 3.141592654 ! The ratio of radii to their circumference
 
-  double precision, parameter:: &
-    radians_per_deg_dp = pi_dp / 180.d0
+  real( kind = dp ), parameter:: &
+    radians_per_deg_dp = pi_dp / 180._dp
 
   real, parameter :: &
     sqrt_2pi = 2.5066282746310005024, &  ! sqrt(2*pi)
