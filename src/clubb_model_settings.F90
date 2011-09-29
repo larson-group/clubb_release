@@ -1,7 +1,7 @@
 ! $Id$
 module clubb_model_settings  
 
-  use stats_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision ! Variable(s)
 
   implicit none
 
