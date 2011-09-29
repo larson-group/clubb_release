@@ -9,7 +9,7 @@ vars_zt =
 'rtm_bt', 'rtm_ma', 'rtm_ta', 'rtm_mfl', 'rtm_tacl', 'rtm_cl',
 'rtm_forcing', 'rtm_pd', 
 'thlm_bt', 'thlm_ma', 'thlm_ta', 'thlm_mfl', 'thlm_tacl', 'thlm_cl',
-'thlm_forcing', 'thlm_without_ta',
+'thlm_old', 'thlm_forcing', 'thlm_without_ta',
 'thlm_mfl_min', 'thlm_mfl_max', 'thlm_enter_mfl', 'thlm_exit_mfl',
 'rtm_old', 'rtm_without_ta',
 'rtm_mfl_min', 'rtm_mfl_max', 'rtm_enter_mfl', 'rtm_exit_mfl',
