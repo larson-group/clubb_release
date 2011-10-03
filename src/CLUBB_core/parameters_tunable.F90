@@ -31,36 +31,36 @@ module parameters_tunable
 
   ! Model constant parameters
   real, public :: & 
-    C1,          & ! Low Skewness in C1 Skewness Function.
-    C1b,         & ! High Skewness in C1 Skewness Function.
-    C1c,         & ! Degree of Slope of C1 Skewness Function.
-    C2,          & ! Low Skewness in C2 Skewness Function.
-    C2rt,        & ! C2 coefficient for the rtp2_dp1 term.
-    C2thl,       & ! C2 coefficient for the thlp2_dp1 term.
-    C2rtthl,     & ! C2 coefficient for the rtpthlp_dp1 term.
-    C2b,         & ! High Skewness in C2 Skewness Function.  
-    C2c,         & ! Degree of Slope of C2 Skewness Function.
-    C4,          & ! Used only when l_tke_aniso is true.
-    C5,          & ! Coefficient in pressure terms in the w'^2 eqn.
-    C6rt,        & ! Low Skewness in C6rt Skewness Function.
-    C6rtb,       & ! High Skewness in C6rt Skewness Function.
-    C6rtc,       & ! Degree of Slope of C6rt Skewness Function.
-    C6thl,       & ! Low Skewness in C6thl Skewness Function.
-    C6thlb,      & ! High Skewness in C6thl Skewness Function.
-    C6thlc,      & ! Degree of Slope of C6thl Skewness Function.
-    C7,          & ! Low Skewness in C7 Skewness Function.
-    C7b,         & ! High Skewness in C7 Skewness Function.
-    C7c,         & ! Degree of Slope of C7 Skewness Function.
-    C8,          & ! Coefficient #1 in C8 Skewness Equation.
-    C8b,         & ! Coefficient #2 in C8 Skewness Equation.
-    C10,         & ! Currently Not Used in the Model.
-    C11,         & ! Low Skewness in C11 Skewness Function.
-    C11b,        & ! High Skewness in C11 Skewness Function.
-    C11c,        & ! Degree of Slope of C11 Skewness Function.
-    C12,         & ! Constant in w'^3 Crank-Nicholson diffusional term.
-    C13,         & ! Not currently used in model.
-    C14,         & ! Constant for u'^2 and v'^2 terms.
-    C15            ! Coefficient for the wp3_bp2 term
+    C1          = 2.500000,          & ! Low Skewness in C1 Skewness Function.
+    C1b         = 2.500000,          & ! High Skewness in C1 Skewness Function.
+    C1c         = 1.000000,          & ! Degree of Slope of C1 Skewness Function.
+    C2          = 1.300000,          & ! Low Skewness in C2 Skewness Function.
+    C2rt        = 1.000000,          & ! C2 coefficient for the rtp2_dp1 term.
+    C2thl       = 1.000000,          & ! C2 coefficient for the thlp2_dp1 term.
+    C2rtthl     = 2.000000,          & ! C2 coefficient for the rtpthlp_dp1 term.
+    C2b         = 1.300000,          & ! High Skewness in C2 Skewness Function.  
+    C2c         = 5.000000,          & ! Degree of Slope of C2 Skewness Function.
+    C4          = 5.200000,          & ! Used only when l_tke_aniso is true.
+    C5          = 0.300000,          & ! Coefficient in pressure terms in the w'^2 eqn.
+    C6rt        = 6.000000,          & ! Low Skewness in C6rt Skewness Function.
+    C6rtb       = 6.000000,          & ! High Skewness in C6rt Skewness Function.
+    C6rtc       = 1.000000,          & ! Degree of Slope of C6rt Skewness Function.
+    C6thl       = 6.000000,          & ! Low Skewness in C6thl Skewness Function.
+    C6thlb      = 6.000000,          & ! High Skewness in C6thl Skewness Function.
+    C6thlc      = 1.000000,          & ! Degree of Slope of C6thl Skewness Function.
+    C7          = 0.100000,          & ! Low Skewness in C7 Skewness Function.
+    C7b         = 0.800000,          & ! High Skewness in C7 Skewness Function.
+    C7c         = 0.500000,          & ! Degree of Slope of C7 Skewness Function.
+    C8          = 3.000000,          & ! Coefficient #1 in C8 Skewness Equation.
+    C8b         = 0.005000,          & ! Coefficient #2 in C8 Skewness Equation.
+    C10         = 3.300000,          & ! Currently Not Used in the Model.
+    C11         = 0.750000,          & ! Low Skewness in C11 Skewness Function.
+    C11b        = 0.350000,          & ! High Skewness in C11 Skewness Function.
+    C11c        = 0.500000,          & ! Degree of Slope of C11 Skewness Function.
+    C12         = 1.000000,          & ! Constant in w'^3 Crank-Nicholson diffusional term.
+    C13         = 0.100000,          & ! Not currently used in model.
+    C14         = 1.000000,          & ! Constant for u'^2 and v'^2 terms.
+    C15         = 0.4                  ! Coefficient for the wp3_bp2 term
 
   real, public ::      &
     C6rt_Lscale0,      & ! Damp C6rt as a function of Lscale
@@ -69,30 +69,30 @@ module parameters_tunable
     wpxp_L_thresh   ! Lscale threshold for damping C6 and C7 coefficients
 
   real, public :: & 
-    c_K,         & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
-    c_K1,        & ! Coefficient of Eddy Diffusion for wp2.
-    c_K2,        & ! Coefficient of Eddy Diffusion for xp2.
-    c_K6,        & ! Coefficient of Eddy Diffusion for wpthlp and wprtp.
-    c_K8,        & ! Coefficient of Eddy Diffusion for wp3.
-    c_K9,        & ! Coefficient of Eddy Diffusion for up2 and vp2.
-    c_Krrainm,   & ! Coefficient of Eddy Diffusion for hydrometeors.
-    c_Ksqd,      & ! Constant for scaling effect of value-squared diffusion.
-    gamma_coef,  & ! Low Skewness in gamma coefficient Skewness Function.
-    gamma_coefb, & ! High Skewness in gamma coefficient Skewness Function.
-    gamma_coefc, & ! Degree of Slope of gamma coefficient Skewness Function.
-    mu,          & ! Fractional entrainment rate per unit altitude.
-    taumin,      & ! Minimum allowable value of time-scale tau.
-    taumax,      & ! Maximum allowable value of time-scale tau.
+    c_K         = 0.200000,         & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
+    c_K1        = 0.750000,         & ! Coefficient of Eddy Diffusion for wp2.
+    c_K2        = 0.125000,         & ! Coefficient of Eddy Diffusion for xp2.
+    c_K6        = 0.375000,         & ! Coefficient of Eddy Diffusion for wpthlp and wprtp.
+    c_K8        = 1.250000,         & ! Coefficient of Eddy Diffusion for wp3.
+    c_K9        = 0.250000,         & ! Coefficient of Eddy Diffusion for up2 and vp2.
+    c_Krrainm   = 0.200000,         & ! Coefficient of Eddy Diffusion for hydrometeors.
+    c_Ksqd      = 10.00000,         & ! Constant for scaling effect of value-squared diffusion.
+    gamma_coef  = 0.320000,         & ! Low Skewness in gamma coefficient Skewness Function.
+    gamma_coefb = 0.320000,         & ! High Skewness in gamma coefficient Skewness Function.
+    gamma_coefc = 5.000000,         & ! Degree of Slope of gamma coefficient Skewness Function.
+    mu          = 1.000E-3,         & ! Fractional entrainment rate per unit altitude.
+    taumin      = 90.00000,         & ! Minimum allowable value of time-scale tau.
+    taumax      = 3600.000,         & ! Maximum allowable value of time-scale tau.
     lmin           ! Minimum value for the length scale.
 
   real, private :: & 
-    nu1,   & ! Background Coefficient of Eddy Diffusion for wp2.
-    nu2,   & ! Background Coefficient of Eddy Diffusion for xp2.
-    nu6,   & ! Background Coefficient of Eddy Diffusion for wpxp.
-    nu8,   & ! Background Coefficient of Eddy Diffusion for wp3.
-    nu9,   & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
-    nu_r,  & ! Background Coefficient of Eddy Diffusion for hydrometeors.
-    nu_hd    ! Constant coefficient for 4th-order hyper-diffusion.
+    nu1         = 20.00000,         & ! Background Coefficient of Eddy Diffusion for wp2.
+    nu2         = 5.000000,         & ! Background Coefficient of Eddy Diffusion for xp2.
+    nu6         = 5.000000,         & ! Background Coefficient of Eddy Diffusion for wpxp.
+    nu8         = 20.00000,         & ! Background Coefficient of Eddy Diffusion for wp3.
+    nu9         = 20.00000,         & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
+    nu_r        = 1.500000,         & ! Background Coefficient of Eddy Diffusion for hydrometeors.
+    nu_hd       = 20000.00    ! Constant coefficient for 4th-order hyper-diffusion.
 
 !$omp   threadprivate(C1, C1b, C1c, C2, C2b, C2c, &
 !$omp     C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc, &
@@ -122,13 +122,16 @@ module parameters_tunable
   ! Vince Larson added a constant to set plume widths for theta_l and rt
   ! beta should vary between 0 and 3, with 1.5 the standard value
 
-  real, public :: beta
+  real, public :: beta         = 1.750000
 
 !$omp threadprivate(beta)
 
-  real, private :: lmin_coef ! Coefficient of lmin
+  real, private :: lmin_coef    = 0.500000 ! Coefficient of lmin
 
 !$omp threadprivate(lmin_coef)
+
+  logical, public :: l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true.
+                                             ! avg_deltaz = deltaz
 
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
@@ -175,7 +178,7 @@ module parameters_tunable
 
   !=============================================================================
   subroutine setup_parameters & 
-            ( deltaz, params, nzmax, l_implemented, &
+            ( deltaz, params, nzmax, &
               grid_type, momentum_heights, thermodynamic_heights, &
               err_code )
 
@@ -204,10 +207,6 @@ module parameters_tunable
 
     ! Grid definition
     integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
-
-    ! Flag to see if CLUBB is running on it's own,
-    ! or if it's implemented as part of a host model.
-    logical, intent(in) :: l_implemented   ! (T/F)
 
     ! If CLUBB is running on its own, this option determines
     ! if it is using:
@@ -263,7 +262,7 @@ module parameters_tunable
 
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
     call adj_low_res_nu &
-           ( l_implemented, nzmax, grid_type, deltaz,  & ! Intent(in)
+           ( nzmax, grid_type, deltaz,  & ! Intent(in)
              momentum_heights, thermodynamic_heights )   ! Intent(in)
 
     ! Sanity check
@@ -303,7 +302,7 @@ module parameters_tunable
 
   !=============================================================================
   subroutine adj_low_res_nu &
-               ( l_implemented, nzmax, grid_type, deltaz, & ! Intent(in)
+               ( nzmax, grid_type, deltaz, & ! Intent(in)
                  momentum_heights, thermodynamic_heights )  ! Intent(in)
 
     ! Description:
@@ -344,10 +343,6 @@ module parameters_tunable
 
 
     ! Input Variables
-
-    ! Flag to see if CLUBB is running on it's own,
-    ! or if it's implemented as part of a host model.
-    logical, intent(in) :: l_implemented   ! (T/F)
 
     ! Grid definition
     integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
@@ -418,19 +413,17 @@ module parameters_tunable
       ! spacing deltaz.  For a case that uses a stretched grid, the adjustment
       ! is based on avg_deltaz, which is the average grid spacing over the
       ! vertical domain.
+ 
+      if ( l_prescribed_avg_deltaz ) then
+        
+        avg_deltaz = deltaz
 
-      if ( l_implemented .or. grid_type == 3 ) then
+      else if ( grid_type == 3 ) then
 
         ! CLUBB is implemented in a host model, or is using grid_type = 3
 
         ! Find the average deltaz over the grid based on momentum level
         ! inputs.
-        ! Note on the use of l_implemented here:
-        !   The use of momentum level inputs will avoid any
-        !   descrepancy between the CLUBB thermodynamic level profile,
-        !   which places the first thermodynamic level below the model
-        !   surface, and many host models, which place the first
-        !   thermodynamic level above the model surface.
 
         avg_deltaz  &
            = ( momentum_heights(nzmax) - momentum_heights(1) )  &
@@ -458,7 +451,7 @@ module parameters_tunable
         write(fstderr,*) "Invalid grid_type:", grid_type
         stop "Fatal error"
 
-      end if ! grid_type / l_implemented
+      end if ! grid_type
 
       ! The nu's are chosen for deltaz <= 40 m. Looks like they must
       ! be adjusted for larger grid spacings (Vince Larson)
@@ -550,72 +543,13 @@ module parameters_tunable
     logical :: l_error
 
     ! Initialize values to NaN
-    call init_parameters_nan( )
+    ! these tunable model parameters are initialized at the beginning of this module 
+    ! call init_parameters_nan( )
 
     ! If the filename is empty, assume we're using a `working' set of
     ! parameters that are set statically here (handy for host models).
-    if ( filename == "" ) then
-      C1                 = 2.5
-      C1b                = 2.5
-      C1c                = 1.0
-      C2rt               = 1.0
-      C2thl              = 1.0
-      C2rtthl            = 2.0
-      C2                 = 1.3
-      C2b                = 1.3
-      C2c                = 5.0
-      C4                 = 5.2
-      C5                 = 0.3
-      C6rt               = 6.0
-      C6rtb              = 6.0
-      C6rtc              = 1.0
-      C6thl              = 6.0
-      C6thlb             = 6.0
-      C6thlc             = 1.0
-      C7                 = 0.1
-      C7b                = 0.8
-      C7c                = 0.5
-      C8                 = 3.0
-      C8b                = 0.005
-      C10                = 3.3
-      C11                = 0.75
-      C11b               = 0.35
-      C11c               = 0.5
-      C12                = 1.0
-      C13                = 0.1
-      C14                = 1.0
-      C15                = 0.4
-      C6rt_Lscale0       = 14.0
-      C6thl_Lscale0      = 14.0
-      C7_Lscale0         = 0.85
-      wpxp_L_thresh    = 60.0
-      !c_K                = 0.548
-      c_K                = 0.2
-      c_K1               = 0.75
-      nu1                = 20.0
-      c_K2               = 0.125
-      nu2                = 5.0
-      c_K6               = 0.375
-      nu6                = 5.0
-      c_K8               = 1.25
-      nu8                = 20.0
-      c_K9               = 0.25
-      nu9                = 20.0
-      c_Krrainm          = 0.2
-      nu_r               = 1.5
-      c_Ksqd             = 10.0
-      nu_hd              = 20000.0
-      beta               = 1.75
-      gamma_coef         = 0.32
-      gamma_coefb        = 0.32
-      gamma_coefc        = 5.0
-      taumin             = 90.0
-      taumax             = 3600.0
-      lmin_coef          = 0.5
-      mu                 = 1.000E-3
-
-    else
-
+    ! Read the namelist
+    if ( filename /= "" ) then
       ! Read the namelist
       open(unit=iunit, file=filename, status='old', action='read')
 

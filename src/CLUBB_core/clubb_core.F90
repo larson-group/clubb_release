@@ -1641,7 +1641,7 @@ module clubb_core
 
     ! Define tunable constant parameters
     call setup_parameters & 
-         ( deltaz, params, gr%nzmax, l_implemented,               & ! intent(in)
+         ( deltaz, params, gr%nzmax,                             & ! intent(in)
            grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
            thermodynamic_heights(begin_height:end_height),       & ! intent(in)
            err_code )                                              ! intent(out)

@@ -78,7 +78,8 @@ module clubb_driver
 
     use inputfields, only: stat_file_zt
 
-    use parameters_tunable, only: params_list ! Variable(s)
+    use parameters_tunable, only: &
+      l_prescribed_avg_deltaz, params_list ! Variable(s)
 
     use clubb_core, only: & 
       setup_clubb_core,  & ! Procedure(s) 
@@ -332,7 +333,8 @@ module clubb_driver
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, l_input_fields, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
-      edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2
+      edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
+      l_prescribed_avg_deltaz
 
 
     namelist /stats_setting/ & 
