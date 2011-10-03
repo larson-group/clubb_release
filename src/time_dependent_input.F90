@@ -674,12 +674,14 @@ module time_dependent_input
   subroutine time_select( time, nvar, time_array, &
                           before_time, after_time, time_frac )
     !
-    !   Description: This subroutine determines which indexes of the given
-    !                time_array should be used when interpolating a value
-    !                at the specified time and the location of time between
-    !                these indexes.
+    ! Description: 
+    !   This subroutine determines which indexes of the given
+    !   time_array should be used when interpolating a value
+    !   at the specified time and the location of time between
+    !   these indexes.
     !
-    !
+    ! References:
+    !   None
     !---------------------------------------------------------------------------------
 
     use clubb_precision, only: time_precision ! Variable(s)
@@ -687,6 +689,9 @@ module time_dependent_input
     use constants_clubb, only: fstderr ! Constant(s)
 
     implicit none
+
+    ! External
+    intrinsic :: real
 
     ! Input Variable(s)
 
@@ -718,26 +723,28 @@ module time_dependent_input
 
     ! convert time to a real so it has the same precision as the values
     ! in time_array   
-    if( real(time) < time_array(1) ) then
+    if( real( time ) < time_array(1) ) then
       
       ! If time is less than the lowest value in time_array, an invalid
       ! time has been provided. Stop execution.
-      write(fstderr,*) 'Time is before the first time in the list. Stopping'
+      write(fstderr,*) "In subroutine time_select:"
+      write(fstderr,*) "Time is before the first time in the list. Stopping"
       stop
 
-    else if ( real(time) == time_array(1) ) then
+    else if ( real( time ) == time_array(1) ) then
 
       before_time = 1
       after_time = 2
 
-    else if ( real(time) > time_array(nvar) ) then
+    else if ( real( time ) > time_array(nvar) ) then
 
       ! If time is greater than the highest value in time_array, an invalid
       ! time has been provided. Stop execution.
-      write(fstderr,*) 'Time is after the last time in the list. Stopping'
+      write(fstderr,*) "In subroutine time_select:"
+      write(fstderr,*) "Time is after the last time in the list. Stopping"
       stop
       
-    else if ( real(time) == time_array(nvar) ) then
+    else if ( real( time ) == time_array(nvar) ) then
       
       before_time = nvar - 1
       after_time = nvar
@@ -746,8 +753,8 @@ module time_dependent_input
 
       do k=1,nvar-1
 
-        if ((real(time) > time_array(k)) .and. &
-         (real(time) <= time_array(k+1))) then
+        if ( (real( time ) > time_array(k)) .and. &
+             (real( time ) <= time_array(k+1)) ) then
 
           before_time = k
           after_time = k+1
@@ -756,12 +763,12 @@ module time_dependent_input
 
       end do
 
-    endif
+    end if
 
     ! Compute the position of time between before_time and after_time
     ! as a fraction.
-    time_frac = real(( real(time) - time_array(before_time) ) / &
-                ( time_array(after_time) - time_array(before_time) ))
+    time_frac = real( ( real( time ) - time_array(before_time) ) / &
+                ( time_array(after_time) - time_array(before_time) ) )
 
     return
 
