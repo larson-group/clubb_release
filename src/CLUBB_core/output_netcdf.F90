@@ -16,6 +16,12 @@ module output_netcdf
 
   private :: define_netcdf, write_grid, first_write, format_date
 
+  ! Constant parameters
+  ! This will truncate all timesteps smaller than 1 mn to a minute for 
+  ! the purposes of viewing the data in grads
+  logical, parameter, private :: &
+    l_grads_kludge = .true. 
+
   private ! Default scope
 
   contains
@@ -195,15 +201,17 @@ module output_netcdf
     end if
 
     allocate( stat( ncf%nvar ) )
-
-    time = real( nint( real( ncf%ntimes, kind=time_precision ) &
-                     * ncf%dtwrite / sec_per_min ), kind=time_precision ) !  minutes(rounded)
-!   time = dble( ncf%ntimes ) * ncf%dtwrite ! seconds
+    if ( l_grads_kludge ) then
+      time = real( nint( real( ncf%ntimes, kind=time_precision ) &
+                       * ncf%dtwrite / sec_per_min ), kind=time_precision ) !  minutes(rounded)
+    else
+      time = real( ncf%ntimes, kind=time_precision ) * ncf%dtwrite ! seconds
+    end if
 
     stat(1) = nf90_put_var( ncid=ncf%iounit, varid=ncf%TimeVarId,  & 
                             values=time(1), start=(/ncf%ntimes/) )
     if ( stat(1) /= NF90_NOERR ) then
-      stop "time put() failed"
+      stop "time variable nf90_put_var failed"
     end if
 
     do i = 1, ncf%nvar, 1
@@ -784,19 +792,16 @@ module output_netcdf
                                iyear, & 
                                st_time )
 
-!      date(1:14) = "minutes since "
-    date = "minutes since YYYY-MM-DD HH:MM:00.0"
-!   date = "seconds since YYYY-MM-DD HH:MM:00.0"
+    if ( .not. l_grads_kludge ) then
+      date = "seconds since YYYY-MM-DD HH:MM:00.0"
+    else
+      date = "minutes since YYYY-MM-DD HH:MM:00.0"
+    end if
     write(date(15:18),'(i4.4)') iyear
-!   write(date(19),'(a1)') '-'
     write(date(20:21),'(i2.2)') imonth
-!   write(date(22),'(a1)') '-'
     write(date(23:24),'(i2.2)') iday
-!   write(date(25),'(a1)') ' '
     write(date(26:27),'(i2.2)') floor( st_time / 3600._time_precision )
-!   write(date(28),'(a1)') ":"
     write(date(29:30),'(i2.2)') int( mod( nint( st_time ),3600 ) / 60 )
-!   write(date(30:35),'(a5)') ":00.0"
 
     return
   end subroutine format_date
