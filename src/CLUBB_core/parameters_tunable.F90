@@ -131,7 +131,11 @@ module parameters_tunable
 !$omp threadprivate(lmin_coef)
 
   ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+#ifdef GFDL
   logical, public :: l_prescribed_avg_deltaz = .true.
+#else
+  logical, public :: l_prescribed_avg_deltaz = .false.
+#endif
 
 !$omp threadprivate(l_prescribed_avg_deltaz)
 
