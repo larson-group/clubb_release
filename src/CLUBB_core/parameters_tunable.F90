@@ -63,10 +63,10 @@ module parameters_tunable
     C15         = 0.4                  ! Coefficient for the wp3_bp2 term
 
   real, public ::      &
-    C6rt_Lscale0,      & ! Damp C6rt as a function of Lscale
-    C6thl_Lscale0,     & ! Damp C6thl as a function of Lscale
-    C7_Lscale0,        & ! Damp C7 as a function of Lscale
-    wpxp_L_thresh   ! Lscale threshold for damping C6 and C7 coefficients
+    C6rt_Lscale0  = 14.0,            & ! Damp C6rt as a function of Lscale
+    C6thl_Lscale0 = 14.0,            & ! Damp C6thl as a function of Lscale
+    C7_Lscale0    = 0.8500000,       & ! Damp C7 as a function of Lscale
+    wpxp_L_thresh = 60.0               ! Lscale threshold for damping C6 and C7 coefficients
 
   real, public :: & 
     c_K         = 0.200000,         & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
@@ -130,8 +130,8 @@ module parameters_tunable
 
 !$omp threadprivate(lmin_coef)
 
-  logical, public :: l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true.
-                                             ! avg_deltaz = deltaz
+  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+  logical, public :: l_prescribed_avg_deltaz = .true.
 
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
