@@ -618,6 +618,8 @@ module clubb_driver
       call write_text( "l_uv_nudge = ", l_uv_nudge, l_write_to_file, iunit )
       call write_text( "l_restart = ", l_restart, l_write_to_file, iunit )
       call write_text( "l_input_fields = ", l_input_fields, l_write_to_file, iunit )
+      call write_text( "l_prescribed_avg_deltaz = ", l_prescribed_avg_deltaz, &
+                       l_write_to_file, iunit )
       call write_text( "restart_path_case = " // restart_path_case, l_write_to_file, iunit )
       call write_text( "time_restart = ", real( time_restart ), l_write_to_file, iunit )
       call write_text( "debug_level = ", debug_level, l_write_to_file, iunit )
