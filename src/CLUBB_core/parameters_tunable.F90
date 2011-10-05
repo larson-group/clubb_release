@@ -133,6 +133,8 @@ module parameters_tunable
   ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
   logical, public :: l_prescribed_avg_deltaz = .true.
 
+!$omp threadprivate(l_prescribed_avg_deltaz)
+
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
   namelist /initvars/  & 
