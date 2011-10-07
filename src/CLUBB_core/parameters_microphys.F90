@@ -8,7 +8,7 @@ module parameters_microphys
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-  use stats_precision, only: &
+  use clubb_precision, only: &
     time_precision
 
   implicit none

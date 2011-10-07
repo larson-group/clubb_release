@@ -63,7 +63,7 @@ module soil_vegetation
     !
     !-----------------------------------------------------------------------
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use stats_variables, only: l_stats_samp, sfc, &
                                 iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K ! Variables

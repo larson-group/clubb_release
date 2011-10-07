@@ -30,7 +30,7 @@ module input_grads
     fstderr,  &
     var_length
 
-  use stats_precision, only:  & 
+  use clubb_precision, only:  & 
     time_precision ! Variable(s)
 
   implicit none

@@ -52,7 +52,7 @@ module output_grads
     use stat_file_module, only: & 
         stat_file ! Type
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable
 
     implicit none
@@ -205,7 +205,7 @@ module output_grads
     use stat_file_module, only: & 
         variable ! Type
 
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
         time_precision ! Variable
 
     use constants_clubb, only:  & 
@@ -464,7 +464,7 @@ module output_grads
     use stat_file_module, only: & 
       stat_file ! Type
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
       time_precision ! Variable(s)
 
     implicit none
@@ -619,7 +619,7 @@ module output_grads
 ! References:
 !   None
 !---------------------------------------------------------
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
       time_precision ! Variable(s)
 
     use calendar, only:  & 
@@ -692,7 +692,7 @@ module output_grads
       sec_per_hr, &
       sec_per_min
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
       time_precision ! Variable(s)
 
     implicit none

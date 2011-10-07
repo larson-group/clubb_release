@@ -227,7 +227,7 @@ module clubb_core
     use advance_wp2_wp3_module, only:  & 
       advance_wp2_wp3 ! Procedure
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
       time_precision ! Variable(s)
 
     use error_code, only :  & 
@@ -538,7 +538,9 @@ module clubb_core
     !----- Begin Code -----
 
     if ( l_stats .and. l_stats_samp ) then
-      if ( l_implemented ) then
+      ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.  
+      ! Therefore, wm must be zero or l_implemented must be true.
+      if ( l_implemented .or. ( all( wm_zt == 0. ) .and. all( wm_zm == 0. ) ) ) then
         ! Get the vertical integral of rtm and thlm before this function begins
         ! so that spurious source can be calculated
         rtm_integral_before  &
@@ -1231,7 +1233,7 @@ module clubb_core
 
     call advance_wp2_wp3 &
          ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! intent(in)
-           a3_coef, a3_coef_zt, wp3_on_wp2,            & ! intent(in)
+           a3_coef, a3_coef_zt, wp3_on_wp2,              & ! intent(in)
            wpthvp, wp2thvp, um, vm, upwp, vpwp,          & ! intent(in)
            up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,       & ! intent(in)
            Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,         & ! intent(in)
@@ -1362,9 +1364,9 @@ module clubb_core
     end if
 
     if ( l_stats .and. l_stats_samp ) then
-      ! Spurious Source will only be calculated if l_implemented = true because wm needs
-      ! to be zero (l_implemented does this)
-      if ( l_implemented ) then
+      ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.  
+      ! Therefore, wm must be zero or l_implemented must be true.
+      if ( l_implemented .or. ( all( wm_zt == 0. ) .and. all( wm_zm == 0. ) ) ) then
         ! Calculate the spurious source for rtm
         rtm_flux_top = rho_ds_zm(gr%nzmax) * wprtp(gr%nzmax)
 
@@ -1641,7 +1643,7 @@ module clubb_core
 
     ! Define tunable constant parameters
     call setup_parameters & 
-         ( deltaz, params, gr%nzmax, l_implemented,               & ! intent(in)
+         ( deltaz, params, gr%nzmax,                             & ! intent(in)
            grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
            thermodynamic_heights(begin_height:end_height),       & ! intent(in)
            err_code )                                              ! intent(out)

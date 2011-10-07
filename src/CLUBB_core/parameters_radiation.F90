@@ -8,12 +8,16 @@ module parameters_radiation
 ! References:
 !   None
 !-------------------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    dp ! double precision
+
   implicit none
 
   character(len=20), public :: & 
     rad_scheme  ! Either BUGSrad, simplified, or simplied_bomex
 
-  double precision, dimension(1), public :: &
+  real( kind = dp ), dimension(1), public :: &
     sol_const ! Solar constant
 
   real, public :: &
@@ -22,7 +26,7 @@ module parameters_radiation
     !               altitude.
 
   ! Albedo values (alvdr is used in the simplifed schemes as well)
-  double precision, public :: &
+  real( kind = dp ), public :: &
     alvdr, &   !Visible direct surface albedo   [-]
     alndr, &   !Near-IR direct surface albedo   [-]
     alvdf, &   !Visible diffuse surface albedo  [-]
@@ -41,7 +45,7 @@ module parameters_radiation
     gc, & ! Asymmetry parameter, "g" in Duynkerke           [-]
     omega ! Single-scattering albedo                        [-] 
 
-  double precision, public :: &
+  real( kind = dp ), public :: &
     slr     ! Fraction of daylight
 
   real, public, dimension(20) :: &

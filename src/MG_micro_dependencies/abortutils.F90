@@ -16,15 +16,14 @@ module abortutils
   subroutine endrun (msg)
     !
     !  Description: The original subroutine aborts the model for abnormal termination.
-    !               In our case, we don't use this, so this subroutine does nothing.
+    !               This dummy subroutine simply prints out the error message.
     !
     !---------------------------------------------------------------------------------
 
       character(len=*), intent(in), optional :: msg    ! string to be printed
       
       ! This subroutine should never be called. It is only here to allow MG to compile correctly.
-      write(*,*) "WARNING: endrun from abortutils dummy file called. This subroutine should" &
-        // " never be called. It is only present to allow MG to compile correctly."
+      write(*,*) msg
         
       return
 

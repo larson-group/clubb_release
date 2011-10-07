@@ -2,6 +2,9 @@
 ! $Id$
 module extend_atmosphere_module
 
+  use clubb_precision, only: &
+    dp ! double precision
+
   implicit none
 
   private ! Default Scope
@@ -27,20 +30,20 @@ module extend_atmosphere_module
   ! Extended Atmosphere variables
 
   ! Altitude in meters
-  double precision, public, target, allocatable, dimension(:) :: extend_alt
+  real( kind = dp ), public, target, allocatable, dimension(:) :: extend_alt
 
   ! Temperature in degrees Kelvin
-  double precision, public, target, allocatable,dimension(:) :: extend_T_in_K
+  real( kind = dp ), public, target, allocatable,dimension(:) :: extend_T_in_K
 
   ! Specific Humidity ( Water Vapor / Density )
-  double precision, public, target, allocatable, dimension(:) ::  extend_sp_hmdty
+  real( kind = dp ), public, target, allocatable, dimension(:) ::  extend_sp_hmdty
 
   ! Pressure in millibars
-  double precision, public, target, allocatable, dimension(:) :: extend_pinmb
+  real( kind = dp ), public, target, allocatable, dimension(:) :: extend_pinmb
 
 
   ! Ozone ( O_3 / Density )
-  double precision, public, target, allocatable, dimension(:) :: extend_o3l
+  real( kind = dp ), public, target, allocatable, dimension(:) :: extend_o3l
 
   contains
 
@@ -68,6 +71,9 @@ module extend_atmosphere_module
     use constants_clubb, only: kappa, p0, fstderr ! Constant(s)
 
     use input_names, only: z_name, temperature_name, ozone_name, rt_name ! Variable(s)
+
+    use clubb_precision, only: &
+      dp ! double precision
 
     implicit none
 
@@ -157,7 +163,7 @@ module extend_atmosphere_module
     extend_sp_hmdty = dble( read_x_profile( n_snd_var, extend_atmos_dim, rt_name, &
                                             sounding_profiles ) )
 
-    extend_sp_hmdty = extend_sp_hmdty / ( extend_sp_hmdty +1.d0 )
+    extend_sp_hmdty = extend_sp_hmdty / ( extend_sp_hmdty +1._dp )
 
     ! Read in radiation scalars sounding (currently it only holds O3)
     call read_one_dim_file( iunit, n_rad_scalars, & ! In
@@ -209,7 +215,10 @@ module extend_atmosphere_module
 
 
     use constants_clubb, only: &
-    fstderr ! Variable(s)
+      fstderr ! Variable(s)
+
+    use clubb_precision, only: &
+      dp ! double precision
 
     implicit none
 
@@ -237,8 +246,8 @@ module extend_atmosphere_module
 
     ! Local Variable(s)
     integer :: k, j, i
-    double precision :: dz10, dz_model, dz_extension, dz
-    double precision :: zm_grid_top, extend_bottom, buffer_size
+    real( kind = dp ) :: dz10, dz_model, dz_extension, dz
+    real( kind = dp ) :: zm_grid_top, extend_bottom, buffer_size
 
     ! -- Begin Code --
 
@@ -294,7 +303,7 @@ module extend_atmosphere_module
     
     ! Determine the spacing of the lin_int_buffer, it should have no more than
     ! 10 levels.
-    dz10 = (extend_bottom - zm_grid_top) / 10.d0
+    dz10 = (extend_bottom - zm_grid_top) / 10._dp
     dz_model = dble( zm_grid_spacing(grid_size) )
     dz = max( dz10, dz_model )
     ! Calculate the size of the lin_int_buffer

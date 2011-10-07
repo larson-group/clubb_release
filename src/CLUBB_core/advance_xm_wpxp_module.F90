@@ -114,7 +114,7 @@ module advance_xm_wpxp_module
     use pdf_parameter_module, only: &
         pdf_parameter  ! Type
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use error_code, only:  & 
@@ -897,7 +897,7 @@ module advance_xm_wpxp_module
         l_clip_semi_implicit, & ! Variable(s)
         l_upwind_wpxp_ta
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use diffusion, only:  & 
@@ -1386,7 +1386,7 @@ module advance_xm_wpxp_module
         l_clip_semi_implicit, & ! Variable(s)
         l_upwind_wpxp_ta
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use clip_semi_implicit, only: & 
@@ -1841,7 +1841,7 @@ module advance_xm_wpxp_module
     use model_flags, only: &
         l_clip_semi_implicit ! Variable(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use mono_flux_limiter, only: &
@@ -3050,7 +3050,7 @@ module advance_xm_wpxp_module
     use grid_class, only: &
         gr  ! Variable(s); gr%nzmax only.
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
         time_precision
 
     use stats_type, only: &

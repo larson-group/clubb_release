@@ -30,7 +30,7 @@ module output_2D_samples_module
     use output_netcdf, only: open_netcdf ! Procedure(s)
 #endif
 
-    use stats_precision, only: time_precision ! Constant(s)
+    use clubb_precision, only: time_precision ! Constant(s)
 
     implicit none
 
@@ -126,7 +126,7 @@ module output_2D_samples_module
     use output_netcdf, only: write_netcdf ! Procedure(s)
 #endif
 
-    use stats_precision, only: stat_rknd ! Constant(s)
+    use clubb_precision, only: stat_rknd ! Constant(s)
 
     implicit none
 

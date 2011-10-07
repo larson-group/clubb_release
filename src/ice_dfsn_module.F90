@@ -63,7 +63,7 @@ module ice_dfsn_module
         Lf,&
         T_freeze_K
 
-    USE stats_precision, only:  & 
+    USE clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     USE saturation, only:  & 

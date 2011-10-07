@@ -141,7 +141,7 @@ module calendar
 !   the seconds that have transpired since that date.
 !
 !----------------------------------------------------------------------------
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
       time_precision  ! Variable(s)
 
     use constants_clubb, only: & 

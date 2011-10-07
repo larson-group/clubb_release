@@ -47,7 +47,7 @@ module coamps_micro_driver_module
       Cp, Lv, pi, Lf, Ls, Rv, Rd, p0, T_freeze_K, cm3_per_m3, & ! Variable(s)
       fstderr ! Constant(s)
     use saturation, only: sat_mixrat_liq, sat_mixrat_ice ! Procedure(s)
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
     use error_code, only: clubb_debug ! Procedure(s)
     use grid_class, only: zt2zm ! Procedure(s)
     use grid_class, only: gr ! Variable(s)

@@ -34,7 +34,7 @@ module gabls3_night
 
     use constants_clubb, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use surface_flux, only: compute_momentum_flux ! Procedure(s)
 

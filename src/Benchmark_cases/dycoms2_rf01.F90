@@ -81,7 +81,7 @@ module dycoms2_rf01
                                   T_sfc_given, &
                                   time_select ! Procedure(s)
 
-  use stats_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision ! Variable(s)
   
   use interpolation, only: factor_interp ! Procedure(s)
 

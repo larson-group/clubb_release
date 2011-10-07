@@ -90,7 +90,7 @@ module surface_flux
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
     
     use time_dependent_input, only: latent_ht_given, sens_ht_given, time_sfc_given ! Variable(s)
     

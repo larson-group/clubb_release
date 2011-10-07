@@ -76,6 +76,9 @@ module estimate_scm_microphys_module
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -107,7 +110,7 @@ module estimate_scm_microphys_module
       LH_rt, & ! n_micro_calls values of total water mixing ratio     [kg/kg]
       LH_thl   ! n_micro_calls values of liquid potential temperature [K]
 
-    double precision, target, dimension(nzmax,n_micro_calls,d_variables), intent(in) :: &
+    real( kind = dp ), target, dimension(nzmax,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real, dimension(nzmax), intent(in) :: &
@@ -142,11 +145,11 @@ module estimate_scm_microphys_module
       lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
     ! Local Variables
-    double precision, dimension(nzmax,hydromet_dim) :: &
+    real( kind = dp ), dimension(nzmax,hydromet_dim) :: &
       lh_hydromet_mc_sum, & ! LH est of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel_sum   ! LH est of hydrometeor sedimentation velocity [m/s]
 
-    double precision, dimension(nzmax) :: &
+    real( kind = dp ), dimension(nzmax) :: &
       lh_rcm_mc_sum,  & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc_sum,  & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc_sum    ! LH est of time tendency of liquid potential temperature [K/s]
@@ -165,7 +168,7 @@ module estimate_scm_microphys_module
 
     integer, dimension(nzmax) :: n1, n2, zero
 
-    double precision, pointer, dimension(:,:) :: &
+    real( kind = dp ), pointer, dimension(:,:) :: &
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
       w_all_points            ! n_micro_calls values of vertical velocity      [m/s]
 
@@ -210,15 +213,15 @@ module estimate_scm_microphys_module
     lh_hydromet_vel(:,:) = 0.
 
     ! Initialize microphysical tendencies for each mixture component
-    lh_hydromet_mc_sum(:,:) = 0.d0
+    lh_hydromet_mc_sum(:,:) = 0._dp
 
-    lh_hydromet_vel_sum(:,:) = 0.d0
+    lh_hydromet_vel_sum(:,:) = 0._dp
 
-    lh_rcm_mc_sum(:) = 0.d0
+    lh_rcm_mc_sum(:) = 0._dp
 
-    lh_rvm_mc_sum(:) = 0.d0
+    lh_rvm_mc_sum(:) = 0._dp
 
-    lh_thlm_mc_sum(:) = 0.d0
+    lh_thlm_mc_sum(:) = 0._dp
 
     do sample = 1, n_micro_calls
 
@@ -339,6 +342,9 @@ module estimate_scm_microphys_module
       iiLH_s_mellor, &
       iiLH_w
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     integer, intent(in) :: &
@@ -346,7 +352,7 @@ module estimate_scm_microphys_module
       d_variables,   & ! Number of variates (normally=5) 
       n_micro_calls    ! Number of calls to microphysics (normally=2)
 
-    double precision, target, dimension(nzmax,n_micro_calls,d_variables), intent(in) :: &
+    real( kind = dp ), target, dimension(nzmax,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real, dimension(nzmax,hydromet_dim), intent(in) :: &

@@ -88,7 +88,7 @@ module stats_subs
       l_netcdf, & 
       l_grads
 
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
       time_precision   ! Variable(s)
 
     use output_grads, only: & 
@@ -837,7 +837,7 @@ module stats_subs
     !     Description:
     !     Initialize stats to zero
     !-----------------------------------------------------------------------
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
         stat_rknd,   & ! Variable(s)
         stat_nknd
 
@@ -868,7 +868,7 @@ module stats_subs
     !     Description:
     !     Compute the average of stats fields
     !-----------------------------------------------------------------------
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
         stat_rknd,   & ! Variable(s)
         stat_nknd
 
@@ -916,7 +916,7 @@ module stats_subs
         stats_tsamp, & 
         stats_tout
 
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
         time_precision ! Variable(s)
 
     implicit none
@@ -970,7 +970,7 @@ module stats_subs
         l_output_rad_files, & 
         l_grads
 
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
         time_precision ! Variable(s)
 
     use output_grads, only: & 

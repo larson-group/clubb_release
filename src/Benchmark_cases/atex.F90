@@ -40,7 +40,7 @@ module atex
 
   use grid_class, only: zt2zm ! Procedure(s)
 
-  use stats_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision ! Variable(s)
 
   use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
@@ -188,7 +188,7 @@ module atex
   use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
                                   time_select                    ! Procedure(s)
 
-  use stats_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision ! Variable(s)
 
   implicit none
 

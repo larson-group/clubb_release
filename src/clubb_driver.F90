@@ -9,6 +9,9 @@ module clubb_driver
 !   being the clubb_standalone program).
 !-----------------------------------------------------------------------
 
+  use clubb_precision, only: time_precision ! Variable(s)
+  use text_writer, only: write_text
+
   implicit none
 
   ! Setup run_clubb() as the sole external interface
@@ -75,7 +78,8 @@ module clubb_driver
 
     use inputfields, only: stat_file_zt
 
-    use parameters_tunable, only: params_list ! Variable(s)
+    use parameters_tunable, only: &
+      l_prescribed_avg_deltaz, params_list ! Variable(s)
 
     use clubb_core, only: & 
       setup_clubb_core,  & ! Procedure(s) 
@@ -97,7 +101,7 @@ module clubb_driver
       set_clubb_debug_level, &
       reportError
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
@@ -180,7 +184,6 @@ module clubb_driver
     use clubb_model_settings, only: &
       time_initial, & ! Variable(s)
       time_final, &
-      time_spinup, &
       time_current, &
       nzmax, &
       grid_type, &
@@ -321,7 +324,7 @@ module clubb_driver
       runtype, nzmax, grid_type, deltaz, zm_init, zm_top, & 
       zt_grid_fname, zm_grid_fname,  & 
       day, month, year, rlat, rlon, sfc_elevation, & 
-      time_initial, time_final, time_spinup, & 
+      time_initial, time_final, & 
       dt_main, dt_rad, & 
       sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, & 
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
@@ -330,7 +333,8 @@ module clubb_driver
       l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, l_input_fields, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
-      edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2
+      edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
+      l_prescribed_avg_deltaz
 
 
     namelist /stats_setting/ & 
@@ -361,7 +365,6 @@ module clubb_driver
 
     time_initial = 0._time_precision
     time_final   = 3600._time_precision
-    time_spinup  = 0._time_precision
 
     dt_main    = 30._time_precision
     dt_rad = 30._time_precision
@@ -554,7 +557,6 @@ module clubb_driver
 
       call write_text( "time_initial = ", real( time_initial ), l_write_to_file, iunit )
       call write_text( "time_final = ", real( time_final ), l_write_to_file, iunit )
-      call write_text( "time_spinup = ", real( time_spinup ), l_write_to_file, iunit )
 
       call write_text( "dt_main = ", real( dt_main ), l_write_to_file, iunit )
       call write_text( "dt_rad = ", real( dt_rad ), l_write_to_file, iunit )
@@ -616,6 +618,8 @@ module clubb_driver
       call write_text( "l_uv_nudge = ", l_uv_nudge, l_write_to_file, iunit )
       call write_text( "l_restart = ", l_restart, l_write_to_file, iunit )
       call write_text( "l_input_fields = ", l_input_fields, l_write_to_file, iunit )
+      call write_text( "l_prescribed_avg_deltaz = ", l_prescribed_avg_deltaz, &
+                       l_write_to_file, iunit )
       call write_text( "restart_path_case = " // restart_path_case, l_write_to_file, iunit )
       call write_text( "time_restart = ", real( time_restart ), l_write_to_file, iunit )
       call write_text( "debug_level = ", debug_level, l_write_to_file, iunit )
@@ -2606,7 +2610,7 @@ module clubb_driver
 
     use constants_clubb, only: fstderr ! Variables(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use model_flags, only: &
       l_soil_veg ! Variable(s)
@@ -2856,7 +2860,7 @@ module clubb_driver
       wpsclrp_sfc,  &
       wpedsclrp_sfc
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use time_dependent_input, only: &
       apply_time_dependent_forcings, &
@@ -3416,7 +3420,7 @@ module clubb_driver
     use constants_clubb, only: & 
       rc_tol, fstderr, cm3_per_m3 ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, dp ! Variable(s)
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
 
@@ -3517,7 +3521,7 @@ module clubb_driver
       err_code ! Error code from the microphysics
 
     ! Local Variables
-    double precision, dimension(gr%nzmax,LH_microphys_calls,d_variables) :: &
+    real( kind = dp ), dimension(gr%nzmax,LH_microphys_calls,d_variables) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
     integer, dimension(gr%nzmax,LH_microphys_calls) :: &
@@ -3713,7 +3717,8 @@ module clubb_driver
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
+      dp, & ! double precision
       time_precision ! Variable(s)
 
     use clubb_model_settings, only: &
@@ -3724,6 +3729,7 @@ module clubb_driver
       lin_int_buffer, &
       rlat, &
       rlon
+
 
     implicit none
 
@@ -3768,7 +3774,7 @@ module clubb_driver
 
     real :: Fs0, amu0_sp
 
-    double precision :: amu0
+    real( kind = dp ) :: amu0
 
     integer :: i, err_code_radiation
 
@@ -3805,7 +3811,7 @@ module clubb_driver
 
       end if ! l_fix_cos_solar_zen
     else
-      amu0 = 0.d0 ! This should disable shortwave radiation
+      amu0 = 0._dp ! This should disable shortwave radiation
 
     end if ! l_sw_radiation
 
@@ -3925,7 +3931,7 @@ module clubb_driver
       !----------------------------------------------------------------
 
       ! The sunray_sw code cannot handle negative values of cosine
-      if ( l_sw_radiation .and. amu0 > 0.d0 ) then
+      if ( l_sw_radiation .and. amu0 > 0._dp ) then
         amu0_sp = real( amu0 )
         if ( nparam > 1 ) then
            call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &

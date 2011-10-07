@@ -51,7 +51,7 @@ sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level
 
 time_initial = 0.0       ! Model start time [seconds since midnight on start date]
 time_final   = 2592000.0 ! Model end time [seconds since midnight on start date]
-time_spinup  = 100000.0  ! End of spin-up period [seconds since midnight on start date]
+
 
 dt_main    = 300.0   ! Model timestep [s]
 dt_rad = 900.0   ! Radiation timestep [s]
@@ -138,6 +138,7 @@ edsclr_dim  = 0
 
 iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
+l_prescribed_avg_deltaz = .false.
 
 /
 

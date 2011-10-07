@@ -2,6 +2,9 @@
 !-----------------------------------------------------------------------
 module cos_solar_zen_module
 
+  use clubb_precision, only: &
+    dp ! double precision
+
   implicit none
 
   public :: cos_solar_zen
@@ -11,7 +14,7 @@ module cos_solar_zen_module
   contains
 
 !-----------------------------------------------------------------------
-  double precision function cos_solar_zen & 
+  function cos_solar_zen & 
            ( day, month, year, current_time, lat_in_degrees, & 
              lon_in_degrees )
 
@@ -32,7 +35,7 @@ module cos_solar_zen_module
     use constants_clubb, only: pi_dp, fstderr, sec_per_day, sec_per_hr,&
                                radians_per_deg_dp ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use calendar, only:  & 
         gregorian2julian_day, compute_current_date, leap_year ! Procedure(s)
@@ -45,14 +48,14 @@ module cos_solar_zen_module
     ! Constant Parameters
 
     ! Liou's coefficients
-    double precision, parameter :: & 
-      c0 =  0.006918d0,   & ! [-]
-      c1 = -0.399912d0,   & ! [-]
-      c2 = -0.006758d0,   & ! [-]
-      c3 = -0.002697d0,   & ! [-]
-      d1 =  0.070257d0,   & ! [-]
-      d2 =  0.000907d0,   & ! [-]
-      d3 =  0.000148d0      ! [-]
+    real( kind = dp ), parameter :: & 
+      c0 =  0.006918_dp,   & ! [-]
+      c1 = -0.399912_dp,   & ! [-]
+      c2 = -0.006758_dp,   & ! [-]
+      c3 = -0.002697_dp,   & ! [-]
+      d1 =  0.070257_dp,   & ! [-]
+      d2 =  0.000907_dp,   & ! [-]
+      d3 =  0.000148_dp      ! [-]
 
     ! Input Variables
     integer, intent(in) ::  & 
@@ -67,8 +70,12 @@ module cos_solar_zen_module
       lat_in_degrees, & ! Latitude       [degrees_N]
       lon_in_degrees    ! Longitude      [degrees_E]
 
+    ! Return Variable
+    real( kind = dp ) :: &
+      cos_solar_zen
+
     ! Local Variables
-    double precision :: & 
+    real( kind = dp ) :: & 
       t,  & 
       delta, & 
       zln, & 
@@ -105,12 +112,12 @@ module cos_solar_zen_module
     ! Determine the number of hours
     hour = present_time / sec_per_hr
 
-    t = 2.d0*pi_dp*dble( jul_day-1 )/dble( days_in_year )
+    t = 2._dp*pi_dp*dble( jul_day-1 )/dble( days_in_year )
 
     delta = c0  & 
           + c1*cos( t ) + d1*sin( t ) & 
-          + c2*cos( 2.d0*t ) + d2*sin( 2.d0*t ) & 
-          + c3*cos( 3.d0*t ) + d3*sin( 3.d0*t )
+          + c2*cos( 2._dp*t ) + d2*sin( 2._dp*t ) & 
+          + c3*cos( 3._dp*t ) + d3*sin( 3._dp*t )
 
 ! The angle  longang  is equivalent to the
 ! hour angle in the formula for cosZ .
@@ -124,11 +131,11 @@ module cos_solar_zen_module
 
     select case ( int( hour ) )
     case ( 0:11 )
-      zln = 180.00d0 - hour*15.00d0 ! Known magic number
+      zln = 180.00_dp - hour*15.00_dp ! Known magic number
     case ( 12:23 )
-      zln = 540.00d0 - hour*15.00d0 ! Known magic number
+      zln = 540.00_dp - hour*15.00_dp ! Known magic number
     case default
-      zln = 0.0d0
+      zln = 0.0_dp
       write(unit=fstderr,fmt=*) "Hour=", hour
       stop " > 24 hours in cosine solar zenith code"
     end select

@@ -40,7 +40,7 @@ module fire
  
   use surface_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc
 
-  use stats_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision ! Variable(s)
 
   use interpolation, only: factor_interp ! Procedure(s)
 

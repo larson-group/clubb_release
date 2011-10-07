@@ -36,7 +36,7 @@ module gabls2
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
@@ -130,7 +130,7 @@ module gabls2
 
     use saturation, only: sat_mixrat_liq ! Procedure(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 

@@ -1,10 +1,10 @@
 !-------------------------------------------------------------------------------
 ! $Id$
-module stats_precision
+module clubb_precision
 
   implicit none
 
-  public :: stat_nknd, stat_rknd, time_precision
+  public :: stat_nknd, stat_rknd, time_precision, dp, sp
 
   private ! Default scope
 
@@ -15,7 +15,9 @@ module stats_precision
   integer, parameter ::  & 
     stat_nknd = selected_int_kind( 8 ), & 
     stat_rknd = selected_real_kind( p=12 ), & 
-    time_precision = selected_real_kind( p=12 )
+    time_precision = selected_real_kind( p=12 ), &
+    dp = selected_real_kind( p=12 ), & ! double precision
+    sp = selected_real_kind( p=5 )     ! single precision
 
-end module stats_precision
+end module clubb_precision
 !-------------------------------------------------------------------------------

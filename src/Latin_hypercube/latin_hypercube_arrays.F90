@@ -1,6 +1,9 @@
 ! $Id$
 module latin_hypercube_arrays
 
+  use clubb_precision, only: &
+    dp ! double precision
+
   implicit none
 
   public :: setup_corr_varnce_array, cleanup_latin_hypercube_arrays
@@ -25,13 +28,13 @@ module latin_hypercube_arrays
 
 !$omp threadprivate(l_fixed_corr_initialized)
 
-  double precision, allocatable, dimension(:,:), target, public :: &
+  real( kind = dp ), allocatable, dimension(:,:), target, public :: &
     corr_stw_cloud_Cholesky, & ! Cholesky factorization of the correlation matrix
     corr_stw_below_Cholesky    ! Cholesky factorization of the correlation matrix
 
 !$omp threadprivate(corr_stw_cloud_Cholesky, corr_stw_below_Cholesky)
 
-  double precision, allocatable, dimension(:), public :: &
+  real( kind = dp ), allocatable, dimension(:), public :: &
     corr_stw_cloud_scaling, & ! Scaling factors for the correlation matrix [-]
     corr_stw_below_scaling    ! Scaling factors for the correlation matrix [-]
 

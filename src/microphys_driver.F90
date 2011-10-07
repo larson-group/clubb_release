@@ -187,7 +187,7 @@ module microphys_driver
 
     use gfdl_activation, only: Loading ! Procedure
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
 #ifdef LATIN_HYPERCUBE
@@ -1047,8 +1047,9 @@ module microphys_driver
     use model_flags, only: &
       l_hole_fill ! Variable(s)
 
-    use stats_precision, only:  & 
-        time_precision ! Variable(s)
+    use clubb_precision, only:  & 
+        time_precision, & ! Variable(s)
+        dp
 
     use error_code, only:  & 
         fatal_error, & ! Procedure
@@ -1187,7 +1188,7 @@ module microphys_driver
       rho_ds_zm, & ! Dry, static density on moment. levels  [kg/m^3]
       rho_ds_zt    ! Dry, static density on thermo. levels  [kg/m^3]
 
-    double precision, dimension(gr%nzmax,LH_microphys_calls,d_variables), intent(in) :: &
+    real( kind = dp ), dimension(gr%nzmax,LH_microphys_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
     integer, dimension(gr%nzmax,LH_microphys_calls), intent(in) :: &
@@ -2015,7 +2016,7 @@ module microphys_driver
     use grid_class, only: & 
         gr ! Variable(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use lapack_wrap, only:  & 
@@ -2265,7 +2266,7 @@ module microphys_driver
         zm2zt, & ! Procedure(s)
         zt2zm    ! Procedure(s)
 
-    use stats_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
     use diffusion, only:  & 
@@ -3054,7 +3055,7 @@ module microphys_driver
         gr,  & ! Variable(s) 
         zm2zt ! Procedure(s)
 
-    use stats_precision, only: & 
+    use clubb_precision, only: & 
         time_precision ! Variable(s)
 
     use diffusion, only:  & 

@@ -55,7 +55,7 @@ l_ignore_forcings = .true. ! Do not read values from _forcings.in file,
 time_initial = 50400.0  ! Model start time [seconds since midnight on start date]
 time_final   = 309600.0 ! Model end time [seconds since midnight on start date]
 !time_final   = 50460.0  ! Model end time [seconds since midnight on start date]
-time_spinup  = 0.0      ! End of spin-up period [seconds since midnight on start date]
+
 
 dt_main    = 60.0   ! Model timestep [s]
 dt_rad = 60.0   ! Radiation timestep [s] 
@@ -134,6 +134,7 @@ edsclr_dim  = 0
 
 iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
+l_prescribed_avg_deltaz = .false.
 
 /
 

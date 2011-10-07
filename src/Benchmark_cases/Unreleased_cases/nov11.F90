@@ -46,7 +46,7 @@ module nov11
     use grid_class, only: &
       gr       ! Variable(s)
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
       time_precision ! Variable(s)
 
     implicit none
@@ -124,7 +124,7 @@ module nov11
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use stats_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision ! Variable(s)
 
     use interpolation, only: linear_interpolation ! Procedure(s)
 
@@ -368,7 +368,7 @@ module nov11
 !   None
 !--------------------------------------------------------------------------
 
-    use stats_precision, only: &
+    use clubb_precision, only: &
       time_precision ! Variable(s)
 
     use time_dependent_input, only: time_sfc_given, &             ! Variable(s)

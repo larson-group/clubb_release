@@ -1,6 +1,9 @@
 !$Id$
 module generate_lh_sample_module
 
+  use clubb_precision, only: &
+    dp ! double precision
+
   implicit none
 
   public :: generate_lh_sample, generate_uniform_sample, &
@@ -109,6 +112,9 @@ module generate_lh_sample_module
     use parameters_microphys, only: &
       l_fix_s_t_correlations ! Varible(s)
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -174,7 +180,7 @@ module generate_lh_sample_module
       LH_rt, & ! Total water mixing ratio          [kg/kg]
       LH_thl   ! Liquid potential temperature      [K]
 
-    double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(out), dimension(n_micro_calls,d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
     ! Local Variables
@@ -202,11 +208,11 @@ module generate_lh_sample_module
       stdev_s1,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
       stdev_s2       ! Standard deviation of s for 2nd normal distribution [kg/kg]
 
-    double precision :: &
+    real( kind = dp ) :: &
       stdev_t1, &  ! Standard deviation of t for the 1st normal distribution [kg/kg]
       stdev_t2     ! Standard deviation of t for the 1st normal distribution [kg/kg]
 
-    double precision :: &
+    real( kind = dp ) :: &
       cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
       cloud_frac2    ! Cloud fraction for 2nd normal distribution              [-]
 
@@ -214,7 +220,7 @@ module generate_lh_sample_module
     ! Use to clip the magnitude of the correlation between rt and thl
     real :: rrtthl_reduced ! Correlation between rt and thl [-]
 
-    double precision :: &
+    real( kind = dp ) :: &
       rrtthl_covar_reduced1, & ! Covariance of rtthl for plume 1 [K^2/kg^2]
       rrtthl_covar_reduced2    ! Covariance of rtthl for plume 2 [K^2/kg^2]
 
@@ -224,11 +230,11 @@ module generate_lh_sample_module
 
     ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4 ... d_variables
     !                                      s   t   w   hydrometeors
-    double precision, dimension(d_variables,d_variables) :: &
+    real( kind = dp ), dimension(d_variables,d_variables) :: &
       Sigma_stw_1, & ! Covariance of s,t, w + hydrometeors for plume 1
       Sigma_stw_2    ! Covariance of s,t, w + hydrometeors for plume 2
 
-    double precision :: &
+    real( kind = dp ) :: &
 !     Ncm,     & ! Cloud droplet number concentration.[number / kg air]
       var_Nc1, & ! PDF param for width of plume 1.    [(#/kg)^2]
       var_Nc2, & ! PDF param for width of plume 2.    [(#/kg^2]
@@ -239,7 +245,7 @@ module generate_lh_sample_module
     real :: corr_rrNr, covar_rrNr1, covar_rrNr2, corr_srr, corr_sNr, &
             covar_sNr1, covar_sNr2, covar_srr1, covar_srr2
 
-    double precision :: covar_trr1, covar_trr2, covar_tNr2, covar_tNr1
+    real( kind = dp ) :: covar_trr1, covar_trr2, covar_tNr2, covar_tNr1
 
 !   real :: &
 !     stdev_Nc, & ! Standard deviation of Nc   [#/kg]
@@ -250,38 +256,38 @@ module generate_lh_sample_module
 !     covar_sNc1,    & ! Covariance of s and Nc1      [# kg/kg^2]
 !     covar_sNc2       ! Covariance of s and Nc2      [# kg/kg^2]
 
-!   double precision, dimension(2,2) :: corr_st_mellor_1, corr_st_mellor_2
+!   real( kind = dp ), dimension(2,2) :: corr_st_mellor_1, corr_st_mellor_2
 
     ! rr = specific rain content. [rr] = kg rain / kg air
-    double precision :: &
+    real( kind = dp ) :: &
       rrainm, &  ! rain water mixing ratio         [kg/kg]
       var_rr1, & ! PDF param for width of plume 1     [(kg/kg)^2]
       var_rr2    ! PDF param for width of plume 2.    [(kg/kg)^2]
 
-    double precision :: &
+    real( kind = dp ) :: &
       tp2_mellor_2, sp2_mellor_2,  & ! Variance of s,t         [(kg/kg)^2]
       sptp_mellor_2,               & ! Covariance of s and t   [kg/kg]
       tp2_mellor_1, sp2_mellor_1,  & ! Variance of s,t         [(kg/kg)^2]
       sptp_mellor_1                  ! Covariance of s and t   [kg/kg]
 
 
-    double precision, dimension(d_variables,d_variables) :: &
+    real( kind = dp ), dimension(d_variables,d_variables) :: &
       Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
 
-    double precision, dimension(d_variables) :: &
+    real( kind = dp ), dimension(d_variables) :: &
        Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
        Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
 
     logical :: &
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
 
-    double precision, dimension(d_variables,d_variables) :: &
+    real( kind = dp ), dimension(d_variables,d_variables) :: &
       Corr_stw_1, Corr_stw_2 ! Correlation matrix for Sigma_stw_1,2
 
-    double precision, dimension(:,:), allocatable :: &
+    real( kind = dp ), dimension(:,:), allocatable :: &
       corr_stw_matrix ! Correlation matrix      [-]
 
-    double precision, dimension(3) :: &
+    real( kind = dp ), dimension(3) :: &
       temp_3_elements
 
     real, pointer, dimension(:) :: &
@@ -290,7 +296,7 @@ module generate_lh_sample_module
     real, pointer, dimension(:,:) :: &
       corr_array => null()  ! Correlation array pointer
 
-    double precision, pointer, dimension(:,:) :: &
+    real( kind = dp ), pointer, dimension(:,:) :: &
       corr_stw_matrix_Cholesky => null() ! Pointer to the correct Cholesky factorization
 
     logical :: l_in_cloud
@@ -390,10 +396,10 @@ module generate_lh_sample_module
 
 
     ! Standard sample for testing purposes when n=2
-    ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, &
-    !             0.58015016959859d0, 0.61894015386778d0, 0.1d0, 0.1d0  / )
-    ! X_u_one_lev(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0, &
-    !             0.43642762850981d0, 0.32291562498749d0, 0.1d0, 0.1d0  / )
+    ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001_dp, 0.46711825945881_dp, &
+    !             0.58015016959859_dp, 0.61894015386778_dp, 0.1_dp, 0.1_dp  / )
+    ! X_u_one_lev(2,1:(d+1)) = ( / 0.999_dp, 0.63222458307464_dp, &
+    !             0.43642762850981_dp, 0.32291562498749_dp, 0.1_dp, 0.1_dp  / )
 
     ! Select the in-cloud or out of cloud values if the correlations and
     ! x'^2 /  xm^2 terms.
@@ -511,8 +517,8 @@ module generate_lh_sample_module
       !    any other variables.
 
       ! Sigma_stw_1,2
-      Sigma_stw_1 = 0.d0 ! Start with no covariance, and add matrix elements
-      Sigma_stw_2 = 0.d0
+      Sigma_stw_1 = 0._dp ! Start with no covariance, and add matrix elements
+      Sigma_stw_2 = 0._dp
 
       ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
 
@@ -899,6 +905,9 @@ module generate_lh_sample_module
       iiLH_s_mellor, & ! Variables
       iiLH_t_mellor
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input variables
@@ -907,14 +916,14 @@ module generate_lh_sample_module
       d_variables      ! Number of variates (normally=5)
 
     ! Weight of 1st Gaussian, 0 <= mixt_frac <= 1
-    double precision, intent(in) :: mixt_frac
+    real( kind = dp ), intent(in) :: mixt_frac
 
     !rt1, thl1 = mean of rt, thl for Gaus comp 1
     !rt2, thl2 = mean of rt, thl for Gaus comp 2
-    double precision, intent(in) :: rt1, thl1, rt2, thl2
+    real( kind = dp ), intent(in) :: rt1, thl1, rt2, thl2
 
     ! Thermodynamic constants for plumes 1 and 2, units of kg/kg
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       crt1,  & ! coefficient relating rt, s and t for Gaus comp 1
       cthl1, & ! coeff relating thl, s and t for component 1
       crt2,  & ! coefficient relating rt, s and t for component 2
@@ -925,13 +934,13 @@ module generate_lh_sample_module
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
 
     ! Cloud fractions for components 1 and 2
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       cloud_frac1, cloud_frac2 ! cloud fraction associated w/ 1st, 2nd mixture component
 
     logical, intent(in), dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
 
-    double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
+    real( kind = dp ), intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from particular grid level [-]
 
     integer, intent(in), dimension(n_micro_calls) :: &
@@ -939,11 +948,11 @@ module generate_lh_sample_module
 
     ! Columns of Sigma_Cholesky, X_nl_one_lev:  1   2   3   4 ... d_variables
     !                                           s   t   w   hydrometeors
-    double precision, intent(in), dimension(d_variables,d_variables) :: &
+    real( kind = dp ), intent(in), dimension(d_variables,d_variables) :: &
       Sigma1_Cholesky, & ! [units vary]
       Sigma2_Cholesky
 
-    double precision, intent(in), dimension(d_variables) :: &
+    real( kind = dp ), intent(in), dimension(d_variables) :: &
       Sigma1_scaling, Sigma2_scaling ! Scaling factors on Sigma1,2 [units vary]
 
     logical, intent(in) :: &
@@ -955,7 +964,7 @@ module generate_lh_sample_module
       LH_rt,  & ! Total water   [kg/kg]
       LH_thl    ! Liquid potential temperature  [K]
 
-    double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(out), dimension(n_micro_calls,d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
     ! Local Variables
@@ -1020,6 +1029,9 @@ module generate_lh_sample_module
     use constants_clubb, only: &
       max_mag_correlation ! Constant
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -1027,7 +1039,7 @@ module generate_lh_sample_module
 
     ! Input Variables
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       stdev_s_mellor, & ! Standard deviation of s_mellor [(kg/kg)^2]
       varnce_rt,      & ! Variance of rt1/rt2
       varnce_thl,     & ! Variance of thl1/thl2
@@ -1036,15 +1048,15 @@ module generate_lh_sample_module
 
     ! Output Variables
 
-    double precision, intent(out) :: &
+    real( kind = dp ), intent(out) :: &
       tp2, sp2,  &    ! Variance of s,t         [(kg/kg)^2]
       sptp            ! Covariance of s and t   [kg/kg]
 
     ! Local Variables
 
-    double precision :: crt_sqd, cthl_sqd
+    real( kind = dp ) :: crt_sqd, cthl_sqd
 
-    double precision :: &
+    real( kind = dp ) :: &
       sqrt_sp2_tp2 ! sqrt of the product of the variances of s and t [kg/kg]
 
     ! ---- Begin Code ----
@@ -1055,7 +1067,7 @@ module generate_lh_sample_module
     crt_sqd = crt**2
     cthl_sqd = cthl**2
     sptp = crt_sqd * varnce_rt - cthl_sqd * varnce_thl
-    tp2 = crt_sqd * varnce_rt + 2.d0 * crt * cthl * rrtthl_covar &
+    tp2 = crt_sqd * varnce_rt + 2._dp * crt * cthl * rrtthl_covar &
         + cthl_sqd * varnce_thl
     sp2 = stdev_s_mellor**2
 
@@ -1173,6 +1185,9 @@ module generate_lh_sample_module
     use error_code, only:  &
       clubb_at_least_debug_level  ! Procedure(s)
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input Variables
@@ -1181,7 +1196,7 @@ module generate_lh_sample_module
       n_micro_calls, &  ! Number of calls to microphysics (normally=2) 
       d_variables       ! Number of variates (normally=5)
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mixt_frac,     & ! Mixture fraction of Gaussians
       cloud_frac1, cloud_frac2   ! Cloud fraction associated w/ 1st, 2nd mixture component
 
@@ -1189,13 +1204,13 @@ module generate_lh_sample_module
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
     ! Latin hypercube sample from uniform distribution from a particular grid level
-    double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
+    real( kind = dp ), intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev
 
-    double precision, dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
       Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
 
-    double precision, dimension(d_variables), intent(in) :: &
+    real( kind = dp ), dimension(d_variables), intent(in) :: &
       Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
       Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
 
@@ -1207,12 +1222,12 @@ module generate_lh_sample_module
 
     ! Output Variables
 
-    double precision, intent(out), dimension(n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(out), dimension(n_micro_calls,d_variables) :: &
       X_nl_one_lev ! [n by d] matrix, each row of which is a d-dimensional sample
 
     ! Local Variables
 
-    double precision, dimension(d_variables) :: &
+    real( kind = dp ), dimension(d_variables) :: &
       std_normal  ! Standard normal multiplied by the factorized Sigma    [-]
 
     integer :: ivar, sample ! Loop iterators
@@ -1221,24 +1236,24 @@ module generate_lh_sample_module
 
     ! Handle some possible errors re: proper ranges of mixt_frac,
     ! cloud_frac1, cloud_frac2.
-    if (mixt_frac > 1.0d0 .or. mixt_frac < 0.0d0) then
+    if (mixt_frac > 1.0_dp .or. mixt_frac < 0.0_dp) then
       write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
                        'mixture fraction, mixt_frac, does not lie in [0,1].'
       stop
     end if
-    if (cloud_frac1 > 1.0d0 .or. cloud_frac1 < 0.0d0) then
+    if (cloud_frac1 > 1.0_dp .or. cloud_frac1 < 0.0_dp) then
       write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
                        'cloud fraction 1, cloud_frac1, does not lie in [0,1].'
       stop
     end if
-    if (cloud_frac2 > 1.0d0 .or. cloud_frac2 < 0.0d0) then
+    if (cloud_frac2 > 1.0_dp .or. cloud_frac2 < 0.0_dp) then
       write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
                        'cloud fraction 2, cloud_frac2, does not lie in [0,1].'
       stop
     end if
 
     ! Make sure there is some cloud.
-    if (mixt_frac*cloud_frac1 < 0.001d0 .and. (1-mixt_frac)*cloud_frac2 < 0.001d0) then
+    if (mixt_frac*cloud_frac1 < 0.001_dp .and. (1-mixt_frac)*cloud_frac2 < 0.001_dp) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
                          'there is no cloud or almost no cloud!'
@@ -1297,6 +1312,9 @@ module generate_lh_sample_module
     use error_code, only:  &
       clubb_at_least_debug_level  ! Procedure(s)
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input Variables
@@ -1306,18 +1324,18 @@ module generate_lh_sample_module
       d_variables,   &  ! Number of variates (normally=5)
       col               ! Scalar indicated which column of X_nl_one_lev to truncate
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mixt_frac,    & ! Mixture fraction of Gaussians
       cloud_frac1, cloud_frac2  ! Cloud fraction associated w/ 1st, 2nd mixture component
 
     real, intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
-    double precision, intent(in), dimension(d_variables,d_variables) :: &
+    real( kind = dp ), intent(in), dimension(d_variables,d_variables) :: &
       Sigma1, Sigma2 ! dxd dimensional covariance matrices
 
     ! Latin hypercube sample from uniform distribution from a particular grid level
-    double precision, intent(in), dimension(n_micro_calls,d_variables+1) :: &
+    real( kind = dp ), intent(in), dimension(n_micro_calls,d_variables+1) :: &
       X_u_one_lev
 
     integer, intent(in), dimension(n_micro_calls) :: &
@@ -1326,35 +1344,35 @@ module generate_lh_sample_module
     ! Output Variables
 
     ! A column vector of length n that is transformed from a Gaussian PDF to truncated Gaussian PDF.
-    double precision, intent(out), dimension(n_micro_calls) :: truncated_column
+    real( kind = dp ), intent(out), dimension(n_micro_calls) :: truncated_column
 
     ! Local Variables
 
     integer :: sample
-    double precision :: s_std
+    real( kind = dp ) :: s_std
 
     ! ---- Begin Code ----
 
     ! Handle some possible errors re: proper ranges of mixt_frac,
     ! cloud_frac1, cloud_frac2.
-    if ( (mixt_frac > 1.0d0) .or. (mixt_frac < 0.0d0) ) then
+    if ( (mixt_frac > 1.0_dp) .or. (mixt_frac < 0.0_dp) ) then
       write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
                        'mixture fraction, mixt_frac, does not lie in [0,1].'
       stop
     end if
-    if ( (cloud_frac1 > 1.0d0) .or. (cloud_frac1 < 0.0d0) ) then
+    if ( (cloud_frac1 > 1.0_dp) .or. (cloud_frac1 < 0.0_dp) ) then
       write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
                        'cloud fraction 1, cloud_frac1, does not lie in [0,1].'
       stop
     end if
-    if ( (cloud_frac2 > 1.0d0) .or. (cloud_frac2 < 0.0d0) ) then
+    if ( (cloud_frac2 > 1.0_dp) .or. (cloud_frac2 < 0.0_dp) ) then
       write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
                        'cloud fraction 2, cloud_frac2, does not lie in [0,1].'
       stop
     end if
 
     ! Make sure there is some cloud.
-    if (mixt_frac*cloud_frac1 < 0.001d0 .and. (1-mixt_frac) * cloud_frac2 < 0.001d0) then
+    if (mixt_frac*cloud_frac1 < 0.001_dp .and. (1-mixt_frac) * cloud_frac2 < 0.001_dp) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
                          'there is no cloud or almost no cloud!'
@@ -1371,7 +1389,7 @@ module generate_lh_sample_module
       if  ( X_mixt_comp_one_lev(sample) == 1 ) then
         ! Replace first dimension (s) with
         !  sample from cloud (i.e. truncated standard Gaussian)
-        s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac1 + (1.d0 - &
+        s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac1 + (1._dp - &
           cloud_frac1) )
         ! Convert to nonstandard normal with mean mu1 and variance Sigma1
         truncated_column(sample) =  & 
@@ -1380,7 +1398,7 @@ module generate_lh_sample_module
 
         ! Replace first dimension (s) with
         !   sample from cloud (i.e. truncated Gaussian)
-        s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac2 + (1.d0 - &
+        s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac2 + (1._dp - &
           cloud_frac2) )
 
         ! Convert to nonstandard normal with mean mu2 and variance Sigma2
@@ -1397,7 +1415,7 @@ module generate_lh_sample_module
   end subroutine truncate_gaus_mixt
 
 !-----------------------------------------------------------------------
-  double precision function ltqnorm( p )
+  function ltqnorm( p )
 ! Description:
 !   This function is ported to Fortran from the same function written in Matlab, see the following
 !   description of this function.  Hongli Jiang, 2/17/2004
@@ -1425,6 +1443,9 @@ module generate_lh_sample_module
 
     use constants_clubb, only: Pi_DP ! Variable(s)
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -1433,20 +1454,24 @@ module generate_lh_sample_module
 
     ! Input Variable(s)
 
-    double precision, intent(in) :: p
+    real( kind = dp ), intent(in) :: p
+
+    ! Return Variable
+
+    real( kind = dp ) :: ltqnorm
 
 
     ! Local Variable(s)
 
-    double precision a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, & 
+    real( kind = dp ) a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, & 
                      c1, c2, c3, c4, c5, c6, d1, d2, d3, d4
 
-    double precision q, r, z, z1, plow, phigh
+    real( kind = dp ) q, r, z, z1, plow, phigh
 
 !       double preciseion e, erf_dp, u
 
 !       Occurs in constants.F now.  Isn't actually used currently.
-!        double precision, parameter :: pi=3.1415926d0
+!        double precision, parameter :: pi=3.1415926_dp
 
 ! Coefficients in rational approximations.
 ! equivalent: a(1)=a1, a(2)=a2, and etc, when a(1) is in Matlab.
@@ -1477,47 +1502,47 @@ module generate_lh_sample_module
     z = 0.0
 
 !  Define break-points.
-    plow  = 0.02425d0
-    phigh = 1.d0 - plow
+    plow  = 0.02425_dp
+    phigh = 1._dp - plow
 
 !  Initialize output array. Don't need this in Fortran
 !   z = zeros(size(p));
 
 !  Rational approximation for lower region:
-    if (p > 0.d0 .and. p < plow) then
+    if (p > 0._dp .and. p < plow) then
       q = sqrt( -2 * log(p) )
       z = (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/ & 
-                ((((d1*q+d2)*q+d3)*q+d4)*q+1.d0)
+                ((((d1*q+d2)*q+d3)*q+d4)*q+1._dp)
 !  Rational approximation for central region:
     else if (p >= plow .and. p <= phigh) then
-      q = p - 0.5d0
+      q = p - 0.5_dp
       r = q * q
       z = (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)*q & 
-                 /(((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1.d0)
+                 /(((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1._dp)
 ! Rational approximation for upper region:
-    else if (p > phigh .and. p < 1.d0) then
-      q  = sqrt( -2.d0 * log(1.d0 - p) )
+    else if (p > phigh .and. p < 1._dp) then
+      q  = sqrt( -2._dp * log(1._dp - p) )
       z  = -(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6) & 
-                  /((((d1*q+d2)*q+d3)*q+d4)*q+1.d0)
+                  /((((d1*q+d2)*q+d3)*q+d4)*q+1._dp)
     end if
 
 !  Case when P = 0: z = -inf, to create inf z =-1./0.,
 !     to create NaN's inf*inf.
-    z1 = 0.d0
-    if (p == 0.d0) then
-      z = (-1.d0)/z1
+    z1 = 0._dp
+    if (p == 0._dp) then
+      z = (-1._dp)/z1
     end if
 
 ! Case when P = 1:, z=inf
-    if(p == 1.d0)then
-      z = 1.d0/z1
+    if(p == 1._dp)then
+      z = 1._dp/z1
     end if
 
 !  Cases when output will be NaN:
 !   k = p < 0 | p > 1 | isnan(p);
 ! usually inf*inf --> NaN's.
-    if (p < 0.d0 .or. p > 1d0) then
-      z = (1.d0/z1)**2
+    if (p < 0._dp .or. p > 1_dp) then
+      z = (1._dp/z1)**2
     end if
 
 !  The relative error of the approximation has absolute value less
@@ -1556,6 +1581,9 @@ module generate_lh_sample_module
 !   M. E. Johnson (1987), ``Multivariate Normal and Related Distributions'' p50-55
 !-------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -1570,16 +1598,16 @@ module generate_lh_sample_module
     ! Input Variables
     integer, intent(in) :: d_variables ! Number of variates (normally=5)
 
-    double precision, intent(in), dimension(d_variables) :: &
+    real( kind = dp ), intent(in), dimension(d_variables) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
     real, intent(in), dimension(d_variables) :: &
       mu ! d-dimensional column vector of means of Gaussian     [units vary]
 
-    double precision, intent(in), dimension(d_variables,d_variables) :: &
+    real( kind = dp ), intent(in), dimension(d_variables,d_variables) :: &
       Sigma_Cholesky ! Cholesky factorization of the Sigma matrix [units vary]
 
-    double precision, intent(in), dimension(d_variables) :: &
+    real( kind = dp ), intent(in), dimension(d_variables) :: &
       Sigma_scaling ! Scaling for Sigma / mu    [units vary]
 
     logical, intent(in) :: l_scaled ! Whether any scaling was done to Sigma
@@ -1588,11 +1616,11 @@ module generate_lh_sample_module
 
     ! nxd matrix of n samples from d-variate normal distribution
     !   with mean mu and covariance structure Sigma
-    double precision, intent(out) :: &
+    real( kind = dp ), intent(out) :: &
       nonstd_normal(d_variables)
 
     ! Local Variables
-    double precision, dimension(d_variables) :: &
+    real( kind = dp ), dimension(d_variables) :: &
       Sigma_times_std_normal ! Sigma * std_normal [units vary]
 
     ! --- Begin Code ---
@@ -1634,6 +1662,9 @@ module generate_lh_sample_module
     use error_code, only:  &
         clubb_at_least_debug_level  ! Procedure(s)
 
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! Input
@@ -1641,21 +1672,21 @@ module generate_lh_sample_module
     integer, intent(in) :: &
       n_micro_calls   ! Number of calls to microphysics (normally=2)
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mixt_frac,   & ! Mixture fraction of Gaussians 'mixt_frac' [-]
       rt1, rt2,    & ! n dimensional column vector of rt         [kg/kg]
       thl1, thl2,  & ! n dimensional column vector of thetal     [K]
       crt1, crt2,  & ! Constants from plumes 1 & 2 of rt
       cthl1, cthl2   ! Constants from plumes 1 & 2 of thetal
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       cloud_frac1, cloud_frac2 ! Cloud fraction associated with 1st / 2nd mixture component
 
     real, intent(in) :: &
       mu_s1, mu_s2
 
     ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
-    double precision, intent(in), dimension(n_micro_calls) :: &
+    real( kind = dp ), intent(in), dimension(n_micro_calls) :: &
       s_mellor, & 
       t_mellor
 
@@ -1676,24 +1707,24 @@ module generate_lh_sample_module
     ! Handle some possible errors re: proper ranges of mixt_frac,
     ! cloud_frac1, cloud_frac2.
 
-    if ( mixt_frac > 1.0d0 .or. mixt_frac < 0.0d0 ) then
+    if ( mixt_frac > 1.0_dp .or. mixt_frac < 0.0_dp ) then
       write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                        'mixture fraction, mixt_frac, does not lie in [0,1].'
       stop
     end if
-    if ( cloud_frac1 > 1.0d0 .or. cloud_frac1 < 0.0d0 ) then
+    if ( cloud_frac1 > 1.0_dp .or. cloud_frac1 < 0.0_dp ) then
       write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                        'cloud fraction 1, cloud_frac1, does not lie in [0,1].'
       stop
     end if
-    if ( cloud_frac2 > 1.0d0 .or. cloud_frac2 < 0.0d0 ) then
+    if ( cloud_frac2 > 1.0_dp .or. cloud_frac2 < 0.0_dp ) then
       write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                        'cloud fraction 2, cloud_frac2, does not lie in [0,1].'
       stop
     end if
 
     ! Make sure there is some cloud.
-    if ( mixt_frac*cloud_frac1 < 0.001d0 .and. (1-mixt_frac)*cloud_frac2 < 0.001d0 ) then
+    if ( mixt_frac*cloud_frac1 < 0.001_dp .and. (1-mixt_frac)*cloud_frac2 < 0.001_dp ) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                          'there is no cloud or almost no cloud!'
@@ -1710,17 +1741,17 @@ module generate_lh_sample_module
 
 !     if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
-        LH_rt(sample)  = real( rt1 + (0.5d0/crt1)*(s_mellor(sample)-mu_s1) +  & 
-                               (0.5d0/crt1)*t_mellor(sample) )
-        LH_thl(sample) = real( thl1 + (-0.5d0/cthl1)*(s_mellor(sample)-mu_s1) +  & 
-                               (0.5d0/cthl1)*t_mellor(sample) )
+        LH_rt(sample)  = real( rt1 + (0.5_dp/crt1)*(s_mellor(sample)-mu_s1) +  & 
+                               (0.5_dp/crt1)*t_mellor(sample) )
+        LH_thl(sample) = real( thl1 + (-0.5_dp/cthl1)*(s_mellor(sample)-mu_s1) +  & 
+                               (0.5_dp/cthl1)*t_mellor(sample) )
 
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
         ! mixture fraction 2
-        LH_rt(sample)  = real( rt2 + (0.5d0/crt2)*(s_mellor(sample)-mu_s2) +  & 
-                               (0.5d0/crt2)*t_mellor(sample) )
-        LH_thl(sample) = real( thl2 + (-0.5d0/cthl2)*(s_mellor(sample)-mu_s2) +  & 
-                              (0.5d0/cthl2)*t_mellor(sample) )
+        LH_rt(sample)  = real( rt2 + (0.5_dp/crt2)*(s_mellor(sample)-mu_s2) +  & 
+                               (0.5_dp/crt2)*t_mellor(sample) )
+        LH_thl(sample) = real( thl2 + (-0.5_dp/cthl2)*(s_mellor(sample)-mu_s2) +  & 
+                              (0.5_dp/cthl2)*t_mellor(sample) )
 
       else
         stop "Error determining mixture fraction in st_2_rtthl"
@@ -1740,18 +1771,22 @@ module generate_lh_sample_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        dp ! double precision
+
     implicit none
 
     ! External
     intrinsic :: log, epsilon, max
 
     ! Input Variables
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       Xm,         & ! Mean X          [units vary]
       Xp2_on_Xm2    ! X'^2 / X^2      [-]
 
     ! Output Variables
-    double precision, intent(out) :: &
+    real( kind = dp ), intent(out) :: &
       X1, X2  ! PDF parameters for mean of plume 1, 2   [units vary]
 
     ! ---- Begin Code ----
@@ -1889,6 +1924,9 @@ module generate_lh_sample_module
       set_lower_triangular_matrix_dp, & ! Procedures
       get_lower_triangular_matrix_sp
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! External
@@ -1904,7 +1942,7 @@ module generate_lh_sample_module
       xp2_on_xm2_array ! x'^2 / xm^2
 
     ! Output variables
-    double precision, dimension(d_variables,d_variables), intent(out) :: &
+    real( kind = dp ), dimension(d_variables,d_variables), intent(out) :: &
       corr_stw_matrix ! Correlations between variates with some terms in lognormal space
 
     ! Local Variables
@@ -2008,6 +2046,9 @@ module generate_lh_sample_module
       get_lower_triangular_matrix_sp, & ! Procedure(s)
       set_lower_triangular_matrix_dp
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input Variables
@@ -2022,7 +2063,7 @@ module generate_lh_sample_module
       corr_array ! Array of correlations        [-]
 
     ! Input/Output Variables
-    double precision, dimension(d_variables,d_variables), intent(inout) :: &
+    real( kind = dp ), dimension(d_variables,d_variables), intent(inout) :: &
       corr_stw_matrix ! Correlation matrix      [-]
 
     ! Local Variables
@@ -2069,6 +2110,9 @@ module generate_lh_sample_module
       get_lower_triangular_matrix_sp, & ! Procedure(s)
       set_lower_triangular_matrix_dp
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Input Variables
@@ -2086,7 +2130,7 @@ module generate_lh_sample_module
       corr_array ! Array of correlations        [-]
 
     ! Input/Output Variables
-    double precision, dimension(d_variables,d_variables), intent(inout) :: &
+    real( kind = dp ), dimension(d_variables,d_variables), intent(inout) :: &
       corr_stw_matrix ! Correlation matrix      [-]
 
     ! Local Variables
@@ -2096,7 +2140,7 @@ module generate_lh_sample_module
       covar_sx, & ! Lognormal covariance of s_mellor and x
       covar_wx    ! Lognormal covariance of w and x
 
-    double precision :: &
+    real( kind = dp ) :: &
       covar_tx    ! Lognormal covariance of t_mellor and x
 
     ! ---- Begin Code ----
@@ -2166,13 +2210,16 @@ module generate_lh_sample_module
 !   None
 !-------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     integer, intent(in) :: &
       d_variables, & ! Number of variates
       index1         ! Index of x in mu1 and mu1
 
-    double precision, intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       Xm ! Mean X  [kg/kg or #/kg]
 
     real, dimension(d_variables), intent(in) :: & 
@@ -2181,7 +2228,7 @@ module generate_lh_sample_module
     real, dimension(d_variables), intent(inout) :: &
       mu1, mu2 ! Mu 1 and 2     [-]
 
-    double precision :: &
+    real( kind = dp ) :: &
       xp2_on_xm2_element, & ! X'^2 / Xm^2 array [-]
       X1, X2  ! PDF parameter for mean of plume 1 and 2.
 
