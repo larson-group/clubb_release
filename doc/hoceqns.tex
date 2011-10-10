@@ -58,6 +58,9 @@
 = \underbrace{ - \bar{w}\ptlder{\bar{u}}{z} }_{ma}
   \underbrace{ - f (v_g - \bar{v}) }_{cf/gf}
   \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{u'w'}}{z} }_{ta} 
+  + \left. \ptlder{\bar{u}}{t} \right|_{\rm{ls}}
+  + \left. \ptlder{\bar{u}}{t} \right|_{\rm{ndg}}
+  + \left. \ptlder{\bar{u}}{t} \right|_{\rm{sdmp}}
 \end{equation}
 %
 \begin{equation}
@@ -66,6 +69,9 @@
 = \underbrace{ - \bar{w}\ptlder{\bar{v}}{z} }_{ma}
   \underbrace{ + f (u_g - \bar{u}) }_{cf/gf}
   \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{v'w'}}{z} }_{ta}
+  + \left. \ptlder{\bar{v}}{t} \right|_{\rm{ls}}
+  + \left. \ptlder{\bar{v}}{t} \right|_{\rm{ndg}}
+  + \left. \ptlder{\bar{v}}{t} \right|_{\rm{sdmp}}
 \end{equation}
 %
 \begin{equation}
@@ -74,6 +80,10 @@
 = \underbrace{ - \bar{w}\ptlder{\bar{r}_t}{z} }_{ma}
   \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w'r'_t}}{z} }_{ta}
   + \left. \ptlder{\bar{r}_t}{t} \right|_{\rm{ls}}
+  + \left. \ptlder{\bar{r}_t}{t} \right|_{\rm{cl}}
+  + \left. \ptlder{\bar{r}_t}{t} \right|_{\rm{mfl}}
+  + \left. \ptlder{\bar{r}_t}{t} \right|_{\rm{tacl}}
+  + \left. \ptlder{\bar{r}_t}{t} \right|_{\rm{sdmp}}
 \end{equation}
 %
 \begin{equation}
@@ -83,6 +93,10 @@
   \underbrace{ - \inverse{\rho_{s}}\ptlder{\rho_{s}\overline{w'\theta'_l}}{z} }_{ta} 
   + \bar{R}   
   + \left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm{ls}}
+  + \left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm{cl}}
+  + \left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm{mfl}}
+  + \left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm{tacl}}
+  + \left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm{sdmp}}
 \end{equation}
 %
 \begin{equation}
@@ -182,6 +196,7 @@
                    \right] }_{dp1}
     + \left. \ptlder{\overline{w'r'_t}}{t} \right|_{\rm{sicl}}
     + \left. \ptlder{\overline{w'r'_t}}{t} \right|_{\rm{cl}}
+    + \left. \ptlder{\overline{w'r'_t}}{t} \right|_{\rm{mfl}}
 \end{split}
 \end{equation}
 %
@@ -202,6 +217,7 @@
                    \right] }_{dp1}
     + \left. \ptlder{\overline{w'\theta'_l}}{t} \right|_{\rm{sicl}}
     + \left. \ptlder{\overline{w'\theta'_l}}{t} \right|_{\rm{cl}}
+    + \left. \ptlder{\overline{w'\theta'_l}}{t} \right|_{\rm{mfl}}
 \end{split}
 \end{equation}
 %
@@ -237,7 +253,7 @@ where $\bar{R}$ is the radiative heating rate, $f$ the Coriolis parameter, and
 $u_g$ and $v_g$ the geostrophic winds.  Furthermore,
 $\left. \ptlder{\bar{r}_t}{t} \right|_{\rm ls}$ and
 $\left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm ls}$ are large-scale moisture
-and temperature forcings, respectively, and $g$ is the gravity.   The set of
+and temperature forcings, respectively, and $g$ is acceleration due to gravity.   The set of
 equations is an anelastic set of equations, where $\rho_{s}$ is the dry, static,
 base-state density, which only changes with respect to altitude; and where
 $\theta_{vs}$ is the dry, base-state $\theta_{v}$, which also only changes with
@@ -247,10 +263,14 @@ $\overline{w^{'2}}$;  $\left. r_t \right|_{\rm{tol}}^{2}$ is the minimum
 threshold value for $\overline{r_t^{'2}}$; and 
 $\left. \theta_l \right|_{\rm{tol}}^{2}$ is the minimum threshold value for
 $\overline{\theta_l^{'2}}$.  The subscript $\left.\right|_{\rm{pd}}$ stands for
-the rate of change due to the positive-definite hole-filling scheme; the
+the rate of change due to the positive-definite hole-filling scheme, the
 subscript $\left.\right|_{\rm{sicl}}$ stands for the rate of change due to the
-semi-implicit clipping scheme; and the subscript $\left.\right|_{\rm{cl}}$
-stands for the rate of change due to completely explicit clipping.
+semi-implicit clipping scheme, the subscript $\left.\right|_{\rm{cl}}$
+stands for the rate of change due to completely explicit clipping,  the subscript 
+$\left.\right|_{\rm{mfl}}$ denotes adjustments from the monotonic flux limiter, the subscript
+the $\left.\right|_{\rm{tacl}}$  denotes turbulent advection clipping, and finally the subscript
+$\left.\right|_{\rm{sdmp}}$ denotes sponge layer damping.
+
 
 If the model does not predict any higher-order moments of the
 horizontal winds, we assume that the turbulence kinetic energy, $\bar{e}$,
