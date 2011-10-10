@@ -1,4 +1,4 @@
-! $Id: high_dfsn_tunable_parameters.in 3430 2009-04-23 07:05:45Z bmg2@uwm.edu $
+! $Id$
 ! Description:
 ! This file contains tunable model parameters.
 ! C4, C14, and nu9 are only relevant when ltke_aniso is enabled.

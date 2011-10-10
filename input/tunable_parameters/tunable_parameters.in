@@ -1,4 +1,4 @@
-! $Id: tunable_parameters.in 3461 2009-05-12 15:43:02Z bmg2@uwm.edu $
+! $Id$
 ! Description:
 ! This file contains tunable model parameters.
 ! C4, C14, and nu9 are only relevant when l_tke_aniso is true.
