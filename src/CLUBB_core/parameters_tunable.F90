@@ -104,7 +104,7 @@ module parameters_tunable
 !$omp     gamma_coef, gamma_coefb, gamma_coefc, &
 !$omp     taumin, taumax, mu, lmin)
 
-  real, public, pointer, dimension(:) :: & 
+  real, public, allocatable, dimension(:) :: & 
     nu1_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp2.
     nu2_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for xp2.
     nu6_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wpxp.
@@ -347,7 +347,6 @@ module parameters_tunable
       grid_spacing_thresh = 40.0, &  ! grid spacing threshold  [m]
       mult_coef = 1.5 ! Coefficient applied to log( avg dz / threshold )
 
-
     ! Input Variables
 
     ! Grid definition
@@ -397,12 +396,24 @@ module parameters_tunable
 
     !--------------- Begin code -------------------------
 
-    allocate( nu1_vert_res_dep(1:gr%nzmax) )
-    allocate( nu2_vert_res_dep(1:gr%nzmax) )
-    allocate( nu6_vert_res_dep(1:gr%nzmax) )
-    allocate( nu8_vert_res_dep(1:gr%nzmax) )
-    allocate( nu9_vert_res_dep(1:gr%nzmax) )
-    allocate( nu_r_vert_res_dep(1:gr%nzmax) )
+    if ( .not. allocated( nu1_vert_res_dep ) ) then
+      allocate( nu1_vert_res_dep(1:gr%nzmax) )
+    end if
+    if ( .not. allocated( nu2_vert_res_dep ) ) then
+      allocate( nu2_vert_res_dep(1:gr%nzmax) )
+    end if
+    if ( .not. allocated( nu6_vert_res_dep ) ) then
+      allocate( nu6_vert_res_dep(1:gr%nzmax) )
+    end if
+    if ( .not. allocated( nu8_vert_res_dep ) ) then
+      allocate( nu8_vert_res_dep(1:gr%nzmax) )
+    end if
+    if ( .not. allocated( nu9_vert_res_dep ) ) then
+      allocate( nu9_vert_res_dep(1:gr%nzmax) )
+    end if
+    if ( .not. allocated( nu_r_vert_res_dep ) ) then
+      allocate( nu_r_vert_res_dep(1:gr%nzmax) )
+    end if
 
     ! Flag for adjusting the values of the constant diffusivity coefficients
     ! based on the grid spacing.  If this flag is turned off, the values of the
