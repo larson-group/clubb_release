@@ -804,7 +804,7 @@ module clubb_core
       p_in_Pa_zm(:) = zt2zm( p_in_Pa )
       p_in_Pa_zm(1) = p_in_Pa(1)
 
-      ! Clip pressure if the extropolation leads to negative value of pressure
+      ! Clip pressure if the extrapolation leads to a negative value of pressure
       p_in_Pa_zm(gr%nzmax) = max( p_in_Pa_zm(gr%nzmax), 0.5*p_in_Pa(gr%nzmax) )
 
       ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
