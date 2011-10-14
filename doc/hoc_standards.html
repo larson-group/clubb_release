@@ -131,7 +131,7 @@ This is to make it clear where the algorithmic portion of the procedure starts.
 <div class="p"><!----></div>
 </li>
 
-<li> Write lots of code comments.  Make sure your code is understandable to an outsider 
+<li> Be generous with code comments.  Make sure your code is understandable to an outsider 
 looking at it for the first time.  When writing a code comment, leave your name 
 at the end of the comment.
 This will allow other users to contact you with any questions about the section of code.
@@ -305,11 +305,11 @@ E.g.
 <div class="p"><!----></div>
 
 <pre>
-&nbsp;&nbsp;if&nbsp;(&nbsp;lcode_enabled&nbsp;)&nbsp;then
+&nbsp;&nbsp;if&nbsp;(&nbsp;l_code_enabled&nbsp;)&nbsp;then
 
 &nbsp;&nbsp;&nbsp;&nbsp;...many&nbsp;lines&nbsp;of&nbsp;code...
 
-&nbsp;&nbsp;end&nbsp;if&nbsp;!&nbsp;lcode_enabled
+&nbsp;&nbsp;end&nbsp;if&nbsp;!&nbsp;l_code_enabled
 
 </pre>
 
@@ -319,11 +319,11 @@ or
 <div class="p"><!----></div>
 
 <pre>
-&nbsp;&nbsp;if&nbsp;(&nbsp;.not.&nbsp;lcode_enabled&nbsp;)&nbsp;then
+&nbsp;&nbsp;if&nbsp;(&nbsp;.not.&nbsp;l_code_enabled&nbsp;)&nbsp;then
 
 &nbsp;&nbsp;&nbsp;&nbsp;...many&nbsp;lines&nbsp;of&nbsp;code...
 
-&nbsp;&nbsp;end&nbsp;if&nbsp;!&nbsp;~lcode_enabled
+&nbsp;&nbsp;end&nbsp;if&nbsp;!&nbsp;~l_code_enabled
 
 </pre>
 
@@ -542,6 +542,17 @@ Instead, do this:
 &nbsp;&nbsp;rtm&nbsp;=&nbsp;rtm&nbsp;*&nbsp;g_per_kg
 
 </pre>
+
+<div class="p"><!----></div>
+If you absolutely need to use a magic number, perhaps because a case 
+specification uses one, include a comment on that line saying:
+
+<pre>
+&nbsp;&nbsp;!&nbsp;known&nbsp;magic&nbsp;number
+
+</pre>
+This will prevent the check_for_errors.py script from reporting that there is a 
+magic number on this line.
 <div class="p"><!----></div>
 </li>
 
@@ -564,6 +575,17 @@ This is better documented:
 &nbsp;&nbsp;call&nbsp;complex_function(&nbsp;wp2,&nbsp;wp3,&nbsp;l_enable_damping&nbsp;)
 
 </pre>
+
+<div class="p"><!----></div>
+If you absolutely need to use a magic flag, include a comment on that line
+saying:
+
+<pre>
+&nbsp;&nbsp;!&nbsp;known&nbsp;magic&nbsp;flag
+
+</pre>
+This will prevent the check_for_errors.py script from reporting that there is a
+magic flag on this line.
 <div class="p"><!----></div>
 </li>
 
@@ -574,8 +596,8 @@ is used in
 <tt>diagnostic_variables</tt> is used in <tt>clubb_driver</tt>, 
 <tt>clubb_core</tt>, 
 and <tt>stats_subs</tt>. Global variables like these make debugging 
-the code more difficult.  The proper way to use these variables in a new 
-section of code is to pass them as an argument.
+the code more difficult, and complicate implementing CLUBB in a host model.
+The proper way to use these variables in a new section of code is to pass them as an argument.
 
 <div class="p"><!----></div>
 
@@ -729,7 +751,7 @@ E.g.
 <div class="p"><!----></div>
 </li>
 
-<li> Use lowercase letters for Fortran keywords. 
+<li> For consistency use lowercase letters for Fortran keywords. 
 <div class="p"><!----></div>
 E.g.
 
@@ -768,7 +790,7 @@ E.g. <br />
 <tt></tt> <br />
 <tt>&nbsp;&nbsp;subroutine</tt><tt>&nbsp;advect_2D(&nbsp;...&nbsp;)</tt> <br />
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;use</tt><tt>&nbsp;grid,&nbsp;only:&nbsp;&amp;&nbsp;</tt> <font size="-1">2+2 columns within the scope of <tt>dynamics/advect_2D</tt></font> <br />
-<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nz,</tt><tt>&nbsp;&amp;&nbsp;</tt> <font size="-1">2+2+2 columns since we're continuing the <tt>use</tt> statement</font>  <br />
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nzmax,</tt><tt>&nbsp;&amp;&nbsp;</tt> <font size="-1">2+2+2 columns since we're continuing the <tt>use</tt> statement</font>  <br />
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nx</tt> <br />
 <tt></tt> <br />
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;if</tt><tt>&nbsp;(&nbsp;l_do_something&nbsp;)&nbsp;then</tt> <br />
@@ -801,7 +823,7 @@ real data type conversions.
 </li>
 
 <li> All files added to the CLUBB code should use a <tt>.F90</tt> file 
-extension.  This is due to the a kluge used with <tt>mkmf</tt> that only enables
+extension.  This is needed for a kluge used with <tt>mkmf</tt> that only enables
 compiler warnings when the file is pre-processed Fortran 90 source.
 <div class="p"><!----></div>
 </li>
@@ -819,7 +841,7 @@ use <tt>l_cloud_sed</tt> rather than <tt>cloud_sed</tt>.
 <div class="p"><!----></div>
 </li>
 
-<li> All non-fatal print or write statements should recast as <tt>clubb_debug(&nbsp;1&nbsp;or&nbsp;2,&nbsp;“message”)</tt> or
+<li> All non-fatal print or write statements should recast as <tt>clubb_debug(&nbsp;1&nbsp;or&nbsp;2,&nbsp;"message")</tt> or
 should be enclosed in <tt>clubb_at_least_debug_level(&nbsp;1&nbsp;or&nbsp;2&nbsp;)</tt> conditionals. All fatal errors should
 be write statements to stderr (<tt>clubb_constants&nbsp;fstderr</tt>) with no <tt>clubb_at_least_debug_level</tt> conditional.
 <div class="p"><!----></div>
@@ -847,6 +869,14 @@ derived types that contain allocatable pointer components. E.g. <br />
 </pre>
 <div class="p"><!----></div>
 </li>
+
+<li>  Append a grid label to a variable name when the variable has been 
+interpolated to a different grid.  For instance, wp2 is natively on the zm 
+grid.  When it is interpolated to the zt grid, we call it "wp2_zt."  
+However, when wp2 is kept on the zm, we simply call it "wp2" without 
+appending "_zm."
+<div class="p"><!----></div>
+</li>
 </ol>
 
 <div class="p"><!----></div>
@@ -855,5 +885,5 @@ derived types that contain allocatable pointer components. E.g. <br />
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>M</a>,
-version 3.85.<br />On 29 Mar 2011, 16:57.</small>
+version 3.85.<br />On 10 Oct 2011, 15:59.</small>
 </body></html>

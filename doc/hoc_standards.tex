@@ -266,21 +266,21 @@ small comment after the end statement with the name of the loop or logical
 variable.
 E.g. \newline
 \begin{verbatim}
-  if ( lcode_enabled ) then
+  if ( l_code_enabled ) then
 
     ...many lines of code...
 
-  end if ! lcode_enabled
+  end if ! l_code_enabled
 \end{verbatim}
 
 or 
 
 \begin{verbatim}
-  if ( .not. lcode_enabled ) then
+  if ( .not. l_code_enabled ) then
 
     ...many lines of code...
 
-  end if ! ~lcode_enabled
+  end if ! ~l_code_enabled
 \end{verbatim}
 
 A long do statement
@@ -438,11 +438,11 @@ Instead, do this:
 \end{verbatim}
 
 If you absolutely need to use a magic number, perhaps because a case 
-specificaton uses one, include a comment on that line saying:
+specification uses one, include a comment on that line saying:
 \begin{verbatim}
   ! known magic number
 \end{verbatim}
-This will cause the check\_for\_errors.py script from saying that there is a 
+This will prevent the check\_for\_errors.py script from reporting that there is a 
 magic number on this line.
 
 \item  Do not use magic flags, i.e. undefined input arguments to subroutines or 
@@ -464,7 +464,7 @@ saying:
 \begin{verbatim}
   ! known magic flag
 \end{verbatim}
-This will prevent the check\_for\_errors.py script from saying that there is a
+This will prevent the check\_for\_errors.py script from reporting that there is a
 magic flag on this line.
 
 \item Do not use the prognostic or diagnostic variable modules anywhere they
@@ -474,8 +474,8 @@ is used in
 \texttt{diagnostic\_variables} is used in \texttt{clubb\_driver}, 
 \texttt{clubb\_core}, 
 and \texttt{stats\_subs}. Global variables like these make debugging 
-the code more difficult.  The proper way to use these variables in a new 
-section of code is to pass them as an argument.
+the code more difficult, and complicate implementing CLUBB in a host model.
+The proper way to use these variables in a new section of code is to pass them as an argument.
 \newline
 
 \item Put all functions and subroutines within a module.  This allows for 
@@ -605,7 +605,7 @@ E.g.
 %                       stuff3, stuff4 )
 %\end{verbatim}
 
-\item Use lowercase letters for Fortran keywords. \newline
+\item For consistency use lowercase letters for Fortran keywords. \newline
 E.g.
 \begin{verbatim}
 program HAL ! lowercase program
@@ -664,7 +664,7 @@ arithmetic \texttt{if}, alternate \texttt{return}, and \texttt{float()} for
 real data type conversions.
 
 \item All files added to the CLUBB code should use a \texttt{.F90} file 
-extension.  This is due to the a kluge used with \texttt{mkmf} that only enables
+extension.  This is needed for a kluge used with \texttt{mkmf} that only enables
 compiler warnings when the file is pre-processed Fortran 90 source. 
 
 \item Any new files added to the repository should have matching filenames and module names. 
@@ -676,7 +676,7 @@ rather than \verb|<module name>_mod|, for clarity and consistency with the rest 
 \item CLUBB uses the convention that logical variables should have a prefix of \verb|l_|.  For example,
 use \verb|l_cloud_sed| rather than \verb|cloud_sed|.
 
-\item All non-fatal print or write statements should recast as \verb|clubb_debug( 1 or 2, “message”)| or
+\item All non-fatal print or write statements should recast as \verb|clubb_debug( 1 or 2, "message")| or
 should be enclosed in \verb|clubb_at_least_debug_level( 1 or 2 )| conditionals. All fatal errors should
 be write statements to stderr (\verb|clubb_constants fstderr|) with no \verb|clubb_at_least_debug_level| conditional.
 
@@ -699,7 +699,11 @@ derived types that contain allocatable pointer components. E.g. \\
   end function func
 \end{verbatim}
 
-\item  Append a grid label to a variable name when the variable has been interpolated to a different grid.  For instance, wp2 is natively on the zm grid.  When it is interpolated to the zt grid, we call it ``wp2\_zt."  However, when wp2 is kept on the zm, we simply call it ``wp2" without appending ``\_zm."
+\item  Append a grid label to a variable name when the variable has been 
+interpolated to a different grid.  For instance, wp2 is natively on the zm 
+grid.  When it is interpolated to the zt grid, we call it ``wp2\_zt."  
+However, when wp2 is kept on the zm, we simply call it ``wp2" without 
+appending ``\_zm."
 
 \end{enumerate}
 
