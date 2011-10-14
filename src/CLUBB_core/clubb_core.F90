@@ -802,7 +802,10 @@ module clubb_core
       ! boundary) is located at momentum level k = 1, the pressure there is
       ! p_sfc, which is p_in_Pa(1).  Thus, p_in_Pa_zm(1) = p_in_Pa(1).
       p_in_Pa_zm(:) = zt2zm( p_in_Pa )
-      p_in_Pa_zm(1) = P_in_Pa(1)
+      p_in_Pa_zm(1) = p_in_Pa(1)
+
+      ! Clip pressure if the extropolation leads to negative value of pressure
+      p_in_Pa_zm(gr%nzmax) = max( p_in_Pa_zm(gr%nzmax), 0.5*p_in_Pa(gr%nzmax) )
 
       ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
       exner_zm(:) = (p_in_Pa_zm(:)/p0)**kappa
