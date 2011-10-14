@@ -68,6 +68,10 @@ module mg_micro_driver_module
       
     use ppgrid, only: &
       init_ppgrid ! Procedure
+      
+    use phys_buffer, only: & ! Used for placing wp2_zt in morrison-gettelman microphysics
+      pbuf_add,            &
+      pbuf_allocate
 
     use phys_buffer, only: &
       pbuf, &      ! Variable
@@ -291,6 +295,10 @@ module mg_micro_driver_module
     
     ! Initialize grid variables. These are imported in the MG code.
     call init_ppgrid()
+    
+    ! Initialize phys_buffer. This is imported in the MG code
+    call pbuf_add('WP2', 1, nzmax, 1)
+    call pbuf_allocate()
     
     call gestbl(173.16_r8, 375.16_r8, 20.00_r8, .true., real( epsilo, kind=r8), &
                  real( latvap, kind=r8), real( latice, kind=r8), real( rh2o, kind=r8), &

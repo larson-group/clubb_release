@@ -51,8 +51,6 @@ module microphys_driver
 
   use phys_buffer, only: & ! Used for placing wp2_zt in morrison-gettelman microphysics
     pbuf_init,           &
-    pbuf_add,            &
-    pbuf_allocate,       &
     pbuf_deallocate
 
   implicit none
@@ -85,9 +83,6 @@ module microphys_driver
     ! References:
     ! None
     !---------------------------------------------------------------------------
-
-    use grid_class, only: & 
-      gr
 
     use array_index, only: & 
       iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
@@ -824,8 +819,6 @@ module microphys_driver
       ! Setup the MG scheme
       call ini_micro()
       call pbuf_init()
-      call pbuf_add('WP2', 1, gr%nzmax, 1)
-      call pbuf_allocate()
       
     case ( "coamps" )
       iirrainm    = 1

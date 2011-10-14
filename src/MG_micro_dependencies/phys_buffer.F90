@@ -91,9 +91,10 @@ subroutine pbuf_add(name, fdim, mdim, ldim)
       call endrun (sub//': max number physics buffer fields exceeded. Increase pbuf_size_max in phys_buffer.F90')
    end if
 
+   ! If add has already been called for a variable, don't repeat
    do i = 1, pbuf_size
       if ( pbuf(i)%name == name ) then
-         call endrun (sub//': ERROR: field name '//name//' is already in use.')
+         return
       end if
    end do
 
@@ -193,13 +194,18 @@ subroutine pbuf_allocate()
 !-----------------------------------------------------------------------------------------
 
    do i = 1, pbuf_size
+      ! After being called once, subsequent calls to this subroutine will immediately return
+      if( associated( pbuf(i)%fld_ptr ) ) then
+         return
+      end if
+
      fdim = pbuf(i)%fdim
      mdim = pbuf(i)%mdim
      ldim = pbuf(i)%ldim
 
      allocate(pbuf(i)%fld_ptr(fdim,pcols,mdim,1,ldim), stat=istat)
      if ( istat /= 0 ) then
-        call endrun (sub//': ERROR: allocate failed for '//pbuf(i)%name)
+        call endrun (sub//': ERROR: allocate failed for '//pbuf(i)%name//' in phys_buffer.F90 ')
      end if
      pbuf(i)%fld_ptr = -9999.99
          
@@ -226,7 +232,7 @@ subroutine pbuf_deallocate()
      if (associated(pbuf(i)%fld_ptr)) then
         deallocate(pbuf(i)%fld_ptr)
      else
-        call endrun (sub//': ERROR: '//pbuf(i)%name//' is not allocated')
+        call endrun (sub//': ERROR: '//pbuf(i)%name//' in phys_buffer.F90 is not allocated')
      end if
    end do
 
@@ -259,7 +265,7 @@ subroutine pbuf_setval(name, value)
    if (associated(pbuf(idx)%fld_ptr)) then
       pbuf(idx)%fld_ptr(1,1,:,1,1) = value
    else
-      call endrun (sub//': ERROR: field '//name//' is not allocated')
+      call endrun (sub//': ERROR: field '//name//' in phys_buffer.F90 is not allocated')
    end if
 
 end subroutine pbuf_setval
