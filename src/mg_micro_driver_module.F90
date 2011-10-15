@@ -10,7 +10,7 @@ module mg_micro_driver_module
   contains
 !-------------------------------------------------------------------------------
   subroutine mg_microphys_driver &
-             ( dt, nzmax, l_stats_samp, l_local_kk, l_latin_hypercube, &
+             ( dt, nz, l_stats_samp, l_local_kk, l_latin_hypercube, &
                thlm, p_in_Pa, exner, rho, pdf_params, &
                rcm, rvm, Ncnm, hydromet, hydromet_mc, &
                hydromet_vel, rcm_mc, rvm_mc, thlm_mc, wp2_zt)
@@ -94,44 +94,44 @@ module mg_micro_driver_module
     ! Input Variables
     real, intent(in) :: dt ! Model timestep        [s]
 
-    integer, intent(in) :: nzmax ! Points in the Vertical        [-]
+    integer, intent(in) :: nz ! Points in the Vertical        [-]
 
     logical, intent(in) :: &
       l_stats_samp,     & ! Whether to accumulate statistics [T/F]
       l_local_kk,       & ! Whether we're using the local formulas
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
       rho           ! Density on thermo. grid            [kg/m^3]
 
-    type(pdf_parameter), dimension(nzmax), intent(in) :: &
+    type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params ! PDF parameters
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       rcm,      & ! Liquid water mixing ratio          [kg/kg]
       rvm,      & ! Vapor water mixing ratio           [kg/kg]
       Ncnm,     & ! Cloud nuclei number concentration  [count/m^3]
       wp2_zt      ! w'^2 on the thermo. grid           [m^2/s^2]
 
-    real, dimension(nzmax,hydromet_dim), intent(in) :: &
+    real, dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     ! Input/Output Variables
-    real, dimension(nzmax,hydromet_dim), intent(inout) :: &
+    real, dimension(nz,hydromet_dim), intent(inout) :: &
       hydromet_mc,   & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel     ! Hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
-    real, dimension(nzmax), intent(out) :: &
+    real, dimension(nz), intent(out) :: &
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
     ! Local Variables
-    real, dimension(nzmax) :: & 
+    real, dimension(nz) :: & 
       T_in_K,       & ! Temperature                                                   [K]
       T_in_K_new,   & ! Temperature after microphysics                                [K]
       tlat,         & ! Latent heating rate                                           [W/kg]
@@ -141,20 +141,25 @@ module mg_micro_driver_module
       effc,         & ! Droplet effective radius                                      [μ]
       effi            ! cloud ice effective radius                                    [μ]
 
-    real(r8), dimension(nzmax) :: & 
+    real(r8), dimension(nz) :: & 
       turbtype_flip,& ! Turbulence type at each interface                             [-]
       smaw_flip,    & ! Normalized instability function of momentum                   [???]
       wsub_flip,    & ! Diagnosed sub-grid vertical velocity st. dev.                 [m/s]
       wsubi_flip      ! Diagnosed sub-grid vertical velocity ice                      [m/s]
       
-    real(r8), dimension(1, nzmax-1, 1) :: &
+    real(r8), dimension(1, nz-1, 1) :: &
       aer_mmr_flip
 
-    ! MG Input Variables
     ! Note that the MG grid is flipped with respect to CLUBB.
-    real(r8), dimension(nzmax-1) :: &
+    ! For this reason, all MG variables are marked as "flip"
+
+    ! MG Input Variables on zm grid
+    real(r8), dimension(nz) :: &
       Kh_zm_flip,   & ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
-      em_flip,      & ! Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
+      em_flip         ! Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
+
+    ! MG Input Variables on zt grid
+    real(r8), dimension(nz-1) :: &
       T_in_K_flip,  & ! Air temperature                                      [K]
       rvm_flip,     & ! Vapor water mixing ratio                             [kg/kg]
       rcm_flip,     & ! Cloud water mixing ratio                             [kg/kg]
@@ -168,13 +173,12 @@ module mg_micro_driver_module
       npccn_flip,   & ! Number of cloud nuclei                               [count/m^3]
       unused_in       ! Represents MG variables that are not used in the current code
       
-    real(r8), dimension(nzmax-1,4) :: &
+    real(r8), dimension(nz-1,4) :: &
       rndst_flip,   & ! radius of 4 dust bins for contact freezing [units unknown, our guess is mm]
       nacon_flip      ! number of 4 dust bins for contact nucleation [units unknown]
       
     ! MG Output Variables
-    ! Note that the MG grid is flipped with respect to CLUBB
-    real(r8), dimension(nzmax-1) :: &
+    real(r8), dimension(nz-1) :: &
       tlat_flip,    & ! Latent heating rate                                  [W/kg]
       rcm_mc_flip,  & ! Time tendency of liquid water mixing ratio           [kg/kg/s]
       rvm_mc_flip,  & ! Time tendency of vapor water mixing ratio            [kg/kg/s]
@@ -183,29 +187,23 @@ module mg_micro_driver_module
       effc_flip,    & ! Droplet effective radius                             [μ]
       effi_flip       ! cloud ice effective radius                           [μ]
       
-    ! MG variables that are not used in CLUBB.
-    ! A separate variables needs to be passed in for every intent_out variable in MG,
-    ! otherwise Fortran treats all the variables are if they point to the same memory
-    ! location.
-    real(r8), dimension(nzmax-1) :: &
-      unused_out01, unused_out02, unused_out03, &
-      unused_out04, unused_out05, unused_out06, &
-      unused_out07, unused_out08, unused_out09, &
-      unused_out10, unused_out11, unused_out12, &
-      unused_out13, unused_out14, unused_out15, &
-      unused_out16, unused_out17, unused_out18, &
-      unused_out19, unused_out20, unused_out21, &
-      unused_out22, unused_out23, unused_out24, &
-      unused_out25, unused_out26, unused_out27, &
-      unused_out28, unused_out29, unused_out30, &
-      unused_out31, unused_out32, unused_out33, &
-      unused_out34, unused_out35, unused_out36, &
-      unused_out37, unused_out38, unused_out39, &
-      unused_out40, unused_out41, unused_out42, &
-      unused_out43, unused_out44, unused_out45, &
-      unused_out46
+    ! MG zt variables that are not used in CLUBB.
+    real(r8), dimension(nz-1) :: &
+      rate1ord_cw2pr_st_flip, effc_fn_flip, prect_flip, preci_flip,            &
+      nevapr_flip, evapsnow_flip, prain_flip, prodsnow_flip, cmeout_flip,      &
+      deffi_flip, pgamrad_flip, lamcrad_flip, dsout_flip, qcsevap_flip,        &
+      qisevap_flip, qvres_flip, cmeiout_flip, vtrmc_flip, vtrmi_flip,          &
+      qcsedten_flip, qisedten_flip, prao_flip, prco_flip, mnuccco_flip,        &
+      mnuccto_flip, msacwio_flip, psacwso_flip, bergso_flip, bergo_flip,       &
+      melto_flip, homoo_flip, qcreso_flip, prcio_flip, praio_flip, qireso_flip,&
+      mnuccro_flip, pracso_flip, meltsdt_flip, frzrdt_flip, mnuccdo_flip,      &
+      qrout_flip, reff_rain_flip, reff_snow_flip, naai_hom_flip, dum
+
+    ! MG zm variables that are not used in CLUBB
+    real(r8), dimension(nz) :: &
+      rflx_flip, sflx_flip
       
-    real(r8), dimension(nzmax-1,hydromet_dim) :: &
+    real(r8), dimension(nz-1,hydromet_dim) :: &
        hydromet_flip, &  ! Hydrometeor species                               [units vary]
        hydromet_mc_flip  ! Hydrometeor time tendency                         [units vary]
 
@@ -230,10 +228,10 @@ module mg_micro_driver_module
     tlat(:) = 0.0
     rcm_new(:) = 0.0
     T_in_K_new(:) = 0.0
-    rcm_mc(1:nzmax) = 0.0
-    rvm_mc(1:nzmax) = 0.0
-    hydromet_mc(1:nzmax,:) = 0.0
-    hydromet_mc_flip(1:nzmax-1,:) = 0.0_r8
+    rcm_mc(1:nz) = 0.0
+    rvm_mc(1:nz) = 0.0
+    hydromet_mc(1:nz,:) = 0.0
+    hydromet_mc_flip(1:nz-1,:) = 0.0_r8
     hydromet_vel(:,:) = 0.0
 
     ! Determine temperature
@@ -241,37 +239,38 @@ module mg_micro_driver_module
     
     if ( l_latin_hypercube ) then
       ! Don't use sgs cloud fraction to weight the tendencies
-      cloud_frac(1:nzmax) = 0.0
+      cloud_frac(1:nz) = 0.0
 
     else 
       ! Use sgs cloud fraction to weight tendencies
-      cloud_frac(1:nzmax) = max( zero_threshold, &
+      cloud_frac(1:nz) = max( zero_threshold, &
                         pdf_params%mixt_frac * pdf_params%cloud_frac1 &
                         + (1.-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
     end if
     
     ! MG's grid is flipped with respect to CLUBB.
     ! Flip CLUBB variables before inputting them into MG.
-    ! In addition, MG does not include CLUBB's bottom level
-    Kh_zm_flip(1:nzmax-1) = real( flip( dble(Kh_zm(2:nzmax) ), nzmax-1 ), kind=r8 )
-    em_flip(1:nzmax-1) = real( flip( dble(em(2:nzmax) ), nzmax-1 ), kind=r8 )
-    T_in_K_flip(1:nzmax-1) = real( flip( dble(T_in_K(2:nzmax) ), nzmax-1 ), kind=r8 )
-    rvm_flip(1:nzmax-1) = real( flip( dble(rvm(2:nzmax) ), nzmax-1 ), kind=r8 )
-    rcm_flip(1:nzmax-1) = real( flip( dble(rcm(2:nzmax) ), nzmax-1 ), kind=r8 )
-    p_in_Pa_flip(1:nzmax-1) = real( flip( dble(p_in_Pa(2:nzmax) ), nzmax-1 ), kind=r8 )
-    liqcldf_flip(1:nzmax-1) = real( flip( dble(cloud_frac(2:nzmax) ), nzmax-1 ), kind=r8 )
+    Kh_zm_flip(1:nz) = real( flip( dble(Kh_zm(1:nz) ), nz ), kind=r8 )
+    em_flip(1:nz) = real( flip( dble(em(1:nz) ), nz ), kind=r8 )
+
+    ! MG does not include zt(1) as CLUBB does, so it is removed during the flip
+    T_in_K_flip(1:nz-1) = real( flip( dble(T_in_K(2:nz) ), nz-1 ), kind=r8 )
+    rvm_flip(1:nz-1) = real( flip( dble(rvm(2:nz) ), nz-1 ), kind=r8 )
+    rcm_flip(1:nz-1) = real( flip( dble(rcm(2:nz) ), nz-1 ), kind=r8 )
+    p_in_Pa_flip(1:nz-1) = real( flip( dble(p_in_Pa(2:nz) ), nz-1 ), kind=r8 )
+    liqcldf_flip(1:nz-1) = real( flip( dble(cloud_frac(2:nz) ), nz-1 ), kind=r8 )
     
     ! Hydromet is 2 dimensional, so flip function doesn't work
     do i = 1, hydromet_dim, 1
-      hydromet_flip(1:nzmax-1, i) = real( hydromet(nzmax:2:-1, i), kind=r8 )
+      hydromet_flip(1:nz-1, i) = real( hydromet(nz:2:-1, i), kind=r8 )
     end do
     
     ! Initialize MG input variables. The top level is skipped because MG's grid is flipped with
     ! respect to CLUBB's, and MG doesn't include CLUBB's lowest level.
-    do i = 1, nzmax-1, 1
+    do i = 1, nz-1, 1
     
       ! Find difference in air pressure between vertical levels
-      if ( i /= nzmax-1 ) then
+      if ( i /= nz-1 ) then
         pdel_flip(i) = p_in_Pa_flip(i) - p_in_Pa_flip(i+1)
       else
         pdel_flip(i) = p_in_Pa_flip(i)
@@ -294,19 +293,17 @@ module mg_micro_driver_module
     end do
     
     ! Initialize grid variables. These are imported in the MG code.
-    call init_ppgrid()
-    
-    ! Initialize phys_buffer. This is imported in the MG code
-    call pbuf_add('WP2', 1, nzmax, 1)
+    call init_ppgrid( nz )
+
+    ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
+    call pbuf_add( 'WP2', 1, nz, 1 )
     call pbuf_allocate()
+    call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
     
     call gestbl(173.16_r8, 375.16_r8, 20.00_r8, .true., real( epsilo, kind=r8), &
                  real( latvap, kind=r8), real( latice, kind=r8), real( rh2o, kind=r8), &
                  real( cpair, kind=r8), real( tmelt, kind=r8) ) ! Known magic flag
 
-    ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
-    call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
-                 
     ! Ensure no hydromet arrays are input as 0, because this makes MG crash.
     do i=1, hydromet_dim, 1
       hydromet_flip(:,i) = max( 1e-8_r8, hydromet_flip(:,i) ) ! Known magic number
@@ -320,8 +317,8 @@ module mg_micro_driver_module
     ! decide not to use it. If microp_aero_ts is called, this code block can be commented
     ! out.
     !
-    !rho_flip(1:nzmax-1) = real( flip( dble(rho(2:nzmax) ), nzmax-1 ) )
-    !npccn_flip(1:nzmax-1) = real( flip( dble(Ncnm(2:nzmax) ), nzmax-1 ) )
+    !rho_flip(1:nz-1) = real( flip( dble(rho(2:nz) ), nz-1 ) )
+    !npccn_flip(1:nz-1) = real( flip( dble(Ncnm(2:nz) ), nz-1 ) )
     !
     ! Determine ice nulceation number using Meyers formula found in the Morrison microphysics
     !naai_flip(i) = exp( -2.80 + 0.262 * ( T_freeze_K - T_in_K_flip(i) ) ) * 1000 / rho_flip(i)
@@ -351,7 +348,7 @@ module mg_micro_driver_module
          aer_mmr_flip, &
          pbuf, &
          Kh_zm_flip, em_flip, turbtype_flip, smaw_flip, wsub_flip, wsubi_flip, &
-         naai_flip, unused_out46, npccn_flip, rndst_flip, nacon_flip )                        ! out
+         naai_flip, naai_hom_flip, npccn_flip, rndst_flip, nacon_flip )                       ! out
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond &
@@ -361,41 +358,41 @@ module mg_micro_driver_module
          hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
          liqcldf_flip, icecldf_flip, &                                                        ! in
          cldo_flip, &                                                                         ! in
-         unused_out01, &                                                                      ! out
+         rate1ord_cw2pr_st_flip, &                                                            ! out
          naai_flip, npccn_flip, rndst_flip, nacon_flip, &                                     ! in
          tlat_flip, rvm_mc_flip, &                                                            ! out
          rcm_mc_flip, hydromet_mc_flip(:,iiricem), hydromet_mc_flip(:,iiNcm), &               ! out
          hydromet_mc_flip(:,iiNim), effc_flip, &                                              ! out
-         unused_out02, effi_flip, unused_out03, unused_out04,             &
-         unused_out05, unused_out06,      &
-         unused_out07, unused_out08, unused_out09, unused_out10, unused_out11, &
-         unused_out12, rsnowm_flip, unused_out13, & !out
-         unused_out41, unused_out42, unused_out43, unused_out44, unused_out45, &
-         unused_out14,unused_out15,unused_out16,unused_out17, &
-         unused_out18, unused_out19, unused_out20, unused_out21, &
-         unused_out22,unused_out23,unused_out24,unused_out25,unused_out26,unused_out27,& 
-         unused_out28,unused_out29,unused_out30,unused_out31,unused_out32,unused_out33, &
-         unused_out34,unused_out35,&
-         unused_out36,unused_out37,unused_out38,unused_out39,unused_out40 )
+         effc_fn_flip, effi_flip, prect_flip, preci_flip,             &                       ! out
+         nevapr_flip, evapsnow_flip,      &                                                   ! out
+         prain_flip, prodsnow_flip, cmeout_flip, deffi_flip, pgamrad_flip, &                  ! out
+         lamcrad_flip, rsnowm_flip, dsout_flip, &                                             ! out
+         rflx_flip, sflx_flip, qrout_flip, reff_rain_flip, reff_snow_flip, &                  ! out
+         qcsevap_flip, qisevap_flip, qvres_flip, cmeiout_flip, &                              ! out
+         vtrmc_flip, vtrmi_flip, qcsedten_flip, qisedten_flip, &                              ! out
+         prao_flip, prco_flip, mnuccco_flip, mnuccto_flip, msacwio_flip, psacwso_flip,&       ! out
+         bergso_flip, bergo_flip, melto_flip, homoo_flip, qcreso_flip, prcio_flip, praio_flip, &
+         qireso_flip,&                                                                        ! out
+         mnuccro_flip, pracso_flip, meltsdt_flip, frzrdt_flip, mnuccdo_flip)                  ! out
 
     ! Flip MG variables into CLUBB grid
-    rcm_mc(2:nzmax) = real( flip( dble(rcm_mc_flip(1:nzmax-1) ), nzmax-1 ) )
-    rvm_mc(2:nzmax) = real( flip( dble(rvm_mc_flip(1:nzmax-1) ), nzmax-1 ) )
-    rcm_new(2:nzmax) = real( flip( dble(rcm_flip(1:nzmax-1) ), nzmax-1 ) )
-    effc(2:nzmax) = real( flip( dble(effc_flip(1:nzmax-1) ), nzmax-1 ) )
-    effi(2:nzmax) = real( flip( dble(effi_flip(1:nzmax-1) ), nzmax-1 ) )
-    tlat(2:nzmax) = real( flip( dble(tlat_flip(1:nzmax-1) ), nzmax-1 ) )
-    rsnowm(2:nzmax) = real( flip( dble(rsnowm_flip(1:nzmax-1) ), nzmax-1 ) )
+    rcm_mc(2:nz) = real( flip( dble(rcm_mc_flip(1:nz-1) ), nz-1 ) )
+    rvm_mc(2:nz) = real( flip( dble(rvm_mc_flip(1:nz-1) ), nz-1 ) )
+    rcm_new(2:nz) = real( flip( dble(rcm_flip(1:nz-1) ), nz-1 ) )
+    effc(2:nz) = real( flip( dble(effc_flip(1:nz-1) ), nz-1 ) )
+    effi(2:nz) = real( flip( dble(effi_flip(1:nz-1) ), nz-1 ) )
+    tlat(2:nz) = real( flip( dble(tlat_flip(1:nz-1) ), nz-1 ) )
+    rsnowm(2:nz) = real( flip( dble(rsnowm_flip(1:nz-1) ), nz-1 ) )
       
     do i = 1, hydromet_dim, 1      
-      hydromet_mc(2:nzmax, i) = real( hydromet_mc_flip(nzmax-1:1:-1, i) )
+      hydromet_mc(2:nz, i) = real( hydromet_mc_flip(nz-1:1:-1, i) )
     end do
     
     ! Update thetal based on absolute temperature
     T_in_K_new = T_in_K + (tlat/Cp) * real( dt )
     
     ! TODO: To remove compile warnings:
-    unused_out01 = real( T_in_K_new(1:nzmax-1), kind=r8 )
+    dum = real( T_in_K_new(1:nz-1), kind=r8 )
     ! TODO: T_in_K is not changed within MG, so the change in temperature will need to be
     ! calculated another way. However, using the eqution above does not seem to work correctly.
     thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_new ) - thlm ) / real( dt )
