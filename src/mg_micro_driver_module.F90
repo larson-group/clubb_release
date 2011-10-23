@@ -271,9 +271,9 @@ module mg_micro_driver_module
     
       ! Find difference in air pressure between vertical levels
       if ( i /= nz-1 ) then
-        pdel_flip(i) = p_in_Pa_flip(i) - p_in_Pa_flip(i+1)
+        pdel_flip(i) = p_in_Pa_flip(i+1) - p_in_Pa_flip(i)
       else
-        pdel_flip(i) = p_in_Pa_flip(i)
+        pdel_flip(i) = p_in_Pa_flip(nz-2)
       end if
       
       ! Cloud fraction. In MG there is no difference between ice cloud fraction and
