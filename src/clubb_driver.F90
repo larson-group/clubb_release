@@ -1827,7 +1827,7 @@ module clubb_driver
 
     use saturation, only: &
         sat_mixrat_liq, & ! Procedure(s)
-        sat_rcm
+        rcm_sat_adj
 
     use array_index, only: &
         iisclr_thl, & ! Variable(s)
@@ -2021,7 +2021,7 @@ module clubb_driver
         ! Find mean cloud water mixing ratio.
         do k = 1, gr%nzmax, 1
           ! Compute cloud water mixing ratio using an iterative method.
-          rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
+          rcm(k) = rcm_sat_adj( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
         enddo
 
         ! Compute initial theta.
@@ -2318,7 +2318,7 @@ module clubb_driver
 
         ! Compute initial cloud water mixing ratio using an iterative method.
         do k = 1, gr%nzmax, 1
-          rcm(k) = sat_rcm( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
+          rcm(k) = rcm_sat_adj( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
         enddo
 
         ! Compute initial theta.

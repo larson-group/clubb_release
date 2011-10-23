@@ -17,7 +17,7 @@ module saturation
 
   private  ! Change default so all items private
 
-  public   :: sat_mixrat_liq, sat_mixrat_liq_lookup, sat_mixrat_ice, sat_rcm, &
+  public   :: sat_mixrat_liq, sat_mixrat_liq_lookup, sat_mixrat_ice, rcm_sat_adj, &
               sat_vapor_press_liq
 
   private  :: sat_vapor_press_liq_flatau, sat_vapor_press_liq_bolton
@@ -639,12 +639,15 @@ module saturation
 ! <--- h1g, 2010-06-16
 
 !-------------------------------------------------------------------------
-  FUNCTION sat_rcm( thlm, rtm, p_in_Pa, exner )
+  FUNCTION rcm_sat_adj( thlm, rtm, p_in_Pa, exner ) result ( rcm )
 
     ! Description:
     !
-    ! This function uses an iterative method to find the value of rcm
-    ! from an initial profile that has saturation at some point.
+    !   This function uses an iterative method to find the value of rcm
+    !   from an initial profile that has saturation at some point.
+    !
+    ! References:
+    !   None
     !-------------------------------------------------------------------------
 
     use constants_clubb, only: & 
@@ -654,30 +657,40 @@ module saturation
 
     implicit none
 
+    ! Local Constant(s)
+    real, parameter :: &
+      tolerance = 0.001 ! Tolerance on theta calculation [K]
+
+    integer, parameter :: &
+      itermax = 1000000 ! Maximum interations
+
+    ! External
+    intrinsic :: max, abs
+
     ! Input Variable(s)
-    REAL, INTENT(IN):: thlm         ! Liquid Water Potential Temperature [K]
-    REAL, INTENT(IN):: rtm          ! Total Water Mixing Ratio       [kg/kg]
-    REAL, INTENT(IN):: p_in_Pa      ! Pressure                          [Pa]
-    REAL, INTENT(IN):: exner        ! Exner function                     [-]
+    real, intent(in) :: &
+      thlm,    & ! Liquid Water Potential Temperature [K]
+      rtm,     & ! Total Water Mixing Ratio       [kg/kg]
+      p_in_Pa, & ! Pressure                          [Pa]
+      exner      ! Exner function                     [-]
 
-    REAL:: sat_rcm
+    ! Output Variable(s)
+    real :: rcm ! Cloud water mixing ratio      [kg/kg]
 
-    REAL:: theta
-    REAL:: answer, too_low, too_high
+    ! Local Variable(s)
+    real :: &
+      theta, answer, too_low, too_high ! [K]
 
-    INTEGER:: iteration
+    integer :: iteration
 
-    REAL, PARAMETER:: tolerance = 0.001
+    ! ----- Begin Code -----
 
     ! Default initialization
     theta = thlm
-    iteration = 0
     too_high = 0.0
     too_low = 0.0
 
-    DO
-
-      iteration = iteration + 1
+    DO iteration = 1, itermax, 1
 
       answer = &
       theta - (Lv/(Cp*exner)) &
@@ -699,10 +712,15 @@ module saturation
 
       theta = (too_low + too_high)/2.0
 
-    ENDDO
+    END DO ! 1..itermax
 
-    sat_rcm = MAX( rtm - sat_mixrat_liq( p_in_Pa, theta*exner), zero_threshold )
+    if ( iteration == itermax ) then
+      stop "Error in rcm_sat_adj: could not determine rcm"
+    else
+      rcm = MAX( rtm - sat_mixrat_liq( p_in_Pa, theta*exner), zero_threshold )
+      return
+    end if
 
-  END FUNCTION sat_rcm
+  END FUNCTION rcm_sat_adj
 
 end module saturation

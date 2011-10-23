@@ -39,7 +39,7 @@ module input_interpret
 
     use saturation, only: &
         sat_mixrat_liq, & ! Procedure(s)
-        sat_rcm
+        rcm_sat_adj
 
     use hydrostatic_module, only: &
         inverse_hydrostatic ! Procedure(s)
@@ -168,7 +168,7 @@ module input_interpret
            ! an iterative method involving theta_l, total water mixing ratio,
            ! pressure, and exner.
            do k =1, nlevels, 1
-              rcm(k) = sat_rcm( theta(k), rtm(k), p_in_Pa(k), exner(k) )
+              rcm(k) = rcm_sat_adj( theta(k), rtm(k), p_in_Pa(k), exner(k) )
            enddo
 
            ! Calculate theta from theta_l and cloud water mixing ratio, such
