@@ -39,8 +39,11 @@ module mg_micro_driver_module
     use stats_variables, only: & 
       zt, &  ! Variables
       irsnowm, &
+      irrainm, &
       ieff_rad_cloud, &
-      ieff_rad_ice
+      ieff_rad_ice, &
+      ieff_rad_rain, &
+      ieff_rad_snow
 
     use stats_type, only:  & 
       stat_update_var
@@ -138,8 +141,11 @@ module mg_micro_driver_module
       cloud_frac,   & ! Liquid Cloud fraction                                         [-]
       rcm_new,      & ! Cloud water mixing ratio after microphysics                   [kg/kg]
       rsnowm,       & ! Snow mixing ratio (not in hydromet, output straight to stats) [kg/kg]
+      rrainm,       & ! Rain mixing ratio (not in hydromet, output straight to stats) [kg/kg]
       effc,         & ! Droplet effective radius                                      [μ]
-      effi            ! cloud ice effective radius                                    [μ]
+      effi,         & ! cloud ice effective radius                                    [μ]
+      reff_rain,    & ! rain effective radius                                         [μ]
+      reff_snow       ! snow effective radius                                         [μ]
 
     real(r8), dimension(nz) :: & 
       turbtype_flip,& ! Turbulence type at each interface                             [-]
@@ -179,13 +185,16 @@ module mg_micro_driver_module
       
     ! MG Output Variables
     real(r8), dimension(nz-1) :: &
-      tlat_flip,    & ! Latent heating rate                                  [W/kg]
-      rcm_mc_flip,  & ! Time tendency of liquid water mixing ratio           [kg/kg/s]
-      rvm_mc_flip,  & ! Time tendency of vapor water mixing ratio            [kg/kg/s]
-      cldo_flip,    & ! Old cloud fraction.                                  [-]
-      rsnowm_flip,  & ! snow mixing ratio                                    [kg/kg]
-      effc_flip,    & ! Droplet effective radius                             [μ]
-      effi_flip       ! cloud ice effective radius                           [μ]
+      tlat_flip,     & ! Latent heating rate                                  [W/kg]
+      rcm_mc_flip,   & ! Time tendency of liquid water mixing ratio           [kg/kg/s]
+      rvm_mc_flip,   & ! Time tendency of vapor water mixing ratio            [kg/kg/s]
+      cldo_flip,     & ! Old cloud fraction.                                  [-]
+      qsout_flip,    & ! snow mixing ratio                                    [kg/kg]
+      effc_flip,     & ! Droplet effective radius                             [μ]
+      effi_flip,     & ! cloud ice effective radius                           [μ]
+      reff_rain_flip,& ! rain effective radius                                [μ]
+      reff_snow_flip,& ! snow effective radius                                [μ]
+      qrout_flip       ! rain mixing ratio                                    [kg/kg]
       
     ! MG zt variables that are not used in CLUBB.
     real(r8), dimension(nz-1) :: &
@@ -197,7 +206,7 @@ module mg_micro_driver_module
       mnuccto_flip, msacwio_flip, psacwso_flip, bergso_flip, bergo_flip,       &
       melto_flip, homoo_flip, qcreso_flip, prcio_flip, praio_flip, qireso_flip,&
       mnuccro_flip, pracso_flip, meltsdt_flip, frzrdt_flip, mnuccdo_flip,      &
-      qrout_flip, reff_rain_flip, reff_snow_flip, naai_hom_flip, dum
+      naai_hom_flip, dum
 
     ! MG zm variables that are not used in CLUBB
     real(r8), dimension(nz) :: &
@@ -224,7 +233,10 @@ module mg_micro_driver_module
     nacon_flip = 0.0_r8
     effc(:) = 0.0
     effi(:) = 0.0
+    reff_rain(:) = 0.0
+    reff_snow(:) = 0.0
     rsnowm(:) = 0.0
+    rrainm(:) = 0.0
     tlat(:) = 0.0
     rcm_new(:) = 0.0
     T_in_K_new(:) = 0.0
@@ -317,19 +329,20 @@ module mg_micro_driver_module
     ! decide not to use it. If microp_aero_ts is called, this code block can be commented
     ! out.
     !
-    !rho_flip(1:nz-1) = real( flip( dble(rho(2:nz) ), nz-1 ) )
-    !npccn_flip(1:nz-1) = real( flip( dble(Ncnm(2:nz) ), nz-1 ) )
+    !rho_flip(1:nz-1) = real( flip( dble(rho(2:nz) ), nz-1 ), kind=r8 )
+    !npccn_flip(1:nz-1) = real( flip( dble(Ncnm(2:nz) ), nz-1 ), kind=r8 )
     !
     ! Determine ice nulceation number using Meyers formula found in the Morrison microphysics
-    !naai_flip(i) = exp( -2.80 + 0.262 * ( T_freeze_K - T_in_K_flip(i) ) ) * 1000 / rho_flip(i)
+    !naai_flip(i) = exp( -2.80_r8 + 0.262_r8 * ( dble(T_freeze_K ) - dble(T_in_K_flip(i)) ) ) &
+    !               * 1000.0_r8 / rho_flip(i)
     !
     ! Set values for radius of 4 dust bins for contact freezing. Currently, we assume
     ! nacon = 0 therby ommitting contact nucleation, but this is set regardless.
-    !rndst_flip(:,1) = 0.001
-    !rndst_flip(:,2) = 0.01
-    !rndst_flip(:,3) = 0.1
-    !rndst_flip(:,4) = 1
-    !nacon_flip(:,1:4) = 0
+    !rndst_flip(:,1) = 0.001_r8
+    !rndst_flip(:,2) = 0.01_r8
+    !rndst_flip(:,3) = 0.1_r8
+    !rndst_flip(:,4) = 1.0_r8
+    !nacon_flip(:,1:4) = 0.0_r8
     !----------------------------------------------------------------------------------------
 
     ! These variables are unused in CLUBB, so they are initialized to 1 before input into
@@ -340,7 +353,7 @@ module mg_micro_driver_module
     
     ! Calculate aerosol activiation, dust size, and number for contact nucleation
     call microp_aero_ts &
-         ( 1, 1, real( dt, kind=r8), T_in_K_flip, unused_in, &                                ! in
+         ( 0, 1, real( dt, kind=r8), T_in_K_flip, unused_in, &                                ! in
          rvm_flip, rcm_flip, hydromet_flip(:,iiricem), &                                      ! in
          hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
          liqcldf_flip, icecldf_flip, &                                                        ! in
@@ -351,28 +364,28 @@ module mg_micro_driver_module
          naai_flip, naai_hom_flip, npccn_flip, rndst_flip, nacon_flip )                       ! out
 
     ! Call the Morrison-Gettelman microphysics
-    call mmicro_pcond &
-         (.false., &                                                                          ! in
-         0, 1, real( dt, kind=r8), T_in_K_flip, &                                             ! in
-         rvm_flip, rcm_flip, hydromet_flip(:,iiricem), &                                      ! in
+    call mmicro_pcond                                                                        &
+         (.false.,                                                                           &! in
+         0, 1, real( dt, kind=r8), T_in_K_flip,                                              &! in
+         rvm_flip, rcm_flip, hydromet_flip(:,iiricem),                                       &! in
          hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
-         liqcldf_flip, icecldf_flip, &                                                        ! in
-         cldo_flip, &                                                                         ! in
-         rate1ord_cw2pr_st_flip, &                                                            ! out
-         naai_flip, npccn_flip, rndst_flip, nacon_flip, &                                     ! in
-         tlat_flip, rvm_mc_flip, &                                                            ! out
-         rcm_mc_flip, hydromet_mc_flip(:,iiricem), hydromet_mc_flip(:,iiNcm), &               ! out
-         hydromet_mc_flip(:,iiNim), effc_flip, &                                              ! out
-         effc_fn_flip, effi_flip, prect_flip, preci_flip,             &                       ! out
-         nevapr_flip, evapsnow_flip,      &                                                   ! out
-         prain_flip, prodsnow_flip, cmeout_flip, deffi_flip, pgamrad_flip, &                  ! out
-         lamcrad_flip, rsnowm_flip, dsout_flip, &                                             ! out
-         rflx_flip, sflx_flip, qrout_flip, reff_rain_flip, reff_snow_flip, &                  ! out
-         qcsevap_flip, qisevap_flip, qvres_flip, cmeiout_flip, &                              ! out
-         vtrmc_flip, vtrmi_flip, qcsedten_flip, qisedten_flip, &                              ! out
-         prao_flip, prco_flip, mnuccco_flip, mnuccto_flip, msacwio_flip, psacwso_flip,&       ! out
+         liqcldf_flip, icecldf_flip,                                                         &! in
+         cldo_flip,                                                                          &! in
+         rate1ord_cw2pr_st_flip,                                                             &! out
+         naai_flip, npccn_flip, rndst_flip, nacon_flip,                                      &! in
+         tlat_flip, rvm_mc_flip,                                                             &! out
+         rcm_mc_flip, hydromet_mc_flip(:,iiricem), hydromet_mc_flip(:,iiNcm), &
+         hydromet_mc_flip(:,iiNim), effc_flip,                                               &! out
+         effc_fn_flip, effi_flip, prect_flip, preci_flip,                                    &! out
+         nevapr_flip, evapsnow_flip,                                                         &! out
+         prain_flip, prodsnow_flip, cmeout_flip, deffi_flip, pgamrad_flip,                   &! out
+         lamcrad_flip, qsout_flip, dsout_flip,                                               &! out
+         rflx_flip, sflx_flip, qrout_flip, reff_rain_flip, reff_snow_flip,                   &! out
+         qcsevap_flip, qisevap_flip, qvres_flip, cmeiout_flip,                               &! out
+         vtrmc_flip, vtrmi_flip, qcsedten_flip, qisedten_flip,                               &! out
+         prao_flip, prco_flip, mnuccco_flip, mnuccto_flip, msacwio_flip, psacwso_flip,       &! out
          bergso_flip, bergo_flip, melto_flip, homoo_flip, qcreso_flip, prcio_flip, praio_flip, &
-         qireso_flip,&                                                                        ! out
+         qireso_flip,                                                                        &! out
          mnuccro_flip, pracso_flip, meltsdt_flip, frzrdt_flip, mnuccdo_flip)                  ! out
 
     ! Flip MG variables into CLUBB grid
@@ -381,9 +394,12 @@ module mg_micro_driver_module
     rcm_new(2:nz) = real( flip( dble(rcm_flip(1:nz-1) ), nz-1 ) )
     effc(2:nz) = real( flip( dble(effc_flip(1:nz-1) ), nz-1 ) )
     effi(2:nz) = real( flip( dble(effi_flip(1:nz-1) ), nz-1 ) )
+    reff_rain(2:nz) = real( flip( dble(reff_rain_flip(1:nz-1) ), nz-1 ) )
+    reff_snow(2:nz) = real( flip( dble(reff_snow_flip(1:nz-1) ), nz-1 ) )
     tlat(2:nz) = real( flip( dble(tlat_flip(1:nz-1) ), nz-1 ) )
-    rsnowm(2:nz) = real( flip( dble(rsnowm_flip(1:nz-1) ), nz-1 ) )
-      
+    rsnowm(2:nz) = real( flip( dble(qsout_flip(1:nz-1) ), nz-1 ) )
+    rrainm(2:nz) = real( flip( dble(qrout_flip(1:nz-1) ), nz-1 ) )
+
     do i = 1, hydromet_dim, 1      
       hydromet_mc(2:nz, i) = real( hydromet_mc_flip(nz-1:1:-1, i) )
     end do
@@ -398,11 +414,14 @@ module mg_micro_driver_module
     thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_new ) - thlm ) / real( dt )
     
     if ( l_stats_samp ) then
-      call stat_update_var( irsnowm, rsnowm, zt )
+      call stat_update_var( irsnowm, rsnowm(:), zt )
+      call stat_update_var( irrainm, rrainm(:), zt)
       
       ! Effective radii of hydrometeor species
       call stat_update_var( ieff_rad_cloud, effc(:), zt )
       call stat_update_var( ieff_rad_ice, effi(:), zt )
+      call stat_update_var( ieff_rad_rain, reff_rain(:), zt)
+      call stat_update_var( ieff_rad_snow, reff_snow(:), zt)
       
     end if ! l_stats_samp
 
