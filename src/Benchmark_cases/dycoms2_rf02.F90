@@ -106,7 +106,7 @@ module dycoms2_rf02
     use time_dependent_input, only: sens_ht_given, latent_ht_given, time_sfc_given,& ! Variable(s)
                                     time_select ! Procedure(s)
 
-    use interpolation, only: factor_interp ! Procedure(s)
+    use interpolation, only: linear_interp_factor ! Procedure(s)
 
     use clubb_precision, only: time_precision ! Variable(s)
 
@@ -138,12 +138,13 @@ module dycoms2_rf02
 
     !------------------------BEGIN CODE-----------------------------------
 
-    call time_select( time, size(time_sfc_given), time_sfc_given, &
+    call time_select( time, size( time_sfc_given ), time_sfc_given, &
                       before_time, after_time, time_frac )
 
-    sens_ht = factor_interp( time_frac, sens_ht_given(after_time), sens_ht_given(before_time) )
-    latent_ht = factor_interp( time_frac, latent_ht_given(after_time), &
-                                          latent_ht_given(before_time) )
+    sens_ht = linear_interp_factor( time_frac, sens_ht_given(after_time), &
+                                    sens_ht_given(before_time) )
+    latent_ht = linear_interp_factor( time_frac, latent_ht_given(after_time), &
+                                      latent_ht_given(before_time) )
 
     ! Declare the value of ustar.
     ustar = 0.25

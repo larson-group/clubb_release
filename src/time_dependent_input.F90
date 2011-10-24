@@ -471,7 +471,7 @@ module time_dependent_input
       fstderr
 
     use interpolation, only: &
-      factor_interp ! Procedure(s)
+      linear_interp_factor ! Procedure(s)
 
     use input_names, only: &
       z_name, & ! Variable(s)
@@ -555,8 +555,9 @@ module time_dependent_input
     ! data.
     do i=2, nCols
 
-      temp_array = factor_interp( time_frac, t_dependent_forcing_data(i)%values(:,after_time), &
-                                         t_dependent_forcing_data(i)%values(:,before_time) )
+      temp_array = linear_interp_factor &
+                   ( time_frac, t_dependent_forcing_data(i)%values(:,after_time), &
+                     t_dependent_forcing_data(i)%values(:,before_time) )
 
       ! Check to see if temp_array is an actual profile or a dummy profile
       ! If it is a dummy profile we dont want it to apply itself as it may

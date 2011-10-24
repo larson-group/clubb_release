@@ -2,11 +2,11 @@
 ! $Id$
 module gabls3_night
 
-  !       Description:
-  !       Contains subroutines for the GABLS3 LES.
+  ! Description:
+  !   Contains subroutines for the GABLS3 LES.
   !
-  !       References:
-  !       http://www4.ncsu.edu/~sbasu5/GABLS3/
+  ! References:
+  !   http://www4.ncsu.edu/~sbasu5/GABLS3/
   !----------------------------------------------------------------------
 
   implicit none
@@ -24,12 +24,12 @@ module gabls3_night
                             thlm_sfc, rtm_sfc, lowest_level, & 
                             upwp_sfc, vpwp_sfc, &
                             wpthlp_sfc, wprtp_sfc, ustar )
-    !       Description:
-    !       This subroutine computes surface fluxes of horizontal momentum,
-    !       heat and moisture according to GCSS ATEX specifications
+    ! Description:
+    !   This subroutine computes surface fluxes of horizontal momentum,
+    !   heat and moisture according to GCSS ATEX specifications
     !
-    !       References:
-    !       http://www4.ncsu.edu/~sbasu5/GABLS3/
+    ! References:
+    !   http://www4.ncsu.edu/~sbasu5/GABLS3/
     !----------------------------------------------------------------------
 
     use constants_clubb, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)
@@ -47,7 +47,7 @@ module gabls3_night
                                     vpwp_sfc_given,   &
                                     time_select         ! Procedure(s)
 
-    use interpolation, only: factor_interp ! Procedure(s)
+    use interpolation, only: linear_interp_factor ! Procedure(s)
 
     implicit none
 
@@ -87,14 +87,15 @@ module gabls3_night
     if( l_t_dependent ) then
 
       ! Use time_select to determine the time indexes before and after 'time', as well as
-      ! the time fraction necessary for factor_interp
-      call time_select( time, size(time_sfc_given), time_sfc_given, &
+      ! the time fraction necessary for linear_interp_factor
+      call time_select( time, size( time_sfc_given ), time_sfc_given, &
                         before_time, after_time, time_frac )
 
 
-      ts = factor_interp( time_frac, thlm_sfc_given(after_time), thlm_sfc_given(before_time) )
+      ts = linear_interp_factor( time_frac, thlm_sfc_given(after_time), &
+                                 thlm_sfc_given(before_time) )
 
-      qs = factor_interp( time_frac, rtm_sfc_given(after_time), rtm_sfc_given(before_time) )
+      qs = linear_interp_factor( time_frac, rtm_sfc_given(after_time), rtm_sfc_given(before_time) )
      
 
       ! Compute heat and moisture fluxes
@@ -103,9 +104,9 @@ module gabls3_night
 
       if ( l_input_xpwp_sfc ) then
         ! Feed in momentum fluxes
-        upwp_sfc = factor_interp( time_frac, upwp_sfc_given(after_time), &
+        upwp_sfc = linear_interp_factor( time_frac, upwp_sfc_given(after_time), &
                                   upwp_sfc_given(before_time) )
-        vpwp_sfc = factor_interp( time_frac, vpwp_sfc_given(after_time), &
+        vpwp_sfc = linear_interp_factor( time_frac, vpwp_sfc_given(after_time), &
                                   vpwp_sfc_given(before_time) )
 
       else

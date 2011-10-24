@@ -370,7 +370,7 @@ module simple_rad_module
 
     use interpolation, only: zlinterp_fnc ! Procedure(s)
 
-    use interpolation, only: factor_interp ! Procedure(s)
+    use interpolation, only: linear_interp_factor ! Procedure(s)
 
     use clubb_precision, only: time_precision ! Constant
 
@@ -404,7 +404,7 @@ module simple_rad_module
         if ( time >= 600. * real( i1 ) .and. time < 600. * real( i2 )  ) then
           a  = ( time - 600. * real( i1 ) ) & ! Known magic number
             /( 600. * real( i2 ) - 600. * real( i1 )) ! Known magic number
-          radhtz(:) = factor_interp( a, lba_krad(:,i2), lba_krad(:,i1) )
+          radhtz(:) = linear_interp_factor( a, lba_krad(:,i2), lba_krad(:,i1) )
           i1 = lba_ntimes
         end if
         i1 = i2

@@ -2,14 +2,14 @@
 ! $Id$
 module fire
 
-  !       Description:
-  !       Contains subroutines for the GCSS FIRE case.
+  ! Description:
+  !   Contains subroutines for the GCSS FIRE case.
   !
-  !       References:
-  !       Moeng, C.-H., and coauthors, 1996: Simulation of a
-  !       stratocumulus-topped PBL: Intercomparison among different 
-  !       numerical codes. Bull. Amer. Meteor. Soc., 77, 261-278.
-  !       ftp://eos.atmos.washington.edu/pub/breth/papers/1996/GCSS1-Moeng.pdf
+  ! References:
+  !   Moeng, C.-H., and coauthors, 1996: Simulation of a
+  !   stratocumulus-topped PBL: Intercomparison among different 
+  !   numerical codes. Bull. Amer. Meteor. Soc., 77, 261-278.
+  !   ftp://eos.atmos.washington.edu/pub/breth/papers/1996/GCSS1-Moeng.pdf
   !----------------------------------------------------------------------
 
   implicit none
@@ -25,15 +25,15 @@ module fire
                           thlm_sfc, rtm_sfc, exner_sfc, & 
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
                                           
-  !       Description:
-  !       This subroutine computes surface fluxes of heat and moisture 
-  !       using aerodynamic formulas.
+  ! Description:
+  !   This subroutine computes surface fluxes of heat and moisture 
+  !   using aerodynamic formulas.
 
-  !       References:
-  !       Moeng, C.-H., and coauthors, 1996: Simulation of a
-  !       stratocumulus-topped PBL: Intercomparison among different 
-  !       numerical codes. Bull. Amer. Meteor. Soc., 77, 261-278.
-  !       ftp://eos.atmos.washington.edu/pub/breth/papers/1996/GCSS1-Moeng.pdf
+  ! References:
+  !   Moeng, C.-H., and coauthors, 1996: Simulation of a
+  !   stratocumulus-topped PBL: Intercomparison among different 
+  !   numerical codes. Bull. Amer. Meteor. Soc., 77, 261-278.
+  !   ftp://eos.atmos.washington.edu/pub/breth/papers/1996/GCSS1-Moeng.pdf
   !------------------------------------------------------------------------
 
   use saturation, only: sat_mixrat_liq ! Procedure(s)
@@ -42,7 +42,7 @@ module fire
 
   use clubb_precision, only: time_precision ! Variable(s)
 
-  use interpolation, only: factor_interp ! Procedure(s)
+  use interpolation, only: linear_interp_factor ! Procedure(s)
 
   use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
                                   time_select ! Procedure(s)
@@ -82,7 +82,7 @@ module fire
   call time_select( time, size(time_sfc_given), time_sfc_given, &
                     before_time, after_time, time_frac )
 
-  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+  T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                     T_sfc_given(before_time) )
 
   ! Compute wpthlp_sfc and wprtp_sfc

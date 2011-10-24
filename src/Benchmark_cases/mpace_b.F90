@@ -138,7 +138,7 @@ module mpace_b
     use time_dependent_input, only: sens_ht_given, latent_ht_given, time_sfc_given,& !Variable(s)
                                     time_select ! Procedure(s)
 
-    use interpolation, only: factor_interp ! Procedure(s)
+    use interpolation, only: linear_interp_factor ! Procedure(s)
 
     use clubb_precision, only: time_precision ! Variable(s)
 
@@ -176,9 +176,9 @@ module mpace_b
                      before_time, after_time, time_frac )
 
     ! Get sens_ht and latent_ht from the input.
-    sensible_heat_flx = factor_interp( time_frac, sens_ht_given(after_time), &
+    sensible_heat_flx = linear_interp_factor( time_frac, sens_ht_given(after_time), &
                                        sens_ht_given(before_time) )
-    latent_heat_flx = factor_interp( time_frac, latent_ht_given(after_time), &
+    latent_heat_flx = linear_interp_factor( time_frac, latent_ht_given(after_time), &
                                        latent_ht_given(before_time) )
 
 

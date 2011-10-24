@@ -83,7 +83,7 @@ module dycoms2_rf01
 
   use clubb_precision, only: time_precision ! Variable(s)
   
-  use interpolation, only: factor_interp ! Procedure(s)
+  use interpolation, only: linear_interp_factor ! Procedure(s)
 
   implicit none
 
@@ -126,9 +126,10 @@ module dycoms2_rf01
   call time_select( time, size(time_sfc_given), time_sfc_given, &
                     before_time, after_time, time_frac )
 
-  sens_ht = factor_interp( time_frac, sens_ht_given(after_time), sens_ht_given(before_time) )
-  latent_ht = factor_interp( time_frac, latent_ht_given(after_time), latent_ht_given(before_time) )
-  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+  sens_ht = linear_interp_factor( time_frac, sens_ht_given(after_time), sens_ht_given(before_time) )
+  latent_ht = linear_interp_factor( time_frac, latent_ht_given(after_time), &
+                                    latent_ht_given(before_time) )
+  T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                     T_sfc_given(before_time) )
 
   ! Compute heat and moisture fluxes

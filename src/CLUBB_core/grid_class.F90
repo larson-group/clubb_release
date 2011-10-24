@@ -1037,7 +1037,7 @@ module grid_class
     ! formulation used is compatible with a stretched (unevenly-spaced) grid.
     !-----------------------------------------------------------------------
 
-    use interpolation, only: factor_interp
+    use interpolation, only: linear_interp_factor
 
     implicit none
 
@@ -1056,7 +1056,7 @@ module grid_class
     ! Use linear interpolation.
     forall( k = 1 : gr%nzmax-1 : 1 )
       interpolated_azm(k) = &
-         factor_interp( gr%weights_zt2zm( 1, k ), azt(k+1), azt(k) )
+         linear_interp_factor( gr%weights_zt2zm(1, k), azt(k+1), azt(k) )
     end forall
 
 !    ! Set the value of azm at level gr%nzmax (the uppermost level in the model)
@@ -1085,7 +1085,7 @@ module grid_class
     ! stretched (unevenly-spaced) grid.
     !-----------------------------------------------------------------------
 
-    use interpolation, only: factor_interp
+    use interpolation, only: linear_interp_factor
 
     implicit none
 
@@ -1104,7 +1104,7 @@ module grid_class
     if ( k /= gr%nzmax ) then
 
       interpolated_azmk = &
-         factor_interp( gr%weights_zt2zm( 1, k ), azt(k+1), azt(k) )
+         linear_interp_factor( gr%weights_zt2zm(1, k), azt(k+1), azt(k) )
 
     else
 
@@ -1335,7 +1335,7 @@ module grid_class
     ! used is compatible with a stretched (unevenly-spaced) grid.
     !-----------------------------------------------------------------------
 
-    use interpolation, only: factor_interp
+    use interpolation, only: linear_interp_factor
 
     implicit none
 
@@ -1354,7 +1354,7 @@ module grid_class
     ! Use a linear interpolation.
     forall( k = gr%nzmax : 2 : -1 )
       interpolated_azt(k) = &
-         factor_interp( gr%weights_zm2zt( 1, k ), azm(k), azm(k-1) )
+         linear_interp_factor( gr%weights_zm2zt(1, k), azm(k), azm(k-1) )
     end forall ! gr%nzmax .. 2
 !    ! Set the value of azt at level 1 (the lowermost level in the model) to the
 !    ! value of azm at level 1.
@@ -1380,7 +1380,7 @@ module grid_class
     ! stretched (unevenly-spaced) grid.
     !-----------------------------------------------------------------------
 
-    use interpolation, only: factor_interp
+    use interpolation, only: linear_interp_factor
 
     implicit none
 
@@ -1399,7 +1399,7 @@ module grid_class
     if ( k /= 1 ) then
 
       interpolated_aztk = &
-         factor_interp( gr%weights_zm2zt( 1, k ), azm(k), azm(k-1) )
+         linear_interp_factor( gr%weights_zm2zt(1, k), azm(k), azm(k-1) )
 
     else
 

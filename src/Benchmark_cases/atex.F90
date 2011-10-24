@@ -183,7 +183,7 @@ module atex
 
   use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc
 
-  use interpolation, only: factor_interp ! Procedure(s)
+  use interpolation, only: linear_interp_factor ! Procedure(s)
 
   use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
                                   time_select                    ! Procedure(s)
@@ -195,6 +195,7 @@ module atex
   ! Input variables
   real(time_precision), intent(in) :: &
     time       ! the current time [s]
+
   real, intent(in) ::  &
     ubar,    & ! mean sfc wind speed                           [m/s]
     thlm_sfc,& ! theta_l at first model layer                  [K]
@@ -224,7 +225,7 @@ module atex
   call time_select( time, size(time_sfc_given), time_sfc_given, &
                     before_time, after_time, time_frac )
 
-  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+  T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                     T_sfc_given(before_time) )
 
   ! Compute wpthlp_sfc and wprtp_sfc

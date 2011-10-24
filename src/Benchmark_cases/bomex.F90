@@ -124,7 +124,7 @@ module bomex
         time_sfc_given ! Variable(s)
 
     use interpolation, only: &
-        factor_interp ! Procedure(s)
+        linear_interp_factor ! Procedure(s)
 
     use clubb_precision, only: time_precision ! Variable(s)
 
@@ -157,12 +157,12 @@ module bomex
     call time_select(time, size(time_sfc_given), time_sfc_given, &
                 before_time, after_time, time_frac)
 
-    wpthlp_sfc = factor_interp(time_frac, wpthlp_sfc_given(after_time), &
+    wpthlp_sfc = linear_interp_factor(time_frac, wpthlp_sfc_given(after_time), &
                                wpthlp_sfc_given(before_time))
 
     ! The BOMEX specifications give surface moisture flux in terms of total water
     ! specific humidity.
-    wpqtp_sfc  = factor_interp(time_frac, wpqtp_sfc_given(after_time), &
+    wpqtp_sfc  = linear_interp_factor(time_frac, wpqtp_sfc_given(after_time), &
                                wpqtp_sfc_given(before_time))
 
 

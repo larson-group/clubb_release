@@ -375,7 +375,7 @@ module nov11
                                     sens_ht_given, latent_ht_given, &
                                     time_select                   ! Procedure(s)
 
-    use interpolation, only: factor_interp ! Procedure(s)
+    use interpolation, only: linear_interp_factor ! Procedure(s)
 
     implicit none
 
@@ -403,10 +403,10 @@ module nov11
     call time_select( time, size(time_sfc_given), time_sfc_given, &
                       before_time, after_time, time_frac )
 
-    sens_ht = factor_interp( time_frac, sens_ht_given(after_time), &
+    sens_ht = linear_interp_factor( time_frac, sens_ht_given(after_time), &
                                    sens_ht_given(before_time) )
     
-    latent_ht = factor_interp( time_frac, latent_ht_given(after_time), &
+    latent_ht = linear_interp_factor( time_frac, latent_ht_given(after_time), &
                                    latent_ht_given(before_time) )
 
     return
