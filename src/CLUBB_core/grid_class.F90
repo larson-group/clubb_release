@@ -145,12 +145,14 @@ module grid_class
   public :: gr, grid, zt2zm, interp_weights_zt2zm_imp, zm2zt, & 
             interp_weights_zm2zt_imp, ddzm, ddzt, & 
             setup_grid, cleanup_grid, setup_grid_heights, &
-            read_grid_heights, flip
+            read_grid_heights, flip, zt2zm_cubic, zm2zt_cubic
 
   private :: interpolated_azm, interpolated_azmk, & 
              interpolated_azmk_imp, interpolated_azt, & 
              interpolated_aztk, interpolated_aztk_imp, & 
-             gradzm, gradzt, t_above, t_below, m_above, m_below
+             gradzm, gradzt, t_above, t_below, m_above, m_below, &
+             cubic_interpolated_azmk, cubic_interpolated_aztk, &
+             cubic_interpolated_azm, cubic_interpolated_azt
 
   private ! Default Scoping
 
@@ -217,6 +219,14 @@ module grid_class
     ! In the future, we could add a flag (lposdef) and, when needed, apply the
     ! max statement directly within interpolated_azm and interpolated_azmk.
     module procedure interpolated_azm, interpolated_azmk
+  end interface
+
+  interface zt2zm_cubic
+    module procedure cubic_interpolated_azmk, cubic_interpolated_azm
+  end interface
+
+  interface zm2zt_cubic
+    module procedure cubic_interpolated_aztk, cubic_interpolated_azt
   end interface
 
   interface interp_weights_zt2zm_imp
@@ -1126,6 +1136,95 @@ module grid_class
   end function interpolated_azmk
 
   !=============================================================================
+  pure function cubic_interpolated_azm( azt )
+
+    ! Description:
+    ! Function to interpolate a variable located on the thermodynamic grid
+    ! levels (azt) to the momentum grid levels (azm).  This function outputs the
+    ! value of azt at a all grid levels using Steffen's monotonic cubic
+    ! interpolation implemented by Tak Yamaguchi.
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in), dimension(gr%nzmax) :: azt
+
+    ! Return Variable
+    real, dimension(gr%nzmax) :: cubic_interpolated_azm
+
+    integer :: k
+
+    ! ---- Begin Code ----
+
+    do k = 1, gr%nzmax
+      cubic_interpolated_azm(k) = cubic_interpolated_azmk( azt, k )
+    end do
+
+    return
+
+  end function cubic_interpolated_azm
+
+  !=============================================================================
+  pure function cubic_interpolated_azmk( azt, k )
+
+    ! Description:
+    ! Function to interpolate a variable located on the thermodynamic grid
+    ! levels (azt) to the momentum grid levels (azm).  This function outputs the
+    ! value of azm at a single grid level (k) using Steffen's monotonic cubic
+    ! interpolation implemented by Tak Yamaguchi.
+    !-----------------------------------------------------------------------
+
+    use interpolation, only: mono_cubic_interp
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in), dimension(gr%nzmax) :: azt
+
+    integer, intent(in) :: k
+
+    ! Return Variable
+    real :: cubic_interpolated_azmk
+
+    integer :: km1, k00, kp1, kp2
+
+    ! ---- Begin Code ----
+
+    ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
+    if ( k == gr%nzmax-1 ) then
+      km1 = k-2
+      kp1 = k+1
+      kp2 = k+1
+      k00 = k
+    else if ( k == gr%nzmax ) then ! Extrapolation
+      km1 = k
+      kp1 = k
+      kp2 = k
+      k00 = k-1
+    else if ( k == 1 ) then
+      km1 = 1
+      kp1 = 2
+      kp2 = 3
+      k00 = k
+    else
+      km1 = k-1
+      kp1 = k+1
+      kp2 = k+2
+      k00 = k
+    end if
+    ! Do the actual interpolation.
+    ! Use a cubic monotonic spline interpolation.
+    cubic_interpolated_azmk = &
+      mono_cubic_interp( gr%zm(k), km1, k00, kp1, kp2, &
+                         gr%zt(km1), gr%zt(k00), gr%zt(kp1), gr%zt(kp2), &
+                         azt(km1), azt(k00), azt(kp1), azt(kp2) )
+
+    return
+
+  end function cubic_interpolated_azmk
+
+  !=============================================================================
   pure function interpolated_azmk_imp( m_lev ) & 
     result( azt_weight )
 
@@ -1417,6 +1516,96 @@ module grid_class
     return
 
   end function interpolated_aztk
+
+  !=============================================================================
+  pure function cubic_interpolated_azt( azm )
+
+    ! Description:
+    ! Function to interpolate a variable located on the momentum grid
+    ! levels (azm) to the thermodynamic grid levels (azt).  This function outputs the
+    ! value of azt at a all grid levels using Steffen's monotonic cubic
+    ! interpolation implemented by Tak Yamaguchi.
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in), dimension(gr%nzmax) :: azm
+
+    ! Return Variable
+    real, dimension(gr%nzmax) :: cubic_interpolated_azt
+
+    integer :: k
+
+    ! ---- Begin Code ----
+
+    do k = 1, gr%nzmax
+      cubic_interpolated_azt(k) = cubic_interpolated_aztk( azm, k )
+    end do
+
+    return
+
+  end function cubic_interpolated_azt
+
+
+  !=============================================================================
+  pure function cubic_interpolated_aztk( azm, k )
+
+    ! Description:
+    ! Function to interpolate a variable located on the momentum grid
+    ! levels (azm) to the thermodynamic grid levels (azt).  This function outputs the
+    ! value of azt at a single grid level (k) using Steffen's monotonic cubic
+    ! interpolation implemented by Tak Yamaguchi.
+    !-----------------------------------------------------------------------
+
+    use interpolation, only: mono_cubic_interp
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in), dimension(gr%nzmax) :: azm
+
+    integer, intent(in) :: k
+
+    ! Return Variable
+    real :: cubic_interpolated_aztk
+
+    integer :: km1, k00, kp1, kp2
+
+    ! ---- Begin Code ----
+
+    ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
+    if ( k == gr%nzmax ) then
+      km1 = k-2
+      kp1 = k
+      kp2 = k
+      k00 = k-1
+    else if ( k == gr%nzmax-1 ) then
+      km1 = k-1
+      kp1 = k+1
+      kp2 = k+1
+      k00 = k
+    else if ( k == 1 ) then ! Extrapolation for the ghost point
+      km1 = gr%nzmax
+      k00 = 1
+      kp1 = 2
+      kp2 = 3
+    else
+      km1 = k-1
+      kp1 = k+1
+      kp2 = k+2
+      k00 = k
+    end if
+    ! Do the actual interpolation.
+    ! Use a cubic monotonic spline interpolation.
+    cubic_interpolated_aztk = &
+      mono_cubic_interp( gr%zt(k), km1, k00, kp1, kp2, &
+                         gr%zm(km1), gr%zm(k00), gr%zm(kp1), gr%zm(kp2), &
+                         azm(km1), azm(k00), azm(kp1), azm(kp2) )
+
+    return
+
+  end function cubic_interpolated_aztk
 
   !=============================================================================
   pure function interpolated_aztk_imp( t_lev ) & 
