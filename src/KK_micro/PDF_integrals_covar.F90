@@ -113,7 +113,7 @@ module PDF_integrals_covars
             + sqrt(pi_dp/2.0) * ( mu_x1 - x1_mean )  &
               * erfc( mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
             )  &
-        ) ! Known magic number
+        )
 
     return
 
@@ -198,7 +198,7 @@ module PDF_integrals_covars
           * Dv_fnc( -(alpha_exp + 1.0), s_cc )  &
         - x2_alpha_x3_beta_x4_gamma_mean  &
           * sqrt(pi_dp/2.0) * erfc( mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
-        ) ! Known magic number
+        )
 
     return
 
@@ -397,7 +397,7 @@ module PDF_integrals_covars
             + sqrt(pi_dp/2.0) * ( mu_x1 - x1_mean )  &
               * erfc( - mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
             )  &
-        ) ! Known magic number
+        )
 
     return
 
@@ -466,7 +466,7 @@ module PDF_integrals_covars
           * Dv_fnc( -(alpha_exp + 1.0), -s_c )  &
         - x2_alpha_x3_beta_mean  &
           * sqrt(pi_dp/2.0) * erfc( - mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
-        ) ! Known magic number
+        )
 
     return
 
