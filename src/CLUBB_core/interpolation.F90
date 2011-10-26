@@ -101,29 +101,39 @@ module interpolation
   ! Original Author:
   !   Takanobu Yamaguchi
   !   tak.yamaguchi@noaa.gov
-  ! This version has been modified slightly for CLUBB's coding standards.
+  !
+  ! This version has been modified slightly for CLUBB's coding standards and
+  ! adds the 3/2 from eqn 21. -dschanen 26 Oct 2011
   !
   ! References:
   !   M. Steffen, Astron. Astrophys. 239, 443-450 (1990)
   !-------------------------------------------------------------------------------------------------
+
+    use constants_clubb, only: three_halves
+
     implicit none
+
+    ! Constant Parameters
+    logical, parameter :: &
+      l_equation_21 = .false.
 
     ! External
     intrinsic :: sign, abs, min
 
     ! Input Variables
     real, intent(in) :: & 
-      z_in
+      z_in ! The altitude to be interpolated to [m]
 
+    ! k-levels;  their meaning depends on whether we're extrapolating or interpolating
     integer, intent(in) :: &
-      km1, k00, kp1, kp2
+      km1, k00, kp1, kp2 
 
     real, intent(in) :: &
-      zm1, z00, zp1, zp2, &
-      fm1, f00, fp1, fp2
+      zm1, z00, zp1, zp2, & ! The altitudes for km1, k00, kp1, kp2      [m]
+      fm1, f00, fp1, fp2    ! The field at km1, k00, kp1, and kp2       [units vary]
 
     ! Output Variables
-    real :: f_out
+    real :: f_out ! The interpolated field
    
     ! Local Variables 
     real :: &
@@ -132,9 +142,18 @@ module interpolation
       p00, pp1, &
       dfdx00, dfdxp1, &
       c1, c2, c3, c4, &
-      w00, wp1
+      w00, wp1, &
+      coef1, coef2
    
     ! ---- Begin Code ---- 
+
+    if ( l_equation_21 ) then
+      coef1 = three_halves
+      coef2 = 1.0/three_halves
+    else
+      coef1 = 1.0
+      coef2 = 1.0
+    end if
 
     if ( km1 <= k00 ) then
       hm1 = z00 - zm1
@@ -146,15 +165,15 @@ module interpolation
         sp1 = ( fp2 - fp1 ) / ( zp2 - zp1 )
         dfdx00 = s00
         pp1 = ( s00 * hp1 + sp1 * h00 ) / ( h00 + hp1 )
-        dfdxp1 = ( sign( 1.0, s00 ) + sign( 1.0, sp1 ) ) &
-          * min( abs(s00), abs(sp1), 0.5*abs(pp1) )
+        dfdxp1 = coef1*( sign( 1.0, s00 ) + sign( 1.0, sp1 ) ) &
+          * min( abs( s00 ), abs( sp1 ), coef2*0.5*abs( pp1 ) )
 
       else if ( kp1 == kp2 ) then
         sm1 = ( f00 - fm1 ) / ( z00 - zm1 )
         s00 = ( fp1 - f00 ) / ( zp1 - z00 )
         p00 = ( sm1 * h00 + s00 * hm1 ) / ( hm1 + h00 )
-        dfdx00 = ( sign( 1.0, sm1 ) + sign( 1.0, s00 ) ) &
-          * min( abs(sm1), abs(s00), 0.5*abs(p00) )
+        dfdx00 = coef1*( sign( 1.0, sm1 ) + sign( 1.0, s00 ) ) &
+          * min( abs( sm1 ), abs( s00 ), coef2*0.5*abs( p00 ) )
         dfdxp1 = sm1
 
       else
@@ -163,10 +182,10 @@ module interpolation
         sp1 = ( fp2 - fp1 ) / ( zp2 - zp1 )
         p00 = ( sm1 * h00 + s00 * hm1 ) / ( hm1 + h00 )
         pp1 = ( s00 * hp1 + sp1 * h00 ) / ( h00 + hp1 )
-        dfdx00 = ( sign( 1.0, sm1 ) + sign( 1.0, s00 ) ) &
-          * min( abs(sm1), abs(s00), 0.5*abs(p00) )
-        dfdxp1 = ( sign( 1.0, s00 ) + sign( 1.0, sp1 ) ) &
-          * min( abs(s00), abs(sp1), 0.5*abs(pp1) )
+        dfdx00 = coef1*( sign( 1.0, sm1 ) + sign( 1.0, s00 ) ) &
+          * min( abs( sm1 ), abs( s00 ), coef2*0.5*abs( p00 ) )
+        dfdxp1 = coef1*( sign( 1.0, s00 ) + sign( 1.0, sp1 ) ) &
+          * min( abs( s00 ), abs( sp1 ), coef2*0.5*abs( pp1 ) )
 
       end if
 
