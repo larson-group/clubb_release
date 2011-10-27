@@ -82,20 +82,20 @@ module KK_upscaled_covariances
     = KK_evap_coef &
       * ( mixt_frac &
           * quadrivar_NNLL_covar_eq( mu_x_1, mu_s_1, mu_rr_n, mu_Nr_n, &
-                                   sigma_x_1, sigma_s_1, sigma_rr_n, &
-                                   sigma_Nr_n, corr_xs_1, corr_xrr_1_n, &
-                                   corr_xNr_1_n, corr_srr_1_n, &
-                                   corr_sNr_1_n, corr_rrNr_n, x_mean, &
-                                   KK_evap_tndcy, KK_evap_coef, x_tol, &
-                                   alpha_exp, beta_exp, gamma_exp ) &
+                                     sigma_x_1, sigma_s_1, sigma_rr_n, &
+                                     sigma_Nr_n, corr_xs_1, corr_xrr_1_n, &
+                                     corr_xNr_1_n, corr_srr_1_n, &
+                                     corr_sNr_1_n, corr_rrNr_n, x_mean, &
+                                     KK_evap_tndcy, KK_evap_coef, x_tol, &
+                                     alpha_exp, beta_exp, gamma_exp ) &
         + ( 1.0 - mixt_frac ) &
           * quadrivar_NNLL_covar_eq( mu_x_2, mu_s_2, mu_rr_n, mu_Nr_n, &
-                                   sigma_x_2, sigma_s_2, sigma_rr_n, &
-                                   sigma_Nr_n, corr_xs_2, corr_xrr_2_n, &
-                                   corr_xNr_2_n, corr_srr_2_n, &
-                                   corr_sNr_2_n, corr_rrNr_n, x_mean, &
-                                   KK_evap_tndcy, KK_evap_coef, x_tol, &
-                                   alpha_exp, beta_exp, gamma_exp ) &
+                                     sigma_x_2, sigma_s_2, sigma_rr_n, &
+                                     sigma_Nr_n, corr_xs_2, corr_xrr_2_n, &
+                                     corr_xNr_2_n, corr_srr_2_n, &
+                                     corr_sNr_2_n, corr_rrNr_n, x_mean, &
+                                     KK_evap_tndcy, KK_evap_coef, x_tol, &
+                                     alpha_exp, beta_exp, gamma_exp ) &
         )
 
 
@@ -160,16 +160,16 @@ module KK_upscaled_covariances
     = KK_auto_coef &
       * ( mixt_frac &
           * trivar_NNL_covar_eq( mu_x_1, mu_s_1, mu_Nc_n, &
-                               sigma_x_1, sigma_s_1, sigma_Nc_n, &
-                               corr_xs_1, corr_xNc_1_n, corr_sNc_1_n, &
-                               x_mean, KK_auto_tndcy, KK_auto_coef, &
-                               x_tol, alpha_exp, beta_exp ) &
+                                 sigma_x_1, sigma_s_1, sigma_Nc_n, &
+                                 corr_xs_1, corr_xNc_1_n, corr_sNc_1_n, &
+                                 x_mean, KK_auto_tndcy, KK_auto_coef, &
+                                 x_tol, alpha_exp, beta_exp ) &
         + ( 1.0 - mixt_frac ) &
           * trivar_NNL_covar_eq( mu_x_2, mu_s_2, mu_Nc_n, &
-                               sigma_x_2, sigma_s_2, sigma_Nc_n, &
-                               corr_xs_2, corr_xNc_2_n, corr_sNc_2_n, &
-                               x_mean, KK_auto_tndcy, KK_auto_coef, &
-                               x_tol, alpha_exp, beta_exp ) &
+                                 sigma_x_2, sigma_s_2, sigma_Nc_n, &
+                                 corr_xs_2, corr_xNc_2_n, corr_sNc_2_n, &
+                                 x_mean, KK_auto_tndcy, KK_auto_coef, &
+                                 x_tol, alpha_exp, beta_exp ) &
         )
 
 
@@ -234,16 +234,16 @@ module KK_upscaled_covariances
     = KK_accr_coef &
       * ( mixt_frac &
           * trivar_NNL_covar_eq( mu_x_1, mu_s_1, mu_rr_n, &
-                               sigma_x_1, sigma_s_1, sigma_rr_n, &
-                               corr_xs_1, corr_xrr_1_n, corr_srr_1_n, &
-                               x_mean, KK_accr_tndcy, KK_accr_coef, &
-                               x_tol, alpha_exp, beta_exp ) &
+                                 sigma_x_1, sigma_s_1, sigma_rr_n, &
+                                 corr_xs_1, corr_xrr_1_n, corr_srr_1_n, &
+                                 x_mean, KK_accr_tndcy, KK_accr_coef, &
+                                 x_tol, alpha_exp, beta_exp ) &
         + ( 1.0 - mixt_frac ) &
           * trivar_NNL_covar_eq( mu_x_2, mu_s_2, mu_rr_n, &
-                               sigma_x_2, sigma_s_2, sigma_rr_n, &
-                               corr_xs_2, corr_xrr_2_n, corr_srr_2_n, &
-                               x_mean, KK_accr_tndcy, KK_accr_coef, &
-                               x_tol, alpha_exp, beta_exp ) &
+                                 sigma_x_2, sigma_s_2, sigma_rr_n, &
+                                 corr_xs_2, corr_xrr_2_n, corr_srr_2_n, &
+                                 x_mean, KK_accr_tndcy, KK_accr_coef, &
+                                 x_tol, alpha_exp, beta_exp ) &
         )
 
 
@@ -253,12 +253,12 @@ module KK_upscaled_covariances
 
   !=============================================================================
   function quadrivar_NNLL_covar_eq( mu_x_i, mu_s_i, mu_rr_n, mu_Nr_n, &
-                                  sigma_x_i, sigma_s_i, sigma_rr_n, &
-                                  sigma_Nr_n, corr_xs_i, corr_xrr_i_n, &
-                                  corr_xNr_i_n, corr_srr_i_n, &
-                                  corr_sNr_i_n, corr_rrNr_n, x_mean, &
-                                  mc_tndcy_mean, mc_coef, x_tol, &
-                                  alpha_exp_in, beta_exp_in, gamma_exp_in )
+                                    sigma_x_i, sigma_s_i, sigma_rr_n, &
+                                    sigma_Nr_n, corr_xs_i, corr_xrr_i_n, &
+                                    corr_xNr_i_n, corr_srr_i_n, &
+                                    corr_sNr_i_n, corr_rrNr_n, x_mean, &
+                                    mc_tndcy_mean, mc_coef, x_tol, &
+                                    alpha_exp_in, beta_exp_in, gamma_exp_in )
 
     ! Description:
     ! This function calculates the contribution by the ith PDF component to the
@@ -432,10 +432,10 @@ module KK_upscaled_covariances
           quadrivar_NNLL_covar_eq  &
           = real( &
             quadrivar_NNLL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                            sigma_x3_n, sigma_x4_n, &
-                                            rho_x3x4_n, x1_mean, &
-                                            x2_alpha_x3_beta_x4_gamma_mean, &
-                                            alpha_exp, beta_exp, gamma_exp ) )
+                                              sigma_x3_n, sigma_x4_n, &
+                                              rho_x3x4_n, x1_mean, &
+                                              x2_alpha_x3_beta_x4_gamma_mean, &
+                                              alpha_exp, beta_exp, gamma_exp ) )
 
 
        else  ! mu_x2 > 0
@@ -453,11 +453,11 @@ module KK_upscaled_covariances
        quadrivar_NNLL_covar_eq  &
        = real( &
          quadrivar_NNLL_covar_const_x1( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                      sigma_x2, sigma_x3_n, sigma_x4_n, &
-                                      rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
-                                      x1_mean, &
-                                      x2_alpha_x3_beta_x4_gamma_mean, &
-                                      alpha_exp, beta_exp, gamma_exp ) )
+                                        sigma_x2, sigma_x3_n, sigma_x4_n, &
+                                        rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
+                                        x1_mean, &
+                                        x2_alpha_x3_beta_x4_gamma_mean, &
+                                        alpha_exp, beta_exp, gamma_exp ) )
 
 
     elseif ( sigma_x2 <= x2_tol .or. abs( s_cc ) > parab_cyl_max_input ) then
@@ -470,11 +470,11 @@ module KK_upscaled_covariances
           quadrivar_NNLL_covar_eq  &
           = real( &
             quadrivar_NNLL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                         sigma_x1, sigma_x3_n, sigma_x4_n, &
-                                         rho_x1x3_n, rho_x1x4_n, rho_x3x4_n, &
-                                         x1_mean, &
-                                         x2_alpha_x3_beta_x4_gamma_mean, &
-                                         alpha_exp, beta_exp, gamma_exp ) )
+                                           sigma_x1, sigma_x3_n, sigma_x4_n, &
+                                           rho_x1x3_n, rho_x1x4_n, rho_x3x4_n, &
+                                           x1_mean, &
+                                           x2_alpha_x3_beta_x4_gamma_mean, &
+                                           alpha_exp, beta_exp, gamma_exp ) )
 
 
        else  ! mu_x2 > 0
@@ -492,11 +492,11 @@ module KK_upscaled_covariances
        ! All fields vary in the ith PDF component.
        quadrivar_NNLL_covar_eq  &
        = real( quadrivar_NNLL_covar( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                   sigma_x1, sigma_x2, sigma_x3_n, sigma_x4_n, &
-                                   rho_x1x2, rho_x1x3_n, rho_x1x4_n, &
-                                   rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
-                                   x1_mean, x2_alpha_x3_beta_x4_gamma_mean, &
-                                   alpha_exp, beta_exp, gamma_exp ) )
+                                     sigma_x1, sigma_x2, sigma_x3_n, sigma_x4_n, &
+                                     rho_x1x2, rho_x1x3_n, rho_x1x4_n, &
+                                     rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
+                                     x1_mean, x2_alpha_x3_beta_x4_gamma_mean, &
+                                     alpha_exp, beta_exp, gamma_exp ) )
 
 
     endif
@@ -508,10 +508,10 @@ module KK_upscaled_covariances
 
   !=============================================================================
   function trivar_NNL_covar_eq( mu_x_i, mu_s_i, mu_y_n, &
-                              sigma_x_i, sigma_s_i, sigma_y_n, &
-                              corr_xs_i, corr_xy_i_n, corr_sy_i_n, &
-                              x_mean, mc_tndcy_mean, mc_coef, &
-                              x_tol, alpha_exp_in, beta_exp_in )
+                                sigma_x_i, sigma_s_i, sigma_y_n, &
+                                corr_xs_i, corr_xy_i_n, corr_sy_i_n, &
+                                x_mean, mc_tndcy_mean, mc_coef, &
+                                x_tol, alpha_exp_in, beta_exp_in )
 
     ! Description:
     ! This function calculates the contribution by the ith PDF component to the
@@ -670,8 +670,8 @@ module KK_upscaled_covariances
           trivar_NNL_covar_eq  &
           = real( &
             trivar_NNL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
-                                        x1_mean, x2_alpha_x3_beta_mean, &
-                                        alpha_exp, beta_exp ) )
+                                          x1_mean, x2_alpha_x3_beta_mean, &
+                                          alpha_exp, beta_exp ) )
 
 
        else  ! mu_x2 <= 0
@@ -688,9 +688,9 @@ module KK_upscaled_covariances
        ! The ith PDF component variance of x (r_t, th_l, or w) is 0.
        trivar_NNL_covar_eq  &
        = real( trivar_NNL_covar_const_x1( mu_x1, mu_x2, mu_x3_n, &
-                                        sigma_x2, sigma_x3_n, rho_x2x3_n, &
-                                        x1_mean, x2_alpha_x3_beta_mean, &
-                                        alpha_exp, beta_exp ) )
+                                          sigma_x2, sigma_x3_n, rho_x2x3_n, &
+                                          x1_mean, x2_alpha_x3_beta_mean, &
+                                          alpha_exp, beta_exp ) )
 
 
     elseif ( sigma_x2 <= x2_tol .or. abs( s_c ) > parab_cyl_max_input ) then
@@ -702,9 +702,9 @@ module KK_upscaled_covariances
           ! There is all cloudy air in the ith component ( s > 0 everywhere ).
           trivar_NNL_covar_eq  &
           = real( trivar_NNL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, &
-                                           sigma_x1, sigma_x3_n, rho_x1x3_n, &
-                                           x1_mean, x2_alpha_x3_beta_mean, &
-                                           alpha_exp, beta_exp ) )
+                                             sigma_x1, sigma_x3_n, rho_x1x3_n, &
+                                             x1_mean, x2_alpha_x3_beta_mean, &
+                                             alpha_exp, beta_exp ) )
 
 
        else  ! mu_x2 <= 0
@@ -722,10 +722,10 @@ module KK_upscaled_covariances
        ! All fields vary in the ith PDF component.
        trivar_NNL_covar_eq  &
        = real( trivar_NNL_covar( mu_x1, mu_x2, mu_x3_n, &
-                               sigma_x1, sigma_x2, sigma_x3_n, &
-                               rho_x1x2, rho_x1x3_n, rho_x2x3_n, &
-                               x1_mean, x2_alpha_x3_beta_mean, &
-                               alpha_exp, beta_exp ) )
+                                 sigma_x1, sigma_x2, sigma_x3_n, &
+                                 rho_x1x2, rho_x1x3_n, rho_x2x3_n, &
+                                 x1_mean, x2_alpha_x3_beta_mean, &
+                                 alpha_exp, beta_exp ) )
 
 
     endif
