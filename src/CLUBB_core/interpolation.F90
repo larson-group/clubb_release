@@ -92,7 +92,7 @@ module interpolation
   end function linear_interp_factor
   !-------------------------------------------------------------------------------------------------
   pure function mono_cubic_interp &
-       ( z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp1, fp2 ) result ( f_out )
+    ( z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp1, fp2 ) result ( f_out )
 
   ! Description:
   !   Steffen's monotone cubic interpolation method
@@ -115,7 +115,7 @@ module interpolation
 
     ! Constant Parameters
     logical, parameter :: &
-      l_equation_21 = .false.
+      l_equation_21 = .true.
 
     ! External
     intrinsic :: sign, abs, min
@@ -174,7 +174,7 @@ module interpolation
         p00 = ( sm1 * h00 + s00 * hm1 ) / ( hm1 + h00 )
         dfdx00 = coef1*( sign( 1.0, sm1 ) + sign( 1.0, s00 ) ) &
           * min( abs( sm1 ), abs( s00 ), coef2*0.5*abs( p00 ) )
-        dfdxp1 = sm1
+        dfdxp1 = s00
 
       else
         sm1 = ( f00 - fm1 ) / ( z00 - zm1 )
@@ -200,6 +200,7 @@ module interpolation
       wp1 = ( z_in - z00 ) / ( zp1 - z00 )
       w00 = 1. - wp1
       f_out = wp1 * fp1 + w00 * f00
+
     end if
 
     return

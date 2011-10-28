@@ -1153,6 +1153,7 @@ module grid_class
     ! Return Variable
     real, dimension(gr%nzmax) :: cubic_interpolated_azm
 
+    ! Local Variable(s)
     integer :: k
 
     ! ---- Begin Code ----
@@ -1188,26 +1189,27 @@ module grid_class
     ! Return Variable
     real :: cubic_interpolated_azmk
 
+    ! Local Variable(s)
     integer :: km1, k00, kp1, kp2
 
     ! ---- Begin Code ----
 
     ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
     if ( k == gr%nzmax-1 ) then
-      km1 = k-2
-      kp1 = k+1
-      kp2 = k+1
-      k00 = k
+      km1 = gr%nzmax-2
+      kp1 = gr%nzmax
+      kp2 = gr%nzmax
+      k00 = gr%nzmax-1
     else if ( k == gr%nzmax ) then ! Extrapolation
-      km1 = k
-      kp1 = k
-      kp2 = k
-      k00 = k-1
+      km1 = gr%nzmax
+      kp1 = gr%nzmax
+      kp2 = gr%nzmax
+      k00 = gr%nzmax-1
     else if ( k == 1 ) then
       km1 = 1
       kp1 = 2
       kp2 = 3
-      k00 = k
+      k00 = 1
     else
       km1 = k-1
       kp1 = k+1
@@ -1536,6 +1538,7 @@ module grid_class
     ! Return Variable
     real, dimension(gr%nzmax) :: cubic_interpolated_azt
 
+    ! Local Variable(s)
     integer :: k
 
     ! ---- Begin Code ----
@@ -1572,31 +1575,32 @@ module grid_class
     ! Return Variable
     real :: cubic_interpolated_aztk
 
+    ! Local Variable(s)
     integer :: km1, k00, kp1, kp2
 
     ! ---- Begin Code ----
 
     ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
     if ( k == gr%nzmax ) then
-      km1 = k-2
-      kp1 = k
-      kp2 = k
-      k00 = k-1
-    else if ( k == gr%nzmax-1 ) then
-      km1 = k-1
-      kp1 = k+1
-      kp2 = k+1
-      k00 = k
+      km1 = gr%nzmax-2
+      kp1 = gr%nzmax
+      kp2 = gr%nzmax
+      k00 = gr%nzmax-1
+    else if ( k == 2 ) then
+      km1 = 1
+      kp1 = 2
+      kp2 = 3
+      k00 = 1
     else if ( k == 1 ) then ! Extrapolation for the ghost point
       km1 = gr%nzmax
       k00 = 1
       kp1 = 2
       kp2 = 3
     else
-      km1 = k-1
-      kp1 = k+1
-      kp2 = k+2
-      k00 = k
+      km1 = k-2
+      kp1 = k
+      kp2 = k+1
+      k00 = k-1
     end if
     ! Do the actual interpolation.
     ! Use a cubic monotonic spline interpolation.
