@@ -2324,8 +2324,8 @@ module advance_xm_wpxp_module
     end if
 
     call clip_covar( solve_type_cl, l_first_clip_ts, &  ! In
-                          l_last_clip_ts, dt, wp2, xp2_relaxed, &  ! In
-                          wpxp, wpxp_chnge ) ! In/Out
+                     l_last_clip_ts, dt, wp2, xp2_relaxed, &  ! In
+                     wpxp, wpxp_chnge ) ! In/Out
 
     ! Adjusting xm based on clipping for w'x'.
     if ( any( wpxp_chnge /= 0.0 ) .and. l_clip_turb_adv ) then

@@ -2,11 +2,11 @@
 ! $Id: twp_ice.F90 3363 2009-04-02 21:42:22Z dschanen@uwm.edu $
 module twp_ice
   !
-  !       Description:
-  !       Contains subroutines for the Jan. 2006 TWP_ICE case.
+  ! Description:
+  !   Contains subroutines for the Jan. 2006 TWP_ICE case.
   !
-  !       References:
-  !       http://users.monash.edu.au/~ladavies/gcss.html
+  ! References:
+  !   http://users.monash.edu.au/~ladavies/gcss.html
   !----------------------------------------------------------------------
 
   implicit none
@@ -21,12 +21,12 @@ module twp_ice
   subroutine twp_ice_sfclyr( time, z, exner_sfc, thlm_sfc, & 
                               ubar, rtm, p_sfc,  & 
                               wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
-    !       Description:
-    !       This subroutine computes surface fluxes of horizontal momentum,
-    !       heat and moisture according to GCSS ARM specifications
+    ! Description:
+    !   This subroutine computes surface fluxes of horizontal momentum,
+    !   heat and moisture according to GCSS ARM specifications
     !
-    !       References:
-    !       http://users.monash.edu.au/~ladavies/gcss.html
+    ! References:
+    !   http://users.monash.edu.au/~ladavies/gcss.html
     !----------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Lv, grav ! Variable(s)
@@ -40,7 +40,7 @@ module twp_ice
     use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
                                     time_select                   ! Procedure(s)
 
-    use interpolation, only: factor_interp ! Procedure(s)
+    use interpolation, only: linear_interp_factor ! Procedure(s)
 
     implicit none
 
@@ -89,7 +89,7 @@ module twp_ice
     call time_select( time, size(time_sfc_given), time_sfc_given, &
                        before_time, after_time, time_frac )
 
-    T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
+    T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
                                        T_sfc_given(before_time) )
 
     ! Declare the value of ustar.

@@ -385,8 +385,8 @@ module advance_windm_edsclrm_module
       l_first_clip_ts = .false.
       l_last_clip_ts = .true.
       call clip_covar( clip_upwp, l_first_clip_ts,      & ! intent(in)
-                            l_last_clip_ts, dt, wp2, up2,    & ! intent(in)
-                            upwp, upwp_chnge )                 ! intent(inout)
+                       l_last_clip_ts, dt, wp2, up2,    & ! intent(in)
+                       upwp, upwp_chnge )                 ! intent(inout)
 
       ! Clipping for v'w'
       !
@@ -402,8 +402,8 @@ module advance_windm_edsclrm_module
       l_first_clip_ts = .false.
       l_last_clip_ts = .true.
       call clip_covar( clip_vpwp, l_first_clip_ts,      & ! intent(in)
-                            l_last_clip_ts, dt, wp2, vp2,    & ! intent(in)
-                            vpwp, vpwp_chnge )                 ! intent(inout)
+                       l_last_clip_ts, dt, wp2, vp2,    & ! intent(in)
+                       vpwp, vpwp_chnge )                 ! intent(inout)
 
     else
 
@@ -413,12 +413,12 @@ module advance_windm_edsclrm_module
       l_first_clip_ts = .false.
       l_last_clip_ts = .true.
       call clip_covar( clip_upwp, l_first_clip_ts,      & ! intent(in)
-                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
-                            upwp, upwp_chnge )                 ! intent(inout)
+                       l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
+                       upwp, upwp_chnge )                 ! intent(inout)
 
       call clip_covar( clip_vpwp, l_first_clip_ts,      & ! intent(in)
-                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
-                            vpwp, vpwp_chnge )                 ! intent(inout)
+                       l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
+                       vpwp, vpwp_chnge )                 ! intent(inout)
 
     endif ! l_tke_aniso
 

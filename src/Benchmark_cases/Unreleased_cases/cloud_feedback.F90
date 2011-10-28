@@ -2,11 +2,11 @@
 ! $Id$
 module cloud_feedback
 
-  !       Description:
-  !       Contains subroutines for the Cloud Feedback cases.
+  ! Description:
+  !   Contains subroutines for the Cloud Feedback cases.
   !
-  !       References:
-  !       http://atmgcm.msrc.sunysb.edu/cfmip_figs/Case_specification.html
+  ! References:
+  !   http://atmgcm.msrc.sunysb.edu/cfmip_figs/Case_specification.html
   !----------------------------------------------------------------------
 
   implicit none
@@ -23,12 +23,12 @@ module cloud_feedback
                                     ubar, p_sfc, T_sfc,                &
                                     wpthlp_sfc, wprtp_sfc, ustar )
 
-  !       Description:
-  !       Sets up surface information for the cloud feedback case
+  ! Description:
+  !   Sets up surface information for the cloud feedback case
 
-  !       References: 
-  !       http://cfmip.metoffice.com/
-  !       http://atmgcm.msrc.sunysb.edu/cfmip_figs/Case_specification.html
+  ! References: 
+  !   http://cfmip.metoffice.com/
+  !   http://atmgcm.msrc.sunysb.edu/cfmip_figs/Case_specification.html
   !----------------------------------------------------------------------
 
   use constants_clubb, only: pi, grav, Lv, Cp, p0, kappa ! Variable(s)
@@ -42,7 +42,7 @@ module cloud_feedback
   use time_dependent_input, only: time_sfc_given, T_sfc_given, &! Variable(s)
                                   time_select                   ! Procedure(s)
 
-  use interpolation, only: factor_interp ! Procedure(s)
+  use interpolation, only: linear_interp_factor ! Procedure(s)
 
   implicit none
 
@@ -96,8 +96,8 @@ module cloud_feedback
   call time_select( time, size(time_sfc_given), time_sfc_given, &
                     before_time, after_time, time_frac )
 
-  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
-                                    T_sfc_given(before_time) )
+  T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
+                                T_sfc_given(before_time) )
 
   ! Calculate exner_sfc based on p_sfc.
   exner_sfc = ( p_sfc / p0 )**kappa

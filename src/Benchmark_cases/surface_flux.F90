@@ -94,7 +94,7 @@ module surface_flux
     
     use time_dependent_input, only: latent_ht_given, sens_ht_given, time_sfc_given ! Variable(s)
     
-    use interpolation, only: factor_interp ! Procedure(s)
+    use interpolation, only: linear_interp_factor ! Procedure(s)
     
     implicit none
 
@@ -142,10 +142,8 @@ module surface_flux
         
         if ( time >= time_sfc_given(i1) .and. time < time_sfc_given(i2) ) then
           time_frac = real((time-time_sfc_given(i1))/(time_sfc_given(i2) - time_sfc_given(i1)))
-!          heat_flx     = ( 1. - time_frac ) * sens_ht_given(i1) + time_frac * sens_ht_given(i2)
-          heat_flx = factor_interp( time_frac, sens_ht_given(i2), sens_ht_given(i1) )
-!          moisture_flx = ( 1. - time_frac ) * latent_ht_given(i1) + time_frac * latent_ht_given(i2)
-          moisture_flx = factor_interp( time_frac, latent_ht_given(i2), latent_ht_given(i1) )
+          heat_flx = linear_interp_factor( time_frac, sens_ht_given(i2), sens_ht_given(i1) )
+          moisture_flx = linear_interp_factor( time_frac, latent_ht_given(i2), latent_ht_given(i1) )
           i1 = ntimes
         end if
         

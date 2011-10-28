@@ -7,7 +7,7 @@ module interpolation
   private ! Default Scope
 
   public :: lin_int, binary_search, zlinterp_fnc, & 
-    linear_interpolation, factor_interp, plinterp_fnc
+    linear_interpolation, linear_interp_factor, mono_cubic_interp, plinterp_fnc
 
   contains
 
@@ -72,7 +72,7 @@ module interpolation
   end function lin_int
 
   !-------------------------------------------------------------------------------------------------
-  elemental real function factor_interp( factor, var_high, var_low )
+  elemental real function linear_interp_factor( factor, var_high, var_low )
   ! Description:
   !   Determines the coefficient for a linear interpolation
   ! 
@@ -82,14 +82,128 @@ module interpolation
     implicit none
 
     real, intent(in) :: &
-    factor,   & ! Factor                           [units vary]  
-    var_high, & ! Variable above the interpolation [units vary]
-    var_low     ! Variable below the interpolation [units vary]
+      factor,   & ! Factor                           [units vary]  
+      var_high, & ! Variable above the interpolation [units vary]
+      var_low     ! Variable below the interpolation [units vary]
 
-    factor_interp = factor * ( var_high - var_low ) + var_low
+    linear_interp_factor = factor * ( var_high - var_low ) + var_low
 
     return
-  end function factor_interp
+  end function linear_interp_factor
+  !-------------------------------------------------------------------------------------------------
+  pure function mono_cubic_interp &
+       ( z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp1, fp2 ) result ( f_out )
+
+  ! Description:
+  !   Steffen's monotone cubic interpolation method
+  !   Returns monotone cubic interpolated value between x00 and xp1
+
+  ! Original Author:
+  !   Takanobu Yamaguchi
+  !   tak.yamaguchi@noaa.gov
+  !
+  ! This version has been modified slightly for CLUBB's coding standards and
+  ! adds the 3/2 from eqn 21. -dschanen 26 Oct 2011
+  !
+  ! References:
+  !   M. Steffen, Astron. Astrophys. 239, 443-450 (1990)
+  !-------------------------------------------------------------------------------------------------
+
+    use constants_clubb, only: three_halves
+
+    implicit none
+
+    ! Constant Parameters
+    logical, parameter :: &
+      l_equation_21 = .false.
+
+    ! External
+    intrinsic :: sign, abs, min
+
+    ! Input Variables
+    real, intent(in) :: & 
+      z_in ! The altitude to be interpolated to [m]
+
+    ! k-levels;  their meaning depends on whether we're extrapolating or interpolating
+    integer, intent(in) :: &
+      km1, k00, kp1, kp2 
+
+    real, intent(in) :: &
+      zm1, z00, zp1, zp2, & ! The altitudes for km1, k00, kp1, kp2      [m]
+      fm1, f00, fp1, fp2    ! The field at km1, k00, kp1, and kp2       [units vary]
+
+    ! Output Variables
+    real :: f_out ! The interpolated field
+   
+    ! Local Variables 
+    real :: &
+      hm1, h00, hp1, &
+      sm1, s00, sp1, &
+      p00, pp1, &
+      dfdx00, dfdxp1, &
+      c1, c2, c3, c4, &
+      w00, wp1, &
+      coef1, coef2
+   
+    ! ---- Begin Code ---- 
+
+    if ( l_equation_21 ) then
+      coef1 = three_halves
+      coef2 = 1.0/three_halves
+    else
+      coef1 = 1.0
+      coef2 = 1.0
+    end if
+
+    if ( km1 <= k00 ) then
+      hm1 = z00 - zm1
+      h00 = zp1 - z00
+      hp1 = zp2 - zp1
+
+      if ( km1 == k00 ) then
+        s00 = ( fp1 - f00 ) / ( zp1 - z00 )
+        sp1 = ( fp2 - fp1 ) / ( zp2 - zp1 )
+        dfdx00 = s00
+        pp1 = ( s00 * hp1 + sp1 * h00 ) / ( h00 + hp1 )
+        dfdxp1 = coef1*( sign( 1.0, s00 ) + sign( 1.0, sp1 ) ) &
+          * min( abs( s00 ), abs( sp1 ), coef2*0.5*abs( pp1 ) )
+
+      else if ( kp1 == kp2 ) then
+        sm1 = ( f00 - fm1 ) / ( z00 - zm1 )
+        s00 = ( fp1 - f00 ) / ( zp1 - z00 )
+        p00 = ( sm1 * h00 + s00 * hm1 ) / ( hm1 + h00 )
+        dfdx00 = coef1*( sign( 1.0, sm1 ) + sign( 1.0, s00 ) ) &
+          * min( abs( sm1 ), abs( s00 ), coef2*0.5*abs( p00 ) )
+        dfdxp1 = sm1
+
+      else
+        sm1 = ( f00 - fm1 ) / ( z00 - zm1 )
+        s00 = ( fp1 - f00 ) / ( zp1 - z00 )
+        sp1 = ( fp2 - fp1 ) / ( zp2 - zp1 )
+        p00 = ( sm1 * h00 + s00 * hm1 ) / ( hm1 + h00 )
+        pp1 = ( s00 * hp1 + sp1 * h00 ) / ( h00 + hp1 )
+        dfdx00 = coef1*( sign( 1.0, sm1 ) + sign( 1.0, s00 ) ) &
+          * min( abs( sm1 ), abs( s00 ), coef2*0.5*abs( p00 ) )
+        dfdxp1 = coef1*( sign( 1.0, s00 ) + sign( 1.0, sp1 ) ) &
+          * min( abs( s00 ), abs( sp1 ), coef2*0.5*abs( pp1 ) )
+
+      end if
+
+      c1 = ( dfdx00 + dfdxp1 - 2. * s00 ) / ( h00 ** 2 )
+      c2 = ( 3. * s00 - 2. * dfdx00 - dfdxp1 ) / h00
+      c3 = dfdx00
+      c4 = f00
+      f_out = c1 * ( (z_in - z00) ** 3 ) + c2 * ( (z_in - z00) ** 2 ) + c3 * (z_in - z00) + c4
+
+    else
+      ! Linear extrapolation
+      wp1 = ( z_in - z00 ) / ( zp1 - z00 )
+      w00 = 1. - wp1
+      f_out = wp1 * fp1 + w00 * f00
+    end if
+
+    return
+  end function mono_cubic_interp
 
 !-------------------------------------------------------------------------------
   pure integer function binary_search( n, array, var ) & 

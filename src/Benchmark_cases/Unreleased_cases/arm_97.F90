@@ -36,7 +36,7 @@ module arm_97
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
-    use interpolation, only: factor_interp ! Procedure(s)
+    use interpolation, only: linear_interp_factor ! Procedure(s)
 
     use error_code, only: clubb_debug ! Procedure(s)
 
@@ -91,10 +91,10 @@ module arm_97
       endif
 
 
-      heat_flx = factor_interp( time_frac, sens_ht_given(after_time), &
-                                sens_ht_given(before_time) )
-      moisture_flx = factor_interp( time_frac, latent_ht_given(after_time), &
-                                    latent_ht_given(before_time) )
+      heat_flx = linear_interp_factor( time_frac, sens_ht_given(after_time), &
+                                       sens_ht_given(before_time) )
+      moisture_flx = linear_interp_factor( time_frac, latent_ht_given(after_time), &
+                                           latent_ht_given(before_time) )
 
       ! Convert W/m^2 into w'thl' w'rt' units
       wpthlp_sfc = convert_sens_ht_to_km_s( heat_flx, rho_sfc )     ! (K m/s)

@@ -35,9 +35,9 @@ module clip_explicit
 
   !=============================================================================
   subroutine clip_covars_denom( dt, rtp2, thlp2, up2, vp2, wp2, &
-                                     sclrp2, wprtp_cl_num, wpthlp_cl_num, &
-                                     wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
-                                     wprtp, wpthlp, upwp, vpwp, wpsclrp )
+                                sclrp2, wprtp_cl_num, wpthlp_cl_num, &
+                                wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
+                                wprtp, wpthlp, upwp, vpwp, wpsclrp )
 
     ! Description:
     ! Some of the covariances found in the CLUBB model code need to be clipped
@@ -180,8 +180,8 @@ module clip_explicit
 
     ! Clip w'r_t'
     call clip_covar( clip_wprtp, l_first_clip_ts,   & ! intent(in) 
-                          l_last_clip_ts, dt, wp2, rtp2, & ! intent(in)
-                          wprtp, wprtp_chnge )             ! intent(inout)
+                     l_last_clip_ts, dt, wp2, rtp2, & ! intent(in)
+                     wprtp, wprtp_chnge )             ! intent(inout)
 
     if ( l_stats_samp ) then
       if ( wprtp_cl_num == 1 ) then
@@ -249,8 +249,8 @@ module clip_explicit
 
     ! Clip w'th_l'
     call clip_covar( clip_wpthlp, l_first_clip_ts,   & ! intent(in)
-                          l_last_clip_ts, dt, wp2, thlp2, & ! intent(in)
-                          wpthlp, wpthlp_chnge )            ! intent(inout)
+                     l_last_clip_ts, dt, wp2, thlp2, & ! intent(in)
+                     wpthlp, wpthlp_chnge )            ! intent(inout)
 
 
     if ( l_stats_samp ) then
@@ -304,8 +304,8 @@ module clip_explicit
     ! Clip w'sclr'
     do i = 1, sclr_dim, 1
       call clip_covar( clip_wpsclrp, l_first_clip_ts,           & ! intent(in)
-                            l_last_clip_ts, dt, wp2(:), sclrp2(:,i), & ! intent(in)
-                            wpsclrp(:,i), wpsclrp_chnge(:,i) )         ! intent(inout)
+                       l_last_clip_ts, dt, wp2(:), sclrp2(:,i), & ! intent(in)
+                       wpsclrp(:,i), wpsclrp_chnge(:,i) )         ! intent(inout)
     enddo
 
 
@@ -343,13 +343,13 @@ module clip_explicit
     ! Clip u'w'
     if ( l_tke_aniso ) then
       call clip_covar( clip_upwp, l_first_clip_ts,   & ! intent(in)
-                            l_last_clip_ts, dt, wp2, up2, & ! intent(in)
-                            upwp, upwp_chnge )              ! intent(inout)
+                       l_last_clip_ts, dt, wp2, up2, & ! intent(in)
+                       upwp, upwp_chnge )              ! intent(inout)
     else
       ! In this case, up2 = wp2, and the variable `up2' does not interact
       call clip_covar( clip_upwp, l_first_clip_ts,   & ! intent(in)
-                            l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
-                            upwp, upwp_chnge )              ! intent(inout)
+                       l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
+                       upwp, upwp_chnge )              ! intent(inout)
     end if
 
 
@@ -387,13 +387,13 @@ module clip_explicit
 
     if ( l_tke_aniso ) then
       call clip_covar( clip_vpwp, l_first_clip_ts,   & ! intent(in)
-                            l_last_clip_ts, dt, wp2, vp2, & ! intent(in)
-                            vpwp, vpwp_chnge )              ! intent(inout)
+                       l_last_clip_ts, dt, wp2, vp2, & ! intent(in)
+                       vpwp, vpwp_chnge )              ! intent(inout)
     else
       ! In this case, vp2 = wp2, and the variable `vp2' does not interact
       call clip_covar( clip_vpwp, l_first_clip_ts,   & ! intent(in)
-                            l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
-                            vpwp, vpwp_chnge )              ! intent(inout)
+                       l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
+                       vpwp, vpwp_chnge )              ! intent(inout)
     end if
 
 
@@ -402,8 +402,8 @@ module clip_explicit
 
   !=============================================================================
   subroutine clip_covar( solve_type, l_first_clip_ts,  & 
-                              l_last_clip_ts, dt, xp2, yp2,  & 
-                              xpyp, xpyp_chnge )
+                         l_last_clip_ts, dt, xp2, yp2,  & 
+                         xpyp, xpyp_chnge )
 
     ! Description:
     ! Clipping the value of covariance x'y' based on the correlation between x

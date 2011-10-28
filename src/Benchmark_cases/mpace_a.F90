@@ -66,7 +66,7 @@ module mpace_a
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use interpolation, only: zlinterp_fnc, factor_interp ! Procedure(s)
+    use interpolation, only: zlinterp_fnc, linear_interp_factor ! Procedure(s)
 
     use clubb_precision, only: time_precision ! Variable(s)
 
@@ -82,27 +82,27 @@ module mpace_a
 
     ! Local constants, subsidence
     real, parameter :: & 
-    p_sfc  = 101000.   ! Pa
+      p_sfc  = 101000.   ! Pa
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
-    time  ! Current time of simulation      [s]
+      time  ! Current time of simulation      [s]
 
     real, dimension(gr%nzmax), intent(in) :: & 
-    p_in_Pa  ! Pressure                               [Pa]
+      p_in_Pa  ! Pressure                               [Pa]
 
     ! Output Variables
     real, dimension(gr%nzmax), intent(out) ::  & 
-    wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
-    wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
-    thlm_forcing, & ! Large-scale thlm tendency               [K/s]
-    rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
+      wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
+      wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
+      thlm_forcing, & ! Large-scale thlm tendency               [K/s]
+      rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
 
     real, intent(out), dimension(gr%nzmax,sclr_dim) :: & 
-    sclrm_forcing ! Passive scalar LS tendency            [units/s]
+      sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
     real, intent(out), dimension(gr%nzmax,edsclr_dim) :: & 
-    edsclrm_forcing ! Eddy-passive scalar forcing         [units/s]
+      edsclrm_forcing ! Eddy-passive scalar forcing         [units/s]
 
     ! Local Variables, general
     integer :: i, k ! Loop indices
@@ -154,16 +154,16 @@ module mpace_a
 !     .                      -omega_forcing(k,before_time))
 !     .                     + omega_forcing(k,before_time)
 
-      dTdt_column(k)  = factor_interp( ratio, dTdt_forcing(k, after_time), &
-                                       dTdt_forcing(k, before_time) )
-      dqdt_column(k)  = factor_interp( ratio, dqdt_forcing(k, after_time), &
-                                       dqdt_forcing(k, before_time) )
-      vertT_column(k) = factor_interp( ratio, vertT_forcing(k,after_time), &
-                                       vertT_forcing(k,before_time) )
-      vertq_column(k) = factor_interp( ratio, vertq_forcing(k,after_time), &
-                                       vertq_forcing(k,before_time) )
-      um_column(k)    = factor_interp( ratio, um_obs(k, after_time), um_obs(k, before_time) )
-      vm_column(k)    = factor_interp( ratio, vm_obs(k, after_time), vm_obs(k, before_time) )
+      dTdt_column(k)  = linear_interp_factor( ratio, dTdt_forcing(k, after_time), &
+                                              dTdt_forcing(k, before_time) )
+      dqdt_column(k)  = linear_interp_factor( ratio, dqdt_forcing(k, after_time), &
+                                              dqdt_forcing(k, before_time) )
+      vertT_column(k) = linear_interp_factor( ratio, vertT_forcing(k,after_time), &
+                                              vertT_forcing(k,before_time) )
+      vertq_column(k) = linear_interp_factor( ratio, vertq_forcing(k,after_time), &
+                                              vertq_forcing(k,before_time) )
+      um_column(k)    = linear_interp_factor( ratio, um_obs(k, after_time), um_obs(k, before_time) )
+      vm_column(k)    = linear_interp_factor( ratio, vm_obs(k, after_time), vm_obs(k, before_time) )
     end do
 
 !     Do linear interpolation in space
@@ -244,7 +244,7 @@ module mpace_a
 
     use error_code, only: clubb_debug ! Procedure(s)
 
-    use interpolation, only: factor_interp ! Procedure(s)
+    use interpolation, only: linear_interp_factor ! Procedure(s)
 
     ! Note that this subroutine is from time_dependent_input, but 
     ! mpace_a does not have time_dependent input.
@@ -292,10 +292,10 @@ module mpace_a
       call clubb_debug(1, "file_times not sorted in MPACE_A")
     endif
 
-    latent_heat_flx = factor_interp( ratio, file_latent_ht(after_time), &
+    latent_heat_flx = linear_interp_factor( ratio, file_latent_ht(after_time), &
                                             file_latent_ht(before_time) )
 
-    sensible_heat_flx = factor_interp( ratio, file_sens_ht(after_time), &
+    sensible_heat_flx = linear_interp_factor( ratio, file_sens_ht(after_time), &
                                               file_sens_ht(before_time) )
 
     ! Compute heat and moisture fluxes

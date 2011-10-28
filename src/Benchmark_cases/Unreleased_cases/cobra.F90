@@ -32,7 +32,7 @@ module cobra
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-  use interpolation, only: factor_interp
+  use interpolation, only: linear_interp_factor
 
   use clubb_precision, only: time_precision ! Variable(s)
 
@@ -108,19 +108,19 @@ module cobra
   ! Compute heat and moisture fluxes from ARM data in (W/m2)
 
   ! Use time_select to caluclate the indexes before and after time
-  ! and the time fraction necessary for factor_interp
+  ! and the time fraction necessary for linear_interp_factor
   call time_select( time, ntimes, time_sfc_given, &
                     before_time, after_time, time_frac )
 
   ! Interpolate fluxes
-  heat_flx = factor_interp( time_frac, sens_ht_given(after_time), &
-                                       sens_ht_given(before_time) )
-  moisture_flx = factor_interp( time_frac, latent_ht_given(after_time), &
-                                           latent_ht_given(before_time) )
-  CO2_flx = factor_interp( time_frac, CO2_sfc_given(after_time), &
-                                      CO2_sfc_given(before_time) )
-  T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
-                                    T_sfc_given(before_time) )
+  heat_flx = linear_interp_factor( time_frac, sens_ht_given(after_time), &
+                                   sens_ht_given(before_time) )
+  moisture_flx = linear_interp_factor( time_frac, latent_ht_given(after_time), &
+                                       latent_ht_given(before_time) )
+  CO2_flx = linear_interp_factor( time_frac, CO2_sfc_given(after_time), &
+                                  CO2_sfc_given(before_time) )
+  T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
+                                T_sfc_given(before_time) )
 
   ! Convert heat_flx and moisture_flx to natural units
   heat_flx2     = convert_sens_ht_to_km_s( heat_flx, rho_sfc )    ! (K m/s)

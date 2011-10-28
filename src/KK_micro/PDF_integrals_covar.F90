@@ -19,11 +19,11 @@ module PDF_integrals_covars
 
   !=============================================================================
   function quadrivar_NNLL_covar( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                               sigma_x1, sigma_x2, sigma_x3_n, sigma_x4_n, &
-                               rho_x1x2, rho_x1x3_n, rho_x1x4_n, &
-                               rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
-                               x1_mean, x2_alpha_x3_beta_x4_gamma_mean, &
-                               alpha_exp, beta_exp, gamma_exp )
+                                 sigma_x1, sigma_x2, sigma_x3_n, sigma_x4_n, &
+                                 rho_x1x2, rho_x1x3_n, rho_x1x4_n, &
+                                 rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
+                                 x1_mean, x2_alpha_x3_beta_x4_gamma_mean, &
+                                 alpha_exp, beta_exp, gamma_exp )
 
     ! Description:
 
@@ -113,7 +113,7 @@ module PDF_integrals_covars
             + sqrt(pi_dp/2.0) * ( mu_x1 - x1_mean )  &
               * erfc( mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
             )  &
-        ) ! Known magic number
+        )
 
     return
 
@@ -121,11 +121,11 @@ module PDF_integrals_covars
 
   !=============================================================================
   function quadrivar_NNLL_covar_const_x1( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                        sigma_x2, sigma_x3_n, sigma_x4_n, &
-                                        rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
-                                        x1_mean, &
-                                        x2_alpha_x3_beta_x4_gamma_mean, &
-                                        alpha_exp, beta_exp, gamma_exp )
+                                          sigma_x2, sigma_x3_n, sigma_x4_n, &
+                                          rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
+                                          x1_mean, &
+                                          x2_alpha_x3_beta_x4_gamma_mean, &
+                                          alpha_exp, beta_exp, gamma_exp )
 
     ! Description:
 
@@ -198,7 +198,7 @@ module PDF_integrals_covars
           * Dv_fnc( -(alpha_exp + 1.0), s_cc )  &
         - x2_alpha_x3_beta_x4_gamma_mean  &
           * sqrt(pi_dp/2.0) * erfc( mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
-        ) ! Known magic number
+        )
 
     return
 
@@ -206,11 +206,11 @@ module PDF_integrals_covars
 
   !=============================================================================
   function quadrivar_NNLL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                        sigma_x1, sigma_x3_n, sigma_x4_n, &
-                                        rho_x1x3_n, rho_x1x4_n, rho_x3x4_n, &
-                                        x1_mean, &
-                                        x2_alpha_x3_beta_x4_gamma_mean, &
-                                        alpha_exp, beta_exp, gamma_exp )
+                                          sigma_x1, sigma_x3_n, sigma_x4_n, &
+                                          rho_x1x3_n, rho_x1x4_n, rho_x3x4_n, &
+                                          x1_mean, &
+                                          x2_alpha_x3_beta_x4_gamma_mean, &
+                                          alpha_exp, beta_exp, gamma_exp )
 
     ! Description:
 
@@ -267,10 +267,10 @@ module PDF_integrals_covars
 
   !=============================================================================
   function quadrivar_NNLL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                           sigma_x3_n, sigma_x4_n, &
-                                           rho_x3x4_n, x1_mean, &
-                                           x2_alpha_x3_beta_x4_gamma_mean, &
-                                           alpha_exp, beta_exp, gamma_exp )
+                                             sigma_x3_n, sigma_x4_n, &
+                                             rho_x3x4_n, x1_mean, &
+                                             x2_alpha_x3_beta_x4_gamma_mean, &
+                                             alpha_exp, beta_exp, gamma_exp )
 
     ! Description:
 
@@ -322,10 +322,10 @@ module PDF_integrals_covars
 
   !=============================================================================
   function trivar_NNL_covar( mu_x1, mu_x2, mu_x3_n, &
-                           sigma_x1, sigma_x2, sigma_x3_n, &
-                           rho_x1x2, rho_x1x3_n, rho_x2x3_n, &
-                           x1_mean, x2_alpha_x3_beta_mean, &
-                           alpha_exp, beta_exp )
+                             sigma_x1, sigma_x2, sigma_x3_n, &
+                             rho_x1x2, rho_x1x3_n, rho_x2x3_n, &
+                             x1_mean, x2_alpha_x3_beta_mean, &
+                             alpha_exp, beta_exp )
 
     ! Description:
 
@@ -397,7 +397,7 @@ module PDF_integrals_covars
             + sqrt(pi_dp/2.0) * ( mu_x1 - x1_mean )  &
               * erfc( - mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
             )  &
-        ) ! Known magic number
+        )
 
     return
 
@@ -405,9 +405,9 @@ module PDF_integrals_covars
 
   !=============================================================================
   function trivar_NNL_covar_const_x1( mu_x1, mu_x2, mu_x3_n, &
-                                    sigma_x2, sigma_x3_n, rho_x2x3_n, &
-                                    x1_mean, x2_alpha_x3_beta_mean, &
-                                    alpha_exp, beta_exp )
+                                      sigma_x2, sigma_x3_n, rho_x2x3_n, &
+                                      x1_mean, x2_alpha_x3_beta_mean, &
+                                      alpha_exp, beta_exp )
 
     ! Description:
 
@@ -466,7 +466,7 @@ module PDF_integrals_covars
           * Dv_fnc( -(alpha_exp + 1.0), -s_c )  &
         - x2_alpha_x3_beta_mean  &
           * sqrt(pi_dp/2.0) * erfc( - mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
-        ) ! Known magic number
+        )
 
     return
 
@@ -474,9 +474,9 @@ module PDF_integrals_covars
 
   !=============================================================================
   function trivar_NNL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, &
-                                    sigma_x1, sigma_x3_n, rho_x1x3_n, &
-                                    x1_mean, x2_alpha_x3_beta_mean, &
-                                    alpha_exp, beta_exp )
+                                      sigma_x1, sigma_x3_n, rho_x1x3_n, &
+                                      x1_mean, x2_alpha_x3_beta_mean, &
+                                      alpha_exp, beta_exp )
 
     ! Description:
 
@@ -524,8 +524,8 @@ module PDF_integrals_covars
 
   !=============================================================================
   function trivar_NNL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
-                                       x1_mean, x2_alpha_x3_beta_mean, &
-                                       alpha_exp, beta_exp )
+                                         x1_mean, x2_alpha_x3_beta_mean, &
+                                         alpha_exp, beta_exp )
 
     ! Description:
 

@@ -115,7 +115,7 @@ module astex_a209
 
     use saturation, only: sat_mixrat_liq ! Procedure(s)
 
-    use interpolation, only: factor_interp ! Procedure(s)
+    use interpolation, only: linear_interp_factor ! Procedure(s)
 
     use clubb_precision, only: time_precision ! Variable(s)
 
@@ -190,13 +190,13 @@ module astex_a209
     ustar = 0.155
 
     ! Use time_select to determine the time indexes before and after time
-    ! and to calculate the time fraction necessary for factor_interp
+    ! and to calculate the time fraction necessary for linear_interp_factor
     call time_select(time, ntimes, time_sfc_given, &
                 before_time, after_time, time_frac)
 
     ! Interpolate the value for T_sfc based on time.
-    T_sfc = factor_interp( time_frac, T_sfc_given(after_time), &
-                           T_sfc_given(before_time) )
+    T_sfc = linear_interp_factor( time_frac, T_sfc_given(after_time), &
+                                  T_sfc_given(before_time) )
    
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm, T_sfc, exner_sfc )
     wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
