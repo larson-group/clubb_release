@@ -1154,13 +1154,16 @@ module grid_class
     real, dimension(gr%nzmax) :: cubic_interpolated_azm
 
     ! Local Variable(s)
+    real, dimension(gr%nzmax) :: tmp ! This is needed for variables that self-reference
     integer :: k
 
     ! ---- Begin Code ----
 
-    do k = 1, gr%nzmax
-      cubic_interpolated_azm(k) = cubic_interpolated_azmk( azt, k )
-    end do
+    forall( k = 1 : gr%nzmax )
+      tmp(k) = cubic_interpolated_azmk( azt, k )
+    end forall
+
+    cubic_interpolated_azm = tmp
 
     return
 
@@ -1539,13 +1542,16 @@ module grid_class
     real, dimension(gr%nzmax) :: cubic_interpolated_azt
 
     ! Local Variable(s)
+    real, dimension(gr%nzmax) :: tmp ! This is needed for variables that self-reference
     integer :: k
 
     ! ---- Begin Code ----
 
-    do k = 1, gr%nzmax
-      cubic_interpolated_azt(k) = cubic_interpolated_aztk( azm, k )
-    end do
+    forall ( k = 1 : gr%nzmax )
+      tmp(k) = cubic_interpolated_aztk( azm, k )
+    end forall
+
+    cubic_interpolated_azt = tmp
 
     return
 
