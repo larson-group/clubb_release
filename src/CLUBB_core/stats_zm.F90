@@ -184,7 +184,9 @@ module stats_zm
         iwprtp_mfl_max
 
     use stats_variables, only: & 
-      iwm_zm ! Variable
+      iwm_zm,  &  ! Variable
+      irtm_zm, &
+      ithlm_zm
 
     use stats_variables, only: & 
         isclrprtp, & 
@@ -1318,6 +1320,18 @@ module stats_zm
         iwm_zm = k
         call stat_assign( iwm_zm, "wm_zm", & 
              "Vertical (w) wind [m/s]", "m/s", zm )
+        k = k + 1
+
+      case ('rtm_zm')
+        irtm_zm = k
+        call stat_assign( irtm_zm, "rtm_zm", & 
+             "Total water mixing ratio [kg/kg]", "kg/kg", zm )
+        k = k + 1
+
+      case ('thlm_zm')
+        ithlm_zm = k
+        call stat_assign( ithlm_zm, "thlm_zm", & 
+             "Liquid potential temperature [K]", "K", zm )
         k = k + 1
 
       case ( 'tp2_mellor_1' )

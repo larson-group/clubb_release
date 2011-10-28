@@ -1172,6 +1172,7 @@ module stats_subs
                      p_in_Pa, exner, rho, rho_zm, &
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, &
                      thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, &
+                     rtm_zm, thlm_zm, &
                      cloud_frac, rcm_in_layer, cloud_cover, &
                      sigma_sqd_w, pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
@@ -1338,7 +1339,9 @@ module stats_subs
       iAKm_rcc
 
     use stats_variables, only: &
-      iLH_rcm_avg
+      iLH_rcm_avg, &
+      irtm_zm, &
+      ithlm_zm
 
     use stats_variables, only: &
       itp2_mellor_1, & ! Variables
@@ -1496,6 +1499,8 @@ module stats_subs
       wm_zm           ! w on momentum levels                     [m/s]
 
     real, intent(in), dimension(gr%nzmax) :: & 
+      rtm_zm,       & ! Total water mixing ratio                 [kg/kg]
+      thlm_zm,      & ! Liquid potential temperature             [K]
       rcm,          & ! Cloud water mixing ratio                 [kg/kg]
       wprcp,        & ! w'rc'                                    [(kg/kg) m/s]
       cloud_frac,   & ! Cloud fraction                           [-]
@@ -1540,7 +1545,7 @@ module stats_subs
 
 
       if ( iT_in_K > 0 .or. irsati > 0 ) then
-        T_in_K = thlm2T_in_K( thlm, exner, rcm)
+        T_in_K = thlm2T_in_K( thlm, exner, rcm )
       else
         T_in_K = -999.
       end if
@@ -1693,6 +1698,9 @@ module stats_subs
       call stat_update_var( iSkw_velocity, Skw_velocity, zm )
       call stat_update_var( ia3_coef, a3_coef, zm )
       call stat_update_var( iwp3_on_wp2, wp3_on_wp2, zm )
+
+      call stat_update_var( irtm_zm, rtm_zm, zm )
+      call stat_update_var( ithlm_zm, thlm_zm, zm )
 
       if ( sclr_dim > 0 ) then
         do i=1, sclr_dim
