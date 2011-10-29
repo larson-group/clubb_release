@@ -38,15 +38,18 @@ module mg_micro_driver_module
       
     use stats_variables, only: & 
       zt, &  ! Variables
+      sfc, &
       irsnowm, &
       irrainm, &
+      irain_rate_sfc, &
       ieff_rad_cloud, &
       ieff_rad_ice, &
       ieff_rad_rain, &
       ieff_rad_snow
 
     use stats_type, only:  & 
-      stat_update_var
+      stat_update_var, &
+      stat_update_var_pt
       
     use cldwat2m_micro, only: &
       mmicro_pcond ! Procedure
@@ -85,7 +88,9 @@ module mg_micro_driver_module
       
     use constants_clubb, only: &
       rc_tol, & ! Variable
-      rt_tol
+      rt_tol, &
+      sec_per_day, &
+      mm_per_m
 
     use shr_kind_mod, only: r8 => shr_kind_r8 
 
@@ -184,6 +189,10 @@ module mg_micro_driver_module
       nacon_flip      ! number of 4 dust bins for contact nucleation [units unknown]
       
     ! MG Output Variables
+    real(r8), dimension(1) :: &
+      prect,        & ! Surface precipitation rate                                    [m/s]
+      preci           ! Unused
+
     real(r8), dimension(nz-1) :: &
       tlat_flip,     & ! Latent heating rate                                  [W/kg]
       rcm_mc_flip,   & ! Time tendency of liquid water mixing ratio           [kg/kg/s]
@@ -198,7 +207,7 @@ module mg_micro_driver_module
       
     ! MG zt variables that are not used in CLUBB.
     real(r8), dimension(nz-1) :: &
-      rate1ord_cw2pr_st_flip, effc_fn_flip, prect_flip, preci_flip,            &
+      rate1ord_cw2pr_st_flip, effc_fn_flip,                                    &
       nevapr_flip, evapsnow_flip, prain_flip, prodsnow_flip, cmeout_flip,      &
       deffi_flip, pgamrad_flip, lamcrad_flip, dsout_flip, qcsevap_flip,        &
       qisevap_flip, qvres_flip, cmeiout_flip, vtrmc_flip, vtrmi_flip,          &
@@ -376,7 +385,7 @@ module mg_micro_driver_module
          tlat_flip, rvm_mc_flip,                                                             &! out
          rcm_mc_flip, hydromet_mc_flip(:,iiricem), hydromet_mc_flip(:,iiNcm), &
          hydromet_mc_flip(:,iiNim), effc_flip,                                               &! out
-         effc_fn_flip, effi_flip, prect_flip, preci_flip,                                    &! out
+         effc_fn_flip, effi_flip, prect, preci,                                              &! out
          nevapr_flip, evapsnow_flip,                                                         &! out
          prain_flip, prodsnow_flip, cmeout_flip, deffi_flip, pgamrad_flip,                   &! out
          lamcrad_flip, qsout_flip, dsout_flip,                                               &! out
@@ -422,6 +431,9 @@ module mg_micro_driver_module
       call stat_update_var( ieff_rad_ice, effi(:), zt )
       call stat_update_var( ieff_rad_rain, reff_rain(:), zt)
       call stat_update_var( ieff_rad_snow, reff_snow(:), zt)
+
+      ! Rain rates at the bottom of the domain, in mm/day
+      call stat_update_var_pt( irain_rate_sfc, 1, prect(1) * real( mm_per_m * sec_per_day ), sfc)
       
     end if ! l_stats_samp
 
