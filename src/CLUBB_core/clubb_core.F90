@@ -115,7 +115,6 @@ module clubb_core
       gr,  & ! Variable(s)
       zm2zt,  & ! Procedure(s)
       zt2zm, & 
-      zt2zm_cubic, & 
       ddzm
 
     use numerical_check, only: & 
@@ -346,8 +345,7 @@ module clubb_core
     ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
 
     logical, parameter :: &
-      l_iter_xp2_xpyp = .true., & ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
-      l_cubic_interp  = .false.    ! Use a cubic interpolation for rtm_zm and thlm_zm
+      l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
 
     !!! Input Variables
     logical, intent(in) ::  & 
@@ -797,11 +795,7 @@ module clubb_core
       ! Interpolate sclrm to the momentum level for use in
       ! the second call to pdf_closure
       do i = 1, sclr_dim
-        if ( l_cubic_interp ) then
-          sclrm_zm(:,i) = zt2zm_cubic( sclrm(:,i) )
-        else
-          sclrm_zm(:,i) = zt2zm( sclrm(:,i) )
-        end if
+        sclrm_zm(:,i) = zt2zm( sclrm(:,i) )
       end do ! i = 1, sclr_dim
 
       ! Interpolate pressure, p_in_Pa, to momentum levels.
@@ -818,13 +812,8 @@ module clubb_core
       ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
       exner_zm(:) = (p_in_Pa_zm(:)/p0)**kappa
 
-      if ( l_cubic_interp ) then
-        rtm_zm  = zt2zm_cubic( rtm )
-        thlm_zm = zt2zm_cubic( thlm )
-      else
-        rtm_zm  = zt2zm( rtm )
-        thlm_zm = zt2zm( thlm )
-      end if
+      rtm_zm  = zt2zm( rtm )
+      thlm_zm = zt2zm( thlm )
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       do k = 1, gr%nzmax, 1
@@ -1359,7 +1348,7 @@ module clubb_core
            p_in_Pa, exner, rho, rho_zm,                       & ! intent(in)
            rho_ds_zm, rho_ds_zt, thv_ds_zm,                   & ! intent(in)
            thv_ds_zt, wm_zt, wm_zm, rcm, wprcp,               & ! intent(in)
-           rtm_zm, thlm_zm,                                   & ! intent(in)
+           rcm_zm, rtm_zm, thlm_zm,                           & ! intent(in)
            cloud_frac, rcm_in_layer, cloud_cover,             & ! intent(in)
            sigma_sqd_w, pdf_params,                           & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & ! intent(in)

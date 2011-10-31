@@ -1172,16 +1172,16 @@ module stats_subs
                      p_in_Pa, exner, rho, rho_zm, &
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, &
                      thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, &
-                     rtm_zm, thlm_zm, &
+                     rcm_zm, rtm_zm, thlm_zm, &
                      cloud_frac, rcm_in_layer, cloud_cover, &
                      sigma_sqd_w, pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
                      wpsclrp, edsclrm, edsclrm_forcing )
 
     ! Description:
-    ! Accumulate those stats variables that are preserved in CLUBB from timestep to
-    ! timestep, but not those stats that are not, (e.g. budget terms, longwave and
-    ! shortwave components, etc. )
+    !   Accumulate those stats variables that are preserved in CLUBB from timestep to
+    !   timestep, but not those stats that are not, (e.g. budget terms, longwave and
+    !   shortwave components, etc.)
     !----------------------------------------------------------------------
 
     use stats_variables, only: & 
@@ -1340,6 +1340,7 @@ module stats_subs
 
     use stats_variables, only: &
       iLH_rcm_avg, &
+      ircm_zm, &
       irtm_zm, &
       ithlm_zm
 
@@ -1499,6 +1500,7 @@ module stats_subs
       wm_zm           ! w on momentum levels                     [m/s]
 
     real, intent(in), dimension(gr%nzmax) :: & 
+      rcm_zm,       & ! Total water mixing ratio                 [kg/kg]
       rtm_zm,       & ! Total water mixing ratio                 [kg/kg]
       thlm_zm,      & ! Liquid potential temperature             [K]
       rcm,          & ! Cloud water mixing ratio                 [kg/kg]
@@ -1699,6 +1701,7 @@ module stats_subs
       call stat_update_var( ia3_coef, a3_coef, zm )
       call stat_update_var( iwp3_on_wp2, wp3_on_wp2, zm )
 
+      call stat_update_var( ircm_zm, rcm_zm, zm )
       call stat_update_var( irtm_zm, rtm_zm, zm )
       call stat_update_var( ithlm_zm, thlm_zm, zm )
 

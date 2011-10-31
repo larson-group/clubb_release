@@ -145,11 +145,11 @@ module grid_class
   public :: gr, grid, zt2zm, interp_weights_zt2zm_imp, zm2zt, & 
             interp_weights_zm2zt_imp, ddzm, ddzt, & 
             setup_grid, cleanup_grid, setup_grid_heights, &
-            read_grid_heights, flip, zt2zm_cubic, zm2zt_cubic
+            read_grid_heights, flip, zt2zm_linear, zm2zt_linear
 
-  private :: interpolated_azm, interpolated_azmk, & 
-             interpolated_azmk_imp, interpolated_azt, & 
-             interpolated_aztk, interpolated_aztk_imp, & 
+  private :: linear_interpolated_azm, linear_interpolated_azmk, & 
+             interpolated_azmk_imp, linear_interpolated_azt, & 
+             linear_interpolated_aztk, interpolated_aztk_imp, & 
              gradzm, gradzt, t_above, t_below, m_above, m_below, &
              cubic_interpolated_azmk, cubic_interpolated_aztk, &
              cubic_interpolated_azm, cubic_interpolated_azt
@@ -211,21 +211,33 @@ module grid_class
   ! Interfaces provided for function overloading
 
   ! Interpolation/extension functions
-  interface zt2zm
+  interface zt2zm_linear
     ! This performs a linear extension at the highest grid level and therefore
     ! does not guarantee, for positive definite quantities (e.g. wp2), that the
     ! extended point is indeed positive definite.  Positive definiteness can be
     ! ensured with a max statement.
     ! In the future, we could add a flag (lposdef) and, when needed, apply the
     ! max statement directly within interpolated_azm and interpolated_azmk.
-    module procedure interpolated_azm, interpolated_azmk
+    module procedure linear_interpolated_azmk, linear_interpolated_azm
   end interface
 
-  interface zt2zm_cubic
+  interface zm2zt_linear
+    ! This performs a linear extension at the lowest grid level and therefore
+    ! does not guarantee, for positive definite quantities (e.g. wp2), that the
+    ! extended point is indeed positive definite.  Positive definiteness can be
+    ! ensured with a max statement.
+    ! In the future, we could add a flag (lposdef) and, when needed, apply the
+    ! max statement directly within interpolated_azt and interpolated_aztk.
+    module procedure linear_interpolated_azt, linear_interpolated_aztk
+  end interface
+
+  interface zt2zm
+    ! This version uses cublic spline interpolation of Stefen (1990).
     module procedure cubic_interpolated_azmk, cubic_interpolated_azm
   end interface
 
-  interface zm2zt_cubic
+  interface zm2zt
+    ! As above, but for interpolating zm to zt levels.
     module procedure cubic_interpolated_aztk, cubic_interpolated_azt
   end interface
 
@@ -233,15 +245,6 @@ module grid_class
     module procedure interpolated_azmk_imp
   end interface
 
-  interface zm2zt
-    ! This performs a linear extension at the lowest grid level and therefore
-    ! does not guarantee, for positive definite quantities (e.g. wp2), that the
-    ! extended point is indeed positive definite.  Positive definiteness can be
-    ! ensured with a max statement.
-    ! In the future, we could add a flag (lposdef) and, when needed, apply the
-    ! max statement directly within interpolated_azt and interpolated_aztk.
-    module procedure interpolated_azt, interpolated_aztk
-  end interface
 
   interface interp_weights_zm2zt_imp
     module procedure interpolated_aztk_imp
@@ -1038,7 +1041,7 @@ module grid_class
   end subroutine read_grid_heights
 
   !=============================================================================
-  pure function interpolated_azm( azt )
+  pure function linear_interpolated_azm( azt )
 
     ! Description:
     ! Function to interpolate a variable located on the thermodynamic grid
@@ -1055,7 +1058,7 @@ module grid_class
     real, intent(in), dimension(gr%nzmax) :: azt
 
     ! Return Variable
-    real, dimension(gr%nzmax) :: interpolated_azm
+    real, dimension(gr%nzmax) :: linear_interpolated_azm
 
     ! Local Variable
     integer :: k
@@ -1065,27 +1068,27 @@ module grid_class
     ! Do the actual interpolation.
     ! Use linear interpolation.
     forall( k = 1 : gr%nzmax-1 : 1 )
-      interpolated_azm(k) = &
+      linear_interpolated_azm(k) = &
          linear_interp_factor( gr%weights_zt2zm(1, k), azt(k+1), azt(k) )
     end forall
 
 !    ! Set the value of azm at level gr%nzmax (the uppermost level in the model)
 !    ! to the value of azt at level gr%nzmax.
-!    interpolated_azm(gr%nzmax) = azt(gr%nzmax)
+!    linear_interpolated_azm(gr%nzmax) = azt(gr%nzmax)
     ! Use a linear extension based on the values of azt at levels gr%nzmax and
     ! gr%nzmax-1 to find the value of azm at level gr%nzmax (the uppermost level
     ! in the model).
-    interpolated_azm(gr%nzmax) =  & 
+    linear_interpolated_azm(gr%nzmax) =  & 
        ( ( azt(gr%nzmax)-azt(gr%nzmax-1) ) & 
          / ( gr%zt(gr%nzmax)-gr%zt(gr%nzmax-1) ) ) & 
         * ( gr%zm(gr%nzmax)-gr%zt(gr%nzmax) ) + azt(gr%nzmax)
 
     return
 
-  end function interpolated_azm
+  end function linear_interpolated_azm
 
   !=============================================================================
-  pure function interpolated_azmk( azt, k )
+  pure function linear_interpolated_azmk( azt, k )
 
     ! Description:
     ! Function to interpolate a variable located on the thermodynamic grid
@@ -1105,7 +1108,7 @@ module grid_class
     integer, intent(in) :: k
 
     ! Return Variable
-    real :: interpolated_azmk
+    real :: linear_interpolated_azmk
 
     ! ---- Begin Code ----
 
@@ -1113,18 +1116,18 @@ module grid_class
     ! Use a linear interpolation.
     if ( k /= gr%nzmax ) then
 
-      interpolated_azmk = &
+      linear_interpolated_azmk = &
          linear_interp_factor( gr%weights_zt2zm(1, k), azt(k+1), azt(k) )
 
     else
 
 !       ! Set the value of azm at level gr%nzmax (the uppermost level in the
 !       ! model) to the value of azt at level gr%nzmax.
-!       interpolated_azmk = azt(gr%nzmax)
+!       linear_interpolated_azmk = azt(gr%nzmax)
       ! Use a linear extension based on the values of azt at levels gr%nzmax and
       ! gr%nzmax-1 to find the value of azm at level gr%nzmax (the uppermost
       ! level in the model).
-      interpolated_azmk =  & 
+      linear_interpolated_azmk =  & 
          ( ( azt(gr%nzmax)-azt(gr%nzmax-1) ) & 
            / ( gr%zt(gr%nzmax)-gr%zt(gr%nzmax-1) ) ) & 
           * ( gr%zm(gr%nzmax)-gr%zt(gr%nzmax) ) + azt(gr%nzmax)
@@ -1133,7 +1136,7 @@ module grid_class
 
     return
 
-  end function interpolated_azmk
+  end function linear_interpolated_azmk
 
   !=============================================================================
   pure function cubic_interpolated_azm( azt )
@@ -1177,7 +1180,6 @@ module grid_class
     ! levels (azt) to the momentum grid levels (azm).  This function outputs the
     ! value of azm at a single grid level (k) using Steffen's monotonic cubic
     ! interpolation implemented by Tak Yamaguchi.
-    ! TODO: Fix for less than 4 levels.
     !-----------------------------------------------------------------------
 
     use interpolation, only: mono_cubic_interp
@@ -1196,6 +1198,12 @@ module grid_class
     integer :: km1, k00, kp1, kp2
 
     ! ---- Begin Code ----
+
+    ! Special case for a very small domain
+    if ( gr%nzmax < 3 ) then
+      cubic_interpolated_azmk = linear_interpolated_azmk( azt, k )
+      return
+    end if
 
     ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
     if ( k == gr%nzmax-1 ) then
@@ -1219,6 +1227,7 @@ module grid_class
       kp2 = k+2
       k00 = k
     end if
+
     ! Do the actual interpolation.
     ! Use a cubic monotonic spline interpolation.
     cubic_interpolated_azmk = &
@@ -1431,7 +1440,7 @@ module grid_class
   end function interpolated_azmk_imp
 
   !=============================================================================
-  pure function interpolated_azt( azm )
+  pure function linear_interpolated_azt( azm )
 
     ! Description:
     ! Function to interpolate a variable located on the momentum grid levels
@@ -1448,7 +1457,7 @@ module grid_class
     real, intent(in), dimension(gr%nzmax) :: azm
 
     ! Output Variable
-    real, dimension(gr%nzmax) :: interpolated_azt
+    real, dimension(gr%nzmax) :: linear_interpolated_azt
 
     ! Local Variable
     integer :: k  ! Index
@@ -1458,7 +1467,7 @@ module grid_class
     ! Do actual interpolation.
     ! Use a linear interpolation.
     forall( k = gr%nzmax : 2 : -1 )
-      interpolated_azt(k) = &
+      linear_interpolated_azt(k) = &
          linear_interp_factor( gr%weights_zm2zt(1, k), azm(k), azm(k-1) )
     end forall ! gr%nzmax .. 2
 !    ! Set the value of azt at level 1 (the lowermost level in the model) to the
@@ -1466,16 +1475,16 @@ module grid_class
 !    interpolated_azt(1) = azm(1)
     ! Use a linear extension based on the values of azm at levels 1 and 2 to
     ! find the value of azt at level 1 (the lowermost level in the model).
-    interpolated_azt(1) = & 
+    linear_interpolated_azt(1) = & 
        ( ( azm(2)-azm(1) ) / ( gr%zm(2)-gr%zm(1) ) ) & 
         * ( gr%zt(1)-gr%zm(1) ) + azm(1)
 
     return
 
-  end function interpolated_azt
+  end function linear_interpolated_azt
 
   !=============================================================================
-  pure function interpolated_aztk( azm, k )
+  pure function linear_interpolated_aztk( azm, k )
 
     ! Description:
     ! Function to interpolate a variable located on the momentum grid levels
@@ -1495,7 +1504,7 @@ module grid_class
     integer, intent(in) :: k
 
     ! Return Variables
-    real :: interpolated_aztk
+    real :: linear_interpolated_aztk
 
     ! ---- Begin Code ----
 
@@ -1503,17 +1512,17 @@ module grid_class
     ! Use a linear interpolation.
     if ( k /= 1 ) then
 
-      interpolated_aztk = &
+      linear_interpolated_aztk = &
          linear_interp_factor( gr%weights_zm2zt(1, k), azm(k), azm(k-1) )
 
     else
 
 !       ! Set the value of azt at level 1 (the lowermost level in the model) to
 !       ! the value of azm at level 1.
-!       interpolated_aztk = azm(1)
+!       linear_interpolated_aztk = azm(1)
       ! Use a linear extension based on the values of azm at levels 1 and 2 to
       ! find the value of azt at level 1 (the lowermost level in the model).
-      interpolated_aztk = & 
+      linear_interpolated_aztk = & 
          ( ( azm(2)-azm(1) ) / ( gr%zm(2)-gr%zm(1) ) ) & 
           * ( gr%zt(1)-gr%zm(1) ) + azm(1)
 
@@ -1521,7 +1530,7 @@ module grid_class
 
     return
 
-  end function interpolated_aztk
+  end function linear_interpolated_aztk
 
   !=============================================================================
   pure function cubic_interpolated_azt( azm )
@@ -1562,11 +1571,13 @@ module grid_class
   pure function cubic_interpolated_aztk( azm, k )
 
     ! Description:
-    ! Function to interpolate a variable located on the momentum grid
-    ! levels (azm) to the thermodynamic grid levels (azt).  This function outputs the
-    ! value of azt at a single grid level (k) using Steffen's monotonic cubic
-    ! interpolation implemented by Tak Yamaguchi.
-    ! TODO: Fix for less than 4 levels.
+    !   Function to interpolate a variable located on the momentum grid
+    !   levels (azm) to the thermodynamic grid levels (azt).  This function outputs the
+    !   value of azt at a single grid level (k) using Steffen's monotonic cubic
+    !   interpolation implemented by Tak Yamaguchi.
+    !
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     use interpolation, only: mono_cubic_interp
@@ -1585,6 +1596,12 @@ module grid_class
     integer :: km1, k00, kp1, kp2
 
     ! ---- Begin Code ----
+
+    ! Special case for a very small domain
+    if ( gr%nzmax < 3 ) then
+      cubic_interpolated_aztk = linear_interpolated_aztk( azm, k )
+      return
+    end if
 
     ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
     if ( k == gr%nzmax ) then

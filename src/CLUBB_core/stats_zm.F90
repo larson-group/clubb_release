@@ -185,6 +185,7 @@ module stats_zm
 
     use stats_variables, only: & 
       iwm_zm,  &  ! Variable
+      ircm_zm, &
       irtm_zm, &
       ithlm_zm
 
@@ -1320,6 +1321,12 @@ module stats_zm
         iwm_zm = k
         call stat_assign( iwm_zm, "wm_zm", & 
              "Vertical (w) wind [m/s]", "m/s", zm )
+        k = k + 1
+
+      case ('rcm_zm')
+        ircm_zm = k
+        call stat_assign( ircm_zm, "rcm_zm", & 
+             "Total water mixing ratio [kg/kg]", "kg/kg", zm )
         k = k + 1
 
       case ('rtm_zm')
