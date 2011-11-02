@@ -5,9 +5,9 @@
     'name' => 'dycoms2_rf01_fixed_sst',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'DYCOMS II RF01 Fixed SST Minutes 1380-1440',
-    'startTime' => 1380.0,  # [minutes]
-    'endTime' => 1440.0,    # [minutes]
+    'headerText' => 'DYCOMS II RF01 Fixed SST Minutes 2520-2700',
+    'startTime' => 2520.0,  # [minutes]
+    'endTime' => 2700.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 1200.0, # [m]
     'plots' =>
