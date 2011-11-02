@@ -153,6 +153,16 @@ F0 = 70.0,    ! Coefficient for cloud top heating (see Stevens) [W/m^2]
 F1 = 22.0,    ! Coefficient for cloud base heating (see Stevens) [W/m^2] 
 kappa = 85.0, ! A constant (Duynkerke eqn. 5)                   [m^2/kg] 
 l_rad_above_cloud = .true.,
+eff_drop_radius = 1.0e-5, ! Effective droplet radius            [m]
+alvdr = 0.1,   ! Visible direct surface albedo                  [-]
+gc    = 0.85,  ! Asymmetry parameter, "g" in Duynkerke          [-]
+omega = 0.992, ! Single-scattering albedo                       [-]
+! The incident of incoming SW insolation at cloud top the
+! direction of the incoming beam (not the vertical)   [W/m^2]
+Fs_values = 1212.75,
+l_sw_radiation = .true.,
+l_fix_cos_solar_zen = .false.,
+
 /
 
 
