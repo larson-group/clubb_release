@@ -53,8 +53,8 @@ time_initial = 21600.0  ! Model start time [seconds since midnight UTC on start 
 time_final =  183600.0   ! Model end time [seconds since midnight UTC on start date]
 
 
-dt_main    = 300.0   ! Model timestep [s]
-dt_rad = 300.0   ! Radiation timestep [s] 
+dt_main = 300.0   ! Model timestep [s]
+dt_rad  = 300.0   ! Radiation timestep [s] 
 
 l_t_dependent = .true. ! Read values from _surface.in file. Also read
                        ! _forcings.in file if l_ignore_forcings
@@ -152,7 +152,7 @@ rad_scheme = "simplified",
 F0 = 70.0,    ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
 F1 = 22.0,    ! Coefficient for cloud base heating (see Stevens) [W/m^2] 
 kappa = 85.0, ! A constant (Duynkerke eqn. 5)                   [m^2/kg] 
-l_rad_above_cloud = .true.,
+l_rad_above_cloud = .false.,
 eff_drop_radius = 1.0e-5, ! Effective droplet radius            [m]
 alvdr = 0.1,   ! Visible direct surface albedo                  [-]
 gc    = 0.85,  ! Asymmetry parameter, "g" in Duynkerke          [-]
