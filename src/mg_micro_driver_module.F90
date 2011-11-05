@@ -12,8 +12,8 @@ module mg_micro_driver_module
   subroutine mg_microphys_driver &
              ( dt, nz, l_stats_samp, l_local_kk, l_latin_hypercube, &
                thlm, p_in_Pa, exner, rho, pdf_params, &
-               rcm, rvm, Ncnm, hydromet, hydromet_mc, &
-               hydromet_vel, rcm_mc, rvm_mc, thlm_mc, wp2_zt)
+               wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
+               hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
 !   Wrapper for the Morrison-Gettelman microphysics
 ! References:
@@ -41,6 +41,7 @@ module mg_micro_driver_module
       sfc, &
       irsnowm, &
       irrainm, &
+      iswp, &
       irain_rate_sfc, &
       ieff_rad_cloud, &
       ieff_rad_ice, &
@@ -56,6 +57,9 @@ module mg_micro_driver_module
       
     use microp_aero, only: &
       microp_aero_ts ! Procedure
+
+    use cldwat2m_macro, only: &
+      aist_vector ! Procedure
     
     use variables_diagnostic_module, only: &
       Kh_zm, &
@@ -70,18 +74,14 @@ module mg_micro_driver_module
       tmelt,  &
       latice, &
       latvap, &
+      gravit, &
       epsilo
       
     use ppgrid, only: &
       init_ppgrid ! Procedure
       
-    use phys_buffer, only: & ! Used for placing wp2_zt in morrison-gettelman microphysics
-      pbuf_add,            &
-      pbuf_allocate
-
     use phys_buffer, only: &
-      pbuf, &      ! Variable
-      pbuf_setval  ! Procedure
+      pbuf        ! Variable
       
     use grid_class, only: &
       flip ! Procedure
@@ -119,10 +119,15 @@ module mg_micro_driver_module
       pdf_params ! PDF parameters
 
     real, dimension(nz), intent(in) :: &
+      wm,        & ! Mean w                         [m/s]
+      w_std_dev, & ! Standard deviation of w        [m/s]
+      dzq,       & ! Difference in heights          [m]
+      s_mellor     ! The variable 's' from Mellor   [kg/kg]
+
+    real, dimension(nz), intent(in) :: &
       rcm,      & ! Liquid water mixing ratio          [kg/kg]
-      rvm,      & ! Vapor water mixing ratio           [kg/kg]
-      Ncnm,     & ! Cloud nuclei number concentration  [count/m^3]
-      wp2_zt      ! w'^2 on the thermo. grid           [m^2/s^2]
+      rvm         ! Vapor water mixing ratio           [kg/kg]
+      !Ncnm        ! Cloud nuclei number concentration  [count/m^3]
 
     real, dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -139,6 +144,9 @@ module mg_micro_driver_module
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
     ! Local Variables
+
+    logical :: l_microp_aero_ts ! Use microp_aero_ts to determine aerosols
+
     real, dimension(nz) :: & 
       T_in_K,       & ! Temperature                                                   [K]
       T_in_K_new,   & ! Temperature after microphysics                                [K]
@@ -147,6 +155,7 @@ module mg_micro_driver_module
       rcm_new,      & ! Cloud water mixing ratio after microphysics                   [kg/kg]
       rsnowm,       & ! Snow mixing ratio (not in hydromet, output straight to stats) [kg/kg]
       rrainm,       & ! Rain mixing ratio (not in hydromet, output straight to stats) [kg/kg]
+      pdel,         & ! Difference in air pressure between vertical levels            [Pa]
       effc,         & ! Droplet effective radius                                      [μ]
       effi,         & ! cloud ice effective radius                                    [μ]
       reff_rain,    & ! rain effective radius                                         [μ]
@@ -180,7 +189,7 @@ module mg_micro_driver_module
       liqcldf_flip, & ! Liquid cloud fraction                                [-]
       icecldf_flip, & ! Ice cloud fraction                                   [-]
       naai_flip,    & ! number of activated ice nuclei                       [1/kg]
-      !rho_flip,     & ! Density on thermo. grid                              [kg/m^3]
+      rho_flip,     & ! Density on thermo. grid                              [kg/m^3]
       npccn_flip,   & ! Number of cloud nuclei                               [count/m^3]
       unused_in       ! Represents MG variables that are not used in the current code
       
@@ -231,7 +240,13 @@ module mg_micro_driver_module
     ! Some dummy assignments to make compiler warnings go away...
     if ( .false. ) then
       if ( l_local_kk ) stop
+      dum = dble(wm)
+      dum = dble(w_std_dev)
+      dum = dble(dzq)
+      dum = dble(s_mellor)
     end if
+
+    l_microp_aero_ts = .true.
     
     unused_in(:) = -9999.9_r8
     
@@ -246,6 +261,7 @@ module mg_micro_driver_module
     reff_snow(:) = 0.0
     rsnowm(:) = 0.0
     rrainm(:) = 0.0
+    pdel(:) = 0.0
     tlat(:) = 0.0
     rcm_new(:) = 0.0
     T_in_K_new(:) = 0.0
@@ -308,19 +324,19 @@ module mg_micro_driver_module
       else
         cldn_flip(i) = 0._r8
       end if
-      liqcldf_flip(i) = cldn_flip(i)
-      icecldf_flip(i) = cldn_flip(i)
 
+      liqcldf_flip(i) = cldn_flip(i)
     end do
+
+    ! TODO rvm=qv_in(pcols) Grid-mean water vapor[kg/kg]?
+    ! TODO land fraction?
+    ! TODO snowh_in - Snow depth (liquid water equivalent)?
+    call aist_vector(rvm_flip, T_in_K_flip, p_in_Pa_flip, hydromet_flip(:,iiricem), &
+                     rvm_flip, rvm_flip, icecldf_flip, 1)
     
     ! Initialize grid variables. These are imported in the MG code.
     call init_ppgrid( nz )
 
-    ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
-    call pbuf_add( 'WP2', 1, nz, 1 )
-    call pbuf_allocate()
-    call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
-    
     call gestbl(173.16_r8, 375.16_r8, 20.00_r8, .true., real( epsilo, kind=r8), &
                  real( latvap, kind=r8), real( latice, kind=r8), real( rh2o, kind=r8), &
                  real( cpair, kind=r8), real( tmelt, kind=r8) ) ! Known magic flag
@@ -333,35 +349,10 @@ module mg_micro_driver_module
     ! Prescribe droplet concentration
     hydromet_flip(:,iiNcm) = 1e8_r8
     
-    !---------------------------------------------------------------------------------------
-    ! This code block initializes outputs of the microp_aero_ts subroutine in case we
-    ! decide not to use it. If microp_aero_ts is called, this code block can be commented
-    ! out.
-    !
-    !rho_flip(1:nz-1) = real( flip( dble(rho(2:nz) ), nz-1 ), kind=r8 )
-    !npccn_flip(1:nz-1) = real( flip( dble(Ncnm(2:nz) ), nz-1 ), kind=r8 )
-    !
-    ! Determine ice nulceation number using Meyers formula found in the Morrison microphysics
-    !naai_flip(i) = exp( -2.80_r8 + 0.262_r8 * ( dble(T_freeze_K ) - dble(T_in_K_flip(i)) ) ) &
-    !               * 1000.0_r8 / rho_flip(i)
-    !
-    ! Set values for radius of 4 dust bins for contact freezing. Currently, we assume
-    ! nacon = 0 therby ommitting contact nucleation, but this is set regardless.
-    !rndst_flip(:,1) = 0.001_r8
-    !rndst_flip(:,2) = 0.01_r8
-    !rndst_flip(:,3) = 0.1_r8
-    !rndst_flip(:,4) = 1.0_r8
-    !nacon_flip(:,1:4) = 0.0_r8
-    !----------------------------------------------------------------------------------------
+    if( l_microp_aero_ts ) then
 
-    ! These variables are unused in CLUBB, so they are initialized to 1 before input into
-    ! microp_aero_ts. 
-    aer_mmr_flip(:,:,:) = 1._r8
-    turbtype_flip(:) = 1._r8
-    smaw_flip(:) = 1._r8
-    
-    ! Calculate aerosol activiation, dust size, and number for contact nucleation
-    call microp_aero_ts &
+      ! Calculate aerosol activiation, dust size, and number for contact nucleation
+      call microp_aero_ts &
          ( 0, 1, real( dt, kind=r8), T_in_K_flip, unused_in, &                                ! in
          rvm_flip, rcm_flip, hydromet_flip(:,iiricem), &                                      ! in
          hydromet_flip(:,iiNcm), hydromet_flip(:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &! in
@@ -371,6 +362,31 @@ module mg_micro_driver_module
          pbuf, &
          Kh_zm_flip, em_flip, turbtype_flip, smaw_flip, wsub_flip, wsubi_flip, &
          naai_flip, naai_hom_flip, npccn_flip, rndst_flip, nacon_flip )                       ! out
+
+    else
+
+      rho_flip(1:nz-1) = real( flip( dble(rho(2:nz) ), nz-1 ), kind=r8 )
+      npccn_flip(1:nz-1) = 0.0_r8 !real( flip( dble(Ncnm(2:nz) ), nz-1 ), kind=r8 )TODO Get Ncnm in here
+
+      ! Determine ice nulceation number using Meyers formula found in the Morrison microphysics
+      naai_flip(i) = exp( -2.80_r8 + 0.262_r8 * ( dble(T_freeze_K ) - dble(T_in_K_flip(i)) ) ) &
+                     * 1000.0_r8 / rho_flip(i)
+
+      ! Set values for radius of 4 dust bins for contact freezing. Currently, we assume
+      ! nacon = 0 therby ommitting contact nucleation, but this is set regardless.
+      rndst_flip(:,1) = 0.001_r8
+      rndst_flip(:,2) = 0.01_r8
+      rndst_flip(:,3) = 0.1_r8
+      rndst_flip(:,4) = 1.0_r8
+      nacon_flip(:,1:4) = 0.0_r8
+
+    end if
+
+    ! These variables are unused in CLUBB, so they are initialized to 1 before input into
+    ! microp_aero_ts. 
+    aer_mmr_flip(:,:,:) = 1._r8
+    turbtype_flip(:) = 1._r8
+    smaw_flip(:) = 1._r8
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond                                                                        &
@@ -408,6 +424,7 @@ module mg_micro_driver_module
     tlat(2:nz) = real( flip( dble(tlat_flip(1:nz-1) ), nz-1 ) )
     rsnowm(2:nz) = real( flip( dble(qsout_flip(1:nz-1) ), nz-1 ) )
     rrainm(2:nz) = real( flip( dble(qrout_flip(1:nz-1) ), nz-1 ) )
+    pdel(2:nz) = real( flip( dble(pdel_flip(1:nz-1) ), nz-1 ) )
 
     do i = 1, hydromet_dim, 1      
       hydromet_mc(2:nz, i) = real( hydromet_mc_flip(nz-1:1:-1, i) )
@@ -433,7 +450,10 @@ module mg_micro_driver_module
       call stat_update_var( ieff_rad_snow, reff_snow(:), zt)
 
       ! Rain rates at the bottom of the domain, in mm/day
-      call stat_update_var_pt( irain_rate_sfc, 1, prect(1) * real( mm_per_m * sec_per_day ), sfc)
+      call stat_update_var_pt( irain_rate_sfc, 1, &
+                               real( prect(1) ) * mm_per_m * real(sec_per_day), sfc)
+
+      call stat_update_var_pt( iswp, 1, real( rsnowm(1) / max( 0.0001, real(cldn_flip(1)) ) * pdel(1) / gravit ), sfc )
       
     end if ! l_stats_samp
 

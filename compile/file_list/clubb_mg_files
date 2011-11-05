@@ -13,7 +13,9 @@
 ../src/MG_micro_dependencies/physconst.F90
 ../src/MG_micro_dependencies/phys_buffer.F90
 ../src/MG_micro_dependencies/phys_control.F90
+../src/MG_micro_dependencies/phys_debug_util.F90
 ../src/MG_micro_dependencies/ppgrid.F90
 ../src/MG_micro_dependencies/rad_constituents.F90
 ../src/MG_micro_dependencies/shr_kind_mod.F90
 ../src/MG_micro_dependencies/spmd_utils.F90
+../src/MG_micro_dependencies/time_manager.F90

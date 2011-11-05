@@ -1132,6 +1132,13 @@ module microphys_driver
       vertical_avg, & ! Procedure(s)
       fill_holes_driver
 
+    use phys_buffer, only: & ! Used for placing wp2_zt in morrison-gettelman microphysics
+      pbuf_add,            &
+      pbuf_allocate,       &
+      pbuf_setval
+
+    use shr_kind_mod, only: r8 => shr_kind_r8
+
     use parameters_microphys, only: &
       LH_microphys_type, & ! Determines how the LH samples are used
       LH_microphys_interactive,     & ! Feed the subcolumns into the microphysics and allow feedback
@@ -1469,16 +1476,15 @@ module microphys_driver
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef LATIN_HYPERCUBE
-!       call LH_microphys_driver &
-!            ( real( dt ), gr%nzmax, LH_microphys_calls, d_variables, & ! In
-!              X_nl_all_levs, LH_rt, LH_thl, & ! In
-!              pdf_params, p_in_Pa, exner, rho, & ! In
-!              rcm, wtmp, delta_zt, cloud_frac, & ! In
-!              hydromet, X_mixt_comp_all_levs, & !In 
-!              hydromet_mc, hydromet_vel_zt, & ! In/Out
-!              rcm_mc, rvm_mc, thlm_mc,  & ! Out
-!              mg_microphys_driver )  ! Procedure
-        stop "Latin hypercube is not setup for MG yet"
+       call LH_microphys_driver &
+            ( real( dt ), gr%nzmax, LH_microphys_calls, d_variables, & ! In
+              X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
+              pdf_params, p_in_Pa, exner, rho, & ! In
+              rcm, wtmp, delta_zt, cloud_frac, & ! In
+              hydromet, X_mixt_comp_all_levs, & !In 
+              hydromet_mc, hydromet_vel_zt, & ! In/Out
+              rcm_mc, rvm_mc, thlm_mc,  & ! Out
+              mg_microphys_driver )  ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
 #endif
@@ -1491,11 +1497,19 @@ module microphys_driver
       if ( LH_microphys_type /= LH_microphys_interactive ) then
         l_local_kk_input = .false.
         l_latin_hypercube_input = .false.
+
+    ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
+    ! Placed here because parameters cannot be changed on mg_microphys_driver with
+    ! the way LH is currently set up.
+    call pbuf_add( 'WP2', 1, gr%nzmax, 1 )
+    call pbuf_allocate()
+    call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
+
         call mg_microphys_driver &
           ( real( dt ), gr%nzmax, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
               thlm, p_in_Pa, exner, rho, pdf_params, &
-              rcm, rtm-rcm, Ncnm, hydromet, hydromet_mc, &
-              hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc, wp2_zt)
+              wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
+              hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
       end if
           
     case ( "khairoutdinov_kogan" )
