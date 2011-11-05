@@ -2540,14 +2540,14 @@ subroutine mmicro_pcond ( sub_column,       &
 
 ! make sure freezing rain doesn't increase temperature above threshold
           dum = xlf/cpp*qrtot/(dz(i,k)*rho(i,k))
-          !if (t(i,k)+tlat(i,k)/cpp*deltat+dum.gt.(tmelt - 5._r8)) then
+          if (t(i,k)+tlat(i,k)/cpp*deltat+dum.gt.(tmelt - 5._r8)) then
            dum = -(t(i,k)+tlat(i,k)/cpp*deltat-(tmelt-5._r8))*cpp/xlf
            dum = dum/(xlf/cpp*qrtot/(dz(i,k)*rho(i,k)))
            dum = max(0._r8,dum)
            dum = min(1._r8,dum)
-          !else
-          !   dum = 1._r8
-          !end if
+          else
+             dum = 1._r8
+          end if
             
 	      qniic(i,k)=qniic(i,k)+dum*qric(i,k)
 	      nsic(i,k)=nsic(i,k)+dum*nric(i,k)
