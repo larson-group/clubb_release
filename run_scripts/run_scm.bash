@@ -252,10 +252,11 @@ then
 		mv "../output/$run_case"_zm.ctl "$OUTPUT_DIR"/CLUBB_current/
 		mv "../output/$run_case"_zm.dat "$OUTPUT_DIR"/CLUBB_current/
 		case $run_case in
-			# We only run TWP_ICE and Cloud Feedback once so we want to keep the SFC files.
+			# We only run TWP_ICE, Cloud Feedback, and Dycoms2_rf01_fixed_sst once so we 
+			# want to keep the SFC files.
 			# The other cases are rerun with stats_tout = 1 minute (or 5 minutes for RICO),
 			# and sfc files from the second run are used in the nightly plots for these cases.
-			twp_ice | cloud_feedback* )
+			twp_ice | cloud_feedback* | dycoms2_rf01_fixed_sst )
 				mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
 				mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
 				;;
@@ -272,7 +273,7 @@ then
 	# Note, we do not run TWP_ICE and Cloud Feedback a second time because
 	# they are 25- and 30-day simulations.
 	case $run_case in 
-		twp_ice | cloud_feedback* )
+		twp_ice | cloud_feedback* | dycoms2_rf01_fixed_sst )
 			;;
 		* )
 			case $run_case in 
