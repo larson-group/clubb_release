@@ -143,7 +143,8 @@ module interpolation
       dfdx00, dfdxp1, &
       c1, c2, c3, c4, &
       w00, wp1, &
-      coef1, coef2
+      coef1, coef2, &
+      zprime
    
     ! ---- Begin Code ---- 
 
@@ -189,11 +190,16 @@ module interpolation
 
       end if
 
-      c1 = ( dfdx00 + dfdxp1 - 2. * s00 ) / ( h00 ** 2 )
+      c1 = ( dfdx00 + dfdxp1 - 2. * s00 ) / ( h00**2 )
       c2 = ( 3. * s00 - 2. * dfdx00 - dfdxp1 ) / h00
       c3 = dfdx00
       c4 = f00
-      f_out = c1 * ( (z_in - z00) ** 3 ) + c2 * ( (z_in - z00) ** 2 ) + c3 * (z_in - z00) + c4
+
+      ! Old formula
+!     f_out = c1 * ( (z_in - z00)**3 ) + c2 * ( (z_in - z00)**2 ) + c3 * (z_in - z00) + c4
+      ! Faster nested multiplication
+      zprime = z_in - z00
+      f_out =  c4 + zprime*( c3 + zprime*( c2 + ( zprime*c1 ) ) )
 
     else
       ! Linear extrapolation
