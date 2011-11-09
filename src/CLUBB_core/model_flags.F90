@@ -60,7 +60,7 @@ module model_flags
   logical, parameter, public :: & 
     l_upwind_wpxp_ta = .false., & 
     l_upwind_xpyp_ta = .true.,  &
-    l_upwind_xm_ma   = .false.
+    l_upwind_xm_ma   = .true.
 
 
   logical, parameter, public :: &
