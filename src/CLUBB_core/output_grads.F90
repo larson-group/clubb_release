@@ -568,12 +568,12 @@ module output_grads
     else if ( grads_file%ia < grads_file%iz ) then
       write(unit=grads_file%iounit,fmt='(a,i5,a)')  & 
         'ZDEF', abs(grads_file%iz-grads_file%ia)+1,' LEVELS '
-      write(unit=grads_file%iounit,fmt='(8f10.2)')  & 
+      write(unit=grads_file%iounit,fmt='(6f13.4)')  & 
         (grads_file%z(i-grads_file%ia+1),i=grads_file%ia,grads_file%iz)
     else
       write(unit=grads_file%iounit,fmt='(a,i5,a)')  & 
         'ZDEF',abs(grads_file%iz-grads_file%ia)+1,' LEVELS '
-      write(grads_file%iounit,'(8f10.2)') (grads_file%z(grads_file%ia-i+1), &
+      write(grads_file%iounit,'(6f13.4)') (grads_file%z(grads_file%ia-i+1), &
         i=grads_file%ia,grads_file%iz,-1)
     end if
 
