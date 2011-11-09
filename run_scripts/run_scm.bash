@@ -234,9 +234,18 @@ then
 	# The regular expression used here matches:
 	# 'stats_tout' (0 or > whitespaces) '=' (0 or > whitespaces) (0 or > characters)
 	# and replaces it with 'stats_tout = 3600.'
-	cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 3600\./g' >> $NAMELISTS
-	cat $stats_file >> $NAMELISTS
-	run_case
+	case $run_case in
+		dycoms2_rf01_fixed_sst )
+			cat $model_file >> $NAMELISTS
+			cat $stats_file >> $NAMELISTS
+			run_case
+			;;
+		* )
+			cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 3600\./g' >> $NAMELISTS
+			cat $stats_file >> $NAMELISTS
+			run_case
+			;;
+		esac
 
 	# Move the ZT and ZM files out of the way
 	if [ "$RESULT" != 0 ]; then

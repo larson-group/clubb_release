@@ -147,7 +147,7 @@
     ],
     'nightlyOutput' =>
     {
-        'subText' => '',
+        'subText' => 'Ran with a 5 min timestep and a 48-level grid',
         'subHtml' => ''
     },
     'additionalOutput' =>
