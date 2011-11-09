@@ -2603,7 +2603,7 @@ module clubb_driver
         input_thv_ds_zm, input_thv_ds_zt, &
         input_Lscale, input_Lscale_up, input_Lscale_down, & 
         input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
-        input_wpthvp, &
+        input_wpthvp, input_radht, &
         input_thl1, input_thl2, input_mixt_frac, input_s1, input_s2, &
         input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
         input_thvm, input_rrainm,input_Nrm,  & 
@@ -2708,6 +2708,7 @@ module clubb_driver
     input_stdev_s2  = .true.
     input_rc1  = .true.
     input_rc2  = .true.
+    input_radht = .true.
 
     select case ( trim( micro_scheme ) )
     case ( "coamps" )
@@ -3014,7 +3015,7 @@ module clubb_driver
           ( time_current, gr%nzmax, rtm, rho, exner,& ! In
             thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, & ! In/Out
             wm_zt, wm_zm, ug, vg, & ! In/Out
-        sclrm_forcing, edsclrm_forcing ) ! In/Out
+            sclrm_forcing, edsclrm_forcing ) ! In/Out
 
       ! Vince Larson set forcing to zero at the top point so that we don't need
       ! so much sponge damping, which is associated with sawtooth noise
