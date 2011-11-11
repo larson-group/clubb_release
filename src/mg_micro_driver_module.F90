@@ -58,9 +58,6 @@ module mg_micro_driver_module
     use microp_aero, only: &
       microp_aero_ts ! Procedure
 
-    use cldwat2m_macro, only: &
-      aist_vector ! Procedure
-    
     use variables_diagnostic_module, only: &
       Kh_zm, &
       em
@@ -147,6 +144,8 @@ module mg_micro_driver_module
 
     logical :: l_microp_aero_ts ! Use microp_aero_ts to determine aerosols
 
+    real :: cldfsnow ! Radiative cloud fraction at sfc level for calcuating swp       [-]
+
     real, dimension(nz) :: & 
       T_in_K,       & ! Temperature                                                   [K]
       T_in_K_new,   & ! Temperature after microphysics                                [K]
@@ -155,7 +154,6 @@ module mg_micro_driver_module
       rcm_new,      & ! Cloud water mixing ratio after microphysics                   [kg/kg]
       rsnowm,       & ! Snow mixing ratio (not in hydromet, output straight to stats) [kg/kg]
       rrainm,       & ! Rain mixing ratio (not in hydromet, output straight to stats) [kg/kg]
-      pdel,         & ! Difference in air pressure between vertical levels            [Pa]
       effc,         & ! Droplet effective radius                                      [μ]
       effi,         & ! cloud ice effective radius                                    [μ]
       reff_rain,    & ! rain effective radius                                         [μ]
@@ -261,7 +259,6 @@ module mg_micro_driver_module
     reff_snow(:) = 0.0
     rsnowm(:) = 0.0
     rrainm(:) = 0.0
-    pdel(:) = 0.0
     tlat(:) = 0.0
     rcm_new(:) = 0.0
     T_in_K_new(:) = 0.0
@@ -326,13 +323,8 @@ module mg_micro_driver_module
       end if
 
       liqcldf_flip(i) = cldn_flip(i)
+      icecldf_flip(i) = cldn_flip(i)
     end do
-
-    ! TODO rvm=qv_in(pcols) Grid-mean water vapor[kg/kg]?
-    ! TODO land fraction?
-    ! TODO snowh_in - Snow depth (liquid water equivalent)?
-    call aist_vector(rvm_flip, T_in_K_flip, p_in_Pa_flip, hydromet_flip(:,iiricem), &
-                     rvm_flip, rvm_flip, icecldf_flip, 1)
     
     ! Initialize grid variables. These are imported in the MG code.
     call init_ppgrid( nz )
@@ -424,11 +416,18 @@ module mg_micro_driver_module
     tlat(2:nz) = real( flip( dble(tlat_flip(1:nz-1) ), nz-1 ) )
     rsnowm(2:nz) = real( flip( dble(qsout_flip(1:nz-1) ), nz-1 ) )
     rrainm(2:nz) = real( flip( dble(qrout_flip(1:nz-1) ), nz-1 ) )
-    pdel(2:nz) = real( flip( dble(pdel_flip(1:nz-1) ), nz-1 ) )
 
     do i = 1, hydromet_dim, 1      
       hydromet_mc(2:nz, i) = real( hydromet_mc_flip(nz-1:1:-1, i) )
     end do
+
+    ! Compute the snow water path
+    cldfsnow = cldn_flip(nz-1) ! Only need sfc level
+    if ( ( cldfsnow > 1.e-4_r8 ) .and. ( rcm_flip(nz-1) < 1e-10_r8 ) ) then
+      cldfsnow = 0._r8
+    else if ( ( cldfsnow < 1.e-4_r8 ) .and. ( qsout_flip(nz-1) > 1.e-6_r8 ) ) then
+      cldfsnow = 0.25_r8
+    end if
     
     ! Update thetal based on absolute temperature
     T_in_K_new = T_in_K + (tlat/Cp) * real( dt )
@@ -453,7 +452,8 @@ module mg_micro_driver_module
       call stat_update_var_pt( irain_rate_sfc, 1, &
                                real( prect(1) ) * mm_per_m * real(sec_per_day), sfc)
 
-      call stat_update_var_pt( iswp, 1, real( rsnowm(1) / max( 0.0001, real(cldn_flip(1)) ) * pdel(1) / gravit ), sfc )
+      call stat_update_var_pt( iswp, 1, real( rsnowm(2) / max( 0.0001, cldfsnow ) * &
+                               pdel_flip(nz-1) / gravit ), sfc )
       
     end if ! l_stats_samp
 
