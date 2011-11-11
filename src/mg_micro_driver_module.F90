@@ -307,7 +307,7 @@ module mg_micro_driver_module
       if ( i /= nz-1 ) then
         pdel_flip(i) = p_in_Pa_flip(i+1) - p_in_Pa_flip(i)
       else
-        pdel_flip(i) = p_in_Pa_flip(nz-2)
+        pdel_flip(i) = pdel_flip(i-1)
       end if
       
       ! Cloud fraction. In MG there is no difference between ice cloud fraction and
@@ -453,7 +453,7 @@ module mg_micro_driver_module
       call stat_update_var_pt( irain_rate_sfc, 1, &
                                real( prect(1) ) * mm_per_m * real(sec_per_day), sfc)
 
-      call stat_update_var_pt( iswp, 1, real( rsnowm(2) / max( 0.0001, cldfsnow ) * &
+      call stat_update_var_pt( iswp, 1, real( rsnowm(3) / max( 0.0001, cldfsnow ) * &
                                pdel_flip(nz-1) / gravit ), sfc )
       
     end if ! l_stats_samp
