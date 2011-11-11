@@ -92,7 +92,7 @@ module interpolation
   end function linear_interp_factor
   !-------------------------------------------------------------------------------------------------
   pure function mono_cubic_interp &
-       ( z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp1, fp2 ) result ( f_out )
+    ( z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp1, fp2 ) result ( f_out )
 
   ! Description:
   !   Steffen's monotone cubic interpolation method
@@ -115,7 +115,7 @@ module interpolation
 
     ! Constant Parameters
     logical, parameter :: &
-      l_equation_21 = .false.
+      l_equation_21 = .true.
 
     ! External
     intrinsic :: sign, abs, min
@@ -143,7 +143,8 @@ module interpolation
       dfdx00, dfdxp1, &
       c1, c2, c3, c4, &
       w00, wp1, &
-      coef1, coef2
+      coef1, coef2, &
+      zprime
    
     ! ---- Begin Code ---- 
 
@@ -174,7 +175,7 @@ module interpolation
         p00 = ( sm1 * h00 + s00 * hm1 ) / ( hm1 + h00 )
         dfdx00 = coef1*( sign( 1.0, sm1 ) + sign( 1.0, s00 ) ) &
           * min( abs( sm1 ), abs( s00 ), coef2*0.5*abs( p00 ) )
-        dfdxp1 = sm1
+        dfdxp1 = s00
 
       else
         sm1 = ( f00 - fm1 ) / ( z00 - zm1 )
@@ -189,17 +190,23 @@ module interpolation
 
       end if
 
-      c1 = ( dfdx00 + dfdxp1 - 2. * s00 ) / ( h00 ** 2 )
+      c1 = ( dfdx00 + dfdxp1 - 2. * s00 ) / ( h00**2 )
       c2 = ( 3. * s00 - 2. * dfdx00 - dfdxp1 ) / h00
       c3 = dfdx00
       c4 = f00
-      f_out = c1 * ( (z_in - z00) ** 3 ) + c2 * ( (z_in - z00) ** 2 ) + c3 * (z_in - z00) + c4
+
+      ! Old formula
+!     f_out = c1 * ( (z_in - z00)**3 ) + c2 * ( (z_in - z00)**2 ) + c3 * (z_in - z00) + c4
+      ! Faster nested multiplication
+      zprime = z_in - z00
+      f_out =  c4 + zprime*( c3 + zprime*( c2 + ( zprime*c1 ) ) )
 
     else
       ! Linear extrapolation
       wp1 = ( z_in - z00 ) / ( zp1 - z00 )
       w00 = 1. - wp1
       f_out = wp1 * fp1 + w00 * f00
+
     end if
 
     return

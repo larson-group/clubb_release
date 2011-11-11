@@ -65,8 +65,8 @@ module surface_varnce_module
     logical, parameter :: l_andre_1978 = .false.
 
     real, parameter ::  & 
-      a = 1.8, & 
-      z = 1.0, & 
+      a_const = 1.8, & 
+      z_const = 1.0, & 
       ! Vince Larson increased ufmin to stabilize arm_97.  24 Jul 2007
 !      ufmin = 0.0001, &
       ufmin = 0.01, & 
@@ -144,7 +144,7 @@ module surface_varnce_module
 
       ! Find the value of dimensionless height zeta
       ! (Andre et al., 1978, p. 1866).
-      zeta = z / Lngth
+      zeta = z_const / Lngth
 
       ! Andre et al, 1978, Eq. 29.
       ! Notes:  1) "reduce_coef" is a reduction coefficient intended to make
@@ -180,7 +180,7 @@ module surface_varnce_module
       end if
 
       ! Calculate wstar following Andre et al., 1978, p. 1866.
-      wstar = ( (1.0/T0) * grav * wpthlp_sfc * z )**(1.0/3.0)
+      wstar = ( (1.0/T0) * grav * wpthlp_sfc * z_const )**(1.0/3.0)
 
       ! Andre et al., 1978, Eq. 29.
       ! Andre et al. (1978) defines horizontal wind surface variances in terms
@@ -267,7 +267,7 @@ module surface_varnce_module
       ! Compute wstar following Andre et al., 1976
 
       if ( wpthlp_sfc > 0. ) then
-        wstar = ( 1.0/T0 * grav * wpthlp_sfc * z ) ** (1./3.)
+        wstar = ( 1.0/T0 * grav * wpthlp_sfc * z_const ) ** (1./3.)
       else
         wstar = 0.
       end if
@@ -279,9 +279,9 @@ module surface_varnce_module
 
       ! Compute estimate for surface second order moments
 
-      wp2_sfc     =  a * uf**2
-      up2_sfc     =  2.0 * a * uf**2  ! From Andre, et al. 1978
-      vp2_sfc     =  2.0 * a * uf**2  ! "  "
+      wp2_sfc     =  a_const * uf**2
+      up2_sfc     =  2.0 * a_const * uf**2  ! From Andre, et al. 1978
+      vp2_sfc     =  2.0 * a_const * uf**2  ! "  "
       ! Vince Larson changed to make correlations between [-1,1]  31 Jan 2008
 !       thlp2_sfc   = 0.1 * a * ( wpthlp_sfc / uf )**2
 !       rtp2_sfc    = 0.4 * a * ( wprtp_sfc / uf )**2
@@ -291,11 +291,11 @@ module surface_varnce_module
       !         2) The surface correlation of rt & thl is 0.5.
       ! Brian Griffin; February 2, 2008.
 
-      thlp2_sfc = 0.4 * a * ( wpthlp_sfc / uf )**2 ! Known magic number
+      thlp2_sfc = 0.4 * a_const * ( wpthlp_sfc / uf )**2 ! Known magic number
 
-      rtp2_sfc = 0.4 * a * ( wprtp_sfc / uf )**2 ! Known magic number
+      rtp2_sfc = 0.4 * a_const * ( wprtp_sfc / uf )**2 ! Known magic number
 
-      rtpthlp_sfc = 0.2 * a * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf ) ! Known magic number
+      rtpthlp_sfc = 0.2 * a_const * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf ) ! Known magic number
 
       ! End Vince Larson's change.
 
@@ -320,23 +320,25 @@ module surface_varnce_module
           ! We use the following if..then's to make sclr_rt and sclr_thl close to
           ! the actual thlp2/rtp2 at the surface. -dschanen 25 Sep 08
           if ( i == iisclr_rt ) then
-            ! If we are trying to imitate rt with the scalar, then we
+            ! If we are trying to emulate rt with the scalar, then we
             ! use the variance coefficient from above
-            sclrprtp_sfc(i) = 0.4 * a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)!Known magic number
+            sclrprtp_sfc(i) = 0.4 * a_const * (wprtp_sfc / uf) & ! Known magic number
+                              * (wpsclrp_sfc(i) / uf) 
           else
-            sclrprtp_sfc(i) = 0.2 * a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)!Known magic number
+            sclrprtp_sfc(i) = 0.2 * a_const * (wprtp_sfc / uf) & ! Known magic number
+                              * (wpsclrp_sfc(i) / uf) 
           end if
 
           if ( i == iisclr_thl ) then
             ! As above, but for thetal
-            sclrpthlp_sfc(i) = 0.4 * a * (wpthlp_sfc / uf) &
+            sclrpthlp_sfc(i) = 0.4 * a_const * (wpthlp_sfc / uf) &
                                 * (wpsclrp_sfc(i) / uf) ! Known magic number
           else
-            sclrpthlp_sfc(i) = 0.2 * a * (wpthlp_sfc / uf) &
+            sclrpthlp_sfc(i) = 0.2 * a_const * (wpthlp_sfc / uf) &
                                 * (wpsclrp_sfc(i) / uf) ! Known magic number
           end if
 
-          sclrp2_sfc(i) = sclr_var_coef * a * ( wpsclrp_sfc(i) / uf )**2
+          sclrp2_sfc(i) = sclr_var_coef * a_const * ( wpsclrp_sfc(i) / uf )**2
 
           ! End Vince Larson's change.
 

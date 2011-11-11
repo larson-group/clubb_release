@@ -183,7 +183,7 @@ module mg_micro_driver_module
       rcm_flip,     & ! Cloud water mixing ratio                             [kg/kg]
       p_in_Pa_flip, & ! Pressure                                             [Pa]
       pdel_flip,    & ! difference in air pressure between vertical levels   [Pa]
-      cldn_flip,    & ! Cloud fraction                                       [-]
+      cldn_flip,    & ! Relative Humidity Cloud fraction                     [-]
       liqcldf_flip, & ! Liquid cloud fraction                                [-]
       icecldf_flip, & ! Ice cloud fraction                                   [-]
       naai_flip,    & ! number of activated ice nuclei                       [1/kg]
@@ -313,6 +313,7 @@ module mg_micro_driver_module
       ! Cloud fraction. In MG there is no difference between ice cloud fraction and
       ! liquid cloud fraction. However, just setting icecldf equal to CLUBBs cloud_frac
       ! won't work for all ice, no liquid clouds.
+      ! In CAM, cldn is equal to max(liqcldf,icecldf).
       if ( rcm_flip(i) > 0._r8 ) then
         cldn_flip(i) = liqcldf_flip(i)
       else if ( rcm_flip(i) < real( rc_tol, kind=r8 ) &

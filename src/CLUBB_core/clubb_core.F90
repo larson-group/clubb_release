@@ -510,6 +510,8 @@ module clubb_core
       wp2thlp_zm,    & ! w'^2 thl' on momentum grid                 [m^2 K/s^2]
       wprtpthlp_zm,  & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
       cloud_frac_zm, & ! Cloud Fraction on momentum grid            [-]
+      rtm_zm,        & ! Total water mixing ratio                   [kg/kg]
+      thlm_zm,       & ! Liquid potential temperature               [kg/kg]
       rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
       wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
       wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
@@ -810,14 +812,17 @@ module clubb_core
       ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
       exner_zm(:) = (p_in_Pa_zm(:)/p0)**kappa
 
+      rtm_zm  = zt2zm( rtm )
+      thlm_zm = zt2zm( thlm )
+
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       do k = 1, gr%nzmax, 1
 
         call pdf_closure & 
            ( p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),    & ! intent(in)
              wp2(k), wp3_zm(k), sigma_sqd_w(k),                     & ! intent(in)
-             Skw_zm(k), zt2zm( rtm, k ), rtp2(k),                   & ! intent(in)
-             wprtp(k), zt2zm( thlm, k ), thlp2(k),                  & ! intent(in)
+             Skw_zm(k), rtm_zm(k), rtp2(k),                         & ! intent(in)
+             wprtp(k),  thlm_zm(k), thlp2(k),                       & ! intent(in)
              wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                  & ! intent(in)
              wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),              & ! intent(in)
              sclrpthlp(k,:), k,                                     & ! intent(in)
@@ -1343,6 +1348,7 @@ module clubb_core
            p_in_Pa, exner, rho, rho_zm,                       & ! intent(in)
            rho_ds_zm, rho_ds_zt, thv_ds_zm,                   & ! intent(in)
            thv_ds_zt, wm_zt, wm_zm, rcm, wprcp,               & ! intent(in)
+           rcm_zm, rtm_zm, thlm_zm,                           & ! intent(in)
            cloud_frac, rcm_in_layer, cloud_cover,             & ! intent(in)
            sigma_sqd_w, pdf_params,                           & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & ! intent(in)

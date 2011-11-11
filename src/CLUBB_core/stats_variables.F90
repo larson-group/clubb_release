@@ -128,6 +128,13 @@ module stats_variables
 !$omp   threadprivate(iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc)
 
   integer, public :: &
+    ircm_zm, &
+    irtm_zm, &
+    ithlm_zm
+
+!$omp threadprivate(ircm_zm, irtm_zm, ithlm_zm)
+
+  integer, public :: &
     iLH_rcm_avg
 
 !$omp threadprivate(iLH_rcm_avg)

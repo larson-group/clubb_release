@@ -16,27 +16,28 @@ module inputfields
 
   character(len=10), public :: input_type
 
-  logical, public :: input_um, input_vm, input_rtm, input_thlm, & 
-                     input_wp2, input_wprtp, input_wpthlp,  & 
-                     input_wp3, input_rtp2, input_thlp2,  & 
-                     input_rtpthlp, input_upwp, input_vpwp, & 
-                     input_ug, input_vg, input_rcm,  & 
-                     input_wm_zt, input_exner, input_em, & 
-                     input_p, input_rho, input_rho_zm, & 
-                     input_rho_ds_zm, input_rho_ds_zt, &
-                     input_thv_ds_zm, input_thv_ds_zt, &
-                     input_Lscale, input_Lscale_up, input_Lscale_down, & 
-                     input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
-                     input_wpthvp, &
-                     input_thl1, input_thl2, input_mixt_frac, input_s1, input_s2, &
-                     input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
-                     input_thvm, input_rrainm, input_Nrm,  input_Ncm,  & 
-                     input_rsnowm, input_ricem, input_rgraupelm, input_Ncnm, input_Nim, & 
-                     input_thlm_forcing, input_rtm_forcing, & 
-                     input_up2, input_vp2, input_sigma_sqd_w, & 
-                     input_cloud_frac, input_sigma_sqd_w_zt, &
-                     input_veg_T_in_K, input_deep_soil_T_in_K, &
-                     input_sfc_soil_T_in_K
+  logical, public :: &
+    input_um, input_vm, input_rtm, input_thlm, & 
+    input_wp2, input_wprtp, input_wpthlp,  & 
+    input_wp3, input_rtp2, input_thlp2,  & 
+    input_rtpthlp, input_upwp, input_vpwp, & 
+    input_ug, input_vg, input_rcm,  & 
+    input_wm_zt, input_exner, input_em, & 
+    input_p, input_rho, input_rho_zm, & 
+    input_rho_ds_zm, input_rho_ds_zt, &
+    input_thv_ds_zm, input_thv_ds_zt, &
+    input_Lscale, input_Lscale_up, input_Lscale_down, & 
+    input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
+    input_wpthvp, input_radht, &
+    input_thl1, input_thl2, input_mixt_frac, input_s1, input_s2, &
+    input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
+    input_thvm, input_rrainm, input_Nrm,  input_Ncm,  & 
+    input_rsnowm, input_ricem, input_rgraupelm, input_Ncnm, input_Nim, & 
+    input_thlm_forcing, input_rtm_forcing, & 
+    input_up2, input_vp2, input_sigma_sqd_w, & 
+    input_cloud_frac, input_sigma_sqd_w_zt, &
+    input_veg_T_in_K, input_deep_soil_T_in_K, &
+    input_sfc_soil_T_in_K
 
   integer, parameter, private :: &
     coamps_input_type = 1, &
@@ -176,7 +177,8 @@ module inputfields
         wpthvp, &
         Ncnm, & 
         sigma_sqd_w_zt, & 
-        em
+        em, &
+        radht
 
     use variables_prognostic_module, only: & 
         pdf_params ! Variable(s)
@@ -489,6 +491,12 @@ module inputfields
       call get_clubb_variable_interpolated &
            ( input_sigma_sqd_w_zt, stat_file_zt, "sigma_sqd_w_zt", gr%nzmax, timestep, &
              gr%zt, sigma_sqd_w_zt, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( input_radht, stat_file_zt, "radht", gr%nzmax, timestep, &
+             gr%zt, radht, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -1404,6 +1412,12 @@ module inputfields
         l_fatal_error = .true.
       end if
 
+      if ( input_radht ) then
+        write(fstderr,*) "The variable radht is not setup for input_type" &
+          //trim( input_type )
+        l_fatal_error = .true.
+      end if
+
       if ( l_fatal_error ) stop "oops, get_grads_var failed in stat_fields_reader"
 
       ! Deallocate temporary storage variable LES_tmp1.
@@ -1891,7 +1905,7 @@ module inputfields
       input_p, input_rho, input_rho_zm, & 
       input_Lscale, input_Lscale_up, input_Lscale_down, & 
       input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
-      input_wpthvp, &
+      input_wpthvp, input_radht, &
       input_thl1, input_thl2, input_mixt_frac, input_s1, input_s2, &
       input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
       input_thvm, input_rrainm,input_Nrm,  & 

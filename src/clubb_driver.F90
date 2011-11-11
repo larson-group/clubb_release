@@ -172,7 +172,7 @@ module clubb_driver
       cleanup_latin_hypercube_arrays ! Procedure(s)
 
     use simple_rad_module, only: simple_rad_lba_init ! Procedure(s)
- 
+
 #endif
 
     use variables_radiation_module, only: &
@@ -206,7 +206,7 @@ module clubb_driver
     implicit none
 
     ! Because Fortran I/O is not thread safe, we use this here to
-    ! insure that no model uses the same file number simultaneously
+    ! ensure that no model uses the same file number simultaneously
     ! when doing a tuning run. -dschanen 31 Jan 2007
 #ifdef _OPENMP
     integer :: omp_get_thread_num ! Function
@@ -240,7 +240,7 @@ module clubb_driver
     ! Local Variables
     ! Internal Timing Variables
     integer :: & 
-      ifinal    
+      ifinal
 
     integer :: & 
       debug_level     ! Amount of debugging information
@@ -366,17 +366,17 @@ module clubb_driver
     time_initial = 0._time_precision
     time_final   = 3600._time_precision
 
-    dt_main    = 30._time_precision
-    dt_rad = 30._time_precision
+    dt_main = 30._time_precision
+    dt_rad  = 30._time_precision
 
-    sfctype  = 0
+    sfctype   = 0
     T_sfc     = 288.
     p_sfc     = 1000.e2
-    sens_ht       = 0.
-    latent_ht       = 0.
-    fcor     = 1.e-4
-    T0       = 300.
-    ts_nudge = 86400.
+    sens_ht   = 0.
+    latent_ht = 0.
+    fcor      = 1.e-4
+    T0        = 300.
+    ts_nudge  = 86400.
 
     forcings_file_path = ''
 
@@ -409,7 +409,8 @@ module clubb_driver
     time_restart  = 0._time_precision
     debug_level   = 2
 
-    saturation_formula = "flatau" ! Flatau polynomial approx.
+    ! Use the Flatau polynomial approximation for computing saturation in clubb_core
+    saturation_formula = "flatau"
 
     sclr_dim   = 0
     iisclr_thl = -1
@@ -443,8 +444,8 @@ module clubb_driver
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
 
-  case_info_file = &
-    "../output/" // trim( fname_prefix ) // "_setup.txt" ! The filename for case setup
+    case_info_file = &
+      "../output/" // trim( fname_prefix ) // "_setup.txt" ! The filename for case setup
 
     ! Sanity check on passive scalars
     ! When adding new 'ii' scalar indices, add them to this list.
@@ -463,6 +464,7 @@ module clubb_driver
 
       err_code = clubb_var_out_of_bounds
       return
+
     end if
 
     ! Set debug level
@@ -717,7 +719,7 @@ module clubb_driver
            err_code )                                     ! Intent(out)
 
 
-    if ( err_code == clubb_var_out_of_bounds ) return
+    if ( fatal_error( err_code ) ) return
 
     ! Deallocate stretched grid altitude arrays
     deallocate( momentum_heights, thermodynamic_heights )
@@ -746,7 +748,9 @@ module clubb_driver
              rtm_ref, thlm_ref,                                & ! Intent(inout) 
              Kh_zt, Kh_zm, um_ref, vm_ref,                     & ! Intent(inout)
              hydromet, Ncnm,                                   & ! Intent(inout)
-             sclrm, edsclrm )                                    ! Intent(out)
+             sclrm, edsclrm, err_code )                          ! Intent(out)
+
+      if ( fatal_error( err_code ) ) return
 
     else  ! restart
 
@@ -766,8 +770,9 @@ module clubb_driver
              rtm_ref, thlm_ref,                                                & ! Intent(inout) 
              Kh_zt, Kh_zm, um_ref, vm_ref,                                     & ! Intent(inout)
              hydromet, Ncnm,                                                   & ! Intent(inout)
-             sclrm, edsclrm )                                                    ! Intent(out)
+             sclrm, edsclrm, err_code )                                          ! Intent(out)
 
+      if ( fatal_error( err_code ) ) return
 
       time_current = time_restart
 
@@ -915,7 +920,7 @@ module clubb_driver
       ! Check for NaN values in the model arrays
       if ( clubb_at_least_debug_level( 2 ) ) then
         if ( invalid_model_arrays( ) ) then
-          err_code = clubb_var_equals_NaN 
+          err_code = clubb_var_equals_NaN
           write(fstderr,*) "a CLUBB variable is NaN in main time stepping loop."
         end if
       end if
@@ -926,11 +931,11 @@ module clubb_driver
                                    err_code_forcings ) ! Intent(inout)
 
       if ( fatal_error( err_code_forcings ) ) then
-         if ( clubb_at_least_debug_level( 1 ) ) then
-           write(fstderr,*) "Fatal error in advance_clubb_forcings:"
-           call reportError( err_code_forcings )
-         end if
-         err_code = err_code_forcings
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,*) "Fatal error in advance_clubb_forcings:"
+          call reportError( err_code_forcings )
+        end if
+        err_code = err_code_forcings
       end if
 
       if ( l_stats_samp ) then
@@ -982,8 +987,8 @@ module clubb_driver
              Ncnm, hydromet,                                       & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(inout)
 
-      ! Radiation is always called on the first timestep in order to ensure 
-      ! that the simulation is subject to radiative heating and cooling from 
+      ! Radiation is always called on the first timestep in order to ensure
+      ! that the simulation is subject to radiative heating and cooling from
       ! the first timestep.
       if ( mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1 ) then
 
@@ -1080,7 +1085,7 @@ module clubb_driver
                rtm_ref, thlm_ref, &
                Kh_zt, Kh_zm, um_ref, vm_ref, &
                hydromet, Ncnm, &
-               sclrm, edsclrm )
+               sclrm, edsclrm, err_code )
     ! Description:
     !   Execute the necessary steps for the initialization of the
     !   CLUBB model run.
@@ -1130,7 +1135,10 @@ module clubb_driver
 
     use mixing_length, only: compute_length ! Procedure(s)
 
-    use error_code, only: clubb_no_error ! Variable(s)
+    use error_code, only: &
+      clubb_no_error, & ! Variable(s)
+      clubb_at_least_debug_level, & ! Procedure(s)
+      fatal_error
 
     use constants_clubb, only: fstderr ! Variables(s)
 
@@ -1224,6 +1232,9 @@ module clubb_driver
     real, dimension(gr%nzmax,edsclr_dim), intent(out) ::  & 
       edsclrm    ! Eddy diffusivity passive scalar [units vary]
 
+    integer, intent(out) :: &
+      err_code ! Indicates an error condition
+
     ! Local Variables
     real, dimension(gr%nzmax) :: tmp1
 
@@ -1233,13 +1244,14 @@ module clubb_driver
       cloud_top_height, & ! Cloud top altitude in initial profile  [m]
       em_max                ! Maximum value of initial subgrid TKE   [m^2/s^2]
 
-    integer :: k, err_code
+    integer :: k
 
     character(len=50) :: &
       theta_type, & ! Type of temperature sounding 
       alt_type,   & ! Type of altitude sounding
       subs_type     ! Type of large-scale subsidence sounding
-    !-----------------------------------------------------------------------
+
+    !---- Begin code ----
 
     err_code = clubb_no_error
 
@@ -1287,7 +1299,7 @@ module clubb_driver
 
       ! Upper boundary condition
       hydromet(gr%nzmax,iiNcm) = 0.
-      
+
     case ( "morrison-gettelman" )
       ! Lower boundary condition
       hydromet(1,iiNcm) = 0.
@@ -1418,13 +1430,13 @@ module clubb_driver
 
       em = 1.0
       em(gr%nzmax) = em_min
-      
+
       ! twp_ice
     case ( "twp_ice" )
 
       em = 1.0
       em(gr%nzmax) = em_min
-      
+
       ! cloud feedback cases
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
@@ -1554,7 +1566,7 @@ module clubb_driver
 
       em(1) = em(2)
       ! End Vince Larson's change.
-      
+
       em(gr%nzmax) = em_min
 
       ! End of ajsmith4's addition
@@ -1724,7 +1736,9 @@ module clubb_driver
                          p_in_Pa, exner, thv_ds_zt, l_implemented, & ! Intent(in)    
                          err_code,                   &               ! Intent(inout)
                          Lscale )                                    ! Intent(out)
-
+    if ( fatal_error( err_code ) .and. clubb_at_least_debug_level( 1 ) ) then
+      write(fstderr,*) "initialize_clubb: Fatal error in compute_length"
+    end if
     ! Dissipation time
     tmp1 = sqrt( max( em_min, zm2zt( em ) ) )
     tau_zt = min( Lscale / tmp1, taumax )
@@ -1894,6 +1908,7 @@ module clubb_driver
 
     integer :: k   ! Array index
 
+    ! ---- Begin Code ----
 
     ! The value of rtm at the surface is output from the sounding, as long as
     ! the initial sounding extends to the model surface (at gr%zm(1)).
@@ -1905,7 +1920,7 @@ module clubb_driver
       ! The sounding does extend to the surface, so rtm_sfc is the initial value
       ! of total water mixing ratio at the surface.
       rv_sfc = rtm_sfc
-    endif
+    end if
 
     ! Calculate dry surface pressure from surface pressure and surface water
     ! vapor mixing ratio, such that p_d = p / [ 1 + (R_v/R_d)*r_v ].
@@ -1924,7 +1939,7 @@ module clubb_driver
         'variable and absolute temperature as the temperature variable has not ', &
         'been implemented.  Either specify pressure as the independent variable or ', &
         'thm/thlm as the temperature variable.'
-        stop
+        stop "Fatal error."
 
       endif
 
@@ -2588,7 +2603,7 @@ module clubb_driver
         input_thv_ds_zm, input_thv_ds_zt, &
         input_Lscale, input_Lscale_up, input_Lscale_down, & 
         input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
-        input_wpthvp, &
+        input_wpthvp, input_radht, &
         input_thl1, input_thl2, input_mixt_frac, input_s1, input_s2, &
         input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
         input_thvm, input_rrainm,input_Nrm,  & 
@@ -2693,6 +2708,7 @@ module clubb_driver
     input_stdev_s2  = .true.
     input_rc1  = .true.
     input_rc2  = .true.
+    input_radht = .true.
 
     select case ( trim( micro_scheme ) )
     case ( "coamps" )
@@ -2714,7 +2730,7 @@ module clubb_driver
       input_Ncm = .true.
       input_Nrm = .true.
       input_Nim =  .true.
-      
+
     case ( "morrison-gettelman" )
       input_rrainm = .false.
       input_rsnowm = .false.
@@ -2999,7 +3015,7 @@ module clubb_driver
           ( time_current, gr%nzmax, rtm, rho, exner,& ! In
             thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, & ! In/Out
             wm_zt, wm_zm, ug, vg, & ! In/Out
-        sclrm_forcing, edsclrm_forcing ) ! In/Out
+            sclrm_forcing, edsclrm_forcing ) ! In/Out
 
       ! Vince Larson set forcing to zero at the top point so that we don't need
       ! so much sponge damping, which is associated with sawtooth noise
@@ -3234,7 +3250,7 @@ module clubb_driver
       call arm_0003_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
                             thlm(2), ubar,                     &  ! Intent(in)
                             wpthlp_sfc, wprtp_sfc, ustar )        ! Intent(out)
-   case ( "arm_3year" )
+    case ( "arm_3year" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), & ! Intent(in)
@@ -3415,7 +3431,7 @@ module clubb_driver
 
     use parameters_microphys, only: &
       micro_scheme, l_cloud_sed, Ncm_initial, &  ! Variables
-      LH_microphys_calls  
+      LH_microphys_calls
 
     use constants_clubb, only: & 
       rc_tol, fstderr, cm3_per_m3 ! Variable(s)
@@ -3528,7 +3544,7 @@ module clubb_driver
       X_mixt_comp_all_levs ! Which mixture component the sample is in
 
     real, dimension(gr%nzmax,LH_microphys_calls) :: &
-      LH_rt, LH_thl ! Samples of rt, thl	[kg/kg,K]
+      LH_rt, LH_thl ! Samples of rt, thl        [kg/kg,K]
 
     real, dimension(LH_microphys_calls) :: &
       LH_sample_point_weights ! Weights for cloud weighted sampling
@@ -3537,7 +3553,7 @@ module clubb_driver
     real, dimension(gr%nzmax) :: &
       Lscale_vert_avg ! 3pt vertically averaged Lscale          [m]
 
-    integer :: k, kp1, km1 
+    integer :: k, kp1, km1
 #endif
     integer :: err_code_microphys
 
@@ -3934,8 +3950,8 @@ module clubb_driver
       if ( l_sw_radiation .and. amu0 > 0._dp ) then
         amu0_sp = real( amu0 )
         if ( nparam > 1 ) then
-           call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &
-                                     Fs_values(1:nparam), amu0_sp, Fs0 )
+          call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &
+                                    Fs_values(1:nparam), amu0_sp, Fs0 )
         else
           Fs0 = Fs_values(1)
         end if
@@ -3951,8 +3967,8 @@ module clubb_driver
                        Frad_LW, radht_LW ) ! Out
 
 
-      Frad = Frad_SW + Frad_LW 
-      radht = radht_SW + radht_LW 
+      Frad = Frad_SW + Frad_LW
+      radht = radht_SW + radht_LW
 
     case ( "simplified_bomex" )
       !----------------------------------------------------------------
@@ -3989,12 +4005,12 @@ module clubb_driver
   !-----------------------------------------------------------------------------
   subroutine update_radiation_variables( nzmax )
 
-  ! Description:
-  !   Updates the radiation variables using the stat_var_update() subroutine.
-  !
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------------
+    ! Description:
+    !   Updates the radiation variables using the stat_var_update() subroutine.
+    !
+    ! References:
+    !   None
+    !---------------------------------------------------------------------------
 
     use stats_variables, only: &
       iradht_LW, iradht_SW, iFrad_SW, iFrad_LW, iFrad_SW_up, & ! Variables
@@ -4038,7 +4054,7 @@ module clubb_driver
 
 
     if ( l_stats_samp ) then
-     
+
       call stat_update_var( iradht_LW, radht_LW, zt )
 
       call stat_update_var( iradht_SW, radht_SW, zt )

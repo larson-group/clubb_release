@@ -63,7 +63,7 @@ our $implicitNoneRegEx = qr/^				# Bind to beginning of line
 
 our $functionRegEx = 	qr/^				# Bind to beginning of line
         		\s*? 				# Zero or more spaces before statement
-          	 	(real|double\sprecision|complex|
+          	 	(real|real\(.*\)|double\sprecision|complex|
 			logical|character|integer|pure|
 			elemental|recursive|\s*?)*?	# Zero or more specifications.
 							# Note the expression does not fit	
