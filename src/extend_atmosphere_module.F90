@@ -339,12 +339,18 @@ module extend_atmosphere_module
       complete_momentum(j) = real( extend_alt(extend_atmos_bottom_level + i) )
       ! Keep track of where we are in the extended atmosphere
       i = i + 1
+      if ( i+extend_atmos_bottom_level == extend_atmos_dim ) then
+        exit
+      else
+        cycle ! Loop to next point
+      end if
     end do
 
-    ! Use a linear extension for the absolute topmost point
-    j = total_atmos_dim + 1
-    dz_extension = real( complete_momentum(j-1) - complete_momentum(j-2), kind=dp )
-    complete_momentum(j) = complete_momentum(j-1) + real( dz_extension )
+    ! Use a linear extension for the topmost points (generally this is only 1 or 2 points)
+    do j = i, total_atmos_dim + 1
+      dz_extension = real( complete_momentum(j-1) - complete_momentum(j-2), kind=dp )
+      complete_momentum(j) = complete_momentum(j-1) + real( dz_extension )
+    end do
     
     allocate( complete_alt(total_atmos_dim) )
 
