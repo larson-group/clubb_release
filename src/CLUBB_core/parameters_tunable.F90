@@ -52,7 +52,7 @@ module parameters_tunable
     C7b         = 0.800000,          & ! High Skewness in C7 Skewness Function.
     C7c         = 0.500000,          & ! Degree of Slope of C7 Skewness Function.
     C8          = 3.000000,          & ! Coefficient #1 in C8 Skewness Equation.
-    C8b         = 0.005000,          & ! Coefficient #2 in C8 Skewness Equation.
+    C8b         = 0.000000,          & ! Coefficient #2 in C8 Skewness Equation.
     C10         = 3.300000,          & ! Currently Not Used in the Model.
     C11         = 0.800000,          & ! Low Skewness in C11 Skewness Function.
     C11b        = 0.350000,          & ! High Skewness in C11 Skewness Function.
