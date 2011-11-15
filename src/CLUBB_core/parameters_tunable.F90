@@ -180,6 +180,9 @@ module parameters_tunable
        "gamma_coef   ", "gamma_coefb  ", "gamma_coefc  ", "mu           ", &
        "beta         ", "lmin_coef    ", "taumin       ", "taumax       " /)
 
+  real, parameter :: &
+    init_value = -999. ! Initial value for the parameters, used to detect missing values
+
   contains
 
   !=============================================================================
@@ -542,8 +545,6 @@ module parameters_tunable
     !-----------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Constant
 
-    use numerical_check, only: is_nan_sclr ! Procedure
-
     implicit none
 
     ! Input variables
@@ -559,9 +560,7 @@ module parameters_tunable
 
     logical :: l_error
 
-    ! Initialize values to NaN
-    ! these tunable model parameters are initialized at the beginning of this module 
-    ! call init_parameters_nan( )
+    ! ---- Begin Code ----
 
     ! If the filename is empty, assume we're using a `working' set of
     ! parameters that are set statically here (handy for host models).
@@ -590,7 +589,7 @@ module parameters_tunable
     l_error = .false.
 
     do i = 1, nparams
-      if ( is_nan_sclr( params(i) ) ) then
+      if ( params(i) == init_value ) then
         write(fstderr,*) "Tuning parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
@@ -615,8 +614,6 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Constant
-
-    use numerical_check, only: is_nan_sclr ! Procedure
 
     implicit none
 
@@ -654,8 +651,8 @@ module parameters_tunable
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, taumin, taumax, mu
 
-    ! Initialize values to NaN
-    call init_parameters_nan( )
+    ! Initialize values to -999.
+    call init_parameters_999( )
 
     ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
@@ -678,7 +675,7 @@ module parameters_tunable
     l_error = .false.
 
     do i = 1, nparams
-      if ( is_nan_sclr( param_spread(i) ) ) then
+      if ( param_spread(i) == init_value ) then
         write(fstderr,*) "A spread parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
@@ -1075,7 +1072,7 @@ module parameters_tunable
   end subroutine get_parameters
 
   !=============================================================================
-  subroutine init_parameters_nan( )
+  subroutine init_parameters_999( )
 
     ! Description:
     ! Set all tunable parameters to NaN
@@ -1084,75 +1081,72 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
 
-    use parameters_model, only: &
-      PosInf ! Variable(s)
-
     implicit none
 
     ! --- Begin Code ---
 
-    C1                 = PosInf
-    C1b                = PosInf
-    C1c                = PosInf
-    C2rt               = PosInf
-    C2thl              = PosInf
-    C2rtthl            = PosInf
-    C2                 = PosInf
-    C2b                = PosInf
-    C2c                = PosInf
-    C4                 = PosInf
-    C5                 = PosInf
-    C6rt               = PosInf
-    C6rtb              = PosInf
-    C6rtc              = PosInf
-    C6thl              = PosInf
-    C6thlb             = PosInf
-    C6thlc             = PosInf
-    C7                 = PosInf
-    C7b                = PosInf
-    C7c                = PosInf
-    C8                 = PosInf
-    C8b                = PosInf
-    C10                = PosInf
-    C11                = PosInf
-    C11b               = PosInf
-    C11c               = PosInf
-    C12                = PosInf
-    C13                = PosInf
-    C14                = PosInf
-    C15                = PosInf
-    C6rt_Lscale0       = PosInf
-    C6thl_Lscale0      = PosInf
-    C7_Lscale0         = PosInf
-    wpxp_L_thresh      = PosInf
-    c_K                = PosInf
-    c_K1               = PosInf
-    nu1                = PosInf
-    c_K2               = PosInf
-    nu2                = PosInf
-    c_K6               = PosInf
-    nu6                = PosInf
-    c_K8               = PosInf
-    nu8                = PosInf
-    c_K9               = PosInf
-    nu9                = PosInf
-    c_Krrainm          = PosInf
-    nu_r               = PosInf
-    c_Ksqd             = PosInf
-    nu_hd              = PosInf
-    beta               = PosInf
-    gamma_coef         = PosInf
-    gamma_coefb        = PosInf
-    gamma_coefc        = PosInf
-    taumin             = PosInf
-    taumax             = PosInf
-    lmin_coef          = PosInf
-    mu                 = PosInf
+    C1                 = init_value
+    C1b                = init_value
+    C1c                = init_value
+    C2rt               = init_value
+    C2thl              = init_value
+    C2rtthl            = init_value
+    C2                 = init_value
+    C2b                = init_value
+    C2c                = init_value
+    C4                 = init_value
+    C5                 = init_value
+    C6rt               = init_value
+    C6rtb              = init_value
+    C6rtc              = init_value
+    C6thl              = init_value
+    C6thlb             = init_value
+    C6thlc             = init_value
+    C7                 = init_value
+    C7b                = init_value
+    C7c                = init_value
+    C8                 = init_value
+    C8b                = init_value
+    C10                = init_value
+    C11                = init_value
+    C11b               = init_value
+    C11c               = init_value
+    C12                = init_value
+    C13                = init_value
+    C14                = init_value
+    C15                = init_value
+    C6rt_Lscale0       = init_value
+    C6thl_Lscale0      = init_value
+    C7_Lscale0         = init_value
+    wpxp_L_thresh      = init_value
+    c_K                = init_value
+    c_K1               = init_value
+    nu1                = init_value
+    c_K2               = init_value
+    nu2                = init_value
+    c_K6               = init_value
+    nu6                = init_value
+    c_K8               = init_value
+    nu8                = init_value
+    c_K9               = init_value
+    nu9                = init_value
+    c_Krrainm          = init_value
+    nu_r               = init_value
+    c_Ksqd             = init_value
+    nu_hd              = init_value
+    beta               = init_value
+    gamma_coef         = init_value
+    gamma_coefb        = init_value
+    gamma_coefc        = init_value
+    taumin             = init_value
+    taumax             = init_value
+    lmin_coef          = init_value
+    mu                 = init_value
  
-    nu_hd_vert_res_dep = PosInf
+    nu_hd_vert_res_dep = init_value
 
     return
-  end subroutine init_parameters_nan
+  end subroutine init_parameters_999
 
   !=============================================================================
   subroutine cleanup_nu( )
