@@ -12,7 +12,7 @@ module mixing_length
 
   !=============================================================================
   subroutine compute_length( thvm, thlm, rtm, em, &
-                             p_in_Pa, exner, thv_ds, l_implemented, &
+                             p_in_Pa, exner, thv_ds, mu, l_implemented, &
                              err_code, &
                              Lscale )
     ! Description:
@@ -42,7 +42,6 @@ module mixing_length
         zero_threshold
 
     use parameters_tunable, only:  &  ! Variable(s)
-        mu,   & ! Fractional entrainment rate per unit altitude    [1/m]
         lmin    ! Minimum value for Lscale                         [m]
 
     use parameters_model, only:  & 
@@ -93,6 +92,9 @@ module mixing_length
       p_in_Pa, & ! Pressure on thermodynamic level                [Pa]
       thv_ds     ! Dry, base-state theta_v on thermodynamic level [K]
     ! Note:  thv_ds used as a reference theta_l here
+
+    real, intent(in) :: &
+      mu  ! mu Fractional extrainment rate per unit altitude      [1/m]
 
     logical, intent(in) :: &
       l_implemented ! Flag for CLUBB being implemented in a larger model

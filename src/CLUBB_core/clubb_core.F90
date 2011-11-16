@@ -93,6 +93,7 @@ module clubb_core
       fstderr, &
       zero_threshold, &
       Lscale_pert_coef, &
+      Lscale_mu_coef, &
       three_halves
 
     use parameters_tunable, only: & 
@@ -100,7 +101,8 @@ module clubb_core
       gamma_coefb, & 
       gamma_coef, & 
       taumax, & 
-      c_K
+      c_K, &
+      mu
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
@@ -535,7 +537,8 @@ module clubb_core
       thlm_integral_forcing, &
       thlm_flux_top, &
       thlm_flux_sfc, &
-      thlm_spur_src
+      thlm_spur_src, &
+      mu_pert_1, mu_pert_2          ! For avg. calculation of Lscale  [1/m]
 
     !----- Begin Code -----
 
@@ -995,17 +998,19 @@ module clubb_core
 
       thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
       rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+      mu_pert_1  = mu * Lscale_mu_coef
 
       thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
       rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+      mu_pert_2  = mu / Lscale_mu_coef
 
       call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, &        ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, l_implemented, & ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
                            err_code, &                                 ! intent(inout)
                            Lscale_pert_1 )                             ! intent(out)
 
-      call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, &        ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, l_implemented, & ! intent(in)
+      call compute_length( thvm, thlm_pert_2, rtm_pert_2, em,  &        ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu_pert_2, l_implemented, & ! intent(in)
                            err_code, &                                 ! intent(inout)
                            Lscale_pert_2 )                             ! intent(out)
 
@@ -1015,7 +1020,7 @@ module clubb_core
     ! This call to compute_length must be last.  Otherwise, the values of
     ! Lscale_up and Lscale_down will not be correctly saved stats.
     call compute_length( thvm, thlm, rtm, em, &                      ! intent(in)
-                         p_in_Pa, exner, thv_ds_zt, l_implemented, & ! intent(in)
+                         p_in_Pa, exner, thv_ds_zt, mu, l_implemented, & ! intent(in)
                          err_code, &                                 ! intent(inout)
                          Lscale )                                    ! intent(out)
 

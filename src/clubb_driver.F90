@@ -79,7 +79,7 @@ module clubb_driver
     use inputfields, only: stat_file_zt
 
     use parameters_tunable, only: &
-      l_prescribed_avg_deltaz, params_list ! Variable(s)
+      l_prescribed_avg_deltaz, params_list ! Variable(s)     
 
     use clubb_core, only: & 
       setup_clubb_core,  & ! Procedure(s) 
@@ -1170,6 +1170,9 @@ module clubb_driver
       runtype, &
       dt_main
 
+    use parameters_tunable, only: &
+      mu  ! Variable(s)     
+
     implicit none
 
     intrinsic :: min, max, trim, sqrt, size
@@ -1733,7 +1736,8 @@ module clubb_driver
 
     ! Compute mixing length
     call compute_length( thvm, thlm, rtm, em,   &                    ! Intent(in)
-                         p_in_Pa, exner, thv_ds_zt, l_implemented, & ! Intent(in)    
+                         p_in_Pa, exner, thv_ds_zt, mu, &            ! Intent(in)  
+                         l_implemented,              &               ! Intent(in)    
                          err_code,                   &               ! Intent(inout)
                          Lscale )                                    ! Intent(out)
     if ( fatal_error( err_code ) .and. clubb_at_least_debug_level( 1 ) ) then
