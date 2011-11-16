@@ -74,15 +74,13 @@ module advance_wp2_wp3_module
         C1b,  & 
         C1,  & 
         c_K1,  & 
-        c_ksqd,  & 
         c_K8
 
     use constants_clubb, only:  & 
         fstderr    ! Variable(s)
 
     use model_flags, only: &
-        l_hyper_dfsn,  & ! Variable(s)
-        l_3pt_sqd_dfsn
+        l_hyper_dfsn ! Variable(s)
 
     use clubb_precision, only:  & 
         time_precision ! Variable(s)
@@ -150,13 +148,6 @@ module advance_wp2_wp3_module
     real, dimension(gr%nzmax) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
     real, dimension(gr%nzmax) :: Kw8    ! w'^3 coef. eddy diff.  [m^2/s]
 
-    ! Note:  wp2_zt and wp2_zt_sqd_3pt, and wp3_zm and wp3_zm_sqd_3pt
-    !        are used to help determine the coefficients of eddy
-    !        diffusivity for wp2 and wp3, respectively.
-    real, dimension(gr%nzmax) :: & 
-      wp2_zt_sqd_3pt,  & ! (w'^2)^2; averaged over 3 points         [m^4/s^4]
-      wp3_zm_sqd_3pt     ! (w'^3)^2; averaged over 3 points         [m^6/s^6]
-
     ! Internal variables for C11 function, Vince Larson 13 Mar 2005
     ! Brian added C1 function.
     real, dimension(gr%nzmax) ::  & 
@@ -168,7 +159,7 @@ module advance_wp2_wp3_module
       nsub,   & ! Number of subdiagonals in the LHS matrix.
       nsup      ! Number of superdiagonals in the LHS matrix.
 
-    integer :: k, km1, kp1  ! Array indices
+    integer :: k ! Array indices
 
     integer :: wp2_wp3_err_code ! Error code from solving for wp2/wp3
 
@@ -241,48 +232,6 @@ module advance_wp2_wp3_module
       Kw8(k) = c_K8 * Kh_zm(k)
 
     enddo
-
-    ! (wp2)^2 and (wp3)^2:  3-point average diffusion coefficient.
-    if ( l_3pt_sqd_dfsn ) then
-
-       do k = 1, gr%nzmax, 1
-
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, gr%nzmax )
-
-          ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
-          ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
-
-          ! Compute the square of wp2_zt, averaged over 3 points.  15 Dec 2007
-          wp2_zt_sqd_3pt(k)  & 
-             = ( wp2_zt(km1)**2 + wp2_zt(k)**2 + wp2_zt(kp1)**2 ) / 3.0
-
-          ! Compute the square of wp3_zm, averaged over 3 points.  15 Dec 2007
-          wp3_zm_sqd_3pt(k)  & 
-             = ( wp3_zm(km1)**2 + wp3_zm(k)**2 + wp3_zm(kp1)**2 ) / 3.0
-
-          ! End Vince Larson's addition.
-
-       enddo
-
-       ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
-       do k = 1, gr%nzmax, 1
-
-          ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
-          ! Kw1 must have units of m^2/s.  Since wp2_zt_sqd_3pt has units
-          ! of m^4/s^4, c_Ksqd is given units of s^3/m^2 in this case.
-          Kw1(k) = Kw1(k) + c_Ksqd * wp2_zt_sqd_3pt(k)
-          ! End Vince Larson's addition.
-
-          ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
-          ! Kw8 must have units of m^2/s.  Since wp3_zm_sqd_3pt has units
-          ! of m^6/s^6, c_Ksqd is given units of s^5/m^4 in this case.
-          Kw8(k) = Kw8(k) + c_Ksqd * wp3_zm_sqd_3pt(k)
-          ! End Vince Larson's addition.
-
-       enddo
-
-    endif  ! l_3pt_sqd_dfsn
 
     ! Declare the number of subdiagonals and superdiagonals in the LHS matrix.
     if ( l_hyper_dfsn ) then
