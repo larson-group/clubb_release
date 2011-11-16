@@ -77,7 +77,6 @@ module advance_xm_wpxp_module
         C7b,  & 
         C7c,  & 
         c_K6,  & 
-        c_Ksqd, &
         C6rt_Lscale0, &
         C6thl_Lscale0, &
         C7_Lscale0, &
@@ -104,8 +103,7 @@ module advance_xm_wpxp_module
       zt2zm
 
     use model_flags, only: &
-        l_3pt_sqd_dfsn,     & ! Variable(s)
-        l_clip_semi_implicit, &
+        l_clip_semi_implicit, & ! Variable(s)
         l_upwind_wpxp_ta
 
     use mono_flux_limiter, only: &
@@ -220,16 +218,6 @@ module advance_xm_wpxp_module
       a1,     & ! a_1 (momentum levels); See eqn. 24 in `Equations for CLUBB' [-]
       a1_zt     ! a_1 interpolated to thermodynamic levels                    [-]
 
-    ! Variables used for adding (wpxp)^2: 3-point average
-    ! diffusion coefficient.
-    real, dimension(gr%nzmax) :: & 
-      wprtp_zt, & 
-      wpthlp_zt, & 
-      wprtp_zt_sqd_3pt, & 
-      wpthlp_zt_sqd_3pt, & 
-      Kw6_rt, & 
-      Kw6_thl
-
     ! Variables used as part of the monotonic turbulent advection scheme.
     ! Find the lowermost and uppermost grid levels that can have an effect
     ! on the central thermodynamic level during the course of a time step,
@@ -262,12 +250,11 @@ module advance_xm_wpxp_module
 
     ! Indices
     integer :: i
-    integer :: k, km1, kp1
 
     !---------------------------------------------------------------------------
 
     ! ----- Begin Code -----
-    if ( l_clip_semi_implicit .or. l_3pt_sqd_dfsn ) then
+    if ( l_clip_semi_implicit ) then
       nrhs = 1
     else
       nrhs = 2+sclr_dim
@@ -320,62 +307,6 @@ module advance_xm_wpxp_module
 
     Kw6(1:gr%nzmax) = c_K6 * Kh_zt(1:gr%nzmax)
 
-
-    ! (wpxp)^2: 3-point average diffusion coefficient.
-    if ( l_3pt_sqd_dfsn ) then
-
-      ! Interpolate w'x' (w'r_t' and w'th_l') from the momentum levels to the
-      ! thermodynamic levels.  This is used for extra diffusion based on a
-      ! three-point average of (w'x')^2.
-      wprtp_zt  = zm2zt( wprtp )
-      wpthlp_zt = zm2zt( wpthlp )
-
-      do k = 1, gr%nzmax, 1
-
-        km1 = max( k-1, 1 )
-        kp1 = min( k+1, gr%nzmax )
-
-        ! Compute the square of wprtp_zt, averaged over 3 points.  26 Jan 2008
-        wprtp_zt_sqd_3pt(k) = ( wprtp_zt(km1)**2 + wprtp_zt(k)**2 & 
-                                + wprtp_zt(kp1)**2 ) / 3.0
-        ! Account for units of mix ratio (kg/kg)**2   Vince Larson 29 Jan 2008
-        wprtp_zt_sqd_3pt(k) = 1e6 * wprtp_zt_sqd_3pt(k)
-
-        ! Compute the square of wpthlp_zt, averaged over 3 points.
-        ! 26 Jan 2008
-        wpthlp_zt_sqd_3pt(k) = ( wpthlp_zt(km1)**2 + wpthlp_zt(k)**2 & 
-                                 + wpthlp_zt(kp1)**2 ) / 3.0
-
-      enddo
-
-      ! Define Kw6_rt and Kw6_thl
-      do k = 1, gr%nzmax, 1
-
-        ! Kw6_rt must have units of m^2/s.  Since wprtp_zt_sqd_3pt has units
-        ! of m/s (kg/kg), c_Ksqd is given units of m/(kg/kg) in this case.
-        ! Vince Larson increased by c_Ksqd, 29Jan2008
-        Kw6_rt(k)  = Kw6(k) + c_Ksqd * wprtp_zt_sqd_3pt(k)
-
-        ! Kw6_thl must have units of m^2/s.  Since wpthlp_zt_sqd_3pt has units
-        ! of m/s K, c_Ksqd is given units of m/K in this case.
-        Kw6_thl(k) = Kw6(k) + c_Ksqd * wpthlp_zt_sqd_3pt(k)
-        ! End Vince Larson's change
-
-      enddo
-
-    else  ! Three-point squared diffusion turned off.
-
-      ! Define Kw6_rt and Kw6_thl
-      do k = 1, gr%nzmax, 1
-
-        Kw6_rt(k)  = Kw6(k)
-        Kw6_thl(k) = Kw6(k)
-
-      enddo
-
-    endif  ! l_3pt_sqd_dfsn
-
-
     ! Find the number of grid levels, both upwards and downwards, that can
     ! have an effect on the central thermodynamic level during the course of
     ! one time step due to turbulent advection.  This is used as part of the
@@ -395,7 +326,7 @@ module advance_xm_wpxp_module
 
     ! Setup and decompose matrix for each variable.
 
-    if ( l_clip_semi_implicit .or. l_3pt_sqd_dfsn ) then
+    if ( l_clip_semi_implicit ) then
 
       ! Compute the upper and lower limits of w'r_t' at every level,
       ! based on the correlation of w and r_t, such that:
@@ -410,7 +341,7 @@ module advance_xm_wpxp_module
       ! Build the left-hand side matrix.
       call xm_wpxp_lhs( l_iter, dt, wprtp, a1, a1_zt, wm_zm, wm_zt,  &  ! Intent(in)
                         wp2, wp3_on_wp2, wp3_on_wp2_zt, & ! Intent(in)
-                        Kw6_rt, tau_zm, C7_Skw_fnc,  & ! Intent(in)
+                        Kw6, tau_zm, C7_Skw_fnc,  & ! Intent(in)
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt,  & ! Intent(in)
                         wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
@@ -483,7 +414,7 @@ module advance_xm_wpxp_module
       ! Build the left-hand side matrix.
       call xm_wpxp_lhs( l_iter, dt, wpthlp, a1, a1_zt, wm_zm, wm_zt, & ! Intent(in)
                         wp2, wp3_on_wp2, wp3_on_wp2_zt, & !  Intent(in)
-                        Kw6_thl, tau_zm, C7_Skw_fnc, & ! Intent(in)
+                        Kw6, tau_zm, C7_Skw_fnc, & ! Intent(in)
                         C6thl_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt, & ! Intent(in)
                         wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
@@ -623,7 +554,7 @@ module advance_xm_wpxp_module
 
       enddo ! passive scalars
 
-    else ! Simple case, where l_clip_semi_implicit and l_3pt_sqd_dfsn are both false
+    else ! Simple case, where l_clip_semi_implicit is false
 
       ! This is initialized solely for the purpose of avoiding a compiler
       ! warning about uninitialized variables.
@@ -775,7 +706,7 @@ module advance_xm_wpxp_module
 
       end do ! 1..sclr_dim
 
-    end if ! l_clip_semi_implicit .and. l_3pt_sqd_dfsn
+    end if ! l_clip_semi_implicit
 
     ! De-allocate memory
     deallocate( rhs, solution )

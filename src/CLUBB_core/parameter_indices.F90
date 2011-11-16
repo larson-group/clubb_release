@@ -25,7 +25,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 57 ! Total tunable parameters
+    nparams = 56 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -87,18 +87,17 @@ module parameter_indices
     inu9            = 45, & 
     ic_Krrainm      = 46, & 
     inu_r           = 47, & 
-    ic_Ksqd         = 48, &
-    inu_hd          = 49
+    inu_hd          = 48
 
   integer, parameter, public :: & 
-    igamma_coef     = 50, & 
-    igamma_coefb    = 51, & 
-    igamma_coefc    = 52, & 
-    imu             = 53, & 
-    ibeta           = 54, & 
-    ilmin_coef      = 55, & 
-    itaumin         = 56, & 
-    itaumax         = 57
+    igamma_coef     = 49, & 
+    igamma_coefb    = 50, & 
+    igamma_coefc    = 51, & 
+    imu             = 52, & 
+    ibeta           = 53, & 
+    ilmin_coef      = 54, & 
+    itaumin         = 55, & 
+    itaumax         = 56
 
 end module parameter_indices
 !-----------------------------------------------------------------------

@@ -491,7 +491,6 @@ module output_netcdf
       l_pos_def, &
       l_hole_fill, &
       l_clip_semi_implicit, &
-      l_3pt_sqd_dfsn, &
       l_standard_term_ta, &
       l_single_C2_Skw, &
       l_gamma_Skw, &
@@ -629,23 +628,21 @@ module output_netcdf
 
     ! Write the model flags to the file
     deallocate( stat )
-    allocate( stat(11) ) ! # of model flags
+    allocate( stat(10) ) ! # of model flags
 
     stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_local_kk", lchar( l_local_kk ) )
     stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_pos_def", lchar( l_pos_def ) )
     stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_hole_fill", lchar( l_hole_fill ) )
     stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_clip_semi_implicit", &
       lchar( l_clip_semi_implicit ) )
-    stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_3pt_sqd_dfsn", &
-      lchar( l_3pt_sqd_dfsn ) )
-    stat(6) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_standard_term_ta", &
+    stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_standard_term_ta", &
       lchar( l_standard_term_ta ) )
-    stat(7) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_single_C2_Skw", &
+    stat(6) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_single_C2_Skw", &
       lchar( l_single_C2_Skw ) )
-    stat(8) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_gamma_Skw", lchar( l_gamma_Skw ) )
-    stat(9) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_cloud_sed", lchar( l_cloud_sed ) )
-    stat(10) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
-    stat(11) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
+    stat(7) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_gamma_Skw", lchar( l_gamma_Skw ) )
+    stat(8) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_cloud_sed", lchar( l_cloud_sed ) )
+    stat(9) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
+    stat(10) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
 
     if ( any( stat /= NF90_NOERR ) ) then
       write(fstderr,*) "Error writing model flags"

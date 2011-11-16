@@ -81,8 +81,7 @@ module advance_xp2_xpyp_module
 
     use model_flags, only: & 
       l_hole_fill, &    ! logical constants
-      l_single_C2_Skw, &
-      l_3pt_sqd_dfsn
+      l_single_C2_Skw
 
     use parameters_tunable, only: &
       C2rt,     & ! Variable(s)
@@ -92,7 +91,6 @@ module advance_xp2_xpyp_module
       nu2_vert_res_dep, &
       c_K9,     &
       nu9_vert_res_dep, &
-      c_Ksqd,   &
       beta,     &
       C4,       &
       C14,      &
@@ -251,16 +249,7 @@ module advance_xp2_xpyp_module
     real, dimension(gr%nzmax) :: & 
       a1_zt,      & ! a_1 interpolated to thermodynamic levels       [-]
       wprtp_zt,   & ! w'r_t' interpolated to thermodynamic levels    [(kg/kg) m/s]
-      wpthlp_zt,  & ! w'th_l' interpolated to thermodyamnic levels   [K m/s]
-      rtp2_zt,    & ! r_t'^2 interpolated to thermodynamic levels    [kg^2/kg^2]
-      thlp2_zt,   & ! th_l'^2 interpolated to thermodynamic levels   [K^2]
-      rtpthlp_zt, & ! r_t'th_l' interpolated to thermodynamic levels [K kg/kg]
-      rtp2_zt_sqd_3pt, & 
-      thlp2_zt_sqd_3pt, & 
-      rtpthlp_zt_sqd_3pt, & 
-      Kw2_rtp2, & 
-      Kw2_thlp2, & 
-      Kw2_rtpthlp
+      wpthlp_zt     ! w'th_l' interpolated to thermodyamnic levels   [K m/s]
 
     real, dimension(gr%nzmax) :: &
       rtpthlp_chnge  ! Net change in r_t'th_l' due to clipping [(kg/kg) K]
@@ -272,7 +261,7 @@ module advance_xp2_xpyp_module
     logical :: l_scalar_calc, l_first_clip_ts, l_last_clip_ts
 
     ! Loop indices
-    integer :: i, k, km1, kp1
+    integer :: i, k
 
     !---------------------------- Begin Code ----------------------------------
 
@@ -342,81 +331,12 @@ module advance_xp2_xpyp_module
 
     enddo
 
-    ! (xapxbp)^2: 3-point average diffusion coefficient.
-    if ( l_3pt_sqd_dfsn ) then
-
-      ! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from the momentum levels to
-      ! the thermodynamic levels.  These will be used for extra diffusion based
-      ! on a three-point average of (var)^2.
-      rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )  ! Positive def. quantity
-      thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 )  ! Positive def. quantity
-      rtpthlp_zt = zm2zt( rtpthlp )
-
-      do k = 1, gr%nzmax, 1
-
-        km1 = max( k-1, 1 )
-        kp1 = min( k+1, gr%nzmax )
-
-        ! Compute the square of rtp2_zt, averaged over 3 points.  26 Jan 2008
-        rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2  & 
-                               + rtp2_zt(kp1)**2 ) / 3.0
-        ! Account for units (kg/kg)**4  Vince Larson 29 Jan 2008
-        rtp2_zt_sqd_3pt(k) = 1e12 * rtp2_zt_sqd_3pt(k) ! Known magic number
-
-        ! Compute the square of thlp2_zt, averaged over 3 points.  26 Jan 2008
-        thlp2_zt_sqd_3pt(k) = ( thlp2_zt(km1)**2 + thlp2_zt(k)**2  & 
-                                + thlp2_zt(kp1)**2 ) / 3.0
-
-        ! Compute the square of rtpthlp_zt, averaged over 3 points.  26 Jan 2008
-        rtpthlp_zt_sqd_3pt(k) = ( rtpthlp_zt(km1)**2 + rtpthlp_zt(k)**2  & 
-                                  + rtpthlp_zt(kp1)**2 ) / 3.0
-        ! Account for units (kg/kg)**2 Vince Larson 29 Jan 2008
-        rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k) ! Known magic number
-
-      enddo
-
-      ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
-      do k = 1, gr%nzmax, 1
-
-        ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has units
-        ! of kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ] in this
-        ! case.
-        Kw2_rtp2(k) = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k)
-        ! Vince Larson increased by c_Ksqd, 29Jan2008
-
-        ! Kw2_thlp2 must have units of m^2/s.  Since thlp2_zt_sqd_3pt has
-        ! units of K^2, c_Ksqd is given units of m^2/[ s K^2 ] in this case.
-        Kw2_thlp2(k) = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k)
-        ! Vince Larson increased by c_Ksqd, 29Jan2008
-
-        ! Kw2_rtpthlp must have units of m^2/s.  Since rtpthlp_zt_sqd_3pt has
-        ! units of K (kg/kg), c_Ksqd is given units of m^2/[ s K (kg/kg) ] in
-        ! this case.
-        Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k)
-        ! Vince Larson increased by c_Ksqd, 29Jan2008
-
-      enddo
-
-    else  ! Three-point squared diffusion turned off.
-
-      ! Define Kw2_rtp2, Kw2_thlp2, and Kw2_rtpthlp
-      do k = 1, gr%nzmax, 1
-
-        Kw2_rtp2(k)    = Kw2(k)
-        Kw2_thlp2(k)   = Kw2(k)
-        Kw2_rtpthlp(k) = Kw2(k)
-
-      enddo
-
-    endif  ! l_3pt_sqd_dfsn
-
-
     !!!!!***** r_t'^2 *****!!!!!
 
     ! Implicit contributions to term rtp2
     call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &              ! Intent(in)
                        wp3_on_wp2, &                             ! Intent(in)
-                       a1, a1_zt, tau_zm, wm_zm, Kw2_rtp2, &     ! Intent(in)
+                       a1, a1_zt, tau_zm, wm_zm, Kw2, &          ! Intent(in)
                        rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &  ! Intent(in)
                        C2rt_1d, nu2_vert_res_dep, beta, &        ! Intent(in)
                        lhs )                                     ! Intent(out)
@@ -444,7 +364,7 @@ module advance_xp2_xpyp_module
     ! Implicit contributions to term thlp2
     call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &             ! Intent(in)
                        wp3_on_wp2, &                            ! Intent(in)
-                       a1, a1_zt, tau_zm, wm_zm, Kw2_thlp2, &   ! Intent(in)
+                       a1, a1_zt, tau_zm, wm_zm, Kw2, &        ! Intent(in)
                        rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! Intent(in)
                        C2thl_1d, nu2_vert_res_dep, beta, &      ! Intent(in)
                        lhs )                                    ! Intent(out)
@@ -473,7 +393,7 @@ module advance_xp2_xpyp_module
     ! Implicit contributions to term rtpthlp
     call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, &             ! Intent(in)
                        wp3_on_wp2, &                            ! Intent(in)
-                       a1, a1_zt, tau_zm, wm_zm, Kw2_rtpthlp, & ! Intent(in)
+                       a1, a1_zt, tau_zm, wm_zm, Kw2, &         ! Intent(in)
                        rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! Intent(in)
                        C2rtthl_1d, nu2_vert_res_dep, beta, &    ! Intent(in)
                        lhs )                                    ! Intent(out)

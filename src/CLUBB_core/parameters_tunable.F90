@@ -76,7 +76,6 @@ module parameters_tunable
     c_K8        = 1.250000,         & ! Coefficient of Eddy Diffusion for wp3.
     c_K9        = 0.250000,         & ! Coefficient of Eddy Diffusion for up2 and vp2.
     c_Krrainm   = 0.200000,         & ! Coefficient of Eddy Diffusion for hydrometeors.
-    c_Ksqd      = 10.00000,         & ! Constant for scaling effect of value-squared diffusion.
     gamma_coef  = 0.320000,         & ! Low Skewness in gamma coefficient Skewness Function.
     gamma_coefb = 0.320000,         & ! High Skewness in gamma coefficient Skewness Function.
     gamma_coefc = 5.000000,         & ! Degree of Slope of gamma coefficient Skewness Function.
@@ -100,7 +99,7 @@ module parameters_tunable
 !$omp     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, &
 !$omp     C13, C14, C15, &
 !$omp     c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, &
-!$omp     c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd, &
+!$omp     c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, nu_hd, &
 !$omp     gamma_coef, gamma_coefb, gamma_coefc, &
 !$omp     taumin, taumax, mu, lmin)
 
@@ -148,7 +147,7 @@ module parameters_tunable
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
     C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
-    c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
+    c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
     lmin_coef, taumin, taumax, mu
 
@@ -176,7 +175,7 @@ module parameters_tunable
        "nu1          ", &
        "c_K2         ", "nu2          ", "c_K6         ", "nu6          ", & 
        "c_K8         ", "nu8          ", "c_K9         ", "nu9          ", & 
-       "c_Krrainm    ", "nu_r         ", "c_Ksqd       ", "nu_hd        ", &
+       "c_Krrainm    ", "nu_r         ", "nu_hd        ",                  &
        "gamma_coef   ", "gamma_coefb  ", "gamma_coefc  ", "mu           ", &
        "beta         ", "lmin_coef    ", "taumin       ", "taumax       " /)
 
@@ -258,7 +257,7 @@ module parameters_tunable
                             C11, C11b, C11c, C12, C13, C14, C15, & 
                             C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                            c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+                            c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
                             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                             mu, beta, lmin_coef, taumin, taumax )
 
@@ -582,7 +581,7 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, taumin, taumax, params )
 
@@ -647,7 +646,7 @@ module parameters_tunable
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
       C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
-      c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
+      c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, taumin, taumax, mu
 
@@ -668,7 +667,7 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, taumin, taumax, param_spread )
 
@@ -710,7 +709,7 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
-               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, &
+               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, &
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
                mu, beta, lmin_coef, taumin, taumax, params )
 
@@ -775,7 +774,6 @@ module parameters_tunable
       inu9, & 
       ic_Krrainm, & 
       inu_r, & 
-      ic_Ksqd, &
       inu_hd, & 
       igamma_coef, & 
       igamma_coefb, & 
@@ -797,7 +795,7 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
-      c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd, gamma_coef, &
+      c_K9, nu9, c_Krrainm, nu_r, nu_hd, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, taumin, taumax
 
     ! Output variables
@@ -852,7 +850,6 @@ module parameters_tunable
     params(inu9)       = nu9
     params(ic_Krrainm) = c_Krrainm
     params(inu_r)      = nu_r
-    params(ic_Ksqd)    = c_Ksqd
     params(inu_hd)     = nu_hd
 
     params(igamma_coef)  = gamma_coef
@@ -880,7 +877,7 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, & 
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                mu, beta, lmin_coef, taumin, taumax )
 
@@ -945,7 +942,6 @@ module parameters_tunable
       inu9, & 
       ic_Krrainm, & 
       inu_r, & 
-      ic_Ksqd, & 
       inu_hd, & 
       igamma_coef, & 
       igamma_coefb, & 
@@ -970,7 +966,7 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-      c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+      c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
       mu, beta, lmin_coef, taumin, taumax
 
@@ -1023,7 +1019,6 @@ module parameters_tunable
     nu9       = params(inu9)
     c_Krrainm = params(ic_Krrainm)
     nu_r      = params(inu_r)
-    c_Ksqd    = params(ic_Ksqd)
     nu_hd     = params(inu_hd)
 
     gamma_coef  = params(igamma_coef)
@@ -1063,7 +1058,7 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, taumin, taumax, params )
 
@@ -1132,7 +1127,6 @@ module parameters_tunable
     nu9                = init_value
     c_Krrainm          = init_value
     nu_r               = init_value
-    c_Ksqd             = init_value
     nu_hd              = init_value
     beta               = init_value
     gamma_coef         = init_value
