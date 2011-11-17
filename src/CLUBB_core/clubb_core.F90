@@ -934,16 +934,16 @@ module clubb_core
     ! ldgrant June 2009
     if ( l_trapezoidal_rule_zt ) then
       call trapezoidal_rule_zt &
-         ( l_call_pdf_closure_twice,                    & ! intent(in)
-           wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
-           wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
-           wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
-           wp2sclrp, pdf_params,                        & ! intent(inout)
-           wprtp2_zm, wp2rtp_zm, wpthlp2_zm,            & ! intent(inout)
-           wp2thlp_zm, wprtpthlp_zm, cloud_frac_zm,     & ! intent(inout)
-           rcm_zm, wp2thvp_zm, wp2rcp_zm,               & ! intent(inout)
-           wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
-           wp2sclrp_zm, pdf_params_zm )                   ! intent(inout)
+           ( l_call_pdf_closure_twice,                    & ! intent(in)
+             wprtp2, wpthlp2,                             & ! intent(inout)
+             wprtpthlp, cloud_frac, rcm,                  & ! intent(inout)
+             wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
+             pdf_params,                                  & ! intent(inout)
+             wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
+             wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
+             rcm_zm,                                      & ! intent(inout)
+             wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
+               pdf_params_zm )                   ! intent(inout)
     end if ! l_trapezoidal_rule_zt
 
     ! If l_trapezoidal_rule_zm is true, call trapezoidal_rule_zm for
@@ -1781,36 +1781,44 @@ module clubb_core
   !-----------------------------------------------------------------------
   subroutine trapezoidal_rule_zt &
              ( l_call_pdf_closure_twice,                    & ! intent(in)
-               wprtp2, wp2rtp, wpthlp2, wp2thlp,            & ! intent(inout)
-               wprtpthlp, cloud_frac, rcm, wp2thvp, wp2rcp, & ! intent(inout)
+               wprtp2, wpthlp2,                             & ! intent(inout)
+               wprtpthlp, cloud_frac, rcm,                  & ! intent(inout)
                wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
-               wp2sclrp, pdf_params,                        & ! intent(inout)
-               wprtp2_zm, wp2rtp_zm, wpthlp2_zm,            & ! intent(inout)
-               wp2thlp_zm, wprtpthlp_zm, cloud_frac_zm,     & ! intent(inout)
-               rcm_zm, wp2thvp_zm, wp2rcp_zm,               & ! intent(inout)
+               pdf_params,                                  & ! intent(inout)
+               wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
+               wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
+               rcm_zm,                                      & ! intent(inout)
                wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
-               wp2sclrp_zm, pdf_params_zm )                   ! intent(inout)
+               pdf_params_zm )                   ! intent(inout)
     !
-    ! Description:  This subroutine takes the output variables on the thermo.
-    ! grid and either: interpolates them to the momentum grid, or uses the
-    ! values output from the second call to pdf_closure on momentum levels if
-    ! l_call_pdf_closure_twice is true.  It then calls the function
-    ! trapezoid_zt to recompute the variables on the thermo. grid.
-    ! ldgrant June 2009
+    ! Description:  
+    !   This subroutine takes the output variables on the thermo.
+    !   grid and either: interpolates them to the momentum grid, or uses the
+    !   values output from the second call to pdf_closure on momentum levels if
+    !   l_call_pdf_closure_twice is true.  It then calls the function
+    !   trapezoid_zt to recompute the variables on the thermo. grid.
+    !   ldgrant June 2009
     !
-    ! Note:  The argument variables in the last 5 lines of the subroutine
-    ! (wprtp2_zm through pdf_params_zm) are declared intent(inout) because
-    ! if l_call_pdf_closure_twice is true, these variables will already have
-    ! values from pdf_closure on momentum levels and will not be altered in
-    ! this subroutine.  However, if l_call_pdf_closure_twice is false, these
-    ! variables will not have values yet and will be interpolated to
-    ! momentum levels in this subroutine.
+    ! Note: 
+    !   The argument variables in the last 5 lines of the subroutine
+    !   (wprtp2_zm through pdf_params_zm) are declared intent(inout) because
+    !   if l_call_pdf_closure_twice is true, these variables will already have
+    !   values from pdf_closure on momentum levels and will not be altered in
+    !   this subroutine.  However, if l_call_pdf_closure_twice is false, these
+    !   variables will not have values yet and will be interpolated to
+    !   momentum levels in this subroutine.
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     use stats_variables, only: &
       iwprtp2, & ! Varibles
       iwprtpthlp, &
-      iwpthlp2
+      iwpthlp2, &
+      iwprtp2, &
+      iwpsclrp2, &
+      iwpsclrprtp, &
+      iwpsclrpthlp
  
     use grid_class, only: &
       gr, & ! Variable
@@ -1831,20 +1839,15 @@ module clubb_core
     ! Thermodynamic level variables output from the first call to pdf_closure
     real, dimension(gr%nzmax), intent(inout) :: &
       wprtp2,      & ! w'rt'^2                   [m kg^2/kg^2]
-      wp2rtp,      & ! w'^2 rt'                  [m^2 kg/kg]
       wpthlp2,     & ! w'thl'^2                  [m K^2/s]
-      wp2thlp,     & ! w'^2 thl'                 [m^2 K/s^2]
       wprtpthlp,   & ! w'rt'thl'                 [m kg K/kg s]
       cloud_frac,  & ! Cloud Fraction            [-]
-      rcm,         & ! Liquid water mixing ratio [kg/kg]
-      wp2thvp,     & ! w'^2 th_v'                [m^2 K/s^2]
-      wp2rcp         ! w'^2 rc'                  [m^2 kg/kg s^2]
+      rcm            ! Liquid water mixing ratio [kg/kg]
 
     real, dimension(gr%nzmax,sclr_dim), intent(inout) :: & 
       wpsclrprtp,  & ! w'sclr'rt' 
       wpsclrp2,    & ! w'sclr'^2
-      wpsclrpthlp, & ! w'sclr'thl'
-      wp2sclrp       ! w'^2 sclr'
+      wpsclrpthlp    ! w'sclr'thl'
 
     type (pdf_parameter), dimension(gr%nzmax), intent(inout) :: &
       pdf_params ! PDF parameters [units vary]
@@ -1854,20 +1857,15 @@ module clubb_core
     ! the second call to pdf_closure (in subroutine advance_clubb_core)
     real, dimension(gr%nzmax), intent(inout) :: &
       wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
-      wp2rtp_zm,     & ! w'^2 rt' on momentum grid                  [m^2 kg/kg]
       wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
-      wp2thlp_zm,    & ! w'^2 thl' on momentum grid                 [m^2 K/s^2]
       wprtpthlp_zm,  & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
       cloud_frac_zm, & ! Cloud Fraction on momentum grid            [-]
-      rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
-      wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
-      wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
+      rcm_zm           ! Liquid water mixing ratio on momentum grid [kg/kg]
 
     real, dimension(gr%nzmax,sclr_dim), intent(inout) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
-      wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid 
-      wp2sclrp_zm       ! w'^2 sclr' on momentum grid
+      wpsclrpthlp_zm    ! w'sclr'thl' on momentum grid 
 
     type (pdf_parameter), dimension(gr%nzmax), intent(inout) :: &
       pdf_params_zm ! PDF parameters on momentum grid [units vary]
@@ -2017,24 +2015,16 @@ module clubb_core
       ! Interpolate thermodynamic variables to the momentum grid.
       ! Since top momentum level is higher than top thermo. level,
       ! set variables at top momentum level to 0.
-      wprtp2_zm              = zt2zm( wprtp2 )
-      wprtp2_zm(gr%nzmax)     = 0.0
-      wp2rtp_zm              = zt2zm( wp2rtp )
-      wp2rtp_zm(gr%nzmax)     = 0.0
-      wpthlp2_zm             = zt2zm( wpthlp2 )
-      wpthlp2_zm(gr%nzmax)    = 0.0
-      wp2thlp_zm             = zt2zm( wp2thlp )
-      wp2thlp_zm(gr%nzmax)    = 0.0
+      wprtp2_zm           = zt2zm( wprtp2 )
+      wprtp2_zm(gr%nzmax) = 0.0
+      wpthlp2_zm           = zt2zm( wpthlp2 )
+      wpthlp2_zm(gr%nzmax) = 0.0
       wprtpthlp_zm           = zt2zm( wprtpthlp )
       wprtpthlp_zm(gr%nzmax)  = 0.0
       cloud_frac_zm          = zt2zm( cloud_frac )
       cloud_frac_zm(gr%nzmax) = 0.0
       rcm_zm                 = zt2zm( rcm )
       rcm_zm(gr%nzmax)        = 0.0
-      wp2thvp_zm             = zt2zm( wp2thvp )
-      wp2thvp_zm(gr%nzmax)    = 0.0
-      wp2rcp_zm              = zt2zm( wp2rcp )
-      wp2rcp_zm(gr%nzmax)     = 0.0
 
       do i = 1, sclr_dim
         wpsclrprtp_zm(:,i)        = zt2zm( wpsclrprtp(:,i) )
@@ -2043,8 +2033,6 @@ module clubb_core
         wpsclrp2_zm(gr%nzmax,i)    = 0.0
         wpsclrpthlp_zm(:,i)       = zt2zm( wpsclrpthlp(:,i) )
         wpsclrpthlp_zm(gr%nzmax,i) = 0.0
-        wp2sclrp_zm(:,i)          = zt2zm( wp2sclrp(:,i) )
-        wp2sclrp_zm(gr%nzmax,i)    = 0.0
       end do ! i = 1, sclr_dim
 
       w1_zm                   = zt2zm( pdf_params%w1 )
@@ -2119,18 +2107,20 @@ module clubb_core
     if ( iwprtpthlp > 0 ) then
       wprtpthlp  = trapezoid_zt( wprtpthlp, wprtpthlp_zm )
     end if
-    wp2rtp     = trapezoid_zt( wp2rtp, wp2rtp_zm )
-    wp2thlp    = trapezoid_zt( wp2thlp, wp2thlp_zm )
+
     cloud_frac = trapezoid_zt( cloud_frac, cloud_frac_zm )
     rcm        = trapezoid_zt( rcm, rcm_zm )
-    wp2thvp    = trapezoid_zt( wp2thvp, wp2thvp_zm )
-    wp2rcp     = trapezoid_zt( wp2rcp, wp2rcp_zm )
 
     do i = 1, sclr_dim
-      wpsclrprtp(:,i)  = trapezoid_zt( wpsclrprtp(:,i), wpsclrprtp_zm(:,i) )
-      wpsclrp2(:,i)    = trapezoid_zt( wpsclrp2(:,i), wpsclrp2_zm(:,i) )
-      wpsclrpthlp(:,i) = trapezoid_zt( wpsclrpthlp(:,i), wpsclrpthlp_zm(:,i) )
-      wp2sclrp(:,i)    = trapezoid_zt( wp2sclrp(:,i), wp2sclrp_zm(:,i) )
+      if ( iwpsclrprtp(i) > 0 ) then
+        wpsclrprtp(:,i)  = trapezoid_zt( wpsclrprtp(:,i), wpsclrprtp_zm(:,i) )
+      end if
+      if ( iwpsclrpthlp(i) > 0 ) then
+        wpsclrpthlp(:,i) = trapezoid_zt( wpsclrpthlp(:,i), wpsclrpthlp_zm(:,i) )
+      end if
+      if ( iwpsclrp2(i) > 0 ) then
+        wpsclrp2(:,i)    = trapezoid_zt( wpsclrp2(:,i), wpsclrp2_zm(:,i) )
+      end if
     end do ! i = 1, sclr_dim
 
     pdf_params%w1          = trapezoid_zt( w1_zt, w1_zm )
