@@ -1807,6 +1807,11 @@ module clubb_core
     ! momentum levels in this subroutine.
     !-----------------------------------------------------------------------
 
+    use stats_variables, only: &
+      iwprtp2, & ! Varibles
+      iwprtpthlp, &
+      iwpthlp2
+ 
     use grid_class, only: &
       gr, & ! Variable
       zt2zm ! Procedure
@@ -2105,11 +2110,17 @@ module clubb_core
     end if ! l_call_pdf_closure_twice
 
     ! Use the trapezoidal rule to recompute the variables on the zt level
-    wprtp2     = trapezoid_zt( wprtp2, wprtp2_zm )
+    if ( iwprtp2 > 0 ) then
+      wprtp2     = trapezoid_zt( wprtp2, wprtp2_zm )
+    end if
+    if ( iwpthlp2 > 0 ) then
+      wpthlp2    = trapezoid_zt( wpthlp2, wpthlp2_zm )
+    end if
+    if ( iwprtpthlp > 0 ) then
+      wprtpthlp  = trapezoid_zt( wprtpthlp, wprtpthlp_zm )
+    end if
     wp2rtp     = trapezoid_zt( wp2rtp, wp2rtp_zm )
-    wpthlp2    = trapezoid_zt( wpthlp2, wpthlp2_zm )
     wp2thlp    = trapezoid_zt( wp2thlp, wp2thlp_zm )
-    wprtpthlp  = trapezoid_zt( wprtpthlp, wprtpthlp_zm )
     cloud_frac = trapezoid_zt( cloud_frac, cloud_frac_zm )
     rcm        = trapezoid_zt( rcm, rcm_zm )
     wp2thvp    = trapezoid_zt( wp2thvp, wp2thvp_zm )
