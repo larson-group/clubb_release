@@ -936,14 +936,14 @@ module clubb_core
       call trapezoidal_rule_zt &
            ( l_call_pdf_closure_twice,                    & ! intent(in)
              wprtp2, wpthlp2,                             & ! intent(inout)
-             wprtpthlp, cloud_frac, rcm,                  & ! intent(inout)
+             wprtpthlp, cloud_frac, rcm, wp2thvp,         & ! intent(inout)
              wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
              pdf_params,                                  & ! intent(inout)
              wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
              wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
-             rcm_zm,                                      & ! intent(inout)
+             rcm_zm, wp2thvp_zm,                          & ! intent(inout)
              wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
-               pdf_params_zm )                   ! intent(inout)
+             pdf_params_zm )                                ! intent(inout)
     end if ! l_trapezoidal_rule_zt
 
     ! If l_trapezoidal_rule_zm is true, call trapezoidal_rule_zm for
@@ -1782,12 +1782,12 @@ module clubb_core
   subroutine trapezoidal_rule_zt &
              ( l_call_pdf_closure_twice,                    & ! intent(in)
                wprtp2, wpthlp2,                             & ! intent(inout)
-               wprtpthlp, cloud_frac, rcm,                  & ! intent(inout)
+               wprtpthlp, cloud_frac, rcm, wp2thvp,         & ! intent(inout)
                wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
                pdf_params,                                  & ! intent(inout)
                wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
                wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
-               rcm_zm,                                      & ! intent(inout)
+               rcm_zm, wp2thvp_zm,                          & ! intent(inout)
                wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
                pdf_params_zm )                   ! intent(inout)
     !
@@ -1842,7 +1842,8 @@ module clubb_core
       wpthlp2,     & ! w'thl'^2                  [m K^2/s]
       wprtpthlp,   & ! w'rt'thl'                 [m kg K/kg s]
       cloud_frac,  & ! Cloud Fraction            [-]
-      rcm            ! Liquid water mixing ratio [kg/kg]
+      rcm,         & ! Liquid water mixing ratio [kg/kg]
+      wp2thvp        ! w'^2 th_v'                [m^2 K/s^2]
 
     real, dimension(gr%nzmax,sclr_dim), intent(inout) :: & 
       wpsclrprtp,  & ! w'sclr'rt' 
@@ -1860,7 +1861,8 @@ module clubb_core
       wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
       wprtpthlp_zm,  & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
       cloud_frac_zm, & ! Cloud Fraction on momentum grid            [-]
-      rcm_zm           ! Liquid water mixing ratio on momentum grid [kg/kg]
+      rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
+      wp2thvp_zm       ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
 
     real, dimension(gr%nzmax,sclr_dim), intent(inout) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
@@ -2025,6 +2027,8 @@ module clubb_core
       cloud_frac_zm(gr%nzmax) = 0.0
       rcm_zm                 = zt2zm( rcm )
       rcm_zm(gr%nzmax)        = 0.0
+      wp2thvp_zm             = zt2zm( wp2thvp )
+      wp2thvp_zm(gr%nzmax)    = 0.0
 
       do i = 1, sclr_dim
         wpsclrprtp_zm(:,i)        = zt2zm( wpsclrprtp(:,i) )
@@ -2110,6 +2114,7 @@ module clubb_core
 
     cloud_frac = trapezoid_zt( cloud_frac, cloud_frac_zm )
     rcm        = trapezoid_zt( rcm, rcm_zm )
+    wp2thvp    = trapezoid_zt( wp2thvp, wp2thvp_zm )
 
     do i = 1, sclr_dim
       if ( iwpsclrprtp(i) > 0 ) then
