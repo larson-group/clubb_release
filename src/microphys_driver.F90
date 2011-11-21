@@ -276,9 +276,8 @@ module microphys_driver
 
     select case (trim(runtype))
     case ( "clex9_oct14")
-      NNUCCD_REDUCE_COEF = .01 ! Reduce NNUCCD by factor of 100
-      NNUCCC_REDUCE_COEF = .01 ! Reduce NNUCCC by factor of 100
-    write(6,*) "I AM WORKING SO HARD RIGHT NOW!"
+      NNUCCD_REDUCE_COEF = .01 ! Reduce NNUCCD by factor of 100 for clex9_oct14
+      NNUCCC_REDUCE_COEF = .01 ! Reduce NNUCCC by factor of 100 for clex9_oct14
     end select
     ! end change by Marc Pilon 11/16/11
 
