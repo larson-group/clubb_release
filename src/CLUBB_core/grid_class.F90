@@ -268,9 +268,9 @@ module grid_class
                          begin_height, end_height                 )
 
     ! Description:
-    ! Grid Constructor
+    !   Grid Constructor
     !
-    ! This subroutine sets up the CLUBB vertical grid.
+    !   This subroutine sets up the CLUBB vertical grid.
     !
     ! References:
     !   ``Equations for CLUBB'',  Sec. 8,  Grid Configuration.
@@ -285,13 +285,12 @@ module grid_class
     implicit none
 
     ! Constant parameters
-    ! Issue a warning if nzmax exceeds this number.
     integer, parameter :: & 
-      NWARNING = 250
+      NWARNING = 250 ! Issue a warning if nzmax exceeds this number.
 
     ! Input Variables
     integer, intent(in) ::  & 
-      nzmax     ! Number of vertical levels in grid      [#]
+      nzmax  ! Number of vertical levels in grid      [#]
 
     real, intent(in) ::  &
       sfc_elevation  ! Elevation of ground level    [m AMSL]
@@ -343,11 +342,11 @@ module grid_class
 
     ! Define the grid size
 
-    if ( nzmax > NWARNING .and.  &
-         clubb_at_least_debug_level( 1 ) ) then
+    if ( nzmax > NWARNING .and. clubb_at_least_debug_level( 1 ) ) then
       write(fstderr,*) "Warning:  running with vertical grid "// & 
                        "which is larger than", NWARNING, "levels."
-    endif
+      write(fstderr,*) "This may take a lot of CPU time and memory."
+    end if
 
     gr%nzmax = nzmax
 
@@ -359,7 +358,7 @@ module grid_class
     !---------------------------------------------------
     if ( .not. l_implemented ) then
 
-      if( grid_type == 1 ) then
+      if ( grid_type == 1 ) then
 
         ! Determine the number of grid points given the spacing
         ! to fit within the bounds without going over.
@@ -459,16 +458,16 @@ module grid_class
 
     !---------------------------------------------------
 
-    ! Allocate memory for grid levels
-    allocate( gr%zm(1:gr%nzmax), gr%zt(1:gr%nzmax), & 
-              gr%dzm(1:gr%nzmax), gr%dzt(1:gr%nzmax), &
-              gr%invrs_dzm(1:gr%nzmax), gr%invrs_dzt(1:gr%nzmax),  & 
-              gr%weights_zm2zt(m_above:m_below,1:gr%nzmax), & 
-              gr%weights_zt2zm(t_above:t_below,1:gr%nzmax), & 
+    ! Allocate memory for the grid levels
+    allocate( gr%zm(gr%nzmax), gr%zt(gr%nzmax), & 
+              gr%dzm(gr%nzmax), gr%dzt(gr%nzmax), &
+              gr%invrs_dzm(gr%nzmax), gr%invrs_dzt(gr%nzmax),  & 
+              gr%weights_zm2zt(m_above:m_below,gr%nzmax), & 
+              gr%weights_zt2zm(t_above:t_below,gr%nzmax), & 
               stat=ierr )
 
     if ( ierr /= 0 ) then
-      write(fstderr,*) "Grid allocation failed."
+      write(fstderr,*) "In setup_grid: allocation of grid variables failed."
       stop "Fatal error."
     end if
 
@@ -1536,10 +1535,13 @@ module grid_class
   pure function cubic_interpolated_azt( azm )
 
     ! Description:
-    ! Function to interpolate a variable located on the momentum grid
-    ! levels (azm) to the thermodynamic grid levels (azt).  This function outputs the
-    ! value of azt at a all grid levels using Steffen's monotonic cubic
-    ! interpolation implemented by Tak Yamaguchi.
+    !   Function to interpolate a variable located on the momentum grid
+    !   levels (azm) to the thermodynamic grid levels (azt).  This function outputs the
+    !   value of azt at a all grid levels using Steffen's monotonic cubic
+    !   interpolation implemented by Tak Yamaguchi.
+    ! 
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     implicit none
@@ -1638,7 +1640,7 @@ module grid_class
 
   !=============================================================================
   pure function interpolated_aztk_imp( t_lev ) & 
-  result( azm_weight )
+    result( azm_weight )
 
     ! Description:
     ! Function used to help in an interpolation of a variable (var_zm) located
@@ -1933,13 +1935,16 @@ module grid_class
   end function gradzt
 
   !=============================================================================
-  function flip( x, xdim )
+  pure function flip( x, xdim )
 
     ! Description:
-    ! Flips a single dimension array (i.e. a vector), so the first element
-    ! becomes the last and vice versa for the whole column.  This is a
-    ! necessary part of the code because BUGSrad and CLUBB store altitudes in
-    ! reverse order
+    !   Flips a single dimension array (i.e. a vector), so the first element
+    !   becomes the last and vice versa for the whole column.  This is a
+    !   necessary part of the code because BUGSrad and CLUBB store altitudes in
+    !   reverse order.
+    !
+    ! References:
+    !   None
     !-------------------------------------------------------------------------
     
     use clubb_precision, only: &
@@ -1947,21 +1952,24 @@ module grid_class
 
     implicit none
 
-    ! Input
+    ! Input Variables
     integer, intent(in) :: xdim
 
-    real( kind = dp ), dimension(xdim), intent(in) :: x
+    real(kind = dp), dimension(xdim), intent(in) :: x
 
-    ! Output
-    real( kind = dp ), dimension(xdim) :: flip
+    ! Output Variables
+    real(kind = dp), dimension(xdim) :: flip
 
-    ! Internal
-    real( kind = dp ), dimension(xdim) :: tmp
+    ! Local Variables
+    real(kind = dp), dimension(xdim) :: tmp
+
     integer :: indx
 
-    do indx = 1, xdim, 1
+    ! ---- Begin Code ----
+
+    forall ( indx = 1 : xdim )
       tmp(indx) = x((xdim+1) - (indx))
-    end do
+    end forall
 
     flip = tmp
 
