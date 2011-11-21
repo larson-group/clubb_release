@@ -199,9 +199,12 @@ module input_reader
   !------------------------------------------------------------------------------------------------
   subroutine read_one_dim_file( iunit, nCol, filename, read_vars )
     !
-    ! Description: This subroutine reads from a file containing data that varies
-    !              in one dimensions. This is typically time.
-    !
+    ! Description: 
+    !   This subroutine reads from a file containing data that varies
+    !   in one dimension. The dimension is typically time.
+    ! 
+    ! References:
+    !   None
     !----------------------------------------------------------------------------------------------
     implicit none
 
@@ -219,8 +222,8 @@ module input_reader
 
     ! Output Variable(s)
 
-    type (one_dim_read_var), dimension(nCol),intent(out) :: read_vars ! Structured information
-    !                                                                   from the file
+    type (one_dim_read_var), dimension(nCol),intent(out) :: &
+      read_vars ! Structured information from the file
 
     ! Local Variable(s)
     character(len=30),dimension(nCol) :: names
@@ -386,7 +389,7 @@ module input_reader
                                         two_dim_vars(1)%values(:,j), &
                                         two_dim_vars(i)%values(:,j), -999.9 ) ! Known magic number
       end do
-      ! Interpopate along other dim
+      ! Interpolate along other dim
       do j=1, dim_size
         two_dim_vars(i)%values(j,:) = linear_fill_blanks( other_dim_size, &
                                         other_dim%values, &
@@ -478,8 +481,9 @@ module input_reader
   !----------------------------------------------------------------------------
   subroutine deallocate_one_dim_vars( num_vars, one_dim_vars )
     !
-    !  Description: This subroutine deallocates the pointer stored in
-    !  one_dim_vars%value for the whole array
+    !  Description: 
+    !    This subroutine deallocates the pointer stored in
+    !    one_dim_vars%value for the whole array.
     !
     !------------------------------------------------------------------------------
     implicit none
