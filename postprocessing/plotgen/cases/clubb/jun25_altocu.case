@@ -5,9 +5,9 @@
     'name' => 'jun25_altocu',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'June 25 Altocumulus Minutes 61-120',
-    'startTime' => 61.0,  # [minutes]
-    'endTime' => 120.0,    # [minutes]
+    'headerText' => 'June 25 Altocumulus Minutes 181-240',
+    'startTime' => 181.0,  # [minutes]
+    'endTime' => 240.0,    # [minutes]
     'startHeight' => 4808.0,  # [m]
     'endHeight' => 7308.0, # [m]
     'plots' =>
