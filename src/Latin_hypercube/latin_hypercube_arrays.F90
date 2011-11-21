@@ -447,10 +447,9 @@ module latin_hypercube_arrays
       end if
     end do
 
-    call deallocate_one_dim_vars( d_variables, retVars )
+    call deallocate_one_dim_vars( nCols, retVars )
 
-    deallocate( retVars )
-
+    return
   end subroutine read_correlation_matrix
 
   !--------------------------------------------------------------------------
