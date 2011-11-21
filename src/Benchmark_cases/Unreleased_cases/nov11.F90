@@ -83,7 +83,7 @@ module nov11
          time <  time_initial + 3600.0_time_precision + dt ) then
 
       do k = 1, gr%nzmax, 1
-        if ( gr%zt(k) > ( 2687.5 + gr%zm(1) ) ) then
+        if ( gr%zt(k) > ( 2900.0 + gr%zm(1) ) ) then
           rtm(k) = 0.89 * rtm(k) ! Known magic number
         end if
       end do
@@ -260,7 +260,7 @@ module nov11
          time <  time_initial + 3600.0_time_precision + dt ) then
 
       do k = 1, gr%nzmax, 1
-        if ( gr%zt(k) > ( 2687.5 + gr%zm(1) ) ) then
+        if ( gr%zt(k) > ( 2900.0 + gr%zm(1) ) ) then
           rtm(k) = 0.89 * rtm(k) ! Known magic number
         end if
       end do
