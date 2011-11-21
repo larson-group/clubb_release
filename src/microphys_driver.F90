@@ -80,6 +80,12 @@ module microphys_driver
     ! None
     !---------------------------------------------------------------------------
 
+! Adding coefficient variable for clex9_oct14 case to reduce NNUCCD and NNUCCC
+    use module_mp_graupel, only: &
+      NNUCCD_REDUCE_COEF, &
+      NNUCCC_REDUCE_COEF
+! Change by Marc Pilon on 11/16/11
+
     use array_index, only: & 
       iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
       iiNcm, iiNsnowm, iiNim, iiNgraupelm
@@ -263,6 +269,19 @@ module microphys_driver
     ! Cloud water sedimentation from the RF02 case
     ! This has no effect on Morrison's cloud water sedimentation
     l_cloud_sed = .false.
+
+    !--------------------------------------------------------------------------
+    ! Parameters for NNUCCD & NNUCCC coefficients on clex9_oct14 case
+    !--------------------------------------------------------------------------
+
+    select case (trim(runtype))
+    case ( "clex9_oct14")
+      NNUCCD_REDUCE_COEF = .01 ! Reduce NNUCCD by factor of 100
+      NNUCCC_REDUCE_COEF = .01 ! Reduce NNUCCC by factor of 100
+    write(6,*) "I AM WORKING SO HARD RIGHT NOW!"
+    end select
+    ! end change by Marc Pilon 11/16/11
+
 
     !---------------------------------------------------------------------------
     ! Parameters for Khairoutdinov and Kogan microphysics
