@@ -102,20 +102,24 @@ module interpolation
   !   Takanobu Yamaguchi
   !   tak.yamaguchi@noaa.gov
   !
-  ! This version has been modified slightly for CLUBB's coding standards and
-  ! adds the 3/2 from eqn 21. -dschanen 26 Oct 2011
+  !   This version has been modified slightly for CLUBB's coding standards and
+  !   adds the 3/2 from eqn 21. -dschanen 26 Oct 2011
+  !   We have also added a quintic polynomial option (currently disabled).
   !
   ! References:
   !   M. Steffen, Astron. Astrophys. 239, 443-450 (1990)
   !-------------------------------------------------------------------------------------------------
 
-    use constants_clubb, only: three_halves
+    use constants_clubb, only: &
+      three_halves, & ! Constant(s)
+      eps
 
     implicit none
 
     ! Constant Parameters
     logical, parameter :: &
-      l_equation_21 = .true.
+      l_equation_21 = .true., &
+      l_quintic_polynomial = .false.
 
     ! External
     intrinsic :: sign, abs, min
@@ -144,14 +148,17 @@ module interpolation
       c1, c2, c3, c4, &
       w00, wp1, &
       coef1, coef2, &
-      zprime
+      zprime, beta, alpha, zn
    
     ! ---- Begin Code ---- 
 
     if ( l_equation_21 ) then
+      ! Use the formula from Steffen (1990), which should make the interpolation
+      ! less restrictive
       coef1 = three_halves
       coef2 = 1.0/three_halves
     else
+      ! Standard formula
       coef1 = 1.0
       coef2 = 1.0
     end if
@@ -195,11 +202,38 @@ module interpolation
       c3 = dfdx00
       c4 = f00
 
-      ! Old formula
-!     f_out = c1 * ( (z_in - z00)**3 ) + c2 * ( (z_in - z00)**2 ) + c3 * (z_in - z00) + c4
-      ! Faster nested multiplication
-      zprime = z_in - z00
-      f_out =  c4 + zprime*( c3 + zprime*( c2 + ( zprime*c1 ) ) )
+      if ( .not. l_quintic_polynomial ) then
+
+        ! Old formula
+        !f_out = c1 * ( (z_in - z00)**3 ) + c2 * ( (z_in - z00)**2 ) + c3 * (z_in - z00) + c4
+
+        ! Faster nested multiplication
+        zprime = z_in - z00
+        f_out =  c4 + zprime*( c3 + zprime*( c2 + ( zprime*c1 ) ) )
+
+      else 
+
+       ! Use a quintic polynomial interpolation instead instead of the Steffen formula.
+       ! Unlike the formula above, this formula does not guarantee monotonicity.
+
+        beta = 120. * ( (fp1-f00) - 0.5 * h00 * (dfdx00 + dfdxp1) )
+
+        ! Prevent an underflow by using a linear interpolation
+        if ( abs( beta ) < eps ) then 
+          f_out = lin_int( z00, zp1, zm1, &
+                           fp1, fm1 )
+
+        else
+          alpha = (6./beta) * h00 * (dfdxp1-dfdx00) + 0.5             
+
+          zn = (z_in-z00)/h00
+
+          f_out = ( &
+                  (( (beta/20.)*zn - (beta*(1.+alpha)/12.)) * zn + (beta*alpha/6.)) &
+                    * zn**2 + dfdx00*h00 &
+                  ) * zn + f00
+        end if ! beta < eps
+      end if ! ~quintic_polynomial
 
     else
       ! Linear extrapolation
