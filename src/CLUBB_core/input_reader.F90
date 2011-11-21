@@ -54,6 +54,11 @@ module input_reader
 
   end type two_dim_read_var
 
+
+  ! Constant Parameter(s)
+  real, parameter, private :: &
+    blank_value = -999. ! Used to denote if a value is missing from the file
+
   contains
 
   !-------------------------------------------------------------------------------------------------
@@ -304,10 +309,13 @@ module input_reader
   !------------------------------------------------------------------------------------------------
   subroutine fill_blanks_one_dim_vars( num_vars, one_dim_vars )
     !
-    !  Description: This subroutine fills in the blank spots (signified by -999.0)
-    !  with values linearly interpolated using the first element of the array as a
-    !  guide.
+    ! Description: 
+    !   This subroutine fills in the blank spots (signified by constant blank_value)
+    !   with values linearly interpolated using the first element of the array as a
+    !   guide.
     !
+    ! References:
+    !   None
     !----------------------------------------------------------------------------------------------
 
     implicit none
@@ -325,10 +333,10 @@ module input_reader
     ! Local variable(s)
     integer :: i
 
-    ! Begin Code
+    ! ---- Begin Code ----
 
     do i=1, num_vars
-      one_dim_vars(i)%values = linear_fill_blanks( size(one_dim_vars(i)%values), &
+      one_dim_vars(i)%values = linear_fill_blanks( size( one_dim_vars(i)%values ), &
                                                    one_dim_vars(1)%values, one_dim_vars(i)%values, &
                                                    0.0 )
     end do
@@ -340,19 +348,21 @@ module input_reader
   !------------------------------------------------------------------------------------------------
   subroutine fill_blanks_two_dim_vars( num_vars, other_dim, two_dim_vars )
     !
-    !  Description: This subroutine fills in the blank spots (signified by -999.0)
-    !  with values linearly interpolated using the first element of the array
-    !  and the values in the other_dim argument as a guide.
+    ! Description: 
+    !   This subroutine fills in the blank spots (signified by the
+    !   constant blank_value with values linearly interpolated using the first 
+    !   element of the array and the values in the other_dim argument as a guide.
     !
-    !  This is a two step process. First we assume that the other_dim values
-    !  have no holes, but there are blanks for that variable across that
-    !  dimension. Then we fill holes across the dimension whose values are first
-    !  in the array of two_dim_vars.
+    !   This is a two step process. First we assume that the other_dim values
+    !   have no holes, but there are blanks for that variable across that
+    !   dimension. Then we fill holes across the dimension whose values are first
+    !   in the array of two_dim_vars.
     !
-    !  Ex. Time is the 'other_dim' and Height in meters is the first element in
-    !  two_dim_vars.
+    !   Ex. Time is the 'other_dim' and Height in meters is the first element in
+    !   two_dim_vars.
     !
-    !
+    ! References:
+    !   None
     !----------------------------------------------------------------------------------------------
 
     implicit none
@@ -361,7 +371,6 @@ module input_reader
     intrinsic :: size
 
     ! Input Variable(s)
-
     integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
 
     ! Input/Output Variable(s)
@@ -371,12 +380,13 @@ module input_reader
       two_dim_vars ! Read data that may have gaps.
 
     ! Local variables
-    integer i,j
+    integer :: i,j ! Loop iterators
 
-    integer dim_size
-    integer other_dim_size
+    integer :: & 
+      dim_size, &    ! 1st dimension size
+      other_dim_size ! 2nd dimension size
 
-    ! Begin Code
+    ! ---- Begin Code ----
 
     dim_size = size( two_dim_vars(1)%values, 1 )
 
@@ -387,17 +397,17 @@ module input_reader
       do j=1, other_dim_size
         two_dim_vars(i)%values(:,j) = linear_fill_blanks( dim_size, &
                                         two_dim_vars(1)%values(:,j), &
-                                        two_dim_vars(i)%values(:,j), -999.9 ) ! Known magic number
-      end do
+                                        two_dim_vars(i)%values(:,j), blank_value ) 
+      end do ! j = 1 .. other_dim_size
+
       ! Interpolate along other dim
       do j=1, dim_size
         two_dim_vars(i)%values(j,:) = linear_fill_blanks( other_dim_size, &
                                         other_dim%values, &
-                                        two_dim_vars(i)%values(j,:), -999.9 ) ! Known magic number
-      end do
+                                        two_dim_vars(i)%values(j,:), blank_value ) 
+      end do ! j = 1 .. dim_size
 
-
-    end do
+    end do ! i = 2 .. num_vars
 
     return
 
@@ -407,10 +417,13 @@ module input_reader
   !------------------------------------------------------------------------------------------------
   function linear_fill_blanks( dim_grid, grid, var, default_value ) &
   !
-  !  Description: This function fills blanks in array var using the grid
-  !               as a guide. Blank values in var are signified by being
-  !               less than or equal to -999.0
+  ! Description: 
+  !   This function fills blanks in array var using the grid
+  !   as a guide. Blank values in var are signified by being
+  !   less than or equal to the constant blank_value.
   !
+  ! References:
+  !   None
   !-----------------------------------------------------------------------------------------------
   result( var_out )
 
@@ -426,7 +439,7 @@ module input_reader
 
     real, dimension(dim_grid), intent(in) :: var ! Array that may contain gaps.
 
-    real, intent(in) :: default_value ! Default value if entire profile is -999.9
+    real, intent(in) :: default_value ! Default value if entire profile == blank_value
 
     ! Output Variable(s)
     real, dimension(dim_grid) :: var_out ! Return variable
@@ -438,11 +451,11 @@ module input_reader
     integer :: i
     integer :: amt
 
-    logical reversed
+    logical :: reversed
+
+    ! ---- Begin Code ----
+
     reversed = .false.
-
-
-    ! Begin Code
 
     ! Essentially this code leverages the previously written zlinterp function.
     ! A smaller temporary grid and var variable are being created to pass to
@@ -451,7 +464,7 @@ module input_reader
 
     amt = 0
     do i=1, dim_grid
-      if ( var(i) > -999.0 ) then
+      if ( var(i) > blank_value ) then
         amt = amt + 1
         temp_var(amt) = var(i)
         temp_grid(amt) = grid(i)
@@ -467,10 +480,10 @@ module input_reader
     if ( amt == 0 ) then
       var_out = default_value
     else if (amt < dim_grid) then
-      if( reversed ) then
-        var_out = zlinterp_fnc(dim_grid, amt, -grid, -temp_grid(1:amt), temp_var(1:amt))
+      if ( reversed ) then
+        var_out = zlinterp_fnc( dim_grid, amt, -grid, -temp_grid(1:amt), temp_var(1:amt) )
       else
-        var_out = zlinterp_fnc(dim_grid, amt, grid, temp_grid(1:amt), temp_var(1:amt))
+        var_out = zlinterp_fnc( dim_grid, amt, grid, temp_grid(1:amt), temp_var(1:amt) )
       end if
     else
       var_out = var
@@ -506,11 +519,11 @@ module input_reader
 
       if ( associated( one_dim_vars(i)%values ) ) then
 
-        deallocate(one_dim_vars(i)%values)
+        deallocate( one_dim_vars(i)%values )
 
       end if
 
-    end do
+    end do ! 1 .. num_vars
 
     return
   end subroutine deallocate_one_dim_vars
@@ -518,9 +531,12 @@ module input_reader
   !------------------------------------------------------------------------------------------------
   subroutine deallocate_two_dim_vars( num_vars, two_dim_vars, other_dim )
     !
-    !  Description: This subroutine deallocates the pointer stored in
-    !  two_dim_vars%value for the whole array
+    ! Description: 
+    !   This subroutine deallocates the pointer stored in
+    !   two_dim_vars%value for the whole array
     !
+    ! References:
+    !   None
     !----------------------------------------------------------------------------------------------
     implicit none
 
@@ -560,36 +576,43 @@ module input_reader
     return
   end subroutine deallocate_two_dim_vars
   !------------------------------------------------------------------------------------------------
-  function read_x_table( nvar, xdim, ydim, target_name, retVars ) result(x)
+  function read_x_table( nvar, xdim, ydim, target_name, retVars ) result( x )
     !
-    !  Description: Searches for the variable specified by target_name in the
-    !  collection of retVars. If the function finds the variable then it returns
-    !  it. If it does not the program using this function will exit gracefully
-    !  with a warning message.
+    ! Description: 
+    !   Searches for the variable specified by target_name in the
+    !   collection of retVars. If the function finds the variable then it returns
+    !   it. If it does not the program using this function will exit gracefully
+    !   with a warning message.
     !
+    ! References:
+    !   None
     !-----------------------------------------------------------------------------------------------
-    implicit none
 
+    use constants_clubb, only: &
+      fstderr ! Constant(s)
+
+    implicit none
 
     ! Input Variable(s)
     integer, intent(in) :: nvar ! Number of variables in retVars
 
     integer, intent(in) :: xdim, ydim
-    character(len=*), intent(in) :: target_name ! Variable that is being
-    !                                             searched for
 
-    type(two_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection
-    !                                                                being searched through
+    character(len=*), intent(in) :: &
+      target_name ! Name of the variable that is being searched for
+
+    type(two_dim_read_var), dimension(nvar), intent(in) :: &
+      retVars ! Collection of data being searched through
 
     ! Output Variable(s)
-    real, dimension( xdim, ydim ) :: x
+    real, dimension(xdim, ydim) :: x
 
     ! Local Variables
-    integer i
+    integer :: i ! Loop iterator
 
-    logical l_found
+    logical :: l_found
 
-    ! Begin Code
+    ! ---- Begin Code ----
 
     l_found = .false.
 
@@ -607,13 +630,13 @@ module input_reader
 
       i=i+1
 
-    end do
+    end do ! i <= nvar .and. not l_found
 
-    if( .not. l_found ) then
+    if ( .not. l_found ) then
 
-      print *,target_name//' could not be found. '
+      write(fstderr,*) trim( target_name )//" could not be found."
 
-      stop
+      stop "Fatal error in function read_x_table"
 
     end if
 
@@ -626,10 +649,11 @@ module input_reader
   function read_x_profile( nvar, dim_size, target_name, retVars, &
                            input_file ) result( x )
     !
-    !  Description: Searches for the variable specified by target_name in the
-    !  collection of retVars. If the function finds the variable then it returns
-    !  it. If it does not the program using this function will exit gracefully
-    !  with a warning message.
+    !  Description: 
+    !    Searches for the variable specified by target_name in the
+    !    collection of retVars. If the function finds the variable then it returns
+    !    it. If it does not the program using this function will exit gracefully
+    !    with a warning message.
     !
     ! Modified by Cavyn, June 2010
     !----------------------------------------------------------------------------------------------
@@ -647,30 +671,35 @@ module input_reader
       nvar,  & ! Number of variables in retVars
       dim_size ! Size of the array returned
 
-    character(len=*), intent(in) :: target_name  ! Variable that is being searched for
-    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being searched
-    character(len=*), optional, intent(in) :: input_file
+    character(len=*), intent(in) :: &
+      target_name  ! Name of the variable that is being searched for
+
+    type(one_dim_read_var), dimension(nvar), intent(in) :: &
+      retVars ! Collection being searched
+
+    character(len=*), optional, intent(in) :: &
+      input_file ! Name of the input file containing the variables
 
     ! Output Variable(s)
     real, dimension(dim_size) :: x
 
     ! Local Variables
-    integer i
-    
-    !----------------BEGIN CODE------------------
+    integer :: i
+
+    ! ---- Begin Code ----    
 
     i = get_target_index( nvar, target_name, retVars )
     
-    if( i > 0 ) then
+    if ( i > 0 ) then
         x(1:size(retVars(i)%values)) = retVars(i)%values
         
     else
       if( present( input_file ) ) then
-        write(fstderr,*) target_name, ' could not be found. Check the file ', input_file
+        write(fstderr,*) trim( target_name ), ' could not be found. Check the file ', input_file
       else
-        write(fstderr,*) target_name, ' could not be found. Check your sounding.in file.'
+        write(fstderr,*) trim( target_name ), ' could not be found. Check your sounding.in file.'
       end if ! present( input_file )
-      stop
+      stop "Fatal error in read_x_profile"
       
     end if ! target_exists_in_array
 
@@ -681,9 +710,12 @@ module input_reader
   !------------------------------------------------------------------------------
   function get_target_index( nvar, target_name, retVars) result( i )
     !
-    !  Description:
-    !    Returns the index of the variable specified by target_name in the
-    !    collection of retVars. Returns -1 if variable does not exist in retVars
+    ! Description:
+    !   Returns the index of the variable specified by target_name in the
+    !   collection of retVars. Returns -1 if variable does not exist in retVars
+    !
+    ! References:
+    !   None
     !
     ! Created by Cavyn, July 2010
     !----------------------------------------------------------------------------------------------
@@ -696,17 +728,17 @@ module input_reader
     type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being searched
 
     ! Output Variable
-    integer i
+    integer :: i
 
     ! Local Variable(s)
-    logical l_found
+    logical :: l_found
     
     !----------------BEGIN CODE------------------
     
     l_found = .false.
     
     i = 0
-    do while( i < nvar .and. .not. l_found)
+    do while ( i < nvar .and. .not. l_found )
       i = i+1
       if( retVars(i)%name == target_name ) then
         l_found = .true.
