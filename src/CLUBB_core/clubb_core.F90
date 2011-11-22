@@ -329,7 +329,7 @@ module clubb_core
 
       l_trapezoidal_rule_zm = .true., & ! If true, the trapezoidal rule is called for
                                          ! three momentum-level variables - wpthvp,
-                                         ! thlpthvp, and rtpthvp - output from pdf_closure.
+                                       ! thlpthvp, and rtpthvp - output from pdf_closure.
 
       l_call_pdf_closure_twice = .true. ! This logical flag determines whether or not to
     ! call subroutine pdf_closure twice.  If true,
@@ -543,7 +543,7 @@ module clubb_core
     !----- Begin Code -----
 
     if ( l_stats .and. l_stats_samp ) then
-      ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.  
+      ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
       ! Therefore, wm must be zero or l_implemented must be true.
       if ( l_implemented .or. ( all( wm_zt == 0. ) .and. all( wm_zm == 0. ) ) ) then
         ! Get the vertical integral of rtm and thlm before this function begins
@@ -598,7 +598,7 @@ module clubb_core
                               zm )                                  ! Intent(inout)
       call stat_begin_update( irtpthlp_bt, rtpthlp / real( dt ), &  ! Intent(in)
                               zm )                                  ! Intent(inout)
-      
+
       call stat_begin_update( irtm_bt, rtm / real( dt ), &          ! Intent(in)
                               zt )                                  ! Intent(inout)
       call stat_begin_update( ithlm_bt, thlm / real( dt ), &        ! Intent(in)
@@ -1181,7 +1181,7 @@ module clubb_core
                           rtm, wprtp, thlm, wpthlp,                    & ! intent(inout)
                           err_code,                                    & ! intent(inout)
                           sclrm, wpsclrp                               ) ! intent(inout)
- 
+
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
     ! We do not clip rcm_in_layer because rcm_in_layer only influences
@@ -1240,7 +1240,7 @@ module clubb_core
 
 
     !----------------------------------------------------------------
-    ! Advance 2nd and 3rd order moment of vertical velocity (wp2 / wp3) 
+    ! Advance 2nd and 3rd order moment of vertical velocity (wp2 / wp3)
     ! by one timestep
     !----------------------------------------------------------------
 
@@ -1271,8 +1271,8 @@ module clubb_core
                             wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
     !----------------------------------------------------------------
-    ! Advance the horizontal mean of the wind in the x-y directions 
-    ! (i.e. um, vm) and the mean of the eddy-diffusivity scalars 
+    ! Advance the horizontal mean of the wind in the x-y directions
+    ! (i.e. um, vm) and the mean of the eddy-diffusivity scalars
     ! (i.e. edsclrm) by one time step
     !----------------------------------------------------------------
 
@@ -1290,7 +1290,7 @@ module clubb_core
     !#######################################################################
 
     if ( l_stats_samp ) then
-    
+
       call stat_end_update( iwp2_bt, wp2 / real( dt ), &        ! Intent(in)
                             zm )                                ! Intent(inout)
       call stat_end_update( ivp2_bt, vp2 / real( dt ),&         ! Intent(in)
@@ -1307,7 +1307,7 @@ module clubb_core
                             zm )                                ! Intent(inout)
       call stat_end_update( irtpthlp_bt, rtpthlp / real( dt ), &! Intent(in)
                             zm )                                ! Intent(inout)
-      
+
       call stat_end_update( irtm_bt, rtm / real( dt ), &        ! Intent(in)
                             zt )                                ! Intent(inout)
       call stat_end_update( ithlm_bt, thlm / real( dt ), &      ! Intent(in)
@@ -1378,7 +1378,7 @@ module clubb_core
     end if
 
     if ( l_stats .and. l_stats_samp ) then
-      ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.  
+      ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
       ! Therefore, wm must be zero or l_implemented must be true.
       if ( l_implemented .or. ( all( wm_zt == 0. ) .and. all( wm_zm == 0. ) ) ) then
         ! Calculate the spurious source for rtm
@@ -1451,15 +1451,15 @@ module clubb_core
                l_soil_veg, l_host_applies_sfc_fluxes, & ! In
                l_uv_nudge, l_tke_aniso, saturation_formula, &  ! In
 #ifdef GFDL
-               I_sat_sphum, &        ! intent(in)  h1g, 2010-06-16
+    I_sat_sphum, &        ! intent(in)  h1g, 2010-06-16
 #endif
-               l_implemented, grid_type, deltaz, zm_init, zm_top, &  ! In
-               momentum_heights, thermodynamic_heights,  &  ! In
-               host_dx, host_dy, sfc_elevation, & ! In
+    l_implemented, grid_type, deltaz, zm_init, zm_top, &  ! In
+    momentum_heights, thermodynamic_heights,  &  ! In
+    host_dx, host_dy, sfc_elevation, & ! In
 #ifdef GFDL
-               cloud_frac_min , &        ! intent(in)  h1g, 2010-06-16
+    cloud_frac_min , &        ! intent(in)  h1g, 2010-06-16
 #endif
-               err_code ) ! Out
+    err_code ) ! Out
     !
     ! Description:
     !   Subroutine to set up the model for execution.
@@ -1791,7 +1791,7 @@ module clubb_core
                wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
                pdf_params_zm )                   ! intent(inout)
     !
-    ! Description:  
+    ! Description:
     !   This subroutine takes the output variables on the thermo.
     !   grid and either: interpolates them to the momentum grid, or uses the
     !   values output from the second call to pdf_closure on momentum levels if
@@ -1799,7 +1799,7 @@ module clubb_core
     !   trapezoid_zt to recompute the variables on the thermo. grid.
     !   ldgrant June 2009
     !
-    ! Note: 
+    ! Note:
     !   The argument variables in the last 5 lines of the subroutine
     !   (wprtp2_zm through pdf_params_zm) are declared intent(inout) because
     !   if l_call_pdf_closure_twice is true, these variables will already have
@@ -1818,8 +1818,9 @@ module clubb_core
       iwprtp2, &
       iwpsclrp2, &
       iwpsclrprtp, &
-      iwpsclrpthlp
- 
+      iwpsclrpthlp, &
+      l_stats
+
     use grid_class, only: &
       gr, & ! Variable
       zt2zm ! Procedure
@@ -1867,7 +1868,7 @@ module clubb_core
     real, dimension(gr%nzmax,sclr_dim), intent(inout) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
-      wpsclrpthlp_zm    ! w'sclr'thl' on momentum grid 
+      wpsclrpthlp_zm    ! w'sclr'thl' on momentum grid
 
     type (pdf_parameter), dimension(gr%nzmax), intent(inout) :: &
       pdf_params_zm ! PDF parameters on momentum grid [units vary]
@@ -2101,32 +2102,34 @@ module clubb_core
       alpha_rt_zm(gr%nzmax)    = 0.0
     end if ! l_call_pdf_closure_twice
 
-    ! Use the trapezoidal rule to recompute the variables on the zt level
-    if ( iwprtp2 > 0 ) then
-      wprtp2     = trapezoid_zt( wprtp2, wprtp2_zm )
-    end if
-    if ( iwpthlp2 > 0 ) then
-      wpthlp2    = trapezoid_zt( wpthlp2, wpthlp2_zm )
-    end if
-    if ( iwprtpthlp > 0 ) then
-      wprtpthlp  = trapezoid_zt( wprtpthlp, wprtpthlp_zm )
+    if ( l_stats ) then
+      ! Use the trapezoidal rule to recompute the variables on the zt level
+      if ( iwprtp2 > 0 ) then
+        wprtp2     = trapezoid_zt( wprtp2, wprtp2_zm )
+      end if
+      if ( iwpthlp2 > 0 ) then
+        wpthlp2    = trapezoid_zt( wpthlp2, wpthlp2_zm )
+      end if
+      if ( iwprtpthlp > 0 ) then
+        wprtpthlp  = trapezoid_zt( wprtpthlp, wprtpthlp_zm )
+      end if
+
+      do i = 1, sclr_dim
+        if ( iwpsclrprtp(i) > 0 ) then
+          wpsclrprtp(:,i)  = trapezoid_zt( wpsclrprtp(:,i), wpsclrprtp_zm(:,i) )
+        end if
+        if ( iwpsclrpthlp(i) > 0 ) then
+          wpsclrpthlp(:,i) = trapezoid_zt( wpsclrpthlp(:,i), wpsclrpthlp_zm(:,i) )
+        end if
+        if ( iwpsclrp2(i) > 0 ) then
+          wpsclrp2(:,i)    = trapezoid_zt( wpsclrp2(:,i), wpsclrp2_zm(:,i) )
+        end if
+      end do ! i = 1, sclr_dim
     end if
 
     cloud_frac = trapezoid_zt( cloud_frac, cloud_frac_zm )
     rcm        = trapezoid_zt( rcm, rcm_zm )
     wp2thvp    = trapezoid_zt( wp2thvp, wp2thvp_zm )
-
-    do i = 1, sclr_dim
-      if ( iwpsclrprtp(i) > 0 ) then
-        wpsclrprtp(:,i)  = trapezoid_zt( wpsclrprtp(:,i), wpsclrprtp_zm(:,i) )
-      end if
-      if ( iwpsclrpthlp(i) > 0 ) then
-        wpsclrpthlp(:,i) = trapezoid_zt( wpsclrpthlp(:,i), wpsclrpthlp_zm(:,i) )
-      end if
-      if ( iwpsclrp2(i) > 0 ) then
-        wpsclrp2(:,i)    = trapezoid_zt( wpsclrp2(:,i), wpsclrp2_zm(:,i) )
-      end if
-    end do ! i = 1, sclr_dim
 
     pdf_params%w1          = trapezoid_zt( w1_zt, w1_zm )
     pdf_params%w2          = trapezoid_zt( w2_zt, w2_zm )
@@ -2296,7 +2299,7 @@ module clubb_core
            ( pdf_params, cloud_frac, rcm, & ! intent(in)
              cloud_cover, rcm_in_layer )    ! intent(out)
     !
-    ! Description:  
+    ! Description:
     !   Subroutine to compute cloud cover (the amount of sky
     !   covered by cloud) and rcm in layer (liquid water mixing ratio in
     !   the portion of the grid box filled by cloud).
@@ -2456,7 +2459,7 @@ module clubb_core
            ( rtm, message, & ! intent(in)
              rcm )    ! intent(inout)
     !
-    ! Description:  
+    ! Description:
     !   Subroutine that reduces cloud water (rcm) whenever
     !   it exceeds total water (rtm = vapor + liquid).
     !   This avoids negative values of rvm = water vapor mixing ratio.
