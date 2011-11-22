@@ -57,7 +57,7 @@ module input_reader
 
   ! Constant Parameter(s)
   real, parameter, private :: &
-    blank_value = -999. ! Used to denote if a value is missing from the file
+    blank_value = -999.9 ! Used to denote if a value is missing from the file
 
   contains
 
