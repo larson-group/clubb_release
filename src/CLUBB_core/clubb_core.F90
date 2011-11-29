@@ -360,7 +360,7 @@ module clubb_core
       fcor,  &          ! Coriolis forcing             [s^-1]
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
-    real, intent(in), dimension(gr%nzmax) ::  & 
+    real, intent(in), dimension(gr%nz) ::  & 
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
       um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
@@ -385,14 +385,14 @@ module clubb_core
       vpwp_sfc        ! v'w' at surface          [m^2/s^2]
 
     ! Passive scalar variables
-    real, intent(in), dimension(gr%nzmax,sclr_dim) :: & 
+    real, intent(in), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
 
     real, intent(in),  dimension(sclr_dim) ::  & 
       wpsclrp_sfc      ! Scalar flux at surface         [{units vary} m/s]
 
     ! Eddy passive scalar variables
-    real, intent(in), dimension(gr%nzmax,edsclr_dim) :: & 
+    real, intent(in), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
 
     real, intent(in),  dimension(edsclr_dim) ::  & 
@@ -400,7 +400,7 @@ module clubb_core
 
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
-    real, intent(inout), dimension(gr%nzmax) ::  & 
+    real, intent(inout), dimension(gr%nz) ::  & 
       um,      & ! u mean wind component (thermodynamic levels)   [m/s]
       upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
       vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
@@ -418,7 +418,7 @@ module clubb_core
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
     ! Passive scalar variables
-    real, intent(inout), dimension(gr%nzmax,sclr_dim) :: & 
+    real, intent(inout), dimension(gr%nz,sclr_dim) :: & 
       sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
       wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
       sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
@@ -426,27 +426,27 @@ module clubb_core
       sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
 
 #ifdef GFDL
-    real, intent(inout), dimension(gr%nzmax,sclr_dim) :: &  ! h1g, 2010-06-16
+    real, intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
      sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
 #endif
 
     ! Eddy passive scalar variable
-    real, intent(inout), dimension(gr%nzmax,edsclr_dim) :: & 
+    real, intent(inout), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
     ! Variables that need to be output for use in other parts of the CLUBB
     ! code, such as microphysics (rcm, pdf_params), forcings (rcm), and/or
     ! BUGSrad (cloud_cover).
-    real, intent(out), dimension(gr%nzmax) ::  & 
+    real, intent(out), dimension(gr%nz) ::  & 
       rcm,          & ! cloud water mixing ratio, r_c (thermo. levels)  [kg/kg]
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
 
-    type(pdf_parameter), dimension(gr%nzmax), intent(out) :: & 
+    type(pdf_parameter), dimension(gr%nz), intent(out) :: & 
       pdf_params      ! PDF parameters   [units vary]
 
     ! Variables that need to be output for use in host models
-    real, intent(out), dimension(gr%nzmax) ::  &
+    real, intent(out), dimension(gr%nz) ::  &
       wprcp,      & ! w'r_c' (momentum levels)                [(kg/kg) m/s]
       cloud_frac    ! cloud fraction (thermodynamic levels)   [-]
 
@@ -455,7 +455,7 @@ module clubb_core
     integer, intent(inout) :: err_code
 
 #ifdef GFDL
-    real, intent(inOUT), dimension(gr%nzmax, min(1,sclr_dim) , 2) :: &  ! h1g, 2010-06-16
+    real, intent(inOUT), dimension(gr%nz, min(1,sclr_dim) , 2) :: &  ! h1g, 2010-06-16
       RH_crit  ! critical relative humidity for droplet and ice nucleation
 #endif
 
@@ -463,7 +463,7 @@ module clubb_core
     integer :: i, k, &
       err_code_pdf_closure, err_code_surface
 
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       sigma_sqd_w,   & ! PDF width parameter (momentum levels)    [-]
       sqrt_em_zt,    & ! sqrt( em ) on zt levels; where em is TKE [m/s] 
       gamma_Skw_fnc, & ! Gamma as a function of skewness          [???]
@@ -472,13 +472,13 @@ module clubb_core
       rtm_pert_1, rtm_pert_2          ! For avg. calculation of Lscale  [kg/kg]
 
     ! For pdf_closure
-    real, dimension(gr%nzmax,sclr_dim) :: & 
+    real, dimension(gr%nz,sclr_dim) :: & 
       wpsclrp_zt,  & ! w' sclr' on thermo. levels
       sclrp2_zt,   & ! sclr'^2 on thermo. levels
       sclrprtp_zt, & ! sclr' r_t' on thermo. levels
       sclrpthlp_zt   ! sclr' th_l' on thermo. levels
 
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       p_in_Pa_zm, &  ! Pressure interpolated to momentum levels  [Pa]
       exner_zm       ! Exner interpolated to momentum levels     [-]
 
@@ -491,7 +491,7 @@ module clubb_core
 
     ! These local variables are declared because they originally belong on the momentum
     ! grid levels, but pdf_closure outputs them on the thermodynamic grid levels.
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       wp4_zt,      & ! w'^4 (on thermo. grid)           [m^4/s^4] 
       wpthvp_zt,   & ! Buoyancy flux (on thermo. grid)  [(K m)/s]
       rtpthvp_zt,  & ! r_t' th_v' (on thermo. grid)     [(kg K)/kg]
@@ -501,11 +501,11 @@ module clubb_core
       thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg] 
       rcp2_zt        ! r_c'^2 (on thermo. grid)         [(kg^2)/(kg^2)]
 
-    real, dimension(gr%nzmax, sclr_dim) :: &       
+    real, dimension(gr%nz, sclr_dim) :: &       
       sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid) 
       sclrprcp_zt     ! sclr'rc' (on thermo. grid)
 
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
       wp2rtp_zm,     & ! w'^2 rt' on momentum grid                  [m^2 kg/kg]
       wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
@@ -518,7 +518,7 @@ module clubb_core
       wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
       wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
 
-    real, dimension(gr%nzmax,sclr_dim) :: & 
+    real, dimension(gr%nz,sclr_dim) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
       wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid 
@@ -549,12 +549,12 @@ module clubb_core
         ! Get the vertical integral of rtm and thlm before this function begins
         ! so that spurious source can be calculated
         rtm_integral_before  &
-        = vertical_integral( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                             rtm(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) )
+        = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                             rtm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
 
         thlm_integral_before  &
-        = vertical_integral( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                             thlm(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) )
+        = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                             thlm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
       end if
     end if
 
@@ -658,8 +658,8 @@ module clubb_core
     wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
     wp3_zm = zt2zm( wp3 )
 
-    Skw_zt(1:gr%nzmax) = Skw_func( wp2_zt(1:gr%nzmax), wp3(1:gr%nzmax) )
-    Skw_zm(1:gr%nzmax) = Skw_func( wp2(1:gr%nzmax), wp3_zm(1:gr%nzmax) )
+    Skw_zt(1:gr%nz) = Skw_func( wp2_zt(1:gr%nz), wp3(1:gr%nz) )
+    Skw_zm(1:gr%nz) = Skw_func( wp2(1:gr%nz), wp3_zm(1:gr%nz) )
 
     ! The right hand side of this conjunction is only for reducing cpu time,
     ! since the more complicated formula is mathematically equivalent
@@ -712,16 +712,16 @@ module clubb_core
 
     ! Compute skewness velocity for stats output purposes
     if ( iSkw_velocity > 0 ) then
-      Skw_velocity = ( 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nzmax) ) ) & 
-                   * ( wp3_zm(1:gr%nzmax) / max( wp2(1:gr%nzmax), w_tol_sqd ) )
+      Skw_velocity = ( 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nz) ) ) & 
+                   * ( wp3_zm(1:gr%nz) / max( wp2(1:gr%nz), w_tol_sqd ) )
     end if
 
     ! Compute wp3 / wp2 on zt levels.  Always use the interpolated value in the
     ! denominator since it's less likely to create spikes
-    wp3_on_wp2_zt = ( wp3(1:gr%nzmax) / max( wp2_zt(1:gr%nzmax), w_tol_sqd ) )
+    wp3_on_wp2_zt = ( wp3(1:gr%nz) / max( wp2_zt(1:gr%nz), w_tol_sqd ) )
 
     ! Clip wp3_on_wp2_zt if it's too large
-    do k=1, gr%nzmax
+    do k=1, gr%nz
       if( wp3_on_wp2_zt(k) < 0. ) then
         wp3_on_wp2_zt = max( -1000., wp3_on_wp2_zt )
       else
@@ -748,7 +748,7 @@ module clubb_core
     end do ! i = 1, sclr_dim, 1
 
 
-    do k = 1, gr%nzmax, 1
+    do k = 1, gr%nz, 1
 
       call pdf_closure & 
          ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),       & ! intent(in)
@@ -787,7 +787,7 @@ module clubb_core
         err_code = err_code_pdf_closure
       end if
 
-    end do ! k = 1, gr%nzmax, 1
+    end do ! k = 1, gr%nz, 1
 
 
     if ( l_call_pdf_closure_twice ) then
@@ -810,7 +810,7 @@ module clubb_core
       p_in_Pa_zm(1) = p_in_Pa(1)
 
       ! Clip pressure if the extrapolation leads to a negative value of pressure
-      p_in_Pa_zm(gr%nzmax) = max( p_in_Pa_zm(gr%nzmax), 0.5*p_in_Pa(gr%nzmax) )
+      p_in_Pa_zm(gr%nz) = max( p_in_Pa_zm(gr%nz), 0.5*p_in_Pa(gr%nz) )
 
       ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
       exner_zm(:) = (p_in_Pa_zm(:)/p0)**kappa
@@ -819,7 +819,7 @@ module clubb_core
       thlm_zm = zt2zm( thlm )
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.
-      do k = 1, gr%nzmax, 1
+      do k = 1, gr%nz, 1
 
         call pdf_closure & 
            ( p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),    & ! intent(in)
@@ -859,7 +859,7 @@ module clubb_core
           err_code = err_code_pdf_closure
         end if
 
-      end do ! k = 1, gr%nzmax, 1
+      end do ! k = 1, gr%nz, 1
 
     else ! l_call_pdf_closure_twice is false
 
@@ -872,12 +872,12 @@ module clubb_core
       ! used elsewhere in the parameterization
       if ( iwp4 > 0 ) then
         wp4 = max( zt2zm( wp4_zt ), zero_threshold )  ! Pos. def. quantity
-        wp4(gr%nzmax)  = 0.0
+        wp4(gr%nz)  = 0.0
       end if
 
       if ( ircp2 > 0 ) then
         rcp2 = max( zt2zm( rcp2_zt ), zero_threshold )  ! Pos. def. quantity
-        rcp2(gr%nzmax) = 0.0
+        rcp2(gr%nz) = 0.0
       end if
 
       if ( icorr_st_mellor1 > 0 ) then
@@ -898,33 +898,33 @@ module clubb_core
 
       if ( itp2_mellor_1 > 0 ) then
         tp2_mellor_1 = max( zt2zm( tp2_mellor_1 ), zero_threshold )
-        tp2_mellor_1(gr%nzmax) = 0.0
+        tp2_mellor_1(gr%nz) = 0.0
       end if
 
       if ( itp2_mellor_2 > 0 ) then
         tp2_mellor_2 = max( zt2zm( tp2_mellor_2 ), zero_threshold )
-        tp2_mellor_2(gr%nzmax) = 0.0
+        tp2_mellor_2(gr%nz) = 0.0
       end if
 
       wpthvp            = zt2zm( wpthvp_zt )
-      wpthvp(gr%nzmax)   = 0.0
+      wpthvp(gr%nz)   = 0.0
       thlpthvp          = zt2zm( thlpthvp_zt )
-      thlpthvp(gr%nzmax) = 0.0
+      thlpthvp(gr%nz) = 0.0
       rtpthvp           = zt2zm( rtpthvp_zt )
-      rtpthvp(gr%nzmax)  = 0.0
+      rtpthvp(gr%nz)  = 0.0
       wprcp             = zt2zm( wprcp_zt )
-      wprcp(gr%nzmax)    = 0.0
+      wprcp(gr%nz)    = 0.0
       rtprcp            = zt2zm( rtprcp_zt )
-      rtprcp(gr%nzmax)   = 0.0
+      rtprcp(gr%nz)   = 0.0
       thlprcp           = zt2zm( thlprcp_zt )
-      thlprcp(gr%nzmax)  = 0.0
+      thlprcp(gr%nz)  = 0.0
 
       ! Interpolate passive scalars back onto the m grid
       do i = 1, sclr_dim
         sclrpthvp(:,i)       = zt2zm( sclrpthvp_zt(:,i) )
-        sclrpthvp(gr%nzmax,i) = 0.0
+        sclrpthvp(gr%nz,i) = 0.0
         sclrprcp(:,i)        = zt2zm( sclrprcp_zt(:,i) )
-        sclrprcp(gr%nzmax,i)  = 0.0
+        sclrprcp(gr%nz,i)  = 0.0
       end do ! i=1, sclr_dim
 
     end if ! l_call_pdf_closure_twice
@@ -1050,7 +1050,7 @@ module clubb_core
     ! Modification to damp noise in stable region
 ! Vince Larson commented out because it may prevent turbulence from
 !    initiating in unstable regions.  7 Jul 2007
-!       do k = 1, gr%nzmax
+!       do k = 1, gr%nz
 !         if ( wp2(k) <= 0.005 ) then
 !           tau_zt(k) = taumin
 !           tau_zm(k) = taumin
@@ -1382,7 +1382,7 @@ module clubb_core
       ! Therefore, wm must be zero or l_implemented must be true.
       if ( l_implemented .or. ( all( wm_zt == 0. ) .and. all( wm_zm == 0. ) ) ) then
         ! Calculate the spurious source for rtm
-        rtm_flux_top = rho_ds_zm(gr%nzmax) * wprtp(gr%nzmax)
+        rtm_flux_top = rho_ds_zm(gr%nz) * wprtp(gr%nz)
 
         if ( .not. l_host_applies_sfc_fluxes ) then
           rtm_flux_sfc = rho_ds_zm(1) * wprtp_sfc
@@ -1391,12 +1391,12 @@ module clubb_core
         end if
 
         rtm_integral_after  &
-        = vertical_integral( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                             rtm(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) )
+        = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                             rtm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
 
         rtm_integral_forcing  &
-        = vertical_integral( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                             rtm_forcing(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) )
+        = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                             rtm_forcing(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
 
         rtm_spur_src  &
         = calculate_spurious_source( rtm_integral_after, &
@@ -1406,7 +1406,7 @@ module clubb_core
                                      real( dt ) )
 
         ! Calculate the spurious source for thlm
-        thlm_flux_top = rho_ds_zm(gr%nzmax) * wpthlp(gr%nzmax)
+        thlm_flux_top = rho_ds_zm(gr%nz) * wpthlp(gr%nz)
 
         if ( .not. l_host_applies_sfc_fluxes ) then
           thlm_flux_sfc = rho_ds_zm(1) * wpthlp_sfc
@@ -1415,12 +1415,12 @@ module clubb_core
         end if
 
         thlm_integral_after  &
-        = vertical_integral( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                             thlm(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) )
+        = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                             thlm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
 
         thlm_integral_forcing  &
-        = vertical_integral( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                             thlm_forcing(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) )
+        = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                             thlm_forcing(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
 
         thlm_spur_src  &
         = calculate_spurious_source( thlm_integral_after, &
@@ -1668,7 +1668,7 @@ module clubb_core
 
     ! Define tunable constant parameters
     call setup_parameters & 
-         ( deltaz, params, gr%nzmax,                             & ! intent(in)
+         ( deltaz, params, gr%nz,                             & ! intent(in)
            grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
            thermodynamic_heights(begin_height:end_height),       & ! intent(in)
            err_code )                                              ! intent(out)
@@ -1697,17 +1697,17 @@ module clubb_core
 
 #ifdef GFDL
 ! setup  prognostic_variables
-    call setup_prognostic_variables( gr%nzmax ) ! intent(in)  h1g, 2010-06-16
+    call setup_prognostic_variables( gr%nz ) ! intent(in)  h1g, 2010-06-16
 #else
     if ( .not. l_implemented ) then
-      call setup_prognostic_variables( gr%nzmax ) ! intent(in)
+      call setup_prognostic_variables( gr%nz ) ! intent(in)
     end if
 #endif
 
     ! The diagnostic variables need to be
     ! declared, allocated, initialized, and deallocated whether CLUBB
     ! is part of a larger model or not.
-    call setup_diagnostic_variables( gr%nzmax )
+    call setup_diagnostic_variables( gr%nz )
 
 #ifdef MKL
     ! Initialize the CSR matrix class.
@@ -1716,8 +1716,8 @@ module clubb_core
     end if
 
     if ( l_gmres ) then
-      call gmres_cache_temp_init( gr%nzmax )
-      call gmres_init( (2 * gr%nzmax), intlc_5d_5d_ja_size )
+      call gmres_cache_temp_init( gr%nz )
+      call gmres_init( (2 * gr%nz), intlc_5d_5d_ja_size )
     end if
 #endif /* MKL */
 
@@ -1838,7 +1838,7 @@ module clubb_core
 
     ! Input/Output variables
     ! Thermodynamic level variables output from the first call to pdf_closure
-    real, dimension(gr%nzmax), intent(inout) :: &
+    real, dimension(gr%nz), intent(inout) :: &
       wprtp2,      & ! w'rt'^2                   [m kg^2/kg^2]
       wpthlp2,     & ! w'thl'^2                  [m K^2/s]
       wprtpthlp,   & ! w'rt'thl'                 [m kg K/kg s]
@@ -1846,18 +1846,18 @@ module clubb_core
       rcm,         & ! Liquid water mixing ratio [kg/kg]
       wp2thvp        ! w'^2 th_v'                [m^2 K/s^2]
 
-    real, dimension(gr%nzmax,sclr_dim), intent(inout) :: & 
+    real, dimension(gr%nz,sclr_dim), intent(inout) :: & 
       wpsclrprtp,  & ! w'sclr'rt' 
       wpsclrp2,    & ! w'sclr'^2
       wpsclrpthlp    ! w'sclr'thl'
 
-    type (pdf_parameter), dimension(gr%nzmax), intent(inout) :: &
+    type (pdf_parameter), dimension(gr%nz), intent(inout) :: &
       pdf_params ! PDF parameters [units vary]
 
     ! Thermo. level variables brought to momentum levels either by
     ! interpolation (in subroutine trapezoidal_rule_zt) or by
     ! the second call to pdf_closure (in subroutine advance_clubb_core)
-    real, dimension(gr%nzmax), intent(inout) :: &
+    real, dimension(gr%nz), intent(inout) :: &
       wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
       wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
       wprtpthlp_zm,  & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
@@ -1865,19 +1865,19 @@ module clubb_core
       rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
       wp2thvp_zm       ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
 
-    real, dimension(gr%nzmax,sclr_dim), intent(inout) :: & 
+    real, dimension(gr%nz,sclr_dim), intent(inout) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
       wpsclrpthlp_zm    ! w'sclr'thl' on momentum grid
 
-    type (pdf_parameter), dimension(gr%nzmax), intent(inout) :: &
+    type (pdf_parameter), dimension(gr%nz), intent(inout) :: &
       pdf_params_zm ! PDF parameters on momentum grid [units vary]
 
     ! Local variables
     integer :: i
 
     ! Components of PDF_parameters on the momentum grid (_zm) and on the thermo. grid (_zt)
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       w1_zt,          & ! Mean of w for 1st normal distribution                 [m/s]
       w1_zm,          & ! Mean of w for 1st normal distribution                 [m/s]
       w2_zm,          & ! Mean of w for 2nd normal distribution                 [m/s]
@@ -1911,7 +1911,7 @@ module clubb_core
       varnce_thl2_zm, & ! Variance of th_l for 2nd normal distribution          [K^2]
       varnce_thl2_zt    ! Variance of th_l for 2nd normal distribution          [K^2]
 
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       mixt_frac_zm,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       mixt_frac_zt,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       rc1_zm,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
@@ -2019,87 +2019,87 @@ module clubb_core
       ! Since top momentum level is higher than top thermo. level,
       ! set variables at top momentum level to 0.
       wprtp2_zm           = zt2zm( wprtp2 )
-      wprtp2_zm(gr%nzmax) = 0.0
+      wprtp2_zm(gr%nz) = 0.0
       wpthlp2_zm           = zt2zm( wpthlp2 )
-      wpthlp2_zm(gr%nzmax) = 0.0
+      wpthlp2_zm(gr%nz) = 0.0
       wprtpthlp_zm           = zt2zm( wprtpthlp )
-      wprtpthlp_zm(gr%nzmax)  = 0.0
+      wprtpthlp_zm(gr%nz)  = 0.0
       cloud_frac_zm          = zt2zm( cloud_frac )
-      cloud_frac_zm(gr%nzmax) = 0.0
+      cloud_frac_zm(gr%nz) = 0.0
       rcm_zm                 = zt2zm( rcm )
-      rcm_zm(gr%nzmax)        = 0.0
+      rcm_zm(gr%nz)        = 0.0
       wp2thvp_zm             = zt2zm( wp2thvp )
-      wp2thvp_zm(gr%nzmax)    = 0.0
+      wp2thvp_zm(gr%nz)    = 0.0
 
       do i = 1, sclr_dim
         wpsclrprtp_zm(:,i)        = zt2zm( wpsclrprtp(:,i) )
-        wpsclrprtp_zm(gr%nzmax,i)  = 0.0
+        wpsclrprtp_zm(gr%nz,i)  = 0.0
         wpsclrp2_zm(:,i)          = zt2zm( wpsclrp2(:,i) )
-        wpsclrp2_zm(gr%nzmax,i)    = 0.0
+        wpsclrp2_zm(gr%nz,i)    = 0.0
         wpsclrpthlp_zm(:,i)       = zt2zm( wpsclrpthlp(:,i) )
-        wpsclrpthlp_zm(gr%nzmax,i) = 0.0
+        wpsclrpthlp_zm(gr%nz,i) = 0.0
       end do ! i = 1, sclr_dim
 
       w1_zm                   = zt2zm( pdf_params%w1 )
-      w1_zm(gr%nzmax)          = 0.0
+      w1_zm(gr%nz)          = 0.0
       w2_zm                   = zt2zm( pdf_params%w2 )
-      w2_zm(gr%nzmax)          = 0.0
+      w2_zm(gr%nz)          = 0.0
       varnce_w1_zm            = zt2zm( pdf_params%varnce_w1 )
-      varnce_w1_zm(gr%nzmax)   = 0.0
+      varnce_w1_zm(gr%nz)   = 0.0
       varnce_w2_zm            = zt2zm( pdf_params%varnce_w2 )
-      varnce_w2_zm(gr%nzmax)   = 0.0
+      varnce_w2_zm(gr%nz)   = 0.0
       rt1_zm                  = zt2zm( pdf_params%rt1 )
-      rt1_zm(gr%nzmax)         = 0.0
+      rt1_zm(gr%nz)         = 0.0
       rt2_zm                  = zt2zm( pdf_params%rt2 )
-      rt2_zm(gr%nzmax)         = 0.0
+      rt2_zm(gr%nz)         = 0.0
       varnce_rt1_zm           = zt2zm( pdf_params%varnce_rt1 )
-      varnce_rt1_zm(gr%nzmax)  = 0.0
+      varnce_rt1_zm(gr%nz)  = 0.0
       varnce_rt2_zm           = zt2zm( pdf_params%varnce_rt2 )
-      varnce_rt2_zm(gr%nzmax)  = 0.0
+      varnce_rt2_zm(gr%nz)  = 0.0
       crt1_zm                 = zt2zm( pdf_params%crt1 )
-      crt1_zm(gr%nzmax)        = 0.0
+      crt1_zm(gr%nz)        = 0.0
       crt2_zm                 = zt2zm( pdf_params%crt2 )
-      crt2_zm(gr%nzmax)        = 0.0
+      crt2_zm(gr%nz)        = 0.0
       cthl1_zm                = zt2zm( pdf_params%cthl1 )
-      cthl1_zm(gr%nzmax)       = 0.0
+      cthl1_zm(gr%nz)       = 0.0
       cthl2_zm                = zt2zm( pdf_params%cthl2 )
-      cthl2_zm(gr%nzmax)       = 0.0
+      cthl2_zm(gr%nz)       = 0.0
       thl1_zm                 = zt2zm( pdf_params%thl1 )
-      thl1_zm(gr%nzmax)        = 0.0
+      thl1_zm(gr%nz)        = 0.0
       thl2_zm                 = zt2zm( pdf_params%thl2 )
-      thl2_zm(gr%nzmax)        = 0.0
+      thl2_zm(gr%nz)        = 0.0
       varnce_thl1_zm          = zt2zm( pdf_params%varnce_thl1 )
-      varnce_thl1_zm(gr%nzmax) = 0.0
+      varnce_thl1_zm(gr%nz) = 0.0
       varnce_thl2_zm          = zt2zm( pdf_params%varnce_thl2 )
-      varnce_thl2_zm(gr%nzmax) = 0.0
+      varnce_thl2_zm(gr%nz) = 0.0
       mixt_frac_zm            = zt2zm( pdf_params%mixt_frac )
-      mixt_frac_zm(gr%nzmax)   = 0.0
+      mixt_frac_zm(gr%nz)   = 0.0
       rc1_zm                  = zt2zm( pdf_params%rc1 )
-      rc1_zm(gr%nzmax)         = 0.0
+      rc1_zm(gr%nz)         = 0.0
       rc2_zm                  = zt2zm( pdf_params%rc2 )
-      rc2_zm(gr%nzmax)         = 0.0
+      rc2_zm(gr%nz)         = 0.0
       rsl1_zm                 = zt2zm( pdf_params%rsl1 )
-      rsl1_zm(gr%nzmax)        = 0.0
+      rsl1_zm(gr%nz)        = 0.0
       rsl2_zm                 = zt2zm( pdf_params%rsl2 )
-      rsl2_zm(gr%nzmax)        = 0.0
+      rsl2_zm(gr%nz)        = 0.0
       cloud_frac1_zm          = zt2zm( pdf_params%cloud_frac1 )
-      cloud_frac1_zm(gr%nzmax) = 0.0
+      cloud_frac1_zm(gr%nz) = 0.0
       cloud_frac2_zm          = zt2zm( pdf_params%cloud_frac2 )
-      cloud_frac2_zm(gr%nzmax) = 0.0
+      cloud_frac2_zm(gr%nz) = 0.0
       s1_zm                   = zt2zm( pdf_params%s1 )
-      s1_zm(gr%nzmax)          = 0.0
+      s1_zm(gr%nz)          = 0.0
       s2_zm                   = zt2zm( pdf_params%s2 )
-      s2_zm(gr%nzmax)          = 0.0
+      s2_zm(gr%nz)          = 0.0
       stdev_s1_zm             = zt2zm( pdf_params%stdev_s1 )
-      stdev_s1_zm(gr%nzmax)    = 0.0
+      stdev_s1_zm(gr%nz)    = 0.0
       stdev_s2_zm             = zt2zm( pdf_params%stdev_s2 )
-      stdev_s2_zm(gr%nzmax)    = 0.0
+      stdev_s2_zm(gr%nz)    = 0.0
       rrtthl_zm               = zt2zm( pdf_params%rrtthl )
-      rrtthl_zm(gr%nzmax)      = 0.0
+      rrtthl_zm(gr%nz)      = 0.0
       alpha_thl_zm            = zt2zm( pdf_params%alpha_thl )
-      alpha_thl_zm(gr%nzmax)   = 0.0
+      alpha_thl_zm(gr%nz)   = 0.0
       alpha_rt_zm             = zt2zm( pdf_params%alpha_rt )
-      alpha_rt_zm(gr%nzmax)    = 0.0
+      alpha_rt_zm(gr%nz)    = 0.0
     end if ! l_call_pdf_closure_twice
 
     if ( l_stats ) then
@@ -2190,13 +2190,13 @@ module clubb_core
     implicit none
 
     ! Input variables
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       wpthvp_zt,   & ! Buoyancy flux (on thermo. grid)  [(K m)/s]
       thlpthvp_zt, & ! th_l' th_v' (on thermo. grid)    [K^2]
       rtpthvp_zt     ! r_t' th_v' (on thermo. grid)     [(kg K)/kg]
 
     ! Input/Output variables
-    real, dimension(gr%nzmax), intent(inout) :: &
+    real, dimension(gr%nz), intent(inout) :: &
       wpthvp,   & ! Buoyancy flux   [(K m)/s]
       thlpthvp, & ! th_l' th_v'     [K^2]
       rtpthvp     ! r_t' th_v'      [(kg K)/kg]
@@ -2225,12 +2225,12 @@ module clubb_core
     implicit none
 
     ! Input Variables
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       variable_zt, & ! Variable on the zt grid
       variable_zm    ! Variable on the zm grid
 
     ! Result
-    real, dimension(gr%nzmax) :: trapezoid_zt
+    real, dimension(gr%nz) :: trapezoid_zt
 
     ! Local Variable
     integer :: k ! Loop index
@@ -2240,13 +2240,13 @@ module clubb_core
     ! Boundary condition: trapezoidal rule not valid at zt level 1
     trapezoid_zt(1) = variable_zt(1)
 
-    do k = 2, gr%nzmax
+    do k = 2, gr%nz
       ! Trapezoidal rule from calculus
       trapezoid_zt(k) =  0.5 * ( variable_zm(k) + variable_zt(k) ) &
                              * ( gr%zm(k) - gr%zt(k) ) * gr%invrs_dzt(k) &
                        + 0.5 * ( variable_zt(k) + variable_zm(k-1) ) &
                              * ( gr%zt(k) - gr%zm(k-1) ) * gr%invrs_dzt(k)
-    end do ! k = 2, gr%nzmax
+    end do ! k = 2, gr%nz
 
     return
   end function trapezoid_zt
@@ -2266,12 +2266,12 @@ module clubb_core
     implicit none
 
     ! Input Variables
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       variable_zm, & ! Variable on the zm grid
       variable_zt    ! Variable on the zt grid
 
     ! Result
-    real, dimension(gr%nzmax) :: trapezoid_zm
+    real, dimension(gr%nz) :: trapezoid_zm
 
     ! Local Variable
     integer :: k ! Loop index
@@ -2281,15 +2281,15 @@ module clubb_core
     ! Boundary conditions: trapezoidal rule not valid at top zm level, nzmax.
     ! Trapezoidal rule also not used at zm level 1.
     trapezoid_zm(1)       = variable_zm(1)
-    trapezoid_zm(gr%nzmax) = variable_zm(gr%nzmax)
+    trapezoid_zm(gr%nz) = variable_zm(gr%nz)
 
-    do k = 2, gr%nzmax-1
+    do k = 2, gr%nz-1
       ! Trapezoidal rule from calculus
       trapezoid_zm(k) =  0.5 * ( variable_zt(k+1) + variable_zm(k) ) &
                              * ( gr%zt(k+1) - gr%zm(k) ) * gr%invrs_dzm(k) &
                        + 0.5 * ( variable_zm(k) + variable_zt(k) ) &
                              * ( gr%zm(k) - gr%zt(k) ) * gr%invrs_dzm(k)
-    end do ! k = 2, gr%nzmax-1
+    end do ! k = 2, gr%nz-1
 
     return
   end function trapezoid_zm
@@ -2331,20 +2331,20 @@ module clubb_core
     intrinsic :: abs, min, max
 
     ! Input variables
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       cloud_frac, & ! Cloud fraction             [-]
       rcm           ! Liquid water mixing ratio  [kg/kg]
 
-    type (pdf_parameter), dimension(gr%nzmax), intent(in) :: &
+    type (pdf_parameter), dimension(gr%nz), intent(in) :: &
       pdf_params    ! PDF Parameters  [units vary]
 
     ! Output variables
-    real, dimension(gr%nzmax), intent(out) :: &
+    real, dimension(gr%nz), intent(out) :: &
       cloud_cover,  & ! Cloud cover                               [-]
       rcm_in_layer    ! Liquid water mixing ratio in cloud layer  [kg/kg]
 
     ! Local variables
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       s_mean,                & ! Mean extended cloud water mixing ratio of the 
     !                            two Gaussian distributions
       vert_cloud_frac_upper, & ! Fraction of cloud in top half of grid box
@@ -2355,14 +2355,14 @@ module clubb_core
 
     ! ------------ Begin code ---------------
 
-    do k = 1, gr%nzmax
+    do k = 1, gr%nz
 
       s_mean(k) =      pdf_params(k)%mixt_frac  * pdf_params(k)%s1 + &
                   (1.0-pdf_params(k)%mixt_frac) * pdf_params(k)%s2
 
     end do
 
-    do k = 2, gr%nzmax-1, 1
+    do k = 2, gr%nz-1, 1
 
       if ( rcm(k) < rc_tol ) then ! No cloud at this level
 
@@ -2444,13 +2444,13 @@ module clubb_core
 
       end if ! rcm(k) < rc_tol
 
-    end do ! k = 2, gr%nzmax-1, 1
+    end do ! k = 2, gr%nz-1, 1
 
     cloud_cover(1)       = cloud_frac(1)
-    cloud_cover(gr%nzmax) = cloud_frac(gr%nzmax)
+    cloud_cover(gr%nz) = cloud_frac(gr%nz)
 
     rcm_in_layer(1)       = rcm(1)
-    rcm_in_layer(gr%nzmax) = rcm(gr%nzmax)
+    rcm_in_layer(gr%nz) = rcm(gr%nz)
 
     return
   end subroutine compute_cloud_cover
@@ -2485,12 +2485,12 @@ module clubb_core
     intrinsic :: max, epsilon
 
     ! Input variables
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       rtm           ! Total water mixing ratio             [kg/kg]
 
     character(len= * ), intent(in) :: message
 
-    real, dimension(gr%nzmax), intent(inout) :: &
+    real, dimension(gr%nz), intent(inout) :: &
       rcm           ! Cloud water mixing ratio  [kg/kg]
 
     integer :: k
@@ -2501,7 +2501,7 @@ module clubb_core
     ! This code won't work unless rtm >= 0 !!!
     ! We do not clip rcm_in_layer because rcm_in_layer only influences
     ! radiation, and we do not want to bother recomputing it.  6 Aug 2009
-    do k = 1, gr%nzmax
+    do k = 1, gr%nz
       if ( rtm(k) < rcm(k) ) then
 
         if ( clubb_at_least_debug_level(1) ) then
@@ -2514,7 +2514,7 @@ module clubb_core
 
       end if ! rtm(k) < rcm(k)
 
-    end do ! k=1..gr%nzmax
+    end do ! k=1..gr%nz
 
     return
   end subroutine clip_rcm

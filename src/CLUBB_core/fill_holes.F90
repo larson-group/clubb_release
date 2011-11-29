@@ -53,12 +53,12 @@ module fill_holes
     character(len=2), intent(in) :: & 
       field_grid ! The grid of the field, either zt or zm
 
-    real, dimension(gr%nzmax), intent(in) ::  & 
+    real, dimension(gr%nz), intent(in) ::  & 
       rho_ds,    & ! Dry, static density on thermodynamic levels    [kg/m^3]
       rho_ds_zm    ! Dry, static density on momentum levels         [kg/m^3]
 
     ! Input/Output variable
-    real, dimension(gr%nzmax), intent(inout) :: & 
+    real, dimension(gr%nz), intent(inout) :: & 
       field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
 
     ! Local Variables
@@ -76,14 +76,14 @@ module fill_holes
     ! level variables), or consider the value of 'field' at a level below the
     ! surface (for thermodynamic level variables).  For momentum level variables
     ! only, the hole-filling scheme should not alter the set value of 'field' at
-    ! the upper boundary level (k=gr%nzmax).
+    ! the upper boundary level (k=gr%nz).
 
     if ( field_grid == "zt" ) then
       ! 'field' is on the zt (thermodynamic level) grid
-      upper_hf_level = gr%nzmax
+      upper_hf_level = gr%nz
     elseif ( field_grid == "zm" )  then
       ! 'field' is on the zm (momentum level) grid
-      upper_hf_level = gr%nzmax-1
+      upper_hf_level = gr%nz-1
     endif
 
     if ( any( field( 2:upper_hf_level ) < threshold ) ) then
@@ -96,7 +96,7 @@ module fill_holes
       ! 'field' at a level below the surface (for thermodynamic level
       ! variables).  For momentum level variables only, the hole-filling scheme
       ! should not alter the set value of 'field' at the upper boundary
-      ! level (k=gr%nzmax).
+      ! level (k=gr%nz).
       do k = 2+num_pts, upper_hf_level-num_pts, 1
 
         begin_idx = k - num_pts
@@ -129,7 +129,7 @@ module fill_holes
       ! momentum level variables), or consider the value of 'field' at a level
       ! below the surface (for thermodynamic level variables).  For momentum
       ! level variables only, the hole-filling scheme should not alter the set
-      ! value of 'field' at the upper boundary level (k=gr%nzmax).
+      ! value of 'field' at the upper boundary level (k=gr%nz).
       if ( any( field( 2:upper_hf_level ) < threshold ) ) then
 
         ! 'field' is on the zt (thermodynamic level) grid
@@ -182,7 +182,7 @@ module fill_holes
     ! Input variables
     integer, intent(in) :: & 
       begin_idx, & ! The beginning index (e.g. k=2) of the range of hole-filling 
-      end_idx      ! The end index (e.g. k=gr%nzmax) of the range of hole-filling
+      end_idx      ! The end index (e.g. k=gr%nz) of the range of hole-filling
 
     real, intent(in) :: & 
       threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not fall
@@ -307,8 +307,8 @@ module fill_holes
     ! For cases where hole-filling over the entire (global) vertical domain
     ! is desired, or where statistics over the entire (global) vertical
     ! domain are desired, the lower (thermodynamic-level) index of k = 2 and
-    ! the upper (thermodynamic-level) index of k = gr%nzmax, means that the
-    ! overall vertical domain will be gr%zm(gr%nzmax) - gr%zm(1).
+    ! the upper (thermodynamic-level) index of k = gr%nz, means that the
+    ! overall vertical domain will be gr%zm(gr%nz) - gr%zm(1).
     !
     !
     ! Momentum-level computation:
@@ -336,13 +336,13 @@ module fill_holes
     ! surface level (or lower boundary level).  For hole-filling purposes,
     ! begin no lower than level k=2, which is the second momentum level above
     ! ground (or above the model lower boundary).  Likewise, the value at the
-    ! model upper boundary (k=gr%nzmax) is also set for momentum level
+    ! model upper boundary (k=gr%nz) is also set for momentum level
     ! variables.  That value should also not be changed.
     !
     ! However, this function is also used to keep track (for statistical
     ! purposes) of the vertical average of certain variables.  In that case,
     ! the vertical average needs to be taken over the entire vertical domain
-    ! (level 1 to level gr%nzmax).
+    ! (level 1 to level gr%nz).
     !
     !
     ! In both the thermodynamic-level computation and the momentum-level
@@ -451,7 +451,7 @@ module fill_holes
 
     !-----------------------------------------------------------------------
 
-    !  Assertion checks: that begin_idx <= gr%nzmax - 1
+    !  Assertion checks: that begin_idx <= gr%nz - 1
     !                    that end_idx   >= 2
     !                    that begin_idx <= end_idx
 

@@ -35,16 +35,16 @@ module wangara
     implicit none
 
     ! Output Variables
-    real, intent(out), dimension(gr%nzmax) :: & 
+    real, intent(out), dimension(gr%nz) :: & 
       wm_zt,        & ! w wind on thermodynamic grid                [m/s]
       wm_zm,        & ! w wind on momentum grid                     [m/s]
       thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
       rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
-    real, intent(out), dimension(gr%nzmax,sclr_dim) :: & 
+    real, intent(out), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar tendency [units/s]
 
-    real, intent(out), dimension(gr%nzmax,edsclr_dim) :: & 
+    real, intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar tendency [units/s]
 
     ! No large-scale subsidence for now

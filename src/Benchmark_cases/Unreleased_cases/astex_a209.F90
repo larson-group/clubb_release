@@ -40,16 +40,16 @@ module astex_a209
     implicit none
 
     ! Output Variables
-    real, intent(out), dimension(gr%nzmax) ::  & 
+    real, intent(out), dimension(gr%nz) ::  & 
       wm_zt,         & ! w wind on the thermodynamic grid        [m/s]
       wm_zm,         & ! w wind on the momentum grid             [m/s]
       thlm_forcing,  & ! Liquid potential temperature tendency   [K/s]
       rtm_forcing      ! Total water mixing ratio tendency       [kg/kg/s]
 
-    real, intent(out), dimension(gr%nzmax,sclr_dim) ::  & 
+    real, intent(out), dimension(gr%nz,sclr_dim) ::  & 
       sclrm_forcing ! Passive scalar forcing  [units/s]
 
-    real, intent(out), dimension(gr%nzmax,edsclr_dim) ::  & 
+    real, intent(out), dimension(gr%nz,edsclr_dim) ::  & 
       edsclrm_forcing ! Passive scalar forcing  [units/s]
 
     ! Local variables
@@ -58,7 +58,7 @@ module astex_a209
 
     ! Compute large-scale subsidence
 
-    do i=2,gr%nzmax
+    do i=2,gr%nz
 
       wm_zt(i) = - 5.e-6 * gr%zt(i)
 
@@ -72,7 +72,7 @@ module astex_a209
 
     ! Boundary conditions on zm
     wm_zm(1) = 0.0        ! At surface
-    wm_zm(gr%nzmax) = 0.0  ! Model top
+    wm_zm(gr%nz) = 0.0  ! Model top
 
     ! Radiative theta-l tendency
 

@@ -11,7 +11,7 @@ module estimate_scm_microphys_module
 
 !-------------------------------------------------------------------------------
   subroutine est_single_column_tndcy &
-             ( dt, nzmax, n_micro_calls, d_variables, &
+             ( dt, nz, n_micro_calls, d_variables, &
                k_lh_start, LH_rt, LH_thl, &
                X_nl_all_levs, LH_sample_point_weights, &
                p_in_Pa, exner, rho, w_std_dev, &
@@ -101,33 +101,33 @@ module estimate_scm_microphys_module
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
-      nzmax,          & ! Number of vertical levels
+      nz,          & ! Number of vertical levels
       n_micro_calls, & ! Number of calls to microphysics (normally=2)
       d_variables,   & ! Number of variates (normally=5) 
       k_lh_start       ! Starting level for computing arbitrary overlap
 
-    real, dimension(nzmax,n_micro_calls), intent(in) :: &
+    real, dimension(nz,n_micro_calls), intent(in) :: &
       LH_rt, & ! n_micro_calls values of total water mixing ratio     [kg/kg]
       LH_thl   ! n_micro_calls values of liquid potential temperature [K]
 
-    real( kind = dp ), target, dimension(nzmax,n_micro_calls,d_variables), intent(in) :: &
+    real( kind = dp ), target, dimension(nz,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
       rho           ! Density on thermo. grid  [kg/m^3]
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in height per gridbox   [m]
 
-    type(pdf_parameter), dimension(nzmax), intent(in) :: pdf_params
+    type(pdf_parameter), dimension(nz), intent(in) :: pdf_params
 
-    real, dimension(nzmax,hydromet_dim), intent(in) :: &
+    real, dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    integer, dimension(nzmax,n_micro_calls), intent(in) :: &
+    integer, dimension(nz,n_micro_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
 
     real, dimension(n_micro_calls), intent(in) :: &
@@ -135,38 +135,38 @@ module estimate_scm_microphys_module
 
     ! Output Variables
 
-    real, dimension(nzmax,hydromet_dim), intent(inout) :: &
+    real, dimension(nz,hydromet_dim), intent(inout) :: &
       lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
-    real, dimension(nzmax), intent(out) :: &
+    real, dimension(nz), intent(out) :: &
       lh_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
     ! Local Variables
-    real( kind = dp ), dimension(nzmax,hydromet_dim) :: &
+    real( kind = dp ), dimension(nz,hydromet_dim) :: &
       lh_hydromet_mc_sum, & ! LH est of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel_sum   ! LH est of hydrometeor sedimentation velocity [m/s]
 
-    real( kind = dp ), dimension(nzmax) :: &
+    real( kind = dp ), dimension(nz) :: &
       lh_rcm_mc_sum,  & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc_sum,  & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc_sum    ! LH est of time tendency of liquid potential temperature [K/s]
 
-    real, dimension(nzmax,hydromet_dim) :: &
+    real, dimension(nz,hydromet_dim) :: &
       hydromet_columns ! Hydrometeor species    [units vary]
 
-    real, dimension(nzmax) :: &
+    real, dimension(nz) :: &
       s_mellor_column    ! 's' (Mellor 1977)            [kg/kg]
 
-    real, dimension(nzmax) :: &
+    real, dimension(nz) :: &
       rv_column,  & ! Vapor water                  [kg/kg]
       thl_column, & ! Liquid potential temperature [K]
       rc_column,  & ! Liquid water                [kg/kg]
       w_column      ! Vertical velocity           [m/s]
 
-    integer, dimension(nzmax) :: n1, n2, zero
+    integer, dimension(nz) :: n1, n2, zero
 
     real( kind = dp ), pointer, dimension(:,:) :: &
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
@@ -240,7 +240,7 @@ module estimate_scm_microphys_module
         if ( clubb_at_least_debug_level( 1 ) ) then
           write(fstderr,*) "rv negative, LH sample number = ", sample
           write(fstderr,'(a3,3a20)') "k", "rt", "rv", "rc"
-          do k = 1, nzmax
+          do k = 1, nz
             if ( rv_column(k) < 0. ) then
               write(6,'(i3,3g20.7)')  k, LH_rt(k,sample), rv_column(k), &
                 rc_column(k)
@@ -253,14 +253,14 @@ module estimate_scm_microphys_module
 
       thl_column = real( LH_thl(:,sample) )
 
-      call copy_X_nl_into_hydromet( nzmax, d_variables, 1, & ! In
+      call copy_X_nl_into_hydromet( nz, d_variables, 1, & ! In
                                     X_nl_all_levs(:,sample,:), & ! In
                                     hydromet, & ! In
                                     hydromet_columns )
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
-           ( dt, nzmax, l_stats_samp, l_local_kk, l_latin_hypercube, & ! In
+           ( dt, nz, l_stats_samp, l_local_kk, l_latin_hypercube, & ! In
              thl_column, p_in_Pa, exner, rho, pdf_params, & ! In
              w_column, w_std_dev, dzq, & ! In
              rc_column, s_mellor_column, & ! In
@@ -304,7 +304,7 @@ module estimate_scm_microphys_module
   end subroutine est_single_column_tndcy
 
   !-----------------------------------------------------------------------------
-  subroutine copy_X_nl_into_hydromet( nzmax, d_variables, n_micro_calls, &
+  subroutine copy_X_nl_into_hydromet( nz, d_variables, n_micro_calls, &
                                       X_nl_all_levs, &
                                       hydromet, &
                                       hydromet_all_points )
@@ -348,17 +348,17 @@ module estimate_scm_microphys_module
     implicit none
 
     integer, intent(in) :: &
-      nzmax,          & ! Number of vertical levels
+      nz,          & ! Number of vertical levels
       d_variables,   & ! Number of variates (normally=5) 
       n_micro_calls    ! Number of calls to microphysics (normally=2)
 
-    real( kind = dp ), target, dimension(nzmax,n_micro_calls,d_variables), intent(in) :: &
+    real( kind = dp ), target, dimension(nz,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real, dimension(nzmax,hydromet_dim), intent(in) :: &
+    real, dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(nzmax,n_micro_calls,hydromet_dim), intent(out) :: &
+    real, dimension(nz,n_micro_calls,hydromet_dim), intent(out) :: &
       hydromet_all_points ! Hydrometeor species    [units vary]
 
     integer :: sample, ivar

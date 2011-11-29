@@ -53,24 +53,24 @@ module atex
     time,         & ! Current time     [s]
     time_initial ! Initial time     [s]
 
-  real, intent(in), dimension(gr%nzmax) :: & 
+  real, intent(in), dimension(gr%nz) :: & 
     rtm      ! Total water mixing ratio        [kg/kg]
 
   ! Input/output
   integer, intent(inout) :: err_code ! Diagnostic 
 
   ! Output Variables
-  real, intent(out), dimension(gr%nzmax) :: & 
+  real, intent(out), dimension(gr%nz) :: & 
     wm_zt,        & ! w wind on thermodynamic grid                [m/s]
     wm_zm,        & ! w wind on momentum grid                     [m/s]
     thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
     rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
 
-  real, intent(out), dimension(gr%nzmax, sclr_dim) :: & 
+  real, intent(out), dimension(gr%nz, sclr_dim) :: & 
     sclrm_forcing   ! Passive scalar tendency         [units/s]
 
-  real, intent(out), dimension(gr%nzmax, edsclr_dim) :: & 
+  real, intent(out), dimension(gr%nz, edsclr_dim) :: & 
     edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
   ! Internal variables
@@ -89,10 +89,10 @@ module atex
   !  Identify height of 6.5 g/kg moisture level
 
      i = 2
-     do while ( i <= gr%nzmax .and. rtm(i) > 6.5e-3 )
+     do while ( i <= gr%nz .and. rtm(i) > 6.5e-3 )
         i = i + 1
      end do
-     if ( i == gr%nzmax+1 .or. i == 2 ) then
+     if ( i == gr%nz+1 .or. i == 2 ) then
        write(fstderr,*) "Identification of 6.5 g/kg level failed"
        write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
        write(fstderr,*) "i = ", i
@@ -104,7 +104,7 @@ module atex
 
   !          Large scale subsidence
 
-     do i = 2, gr%nzmax
+     do i = 2, gr%nz
 
         if ( gr%zt(i) > 0. .and. gr%zt(i) <= z_inversion ) then
            wm_zt(i)  & 
@@ -123,11 +123,11 @@ module atex
      ! Boundary conditions.
      wm_zt(1) = 0.0        ! Below surface
      wm_zm(1) = 0.0        ! At surface
-     wm_zm(gr%nzmax) = 0.0  ! Model top
+     wm_zm(gr%nz) = 0.0  ! Model top
 
      ! Theta-l tendency
 
-     do i = 2, gr%nzmax
+     do i = 2, gr%nz
 
         if ( gr%zt(i) > 0. .and. gr%zt(i) < z_inversion ) then
            thlm_forcing(i) = -1.1575e-5 * ( 3. - gr%zt(i)/z_inversion ) ! Known magic number
@@ -140,7 +140,7 @@ module atex
      end do
 
      ! Moisture tendency
-     do i = 2, gr%nzmax
+     do i = 2, gr%nz
 
         if ( gr%zt(i) > 0. .and. gr%zt(i) < z_inversion ) then
            rtm_forcing(i) = -1.58e-8 * ( 1. - gr%zt(i)/z_inversion )  ! Brian - known magic number

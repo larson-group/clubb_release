@@ -235,7 +235,7 @@ module mono_flux_limiter
     ! rho_ds_zm are found on the momentum levels, and the values of rho_ds_zt
     ! are found on the thermodynamic levels.  The inequality is applied to
     ! w'x'(k,<t+1>) from vertical levels 2 through the second-highest level
-    ! (gr%nzmax-1).  The value of w'x' at level 1 is a set surface (or lowest
+    ! (gr%nz-1).  The value of w'x' at level 1 is a set surface (or lowest
     ! level) flux.  The value of w'x' at the highest level is also a set value,
     ! and therefore is not altered.
     !
@@ -347,7 +347,7 @@ module mono_flux_limiter
     real(kind=time_precision), intent(in) ::  &
       dt          ! Model timestep length                           [s]
 
-    real, dimension(gr%nzmax), intent(in) ::  &
+    real, dimension(gr%nz), intent(in) ::  &
       xm_old,          & ! xm at previous time step (thermo. levs.) [units vary]
       xp2,             & ! x'^2 (momentum levels)                   [units vary]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
@@ -364,12 +364,12 @@ module mono_flux_limiter
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
-    integer, dimension(gr%nzmax), intent(in) ::  &
+    integer, dimension(gr%nz), intent(in) ::  &
       low_lev_effect, & ! Index of lowest level that has an effect (for lev. k)
       high_lev_effect   ! Index of highest level that has an effect (for lev. k)
 
     ! Input/Output Variables
-    real, dimension(gr%nzmax), intent(inout) ::  &
+    real, dimension(gr%nz), intent(inout) ::  &
       xm,  &      ! xm at current time step (thermodynamic levels)  [units vary]
       wpxp        ! w'x' (momentum levels)                          [units vary]
 
@@ -378,14 +378,14 @@ module mono_flux_limiter
       err_code  ! Returns an error code in the event of a singular matrix
 
     ! Local Variables
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       xp2_zt,          &      ! x'^2 interpolated to thermodynamic levels  [units vary]
       xm_enter_mfl,    &      ! xm as it enters the MFL                    [units vary]
       xm_without_ta,   &      ! Value of xm without turb. adv. contrib.    [units vary]
       wpxp_net_adjust, &      ! Net amount of adjustment needed on w'x'    [units vary]      
       dxm_dt_mfl_adjust       ! Rate of change of adjustment to xm         [units vary]
 
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       min_x_allowable_lev, & ! Smallest usuable value of x at lev k [units vary]
       max_x_allowable_lev, & ! Largest usuable value of x at lev k  [units vary]
       min_x_allowable, & ! Smallest usuable x within k +/- num_levs [units vary]
@@ -403,10 +403,10 @@ module mono_flux_limiter
       xm_vert_integral,    & ! Vertical integral of xm                       [units_vary]
       dz                     ! zm grid spacing at top of domain              [m]
 
-    real, dimension(3,gr%nzmax) ::  &
+    real, dimension(3,gr%nz) ::  &
       lhs_mfl_xm  ! Left hand side of tridiagonal matrix
 
-    real, dimension(gr%nzmax) ::  &
+    real, dimension(gr%nz) ::  &
       rhs_mfl_xm  ! Right hand side of tridiagonal matrix equation
 
     integer ::  &
@@ -483,10 +483,10 @@ module mono_flux_limiter
     ! vertical level.  Start from level 2, which is the first level above
     ! the ground (or above the model surface).  This computation needs to be
     ! performed for all vertical levels above the ground (or model surface).
-    do k = 2, gr%nzmax, 1
+    do k = 2, gr%nz, 1
 
        km1 = max( k-1, 1 )
-       !kp1 = min( k+1, gr%nzmax )
+       !kp1 = min( k+1, gr%nz )
 
        ! Standard deviation is the square root of the variance.
        stnd_dev_x = sqrt( xp2_zt(k) )
@@ -501,8 +501,8 @@ module mono_flux_limiter
 
        ! Calculate the contribution of the mean advection term:
        ! m_adv_term = -wm_zt(k)*d(xm)/dz|_(k).
-       ! Note:  mean advection is not applied to xm at level gr%nzmax.
-       !if ( .not. l_implemented .and. k < gr%nzmax ) then
+       ! Note:  mean advection is not applied to xm at level gr%nz.
+       !if ( .not. l_implemented .and. k < gr%nz ) then
        !   tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k )
        !   m_adv_term = - tmp(1) * xm(kp1)  &
        !                - tmp(2) * xm(k)  &
@@ -516,7 +516,7 @@ module mono_flux_limiter
 
        ! Find the value of xm without the contribution from the turbulent
        ! advection term.
-       ! Note:  the contribution of xm_forcing at level gr%nzmax should be 0.
+       ! Note:  the contribution of xm_forcing at level gr%nz should be 0.
        xm_without_ta(k) = xm_old(k) + real( dt )*xm_forcing(k) + real( dt )*m_adv_term
 
        ! Find the minimum usuable value of variable x at each vertical level.
@@ -540,16 +540,16 @@ module mono_flux_limiter
     ! of x at level k.  Then, find the upper and lower limits of w'x'.  Reset
     ! the value of w'x' if it is outside of those limits, and store the amount
     ! of adjustment that was needed to w'x'.
-    ! The values of w'x' at level 1 and at level gr%nzmax are set values and
+    ! The values of w'x' at level 1 and at level gr%nz are set values and
     ! are not altered.
-    do k = 2, gr%nzmax-1, 1
+    do k = 2, gr%nz-1, 1
 
        km1 = max( k-1, 1 )
 
        low_lev  = max( low_lev_effect(k), 2 )
-       high_lev = min( high_lev_effect(k), gr%nzmax )
+       high_lev = min( high_lev_effect(k), gr%nz )
        !low_lev  = max( k-num_levs, 2 )
-       !high_lev = min( k+num_levs, gr%nzmax )
+       !high_lev = min( k+num_levs, gr%nz )
 
        ! Find the smallest value of all relevant level minima for variable x.
        min_x_allowable(k) = minval( min_x_allowable_lev(low_lev:high_lev) )
@@ -666,14 +666,14 @@ module mono_flux_limiter
     min_x_allowable(1) = 0.
     max_x_allowable(1) = 0.
 
-    min_x_allowable(gr%nzmax) = 0.
-    max_x_allowable(gr%nzmax) = 0.
+    min_x_allowable(gr%nz) = 0.
+    max_x_allowable(gr%nz) = 0.
 
     wpxp_mfl_min(1) = 0.
     wpxp_mfl_max(1) = 0.
 
-    wpxp_mfl_min(gr%nzmax) = 0.
-    wpxp_mfl_max(gr%nzmax) = 0.
+    wpxp_mfl_min(gr%nz) = 0.
+    wpxp_mfl_max(gr%nz) = 0.
 
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
        call stat_update_var( ithlm_without_ta, xm_without_ta, zt )
@@ -721,7 +721,7 @@ module mono_flux_limiter
           ! index (t+1), which is based upon the array of the amounts of w'x'
           ! adjustments.
 
-          do k = 2, gr%nzmax, 1
+          do k = 2, gr%nz, 1
 
              km1 = max( k-1, 1 )
 
@@ -747,22 +747,22 @@ module mono_flux_limiter
        endif  ! l_mfl_xm_imp_adj
 
        ! This code can be uncommented for debugging.
-       !do k = 1, gr%nzmax, 1
+       !do k = 1, gr%nz, 1
        !   print *, "k = ", k, "xm(t) = ", xm_old(k), "new xm(t+1) = ", xm(k)
        !enddo
 
        !Ensure there are no spikes at the top of the domain
-       if (abs( xm(gr%nzmax) - xm_enter_mfl(gr%nzmax) ) > 10. * xm_tol) then
-          dz = gr%zm(gr%nzmax) - gr%zm(gr%nzmax - 1)
+       if (abs( xm(gr%nz) - xm_enter_mfl(gr%nz) ) > 10. * xm_tol) then
+          dz = gr%zm(gr%nz) - gr%zm(gr%nz - 1)
 
-          xm_density_weighted = rho_ds_zt(gr%nzmax) &
-                                * (xm(gr%nzmax) - xm_enter_mfl(gr%nzmax)) &
+          xm_density_weighted = rho_ds_zt(gr%nz) &
+                                * (xm(gr%nz) - xm_enter_mfl(gr%nz)) &
                                 * dz
 
           xm_vert_integral &
           = vertical_integral  &
-              ( ((gr%nzmax - 1) - 2 + 1), rho_ds_zt(2:gr%nzmax - 1), &
-                xm(2:gr%nzmax - 1), gr%invrs_dzt(2:gr%nzmax - 1) )
+              ( ((gr%nz - 1) - 2 + 1), rho_ds_zt(2:gr%nz - 1), &
+                xm(2:gr%nz - 1), gr%invrs_dzt(2:gr%nz - 1) )
 
           !Check to ensure the vertical integral is not zero to avoid a divide
           !by zero error
@@ -772,7 +772,7 @@ module mono_flux_limiter
                               "but it will not conserve xm."
 
              !Remove the spike at the top of the domain
-             xm(gr%nzmax) = xm_enter_mfl(gr%nzmax)      
+             xm(gr%nz) = xm_enter_mfl(gr%nz)      
           else
              xm_adj_coef = xm_density_weighted / xm_vert_integral
 
@@ -787,16 +787,16 @@ module mono_flux_limiter
              xm = xm * (1. + xm_adj_coef)
 
              !Remove the spike at the top of the domain
-             xm(gr%nzmax) = xm_enter_mfl(gr%nzmax)
+             xm(gr%nz) = xm_enter_mfl(gr%nz)
 
              !This code can be uncommented to ensure conservation
-             !if (abs(sum(rho_ds_zt(2:gr%nzmax) * xm(2:gr%nzmax) / gr%invrs_dzt(2:gr%nzmax)) - & 
-             !    sum(rho_ds_zt(2:gr%nzmax) * xm_enter_mfl(2:gr%nzmax) / gr%invrs_dzt(2:gr%nzmax)))&
+             !if (abs(sum(rho_ds_zt(2:gr%nz) * xm(2:gr%nz) / gr%invrs_dzt(2:gr%nz)) - & 
+             !    sum(rho_ds_zt(2:gr%nz) * xm_enter_mfl(2:gr%nz) / gr%invrs_dzt(2:gr%nz)))&
              !    > (1000 * xm_tol)) then
              !   write(fstderr,*) "NON-CONSERVATION in MFL", trim( solve_type ), &
-             !      abs(sum(rho_ds_zt(2:gr%nzmax) * xm(2:gr%nzmax) / gr%invrs_dzt(2:gr%nzmax)) - &
-             !       sum(rho_ds_zt(2:gr%nzmax) * xm_enter_mfl(2:gr%nzmax) / &
-             !              gr%invrs_dzt(2:gr%nzmax)))
+             !      abs(sum(rho_ds_zt(2:gr%nz) * xm(2:gr%nz) / gr%invrs_dzt(2:gr%nz)) - &
+             !       sum(rho_ds_zt(2:gr%nz) * xm_enter_mfl(2:gr%nz) / &
+             !              gr%invrs_dzt(2:gr%nz)))
              !
              !   write(fstderr,*) "XM_ENTER_MFL=", xm_enter_mfl 
              !   write(fstderr,*) "XM_AFTER_SPIKE_REMOVAL", xm 
@@ -866,14 +866,14 @@ module mono_flux_limiter
     real(kind=time_precision), intent(in) ::  &
       dt     ! Model timestep length                      [s]
 
-    real, dimension(gr%nzmax), intent(in) ::  &
+    real, dimension(gr%nz), intent(in) ::  &
       wm_zt  ! w wind component on thermodynamic levels   [m/s]
 
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
     ! Output Variables
-    real, dimension(3,gr%nzmax), intent(out) ::  & 
+    real, dimension(3,gr%nz), intent(out) ::  & 
       lhs    ! Left hand side of tridiagonal matrix
 
     ! Local Variables
@@ -886,12 +886,12 @@ module mono_flux_limiter
     lhs = 0.0
 
 
-    ! The xm loop runs between k = 2 and k = gr%nzmax.  The value of xm at
+    ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
     ! level k = 1, which is below the model surface, is simply set equal to the
     ! value of xm at level k = 2 after the solve has been completed.
 
     ! Setup LHS of the tridiagonal system
-    do k = 2, gr%nzmax, 1
+    do k = 2, gr%nz, 1
 
        km1 = max( k-1,1 )
 
@@ -913,7 +913,7 @@ module mono_flux_limiter
        lhs(k_tdiag,k) &
        = lhs(k_tdiag,k) + 1.0 / real( dt )
 
-    enddo ! xm loop: 2..gr%nzmax
+    enddo ! xm loop: 2..gr%nz
 
     ! Boundary conditions.
 
@@ -953,7 +953,7 @@ module mono_flux_limiter
     real(kind=time_precision), intent(in) ::  &
       dt                 ! Model timestep length                    [s]
 
-    real, dimension(gr%nzmax), intent(in) ::  &
+    real, dimension(gr%nz), intent(in) ::  &
       xm_old,          & ! xm; timestep (t) (thermodynamic levels)  [units vary]
       wpxp,            & ! w'x'; timestep (t+1); limited (m-levs.)  [units vary]
       xm_forcing,      & ! xm forcings (thermodynamic levels)       [units vary]
@@ -961,7 +961,7 @@ module mono_flux_limiter
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     ! Output Variable
-    real, dimension(gr%nzmax), intent(out) ::  &
+    real, dimension(gr%nz), intent(out) ::  &
       rhs         ! Right hand side of tridiagonal matrix equation
 
     ! Local Variables
@@ -973,11 +973,11 @@ module mono_flux_limiter
     rhs = 0.0
 
 
-    ! The xm loop runs between k = 2 and k = gr%nzmax.  The value of xm at
+    ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
     ! level k = 1, which is below the model surface, is simply set equal to the
     ! value of xm at level k = 2 after the solve has been completed.
 
-    do k = 2, gr%nzmax, 1
+    do k = 2, gr%nz, 1
 
        ! Define indices
        km1 = max( k-1, 1 )
@@ -1007,7 +1007,7 @@ module mono_flux_limiter
        !       imposed forcings on xm.
        rhs(k) = rhs(k) + xm_forcing(k)
 
-    enddo ! xm loop: 2..gr%nzmax
+    enddo ! xm loop: 2..gr%nz
 
     ! Boundary conditions
 
@@ -1059,14 +1059,14 @@ module mono_flux_limiter
     integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
 
-    real, dimension(3,gr%nzmax), intent(inout) ::  & 
+    real, dimension(3,gr%nz), intent(inout) ::  & 
       lhs  ! Left hand side of tridiagonal matrix
 
-    real, dimension(gr%nzmax), intent(inout) ::  &
+    real, dimension(gr%nz), intent(inout) ::  &
       rhs  ! Right hand side of tridiagonal matrix equation
 
     ! Output Variables
-    real, dimension(gr%nzmax), intent(inout) :: &
+    real, dimension(gr%nz), intent(inout) :: &
       xm   ! Value of variable being solved for at timestep (t+1)   [units vary]
 
     integer, intent(out) ::  &
@@ -1091,7 +1091,7 @@ module mono_flux_limiter
 
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
     call tridag_solve & 
-         ( solve_type_str, gr%nzmax, 1, lhs(kp1_tdiag,:),  &  ! Intent(in)
+         ( solve_type_str, gr%nz, 1, lhs(kp1_tdiag,:),  &  ! Intent(in)
            lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs,  &         ! Intent(inout)
            xm, err_code )                                    ! Intent(out)
 
@@ -1152,16 +1152,16 @@ module mono_flux_limiter
     real(kind=time_precision), intent(in) ::  &
       dt        ! Model timestep length                            [s]
 
-    type(pdf_parameter), dimension(gr%nzmax), intent(in) ::  &
+    type(pdf_parameter), dimension(gr%nz), intent(in) ::  &
       pdf_params   ! PDF parameters     [units vary]
 
     ! Output Variables
-    integer, dimension(gr%nzmax), intent(out) ::  &
+    integer, dimension(gr%nz), intent(out) ::  &
       low_lev_effect, & ! Index of lowest level that has an effect (for lev. k)
       high_lev_effect   ! Index of highest level that has an effect (for lev. k)
 
     ! Local Variables
-    real, dimension(gr%nzmax) ::  &
+    real, dimension(gr%nz) ::  &
       vert_vel_up,  & ! Average upwards vertical velocity component   [m/s]
       vert_vel_down   ! Average downwards vertical velocity component [m/s]
 
@@ -1180,8 +1180,8 @@ module mono_flux_limiter
 
     if ( l_constant_thickness ) then ! thickness is a constant value.
 
-       ! The value of w'x' may only be altered between levels 3 and gr%nzmax-2.
-       do k = 3, gr%nzmax-2, 1
+       ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
+       do k = 3, gr%nz-2, 1
 
           ! Compute the number of levels that effect the central thermodynamic
           ! level through upwards motion (traveling from lower levels to reach
@@ -1248,10 +1248,10 @@ module mono_flux_limiter
              else
 
                 ! The highest level that can be considered is thermodynamic
-                ! level gr%nzmax.
-                if ( j == gr%nzmax ) then
+                ! level gr%nz.
+                if ( j == gr%nz ) then
 
-                   ! The current level (level gr%nzmax) is the highest level
+                   ! The current level (level gr%nz) is the highest level
                    ! that can be considered.
                    high_lev_effect(k) = j
 
@@ -1268,7 +1268,7 @@ module mono_flux_limiter
 
           enddo ! upwards loop
 
-       enddo ! k = 3, gr%nzmax-2
+       enddo ! k = 3, gr%nz-2
 
 
     else ! thickness based on vertical velocity and time step length.
@@ -1280,8 +1280,8 @@ module mono_flux_limiter
        call mean_vert_vel_up_down( pdf_params, 0.0,  &
                                    vert_vel_down, vert_vel_up )
 
-       ! The value of w'x' may only be altered between levels 3 and gr%nzmax-2.
-       do k = 3, gr%nzmax-2, 1
+       ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
+       do k = 3, gr%nz-2, 1
 
           ! Compute the number of levels that effect the central thermodynamic
           ! level through upwards motion (traveling from lower levels to reach
@@ -1401,10 +1401,10 @@ module mono_flux_limiter
                 else
 
                    ! The highest level that can be considered is thermodynamic
-                   ! level gr%nzmax.
-                   if ( j == gr%nzmax ) then
+                   ! level gr%nz.
+                   if ( j == gr%nz ) then
 
-                      ! The current level (level gr%nzmax) is the highest level
+                      ! The current level (level gr%nz) is the highest level
                       ! that can be considered.
                       high_lev_effect(k) = j
 
@@ -1432,22 +1432,22 @@ module mono_flux_limiter
 
           enddo  ! upwards loop
 
-       enddo ! k = 3, gr%nzmax-2
+       enddo ! k = 3, gr%nz-2
 
     endif ! l_constant_thickness
 
 
-    ! Information for levels 1, 2, gr%nzmax-1, and gr%nzmax is not needed.
+    ! Information for levels 1, 2, gr%nz-1, and gr%nz is not needed.
     ! However, set the values at these levels for purposes of not having odd
     ! values in the arrays.
     low_lev_effect(1)  = 1
     high_lev_effect(1) = 1
     low_lev_effect(2)  = 2
     high_lev_effect(2) = 2
-    low_lev_effect(gr%nzmax-1)  = gr%nzmax-1
-    high_lev_effect(gr%nzmax-1) = gr%nzmax
-    low_lev_effect(gr%nzmax)    = gr%nzmax
-    high_lev_effect(gr%nzmax)   = gr%nzmax
+    low_lev_effect(gr%nz-1)  = gr%nz-1
+    high_lev_effect(gr%nz-1) = gr%nz
+    low_lev_effect(gr%nz)    = gr%nz
+    high_lev_effect(gr%nz)   = gr%nz
 
 
     return
@@ -1662,21 +1662,21 @@ module mono_flux_limiter
     implicit none
 
     ! Input Variables
-    type(pdf_parameter), dimension(gr%nzmax), intent(in) ::  &
+    type(pdf_parameter), dimension(gr%nz), intent(in) ::  &
       pdf_params     ! PDF parameters
 
     real, intent(in) ::  &
       w_ref          ! Reference velocity, w|_ref (normally = 0)   [m/s]
 
     ! Output Variables
-    real, dimension(gr%nzmax), intent(out) :: &
+    real, dimension(gr%nz), intent(out) :: &
       mean_w_down, & ! Overall mean w (<= w|_ref)                  [m/s]
       mean_w_up      ! Overall mean w (>= w|_ref)                  [m/s]
 
     ! Local Variables
 
     ! PDF parameters unpacked and interpolated to momentum levels
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       w1,  & ! Mean of w for 1st normal distribution               [m/s]
       w2,  & ! Mean of w for 2nd normal distribution               [m/s]
       varnce_w1, & ! Variance of w for 1st normal distribution           [m^2/s^2]
@@ -1706,9 +1706,9 @@ module mono_flux_limiter
     mixt_frac = zt2zm( pdf_params%mixt_frac )
 
 
-    ! Loop over momentum levels from 2 to gr%nzmax-1.  Levels 1 and gr%nzmax
+    ! Loop over momentum levels from 2 to gr%nz-1.  Levels 1 and gr%nz
     ! are not needed.
-    do k = 2, gr%nzmax-1, 1
+    do k = 2, gr%nz-1, 1
 
        ! Standard deviation of w for the 1st normal distribution.
        sigma_w1 = sqrt( varnce_w1(k) )
@@ -1826,7 +1826,7 @@ module mono_flux_limiter
 
        endif ! l_stats_samp
 
-    enddo ! k = 2, gr%nzmax, 1
+    enddo ! k = 2, gr%nz, 1
 
 
     return

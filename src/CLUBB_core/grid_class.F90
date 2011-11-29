@@ -166,7 +166,7 @@ module grid_class
 
   type grid
 
-    integer :: nzmax ! Number of points in the grid
+    integer :: nz ! Number of points in the grid
     !   Note: Fortran 90/95 prevents an allocatable array from appearing
     !   within a derived type.  However, a pointer can be used in the same
     !   manner as an allocatable array, as we have done here (the grid
@@ -348,12 +348,12 @@ module grid_class
       write(fstderr,*) "This may take a lot of CPU time and memory."
     end if
 
-    gr%nzmax = nzmax
+    gr%nz = nzmax
 
     ! Default bounds
     begin_height = 1
 
-    end_height = gr%nzmax
+    end_height = gr%nz
 
     !---------------------------------------------------
     if ( .not. l_implemented ) then
@@ -362,13 +362,13 @@ module grid_class
 
         ! Determine the number of grid points given the spacing
         ! to fit within the bounds without going over.
-        gr%nzmax = floor( ( zm_top - zm_init + deltaz ) / deltaz )
+        gr%nz = floor( ( zm_top - zm_init + deltaz ) / deltaz )
 
       else if( grid_type == 2 ) then! Thermo
 
         ! Find begin_height (lower bound)
 
-        i = gr%nzmax
+        i = gr%nz
 
         do while( thermodynamic_heights(i) >= zm_init .and. i > 1 )
 
@@ -388,7 +388,7 @@ module grid_class
 
         ! Find end_height (upper bound)
 
-        i = gr%nzmax
+        i = gr%nz
 
         do while( thermodynamic_heights(i) > zm_top .and. i > 1 )
 
@@ -404,7 +404,7 @@ module grid_class
 
           end_height = i
 
-          gr%nzmax = size( thermodynamic_heights(begin_height:end_height) )
+          gr%nz = size( thermodynamic_heights(begin_height:end_height) )
 
         end if
 
@@ -414,7 +414,7 @@ module grid_class
 
         i = 1
 
-        do while( momentum_heights(i) < zm_init .and. i < gr%nzmax )
+        do while( momentum_heights(i) < zm_init .and. i < gr%nz )
 
           i = i + 1
 
@@ -432,7 +432,7 @@ module grid_class
 
         ! Find end_height (lower bound)
 
-        i = gr%nzmax
+        i = gr%nz
 
         do while( momentum_heights(i) > zm_top .and. i > 1 )
 
@@ -448,7 +448,7 @@ module grid_class
 
           end_height = i
 
-          gr%nzmax = size( momentum_heights(begin_height:end_height) )
+          gr%nz = size( momentum_heights(begin_height:end_height) )
 
         end if
 
@@ -459,11 +459,11 @@ module grid_class
     !---------------------------------------------------
 
     ! Allocate memory for the grid levels
-    allocate( gr%zm(gr%nzmax), gr%zt(gr%nzmax), & 
-              gr%dzm(gr%nzmax), gr%dzt(gr%nzmax), &
-              gr%invrs_dzm(gr%nzmax), gr%invrs_dzt(gr%nzmax),  & 
-              gr%weights_zm2zt(m_above:m_below,gr%nzmax), & 
-              gr%weights_zt2zm(t_above:t_below,gr%nzmax), & 
+    allocate( gr%zm(gr%nz), gr%zt(gr%nz), & 
+              gr%dzm(gr%nz), gr%dzt(gr%nz), &
+              gr%invrs_dzm(gr%nz), gr%invrs_dzt(gr%nz),  & 
+              gr%weights_zm2zt(m_above:m_below,gr%nz), & 
+              gr%weights_zt2zm(t_above:t_below,gr%nz), & 
               stat=ierr )
 
     if ( ierr /= 0 ) then
@@ -576,7 +576,7 @@ module grid_class
     ! If the CLUBB model is running by itself, but is using a stretched grid
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
-    real, intent(in), dimension(gr%nzmax) ::  & 
+    real, intent(in), dimension(gr%nz) ::  & 
       momentum_heights,   & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
@@ -592,11 +592,11 @@ module grid_class
         ! Evenly-spaced grid.
         ! Momentum level altitudes are defined based on the grid starting
         ! altitude, zm_init, the constant grid-spacing, deltaz, and the number
-        ! of grid levels, gr%nzmax.
+        ! of grid levels, gr%nz.
 
         ! Define momentum level altitudes. The first momentum level is at
         ! altitude zm_init.
-        do k = 1, gr%nzmax, 1
+        do k = 1, gr%nz, 1
           gr%zm(k) = zm_init + real( k-1 ) * deltaz
         enddo
 
@@ -607,7 +607,7 @@ module grid_class
         ! momentum levels and subtracting that value from the bottom momentum
         ! level.  The first thermodynamic level is below zm_init.
         gr%zt(1) = zm_init - ( 0.5 * deltaz )
-        do k = 2, gr%nzmax, 1
+        do k = 2, gr%nz, 1
           gr%zt(k) = 0.5 * ( gr%zm(k) + gr%zm(k-1) )
         enddo
 
@@ -620,7 +620,7 @@ module grid_class
         ! SAM-style stretched grid.
 
         ! Define thermodynamic level altitudes.
-        do k = 1, gr%nzmax, 1
+        do k = 1, gr%nz, 1
           gr%zt(k) = thermodynamic_heights(k)
         enddo
 
@@ -630,11 +630,11 @@ module grid_class
         ! altitude is found by taking 1/2 the altitude difference between the
         ! top two thermodynamic levels and adding that value to the top
         ! thermodynamic level.
-        do k = 1, gr%nzmax-1, 1
+        do k = 1, gr%nz-1, 1
           gr%zm(k) = 0.5 * ( gr%zt(k+1) + gr%zt(k) )
         enddo
-        gr%zm(gr%nzmax) = gr%zt(gr%nzmax) +  & 
-             0.5 * ( gr%zt(gr%nzmax) - gr%zt(gr%nzmax-1) )
+        gr%zm(gr%nz) = gr%zt(gr%nz) +  & 
+             0.5 * ( gr%zt(gr%nz) - gr%zt(gr%nz-1) )
 
       elseif ( grid_type == 3 ) then
 
@@ -644,7 +644,7 @@ module grid_class
         ! WRF-style stretched grid.
 
         ! Define momentum level altitudes.
-        do k = 1, gr%nzmax, 1
+        do k = 1, gr%nz, 1
           gr%zm(k) = momentum_heights(k)
         enddo
 
@@ -655,7 +655,7 @@ module grid_class
         ! bottom two momentum levels and subtracting that value from the
         ! bottom momentum level.
         gr%zt(1) = gr%zm(1) - 0.5 * ( gr%zm(2) - gr%zm(1) )
-        do k = 2, gr%nzmax, 1
+        do k = 2, gr%nz, 1
           gr%zt(k) = 0.5 * ( gr%zm(k) + gr%zm(k-1) )
         enddo
 
@@ -678,13 +678,13 @@ module grid_class
       ! altitudes to set up the CLUBB grid.
 
       ! Momentum level altitudes from host model.
-      do k = 1, gr%nzmax, 1
+      do k = 1, gr%nz, 1
         gr%zm(k) = momentum_heights(k)
       enddo
 
       ! Thermodynamic level altitudes from host model after possible grid-index
       ! adjustment for CLUBB interface.
-      do k = 1, gr%nzmax, 1
+      do k = 1, gr%nz, 1
         gr%zt(k) = thermodynamic_heights(k)
       enddo
 
@@ -694,29 +694,29 @@ module grid_class
 
     ! Define dzm, the spacing between thermodynamic grid levels; centered over
     ! momentum grid levels
-    do k=1,gr%nzmax-1
+    do k=1,gr%nz-1
       gr%dzm(k) = gr%zt(k+1) - gr%zt(k)
     enddo
-    gr%dzm(gr%nzmax) = gr%dzm(gr%nzmax-1)
+    gr%dzm(gr%nz) = gr%dzm(gr%nz-1)
 
     ! Define dzt, the spacing between momentum grid levels; centered over
     ! thermodynamic grid levels
-    do k=2,gr%nzmax
+    do k=2,gr%nz
       gr%dzt(k) = gr%zm(k) - gr%zm(k-1)
     enddo
     gr%dzt(1) = gr%dzt(2)
 
     ! Define invrs_dzm, which is the inverse spacing between thermodynamic grid
     ! levels; centered over momentum grid levels.
-    do k=1,gr%nzmax-1
+    do k=1,gr%nz-1
       gr%invrs_dzm(k) = 1. / ( gr%zt(k+1) - gr%zt(k) )
     enddo
-    gr%invrs_dzm(gr%nzmax) = gr%invrs_dzm(gr%nzmax-1)
+    gr%invrs_dzm(gr%nz) = gr%invrs_dzm(gr%nz-1)
 
 
     ! Define invrs_dzt, which is the inverse spacing between momentum grid
     ! levels; centered over thermodynamic grid levels.
-    do k=2,gr%nzmax
+    do k=2,gr%nz
       gr%invrs_dzt(k) = 1. / ( gr%zm(k) - gr%zm(k-1) )
     enddo
     gr%invrs_dzt(1) = gr%invrs_dzt(2)
@@ -733,7 +733,7 @@ module grid_class
     ! above and below the central momentum level) to the intermediate
     ! thermodynamic grid levels that sandwich the central momentum level.
     ! For more information, see the comments in function interpolated_aztk_imp.
-    do k = 1, gr%nzmax, 1
+    do k = 1, gr%nz, 1
       gr%weights_zm2zt(m_above:m_below,k)  & 
              = interp_weights_zm2zt_imp( k )
     enddo
@@ -752,7 +752,7 @@ module grid_class
     ! thermodynamic level.
     ! For more information, see the comments in function interpolated_azmk_imp.
 
-    do k = 1, gr%nzmax, 1
+    do k = 1, gr%nz, 1
       gr%weights_zt2zm(t_above:t_below,k)  & 
              = interp_weights_zt2zm_imp( k )
     enddo
@@ -1054,10 +1054,10 @@ module grid_class
     implicit none
 
     ! Input Variable
-    real, intent(in), dimension(gr%nzmax) :: azt
+    real, intent(in), dimension(gr%nz) :: azt
 
     ! Return Variable
-    real, dimension(gr%nzmax) :: linear_interpolated_azm
+    real, dimension(gr%nz) :: linear_interpolated_azm
 
     ! Local Variable
     integer :: k
@@ -1066,21 +1066,21 @@ module grid_class
 
     ! Do the actual interpolation.
     ! Use linear interpolation.
-    forall( k = 1 : gr%nzmax-1 : 1 )
+    forall( k = 1 : gr%nz-1 : 1 )
       linear_interpolated_azm(k) = &
          linear_interp_factor( gr%weights_zt2zm(1, k), azt(k+1), azt(k) )
     end forall
 
-!    ! Set the value of azm at level gr%nzmax (the uppermost level in the model)
-!    ! to the value of azt at level gr%nzmax.
-!    linear_interpolated_azm(gr%nzmax) = azt(gr%nzmax)
-    ! Use a linear extension based on the values of azt at levels gr%nzmax and
-    ! gr%nzmax-1 to find the value of azm at level gr%nzmax (the uppermost level
+!    ! Set the value of azm at level gr%nz (the uppermost level in the model)
+!    ! to the value of azt at level gr%nz.
+!    linear_interpolated_azm(gr%nz) = azt(gr%nz)
+    ! Use a linear extension based on the values of azt at levels gr%nz and
+    ! gr%nz-1 to find the value of azm at level gr%nz (the uppermost level
     ! in the model).
-    linear_interpolated_azm(gr%nzmax) =  & 
-       ( ( azt(gr%nzmax)-azt(gr%nzmax-1) ) & 
-         / ( gr%zt(gr%nzmax)-gr%zt(gr%nzmax-1) ) ) & 
-        * ( gr%zm(gr%nzmax)-gr%zt(gr%nzmax) ) + azt(gr%nzmax)
+    linear_interpolated_azm(gr%nz) =  & 
+       ( ( azt(gr%nz)-azt(gr%nz-1) ) & 
+         / ( gr%zt(gr%nz)-gr%zt(gr%nz-1) ) ) & 
+        * ( gr%zm(gr%nz)-gr%zt(gr%nz) ) + azt(gr%nz)
 
     return
 
@@ -1102,7 +1102,7 @@ module grid_class
     implicit none
 
     ! Input Variables
-    real, intent(in), dimension(gr%nzmax) :: azt
+    real, intent(in), dimension(gr%nz) :: azt
 
     integer, intent(in) :: k
 
@@ -1113,23 +1113,23 @@ module grid_class
 
     ! Do the actual interpolation.
     ! Use a linear interpolation.
-    if ( k /= gr%nzmax ) then
+    if ( k /= gr%nz ) then
 
       linear_interpolated_azmk = &
          linear_interp_factor( gr%weights_zt2zm(1, k), azt(k+1), azt(k) )
 
     else
 
-!       ! Set the value of azm at level gr%nzmax (the uppermost level in the
-!       ! model) to the value of azt at level gr%nzmax.
-!       linear_interpolated_azmk = azt(gr%nzmax)
-      ! Use a linear extension based on the values of azt at levels gr%nzmax and
-      ! gr%nzmax-1 to find the value of azm at level gr%nzmax (the uppermost
+!       ! Set the value of azm at level gr%nz (the uppermost level in the
+!       ! model) to the value of azt at level gr%nz.
+!       linear_interpolated_azmk = azt(gr%nz)
+      ! Use a linear extension based on the values of azt at levels gr%nz and
+      ! gr%nz-1 to find the value of azm at level gr%nz (the uppermost
       ! level in the model).
       linear_interpolated_azmk =  & 
-         ( ( azt(gr%nzmax)-azt(gr%nzmax-1) ) & 
-           / ( gr%zt(gr%nzmax)-gr%zt(gr%nzmax-1) ) ) & 
-          * ( gr%zm(gr%nzmax)-gr%zt(gr%nzmax) ) + azt(gr%nzmax)
+         ( ( azt(gr%nz)-azt(gr%nz-1) ) & 
+           / ( gr%zt(gr%nz)-gr%zt(gr%nz-1) ) ) & 
+          * ( gr%zm(gr%nz)-gr%zt(gr%nz) ) + azt(gr%nz)
 
     endif
 
@@ -1150,18 +1150,18 @@ module grid_class
     implicit none
 
     ! Input Variables
-    real, intent(in), dimension(gr%nzmax) :: azt
+    real, intent(in), dimension(gr%nz) :: azt
 
     ! Return Variable
-    real, dimension(gr%nzmax) :: cubic_interpolated_azm
+    real, dimension(gr%nz) :: cubic_interpolated_azm
 
     ! Local Variable(s)
-    real, dimension(gr%nzmax) :: tmp ! This is needed for variables that self-reference
+    real, dimension(gr%nz) :: tmp ! This is needed for variables that self-reference
     integer :: k
 
     ! ---- Begin Code ----
 
-    forall( k = 1 : gr%nzmax )
+    forall( k = 1 : gr%nz )
       tmp(k) = cubic_interpolated_azmk( azt, k )
     end forall
 
@@ -1186,7 +1186,7 @@ module grid_class
     implicit none
 
     ! Input Variables
-    real, intent(in), dimension(gr%nzmax) :: azt
+    real, intent(in), dimension(gr%nz) :: azt
 
     integer, intent(in) :: k
 
@@ -1199,22 +1199,22 @@ module grid_class
     ! ---- Begin Code ----
 
     ! Special case for a very small domain
-    if ( gr%nzmax < 3 ) then
+    if ( gr%nz < 3 ) then
       cubic_interpolated_azmk = linear_interpolated_azmk( azt, k )
       return
     end if
 
     ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
-    if ( k == gr%nzmax-1 ) then
-      km1 = gr%nzmax-2
-      kp1 = gr%nzmax
-      kp2 = gr%nzmax
-      k00 = gr%nzmax-1
-    else if ( k == gr%nzmax ) then ! Extrapolation
-      km1 = gr%nzmax
-      kp1 = gr%nzmax
-      kp2 = gr%nzmax
-      k00 = gr%nzmax-1
+    if ( k == gr%nz-1 ) then
+      km1 = gr%nz-2
+      kp1 = gr%nz
+      kp2 = gr%nz
+      k00 = gr%nz-1
+    else if ( k == gr%nz ) then ! Extrapolation
+      km1 = gr%nz
+      kp1 = gr%nz
+      kp2 = gr%nz
+      k00 = gr%nz-1
     else if ( k == 1 ) then
       km1 = 1
       kp1 = 2
@@ -1247,9 +1247,9 @@ module grid_class
     ! on the thermodynamic grid levels (azt) to the momentum grid levels (azm).
     ! This function computes a weighting factor for both the upper thermodynamic
     ! level (k+1) and the lower thermodynamic level (k) applied to the central
-    ! momentum level (k).  For the uppermost momentum grid level (k=gr%nzmax), a
-    ! weighting factor for both the thermodynamic level at gr%nzmax and the
-    ! thermodynamic level at gr%nzmax-1 are calculated based on the use of a
+    ! momentum level (k).  For the uppermost momentum grid level (k=gr%nz), a
+    ! weighting factor for both the thermodynamic level at gr%nz and the
+    ! thermodynamic level at gr%nz-1 are calculated based on the use of a
     ! linear extension.  This function outputs the weighting factors at a single
     ! momentum grid level (k).  The formulation used is compatible with a
     ! stretched (unevenly-spaced) grid.  The weights are defined as follows:
@@ -1264,7 +1264,7 @@ module grid_class
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! For all levels k < gr%nzmax:
+    ! For all levels k < gr%nz:
     !
     ! The formula for a linear interpolation is given by:
     !
@@ -1349,16 +1349,16 @@ module grid_class
     !
     ! Additionally, as long as the central thermodynamic level (k) in the above
     ! scenario is not the uppermost thermodynamic level or the lowermost
-    ! thermodynamic level (k /= gr%nzmax and k /= 1), the four weighting factors
+    ! thermodynamic level (k /= gr%nz and k /= 1), the four weighting factors
     ! have the following relationships:  A(k) = C(k+1) and B(k) = D(k+1).
     !
     !
-    ! Special condition for uppermost grid level, k = gr%nzmax:
+    ! Special condition for uppermost grid level, k = gr%nz:
     !
     ! The uppermost momentum grid level is above the uppermost thermodynamic
     ! grid level.  Thus, a linear extension is used at this level.
     !
-    ! For level k = gr%nzmax:
+    ! For level k = gr%nz:
     !
     ! The formula for a linear extension is given by:
     !
@@ -1382,9 +1382,9 @@ module grid_class
     ! factor = ( zm(k) - zt(k-1) ) / ( zt(k) - zt(k-1) ).
     !
     ! Due to the fact that a linear extension is being used, the value of factor
-    ! will be greater than 1.  The weight of thermodynamic level k = gr%nzmax on
-    ! momentum level k = gr%nzmax equals the value of factor.  The weight of
-    ! thermodynamic level k = gr%nzmax-1 on momentum level k = gr%nzmax equals
+    ! will be greater than 1.  The weight of thermodynamic level k = gr%nz on
+    ! momentum level k = gr%nz equals the value of factor.  The weight of
+    ! thermodynamic level k = gr%nz-1 on momentum level k = gr%nz equals
     ! 1 - factor, which is less than 0.  However, the sum of the two weights
     ! equals 1.
     !
@@ -1415,18 +1415,18 @@ module grid_class
     ! Compute the weighting factors at momentum level k.
     k = m_lev
 
-    if ( k /= gr%nzmax ) then
+    if ( k /= gr%nz ) then
       ! At most levels, the momentum level is found in-between two
       ! thermodynamic levels.  Linear interpolation is used.
       factor = ( gr%zm(k)-gr%zt(k) ) / ( gr%zt(k+1)-gr%zt(k) )
     else
-      ! The top model level (gr%nzmax) is formulated differently because the top
+      ! The top model level (gr%nz) is formulated differently because the top
       ! momentum level is above the top thermodynamic level.  A linear
       ! extension is required, rather than linear interpolation.
       ! Note:  Variable "factor" will be greater than 1 in this situation.
       factor =  & 
-         ( gr%zm(gr%nzmax)-gr%zt(gr%nzmax-1) )  & 
-          / ( gr%zt(gr%nzmax)-gr%zt(gr%nzmax-1) )
+         ( gr%zm(gr%nz)-gr%zt(gr%nz-1) )  & 
+          / ( gr%zt(gr%nz)-gr%zt(gr%nz-1) )
     endif
 
     ! Weight of upper thermodynamic level on momentum level.
@@ -1453,10 +1453,10 @@ module grid_class
     implicit none
 
     ! Input Variable
-    real, intent(in), dimension(gr%nzmax) :: azm
+    real, intent(in), dimension(gr%nz) :: azm
 
     ! Output Variable
-    real, dimension(gr%nzmax) :: linear_interpolated_azt
+    real, dimension(gr%nz) :: linear_interpolated_azt
 
     ! Local Variable
     integer :: k  ! Index
@@ -1465,10 +1465,10 @@ module grid_class
 
     ! Do actual interpolation.
     ! Use a linear interpolation.
-    forall( k = gr%nzmax : 2 : -1 )
+    forall( k = gr%nz : 2 : -1 )
       linear_interpolated_azt(k) = &
          linear_interp_factor( gr%weights_zm2zt(1, k), azm(k), azm(k-1) )
-    end forall ! gr%nzmax .. 2
+    end forall ! gr%nz .. 2
 !    ! Set the value of azt at level 1 (the lowermost level in the model) to the
 !    ! value of azm at level 1.
 !    interpolated_azt(1) = azm(1)
@@ -1498,7 +1498,7 @@ module grid_class
     implicit none
 
     ! Input Variables
-    real, intent(in), dimension(gr%nzmax) :: azm
+    real, intent(in), dimension(gr%nz) :: azm
 
     integer, intent(in) :: k
 
@@ -1547,18 +1547,18 @@ module grid_class
     implicit none
 
     ! Input Variables
-    real, intent(in), dimension(gr%nzmax) :: azm
+    real, intent(in), dimension(gr%nz) :: azm
 
     ! Return Variable
-    real, dimension(gr%nzmax) :: cubic_interpolated_azt
+    real, dimension(gr%nz) :: cubic_interpolated_azt
 
     ! Local Variable(s)
-    real, dimension(gr%nzmax) :: tmp ! This is needed for variables that self-reference
+    real, dimension(gr%nz) :: tmp ! This is needed for variables that self-reference
     integer :: k
 
     ! ---- Begin Code ----
 
-    forall ( k = 1 : gr%nzmax )
+    forall ( k = 1 : gr%nz )
       tmp(k) = cubic_interpolated_aztk( azm, k )
     end forall
 
@@ -1587,7 +1587,7 @@ module grid_class
     implicit none
 
     ! Input Variables
-    real, intent(in), dimension(gr%nzmax) :: azm
+    real, intent(in), dimension(gr%nz) :: azm
 
     integer, intent(in) :: k
 
@@ -1600,24 +1600,24 @@ module grid_class
     ! ---- Begin Code ----
 
     ! Special case for a very small domain
-    if ( gr%nzmax < 3 ) then
+    if ( gr%nz < 3 ) then
       cubic_interpolated_aztk = linear_interpolated_aztk( azm, k )
       return
     end if
 
     ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
-    if ( k == gr%nzmax ) then
-      km1 = gr%nzmax-2
-      kp1 = gr%nzmax
-      kp2 = gr%nzmax
-      k00 = gr%nzmax-1
+    if ( k == gr%nz ) then
+      km1 = gr%nz-2
+      kp1 = gr%nz
+      kp2 = gr%nz
+      k00 = gr%nz-1
     else if ( k == 2 ) then
       km1 = 1
       kp1 = 2
       kp2 = 3
       k00 = 1
     else if ( k == 1 ) then ! Extrapolation for the ghost point
-      km1 = gr%nzmax
+      km1 = gr%nz
       k00 = 1
       kp1 = 2
       kp2 = 3
@@ -1749,7 +1749,7 @@ module grid_class
     !
     ! Additionally, as long as the central momentum level (k) in the above
     ! scenario is not the lowermost momentum level or the uppermost momentum
-    ! level (k /= 1 and k /= gr%nzmax), the four weighting factors have the
+    ! level (k /= 1 and k /= gr%nz), the four weighting factors have the
     ! following relationships:  A(k) = C(k+1) and B(k) = D(k+1).
     !
     !
@@ -1852,10 +1852,10 @@ module grid_class
     implicit none
 
     ! Input Variable
-    real, intent(in), dimension(gr%nzmax) :: azm
+    real, intent(in), dimension(gr%nz) :: azm
 
     ! Return Variable
-    real, dimension(gr%nzmax) :: gradzm
+    real, dimension(gr%nz) :: gradzm
 
     ! Local Variable
     integer :: k
@@ -1863,11 +1863,11 @@ module grid_class
     ! ---- Begin Code ----
 
     ! Compute vertical derivatives.
-    forall( k = gr%nzmax : 2 : -1 )
+    forall( k = gr%nz : 2 : -1 )
       ! Take derivative of momentum-level variable azm over the central
       ! thermodynamic level (k).
       gradzm(k) = ( azm(k) - azm(k-1) ) * gr%invrs_dzt(k)
-    end forall ! gr%nzmax .. 2
+    end forall ! gr%nz .. 2
 !    ! Thermodynamic level 1 is located below momentum level 1, so there is not
 !    ! enough information to calculate the derivative over thermodynamic
 !    ! level 1.  Thus, the value of the derivative at thermodynamic level 1 is
@@ -1899,10 +1899,10 @@ module grid_class
     implicit none
 
     ! Input Variable
-    real, intent(in), dimension(gr%nzmax) :: azt
+    real, intent(in), dimension(gr%nz) :: azt
 
     ! Output Variable
-    real, dimension(gr%nzmax) :: gradzt
+    real, dimension(gr%nz) :: gradzt
 
     ! Local Variable
     integer :: k
@@ -1910,25 +1910,25 @@ module grid_class
     ! ---- Begin Code ----
 
     ! Compute vertical derivative.
-    forall( k = 1 : gr%nzmax-1 : 1 )
+    forall( k = 1 : gr%nz-1 : 1 )
       ! Take derivative of thermodynamic-level variable azt over the central
       ! momentum level (k).
       gradzt(k) = ( azt(k+1) - azt(k) ) * gr%invrs_dzm(k)
-    end forall ! 1 .. gr%nzmax-1
-!    ! Momentum level gr%nzmax is located above thermodynamic level gr%nzmax, so
+    end forall ! 1 .. gr%nz-1
+!    ! Momentum level gr%nz is located above thermodynamic level gr%nz, so
 !    ! there is not enough information to calculate the derivative over momentum
-!    ! level gr%nzmax.  Thus, the value of the derivative at momentum level
-!    ! gr%nzmax is set equal to 0.  This formulation is consistent with setting
+!    ! level gr%nz.  Thus, the value of the derivative at momentum level
+!    ! gr%nz is set equal to 0.  This formulation is consistent with setting
 !    ! the value of the variable azt above the model grid to the value of the
 !    ! variable azt at the highest grid level.
-!    gradzt(gr%nzmax) = 0.
-    ! Momentum level gr%nzmax is located above thermodynamic level gr%nzmax, so
+!    gradzt(gr%nz) = 0.
+    ! Momentum level gr%nz is located above thermodynamic level gr%nz, so
     ! there is not enough information to calculate the derivative over momentum
-    ! level gr%nzmax.  Thus, the value of the derivative at momentum level
-    ! gr%nzmax is set equal to the value of the derivative at momentum level
-    ! gr%nzmax-1.  This formulation is consistent with using a linear extension
+    ! level gr%nz.  Thus, the value of the derivative at momentum level
+    ! gr%nz is set equal to the value of the derivative at momentum level
+    ! gr%nz-1.  This formulation is consistent with using a linear extension
     ! to find the values of the variable azt above the model grid.
-    gradzt(gr%nzmax) = gradzt(gr%nzmax-1)
+    gradzt(gr%nz) = gradzt(gr%nz-1)
 
     return
 

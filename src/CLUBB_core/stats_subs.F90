@@ -1470,7 +1470,7 @@ module stats_subs
     implicit none
 
     ! Input Variable
-    real, intent(in), dimension(gr%nzmax) :: & 
+    real, intent(in), dimension(gr%nz) :: & 
       um,      & ! u wind                        [m/s]
       vm,      & ! v wind                        [m/s]
       upwp,    & ! vertical u momentum flux      [m^2/s^2]
@@ -1487,7 +1487,7 @@ module stats_subs
       thlp2,   & ! thl'^2                        [K^2]
       rtpthlp    ! rt'thl'                       [kg/kg K]
 
-    real, intent(in), dimension(gr%nzmax) :: & 
+    real, intent(in), dimension(gr%nz) :: & 
       p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
       exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
       rho,          & ! Density                                  [kg/m^3]
@@ -1499,7 +1499,7 @@ module stats_subs
       wm_zt,        & ! w on thermodynamic levels                [m/s]
       wm_zm           ! w on momentum levels                     [m/s]
 
-    real, intent(in), dimension(gr%nzmax) :: & 
+    real, intent(in), dimension(gr%nz) :: & 
       rcm_zm,       & ! Total water mixing ratio                 [kg/kg]
       rtm_zm,       & ! Total water mixing ratio                 [kg/kg]
       thlm_zm,      & ! Liquid potential temperature             [K]
@@ -1509,13 +1509,13 @@ module stats_subs
       rcm_in_layer, & ! Cloud water mixing ratio in cloud layer  [kg/kg]
       cloud_cover     ! Cloud cover                              [-]
 
-    real, intent(in), dimension(gr%nzmax) :: &
+    real, intent(in), dimension(gr%nz) :: &
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
 
-    type(pdf_parameter), dimension(gr%nzmax), intent(in) :: & 
+    type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
       pdf_params ! PDF parameters [units vary]
 
-    real, intent(in), dimension(gr%nzmax,sclr_dim) :: & 
+    real, intent(in), dimension(gr%nz,sclr_dim) :: & 
       sclrm,           & ! High-order passive scalar            [units vary]
       sclrp2,          & ! High-order passive scalar variance   [units^2]
       sclrprtp,        & ! High-order passive scalar covariance [units kg/kg]
@@ -1523,7 +1523,7 @@ module stats_subs
       sclrm_forcing,   & ! Large-scale forcing of scalar        [units/s]
       wpsclrp            ! w'sclr'                              [units m/s]
 
-    real, intent(in), dimension(gr%nzmax,edsclr_dim) :: & 
+    real, intent(in), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm,         & ! Eddy-diff passive scalar      [units vary] 
       edsclrm_forcing    ! Large-scale forcing of edscalar  [units vary]
 
@@ -1531,7 +1531,7 @@ module stats_subs
 
     integer :: i, k
 
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       T_in_K, &  ! Absolute temperature [K]
       rsati,  &  ! Saturation w.r.t ice [kg/kg]
       shear,  &  ! Wind shear production term [m^2/s^3]
@@ -1727,28 +1727,28 @@ module stats_subs
 
       ! Calculate shear production
       if ( ishear > 0 ) then
-        do k = 1, gr%nzmax-1, 1
+        do k = 1, gr%nz-1, 1
           shear(k) = - upwp(k) * ( um(k+1) - um(k) ) * gr%invrs_dzm(k)  &
                      - vpwp(k) * ( vm(k+1) - vm(k) ) * gr%invrs_dzm(k)
         enddo
-        shear(gr%nzmax) = 0.0
+        shear(gr%nz) = 0.0
       endif
       call stat_update_var( ishear, shear, zm )
 
       ! sfc variables
 
       ! Cloud cover
-      call stat_update_var_pt( icc, 1, maxval( cloud_frac(1:gr%nzmax) ), sfc )
+      call stat_update_var_pt( icc, 1, maxval( cloud_frac(1:gr%nz) ), sfc )
 
       ! Cloud base
       if ( iz_cloud_base > 0 ) then
 
         k = 1
-        do while ( rcm(k) < rc_tol .and. k < gr%nzmax )
+        do while ( rcm(k) < rc_tol .and. k < gr%nz )
           k = k + 1
         enddo
 
-        if ( k > 1 .AND. k < gr%nzmax) then
+        if ( k > 1 .AND. k < gr%nz) then
 
           ! Use linear interpolation to find the exact height of the
           ! rc_tol kg/kg level.  Brian.
@@ -1769,8 +1769,8 @@ module stats_subs
 
         xtmp &
         = vertical_integral &
-               ( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                 rcm(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) )
+               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                 rcm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( ilwp, 1, xtmp, sfc )
 
@@ -1781,8 +1781,8 @@ module stats_subs
 
         xtmp &
         = vertical_integral &
-               ( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                 ( rtm(2:gr%nzmax) - rcm(2:gr%nzmax) ), gr%invrs_dzt(2:gr%nzmax) )
+               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                 ( rtm(2:gr%nz) - rcm(2:gr%nz) ), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( ivwp, 1, xtmp, sfc )
 
@@ -1794,8 +1794,8 @@ module stats_subs
         ! Calculate snow water path
         xtmp &
         = vertical_integral &
-               ( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                 hydromet(2:gr%nzmax,iirsnowm), gr%invrs_dzt(2:gr%nzmax) )
+               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                 hydromet(2:gr%nz,iirsnowm), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( iswp, 1, xtmp, sfc )
 
@@ -1806,8 +1806,8 @@ module stats_subs
 
         xtmp &
         = vertical_integral &
-               ( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                 hydromet(2:gr%nzmax,iiricem), gr%invrs_dzt(2:gr%nzmax) )
+               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                 hydromet(2:gr%nz,iiricem), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( iiwp, 1, xtmp, sfc )
 
@@ -1818,8 +1818,8 @@ module stats_subs
 
         xtmp &
         = vertical_integral &
-               ( (gr%nzmax - 2 + 1), rho_ds_zt(2:gr%nzmax), &
-                 hydromet(2:gr%nzmax,iirrainm), gr%invrs_dzt(2:gr%nzmax) )
+               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                 hydromet(2:gr%nz,iirrainm), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( irwp, 1, xtmp, sfc )
 
@@ -1829,67 +1829,67 @@ module stats_subs
 
       ! Find the vertical average of thermodynamic level variables, averaged from
       ! level 2 (the first thermodynamic level above model surface) through
-      ! level gr%nzmax (the top of the model).  Use the vertical averaging function
+      ! level gr%nz (the top of the model).  Use the vertical averaging function
       ! found in fill_holes.F90.
 
       ! Vertical average of thlm.
       call stat_update_var_pt( ithlm_vert_avg, 1,  &
-           vertical_avg( (gr%nzmax-2+1), rho_ds_zt(2:gr%nzmax), &
-                         thlm(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) ), &
+           vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
+                         thlm(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
                                sfc )
 
       ! Vertical average of rtm.
       call stat_update_var_pt( irtm_vert_avg, 1,  &
-           vertical_avg( (gr%nzmax-2+1), rho_ds_zt(2:gr%nzmax), &
-                         rtm(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) ), &
+           vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
+                         rtm(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
                                sfc )
 
       ! Vertical average of um.
       call stat_update_var_pt( ium_vert_avg, 1,  &
-           vertical_avg( (gr%nzmax-2+1), rho_ds_zt(2:gr%nzmax), &
-                         um(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) ), &
+           vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
+                         um(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
                                sfc )
 
       ! Vertical average of vm.
       call stat_update_var_pt( ivm_vert_avg, 1,  &
-           vertical_avg( (gr%nzmax-2+1), rho_ds_zt(2:gr%nzmax), &
-                         vm(2:gr%nzmax), gr%invrs_dzt(2:gr%nzmax) ), &
+           vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
+                         vm(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
                                sfc )
 
       ! Vertical average of momentum level variables.
 
       ! Find the vertical average of momentum level variables, averaged over the
-      ! entire vertical profile (level 1 through level gr%nzmax).  Use the vertical
+      ! entire vertical profile (level 1 through level gr%nz).  Use the vertical
       ! averaging function found in fill_holes.F90.
 
       ! Vertical average of wp2.
       call stat_update_var_pt( iwp2_vert_avg, 1,  &
-           vertical_avg( (gr%nzmax-1+1), rho_ds_zm(1:gr%nzmax), &
-                         wp2(1:gr%nzmax), gr%invrs_dzm(1:gr%nzmax) ), &
+           vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
+                         wp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
                                sfc )
 
       ! Vertical average of up2.
       call stat_update_var_pt( iup2_vert_avg, 1,  &
-           vertical_avg( (gr%nzmax-1+1), rho_ds_zm(1:gr%nzmax), &
-                         up2(1:gr%nzmax), gr%invrs_dzm(1:gr%nzmax) ), &
+           vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
+                         up2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
                                sfc )
 
       ! Vertical average of vp2.
       call stat_update_var_pt( ivp2_vert_avg, 1,  &
-           vertical_avg( (gr%nzmax-1+1), rho_ds_zm(1:gr%nzmax), &
-                         vp2(1:gr%nzmax), gr%invrs_dzm(1:gr%nzmax) ), &
+           vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
+                         vp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
                                sfc )
 
       ! Vertical average of rtp2.
       call stat_update_var_pt( irtp2_vert_avg, 1,  &
-           vertical_avg( (gr%nzmax-1+1), rho_ds_zm(1:gr%nzmax), &
-                         rtp2(1:gr%nzmax), gr%invrs_dzm(1:gr%nzmax) ), &
+           vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
+                         rtp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
                                sfc )
 
       ! Vertical average of thlp2.
       call stat_update_var_pt( ithlp2_vert_avg, 1,  &
-           vertical_avg( (gr%nzmax-1+1), rho_ds_zm(1:gr%nzmax), &
-                         thlp2(1:gr%nzmax), gr%invrs_dzm(1:gr%nzmax) ), &
+           vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
+                         thlp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
                                sfc )
 
 
@@ -1937,7 +1937,7 @@ module stats_subs
     implicit none
 
     ! Input Variables
-    real, dimension(gr%nzmax,hydromet_dim), intent(in) :: &
+    real, dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet ! All hydrometeors except for rcm        [units vary]
 
     if ( l_stats_samp ) then
@@ -2025,10 +2025,10 @@ module stats_subs
     implicit none
 
     ! Input Variables
-    real, dimension(gr%nzmax,hydromet_dim), intent(in) :: &
+    real, dimension(gr%nz,hydromet_dim), intent(in) :: &
       LH_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
 
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       LH_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
       LH_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
       LH_rvm_mc     ! Tendency of vapor                        [kg/kg/s]

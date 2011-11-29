@@ -67,7 +67,7 @@
         real, intent(in) :: 
      .  dt           ! Timestep                       [s]
 
-        real, intent(in), dimension(gr%nzmax) ::
+        real, intent(in), dimension(gr%nz) ::
      .  taum,        ! Tau on moment. grid                [s]
      .  wmm,         ! w wind on m                        [m/s]
      .  wmt,         ! w wind on t                        [m/s]
@@ -86,7 +86,7 @@
 ! End of Vince Larson's addition.
 
         ! Additions for DYCOMS 2 RF02
-        real, intent(in), dimension(gr%nzmax) ::
+        real, intent(in), dimension(gr%nz) ::
      .  rhot,        ! rho (density) on thermo. grid  [kg/m^3] 
      .  rhom,        ! rho (density) on moment. grid  [kg/m^3] 
      .  exner,       ! Exner function                 [-]
@@ -99,7 +99,7 @@
      .  implemented  ! Flag for if HOC is implemented in a larger model or not.
          
         ! Input/Output Variables
-        real, intent(inout), dimension(gr%nzmax) :: 
+        real, intent(inout), dimension(gr%nz) :: 
      .  rtm,         ! r_t Total water mixing ratio   [kg/kg]
      .  wprtp,       ! w' r_t'                        [(m kg)/(s kg)]
      .  thlm,        ! th_l Liquid potential temp.    [K]
@@ -109,35 +109,35 @@
 
         ! Output Variables
         ! Addition for DYCOMS_2
-        real, intent(out), dimension(gr%nzmax) :: 
+        real, intent(out), dimension(gr%nz) :: 
      .  Fcsed,       ! Cloud water sedimentation flux       [kg/(m^2 s)]
      .  sed_rcm      ! d(rcm)/dt due to cloud sedimentation [kg/(m^2 s)]
 
         ! Additional optional variables for passive scalars
         ! Input Variables
-        real, intent(in), optional, dimension(gr%nzmax,sclr_dim) :: 
+        real, intent(in), optional, dimension(gr%nz,sclr_dim) :: 
      .  sclrpthvp, sclrm_forcing !                           [Units vary]
      .  ,sclrp2                  ! For clipping Vince Larson [Units vary]
         ! Input/Output Variables
-        real, intent(inout), optional, dimension(gr%nzmax,sclr_dim) :: 
+        real, intent(inout), optional, dimension(gr%nz,sclr_dim) :: 
      .  sclrm, wpsclrp !                                     [Units vary]
 
         ! Local variables
-        real, dimension(2+2+1,2*gr%nzmax) ::
+        real, dimension(2+2+1,2*gr%nz) ::
      .  lhs  ! Band diagonal sparse matrix stored in compact form 
 
-        real, dimension(2*gr%nzmax,nrhs) ::
+        real, dimension(2*gr%nz,nrhs) ::
      .  rhs ! RHS vector for banded matrix
 
         ! Constant parameters as a function of Skw.
-        real, dimension(gr%nzmax) :: 
+        real, dimension(gr%nz) :: 
      .  C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
 
         ! Misc. storage
-!       real, dimension(gr%nzmax) :: tmp1, tmp2
+!       real, dimension(gr%nz) :: tmp1, tmp2
 
         ! Eddy Diffusion for wpthlp and wprtp.
-        real, dimension(gr%nzmax) :: Kw6   ! wpxp eddy diff. [m^2/s]
+        real, dimension(gr%nz) :: Kw6   ! wpxp eddy diff. [m^2/s]
 
         ! Indices
         integer :: i
@@ -160,7 +160,7 @@
 !        C7_Skw_fnc = C7
 
 !       Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
-        do k = 1, gr%nzmax, 1
+        do k = 1, gr%nz, 1
            ! Kw6 is used for wpthlp and wprtp, which are located on 
            ! momentum levels.
            ! Kw6 is located on thermodynamic levels.
@@ -287,7 +287,7 @@
 
         real, intent(in) :: dt ! Timestep             [s]
 
-        real, intent(in), dimension(gr%nzmax) :: 
+        real, intent(in), dimension(gr%nz) :: 
      .  taum,        ! Tau on moment. grid            [s]
      .  wmm,         ! w wind on m                    [m/s]
      .  wmt,         ! w wind on t                    [m/s]
@@ -298,18 +298,18 @@
 
         logical, intent(in)    :: implemented
 
-        real, intent(in), dimension(gr%nzmax) :: 
+        real, intent(in), dimension(gr%nz) :: 
      .  C6x_Skw_fnc,
      .  C7_Skw_fnc
 
         ! Output variables
-        real, intent(out)      :: lhs(2+2+1,2*gr%nzmax) ! LHS
+        real, intent(out)      :: lhs(2+2+1,2*gr%nz) ! LHS
 
         ! Local Variables
-        real, dimension(gr%nzmax) :: a1
+        real, dimension(gr%nz) :: a1
 
         ! Added by Brian for eddy diffusion.
-        real, dimension(3,gr%nzmax) :: diff_lhs_imp
+        real, dimension(3,gr%nz) :: diff_lhs_imp
         ! Constant parameters
         integer, parameter ::
      .  kp1diag = 1,
@@ -322,18 +322,18 @@
 
         ! Define a1
 
-        a1(1:gr%nzmax) = 1.0 / ( 1.0 - Scm(1:gr%nzmax) )
+        a1(1:gr%nz) = 1.0 / ( 1.0 - Scm(1:gr%nz) )
 
         ! Set up left hand side matrix
 
         lhs = 0.0
 
-        do k=2,gr%nzmax-1
+        do k=2,gr%nz-1
 
           ! Define indices
 
           km1 = max( k-1, 1 )
-          kp1 = min( k+1, gr%nzmax )
+          kp1 = min( k+1, gr%nz )
 
           k_xm   = 2*k - 1
           k_wpxp = 2*k
@@ -483,7 +483,7 @@
 
           end if
 #endif
-        end do ! 2..gr%nzmax-1
+        end do ! 2..gr%nz-1
 
         ! Boundary condition for the mean and flux
 
@@ -499,7 +499,7 @@
         lhs(3,k_wpxp)   = 1.0
 
         ! Upper boundary
-        k      = gr%nzmax
+        k      = gr%nz
         k_xm   = 2*k - 1
         k_wpxp = 2*k
         lhs(:,k_xm)     = 0.0
@@ -547,7 +547,7 @@
 
         real, intent(in) :: dt      ! Timestep              [s]
 
-        real, intent(in), dimension(gr%nzmax) :: 
+        real, intent(in), dimension(gr%nz) :: 
      .  taum,        ! Tau on moment. grid                    [s]
      .  rhot,        ! Rho (density) on thermo. grid -Brian   [kg/m^3]
      .  rhom,        ! Rho (density) on moment. grid -Brian   [kg/m^3]
@@ -564,34 +564,34 @@
      .  C7_Skw_fnc   ! C7 parameter (Skw dependent)           [-] 
 
         ! Input/Output
-        real, intent(inout), dimension(gr%nzmax) :: 
+        real, intent(inout), dimension(gr%nz) :: 
      .  xm,  ! Mean term                                  [units vary] 
      .  wpxp ! Flux term                                  [units vary] 
 
-        real, intent(inout), dimension(nsup+nsub+1,2*gr%nzmax) :: 
+        real, intent(inout), dimension(nsup+nsub+1,2*gr%nz) :: 
      .  lhs  ! Left hand side (LAPACK)
-        real, intent(inout), dimension(2*gr%nzmax,nrhs) :: 
+        real, intent(inout), dimension(2*gr%nz,nrhs) :: 
      .  rhs  ! Right hand side (LAPACK)
 
         ! Output
-        real, intent(out), dimension(gr%nzmax) :: 
+        real, intent(out), dimension(gr%nz) :: 
      .  Fcsed,  ! Cloud water sedimentation flux.-Brian       [kg/(m^2 s)]
      .  sed_rcm ! d(rcm)/dt due to cloud sedimentation.-Brian [kg/(m^2 s)]
 
         logical, intent(out) :: isValid
 
         ! Local Variables
-        real, dimension(2*gr%nzmax,nrhs) :: 
+        real, dimension(2*gr%nz,nrhs) :: 
      .  solution ! Solution to band diagonal system
 
         real :: rcond ! Est. of the reciprocal of the condition #
 
         ! Arrays for correlation clipping.
-        real, dimension(gr%nzmax) :: wpxp_zt  ! wpxp interp. to thermo. levels
-        real, dimension(gr%nzmax) :: xp2_zt   ! xp2 interp. to thermo. levels
-        real, dimension(gr%nzmax) :: wp2_zt   ! wp2 interp. to thermo. levels
-        real, dimension(gr%nzmax) :: xm_old   ! Prev. timestep value of xm
-        logical, dimension(gr%nzmax) :: lcorr_chge_zt 
+        real, dimension(gr%nz) :: wpxp_zt  ! wpxp interp. to thermo. levels
+        real, dimension(gr%nz) :: xp2_zt   ! xp2 interp. to thermo. levels
+        real, dimension(gr%nz) :: wp2_zt   ! wp2 interp. to thermo. levels
+        real, dimension(gr%nz) :: xm_old   ! Prev. timestep value of xm
+        logical, dimension(gr%nz) :: lcorr_chge_zt 
                                              ! Flag for changed corr. at level.
 
         ! sigma_g is the Geometric standard deviation of cloud droplets falling
@@ -803,7 +803,7 @@
         ! Define cloud water sedimentation flux on momentum levels.
         IF ( cloud_sed ) THEN
 
-           DO k = 2, gr%nzmax-1, 1
+           DO k = 2, gr%nz-1, 1
 
               IF ( zt2zm(rcm,k) > 0.0 .AND. zt2zm(Ncm,k) > 0.0 ) THEN
                  Fcsed(k) = 1.19E8
@@ -816,11 +816,11 @@
                  Fcsed(k) = 0.0
               END IF
 
-           END DO ! k=2..gr%nzmax-1
+           END DO ! k=2..gr%nz-1
 
            ! Boundary conditions.
            Fcsed(1)       = 0.0
-           Fcsed(gr%nzmax) = 0.0
+           Fcsed(gr%nz) = 0.0
 
            ! Find drc/dt due to cloud water sedimentation flux.
            ! This value is defined on thermodynamic levels.
@@ -843,8 +843,8 @@
         lcorr_chge_zt = .false.
 
 
-!        do k=2,gr%nzmax
-        do k=2,gr%nzmax-1
+!        do k=2,gr%nz
+        do k=2,gr%nz-1
 
 !         Define indices
 
@@ -919,7 +919,7 @@
 
           if ( liter ) rhs(k_wpxp,1) = rhs(k_wpxp,1) + wpxp(k) / dt
 
-        end do ! k=2..gr%nzmax-1
+        end do ! k=2..gr%nz-1
 
         ! Boundary condition for the flux and mean
 
@@ -931,7 +931,7 @@
         rhs(k_xm,1)   = xm(k)
         rhs(k_wpxp,1) = wpxp(k)
 
-        k      = gr%nzmax
+        k      = gr%nz
         k_xm   = 2*k - 1
         k_wpxp = 2*k
         rhs(k_xm,1)   = xm(k)
@@ -940,7 +940,7 @@
 #ifdef STATS
         if ( lstats_samp .and. ixm_cn > 0 ) then
           ! Perform LU decomp and solve system (LAPACK with diagnostics)
-          call band_solvex( solve_type, nsup, nsub, 2*gr%nzmax, nrhs,
+          call band_solvex( solve_type, nsup, nsub, 2*gr%nz, nrhs,
      .                      lhs, rhs, solution, rcond, isValid )
 
           ! Est. of the condition number of the mean/flux LHS matrix 
@@ -949,12 +949,12 @@
 
         else
           ! Perform LU decomp and solve system (LAPACK)
-          call band_solve( solve_type, nsup, nsub, 2*gr%nzmax, nrhs,
+          call band_solve( solve_type, nsup, nsub, 2*gr%nz, nrhs,
      .                     lhs, rhs, solution, isValid )
         end if
 #else
         ! Perform LU decomp and solve system (LAPACK)
-        call band_solve( solve_type, nsup, nsub, 2*gr%nzmax, nrhs,
+        call band_solve( solve_type, nsup, nsub, 2*gr%nz, nrhs,
      .                   lhs, rhs, solution, isValid )
 
 #endif /*STATS*/
@@ -963,7 +963,7 @@
 
 !       Copy result into output arrays
 
-        do k=1,gr%nzmax
+        do k=1,gr%nz
 
           k_xm   = 2 * k - 1
           k_wpxp = 2 * k
@@ -971,22 +971,22 @@
           xm(k)   = solution(k_xm,1)
           wpxp(k) = solution(k_wpxp,1)
 
-        end do ! k=1..gr%nzmax
+        end do ! k=1..gr%nz
 
 !       Boundary condition on xm
 
 !        xm(1) = 2. * xm(2) - xm(3)
-!        xm(gr%nzmax) = 2. * xm(gr%nzmax-1) - xm(gr%nzmax-2)
+!        xm(gr%nz) = 2. * xm(gr%nz-1) - xm(gr%nz-2)
          xm(1) = xm(2)
-!        xm(gr%nzmax) = xm(gr%nzmax-1)
+!        xm(gr%nz) = xm(gr%nz-1)
 
 
 #ifdef STATS
           if ( lstats_samp ) then
 
-           do k = 1, gr%nzmax
+           do k = 1, gr%nz
              km1 = max( k-1, 1 )
-             kp1 = min( k+1, gr%nzmax )
+             kp1 = min( k+1, gr%nz )
 
              ! Finalize implicit contributions for xm
              if ( ixm_ma > 0 ) then
@@ -1052,7 +1052,7 @@
                zm%n(k,iwpxp_dp1) = zm%n(k,iwpxp_dp1) + 1
              end if
 
-           end do ! 1..gr%nzmax
+           end do ! 1..gr%nz
 
           end if ! lstats_samp
 #endif /*STATS*/
@@ -1098,7 +1098,7 @@
         ! Update wpxp on the momentum levels if its correlation has been
         ! changed on either bookend thermodynamic level.  This doesn't 
         ! apply to the lowest level or to the uppermost level.
-        do k = 2, gr%nzmax-1, 1
+        do k = 2, gr%nz-1, 1
            if ( lcorr_chge_zt(k) .or. lcorr_chge_zt(k+1) ) then
               wpxp(k) = zt2zm( wpxp_zt, k )
            endif

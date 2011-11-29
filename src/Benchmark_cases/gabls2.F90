@@ -48,16 +48,16 @@ module gabls2
       time_initial   ! Current length of timestep      [s]
 
     ! Output Variables
-    real, dimension(gr%nzmax), intent(out) :: & 
+    real, dimension(gr%nz), intent(out) :: & 
       wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
       wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
       thlm_forcing, & ! Large-scale thlm tendency               [K/s]
       rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
 
-    real, intent(out), dimension(gr%nzmax,sclr_dim) :: & 
+    real, intent(out), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-    real, intent(out), dimension(gr%nzmax,edsclr_dim) :: & 
+    real, intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar forcing         [units vary/s]
 
     ! Local Variables, general
@@ -67,7 +67,7 @@ module gabls2
     ! 93600 seconds = 26 hours of simulation time;
     if ( time > (time_initial + 93600._time_precision ) ) then 
       ! per GABLS2 specification
-      do k=1,gr%nzmax
+      do k=1,gr%nz
         if ( gr%zt(k) <= 1000. ) then
           wm_zt(k) = -0.005 * (gr%zt(k) / 1000. ) ! Known magic number
         else
@@ -75,7 +75,7 @@ module gabls2
         end if
       end do
     else
-      do k=1,gr%nzmax
+      do k=1,gr%nz
         wm_zt(k) = 0.
       end do
     end if
@@ -85,17 +85,17 @@ module gabls2
     ! Boundary conditions on vertical motion.
     wm_zt(1) = 0.0        ! Below surface
     wm_zm(1) = 0.0        ! At surface
-    wm_zm(gr%nzmax) = 0.0  ! Model top
+    wm_zm(gr%nz) = 0.0  ! Model top
 
 
     ! Compute large-scale horizontal temperature advection
-    do k=1,gr%nzmax
+    do k=1,gr%nz
       thlm_forcing(k) = 0.
     end do
 
 
     ! Compute large-scale horizontal moisture advection [g/kg/s]
-    do k=1,gr%nzmax
+    do k=1,gr%nz
       rtm_forcing(k) = 0.
     end do
 

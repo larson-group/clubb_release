@@ -215,7 +215,7 @@ module simple_rad_module
 
     ! Input Variables
 
-    real, intent(in), dimension(gr%nzmax) :: & 
+    real, intent(in), dimension(gr%nz) :: & 
       rho,    & ! Density on thermodynamic grid  [kg/m^3] 
       rho_zm, & ! Density on momentum grid       [kg/m^3]
       rtm,    & ! Total water mixing ratio       [kg/kg]
@@ -225,12 +225,12 @@ module simple_rad_module
     integer, intent(inout) :: err_code
 
     ! Output Variables
-    real, intent(out), dimension(gr%nzmax) ::  & 
+    real, intent(out), dimension(gr%nz) ::  & 
       Frad_LW,         & ! Radiative flux                 [W/m^2]
       radht_LW           ! Radiative heating rate         [K/s]
 
     ! Local Variables
-    real, dimension(gr%nzmax) ::  & 
+    real, dimension(gr%nz) ::  & 
       LWP,      & ! Liquid water path
       Heaviside
 
@@ -240,9 +240,9 @@ module simple_rad_module
 
     ! ---- Begin Code ----
 
-    LWP(1:gr%nzmax) = liq_water_path( gr%nzmax, rho, rcm, gr%invrs_dzt )
+    LWP(1:gr%nz) = liq_water_path( gr%nz, rho, rcm, gr%invrs_dzt )
 
-    do k = 1, gr%nzmax, 1
+    do k = 1, gr%nz, 1
 
       if ( F1 /= 0. ) then
         Frad_LW(k) = F0 * exp( -kappa * LWP(k) ) & 
@@ -259,10 +259,10 @@ module simple_rad_module
       ! Find the height of the isotherm rtm = 8.0 g/kg.
 
       k = 2
-      do while ( k <= gr%nzmax .and. rtm(k) > 8.0e-3 )
+      do while ( k <= gr%nz .and. rtm(k) > 8.0e-3 )
         k = k + 1
       end do
-      if ( k == gr%nzmax+1 .or. k == 2 ) then
+      if ( k == gr%nz+1 .or. k == 2 ) then
         write(fstderr,*) "Identification of 8.0 g/kg level failed"
         write(fstderr,*) "Subroutine: simple_rad. " & 
           // "File: simple_rad_module.F90"
@@ -275,7 +275,7 @@ module simple_rad_module
       z_i = lin_int( 8.0e-3, rtm(k), rtm(k-1), gr%zt(k), gr%zt(k-1) )
 
       ! Compute the Heaviside step function for z - z_i.
-      do k = 1, gr%nzmax, 1
+      do k = 1, gr%nz, 1
         if ( gr%zm(k) - z_i  <  0.0 ) then
           Heaviside(k) = 0.0
         else if ( gr%zm(k) - z_i  ==  0.0 ) then
@@ -285,14 +285,14 @@ module simple_rad_module
         end if
       end do
 
-      do k = 1, gr%nzmax, 1
+      do k = 1, gr%nz, 1
         if ( Heaviside(k) > 0.0 ) then
           Frad_LW(k) = Frad_LW(k) & 
                   + rho_zm(k) * Cp * ls_div * Heaviside(k) & 
                     * ( 0.25 * ((gr%zm(k)-z_i)**(4.0/3.0)) & 
                   + z_i * ((gr%zm(k)-z_i)**(1.0/3.0)) )
         end if
-      end do ! k=1..gr%nzmax
+      end do ! k=1..gr%nz
 
       ! Update surface statistics
       if ( l_stats_samp ) then
@@ -306,7 +306,7 @@ module simple_rad_module
     ! Compute the radiative heating rate.
     ! The radiative heating rate is defined on thermodynamic levels.
 
-    do k = 2, gr%nzmax, 1
+    do k = 2, gr%nz, 1
       radht_LW(k) = ( 1.0 / exner(k) ) * ( -1.0/(Cp*rho(k)) ) & 
                * ( Frad_LW(k) - Frad_LW(k-1) ) * gr%invrs_dzt(k)
     end do
@@ -327,7 +327,7 @@ module simple_rad_module
     implicit none
 
     ! Output Variables
-    real, intent(out), dimension(gr%nzmax) :: & 
+    real, intent(out), dimension(gr%nz) :: & 
       radht  ! Radiative heating rate [K/s]
 
     ! Local Variables
@@ -336,7 +336,7 @@ module simple_rad_module
     ! ---- Begin Code ----
 
     ! Radiative theta-l tendency
-    do k = 2, gr%nzmax
+    do k = 2, gr%nz
 
       if ( gr%zt(k) >= 0. .and. gr%zt(k) < 1500. ) then
         radht(k) = -2.315e-5
@@ -350,7 +350,7 @@ module simple_rad_module
         radht(k) = 0.
       end if
 
-    end do ! k=2..gr%nzmax
+    end do ! k=2..gr%nz
 
     ! Boundary condition
     radht(1) = 0.0
@@ -381,7 +381,7 @@ module simple_rad_module
       time_in ! Model time [s]
 
     ! Output Variables
-    real, dimension(gr%nzmax), intent(out) :: radht
+    real, dimension(gr%nz), intent(out) :: radht
 
     ! Local Variables
     real, dimension(lba_nzrad) :: radhtz
@@ -412,7 +412,7 @@ module simple_rad_module
     end if ! time <= times(1)
 
     ! Radiative theta-l tendency
-    radht = zlinterp_fnc( gr%nzmax, lba_nzrad, gr%zt, lba_zrad, radhtz )
+    radht = zlinterp_fnc( gr%nz, lba_nzrad, gr%zt, lba_zrad, radhtz )
 
     return
   end subroutine simple_rad_lba
@@ -527,22 +527,22 @@ module simple_rad_module
       Fs0, & ! [W/m^2]
       amu0   ! Cosine of the solar zenith angle [-]
 
-    real, intent(in), dimension(gr%nzmax) :: & 
+    real, intent(in), dimension(gr%nz) :: & 
       rho,    & ! Density on thermodynamic grid  [kg/m^3] 
       rcm       ! Cloud water mixing ratio       [kg/kg]
 
     ! Output Variables
-    real, intent(out), dimension(gr%nzmax) ::  & 
+    real, intent(out), dimension(gr%nz) ::  & 
       Frad_SW,  & ! SW Radiative flux                 [W/m^2]
       radht_SW    ! SW Radiative heating rate         [K/s]
 
     ! Local Variables
-    real, dimension(gr%nzmax-1) ::  & 
+    real, dimension(gr%nz-1) ::  & 
       rcm_flipped, &
       rho_flipped, &
       dzt_flipped   
 
-    real, dimension(gr%nzmax) ::  & 
+    real, dimension(gr%nz) ::  & 
       zt_flipped, &
       zm_flipped, &
       Frad_SW_flipped
@@ -553,8 +553,8 @@ module simple_rad_module
 
     ! Certain arrays in sunray_sw lack a ghost point and are therefore
     ! dimension nzmax-1
-    do k = 1, gr%nzmax-1
-      kflip = gr%nzmax+1-k
+    do k = 1, gr%nz-1
+      kflip = gr%nz+1-k
       rcm_flipped(k) = rcm(kflip)
       rho_flipped(k) = rho(kflip)
       dzt_flipped(k) = 1.0 / gr%invrs_dzt(kflip)
@@ -562,21 +562,21 @@ module simple_rad_module
 
     ! The zt array does have a ghost point, but it looks like it's not
     ! referenced within the sunray_sw code.  We set it anyway just in case.
-    do k = 1, gr%nzmax
-      kflip = gr%nzmax+1-k
+    do k = 1, gr%nz
+      kflip = gr%nz+1-k
       zt_flipped(k) = gr%zt(kflip)
       zm_flipped(k) = gr%zm(kflip)
     end do
 
     ! Call the old sunray_sw code
-    call sunray_sw( rcm_flipped, rho_flipped, amu0, dzt_flipped, gr%nzmax-1, &
+    call sunray_sw( rcm_flipped, rho_flipped, amu0, dzt_flipped, gr%nz-1, &
                     zm_flipped, zt_flipped, &
                     eff_drop_radius, real( alvdr ), gc, Fs0, omega, l_center, &
                     Frad_SW_flipped )
 
     ! Return the radiation flux to the CLUBB grid
-    do k = 1, gr%nzmax
-      Frad_SW(k) = Frad_SW_flipped(gr%nzmax+1-k)
+    do k = 1, gr%nz
+      Frad_SW(k) = Frad_SW_flipped(gr%nz+1-k)
     end do
 
     ! Take the derivative of the flux to compute radht_SW (see comment above)

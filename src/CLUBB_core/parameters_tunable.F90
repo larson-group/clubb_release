@@ -387,7 +387,7 @@ module parameters_tunable
     ! The factor by which to multiply the coefficients of background eddy
     ! diffusivity if the grid spacing threshold is exceeded and l_adj_low_res_nu
     ! is turned on.
-    real,dimension(gr%nzmax) :: &
+    real,dimension(gr%nz) :: &
       mult_factor_zt, &  ! Uses gr%dzt for nu values on zt levels
       mult_factor_zm     ! Uses gr%dzm for nu values on zm levels
 
@@ -399,22 +399,22 @@ module parameters_tunable
     !--------------- Begin code -------------------------
 
     if ( .not. allocated( nu1_vert_res_dep ) ) then
-      allocate( nu1_vert_res_dep(1:gr%nzmax) )
+      allocate( nu1_vert_res_dep(1:gr%nz) )
     end if
     if ( .not. allocated( nu2_vert_res_dep ) ) then
-      allocate( nu2_vert_res_dep(1:gr%nzmax) )
+      allocate( nu2_vert_res_dep(1:gr%nz) )
     end if
     if ( .not. allocated( nu6_vert_res_dep ) ) then
-      allocate( nu6_vert_res_dep(1:gr%nzmax) )
+      allocate( nu6_vert_res_dep(1:gr%nz) )
     end if
     if ( .not. allocated( nu8_vert_res_dep ) ) then
-      allocate( nu8_vert_res_dep(1:gr%nzmax) )
+      allocate( nu8_vert_res_dep(1:gr%nz) )
     end if
     if ( .not. allocated( nu9_vert_res_dep ) ) then
-      allocate( nu9_vert_res_dep(1:gr%nzmax) )
+      allocate( nu9_vert_res_dep(1:gr%nz) )
     end if
     if ( .not. allocated( nu_r_vert_res_dep ) ) then
-      allocate( nu_r_vert_res_dep(1:gr%nzmax) )
+      allocate( nu_r_vert_res_dep(1:gr%nz) )
     end if
 
     ! Flag for adjusting the values of the constant diffusivity coefficients
@@ -485,7 +485,7 @@ module parameters_tunable
         end if
       else  ! l_nu_grid_dependent = .true.
         ! mult_factor will vary to create nu values that vary with grid spacing
-        do k = 1, gr%nzmax
+        do k = 1, gr%nz
           if( gr%dzm(k) > grid_spacing_thresh ) then
             mult_factor_zm(k) = 1.0 + mult_coef * log( gr%dzm(k) / grid_spacing_thresh )
           else

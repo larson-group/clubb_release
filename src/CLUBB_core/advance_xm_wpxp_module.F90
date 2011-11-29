@@ -151,7 +151,7 @@ module advance_xm_wpxp_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
 
-    real, intent(in), dimension(gr%nzmax) :: & 
+    real, intent(in), dimension(gr%nz) :: & 
       sigma_sqd_w,     & ! sigma_sqd_w on momentum levels           [-]
       wm_zm,           & ! w wind component on momentum levels      [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
@@ -178,7 +178,7 @@ module advance_xm_wpxp_module
       thlp2              ! th_l'^2 (momentum levels)                [K^2]
       ! End of Vince Larson's addition.
 
-    type(pdf_parameter), dimension(gr%nzmax), intent(in) ::  &
+    type(pdf_parameter), dimension(gr%nz), intent(in) ::  &
       pdf_params   ! PDF parameters     [units vary]
 
     logical, intent(in) ::  & 
@@ -187,12 +187,12 @@ module advance_xm_wpxp_module
 
     ! Additional variables for passive scalars
     ! Input Variables
-    real, intent(in), dimension(gr%nzmax,sclr_dim) ::  & 
+    real, intent(in), dimension(gr%nz,sclr_dim) ::  & 
       sclrpthvp, sclrm_forcing,  & !                           [Units vary]
       sclrp2                       ! For clipping Vince Larson [Units vary]
 
     ! Input/Output Variables
-    real, intent(inout), dimension(gr%nzmax) ::  & 
+    real, intent(inout), dimension(gr%nz) ::  & 
       rtm,       & ! r_t  (total water mixing ratio)           [kg/kg]
       wprtp,     & ! w'r_t'                                    [(kg/kg) m/s]
       thlm,      & ! th_l (liquid water potential temperature) [K]
@@ -201,20 +201,20 @@ module advance_xm_wpxp_module
     integer, intent(inout) :: err_code ! Error code for the model's status
 
     ! Input/Output Variables
-    real, intent(inout), dimension(gr%nzmax,sclr_dim) ::  & 
+    real, intent(inout), dimension(gr%nz,sclr_dim) ::  & 
       sclrm, wpsclrp !                                     [Units vary]
 
     ! Local variables
-    real, dimension(nsup+nsub+1,2*gr%nzmax) :: & 
+    real, dimension(nsup+nsub+1,2*gr%nz) :: & 
       lhs  ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
-    real, dimension(gr%nzmax) ::  & 
+    real, dimension(gr%nz) ::  & 
       C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
 
     ! Eddy Diffusion for wpthlp and wprtp.
-    real, dimension(gr%nzmax) :: Kw6   ! wpxp eddy diff. [m^2/s]
+    real, dimension(gr%nz) :: Kw6   ! wpxp eddy diff. [m^2/s]
 
-    real, dimension(gr%nzmax) ::  & 
+    real, dimension(gr%nz) ::  & 
       a1,     & ! a_1 (momentum levels); See eqn. 24 in `Equations for CLUBB' [-]
       a1_zt     ! a_1 interpolated to thermodynamic levels                    [-]
 
@@ -222,7 +222,7 @@ module advance_xm_wpxp_module
     ! Find the lowermost and uppermost grid levels that can have an effect
     ! on the central thermodynamic level during the course of a time step,
     ! due to the effects of turbulent advection only.
-    integer, dimension(gr%nzmax) ::  &
+    integer, dimension(gr%nz) ::  &
       low_lev_effect, & ! Index of the lowest level that has an effect.
       high_lev_effect   ! Index of the highest level that has an effect.
 
@@ -230,11 +230,11 @@ module advance_xm_wpxp_module
     ! of w with x, such that:
     ! corr_(w,x) = w'x' / [ sqrt(w'^2) * sqrt(x'^2) ];
     ! -1 <= corr_(w,x) <= 1.
-    real, dimension(gr%nzmax) :: & 
+    real, dimension(gr%nz) :: & 
       wpxp_upper_lim, & ! Keeps correlations from becoming greater than 1.
       wpxp_lower_lim    ! Keeps correlations from becoming less than -1.
 
-    real, dimension(gr%nzmax) :: dummy_1d ! Unreferenced array
+    real, dimension(gr%nz) :: dummy_1d ! Unreferenced array
 
     real, allocatable, dimension(:,:) :: & 
       rhs,     &! Right-hand sides of band diag. matrix. (LAPACK)
@@ -261,30 +261,30 @@ module advance_xm_wpxp_module
     endif
 
     ! Allocate rhs and solution vector
-    allocate( rhs(2*gr%nzmax,nrhs) )
-    allocate( solution(2*gr%nzmax,nrhs) )
+    allocate( rhs(2*gr%nz,nrhs) )
+    allocate( solution(2*gr%nz,nrhs) )
 
     ! Compute C6 and C7 as a function of Skw
     ! The if...then is just here to save compute time
     if ( C6rt /= C6rtb ) then
-      C6rt_Skw_fnc(1:gr%nzmax) = C6rtb + (C6rt-C6rtb) & 
-        *EXP( -0.5 * (Skw_zm(1:gr%nzmax)/C6rtc)**2 )
+      C6rt_Skw_fnc(1:gr%nz) = C6rtb + (C6rt-C6rtb) & 
+        *EXP( -0.5 * (Skw_zm(1:gr%nz)/C6rtc)**2 )
     else
-      C6rt_Skw_fnc(1:gr%nzmax) = C6rtb
+      C6rt_Skw_fnc(1:gr%nz) = C6rtb
     endif
 
     if ( C6thl /= C6thlb ) then
-      C6thl_Skw_fnc(1:gr%nzmax) = C6thlb + (C6thl-C6thlb) & 
-        *EXP( -0.5 * (Skw_zm(1:gr%nzmax)/C6thlc)**2 )
+      C6thl_Skw_fnc(1:gr%nz) = C6thlb + (C6thl-C6thlb) & 
+        *EXP( -0.5 * (Skw_zm(1:gr%nz)/C6thlc)**2 )
     else
-      C6thl_Skw_fnc(1:gr%nzmax) = C6thlb
+      C6thl_Skw_fnc(1:gr%nz) = C6thlb
     endif
 
     if ( C7 /= C7b ) then
-      C7_Skw_fnc(1:gr%nzmax) = C7b + (C7-C7b) & 
-        *EXP( -0.5 * (Skw_zm(1:gr%nzmax)/C7c)**2 )
+      C7_Skw_fnc(1:gr%nz) = C7b + (C7-C7b) & 
+        *EXP( -0.5 * (Skw_zm(1:gr%nz)/C7c)**2 )
     else
-      C7_Skw_fnc(1:gr%nzmax) = C7b
+      C7_Skw_fnc(1:gr%nz) = C7b
     endif
 
     ! Damp C6 and C7 as a function of Lscale in stably stratified regions
@@ -305,7 +305,7 @@ module advance_xm_wpxp_module
     ! Kw6 is located on thermodynamic levels.
     ! Kw6 = c_K6 * Kh_zt
 
-    Kw6(1:gr%nzmax) = c_K6 * Kh_zt(1:gr%nzmax)
+    Kw6(1:gr%nz) = c_K6 * Kh_zt(1:gr%nz)
 
     ! Find the number of grid levels, both upwards and downwards, that can
     ! have an effect on the central thermodynamic level during the course of
@@ -318,7 +318,7 @@ module advance_xm_wpxp_module
     ! Define a_1 (located on momentum levels).
     ! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is
     ! located on momentum levels).
-    a1(1:gr%nzmax) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nzmax) )
+    a1(1:gr%nz) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nz) )
 
     ! Interpolate a_1 from momentum levels to thermodynamic levels.  This will
     ! be used for the w'x' turbulent advection (ta) term.
@@ -773,7 +773,7 @@ module advance_xm_wpxp_module
       if( l_stats_samp ) then
         call stat_begin_update( irtm_sdmp, rtm / real( dt ), zt )
       end if
-      rtm(1:gr%nzmax) = sponge_damp_xm( dt, rtm_ref(1:gr%nzmax), rtm(1:gr%nzmax), &
+      rtm(1:gr%nz) = sponge_damp_xm( dt, rtm_ref(1:gr%nz), rtm(1:gr%nz), &
                                        rtm_sponge_damp_profile )
 
       if( l_stats_samp ) then
@@ -785,7 +785,7 @@ module advance_xm_wpxp_module
       if( l_stats_samp ) then
         call stat_begin_update( ithlm_sdmp, thlm / real( dt ), zt )
       end if
-      thlm(1:gr%nzmax) = sponge_damp_xm( dt, thlm_ref(1:gr%nzmax), thlm(1:gr%nzmax), &
+      thlm(1:gr%nz) = sponge_damp_xm( dt, thlm_ref(1:gr%nz), thlm(1:gr%nz), &
                                         thlm_sponge_damp_profile )
       if( l_stats_samp ) then
         call stat_end_update( ithlm_sdmp, thlm / real( dt ), zt )
@@ -919,7 +919,7 @@ module advance_xm_wpxp_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
-    real, intent(in), dimension(gr%nzmax) :: & 
+    real, intent(in), dimension(gr%nz) :: & 
       wpxp,            & ! w'x' (momentum levels) at timestep (t)    [{xm units} m/s]
       a1,              & ! a_1 (momentum levels)                     [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels  [-]
@@ -943,7 +943,7 @@ module advance_xm_wpxp_module
       l_implemented ! Flag for CLUBB being implemented in a larger model.
 
     ! Output Variable
-    real, intent(out), dimension(nsup+nsub+1,2*gr%nzmax) ::  & 
+    real, intent(out), dimension(nsup+nsub+1,2*gr%nz) ::  & 
       lhs ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
     ! Local Variables
@@ -961,11 +961,11 @@ module advance_xm_wpxp_module
     ! Initialize the left-hand side matrix to 0.
     lhs = 0.0
 
-    ! The xm loop runs between k = 2 and k = gr%nzmax.  The value of xm at
+    ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
     ! level k = 1, which is below the model surface, is simply set equal to the
     ! value of xm at level k = 2 after the solve has been completed.
 
-    do k = 2, gr%nzmax, 1
+    do k = 2, gr%nz, 1
 
       ! Define indices
 
@@ -1042,18 +1042,18 @@ module advance_xm_wpxp_module
 
       endif
 
-    enddo ! xm loop: 2..gr%nzmax
+    enddo ! xm loop: 2..gr%nz
 
 
-    ! The wpxp loop runs between k = 2 and k = gr%nzmax-1.  The value of wpxp
+    ! The wpxp loop runs between k = 2 and k = gr%nz-1.  The value of wpxp
     ! is set to specified values at both the lowest level, k = 1, and the
-    ! highest level, k = gr%nzmax.
+    ! highest level, k = gr%nz.
 
-    do k = 2, gr%nzmax-1, 1
+    do k = 2, gr%nz-1, 1
 
       ! Define indices
 
-      kp1 = min( k+1, gr%nzmax )
+      kp1 = min( k+1, gr%nz )
       km1 = max( k-1, 1 )
 
       ! k_xm is 2*k - 1
@@ -1252,7 +1252,7 @@ module advance_xm_wpxp_module
 
       endif
 
-    enddo ! wpxp loop: 2..gr%nzmax-1
+    enddo ! wpxp loop: 2..gr%nz-1
 
 
     ! Boundary conditions
@@ -1280,7 +1280,7 @@ module advance_xm_wpxp_module
     k_wpxp_low = 2*k
 
     ! Upper boundary
-    k      = gr%nzmax
+    k      = gr%nz
     !k_xm is 2*k - 1
     k_wpxp_high = 2*k
 
@@ -1357,7 +1357,7 @@ module advance_xm_wpxp_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
-    real, dimension(gr%nzmax), intent(in) :: & 
+    real, dimension(gr%nz), intent(in) :: & 
       xm,              & ! xm (thermodynamic levels)                 [{xm units}]
       wpxp,            & ! w'x' (momentum levels)                    [{xm units} m/s]
       xm_forcing,      & ! xm forcings (thermodynamic levels)        [{xm units}/s]
@@ -1377,7 +1377,7 @@ module advance_xm_wpxp_module
       wpxp_lower_lim     ! Keeps correlations from becoming < -1.    [units vary]
 
     ! Output Variable
-    real, intent(out), dimension(2*gr%nzmax) ::  & 
+    real, intent(out), dimension(2*gr%nz) ::  & 
       rhs  ! Right-hand side of band diag. matrix. (LAPACK)
 
     ! Local Variables.
@@ -1435,11 +1435,11 @@ module advance_xm_wpxp_module
     ! Initialize the right-hand side vector to 0.
     rhs = 0.0
 
-    ! The xm loop runs between k = 2 and k = gr%nzmax.  The value of xm at
+    ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
     ! level k = 1, which is below the model surface, is simply set equal to the
     ! value of xm at level k = 2 after the solve has been completed.
 
-    do k = 2, gr%nzmax, 1
+    do k = 2, gr%nz, 1
 
       ! Define indices
 
@@ -1470,19 +1470,19 @@ module advance_xm_wpxp_module
 
       endif ! l_stats_samp
 
-    enddo ! xm loop: 2..gr%nzmax
+    enddo ! xm loop: 2..gr%nz
 
 
-    ! The wpxp loop runs between k = 2 and k = gr%nzmax-1.  The value of wpxp
+    ! The wpxp loop runs between k = 2 and k = gr%nz-1.  The value of wpxp
     ! is set to specified values at both the lowest level, k = 1, and the
-    ! highest level, k = gr%nzmax.
+    ! highest level, k = gr%nz.
 
-    do k = 2, gr%nzmax-1, 1
+    do k = 2, gr%nz-1, 1
 
       ! Define indices
 
       km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nzmax )
+      kp1 = min( k+1, gr%nz )
 
       ! k_xm is 2*k - 1
       k_wpxp = 2*k
@@ -1646,7 +1646,7 @@ module advance_xm_wpxp_module
 
       endif ! l_stats_samp
 
-    enddo ! wpxp loop: 2..gr%nzmax-1
+    enddo ! wpxp loop: 2..gr%nz-1
 
 
     ! Boundary conditions
@@ -1667,7 +1667,7 @@ module advance_xm_wpxp_module
     k_wpxp_low = 2*k
 
     ! Upper boundary
-    k      = gr%nzmax
+    k      = gr%nz
     !k_xm is 2*k - 1
     k_wpxp_high = 2*k
 
@@ -1717,13 +1717,13 @@ module advance_xm_wpxp_module
       nrhs ! Number of rhs vectors
 
     ! Input/Output Variables
-    real, intent(inout), dimension(nsup+nsub+1,2*gr%nzmax) :: & 
+    real, intent(inout), dimension(nsup+nsub+1,2*gr%nz) :: & 
       lhs  ! Implicit contributions to wpxp/xm (band diag. matrix in LAPACK storage)
 
-    real, intent(inout), dimension(2*gr%nzmax,nrhs) ::  & 
+    real, intent(inout), dimension(2*gr%nz,nrhs) ::  & 
       rhs      ! Right-hand side of band diag. matrix. (LAPACK storage)
 
-    real, intent(out), dimension(2*gr%nzmax,nrhs) ::  & 
+    real, intent(out), dimension(2*gr%nz,nrhs) ::  & 
       solution ! Solution to band diagonal system (LAPACK storage)
 
     ! Output Variables
@@ -1735,13 +1735,13 @@ module advance_xm_wpxp_module
 
     if ( present( rcond ) ) then
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      call band_solvex( "xm_wpxp", nsup, nsub, 2*gr%nzmax, nrhs, & 
+      call band_solvex( "xm_wpxp", nsup, nsub, 2*gr%nz, nrhs, & 
                         lhs, rhs, solution, rcond, err_code )
 
 
     else
       ! Perform LU decomp and solve system (LAPACK)
-      call band_solve( "xm_wpxp", nsup, nsub, 2*gr%nzmax, nrhs, & 
+      call band_solve( "xm_wpxp", nsup, nsub, 2*gr%nz, nrhs, & 
                        lhs, rhs, solution, err_code )
     end if
 
@@ -1882,7 +1882,7 @@ module advance_xm_wpxp_module
     real(kind=time_precision), intent(in) ::  & 
       dt  ! Timestep   [s]
 
-    real, intent(in), dimension(gr%nzmax) ::  & 
+    real, intent(in), dimension(gr%nz) ::  & 
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
       xp2,             & ! x'^2 (momentum levels)                   [{xm units}^2]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
@@ -1902,18 +1902,18 @@ module advance_xm_wpxp_module
     ! Find the lowermost and uppermost grid levels that can have an effect
     ! on the central thermodynamic level during the course of a time step,
     ! due to the effects of turbulent advection only.
-    integer, dimension(gr%nzmax), intent(in) ::  &
+    integer, dimension(gr%nz), intent(in) ::  &
       low_lev_effect, & ! Index of the lowest level that has an effect.
       high_lev_effect   ! Index of the highest level that has an effect.
 
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
-    real, intent(in), dimension(2*gr%nzmax) :: &
+    real, intent(in), dimension(2*gr%nz) :: &
       solution ! The <t+1> value of xm and wpxp   [units vary]
 
     ! Input/Output Variables
-    real, intent(inout), dimension(gr%nzmax) :: & 
+    real, intent(inout), dimension(gr%nz) :: & 
       xm, &     ! The mean x field  [units vary]
       wpxp      ! The flux of x     [units vary m/s]
 
@@ -1928,13 +1928,13 @@ module advance_xm_wpxp_module
     character(len=10) :: &
       solve_type_str ! solve_type as a string for debug output purposes
 
-    real, dimension(gr%nzmax) :: & 
+    real, dimension(gr%nz) :: & 
       xm_n ! Old value of xm for positive definite scheme     [units vary]
 
-    real, dimension(gr%nzmax) :: & 
+    real, dimension(gr%nz) :: & 
       wpxp_pd, xm_pd ! Change in xm and wpxp due to the pos. def. scheme
 
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       wpxp_chnge, &  ! Net change in w'x' due to clipping       [units vary]
       xp2_relaxed    ! Value of x'^2 * clip_factor               [units vary]
 
@@ -2022,7 +2022,7 @@ module advance_xm_wpxp_module
 
     ! Copy result into output arrays
 
-    do k=1, gr%nzmax, 1
+    do k=1, gr%nz, 1
 
       k_xm   = 2 * k - 1
       k_wpxp = 2 * k
@@ -2032,7 +2032,7 @@ module advance_xm_wpxp_module
       xm(k)   = solution(k_xm)
       wpxp(k) = solution(k_wpxp)
 
-    end do ! k=1..gr%nzmax
+    end do ! k=1..gr%nz
 
     ! Lower boundary condition on xm
     xm(1) = xm(2)
@@ -2047,15 +2047,15 @@ module advance_xm_wpxp_module
       end if
 
 
-      ! The xm loop runs between k = 2 and k = gr%nzmax.  The value of xm at
+      ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
       ! level k = 1, which is below the model surface, is simply set equal to
       ! the value of xm at level k = 2 after the solve has been completed.
-      ! Thus, the statistical code will run from levels 2 through gr%nzmax.
+      ! Thus, the statistical code will run from levels 2 through gr%nz.
 
-      do k = 2, gr%nzmax
+      do k = 2, gr%nz
 
         km1 = max( k-1, 1 )
-        kp1 = min( k+1, gr%nzmax )
+        kp1 = min( k+1, gr%nz )
 
         ! Finalize implicit contributions for xm
 
@@ -2070,18 +2070,18 @@ module advance_xm_wpxp_module
             ztscr04(k) * wpxp(km1) & 
           + ztscr05(k) * wpxp(k), zt )
 
-      enddo ! xm loop: 2..gr%nzmax
+      enddo ! xm loop: 2..gr%nz
 
 
-      ! The wpxp loop runs between k = 2 and k = gr%nzmax-1.  The value of wpxp
+      ! The wpxp loop runs between k = 2 and k = gr%nz-1.  The value of wpxp
       ! is set to specified values at both the lowest level, k = 1, and the
-      ! highest level, k = gr%nzmax.  Thus, the statistical code will run from
-      ! levels 2 through gr%nzmax-1.
+      ! highest level, k = gr%nz.  Thus, the statistical code will run from
+      ! levels 2 through gr%nz-1.
 
-      do k = 2, gr%nzmax-1
+      do k = 2, gr%nz-1
 
         km1 = max( k-1, 1 )
-        kp1 = min( k+1, gr%nzmax )
+        kp1 = min( k+1, gr%nz )
 
         ! Finalize implicit contributions for wpxp
 
@@ -2135,7 +2135,7 @@ module advance_xm_wpxp_module
               zmscr15(k) * wpxp(k), zm )
         endif
 
-      enddo ! wpxp loop: 2..gr%nzmax-1
+      enddo ! wpxp loop: 2..gr%nz-1
 
 
     endif ! l_stats_samp
@@ -2168,9 +2168,9 @@ module advance_xm_wpxp_module
 
     if ( l_stats_samp ) then
 
-      call stat_update_var( iwpxp_pd, wpxp_pd(1:gr%nzmax), zm )
+      call stat_update_var( iwpxp_pd, wpxp_pd(1:gr%nz), zm )
 
-      call stat_update_var( ixm_pd, xm_pd(1:gr%nzmax), zt )
+      call stat_update_var( ixm_pd, xm_pd(1:gr%nz), zt )
 
     end if
 
@@ -2192,7 +2192,7 @@ module advance_xm_wpxp_module
       end select
 
       if ( clubb_at_least_debug_level( 1 ) ) then
-        do k = 1, gr%nzmax
+        do k = 1, gr%nz
           if ( xm(k) < 0.0 ) then
             write(fstderr,*) solve_type_str//" < ", xm_threshold, &
               " in advance_xm_wpxp_module at k= ", k
@@ -2979,7 +2979,7 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr  ! Variable(s); gr%nzmax only.
+        gr  ! Variable(s); gr%nz only.
 
     use clubb_precision, only: &
         time_precision
@@ -3002,16 +3002,16 @@ module advance_xm_wpxp_module
     real(kind=time_precision), intent(in) :: &
       dt            ! Model timestep                            [s]
 
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       wpxp_chnge, & ! Amount of change in w'x' due to clipping  [m/s {xm units}]
       invrs_dzt     ! Inverse of grid spacing                   [1/m]
 
     ! Input/Output Variable
-    real, dimension(gr%nzmax), intent(inout) :: &
+    real, dimension(gr%nz), intent(inout) :: &
       xm            ! xm (thermodynamic levels)                 [{xm units}]
 
     ! Local Variables
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       xm_tndcy_wpxp_cl ! d(xm)/dt due to clipping of w'x'       [{xm units}/s]
 
     integer :: k    ! Array index
@@ -3031,7 +3031,7 @@ module advance_xm_wpxp_module
     ! Adjusting xm based on clipping for w'x'.
     ! Loop over all thermodynamic levels between the second-lowest and the
     ! highest.
-    do k = 2, gr%nzmax, 1
+    do k = 2, gr%nz, 1
       xm_tndcy_wpxp_cl(k) = - invrs_dzt(k) * ( wpxp_chnge(k) - wpxp_chnge(k-1) )
       xm(k) = xm(k) + xm_tndcy_wpxp_cl(k) * real( dt )
     enddo
@@ -3067,12 +3067,12 @@ module advance_xm_wpxp_module
       coefficient,      &   ! The coefficient to be damped
       max_coeff_value,  &   ! Maximum value the damped coefficient should have
       threshold             ! Value of Lscale below which the damping should occur
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       Lscale,           &   ! Current value of Lscale
       Cx_Skw_fnc            ! Initial skewness function before damping
 
     ! Return Variable
-    real, dimension(gr%nzmax) :: damped_value
+    real, dimension(gr%nz) :: damped_value
 
     damped_value = Cx_Skw_fnc
 

@@ -29,8 +29,8 @@ module ppgrid
     !---------------------------------------------------------------------------------
     use grid_class, only: gr
       
-    pver  = gr%nzmax - 1
-    pverp = gr%nzmax
+    pver  = gr%nz - 1
+    pverp = gr%nz
 
   end subroutine init_ppgrid
   

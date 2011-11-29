@@ -380,8 +380,8 @@ though Fortran 90 allows you to omit them. \newline
 E.g. Do this:
 
 \begin{verbatim}
- xyzzy(1:gr%nzmax) = variable_arr1(1:gr%nzmax) * variable_scl1 &
-                    * variable_arr2(1:gr%nzmax)**2
+ xyzzy(1:gr%nz) = variable_arr1(1:gr%nz) * variable_scl1 &
+                    * variable_arr2(1:gr%nz)**2
 \end{verbatim}
 
 Not this:
@@ -574,7 +574,7 @@ E.g.
 
     ...
 
-  do k = 1, gr%nzmax, 1
+  do k = 1, gr%nz, 1
 
            ...
 
