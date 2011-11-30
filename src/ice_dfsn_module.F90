@@ -10,14 +10,14 @@ module ice_dfsn_module
   private ! Default Scope
 
   contains
-!-----------------------------------------------------------------------
-  SUBROUTINE ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, & 
+!-------------------------------------------------------------------------------
+  subroutine ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, & 
                        rcm_icedfsn, thlm_icedfsn )
 ! Description:
-! This subroutine is based on a COAMPS subroutine (nov11_icedfs)
-! written by Adam Smith and Vince Larson to calculate the
-! depletion of cloud water by the diffusional growth of ice.
-
+!   This subroutine is based on a COAMPS subroutine (nov11_icedfs)
+!   written by Adam Smith and Vince Larson to calculate the
+!   depletion of cloud water by the diffusional growth of ice.
+!
 !---------------Brian's comment--------------------------------------!
 ! This code does not use actual microphysics.  Diffusional growth of !
 ! ice is supposed to be the growth of ice due to diffusion of water  !
@@ -40,22 +40,25 @@ module ice_dfsn_module
 ! essentially grows at the expense of the liquid water.  This is     !
 ! why the diffusional growth of ice is being deducted from liquid    !
 ! water in this subroutine.
-!--------------------------------------------------------------------!
+!-------------------------------------------------------------------------------
 
-!     References:
-!       Section 4.2 of Larson et al. (2006), "What determines altocumulus
-!         dissipation time?", J. Geophys. Res., Vol. 111, D19207.
-!       Mitchell, D. L. (1996), "Use of mass- and area- ...", J. Atmos. Sci.
-!         Vol. 53, 1710--1723.
-!       Rogers and Yau (1989), "A Short Course in Cloud Physics", 3rd. Ed.
-!       Fleishauer et al. (2002), "Observed microphysical structure of
-!         midlevel, mixed-phase clouds", J. Atmos. Sci., Vol. 59,
-!         pp. 1779--1804.
+! References:
+!   Section 4.2 of Larson et al. (2006), "What determines altocumulus
+!     dissipation time?", J. Geophys. Res., Vol. 111, D19207.
+!
+!   Mitchell, D. L. (1996), "Use of mass- and area- ...", J. Atmos. Sci.
+!     Vol. 53, 1710--1723.
+!
+!   Rogers and Yau (1989), "A Short Course in Cloud Physics", 3rd. Ed.
+!
+!   Fleishauer et al. (2002), "Observed microphysical structure of
+!     midlevel, mixed-phase clouds", J. Atmos. Sci., Vol. 59,
+!     pp. 1779--1804.
+!-------------------------------------------------------------------------------
 
-
-    USE grid_class, only: & 
+    use grid_class, only: & 
         gr ! Variable(s)
-    USE constants_clubb, only: & 
+    use constants_clubb, only: & 
         Cp,  & ! Variable(s)
         Lv, & 
         ep, & 
@@ -63,10 +66,10 @@ module ice_dfsn_module
         Lf,&
         T_freeze_K
 
-    USE clubb_precision, only:  & 
+    use clubb_precision, only:  & 
         time_precision ! Variable(s)
 
-    USE saturation, only:  & 
+    use saturation, only:  & 
         sat_mixrat_liq ! Procedure(s)
 
     use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
@@ -82,26 +85,26 @@ module ice_dfsn_module
     ! Constant Parameters
     ! Number of ice crystals per unit volume of air    [m^{-3}]
     ! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
-    REAL, PARAMETER:: N_i = 2000.
+    real, parameter :: N_i = 2000.
 
     ! Input variables
-    REAL(KIND=time_precision), INTENT(IN)::  & 
+    real(kind=time_precision), intent(in)::  & 
       dt      ! Model timestep                                     [s]
 
-    REAL, DIMENSION(gr%nz), INTENT(IN)::  & 
+    real, dimension(gr%nz), intent(in)::  & 
       thlm,    & ! Liquid potential temperature         [K]
       rcm,     & ! Cloud water mixing ratio             [kg kg^{-1}]
       exner,   & ! Exner function                       [-]
       p_in_Pa, & ! Air pressure                         [Pa]
       rho        ! Air density on thermodynamic grid    [kg m^{-3}]
 
-! Output variables
-    REAL, DIMENSION(gr%nz), INTENT(OUT)::  & 
+    ! Output variables
+    real, dimension(gr%nz), intent(out)::  & 
       rcm_icedfsn, & ! Time tendency of rcm due to ice diffusional growth  [kg kg^{-1} s^{-1}]
       thlm_icedfsn   ! Time tendency of thlm due to ice diffusional growth [K/s]
 
-! Local variables
-    REAL, DIMENSION(gr%nz)::  & 
+    ! Local variables
+    real, dimension(gr%nz)::  & 
       T_in_K,           & ! Absolute temperature                        [K]
       mass_ice_cryst,   & ! Mass of a single ice crystal                [kg]
       r_s,              & ! Saturation mixing ratio over vapor          [kg kg^{-1}] 
@@ -113,59 +116,59 @@ module ice_dfsn_module
       diam,             & ! Diameter of ice crystal                     [m]
       u_T_cm              ! Fallspeed of ice crystal in cm/s            [cm s^{-1}]
 
-    REAL::  & 
+    real ::  & 
       a_coef,     & ! Pre-factor for mass-diameter relationship, Mitchell (1996) [kg] 
       b_expn,     & ! Exponential for mass-diameter relationship, Mitchell (1996) []
       k_u_coef,   & ! Pre-factor for fallspeed-diameter formula                  [m s^{-1}]
       q_expn,     & ! Exponential of density in fallspeed-diameter formula       []   
       n_expn        ! Exponential of diameter in fallspeed-diameter formula      []
 
-    INTEGER :: k
+    integer :: k
 
     ! ---- Begin Code ----
 
     ! Determine absolute temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!                                                                     !
-! Coefficients for mass-diameter relationship, Mitchell (1996)        !
-! mass = a (diameter/(1 meter))^b,  [a] = kg, [b] = []                !
-!                                                                     !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !                                                                     !
+    ! Coefficients for mass-diameter relationship, Mitchell (1996)        !
+    ! mass = a (diameter/(1 meter))^b,  [a] = kg, [b] = []                !
+    !                                                                     !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     a_coef = 2.05e-3
     b_expn = 1.8
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!                                                                     !
-!  Coefficients for mass-diameter relationship, Kajikawa (1989)       !
-!  mass = a (diam/(1m))^b,  [a] = kg, [b] = []                        !
-!                                                                     !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !                                                                     !
+    !  Coefficients for mass-diameter relationship, Kajikawa (1989)       !
+    !  mass = a (diam/(1m))^b,  [a] = kg, [b] = []                        !
+    !                                                                     !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !       a = 2.50e-4
 !       b = 1.4
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!                                                                     !
-!  Coefficients for fallspeed-diameter relationship, Mitchell (1996)  !
-!  u_T = k_u rho^{-q} (diameter/(1 meter))^n,                         !
-!       [k_u] = m/s, [q] = [], [n] = [], [rho] = kg m^{-3}            !
-!                                                                     !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !                                                                     !
+    !  Coefficients for fallspeed-diameter relationship, Mitchell (1996)  !
+    !  u_T = k_u rho^{-q} (diameter/(1 meter))^n,                         !
+    !       [k_u] = m/s, [q] = [], [n] = [], [rho] = kg m^{-3}            !
+    !                                                                     !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     k_u_coef = 55.
     q_expn   = 0.17
     n_expn   = 0.70
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!                                                                     !
-!  Coefficients for fallspeed-diameter relationship, Kajikawa (1989)  !
-!  u_T = k_u rho^{-q} (diam/(1m))^n,  [k_u] = m/s, [q] = [], [n] = [] !
-!       [rho] = kg m^{-3}                                             !
-!                                                                     !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !                                                                     !
+    !  Coefficients for fallspeed-diameter relationship, Kajikawa (1989)  !
+    !  u_T = k_u rho^{-q} (diam/(1m))^n,  [k_u] = m/s, [q] = [], [n] = [] !
+    !       [rho] = kg m^{-3}                                             !
+    !                                                                     !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !       k_u = 0.438
 !       q = 0.0
@@ -173,24 +176,24 @@ module ice_dfsn_module
 
 
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!                                                                     !
-!  Initialize ice particle mass                                       !
-!                                                                     !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !                                                                     !
+    !  Initialize ice particle mass                                       !
+    !                                                                     !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    DO k = 1, gr%nz, 1
+    do k = 1, gr%nz, 1
       mass_ice_cryst(k) = 1.0e-11
-    END DO
+    end do
 
-    DO k = gr%nz, 2, -1
+    do k = gr%nz, 2, -1
 
       ! Check whether we're in cloud and below freezing.
       ! Note:  A value of 1.0E-5 kg/kg is used as a threshold value
       ! for rcm because the CLUBB model shows a small amount of liquid
       ! water all the way to the model top, which messes with the
       ! ice diffusion calculations.
-      IF ( rcm(k) >= 1.0E-5 .AND. T_in_K(k) < T_freeze_K ) THEN
+      if ( rcm(k) >= 1.0E-5 .and. T_in_K(k) < T_freeze_K ) then
 
         ! Find saturation mixing ratio over vapor [kg kg^{-1}]
         r_s(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
@@ -234,9 +237,9 @@ module ice_dfsn_module
            * (mass_ice_cryst(k)/a_coef)**(1./b_expn)
 
         ! Ensure that liquid is not over-depleted
-        IF ( rcm(k) + rcm_icedfsn(k)*real( dt ) < 0.0 ) THEN
+        if ( rcm(k) + rcm_icedfsn(k)*real( dt ) < 0.0 ) then
           rcm_icedfsn(k) = -rcm(k)/real( dt )
-        END IF
+        end if
 
         !---------------Brian's comment-----------------------------------!
         ! dm = (dm/dt)*(dt/dz)*dz                                         !
@@ -257,25 +260,25 @@ module ice_dfsn_module
                     ((mass_ice_cryst(k)/a_coef)**(n_expn/b_expn))  & 
                           * (rho(k)**(-q_expn))
 
-      ELSE   ! There's no liquid and/or ice present; assume no ice growth
+      else   ! There's no liquid and/or ice present; assume no ice growth
 
         mass_ice_cryst(k-1) = mass_ice_cryst(k)
         rcm_icedfsn(k) = 0.0
         diam(k)        = 0.0  ! Set zero to remind that we don't grow ice
         u_T_cm(k)      = 0.0  ! Set zero to remind that we don't grow ice
 
-      END IF
+      end if
 
-    END DO
+    end do ! k = gr%nz, 2, -1
 
-! Michael Falk added boundary condx, 31 July 2006
+    ! Michael Falk added boundary condx, 31 July 2006
 
     mass_ice_cryst(1) = mass_ice_cryst(2)
     rcm_icedfsn(1)    = rcm_icedfsn(2)
     diam(1)           = diam(2)
     u_T_cm(1)         = u_T_cm(2)
 
-! eMFc
+    ! eMFc
 
 !
     if ( l_stats_samp ) then
@@ -297,36 +300,43 @@ module ice_dfsn_module
     ! Determine time tendency of liquid potential temperature
     thlm_icedfsn(1:gr%nz) = - ( Lv/(Cp*exner(1:gr%nz)) ) * rcm_icedfsn(1:gr%nz)
 
-    RETURN
-  END SUBROUTINE ice_dfsn
+    return
+  end subroutine ice_dfsn
 
-!-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------------
+  function Diff_denom( T_in_K, p_in_Pa, e_i )
 
-  FUNCTION Diff_denom( T_in_K, p_in_Pa, e_i )
-
-    USE constants_clubb, only: & 
-        Ls,  & ! Variables
+    use constants_clubb, only: & 
+        Ls,  & ! Constant(s)
         Rv
 
-    IMPLICIT NONE
+    implicit none
 
-! Compute denominator of diffusional growth equation
+    ! Description:
+    !   Compute denominator of diffusional growth equation
+    !
+    ! References:
+    !   Eqn. 9.4 of Rogers and Yau (1989), "A Short Course on Cloud Physics"
+    !
+    !-----------------------------------------------------------------------------
 
-! Reference:  Eqn. 9.4 of Rogers and Yau (1989), "A Short Course on Cloud Physics"
+    ! Constant Parameters
+!   real, parameter :: Ls = 2.834e6
 
-    REAL, INTENT(IN) ::  & 
-     T_in_K,       & ! Temperature                               [K]
-     p_in_Pa,        & ! Air pressure                              [Pa]
-     e_i          ! Vapor pressure over ice                   [Pa]
+    ! Input Variables
+    real, intent(in) ::  & 
+      T_in_K,  & ! Temperature                               [K]
+      p_in_Pa, & ! Air pressure                              [Pa]
+      e_i        ! Vapor pressure over ice                   [Pa]
 
-    REAL ::  & 
-     Diff_denom   ! Denominator of diffusional growth equation  [m s kg^{-1}]
+    ! Local Variables
+    real ::  & 
+      Diff_denom, & ! Denominator of diffusional growth equation  [m s kg^{-1}]
+      Ka, Dv, &
+      Fk, Fd, &
+      Celsius
 
-    REAL:: Ka, Dv
-    REAL:: Fk, Fd
-    REAL:: Celsius
-
-!        REAL, PARAMETER:: Ls = 2.834e6
+    ! ---- Begin Code ----
 
     Celsius = T_in_K - 273.16
 
@@ -342,7 +352,7 @@ module ice_dfsn_module
 
     Diff_denom = Fk + Fd
 
-    RETURN
-  END FUNCTION Diff_denom
+    return
+  end function Diff_denom
 
 end module ice_dfsn_module
