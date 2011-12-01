@@ -121,14 +121,20 @@ module advance_xm_wpxp_module
       fatal_error
 
     use stats_type, only: &
-        stat_begin_update, &
-        stat_end_update
+        stat_begin_update, & ! Procedure(s)
+        stat_end_update, &
+        stat_update_var
 
     use stats_variables, only: & 
         zt, &
+        zm, &
         irtm_matrix_condt_num, &  ! Variables
         ithlm_matrix_condt_num, &
         irtm_sdmp, ithlm_sdmp, & 
+        l_stats_samp, &
+        iC7_Skw_fnc, &
+        iC6rt_Skw_fnc, &
+        iC6thl_Skw_fnc, &
         l_stats_samp
 
     use sponge_layer_damping, only: &
@@ -299,6 +305,13 @@ module advance_xm_wpxp_module
     !        C6thl_Skw_fnc = C6thl
     !        C7_Skw_fnc = C7
 
+    if ( l_stats_samp ) then
+
+      call stat_update_var( iC7_Skw_fnc, C7_Skw_fnc, zm )
+      call stat_update_var( iC6rt_Skw_fnc, C6rt_Skw_fnc, zm )
+      call stat_update_var( iC6thl_Skw_fnc, C6thl_Skw_fnc, zm )
+
+    endif
 
     ! Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
     ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.

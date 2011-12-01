@@ -76,6 +76,16 @@ module advance_wp2_wp3_module
         c_K1,  & 
         c_K8
 
+    use stats_type, only: & 
+        stat_update_var
+
+    use stats_variables, only: &
+        iC1_Skw_fnc, &
+        iC11_Skw_fnc, &
+        zm, &
+        zt, &
+        l_stats_samp
+
     use constants_clubb, only:  & 
         fstderr    ! Variable(s)
 
@@ -216,6 +226,10 @@ module advance_wp2_wp3_module
     !C11_Skw_fnc = C11
     !C1_Skw_fnc = C1
 
+    if ( l_stats_samp ) then
+      call stat_update_var( iC11_Skw_fnc, C11_Skw_fnc, zt )
+      call stat_update_var( iC1_Skw_fnc, C1_Skw_fnc, zm )
+    endif
 
     ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
     do k = 1, gr%nz, 1

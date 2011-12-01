@@ -127,6 +127,12 @@ module stats_variables
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
 !$omp   threadprivate(iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc)
 
+  ! Skewness functions on zt grid
+  integer, public :: &
+    iC11_Skw_fnc
+
+!$omp   threadprivate(iC11_Skw_fnc)
+
   integer, public :: &
     ircm_zm, &
     irtm_zm, &
@@ -569,6 +575,17 @@ module stats_variables
 !$omp   threadprivate(irho_zm, isigma_sqd_w, irho_ds_zm, ithv_ds_zm, iem, ishear)
 !$omp   threadprivate(iFrad, iFrad_LW, iFrad_SW, iFrad_SW_up, iFrad_SW_down)
 !$omp   threadprivate(iFrad_LW_up, iFrad_LW_down, iFprec, iFcsed)
+
+  ! Skewness Functions on zm grid
+  integer, public :: &
+    igamma_Skw_fnc,  &
+    iC6rt_Skw_fnc,   &
+    iC6thl_Skw_fnc,  &
+    iC7_Skw_fnc,     &
+    iC1_Skw_fnc
+
+!$omp   threadprivate(igamma_Skw_fnc, iC6rt_Skw_fnc, iC6thl_Skw_fnc)
+!$omp   threadprivate(iC7_Skw_fnc, iC1_Skw_fnc)
 
   ! Sedimentation velocities
   integer, public :: & 

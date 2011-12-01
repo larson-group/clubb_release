@@ -307,7 +307,8 @@ module clubb_core
       isptp_mellor_2, &
       icorr_st_mellor1, &
       icorr_st_mellor2, &
-      iSkw_velocity
+      iSkw_velocity, &
+      igamma_Skw_fnc
 
     use fill_holes, only: &
       vertical_integral ! Procedure(s)
@@ -679,6 +680,10 @@ module clubb_core
 
     ! Compute sigma_sqd_w (dimensionless PDF width parameter)
     sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, wpthlp, wprtp )
+
+    if ( l_stats_samp ) then
+      call stat_update_var( igamma_Skw_fnc, gamma_Skw_fnc, zm )
+    endif
 
     ! Smooth in the vertical
     sigma_sqd_w = zt2zm( zm2zt( sigma_sqd_w ) )
