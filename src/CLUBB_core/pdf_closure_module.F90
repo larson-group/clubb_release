@@ -798,6 +798,13 @@ module pdf_closure_module
     ! rcm in the first timestep of the FIRE case.
 
     cloud_frac  = max( zero_threshold, cloud_frac )
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( cloud_frac > 1.0 ) then
+        write(fstderr,*) "Cloud fraction > 1"
+      end if
+    end if
+    cloud_frac = min( 1.0, cloud_frac )
+
     rcm = max( zero_threshold, rcm )
 
     ! Compute variance of liquid water mixing ratio.
