@@ -281,31 +281,43 @@ Ncm_initial
 
 rrp2_on_rrainm2_cloud | real, default precision
 rrp2_on_rrainm2_below | real, default precision
-  Variance of rain water mixing ratio divided by the mean squared (K&K / latin hypercube).
+  Variance of rain water mixing ratio divided by the mean squared (K&K).
 
 Nrp2_on_Nrm2_cloud | real, default precision
 Nrp2_on_Nrm2_below | real, default precision
-  Variance of rain water num. conc. divided by the mean squared (K&K / latin hypercube).
+  Variance of rain water num. conc. divided by the mean squared (K&K).
 
 Ncp2_on_Ncm2_cloud | real, default precision
 Ncp2_on_Ncm2_below | real, default precision
-  Variance of cloud water num. conc. divided by the mean squared (K&K / latin hypercube).
+  Variance of cloud water num. conc. divided by the mean squared (K&K).
 
 corr_rrNr_LL_cloud | real, default precision
 corr_rrNr_LL_below | real, default precision
-  Correlation between rain water mixing ratio and number conc. (K&K / latin hypercube)
+  Correlation between rain water mixing ratio and number conc. (K&K)
 
-corr_srr_NL_cloud | real, default precision
-corr_srr_NL_below | real, default precision
-  Correlation between rain water mixing ratio and 's' in Mellor (K&K / latin hypercube).
+corr_rtrr_NL_cloud | real, default precision
+corr_rtrr_NL_below | real, default precision
+  Correlation between rain water mixing ratio and total water (K&K).
 
-corr_sNr_NL_cloud | real, default precision
-corr_sNr_NL_below | real, default precision
-  Correlation between rain water num. conc. ratio and 's' in Mellor (K&K / latin hypercube).
+corr_rtNr_NL_cloud | real, default precision
+corr_rtNr_NL_below | real, default precision
+  Correlation between rain water num. conc. ratio and total water (K&K).
 
-corr_sNc_NL_cloud | real, default precision
-corr_sNc_NL_below | real, default precision
-  Correlation between cloud droplet number conc. and 's' in Mellor (K&K / latin hypercube).
+corr_rtNc_NL_cloud | real, default precision
+corr_rtNc_NL_below | real, default precision
+  Correlation between cloud droplet number conc. and total water (K&K).
+
+corr_thlrr_NL_cloud | real, default precision
+corr_rtrr_NL_below | real, default precision
+  Correlation between rain water mixing ratio and total water (K&K).
+
+corr_thlNr_NL_cloud | real, default precision
+corr_thlNr_NL_below | real, default precision
+  Correlation between rain water num. conc. ratio and total water (K&K).
+
+corr_thlNc_NL_cloud | real, default precision
+corr_thlNc_NL_below | real, default precision
+  Correlation between cloud droplet number conc. and total water (K&K).
 
 C_evap | real, default precision
   Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric radius to
@@ -468,7 +480,7 @@ input_type | character
   Either 'coamps_les' or 'clubb' depending whether the data is from CLUBB or
   COAMPS-LES.
 
-input_<varname> |logical
+input_<varname> | logical
   Whether the use the values of the given field will be reset based on data at
   each timestep in the simulation.
 
