@@ -276,7 +276,7 @@ microphys_start_time | real, minimum 12 digits of precision
   cases.
 
 Ncm_initial 
-  Initial value for Ncm (cloud droplet number concentration) in cc/m^3 
+  Initial value for Ncm (cloud droplet number concentration) in #/cc.
   (K&K, l_cloud_sed = .true., Morrison).
 
 rrp2_on_rrainm2_cloud | real, default precision
