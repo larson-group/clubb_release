@@ -705,6 +705,16 @@ grid.  When it is interpolated to the zt grid, we call it ``wp2\_zt."
 However, when wp2 is kept on the zm, we simply call it ``wp2" without 
 appending ``\_zm."
 
+\item  When using find/replace to make changes to the code, such as renaming a function or variable, mistakes can be made and overlooked. In particular, unwanted changes to comments frequently occur. To alleviate this, whenever using find/replace to make changes to the code, you must check all changes made to comments.
+
+A regular expression can easily be used with the svn diff and egrep commands to find all changes made to comments in a local revision. Simply run the command from the base directory of your CLUBB checkout. The command is as follows:
+
+\begin{verbatim}
+svn diff | egrep '(^(\+|-).*!|^---|^\+\+\+|^@@|^===)' -
+\end{verbatim}
+
+Each pipe in this egrep command represents an OR statement. The first section includes all lines from the diff that include an exclamation mark, which represents a comment. The rest of the lines include the lines that show information about the filenames and line numbers.
+
 \end{enumerate}
 
 \end{document}
