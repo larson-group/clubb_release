@@ -33,12 +33,15 @@ program clubb_tuner
 
   implicit none
 
+  ! External
+  external :: enhanced_simann_driver, amoeba_driver, amebsa_driver
+
   ! Variables
   character(len=10) :: current_time  ! Current time string (no seconds)
   character(len=8)  :: current_date  ! Current date string
   character(len=75) :: results_f     ! Results file
 
-  character(len=1)  :: user_response ! Simple Y/N query
+  character(len=3)  :: user_response ! Simple Y/N query
 
   !----------------- Begin Code -------------------
 
@@ -92,10 +95,12 @@ program clubb_tuner
       close(unit=file_unit)
     end if ! l_save_tuning_run
 
-    if ( trim( user_response ) /= "y" .and. & 
-         trim( user_response ) /= "Y"   ) then
-      exit 
-    end if
+    select case ( trim( user_response ) )
+    case ( "Yes", "yes", "y", "Y" )
+      continue
+    case default
+      exit
+    end select
 
     ! Save tuning results in file if specified
     if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
@@ -196,6 +201,8 @@ program clubb_tuner
 
   implicit none
 
+  ! ---- Begin Code ----
+
   call amoeba( param_vals_matrix(1:ndim+1,1:ndim),  & 
                cost_fnc_vector(1:ndim+1),  & 
                f_tol, min_les_clubb_diff, iter)
@@ -218,10 +225,13 @@ program clubb_tuner
 
   subroutine amebsa_driver
 
-  !     Description:
-  !     Interface for the amoeba simulated annealing minimization algorithm
-  !     At the end of the subroutine, the param_vals_matrix's first row gets the
-  !     optimal values assigned to it.
+  ! Description:
+  !   Interface for the amoeba simulated annealing minimization algorithm
+  !   At the end of the subroutine, the param_vals_matrix's first row gets the
+  !   optimal values assigned to it.
+  !
+  ! References:
+  !   None
   !-----------------------------------------------------------------------
 #ifdef TUNER
   use nr, only:  & 
@@ -259,6 +269,8 @@ program clubb_tuner
     yb,    & ! ???
     tmptr ! ???
 
+  ! ---- Begin Code ----
+
   ybb   = 1.0e30_SP
   yb    = 1.0e30_SP
   nit   = 0
@@ -279,10 +291,11 @@ program clubb_tuner
       ybb = yb
     end if
     if ( iter > 0 ) exit
-  enddo
+  end do
 
   param_vals_matrix(1,1:ndim) = pb(1:ndim)
   min_err = ybb
+
   return
 
 #else
@@ -290,7 +303,7 @@ program clubb_tuner
 #endif
 end subroutine amebsa_driver
 !----------------------------------------------------------------------
-  subroutine enhanced_simann_driver
+subroutine enhanced_simann_driver
 
   ! Description:
   !   Wrapper subroutine for the ESA driver
@@ -326,6 +339,8 @@ end subroutine amebsa_driver
 
   real :: enopt ! Optimal cost
 
+  ! ---- Begin Code ----
+
   xinit = param_vals_matrix(1,1:ndim)
 
   ! Set the minimum for the parameters.  Assume no parameter is < 0 for now
@@ -345,5 +360,4 @@ end subroutine amebsa_driver
   min_err = enopt
 
   return
-  end subroutine enhanced_simann_driver
-
+end subroutine enhanced_simann_driver
