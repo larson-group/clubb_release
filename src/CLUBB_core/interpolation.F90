@@ -104,7 +104,7 @@ module interpolation
   !
   !   This version has been modified slightly for CLUBB's coding standards and
   !   adds the 3/2 from eqn 21. -dschanen 26 Oct 2011
-  !   We have also added a quintic polynomial option (currently disabled).
+  !   We have also added a quintic polynomial option.
   !
   ! References:
   !   M. Steffen, Astron. Astrophys. 239, 443-450 (1990)
@@ -114,13 +114,15 @@ module interpolation
       three_halves, & ! Constant(s)
       eps
 
+    use model_flags, only: &
+      l_quintic_poly_interp ! Variable(s)
+
     implicit none
 
     ! Constant Parameters
     logical, parameter :: &
-      l_equation_21 = .true., &
-      l_quintic_polynomial = .false.
-
+      l_equation_21 = .true.
+      
     ! External
     intrinsic :: sign, abs, min
 
@@ -202,7 +204,7 @@ module interpolation
       c3 = dfdx00
       c4 = f00
 
-      if ( .not. l_quintic_polynomial ) then
+      if ( .not. l_quintic_poly_interp ) then
 
         ! Old formula
         !f_out = c1 * ( (z_in - z00)**3 ) + c2 * ( (z_in - z00)**2 ) + c3 * (z_in - z00) + c4

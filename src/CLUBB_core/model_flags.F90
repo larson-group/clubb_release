@@ -34,16 +34,6 @@ module model_flags
 #endif
     l_gamma_Skw     = .true.      ! Use a Skw dependent gamma parameter
 
-  ! These flags determine whether we want to use an upwind differencing approximation 
-  ! rather than a centered differencing for turbulent or mean advection terms.
-  ! wpxp_ta affects wprtp, wpthlp, & wpsclrp
-  ! xpyp_ta affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp
-  ! xm_ma affects rtm, thlm, sclrm, um and vm.
-  logical, parameter, public :: & 
-    l_upwind_wpxp_ta = .false., & 
-    l_upwind_xpyp_ta = .true.,  &
-    l_upwind_xm_ma   = .true.
-
   logical, parameter, public :: &
     l_use_boussinesq = .false.  ! Flag to use the Boussinesq form of the
                                 ! predictive equations.  The predictive
@@ -64,6 +54,24 @@ module model_flags
   ! Options that can be changed at runtime 
   ! The default values are chosen below and overwritten if desired by the user
   !-----------------------------------------------------------------------------
+
+  ! These flags determine whether we want to use an upwind differencing approximation 
+  ! rather than a centered differencing for turbulent or mean advection terms.
+  ! wpxp_ta affects wprtp, wpthlp, & wpsclrp
+  ! xpyp_ta affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp
+  ! xm_ma affects rtm, thlm, sclrm, um and vm.
+  logical, public :: & 
+    l_upwind_wpxp_ta = .false., & 
+    l_upwind_xpyp_ta = .true.,  &
+    l_upwind_xm_ma   = .true.
+
+!$omp threadprivate(l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma)
+
+  logical, public :: & 
+    l_quintic_poly_interp = .false. ! Use a quintic polynomial in mono_cubic_interp
+
+!$omp threadprivate(l_quintic_poly_interp)
+
 
   logical, public :: & 
     l_uv_nudge = .false., & ! For wind speed nudging. - Michael Falk
