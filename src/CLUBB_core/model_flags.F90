@@ -61,6 +61,9 @@ module model_flags
     l_upwind_xpyp_ta = .true.,  &
     l_upwind_xm_ma   = .true.
 
+  ! Use 2 calls to pdf_closure and the trapezoidal rule to compute high order closure
+  logical, parameter, public :: &
+    l_vert_avg_closure  = .true. 
 
   logical, parameter, public :: &
     l_use_boussinesq = .false.  ! Flag to use the Boussinesq form of the

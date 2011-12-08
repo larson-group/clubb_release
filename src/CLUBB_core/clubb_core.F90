@@ -111,6 +111,7 @@ module clubb_core
     use model_flags, only: & 
       l_tke_aniso, &  ! Variable(s)
       l_gamma_Skw, &
+      l_vert_avg_closure, &
       l_host_applies_sfc_fluxes
 
     use grid_class, only: & 
@@ -322,24 +323,6 @@ module clubb_core
     intrinsic :: sqrt, min, max, exp, mod, real
 
     ! Constant Parameters
-    ! ldgrant June 2009
-    logical, parameter :: &
-      l_trapezoidal_rule_zt = .true., & ! If true, the trapezoidal rule is called for
-                                         ! the thermodynamic-level variables output 
-                                         ! from pdf_closure.  
-
-      l_trapezoidal_rule_zm = .true., & ! If true, the trapezoidal rule is called for
-                                         ! three momentum-level variables - wpthvp,
-                                       ! thlpthvp, and rtpthvp - output from pdf_closure.
-
-      l_call_pdf_closure_twice = .true. ! This logical flag determines whether or not to
-    ! call subroutine pdf_closure twice.  If true,
-    ! pdf_closure is called first on thermodynamic levels
-    ! and then on momentum levels so that each variable is
-    ! computed on its native level.  If false, pdf_closure
-    ! is only called on thermodynamic levels, and variables
-    ! which belong on momentum levels are interpolated.
-
     logical, parameter :: &
       l_avg_Lscale = .true.  ! Lscale is calculated in subroutine compute_length; if l_avg_Lscale
     ! is true, compute_length is called two additional times with
@@ -795,7 +778,7 @@ module clubb_core
     end do ! k = 1, gr%nz, 1
 
 
-    if ( l_call_pdf_closure_twice ) then
+    if ( l_vert_avg_closure ) then
       ! Call pdf_closure a second time on momentum levels, to
       ! output (rather than interpolate) the variables which
       ! belong on the momentum levels.
@@ -866,7 +849,27 @@ module clubb_core
 
       end do ! k = 1, gr%nz, 1
 
-    else ! l_call_pdf_closure_twice is false
+      ! Call trapezoidal_rule_zt for thermodynamic-level variables output from pdf_closure.
+      ! ldgrant June 2009
+      call trapezoidal_rule_zt &
+           ( wprtp2, wpthlp2,                             & ! intent(inout)
+             wprtpthlp, cloud_frac, rcm, wp2thvp,         & ! intent(inout)
+             wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
+             pdf_params,                                  & ! intent(inout)
+             wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
+             wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
+             rcm_zm, wp2thvp_zm,                          & ! intent(inout)
+             wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
+             pdf_params_zm )                                ! intent(inout)
+
+      ! If l_trapezoidal_rule_zm is true, call trapezoidal_rule_zm for
+      ! the important momentum-level variabes output from pdf_closure.
+      ! ldgrant Feb. 2010
+      call trapezoidal_rule_zm &
+         ( wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
+           wpthvp, thlpthvp, rtpthvp )           ! intent(inout)
+
+    else ! l_vert_avg_closure is false
 
       ! Interpolate momentum variables output from the first call to
       ! pdf_closure back to momentum grid.
@@ -932,33 +935,7 @@ module clubb_core
         sclrprcp(gr%nz,i)  = 0.0
       end do ! i=1, sclr_dim
 
-    end if ! l_call_pdf_closure_twice
-
-    ! If l_trapezoidal_rule_zt is true, call trapezoidal_rule_zt for
-    ! thermodynamic-level variables output from pdf_closure.
-    ! ldgrant June 2009
-    if ( l_trapezoidal_rule_zt ) then
-      call trapezoidal_rule_zt &
-           ( l_call_pdf_closure_twice,                    & ! intent(in)
-             wprtp2, wpthlp2,                             & ! intent(inout)
-             wprtpthlp, cloud_frac, rcm, wp2thvp,         & ! intent(inout)
-             wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
-             pdf_params,                                  & ! intent(inout)
-             wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
-             wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
-             rcm_zm, wp2thvp_zm,                          & ! intent(inout)
-             wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
-             pdf_params_zm )                                ! intent(inout)
-    end if ! l_trapezoidal_rule_zt
-
-    ! If l_trapezoidal_rule_zm is true, call trapezoidal_rule_zm for
-    ! the important momentum-level variabes output from pdf_closure.
-    ! ldgrant Feb. 2010
-    if ( l_trapezoidal_rule_zm ) then
-      call trapezoidal_rule_zm &
-         ( wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
-           wpthvp, thlpthvp, rtpthvp )           ! intent(inout)
-    end if ! l_trapezoidal_rule_zm
+    end if ! l_vert_avg_pdf_closure
 
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
@@ -1468,6 +1445,7 @@ module clubb_core
     !
     ! Description:
     !   Subroutine to set up the model for execution.
+    !
     ! References:
     !   None
     !-------------------------------------------------------------------------
@@ -1729,13 +1707,15 @@ module clubb_core
     return
   end subroutine setup_clubb_core
 
-  !-----------------------------------------------------------------------
+  !----------------------------------------------------------------------------
   subroutine cleanup_clubb_core( l_implemented )
     !
-    !  Description:
-    !    Frees memory used by the model itself.
+    ! Description:
+    !   Frees memory used by the model itself.
     !
-    !--------------------------------------------------------------------
+    ! References:
+    !   None
+    !---------------------------------------------------------------------------
     use parameters_model, only: sclr_tol ! Variable
 
     use variables_diagnostic_module, only: & 
@@ -1785,8 +1765,7 @@ module clubb_core
 
   !-----------------------------------------------------------------------
   subroutine trapezoidal_rule_zt &
-             ( l_call_pdf_closure_twice,                    & ! intent(in)
-               wprtp2, wpthlp2,                             & ! intent(inout)
+             ( wprtp2, wpthlp2,                             & ! intent(inout)
                wprtpthlp, cloud_frac, rcm, wp2thvp,         & ! intent(inout)
                wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
                pdf_params,                                  & ! intent(inout)
@@ -1797,21 +1776,12 @@ module clubb_core
                pdf_params_zm )                   ! intent(inout)
     !
     ! Description:
-    !   This subroutine takes the output variables on the thermo.
-    !   grid and either: interpolates them to the momentum grid, or uses the
-    !   values output from the second call to pdf_closure on momentum levels if
-    !   l_call_pdf_closure_twice is true.  It then calls the function
+    !   This subroutine uses the values output from the second call to 
+    !   pdf_closure on momentum levels in the call to the function
     !   trapezoid_zt to recompute the variables on the thermo. grid.
+    !
     !   ldgrant June 2009
     !
-    ! Note:
-    !   The argument variables in the last 5 lines of the subroutine
-    !   (wprtp2_zm through pdf_params_zm) are declared intent(inout) because
-    !   if l_call_pdf_closure_twice is true, these variables will already have
-    !   values from pdf_closure on momentum levels and will not be altered in
-    !   this subroutine.  However, if l_call_pdf_closure_twice is false, these
-    !   variables will not have values yet and will be interpolated to
-    !   momentum levels in this subroutine.
     ! References:
     !   None
     !-----------------------------------------------------------------------
@@ -1837,9 +1807,6 @@ module clubb_core
       pdf_parameter ! Derived data type
 
     implicit none
-
-    ! Input variables
-    logical, intent(in) :: l_call_pdf_closure_twice
 
     ! Input/Output variables
     ! Thermodynamic level variables output from the first call to pdf_closure
@@ -1980,132 +1947,39 @@ module clubb_core
     alpha_thl_zt   = pdf_params%alpha_thl
     alpha_rt_zt    = pdf_params%alpha_rt
 
-    ! If l_call_pdf_closure_twice is true, the _zm variables already have
-    ! values from the second call to pdf_closure in advance_clubb_core.
-    ! If it is false, the variables are interpolated to the _zm levels.
-    if ( l_call_pdf_closure_twice ) then
-
-      ! Store, in locally declared variables, the pdf_params output
-      ! from the second call to pdf_closure
-      w1_zm          = pdf_params_zm%w1
-      w2_zm          = pdf_params_zm%w2
-      varnce_w1_zm   = pdf_params_zm%varnce_w1
-      varnce_w2_zm   = pdf_params_zm%varnce_w2
-      rt1_zm         = pdf_params_zm%rt1
-      rt2_zm         = pdf_params_zm%rt2
-      varnce_rt1_zm  = pdf_params_zm%varnce_rt1
-      varnce_rt2_zm  = pdf_params_zm%varnce_rt2
-      crt1_zm        = pdf_params_zm%crt1
-      crt2_zm        = pdf_params_zm%crt2
-      cthl1_zm       = pdf_params_zm%cthl1
-      cthl2_zm       = pdf_params_zm%cthl2
-      thl1_zm        = pdf_params_zm%thl1
-      thl2_zm        = pdf_params_zm%thl2
-      varnce_thl1_zm = pdf_params_zm%varnce_thl1
-      varnce_thl2_zm = pdf_params_zm%varnce_thl2
-      mixt_frac_zm   = pdf_params_zm%mixt_frac
-      rc1_zm         = pdf_params_zm%rc1
-      rc2_zm         = pdf_params_zm%rc2
-      rsl1_zm        = pdf_params_zm%rsl1
-      rsl2_zm        = pdf_params_zm%rsl2
-      cloud_frac1_zm = pdf_params_zm%cloud_frac1
-      cloud_frac2_zm = pdf_params_zm%cloud_frac2
-      s1_zm          = pdf_params_zm%s1
-      s2_zm          = pdf_params_zm%s2
-      stdev_s1_zm    = pdf_params_zm%stdev_s1
-      stdev_s2_zm    = pdf_params_zm%stdev_s2
-      rrtthl_zm      = pdf_params_zm%rrtthl
-      alpha_thl_zm   = pdf_params_zm%alpha_thl
-      alpha_rt_zm    = pdf_params_zm%alpha_rt
-
-    else
-
-      ! Interpolate thermodynamic variables to the momentum grid.
-      ! Since top momentum level is higher than top thermo. level,
-      ! set variables at top momentum level to 0.
-      wprtp2_zm           = zt2zm( wprtp2 )
-      wprtp2_zm(gr%nz) = 0.0
-      wpthlp2_zm           = zt2zm( wpthlp2 )
-      wpthlp2_zm(gr%nz) = 0.0
-      wprtpthlp_zm           = zt2zm( wprtpthlp )
-      wprtpthlp_zm(gr%nz)  = 0.0
-      cloud_frac_zm          = zt2zm( cloud_frac )
-      cloud_frac_zm(gr%nz) = 0.0
-      rcm_zm                 = zt2zm( rcm )
-      rcm_zm(gr%nz)        = 0.0
-      wp2thvp_zm             = zt2zm( wp2thvp )
-      wp2thvp_zm(gr%nz)    = 0.0
-
-      do i = 1, sclr_dim
-        wpsclrprtp_zm(:,i)        = zt2zm( wpsclrprtp(:,i) )
-        wpsclrprtp_zm(gr%nz,i)  = 0.0
-        wpsclrp2_zm(:,i)          = zt2zm( wpsclrp2(:,i) )
-        wpsclrp2_zm(gr%nz,i)    = 0.0
-        wpsclrpthlp_zm(:,i)       = zt2zm( wpsclrpthlp(:,i) )
-        wpsclrpthlp_zm(gr%nz,i) = 0.0
-      end do ! i = 1, sclr_dim
-
-      w1_zm                   = zt2zm( pdf_params%w1 )
-      w1_zm(gr%nz)          = 0.0
-      w2_zm                   = zt2zm( pdf_params%w2 )
-      w2_zm(gr%nz)          = 0.0
-      varnce_w1_zm            = zt2zm( pdf_params%varnce_w1 )
-      varnce_w1_zm(gr%nz)   = 0.0
-      varnce_w2_zm            = zt2zm( pdf_params%varnce_w2 )
-      varnce_w2_zm(gr%nz)   = 0.0
-      rt1_zm                  = zt2zm( pdf_params%rt1 )
-      rt1_zm(gr%nz)         = 0.0
-      rt2_zm                  = zt2zm( pdf_params%rt2 )
-      rt2_zm(gr%nz)         = 0.0
-      varnce_rt1_zm           = zt2zm( pdf_params%varnce_rt1 )
-      varnce_rt1_zm(gr%nz)  = 0.0
-      varnce_rt2_zm           = zt2zm( pdf_params%varnce_rt2 )
-      varnce_rt2_zm(gr%nz)  = 0.0
-      crt1_zm                 = zt2zm( pdf_params%crt1 )
-      crt1_zm(gr%nz)        = 0.0
-      crt2_zm                 = zt2zm( pdf_params%crt2 )
-      crt2_zm(gr%nz)        = 0.0
-      cthl1_zm                = zt2zm( pdf_params%cthl1 )
-      cthl1_zm(gr%nz)       = 0.0
-      cthl2_zm                = zt2zm( pdf_params%cthl2 )
-      cthl2_zm(gr%nz)       = 0.0
-      thl1_zm                 = zt2zm( pdf_params%thl1 )
-      thl1_zm(gr%nz)        = 0.0
-      thl2_zm                 = zt2zm( pdf_params%thl2 )
-      thl2_zm(gr%nz)        = 0.0
-      varnce_thl1_zm          = zt2zm( pdf_params%varnce_thl1 )
-      varnce_thl1_zm(gr%nz) = 0.0
-      varnce_thl2_zm          = zt2zm( pdf_params%varnce_thl2 )
-      varnce_thl2_zm(gr%nz) = 0.0
-      mixt_frac_zm            = zt2zm( pdf_params%mixt_frac )
-      mixt_frac_zm(gr%nz)   = 0.0
-      rc1_zm                  = zt2zm( pdf_params%rc1 )
-      rc1_zm(gr%nz)         = 0.0
-      rc2_zm                  = zt2zm( pdf_params%rc2 )
-      rc2_zm(gr%nz)         = 0.0
-      rsl1_zm                 = zt2zm( pdf_params%rsl1 )
-      rsl1_zm(gr%nz)        = 0.0
-      rsl2_zm                 = zt2zm( pdf_params%rsl2 )
-      rsl2_zm(gr%nz)        = 0.0
-      cloud_frac1_zm          = zt2zm( pdf_params%cloud_frac1 )
-      cloud_frac1_zm(gr%nz) = 0.0
-      cloud_frac2_zm          = zt2zm( pdf_params%cloud_frac2 )
-      cloud_frac2_zm(gr%nz) = 0.0
-      s1_zm                   = zt2zm( pdf_params%s1 )
-      s1_zm(gr%nz)          = 0.0
-      s2_zm                   = zt2zm( pdf_params%s2 )
-      s2_zm(gr%nz)          = 0.0
-      stdev_s1_zm             = zt2zm( pdf_params%stdev_s1 )
-      stdev_s1_zm(gr%nz)    = 0.0
-      stdev_s2_zm             = zt2zm( pdf_params%stdev_s2 )
-      stdev_s2_zm(gr%nz)    = 0.0
-      rrtthl_zm               = zt2zm( pdf_params%rrtthl )
-      rrtthl_zm(gr%nz)      = 0.0
-      alpha_thl_zm            = zt2zm( pdf_params%alpha_thl )
-      alpha_thl_zm(gr%nz)   = 0.0
-      alpha_rt_zm             = zt2zm( pdf_params%alpha_rt )
-      alpha_rt_zm(gr%nz)    = 0.0
-    end if ! l_call_pdf_closure_twice
+    ! The _zm variables already have values from the second call to pdf_closure in 
+    ! advance_clubb_core.  Here we store, in locally declared variables, the 
+    ! pdf_params output from the second call to pdf_closure
+    w1_zm          = pdf_params_zm%w1
+    w2_zm          = pdf_params_zm%w2
+    varnce_w1_zm   = pdf_params_zm%varnce_w1
+    varnce_w2_zm   = pdf_params_zm%varnce_w2
+    rt1_zm         = pdf_params_zm%rt1
+    rt2_zm         = pdf_params_zm%rt2
+    varnce_rt1_zm  = pdf_params_zm%varnce_rt1
+    varnce_rt2_zm  = pdf_params_zm%varnce_rt2
+    crt1_zm        = pdf_params_zm%crt1
+    crt2_zm        = pdf_params_zm%crt2
+    cthl1_zm       = pdf_params_zm%cthl1
+    cthl2_zm       = pdf_params_zm%cthl2
+    thl1_zm        = pdf_params_zm%thl1
+    thl2_zm        = pdf_params_zm%thl2
+    varnce_thl1_zm = pdf_params_zm%varnce_thl1
+    varnce_thl2_zm = pdf_params_zm%varnce_thl2
+    mixt_frac_zm   = pdf_params_zm%mixt_frac
+    rc1_zm         = pdf_params_zm%rc1
+    rc2_zm         = pdf_params_zm%rc2
+    rsl1_zm        = pdf_params_zm%rsl1
+    rsl2_zm        = pdf_params_zm%rsl2
+    cloud_frac1_zm = pdf_params_zm%cloud_frac1
+    cloud_frac2_zm = pdf_params_zm%cloud_frac2
+    s1_zm          = pdf_params_zm%s1
+    s2_zm          = pdf_params_zm%s2
+    stdev_s1_zm    = pdf_params_zm%stdev_s1
+    stdev_s2_zm    = pdf_params_zm%stdev_s2
+    rrtthl_zm      = pdf_params_zm%rrtthl
+    alpha_thl_zm   = pdf_params_zm%alpha_thl
+    alpha_rt_zm    = pdf_params_zm%alpha_rt
 
     if ( l_stats ) then
       ! Use the trapezoidal rule to recompute the variables on the zt level
@@ -2176,18 +2050,22 @@ module clubb_core
              ( wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
                wpthvp, thlpthvp, rtpthvp )           ! intent(inout)
     !
-    ! Description:  This subroutine recomputes three variables on the
-    ! momentum grid from pdf_closure -- wpthvp, thlpthvp, and
-    ! rtpthvp -- by calling the function trapezoid_zm.  Only these three
-    ! variables are used in this subroutine because they are the only
-    ! pdf_closure momentum variables used elsewhere in CLUBB.
+    ! Description:  
+    !   This subroutine recomputes three variables on the
+    !   momentum grid from pdf_closure -- wpthvp, thlpthvp, and
+    !   rtpthvp -- by calling the function trapezoid_zm.  Only these three
+    !   variables are used in this subroutine because they are the only
+    !   pdf_closure momentum variables used elsewhere in CLUBB.
     !
-    ! The _zt variables are output from the first call to pdf_closure.
-    ! The _zm variables are either output from the second call to pdf_closure
-    ! if l_call_pdf_closure_twice is true, or are interpolated to their
-    ! home momentum levels if l_call_pdf_closure_twice is false.
-    ! This is done before the call to this subroutine.
-    ! ldgrant Feb. 2010
+    !   The _zt variables are output from the first call to pdf_closure.
+    !   The _zm variables are output from the second call to pdf_closure
+    !   on the momentum levels.
+    !   This is done before the call to this subroutine.
+    !
+    !   ldgrant Feb. 2010
+    !
+    !  References:
+    !    None
     !-----------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable
@@ -2219,10 +2097,12 @@ module clubb_core
   !-----------------------------------------------------------------------
   pure function trapezoid_zt( variable_zt, variable_zm )
     !
-    ! Description: Function which uses the trapezoidal rule from calculus
-    ! to recompute the values for the variables on the thermo. grid which
-    ! are output from the first call to pdf_closure in module clubb_core.
-    ! ldgrant June 2009
+    ! Description:
+    !   Function which uses the trapezoidal rule from calculus
+    !   to recompute the values for the variables on the thermo. grid which
+    !   are output from the first call to pdf_closure in module clubb_core.
+    !
+    !   ldgrant June 2009
     !--------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable
@@ -2259,11 +2139,13 @@ module clubb_core
   !-----------------------------------------------------------------------
   pure function trapezoid_zm( variable_zm, variable_zt )
     !
-    ! Description: Function which uses the trapezoidal rule from calculus
-    ! to recompute the values for the important variables on the momentum
-    ! grid which are output from pdf_closure in module clubb_core.
-    ! These momentum variables only include wpthvp, thlpthvp, and rtpthvp.
-    ! ldgrant Feb. 2010
+    ! Description: 
+    !   Function which uses the trapezoidal rule from calculus
+    !   to recompute the values for the important variables on the momentum
+    !   grid which are output from pdf_closure in module clubb_core.
+    !   These momentum variables only include wpthvp, thlpthvp, and rtpthvp.
+    !
+    !   ldgrant Feb. 2010
     !--------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable
