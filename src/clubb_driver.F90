@@ -203,6 +203,9 @@ module clubb_driver
       dt_rad, &
       dt_main
 
+    use soil_vegetation, only: &
+      l_soil_veg ! Variable(s)
+
     implicit none
 
     ! Because Fortran I/O is not thread safe, we use this here to
@@ -256,13 +259,13 @@ module clubb_driver
     real(kind=time_precision) :: & 
       time_restart    ! Time of model restart run     [s]
 
-    logical ::  & 
-      l_soil_veg,     & ! Flag for simple surface scheme
+    logical :: &
+      l_vert_avg_closure, & ! Call pdf_closure twice and use the trapazoidal rule
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
       l_input_fields, & ! Whether to set model variables from a file
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
-!                     i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+!                         i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
@@ -330,7 +333,7 @@ module clubb_driver
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
-      l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
+      l_vert_avg_closure, l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, l_input_fields, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
@@ -401,7 +404,8 @@ module clubb_driver
     uv_sponge_damp_settings%sponge_damp_depth = 0.25
 
     l_soil_veg     = .false.
-    l_tke_aniso    = .false.
+    l_vert_avg_closure = .true.
+    l_tke_aniso    = .true.
     l_uv_nudge     = .false.
     l_restart      = .false.
     l_input_fields  = .false.
@@ -473,7 +477,9 @@ module clubb_driver
     ! Printing Model Inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
 
-      if( l_write_to_file ) open(unit=iunit, file=case_info_file, status='replace', action='write')
+      if ( l_write_to_file ) then
+        open(unit=iunit, file=case_info_file, status='replace', action='write')
+      end if
 
       ! Print the date and time
       call write_date( l_write_to_file, iunit )
@@ -531,6 +537,11 @@ module clubb_driver
       call write_text( "-DUSE_BUGSrad_ocast_random enabled", l_write_to_file, iunit )
 #else
       call write_text( "-DUSE_BUGSrad_ocast_random disabled", l_write_to_file, iunit )
+#endif
+#ifdef BYTESWAP_IO
+      call write_text( "-DBYTESWAP_IO enabled", l_write_to_file, iunit )
+#else
+      call write_text( "-DBYTESWAP_IO disabled", l_write_to_file, iunit )
 #endif
 
       ! Pick some default values for model_setting
@@ -616,6 +627,7 @@ module clubb_driver
         uv_sponge_damp_settings%sponge_damp_depth, l_write_to_file, iunit )
 
       call write_text( "l_soil_veg = ", l_soil_veg, l_write_to_file, iunit )
+      call write_text( "l_vert_avg_closure = ", l_vert_avg_closure, l_write_to_file, iunit )
       call write_text( "l_tke_aniso = ", l_tke_aniso, l_write_to_file, iunit )
       call write_text( "l_uv_nudge = ", l_uv_nudge, l_write_to_file, iunit )
       call write_text( "l_restart = ", l_restart, l_write_to_file, iunit )
@@ -658,15 +670,15 @@ module clubb_driver
       call write_text( "thl_tol [K] = ", thl_tol, l_write_to_file, iunit )
       call write_text( "w_tol [m/s] = ", w_tol, l_write_to_file, iunit )
 
-      if( l_write_to_file) close(unit=iunit);
+      if ( l_write_to_file ) close(unit=iunit)
 
     end if ! clubb_at_least_debug_level(1)
 
     !----------------------------------------------------------------------
 
     ! Allocate stretched grid altitude arrays.
-    allocate( momentum_heights(1:nzmax),  & 
-              thermodynamic_heights(1:nzmax) )
+    allocate( momentum_heights(nzmax),  & 
+              thermodynamic_heights(nzmax) )
 
     ! Handle the reading of grid altitudes for
     ! stretched (unevenly-spaced) grid options.
@@ -682,7 +694,7 @@ module clubb_driver
     dummy_dy = 0.0
 
     ! Setup microphysical fields
-    call init_microphys( iunit, trim(runtype), runfile, case_info_file, & !Intent(in)
+    call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & !Intent(in)
                          hydromet_dim )                    ! Intent(out)
 
     ! Set the value of sigma_g to be used for cloud_sed module
@@ -707,16 +719,16 @@ module clubb_driver
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
 
-    call setup_clubb_core                               &
-         ( nzmax, T0, ts_nudge,                         & ! Intent(in)
-           hydromet_dim, sclr_dim,                      & ! Intent(in)
-           sclr_tol(1:sclr_dim), edsclr_dim, params,    & ! Intent(in)
-           l_soil_veg, l_host_applies_sfc_fluxes,       & ! Intent(in)
-           l_uv_nudge, l_tke_aniso, saturation_formula, & ! Intent(in)
+    call setup_clubb_core                                     & ! Intent(in)
+         ( nzmax, T0, ts_nudge,                               & ! Intent(in)
+           hydromet_dim, sclr_dim,                            & ! Intent(in)
+           sclr_tol(1:sclr_dim), edsclr_dim, params,          & ! Intent(in)
+           l_vert_avg_closure, l_host_applies_sfc_fluxes,     & ! Intent(in)
+           l_uv_nudge, l_tke_aniso, saturation_formula,       & ! Intent(in)
            l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
-           momentum_heights, thermodynamic_heights,     & ! Intent(in)
-           dummy_dx, dummy_dy, sfc_elevation,           & ! Intent(in)
-           err_code )                                     ! Intent(out)
+           momentum_heights, thermodynamic_heights,           & ! Intent(in)
+           dummy_dx, dummy_dy, sfc_elevation,                 & ! Intent(in)
+           err_code )                                           ! Intent(out)
 
 
     if ( fatal_error( err_code ) ) return
@@ -1147,16 +1159,20 @@ module clubb_driver
 
     ! Joshua Fasching
     ! March 2008
-    use soil_vegetation, only: sfc_soil_T_in_K, deep_soil_T_in_K, veg_T_in_K ! Variable(s)
+    use soil_vegetation, only: & 
+      sfc_soil_T_in_K, & ! Variable(s)
+      deep_soil_T_in_K, &
+      veg_T_in_K, &
+      l_soil_veg
 
     use sponge_layer_damping, only: &
-      thlm_sponge_damp_settings, &
+      thlm_sponge_damp_settings, & ! Procedure(s)
       rtm_sponge_damp_settings, &
       uv_sponge_damp_settings, &
       thlm_sponge_damp_profile, &
       rtm_sponge_damp_profile, &
       uv_sponge_damp_profile, &
-      initialize_tau_sponge_damp ! Procedure(s0
+      initialize_tau_sponge_damp 
 
     use input_names, only: &
       wm_name, &
@@ -2631,7 +2647,7 @@ module clubb_driver
 
     use clubb_precision, only: time_precision ! Variable(s)
 
-    use model_flags, only: &
+    use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
 
     use parameters_microphys, only : &
@@ -2830,7 +2846,7 @@ module clubb_driver
     !----------------------------------------------------------------------
 
     ! Modules to be included
-    use model_flags, only:  &
+    use soil_vegetation, only:  &
       l_soil_veg
 
     use grid_class, only: gr ! Variable(s)

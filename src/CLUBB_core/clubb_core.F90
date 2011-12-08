@@ -1430,18 +1430,18 @@ module clubb_core
              ( nzmax, T0_in, ts_nudge_in, & ! In
                hydromet_dim_in, sclr_dim_in, & ! In
                sclr_tol_in, edsclr_dim_in, params,  &  ! In
-               l_soil_veg, l_host_applies_sfc_fluxes, & ! In
+               l_vert_avg_closure, l_host_applies_sfc_fluxes, & ! In
                l_uv_nudge, l_tke_aniso, saturation_formula, &  ! In
 #ifdef GFDL
-    I_sat_sphum, &        ! intent(in)  h1g, 2010-06-16
+               I_sat_sphum, &        ! intent(in)  h1g, 2010-06-16
 #endif
-    l_implemented, grid_type, deltaz, zm_init, zm_top, &  ! In
-    momentum_heights, thermodynamic_heights,  &  ! In
-    host_dx, host_dy, sfc_elevation, & ! In
+               l_implemented, grid_type, deltaz, zm_init, zm_top, &  ! In
+               momentum_heights, thermodynamic_heights,  &  ! In
+               host_dx, host_dy, sfc_elevation, & ! In
 #ifdef GFDL
-    cloud_frac_min , &        ! intent(in)  h1g, 2010-06-16
+               cloud_frac_min , &        ! intent(in)  h1g, 2010-06-16
 #endif
-    err_code ) ! Out
+               err_code ) ! Out
     !
     ! Description:
     !   Subroutine to set up the model for execution.
@@ -1564,8 +1564,8 @@ module clubb_core
 
     ! Flags
     logical, intent(in) ::  & 
-      l_soil_veg,     & ! Simple surface scheme
-      l_uv_nudge,     & ! Wind nudging
+      l_vert_avg_closure, & ! Simple surface scheme
+      l_uv_nudge,         & ! Wind nudging
       l_tke_aniso       ! For anisotropic turbulent kinetic energy,
     !                     i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
@@ -1622,13 +1622,13 @@ module clubb_core
     ! Setup flags
 #ifdef GFDL
     call setup_model_flags & 
-         ( l_soil_veg, l_host_applies_sfc_fluxes, & ! intent(in)
+         ( l_vert_avg_closure, l_host_applies_sfc_fluxes, & ! intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula, &  ! intent(in) 
            I_sat_sphum )  ! intent(in)  h1g, 2010-06-16
 
 #else
     call setup_model_flags & 
-         ( l_soil_veg, l_host_applies_sfc_fluxes, & ! intent(in)
+         ( l_vert_avg_closure, l_host_applies_sfc_fluxes, & ! intent(in)
            l_uv_nudge, l_tke_aniso, saturation_formula )  ! intent(in)
 #endif
 
