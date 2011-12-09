@@ -12,8 +12,7 @@ module model_flags
 
   implicit none
 
-  public :: setup_model_flags
-
+  public :: setup_model_flags, read_model_flags_from_file, setup_tunable_model_flags
   private ! Default Scope
 
   logical, parameter, public ::  & 
@@ -183,5 +182,78 @@ module model_flags
 #endif
     return
   end subroutine setup_model_flags
+
+!===============================================================================
+  subroutine read_model_flags_from_file( iunit, filename )
+
+! Description:
+!   Read in some of the model flags of interest from a text file.  If the
+!   variable isn't in the file it will just be the default value.
+!
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    implicit none
+
+    integer, intent(in) :: &
+      iunit ! File I/O unit to use
+
+    character(len=*), intent(in) :: &
+      filename ! Name of the file with the namelist
+
+    namelist /model_flags/ &
+      l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
+      l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta
+
+   ! Read the namelist
+    open(unit=iunit, file=filename, status='old', action='read')
+
+    read(unit=iunit, nml=model_flags)
+
+    close(unit=iunit)
+
+    return
+  end subroutine read_model_flags_from_file
+
+!===============================================================================
+  subroutine setup_tunable_model_flags &
+             ( l_upwind_wpxp_ta_in, l_upwind_xpyp_ta_in, & 
+               l_upwind_xm_ma_in, l_quintic_poly_interp_in, &
+               l_vert_avg_closure_in, &
+               l_single_C2_Skw_in, l_standard_term_ta_in )
+
+! Description:
+!   Read in some of the model flags of interest from a text file.  If the
+!   variable isn't in the file it will just be the default value.
+!
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    logical, intent(in) :: &
+      l_upwind_wpxp_ta_in, & ! Model flags
+      l_upwind_xpyp_ta_in, & 
+      l_upwind_xm_ma_in, &
+      l_quintic_poly_interp_in, &
+      l_vert_avg_closure_in, &
+      l_single_C2_Skw_in, &
+      l_standard_term_ta_in
+
+    ! ---- Begin Code ----
+
+    l_upwind_wpxp_ta = l_upwind_wpxp_ta_in
+    l_upwind_xpyp_ta = l_upwind_xpyp_ta_in
+    l_upwind_xm_ma = l_upwind_xm_ma_in
+    l_quintic_poly_interp = l_quintic_poly_interp_in
+    l_vert_avg_closure = l_vert_avg_closure_in
+    l_single_C2_Skw = l_single_C2_Skw_in
+    l_standard_term_ta = l_standard_term_ta_in
+
+    return
+  end subroutine setup_tunable_model_flags
 
 end module model_flags

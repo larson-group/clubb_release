@@ -23,7 +23,8 @@ program clubb_tuner
   use error, only:  & 
     iamoeba, & ! Constants
     iamebsa, &
-    iesa
+    iesa, &
+    iflags
 
   use constants_clubb, only: & 
     fstdout ! Variable
@@ -34,7 +35,8 @@ program clubb_tuner
   implicit none
 
   ! External
-  external :: enhanced_simann_driver, amoeba_driver, amebsa_driver
+  external :: enhanced_simann_driver, amoeba_driver, amebsa_driver, &
+    logical_flags_driver
 
   ! Variables
   character(len=10) :: current_time  ! Current time string (no seconds)
@@ -66,10 +68,17 @@ program clubb_tuner
     select case ( tune_type )
     case ( iamoeba )
       call amoeba_driver( )
+
     case ( iamebsa )
       call amebsa_driver( )
+
     case ( iesa )
       call enhanced_simann_driver( )
+
+    case ( iflags )
+      call logical_flags_driver( )
+      stop "Program exited normally"
+
     case default
        stop "Unknown tuning type"
     end select
@@ -361,3 +370,82 @@ subroutine enhanced_simann_driver
 
   return
 end subroutine enhanced_simann_driver
+!-------------------------------------------------------------------------------
+subroutine logical_flags_driver
+
+! Description:
+!   While not a true search algorithm in same sense as the simulated annealing
+!   or the downhill simplex method is, this driver will try all permutations.
+!
+! Referecnes:
+!   None
+!-------------------------------------------------------------------------------
+  use error, only: &
+    param_vals_matrix ! Variable(s)
+
+  use error, only: &
+    min_les_clubb_diff ! Procedure(s)
+
+  use model_flags, only: &
+    setup_tunable_model_flags ! Procedure(s)
+
+  implicit none
+
+  ! External
+  intrinsic :: btest, selected_int_kind
+
+  ! Constant parameters
+  integer, parameter :: &
+    i8 = selected_int_kind( 15 )
+
+  integer, parameter :: &
+    ndim = 7, & ! Temporarily hardwired for 7 flags
+    two_ndim = 2**ndim
+
+  ! Local Variables
+  logical, dimension(:,:), allocatable :: &
+    model_flags ! Flags we're checking for
+
+  real, dimension(:), allocatable :: &
+    cost_function ! Values from the cost function
+
+  integer :: i, j
+  integer(kind=i8) :: bit_string
+
+  ! ---- Begin Code ----
+
+  allocate( model_flags(two_ndim,ndim) )
+  allocate( cost_function(two_ndim) )
+
+  bit_string = 0_i8 ! Initialize bits to 00 ... 00
+  do i = 1, two_ndim
+    do j = 1, ndim
+     ! This loop sets 1:n logicals using individual bits, i.e. 0 means
+     ! false and 1 means true for the purposes of trying all possibilities
+     model_flags(i,j) = btest( bit_string, j-1 ) 
+    end do
+    bit_string = bit_string + 1_i8 ! Increment the binary adder
+  end do
+
+  do i = 1, two_ndim
+    call setup_tunable_model_flags &
+         ( l_upwind_wpxp_ta_in=model_flags(i,1), l_upwind_xpyp_ta_in=model_flags(i,2), & 
+           l_upwind_xm_ma_in=model_flags(i,3), l_quintic_poly_interp_in=model_flags(i,4), &
+           l_vert_avg_closure_in=model_flags(i,5), &
+           l_single_C2_Skw_in=model_flags(i,6), l_standard_term_ta_in=model_flags(i,7) )
+    cost_function(i) = min_les_clubb_diff( param_vals_matrix(1,:) )
+  end do
+
+  write(6,'(A80)') "-------------------- Results from varying CLUBB flags -----------------------"
+  write(6,'(7A20)') "upwind_wpxp_ta", "upwind_xpyp_ta", "upwind_xm_ma", &
+    "quintic_poly_interp", "vert_avg_closure", &
+    "single_C2_Skw", "standard_term_ta"
+  do i = 1, two_ndim
+    write(6,'(7L20,G20.6)') model_flags(i,:), cost_function(i)
+  end do
+
+  deallocate( model_flags )
+  deallocate( cost_function )
+
+  return
+end subroutine logical_flags_driver
