@@ -377,7 +377,7 @@ subroutine logical_flags_driver
 !   While not a true search algorithm in same sense as the simulated annealing
 !   or the downhill simplex method is, this driver will try all permutations.
 !
-! Referecnes:
+! References:
 !   None
 !-------------------------------------------------------------------------------
   use error, only: &
@@ -388,6 +388,9 @@ subroutine logical_flags_driver
 
   use model_flags, only: &
     setup_tunable_model_flags ! Procedure(s)
+
+  use constants_clubb, only: &
+    fstdout ! Constant(s)
 
   implicit none
 
@@ -400,7 +403,11 @@ subroutine logical_flags_driver
 
   integer, parameter :: &
     ndim = 7, & ! Temporarily hardwired for 7 flags
-    two_ndim = 2**ndim
+    two_ndim = 2**ndim, &
+    iunit = 10
+
+  character(len=*), parameter :: &
+    model_flags_output = "../output/clubb_model_flags.csv"
 
   ! Local Variables
   logical, dimension(:,:), allocatable :: &
@@ -436,13 +443,19 @@ subroutine logical_flags_driver
     cost_function(i) = min_les_clubb_diff( param_vals_matrix(1,:) )
   end do
 
-  write(6,'(A80)') "-------------------- Results from varying CLUBB flags -----------------------"
-  write(6,'(7A20)') "upwind_wpxp_ta", "upwind_xpyp_ta", "upwind_xm_ma", &
-    "quintic_poly_interp", "vert_avg_closure", &
-    "single_C2_Skw", "standard_term_ta"
+  open(unit=iunit,file=model_flags_output)
+! write(6,'(A80)') "-------------------- Results from varying CLUBB flags -----------------------"
+  write(iunit,'(8A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
+    "quintic_poly_interp, ", "vert_avg_closure, ", &
+    "single_C2_Skw, ", "standard_term_ta, ", "Cost func."
   do i = 1, two_ndim
-    write(6,'(7L20,G20.6)') model_flags(i,:), cost_function(i)
+    do j = 1, ndim
+      write(iunit,'(L20,A2)',advance='no') model_flags(i,j), ", "
+    end do
+    write(iunit,'(G20.6,A2)') cost_function(i), ", "
   end do
+  close(unit=iunit)
+  write(fstdout,*) "Results of tuning model flags written to: ", model_flags_output
 
   deallocate( model_flags )
   deallocate( cost_function )
