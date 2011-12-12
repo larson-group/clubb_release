@@ -36,6 +36,7 @@
 ../src/text_writer.F90
 ../src/Parabolic_constants.f90
 ../src/Parabolic.f90
+../src/quicksort.F90
 ../src/recl.inc
 ../src/simple_rad_module.F90
 ../src/soil_vegetation.F90

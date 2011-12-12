@@ -392,6 +392,9 @@ subroutine logical_flags_driver
   use constants_clubb, only: &
     fstdout ! Constant(s)
 
+  use quicksort, only: &
+    Qsort_flags ! Procedure(s)
+
   implicit none
 
   ! External
@@ -445,6 +448,8 @@ subroutine logical_flags_driver
            l_standard_term_ta_in=model_flags_array(i,7) )
     cost_function(i) = min_les_clubb_diff( param_vals_matrix(1,:) )
   end do
+
+  call Qsort_flags( model_flags_array, cost_function )
 
   open(unit=iunit,file=model_flags_output)
 ! write(6,'(A80)') "-------------------- Results from varying CLUBB flags -----------------------"
