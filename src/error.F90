@@ -144,6 +144,10 @@ module error
   real(kind=genrand_real), allocatable, dimension(:), private ::  & 
     rand_vect ! A vector of random reals for initializing the x array
 
+  logical, public, dimension(:,:), allocatable :: &
+    model_flags_array ! Flags we're checking for
+
+
   ! Procedures
   public :: tuner_init, min_les_clubb_diff, write_results, & 
     output_nml_standalone, output_nml_tuner
@@ -571,7 +575,7 @@ module error
     ! model variables are declared threadprivate -dschanen 31 Jan 2007
 
 !$omp parallel do default(none), private(c_run), &
-!$omp   shared(params_local, run_file, run_stat, c_total)
+!$omp   shared(params_local, run_file, run_stat, c_total, model_flags_array, iter)
     do c_run=1, c_total, 1
 
 #ifndef _OPENMP 
@@ -586,8 +590,14 @@ module error
 #endif
       ! Run the CLUBB model with parameters as input
 
-      call run_clubb & 
-           ( params_local, run_file(c_run), run_stat(c_run), l_stdout )
+      if ( allocated( model_flags_array ) ) then
+        call run_clubb &
+             ( params_local, run_file(c_run), run_stat(c_run), l_stdout, &
+               model_flags_array(iter,:) )
+      else
+        call run_clubb & 
+             ( params_local, run_file(c_run), run_stat(c_run), l_stdout )
+      end if
 
     end do ! 1..c_run
 !$omp end parallel do

@@ -30,7 +30,8 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine run_clubb & 
-             ( params, runfile, err_code, l_stdout )
+             ( params, runfile, err_code, l_stdout, &
+               model_flags_array )
     ! Description:
     !   Subprogram to integrate the pde equations for pdf closure.
 
@@ -203,6 +204,9 @@ module clubb_driver
       dt_rad, &
       dt_main
 
+    use model_flags, only: &
+      setup_tunable_model_flags ! Procedure(s)
+
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
 
@@ -235,6 +239,9 @@ module clubb_driver
     ! Subroutine Arguments (Model Setting)
     character(len=*), intent(in) ::  & 
       runfile ! Name of file containing &model_setting and &sounding
+
+    logical, optional, dimension(:), intent(in) :: &
+      model_flags_array ! Array containing model flags (for the clubb_tuner only)
 
     ! Output Variables
     integer, intent(inout) :: &
@@ -732,6 +739,20 @@ module clubb_driver
 
 
     if ( fatal_error( err_code ) ) return
+
+    ! This special purpose code only applies to tuner runs where the tune_type
+    ! is setup to try all permutations of our model flags
+    if ( present( model_flags_array ) ) then
+      call setup_tunable_model_flags &
+           ( l_upwind_wpxp_ta_in=model_flags_array(1), &
+             l_upwind_xpyp_ta_in=model_flags_array(2), & 
+             l_upwind_xm_ma_in=model_flags_array(3), &
+             l_quintic_poly_interp_in=model_flags_array(4), &
+             l_vert_avg_closure_in=model_flags_array(5), &
+             l_single_C2_Skw_in=model_flags_array(6), &
+             l_standard_term_ta_in=model_flags_array(7), &
+             l_tke_aniso_in=model_flags_array(8) )
+    end if
 
     ! Deallocate stretched grid altitude arrays
     deallocate( momentum_heights, thermodynamic_heights )

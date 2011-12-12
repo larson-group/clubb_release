@@ -221,11 +221,12 @@ module model_flags
              ( l_upwind_wpxp_ta_in, l_upwind_xpyp_ta_in, & 
                l_upwind_xm_ma_in, l_quintic_poly_interp_in, &
                l_vert_avg_closure_in, &
-               l_single_C2_Skw_in, l_standard_term_ta_in )
+               l_single_C2_Skw_in, l_standard_term_ta_in, &
+               l_tke_aniso_in )
 
 ! Description:
-!   Read in some of the model flags of interest from a text file.  If the
-!   variable isn't in the file it will just be the default value.
+!   Set a model flag based on the input arguments for the purposes of trying
+!   all possible combinations in the clubb_tuner.
 !
 ! References:
 !   None
@@ -241,7 +242,8 @@ module model_flags
       l_quintic_poly_interp_in, &
       l_vert_avg_closure_in, &
       l_single_C2_Skw_in, &
-      l_standard_term_ta_in
+      l_standard_term_ta_in, &
+      l_tke_aniso_in
 
     ! ---- Begin Code ----
 
@@ -252,6 +254,7 @@ module model_flags
     l_vert_avg_closure = l_vert_avg_closure_in
     l_single_C2_Skw = l_single_C2_Skw_in
     l_standard_term_ta = l_standard_term_ta_in
+    l_tke_aniso = l_tke_aniso_in
 
     return
   end subroutine setup_tunable_model_flags
