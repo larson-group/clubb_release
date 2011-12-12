@@ -411,7 +411,7 @@ subroutine logical_flags_driver
 
   ! Local Variables
   logical, dimension(:,:), allocatable :: &
-    model_flags ! Flags we're checking for
+    model_flags_array ! Flags we're checking for
 
   real, dimension(:), allocatable :: &
     cost_function ! Values from the cost function
@@ -421,7 +421,7 @@ subroutine logical_flags_driver
 
   ! ---- Begin Code ----
 
-  allocate( model_flags(two_ndim,ndim) )
+  allocate( model_flags_array(two_ndim,ndim) )
   allocate( cost_function(two_ndim) )
 
   bit_string = 0_i8 ! Initialize bits to 00 ... 00
@@ -429,17 +429,20 @@ subroutine logical_flags_driver
     do j = 1, ndim
      ! This loop sets 1:n logicals using individual bits, i.e. 0 means
      ! false and 1 means true for the purposes of trying all possibilities
-     model_flags(i,j) = btest( bit_string, j-1 ) 
+     model_flags_array(i,j) = btest( bit_string, j-1 ) 
     end do
     bit_string = bit_string + 1_i8 ! Increment the binary adder
   end do
 
   do i = 1, two_ndim
     call setup_tunable_model_flags &
-         ( l_upwind_wpxp_ta_in=model_flags(i,1), l_upwind_xpyp_ta_in=model_flags(i,2), & 
-           l_upwind_xm_ma_in=model_flags(i,3), l_quintic_poly_interp_in=model_flags(i,4), &
-           l_vert_avg_closure_in=model_flags(i,5), &
-           l_single_C2_Skw_in=model_flags(i,6), l_standard_term_ta_in=model_flags(i,7) )
+         ( l_upwind_wpxp_ta_in=model_flags_array(i,1), &
+           l_upwind_xpyp_ta_in=model_flags_array(i,2), & 
+           l_upwind_xm_ma_in=model_flags_array(i,3), &
+           l_quintic_poly_interp_in=model_flags_array(i,4), &
+           l_vert_avg_closure_in=model_flags_array(i,5), &
+           l_single_C2_Skw_in=model_flags_array(i,6), &
+           l_standard_term_ta_in=model_flags_array(i,7) )
     cost_function(i) = min_les_clubb_diff( param_vals_matrix(1,:) )
   end do
 
@@ -450,14 +453,14 @@ subroutine logical_flags_driver
     "single_C2_Skw, ", "standard_term_ta, ", "Cost func."
   do i = 1, two_ndim
     do j = 1, ndim
-      write(iunit,'(L20,A2)',advance='no') model_flags(i,j), ", "
+      write(iunit,'(L20,A2)',advance='no') model_flags_array(i,j), ", "
     end do
     write(iunit,'(G20.6,A2)') cost_function(i), ", "
   end do
   close(unit=iunit)
   write(fstdout,*) "Results of tuning model flags written to: ", model_flags_output
 
-  deallocate( model_flags )
+  deallocate( model_flags_array )
   deallocate( cost_function )
 
   return
