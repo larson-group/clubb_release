@@ -141,7 +141,7 @@ elif [ $PRIORITY_CASES == true ] ; then
             fi
         done
         
-        # If the case was found in IGNORE_CASES, don't add it.
+        # If the case was found in PRIORITY_CASE_ARRAY, add it to the run cases.
         if [ $include == 1 ]; then
           RUN_CASE[$a]=$line
           a=$(($a+1));
