@@ -61,6 +61,9 @@ module advance_windm_edsclrm_module
       ts_nudge,  & ! Variable(s)
       edsclr_dim
 
+    use parameters_tunable, only: &
+      nu10_vert_res_dep ! Constant
+
     use model_flags, only:  &
       l_uv_nudge,  & ! Variable(s)
       l_tke_aniso
@@ -111,7 +114,6 @@ module advance_windm_edsclrm_module
 
     ! Constant Parameters
     real, dimension(gr%nz) :: &
-      nu10, &
       dummy_nu  ! Used to feed zero values into function calls
 
     ! Input Variables
@@ -201,7 +203,6 @@ module advance_windm_edsclrm_module
     err_code_windm   = clubb_no_error
     err_code_edsclrm = clubb_no_error
 
-    nu10 = 0. ! Background constant coef. of eddy diffusivity (disabled) [m^2/s]
     dummy_nu = 0.
 
     !----------------------------------------------------------------
@@ -229,14 +230,14 @@ module advance_windm_edsclrm_module
 
     ! Compute the explicit portion of the um equation.
     ! Build the right-hand side vector.
-    rhs(1:gr%nz,1) = windm_edsclrm_rhs( windm_edsclrm_um, dt, nu10, Kh_zm, um, & ! in
+    rhs(1:gr%nz,1) = windm_edsclrm_rhs( windm_edsclrm_um, dt, nu10_vert_res_dep, Kh_zm, um, & ! in
                                           um_tndcy,  &  ! in
                                           rho_ds_zm, invrs_rho_ds_zt,  &     ! in
                                           l_imp_sfc_momentum_flux, upwp(1) ) ! in
 
     ! Compute the explicit portion of the vm equation.
     ! Build the right-hand side vector.
-    rhs(1:gr%nz,2) = windm_edsclrm_rhs( windm_edsclrm_vm, dt, nu10, Kh_zm, vm, & ! in
+    rhs(1:gr%nz,2) = windm_edsclrm_rhs( windm_edsclrm_vm, dt, nu10_vert_res_dep, Kh_zm, vm, & ! in
                                           vm_tndcy,  &  ! in
                                           rho_ds_zm, invrs_rho_ds_zt,  &     ! in
                                           l_imp_sfc_momentum_flux, vpwp(1) ) ! in
@@ -251,11 +252,11 @@ module advance_windm_edsclrm_module
     ! Solve for x'w' at all intermediate model levels.
     ! A Crank-Nicholson timestep is used.
 
-    upwp(2:gr%nz-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10(2:gr%nz-1),  & ! in
+    upwp(2:gr%nz-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10_vert_res_dep(2:gr%nz-1),  & ! in
                                           um(2:gr%nz-1), um(3:gr%nz), & ! in
                                           gr%invrs_dzm(2:gr%nz-1) )
 
-    vpwp(2:gr%nz-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10(2:gr%nz-1),  & ! in
+    vpwp(2:gr%nz-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10_vert_res_dep(2:gr%nz-1),  & ! in
                                           vm(2:gr%nz-1), vm(3:gr%nz), & ! in
                                           gr%invrs_dzm(2:gr%nz-1) )
 
@@ -268,7 +269,7 @@ module advance_windm_edsclrm_module
 
     ! Compute the implicit portion of the um and vm equations.
     ! Build the left-hand side matrix.
-    call windm_edsclrm_lhs( dt, nu10, wm_zt, Kh_zm, wind_speed, u_star_sqd,  & ! in
+    call windm_edsclrm_lhs( dt, nu10_vert_res_dep, wm_zt, Kh_zm, wind_speed, u_star_sqd,  & ! in
                             rho_ds_zm, invrs_rho_ds_zt,  &               ! in
                             l_implemented, l_imp_sfc_momentum_flux,  &   ! in
                             lhs )                                        ! out
@@ -330,11 +331,11 @@ module advance_windm_edsclrm_module
     ! A Crank-Nicholson timestep is used.
 
     upwp(2:gr%nz-1) = upwp(2:gr%nz-1)  &
-      - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10(2:gr%nz-1), &
+      - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10_vert_res_dep(2:gr%nz-1), &
       um(2:gr%nz-1), um(3:gr%nz), gr%invrs_dzm(2:gr%nz-1) ) !in
 
     vpwp(2:gr%nz-1) = vpwp(2:gr%nz-1)  &
-      - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10(2:gr%nz-1), &
+      - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10_vert_res_dep(2:gr%nz-1), &
       vm(2:gr%nz-1), vm(3:gr%nz), gr%invrs_dzm(2:gr%nz-1) ) !in
 
 

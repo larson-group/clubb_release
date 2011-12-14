@@ -92,8 +92,6 @@ module clubb_core
       kappa, &
       fstderr, &
       zero_threshold, &
-      Lscale_pert_coef, &
-      Lscale_mu_coef, &
       three_halves
 
     use parameters_tunable, only: & 
@@ -102,7 +100,9 @@ module clubb_core
       gamma_coef, & 
       taumax, & 
       c_K, &
-      mu
+      mu, &
+      Lscale_mu_coef, &
+      Lscale_pert_coef
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)

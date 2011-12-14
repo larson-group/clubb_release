@@ -25,7 +25,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 56 ! Total tunable parameters
+    nparams = 59 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -36,68 +36,71 @@ module parameter_indices
 !***************************************************************
 
   integer, parameter, public :: & 
-    iC1             =  1, & 
-    iC1b            =  2, & 
-    iC1c            =  3, & 
-    iC2             =  4, & 
-    iC2b            =  5, & 
-    iC2c            =  6, & 
-    iC2rt           =  7, & 
-    iC2thl          =  8, & 
-    iC2rtthl        =  9, & 
-    iC4             = 10, & 
-    iC5             = 11, & 
-    iC6rt           = 12, & 
-    iC6rtb          = 13, & 
-    iC6rtc          = 14, & 
-    iC6thl          = 15, & 
-    iC6thlb         = 16, & 
-    iC6thlc         = 17, & 
-    iC7             = 18, & 
-    iC7b            = 19, & 
-    iC7c            = 20, & 
-    iC8             = 21, & 
-    iC8b            = 22, & 
-    iC10            = 23, & 
-    iC11            = 24, & 
-    iC11b           = 25, & 
-    iC11c           = 26, & 
-    iC12            = 27, & 
-    iC13            = 28, & 
-    iC14            = 29, &
-    iC15            = 30
+    iC1               =  1, & 
+    iC1b              =  2, & 
+    iC1c              =  3, & 
+    iC2               =  4, & 
+    iC2b              =  5, & 
+    iC2c              =  6, & 
+    iC2rt             =  7, & 
+    iC2thl            =  8, & 
+    iC2rtthl          =  9, & 
+    iC4               = 10, & 
+    iC5               = 11, & 
+    iC6rt             = 12, & 
+    iC6rtb            = 13, & 
+    iC6rtc            = 14, & 
+    iC6thl            = 15, & 
+    iC6thlb           = 16, & 
+    iC6thlc           = 17, & 
+    iC7               = 18, & 
+    iC7b              = 19, & 
+    iC7c              = 20, & 
+    iC8               = 21, & 
+    iC8b              = 22, & 
+    iC10              = 23, & 
+    iC11              = 24, & 
+    iC11b             = 25, & 
+    iC11c             = 26, & 
+    iC12              = 27, & 
+    iC13              = 28, & 
+    iC14              = 29, &
+    iC15              = 30
 
   integer, parameter, public :: &
-    iC6rt_Lscale0   = 31, &
-    iC6thl_Lscale0  = 32, &
-    iC7_Lscale0     = 33, &
-    iwpxp_L_thresh  = 34
+    iC6rt_Lscale0     = 31, &
+    iC6thl_Lscale0    = 32, &
+    iC7_Lscale0       = 33, &
+    iwpxp_L_thresh    = 34
 
   integer, parameter, public :: & 
-    ic_K            = 35, & 
-    ic_K1           = 36, & 
-    inu1            = 37, & 
-    ic_K2           = 38, & 
-    inu2            = 39, & 
-    ic_K6           = 40, & 
-    inu6            = 41, & 
-    ic_K8           = 42, & 
-    inu8            = 43, & 
-    ic_K9           = 44, & 
-    inu9            = 45, & 
-    ic_Krrainm      = 46, & 
-    inu_r           = 47, & 
-    inu_hd          = 48
+    ic_K              = 35, & 
+    ic_K1             = 36, & 
+    inu1              = 37, & 
+    ic_K2             = 38, & 
+    inu2              = 39, & 
+    ic_K6             = 40, & 
+    inu6              = 41, & 
+    ic_K8             = 42, & 
+    inu8              = 43, & 
+    ic_K9             = 44, & 
+    inu9              = 45, & 
+    inu10             = 46, &
+    ic_Krrainm        = 47, & 
+    inu_r             = 48, & 
+    inu_hd            = 49
 
   integer, parameter, public :: & 
-    igamma_coef     = 49, & 
-    igamma_coefb    = 50, & 
-    igamma_coefc    = 51, & 
-    imu             = 52, & 
-    ibeta           = 53, & 
-    ilmin_coef      = 54, & 
-    itaumin         = 55, & 
-    itaumax         = 56
+    igamma_coef       = 50, & 
+    igamma_coefb      = 51, & 
+    igamma_coefc      = 52, & 
+    imu               = 53, & 
+    ibeta             = 54, & 
+    ilmin_coef        = 55, & 
+    itaumin           = 56, & 
+    itaumax           = 57, &
+    iLscale_mu_coef   = 58, &
+    iLscale_pert_coef = 59
 
 end module parameter_indices
 !-----------------------------------------------------------------------

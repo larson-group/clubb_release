@@ -82,7 +82,11 @@ module parameters_tunable
     mu          = 1.000E-3,         & ! Fractional entrainment rate per unit altitude.
     taumin      = 90.00000,         & ! Minimum allowable value of time-scale tau.
     taumax      = 3600.000,         & ! Maximum allowable value of time-scale tau.
-    lmin           ! Minimum value for the length scale.
+    lmin                              ! Minimum value for the length scale.
+
+  real, public :: &
+    Lscale_mu_coef   = 2.0,         & ! Coefficient to perturb mu for an avg calculation of Lscale
+    Lscale_pert_coef = 0.1            ! Coeff to perturb thlm and rtm for an avg calc of Lscale.
 
   real, private :: & 
     nu1         = 20.00000,         & ! Background Coefficient of Eddy Diffusion for wp2.
@@ -90,6 +94,7 @@ module parameters_tunable
     nu6         = 5.000000,         & ! Background Coefficient of Eddy Diffusion for wpxp.
     nu8         = 20.00000,         & ! Background Coefficient of Eddy Diffusion for wp3.
     nu9         = 20.00000,         & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
+    nu10        = 0.000000,         & ! Background Coef of Eddy Dfsn for edsclrm,um, vm, upwp, vpwp
     nu_r        = 1.500000,         & ! Background Coefficient of Eddy Diffusion for hydrometeors.
     nu_hd       = 20000.00    ! Constant coefficient for 4th-order hyper-diffusion.
 
@@ -99,9 +104,9 @@ module parameters_tunable
 !$omp     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, &
 !$omp     C13, C14, C15, &
 !$omp     c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, &
-!$omp     c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, nu_hd, &
+!$omp     c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, nu_hd, &
 !$omp     gamma_coef, gamma_coefb, gamma_coefc, &
-!$omp     taumin, taumax, mu, lmin)
+!$omp     taumin, taumax, mu, lmin, Lscale_mu_coef, Lscale_pert_coef)
 
   real, public, allocatable, dimension(:) :: & 
     nu1_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp2.
@@ -109,13 +114,14 @@ module parameters_tunable
     nu6_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wpxp.
     nu8_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp3.
     nu9_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
+    nu10_vert_res_dep,  & ! Background Coef of Eddy Dfsn for edsclrm,um,vm,upwp,vpwp.
     nu_r_vert_res_dep     ! Background Coefficient of Eddy Diffusion for hydrometeors.
 
   real, public :: &
     nu_hd_vert_res_dep    ! Constant coefficient for 4th-order hyper-diffusion.
 
 !$omp threadprivate(nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep, &
-!$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu_r_vert_res_dep,  &
+!$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, nu_r_vert_res_dep,  &
 !$omp   nu_hd_vert_res_dep )
 
   ! Vince Larson added a constant to set plume widths for theta_l and rt
@@ -147,9 +153,9 @@ module parameters_tunable
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
     C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
-    c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
+    c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
-    lmin_coef, taumin, taumax, mu
+    lmin_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -161,23 +167,23 @@ module parameters_tunable
   ! tuner will break!
   !                    ***** IMPORTANT *****
   !***************************************************************
-  character(len=13), dimension(nparams), parameter, public ::  & 
+  character(len=16), dimension(nparams), parameter, public ::  & 
   params_list = & 
-     (/"C1           ", "C1b          ", "C1c          ", "C2           ", & 
-       "C2b          ", "C2c          ", "C2rt         ", "C2thl        ", & 
-       "C2rtthl      ", "C4           ", "C5           ", "C6rt         ", & 
-       "C6rtb        ", "C6rtc        ", "C6thl        ", "C6thlb       ", & 
-       "C6thlc       ", "C7           ", "C7b          ", "C7c          ", & 
-       "C8           ", "C8b          ", "C10          ", "C11          ", & 
-       "C11b         ", "C11c         ", "C12          ", "C13          ", & 
-       "C14          ", "C15          ", "C6rt_Lscale0 ", "C6thl_Lscale0", &
-       "C7_Lscale0   ", "wpxp_L_thresh", "c_K          ", "c_K1         ", &
-       "nu1          ", &
-       "c_K2         ", "nu2          ", "c_K6         ", "nu6          ", & 
-       "c_K8         ", "nu8          ", "c_K9         ", "nu9          ", & 
-       "c_Krrainm    ", "nu_r         ", "nu_hd        ",                  &
-       "gamma_coef   ", "gamma_coefb  ", "gamma_coefc  ", "mu           ", &
-       "beta         ", "lmin_coef    ", "taumin       ", "taumax       " /)
+     (/"C1              ", "C1b             ", "C1c             ", "C2              ", & 
+       "C2b             ", "C2c             ", "C2rt            ", "C2thl           ", & 
+       "C2rtthl         ", "C4              ", "C5              ", "C6rt            ", & 
+       "C6rtb           ", "C6rtc           ", "C6thl           ", "C6thlb          ", & 
+       "C6thlc          ", "C7              ", "C7b             ", "C7c             ", & 
+       "C8              ", "C8b             ", "C10             ", "C11             ", & 
+       "C11b            ", "C11c            ", "C12             ", "C13             ", & 
+       "C14             ", "C15             ", "C6rt_Lscale0    ", "C6thl_Lscale0   ", &
+       "C7_Lscale0      ", "wpxp_L_thresh   ", "c_K             ", "c_K1            ", &
+       "nu1             ", "c_K2            ", "nu2             ", "c_K6            ", &
+       "nu6             ", "c_K8            ", "nu8             ", "c_K9            ", &
+       "nu9             ", "nu10            ", "c_Krrainm       ", "nu_r            ", &
+       "nu_hd           ", "gamma_coef      ", "gamma_coefb     ", "gamma_coefc     ", &
+       "mu              ", "beta            ", "lmin_coef       ", "taumin          ", &
+       "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef" /)
 
   real, parameter :: &
     init_value = -999. ! Initial value for the parameters, used to detect missing values
@@ -257,9 +263,10 @@ module parameters_tunable
                             C11, C11b, C11c, C12, C13, C14, C15, & 
                             C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                            c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
+                            c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-                            mu, beta, lmin_coef, taumin, taumax )
+                            mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+                            Lscale_pert_coef )
 
 
     ! It was decided after some experimentation, that the best
@@ -413,6 +420,9 @@ module parameters_tunable
     if ( .not. allocated( nu9_vert_res_dep ) ) then
       allocate( nu9_vert_res_dep(1:gr%nz) )
     end if
+    if ( .not. allocated( nu10_vert_res_dep ) ) then
+      allocate( nu10_vert_res_dep(1:gr%nz) )
+    end if
     if ( .not. allocated( nu_r_vert_res_dep ) ) then
       allocate( nu_r_vert_res_dep(1:gr%nz) )
     end if
@@ -506,6 +516,7 @@ module parameters_tunable
       nu6_vert_res_dep  =  nu6 * mult_factor_zm
       nu8_vert_res_dep  =  nu8 * mult_factor_zt
       nu9_vert_res_dep  =  nu9 * mult_factor_zm
+      nu10_vert_res_dep =  nu10 * mult_factor_zt !We're unsure of the grid
       nu_r_vert_res_dep =  nu_r * mult_factor_zt
 
       ! The value of nu_hd is based on an average grid box spacing of
@@ -525,6 +536,7 @@ module parameters_tunable
       nu6_vert_res_dep  =  nu6
       nu8_vert_res_dep  =  nu8
       nu9_vert_res_dep  =  nu9
+      nu10_vert_res_dep = nu10
       nu_r_vert_res_dep =  nu_r
       nu_hd_vert_res_dep = nu_hd
 
@@ -581,9 +593,10 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
+                          c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-                          mu, beta, lmin_coef, taumin, taumax, params )
+                          mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+                          Lscale_pert_coef, params )
 
     l_error = .false.
 
@@ -646,9 +659,9 @@ module parameters_tunable
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
       C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
-      c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
+      c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
-      lmin_coef, taumin, taumax, mu
+      lmin_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef
 
     ! Initialize values to -999.
     call init_parameters_999( )
@@ -667,9 +680,10 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
+                          c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-                          mu, beta, lmin_coef, taumin, taumax, param_spread )
+                          mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+                          Lscale_pert_coef, param_spread )
 
     l_error = .false.
 
@@ -709,9 +723,10 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
-               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, &
+               c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, &
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
-               mu, beta, lmin_coef, taumin, taumax, params )
+               mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+               Lscale_pert_coef, params )
 
     ! Description:
     ! Takes the list of scalar variables and puts them into a 1D vector.
@@ -772,6 +787,7 @@ module parameters_tunable
       inu8, & 
       ic_K9, & 
       inu9, & 
+      inu10, &
       ic_Krrainm, & 
       inu_r, & 
       inu_hd, & 
@@ -783,6 +799,8 @@ module parameters_tunable
       ilmin_coef, & 
       itaumin, & 
       itaumax, & 
+      iLscale_mu_coef, &
+      iLscale_pert_coef, &
       nparams
 
     implicit none
@@ -795,8 +813,9 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
-      c_K9, nu9, c_Krrainm, nu_r, nu_hd, gamma_coef, &
-      gamma_coefb, gamma_coefc, mu, beta, lmin_coef, taumin, taumax
+      c_K9, nu9, nu10, c_Krrainm, nu_r, nu_hd, gamma_coef, &
+      gamma_coefb, gamma_coefc, mu, beta, lmin_coef, taumin, &
+      taumax, Lscale_mu_coef, Lscale_pert_coef
 
     ! Output variables
     real, intent(out), dimension(nparams) :: params
@@ -848,6 +867,7 @@ module parameters_tunable
     params(inu8)       = nu8
     params(ic_K9)      = c_K9
     params(inu9)       = nu9
+    params(inu10)      = nu10
     params(ic_Krrainm) = c_Krrainm
     params(inu_r)      = nu_r
     params(inu_hd)     = nu_hd
@@ -865,6 +885,9 @@ module parameters_tunable
     params(itaumin) = taumin
     params(itaumax) = taumax
 
+    params(iLscale_mu_coef) = Lscale_mu_coef
+    params(iLscale_pert_coef) = Lscale_pert_coef
+
     return
   end subroutine pack_parameters
 
@@ -877,9 +900,10 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, & 
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
+               c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-               mu, beta, lmin_coef, taumin, taumax )
+               mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+               Lscale_pert_coef )
 
     ! Description:
     ! Takes the 1D vector and returns the list of scalar variables.
@@ -940,6 +964,7 @@ module parameters_tunable
       inu8, & 
       ic_K9, & 
       inu9, & 
+      inu10, &
       ic_Krrainm, & 
       inu_r, & 
       inu_hd, & 
@@ -951,6 +976,8 @@ module parameters_tunable
       ilmin_coef, & 
       itaumin, & 
       itaumax, & 
+      iLscale_mu_coef, &
+      iLscale_pert_coef, &
       nparams
 
     implicit none
@@ -966,9 +993,10 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-      c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
+      c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-      mu, beta, lmin_coef, taumin, taumax
+      mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+      Lscale_pert_coef
 
     C1      = params(iC1)
     C1b     = params(iC1b)
@@ -1017,6 +1045,7 @@ module parameters_tunable
     nu8       = params(inu8)
     c_K9      = params(ic_K9)
     nu9       = params(inu9)
+    nu10      = params(inu10)
     c_Krrainm = params(ic_Krrainm)
     nu_r      = params(inu_r)
     nu_hd     = params(inu_hd)
@@ -1033,6 +1062,9 @@ module parameters_tunable
 
     taumin = params(itaumin)
     taumax = params(itaumax)
+
+    Lscale_mu_coef = params(iLscale_mu_coef)
+    Lscale_pert_coef = params(iLscale_pert_coef)
 
     return
   end subroutine unpack_parameters
@@ -1058,9 +1090,10 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
+                          c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-                          mu, beta, lmin_coef, taumin, taumax, params )
+                          mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+                          Lscale_pert_coef, params )
 
     return
 
@@ -1125,6 +1158,7 @@ module parameters_tunable
     nu8                = init_value
     c_K9               = init_value
     nu9                = init_value
+    nu10               = init_value
     c_Krrainm          = init_value
     nu_r               = init_value
     nu_hd              = init_value
@@ -1136,6 +1170,8 @@ module parameters_tunable
     taumax             = init_value
     lmin_coef          = init_value
     mu                 = init_value
+    Lscale_mu_coef     = init_value
+    Lscale_pert_coef   = init_value
  
     nu_hd_vert_res_dep = init_value
 
@@ -1163,8 +1199,8 @@ module parameters_tunable
     ! ----- Begin Code -----
 
     deallocate( nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep,  &
-                nu8_vert_res_dep, nu9_vert_res_dep, nu_r_vert_res_dep, &
-                stat = ierr )
+                nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, &
+                nu_r_vert_res_dep, stat = ierr )
 
     if ( ierr /= 0 ) then
       write(fstderr,*) "Nu deallocation failed."
