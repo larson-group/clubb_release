@@ -458,7 +458,8 @@ subroutine logical_flags_driver
       end if
     end do
   end do
-  cost_func_avg(:) = cost_func_sum_false(:) - cost_func_sum_true(:)
+  cost_func_avg(:) = ( cost_func_sum_false(:) / real( two_ndim / 2 ) ) &
+                   - ( cost_func_sum_true(:) / real( two_ndim / 2 ) )
 
   ! Sort flags and the cost function in ascending order
   call Qsort_flags( model_flags_array, cost_function )
