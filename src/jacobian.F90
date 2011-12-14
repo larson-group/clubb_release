@@ -51,7 +51,7 @@ program jacobian
 
     integer :: entries ! Total tunable parameters
 
-    character(len=13), pointer :: name(:)
+    character(len=16), pointer :: name(:)
 
     real, pointer :: value(:)
 
