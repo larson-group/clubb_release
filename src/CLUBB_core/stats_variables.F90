@@ -134,11 +134,12 @@ module stats_variables
 !$omp   threadprivate(iC11_Skw_fnc)
 
   integer, public :: &
+    icloud_frac_zm, &
     ircm_zm, &
     irtm_zm, &
     ithlm_zm
 
-!$omp threadprivate(ircm_zm, irtm_zm, ithlm_zm)
+!$omp threadprivate(icloud_frac_zm, ircm_zm, irtm_zm, ithlm_zm)
 
   integer, public :: &
     iLH_rcm_avg

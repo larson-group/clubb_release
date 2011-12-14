@@ -1172,8 +1172,8 @@ module stats_subs
                      p_in_Pa, exner, rho, rho_zm, &
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, &
                      thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, &
-                     rcm_zm, rtm_zm, thlm_zm, &
-                     cloud_frac, rcm_in_layer, cloud_cover, &
+                     rcm_zm, rtm_zm, thlm_zm, cloud_frac, &
+                     cloud_frac_zm, rcm_in_layer, cloud_cover, &
                      sigma_sqd_w, pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
                      wpsclrp, edsclrm, edsclrm_forcing )
@@ -1340,6 +1340,7 @@ module stats_subs
 
     use stats_variables, only: &
       iLH_rcm_avg, &
+      icloud_frac_zm, &
       ircm_zm, &
       irtm_zm, &
       ithlm_zm
@@ -1500,14 +1501,15 @@ module stats_subs
       wm_zm           ! w on momentum levels                     [m/s]
 
     real, intent(in), dimension(gr%nz) :: & 
-      rcm_zm,       & ! Total water mixing ratio                 [kg/kg]
-      rtm_zm,       & ! Total water mixing ratio                 [kg/kg]
-      thlm_zm,      & ! Liquid potential temperature             [K]
-      rcm,          & ! Cloud water mixing ratio                 [kg/kg]
-      wprcp,        & ! w'rc'                                    [(kg/kg) m/s]
-      cloud_frac,   & ! Cloud fraction                           [-]
-      rcm_in_layer, & ! Cloud water mixing ratio in cloud layer  [kg/kg]
-      cloud_cover     ! Cloud cover                              [-]
+      rcm_zm,        & ! Total water mixing ratio                 [kg/kg]
+      rtm_zm,        & ! Total water mixing ratio                 [kg/kg]
+      thlm_zm,       & ! Liquid potential temperature             [K]
+      rcm,           & ! Cloud water mixing ratio                 [kg/kg]
+      wprcp,         & ! w'rc'                                    [(kg/kg) m/s]
+      cloud_frac,    & ! Cloud fraction                           [-]
+      cloud_frac_zm, & ! Cloud fraction on zm levels              [-]
+      rcm_in_layer,  & ! Cloud water mixing ratio in cloud layer  [kg/kg]
+      cloud_cover      ! Cloud cover                              [-]
 
     real, intent(in), dimension(gr%nz) :: &
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
@@ -1701,6 +1703,7 @@ module stats_subs
       call stat_update_var( ia3_coef, a3_coef, zm )
       call stat_update_var( iwp3_on_wp2, wp3_on_wp2, zm )
 
+      call stat_update_var( icloud_frac_zm, cloud_frac_zm, zm )
       call stat_update_var( ircm_zm, rcm_zm, zm )
       call stat_update_var( irtm_zm, rtm_zm, zm )
       call stat_update_var( ithlm_zm, thlm_zm, zm )
@@ -1718,12 +1721,12 @@ module stats_subs
           call stat_update_var( iwpsclrprtp(i), wpsclrprtp(:,i), zm )
           call stat_update_var( iwpsclrpthlp(i), wpsclrpthlp(:,i), zm )
         end do
-      endif
+      end if
       if ( edsclr_dim > 0 ) then
         do i=1, edsclr_dim
           call stat_update_var( iwpedsclrp(i), wpedsclrp(:,i), zm )
         end do
-      endif
+      end if
 
       ! Calculate shear production
       if ( ishear > 0 ) then

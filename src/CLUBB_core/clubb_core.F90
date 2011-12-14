@@ -788,7 +788,8 @@ module clubb_core
       ! the second call to pdf_closure
       do i = 1, sclr_dim
         sclrm_zm(:,i) = zt2zm( sclrm(:,i) )
-        sclrm_zm = max( sclrm_zm, sclr_tol(i) ) ! Clip if extrap. causes sclrm_zm to be negative
+        ! Clip if extrap. causes sclrm_zm to be negative
+        sclrm_zm(gr%nz,i) = max( sclrm_zm(gr%nz,i), sclr_tol(i) ) 
       end do ! i = 1, sclr_dim
 
       ! Interpolate pressure, p_in_Pa, to momentum levels.
@@ -805,10 +806,12 @@ module clubb_core
       ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
       exner_zm(:) = (p_in_Pa_zm(:)/p0)**kappa
 
-      rtm_zm  = zt2zm( rtm )
-      rtm_zm = max( rtm_zm, rt_tol ) ! Clip if extrap. causes rtm_zm to be negative
+      rtm_zm = zt2zm( rtm )
+      ! Clip if extrap. causes rtm_zm to be negative
+      rtm_zm(gr%nz) = max( rtm_zm(gr%nz), rt_tol ) 
       thlm_zm = zt2zm( thlm )
-      thlm_zm = max( thlm_zm, thl_tol ) ! Clip if extrap. causes thlm_zm to be negative
+      ! Clip if extrap. causes thlm_zm to be negative
+      thlm_zm(gr%nz) = max( thlm_zm(gr%nz), thl_tol ) 
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       do k = 1, gr%nz, 1
@@ -1339,8 +1342,8 @@ module clubb_core
            p_in_Pa, exner, rho, rho_zm,                       & ! intent(in)
            rho_ds_zm, rho_ds_zt, thv_ds_zm,                   & ! intent(in)
            thv_ds_zt, wm_zt, wm_zm, rcm, wprcp,               & ! intent(in)
-           rcm_zm, rtm_zm, thlm_zm,                           & ! intent(in)
-           cloud_frac, rcm_in_layer, cloud_cover,             & ! intent(in)
+           rcm_zm, rtm_zm, thlm_zm, cloud_frac,               & ! intent(in)
+           cloud_frac_zm, rcm_in_layer, cloud_cover,          & ! intent(in)
            sigma_sqd_w, pdf_params,                           & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & ! intent(in)
            wpsclrp, edsclrm, edsclrm_forcing                  ) ! intent(in)
