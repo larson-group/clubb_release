@@ -413,8 +413,13 @@ subroutine logical_flags_driver
 
   ! Local Variables
 
-  real, dimension(:), allocatable :: &
-    cost_function ! Values from the cost function
+  real, dimension(two_ndim) :: &
+    cost_function  ! Values from the cost function
+
+  real, dimension(ndim) :: &
+    cost_func_sum_true,  & ! Averaged cost function when the flag is true
+    cost_func_sum_false, & ! Averaged cost function when the flag is false
+    cost_func_avg          ! Averaged cost function true - false.
 
   integer :: i, j
   integer(kind=i8) :: bit_string
@@ -422,7 +427,6 @@ subroutine logical_flags_driver
   ! ---- Begin Code ----
 
   allocate( model_flags_array(two_ndim,ndim) )
-  allocate( cost_function(two_ndim) )
 
   bit_string = 0_i8 ! Initialize bits to 00 ... 00
   do i = 1, two_ndim
@@ -434,16 +438,65 @@ subroutine logical_flags_driver
     bit_string = bit_string + 1_i8 ! Increment the binary adder
   end do
 
+  ! Compute the cost function with new set of flags.  The model_flags array is
+  ! indexed using the iter variable in min_les_clubb_diff to avoid having to
+  ! modify the Numerical Recipes code.
   do iter = 1, two_ndim
+    ! param_vals_matrix is dimension 0;  the parameters are not varied.
     cost_function(iter) = min_les_clubb_diff( param_vals_matrix(1,:) )
   end do
 
+  ! Compute a metric of false cost function - true cost function
+  cost_func_sum_true = 0.0
+  cost_func_sum_false = 0.0
+  do i = 1, two_ndim
+    do j = 1, ndim
+      if ( model_flags_array(i,j) ) then ! Flag is true
+        cost_func_sum_true(j) = cost_func_sum_true(j) + cost_function(i)
+      else ! Flag is false
+        cost_func_sum_false(j) = cost_func_sum_false(j) + cost_function(i)
+      end if
+    end do
+  end do
+  cost_func_avg(:) = cost_func_sum_false(:) - cost_func_sum_true(:)
+
+  ! Sort flags and the cost function in ascending order
   call Qsort_flags( model_flags_array, cost_function )
+
+  ! Output results to the terminal
+  write(fstdout,'(A)') "Results from trying all permutations of the flags: "
+  do i = 1, ndim
+    write(fstdout,'(I6,4X)',advance='no') i
+  end do
+  write(fstdout,'(A10)') " Cost func" 
+  do i = 1, ndim
+    write(fstdout,'(G10.3)',advance='no') cost_func_avg(i)
+  end do
+  write(fstdout,*) ""
+  do i = 1, two_ndim
+    do j = 1, ndim
+      write(fstdout,'(L6,4X)',advance='no') model_flags_array(i,j)
+    end do
+    write(fstdout,'(G10.3)') cost_function(i)
+  end do
+  write(fstdout,'(A30)') &
+    "Column 1 = upwind_wpxp_ta     ", &
+    "Column 2 = upwind_xpyp_ta     ", &
+    "Column 3 = upwind_xm_ma       ", &
+    "Column 4 = quintic_poly_interp", &
+    "Column 5 = vert_avg_closure   ", &
+    "Column 6 = single_C2_Skw      ", &
+    "Column 7 = standard_term_ta   ", &
+    "Column 8 = tke_aniso          "
 
   open(unit=iunit,file=model_flags_output)
   write(iunit,'(9A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
     "quintic_poly_interp, ", "vert_avg_closure, ", &
     "single_C2_Skw, ", "standard_term_ta, ", "tke_aniso, ", "Cost func."
+  do i = 1, ndim
+    write(iunit,'(G20.6,A2)',advance='no') cost_func_avg(i), ", "
+  end do
+  write(iunit,'(A20)') "Avg false - Avg true ,"
   do i = 1, two_ndim
     do j = 1, ndim
       write(iunit,'(L20,A2)',advance='no') model_flags_array(i,j), ", "
@@ -454,7 +507,6 @@ subroutine logical_flags_driver
   write(fstdout,*) "Results of tuning model flags written to: ", model_flags_output
 
   deallocate( model_flags_array )
-  deallocate( cost_function )
 
   return
 end subroutine logical_flags_driver
