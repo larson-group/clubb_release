@@ -380,8 +380,8 @@ though Fortran 90 allows you to omit them. \newline
 E.g. Do this:
 
 \begin{verbatim}
- xyzzy(1:gr%nzmax) = variable_arr1(1:gr%nzmax) * variable_scl1 &
-                    * variable_arr2(1:gr%nzmax)**2
+ xyzzy(1:gr%nz) = variable_arr1(1:gr%nz) * variable_scl1 &
+                    * variable_arr2(1:gr%nz)**2
 \end{verbatim}
 
 Not this:
@@ -574,7 +574,7 @@ E.g.
 
     ...
 
-  do k = 1, gr%nzmax, 1
+  do k = 1, gr%nz, 1
 
            ...
 
@@ -704,6 +704,16 @@ interpolated to a different grid.  For instance, wp2 is natively on the zm
 grid.  When it is interpolated to the zt grid, we call it ``wp2\_zt."  
 However, when wp2 is kept on the zm, we simply call it ``wp2" without 
 appending ``\_zm."
+
+\item  When using find/replace to make changes to the code, such as renaming a function or variable, mistakes can be made and overlooked. In particular, unwanted changes to comments frequently occur. To alleviate this, whenever using find/replace to make changes to the code, you must check all changes made to comments.
+
+A regular expression can easily be used with the svn diff and egrep commands to find all changes made to comments in a local revision. Simply run the command from the base directory of your CLUBB checkout. The command is as follows:
+
+\begin{verbatim}
+svn diff | egrep '(^(\+|-).*!|^---|^\+\+\+|^@@|^===)' -
+\end{verbatim}
+
+Each pipe in this egrep command represents an OR statement. The first section includes all lines from the diff that include an exclamation mark, which represents a comment. The rest of the lines include the lines that show information about the filenames and line numbers.
 
 \end{enumerate}
 

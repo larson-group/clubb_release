@@ -74,17 +74,17 @@ module sponge_layer_damping
     ! Input Variable(s)
     real(kind=time_precision), intent(in) :: dt ! Model Timestep
 
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       xm_ref ! Reference to damp to [-]
 
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       xm ! Variable being damped [-]
 
     type(sponge_damp_profile), intent(in) :: &
         damping_profile
 
     ! Output Variable(s)
-    real, dimension(gr%nzmax) :: xm_p ! Variable damped [-]
+    real, dimension(gr%nz) :: xm_p ! Variable damped [-]
 
     real :: dt_on_tau ! Ratio of timestep to damping timescale [-]
 
@@ -96,7 +96,7 @@ module sponge_layer_damping
 
       xm_p = xm
 
-      do k = gr%nzmax, gr%nzmax-damping_profile%n_sponge_damp, -1
+      do k = gr%nz, gr%nz-damping_profile%n_sponge_damp, -1
 
 ! Vince Larson used implicit discretization in order to 
 ! reduce noise in rtm in cloud_feedback_s12 (CGILS) 
@@ -152,28 +152,28 @@ module sponge_layer_damping
 
     ! ---- Begin Code ----
 
-    allocate( damping_profile%tau_sponge_damp(1:gr%nzmax))
+    allocate( damping_profile%tau_sponge_damp(1:gr%nz))
 
     if( settings%tau_sponge_damp_min < 2. * real( dt ) ) then
       write(fstderr,*) 'Error: in damping() tau_sponge_damp_min is too small!'
       stop
     end if
 
-    do k=gr%nzmax,1,-1
-      if(gr%zt(gr%nzmax)-gr%zt(k) < settings%sponge_damp_depth*gr%zt(gr%nzmax)) then
-        damping_profile%n_sponge_damp=gr%nzmax-k+1
+    do k=gr%nz,1,-1
+      if(gr%zt(gr%nz)-gr%zt(k) < settings%sponge_damp_depth*gr%zt(gr%nz)) then
+        damping_profile%n_sponge_damp=gr%nz-k+1
       endif
     end do
 
-    do k=gr%nzmax,gr%nzmax-damping_profile%n_sponge_damp,-1
+    do k=gr%nz,gr%nz-damping_profile%n_sponge_damp,-1
 ! Vince Larson added code to use standard linear interpolation.
 !      damping_profile%tau_sponge_damp(k) = settings%tau_sponge_damp_min *&
 !        (settings%tau_sponge_damp_max/settings%tau_sponge_damp_min)** &
-!        ( ( gr%zt(gr%nzmax)-gr%zt(k) ) / &
-!          (gr%zt(gr%nzmax) - gr%zt( gr%nzmax-damping_profile%n_sponge_damp ) ) )
+!        ( ( gr%zt(gr%nz)-gr%zt(k) ) / &
+!          (gr%zt(gr%nz) - gr%zt( gr%nz-damping_profile%n_sponge_damp ) ) )
       damping_profile%tau_sponge_damp(k) =                                     &
-        lin_int( gr%zt(k), gr%zt(gr%nzmax),                                     &
-          gr%zt(gr%nzmax) - gr%zt( gr%nzmax-damping_profile%n_sponge_damp ) ,    &
+        lin_int( gr%zt(k), gr%zt(gr%nz),                                     &
+          gr%zt(gr%nz) - gr%zt( gr%nz-damping_profile%n_sponge_damp ) ,    &
           settings%tau_sponge_damp_min, settings%tau_sponge_damp_max )         
 ! End Vince Larson's change
     end do

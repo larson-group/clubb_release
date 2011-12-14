@@ -343,9 +343,11 @@ module stats_zt
       iLH_cloud_frac
 
     use stats_variables, only: &
-      is_mellor, & ! Variables
+      iC11_Skw_fnc, & ! Variable(s)
+      is_mellor, &
       iwp3_on_wp2_zt, &
       ia3_coef_zt
+      
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -671,6 +673,7 @@ module stats_zt
     iLH_Nrp2_zt = 0
     iLH_Ncp2_zt = 0
 
+    iC11_Skw_fnc = 0
     ia3_coef_zt = 0
     iwp3_on_wp2_zt = 0
 
@@ -2511,6 +2514,13 @@ module stats_zt
         iLH_rrainp2_zt = k
         call stat_assign( iLH_rrainp2_zt, "LH_rrainp2_zt", & 
              "Variance of the latin hypercube estimate of rrain [kg^2/kg^2]", "kg^2/kg^2", zt )
+        k = k + 1
+
+      case ('C11_Skw_fnc')
+        iC11_Skw_fnc = k
+
+        call stat_assign( iC11_Skw_fnc, "C11_Skw_fnc", & 
+             "C_11 parameter with Sk_w applied [-]", "count", zt )
         k = k + 1
 
       case ('s_mellor')

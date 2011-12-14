@@ -26,7 +26,8 @@ module constants_clubb
     sec_per_hr, sec_per_min, min_per_hr, g_per_kg, mm_per_m, T_freeze_K, &
     Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
     cm3_per_m3, micron_per_m, pascal_per_mb, parab_cyl_max_input,  &
-    gamma_over_implicit_ts, Lscale_pert_coef, cloud_frac_min
+    gamma_over_implicit_ts, Lscale_pert_coef, Lscale_mu_coef, &
+    cloud_frac_min
 
   private ! Default scope
 
@@ -105,6 +106,9 @@ module constants_clubb
 
   ! Coefficient to perterb thlm and rtm for an average calculation of Lscale
   real, parameter :: Lscale_pert_coef = 0.1  ! [-]
+
+  ! Coefficient to perterb mu for an average calculation of Lscale
+  real, parameter :: Lscale_mu_coef = 2.0  ! [-]
 
   !-----------------------------------------------------------------------------
   ! Mathematical Constants

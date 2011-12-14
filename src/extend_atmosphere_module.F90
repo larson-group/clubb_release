@@ -198,19 +198,18 @@ module extend_atmosphere_module
                                               extend_atmos_top_level, &
                                               extend_atmos_range_size, &
                                               lin_int_buffer_size )
-    !  Description: This subroutine determines the bottom and top levels of the
-    !  extended atmosphere to use for a given radiation_top and grid. It also
-    !  computes the amount of a linear interpolation buffer between the grid and
-    !  the extended atmosphere.
+    ! Description: 
+    !   This subroutine determines the bottom and top levels of the
+    !   extended atmosphere to use for a given radiation_top and grid. It also
+    !   computes the amount of a linear interpolation buffer between the grid and
+    !   the extended atmosphere.
     !
-    !  The linear interpolation buffer is used to counter cooling spikes caused
-    !  by a potentially large difference in temperature between the extended
-    !  atmosphere profile and the CLUBB profile.
+    !   The linear interpolation buffer is used to counter cooling spikes caused
+    !   by a potentially large difference in temperature between the extended
+    !   atmosphere profile and the CLUBB profile.
     !
-    !
-    !  References:
-    !    None
-    !
+    ! References:
+    !   None
     !----------------------------------------------------------------------------------------------
 
 
@@ -222,47 +221,50 @@ module extend_atmosphere_module
 
     implicit none
 
+    ! External
+    intrinsic :: real, max, int
+
     ! Input Variable(s)
     integer, intent(in) :: grid_size ! Size of the model grid  [-]
 
-    real, dimension(grid_size), intent(in) :: zt_grid ! Model grid [m]
-
-    real, dimension(grid_size), intent(in) :: zm_grid ! Model grid [m]
-
     real, dimension(grid_size), intent(in) :: &
-      zm_grid_spacing ! Inverse spacing between grid levels [m]
+      zt_grid,       & ! Thermodynamic grid [m]
+      zm_grid,       & ! Momentum grid [m]
+      zm_grid_spacing  ! Inverse spacing between zm grid levels [m]
 
     real, intent(in) :: radiation_top ! Maximum height to extend to [m]
 
     ! Output Variable(s)
     integer, intent(out) :: &
-      extend_atmos_bottom_level, & ! Index of lowest point to
-      !                              use for atmosphere extension [-]
-      extend_atmos_top_level, &    ! Index of highest point to 
-      !                              use for atmosphere extension [-]
+      extend_atmos_bottom_level, & ! Index of lowest point to use for atmosphere extension [-]
+      extend_atmos_top_level, &    ! Index of highest point to use for atmosphere extension [-]
       extend_atmos_range_size, &   ! Size of the range between the 
       !                              two points bounds for atmosphere extension[-]
       lin_int_buffer_size          ! Size of linear interpolation buffer [-]
 
     ! Local Variable(s)
-    integer :: k, j, i
-    real( kind = dp ) :: dz10, dz_model, dz_extension, dz
-    real( kind = dp ) :: zm_grid_top, extend_bottom, buffer_size
+    real(kind=dp) :: &
+      dz10, dz_model, dz_extension, dz, &
+      zm_grid_top, extend_bottom, buffer_size
 
-    ! -- Begin Code --
+    integer :: i, j, k ! Loop indices
+
+    ! ---- Begin Code ----
 
     ! Determine the bounds to use for the extended atmosphere
 
     j=1
-    do while( extend_alt(j) < dble( zm_grid(grid_size) ) .and. j < extend_atmos_dim )
+    do while ( extend_alt(j) < real( zm_grid(grid_size), kind=dp ) .and. j < extend_atmos_dim )
       j= j+1
     end do
 
-    if ( extend_alt(j) < dble( zm_grid(grid_size) ) ) then
+    if ( extend_alt(j) < real( zm_grid(grid_size), kind=dp ) ) then
+      write(fstderr,*) "In subroutine determine_extend_atmos_bounds"
       stop "Extended atmosphere is below the top of the computational grid"
     end if
 
-    if ( extend_alt(extend_atmos_dim) < dble( radiation_top ) ) then
+    if ( extend_alt(extend_atmos_dim) < real( radiation_top, kind=dp ) ) then
+      write(fstderr,*) "In subroutine determine_extend_atmos_bounds"
       write(fstderr,*) "Atmosphere cannot be extended because extension data does ", &
                          "not reach radiation_top"
       stop
@@ -270,15 +272,15 @@ module extend_atmosphere_module
 
     k=1
 
-    if( j <= extend_atmos_dim ) then
+    if ( j <= extend_atmos_dim ) then
 
-      do while( extend_alt(k) < dble( radiation_top ) .and. k < extend_atmos_dim )
+      do while( extend_alt(k) < real( radiation_top, kind=dp ) .and. k < extend_atmos_dim )
         k= k+1
       end do
 
       ! It is possible we could be above the specified radiation top, check
       ! and roll back if neccessary
-      if( extend_alt(k) > dble( radiation_top ) ) then
+      if( extend_alt(k) > real( radiation_top, kind=dp ) ) then
         k= k-1
       end if
 
@@ -291,20 +293,21 @@ module extend_atmosphere_module
     extend_atmos_top_level = k
     extend_atmos_range_size = k - j + 1
 
-    if( extend_atmos_range_size < 1 ) then
+    if ( extend_atmos_range_size < 1 ) then
+      write(fstderr,*) "In subroutine determine_extend_atmos_bounds"
       stop "radiation top below computational grid"
     end if
 
     ! Get the altitudes for a couple of key points so we can calculate a buffer
     ! size
-    zm_grid_top =  dble( zm_grid(grid_size) ) !Altitude at top of normal grid
+    zm_grid_top =  real( zm_grid(grid_size), kind=dp ) !Altitude at top of normal grid
     extend_bottom = extend_alt(extend_atmos_bottom_level) !Altitude at bottom of
                                                           !extended atmos
     
     ! Determine the spacing of the lin_int_buffer, it should have no more than
     ! 10 levels.
     dz10 = (extend_bottom - zm_grid_top) / 10._dp
-    dz_model = dble( zm_grid_spacing(grid_size) )
+    dz_model = real( zm_grid_spacing(grid_size), kind=dp )
     dz = max( dz10, dz_model )
     ! Calculate the size of the lin_int_buffer
     buffer_size = (extend_bottom - zm_grid_top) / dz
@@ -316,43 +319,52 @@ module extend_atmosphere_module
     ! Build the complete momentum grid
     ! The extended momentum grid contains one level above the
     ! extended thermodynamic grid.
-    allocate( complete_momentum(1:total_atmos_dim + 1) )
+    allocate( complete_momentum(total_atmos_dim + 1) )
 
-    i = 0 !The number of extension levels used
-    do j=1, total_atmos_dim + 1
-      if (j <= grid_size) then
-        complete_momentum(j) = zm_grid(j)
-      elseif(j > grid_size .and. j <= (grid_size + lin_int_buffer_size)) then 
-        !Interpolate between the top of the computational grid and the bottom
-        !of the extended altitude
-        complete_momentum(j) = real(zm_grid_top  + (extend_bottom - zm_grid_top) )/ & 
-                          real( lin_int_buffer_size + 1 ) * &
-                          real( j - grid_size )
-      elseif(i < extend_atmos_range_size) then
-        !Take values from the extended atmosphere    
-        complete_momentum(j) = real(extend_alt(extend_atmos_bottom_level + i))
-        ! Keep track of where we are in the extended atmosphere
-        i = i + 1
+    forall ( j=1:grid_size ) ! Loop from the lowest zm level to zm_grid_top
+      complete_momentum(j) = zm_grid(j)
+    end forall
+
+    ! Interpolate between the top of the computational grid and the bottom
+    ! of the extended altitude
+    i = 1 ! Tracks the number of interpolation levels used
+    do j=grid_size+1, grid_size+lin_int_buffer_size
+      complete_momentum(j) = real( zm_grid_top ) + real( dz ) * real( i )
+      i = i + 1
+    end do
+
+    i = 0 ! Tracks the number of extension levels used
+    do j=grid_size+lin_int_buffer_size, total_atmos_dim
+      ! Take values from the extended atmosphere    
+      complete_momentum(j) = real( extend_alt(extend_atmos_bottom_level + i) )
+      ! Keep track of where we are in the extended atmosphere
+      i = i + 1
+      if ( i+extend_atmos_bottom_level == extend_atmos_dim ) then
+        exit
       else
-        !We should only get here for the absolute topmost point, which is a
-        !linear extension
-        dz_extension = dble( complete_momentum(j-1) - complete_momentum(j-2) )
-        complete_momentum(j) = complete_momentum(j-1) + real( dz_extension )
-      endif 
+        cycle ! Loop to next point
+      end if
+    end do
+
+    ! Use a linear extension for the topmost points (generally this is only 1 or 2 points)
+    do j = i, total_atmos_dim + 1
+      dz_extension = real( complete_momentum(j-1) - complete_momentum(j-2), kind=dp )
+      complete_momentum(j) = complete_momentum(j-1) + real( dz_extension )
     end do
     
-    allocate( complete_alt(1:total_atmos_dim) )
+    allocate( complete_alt(total_atmos_dim) )
 
-    ! Build the total atmosphere grid
-    do j=1, total_atmos_dim
-      if (j <= grid_size) then
-        complete_alt(j) = zt_grid(j)
-      else    
-        !Linear extension above zt_grid so points are between momentum levels
-        complete_alt(j) = (complete_momentum(j - 1) + complete_momentum(j)) / 2.
-      endif 
-    end do
+    ! Build the total atmosphere grid for the zt levels
+    forall ( j=1:grid_size )
+      complete_alt(j) = zt_grid(j)
+    end forall
 
+    forall ( j=grid_size+1:total_atmos_dim )
+      ! Use a linear extension above the zt_grid so the points are between the momentum levels
+      complete_alt(j) = (complete_momentum(j-1) + complete_momentum(j)) / 2.
+    end forall
+
+    return
   end subroutine determine_extend_atmos_bounds
 
   !-------------------------------------------------------------------------------------------------
@@ -381,6 +393,9 @@ module extend_atmosphere_module
       press_mb_name, &
       sp_humidity_name
 
+    use clubb_precision, only: &
+      dp ! double precision
+
     implicit none
 
     ! Constant Parameters
@@ -406,26 +421,26 @@ module extend_atmosphere_module
 
     ! Allocate and initialize variables for standard atmosphere
 
-    allocate( extend_alt(1:extend_atmos_dim) )
-    allocate( extend_T_in_K(1:extend_atmos_dim) )
-    allocate( extend_sp_hmdty(1:extend_atmos_dim) )
-    allocate( extend_pinmb(1:extend_atmos_dim) )
-    allocate( extend_o3l(1:extend_atmos_dim) )
+    allocate( extend_alt(extend_atmos_dim) )
+    allocate( extend_T_in_K(extend_atmos_dim) )
+    allocate( extend_sp_hmdty(extend_atmos_dim) )
+    allocate( extend_pinmb(extend_atmos_dim) )
+    allocate( extend_o3l(extend_atmos_dim) )
 
-    extend_alt = dble( read_x_profile( nCol, extend_atmos_dim, z_name, retVars, &
-                                 atm_input_file ) )
+    extend_alt = real( read_x_profile( nCol, extend_atmos_dim, z_name, retVars, &
+                                 atm_input_file ), kind=dp )
 
-    extend_T_in_K = dble( read_x_profile( nCol, extend_atmos_dim, temperature_name, retVars, &
-                                    atm_input_file ) )
+    extend_T_in_K = real( read_x_profile( nCol, extend_atmos_dim, temperature_name, retVars, &
+                                    atm_input_file ), kind=dp )
 
-    extend_sp_hmdty = dble( read_x_profile( nCol, extend_atmos_dim, sp_humidity_name, retVars, &
-                                      atm_input_file ) )
+    extend_sp_hmdty = real( read_x_profile( nCol, extend_atmos_dim, sp_humidity_name, retVars, &
+                                      atm_input_file ), kind=dp )
 
-    extend_pinmb = dble( read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars, &
-                                   atm_input_file ) )
+    extend_pinmb = real( read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars, &
+                                   atm_input_file ), kind=dp )
 
-    extend_o3l = dble( read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars, &
-                                 atm_input_file ) )
+    extend_o3l = real( read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars, &
+                                 atm_input_file ), kind=dp )
 
     ! Deallocate memory
     call deallocate_one_dim_vars( nCol, retVars )

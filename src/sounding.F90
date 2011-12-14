@@ -95,7 +95,7 @@ module sounding
       zm_init ! Height at zm(1)         [m]
 
     ! Output variables
-    real, intent(out), dimension(gr%nzmax) ::  & 
+    real, intent(out), dimension(gr%nz) ::  & 
       thlm,  & ! Liquid water potential temperature    [K]
       rtm,   & ! Total water mixing ratio              [kg/kg]
       um,    & ! u wind component                      [m/s]
@@ -114,10 +114,10 @@ module sounding
       alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
-    real, intent(out), dimension(gr%nzmax, sclr_dim) ::  & 
+    real, intent(out), dimension(gr%nz, sclr_dim) ::  & 
       sclrm   ! Passive scalar output      [units vary]
 
-    real, intent(out), dimension(gr%nzmax, edsclr_dim) ::  & 
+    real, intent(out), dimension(gr%nz, edsclr_dim) ::  & 
       edsclrm ! Eddy Passive scalar output [units vary]
 
     ! Local variables
@@ -291,7 +291,7 @@ module sounding
     ! Use linear interpolation from two nearest prescribed grid points
     ! (one above and one below) to initialize mean quantities in the model
     ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
-    do i=2, gr%nzmax
+    do i=2, gr%nz
       k=1
       do while ( z(k) < gr%zt(i) )
         k=k+1
@@ -301,7 +301,7 @@ module sounding
               write(fstderr,'(a,f7.1,/a,f7.1)') &
                '  highest sounding level', z(nlevels),&
                '  should be higher than highest thermodynamic point',&
-               gr%zt(gr%nzmax)
+               gr%zt(gr%nz)
               stop 'STOP in sounding'
           exit
         end if  ! k > nlevels
@@ -380,7 +380,7 @@ module sounding
 
       end do ! do while ( z(k) < gr%zt(i) )
 
-    end do   ! i=2, gr%nzmax
+    end do   ! i=2, gr%nz
 
 
     ! The sounding will be initialized to thermodynamic grid levels successfully
@@ -696,7 +696,7 @@ module sounding
     character(len=*), intent(in) :: fname
 
     ! Output Variable
-    real, dimension(gr%nzmax), intent(out) :: x
+    real, dimension(gr%nz), intent(out) :: x
 
     ! Local variables
 
@@ -742,7 +742,7 @@ module sounding
     ! (one above and one below) to initialize mean quantities in the model
     ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
 
-    do i = 2, gr%nzmax
+    do i = 2, gr%nz
       k = 1
       do while ( z(k) < gr%zt(i) )
         k = k + 1
@@ -752,7 +752,7 @@ module sounding
           write(fstderr,'(a,f7.1,/a,f7.1)') ' Highest sounding level',  &
                z(nlevels),  &
                'should be higher than highest thermodynamic point',  &
-               gr%zt(gr%nzmax)
+               gr%zt(gr%nz)
           write(*,*) ' Filename: ', fname
           stop 'STOP in read_profile (sounding.F90)'
         endif

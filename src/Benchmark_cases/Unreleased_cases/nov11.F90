@@ -60,7 +60,7 @@ module nov11
       dt              ! Timestep              [s]
 
     ! Input/Output variables
-    real, intent(inout), dimension(gr%nzmax) :: & 
+    real, intent(inout), dimension(gr%nz) :: & 
       rtm     ! Total water mixing ratio      [kg/kg]
 
     ! Local variables
@@ -82,8 +82,8 @@ module nov11
     if ( time >= time_initial + 3600.0_time_precision  .and. & 
          time <  time_initial + 3600.0_time_precision + dt ) then
 
-      do k = 1, gr%nzmax, 1
-        if ( gr%zt(k) > ( 2687.5 + gr%zm(1) ) ) then
+      do k = 1, gr%nz, 1
+        if ( gr%zt(k) > ( 2900.0 + gr%zm(1) ) ) then
           rtm(k) = 0.89 * rtm(k) ! Known magic number
         end if
       end do
@@ -149,20 +149,20 @@ module nov11
       dt              ! Timestep              [s]
 
     ! Input/Output variables
-    real, intent(inout), dimension(gr%nzmax) :: & 
+    real, intent(inout), dimension(gr%nz) :: & 
       rtm     ! Total water mixing ratio      [kg/kg]
 
     ! Output variables
-    real, intent(out), dimension(gr%nzmax) :: & 
+    real, intent(out), dimension(gr%nz) :: & 
       wm_zt,           & ! Mean vertical wind on the thermo. grid  [m/s]
       wm_zm,           & ! Mean vertical wind on the moment. grid  [m/s]
       thlm_forcing,    & ! Theta_l forcing                         [K/s]
       rtm_forcing        ! Total water forcing                     [kg/kg/s]
 
-    real, intent(out), dimension(gr%nzmax,sclr_dim) :: & 
+    real, intent(out), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing   ! Passive scalar forcing                  [units/s]
 
-    real, intent(out), dimension(gr%nzmax,edsclr_dim) :: & 
+    real, intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing   ! Passive scalar forcing                  [units/s]
 
 
@@ -259,8 +259,8 @@ module nov11
     if ( time >= time_initial + 3600.0_time_precision  .and. & 
          time <  time_initial + 3600.0_time_precision + dt ) then
 
-      do k = 1, gr%nzmax, 1
-        if ( gr%zt(k) > ( 2687.5 + gr%zm(1) ) ) then
+      do k = 1, gr%nz, 1
+        if ( gr%zt(k) > ( 2900.0 + gr%zm(1) ) ) then
           rtm(k) = 0.89 * rtm(k) ! Known magic number
         end if
       end do
@@ -313,7 +313,7 @@ module nov11
 ! Comment by Adam Smith on 26 June 2006
 !-----------------------------------------------------------------------
 
-    do k=2,gr%nzmax
+    do k=2,gr%nz
       if ( (time >= time_initial + 3600.0_time_precision ) .and. l_subs_on ) then
         if ( gr%zt(k) <= zsubs(7) ) then
           nparam = 7
@@ -340,7 +340,7 @@ module nov11
     wm_zm = zt2zm(wm_zt)
 
     ! Enter the final rtm tendency
-    do k = 1, gr%nzmax, 1
+    do k = 1, gr%nz, 1
 
       rtm_forcing(k) = 0.
 

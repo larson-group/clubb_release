@@ -658,7 +658,9 @@ module lapack_wrap
 !-----------------------------------------------------------------------
 
     implicit none
-#ifdef __sun
+#ifdef NO_LAPACK_ISNAN /* Used for older LAPACK libraries that don't have sisnan/disnan */
+
+    intrinsic :: any
 
     integer, intent(in) :: &
       ndim, & ! Size of variable
@@ -703,7 +705,7 @@ module lapack_wrap
     else
       stop "lapack_isnan: Cannot resolve the precision of real datatype"
     end if
-#endif
+#endif /* NO_LAPACK_ISNAN */
 
     return
   end function lapack_isnan

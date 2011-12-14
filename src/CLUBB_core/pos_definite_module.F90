@@ -70,16 +70,16 @@ module pos_definite_module
     character(len=2), intent(in) :: & 
       field_grid ! The grid of the field, either zt or zm
 
-    real, dimension(gr%nzmax), intent(in) ::  & 
+    real, dimension(gr%nz), intent(in) ::  & 
       field_n ! The field (e.g. rtm) at n, prior to n+1
 
-    real, dimension(gr%nzmax), intent(out) ::  & 
+    real, dimension(gr%nz), intent(out) ::  & 
       flux_pd,  & ! Budget of the change in the flux term due to the scheme
       field_pd    ! Budget of the change in the mean term due to the scheme
 
     ! Output Variables
 
-    real, intent(inout), dimension(gr%nzmax) :: & 
+    real, intent(inout), dimension(gr%nz) :: & 
       field_np1,   & ! Field at n+1 (e.g. rtm in [kg/kg])
       flux_np1    ! Flux applied to field
 
@@ -91,13 +91,13 @@ module pos_definite_module
     integer ::  & 
       k, kmhalf, kp1, kphalf ! Loop indices
 
-    real, dimension(gr%nzmax) :: & 
+    real, dimension(gr%nz) :: & 
       flux_plus, flux_minus, & ! [F_i+1/2]^+ [F_i+1/2]^- in Smolarkiewicz 
       fout,                  & ! (A4) F_i{}^OUT, or the sum flux_plus+flux_minus
       flux_lim,              & ! Correction applied to flux at n+1
       field_nonlim          ! Temporary variable for calculation
 
-    real, dimension(gr%nzmax) ::  & 
+    real, dimension(gr%nz) ::  & 
       dz_over_dt ! Conversion factor  [m/s]
 
 
@@ -130,7 +130,7 @@ module pos_definite_module
       print *, "Correcting flux"
     end if
 
-    do k = 1, gr%nzmax, 1
+    do k = 1, gr%nz, 1
 
       ! Def. of F+ and F- from eqn 2 Smolarkowicz
       flux_plus(k)  =  max( zero_threshold, flux_np1(k) ) ! defined on flux levels
@@ -146,14 +146,14 @@ module pos_definite_module
 
     end do
 
-    do k = 1, gr%nzmax, 1
+    do k = 1, gr%nz, 1
       ! If the scalar variable is on the kth t-level, then
       ! Smolarkowicz's k+1/2 flux level is the kth m-level in CLUBB.
 
       ! If the scalar variable is on the kth m-level, then
       ! Smolarkowicz's k+1/2 flux level is the k+1 t-level in CLUBB.
 
-      kphalf = min( k+kabove, gr%nzmax ) ! k+1/2 flux level
+      kphalf = min( k+kabove, gr%nz ) ! k+1/2 flux level
       kmhalf = max( k-kbelow, 1 )       ! k-1/2 flux level
 
       ! Eqn A4 from Smolarkowicz
@@ -166,14 +166,14 @@ module pos_definite_module
     end do
 
 
-    do k = 1, gr%nzmax, 1
+    do k = 1, gr%nz, 1
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! FIXME:
-      ! We haven't tested this for negative values at the gr%nzmax level
+      ! We haven't tested this for negative values at the gr%nz level
       ! -dschanen 13 June 2008
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      kphalf = min( k+kabove, gr%nzmax ) ! k+1/2 flux level
-      kp1    = min( k+1, gr%nzmax )      ! k+1 scalar level
+      kphalf = min( k+kabove, gr%nz ) ! k+1/2 flux level
+      kp1    = min( k+1, gr%nz )      ! k+1 scalar level
 
       ! Eqn 10 from Smolarkowicz (1989)
 
@@ -189,7 +189,7 @@ module pos_definite_module
 
     ! Boundary conditions
     flux_lim(1) = flux_np1(1)
-    flux_lim(gr%nzmax) = flux_np1(gr%nzmax)
+    flux_lim(gr%nz) = flux_np1(gr%nz)
 
     flux_pd = ( flux_lim - flux_np1 ) / real( dt )
 

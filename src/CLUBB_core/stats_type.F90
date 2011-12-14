@@ -235,7 +235,7 @@ module stats_type
     integer, intent(in) ::  & 
       var_index      ! The index at which the variable is stored           []
 
-    real, dimension(gr%nzmax), intent(in) :: & 
+    real, dimension(gr%nz), intent(in) :: & 
       value          ! Value of field being added to the statistic         [Units Vary]
 
     ! Input/Output Variable(s)
@@ -244,7 +244,7 @@ module stats_type
 
     integer :: i
 
-    do i = 1, gr%nzmax
+    do i = 1, gr%nz
 
       call stat_begin_update_pt & 
             ( var_index, i, value(i), grid_kind )
@@ -357,7 +357,7 @@ module stats_type
     integer, intent(in) ::  & 
       var_index ! The index at which the variable is stored           []
 
-    real, dimension(gr%nzmax), intent(in) :: & 
+    real, dimension(gr%nz), intent(in) :: & 
       value ! Value of field being added to the statistic             [Units Vary]
 
     ! Input/Output Variable(s)
@@ -368,7 +368,7 @@ module stats_type
 
     ! ---- Begin Code ----
 
-    do i = 1,gr%nzmax
+    do i = 1,gr%nz
       call stat_end_update_pt & 
                ( var_index, i, value(i), grid_kind )
     enddo
@@ -453,7 +453,7 @@ module stats_type
     integer, intent(in) ::  & 
       var_index ! The index at which the variable is stored           []
 
-    real, dimension(gr%nzmax), intent(in) :: & 
+    real, dimension(gr%nz), intent(in) :: & 
      value     ! Value of field being added to the statistic         [Units Vary]
 
     ! Input/Output Variable(s)
@@ -464,7 +464,7 @@ module stats_type
 
     ! ---- Begin Code ----
 
-    do i = 1, gr%nzmax
+    do i = 1, gr%nz
 
       call stat_modify_pt( var_index, i, value(i), grid_kind )
 

@@ -23,7 +23,7 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine LH_subcolumn_generator &
-             ( iter, d_variables, n_micro_calls, sequence_length, nzmax, &
+             ( iter, d_variables, n_micro_calls, sequence_length, nz, &
                thlm, pdf_params, wm_zt, delta_zm, rcm, rvm, &
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
                corr_array_cloud, corr_array_below, Lscale_vert_avg, &
@@ -99,21 +99,21 @@ module latin_hypercube_driver_module
       d_variables,     & ! Number of variables to sample
       n_micro_calls,   & ! Number of calls to microphysics per timestep (normally=2)
       sequence_length, & ! nt_repeat/n_micro_call; number of timesteps before sequence repeats.
-      nzmax               ! Number of vertical model levels
+      nz               ! Number of vertical model levels
 
-    type(pdf_parameter), dimension(nzmax), intent(in) :: & 
+    type(pdf_parameter), dimension(nz), intent(in) :: & 
       pdf_params ! PDF parameters       [units vary]
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       thlm,      & ! Liquid potential temperature         [K]
       wm_zt,     & ! Mean w                             [m/s]
       delta_zm     ! Difference in moment. altitudes    [m]
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       rcm, & ! Liquid water mixing ratio        [kg/kg]
       rvm    ! Vapor water mixing ratio         [kg/kg]
 
-    real, dimension(nzmax,hydromet_dim), intent(in) :: &
+    real, dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     real, dimension(d_variables), intent(in) :: &
@@ -124,17 +124,17 @@ module latin_hypercube_driver_module
       corr_array_cloud, & ! Correlation for hydrometeor species [-]
       corr_array_below
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
 
     ! Output Variables
-    real( kind = dp ), intent(out), dimension(nzmax,n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(out), dimension(nz,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    integer, intent(out), dimension(nzmax,n_micro_calls) :: &
+    integer, intent(out), dimension(nz,n_micro_calls) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real, intent(out), dimension(nzmax,n_micro_calls) :: &
+    real, intent(out), dimension(nz,n_micro_calls) :: &
       LH_rt, LH_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
 
     real, intent(out), dimension(n_micro_calls) :: &
@@ -142,7 +142,7 @@ module latin_hypercube_driver_module
 
     ! Local variables
 
-    real(kind=genrand_real), dimension(nzmax,n_micro_calls,(d_variables+1)) :: &
+    real(kind=genrand_real), dimension(nz,n_micro_calls,(d_variables+1)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
 
     integer :: p_matrix(n_micro_calls,d_variables+1)
@@ -157,7 +157,7 @@ module latin_hypercube_driver_module
     real(kind=genrand_real), dimension(n_micro_calls) :: &
       X_u_dp1_k_lh_start, X_u_s_mellor_k_lh_start
 
-    real(kind=genrand_real), dimension(nzmax) :: &
+    real(kind=genrand_real), dimension(nz) :: &
       X_vert_corr ! Vertical correlation of a variate   [-]
 
     real(kind=genrand_real) :: X_u_temp
@@ -183,7 +183,7 @@ module latin_hypercube_driver_module
       ! If this is first time latin_hypercube_driver is called, then allocate
       ! the height_time_matrix and set the prior iteration number for debugging
       ! purposes.
-      allocate( height_time_matrix(nzmax, nt_repeat, d_variables+1) )
+      allocate( height_time_matrix(nz, nt_repeat, d_variables+1) )
 
       prior_iter = iter
 
@@ -223,11 +223,11 @@ module latin_hypercube_driver_module
     LH_sample_point_weights(1:n_micro_calls)  = 1.0
 
     ! Latin hypercube sample generation
-    ! Generate height_time_matrix, an nzmax x nt_repeat x d_variables array of random integers
+    ! Generate height_time_matrix, an nz x nt_repeat x d_variables array of random integers
     i_rmd = mod( iter-1, sequence_length )
 
     if ( i_rmd == 0 ) then
-      call permute_height_time( nzmax, nt_repeat, d_variables+1, & ! intent(in)
+      call permute_height_time( nz, nt_repeat, d_variables+1, & ! intent(in)
                                 height_time_matrix )              ! intent(out)
     end if
     ! End Latin hypercube sample generation
@@ -245,10 +245,10 @@ module latin_hypercube_driver_module
     k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm for now
 
     ! If there's no cloud k_lh_start appears to end up being 1.  Check if
-    ! k_lh_start is 1 or nzmax and set it to the middle of the domain in that
+    ! k_lh_start is 1 or nz and set it to the middle of the domain in that
     ! case.
-    if ( k_lh_start == nzmax .or. k_lh_start == 1 ) then
-      k_lh_start = nzmax / 2
+    if ( k_lh_start == nz .or. k_lh_start == 1 ) then
+      k_lh_start = nz / 2
     end if
 
     if ( l_lh_cloud_weighted_sampling ) then
@@ -335,19 +335,19 @@ module latin_hypercube_driver_module
       end do ! 1..n_micro_calls
 
       ! Use a fixed number for the vertical correlation.
-!     X_vert_corr(1:nzmax) = 0.95_genrand_real
+!     X_vert_corr(1:nz) = 0.95_genrand_real
 
       ! Compute vertical correlation using a formula based on Lscale, the
       ! the difference in height levels, and an empirical constant
-      X_vert_corr(1:nzmax) = &
-        real( compute_vert_corr( nzmax, delta_zm, Lscale_vert_avg ), kind=genrand_real )
+      X_vert_corr(1:nz) = &
+        real( compute_vert_corr( nz, delta_zm, Lscale_vert_avg ), kind=genrand_real )
 
       ! Assertion check for the vertical correlation
       if ( clubb_at_least_debug_level( 1 ) ) then
         if ( any( X_vert_corr > 1.0 ) .or. any( X_vert_corr < 0.0 ) ) then
           write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
             "is not in the correct range"
-          do k = 1, nzmax
+          do k = 1, nz
             write(fstderr,*) "k = ", k,  "Vert. correlation = ", X_vert_corr(k)
           end do
         end if ! Some correlation isn't between [0,1]
@@ -356,13 +356,13 @@ module latin_hypercube_driver_module
       do sample = 1, n_micro_calls
         ! Correlate s_mellor vertically
         call compute_arb_overlap &
-             ( nzmax, k_lh_start, &  ! In
+             ( nz, k_lh_start, &  ! In
                X_u_s_mellor_k_lh_start(sample), X_vert_corr, & ! In
                X_u_all_levs(:,sample,iiLH_s_mellor) ) ! Out
         ! Correlate the d+1 variate vertically (used to compute the mixture
         ! component later)
         call compute_arb_overlap &
-             ( nzmax, k_lh_start, &  ! In
+             ( nz, k_lh_start, &  ! In
                X_u_dp1_k_lh_start(sample), X_vert_corr, & ! In
                X_u_all_levs(:,sample,d_variables+1) ) ! Out
 
@@ -372,7 +372,7 @@ module latin_hypercube_driver_module
           if ( ivar /= iiLH_s_mellor ) then
             X_u_temp = X_u_all_levs(k_lh_start,sample,ivar)
             call compute_arb_overlap &
-                 ( nzmax, k_lh_start, &  ! In
+                 ( nz, k_lh_start, &  ! In
                    X_u_temp, X_vert_corr, & ! In
                    X_u_all_levs(:,sample,ivar) ) ! Out
           end if
@@ -385,7 +385,7 @@ module latin_hypercube_driver_module
       ! %% Debug %%
     else ! Random overlap
 
-      do k = 1, nzmax
+      do k = 1, nz
         ! Choose which rows of LH sample to feed into closure.
         p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
           height_time_matrix(k, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
@@ -395,12 +395,12 @@ module latin_hypercube_driver_module
         !  X_u has one extra dimension for the mixture component.
         call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
                                       X_u_all_levs(k,:,:) ) ! Out
-      end do ! 1..nzmax
+      end do ! 1..nz
 
     end if ! l_lh_vert_overlap
 
     ! Determine mixture component for all levels
-    do k = 1, nzmax
+    do k = 1, nz
 
       mixt_frac_dp = dble( pdf_params(k)%mixt_frac )
 
@@ -410,7 +410,7 @@ module latin_hypercube_driver_module
         X_mixt_comp_all_levs(k,:) = 2
       end where
 
-    end do ! k = 1 .. nzmax
+    end do ! k = 1 .. nz
 
     ! Assertion check for whether half of sample points are cloudy.
     ! This is for the uniform sample only.  Another assertion check is in the
@@ -450,7 +450,7 @@ module latin_hypercube_driver_module
     end if ! l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 )
 
     ! Upwards loop
-    do k = k_lh_start, nzmax, 1
+    do k = k_lh_start, nz, 1
       ! Generate LH sample, represented by X_u and X_nl, for level k
       call generate_lh_sample &
            ( n_micro_calls, d_variables, hydromet_dim, &  ! In
@@ -470,7 +470,7 @@ module latin_hypercube_driver_module
              corr_array_cloud, corr_array_below, & ! In
              X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
-    end do ! k = k_lh_start..nzmax
+    end do ! k = k_lh_start..nz
 
     ! Downwards loop
     do k = k_lh_start-1, 1, -1
@@ -495,11 +495,11 @@ module latin_hypercube_driver_module
     end do ! k_lh_start-1..1
 
     if ( l_output_2D_lognormal_dist ) then
-      call output_2D_lognormal_dist_file( nzmax, n_micro_calls, d_variables, &
+      call output_2D_lognormal_dist_file( nz, n_micro_calls, d_variables, &
                                           X_nl_all_levs, LH_rt, LH_thl )
     end if
     if ( l_output_2D_uniform_dist ) then
-      call output_2D_uniform_dist_file( nzmax, n_micro_calls, d_variables+1, &
+      call output_2D_uniform_dist_file( nz, n_micro_calls, d_variables+1, &
                                         X_u_all_levs, X_mixt_comp_all_levs, &
                                         p_matrix )
     end if
@@ -520,7 +520,7 @@ module latin_hypercube_driver_module
 
   !=============================================================================
   subroutine LH_microphys_driver &
-             ( dt, nzmax, n_micro_calls, d_variables, &
+             ( dt, nz, n_micro_calls, d_variables, &
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, &
                pdf_params, p_in_Pa, exner, rho, &
                rcm, w_std_dev, delta_zt, cloud_frac, &
@@ -569,28 +569,28 @@ module latin_hypercube_driver_module
     integer, intent(in) :: &
       d_variables,     & ! Number of variables to sample
       n_micro_calls,   & ! Number of calls to microphysics per timestep (normally=2)
-      nzmax               ! Number of vertical model levels
+      nz               ! Number of vertical model levels
 
     ! Input Variables
-    real( kind = dp ), intent(in), dimension(nzmax,n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(in), dimension(nz,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    integer, intent(in), dimension(nzmax,n_micro_calls) :: &
+    integer, intent(in), dimension(nz,n_micro_calls) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real, intent(in), dimension(nzmax,n_micro_calls) :: &
+    real, intent(in), dimension(nz,n_micro_calls) :: &
       LH_rt, LH_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
 
     real, intent(in), dimension(n_micro_calls) :: &
       LH_sample_point_weights ! Weight given the individual sample points
 
-    type(pdf_parameter), dimension(nzmax), intent(in) :: & 
+    type(pdf_parameter), dimension(nz), intent(in) :: & 
       pdf_params ! PDF parameters       [units vary]
 
-    real, dimension(nzmax,hydromet_dim), intent(in) :: &
+    real, dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       cloud_frac,  & ! Cloud fraction               [-]
       w_std_dev,   & ! Standard deviation of w      [m/s]
       delta_zt,    & ! Change in meters with height [m]
@@ -600,12 +600,12 @@ module latin_hypercube_driver_module
       rho            ! Density on thermo. grid      [kg/m^3]
 
     ! Input/Output Variables
-    real, dimension(nzmax,hydromet_dim), intent(inout) :: &
+    real, dimension(nz,hydromet_dim), intent(inout) :: &
       LH_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       LH_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
-    real, dimension(nzmax), intent(out) :: &
+    real, dimension(nz), intent(out) :: &
       LH_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       LH_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
       LH_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
@@ -614,7 +614,7 @@ module latin_hypercube_driver_module
 
     ! Perform LH and analytic microphysical calculations
     call estimate_lh_micro &
-         ( dt, nzmax, n_micro_calls, d_variables, &  ! intent(in)
+         ( dt, nz, n_micro_calls, d_variables, &  ! intent(in)
            X_nl_all_levs, &                         ! intent(in)
            LH_rt, LH_thl, pdf_params, &             ! intent(in)
            p_in_Pa, exner, rho, &                   ! intent(in)
@@ -631,7 +631,7 @@ module latin_hypercube_driver_module
   end subroutine LH_microphys_driver
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_2D_output &
-             ( fname_prefix, fdir, stats_tout, nzmax, &
+             ( fname_prefix, fdir, stats_tout, nz, &
                zt, time_initial )
 !-------------------------------------------------------------------------------
 
@@ -678,9 +678,9 @@ module latin_hypercube_driver_module
       time_initial  ! Initial time                      [s]
 
     integer, intent(in) :: &
-      nzmax ! Number of vertical levels
+      nz ! Number of vertical levels
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       zt ! Altitudes [m]
 
     ! Local Variables
@@ -765,7 +765,7 @@ module latin_hypercube_driver_module
       variable_descriptions(i) = "Liquid potential temperature"
       variable_units(i)        = "K"
 
-      call open_2D_samples_file( nzmax, LH_microphys_calls, d_variables+2, & ! In
+      call open_2D_samples_file( nz, LH_microphys_calls, d_variables+2, & ! In
                                  trim( fname_prefix )//"_nl", fdir, & ! In
                                  time_initial, stats_tout, zt, variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In
@@ -855,7 +855,7 @@ module latin_hypercube_driver_module
       ! Set all the units
       variable_units(:) = "count" ! Unidata units format for a dimensionless quantity
 
-      call open_2D_samples_file( nzmax, LH_microphys_calls, i, & ! In
+      call open_2D_samples_file( nz, LH_microphys_calls, i, & ! In
                                  trim( fname_prefix )//"_u", fdir, & ! In
                                  time_initial, stats_tout, zt, &! In
                                  variable_names(1:i), variable_descriptions(1:i), & ! In
@@ -1159,7 +1159,7 @@ module latin_hypercube_driver_module
   end function in_mixt_comp_1
 
 !-------------------------------------------------------------------------------
-  subroutine compute_arb_overlap( nzmax, k_lh_start, &
+  subroutine compute_arb_overlap( nz, k_lh_start, &
                                   X_u_one_var_k_lh_start, vert_corr, &
                                   X_u_one_var_all_levs )
 ! Description:
@@ -1184,17 +1184,17 @@ module latin_hypercube_driver_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nzmax,      & ! Number of vertical levels [-]
+      nz,      & ! Number of vertical levels [-]
       k_lh_start   ! Starting k level          [-]
 
     real(kind=genrand_real), intent(in) :: &
       X_u_one_var_k_lh_start  ! Uniform distribution of 1 variate (e.g. s_mellor) at k_lh_start [-]
 
-    real(kind=genrand_real), dimension(nzmax), intent(in) :: &
+    real(kind=genrand_real), dimension(nz), intent(in) :: &
       vert_corr ! Vertical correlation between k points in range [0,1]   [-]
 
     ! Output Variables
-    real(kind=genrand_real), dimension(nzmax), intent(out) :: &
+    real(kind=genrand_real), dimension(nz), intent(out) :: &
       X_u_one_var_all_levs ! Uniform distribution of 1 variate at all levels [-]
 
     ! Local Variables
@@ -1210,7 +1210,7 @@ module latin_hypercube_driver_module
     X_u_one_var_all_levs(k_lh_start) = X_u_one_var_k_lh_start
 
     ! Upwards loop
-    do k = k_lh_start, nzmax-1
+    do k = k_lh_start, nz-1
 
       kp1 = k+1 ! This is the level we're computing
 
@@ -1238,7 +1238,7 @@ module latin_hypercube_driver_module
 
 !     print *, k, X_u_one_var_all_levs(k), kp1, X_u_one_var_all_levs(kp1)
 
-    end do ! k_lh_start..nzmax-1
+    end do ! k_lh_start..nz-1
 
     ! Downwards loop
     do k = k_lh_start, 2, -1
@@ -1346,7 +1346,7 @@ module latin_hypercube_driver_module
   end subroutine assert_check_half_cloudy
 
 !-------------------------------------------------------------------------------
-  function compute_vert_corr( nzmax, delta_zm, Lscale_vert_avg ) result( vert_corr )
+  function compute_vert_corr( nz, delta_zm, Lscale_vert_avg ) result( vert_corr )
 ! Description:
 !   This function computes the vertical correlation for arbitrary overlap, using
 !   density weighted 3pt averaged Lscale and the difference in height levels
@@ -1366,25 +1366,25 @@ module latin_hypercube_driver_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nzmax ! Number of vertical levels  [-]
+      nz ! Number of vertical levels  [-]
 
-    real, intent(in), dimension(nzmax) :: &
+    real, intent(in), dimension(nz) :: &
       delta_zm, &     ! Difference between altitudes    [m]
       Lscale_vert_avg ! Vertically averaged Lscale      [m]
 
     ! Output Variable
-    real, dimension(nzmax) :: &
+    real, dimension(nz) :: &
       vert_corr ! The vertical correlation      [-]
 
     ! ---- Begin Code ----
-    vert_corr(1:nzmax) = exp( -vert_corr_coef * ( delta_zm(1:nzmax) / Lscale_vert_avg(1:nzmax) ) )
+    vert_corr(1:nz) = exp( -vert_corr_coef * ( delta_zm(1:nz) / Lscale_vert_avg(1:nz) ) )
 
     return
   end function compute_vert_corr
 
 !-------------------------------------------------------------------------------
   subroutine stats_accumulate_LH &
-             ( nzmax, n_micro_calls, d_variables, &
+             ( nz, n_micro_calls, d_variables, &
                LH_sample_point_weights, X_nl_all_levs, LH_thl, LH_rt )
 ! Description:
 !   Clip subcolumns from latin hypercube and create stats for diagnostic
@@ -1470,30 +1470,30 @@ module latin_hypercube_driver_module
     integer, intent(in) :: &
       d_variables,     & ! Number of variables to sample
       n_micro_calls,   & ! Number of calls to microphysics per timestep (normally=2)
-      nzmax               ! Number of vertical model levels
+      nz               ! Number of vertical model levels
 
     real, intent(in), dimension(n_micro_calls) :: &
       LH_sample_point_weights
 
-    real( kind = dp ), intent(in), dimension(nzmax,n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(in), dimension(nz,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real, intent(in), dimension(nzmax,n_micro_calls) :: &
+    real, intent(in), dimension(nz,n_micro_calls) :: &
       LH_thl, & ! Sample of liquid potential temperature [K]
       LH_rt     ! Sample of total water mixing ratio     [kg/kg]
 
     ! Local variables
-    real, dimension(nzmax,n_micro_calls) :: &
+    real, dimension(nz,n_micro_calls) :: &
       rc_all_points, & ! Cloud water mixing ratio for all levels   [kg/kg]
       rv_all_points    ! Vapor mixing ratio for all levels   [kg/kg]
 
-    real, dimension(nzmax,n_micro_calls,hydromet_dim) :: &
+    real, dimension(nz,n_micro_calls,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species    [units vary]
 
-    real, dimension(nzmax,hydromet_dim) :: &
+    real, dimension(nz,hydromet_dim) :: &
       LH_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
 
-    real, dimension(nzmax) :: &
+    real, dimension(nz) :: &
       LH_thlm,       & ! Average value of the latin hypercube est. of theta_l           [K]
       LH_rcm,        & ! Average value of the latin hypercube est. of rc                [kg/kg]
       LH_rvm,        & ! Average value of the latin hypercube est. of rv                [kg/kg]
@@ -1520,23 +1520,23 @@ module latin_hypercube_driver_module
       ! will be 1 (all points equally weighted)
 
       if ( iLH_rcm + iLH_rcp2_zt > 0 ) then
-        LH_rcm = compute_sample_mean( nzmax, n_micro_calls, LH_sample_point_weights, &
+        LH_rcm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                       rc_all_points )
       end if
 
       if ( iLH_thlm + iLH_thlp2_zt > 0 ) then
-        LH_thlm = compute_sample_mean( nzmax, n_micro_calls, LH_sample_point_weights, &
+        LH_thlm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                        real( LH_thl ) )
       end if
 
       if ( iLH_rvm + iLH_rtp2_zt > 0 ) then
         rv_all_points = LH_rt - rc_all_points
-        LH_rvm = compute_sample_mean( nzmax, n_micro_calls, LH_sample_point_weights, &
+        LH_rvm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                       rv_all_points )
       end if
 
       if ( iLH_wm + iLH_wp2_zt > 0 ) then
-        LH_wm  = compute_sample_mean( nzmax, n_micro_calls, LH_sample_point_weights, &
+        LH_wm  = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                       real( X_nl_all_levs(:,:,iiLH_w) ) )
       end if
 
@@ -1544,13 +1544,13 @@ module latin_hypercube_driver_module
            iLH_rgraupelm + iLH_Ngraupelm + iLH_Ncm > 0 ) then
 
         LH_hydromet = 0.
-        call copy_X_nl_into_hydromet( nzmax, d_variables, n_micro_calls, & ! In
+        call copy_X_nl_into_hydromet( nz, d_variables, n_micro_calls, & ! In
                                       X_nl_all_levs, &  ! In
                                       LH_hydromet, & ! In
                                       hydromet_all_points ) ! Out
 
         forall ( ivar = 1:hydromet_dim )
-          LH_hydromet(:,ivar) = compute_sample_mean( nzmax, n_micro_calls, LH_sample_point_weights,&
+          LH_hydromet(:,ivar) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights,&
                                                      hydromet_all_points(:,:,ivar) )
         end forall ! 1..hydromet_dim
       end if
@@ -1568,7 +1568,7 @@ module latin_hypercube_driver_module
 
       if ( iLH_wp2_zt > 0 ) then
         ! Compute the variance of vertical velocity
-        LH_wp2_zt = compute_sample_variance( nzmax, n_micro_calls, &
+        LH_wp2_zt = compute_sample_variance( nz, n_micro_calls, &
                                              real( X_nl_all_levs(:,:,iiLH_w) ), &
                                              LH_sample_point_weights, LH_wm )
       end if
@@ -1576,40 +1576,40 @@ module latin_hypercube_driver_module
       if ( iLH_rcp2_zt  > 0 ) then
         ! Compute the variance of cloud water mixing ratio
         LH_rcp2_zt = compute_sample_variance &
-                     ( nzmax, n_micro_calls, rc_all_points, &
+                     ( nz, n_micro_calls, rc_all_points, &
                        LH_sample_point_weights, LH_rcm )
       end if
 
       if ( iLH_rtp2_zt > 0 ) then
         ! Compute the variance of total water
         LH_rtp2_zt = compute_sample_variance &
-                     ( nzmax, n_micro_calls, &
+                     ( nz, n_micro_calls, &
                        real( LH_rt ), LH_sample_point_weights, LH_rvm+LH_rcm )
       end if
 
       if ( iLH_thlp2_zt > 0 ) then
         ! Compute the variance of liquid potential temperature
-        LH_thlp2_zt = compute_sample_variance( nzmax, n_micro_calls, &
+        LH_thlp2_zt = compute_sample_variance( nz, n_micro_calls, &
                                                real( LH_thl ), LH_sample_point_weights, LH_thlm )
       end if
 
       ! Compute the variance of rain water mixing ratio
       if ( iirrainm > 0 .and. iLH_rrainp2_zt > 0 ) then
         LH_rrainp2_zt = compute_sample_variance &
-                        ( nzmax, n_micro_calls, hydromet_all_points(:,:,iirrainm), &
+                        ( nz, n_micro_calls, hydromet_all_points(:,:,iirrainm), &
                           LH_sample_point_weights, LH_hydromet(:,iirrainm) )
       end if
 
       ! Compute the variance of cloud droplet number concentration
       if ( iiNcm > 0 .and. iLH_Ncp2_zt > 0 ) then
         LH_Ncp2_zt = compute_sample_variance &
-                     ( nzmax, n_micro_calls, hydromet_all_points(:,:,iiNcm), &
+                     ( nz, n_micro_calls, hydromet_all_points(:,:,iiNcm), &
                        LH_sample_point_weights, LH_hydromet(:,iiNcm) )
       end if
 
       ! Compute the variance of rain droplet number concentration
       if ( iiNrm > 0 .and. iLH_Nrp2_zt > 0 ) then
-        LH_Nrp2_zt = compute_sample_variance( nzmax, n_micro_calls, hydromet_all_points(:,:,iiNrm),&
+        LH_Nrp2_zt = compute_sample_variance( nz, n_micro_calls, hydromet_all_points(:,:,iiNrm),&
                                               LH_sample_point_weights, LH_hydromet(:,iiNrm) )
       end if
 

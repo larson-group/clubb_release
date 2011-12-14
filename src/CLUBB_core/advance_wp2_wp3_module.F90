@@ -74,15 +74,23 @@ module advance_wp2_wp3_module
         C1b,  & 
         C1,  & 
         c_K1,  & 
-        c_ksqd,  & 
         c_K8
+
+    use stats_type, only: & 
+        stat_update_var
+
+    use stats_variables, only: &
+        iC1_Skw_fnc, &
+        iC11_Skw_fnc, &
+        zm, &
+        zt, &
+        l_stats_samp
 
     use constants_clubb, only:  & 
         fstderr    ! Variable(s)
 
     use model_flags, only: &
-        l_hyper_dfsn,  & ! Variable(s)
-        l_3pt_sqd_dfsn
+        l_hyper_dfsn ! Variable(s)
 
     use clubb_precision, only:  & 
         time_precision ! Variable(s)
@@ -102,7 +110,7 @@ module advance_wp2_wp3_module
     real, intent(in) ::  &
       sfc_elevation      ! Elevation of ground level                 [m AMSL]
 
-    real, intent(in), dimension(gr%nzmax) ::  & 
+    real, intent(in), dimension(gr%nz) ::  & 
       sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)             [-]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
@@ -132,34 +140,27 @@ module advance_wp2_wp3_module
       mixt_frac          ! Weight of 1st normal distribution         [-]
 
     ! Input/Output
-    real, dimension(gr%nzmax), intent(inout) ::  & 
+    real, dimension(gr%nz), intent(inout) ::  & 
       wp2,  & ! w'^2 (momentum levels)                    [m^2/s^2]
       wp3,  & ! w'^3 (thermodynamic levels)               [m^3/s^3]
       wp3_zm  ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
-    real, dimension(gr%nzmax), intent(inout) ::  &
+    real, dimension(gr%nz), intent(inout) ::  &
       wp2_zt  ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
 
     integer, intent(inout) :: err_code ! Diagnostic
 
     ! Local Variables
-    real, dimension(gr%nzmax) ::  & 
+    real, dimension(gr%nz) ::  & 
       tauw3t  ! Currently just tau_zt                           [s]
 
     ! Eddy Diffusion for w'^2 and w'^3.
-    real, dimension(gr%nzmax) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
-    real, dimension(gr%nzmax) :: Kw8    ! w'^3 coef. eddy diff.  [m^2/s]
-
-    ! Note:  wp2_zt and wp2_zt_sqd_3pt, and wp3_zm and wp3_zm_sqd_3pt
-    !        are used to help determine the coefficients of eddy
-    !        diffusivity for wp2 and wp3, respectively.
-    real, dimension(gr%nzmax) :: & 
-      wp2_zt_sqd_3pt,  & ! (w'^2)^2; averaged over 3 points         [m^4/s^4]
-      wp3_zm_sqd_3pt     ! (w'^3)^2; averaged over 3 points         [m^6/s^6]
+    real, dimension(gr%nz) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
+    real, dimension(gr%nz) :: Kw8    ! w'^3 coef. eddy diff.  [m^2/s]
 
     ! Internal variables for C11 function, Vince Larson 13 Mar 2005
     ! Brian added C1 function.
-    real, dimension(gr%nzmax) ::  & 
+    real, dimension(gr%nz) ::  & 
       C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied              [-]
       C11_Skw_fnc    ! C_11 parameter with Sk_w applied             [-]
     ! End Vince Larson's addition.
@@ -168,7 +169,7 @@ module advance_wp2_wp3_module
       nsub,   & ! Number of subdiagonals in the LHS matrix.
       nsup      ! Number of superdiagonals in the LHS matrix.
 
-    integer :: k, km1, kp1  ! Array indices
+    integer :: k ! Array indices
 
     integer :: wp2_wp3_err_code ! Error code from solving for wp2/wp3
 
@@ -191,7 +192,7 @@ module advance_wp2_wp3_module
 !     .                         ,0.)
 !     .              )
 
-!        do k=1,gr%nzmax
+!        do k=1,gr%nz
 !
 !          Skw = abs( wp3(k)/max(wp2(k),1.e-8)**1.5 )
 !          Skw = min( 5.0, Skw )
@@ -208,26 +209,30 @@ module advance_wp2_wp3_module
     ! Calculate C_{1} and C_{11} as functions of skewness of w.
     ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
     if ( C11 /= C11b ) then
-      C11_Skw_fnc(1:gr%nzmax) =  & 
-        C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skw_zt(1:gr%nzmax)/C11c)**2 )
+      C11_Skw_fnc(1:gr%nz) =  & 
+        C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skw_zt(1:gr%nz)/C11c)**2 )
     else
-      C11_Skw_fnc(1:gr%nzmax) = C11b
+      C11_Skw_fnc(1:gr%nz) = C11b
     end if
 
     ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
     if ( C1 /= C1b ) then
-      C1_Skw_fnc(1:gr%nzmax) =  & 
-        C1b + (C1-C1b)*EXP( -(1.0/2.0) * (Skw_zm(1:gr%nzmax)/C1c)**2 )
+      C1_Skw_fnc(1:gr%nz) =  & 
+        C1b + (C1-C1b)*EXP( -(1.0/2.0) * (Skw_zm(1:gr%nz)/C1c)**2 )
     else
-      C1_Skw_fnc(1:gr%nzmax) = C1b 
+      C1_Skw_fnc(1:gr%nz) = C1b 
     end if
 
     !C11_Skw_fnc = C11
     !C1_Skw_fnc = C1
 
+    if ( l_stats_samp ) then
+      call stat_update_var( iC11_Skw_fnc, C11_Skw_fnc, zt )
+      call stat_update_var( iC1_Skw_fnc, C1_Skw_fnc, zm )
+    endif
 
     ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
-    do k = 1, gr%nzmax, 1
+    do k = 1, gr%nz, 1
 
       ! Kw1 is used for wp2, which is located on momentum levels.
       ! Kw1 is located on thermodynamic levels.
@@ -241,48 +246,6 @@ module advance_wp2_wp3_module
       Kw8(k) = c_K8 * Kh_zm(k)
 
     enddo
-
-    ! (wp2)^2 and (wp3)^2:  3-point average diffusion coefficient.
-    if ( l_3pt_sqd_dfsn ) then
-
-       do k = 1, gr%nzmax, 1
-
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, gr%nzmax )
-
-          ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
-          ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
-
-          ! Compute the square of wp2_zt, averaged over 3 points.  15 Dec 2007
-          wp2_zt_sqd_3pt(k)  & 
-             = ( wp2_zt(km1)**2 + wp2_zt(k)**2 + wp2_zt(kp1)**2 ) / 3.0
-
-          ! Compute the square of wp3_zm, averaged over 3 points.  15 Dec 2007
-          wp3_zm_sqd_3pt(k)  & 
-             = ( wp3_zm(km1)**2 + wp3_zm(k)**2 + wp3_zm(kp1)**2 ) / 3.0
-
-          ! End Vince Larson's addition.
-
-       enddo
-
-       ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
-       do k = 1, gr%nzmax, 1
-
-          ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
-          ! Kw1 must have units of m^2/s.  Since wp2_zt_sqd_3pt has units
-          ! of m^4/s^4, c_Ksqd is given units of s^3/m^2 in this case.
-          Kw1(k) = Kw1(k) + c_Ksqd * wp2_zt_sqd_3pt(k)
-          ! End Vince Larson's addition.
-
-          ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
-          ! Kw8 must have units of m^2/s.  Since wp3_zm_sqd_3pt has units
-          ! of m^6/s^6, c_Ksqd is given units of s^5/m^4 in this case.
-          Kw8(k) = Kw8(k) + c_Ksqd * wp3_zm_sqd_3pt(k)
-          ! End Vince Larson's addition.
-
-       enddo
-
-    endif  ! l_3pt_sqd_dfsn
 
     ! Declare the number of subdiagonals and superdiagonals in the LHS matrix.
     if ( l_hyper_dfsn ) then
@@ -489,7 +452,7 @@ module advance_wp2_wp3_module
     real, intent(in) ::  &
       sfc_elevation      ! Elevation of ground level                 [m AMSL]
 
-    real, intent(in), dimension(gr%nzmax) ::  & 
+    real, intent(in), dimension(gr%nz) ::  & 
       sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)             [-]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
@@ -524,32 +487,32 @@ module advance_wp2_wp3_module
       nsup      ! Number of superdiagonals in the LHS matrix.
 
     ! Input/Output Variables
-    real, dimension(gr%nzmax), intent(inout) ::  & 
+    real, dimension(gr%nz), intent(inout) ::  & 
       wp2,  & ! w'^2 (momentum levels)                            [m^2/s^2]
       wp3,  & ! w'^3 (thermodynamic levels)                       [m^3/s^3]
       wp3_zm  ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
-    real, dimension(gr%nzmax), intent(inout) ::  &
+    real, dimension(gr%nz), intent(inout) ::  &
       wp2_zt  ! w'^2 interpolated to thermodyamic levels          [m^2/s^2]
 
     integer, intent(inout) :: err_code ! Have any errors occured?
 
     ! Local Variables
-    real, dimension(nsup+nsub+1,2*gr%nzmax) ::  & 
+    real, dimension(nsup+nsub+1,2*gr%nz) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
 
-    real, dimension(2*gr%nzmax) ::  & 
+    real, dimension(2*gr%nz) ::  & 
       rhs   ! RHS of band matrix
 
-!        real, target, dimension(2*gr%nzmax) ::
-    real, dimension(2*gr%nzmax) ::  & 
+!        real, target, dimension(2*gr%nz) ::
+    real, dimension(2*gr%nz) ::  & 
       solut ! Solution to band diagonal system.
 
-    real, dimension(gr%nzmax) ::  & 
+    real, dimension(gr%nz) ::  & 
       a1,   & ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
       a1_zt   ! a_1 interpolated to thermodynamic levels                    [-]
 
-!      real, dimension(gr%nzmax) ::  &
+!      real, dimension(gr%nz) ::  &
 !        wp2_n ! w'^2 at the previous timestep           [m^2/s^2]
 
     real ::  & 
@@ -611,7 +574,7 @@ module advance_wp2_wp3_module
 
         ! Perform LU decomp and solve system (LAPACK with diagnostics)
         ! Note that this can change the answer slightly
-        call band_solvex( "wp2_wp3", nsup, nsub, 2*gr%nzmax, nrhs, & 
+        call band_solvex( "wp2_wp3", nsup, nsub, 2*gr%nz, nrhs, & 
                           lhs, rhs, solut, rcond, err_code )
 
         ! Est. of the condition number of the w'^2/w^3 LHS matrix
@@ -619,7 +582,7 @@ module advance_wp2_wp3_module
 
       else
         ! Perform LU decomp and solve system (LAPACK)
-        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nzmax, nrhs, & 
+        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nz, nrhs, & 
                          lhs, rhs, solut, err_code )
       end if
 
@@ -627,10 +590,10 @@ module advance_wp2_wp3_module
 
     ! Copy result into output arrays and clip
 
-    do k = 1, gr%nzmax
+    do k = 1, gr%nz
 
       km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nzmax )
+      kp1 = min( k+1, gr%nz )
 
       k_wp3 = 2*k - 1
       k_wp2 = 2*k
@@ -646,12 +609,12 @@ module advance_wp2_wp3_module
 
       ! Finalize implicit contributions for wp2
 
-      do k = 2, gr%nzmax-1
+      do k = 2, gr%nz-1
 
         km1 = max( k-1, 1 )
         km2 = max( k-2, 1 )
-        kp1 = min( k+1, gr%nzmax )
-        kp2 = min( k+2, gr%nzmax )
+        kp1 = min( k+1, gr%nz )
+        kp2 = min( k+2, gr%nz )
 
         ! w'^2 term dp1 has both implicit and explicit components;
         ! call stat_end_update_pt.
@@ -714,12 +677,12 @@ module advance_wp2_wp3_module
 
       ! Finalize implicit contributions for wp3
 
-      do k = 2, gr%nzmax-1, 1
+      do k = 2, gr%nz-1, 1
 
         km1 = max( k-1, 1 )
         km2 = max( k-2, 1 )
-        kp1 = min( k+1, gr%nzmax )
-        kp2 = min( k+2, gr%nzmax )
+        kp1 = min( k+1, gr%nz )
+        kp2 = min( k+2, gr%nz )
 
         ! w'^3 term pr1 has both implicit and explicit components; 
         ! call stat_end_update_pt.
@@ -893,10 +856,10 @@ module advance_wp2_wp3_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
-    real, dimension(gr%nzmax), intent(in) ::  & 
+    real, dimension(gr%nz), intent(in) ::  & 
       wp2                ! w'^2 (momentum levels)                    [m^2/s^2]
 
-    real, intent(in), dimension(gr%nzmax) ::  & 
+    real, intent(in), dimension(gr%nz) ::  & 
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
       a1,              & ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
@@ -926,25 +889,25 @@ module advance_wp2_wp3_module
                 ! (GMRES currently only supports 1)
 
     ! Input/Output variables
-    real, dimension(2*gr%nzmax), intent(inout) :: &
+    real, dimension(2*gr%nz), intent(inout) :: &
       rhs       ! Right hand side vector
 
     ! Output variables
-    real, dimension(2*gr%nzmax), intent(out) :: &
+    real, dimension(2*gr%nz), intent(out) :: &
       solut     ! Solution to band diagonal system
 
     integer, intent(out) :: err_code ! Have any errors occured?
 
 #ifdef MKL
     ! Local variables
-    real, dimension(nsup+nsub+1,2*gr%nzmax) :: &
+    real, dimension(nsup+nsub+1,2*gr%nz) :: &
       lhs, &    ! Implicit contributions to wp2/wp3 (band diag. matrix)
       lhs_cache ! Backup cache of LHS matrix
 
     real, dimension(intlc_5d_5d_ja_size) :: &
       lhs_a_csr ! Implicit contributions to wp2/wp3 (CSR format)
 
-    real, dimension(2*gr%nzmax) :: &
+    real, dimension(2*gr%nz) :: &
       rhs_cache ! Backup cache of RHS vector
 
     real ::  & 
@@ -975,16 +938,16 @@ module advance_wp2_wp3_module
       ! Solve system with LAPACK to give us our first solution vector
         lhs_cache = lhs
         rhs_cache = rhs
-        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nzmax, nrhs, &
+        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nz, nrhs, &
                          lhs, rhs, solut, err_code )
 
         ! Use gmres_cache_wp2wp3_soln to set cache this solution for GMRES
-        call gmres_cache_soln( gr%nzmax * 2, gmres_idx_wp2wp3, solut )
+        call gmres_cache_soln( gr%nz * 2, gmres_idx_wp2wp3, solut )
         lhs = lhs_cache
         rhs = rhs_cache
     end if ! .not. l_gmres_soln_ok(gmres_idx_wp2wp3)
 
-    call gmres_solve( intlc_5d_5d_ja_size, (gr%nzmax * 2), &
+    call gmres_solve( intlc_5d_5d_ja_size, (gr%nz * 2), &
                       lhs_a_csr, csr_intlc_5b_5b_ia, csr_intlc_5b_5b_ja, &
                       gmres_tempsize_intlc, &
                       gmres_prev_soln(:,gmres_idx_wp2wp3), &
@@ -1011,7 +974,7 @@ module advance_wp2_wp3_module
 
         ! Perform LU decomp and solve system (LAPACK with diagnostics)
         ! Note that this can change the answer slightly
-        call band_solvex( "wp2_wp3", nsup, nsub, 2*gr%nzmax, nrhs, & 
+        call band_solvex( "wp2_wp3", nsup, nsub, 2*gr%nz, nrhs, & 
                           lhs, rhs, solut, rcond, err_code )
 
         ! Est. of the condition number of the w'^2/w^3 LHS matrix
@@ -1019,7 +982,7 @@ module advance_wp2_wp3_module
 
       else
         ! Perform LU decomp and solve system (LAPACK)
-        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nzmax, nrhs, & 
+        call band_solve( "wp2_wp3", nsup, nsub, 2*gr%nz, nrhs, & 
                          lhs, rhs, solut, err_code )
       end if
 
@@ -1031,25 +994,25 @@ module advance_wp2_wp3_module
     ! These prevent compiler warnings when -DMKL not set.
     if ( l_crank_nich_diff .or. .true. ) print *, "This should be unreachable"
     solut = rhs
-    solut(1:gr%nzmax) = a1
-    solut(1:gr%nzmax) = a1_zt
-    solut(1:gr%nzmax) = a3
-    solut(1:gr%nzmax) = a3_zt
-    solut(1:gr%nzmax) = C11_Skw_fnc
-    solut(1:gr%nzmax) = C1_Skw_fnc
-    solut(1:gr%nzmax) = invrs_rho_ds_zm
-    solut(1:gr%nzmax) = invrs_rho_ds_zt
-    solut(1:gr%nzmax) = rho_ds_zm
-    solut(1:gr%nzmax) = rho_ds_zt
-    solut(1:gr%nzmax) = Kw1
-    solut(1:gr%nzmax) = Kw8
-    solut(1:gr%nzmax) = Skw_zt
-    solut(1:gr%nzmax) = tau1m
-    solut(1:gr%nzmax) = tauw3t
-    solut(1:gr%nzmax) = wm_zt
-    solut(1:gr%nzmax) = wm_zm
-    solut(1:gr%nzmax) = wp2
-    solut(1:gr%nzmax) = wp3_on_wp2
+    solut(1:gr%nz) = a1
+    solut(1:gr%nz) = a1_zt
+    solut(1:gr%nz) = a3
+    solut(1:gr%nz) = a3_zt
+    solut(1:gr%nz) = C11_Skw_fnc
+    solut(1:gr%nz) = C1_Skw_fnc
+    solut(1:gr%nz) = invrs_rho_ds_zm
+    solut(1:gr%nz) = invrs_rho_ds_zt
+    solut(1:gr%nz) = rho_ds_zm
+    solut(1:gr%nz) = rho_ds_zt
+    solut(1:gr%nz) = Kw1
+    solut(1:gr%nz) = Kw8
+    solut(1:gr%nz) = Skw_zt
+    solut(1:gr%nz) = tau1m
+    solut(1:gr%nz) = tauw3t
+    solut(1:gr%nz) = wm_zt
+    solut(1:gr%nz) = wm_zm
+    solut(1:gr%nz) = wp2
+    solut(1:gr%nz) = wp3_on_wp2
     err_code = int( dt )
     err_code = nsup
     err_code = nsub
@@ -1209,7 +1172,7 @@ module advance_wp2_wp3_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep length                            [s]
 
-    real, dimension(gr%nzmax), intent(in) ::  & 
+    real, dimension(gr%nz), intent(in) ::  & 
       wp2,             & ! w'^2 (momentum levels)                     [m^2/s^2]
       wm_zm,           & ! w wind component on momentum levels        [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels   [m/s]
@@ -1238,7 +1201,7 @@ module advance_wp2_wp3_module
       nsup      ! Number of superdiagonals in the LHS matrix.
 
     ! Output Variable
-    real, dimension(5-nsup:5+nsub,2*gr%nzmax), intent(out) ::  & 
+    real, dimension(5-nsup:5+nsub,2*gr%nz), intent(out) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
 
     ! Local Variables
@@ -1253,14 +1216,14 @@ module advance_wp2_wp3_module
     ! Initialize the left-hand side matrix to 0.
     lhs = 0.0
 
-    do k = 2, gr%nzmax-1, 1
+    do k = 2, gr%nz-1, 1
 
       ! Define indices
 
       km1 = max( k-1, 1 )
       km2 = max( k-2, 1 )
-      kp1 = min( k+1, gr%nzmax )
-      kp2 = min( k+2, gr%nzmax )
+      kp1 = min( k+1, gr%nz )
+      kp2 = min( k+2, gr%nz )
 
       k_wp3 = 2*k - 1
       k_wp2 = 2*k
@@ -1684,7 +1647,7 @@ module advance_wp2_wp3_module
 
       endif
 
-    enddo ! k = 2, gr%nzmax-1, 1
+    enddo ! k = 2, gr%nz-1, 1
 
 
     ! Boundary conditions
@@ -1710,7 +1673,7 @@ module advance_wp2_wp3_module
     k_wp2_low = 2*k
 
     ! Upper boundary
-    k = gr%nzmax
+    k = gr%nz
     k_wp3_high = 2*k - 1
     k_wp2_high = 2*k
 
@@ -1880,7 +1843,7 @@ module advance_wp2_wp3_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep length                            [s]
 
-    real, dimension(gr%nzmax), intent(in) ::  & 
+    real, dimension(gr%nz), intent(in) ::  & 
       wp2,             & ! w'^2 (momentum levels)                     [m^2/s^2]
       wm_zm,           & ! w wind component on momentum levels        [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels   [m/s]
@@ -1923,14 +1886,14 @@ module advance_wp2_wp3_module
     ! Initialize the left-hand side matrix to 0.
     lhs_a_csr = 0.0
 
-    do k = 2, gr%nzmax-1, 1
+    do k = 2, gr%nz-1, 1
 
       ! Define indices
 
       km1 = max( k-1, 1 )
       km2 = max( k-2, 1 )
-      kp1 = min( k+1, gr%nzmax )
-      kp2 = min( k+2, gr%nzmax )
+      kp1 = min( k+1, gr%nz )
+      kp2 = min( k+2, gr%nz )
 
       k_wp3 = 2*k - 1
       k_wp2 = 2*k
@@ -2422,7 +2385,7 @@ module advance_wp2_wp3_module
 
       endif
 
-    enddo ! k = 2, gr%nzmax-1, 1
+    enddo ! k = 2, gr%nz-1, 1
 
 
     ! Boundary conditions
@@ -2466,7 +2429,7 @@ module advance_wp2_wp3_module
     !lhs(t_k_tdiag,k_wp3) = 1.0
 
     ! Upper boundary
-    k = gr%nzmax
+    k = gr%nz
     k_wp3 = 2*k - 1
     k_wp2 = 2*k
 
@@ -2562,7 +2525,7 @@ module advance_wp2_wp3_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep length                           [s]
 
-    real, dimension(gr%nzmax), intent(in) ::  & 
+    real, dimension(gr%nz), intent(in) ::  & 
       wp2,             & ! w'^2 (momentum levels)                    [m^2/s^2]
       wp3,             & ! w'^3 (thermodynamic levels)               [m^3/s^3]
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)    [-]
@@ -2595,11 +2558,11 @@ module advance_wp2_wp3_module
       l_crank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
 
     ! Output Variable
-    real, dimension(2*gr%nzmax), intent(out) :: & 
+    real, dimension(2*gr%nz), intent(out) :: & 
       rhs   ! RHS of band matrix
 
     ! Local Variables
-    real, dimension(gr%nzmax) :: & 
+    real, dimension(gr%nz) :: & 
       dum_dz, dvm_dz ! Vertical derivatives of um and vm
 
     ! Array indices
@@ -2633,13 +2596,13 @@ module advance_wp2_wp3_module
       dvm_dz = -999.
     end if
 
-    do k = 2, gr%nzmax-1, 1
+    do k = 2, gr%nz-1, 1
 
 
       ! Define indices
 
       km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nzmax )
+      kp1 = min( k+1, gr%nz )
 
       k_wp3 = 2*k - 1
       k_wp2 = 2*k
@@ -3033,7 +2996,7 @@ module advance_wp2_wp3_module
 
       endif ! l_stats_samp
 
-    enddo ! k = 2..gr%nzmax-1
+    enddo ! k = 2..gr%nz-1
 
 
     ! Boundary conditions
@@ -3052,7 +3015,7 @@ module advance_wp2_wp3_module
     k_wp2_low = 2*k
 
     ! Upper boundary
-    k = gr%nzmax
+    k = gr%nz
     k_wp3_high = 2*k - 1
     k_wp2_high = 2*k
 

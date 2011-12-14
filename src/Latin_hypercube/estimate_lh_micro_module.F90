@@ -19,7 +19,7 @@ module estimate_lh_micro_module
 !------------------------------------------------------------------------
 
   subroutine estimate_lh_micro &
-             ( dt, nzmax, n_micro_calls, d_variables, &
+             ( dt, nz, n_micro_calls, d_variables, &
                X_nl_all_levs, & 
                LH_rt, LH_thl, pdf_params, & 
                p_in_Pa, exner, rho, &
@@ -68,50 +68,50 @@ module estimate_lh_micro_module
     real, intent(in) :: dt ! Model timestep     [s]
 
     integer, intent(in) :: &
-      nzmax, &          ! Number of vertical levels
+      nz, &          ! Number of vertical levels
       n_micro_calls, & ! Number of calls to the microphysics
       d_variables      ! Number of variates
 
-    real( kind = dp ), dimension(nzmax,n_micro_calls,d_variables), intent(in) :: &
+    real( kind = dp ), dimension(nz,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real, dimension(nzmax,n_micro_calls), intent(in) :: &
+    real, dimension(nz,n_micro_calls), intent(in) :: &
       LH_rt, LH_thl ! Total water / Liquid potential temperature      [kg/kg] / [K]
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       cloud_frac, & ! Cloud fraction           [-]
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
       rho           ! Density on thermo. grid  [kg/m^3]
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       rcm,       & ! Liquid water mixing ratio                [kg/kg]
       w_std_dev, & ! Standard deviation of vertical velocity  [m/s]
       dzq          ! Difference in height per gridbox         [m]
 
-    type(pdf_parameter), dimension(nzmax), intent(in) :: &
+    type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
-    real, dimension(nzmax,hydromet_dim), intent(in) :: &
+    real, dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    integer, dimension(nzmax,n_micro_calls), intent(in) :: &
+    integer, dimension(nz,n_micro_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
     real, dimension(n_micro_calls), intent(in) :: &
       LH_sample_point_weights ! Weight for cloud weighted sampling
 
     ! Output Variables
-    real, dimension(nzmax,hydromet_dim), intent(inout) :: &
+    real, dimension(nz,hydromet_dim), intent(inout) :: &
       lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
-    real, dimension(nzmax), intent(out) :: &
+    real, dimension(nz), intent(out) :: &
       lh_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
-    real, dimension(nzmax), intent(out) :: &
+    real, dimension(nz), intent(out) :: &
       lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
       AKm,       & ! Exact Kessler autoconversion, AKm,             [kg/kg/s]
       AKstd,     & ! Exact standard deviation of gba Kessler        [kg/kg/s]
@@ -120,7 +120,7 @@ module estimate_lh_micro_module
       AKm_rcc      ! Exact local gba Kessler based on w/in cloud rc [kg/kg/s]
 
     ! For comparison, estimate kth liquid water using Monte Carlo
-    real, dimension(nzmax), intent(out) :: &
+    real, dimension(nz), intent(out) :: &
       lh_rcm_avg ! LH estimate of grid box avg liquid water [kg/kg]
 
     ! Local Variables
@@ -173,7 +173,7 @@ module estimate_lh_micro_module
     AKstd(1)      = 0.0
     AKstd_cld(1)  = 0.0
 
-    do level = 2, nzmax, 1
+    do level = 2, nz, 1
       ! Extract PDF parameters
 
       !w1         = pdf_params(level)%w1
@@ -299,10 +299,10 @@ module estimate_lh_micro_module
         AKm_rcc(level) = zero_threshold
       end if
 
-    end do ! level = 2, nzmax
+    end do ! level = 2, nz
 
     ! Call the latin hypercube microphysics driver for microphys_sub
-    call est_single_column_tndcy( dt, nzmax, n_micro_calls, d_variables, & ! In
+    call est_single_column_tndcy( dt, nz, n_micro_calls, d_variables, & ! In
                                 k_lh_start, LH_rt, LH_thl, & ! In
                                 X_nl_all_levs, LH_sample_point_weights, & ! In
                                 p_in_Pa, exner, rho, w_std_dev, & ! In

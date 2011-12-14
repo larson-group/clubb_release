@@ -84,6 +84,12 @@ module microphys_driver
     ! None
     !---------------------------------------------------------------------------
 
+! Adding coefficient variable for clex9_oct14 case to reduce NNUCCD and NNUCCC
+    use module_mp_graupel, only: &
+      NNUCCD_REDUCE_COEF, &
+      NNUCCC_REDUCE_COEF
+! Change by Marc Pilon on 11/16/11
+
     use array_index, only: & 
       iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
       iiNcm, iiNsnowm, iiNim, iiNgraupelm
@@ -267,6 +273,18 @@ module microphys_driver
     ! Cloud water sedimentation from the RF02 case
     ! This has no effect on Morrison's cloud water sedimentation
     l_cloud_sed = .false.
+
+    !--------------------------------------------------------------------------
+    ! Parameters for NNUCCD & NNUCCC coefficients on clex9_oct14 case
+    !--------------------------------------------------------------------------
+
+    select case (trim(runtype))
+    case ( "clex9_oct14")
+      NNUCCD_REDUCE_COEF = .01 ! Reduce NNUCCD by factor of 100 for clex9_oct14
+      NNUCCC_REDUCE_COEF = .01 ! Reduce NNUCCC by factor of 100 for clex9_oct14
+    end select
+    ! end change by Marc Pilon 11/16/11
+
 
     !---------------------------------------------------------------------------
     ! Parameters for Khairoutdinov and Kogan microphysics
@@ -1167,7 +1185,7 @@ module microphys_driver
     real(kind=time_precision), intent(in) ::  & 
       time_current ! Current time     [s]
 
-    real, dimension(gr%nzmax), intent(in) :: & 
+    real, dimension(gr%nz), intent(in) :: & 
       thlm,       & ! Liquid potential temp.                 [K]
       p_in_Pa,    & ! Pressure                               [Pa]
       exner,      & ! Exner function                         [-]
@@ -1180,21 +1198,21 @@ module microphys_driver
       wm_zm,      & ! w wind on thermo. grid                 [m/s]
       Kh_zm         ! Kh Eddy diffusivity on momentum grid   [m^2/s]
 
-    type(pdf_parameter), dimension(gr%nzmax), intent(in) :: & 
+    type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
       pdf_params     ! PDF parameters
 
-    real, dimension(gr%nzmax), intent(in) :: & 
+    real, dimension(gr%nz), intent(in) :: & 
       wp2_zt,    & ! w'^2 on the thermo. grid               [m^2/s^2]
       rho_ds_zm, & ! Dry, static density on moment. levels  [kg/m^3]
       rho_ds_zt    ! Dry, static density on thermo. levels  [kg/m^3]
 
-    real( kind = dp ), dimension(gr%nzmax,LH_microphys_calls,d_variables), intent(in) :: &
+    real( kind = dp ), dimension(gr%nz,LH_microphys_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
-    integer, dimension(gr%nzmax,LH_microphys_calls), intent(in) :: &
+    integer, dimension(gr%nz,LH_microphys_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Which mixture component the sample is in
 
-    real, dimension(gr%nzmax,LH_microphys_calls), intent(in) :: &
+    real, dimension(gr%nz,LH_microphys_calls), intent(in) :: &
       LH_rt, LH_thl ! Samples of rt, thl	[kg/kg,K]
 
     real, dimension(LH_microphys_calls), intent(in) :: &
@@ -1203,13 +1221,13 @@ module microphys_driver
     ! Note:
     ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
     ! and Nim & Ncm are computed within subroutine adjtg.
-    real, dimension(gr%nzmax), intent(inout) :: & 
+    real, dimension(gr%nz), intent(inout) :: & 
       Ncnm       ! Cloud nuclei number concentration     [count/m^3]
 
-    real, dimension(gr%nzmax,hydromet_dim), intent(inout) :: & 
+    real, dimension(gr%nz,hydromet_dim), intent(inout) :: & 
       hydromet      ! Array of rain, prist. ice, graupel, etc. [units vary]
 
-    real, dimension(gr%nzmax), intent(inout) :: & 
+    real, dimension(gr%nz), intent(inout) :: & 
       rcm_mc,  & ! Microphysics contributions to liquid water           [kg/kg/s]
       rvm_mc,  & ! Microphysics contributions to vapor water            [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp. [K/s]
@@ -1217,29 +1235,29 @@ module microphys_driver
     integer, intent(out) :: err_code ! Exit code returned from subroutine
 
     ! Local Variables
-    real, dimension(3,gr%nzmax) :: & 
+    real, dimension(3,gr%nz) :: & 
       lhs ! Left hand side of tridiagonal matrix
 
-    real, dimension(gr%nzmax,hydromet_dim) :: &
+    real, dimension(gr%nz,hydromet_dim) :: &
       hydromet_vel,    & ! Contains vel. of the hydrometeors        [m/s]
       hydromet_vel_zt
 
-    real, dimension(gr%nzmax,hydromet_dim) :: & 
+    real, dimension(gr%nz,hydromet_dim) :: & 
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
 
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       delta_zt  ! Difference in thermo. height levels     [m]
 
-   real, dimension(gr%nzmax) :: &
+   real, dimension(gr%nz) :: &
      T_in_K  ! Temperature          [K]
 
-    real, dimension(1,1,gr%nzmax) :: & 
+    real, dimension(1,1,gr%nz) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
 
     ! Eddy diffusivity for rain and rain drop concentration.
     ! It is also used for the other hydrometeor variables.
     ! Kr = Constant * Kh_zm; Constant is named c_Krrainm.
-    real, dimension(gr%nzmax) :: Kr   ! [m^2/s]
+    real, dimension(gr%nz) :: Kr   ! [m^2/s]
 
     ! Variable needed to handle correction to rtm and thlm microphysics
     ! tendency arrays, as well rrainm_cond and Nrm_cond statistical
@@ -1248,7 +1266,7 @@ module microphys_driver
     ! Brian Griffin.  April 14, 2007.
     real :: overevap_rate ! Absolute value of negative evap. rate.
 
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       wtmp,    & ! Standard dev. of w                   [m/s]
       s_mellor   ! The variable 's' in Mellor (1977)    [kg/kg]
 
@@ -1260,15 +1278,15 @@ module microphys_driver
 
     integer :: ixrm_cl, ixrm_bt, ixrm_mc
 
-    real, dimension(gr%nzmax) :: Ndrop_max  ! GFDL droplet activation concentration [#/kg]
+    real, dimension(gr%nz) :: Ndrop_max  ! GFDL droplet activation concentration [#/kg]
 
     !Input aerosol mass concentration: the unit is 10^12 ug/m3.
     !For example, aeromass=2.25e-12 means that the aerosol mass concentration is 2.25 ug/m3.
     !This value of aeromass was recommended by Huan Guo
     !See http://carson.math.uwm.edu/trac/climate_process_team/ticket/46#comment:12
-    real, dimension(gr%nzmax, 4) :: aeromass ! ug/m^3
+    real, dimension(gr%nz, 4) :: aeromass ! ug/m^3
 
-    real, dimension(gr%nzmax) :: Ncm_in_cloud ! cloud average droplet concentration [#/kg]
+    real, dimension(gr%nz) :: Ncm_in_cloud ! cloud average droplet concentration [#/kg]
 
     character(len=10) :: hydromet_name
 
@@ -1294,7 +1312,7 @@ module microphys_driver
     if ( time_current < microphys_start_time ) return
 
     ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
-    do k = 1, gr%nzmax, 1
+    do k = 1, gr%nz, 1
       Kr(k) = c_Krrainm * Kh_zm(k)
     end do
 
@@ -1306,7 +1324,7 @@ module microphys_driver
     wtmp(:) = sqrt( wp2_zt(:) )
 
     ! Compute difference in thermodynamic height levels
-    delta_zt(1:gr%nzmax) = 1./gr%invrs_dzm(1:gr%nzmax)
+    delta_zt(1:gr%nz) = 1./gr%invrs_dzm(1:gr%nz)
 
     ! Calculate T_in_K
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
@@ -1338,7 +1356,7 @@ module microphys_driver
         end if
 
         ! Clip Ncm values that are outside of cloud by CLUBB standards
-        do k=1, gr%nzmax
+        do k=1, gr%nz
 
 ! ---> h1g, 2011-04-20,   no liquid drop nucleation if T < -40 C
           if( T_in_K(k) <= 233.15 )  Ndrop_max(k) = 0.0  ! if T<-40C, no liquid drop nucleation
@@ -1427,7 +1445,7 @@ module microphys_driver
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef LATIN_HYPERCUBE
         call LH_microphys_driver &
-             ( real( dt ), gr%nzmax, LH_microphys_calls, d_variables, & ! In
+             ( real( dt ), gr%nz, LH_microphys_calls, d_variables, & ! In
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, wtmp, delta_zt, cloud_frac, & ! In
@@ -1459,7 +1477,7 @@ module microphys_driver
         l_local_kk_input = .false.
         l_latin_hypercube_input = .false.
         call morrison_micro_driver & 
-             ( real( dt ), gr%nzmax, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
+             ( real( dt ), gr%nz, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
                thlm, p_in_Pa, exner, rho, pdf_params, &
                wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
                hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
@@ -1476,15 +1494,15 @@ module microphys_driver
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef LATIN_HYPERCUBE
-       call LH_microphys_driver &
-            ( real( dt ), gr%nzmax, LH_microphys_calls, d_variables, & ! In
-              X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
-              pdf_params, p_in_Pa, exner, rho, & ! In
-              rcm, wtmp, delta_zt, cloud_frac, & ! In
-              hydromet, X_mixt_comp_all_levs, & !In 
-              hydromet_mc, hydromet_vel_zt, & ! In/Out
-              rcm_mc, rvm_mc, thlm_mc,  & ! Out
-              mg_microphys_driver )  ! Procedure
+!       call LH_microphys_driver &
+!            ( real( dt ), gr%nz, LH_microphys_calls, d_variables, & ! In
+!              X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
+!              pdf_params, p_in_Pa, exner, rho, & ! In
+!              rcm, wtmp, delta_zt, cloud_frac, & ! In
+!              hydromet, X_mixt_comp_all_levs, & !In 
+!              hydromet_mc, hydromet_vel_zt, & ! In/Out
+!              rcm_mc, rvm_mc, thlm_mc,  & ! Out
+!              mg_microphys_driver )  ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
 #endif
@@ -1506,7 +1524,7 @@ module microphys_driver
     call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
 
         call mg_microphys_driver &
-          ( real( dt ), gr%nzmax, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
+          ( real( dt ), gr%nz, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
               thlm, p_in_Pa, exner, rho, pdf_params, &
               wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
               hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
@@ -1524,7 +1542,7 @@ module microphys_driver
 
 #ifdef LATIN_HYPERCUBE
         call LH_microphys_driver &
-             ( real( dt ), gr%nzmax, LH_microphys_calls, d_variables, & ! In
+             ( real( dt ), gr%nz, LH_microphys_calls, d_variables, & ! In
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, wtmp, delta_zt, cloud_frac, & ! In
@@ -1558,7 +1576,7 @@ module microphys_driver
 !                               rcm_mc, rvm_mc, thlm_mc )
          l_latin_hypercube_input = .false.
          call KK_micro_driver &
-                 ( real( dt ), gr%nzmax, l_stats_samp, l_local_kk, &
+                 ( real( dt ), gr%nz, l_stats_samp, l_local_kk, &
                    l_latin_hypercube_input, thlm, p_in_Pa, exner, rho, &
                    pdf_params, wm_zt, wtmp, delta_zt, rcm, s_mellor, &
                    rtm-rcm, hydromet, hydromet_mc, hydromet_vel_zt, &
@@ -1698,7 +1716,7 @@ module microphys_driver
         ! Set realistic limits on sedimentation velocities, following the
         ! numbers in the Morrison microphysics.
 
-        do k = 1, gr%nzmax
+        do k = 1, gr%nz
           if ( clubb_at_least_debug_level( 1 ) ) then
             ! Print a warning if the velocity has a large magnitude or the
             ! velocity is in the wrong direction.
@@ -1710,12 +1728,12 @@ module microphys_driver
             end if
           end if
           hydromet_vel_zt(k,i) = min( max( hydromet_vel_zt(k,i), max_velocity ), zero_threshold )
-        end do ! k = 1..gr%nzmax
+        end do ! k = 1..gr%nz
 
         ! Interpolate velocity to the momentum grid for a centered difference
         ! approximation of the sedimenation term.
         hydromet_vel(:,i) = zt2zm( hydromet_vel_zt(:,i) )
-        hydromet_vel(gr%nzmax,i) = 0.0 ! Upper boundary condition
+        hydromet_vel(gr%nz,i) = 0.0 ! Upper boundary condition
 
         ! Don't calculate if we aren't trying to predict Ncm in a meaningful way
         if ( trim( hydromet_list(i) ) /= "Ncm" .or. l_predictnc ) then
@@ -1748,7 +1766,7 @@ module microphys_driver
           if ( i == iirrainm ) then
             ! Handle over-evaporation of rrainm and adjust rt and theta-l
             ! hydrometeor tendency arrays accordingly.
-            do k = 1, gr%nzmax, 1
+            do k = 1, gr%nz, 1
               if ( hydromet(k,i) < 0.0 ) then
                 l_sed = .true.
                 call adj_microphys_tndcy & 
@@ -1780,13 +1798,13 @@ module microphys_driver
                 ! Joshua Faschinj December 2007
               end if
 
-            end do ! k=1..gr%nzmax
+            end do ! k=1..gr%nz
 
           else if ( i == iiNrm ) then
             ! Handle over-evaporation similar to rrainm.  However, in the case
             ! of Nrm there is no effect on rtm or on thlm.
             ! Brian Griffin.  April 14, 2007.
-            do k = 1, gr%nzmax, 1
+            do k = 1, gr%nz, 1
               if ( hydromet(k,i) < 0.0 ) then
                 l_sed = .true.
                 call adj_microphys_tndcy & 
@@ -1806,7 +1824,7 @@ module microphys_driver
 
               end if ! Nrm(k) < 0
               ! Joshua Fasching December 2007
-            end do ! k = 1..gr%nzmax
+            end do ! k = 1..gr%nz
 
           end if ! i == rrainm else if i == Nrm
         end if ! trim( micro_scheme  ) == khairoutdinov_kogan
@@ -1825,7 +1843,7 @@ module microphys_driver
           if ( any( hydromet(:,i) < zero_threshold ) ) then
             hydromet_name = hydromet_list(i)
             if ( clubb_at_least_debug_level( 1 ) ) then
-              do k = 1, gr%nzmax
+              do k = 1, gr%nz
                 if ( hydromet(k,i) < zero_threshold ) then
                   write(fstderr,*) trim( hydromet_name ) //" < ", zero_threshold, &
                     " in advance_microphys at k= ", k
@@ -1845,7 +1863,7 @@ module microphys_driver
               ! the missing mass with water vapor mixing ratio.
               ! We noticed this is needed for ASEX A209, particularly if Latin
               ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
-              do k = 2, gr%nzmax
+              do k = 2, gr%nz
                 if ( hydromet(k,i) < zero_threshold ) then
 
                   ! Set temp to the time tendency applied to vapor and removed
@@ -1870,7 +1888,7 @@ module microphys_driver
                   hydromet(k,i) = zero_threshold
 
                 end if ! hydromet(k,i) < 0
-              end do ! k = 2..gr%nzmax
+              end do ! k = 2..gr%nz
 
               ! Boundary condition
               ! Rain, snow and graupel which is at the ghost point has presumably
@@ -2091,22 +2109,22 @@ module microphys_driver
 
     ! Explicit contrbution to the hydrometeor, e.g. evaporation
     ! from Brian Griffin's K & K microphysics implementation
-    real, intent(in), dimension(gr%nzmax) :: & 
+    real, intent(in), dimension(gr%nz) :: & 
       xrm_tndcy, &  !                                 [units/s]
       cloud_frac    ! Cloud fraction                  [-]
 
     ! Input/Output Variables
-    real, intent(inout), dimension(3,gr%nzmax) :: & 
+    real, intent(inout), dimension(3,gr%nz) :: & 
       lhs ! Left hand side
 
-    real, intent(inout), dimension(gr%nzmax) :: & 
+    real, intent(inout), dimension(gr%nz) :: & 
       xrm ! Hydrometeor being solved for              [units vary]
 
     ! Output Variables
     integer, intent(out) :: err_code
 
     ! Local Variables
-    real, dimension(gr%nzmax) :: & 
+    real, dimension(gr%nz) :: & 
       rhs ! Right hand side
 
     integer :: k, kp1, km1 ! Array indices
@@ -2169,29 +2187,29 @@ module microphys_driver
 
 
     ! RHS of equation, following Brian's method from the rain subroutine
-    rhs(2:gr%nzmax-1)  & 
-      = (xrm(2:gr%nzmax-1) / real( dt )  & ! Time tendency
-      + xrm_tndcy(2:gr%nzmax-1))
+    rhs(2:gr%nz-1)  & 
+      = (xrm(2:gr%nz-1) / real( dt )  & ! Time tendency
+      + xrm_tndcy(2:gr%nz-1))
 
 
     ! Boundary condition on the RHS
     rhs(1) = xrm(1) / real( dt )
-    rhs(gr%nzmax) =  & 
-       ( xrm(gr%nzmax) / real( dt ) + xrm_tndcy(gr%nzmax) )
+    rhs(gr%nz) =  & 
+       ( xrm(gr%nz) / real( dt ) + xrm_tndcy(gr%nz) )
 
 
     ! Solve system using tridag_solve. This uses LAPACK sgtsv,
     ! which relies on Gaussian elimination to decompose the matrix.
     call tridag_solve & 
-         ( solve_type, gr%nzmax, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
+         ( solve_type, gr%nz, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
            rhs, xrm, err_code )
 
     if ( l_stats_samp ) then
 
-      do k = 1, gr%nzmax, 1
+      do k = 1, gr%nz, 1
 
         km1 = max( k-1, 1 )
-        kp1 = min( k+1, gr%nzmax )
+        kp1 = min( k+1, gr%nz )
 
         ! Finalize implicit contributions
 
@@ -2235,7 +2253,7 @@ module microphys_driver
                 + ztscr09(k) * xrm(kp1), zt )
         end if
 
-      enddo ! 1..gr%nzmax
+      enddo ! 1..gr%nz
 
     end if ! l_stats_samp
 
@@ -2244,8 +2262,8 @@ module microphys_driver
     !xrm(1) = xrm(2)
     ! Michael Falk, 7 Sep 2007, made this change to eliminate problems
     ! with anomalous rain formation at the top boundary.
-    !        xrm(gr%nzmax) = 0
-    !xrm(gr%nzmax) = xrm(gr%nzmax-1)
+    !        xrm(gr%nz) = 0
+    !xrm(gr%nz) = xrm(gr%nz-1)
     ! eMFc
 
     return
@@ -2336,23 +2354,23 @@ module microphys_driver
     real(kind=time_precision), intent(in) ::  & 
       dt       ! Model timestep                                           [s]
 
-    real, dimension(gr%nzmax), intent(in) ::  & 
+    real, dimension(gr%nz), intent(in) ::  & 
       nu       ! Background diffusion coefficient                         [m^2/s]
 
-    real, intent(in), dimension(gr%nzmax) ::  & 
+    real, intent(in), dimension(gr%nz) ::  & 
       cloud_frac, & ! Cloud fraction                                          [-]
       wm_zt,      & ! w wind component on thermodynamic levels                [m/s]
       V_hm,       & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
       V_hmt,      & ! Sedimentation velocity of hydrometeor (thermo. levels)  [m/s]
       Kr            ! Eddy diffusivity for hydrometeor on momentum levels     [m^2/s]
 
-    real, intent(out), dimension(3,gr%nzmax) :: & 
+    real, intent(out), dimension(3,gr%nz) :: & 
       lhs      ! Left hand side of tridiagonal matrix.
 
     ! Local Variables
     real, dimension(3) :: tmp
 
-    real, dimension(gr%nzmax) :: & 
+    real, dimension(gr%nz) :: & 
       cloud_frac_zt, & ! Cloud fraction on thermodynamic levels  [-]
       cloud_frac_zm    ! Cloud fraction on momentum levels       [-]
 
@@ -2418,10 +2436,10 @@ module microphys_driver
     lhs = 0.0
 
     ! Setup LHS Matrix
-    do k = 2, gr%nzmax-1, 1
+    do k = 2, gr%nz-1, 1
 
       km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nzmax )
+      kp1 = min( k+1, gr%nz )
 
       ! Main diagonal
 
@@ -2536,7 +2554,7 @@ module microphys_driver
 
       end if ! l_stats_samp
 
-    end do ! 2..gr%nzmax-1
+    end do ! 2..gr%nz-1
 
 
     ! Boundary Conditions
@@ -2546,7 +2564,7 @@ module microphys_driver
     ! through the process of eddy-diffusion.  It should be noted that amounts of a
     ! hydrometeor are allowed to leave the model at the lower boundary through the
     ! process of hydrometeor sedimentation.  However, only the eddy-diffusion term
-    ! contributes to the LHS matrix at the k=1 and k=gr%nzmax levels.  Thus, function
+    ! contributes to the LHS matrix at the k=1 and k=gr%nz levels.  Thus, function
     ! diffusion_zt_lhs needs to be called at both the upper boundary level and the
     ! lower boundary level.
 
@@ -2601,7 +2619,7 @@ module microphys_driver
 
 
     ! Upper Boundary
-    k   = gr%nzmax
+    k   = gr%nz
     km1 = max( k-1, 1 )
 
     ! LHS time tendency at the upper boundary.
@@ -2750,7 +2768,7 @@ module microphys_driver
     !      = 1 - C(k).
     !
     ! Furthermore, for all intermediate thermodynamic grid levels (as long as
-    ! k /= gr%nzmax and k /= 1), the four weighting factors have the following
+    ! k /= gr%nz and k /= 1), the four weighting factors have the following
     ! relationships:  A(k) = C(k+1) and B(k) = D(k+1).
     !
     ! Note:  The superdiagonal term from level 3 and both the main diagonal
@@ -2828,7 +2846,7 @@ module microphys_driver
       lhs(km1_tdiag) = 0.0
 
 
-    else if ( level > 1 .and. level < gr%nzmax ) then
+    else if ( level > 1 .and. level < gr%nz ) then
 
       ! Most of the interior model; normal conditions.
 
@@ -2864,9 +2882,9 @@ module microphys_driver
       !  End Vince Larson change
 
 
-    else if ( level == gr%nzmax ) then
+    else if ( level == gr%nz ) then
 
-      ! k = gr%nzmax (top level); upper boundary level; no flux.
+      ! k = gr%nz (top level); upper boundary level; no flux.
 
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
       lhs(kp1_tdiag) = 0.0
@@ -2921,9 +2939,9 @@ module microphys_driver
 
     ! Sedimention is always a downward process, so we omit the upward case
     ! (i.e. the V_hmt variable will always be negative).
-    if ( level == gr%nzmax ) then
+    if ( level == gr%nz ) then
 
-      ! k = gr%nzmax (top level); upper boundary level; no flux.
+      ! k = gr%nz (top level); upper boundary level; no flux.
 
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
       lhs(kp1_tdiag) = 0.0
@@ -3078,14 +3096,14 @@ module microphys_driver
 
     ! Input variables.
 
-    real, dimension(gr%nzmax), intent(in) :: &
+    real, dimension(gr%nz), intent(in) :: &
       xrm_tndcy, & ! Hydrometeor microphysical tendency.                      [hm_units/s]
       wm_zt,     & ! Vertical velocity (thermo. levels).                      [m/s]
       V_hm,      & ! Sedimentation velocity (interpolated to moment. levels). [m/s]
       V_hmt,     & ! Sedimentation velocity (thermo. levels).                 [m/s]
       Kr           ! Eddy diffusivity for hydrometeors (m-lev).               [m^2/s]
 
-    real, dimension(gr%nzmax), intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
+    real, dimension(gr%nz), intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
 
     real(kind=time_precision), intent(in) :: dt  ! Timestep   [s]
 
@@ -3096,7 +3114,7 @@ module microphys_driver
 
     ! Input/output variable.
 
-    real, dimension(gr%nzmax), intent(inout) :: &
+    real, dimension(gr%nz), intent(inout) :: &
       xrm  ! Hydrometeor.  [hm_units]
 
     ! Output variable.
@@ -3149,7 +3167,7 @@ module microphys_driver
 
     k = level
     km1 = max( k-1, 1 )
-    kp1 = min( k+1, gr%nzmax )
+    kp1 = min( k+1, gr%nz )
 
 
     ! Mean advection tendency component

@@ -232,7 +232,7 @@ module inputfields
 
     real, dimension(:), allocatable :: LES_tmp1
 
-    real, dimension(gr%nzmax+1) :: tmp1
+    real, dimension(gr%nz+1) :: tmp1
 
     integer ::  &
       k_lowest_zt_input, &  ! The lowest CLUBB thermodynamic level that's within the LES domain.
@@ -267,7 +267,7 @@ module inputfields
     integer :: k, &  ! Array index
                unit_number ! file unit number
 
-    real, dimension(gr%nzmax) :: &
+    real, dimension(gr%nz) :: &
       temp ! temporary variable
 
     ! ---- Begin Code ----
@@ -282,275 +282,275 @@ module inputfields
       l_fatal_error = .false.
 
       call get_clubb_variable_interpolated &
-           ( input_um, stat_file_zt, "um", gr%nzmax, timestep, &
+           ( input_um, stat_file_zt, "um", gr%nz, timestep, &
              gr%zt, um, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_vm, stat_file_zt, "vm", gr%nzmax, timestep, &
+           ( input_vm, stat_file_zt, "vm", gr%nz, timestep, &
              gr%zt, vm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rtm, stat_file_zt, "rtm", gr%nzmax, timestep, &
+           ( input_rtm, stat_file_zt, "rtm", gr%nz, timestep, &
              gr%zt, rtm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
-           ( input_thlm, stat_file_zt, "thlm", gr%nzmax, timestep, &
+           ( input_thlm, stat_file_zt, "thlm", gr%nz, timestep, &
              gr%zt, thlm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_wp3, stat_file_zt, "wp3", gr%nzmax, timestep, &
+           ( input_wp3, stat_file_zt, "wp3", gr%nz, timestep, &
              gr%zt, wp3, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_tau_zt, stat_file_zt, "tau_zt", gr%nzmax, timestep, &
+           ( input_tau_zt, stat_file_zt, "tau_zt", gr%nz, timestep, &
              gr%zt, tau_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rrainm, stat_file_zt, "rrainm", gr%nzmax, timestep, & 
-             gr%zt, tmp1(1:gr%nzmax), l_read_error )
+           ( input_rrainm, stat_file_zt, "rrainm", gr%nz, timestep, & 
+             gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( input_rrainm ) then
-        hydromet(1:gr%nzmax,iirrainm) = tmp1(1:gr%nzmax)
+        hydromet(1:gr%nz,iirrainm) = tmp1(1:gr%nz)
       end if
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rsnowm, stat_file_zt, "rsnowm", gr%nzmax, timestep, & 
-             gr%zt, tmp1(1:gr%nzmax), l_read_error )
+           ( input_rsnowm, stat_file_zt, "rsnowm", gr%nz, timestep, & 
+             gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( input_rsnowm ) then
-        hydromet(1:gr%nzmax,iirsnowm) = tmp1(1:gr%nzmax)
+        hydromet(1:gr%nz,iirsnowm) = tmp1(1:gr%nz)
       end if
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_ricem, stat_file_zt, "ricem", gr%nzmax, timestep, & 
-             gr%zt, tmp1(1:gr%nzmax), l_read_error )
+           ( input_ricem, stat_file_zt, "ricem", gr%nz, timestep, & 
+             gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( input_ricem ) then
-        hydromet(1:gr%nzmax,iiricem) = tmp1(1:gr%nzmax)
+        hydromet(1:gr%nz,iiricem) = tmp1(1:gr%nz)
       end if
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rgraupelm, stat_file_zt, "rgraupelm", gr%nzmax, timestep, & 
-             gr%zt, tmp1(1:gr%nzmax), l_read_error )
+           ( input_rgraupelm, stat_file_zt, "rgraupelm", gr%nz, timestep, & 
+             gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( input_rgraupelm ) then
-        hydromet(1:gr%nzmax,iirgraupelm) = tmp1(1:gr%nzmax)
+        hydromet(1:gr%nz,iirgraupelm) = tmp1(1:gr%nz)
       end if
       l_fatal_error = l_fatal_error .or. l_read_error
 
 !--------------------------------------------------------
 ! Added variables for clubb_restart
       call get_clubb_variable_interpolated &
-           ( input_p, stat_file_zt, "p_in_Pa", gr%nzmax, timestep, &
+           ( input_p, stat_file_zt, "p_in_Pa", gr%nz, timestep, &
              gr%zt, p_in_Pa, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_exner, stat_file_zt, "exner", gr%nzmax, timestep, &
+           ( input_exner, stat_file_zt, "exner", gr%nz, timestep, &
              gr%zt, exner, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_ug, stat_file_zt, "ug", gr%nzmax, timestep, &
+           ( input_ug, stat_file_zt, "ug", gr%nz, timestep, &
              gr%zt, ug, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_vg, stat_file_zt, "vg", gr%nzmax, timestep, &
+           ( input_vg, stat_file_zt, "vg", gr%nz, timestep, &
              gr%zt, vg, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rcm, stat_file_zt, "rcm", gr%nzmax, timestep, &
+           ( input_rcm, stat_file_zt, "rcm", gr%nz, timestep, &
              gr%zt, rcm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_wm_zt, stat_file_zt, "wm", gr%nzmax, timestep, &
+           ( input_wm_zt, stat_file_zt, "wm", gr%nz, timestep, &
              gr%zt, wm_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
-           ( input_rho, stat_file_zt, "rho", gr%nzmax, timestep, &
+           ( input_rho, stat_file_zt, "rho", gr%nz, timestep, &
              gr%zt, rho, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rho_ds_zt, stat_file_zt, "rho_ds_zt", gr%nzmax, timestep, &
+           ( input_rho_ds_zt, stat_file_zt, "rho_ds_zt", gr%nz, timestep, &
              gr%zt, rho_ds_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_thv_ds_zt, stat_file_zt, "thv_ds_zt", gr%nzmax, timestep, &
+           ( input_thv_ds_zt, stat_file_zt, "thv_ds_zt", gr%nz, timestep, &
              gr%zt, thv_ds_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_Lscale, stat_file_zt, "Lscale", gr%nzmax, timestep, &
+           ( input_Lscale, stat_file_zt, "Lscale", gr%nz, timestep, &
              gr%zt, Lscale, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_Lscale_up, stat_file_zt, "Lscale_up", gr%nzmax, timestep, &
+           ( input_Lscale_up, stat_file_zt, "Lscale_up", gr%nz, timestep, &
              gr%zt, Lscale_up, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_Lscale_down, stat_file_zt, "Lscale_down", gr%nzmax, timestep, &
+           ( input_Lscale_down, stat_file_zt, "Lscale_down", gr%nz, timestep, &
              gr%zt, Lscale_down, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_Kh_zt, stat_file_zt, "Kh_zt", gr%nzmax, timestep, &
+           ( input_Kh_zt, stat_file_zt, "Kh_zt", gr%nz, timestep, &
              gr%zt, Kh_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_thvm, stat_file_zt, "thvm", gr%nzmax, timestep, &
+           ( input_thvm, stat_file_zt, "thvm", gr%nz, timestep, &
              gr%zt, thvm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_thlm_forcing, stat_file_zt, "thlm_forcing", gr%nzmax, timestep, &
+           ( input_thlm_forcing, stat_file_zt, "thlm_forcing", gr%nz, timestep, &
              gr%zt, thlm_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rtm_forcing, stat_file_zt, "rtm_forcing", gr%nzmax, timestep, &
+           ( input_rtm_forcing, stat_file_zt, "rtm_forcing", gr%nz, timestep, &
              gr%zt, rtm_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_Ncm, stat_file_zt, "Ncm", gr%nzmax, timestep, &
-             gr%zt, tmp1(1:gr%nzmax), l_read_error )
+           ( input_Ncm, stat_file_zt, "Ncm", gr%nz, timestep, &
+             gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( input_Ncm ) then
-        hydromet(1:gr%nzmax,iiNcm) = tmp1(1:gr%nzmax)
+        hydromet(1:gr%nz,iiNcm) = tmp1(1:gr%nz)
       end if
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_Ncnm, stat_file_zt, "Ncnm", gr%nzmax, timestep, &
+           ( input_Ncnm, stat_file_zt, "Ncnm", gr%nz, timestep, &
              gr%zt, Ncnm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_Nim, stat_file_zt, "Nim", gr%nzmax, timestep, &
-             gr%zt, tmp1(1:gr%nzmax), l_read_error )
+           ( input_Nim, stat_file_zt, "Nim", gr%nz, timestep, &
+             gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( input_Nim ) then
-        hydromet(1:gr%nzmax, iiNcm) = tmp1(1:gr%nzmax)
+        hydromet(1:gr%nz, iiNcm) = tmp1(1:gr%nz)
       end if
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_cloud_frac, stat_file_zt, "cloud_frac", gr%nzmax, timestep, &
+           ( input_cloud_frac, stat_file_zt, "cloud_frac", gr%nz, timestep, &
              gr%zt, cloud_frac, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_Nrm, stat_file_zt, "Nrm", gr%nzmax, timestep, &
-             gr%zt, tmp1(1:gr%nzmax), l_read_error )
+           ( input_Nrm, stat_file_zt, "Nrm", gr%nz, timestep, &
+             gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( input_Nrm ) then
-        hydromet(1:gr%nzmax, iiNrm) = tmp1(1:gr%nzmax)
+        hydromet(1:gr%nz, iiNrm) = tmp1(1:gr%nz)
       end if
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_sigma_sqd_w_zt, stat_file_zt, "sigma_sqd_w_zt", gr%nzmax, timestep, &
+           ( input_sigma_sqd_w_zt, stat_file_zt, "sigma_sqd_w_zt", gr%nz, timestep, &
              gr%zt, sigma_sqd_w_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_radht, stat_file_zt, "radht", gr%nzmax, timestep, &
+           ( input_radht, stat_file_zt, "radht", gr%nz, timestep, &
              gr%zt, radht, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       ! PDF Parameters (needed for K&K microphysics)
       call get_clubb_variable_interpolated &
-           ( input_thl1, stat_file_zt, "thl1", gr%nzmax, timestep, &
+           ( input_thl1, stat_file_zt, "thl1", gr%nz, timestep, &
              gr%zt, pdf_params%thl1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_thl2, stat_file_zt, "thl2", gr%nzmax, timestep, &
+           ( input_thl2, stat_file_zt, "thl2", gr%nz, timestep, &
              gr%zt, pdf_params%thl2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_mixt_frac, stat_file_zt, "mixt_frac", gr%nzmax, timestep, &
+           ( input_mixt_frac, stat_file_zt, "mixt_frac", gr%nz, timestep, &
              gr%zt, pdf_params%mixt_frac, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_s1, stat_file_zt, "s1", gr%nzmax, timestep, &
+           ( input_s1, stat_file_zt, "s1", gr%nz, timestep, &
              gr%zt, pdf_params%s1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_s2, stat_file_zt, "s2", gr%nzmax, timestep, &
+           ( input_s2, stat_file_zt, "s2", gr%nz, timestep, &
              gr%zt, pdf_params%s2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_stdev_s1, stat_file_zt, "stdev_s1", gr%nzmax, timestep, &
+           ( input_stdev_s1, stat_file_zt, "stdev_s1", gr%nz, timestep, &
              gr%zt, pdf_params%stdev_s1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_stdev_s2, stat_file_zt, "stdev_s2", gr%nzmax, timestep, &
+           ( input_stdev_s2, stat_file_zt, "stdev_s2", gr%nz, timestep, &
              gr%zt, pdf_params%stdev_s2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rc1, stat_file_zt, "rc1", gr%nzmax, timestep, &
+           ( input_rc1, stat_file_zt, "rc1", gr%nz, timestep, &
              gr%zt, pdf_params%rc1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rc2, stat_file_zt, "rc2", gr%nzmax, timestep, &
+           ( input_rc2, stat_file_zt, "rc2", gr%nz, timestep, &
              gr%zt, pdf_params%rc2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
@@ -560,110 +560,110 @@ module inputfields
       ! Read in the zm file
 
       call get_clubb_variable_interpolated &
-           ( input_wp2, stat_file_zm, "wp2", gr%nzmax, timestep, &
+           ( input_wp2, stat_file_zm, "wp2", gr%nz, timestep, &
              gr%zm, wp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_wprtp, stat_file_zm, "wprtp", gr%nzmax, timestep, &
+           ( input_wprtp, stat_file_zm, "wprtp", gr%nz, timestep, &
              gr%zm, wprtp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_wpthlp, stat_file_zm, "wpthlp", gr%nzmax, timestep, &
+           ( input_wpthlp, stat_file_zm, "wpthlp", gr%nz, timestep, &
              gr%zm, wpthlp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_wpthvp, stat_file_zm, "wpthvp", gr%nzmax, timestep, &
+           ( input_wpthvp, stat_file_zm, "wpthvp", gr%nz, timestep, &
              gr%zm, wpthvp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rtp2, stat_file_zm, "rtp2", gr%nzmax, timestep, &
+           ( input_rtp2, stat_file_zm, "rtp2", gr%nz, timestep, &
              gr%zm, rtp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_thlp2, stat_file_zm, "thlp2", gr%nzmax, timestep, &
+           ( input_thlp2, stat_file_zm, "thlp2", gr%nz, timestep, &
              gr%zm, thlp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rtpthlp, stat_file_zm, "rtpthlp", gr%nzmax, timestep, &
+           ( input_rtpthlp, stat_file_zm, "rtpthlp", gr%nz, timestep, &
              gr%zm, rtpthlp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_upwp, stat_file_zm, "upwp", gr%nzmax, timestep, &
+           ( input_upwp, stat_file_zm, "upwp", gr%nz, timestep, &
              gr%zm, upwp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_vpwp, stat_file_zm, "vpwp", gr%nzmax, timestep, &
+           ( input_vpwp, stat_file_zm, "vpwp", gr%nz, timestep, &
              gr%zm, vpwp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 !-----------------------------------------------------------
       call get_clubb_variable_interpolated &
-           ( input_em, stat_file_zm, "em", gr%nzmax, timestep, &
+           ( input_em, stat_file_zm, "em", gr%nz, timestep, &
              gr%zm, em, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rho_zm, stat_file_zm, "rho_zm", gr%nzmax, timestep, &
+           ( input_rho_zm, stat_file_zm, "rho_zm", gr%nz, timestep, &
              gr%zm, rho_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_rho_ds_zm, stat_file_zm, "rho_ds_zm", gr%nzmax, timestep, &
+           ( input_rho_ds_zm, stat_file_zm, "rho_ds_zm", gr%nz, timestep, &
              gr%zm, rho_ds_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_thv_ds_zm, stat_file_zm, "thv_ds_zm", gr%nzmax, timestep, &
+           ( input_thv_ds_zm, stat_file_zm, "thv_ds_zm", gr%nz, timestep, &
              gr%zm, thv_ds_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_Kh_zm, stat_file_zm, "Kh_zm", gr%nzmax, timestep, &
+           ( input_Kh_zm, stat_file_zm, "Kh_zm", gr%nz, timestep, &
              gr%zm, Kh_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_tau_zm, stat_file_zm, "tau_zm", gr%nzmax, timestep, &
+           ( input_tau_zm, stat_file_zm, "tau_zm", gr%nz, timestep, &
              gr%zm, tau_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_up2, stat_file_zm, "up2", gr%nzmax, timestep, &
+           ( input_up2, stat_file_zm, "up2", gr%nz, timestep, &
              gr%zm, up2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_vp2, stat_file_zm, "vp2", gr%nzmax, timestep, &
+           ( input_vp2, stat_file_zm, "vp2", gr%nz, timestep, &
              gr%zm, vp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( input_sigma_sqd_w, stat_file_zm, "sigma_sqd_w", gr%nzmax, timestep, &
+           ( input_sigma_sqd_w, stat_file_zm, "sigma_sqd_w", gr%nz, timestep, &
              gr%zm, sigma_sqd_w, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
@@ -788,7 +788,7 @@ module inputfields
       l_read_error = .false.
 
       call get_coamps_variable_interp( &
-              input_um, fread_var, "um", timestep, gr%nzmax, &               ! Intent(in)
+              input_um, fread_var, "um", timestep, gr%nz, &               ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               um, l_read_error )                           ! Intent(in/out), Intent(out)
@@ -809,7 +809,7 @@ module inputfields
       endif
 
       call get_coamps_variable_interp( &
-              input_vm, fread_var, "vm", timestep, gr%nzmax, &               ! Intent(in)
+              input_vm, fread_var, "vm", timestep, gr%nz, &               ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               vm, l_read_error )                           ! Intent(in/out), Intent(out)
@@ -830,7 +830,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_rtm, fread_var, "qtm", timestep, gr%nzmax, &             ! Intent(in)
+              input_rtm, fread_var, "qtm", timestep, gr%nz, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               rtm, l_read_error )                          ! Intent(in/out), Intent(out)
@@ -849,7 +849,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_thlm, fread_var, "thlm", timestep, gr%nzmax, &           ! Intent(in)
+              input_thlm, fread_var, "thlm", timestep, gr%nz, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               thlm, l_read_error )                         ! Intent(in/out), Intent(out)
@@ -869,7 +869,7 @@ module inputfields
       ! We obtain wp2 from stats_sw
 
       call get_coamps_variable_interp( &
-              input_wp3, fread_var, "wp3", timestep, gr%nzmax, &             ! Intent(in)
+              input_wp3, fread_var, "wp3", timestep, gr%nz, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               wp3, l_read_error )                          ! Intent(in/out), Intent(out)
@@ -887,7 +887,7 @@ module inputfields
       endif
 
       call get_coamps_variable_interp( &
-              input_wprtp, fread_var, "wpqtp", timestep, gr%nzmax, &         ! Intent(in)
+              input_wprtp, fread_var, "wpqtp", timestep, gr%nz, &         ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               wprtp, l_read_error )                        ! Intent(in/out), Intent(out)
@@ -909,7 +909,7 @@ module inputfields
       endif
 
       call get_coamps_variable_interp( &
-              input_wpthlp, fread_var, "wpthltp", timestep, gr%nzmax, &      ! Intent(in)
+              input_wpthlp, fread_var, "wpthltp", timestep, gr%nz, &      ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               wpthlp, l_read_error )                       ! Intent(in/out), Intent(out)
@@ -932,7 +932,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_rtp2, fread_var, "qtp2", timestep, gr%nzmax, &           ! Intent(in)
+              input_rtp2, fread_var, "qtp2", timestep, gr%nz, &           ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               rtp2, l_read_error )                         ! Intent(in/out), Intent(out)
@@ -947,15 +947,15 @@ module inputfields
         if ( k_lowest_zm_input == 2 ) then
           rtp2(1) =  rtp2(2)
         endif
-        if ( any( rtp2(1:gr%nzmax) < rt_tol**2 ) ) then
-          do k=1, gr%nzmax
+        if ( any( rtp2(1:gr%nz) < rt_tol**2 ) ) then
+          do k=1, gr%nz
             rtp2(k) = max(rtp2(k), rt_tol**2)
           enddo
         endif
       endif
 
       call get_coamps_variable_interp( &
-              input_thlp2, fread_var, "thlp2", timestep, gr%nzmax, &         ! Intent(in)
+              input_thlp2, fread_var, "thlp2", timestep, gr%nz, &         ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               thlp2, l_read_error )                        ! Intent(in/out), Intent(out)
@@ -970,8 +970,8 @@ module inputfields
         if ( k_lowest_zm_input == 2 ) then
           thlp2(1) = thlp2(2)
         endif
-        if ( any( thlp2(1:gr%nzmax) < thl_tol**2 ) ) then
-          do k=1, gr%nzmax
+        if ( any( thlp2(1:gr%nz) < thl_tol**2 ) ) then
+          do k=1, gr%nz
             thlp2(k) = max(thlp2(k), thl_tol**2)
           enddo
         endif
@@ -979,7 +979,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_rtpthlp, fread_var, "qtpthlp", timestep, gr%nzmax, &     ! Intent(in)
+              input_rtpthlp, fread_var, "qtpthlp", timestep, gr%nz, &     ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               rtpthlp, l_read_error )                      ! Intent(in/out), Intent(out)
@@ -1015,7 +1015,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_rcm, fread_var, "qcm", timestep, gr%nzmax, &             ! Intent(in)
+              input_rcm, fread_var, "qcm", timestep, gr%nz, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               rcm, l_read_error )                          ! Intent(in/out), Intent(out)
@@ -1024,7 +1024,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_wm_zt, fread_var, "wlsm", timestep, gr%nzmax, &          ! Intent(in)
+              input_wm_zt, fread_var, "wlsm", timestep, gr%nz, &          ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               wm_zt, l_read_error )                        ! Intent(in/out), Intent(out)
@@ -1033,7 +1033,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_exner, fread_var, "ex0", timestep, gr%nzmax, &           ! Intent(in)
+              input_exner, fread_var, "ex0", timestep, gr%nz, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               exner, l_read_error )                        ! Intent(in/out), Intent(out)
@@ -1042,7 +1042,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_em, fread_var, "em", timestep, gr%nzmax, &               ! Intent(in)
+              input_em, fread_var, "em", timestep, gr%nz, &               ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               em, l_read_error )                           ! Intent(in/out), Intent(out)
@@ -1052,7 +1052,7 @@ module inputfields
       temp = 0.0 ! Initialize temp to 0.0
 
       call get_coamps_variable_interp( &
-              input_em, fread_var, "tke", timestep, gr%nzmax, &              ! Intent(in)
+              input_em, fread_var, "tke", timestep, gr%nz, &              ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               temp, l_read_error )                         ! Intent(in/out), Intent(out)
@@ -1070,7 +1070,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_p, fread_var, "pm", timestep, gr%nzmax, &                ! Intent(in)
+              input_p, fread_var, "pm", timestep, gr%nz, &                ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               p_in_Pa, l_read_error )                      ! Intent(in/out), Intent(out)
@@ -1080,7 +1080,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_rho, fread_var, "dn0", timestep, gr%nzmax, &             ! Intent(in)
+              input_rho, fread_var, "dn0", timestep, gr%nz, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               rho, l_read_error )                          ! Intent(in/out), Intent(out)
@@ -1110,7 +1110,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_Kh_zt, fread_var, "kh", timestep, gr%nzmax, &            ! Intent(in)
+              input_Kh_zt, fread_var, "kh", timestep, gr%nz, &            ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               Kh_zt, l_read_error )                        ! Intent(in/out), Intent(out)
@@ -1138,7 +1138,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_wpthvp, fread_var, "wpthvp", timestep, gr%nzmax, &       ! Intent(in)
+              input_wpthvp, fread_var, "wpthvp", timestep, gr%nz, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               wpthvp, l_read_error )                       ! Intent(in/out), Intent(out)
@@ -1202,7 +1202,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_thvm, fread_var, "thvm", timestep, gr%nzmax, &           ! Intent(in)
+              input_thvm, fread_var, "thvm", timestep, gr%nz, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               thvm, l_read_error )                         ! Intent(in/out), Intent(out)
@@ -1217,7 +1217,7 @@ module inputfields
             l_fatal_error = .true.
         else
           call get_coamps_variable_interp( &
-                  input_rrainm, fread_var, "qrm", timestep, gr%nzmax, &          ! Intent(in)
+                  input_rrainm, fread_var, "qrm", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
                   hydromet(:,iirrainm), l_read_error )         ! Intent(in/out), Intent(out)
@@ -1233,7 +1233,7 @@ module inputfields
             l_fatal_error = .true.
         else
           call get_coamps_variable_interp( &
-                  input_Nrm, fread_var, "nrm", timestep, gr%nzmax, &          ! Intent(in)
+                  input_Nrm, fread_var, "nrm", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
                   hydromet(:,iiNrm), l_read_error )         ! Intent(in/out), Intent(out)
@@ -1250,7 +1250,7 @@ module inputfields
             l_fatal_error = .true.
         else
           call get_coamps_variable_interp( &
-                  input_Ncm, fread_var, "ncm", timestep, gr%nzmax, &          ! Intent(in)
+                  input_Ncm, fread_var, "ncm", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
                   hydromet(:,iiNcm), l_read_error )         ! Intent(in/out), Intent(out)
@@ -1267,7 +1267,7 @@ module inputfields
             l_fatal_error = .true.
         else
           call get_coamps_variable_interp( &
-                  input_rsnowm, fread_var, "qsm", timestep, gr%nzmax, &          ! Intent(in)
+                  input_rsnowm, fread_var, "qsm", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
                   hydromet(:,iirsnowm), l_read_error )         ! Intent(in/out), Intent(out)
@@ -1284,7 +1284,7 @@ module inputfields
             l_fatal_error = .true.
         else
           call get_coamps_variable_interp( &
-                  input_ricem, fread_var, "qim", timestep, gr%nzmax, &          ! Intent(in)
+                  input_ricem, fread_var, "qim", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
                   hydromet(:,iiricem), l_read_error )         ! Intent(in/out), Intent(out)
@@ -1301,7 +1301,7 @@ module inputfields
             l_fatal_error = .true.
         else
           call get_coamps_variable_interp( &
-                  input_rgraupelm, fread_var, "qgm", timestep, gr%nzmax, &          ! Intent(in)
+                  input_rgraupelm, fread_var, "qgm", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
                   hydromet(:,iirgraupelm), l_read_error )         ! Intent(in/out), Intent(out)
@@ -1312,7 +1312,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_Ncnm, fread_var, "ncnm", timestep, gr%nzmax, &           ! Intent(in)
+              input_Ncnm, fread_var, "ncnm", timestep, gr%nz, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               Ncnm, l_read_error )                         ! Intent(in/out), Intent(out)
@@ -1327,7 +1327,7 @@ module inputfields
             l_fatal_error = .true.
         else
           call get_coamps_variable_interp( &
-                  input_Nim, fread_var, "nim", timestep, gr%nzmax, &          ! Intent(in)
+                  input_Nim, fread_var, "nim", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
                   hydromet(:,iiNim), l_read_error )         ! Intent(in/out), Intent(out)
@@ -1351,7 +1351,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_up2, fread_var, "up2", timestep, gr%nzmax, &             ! Intent(in)
+              input_up2, fread_var, "up2", timestep, gr%nz, &             ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               up2, l_read_error )                          ! Intent(in/out), Intent(out)
@@ -1365,7 +1365,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_vp2, fread_var, "vp2", timestep, gr%nzmax, &             ! Intent(in)
+              input_vp2, fread_var, "vp2", timestep, gr%nz, &             ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               vp2, l_read_error )                          ! Intent(in/out), Intent(out)
@@ -1486,7 +1486,7 @@ module inputfields
       !        as they are in CLUBB.
 
       call get_coamps_variable_interp( &
-              input_upwp, fread_var, "wpup", timestep, gr%nzmax, &           ! Intent(in)
+              input_upwp, fread_var, "wpup", timestep, gr%nz, &           ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               upwp, l_read_error )                         ! Intent(in/out), Intent(out)
@@ -1495,7 +1495,7 @@ module inputfields
 
       temp = 0.0  ! clear temp
       call get_coamps_variable_interp( &
-              input_upwp, fread_var, "wpup_sgs", timestep, gr%nzmax, &       ! Intent(in)
+              input_upwp, fread_var, "wpup_sgs", timestep, gr%nz, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               temp, l_read_error )                         ! Intent(in/out), Intent(out)
@@ -1510,7 +1510,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_vpwp, fread_var, "wpvp", timestep, gr%nzmax, &           ! Intent(in)
+              input_vpwp, fread_var, "wpvp", timestep, gr%nz, &           ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               vpwp, l_read_error )                         ! Intent(in/out), Intent(out)
@@ -1519,7 +1519,7 @@ module inputfields
 
       temp = 0.0  ! clear temp
       call get_coamps_variable_interp( &
-              input_vpwp, fread_var, "wpvp_sgs", timestep, gr%nzmax, &       ! Intent(in)
+              input_vpwp, fread_var, "wpvp_sgs", timestep, gr%nz, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               temp, l_read_error )                         ! Intent(in/out), Intent(out)
@@ -1534,7 +1534,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_wp2, fread_var, "wp2", timestep, gr%nzmax, &            ! Intent(in)
+              input_wp2, fread_var, "wp2", timestep, gr%nz, &            ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               wp2, l_read_error )                          ! Intent(in/out), Intent(out)
@@ -1542,8 +1542,8 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       if ( input_wp2 ) then
-         if ( any( wp2(1:gr%nzmax) < w_tol_sqd ) ) then
-          do k=1, gr%nzmax
+         if ( any( wp2(1:gr%nz) < w_tol_sqd ) ) then
+          do k=1, gr%nz
             wp2(k) = max( wp2(k), w_tol_sqd )
           enddo
         endif
@@ -1551,7 +1551,7 @@ module inputfields
 
 
       call get_coamps_variable_interp( &
-              input_rho_zm, fread_var, "dn0", timestep, gr%nzmax, &          ! Intent(in)
+              input_rho_zm, fread_var, "dn0", timestep, gr%nz, &          ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               rho_zm, l_read_error )                       ! Intent(in/out), Intent(out)

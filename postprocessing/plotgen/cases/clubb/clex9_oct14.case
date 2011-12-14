@@ -5,9 +5,9 @@
     'name' => 'clex9_oct14',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'Clex 9 Oct. 14 Minutes 91-150',
-    'startTime' => 91.0,  # [minutes]
-    'endTime' => 150.0,    # [minutes]
+    'headerText' => 'Clex 9 Oct. 14 Minutes 181-240',
+    'startTime' => 181.0,  # [minutes]
+    'endTime' => 240.0,    # [minutes]
     'startHeight' => 2188.0,  # [m]
     'endHeight' => 6688.0, # [m]
     'plots' =>

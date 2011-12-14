@@ -211,7 +211,12 @@ module stats_zm
       isptp_mellor_2, &
       icorr_st_mellor1, &
       icorr_st_mellor2, &
-      iSkw_velocity
+      iSkw_velocity, &
+      igamma_Skw_fnc, &
+      iC6rt_Skw_fnc, &
+      iC6thl_Skw_fnc, &
+      iC7_Skw_fnc, &
+      iC1_Skw_fnc
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -410,6 +415,13 @@ module stats_zm
 
     ! Skewness velocity
     iSkw_velocity = 0
+
+    ! Skewness function
+    igamma_Skw_fnc = 0
+    iC6rt_Skw_fnc = 0
+    iC6thl_Skw_fnc = 0
+    iC7_Skw_fnc = 0
+    iC1_Skw_fnc = 0
 
     ia3_coef = 0
     iwp3_on_wp2 = 0
@@ -1381,6 +1393,36 @@ module stats_zm
         iSkw_velocity = k
         call stat_assign( iSkw_velocity, "Skw_velocity", & 
              "Skewness velocity [m/s]", "m/s", zm )
+        k = k + 1
+
+      case ( 'gamma_Skw_fnc' )
+        igamma_Skw_fnc = k
+        call stat_assign( igamma_Skw_fnc, "gamma_Skw_fnc", & 
+             "Gamma as a function of skewness [-]", "count", zm )
+        k = k + 1
+
+      case ( 'C6rt_Skw_fnc' )
+        iC6rt_Skw_fnc = k
+        call stat_assign( iC6rt_Skw_fnc, "C6rt_Skw_fnc", & 
+             "C_6rt parameter with Sk_w applied [-]", "count", zm )
+        k = k + 1
+
+      case ( 'C6thl_Skw_fnc' )
+        iC6thl_Skw_fnc = k
+        call stat_assign( iC6thl_Skw_fnc, "C6thl_Skw_fnc", & 
+             "C_6thl parameter with Sk_w applied [-]", "count", zm )
+        k = k + 1
+
+      case ( 'C7_Skw_fnc' )
+        iC7_Skw_fnc = k
+        call stat_assign( iC7_Skw_fnc, "C7_Skw_fnc", & 
+             "C_7 parameter with Sk_w applied [-]", "count", zm )
+        k = k + 1
+
+      case ( 'C1_Skw_fnc' )
+        iC1_Skw_fnc = k
+        call stat_assign( iC1_Skw_fnc, "C1_Skw_fnc", & 
+             "C_1 parameter with Sk_w applied [-]", "count", zm )
         k = k + 1
 
       case ( 'a3_coef' )

@@ -7,14 +7,16 @@ module soil_vegetation
 
   real, public :: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
+  logical, public :: l_soil_veg
+
   private
 
   contains
 
   !----------------------------------------------------------------------
   subroutine advance_soil_veg( dt, rho_sfc, &
-                                   Frad_SW_net, Frad_SW_down_sfc, &
-                                   Frad_LW_down_sfc, wpthep, soil_heat_flux )
+                               Frad_SW_net, Frad_SW_down_sfc, &
+                               Frad_LW_down_sfc, wpthep, soil_heat_flux )
     !
     !     Description:
     !

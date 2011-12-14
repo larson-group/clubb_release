@@ -43,7 +43,8 @@ module error
   integer, parameter, public :: &
     iamoeba = 0, & ! Numerical Recipes downhill simplex
     iamebsa = 1, & ! Numerical Recipes simulated annealing
-    iesa    = 2    ! ESA tuning type
+    iesa    = 2, & ! ESA tuning type
+    iflags  = 3    ! Model flags "tuner"
 
   ! Variables
   integer, public :: ndim ! Size of the simplex
@@ -142,6 +143,10 @@ module error
 
   real(kind=genrand_real), allocatable, dimension(:), private ::  & 
     rand_vect ! A vector of random reals for initializing the x array
+
+  logical, public, dimension(:,:), allocatable :: &
+    model_flags_array ! Flags we're checking for
+
 
   ! Procedures
   public :: tuner_init, min_les_clubb_diff, write_results, & 
@@ -320,7 +325,7 @@ module error
       call read_param_spread( iunit, filename, params_index,  & 
                               rtmp, ndim )
 
-      if ( ndim == 0 ) then
+      if ( ndim == 0 .and. tune_type /= iflags ) then
         write(fstderr,*) "You must vary at least one parameter"
         stop
       end if
@@ -330,7 +335,7 @@ module error
         allocate( rand_vect(ndim), param_vals_matrix(ndim+1,ndim), & 
                   param_vals_spread(ndim), cost_fnc_vector(ndim+1) )
 
-      else ! ESA algorithm
+      else ! ESA algorithm or model flags
         allocate( param_vals_matrix(1,ndim), param_vals_spread(ndim), cost_fnc_vector(1) )
       end if
       ! Initialize the CLUBB parameter spread
@@ -414,7 +419,7 @@ module error
 
 ! Description:
 !   Function that returns the sum of the error between the dependent
-!   variable(i.e. the variable we want to match) in each of the models
+!   variable (i.e. the variable we want to match) in each of the models
 
 ! References:
 !   _Numerical Recipes in Fortran 77_ P.402-406 (Description)
@@ -507,7 +512,7 @@ module error
     ! Amoeba's unusual calling convention makes this happen less
     ! often than might be expected.
     if ( l_results_stdout & 
-        .and. ( modulo(iter, 10) == 0 ) & 
+        .and. ( modulo( iter, 10 ) == 0 ) & 
         .and. iter /= 0  ) then
 
       write(unit=*,fmt='(A12,I10)') "Iteration: ", iter
@@ -522,7 +527,7 @@ module error
     end if
 
     ! Do the same as above if the tuning run is being saved to a file
-    if( l_save_tuning_run .and. ( modulo(iter,10) == 0 ) .and. iter /= 0 ) then
+    if( l_save_tuning_run .and. ( modulo( iter, 10 ) == 0 ) .and. iter /= 0 ) then
       open(unit=file_unit, file=tuning_filename, action='write', position='append')
 
       write(unit=file_unit,fmt='(A12,I10)') "Iteration: ", iter
@@ -543,7 +548,7 @@ module error
     err_sum  = 0.0
     err_sums = 0.0
     c_terms  = 0
-    err_code     = clubb_no_error
+    err_code = clubb_no_error
     run_stat(1:c_total) = clubb_no_error
 
     ! Copy simplex into a vector of all possible CLUBB parameters
@@ -570,7 +575,7 @@ module error
     ! model variables are declared threadprivate -dschanen 31 Jan 2007
 
 !$omp parallel do default(none), private(c_run), &
-!$omp   shared(params_local, run_file, run_stat, c_total)
+!$omp   shared(params_local, run_file, run_stat, c_total, model_flags_array, iter)
     do c_run=1, c_total, 1
 
 #ifndef _OPENMP 
@@ -585,8 +590,14 @@ module error
 #endif
       ! Run the CLUBB model with parameters as input
 
-      call run_clubb & 
-           ( params_local, run_file(c_run), run_stat(c_run), l_stdout )
+      if ( allocated( model_flags_array ) ) then
+        call run_clubb &
+             ( params_local, run_file(c_run), run_stat(c_run), l_stdout, &
+               model_flags_array(iter,:) )
+      else
+        call run_clubb & 
+             ( params_local, run_file(c_run), run_stat(c_run), l_stdout )
+      end if
 
     end do ! 1..c_run
 !$omp end parallel do

@@ -12,6 +12,7 @@
 
 NIGHTLY=false
 SHORT_CASES=false
+PRIORITY_CASES=false
 
 OUTPUT_DIR="/home/`whoami`/nightly_tests/output"
 
@@ -29,38 +30,42 @@ OPTIONS=$*
 # Note that we use `"$@"' to let each command-line parameter expand to a 
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o :nhc --long nightly,help,short-cases -n 'run_scm_all.bash' -- "$@"`
+TEMP=`getopt -o :nhci --long nightly,help,short-cases,priority-cases -n 'run_scm_all.bash' -- "$@"`
 
 # Note the quotes around `$TEMP': they are essential!
 eval set -- "$TEMP"
 
 while true ; do
-	case "$1" in
-	-n|--nightly) # Use nightly mode
+  case "$1" in
+  -n|--nightly) # Use nightly mode
             NIGHTLY=true
             shift ;;
-        -h|--help) # Print the help message
+  -h|--help) # Print the help message
             echo -e "Usage: run_scm_all.bash [OPTION]..."
             echo -e "\t-n, --nightly\t\t\tRun in nightly mode"
-	    echo -e "\t-c, --short-cases\t\tRun short cases. This will omit the gabls2, cloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12, and twp_ice cases"
+            echo -e "\t-c, --short-cases\t\tRun short cases. This will omit\n\t\tthe gabls2, cloud_feedback_s6, cloud_feedback_s11,\n\t\tcloud_feedback_s12, and twp_ice cases"
+            echo -e "\t-i, --priority-cases\t\tRun priority cases. This will include\n\t\tonly the following cases if they are in RUN_CASES: arm, atex,\n\t\tbomex, dycoms2_rf01, dycoms2_rf01_fixed_sst, dycoms2_rf02_ds,\n\t\tdycoms2_rf02_nd, mpace_b, rico, wangara, arm_97,\n\t\tcloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12,\n\t\tgabls3_night, lba, and twp_ice."
             echo -e "\t-h, --help\t\t\tPrints this help message"
 
             # Since the options for run_scm.bash are also valid, print those too:
             ./run_scm.bash --help | grep -v "Usage: run_scm.bash" | grep -v "\-\-help"
 
             exit 1 ;;
-	-c|--short-cases) # Omit the longest cases to perform a shorter run
-	    SHORT_CASES=true
-	    shift ;;
-	--) shift ; break ;;
-	*) echo "Something bad happened!" ; exit 1 ;;
-	esac
+  -c|--short-cases) # Omit the longest cases to perform a shorter run
+      SHORT_CASES=true
+      echo "SHORT"
+      shift ;;
+  -i|--priority-cases) # Include only priority cases to filter unneeded data
+      PRIORITY_CASES=true
+      shift ;;
+  --) shift ; break ;;
+  *) echo "Something bad happened!" ; exit 1 ;;
+  esac
 done
 
 # Declare arrays that will be used later on in this script.
 declare -a RUN_CASE
 declare -a EXIT_CODES
-
 if [ $SHORT_CASES == true ] ; then # Run only short cases
     # Remove -c and --short-cases from the options so they aren't
     # passed to the run_scm.bash script
@@ -80,11 +85,10 @@ if [ $SHORT_CASES == true ] ; then # Run only short cases
 
     a=0
     while read line
-    do
-	# If the line is not commented out (does not start with '!')
-	if [[ $line != !* ]] && [[ ! -z $line ]] ; then
-	    # Check to see if this case should be ignored
-	    ignore=0
+    do  # If the line is not commented out (does not start with '!')
+      if [[ $line != !* ]] && [[ ! -z $line ]] ; then
+        # Check to see if this case should be ignored
+        ignore=0
         for (( x=0; x<${#IGNORE_CASES[@]}; x++ )); do
             if [ $line == ${IGNORE_CASES[$x]} ] ; then
                 ignore=1
@@ -93,21 +97,67 @@ if [ $SHORT_CASES == true ] ; then # Run only short cases
         
         # If the case was found in IGNORE_CASES, don't add it.
         if [ $ignore == 0 ]; then
-		RUN_CASE[$a]=$line
-		a=$(($a+1));
-	    fi
-	fi
+          RUN_CASE[$a]=$line
+          a=$(($a+1));
+        fi
+      fi
+    done < "RUN_CASES"
+elif [ $PRIORITY_CASES == true ] ; then
+    # Remove -i and --priority-cases from the options so they aren't
+    # passed to the run_scm.bash script
+    OPTIONS=${OPTIONS#-i}
+    OPTIONS=${OPTIONS#--priority-cases}
+    PRIORITY_CASES=true
+
+    declare -a PRIORITY_CASE_ARRAY
+    
+    PRIORITY_CASE_ARRAY[0]="arm"
+    PRIORITY_CASE_ARRAY[1]="atex"
+    PRIORITY_CASE_ARRAY[2]="bomex"
+    PRIORITY_CASE_ARRAY[3]="dycoms2_rf01"
+    PRIORITY_CASE_ARRAY[4]="dycoms2_rf01_fixed_sst"
+    PRIORITY_CASE_ARRAY[5]="dycoms2_rf02_ds"
+    PRIORITY_CASE_ARRAY[6]="dycoms2_rf02_nd"
+    PRIORITY_CASE_ARRAY[7]="mpace_b"
+    PRIORITY_CASE_ARRAY[8]="rico"
+    PRIORITY_CASE_ARRAY[9]="wangara"
+    PRIORITY_CASE_ARRAY[10]="arm_97"
+    PRIORITY_CASE_ARRAY[11]="cloud_feedback_s6"
+    PRIORITY_CASE_ARRAY[12]="cloud_feedback_s11"
+    PRIORITY_CASE_ARRAY[13]="cloud_feedback_s12"
+    PRIORITY_CASE_ARRAY[14]="gabls3_night"
+    PRIORITY_CASE_ARRAY[15]="lba"
+    PRIORITY_CASE_ARRAY[16]="twp_ice"
+
+    a=0
+    while read line
+    do  # If the line is not commented out (does not start with '!')
+      if [[ $line != !* ]] && [[ ! -z $line ]] ; then
+        # Check to see if this case should be included
+        include=0
+        for (( x=0; x<${#PRIORITY_CASE_ARRAY[@]}; x++ )); do
+            if [ $line == ${PRIORITY_CASE_ARRAY[$x]} ] ; then
+                include=1
+            fi
+        done
+        
+        # If the case was found in PRIORITY_CASE_ARRAY, add it to the run cases.
+        if [ $include == 1 ]; then
+          RUN_CASE[$a]=$line
+          a=$(($a+1));
+        fi
+      fi
     done < "RUN_CASES"
 else # Populate the RUN_CASE array normally
     a=0
     while read line
     do
-	# If the line is not commented out (does not start with '!')
-	if [[ $line != !* ]] && [[ ! -z $line ]] ; then
-	    RUN_CASE[$a]=$line
-	    a=$(($a+1));
-	fi
-    done < "RUN_CASES"
+      # If the line is not commented out (does not start with '!')
+      if [[ $line != !* ]] && [[ ! -z $line ]] ; then
+        RUN_CASE[$a]=$line
+        a=$(($a+1));
+      fi
+     done < "RUN_CASES"
 fi
 
 # Initialize all elements in EXIT_CODES to 0
@@ -123,7 +173,7 @@ if [ $NIGHTLY == true ] ; then
     # Make the CLUBB_previous and CLUBB_current directories if they don't exist
     mkdir -p $OUTPUT_DIR"/CLUBB_current"
     mkdir -p $OUTPUT_DIR"/CLUBB_previous"
-	
+  
     # Eliminate the previous CLUBB results.
     # This prevents spurious profile generation resulting from
     # previous profiles not getting overwritten
@@ -133,6 +183,8 @@ if [ $NIGHTLY == true ] ; then
     mv $OUTPUT_DIR/CLUBB_current/*.dat $OUTPUT_DIR/CLUBB_previous/
 elif [ $SHORT_CASES == true ] ; then
     echo -e "\nPerforming short-cases run\n"
+elif [ $PRIORITY_CASES == true ] ; then
+    echo -e "\nPerforming priority-cases run\n"
 else
     echo -e "\nPerforming standard run\n"
 fi
@@ -167,10 +219,10 @@ EXIT_STATUS=0
 
 # Print the results and copy files for a nightly run
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
-	if [ "${EXIT_CODES[$x]}" != 0 ]; then
-		echo "${RUN_CASE[$x]}"' failure'
+  if [ "${EXIT_CODES[$x]}" != 0 ]; then
+    echo "${RUN_CASE[$x]}"' failure'
         EXIT_STATUS=1
- 	fi
+   fi
 done
 
 exit $EXIT_STATUS

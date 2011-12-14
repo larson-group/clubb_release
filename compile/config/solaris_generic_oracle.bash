@@ -1,8 +1,8 @@
 # $Id$
-# Makefile definitions for Sun Studio's Fortran compiler (SPARC or x64)
+# Makefile definitions for Oracle Solaris Studio Fortran compiler (SPARC or x64)
 
 # Fortran 95 compiler and linker
-FC=f95 # Sun Fortran
+FC=f95 # Sun/Oracle Fortran
 LD=f95
 
 # Define path to directories
@@ -14,28 +14,27 @@ srcdir="$dir/../src"  # dir where the source files reside
 
 # == Debugging ==
 # It is sometimes helpful to turn on floating-point trapping for the 
-#  standalone program, but this will not work when using the tuner.
+#  standalone program, but this will not work when using clubb_tuner.
 # In Sun f95: remove the reference to ftrap, or use -ftrap=common
 DEBUG="-g -C -fns=no -ftrap=%none" #-stackvar -xcheck=init_local -ftrap=common
 
 WARNINGS="-w3 -ansi"
 # == Machine specific flags ==
-# The 2nd line is specific to ketley.math.uwm.edu.
 # Note that when linking to sunperf (for LAPACK) you must use -dalign
 ARCH="-xarch=native64 -xcache=native -xchip=native -dalign"
-#ARCH="-m64 -xarch=sse3a -xcache=native -xchip=opteron -dalign"
+
+# == Used to promote all real's to double precision ==
+# Note the on SPARC the compiler will allow as large as quad precision if desired, 
+# but the included LAPACK library only allows up to double precision.
+DOUBLE_PRECISION="-xtypemap=real:64,double:64,integer:32"
 
 # == Optimization ==
-# Using -xtypemap it is possible to compile for quad precision floating 
-# point on SPARC, but on AMD64/EMT64 this is still not implemented.
 # These are all pretty conservative options, check the your compiler manual 
 # for information on using more aggressive techniques (inlining, etc.)
 # -KPIC would need to be here to to build shared libraries.
-# Note that -g is needed for profiling.
-# These options are valid on a SPARC and AMD64 machine
+# Note that -g is needed for both profiling and debugging.
+# These options are valid on a SPARC and x64 machine
 OPTIMIZE="-g -xO3 -xvector=lib -ftrap=%none"
-# This works on x86/x64 only
-#OPTIMIZE="-g -xO3 -xvector=simd -ftrap=%none"
 # These are more aggresive options that enable OpenMP
 #OPTIMIZE="-g -xopenmp -xparallel -stackvar -xipo=2 -xvector=simd -xO4 -ftrap=%none"
 
@@ -60,7 +59,7 @@ FFLAGS="$OPTIMIZE $ARCH"
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -M<include path> to set a module file directory
-CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline"
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DNO_LAPACK_ISNAN"
 CPPFLAGS="-M$NETCDF/include"
 
 # == Static library processing ==

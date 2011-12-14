@@ -266,12 +266,12 @@ module latin_hypercube_arrays
     end if ! iiLH_rgraupel > 0
 
     ! Fill in values for t_mellor using s_mellor correlations
-    do i = 3, d_variables
-      corr_array_cloud(i,iiLH_t_mellor) = corr_array_cloud(i,iiLH_s_mellor) &
-        * corr_array_cloud(iiLH_t_mellor,iiLH_s_mellor)
-      corr_array_below(i,iiLH_t_mellor) = corr_array_below(i,iiLH_s_mellor) &
-        * corr_array_below(iiLH_t_mellor,iiLH_s_mellor)
-    end do
+!   do i = 3, d_variables
+!     corr_array_cloud(i,iiLH_t_mellor) = corr_array_cloud(i,iiLH_s_mellor) &
+!       * corr_array_cloud(iiLH_t_mellor,iiLH_s_mellor)
+!     corr_array_below(i,iiLH_t_mellor) = corr_array_below(i,iiLH_s_mellor) &
+!       * corr_array_below(iiLH_t_mellor,iiLH_s_mellor)
+!   end do
 
     return
   end subroutine setup_corr_varnce_array
@@ -447,10 +447,9 @@ module latin_hypercube_arrays
       end if
     end do
 
-    call deallocate_one_dim_vars( d_variables, retVars )
+    call deallocate_one_dim_vars( nCols, retVars )
 
-    deallocate( retVars )
-
+    return
   end subroutine read_correlation_matrix
 
   !--------------------------------------------------------------------------

@@ -35,14 +35,14 @@ module dycoms2_rf01
     implicit none
 
     ! Output Variables
-    real, intent(out), dimension(gr%nzmax) ::  & 
+    real, intent(out), dimension(gr%nz) ::  & 
       thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing      ! Total water mixing ratio tendency            [kg/kg/s]
 
-    real, intent(out), dimension(gr%nzmax, sclr_dim) :: & 
+    real, intent(out), dimension(gr%nz, sclr_dim) :: & 
       sclrm_forcing   ! Passive scalar tendency         [units/s]
 
-    real, intent(out), dimension(gr%nzmax, edsclr_dim) :: & 
+    real, intent(out), dimension(gr%nz, edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
     thlm_forcing = 0.

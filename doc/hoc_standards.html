@@ -448,8 +448,8 @@ E.g. Do this:
 <div class="p"><!----></div>
 
 <pre>
-&nbsp;xyzzy(1:gr%nzmax)&nbsp;=&nbsp;variable_arr1(1:gr%nzmax)&nbsp;*&nbsp;variable_scl1&nbsp;&amp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;variable_arr2(1:gr%nzmax)**2
+&nbsp;xyzzy(1:gr%nz)&nbsp;=&nbsp;variable_arr1(1:gr%nz)&nbsp;*&nbsp;variable_scl1&nbsp;&amp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;variable_arr2(1:gr%nz)**2
 
 </pre>
 
@@ -728,7 +728,7 @@ E.g.
 
 &nbsp;&nbsp;&nbsp;&nbsp;...
 
-&nbsp;&nbsp;do&nbsp;k&nbsp;=&nbsp;1,&nbsp;gr%nzmax,&nbsp;1
+&nbsp;&nbsp;do&nbsp;k&nbsp;=&nbsp;1,&nbsp;gr%nz,&nbsp;1
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
 
@@ -877,6 +877,23 @@ However, when wp2 is kept on the zm, we simply call it "wp2" without
 appending "_zm."
 <div class="p"><!----></div>
 </li>
+
+<li>  When using find/replace to make changes to the code, such as renaming a function or variable, mistakes can be made and overlooked. In particular, unwanted changes to comments frequently occur. To alleviate this, whenever using find/replace to make changes to the code, you must check all changes made to comments.
+
+<div class="p"><!----></div>
+A regular expression can easily be used with the svn diff and egrep commands to find all changes made to comments in a local revision. Simply run the command from the base directory of your CLUBB checkout. The command is as follows:
+
+<div class="p"><!----></div>
+
+<pre>
+svn&nbsp;diff&nbsp;|&nbsp;egrep&nbsp;'(^(\+|-).*!|^---|^\+\+\+|^@@|^===)'&nbsp;-
+
+</pre>
+
+<div class="p"><!----></div>
+Each pipe in this egrep command represents an OR statement. The first section includes all lines from the diff that include an exclamation mark, which represents a comment. The rest of the lines include the lines that show information about the filenames and line numbers.
+<div class="p"><!----></div>
+</li>
 </ol>
 
 <div class="p"><!----></div>
@@ -885,5 +902,5 @@ appending "_zm."
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>M</a>,
-version 3.85.<br />On 10 Oct 2011, 15:59.</small>
+version 3.85.<br />On  7 Dec 2011, 11:30.</small>
 </body></html>

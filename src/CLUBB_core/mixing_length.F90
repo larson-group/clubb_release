@@ -12,7 +12,7 @@ module mixing_length
 
   !=============================================================================
   subroutine compute_length( thvm, thlm, rtm, em, &
-                             p_in_Pa, exner, thv_ds, l_implemented, &
+                             p_in_Pa, exner, thv_ds, mu, l_implemented, &
                              err_code, &
                              Lscale )
     ! Description:
@@ -42,7 +42,6 @@ module mixing_length
         zero_threshold
 
     use parameters_tunable, only:  &  ! Variable(s)
-        mu,   & ! Fractional entrainment rate per unit altitude    [1/m]
         lmin    ! Minimum value for Lscale                         [m]
 
     use parameters_model, only:  & 
@@ -84,7 +83,7 @@ module mixing_length
     !zeps  = 1.e-10
 
     ! Input Variables
-    real, dimension(gr%nzmax), intent(in) ::  & 
+    real, dimension(gr%nz), intent(in) ::  & 
       thvm,    & ! Virtual potential temp. on themodynamic level  [K]
       thlm,    & ! Liquid potential temp. on themodynamic level   [K]
       rtm,     & ! Total water mixing ratio on themodynamic level [kg/kg]
@@ -94,6 +93,9 @@ module mixing_length
       thv_ds     ! Dry, base-state theta_v on thermodynamic level [K]
     ! Note:  thv_ds used as a reference theta_l here
 
+    real, intent(in) :: &
+      mu  ! mu Fractional extrainment rate per unit altitude      [1/m]
+
     logical, intent(in) :: &
       l_implemented ! Flag for CLUBB being implemented in a larger model
 
@@ -101,7 +103,7 @@ module mixing_length
     integer, intent(inout) :: & 
       err_code
 
-    real, dimension(gr%nzmax), intent(out) ::  & 
+    real, dimension(gr%nz), intent(out) ::  & 
       Lscale  ! Mixing length                 [m]
 
     ! Local Variables
@@ -113,7 +115,7 @@ module mixing_length
     real :: dCAPE_dz_j, dCAPE_dz_j_minus_1, dCAPE_dz_j_plus_1
 
     ! Temporary arrays to store calculations to speed runtime
-    real, dimension(gr%nzmax) :: exp_mu_dzm, invrs_dzm_on_mu
+    real, dimension(gr%nz) :: exp_mu_dzm, invrs_dzm_on_mu
 
     ! Minimum value for Lscale that will taper off with height
     real :: lminh
@@ -163,7 +165,7 @@ module mixing_length
     ! Upwards loop
 
     Lscale_up_max_alt = 0.
-    do i = 2, gr%nzmax, 1
+    do i = 2, gr%nz, 1
 
       tke_i = zm2zt( em, i )   ! TKE interpolated to thermodynamic level
 
@@ -174,7 +176,7 @@ module mixing_length
       rt_par_j_minus_1  = rtm(i)
       dCAPE_dz_j_minus_1 = 0.0
 
-      do while ((tke_i > 0.) .and. (j < gr%nzmax))
+      do while ((tke_i > 0.) .and. (j < gr%nz))
 
         ! thl, rt of parcel are conserved except for entrainment
 
@@ -439,8 +441,8 @@ module mixing_length
     ! Chris Golaz modification to include effects on latent heating
     ! on Lscale_down
 
-    Lscale_down_min_alt = gr%zt(gr%nzmax)
-    do i = gr%nzmax, 2, -1
+    Lscale_down_min_alt = gr%zt(gr%nz)
+    do i = gr%nz, 2, -1
 
       tke_i = zm2zt( em, i )   ! TKE interpolated to thermodynamic level
 
@@ -734,7 +736,7 @@ module mixing_length
 
     !!!!! Compute Lscale for every vertical level.
 
-    do i = 2, gr%nzmax, 1
+    do i = 2, gr%nz, 1
 
       ! The equation for Lscale is:
       !
@@ -762,7 +764,7 @@ module mixing_length
 
     ! Set the value of Lscale at the upper and lower boundaries.
     Lscale(1) = Lscale(2)
-    Lscale(gr%nzmax) = Lscale(gr%nzmax-1)
+    Lscale(gr%nz) = Lscale(gr%nz-1)
 
     ! Vince Larson limited Lscale to allow host
     ! model to take over deep convection.  13 Feb 2008.

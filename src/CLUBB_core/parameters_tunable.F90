@@ -52,7 +52,7 @@ module parameters_tunable
     C7b         = 0.800000,          & ! High Skewness in C7 Skewness Function.
     C7c         = 0.500000,          & ! Degree of Slope of C7 Skewness Function.
     C8          = 3.000000,          & ! Coefficient #1 in C8 Skewness Equation.
-    C8b         = 0.005000,          & ! Coefficient #2 in C8 Skewness Equation.
+    C8b         = 0.000000,          & ! Coefficient #2 in C8 Skewness Equation.
     C10         = 3.300000,          & ! Currently Not Used in the Model.
     C11         = 0.800000,          & ! Low Skewness in C11 Skewness Function.
     C11b        = 0.350000,          & ! High Skewness in C11 Skewness Function.
@@ -76,7 +76,6 @@ module parameters_tunable
     c_K8        = 1.250000,         & ! Coefficient of Eddy Diffusion for wp3.
     c_K9        = 0.250000,         & ! Coefficient of Eddy Diffusion for up2 and vp2.
     c_Krrainm   = 0.200000,         & ! Coefficient of Eddy Diffusion for hydrometeors.
-    c_Ksqd      = 10.00000,         & ! Constant for scaling effect of value-squared diffusion.
     gamma_coef  = 0.320000,         & ! Low Skewness in gamma coefficient Skewness Function.
     gamma_coefb = 0.320000,         & ! High Skewness in gamma coefficient Skewness Function.
     gamma_coefc = 5.000000,         & ! Degree of Slope of gamma coefficient Skewness Function.
@@ -100,7 +99,7 @@ module parameters_tunable
 !$omp     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, &
 !$omp     C13, C14, C15, &
 !$omp     c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, &
-!$omp     c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd, &
+!$omp     c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, nu_hd, &
 !$omp     gamma_coef, gamma_coefb, gamma_coefc, &
 !$omp     taumin, taumax, mu, lmin)
 
@@ -148,7 +147,7 @@ module parameters_tunable
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
     C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
-    c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
+    c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
     lmin_coef, taumin, taumax, mu
 
@@ -176,9 +175,12 @@ module parameters_tunable
        "nu1          ", &
        "c_K2         ", "nu2          ", "c_K6         ", "nu6          ", & 
        "c_K8         ", "nu8          ", "c_K9         ", "nu9          ", & 
-       "c_Krrainm    ", "nu_r         ", "c_Ksqd       ", "nu_hd        ", &
+       "c_Krrainm    ", "nu_r         ", "nu_hd        ",                  &
        "gamma_coef   ", "gamma_coefb  ", "gamma_coefc  ", "mu           ", &
        "beta         ", "lmin_coef    ", "taumin       ", "taumax       " /)
+
+  real, parameter :: &
+    init_value = -999. ! Initial value for the parameters, used to detect missing values
 
   contains
 
@@ -255,7 +257,7 @@ module parameters_tunable
                             C11, C11b, C11c, C12, C13, C14, C15, & 
                             C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                            c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+                            c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
                             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                             mu, beta, lmin_coef, taumin, taumax )
 
@@ -385,7 +387,7 @@ module parameters_tunable
     ! The factor by which to multiply the coefficients of background eddy
     ! diffusivity if the grid spacing threshold is exceeded and l_adj_low_res_nu
     ! is turned on.
-    real,dimension(gr%nzmax) :: &
+    real,dimension(gr%nz) :: &
       mult_factor_zt, &  ! Uses gr%dzt for nu values on zt levels
       mult_factor_zm     ! Uses gr%dzm for nu values on zm levels
 
@@ -397,22 +399,22 @@ module parameters_tunable
     !--------------- Begin code -------------------------
 
     if ( .not. allocated( nu1_vert_res_dep ) ) then
-      allocate( nu1_vert_res_dep(1:gr%nzmax) )
+      allocate( nu1_vert_res_dep(1:gr%nz) )
     end if
     if ( .not. allocated( nu2_vert_res_dep ) ) then
-      allocate( nu2_vert_res_dep(1:gr%nzmax) )
+      allocate( nu2_vert_res_dep(1:gr%nz) )
     end if
     if ( .not. allocated( nu6_vert_res_dep ) ) then
-      allocate( nu6_vert_res_dep(1:gr%nzmax) )
+      allocate( nu6_vert_res_dep(1:gr%nz) )
     end if
     if ( .not. allocated( nu8_vert_res_dep ) ) then
-      allocate( nu8_vert_res_dep(1:gr%nzmax) )
+      allocate( nu8_vert_res_dep(1:gr%nz) )
     end if
     if ( .not. allocated( nu9_vert_res_dep ) ) then
-      allocate( nu9_vert_res_dep(1:gr%nzmax) )
+      allocate( nu9_vert_res_dep(1:gr%nz) )
     end if
     if ( .not. allocated( nu_r_vert_res_dep ) ) then
-      allocate( nu_r_vert_res_dep(1:gr%nzmax) )
+      allocate( nu_r_vert_res_dep(1:gr%nz) )
     end if
 
     ! Flag for adjusting the values of the constant diffusivity coefficients
@@ -483,7 +485,7 @@ module parameters_tunable
         end if
       else  ! l_nu_grid_dependent = .true.
         ! mult_factor will vary to create nu values that vary with grid spacing
-        do k = 1, gr%nzmax
+        do k = 1, gr%nz
           if( gr%dzm(k) > grid_spacing_thresh ) then
             mult_factor_zm(k) = 1.0 + mult_coef * log( gr%dzm(k) / grid_spacing_thresh )
           else
@@ -542,8 +544,6 @@ module parameters_tunable
     !-----------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Constant
 
-    use numerical_check, only: is_nan_sclr ! Procedure
-
     implicit none
 
     ! Input variables
@@ -559,9 +559,7 @@ module parameters_tunable
 
     logical :: l_error
 
-    ! Initialize values to NaN
-    ! these tunable model parameters are initialized at the beginning of this module 
-    ! call init_parameters_nan( )
+    ! ---- Begin Code ----
 
     ! If the filename is empty, assume we're using a `working' set of
     ! parameters that are set statically here (handy for host models).
@@ -583,14 +581,14 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, taumin, taumax, params )
 
     l_error = .false.
 
     do i = 1, nparams
-      if ( is_nan_sclr( params(i) ) ) then
+      if ( params(i) == init_value ) then
         write(fstderr,*) "Tuning parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
@@ -615,8 +613,6 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Constant
-
-    use numerical_check, only: is_nan_sclr ! Procedure
 
     implicit none
 
@@ -650,12 +646,12 @@ module parameters_tunable
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
       C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
-      c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
+      c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, taumin, taumax, mu
 
-    ! Initialize values to NaN
-    call init_parameters_nan( )
+    ! Initialize values to -999.
+    call init_parameters_999( )
 
     ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
@@ -671,14 +667,14 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, taumin, taumax, param_spread )
 
     l_error = .false.
 
     do i = 1, nparams
-      if ( is_nan_sclr( param_spread(i) ) ) then
+      if ( param_spread(i) == init_value ) then
         write(fstderr,*) "A spread parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
@@ -713,7 +709,7 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
-               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, &
+               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, &
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
                mu, beta, lmin_coef, taumin, taumax, params )
 
@@ -778,7 +774,6 @@ module parameters_tunable
       inu9, & 
       ic_Krrainm, & 
       inu_r, & 
-      ic_Ksqd, &
       inu_hd, & 
       igamma_coef, & 
       igamma_coefb, & 
@@ -800,7 +795,7 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
-      c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, nu_hd, gamma_coef, &
+      c_K9, nu9, c_Krrainm, nu_r, nu_hd, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, taumin, taumax
 
     ! Output variables
@@ -855,7 +850,6 @@ module parameters_tunable
     params(inu9)       = nu9
     params(ic_Krrainm) = c_Krrainm
     params(inu_r)      = nu_r
-    params(ic_Ksqd)    = c_Ksqd
     params(inu_hd)     = nu_hd
 
     params(igamma_coef)  = gamma_coef
@@ -883,7 +877,7 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, & 
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                mu, beta, lmin_coef, taumin, taumax )
 
@@ -948,7 +942,6 @@ module parameters_tunable
       inu9, & 
       ic_Krrainm, & 
       inu_r, & 
-      ic_Ksqd, & 
       inu_hd, & 
       igamma_coef, & 
       igamma_coefb, & 
@@ -973,7 +966,7 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-      c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+      c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
       mu, beta, lmin_coef, taumin, taumax
 
@@ -1026,7 +1019,6 @@ module parameters_tunable
     nu9       = params(inu9)
     c_Krrainm = params(ic_Krrainm)
     nu_r      = params(inu_r)
-    c_Ksqd    = params(ic_Ksqd)
     nu_hd     = params(inu_hd)
 
     gamma_coef  = params(igamma_coef)
@@ -1066,7 +1058,7 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
+                          c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, taumin, taumax, params )
 
@@ -1075,7 +1067,7 @@ module parameters_tunable
   end subroutine get_parameters
 
   !=============================================================================
-  subroutine init_parameters_nan( )
+  subroutine init_parameters_999( )
 
     ! Description:
     ! Set all tunable parameters to NaN
@@ -1084,75 +1076,71 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
 
-    use parameters_model, only: &
-      PosInf ! Variable(s)
-
     implicit none
 
     ! --- Begin Code ---
 
-    C1                 = PosInf
-    C1b                = PosInf
-    C1c                = PosInf
-    C2rt               = PosInf
-    C2thl              = PosInf
-    C2rtthl            = PosInf
-    C2                 = PosInf
-    C2b                = PosInf
-    C2c                = PosInf
-    C4                 = PosInf
-    C5                 = PosInf
-    C6rt               = PosInf
-    C6rtb              = PosInf
-    C6rtc              = PosInf
-    C6thl              = PosInf
-    C6thlb             = PosInf
-    C6thlc             = PosInf
-    C7                 = PosInf
-    C7b                = PosInf
-    C7c                = PosInf
-    C8                 = PosInf
-    C8b                = PosInf
-    C10                = PosInf
-    C11                = PosInf
-    C11b               = PosInf
-    C11c               = PosInf
-    C12                = PosInf
-    C13                = PosInf
-    C14                = PosInf
-    C15                = PosInf
-    C6rt_Lscale0       = PosInf
-    C6thl_Lscale0      = PosInf
-    C7_Lscale0         = PosInf
-    wpxp_L_thresh      = PosInf
-    c_K                = PosInf
-    c_K1               = PosInf
-    nu1                = PosInf
-    c_K2               = PosInf
-    nu2                = PosInf
-    c_K6               = PosInf
-    nu6                = PosInf
-    c_K8               = PosInf
-    nu8                = PosInf
-    c_K9               = PosInf
-    nu9                = PosInf
-    c_Krrainm          = PosInf
-    nu_r               = PosInf
-    c_Ksqd             = PosInf
-    nu_hd              = PosInf
-    beta               = PosInf
-    gamma_coef         = PosInf
-    gamma_coefb        = PosInf
-    gamma_coefc        = PosInf
-    taumin             = PosInf
-    taumax             = PosInf
-    lmin_coef          = PosInf
-    mu                 = PosInf
+    C1                 = init_value
+    C1b                = init_value
+    C1c                = init_value
+    C2rt               = init_value
+    C2thl              = init_value
+    C2rtthl            = init_value
+    C2                 = init_value
+    C2b                = init_value
+    C2c                = init_value
+    C4                 = init_value
+    C5                 = init_value
+    C6rt               = init_value
+    C6rtb              = init_value
+    C6rtc              = init_value
+    C6thl              = init_value
+    C6thlb             = init_value
+    C6thlc             = init_value
+    C7                 = init_value
+    C7b                = init_value
+    C7c                = init_value
+    C8                 = init_value
+    C8b                = init_value
+    C10                = init_value
+    C11                = init_value
+    C11b               = init_value
+    C11c               = init_value
+    C12                = init_value
+    C13                = init_value
+    C14                = init_value
+    C15                = init_value
+    C6rt_Lscale0       = init_value
+    C6thl_Lscale0      = init_value
+    C7_Lscale0         = init_value
+    wpxp_L_thresh      = init_value
+    c_K                = init_value
+    c_K1               = init_value
+    nu1                = init_value
+    c_K2               = init_value
+    nu2                = init_value
+    c_K6               = init_value
+    nu6                = init_value
+    c_K8               = init_value
+    nu8                = init_value
+    c_K9               = init_value
+    nu9                = init_value
+    c_Krrainm          = init_value
+    nu_r               = init_value
+    nu_hd              = init_value
+    beta               = init_value
+    gamma_coef         = init_value
+    gamma_coefb        = init_value
+    gamma_coefc        = init_value
+    taumin             = init_value
+    taumax             = init_value
+    lmin_coef          = init_value
+    mu                 = init_value
  
-    nu_hd_vert_res_dep = PosInf
+    nu_hd_vert_res_dep = init_value
 
     return
-  end subroutine init_parameters_nan
+  end subroutine init_parameters_999
 
   !=============================================================================
   subroutine cleanup_nu( )

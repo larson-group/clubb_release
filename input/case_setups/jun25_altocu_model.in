@@ -23,7 +23,7 @@ grid_type = 1     ! Select grid type:
 
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
-deltaz  = 12.5    ! Distance between grid levels on evenly-spaced grid.      [m]
+deltaz  = 12.5 ! Distance between grid levels on evenly-spaced grid. [m]
 zm_init = 4808.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
 zm_top = 7810.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 

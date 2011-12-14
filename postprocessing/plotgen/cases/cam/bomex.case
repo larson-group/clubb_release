@@ -73,32 +73,32 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/bomex_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wp3', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/bomex_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'wp3', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/bomex_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wp3', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}#,
- #         {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'wp3 * 0', 'lineWidth' => #'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP3_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 [K^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/bomex_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'thlp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/bomex_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'thlp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/bomex_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'thlp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}#,
-#          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'thlp2 * 0', 'lineWidth' => #'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'THLP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/bomex_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qtp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/bomex_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rtp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/bomex_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}#,
-#          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'rtp2 * 0', 'lineWidth' => #'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'RTP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/bomex_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qtpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/bomex_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rtpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/bomex_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtpthlp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}#,
-#          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'rtpthlp * 0', 'lineWidth' #=> 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'bomex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'RTPTHLP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
        [
@@ -170,7 +170,7 @@
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/bomex_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'Nrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/bomex_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Nrm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'NDROPCOL','lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'ANRAIN./1','lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
@@ -178,7 +178,7 @@
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/bomex_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'Ncm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/bomex_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Ncm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'bomex_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'ANRAIN./1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #RHO changed to 1
+          {'filename' => 'bomex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AWNC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
