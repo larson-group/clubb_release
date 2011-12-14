@@ -106,7 +106,8 @@ module clubb_core
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
-      edsclr_dim
+      edsclr_dim, &
+      sclr_tol
 
     use model_flags, only: & 
       l_tke_aniso, &  ! Variable(s)
@@ -787,6 +788,7 @@ module clubb_core
       ! the second call to pdf_closure
       do i = 1, sclr_dim
         sclrm_zm(:,i) = zt2zm( sclrm(:,i) )
+        sclrm_zm = max( sclrm_zm, sclr_tol(i) ) ! Clip if extrap. causes sclrm_zm to be negative
       end do ! i = 1, sclr_dim
 
       ! Interpolate pressure, p_in_Pa, to momentum levels.
@@ -804,7 +806,9 @@ module clubb_core
       exner_zm(:) = (p_in_Pa_zm(:)/p0)**kappa
 
       rtm_zm  = zt2zm( rtm )
+      rtm_zm = max( rtm_zm, rt_tol ) ! Clip if extrap. causes rtm_zm to be negative
       thlm_zm = zt2zm( thlm )
+      thlm_zm = max( thlm_zm, thl_tol ) ! Clip if extrap. causes thlm_zm to be negative
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       do k = 1, gr%nz, 1
