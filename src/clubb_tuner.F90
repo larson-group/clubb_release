@@ -422,7 +422,7 @@ subroutine logical_flags_driver
     cost_func_avg          ! Averaged cost function true - false.
 
   integer :: i, j
-  integer(kind=i8) :: bit_string
+  integer(kind=i8) :: bit_string, bit_iter
 
   ! ---- Begin Code ----
 
@@ -430,10 +430,10 @@ subroutine logical_flags_driver
 
   bit_string = 0_i8 ! Initialize bits to 00 ... 00
   do i = 1, two_ndim
-    do j = 1, ndim
+    do bit_iter = 1, ndim
      ! This loop sets 1:n logicals using individual bits, i.e. 0 means
      ! false and 1 means true for the purposes of trying all possibilities
-     model_flags_array(i,j) = btest( bit_string, j-1 ) 
+     model_flags_array(i,j) = btest( bit_string, bit_iter-1_i8 ) 
     end do
     bit_string = bit_string + 1_i8 ! Increment the binary adder
   end do
