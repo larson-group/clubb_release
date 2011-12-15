@@ -404,7 +404,7 @@ subroutine logical_flags_driver
     i8 = selected_int_kind( 15 )
 
   integer, parameter :: &
-    ndim = 8, & ! Temporarily hardwired for a fixed number of flags
+    ndim = 9, & ! Temporarily hardwired for a fixed number of flags
     two_ndim = 2**ndim, &
     iunit = 10
 
@@ -489,12 +489,13 @@ subroutine logical_flags_driver
     "Column 5 = vert_avg_closure   ", &
     "Column 6 = single_C2_Skw      ", &
     "Column 7 = standard_term_ta   ", &
-    "Column 8 = tke_aniso          "
+    "Column 8 = tke_aniso          ", &
+    "Column 9 = use_cloud_cover    "
 
   open(unit=iunit,file=model_flags_output)
-  write(iunit,'(9A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
+  write(iunit,'(10A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
     "quintic_poly_interp, ", "vert_avg_closure, ", &
-    "single_C2_Skw, ", "standard_term_ta, ", "tke_aniso, ", "Cost func."
+    "single_C2_Skw, ", "standard_term_ta, ", "tke_aniso, ", "use_cloud_cover, ", "Cost func."
   do i = 1, ndim
     write(iunit,'(G20.6,A2)',advance='no') cost_func_avg(i), ", "
   end do

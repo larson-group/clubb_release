@@ -99,13 +99,14 @@ module model_flags
   logical, public :: &
     l_host_applies_sfc_fluxes = .false.
 
-!$omp threadprivate(l_use_cloud_cover)
+!$omp threadprivate(l_host_applies_sfc_fluxes)
+
   ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help increase cloudiness
   ! at coarser grid resolutions.
   logical, public :: &
     l_use_cloud_cover = .true.
+!$omp threadprivate(l_use_cloud_cover)
 
-!$omp threadprivate(l_host_applies_sfc_fluxes)
 
   integer, public :: &
     saturation_formula = saturation_flatau ! Integer that stores the saturation formula to be used
@@ -228,7 +229,7 @@ module model_flags
                l_upwind_xm_ma_in, l_quintic_poly_interp_in, &
                l_vert_avg_closure_in, &
                l_single_C2_Skw_in, l_standard_term_ta_in, &
-               l_tke_aniso_in )
+               l_tke_aniso_in, l_use_cloud_cover_in )
 
 ! Description:
 !   Set a model flag based on the input arguments for the purposes of trying
@@ -249,7 +250,8 @@ module model_flags
       l_vert_avg_closure_in, &
       l_single_C2_Skw_in, &
       l_standard_term_ta_in, &
-      l_tke_aniso_in
+      l_tke_aniso_in, &
+      l_use_cloud_cover_in
 
     ! ---- Begin Code ----
 
@@ -261,6 +263,7 @@ module model_flags
     l_single_C2_Skw = l_single_C2_Skw_in
     l_standard_term_ta = l_standard_term_ta_in
     l_tke_aniso = l_tke_aniso_in
+    l_use_cloud_cover = l_use_cloud_cover_in
 
     return
   end subroutine setup_tunable_model_flags
