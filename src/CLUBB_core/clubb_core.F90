@@ -113,7 +113,8 @@ module clubb_core
       l_tke_aniso, &  ! Variable(s)
       l_gamma_Skw, &
       l_vert_avg_closure, &
-      l_host_applies_sfc_fluxes
+      l_host_applies_sfc_fluxes, &
+      l_use_cloud_cover
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -958,6 +959,13 @@ module clubb_core
     call compute_cloud_cover &
        ( pdf_params, cloud_frac, rcm, & ! intent(in)
          cloud_cover, rcm_in_layer )    ! intent(out)
+
+    ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help
+    ! increase cloudiness at coarser grid resolutions.
+    if ( l_use_cloud_cover ) then
+      cloud_frac = cloud_cover
+      rcm = rcm_in_layer
+    end if
 
     !----------------------------------------------------------------
     ! Compute thvm
