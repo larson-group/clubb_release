@@ -62,14 +62,14 @@ module model_flags
   ! xpyp_ta affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp
   ! xm_ma affects rtm, thlm, sclrm, um and vm.
   logical, public :: & 
-    l_upwind_wpxp_ta = .true., & 
+    l_upwind_wpxp_ta = .false., & 
     l_upwind_xpyp_ta = .true.,  &
-    l_upwind_xm_ma   = .false.
+    l_upwind_xm_ma   = .true.
 
 !$omp threadprivate(l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma)
 
   logical, public :: & 
-    l_quintic_poly_interp = .true. ! Use a quintic polynomial in mono_cubic_interp
+    l_quintic_poly_interp = .false. ! Use a quintic polynomial in mono_cubic_interp
 
 !$omp threadprivate(l_quintic_poly_interp)
 
@@ -106,7 +106,7 @@ module model_flags
   ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help increase cloudiness
   ! at coarser grid resolutions.
   logical, public :: &
-    l_use_cloud_cover = .false.
+    l_use_cloud_cover = .true.
 !$omp threadprivate(l_use_cloud_cover)
 
 
