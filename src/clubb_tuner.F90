@@ -430,9 +430,10 @@ subroutine logical_flags_driver
 
   bit_string = 0_i8 ! Initialize bits to 00 ... 00
   do i = 1, two_ndim
-    do bit_iter = 1_i8, int( ndim, i8 )
+    do j = 1, ndim
      ! This loop sets 1:n logicals using individual bits, i.e. 0 means
      ! false and 1 means true for the purposes of trying all possibilities
+     bit_iter = int( j, i8 )
      model_flags_array(i,j) = btest( bit_string, bit_iter-1_i8 ) 
     end do
     bit_string = bit_string + 1_i8 ! Increment the binary adder
