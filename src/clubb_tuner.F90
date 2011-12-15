@@ -394,6 +394,9 @@ subroutine logical_flags_driver
   use quicksort, only: &
     Qsort_flags ! Procedure(s)
 
+  use model_flags, only: &
+    get_tunable_model_flags ! Procedure(s)
+
   implicit none
 
   ! External
@@ -422,12 +425,28 @@ subroutine logical_flags_driver
     cost_func_avg          ! Averaged cost function true - false.
 
   integer :: i, j
+
   integer(kind=i8) :: bit_string, bit_iter
+  logical, dimension(ndim) :: model_flags_default
+  real :: cost_func_default
 
   ! ---- Begin Code ----
 
-  allocate( model_flags_array(two_ndim,ndim) )
+  ! Determine the current flags
+  call get_tunable_model_flags( model_flags_default(1),  &
+                                model_flags_default(2),  &
+                                model_flags_default(3),  &
+                                model_flags_default(4),  &
+                                model_flags_default(5),  &
+                                model_flags_default(6),  &
+                                model_flags_default(7),  &
+                                model_flags_default(8),  &
+                                model_flags_default(9) )
 
+  ! This should always be 1.0; it's here as a sanity check
+  cost_func_default = min_les_clubb_diff( param_vals_matrix(1,:) )
+
+  allocate( model_flags_array(two_ndim,ndim) )
   bit_string = 0_i8 ! Initialize bits to 00 ... 00
   do i = 1, two_ndim
     do j = 1, ndim
@@ -481,6 +500,12 @@ subroutine logical_flags_driver
     end do
     write(fstdout,'(G10.3)') cost_function(i)
   end do
+
+  write(fstdout,'(A30)') "Default flags:                "
+  do j = 1, ndim
+    write(fstdout,'(L6,4X)',advance='no') model_flags_default(j)
+  end do
+  write(fstdout,'(G10.3)') cost_func_default
   write(fstdout,'(A30)') &
     "Column 1 = upwind_wpxp_ta     ", &
     "Column 2 = upwind_xpyp_ta     ", &
@@ -506,6 +531,11 @@ subroutine logical_flags_driver
     end do
     write(iunit,'(G20.6,A2)') cost_function(i), ", "
   end do
+  write(iunit,'(A30)') "Default flags:               ,"
+  do j = 1, ndim
+    write(iunit,'(L20,A2)',advance='no') model_flags_default(j), ", "
+  end do
+  write(iunit,'(G20.6,A2)') cost_func_default, ", "
   close(unit=iunit)
   write(fstdout,*) "Results of tuning model flags written to: ", model_flags_output
 

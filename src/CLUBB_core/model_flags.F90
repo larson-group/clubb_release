@@ -12,7 +12,9 @@ module model_flags
 
   implicit none
 
-  public :: setup_model_flags, read_model_flags_from_file, setup_tunable_model_flags
+  public :: setup_model_flags, read_model_flags_from_file, setup_tunable_model_flags, &
+    get_tunable_model_flags
+
   private ! Default Scope
 
   logical, parameter, public ::  & 
@@ -60,14 +62,14 @@ module model_flags
   ! xpyp_ta affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp
   ! xm_ma affects rtm, thlm, sclrm, um and vm.
   logical, public :: & 
-    l_upwind_wpxp_ta = .false., & 
+    l_upwind_wpxp_ta = .true., & 
     l_upwind_xpyp_ta = .true.,  &
-    l_upwind_xm_ma   = .true.
+    l_upwind_xm_ma   = .false.
 
 !$omp threadprivate(l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma)
 
   logical, public :: & 
-    l_quintic_poly_interp = .false. ! Use a quintic polynomial in mono_cubic_interp
+    l_quintic_poly_interp = .true. ! Use a quintic polynomial in mono_cubic_interp
 
 !$omp threadprivate(l_quintic_poly_interp)
 
@@ -104,7 +106,7 @@ module model_flags
   ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help increase cloudiness
   ! at coarser grid resolutions.
   logical, public :: &
-    l_use_cloud_cover = .true.
+    l_use_cloud_cover = .false.
 !$omp threadprivate(l_use_cloud_cover)
 
 
@@ -267,5 +269,47 @@ module model_flags
 
     return
   end subroutine setup_tunable_model_flags
+!===============================================================================
+  subroutine get_tunable_model_flags &
+             ( l_upwind_wpxp_ta_out, l_upwind_xpyp_ta_out, & 
+               l_upwind_xm_ma_out, l_quintic_poly_interp_out, &
+               l_vert_avg_closure_out, &
+               l_single_C2_Skw_out, l_standard_term_ta_out, &
+               l_tke_aniso_out, l_use_cloud_cover_out )
 
+! Description:
+!   Get the current model flags.
+!
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    logical, intent(out) :: &
+      l_upwind_wpxp_ta_out, & ! Model flags
+      l_upwind_xpyp_ta_out, & 
+      l_upwind_xm_ma_out, &
+      l_quintic_poly_interp_out, &
+      l_vert_avg_closure_out, &
+      l_single_C2_Skw_out, &
+      l_standard_term_ta_out, &
+      l_tke_aniso_out, &
+      l_use_cloud_cover_out
+
+    ! ---- Begin Code ----
+
+    l_upwind_wpxp_ta_out = l_upwind_wpxp_ta
+    l_upwind_xpyp_ta_out = l_upwind_xpyp_ta
+    l_upwind_xm_ma_out = l_upwind_xm_ma
+    l_quintic_poly_interp_out = l_quintic_poly_interp
+    l_vert_avg_closure_out = l_vert_avg_closure
+    l_single_C2_Skw_out = l_single_C2_Skw
+    l_standard_term_ta_out = l_standard_term_ta
+    l_tke_aniso_out = l_tke_aniso
+    l_use_cloud_cover_out = l_use_cloud_cover
+
+    return
+  end subroutine get_tunable_model_flags
 end module model_flags
