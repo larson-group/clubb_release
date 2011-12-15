@@ -103,8 +103,7 @@ module advance_xm_wpxp_module
       zt2zm
 
     use model_flags, only: &
-        l_clip_semi_implicit, & ! Variable(s)
-        l_upwind_wpxp_ta
+        l_clip_semi_implicit ! Variable(s)
 
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)

@@ -1183,8 +1183,7 @@ module clubb_driver
     use soil_vegetation, only: & 
       sfc_soil_T_in_K, & ! Variable(s)
       deep_soil_T_in_K, &
-      veg_T_in_K, &
-      l_soil_veg
+      veg_T_in_K
 
     use sponge_layer_damping, only: &
       thlm_sponge_damp_settings, & ! Procedure(s)
