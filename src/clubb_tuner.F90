@@ -397,7 +397,7 @@ subroutine logical_flags_driver
   implicit none
 
   ! External
-  intrinsic :: btest, selected_int_kind
+  intrinsic :: btest, selected_int_kind, int
 
   ! Constant parameters
   integer, parameter :: &
@@ -430,7 +430,7 @@ subroutine logical_flags_driver
 
   bit_string = 0_i8 ! Initialize bits to 00 ... 00
   do i = 1, two_ndim
-    do bit_iter = 1, ndim
+    do bit_iter = 1_i8, int( ndim, i8 )
      ! This loop sets 1:n logicals using individual bits, i.e. 0 means
      ! false and 1 means true for the purposes of trying all possibilities
      model_flags_array(i,j) = btest( bit_string, bit_iter-1_i8 ) 
