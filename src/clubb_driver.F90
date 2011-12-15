@@ -751,7 +751,8 @@ module clubb_driver
              l_vert_avg_closure_in=model_flags_array(5), &
              l_single_C2_Skw_in=model_flags_array(6), &
              l_standard_term_ta_in=model_flags_array(7), &
-             l_tke_aniso_in=model_flags_array(8) )
+             l_tke_aniso_in=model_flags_array(8), &
+             l_use_cloud_cover_in=model_flags_array(9) )
     end if
 
     ! Deallocate stretched grid altitude arrays
