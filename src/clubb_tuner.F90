@@ -386,7 +386,8 @@ subroutine logical_flags_driver
     iter
 
   use error, only: &
-    min_les_clubb_diff ! Procedure(s)
+    min_les_clubb_diff, &  ! Procedure(s)
+    l_results_stdout
 
   use constants_clubb, only: &
     fstdout ! Constant(s)
@@ -484,43 +485,50 @@ subroutine logical_flags_driver
   ! Sort flags and the cost function in ascending order
   call Qsort_flags( model_flags_array, cost_function )
 
-  ! Output results to the terminal
-  write(fstdout,'(A)') "Results from trying all permutations of the flags: "
-  do i = 1, ndim
-    write(fstdout,'(I6,4X)',advance='no') i
-  end do
-  write(fstdout,'(A10)') " Cost func" 
-  do i = 1, ndim
-    write(fstdout,'(G10.3)',advance='no') cost_func_avg(i)
-  end do
-  write(fstdout,*) ""
-  do i = 1, two_ndim
+  if ( l_results_stdout ) then
+    ! Output results to the terminal
+    write(fstdout,'(A30)') "Default flags:                "
     do j = 1, ndim
-      write(fstdout,'(L6,4X)',advance='no') model_flags_array(i,j)
+      write(fstdout,'(L6,4X)',advance='no') model_flags_default(j)
     end do
-    write(fstdout,'(G10.3)') cost_function(i)
-  end do
+    write(fstdout,'(G10.3)') cost_func_default
+    write(fstdout,'(A)') "Results from trying all permutations of the flags: "
+    do i = 1, ndim
+      write(fstdout,'(I6,4X)',advance='no') i
+    end do
+    write(fstdout,'(A10)') " Cost func" 
+    do i = 1, ndim
+      write(fstdout,'(G10.3)',advance='no') cost_func_avg(i)
+    end do
+    write(fstdout,*) ""
+    do i = 1, two_ndim
+      do j = 1, ndim
+        write(fstdout,'(L6,4X)',advance='no') model_flags_array(i,j)
+      end do
+      write(fstdout,'(G10.3)') cost_function(i)
+    end do
 
-  write(fstdout,'(A30)') "Default flags:                "
-  do j = 1, ndim
-    write(fstdout,'(L6,4X)',advance='no') model_flags_default(j)
-  end do
-  write(fstdout,'(G10.3)') cost_func_default
-  write(fstdout,'(A30)') &
-    "Column 1 = upwind_wpxp_ta     ", &
-    "Column 2 = upwind_xpyp_ta     ", &
-    "Column 3 = upwind_xm_ma       ", &
-    "Column 4 = quintic_poly_interp", &
-    "Column 5 = vert_avg_closure   ", &
-    "Column 6 = single_C2_Skw      ", &
-    "Column 7 = standard_term_ta   ", &
-    "Column 8 = tke_aniso          ", &
-    "Column 9 = use_cloud_cover    "
+    write(fstdout,'(A30)') &
+      "Column 1 = upwind_wpxp_ta     ", &
+      "Column 2 = upwind_xpyp_ta     ", &
+      "Column 3 = upwind_xm_ma       ", &
+      "Column 4 = quintic_poly_interp", &
+      "Column 5 = vert_avg_closure   ", &
+      "Column 6 = single_C2_Skw      ", &
+      "Column 7 = standard_term_ta   ", &
+      "Column 8 = tke_aniso          ", &
+      "Column 9 = use_cloud_cover    "
+  end if ! l_results_stdout
 
   open(unit=iunit,file=model_flags_output)
   write(iunit,'(10A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
     "quintic_poly_interp, ", "vert_avg_closure, ", &
     "single_C2_Skw, ", "standard_term_ta, ", "tke_aniso, ", "use_cloud_cover, ", "Cost func."
+  write(iunit,'(A30)') "Default flags:               ,"
+  do j = 1, ndim
+    write(iunit,'(L20,A2)',advance='no') model_flags_default(j), ", "
+  end do
+  write(iunit,'(G20.6,A2)') cost_func_default, ", "
   do i = 1, ndim
     write(iunit,'(G20.6,A2)',advance='no') cost_func_avg(i), ", "
   end do
@@ -531,11 +539,6 @@ subroutine logical_flags_driver
     end do
     write(iunit,'(G20.6,A2)') cost_function(i), ", "
   end do
-  write(iunit,'(A30)') "Default flags:               ,"
-  do j = 1, ndim
-    write(iunit,'(L20,A2)',advance='no') model_flags_default(j), ", "
-  end do
-  write(iunit,'(G20.6,A2)') cost_func_default, ", "
   close(unit=iunit)
   write(fstdout,*) "Results of tuning model flags written to: ", model_flags_output
 
