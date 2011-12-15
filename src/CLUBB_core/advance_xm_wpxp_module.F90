@@ -3083,12 +3083,17 @@ module advance_xm_wpxp_module
       Lscale,           &   ! Current value of Lscale
       Cx_Skw_fnc            ! Initial skewness function before damping
 
+    ! Local variables
+    real, parameter :: &
+      ! Added to prevent large damping at low altitudes where Lscale is small
+      altitude_threshold = 100.0  ! Altitude above which damping should occur
+
     ! Return Variable
     real, dimension(gr%nz) :: damped_value
 
     damped_value = Cx_Skw_fnc
 
-    where( Lscale < threshold )
+    where( Lscale < threshold .and. gr%zt > altitude_threshold)
       damped_value = max_coeff_value + ( ( coefficient - max_coeff_value ) / threshold ) * Lscale
     end where
 
