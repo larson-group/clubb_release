@@ -243,6 +243,7 @@ module input_netcdf
     use netcdf, only: &
       nf90_inq_varid, & ! Function(s)
       nf90_get_var, &
+      nf90_get_att, &
       nf90_inquire_variable, &
       nf90_strerror
 
@@ -254,8 +255,15 @@ module input_netcdf
 
     use stat_file_module, only: &
       stat_file ! Type(s)
+    use constants_clubb, only: &
+      g_per_kg, &
+      sec_per_day
 
     implicit none
+
+    ! Constant parameter
+    logical, parameter :: &
+      l_convert_to_MKS = .true. ! Convert to MKS units
 
     ! Input Variables
     type (stat_file), intent(in) :: &
@@ -279,6 +287,9 @@ module input_netcdf
 
     ! Local Variables
     integer, dimension(NF90_MAX_VAR_DIMS) :: dimIds
+
+    character(len=10) :: &
+      units ! The units on the variable
 
     real(kind=4), dimension(:,:,:,:), allocatable :: & 
       x4 ! The variable from the file
@@ -326,9 +337,40 @@ module input_netcdf
       write(fstderr,*) nf90_strerror( ierr )
       l_error = .true.
       return
-    else
-      x = real( x4(1,1,:,1) )
     end if
+
+    x = real( x4(1,1,:,1) )
+
+    if ( l_convert_to_MKS ) then
+
+      ierr = nf90_get_att( ncid=ncf%iounit, varid=varid, name='units', values=units )
+
+      if ( ierr /= NF90_NOERR ) then
+        write(fstderr,*) nf90_strerror( ierr )
+        l_error = .true.
+        return
+
+      else
+        select case ( trim( units ) )
+        case ( "g/kg" ) 
+          x = x / g_per_kg
+
+        case ( "W/m2" ) 
+           l_error = .true.
+           write(fstderr,*) "get_netcdf_var: Unable to convert variables of this type to MKS units"
+           return
+
+        case ( "K/day" ) 
+          x = x / real( sec_per_day )
+
+        case default
+          ! Do nothing
+
+        end select ! units
+
+      end if ! ierr /= NF90_NOERR
+
+    end if ! l_convert_to_MKS
 
     return
   end subroutine get_netcdf_var
