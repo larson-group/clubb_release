@@ -63,7 +63,10 @@ module clubb_core
                RH_crit, &  ! h1g, 2010-06-16
 #endif
                rcm, wprcp, cloud_frac, & 
-               rcm_in_layer, cloud_cover, &  
+               rcm_in_layer, cloud_cover, &
+#ifdef NCAR
+               khzm, khzt, &
+#endif  
                pdf_params )
 
     ! Description:
@@ -435,6 +438,12 @@ module clubb_core
     real, intent(out), dimension(gr%nz) ::  &
       wprcp,      & ! w'r_c' (momentum levels)                [(kg/kg) m/s]
       cloud_frac    ! cloud fraction (thermodynamic levels)   [-]
+
+#ifdef NCAR
+    real, intent(out), dimension(gr%nz) :: &
+      khzt, &       ! eddy diffusivity on thermo levels
+      khzm          ! eddy diffusivity on momentum levels     
+#endif
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
@@ -1064,6 +1073,11 @@ module clubb_core
     Kh_zt = c_K * Lscale * sqrt_em_zt
     Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
                 * sqrt( max( em, em_min ) )
+
+#ifdef NCAR		
+    khzt(:) = Kh_zt(:)
+    khzm(:) = Kh_zm(:)
+#endif
 
     !----------------------------------------------------------------
     ! Set Surface variances

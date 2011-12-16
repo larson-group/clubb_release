@@ -14,6 +14,14 @@ module constants_clubb
       time_precision, & ! Variable(s)
       dp
 
+#ifdef NCAR      
+  use shr_const_mod, only: shr_const_rdair, shr_const_cpdair, shr_const_latvap, &
+                           shr_const_latice, shr_const_latsub, shr_const_rgas, &
+			   shr_const_mwwv, shr_const_stebol, shr_const_tkfrz, &
+                           shr_const_mwdair, shr_const_g, shr_const_karman, &
+			   shr_const_rhofw
+#endif
+
   implicit none
 
   public :: fstderr, fstdin, fstdout, var_length, &
@@ -125,6 +133,44 @@ module constants_clubb
   !-----------------------------------------------------------------------------
   ! Physical constants
   !-----------------------------------------------------------------------------
+
+#ifdef NCAR
+
+  real, parameter ::  & 
+    Cp = shr_const_cpdair,  & ! Dry air specific heat at constant p [J/kg/K]
+    Lv = shr_const_latvap,    & ! Latent heat of vaporization         [J/kg]
+    Lf = shr_const_latice,   & ! Latent heat of fusion               [J/kg]
+    Ls = shr_const_latsub,  & ! Latent heat of sublimation          [J/kg]
+    Rd = shr_const_rdair,   & ! Dry air gas constant                [J/kg/K]
+    Rv = shr_const_rgas/shr_const_mwwv       ! Water vapor gas constant            [J/kg/K]
+    
+  real, parameter :: &
+    stefan_boltzmann = shr_const_stebol ! Stefan-Boltzmann constant [W/(m^2 K^4)]
+    
+  real, parameter :: &
+    T_freeze_K = shr_const_tkfrz ! Freezing point of water [K]
+    
+  ! Useful combinations of Rd and Rv
+  real, parameter ::  & 
+    ep  = shr_const_mwwv/shr_const_mwdair,    & ! ep  = 0.622  [-]
+    ep1 = (1.0-ep)/ep,& ! ep1 = 0.61   [-]
+    ep2 = 1.0/ep        ! ep2 = 1.61   [-]
+    
+  real, parameter :: & 
+    kappa = (shr_const_rgas/shr_const_mwdair)/shr_const_cpdair     ! kappa        [-]
+    
+  real, parameter :: & 
+    grav = shr_const_g, & ! Gravitational acceleration     [m/s^2]
+    p0   = 1.0e5   ! Reference pressure             [Pa]
+
+  ! Von Karman's constant
+  ! Constant of the logarithmic wind profile in the surface layer    
+  real, parameter :: & 
+    vonk   = shr_const_karman,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
+    rho_lw = shr_const_rhofw    ! Density of liquid water                [kg/m^3]
+
+#else
+
   real, parameter ::  & 
     Cp = 1004.67,  & ! Dry air specific heat at constant p [J/kg/K]
     Lv = 2.5e6,    & ! Latent heat of vaporization         [J/kg]
@@ -160,6 +206,8 @@ module constants_clubb
   real, parameter :: & 
     vonk   = 0.4,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
     rho_lw = 1000.0    ! Density of liquid water                [kg/m^3]
+    
+#endif
 
   ! Tolerances below which we consider moments to be zero
   real, parameter ::  & 
