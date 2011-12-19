@@ -81,12 +81,31 @@ module model_flags
 ! OpenMP directives.
 !$omp threadprivate(l_uv_nudge, l_tke_aniso)
 
+  ! Use 2 calls to pdf_closure and the trapezoidal rule to  compute the 
+  ! varibles that are output from high order closure
+  logical, private :: &
+    l_vert_avg_closure  = .true.
+!$omp threadprivate(l_vert_avg_closure)
+
+  ! These are currently set based on l_vert_avg_closure
   logical, public :: &
-    l_vert_avg_closure  = .true., & ! Use 2 calls to pdf_closure and the trapezoidal rule to 
-    !                                 compute the varibles that are output from high order closure
+    l_trapezoidal_rule_zt = .true., & ! If true, the trapezoidal rule is called for
+                                         ! the thermodynamic-level variables output 
+                                         ! from pdf_closure.  
+    l_trapezoidal_rule_zm = .true., & ! If true, the trapezoidal rule is called for
+                                         ! three momentum-level variables - wpthvp,
+                                       ! thlpthvp, and rtpthvp - output from pdf_closure.
+    l_call_pdf_closure_twice = .true., & ! This logical flag determines whether or not to
+    ! call subroutine pdf_closure twice.  If true,
+    ! pdf_closure is called first on thermodynamic levels
+    ! and then on momentum levels so that each variable is
+    ! computed on its native level.  If false, pdf_closure
+    ! is only called on thermodynamic levels, and variables
+    ! which belong on momentum levels are interpolated.
     l_single_C2_Skw = .false. ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
 
-!$omp threadprivate(l_vert_avg_closure, l_single_C2_Skw)
+!$omp threadprivate(l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, &
+!$omp   l_call_pdf_closure_twice, l_single_C2_Skw)
 
   logical, public :: &
     l_standard_term_ta = .false.    ! Use the standard discretization for the
@@ -165,6 +184,17 @@ module model_flags
     ! Logicals
 
     l_vert_avg_closure = l_vert_avg_closure_in
+
+    if ( l_vert_avg_closure ) then
+      l_trapezoidal_rule_zt    = .true.
+      l_trapezoidal_rule_zm    = .true.
+      l_call_pdf_closure_twice = .true.
+    else
+      l_trapezoidal_rule_zt    = .false.
+      l_trapezoidal_rule_zm    = .false.
+      l_call_pdf_closure_twice = .false.
+    end if
+
     l_uv_nudge  = l_uv_nudge_in
     l_tke_aniso = l_tke_aniso_in
 
@@ -213,7 +243,8 @@ module model_flags
 
     namelist /model_flags/ &
       l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
-      l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta
+      l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
+      l_use_cloud_cover
 
    ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
@@ -221,6 +252,16 @@ module model_flags
     read(unit=iunit, nml=model_flags)
 
     close(unit=iunit)
+
+    if ( l_vert_avg_closure ) then
+      l_trapezoidal_rule_zt    = .true.
+      l_trapezoidal_rule_zm    = .true.
+      l_call_pdf_closure_twice = .true.
+    else
+      l_trapezoidal_rule_zt    = .false.
+      l_trapezoidal_rule_zm    = .false.
+      l_call_pdf_closure_twice = .false.
+    end if
 
     return
   end subroutine read_model_flags_from_file
@@ -267,8 +308,19 @@ module model_flags
     l_tke_aniso = l_tke_aniso_in
     l_use_cloud_cover = l_use_cloud_cover_in
 
+    if ( l_vert_avg_closure ) then
+      l_trapezoidal_rule_zt    = .true.
+      l_trapezoidal_rule_zm    = .true.
+      l_call_pdf_closure_twice = .true.
+    else
+      l_trapezoidal_rule_zt    = .false.
+      l_trapezoidal_rule_zm    = .false.
+      l_call_pdf_closure_twice = .false.
+    end if
+
     return
   end subroutine setup_tunable_model_flags
+
 !===============================================================================
   subroutine get_tunable_model_flags &
              ( l_upwind_wpxp_ta_out, l_upwind_xpyp_ta_out, & 
@@ -312,4 +364,5 @@ module model_flags
 
     return
   end subroutine get_tunable_model_flags
+
 end module model_flags
