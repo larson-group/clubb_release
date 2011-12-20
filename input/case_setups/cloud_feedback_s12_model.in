@@ -78,7 +78,6 @@ ts_nudge = 7200.    ! Timescale of u/v nudging            [s]
 forcings_file_path = '../input/case_setups/cloud_feedback_s12_forcings/'
 !forcings_file_path = ''
 
-l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
 l_t_dependent = .true. ! Read values from _surface.in file. Also read 

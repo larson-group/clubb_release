@@ -77,7 +77,6 @@ ts_nudge = 7200.    ! Timescale of u/v nudging            [s]
 
 forcings_file_path = '../input/case_setups/lba_forcings/'
 
-l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
 ! Sponge Damping

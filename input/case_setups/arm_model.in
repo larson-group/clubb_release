@@ -70,7 +70,6 @@ p_sfc = 970.e2    ! Pressure at model base              [Pa]
 fcor = 8.5e-5    ! Coriolis parameter                  [s^-1]
 T0   = 300.      ! Reference temperature (usually 300) [K]
 
-l_tke_aniso  = .true.   ! Flag for anisotropic tke.
 
 
 ! Sponge Damping

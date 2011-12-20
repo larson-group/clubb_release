@@ -75,7 +75,6 @@ l_input_xpwp_sfc = .true. ! Flag used to determine whether or not to
                           ! read in the surface momentum fluxes, 
                           ! upwp_sfc and vpwp_sfc
 
-l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_soil_veg     = .false. ! Flag for simple surface scheme
 
 ! Sponge Damping

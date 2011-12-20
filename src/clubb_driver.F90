@@ -267,12 +267,9 @@ module clubb_driver
       time_restart    ! Time of model restart run     [s]
 
     logical :: &
-      l_vert_avg_closure, & ! Call pdf_closure twice and use the trapazoidal rule
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
-      l_input_fields, & ! Whether to set model variables from a file
-      l_tke_aniso       ! For anisotropic turbulent kinetic energy,
-!                         i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_input_fields    ! Whether to set model variables from a file
 
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
@@ -340,7 +337,7 @@ module clubb_driver
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
-      l_vert_avg_closure, l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
+      l_soil_veg, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, l_input_fields, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
@@ -411,8 +408,6 @@ module clubb_driver
     uv_sponge_damp_settings%sponge_damp_depth = 0.25
 
     l_soil_veg     = .false.
-    l_vert_avg_closure = .true.
-    l_tke_aniso    = .true.
     l_uv_nudge     = .false.
     l_restart      = .false.
     l_input_fields  = .false.
@@ -634,8 +629,6 @@ module clubb_driver
         uv_sponge_damp_settings%sponge_damp_depth, l_write_to_file, iunit )
 
       call write_text( "l_soil_veg = ", l_soil_veg, l_write_to_file, iunit )
-      call write_text( "l_vert_avg_closure = ", l_vert_avg_closure, l_write_to_file, iunit )
-      call write_text( "l_tke_aniso = ", l_tke_aniso, l_write_to_file, iunit )
       call write_text( "l_uv_nudge = ", l_uv_nudge, l_write_to_file, iunit )
       call write_text( "l_restart = ", l_restart, l_write_to_file, iunit )
       call write_text( "l_input_fields = ", l_input_fields, l_write_to_file, iunit )
@@ -730,8 +723,8 @@ module clubb_driver
          ( nzmax, T0, ts_nudge,                               & ! Intent(in)
            hydromet_dim, sclr_dim,                            & ! Intent(in)
            sclr_tol(1:sclr_dim), edsclr_dim, params,          & ! Intent(in)
-           l_vert_avg_closure, l_host_applies_sfc_fluxes,     & ! Intent(in)
-           l_uv_nudge, l_tke_aniso, saturation_formula,       & ! Intent(in)
+           l_host_applies_sfc_fluxes,                         & ! Intent(in)
+           l_uv_nudge, saturation_formula,                    & ! Intent(in)
            l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
            momentum_heights, thermodynamic_heights,           & ! Intent(in)
            dummy_dx, dummy_dy, sfc_elevation,                 & ! Intent(in)
@@ -1769,7 +1762,7 @@ module clubb_driver
 
       wp2 = (2.0/3.0) * em
 
-    endif
+    end if ! l_tke_aniso
 
     ! Compute mixing length
     call compute_length( thvm, thlm, rtm, em,   &                    ! Intent(in)

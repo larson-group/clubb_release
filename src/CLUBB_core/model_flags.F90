@@ -143,8 +143,8 @@ module model_flags
 
 !===============================================================================
   subroutine setup_model_flags & 
-             ( l_vert_avg_closure_in, l_host_applies_sfc_fluxes_in, & 
-               l_uv_nudge_in, l_tke_aniso_in, saturation_formula_in &
+             ( l_host_applies_sfc_fluxes_in, & 
+               l_uv_nudge_in, saturation_formula_in &
 #ifdef GFDL
                ,  I_sat_sphum_in   &  ! h1g, 2010-06-15
 #endif
@@ -166,10 +166,8 @@ module model_flags
 
     ! Input Variables
     logical, intent(in) ::  & 
-      l_vert_avg_closure_in, & 
       l_host_applies_sfc_fluxes_in, &
-      l_uv_nudge_in, & 
-      l_tke_aniso_in
+      l_uv_nudge_in
 
     character(len=*), intent(in) :: &
       saturation_formula_in
@@ -183,20 +181,7 @@ module model_flags
 
     ! Logicals
 
-    l_vert_avg_closure = l_vert_avg_closure_in
-
-    if ( l_vert_avg_closure ) then
-      l_trapezoidal_rule_zt    = .true.
-      l_trapezoidal_rule_zm    = .true.
-      l_call_pdf_closure_twice = .true.
-    else
-      l_trapezoidal_rule_zt    = .false.
-      l_trapezoidal_rule_zm    = .false.
-      l_call_pdf_closure_twice = .false.
-    end if
-
     l_uv_nudge  = l_uv_nudge_in
-    l_tke_aniso = l_tke_aniso_in
 
     l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes_in
 

@@ -1467,8 +1467,8 @@ module clubb_core
              ( nzmax, T0_in, ts_nudge_in, & ! In
                hydromet_dim_in, sclr_dim_in, & ! In
                sclr_tol_in, edsclr_dim_in, params,  &  ! In
-               l_vert_avg_closure, l_host_applies_sfc_fluxes, & ! In
-               l_uv_nudge, l_tke_aniso, saturation_formula, &  ! In
+               l_host_applies_sfc_fluxes, & ! In
+               l_uv_nudge, saturation_formula, & ! In
 #ifdef GFDL
                I_sat_sphum, &        ! intent(in)  h1g, 2010-06-16
 #endif
@@ -1601,16 +1601,11 @@ module clubb_core
 
     ! Flags
     logical, intent(in) ::  & 
-      l_vert_avg_closure, & ! Simple surface scheme
-      l_uv_nudge,         & ! Wind nudging
-      l_tke_aniso       ! For anisotropic turbulent kinetic energy,
-    !                     i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
-
-    logical, intent(in) :: & 
-      l_host_applies_sfc_fluxes
+      l_uv_nudge,             & ! Wind nudging
+      l_host_applies_sfc_fluxes ! Whether to apply for the surface flux
 
     character(len=*), intent(in) :: &
-      saturation_formula ! "bolton" approx. or "flatau" approx.
+      saturation_formula ! Approximation for saturation vapor pressure
 
 #ifdef GFDL
     logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
@@ -1659,14 +1654,14 @@ module clubb_core
     ! Setup flags
 #ifdef GFDL
     call setup_model_flags & 
-         ( l_vert_avg_closure, l_host_applies_sfc_fluxes, & ! intent(in)
-           l_uv_nudge, l_tke_aniso, saturation_formula, &  ! intent(in) 
+         ( l_host_applies_sfc_fluxes, & ! intent(in)
+           l_uv_nudge, saturation_formula, &  ! intent(in) 
            I_sat_sphum )  ! intent(in)  h1g, 2010-06-16
 
 #else
     call setup_model_flags & 
-         ( l_vert_avg_closure, l_host_applies_sfc_fluxes, & ! intent(in)
-           l_uv_nudge, l_tke_aniso, saturation_formula )  ! intent(in)
+         ( l_host_applies_sfc_fluxes, & ! intent(in)
+           l_uv_nudge, saturation_formula )  ! intent(in)
 #endif
 
     ! Determine the maximum allowable value for Lscale (in meters).
