@@ -267,6 +267,8 @@ module lapack_wrap
         " illegal value in argument", -info
       err_code = clubb_bad_lapack_arg
 
+      solution = -999.
+
     case( 0 )
       ! Success!
       if ( lapack_isnan( ndim, nrhs, rhs ) ) then
@@ -280,6 +282,8 @@ module lapack_wrap
     case( 1: )
       write(fstderr,*) trim( solve_type )//" singular matrix."
       err_code = clubb_singular_matrix
+
+      solution = -999.
 
     end select
 
@@ -627,6 +631,8 @@ module lapack_wrap
         " illegal value for argument ", -info
       err_code = clubb_bad_lapack_arg
 
+      solution = -999.
+
     case( 0 )
       ! Success!
       if ( lapack_isnan( ndim, nrhs, rhs ) ) then
@@ -640,6 +646,8 @@ module lapack_wrap
     case( 1: )
       write(fstderr,*) trim( solve_type )//" band solver: singular matrix"
       err_code = clubb_singular_matrix
+
+      solution = -999.
 
     end select
 

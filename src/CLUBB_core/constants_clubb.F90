@@ -14,27 +14,15 @@ module constants_clubb
       time_precision, & ! Variable(s)
       dp
 
-#ifdef NCAR      
+#ifdef NCAR /* Set constants as they're set in CAM */
   use shr_const_mod, only: shr_const_rdair, shr_const_cpdair, shr_const_latvap, &
                            shr_const_latice, shr_const_latsub, shr_const_rgas, &
-			   shr_const_mwwv, shr_const_stebol, shr_const_tkfrz, &
+                           shr_const_mwwv, shr_const_stebol, shr_const_tkfrz, &
                            shr_const_mwdair, shr_const_g, shr_const_karman, &
-			   shr_const_rhofw
+                           shr_const_rhofw
 #endif
 
   implicit none
-
-  public :: fstderr, fstdin, fstdout, var_length, &
-    pi_dp, pi, radians_per_deg_dp, sqrt_2pi, sqrt_2, three_halves, &
-    Cp, Lv, Ls, Lf, Rd, Rv, ep, ep1, ep2, &
-    kappa, grav, p0, vonk, rho_lw, &
-    w_tol, thl_tol, rt_tol, s_mellor_tol, thl_tol_mfl, rt_tol_mfl, & 
-    w_tol_sqd, rc_tol, Nc_tol, rr_tol, Nr_tol, em_min, &
-    eps, zero_threshold, max_mag_correlation, sec_per_day, &
-    sec_per_hr, sec_per_min, min_per_hr, g_per_kg, mm_per_m, T_freeze_K, &
-    Skw_max_mag, Skw_max_mag_sqd, stefan_boltzmann, &
-    cm3_per_m3, micron_per_m, pascal_per_mb, parab_cyl_max_input,  &
-    gamma_over_implicit_ts, cloud_frac_min
 
   private ! Default scope
 
@@ -43,11 +31,11 @@ module constants_clubb
   !-----------------------------------------------------------------------------
 
   ! Fortran file unit I/O constants
-  integer, parameter ::  & 
+  integer, parameter, public ::  & 
     fstderr = 0, fstdin = 5, fstdout = 6
 
   ! Maximum variable name length in CLUBB GrADS or netCDF output
-  integer, parameter ::  & 
+  integer, parameter, public ::  & 
     var_length = 30
 
   ! The parameter parab_cyl_max_input is the largest magnitude that the input to
@@ -66,7 +54,7 @@ module constants_clubb
   ! function (before overflow occurs) is dependent on the order of parabolic
   ! cylinder function.  However, after a lot of testing, it was determined that
   ! an absolute value of 375 works well for an order of 12 or less.
-  real, parameter :: &
+  real, parameter, public :: &
     parab_cyl_max_input = 375.  ! Largest allowable input to parab. cyl. fnct.
 
   ! "Over-implicit" weighted time step.
@@ -108,26 +96,26 @@ module constants_clubb
   !           module advance_xm_wpxp_module; and
   !           r_t'^2, th_l'^2, r_t'th_l', u'^2, v'^2, sclr'^2, sclr'r_t',
   !           and sclr'th_l', found in module advance_xp2_xpyp_module.
-  real, parameter :: &
+  real, parameter, public :: &
     gamma_over_implicit_ts = 1.50
 
   !-----------------------------------------------------------------------------
   ! Mathematical Constants
   !-----------------------------------------------------------------------------
-  real( kind = dp ), parameter ::  & 
+  real( kind = dp ), parameter, public ::  & 
     pi_dp = 3.14159265358979323846_dp
 
-  real, parameter ::  & 
+  real, parameter, public ::  & 
     pi = 3.141592654 ! The ratio of radii to their circumference
 
-  real( kind = dp ), parameter:: &
+  real( kind = dp ), parameter, public :: &
     radians_per_deg_dp = pi_dp / 180._dp
 
-  real, parameter :: &
+  real, parameter, public :: &
     sqrt_2pi = 2.5066282746310005024, &  ! sqrt(2*pi)
     sqrt_2   = 1.4142135623730950488     ! sqrt(2)
 
-  real, parameter :: &
+  real, parameter, public :: &
     three_halves = 3.0/2.0   ! 3/2
 
   !-----------------------------------------------------------------------------
@@ -136,7 +124,7 @@ module constants_clubb
 
 #ifdef NCAR
 
-  real, parameter ::  & 
+  real, parameter, public ::  & 
     Cp = shr_const_cpdair,  & ! Dry air specific heat at constant p [J/kg/K]
     Lv = shr_const_latvap,    & ! Latent heat of vaporization         [J/kg]
     Lf = shr_const_latice,   & ! Latent heat of fusion               [J/kg]
@@ -144,34 +132,34 @@ module constants_clubb
     Rd = shr_const_rdair,   & ! Dry air gas constant                [J/kg/K]
     Rv = shr_const_rgas/shr_const_mwwv       ! Water vapor gas constant            [J/kg/K]
     
-  real, parameter :: &
+  real, parameter, public :: &
     stefan_boltzmann = shr_const_stebol ! Stefan-Boltzmann constant [W/(m^2 K^4)]
     
-  real, parameter :: &
+  real, parameter, public :: &
     T_freeze_K = shr_const_tkfrz ! Freezing point of water [K]
     
   ! Useful combinations of Rd and Rv
-  real, parameter ::  & 
+  real, parameter, public ::  & 
     ep  = shr_const_mwwv/shr_const_mwdair,    & ! ep  = 0.622  [-]
     ep1 = (1.0-ep)/ep,& ! ep1 = 0.61   [-]
     ep2 = 1.0/ep        ! ep2 = 1.61   [-]
     
-  real, parameter :: & 
+  real, parameter, public :: & 
     kappa = (shr_const_rgas/shr_const_mwdair)/shr_const_cpdair     ! kappa        [-]
     
-  real, parameter :: & 
+  real, parameter, public :: & 
     grav = shr_const_g, & ! Gravitational acceleration     [m/s^2]
     p0   = 1.0e5   ! Reference pressure             [Pa]
 
   ! Von Karman's constant
   ! Constant of the logarithmic wind profile in the surface layer    
-  real, parameter :: & 
+  real, parameter, public :: & 
     vonk   = shr_const_karman,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
     rho_lw = shr_const_rhofw    ! Density of liquid water                [kg/m^3]
 
 #else
 
-  real, parameter ::  & 
+  real, parameter, public ::  & 
     Cp = 1004.67,  & ! Dry air specific heat at constant p [J/kg/K]
     Lv = 2.5e6,    & ! Latent heat of vaporization         [J/kg]
     Ls = 2.834e6,  & ! Latent heat of sublimation          [J/kg]
@@ -180,37 +168,37 @@ module constants_clubb
     Rv = 461.5       ! Water vapor gas constant            [J/kg/K]
 
 
-  real, parameter :: &
+  real, parameter, public :: &
     stefan_boltzmann = 5.6704e-8 ! Stefan-Boltzmann constant [W/(m^2 K^4)]
 
-  real, parameter :: &
+  real, parameter, public :: &
     T_freeze_K = 273.15 ! Freezing point of water [K]
 
   ! Useful combinations of Rd and Rv
-  real, parameter ::  & 
+  real, parameter, public ::  & 
     ep  = Rd / Rv,    & ! ep  = 0.622  [-]
     ep1 = (1.0-ep)/ep,& ! ep1 = 0.61   [-]
     ep2 = 1.0/ep        ! ep2 = 1.61   [-]
 
-  real, parameter :: & 
+  real, parameter, public :: & 
     kappa = Rd / Cp     ! kappa        [-]
 
   ! Changed g to grav to make it easier to find in the code 5/25/05
   ! real, parameter :: grav  = 9.80665 ! Gravitational acceleration [m/s^2]
-  real, parameter :: & 
+  real, parameter, public :: & 
     grav = 9.81, & ! Gravitational acceleration     [m/s^2]
     p0   = 1.0e5   ! Reference pressure             [Pa]
 
   ! Von Karman's constant
   ! Constant of the logarithmic wind profile in the surface layer
-  real, parameter :: & 
+  real, parameter, public :: & 
     vonk   = 0.4,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
     rho_lw = 1000.0    ! Density of liquid water                [kg/m^3]
     
 #endif
 
   ! Tolerances below which we consider moments to be zero
-  real, parameter ::  & 
+  real, parameter, public ::  & 
     w_tol        = 2.e-2,  & ! [m/s]
     thl_tol      = 1.e-2,  & ! [K]
     rt_tol       = 1.e-8,  & ! [kg/kg]
@@ -221,18 +209,18 @@ module constants_clubb
   ! (1e-8) to prevent spurious cloud formation aloft in LBA.
   ! rt_tol_mfl is larger (1e-4) to prevent the mfl from
   ! depositing moisture at the top of the domain.
-  real, parameter :: &
+  real, parameter, public :: &
     thl_tol_mfl = 1.e-2, & ! [K]
     rt_tol_mfl = 1.e-4     ! [kg/kg]
 
   ! The tolerance for w'^2 is the square of the tolerance for w.
-  real, parameter :: &
+  real, parameter, public :: &
     w_tol_sqd = w_tol**2 ! [m^2/s^2]
 
-  real, parameter :: &
+  real, parameter, public :: &
     Skw_max_mag = 4.5  ! Max magnitude of skewness     [-]
 
-  real, parameter :: &
+  real, parameter, public :: &
     Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]
 
   ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
@@ -243,7 +231,7 @@ module constants_clubb
   ! tolerance value for rc doubles as the lowest mixing ratio there can be to
   ! still officially have a cloud at that level.  This is figured to be about
   ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
-  real, parameter :: & 
+  real, parameter, public :: & 
     rc_tol = 1.0E-7,  & ! [kg/kg]
     Nc_tol = 1.0E-10, & ! [#/kg]
     rr_tol = 1.0E-10, & ! [kg/kg]
@@ -254,41 +242,42 @@ module constants_clubb
   ! otherwise, em = (3/2) * wp2.  Since up2, vp2, and wp2 all have
   ! the same minimum threshold value of w_tol_sqd, em cannot be less
   ! than (3/2) * w_tol_sqd.  Thus, em_min = (3/2) * w_tol_sqd.
-  real, parameter :: em_min = 1.5 * w_tol_sqd  ! [m^2/s^2]
+  real, parameter, public :: em_min = 1.5 * w_tol_sqd  ! [m^2/s^2]
 
-  real, parameter ::  & 
+  real, parameter, public ::  & 
     eps = 1.0e-10 ! Small value to prevent a divide by zero
 
-  real, parameter ::  &
+  real, parameter, public ::  &
     zero_threshold = 0.0 ! Defining a threshold on a physical quantity to be 0.
 
   ! The maximum absolute value (or magnitude) that a correlation is allowed to
   ! have.  Statistically, a correlation is not allowed to be less than -1 or
   ! greater than 1, so the maximum magnitude would be 1.
-  real, parameter :: &
+  real, parameter, public :: &
     max_mag_correlation = 0.99
 
-  real, parameter :: &
+  real, parameter, public :: &
     cloud_frac_min = 0.005 ! Threshold for cloud fractions
 
   !-----------------------------------------------------------------------------
   ! Useful conversion factors.
   !-----------------------------------------------------------------------------
-  real(kind=time_precision), parameter ::  & 
+  real(kind=time_precision), parameter, public ::  & 
     sec_per_day = 86400.0_time_precision, & ! Seconds in a day.
     sec_per_hr  = 3600.0_time_precision,  & ! Seconds in an hour.
     sec_per_min = 60.0_time_precision,    & ! Seconds in a minute.
     min_per_hr = 60.0_time_precision        ! Minutes in an hour.
 
-  real, parameter :: & 
+  real, parameter, public :: & 
     g_per_kg = 1000.0     ! Grams in a kilogram.
 
-  real, parameter :: &
+  real, parameter, public :: &
     pascal_per_mb = 100.0 ! Pascals per Millibar
 
-  real, parameter :: & 
+  real, parameter, public :: & 
     cm3_per_m3   = 1.e6, & ! Cubic centimeters per cubic meter
     micron_per_m = 1.e6, & ! Micrometers per meter
+    cm_per_m     = 100., & ! Centimeters per meter  
     mm_per_m     = 1000.   ! Millimeters per meter  
 
 !=============================================================================

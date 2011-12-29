@@ -58,13 +58,15 @@ module ice_dfsn_module
 
     use grid_class, only: & 
         gr ! Variable(s)
+
     use constants_clubb, only: & 
-        Cp,  & ! Variable(s)
+        Cp,  & ! Constant(s)
         Lv, & 
         ep, & 
         Rv, & 
         Lf,&
-        T_freeze_K
+        T_freeze_K, &
+        cm_per_m
 
     use clubb_precision, only:  & 
         time_precision ! Variable(s)
@@ -246,7 +248,7 @@ module ice_dfsn_module
         ! dm = (dm/dt)*(1/u_T)*dz                                         !
         !-----------------------------------------------------------------!
         dmass_ice_cryst(k) = ( 4. * (S_i(k) - 1.) / Denom(k) ) & 
-           * (k_u_coef**(-1.0)) * ( rho(k)**q_expn ) & 
+           * (1.0/k_u_coef) * ( rho(k)**q_expn ) & 
            * ( (mass_ice_cryst(k)/a_coef)**((1.0-n_expn)/b_expn) ) & 
            * (1.0/gr%invrs_dzm(k-1))
         mass_ice_cryst(k-1) = mass_ice_cryst(k)  & 
@@ -256,7 +258,7 @@ module ice_dfsn_module
         diam(k) = (mass_ice_cryst(k)/a_coef)**(1./b_expn)
 
         ! Fallspeed of ice crystal in cm/s.
-        u_T_cm(k) = 100. * k_u_coef * & 
+        u_T_cm(k) = cm_per_m * k_u_coef * & 
                     ((mass_ice_cryst(k)/a_coef)**(n_expn/b_expn))  & 
                           * (rho(k)**(-q_expn))
 
@@ -308,7 +310,8 @@ module ice_dfsn_module
 
     use constants_clubb, only: & 
         Ls,  & ! Constant(s)
-        Rv
+        Rv, &
+        T_freeze_K
 
     implicit none
 
@@ -338,12 +341,12 @@ module ice_dfsn_module
 
     ! ---- Begin Code ----
 
-    Celsius = T_in_K - 273.16
+    Celsius = T_in_K - T_freeze_K
 
     Ka = (5.69 + 0.017*Celsius)*0.00001  ! Ka in cal./(cm.*sec.*C)
     Ka = 4.1868*100.0*Ka  ! Ka in J./(m.*sec.*K)
 
-    Dv = 0.221 * ( (T_in_K/273.16)**1.94 ) * (101325.0/p_in_Pa)
+    Dv = 0.221 * ( (T_in_K/T_freeze_K)**1.94 ) * (101325.0/p_in_Pa)
     ! Dv in (cm.^2)/sec.  ! .221 is correct.
     Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
 

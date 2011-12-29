@@ -1648,7 +1648,7 @@ module stats_subs
         call stat_update_var( is_mellor, s_mellor, zt )
       end if
 
-      if (sclr_dim > 0 ) then
+      if ( sclr_dim > 0 ) then
         do i=1, sclr_dim
           call stat_update_var( isclrm(i), sclrm(:,i), zt )
           call stat_update_var( isclrm_f(i), sclrm_forcing(:,i),  zt )
