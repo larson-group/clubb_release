@@ -379,12 +379,17 @@ module rad_lwsw_module
 ! see subroutine rad_lwsw.
 !-----------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, rho_lw, pi ! Variable(s)
+    use constants_clubb, only: &
+      Cp, & ! Constant(s)
+      rho_lw, &
+      pi, &
+      three_halves
+
     use interpolation, only: lin_int ! Procedure(s)
 
     implicit none
 
-! Input variables
+    ! Input variables
 
     integer, intent(in) :: kk
 
@@ -408,7 +413,7 @@ module rad_lwsw_module
     logical, intent(in) ::  & 
       l_center
 
-! Output variables
+    ! Output variables
     real, dimension(kk+1), intent(out) ::  & 
       Frad_SW
 
@@ -462,7 +467,7 @@ module rad_lwsw_module
     tauc = 0.0
     do k=1, kk
 
-      tau(k) = 1.5 * qc3(k) * rbm(k) * dsigm(k)  & !/ aoz(i,j)
+      tau(k) = three_halves * qc3(k) * rbm(k) * dsigm(k)  & !/ aoz(i,j)
              / radius / rho_lw
       tauc = tauc + tau(k)
     enddo

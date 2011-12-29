@@ -1949,7 +1949,7 @@ module microphys_driver
            ( hydromet(2,iirrainm) & 
              * abs( zm2zt( hydromet_vel(:,iirrainm), 2 ) ) ) & 
              * ( rho(2) / rho_lw ) & 
-             * real( sec_per_day ) * 1000.0, sfc )
+             * real( sec_per_day ) * mm_per_m, sfc )
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
            ( zt2zm( hydromet(:,iirrainm), 1 )  & 
