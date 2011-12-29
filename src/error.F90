@@ -614,7 +614,7 @@ module error
     ! If it has, it returns higher value than those previous to
     ! Amoeba (the downhill simplex)
     if ( fatal_error( err_code ) ) then
-
+      write(fstderr,*) "Warning: the parameter set has caused CLUBB to crash"
       min_les_clubb_diff = 2. * maxval( cost_fnc_vector )  & 
                        - minval( cost_fnc_vector )
 
@@ -624,6 +624,7 @@ module error
         call output_nml_tuner( errorfile,  & 
                                param_vals_vector(1:ndim) )
       end if
+
       return
     end if
 
