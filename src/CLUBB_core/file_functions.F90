@@ -94,10 +94,16 @@ module file_functions
   end subroutine file_read_1d
 
 !===============================================================================
-  subroutine file_read_2d (device,file_path,file_dimension1, & 
-                         file_dimension2,file_per_line,variable)
+  subroutine file_read_2d( device, file_path, file_dimension1, & 
+                           file_dimension2, file_per_line, variable )
 
 ! Description:
+!   Michael Falk wrote this routine to read data files in a particular format for mpace_a.
+!   The 2d mpace_a files list the (file_dimension2) values on a given vertical level, then
+!   moves to the next level to list its values.
+!   Each line has a specific number of values, until the last line on a level, which
+!   is short-- it has the last few values and then a line break.  The next line, beginning
+!   the next level, is full-sized again.  24 September 2007
 !
 ! References:
 !   None
@@ -105,27 +111,24 @@ module file_functions
     implicit none
 
     integer, intent(in) :: & 
-     device, & 
-     file_dimension1, & 
-     file_dimension2, & 
-     file_per_line
+      device, & 
+      file_dimension1, & 
+      file_dimension2, & 
+      file_per_line
 
     character(*), intent(in) :: & 
-     file_path
+      file_path
 
     real, dimension(file_dimension1,file_dimension2), intent(out) :: & 
-     variable
+      variable
 
     integer i, j, k
 
-    open(device,file=file_path,action='read')
+    ! ---- Begin Code ----
 
-    ! Michael Falk wrote this routine to read data files in a particular format for mpace_a.
-    ! The 2d mpace_a files list the (file_dimension2) values on a given vertical level, then
-    ! moves to the next level to list its values.
-    ! Each line has a specific number of values, until the last line on a level, which
-    ! is short-- it has the last few values and then a line break.  The next line, beginning
-    ! the next level, is full-sized again.  24 September 2007
+    variable = -999. ! Initialize to nonsense values
+
+    open(device,file=file_path,action='read')
 
     do k=1,(file_dimension1)                ! For each level in the data file,
       do j=0,((file_dimension2/file_per_line)-1)
@@ -136,8 +139,9 @@ module file_functions
             i=1,(mod(file_dimension2,file_per_line)))
     end do                                              ! and then start over at the next level.
 
-    close (device)
+    close(device)
 
+    return
   end subroutine file_read_2d
 
 !===============================================================================
