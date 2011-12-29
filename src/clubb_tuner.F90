@@ -397,8 +397,8 @@ subroutine logical_flags_driver( current_date, current_time )
     Qsort_flags ! Procedure(s)
 
   use model_flags, only: &
-    get_tunable_model_flags, & ! Procedure(s)
-    setup_tunable_model_flags, &
+    get_configurable_model_flags, & ! Procedure(s)
+    setup_configurable_model_flags, &
     write_model_flags_to_file
 
   implicit none
@@ -443,7 +443,7 @@ subroutine logical_flags_driver( current_date, current_time )
   ! ---- Begin Code ----
 
   ! Determine the current flags
-  call get_tunable_model_flags( model_flags_default(1),  &
+  call get_configurable_model_flags( model_flags_default(1),  &
                                 model_flags_default(2),  &
                                 model_flags_default(3),  &
                                 model_flags_default(4),  &
@@ -555,7 +555,7 @@ subroutine logical_flags_driver( current_date, current_time )
 
   ! Generate namelist file of the optimal result
   if ( l_results_file ) then
-   call setup_tunable_model_flags( model_flags_array(1,1), &
+   call setup_configurable_model_flags( model_flags_array(1,1), &
                                    model_flags_array(1,2), &
                                    model_flags_array(1,3), &
                                    model_flags_array(1,4), &
@@ -565,7 +565,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                    model_flags_array(1,8), &
                                    model_flags_array(1,9) )
 
-    filename_nml = "../input/tunable_parameters/tunable_model_flags_"//current_date//'_' & 
+    filename_nml = "../input/tunable_parameters/configurable_model_flags_"//current_date//'_' & 
       //current_time(1:4)//".in"
 
     call write_model_flags_to_file( iunit, trim( filename_nml ) )

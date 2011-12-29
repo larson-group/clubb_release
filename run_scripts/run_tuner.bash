@@ -111,7 +111,7 @@ DATE=`date +%F`
 
 # The tunable_parameters.in file
 PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
-FLAGS_FILE="../input/tunable_parameters/tunable_model_flags.in"
+FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 
 if [ ! -e "$PARAMS_FILE" ] ; then
 	echo $PARAMS_FILE " does not exist"
@@ -247,7 +247,7 @@ echo "Running with the optimal parameter set"
 PARAMS_FILE=`ls -t ../input/tunable_parameters/tunable_parameters* | head -n 1` 
 
 # For the model flag tuning runs
-FLAGS_FILE=`ls -t ../input/tunable_parameters/tunable_model_flags* | head -n 1` 
+FLAGS_FILE=`ls -t ../input/tunable_parameters/configurable_model_flags* | head -n 1` 
 
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 

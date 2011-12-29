@@ -205,7 +205,7 @@ module clubb_driver
       dt_main
 
     use model_flags, only: &
-      setup_tunable_model_flags, & ! Procedure(s)
+      setup_configurable_model_flags, & ! Procedure(s)
       read_model_flags_from_file
 
     use soil_vegetation, only: &
@@ -738,7 +738,7 @@ module clubb_driver
     ! This special purpose code only applies to tuner runs where the tune_type
     ! is setup to try all permutations of our model flags
     if ( present( model_flags_array ) ) then
-      call setup_tunable_model_flags &
+      call setup_configurable_model_flags &
            ( l_upwind_wpxp_ta_in=model_flags_array(1), &
              l_upwind_xpyp_ta_in=model_flags_array(2), & 
              l_upwind_xm_ma_in=model_flags_array(3), &

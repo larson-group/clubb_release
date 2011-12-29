@@ -12,8 +12,8 @@ module model_flags
 
   implicit none
 
-  public :: setup_model_flags, read_model_flags_from_file, setup_tunable_model_flags, &
-    get_tunable_model_flags, write_model_flags_to_file
+  public :: setup_model_flags, read_model_flags_from_file, setup_configurable_model_flags, &
+    get_configurable_model_flags, write_model_flags_to_file
 
   private ! Default Scope
 
@@ -138,7 +138,7 @@ module model_flags
      I_sat_sphum       ! h1g, 2010-06-15
 #endif
 
-  namelist /tunable_model_flags/ &
+  namelist /configurable_model_flags/ &
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
     l_use_cloud_cover
@@ -233,7 +233,7 @@ module model_flags
    ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
 
-    read(unit=iunit, nml=tunable_model_flags)
+    read(unit=iunit, nml=configurable_model_flags)
 
     close(unit=iunit)
 
@@ -254,7 +254,7 @@ module model_flags
   subroutine write_model_flags_to_file( iunit, filename )
 
 ! Description:
-!   Write a new namelist for the tunable model flags
+!   Write a new namelist for the configurable model flags
 !
 ! References:
 !   None
@@ -271,14 +271,14 @@ module model_flags
    ! Read the namelist
     open(unit=iunit, file=filename, status='unknown', action='write')
 
-    write(unit=iunit, nml=tunable_model_flags)
+    write(unit=iunit, nml=configurable_model_flags)
 
     close(unit=iunit)
 
     return
   end subroutine write_model_flags_to_file
 !===============================================================================
-  subroutine setup_tunable_model_flags &
+  subroutine setup_configurable_model_flags &
              ( l_upwind_wpxp_ta_in, l_upwind_xpyp_ta_in, & 
                l_upwind_xm_ma_in, l_quintic_poly_interp_in, &
                l_vert_avg_closure_in, &
@@ -330,10 +330,10 @@ module model_flags
     end if
 
     return
-  end subroutine setup_tunable_model_flags
+  end subroutine setup_configurable_model_flags
 
 !===============================================================================
-  subroutine get_tunable_model_flags &
+  subroutine get_configurable_model_flags &
              ( l_upwind_wpxp_ta_out, l_upwind_xpyp_ta_out, & 
                l_upwind_xm_ma_out, l_quintic_poly_interp_out, &
                l_vert_avg_closure_out, &
@@ -374,6 +374,6 @@ module model_flags
     l_use_cloud_cover_out = l_use_cloud_cover
 
     return
-  end subroutine get_tunable_model_flags
+  end subroutine get_configurable_model_flags
 
 end module model_flags

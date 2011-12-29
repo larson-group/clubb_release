@@ -89,6 +89,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
 	MODEL_FILE="../input/case_setups/"${RUN_CASE[$x]}"_model.in"
 	PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
+	FLAGS_FILE="../input/tunable_parameters/configurable_flags.in"
 
 	if [ ! -e "$MODEL_FILE" ]; then
 		echo "ERROR: $MODEL_FILE does not exist."
@@ -100,7 +101,13 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 		exit 1
 	fi
 
+	if [ ! -e "$FLAGS_FILE" ]; then
+		echo "ERROR: $FLAGS_FILE does not exist."
+		exit 1
+	fi
+
 	cat $PARAMS_FILE > "clubb.in"
+	cat $FLAGS_FILE >> "clubb.in"
 
 	# Use sed to set l_stats to .false. and debug_level to 0.
 	cat $MODEL_FILE | sed 's/l_stats\s*=\s*.*/l_stats = \.false\./g' | sed 's/debug_level\s*=\s*.*/debug_level = 0/g' >> 'clubb.in'

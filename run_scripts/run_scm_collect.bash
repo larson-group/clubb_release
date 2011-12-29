@@ -22,7 +22,7 @@ else
 fi
 
 PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
-FLAGS_FILE="../input/tunable_parameters/tunable_model_flags.in"
+FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 
 #######################################################################
 # Check for necessary namelists.  If files exist, then

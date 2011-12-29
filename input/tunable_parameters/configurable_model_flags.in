@@ -1,5 +1,5 @@
 $Id$
-&tunable_model_flags
+&configurable_model_flags
 l_quintic_poly_interp = .false.,
 l_tke_aniso           = .true.,
 l_vert_avg_closure    = .true.,

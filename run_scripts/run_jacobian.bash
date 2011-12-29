@@ -32,7 +32,7 @@ else
 	else
 		STATS_FILE=$3
 	fi
-	FLAGS_FILE="../input/tunable_parameters/tunable_model_flags.in"
+	FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 fi
 #######################################################################
 # Enable G95 Runtime option that sets uninitialized 

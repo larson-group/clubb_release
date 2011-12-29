@@ -23,7 +23,7 @@ ZM_GRID=false
 PERFORMANCE_TEST=false
 OUTPUT_DIR="/home/`whoami`/nightly_tests/output"
 NAMELISTS="clubb.in"
-FLAGS_FILE="../input/tunable_parameters/tunable_model_flags.in"
+FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
