@@ -1846,10 +1846,12 @@ module inputfields
 
     !--------------------------- BEGIN CODE ---------------------------------
 
-    if( l_input_var ) then
+    l_error = .false. ! Initialize to false
+
+    if ( l_input_var ) then
       call get_grads_var( fread_var, var_name, timestep, &
                     LES_tmp(fread_var%ia:fread_var%iz), l_error )
-      !LES_tmp is the value of the variable from teh LES GrADS file.
+      !LES_tmp is the value of the variable from the LES GrADS file.
       do k = k_lowest, k_highest, 1
         if( l_lin_int(k) ) then
           ! CLUBB level k is found at an altitude that is between two
