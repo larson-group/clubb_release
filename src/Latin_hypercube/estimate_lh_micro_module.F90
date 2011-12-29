@@ -347,6 +347,11 @@ module estimate_lh_micro_module
     logical, parameter :: &
       l_cloud_weighted_averaging = .false.
 
+    real, parameter :: &
+    ! r_crit = 0.3_dp
+    ! r_crit = 0.7_dp
+    r_crit_g_kg = 0.2_dp
+
     ! Input Variables
 
     integer, intent(in) :: &
@@ -420,10 +425,8 @@ module estimate_lh_micro_module
     ! Autoconversion formula prefactor and exponent.
     ! These are for Kessler autoconversion in (kg/kg)/s.
     coeff  = 1.d-3
+    r_crit = r_crit_g_kg / g_per_kg
     ! expn   = 1._dp
-    ! r_crit = 0.3_dp
-    ! r_crit = 0.7_dp
-    r_crit = 0.2_dp / g_per_kg
 
     ! Initialize autoconversion in each mixture component
     ac_m1 = 0._dp
