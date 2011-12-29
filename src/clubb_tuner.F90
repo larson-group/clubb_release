@@ -17,7 +17,7 @@ program clubb_tuner
     output_nml_standalone, output_nml_tuner,       & ! Subroutines
     param_vals_matrix, anneal_temp,                & ! Variables
     l_results_stdout, l_save_tuning_run,           & ! Variables
-    l_results_file, tune_type, f_tol, ndim,         & ! Variables
+    l_results_file, tune_type, f_tol, ndim,        & ! Variables
     tuning_filename, file_unit                       ! Variable
 
   use error, only:  & 
@@ -76,7 +76,7 @@ program clubb_tuner
       call enhanced_simann_driver( )
 
     case ( iflags )
-      call logical_flags_driver( )
+      call logical_flags_driver( current_date, current_time )
       stop "Program exited normally"
 
     case default
@@ -371,7 +371,7 @@ subroutine enhanced_simann_driver
   return
 end subroutine enhanced_simann_driver
 !-------------------------------------------------------------------------------
-subroutine logical_flags_driver
+subroutine logical_flags_driver( current_date, current_time )
 
 ! Description:
 !   While not a true search algorithm in same sense as the simulated annealing
@@ -383,11 +383,12 @@ subroutine logical_flags_driver
   use error, only: &
     param_vals_matrix, & ! Variable(s)
     model_flags_array, &
-    iter
+    iter, &
+    l_results_file, &
+    l_results_stdout
 
   use error, only: &
-    min_les_clubb_diff, &  ! Procedure(s)
-    l_results_stdout
+    min_les_clubb_diff ! Procedure(s)
 
   use constants_clubb, only: &
     fstdout ! Constant(s)
@@ -396,7 +397,9 @@ subroutine logical_flags_driver
     Qsort_flags ! Procedure(s)
 
   use model_flags, only: &
-    get_tunable_model_flags ! Procedure(s)
+    get_tunable_model_flags, & ! Procedure(s)
+    setup_tunable_model_flags, &
+    write_model_flags_to_file
 
   implicit none
 
@@ -412,8 +415,9 @@ subroutine logical_flags_driver
     two_ndim = 2**ndim, &
     iunit = 10
 
-  character(len=*), parameter :: &
-    model_flags_output = "../output/clubb_model_flags.csv"
+  ! Input Variables
+  character(len=10), intent(in) :: current_time  ! Current time string (no seconds)
+  character(len=8), intent(in)  :: current_date  ! Current date string
 
   ! Local Variables
 
@@ -425,11 +429,16 @@ subroutine logical_flags_driver
     cost_func_sum_false, & ! Averaged cost function when the flag is false
     cost_func_avg          ! Averaged cost function true - false.
 
-  integer :: i, j
+  logical, dimension(ndim) :: model_flags_default
+
+  character(len=128) :: &
+    filename_nml, &  ! Namelist file name
+    filename_csv     ! Comma seperated values filename
 
   integer(kind=i8) :: bit_string, bit_iter
-  logical, dimension(ndim) :: model_flags_default
   real :: cost_func_default
+
+  integer :: i, j
 
   ! ---- Begin Code ----
 
@@ -520,7 +529,9 @@ subroutine logical_flags_driver
       "Column 9 = use_cloud_cover    "
   end if ! l_results_stdout
 
-  open(unit=iunit,file=model_flags_output)
+  ! Generate CSV file of the results
+  filename_csv = "../output/clubb_model_flags_"//current_date//"_"//current_time//".csv"
+  open(unit=iunit,file=trim( filename_csv ))
   write(iunit,'(10A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
     "quintic_poly_interp, ", "vert_avg_closure, ", &
     "single_C2_Skw, ", "standard_term_ta, ", "tke_aniso, ", "use_cloud_cover, ", "Cost func."
@@ -540,7 +551,27 @@ subroutine logical_flags_driver
     write(iunit,'(G20.6,A2)') cost_function(i), ", "
   end do
   close(unit=iunit)
-  write(fstdout,*) "Results of tuning model flags written to: ", model_flags_output
+  write(fstdout,*) "Results of tuning model flags written to: ", trim( filename_csv )
+
+  ! Generate namelist file of the optimal result
+  if ( l_results_file ) then
+   call setup_tunable_model_flags( model_flags_array(1,1), &
+                                   model_flags_array(1,2), &
+                                   model_flags_array(1,3), &
+                                   model_flags_array(1,4), &
+                                   model_flags_array(1,5), &
+                                   model_flags_array(1,6), &
+                                   model_flags_array(1,7), &
+                                   model_flags_array(1,8), &
+                                   model_flags_array(1,9) )
+
+    filename_nml = "../input/tunable_parameters/tunable_model_flags_"//current_date//'_' & 
+      //current_time(1:4)//".in"
+
+    call write_model_flags_to_file( iunit, trim( filename_nml ) )
+
+    write(fstdout,*) "New namelist of tuning model flags written to: ", trim( filename_nml )
+  end if
 
   deallocate( model_flags_array )
 

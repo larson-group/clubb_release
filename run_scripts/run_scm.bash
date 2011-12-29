@@ -23,6 +23,7 @@ ZM_GRID=false
 PERFORMANCE_TEST=false
 OUTPUT_DIR="/home/`whoami`/nightly_tests/output"
 NAMELISTS="clubb.in"
+FLAGS_FILE="../input/tunable_parameters/tunable_model_flags.in"
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
@@ -226,6 +227,7 @@ fi
 if [ $NIGHTLY == true ]; 
 then
 	cat $parameter_file > $NAMELISTS
+	cat $FLAGS_FILE >> $NAMELISTS
 	# This is needed because the model file now contains stats_tout.
 	# Here we replace the repository version of stats_tout with an hour output.
 	# We then save the zt and zm files from this run for the profile plots because
@@ -290,11 +292,13 @@ then
 					# This was added because RICO uses a 300 s timestep
 					# and cannot be run with stats_tout = 60.
 					cat $parameter_file > $NAMELISTS
+					cat $FLAGS_FILE >> $NAMELISTS
 					cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 300\./g' >> $NAMELISTS
 					cat $stats_file >> $NAMELISTS
 					;;
 				* )
 					cat $parameter_file > $NAMELISTS
+					cat $FLAGS_FILE >> $NAMELISTS
 					cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> $NAMELISTS
 					cat $stats_file >> $NAMELISTS
 					;;
@@ -325,6 +329,7 @@ then
 	# Set the model timestep for all cases (and the stats output timestep
 	# unless l_stats is overwritten to .false.) to timestep test_ts.
 	cat $parameter_file > $NAMELISTS
+	cat $FLAGS_FILE >> $NAMELISTS
 	# Use this version if statistical output is desired.
 	#cat $MODEL_IN | sed -e 's/dt_main\s*=\s*.*/dt_main = '$test_ts'/g' \
 	#                    -e 's/dt_rad\s*=\s*.*/dt_rad = '$test_ts'/g' \
@@ -340,6 +345,7 @@ then
 elif [ $ZT_GRID == true ];
 then
 	cat $parameter_file > $NAMELISTS
+	cat $FLAGS_FILE >> $NAMELISTS
 	cat $model_file | sed -e 's/^nzmax\s*=\s*.*//g' \
 		-e 's/^grid_type\s*=\s*.*//g' \
 		-e 's/^zm_grid_fname\s*=\s*.*//g' \
@@ -354,6 +360,7 @@ then
 elif [ $ZM_GRID == true ];
 then
 	cat $parameter_file > $NAMELISTS
+	cat $FLAGS_FILE >> $NAMELISTS
 	cat $model_file | sed -e 's/^nzmax\s*=\s*.*//g' \
 			-e 's/^grid_type\s*=\s*.*//g' \
 			-e 's/^zt_grid_fname\s*=\s*.*//g' \
@@ -368,6 +375,7 @@ then
 elif [ $PERFORMANCE_TEST == true ];
 then
 	cat $parameter_file > $NAMELISTS
+	cat $FLAGS_FILE >> $NAMELISTS
 	cat $model_file | sed 's/l_stats\s*=\s*.*/l_stats = \.false\./g' \
 					| sed 's/debug_level\s*=\s*.*/debug_level = 0/g' \
 					>> $NAMELISTS
@@ -375,7 +383,7 @@ then
 
 	run_case
 else
-	cat $parameter_file $model_file $stats_file > $NAMELISTS
+	cat $parameter_file $FLAGS_FILE $model_file $stats_file > $NAMELISTS
 
 	run_case
 fi

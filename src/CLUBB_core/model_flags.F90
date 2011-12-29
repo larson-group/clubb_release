@@ -13,7 +13,7 @@ module model_flags
   implicit none
 
   public :: setup_model_flags, read_model_flags_from_file, setup_tunable_model_flags, &
-    get_tunable_model_flags
+    get_tunable_model_flags, write_model_flags_to_file
 
   private ! Default Scope
 
@@ -128,7 +128,6 @@ module model_flags
     l_use_cloud_cover = .true.
 !$omp threadprivate(l_use_cloud_cover)
 
-
   integer, public :: &
     saturation_formula = saturation_flatau ! Integer that stores the saturation formula to be used
 
@@ -138,6 +137,11 @@ module model_flags
   logical, public :: &
      I_sat_sphum       ! h1g, 2010-06-15
 #endif
+
+  namelist /tunable_model_flags/ &
+    l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
+    l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
+    l_use_cloud_cover
 
   contains
 
@@ -211,7 +215,7 @@ module model_flags
   subroutine read_model_flags_from_file( iunit, filename )
 
 ! Description:
-!   Read in some of the model flags of interest from a text file.  If the
+!   Read in some of the model flags of interest from a namelist file.  If the
 !   variable isn't in the file it will just be the default value.
 !
 ! References:
@@ -226,15 +230,10 @@ module model_flags
     character(len=*), intent(in) :: &
       filename ! Name of the file with the namelist
 
-    namelist /model_flags/ &
-      l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
-      l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
-      l_use_cloud_cover
-
    ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
 
-    read(unit=iunit, nml=model_flags)
+    read(unit=iunit, nml=tunable_model_flags)
 
     close(unit=iunit)
 
@@ -251,6 +250,33 @@ module model_flags
     return
   end subroutine read_model_flags_from_file
 
+!===============================================================================
+  subroutine write_model_flags_to_file( iunit, filename )
+
+! Description:
+!   Write a new namelist for the tunable model flags
+!
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    implicit none
+
+    integer, intent(in) :: &
+      iunit ! File I/O unit to use
+
+    character(len=*), intent(in) :: &
+      filename ! Name of the file with the namelist
+
+   ! Read the namelist
+    open(unit=iunit, file=filename, status='unknown', action='write')
+
+    write(unit=iunit, nml=tunable_model_flags)
+
+    close(unit=iunit)
+
+    return
+  end subroutine write_model_flags_to_file
 !===============================================================================
   subroutine setup_tunable_model_flags &
              ( l_upwind_wpxp_ta_in, l_upwind_xpyp_ta_in, & 

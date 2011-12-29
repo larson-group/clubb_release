@@ -22,6 +22,7 @@ else
 fi
 
 PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
+FLAGS_FILE="../input/tunable_parameters/tunable_model_flags.in"
 
 #######################################################################
 # Check for necessary namelists.  If files exist, then
@@ -40,6 +41,7 @@ fi
 
 
 cat $PARAMS_FILE > 'clubb.in'
+cat $FLAGS_FILE > 'clubb.in'
 #######################################################################
 # The following sed commands set l_stats to .false., debug_level to 0,
 # and dt = 1.0 sec for profiling purposes.

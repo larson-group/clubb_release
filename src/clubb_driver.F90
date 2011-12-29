@@ -205,7 +205,8 @@ module clubb_driver
       dt_main
 
     use model_flags, only: &
-      setup_tunable_model_flags ! Procedure(s)
+      setup_tunable_model_flags, & ! Procedure(s)
+      read_model_flags_from_file
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
@@ -449,6 +450,7 @@ module clubb_driver
     read(unit=iunit, nml=model_setting)
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
+    call read_model_flags_from_file( iunit, runfile )
 
     case_info_file = &
       "../output/" // trim( fname_prefix ) // "_setup.txt" ! The filename for case setup

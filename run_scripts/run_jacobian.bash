@@ -9,7 +9,7 @@
 #######################################################################
 # Useful variable on multiprocessor machines with OpenMP capable 
 # Fortran, uncomment and set to use.  
-# The hoc_standalone program is not parallel, but many LAPACK/BLAS 
+# The clubb_standalone program is not parallel, but many LAPACK/BLAS 
 # libraries are.
 #
 # export OMP_NUM_THREADS=2
@@ -32,6 +32,7 @@ else
 	else
 		STATS_FILE=$3
 	fi
+	FLAGS_FILE="../input/tunable_parameters/tunable_model_flags.in"
 fi
 #######################################################################
 # Enable G95 Runtime option that sets uninitialized 
@@ -60,7 +61,7 @@ if [ ! -e "$STATS_FILE" ]; then
 	exit 1
 fi
 
-cat "../input_misc/jacobian.in" $PARAMS_FILE $MODEL_FILE $STATS_FILE \
+cat "../input_misc/jacobian.in" $PARAMS_FILE $MODEL_FILE $STATS_FILE $FLAGS_FILE \
 	| sed 's/debug_level\s*=\s*.*/debug_level = 0/g' | sed -e 's/\!.*//' > 'jacobian.in'
 #######################################################################
 # State which case is being run

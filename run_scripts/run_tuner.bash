@@ -111,9 +111,14 @@ DATE=`date +%F`
 
 # The tunable_parameters.in file
 PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
+FLAGS_FILE="../input/tunable_parameters/tunable_model_flags.in"
 
 if [ ! -e "$PARAMS_FILE" ] ; then
 	echo $PARAMS_FILE " does not exist"
+	exit 1
+fi
+if [ ! -e "$FLAGS_FILE" ] ; then
+	echo $FLAGSS_FILE " does not exist"
 	exit 1
 fi
 
@@ -136,9 +141,9 @@ fi
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
    # The <CASE>_model.in file.
-   MODEL_IN=$MODEL_DIR$RUN_CASE'_model.in'
-   if [ ! -e "$MODEL_IN" ] ; then
-	   echo $MODEL_IN " does not exist"
+   MODEL_FILE=$MODEL_DIR$RUN_CASE'_model.in'
+   if [ ! -e "$MODEL_FILE" ] ; then
+	   echo $MODEL_FILE " does not exist"
 	   exit 1
    fi
 
@@ -160,7 +165,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    fi
 
 	# Concatenate *_model.in and *_stats.in into *_hoc.in
-	cat $MODEL_IN $STATS_TUNE_IN > $RUN_CASE'_hoc.in'
+	cat $MODEL_FILE $STATS_TUNE_IN $FLAGS_FILE > $RUN_CASE'_hoc.in'
 	sed -i -e 's/\!.*//' $RUN_CASE'_hoc.in'
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
@@ -168,9 +173,9 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
    for EACH_CASE in "${MODEL_MULT[@]}"; do
 
            # The <CASE>_model.in file.
-           MODEL_IN=$MODEL_DIR$EACH_CASE'_model.in'
-           if [ ! -e "$MODEL_IN" ] ; then
-	           echo $MODEL_IN " does not exist"
+           MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
+           if [ ! -e "$MODEL_FILE" ] ; then
+	           echo $MODEL_FILE " does not exist"
 	           exit 1
            fi
 
@@ -189,7 +194,7 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
            fi
 
         # Concatenate *_model.in and *_stats.in into *_hoc.in
-	cat $MODEL_IN $STATS_TUNE_IN > $EACH_CASE'_hoc.in'
+	cat $MODEL_FILE $STATS_TUNE_IN $FLAGS_FILE > $EACH_CASE'_hoc.in'
 	sed -i -e 's/\!.*//' $EACH_CASE'_hoc.in'
 
    done
@@ -197,7 +202,7 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 fi
 
 # Copy error_*.in file and tunable_parameters to error.in
-cat $ERROR_IN $PARAMS_FILE> 'error.in'
+cat $ERROR_IN $PARAMS_FILE > 'error.in'
 sed -i -e 's/\!.*//' 'error.in'
 
 # Copy random seed
@@ -236,23 +241,26 @@ rm -f *'_hoc.in'
 
 #######################################################################
 # do a run with the optimal constants
-echo "Running with optimal constants"
+echo "Running with the optimal parameter set"
 
 # The newest parameter file should have the optimal set
-PARAMS_IN=`ls -t ../input/tunable_parameters/tunable_parameters* | head -n 1` 
+PARAMS_FILE=`ls -t ../input/tunable_parameters/tunable_parameters* | head -n 1` 
+
+# For the model flag tuning runs
+FLAGS_FILE=`ls -t ../input/tunable_parameters/tunable_model_flags* | head -n 1` 
 
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
    # Concatenate *_model.in and *_stats.in into hoc.in
-   cat $PARAMS_IN $MODEL_IN $STATS_OPT_IN | sed -e 's/\!.*//' > 'clubb.in'
+   cat $PARAMS_FILE $MODEL_FILE $STATS_OPT_IN $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
    ../bin/clubb_standalone
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
    for EACH_CASE in "${MODEL_MULT[@]}"; do
-		MODEL_IN=$MODEL_DIR$EACH_CASE'_model.in'
+		MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
 		# Concatenate *_model.in and *_stats.in into hoc.in
-		cat $PARAMS_IN $MODEL_IN $STATS_OPT_IN | sed -e 's/\!.*//' > 'clubb.in'
+		cat $PARAMS_IN $MODEL_FILE $STATS_OPT_IN | sed -e 's/\!.*//' > 'clubb.in'
 		../bin/clubb_standalone
    done
 
