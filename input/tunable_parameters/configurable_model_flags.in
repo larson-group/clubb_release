@@ -1,4 +1,4 @@
-$Id$
+!$Id$
 &configurable_model_flags
 l_quintic_poly_interp = .false.,
 l_tke_aniso           = .true.,
