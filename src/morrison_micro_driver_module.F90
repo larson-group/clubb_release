@@ -10,7 +10,7 @@ module morrison_micro_driver_module
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_micro_driver &
-             ( dt, nzmax, l_stats_samp, l_local_kk, l_latin_hypercube, &
+             ( dt, nz, l_stats_samp, l_local_kk, l_latin_hypercube, &
                thlm, p_in_Pa, exner, rho, pdf_params, &
                wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
                hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
@@ -77,63 +77,63 @@ module morrison_micro_driver_module
     ! Input Variables
     real, intent(in) :: dt ! Model timestep        [s]
 
-    integer, intent(in) :: nzmax ! Points in the Vertical        [-]
+    integer, intent(in) :: nz ! Points in the Vertical        [-]
 
     logical, intent(in) :: &
       l_stats_samp,     & ! Whether to accumulate statistics [T/F]
       l_local_kk,       & ! Whether we're using the local formulas
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
       rho           ! Density on thermo. grid            [kg/m^3]
 
-    type(pdf_parameter), target, dimension(nzmax), intent(in) :: &
+    type(pdf_parameter), target, dimension(nz), intent(in) :: &
       pdf_params ! PDF parameters
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       wm, &        ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in heights      [m]
 
-    real, dimension(nzmax), intent(in) :: &
+    real, dimension(nz), intent(in) :: &
       rcm,      & ! Liquid water mixing ratio        [kg/kg]
       s_mellor, & ! The variable 's' from Mellor     [kg/kg]
       rvm         ! Vapor water mixing ratio         [kg/kg]
 
-    real, dimension(nzmax,hydromet_dim), target, intent(in) :: &
+    real, dimension(nz,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     ! Input/Output Variables
-    real, dimension(nzmax,hydromet_dim), target, intent(inout) :: &
+    real, dimension(nz,hydromet_dim), target, intent(inout) :: &
       hydromet_mc,   & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel     ! Hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
-    real, dimension(nzmax), intent(out) :: &
+    real, dimension(nz), intent(out) :: &
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
     ! Local Variables
-    real, dimension(nzmax) :: & 
+    real, dimension(nz) :: & 
       effc, effi, effg, effs, effr ! Effective droplet radii [μ]
 
-    real, dimension(nzmax) :: & 
+    real, dimension(nz) :: & 
       T_in_K,    & ! Temperature                        [K]
       T_in_K_mc, & ! Temperature tendency               [K/s]
       rcm_tmp,   & ! Temporary array for cloud water mixing ratio  [kg/kg]
       rvm_tmp,   & ! Temporary array for vapor water mixing ratio  [kg/kg]
       rcm_sten     ! Cloud dropet sedimentation tendency           [kg/kg/s]
 
-    real, dimension(nzmax) :: & 
+    real, dimension(nz) :: & 
       cloud_frac, &  ! Cloud fraction   [-]
       wm_tmp, &     ! Mean vertical velocity   [m/s]
       w_std_dev_tmp ! Standard deviation of w  [m/s]
 
-    real, dimension(nzmax,hydromet_dim) :: & 
+    real, dimension(nz,hydromet_dim) :: & 
       hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
       hydromet_tmp     ! Temporary variable
 
@@ -165,14 +165,14 @@ module morrison_micro_driver_module
 
     if ( l_latin_hypercube ) then
       ! Don't use sgs cloud fraction to weight the tendencies
-      cloud_frac(1:nzmax) = 0.0
+      cloud_frac(1:nz) = 0.0
 
       wm_tmp = max( wm, w_thresh ) ! Impose a minimum value on w
       w_std_dev_tmp = 0. ! Don't add in a standard deviation for aerosol activation
 
     else 
       ! Use sgs cloud fraction to weight tendencies
-      cloud_frac(1:nzmax) = max( zero_threshold, &
+      cloud_frac(1:nz) = max( zero_threshold, &
                         pdf_params%mixt_frac * pdf_params%cloud_frac1 &
                         + (1.-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
 
@@ -184,14 +184,14 @@ module morrison_micro_driver_module
     rvm_tmp = rvm
 
     do i = 1, hydromet_dim, 1
-      hydromet_tmp(1:nzmax,i) = hydromet(1:nzmax,i)
+      hydromet_tmp(1:nz,i) = hydromet(1:nz,i)
     end do
     
     ! Initialize tendencies to zero
-    T_in_K_mc(1:nzmax) = 0.0
-    rcm_mc(1:nzmax) = 0.0
-    rvm_mc(1:nzmax) = 0.0
-    hydromet_mc(1:nzmax,:) = 0.0
+    T_in_K_mc(1:nz) = 0.0
+    rcm_mc(1:nz) = 0.0
+    rvm_mc(1:nz) = 0.0
+    hydromet_mc(1:nz,:) = 0.0
 
     ! Initialize effective radius to zero
     effc = 0.0 
@@ -210,7 +210,7 @@ module morrison_micro_driver_module
            hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
            T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm_tmp, w_std_dev_tmp, &
            Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, dt, &
-           1,1, 1,1, 1,nzmax, 1,1, 1,1, 2,nzmax, &
+           1,1, 1,1, 1,nz, 1,1, 1,1, 2,nz, &
            hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
            hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
