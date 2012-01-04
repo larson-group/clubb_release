@@ -29,7 +29,7 @@ module mg_micro_driver_module
       thlm2T_in_K
 
     use array_index, only:  &
-      iiricem, iiNim, iiNcm
+      iirsnowm, iiricem, iiNim, iiNcm
 
     use constants_clubb, only: &
       zero_threshold, &
@@ -152,7 +152,6 @@ module mg_micro_driver_module
       tlat,         & ! Latent heating rate                                           [W/kg]
       cloud_frac,   & ! Liquid Cloud fraction                                         [-]
       rcm_new,      & ! Cloud water mixing ratio after microphysics                   [kg/kg]
-      rsnowm,       & ! Snow mixing ratio (not in hydromet, output straight to stats) [kg/kg]
       rrainm,       & ! Rain mixing ratio (not in hydromet, output straight to stats) [kg/kg]
       effc,         & ! Droplet effective radius                                      [μ]
       effi,         & ! cloud ice effective radius                                    [μ]
@@ -205,7 +204,6 @@ module mg_micro_driver_module
       rcm_mc_flip,   & ! Time tendency of liquid water mixing ratio           [kg/kg/s]
       rvm_mc_flip,   & ! Time tendency of vapor water mixing ratio            [kg/kg/s]
       cldo_flip,     & ! Old cloud fraction.                                  [-]
-      qsout_flip,    & ! snow mixing ratio                                    [kg/kg]
       effc_flip,     & ! Droplet effective radius                             [μ]
       effi_flip,     & ! cloud ice effective radius                           [μ]
       reff_rain_flip,& ! rain effective radius                                [μ]
@@ -257,7 +255,6 @@ module mg_micro_driver_module
     effi(:) = 0.0
     reff_rain(:) = 0.0
     reff_snow(:) = 0.0
-    rsnowm(:) = 0.0
     rrainm(:) = 0.0
     tlat(:) = 0.0
     rcm_new(:) = 0.0
@@ -397,7 +394,7 @@ module mg_micro_driver_module
          effc_fn_flip, effi_flip, prect, preci,                                              &! out
          nevapr_flip, evapsnow_flip,                                                         &! out
          prain_flip, prodsnow_flip, cmeout_flip, deffi_flip, pgamrad_flip,                   &! out
-         lamcrad_flip, qsout_flip, dsout_flip,                                               &! out
+         lamcrad_flip, hydromet_mc_flip(:,iirsnowm), dsout_flip,                             &! out
          rflx_flip, sflx_flip, qrout_flip, reff_rain_flip, reff_snow_flip,                   &! out
          qcsevap_flip, qisevap_flip, qvres_flip, cmeiout_flip,                               &! out
          vtrmc_flip, vtrmi_flip, qcsedten_flip, qisedten_flip,                               &! out
@@ -415,7 +412,6 @@ module mg_micro_driver_module
     reff_rain(2:nz) = real( flip( dble(reff_rain_flip(1:nz-1) ), nz-1 ) )
     reff_snow(2:nz) = real( flip( dble(reff_snow_flip(1:nz-1) ), nz-1 ) )
     tlat(2:nz) = real( flip( dble(tlat_flip(1:nz-1) ), nz-1 ) )
-    rsnowm(2:nz) = real( flip( dble(qsout_flip(1:nz-1) ), nz-1 ) )
     rrainm(2:nz) = real( flip( dble(qrout_flip(1:nz-1) ), nz-1 ) )
 
     do i = 1, hydromet_dim, 1      
@@ -426,7 +422,7 @@ module mg_micro_driver_module
     cldfsnow = cldn_flip(nz-1) ! Only need sfc level
     if ( ( cldfsnow > 1.e-4_r8 ) .and. ( rcm_flip(nz-1) < 1e-10_r8 ) ) then
       cldfsnow = 0._r8
-    else if ( ( cldfsnow < 1.e-4_r8 ) .and. ( qsout_flip(nz-1) > 1.e-6_r8 ) ) then
+    else if ( ( cldfsnow < 1.e-4_r8 ) .and. ( hydromet_mc_flip(nz-1,iirsnowm) > 1.e-6_r8 ) ) then
       cldfsnow = 0.25_r8
     end if
     
@@ -440,7 +436,6 @@ module mg_micro_driver_module
     thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_new ) - thlm ) / real( dt )
     
     if ( l_stats_samp ) then
-      call stat_update_var( irsnowm, rsnowm(:), zt )
       call stat_update_var( irrainm, rrainm(:), zt)
       
       ! Effective radii of hydrometeor species
@@ -453,8 +448,9 @@ module mg_micro_driver_module
       call stat_update_var_pt( irain_rate_sfc, 1, &
                                real( prect(1) ) * mm_per_m * real(sec_per_day), sfc)
 
-      call stat_update_var_pt( iswp, 1, real( rsnowm(3) / max( 0.0001, cldfsnow ) * &
-                               pdel_flip(nz-1) / gravit ), sfc )
+     ! Snow water path is updated in stats_subs.F90
+     ! call stat_update_var_pt( iswp, 1, real( hydromet_mc(3,iirsnowm) / max( 0.0001, cldfsnow ) * &
+     !                          pdel_flip(nz-1) / gravit ), sfc )
       
     end if ! l_stats_samp
 

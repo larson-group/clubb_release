@@ -807,29 +807,31 @@ module microphys_driver
       
     case ( "morrison-gettelman" )
       iirrainm    = -1
-      iirsnowm    = -1
-      iiricem     = 1
+      iirsnowm    = 1
+      iiricem     = 2
       iirgraupelm = -1
 
       iiNrm       = -1
       iiNsnowm    = -1
-      iiNim       = 2
+      iiNim       = 3
       iiNgraupelm = -1
-      iiNcm       = 3
+      iiNcm       = 4
 
-      hydromet_dim = 3
+      hydromet_dim = 4
       
       allocate( hydromet_list(hydromet_dim) )
       
+      hydromet_list(iirsnowm)    = "rsnowm"
       hydromet_list(iiricem)     = "ricem"
       hydromet_list(iiNim)       = "Nim"
       hydromet_list(iiNcm)       = "Ncm"
       
       allocate( l_hydromet_sed(hydromet_dim) )
       ! Sedimentation is handled within the MG microphysics
-      l_hydromet_sed(iiricem)  = .false.
-      l_hydromet_sed(iiNim)    = .false.
-      l_hydromet_sed(iiNcm)    = .false.
+      l_hydromet_sed(iiNim)       = .false.
+      l_hydromet_sed(iiNcm)       = .false.
+      l_hydromet_sed(iirsnowm)    = .false.
+      l_hydromet_sed(iiricem)     = .false.
       
       ! Initialize constants for aerosols
       call ini_microp_aero()
