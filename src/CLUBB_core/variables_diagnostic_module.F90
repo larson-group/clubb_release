@@ -135,6 +135,7 @@ module variables_diagnostic_module
 
   real, target, allocatable, dimension(:,:), public :: & 
     wpedsclrp   ! w'edsclr'
+!$omp threadprivate(wpedsclrp)
 
   real, target, allocatable, dimension(:,:), public :: & 
     sclrpthvp,   & ! sclr'th_v'
@@ -144,9 +145,8 @@ module variables_diagnostic_module
     wpsclrprtp,  & ! w'sclr'rt'
     wpsclrpthlp    ! w'sclr'thl'
 
-!$omp threadprivate(wpedsclrp)
-!$omp threadprivate(sclrpthvp, &
-!$omp   wp2sclrp, wpsclrprtp, wpsclrpthlp )
+!$omp threadprivate(sclrpthvp, sclrprcp, &
+!$omp   wp2sclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp )
 
 ! Interpolated variables for tuning
 !

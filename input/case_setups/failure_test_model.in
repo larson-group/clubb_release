@@ -61,7 +61,6 @@ T0   = 300.     ! Reference temperature (usually 300) [K]
 l_t_dependent = .true. ! Read values from _surface.in file. Also read 
                        ! _forcings.in file if l_ignore_forcings = .false.
 
-l_tke_aniso    = .true. ! Flag for anisotropic tke.
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../run_scripts/) and filename of GrADS control files 

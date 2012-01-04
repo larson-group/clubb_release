@@ -103,8 +103,7 @@ module advance_xm_wpxp_module
       zt2zm
 
     use model_flags, only: &
-        l_clip_semi_implicit, & ! Variable(s)
-        l_upwind_wpxp_ta
+        l_clip_semi_implicit ! Variable(s)
 
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
@@ -3084,12 +3083,17 @@ module advance_xm_wpxp_module
       Lscale,           &   ! Current value of Lscale
       Cx_Skw_fnc            ! Initial skewness function before damping
 
+    ! Local variables
+    real, parameter :: &
+      ! Added to prevent large damping at low altitudes where Lscale is small
+      altitude_threshold = 100.0  ! Altitude above which damping should occur
+
     ! Return Variable
     real, dimension(gr%nz) :: damped_value
 
     damped_value = Cx_Skw_fnc
 
-    where( Lscale < threshold )
+    where( Lscale < threshold .and. gr%zt > altitude_threshold)
       damped_value = max_coeff_value + ( ( coefficient - max_coeff_value ) / threshold ) * Lscale
     end where
 

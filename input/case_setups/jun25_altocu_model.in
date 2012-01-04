@@ -63,7 +63,6 @@ T0   = 300.        ! Reference temperature (usually 300) [K]
 l_t_dependent  = .true ! Read values from _surface.in file. Also read
                        ! _forcings.in file if 
 
-l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 
 ! Sponge Damping
 !

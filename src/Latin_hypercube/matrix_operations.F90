@@ -102,15 +102,18 @@ module matrix_operations
     return
   end subroutine row_mult_lower_tri_matrix
 
-!----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
   subroutine Cholesky_factor( ndim, a_input, a_scaling, a_Cholesky, l_scaled )
 !  Description:
 !    Create a Cholesky factorization of a_input.
+!    If the factorization fails we use a modified a_input matrix and attempt
+!    to factorize again.
+!
 !  References:
 !    <http://www.netlib.org/lapack/explore-html/a00868.html> dpotrf
 !    <http://www.netlib.org/lapack/explore-html/a00860.html> dpoequ
 !    <http://www.netlib.org/lapack/explore-html/a00753.html> dlaqsy
-!-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
@@ -126,7 +129,9 @@ module matrix_operations
     external :: dpotrf, dpoequ, dlaqsy ! LAPACK subroutines
 
     ! Constant Parameters
-    integer, parameter :: itermax = 10
+    integer, parameter :: itermax = 10 ! Max iterations of the modified method
+
+    real, parameter :: d_coef = 0.1 ! Coefficient applied if the decomposition doesn't work
 
     ! Input Variables
     integer, intent(in) :: ndim
@@ -266,7 +271,9 @@ module matrix_operations
         do i = 2, ndim
           if ( d_smallest > a_Cholesky(i,i) ) d_smallest = a_Cholesky(i,i)
         end do
-        tau = d_smallest * 0.1 * dble( iter ) ! Use the smallest element * 0.1 * iteration
+        ! Use the smallest element * d_coef * iteration
+        tau = d_smallest * d_coef * real( iter, kind=dp ) 
+
 !       print *, "tau =", tau, "d_smallest = ", d_smallest
 
         do i = 1, ndim

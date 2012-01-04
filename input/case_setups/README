@@ -484,3 +484,33 @@ input_<varname> | logical
   Whether the use the values of the given field will be reset based on data at
   each timestep in the simulation.
 
+
+================================================================================
+In addition, the directory contains the following files for running simulations:
+
+<Case Name>_sounding.in
+Contains columns for the initial values of temperature, moisture, and wind.
+
+<Case Name>_ozone_sounding.in
+This is an optional file that is only used with BUGSrad radiation scheme to 
+specify the values of O3 (ozone).
+
+<Case Name>_surface.in
+This file contains values for the heat and moisture flux at the surface.
+The values can be use fixed values (sfc_type = 0) in which case sens_ht, and 
+latent_ht are used or the bulk formula (sfc_type = 1) in which case the value 
+T_sfc is used to compute the flux.
+
+<Case Name>_forcings.in
+Large-scale tendency applied to mean fields (e.g. um, vm, thlm, rtm). Cases that
+were implemented in clubb_standalone prior to adding this code may use hardwired
+values that are set in the source code instead. See l_t_dependent, above.
+
+<Case Name>_corr_array_cloud.in
+The in cloud (where rcm >= rc_tol) correlation values for computing the
+latin hypercube sample points fed into the microphysics.
+
+<Case Name>_corr_array_below.in
+The out of cloud (where rcm < rc_tol) correlation values for computing the 
+latin hypercube sample points fed into the microphysics.
+

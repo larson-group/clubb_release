@@ -80,7 +80,6 @@ forcings_file_path = '../input/case_setups/arm_3year_forcings/'
 l_t_dependent  = .true. ! Read values from _surface.in file. Also read 
                         ! _forcings.in file if l_ignore_forcings = .false.
 
-l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
 

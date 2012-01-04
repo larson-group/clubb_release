@@ -25,35 +25,44 @@ module time_dependent_input
 
   real, public, target, allocatable, dimension(:) :: & ! Module variables used to describe 
     time_sfc_given, &                                  ! the surface over time.
-    latent_ht_given,       &
-    sens_ht_given,       &
+    latent_ht_given, &
+    sens_ht_given, &
     thlm_sfc_given, &
     rtm_sfc_given,  &
     CO2_sfc_given,  &
     upwp_sfc_given, &
     vpwp_sfc_given, &
-    T_sfc_given,    &
+    T_sfc_given, &
     wpthlp_sfc_given, &
     wpqtp_sfc_given
+
+!$omp threadprivate( time_sfc_given, latent_ht_given, sens_ht_given, thlm_sfc_given, &
+!$omp   rtm_sfc_given, CO2_sfc_given,  upwp_sfc_given, vpwp_sfc_given, &
+!$omp   T_sfc_given, wpthlp_sfc_given, wpqtp_sfc_given )
 
   type(two_dim_read_var), private, dimension(nCols) :: &
     t_dependent_forcing_data ! Data structure that defines the change in input
                              ! files over time
+!$omp threadprivate( t_dependent_forcing_data )
 
   type(one_dim_read_var), private :: dimension_var ! Data structure that describes other 
                                                    ! dimension of the two_dim_read_var
 
+!$omp threadprivate( dimension_var )
   logical, public :: l_t_dependent ! Flag used to determine when
   !                                  time dependent information is read in.
   !                                  It is suggested that the flag be checked
   !                                  before using any of the variables stored
   !                                  in the module.
+!$omp threadprivate( l_t_dependent )
 
   logical, public :: l_input_xpwp_sfc ! Flag used to determine whether or not to read 
                                       ! in the surface momentum fluxes, upwp_sfc and vpwp_sfc.
+!$omp threadprivate( l_input_xpwp_sfc )
 
   logical, public :: l_ignore_forcings ! Flag used to determine if the forcings
                                        ! should be ignored for this case.
+!$omp threadprivate( l_ignore_forcings )
 
   ! File path constants
   character(len=*), private, parameter :: input_path = "../input/case_setups/"

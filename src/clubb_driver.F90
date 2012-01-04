@@ -205,7 +205,8 @@ module clubb_driver
       dt_main
 
     use model_flags, only: &
-      setup_tunable_model_flags ! Procedure(s)
+      setup_configurable_model_flags, & ! Procedure(s)
+      read_model_flags_from_file
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
@@ -267,12 +268,9 @@ module clubb_driver
       time_restart    ! Time of model restart run     [s]
 
     logical :: &
-      l_vert_avg_closure, & ! Call pdf_closure twice and use the trapazoidal rule
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
-      l_input_fields, & ! Whether to set model variables from a file
-      l_tke_aniso       ! For anisotropic turbulent kinetic energy,
-!                         i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_input_fields    ! Whether to set model variables from a file
 
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
@@ -340,7 +338,7 @@ module clubb_driver
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
-      l_vert_avg_closure, l_soil_veg, l_tke_aniso, l_uv_nudge, l_restart, restart_path_case, & 
+      l_soil_veg, l_uv_nudge, l_restart, restart_path_case, & 
       time_restart, l_input_fields, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
@@ -411,8 +409,6 @@ module clubb_driver
     uv_sponge_damp_settings%sponge_damp_depth = 0.25
 
     l_soil_veg     = .false.
-    l_vert_avg_closure = .true.
-    l_tke_aniso    = .true.
     l_uv_nudge     = .false.
     l_restart      = .false.
     l_input_fields  = .false.
@@ -454,6 +450,7 @@ module clubb_driver
     read(unit=iunit, nml=model_setting)
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
+    call read_model_flags_from_file( iunit, runfile )
 
     case_info_file = &
       "../output/" // trim( fname_prefix ) // "_setup.txt" ! The filename for case setup
@@ -634,8 +631,6 @@ module clubb_driver
         uv_sponge_damp_settings%sponge_damp_depth, l_write_to_file, iunit )
 
       call write_text( "l_soil_veg = ", l_soil_veg, l_write_to_file, iunit )
-      call write_text( "l_vert_avg_closure = ", l_vert_avg_closure, l_write_to_file, iunit )
-      call write_text( "l_tke_aniso = ", l_tke_aniso, l_write_to_file, iunit )
       call write_text( "l_uv_nudge = ", l_uv_nudge, l_write_to_file, iunit )
       call write_text( "l_restart = ", l_restart, l_write_to_file, iunit )
       call write_text( "l_input_fields = ", l_input_fields, l_write_to_file, iunit )
@@ -730,8 +725,8 @@ module clubb_driver
          ( nzmax, T0, ts_nudge,                               & ! Intent(in)
            hydromet_dim, sclr_dim,                            & ! Intent(in)
            sclr_tol(1:sclr_dim), edsclr_dim, params,          & ! Intent(in)
-           l_vert_avg_closure, l_host_applies_sfc_fluxes,     & ! Intent(in)
-           l_uv_nudge, l_tke_aniso, saturation_formula,       & ! Intent(in)
+           l_host_applies_sfc_fluxes,                         & ! Intent(in)
+           l_uv_nudge, saturation_formula,                    & ! Intent(in)
            l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
            momentum_heights, thermodynamic_heights,           & ! Intent(in)
            dummy_dx, dummy_dy, sfc_elevation,                 & ! Intent(in)
@@ -743,7 +738,7 @@ module clubb_driver
     ! This special purpose code only applies to tuner runs where the tune_type
     ! is setup to try all permutations of our model flags
     if ( present( model_flags_array ) ) then
-      call setup_tunable_model_flags &
+      call setup_configurable_model_flags &
            ( l_upwind_wpxp_ta_in=model_flags_array(1), &
              l_upwind_xpyp_ta_in=model_flags_array(2), & 
              l_upwind_xm_ma_in=model_flags_array(3), &
@@ -751,7 +746,8 @@ module clubb_driver
              l_vert_avg_closure_in=model_flags_array(5), &
              l_single_C2_Skw_in=model_flags_array(6), &
              l_standard_term_ta_in=model_flags_array(7), &
-             l_tke_aniso_in=model_flags_array(8) )
+             l_tke_aniso_in=model_flags_array(8), &
+             l_use_cloud_cover_in=model_flags_array(9) )
     end if
 
     ! Deallocate stretched grid altitude arrays
@@ -1183,8 +1179,7 @@ module clubb_driver
     use soil_vegetation, only: & 
       sfc_soil_T_in_K, & ! Variable(s)
       deep_soil_T_in_K, &
-      veg_T_in_K, &
-      l_soil_veg
+      veg_T_in_K
 
     use sponge_layer_damping, only: &
       thlm_sponge_damp_settings, & ! Procedure(s)
@@ -1769,7 +1764,7 @@ module clubb_driver
 
       wp2 = (2.0/3.0) * em
 
-    endif
+    end if ! l_tke_aniso
 
     ! Compute mixing length
     call compute_length( thvm, thlm, rtm, em,   &                    ! Intent(in)

@@ -163,6 +163,7 @@ c_K8        = 0.
 nu8         = 0.
 c_K9        = 0.
 nu9         = 0.
+nu10        = 0.
 c_Krrainm   = 0.
 nu_r        = 0.
 beta        = 0.
@@ -174,4 +175,6 @@ taumin      = 0.
 taumax      = 0.
 lmin_coef   = 0.
 mu          = 0.
+Lscale_mu_coef = 0.
+Lscale_pert_coef = 0.
 /

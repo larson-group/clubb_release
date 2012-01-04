@@ -1324,6 +1324,9 @@ the Morrison microphysics are as follows:
   code handles its own sedimentation.  Therefore, xm_mc includes xm_sd in 
   addition to local processes and clipping.
 
+  The Morrison microphysics is also configured to allow for Latin Hypercube
+  sampling for UW Milwaukee users.  See the input/case_setups/README.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % CHAPTER 6: CONTRIBUTING CODE CHANGES TO UNIV WISC --- MILWAUKEE

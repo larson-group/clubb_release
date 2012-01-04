@@ -115,7 +115,7 @@ module error
     z_i, & ! Initial z level for tuning purposes
     z_f    ! Final z level for tuning purposes
 
-  character(len=50), dimension(:), allocatable, private ::  & 
+  character(len=100), dimension(:), allocatable, private ::  & 
     run_file,        & ! Model run files
     hoc_stats_file,  & ! Model GrADS files
     les_stats_file  ! Model GrADS files
@@ -216,7 +216,7 @@ module error
 
     real, dimension(max_variables) :: weight_var_nl
 
-    character(len=50), dimension(max_run) ::  & 
+    character(len=100), dimension(max_run) ::  & 
       run_file_nl, & 
       hoc_stats_file_nl, & 
       les_stats_file_nl
@@ -614,7 +614,7 @@ module error
     ! If it has, it returns higher value than those previous to
     ! Amoeba (the downhill simplex)
     if ( fatal_error( err_code ) ) then
-
+      write(fstderr,*) "Warning: the parameter set has caused CLUBB to crash"
       min_les_clubb_diff = 2. * maxval( cost_fnc_vector )  & 
                        - minval( cost_fnc_vector )
 
@@ -624,6 +624,7 @@ module error
         call output_nml_tuner( errorfile,  & 
                                param_vals_vector(1:ndim) )
       end if
+
       return
     end if
 

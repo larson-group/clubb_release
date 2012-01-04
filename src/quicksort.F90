@@ -66,8 +66,10 @@ module quicksort
     ! ---- Begin Code ----
 
     x = cost(1)
-    i= 0
-    j= size( cost ) + 1
+    i = 0
+    j = size( cost ) + 1
+
+    marker = -999 ! Initialize to avoid warnings
 
     do
       j = j-1

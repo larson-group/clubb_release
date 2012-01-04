@@ -61,7 +61,6 @@ p_sfc = 1029.e2     ! Pressure at model base              [Pa]
 fcor = 8.1553388e-5    ! Coriolis parameter                  [s^-1]
 T0   = 300.        ! Reference temperature (usually 300) [K]
 
-l_tke_aniso    = .true.   ! Flag for anisotropic tke.
 l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
 l_t_dependent = .true. ! Read values from _surface.in file. Also read

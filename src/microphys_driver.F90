@@ -1519,7 +1519,7 @@ module microphys_driver
     ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
     ! Placed here because parameters cannot be changed on mg_microphys_driver with
     ! the way LH is currently set up.
-    call pbuf_add( 'WP2', 1, gr%nzmax, 1 )
+    call pbuf_add( 'WP2', 1, gr%nz, 1 )
     call pbuf_allocate()
     call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
 
@@ -1968,7 +1968,7 @@ module microphys_driver
            ( hydromet(2,iirrainm) & 
              * abs( zm2zt( hydromet_vel(:,iirrainm), 2 ) ) ) & 
              * ( rho(2) / rho_lw ) & 
-             * real( sec_per_day ) * 1000.0, sfc )
+             * real( sec_per_day ) * mm_per_m, sfc )
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
            ( zt2zm( hydromet(:,iirrainm), 1 )  & 

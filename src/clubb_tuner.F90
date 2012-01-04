@@ -17,7 +17,7 @@ program clubb_tuner
     output_nml_standalone, output_nml_tuner,       & ! Subroutines
     param_vals_matrix, anneal_temp,                & ! Variables
     l_results_stdout, l_save_tuning_run,           & ! Variables
-    l_results_file, tune_type, f_tol, ndim,         & ! Variables
+    l_results_file, tune_type, f_tol, ndim,        & ! Variables
     tuning_filename, file_unit                       ! Variable
 
   use error, only:  & 
@@ -76,7 +76,7 @@ program clubb_tuner
       call enhanced_simann_driver( )
 
     case ( iflags )
-      call logical_flags_driver( )
+      call logical_flags_driver( current_date, current_time )
       stop "Program exited normally"
 
     case default
@@ -371,7 +371,7 @@ subroutine enhanced_simann_driver
   return
 end subroutine enhanced_simann_driver
 !-------------------------------------------------------------------------------
-subroutine logical_flags_driver
+subroutine logical_flags_driver( current_date, current_time )
 
 ! Description:
 !   While not a true search algorithm in same sense as the simulated annealing
@@ -383,7 +383,9 @@ subroutine logical_flags_driver
   use error, only: &
     param_vals_matrix, & ! Variable(s)
     model_flags_array, &
-    iter
+    iter, &
+    l_results_file, &
+    l_results_stdout
 
   use error, only: &
     min_les_clubb_diff ! Procedure(s)
@@ -394,56 +396,154 @@ subroutine logical_flags_driver
   use quicksort, only: &
     Qsort_flags ! Procedure(s)
 
+  use model_flags, only: &
+    get_configurable_model_flags, & ! Procedure(s)
+    setup_configurable_model_flags, &
+    write_model_flags_to_file
+
   implicit none
 
   ! External
-  intrinsic :: btest, selected_int_kind
+  intrinsic :: btest, selected_int_kind, int
 
   ! Constant parameters
   integer, parameter :: &
     i8 = selected_int_kind( 15 )
 
   integer, parameter :: &
-    ndim = 8, & ! Temporarily hardwired for a fixed number of flags
+    ndim = 9, & ! Temporarily hardwired for a fixed number of flags
     two_ndim = 2**ndim, &
     iunit = 10
 
-  character(len=*), parameter :: &
-    model_flags_output = "../output/clubb_model_flags.csv"
+  ! Input Variables
+  character(len=10), intent(in) :: current_time  ! Current time string (no seconds)
+  character(len=8), intent(in)  :: current_date  ! Current date string
 
   ! Local Variables
 
-  real, dimension(:), allocatable :: &
-    cost_function ! Values from the cost function
+  real, dimension(two_ndim) :: &
+    cost_function  ! Values from the cost function
+
+  real, dimension(ndim) :: &
+    cost_func_sum_true,  & ! Averaged cost function when the flag is true
+    cost_func_sum_false, & ! Averaged cost function when the flag is false
+    cost_func_avg          ! Averaged cost function true - false.
+
+  logical, dimension(ndim) :: model_flags_default
+
+  character(len=128) :: &
+    filename_nml, &  ! Namelist file name
+    filename_csv     ! Comma seperated values filename
+
+  integer(kind=i8) :: bit_string, bit_iter
+  real :: cost_func_default
 
   integer :: i, j
-  integer(kind=i8) :: bit_string
 
   ! ---- Begin Code ----
 
-  allocate( model_flags_array(two_ndim,ndim) )
-  allocate( cost_function(two_ndim) )
+  ! Determine the current flags
+  call get_configurable_model_flags( model_flags_default(1),  &
+                                model_flags_default(2),  &
+                                model_flags_default(3),  &
+                                model_flags_default(4),  &
+                                model_flags_default(5),  &
+                                model_flags_default(6),  &
+                                model_flags_default(7),  &
+                                model_flags_default(8),  &
+                                model_flags_default(9) )
 
+  ! This should always be 1.0; it's here as a sanity check
+  cost_func_default = min_les_clubb_diff( param_vals_matrix(1,:) )
+
+  allocate( model_flags_array(two_ndim,ndim) )
   bit_string = 0_i8 ! Initialize bits to 00 ... 00
   do i = 1, two_ndim
     do j = 1, ndim
      ! This loop sets 1:n logicals using individual bits, i.e. 0 means
      ! false and 1 means true for the purposes of trying all possibilities
-     model_flags_array(i,j) = btest( bit_string, j-1 ) 
+     bit_iter = int( j, i8 )
+     model_flags_array(i,j) = btest( bit_string, bit_iter-1_i8 ) 
     end do
     bit_string = bit_string + 1_i8 ! Increment the binary adder
   end do
 
+  ! Compute the cost function with new set of flags.  The model_flags array is
+  ! indexed using the iter variable in min_les_clubb_diff to avoid having to
+  ! modify the Numerical Recipes code.
   do iter = 1, two_ndim
+    ! param_vals_matrix is dimension 0;  the parameters are not varied.
     cost_function(iter) = min_les_clubb_diff( param_vals_matrix(1,:) )
   end do
 
+  ! Compute a metric of false cost function - true cost function
+  cost_func_sum_true = 0.0
+  cost_func_sum_false = 0.0
+  do i = 1, two_ndim
+    do j = 1, ndim
+      if ( model_flags_array(i,j) ) then ! Flag is true
+        cost_func_sum_true(j) = cost_func_sum_true(j) + cost_function(i)
+      else ! Flag is false
+        cost_func_sum_false(j) = cost_func_sum_false(j) + cost_function(i)
+      end if
+    end do
+  end do
+  cost_func_avg(:) = ( cost_func_sum_false(:) / real( two_ndim / 2 ) ) &
+                   - ( cost_func_sum_true(:) / real( two_ndim / 2 ) )
+
+  ! Sort flags and the cost function in ascending order
   call Qsort_flags( model_flags_array, cost_function )
 
-  open(unit=iunit,file=model_flags_output)
-  write(iunit,'(9A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
+  if ( l_results_stdout ) then
+    ! Output results to the terminal
+    write(fstdout,'(A30)') "Default flags:                "
+    do j = 1, ndim
+      write(fstdout,'(L6,4X)',advance='no') model_flags_default(j)
+    end do
+    write(fstdout,'(G10.3)') cost_func_default
+    write(fstdout,'(A)') "Results from trying all permutations of the flags: "
+    do i = 1, ndim
+      write(fstdout,'(I6,4X)',advance='no') i
+    end do
+    write(fstdout,'(A10)') " Cost func" 
+    do i = 1, ndim
+      write(fstdout,'(G10.3)',advance='no') cost_func_avg(i)
+    end do
+    write(fstdout,*) ""
+    do i = 1, two_ndim
+      do j = 1, ndim
+        write(fstdout,'(L6,4X)',advance='no') model_flags_array(i,j)
+      end do
+      write(fstdout,'(G10.3)') cost_function(i)
+    end do
+
+    write(fstdout,'(A30)') &
+      "Column 1 = upwind_wpxp_ta     ", &
+      "Column 2 = upwind_xpyp_ta     ", &
+      "Column 3 = upwind_xm_ma       ", &
+      "Column 4 = quintic_poly_interp", &
+      "Column 5 = vert_avg_closure   ", &
+      "Column 6 = single_C2_Skw      ", &
+      "Column 7 = standard_term_ta   ", &
+      "Column 8 = tke_aniso          ", &
+      "Column 9 = use_cloud_cover    "
+  end if ! l_results_stdout
+
+  ! Generate CSV file of the results
+  filename_csv = "../output/clubb_model_flags_"//current_date//"_"//current_time//".csv"
+  open(unit=iunit,file=trim( filename_csv ))
+  write(iunit,'(10A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
     "quintic_poly_interp, ", "vert_avg_closure, ", &
-    "single_C2_Skw, ", "standard_term_ta, ", "tke_aniso, ", "Cost func."
+    "single_C2_Skw, ", "standard_term_ta, ", "tke_aniso, ", "use_cloud_cover, ", "Cost func."
+  write(iunit,'(A30)') "Default flags:               ,"
+  do j = 1, ndim
+    write(iunit,'(L20,A2)',advance='no') model_flags_default(j), ", "
+  end do
+  write(iunit,'(G20.6,A2)') cost_func_default, ", "
+  do i = 1, ndim
+    write(iunit,'(G20.6,A2)',advance='no') cost_func_avg(i), ", "
+  end do
+  write(iunit,'(A20)') "Avg false - Avg true ,"
   do i = 1, two_ndim
     do j = 1, ndim
       write(iunit,'(L20,A2)',advance='no') model_flags_array(i,j), ", "
@@ -451,10 +551,29 @@ subroutine logical_flags_driver
     write(iunit,'(G20.6,A2)') cost_function(i), ", "
   end do
   close(unit=iunit)
-  write(fstdout,*) "Results of tuning model flags written to: ", model_flags_output
+  write(fstdout,*) "Results of tuning model flags written to: ", trim( filename_csv )
+
+  ! Generate namelist file of the optimal result
+  if ( l_results_file ) then
+   call setup_configurable_model_flags( model_flags_array(1,1), &
+                                   model_flags_array(1,2), &
+                                   model_flags_array(1,3), &
+                                   model_flags_array(1,4), &
+                                   model_flags_array(1,5), &
+                                   model_flags_array(1,6), &
+                                   model_flags_array(1,7), &
+                                   model_flags_array(1,8), &
+                                   model_flags_array(1,9) )
+
+    filename_nml = "../input/tunable_parameters/configurable_model_flags_"//current_date//'_' & 
+      //current_time(1:4)//".in"
+
+    call write_model_flags_to_file( iunit, trim( filename_nml ) )
+
+    write(fstdout,*) "New namelist of tuning model flags written to: ", trim( filename_nml )
+  end if
 
   deallocate( model_flags_array )
-  deallocate( cost_function )
 
   return
 end subroutine logical_flags_driver

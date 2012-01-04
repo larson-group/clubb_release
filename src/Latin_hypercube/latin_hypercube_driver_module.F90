@@ -922,6 +922,10 @@ module latin_hypercube_driver_module
     ! External
     intrinsic :: ceiling, dble
 
+    ! Constant parameters
+    real, parameter :: &
+      max_iter_numerator = 100.
+
     ! Input Variables
     logical, intent(in) :: &
       l_cloudy_sample ! Whether his is a cloudy or clear air sample point
@@ -953,7 +957,7 @@ module latin_hypercube_driver_module
     ! Maximum iterations searching for the cloudy/clear part of the gridbox
     ! This should't appear in a parameter statement because it's set based on
     ! a floating-point calculation, and apparently that's not ISO Fortran
-    itermax = ceiling( 100. / cloud_frac_thresh )
+    itermax = ceiling( max_iter_numerator / cloud_frac_thresh )
 
     ! Find some new random numbers between (0,1)
     call genrand_real3( rand )
