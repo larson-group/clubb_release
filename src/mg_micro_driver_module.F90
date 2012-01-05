@@ -10,7 +10,7 @@ module mg_micro_driver_module
   contains
 !-------------------------------------------------------------------------------
   subroutine mg_microphys_driver &
-             ( dt, nz, l_stats_samp, thlm, p_in_Pa, exner, &
+             ( dt, nz, l_stats_samp, invrs_dzt, thlm, p_in_Pa, exner, &
                rho, pdf_params, rcm, rvm, Ncnm, hydromet, &
                hydromet_mc, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
@@ -45,7 +45,10 @@ module mg_micro_driver_module
       ieff_rad_cloud, &
       ieff_rad_ice, &
       ieff_rad_rain, &
-      ieff_rad_snow
+      ieff_rad_snow, &
+      irrainm_auto, &
+      irrainm_accr, &
+      irwp
 
     use stats_type, only:  & 
       stat_update_var, &
@@ -90,6 +93,14 @@ module mg_micro_driver_module
 
     use shr_kind_mod, only: r8 => shr_kind_r8 
 
+    use stats_variables, only: & 
+      irrainm_auto, & ! Variables
+      irrainm_accr, &
+      irrainm_cond
+
+    use fill_holes, only: &
+      vertical_integral ! Procedure(s)
+
     implicit none
 
     ! External
@@ -104,6 +115,7 @@ module mg_micro_driver_module
       l_stats_samp  ! Whether to accumulate statistics [T/F]
 
     real, dimension(nz), intent(in) :: &
+      invrs_dzt,  & ! Inverse of the grid spacing   [1/m]
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
@@ -214,6 +226,10 @@ module mg_micro_driver_module
       mnuccro_flip, pracso_flip, meltsdt_flip, frzrdt_flip, mnuccdo_flip,      &
       naai_hom_flip, dum
 
+    real, dimension(nz) :: &
+      rrainm_auto, & ! Autoconversion rate  [kg/kg/s]
+      rrainm_accr    ! Accretion rate       [kg/kg/s]
+
     ! MG zm variables that are not used in CLUBB
     real(r8), dimension(nz) :: &
       rflx_flip, sflx_flip
@@ -221,6 +237,8 @@ module mg_micro_driver_module
     real(r8), dimension(nz-1,hydromet_dim) :: &
        hydromet_flip, &  ! Hydrometeor species                               [units vary]
        hydromet_mc_flip  ! Hydrometeor time tendency                         [units vary]
+
+    real :: xtmp
 
     integer :: i
 
@@ -304,19 +322,20 @@ module mg_micro_driver_module
     ! Initialize grid variables. These are imported in the MG code.
     call init_ppgrid( nz )
 
-    call gestbl(173.16_r8, 375.16_r8, 20.00_r8, .true., real( epsilo, kind=r8), &
+    call gestbl( 173.16_r8, 375.16_r8, 20.00_r8, .true., real( epsilo, kind=r8), &
                  real( latvap, kind=r8), real( latice, kind=r8), real( rh2o, kind=r8), &
                  real( cpair, kind=r8), real( tmelt, kind=r8) ) ! Known magic flag
 
     ! Ensure no hydromet arrays are input as 0, because this makes MG crash.
-    do i=1, hydromet_dim, 1
-      hydromet_flip(:,i) = max( 1e-8_r8, hydromet_flip(:,i) ) ! Known magic number
-    end do
-    
-    ! Prescribe droplet concentration
-    hydromet_flip(:,iiNcm) = 1e8_r8
-    
+    ! dschanen found this was no longer necessary, due a prior bug fix? 5 Jan 2011
+!   do i=1, hydromet_dim, 1
+!     hydromet_flip(:,i) = max( 1e-8_r8, hydromet_flip(:,i) ) ! Known magic number
+!   end do
+   
     if( l_microp_aero_ts ) then
+      ! Need to prevent a floating-point exception below;  the result doesn't
+      ! appear to feedback into the model
+      aer_mmr_flip(:,:,:) = 0._r8
 
       ! Calculate aerosol activiation, dust size, and number for contact nucleation
       call microp_aero_ts &
@@ -354,6 +373,7 @@ module mg_micro_driver_module
     aer_mmr_flip(:,:,:) = 1._r8
     turbtype_flip(:) = 1._r8
     smaw_flip(:) = 1._r8
+
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond                                                                        &
@@ -410,7 +430,7 @@ module mg_micro_driver_module
     ! TODO: To remove compile warnings:
     dum = real( T_in_K_new(1:nz-1), kind=r8 )
     ! TODO: T_in_K is not changed within MG, so the change in temperature will need to be
-    ! calculated another way. However, using the eqution above does not seem to work correctly.
+    ! calculated another way. However, using the equation above does not seem to work correctly.
     thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_new ) - thlm ) / real( dt )
     
     if ( l_stats_samp ) then
@@ -430,7 +450,41 @@ module mg_micro_driver_module
      ! Snow water path is updated in stats_subs.F90
      ! call stat_update_var_pt( iswp, 1, real( hydromet_mc(3,iirsnowm) / max( 0.0001, cldfsnow ) * &
      !                          pdel_flip(nz-1) / gravit ), sfc )
-      
+
+      ! Compute autoconversion
+      rrainm_auto(2:nz) = real( flip( dble( prco_flip(1:nz-1) ), nz-1 ) )
+      rrainm_auto(1) = 0.0
+      call stat_update_var( irrainm_auto, rrainm_auto, zt )
+
+      ! Compute accretion
+      rrainm_accr(2:nz) = real( flip( dble( prao_flip(1:nz-1) ), nz-1 ) )
+      rrainm_accr(1) = 0.0
+      call stat_update_var( irrainm_accr, rrainm_accr, zt )
+
+      ! Compute Rain Water Path
+      if ( irwp > 0 ) then
+
+        xtmp &
+        = vertical_integral &
+               ( (nz - 2 + 1), rho(2:nz), &
+                 rrainm(2:nz), invrs_dzt(2:nz) )
+
+        call stat_update_var_pt( irwp, 1, xtmp, sfc )
+
+      end if
+
+      ! Compute Snow Water Path
+      if ( iswp > 0 ) then
+
+        xtmp &
+        = vertical_integral &
+               ( (nz - 2 + 1), rho(2:nz), &
+                 rsnowm(2:nz), invrs_dzt(2:nz) )
+
+        call stat_update_var_pt( iswp, 1, xtmp, sfc )
+
+      end if
+
     end if ! l_stats_samp
 
     return

@@ -1492,6 +1492,18 @@ module microphys_driver
       rvm_mc(:) = 0.0
       thlm_mc(:) = 0.0
 
+      hydromet_vel = 0.0
+      hydromet_vel_zt = 0.0
+
+      ! Fix Nc for testing purposes -dschanen 5 Jan 2012
+      if ( .not. l_predictnc ) then
+        where ( rcm >= rc_tol )
+          hydromet(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
+        else where
+          hydromet(:,iiNcm) = 0.0
+        end where
+      end if
+
       ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
       ! Placed here because parameters cannot be changed on mg_microphys_driver with
       ! the way LH is currently set up.
@@ -1500,7 +1512,7 @@ module microphys_driver
       call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
 
       call mg_microphys_driver &
-          ( real( dt ), gr%nz, l_stats_samp, thlm, p_in_Pa, exner, &
+          ( real( dt ), gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
               rho, pdf_params, rcm, rtm-rcm, Ncnm, hydromet, &
               hydromet_mc, rcm_mc, rvm_mc, thlm_mc )
           
