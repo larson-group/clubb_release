@@ -2419,6 +2419,11 @@ module clubb_core
 
           vert_cloud_frac_upper(k) = min( 0.5, vert_cloud_frac_upper(k) )
 
+          ! Make the transition in cloudiness more gradual than using
+          ! the above min statement alone.
+          vert_cloud_frac_upper(k) = vert_cloud_frac_upper(k) + &
+            ( ( rcm(k+1)/rc_tol )*( 0.5 -vert_cloud_frac_upper(k) ) )
+
         else
 
           vert_cloud_frac_upper(k) = 0.5
@@ -2432,6 +2437,11 @@ module clubb_core
                    * ( rcm(k) / ( rcm(k) + abs( s_mean(k-1) ) ) )
 
           vert_cloud_frac_lower(k) = min( 0.5, vert_cloud_frac_lower(k) )
+
+          ! Make the transition in cloudiness more gradual than using
+          ! the above min statement alone.
+          vert_cloud_frac_lower(k) = vert_cloud_frac_lower(k) + &
+            ( ( rcm(k-1)/rc_tol )*( 0.5 -vert_cloud_frac_lower(k) ) )
 
         else
 

@@ -232,7 +232,7 @@ module constants_clubb
   ! still officially have a cloud at that level.  This is figured to be about
   ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
   real, parameter, public :: & 
-    rc_tol = 1.0E-7,  & ! [kg/kg]
+    rc_tol = 1.0E-6,  & ! [kg/kg]
     Nc_tol = 1.0E-10, & ! [#/kg]
     rr_tol = 1.0E-10, & ! [kg/kg]
     Nr_tol = 1.0E-10    ! [#/kg]
