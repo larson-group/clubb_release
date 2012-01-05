@@ -10,10 +10,9 @@ module mg_micro_driver_module
   contains
 !-------------------------------------------------------------------------------
   subroutine mg_microphys_driver &
-             ( dt, nz, l_stats_samp, l_local_kk, l_latin_hypercube, &
-               thlm, p_in_Pa, exner, rho, pdf_params, &
-               wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
-               hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
+             ( dt, nz, l_stats_samp, thlm, p_in_Pa, exner, &
+               rho, pdf_params, rcm, rvm, Ncnm, hydromet, &
+               hydromet_mc, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
 !   Wrapper for the Morrison-Gettelman microphysics
 ! References:
@@ -29,7 +28,7 @@ module mg_micro_driver_module
       thlm2T_in_K
 
     use array_index, only:  &
-      iirsnowm, iiricem, iiNim, iiNcm
+      iiricem, iiNim, iiNcm
 
     use constants_clubb, only: &
       zero_threshold, &
@@ -102,9 +101,7 @@ module mg_micro_driver_module
     integer, intent(in) :: nz ! Points in the Vertical        [-]
 
     logical, intent(in) :: &
-      l_stats_samp,     & ! Whether to accumulate statistics [T/F]
-      l_local_kk,       & ! Whether we're using the local formulas
-      l_latin_hypercube   ! Whether we're using latin hypercube sampling
+      l_stats_samp  ! Whether to accumulate statistics [T/F]
 
     real, dimension(nz), intent(in) :: &
       thlm,       & ! Liquid potential temperature       [K]
@@ -113,26 +110,19 @@ module mg_micro_driver_module
       rho           ! Density on thermo. grid            [kg/m^3]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
-      pdf_params ! PDF parameters
+      pdf_params    ! PDF parameters
 
     real, dimension(nz), intent(in) :: &
-      wm,        & ! Mean w                         [m/s]
-      w_std_dev, & ! Standard deviation of w        [m/s]
-      dzq,       & ! Difference in heights          [m]
-      s_mellor     ! The variable 's' from Mellor   [kg/kg]
-
-    real, dimension(nz), intent(in) :: &
-      rcm,      & ! Liquid water mixing ratio          [kg/kg]
-      rvm         ! Vapor water mixing ratio           [kg/kg]
-      !Ncnm        ! Cloud nuclei number concentration  [count/m^3]
+      rcm,        & ! Liquid water mixing ratio          [kg/kg]
+      rvm,        & ! Vapor water mixing ratio           [kg/kg]
+      Ncnm          ! Cloud nuclei number concentration  [count/m^3]
 
     real, dimension(nz,hydromet_dim), intent(in) :: &
-      hydromet ! Hydrometeor species    [units vary]
+      hydromet      ! Hydrometeor species    [units vary]
 
     ! Input/Output Variables
     real, dimension(nz,hydromet_dim), intent(inout) :: &
-      hydromet_mc,   & ! Hydrometeor time tendency          [(units vary)/s]
-      hydromet_vel     ! Hydrometeor sedimentation velocity [m/s]
+      hydromet_mc   ! Hydrometeor time tendency          [(units vary)/s]
 
     ! Output Variables
     real, dimension(nz), intent(out) :: &
@@ -152,7 +142,8 @@ module mg_micro_driver_module
       tlat,         & ! Latent heating rate                                           [W/kg]
       cloud_frac,   & ! Liquid Cloud fraction                                         [-]
       rcm_new,      & ! Cloud water mixing ratio after microphysics                   [kg/kg]
-      rrainm,       & ! Rain mixing ratio (not in hydromet, output straight to stats) [kg/kg]
+      rsnowm,       & ! Snow mixing ratio (not in hydromet because it is diagnostic)  [kg/kg]
+      rrainm,       & ! Rain mixing ratio (not in hydromet because it is diagnostic)  [kg/kg]
       effc,         & ! Droplet effective radius                                      [μ]
       effi,         & ! cloud ice effective radius                                    [μ]
       reff_rain,    & ! rain effective radius                                         [μ]
@@ -204,6 +195,7 @@ module mg_micro_driver_module
       rcm_mc_flip,   & ! Time tendency of liquid water mixing ratio           [kg/kg/s]
       rvm_mc_flip,   & ! Time tendency of vapor water mixing ratio            [kg/kg/s]
       cldo_flip,     & ! Old cloud fraction.                                  [-]
+      qsout_flip,    & ! Snow mixing ratio                                    [kg/kg]
       effc_flip,     & ! Droplet effective radius                             [μ]
       effi_flip,     & ! cloud ice effective radius                           [μ]
       reff_rain_flip,& ! rain effective radius                                [μ]
@@ -233,15 +225,6 @@ module mg_micro_driver_module
     integer :: i
 
     ! ---- Begin Code ----
-    ! Some dummy assignments to make compiler warnings go away...
-    if ( .false. ) then
-      if ( l_local_kk ) stop
-      dum = dble(wm)
-      dum = dble(w_std_dev)
-      dum = dble(dzq)
-      dum = dble(s_mellor)
-    end if
-
     l_microp_aero_ts = .true.
     
     unused_in(:) = -9999.9_r8
@@ -255,29 +238,23 @@ module mg_micro_driver_module
     effi(:) = 0.0
     reff_rain(:) = 0.0
     reff_snow(:) = 0.0
+    rsnowm(:) = 0.0
     rrainm(:) = 0.0
     tlat(:) = 0.0
     rcm_new(:) = 0.0
     T_in_K_new(:) = 0.0
-    rcm_mc(1:nz) = 0.0
-    rvm_mc(1:nz) = 0.0
-    hydromet_mc(1:nz,:) = 0.0
-    hydromet_mc_flip(1:nz-1,:) = 0.0_r8
-    hydromet_vel(:,:) = 0.0
+    rcm_mc(:) = 0.0
+    rvm_mc(:) = 0.0
+    hydromet_mc(:,:) = 0.0
+    hydromet_mc_flip(:,:) = 0.0_r8
 
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
     
-    if ( l_latin_hypercube ) then
-      ! Don't use sgs cloud fraction to weight the tendencies
-      cloud_frac(1:nz) = 0.0
-
-    else 
-      ! Use sgs cloud fraction to weight tendencies
-      cloud_frac(1:nz) = max( zero_threshold, &
-                        pdf_params%mixt_frac * pdf_params%cloud_frac1 &
-                        + (1.-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
-    end if
+    ! Use sgs cloud fraction to weight tendencies
+    cloud_frac(1:nz) = max( zero_threshold, &
+                      pdf_params%mixt_frac * pdf_params%cloud_frac1 &
+                      + (1.-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
     
     ! MG's grid is flipped with respect to CLUBB.
     ! Flip CLUBB variables before inputting them into MG.
@@ -356,7 +333,7 @@ module mg_micro_driver_module
     else
 
       rho_flip(1:nz-1) = real( flip( dble(rho(2:nz) ), nz-1 ), kind=r8 )
-      npccn_flip(1:nz-1) = 0.0_r8 !real( flip( dble(Ncnm(2:nz) ), nz-1 ), kind=r8 )TODO Get Ncnm in here
+      npccn_flip(1:nz-1) = real( flip( dble(Ncnm(2:nz) ), nz-1 ), kind=r8 )
 
       ! Determine ice nulceation number using Meyers formula found in the Morrison microphysics
       naai_flip(i) = exp( -2.80_r8 + 0.262_r8 * ( dble(T_freeze_K ) - dble(T_in_K_flip(i)) ) ) &
@@ -394,7 +371,7 @@ module mg_micro_driver_module
          effc_fn_flip, effi_flip, prect, preci,                                              &! out
          nevapr_flip, evapsnow_flip,                                                         &! out
          prain_flip, prodsnow_flip, cmeout_flip, deffi_flip, pgamrad_flip,                   &! out
-         lamcrad_flip, hydromet_mc_flip(:,iirsnowm), dsout_flip,                             &! out
+         lamcrad_flip, qsout_flip, dsout_flip,                             &! out
          rflx_flip, sflx_flip, qrout_flip, reff_rain_flip, reff_snow_flip,                   &! out
          qcsevap_flip, qisevap_flip, qvres_flip, cmeiout_flip,                               &! out
          vtrmc_flip, vtrmi_flip, qcsedten_flip, qisedten_flip,                               &! out
@@ -412,6 +389,7 @@ module mg_micro_driver_module
     reff_rain(2:nz) = real( flip( dble(reff_rain_flip(1:nz-1) ), nz-1 ) )
     reff_snow(2:nz) = real( flip( dble(reff_snow_flip(1:nz-1) ), nz-1 ) )
     tlat(2:nz) = real( flip( dble(tlat_flip(1:nz-1) ), nz-1 ) )
+    rsnowm(2:nz) = real( flip( dble(qsout_flip(1:nz-1) ), nz-1 ) )
     rrainm(2:nz) = real( flip( dble(qrout_flip(1:nz-1) ), nz-1 ) )
 
     do i = 1, hydromet_dim, 1      
@@ -422,7 +400,7 @@ module mg_micro_driver_module
     cldfsnow = cldn_flip(nz-1) ! Only need sfc level
     if ( ( cldfsnow > 1.e-4_r8 ) .and. ( rcm_flip(nz-1) < 1e-10_r8 ) ) then
       cldfsnow = 0._r8
-    else if ( ( cldfsnow < 1.e-4_r8 ) .and. ( hydromet_mc_flip(nz-1,iirsnowm) > 1.e-6_r8 ) ) then
+    else if ( ( cldfsnow < 1.e-4_r8 ) .and. ( qsout_flip(nz-1) > 1.e-6_r8 ) ) then
       cldfsnow = 0.25_r8
     end if
     
@@ -436,6 +414,7 @@ module mg_micro_driver_module
     thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_new ) - thlm ) / real( dt )
     
     if ( l_stats_samp ) then
+      call stat_update_var( irsnowm, rsnowm(:), zt)
       call stat_update_var( irrainm, rrainm(:), zt)
       
       ! Effective radii of hydrometeor species

@@ -807,31 +807,29 @@ module microphys_driver
       
     case ( "morrison-gettelman" )
       iirrainm    = -1
-      iirsnowm    = 1
-      iiricem     = 2
+      iirsnowm    = -1
+      iiricem     = 1
       iirgraupelm = -1
 
       iiNrm       = -1
       iiNsnowm    = -1
-      iiNim       = 3
+      iiNim       = 2
       iiNgraupelm = -1
-      iiNcm       = 4
+      iiNcm       = 3
 
-      hydromet_dim = 4
+      hydromet_dim = 3
       
       allocate( hydromet_list(hydromet_dim) )
       
-      hydromet_list(iirsnowm)    = "rsnowm"
       hydromet_list(iiricem)     = "ricem"
       hydromet_list(iiNim)       = "Nim"
       hydromet_list(iiNcm)       = "Ncm"
       
       allocate( l_hydromet_sed(hydromet_dim) )
       ! Sedimentation is handled within the MG microphysics
+      l_hydromet_sed(iiricem)     = .false.
       l_hydromet_sed(iiNim)       = .false.
       l_hydromet_sed(iiNcm)       = .false.
-      l_hydromet_sed(iirsnowm)    = .false.
-      l_hydromet_sed(iiricem)     = .false.
       
       ! Initialize constants for aerosols
       call ini_microp_aero()
@@ -1494,43 +1492,17 @@ module microphys_driver
       rvm_mc(:) = 0.0
       thlm_mc(:) = 0.0
 
-      if ( LH_microphys_type /= LH_microphys_disabled ) then
-#ifdef LATIN_HYPERCUBE
-!       call LH_microphys_driver &
-!            ( real( dt ), gr%nz, LH_microphys_calls, d_variables, & ! In
-!              X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
-!              pdf_params, p_in_Pa, exner, rho, & ! In
-!              rcm, wtmp, delta_zt, cloud_frac, & ! In
-!              hydromet, X_mixt_comp_all_levs, & !In 
-!              hydromet_mc, hydromet_vel_zt, & ! In/Out
-!              rcm_mc, rvm_mc, thlm_mc,  & ! Out
-!              mg_microphys_driver )  ! Procedure
-#else
-        stop "Latin hypercube was not enabled at compile time"
-#endif
-        call stats_accumulate_LH_tend( hydromet_mc, thlm_mc, rvm_mc, rcm_mc )
+      ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
+      ! Placed here because parameters cannot be changed on mg_microphys_driver with
+      ! the way LH is currently set up.
+      call pbuf_add( 'WP2', 1, gr%nz, 1 )
+      call pbuf_allocate()
+      call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
 
-      end if ! LH isn't disabled
-
-      ! Call the microphysics if we don't want to have feedback effects from the
-      ! latin hypercube result (above)
-      if ( LH_microphys_type /= LH_microphys_interactive ) then
-        l_local_kk_input = .false.
-        l_latin_hypercube_input = .false.
-
-    ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
-    ! Placed here because parameters cannot be changed on mg_microphys_driver with
-    ! the way LH is currently set up.
-    call pbuf_add( 'WP2', 1, gr%nz, 1 )
-    call pbuf_allocate()
-    call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
-
-        call mg_microphys_driver &
-          ( real( dt ), gr%nz, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
-              thlm, p_in_Pa, exner, rho, pdf_params, &
-              wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
-              hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
-      end if
+      call mg_microphys_driver &
+          ( real( dt ), gr%nz, l_stats_samp, thlm, p_in_Pa, exner, &
+              rho, pdf_params, rcm, rtm-rcm, Ncnm, hydromet, &
+              hydromet_mc, rcm_mc, rvm_mc, thlm_mc )
           
     case ( "khairoutdinov_kogan" )
 
