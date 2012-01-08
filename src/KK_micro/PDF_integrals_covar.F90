@@ -379,25 +379,20 @@ module PDF_integrals_covars
 
     trivar_NNL_covar  &
     = 1.0 / sqrt( 2.0*pi_dp )  &
-      * ( sigma_x2**alpha_exp  &
-          * exp( mu_x3_n * beta_exp  &
-                 + 0.5 * sigma_x3_n**2 * beta_exp**2  &
-                 - 0.25 * s_c**2 )  &
-          * ( rho_x1x2 * sigma_x1 * gamma( alpha_exp + 2.0 )  &
-              * Dv_fnc( -(alpha_exp + 2.0), -s_c )  &
-            + ( mu_x1 - x1_mean  &
-                - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
-                + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
-                         * sigma_x1 * sigma_x3_n * beta_exp )  &
-              * gamma( alpha_exp + 1.0 )  &
-              * Dv_fnc( -(alpha_exp + 1.0), -s_c )  &
-            )  &
-        - x2_alpha_x3_beta_mean  &
-          * ( rho_x1x2 * sigma_x1 * exp( -0.5 * ( mu_x2 / sigma_x2 )**2 )  &
-            + sqrt(pi_dp/2.0) * ( mu_x1 - x1_mean )  &
-              * erfc( - mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
-            )  &
-        )
+      * sigma_x2**alpha_exp  &
+      * exp( mu_x3_n * beta_exp  &
+             + 0.5 * sigma_x3_n**2 * beta_exp**2  &
+             - 0.25 * s_c**2 )  &
+      * ( rho_x1x2 * sigma_x1 * gamma( alpha_exp + 2.0 )  &
+          * Dv_fnc( -(alpha_exp + 2.0), -s_c )  &
+        + ( mu_x1 - x1_mean  &
+            - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
+            + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
+                     * sigma_x1 * sigma_x3_n * beta_exp )  &
+          * gamma( alpha_exp + 1.0 )  &
+          * Dv_fnc( -(alpha_exp + 1.0), -s_c )  &
+        )  &
+      - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
 
     return
 
@@ -457,16 +452,12 @@ module PDF_integrals_covars
     s_c = ( mu_x2 / sigma_x2 ) + rho_x2x3_n * sigma_x3_n * beta_exp;
    
     trivar_NNL_covar_const_x1  &
-    = ( 1.0 / sqrt( 2.0*pi_dp ) ) * ( mu_x1 - x1_mean )  &
-      * ( sigma_x2**alpha_exp  &
-          * exp( mu_x3_n * beta_exp  &
-                 + 0.5 * sigma_x3_n**2 * beta_exp**2  &
-                 - 0.25 * s_c**2 )  &
-          * gamma( alpha_exp + 1.0 )  &
-          * Dv_fnc( -(alpha_exp + 1.0), -s_c )  &
-        - x2_alpha_x3_beta_mean  &
-          * sqrt(pi_dp/2.0) * erfc( - mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
-        )
+    = ( 1.0 / sqrt( 2.0*pi_dp ) ) * ( mu_x1 - x1_mean ) * sigma_x2**alpha_exp  &
+      * exp( mu_x3_n * beta_exp  & 
+             + 0.5 * sigma_x3_n**2 * beta_exp**2  &
+             - 0.25 * s_c**2 )  &
+      * gamma( alpha_exp + 1.0 ) * Dv_fnc( -(alpha_exp + 1.0), -s_c )  &
+      - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
 
     return
 
