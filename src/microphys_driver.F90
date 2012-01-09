@@ -805,7 +805,7 @@ module microphys_driver
       ! Setup the Morrison scheme
       call GRAUPEL_INIT()
       
-    case ( "morrison_gettelman", "morrison-gettelman" )
+    case ( "morrison-gettelman" )
       iirrainm    = -1
       iirsnowm    = -1
       iiricem     = 1
@@ -881,7 +881,7 @@ module microphys_driver
       l_hydromet_sed(iiricem)     = .true.
       l_hydromet_sed(iirgraupelm) = .true.
 
-    case ( "khairoutdinov_kogan", "khairoutdinov-kogan" )
+    case ( "khairoutdinov_kogan" )
       iirrainm    = 1
       iirsnowm    = -1
       iiricem     = -1
