@@ -805,7 +805,7 @@ module microphys_driver
       ! Setup the Morrison scheme
       call GRAUPEL_INIT()
       
-    case ( "morrison-gettelman" )
+    case ( "morrison_gettelman", "morrison-gettelman" )
       iirrainm    = -1
       iirsnowm    = -1
       iiricem     = 1
@@ -819,6 +819,12 @@ module microphys_driver
 
       hydromet_dim = 3
       
+      if ( l_cloud_sed ) then
+        write(fstderr,*) "Morrison-Gettelman microphysics has seperate code for cloud water"
+        write(fstderr,*) "sedimentation, therefore l_cloud_sed should be set to .false."
+        stop "Fatal error."
+      end if
+
       allocate( hydromet_list(hydromet_dim) )
       
       hydromet_list(iiricem)     = "ricem"
@@ -875,7 +881,7 @@ module microphys_driver
       l_hydromet_sed(iiricem)     = .true.
       l_hydromet_sed(iirgraupelm) = .true.
 
-    case ( "khairoutdinov_kogan" )
+    case ( "khairoutdinov_kogan", "khairoutdinov-kogan" )
       iirrainm    = 1
       iirsnowm    = -1
       iiricem     = -1
@@ -939,7 +945,7 @@ module microphys_driver
       iiNgraupelm = -1
 
     case default
-      write(fstderr,*) "Unknown micro_scheme"// trim( micro_scheme )
+      write(fstderr,*) "Unknown micro_scheme: "// trim( micro_scheme )
       stop
 
     end select
