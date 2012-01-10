@@ -381,7 +381,11 @@ subroutine mmicro_pcond ( sub_column,       &
    vtrmc,vtrmi,qcsedten,qisedten, &
    prao,prco,mnuccco,mnuccto,msacwio,psacwso,&
    bergso,bergo,melto,homoo,qcreso,prcio,praio,qireso,&
-   mnuccro,pracso,meltsdt,frzrdt,mnuccdo)
+   mnuccro,pracso,meltsdt,frzrdt,mnuccdo &
+#ifdef CLUBB
+   ,qcic &
+#endif
+   )
 
 !Author: Hugh Morrison, Andrew Gettelman, NCAR
 ! e-mail: morrison@ucar.edu, andrew@ucar.edu
