@@ -154,7 +154,7 @@ module mg_micro_driver_module
 
     logical :: l_microp_aero_ts ! Use microp_aero_ts to determine aerosols
 
-    real :: cldfsnow ! Radiative cloud fraction at sfc level for calcuating swp       [-]
+    real(r8) :: cldfsnow ! Radiative cloud fraction at sfc level for calcuating swp   [-]
 
     real, dimension(nz) :: & 
       T_in_K,       & ! Temperature                                                   [K]
@@ -402,7 +402,7 @@ module mg_micro_driver_module
     turbtype_flip(icol,:) = 1._r8
     smaw_flip(icol,:) = 1._r8
 
-    qcic_flip(icol,:) = 0.0 ! This is needed in case qc is 0 everywhere, due to a goto statement
+    qcic_flip(icol,:) = 0.0_r8 ! This is needed in case qc is 0 everywhere, due to a goto statement
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond                                                                        &! in
