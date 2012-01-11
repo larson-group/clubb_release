@@ -68,6 +68,7 @@ module stats_variables
      ivg, & 
      icloud_frac, &
      ircm_in_layer, &
+     ircm_in_cloud, &
      icloud_cover, &
      ip_in_Pa, & 
      iexner, & 
@@ -115,23 +116,23 @@ module stats_variables
      iAKm_rcm, & 
      iAKm_rcc
 
-!$omp   threadprivate(ithlm, ithvm, irtm, ircm, irvm, ium, ivm, ium_ref, ivm_ref)
-!$omp   threadprivate(iwm_zt, iwm_zm, iug, ivg, icloud_frac, ircm_in_layer, icloud_cover)
-!$omp   threadprivate(ip_in_Pa, iexner, irho_ds_zt, ithv_ds_zt, iLscale, iwp3)
-!$omp   threadprivate(iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down)
-!$omp   threadprivate(itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt)
-!$omp   threadprivate(irho, irel_humidity, iNcm, iNcnm, isnowslope)
-!$omp   threadprivate(ised_rcm, irsat, irsati, irrainm)
-!$omp   threadprivate(im_vol_rad_rain, im_vol_rad_cloud)
-!$omp   threadprivate(irain_rate_zt, iAKm, iLH_AKm)
-!$omp   threadprivate(iradht, iradht_LW, iradht_SW)
-!$omp   threadprivate(iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc)
+!$omp threadprivate(ithlm, ithvm, irtm, ircm, irvm, ium, ivm, ium_ref, ivm_ref, &
+!$omp   iwm_zt, iwm_zm, iug, ivg, icloud_frac, ircm_in_layer, ircm_in_cloud, icloud_cover, &
+!$omp   ip_in_Pa, iexner, irho_ds_zt, ithv_ds_zt, iLscale, iwp3, &
+!$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, &
+!$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, &
+!$omp   irho, irel_humidity, iNcm, iNcnm, isnowslope, &
+!$omp   ised_rcm, irsat, irsati, irrainm, &
+!$omp   im_vol_rad_rain, im_vol_rad_cloud, &
+!$omp   irain_rate_zt, iAKm, iLH_AKm, &
+!$omp   iradht, iradht_LW, iradht_SW, &
+!$omp   iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc)
 
   ! Skewness functions on zt grid
   integer, public :: &
     iC11_Skw_fnc
 
-!$omp   threadprivate(iC11_Skw_fnc)
+!$omp threadprivate(iC11_Skw_fnc)
 
   integer, public :: &
     icloud_frac_zm, &

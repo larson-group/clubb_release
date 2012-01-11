@@ -28,6 +28,9 @@ module morrison_micro_driver_module
     use module_MP_graupel, only: &
       M2005MICRO_GRAUPEL  ! Procedure
 
+    use module_MP_graupel, only: &
+      cloud_frac_thresh ! Constant
+
     use stats_variables, only: &
       zt,  & ! Variables
       sfc
@@ -37,7 +40,8 @@ module morrison_micro_driver_module
       iricem_sd_morr, & 
       irrainm_sd_morr, & 
       irsnowm_sd_morr, &
-      irgraupelm_sd_morr
+      irgraupelm_sd_morr, &
+      ircm_in_cloud
 
     use stats_variables, only: & 
       ieff_rad_cloud, & ! Variables
@@ -129,9 +133,10 @@ module morrison_micro_driver_module
       rcm_sten     ! Cloud dropet sedimentation tendency           [kg/kg/s]
 
     real, dimension(nz) :: & 
-      cloud_frac, &  ! Cloud fraction   [-]
-      wm_tmp, &     ! Mean vertical velocity   [m/s]
-      w_std_dev_tmp ! Standard deviation of w  [m/s]
+      cloud_frac, &   ! Cloud fraction          [-]
+      rcm_in_cloud, & ! Liquid water in cloud   [kg/kg]
+      wm_tmp, &       ! Mean vertical velocity  [m/s]
+      w_std_dev_tmp   ! Standard deviation of w [m/s]
 
     real, dimension(nz,hydromet_dim) :: & 
       hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
@@ -192,6 +197,7 @@ module morrison_micro_driver_module
     rcm_mc(1:nz) = 0.0
     rvm_mc(1:nz) = 0.0
     hydromet_mc(1:nz,:) = 0.0
+    hydromet_sten(1:nz,:) = 0.0
 
     ! Initialize effective radius to zero
     effc = 0.0 
@@ -244,6 +250,14 @@ module morrison_micro_driver_module
       call stat_update_var( irsnowm_sd_morr, hydromet_sten(:,iirsnowm), zt )
 
       call stat_update_var( iricem_sd_morr, hydromet_sten(:,iiricem), zt )
+
+      where ( cloud_frac(:) > cloud_frac_thresh ) 
+        rcm_in_cloud(:) = rcm / cloud_frac
+      else where
+        rcm_in_cloud(:) = rcm
+      end where
+
+      call stat_update_var( ircm_in_cloud, rcm_in_cloud, zt )
 
       ! --- Number concentrations ---
       ! No budgets for sedimentation are output

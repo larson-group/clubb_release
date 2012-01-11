@@ -19,13 +19,11 @@ restoreDir=`pwd`
 DEBUG=pgdbg
 #DEBUG="valgrind --leak-check=full --show-reachable=yes"
 
-FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
-
 # Change directories to the one the script is located in
 cd $scriptPath
 
 if [ -z $1 ]; then
-	echo "Usage: "$0" <MODEL CASE> [PARAMETER FILE] [STATS FILE]"
+	echo "Usage: "$0" <MODEL CASE> [PARAMETER FILE] [STATS FILE] [FLAGS FILE]"
 	exit
 else
 	MODEL_FILE='../input/case_setups/'$1'_model.in'
@@ -41,6 +39,12 @@ else
 	else
 		STATS_FILE=$3
 	fi
+
+        if [ -z $4 ]; then
+                FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
+        else
+                FLAGS_FILE=$4
+        fi
 fi
 
 #######################################################################
@@ -61,6 +65,11 @@ fi
 if [ ! -e "$STATS_FILE" ]; then
 	echo "$STATS_FILE does not exist"
 	exit 1
+fi
+
+if [ ! -e "$FLAGS_FILE" ]; then
+        echo "$FLAGS_FILE does not exist"
+        exit 1
 fi
 
 cat $PARAMS_FILE $MODEL_FILE $STATS_FILE $FLAGS_FILE | sed 's/\!.*//' > 'clubb.in'

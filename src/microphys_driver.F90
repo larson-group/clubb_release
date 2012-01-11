@@ -49,6 +49,10 @@ module microphys_driver
   use constants_clubb, only: &
     cloud_frac_min
 
+  use phys_buffer, only: & ! Used for placing wp2_zt in morrison-gettelman microphysics
+    pbuf_init,           &
+    pbuf_deallocate
+
   implicit none
 
   ! Subroutines
@@ -815,6 +819,12 @@ module microphys_driver
 
       hydromet_dim = 3
       
+      if ( l_cloud_sed ) then
+        write(fstderr,*) "Morrison-Gettelman microphysics has seperate code for cloud water"
+        write(fstderr,*) "sedimentation, therefore l_cloud_sed should be set to .false."
+        stop "Fatal error."
+      end if
+
       allocate( hydromet_list(hydromet_dim) )
       
       hydromet_list(iiricem)     = "ricem"
@@ -823,15 +833,16 @@ module microphys_driver
       
       allocate( l_hydromet_sed(hydromet_dim) )
       ! Sedimentation is handled within the MG microphysics
-      l_hydromet_sed(iiricem)  = .false.
-      l_hydromet_sed(iiNim)    = .false.
-      l_hydromet_sed(iiNcm)    = .false.
+      l_hydromet_sed(iiricem)     = .false.
+      l_hydromet_sed(iiNim)       = .false.
+      l_hydromet_sed(iiNcm)       = .false.
       
       ! Initialize constants for aerosols
       call ini_microp_aero()
 
       ! Setup the MG scheme
       call ini_micro()
+      call pbuf_init()
       
     case ( "coamps" )
       iirrainm    = 1
@@ -934,7 +945,7 @@ module microphys_driver
       iiNgraupelm = -1
 
     case default
-      write(fstderr,*) "Unknown micro_scheme"// trim( micro_scheme )
+      write(fstderr,*) "Unknown micro_scheme: "// trim( micro_scheme )
       stop
 
     end select
@@ -1144,6 +1155,13 @@ module microphys_driver
     use fill_holes, only: &
       vertical_avg, & ! Procedure(s)
       fill_holes_driver
+
+    use phys_buffer, only: & ! Used for placing wp2_zt in morrison-gettelman microphysics
+      pbuf_add,            &
+      pbuf_allocate,       &
+      pbuf_setval
+
+    use shr_kind_mod, only: r8 => shr_kind_r8
 
     use parameters_microphys, only: &
       LH_microphys_type, & ! Determines how the LH samples are used
@@ -1480,36 +1498,29 @@ module microphys_driver
       rvm_mc(:) = 0.0
       thlm_mc(:) = 0.0
 
-      if ( LH_microphys_type /= LH_microphys_disabled ) then
-#ifdef LATIN_HYPERCUBE
-!       call LH_microphys_driver &
-!            ( real( dt ), gr%nz, LH_microphys_calls, d_variables, & ! In
-!              X_nl_all_levs, LH_rt, LH_thl, & ! In
-!              pdf_params, p_in_Pa, exner, rho, & ! In
-!              rcm, wtmp, delta_zt, cloud_frac, & ! In
-!              hydromet, X_mixt_comp_all_levs, & !In 
-!              hydromet_mc, hydromet_vel_zt, & ! In/Out
-!              rcm_mc, rvm_mc, thlm_mc,  & ! Out
-!              mg_microphys_driver )  ! Procedure
-        stop "Latin hypercube is not setup for MG yet"
-#else
-        stop "Latin hypercube was not enabled at compile time"
-#endif
-        call stats_accumulate_LH_tend( hydromet_mc, thlm_mc, rvm_mc, rcm_mc )
+      hydromet_vel = 0.0
+      hydromet_vel_zt = 0.0
 
-      end if ! LH isn't disabled
-
-      ! Call the microphysics if we don't want to have feedback effects from the
-      ! latin hypercube result (above)
-      if ( LH_microphys_type /= LH_microphys_interactive ) then
-        l_local_kk_input = .false.
-        l_latin_hypercube_input = .false.
-        call mg_microphys_driver &
-          ( real( dt ), gr%nz, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
-              thlm, p_in_Pa, exner, rho, pdf_params, &
-              rcm, rtm-rcm, Ncnm, hydromet, hydromet_mc, &
-              hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc)
+      ! Fix Nc for testing purposes -dschanen 5 Jan 2012
+      if ( .not. l_predictnc ) then
+        where ( rcm >= rc_tol )
+          hydromet(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
+        else where
+          hydromet(:,iiNcm) = 0.0
+        end where
       end if
+
+      ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
+      ! Placed here because parameters cannot be changed on mg_microphys_driver with
+      ! the way LH is currently set up.
+      call pbuf_add( 'WP2', 1, gr%nz, 1 )
+      call pbuf_allocate()
+      call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
+
+      call mg_microphys_driver &
+          ( real( dt ), gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
+              rho, pdf_params, rcm, rtm-rcm, Ncnm, hydromet, &
+              hydromet_mc, rcm_mc, rvm_mc, thlm_mc )
           
     case ( "khairoutdinov_kogan" )
 
@@ -3314,6 +3325,10 @@ module microphys_driver
 
     if ( allocated( l_hydromet_sed ) ) then
       deallocate( l_hydromet_sed )
+    end if
+
+    if ( trim( micro_scheme ) == "morrison-gettelman" ) then
+      call pbuf_deallocate()
     end if
 
     return

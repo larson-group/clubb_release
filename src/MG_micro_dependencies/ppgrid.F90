@@ -20,17 +20,15 @@ module ppgrid
   contains
   
 !================================================================================================
-  subroutine init_ppgrid
+  subroutine init_ppgrid( nz )
     !
     !  Description: Initialize ppgrid variables for being imported into MG microphysics.
-    !               We need to do this in a separate subroutine because Fortran doesn't
-    !               permit using 'gr' in the variable initialization statements.
-    !
     !---------------------------------------------------------------------------------
-    use grid_class, only: gr
       
-    pver  = gr%nz - 1
-    pverp = gr%nz
+    integer, intent(in) :: nz ! Points in the vertical
+
+    pver  = nz - 1
+    pverp = nz
 
   end subroutine init_ppgrid
   
