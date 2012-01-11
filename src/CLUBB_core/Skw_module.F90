@@ -39,13 +39,20 @@ module Skw_module
       wp2,  & ! w'^2    [m^2/s^2]
       wp3     ! w'^3    [m^3/s^3]
 
+    real, parameter :: &
+      Skw_denom_coef = 8.0  ! Factor to decrease sensitivity in the denominator
+                            ! of Skw calculation
+
     ! Output Variable
     real :: & 
       Skw     ! Result Skw [-]
 
     ! ---- Begin Code ----
 
-    Skw = wp3 / ( max( wp2, w_tol_sqd ) )**1.5
+    !Skw = wp3 / ( max( wp2, w_tol_sqd ) )**1.5
+    ! Calculation of skewness to help reduce the sensitivity of this value to
+    ! small values of wp2.
+    Skw = wp3 / ( ( wp2 + Skw_denom_coef * w_tol_sqd ) )**1.5
 
     ! This is no longer need since clipping is already
     ! imposed on wp2 and wp3 elsewhere in the code

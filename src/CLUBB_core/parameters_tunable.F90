@@ -48,7 +48,7 @@ module parameters_tunable
     C6thl       = 4.000000,          & ! Low Skewness in C6thl Skewness Function.
     C6thlb      = 6.000000,          & ! High Skewness in C6thl Skewness Function.
     C6thlc      = 1.000000,          & ! Degree of Slope of C6thl Skewness Function.
-    C7          = 0.300000,          & ! Low Skewness in C7 Skewness Function.
+    C7          = 0.500000,          & ! Low Skewness in C7 Skewness Function.
     C7b         = 0.800000,          & ! High Skewness in C7 Skewness Function.
     C7c         = 0.500000,          & ! Degree of Slope of C7 Skewness Function.
     C8          = 3.000000,          & ! Coefficient #1 in C8 Skewness Equation.
