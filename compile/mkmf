@@ -40,7 +40,7 @@ sub ensureTrailingSlash {
    local $/ = '/'; chomp @_[0]; @_[0] .= '/';
 }
 
-my $version = '$Id: mkmf,v 14.0 2007/03/20 22:13:27 fms Exp $ ';
+my $version = '$Id$ ';
 
 # initialize variables: use getopts for these
 getopts( 'a:c:dfm:o:p:t:vx' ) || die "\aSyntax: $0 [-a abspath] [-c cppdefs] [-d] [-f] [-m makefile] [-o otherflags] ][-p program] [-t template] [-v] [-x] [targets]\n";
