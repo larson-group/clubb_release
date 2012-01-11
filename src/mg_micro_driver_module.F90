@@ -493,7 +493,8 @@ module mg_micro_driver_module
       rrainm_accr(1) = 0.0
       call stat_update_var( irrainm_accr, rrainm_accr, zt )
 
-      ! Compute accretion
+      ! Compute cloud water mixing ratio in cloud (based on a threshold in the
+      ! MG microphysics)
       rcm_in_cloud(2:nz) = real( flip( dble( qcic_flip(icol,1:nz-1) ), nz-1 ) )
       rcm_in_cloud(1) = 0.0
       call stat_update_var( ircm_in_cloud, rcm_in_cloud, zt )
