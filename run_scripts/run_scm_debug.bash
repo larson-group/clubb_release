@@ -19,6 +19,8 @@ restoreDir=`pwd`
 DEBUG=pgdbg
 #DEBUG="valgrind --leak-check=full --show-reachable=yes"
 
+FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
+
 # Change directories to the one the script is located in
 cd $scriptPath
 
@@ -61,7 +63,7 @@ if [ ! -e "$STATS_FILE" ]; then
 	exit 1
 fi
 
-cat $PARAMS_FILE $MODEL_FILE $STATS_FILE | sed 's/\!.*//' > 'clubb.in'
+cat $PARAMS_FILE $MODEL_FILE $STATS_FILE $FLAGS_FILE | sed 's/\!.*//' > 'clubb.in'
 
 #######################################################################
 # State which case is being run
