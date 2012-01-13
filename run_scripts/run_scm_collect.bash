@@ -41,7 +41,7 @@ fi
 
 
 cat $PARAMS_FILE > 'clubb.in'
-cat $FLAGS_FILE > 'clubb.in'
+cat $FLAGS_FILE >> 'clubb.in'
 #######################################################################
 # The following sed commands set l_stats to .false., debug_level to 0,
 # and dt = 1.0 sec for profiling purposes.
