@@ -7,8 +7,14 @@ module KK_upscaled_covariances
   private  ! Default scope
 
   public :: covar_x_KK_evap, &
+            covar_rt_KK_evap, &
+            covar_thl_KK_evap, &
             covar_x_KK_auto, &
-            covar_x_KK_accr
+            covar_rt_KK_auto, &
+            covar_thl_KK_auto, &
+            covar_x_KK_accr, &
+            covar_rt_KK_accr, &
+            covar_thl_KK_accr
 
   private :: quadrivar_NNLL_covar_eq, &
              trivar_NNL_covar_eq
@@ -79,8 +85,8 @@ module KK_upscaled_covariances
 
     ! Calculate the covariance of x and KK evaporation tendency.
     covar_x_KK_evap  &
-    = KK_evap_coef &
-      * ( mixt_frac &
+    = KK_evap_coef  &
+      * ( mixt_frac  &
           * quadrivar_NNLL_covar_eq( mu_x_1, mu_s_1, mu_rr_n, mu_Nr_n, &
                                      sigma_x_1, sigma_s_1, sigma_rr_n, &
                                      sigma_Nr_n, corr_xs_1, corr_xrr_1_n, &
@@ -102,6 +108,168 @@ module KK_upscaled_covariances
     return
 
   end function covar_x_KK_evap
+
+  !=============================================================================
+  function covar_rt_KK_evap
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
+      mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
+      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
+      mu_rr_n,       & ! Mean of ln rr (both components)                     [-]
+      mu_Nr_n,       & ! Mean of ln Nr (both components)                     [-]
+      sigma_t_1,     & ! Standard deviation of t (1st PDF component)         [-]
+      sigma_t_2,     & ! Standard deviation of t (2nd PDF component)         [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_rr_n,    & ! Standard deviation of ln rr (both components)       [-]
+      sigma_Nr_n,    & ! Standard deviation of ln Nr (both components)       [-]
+      corr_ts_1,     & ! Correlation between t and s (1st PDF component)     [-]
+      corr_ts_2,     & ! Correlation between t and s (2nd PDF component)     [-]
+      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF component) [-]
+      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF component) [-]
+      corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF component) [-]
+      corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF component) [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF component) [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF component) [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF component) [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF component) [-]
+      corr_rrNr_n,   & ! Correlation between ln rr & ln Nr (both components) [-]
+      KK_evap_tndcy, & ! KK evaporation tendency                     [(kg/kg)/s]
+      KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
+      t_tol,         & ! Tolerance value of t                                [-]
+      crt_1,         & ! Coefficient c_rt (1st PDF component)                [-]
+      crt_2,         & ! Coefficient c_rt (2nd PDF component)                [-]
+      mixt_frac        ! Mixture fraction                                    [-]
+
+    ! Return Variable
+    real :: &
+      covar_rt_KK_evap  ! Covariance between r_t and KK evaporation tendency [-]
+
+    ! Constant Parameters
+    real, parameter :: &
+      alpha_exp = 1.0,       & ! Exponent on s                               [-]
+      beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
+      gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
+
+
+    ! Calculate the covariance of r_t and KK evaporation tendency.
+    covar_rt_KK_evap  &
+    = KK_evap_coef  &
+      * ( mixt_frac * ( 1.0 / ( 2.0 * crt_1 ) )  &
+          * ( quadrivar_NNLL_covar_eq( mu_t_1, mu_s_1, mu_rr_n, mu_Nr_n, &
+                                       sigma_t_1, sigma_s_1, sigma_rr_n, &
+                                       sigma_Nr_n, corr_ts_1, corr_trr_1_n, &
+                                       corr_tNr_1_n, corr_srr_1_n, &
+                                       corr_sNr_1_n, corr_rrNr_n, mu_t_1, &
+                                       KK_evap_tndcy, KK_evap_coef, t_tol, &
+                                       alpha_exp, beta_exp, gamma_exp )  &
+            )  &
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt_2 ) )  &
+          * ( quadrivar_NNLL_covar_eq( mu_t_2, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                       sigma_t_2, sigma_s_2, sigma_rr_n, &
+                                       sigma_Nr_n, corr_ts_2, corr_trr_2_n, &
+                                       corr_tNr_2_n, corr_srr_2_n, &
+                                       corr_sNr_2_n, corr_rrNr_n, mu_t_2, &
+                                       KK_evap_tndcy, KK_evap_coef, t_tol, &
+                                       alpha_exp, beta_exp, gamma_exp )  &
+            )  &
+        )
+
+
+    return
+
+  end function covar_rt_KK_evap
+
+  !=============================================================================
+  function covar_thl_KK_evap
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    real, intent(in) :: &
+      mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
+      mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
+      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
+      mu_rr_n,       & ! Mean of ln rr (both components)                     [-]
+      mu_Nr_n,       & ! Mean of ln Nr (both components)                     [-]
+      sigma_t_1,     & ! Standard deviation of t (1st PDF component)         [-]
+      sigma_t_2,     & ! Standard deviation of t (2nd PDF component)         [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_rr_n,    & ! Standard deviation of ln rr (both components)       [-]
+      sigma_Nr_n,    & ! Standard deviation of ln Nr (both components)       [-]
+      corr_ts_1,     & ! Correlation between t and s (1st PDF component)     [-]
+      corr_ts_2,     & ! Correlation between t and s (2nd PDF component)     [-]
+      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF component) [-]
+      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF component) [-]
+      corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF component) [-]
+      corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF component) [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF component) [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF component) [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF component) [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF component) [-]
+      corr_rrNr_n,   & ! Correlation between ln rr & ln Nr (both components) [-]
+      KK_evap_tndcy, & ! KK evaporation tendency                     [(kg/kg)/s]
+      KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
+      t_tol,         & ! Tolerance value of t                                [-]
+      cthl_1,        & ! Coefficient c_thl (1st PDF component)               [-]
+      cthl_2,        & ! Coefficient c_thl (2nd PDF component)               [-]
+      mixt_frac        ! Mixture fraction                                    [-]
+
+    ! Return Variable
+    real :: &
+      covar_thl_KK_evap  ! Covariance between th_l and KK evap. tendency     [-]
+
+    ! Constant Parameters
+    real, parameter :: &
+      alpha_exp = 1.0,       & ! Exponent on s                               [-]
+      beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
+      gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
+
+
+    ! Calculate the covariance of th_l and KK evaporation tendency.
+    covar_thl_KK_evap  &
+    = KK_evap_coef  &
+      * ( mixt_frac * ( 1.0 / ( 2.0 * cthl_1 ) )  &
+          * ( quadrivar_NNLL_covar_eq( mu_t_1, mu_s_1, mu_rr_n, mu_Nr_n, &
+                                       sigma_t_1, sigma_s_1, sigma_rr_n, &
+                                       sigma_Nr_n, corr_ts_1, corr_trr_1_n, &
+                                       corr_tNr_1_n, corr_srr_1_n, &
+                                       corr_sNr_1_n, corr_rrNr_n, mu_t_1, &
+                                       KK_evap_tndcy, KK_evap_coef, t_tol, &
+                                       alpha_exp, beta_exp, gamma_exp )  &
+            )  &
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl_2 ) )  &
+          * ( quadrivar_NNLL_covar_eq( mu_t_2, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                       sigma_t_2, sigma_s_2, sigma_rr_n, &
+                                       sigma_Nr_n, corr_ts_2, corr_trr_2_n, &
+                                       corr_tNr_2_n, corr_srr_2_n, &
+                                       corr_sNr_2_n, corr_rrNr_n, mu_t_2, &
+                                       KK_evap_tndcy, KK_evap_coef, t_tol, &
+                                       alpha_exp, beta_exp, gamma_exp )  &
+            )  &
+        )
+
+
+    return
+
+  end function covar_thl_KK_evap
 
   !=============================================================================
   function covar_x_KK_auto( mu_x_1, mu_x_2, mu_s_1, mu_s_2, mu_Nc_n, &
@@ -178,6 +346,82 @@ module KK_upscaled_covariances
   end function covar_x_KK_auto
 
   !=============================================================================
+  function covar_rt_KK_auto
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+
+    ! Return Variable
+    real :: &
+      covar_rt_KK_auto  ! Covariance between r_t and KK autoconv. tendency   [-]
+
+    ! Constant Parameters
+    real, parameter :: &
+      alpha_exp = 2.47,  & ! Exponent on s                                   [-]
+      beta_exp  = -1.79    ! Exponent on r_r                                 [-]
+
+
+    ! Calculate the covariance of r_t and KK autoconversion tendency.
+    covar_rt_KK_auto  &
+    = KK_auto_coef  &
+      * ( mixt_frac * ( 1.0 / ( 2.0 * crt_1 ) )  &
+          * (
+            )  &
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt_2 ) )  &
+          * (
+            )  &
+        )
+
+
+    return
+
+  end function covar_rt_KK_auto
+
+  !=============================================================================
+  function covar_thl_KK_auto
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+
+    ! Return Variable
+    real :: &
+      covar_thl_KK_auto  ! Covariance between th_l and KK autoconv. tendency [-]
+
+    ! Constant Parameters
+    real, parameter :: &
+      alpha_exp = 2.47,  & ! Exponent on s                                   [-]
+      beta_exp  = -1.79    ! Exponent on r_r                                 [-]
+
+
+    ! Calculate the covariance of th_l and KK autoconversion tendency.
+    covar_thl_KK_auto  &
+    = KK_auto_coef  &
+      * ( mixt_frac * ( 1.0 / ( 2.0 * cthl_1 ) )  &
+          * (
+            )  &
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl_2 ) )  &
+          * (
+            )  &
+        )
+
+
+    return
+
+  end function covar_thl_KK_auto
+
+  !=============================================================================
   function covar_x_KK_accr( mu_x_1, mu_x_2, mu_s_1, mu_s_2, mu_rr_n, &
                             sigma_x_1, sigma_x_2, sigma_s_1, sigma_s_2, &
                             sigma_rr_n, corr_xs_1, corr_xs_2, &
@@ -250,6 +494,82 @@ module KK_upscaled_covariances
     return
 
   end function covar_x_KK_accr
+
+  !=============================================================================
+  function covar_rt_KK_accr
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+
+    ! Return Variable
+    real :: &
+      covar_rt_KK_accr  ! Covariance between r_t and KK accretion tendency   [-]
+
+    ! Constant Parameters
+    real, parameter :: &
+      alpha_exp = 1.15, & ! Exponent on s                                    [-]
+      beta_exp  = 1.15    ! Exponent on r_r                                  [-]
+
+
+    ! Calculate the covariance of r_t and KK accretion tendency.
+    covar_rt_KK_accr  &
+    = KK_accr_coef  &
+      * ( mixt_frac * ( 1.0 / ( 2.0 * crt_1 ) )  &
+          * (
+            )  &
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt_2 ) )  &
+          * (
+            )  &
+        )
+
+
+    return
+
+  end function covar_rt_KK_accr
+
+  !=============================================================================
+  function covar_thl_KK_accr
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+
+    ! Return Variable
+    real :: &
+      covar_thl_KK_accr  ! Covariance between th_l and KK accretion tendency [-]
+
+    ! Constant Parameters
+    real, parameter :: &
+      alpha_exp = 1.15, & ! Exponent on s                                    [-]
+      beta_exp  = 1.15    ! Exponent on r_r                                  [-]
+
+
+    ! Calculate the covariance of th_l and KK accretion tendency.
+    covar_thl_KK_accr  &
+    = KK_accr_coef  &
+      * ( mixt_frac * ( 1.0 / ( 2.0 * cthl_1 ) )  &
+          * (
+            )  &
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl_2 ) )  &
+          * (
+            )  &
+        )
+
+
+    return
+
+  end function covar_thl_KK_accr
 
   !=============================================================================
   function quadrivar_NNLL_covar_eq( mu_x_i, mu_s_i, mu_rr_n, mu_Nr_n, &
