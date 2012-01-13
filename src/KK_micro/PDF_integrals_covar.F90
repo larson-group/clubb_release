@@ -85,35 +85,29 @@ module PDF_integrals_covars
 
     quadrivar_NNLL_covar  &
     = 1.0 / sqrt( 2.0*pi_dp )  &
-      * ( ( - sigma_x2 )**alpha_exp  &
-          * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
-                 + 0.5 * ( 1.0 - rho_x2x3_n**2 )  &
-                       * sigma_x3_n**2 * beta_exp**2  &
-                 + 0.5 * ( 1.0 - rho_x2x4_n**2 )  &
-                       * sigma_x4_n**2 * gamma_exp**2  &
-                 + ( rho_x3x4_n - rho_x2x3_n * rho_x2x4_n )  &
-                       * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp  &
-               )  &
-          * exp( 0.25 * s_cc**2 - ( mu_x2 / sigma_x2 ) * s_cc  &
-                 + 0.5 * ( mu_x2**2 / sigma_x2**2 ) )  &
-          * ( - rho_x1x2 * sigma_x1 * gamma( alpha_exp + 2.0 )  &
-              * Dv_fnc( -(alpha_exp + 2.0), s_cc )  &
-            + ( mu_x1 - x1_mean  &
-                - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
-                + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
-                         * sigma_x1 * sigma_x3_n * beta_exp  &
-                + ( rho_x1x4_n - rho_x1x2 * rho_x2x4_n )  &
-                         * sigma_x1 * sigma_x4_n * gamma_exp )  &
-              * gamma( alpha_exp + 1.0 )  &
-              * Dv_fnc( -(alpha_exp + 1.0), s_cc )  &
-            )  &
-        - x2_alpha_x3_beta_x4_gamma_mean  &
-          * ( - rho_x1x2 * sigma_x1  &
-              * exp( -0.5 * ( mu_x2 / sigma_x2 )**2 )  &
-            + sqrt(pi_dp/2.0) * ( mu_x1 - x1_mean )  &
-              * erfc( mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
-            )  &
-        )
+      * ( - sigma_x2 )**alpha_exp  &
+      * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
+             + 0.5 * ( 1.0 - rho_x2x3_n**2 )  &
+                   * sigma_x3_n**2 * beta_exp**2  &
+             + 0.5 * ( 1.0 - rho_x2x4_n**2 )  &
+                   * sigma_x4_n**2 * gamma_exp**2  &
+             + ( rho_x3x4_n - rho_x2x3_n * rho_x2x4_n )  &
+                   * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp  &
+           )  &
+      * exp( 0.25 * s_cc**2 - ( mu_x2 / sigma_x2 ) * s_cc  &
+             + 0.5 * ( mu_x2**2 / sigma_x2**2 ) )  &
+      * ( - rho_x1x2 * sigma_x1 * gamma( alpha_exp + 2.0 )  &
+          * Dv_fnc( -(alpha_exp + 2.0), s_cc )  &
+        + ( mu_x1 - x1_mean  &
+            - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
+            + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
+                     * sigma_x1 * sigma_x3_n * beta_exp  &
+            + ( rho_x1x4_n - rho_x1x2 * rho_x2x4_n )  &
+                     * sigma_x1 * sigma_x4_n * gamma_exp )  &
+          * gamma( alpha_exp + 1.0 )  &
+          * Dv_fnc( -(alpha_exp + 1.0), s_cc )  &
+        )  &
+      - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
 
     return
 
@@ -183,22 +177,20 @@ module PDF_integrals_covars
 
     quadrivar_NNLL_covar_const_x1  &
     = ( 1.0 / sqrt( 2.0*pi_dp ) ) * ( mu_x1 - x1_mean )  &
-      * ( ( - sigma_x2 )**alpha_exp  &
-          * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
-                 + 0.5 * ( 1.0 - rho_x2x3_n**2 )  &
-                       * sigma_x3_n**2 * beta_exp**2  &
-                 + 0.5 * ( 1.0 - rho_x2x4_n**2 )  &
-                       * sigma_x4_n**2 * gamma_exp**2  &
-                 + ( rho_x3x4_n - rho_x2x3_n * rho_x2x4_n )  &
-                       * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp  &
-               )  &
-          * exp( 0.25 * s_cc**2 - ( mu_x2 / sigma_x2 ) * s_cc  &
-                 + 0.5 * ( mu_x2**2 / sigma_x2**2 ) )  &
-          * gamma( alpha_exp + 1.0 )  &
-          * Dv_fnc( -(alpha_exp + 1.0), s_cc )  &
-        - x2_alpha_x3_beta_x4_gamma_mean  &
-          * sqrt(pi_dp/2.0) * erfc( mu_x2 / ( sqrt(2.0) * sigma_x2 ) )  &
-        )
+      * ( - sigma_x2 )**alpha_exp  &
+      * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
+             + 0.5 * ( 1.0 - rho_x2x3_n**2 )  &
+                   * sigma_x3_n**2 * beta_exp**2  &
+             + 0.5 * ( 1.0 - rho_x2x4_n**2 )  &
+                   * sigma_x4_n**2 * gamma_exp**2  &
+             + ( rho_x3x4_n - rho_x2x3_n * rho_x2x4_n )  &
+                   * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp  &
+           )  &
+      * exp( 0.25 * s_cc**2 - ( mu_x2 / sigma_x2 ) * s_cc  &
+             + 0.5 * ( mu_x2**2 / sigma_x2**2 ) )  &
+      * gamma( alpha_exp + 1.0 )  &
+      * Dv_fnc( -(alpha_exp + 1.0), s_cc )  &
+      - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
 
     return
 
@@ -249,17 +241,26 @@ module PDF_integrals_covars
     real( kind = dp ) ::  &
       quadrivar_NNLL_covar_const_x2
 
-    quadrivar_NNLL_covar_const_x2  &
-    = mu_x2**alpha_exp  &
-      * ( mu_x1 - x1_mean  &
-          + rho_x1x3_n * sigma_x1 * sigma_x3_n * beta_exp  &
-          + rho_x1x4_n * sigma_x1 * sigma_x4_n * gamma_exp )  &
-      * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
-             + 0.5 * sigma_x3_n**2 * beta_exp**2  &
-             + 0.5 * sigma_x4_n**2 * gamma_exp**2  &
-             + rho_x3x4_n * sigma_x3_n * beta_exp  &
+    if ( mu_x2 <= 0.0 ) then
+
+       quadrivar_NNLL_covar_const_x2  &
+       = mu_x2**alpha_exp  &
+         * ( mu_x1 - x1_mean  &
+             + rho_x1x3_n * sigma_x1 * sigma_x3_n * beta_exp  &
+             + rho_x1x4_n * sigma_x1 * sigma_x4_n * gamma_exp )  &
+         * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
+                + 0.5 * sigma_x3_n**2 * beta_exp**2  &
+                + 0.5 * sigma_x4_n**2 * gamma_exp**2  &
+                + rho_x3x4_n * sigma_x3_n * beta_exp  &
                           * sigma_x4_n * gamma_exp )  &
-      - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
+         - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
+
+    else ! mu_x2 > 0
+
+       quadrivar_NNLL_covar_const_x2  &
+       = - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
+
+    endif
 
     return
 
@@ -306,15 +307,24 @@ module PDF_integrals_covars
     real( kind = dp ) ::  &
       quadrivar_NNLL_covar_const_x1_x2
 
-    quadrivar_NNLL_covar_const_x1_x2  &
-    = ( mu_x1 - x1_mean )  &
-      * ( mu_x2**alpha_exp  &
-          * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
-                 + 0.5 * sigma_x3_n**2 * beta_exp**2  &
-                 + 0.5 * sigma_x4_n**2 * gamma_exp**2  &
-                 + rho_x3x4_n * sigma_x3_n * beta_exp  &
-                              * sigma_x4_n * gamma_exp )  &
-        - x2_alpha_x3_beta_x4_gamma_mean )
+    if ( mu_x2 <= 0.0 ) then
+
+       quadrivar_NNLL_covar_const_x1_x2  &
+       = mu_x2**alpha_exp  &
+         * ( mu_x1 - x1_mean )  &
+         * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
+                + 0.5 * sigma_x3_n**2 * beta_exp**2  &
+                + 0.5 * sigma_x4_n**2 * gamma_exp**2  &
+                + rho_x3x4_n * sigma_x3_n * beta_exp  &
+                             * sigma_x4_n * gamma_exp )  &
+         - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
+
+    else ! mu_x2 > 0
+
+       quadrivar_NNLL_covar_const_x1_x2  &
+       = - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
+
+    endif
 
     return
 
@@ -501,13 +511,22 @@ module PDF_integrals_covars
     real( kind = dp ) ::  &
       trivar_NNL_covar_const_x2
 
-      trivar_NNL_covar_const_x2  &
-      = mu_x2**alpha_exp  &
-        * ( mu_x1 - x1_mean  &
-            + rho_x1x3_n * sigma_x1 * sigma_x3_n * beta_exp )  &
-        * exp( mu_x3_n * beta_exp  &
-                 + 0.5 * sigma_x3_n**2 * beta_exp**2 )  &
-        - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
+    if ( mu_x2 >= 0.0 ) then
+
+       trivar_NNL_covar_const_x2  &
+       = mu_x2**alpha_exp  &
+         * ( mu_x1 - x1_mean  &
+             + rho_x1x3_n * sigma_x1 * sigma_x3_n * beta_exp )  &
+         * exp( mu_x3_n * beta_exp  &
+                  + 0.5 * sigma_x3_n**2 * beta_exp**2 )  &
+         - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
+
+    else ! mu_x2 < 0
+
+       trivar_NNL_covar_const_x2  &
+       = - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
+
+    endif
   
     return
 
@@ -548,12 +567,21 @@ module PDF_integrals_covars
     real( kind = dp ) ::  &
       trivar_NNL_covar_const_x1_x2
 
-    trivar_NNL_covar_const_x1_x2  &
-    = ( mu_x1 - x1_mean )  &
-      * ( mu_x2**alpha_exp  &
-          * exp( mu_x3_n * beta_exp  &
-                 + 0.5 * sigma_x3_n**2 * beta_exp**2 )  &
-        - x2_alpha_x3_beta_mean )
+    if ( mu_x2 >= 0.0 ) then
+
+       trivar_NNL_covar_const_x1_x2  &
+       = mu_x2**alpha_exp  &
+         * ( mu_x1 - x1_mean )  &
+         * exp( mu_x3_n * beta_exp  &
+                + 0.5 * sigma_x3_n**2 * beta_exp**2 )  &
+         - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
+
+    else ! mu_x2 < 0
+
+       trivar_NNL_covar_const_x1_x2  &
+       = - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
+
+    endif
   
     return
 

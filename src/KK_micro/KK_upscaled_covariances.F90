@@ -262,10 +262,10 @@ module KK_upscaled_covariances
 
     ! Description:
     ! This function calculates the contribution by the ith PDF component to the
-    ! expression < y1'y2'_(i) >, where y1 = x1 ( = x, which is r_t, th_l, or w),
-    ! and where y2 = x2^alpha x3^beta x4^gamma ( = s^alpha r_r^beta N_r^gamma,
-    ! which also equals KK_evap_tndcy / KK_evap_coef).  The value of covariance
-    ! of x and KK evaporation tendency is:
+    ! expression < y1'y2'_(i) >, where y1 = x1 ( = x, which is w or t), and
+    ! where y2 = x2^alpha x3^beta x4^gamma ( = s^alpha r_r^beta N_r^gamma, which
+    ! also equals KK_evap_tndcy / KK_evap_coef).  The value of covariance of x
+    ! and KK evaporation tendency is:
     !
     ! < x'KK_evap' > = KK_evap_coef
     !                  * ( mixt_frac < y1'y2'_(1) >
@@ -358,27 +358,27 @@ module KK_upscaled_covariances
 
 
     ! Means for the ith PDF component. 
-    mu_x1   = dble( mu_x_i )  ! x is r_t, th_l, or w (ith component).
+    mu_x1   = dble( mu_x_i )  ! x is w or t (ith component).
     mu_x2   = dble( mu_s_i )
     mu_x3_n = dble( mu_rr_n ) ! The same for both PDF components.
     mu_x4_n = dble( mu_Nr_n ) ! The same for both PDF components.
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = dble( sigma_x_i )  ! x is r_t, th_l, or w (ith component).
+    sigma_x1   = dble( sigma_x_i )  ! x is w or t (ith component).
     sigma_x2   = dble( sigma_s_i )
     sigma_x3_n = dble( sigma_rr_n ) ! The same for both PDF components.
     sigma_x4_n = dble( sigma_Nr_n ) ! The same for both PDF components.
 
     ! Correlations for the ith PDF component.
-    rho_x1x2   = dble( corr_xs_i )    ! x is r_t, th_l, or w (ith component).
-    rho_x1x3_n = dble( corr_xrr_i_n ) ! x is r_t, th_l, or w (ith component).
-    rho_x1x4_n = dble( corr_xNr_i_n ) ! x is r_t, th_l, or w (ith component).
+    rho_x1x2   = dble( corr_xs_i )    ! x is w or t (ith component).
+    rho_x1x3_n = dble( corr_xrr_i_n ) ! x is w or t (ith component).
+    rho_x1x4_n = dble( corr_xNr_i_n ) ! x is w or t (ith component).
     rho_x2x3_n = dble( corr_srr_i_n )
     rho_x2x4_n = dble( corr_sNr_i_n )
     rho_x3x4_n = dble( corr_rrNr_n )  ! The same for both PDF components.
 
     ! Overall means.
-    x1_mean = dble( x_mean )  ! x is r_t, th_l, or w.
+    x1_mean = dble( x_mean )  ! x is w or t.
     x2_alpha_x3_beta_x4_gamma_mean = dble( mc_tndcy_mean / mc_coef )
 
     ! Exponents.
@@ -390,7 +390,7 @@ module KK_upscaled_covariances
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( x_tol )  ! x is r_t, th_l, or w.
+    x1_tol = dble( x_tol )  ! x is w or t.
     x2_tol = dble( s_mellor_tol )
 
     ! Determine the value of the parabolic cylinder function input value, s_cc.
@@ -425,26 +425,13 @@ module KK_upscaled_covariances
          ( sigma_x2 <= x2_tol .or. abs( s_cc ) > parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of both x (r_t, th_l, or w) and s is 0.
-
-       if ( mu_x2 <= 0.0 ) then
-
-          ! There is all clear air in the ith component ( s <= 0 everywhere ).
-          quadrivar_NNLL_covar_eq  &
-          = real( &
-            quadrivar_NNLL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                              sigma_x3_n, sigma_x4_n, &
-                                              rho_x3x4_n, x1_mean, &
-                                              x2_alpha_x3_beta_x4_gamma_mean, &
-                                              alpha_exp, beta_exp, gamma_exp ) )
-
-
-       else  ! mu_x2 > 0
-
-          ! There is all cloudy air in the ith component ( s > 0 everywhere ).
-          quadrivar_NNLL_covar_eq = 0.0
-
-
-       endif
+       quadrivar_NNLL_covar_eq  &
+       = real( &
+         quadrivar_NNLL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
+                                           sigma_x3_n, sigma_x4_n, &
+                                           rho_x3x4_n, x1_mean, &
+                                           x2_alpha_x3_beta_x4_gamma_mean, &
+                                           alpha_exp, beta_exp, gamma_exp ) )
 
 
     elseif ( sigma_x1 <= x1_tol ) then
@@ -463,27 +450,14 @@ module KK_upscaled_covariances
     elseif ( sigma_x2 <= x2_tol .or. abs( s_cc ) > parab_cyl_max_input ) then
 
        ! The ith PDF component variance of s is 0.
-
-       if ( mu_x2 <= 0.0 ) then
-
-          ! There is all clear air in the ith component ( s <= 0 everywhere ).
-          quadrivar_NNLL_covar_eq  &
-          = real( &
-            quadrivar_NNLL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                           sigma_x1, sigma_x3_n, sigma_x4_n, &
-                                           rho_x1x3_n, rho_x1x4_n, rho_x3x4_n, &
-                                           x1_mean, &
-                                           x2_alpha_x3_beta_x4_gamma_mean, &
-                                           alpha_exp, beta_exp, gamma_exp ) )
-
-
-       else  ! mu_x2 > 0
-
-          ! There is all cloudy air in the ith component ( s > 0 everywhere ).
-          quadrivar_NNLL_covar_eq = 0.0
-
-
-       endif
+       quadrivar_NNLL_covar_eq  &
+       = real( &
+         quadrivar_NNLL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
+                                        sigma_x1, sigma_x3_n, sigma_x4_n, &
+                                        rho_x1x3_n, rho_x1x4_n, rho_x3x4_n, &
+                                        x1_mean, &
+                                        x2_alpha_x3_beta_x4_gamma_mean, &
+                                        alpha_exp, beta_exp, gamma_exp ) )
 
 
     else  ! sigma_x1 > 0 and sigma_x2 > 0.
@@ -491,12 +465,13 @@ module KK_upscaled_covariances
        ! This is the complete value of the quadrivariate.
        ! All fields vary in the ith PDF component.
        quadrivar_NNLL_covar_eq  &
-       = real( quadrivar_NNLL_covar( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                     sigma_x1, sigma_x2, sigma_x3_n, sigma_x4_n, &
-                                     rho_x1x2, rho_x1x3_n, rho_x1x4_n, &
-                                     rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
-                                     x1_mean, x2_alpha_x3_beta_x4_gamma_mean, &
-                                     alpha_exp, beta_exp, gamma_exp ) )
+       = real( &
+         quadrivar_NNLL_covar( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
+                               sigma_x1, sigma_x2, sigma_x3_n, sigma_x4_n, &
+                               rho_x1x2, rho_x1x3_n, rho_x1x4_n, &
+                               rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
+                               x1_mean, x2_alpha_x3_beta_x4_gamma_mean, &
+                               alpha_exp, beta_exp, gamma_exp ) )
 
 
     endif
@@ -515,9 +490,9 @@ module KK_upscaled_covariances
 
     ! Description:
     ! This function calculates the contribution by the ith PDF component to the
-    ! expression < y1'y2'_(i) >, where y1 = x1 ( = x, which is r_t, th_l, or w),
-    ! and where y2 = x2^alpha x3^beta ( = s^alpha y^beta, where y is N_c or r_r
-    ! for autoconversion or accretion, respectively, and which also equals
+    ! expression < y1'y2'_(i) >, where y1 = x1 ( = x, which is w or t), and
+    ! where y2 = x2^alpha x3^beta ( = s^alpha y^beta, where y is N_c or r_r for
+    ! autoconversion or accretion, respectively, and which also equals
     ! KK_auto_tndcy / KK_auto_coef or KK_accr_tndcy / KK_accr_coef,
     ! respectively).  The value of covariance of x and the KK microphysics
     ! tendency is:
@@ -601,25 +576,25 @@ module KK_upscaled_covariances
 
 
     ! Means for the ith PDF component. 
-    mu_x1   = dble( mu_x_i ) ! x is r_t, th_l, or w (ith component).
+    mu_x1   = dble( mu_x_i ) ! x is w or t (ith component).
     mu_x2   = dble( mu_s_i )
     mu_x3_n = dble( mu_y_n ) ! y is N_c (autoconversion) or r_r (accretion).
                              ! The same for both PDF components.
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = dble( sigma_x_i ) ! x is r_t, th_l, or w (ith component).
+    sigma_x1   = dble( sigma_x_i ) ! x is w or t (ith component).
     sigma_x2   = dble( sigma_s_i )
     sigma_x3_n = dble( sigma_y_n ) ! y is N_c (auto.) or r_r (accr.).
                                    ! The same for both PDF components.
 
     ! Correlations for the ith PDF component.
-    rho_x1x2   = dble( corr_xs_i )    ! x is r_t, th_l, or w (ith component).
-    rho_x1x3_n = dble( corr_xy_i_n )  ! x is r_t, th_l, or w (ith component).
+    rho_x1x2   = dble( corr_xs_i )    ! x is w or t (ith component).
+    rho_x1x3_n = dble( corr_xy_i_n )  ! x is w or t (ith component).
                                       ! y is N_c (auto.) or r_r (accr.).
     rho_x2x3_n = dble( corr_sy_i_n )  ! y is N_c (auto.) or r_r (accr.).
 
     ! Overall means.
-    x1_mean = dble( x_mean )  ! x is r_t, th_l, or w.
+    x1_mean = dble( x_mean )  ! x is w or t.
     x2_alpha_x3_beta_mean = dble( mc_tndcy_mean / mc_coef )
 
     ! Exponents.
@@ -630,7 +605,7 @@ module KK_upscaled_covariances
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( x_tol )  ! x is r_t, th_l, or w.
+    x1_tol = dble( x_tol )  ! x is w or t.
     x2_tol = dble( s_mellor_tol )
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
@@ -663,24 +638,11 @@ module KK_upscaled_covariances
          ( sigma_x2 <= x2_tol .or. abs( s_c ) > parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of both x (r_t, th_l, or w) and s is 0.
-
-       if ( mu_x2 > 0.0 ) then
-
-          ! There is all cloudy air in the ith component ( s > 0 everywhere ).
-          trivar_NNL_covar_eq  &
-          = real( &
-            trivar_NNL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
-                                          x1_mean, x2_alpha_x3_beta_mean, &
-                                          alpha_exp, beta_exp ) )
-
-
-       else  ! mu_x2 <= 0
-
-          ! There is all clear air in the ith component ( s <= 0 everywhere ).
-          trivar_NNL_covar_eq = 0.0
-
-
-       endif
+       trivar_NNL_covar_eq  &
+       = real( &
+         trivar_NNL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
+                                       x1_mean, x2_alpha_x3_beta_mean, &
+                                       alpha_exp, beta_exp ) )
 
 
     elseif ( sigma_x1 <= x1_tol ) then
@@ -696,24 +658,11 @@ module KK_upscaled_covariances
     elseif ( sigma_x2 <= x2_tol .or. abs( s_c ) > parab_cyl_max_input ) then
 
        ! The ith PDF component variance of s is 0.
-
-       if ( mu_x2 > 0.0 ) then
-
-          ! There is all cloudy air in the ith component ( s > 0 everywhere ).
-          trivar_NNL_covar_eq  &
-          = real( trivar_NNL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, &
-                                             sigma_x1, sigma_x3_n, rho_x1x3_n, &
-                                             x1_mean, x2_alpha_x3_beta_mean, &
-                                             alpha_exp, beta_exp ) )
-
-
-       else  ! mu_x2 <= 0
-
-          ! There is all clear air in the ith component ( s <= 0 everywhere ).
-          trivar_NNL_covar_eq = 0.0
-
-
-       endif
+       trivar_NNL_covar_eq  &
+       = real( trivar_NNL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, &
+                                          sigma_x1, sigma_x3_n, rho_x1x3_n, &
+                                          x1_mean, x2_alpha_x3_beta_mean, &
+                                          alpha_exp, beta_exp ) )
 
 
     else  ! sigma_x1 > 0 and sigma_x2 > 0.
