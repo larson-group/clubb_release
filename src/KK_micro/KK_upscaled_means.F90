@@ -367,24 +367,10 @@ module KK_upscaled_means
     if ( sigma_x1 <= x1_tol .or. abs( s_cc ) > dble( parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of s is 0.
-
-       if ( mu_x1 <= 0.0_dp ) then
-
-          ! There is all clear air in the ith component ( s <= 0 everywhere ).
-          trivar_NLL_mean_eq  &
-          = real( &
-            trivar_NLL_mean_const_x1( mu_x1, mu_x2_n, mu_x3_n, &
-                                      sigma_x2_n, sigma_x3_n, rho_x2x3_n, &
-                                      alpha_exp, beta_exp, gamma_exp ) )
-
-
-       else  ! mu_x1 > 0
-
-          ! There is all cloudy air in the ith component ( s > 0 everywhere ).
-          trivar_NLL_mean_eq = 0.0
-
-
-       endif
+       trivar_NLL_mean_eq  &
+       = real( trivar_NLL_mean_const_x1( mu_x1, mu_x2_n, mu_x3_n, &
+                                         sigma_x2_n, sigma_x3_n, rho_x2x3_n, &
+                                         alpha_exp, beta_exp, gamma_exp ) )
 
 
     else  ! sigma_x1 > 0
@@ -524,22 +510,9 @@ module KK_upscaled_means
     if ( sigma_x1 <= x1_tol .or. abs( s_c ) > dble( parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of s is 0.
-
-       if ( mu_x1 > 0.0_dp ) then
-
-          ! There is all cloudy air in the ith component ( s > 0 everywhere ).
-          bivar_NL_mean_eq  &
-          = real( bivar_NL_mean_const_x1( mu_x1, mu_x2_n, sigma_x2_n, &
-                                          alpha_exp, beta_exp ) )
-
-
-       else  ! mu_x1 <= 0
-
-          ! There is all clear air in the ith component ( s <= 0 everywhere ).
-          bivar_NL_mean_eq = 0.0
-
-
-       endif
+       bivar_NL_mean_eq  &
+       = real( bivar_NL_mean_const_x1( mu_x1, mu_x2_n, sigma_x2_n, &
+                                       alpha_exp, beta_exp ) )
 
 
     else  ! sigma_x1 > 0

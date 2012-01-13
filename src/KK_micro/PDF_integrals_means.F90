@@ -117,12 +117,21 @@ module PDF_integrals_means
     real( kind = dp ) ::  &
       trivar_NLL_mean_const_x1
 
-    trivar_NLL_mean_const_x1  &
-    = mu_x1**alpha_exp  &
-      * exp( mu_x2_n * beta_exp + mu_x3_n * gamma_exp  &
-             + 0.5_dp * sigma_x2_n**2 * beta_exp**2  &
-             + 0.5_dp * sigma_x3_n**2 * gamma_exp**2  &
-             + rho_x2x3_n * sigma_x2_n * beta_exp * sigma_x3_n * gamma_exp )
+    if ( mu_x1 <= 0.0_dp ) then
+
+       trivar_NLL_mean_const_x1  &
+       = mu_x1**alpha_exp  &
+         * exp( mu_x2_n * beta_exp + mu_x3_n * gamma_exp  &
+                + 0.5_dp * sigma_x2_n**2 * beta_exp**2  &
+                + 0.5_dp * sigma_x3_n**2 * gamma_exp**2  &
+                + rho_x2x3_n * sigma_x2_n * beta_exp * sigma_x3_n * gamma_exp )
+
+    else ! mu_x1 > 0
+
+       trivar_NLL_mean_const_x1 = 0.0_dp
+
+    endif
+
 
     return
 
@@ -210,10 +219,19 @@ module PDF_integrals_means
     real( kind = dp ) :: &
       bivar_NL_mean_const_x1
 
-    bivar_NL_mean_const_x1  &
-    = mu_x1**alpha_exp  &
-      * exp( mu_x2_n * beta_exp  &
-             + 0.5_dp * sigma_x2_n**2 * beta_exp**2 )
+    if ( mu_x1 >= 0.0_dp ) then
+
+       bivar_NL_mean_const_x1  &
+       = mu_x1**alpha_exp  &
+         * exp( mu_x2_n * beta_exp  &
+                + 0.5_dp * sigma_x2_n**2 * beta_exp**2 )
+
+    else ! mu_x1 < 0
+
+       bivar_NL_mean_const_x1 = 0.0_dp
+
+    endif
+
 
     return
 
