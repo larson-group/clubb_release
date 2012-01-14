@@ -110,12 +110,22 @@ module KK_upscaled_covariances
   end function covar_x_KK_evap
 
   !=============================================================================
-  function covar_rt_KK_evap
+  function covar_rt_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                             mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
+                             sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                             corr_ts_1, corr_ts_2, corr_trr_1_n, &
+                             corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
+                             corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                             corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
+                             KK_evap_coef, t_tol, crt1, crt2, mixt_frac )
 
     ! Description:
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use KK_upscaled_means, only:  &
+        trivar_NLL_mean_eq  ! Procedure
 
     implicit none
 
@@ -147,8 +157,8 @@ module KK_upscaled_covariances
       KK_evap_tndcy, & ! KK evaporation tendency                     [(kg/kg)/s]
       KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
       t_tol,         & ! Tolerance value of t                                [-]
-      crt_1,         & ! Coefficient c_rt (1st PDF component)                [-]
-      crt_2,         & ! Coefficient c_rt (2nd PDF component)                [-]
+      crt1,          & ! Coefficient c_rt (1st PDF component)                [-]
+      crt2,          & ! Coefficient c_rt (2nd PDF component)                [-]
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
@@ -165,7 +175,7 @@ module KK_upscaled_covariances
     ! Calculate the covariance of r_t and KK evaporation tendency.
     covar_rt_KK_evap  &
     = KK_evap_coef  &
-      * ( mixt_frac * ( 1.0 / ( 2.0 * crt_1 ) )  &
+      * ( mixt_frac * ( 1.0 / ( 2.0 * crt1 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_1, mu_s_1, mu_rr_n, mu_Nr_n, &
                                        sigma_t_1, sigma_s_1, sigma_rr_n, &
                                        sigma_Nr_n, corr_ts_1, corr_trr_1_n, &
@@ -173,8 +183,17 @@ module KK_upscaled_covariances
                                        corr_sNr_1_n, corr_rrNr_n, mu_t_1, &
                                        KK_evap_tndcy, KK_evap_coef, t_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
+            + trivar_NLL_mean_eq( mu_s_1, mu_rr_n, mu_Nr_n, &
+                                  sigma_s_1, sigma_rr_n, sigma_Nr_n, &
+                                  corr_srr_1_n, corr_sNr_1_n, corr_rrNr_n, &
+                                  alpha_exp + 1.0, beta_exp, gamma_exp )  &
+            - mu_s_1  &
+              * trivar_NLL_mean_eq( mu_s_1, mu_rr_n, mu_Nr_n, &
+                                    sigma_s_1, sigma_rr_n, sigma_Nr_n, &
+                                    corr_srr_1_n, corr_sNr_1_n, corr_rrNr_n, &
+                                    alpha_exp, beta_exp, gamma_exp )  &
             )  &
-        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt_2 ) )  &
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt2 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_2, mu_s_2, mu_rr_n, mu_Nr_n, &
                                        sigma_t_2, sigma_s_2, sigma_rr_n, &
                                        sigma_Nr_n, corr_ts_2, corr_trr_2_n, &
@@ -182,6 +201,15 @@ module KK_upscaled_covariances
                                        corr_sNr_2_n, corr_rrNr_n, mu_t_2, &
                                        KK_evap_tndcy, KK_evap_coef, t_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
+            + trivar_NLL_mean_eq( mu_s_2, mu_rr_n, mu_Nr_n, &
+                                  sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                                  corr_srr_2_n, corr_sNr_2_n, corr_rrNr_n, &
+                                  alpha_exp + 1.0, beta_exp, gamma_exp )  &
+            - mu_s_2  &
+              * trivar_NLL_mean_eq( mu_s_2, mu_rr_n, mu_Nr_n, &
+                                    sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                                    corr_srr_2_n, corr_sNr_2_n, corr_rrNr_n, &
+                                    alpha_exp, beta_exp, gamma_exp )  &
             )  &
         )
 
@@ -191,7 +219,14 @@ module KK_upscaled_covariances
   end function covar_rt_KK_evap
 
   !=============================================================================
-  function covar_thl_KK_evap
+  function covar_thl_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                              mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
+                              sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                              corr_ts_1, corr_ts_2, corr_trr_1_n, &
+                              corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
+                              corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                              corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
+                              KK_evap_coef, t_tol, cthl1, cthl2, mixt_frac )
 
     ! Description:
 
@@ -228,8 +263,8 @@ module KK_upscaled_covariances
       KK_evap_tndcy, & ! KK evaporation tendency                     [(kg/kg)/s]
       KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
       t_tol,         & ! Tolerance value of t                                [-]
-      cthl_1,        & ! Coefficient c_thl (1st PDF component)               [-]
-      cthl_2,        & ! Coefficient c_thl (2nd PDF component)               [-]
+      cthl1,         & ! Coefficient c_thl (1st PDF component)               [-]
+      cthl2,         & ! Coefficient c_thl (2nd PDF component)               [-]
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
@@ -246,7 +281,7 @@ module KK_upscaled_covariances
     ! Calculate the covariance of th_l and KK evaporation tendency.
     covar_thl_KK_evap  &
     = KK_evap_coef  &
-      * ( mixt_frac * ( 1.0 / ( 2.0 * cthl_1 ) )  &
+      * ( mixt_frac * ( 1.0 / ( 2.0 * cthl1 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_1, mu_s_1, mu_rr_n, mu_Nr_n, &
                                        sigma_t_1, sigma_s_1, sigma_rr_n, &
                                        sigma_Nr_n, corr_ts_1, corr_trr_1_n, &
@@ -255,7 +290,7 @@ module KK_upscaled_covariances
                                        KK_evap_tndcy, KK_evap_coef, t_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
             )  &
-        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl_2 ) )  &
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl2 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_2, mu_s_2, mu_rr_n, mu_Nr_n, &
                                        sigma_t_2, sigma_s_2, sigma_rr_n, &
                                        sigma_Nr_n, corr_ts_2, corr_trr_2_n, &
@@ -346,7 +381,12 @@ module KK_upscaled_covariances
   end function covar_x_KK_auto
 
   !=============================================================================
-  function covar_rt_KK_auto
+  function covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
+                             sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                             sigma_Nc_n, corr_ts_1, corr_ts_2, &
+                             corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
+                             corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
+                             t_tol, crt1, crt2, mixt_frac )
 
     ! Description:
 
@@ -356,6 +396,29 @@ module KK_upscaled_covariances
     implicit none
 
     ! Input Variables
+    real, intent(in) :: &
+      mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
+      mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
+      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
+      mu_Nc_n,       & ! Mean of ln Nc (both components)                     [-]
+      sigma_t_1,     & ! Standard deviation of t (1st PDF component)         [-]
+      sigma_t_2,     & ! Standard deviation of t (2nd PDF component)         [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_Nc_n,    & ! Standard deviation of ln Nc (both components)       [-]
+      corr_ts_1,     & ! Correlation between t and s (1st PDF component)     [-]
+      corr_ts_2,     & ! Correlation between t and s (2nd PDF component)     [-]
+      corr_tNc_1_n,  & ! Correlation between t and ln Nc (1st PDF component) [-]
+      corr_tNc_2_n,  & ! Correlation between t and ln Nc (2nd PDF component) [-]
+      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF component) [-]
+      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF component) [-]
+      KK_auto_tndcy, & ! KK autoconversion tendency                  [(kg/kg)/s]
+      KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
+      t_tol,         & ! Tolerance value of t                       [units vary]
+      crt1,          & ! Coefficient c_rt (1st PDF component)                [-]
+      crt2,          & ! Coefficient c_rt (2nd PDF component)                [-]
+      mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
     real :: &
@@ -370,11 +433,19 @@ module KK_upscaled_covariances
     ! Calculate the covariance of r_t and KK autoconversion tendency.
     covar_rt_KK_auto  &
     = KK_auto_coef  &
-      * ( mixt_frac * ( 1.0 / ( 2.0 * crt_1 ) )  &
-          * (
+      * ( mixt_frac * ( 1.0 / ( 2.0 * crt1 ) )  &
+          * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_Nc_n, &
+                                   sigma_t_1, sigma_s_1, sigma_Nc_n, &
+                                   corr_ts_1, corr_tNc_1_n, corr_sNc_1_n, &
+                                   mu_t_1, KK_auto_tndcy, KK_auto_coef, &
+                                   t_tol, alpha_exp, beta_exp )  &
             )  &
-        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt_2 ) )  &
-          * (
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt2 ) )  &
+          * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Nc_n, &
+                                   sigma_t_2, sigma_s_2, sigma_Nc_n, &
+                                   corr_ts_2, corr_tNc_2_n, corr_sNc_2_n, &
+                                   mu_t_2, KK_auto_tndcy, KK_auto_coef, &
+                                   t_tol, alpha_exp, beta_exp )  &
             )  &
         )
 
@@ -384,7 +455,12 @@ module KK_upscaled_covariances
   end function covar_rt_KK_auto
 
   !=============================================================================
-  function covar_thl_KK_auto
+  function covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
+                              sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                              sigma_Nc_n, corr_ts_1, corr_ts_2, &
+                              corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
+                              corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
+                              t_tol, cthl1, cthl2, mixt_frac )
 
     ! Description:
 
@@ -394,6 +470,29 @@ module KK_upscaled_covariances
     implicit none
 
     ! Input Variables
+    real, intent(in) :: &
+      mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
+      mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
+      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
+      mu_Nc_n,       & ! Mean of ln Nc (both components)                     [-]
+      sigma_t_1,     & ! Standard deviation of t (1st PDF component)         [-]
+      sigma_t_2,     & ! Standard deviation of t (2nd PDF component)         [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_Nc_n,    & ! Standard deviation of ln Nc (both components)       [-]
+      corr_ts_1,     & ! Correlation between t and s (1st PDF component)     [-]
+      corr_ts_2,     & ! Correlation between t and s (2nd PDF component)     [-]
+      corr_tNc_1_n,  & ! Correlation between t and ln Nc (1st PDF component) [-]
+      corr_tNc_2_n,  & ! Correlation between t and ln Nc (2nd PDF component) [-]
+      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF component) [-]
+      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF component) [-]
+      KK_auto_tndcy, & ! KK autoconversion tendency                  [(kg/kg)/s]
+      KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
+      t_tol,         & ! Tolerance value of t                       [units vary]
+      cthl1,         & ! Coefficient c_thl (1st PDF component)               [-]
+      cthl2,         & ! Coefficient c_thl (2nd PDF component)               [-]
+      mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
     real :: &
@@ -408,11 +507,19 @@ module KK_upscaled_covariances
     ! Calculate the covariance of th_l and KK autoconversion tendency.
     covar_thl_KK_auto  &
     = KK_auto_coef  &
-      * ( mixt_frac * ( 1.0 / ( 2.0 * cthl_1 ) )  &
-          * (
+      * ( mixt_frac * ( 1.0 / ( 2.0 * cthl1 ) )  &
+          * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_Nc_n, &
+                                   sigma_t_1, sigma_s_1, sigma_Nc_n, &
+                                   corr_ts_1, corr_tNc_1_n, corr_sNc_1_n, &
+                                   mu_t_1, KK_auto_tndcy, KK_auto_coef, &
+                                   t_tol, alpha_exp, beta_exp )  &
             )  &
-        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl_2 ) )  &
-          * (
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl2 ) )  &
+          * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Nc_n, &
+                                   sigma_t_2, sigma_s_2, sigma_Nc_n, &
+                                   corr_ts_2, corr_tNc_2_n, corr_sNc_2_n, &
+                                   mu_t_2, KK_auto_tndcy, KK_auto_coef, &
+                                   t_tol, alpha_exp, beta_exp )  &
             )  &
         )
 
@@ -496,7 +603,12 @@ module KK_upscaled_covariances
   end function covar_x_KK_accr
 
   !=============================================================================
-  function covar_rt_KK_accr
+  function covar_rt_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                             sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                             sigma_rr_n, corr_ts_1, corr_ts_2, &
+                             corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
+                             corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
+                             t_tol, crt1, crt2, mixt_frac )
 
     ! Description:
 
@@ -506,6 +618,29 @@ module KK_upscaled_covariances
     implicit none
 
     ! Input Variables
+    real, intent(in) :: &
+      mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
+      mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
+      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
+      mu_rr_n,       & ! Mean of ln rr (both components)                     [-]
+      sigma_t_1,     & ! Standard deviation of t (1st PDF component)         [-]
+      sigma_t_2,     & ! Standard deviation of t (2nd PDF component)         [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_rr_n,    & ! Standard deviation of ln rr (both components)       [-]
+      corr_ts_1,     & ! Correlation between t and s (1st PDF component)     [-]
+      corr_ts_2,     & ! Correlation between t and s (2nd PDF component)     [-]
+      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF component) [-]
+      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF component) [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF component) [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF component) [-]
+      KK_accr_tndcy, & ! KK accretion tendency                       [(kg/kg)/s]
+      KK_accr_coef,  & ! KK accretion coefficient                    [(kg/kg)/s]
+      t_tol,         & ! Tolerance value of t                       [units vary]
+      crt1,          & ! Coefficient c_rt (1st PDF component)                [-]
+      crt2,          & ! Coefficient c_rt (2nd PDF component)                [-]
+      mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
     real :: &
@@ -520,11 +655,19 @@ module KK_upscaled_covariances
     ! Calculate the covariance of r_t and KK accretion tendency.
     covar_rt_KK_accr  &
     = KK_accr_coef  &
-      * ( mixt_frac * ( 1.0 / ( 2.0 * crt_1 ) )  &
-          * (
+      * ( mixt_frac * ( 1.0 / ( 2.0 * crt1 ) )  &
+          * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_rr_n, &
+                                   sigma_t_1, sigma_s_1, sigma_rr_n, &
+                                   corr_ts_1, corr_trr_1_n, corr_srr_1_n, &
+                                   mu_t_1, KK_accr_tndcy, KK_accr_coef, &
+                                   t_tol, alpha_exp, beta_exp )  &
             )  &
-        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt_2 ) )  &
-          * (
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt2 ) )  &
+          * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_rr_n, &
+                                   sigma_t_2, sigma_s_2, sigma_rr_n, &
+                                   corr_ts_2, corr_trr_2_n, corr_srr_2_n, &
+                                   mu_t_2, KK_accr_tndcy, KK_accr_coef, &
+                                   t_tol, alpha_exp, beta_exp )  &
             )  &
         )
 
@@ -534,7 +677,12 @@ module KK_upscaled_covariances
   end function covar_rt_KK_accr
 
   !=============================================================================
-  function covar_thl_KK_accr
+  function covar_thl_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                              sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                              sigma_rr_n, corr_ts_1, corr_ts_2, &
+                              corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
+                              corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
+                              t_tol, cthl1, cthl2, mixt_frac )
 
     ! Description:
 
@@ -544,6 +692,29 @@ module KK_upscaled_covariances
     implicit none
 
     ! Input Variables
+    real, intent(in) :: &
+      mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
+      mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
+      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
+      mu_rr_n,       & ! Mean of ln rr (both components)                     [-]
+      sigma_t_1,     & ! Standard deviation of t (1st PDF component)         [-]
+      sigma_t_2,     & ! Standard deviation of t (2nd PDF component)         [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_rr_n,    & ! Standard deviation of ln rr (both components)       [-]
+      corr_ts_1,     & ! Correlation between t and s (1st PDF component)     [-]
+      corr_ts_2,     & ! Correlation between t and s (2nd PDF component)     [-]
+      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF component) [-]
+      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF component) [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF component) [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF component) [-]
+      KK_accr_tndcy, & ! KK accretion tendency                       [(kg/kg)/s]
+      KK_accr_coef,  & ! KK accretion coefficient                    [(kg/kg)/s]
+      t_tol,         & ! Tolerance value of t                       [units vary]
+      cthl1,         & ! Coefficient c_thl (1st PDF component)               [-]
+      cthl2,         & ! Coefficient c_thl (2nd PDF component)               [-]
+      mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
     real :: &
@@ -558,11 +729,19 @@ module KK_upscaled_covariances
     ! Calculate the covariance of th_l and KK accretion tendency.
     covar_thl_KK_accr  &
     = KK_accr_coef  &
-      * ( mixt_frac * ( 1.0 / ( 2.0 * cthl_1 ) )  &
-          * (
+      * ( mixt_frac * ( 1.0 / ( 2.0 * cthl1 ) )  &
+          * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_rr_n, &
+                                   sigma_t_1, sigma_s_1, sigma_rr_n, &
+                                   corr_ts_1, corr_trr_1_n, corr_srr_1_n, &
+                                   mu_t_1, KK_accr_tndcy, KK_accr_coef, &
+                                   t_tol, alpha_exp, beta_exp )  &
             )  &
-        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl_2 ) )  &
-          * (
+        + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl2 ) )  &
+          * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_rr_n, &
+                                   sigma_t_2, sigma_s_2, sigma_rr_n, &
+                                   corr_ts_2, corr_trr_2_n, corr_srr_2_n, &
+                                   mu_t_2, KK_accr_tndcy, KK_accr_coef, &
+                                   t_tol, alpha_exp, beta_exp )  &
             )  &
         )
 
