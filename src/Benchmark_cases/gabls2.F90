@@ -36,7 +36,7 @@ module gabls2
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
@@ -48,16 +48,16 @@ module gabls2
       time_initial   ! Current length of timestep      [s]
 
     ! Output Variables
-    real, dimension(gr%nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
       wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
       wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
       thlm_forcing, & ! Large-scale thlm tendency               [K/s]
       rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
 
-    real, intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-    real, intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar forcing         [units vary/s]
 
     ! Local Variables, general
@@ -68,35 +68,35 @@ module gabls2
     if ( time > (time_initial + 93600._time_precision ) ) then 
       ! per GABLS2 specification
       do k=1,gr%nz
-        if ( gr%zt(k) <= 1000. ) then
-          wm_zt(k) = -0.005 * (gr%zt(k) / 1000. ) ! Known magic number
+        if ( gr%zt(k) <= 1000._core_rknd ) then
+          wm_zt(k) = -0.005_core_rknd * (gr%zt(k) / 1000._core_rknd ) ! Known magic number
         else
-          wm_zt(k) = -0.005
+          wm_zt(k) = -0.005_core_rknd
         end if
       end do
     else
       do k=1,gr%nz
-        wm_zt(k) = 0.
+        wm_zt(k) = 0._core_rknd
       end do
     end if
 
     wm_zm = zt2zm( wm_zt )
 
     ! Boundary conditions on vertical motion.
-    wm_zt(1) = 0.0        ! Below surface
-    wm_zm(1) = 0.0        ! At surface
-    wm_zm(gr%nz) = 0.0  ! Model top
+    wm_zt(1) = 0.0_core_rknd        ! Below surface
+    wm_zm(1) = 0.0_core_rknd        ! At surface
+    wm_zm(gr%nz) = 0.0_core_rknd  ! Model top
 
 
     ! Compute large-scale horizontal temperature advection
     do k=1,gr%nz
-      thlm_forcing(k) = 0.
+      thlm_forcing(k) = 0._core_rknd
     end do
 
 
     ! Compute large-scale horizontal moisture advection [g/kg/s]
     do k=1,gr%nz
-      rtm_forcing(k) = 0.
+      rtm_forcing(k) = 0._core_rknd
     end do
 
 
@@ -130,7 +130,7 @@ module gabls2
 
     use saturation, only: sat_mixrat_liq ! Procedure(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
@@ -138,17 +138,17 @@ module gabls2
     implicit none
 
     ! Local constants
-    real, parameter :: & 
-      standard_flux_alt = 10., & ! Default height at which the surface flux is computed [m]
-      C_10    = 0.0013,        & ! Drag coefficient, defined by ATEX specification
-      z0      = 0.03             ! Roughness length, defined by GABLS2 specification
+    real( kind = core_rknd ), parameter :: & 
+      standard_flux_alt = 10._core_rknd,& ! Default height at which the surface flux is computed [m]
+      C_10    = 0.0013_core_rknd,        & ! Drag coefficient, defined by ATEX specification
+      z0      = 0.03_core_rknd             ! Roughness length, defined by GABLS2 specification
 
     ! Input variables
     real(kind=time_precision), intent(in) :: & 
       time,                & ! Time elapsed since 0.0 s          [s]
       time_initial           ! Initial time of model integration [s]
 
-    real, intent(in) ::    & 
+    real( kind = core_rknd ), intent(in) ::    & 
       p_sfc,                & ! Surface pressure [Pa]
       lowest_level,        & ! Height of lowest above-ground gridpoint [m]
       ubar,                & ! Root (u^2 + v^2), per ATEX and RICO spec.
@@ -158,14 +158,14 @@ module gabls2
       exner_sfc
 
     ! Output variables
-    real, intent(out) :: & 
+    real( kind = core_rknd ), intent(out) :: & 
       wpthlp_sfc, & ! The turbulent upward flux of theta-l            [K m/s]
       wprtp_sfc,  & ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
       ustar,      & ! surface friction velocity                       [m/s]
       T_sfc          ! Sea surface temperature [K].
 
     ! Local variables
-    real :: & 
+    real( kind = core_rknd ) :: & 
       time_in_hours,       & ! time in hours from 00 local on first day of experiment 
                            ! (experiment starts at 14)
       Cz,                  & ! C_10 scaled to the height of the lowest 
@@ -183,35 +183,39 @@ module gabls2
     ! lowest model level isn't at 10 m,
     ! from ATEX specification (Stevens, et al. 2000, eq 3)
     time_in_hours_init = 14._time_precision
-    time_in_hours = real( (time - time_initial) / sec_per_hr + time_in_hours_init ) 
+    time_in_hours = real( (time - time_initial) / sec_per_hr + &
+      time_in_hours_init, kind = core_rknd ) 
     ! at initial time,
     ! time_in_hours = 14
     ! (14 local; 19 UTC)
 
     ! Compute sea surface temperature
-    if ( time_in_hours <= 17.4 ) then
+    if ( time_in_hours <= 17.4_core_rknd ) then
       ! SST in celsius per GABLS2 spec
-      T_sfc = -10. - (25.*cos(time_in_hours*0.22 + 0.2)) ! Known magic number
-    else if (time_in_hours <= 30.0) then
-      T_sfc = (-0.54 * time_in_hours) + 15.2 ! Known magic number
-    else if (time_in_hours <= 41.9) then
-      T_sfc = -7. - (25.*cos(time_in_hours*0.21 + 1.8)) ! Known magic number
-    else if (time_in_hours <= 53.3) then
-      T_sfc = (-0.37 * time_in_hours) + 18.0 ! Known magic number
-    else if (time_in_hours <= 65.6) then
-      T_sfc = -4. - (25.*cos(time_in_hours*0.22 + 2.5)) ! Known magic number
+      T_sfc = -10._core_rknd - (25._core_rknd* &
+        cos(time_in_hours*0.22_core_rknd + 0.2_core_rknd)) ! Known magic number
+    else if (time_in_hours <= 30.0_core_rknd) then
+      T_sfc = (-0.54_core_rknd * time_in_hours) + 15.2_core_rknd ! Known magic number
+    else if (time_in_hours <= 41.9_core_rknd) then
+      T_sfc = -7._core_rknd - (25._core_rknd* &
+        cos(time_in_hours*0.21_core_rknd + 1.8_core_rknd)) ! Known magic number
+    else if (time_in_hours <= 53.3_core_rknd) then
+      T_sfc = (-0.37_core_rknd * time_in_hours) + 18.0_core_rknd ! Known magic number
+    else if (time_in_hours <= 65.6_core_rknd) then
+      T_sfc = -4._core_rknd - (25._core_rknd* &
+        cos(time_in_hours*0.22_core_rknd + 2.5_core_rknd)) ! Known magic number
     else
-      T_sfc = 4.4
+      T_sfc = 4.4_core_rknd
     end if
 
-    T_sfc     = T_sfc + 273.15
+    T_sfc     = T_sfc + 273.15_core_rknd
     sstheta = T_sfc * ((p0 / p_sfc)**(Rd/Cp))
 
     ! Compute heat and moisture fluxes
     wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm, T_sfc, exner_sfc ) 
     wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
     ! The latent heat flux at the surface is 2.5% of its potential value
-    wprtp_sfc = wprtp_sfc * 0.025 ! Known magic number
+    wprtp_sfc = wprtp_sfc * 0.025_core_rknd ! Known magic number
 
     ! Compute momentum fluxes
     bflx  = wpthlp_sfc * grav / sstheta

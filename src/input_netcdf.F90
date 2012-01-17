@@ -43,7 +43,8 @@ module input_netcdf
     use stat_file_module, only: stat_file ! Type
 
     use clubb_precision, only: &
-      time_precision
+      time_precision, &
+      core_rknd
 
     implicit none
 
@@ -64,11 +65,11 @@ module input_netcdf
 
     integer :: xdim, ydim, ndims
     
-    real :: hours, minutes, seconds, multiplier
+    real( kind = core_rknd ) :: hours, minutes, seconds, multiplier
 
     integer :: length
     
-    real, dimension(2) :: write_times
+    real( kind = core_rknd ), dimension(2) :: write_times
 
     character(len=80) :: time
 
@@ -83,7 +84,7 @@ module input_netcdf
     ! Initialize l_error to false
     l_error = .false.
 
-    multiplier = 0.  ! Initialized to eliminate g95 compiler warning -meyern
+    multiplier = 0._core_rknd  ! Initialized to eliminate g95 compiler warning -meyern
 
     ierr = nf90_open( path=trim( path ), mode=NF90_NOWRITE, ncid=ncf%iounit )
 
@@ -199,19 +200,20 @@ module input_netcdf
       read(time( length-10:length-8 ), *) hours
       read(time( length-6:length-5 ), *) minutes
       read(time( length-3:length - 2 ), *) seconds
-      ncf%time = real( hours * real( sec_per_hr ) + minutes * real( sec_per_min ) + seconds, &
+      ncf%time = real( hours * real( sec_per_hr, kind = core_rknd ) + minutes *&
+                       real( sec_per_min, kind = core_rknd ) + seconds, &
                        kind=time_precision )
 
       ! Figure out what units Time is in so dtwrite can be set correctly
       select case ( time( 1:index ( time, ' ' ) ) )
       case ( "hours" )
-        multiplier = real( sec_per_hr )
+        multiplier = real( sec_per_hr, kind = core_rknd )
 
       case ( "minutes" )
-        multiplier = real( sec_per_min )
+        multiplier = real( sec_per_min, kind = core_rknd )
 
       case ( "seconds" )
-        multiplier = 1.
+        multiplier = 1._core_rknd
 
       case default
         l_error = .true.
@@ -259,6 +261,9 @@ module input_netcdf
       g_per_kg, &
       sec_per_day
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameter
@@ -276,7 +281,7 @@ module input_netcdf
       itime ! Obtain variable varname at time itime [m]
 
     ! Output
-    real, dimension(:), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(:), intent(out) ::  & 
       x ! Result variable
      
     logical, intent(out) :: l_error
@@ -339,7 +344,7 @@ module input_netcdf
       return
     end if
 
-    x = real( x4(1,1,:,1) )
+    x = real( x4(1,1,:,1), kind = core_rknd )
 
     if ( l_convert_to_MKS ) then
 
@@ -361,7 +366,7 @@ module input_netcdf
            return
 
         case ( "K/day" ) 
-          x = x / real( sec_per_day )
+          x = x / real(sec_per_day, kind = core_rknd)
 
         case default
           ! Do nothing

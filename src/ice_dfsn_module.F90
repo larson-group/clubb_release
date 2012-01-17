@@ -69,7 +69,8 @@ module ice_dfsn_module
         cm_per_m
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use saturation, only:  & 
         sat_mixrat_liq ! Procedure(s)
@@ -87,13 +88,13 @@ module ice_dfsn_module
     ! Constant Parameters
     ! Number of ice crystals per unit volume of air    [m^{-3}]
     ! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
-    real, parameter :: N_i = 2000.
+    real(kind = core_rknd), parameter :: N_i = 2000._core_rknd
 
     ! Input variables
     real(kind=time_precision), intent(in)::  & 
       dt      ! Model timestep                                     [s]
 
-    real, dimension(gr%nz), intent(in)::  & 
+    real(kind = core_rknd), dimension(gr%nz), intent(in)::  & 
       thlm,    & ! Liquid potential temperature         [K]
       rcm,     & ! Cloud water mixing ratio             [kg kg^{-1}]
       exner,   & ! Exner function                       [-]
@@ -101,12 +102,12 @@ module ice_dfsn_module
       rho        ! Air density on thermodynamic grid    [kg m^{-3}]
 
     ! Output variables
-    real, dimension(gr%nz), intent(out)::  & 
+    real(kind = core_rknd), dimension(gr%nz), intent(out)::  & 
       rcm_icedfsn, & ! Time tendency of rcm due to ice diffusional growth  [kg kg^{-1} s^{-1}]
       thlm_icedfsn   ! Time tendency of thlm due to ice diffusional growth [K/s]
 
     ! Local variables
-    real, dimension(gr%nz)::  & 
+    real(kind = core_rknd), dimension(gr%nz)::  & 
       T_in_K,           & ! Absolute temperature                        [K]
       mass_ice_cryst,   & ! Mass of a single ice crystal                [kg]
       r_s,              & ! Saturation mixing ratio over vapor          [kg kg^{-1}] 
@@ -118,7 +119,7 @@ module ice_dfsn_module
       diam,             & ! Diameter of ice crystal                     [m]
       u_T_cm              ! Fallspeed of ice crystal in cm/s            [cm s^{-1}]
 
-    real ::  & 
+    REAL(KIND=core_rknd)::  & 
       a_coef,     & ! Pre-factor for mass-diameter relationship, Mitchell (1996) [kg] 
       b_expn,     & ! Exponential for mass-diameter relationship, Mitchell (1996) []
       k_u_coef,   & ! Pre-factor for fallspeed-diameter formula                  [m s^{-1}]
@@ -139,8 +140,8 @@ module ice_dfsn_module
     !                                                                     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    a_coef = 2.05e-3
-    b_expn = 1.8
+    a_coef = 2.05e-3_core_rknd
+    b_expn = 1.8_core_rknd
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !                                                                     !
@@ -149,8 +150,8 @@ module ice_dfsn_module
     !                                                                     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!       a = 2.50e-4
-!       b = 1.4
+!       a = 2.50e-4_core_rknd
+!       b = 1.4_core_rknd
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !                                                                     !
@@ -160,9 +161,9 @@ module ice_dfsn_module
     !                                                                     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    k_u_coef = 55.
-    q_expn   = 0.17
-    n_expn   = 0.70
+    k_u_coef = 55._core_rknd
+    q_expn   = 0.17_core_rknd
+    n_expn   = 0.70_core_rknd
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !                                                                     !
@@ -172,9 +173,9 @@ module ice_dfsn_module
     !                                                                     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!       k_u = 0.438
-!       q = 0.0
-!       n = 0.0742
+!       k_u = 0.438_core_rknd
+!       q = 0.0_core_rknd
+!       n = 0.0742_core_rknd
 
 
 
@@ -185,7 +186,7 @@ module ice_dfsn_module
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do k = 1, gr%nz, 1
-      mass_ice_cryst(k) = 1.0e-11
+      mass_ice_cryst(k) = 1.0e-11_core_rknd
     end do
 
     do k = gr%nz, 2, -1
@@ -195,7 +196,7 @@ module ice_dfsn_module
       ! for rcm because the CLUBB model shows a small amount of liquid
       ! water all the way to the model top, which messes with the
       ! ice diffusion calculations.
-      if ( rcm(k) >= 1.0E-5 .and. T_in_K(k) < T_freeze_K ) then
+      IF ( rcm(k) >= 1.0E-5_core_rknd .AND. T_in_K(k) < T_freeze_K ) THEN
 
         ! Find saturation mixing ratio over vapor [kg kg^{-1}]
         r_s(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
@@ -205,7 +206,7 @@ module ice_dfsn_module
 
         ! Saturation vapor pressure over ice in Pa, Eq. 2.15 Rogers and Yau
         e_i(k) = e_s(k) / EXP( ( Lf/(Rv*T_freeze_K) ) & 
-                            * ( T_freeze_K/T_in_K(k) - 1.0 ) )
+                            * ( T_freeze_K/T_in_K(k) - 1.0_core_rknd ) )
 
         ! Saturation ratio in a liquid-saturated cloud, p. 158 Rogers and Yau
         !---------------Brian's comment--------------------------------------!
@@ -235,27 +236,27 @@ module ice_dfsn_module
         ! concentration yields the overall change in mixing ratio over time. !
         !--------------------------------------------------------------------!
         rcm_icedfsn(k) = - (N_i/rho(k)) & 
-           * ( 4. * (S_i(k) - 1.) / Denom(k) ) & 
-           * (mass_ice_cryst(k)/a_coef)**(1./b_expn)
+           * ( 4._core_rknd * (S_i(k) - 1._core_rknd) / Denom(k) ) & 
+           * (mass_ice_cryst(k)/a_coef)**(1._core_rknd/b_expn)
 
         ! Ensure that liquid is not over-depleted
-        if ( rcm(k) + rcm_icedfsn(k)*real( dt ) < 0.0 ) then
-          rcm_icedfsn(k) = -rcm(k)/real( dt )
+        IF ( rcm(k) + rcm_icedfsn(k)*real( dt, kind = core_rknd ) < 0.0_core_rknd ) THEN
+          rcm_icedfsn(k) = -rcm(k)/real( dt, kind = core_rknd )
         end if
 
         !---------------Brian's comment-----------------------------------!
         ! dm = (dm/dt)*(dt/dz)*dz                                         !
         ! dm = (dm/dt)*(1/u_T)*dz                                         !
         !-----------------------------------------------------------------!
-        dmass_ice_cryst(k) = ( 4. * (S_i(k) - 1.) / Denom(k) ) & 
-           * (1.0/k_u_coef) * ( rho(k)**q_expn ) & 
-           * ( (mass_ice_cryst(k)/a_coef)**((1.0-n_expn)/b_expn) ) & 
-           * (1.0/gr%invrs_dzm(k-1))
+        dmass_ice_cryst(k) = ( 4._core_rknd * (S_i(k) - 1._core_rknd) / Denom(k) ) & 
+           * (1.0_core_rknd/k_u_coef) * ( rho(k)**q_expn ) & 
+           * ( (mass_ice_cryst(k)/a_coef)**((1.0_core_rknd-n_expn)/b_expn) ) & 
+           * (1.0_core_rknd/gr%invrs_dzm(k-1))
         mass_ice_cryst(k-1) = mass_ice_cryst(k)  & 
                                      + dmass_ice_cryst(k)
 
         ! Diameter of ice crystal in meters.
-        diam(k) = (mass_ice_cryst(k)/a_coef)**(1./b_expn)
+        diam(k) = (mass_ice_cryst(k)/a_coef)**(1._core_rknd/b_expn)
 
         ! Fallspeed of ice crystal in cm/s.
         u_T_cm(k) = cm_per_m * k_u_coef * & 
@@ -265,9 +266,9 @@ module ice_dfsn_module
       else   ! There's no liquid and/or ice present; assume no ice growth
 
         mass_ice_cryst(k-1) = mass_ice_cryst(k)
-        rcm_icedfsn(k) = 0.0
-        diam(k)        = 0.0  ! Set zero to remind that we don't grow ice
-        u_T_cm(k)      = 0.0  ! Set zero to remind that we don't grow ice
+        rcm_icedfsn(k) = 0.0_core_rknd
+        diam(k)        = 0.0_core_rknd  ! Set zero to remind that we don't grow ice
+        u_T_cm(k)      = 0.0_core_rknd  ! Set zero to remind that we don't grow ice
 
       end if
 
@@ -313,6 +314,9 @@ module ice_dfsn_module
         Rv, &
         T_freeze_K
 
+    USE clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Description:
@@ -323,17 +327,16 @@ module ice_dfsn_module
     !
     !-----------------------------------------------------------------------------
 
+! Reference:  Eqn. 9.4 of Rogers and Yau (1989), "A Short Course on Cloud Physics"
     ! Constant Parameters
 !   real, parameter :: Ls = 2.834e6
 
-    ! Input Variables
-    real, intent(in) ::  & 
-      T_in_K,  & ! Temperature                               [K]
-      p_in_Pa, & ! Air pressure                              [Pa]
-      e_i        ! Vapor pressure over ice                   [Pa]
+    real(kind=core_rknd), intent(in) ::  & 
+     T_in_K,       & ! Temperature                               [K]
+     p_in_Pa,        & ! Air pressure                              [Pa]
+     e_i          ! Vapor pressure over ice                   [Pa]
 
-    ! Local Variables
-    real ::  & 
+    real(kind=core_rknd) ::  & 
       Diff_denom, & ! Denominator of diffusional growth equation  [m s kg^{-1}]
       Ka, Dv, &
       Fk, Fd, &
@@ -343,14 +346,15 @@ module ice_dfsn_module
 
     Celsius = T_in_K - T_freeze_K
 
-    Ka = (5.69 + 0.017*Celsius)*0.00001  ! Ka in cal./(cm.*sec.*C)
-    Ka = 4.1868*100.0*Ka  ! Ka in J./(m.*sec.*K)
+    Ka = (5.69_core_rknd + 0.017_core_rknd*Celsius)*0.00001_core_rknd  ! Ka in cal./(cm.*sec.*C)
+    Ka = 4.1868_core_rknd*100.0_core_rknd*Ka  ! Ka in J./(m.*sec.*K)
 
-    Dv = 0.221 * ( (T_in_K/T_freeze_K)**1.94 ) * (101325.0/p_in_Pa)
+    Dv = 0.221_core_rknd * ( (T_in_K/T_freeze_K)**1.94_core_rknd ) * &
+          (101325.0_core_rknd/p_in_Pa)
     ! Dv in (cm.^2)/sec.  ! .221 is correct.
-    Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
+    Dv = Dv/10000.0_core_rknd  ! Dv in (m.^2)/sec.
 
-    Fk = ( Ls/(Rv*T_in_K) - 1.0 ) * Ls / (Ka*T_in_K)
+    Fk = ( Ls/(Rv*T_in_K) - 1.0_core_rknd ) * Ls / (Ka*T_in_K)
     Fd = (Rv*T_in_K) / (Dv*e_i)
 
     Diff_denom = Fk + Fd

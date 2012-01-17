@@ -69,17 +69,21 @@ module morrison_micro_driver_module
       sec_per_day, &
       zero_threshold
 
+    use clubb_precision, only: &
+      core_rknd, & ! Variable(s)
+      time_precision
+
     implicit none
 
     ! External
     intrinsic :: max
 
     ! Constant parameters
-    real, parameter :: &
-      w_thresh = 0.1 ! Minimum value w for latin hypercube [m/s]
+    real( kind = core_rknd ), parameter :: &
+      w_thresh = 0.1_core_rknd ! Minimum value w for latin hypercube [m/s]
 
     ! Input Variables
-    real, intent(in) :: dt ! Model timestep        [s]
+    real( kind = time_precision ), intent(in) :: dt ! Model timestep        [s]
 
     integer, intent(in) :: nz ! Points in the Vertical        [-]
 
@@ -88,7 +92,7 @@ module morrison_micro_driver_module
       l_local_kk,       & ! Whether we're using the local formulas
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
@@ -97,26 +101,26 @@ module morrison_micro_driver_module
     type(pdf_parameter), target, dimension(nz), intent(in) :: &
       pdf_params ! PDF parameters
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       wm, &        ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in heights      [m]
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm,      & ! Liquid water mixing ratio        [kg/kg]
       s_mellor, & ! The variable 's' from Mellor     [kg/kg]
       rvm         ! Vapor water mixing ratio         [kg/kg]
 
-    real, dimension(nz,hydromet_dim), target, intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     ! Input/Output Variables
-    real, dimension(nz,hydromet_dim), target, intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(inout) :: &
       hydromet_mc,   & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel     ! Hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
-    real, dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
@@ -132,23 +136,31 @@ module morrison_micro_driver_module
       rvm_tmp,   & ! Temporary array for vapor water mixing ratio  [kg/kg]
       rcm_sten     ! Cloud dropet sedimentation tendency           [kg/kg/s]
 
-    real, dimension(nz) :: & 
+    real( kind = core_rknd ), dimension(nz) :: & 
       cloud_frac, &   ! Cloud fraction          [-]
-      rcm_in_cloud, & ! Liquid water in cloud   [kg/kg]
-      wm_tmp, &       ! Mean vertical velocity  [m/s]
-      w_std_dev_tmp   ! Standard deviation of w [m/s]
+      rcm_in_cloud    ! Liquid water in cloud   [kg/kg]
 
-    real, dimension(nz,hydromet_dim) :: & 
-      hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
-      hydromet_tmp     ! Temporary variable
-
-    real, pointer, dimension(:,:) :: &
+    real( kind = core_rknd ), pointer, dimension(:,:) :: &
       dummy
 
-    real, pointer, dimension(:) :: &
+    real( kind = core_rknd ), pointer, dimension(:) :: &
       dummy_1D
 
     real :: Morr_snow_rate, Morr_rain_rate
+
+    real, dimension(nz,hydromet_dim) :: &
+      hydromet_tmp, &   ! Temporary variable
+      hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
+      hydromet_mc_r4
+
+    real, dimension(nz) :: &
+      rcm_mc_r4, &
+      rvm_mc_r4, &
+      P_in_pa_r4, &
+      rho_r4, &
+      dzq_r4, &
+      wm_tmp, &     ! Mean vertical velocity   [m/s]
+      w_std_dev_tmp ! Standard deviation of w  [m/s]
 
     integer :: i
 
@@ -166,76 +178,91 @@ module morrison_micro_driver_module
     end if
 
     ! Determine temperature
-    T_in_K = thlm2T_in_K( thlm, exner, rcm )
+    T_in_K = real(thlm2T_in_K( thlm, exner, rcm ))
 
     if ( l_latin_hypercube ) then
       ! Don't use sgs cloud fraction to weight the tendencies
-      cloud_frac(1:nz) = 0.0
+      cloud_frac(1:nz) = 0.0_core_rknd
 
-      wm_tmp = max( wm, w_thresh ) ! Impose a minimum value on w
+      wm_tmp = real(max( wm, w_thresh )) ! Impose a minimum value on w
       w_std_dev_tmp = 0. ! Don't add in a standard deviation for aerosol activation
 
     else 
       ! Use sgs cloud fraction to weight tendencies
       cloud_frac(1:nz) = max( zero_threshold, &
                         pdf_params%mixt_frac * pdf_params%cloud_frac1 &
-                        + (1.-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
+                        + (1._core_rknd-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
 
-      wm_tmp = wm ! Use the mean value without a threshold
-      w_std_dev_tmp = w_std_dev ! Add in a standard deviation
+      wm_tmp = real(wm) ! Use the mean value without a threshold
+      w_std_dev_tmp = real(w_std_dev) ! Add in a standard deviation
     end if
 
-    rcm_tmp = rcm
-    rvm_tmp = rvm
+    rcm_tmp = real(rcm)
+    rvm_tmp = real(rvm)
 
     do i = 1, hydromet_dim, 1
-      hydromet_tmp(1:nz,i) = hydromet(1:nz,i)
+      hydromet_tmp(1:nz,i) = real(hydromet(1:nz,i))
     end do
     
     ! Initialize tendencies to zero
     T_in_K_mc(1:nz) = 0.0
-    rcm_mc(1:nz) = 0.0
-    rvm_mc(1:nz) = 0.0
-    hydromet_mc(1:nz,:) = 0.0
+    rcm_mc(1:nz) = 0.0_core_rknd
+    rvm_mc(1:nz) = 0.0_core_rknd
+    hydromet_mc(1:nz,:) = 0.0_core_rknd
     hydromet_sten(1:nz,:) = 0.0
 
     ! Initialize effective radius to zero
-    effc = 0.0 
-    effi = 0.0 
-    effg = 0.0 
-    effs = 0.0 
+    effc = 0.0
+    effi = 0.0
+    effg = 0.0
+    effs = 0.0
     effr = 0.0
+
+    hydromet_mc_r4 = real(hydromet_mc)
+    rcm_mc_r4 = real(rcm_mc)
+    rvm_mc_r4 = real(rvm_mc)
+    P_in_pa_r4 = real(P_in_pa)
+    rho_r4 = real(rho)
+    dzq_r4 = real(dzq)
 
     ! Call the Morrison microphysics
     call M2005MICRO_GRAUPEL &
-         ( rcm_mc, hydromet_mc(:,iiricem), hydromet_mc(:,iirsnowm), &
-           hydromet_mc(:,iirrainm), hydromet_mc(:,iiNcm), &
-           hydromet_mc(:,iiNim), hydromet_mc(:,iiNsnowm), &
-           hydromet_mc(:,iiNrm), rcm_tmp, hydromet_tmp(:,iiricem), &
+         ( rcm_mc_r4, hydromet_mc_r4(:,iiricem), hydromet_mc_r4(:,iirsnowm), &
+           hydromet_mc_r4(:,iirrainm), hydromet_mc_r4(:,iiNcm), &
+           hydromet_mc_r4(:,iiNim), hydromet_mc_r4(:,iiNsnowm), &
+           hydromet_mc_r4(:,iiNrm), rcm_tmp, hydromet_tmp(:,iiricem), &
            hydromet_tmp(:,iirsnowm), hydromet_tmp(:,iirrainm), hydromet_tmp(:,iiNcm), &
            hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
-           T_in_K_mc, rvm_mc, T_in_K, rvm_tmp, P_in_pa, rho, dzq, wm_tmp, w_std_dev_tmp, &
-           Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, dt, &
+           T_in_K_mc, rvm_mc_r4, T_in_K, rvm_tmp, P_in_pa_r4, rho_r4, dzq_r4, &
+           wm_tmp, w_std_dev_tmp, &
+           Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, real(dt), &
            1,1, 1,1, 1,nz, 1,1, 1,1, 2,nz, &
-           hydromet_mc(:,iirgraupelm), hydromet_mc(:,iiNgraupelm), &
+           hydromet_mc_r4(:,iirgraupelm), hydromet_mc_r4(:,iiNgraupelm), &
            hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
            hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
-           rcm_sten, cloud_frac )
+           rcm_sten, real(cloud_frac) )
+
+    hydromet_mc = real(hydromet_mc_r4, kind = core_rknd)
+    rcm_mc = real(rcm_mc_r4, kind = core_rknd)
+    rvm_mc = real(rvm_mc_r4, kind = core_rknd)
+
            
     ! Update hydrometeor tendencies
     ! This done because the hydromet_mc arrays that are produced by
     ! M2005MICRO_GRAUPEL don't include the clipping term.
     do i = 1, hydromet_dim, 1
-      hydromet_mc(2:,i) = ( hydromet_tmp(2:,i) - hydromet(2:,i)  ) / real( dt )
+      hydromet_mc(2:,i) = ( real(hydromet_tmp(2:,i), kind = core_rknd) - &
+                            hydromet(2:,i)  ) / real( dt, kind = core_rknd )
     end do
-    hydromet_mc(1,:) = 0.0 ! Boundary condition
+    hydromet_mc(1,:) = 0.0_core_rknd ! Boundary condition
 
     ! Update thetal based on absolute temperature
-    thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_tmp ) - thlm ) / real( dt )
+    thlm_mc = ( T_in_K2thlm( real(T_in_K, kind = core_rknd), exner, &
+                real(rcm_tmp, kind = core_rknd) ) - thlm ) / real( dt, kind = core_rknd )
 
     ! Sedimentation is handled within the Morrison microphysics
-    hydromet_vel(:,:) = 0.0
+    hydromet_vel(:,:) = 0.0_core_rknd
 
     if ( l_stats_samp ) then
 
@@ -243,15 +270,19 @@ module morrison_micro_driver_module
 
       ! --- Mixing ratios ---
 
-      call stat_update_var( irgraupelm_sd_morr, hydromet_sten(:,iirgraupelm), zt )
+      call stat_update_var( irgraupelm_sd_morr, &
+                 real(hydromet_sten(:,iirgraupelm), kind = core_rknd), zt )
 
-      call stat_update_var( irrainm_sd_morr, hydromet_sten(:,iirrainm), zt )
+      call stat_update_var( irrainm_sd_morr, &
+                 real(hydromet_sten(:,iirrainm), kind = core_rknd), zt )
 
-      call stat_update_var( irsnowm_sd_morr, hydromet_sten(:,iirsnowm), zt )
+      call stat_update_var( irsnowm_sd_morr, &
+                 real(hydromet_sten(:,iirsnowm), kind = core_rknd), zt )
 
-      call stat_update_var( iricem_sd_morr, hydromet_sten(:,iiricem), zt )
+      call stat_update_var( iricem_sd_morr, &
+                 real(hydromet_sten(:,iiricem), kind = core_rknd), zt )
 
-      where ( cloud_frac(:) > cloud_frac_thresh ) 
+      where ( cloud_frac(:) > real(cloud_frac_thresh, kind = core_rknd) ) 
         rcm_in_cloud(:) = rcm / cloud_frac
       else where
         rcm_in_cloud(:) = rcm
@@ -263,18 +294,20 @@ module morrison_micro_driver_module
       ! No budgets for sedimentation are output
 
       ! Effective radii of hydrometeor species
-      call stat_update_var( ieff_rad_cloud, effc(:), zt )
-      call stat_update_var( ieff_rad_ice, effi(:), zt )
-      call stat_update_var( ieff_rad_snow, effs(:), zt )
-      call stat_update_var( ieff_rad_rain, effr(:), zt )
-      call stat_update_var( ieff_rad_graupel, effg(:), zt )
+      call stat_update_var( ieff_rad_cloud, real(effc(:), kind = core_rknd), zt)
+      call stat_update_var( ieff_rad_ice, real(effi(:), kind = core_rknd), zt )
+      call stat_update_var( ieff_rad_snow, real(effs(:), kind = core_rknd), zt )
+      call stat_update_var( ieff_rad_rain, real(effr(:), kind = core_rknd), zt )
+      call stat_update_var( ieff_rad_graupel, real(effg(:), kind = core_rknd), zt )
 
       ! Snow and Rain rates at the bottom of the domain, in mm/day
       call stat_update_var_pt( imorr_rain_rate, 1, &
-        Morr_rain_rate * real( sec_per_day ) / dt, sfc )
+        real(Morr_rain_rate, kind = core_rknd) * &
+        real( sec_per_day, kind = core_rknd) / real(dt, kind = core_rknd), sfc )
 
       call stat_update_var_pt( imorr_snow_rate, 1, &
-        Morr_snow_rate * real(  sec_per_day ) / dt, sfc )
+        real(Morr_snow_rate, kind = core_rknd) * &
+        real( sec_per_day, kind = core_rknd) / real(dt, kind = core_rknd), sfc )
     end if ! l_stats_samp
 
     return

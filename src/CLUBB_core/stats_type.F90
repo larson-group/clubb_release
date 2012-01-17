@@ -13,7 +13,8 @@ module stats_type
 
   use clubb_precision, only: & 
       stat_rknd,  & ! Variable(s)
-      stat_nknd
+      stat_nknd,  &
+      core_rknd
 
   implicit none
 
@@ -40,7 +41,7 @@ module stats_type
     integer :: kk
 
     ! Vertical levels
-    real, pointer, dimension(:) :: z
+    real( kind = core_rknd ), pointer, dimension(:) :: z
 
     ! Array to store sampled fields
 
@@ -134,7 +135,7 @@ module stats_type
     ! Input Variable(s) NOTE: Due to the implicit none above, these must
     ! be declared below to allow the use of grid_kind
 
-    real, dimension(grid_kind%kk), intent(in) :: & 
+    real( kind = core_rknd ), dimension(grid_kind%kk), intent(in) :: & 
       value ! Value of field being added to the statistic    [Units Vary]
 
     integer :: k
@@ -172,7 +173,7 @@ module stats_type
       var_index,    & ! The index at which the variable is stored           []
       grid_level      ! The level at which the variable is to be modified   []
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       value ! Value of field being added to the statistic         [Units Vary]
 
     ! Input/Output Variable(s)
@@ -235,7 +236,7 @@ module stats_type
     integer, intent(in) ::  & 
       var_index      ! The index at which the variable is stored           []
 
-    real, dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       value          ! Value of field being added to the statistic         [Units Vary]
 
     ! Input/Output Variable(s)
@@ -284,7 +285,7 @@ module stats_type
       var_index,    & ! The index at which the variable is stored           []
       grid_level      ! The level at which the variable is to be modified   []
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       value ! Value of field being added to the statistic                [Units Vary]
 
     ! Input/Output Variable(s)
@@ -357,7 +358,7 @@ module stats_type
     integer, intent(in) ::  & 
       var_index ! The index at which the variable is stored           []
 
-    real, dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       value ! Value of field being added to the statistic             [Units Vary]
 
     ! Input/Output Variable(s)
@@ -400,7 +401,7 @@ module stats_type
       var_index,   & ! The index at which the variable is stored           []
       grid_level     ! The level at which the variable is to be modified   []
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       value       ! Value of field being added to the statistic         [Units Vary]
 
     ! Input/Output Variable(s)
@@ -453,7 +454,7 @@ module stats_type
     integer, intent(in) ::  & 
       var_index ! The index at which the variable is stored           []
 
-    real, dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
      value     ! Value of field being added to the statistic         [Units Vary]
 
     ! Input/Output Variable(s)
@@ -496,7 +497,7 @@ module stats_type
       var_index ! The index at which the variable is stored            []
 
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       value      ! Value of field being added to the statistic         [Units Vary]
 
     integer, intent(in) ::  & 

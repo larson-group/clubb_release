@@ -91,7 +91,8 @@ module gmres_wrap
     !   None
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
 
@@ -102,7 +103,7 @@ module gmres_wrap
       elements, &  ! Number of elements in the csr_a/csr_ja arrays
       numeqns      ! Number of equations in the matrix
 
-    real, dimension(elements), intent(in) :: &
+    real( kind = core_rknd ), dimension(elements), intent(in) :: &
       csr_a        ! A-array description of the matrix in CSR format. This
                    ! will be converted to double precision for the purposes
                    ! of running GMRES.
@@ -124,7 +125,7 @@ module gmres_wrap
                    ! calculations.
 
     ! Input/Output variables
-    real, dimension(numeqns), intent(inout) :: &
+    real( kind = core_rknd ), dimension(numeqns), intent(inout) :: &
       rhs          ! Right-hand-side vectors to solve the equation for.
 
     real( kind = dp ), dimension(numeqns), intent(inout) :: &
@@ -141,7 +142,7 @@ module gmres_wrap
                    ! solver iterates
 
     ! Output variables
-    real, dimension(numeqns), intent(out) :: &
+    real( kind = core_rknd ), dimension(numeqns), intent(out) :: &
       solution     ! Solution vector, output of solver routine
 
     integer, intent(out) :: &

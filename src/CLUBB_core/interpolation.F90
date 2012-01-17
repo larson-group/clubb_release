@@ -2,6 +2,9 @@
 !$Id$
 module interpolation
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   private ! Default Scope
@@ -49,11 +52,14 @@ module interpolation
 ! None
 !-------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       height_int,  & ! Height to be interpolated to     [m]
       height_high, & ! Height above the interpolation   [m]
       height_low,  & ! Height below the interpolation   [m]
@@ -61,7 +67,7 @@ module interpolation
       var_low        ! Variable below the interpolation [units vary]
 
     ! Output Variables
-    real :: lin_int
+    real( kind = core_rknd ) :: lin_int
 
     ! Compute linear interpolation
 
@@ -72,16 +78,20 @@ module interpolation
   end function lin_int
 
   !-------------------------------------------------------------------------------------------------
-  elemental real function linear_interp_factor( factor, var_high, var_low )
+  elemental real( kind = core_rknd ) function linear_interp_factor( factor, var_high, var_low )
   ! Description:
   !   Determines the coefficient for a linear interpolation
   ! 
   ! References:
   !   None
   !-------------------------------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       factor,   & ! Factor                           [units vary]  
       var_high, & ! Variable above the interpolation [units vary]
       var_low     ! Variable below the interpolation [units vary]
@@ -114,6 +124,9 @@ module interpolation
       three_halves, & ! Constant(s)
       eps
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+    
     use model_flags, only: &
       l_quintic_poly_interp ! Variable(s)
 
@@ -127,22 +140,22 @@ module interpolation
     intrinsic :: sign, abs, min
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       z_in ! The altitude to be interpolated to [m]
 
     ! k-levels;  their meaning depends on whether we're extrapolating or interpolating
     integer, intent(in) :: &
       km1, k00, kp1, kp2 
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       zm1, z00, zp1, zp2, & ! The altitudes for km1, k00, kp1, kp2      [m]
       fm1, f00, fp1, fp2    ! The field at km1, k00, kp1, and kp2       [units vary]
 
     ! Output Variables
-    real :: f_out ! The interpolated field
+    real( kind = core_rknd ) :: f_out ! The interpolated field
    
     ! Local Variables 
-    real :: &
+    real( kind = core_rknd ) :: &
       hm1, h00, hp1, &
       sm1, s00, sp1, &
       p00, pp1, &
@@ -158,11 +171,10 @@ module interpolation
       ! Use the formula from Steffen (1990), which should make the interpolation
       ! less restrictive
       coef1 = three_halves
-      coef2 = 1.0/three_halves
+      coef2 = 1.0_core_rknd/three_halves
     else
-      ! Standard formula
-      coef1 = 1.0
-      coef2 = 1.0
+      coef1 = 1.0_core_rknd
+      coef2 = 1.0_core_rknd
     end if
 
     if ( km1 <= k00 ) then
@@ -175,15 +187,15 @@ module interpolation
         sp1 = ( fp2 - fp1 ) / ( zp2 - zp1 )
         dfdx00 = s00
         pp1 = ( s00 * hp1 + sp1 * h00 ) / ( h00 + hp1 )
-        dfdxp1 = coef1*( sign( 1.0, s00 ) + sign( 1.0, sp1 ) ) &
-          * min( abs( s00 ), abs( sp1 ), coef2*0.5*abs( pp1 ) )
+        dfdxp1 = coef1*( sign( 1.0_core_rknd, s00 ) + sign( 1.0_core_rknd, sp1 ) ) &
+          * min( abs( s00 ), abs( sp1 ), coef2*0.5_core_rknd*abs( pp1 ) )
 
       else if ( kp1 == kp2 ) then
         sm1 = ( f00 - fm1 ) / ( z00 - zm1 )
         s00 = ( fp1 - f00 ) / ( zp1 - z00 )
         p00 = ( sm1 * h00 + s00 * hm1 ) / ( hm1 + h00 )
-        dfdx00 = coef1*( sign( 1.0, sm1 ) + sign( 1.0, s00 ) ) &
-          * min( abs( sm1 ), abs( s00 ), coef2*0.5*abs( p00 ) )
+        dfdx00 = coef1*( sign( 1.0_core_rknd, sm1 ) + sign( 1.0_core_rknd, s00 ) ) &
+          * min( abs( sm1 ), abs( s00 ), coef2*0.5_core_rknd*abs( p00 ) )
         dfdxp1 = s00
 
       else
@@ -192,15 +204,15 @@ module interpolation
         sp1 = ( fp2 - fp1 ) / ( zp2 - zp1 )
         p00 = ( sm1 * h00 + s00 * hm1 ) / ( hm1 + h00 )
         pp1 = ( s00 * hp1 + sp1 * h00 ) / ( h00 + hp1 )
-        dfdx00 = coef1*( sign( 1.0, sm1 ) + sign( 1.0, s00 ) ) &
-          * min( abs( sm1 ), abs( s00 ), coef2*0.5*abs( p00 ) )
-        dfdxp1 = coef1*( sign( 1.0, s00 ) + sign( 1.0, sp1 ) ) &
-          * min( abs( s00 ), abs( sp1 ), coef2*0.5*abs( pp1 ) )
+        dfdx00 = coef1*( sign( 1.0_core_rknd, sm1 ) + sign( 1.0_core_rknd, s00 ) ) &
+          * min( abs( sm1 ), abs( s00 ), coef2*0.5_core_rknd*abs( p00 ) )
+        dfdxp1 = coef1*( sign( 1.0_core_rknd, s00 ) + sign( 1.0_core_rknd, sp1 ) ) &
+          * min( abs( s00 ), abs( sp1 ), coef2*0.5_core_rknd*abs( pp1 ) )
 
       end if
 
-      c1 = ( dfdx00 + dfdxp1 - 2. * s00 ) / ( h00**2 )
-      c2 = ( 3. * s00 - 2. * dfdx00 - dfdxp1 ) / h00
+      c1 = ( dfdx00 + dfdxp1 - 2._core_rknd * s00 ) / ( h00 ** 2 )
+      c2 = ( 3._core_rknd * s00 - 2._core_rknd * dfdx00 - dfdxp1 ) / h00
       c3 = dfdx00
       c4 = f00
 
@@ -218,7 +230,7 @@ module interpolation
        ! Use a quintic polynomial interpolation instead instead of the Steffen formula.
        ! Unlike the formula above, this formula does not guarantee monotonicity.
 
-        beta = 120. * ( (fp1-f00) - 0.5 * h00 * (dfdx00 + dfdxp1) )
+        beta = 120._core_rknd * ( (fp1-f00) - 0.5_core_rknd * h00 * (dfdx00 + dfdxp1) )
 
         ! Prevent an underflow by using a linear interpolation
         if ( abs( beta ) < eps ) then 
@@ -226,12 +238,12 @@ module interpolation
                            fp1, fm1 )
 
         else
-          alpha = (6./beta) * h00 * (dfdxp1-dfdx00) + 0.5             
-
+          alpha = (6._core_rknd/beta) * h00 * (dfdxp1-dfdx00) + 0.5_core_rknd
           zn = (z_in-z00)/h00
 
           f_out = ( &
-                  (( (beta/20.)*zn - (beta*(1.+alpha)/12.)) * zn + (beta*alpha/6.)) &
+                  (( (beta/20._core_rknd)*zn - (beta*(1._core_rknd+alpha) &
+                    / 12._core_rknd)) * zn + (beta*alpha/6._core_rknd)) &
                     * zn**2 + dfdx00*h00 &
                   ) * zn + f00
         end if ! beta < eps
@@ -240,7 +252,7 @@ module interpolation
     else
       ! Linear extrapolation
       wp1 = ( z_in - z00 ) / ( zp1 - z00 )
-      w00 = 1. - wp1
+      w00 = 1._core_rknd - wp1
       f_out = wp1 * fp1 + w00 * f00
 
     end if
@@ -260,6 +272,9 @@ module interpolation
     !
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
@@ -269,10 +284,10 @@ module interpolation
 
     ! The array being searched (must be sorted from least value to greatest
     ! value).
-    real, dimension(n), intent(in) :: array
+    real( kind = core_rknd ), dimension(n), intent(in) :: array
 
     ! The value being searched for
-    real, intent(in) :: var
+    real( kind = core_rknd ), intent(in) :: var
 
     ! Local Variables
 
@@ -364,20 +379,23 @@ module interpolation
 !   function LIN_INT from WRF-HOC
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input variables
     integer, intent(in) :: dim_out, dim_src
 
-    real, dimension(dim_src), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(dim_src), intent(in) ::  & 
       grid_src,  & ! [m]
       var_src      ! [units vary]
 
-    real, dimension(dim_out), intent(in) :: &
+    real( kind = core_rknd ), dimension(dim_out), intent(in) :: &
       grid_out ! [m]
 
     ! Output variable
-    real, dimension(dim_out) :: &
+    real( kind = core_rknd ), dimension(dim_out) :: &
       var_out ! [units vary]
 
     ! ---- Begin Code ----
@@ -400,20 +418,23 @@ module interpolation
 !   function LIN_INT from WRF-HOC
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input variables
     integer, intent(in) :: dim_out, dim_src
 
-    real, dimension(dim_src), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(dim_src), intent(in) ::  & 
       grid_src,  & ! [m]
       var_src      ! [units vary]
 
-    real, dimension(dim_out), intent(in) :: &
+    real( kind = core_rknd ), dimension(dim_out), intent(in) :: &
       grid_out ! [m]
 
     ! Output variable
-    real, dimension(dim_out) :: &
+    real( kind = core_rknd ), dimension(dim_out) :: &
       var_out ! [units vary]
 
     ! Local variables
@@ -429,7 +450,7 @@ module interpolation
 
       ! Set to 0 if we're below the input data's lowest point
       if ( grid_out(kint) < grid_src(1) ) then
-        var_out(kint) = 0.0
+        var_out(kint) = 0.0_core_rknd
         cycle
       end if
 
@@ -453,7 +474,7 @@ module interpolation
       ! point and all those above it to zero
       !if( k > dim_src ) then
       if ( k == -1 ) then
-        var_out(kint:dim_out) = 0.0
+        var_out(kint:dim_out) = 0.0_core_rknd
         exit
       end if
 
@@ -498,20 +519,23 @@ module interpolation
 
     use constants_clubb, only: fstderr ! Constant
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
     integer, intent(in) :: nparam ! Number of parameters in xlist and tlist
 
     ! Input/Output Variables
-    real, intent(inout), dimension(nparam) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(nparam) ::  & 
       xlist,  & ! List of x-values (independent variable)
       tlist     ! List of t-values (dependent variable)
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       xvalue  ! x-value at which to interpolate
 
-    real, intent(inout) ::  & 
+    real( kind = core_rknd ), intent(inout) ::  & 
       tvalue  ! t-value solved by interpolation
 
     ! Local variables
@@ -525,7 +549,7 @@ module interpolation
       topbound,    & ! Index of the larger value in the linear interpolation
       smallest       ! Index of the present smallest value, for bubble sort
 
-    real :: temp ! A temporary variable used for the bubble sort swap
+    real( kind = core_rknd ) :: temp ! A temporary variable used for the bubble sort swap
 
 !-------------------------------------------------------------------------------
 !

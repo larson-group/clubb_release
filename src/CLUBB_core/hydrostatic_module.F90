@@ -92,17 +92,20 @@ module hydrostatic_module
         zm2zt,  & ! Procedure(s)
         zt2zm
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       p_sfc    ! Pressure at the surface                     [Pa]
 
-    real, intent(in), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       thvm    ! Virtual potential temperature               [K]
 
     ! Output Variables
-    real, intent(out), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       p_in_Pa,    & ! Pressure (thermodynamic levels)         [Pa]
       p_in_Pa_zm, & ! Pressure on momentum levels             [Pa]
       exner,      & ! Exner function (thermodynamic levels)   [-]
@@ -111,10 +114,10 @@ module hydrostatic_module
       rho_zm        ! Density on momentum levels              [kg/m^3]
 
     !  Local Variables
-    real, dimension(gr%nz) ::  &
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
       thvm_zm       ! Theta_v interpolated to momentum levels  [K]
 
-    real :: &
+    real( kind = core_rknd ) :: &
       dthvm_dz      ! Constant d(thvm)/dz between successive levels   [K/m]
 
     integer :: k
@@ -149,7 +152,7 @@ module hydrostatic_module
 
       dthvm_dz = gr%invrs_dzm(k-1) * ( thvm(k) - thvm(k-1) )
 
-      if ( dthvm_dz /= 0.0 ) then
+      if ( dthvm_dz /= 0.0_core_rknd ) then
 
         exner(k) &
         = calc_exner_linear_thvm( thvm(k-1), dthvm_dz, &
@@ -179,7 +182,7 @@ module hydrostatic_module
     dthvm_dz = ( thvm_zm(gr%nz) - thvm(gr%nz) ) &
                / ( gr%zm(gr%nz) - gr%zt(gr%nz) )
 
-    if ( dthvm_dz /= 0.0 ) then
+    if ( dthvm_dz /= 0.0_core_rknd ) then
 
       exner_zm(gr%nz) &
       = calc_exner_linear_thvm &
@@ -197,8 +200,8 @@ module hydrostatic_module
     ! Calculate pressure based on the values of exner.
 
     do k = 1, gr%nz
-      p_in_Pa(k) = p0 * exner(k)**( 1./kappa )
-      p_in_Pa_zm(k) = p0 * exner_zm(k)**( 1./kappa )
+      p_in_Pa(k) = p0 * exner(k)**( 1._core_rknd/kappa )
+      p_in_Pa_zm(k) = p0 * exner_zm(k)**( 1._core_rknd/kappa )
     enddo
 
     ! Calculate density based on pressure, exner, and thvm.
@@ -231,34 +234,37 @@ module hydrostatic_module
     use interpolation, only: &
         binary_search ! Procedure(s)
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       p_sfc,    & ! Pressure at the surface      [Pa]
       zm_init    ! Altitude at the surface      [m]
 
     integer, intent(in) ::  &
       nlevels  ! Number of levels in the sounding [-]
 
-    real, intent(in), dimension(nlevels) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(nlevels) ::  & 
       thvm,  & ! Virtual potential temperature   [K]
       exner    ! Exner function                  [-]
 
     ! Output Variables
-    real, intent(out), dimension(nlevels) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(nlevels) ::  & 
       z        ! Height                    [m]
 
     !  Local Variables
     integer :: k
 
-    real, dimension(nlevels) ::  &
+    real( kind = core_rknd ), dimension(nlevels) ::  &
       ref_z_snd  ! Altitude minus altitude of the lowest sounding level  [m]
 
-    real, dimension(nlevels) ::  &
+    real( kind = core_rknd ), dimension(nlevels) ::  &
       exner_reverse_array  ! Array of exner snd. values in reverse order [-]
 
-    real ::  &
+    real( kind = core_rknd ) ::  &
       exner_sfc,    & ! Value of exner at the surface                    [-]
       ref_z_sfc,    & ! Alt. diff between surface and lowest snd. level  [m]
       z_snd_bottom, & ! Altitude of the bottom of the input sounding     [m]
@@ -272,14 +278,14 @@ module hydrostatic_module
 
 
     ! Variable ref_z_sfc is initialized to 0.0 to avoid a compiler warning.
-    ref_z_sfc = 0.0
+    ref_z_sfc = 0.0_core_rknd
 
     ! The variable ref_z_snd is the altitude of each sounding level compared to
     ! the altitude of the lowest sounding level.  Thus, the value of ref_z_snd
     ! at sounding level 1 is 0.  The lowest sounding level may or may not be
     ! right at the surface, and therefore an adjustment may be required to find
     ! the actual altitude above ground.
-    ref_z_snd(1) = 0.0
+    ref_z_snd(1) = 0.0_core_rknd
 
     do k = 2, nlevels
 
@@ -439,17 +445,20 @@ module hydrostatic_module
         grav,  & ! Gravitational acceleration                  [m/s^2]
         Cp       ! Specific heat of dry air at const. pressure [J/(kg*K)]
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       thvm,    & ! Constant value of thvm over the layer    [K]
       z_2,     & ! Altitude at the top of the layer         [m]
       z_1,     & ! Altitude at the bottom of the layer      [m]
       exner_1    ! Exner at the bottom of the layer         [-]
 
     ! Return Variable
-    real :: exner_2  ! Exner at the top of the layer        [-]
+    real( kind = core_rknd ) :: exner_2  ! Exner at the top of the layer        [-]
 
     ! Calculate exner at top of the layer.
     exner_2 = exner_1 - ( grav / ( Cp * thvm ) ) * ( z_2 - z_1 )
@@ -557,6 +566,9 @@ module hydrostatic_module
     ! References:
     !-------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     use constants_clubb, only: &
         grav,  & ! Gravitational acceleration                   [m/s^2]
         Cp       ! Specific heat of dry air at const. pressure  [J/(kg*K)]
@@ -564,7 +576,7 @@ module hydrostatic_module
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       thvm_km1,  & ! Value of thvm at level k-1                     [K]
       dthvm_dz,  & ! Constant d(thvm)/dz between levels k-1 and k   [K/m]
       z_km1,     & ! Altitude at level k-1                          [m]
@@ -572,12 +584,12 @@ module hydrostatic_module
       exner_km1    ! Exner at level k-1                             [-]
 
     ! Return Variable
-    real :: exner_2 ! Exner at the top of the layer                 [-]
+    real( kind = core_rknd ) :: exner_2 ! Exner at the top of the layer                 [-]
 
     ! Calculate exner at the top of the layer.
     exner_2  &
     = exner_km1 &
-      - ( grav / Cp ) * ( 1.0 / dthvm_dz )  &
+      - ( grav / Cp ) * ( 1.0_core_rknd / dthvm_dz )  &
         * log(  ( thvm_km1 + dthvm_dz * ( z_2 - z_km1 ) )  /  thvm_km1  )
 
     return
@@ -697,6 +709,9 @@ module hydrostatic_module
     ! References:
     !-------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     use constants_clubb, only: &
         grav,  & ! Gravitational acceleration                   [m/s^2]
         Cp       ! Specific heat of dry air at const. pressure  [J/(kg*K)]
@@ -704,7 +719,7 @@ module hydrostatic_module
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       thvm_km1,     & ! Value of thvm at sounding level k-1                 [K]
       dthvm_dexner, & ! Constant d(thvm)/d(exner) between levels k-1 and k  [K]
       exner_km1,    & ! Value of exner at sounding level k-1                [-]
@@ -712,13 +727,13 @@ module hydrostatic_module
       z_km1           ! Altitude at sounding level k-1                      [m]
 
     ! Return Variable
-    real :: z_2       ! Altitude at the top of the layer                    [m]
+    real( kind = core_rknd ) :: z_2       ! Altitude at the top of the layer                    [m]
 
     ! Calculate z_2 at the top of the layer.
     z_2  &
     = z_km1  &
       - ( Cp / grav )  &
-        * (   0.5 * dthvm_dexner * ( exner_2**2 - exner_km1**2 )  &
+        * (   0.5_core_rknd * dthvm_dexner * ( exner_2**2 - exner_km1**2 )  &
             + ( thvm_km1 - dthvm_dexner * exner_km1 )  &
               * ( exner_2 - exner_km1 )  &
           )

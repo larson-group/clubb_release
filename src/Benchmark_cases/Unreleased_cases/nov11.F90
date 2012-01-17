@@ -47,7 +47,8 @@ module nov11
       gr       ! Variable(s)
 
     use clubb_precision, only: &
-      time_precision ! Variable(s)
+      time_precision, & ! Variable(s)
+      core_rknd
 
     implicit none
 
@@ -60,7 +61,7 @@ module nov11
       dt              ! Timestep              [s]
 
     ! Input/Output variables
-    real, intent(inout), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
       rtm     ! Total water mixing ratio      [kg/kg]
 
     ! Local variables
@@ -83,8 +84,8 @@ module nov11
          time <  time_initial + 3600.0_time_precision + dt ) then
 
       do k = 1, gr%nz, 1
-        if ( gr%zt(k) > ( 2900.0 + gr%zm(1) ) ) then
-          rtm(k) = 0.89 * rtm(k) ! Known magic number
+        if ( gr%zt(k) > ( 2900.0_core_rknd + gr%zm(1) ) ) then
+          rtm(k) = 0.89_core_rknd * rtm(k) ! Known magic number
         end if
       end do
 
@@ -124,7 +125,7 @@ module nov11
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use interpolation, only: linear_interpolation ! Procedure(s)
 
@@ -149,32 +150,32 @@ module nov11
       dt              ! Timestep              [s]
 
     ! Input/Output variables
-    real, intent(inout), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
       rtm     ! Total water mixing ratio      [kg/kg]
 
     ! Output variables
-    real, intent(out), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
       wm_zt,           & ! Mean vertical wind on the thermo. grid  [m/s]
       wm_zm,           & ! Mean vertical wind on the moment. grid  [m/s]
       thlm_forcing,    & ! Theta_l forcing                         [K/s]
       rtm_forcing        ! Total water forcing                     [kg/kg/s]
 
-    real, intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing   ! Passive scalar forcing                  [units/s]
 
-    real, intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing   ! Passive scalar forcing                  [units/s]
 
 
     ! Local variables
 
     ! Working arrays for subsidence interpolation
-    real, dimension(7) ::  & 
+    real( kind = core_rknd ), dimension(7) ::  & 
     zsubs, & ! Heights at which wm_zt data is supplied (used for subsidence interpolation) [m]
     wt1      ! ONLY wt1 IS NEEDED FOR NOV.11 CASE
 
     ! Subsidence constant and variables (for Nov.11 case only)
-    real :: & 
+    real( kind = core_rknd ) :: & 
     wmax,  & ! Defines value of maximum subsidence in profile  [cm/s]
     z_inversion,    & ! Defines approx. height of inversion within cloud 
            ! (subsidence is equal to wmax at this height) [m]
@@ -223,28 +224,28 @@ module nov11
     !----------------------
     ! Subsidence Parameters
     !----------------------
-    wmax =  -0.03
-    z_inversion = 2500.0 + gr%zm(1)
-    daz_inversion = 1500.0
-    dbz_inversion = 2000.0
-    dbc =  300.0
-    dac =  200.0
+    wmax =  -0.03_core_rknd
+    z_inversion = 2500.00_core_rknd + gr%zm(1)
+    daz_inversion = 1500.0_core_rknd
+    dbz_inversion = 2000.0_core_rknd
+    dbc =  300.0_core_rknd
+    dac =  200.0_core_rknd
 
-    zsubs(1) = 0. + gr%zm(1)
+    zsubs(1) = 0._core_rknd + gr%zm(1)
     zsubs(2) = z_inversion-dbz_inversion-dbc
     zsubs(3) = z_inversion-dbz_inversion
     zsubs(4) = z_inversion
     zsubs(5) = z_inversion+daz_inversion
     zsubs(6) = z_inversion+daz_inversion+dac
-    zsubs(7) = 4500. + gr%zm(1)
+    zsubs(7) = 4500._core_rknd + gr%zm(1)
 
-    wt1(1) = 0.
-    wt1(2) = 0.
+    wt1(1) = 0._core_rknd
+    wt1(2) = 0._core_rknd
     wt1(3) = wmax
     wt1(4) = wmax
     wt1(5) = wmax
-    wt1(6) = 0.
-    wt1(7) = 0.
+    wt1(6) = 0._core_rknd
+    wt1(7) = 0._core_rknd
 
 !-----------------------------------------------------------------------
 ! SPECIAL NOV.11 CONDITION FOR TOTAL WATER ABOVE CLOUD
@@ -260,8 +261,8 @@ module nov11
          time <  time_initial + 3600.0_time_precision + dt ) then
 
       do k = 1, gr%nz, 1
-        if ( gr%zt(k) > ( 2900.0 + gr%zm(1) ) ) then
-          rtm(k) = 0.89 * rtm(k) ! Known magic number
+        if ( gr%zt(k) > ( 2900.0_core_rknd + gr%zm(1) ) ) then
+          rtm(k) = 0.89_core_rknd * rtm(k) ! Known magic number
         end if
       end do
 
@@ -270,7 +271,7 @@ module nov11
 
     ! Impose no large-scale tendency on thetal.
     ! Radiation may be computing interactively or analytically elsewhere.
-    thlm_forcing = 0.
+    thlm_forcing = 0._core_rknd
 
 !---------------------------------------------------------------------
 !
@@ -319,7 +320,7 @@ module nov11
           nparam = 7
           call linear_interpolation( nparam, zsubs, wt1, gr%zt(k), wm_zt(k) )
         else
-          wm_zt(k) = 0.0
+          wm_zt(k) = 0.0_core_rknd
           if ( clubb_at_least_debug_level( 1 ) ) then
             write(fstderr,*) "Thermodynamic grid level", k, "at height",  &
                              gr%zt(k), "m. is above the highest level ",  &
@@ -331,7 +332,7 @@ module nov11
         endif
       else
         ! If time is not yet one hour, we have no subsidence
-        wm_zt(k) = 0.0
+        wm_zt(k) = 0.0_core_rknd
       end if
 
       wm_zt(1) = wm_zt(2)
@@ -342,7 +343,7 @@ module nov11
     ! Enter the final rtm tendency
     do k = 1, gr%nz, 1
 
-      rtm_forcing(k) = 0.
+      rtm_forcing(k) = 0._core_rknd
 
     end do
 
@@ -369,7 +370,7 @@ module nov11
 !--------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      time_precision ! Variable(s)
+      time_precision, core_rknd ! Variable(s)
 
     use time_dependent_input, only: time_sfc_given, &             ! Variable(s)
                                     sens_ht_given, latent_ht_given, &
@@ -384,12 +385,12 @@ module nov11
       time             ! Current time          [s]
 
     ! Output variables
-    real, intent(out) :: & 
+    real( kind = core_rknd ), intent(out) :: & 
       sens_ht,    &   ! sensible heat flux [W/m^2]
       latent_ht         ! latent heat flux [W/m^2]
 
     ! Local variables
-    real :: &
+    real( kind = core_rknd ) :: &
       time_frac ! time fraction used for interpolation
 
     integer :: &

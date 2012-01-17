@@ -46,7 +46,8 @@ module output_netcdf
       stat_file ! Type
 
     use clubb_precision, only:  & 
-      time_precision ! Variable(s)
+      time_precision, & ! Variable(s)
+      core_rknd
 
     use constants_clubb, only:  & 
       fstderr ! Variable(s)
@@ -64,10 +65,10 @@ module output_netcdf
       ia, iz,           & ! First and last grid point
       nvar                ! Number of variables
 
-    real, dimension(nlat), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(nlat), intent(in) ::  & 
       rlat ! Latitudes   [degrees_E]
 
-    real, dimension(nlon), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(nlon), intent(in) ::  & 
       rlon ! Longitudes  [degrees_N]
 
     real(kind=time_precision), intent(in) :: & 
@@ -76,7 +77,7 @@ module output_netcdf
     real(kind=time_precision), intent(in) ::  & 
      time   ! Current time                    [s]
 
-    real, dimension(:), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(:), intent(in) ::  & 
       zgrid  ! The model grid                  [m]
 
     ! Input/output Variables
@@ -505,6 +506,9 @@ module output_netcdf
     use parameters_radiation, only: &
       rad_scheme
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input/Output Variables
@@ -513,7 +517,7 @@ module output_netcdf
     ! Local Variables
     integer, dimension(:), allocatable :: stat
 
-    real, dimension(nparams) :: params ! Tunable parameters
+    real( kind = core_rknd ), dimension(nparams) :: params ! Tunable parameters
 
     integer :: i     ! Array index
     logical :: l_error ! Error stat

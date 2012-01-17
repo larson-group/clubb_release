@@ -498,6 +498,9 @@ module hyper_diffusion_4th_ord
     ! None
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use grid_class, only:  &
         gr  ! Variable(s)   gr%nz
 
@@ -516,7 +519,7 @@ module hyper_diffusion_4th_ord
       boundary_cond   ! Type of boundary conditions being used
     !                   ('zero-flux' or 'fixed-point').
 
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       nu,          & ! Constant coef. of 4th-order numerical diffusion   [m^4/s]
       invrs_dzt,   & ! Inverse of grid spacing over thermo. level (k)    [1/m]
       invrs_dzm,   & ! Inverse of grid spacing over momentum level (k)   [1/m]
@@ -530,7 +533,7 @@ module hyper_diffusion_4th_ord
       level     ! Thermodynamic level where calculation occurs.          [-]
 
     ! Return Variable
-    real, dimension(5) :: lhs
+    real( kind = core_rknd ), dimension(5) :: lhs
 
 
     if ( level == 1 ) then
@@ -545,11 +548,11 @@ module hyper_diffusion_4th_ord
 
         ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
         lhs(km2_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
         lhs(km1_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
         lhs(k_tdiag)   &
@@ -575,23 +578,23 @@ module hyper_diffusion_4th_ord
 
         ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
         lhs(km2_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
         lhs(km1_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
         lhs(k_tdiag)   &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
         lhs(kp2_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
       endif
 
@@ -606,7 +609,7 @@ module hyper_diffusion_4th_ord
 
         ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
         lhs(km2_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
         lhs(km1_tdiag) &
@@ -641,7 +644,7 @@ module hyper_diffusion_4th_ord
 
         ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
         lhs(km2_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
         lhs(km1_tdiag) &
@@ -746,7 +749,7 @@ module hyper_diffusion_4th_ord
 
         ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
         lhs(kp2_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
@@ -779,7 +782,7 @@ module hyper_diffusion_4th_ord
 
         ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
         lhs(kp2_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
       endif
 
@@ -812,11 +815,11 @@ module hyper_diffusion_4th_ord
 
         ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
         lhs(kp2_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
@@ -826,23 +829,23 @@ module hyper_diffusion_4th_ord
 
         ! Thermodynamic sub-sub diagonal: [ x var_zt(k-2,<t+1>) ]
         lhs(km2_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic sub diagonal: [ x var_zt(k-1,<t+1>) ]
         lhs(km1_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
         lhs(k_tdiag)   &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic super diagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic super-super diagonal: [ x var_zt(k+2,<t+1>) ]
         lhs(kp2_tdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
       endif
 
@@ -1318,6 +1321,9 @@ module hyper_diffusion_4th_ord
     ! None
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     use grid_class, only:  &
         gr  ! Variable(s)   gr%nz
 
@@ -1336,7 +1342,7 @@ module hyper_diffusion_4th_ord
       boundary_cond   ! Type of boundary conditions being used
     ! ('zero-flux' or 'fixed-point').
 
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       nu,          & ! Constant coef. of 4th-order numerical diffusion   [m^4/s]
       invrs_dzm,   & ! Inverse of grid spacing over momentum level (k)   [1/m]
       invrs_dztp1, & ! Inverse of grid spacing over thermo. level (k+1)  [1/m]
@@ -1350,7 +1356,7 @@ module hyper_diffusion_4th_ord
       level     ! Momentum level where calculation occurs.               [-]
 
     ! Return Variable
-    real, dimension(5) :: lhs
+    real( kind = core_rknd ), dimension(5) :: lhs
 
 
     if ( level == 1 ) then
@@ -1365,11 +1371,11 @@ module hyper_diffusion_4th_ord
 
         ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
         lhs(km2_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
         lhs(km1_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
         lhs(k_mdiag)   &
@@ -1395,23 +1401,23 @@ module hyper_diffusion_4th_ord
 
         ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
         lhs(km2_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
         lhs(km1_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
         lhs(k_mdiag)   &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
         lhs(kp2_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
       endif
 
@@ -1426,7 +1432,7 @@ module hyper_diffusion_4th_ord
 
         ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
         lhs(km2_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
         lhs(km1_mdiag) &
@@ -1461,7 +1467,7 @@ module hyper_diffusion_4th_ord
 
         ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
         lhs(km2_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
         lhs(km1_mdiag) &
@@ -1566,7 +1572,7 @@ module hyper_diffusion_4th_ord
 
         ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
         lhs(kp2_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
@@ -1599,7 +1605,7 @@ module hyper_diffusion_4th_ord
 
         ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
         lhs(kp2_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
       endif
 
@@ -1632,11 +1638,11 @@ module hyper_diffusion_4th_ord
 
         ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
         lhs(kp2_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
       elseif ( trim( boundary_cond ) == 'fixed-point' ) then
 
@@ -1646,23 +1652,23 @@ module hyper_diffusion_4th_ord
 
         ! Momentum sub-sub diagonal: [ x var_zm(k-2,<t+1>) ]
         lhs(km2_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum sub diagonal: [ x var_zm(k-1,<t+1>) ]
         lhs(km1_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
         lhs(k_mdiag)   &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum super diagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
         ! Momentum super-super diagonal: [ x var_zm(k+2,<t+1>) ]
         lhs(kp2_mdiag) &
-        = 0.0
+        = 0.0_core_rknd
 
       endif
 

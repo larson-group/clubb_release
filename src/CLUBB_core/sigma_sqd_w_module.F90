@@ -22,13 +22,16 @@ module sigma_sqd_w_module
       rt_tol, &
       thl_tol
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: min, max, sqrt
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       gamma_Skw_fnc, & ! Gamma as a function of skewness   [-]
       wp2,           & ! Variance of vertical velocity     [m^2/s^2]
       thlp2,         & ! Variance of liquid pot. temp.     [K^2]
@@ -37,7 +40,7 @@ module sigma_sqd_w_module
       wprtp            ! Flux of total water               [m/s kg/kg]
 
     ! Output Variable
-    real :: sigma_sqd_w ! PDF width parameter      [-]
+    real( kind = core_rknd ) :: sigma_sqd_w ! PDF width parameter      [-]
 
     ! ---- Begin Code ----
 
@@ -46,13 +49,13 @@ module sigma_sqd_w_module
     !----------------------------------------------------------------
 
     sigma_sqd_w = gamma_Skw_fnc * &
-      ( 1.0 - min( &
+      ( 1.0_core_rknd - min( &
                   max( ( wpthlp / ( sqrt( wp2 * thlp2 )  &
-                      + 0.01 * w_tol * thl_tol ) )**2, &
+                      + 0.01_core_rknd * w_tol * thl_tol ) )**2, &
                        ( wprtp / ( sqrt( wp2 * rtp2 )  &
-                      + 0.01 * w_tol * rt_tol ) )**2 &
+                      + 0.01_core_rknd * w_tol * rt_tol ) )**2 &
                      ), & ! max
-             1.0 ) & ! min - Known magic number (eq. 22 from "Equations for CLUBB")
+             1.0_core_rknd ) & ! min - Known magic number (eq. 22 from "Equations for CLUBB")
        )
 
     return

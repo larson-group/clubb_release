@@ -56,7 +56,9 @@ module estimate_lh_micro_module
       est_single_column_tndcy ! Procedure(s)
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd, &
+      time_precision
 
     implicit none
 
@@ -65,7 +67,7 @@ module estimate_lh_micro_module
 
     ! Input Variables
 
-    real, intent(in) :: dt ! Model timestep     [s]
+    real( kind = time_precision ), intent(in) :: dt ! Model timestep     [s]
 
     integer, intent(in) :: &
       nz, &          ! Number of vertical levels
@@ -75,16 +77,16 @@ module estimate_lh_micro_module
     real( kind = dp ), dimension(nz,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real, dimension(nz,n_micro_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,n_micro_calls), intent(in) :: &
       LH_rt, LH_thl ! Total water / Liquid potential temperature      [kg/kg] / [K]
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       cloud_frac, & ! Cloud fraction           [-]
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
       rho           ! Density on thermo. grid  [kg/m^3]
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm,       & ! Liquid water mixing ratio                [kg/kg]
       w_std_dev, & ! Standard deviation of vertical velocity  [m/s]
       dzq          ! Difference in height per gridbox         [m]
@@ -92,26 +94,26 @@ module estimate_lh_micro_module
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
-    real, dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     integer, dimension(nz,n_micro_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
-    real, dimension(n_micro_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(n_micro_calls), intent(in) :: &
       LH_sample_point_weights ! Weight for cloud weighted sampling
 
     ! Output Variables
-    real, dimension(nz,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
       lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
-    real, dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
-    real, dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
       AKm,       & ! Exact Kessler autoconversion, AKm,             [kg/kg/s]
       AKstd,     & ! Exact standard deviation of gba Kessler        [kg/kg/s]
@@ -120,7 +122,7 @@ module estimate_lh_micro_module
       AKm_rcc      ! Exact local gba Kessler based on w/in cloud rc [kg/kg/s]
 
     ! For comparison, estimate kth liquid water using Monte Carlo
-    real, dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_rcm_avg ! LH estimate of grid box avg liquid water [kg/kg]
 
     ! Local Variables
@@ -129,18 +131,18 @@ module estimate_lh_micro_module
     integer :: level
 
     ! PDF parameters
-    real :: mixt_frac
-!   real :: w1, w2
-!   real :: sw1, sw2
-!   real :: thl1, thl2, sthl1, sthl2
-!   real :: rt1,rt2
-!   real :: srt1, srt2
-    real :: stdev_s1, stdev_s2, s1, s2
-    real :: cloud_frac1, cloud_frac2
-!   real :: rc1, rc2
+    real( kind = core_rknd ) :: mixt_frac
+!   real( kind = core_rknd ) :: w1, w2
+!   real( kind = core_rknd ) :: sw1, sw2
+!   real( kind = core_rknd ) :: thl1, thl2, sthl1, sthl2
+!   real( kind = core_rknd ) :: rt1,rt2
+!   real( kind = core_rknd ) :: srt1, srt2
+    real( kind = core_rknd ) :: stdev_s1, stdev_s2, s1, s2
+    real( kind = core_rknd ) :: cloud_frac1, cloud_frac2
+!   real( kind = core_rknd ) :: rc1, rc2
 
     ! Cloud fraction 0<cloud_frac<1, mean liquid water mix ratio [kg/kg]
-!   real :: cloud_frac, rcm
+!   real( kind = core_rknd ) :: cloud_frac, rcm
 
     ! Double precision version of Monte Carlo Kessler ac
     real( kind = dp ) :: lh_AKm_dp
@@ -151,13 +153,13 @@ module estimate_lh_micro_module
       rcm_sample ! Sample points of rcm         [kg/kg]
 
     ! Variables needed for exact Kessler autoconversion, AKm
-    real :: r_crit, K_one
-    real :: sn1_crit, cloud_frac1_crit, sn2_crit, cloud_frac2_crit
-    real :: AK1, AK2
+    real( kind = core_rknd ) :: r_crit, K_one
+    real( kind = core_rknd ) :: sn1_crit, cloud_frac1_crit, sn2_crit, cloud_frac2_crit
+    real( kind = core_rknd ) :: AK1, AK2
 
     ! Variables needed for exact std of Kessler autoconversion, AKstd
     !      and within cloud standard deviation, AKstd_cld
-    real :: AK1var, AK2var
+    real( kind = core_rknd ) :: AK1var, AK2var
 
     ! For comparison, compute within-cloud vertical velocity analytically.
     !real C_w_cld1, C_w_cld2, w_cld_avg
@@ -165,13 +167,13 @@ module estimate_lh_micro_module
     ! ---- Begin Code ----
 
     ! Boundary condition
-    lh_AKm(1)     = 0.0
-    AKm(1)        = 0.0
-    AKm_rcm(1)    = 0.0
-    AKm_rcc(1)    = 0.0
-    lh_rcm_avg(1) = 0.0
-    AKstd(1)      = 0.0
-    AKstd_cld(1)  = 0.0
+    lh_AKm(1)     = 0.0_core_rknd
+    AKm(1)        = 0.0_core_rknd
+    AKm_rcm(1)    = 0.0_core_rknd
+    AKm_rcc(1)    = 0.0_core_rknd
+    lh_rcm_avg(1) = 0.0_core_rknd
+    AKstd(1)      = 0.0_core_rknd
+    AKstd_cld(1)  = 0.0_core_rknd
 
     do level = 2, nz, 1
       ! Extract PDF parameters
@@ -193,8 +195,8 @@ module estimate_lh_micro_module
 !     rc2         = pdf_params(level)%rc2
 !     cloud_frac1 = pdf_params(level)%cloud_frac1
 !     cloud_frac2 = pdf_params(level)%cloud_frac2
-      cloud_frac1 = 1.0 ! For in and out of cloud sampling -dschanen 30 Jul 09
-      cloud_frac2 = 1.0 !     "    "
+      cloud_frac1 = 1.0_core_rknd ! For in and out of cloud sampling -dschanen 30 Jul 09
+      cloud_frac2 = 1.0_core_rknd !     "    "
       s1          = pdf_params(level)%s1
       s2          = pdf_params(level)%s2
       stdev_s1    = pdf_params(level)%stdev_s1
@@ -228,7 +230,7 @@ module estimate_lh_micro_module
              X_mixt_comp_all_levs(level,:), LH_sample_point_weights, lh_AKm_dp )
 
       ! Convert to real number
-      lh_AKm(level) = real( lh_AKm_dp )
+      lh_AKm(level) = real( lh_AKm_dp, kind = core_rknd )
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       call rc_estimate &
@@ -247,18 +249,18 @@ module estimate_lh_micro_module
       !       print*, 'lh_rcm_avg=', lh_rcm_avg
 
       ! Exact Kessler autoconversion in units of (kg/kg)/s
-      !        r_crit = 0.3e-3
-      !        r_crit = 0.7e-3
-      r_crit            = 0.2e-3
-      K_one             = 1.e-3
+      !        r_crit = 0.3e-3_core_rknd
+      !        r_crit = 0.7e-3_core_rknd
+      r_crit            = 0.2e-3_core_rknd
+      K_one             = 1.e-3_core_rknd
       sn1_crit          = (s1-r_crit)/max( stdev_s1, s_mellor_tol )
-      cloud_frac1_crit  = 0.5*(1+erf(sn1_crit/sqrt(2.0)))
+      cloud_frac1_crit  = 0.5_core_rknd*(1+erf(sn1_crit/sqrt(2.0_core_rknd)))
       AK1               = K_one * ( (s1-r_crit)*cloud_frac1_crit  & 
-                         + stdev_s1*exp(-0.5*sn1_crit**2)/(sqrt(2*pi)) )
+                         + stdev_s1*exp(-0.5_core_rknd*sn1_crit**2)/(sqrt(2*pi)) )
       sn2_crit          = (s2-r_crit)/max( stdev_s2, s_mellor_tol )
-      cloud_frac2_crit  = 0.5*(1+erf(sn2_crit/sqrt(2.0)))
+      cloud_frac2_crit  = 0.5_core_rknd*(1+erf(sn2_crit/sqrt(2.0_core_rknd)))
       AK2               = K_one * ( (s2-r_crit)*cloud_frac2_crit  & 
-                         + stdev_s2*exp(-0.5*sn2_crit**2)/(sqrt(2*pi)) )
+                         + stdev_s2*exp(-0.5_core_rknd*sn2_crit**2)/(sqrt(2*pi)) )
       AKm(level)        = mixt_frac * AK1 + (1-mixt_frac) * AK2
 
       ! Exact Kessler standard deviation in units of (kg/kg)/s
@@ -292,7 +294,7 @@ module estimate_lh_micro_module
       ! We found that for small values of cloud_frac this formula
       ! can still produce NaN values and therefore added this
       ! threshold of 0.001 here. -dschanen 3 June 2009
-      if ( cloud_frac(level) > 0.001 ) then
+      if ( cloud_frac(level) > 0.001_core_rknd ) then
         AKm_rcc(level) = cloud_frac(level) * K_one * &
                          max( zero_threshold, rcm(level)/cloud_frac(level)-r_crit )
       else
@@ -336,7 +338,8 @@ module estimate_lh_micro_module
       l_lh_cloud_weighted_sampling ! Variable(s)
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
 
@@ -370,7 +373,7 @@ module estimate_lh_micro_module
     integer, dimension(n_micro_calls), intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
 
-    real, dimension(n_micro_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(n_micro_calls), intent(in) :: &
        LH_sample_point_weights ! Weight for cloud weighted sampling
 
     ! Output Variables
@@ -549,7 +552,8 @@ module estimate_lh_micro_module
         fstderr  ! Constant(s)
 
     use clubb_precision, only: &
-        dp ! double precision
+        dp, & ! double precision
+        core_rknd
 
 !   use error_code, only:  &
 !       clubb_at_least_debug_level  ! Procedure(s)
@@ -613,7 +617,7 @@ module estimate_lh_micro_module
     ! Make sure there is some cloud.
     ! Disable this for now, so we can loop over the whole domain.
     ! -dschanen 3 June 2009
-!   if ( mixt_frac*C1 < 0.001_dp .and. (1-mixt_frac)*C2 < 0.001_dp ) then
+!   if ( mixt_frac*C1 < 0.001__dp .and. (1-mixt_frac)*C2 < 0.001_dp ) then
 !     if ( clubb_at_least_debug_level( 1 ) ) then
 !       write(fstderr,*) 'Error in rc_estimate:  ',  &
 !                        'there is no cloud or almost no cloud!'
@@ -699,7 +703,7 @@ module estimate_lh_micro_module
     end if ! l_cloud_weighted_averaging
 
     ! Grid box average.
-    rc_m = ( rc_m1 + rc_m2 ) / dble( n_micro_calls )
+    rc_m = ( rc_m1 + rc_m2 ) / real(n_micro_calls, kind = dp)
 
     return
   end subroutine rc_estimate

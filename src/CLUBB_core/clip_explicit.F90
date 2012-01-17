@@ -68,7 +68,8 @@ module clip_explicit
         l_tke_aniso ! Logical
 
     use clubb_precision, only: & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use stats_type, only: &
        stat_modify ! Procedure(s)
@@ -85,14 +86,14 @@ module clip_explicit
     real(kind=time_precision), intent(in) :: &
       dt ! Timestep [s]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       rtp2,  & ! r_t'^2         [(kg/kg)^2]
       thlp2, & ! theta_l'^2     [K^2]
       up2,   & ! u'^2           [m^2/s^2]
       vp2,   & ! v'^2           [m^2/s^2]
       wp2      ! w'^2           [m^2/s^2]
 
-    real, dimension(gr%nz,sclr_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(in) :: &
       sclrp2 ! sclr'^2  [{units vary}^2]
 
     integer, intent(in) :: &
@@ -103,13 +104,13 @@ module clip_explicit
       vpwp_cl_num
 
     ! Input/Output Variables
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       wprtp,  & ! w'r_t'        [(kg/kg) m/s]
       wpthlp, & ! w'theta_l'    [K m/s]
       upwp,   & ! u'w'          [m^2/s^2]
       vpwp      ! v'w'          [m^2/s^2]
 
-    real, dimension(gr%nz,sclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(inout) :: &
       wpsclrp ! w'sclr'         [units m/s]
 
     ! Local Variables
@@ -117,13 +118,13 @@ module clip_explicit
       l_first_clip_ts, & ! First instance of clipping in a timestep.
       l_last_clip_ts     ! Last instance of clipping in a timestep.
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       wprtp_chnge,  & ! Net change in w'r_t' due to clipping  [(kg/kg) m/s]
       wpthlp_chnge, & ! Net change in w'th_l' due to clipping [K m/s]
       upwp_chnge,   & ! Net change in u'w' due to clipping    [m^2/s^2]
       vpwp_chnge      ! Net change in v'w' due to clipping    [m^2/s^2]
 
-    real, dimension(gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
       wpsclrp_chnge   ! Net change in w'sclr' due to clipping [{units vary}]
 
     integer :: i  ! scalar array index.
@@ -157,11 +158,11 @@ module clip_explicit
       
       if ( wprtp_cl_num == 2 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt,  -wprtp / real( dt ),  & ! intent(in)
+        call stat_modify( iwprtp_bt,  -wprtp / real( dt, kind = core_rknd ),  & ! intent(in)
                           zm )                               ! intent(inout)
       elseif ( wprtp_cl_num == 3 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt, -wprtp / real( dt ),  & ! intent(in)
+        call stat_modify( iwprtp_bt, -wprtp / real( dt, kind = core_rknd ),  & ! intent(in)
                           zm )                               ! intent(inout)
       endif
     endif
@@ -186,11 +187,11 @@ module clip_explicit
     if ( l_stats_samp ) then
       if ( wprtp_cl_num == 1 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt,  wprtp / real( dt ),  & ! intent(in)
+        call stat_modify( iwprtp_bt,  wprtp / real( dt, kind = core_rknd ),  & ! intent(in)
                           zm )                              ! intent(inout)
       elseif ( wprtp_cl_num == 2 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt, wprtp / real( dt ),  & ! intent(in)
+        call stat_modify( iwprtp_bt, wprtp / real( dt, kind = core_rknd ),  & ! intent(in)
                           zm )                              ! intent(inout)
       ! if wprtp_cl_num == 3 do nothing since
       ! iwprtp_bt stat_end_update is called outside of this method
@@ -226,11 +227,11 @@ module clip_explicit
       
       if ( wpthlp_cl_num == 2 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, -wpthlp / real( dt ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, -wpthlp / real( dt, kind = core_rknd ),  & ! intent(in)
                           zm )                                 ! intent(inout)
       elseif ( wpthlp_cl_num == 3 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, -wpthlp / real( dt ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, -wpthlp / real( dt, kind = core_rknd ),  & ! intent(in)
                           zm )                                 ! intent(inout)
       endif
     endif
@@ -256,11 +257,11 @@ module clip_explicit
     if ( l_stats_samp ) then
       if ( wpthlp_cl_num == 1 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, wpthlp / real( dt ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, wpthlp / real( dt, kind = core_rknd ),  & ! intent(in)
                           zm )                                ! intent(inout)
       elseif ( wpthlp_cl_num == 2 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, wpthlp / real( dt ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, wpthlp / real( dt, kind = core_rknd ),  & ! intent(in)
                           zm )                                ! intent(inout)
                           
       ! if wpthlp_cl_num == 3 do nothing since
@@ -451,7 +452,8 @@ module clip_explicit
         max_mag_correlation ! Constant(s)
 
     use clubb_precision, only: & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use stats_type, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -478,15 +480,15 @@ module clip_explicit
     real(kind=time_precision), intent(in) ::  & 
       dt     ! Model timestep; used here for STATS           [s]
 
-    real, dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       xp2, & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
       yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
 
     ! Output Variable
-    real, dimension(gr%nz), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
       xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
 
-    real, dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       xpyp_chnge  ! Net change in x'y' due to clipping [{x units}*{y units}]
 
 
@@ -512,9 +514,9 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( l_first_clip_ts ) then
-        call stat_begin_update( ixpyp_cl, xpyp / real( dt ), zm )
+        call stat_begin_update( ixpyp_cl, xpyp / real( dt, kind = core_rknd ), zm )
       else
-        call stat_modify( ixpyp_cl, -xpyp / real( dt ), zm )
+        call stat_modify( ixpyp_cl, -xpyp / real( dt, kind = core_rknd ), zm )
       endif
     endif
 
@@ -547,7 +549,7 @@ module clip_explicit
 
       else
 
-        xpyp_chnge(k) = 0.0
+        xpyp_chnge(k) = 0.0_core_rknd
 
       endif
 
@@ -555,14 +557,14 @@ module clip_explicit
 
     ! Since there is no covariance clipping at the upper or lower boundaries,
     ! the change in x'y' due to covariance clipping at those levels is 0.
-    xpyp_chnge(1)       = 0.0
-    xpyp_chnge(gr%nz) = 0.0
+    xpyp_chnge(1)       = 0.0_core_rknd
+    xpyp_chnge(gr%nz) = 0.0_core_rknd
 
     if ( l_stats_samp ) then
       if ( l_last_clip_ts ) then
-        call stat_end_update( ixpyp_cl, xpyp / real( dt ), zm )
+        call stat_end_update( ixpyp_cl, xpyp / real( dt, kind = core_rknd ), zm )
       else
-        call stat_modify( ixpyp_cl, xpyp / real( dt ), zm )
+        call stat_modify( ixpyp_cl, xpyp / real( dt, kind = core_rknd ), zm )
       endif
     endif
 
@@ -593,7 +595,8 @@ module clip_explicit
         gr ! Variable(s)
 
     use clubb_precision, only: & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use stats_type, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -617,11 +620,11 @@ module clip_explicit
     real(kind=time_precision), intent(in) :: & 
       dt          ! Model timestep; used here for STATS     [s]
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       threshold   ! Minimum value of x'^2                   [{x units}^2]
 
     ! Output Variable
-    real, dimension(gr%nz), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
       xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
 
     ! Local Variables
@@ -650,7 +653,7 @@ module clip_explicit
 
 
     if ( l_stats_samp ) then
-      call stat_begin_update( ixp2_cl, xp2 / real( dt ), zm )
+      call stat_begin_update( ixp2_cl, xp2 / real( dt, kind = core_rknd ), zm )
     endif
 
     ! Limit the value of x'^2 at threshold.
@@ -666,7 +669,7 @@ module clip_explicit
     enddo
 
     if ( l_stats_samp ) then
-      call stat_end_update( ixp2_cl, xp2 / real( dt ), zm )
+      call stat_end_update( ixp2_cl, xp2 / real( dt, kind = core_rknd ), zm )
     endif
 
 
@@ -692,11 +695,11 @@ module clip_explicit
     !
     ! For altitudes less than or equal to 100 meters above ground level (AGL):
     !
-    ! -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2);
+    ! -0.2_core_rknd*sqrt(2) <= Sk_w <= 0.2_core_rknd*sqrt(2);
     !
     ! while for all altitudes greater than 100 meters AGL:
     !
-    ! -4.5 <= Sk_w <= 4.5.
+    ! -4.5_core_rknd <= Sk_w <= 4.5_core_rknd.
     !
     ! Therefore, there is an upper limit on w'^3, such that:
     !
@@ -719,7 +722,8 @@ module clip_explicit
       gr ! Variable(s)
 
     use clubb_precision, only: & 
-      time_precision ! Variable(s)
+      time_precision, & ! Variable(s)
+      core_rknd
 
     use stats_type, only: &
       stat_begin_update,  & ! Procedure(s)
@@ -739,26 +743,26 @@ module clip_explicit
     real(kind=time_precision), intent(in) :: & 
       dt               ! Model timestep; used here for STATS        [s]
 
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       sfc_elevation    ! Elevation of ground level                  [m AMSL]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
 
     ! Input/Output Variables
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
 
     ! ---- Begin Code ----
 
     if ( l_stats_samp ) then
-      call stat_begin_update( iwp3_cl, wp3 / real( dt ), zt )
+      call stat_begin_update( iwp3_cl, wp3 / real( dt, kind = core_rknd ), zt )
     endif
 
     call clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
 
     if ( l_stats_samp ) then
-      call stat_end_update( iwp3_cl, wp3 / real( dt ), zt )
+      call stat_end_update( iwp3_cl, wp3 / real( dt, kind = core_rknd ), zt )
     endif
 
     return
@@ -773,31 +777,34 @@ module clip_explicit
     use constants_clubb, only: &
       Skw_max_mag_sqd ! [-]
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: sign, sqrt, real
 
     ! Input Variables
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       sfc_elevation    ! Elevation of ground level                  [m AMSL]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
 
     ! Input/Output Variables
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
 
     ! Local Variables
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       wp2_zt_cubed, & ! Variance of vertical velocity cubed (w^2_{zt}^3)   [m^6/s^6]
       wp3_lim_sqd     ! Keeps absolute value of Sk_w from becoming > limit [m^6/s^6]
 
     integer :: k       ! Vertical array index.
 
-    real, parameter :: &  
-      wp3_max = 100. ! Threshold for wp3 [m^3/s^3]      
+    real( kind = core_rknd ), parameter :: &  
+      wp3_max = 100._core_rknd ! Threshold for wp3 [m^3/s^3]      
 
     ! ---- Begin Code ----
 
@@ -822,14 +829,15 @@ module clip_explicit
     wp2_zt_cubed(1:gr%nz) = wp2_zt(1:gr%nz)**3
 
     do k = 1, gr%nz, 1
-      if ( gr%zt(k) - sfc_elevation <= 100.0 ) then ! Clip for 100 m. AGL.
-       !wp3_upper_lim(k) =  0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
-       !wp3_lower_lim(k) = -0.2 * sqrt_2 * wp2_zt(k)**(3.0/2.0)
-        wp3_lim_sqd(k) = 0.08 * wp2_zt_cubed(k) ! Where 0.08 == (sqrt(2)*0.2)**2 known magic number
+      if ( gr%zt(k) - sfc_elevation <= 100.0_core_rknd ) then ! Clip for 100 m. AGL.
+       !wp3_upper_lim(k) =  0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
+       !wp3_lower_lim(k) = -0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
+        wp3_lim_sqd(k) = 0.08_core_rknd * wp2_zt_cubed(k) ! Where 0.08_core_rknd
+                              ! == (sqrt(2)*0.2_core_rknd)**2 known magic number
       else                          ! Clip skewness consistently with a.
-       !wp3_upper_lim(k) =  4.5 * wp2_zt(k)**(3.0/2.0)
-       !wp3_lower_lim(k) = -4.5 * wp2_zt(k)**(3.0/2.0)
-        wp3_lim_sqd(k) = Skw_max_mag_sqd * wp2_zt_cubed(k) ! Skw_max_mag = 4.5^2
+       !wp3_upper_lim(k) =  4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
+       !wp3_lower_lim(k) = -4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
+        wp3_lim_sqd(k) = Skw_max_mag_sqd * wp2_zt_cubed(k) ! Skw_max_mag = 4.5_core_rknd^2
       endif
     enddo
 

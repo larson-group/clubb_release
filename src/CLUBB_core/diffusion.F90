@@ -251,6 +251,9 @@ module diffusion
     use grid_class, only: & 
         gr ! Variable(s)
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -260,21 +263,21 @@ module diffusion
       km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       K_zm,        & ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
       K_zmm1,      & ! Coef. of eddy diffusivity at momentum level (k-1) [m^2/s 
       invrs_dzt,   & ! Inverse of grid spacing over thermo. level (k)    [1/m]
       invrs_dzm,   & ! Inverse of grid spacing over momentum level (k)   [1/m]
       invrs_dzmm1    ! Inverse of grid spacing over momentum level (k-1) [1/m]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       nu             ! Background constant coef. of eddy diffusivity     [m^2/s]
 
     integer, intent(in) ::  & 
       level     ! Thermodynamic level where calculation occurs.          [-]
 
     ! Return Variable
-    real, dimension(3) :: lhs
+    real( kind = core_rknd ), dimension(3) :: lhs
 
     if ( level == 1 ) then
 
@@ -288,7 +291,7 @@ module diffusion
       lhs(k_tdiag)   = + invrs_dzt * (K_zm+nu(1)) * invrs_dzm
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-      lhs(km1_tdiag) = 0.0
+      lhs(km1_tdiag) = 0.0_core_rknd
 
 
     elseif ( level > 1 .and. level < gr%nz ) then
@@ -311,7 +314,7 @@ module diffusion
       ! Only relevant if zero-flux boundary conditions are used.
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = 0.0
+      lhs(kp1_tdiag) = 0.0_core_rknd
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
       lhs(k_tdiag)   = + invrs_dzt * (K_zmm1+nu(gr%nz)) * invrs_dzmm1
@@ -344,14 +347,17 @@ module diffusion
    use grid_class, only: & 
      gr ! Variable(s)
 
+   use clubb_precision, only: &
+     core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: min
 
     ! Constant parameters
-    real, parameter :: &
-      cf_ratio = 10. ! Maximum cloud-fraction coefficient applied to Kh_zm
+    real( kind = core_rknd ), parameter :: &
+      cf_ratio = 10._core_rknd ! Maximum cloud-fraction coefficient applied to Kh_zm
 
     integer, parameter :: & 
       kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
@@ -359,7 +365,7 @@ module diffusion
       km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       K_zm,            & ! Coef. of eddy diffusivity at mom. level (k)   [m^2/s]
       K_zmm1,          & ! Coef. of eddy diffusivity at mom. level (k-1) [m^2/s]
       cloud_frac_zt,   & ! Cloud fraction at the thermo. level (k)       [-]
@@ -371,14 +377,14 @@ module diffusion
       invrs_dzm,       & ! Inverse of grid spacing over mom. level (k)   [1/m]
       invrs_dzmm1        ! Inverse of grid spacing over mom. level (k-1) [1/m]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       nu                 ! Background constant coef. of eddy diffusivity [m^2/s]
 
     integer, intent(in) ::  & 
       level     ! Thermodynamic level where calculation occurs.           [-]
 
     ! Return Variable
-    real, dimension(3) :: lhs
+    real( kind = core_rknd ), dimension(3) :: lhs
 
     ! ---- Begin Code ----
 
@@ -406,7 +412,7 @@ module diffusion
                             + nu(1)) * invrs_dzm
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-      lhs(km1_tdiag) = 0.0
+      lhs(km1_tdiag) = 0.0_core_rknd
 
 
     else if ( level > 1 .and. level < gr%nz ) then
@@ -464,7 +470,7 @@ module diffusion
       ! Only relevant if zero-flux boundary conditions are used.
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = 0.0
+      lhs(kp1_tdiag) = 0.0_core_rknd
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
 !     lhs(k_tdiag)   = + invrs_dzt &
@@ -712,6 +718,9 @@ module diffusion
     use grid_class, only: & 
         gr       ! Variable(s)
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -721,21 +730,21 @@ module diffusion
       km1_mdiag = 3       ! Momentum subdiagonal index.
 
     ! Input Variables
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       K_zt,        & ! Coef. of eddy diffusivity at thermo. level (k)   [m^2/s]
       K_ztp1,      & ! Coef. of eddy diffusivity at thermo. level (k+1) [m^2/s]
       invrs_dzm,   & ! Inverse of grid spacing over momentum level (k)  [1/m]
       invrs_dzt,   & ! Inverse of grid spacing over thermo. level (k)   [1/m]
       invrs_dztp1    ! Inverse of grid spacing over thermo. level (k+1) [1/m]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       nu             ! Background constant coef. of eddy diffusivity    [m^2/s]
 
     integer, intent(in) ::  & 
       level     ! Momentum level where calculation occurs.              [-]
 
     ! Return Variable
-    real, dimension(3) :: lhs
+    real( kind = core_rknd ), dimension(3) :: lhs
 
     if ( level == 1 ) then
 
@@ -749,7 +758,7 @@ module diffusion
       lhs(k_mdiag)   = + invrs_dzm * (K_ztp1+nu(2)) * invrs_dztp1
 
       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-      lhs(km1_mdiag) = 0.0
+      lhs(km1_mdiag) = 0.0_core_rknd
 
 
     elseif ( level > 1 .and. level < gr%nz ) then
@@ -773,7 +782,7 @@ module diffusion
       ! Only relevant if zero-flux boundary conditions are used.
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-      lhs(kp1_mdiag) = 0.0
+      lhs(kp1_mdiag) = 0.0_core_rknd
 
       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
       lhs(k_mdiag)   = + invrs_dzm * (K_zt+nu(gr%nz)) * invrs_dzt

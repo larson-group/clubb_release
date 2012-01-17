@@ -40,7 +40,7 @@ module fire
  
   use surface_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc
 
-  use clubb_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
   use interpolation, only: linear_interp_factor ! Procedure(s)
 
@@ -53,7 +53,7 @@ module fire
   real(time_precision), intent(in) :: &
     time   ! current time [s]
 
-  real, intent(in) ::  & 
+  real( kind = core_rknd ), intent(in) ::  & 
     ubar,    & ! mean sfc wind speed                           [m/s]
     p_sfc,    & ! Surface pressure                              [Pa]
     thlm_sfc,& ! theta_l at first model layer                  [K]
@@ -61,14 +61,14 @@ module fire
     exner_sfc
 
   ! Output Variables
-  real, intent(out) ::  & 
+  real( kind = core_rknd ), intent(out) ::  & 
     wpthlp_sfc, &   ! surface thetal flux        [K m/s]
     wprtp_sfc,  &   ! surface moisture flux      [kg/kg m/s]
     ustar,      &
     T_sfc           ! Surface temperature        [K]
 
   ! Local Variable
-  real :: & 
+  real( kind = core_rknd ) :: & 
     Cz, &  ! Coefficient
     time_frac ! the time fraction used for interpolation
 
@@ -87,9 +87,9 @@ module fire
 
   ! Compute wpthlp_sfc and wprtp_sfc
 
-  Cz = 0.0013
+  Cz = 0.0013_core_rknd
 
-  ustar = 0.3
+  ustar = 0.3_core_rknd
 
   wpthlp_sfc = compute_wpthlp_sfc ( Cz, ubar, thlm_sfc, T_sfc, exner_sfc )
   wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )

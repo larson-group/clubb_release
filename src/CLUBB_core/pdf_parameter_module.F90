@@ -6,6 +6,9 @@ module pdf_parameter_module
 !   None
 !-------------------------------------------------------------------------------
 
+  use clubb_precision, only: &
+    core_rknd
+
   implicit none
 
   private ! Default scope
@@ -13,7 +16,7 @@ module pdf_parameter_module
   public :: pdf_parameter
 
   type pdf_parameter
-    real :: &
+    real( kind = core_rknd ) :: &
       w1,          & ! Mean of w for 1st normal distribution                 [m/s]
       w2,          & ! Mean of w for 2nd normal distribution                 [m/s]
       varnce_w1,   & ! Variance of w for 1st normal distribution         [m^2/s^2]

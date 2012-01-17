@@ -12,7 +12,8 @@ module constants_clubb
 
   use clubb_precision, only:  & 
       time_precision, & ! Variable(s)
-      dp
+      dp, &
+      core_rknd
 
 #ifdef NCAR /* Set constants as they're set in CAM */
   use shr_const_mod, only: shr_const_rdair, shr_const_cpdair, shr_const_latvap, &
@@ -54,8 +55,8 @@ module constants_clubb
   ! function (before overflow occurs) is dependent on the order of parabolic
   ! cylinder function.  However, after a lot of testing, it was determined that
   ! an absolute value of 375 works well for an order of 12 or less.
-  real, parameter, public :: &
-    parab_cyl_max_input = 375.  ! Largest allowable input to parab. cyl. fnct.
+  real( kind = core_rknd ), parameter, public :: &
+    parab_cyl_max_input = 375._core_rknd  ! Largest allowable input to parab. cyl. fnct.
 
   ! "Over-implicit" weighted time step.
   !
@@ -74,15 +75,15 @@ module constants_clubb
   !
   !    gamma_over_implicit_ts          Effect on term
   !
-  !            0.0               Term becomes completely explicit
+  !            0.0_core_rknd               Term becomes completely explicit
   !
-  !            1.0               Standard implicit portion of the term;
+  !            1.0_core_rknd               Standard implicit portion of the term;
   !                              as it was without the weighting factor.
   !
-  !            1.5               Strongly weighted implicit portion of the term;
+  !            1.5_core_rknd               Strongly weighted implicit portion of the term;
   !                              increased numerical stability.
   !
-  !            2.0               More strongly weighted implicit portion of the
+  !            2.0_core_rknd               More strongly weighted implicit portion of the
   !                              term; increased numerical stability.
   !
   ! Note:  The "over-implicit" weighted time step is only applied to terms that
@@ -96,8 +97,8 @@ module constants_clubb
   !           module advance_xm_wpxp_module; and
   !           r_t'^2, th_l'^2, r_t'th_l', u'^2, v'^2, sclr'^2, sclr'r_t',
   !           and sclr'th_l', found in module advance_xp2_xpyp_module.
-  real, parameter, public :: &
-    gamma_over_implicit_ts = 1.50
+  real( kind = core_rknd ), parameter, public :: &
+    gamma_over_implicit_ts = 1.50_core_rknd
 
   !-----------------------------------------------------------------------------
   ! Mathematical Constants
@@ -105,18 +106,18 @@ module constants_clubb
   real( kind = dp ), parameter, public ::  & 
     pi_dp = 3.14159265358979323846_dp
 
-  real, parameter, public ::  & 
-    pi = 3.141592654 ! The ratio of radii to their circumference
+  real( kind = core_rknd ), parameter, public ::  & 
+    pi = 3.141592654_core_rknd ! The ratio of radii to their circumference
 
   real( kind = dp ), parameter, public :: &
     radians_per_deg_dp = pi_dp / 180._dp
 
-  real, parameter, public :: &
-    sqrt_2pi = 2.5066282746310005024, &  ! sqrt(2*pi)
-    sqrt_2   = 1.4142135623730950488     ! sqrt(2)
+  real( kind = core_rknd ), parameter, public :: &
+    sqrt_2pi = 2.5066282746310005024_core_rknd, &  ! sqrt(2*pi)
+    sqrt_2   = 1.4142135623730950488_core_rknd     ! sqrt(2)
 
-  real, parameter, public :: &
-    three_halves = 3.0/2.0   ! 3/2
+  real( kind = core_rknd ), parameter, public :: &
+    three_halves = 3.0_core_rknd/2.0_core_rknd   ! 3/2
 
   !-----------------------------------------------------------------------------
   ! Physical constants
@@ -124,7 +125,7 @@ module constants_clubb
 
 #ifdef NCAR
 
-  real, parameter, public ::  & 
+  real( kind = core_rknd ), parameter, public ::  & 
     Cp = shr_const_cpdair,  & ! Dry air specific heat at constant p [J/kg/K]
     Lv = shr_const_latvap,    & ! Latent heat of vaporization         [J/kg]
     Lf = shr_const_latice,   & ! Latent heat of fusion               [J/kg]
@@ -132,95 +133,95 @@ module constants_clubb
     Rd = shr_const_rdair,   & ! Dry air gas constant                [J/kg/K]
     Rv = shr_const_rgas/shr_const_mwwv       ! Water vapor gas constant            [J/kg/K]
     
-  real, parameter, public :: &
+  real( kind = core_rknd ), parameter, public :: &
     stefan_boltzmann = shr_const_stebol ! Stefan-Boltzmann constant [W/(m^2 K^4)]
     
-  real, parameter, public :: &
+  real( kind = core_rknd ), parameter, public :: &
     T_freeze_K = shr_const_tkfrz ! Freezing point of water [K]
     
   ! Useful combinations of Rd and Rv
-  real, parameter, public ::  & 
+  real( kind = core_rknd ), parameter, public ::  & 
     ep  = shr_const_mwwv/shr_const_mwdair,    & ! ep  = 0.622  [-]
     ep1 = (1.0-ep)/ep,& ! ep1 = 0.61   [-]
     ep2 = 1.0/ep        ! ep2 = 1.61   [-]
     
-  real, parameter, public :: & 
+  real( kind = core_rknd ), parameter, public :: & 
     kappa = (shr_const_rgas/shr_const_mwdair)/shr_const_cpdair     ! kappa        [-]
     
-  real, parameter, public :: & 
+  real( kind = core_rknd ), parameter, public :: & 
     grav = shr_const_g, & ! Gravitational acceleration     [m/s^2]
     p0   = 1.0e5   ! Reference pressure             [Pa]
 
   ! Von Karman's constant
   ! Constant of the logarithmic wind profile in the surface layer    
-  real, parameter, public :: & 
+  real( kind = core_rknd ), parameter, public :: & 
     vonk   = shr_const_karman,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
     rho_lw = shr_const_rhofw    ! Density of liquid water                [kg/m^3]
 
 #else
 
-  real, parameter, public ::  & 
-    Cp = 1004.67,  & ! Dry air specific heat at constant p [J/kg/K]
-    Lv = 2.5e6,    & ! Latent heat of vaporization         [J/kg]
-    Ls = 2.834e6,  & ! Latent heat of sublimation          [J/kg]
-    Lf = 3.33e5,   & ! Latent heat of fusion               [J/kg]
-    Rd = 287.04,   & ! Dry air gas constant                [J/kg/K]
-    Rv = 461.5       ! Water vapor gas constant            [J/kg/K]
+  real( kind = core_rknd ), parameter, public ::  & 
+    Cp = 1004.67_core_rknd,  & ! Dry air specific heat at constant p [J/kg/K]
+    Lv = 2.5e6_core_rknd,    & ! Latent heat of vaporization         [J/kg]
+    Ls = 2.834e6_core_rknd,  & ! Latent heat of sublimation          [J/kg]
+    Lf = 3.33e5_core_rknd,   & ! Latent heat of fusion               [J/kg]
+    Rd = 287.04_core_rknd,   & ! Dry air gas constant                [J/kg/K]
+    Rv = 461.5_core_rknd       ! Water vapor gas constant            [J/kg/K]
 
 
-  real, parameter, public :: &
-    stefan_boltzmann = 5.6704e-8 ! Stefan-Boltzmann constant [W/(m^2 K^4)]
+  real( kind = core_rknd ), parameter, public :: &
+    stefan_boltzmann = 5.6704e-8_core_rknd ! Stefan-Boltzmann constant [W/(m^2 K^4)]
 
-  real, parameter, public :: &
-    T_freeze_K = 273.15 ! Freezing point of water [K]
+  real( kind = core_rknd ), parameter, public :: &
+    T_freeze_K = 273.15_core_rknd ! Freezing point of water [K]
 
   ! Useful combinations of Rd and Rv
-  real, parameter, public ::  & 
-    ep  = Rd / Rv,    & ! ep  = 0.622  [-]
-    ep1 = (1.0-ep)/ep,& ! ep1 = 0.61   [-]
-    ep2 = 1.0/ep        ! ep2 = 1.61   [-]
+  real( kind = core_rknd ), parameter, public ::  & 
+    ep  = Rd / Rv,    & ! ep  = 0.622_core_rknd  [-]
+    ep1 = (1.0_core_rknd-ep)/ep,& ! ep1 = 0.61_core_rknd   [-]
+    ep2 = 1.0_core_rknd/ep        ! ep2 = 1.61_core_rknd   [-]
 
-  real, parameter, public :: & 
+  real( kind = core_rknd ), parameter, public :: & 
     kappa = Rd / Cp     ! kappa        [-]
 
   ! Changed g to grav to make it easier to find in the code 5/25/05
-  ! real, parameter :: grav  = 9.80665 ! Gravitational acceleration [m/s^2]
-  real, parameter, public :: & 
-    grav = 9.81, & ! Gravitational acceleration     [m/s^2]
-    p0   = 1.0e5   ! Reference pressure             [Pa]
+  ! real, parameter, public :: grav  = 9.80665_core_rknd ! Gravitational acceleration [m/s^2]
+  real( kind = core_rknd ), parameter, public :: & 
+    grav = 9.81_core_rknd, & ! Gravitational acceleration     [m/s^2]
+    p0   = 1.0e5_core_rknd   ! Reference pressure             [Pa]
 
   ! Von Karman's constant
   ! Constant of the logarithmic wind profile in the surface layer
-  real, parameter, public :: & 
-    vonk   = 0.4,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
-    rho_lw = 1000.0    ! Density of liquid water                [kg/m^3]
+  real( kind = core_rknd ), parameter, public :: & 
+    vonk   = 0.4_core_rknd,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
+    rho_lw = 1000.0_core_rknd    ! Density of liquid water                [kg/m^3]
     
 #endif
 
   ! Tolerances below which we consider moments to be zero
-  real, parameter, public ::  & 
-    w_tol        = 2.e-2,  & ! [m/s]
-    thl_tol      = 1.e-2,  & ! [K]
-    rt_tol       = 1.e-8,  & ! [kg/kg]
-    s_mellor_tol = 1.e-8     ! [kg/kg]
+  real( kind = core_rknd ), parameter, public ::  & 
+    w_tol        = 2.e-2_core_rknd,  & ! [m/s]
+    thl_tol      = 1.e-2_core_rknd,  & ! [K]
+    rt_tol       = 1.e-8_core_rknd,  & ! [kg/kg]
+    s_mellor_tol = 1.e-8_core_rknd     ! [kg/kg]
 
   ! Tolerances for use by the monatonic flux limiter.
   ! rt_tol_mfl is larger than rt_tol. rt_tol is extremely small
   ! (1e-8) to prevent spurious cloud formation aloft in LBA.
   ! rt_tol_mfl is larger (1e-4) to prevent the mfl from
   ! depositing moisture at the top of the domain.
-  real, parameter, public :: &
-    thl_tol_mfl = 1.e-2, & ! [K]
-    rt_tol_mfl = 1.e-4     ! [kg/kg]
+  real( kind = core_rknd ), parameter, public :: &
+    thl_tol_mfl = 1.e-2_core_rknd, & ! [K]
+    rt_tol_mfl = 1.e-4_core_rknd     ! [kg/kg]
 
   ! The tolerance for w'^2 is the square of the tolerance for w.
-  real, parameter, public :: &
+  real( kind = core_rknd ), parameter, public :: &
     w_tol_sqd = w_tol**2 ! [m^2/s^2]
 
-  real, parameter, public :: &
-    Skw_max_mag = 4.5  ! Max magnitude of skewness     [-]
+  real( kind = core_rknd ), parameter, public :: &
+    Skw_max_mag = 4.5_core_rknd  ! Max magnitude of skewness     [-]
 
-  real, parameter, public :: &
+  real( kind = core_rknd ), parameter, public :: &
     Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]
 
   ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
@@ -230,34 +231,34 @@ module constants_clubb
   ! the lowest number that can be numerically represented.  However, the
   ! tolerance value for rc doubles as the lowest mixing ratio there can be to
   ! still officially have a cloud at that level.  This is figured to be about
-  ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
-  real, parameter, public :: & 
-    rc_tol = 1.0E-6,  & ! [kg/kg]
-    Nc_tol = 1.0E-10, & ! [#/kg]
-    rr_tol = 1.0E-10, & ! [kg/kg]
-    Nr_tol = 1.0E-10    ! [#/kg]
+  ! 1.0_core_rknd x 10^-7 kg/kg.  Brian; February 10, 2007.
+  real( kind = core_rknd ), parameter, public :: & 
+    rc_tol = 1.0E-6_core_rknd,  & ! [kg/kg]
+    Nc_tol = 1.0E-10_core_rknd, & ! [#/kg]
+    rr_tol = 1.0E-10_core_rknd, & ! [kg/kg]
+    Nr_tol = 1.0E-10_core_rknd    ! [#/kg]
 
   ! Minimum value for em (turbulence kinetic energy)
   ! If anisotropic TKE is enabled, em = (1/2) * ( up2 + vp2 + wp2 );
   ! otherwise, em = (3/2) * wp2.  Since up2, vp2, and wp2 all have
   ! the same minimum threshold value of w_tol_sqd, em cannot be less
   ! than (3/2) * w_tol_sqd.  Thus, em_min = (3/2) * w_tol_sqd.
-  real, parameter, public :: em_min = 1.5 * w_tol_sqd  ! [m^2/s^2]
+  real( kind = core_rknd ), parameter, public :: em_min = 1.5_core_rknd * w_tol_sqd  ! [m^2/s^2]
 
-  real, parameter, public ::  & 
-    eps = 1.0e-10 ! Small value to prevent a divide by zero
+  real( kind = core_rknd ), parameter, public ::  & 
+    eps = 1.0e-10_core_rknd ! Small value to prevent a divide by zero
 
-  real, parameter, public ::  &
-    zero_threshold = 0.0 ! Defining a threshold on a physical quantity to be 0.
+  real( kind = core_rknd ), parameter, public ::  &
+    zero_threshold = 0.0_core_rknd ! Defining a threshold on a physical quantity to be 0.
 
   ! The maximum absolute value (or magnitude) that a correlation is allowed to
   ! have.  Statistically, a correlation is not allowed to be less than -1 or
   ! greater than 1, so the maximum magnitude would be 1.
-  real, parameter, public :: &
-    max_mag_correlation = 0.99
+  real( kind = core_rknd ), parameter, public :: &
+    max_mag_correlation = 0.99_core_rknd
 
-  real, parameter, public :: &
-    cloud_frac_min = 0.005 ! Threshold for cloud fractions
+  real( kind = core_rknd ), parameter, public :: &
+    cloud_frac_min = 0.005_core_rknd ! Threshold for cloud fractions
 
   !-----------------------------------------------------------------------------
   ! Useful conversion factors.
@@ -268,17 +269,17 @@ module constants_clubb
     sec_per_min = 60.0_time_precision,    & ! Seconds in a minute.
     min_per_hr = 60.0_time_precision        ! Minutes in an hour.
 
-  real, parameter, public :: & 
-    g_per_kg = 1000.0     ! Grams in a kilogram.
+  real( kind = core_rknd ), parameter, public :: & 
+    g_per_kg = 1000.0_core_rknd     ! Grams in a kilogram.
 
-  real, parameter, public :: &
-    pascal_per_mb = 100.0 ! Pascals per Millibar
+  real( kind = core_rknd ), parameter, public :: &
+    pascal_per_mb = 100.0_core_rknd ! Pascals per Millibar
 
-  real, parameter, public :: & 
-    cm3_per_m3   = 1.e6, & ! Cubic centimeters per cubic meter
-    micron_per_m = 1.e6, & ! Micrometers per meter
-    cm_per_m     = 100., & ! Centimeters per meter  
-    mm_per_m     = 1000.   ! Millimeters per meter  
+  real( kind = core_rknd ), parameter, public :: & 
+    cm3_per_m3   = 1.e6_core_rknd, & ! Cubic centimeters per cubic meter
+    micron_per_m = 1.e6_core_rknd, & ! Micrometers per meter
+    cm_per_m     = 100._core_rknd, & ! Centimeters per meter
+    mm_per_m     = 1000._core_rknd   ! Millimeters per meter  
 
 !=============================================================================
 

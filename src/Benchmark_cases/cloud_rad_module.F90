@@ -31,27 +31,29 @@ module cloud_rad_module
 
     use parameters_radiation, only: F0, kappa
 
+    use clubb_precision, only: core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: exp
 
     ! Input Variables
-    real, dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       rho,  & ! Density (thermo point)          [kg/m^3]
       rcm,  & ! Liquid water mixing ratio       [kg/kg]
       exner   ! Exner function                  [-]
 
     ! Output Variables
-    real, dimension(gr%nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  & 
       Frad, & ! IR radiative flux               [W/m^2]
       radht   ! Radiative heating rate          [K/s]
 
-    real, dimension(gr%nz), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
       thlm_forcing ! Radht + LS      [K/s]
 
     ! Local Variables
-    real, dimension(1:gr%nz) :: LWP        ! Liquid Water Path
+    real( kind = core_rknd ), dimension(1:gr%nz) :: LWP        ! Liquid Water Path
 
     integer :: k
 
@@ -59,7 +61,7 @@ module cloud_rad_module
 
     ! Compute liquid water path from top of the model
     ! We define liquid water path on momentum levels
-    LWP(gr%nz) = 0.
+    LWP(gr%nz) = 0._core_rknd
 
     do k = gr%nz-1, 1, -1
 
@@ -71,18 +73,18 @@ module cloud_rad_module
 
     do k = 1, gr%nz, 1
 
-      Frad(k) = F0 * EXP( -kappa * 1.0 * LWP(k) )
+      Frad(k) = F0 * EXP( -kappa * 1.0_core_rknd * LWP(k) )
 
     end do
 
     ! Compute IR heating rate
 
     radht(1:gr%nz) & 
-    = ( -1.0/(Cp*rho(1:gr%nz) ) * ddzm( Frad(1:gr%nz) )  & 
-      * 1.0 / exner(1:gr%nz) )
+    = ( -1.0_core_rknd/(Cp*rho(1:gr%nz) ) * ddzm( Frad(1:gr%nz) )  & 
+      * 1.0_core_rknd / exner(1:gr%nz) )
 
-    radht(1)       = 0.
-    radht(gr%nz) = 0.
+    radht(1)       = 0._core_rknd
+    radht(gr%nz) = 0._core_rknd
 
     ! Note that for ATEX after 90 minutes, advect and clear air
     ! radiation must be added in from atex_tndcy

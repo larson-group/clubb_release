@@ -289,7 +289,8 @@ module mono_flux_limiter
         fstderr
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use error_code, only:  &
         fatal_error, &  ! Procedure(s)
@@ -347,7 +348,7 @@ module mono_flux_limiter
     real(kind=time_precision), intent(in) ::  &
       dt          ! Model timestep length                           [s]
 
-    real, dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
       xm_old,          & ! xm at previous time step (thermo. levs.) [units vary]
       xp2,             & ! x'^2 (momentum levels)                   [units vary]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
@@ -357,7 +358,7 @@ module mono_flux_limiter
       invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs. [m^3/kg]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       xp2_threshold, &   ! Lower limit of x'^2                      [units vary]
       xm_tol             ! Lower limit of maxdev                    [units vary]
 
@@ -369,7 +370,7 @@ module mono_flux_limiter
       high_lev_effect   ! Index of highest level that has an effect (for lev. k)
 
     ! Input/Output Variables
-    real, dimension(gr%nz), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       xm,  &      ! xm at current time step (thermodynamic levels)  [units vary]
       wpxp        ! w'x' (momentum levels)                          [units vary]
 
@@ -378,14 +379,14 @@ module mono_flux_limiter
       err_code  ! Returns an error code in the event of a singular matrix
 
     ! Local Variables
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       xp2_zt,          &      ! x'^2 interpolated to thermodynamic levels  [units vary]
       xm_enter_mfl,    &      ! xm as it enters the MFL                    [units vary]
       xm_without_ta,   &      ! Value of xm without turb. adv. contrib.    [units vary]
       wpxp_net_adjust, &      ! Net amount of adjustment needed on w'x'    [units vary]      
       dxm_dt_mfl_adjust       ! Rate of change of adjustment to xm         [units vary]
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       min_x_allowable_lev, & ! Smallest usuable value of x at lev k [units vary]
       max_x_allowable_lev, & ! Largest usuable value of x at lev k  [units vary]
       min_x_allowable, & ! Smallest usuable x within k +/- num_levs [units vary]
@@ -393,7 +394,7 @@ module mono_flux_limiter
       wpxp_mfl_max, & ! Upper limit on w'x'(k)                [units vary]
       wpxp_mfl_min    ! Lower limit on w'x'(k)                [units vary]
 
-    real ::  &
+    real( kind = core_rknd ) ::  &
       max_xp2,             & ! Maximum allowable x'^2                        [units vary]
       stnd_dev_x,          & ! Standard deviation of x                       [units vary]
       max_dev,             & ! Determines approximate upper/lower limit of x [units vary]
@@ -403,10 +404,10 @@ module mono_flux_limiter
       xm_vert_integral,    & ! Vertical integral of xm                       [units_vary]
       dz                     ! zm grid spacing at top of domain              [m]
 
-    real, dimension(3,gr%nz) ::  &
+    real( kind = core_rknd ), dimension(3,gr%nz) ::  &
       lhs_mfl_xm  ! Left hand side of tridiagonal matrix
 
-    real, dimension(gr%nz) ::  &
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
       rhs_mfl_xm  ! Right hand side of tridiagonal matrix equation
 
     integer ::  &
@@ -428,28 +429,28 @@ module mono_flux_limiter
     err_code = clubb_no_error  ! Initialize to the value for no errors
 
     ! Default Initialization required due to G95 compiler warning
-    max_xp2 = 0.0
-    dz = 0.0
+    max_xp2 = 0.0_core_rknd
+    dz = 0.0_core_rknd
 
     select case( solve_type )
     case ( mono_flux_rtm )  ! rtm/wprtp
        iwpxp_mfl = iwprtp_mfl
        ixm_mfl   = irtm_mfl
-       max_xp2   = 5.0e-6
+       max_xp2   = 5.0e-6_core_rknd
     case ( mono_flux_thlm ) ! thlm/wpthlp
        iwpxp_mfl = iwpthlp_mfl
        ixm_mfl   = ithlm_mfl
-       max_xp2   = 5.0
+       max_xp2   = 5.0_core_rknd
     case default    ! passive scalars are involved
        iwpxp_mfl = 0
        ixm_mfl   = 0
-       max_xp2   = 5.0
+       max_xp2   = 5.0_core_rknd
     end select
 
 
     if ( l_stats_samp ) then
-       call stat_begin_update( iwpxp_mfl, wpxp / real( dt ), zm )
-       call stat_begin_update( ixm_mfl, xm / real( dt ), zt )
+       call stat_begin_update( iwpxp_mfl, wpxp / real( dt, kind = core_rknd ), zm )
+       call stat_begin_update( ixm_mfl, xm / real( dt, kind = core_rknd ), zt )
     endif
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
        call stat_update_var( ithlm_enter_mfl, xm, zt )
@@ -462,8 +463,8 @@ module mono_flux_limiter
     endif
 
     ! Initialize arrays.
-    wpxp_net_adjust = 0.0
-    dxm_dt_mfl_adjust = 0.0
+    wpxp_net_adjust = 0.0_core_rknd
+    dxm_dt_mfl_adjust = 0.0_core_rknd
 
     ! Store the value of xm as it enters the mfl
     xm_enter_mfl = xm
@@ -494,10 +495,10 @@ module mono_flux_limiter
        ! Most values are found within +/- 2 standard deviations from the mean.
        ! Use +/- 2 standard deviations from the mean as the maximum/minimum
        ! values.
-       ! max_dev = 2.0*stnd_dev_x
+       ! max_dev = 2.0_core_rknd*stnd_dev_x
 
        ! Set a minimum on max_dev
-       max_dev = max(2.0 * stnd_dev_x, xm_tol)
+       max_dev = max(2.0_core_rknd * stnd_dev_x, xm_tol)
 
        ! Calculate the contribution of the mean advection term:
        ! m_adv_term = -wm_zt(k)*d(xm)/dz|_(k).
@@ -508,16 +509,17 @@ module mono_flux_limiter
        !                - tmp(2) * xm(k)  &
        !                - tmp(3) * xm(km1)
        !else
-       !   m_adv_term = 0.0
+       !   m_adv_term = 0.0_core_rknd
        !endif
 
        ! Shut off to avoid using new, possibly corrupt mean advection term
-       m_adv_term = 0.0
+       m_adv_term = 0.0_core_rknd
 
        ! Find the value of xm without the contribution from the turbulent
        ! advection term.
        ! Note:  the contribution of xm_forcing at level gr%nz should be 0.
-       xm_without_ta(k) = xm_old(k) + real( dt )*xm_forcing(k) + real( dt )*m_adv_term
+       xm_without_ta(k) = xm_old(k) + real( dt, kind = core_rknd )*xm_forcing(k) &
+                          + real( dt, kind = core_rknd )*m_adv_term
 
        ! Find the minimum usuable value of variable x at each vertical level.
        ! Since variable x must be one of theta_l, r_t, or a scalar, all of
@@ -560,14 +562,14 @@ module mono_flux_limiter
        ! Find the upper limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_max(k)  &
        = invrs_rho_ds_zm(k)  &
-                  * (   ( rho_ds_zt(k) / (real( dt )*gr%invrs_dzt(k)) )  &
+                  * (   ( rho_ds_zt(k) / (real( dt, kind = core_rknd )*gr%invrs_dzt(k)) )  &
                         * ( xm_without_ta(k) - min_x_allowable(k) )  &
                       + rho_ds_zm(km1) * wpxp(km1)  )
 
        ! Find the lower limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_min(k)  &
        = invrs_rho_ds_zm(k)  &
-                  * (   ( rho_ds_zt(k) / (real( dt )*gr%invrs_dzt(k)) )  &
+                  * (   ( rho_ds_zt(k) / (real( dt, kind = core_rknd )*gr%invrs_dzt(k)) )  &
                         * ( xm_without_ta(k) - max_x_allowable(k) )  &
                       + rho_ds_zm(km1) * wpxp(km1)  )
 
@@ -633,7 +635,7 @@ module mono_flux_limiter
        !else
        !
        !   ! wpxp(k) is okay.
-       !   if ( wpxp_net_adjust(km1) /= 0.0 ) then
+       !   if ( wpxp_net_adjust(km1) /= 0.0_core_rknd ) then
        !      print *, "k = ", k
        !      print *, "wpxp is in an acceptable range (mfl)"
        !      print *, "xm(t) = ", xm_old(k)
@@ -663,17 +665,17 @@ module mono_flux_limiter
     enddo
 
     ! Boundary conditions
-    min_x_allowable(1) = 0.
-    max_x_allowable(1) = 0.
+    min_x_allowable(1) = 0._core_rknd
+    max_x_allowable(1) = 0._core_rknd
 
-    min_x_allowable(gr%nz) = 0.
-    max_x_allowable(gr%nz) = 0.
+    min_x_allowable(gr%nz) = 0._core_rknd
+    max_x_allowable(gr%nz) = 0._core_rknd
 
-    wpxp_mfl_min(1) = 0.
-    wpxp_mfl_max(1) = 0.
+    wpxp_mfl_min(1) = 0._core_rknd
+    wpxp_mfl_max(1) = 0._core_rknd
 
-    wpxp_mfl_min(gr%nz) = 0.
-    wpxp_mfl_max(gr%nz) = 0.
+    wpxp_mfl_min(gr%nz) = 0._core_rknd
+    wpxp_mfl_max(gr%nz) = 0._core_rknd
 
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
        call stat_update_var( ithlm_without_ta, xm_without_ta, zt )
@@ -690,7 +692,7 @@ module mono_flux_limiter
     endif
 
 
-    if ( any( wpxp_net_adjust(:) /= 0.0 ) ) then
+    if ( any( wpxp_net_adjust(:) /= 0.0_core_rknd ) ) then
 
        ! Reset the value of xm to compensate for the change to w'x'.
 
@@ -737,7 +739,7 @@ module mono_flux_limiter
              ! rate of change multiplied by the time step length.  Add the
              ! product to xm to find the new xm resulting from the monotonic
              ! flux limiter.
-             xm(k) = xm(k) + dxm_dt_mfl_adjust(k) * real( dt )
+             xm(k) = xm(k) + dxm_dt_mfl_adjust(k) * real( dt, kind = core_rknd )
 
           enddo
 
@@ -752,7 +754,7 @@ module mono_flux_limiter
        !enddo
 
        !Ensure there are no spikes at the top of the domain
-       if (abs( xm(gr%nz) - xm_enter_mfl(gr%nz) ) > 10. * xm_tol) then
+       if (abs( xm(gr%nz) - xm_enter_mfl(gr%nz) ) > 10._core_rknd * xm_tol) then
           dz = gr%zm(gr%nz) - gr%zm(gr%nz - 1)
 
           xm_density_weighted = rho_ds_zt(gr%nz) &
@@ -777,14 +779,14 @@ module mono_flux_limiter
              xm_adj_coef = xm_density_weighted / xm_vert_integral
 
              !xm_adj_coef can not be smaller than -1
-             if (xm_adj_coef < -0.99) then
+             if (xm_adj_coef < -0.99_core_rknd) then
                 write(fstderr,*) "xm_adj_coef in mfl less than -0.99, " &
                                  // "mx_adj_coef set to -0.99"
-                xm_adj_coef = -0.99
+                xm_adj_coef = -0.99_core_rknd
              endif
 
              !Apply the adjustment
-             xm = xm * (1. + xm_adj_coef)
+             xm = xm * (1._core_rknd + xm_adj_coef)
 
              !Remove the spike at the top of the domain
              xm(gr%nz) = xm_enter_mfl(gr%nz)
@@ -807,14 +809,14 @@ module mono_flux_limiter
           endif ! xm_vert_integral < eps
        endif ! spike at domain top
 
-    endif ! any( wpxp_net_adjust(:) /= 0.0 )
+    endif ! any( wpxp_net_adjust(:) /= 0.0_core_rknd )
 
 
     if ( l_stats_samp ) then
 
-       call stat_end_update( iwpxp_mfl, wpxp / real( dt ), zm )
+       call stat_end_update( iwpxp_mfl, wpxp / real( dt, kind = core_rknd ), zm )
 
-       call stat_end_update( ixm_mfl, xm / real( dt ), zt )
+       call stat_end_update( ixm_mfl, xm / real( dt, kind = core_rknd ), zt )
 
        if ( solve_type == mono_flux_thlm ) then
           call stat_update_var( ithlm_exit_mfl, xm, zt )
@@ -852,7 +854,8 @@ module mono_flux_limiter
         term_ma_zt_lhs ! Procedure(s)
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     implicit none
 
@@ -866,14 +869,14 @@ module mono_flux_limiter
     real(kind=time_precision), intent(in) ::  &
       dt     ! Model timestep length                      [s]
 
-    real, dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
       wm_zt  ! w wind component on thermodynamic levels   [m/s]
 
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
     ! Output Variables
-    real, dimension(3,gr%nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(3,gr%nz), intent(out) ::  & 
       lhs    ! Left hand side of tridiagonal matrix
 
     ! Local Variables
@@ -883,7 +886,7 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
     ! Initialize the left-hand side matrix to 0.
-    lhs = 0.0
+    lhs = 0.0_core_rknd
 
 
     ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
@@ -905,13 +908,13 @@ module mono_flux_limiter
        else
 
           lhs(kp1_tdiag:km1_tdiag,k) & 
-          = lhs(kp1_tdiag:km1_tdiag,k) + 0.0
+          = lhs(kp1_tdiag:km1_tdiag,k) + 0.0_core_rknd
 
        endif
 
        ! LHS xm time tendency.
        lhs(k_tdiag,k) &
-       = lhs(k_tdiag,k) + 1.0 / real( dt )
+       = lhs(k_tdiag,k) + 1.0_core_rknd / real( dt, kind = core_rknd )
 
     enddo ! xm loop: 2..gr%nz
 
@@ -919,8 +922,8 @@ module mono_flux_limiter
 
     ! Lower boundary
     k = 1
-    lhs(:,k)       = 0.0
-    lhs(k_tdiag,k) = 1.0
+    lhs(:,k)       = 0.0_core_rknd
+    lhs(k_tdiag,k) = 1.0_core_rknd
 
     return
   end subroutine mfl_xm_lhs
@@ -945,7 +948,8 @@ module mono_flux_limiter
         gr  ! Variable(s)
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     implicit none
 
@@ -953,7 +957,7 @@ module mono_flux_limiter
     real(kind=time_precision), intent(in) ::  &
       dt                 ! Model timestep length                    [s]
 
-    real, dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
       xm_old,          & ! xm; timestep (t) (thermodynamic levels)  [units vary]
       wpxp,            & ! w'x'; timestep (t+1); limited (m-levs.)  [units vary]
       xm_forcing,      & ! xm forcings (thermodynamic levels)       [units vary]
@@ -961,7 +965,7 @@ module mono_flux_limiter
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     ! Output Variable
-    real, dimension(gr%nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
       rhs         ! Right hand side of tridiagonal matrix equation
 
     ! Local Variables
@@ -970,7 +974,7 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
     ! Initialize the right-hand side vector to 0.
-    rhs = 0.0
+    rhs = 0.0_core_rknd
 
 
     ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
@@ -983,7 +987,7 @@ module mono_flux_limiter
        km1 = max( k-1, 1 )
 
        ! RHS xm time tendency.
-       rhs(k) = rhs(k) + xm_old(k) / real( dt )
+       rhs(k) = rhs(k) + xm_old(k) / real( dt, kind = core_rknd )
 
        ! RHS xm turbulent advection (ta) term.
        ! Note:  Normally, the turbulent advection (ta) term is treated
@@ -1047,6 +1051,9 @@ module mono_flux_limiter
         fatal_error, &  ! Procedure(s)
         clubb_no_error   ! Constant
 
+    use clubb_precision, only: &
+        core_rknd
+
     implicit none
 
     ! Constant parameters
@@ -1059,14 +1066,14 @@ module mono_flux_limiter
     integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
 
-    real, dimension(3,gr%nz), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(3,gr%nz), intent(inout) ::  & 
       lhs  ! Left hand side of tridiagonal matrix
 
-    real, dimension(gr%nz), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       rhs  ! Right hand side of tridiagonal matrix equation
 
     ! Output Variables
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       xm   ! Value of variable being solved for at timestep (t+1)   [units vary]
 
     integer, intent(out) ::  &
@@ -1144,8 +1151,9 @@ module mono_flux_limiter
         pdf_parameter  ! Type
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
-    
+        time_precision, & ! Variable(s)
+        core_rknd
+
     implicit none
     
     ! Input Variables
@@ -1161,7 +1169,7 @@ module mono_flux_limiter
       high_lev_effect   ! Index of highest level that has an effect (for lev. k)
 
     ! Local Variables
-    real, dimension(gr%nz) ::  &
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
       vert_vel_up,  & ! Average upwards vertical velocity component   [m/s]
       vert_vel_down   ! Average downwards vertical velocity component [m/s]
 
@@ -1174,8 +1182,8 @@ module mono_flux_limiter
     logical, parameter ::  &
       l_constant_thickness = .false.  ! Toggle constant or variable thickness.
 
-    real, parameter ::  &
-      const_thick = 150.0  ! Constant thickness value               [m]
+    real( kind = core_rknd ), parameter ::  &
+      const_thick = 150.0_core_rknd  ! Constant thickness value               [m]
 
 
     if ( l_constant_thickness ) then ! thickness is a constant value.
@@ -1277,7 +1285,7 @@ module mono_flux_limiter
        ! vertical velocity.
        ! Note:  A level that has all vertical wind moving downwards will have a
        !        vert_vel_up value that is 0, and vice versa.
-       call mean_vert_vel_up_down( pdf_params, 0.0,  &
+       call mean_vert_vel_up_down( pdf_params, 0.0_core_rknd,  &
                                    vert_vel_down, vert_vel_up )
 
        ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
@@ -1297,11 +1305,11 @@ module mono_flux_limiter
           do ! loop downwards until answer is found.
 
              ! Continue if there is some component of upwards vertical velocity.
-             if ( vert_vel_up(j) > 0.0 ) then
+             if ( vert_vel_up(j) > 0.0_core_rknd ) then
 
                 ! Compute the amount of time it takes to travel one grid level
                 ! upwards:  delta_t = delta_z / vert_vel_up.
-                dt_one_grid_lev = real( (1.0/gr%invrs_dzm(j)) / vert_vel_up(j), &
+                dt_one_grid_lev = real( (1.0_core_rknd/gr%invrs_dzm(j)) / vert_vel_up(j), &
                                         kind=time_precision )
 
                 ! Total time elapsed for crossing all grid levels that have been
@@ -1371,7 +1379,7 @@ module mono_flux_limiter
           do ! loop upwards until answer is found.
 
              ! Continue if there is some component of downwards vertical velocity.
-             if ( vert_vel_down(j-1) < 0.0 ) then
+             if ( vert_vel_down(j-1) < 0.0_core_rknd ) then
 
                 ! Compute the amount of time it takes to travel one grid level
                 ! downwards:  delta_t = - delta_z / vert_vel_down.
@@ -1379,7 +1387,7 @@ module mono_flux_limiter
                 !        distance traveled is downwards.  Since vert_vel_down
                 !        has a negative value, dt_one_grid_lev will be a
                 !        positive value.
-                dt_one_grid_lev = real( -(1.0/gr%invrs_dzm(j-1)) / vert_vel_down(j-1), &
+                dt_one_grid_lev = real( -(1.0_core_rknd/gr%invrs_dzm(j-1)) / vert_vel_down(j-1), &
                                         kind=time_precision )
 
                 ! Total time elapsed for crossing all grid levels that have been
@@ -1659,31 +1667,34 @@ module mono_flux_limiter
         imean_w_down, &
         l_stats_samp
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
     type(pdf_parameter), dimension(gr%nz), intent(in) ::  &
       pdf_params     ! PDF parameters
 
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       w_ref          ! Reference velocity, w|_ref (normally = 0)   [m/s]
 
     ! Output Variables
-    real, dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       mean_w_down, & ! Overall mean w (<= w|_ref)                  [m/s]
       mean_w_up      ! Overall mean w (>= w|_ref)                  [m/s]
 
     ! Local Variables
 
     ! PDF parameters unpacked and interpolated to momentum levels
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       w1,  & ! Mean of w for 1st normal distribution               [m/s]
       w2,  & ! Mean of w for 2nd normal distribution               [m/s]
       varnce_w1, & ! Variance of w for 1st normal distribution           [m^2/s^2]
       varnce_w2, & ! Variance of w for 2nd normal distribution           [m^2/s^2]
       mixt_frac    ! Weight of 1st normal distribution (Sk_w dependent)  [-]
 
-    real :: &
+    real( kind = core_rknd ) :: &
       sigma_w1, & ! Standard deviation of w for 1st normal distribution    [m/s]
       sigma_w2, & ! Standard deviation of w for 2nd normal distribution    [m/s]
       mean_w_down_1st, & ! Mean w (<= w|_ref) from 1st normal distribution [m/s]
@@ -1718,16 +1729,16 @@ module mono_flux_limiter
 
 
        ! Contributions from the 1st normal distribution.
-       if ( w1(k) + 3.*sigma_w1 <= w_ref ) then
+       if ( w1(k) + 3._core_rknd*sigma_w1 <= w_ref ) then
 
           ! The entire 1st normal is on the negative side of w|_ref.
           mean_w_down_1st = w1(k)
-          mean_w_up_1st   = 0.0
+          mean_w_up_1st   = 0.0_core_rknd
 
-       elseif ( w1(k) - 3.*sigma_w1 >= w_ref ) then
+       elseif ( w1(k) - 3._core_rknd*sigma_w1 >= w_ref ) then
 
           ! The entire 1st normal is on the positive side of w|_ref.
-          mean_w_down_1st = 0.0
+          mean_w_down_1st = 0.0_core_rknd
           mean_w_up_1st   = w1(k)
 
        else
@@ -1736,7 +1747,7 @@ module mono_flux_limiter
           ! equations. This should save one calculation of the
           ! exp( -(w_ref-w1(k))**2 ... etc. part of the formula.
           ! ~~EIHoppe//20090618
-          exp_cache = exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) ) 
+          exp_cache = exp( -(w_ref-w1(k))**2 / (2.0_core_rknd*sigma_w1**2) ) 
 
           ! Added cache of the error function calculations.
           ! This should save one calculation of the erf(...) part
@@ -1747,17 +1758,17 @@ module mono_flux_limiter
           ! The 1st normal has values on both sides of w_ref.
           mean_w_down_1st =  &
              - (sigma_w1/sqrt_2pi)  &
-!             * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
+!             * exp( -(w_ref-w1(k))**2 / (2.0_core_rknd*sigma_w1**2) )  &
              * exp_cache  &
-!             + w1(k) * 0.5*( 1.0 + erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
-             + w1(k) * 0.5*( 1.0 + erf_cache)
+!             + w1(k) * 0.5_core_rknd*( 1.0_core_rknd + erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
+             + w1(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
 
           mean_w_up_1st =  &
              + (sigma_w1/sqrt_2pi)  &
-!             * exp( -(w_ref-w1(k))**2 / (2.0*sigma_w1**2) )  &
+!             * exp( -(w_ref-w1(k))**2 / (2.0_core_rknd*sigma_w1**2) )  &
              * exp_cache  &
-!             + w1(k) * 0.5*( 1.0 - erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
-             + w1(k) * 0.5*( 1.0 - erf_cache)
+!             + w1(k) * 0.5_core_rknd*( 1.0_core_rknd - erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
+             + w1(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
 
           ! /EIHoppe changes
 
@@ -1765,16 +1776,16 @@ module mono_flux_limiter
 
 
        ! Contributions from the 2nd normal distribution.
-       if ( w2(k) + 3.*sigma_w2 <= w_ref ) then
+       if ( w2(k) + 3._core_rknd*sigma_w2 <= w_ref ) then
 
           ! The entire 2nd normal is on the negative side of w|_ref.
           mean_w_down_2nd = w2(k)
-          mean_w_up_2nd   = 0.0
+          mean_w_up_2nd   = 0.0_core_rknd
 
-       elseif ( w2(k) - 3.*sigma_w2 >= w_ref ) then
+       elseif ( w2(k) - 3._core_rknd*sigma_w2 >= w_ref ) then
 
           ! The entire 2nd normal is on the positive side of w|_ref.
-          mean_w_down_2nd = 0.0
+          mean_w_down_2nd = 0.0_core_rknd
           mean_w_up_2nd   = w2(k)
 
        else
@@ -1783,7 +1794,7 @@ module mono_flux_limiter
           ! equations. This should save one calculation of the
           ! exp( -(w_ref-w1(k))**2 ... etc. part of the formula.
           ! ~~EIHoppe//20090618
-          exp_cache = exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) ) 
+          exp_cache = exp( -(w_ref-w2(k))**2 / (2.0_core_rknd*sigma_w2**2) ) 
 
           ! Added cache of the error function calculations.
           ! This should save one calculation of the erf(...) part
@@ -1794,17 +1805,17 @@ module mono_flux_limiter
           ! The 2nd normal has values on both sides of w_ref.
           mean_w_down_2nd =  &
              - (sigma_w2/sqrt_2pi)  &
-!             * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
+!             * exp( -(w_ref-w2(k))**2 / (2.0_core_rknd*sigma_w2**2) )  &
              * exp_cache  &
-!             + w2(k) * 0.5*( 1.0 + erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
-             + w2(k) * 0.5*( 1.0 + erf_cache)
+!             + w2(k) * 0.5_core_rknd*( 1.0_core_rknd + erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
+             + w2(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
 
           mean_w_up_2nd =  &
              + (sigma_w2/sqrt_2pi)  &
-!             * exp( -(w_ref-w2(k))**2 / (2.0*sigma_w2**2) )  &
+!             * exp( -(w_ref-w2(k))**2 / (2.0_core_rknd*sigma_w2**2) )  &
              * exp_cache  &
-!             + w2(k) * 0.5*( 1.0 - erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
-             + w2(k) * 0.5*( 1.0 - erf_cache)
+!             + w2(k) * 0.5_core_rknd*( 1.0_core_rknd - erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
+             + w2(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
 
           ! /EIHoppe changes
 
@@ -1812,11 +1823,11 @@ module mono_flux_limiter
 
        ! Overall mean of downwards w.
        mean_w_down(k) = mixt_frac(k) * mean_w_down_1st  &
-                        + ( 1.0 - mixt_frac(k) ) * mean_w_down_2nd
+                        + ( 1.0_core_rknd - mixt_frac(k) ) * mean_w_down_2nd
 
        ! Overall mean of upwards w.
        mean_w_up(k) = mixt_frac(k) * mean_w_up_1st  &
-                      + ( 1.0 - mixt_frac(k) ) * mean_w_up_2nd
+                      + ( 1.0_core_rknd - mixt_frac(k) ) * mean_w_up_2nd
 
        if ( l_stats_samp ) then
 

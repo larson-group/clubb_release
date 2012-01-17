@@ -13,6 +13,9 @@ module variables_diagnostic_module
   use pdf_parameter_module, only: &
     pdf_parameter ! derived type
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   private ! Set default scope
@@ -23,7 +26,7 @@ module variables_diagnostic_module
 
   ! Diagnostic variables
 
-  real, target, allocatable, dimension(:), public :: &
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: &
     sigma_sqd_w_zt, & ! PDF width parameter interpolated to t-levs.  [-]
     Skw_zm,         & ! Skewness of w on momentum levels             [-]
     Skw_zt,         & ! Skewness of w on thermodynamic levels        [-]
@@ -41,7 +44,7 @@ module variables_diagnostic_module
 !$omp threadprivate(sigma_sqd_w_zt, Skw_zm, Skw_zt, ug, vg, &
 !$omp   um_ref, vm_ref, thlm_ref, rtm_ref, thvm )
 
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     rsat ! Saturation mixing ratio  ! Brian
 
 !$omp threadprivate(rsat)
@@ -51,7 +54,7 @@ module variables_diagnostic_module
 
 !$omp threadprivate(pdf_params_zm)
 
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     Frad,         & ! Radiative flux (momentum point)   [W/m^2]
     radht,        & ! SW + LW heating rate              [K/s]
     Frad_SW_up,   & ! SW radiative upwelling flux       [W/m^2]
@@ -62,7 +65,7 @@ module variables_diagnostic_module
 !$omp threadprivate(Frad, radht, Frad_SW_up, Frad_SW_down, Frad_LW_up, Frad_LW_down)
 
 ! Second order moments
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     thlprcp,  & ! thl'rc'              [K kg/kg]
     rtprcp,   & ! rt'rc'               [kg^2/kg^2]
     rcp2        ! rc'^2                [kg^2/kg^2]
@@ -70,7 +73,7 @@ module variables_diagnostic_module
 !$omp threadprivate(thlprcp, rtprcp, rcp2)
 
 ! Third order moments
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     wpthlp2,   & ! w'thl'^2    [m K^2/s]
     wp2thlp,   & ! w'^2 thl'   [m^2 K/s^2]
     wprtp2,    & ! w'rt'^2     [m kg^2/kg^2]
@@ -83,13 +86,13 @@ module variables_diagnostic_module
 !$omp   wprtpthlp, wp2rcp, wp3_zm )
 
 ! Fourth order moments
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     wp4 ! w'^4      [m^4/s^4]
 
 !$omp threadprivate(wp4)
 
 ! Buoyancy related moments
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     rtpthvp,  & ! rt'thv'     [K kg/kg]
     thlpthvp, & ! thl'thv'    [K^2]
     wpthvp,   & ! w'thv'      [K m/s]
@@ -97,19 +100,19 @@ module variables_diagnostic_module
 
 !$omp threadprivate(rtpthvp, thlpthvp, wpthvp, wp2thvp)
 
-  real, target, allocatable, dimension(:), public :: &
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: &
     Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
     Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
 
 !$omp threadprivate(Kh_zt, Kh_zm)
 
 ! Mixing lengths
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     Lscale, Lscale_up, Lscale_down ! [m]
 
 !$omp threadprivate(Lscale, Lscale_up, Lscale_down)
 
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     em,     & ! Turbulent Kinetic Energy (TKE)                        [m^2/s^2]
     tau_zm, & ! Eddy dissipation time scale on momentum levels        [s]
     tau_zt    ! Eddy dissipation time scale on thermodynamic levels   [s]
@@ -117,27 +120,27 @@ module variables_diagnostic_module
 !$omp threadprivate(em, tau_zm, tau_zt)
 
 ! hydrometeors variable array
-  real, allocatable, dimension(:,:), public :: hydromet
+  real( kind = core_rknd ), allocatable, dimension(:,:), public :: hydromet
 !$omp threadprivate(hydromet)
 
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     Ncnm     ! Cloud nuclei number concentration       [num/m^3]
 !$omp threadprivate(Ncnm)
 
 
 ! Surface data
-  real, public  :: ustar ! Average value of friction velocity [m/s]
+  real( kind = core_rknd ), public  :: ustar ! Average value of friction velocity [m/s]
 
-  real, public :: soil_heat_flux    ! Soil Heat Flux [W/m^2]
+  real( kind = core_rknd ), public :: soil_heat_flux    ! Soil Heat Flux [W/m^2]
 !$omp threadprivate(ustar, soil_heat_flux)
 
 ! Passive scalar variables
 
-  real, target, allocatable, dimension(:,:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:,:), public :: & 
     wpedsclrp   ! w'edsclr'
 !$omp threadprivate(wpedsclrp)
 
-  real, target, allocatable, dimension(:,:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:,:), public :: & 
     sclrpthvp,   & ! sclr'th_v'
     sclrprcp,    & ! sclr'rc'
     wp2sclrp,    & ! w'^2 sclr'
@@ -150,7 +153,7 @@ module variables_diagnostic_module
 
 ! Interpolated variables for tuning
 !
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     wp2_zt,     & ! w'^2 on thermo. grid     [m^2/s^2]
     thlp2_zt,   & ! thl'^2 on thermo. grid   [K^2]
     wpthlp_zt,  & ! w'thl' on thermo. grid   [m K/s]
@@ -168,7 +171,7 @@ module variables_diagnostic_module
 
 
 ! Latin Hypercube arrays.  Vince Larson 22 May 2005
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     lh_AKm,   & ! Kessler ac estimate                 [kg/kg/s]
     AKm,       & ! Exact Kessler ac                    [kg/kg/s]
     AKstd,     & ! St dev of exact Kessler ac          [kg/kg/s]
@@ -181,21 +184,21 @@ module variables_diagnostic_module
 !$omp   AKm_rcc)
 
   ! Diagnostics from the pdf_closure subroutine
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
     tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
     corr_st_mellor1, corr_st_mellor2 ! Correlation between s and t [-]
 !$omp threadprivate(sptp_mellor_1, sptp_mellor_2, tp2_mellor_1, tp2_mellor_2, &
 !$omp   corr_st_mellor1, corr_st_mellor2 )
 
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     Skw_velocity, & ! Skewness velocity    [m/s]
     a3_coef,      & ! The a3 coefficient from CLUBB eqns                [-]
     a3_coef_zt      ! The a3 coefficient interpolated to the zt grid    [-]
 
 !$omp threadprivate(Skw_velocity, a3_coef, a3_coef_zt)
 
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     wp3_on_wp2,   &  ! w'^3 / w'^2 on the zm grid [m/s]
     wp3_on_wp2_zt    ! w'^3 / w'^2 on the zt grid [m/s]
 
@@ -217,6 +220,9 @@ module variables_diagnostic_module
       hydromet_dim, & ! Variables
       sclr_dim, &
       edsclr_dim
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -353,148 +359,148 @@ module variables_diagnostic_module
 
     ! Diagnostic variables
 
-    sigma_sqd_w_zt = 0.0 ! PDF width parameter interp. to t-levs.
-    Skw_zm         = 0.0 ! Skewness of w on momentum levels
-    Skw_zt         = 0.0 ! Skewness of w on thermodynamic levels
-    ug             = 0.0 ! u geostrophic wind
-    vg             = 0.0 ! v geostrophic wind
-    um_ref         = 0.0
-    vm_ref         = 0.0
-    thlm_ref       = 0.0
-    rtm_ref        = 0.0
+    sigma_sqd_w_zt = 0.0_core_rknd ! PDF width parameter interp. to t-levs.
+    Skw_zm         = 0.0_core_rknd ! Skewness of w on momentum levels
+    Skw_zt         = 0.0_core_rknd ! Skewness of w on thermodynamic levels
+    ug             = 0.0_core_rknd ! u geostrophic wind
+    vg             = 0.0_core_rknd ! v geostrophic wind
+    um_ref         = 0.0_core_rknd
+    vm_ref         = 0.0_core_rknd
+    thlm_ref       = 0.0_core_rknd
+    rtm_ref        = 0.0_core_rknd
 
-    thvm = 0.0  ! Virtual potential temperature
-    rsat  = 0.0  ! Saturation mixing ratio  ! Brian
+    thvm = 0.0_core_rknd  ! Virtual potential temperature
+    rsat  = 0.0_core_rknd  ! Saturation mixing ratio  ! Brian
 
-    radht = 0.0 ! Heating rate
-    Frad  = 0.0 ! Radiative flux
-    Frad_SW_up = 0.0
-    Frad_LW_up = 0.0
-    Frad_SW_down = 0.0
-    Frad_LW_down = 0.0
+    radht = 0.0_core_rknd ! Heating rate
+    Frad  = 0.0_core_rknd ! Radiative flux
+    Frad_SW_up = 0.0_core_rknd
+    Frad_LW_up = 0.0_core_rknd
+    Frad_SW_down = 0.0_core_rknd
+    Frad_LW_down = 0.0_core_rknd
 
 
     ! pdf_params on momentum levels
-    pdf_params_zm%w1          = 0.0
-    pdf_params_zm%w2          = 0.0
-    pdf_params_zm%varnce_w1   = 0.0
-    pdf_params_zm%varnce_w2   = 0.0
-    pdf_params_zm%rt1         = 0.0
-    pdf_params_zm%rt2         = 0.0
-    pdf_params_zm%varnce_rt1  = 0.0
-    pdf_params_zm%varnce_rt2  = 0.0
-    pdf_params_zm%thl1        = 0.0
-    pdf_params_zm%thl2        = 0.0
-    pdf_params_zm%varnce_thl1 = 0.0
-    pdf_params_zm%varnce_thl2 = 0.0
-    pdf_params_zm%mixt_frac   = 0.0
-    pdf_params_zm%rc1         = 0.0
-    pdf_params_zm%rc2         = 0.0
-    pdf_params_zm%rsl1        = 0.0
-    pdf_params_zm%rsl2        = 0.0
-    pdf_params_zm%cloud_frac1 = 0.0
-    pdf_params_zm%cloud_frac2 = 0.0
-    pdf_params_zm%s1          = 0.0
-    pdf_params_zm%s2          = 0.0
-    pdf_params_zm%stdev_s1    = 0.0
-    pdf_params_zm%stdev_s2    = 0.0
-    pdf_params_zm%rrtthl      = 0.0
-    pdf_params_zm%alpha_thl   = 0.0
-    pdf_params_zm%alpha_rt    = 0.0
-    pdf_params_zm%crt1        = 0.0
-    pdf_params_zm%crt2        = 0.0
-    pdf_params_zm%cthl1       = 0.0
-    pdf_params_zm%cthl2       = 0.0
+    pdf_params_zm%w1          = 0.0_core_rknd
+    pdf_params_zm%w2          = 0.0_core_rknd
+    pdf_params_zm%varnce_w1   = 0.0_core_rknd
+    pdf_params_zm%varnce_w2   = 0.0_core_rknd
+    pdf_params_zm%rt1         = 0.0_core_rknd
+    pdf_params_zm%rt2         = 0.0_core_rknd
+    pdf_params_zm%varnce_rt1  = 0.0_core_rknd
+    pdf_params_zm%varnce_rt2  = 0.0_core_rknd
+    pdf_params_zm%thl1        = 0.0_core_rknd
+    pdf_params_zm%thl2        = 0.0_core_rknd
+    pdf_params_zm%varnce_thl1 = 0.0_core_rknd
+    pdf_params_zm%varnce_thl2 = 0.0_core_rknd
+    pdf_params_zm%mixt_frac   = 0.0_core_rknd
+    pdf_params_zm%rc1         = 0.0_core_rknd
+    pdf_params_zm%rc2         = 0.0_core_rknd
+    pdf_params_zm%rsl1        = 0.0_core_rknd
+    pdf_params_zm%rsl2        = 0.0_core_rknd
+    pdf_params_zm%cloud_frac1 = 0.0_core_rknd
+    pdf_params_zm%cloud_frac2 = 0.0_core_rknd
+    pdf_params_zm%s1          = 0.0_core_rknd
+    pdf_params_zm%s2          = 0.0_core_rknd
+    pdf_params_zm%stdev_s1    = 0.0_core_rknd
+    pdf_params_zm%stdev_s2    = 0.0_core_rknd
+    pdf_params_zm%rrtthl      = 0.0_core_rknd
+    pdf_params_zm%alpha_thl   = 0.0_core_rknd
+    pdf_params_zm%alpha_rt    = 0.0_core_rknd
+    pdf_params_zm%crt1        = 0.0_core_rknd
+    pdf_params_zm%crt2        = 0.0_core_rknd
+    pdf_params_zm%cthl1       = 0.0_core_rknd
+    pdf_params_zm%cthl2       = 0.0_core_rknd
 
 
     ! Second order moments
-    thlprcp = 0.0
-    rtprcp  = 0.0
-    rcp2    = 0.0
+    thlprcp = 0.0_core_rknd
+    rtprcp  = 0.0_core_rknd
+    rcp2    = 0.0_core_rknd
 
     ! Third order moments
-    wpthlp2   = 0.0
-    wp2thlp   = 0.0
-    wprtp2    = 0.0
-    wp2rtp    = 0.0
-    wp2rcp    = 0.0
-    wprtpthlp = 0.0
+    wpthlp2   = 0.0_core_rknd
+    wp2thlp   = 0.0_core_rknd
+    wprtp2    = 0.0_core_rknd
+    wp2rtp    = 0.0_core_rknd
+    wp2rcp    = 0.0_core_rknd
+    wprtpthlp = 0.0_core_rknd
 
-    wp3_zm    = 0.0
+    wp3_zm    = 0.0_core_rknd
 
     ! Fourth order moments
-    wp4 = 0.0
+    wp4 = 0.0_core_rknd
 
     ! Buoyancy related moments
-    rtpthvp  = 0.0 ! rt'thv'
-    thlpthvp = 0.0 ! thl'thv'
-    wpthvp   = 0.0 ! w'thv'
-    wp2thvp  = 0.0 ! w'^2thv'
+    rtpthvp  = 0.0_core_rknd ! rt'thv'
+    thlpthvp = 0.0_core_rknd ! thl'thv'
+    wpthvp   = 0.0_core_rknd ! w'thv'
+    wp2thvp  = 0.0_core_rknd ! w'^2thv'
 
     ! Eddy diffusivity
-    Kh_zt = 0.0  ! Eddy diffusivity coefficient: thermo. levels
-    Kh_zm = 0.0  ! Eddy diffusivity coefficient: momentum levels
+    Kh_zt = 0.0_core_rknd  ! Eddy diffusivity coefficient: thermo. levels
+    Kh_zm = 0.0_core_rknd  ! Eddy diffusivity coefficient: momentum levels
 
     ! TKE
     em       = em_min
 
     ! Length scale
-    Lscale   = 0.0
-    Lscale_up      = 0.0
-    Lscale_down    = 0.0
+    Lscale   = 0.0_core_rknd
+    Lscale_up      = 0.0_core_rknd
+    Lscale_down    = 0.0_core_rknd
 
     ! Dissipation time
-    tau_zm = 0.0 ! Eddy dissipation time scale: momentum levels
-    tau_zt = 0.0 ! Eddy dissipation time scale: thermo. levels
+    tau_zm = 0.0_core_rknd ! Eddy dissipation time scale: momentum levels
+    tau_zt = 0.0_core_rknd ! Eddy dissipation time scale: thermo. levels
 
     ! Hydrometer types
-    Ncnm(1:nzmax) = 0.0 ! Cloud nuclei number concentration (COAMPS)
+    Ncnm(1:nzmax) = 0.0_core_rknd ! Cloud nuclei number concentration (COAMPS)
 
     do i = 1, hydromet_dim, 1
-      hydromet(1:nzmax,i) = 0.0
+      hydromet(1:nzmax,i) = 0.0_core_rknd
     end do
 
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-    lh_AKm   = 0.0  ! Kessler ac estimate
-    AKm       = 0.0  ! Exact Kessler ac
-    AKstd     = 0.0  ! St dev of exact Kessler ac
-    AKstd_cld = 0.0  ! St dev of exact w/in cloud Kessler ac
-    lh_rcm_avg   = 0.0  ! Monte Carlo rcm estimate
-    AKm_rcm   = 0.0  ! Kessler ac based on rcm
-    AKm_rcc   = 0.0  ! Kessler ac based on rcm/cloud_frac
+    lh_AKm   = 0.0_core_rknd  ! Kessler ac estimate
+    AKm       = 0.0_core_rknd  ! Exact Kessler ac
+    AKstd     = 0.0_core_rknd  ! St dev of exact Kessler ac
+    AKstd_cld = 0.0_core_rknd  ! St dev of exact w/in cloud Kessler ac
+    lh_rcm_avg   = 0.0_core_rknd  ! Monte Carlo rcm estimate
+    AKm_rcm   = 0.0_core_rknd  ! Kessler ac based on rcm
+    AKm_rcc   = 0.0_core_rknd  ! Kessler ac based on rcm/cloud_frac
 
     ! Passive scalars
     if ( sclr_dim > 0 ) then
-      sclrpthvp(:,:)     = 0.0
-      sclrprcp(:,:)      = 0.0
+      sclrpthvp(:,:)     = 0.0_core_rknd
+      sclrprcp(:,:)      = 0.0_core_rknd
 
-      wp2sclrp(:,:)      = 0.0
-      wpsclrp2(:,:)      = 0.0
-      wpsclrprtp(:,:)    = 0.0
-      wpsclrpthlp(:,:)   = 0.0
+      wp2sclrp(:,:)      = 0.0_core_rknd
+      wpsclrp2(:,:)      = 0.0_core_rknd
+      wpsclrprtp(:,:)    = 0.0_core_rknd
+      wpsclrpthlp(:,:)   = 0.0_core_rknd
 
     end if
 
     if ( edsclr_dim > 0 ) then
-      wpedsclrp(:,:)     = 0.0
+      wpedsclrp(:,:)     = 0.0_core_rknd
     end if
 
-    sptp_mellor_1 = 0.0
-    sptp_mellor_2 = 0.0
-    tp2_mellor_1  = 0.0
-    tp2_mellor_2  = 0.0
+    sptp_mellor_1 = 0.0_core_rknd
+    sptp_mellor_2 = 0.0_core_rknd
+    tp2_mellor_1  = 0.0_core_rknd
+    tp2_mellor_2  = 0.0_core_rknd
 
-    corr_st_mellor1 = 0.0
-    corr_st_mellor2 = 0.0
+    corr_st_mellor1 = 0.0_core_rknd
+    corr_st_mellor2 = 0.0_core_rknd
 
-    Skw_velocity = 0.0
+    Skw_velocity = 0.0_core_rknd
 
-    a3_coef    = 0.0
-    a3_coef_zt = 0.0
+    a3_coef    = 0.0_core_rknd
+    a3_coef_zt = 0.0_core_rknd
 
-    wp3_on_wp2    = 0.0
-    wp3_on_wp2_zt = 0.0
+    wp3_on_wp2    = 0.0_core_rknd
+    wp3_on_wp2_zt = 0.0_core_rknd
 
     return
   end subroutine setup_diagnostic_variables

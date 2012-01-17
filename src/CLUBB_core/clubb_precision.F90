@@ -4,7 +4,7 @@ module clubb_precision
 
   implicit none
 
-  public :: stat_nknd, stat_rknd, time_precision, dp, sp
+  public :: stat_nknd, stat_rknd, time_precision, dp, sp, core_rknd
 
   private ! Default scope
 
@@ -17,7 +17,8 @@ module clubb_precision
     stat_rknd = selected_real_kind( p=12 ), & 
     time_precision = selected_real_kind( p=12 ), &
     dp = selected_real_kind( p=12 ), & ! double precision
-    sp = selected_real_kind( p=5 )     ! single precision
+    sp = selected_real_kind( p=5 ), &  ! single precision
+    core_rknd = CLUBB_REAL_TYPE ! Value from the preprocessor directive
 
 end module clubb_precision
 !-------------------------------------------------------------------------------

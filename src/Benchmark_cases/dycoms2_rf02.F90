@@ -40,30 +40,32 @@ module dycoms2_rf02
     use array_index, only:  & 
         iisclr_thl, iisclr_rt, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
+    use clubb_precision, only: core_rknd ! Variable(s)
+
     implicit none
 
     ! Input/Output Variables
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       wm_zt, & ! W wind component at thermodynamic levels   [m/s]
       wm_zm    ! W wind component at momentum levels        [m/s]
 
     ! Output Variables
-    real, intent(out), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       thlm_forcing, & ! theta_l forcing                [K/s]
       rtm_forcing     ! r_t forcing                    [(kg/kg)/s] 
 
-    real, intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing    ! Passive scalar tendency        [units/s]
 
-    real, intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing  ! Eddy-passive scalar tendency   [units/s]
 
     ! ---- Begin Code ----
 
     ! Enter the final thlm and rtm tendency
 
-    thlm_forcing(1:gr%nz) = 0.0
-    rtm_forcing(1:gr%nz) = 0.0
+    thlm_forcing(1:gr%nz) = 0.0_core_rknd
+    rtm_forcing(1:gr%nz) = 0.0_core_rknd
 
     ! Imposed large-scale subsidence at the uppermost level.
     ! CLUBB used a "one-sided" derivative method to compute mean advection at
@@ -71,8 +73,8 @@ module dycoms2_rf02
     ! amounts of various quantities from above the top of the domain, set wm_zt
     ! to 0 at level gr%nz.  To stay consistent, set wm_zm to 0 at level
     ! gr%nz.
-    wm_zt(gr%nz) = 0.0
-    wm_zm(gr%nz) = 0.0
+    wm_zt(gr%nz) = 0.0_core_rknd
+    wm_zm(gr%nz) = 0.0_core_rknd
 
     ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
@@ -108,7 +110,7 @@ module dycoms2_rf02
 
     use interpolation, only: linear_interp_factor ! Procedure(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     implicit none
 
@@ -116,7 +118,7 @@ module dycoms2_rf02
       time ! The current time [s]
 
     ! Output
-    real, intent(out) ::  & 
+    real( kind = core_rknd ), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
@@ -125,7 +127,7 @@ module dycoms2_rf02
     intrinsic :: sqrt
 
     ! Constant parameters
-    real ::  & 
+    real( kind = core_rknd ) ::  & 
       sens_ht, &   ! Sensible heat flux
       latent_ht, &   ! Latent heat fluxi
       time_frac ! The time fraction for interpolation
@@ -133,8 +135,8 @@ module dycoms2_rf02
     integer :: &
       before_time, after_time ! The times used for interpolation
 
-    real, parameter :: &
-      rho_sfc = 1.21 ! Air density at surface
+    real( kind = core_rknd ), parameter :: &
+      rho_sfc = 1.21_core_rknd ! Air density at surface
 
     !------------------------BEGIN CODE-----------------------------------
 
@@ -147,7 +149,7 @@ module dycoms2_rf02
                                       latent_ht_given(before_time) )
 
     ! Declare the value of ustar.
-    ustar = 0.25
+    ustar = 0.25_core_rknd
 
     wpthlp_sfc = convert_sens_ht_to_km_s( sens_ht, rho_sfc )
     wprtp_sfc  = convert_latent_ht_to_m_s( latent_ht, rho_sfc )

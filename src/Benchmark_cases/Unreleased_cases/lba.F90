@@ -35,27 +35,29 @@ module lba
     use array_index, only:  & 
         iisclr_thl, iisclr_rt ! Variable(s)
 
+    use clubb_precision, only: core_rknd ! Variable(s)
+
 
     implicit none
 
     ! Output Variables
-    real, intent(out), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
       thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
 
-    real, intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar forcing [units vary]
 
-    real, intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing ! Passive eddy-scalar forcing [units vary]
 
     ! ---- Begin Code ----
 
     ! Large-scale temperature tendency
-    thlm_forcing(:) = 0.0
+    thlm_forcing(:) = 0.0_core_rknd
 
     ! Large-scale advective moisture tendency
-    rtm_forcing(:) = 0.0
+    rtm_forcing(:) = 0.0_core_rknd
 
     ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
@@ -83,7 +85,7 @@ module lba
 
     use constants_clubb, only: pi, grav, sec_per_hr ! Variable(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
@@ -94,36 +96,39 @@ module lba
     intrinsic :: max, sqrt
 
     ! Constant Parameters
-    real, parameter ::  & 
-      z0    = 0.035  ! ARM mom. roughness height
+    real( kind = core_rknd ), parameter ::  & 
+      z0    = 0.035_core_rknd  ! ARM mom. roughness height
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
       time      ! Current time        [s]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       z,         & ! Height at zt=2      [m] 
       rho_sfc,   & ! Density at zm=1     [kg/m^3] 
       thlm_sfc,  & ! thlm at (2)         [m/s]
       ubar
 
     ! Output variables
-    real, intent(out) ::  & 
+    real( kind = core_rknd ), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
 
     ! Local variables
-    real :: ft, bflx
+    real( kind = core_rknd ) :: ft, bflx
 
     ! Compute heat and moisture fluxes
     ! From Table A.1.
-    ft = real( max( 0.,  & 
-                 cos( 0.5 * pi * ( (5.25 - real( time/sec_per_hr )) / 5.25 ) ) & 
-            ) ) ! Known magic number
+    ft = real( max( 0._core_rknd,  & 
+                 cos( 0.5_core_rknd * pi * ( (5.25_core_rknd - &
+                 real( time/sec_per_hr, kind = core_rknd )) / 5.25_core_rknd ) ) & 
+            ), kind = core_rknd ) ! Known magic number
 
-    wpthlp_sfc =  convert_sens_ht_to_km_s( ( 270. * ft**1.5 ), rho_sfc ) ! Known magic number
-    wprtp_sfc  =  convert_latent_ht_to_m_s( ( 554. * ft**1.3 ), rho_sfc ) ! Known magic number
+    wpthlp_sfc =  convert_sens_ht_to_km_s( ( 270._core_rknd * &
+           ft**1.5_core_rknd ), rho_sfc ) ! Known magic number
+    wprtp_sfc  =  convert_latent_ht_to_m_s( ( 554._core_rknd * &
+           ft**1.3_core_rknd ), rho_sfc ) ! Known magic number
 
     bflx = grav/thlm_sfc * wpthlp_sfc
 

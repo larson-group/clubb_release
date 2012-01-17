@@ -57,7 +57,7 @@ module bugsrad_driver
     use constants_clubb, only: fstderr, grav, Cp, cloud_frac_min, &
                                pascal_per_mb, g_per_kg ! Variable(s)
 
-    use clubb_precision, only: time_precision, dp ! Variable(s)
+    use clubb_precision, only: time_precision, dp, core_rknd ! Variable(s)
 
     use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 
@@ -96,7 +96,7 @@ module bugsrad_driver
     ! of the CLUBB profile, hopefully enough to eliminate cooling spikes, etc.
     integer, intent(in) :: lin_int_buffer, extend_atmos_range_size
 
-    real, intent(in), dimension(nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz) :: &
       alt,          & ! Altitudes of the model              [m]
       thlm,         & ! Liquid potential temp.              [K]
       rcm,          & ! Liquid water mixing ratio           [kg/kg]
@@ -115,7 +115,7 @@ module bugsrad_driver
       extend_atmos_top_level
 
     ! Output Variables
-    real, intent(out), dimension(nz) :: &
+    real( kind = core_rknd ), intent(out), dimension(nz) :: &
       Frad,         & ! Total radiative flux          [W/m^2]
       Frad_SW_up,   & ! SW radiative upwelling flux   [W/m^2]
       Frad_LW_up,   & ! LW radiative upwelling flux   [W/m^2]
@@ -125,7 +125,7 @@ module bugsrad_driver
 
     ! Local Variables
 
-    real, dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       rcm_in_cloud  ! Liquid water mixing ratio in cloud  [kg/kg]
 
     real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
@@ -171,11 +171,11 @@ module bugsrad_driver
       if ( rtm(z) < rcm(z) ) then
         sp_humidity(1,z-1) = 0.0_dp
         if ( clubb_at_least_debug_level(1) ) then
-          write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0."
+          write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0"
         endif
       else
         sp_humidity(1,z-1) &
-          = dble( rtm(z) - rcm(z) ) / dble( 1.0+rtm(z) )
+          = dble( rtm(z) - rcm(z) ) / dble( 1.0_core_rknd+rtm(z) )
       end if
     end do
 
@@ -183,7 +183,8 @@ module bugsrad_driver
 
     ! Ozone at < 1 km = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976.
     !   Convert from g to kg.
-    o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rho_zm(1:(nz-1)) ) / g_per_kg ) !Known magic number
+    o3l(1,1:(nz-1)) = dble( ( 5.4e-5_core_rknd / rho_zm(1:(nz-1)) ) / &
+       g_per_kg ) !Known magic number
 
     ! Convert and transpose as needed
     rcil(1,buffer+1:(nz-1)+buffer)            = flip( dble( rim(2:nz) ), nz-1 )
@@ -308,26 +309,28 @@ module bugsrad_driver
 
     ! Michael pointed out that this was a temperature tendency, not a theta_l
     ! tendency.  The 2nd line should fix both.  -dschanen 28 July 2006
-    radht_SW(2:nz) = real( flip( radht_SW_2d(1,buffer+1:(nz-1)+buffer), nz-1 ) ) &
-                     * ( 1.0 / exner(2:nz) )
+    radht_SW(2:nz) = real( flip( radht_SW_2d(1,buffer+1:(nz-1)+buffer), nz-1 ), &
+                     kind = core_rknd ) &
+                     * ( 1.0_core_rknd / exner(2:nz) )
 
-    radht_LW(2:nz) = real( flip( radht_LW_2d(1,buffer+1:(nz-1)+buffer), nz-1 ) ) &
-                     * ( 1.0 / exner(2:nz) )
+    radht_LW(2:nz) = real( flip( radht_LW_2d(1,buffer+1:(nz-1)+buffer), nz-1 ), &
+                     kind = core_rknd ) &
+                     * ( 1.0_core_rknd / exner(2:nz) )
 
     ! No radiative heating below ground
-    radht_SW(1) = 0.0
-    radht_LW(1) = 0.0
+    radht_SW(1) = 0.0_core_rknd
+    radht_LW(1) = 0.0_core_rknd
 
     radht = radht_SW + radht_LW
 
     ! These are on the m grid, and require no adjusting
-    Frad_SW_up = real( flip( Frad_uSW(1,buffer+1:nz+buffer), nz ) )
+    Frad_SW_up = real( flip( Frad_uSW(1,buffer+1:nz+buffer), nz ), kind = core_rknd )
 
-    Frad_LW_up = real( flip( Frad_uLW(1,buffer+1:nz+buffer), nz ) )
+    Frad_LW_up = real( flip( Frad_uLW(1,buffer+1:nz+buffer), nz ), kind = core_rknd )
 
-    Frad_SW_down = real( flip( Frad_dSW(1,buffer+1:nz+buffer), nz ) )
+    Frad_SW_down = real( flip( Frad_dSW(1,buffer+1:nz+buffer), nz ), kind = core_rknd )
 
-    Frad_LW_down = real( flip( Frad_dLW(1,buffer+1:nz+buffer), nz ) )
+    Frad_LW_down = real( flip( Frad_dLW(1,buffer+1:nz+buffer), nz ), kind = core_rknd )
 
     Frad_SW(1:nz) = Frad_SW_up - Frad_SW_down
 
@@ -360,7 +363,8 @@ module bugsrad_driver
       write_text   ! Used to write radiation settings to setup.txt file
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
 
@@ -399,17 +403,17 @@ module bugsrad_driver
 
     ! 50000m is the top of the U.S. Standard Atmosphere data used
     ! in CLUBB.
-    radiation_top = 50000.! [m]
+    radiation_top = 50000._core_rknd! [m]
 
     ! Variables used by both schemes
     alvdr = 0.1_dp ! Visible direct surface albedo        [-]
 
     ! Simplified radiation parameters
-    F0    = 100.0  ! Coefficient for cloud top heating (see Stevens) [W/m^2]
-    F1    = 20.0   ! Coefficient for cloud base heating (see Stevens)[W/m^2]
-    kappa = 119.0  ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
-    gc    = 0.86   ! Asymmetry parameter, "g" in Duynkerke           [-]
-    omega = 0.9965 ! Single-scattering albedo                        [-]
+    F0    = 100.0_core_rknd  ! Coefficient for cloud top heating (see Stevens) [W/m^2]
+    F1    = 20.0_core_rknd   ! Coefficient for cloud base heating (see Stevens)[W/m^2]
+    kappa = 119.0_core_rknd  ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
+    gc    = 0.86_core_rknd   ! Asymmetry parameter, "g" in Duynkerke           [-]
+    omega = 0.9965_core_rknd ! Single-scattering albedo                        [-]
 
     slr  = 1.0_dp  ! Fraction of daylight
 
@@ -425,12 +429,12 @@ module bugsrad_driver
 
     ! The incident of incoming SW insolation at cloud top the
     ! direction of the incoming beam (not the vertical)   [W/m^2]
-    Fs_values(:) = 0.0
+    Fs_values(:) = 0.0_core_rknd
 
-    cos_solar_zen_values(:) = -999.0 ! Cosine of the solar zenith angle [-]
-    cos_solar_zen_times(:)  = -999.0 ! Simulation times corresponding to above [s]
+    cos_solar_zen_values(:) = -999.0_core_rknd ! Cosine of the solar zenith angle [-]
+    cos_solar_zen_times(:)  = -999.0_core_rknd ! Simulation times corresponding to above [s]
 
-    eff_drop_radius = 1.e-5 ! Effective droplet radius [m]
+    eff_drop_radius = 1.e-5_core_rknd ! Effective droplet radius [m]
 
     ! Read the namelist values in
     open(unit=iunit, file=namelist_file, status='old',action='read')
@@ -454,18 +458,19 @@ module bugsrad_driver
 
       call write_text ( "rad_scheme = " // rad_scheme, l_write_to_file, &
         iunit )
-      call write_text ( "sol_const = ", real( sol_const ), l_write_to_file, iunit )
-      call write_text ( "alvdr = ", real( alvdr ), l_write_to_file, iunit )
-      call write_text ( "alvdf = ", real( alvdf ), l_write_to_file, iunit )
-      call write_text ( "alndr = ", real( alndr ), l_write_to_file, iunit )
-      call write_text ( "alndf = ", real( alndf ), l_write_to_file, iunit )
+      call write_text ( "sol_const = ", real( sol_const, kind = core_rknd ), &
+        l_write_to_file, iunit )
+      call write_text ( "alvdr = ", real( alvdr, kind = core_rknd ), l_write_to_file, iunit )
+      call write_text ( "alvdf = ", real( alvdf, kind = core_rknd ), l_write_to_file, iunit )
+      call write_text ( "alndr = ", real( alndr, kind = core_rknd ), l_write_to_file, iunit )
+      call write_text ( "alndf = ", real( alndf, kind = core_rknd ), l_write_to_file, iunit )
       call write_text ( "radiation_top = ", radiation_top, l_write_to_file, iunit )
       call write_text ( "F0 = ", F0, l_write_to_file, iunit )
       call write_text ( "F1 = ", F1, l_write_to_file, iunit )
       call write_text ( "kappa = ", kappa, l_write_to_file, iunit )
       call write_text ( "gc = ", gc, l_write_to_file, iunit )
       call write_text ( "omega = ", omega, l_write_to_file, iunit )
-      call write_text ( "slr = ", real( slr ), l_write_to_file, iunit )
+      call write_text ( "slr = ", real( slr, kind = core_rknd ), l_write_to_file, iunit )
       call write_text ( "l_rad_above_cloud = ", l_rad_above_cloud, l_write_to_file, iunit )
       call write_text ( "l_sw_radiation = ", l_sw_radiation, l_write_to_file, iunit )
       call write_text ( "l_fix_cos_solar_zen = ", l_fix_cos_solar_zen, l_write_to_file, iunit )
@@ -481,7 +486,7 @@ module bugsrad_driver
     end if ! clubb_at_least_debug_level(1)
 
     do k = 1, size( cos_solar_zen_values )
-      if ( cos_solar_zen_values(k) == -999. ) then
+      if ( cos_solar_zen_values(k) == -999._core_rknd ) then
         exit
       else
         nparam = k

@@ -67,6 +67,9 @@ module input_grads
       sec_per_hr, &
       sec_per_min
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant Parameters
@@ -188,7 +191,7 @@ module input_grads
         ! Implied Do Loop with the purpose of reading in
         ! altitudes
         if ( grads_file%iz == 1 ) then
-          grads_file%z(1) = 1.
+          grads_file%z(1) = 1._core_rknd
         else
           read(unit=unit_number,fmt=*) (grads_file%z(i),i=grads_file%ia,grads_file%iz)
         end if
@@ -276,6 +279,7 @@ module input_grads
 
         end do ! 1..grads_file%nvar
 
+
       end if
 
       read(unit=unit_number,iostat=ierr,fmt='(a256)') line
@@ -349,6 +353,9 @@ module input_grads
 
     use stat_file_module, only: stat_file ! Variable
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -368,7 +375,7 @@ module input_grads
       itime ! Obtain variable varname at time itime [min]
 
     ! Output Variables
-    real, dimension(:), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(:), intent(out) ::  & 
       variable ! Result variable
 
     logical, intent(out) :: l_error
@@ -426,7 +433,7 @@ module input_grads
 !         nrec = (itime-1)*grads_file%nvar*(grads_file%iz-grads_file%ia+1)
 !    .         + (ivar-1)*(grads_file%iz-grads_file%ia+1) + 1
 
-!          print *, "Division check", nint(itime/(grads_file%dtwrite/60.))-1
+!          print *, "Division check", nint(itime/(grads_file%dtwrite/60._core_rknd))-1
 !          print *, "grads_file%nvar", grads_file%nvar
 !          print *, "varindex", ivar-1
 !          print *, "nlevels", (grads_file%iz-grads_file%ia+1)
@@ -456,7 +463,7 @@ module input_grads
       nrec = nrec + 1
     end do
 
-    variable = real( grads_variable ) ! Convert to default precision
+    variable = real( grads_variable, kind = core_rknd ) ! Convert to default precision
 
     return
   end subroutine get_grads_var

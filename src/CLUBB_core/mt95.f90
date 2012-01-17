@@ -114,7 +114,7 @@ module mt95
   character(len=*), private, parameter  :: alph = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
   character(len=*), private, parameter  :: sepr = "&"
   integer(kind=wi), private, parameter  :: alps = 62_wi
-  integer(kind=wi), private, parameter  :: clen = ( n + 1_wi ) * 7_wi !n * ( ceiling( fbs * log( 2.0 ) / log( alps ) ) + 1 )
+  integer(kind=wi), private, parameter  :: clen = ( n + 1_wi ) * 7_wi !n * ( ceiling( fbs * log( 2.0_core_rknd ) / log( alps ) ) + 1 )
 
   type, public :: genrand_state
     private

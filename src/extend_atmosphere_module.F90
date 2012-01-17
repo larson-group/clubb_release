@@ -3,7 +3,8 @@
 module extend_atmosphere_module
 
   use clubb_precision, only: &
-    dp ! double precision
+    dp, & ! double precision
+    core_rknd
 
   implicit none
 
@@ -22,10 +23,10 @@ module extend_atmosphere_module
   integer, public :: total_atmos_dim
 
   ! Altitude of complete atmosphere in meters
-  real, public, target, allocatable, dimension(:) :: complete_alt
+  real( kind = core_rknd ), public, target, allocatable, dimension(:) :: complete_alt
 
   ! Altitude of complete momentum grid in meters
-  real, public, target, allocatable, dimension(:) :: complete_momentum
+  real( kind = core_rknd ), public, target, allocatable, dimension(:) :: complete_momentum
 
   ! Extended Atmosphere variables
 
@@ -73,7 +74,8 @@ module extend_atmosphere_module
     use input_names, only: z_name, temperature_name, ozone_name, rt_name ! Variable(s)
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
 
@@ -92,16 +94,16 @@ module extend_atmosphere_module
 
     integer, intent(in) :: n_snd_var   ! Number of variables from sounding [-]
 
-    real, intent(in) :: p_sfc  ! Pressure at the surface [Pa]
+    real( kind = core_rknd ), intent(in) :: p_sfc  ! Pressure at the surface [Pa]
 
-    real, intent(in) :: zm_init ! Height at zm(1) [m]
+    real( kind = core_rknd ), intent(in) :: zm_init ! Height at zm(1) [m]
 
     type(one_dim_read_var), dimension(n_snd_var), intent(in) :: &
       sounding_profiles ! Sounding profile
 
     ! Local Variables
 
-    real,  dimension(:), allocatable :: alt, theta, p_in_Pa, exner
+    real( kind = core_rknd ),  dimension(:), allocatable :: alt, theta, p_in_Pa, exner
 
     type(one_dim_read_var), dimension(n_rad_scalars) :: &
       rad_scalars_sounding_profile ! Ozone Sounding profile
@@ -143,7 +145,7 @@ module extend_atmosphere_module
       stop "Feature not implemented"
     end if
 
-    extend_pinmb = dble( p_in_Pa/ 100. )
+    extend_pinmb = dble( p_in_Pa/ 100._core_rknd )
 
     ! Convert to temperature from thlm or theta
 
@@ -217,7 +219,8 @@ module extend_atmosphere_module
       fstderr ! Variable(s)
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
 
@@ -227,12 +230,12 @@ module extend_atmosphere_module
     ! Input Variable(s)
     integer, intent(in) :: grid_size ! Size of the model grid  [-]
 
-    real, dimension(grid_size), intent(in) :: &
+    real( kind = core_rknd ), dimension(grid_size), intent(in) :: &
       zt_grid,       & ! Thermodynamic grid [m]
       zm_grid,       & ! Momentum grid [m]
       zm_grid_spacing  ! Inverse spacing between zm grid levels [m]
 
-    real, intent(in) :: radiation_top ! Maximum height to extend to [m]
+    real( kind = core_rknd ), intent(in) :: radiation_top ! Maximum height to extend to [m]
 
     ! Output Variable(s)
     integer, intent(out) :: &
@@ -329,14 +332,15 @@ module extend_atmosphere_module
     ! of the extended altitude
     i = 1 ! Tracks the number of interpolation levels used
     do j=grid_size+1, grid_size+lin_int_buffer_size
-      complete_momentum(j) = real( zm_grid_top ) + real( dz ) * real( i )
+      complete_momentum(j) = real( zm_grid_top, kind = core_rknd ) + &
+        real( dz, kind = core_rknd ) * real( i, kind = core_rknd )
       i = i + 1
     end do
 
     i = 0 ! Tracks the number of extension levels used
     do j=grid_size+lin_int_buffer_size, total_atmos_dim
       ! Take values from the extended atmosphere    
-      complete_momentum(j) = real( extend_alt(extend_atmos_bottom_level + i) )
+      complete_momentum(j) = real( extend_alt(extend_atmos_bottom_level + i), kind = core_rknd )
       ! Keep track of where we are in the extended atmosphere
       i = i + 1
       if ( i+extend_atmos_bottom_level == extend_atmos_dim ) then
@@ -348,8 +352,8 @@ module extend_atmosphere_module
 
     ! Use a linear extension for the topmost points (generally this is only 1 or 2 points)
     do j = i, total_atmos_dim + 1
-      dz_extension = real( complete_momentum(j-1) - complete_momentum(j-2), kind=dp )
-      complete_momentum(j) = complete_momentum(j-1) + real( dz_extension )
+      dz_extension = real( complete_momentum(j-1) - complete_momentum(j-2), kind= dp )
+      complete_momentum(j) = complete_momentum(j-1) + real( dz_extension, kind = core_rknd )
     end do
     
     allocate( complete_alt(total_atmos_dim) )
@@ -361,7 +365,7 @@ module extend_atmosphere_module
 
     forall ( j=grid_size+1:total_atmos_dim )
       ! Use a linear extension above the zt_grid so the points are between the momentum levels
-      complete_alt(j) = (complete_momentum(j-1) + complete_momentum(j)) / 2.
+      complete_alt(j) = (complete_momentum(j-1) + complete_momentum(j)) / 2._core_rknd
     end forall
 
     return

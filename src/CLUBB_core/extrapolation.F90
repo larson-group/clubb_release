@@ -23,11 +23,14 @@ module extrapolation
     !   None
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       var_zmp2,    & ! Momentum level variable at level (k+2)  [units vary]
       var_zmp1,    & ! Momentum level variable at level (k+1)  [units vary]
       zmp2,        & ! Altitude at momentum level (k+2)        [m]
@@ -35,7 +38,7 @@ module extrapolation
       zm             ! Altitude at momentum level (k)          [m]
 
     ! Return Variable
-    real :: var_zm   ! Momentum level variable at level (k)    [units vary]
+    real( kind = core_rknd ) :: var_zm   ! Momentum level variable at level (k)    [units vary]
 
     ! ---- Begin Code -----
 
@@ -60,10 +63,13 @@ module extrapolation
     !   None
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       var_ztp2,    & ! Thermodynamic level variable at level (k+2)  [units vary]
       var_ztp1,    & ! Thermodynamic level variable at level (k+1)  [units vary]
       ztp2,        & ! Altitude at thermodynamic level (k+2)        [m]
@@ -71,7 +77,7 @@ module extrapolation
       zt             ! Altitude at thermodynamic level (k)          [m]
 
     ! Return Variable
-    real :: var_zt   ! Thermodynamic level variable at level (k)    [units vary]
+    real( kind = core_rknd ) :: var_zt   ! Thermodynamic level variable at level (k)    [units vary]
 
     ! ---- Begin Code -----
 

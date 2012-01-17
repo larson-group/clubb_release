@@ -69,7 +69,8 @@ module advance_windm_edsclrm_module
       l_tke_aniso
 
     use clubb_precision, only:  &
-      time_precision  ! Variable(s)
+      time_precision, &  ! Variable(s)
+      core_rknd
 
     use stats_type, only: &
       stat_begin_update, & ! Subroutines
@@ -113,14 +114,14 @@ module advance_windm_edsclrm_module
     intrinsic :: real
 
     ! Constant Parameters
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       dummy_nu  ! Used to feed zero values into function calls
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  &
       dt                 ! Model timestep                             [s]
 
-    real, dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
       wm_zt,           & ! w wind component on thermodynamic levels   [m/s]
       Kh_zm,           & ! Eddy diffusivity on momentum levels        [m^2/s]
       ug,              & ! u (west-to-east) geostrophic wind comp.    [m/s]
@@ -135,56 +136,56 @@ module advance_windm_edsclrm_module
       rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels [m^3/kg]
 
-    real, dimension(gr%nz,edsclr_dim), intent(in) ::  &
+    real( kind = core_rknd ), dimension(gr%nz,edsclr_dim), intent(in) ::  &
       edsclrm_forcing  ! Eddy scalar large-scale forcing             [{units vary}/s]
 
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       fcor           ! Coriolis parameter                            [s^-1]
 
     logical, intent(in) ::  &
       l_implemented  ! Flag for CLUBB being implemented in a larger model.
 
     ! Input/Output Variables
-    real, dimension(gr%nz), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       um,          & ! Mean u (west-to-east) wind component          [m/s]
       vm             ! Mean v (south-to-north) wind component        [m/s]
 
     ! Input/Output Variable for eddy-scalars
-    real, dimension(gr%nz,edsclr_dim), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(gr%nz,edsclr_dim), intent(inout) ::  &
       edsclrm        ! Mean eddy scalar quantity                     [units vary]
 
     ! Output Variables
-    real, dimension(gr%nz), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       upwp,        & ! u'w' (momentum levels)                        [m^2/s^2]
       vpwp           ! v'w' (momentum levels)                        [m^2/s^2]
 
     ! Output Variable for eddy-scalars
-    real, dimension(gr%nz,edsclr_dim), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(gr%nz,edsclr_dim), intent(inout) ::  &
       wpedsclrp      ! w'edsclr' (momentum levels)                   [units vary]
 
     integer, intent(inout) :: &
       err_code       ! clubb_singular_matrix when matrix is singular
 
     ! Local Variables
-    real, dimension(gr%nz) ::  &
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
       um_tndcy,    & ! u wind component tendency                     [m/s^2]
       vm_tndcy       ! v wind component tendency                     [m/s^2]
 
-    real, dimension(gr%nz) ::  &
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
       upwp_chnge,  & ! Net change of u'w' due to clipping            [m^2/s^2]
       vpwp_chnge     ! Net change of v'w' due to clipping            [m^2/s^2]
 
-    real, dimension(3,gr%nz) :: &
+    real( kind = core_rknd ), dimension(3,gr%nz) :: &
       lhs ! The implicit part of the tridiagonal matrix              [units vary]
 
-    real, dimension(gr%nz,max(2,edsclr_dim)) :: &
+    real( kind = core_rknd ), dimension(gr%nz,max(2,edsclr_dim)) :: &
       rhs,     &! The explicit part of the tridiagonal matrix        [units vary]
       solution  ! The solution to the tridiagonal matrix             [units vary]
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       wind_speed  ! wind speed; sqrt(u^2 + v^2)                      [m/s]
 
-    real :: &
+    real( kind = core_rknd ) :: &
       u_star_sqd  ! Surface friction velocity, u_star, squared       [m/s]
 
     logical :: &
@@ -203,7 +204,7 @@ module advance_windm_edsclrm_module
     err_code_windm   = clubb_no_error
     err_code_edsclrm = clubb_no_error
 
-    dummy_nu = 0.
+    dummy_nu = 0._core_rknd
 
     !----------------------------------------------------------------
     ! Prepare tridiagonal system for horizontal winds, um and vm
@@ -252,19 +253,21 @@ module advance_windm_edsclrm_module
     ! Solve for x'w' at all intermediate model levels.
     ! A Crank-Nicholson timestep is used.
 
-    upwp(2:gr%nz-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10_vert_res_dep(2:gr%nz-1),  & ! in
+    upwp(2:gr%nz-1) = - 0.5_core_rknd * xpwp_fnc( Kh_zm(2:gr%nz-1)+ & 
+                                          nu10_vert_res_dep(2:gr%nz-1),  & ! in
                                           um(2:gr%nz-1), um(3:gr%nz), & ! in
                                           gr%invrs_dzm(2:gr%nz-1) )
 
-    vpwp(2:gr%nz-1) = - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10_vert_res_dep(2:gr%nz-1),  & ! in
+    vpwp(2:gr%nz-1) = - 0.5_core_rknd * xpwp_fnc( Kh_zm(2:gr%nz-1)+ &
+                                          nu10_vert_res_dep(2:gr%nz-1),  & ! in
                                           vm(2:gr%nz-1), vm(3:gr%nz), & ! in
                                           gr%invrs_dzm(2:gr%nz-1) )
 
     ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
     ! means that x'w' at the top model level is 0,
     ! since x'w' = - K_zm * d(xm)/dz.
-    upwp(gr%nz) = 0.
-    vpwp(gr%nz) = 0.
+    upwp(gr%nz) = 0._core_rknd
+    vpwp(gr%nz) = 0._core_rknd
 
 
     ! Compute the implicit portion of the um and vm equations.
@@ -310,8 +313,8 @@ module advance_windm_edsclrm_module
 
     if ( uv_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( ium_sdmp, um/real( dt ), zt )
-        call stat_begin_update( ivm_sdmp, vm/real( dt ), zt )
+        call stat_begin_update( ium_sdmp, um/real( dt, kind = core_rknd ), zt )
+        call stat_begin_update( ivm_sdmp, vm/real( dt, kind = core_rknd ), zt )
       endif
 
       um(1:gr%nz) = sponge_damp_xm( dt, um_ref(1:gr%nz), um(1:gr%nz), &
@@ -319,8 +322,8 @@ module advance_windm_edsclrm_module
       vm(1:gr%nz) = sponge_damp_xm( dt, vm_ref(1:gr%nz), vm(1:gr%nz), &
                                       uv_sponge_damp_profile )
       if( l_stats_samp ) then
-        call stat_end_update( ium_sdmp, um/real( dt ), zt )
-        call stat_end_update( ivm_sdmp, vm/real( dt ), zt )
+        call stat_end_update( ium_sdmp, um/real( dt, kind = core_rknd ), zt )
+        call stat_end_update( ivm_sdmp, vm/real( dt, kind = core_rknd ), zt )
       endif
 
     endif
@@ -331,11 +334,11 @@ module advance_windm_edsclrm_module
     ! A Crank-Nicholson timestep is used.
 
     upwp(2:gr%nz-1) = upwp(2:gr%nz-1)  &
-      - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10_vert_res_dep(2:gr%nz-1), &
+      - 0.5_core_rknd * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10_vert_res_dep(2:gr%nz-1), &
       um(2:gr%nz-1), um(3:gr%nz), gr%invrs_dzm(2:gr%nz-1) ) !in
 
     vpwp(2:gr%nz-1) = vpwp(2:gr%nz-1)  &
-      - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10_vert_res_dep(2:gr%nz-1), &
+      - 0.5_core_rknd * xpwp_fnc( Kh_zm(2:gr%nz-1)+nu10_vert_res_dep(2:gr%nz-1), &
       vm(2:gr%nz-1), vm(3:gr%nz), gr%invrs_dzm(2:gr%nz-1) ) !in
 
 
@@ -344,25 +347,25 @@ module advance_windm_edsclrm_module
 
       ! Reflect nudging in budget
       if( l_stats_samp ) then
-        call stat_begin_update( ium_ndg, um / real( dt ), &         ! Intent(in)
+        call stat_begin_update( ium_ndg, um / real( dt, kind = core_rknd ), &         ! Intent(in)
                                 zt )                              ! Intent(inout)
-        call stat_begin_update( ivm_ndg, vm / real( dt ), &         ! Intent(in)
+        call stat_begin_update( ivm_ndg, vm / real( dt, kind = core_rknd ), &         ! Intent(in)
                                 zt )                              ! Intent(inout)
       end if
       
       um(1:gr%nz) = um(1:gr%nz) &
-        - ((um(1:gr%nz) - um_ref(1:gr%nz)) * (real( dt )/ts_nudge))
+        - ((um(1:gr%nz) - um_ref(1:gr%nz)) * (real( dt, kind = core_rknd )/ts_nudge))
       vm(1:gr%nz) = vm(1:gr%nz) &
-        - ((vm(1:gr%nz) - vm_ref(1:gr%nz)) * (real( dt )/ts_nudge))
+        - ((vm(1:gr%nz) - vm_ref(1:gr%nz)) * (real( dt, kind = core_rknd )/ts_nudge))
     endif
 
     if( l_stats_samp ) then
 
       ! Reflect nudging in budget
       if ( l_uv_nudge ) then
-        call stat_end_update( ium_ndg, um / real( dt ), &         ! Intent(in)
+        call stat_end_update( ium_ndg, um / real( dt, kind = core_rknd ), &         ! Intent(in)
                               zt )                              ! Intent(inout)
-        call stat_end_update( ivm_ndg, vm / real( dt ), &         ! Intent(in)
+        call stat_end_update( ivm_ndg, vm / real( dt, kind = core_rknd ), &         ! Intent(in)
                               zt )                              ! Intent(inout)
       end if
       
@@ -460,14 +463,14 @@ module advance_windm_edsclrm_module
 !HPF$ INDEPENDENT, REDUCTION(wpedsclrp)
       forall( i = 1:edsclr_dim )
         wpedsclrp(2:gr%nz-1,i) = &
-          - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1), edsclrm(2:gr%nz-1,i), & ! in
+          - 0.5_core_rknd * xpwp_fnc( Kh_zm(2:gr%nz-1), edsclrm(2:gr%nz-1,i), & ! in
                             edsclrm(3:gr%nz,i), gr%invrs_dzm(2:gr%nz-1) )   ! in
       end forall
 
       ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
       ! means that x'w' at the top model level is 0,
       ! since x'w' = - K_zm * d(xm)/dz.
-      wpedsclrp(gr%nz,1:edsclr_dim) = 0.
+      wpedsclrp(gr%nz,1:edsclr_dim) = 0._core_rknd
 
 
       ! Compute the implicit portion of the xm (eddy-scalar) equations.
@@ -501,7 +504,7 @@ module advance_windm_edsclrm_module
 !HPF$ INDEPENDENT, REDUCTION(wpedsclrp)
       forall( i = 1:edsclr_dim )
         wpedsclrp(2:gr%nz-1,i) = wpedsclrp(2:gr%nz-1,i) &
-          - 0.5 * xpwp_fnc( Kh_zm(2:gr%nz-1), edsclrm(2:gr%nz-1,i), & ! in
+          - 0.5_core_rknd * xpwp_fnc( Kh_zm(2:gr%nz-1), edsclrm(2:gr%nz-1,i), & ! in
                             edsclrm(3:gr%nz,i), gr%invrs_dzm(2:gr%nz-1) )   ! in
       end forall
 
@@ -952,10 +955,10 @@ module advance_windm_edsclrm_module
     !
     !  0 = Sum_j Sum_i
     !       (rho_ds_zt)_i ( 1/dzt )_i
-    !       ( 0.5 * (1/rho_ds_zt) * dzt * (rho_ds_zm*K_zm*dzm) )_ij (xm<t+1>)_j.
+    !       ( 0.5_core_rknd * (1/rho_ds_zt) * dzt * (rho_ds_zm*K_zm*dzm) )_ij (xm<t+1>)_j.
     !
     ! The left-hand side matrix,
-    ! ( 0.5 * (1/rho_ds_zt) * dzt * (rho_ds_zm*K_zm*dzm) )_ij, is partially
+    ! ( 0.5_core_rknd * (1/rho_ds_zt) * dzt * (rho_ds_zm*K_zm*dzm) )_ij, is partially
     ! written below.  The sum over i in the above equation removes (1/rho_ds_zt)
     ! and dzt everywhere from the matrix below.  The sum over j leaves the
     ! column totals that are desired, which are 0.
@@ -1088,6 +1091,9 @@ module advance_windm_edsclrm_module
     use constants_clubb, only:  & 
       fstderr ! Variable(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -1106,20 +1112,21 @@ module advance_windm_edsclrm_module
     integer, intent(in) :: &
       ixm_matrix_condt_num  ! Stats index of the condition numbers
 
-    real, dimension(3,gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(3,gr%nz), intent(inout) :: &
       lhs    ! Implicit contributions to um, vm, and eddy scalars  [units vary]
 
-    real, dimension(gr%nz,nrhs), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz,nrhs), intent(inout) :: &
       rhs    ! Right-hand side (explicit) contributions.
 
-    real, dimension(gr%nz,nrhs), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz,nrhs), intent(out) :: &
       solution ! Solution to the system of equations    [units vary]
 
     integer, intent(out) :: & 
       err_code ! clubb_singular_matrix when matrix is singular
 
     ! Local variables
-    real :: rcond ! Estimate of the reciprocal of the condition number on the LHS matrix
+    real( kind = core_rknd ) :: &
+      rcond ! Estimate of the reciprocal of the condition number on the LHS matrix
 
     ! Solve tridiagonal system for xm.
     if ( l_stats_samp .and. ixm_matrix_condt_num > 0 ) then
@@ -1129,7 +1136,7 @@ module advance_windm_edsclrm_module
              solution, rcond, err_code )                                ! Intent(out)
 
       ! Est. of the condition number of the variance LHS matrix
-      call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0 / rcond, &  ! Intent(in)
+      call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0_core_rknd / rcond, &  ! Intent(in)
                                sfc )                                       ! Intent(inout)
     else
 
@@ -1172,7 +1179,8 @@ module advance_windm_edsclrm_module
       fstderr ! Variable(s)
 
     use clubb_precision, only:  & 
-      time_precision ! Variable(s)
+      time_precision, & ! Variable(s)
+      core_rknd
 
     use grid_class, only: &
       gr ! Derived type variable
@@ -1183,7 +1191,7 @@ module advance_windm_edsclrm_module
     integer, intent(in) :: & 
       solve_type     ! Desc. of what is being solved for
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       xm !  Computed value um or vm at <t+1>    [m/s]
 
     ! Local variables
@@ -1301,16 +1309,19 @@ module advance_windm_edsclrm_module
         zt, & 
         l_stats_samp
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
     integer, intent(in) ::  &
       solve_type      ! Description of what is being solved for
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       fcor            ! Coriolis parameter     [s^-1]
 
-    real, dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       perp_wind_m,  & ! Perpendicular component of the mean wind (e.g. v, for the u-eqn) [m/s]
       perp_wind_g,  & ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
       xm_forcing      ! Prescribed wind forcing                                          [m/s/s]
@@ -1319,7 +1330,7 @@ module advance_windm_edsclrm_module
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
     ! Output Variables
-    real, dimension(gr%nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
       xm_tndcy        ! xm tendency            [m/s^2]
 
     ! Local Variables
@@ -1328,7 +1339,7 @@ module advance_windm_edsclrm_module
       ixm_cf, &
       ixm_f
 
-    real, dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
       xm_gf, & 
       xm_cf
 
@@ -1366,9 +1377,10 @@ module advance_windm_edsclrm_module
         ixm_cf = 0
         ixm_f = 0
 
-        xm_gf = 0.
+        xm_gf = 0._core_rknd
 
-        xm_cf = 0.
+
+        xm_cf = 0._core_rknd
 
       end select
 
@@ -1389,7 +1401,7 @@ module advance_windm_edsclrm_module
 
     else   ! implemented in a host model.
 
-      xm_tndcy = 0.0
+      xm_tndcy = 0.0_core_rknd
 
     endif
 
@@ -1416,7 +1428,8 @@ module advance_windm_edsclrm_module
         gr  ! Variable(s)
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use diffusion, only:  & 
         diffusion_zt_lhs ! Procedure(s)
@@ -1449,17 +1462,17 @@ module advance_windm_edsclrm_module
     real(kind=time_precision), intent(in) :: & 
       dt                 ! Model timestep                             [s]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       nu ! Background constant coef. of eddy diffusivity        [m^2/s]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       wm_zt,           & ! w wind component on thermodynamic levels   [m/s]
       Kh_zm,           & ! Eddy diffusivity on momentum levels        [m^2/s]
       wind_speed,      & ! wind speed; sqrt( u^2 + v^2 )              [m/s]
       rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels [m^3/kg]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       u_star_sqd    ! Surface friction velocity, u_*, squared  [m/s]
 
     logical, intent(in) ::  & 
@@ -1467,19 +1480,19 @@ module advance_windm_edsclrm_module
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
     ! Output Variable
-    real, dimension(3,gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
       lhs           ! Implicit contributions to xm (tridiagonal matrix)
 
     ! Local Variables
     integer :: k, km1  ! Array indices
     integer :: diff_k_in
 
-    real, dimension(3) :: tmp
+    real( kind = core_rknd ), dimension(3) :: tmp
 
     ! --- Begin Code ---
 
     ! Initialize the LHS array.
-    lhs = 0.0
+    lhs = 0.0_core_rknd
 
     do k = 2, gr%nz, 1
 
@@ -1496,7 +1509,7 @@ module advance_windm_edsclrm_module
       else
 
         lhs(kp1_tdiag:km1_tdiag,k)  &
-        = lhs(kp1_tdiag:km1_tdiag,k) + 0.0
+        = lhs(kp1_tdiag:km1_tdiag,k) + 0.0_core_rknd
 
       endif
 
@@ -1517,7 +1530,7 @@ module advance_windm_edsclrm_module
       endif
       lhs(kp1_tdiag:km1_tdiag,k)  &
       = lhs(kp1_tdiag:km1_tdiag,k)  &
-      + 0.5 * invrs_rho_ds_zt(k)  &
+      + 0.5_core_rknd * invrs_rho_ds_zt(k)  &
       * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                           rho_ds_zm(km1) * Kh_zm(km1), nu,  &
                           gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
@@ -1525,7 +1538,7 @@ module advance_windm_edsclrm_module
 
       ! LHS time tendency.
       lhs(k_tdiag,k)  &
-      = lhs(k_tdiag,k) + 1.0 / real( dt )
+      = lhs(k_tdiag,k) + 1.0_core_rknd / real( dt, kind = core_rknd )
 
       if ( l_stats_samp ) then
 
@@ -1539,15 +1552,15 @@ module advance_windm_edsclrm_module
             ztscr02(k) = -tmp(2)
             ztscr03(k) = -tmp(1)
           else
-            ztscr01(k) = 0.0
-            ztscr02(k) = 0.0
-            ztscr03(k) = 0.0
+            ztscr01(k) = 0.0_core_rknd
+            ztscr02(k) = 0.0_core_rknd
+            ztscr03(k) = 0.0_core_rknd
           endif
         endif
 
         if ( ium_ta + ivm_ta > 0 ) then
           tmp(1:3)  &
-          = 0.5 * invrs_rho_ds_zt(k)  &
+          = 0.5_core_rknd * invrs_rho_ds_zt(k)  &
           * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                               rho_ds_zm(km1) * Kh_zm(km1), nu,  &
                               gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
@@ -1574,7 +1587,7 @@ module advance_windm_edsclrm_module
     ! value of xm(2) after the equation matrix has been solved.
 
     ! k = 1
-    lhs(k_tdiag,1) = 1.0
+    lhs(k_tdiag,1) = 1.0_core_rknd
 
     ! k = 2; add implicit momentum surface flux.
     if ( l_imp_sfc_momentum_flux ) then
@@ -1627,7 +1640,8 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use diffusion, only:  & 
         diffusion_zt_lhs ! Procedure(s)
@@ -1657,24 +1671,24 @@ module advance_windm_edsclrm_module
     real(kind=time_precision), intent(in) :: & 
       dt                 ! Model timestep                             [s]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       nu ! Background constant coef. of eddy diffusivity        [m^2/s]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       Kh_zm,           & ! Eddy diffusivity on momentum levels        [m^2/s]
       xm,              & ! Eddy-scalar variable, xm (thermo. levels)  [units vary]
       xm_tndcy,        & ! The explicit time-tendency acting on xm    [units vary]
       rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels [m^3/kg]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       xpwp_sfc     ! x'w' at the surface                              [units vary]
 
     logical, intent(in) :: &
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
     ! Output Variable
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       rhs          ! Right-hand side (explicit) contributions.
 
     ! Local Variables
@@ -1682,7 +1696,7 @@ module advance_windm_edsclrm_module
     integer :: diff_k_in
 
     ! For use in Crank-Nicholson eddy diffusion.
-    real, dimension(3) :: rhs_diff
+    real( kind = core_rknd ), dimension(3) :: rhs_diff
 
     integer :: ixm_ta
 
@@ -1699,7 +1713,7 @@ module advance_windm_edsclrm_module
 
 
     ! Initialize the RHS vector.
-    rhs = 0.0
+    rhs = 0.0_core_rknd
 
     do k = 2, gr%nz-1, 1
 
@@ -1723,7 +1737,7 @@ module advance_windm_edsclrm_module
         diff_k_in = k
       endif
       rhs_diff(1:3)  & 
-      = 0.5 * invrs_rho_ds_zt(k)  &
+      = 0.5_core_rknd * invrs_rho_ds_zt(k)  &
       * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                           rho_ds_zm(km1) * Kh_zm(km1), nu,  &
                           gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
@@ -1737,7 +1751,7 @@ module advance_windm_edsclrm_module
       rhs(k) = rhs(k) + xm_tndcy(k)
 
       ! RHS time tendency
-      rhs(k) = rhs(k) + 1.0 / real ( dt ) * xm(k)
+      rhs(k) = rhs(k) + 1.0_core_rknd / real ( dt, kind = core_rknd ) * xm(k)
 
       if ( l_stats_samp ) then
 
@@ -1772,7 +1786,7 @@ module advance_windm_edsclrm_module
     ! the matrix equation, rhs(1) is simply set to 0.
 
     ! k = 1
-    rhs(1) = 0.0
+    rhs(1) = 0.0_core_rknd
 
     ! k = 2; add generalized explicit surface flux.
     if ( .not. l_imp_sfc_momentum_flux ) then
@@ -1816,7 +1830,7 @@ module advance_windm_edsclrm_module
     ! RHS turbulent advection term (solved as an eddy-diffusion term) at the
     ! upper boundary.
     rhs_diff(1:3)  &
-    = 0.5 * invrs_rho_ds_zt(k)  &
+    = 0.5_core_rknd * invrs_rho_ds_zt(k)  &
     * diffusion_zt_lhs( rho_ds_zm(k) * Kh_zm(k),  &
                         rho_ds_zm(km1) * Kh_zm(km1), nu,  &
                         gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
@@ -1829,7 +1843,7 @@ module advance_windm_edsclrm_module
     rhs(k) = rhs(k) + xm_tndcy(k)
 
     ! RHS time tendency term at the upper boundary.
-    rhs(k) = rhs(k) + 1.0 / real( dt ) * xm(k)
+    rhs(k) = rhs(k) + 1.0_core_rknd / real( dt, kind = core_rknd ) * xm(k)
 
     if ( l_stats_samp ) then
 
@@ -1861,17 +1875,20 @@ module advance_windm_edsclrm_module
     ! None
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       Kh_zm,     & ! Eddy diff. (k momentum level)                 [m^2/s]
       xm,        & ! x (k thermo level)                            [units vary]
       xmp1,      & ! x (k+1 thermo level)                          [units vary]
       invrs_dzm    ! Inverse of the grid spacing (k thermo level)  [1/m]
 
     ! Output variable
-    real :: &
+    real( kind = core_rknd ) :: &
       xpwp_fnc ! x'w'   [(units vary)(m/s)]
 
     !-----------------------------------------------------------------------

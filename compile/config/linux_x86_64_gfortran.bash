@@ -68,7 +68,7 @@ FFLAGS="$ARCH $DEBUG $OPTIMIZE"
 # Use -I<include path> to set a module or header file directory
 NETCDF_INCLUDE="$NETCDF/include/" # Ubuntu 10 LTS location
 #NETCDF_INCLUDE="$NETCDF/lib/gfortran/modules/" # Fedora Core 11 location
-CPPDEFS="-DNETCDF -D__GFORTRAN__ -Dnooverlap -Dradoffline"
+CPPDEFS="-DNETCDF -D__GFORTRAN__ -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=4"
 CPPFLAGS="-I$NETCDF_INCLUDE"
 
 # == Static library processing ==

@@ -39,6 +39,9 @@ module fill_holes
     use grid_class, only: & 
        gr ! Variable
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input variables
@@ -46,19 +49,19 @@ module fill_holes
       num_pts  ! The number of points on either side of the hole;
                ! Mass is drawn from these points to fill the hole.  []
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
                  ! fall                           [Units vary; same as field]
 
     character(len=2), intent(in) :: & 
       field_grid ! The grid of the field, either zt or zm
 
-    real, dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       rho_ds,    & ! Dry, static density on thermodynamic levels    [kg/m^3]
       rho_ds_zm    ! Dry, static density on momentum levels         [kg/m^3]
 
     ! Input/Output variable
-    real, dimension(gr%nz), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
       field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
 
     ! Local Variables
@@ -177,6 +180,9 @@ module fill_holes
     ! Dynamics", Durran (1999), p. 292.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input variables
@@ -184,26 +190,26 @@ module fill_holes
       begin_idx, & ! The beginning index (e.g. k=2) of the range of hole-filling 
       end_idx      ! The end index (e.g. k=gr%nz) of the range of hole-filling
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not fall
                  !                              [Units vary; same as field]
 
-    real, dimension(end_idx-begin_idx+1), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(end_idx-begin_idx+1), intent(in) ::  & 
       rho,     &  ! Dry, static density on either thermodynamic or momentum levels   [kg/m^3]
       invrs_dz    ! Reciprocal of thermodynamic or momentum level thickness depending on whether
                   ! we're on zt or zm grid.
 
     ! Input/Output variable
-    real, dimension(end_idx-begin_idx+1), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(end_idx-begin_idx+1), intent(inout) ::  & 
       field  ! The field (e.g. wp2) that contains holes
              !                                  [Units same as threshold]
 
     ! Local Variables
-    real, dimension(end_idx-begin_idx+1)  ::  & 
+    real( kind = core_rknd ), dimension(end_idx-begin_idx+1)  ::  & 
       field_clipped  ! The raw field (e.g. wp2) that contains no holes
                      !                          [Units same as threshold]
 
-    real ::  & 
+    real( kind = core_rknd ) ::  & 
       field_avg,  &        ! Vertical average of field [Units of field]
       field_clipped_avg, & ! Vertical average of clipped field [Units of field]
       mass_fraction        ! Coefficient that multiplies clipped field
@@ -236,7 +242,7 @@ module fill_holes
     ! error.
     !if ( abs(field_clipped_avg - threshold)  &
     !      < threshold*epsilon(threshold) ) then
-    if ( abs(field_clipped_avg - threshold) == 0.0 ) then
+    if ( abs(field_clipped_avg - threshold) == 0.0_core_rknd ) then
       return
     endif
 
@@ -353,13 +359,16 @@ module fill_holes
     ! None
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input variables
     integer, intent(in) :: & 
       total_idx ! The total numer of indices within the range of averaging
 
-    real, dimension(total_idx), intent(in) ::  &
+    real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
       rho_ds, & ! Dry, static density on either thermodynamic or momentum levels    [kg/m^3]
       field,  & ! The field (e.g. wp2) to be vertically averaged                    [Units vary]
       invrs_dz  ! Reciprocal of thermodynamic or momentum level thickness           [1/m]
@@ -369,15 +378,15 @@ module fill_holes
     !        field(1) actually their respective values at level k = 1.
 
     ! Output variable
-    real :: & 
+    real( kind = core_rknd ) :: & 
       vertical_avg  ! Vertical average of field    [Units of field]
 
     ! Local variables
-    real :: & 
+    real( kind = core_rknd ) :: & 
       numer_integral, & ! Integral in the numerator (see description)
       denom_integral    ! Integral in the denominator (see description)
       
-    real, dimension(total_idx) :: &
+    real( kind = core_rknd ), dimension(total_idx) :: &
       denom_field       ! When computing the vertical integral in the denominator
                         ! there is no field variable, so create a "dummy" variable
                         ! with value of 1 to pass as an argument
@@ -385,10 +394,10 @@ module fill_holes
     !-----------------------------------------------------------------------
     
     ! Fill array with 1's (see variable description)
-    denom_field = 1.0
+    denom_field = 1.0_core_rknd
 
     ! Initializing vertical_avg to avoid a compiler warning.
-    vertical_avg = 0.0
+    vertical_avg = 0.0_core_rknd
     
      
     ! Compute the numerator integral.
@@ -431,13 +440,16 @@ module fill_holes
     ! None
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input variables
     integer, intent(in) :: & 
       total_idx  ! The total numer of indices within the range of averaging
 
-    real, dimension(total_idx), intent(in) ::  &
+    real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
       rho_ds,  & ! Dry, static density                   [kg/m^3]
       field,   & ! The field to be vertically averaged   [Units vary]
       invrs_dz   ! Level thickness                       [1/m]
@@ -446,7 +458,7 @@ module fill_holes
     !        field(1) actually their respective values at level k = begin_idx.
 
     ! Local variables
-    real :: &
+    real( kind = core_rknd ) :: &
       vertical_integral ! Integral in the numerator (see description)
 
     !-----------------------------------------------------------------------
@@ -457,7 +469,7 @@ module fill_holes
 
 
     ! Initializing vertical_integral to avoid a compiler warning.
-    vertical_integral = 0.0
+    vertical_integral = 0.0_core_rknd
 
     ! Compute the integral.
     ! Multiply the field at level k by rho_ds at level k and by

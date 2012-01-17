@@ -238,7 +238,8 @@ module clubb_core
       advance_wp2_wp3 ! Procedure
 
     use clubb_precision, only:  & 
-      time_precision ! Variable(s)
+      time_precision, & ! Variable(s)
+      core_rknd
 
     use error_code, only :  & 
       clubb_no_error ! Constant(s)
@@ -347,11 +348,11 @@ module clubb_core
     real(kind=time_precision), intent(in) ::  & 
       dt  ! Current timestep duration    [s]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       fcor,  &          ! Coriolis forcing             [s^-1]
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
-    real, intent(in), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
       um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
@@ -369,29 +370,29 @@ module clubb_core
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
       wprtp_sfc,    & ! w' r_t' at surface       [(kg m)/( kg s)]
       upwp_sfc,     & ! u'w' at surface          [m^2/s^2]
       vpwp_sfc        ! v'w' at surface          [m^2/s^2]
 
     ! Passive scalar variables
-    real, intent(in), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
 
-    real, intent(in),  dimension(sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in),  dimension(sclr_dim) ::  & 
       wpsclrp_sfc      ! Scalar flux at surface         [{units vary} m/s]
 
     ! Eddy passive scalar variables
-    real, intent(in), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
 
-    real, intent(in),  dimension(edsclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in),  dimension(edsclr_dim) ::  & 
       wpedsclrp_sfc    ! Eddy-Scalar flux at surface    [{units vary} m/s]
 
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
-    real, intent(inout), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
       um,      & ! u mean wind component (thermodynamic levels)   [m/s]
       upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
       vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
@@ -409,7 +410,7 @@ module clubb_core
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
     ! Passive scalar variables
-    real, intent(inout), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: & 
       sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
       wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
       sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
@@ -417,18 +418,18 @@ module clubb_core
       sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
 
 #ifdef GFDL
-    real, intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
      sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
 #endif
 
     ! Eddy passive scalar variable
-    real, intent(inout), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
     ! Variables that need to be output for use in other parts of the CLUBB
     ! code, such as microphysics (rcm, pdf_params), forcings (rcm), and/or
     ! BUGSrad (cloud_cover).
-    real, intent(out), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       rcm,          & ! cloud water mixing ratio, r_c (thermo. levels)  [kg/kg]
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
@@ -437,7 +438,7 @@ module clubb_core
       pdf_params      ! PDF parameters   [units vary]
 
     ! Variables that need to be output for use in host models
-    real, intent(out), dimension(gr%nz) ::  &
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
       wprcp,      & ! w'r_c' (momentum levels)                [(kg/kg) m/s]
       cloud_frac    ! cloud fraction (thermodynamic levels)   [-]
 
@@ -452,7 +453,8 @@ module clubb_core
     integer, intent(inout) :: err_code
 
 #ifdef GFDL
-    real, intent(inOUT), dimension(gr%nz, min(1,sclr_dim) , 2) :: &  ! h1g, 2010-06-16
+    ! hlg, 2010-06-16
+    real( kind = core_rknd ), intent(inOUT), dimension(gr%nz, min(1,sclr_dim) , 2) :: & 
       RH_crit  ! critical relative humidity for droplet and ice nucleation
 #endif
 
@@ -460,7 +462,7 @@ module clubb_core
     integer :: i, k, &
       err_code_pdf_closure, err_code_surface
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       sigma_sqd_w,   & ! PDF width parameter (momentum levels)    [-]
       sqrt_em_zt,    & ! sqrt( em ) on zt levels; where em is TKE [m/s] 
       gamma_Skw_fnc, & ! Gamma as a function of skewness          [???]
@@ -469,13 +471,13 @@ module clubb_core
       rtm_pert_1, rtm_pert_2          ! For avg. calculation of Lscale  [kg/kg]
 
     ! For pdf_closure
-    real, dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: & 
       wpsclrp_zt,  & ! w' sclr' on thermo. levels
       sclrp2_zt,   & ! sclr'^2 on thermo. levels
       sclrprtp_zt, & ! sclr' r_t' on thermo. levels
       sclrpthlp_zt   ! sclr' th_l' on thermo. levels
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       p_in_Pa_zm, &  ! Pressure interpolated to momentum levels  [Pa]
       exner_zm       ! Exner interpolated to momentum levels     [-]
 
@@ -488,7 +490,7 @@ module clubb_core
 
     ! These local variables are declared because they originally belong on the momentum
     ! grid levels, but pdf_closure outputs them on the thermodynamic grid levels.
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       wp4_zt,      & ! w'^4 (on thermo. grid)           [m^4/s^4] 
       wpthvp_zt,   & ! Buoyancy flux (on thermo. grid)  [(K m)/s]
       rtpthvp_zt,  & ! r_t' th_v' (on thermo. grid)     [(kg K)/kg]
@@ -498,11 +500,11 @@ module clubb_core
       thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg] 
       rcp2_zt        ! r_c'^2 (on thermo. grid)         [(kg^2)/(kg^2)]
 
-    real, dimension(gr%nz, sclr_dim) :: &       
+    real( kind = core_rknd ), dimension(gr%nz, sclr_dim) :: &       
       sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid) 
       sclrprcp_zt     ! sclr'rc' (on thermo. grid)
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
       wp2rtp_zm,     & ! w'^2 rt' on momentum grid                  [m^2 kg/kg]
       wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
@@ -515,14 +517,14 @@ module clubb_core
       wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
       wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
 
-    real, dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
       wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid 
       wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
       sclrm_zm          ! Passive scalar mean on momentum grid
 
-    real :: &
+    real( kind = core_rknd ) :: &
       rtm_integral_before, &
       rtm_integral_after, &
       rtm_integral_forcing, &
@@ -542,7 +544,8 @@ module clubb_core
     if ( l_stats .and. l_stats_samp ) then
       ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
       ! Therefore, wm must be zero or l_implemented must be true.
-      if ( l_implemented .or. ( all( wm_zt == 0. ) .and. all( wm_zm == 0. ) ) ) then
+      if ( l_implemented .or. ( all( wm_zt == 0._core_rknd ) .and. &
+           all( wm_zm == 0._core_rknd ) ) ) then
         ! Get the vertical integral of rtm and thlm before this function begins
         ! so that spurious source can be calculated
         rtm_integral_before  &
@@ -579,32 +582,32 @@ module clubb_core
     ! Set up stats variables.
     if ( l_stats_samp ) then
 
-      call stat_begin_update( iwp2_bt, wp2 / real( dt ), &          ! Intent(in)
+      call stat_begin_update( iwp2_bt, wp2 / real( dt , kind = core_rknd ), &          ! Intent(in)
                               zm )                                  ! Intent(inout)
-      call stat_begin_update( ivp2_bt, vp2 / real( dt ), &          ! Intent(in)
+      call stat_begin_update( ivp2_bt, vp2 / real( dt , kind = core_rknd ), &          ! Intent(in)
                               zm )                                  ! Intent(inout)
-      call stat_begin_update( iup2_bt, up2 / real( dt ),  &         ! Intent(in)
+      call stat_begin_update( iup2_bt, up2 / real( dt , kind = core_rknd ),  &         ! Intent(in)
                               zm )                                  ! Intent(inout)
-      call stat_begin_update( iwprtp_bt, wprtp / real( dt ), &      ! Intent(in)
+      call stat_begin_update( iwprtp_bt, wprtp / real( dt , kind = core_rknd ), &      ! Intent(in)
                               zm )                                  ! Intent(inout)
-      call stat_begin_update( iwpthlp_bt, wpthlp / real( dt ),  &   ! Intent(in)
+      call stat_begin_update( iwpthlp_bt, wpthlp / real( dt , kind = core_rknd ),  &   ! Intent(in)
                               zm )                                  ! Intent(inout)
-      call stat_begin_update( irtp2_bt, rtp2 / real( dt ), &        ! Intent(in)
+      call stat_begin_update( irtp2_bt, rtp2 / real( dt , kind = core_rknd ), &        ! Intent(in)
                               zm )                                  ! Intent(inout)
-      call stat_begin_update( ithlp2_bt, thlp2 / real( dt ), &      ! Intent(in)
+      call stat_begin_update( ithlp2_bt, thlp2 / real( dt , kind = core_rknd ), &      ! Intent(in)
                               zm )                                  ! Intent(inout)
-      call stat_begin_update( irtpthlp_bt, rtpthlp / real( dt ), &  ! Intent(in)
+      call stat_begin_update( irtpthlp_bt, rtpthlp / real( dt , kind = core_rknd ), &  ! Intent(in)
                               zm )                                  ! Intent(inout)
 
-      call stat_begin_update( irtm_bt, rtm / real( dt ), &          ! Intent(in)
+      call stat_begin_update( irtm_bt, rtm / real( dt , kind = core_rknd ), &          ! Intent(in)
                               zt )                                  ! Intent(inout)
-      call stat_begin_update( ithlm_bt, thlm / real( dt ), &        ! Intent(in)
+      call stat_begin_update( ithlm_bt, thlm / real( dt , kind = core_rknd ), &        ! Intent(in)
                               zt )                                  ! Intent(inout)
-      call stat_begin_update( ium_bt, um / real( dt ), &            ! Intent(in)
+      call stat_begin_update( ium_bt, um / real( dt , kind = core_rknd ), &            ! Intent(in)
                               zt )                                  ! Intent(inout)
-      call stat_begin_update( ivm_bt, vm / real( dt ), &            ! Intent(in)
+      call stat_begin_update( ivm_bt, vm / real( dt , kind = core_rknd ), &            ! Intent(in)
                               zt )                                  ! Intent(inout)
-      call stat_begin_update( iwp3_bt, wp3 / real( dt ), &          ! Intent(in)
+      call stat_begin_update( iwp3_bt, wp3 / real( dt , kind = core_rknd ), &          ! Intent(in)
                               zt )                                  ! Intent(inout)
 
     end if
@@ -631,18 +634,18 @@ module clubb_core
 
     else
 
-      wpthlp(1) = 0.0
-      wprtp(1)  = 0.0
-      upwp(1)   = 0.0
-      vpwp(1)   = 0.0
+      wpthlp(1) = 0.0_core_rknd
+      wprtp(1)  = 0.0_core_rknd
+      upwp(1)   = 0.0_core_rknd
+      vpwp(1)   = 0.0_core_rknd
 
       ! Set fluxes for passive scalars (if enabled)
       if ( sclr_dim > 0 ) then
-        wpsclrp(1,1:sclr_dim) = 0.0
+        wpsclrp(1,1:sclr_dim) = 0.0_core_rknd
       end if
 
       if ( edsclr_dim > 0 ) then
-        wpedsclrp(1,1:edsclr_dim) = 0.0
+        wpedsclrp(1,1:edsclr_dim) = 0.0_core_rknd
       end if
 
     end if ! ~l_host_applies_sfc_fluxes
@@ -666,7 +669,7 @@ module clubb_core
       !----------------------------------------------------------------
 
       gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) &
-            *exp( -(1.0/2.0) * (Skw_zm/gamma_coefc)**2 )
+            *exp( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zm/gamma_coefc)**2 )
 
     else
 
@@ -688,17 +691,17 @@ module clubb_core
     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
 
     ! Compute the a3 coefficient (formula 25 in `Equations for CLUBB')
-!   a3_coef = 3.0 * sigma_sqd_w*sigma_sqd_w  &
-!      + 6.0*(1.0-sigma_sqd_w)*sigma_sqd_w  &
-!      + (1.0-sigma_sqd_w)*(1.0-sigma_sqd_w) &
-!      - 3.0
+!   a3_coef = 3.0_core_rknd * sigma_sqd_w*sigma_sqd_w  &
+!      + 6.0_core_rknd*(1.0_core_rknd-sigma_sqd_w)*sigma_sqd_w  &
+!      + (1.0_core_rknd-sigma_sqd_w)*(1.0_core_rknd-sigma_sqd_w) &
+!      - 3.0_core_rknd
 
     ! This is a simplified version of the formula above.
-    a3_coef = -2. * ( 1. - sigma_sqd_w )**2
+    a3_coef = -2._core_rknd * ( 1._core_rknd - sigma_sqd_w )**2
 
     ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
     ! than -1.4 -dschanen 4 Jan 2011
-    a3_coef = max( a3_coef, -1.4 ) ! Known magic number
+    a3_coef = max( a3_coef, -1.4_core_rknd ) ! Known magic number
 
     a3_coef_zt = zm2zt( a3_coef )
 
@@ -713,7 +716,7 @@ module clubb_core
 
     ! Compute skewness velocity for stats output purposes
     if ( iSkw_velocity > 0 ) then
-      Skw_velocity = ( 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nz) ) ) & 
+      Skw_velocity = ( 1.0_core_rknd / ( 1.0_core_rknd - sigma_sqd_w(1:gr%nz) ) ) & 
                    * ( wp3_zm(1:gr%nz) / max( wp2(1:gr%nz), w_tol_sqd ) )
     end if
 
@@ -723,10 +726,10 @@ module clubb_core
 
     ! Clip wp3_on_wp2_zt if it's too large
     do k=1, gr%nz
-      if( wp3_on_wp2_zt(k) < 0. ) then
-        wp3_on_wp2_zt = max( -1000., wp3_on_wp2_zt )
+      if( wp3_on_wp2_zt(k) < 0._core_rknd ) then
+        wp3_on_wp2_zt = max( -1000._core_rknd, wp3_on_wp2_zt )
       else
-        wp3_on_wp2_zt = min( 1000., wp3_on_wp2_zt )
+        wp3_on_wp2_zt = min( 1000._core_rknd, wp3_on_wp2_zt )
       end if
     end do
 
@@ -813,8 +816,7 @@ module clubb_core
       p_in_Pa_zm(1) = p_in_Pa(1)
 
       ! Clip pressure if the extrapolation leads to a negative value of pressure
-      p_in_Pa_zm(gr%nz) = max( p_in_Pa_zm(gr%nz), 0.5*p_in_Pa(gr%nz) )
-
+      p_in_Pa_zm(gr%nz) = max( p_in_Pa_zm(gr%nz), 0.5_core_rknd*p_in_Pa(gr%nz) )
       ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
       exner_zm(:) = (p_in_Pa_zm(:)/p0)**kappa
 
@@ -879,12 +881,12 @@ module clubb_core
       ! used elsewhere in the parameterization
       if ( iwp4 > 0 ) then
         wp4 = max( zt2zm( wp4_zt ), zero_threshold )  ! Pos. def. quantity
-        wp4(gr%nz)  = 0.0
+        wp4(gr%nz)  = 0.0_core_rknd
       end if
 
       if ( ircp2 > 0 ) then
         rcp2 = max( zt2zm( rcp2_zt ), zero_threshold )  ! Pos. def. quantity
-        rcp2(gr%nz) = 0.0
+        rcp2(gr%nz) = 0.0_core_rknd
       end if
 
       if ( icorr_st_mellor1 > 0 ) then
@@ -905,33 +907,33 @@ module clubb_core
 
       if ( itp2_mellor_1 > 0 ) then
         tp2_mellor_1 = max( zt2zm( tp2_mellor_1 ), zero_threshold )
-        tp2_mellor_1(gr%nz) = 0.0
+        tp2_mellor_1(gr%nz) = 0.0_core_rknd
       end if
 
       if ( itp2_mellor_2 > 0 ) then
         tp2_mellor_2 = max( zt2zm( tp2_mellor_2 ), zero_threshold )
-        tp2_mellor_2(gr%nz) = 0.0
+        tp2_mellor_2(gr%nz) = 0.0_core_rknd
       end if
 
       wpthvp            = zt2zm( wpthvp_zt )
-      wpthvp(gr%nz)   = 0.0
+      wpthvp(gr%nz)   = 0.0_core_rknd
       thlpthvp          = zt2zm( thlpthvp_zt )
-      thlpthvp(gr%nz) = 0.0
+      thlpthvp(gr%nz) = 0.0_core_rknd
       rtpthvp           = zt2zm( rtpthvp_zt )
-      rtpthvp(gr%nz)  = 0.0
+      rtpthvp(gr%nz)  = 0.0_core_rknd
       wprcp             = zt2zm( wprcp_zt )
-      wprcp(gr%nz)    = 0.0
+      wprcp(gr%nz)    = 0.0_core_rknd
       rtprcp            = zt2zm( rtprcp_zt )
-      rtprcp(gr%nz)   = 0.0
+      rtprcp(gr%nz)   = 0.0_core_rknd
       thlprcp           = zt2zm( thlprcp_zt )
-      thlprcp(gr%nz)  = 0.0
+      thlprcp(gr%nz)  = 0.0_core_rknd
 
       ! Interpolate passive scalars back onto the m grid
       do i = 1, sclr_dim
         sclrpthvp(:,i)       = zt2zm( sclrpthvp_zt(:,i) )
-        sclrpthvp(gr%nz,i) = 0.0
+        sclrpthvp(gr%nz,i) = 0.0_core_rknd
         sclrprcp(:,i)        = zt2zm( sclrprcp_zt(:,i) )
-        sclrprcp(gr%nz,i)  = 0.0
+        sclrprcp(gr%nz,i)  = 0.0_core_rknd
       end do ! i=1, sclr_dim
 
     end if ! l_call_pdf_closure_twice
@@ -999,7 +1001,7 @@ module clubb_core
       ! tke is assumed to be 3/2 of wp2
       em = three_halves * wp2 ! Known magic number
     else
-      em = 0.5 * ( wp2 + vp2 + up2 )
+      em = 0.5_core_rknd * ( wp2 + vp2 + up2 )
     end if
 
     !----------------------------------------------------------------
@@ -1039,7 +1041,7 @@ module clubb_core
                          Lscale )                                    ! intent(out)
 
     if ( l_avg_Lscale ) then
-      Lscale = (1.0/3.0) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
+      Lscale = (1.0_core_rknd/3.0_core_rknd) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
     end if
 
     !----------------------------------------------------------------
@@ -1065,7 +1067,7 @@ module clubb_core
 ! Vince Larson commented out because it may prevent turbulence from
 !    initiating in unstable regions.  7 Jul 2007
 !       do k = 1, gr%nz
-!         if ( wp2(k) <= 0.005 ) then
+!         if ( wp2(k) <= 0.005_core_rknd ) then
 !           tau_zt(k) = taumin
 !           tau_zm(k) = taumin
 !         end if
@@ -1099,18 +1101,24 @@ module clubb_core
 
       ! Reflect surface varnce changes in budget
       if ( l_stats_samp ) then
-        call stat_begin_update_pt( ithlp2_sf, 1, thlp2(1) / real( dt ), &         ! intent(in)
-                                   zm )                                           ! intent(inout)
-        call stat_begin_update_pt( irtp2_sf, 1, rtp2(1) / real( dt ), &           ! intent(in)
-                                   zm )                                           ! intent(inout)
-        call stat_begin_update_pt( irtpthlp_sf, 1, rtpthlp(1) / real( dt ), &     ! intent(in)
-                                   zm )                                           ! intent(inout)
-        call stat_begin_update_pt( iup2_sf, 1, up2(1) / real( dt ), &             ! intent(in)
-                                   zm )                                           ! intent(inout)
-        call stat_begin_update_pt( ivp2_sf, 1, vp2(1) / real( dt ), &             ! intent(in)
-                                   zm )                                           ! intent(inout)
-        call stat_begin_update_pt( iwp2_sf, 1, wp2(1) / real( dt ), &             ! intent(in)
-                                   zm )                                           ! intent(inout)
+        call stat_begin_update_pt( ithlp2_sf, 1, &           ! intent(in)
+         thlp2(1) / real( dt , kind = core_rknd ), &         ! intent(in)
+                                   zm )                      ! intent(inout)
+        call stat_begin_update_pt( irtp2_sf, 1, &            ! intent(in)
+          rtp2(1) / real( dt , kind = core_rknd ), &         ! intent(in)
+                                   zm )                      ! intent(inout)
+        call stat_begin_update_pt( irtpthlp_sf, 1, &         ! intent(in)
+          rtpthlp(1) / real( dt , kind = core_rknd ), &      ! intent(in)
+                                   zm )                      ! intent(inout)
+        call stat_begin_update_pt( iup2_sf, 1, &             ! intent(in)
+          up2(1) / real( dt , kind = core_rknd ), &          ! intent(in)
+                                   zm )                      ! intent(inout)
+        call stat_begin_update_pt( ivp2_sf, 1, &             ! intent(in)
+          vp2(1) / real( dt , kind = core_rknd ), &          ! intent(in)
+                                   zm )                      ! intent(inout)
+        call stat_begin_update_pt( iwp2_sf, 1, &             ! intent(in)
+          wp2(1) / real( dt , kind = core_rknd ), &          ! intent(in)
+                                   zm )                      ! intent(inout)
       end if
 
       call surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
@@ -1128,18 +1136,24 @@ module clubb_core
 
       ! Update surface stats
       if ( l_stats_samp ) then
-        call stat_end_update_pt( ithlp2_sf, 1, thlp2(1) / real( dt ), &           ! intent(in)
-                                 zm )                                             ! intent(inout)
-        call stat_end_update_pt( irtp2_sf, 1, rtp2(1) / real( dt ), &             ! intent(in)
-                                 zm )                                             ! intent(inout)
-        call stat_end_update_pt( irtpthlp_sf, 1, rtpthlp(1) / real( dt ), &       ! intent(in)
-                                 zm )                                             ! intent(inout)
-        call stat_end_update_pt( iup2_sf, 1, up2(1) / real( dt ), &               ! intent(in)
-                                 zm )                                             ! intent(inout)
-        call stat_end_update_pt( ivp2_sf, 1, vp2(1) / real( dt ), &               ! intent(in)
-                                 zm )                                             ! intent(inout)
-        call stat_end_update_pt( iwp2_sf, 1, wp2(1) / real( dt ), &               ! intent(in)
-                                 zm )                                             ! intent(inout)
+        call stat_end_update_pt( ithlp2_sf, 1, &                ! intent(in)
+          thlp2(1) / real( dt , kind = core_rknd ), &           ! intent(in)
+                                 zm )                           ! intent(inout)
+        call stat_end_update_pt( irtp2_sf, 1, &                 ! intent(in)
+          rtp2(1) / real( dt , kind = core_rknd ), &            ! intent(in)
+                                 zm )                           ! intent(inout)
+        call stat_end_update_pt( irtpthlp_sf, 1, &              ! intent(in)
+          rtpthlp(1) / real( dt , kind = core_rknd ), &         ! intent(in)
+                                 zm )                           ! intent(inout)
+        call stat_end_update_pt( iup2_sf, 1, &                  ! intent(in)
+          up2(1) / real( dt , kind = core_rknd ), &             ! intent(in)
+                                 zm )                           ! intent(inout)
+        call stat_end_update_pt( ivp2_sf, 1, &                  ! intent(in)
+          vp2(1) / real( dt , kind = core_rknd ), &             ! intent(in)
+                                 zm )                           ! intent(inout)
+        call stat_end_update_pt( iwp2_sf, 1, &                  ! intent(in)
+          wp2(1) / real( dt , kind = core_rknd ), &             ! intent(in)
+                                 zm )                           ! intent(inout)
       end if
 
     else
@@ -1151,12 +1165,12 @@ module clubb_core
       vp2(1)     = w_tol_sqd
       thlp2(1)   = thl_tol**2
       rtp2(1)    = rt_tol**2
-      rtpthlp(1) = 0.0
+      rtpthlp(1) = 0.0_core_rknd
 
       do i = 1, sclr_dim, 1
-        sclrp2(1,i)    = 0.0
-        sclrprtp(1,i)  = 0.0
-        sclrpthlp(1,i) = 0.0
+        sclrp2(1,i)    = 0.0_core_rknd
+        sclrprtp(1,i)  = 0.0_core_rknd
+        sclrpthlp(1,i) = 0.0_core_rknd
       end do
 
     end if ! gr%zm(1) == sfc_elevation
@@ -1310,32 +1324,32 @@ module clubb_core
 
     if ( l_stats_samp ) then
 
-      call stat_end_update( iwp2_bt, wp2 / real( dt ), &        ! Intent(in)
+      call stat_end_update( iwp2_bt, wp2 / real( dt , kind = core_rknd ), &        ! Intent(in)
                             zm )                                ! Intent(inout)
-      call stat_end_update( ivp2_bt, vp2 / real( dt ),&         ! Intent(in)
+      call stat_end_update( ivp2_bt, vp2 / real( dt , kind = core_rknd ),&         ! Intent(in)
                             zm )                                ! Intent(inout)
-      call stat_end_update( iup2_bt, up2 / real( dt ), &        ! Intent(in)
+      call stat_end_update( iup2_bt, up2 / real( dt , kind = core_rknd ), &        ! Intent(in)
                             zm )                                ! Intent(inout)
-      call stat_end_update( iwprtp_bt, wprtp / real( dt ), &    ! Intent(in)
+      call stat_end_update( iwprtp_bt, wprtp / real( dt , kind = core_rknd ), &    ! Intent(in)
                             zm )                                ! Intent(inout)
-      call stat_end_update( iwpthlp_bt, wpthlp / real( dt ), &  ! Intent(in)
+      call stat_end_update( iwpthlp_bt, wpthlp / real( dt , kind = core_rknd ), &  ! Intent(in)
                             zm )                                ! Intent(inout)
-      call stat_end_update( irtp2_bt, rtp2 / real( dt ), &      ! Intent(in)
+      call stat_end_update( irtp2_bt, rtp2 / real( dt , kind = core_rknd ), &      ! Intent(in)
                             zm )                                ! Intent(inout)
-      call stat_end_update( ithlp2_bt, thlp2 / real( dt ), &    ! Intent(in) 
+      call stat_end_update( ithlp2_bt, thlp2 / real( dt , kind = core_rknd ), &    ! Intent(in) 
                             zm )                                ! Intent(inout)
-      call stat_end_update( irtpthlp_bt, rtpthlp / real( dt ), &! Intent(in)
+      call stat_end_update( irtpthlp_bt, rtpthlp / real( dt , kind = core_rknd ), &! Intent(in)
                             zm )                                ! Intent(inout)
 
-      call stat_end_update( irtm_bt, rtm / real( dt ), &        ! Intent(in)
+      call stat_end_update( irtm_bt, rtm / real( dt , kind = core_rknd ), &        ! Intent(in)
                             zt )                                ! Intent(inout)
-      call stat_end_update( ithlm_bt, thlm / real( dt ), &      ! Intent(in)
+      call stat_end_update( ithlm_bt, thlm / real( dt , kind = core_rknd ), &      ! Intent(in)
                             zt )                                ! Intent(inout)
-      call stat_end_update( ium_bt, um / real( dt ), &          ! Intent(in)
+      call stat_end_update( ium_bt, um / real( dt , kind = core_rknd ), &          ! Intent(in)
                             zt )                                ! Intent(inout)
-      call stat_end_update( ivm_bt, vm / real( dt ), &          ! Intent(in)
+      call stat_end_update( ivm_bt, vm / real( dt , kind = core_rknd ), &          ! Intent(in)
                             zt )                                ! Intent(inout)
-      call stat_end_update( iwp3_bt, wp3 / real( dt ), &        ! Intent(in)
+      call stat_end_update( iwp3_bt, wp3 / real( dt , kind = core_rknd ), &        ! Intent(in)
                             zt )                                ! Intent(inout)
 
     end if ! l_stats_samp
@@ -1399,14 +1413,15 @@ module clubb_core
     if ( l_stats .and. l_stats_samp ) then
       ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
       ! Therefore, wm must be zero or l_implemented must be true.
-      if ( l_implemented .or. ( all( wm_zt == 0. ) .and. all( wm_zm == 0. ) ) ) then
+      if ( l_implemented .or. ( all( wm_zt == 0._core_rknd ) .and. &
+          all( wm_zm == 0._core_rknd ) ) ) then
         ! Calculate the spurious source for rtm
         rtm_flux_top = rho_ds_zm(gr%nz) * wprtp(gr%nz)
 
         if ( .not. l_host_applies_sfc_fluxes ) then
           rtm_flux_sfc = rho_ds_zm(1) * wprtp_sfc
         else
-          rtm_flux_sfc = 0.0
+          rtm_flux_sfc = 0.0_core_rknd
         end if
 
         rtm_integral_after  &
@@ -1422,7 +1437,7 @@ module clubb_core
                                      rtm_integral_before, &
                                      rtm_flux_top, rtm_flux_sfc, &
                                      rtm_integral_forcing, &
-                                     real( dt ) )
+                                     real( dt , kind = core_rknd ) )
 
         ! Calculate the spurious source for thlm
         thlm_flux_top = rho_ds_zm(gr%nz) * wpthlp(gr%nz)
@@ -1430,7 +1445,7 @@ module clubb_core
         if ( .not. l_host_applies_sfc_fluxes ) then
           thlm_flux_sfc = rho_ds_zm(1) * wpthlp_sfc
         else
-          thlm_flux_sfc = 0.0
+          thlm_flux_sfc = 0.0_core_rknd
         end if
 
         thlm_integral_after  &
@@ -1446,10 +1461,10 @@ module clubb_core
                                      thlm_integral_before, &
                                      thlm_flux_top, thlm_flux_sfc, &
                                      thlm_integral_forcing, &
-                                     real( dt ) )
+                                     real( dt , kind = core_rknd ) )
       else ! If l_implemented is false, we don't want spurious source output
-        rtm_spur_src = -9999.0
-        thlm_spur_src = -9999.0
+        rtm_spur_src = -9999.0_core_rknd
+        thlm_spur_src = -9999.0_core_rknd
       end if
 
       ! Write the var to stats
@@ -1528,6 +1543,9 @@ module clubb_core
       gmres_idx_wp2wp3        ! Variable
 #endif /* MKL */
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
@@ -1539,7 +1557,7 @@ module clubb_core
     !                      given zm_init and zm_top when
     !                      running in standalone mode.
 
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       sfc_elevation  ! Elevation of ground level    [m AMSL]
 
     ! Flag to see if CLUBB is running on it's own,
@@ -1561,7 +1579,7 @@ module clubb_core
     ! evenly-spaced grid (grid_type = 1), it needs the vertical
     ! grid spacing, momentum-level starting altitude, and maximum
     ! altitude as input.
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       deltaz,   & ! Change in altitude per level           [m]
       zm_init,  & ! Initial grid altitude (momentum level) [m]
       zm_top      ! Maximum grid altitude (momentum level) [m]
@@ -1575,17 +1593,17 @@ module clubb_core
     ! If the CLUBB model is running by itself, but is using a
     ! stretched grid entered on momentum levels (grid_type = 3),
     ! it needs to use the momentum level altitudes as input.
-    real, intent(in), dimension(nzmax) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nzmax) :: & 
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     ! Host model horizontal grid spacing, if part of host model.
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       host_dx,  & ! East-West horizontal grid spacing     [m]
       host_dy     ! North-South horizontal grid spacing   [m]
 
     ! Model parameters
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       T0_in, ts_nudge_in
 
     integer, intent(in) :: & 
@@ -1593,10 +1611,10 @@ module clubb_core
       sclr_dim_in,      & ! Number of passive scalars
       edsclr_dim_in       ! Number of eddy-diff. passive scalars
 
-    real, intent(in), dimension(sclr_dim_in) :: & 
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim_in) :: & 
       sclr_tol_in    ! Thresholds for passive scalars
 
-    real, intent(in), dimension(nparams) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nparams) :: & 
       params  ! Including C1, nu1, nu2, etc.
 
     ! Flags
@@ -1611,7 +1629,7 @@ module clubb_core
     logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
        I_sat_sphum
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
        cloud_frac_min         ! h1g, 2010-06-16 end mod
 #endif
 
@@ -1620,7 +1638,7 @@ module clubb_core
       err_code   ! Diagnostic for a problem with the setup
 
     ! Local variables
-    real :: Lscale_max
+    real( kind = core_rknd ) :: Lscale_max
     integer :: begin_height, end_height
 
     !----- Begin Code -----
@@ -1849,6 +1867,9 @@ module clubb_core
     use pdf_parameter_module, only: &
       pdf_parameter ! Derived data type
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input variables
@@ -1856,7 +1877,7 @@ module clubb_core
 
     ! Input/Output variables
     ! Thermodynamic level variables output from the first call to pdf_closure
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       wprtp2,      & ! w'rt'^2                   [m kg^2/kg^2]
       wpthlp2,     & ! w'thl'^2                  [m K^2/s]
       wprtpthlp,   & ! w'rt'thl'                 [m kg K/kg s]
@@ -1864,7 +1885,7 @@ module clubb_core
       rcm,         & ! Liquid water mixing ratio [kg/kg]
       wp2thvp        ! w'^2 th_v'                [m^2 K/s^2]
 
-    real, dimension(gr%nz,sclr_dim), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(inout) :: & 
       wpsclrprtp,  & ! w'sclr'rt' 
       wpsclrp2,    & ! w'sclr'^2
       wpsclrpthlp    ! w'sclr'thl'
@@ -1875,7 +1896,7 @@ module clubb_core
     ! Thermo. level variables brought to momentum levels either by
     ! interpolation (in subroutine trapezoidal_rule_zt) or by
     ! the second call to pdf_closure (in subroutine advance_clubb_core)
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
       wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
       wprtpthlp_zm,  & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
@@ -1883,7 +1904,7 @@ module clubb_core
       rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
       wp2thvp_zm       ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
 
-    real, dimension(gr%nz,sclr_dim), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(inout) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
       wpsclrpthlp_zm    ! w'sclr'thl' on momentum grid
@@ -1895,7 +1916,7 @@ module clubb_core
     integer :: i
 
     ! Components of PDF_parameters on the momentum grid (_zm) and on the thermo. grid (_zt)
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       w1_zt,          & ! Mean of w for 1st normal distribution                 [m/s]
       w1_zm,          & ! Mean of w for 1st normal distribution                 [m/s]
       w2_zm,          & ! Mean of w for 2nd normal distribution                 [m/s]
@@ -1929,7 +1950,7 @@ module clubb_core
       varnce_thl2_zm, & ! Variance of th_l for 2nd normal distribution          [K^2]
       varnce_thl2_zt    ! Variance of th_l for 2nd normal distribution          [K^2]
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       mixt_frac_zm,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       mixt_frac_zt,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
       rc1_zm,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
@@ -2037,87 +2058,87 @@ module clubb_core
       ! Since top momentum level is higher than top thermo. level,
       ! set variables at top momentum level to 0.
       wprtp2_zm           = zt2zm( wprtp2 )
-      wprtp2_zm(gr%nz) = 0.0
+      wprtp2_zm(gr%nz) = 0.0_core_rknd
       wpthlp2_zm           = zt2zm( wpthlp2 )
-      wpthlp2_zm(gr%nz) = 0.0
+      wpthlp2_zm(gr%nz) = 0.0_core_rknd
       wprtpthlp_zm           = zt2zm( wprtpthlp )
-      wprtpthlp_zm(gr%nz)  = 0.0
+      wprtpthlp_zm(gr%nz)  = 0.0_core_rknd
       cloud_frac_zm          = zt2zm( cloud_frac )
-      cloud_frac_zm(gr%nz) = 0.0
+      cloud_frac_zm(gr%nz) = 0.0_core_rknd
       rcm_zm                 = zt2zm( rcm )
-      rcm_zm(gr%nz)        = 0.0
+      rcm_zm(gr%nz)        = 0.0_core_rknd
       wp2thvp_zm             = zt2zm( wp2thvp )
-      wp2thvp_zm(gr%nz)    = 0.0
+      wp2thvp_zm(gr%nz)    = 0.0_core_rknd
 
       do i = 1, sclr_dim
         wpsclrprtp_zm(:,i)        = zt2zm( wpsclrprtp(:,i) )
-        wpsclrprtp_zm(gr%nz,i)  = 0.0
+        wpsclrprtp_zm(gr%nz,i)  = 0.0_core_rknd
         wpsclrp2_zm(:,i)          = zt2zm( wpsclrp2(:,i) )
-        wpsclrp2_zm(gr%nz,i)    = 0.0
+        wpsclrp2_zm(gr%nz,i)    = 0.0_core_rknd
         wpsclrpthlp_zm(:,i)       = zt2zm( wpsclrpthlp(:,i) )
-        wpsclrpthlp_zm(gr%nz,i) = 0.0
+        wpsclrpthlp_zm(gr%nz,i) = 0.0_core_rknd
       end do ! i = 1, sclr_dim
 
       w1_zm                   = zt2zm( pdf_params%w1 )
-      w1_zm(gr%nz)          = 0.0
+      w1_zm(gr%nz)          = 0.0_core_rknd
       w2_zm                   = zt2zm( pdf_params%w2 )
-      w2_zm(gr%nz)          = 0.0
+      w2_zm(gr%nz)          = 0.0_core_rknd
       varnce_w1_zm            = zt2zm( pdf_params%varnce_w1 )
-      varnce_w1_zm(gr%nz)   = 0.0
+      varnce_w1_zm(gr%nz)   = 0.0_core_rknd
       varnce_w2_zm            = zt2zm( pdf_params%varnce_w2 )
-      varnce_w2_zm(gr%nz)   = 0.0
+      varnce_w2_zm(gr%nz)   = 0.0_core_rknd
       rt1_zm                  = zt2zm( pdf_params%rt1 )
-      rt1_zm(gr%nz)         = 0.0
+      rt1_zm(gr%nz)         = 0.0_core_rknd
       rt2_zm                  = zt2zm( pdf_params%rt2 )
-      rt2_zm(gr%nz)         = 0.0
+      rt2_zm(gr%nz)         = 0.0_core_rknd
       varnce_rt1_zm           = zt2zm( pdf_params%varnce_rt1 )
-      varnce_rt1_zm(gr%nz)  = 0.0
+      varnce_rt1_zm(gr%nz)  = 0.0_core_rknd
       varnce_rt2_zm           = zt2zm( pdf_params%varnce_rt2 )
-      varnce_rt2_zm(gr%nz)  = 0.0
+      varnce_rt2_zm(gr%nz)  = 0.0_core_rknd
       crt1_zm                 = zt2zm( pdf_params%crt1 )
-      crt1_zm(gr%nz)        = 0.0
+      crt1_zm(gr%nz)        = 0.0_core_rknd
       crt2_zm                 = zt2zm( pdf_params%crt2 )
-      crt2_zm(gr%nz)        = 0.0
+      crt2_zm(gr%nz)        = 0.0_core_rknd
       cthl1_zm                = zt2zm( pdf_params%cthl1 )
-      cthl1_zm(gr%nz)       = 0.0
+      cthl1_zm(gr%nz)       = 0.0_core_rknd
       cthl2_zm                = zt2zm( pdf_params%cthl2 )
-      cthl2_zm(gr%nz)       = 0.0
+      cthl2_zm(gr%nz)       = 0.0_core_rknd
       thl1_zm                 = zt2zm( pdf_params%thl1 )
-      thl1_zm(gr%nz)        = 0.0
+      thl1_zm(gr%nz)        = 0.0_core_rknd
       thl2_zm                 = zt2zm( pdf_params%thl2 )
-      thl2_zm(gr%nz)        = 0.0
+      thl2_zm(gr%nz)        = 0.0_core_rknd
       varnce_thl1_zm          = zt2zm( pdf_params%varnce_thl1 )
-      varnce_thl1_zm(gr%nz) = 0.0
+      varnce_thl1_zm(gr%nz) = 0.0_core_rknd
       varnce_thl2_zm          = zt2zm( pdf_params%varnce_thl2 )
-      varnce_thl2_zm(gr%nz) = 0.0
+      varnce_thl2_zm(gr%nz) = 0.0_core_rknd
       mixt_frac_zm            = zt2zm( pdf_params%mixt_frac )
-      mixt_frac_zm(gr%nz)   = 0.0
+      mixt_frac_zm(gr%nz)   = 0.0_core_rknd
       rc1_zm                  = zt2zm( pdf_params%rc1 )
-      rc1_zm(gr%nz)         = 0.0
+      rc1_zm(gr%nz)         = 0.0_core_rknd
       rc2_zm                  = zt2zm( pdf_params%rc2 )
-      rc2_zm(gr%nz)         = 0.0
+      rc2_zm(gr%nz)         = 0.0_core_rknd
       rsl1_zm                 = zt2zm( pdf_params%rsl1 )
-      rsl1_zm(gr%nz)        = 0.0
+      rsl1_zm(gr%nz)        = 0.0_core_rknd
       rsl2_zm                 = zt2zm( pdf_params%rsl2 )
-      rsl2_zm(gr%nz)        = 0.0
+      rsl2_zm(gr%nz)        = 0.0_core_rknd
       cloud_frac1_zm          = zt2zm( pdf_params%cloud_frac1 )
-      cloud_frac1_zm(gr%nz) = 0.0
+      cloud_frac1_zm(gr%nz) = 0.0_core_rknd
       cloud_frac2_zm          = zt2zm( pdf_params%cloud_frac2 )
-      cloud_frac2_zm(gr%nz) = 0.0
+      cloud_frac2_zm(gr%nz) = 0.0_core_rknd
       s1_zm                   = zt2zm( pdf_params%s1 )
-      s1_zm(gr%nz)          = 0.0
+      s1_zm(gr%nz)          = 0.0_core_rknd
       s2_zm                   = zt2zm( pdf_params%s2 )
-      s2_zm(gr%nz)          = 0.0
+      s2_zm(gr%nz)          = 0.0_core_rknd
       stdev_s1_zm             = zt2zm( pdf_params%stdev_s1 )
-      stdev_s1_zm(gr%nz)    = 0.0
+      stdev_s1_zm(gr%nz)    = 0.0_core_rknd
       stdev_s2_zm             = zt2zm( pdf_params%stdev_s2 )
-      stdev_s2_zm(gr%nz)    = 0.0
+      stdev_s2_zm(gr%nz)    = 0.0_core_rknd
       rrtthl_zm               = zt2zm( pdf_params%rrtthl )
-      rrtthl_zm(gr%nz)      = 0.0
+      rrtthl_zm(gr%nz)      = 0.0_core_rknd
       alpha_thl_zm            = zt2zm( pdf_params%alpha_thl )
-      alpha_thl_zm(gr%nz)   = 0.0
+      alpha_thl_zm(gr%nz)   = 0.0_core_rknd
       alpha_rt_zm             = zt2zm( pdf_params%alpha_rt )
-      alpha_rt_zm(gr%nz)    = 0.0
+      alpha_rt_zm(gr%nz)    = 0.0_core_rknd
     end if ! l_call_pdf_closure_twice
 
     if ( l_stats ) then
@@ -2209,16 +2230,19 @@ module clubb_core
 
     use grid_class, only: gr ! Variable
 
+    use clubb_precision, only: &
+      core_rknd ! variable(s)
+
     implicit none
 
     ! Input variables
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       wpthvp_zt,   & ! Buoyancy flux (on thermo. grid)  [(K m)/s]
       thlpthvp_zt, & ! th_l' th_v' (on thermo. grid)    [K^2]
       rtpthvp_zt     ! r_t' th_v' (on thermo. grid)     [(kg K)/kg]
 
     ! Input/Output variables
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       wpthvp,   & ! Buoyancy flux   [(K m)/s]
       thlpthvp, & ! th_l' th_v'     [K^2]
       rtpthvp     ! r_t' th_v'      [(kg K)/kg]
@@ -2246,15 +2270,18 @@ module clubb_core
 
     use grid_class, only: gr ! Variable
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       variable_zt, & ! Variable on the zt grid
       variable_zm    ! Variable on the zm grid
 
     ! Result
-    real, dimension(gr%nz) :: trapezoid_zt
+    real( kind = core_rknd ), dimension(gr%nz) :: trapezoid_zt
 
     ! Local Variable
     integer :: k ! Loop index
@@ -2266,9 +2293,9 @@ module clubb_core
 
     do k = 2, gr%nz
       ! Trapezoidal rule from calculus
-      trapezoid_zt(k) =  0.5 * ( variable_zm(k) + variable_zt(k) ) &
+      trapezoid_zt(k) =  0.5_core_rknd * ( variable_zm(k) + variable_zt(k) ) &
                              * ( gr%zm(k) - gr%zt(k) ) * gr%invrs_dzt(k) &
-                       + 0.5 * ( variable_zt(k) + variable_zm(k-1) ) &
+                       + 0.5_core_rknd * ( variable_zt(k) + variable_zm(k-1) ) &
                              * ( gr%zt(k) - gr%zm(k-1) ) * gr%invrs_dzt(k)
     end do ! k = 2, gr%nz
 
@@ -2289,15 +2316,18 @@ module clubb_core
 
     use grid_class, only: gr ! Variable
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       variable_zm, & ! Variable on the zm grid
       variable_zt    ! Variable on the zt grid
 
     ! Result
-    real, dimension(gr%nz) :: trapezoid_zm
+    real( kind = core_rknd ), dimension(gr%nz) :: trapezoid_zm
 
     ! Local Variable
     integer :: k ! Loop index
@@ -2311,9 +2341,9 @@ module clubb_core
 
     do k = 2, gr%nz-1
       ! Trapezoidal rule from calculus
-      trapezoid_zm(k) =  0.5 * ( variable_zt(k+1) + variable_zm(k) ) &
+      trapezoid_zm(k) =  0.5_core_rknd * ( variable_zt(k+1) + variable_zm(k) ) &
                              * ( gr%zt(k+1) - gr%zm(k) ) * gr%invrs_dzm(k) &
-                       + 0.5 * ( variable_zm(k) + variable_zt(k) ) &
+                       + 0.5_core_rknd * ( variable_zm(k) + variable_zt(k) ) &
                              * ( gr%zm(k) - gr%zt(k) ) * gr%invrs_dzm(k)
     end do ! k = 2, gr%nz-1
 
@@ -2351,13 +2381,16 @@ module clubb_core
     use error_code, only:  &
         clubb_at_least_debug_level  ! Procedure
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! External functions
     intrinsic :: abs, min, max
 
     ! Input variables
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       cloud_frac, & ! Cloud fraction             [-]
       rcm           ! Liquid water mixing ratio  [kg/kg]
 
@@ -2365,12 +2398,12 @@ module clubb_core
       pdf_params    ! PDF Parameters  [units vary]
 
     ! Output variables
-    real, dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       cloud_cover,  & ! Cloud cover                               [-]
       rcm_in_layer    ! Liquid water mixing ratio in cloud layer  [kg/kg]
 
     ! Local variables
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       s_mean,                & ! Mean extended cloud water mixing ratio of the 
     !                            two Gaussian distributions
       vert_cloud_frac_upper, & ! Fraction of cloud in top half of grid box
@@ -2384,7 +2417,7 @@ module clubb_core
     do k = 1, gr%nz
 
       s_mean(k) =      pdf_params(k)%mixt_frac  * pdf_params(k)%s1 + &
-                  (1.0-pdf_params(k)%mixt_frac) * pdf_params(k)%s2
+                  (1.0_core_rknd-pdf_params(k)%mixt_frac) * pdf_params(k)%s2
 
     end do
 
@@ -2408,44 +2441,44 @@ module clubb_core
         ! First let the cloud fill the entire grid box, then overwrite
         ! vert_cloud_frac_upper(k) and/or vert_cloud_frac_lower(k)
         ! for a cloud top, cloud base, or one-point cloud.
-        vert_cloud_frac_upper(k) = 0.5
-        vert_cloud_frac_lower(k) = 0.5
+        vert_cloud_frac_upper(k) = 0.5_core_rknd
+        vert_cloud_frac_lower(k) = 0.5_core_rknd
 
         if ( rcm(k+1) < rc_tol ) then ! Cloud top
 
           vert_cloud_frac_upper(k) = &
-                   ( ( 0.5 / gr%invrs_dzm(k) ) / ( gr%zm(k) - gr%zt(k) ) ) &
+                   ( ( 0.5_core_rknd / gr%invrs_dzm(k) ) / ( gr%zm(k) - gr%zt(k) ) ) &
                    * ( rcm(k) / ( rcm(k) + abs( s_mean(k+1) ) ) )
 
-          vert_cloud_frac_upper(k) = min( 0.5, vert_cloud_frac_upper(k) )
+          vert_cloud_frac_upper(k) = min( 0.5_core_rknd, vert_cloud_frac_upper(k) )
 
           ! Make the transition in cloudiness more gradual than using
           ! the above min statement alone.
           vert_cloud_frac_upper(k) = vert_cloud_frac_upper(k) + &
-            ( ( rcm(k+1)/rc_tol )*( 0.5 -vert_cloud_frac_upper(k) ) )
+            ( ( rcm(k+1)/rc_tol )*( 0.5_core_rknd -vert_cloud_frac_upper(k) ) )
 
         else
 
-          vert_cloud_frac_upper(k) = 0.5
+          vert_cloud_frac_upper(k) = 0.5_core_rknd
 
         end if
 
         if ( rcm(k-1) < rc_tol ) then ! Cloud base
 
           vert_cloud_frac_lower(k) = &
-                   ( ( 0.5 / gr%invrs_dzm(k-1) ) / ( gr%zt(k) - gr%zm(k-1) ) ) &
+                   ( ( 0.5_core_rknd / gr%invrs_dzm(k-1) ) / ( gr%zt(k) - gr%zm(k-1) ) ) &
                    * ( rcm(k) / ( rcm(k) + abs( s_mean(k-1) ) ) )
 
-          vert_cloud_frac_lower(k) = min( 0.5, vert_cloud_frac_lower(k) )
+          vert_cloud_frac_lower(k) = min( 0.5_core_rknd, vert_cloud_frac_lower(k) )
 
           ! Make the transition in cloudiness more gradual than using
           ! the above min statement alone.
           vert_cloud_frac_lower(k) = vert_cloud_frac_lower(k) + &
-            ( ( rcm(k-1)/rc_tol )*( 0.5 -vert_cloud_frac_lower(k) ) )
+            ( ( rcm(k-1)/rc_tol )*( 0.5_core_rknd -vert_cloud_frac_lower(k) ) )
 
         else
 
-          vert_cloud_frac_lower(k) = 0.5
+          vert_cloud_frac_lower(k) = 0.5_core_rknd
 
         end if
 
@@ -2453,7 +2486,7 @@ module clubb_core
           vert_cloud_frac_upper(k) + vert_cloud_frac_lower(k)
 
         vert_cloud_frac(k) = &
-          max( cloud_frac(k), min( 1.0, vert_cloud_frac(k) ) )
+          max( cloud_frac(k), min( 1.0_core_rknd, vert_cloud_frac(k) ) )
 
         cloud_cover(k)  = cloud_frac(k) / vert_cloud_frac(k)
         rcm_in_layer(k) = rcm(k) / vert_cloud_frac(k)
@@ -2515,18 +2548,21 @@ module clubb_core
       fstderr, & ! Variable(s)
       zero_threshold
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External functions
     intrinsic :: max, epsilon
 
     ! Input variables
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       rtm           ! Total water mixing ratio             [kg/kg]
 
     character(len= * ), intent(in) :: message
 
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       rcm           ! Cloud water mixing ratio  [kg/kg]
 
     integer :: k
@@ -2576,6 +2612,9 @@ module clubb_core
     !   None
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
@@ -2583,21 +2622,21 @@ module clubb_core
       l_implemented    ! Flag to see if CLUBB is running on it's own,
     !                    or if it's implemented as part of a host model.
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       host_dx, & ! Host model's east-west horizontal grid spacing     [m]
       host_dy    ! Host model's north-south horizontal grid spacing   [m]
 
     ! Output Variable
-    real, intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       Lscale_max    ! Maximum allowable value for Lscale   [m]
 
     ! ---- Begin Code ----
 
     ! Determine the maximum allowable value for Lscale (in meters).
     if ( l_implemented ) then
-      Lscale_max = 0.25 * min( host_dx, host_dy )
+      Lscale_max = 0.25_core_rknd * min( host_dx, host_dy )
     else
-      Lscale_max = 1.0e5
+      Lscale_max = 1.0e5_core_rknd
     end if
 
     return

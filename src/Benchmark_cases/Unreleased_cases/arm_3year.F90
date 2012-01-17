@@ -26,7 +26,7 @@ module arm_3year
 
     use constants_clubb, only: grav ! Variable(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
@@ -39,27 +39,27 @@ module arm_3year
 
     intrinsic :: max, sqrt, present
 
-    real, parameter ::  &  
-      z0    = 0.035   ! ARM Cu mom. roughness height
+    real( kind = core_rknd ), parameter ::  &  
+      z0    = 0.035_core_rknd   ! ARM Cu mom. roughness height
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
       time      ! Current time        [s]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       z,         & ! Height at zt=2      [s] 
       rho_sfc,      & ! Density at zm=1     [kg/m^3] 
       ubar,      & ! mean sfc wind speed [m/s]
       thlm_sfc     ! thlm at (2)         [m/s]
 
     ! Output variables
-    real, intent(out) ::  & 
+    real( kind = core_rknd ), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
 
     ! Local variables
-    real :: bflx, heat_flx, moisture_flx
+    real( kind = core_rknd ) :: bflx, heat_flx, moisture_flx
 
     
     !-------------BEGIN CODE--------------

@@ -40,19 +40,21 @@ module spec_hum_to_mixing_ratio
     
     !-------------------------------------------------------------------
 
+    use clubb_precision, only: core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       rtm_zm, & ! r_tm interpolated to momentum level (k)   [kg/kg]
       wpqtp     ! w'q_t' flux at momentum level (k)         [(kg/kg) m/s]
 
     ! Output Variable
-    real, intent(out) ::  &
+    real( kind = core_rknd ), intent(out) ::  &
       wprtp     ! w'r_t' flux at momentum level (k)         [(kg/kg) m/s]
 
     ! Solve for flux in terms of total water mixing ratio.
-    wprtp = ( 1.0 + rtm_zm )**2 * wpqtp
+    wprtp = ( 1.0_core_rknd + rtm_zm )**2 * wpqtp
 
     return
   end subroutine flux_spec_hum_to_mixing_ratio
@@ -73,19 +75,21 @@ module spec_hum_to_mixing_ratio
 
     !-------------------------------------------------------------------
 
+    use clubb_precision, only: core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       rtm,        & ! r_tm at thermodynamic level (k)            [kg/kg]
       qtm_forcing   ! d(q_tm)/dt|_f at thermodynamic level (k)   [(kg/kg)/s]
 
     ! Output Variable
-    real, intent(out) ::  &
+    real( kind = core_rknd ), intent(out) ::  &
       rtm_forcing   ! d(r_tm)/dt|_f at thermodynamic level (k)   [(kg/kg)/s]
 
     ! Solve for forcing in terms of total water mixing ratio.
-    rtm_forcing = ( 1.0 + rtm )**2 * qtm_forcing
+    rtm_forcing = ( 1.0_core_rknd + rtm )**2 * qtm_forcing
 
     return
   end subroutine force_spec_hum_to_mixing_ratio

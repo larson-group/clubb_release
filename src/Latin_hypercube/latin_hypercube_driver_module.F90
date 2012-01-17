@@ -77,7 +77,9 @@ module latin_hypercube_driver_module
     use mt95, only: genrand_init ! Procedure
 
     use clubb_precision, only: & 
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd, &
+      stat_rknd
 
     implicit none
 
@@ -85,8 +87,8 @@ module latin_hypercube_driver_module
     intrinsic :: allocated, mod, maxloc, dble, epsilon
 
     ! Parameter Constants
-    real, parameter :: &
-      cloud_frac_thresh = 0.001 ! Threshold for sampling preferentially within cloud
+    real( kind = core_rknd ), parameter :: &
+      cloud_frac_thresh = 0.001_core_rknd ! Threshold for sampling preferentially within cloud
 
     ! Find in and out of cloud points using the rejection method rather than scaling
     logical, parameter :: &
@@ -104,27 +106,27 @@ module latin_hypercube_driver_module
     type(pdf_parameter), dimension(nz), intent(in) :: & 
       pdf_params ! PDF parameters       [units vary]
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       thlm,      & ! Liquid potential temperature         [K]
       wm_zt,     & ! Mean w                             [m/s]
       delta_zm     ! Difference in moment. altitudes    [m]
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm, & ! Liquid water mixing ratio        [kg/kg]
       rvm    ! Vapor water mixing ratio         [kg/kg]
 
-    real, dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
       xp2_on_xm2_array_cloud, &! Variances over mean values squared [-]
       xp2_on_xm2_array_below
 
-    real, dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
       corr_array_cloud, & ! Correlation for hydrometeor species [-]
       corr_array_below
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
 
     ! Output Variables
@@ -134,15 +136,15 @@ module latin_hypercube_driver_module
     integer, intent(out), dimension(nz,n_micro_calls) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real, intent(out), dimension(nz,n_micro_calls) :: &
+    real( kind = core_rknd ), intent(out), dimension(nz,n_micro_calls) :: &
       LH_rt, LH_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
 
-    real, intent(out), dimension(n_micro_calls) :: &
+    real( kind = core_rknd ), intent(out), dimension(n_micro_calls) :: &
       LH_sample_point_weights
 
     ! Local variables
 
-    real(kind=genrand_real), dimension(nz,n_micro_calls,(d_variables+1)) :: &
+    real( kind = dp ), dimension(nz,n_micro_calls,(d_variables+1)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
 
     integer :: p_matrix(n_micro_calls,d_variables+1)
@@ -152,15 +154,13 @@ module latin_hypercube_driver_module
     ! Try to obtain 12 digit accuracy for a diagnostic mean
     real(kind=selected_real_kind( p=12 ) ) :: mean_weight
 
-    real( kind = dp ) :: mixt_frac_dp
-
-    real(kind=genrand_real), dimension(n_micro_calls) :: &
+    real(kind=dp), dimension(n_micro_calls) :: &
       X_u_dp1_k_lh_start, X_u_s_mellor_k_lh_start
 
-    real(kind=genrand_real), dimension(nz) :: &
+    real(kind=dp), dimension(nz) :: &
       X_vert_corr ! Vertical correlation of a variate   [-]
 
-    real(kind=genrand_real) :: X_u_temp
+    real(kind=dp) :: X_u_temp
 
     ! Number of random samples before sequence of repeats (normally=10)
     integer :: nt_repeat
@@ -189,7 +189,7 @@ module latin_hypercube_driver_module
 
       ! Re-seed
       if ( l_re_seed ) then
-        ! This is the default seed in mt95.  Change this number to try
+        ! This is the default seed in mt95. Change this number to try
         ! non-default values.
         call genrand_init( put=5489_genrand_intg ) ! Known magic number
       end if
@@ -220,7 +220,7 @@ module latin_hypercube_driver_module
     end if
 
     ! Initialize the sample point weights to 1.0
-    LH_sample_point_weights(1:n_micro_calls)  = 1.0
+    LH_sample_point_weights(1:n_micro_calls)  = 1.0_core_rknd
 
     ! Latin hypercube sample generation
     ! Generate height_time_matrix, an nz x nt_repeat x d_variables array of random integers
@@ -244,7 +244,7 @@ module latin_hypercube_driver_module
     tmp_loc    = maxloc( rcm )
     k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm for now
 
-    ! If there's no cloud k_lh_start appears to end up being 1.  Check if
+    ! If there's no cloud k_lh_start appears to end up being 1. Check if
     ! k_lh_start is 1 or nz and set it to the middle of the domain in that
     ! case.
     if ( k_lh_start == nz .or. k_lh_start == 1 ) then
@@ -256,15 +256,16 @@ module latin_hypercube_driver_module
       ! Determine cloud fraction at k_lh_start
       lh_start_cloud_frac = &
       pdf_params(k_lh_start)%mixt_frac * pdf_params(k_lh_start)%cloud_frac1 &
-        + (1.0-pdf_params(k_lh_start)%mixt_frac) * pdf_params(k_lh_start)%cloud_frac2
+        + (1.0_core_rknd-pdf_params(k_lh_start)%mixt_frac) * pdf_params(k_lh_start)%cloud_frac2
 
       ! Determine p_matrix at k_lh_start
       p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
         height_time_matrix(k_lh_start, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
                            1:d_variables+1)
     else
-      lh_start_cloud_frac = -9999.0  ! This assignment eliminates a g95 compiler warning for an
-      ! uninitialized variable. -meyern
+      lh_start_cloud_frac = -9999.0_core_rknd  
+         ! This assignment eliminates a g95 compiler warning for an uninitialized variable. 
+         !-meyern
 
     end if ! l_lh_cloud_weighted_sampling
 
@@ -291,8 +292,9 @@ module latin_hypercube_driver_module
 
           ! Save the cloud fraction as a weight for averaging preferentially
           ! within cloud
-          if ( lh_start_cloud_frac >= 0.5 .or. lh_start_cloud_frac <= cloud_frac_thresh ) then
-            LH_sample_point_weights(sample)  = 1.0
+          if ( lh_start_cloud_frac >= 0.5_core_rknd .or. &
+               lh_start_cloud_frac <= cloud_frac_thresh ) then
+            LH_sample_point_weights(sample)  = 1.0_core_rknd
             ! There's no cloud or cloud fraction is >= 50%, so we do nothing
 
           else ! If we're in a partly cloud gridbox then we continue to the code below
@@ -304,10 +306,11 @@ module latin_hypercube_driver_module
             if ( p_matrix(sample,iiLH_s_mellor) < ( n_micro_calls / 2 ) ) then
 
               l_cloudy_sample = .false.
-              LH_sample_point_weights(sample) = 2. * ( 1.0 - lh_start_cloud_frac )
+              LH_sample_point_weights(sample) = 2._core_rknd* &
+                ( 1.0_core_rknd - lh_start_cloud_frac )
             else
               l_cloudy_sample = .true.
-              LH_sample_point_weights(sample) = 2. * lh_start_cloud_frac
+              LH_sample_point_weights(sample) = 2._core_rknd* lh_start_cloud_frac
             end if
 
             if ( l_use_rejection_method ) then
@@ -335,16 +338,16 @@ module latin_hypercube_driver_module
       end do ! 1..n_micro_calls
 
       ! Use a fixed number for the vertical correlation.
-!     X_vert_corr(1:nz) = 0.95_genrand_real
+!     X_vert_corr(1:nz) = 0.95_dp
 
       ! Compute vertical correlation using a formula based on Lscale, the
       ! the difference in height levels, and an empirical constant
       X_vert_corr(1:nz) = &
-        real( compute_vert_corr( nz, delta_zm, Lscale_vert_avg ), kind=genrand_real )
+        real(compute_vert_corr( nz, delta_zm, Lscale_vert_avg ), kind = dp)
 
       ! Assertion check for the vertical correlation
       if ( clubb_at_least_debug_level( 1 ) ) then
-        if ( any( X_vert_corr > 1.0 ) .or. any( X_vert_corr < 0.0 ) ) then
+        if ( any( X_vert_corr > 1.0_core_rknd ) .or. any( X_vert_corr < 0.0_core_rknd ) ) then
           write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
             "is not in the correct range"
           do k = 1, nz
@@ -381,7 +384,8 @@ module latin_hypercube_driver_module
       ! %% Debug %%
       ! Testing what happens when we clip uniformally distributed variates to
       ! avoid extreme values.
-!     where ( X_u_all_levs (:,:,2:d_variables) > 0.99 ) X_u_all_levs(:,:,2:d_variables) = 0.99
+!     where ( X_u_all_levs (:,:,2:d_variables) > 0.99_core_rknd ) &
+!       X_u_all_levs(:,:,2:d_variables) = 0.99_core_rknd
       ! %% Debug %%
     else ! Random overlap
 
@@ -402,9 +406,8 @@ module latin_hypercube_driver_module
     ! Determine mixture component for all levels
     do k = 1, nz
 
-      mixt_frac_dp = dble( pdf_params(k)%mixt_frac )
-
-      where ( in_mixt_comp_1( X_u_all_levs(k,:,d_variables+1), mixt_frac_dp ) )
+      where ( in_mixt_comp_1( X_u_all_levs(k,:,d_variables+1), &
+           dble(pdf_params(k)%mixt_frac) ) )
         X_mixt_comp_all_levs(k,:) = 1
       else where
         X_mixt_comp_all_levs(k,:) = 2
@@ -417,7 +420,7 @@ module latin_hypercube_driver_module
     ! estimate_lh_micro_module for X_nl_all_levs.
     if ( l_lh_cloud_weighted_sampling ) then
       if(clubb_at_least_debug_level( 2 ) .and. &
-         lh_start_cloud_frac < 0.5 .and. lh_start_cloud_frac > cloud_frac_thresh ) then
+         lh_start_cloud_frac < 0.5_core_rknd .and. lh_start_cloud_frac > cloud_frac_thresh ) then
 
         call assert_check_half_cloudy &
              ( n_micro_calls, pdf_params(k_lh_start)%cloud_frac1, &
@@ -429,7 +432,7 @@ module latin_hypercube_driver_module
 
     ! Assertion check to ensure that the sample point weights sum to approximately 1
     if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) ) then
-      mean_weight = 0.
+      mean_weight = 0._core_rknd
       do sample = 1, n_micro_calls
         mean_weight = mean_weight + LH_sample_point_weights(sample)
       end do
@@ -441,7 +444,7 @@ module latin_hypercube_driver_module
       ! n_micro_calls, but the formula below seems to be an ok approximation
       ! when we're using 4 or 8 byte precision floats.
       ! -dschanen 19 Nov 2010
-      if ( abs( mean_weight - 1.0 ) > &
+      if ( abs( mean_weight - 1.0_core_rknd ) > &
            real( n_micro_calls ) * epsilon( LH_sample_point_weights ) ) then
         write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
         stop
@@ -496,21 +499,22 @@ module latin_hypercube_driver_module
 
     if ( l_output_2D_lognormal_dist ) then
       call output_2D_lognormal_dist_file( nz, n_micro_calls, d_variables, &
-                                          X_nl_all_levs, LH_rt, LH_thl )
+                                          real(X_nl_all_levs, kind = stat_rknd), &
+                                          LH_rt, LH_thl )
     end if
     if ( l_output_2D_uniform_dist ) then
       call output_2D_uniform_dist_file( nz, n_micro_calls, d_variables+1, &
-                                        X_u_all_levs, X_mixt_comp_all_levs, &
-                                        p_matrix )
+                                        real(X_u_all_levs, kind = stat_rknd), &
+                                        X_mixt_comp_all_levs, p_matrix )
     end if
 
     ! Verify total water isn't negative
-    if ( any( LH_rt < 0. ) ) then
+    if ( any( LH_rt < 0._core_rknd) ) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) "Total water negative in LH sample"
         write(fstderr,*) "Applying non-conservative hard clipping to rv sample."
       end if ! clubb_at_least_debug_level( 1 )
-      where ( LH_rt < 0. )
+      where ( LH_rt < 0._core_rknd)
         LH_rt = zero_threshold
       end where
     end if ! Some rv_all_points(:,sample) < 0
@@ -555,7 +559,9 @@ module latin_hypercube_driver_module
       estimate_lh_micro ! Procedure(s)
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd, &
+      time_precision
 
     implicit none
 
@@ -563,7 +569,7 @@ module latin_hypercube_driver_module
 #include "../microphys_interface.inc"
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = time_precision ), intent(in) :: &
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
@@ -578,19 +584,19 @@ module latin_hypercube_driver_module
     integer, intent(in), dimension(nz,n_micro_calls) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real, intent(in), dimension(nz,n_micro_calls) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,n_micro_calls) :: &
       LH_rt, LH_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
 
-    real, intent(in), dimension(n_micro_calls) :: &
+    real( kind = core_rknd ), intent(in), dimension(n_micro_calls) :: &
       LH_sample_point_weights ! Weight given the individual sample points
 
     type(pdf_parameter), dimension(nz), intent(in) :: & 
       pdf_params ! PDF parameters       [units vary]
 
-    real, dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       cloud_frac,  & ! Cloud fraction               [-]
       w_std_dev,   & ! Standard deviation of w      [m/s]
       delta_zt,    & ! Change in meters with height [m]
@@ -600,12 +606,12 @@ module latin_hypercube_driver_module
       rho            ! Density on thermo. grid      [kg/m^3]
 
     ! Input/Output Variables
-    real, dimension(nz,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
       LH_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       LH_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
-    real, dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       LH_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       LH_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
       LH_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
@@ -653,7 +659,8 @@ module latin_hypercube_driver_module
       LH_microphys_calls ! Variable
 
     use clubb_precision, only: &
-      time_precision ! Constant
+      time_precision, & ! Constant
+      core_rknd
 
     use output_2D_samples_module, only: &
       open_2D_samples_file ! Procedure
@@ -680,7 +687,7 @@ module latin_hypercube_driver_module
     integer, intent(in) :: &
       nz ! Number of vertical levels
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       zt ! Altitudes [m]
 
     ! Local Variables
@@ -917,31 +924,35 @@ module latin_hypercube_driver_module
     use constants_clubb, only: &
       fstderr ! Constant
 
+    use clubb_precision, only: &
+      core_rknd, & ! Variable(s)
+      dp
+
     implicit none
 
     ! External
     intrinsic :: ceiling, dble
 
     ! Constant parameters
-    real, parameter :: &
+    real( kind = core_rknd), parameter :: &
       max_iter_numerator = 100.
 
     ! Input Variables
     logical, intent(in) :: &
       l_cloudy_sample ! Whether his is a cloudy or clear air sample point
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       cloud_frac1, &    ! Cloud fraction associated with mixture component 1     [-]
       cloud_frac2, &    ! Cloud fraction associated with mixture component 2     [-]
       mixt_frac, &      ! Mixture fraction                                       [-]
       cloud_frac_thresh ! Minimum threshold for cloud fraction                   [-]
 
     ! Input/Output Variables
-    real(kind=genrand_real), intent(inout) :: &
+    real(kind=dp), intent(inout) :: &
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
-    real :: cloud_frac_n
+    real(kind=core_rknd) :: cloud_frac_n
 
     real(kind=genrand_real) :: rand ! Random number
 
@@ -961,14 +972,14 @@ module latin_hypercube_driver_module
 
     ! Find some new random numbers between (0,1)
     call genrand_real3( rand )
-    X_u_dp1_element      = rand
+    X_u_dp1_element      = real(rand, kind = dp)
     call genrand_real3( rand )
-    X_u_s_mellor_element = rand
+    X_u_s_mellor_element = real(rand, kind = dp)
     ! Here we use the rejection method to find a value in either the
     ! clear or cloudy part of the grid box
     do i = 1, itermax
 
-      if ( in_mixt_comp_1( X_u_dp1_element, real( mixt_frac, kind=genrand_real ) ) ) then
+      if ( in_mixt_comp_1( X_u_dp1_element, real(mixt_frac, kind = dp) ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
@@ -978,10 +989,10 @@ module latin_hypercube_driver_module
 !       X_mixt_comp_one_lev = 2
       end if
 
-      if ( X_u_s_mellor_element >= (1.-cloud_frac_n) .and. l_cloudy_sample ) then
+      if ( X_u_s_mellor_element >= (1._core_rknd-cloud_frac_n) .and. l_cloudy_sample ) then
         ! If we're looking for the cloudy part of the grid box, then exit this loop
         exit
-      else if ( X_u_s_mellor_element < (1.-cloud_frac_n) & 
+      else if ( X_u_s_mellor_element < (1._core_rknd-cloud_frac_n) & 
                 .and. .not. l_cloudy_sample ) then
         ! If we're looking for the clear part of the grid box, then exit this loop
         exit
@@ -997,9 +1008,9 @@ module latin_hypercube_driver_module
         else
           ! Find some new test values within the interval (0,1)
           call genrand_real3( rand )
-          X_u_dp1_element      = rand
+          X_u_dp1_element      = real(rand, kind = dp)
           call genrand_real3( rand )
-          X_u_s_mellor_element = rand
+          X_u_s_mellor_element = real(rand, kind = dp)
         end if
       end if ! Looking for a clear or cloudy point
 
@@ -1030,6 +1041,10 @@ module latin_hypercube_driver_module
     use constants_clubb, only: &
       fstderr ! Constant
 
+    use clubb_precision, only: &
+      core_rknd, & ! Variable(s)
+      dp
+
     implicit none
 
     ! External
@@ -1047,17 +1062,17 @@ module latin_hypercube_driver_module
       p_matrix_element, & ! Integer from 0..n_micro_calls for this sample
       n_micro_calls       ! Total number of calls to the microphysics
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       cloud_frac1, &    ! Cloud fraction associated with mixture component 1     [-]
       cloud_frac2, &    ! Cloud fraction associated with mixture component 2     [-]
       mixt_frac         ! Mixture fraction                                       [-]
 
     ! Input/Output Variables
-    real(kind=genrand_real), intent(inout) :: &
+    real(kind=dp), intent(inout) :: &
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
-    real(kind=genrand_real) :: cloud_frac_n, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
+    real(kind=dp) :: cloud_frac_n, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
 
     real(kind=genrand_real) :: rand, rand1, rand2 ! Random numbers
 
@@ -1072,18 +1087,18 @@ module latin_hypercube_driver_module
 
     if ( l_cloudy_sample ) then
       cloud_weighted_mixt_frac = ( mixt_frac*cloud_frac1 ) / &
-                   ( mixt_frac*cloud_frac1 + (1._r8-mixt_frac)*cloud_frac2 )
+                   ( mixt_frac*cloud_frac1 + (1._core_rknd-mixt_frac)*cloud_frac2 )
 
-      if ( in_mixt_comp_1( rand1, real( cloud_weighted_mixt_frac, kind=genrand_real ) ) ) then
+      if ( in_mixt_comp_1( rand1, cloud_weighted_mixt_frac ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
-        X_u_dp1_element = mixt_frac * rand2
+        X_u_dp1_element = mixt_frac * real(rand2, kind = dp)
       else
         ! Component 2
         cloud_frac_n = cloud_frac2
 !       X_mixt_comp_one_lev = 2
-        X_u_dp1_element = mixt_frac + (1._r8-mixt_frac) * rand2
+        X_u_dp1_element = mixt_frac + (1._core_rknd-mixt_frac) * real(rand2, kind = dp)
       end if
 
       call genrand_real3( rand ) ! Rand between (0,1)
@@ -1091,27 +1106,29 @@ module latin_hypercube_driver_module
       ! Scale and translate sample point to reside in cloud
       if ( l_use_p_matrix ) then
         ! New formula based on p_matrix
-        X_u_s_mellor_element = 1._r8 &
-          + 2._r8 * (real( p_matrix_element )/real( n_micro_calls ) - 1._r8) * cloud_frac_n &
-          + rand * ( 2._r8/real( n_micro_calls ) ) * cloud_frac_n
+        X_u_s_mellor_element = 1._dp + 2._dp &
+          * (real(p_matrix_element, kind = dp)/real(n_micro_calls, kind = dp) &
+          - 1._dp) * cloud_frac_n &
+          + real(rand, kind = dp) * ( 2._dp/n_micro_calls ) * cloud_frac_n
       else
-        X_u_s_mellor_element = cloud_frac_n * rand + (1._r8-cloud_frac_n)
+        X_u_s_mellor_element = cloud_frac_n * real(rand, kind = dp) &
+          + (1._dp-cloud_frac_n)
       end if
 
     else ! Clear air sample
-      clear_weighted_mixt_frac = ( ( 1._r8 - cloud_frac1 ) * mixt_frac ) &
-        / ( ( 1._r8-cloud_frac1 ) * mixt_frac + ( 1._r8-cloud_frac2 )*( 1._r8-mixt_frac ) )
+      clear_weighted_mixt_frac = ( ( 1._dp - cloud_frac1 ) * mixt_frac ) &
+        / ( ( 1._dp-cloud_frac1 ) * mixt_frac + ( 1._dp-cloud_frac2 )*( 1._dp-mixt_frac ) )
 
-      if ( in_mixt_comp_1( rand1, real( clear_weighted_mixt_frac, kind=genrand_real ) ) ) then
+      if ( in_mixt_comp_1( rand1, clear_weighted_mixt_frac ) ) then
         ! Component 1
         cloud_frac_n = cloud_frac1
 !       X_mixt_comp_one_lev = 1
-        X_u_dp1_element = mixt_frac * rand2
+        X_u_dp1_element = mixt_frac * real(rand2, kind = dp)
       else
         ! Component 2
         cloud_frac_n = cloud_frac2
 !       X_mixt_comp_one_lev = 2
-        X_u_dp1_element = mixt_frac + (1._r8-mixt_frac) * rand2
+        X_u_dp1_element = mixt_frac + (1._dp-mixt_frac) * real(rand2, kind = dp)
       end if
 
       call genrand_real3( rand ) ! Rand between (0,1)
@@ -1119,11 +1136,13 @@ module latin_hypercube_driver_module
       ! Scale and translate sample point to reside in clear air (no cloud)
       if ( l_use_p_matrix ) then
         ! New formula based on p_matrix
-        X_u_s_mellor_element = real( p_matrix_element ) &
-            * (2._r8/real(n_micro_calls) ) * (1._r8-cloud_frac_n) &
-          + (2._r8/real(n_micro_calls)) * (1._r8-cloud_frac_n) * rand
+        X_u_s_mellor_element = p_matrix_element &
+          * (2._dp/real(n_micro_calls, kind = dp) ) * (1._dp-cloud_frac_n) &
+          + (2._dp/real(n_micro_calls, kind = dp) * (1._dp-cloud_frac_n) &
+          * real(rand, kind = dp))
       else
-        X_u_s_mellor_element = (1._r8-cloud_frac_n) * rand
+        X_u_s_mellor_element = (1._dp-cloud_frac_n) &
+          * real(rand, kind = dp)
       end if
 
     end if
@@ -1141,11 +1160,12 @@ module latin_hypercube_driver_module
 !   None
 !----------------------------------------------------------------------
 
-    use mt95, only: genrand_real ! Constant
+    use clubb_precision, only: &
+      dp ! Variable(s)
 
     implicit none
 
-    real(kind=genrand_real), intent(in) :: &
+    real(kind=dp), intent(in) :: &
       X_u_dp1_element, & ! Element of X_u telling us which mixture component we're in
       frac               ! The mixture fraction
 
@@ -1182,6 +1202,9 @@ module latin_hypercube_driver_module
     use mt95, only: &
       genrand_real3 ! Procedure
 
+    use clubb_precision, only: &
+      dp ! Variable(s)
+
     implicit none
 
     ! Parameter Constants
@@ -1191,20 +1214,20 @@ module latin_hypercube_driver_module
       nz,      & ! Number of vertical levels [-]
       k_lh_start   ! Starting k level          [-]
 
-    real(kind=genrand_real), intent(in) :: &
+    real(kind=dp), intent(in) :: &
       X_u_one_var_k_lh_start  ! Uniform distribution of 1 variate (e.g. s_mellor) at k_lh_start [-]
 
-    real(kind=genrand_real), dimension(nz), intent(in) :: &
+    real(kind=dp), dimension(nz), intent(in) :: &
       vert_corr ! Vertical correlation between k points in range [0,1]   [-]
 
     ! Output Variables
-    real(kind=genrand_real), dimension(nz), intent(out) :: &
+    real(kind=dp), dimension(nz), intent(out) :: &
       X_u_one_var_all_levs ! Uniform distribution of 1 variate at all levels [-]
 
     ! Local Variables
     real(kind=genrand_real) :: rand ! random number in the range (0,1)
 
-    real(kind=genrand_real) :: min_val, half_width, offset, unbounded_point
+    real(kind=dp) :: min_val, half_width, offset, unbounded_point
 
     integer :: k, kp1, km1 ! Loop iterators
 
@@ -1218,7 +1241,7 @@ module latin_hypercube_driver_module
 
       kp1 = k+1 ! This is the level we're computing
 
-      if ( vert_corr(kp1) < 0. .or. vert_corr(kp1) > 1. ) then
+      if ( vert_corr(kp1) < 0. .or. vert_corr(kp1) > 1.) then
         stop "vert_corr(kp1) not between 0 and 1"
       end if
 
@@ -1226,7 +1249,7 @@ module latin_hypercube_driver_module
       min_val = X_u_one_var_all_levs(k) - half_width
 
       call genrand_real3( rand ) ! (0,1)
-      offset = 2.0 * half_width * rand
+      offset = 2.0 * half_width * real(rand, kind = dp)
 
       unbounded_point = min_val + offset
 
@@ -1249,7 +1272,7 @@ module latin_hypercube_driver_module
 
       km1 = k-1 ! This is the level we're computing
 
-      if ( vert_corr(km1) < 0. .or. vert_corr(km1) > 1. ) then
+      if ( vert_corr(km1) < 0. .or. vert_corr(km1) > 1.) then
         stop "vert_corr(km1) not between 0 and 1"
       end if
 
@@ -1257,7 +1280,7 @@ module latin_hypercube_driver_module
       min_val = X_u_one_var_all_levs(k) - half_width
 
       call genrand_real3( rand ) ! (0,1)
-      offset = 2.0 * half_width * rand
+      offset = 2.0 * half_width * real(rand, kind = dp)
 
       unbounded_point = min_val + offset
 
@@ -1292,11 +1315,12 @@ module latin_hypercube_driver_module
 !   None.
 !-------------------------------------------------------------------------------
 
-    use mt95, only: &
-      genrand_real ! Constant
-
     use constants_clubb, only: &
       fstderr ! Constant
+
+    use clubb_precision, only: &
+      core_rknd, & ! Variable(s)
+      dp
 
     implicit none
 
@@ -1304,17 +1328,17 @@ module latin_hypercube_driver_module
     integer, intent(in) :: &
       n_micro_calls ! Total calls to the microphysics
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       cloud_frac1, cloud_frac2 ! Cloud fraction associatated with component 1 & 2 [-]
 
     integer, dimension(n_micro_calls), intent(in) :: &
       X_mixt_comp_k_lh_start ! Mixture components at k_lh_start
 
-    real(kind=genrand_real), dimension(n_micro_calls), intent(in) :: &
+    real(kind=dp), dimension(n_micro_calls), intent(in) :: &
       X_u_s_mellor_k_lh_start   ! Uniform distribution for s_mellor at k_lh_start [-]
 
     ! Local Variables
-    real :: cloud_frac_n
+    real(kind = core_rknd) :: cloud_frac_n
 
     integer :: number_cloudy_samples
 
@@ -1330,7 +1354,7 @@ module latin_hypercube_driver_module
       else
         cloud_frac_n = cloud_frac2
       end if
-      if ( X_u_s_mellor_k_lh_start(sample) >= 1.-cloud_frac_n ) then
+      if ( X_u_s_mellor_k_lh_start(sample) >= 1._core_rknd-cloud_frac_n ) then
         number_cloudy_samples = number_cloudy_samples + 1
       else
         ! Do nothing, the air is clear
@@ -1359,25 +1383,28 @@ module latin_hypercube_driver_module
 !   None
 !-------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: exp
 
     ! Parameter Constants
-    real, parameter :: &
-      vert_corr_coef = 0.03 ! Empirically defined correlation constant [-]
+    real( kind = core_rknd ), parameter :: &
+      vert_corr_coef = 0.03_core_rknd ! Empirically defined correlation constant [-]
 
     ! Input Variables
     integer, intent(in) :: &
       nz ! Number of vertical levels  [-]
 
-    real, intent(in), dimension(nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz) :: &
       delta_zm, &     ! Difference between altitudes    [m]
       Lscale_vert_avg ! Vertically averaged Lscale      [m]
 
     ! Output Variable
-    real, dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       vert_corr ! The vertical correlation      [-]
 
     ! ---- Begin Code ----
@@ -1466,7 +1493,8 @@ module latin_hypercube_driver_module
       fstderr
 
     use clubb_precision, only: & 
-      dp ! double precision
+      core_rknd, & ! Variable(s)
+      dp
 
     implicit none
 
@@ -1476,28 +1504,28 @@ module latin_hypercube_driver_module
       n_micro_calls,   & ! Number of calls to microphysics per timestep (normally=2)
       nz               ! Number of vertical model levels
 
-    real, intent(in), dimension(n_micro_calls) :: &
+    real( kind = core_rknd ), intent(in), dimension(n_micro_calls) :: &
       LH_sample_point_weights
 
     real( kind = dp ), intent(in), dimension(nz,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real, intent(in), dimension(nz,n_micro_calls) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,n_micro_calls) :: &
       LH_thl, & ! Sample of liquid potential temperature [K]
       LH_rt     ! Sample of total water mixing ratio     [kg/kg]
 
     ! Local variables
-    real, dimension(nz,n_micro_calls) :: &
+    real( kind = core_rknd ), dimension(nz,n_micro_calls) :: &
       rc_all_points, & ! Cloud water mixing ratio for all levels   [kg/kg]
       rv_all_points    ! Vapor mixing ratio for all levels   [kg/kg]
 
-    real, dimension(nz,n_micro_calls,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(nz,n_micro_calls,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species    [units vary]
 
-    real, dimension(nz,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       LH_hydromet ! Average value of the latin hypercube est. of all hydrometeors [units vary]
 
-    real, dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       LH_thlm,       & ! Average value of the latin hypercube est. of theta_l           [K]
       LH_rcm,        & ! Average value of the latin hypercube est. of rc                [kg/kg]
       LH_rvm,        & ! Average value of the latin hypercube est. of rv                [kg/kg]
@@ -1530,7 +1558,7 @@ module latin_hypercube_driver_module
 
       if ( iLH_thlm + iLH_thlp2_zt > 0 ) then
         LH_thlm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
-                                       real( LH_thl ) )
+                                       real( LH_thl, kind = core_rknd ) )
       end if
 
       if ( iLH_rvm + iLH_rtp2_zt > 0 ) then
@@ -1541,13 +1569,13 @@ module latin_hypercube_driver_module
 
       if ( iLH_wm + iLH_wp2_zt > 0 ) then
         LH_wm  = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
-                                      real( X_nl_all_levs(:,:,iiLH_w) ) )
+                                      real( X_nl_all_levs(:,:,iiLH_w), kind = core_rknd) )
       end if
 
       if ( iLH_rrainm + iLH_Nrm + iLH_ricem + iLH_Nim + iLH_rsnowm + iLH_Nsnowm + &
            iLH_rgraupelm + iLH_Ngraupelm + iLH_Ncm > 0 ) then
 
-        LH_hydromet = 0.
+        LH_hydromet = 0._core_rknd
         call copy_X_nl_into_hydromet( nz, d_variables, n_micro_calls, & ! In
                                       X_nl_all_levs, &  ! In
                                       LH_hydromet, & ! In
@@ -1561,19 +1589,19 @@ module latin_hypercube_driver_module
 
       ! Latin hypercube estimate of cloud fraction
       if ( iLH_cloud_frac > 0 ) then
-        LH_cloud_frac = 0.
+        LH_cloud_frac = 0._core_rknd
         do sample = 1, n_micro_calls
-          where ( X_nl_all_levs(:,sample,iiLH_s_mellor) > 0. )
-            LH_cloud_frac(:) = LH_cloud_frac(:) + 1.0 * LH_sample_point_weights(sample)
+          where ( X_nl_all_levs(:,sample,iiLH_s_mellor) > 0._core_rknd)
+            LH_cloud_frac(:) = LH_cloud_frac(:) + 1.0_core_rknd * LH_sample_point_weights(sample)
           end where
         end do
-        LH_cloud_frac(:) = LH_cloud_frac(:) / real( n_micro_calls )
+        LH_cloud_frac(:) = LH_cloud_frac(:) / real( n_micro_calls, kind = core_rknd )
       end if
 
       if ( iLH_wp2_zt > 0 ) then
         ! Compute the variance of vertical velocity
         LH_wp2_zt = compute_sample_variance( nz, n_micro_calls, &
-                                             real( X_nl_all_levs(:,:,iiLH_w) ), &
+                                             real( X_nl_all_levs(:,:,iiLH_w), kind = core_rknd ), &
                                              LH_sample_point_weights, LH_wm )
       end if
 
@@ -1588,13 +1616,13 @@ module latin_hypercube_driver_module
         ! Compute the variance of total water
         LH_rtp2_zt = compute_sample_variance &
                      ( nz, n_micro_calls, &
-                       real( LH_rt ), LH_sample_point_weights, LH_rvm+LH_rcm )
+                       real( LH_rt, kind = core_rknd ), LH_sample_point_weights, LH_rvm+LH_rcm )
       end if
 
       if ( iLH_thlp2_zt > 0 ) then
         ! Compute the variance of liquid potential temperature
         LH_thlp2_zt = compute_sample_variance( nz, n_micro_calls, &
-                                               real( LH_thl ), LH_sample_point_weights, LH_thlm )
+                        real( LH_thl, kind = core_rknd ), LH_sample_point_weights, LH_thlm )
       end if
 
       ! Compute the variance of rain water mixing ratio

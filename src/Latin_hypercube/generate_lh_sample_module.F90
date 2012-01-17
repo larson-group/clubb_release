@@ -41,7 +41,7 @@ module generate_lh_sample_module
 ! References:
 !   ``Supplying Local Microphysical Parameterizations with Information about
 !     Subgrid Variability: Latin Hypercube Sampling'', JAS Vol. 62,
-!     p. 4010--4026, Larson, et al. 2005.
+!     p. 4010--4026, Larson, et al. 2005
 !-------------------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -89,12 +89,9 @@ module generate_lh_sample_module
       l_corr_stw_cloud_scaling, & 
       l_corr_stw_below_scaling
 
-
-    use mt95, only: genrand_real ! Constants
-
     use matrix_operations, only: &
       set_lower_triangular_matrix_dp, & ! Procedures
-      get_lower_triangular_matrix_sp, &
+      get_lower_triangular_matrix, &
       row_mult_lower_tri_matrix, &
       print_lower_triangular_matrix
 
@@ -113,12 +110,13 @@ module generate_lh_sample_module
       l_fix_s_t_correlations ! Varible(s)
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
 
     ! External
-    intrinsic :: dble, min, max, sqrt, null
+    intrinsic :: min, max, sqrt, null
 
     ! Input Variables
     integer, intent(in) :: &
@@ -126,16 +124,16 @@ module generate_lh_sample_module
       d_variables,   & ! `d' Number of variates (normally 3 + microphysics specific variables)
       hydromet_dim     ! Number of hydrometeor species
 
-    real, dimension(hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species [units vary]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       wm,         & ! Vertical velocity                   [m/s]
       rcm,        & ! Mean liquid water mixing ratio      [kg/kg]
       rvm,        & ! Mean vapor water mixing ratio       [kg/kg]
       thlm          ! Mean liquid potential temperature   [K]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mixt_frac,      & ! Mixture fraction					[-]
       rrtthl,         & ! Sub-plume correlation coefficient between rt, thl 
       !			  varies between -1 < rrtthl < 1			[-]
@@ -161,22 +159,22 @@ module generate_lh_sample_module
       cthl2             ! Coefficient for s'                                    [1/K]
 
     ! From the KK_microphys_module
-    real, dimension(d_variables), target, intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables), target, intent(in) :: &
       xp2_on_xm2_array_cloud, & ! Variance over mean for sampled variables    [-]
       xp2_on_xm2_array_below
 
-    real, dimension(d_variables,d_variables), target, intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), target, intent(in) :: &
       corr_array_cloud, & ! Correlations for sampled variables    [-]
       corr_array_below
 
-    real(kind=genrand_real), intent(in), dimension(n_micro_calls,d_variables+1) :: &
+    real( kind = dp ), intent(in), dimension(n_micro_calls,d_variables+1) :: & 
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
 
     integer, intent(in), dimension(n_micro_calls) :: &
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
     ! Output Variables
-    real, intent(out), dimension(n_micro_calls) :: &
+    real( kind = core_rknd ), intent(out), dimension(n_micro_calls) :: &
       LH_rt, & ! Total water mixing ratio          [kg/kg]
       LH_thl   ! Liquid potential temperature      [K]
 
@@ -188,7 +186,7 @@ module generate_lh_sample_module
     logical, dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
-    real :: &
+    real( kind = core_rknd ) :: &
       rtm,         & ! Mean total water mixing ratio                       [kg/kg]
       s_mellor,    & ! Mean s_mellor (for when stdev_s1 < s_mellor_tol)    [kg/kg]
       w1,          & ! Mean of w for 1st normal distribution                 [m/s]
@@ -218,14 +216,14 @@ module generate_lh_sample_module
 
 
     ! Use to clip the magnitude of the correlation between rt and thl
-    real :: rrtthl_reduced ! Correlation between rt and thl [-]
+    real( kind = core_rknd ) :: rrtthl_reduced ! Correlation between rt and thl [-]
 
     real( kind = dp ) :: &
       rrtthl_covar_reduced1, & ! Covariance of rtthl for plume 1 [K^2/kg^2]
       rrtthl_covar_reduced2    ! Covariance of rtthl for plume 2 [K^2/kg^2]
 
     ! Means of s, t, w, & hydrometeors for plumes 1 and 2
-    real, dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(d_variables) :: &
       mu1, mu2
 
     ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4 ... d_variables
@@ -236,13 +234,13 @@ module generate_lh_sample_module
 
     real( kind = dp ) :: &
 !     Ncm,     & ! Cloud droplet number concentration.[number / kg air]
-      var_Nc1, & ! PDF param for width of plume 1.    [(#/kg)^2]
-      var_Nc2, & ! PDF param for width of plume 2.    [(#/kg^2]
+      var_Nc1, & ! PDF param for width of plume 1.   [(#/kg)^2]
+      var_Nc2, & ! PDF param for width of plume 2.   [(#/kg^2]
       Nrm,     & ! Rain droplet number concentration. [number / kg air]
-      var_Nr1, & ! PDF param for width of plume 1.    [(#/kg)^2]
-      var_Nr2    ! PDF param for width of plume 2.    [(#/kg^2]
+      var_Nr1, & ! PDF param for width of plume 1.   [(#/kg)^2]
+      var_Nr2    ! PDF param for width of plume 2.   [(#/kg^2]
 
-    real :: corr_rrNr, covar_rrNr1, covar_rrNr2, corr_srr, corr_sNr, &
+    real( kind = core_rknd ) :: corr_rrNr, covar_rrNr1, covar_rrNr2, corr_srr, corr_sNr, &
             covar_sNr1, covar_sNr2, covar_srr1, covar_srr2
 
     real( kind = dp ) :: covar_trr1, covar_trr2, covar_tNr2, covar_tNr1
@@ -262,7 +260,7 @@ module generate_lh_sample_module
     real( kind = dp ) :: &
       rrainm, &  ! rain water mixing ratio         [kg/kg]
       var_rr1, & ! PDF param for width of plume 1     [(kg/kg)^2]
-      var_rr2    ! PDF param for width of plume 2.    [(kg/kg)^2]
+      var_rr2    ! PDF param for width of plume 2.   [(kg/kg)^2]
 
     real( kind = dp ) :: &
       tp2_mellor_2, sp2_mellor_2,  & ! Variance of s,t         [(kg/kg)^2]
@@ -290,10 +288,10 @@ module generate_lh_sample_module
     real( kind = dp ), dimension(3) :: &
       temp_3_elements
 
-    real, pointer, dimension(:) :: &
+    real( kind = core_rknd ), pointer, dimension(:) :: &
       xp2_on_xm2_array => null() ! Pointer for the x'2 / xm^2 array
 
-    real, pointer, dimension(:,:) :: &
+    real( kind = core_rknd ), pointer, dimension(:,:) :: &
       corr_array => null()  ! Correlation array pointer
 
     real( kind = dp ), pointer, dimension(:,:) :: &
@@ -367,7 +365,7 @@ module generate_lh_sample_module
             varnce_thl2, thl2 ) ! Out
 
       ! Compute the mean of s1 and s2
-      s_mellor = s1_in * mixt_frac + (1.0-mixt_frac) * s2_in
+      s_mellor = s1_in * mixt_frac + (1.0_core_rknd-mixt_frac) * s2_in
 
       ! Here the subroutine name is a little misleading since we're imposing the
       ! threshold on a standard deviation rather than a variance.
@@ -381,8 +379,8 @@ module generate_lh_sample_module
             stdev_s2, s2 ) ! Out
     end if ! l_fix_s_t_correlations
 
-!   cloud_frac1 = dble( cloud_frac1_in )
-!   cloud_frac2 = dble( cloud_frac2_in )
+!   cloud_frac1 = real(cloud_frac1_in, kind = dp)
+!   cloud_frac2 = real(cloud_frac2_in, kind = dp)
     ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
     cloud_frac1 = 1.0
     cloud_frac2 = 1.0
@@ -426,7 +424,7 @@ module generate_lh_sample_module
 
     if ( iiLH_Nc > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Nc, dble( hydromet(iiNcm) ), xp2_on_xm2_array, & ! In
+           ( d_variables, iiLH_Nc, real(hydromet(iiNcm), kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
@@ -437,49 +435,51 @@ module generate_lh_sample_module
 
     if ( iiLH_rrain > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_rrain, dble( hydromet(iirrainm) ), xp2_on_xm2_array, & ! In
+           ( d_variables, iiLH_rrain, real(hydromet(iirrainm), kind = dp), xp2_on_xm2_array, &! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiLH_Nr > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Nr, dble( hydromet(iiNrm) ), xp2_on_xm2_array, & ! In
+           ( d_variables, iiLH_Nr, real(hydromet(iiNrm), kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiLH_rsnow > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_rsnow, dble( hydromet(iirsnowm) ), xp2_on_xm2_array, & ! In
+           ( d_variables, iiLH_rsnow, real(hydromet(iirsnowm),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiLH_Nsnow > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Nsnow, dble( hydromet(iiNsnowm) ), xp2_on_xm2_array, & ! In
+           ( d_variables, iiLH_Nsnow, real(hydromet(iiNsnowm),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiLH_rice > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_rice, dble( hydromet(iiricem) ), xp2_on_xm2_array, & ! In
+           ( d_variables, iiLH_rice, real(hydromet(iiricem),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiLH_Ni > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Ni, dble( hydromet(iiNim) ), xp2_on_xm2_array, & ! In
+           ( d_variables, iiLH_Ni, real(hydromet(iiNim),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiLH_rgraupel > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_rgraupel, dble( hydromet(iirgraupelm) ), xp2_on_xm2_array, & ! In
+           ( d_variables, iiLH_rgraupel, & ! In
+             real(hydromet(iirgraupelm),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiLH_Ngraupel > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Ngraupel, dble( hydromet(iiNgraupelm) ), xp2_on_xm2_array, & ! In
+           ( d_variables, iiLH_Ngraupel, & ! In
+             real(hydromet(iiNgraupelm),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
@@ -487,21 +487,21 @@ module generate_lh_sample_module
     ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
 
     mu1((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
-      = (/ s1, 0., w1 /)
+      = (/ s1, 0._core_rknd, w1 /)
     mu2((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
-      = (/ s2, 0., w2 /)
+      = (/ s2, 0._core_rknd, w2 /)
 
     ! An old subroutine, gaus_rotate, couldn't handle large correlations;
     !   I assume the replacement, gaus_condt, has equal trouble.
     !   Therefore we input smaller correlations
     !   The current code uses a Cholesky decomposition, which also cannot handle
     !   a correlation of exactly 1. -dschanen 5 Oct 2010
-    ! max_mag_correlation = 0.99 in constants.F90
+    ! max_mag_correlation = 0.99_core_rknd in constants.F90
     rrtthl_reduced = min( max_mag_correlation, max( rrtthl, -max_mag_correlation ) )
 
     ! Within-plume rt-thl correlation terms with rt in kg/kg
-    rrtthl_covar_reduced1 = dble( rrtthl_reduced*sqrt( varnce_rt1*varnce_thl1 ) )
-    rrtthl_covar_reduced2 = dble( rrtthl_reduced*sqrt( varnce_rt2*varnce_thl2 ) )
+    rrtthl_covar_reduced1 = real(rrtthl_reduced*sqrt( varnce_rt1*varnce_thl1 ), kind = dp)
+    rrtthl_covar_reduced2 = real(rrtthl_reduced*sqrt( varnce_rt2*varnce_thl2 ), kind = dp)
 
     call rtpthlp_2_sptp( dble( stdev_s1 ), dble( varnce_rt1 ), dble( varnce_thl1 ), & 
                          dble( rrtthl_covar_reduced1 ), dble( crt1 ), dble( cthl1 ), & ! In
@@ -533,14 +533,14 @@ module generate_lh_sample_module
       call set_lower_triangular_matrix_dp( 2, iiLH_s_mellor, iiLH_t_mellor, sptp_mellor_2, &
                                            Sigma_stw_2(1:2,1:2) )
       ! Add the w element
-      Sigma_stw_1(iiLH_w,iiLH_w) = dble( varnce_w1 )
+      Sigma_stw_1(iiLH_w,iiLH_w) = real(varnce_w1, kind = dp)
 
-      Sigma_stw_2(iiLH_w,iiLH_w) = dble( varnce_w2 )
+      Sigma_stw_2(iiLH_w,iiLH_w) = real(varnce_w2, kind = dp)
 
       if ( iiLH_Nc > 0 ) then
-!       Ncm = dble( hydromet(iiNcm) )
+!       Ncm = real(hydromet(iiNcm), kind = dp)
         ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
-        var_Nc1 = log( 1. + Xp2_on_Xm2_array(iiLH_Nc) )
+        var_Nc1 = log( 1.+ Xp2_on_Xm2_array(iiLH_Nc) )
         var_Nc2 = var_Nc1
         Sigma_stw_1(iiLH_Nc,iiLH_Nc) = var_Nc1
         Sigma_stw_2(iiLH_Nc,iiLH_Nc) = var_Nc2
@@ -548,7 +548,7 @@ module generate_lh_sample_module
 
       if ( iiLH_Nr > 0 ) then
         ! var_Nr1,2 = PDF param for width of plume 1,2. [var_Nr1,2] = (#/kg)**2
-        var_Nr1 = log( 1. + Xp2_on_Xm2_array(iiLH_Nr) )
+        var_Nr1 = log( 1.+ Xp2_on_Xm2_array(iiLH_Nr) )
         var_Nr2 = var_Nr1
         Sigma_stw_1(iiLH_Nr,iiLH_Nr) = var_Nr1
         Sigma_stw_2(iiLH_Nr,iiLH_Nr) = var_Nr2
@@ -556,7 +556,7 @@ module generate_lh_sample_module
 
       if ( iiLH_rrain > 0 ) then
         ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
-        var_rr1 = log( 1. + Xp2_on_Xm2_array(iiLH_rrain) )
+        var_rr1 = log( 1.+ Xp2_on_Xm2_array(iiLH_rrain) )
         var_rr2 = var_rr1
         Sigma_stw_1(iiLH_rrain,iiLH_rrain) = var_rr1
         Sigma_stw_2(iiLH_rrain,iiLH_rrain) = var_rr2
@@ -564,16 +564,16 @@ module generate_lh_sample_module
 
       if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
 
-        rrainm = dble( hydromet(iirrainm) )
-        Nrm = dble( hydromet(iiNrm) )
+        rrainm = real(hydromet(iirrainm), kind = dp)
+        Nrm = real(hydromet(iiNrm), kind = dp)
 
         index1 = iiLH_rrain
         index2 = iiLH_Nr
 
         ! Covariance between rain water mixing ratio rain number concentration
-        if ( rrainm > dble( rr_tol ) .and. Nrm > dble( Nr_tol ) ) then
+        if ( rrainm > real(rr_tol, kind = dp) .and. Nrm > real(Nr_tol, kind = dp) ) then
 
-          call get_lower_triangular_matrix_sp &
+          call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
                  corr_rrNr ) ! Out
 
@@ -585,18 +585,18 @@ module generate_lh_sample_module
           covar_rrNr2 = covar_rrNr1
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, index1, index2, dble( covar_rrNr1 ), & ! In
+               ( d_variables, index1, index2, real(covar_rrNr1, kind=dp), & ! In
                  Sigma_stw_1 ) ! In/out
           call set_lower_triangular_matrix_dp &
-               ( d_variables, index1, index2, dble( covar_rrNr2 ), & ! In
+               ( d_variables, index1, index2, real(covar_rrNr2, kind=dp), & ! In
                  Sigma_stw_2 ) ! In/out
         end if
 
         index1 = iiLH_s_mellor
         index2 = iiLH_Nr
         ! Covariances involving s and Nr & rr
-        if ( stdev_s1 > s_mellor_tol .and. Nrm > dble( Nr_tol ) ) then
-          call get_lower_triangular_matrix_sp &
+        if ( stdev_s1 > s_mellor_tol .and. Nrm > real(Nr_tol, kind = dp) ) then
+          call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
                  corr_sNr ) ! Out
 
@@ -606,22 +606,22 @@ module generate_lh_sample_module
                  covar_sNr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, index1, index2, dble( covar_sNr1 ), & ! In
+               ( d_variables, index1, index2, real(covar_sNr1, kind=dp), & ! In
                  Sigma_stw_1 ) ! In/out
 
           ! Approximate the covariance of t and Nr
           ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
           covar_tNr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
-            * dble( covar_sNr1 ) ) / dble( stdev_s1 )**2
+            * real(covar_sNr1, kind = dp) ) / real(stdev_s1, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiLH_t_mellor, iiLH_Nr, dble( covar_tNr1 ), & ! In
+               ( d_variables, iiLH_t_mellor, iiLH_Nr, real(covar_tNr1, kind=dp) , & ! In
                  Sigma_stw_1 ) ! In/out
         end if
 
-        if ( stdev_s2 > s_mellor_tol .and. Nrm > dble( Nr_tol ) ) then
+        if ( stdev_s2 > s_mellor_tol .and. Nrm > real(Nr_tol, kind = dp) ) then
 
-          call get_lower_triangular_matrix_sp &
+          call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
                  corr_sNr ) ! Out
 
@@ -630,25 +630,25 @@ module generate_lh_sample_module
                  covar_sNr2 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, index1, index2, dble( covar_sNr2 ), & ! In
+               ( d_variables, index1, index2, real(covar_sNr2, kind=dp), & ! In
                  Sigma_stw_2 ) ! In/out
 
           ! Approximate the covariance of t and Nr
           ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
           covar_tNr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
-            * dble( covar_sNr2 ) ) / dble( stdev_s2 )**2
+            * real(covar_sNr2, kind = dp) ) / real(stdev_s2, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiLH_t_mellor, iiLH_Nr, dble( covar_tNr2 ), & ! In
+               ( d_variables, iiLH_t_mellor, iiLH_Nr, real(covar_tNr2, kind = dp), & ! In
                  Sigma_stw_2 ) ! In/out
         end if
 
         index1 = iiLH_s_mellor
         index2 = iiLH_rrain
         ! Covariances involving s and Nr & rr
-        if ( stdev_s1 > s_mellor_tol .and. rrainm > dble( rr_tol ) ) then
+        if ( stdev_s1 > s_mellor_tol .and. rrainm > real(rr_tol, kind = dp) ) then
 
-          call get_lower_triangular_matrix_sp &
+          call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
                  corr_srr ) ! Out
 
@@ -658,22 +658,22 @@ module generate_lh_sample_module
                  covar_srr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiLH_s_mellor, iiLH_rrain, dble( covar_srr1 ), & ! In
+               ( d_variables, iiLH_s_mellor, iiLH_rrain, real(covar_srr1, kind=dp), & ! In
                  Sigma_stw_1 ) ! In/out
 
           ! Approximate the covariance of t and rr
           ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
           covar_trr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
-            * dble( covar_srr1 ) ) / dble( stdev_s1 )**2
+            * real(covar_srr1, kind = dp) ) / real(stdev_s1, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiLH_t_mellor, iiLH_rrain, dble( covar_trr1 ), & ! In
+               ( d_variables, iiLH_t_mellor, iiLH_rrain, real(covar_trr1, kind = dp), & ! In
                  Sigma_stw_1 ) ! In/out
         end if
 
-        if ( stdev_s2 > s_mellor_tol .and. rrainm > dble( rr_tol ) ) then
+        if ( stdev_s2 > s_mellor_tol .and. rrainm > real(rr_tol, kind = dp) ) then
 
-          call get_lower_triangular_matrix_sp &
+          call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
                  corr_srr ) ! Out
 
@@ -682,16 +682,16 @@ module generate_lh_sample_module
                  covar_srr2 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, index1, index2, dble( covar_srr2 ), & ! In
+               ( d_variables, index1, index2, real(covar_srr2, kind=dp), & ! In
                  Sigma_stw_2 ) ! In/out
 
           ! Approximate the covariance of t and rr
           ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
           covar_trr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
-            * dble( covar_srr2 ) ) / dble( stdev_s2 )**2
+            * real(covar_srr2, kind = dp) ) / real(stdev_s2, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiLH_t_mellor, iiLH_rrain, dble( covar_trr2 ), & ! In
+               ( d_variables, iiLH_t_mellor, iiLH_rrain, real(covar_trr2, kind = dp), & ! In
                  Sigma_stw_2 ) ! In/out
         end if
 
@@ -701,40 +701,40 @@ module generate_lh_sample_module
 
       ! Covariances involving s and Nc (currently disabled)
 !       corr_sNc = corr_array(iiLH_s_mellor,iiLH_Nc)
-!       stdev_Nc = real( Ncm ) * sqrt( xp2_on_xm2_array(iiLH_Nc) )
+!       stdev_Nc = real( Ncm, kind = core_rknd ) * sqrt( xp2_on_xm2_array(iiLH_Nc) )
 
-!       if ( stdev_s1 > s_mellor_tol .and. Ncm > dble( Nc_tol ) ) then
+!       if ( stdev_s1 > s_mellor_tol .and. Ncm > real(Nc_tol, kind = dp) ) then
 !         ! The variable s is already Gaussian
 !         stdev_sNc1 = corr_gaus_LN_to_covar_gaus &
 !                 ( corr_sNc, &
 !                   stdev_s1, &
 !                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nc) ) )
 
-!         Sigma_stw_1(iiLH_s_mellor,iiLH_Nc) = dble( stdev_sNc1 )
-!         Sigma_stw_1(iiLH_Nc,iiLH_s_mellor) = dble( stdev_sNc1 )
+!         Sigma_stw_1(iiLH_s_mellor,iiLH_Nc) = real(stdev_sNc1, kind = dp)
+!         Sigma_stw_1(iiLH_Nc,iiLH_s_mellor) = real(stdev_sNc1, kind = dp)
 
 !         ! Approximate the covariance of t and Nc
 !         covar_tNc1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) * covar_sNc1 ) / stdev_s1**2
 
-!         Sigma_stw_1(iiLH_t_mellor,iiLH_Nc) = dble( covar_tNc1 )
-!         Sigma_stw_2(iiLH_Nc,iiLH_t_mellor) = dble( covar_tNc2 )
+!         Sigma_stw_1(iiLH_t_mellor,iiLH_Nc) = real(covar_tNc1, kind = dp)
+!         Sigma_stw_2(iiLH_Nc,iiLH_t_mellor) = real(covar_tNc2, kind = dp)
 
 !       end if
 
-!       if ( stdev_s2 > s_mellor_tol .and. Ncm > dble( Nc_tol ) ) then
+!       if ( stdev_s2 > s_mellor_tol .and. Ncm > real(Nc_tol, kind = dp) ) then
 !         stdev_sNc2 = corr_gaus_LN_to_covar_gaus &
 !                 ( corr_sNc, &
 !                   stdev_s2, &
 !                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nc) ) )
 
-!         Sigma_stw_2(iiLH_s_mellor,iiLH_Nc) = dble( stdev_sNc2 )
-!         Sigma_stw_2(iiLH_Nc,iiLH_s_mellor) = dble( stdev_sNc2 )
+!         Sigma_stw_2(iiLH_s_mellor,iiLH_Nc) = real(stdev_sNc2, kind = dp)
+!         Sigma_stw_2(iiLH_Nc,iiLH_s_mellor) = real(stdev_sNc2, kind = dp)
 
 !         ! Approximate the covariance of t and Nc
 !         covar_tNc2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) * covar_sNc2 ) / stdev_s2**2
 
-!         Sigma_stw_2(iiLH_t_mellor,iiLH_Nc) = dble( stNc2 )
-!         Sigma_stw_2(iiLH_Nc,iiLH_t_mellor) = dble( stNc2 )
+!         Sigma_stw_2(iiLH_t_mellor,iiLH_Nc) = real(stNc2, kind = dp)
+!         Sigma_stw_2(iiLH_Nc,iiLH_t_mellor) = real(stNc2, kind = dp)
 
 !       end if
 
@@ -745,13 +745,15 @@ module generate_lh_sample_module
         call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Corr_stw_1 )
         call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Corr_stw_2 )
 
-        if ( any( Corr_stw_1 > 1.0 ) .or. any( Corr_stw_1 < -1.0 ) ) then
+        if ( any( Corr_stw_1 > 1.0) .or. any( Corr_stw_1 < -1.0) ) then
           write(fstderr,*) "Sigma_stw_1 has a correlation > 1 or < -1"
-          call print_lower_triangular_matrix( fstderr, d_variables, real( Corr_stw_1 ) )
+          call print_lower_triangular_matrix( fstderr, d_variables, &
+            real( Corr_stw_1, kind = core_rknd ) )
         end if
         if ( any( Corr_stw_2 > 1.0 ) .or. any( Corr_stw_2 < -1.0 ) ) then
           write(fstderr,*) "Sigma_stw_2 has a correlation > 1 or < -1"
-          call print_lower_triangular_matrix( fstderr, d_variables, real( Corr_stw_2 ) )
+          call print_lower_triangular_matrix( fstderr, d_variables, &
+            real( Corr_stw_2, kind = core_rknd ) )
         end if
 
       end if ! clubb_at_least_debug_level( 2 )
@@ -763,7 +765,7 @@ module generate_lh_sample_module
       end if
 
       if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 2 ) ) then
-        call Cholesky_factor( d_variables, Sigma_stw_2, & ! In
+        call Cholesky_factor( d_variables, real(Sigma_stw_2, kind = dp), & ! In
                               Sigma2_scaling, Sigma2_Cholesky, l_Sigma2_scaling ) ! Out
       end if
 
@@ -784,8 +786,9 @@ module generate_lh_sample_module
                xp2_on_xm2_array_cloud, & ! In
                corr_stw_matrix ) ! Out
 
+
         ! Compute choleksy factorization for the correlation matrix (in cloud)
-        call Cholesky_factor( d_variables, corr_stw_matrix, & ! In
+        call Cholesky_factor( d_variables, real(corr_stw_matrix, kind = dp), & ! In
                               corr_stw_cloud_scaling, corr_stw_cloud_Cholesky, & ! Out
                               l_corr_stw_cloud_scaling ) ! Out
 
@@ -795,9 +798,10 @@ module generate_lh_sample_module
                corr_stw_matrix ) ! Out
 
         ! Compute choleksy factorization for the correlation matrix (out of cloud)
-        call Cholesky_factor( d_variables, corr_stw_matrix, & ! In
-                              corr_stw_below_scaling, corr_stw_below_Cholesky, & ! Out
+        call Cholesky_factor( d_variables, real(corr_stw_matrix, kind = dp), & ! In
+                              corr_stw_below_scaling, corr_stw_below_Cholesky, &  ! Out
                               l_corr_stw_below_scaling ) ! Out
+
 
         deallocate( corr_stw_matrix )
 
@@ -825,7 +829,7 @@ module generate_lh_sample_module
       if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 1 ) ) then
         Sigma1_Cholesky = 0.
 
-        temp_3_elements = (/ dble( stdev_s1 ), stdev_t1, sqrt( dble( varnce_w1 ) ) /)
+        temp_3_elements = (/ dble( stdev_s1 ), stdev_t1, sqrt( dble(varnce_w1) ) /)
 
         call row_mult_lower_tri_matrix &
              ( 3, temp_3_elements, corr_stw_matrix_Cholesky(1:3,1:3), & ! In
@@ -841,7 +845,7 @@ module generate_lh_sample_module
       if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 2 ) ) then
         Sigma2_Cholesky = 0.
 
-        temp_3_elements = (/ dble( stdev_s2 ), stdev_t2, sqrt( dble( varnce_w2 ) ) /)
+        temp_3_elements = (/ dble( stdev_s2 ), stdev_t2, sqrt( dble(varnce_w2) ) /)
 
         call row_mult_lower_tri_matrix &
              ( 3, temp_3_elements, corr_stw_matrix_Cholesky(1:3,1:3), & ! In
@@ -906,7 +910,8 @@ module generate_lh_sample_module
       iiLH_t_mellor
 
     use clubb_precision, only: &
-      dp ! double precision
+      core_rknd, & ! Variable(s)
+      dp
 
     implicit none
 
@@ -930,7 +935,7 @@ module generate_lh_sample_module
       cthl2    ! coefficient relating thl, s and t for comp. 2
 
     ! Latin hypercube variables, i.e. s, t, w, etc.
-    real, intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
 
     ! Cloud fractions for components 1 and 2
@@ -960,7 +965,7 @@ module generate_lh_sample_module
 
     ! Output Variables
     ! Total water, theta_l: mean plus perturbations
-    real, intent(out), dimension(n_micro_calls) :: &
+    real( kind = core_rknd ), intent(out), dimension(n_micro_calls) :: &
       LH_rt,  & ! Total water   [kg/kg]
       LH_thl    ! Liquid potential temperature  [K]
 
@@ -1030,7 +1035,7 @@ module generate_lh_sample_module
       max_mag_correlation ! Constant
 
     use clubb_precision, only: &
-      dp ! double precision
+      core_rknd ! double precision
 
     implicit none
 
@@ -1095,6 +1100,9 @@ module generate_lh_sample_module
 
     use mt95, only: genrand_real ! Constants
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
@@ -1108,7 +1116,7 @@ module generate_lh_sample_module
 
     ! Output Variables
 
-    real(kind=genrand_real), intent(out), dimension(n_micro_calls,dp1) :: &
+    real(kind=dp), intent(out), dimension(n_micro_calls,dp1) :: &
       X_u_one_lev ! n by dp1 matrix, X, each row of which is a dp1-dimensional sample
 
     ! Local Variables
@@ -1186,7 +1194,10 @@ module generate_lh_sample_module
       clubb_at_least_debug_level  ! Procedure(s)
 
     use clubb_precision, only: &
-      dp ! double precision
+      core_rknd ! double precision
+
+    use mt95, only: &
+      genrand_real
 
     implicit none
 
@@ -1200,7 +1211,7 @@ module generate_lh_sample_module
       mixt_frac,     & ! Mixture fraction of Gaussians
       cloud_frac1, cloud_frac2   ! Cloud fraction associated w/ 1st, 2nd mixture component
 
-    real, intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
     ! Latin hypercube sample from uniform distribution from a particular grid level
@@ -1267,18 +1278,21 @@ module generate_lh_sample_module
         std_normal(ivar) = ltqnorm( X_u_one_lev(sample,ivar) )
       end do
 
+
       ! Determine which mixture fraction we are in.
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
 
         call multiply_Cholesky &
-            ( d_variables, std_normal, mu1, Sigma1_Cholesky, &  ! In
+            ( d_variables, std_normal, & ! In
+              mu1, Sigma1_Cholesky, &  ! In
               Sigma1_scaling, l_Sigma1_scaling, & ! In
               X_nl_one_lev(sample, 1:d_variables) ) ! Out
 
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
 
         call multiply_Cholesky &
-             ( d_variables, std_normal, mu2, Sigma2_Cholesky, &  ! In
+             ( d_variables, std_normal, & ! In
+               mu2, Sigma2_Cholesky, &  ! In
                Sigma2_scaling, l_Sigma2_scaling, & ! In
                X_nl_one_lev(sample, 1:d_variables) ) ! Out
 
@@ -1313,7 +1327,7 @@ module generate_lh_sample_module
       clubb_at_least_debug_level  ! Procedure(s)
 
     use clubb_precision, only: &
-      dp ! double precision
+      core_rknd ! double precision
 
     implicit none
 
@@ -1328,7 +1342,7 @@ module generate_lh_sample_module
       mixt_frac,    & ! Mixture fraction of Gaussians
       cloud_frac1, cloud_frac2  ! Cloud fraction associated w/ 1st, 2nd mixture component
 
-    real, intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
     real( kind = dp ), intent(in), dimension(d_variables,d_variables) :: &
@@ -1389,8 +1403,8 @@ module generate_lh_sample_module
       if  ( X_mixt_comp_one_lev(sample) == 1 ) then
         ! Replace first dimension (s) with
         !  sample from cloud (i.e. truncated standard Gaussian)
-        s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac1 + (1._dp - &
-          cloud_frac1) )
+        s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac1 &
+                   + (1._dp - cloud_frac1 ) )
         ! Convert to nonstandard normal with mean mu1 and variance Sigma1
         truncated_column(sample) =  & 
                    s_std * sqrt( Sigma1(col,col) ) + mu1(col)
@@ -1398,8 +1412,8 @@ module generate_lh_sample_module
 
         ! Replace first dimension (s) with
         !   sample from cloud (i.e. truncated Gaussian)
-        s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac2 + (1._dp - &
-          cloud_frac2) )
+        s_std = ltqnorm( (X_u_one_lev( sample, col ) * cloud_frac2) &
+                  + (1._dp - cloud_frac2) )
 
         ! Convert to nonstandard normal with mean mu2 and variance Sigma2
         truncated_column(sample) =  & 
@@ -1417,8 +1431,8 @@ module generate_lh_sample_module
 !-----------------------------------------------------------------------
   function ltqnorm( p )
 ! Description:
-!   This function is ported to Fortran from the same function written in Matlab, see the following
-!   description of this function.  Hongli Jiang, 2/17/2004
+!   This function is ported to Fortran from the same function written in Matlab,
+!    see the following description of this function.  Hongli Jiang, 2/17/2004
 !   Converted to double precision by Vince Larson 2/22/2004;
 !    this improves results for input values of p near 1.
 
@@ -1432,7 +1446,7 @@ module generate_lh_sample_module
 !   more accurate value when P is close to zero.
 
 !   The algorithm uses a minimax approximation by rational functions and the
-!   result has a relative error less than 1.15e-9.  A last refinement by
+!   result has a relative error less than 1.15e-9. A last refinement by
 !   Halley's rational method is applied to achieve full machine precision.
 
 !   Author:      Peter J. Acklam
@@ -1441,7 +1455,10 @@ module generate_lh_sample_module
 !   URL:         http://home.online.no/~pjacklam
 !-----------------------------------------------------------------------
 
-    use constants_clubb, only: Pi_DP ! Variable(s)
+    ! This is commented out because it is used by old versions of this code that
+    ! have been commented out, but not by the new code.
+
+    ! use constants_clubb, only: Pi_DP ! Variable(s)
 
     use clubb_precision, only: &
       dp ! double precision
@@ -1526,7 +1543,7 @@ module generate_lh_sample_module
                   /((((d1*q+d2)*q+d3)*q+d4)*q+1._dp)
     end if
 
-!  Case when P = 0: z = -inf, to create inf z =-1./0.,
+!  Case when P = 0: z = -inf, to create inf z =-1.0.
 !     to create NaN's inf*inf.
     z1 = 0._dp
     if (p == 0._dp) then
@@ -1546,7 +1563,7 @@ module generate_lh_sample_module
     end if
 
 !  The relative error of the approximation has absolute value less
-!  than 1.15e-9.  One iteration of Halley's rational method (third
+!  than 1.15e-9. One iteration of Halley's rational method (third
 !  order) gives full machine precision.
 ! V. Larson 20Feb04: Don't use the following if-end if loop.
 !   The value of e is very different than what MATLAB produces,
@@ -1557,7 +1574,7 @@ module generate_lh_sample_module
 ! End V. Larson comment
 !!   k = 0 < p & p < 1;
 !       if (p.gt.0 .and. p.lt.1)then
-!         e = 0.5*(1.0 - erf_dp(-z/sqrt(2.))) - p          ! error
+!         e = 0.5_core_rknd*(1.0_core_rknd - erf_dp(-z/sqrt(2._core_rknd)) - p          ! error
 !         u = e * sqrt(2*pi_dp) * exp(z**2/2)       ! f(z)/df(z)
 !         z = z - u/( 1 + z*u/2 )               ! Halley's method
 !       end if
@@ -1582,12 +1599,10 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
-
-    ! External
-    intrinsic :: dble
 
     external :: dtrmv ! BLAS upper/lower triangular multiplication subroutine
 
@@ -1601,7 +1616,7 @@ module generate_lh_sample_module
     real( kind = dp ), intent(in), dimension(d_variables) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
-    real, intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       mu ! d-dimensional column vector of means of Gaussian     [units vary]
 
     real( kind = dp ), intent(in), dimension(d_variables,d_variables) :: &
@@ -1634,12 +1649,12 @@ module generate_lh_sample_module
 
     if ( l_scaled ) then
       ! Add mu to Sigma * std_normal (scaled)
-      nonstd_normal = Sigma_times_std_normal + dble( mu ) * Sigma_scaling
+      nonstd_normal = Sigma_times_std_normal + real(mu, kind = dp) * Sigma_scaling
       ! Determine 'y' vector by removing the scaling factors
       nonstd_normal = nonstd_normal / Sigma_scaling
     else
       ! Add mu to Sigma * std_normal
-      nonstd_normal = Sigma_times_std_normal + dble( mu )
+      nonstd_normal = Sigma_times_std_normal + real(mu, kind = dp)
     end if
 
     return
@@ -1663,7 +1678,7 @@ module generate_lh_sample_module
         clubb_at_least_debug_level  ! Procedure(s)
 
     use clubb_precision, only: &
-        dp ! double precision
+        core_rknd ! double precision
 
     implicit none
 
@@ -1682,7 +1697,7 @@ module generate_lh_sample_module
     real( kind = dp ), intent(in) :: &
       cloud_frac1, cloud_frac2 ! Cloud fraction associated with 1st / 2nd mixture component
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_s1, mu_s2
 
     ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
@@ -1695,7 +1710,7 @@ module generate_lh_sample_module
 
     ! Output variables
 
-    real, dimension(n_micro_calls), intent(out) :: &
+    real( kind = core_rknd ), dimension(n_micro_calls), intent(out) :: &
       LH_rt, LH_thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
 
     ! Local
@@ -1813,16 +1828,19 @@ module generate_lh_sample_module
 !   None
 !-------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       corr_sy,   & ! Correlation between x and y [-]
       stdev_s,   & ! Standard deviation of s     [usually kg/kg]
       yp2_on_ym2   ! Variance of y over mean y^2 [-]
 
-    real, intent(out) :: covar_sy
+    real( kind = core_rknd ), intent(out) :: covar_sy
 
-    real :: yp2_on_ym2_gaus
+    real( kind = core_rknd ) :: yp2_on_ym2_gaus
 
     ! ---- Begin Code ----
 
@@ -1843,16 +1861,19 @@ module generate_lh_sample_module
 !   None
 !-------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       corr_xy,    & ! Correlation between x and y   [-]
       xp2_on_xm2, & ! Variance of x over mean x^2   [-]
       yp2_on_ym2    ! Variance of y over mean y^2   [-]
 
-    real, intent(out) :: covar_xy
+    real( kind = core_rknd ), intent(out) :: covar_xy
 
-    real :: xp2_on_xm2_gaus, yp2_on_ym2_gaus
+    real( kind = core_rknd ) :: xp2_on_xm2_gaus, yp2_on_ym2_gaus
 
     ! ---- Begin Code ----
 
@@ -1876,15 +1897,18 @@ module generate_lh_sample_module
 !   None
 !-------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       Xmean,            & ! Mean value of variable X             [units vary]
       varnce_X_tol,     & ! Min tolerance on the variance of X   [units vary]
       Xn,               & ! Value of X for the 1st norm. dist.   [units vary]
       varnce_Xn           ! Variance of X for the 2nd norm. dist.[units vary]
 
-    real, intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       varnce_Xn_out, & ! [units vary]
       Xn_out           ! [units vary]
 
@@ -1922,10 +1946,11 @@ module generate_lh_sample_module
 
     use matrix_operations, only: &
       set_lower_triangular_matrix_dp, & ! Procedures
-      get_lower_triangular_matrix_sp
+      get_lower_triangular_matrix
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, &! double precision
+      core_rknd
 
     implicit none
 
@@ -1935,10 +1960,10 @@ module generate_lh_sample_module
     ! Input Variables
     integer, intent(in) :: d_variables ! Number of variates
 
-    real, dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
       corr_array ! Correlations between variates
 
-    real, dimension(d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
       xp2_on_xm2_array ! x'^2 / xm^2
 
     ! Output variables
@@ -1946,7 +1971,7 @@ module generate_lh_sample_module
       corr_stw_matrix ! Correlations between variates with some terms in lognormal space
 
     ! Local Variables
-    real :: &
+    real( kind = core_rknd ) :: &
       corr_st, & ! Correlation for s,t  [-]
       corr_sw, & ! Correlation for w,s  [-]
       corr_tw    ! Correlation for w,t  [-]
@@ -1972,12 +1997,12 @@ module generate_lh_sample_module
     index1 = iiLH_s_mellor
     index2 = iiLH_t_mellor
 
-    call get_lower_triangular_matrix_sp &
+    call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
             corr_st ) ! Out
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, index1, index2, dble( corr_st ), & ! In
+         ( d_variables, index1, index2, real(corr_st, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
     ! The correlation between w and s,t is typically not fixed either, but for
@@ -1985,11 +2010,11 @@ module generate_lh_sample_module
     index1 = iiLH_s_mellor
     index2 = iiLH_w
 
-    call get_lower_triangular_matrix_sp &
+    call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
             corr_sw ) ! Out
     call set_lower_triangular_matrix_dp &
-         ( d_variables, index1, index2, dble( corr_sw ), & ! In
+         ( d_variables, index1, index2, real(corr_sw, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
     index1 = iiLH_t_mellor
@@ -1998,16 +2023,16 @@ module generate_lh_sample_module
       ! Approximate the covariance of t and w
       corr_tw = corr_st * corr_sw
     else
-      corr_tw = 0.
+      corr_tw = 0._core_rknd
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, index1, index2, dble( corr_tw ), & ! In
+         ( d_variables, index1, index2, real(corr_tw, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
     ! Compute the main diagonal for each lognormal variate
     forall ( i = LN_index:d_variables )
-      corr_stw_matrix(i,i) = log( 1. + Xp2_on_Xm2_array(i) )
+      corr_stw_matrix(i,i) = log( 1._core_rknd + Xp2_on_Xm2_array(i) )
     end forall
 
     do index1 = LN_index, d_variables
@@ -2043,11 +2068,12 @@ module generate_lh_sample_module
 !   None
 !-------------------------------------------------------------------------------
     use matrix_operations, only: &
-      get_lower_triangular_matrix_sp, & ! Procedure(s)
+      get_lower_triangular_matrix, & ! Procedure(s)
       set_lower_triangular_matrix_dp
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
 
@@ -2056,10 +2082,10 @@ module generate_lh_sample_module
       d_variables, & ! Total variates
       index1, index2 ! Index of the 2 variates
 
-    real, dimension(d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
       xp2_on_xm2_array ! x'^2 / xm^2 array      [-]
 
-    real, dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
       corr_array ! Array of correlations        [-]
 
     ! Input/Output Variables
@@ -2067,7 +2093,7 @@ module generate_lh_sample_module
       corr_stw_matrix ! Correlation matrix      [-]
 
     ! Local Variables
-    real :: &
+    real( kind = core_rknd ) :: &
       corr_xy, & ! Correlation between two variates
       covar_xy   ! Lognormal covariance (not a dimensional covariance)
 
@@ -2075,20 +2101,20 @@ module generate_lh_sample_module
 
     ! Lognormal covariance between two lognormal variates (e.g. rrain and Nr )
 
-    call get_lower_triangular_matrix_sp &
+    call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
            corr_xy ) ! Out
 
-    if ( corr_xy /= 0. ) then
+    if ( corr_xy /= 0._core_rknd ) then
       call construct_LN_LN_element &
            ( corr_xy, xp2_on_xm2_array(index1), xp2_on_xm2_array(index2), & ! In
              covar_xy ) ! Out
     else
-      covar_xy = 0.
+      covar_xy = 0._core_rknd
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, index1, index2, dble( covar_xy ), & ! In
+         ( d_variables, index1, index2, real(covar_xy, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
     return
@@ -2107,11 +2133,12 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
     use matrix_operations, only: &
-      get_lower_triangular_matrix_sp, & ! Procedure(s)
+      get_lower_triangular_matrix, & ! Procedure(s)
       set_lower_triangular_matrix_dp
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
 
@@ -2123,10 +2150,10 @@ module generate_lh_sample_module
       iiLH_w, &        ! Index of w (vertical velocity)
       index1           ! Index of the lognormal variate
 
-    real, dimension(d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
       xp2_on_xm2_array ! x'^2 / xm^2 array      [-]
 
-    real, dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
       corr_array ! Array of correlations        [-]
 
     ! Input/Output Variables
@@ -2134,7 +2161,7 @@ module generate_lh_sample_module
       corr_stw_matrix ! Correlation matrix      [-]
 
     ! Local Variables
-    real :: &
+    real( kind = core_rknd ) :: &
       corr_sx, &  ! Correlation between s and a lognormal variate
       corr_wx, &  ! Correlation between w and a lognormal variate
       covar_sx, & ! Lognormal covariance of s_mellor and x
@@ -2147,54 +2174,54 @@ module generate_lh_sample_module
 
     ! Correlations involving s and lognormal variate x
 
-    call get_lower_triangular_matrix_sp &
+    call get_lower_triangular_matrix &
          ( d_variables, iiLH_s_mellor, index1, corr_array, & ! In
            corr_sx ) ! Out
 
-    if ( corr_sx /= 0. ) then
+    if ( corr_sx /= 0._core_rknd ) then
       ! Covariance between s and lognormal variate x
       ! The variable x could be rrain, Nr, Nc, et cetera.
       call construct_gaus_LN_element &
-           ( corr_sx, 1.0, xp2_on_xm2_array(index1), & ! In
+           ( corr_sx, 1.0_core_rknd, xp2_on_xm2_array(index1), & ! In
              covar_sx ) ! Out
     else
-      covar_sx = 0.
+      covar_sx = 0._core_rknd
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiLH_s_mellor, index1, dble( covar_sx ), & ! In
+         ( d_variables, iiLH_s_mellor, index1, real(covar_sx, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
     if ( corr_sx /= 0 ) then
       ! Approximate the covariance of t and x
       ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
-      covar_tx = ( corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) * dble( covar_sx ) )
+      covar_tx = ( corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) * covar_sx )
     else
-      covar_tx = 0.
+      covar_tx = 0._core_rknd
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiLH_t_mellor, index1, covar_tx, & ! In
+         ( d_variables, iiLH_t_mellor, index1, real(covar_tx, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
     ! Correlations involving w and lognormal variate x
 
-    call get_lower_triangular_matrix_sp &
+    call get_lower_triangular_matrix &
          ( d_variables, iiLH_w, index1, corr_array, & ! In
            corr_wx ) ! Out
 
-    if ( corr_wx /= 0. ) then
+    if ( corr_wx /= 0._core_rknd ) then
       ! Covariance between w and lognormal variate x
       ! The variable x could be rrain, Nr, Nc, et cetera.
       call construct_gaus_LN_element &
-           ( corr_wx, 1.0, xp2_on_xm2_array(index1), & ! In
+           ( corr_wx, 1.0_core_rknd, xp2_on_xm2_array(index1), & ! In
              covar_wx ) ! Out
     else
-      covar_wx = 0.
+      covar_wx = 0._core_rknd
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiLH_w, index1, dble( covar_wx ), & ! In
+         ( d_variables, iiLH_w, index1, real(covar_wx, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
     return
@@ -2211,7 +2238,8 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      dp ! double precision
+      core_rknd, & ! variable(s)
+      dp
 
     implicit none
 
@@ -2222,10 +2250,10 @@ module generate_lh_sample_module
     real( kind = dp ), intent(in) :: &
       Xm ! Mean X  [kg/kg or #/kg]
 
-    real, dimension(d_variables), intent(in) :: & 
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: & 
       xp2_on_xm2 ! X'^2 / Xm^2 array [-]
 
-    real, dimension(d_variables), intent(inout) :: &
+    real( kind = core_rknd ), dimension(d_variables), intent(inout) :: &
       mu1, mu2 ! Mu 1 and 2     [-]
 
     real( kind = dp ) :: &
@@ -2234,13 +2262,13 @@ module generate_lh_sample_module
 
     ! ---- Begin Code ----
 
-    xp2_on_xm2_element = dble( xp2_on_xm2(index1) )
+    xp2_on_xm2_element = real(xp2_on_xm2(index1), kind = dp)
 
     call log_sqd_normalized( Xm, xp2_on_xm2_element, & ! In
                              X1, X2 ) ! Out
 
-    mu1(index1) = real( X1 )
-    mu2(index1) = real( X2 )
+    mu1(index1) = real(X1, kind = core_rknd)
+    mu2(index1) = real(X2, kind = core_rknd)
 
     return
   end subroutine add_mu_element_LN
@@ -2254,23 +2282,26 @@ module generate_lh_sample_module
 
   !-----------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: sqrt, exp, log
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       corr_xy,      & ! Correlation of x and y    [-]
       sigma_x_gaus, & ! Normalized std dev of first term 'x' [-]
       sigma_y_gaus    ! Normalized std dev second term 'y'   [-]
 
-    real :: covar_xy_gaus ! Covariance for a gaussian dist. [-]
+    real( kind = core_rknd ) :: covar_xy_gaus ! Covariance for a gaussian dist. [-]
 
     ! ---- Begin Code ----
 
-    covar_xy_gaus = log( 1.0 + corr_xy * sqrt( exp( sigma_x_gaus**2 ) - 1.0 ) &
-                                     * sqrt( exp( sigma_y_gaus**2 ) - 1.0 ) &
+    covar_xy_gaus = log( 1.0_core_rknd + corr_xy * sqrt( exp( sigma_x_gaus**2 ) - 1.0_core_rknd ) &
+                                     * sqrt( exp( sigma_y_gaus**2 ) - 1.0_core_rknd ) &
                      )
 
     return
@@ -2285,22 +2316,25 @@ module generate_lh_sample_module
 
   !-----------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: sqrt, exp
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       corr_sy,     & ! Correlation of s and y    [-]
       sigma_s,     & ! Normalized std dev of first term (usually Gaussian 's') [units vary]
       sigma_y_gaus   ! Normalized std dev second term 'y'   [-]
 
-    real :: covar_sy_gaus ! Covariance for a gaussian dist. [units vary]
+    real( kind = core_rknd ) :: covar_sy_gaus ! Covariance for a gaussian dist. [units vary]
 
     ! ---- Begin Code ----
 
-    covar_sy_gaus = corr_sy * sigma_s * sqrt( exp( sigma_y_gaus**2 ) - 1.0 )
+    covar_sy_gaus = corr_sy * sigma_s * sqrt( exp( sigma_y_gaus**2 ) - 1.0_core_rknd )
 
     return
   end function corr_gaus_LN_to_covar_gaus
@@ -2315,21 +2349,24 @@ module generate_lh_sample_module
   ! 
   !-----------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: log
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu, &         ! Mean term 'x'                     [-]
       sigma2_on_mu2 ! Variance of 'x' over mean 'x'^2   [-]
 
-    real :: mu_gaus ! Mean field converted to gaussian  [-]
+    real( kind = core_rknd ) :: mu_gaus ! Mean field converted to gaussian  [-]
 
     ! ---- Begin Code ----
 
-    mu_gaus = log( mu / sqrt( 1.0 + ( sigma2_on_mu2 ) ) )
+    mu_gaus = log( mu / sqrt( 1.0_core_rknd + ( sigma2_on_mu2 ) ) )
 
     return
   end function mu_LN_to_mu_gaus
@@ -2343,20 +2380,23 @@ module generate_lh_sample_module
   ! 
   !-----------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: sqrt, log
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       sigma2_on_mu2 ! Variance of 'x' over mean 'x'^2   [-]
 
-    real :: sigma_gaus ! Sigma converted to gaussian dist. [-]
+    real( kind = core_rknd ) :: sigma_gaus ! Sigma converted to gaussian dist. [-]
 
     ! ---- Begin Code ----
 
-    sigma_gaus = sqrt( log( 1.0 + ( sigma2_on_mu2 ) ) )
+    sigma_gaus = sqrt( log( 1.0_core_rknd + ( sigma2_on_mu2 ) ) )
 
     return
   end function sigma_LN_to_sigma_gaus

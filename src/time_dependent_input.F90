@@ -10,6 +10,9 @@ module time_dependent_input
     two_dim_read_var, &
     one_dim_read_var
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   public :: initialize_t_dependent_input, finalize_t_dependent_input, time_select, &
@@ -23,7 +26,8 @@ module time_dependent_input
 
   integer, parameter :: nCols = 10 ! Number of columns in the input file
 
-  real, public, target, allocatable, dimension(:) :: & ! Module variables used to describe 
+  ! Module variables used to describe 
+  real( kind = core_rknd ), public, target, allocatable, dimension(:) :: &
     time_sfc_given, &                                  ! the surface over time.
     latent_ht_given, &
     sens_ht_given, &
@@ -83,6 +87,9 @@ module time_dependent_input
     !
     !---------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variable(s)
@@ -92,9 +99,9 @@ module time_dependent_input
 
     integer, intent(in) :: grid_size ! Size of the model grid
 
-    real, dimension(grid_size), intent(in) :: grid ! Model grid
+    real( kind = core_rknd ), dimension(grid_size), intent(in) :: grid ! Model grid
 
-    real, dimension(grid_size), intent(in) :: p_in_Pa ! Pressure[Pa]
+    real( kind = core_rknd ), dimension(grid_size), intent(in) :: p_in_Pa ! Pressure[Pa]
 
     ! ----------------- Begin Code --------------------
 
@@ -283,6 +290,9 @@ module time_dependent_input
       z_name, &
       pressure_name
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -295,9 +305,9 @@ module time_dependent_input
 
     integer, intent(in) :: grid_size  ! Size of Model Grid [-]
 
-    real, intent(in), dimension(grid_size) :: grid ! Altitudes of Grid [m]
+    real( kind = core_rknd ), intent(in), dimension(grid_size) :: grid ! Altitudes of Grid [m]
 
-    real, intent(in), dimension(grid_size) :: p_in_Pa ! Pressure [Pa]
+    real( kind = core_rknd ), intent(in), dimension(grid_size) :: p_in_Pa ! Pressure [Pa]
 
     ! Local Variables
 
@@ -422,6 +432,9 @@ module time_dependent_input
 
     use interpolation, only: zlinterp_fnc
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     integer, intent(in) :: &
@@ -430,7 +443,7 @@ module time_dependent_input
       other_dim_size, &
       grid_size
 
-    real, dimension(grid_size), intent(in) :: &
+    real( kind = core_rknd ), dimension(grid_size), intent(in) :: &
       grid
 
     type(two_dim_read_var), dimension(ntwo_dim_vars), intent(in) :: &
@@ -439,9 +452,9 @@ module time_dependent_input
     character(len=*), intent(in) :: &
       target_name
 
-    real, dimension(dim_size, other_dim_size) :: temp_var
+    real( kind = core_rknd ), dimension(dim_size, other_dim_size) :: temp_var
 
-    real, dimension(grid_size, other_dim_size) :: var
+    real( kind = core_rknd ), dimension(grid_size, other_dim_size) :: var
 
     integer i
 
@@ -502,7 +515,7 @@ module time_dependent_input
 
     use grid_class, only : zt2zm ! Procedure(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -517,14 +530,14 @@ module time_dependent_input
 
     integer, intent(in) :: grid_size ! Size of the model grid
 
-    real, dimension(grid_size), intent(in) :: &
+    real( kind = core_rknd ), dimension(grid_size), intent(in) :: &
       exner,   & ! Exner Function                             [-]
       rho,     & ! Air Density                                [kg/m^3]
       rtm        ! Total Water Mixing Ratio                   [kg/kg]
 
     ! Output Variable(s)
 
-    real, dimension(grid_size), intent(inout) :: &
+    real( kind = core_rknd ), dimension(grid_size), intent(inout) :: &
       thlm_f, & ! Potential Temperature forcing     [K/s]
       rtm_f,  & ! Total Water Mixing Ration forcing [kg/kg/s]
       um_ref, & ! um reference                      [m/s]
@@ -536,27 +549,27 @@ module time_dependent_input
       ug,     & ! u geostrophic wind                [m/s]
       vg        ! v geostrophic wind                [m/s]
 
-    real, dimension(grid_size, sclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(grid_size, sclr_dim), intent(inout) :: &
       sclrm_forcing ! Scalar forcing [-]
 
-    real, dimension(grid_size, edsclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(grid_size, edsclr_dim), intent(inout) :: &
       edsclrm_forcing ! Edscalar forcing [-]
 
     ! Local Variable(s)
     integer :: i, j, before_time, after_time
 
-    real, dimension(grid_size) :: temp_array
+    real( kind = core_rknd ), dimension(grid_size) :: temp_array
 
-    real time_frac
+    real( kind = core_rknd ) :: time_frac
 
     ! ----------------- Begin Code --------------------
 
-    time_frac = -1.0 ! Default initialization
+    time_frac = -1.0_core_rknd ! Default initialization
 
     call time_select( time, size(dimension_var%values), dimension_var%values, &
                                  before_time, after_time, time_frac )
 
-    if( time_frac == -1.0 ) then
+    if( time_frac == -1.0_core_rknd ) then
       call clubb_debug(1,"times are not sorted in forcing")
     endif
 
@@ -571,7 +584,7 @@ module time_dependent_input
       ! Check to see if temp_array is an actual profile or a dummy profile
       ! If it is a dummy profile we dont want it to apply itself as it may
       ! overwrite legitimate information from another source.
-      if( .not. any( temp_array == -999.9 ) ) then
+      if( .not. any( temp_array == -999.9_core_rknd ) ) then
         select case (t_dependent_forcing_data(i)%name)
         case(temperature_f_name, theta_f_name, thetal_f_name)
 
@@ -598,7 +611,7 @@ module time_dependent_input
           select case(t_dependent_forcing_data(i)%name)
           case(sp_humidity_f_name)
 
-            rtm_f = temp_array * ( 1. + rtm )**2
+            rtm_f = temp_array * ( 1._core_rknd + rtm )**2
 
           case(rt_f_name )
 
@@ -638,19 +651,19 @@ module time_dependent_input
             do j=2,grid_size
               wm_zt(j) = - temp_array(j) / (grav * rho(j))
             end do
-            wm_zt(1) = 0.0
+            wm_zt(1) = 0.0_core_rknd
 
           case(omega_mb_hr_name)
 
             do j=2,grid_size
 
-              temp_array(j) = temp_array(j) * pascal_per_mb / real( sec_per_hr )
+              temp_array(j) = temp_array(j) * pascal_per_mb / real( sec_per_hr, kind = core_rknd )
 
               wm_zt(j) = - temp_array(j) / (grav * rho(j))
 
             end do
 
-            wm_zt(1) = 0.0
+            wm_zt(1) = 0.0_core_rknd
 
           end select
 
@@ -694,7 +707,7 @@ module time_dependent_input
     !   None
     !---------------------------------------------------------------------------------
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use constants_clubb, only: fstderr ! Constant(s)
 
@@ -709,7 +722,7 @@ module time_dependent_input
 
     real(kind=time_precision), intent(in) :: time   ! Target time              [s]
 
-    real, dimension(nvar), intent(in) :: time_array ! Array of times           [s]
+    real( kind = core_rknd ), dimension(nvar), intent(in) :: time_array ! Array of times [s]
 
     ! Output Variable(s)
 
@@ -717,7 +730,7 @@ module time_dependent_input
       after_time, &  ! Index of a time later than the target time [-]
       before_time      ! Index of time before the target time       [-]
 
-    real, intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       time_frac      ! The fraction representing the point where time
                      ! is located between after_time and before_time [-]
 
@@ -733,7 +746,7 @@ module time_dependent_input
 
     ! convert time to a real so it has the same precision as the values
     ! in time_array   
-    if( real( time ) < time_array(1) ) then
+    if( real( time, kind = core_rknd ) < time_array(1) ) then
       
       ! If time is less than the lowest value in time_array, an invalid
       ! time has been provided. Stop execution.
@@ -741,12 +754,12 @@ module time_dependent_input
       write(fstderr,*) "Time is before the first time in the list. Stopping"
       stop
 
-    else if ( real( time ) == time_array(1) ) then
+    else if ( real( time, kind = core_rknd ) == time_array(1) ) then
 
       before_time = 1
       after_time = 2
 
-    else if ( real( time ) > time_array(nvar) ) then
+    else if ( real( time, kind = core_rknd ) > time_array(nvar) ) then
 
       ! If time is greater than the highest value in time_array, an invalid
       ! time has been provided. Stop execution.
@@ -754,7 +767,7 @@ module time_dependent_input
       write(fstderr,*) "Time is after the last time in the list. Stopping"
       stop
       
-    else if ( real( time ) == time_array(nvar) ) then
+    else if ( real( time, kind = core_rknd ) == time_array(nvar) ) then
       
       before_time = nvar - 1
       after_time = nvar
@@ -763,8 +776,8 @@ module time_dependent_input
 
       do k=1,nvar-1
 
-        if ( (real( time ) > time_array(k)) .and. &
-             (real( time ) <= time_array(k+1)) ) then
+        if ( (real( time, kind = core_rknd ) > time_array(k)) .and. &
+             (real( time, kind = core_rknd ) <= time_array(k+1)) ) then
 
           before_time = k
           after_time = k+1
@@ -777,8 +790,8 @@ module time_dependent_input
 
     ! Compute the position of time between before_time and after_time
     ! as a fraction.
-    time_frac = real( ( real( time ) - time_array(before_time) ) / &
-                ( time_array(after_time) - time_array(before_time) ) )
+    time_frac = real( ( real( time, kind = core_rknd ) - time_array(before_time) ) / &
+                ( time_array(after_time) - time_array(before_time) ), kind = core_rknd )
 
     return
 

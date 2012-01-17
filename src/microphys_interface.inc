@@ -11,7 +11,9 @@ interface
 
     use parameters_model, only: hydromet_dim
 
-    real, intent(in) :: dt ! Model timestep        [s]
+    use clubb_precision, only: core_rknd, time_precision
+
+    real( kind = time_precision ), intent(in) :: dt ! Model timestep        [s]
 
     integer, intent(in) :: nnzp ! Points in the Vertical        [-]
 
@@ -20,7 +22,7 @@ interface
       l_local_kk,       & ! Whether we're using the local formulas
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
-    real, dimension(nnzp), intent(in) :: &
+    real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
@@ -29,24 +31,24 @@ interface
     type(pdf_parameter), target, dimension(nnzp), intent(in) :: &
       pdf_params ! PDF parameters
 
-    real, dimension(nnzp), intent(in) :: &
+    real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
       wm, &        ! Mean w                     [m/s]
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in height       [m]
 
-    real, dimension(nnzp), intent(in) :: &
+    real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
       rcm,      & ! Liquid water mixing ratio        [kg/kg]
       s_mellor, & ! The variable 's' from Mellor     [kg/kg]
       rvm         ! Vapor water mixing ratio         [kg/kg]
 
-    real, dimension(nnzp,hydromet_dim), target, intent(in) :: &
+    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(nnzp,hydromet_dim), target, intent(inout) :: &
+    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(inout) :: &
       hydromet_mc, & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel   ! Hydrometeor sedimentation velocity [m/s]
 
-    real, dimension(nnzp), intent(out) :: &
+    real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]

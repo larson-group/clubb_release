@@ -33,7 +33,7 @@ module twp_ice
 
     use saturation, only: sat_mixrat_liq ! Procedure(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc
     
@@ -47,18 +47,18 @@ module twp_ice
     intrinsic :: max, sqrt
 
     ! Constants
-    real, parameter :: & 
-      C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
-      C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
-      z0      = 0.00015      ! Roughness length, defined by ATEX specification
+    real( kind = core_rknd ), parameter :: & 
+      C_h_20  = 0.001094_core_rknd,  & ! Drag coefficient, defined by RICO 3D specification
+      C_q_20  = 0.001133_core_rknd,  & ! Drag coefficient, defined by RICO 3D specification
+      z0      = 0.00015_core_rknd      ! Roughness length, defined by ATEX specification
 
-    real, parameter :: &
-      standard_flux_alt = 20. ! default height at which the surface flux is computed [m]
+    real( kind = core_rknd ), parameter :: &
+      standard_flux_alt = 20._core_rknd ! default height at which the surface flux is computed [m]
 
     real(time_precision), intent(in) :: &
       time  ! current time [s]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       z,             & ! Height at zt=2      [s] 
       exner_sfc,     & ! Exner function at (2) 
       ubar,          & ! This is root (u^2 + v^2), per ATEX and RICO spec.
@@ -67,14 +67,14 @@ module twp_ice
       p_sfc             ! surface pressure    [Pa]
 
     ! Output variables
-    real, intent(out) ::  & 
+    real( kind = core_rknd ), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar,        & ! surface friction velocity [m/s]
       T_sfc           ! Sea surface temp    [K]
 
     ! Internal variables
-    real :: & 
+    real( kind = core_rknd ) :: & 
       Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
       Cq,   & ! This is C_q_20 scaled to the height of the lowest model level.
       time_frac ! time fraction used for interpolation
@@ -93,7 +93,7 @@ module twp_ice
                                        T_sfc_given(before_time) )
 
     ! Declare the value of ustar.
-    ustar = 0.3
+    ustar = 0.3_core_rknd
 
     ! Modification in case lowest model level isn't at 10 m, from ATEX specification
     !Cm   = C_m_20 * ((log(20/z0))/(log(z/z0))) * &

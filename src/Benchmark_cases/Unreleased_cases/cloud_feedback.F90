@@ -35,7 +35,7 @@ module cloud_feedback
 
   use saturation, only: sat_mixrat_liq ! Variable(s)
 
-  use clubb_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
   use surface_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc
 
@@ -56,7 +56,7 @@ module cloud_feedback
   real(time_precision), intent(in) :: &
     time ! The current time [s]
 
-  real, intent(in) ::  & 
+  real( kind = core_rknd ), intent(in) ::  & 
     thlm_sfc,  & ! thlm at (2)         [m/s]
     rtm_sfc,   & ! rtm at (2)          [kg/kg]
     p_sfc,      & ! Surface pressure    [Pa]
@@ -64,22 +64,22 @@ module cloud_feedback
     lowest_level ! This is z at the lowest above-ground model level.  [m]
 
   ! Output variables
-  real, intent(out) ::  & 
+  real( kind = core_rknd ), intent(out) ::  & 
     T_sfc,      & ! Temperature         [K]
     wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
     wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
     ustar           ! surface friction velocity [m/s]
 
   ! Constants
-  real, parameter :: & 
-  !  rho_sfc_flux = 1.0, &
-  !  C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
-    C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
-    C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
-    z0      = 0.00015      ! Roughness length, defined by ATEX specification
+  real( kind = core_rknd ), parameter :: & 
+  !  rho_sfc_flux = 1._core_rknd0, &
+  !  C_10    = 0._core_rknd0013,    & ! Drag coefficient, defined by ATEX specification
+    C_h_20  = 0.001094_core_rknd,  & ! Drag coefficient, defined by RICO 3D specification
+    C_q_20  = 0.001133_core_rknd,  & ! Drag coefficient, defined by RICO 3D specification
+    z0      = 0.00015_core_rknd      ! Roughness length, defined by ATEX specification
 
   ! Internal variables
-  real :: &
+  real( kind = core_rknd ) :: &
     Ch,   &                ! This is C_h_20 scaled to the height of the lowest model level.
     Cq,   &                ! This is C_q_20 scaled to the height of the lowest model level.
     exner_sfc, & ! Value of exner at the surface [-]
@@ -88,8 +88,8 @@ module cloud_feedback
   integer :: &
     before_time, after_time ! The times used for interpolation
 
-  real, parameter :: &
-    standard_flux_alt = 20. ! default height at which the surface flux is computed [m]
+  real( kind = core_rknd ), parameter :: &
+    standard_flux_alt = 20._core_rknd ! default height at which the surface flux is computed [m]
  
   !--------------BEGIN CODE---------------------
 
@@ -103,12 +103,12 @@ module cloud_feedback
   exner_sfc = ( p_sfc / p0 )**kappa
 
   ! Just set ustar = 0.3
-  ustar = 0.3
+  ustar = 0.3_core_rknd
 
   ! Get rid of a compiler warning
-  if ( runtype == "anything" .or. thlm_sfc == 1. .or. rtm_sfc == 1. .or. &
-       exner_sfc == 1. .or. p_sfc == 1. .or. T_sfc == 1. ) then
-    ustar = 0.3
+  if ( runtype == "anything" .or. thlm_sfc == 1._core_rknd .or. rtm_sfc == 1._core_rknd .or. &
+       exner_sfc == 1._core_rknd .or. p_sfc == 1._core_rknd .or. T_sfc == 1._core_rknd ) then
+    ustar = 0.3_core_rknd
   end if
 
   !--------------------------------------------------------------------------------
@@ -116,14 +116,14 @@ module cloud_feedback
   ! wprtp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Lv )
   ! wpthlp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Cp )
 
-  !lhflx(1) = 0.001 * ubar * rho_sfc_flux * Lv * ( sat_mixrat_liq( p_sfc, T_sfc ) - & 
-  !                                                sat_mixrat_liq( p_sfc, T_in_K ) * 0.8 )
-  !shflx(1) = 0.001 * ubar * rho_sfc_flux * Cp * ( T_sfc - T_in_K )
+  !lhflx(1) = 0.001_core_rknd * ubar * rho_sfc_flux * Lv * ( sat_mixrat_liq( p_sfc, T_sfc ) - & 
+  !                                                sat_mixrat_liq( p_sfc, T_in_K ) * 0.8_core_rknd )
+  !shflx(1) = 0.001_core_rknd * ubar * rho_sfc_flux * Cp * ( T_sfc - T_in_K )
 
   ! If this is the S6 case, fudge the values of the fluxes using values from the forcings
   !if ( runtype == "cloud_feedback_s6" .or. runtype == "cloud_feedback_s6_p2k" ) then
-  !    wprtp_sfc = lhflx(1) / ( 1.0 * Lv )
-  !    wpthlp_sfc = shflx(1) / ( 1.0 * Cp )
+  !    wprtp_sfc = lhflx(1) / ( 1.0_core_rknd * Lv )
+  !    wpthlp_sfc = shflx(1) / ( 1.0_core_rknd * Cp )
   !else
   !    wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
   !    wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, & 

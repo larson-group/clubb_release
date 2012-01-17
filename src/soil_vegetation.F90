@@ -1,11 +1,14 @@
 !$Id$
 module soil_vegetation
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   public :: advance_soil_veg
 
-  real, public :: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
+  real( kind = core_rknd ), public :: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
   logical, public :: l_soil_veg
 
@@ -65,7 +68,7 @@ module soil_vegetation
     !
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use stats_variables, only: l_stats_samp, sfc, &
                                 iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K ! Variables
@@ -85,9 +88,9 @@ module soil_vegetation
 
     ! Input variables
 
-    real, intent(in) :: dt ! Current model timestep (Must be < 60s) [s]
+    real( kind = core_rknd ), intent(in) :: dt ! Current model timestep (Must be < 60s) [s]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
     rho_sfc, &             ! Air density at the surface [kg/m^3]
     Frad_SW_net, &         ! SW Net                     [W/m^3]
     Frad_SW_down_sfc, &    ! SW downwelling flux        [W/m^3]
@@ -95,10 +98,11 @@ module soil_vegetation
     wpthep                 ! Turbulent Flux of equivalent potential temperature   [K]
 
 
-    real, intent(out) :: soil_heat_flux ! Soil Heat flux [W/m^2]
+    real( kind = core_rknd ), intent(out) :: soil_heat_flux ! Soil Heat flux [W/m^2]
     ! Local variables
 
-    real cs, &  ! soil heat capacity              [Jg/K]
+    real( kind = core_rknd ) :: &
+         cs, &  ! soil heat capacity              [Jg/K]
          ks, &  ! soil heat diffusivity           [m^2/s]
          rs, &  ! soil density                    [g/m^3]
          c1, &  ! coefficient in force restore 1
@@ -112,14 +116,15 @@ module soil_vegetation
     !  Soil parameters
     !---------------------------
 
-    cs=2.00e3  ! cs
-    rs=1.00e3  ! ps 
-    ks=2.00e-7 ! as
-    d1=sqrt(ks*3600.e0*24.e0) ! Known magic number
-    c1=2.e0*sqrt(pi)/(rs*cs*d1) 
-    c2=2.e0*pi/(3600.e0*24.e0) ! Omega - known magic number
-    c3=sqrt(pi*2.e0)/(exp(pi/4.e0)*rs*cs*sqrt(ks*3600.e0*24.e0* &
-                     365.e0)) ! Known magic number
+    cs=2.00e3_core_rknd  ! cs
+    rs=1.00e3_core_rknd  ! ps 
+    ks=2.00e-7_core_rknd ! as
+    d1=sqrt(ks*3600.e0_core_rknd*24.e0_core_rknd) ! Known magic number
+    c1=2.e0_core_rknd*sqrt(pi)/(rs*cs*d1) 
+    c2=2.e0_core_rknd*pi/(3600.e0_core_rknd*24.e0_core_rknd) ! Omega - known magic number
+    c3=sqrt(pi*2.e0_core_rknd)/(exp(pi/4.e0_core_rknd)*rs*cs* &
+                     sqrt(ks*3600.e0_core_rknd*24.e0_core_rknd* &
+                     365.e0_core_rknd)) ! Known magic number
 
     if( l_stats_samp ) then
       call stat_update_var_pt( iveg_T_in_K, 1, veg_T_in_K, sfc )
@@ -137,11 +142,12 @@ module soil_vegetation
     !
     ! Equation 19 p.328
     
-    soil_heat_flux = 10.0 * ( veg_T_in_K - sfc_soil_T_in_K ) &
-                     + 0.05 * Frad_SW_down_sfc ! Known magic number
+    soil_heat_flux = 10.0_core_rknd * ( veg_T_in_K - sfc_soil_T_in_K ) &
+                     + 0.05_core_rknd * Frad_SW_down_sfc ! Known magic number
 
     ! Update surf veg temp
-    veg_T_in_K = veg_T_in_K + dt * 5.e-5 * ( veg_heat_flux - soil_heat_flux ) ! Known magic number
+    veg_T_in_K = veg_T_in_K + dt * 5.e-5_core_rknd * &
+         ( veg_heat_flux - soil_heat_flux ) ! Known magic number
 
     ! Update soil temp
     sfc_soil_T_in_K = sfc_soil_T_in_K & 

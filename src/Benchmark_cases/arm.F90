@@ -35,7 +35,7 @@ module arm
 
   use constants_clubb, only: grav ! Variable(s)
 
-  use clubb_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
   use diag_ustar_module, only: diag_ustar ! Variable(s)
 
@@ -48,8 +48,8 @@ module arm
   intrinsic :: max, sqrt
 
   ! Constants
-  real, parameter ::  & 
-    z0 = 0.035  ! ARM Cu momentum roughness height
+  real( kind = core_rknd ), parameter ::  & 
+    z0 = 0.035_core_rknd  ! ARM Cu momentum roughness height
   integer, parameter :: &
     ntimes = 7
 
@@ -57,20 +57,20 @@ module arm
   real(kind=time_precision), intent(in) ::  & 
     time            ! Current time          [s]
 
-  real, intent(in) ::  & 
+  real( kind = core_rknd ), intent(in) ::  & 
     z,               & ! Height at zt(2)       [m]
     rho_sfc,             & ! Density at zm(1)      [kg/m^3]
     thlm_sfc,        & ! Theta_l at zt(2)      [K]
     ubar
 
   ! Output variables
- real, intent(out) ::  & 
+ real( kind = core_rknd ), intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
     ustar          ! surface friction velocity [m/s]
 
   ! Local variables
-  real ::  & 
+  real( kind = core_rknd ) ::  & 
     heat_flx, moisture_flx, & 
     heat_flx2, moisture_flx2, & 
     bflx

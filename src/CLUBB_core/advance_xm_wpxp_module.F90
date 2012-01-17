@@ -112,7 +112,8 @@ module advance_xm_wpxp_module
         pdf_parameter  ! Type
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use error_code, only:  & 
       clubb_at_least_debug_level, & ! Procedure(s)
@@ -156,7 +157,7 @@ module advance_xm_wpxp_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
 
-    real, intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       sigma_sqd_w,     & ! sigma_sqd_w on momentum levels           [-]
       wm_zm,           & ! w wind component on momentum levels      [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
@@ -192,12 +193,12 @@ module advance_xm_wpxp_module
 
     ! Additional variables for passive scalars
     ! Input Variables
-    real, intent(in), dimension(gr%nz,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) ::  & 
       sclrpthvp, sclrm_forcing,  & !                           [Units vary]
       sclrp2                       ! For clipping Vince Larson [Units vary]
 
     ! Input/Output Variables
-    real, intent(inout), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
       rtm,       & ! r_t  (total water mixing ratio)           [kg/kg]
       wprtp,     & ! w'r_t'                                    [(kg/kg) m/s]
       thlm,      & ! th_l (liquid water potential temperature) [K]
@@ -206,20 +207,20 @@ module advance_xm_wpxp_module
     integer, intent(inout) :: err_code ! Error code for the model's status
 
     ! Input/Output Variables
-    real, intent(inout), dimension(gr%nz,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) ::  & 
       sclrm, wpsclrp !                                     [Units vary]
 
     ! Local variables
-    real, dimension(nsup+nsub+1,2*gr%nz) :: & 
+    real( kind = core_rknd ), dimension(nsup+nsub+1,2*gr%nz) :: & 
       lhs  ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
-    real, dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
       C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
 
     ! Eddy Diffusion for wpthlp and wprtp.
-    real, dimension(gr%nz) :: Kw6   ! wpxp eddy diff. [m^2/s]
+    real( kind = core_rknd ), dimension(gr%nz) :: Kw6   ! wpxp eddy diff. [m^2/s]
 
-    real, dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
       a1,     & ! a_1 (momentum levels); See eqn. 24 in `Equations for CLUBB' [-]
       a1_zt     ! a_1 interpolated to thermodynamic levels                    [-]
 
@@ -235,13 +236,13 @@ module advance_xm_wpxp_module
     ! of w with x, such that:
     ! corr_(w,x) = w'x' / [ sqrt(w'^2) * sqrt(x'^2) ];
     ! -1 <= corr_(w,x) <= 1.
-    real, dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
       wpxp_upper_lim, & ! Keeps correlations from becoming greater than 1.
       wpxp_lower_lim    ! Keeps correlations from becoming less than -1.
 
-    real, dimension(gr%nz) :: dummy_1d ! Unreferenced array
+    real( kind = core_rknd ), dimension(gr%nz) :: dummy_1d ! Unreferenced array
 
-    real, allocatable, dimension(:,:) :: & 
+    real( kind = core_rknd ), allocatable, dimension(:,:) :: & 
       rhs,     &! Right-hand sides of band diag. matrix. (LAPACK)
       solution  ! solution vectors of band diag. matrix. (LAPACK)
 
@@ -251,7 +252,7 @@ module advance_xm_wpxp_module
       nrhs, &          ! Number of RHS vectors
       err_code_xm_wpxp ! Error code
 
-    real :: rcond
+    real( kind = core_rknd ) :: rcond
 
     ! Indices
     integer :: i
@@ -273,21 +274,21 @@ module advance_xm_wpxp_module
     ! The if...then is just here to save compute time
     if ( C6rt /= C6rtb ) then
       C6rt_Skw_fnc(1:gr%nz) = C6rtb + (C6rt-C6rtb) & 
-        *EXP( -0.5 * (Skw_zm(1:gr%nz)/C6rtc)**2 )
+        *EXP( -0.5_core_rknd * (Skw_zm(1:gr%nz)/C6rtc)**2 )
     else
       C6rt_Skw_fnc(1:gr%nz) = C6rtb
     endif
 
     if ( C6thl /= C6thlb ) then
       C6thl_Skw_fnc(1:gr%nz) = C6thlb + (C6thl-C6thlb) & 
-        *EXP( -0.5 * (Skw_zm(1:gr%nz)/C6thlc)**2 )
+        *EXP( -0.5_core_rknd * (Skw_zm(1:gr%nz)/C6thlc)**2 )
     else
       C6thl_Skw_fnc(1:gr%nz) = C6thlb
     endif
 
     if ( C7 /= C7b ) then
       C7_Skw_fnc(1:gr%nz) = C7b + (C7-C7b) & 
-        *EXP( -0.5 * (Skw_zm(1:gr%nz)/C7c)**2 )
+        *EXP( -0.5_core_rknd * (Skw_zm(1:gr%nz)/C7c)**2 )
     else
       C7_Skw_fnc(1:gr%nz) = C7b
     endif
@@ -330,7 +331,7 @@ module advance_xm_wpxp_module
     ! Define a_1 (located on momentum levels).
     ! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is
     ! located on momentum levels).
-    a1(1:gr%nz) = 1.0 / ( 1.0 - sigma_sqd_w(1:gr%nz) )
+    a1(1:gr%nz) = 1.0_core_rknd / ( 1.0_core_rknd - sigma_sqd_w(1:gr%nz) )
 
     ! Interpolate a_1 from momentum levels to thermodynamic levels.  This will
     ! be used for the w'x' turbulent advection (ta) term.
@@ -570,7 +571,7 @@ module advance_xm_wpxp_module
 
       ! This is initialized solely for the purpose of avoiding a compiler
       ! warning about uninitialized variables.
-      dummy_1d = 0.
+      dummy_1d = 0._core_rknd
 
       ! Create the lhs once
       call xm_wpxp_lhs( l_iter, dt, dummy_1d, a1, a1_zt, wm_zm, wm_zt, & ! Intent(in)
@@ -783,24 +784,24 @@ module advance_xm_wpxp_module
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( irtm_sdmp, rtm / real( dt ), zt )
+        call stat_begin_update( irtm_sdmp, rtm / real( dt, kind = core_rknd ), zt )
       end if
       rtm(1:gr%nz) = sponge_damp_xm( dt, rtm_ref(1:gr%nz), rtm(1:gr%nz), &
                                        rtm_sponge_damp_profile )
 
       if( l_stats_samp ) then
-        call stat_end_update( irtm_sdmp, rtm / real( dt ), zt )
+        call stat_end_update( irtm_sdmp, rtm / real( dt, kind = core_rknd ), zt )
       end if
     endif
 
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( ithlm_sdmp, thlm / real( dt ), zt )
+        call stat_begin_update( ithlm_sdmp, thlm / real( dt, kind = core_rknd ), zt )
       end if
       thlm(1:gr%nz) = sponge_damp_xm( dt, thlm_ref(1:gr%nz), thlm(1:gr%nz), &
                                         thlm_sponge_damp_profile )
       if( l_stats_samp ) then
-        call stat_end_update( ithlm_sdmp, thlm / real( dt ), zt )
+        call stat_end_update( ithlm_sdmp, thlm / real( dt, kind = core_rknd ), zt )
       end if
     endif
 
@@ -841,7 +842,8 @@ module advance_xm_wpxp_module
         l_upwind_wpxp_ta
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use diffusion, only:  & 
         diffusion_zm_lhs ! Procedure(s)
@@ -931,7 +933,7 @@ module advance_xm_wpxp_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
-    real, intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       wpxp,            & ! w'x' (momentum levels) at timestep (t)    [{xm units} m/s]
       a1,              & ! a_1 (momentum levels)                     [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels  [-]
@@ -955,7 +957,7 @@ module advance_xm_wpxp_module
       l_implemented ! Flag for CLUBB being implemented in a larger model.
 
     ! Output Variable
-    real, intent(out), dimension(nsup+nsub+1,2*gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(nsup+nsub+1,2*gr%nz) ::  & 
       lhs ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
     ! Local Variables
@@ -965,13 +967,13 @@ module advance_xm_wpxp_module
     integer :: k_xm, k_wpxp
     integer :: k_wpxp_low, k_wpxp_high
 
-    real, dimension(3) :: tmp
+    real( kind = core_rknd ), dimension(3) :: tmp
 
     logical :: l_upper_thresh, l_lower_thresh ! flags for clip_semi_imp_lhs
 
 
     ! Initialize the left-hand side matrix to 0.
-    lhs = 0.0
+    lhs = 0.0_core_rknd
 
     ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
     ! level k = 1, which is below the model surface, is simply set equal to the
@@ -1012,7 +1014,7 @@ module advance_xm_wpxp_module
       else
 
         lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) & 
-        = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) + 0.0
+        = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_xm) + 0.0_core_rknd
 
       endif
 
@@ -1024,7 +1026,7 @@ module advance_xm_wpxp_module
 
       ! LHS time tendency.
       lhs(t_k_tdiag,k_xm) & 
-      = lhs(t_k_tdiag,k_xm) + 1.0 / real( dt )
+      = lhs(t_k_tdiag,k_xm) + 1.0_core_rknd / real( dt, kind = core_rknd )
 
       if (l_stats_samp) then
 
@@ -1038,9 +1040,9 @@ module advance_xm_wpxp_module
             ztscr02(k) = - tmp(2)
             ztscr03(k) = - tmp(1)
           else
-            ztscr01(k) = 0.0
-            ztscr02(k) = 0.0
-            ztscr03(k) = 0.0
+            ztscr01(k) = 0.0_core_rknd
+            ztscr02(k) = 0.0_core_rknd
+            ztscr03(k) = 0.0_core_rknd
           endif
         endif
 
@@ -1152,7 +1154,7 @@ module advance_xm_wpxp_module
 
       ! LHS time tendency.
       if ( l_iter ) then
-        lhs(m_k_mdiag,k_wpxp) = lhs(m_k_mdiag,k_wpxp) + 1.0 / real( dt )
+        lhs(m_k_mdiag,k_wpxp) = lhs(m_k_mdiag,k_wpxp) + 1.0_core_rknd / real(dt, kind = core_rknd)
       end if
 
       ! LHS portion of semi-implicit clipping term.
@@ -1219,7 +1221,7 @@ module advance_xm_wpxp_module
         !        C_7 skewness function input to function wpxp_terms_ac_pr2_lhs.
         if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
           zmscr09(k) =  & 
-          - wpxp_terms_ac_pr2_lhs( 0.0, & 
+          - wpxp_terms_ac_pr2_lhs( 0.0_core_rknd, & 
                                    wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k) )
         endif
 
@@ -1237,7 +1239,7 @@ module advance_xm_wpxp_module
         !        C_7 skewness function input to function wpxp_terms_ac_pr2_lhs.
         if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
           zmscr11(k) = & 
-          - wpxp_terms_ac_pr2_lhs( (1.0+C7_Skw_fnc(k)), & 
+          - wpxp_terms_ac_pr2_lhs( (1.0_core_rknd+C7_Skw_fnc(k)), & 
                                    wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k) )
         endif
 
@@ -1330,7 +1332,8 @@ module advance_xm_wpxp_module
         l_upwind_wpxp_ta
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use clip_semi_implicit, only: & 
         clip_semi_imp_rhs ! Procedure(s)
@@ -1369,7 +1372,7 @@ module advance_xm_wpxp_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
-    real, dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       xm,              & ! xm (thermodynamic levels)                 [{xm units}]
       wpxp,            & ! w'x' (momentum levels)                    [{xm units} m/s]
       xm_forcing,      & ! xm forcings (thermodynamic levels)        [{xm units}/s]
@@ -1389,7 +1392,7 @@ module advance_xm_wpxp_module
       wpxp_lower_lim     ! Keeps correlations from becoming < -1.    [units vary]
 
     ! Output Variable
-    real, intent(out), dimension(2*gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(2*gr%nz) ::  & 
       rhs  ! Right-hand side of band diag. matrix. (LAPACK)
 
     ! Local Variables.
@@ -1401,7 +1404,7 @@ module advance_xm_wpxp_module
     ! means that the LHS contribution is given extra weight (>1) in order to
     ! increase numerical stability.  A weighted factor must then be applied to
     ! the RHS in order to balance the weight.
-    real, dimension(3) :: lhs_fnc_output
+    real( kind = core_rknd ), dimension(3) :: lhs_fnc_output
 
     ! Indices
     integer :: k, km1, kp1, k_xm, k_wpxp, k_xm_low, k_wpxp_low, k_wpxp_high
@@ -1445,7 +1448,7 @@ module advance_xm_wpxp_module
 
 
     ! Initialize the right-hand side vector to 0.
-    rhs = 0.0
+    rhs = 0.0_core_rknd
 
     ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
     ! level k = 1, which is below the model surface, is simply set equal to the
@@ -1464,7 +1467,7 @@ module advance_xm_wpxp_module
       ! xm: Right-hand side (explicit xm portion of the code).
 
       ! RHS time tendency.
-      rhs(k_xm) = rhs(k_xm) + xm(k) / real( dt )
+      rhs(k_xm) = rhs(k_xm) + xm(k) / real( dt, kind = core_rknd )
 
       ! RHS xm forcings.
       ! Note: xm forcings include the effects of microphysics,
@@ -1511,7 +1514,7 @@ module advance_xm_wpxp_module
 
       ! RHS time tendency.
       if ( l_iter ) then
-        rhs(k_wpxp) = rhs(k_wpxp) + wpxp(k) / real( dt )
+        rhs(k_wpxp) = rhs(k_wpxp) + wpxp(k) / real( dt, kind = core_rknd )
       end if
 
       ! RHS portion of semi-implicit clipping (sicl) term.
@@ -1561,7 +1564,7 @@ module advance_xm_wpxp_module
 
       rhs(k_wpxp)  &
         = rhs(k_wpxp)  &
-        + ( 1.0 - gamma_over_implicit_ts )  &
+        + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
         * ( - lhs_fnc_output(1) * wpxp(kp1)  &
             - lhs_fnc_output(2) * wpxp(k)  &
             - lhs_fnc_output(3) * wpxp(km1) )
@@ -1574,7 +1577,7 @@ module advance_xm_wpxp_module
       = wpxp_term_pr1_lhs( C6x_Skw_fnc(k), tau_zm(k) )
       rhs(k_wpxp)  &
       = rhs(k_wpxp)  &
-      + ( 1.0 - gamma_over_implicit_ts )  &
+      + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
       * ( - lhs_fnc_output(1) * wpxp(k) )
 
 
@@ -1586,13 +1589,13 @@ module advance_xm_wpxp_module
         ! Note:  To find the contribution of w'x' term bp, substitute 0 for the
         !        C_7 skewness function input to function wpxp_terms_bp_pr3_rhs.
         call stat_update_var_pt( iwpxp_bp, k, & 
-            wpxp_terms_bp_pr3_rhs( 0.0, thv_ds_zm(k), xpthvp(k) ), zm )
+            wpxp_terms_bp_pr3_rhs( 0.0_core_rknd, thv_ds_zm(k), xpthvp(k) ), zm )
 
         ! w'x' term pr3 is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'x' term pr3, add 1 to the
         !        C_7 skewness function input to function wpxp_terms_bp_pr2_rhs.
         call stat_update_var_pt( iwpxp_pr3, k, & 
-            wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)), thv_ds_zm(k), &
+            wpxp_terms_bp_pr3_rhs( (1.0_core_rknd+C7_Skw_fnc(k)), thv_ds_zm(k), &
                                    xpthvp(k) ), &
                                  zm )
 
@@ -1635,7 +1638,7 @@ module advance_xm_wpxp_module
         endif
 
         call stat_begin_update_pt( iwpxp_ta, k, &
-              - ( 1.0 - gamma_over_implicit_ts )  &
+              - ( 1.0_core_rknd - gamma_over_implicit_ts )  &
               * ( - lhs_fnc_output(1) * wpxp(kp1)  &
                   - lhs_fnc_output(2) * wpxp(k)  &
                   - lhs_fnc_output(3) * wpxp(km1) ), zm )
@@ -1652,7 +1655,7 @@ module advance_xm_wpxp_module
         lhs_fnc_output(1)  &
         = wpxp_term_pr1_lhs( C6x_Skw_fnc(k), tau_zm(k) )
         call stat_begin_update_pt( iwpxp_pr1, k, &
-              - ( 1.0 - gamma_over_implicit_ts )  &
+              - ( 1.0_core_rknd - gamma_over_implicit_ts )  &
               * ( - lhs_fnc_output(1) * wpxp(k) ), zm )
 
 
@@ -1695,7 +1698,7 @@ module advance_xm_wpxp_module
 
     ! The value of w'x' at the upper boundary will be 0.
     call set_boundary_conditions_rhs( &
-            wpxp(1), k_wpxp_low, 0.0, k_wpxp_high, &
+            wpxp(1), k_wpxp_low, 0.0_core_rknd, k_wpxp_high, &
             rhs, &
             xm(1), k_xm_low )
 
@@ -1722,6 +1725,9 @@ module advance_xm_wpxp_module
     use error_code, only: &
       clubb_no_error ! Constant
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
@@ -1729,19 +1735,20 @@ module advance_xm_wpxp_module
       nrhs ! Number of rhs vectors
 
     ! Input/Output Variables
-    real, intent(inout), dimension(nsup+nsub+1,2*gr%nz) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(nsup+nsub+1,2*gr%nz) :: & 
       lhs  ! Implicit contributions to wpxp/xm (band diag. matrix in LAPACK storage)
 
-    real, intent(inout), dimension(2*gr%nz,nrhs) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(2*gr%nz,nrhs) ::  & 
       rhs      ! Right-hand side of band diag. matrix. (LAPACK storage)
 
-    real, intent(out), dimension(2*gr%nz,nrhs) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(2*gr%nz,nrhs) ::  & 
       solution ! Solution to band diagonal system (LAPACK storage)
 
     ! Output Variables
     integer, intent(out) :: err_code
 
-    real, optional, intent(out) :: rcond ! Est. of the reciprocal of the condition #
+    real( kind = core_rknd ), optional, intent(out) :: &
+      rcond ! Est. of the reciprocal of the condition #
 
     err_code = clubb_no_error  ! Initialize to the value for no errors
 
@@ -1785,7 +1792,8 @@ module advance_xm_wpxp_module
         l_clip_semi_implicit ! Variable(s)
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use mono_flux_limiter, only: &
         monotonic_turbulent_flux_limit ! Procedure(s)
@@ -1894,7 +1902,7 @@ module advance_xm_wpxp_module
     real(kind=time_precision), intent(in) ::  & 
       dt  ! Timestep   [s]
 
-    real, intent(in), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
       xp2,             & ! x'^2 (momentum levels)                   [{xm units}^2]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
@@ -1904,7 +1912,7 @@ module advance_xm_wpxp_module
       invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs. [m^3/kg]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       xp2_threshold, & ! Minimum allowable value of x'^2   [units vary]
       xm_threshold,  & ! Minimum allowable value of xm     [units vary]
       xm_tol,        & ! Minimum allowable deviation of xm [units vary]
@@ -1921,11 +1929,11 @@ module advance_xm_wpxp_module
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
-    real, intent(in), dimension(2*gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(2*gr%nz) :: &
       solution ! The <t+1> value of xm and wpxp   [units vary]
 
     ! Input/Output Variables
-    real, intent(inout), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
       xm, &     ! The mean x field  [units vary]
       wpxp      ! The flux of x     [units vary m/s]
 
@@ -1940,13 +1948,13 @@ module advance_xm_wpxp_module
     character(len=10) :: &
       solve_type_str ! solve_type as a string for debug output purposes
 
-    real, dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
       xm_n ! Old value of xm for positive definite scheme     [units vary]
 
-    real, dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
       wpxp_pd, xm_pd ! Change in xm and wpxp due to the pos. def. scheme
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       wpxp_chnge, &  ! Net change in w'x' due to clipping       [units vary]
       xp2_relaxed    ! Value of x'^2 * clip_factor               [units vary]
 
@@ -2055,7 +2063,7 @@ module advance_xm_wpxp_module
 
       if ( ixm_matrix_condt_num > 0 ) then
         ! Est. of the condition number of the mean/flux LHS matrix
-        call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0 / rcond, sfc )
+        call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0_core_rknd / rcond, sfc )
       end if
 
 
@@ -2166,15 +2174,15 @@ module advance_xm_wpxp_module
 
     ! Apply a flux limiting positive definite scheme if the solution
     ! for the mean field is negative and we're determining total water
-    if ( solve_type == xm_wpxp_rtm .and. l_pos_def .and. any( xm < 0.0 ) ) then
+    if ( solve_type == xm_wpxp_rtm .and. l_pos_def .and. any( xm < 0.0_core_rknd ) ) then
 
       call pos_definite_adj( dt, "zt", xm, wpxp, & 
                              xm_n, xm_pd, wpxp_pd )
 
     else
       ! For stats purposes
-      xm_pd   = 0.0
-      wpxp_pd = 0.0
+      xm_pd   = 0.0_core_rknd
+      wpxp_pd = 0.0_core_rknd
 
     end if ! l_pos_def and solve_type == "rtm" and rtm <n+1> less than 0
 
@@ -2188,7 +2196,7 @@ module advance_xm_wpxp_module
 
     ! Computed value before clipping
     if ( l_stats_samp ) then
-      call stat_begin_update( ixm_cl, xm / real( dt ), & ! Intent(in)
+      call stat_begin_update( ixm_cl, xm / real( dt, kind = core_rknd ), & ! Intent(in)
                               zt )                       ! Intent(inout)
     end if
 
@@ -2205,7 +2213,7 @@ module advance_xm_wpxp_module
 
       if ( clubb_at_least_debug_level( 1 ) ) then
         do k = 1, gr%nz
-          if ( xm(k) < 0.0 ) then
+          if ( xm(k) < 0.0_core_rknd ) then
             write(fstderr,*) solve_type_str//" < ", xm_threshold, &
               " in advance_xm_wpxp_module at k= ", k
           end if
@@ -2219,7 +2227,7 @@ module advance_xm_wpxp_module
     end if !  any( xm < xm_threshold ) .and. l_hole_fill
 
     if ( l_stats_samp ) then
-      call stat_end_update( ixm_cl, xm / real( dt ), & ! Intent(in) 
+      call stat_end_update( ixm_cl, xm / real( dt, kind = core_rknd ), & ! Intent(in) 
                             zt )                       ! Intent(inout)
     end if
 
@@ -2251,13 +2259,13 @@ module advance_xm_wpxp_module
     ! -dschanen 10 Jan 2011
     if ( l_enable_relaxed_clipping ) then
       if ( solve_type == xm_wpxp_rtm ) then
-        xp2_relaxed = max( 1e-7 , xp2 )
+        xp2_relaxed = max( 1e-7_core_rknd , xp2 )
 
       else if ( solve_type == xm_wpxp_thlm ) then
-        xp2_relaxed = max( 0.01, xp2 )
+        xp2_relaxed = max( 0.01_core_rknd, xp2 )
 
       else ! This includes the passive scalars
-        xp2_relaxed = max( 1e-7 , xp2 )
+        xp2_relaxed = max( 1e-7_core_rknd , xp2 )
 
       end if
 
@@ -2271,7 +2279,7 @@ module advance_xm_wpxp_module
                      wpxp, wpxp_chnge ) ! In/Out
 
     ! Adjusting xm based on clipping for w'x'.
-    if ( any( wpxp_chnge /= 0.0 ) .and. l_clip_turb_adv ) then
+    if ( any( wpxp_chnge /= 0.0_core_rknd ) .and. l_clip_turb_adv ) then
       call xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, gr%invrs_dzt, &
                                   xm )
     endif
@@ -2279,7 +2287,7 @@ module advance_xm_wpxp_module
     if ( l_stats_samp ) then
 
       ! wpxp time tendency
-      call stat_modify( iwpxp_bt, wpxp / real( dt ), zm )
+      call stat_modify( iwpxp_bt, wpxp / real( dt, kind = core_rknd ), zm )
       ! Brian Griffin; July 5, 2008.
 
     endif
@@ -2337,6 +2345,9 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -2345,14 +2356,14 @@ module advance_xm_wpxp_module
       km1_mdiag = 2       ! Momentum subdiagonal index.
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       rho_ds_zm,       & ! Dry, static density at momentum level (k)    [kg/m^3]
       rho_ds_zmm1,     & ! Dry, static density at momentum level (k+1)  [kg/m^3]
       invrs_rho_ds_zt, & ! Inverse dry, static density @ thermo lev (k) [m^3/kg]
       invrs_dzt          ! Inverse of grid spacing (k)                  [1/m]
 
     ! Return Variable
-    real, dimension(2) :: lhs
+    real( kind = core_rknd ), dimension(2) :: lhs
 
     ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
     lhs(k_mdiag) & 
@@ -2441,6 +2452,9 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use grid_class, only: & 
         gr ! Variable; gr%weights_zm2zt
 
@@ -2460,7 +2474,7 @@ module advance_xm_wpxp_module
       m_below = 2       ! Index for lower momentum level grid weight.
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       wp3_on_wp2_ztp1, & ! Smoothed wp3 / wp2 on thermo. levels (k+1)  [m/s]
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels (k)    [m/s]
 !     a1,              & ! a_1 interpolated to thermo. level (k+1)     [-]
@@ -2475,7 +2489,7 @@ module advance_xm_wpxp_module
       level ! Central momentum level (on which calculation occurs).
 
     ! Return Variable
-    real, dimension(3) :: lhs
+    real( kind = core_rknd ), dimension(3) :: lhs
 
     ! Local Variables
     integer :: & 
@@ -2586,6 +2600,9 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -2595,7 +2612,7 @@ module advance_xm_wpxp_module
       km1_mdiag = 3       ! Momentum subdiagonal index.
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       a1_zm,             & ! a_1(k) on momentum levels                     [-] 
       a1_zm_p1,          & ! a_1(k+1) on momentum levels                   [-]
       a1_zm_m1,          & ! a_1(k-1) on momentum levels                   [-]
@@ -2610,10 +2627,10 @@ module advance_xm_wpxp_module
       rho_ds_zmm1          ! Density of air (k-1)                          [kg/m^3]
 
     ! Return Variable
-    real, dimension(3) :: lhs
+    real( kind = core_rknd ), dimension(3) :: lhs
 
-    if ( wp3_on_wp2 > 0. ) then ! "Wind" is blowing upwards (a1_zm > 0 and wp2 > 0 always)
-      lhs(kp1_mdiag) = 0.0
+    if ( wp3_on_wp2 > 0._core_rknd ) then ! "Wind" is blowing upwards (a1_zm > 0 and wp2 > 0 always)
+      lhs(kp1_mdiag) = 0.0_core_rknd
 
       lhs(k_mdiag) &
       = + invrs_dzt * invrs_rho_ds_zm &
@@ -2632,7 +2649,7 @@ module advance_xm_wpxp_module
       = - invrs_dztkp1 * invrs_rho_ds_zm & 
         * rho_ds_zm * a1_zm * wp3_on_wp2
 
-      lhs(km1_mdiag) = 0.0
+      lhs(km1_mdiag) = 0.0_core_rknd
     end if
 
     return
@@ -2683,6 +2700,9 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -2691,12 +2711,12 @@ module advance_xm_wpxp_module
       k_tdiag = 2         ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       wp2,      & ! w'^2(k)                       [m^2/s^2]
       invrs_dzm   ! Inverse of grid spacing (k)   [1/m]
 
     ! Return Variable
-    real, dimension(2) :: lhs
+    real( kind = core_rknd ), dimension(2) :: lhs
 
     ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
     lhs(kp1_tdiag) & 
@@ -2764,10 +2784,13 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)             [-]
       wm_ztp1,     & ! w wind component on thermodynamic level (k+1)   [m/s]
       wm_zt,       & ! w wind component on thermodynamic level (k)     [m/s]
@@ -2775,11 +2798,11 @@ module advance_xm_wpxp_module
 
 
     ! Return Variable
-    real :: lhs
+    real( kind = core_rknd ) :: lhs
 
     ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
     lhs & 
-    = + ( 1.0 - C7_Skw_fnc ) * invrs_dzm * ( wm_ztp1 - wm_zt )
+    = + ( 1.0_core_rknd - C7_Skw_fnc ) * invrs_dzm * ( wm_ztp1 - wm_zt )
 
     return
   end function wpxp_terms_ac_pr2_lhs
@@ -2814,15 +2837,18 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C6x_Skw_fnc,  & ! C_6x parameter with Sk_w applied (k)   [-]
       tau_zm          ! Time-scale tau at momentum level (k)   [s]
 
     ! Return Variable
-    real :: lhs
+    real( kind = core_rknd ) :: lhs
 
     ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
     lhs & 
@@ -2856,22 +2882,25 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use constants_clubb, only: & ! Variable(s) 
         grav ! Gravitational acceleration [m/s^2]
 
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)      [-]
       thv_ds_zm,   & ! Dry, base-state theta_v on mom. lev. (k) [K]
       xpthvp         ! x'th_v'(k)                               [K {xm units}]
 
     ! Return Variable
-    real :: rhs
+    real( kind = core_rknd ) :: rhs
 
     rhs & 
-    = ( grav / thv_ds_zm ) * ( 1.0 - C7_Skw_fnc ) * xpthvp
+    = ( grav / thv_ds_zm ) * ( 1.0_core_rknd - C7_Skw_fnc ) * xpthvp
 
     return
   end function wpxp_terms_bp_pr3_rhs
@@ -2994,7 +3023,8 @@ module advance_xm_wpxp_module
         gr  ! Variable(s); gr%nz only.
 
     use clubb_precision, only: &
-        time_precision
+        time_precision, &
+        core_rknd
 
     use stats_type, only: &
         stat_update_var ! Procedure(s)
@@ -3014,16 +3044,16 @@ module advance_xm_wpxp_module
     real(kind=time_precision), intent(in) :: &
       dt            ! Model timestep                            [s]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       wpxp_chnge, & ! Amount of change in w'x' due to clipping  [m/s {xm units}]
       invrs_dzt     ! Inverse of grid spacing                   [1/m]
 
     ! Input/Output Variable
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       xm            ! xm (thermodynamic levels)                 [{xm units}]
 
     ! Local Variables
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       xm_tndcy_wpxp_cl ! d(xm)/dt due to clipping of w'x'       [{xm units}/s]
 
     integer :: k    ! Array index
@@ -3045,7 +3075,7 @@ module advance_xm_wpxp_module
     ! highest.
     do k = 2, gr%nz, 1
       xm_tndcy_wpxp_cl(k) = - invrs_dzt(k) * ( wpxp_chnge(k) - wpxp_chnge(k-1) )
-      xm(k) = xm(k) + xm_tndcy_wpxp_cl(k) * real( dt )
+      xm(k) = xm(k) + xm_tndcy_wpxp_cl(k) * real( dt, kind = core_rknd )
     enddo
 
     if ( l_stats_samp ) then
@@ -3069,27 +3099,30 @@ module advance_xm_wpxp_module
     ! Damps a given coefficient linearly based on the value of Lscale.
     ! For additional information see CLUBB ticket #431.
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use grid_class, only: & 
         gr ! Variable(s)
 
     implicit none
 
     ! Input variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       coefficient,      &   ! The coefficient to be damped
       max_coeff_value,  &   ! Maximum value the damped coefficient should have
       threshold             ! Value of Lscale below which the damping should occur
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       Lscale,           &   ! Current value of Lscale
       Cx_Skw_fnc            ! Initial skewness function before damping
 
     ! Local variables
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       ! Added to prevent large damping at low altitudes where Lscale is small
-      altitude_threshold = 100.0  ! Altitude above which damping should occur
+      altitude_threshold = 100.0_core_rknd  ! Altitude above which damping should occur
 
     ! Return Variable
-    real, dimension(gr%nz) :: damped_value
+    real( kind = core_rknd ), dimension(gr%nz) :: damped_value
 
     damped_value = Cx_Skw_fnc
 

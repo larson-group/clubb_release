@@ -177,6 +177,9 @@ module mean_adv
     use model_flags, only: &
       l_upwind_xm_ma ! Variable(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -190,7 +193,7 @@ module mean_adv
       t_below = 2       ! Index for lower thermodynamic level grid weight.
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       wm_zt,        &    ! wm_zt(k)                        [m/s]
       invrs_dzt,    &    ! Inverse of grid spacing (k)     [1/m]
       invrs_dzm_k,  &    ! Inverse of grid spacing (k)     [1/m]
@@ -201,7 +204,7 @@ module mean_adv
       level ! Central thermodynamic level (on which calculation occurs).
 
     ! Return Variable
-    real, dimension(3) :: lhs
+    real( kind = core_rknd ), dimension(3) :: lhs
 
     ! Local Variables
     logical, parameter ::  &
@@ -227,15 +230,15 @@ module mean_adv
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
       lhs(kp1_tdiag) & 
-      = 0.0
+      = 0.0_core_rknd
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
       lhs(k_tdiag) & 
-      = 0.0
+      = 0.0_core_rknd
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
       lhs(km1_tdiag) & 
-      = 0.0
+      = 0.0_core_rknd
 
 
     elseif ( level > 1 .and. level < gr%nz ) then
@@ -259,11 +262,11 @@ module mean_adv
 
       else    ! l_upwind_xm_ma == .true.  Use upwind differencing
 
-        if ( wm_zt > 0. ) then  ! Wind is in upward direction
+        if ( wm_zt > 0._core_rknd ) then  ! Wind is in upward direction
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
           lhs(kp1_tdiag) &
-          = 0.0
+          = 0.0_core_rknd
 
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
           lhs(k_tdiag) &
@@ -272,6 +275,7 @@ module mean_adv
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
           lhs(km1_tdiag) &
           = - wm_zt * invrs_dzm_km1
+
 
         else  ! wm_zt < 0 Wind is in downward direction
 
@@ -285,7 +289,7 @@ module mean_adv
 
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
           lhs(km1_tdiag) &
-          = 0.0
+          = 0.0_core_rknd
 
         end if ! wm_zt >0
 
@@ -302,7 +306,7 @@ module mean_adv
 
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag) & 
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
         lhs(k_tdiag) & 
@@ -323,11 +327,11 @@ module mean_adv
 
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag) & 
-        = 0.0
+        = 0.0_core_rknd
 
         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
         lhs(k_tdiag) & 
-        = + wm_zt * invrs_dzt * ( 1.0 - gr%weights_zt2zm(t_above,mkm1) )
+        = + wm_zt * invrs_dzt * ( 1.0_core_rknd - gr%weights_zt2zm(t_above,mkm1) )
 
         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
         lhs(km1_tdiag) & 
@@ -400,6 +404,9 @@ module mean_adv
     use grid_class, only: & 
         gr
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -413,7 +420,7 @@ module mean_adv
       m_below = 2       ! Index for lower momentum level grid weight.
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       wm_zm,     & ! wm_zm(k)                        [m/s]
       invrs_dzm    ! Inverse of grid spacing (k)     [1/m]
 
@@ -421,7 +428,7 @@ module mean_adv
       level ! Central momentum level (on which calculation occurs).
 
     ! Return Variable
-    real, dimension(3) :: lhs
+    real( kind = core_rknd ), dimension(3) :: lhs
 
     ! Local Variables
     integer :: & 
@@ -442,15 +449,15 @@ module mean_adv
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
       lhs(kp1_mdiag) & 
-      = 0.0
+      = 0.0_core_rknd
 
       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
       lhs(k_mdiag) & 
-      = 0.0
+      = 0.0_core_rknd
 
       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
       lhs(km1_mdiag) & 
-      = 0.0
+      = 0.0_core_rknd
 
 
     elseif ( level > 1 .and. level < gr%nz ) then
@@ -477,15 +484,15 @@ module mean_adv
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
       lhs(kp1_mdiag) & 
-      = 0.0
+      = 0.0_core_rknd
 
       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
       lhs(k_mdiag) & 
-      = 0.0
+      = 0.0_core_rknd
 
       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
       lhs(km1_mdiag) & 
-      = 0.0
+      = 0.0_core_rknd
 
 
     endif

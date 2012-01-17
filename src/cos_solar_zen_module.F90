@@ -35,7 +35,7 @@ module cos_solar_zen_module
     use constants_clubb, only: pi_dp, fstderr, sec_per_day, sec_per_hr,&
                                radians_per_deg_dp ! Variable(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use calendar, only:  & 
         gregorian2julian_day, compute_current_date, leap_year ! Procedure(s)
@@ -66,7 +66,7 @@ module cos_solar_zen_module
     real(kind=time_precision), intent(in) :: & 
       current_time   ! Current time since start date [s]
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       lat_in_degrees, & ! Latitude       [degrees_N]
       lon_in_degrees    ! Longitude      [degrees_E]
 

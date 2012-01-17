@@ -40,7 +40,7 @@ module atex
 
   use grid_class, only: zt2zm ! Procedure(s)
 
-  use clubb_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
   use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
@@ -53,43 +53,45 @@ module atex
     time,         & ! Current time     [s]
     time_initial ! Initial time     [s]
 
-  real, intent(in), dimension(gr%nz) :: & 
+  real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
     rtm      ! Total water mixing ratio        [kg/kg]
 
   ! Input/output
   integer, intent(inout) :: err_code ! Diagnostic 
 
   ! Output Variables
-  real, intent(out), dimension(gr%nz) :: & 
+  real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
     wm_zt,        & ! w wind on thermodynamic grid                [m/s]
     wm_zm,        & ! w wind on momentum grid                     [m/s]
     thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
     rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
 
-  real, intent(out), dimension(gr%nz, sclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(gr%nz, sclr_dim) :: & 
     sclrm_forcing   ! Passive scalar tendency         [units/s]
 
-  real, intent(out), dimension(gr%nz, edsclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(gr%nz, edsclr_dim) :: & 
     edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
   ! Internal variables
   integer :: i
-  real :: z_inversion
+  real( kind = core_rknd ) :: z_inversion
 
   ! Forcings are applied only after t = 5400 s
-  wm_zt = 0.
-  wm_zm = 0.
+  wm_zt = 0._core_rknd
+  wm_zm = 0._core_rknd
 
-  thlm_forcing = 0.
-  rtm_forcing  = 0.
+
+  thlm_forcing = 0._core_rknd
+
+  rtm_forcing  = 0._core_rknd
 
   if ( time >= time_initial + 5400.0_time_precision ) then
 
   !  Identify height of 6.5 g/kg moisture level
 
      i = 2
-     do while ( i <= gr%nz .and. rtm(i) > 6.5e-3 )
+     do while ( i <= gr%nz .and. rtm(i) > 6.5e-3_core_rknd )
         i = i + 1
      end do
      if ( i == gr%nz+1 .or. i == 2 ) then
@@ -106,14 +108,15 @@ module atex
 
      do i = 2, gr%nz
 
-        if ( gr%zt(i) > 0. .and. gr%zt(i) <= z_inversion ) then
+        if ( gr%zt(i) > 0._core_rknd .and. gr%zt(i) <= z_inversion ) then
            wm_zt(i)  & 
-             = -0.0065 * gr%zt(i)/z_inversion ! Known magic number
-        else if ( gr%zt(i) > z_inversion .and. gr%zt(i) <= z_inversion+300. ) then
+             = -0.0065_core_rknd * gr%zt(i)/z_inversion ! Known magic number
+        else if ( gr%zt(i) > z_inversion .and. gr%zt(i) <= z_inversion+300._core_rknd ) then
            wm_zt(i) & 
-             = - 0.0065 * ( 1. - (gr%zt(i)-z_inversion)/300. ) ! Known magic number
+             = - 0.0065_core_rknd * ( 1._core_rknd - (gr%zt(i)-z_inversion)/&
+                 300._core_rknd ) ! Known magic number
         else
-           wm_zt(i) = 0.
+           wm_zt(i) = 0._core_rknd
         end if
 
      end do
@@ -121,20 +124,22 @@ module atex
      wm_zm = zt2zm( wm_zt )
 
      ! Boundary conditions.
-     wm_zt(1) = 0.0        ! Below surface
-     wm_zm(1) = 0.0        ! At surface
-     wm_zm(gr%nz) = 0.0  ! Model top
+     wm_zt(1) = 0.0_core_rknd        ! Below surface
+     wm_zm(1) = 0.0_core_rknd        ! At surface
+     wm_zm(gr%nz) = 0.0_core_rknd  ! Model top
 
      ! Theta-l tendency
 
      do i = 2, gr%nz
 
-        if ( gr%zt(i) > 0. .and. gr%zt(i) < z_inversion ) then
-           thlm_forcing(i) = -1.1575e-5 * ( 3. - gr%zt(i)/z_inversion ) ! Known magic number
-        else if ( gr%zt(i) > z_inversion .and. gr%zt(i) <= z_inversion+300. ) then
-           thlm_forcing(i) = -2.315e-5 * ( 1. - (gr%zt(i)-z_inversion)/300. ) ! Known magic number
+        if ( gr%zt(i) > 0._core_rknd .and. gr%zt(i) < z_inversion ) then
+           thlm_forcing(i) = -1.1575e-5_core_rknd * ( 3._core_rknd - &
+             gr%zt(i)/z_inversion ) ! Known magic number
+        else if ( gr%zt(i) > z_inversion .and. gr%zt(i) <= z_inversion+300._core_rknd ) then
+           thlm_forcing(i) = -2.315e-5_core_rknd * ( 1._core_rknd - &
+             (gr%zt(i)-z_inversion)/300._core_rknd ) ! Known magic number
         else
-           thlm_forcing(i) = 0.0
+           thlm_forcing(i) = 0.0_core_rknd
         end if
 
      end do
@@ -142,19 +147,20 @@ module atex
      ! Moisture tendency
      do i = 2, gr%nz
 
-        if ( gr%zt(i) > 0. .and. gr%zt(i) < z_inversion ) then
-           rtm_forcing(i) = -1.58e-8 * ( 1. - gr%zt(i)/z_inversion )  ! Brian - known magic number
+        if ( gr%zt(i) > 0._core_rknd .and. gr%zt(i) < z_inversion ) then
+           rtm_forcing(i) = -1.58e-8_core_rknd * ( 1._core_rknd - &
+             gr%zt(i)/z_inversion )  ! Brian - known magic number
         else
-           rtm_forcing(i) = 0.0       ! Brian
+           rtm_forcing(i) = 0.0_core_rknd       ! Brian
         end if
 
      end do
 
      ! Boundary conditions
-     thlm_forcing(1) = 0.0  ! Below surface
-     rtm_forcing(1)  = 0.0  ! Below surface
+     thlm_forcing(1) = 0.0_core_rknd  ! Below surface
+     rtm_forcing(1)  = 0.0_core_rknd  ! Below surface
 
-  end if ! time >= time_initial + 5400.0
+  end if ! time >= time_initial + 5400.0_core_rknd
 
   ! Test scalars with thetal and rt if desired
   if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
@@ -188,7 +194,7 @@ module atex
   use time_dependent_input, only: time_sfc_given, T_sfc_given, & ! Variable(s)
                                   time_select                    ! Procedure(s)
 
-  use clubb_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
   implicit none
 
@@ -196,21 +202,21 @@ module atex
   real(time_precision), intent(in) :: &
     time       ! the current time [s]
 
-  real, intent(in) ::  &
+  real( kind = core_rknd ), intent(in) ::  &
     ubar,    & ! mean sfc wind speed                           [m/s]
     thlm_sfc,& ! theta_l at first model layer                  [K]
     rtm_sfc, & ! Total water mixing ratio at first model layer [kg/kg]
     exner_sfc  ! Exner function                                [-]
 
   ! Output variables
-  real, intent(out) ::  & 
+  real( kind = core_rknd ), intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   &    ! w'rt' surface flux        [(m kg)/(kg s)]
     ustar,       &
     T_sfc          ! Surface temperature                           [K]
     
   ! Local Variable
-  real :: & 
+  real( kind = core_rknd ) :: & 
     C_10, &      ! Coefficient
     time_frac, & ! Time fraction used for interpolation
     adjustment   ! The adjustment for compute_wprtp_sfc
@@ -230,9 +236,9 @@ module atex
 
   ! Compute wpthlp_sfc and wprtp_sfc
 
-  C_10 = 0.0013
-  ustar = 0.3
-  adjustment = 0.0198293
+  C_10 = 0.0013_core_rknd
+  ustar = 0.3_core_rknd
+  adjustment = 0.0198293_core_rknd
 
   wpthlp_sfc = compute_wpthlp_sfc( C_10, ubar, thlm_sfc, T_sfc, exner_sfc )
   wprtp_sfc = compute_wprtp_sfc( C_10, ubar, rtm_sfc, adjustment )

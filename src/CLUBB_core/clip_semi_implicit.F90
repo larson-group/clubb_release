@@ -200,7 +200,8 @@ module clip_semi_implicit
   !-----------------------------------------------------------------------
 
   use clubb_precision, only:  & 
-    time_precision ! Variable(s)
+    time_precision, & ! Variable(s)
+    core_rknd
 
   implicit none
 
@@ -220,7 +221,7 @@ module clip_semi_implicit
   !                     of sigma, and the larger the range of close-to-threshold
   !                     values that will be effected (nudged away from the
   !                     threshold) by the semi-implicit clipping.
-  real, parameter :: sigma_coef = 0.15
+  real( kind = core_rknd ), parameter :: sigma_coef = 0.15_core_rknd
 
   ! dt_clip coefficient:  A coefficient with dimensionless units that must have
   !                       a value greater than 0.  A value of 1 will set the
@@ -269,13 +270,16 @@ module clip_semi_implicit
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)implicit none
+
     implicit none
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
       dt  ! Model timestep.  [s]
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
       upper_threshold,    & ! Greatest allowable value of variable f.            [f units]
       lower_threshold       ! Smallest allowable value of variable f.            [f units]
@@ -285,13 +289,13 @@ module clip_semi_implicit
       l_lower_thresh       ! Flag for having a lower threshold value.
 
     ! Return Variable
-    real :: lhs
+    real( kind = core_rknd ) :: lhs
 
     ! Local Variables
     real(kind=time_precision) ::  & 
       dt_clip       ! Time scale for semi-implicit clipping term.                [s]
 
-    real :: & 
+    real( kind = core_rknd ) :: & 
       f_diff,     & ! Difference between the threshold value and f_unclipped.    [f units]
       A_fnc,      & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
       B_fnc,      & ! Derivative w/ respect to f_diff of function A_fnc.         []
@@ -323,7 +327,7 @@ module clip_semi_implicit
 
     else
 
-      lhs_upper = 0.0
+      lhs_upper = 0.0_core_rknd
 
     endif
 
@@ -348,7 +352,7 @@ module clip_semi_implicit
 
     else
 
-      lhs_lower = 0.0
+      lhs_lower = 0.0_core_rknd
 
     endif
 
@@ -381,22 +385,25 @@ module clip_semi_implicit
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
       dt_clip ! Time scale for semi-implicit clipping term.        [s]
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       B_fnc   ! Derivative w/ respect to f_diff of function A_fnc. []
 
     ! Return Variable
-    real :: lhs_contribution
+    real( kind = core_rknd ) :: lhs_contribution
 
 
     ! Main diagonal: [ x f_unclipped(k,<t+1>) ]
     lhs_contribution & 
-    = + (1.0/real( dt_clip ) * B_fnc )
+    = + (1.0_core_rknd/real( dt_clip, kind = core_rknd ) * B_fnc )
 
 
   end function compute_clip_lhs
@@ -434,13 +441,16 @@ module clip_semi_implicit
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Model timestep.                                    [s]
 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
       upper_threshold,    & ! Greatest allowable value of variable f.            [f units]
       lower_threshold       ! Smallest allowable value of variable f.            [f units]
@@ -450,13 +460,13 @@ module clip_semi_implicit
       l_lower_thresh       ! Flag for having a lower threshold value.
 
     ! Return Variable
-    real :: rhs
+    real( kind = core_rknd ) :: rhs
 
     ! Local Variables
     real(kind=time_precision) ::  & 
       dt_clip       ! Time scale for semi-implicit clipping term.                [s]
 
-    real :: & 
+    real( kind = core_rknd ) :: & 
       f_diff,     & ! Difference between the threshold value and f_unclipped.    [f units]
       A_fnc,      & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
       B_fnc,      & ! Derivative w/ respect to f_diff of function A_fnc.         []
@@ -485,12 +495,12 @@ module clip_semi_implicit
       ! Compute the explicit (RHS) contribution from clipping for the upper
       ! threshold.
       rhs_upper  & 
-      = + (1.0/real( dt_clip )  & 
+      = + (1.0_core_rknd/real( dt_clip, kind = core_rknd )  & 
           * ( A_fnc - B_fnc * f_diff + B_fnc * upper_threshold ) )
 
     else
 
-      rhs_upper = 0.0
+      rhs_upper = 0.0_core_rknd
 
     endif
 
@@ -512,12 +522,12 @@ module clip_semi_implicit
       ! Compute the explicit (RHS) contribution from clipping for the lower
       ! threshold.
       rhs_lower  & 
-      = - (1.0/ real( dt_clip ))  & 
+      = - (1.0_core_rknd/ real( dt_clip, kind = core_rknd ))  & 
           * ( A_fnc - B_fnc * f_diff - B_fnc * lower_threshold )
 
     else
 
-      rhs_lower = 0.0
+      rhs_lower = 0.0_core_rknd
 
     endif
 
@@ -567,10 +577,13 @@ module clip_semi_implicit
 
     use constants_clubb, only: eps ! Variable(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variable
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       f_diff,    & ! Difference between the threshold value and f_unclipped.  [f units]
       upper_threshold,    & ! Greatest allowable value of variable f.         [f units]
       lower_threshold       ! Smallest allowable value of variable f.         [f units]
@@ -580,15 +593,15 @@ module clip_semi_implicit
       l_lower_thresh       ! Flag for having a lower threshold value.
 
     ! Output Variables
-    real, intent(out) :: & 
+    real( kind = core_rknd ), intent(out) :: & 
       A_fnc,   & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
       B_fnc      ! Derivative w/ respect to f_diff of function A_fnc.         []
 
     ! Local Variables
-    real :: sigma_val,       & ! Value of parameter sigma.                  [f units]
+    real( kind = core_rknd ) :: sigma_val,       & ! Value of parameter sigma. [f units]
             thresh_avg_mag     ! Average magnitude of threshold(s).         [f units]
 
-    thresh_avg_mag = 0.0 ! Default Initialization
+    thresh_avg_mag = 0.0_core_rknd ! Default Initialization
 
     ! Find the average magnitude of the threshold.
     ! In cases where only one threshold applies, the average magnitude of the
@@ -600,7 +613,7 @@ module clip_semi_implicit
     !        may work better.
     if ( l_upper_thresh .and. l_lower_thresh ) then
       ! Both thresholds apply.
-      thresh_avg_mag = 0.5 * (   abs(upper_threshold)  & 
+      thresh_avg_mag = 0.5_core_rknd * (   abs(upper_threshold)  & 
                                + abs(lower_threshold)   )
     elseif ( l_upper_thresh ) then
       ! Only the upper threshold applies.
@@ -623,20 +636,20 @@ module clip_semi_implicit
     if ( f_diff <= -sigma_val ) then
       A_fnc = f_diff
     elseif ( f_diff >= sigma_val ) then
-      A_fnc = 0.0
+      A_fnc = 0.0_core_rknd
     else ! -sigma_val < f_diff < sigma_val
-      A_fnc = f_diff - ( (sigma_val/4.0)  & 
-                         * ( 1.0 + f_diff/sigma_val )**2 )
+      A_fnc = f_diff - ( (sigma_val/4.0_core_rknd)  & 
+                         * ( 1.0_core_rknd + f_diff/sigma_val )**2 )
     endif
 
     ! B_fnc is the derivative with respect to f_diff of function A_fnc.  It is
     ! evaluated for f_diff at timestep index (t).
     if ( f_diff <= -sigma_val ) then
-      B_fnc = 1.0
+      B_fnc = 1.0_core_rknd
     elseif ( f_diff >= sigma_val ) then
-      B_fnc = 0.0
+      B_fnc = 0.0_core_rknd
     else ! -sigma_val < f_diff < sigma_val
-      B_fnc = 1.0 - (1.0/2.0)*( 1.0 + f_diff/sigma_val )
+      B_fnc = 1.0_core_rknd - (1.0_core_rknd/2.0_core_rknd)*( 1.0_core_rknd + f_diff/sigma_val )
     endif
 
 

@@ -10,7 +10,8 @@ module parameters_radiation
 !-------------------------------------------------------------------------------
 
   use clubb_precision, only: &
-    dp ! double precision
+    dp, & ! double precision
+    core_rknd
 
   implicit none
 
@@ -20,7 +21,7 @@ module parameters_radiation
   real( kind = dp ), dimension(1), public :: &
     sol_const ! Solar constant
 
-  real, public :: &
+  real( kind = core_rknd ), public :: &
     radiation_top ! The top of the atmosphere fed into a radiation scheme.
     !               The computational grid should be extended to reach this
     !               altitude.
@@ -34,13 +35,13 @@ module parameters_radiation
 
 
   ! Long-wave constants (simplified radiation)
-  real, public :: &
+  real( kind = core_rknd ), public :: &
     kappa, & ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
     F0,    & ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
     F1       ! Coefficient for cloud base heating (see Stevens)[W/m^2]
 
   ! Short-wave constants
-  real, public :: &
+  real( kind = core_rknd ), public :: &
     eff_drop_radius, & ! Effective droplet radius [m] 
     gc, & ! Asymmetry parameter, "g" in Duynkerke           [-]
     omega ! Single-scattering albedo                        [-] 
@@ -48,7 +49,7 @@ module parameters_radiation
   real( kind = dp ), public :: &
     slr     ! Fraction of daylight
 
-  real, public, dimension(20) :: &
+  real( kind = core_rknd ), public, dimension(20) :: &
     Fs_values, &           ! List of Fs0 values for simplified radiation
     cos_solar_zen_times, & ! List of cosine of the solar zenith angle times
     cos_solar_zen_values   ! List of cosine of the solar zenith angle values

@@ -207,14 +207,29 @@ program clubb_tuner
     min_les_clubb_diff,                  & ! Cost function
     min_err                                ! Minimum value of the cost function
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
 
   implicit none
 
+  real, dimension(1:ndim+1, 1:ndim) :: &
+    param_vals_matrix_r4
+
+  real, dimension(1:ndim+1) :: &
+    cost_fnc_vector_r4
+
   ! ---- Begin Code ----
 
-  call amoeba( param_vals_matrix(1:ndim+1,1:ndim),  & 
-               cost_fnc_vector(1:ndim+1),  & 
-               f_tol, min_les_clubb_diff, iter)
+  param_vals_matrix_r4 = real(param_vals_matrix(1:ndim+1,1:ndim))
+  cost_fnc_vector_r4 = real(cost_fnc_vector(1:ndim+1))
+
+  call amoeba( param_vals_matrix_r4,  & 
+               cost_fnc_vector_r4,  & 
+               real(f_tol), min_les_clubb_diff, iter)
+
+  param_vals_matrix(1:ndim+1,1:ndim) = real(param_vals_matrix_r4, kind = core_rknd)
+  cost_fnc_vector(1:ndim+1) = real(cost_fnc_vector_r4, kind = core_rknd)
+
 
   ! Note:
   ! Amoeba will make the optimal cost result the first element of
@@ -258,6 +273,9 @@ program clubb_tuner
       min_err, & 
       min_les_clubb_diff ! Procedure(s)
 
+  use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
   implicit none
 
   ! Note:
@@ -270,30 +288,52 @@ program clubb_tuner
     iiter, jiter, & ! Loop variables
     nit ! ???
 
-  real, dimension(ndim) ::  & 
+  real( kind = core_rknd ), dimension(ndim) ::  & 
     pb ! ???
    
-  real ::  & 
+  real( kind = core_rknd ) ::  & 
     ybb,   & ! ???
     yb,    & ! ???
     tmptr ! ???
 
+  ! Temporary variables for passing into subroutines that require reals
+  real, dimension(1:ndim+1, 1:ndim) :: &
+    param_vals_matrix_r4
+
+  real, dimension(1:ndim+1) :: &
+    cost_fnc_vector_r4
+
+  real, dimension(1:ndim) :: &
+    pb_r4
+
+  real :: &
+    yb_r4
+
   ! ---- Begin Code ----
 
-  ybb   = 1.0e30_SP
-  yb    = 1.0e30_SP
+  ybb   = 1.0e30_core_rknd
+  yb    = 1.0e30_core_rknd
   nit   = 0
   iiter = 0
   tmptr = anneal_temp ! anneal_temp taken from /stat/ namelist
 
+  param_vals_matrix_r4 = real(param_vals_matrix(1:ndim+1,1:ndim))
+  cost_fnc_vector_r4 = real(cost_fnc_vector(1:ndim+1))
+
   do jiter = 1, anneal_iter ! anneal_iter taken from /stat/ namelist
     iter  = iiter
-    tmptr = tmptr * 0.8_SP
+    tmptr = tmptr * 0.8_core_rknd
+
+    pb_r4 = real(pb(1:ndim))
+    yb_r4 = real(yb)
 
     call amebsa & 
-         ( param_vals_matrix(1:ndim+1,1:ndim),  & 
-           cost_fnc_vector(1:ndim+1), & 
-           pb(1:ndim), yb, f_tol, min_les_clubb_diff, iter, tmptr )
+         ( param_vals_matrix_r4,  & 
+           cost_fnc_vector_r4, & 
+           pb_r4, yb_r4, real(f_tol), min_les_clubb_diff, iter, real(tmptr) )
+
+    pb(1:ndim) = real(pb_r4, kind = core_rknd)
+    yb = real(yb_r4, kind = core_rknd)
 
     nit = nit + iiter - iter
     if ( yb < ybb ) then
@@ -301,6 +341,9 @@ program clubb_tuner
     end if
     if ( iter > 0 ) exit
   end do
+
+  param_vals_matrix(1:ndim+1,1:ndim) = real(param_vals_matrix_r4, kind = core_rknd)
+  cost_fnc_vector(1:ndim+1) = real(cost_fnc_vector_r4, kind = core_rknd)
 
   param_vals_matrix(1,1:ndim) = pb(1:ndim)
   min_err = ybb
@@ -335,29 +378,32 @@ subroutine enhanced_simann_driver
   use error, only:  & ! Procedure(s)
     min_les_clubb_diff  ! Cost function
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   ! Local Variables
 
-  real, dimension(ndim) :: &
+  real( kind = core_rknd ), dimension(ndim) :: &
     xinit,  & ! Initial values for the tunable parameters
     x0min,  & ! Minimum value for the tunable parameters
     x0max,  & ! Maximum value for the tunable parameters
     rostep, & ! Initial step size
     xopt      ! Final values for the tunable parameters
 
-  real :: enopt ! Optimal cost
+  real( kind = core_rknd ) :: enopt ! Optimal cost
 
   ! ---- Begin Code ----
 
   xinit = param_vals_matrix(1,1:ndim)
 
   ! Set the minimum for the parameters.  Assume no parameter is < 0 for now
-  x0min(1:ndim) = 0. 
+  x0min(1:ndim) = 0._core_rknd 
 
   ! Set the maximum for the parameters.  Assume parameters will be most 5 
   ! times the current value.
-  x0max(1:ndim) = 5. * param_vals_matrix(1,1:ndim) 
+  x0max(1:ndim) = 5._core_rknd * param_vals_matrix(1,1:ndim) 
 
   rostep(1:ndim) = param_vals_spread(1:ndim)
 
@@ -401,6 +447,9 @@ subroutine logical_flags_driver( current_date, current_time )
     setup_configurable_model_flags, &
     write_model_flags_to_file
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   ! External
@@ -421,10 +470,10 @@ subroutine logical_flags_driver( current_date, current_time )
 
   ! Local Variables
 
-  real, dimension(two_ndim) :: &
+  real( kind = core_rknd ), dimension(two_ndim) :: &
     cost_function  ! Values from the cost function
 
-  real, dimension(ndim) :: &
+  real( kind = core_rknd ), dimension(ndim) :: &
     cost_func_sum_true,  & ! Averaged cost function when the flag is true
     cost_func_sum_false, & ! Averaged cost function when the flag is false
     cost_func_avg          ! Averaged cost function true - false.
@@ -436,7 +485,7 @@ subroutine logical_flags_driver( current_date, current_time )
     filename_csv     ! Comma seperated values filename
 
   integer(kind=i8) :: bit_string, bit_iter
-  real :: cost_func_default
+  real( kind = core_rknd) :: cost_func_default
 
   integer :: i, j
 
@@ -454,7 +503,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                 model_flags_default(9) )
 
   ! This should always be 1.0; it's here as a sanity check
-  cost_func_default = min_les_clubb_diff( param_vals_matrix(1,:) )
+  cost_func_default = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), kind = core_rknd )
 
   allocate( model_flags_array(two_ndim,ndim) )
   bit_string = 0_i8 ! Initialize bits to 00 ... 00
@@ -472,13 +521,13 @@ subroutine logical_flags_driver( current_date, current_time )
   ! indexed using the iter variable in min_les_clubb_diff to avoid having to
   ! modify the Numerical Recipes code.
   do iter = 1, two_ndim
-    ! param_vals_matrix is dimension 0;  the parameters are not varied.
-    cost_function(iter) = min_les_clubb_diff( param_vals_matrix(1,:) )
+    cost_function(iter) = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), &
+         kind = core_rknd )
   end do
 
   ! Compute a metric of false cost function - true cost function
-  cost_func_sum_true = 0.0
-  cost_func_sum_false = 0.0
+  cost_func_sum_true = 0.0_core_rknd
+  cost_func_sum_false = 0.0_core_rknd
   do i = 1, two_ndim
     do j = 1, ndim
       if ( model_flags_array(i,j) ) then ! Flag is true
@@ -488,8 +537,8 @@ subroutine logical_flags_driver( current_date, current_time )
       end if
     end do
   end do
-  cost_func_avg(:) = ( cost_func_sum_false(:) / real( two_ndim / 2 ) ) &
-                   - ( cost_func_sum_true(:) / real( two_ndim / 2 ) )
+  cost_func_avg(:) = ( cost_func_sum_false(:) / real( two_ndim / 2, kind = core_rknd ) ) &
+                   - ( cost_func_sum_true(:) / real( two_ndim / 2, kind = core_rknd ) )
 
   ! Sort flags and the cost function in ascending order
   call Qsort_flags( model_flags_array, cost_function )

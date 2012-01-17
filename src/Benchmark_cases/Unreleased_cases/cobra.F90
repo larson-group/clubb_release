@@ -34,7 +34,7 @@ module cobra
 
   use interpolation, only: linear_interp_factor
 
-  use clubb_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
   use diag_ustar_module, only: diag_ustar ! Variable(s)
 
@@ -53,8 +53,8 @@ module cobra
   intrinsic :: sqrt, max
 
   ! Parameter Constants
-  real, parameter :: & 
-    M_da  = 0.02897  ! Molecular weight of dry air.
+  real( kind = core_rknd ), parameter :: & 
+    M_da  = 0.02897_core_rknd  ! Molecular weight of dry air.
   integer, parameter :: &
     ntimes = 49
 
@@ -62,48 +62,48 @@ module cobra
   real(kind=time_precision), intent(in) ::  & 
     time      ! Current time                [s]
 
-  real, intent(in) :: & 
+  real( kind = core_rknd ), intent(in) :: & 
     z,         & ! Elevation at zt=2           [m]
     rho_sfc,       & ! Air density at surface      [kg/m^3]
     thlm_sfc,  & ! Theta_l at zt(2)            [K]
     ubar         ! mean sfc wind speed         [m/s]
 
   ! Output variables
-  real, intent(out) ::  & 
+  real( kind = core_rknd ), intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
     ustar,       & ! surface friction velocity [m/s]
     T_sfc          ! Temperature at the surface [K]
 
   ! Output variables
-  real, intent(out), dimension(sclr_dim) ::  & 
+  real( kind = core_rknd ), intent(out), dimension(sclr_dim) ::  & 
     wpsclrp_sfc    ! w'sclr' surface flux          [units m/s]
 
-  real, intent(out), dimension(edsclr_dim) ::  & 
+  real( kind = core_rknd ), intent(out), dimension(edsclr_dim) ::  & 
     wpedsclrp_sfc  ! w' edsclr' surface flux       [units m/s]
 
   ! Local variables
   integer :: &
     before_time, after_time
-  real ::  &  
+  real( kind = core_rknd ) ::  &  
     heat_flx, moisture_flx, &                 ! [W/m^2]
     heat_flx2, moisture_flx2, &
     time_frac, &
     bflx
-  real :: CO2_flx
-  real :: CO2_flx2
+  real( kind = core_rknd ) :: CO2_flx
+  real( kind = core_rknd ) :: CO2_flx2
 
   ! COBRA roughness height
-  ! real, parameter :: z0 = 0.035  ! ARM momentum roughness height
-  real, parameter :: z0 = 1.75   ! momentum roughness height
+  ! real, parameter :: z0 = 0.035_core_rknd  ! ARM momentum roughness height
+  real( kind = core_rknd ), parameter :: z0 = 1.75_core_rknd   ! momentum roughness height
 
   !-----------------BEGIN CODE-------------------------
 
   ! Default Initialization
-  heat_flx = 0.0
-  moisture_flx = 0.0
-  CO2_flx = 0.0
-  CO2_flx2 = 0.0 ! Default initialization
+  heat_flx = 0.0_core_rknd
+  moisture_flx = 0.0_core_rknd
+  CO2_flx = 0.0_core_rknd
+  CO2_flx2 = 0.0_core_rknd ! Default initialization
 
   ! Compute heat and moisture fluxes from ARM data in (W/m2)
 

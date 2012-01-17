@@ -33,23 +33,23 @@ module astex_a209
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
     implicit none
 
     ! Output Variables
-    real, intent(out), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       wm_zt,         & ! w wind on the thermodynamic grid        [m/s]
       wm_zm,         & ! w wind on the momentum grid             [m/s]
       thlm_forcing,  & ! Liquid potential temperature tendency   [K/s]
       rtm_forcing      ! Total water mixing ratio tendency       [kg/kg/s]
 
-    real, intent(out), dimension(gr%nz,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) ::  & 
       sclrm_forcing ! Passive scalar forcing  [units/s]
 
-    real, intent(out), dimension(gr%nz,edsclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) ::  & 
       edsclrm_forcing ! Passive scalar forcing  [units/s]
 
     ! Local variables
@@ -60,27 +60,27 @@ module astex_a209
 
     do i=2,gr%nz
 
-      wm_zt(i) = - 5.e-6 * gr%zt(i)
+      wm_zt(i) = - 5.e-6_core_rknd * gr%zt(i)
 
     end do
 
     ! Lower Boundary condition on zt
-    wm_zt(1) = 0.0        ! Below surface
+    wm_zt(1) = 0.0_core_rknd        ! Below surface
 
     ! Interpolate to momentum levels
     wm_zm = zt2zm( wm_zt )
 
     ! Boundary conditions on zm
-    wm_zm(1) = 0.0        ! At surface
-    wm_zm(gr%nz) = 0.0  ! Model top
+    wm_zm(1) = 0.0_core_rknd        ! At surface
+    wm_zm(gr%nz) = 0.0_core_rknd  ! Model top
 
     ! Radiative theta-l tendency
 
-    thlm_forcing = 0.0
+    thlm_forcing = 0.0_core_rknd
 
     ! Large scale advective moisture tendency
 
-    rtm_forcing = 0.0
+    rtm_forcing = 0.0_core_rknd
 
     ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
@@ -117,7 +117,7 @@ module astex_a209
 
     use interpolation, only: linear_interp_factor ! Procedure(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     implicit none
 
@@ -126,19 +126,19 @@ module astex_a209
       ntimes = 41
 
     ! Constants (taken from the rico case)
-    real, parameter :: &
-      C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
-      C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
-      z0      = 0.00015      ! Roughness length, defined by ATEX specification
+    real( kind = core_rknd ), parameter :: &
+      C_h_20  = 0.001094_core_rknd,  & ! Drag coefficient, defined by RICO 3D specification
+      C_q_20  = 0.001133_core_rknd,  & ! Drag coefficient, defined by RICO 3D specification
+      z0      = 0.00015_core_rknd      ! Roughness length, defined by ATEX specification
 
-    real, parameter :: &
-      standard_flux_alt = 20. ! default height at which the surface flux is computed [m]
+    real( kind = core_rknd ), parameter :: &
+      standard_flux_alt = 20._core_rknd ! default height at which the surface flux is computed [m]
 
     ! Input variables
 
     real(kind=time_precision), intent(in) :: time     ! Current time
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       ubar,        & ! Mean sfc wind speed
       rtm,         & ! This is rt at the lowest above-ground model level.  [kg/kg]
       thlm,        & ! This is theta-l at the lowest above-ground model level.  
@@ -150,7 +150,7 @@ module astex_a209
 
     ! Output variables
 
-    real, intent(out) ::  & 
+    real( kind = core_rknd ), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar,        & ! surface friction velocity     [m/s]
@@ -161,7 +161,7 @@ module astex_a209
     integer :: &
       before_time, after_time
 
-    real :: &
+    real( kind = core_rknd ) :: &
       Ch,   & ! This is C_h_20 scaled to the height of the lowest model level.
       Cq,   & ! This is C_q_20 scaled to the height of the lowest model level.
       time_frac
@@ -180,14 +180,14 @@ module astex_a209
            ((log(standard_flux_alt/z0))/(log(lowestlevel/z0)))
 
 
-    !sensible_heat_flx = 10.0
-    !latent_heat_flx = 25.0
+    !sensible_heat_flx = 10.0_core_rknd
+    !latent_heat_flx = 25.0_core_rknd
 
 
-    T_sfc = 0.0
+    T_sfc = 0.0_core_rknd
 
     ! We set ustar as it is set in rico
-    ustar = 0.155
+    ustar = 0.155_core_rknd
 
     ! Use time_select to determine the time indexes before and after time
     ! and to calculate the time fraction necessary for linear_interp_factor

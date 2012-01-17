@@ -6,8 +6,8 @@ module matrix_operations
 
   public :: symm_covar_matrix_2_corr_matrix, Cholesky_factor, &
     row_mult_lower_tri_matrix, print_lower_triangular_matrix, &
-    get_lower_triangular_matrix_sp, get_lower_triangular_matrix_dp, &
-    set_lower_triangular_matrix_sp, set_lower_triangular_matrix_dp
+    get_lower_triangular_matrix, set_lower_triangular_matrix_dp, &
+    set_lower_triangular_matrix_core_rknd
 
   private :: Symm_matrix_eigenvalues
 
@@ -121,7 +121,8 @@ module matrix_operations
       fstderr ! Constant
 
     use clubb_precision, only: & 
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
 
@@ -131,7 +132,8 @@ module matrix_operations
     ! Constant Parameters
     integer, parameter :: itermax = 10 ! Max iterations of the modified method
 
-    real, parameter :: d_coef = 0.1 ! Coefficient applied if the decomposition doesn't work
+    real( kind = core_rknd), parameter :: d_coef = 0.1_core_rknd 
+       ! Coefficient applied if the decomposition doesn't work
 
     ! Input Variables
     integer, intent(in) :: ndim
@@ -272,7 +274,7 @@ module matrix_operations
           if ( d_smallest > a_Cholesky(i,i) ) d_smallest = a_Cholesky(i,i)
         end do
         ! Use the smallest element * d_coef * iteration
-        tau = d_smallest * d_coef * real( iter, kind=dp ) 
+        tau = d_smallest * real(d_coef, kind = dp) * real( iter, kind=dp ) 
 
 !       print *, "tau =", tau, "d_smallest = ", d_smallest
 
@@ -368,6 +370,50 @@ module matrix_operations
     return
   end subroutine Symm_matrix_eigenvalues
 !-------------------------------------------------------------------------------
+  subroutine set_lower_triangular_matrix_core_rknd( d_variables, index1, index2, xpyp, &
+                                             matrix )
+! Description:
+!   Set a value for the lower triangular portion of a matrix.
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! user defined precision
+
+    implicit none
+
+    ! External
+    intrinsic :: max, min
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables, & ! Number of variates
+      index1, index2 ! Indices for 2 variates (the order doesn't matter)
+
+    real( kind = core_rknd ), intent(in) :: &
+      xpyp ! Value for the matrix (usually a correlation or covariance) [units vary]
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(inout) :: &
+      matrix ! The lower triangular matrix
+
+    integer :: i,j
+
+    ! ---- Begin Code ----
+
+    ! Reverse these to set the values of upper triangular matrix
+    i = max( index1, index2 )
+    j = min( index1, index2 )
+
+    if( i > 0 .and. j > 0 ) then
+      matrix(i,j) = xpyp
+    end if
+
+    return
+  end subroutine set_lower_triangular_matrix_core_rknd
+
+!-------------------------------------------------------------------------------
   subroutine set_lower_triangular_matrix_dp( d_variables, index1, index2, xpyp, &
                                              matrix )
 ! Description:
@@ -410,48 +456,9 @@ module matrix_operations
 
     return
   end subroutine set_lower_triangular_matrix_dp
-!-------------------------------------------------------------------------------
-  subroutine set_lower_triangular_matrix_sp( d_variables, index1, index2, xpyp, &
-                                             matrix )
-! Description:
-!   Set a value for the lower triangular portion of a matrix.
-! References:
-!   None
-!-------------------------------------------------------------------------------
-    implicit none
-
-    ! External
-    intrinsic :: max, min
-
-    ! Input Variables
-    integer, intent(in) :: &
-      d_variables, & ! Number of variates
-      index1, index2 ! Indices for 2 variates (the order doesn't matter)
-
-    real, intent(in) :: &
-      xpyp ! Value for the matrix (usually a correlation or covariance) [units vary]
-
-    ! Input/Output Variables
-    real, dimension(d_variables,d_variables), intent(inout) :: &
-      matrix ! The covariance matrix
-
-    integer :: i,j
-
-    ! ---- Begin Code ----
-
-    ! Reverse these to set the values of upper triangular matrix
-    i = max( index1, index2 )
-    j = min( index1, index2 )
-
-    if( i > 0 .and. j > 0 ) then
-      matrix(i,j) = xpyp
-    end if
-
-    return
-  end subroutine set_lower_triangular_matrix_sp
 
 !-------------------------------------------------------------------------------
-  subroutine get_lower_triangular_matrix_dp( d_variables, index1, index2, matrix, &
+  subroutine get_lower_triangular_matrix( d_variables, index1, index2, matrix, &
                                              xpyp )
 ! Description:
 !   Returns a value from the lower triangular portion of a matrix.
@@ -460,7 +467,7 @@ module matrix_operations
 !-------------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      dp ! double precision
+      core_rknd
 
     implicit none
 
@@ -473,10 +480,10 @@ module matrix_operations
       index1, index2 ! Indices for 2 variates (the order doesn't matter)
 
     ! Input/Output Variables
-    real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
       matrix ! The covariance matrix
 
-    real( kind = dp ), intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       xpyp ! Value from the matrix (usually a correlation or covariance) [units vary]
 
     integer :: i,j
@@ -490,45 +497,7 @@ module matrix_operations
     xpyp = matrix(i,j)
 
     return
-  end subroutine get_lower_triangular_matrix_dp
-
-!-------------------------------------------------------------------------------
-  subroutine get_lower_triangular_matrix_sp( d_variables, index1, index2, matrix, &
-                                             xpyp )
-! Description:
-!   Returns a value from the lower triangular portion of a matrix.
-! References:
-!   None
-!-------------------------------------------------------------------------------
-    implicit none
-
-    ! External
-    intrinsic :: max, min
-
-    ! Input Variables
-    integer, intent(in) :: &
-      d_variables, & ! Number of variates
-      index1, index2 ! Indices for 2 variates (the order doesn't matter)
-
-    ! Input/Output Variables
-    real, dimension(d_variables,d_variables), intent(in) :: &
-      matrix ! The covariance matrix
-
-    real, intent(out) :: &
-      xpyp ! Value from the matrix (usually a correlation or covariance) [units vary]
-
-    integer :: i,j
-
-    ! ---- Begin Code ----
-
-    ! Reverse these to set the values of upper triangular matrix
-    i = max( index1, index2 )
-    j = min( index1, index2 )
-
-    xpyp = matrix(i,j)
-
-    return
-  end subroutine get_lower_triangular_matrix_sp
+  end subroutine get_lower_triangular_matrix
 
 !-----------------------------------------------------------------------
   subroutine print_lower_triangular_matrix( iunit, ndim, matrix )
@@ -539,6 +508,10 @@ module matrix_operations
 ! References:
 !   None
 !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
@@ -546,7 +519,7 @@ module matrix_operations
       iunit, & ! File I/O logical unit (usually 6 for stdout and 0 for stderr)
       ndim     ! Dimension of the matrix
 
-    real, dimension(ndim,ndim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ndim,ndim), intent(in) :: &
       matrix ! Lower triangular matrix [units vary]
 
     ! Local Variables

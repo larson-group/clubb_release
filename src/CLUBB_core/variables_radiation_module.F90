@@ -7,6 +7,9 @@ module variables_radiation_module
 !   allocate, deallocate, and initialize them.
 !---------------------------------------------------------------
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
 
@@ -18,7 +21,7 @@ module variables_radiation_module
 
   integer, private, parameter :: dp = selected_real_kind( p=12 )
 
-  real, public, dimension(:), allocatable :: &
+  real( kind = core_rknd ), public, dimension(:), allocatable :: &
     radht_LW, & ! LW heating rate   [K/s]
     radht_SW, & ! SW heating rate   [K/s]
     Frad_SW,  & ! SW radiative flux [W/m^2]
@@ -77,6 +80,9 @@ module variables_radiation_module
   !   for the CLUBB model code.
   !---------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
@@ -127,10 +133,10 @@ module variables_radiation_module
 
     ! --- Initialization ---
 
-    radht_SW = 0.0
-    radht_LW = 0.0
-    Frad_SW = 0.0
-    Frad_LW = 0.0
+    radht_SW = 0.0_core_rknd
+    radht_LW = 0.0_core_rknd
+    Frad_SW = 0.0_core_rknd
+    Frad_LW = 0.0_core_rknd
     T_in_K = 0.0_dp
     rcil = 0.0_dp
     o3l = 0.0_dp

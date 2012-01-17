@@ -42,6 +42,9 @@ program jacobian
   use parameters_model, only: &
     PosInf ! Variable(s)
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   !----------------------------------------------------------------------------
@@ -53,7 +56,7 @@ program jacobian
 
     character(len=16), pointer :: name(:)
 
-    real, pointer :: value(:)
+    real( kind = core_rknd ), pointer :: value(:)
 
   end type param_array
   !----------------------------------------------------------------------------
@@ -63,11 +66,11 @@ program jacobian
       nzmax,   & ! Z dimension [grid boxes] 
       entries ! Total variables
 
-    real, pointer, dimension(:) :: z
+    real( kind = core_rknd ), pointer, dimension(:) :: z
 
     character(len=12), pointer :: name(:)
 
-    real, pointer, dimension(:,:) :: value ! (1:nzmax, entries)
+    real( kind = core_rknd ), pointer, dimension(:,:) :: value ! (1:nzmax, entries)
 
   end type variable_array
   !-----------------------------------------------------------------------------
@@ -98,7 +101,7 @@ program jacobian
     var2zm     ! Momentum grid GrADS results [units vary]
 
 
-  real, dimension(nparams, nvarzt+nvarzm) :: &
+  real( kind = core_rknd ), dimension(nparams, nvarzt+nvarzm) :: &
     jmatrix, &           ! Jacobian matrix
     impact_matrix, &     ! Impact matrix
     fc_impact_matrix     !
@@ -113,7 +116,7 @@ program jacobian
     i, j, k, &    ! loop variables
     err_code      ! Determines whether a run went unstable
 
-  real ::  & 
+  real( kind = core_rknd ) ::  & 
     delta_factor, & ! Factor that tunable parameters are multiplied by
     tmp_param       ! Temporary variable
 
@@ -272,7 +275,7 @@ program jacobian
     if ( fatal_error( err_code ) ) then
 
       ! Pos. Infinity bit pattern
-      jmatrix(i,:) = PosInf
+      jmatrix(i,:) = real(PosInf, kind = core_rknd)
       clubb_params%value(i) = tmp_param
       cycle
     end if
@@ -285,7 +288,7 @@ program jacobian
     do j = 1, nvarzt
       impact_matrix(i, j) =  & 
       sum(  var2zt%value(1:nzt,j) - var1zt%value(1:nzt,j) ) & 
-      / real( nzt )
+      / real( nzt, kind = core_rknd )
 
       fc_impact_matrix(i, j) =  & 
       sum(  var2zt%value(1:nzt, j) - var1zt%value(1:nzt, j) ) & 
@@ -300,7 +303,7 @@ program jacobian
     do j = 1, nvarzm
       impact_matrix(i, j+nvarzt)  & 
       = sum( var2zm%value(1:nzm, j) - var1zm%value(1:nzm, j) ) & 
-      / real( nzm )
+      / real( nzm, kind = core_rknd )
 
       fc_impact_matrix(i, j+nvarzt)  & 
       = sum( var2zm%value(1:nzm, j) - var1zm%value(1:nzm, j) ) & 

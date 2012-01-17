@@ -19,6 +19,9 @@ module lapack_wrap
     clubb_var_equals_NaN, &
     clubb_no_error
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   ! Simple routines
@@ -33,7 +36,7 @@ module lapack_wrap
   ! precision float is in LAPACK.  Hopefully this will work more portably on
   ! architectures like Itanium than the old code -dschanen 11 Aug 2011
   integer, parameter, private :: &
-    sp = selected_real_kind( precision( 0.0 ) ), &
+    sp = selected_real_kind( precision( 0.0_core_rknd ) ), &
     dp = selected_real_kind( precision( 0.d0 ) )
 
   private ! Set Default Scope
@@ -59,6 +62,9 @@ module lapack_wrap
     use error_code, only: &
       clubb_at_least_debug_level ! Logical function
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -77,31 +83,31 @@ module lapack_wrap
       nrhs     ! # of right hand sides to back subst. after LU-decomp.
 
     ! Input/Output variables
-    real, intent(inout), dimension(ndim) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ndim) ::  & 
       diag,       & ! Main diagonal
       subd, supd    ! Sub and super diagonal
 
-    real, intent(inout), dimension(ndim,nrhs) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ndim,nrhs) ::  & 
       rhs ! RHS input
 
     ! The estimate of the reciprocal of the condition number on the LHS matrix.
     ! If rcond is < machine precision the matrix is singular to working
     ! precision, and info == ndim+1.  If rcond == 0, then the LHS matrix
     ! is singular.  This condition is indicated by a return code of info > 0.
-    real, intent(out) :: rcond
+    real( kind = core_rknd ), intent(out) :: rcond
 
     integer, intent(out) ::  & 
       err_code ! Used to determine when a decomp. failed
 
     ! Output variables
-    real, intent(out), dimension(ndim,nrhs) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ndim,nrhs) ::  & 
       solution ! Solution
 
     ! Local Variables
     ! These contain the decomposition of the matrix
-    real, dimension(ndim-1) :: dlf, duf
-    real, dimension(ndim)   :: df
-    real, dimension(ndim-2) :: du2
+    real( kind = core_rknd ), dimension(ndim-1) :: dlf, duf
+    real( kind = core_rknd ), dimension(ndim)   :: df
+    real( kind = core_rknd ), dimension(ndim-2) :: du2
 
     integer, dimension(ndim) ::  & 
       ipivot  ! Index of pivots done during decomposition
@@ -110,11 +116,11 @@ module lapack_wrap
       iwork   ! `scrap' array
 
 
-    real, dimension(nrhs) ::  & 
+    real( kind = core_rknd ), dimension(nrhs) ::  & 
       ferr,  & ! Forward error estimate
       berr     ! Backward error estimate
 
-    real, dimension(3*ndim) ::  & 
+    real( kind = core_rknd ), dimension(3*ndim) ::  & 
       work  ! `Scrap' array
 
     integer :: info ! Diagnostic output
@@ -148,7 +154,7 @@ module lapack_wrap
     end if
 
     ! Print diagnostics for when ferr is large
-    if ( clubb_at_least_debug_level( 2 ) .and. any( ferr > 1.e-3 ) ) then
+    if ( clubb_at_least_debug_level( 2 ) .and. any( ferr > 1.e-3_core_rknd ) ) then
 
       write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
 
@@ -206,6 +212,10 @@ module lapack_wrap
 !   <http://www.netlib.org/lapack/single/sgtsv.f>
 !   <http://www.netlib.org/lapack/double/dgtsv.f>
 !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -224,15 +234,15 @@ module lapack_wrap
       nrhs     ! # of right hand sides to back subst. after LU-decomp.
 
     ! Input/Output variables
-    real, intent(inout), dimension(ndim) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ndim) ::  & 
       diag,       & ! Main diagonal
       subd, supd ! Sub and super diagonal
 
-    real, intent(inout), dimension(ndim,nrhs) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ndim,nrhs) ::  & 
       rhs ! RHS input
 
     ! Output variables
-    real, intent(out), dimension(ndim,nrhs) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ndim,nrhs) ::  & 
       solution ! Solution
 
 
@@ -267,7 +277,7 @@ module lapack_wrap
         " illegal value in argument", -info
       err_code = clubb_bad_lapack_arg
 
-      solution = -999.
+      solution = -999._core_rknd
 
     case( 0 )
       ! Success!
@@ -283,7 +293,7 @@ module lapack_wrap
       write(fstderr,*) trim( solve_type )//" singular matrix."
       err_code = clubb_singular_matrix
 
-      solution = -999.
+      solution = -999._core_rknd
 
     end select
 
@@ -312,6 +322,9 @@ module lapack_wrap
     use error_code, only: &
       clubb_at_least_debug_level ! Logical function
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -330,18 +343,18 @@ module lapack_wrap
       ndim,  & ! The order of the LHS Matrix, i.e. the # of linear equations
       nrhs     ! Number of RHS's to back substitute for
 
-    real, dimension(nsup+nsub+1,ndim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(nsup+nsub+1,ndim), intent(inout) ::  & 
       lhs ! Left hand side
-    real, dimension(ndim,nrhs), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(ndim,nrhs), intent(inout) ::  & 
       rhs ! Right hand side(s)
 
     ! Output Variables
-    real, dimension(ndim,nrhs), intent(out) :: &
+    real( kind = core_rknd ), dimension(ndim,nrhs), intent(out) :: &
       solution
 
     ! The estimate of the reciprocal condition number of matrix
     ! after equilibration (if done).
-    real, intent(out) ::  & 
+    real( kind = core_rknd ), intent(out) ::  & 
       rcond
 
     integer, intent(out) :: err_code ! Valid calculation?
@@ -349,19 +362,19 @@ module lapack_wrap
     ! Local Variables
 
     ! Workspaces
-    real, dimension(3*ndim)  :: work
+    real( kind = core_rknd ), dimension(3*ndim)  :: work
     integer, dimension(ndim) :: iwork
 
-    real, dimension(2*nsub+nsup+1,ndim) :: & 
+    real( kind = core_rknd ), dimension(2*nsub+nsup+1,ndim) :: & 
       lulhs ! LU Decomposition of the LHS
 
     integer, dimension(ndim) ::  & 
       ipivot
 
-    real, dimension(nrhs) ::  & 
+    real( kind = core_rknd ), dimension(nrhs) ::  & 
       ferr, berr ! Forward and backward error estimate
 
-    real, dimension(ndim) ::  & 
+    real( kind = core_rknd ), dimension(ndim) ::  & 
       rscale, cscale ! Row and column scale factors for the LHS
 
     integer ::  & 
@@ -457,7 +470,7 @@ module lapack_wrap
 ! %% end debug
 
     ! Diagnostic information
-    if ( clubb_at_least_debug_level( 2 ) .and. any( ferr > 1.e-3 ) ) then
+    if ( clubb_at_least_debug_level( 2 ) .and. any( ferr > 1.e-3_core_rknd ) ) then
 
       write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
 
@@ -515,6 +528,9 @@ module lapack_wrap
 !   <http://www.netlib.org/lapack/double/dgbsv.f>
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -535,20 +551,20 @@ module lapack_wrap
 
     ! Note: matrix lhs is intent(in), not intent(inout)
     ! as in the subroutine band_solvex( )
-    real, dimension(nsup+nsub+1,ndim), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(nsup+nsub+1,ndim), intent(in) ::  & 
       lhs ! Left hand side
-    real, dimension(ndim,nrhs), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(ndim,nrhs), intent(inout) ::  & 
       rhs ! Right hand side(s)
 
     ! Output Variables
-    real, dimension(ndim,nrhs), intent(out) :: solution
+    real( kind = core_rknd ), dimension(ndim,nrhs), intent(out) :: solution
 
     integer, intent(out) :: err_code ! Valid calculation?
 
     ! Local Variables
 
     ! Workspaces
-    real, dimension(2*nsub+nsup+1,ndim) :: & 
+    real( kind = core_rknd ), dimension(2*nsub+nsup+1,ndim) :: & 
       lulhs ! LU Decomposition of the LHS
 
     integer, dimension(ndim) ::  & 
@@ -631,7 +647,7 @@ module lapack_wrap
         " illegal value for argument ", -info
       err_code = clubb_bad_lapack_arg
 
-      solution = -999.
+      solution = -999._core_rknd
 
     case( 0 )
       ! Success!
@@ -647,7 +663,7 @@ module lapack_wrap
       write(fstderr,*) trim( solve_type )//" band solver: singular matrix"
       err_code = clubb_singular_matrix
 
-      solution = -999.
+      solution = -999._core_rknd
 
     end select
 
@@ -665,6 +681,9 @@ module lapack_wrap
 !   <http://www.netlib.org/lapack/double/disnan.f>
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 #ifdef NO_LAPACK_ISNAN /* Used for older LAPACK libraries that don't have sisnan/disnan */
 
@@ -674,7 +693,7 @@ module lapack_wrap
       ndim, & ! Size of variable
       nrhs    ! Number of right hand sides
 
-    real, dimension(ndim,nrhs), intent(in) :: &
+    real( kind = core_rknd ), dimension(ndim,nrhs), intent(in) :: &
       variable ! Variable to check
 
     lapack_isnan = any( variable(:,1:nrhs) /= variable(:,1:nrhs) )
@@ -685,7 +704,7 @@ module lapack_wrap
       ndim, & ! Size of variable
       nrhs    ! Number of right hand sides
 
-    real, dimension(ndim,nrhs), intent(in) :: &
+    real( kind = core_rknd ), dimension(ndim,nrhs), intent(in) :: &
       variable ! Variable to check
 
     integer :: k, j

@@ -89,7 +89,8 @@ module stats_subs
       l_grads
 
     use clubb_precision, only: & 
-      time_precision   ! Variable(s)
+      time_precision, &   ! Variable(s)
+      core_rknd
 
     use output_grads, only: & 
       open_grads  ! Procedure
@@ -149,20 +150,20 @@ module stats_subs
 
     integer, intent(in) :: nzmax ! Grid points in the vertical [count]
 
-    real, intent(in), dimension(nzmax) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
       gzt, gzm  ! Thermodynamic and momentum levels           [m]
 
     integer, intent(in) :: nnrad_zt ! Grid points in the radiation grid [count]
 
-    real, intent(in), dimension(nnrad_zt) :: grad_zt ! Radiation levels [m]
+    real( kind = core_rknd ), intent(in), dimension(nnrad_zt) :: grad_zt ! Radiation levels [m]
 
     integer, intent(in) :: nnrad_zm ! Grid points in the radiation grid [count]
 
-    real, intent(in), dimension(nnrad_zm) :: grad_zm ! Radiation levels [m]
+    real( kind = core_rknd ), intent(in), dimension(nnrad_zm) :: grad_zm ! Radiation levels [m]
 
     integer, intent(in) :: day, month, year  ! Time of year
 
-    real, dimension(1), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(1), intent(in) ::  & 
       rlat, rlon   ! Latitude and Longitude             [Degrees N/E]
 
     real(kind=time_precision), intent(in) ::  & 
@@ -411,27 +412,27 @@ module stats_subs
     allocate( ztscr20(zt%kk) )
     allocate( ztscr21(zt%kk) )
 
-    ztscr01 = 0.0
-    ztscr02 = 0.0
-    ztscr03 = 0.0
-    ztscr04 = 0.0
-    ztscr05 = 0.0
-    ztscr06 = 0.0
-    ztscr07 = 0.0
-    ztscr08 = 0.0
-    ztscr09 = 0.0
-    ztscr10 = 0.0
-    ztscr11 = 0.0
-    ztscr12 = 0.0
-    ztscr13 = 0.0
-    ztscr14 = 0.0
-    ztscr15 = 0.0
-    ztscr16 = 0.0
-    ztscr17 = 0.0
-    ztscr18 = 0.0
-    ztscr19 = 0.0
-    ztscr20 = 0.0
-    ztscr21 = 0.0
+    ztscr01 = 0.0_core_rknd
+    ztscr02 = 0.0_core_rknd
+    ztscr03 = 0.0_core_rknd
+    ztscr04 = 0.0_core_rknd
+    ztscr05 = 0.0_core_rknd
+    ztscr06 = 0.0_core_rknd
+    ztscr07 = 0.0_core_rknd
+    ztscr08 = 0.0_core_rknd
+    ztscr09 = 0.0_core_rknd
+    ztscr10 = 0.0_core_rknd
+    ztscr11 = 0.0_core_rknd
+    ztscr12 = 0.0_core_rknd
+    ztscr13 = 0.0_core_rknd
+    ztscr14 = 0.0_core_rknd
+    ztscr15 = 0.0_core_rknd
+    ztscr16 = 0.0_core_rknd
+    ztscr17 = 0.0_core_rknd
+    ztscr18 = 0.0_core_rknd
+    ztscr19 = 0.0_core_rknd
+    ztscr20 = 0.0_core_rknd
+    ztscr21 = 0.0_core_rknd
 
     fname = trim( fname_zt )
 
@@ -513,23 +514,23 @@ module stats_subs
     allocate( zmscr16(zm%kk) )
     allocate( zmscr17(zm%kk) )
 
-    zmscr01 = 0.0
-    zmscr02 = 0.0
-    zmscr03 = 0.0
-    zmscr04 = 0.0
-    zmscr05 = 0.0
-    zmscr06 = 0.0
-    zmscr07 = 0.0
-    zmscr08 = 0.0
-    zmscr09 = 0.0
-    zmscr10 = 0.0
-    zmscr11 = 0.0
-    zmscr12 = 0.0
-    zmscr13 = 0.0
-    zmscr14 = 0.0
-    zmscr15 = 0.0
-    zmscr16 = 0.0
-    zmscr17 = 0.0
+    zmscr01 = 0.0_core_rknd
+    zmscr02 = 0.0_core_rknd
+    zmscr03 = 0.0_core_rknd
+    zmscr04 = 0.0_core_rknd
+    zmscr05 = 0.0_core_rknd
+    zmscr06 = 0.0_core_rknd
+    zmscr07 = 0.0_core_rknd
+    zmscr08 = 0.0_core_rknd
+    zmscr09 = 0.0_core_rknd
+    zmscr10 = 0.0_core_rknd
+    zmscr11 = 0.0_core_rknd
+    zmscr12 = 0.0_core_rknd
+    zmscr13 = 0.0_core_rknd
+    zmscr14 = 0.0_core_rknd
+    zmscr15 = 0.0_core_rknd
+    zmscr16 = 0.0_core_rknd
+    zmscr17 = 0.0_core_rknd
 
 
     fname = trim( fname_zm )
@@ -611,23 +612,23 @@ module stats_subs
       !allocate( radscr16(rad%kk) )
       !allocate( radscr17(rad%kk) )
 
-      !radscr01 = 0.0
-      !radscr02 = 0.0
-      !radscr03 = 0.0
-      !radscr04 = 0.0
-      !radscr05 = 0.0
-      !radscr06 = 0.0
-      !radscr07 = 0.0
-      !radscr08 = 0.0
-      !radscr09 = 0.0
-      !radscr10 = 0.0
-      !radscr11 = 0.0
-      !radscr12 = 0.0
-      !radscr13 = 0.0
-      !radscr14 = 0.0
-      !radscr15 = 0.0
-      !radscr16 = 0.0
-      !radscr17 = 0.0
+      !radscr01 = 0.0_core_rknd
+      !radscr02 = 0.0_core_rknd
+      !radscr03 = 0.0_core_rknd
+      !radscr04 = 0.0_core_rknd
+      !radscr05 = 0.0_core_rknd
+      !radscr06 = 0.0_core_rknd
+      !radscr07 = 0.0_core_rknd
+      !radscr08 = 0.0_core_rknd
+      !radscr09 = 0.0_core_rknd
+      !radscr10 = 0.0_core_rknd
+      !radscr11 = 0.0_core_rknd
+      !radscr12 = 0.0_core_rknd
+      !radscr13 = 0.0_core_rknd
+      !radscr14 = 0.0_core_rknd
+      !radscr15 = 0.0_core_rknd
+      !radscr16 = 0.0_core_rknd
+      !radscr17 = 0.0_core_rknd
 
 
       fname = trim( fname_rad_zt )
@@ -708,23 +709,23 @@ module stats_subs
       !allocate( radscr16(rad%kk) )
       !allocate( radscr17(rad%kk) )
 
-      !radscr01 = 0.0
-      !radscr02 = 0.0
-      !radscr03 = 0.0
-      !radscr04 = 0.0
-      !radscr05 = 0.0
-      !radscr06 = 0.0
-      !radscr07 = 0.0
-      !radscr08 = 0.0
-      !radscr09 = 0.0
-      !radscr10 = 0.0
-      !radscr11 = 0.0
-      !radscr12 = 0.0
-      !radscr13 = 0.0
-      !radscr14 = 0.0
-      !radscr15 = 0.0
-      !radscr16 = 0.0
-      !radscr17 = 0.0
+      !radscr01 = 0.0_core_rknd
+      !radscr02 = 0.0_core_rknd
+      !radscr03 = 0.0_core_rknd
+      !radscr04 = 0.0_core_rknd
+      !radscr05 = 0.0_core_rknd
+      !radscr06 = 0.0_core_rknd
+      !radscr07 = 0.0_core_rknd
+      !radscr08 = 0.0_core_rknd
+      !radscr09 = 0.0_core_rknd
+      !radscr10 = 0.0_core_rknd
+      !radscr11 = 0.0_core_rknd
+      !radscr12 = 0.0_core_rknd
+      !radscr13 = 0.0_core_rknd
+      !radscr14 = 0.0_core_rknd
+      !radscr15 = 0.0_core_rknd
+      !radscr16 = 0.0_core_rknd
+      !radscr17 = 0.0_core_rknd
 
 
       fname = trim( fname_rad_zm )
@@ -1468,10 +1469,13 @@ module stats_subs
     use saturation, only: &
       sat_mixrat_ice ! Procedure
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variable
-    real, intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       um,      & ! u wind                        [m/s]
       vm,      & ! v wind                        [m/s]
       upwp,    & ! vertical u momentum flux      [m^2/s^2]
@@ -1488,7 +1492,7 @@ module stats_subs
       thlp2,   & ! thl'^2                        [K^2]
       rtpthlp    ! rt'thl'                       [kg/kg K]
 
-    real, intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
       exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
       rho,          & ! Density                                  [kg/m^3]
@@ -1500,7 +1504,7 @@ module stats_subs
       wm_zt,        & ! w on thermodynamic levels                [m/s]
       wm_zm           ! w on momentum levels                     [m/s]
 
-    real, intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       rcm_zm,        & ! Total water mixing ratio                 [kg/kg]
       rtm_zm,        & ! Total water mixing ratio                 [kg/kg]
       thlm_zm,       & ! Liquid potential temperature             [K]
@@ -1511,13 +1515,13 @@ module stats_subs
       rcm_in_layer,  & ! Cloud water mixing ratio in cloud layer  [kg/kg]
       cloud_cover      ! Cloud cover                              [-]
 
-    real, intent(in), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
 
     type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
       pdf_params ! PDF parameters [units vary]
 
-    real, intent(in), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: & 
       sclrm,           & ! High-order passive scalar            [units vary]
       sclrp2,          & ! High-order passive scalar variance   [units^2]
       sclrprtp,        & ! High-order passive scalar covariance [units kg/kg]
@@ -1525,7 +1529,7 @@ module stats_subs
       sclrm_forcing,   & ! Large-scale forcing of scalar        [units/s]
       wpsclrp            ! w'sclr'                              [units m/s]
 
-    real, intent(in), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm,         & ! Eddy-diff passive scalar      [units vary] 
       edsclrm_forcing    ! Large-scale forcing of edscalar  [units vary]
 
@@ -1533,13 +1537,13 @@ module stats_subs
 
     integer :: i, k
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       T_in_K, &  ! Absolute temperature [K]
       rsati,  &  ! Saturation w.r.t ice [kg/kg]
       shear,  &  ! Wind shear production term [m^2/s^3]
       s_mellor   ! Mellor's 's'               [kg/kg]
 
-    real :: xtmp
+    real( kind = core_rknd ) :: xtmp
 
     ! Sample fields
 
@@ -1551,7 +1555,7 @@ module stats_subs
       if ( iT_in_K > 0 .or. irsati > 0 ) then
         T_in_K = thlm2T_in_K( thlm, exner, rcm )
       else
-        T_in_K = -999.
+        T_in_K = -999._core_rknd
       end if
 
       call stat_update_var( iT_in_K, T_in_K, zt )
@@ -1644,7 +1648,7 @@ module stats_subs
       if ( is_mellor > 0 ) then
         ! Determine 's' from Mellor (1977) (extended liquid water)
         s_mellor(:) = pdf_params%mixt_frac * pdf_params%s1 &
-                    + (1.0-pdf_params%mixt_frac) * pdf_params%s2
+                    + (1.0_core_rknd-pdf_params%mixt_frac) * pdf_params%s2
         call stat_update_var( is_mellor, s_mellor, zt )
       end if
 
@@ -1734,7 +1738,7 @@ module stats_subs
           shear(k) = - upwp(k) * ( um(k+1) - um(k) ) * gr%invrs_dzm(k)  &
                      - vpwp(k) * ( vm(k+1) - vm(k) ) * gr%invrs_dzm(k)
         enddo
-        shear(gr%nz) = 0.0
+        shear(gr%nz) = 0.0_core_rknd
       endif
       call stat_update_var( ishear, shear, zm )
 
@@ -1761,7 +1765,7 @@ module stats_subs
         else
 
           ! Set the cloud base output to -10m, if it's clear. 
-          call stat_update_var_pt( iz_cloud_base, 1, -10.0 , sfc ) ! Known magic number
+          call stat_update_var_pt( iz_cloud_base, 1, -10.0_core_rknd , sfc ) ! Known magic number
  
         endif
 
@@ -1937,10 +1941,13 @@ module stats_subs
       zt, & ! Variables
       l_stats_samp
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, dimension(gr%nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet ! All hydrometeors except for rcm        [units vary]
 
     if ( l_stats_samp ) then
@@ -2025,13 +2032,16 @@ module stats_subs
       zt, & ! Variables
       l_stats_samp
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, dimension(gr%nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       LH_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       LH_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
       LH_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
       LH_rvm_mc     ! Tendency of vapor                        [kg/kg/s]

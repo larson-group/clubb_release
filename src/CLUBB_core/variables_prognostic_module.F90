@@ -13,6 +13,9 @@ module variables_prognostic_module
   use pdf_parameter_module, only: &
     pdf_parameter ! Derived type
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   private ! Set Default Scoping
@@ -24,7 +27,7 @@ module variables_prognostic_module
   ! Prognostic variables
 ! ---> h1g, 2010-06-16
 #ifdef GFDL
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     um,      & ! u wind                        [m/s]
     vm,      & ! v wind                        [m/s]
     upwp,    & ! vertical u momentum flux      [m^2/s^2]
@@ -45,7 +48,7 @@ module variables_prognostic_module
     thlp2,   & ! thl'^2                        [K^2]
     rtpthlp    ! rt'thl'                       [kg/kg K]
 #else
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     um,      & ! u wind                        [m/s]
     vm,      & ! v wind                        [m/s]
     upwp,    & ! vertical u momentum flux      [m^2/s^2]
@@ -69,7 +72,7 @@ module variables_prognostic_module
 !$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wprcp)
 !$omp   threadprivate(wp2, wp3, rtp2, thlp2, rtpthlp)
 
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     p_in_Pa,         & ! Pressure (Pa) (thermodynamic levels)          [Pa]
     exner,           & ! Exner function = ( p / p0 ) ** kappa          [-]
     rho,             & ! Density (thermodynamic levels)                [kg/m^3]
@@ -90,14 +93,14 @@ module variables_prognostic_module
 !$omp     thv_ds_zt, thlm_forcing, rtm_forcing, um_forcing, vm_forcing)
 
   ! Imposed large scale w
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     wm_zm, & ! w on momentum levels              [m/s]
     wm_zt    ! w on thermodynamic levels         [m/s]
 
 !$omp   threadprivate(wm_zm, wm_zt)
 
   ! Cloud water variables
-  real, target, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     rcm,          & ! Cloud water mixing ratio                 [kg/kg]
     cloud_frac,   & ! Cloud fraction                           [-]
     rcm_in_layer, & ! Cloud water mixing ratio in cloud layer  [kg/kg]
@@ -106,7 +109,7 @@ module variables_prognostic_module
 !$omp   threadprivate(rcm, cloud_frac, rcm_in_layer, cloud_cover)
 
   ! Surface fluxes
-  real, public ::  & 
+  real( kind = core_rknd ), public ::  & 
     wpthlp_sfc,        & ! w'thl'      [m K/s]
     wprtp_sfc,         & ! w'rt'       [m kg/(kg s)]
     upwp_sfc, vpwp_sfc   ! u'w' & v'w' [m^2/s^2]
@@ -114,14 +117,14 @@ module variables_prognostic_module
 !$omp   threadprivate(wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc)
 
   ! Surface fluxes for passive scalars
-  real, dimension(:), allocatable, public :: & 
+  real( kind = core_rknd ), dimension(:), allocatable, public :: & 
     wpsclrp_sfc,     & ! w'sclr' at surface    [units m/s]
     wpedsclrp_sfc      ! w'edsclr' at surface  [units m/s]
 
 !$omp   threadprivate(wpsclrp_sfc, wpedsclrp_sfc)
 
   ! More surface data
-  real, public ::  & 
+  real( kind = core_rknd ), public ::  & 
     T_sfc,  & ! surface temperature     [K]
     p_sfc,  & ! surface pressure        [Pa]
     sens_ht,    & ! sensible heat flux      [K m/s]
@@ -130,7 +133,7 @@ module variables_prognostic_module
 !$omp   threadprivate(T_sfc, p_sfc, sens_ht, latent_ht)
 
   ! Passive scalars
-  real, target, allocatable, dimension(:,:), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension(:,:), public :: & 
     sclrm,           & ! Mean passive scalars           [units vary]
     sclrp2,          & ! sclr'^2                        [units^2]
     sclrprtp,        & ! sclr'rt'                       [units kg/kg]
@@ -142,7 +145,7 @@ module variables_prognostic_module
 
 !---> h1g, 2010-06-16
 #ifdef GFDL
-  real, target, allocatable, dimension( : , : , : ), public :: & 
+  real( kind = core_rknd ), target, allocatable, dimension( : , : , : ), public :: & 
     RH_crit  ! critical relative humidity for droplet and ice nucleation
 #endif
 !<--- h1g, 2010-06-16
@@ -151,7 +154,7 @@ module variables_prognostic_module
 !$omp     edsclrm, edsclrm_forcing, wpsclrp)
 
   ! PDF parameters
-  real, target, allocatable, dimension(:), public :: &
+  real( kind = core_rknd ), target, allocatable, dimension(:), public :: &
     sigma_sqd_w    ! PDF width parameter (momentum levels)   [-]
 
 !$omp threadprivate(sigma_sqd_w)
@@ -182,6 +185,9 @@ module variables_prognostic_module
     use parameters_model, only: & 
         sclr_dim,  & ! Variable(s)
         edsclr_dim
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -277,118 +283,118 @@ module variables_prognostic_module
 
     ! Prognostic variables
 
-    um(1:nzmax)      = 0.0     ! u wind
-    vm (1:nzmax)     = 0.0     ! v wind
+    um(1:nzmax)      = 0.0_core_rknd     ! u wind
+    vm (1:nzmax)     = 0.0_core_rknd     ! v wind
 
-    upwp(1:nzmax)    = 0.0     ! vertical u momentum flux
-    vpwp(1:nzmax)    = 0.0     ! vertical v momentum flux
+    upwp(1:nzmax)    = 0.0_core_rknd     ! vertical u momentum flux
+    vpwp(1:nzmax)    = 0.0_core_rknd     ! vertical v momentum flux
 
     up2(1:nzmax)     = w_tol_sqd ! u'^2
     vp2(1:nzmax)     = w_tol_sqd ! v'^2
     wp2(1:nzmax)     = w_tol_sqd ! w'^2
 
-    thlm(1:nzmax)    = 0.0         ! liquid potential temperature
-    rtm(1:nzmax)     = 0.0         ! total water mixing ratio
-    wprtp(1:nzmax)   = 0.0         ! w'rt'
-    wpthlp(1:nzmax)  = 0.0         ! w'thl'
-    wprcp(1:nzmax)   = 0.0         ! w'rc'
-    wp3(1:nzmax)     = 0.0         ! w'^3
+    thlm(1:nzmax)    = 0.0_core_rknd         ! liquid potential temperature
+    rtm(1:nzmax)     = 0.0_core_rknd         ! total water mixing ratio
+    wprtp(1:nzmax)   = 0.0_core_rknd         ! w'rt'
+    wpthlp(1:nzmax)  = 0.0_core_rknd         ! w'thl'
+    wprcp(1:nzmax)   = 0.0_core_rknd         ! w'rc'
+    wp3(1:nzmax)     = 0.0_core_rknd         ! w'^3
     rtp2(1:nzmax)    = rt_tol**2    ! rt'^2
     thlp2(1:nzmax)   = thl_tol**2   ! thl'^2
-    rtpthlp(1:nzmax) = 0.0         ! rt'thl'
+    rtpthlp(1:nzmax) = 0.0_core_rknd         ! rt'thl'
 
-    p_in_Pa(1:nzmax)= 0.0           ! pressure (Pa)
-    exner(1:nzmax) = 0.0            ! exner
-    rho(1:nzmax)  = 0.0             ! density on thermo. levels
-    rho_zm(1:nzmax)  = 0.0          ! density on moment. levels
-    rho_ds_zm(1:nzmax) = 0.0        ! dry, static density: m-levs
-    rho_ds_zt(1:nzmax) = 0.0        ! dry, static density: t-levs
-    invrs_rho_ds_zm(1:nzmax) = 0.0  ! inv. dry, static density: m-levs
-    invrs_rho_ds_zt(1:nzmax) = 0.0  ! inv. dry, static density: t-levs
-    thv_ds_zm(1:nzmax) = 0.0        ! dry, base-state theta_v: m-levs
-    thv_ds_zt(1:nzmax) = 0.0        ! dry, base-state theta_v: t-levs
+    p_in_Pa(1:nzmax)= 0.0_core_rknd           ! pressure (Pa)
+    exner(1:nzmax) = 0.0_core_rknd            ! exner
+    rho(1:nzmax)  = 0.0_core_rknd             ! density on thermo. levels
+    rho_zm(1:nzmax)  = 0.0_core_rknd          ! density on moment. levels
+    rho_ds_zm(1:nzmax) = 0.0_core_rknd        ! dry, static density: m-levs
+    rho_ds_zt(1:nzmax) = 0.0_core_rknd        ! dry, static density: t-levs
+    invrs_rho_ds_zm(1:nzmax) = 0.0_core_rknd  ! inv. dry, static density: m-levs
+    invrs_rho_ds_zt(1:nzmax) = 0.0_core_rknd  ! inv. dry, static density: t-levs
+    thv_ds_zm(1:nzmax) = 0.0_core_rknd        ! dry, base-state theta_v: m-levs
+    thv_ds_zt(1:nzmax) = 0.0_core_rknd        ! dry, base-state theta_v: t-levs
 
-    thlm_forcing(1:nzmax) = 0.0     ! thlm large-scale forcing
-    rtm_forcing(1:nzmax)  = 0.0     ! rtm large-scale forcing
-    um_forcing(1:nzmax) = 0.0       ! u forcing
-    vm_forcing(1:nzmax) = 0.0       ! v forcing
+    thlm_forcing(1:nzmax) = 0.0_core_rknd     ! thlm large-scale forcing
+    rtm_forcing(1:nzmax)  = 0.0_core_rknd     ! rtm large-scale forcing
+    um_forcing(1:nzmax) = 0.0_core_rknd       ! u forcing
+    vm_forcing(1:nzmax) = 0.0_core_rknd       ! v forcing
 
     ! Imposed large scale w
 
-    wm_zm(1:nzmax) = 0.0      ! Momentum levels
-    wm_zt(1:nzmax) = 0.0      ! Thermodynamic levels
+    wm_zm(1:nzmax) = 0.0_core_rknd      ! Momentum levels
+    wm_zt(1:nzmax) = 0.0_core_rknd      ! Thermodynamic levels
 
     ! Cloud water variables
 
-    rcm(1:nzmax)          = 0.0
-    cloud_frac(1:nzmax)   = 0.0
-    rcm_in_layer(1:nzmax) = 0.0
-    cloud_cover(1:nzmax)  = 0.0
+    rcm(1:nzmax)          = 0.0_core_rknd
+    cloud_frac(1:nzmax)   = 0.0_core_rknd
+    rcm_in_layer(1:nzmax) = 0.0_core_rknd
+    cloud_cover(1:nzmax)  = 0.0_core_rknd
 
-    sigma_sqd_w           = 0.0 ! PDF width parameter (momentum levels)
+    sigma_sqd_w           = 0.0_core_rknd ! PDF width parameter (momentum levels)
 
     ! Variables for PDF closure scheme
-    pdf_params(:)%w1          = 0.0
-    pdf_params(:)%w2          = 0.0
-    pdf_params(:)%varnce_w1   = 0.0
-    pdf_params(:)%varnce_w2   = 0.0
-    pdf_params(:)%rt1         = 0.0
-    pdf_params(:)%rt2         = 0.0
-    pdf_params(:)%varnce_rt1  = 0.0
-    pdf_params(:)%varnce_rt2  = 0.0
-    pdf_params(:)%thl1        = 0.0
-    pdf_params(:)%thl2        = 0.0
-    pdf_params(:)%varnce_thl1 = 0.0
-    pdf_params(:)%varnce_thl2 = 0.0
-    pdf_params(:)%mixt_frac   = 0.0
-    pdf_params(:)%rc1         = 0.0
-    pdf_params(:)%rc2         = 0.0
-    pdf_params(:)%rsl1        = 0.0
-    pdf_params(:)%rsl2        = 0.0
-    pdf_params(:)%cloud_frac1 = 0.0
-    pdf_params(:)%cloud_frac2 = 0.0
-    pdf_params(:)%s1          = 0.0
-    pdf_params(:)%s2          = 0.0
-    pdf_params(:)%stdev_s1    = 0.0
-    pdf_params(:)%stdev_s2    = 0.0
-    pdf_params(:)%rrtthl      = 0.0
-    pdf_params(:)%alpha_thl   = 0.0
-    pdf_params(:)%alpha_rt    = 0.0
-    pdf_params(:)%crt1        = 0.0
-    pdf_params(:)%crt2        = 0.0
-    pdf_params(:)%cthl1       = 0.0
-    pdf_params(:)%cthl2       = 0.0
+    pdf_params(:)%w1          = 0.0_core_rknd
+    pdf_params(:)%w2          = 0.0_core_rknd
+    pdf_params(:)%varnce_w1   = 0.0_core_rknd
+    pdf_params(:)%varnce_w2   = 0.0_core_rknd
+    pdf_params(:)%rt1         = 0.0_core_rknd
+    pdf_params(:)%rt2         = 0.0_core_rknd
+    pdf_params(:)%varnce_rt1  = 0.0_core_rknd
+    pdf_params(:)%varnce_rt2  = 0.0_core_rknd
+    pdf_params(:)%thl1        = 0.0_core_rknd
+    pdf_params(:)%thl2        = 0.0_core_rknd
+    pdf_params(:)%varnce_thl1 = 0.0_core_rknd
+    pdf_params(:)%varnce_thl2 = 0.0_core_rknd
+    pdf_params(:)%mixt_frac   = 0.0_core_rknd
+    pdf_params(:)%rc1         = 0.0_core_rknd
+    pdf_params(:)%rc2         = 0.0_core_rknd
+    pdf_params(:)%rsl1        = 0.0_core_rknd
+    pdf_params(:)%rsl2        = 0.0_core_rknd
+    pdf_params(:)%cloud_frac1 = 0.0_core_rknd
+    pdf_params(:)%cloud_frac2 = 0.0_core_rknd
+    pdf_params(:)%s1          = 0.0_core_rknd
+    pdf_params(:)%s2          = 0.0_core_rknd
+    pdf_params(:)%stdev_s1    = 0.0_core_rknd
+    pdf_params(:)%stdev_s2    = 0.0_core_rknd
+    pdf_params(:)%rrtthl      = 0.0_core_rknd
+    pdf_params(:)%alpha_thl   = 0.0_core_rknd
+    pdf_params(:)%alpha_rt    = 0.0_core_rknd
+    pdf_params(:)%crt1        = 0.0_core_rknd
+    pdf_params(:)%crt2        = 0.0_core_rknd
+    pdf_params(:)%cthl1       = 0.0_core_rknd
+    pdf_params(:)%cthl2       = 0.0_core_rknd
 
     ! Surface fluxes
-    wpthlp_sfc = 0.0
-    wprtp_sfc  = 0.0
-    upwp_sfc   = 0.0
-    vpwp_sfc   = 0.0
+    wpthlp_sfc = 0.0_core_rknd
+    wprtp_sfc  = 0.0_core_rknd
+    upwp_sfc   = 0.0_core_rknd
+    vpwp_sfc   = 0.0_core_rknd
 
 ! ---> h1g, 2010-06-16
 ! initialize critical relative humidity for liquid and ice nucleation
 #ifdef GFDL
-    RH_crit = 1.0
+    RH_crit = 1.0_core_rknd
 #endif
 !<--- h1g, 2010-06-16
 
     ! Passive scalars
     do i = 1, sclr_dim, 1
-      wpsclrp_sfc(i)   = 0.0
+      wpsclrp_sfc(i)   = 0.0_core_rknd
 
-      sclrm(1:nzmax,i)         = 0.0
-      sclrp2(1:nzmax,i)        = 0.0
-      sclrprtp(1:nzmax,i)      = 0.0
-      sclrpthlp(1:nzmax,i)     = 0.0
-      sclrm_forcing(1:nzmax,i) = 0.0
-      wpsclrp(1:nzmax,i)         = 0.0
+      sclrm(1:nzmax,i)         = 0.0_core_rknd
+      sclrp2(1:nzmax,i)        = 0.0_core_rknd
+      sclrprtp(1:nzmax,i)      = 0.0_core_rknd
+      sclrpthlp(1:nzmax,i)     = 0.0_core_rknd
+      sclrm_forcing(1:nzmax,i) = 0.0_core_rknd
+      wpsclrp(1:nzmax,i)         = 0.0_core_rknd
     end do
 
     do i = 1, edsclr_dim, 1
-      wpedsclrp_sfc(i) = 0.0
+      wpedsclrp_sfc(i) = 0.0_core_rknd
 
-      edsclrm(1:nzmax,i)         = 0.0
-      edsclrm_forcing(1:nzmax,i) = 0.0
+      edsclrm(1:nzmax,i)         = 0.0_core_rknd
+      edsclrm_forcing(1:nzmax,i) = 0.0_core_rknd
     end do
 
     return

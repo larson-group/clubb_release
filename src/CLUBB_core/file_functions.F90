@@ -39,6 +39,9 @@ module file_functions
 !     See Michael Falk's comments below for more information.
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use constants_clubb, only: fstderr ! Constant(s)
 
     implicit none
@@ -52,7 +55,7 @@ module file_functions
     character(*), intent(in) :: & 
      path_and_filename  ! Path to file and filename of file being read.
 
-    real, dimension(num_datapts), intent(out) :: & 
+    real( kind = core_rknd ), dimension(num_datapts), intent(out) :: & 
      variable           ! Data values output into variable
 
     integer :: k        ! Data file row number.
@@ -108,6 +111,10 @@ module file_functions
 ! References:
 !   None
 !-------------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     integer, intent(in) :: & 
@@ -119,14 +126,14 @@ module file_functions
     character(*), intent(in) :: & 
       file_path
 
-    real, dimension(file_dimension1,file_dimension2), intent(out) :: & 
+    real( kind = core_rknd ), dimension(file_dimension1,file_dimension2), intent(out) :: & 
       variable
 
     integer i, j, k
 
     ! ---- Begin Code ----
 
-    variable = -999. ! Initialize to nonsense values
+    variable = -999._core_rknd ! Initialize to nonsense values
 
     open(device,file=file_path,action='read')
 

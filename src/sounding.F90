@@ -75,6 +75,9 @@ module sounding
       convert_snd2extend_atm, & ! Procedure(s)
       load_extend_std_atm
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -90,12 +93,12 @@ module sounding
       runtype ! Used to determine if this in a DYCOMS II RF02 simulation
 
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       p_sfc, & ! Pressure at the surface [Pa]
       zm_init ! Height at zm(1)         [m]
 
     ! Output variables
-    real, intent(out), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       thlm,  & ! Liquid water potential temperature    [K]
       rtm,   & ! Total water mixing ratio              [kg/kg]
       um,    & ! u wind component                      [m/s]
@@ -105,7 +108,7 @@ module sounding
       press, & ! Pressure                              [Pa]
       wm       ! Subsidence                            [m/s or Pa/s]
 
-    real, intent(out) ::  &
+    real( kind = core_rknd ), intent(out) ::  &
       rtm_sfc,  & ! Initial surface rtm                [kg/kg]
       thlm_sfc    ! Initial surface thlm               [K]
 
@@ -114,10 +117,10 @@ module sounding
       alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
-    real, intent(out), dimension(gr%nz, sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz, sclr_dim) ::  & 
       sclrm   ! Passive scalar output      [units vary]
 
-    real, intent(out), dimension(gr%nz, edsclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz, edsclr_dim) ::  & 
       edsclrm ! Eddy Passive scalar output [units vary]
 
     ! Local variables
@@ -130,7 +133,7 @@ module sounding
       l_sclr_sounding_exists   = .false., &
       l_edsclr_sounding_exists = .false.
 
-    real, dimension(nmaxsnd) :: & 
+    real( kind = core_rknd ), dimension(nmaxsnd) :: & 
       z,       & ! Altitude                               [m]
       theta,   & ! Liquid potential temperature sounding  [K]
       rt,      & ! Total water mixing ratio sounding      [kg/kg]
@@ -141,7 +144,7 @@ module sounding
       p_in_Pa, & ! Pressure                               [Pa]
       subs       ! Vertical velocity sounding             [m/s or Pa/s]
 
-    real, dimension(nmaxsnd, sclr_max) ::  & 
+    real( kind = core_rknd ), dimension(nmaxsnd, sclr_max) ::  & 
       sclr, edsclr ! Passive scalar input sounding    [units vary]
 
     type(one_dim_read_var), dimension(n_snd_var) :: &
@@ -196,8 +199,8 @@ module sounding
     ! Read in a passive scalar sounding, if enabled
     if ( sclr_dim > 0 .or. edsclr_dim > 0 ) then
       ! Initialize to zero
-      sclr   = 0.0
-      edsclr = 0.0
+      sclr   = 0.0_core_rknd
+      edsclr = 0.0_core_rknd
       ! Read in SAM-Like <runtype>_sclr_sounding.in and
       !                  <runtype>_edsclr_sounding.in
       if( sclr_dim > 0 ) then
@@ -241,7 +244,7 @@ module sounding
     ! dschanen 1 May 2007
     ! We have changed this for Nov. 11 and June 25, both of which
     ! begin above the ground.
-    ! if ( abs(z(1)) > 1.e-8 ) then
+    ! if ( abs(z(1)) > 1.e-8_core_rknd ) then
     if ( .false. ) then
       write(fstderr,*) 'First level of input sounding must be z=0'
       stop 'STOP in read_sounding'
@@ -333,14 +336,16 @@ module sounding
 
         ELSE  ! DYCOMS II RF02 case
 
-          IF ( gr%zt(i) < 795.0 ) THEN
+          IF ( gr%zt(i) < 795.0_core_rknd ) THEN
             ! (Wyant, et al. 2007, eq 1--4)
-            um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0 ! Known magic number
-            vm(i)   = -9.0 + (5.6*gr%zt(i))/1000.0 ! Known magic number
+            um(i)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(i))/ &
+                1000.0_core_rknd ! Known magic number
+            vm(i)   = -9.0_core_rknd + (5.6_core_rknd*gr%zt(i))/ &
+                1000.0_core_rknd ! Known magic number
             ugm(i)  = um(i)
             vgm(i)  = vm(i)
-            thlm(i) = 288.3
-            rtm(i)  = (9.45)/g_per_kg ! Known magic number
+            thlm(i) = 288.3_core_rknd
+            rtm(i)  = (9.45_core_rknd)/g_per_kg ! Known magic number
             ! Passive Scalars
             ! Change this if they are not equal to theta_l and rt in RF02
             if ( iisclr_thl > 0  ) then
@@ -355,13 +360,17 @@ module sounding
             wm(i) = lin_int( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
           ELSE
             ! (Wyant, et al. 2007, eq 1--4)
-            um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0 ! Known magic number
-            vm(i)   = -9.0 + (5.6*gr%zt(i))/1000.0 ! Known magic number
+            um(i)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(i))/ &
+                          1000.0_core_rknd ! Known magic number
+            vm(i)   = -9.0_core_rknd + (5.6_core_rknd*gr%zt(i))/ &
+                          1000.0_core_rknd ! Known magic number
             ugm(i)  = um(i)
             vgm(i)  = vm(i)
-            thlm(i) = 295.0 + ( (gr%zt(i) - 795.0)**(1.0/3.0) ) ! Known magic number
-            rtm(i)  = (  5.0 - 3.0  & 
-            * ( 1.0 - EXP( (795.0 - gr%zt(i))/500.0 ) )  )/g_per_kg ! Known magic number
+            thlm(i) = 295.0_core_rknd + ( (gr%zt(i) - 795.0_core_rknd)** &
+                        (1.0_core_rknd/3.0_core_rknd) ) ! Known magic number
+            rtm(i)  = (  5.0_core_rknd - 3.0_core_rknd  & 
+            * ( 1.0_core_rknd - EXP( (795.0_core_rknd - gr%zt(i))/ &
+            500.0_core_rknd ) )  )/g_per_kg ! Known magic number
             ! Passive Scalars
             ! Same as above
             if ( iisclr_thl > 0  ) then
@@ -393,8 +402,8 @@ module sounding
        ! The surface (or model lower boundary) is below the lowest sounding
        ! level.  Initialize the values of rtm_sfc and thlm_sfc to negative
        ! values that will be overwritten later.
-       rtm_sfc  = -999.0
-       thlm_sfc = -999.0
+       rtm_sfc  = -999.0_core_rknd
+       thlm_sfc = -999.0_core_rknd
 
     else ! gr%zm(1) >= z(1)
 
@@ -465,6 +474,9 @@ module sounding
       ug_name, &
       vg_name
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variable(s)
@@ -473,14 +485,14 @@ module sounding
     character(len=*), intent(in) :: &
       runtype ! String identifying the model case; e.g. bomex
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       p_sfc, & ! Pressure at the surface [Pa]
       zm_init ! Height at zm(1)         [m]
 
     ! Output Variable(s)
     integer, intent(out) :: nlevels ! Number of levels from the sounding.in file
 
-    real, intent(out), dimension(nmaxsnd) :: & 
+    real( kind = core_rknd ), intent(out), dimension(nmaxsnd) :: & 
       z,      & ! Altitude                               [m]
       theta,  & ! Liquid potential temperature sounding  [K]
       rt,     & ! Total water mixing ratio sounding      [kg/kg]
@@ -553,6 +565,9 @@ module sounding
       thetal_name, &
       temperature_name
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variable(s)
@@ -562,7 +577,7 @@ module sounding
     !                                         e.g. bomex
 
     ! Output Variable(s)
-    real, intent(inout), dimension(nmaxsnd,sclr_max) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: & 
       sclr        ! Scalar sounding [?]
 
 
@@ -618,6 +633,9 @@ module sounding
       thetal_name, &
       temperature_name
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -630,7 +648,7 @@ module sounding
       runtype ! String identifying the model case; e.g. bomex
 
     ! Output Variable(s)
-    real, intent(inout), dimension(nmaxsnd,sclr_max) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: & 
     edsclr ! Eddy Scalars [?]
 
     type(one_dim_read_var), dimension(edsclr_dim) :: retVars
@@ -684,6 +702,9 @@ module sounding
     use constants_clubb, only:  &
         fstderr ! Constant
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -696,7 +717,7 @@ module sounding
     character(len=*), intent(in) :: fname
 
     ! Output Variable
-    real, dimension(gr%nz), intent(out) :: x
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: x
 
     ! Local variables
 
@@ -704,7 +725,7 @@ module sounding
 
     integer :: nlevels
 
-    real, dimension(nmaxsnd) :: z, var
+    real( kind = core_rknd ), dimension(nmaxsnd) :: z, var
 
     ! Loop indices
     integer :: i,k

@@ -77,7 +77,9 @@ module estimate_scm_microphys_module
       clubb_at_least_debug_level ! Procedure
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd, &
+      time_precision
 
     implicit none
 
@@ -97,7 +99,7 @@ module estimate_scm_microphys_module
       l_check_lh_cloud_weighting = .true. ! Verify every other sample point is out of cloud
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = time_precision ), intent(in) :: &
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
@@ -106,40 +108,39 @@ module estimate_scm_microphys_module
       d_variables,   & ! Number of variates (normally=5) 
       k_lh_start       ! Starting level for computing arbitrary overlap
 
-    real, dimension(nz,n_micro_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,n_micro_calls), intent(in) :: &
       LH_rt, & ! n_micro_calls values of total water mixing ratio     [kg/kg]
       LH_thl   ! n_micro_calls values of liquid potential temperature [K]
 
     real( kind = dp ), target, dimension(nz,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
       rho           ! Density on thermo. grid  [kg/m^3]
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in height per gridbox   [m]
 
     type(pdf_parameter), dimension(nz), intent(in) :: pdf_params
 
-    real, dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     integer, dimension(nz,n_micro_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
 
-    real, dimension(n_micro_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(n_micro_calls), intent(in) :: &
        LH_sample_point_weights ! Weight for cloud weighted sampling
 
     ! Output Variables
 
-    real, dimension(nz,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
       lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
-
-    real, dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
@@ -154,13 +155,13 @@ module estimate_scm_microphys_module
       lh_rvm_mc_sum,  & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc_sum    ! LH est of time tendency of liquid potential temperature [K/s]
 
-    real, dimension(nz,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       hydromet_columns ! Hydrometeor species    [units vary]
 
-    real, dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       s_mellor_column    ! 's' (Mellor 1977)            [kg/kg]
 
-    real, dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       rv_column,  & ! Vapor water                  [kg/kg]
       thl_column, & ! Liquid potential temperature [K]
       rc_column,  & ! Liquid water                [kg/kg]
@@ -189,15 +190,16 @@ module estimate_scm_microphys_module
     ! Assertion check
     if ( clubb_at_least_debug_level( 2 ) ) then
       if ( l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling .and. &
-           all( LH_sample_point_weights(:) /= 1.0 ) ) then ! The 1.0 indicates cloud_frac is > 0.5
+           all( LH_sample_point_weights(:) /= 1.0_core_rknd ) ) then 
+              ! The 1.0 indicates cloud_frac is > 0.5
         ! Verify every other sample point is out of cloud if we're doing
         ! cloud weighted sampling
         in_cloud_points     = 0
         out_of_cloud_points = 0
         do sample = 1, n_micro_calls, 1
-          if ( s_mellor_all_points(k_lh_start,sample) > 0. ) then
+          if ( s_mellor_all_points(k_lh_start,sample) > 0._core_rknd) then
             in_cloud_points = in_cloud_points + 1
-          else if ( s_mellor_all_points(k_lh_start,sample) <= 0. ) then
+          else if ( s_mellor_all_points(k_lh_start,sample) <= 0._core_rknd) then
             out_of_cloud_points = out_of_cloud_points + 1
           end if
         end do ! 1..n_micro_calls
@@ -210,7 +212,7 @@ module estimate_scm_microphys_module
       end if ! l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling
     end if ! clubb_at_least_debug_level 2
 
-    lh_hydromet_vel(:,:) = 0.
+    lh_hydromet_vel(:,:) = 0._core_rknd
 
     ! Initialize microphysical tendencies for each mixture component
     lh_hydromet_mc_sum(:,:) = 0._dp
@@ -225,33 +227,33 @@ module estimate_scm_microphys_module
 
     do sample = 1, n_micro_calls
 
-      s_mellor_column = real( s_mellor_all_points(:,sample) )
+      s_mellor_column = real( s_mellor_all_points(:,sample), kind = core_rknd )
 
-      where( s_mellor_all_points(:,sample) > 0.0 )
-        rc_column = real( s_mellor_all_points(:,sample) )
+      where( s_mellor_all_points(:,sample) > 0.0_core_rknd )
+        rc_column = real( s_mellor_all_points(:,sample), kind = core_rknd )
       else where
-        rc_column = 0.0
+        rc_column = 0.0_core_rknd
       end where
 
-      w_column   = real( w_all_points(:,sample) )
-      rv_column  = real( LH_rt(:,sample) ) - rc_column
+      w_column   = real( w_all_points(:,sample), kind = core_rknd )
+      rv_column  = real( LH_rt(:,sample), kind = core_rknd ) - rc_column
       ! Verify total water isn't negative
-      if ( any( rv_column < 0. ) ) then
+      if ( any( rv_column < 0._core_rknd) ) then
         if ( clubb_at_least_debug_level( 1 ) ) then
           write(fstderr,*) "rv negative, LH sample number = ", sample
           write(fstderr,'(a3,3a20)') "k", "rt", "rv", "rc"
           do k = 1, nz
-            if ( rv_column(k) < 0. ) then
+            if ( rv_column(k) < 0._core_rknd) then
               write(6,'(i3,3g20.7)')  k, LH_rt(k,sample), rv_column(k), &
                 rc_column(k)
             end if
           end do
         end if ! clubb_at_least_debug_level( 1 )
         write(fstderr,*) "Applying non-conservative hard clipping to rv sample."
-        where ( rv_column < 0. ) rv_column = zero_threshold
+        where ( rv_column < 0._core_rknd) rv_column = zero_threshold
       end if ! Some rv_column element < 0
 
-      thl_column = real( LH_thl(:,sample) )
+      thl_column = real( LH_thl(:,sample), kind = core_rknd )
 
       call copy_X_nl_into_hydromet( nz, d_variables, 1, & ! In
                                     X_nl_all_levs(:,sample,:), & ! In
@@ -343,7 +345,8 @@ module estimate_scm_microphys_module
       iiLH_w
 
     use clubb_precision, only: &
-      dp ! double precision
+      dp, & ! double precision
+      core_rknd
 
     implicit none
 
@@ -355,10 +358,10 @@ module estimate_scm_microphys_module
     real( kind = dp ), target, dimension(nz,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real, dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real, dimension(nz,n_micro_calls,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,n_micro_calls,hydromet_dim), intent(out) :: &
       hydromet_all_points ! Hydrometeor species    [units vary]
 
     integer :: sample, ivar
@@ -368,41 +371,50 @@ module estimate_scm_microphys_module
       do ivar = 1, hydromet_dim, 1
         if ( ivar == iirrainm .and. iiLH_rrain > 0 ) then
           ! Use a sampled value of rain water mixing ratio
-          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_rrain) )
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiLH_rrain), kind = core_rknd )
 
         else if ( ivar == iirsnowm .and. iiLH_rsnow > 0 ) then
           ! Use a sampled value of rain water mixing ratio
-          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_rsnow) )
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiLH_rsnow), kind = core_rknd )
 
         else if ( ivar == iiricem .and. iiLH_rice > 0 ) then
           ! Use a sampled value of rain water mixing ratio
-          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_rice) )
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiLH_rice), kind = core_rknd )
 
         else if ( ivar == iirgraupelm .and. iiLH_rgraupel > 0 ) then
           ! Use a sampled value of rain water mixing ratio
-          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_rgraupel) )
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiLH_rgraupel), kind = core_rknd )
 
         else if ( ivar == iiNcm .and. iiLH_Nc > 0 ) then
           ! Kluge for when we don't have correlations between Nc, other variables
 !         hydromet_all_points(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
           ! Use a sampled value of cloud droplet number concentration
-          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Nc) )
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiLH_Nc), kind = core_rknd )
 
         else if ( ivar == iiNrm .and. iiLH_Nr > 0 ) then
           ! Use a sampled value of rain droplet number concentration
-          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Nr) )
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiLH_Nr), kind = core_rknd )
 
         else if ( ivar == iiNsnowm .and. iiLH_Nsnow > 0 ) then
           ! Use a sampled value of rain droplet number concentration
-          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Nsnow) )
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiLH_Nsnow), kind = core_rknd )
 
         else if ( ivar == iiNgraupelm .and. iiLH_Ngraupel > 0 ) then
           ! Use a sampled value of rain droplet number concentration
-          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Ngraupel) )
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiLH_Ngraupel), kind = core_rknd )
 
         else if ( ivar == iiNim .and. iiLH_Ni > 0 ) then
           ! Use a sampled value of rain droplet number concentration
-          hydromet_all_points(:,sample,ivar) = real( X_nl_all_levs(:,sample,iiLH_Ni) )
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiLH_Ni), kind = core_rknd )
 
         else ! Use the mean field, rather than a sample point
           ! This is the case for ice phase fields in the Morrison microphysics

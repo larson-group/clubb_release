@@ -52,6 +52,9 @@ module input_interpret
         thetal_name, &
         theta_name
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variable(s)
@@ -62,23 +65,25 @@ module input_interpret
     type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection
     !                                                                being searched
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       p_sfc, &         ! Pressure at the surface [Pa]
       zm_init         ! Height at zm(1)         [m]
 
     ! Output Variable(s)
 
-    real, intent(out), dimension(nsize) :: z ! Height sounding profile [m]
+    real( kind = core_rknd ), intent(out), dimension(nsize) :: &
+      z ! Height sounding profile [m]
 
-    real, intent(out), dimension(nsize) :: p_in_Pa ! Pressure sounding profile [Pa]
+    real( kind = core_rknd ), intent(out), dimension(nsize) :: &
+      p_in_Pa ! Pressure sounding profile [Pa]
 
-    character(len=*), intent(out) :: alt_type ! Indicates where altitudes were
-    !                                           gained from
+    character(len=*), intent(out) :: &
+      alt_type ! Indicates where altitudes were gained from
 
     intrinsic :: max
 
     ! Local Variables
-    real, dimension( nsize ) :: exner, thvm, rcm, theta, rtm
+    real( kind = core_rknd ), dimension( nsize ) :: exner, thvm, rcm, theta, rtm
 
     integer :: nlevels, k
 
@@ -97,7 +102,7 @@ module input_interpret
         z = read_x_profile( nvar, nsize, alt_type, retVars )
 
         ! Set the pressure at the sounding levels to the "fill value".
-        p_in_Pa = -999.9
+        p_in_Pa = -999.9_core_rknd
 
 
       elseif( any(retVars%name == pressure_name) ) then
@@ -231,10 +236,10 @@ module input_interpret
         do k = 1, nlevels, 1
            thvm(k) &
            = theta(k) &
-             * ( 1.0 &
+             * ( 1.0_core_rknd &
                  + ep1 * ( max( rtm(k) - rcm(k), zero_threshold ) &
-                               / ( 1.0 + rtm(k) ) ) &
-                 - ( rcm(k) / ( 1.0 + rtm(k) ) ) &
+                               / ( 1.0_core_rknd + rtm(k) ) ) &
+                 - ( rcm(k) / ( 1.0_core_rknd + rtm(k) ) ) &
                )
         enddo
 
@@ -269,6 +274,9 @@ module input_interpret
       theta_name, &
       temperature_name
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variable(s)
@@ -282,7 +290,7 @@ module input_interpret
     character(len=*), intent(out) :: theta_type ! Indicates type read in
 
     ! Output Variable(s)
-    real, dimension(nsize), intent(out) :: theta
+    real( kind = core_rknd ), dimension(nsize), intent(out) :: theta
 
     if( count( (/ any(retVars%name == theta_name), &
                   any(retVars%name == thetal_name), &
@@ -314,6 +322,9 @@ module input_interpret
     use input_names, only : &
       wm_name, &
       omega_name
+ 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -322,13 +333,15 @@ module input_interpret
 
     integer, intent(in) :: nsize ! Size of the value arrays in retVars
 
-    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being
-    !                                                                searched through
+    type(one_dim_read_var), dimension(nvar), intent(in) :: &
+      retVars ! Collection being searched through
 
     ! Output Variable(s)
-    character(len=*), intent(out) :: subs_type ! Indicates type of subsidence measurement
+    character(len=*), intent(out) :: &
+      subs_type ! Indicates type of subsidence measurement
 
-    real, dimension(nsize), intent(out) :: subs ! Subsidence profile [m/s or Pa/s]
+    real( kind = core_rknd ), dimension(nsize), intent(out) :: &
+      subs ! Subsidence profile [m/s or Pa/s]
 
     if( count( (/ any(retVars%name == wm_name), any(retVars%name == omega_name) /)) <= 1) then
       if( any(retVars%name == wm_name))then

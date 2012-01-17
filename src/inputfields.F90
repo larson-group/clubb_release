@@ -217,6 +217,9 @@ module inputfields
 
     use soil_vegetation, only: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -230,9 +233,9 @@ module inputfields
 
     type (stat_file) :: fread_var
 
-    real, dimension(:), allocatable :: LES_tmp1
+    real( kind = core_rknd ), dimension(:), allocatable :: LES_tmp1
 
-    real, dimension(gr%nz+1) :: tmp1
+    real( kind = core_rknd ), dimension(gr%nz+1) :: tmp1
 
     integer ::  &
       k_lowest_zt_input, &  ! The lowest CLUBB thermodynamic level that's within the LES domain.
@@ -267,7 +270,7 @@ module inputfields
     integer :: k, &  ! Array index
                unit_number ! file unit number
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       temp ! temporary variable
 
     ! ---- Begin Code ----
@@ -673,7 +676,7 @@ module inputfields
 
       call get_clubb_variable_interpolated &
            ( input_veg_T_in_K, stat_file_sfc, "veg_T_in_K", 1, timestep, &
-             (/0./), tmp1(1), l_read_error )
+             (/0._core_rknd/), tmp1(1), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
       veg_T_in_K = tmp1(1)
@@ -688,7 +691,7 @@ module inputfields
 !     endif
       call get_clubb_variable_interpolated &
            ( input_deep_soil_T_in_K, stat_file_sfc, "deep_soil_T_in_K", 1, timestep, &
-             (/0./), tmp1(1), l_read_error )
+             (/0._core_rknd/), tmp1(1), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
       deep_soil_T_in_K = tmp1(1)
@@ -703,7 +706,7 @@ module inputfields
 !     endif
       call get_clubb_variable_interpolated &
            ( input_sfc_soil_T_in_K, stat_file_sfc, "sfc_soil_T_in_K", 1, timestep, &
-             (/0./), tmp1(1), l_read_error )
+             (/0._core_rknd/), tmp1(1), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
       sfc_soil_T_in_K = tmp1(1)
@@ -882,7 +885,7 @@ module inputfields
         ! value of wp3 at thermodynamic level 1 to 0, as it is done in
         ! advance_wp2_wp3.
         if ( k_lowest_zt_input == 2 ) then
-          wp3(1) = 0.0
+          wp3(1) = 0.0_core_rknd
         endif
       endif
 
@@ -1049,7 +1052,7 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
-      temp = 0.0 ! Initialize temp to 0.0
+      temp = 0.0_core_rknd ! Initialize temp to 0.0
 
       call get_coamps_variable_interp( &
               input_em, fread_var, "tke", timestep, gr%nz, &              ! Intent(in)
@@ -1493,7 +1496,7 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
-      temp = 0.0  ! clear temp
+      temp = 0.0_core_rknd  ! clear temp
       call get_coamps_variable_interp( &
               input_upwp, fread_var, "wpup_sgs", timestep, gr%nz, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
@@ -1517,7 +1520,7 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
-      temp = 0.0  ! clear temp
+      temp = 0.0_core_rknd  ! clear temp
       call get_coamps_variable_interp( &
               input_vpwp, fread_var, "wpvp_sgs", timestep, gr%nz, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
@@ -1731,6 +1734,9 @@ module inputfields
 !--------------------------------------------------------------------------------
     use stat_file_utils, only: stat_file_average ! Procedure(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -1749,10 +1755,10 @@ module inputfields
       vardim, & ! Dimension of the profile in CLUBB
       timestep  ! Timestep to read in
 
-    real, intent(in), dimension(vardim) :: &
+    real( kind = core_rknd ), intent(in), dimension(vardim) :: &
       clubb_heights ! Altitudes         [m]
 
-    real, intent(inout), dimension(vardim) :: &
+    real( kind = core_rknd ), intent(inout), dimension(vardim) :: &
       variable_interpolated     ! The variable after interpolation
 
     logical, intent(out) :: &
@@ -1764,7 +1770,7 @@ module inputfields
     ! ---- Begin Code ----
 
     if ( l_input_var ) then
-      if ( clubb_heights(1) < 0.0 ) then
+      if ( clubb_heights(1) < 0.0_core_rknd ) then
         l_spec_bound_cond = .true.
       else
         l_spec_bound_cond = .false.
@@ -1802,6 +1808,9 @@ module inputfields
 
     use interpolation, only: lin_int
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     logical, intent(in) :: &
@@ -1819,7 +1828,7 @@ module inputfields
       k_lowest, & ! The lowest level from the LES output
       k_highest   ! The highest level from the LES output
 
-    real, dimension(vardim), intent(in) :: &
+    real( kind = core_rknd ), dimension(vardim), intent(in) :: &
       clubb_heights ! The heights for each level
 
     logical, dimension(k_lowest:k_highest), intent(in) :: &
@@ -1830,7 +1839,7 @@ module inputfields
       lower_lev_idx, &
       exact_lev_idx
 
-    real, dimension(vardim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(vardim), intent(inout) :: &
       variable_interpolated ! The resulting interpolated variable
   
     logical, intent(out) :: &
@@ -1838,7 +1847,7 @@ module inputfields
 
     ! Local variables
 
-    real, dimension(fread_var%ia:fread_var%iz) :: &
+    real( kind = core_rknd ), dimension(fread_var%ia:fread_var%iz) :: &
       LES_tmp ! Temporary variable
 
     integer :: &

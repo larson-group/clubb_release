@@ -9,7 +9,8 @@ module stat_file_module
 !-------------------------------------------------------------------------------
    use clubb_precision, only: & 
        stat_rknd,  & ! Variable
-       time_precision
+       time_precision, &
+       core_rknd
  
    implicit none
 
@@ -64,14 +65,14 @@ module stat_file_module
 
      integer :: nlat, nlon ! The number of points in the X and Y
 
-     real, dimension(:), pointer ::  & 
+     real( kind = core_rknd ), dimension(:), pointer ::  & 
        z ! Height of vertical levels [m]
 
      ! Time information
 
      integer :: day, month, year ! Date of starting time
 
-     real, dimension(:), pointer :: & 
+     real( kind = core_rknd ), dimension(:), pointer :: & 
        rlat, & ! Latitude                   [Degrees N]
        rlon    ! Longitude                  [Degrees E]
 

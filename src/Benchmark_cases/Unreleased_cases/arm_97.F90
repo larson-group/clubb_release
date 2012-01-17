@@ -32,7 +32,7 @@ module arm_97
 
     use constants_clubb, only: grav ! Variable(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
@@ -53,40 +53,40 @@ module arm_97
 
     intrinsic :: max, sqrt, present
 
-    real, parameter ::  & 
-      z0    = 0.035   ! ARM Cu mom. roughness height
+    real( kind = core_rknd ), parameter ::  & 
+      z0    = 0.035_core_rknd   ! ARM Cu mom. roughness height
 
     ! Input Variables
     real(time_precision), intent(in) ::  & 
       time      ! Current time        [s]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       z,         & ! Height at zt=2      [s] 
       rho_sfc,      & ! Density at zm=1     [kg/m^3] 
       ubar,      & ! mean sfc wind speed [m/s]
       thlm_sfc     ! thlm at (2)         [m/s]
 
     ! Output variables
-    real, intent(out) ::  & 
+    real( kind = core_rknd ), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
 
     ! Local variables
-    real :: bflx, heat_flx, moisture_flx, time_frac
+    real( kind = core_rknd ) :: bflx, heat_flx, moisture_flx, time_frac
     integer :: before_time, after_time
     !----------------------------------------------------------------------
     if( l_t_dependent ) then
       ! Default initialization
-      heat_flx = 0.0
-      moisture_flx = 0.0
+      heat_flx = 0.0_core_rknd
+      moisture_flx = 0.0_core_rknd
 
-      time_frac = -1.0 ! Default initialization
+      time_frac = -1.0_core_rknd ! Default initialization
 
       call time_select( time, size(time_sfc_given), time_sfc_given, &
                                    before_time, after_time, time_frac )
 
-      if( time_frac == -1.0 ) then
+      if( time_frac == -1.0_core_rknd ) then
         call clubb_debug(1,"times is not sorted in arm_97_tndcy")
       endif
 

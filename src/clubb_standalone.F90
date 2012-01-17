@@ -18,6 +18,8 @@ program clubb_standalone
 
   use parameters_tunable, only: read_parameters ! Procedure(s)
 
+  use clubb_precision, only: core_rknd ! Variable(s)
+
   implicit none
 
   ! External
@@ -35,7 +37,7 @@ program clubb_standalone
     l_stdout = .true.
 
   ! Run information
-  real, dimension(nparams) :: & 
+  real( kind = core_rknd ), dimension(nparams) :: & 
     params  ! Array of the model constants
 
   ! Internal variables

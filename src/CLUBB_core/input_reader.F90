@@ -7,6 +7,8 @@ module input_reader
 !
 !---------------------------------------------------------------------------------------------------
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
 
   implicit none
 
@@ -34,7 +36,7 @@ module input_reader
     character(len=30) :: dim_name           ! Name of the dimension that the
     !                                         variable varies along
 
-    real, dimension(:), pointer :: values   ! Values of that variable
+    real( kind = core_rknd ), dimension(:), pointer :: values   ! Values of that variable
 
   end type one_dim_read_var
 
@@ -50,14 +52,14 @@ module input_reader
     character(len=30) :: dim2_name           ! Name of the other variable that
     !                                          the variable varies along
 
-    real, dimension(:,:), pointer :: values  ! Values of that variable
+    real( kind = core_rknd ), dimension(:,:), pointer :: values  ! Values of that variable
 
   end type two_dim_read_var
 
 
   ! Constant Parameter(s)
-  real, parameter, private :: &
-    blank_value = -999.9 ! Used to denote if a value is missing from the file
+  real( kind = core_rknd ), parameter, private :: &
+    blank_value = -999.9_core_rknd ! Used to denote if a value is missing from the file
 
   contains
 
@@ -74,6 +76,9 @@ module input_reader
 
     use input_names, only: &
       time_name ! Constant(s)
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -109,7 +114,7 @@ module input_reader
 
     character(len=200) :: tmpline
 
-    real, dimension(nCol) :: tmp
+    real( kind = core_rknd ), dimension(nCol) :: tmp
 
     integer :: input_status ! The status of a read statement
 
@@ -211,6 +216,10 @@ module input_reader
     ! References:
     !   None
     !----------------------------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -239,7 +248,7 @@ module input_reader
 
     integer :: k, j
 
-    real, dimension(nCol) :: tmp
+    real( kind = core_rknd ), dimension(nCol) :: tmp
 
     logical :: isComment
 
@@ -318,6 +327,9 @@ module input_reader
     !   None
     !----------------------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -338,7 +350,7 @@ module input_reader
     do i=1, num_vars
       one_dim_vars(i)%values = linear_fill_blanks( size( one_dim_vars(i)%values ), &
                                                    one_dim_vars(1)%values, one_dim_vars(i)%values, &
-                                                   0.0 )
+                                                   0.0_core_rknd )
     end do
 
     return
@@ -364,6 +376,9 @@ module input_reader
     ! References:
     !   None
     !----------------------------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -429,24 +444,30 @@ module input_reader
 
     use interpolation, only: zlinterp_fnc
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variable(s)
     integer, intent(in) :: dim_grid ! Size of grid
 
-    real, dimension(dim_grid), intent(in) :: grid ! Array that var is being
-    !                                               interpolated to.
+    real( kind = core_rknd ), dimension(dim_grid), intent(in) :: &
+      grid ! Array that var is being interpolated to.
 
-    real, dimension(dim_grid), intent(in) :: var ! Array that may contain gaps.
+    real( kind = core_rknd ), dimension(dim_grid), intent(in) :: &
+      var ! Array that may contain gaps.
 
-    real, intent(in) :: default_value ! Default value if entire profile == blank_value
+    real( kind = core_rknd ), intent(in) :: &
+      default_value ! Default value if entire profile == blank_value
 
     ! Output Variable(s)
-    real, dimension(dim_grid) :: var_out ! Return variable
+    real( kind = core_rknd ), dimension(dim_grid) :: &
+      var_out ! Return variable
 
     ! Local Variables
-    real, dimension(dim_grid) :: temp_grid
-    real, dimension(dim_grid) :: temp_var
+    real( kind = core_rknd ), dimension(dim_grid) :: temp_grid
+    real( kind = core_rknd ), dimension(dim_grid) :: temp_var
 
     integer :: i
     integer :: amt
@@ -588,6 +609,9 @@ module input_reader
     !   None
     !-----------------------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use constants_clubb, only: &
       fstderr ! Constant(s)
 
@@ -605,7 +629,7 @@ module input_reader
       retVars ! Collection of data being searched through
 
     ! Output Variable(s)
-    real, dimension(xdim, ydim) :: x
+    real( kind = core_rknd ), dimension( xdim, ydim ) :: x
 
     ! Local Variables
     integer :: i ! Loop iterator
@@ -661,6 +685,9 @@ module input_reader
     use constants_clubb, only: &
       fstderr  ! Variable for writing to error stream
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External Functions
@@ -681,7 +708,7 @@ module input_reader
       input_file ! Name of the input file containing the variables
 
     ! Output Variable(s)
-    real, dimension(dim_size) :: x
+    real( kind = core_rknd ), dimension(dim_size) :: x
 
     ! Local Variables
     integer :: i

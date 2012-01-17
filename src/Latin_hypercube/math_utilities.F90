@@ -21,6 +21,9 @@ module math_utilities
 !   None
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -29,7 +32,7 @@ module math_utilities
     ! Input
     integer, intent(in) :: n
 
-    real, dimension(n), intent(in) :: &
+    real( kind = core_rknd ), dimension(n), intent(in) :: &
       vect1, vect2
 
     ! Return type
@@ -49,6 +52,9 @@ module math_utilities
 !   None
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -57,7 +63,7 @@ module math_utilities
     ! Input Variables
     integer, intent(in) :: n
 
-    real, dimension(n), intent(in) :: &
+    real( kind = core_rknd ), dimension(n), intent(in) :: &
       vector
 
     ! Return type
@@ -78,12 +84,15 @@ module math_utilities
 !   None
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
     integer, intent(in) :: n
 
-    real, dimension(n), intent(in) :: &
+    real( kind = core_rknd ), dimension(n), intent(in) :: &
       vect1, vect2
 
     ! Return type
@@ -95,15 +104,15 @@ module math_utilities
 
     ! ---- Begin Code ----
 
-    avg1 = sum( vect1 ) / real( n ) 
-    avg2 = sum( vect2 ) / real( n ) 
+    avg1 = sum( vect1 ) / real( n, kind = core_rknd ) 
+    avg2 = sum( vect2 ) / real( n, kind = core_rknd ) 
 
-    total = 0.
+    total = 0._core_rknd
     do j = 1, n
       total = total + (vect1(j) - avg1) * (vect2(j) - avg2)
     enddo
 
-    covar = total / real( n )
+    covar = total / real( n, kind = core_rknd )
 
     return
   end function covar
@@ -118,6 +127,9 @@ module math_utilities
 !   None
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -128,14 +140,14 @@ module math_utilities
       n_levels, &
       n_samples
 
-    real,dimension(n_levels,n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
       x_sample ! Collection of sample points    [units vary]
 
-    real, dimension(n_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(n_samples), intent(in) :: &
       weight   ! Weights for individual points of the vector
 
     ! Return type
-    real, dimension(n_levels) :: mean
+    real( kind = core_rknd ), dimension(n_levels) :: mean
 
     integer :: k
     ! ---- Begin Code ----
@@ -156,6 +168,10 @@ module math_utilities
 ! References:
 !   None
 !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
@@ -163,17 +179,17 @@ module math_utilities
       n_levels, & ! Number of sample levels in the mean / variance
       n_samples   ! Number of sample points compute the variance of
 
-    real,dimension(n_levels,n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
       x_sample ! Collection of sample points    [units vary]
 
-    real,dimension(n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_samples), intent(in) :: &
       weight ! Coefficient to weight the nth sample point by [-]
 
-    real,dimension(n_levels), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_levels), intent(in) :: &
       x_mean ! Mean sample points [units vary]
 
     ! Output Variable
-    real,dimension(n_levels) :: &
+    real( kind = core_rknd ),dimension(n_levels) :: &
       variance ! Variance of x [(units vary)^2]
 
     ! Local Variable(s)
@@ -181,7 +197,7 @@ module math_utilities
 
     ! ---- Begin Code ----
 
-    variance(1:n_levels) = 0.0
+    variance(1:n_levels) = 0.0_core_rknd
 
     do sample=1, n_samples
       variance(1:n_levels) = variance(1:n_levels) &

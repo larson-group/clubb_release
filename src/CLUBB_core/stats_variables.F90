@@ -13,8 +13,8 @@ module stats_variables
       stats ! Type
 
   use clubb_precision, only:  & 
-      time_precision ! Variable
-
+      time_precision, & ! Variable
+      core_rknd
 
   implicit none
 
@@ -881,7 +881,7 @@ module stats_variables
 
   ! Scratch space
 
-  real, dimension(:), allocatable, public :: &
+  real( kind = core_rknd ), dimension(:), allocatable, public :: &
     ztscr01, ztscr02, ztscr03, & 
     ztscr04, ztscr05, ztscr06, & 
     ztscr07, ztscr08, ztscr09, & 
@@ -896,7 +896,7 @@ module stats_variables
 !$omp   threadprivate(ztscr16, ztscr17, ztscr18, ztscr19, ztscr20)
 !$omp   threadprivate(ztscr21)
 
-  real, dimension(:), allocatable, public :: &
+  real( kind = core_rknd ), dimension(:), allocatable, public :: &
     zmscr01, zmscr02, zmscr03, &
     zmscr04, zmscr05, zmscr06, & 
     zmscr07, zmscr08, zmscr09, & 
@@ -909,7 +909,7 @@ module stats_variables
 !$omp   threadprivate(zmscr11, zmscr12, zmscr13, zmscr14, zmscr15)
 !$omp   threadprivate(zmscr16, zmscr17)
 
-  real, dimension(:), allocatable, public :: &
+  real( kind = core_rknd ), dimension(:), allocatable, public :: &
     radscr01, radscr02, radscr03, &
     radscr04, radscr05, radscr06, & 
     radscr07, radscr08, radscr09, & 

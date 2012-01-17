@@ -30,7 +30,7 @@ module output_2D_samples_module
     use output_netcdf, only: open_netcdf ! Procedure(s)
 #endif
 
-    use clubb_precision, only: time_precision ! Constant(s)
+    use clubb_precision, only: time_precision, core_rknd ! Constant(s)
 
     implicit none
 
@@ -59,7 +59,7 @@ module output_2D_samples_module
       time,   & ! Start time                      [s]
       dtwrite   ! Interval for writing to disk    [s]
 
-    real, intent(in), dimension(nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz) :: &
       zgrid ! Vertical grid levels [m]
 
     ! Input/Output Variables
@@ -69,9 +69,9 @@ module output_2D_samples_module
     ! Local Variables
     integer :: nlat, nlon ! Not actually latitudes and longitudes
 
-    real, dimension(n_micro_calls) :: rlat
+    real( kind = core_rknd ), dimension(n_micro_calls) :: rlat
 
-    real, dimension(1) :: rlon
+    real( kind = core_rknd ), dimension(1) :: rlon
 
     character(len=100) :: fname
     integer :: i
@@ -91,10 +91,10 @@ module output_2D_samples_module
     allocate( sample_file%z(nz) )
 
     forall( i=1:n_micro_calls )
-      rlat(i) = real( i ) ! Use made up arbitrary values for degrees north
+      rlat(i) = real( i, kind = core_rknd ) ! Use made up arbitrary values for degrees north
     end forall
 
-    rlon = 1.0 ! Also made up
+    rlon = 1.0_core_rknd ! Also made up
 
     forall( i=1:n_2D_variables )
       sample_file%var(i)%name = trim( variable_names(i) )
@@ -126,7 +126,7 @@ module output_2D_samples_module
     use output_netcdf, only: write_netcdf ! Procedure(s)
 #endif
 
-    use clubb_precision, only: stat_rknd ! Constant(s)
+    use clubb_precision, only: stat_rknd, core_rknd ! Constant(s)
 
     implicit none
 
@@ -139,7 +139,7 @@ module output_2D_samples_module
     real(kind=stat_rknd), intent(in), dimension(nz,n_micro_calls,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real, intent(in), dimension(nz,n_micro_calls) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,n_micro_calls) :: &
       LH_rt, & ! Sample of total water mixing ratio             [kg/kg]
       LH_thl   ! Sample of liquid potential temperature         [K]
 

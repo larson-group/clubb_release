@@ -10,6 +10,10 @@ module parameters_model
 ! References:
 !   None
 !-------------------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd
+
   implicit none
 
   private ! Default scope
@@ -17,22 +21,22 @@ module parameters_model
   ! Maximum allowable value for Lscale [m].
   ! Value depends on whether the model is run by itself or as part of a
   ! host model.
-  real, public :: Lscale_max
+  real( kind = core_rknd ), public :: Lscale_max
 
 !$omp threadprivate(Lscale_max)
 
   ! Maximum magnitude of PDF parameter 'mixt_frac'. 
-  real, public :: mixt_frac_max_mag
+  real( kind = core_rknd ), public :: mixt_frac_max_mag
 
 !$omp threadprivate(mixt_frac_max_mag)
 
   ! Model parameters and constraints setup in the namelists
-  real, public ::  & 
+  real( kind = core_rknd ), public ::  & 
     T0,       & ! Reference temperature (usually 300)  [K]
     ts_nudge    ! Timescale of u/v nudging             [s]
 
 #ifdef GFDL
- real, public ::  &   ! h1g, 2010-06-15
+ real( kind = core_rknd ), public ::  &   ! h1g, 2010-06-15
     cloud_frac_min    ! minimum cloud fraction for droplet #
 #endif
 
@@ -45,12 +49,12 @@ module parameters_model
 
 !$omp threadprivate(sclr_dim, edsclr_dim, hydromet_dim)
 
-  real, dimension(:), allocatable, public :: & 
+  real( kind = core_rknd ), dimension(:), allocatable, public :: & 
     sclr_tol ! Threshold(s) on the passive scalars  [units vary]
 
 !$omp threadprivate(sclr_tol)
 
-  real(kind=4), public :: PosInf
+  real( kind = 4 ), public :: PosInf
 
 !$omp threadprivate(PosInf)
 
@@ -79,6 +83,9 @@ module parameters_model
 !-------------------------------------------------------------------------------
     use constants_clubb, only: Skw_max_mag, Skw_max_mag_sqd
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -88,13 +95,13 @@ module parameters_model
     integer(kind=4), parameter :: nanbits = 2139095040
 
     ! Input Variables
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       T0_in,        & ! Ref. temperature             [K]
       ts_nudge_in,  & ! Timescale for u/v nudging    [s]
       Lscale_max_in   ! Largest value for Lscale     [m]
 
 #ifdef GFDL
-    real, intent(in) ::  cloud_frac_min_in  ! h1g, 2010-06-15
+    real( kind = core_rknd ), intent(in) ::  cloud_frac_min_in  ! h1g, 2010-06-15
 #endif
 
 
@@ -103,7 +110,7 @@ module parameters_model
       sclr_dim_in,      & ! Number of passive scalars
       edsclr_dim_in       ! Number of eddy-diff. passive scalars
 
-    real, intent(in), dimension(sclr_dim_in) :: & 
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim_in) :: & 
       sclr_tol_in     ! Threshold on passive scalars
 
     ! --- Begin Code --- 
@@ -111,8 +118,9 @@ module parameters_model
     ! Formula from subroutine pdf_closure, where sigma_sqd_w = 0.4 and Skw =
     ! Skw_max_mag in this formula.  Note that this is constant, but can't appear
     ! with a Fortran parameter attribute, so we define it here. 
-    mixt_frac_max_mag = 1.0 &
-      - ( 0.5 * ( 1.0 - Skw_max_mag / sqrt( 4.0 * ( 1.0 - 0.4 )**3 &
+    mixt_frac_max_mag = 1.0_core_rknd &
+      - ( 0.5_core_rknd * ( 1.0_core_rknd - Skw_max_mag / &
+      sqrt( 4.0_core_rknd * ( 1.0_core_rknd - 0.4_core_rknd )**3 &
       + Skw_max_mag_sqd ) ) ) ! Known magic number
 
     Lscale_max = Lscale_max_in

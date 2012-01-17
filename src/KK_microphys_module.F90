@@ -124,10 +124,14 @@ module KK_microphys_module
         iNrm_auto,          &
         iNrm_src_adj
 
+    use clubb_precision, only: &
+      core_rknd, & ! Variable(s)
+      time_precision
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = time_precision ), intent(in) :: &
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
@@ -138,7 +142,7 @@ module KK_microphys_module
       l_local_kk,        & ! Flag to use the local form of KK microphysics
       l_latin_hypercube    ! Flag to use Latin Hypercube interface
 
-    real, dimension(nzmax), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzmax), intent(in) :: &
       thlm,     & ! Mean liquid water potential temperature  [K]
       rho,      & ! Density                                  [kg/m^3]
       p_in_Pa,  & ! Pressure                                 [Pa]
@@ -146,31 +150,31 @@ module KK_microphys_module
       s_mellor, & ! Mean extended liquid water mixing ratio  [kg/kg]
       rcm         ! Mean cloud water mixing ratio            [kg/kg]
 
-    real, dimension(nzmax), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzmax), intent(in) :: &
       wm,        & ! Mean vertical velocity, w (for LH interface)        [m/s] 
       w_std_dev, & ! Standard deviation of w (for LH interface)          [m/s]
       dzq,       & ! Thickness between thermo. levels (for LH interface) [m]
       rvm          ! Mean water vapor mixing ratio (for LH interface)    [kg/kg]
 
-    real, dimension(nzmax,hydromet_dim), target, intent(in) :: &
+    real( kind = core_rknd ), dimension(nzmax,hydromet_dim), target, intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
 
     type(pdf_parameter), dimension(nzmax), target, intent(in) :: &
       pdf_params    ! PDF parameters                         [units vary]
 
     ! Input / Output Variables
-    real, dimension(nzmax,hydromet_dim), target, intent(inout) :: &
+    real( kind = core_rknd ), dimension(nzmax,hydromet_dim), target, intent(inout) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
-    real, dimension(nzmax), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzmax), intent(out) :: &
       rcm_mc,  & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc    ! Time tendency of liquid potential temperature [K/s]
 
     ! Local Variables
-    real, dimension(:), pointer ::  &
+    real( kind = core_rknd ), dimension(:), pointer ::  &
       rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
       Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
       Ncm,             & ! Mean cloud droplet conc., < N_c >        [num/kg]
@@ -179,7 +183,7 @@ module KK_microphys_module
       rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
       Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
 
-    real, dimension(nzmax) :: &
+    real( kind = core_rknd ), dimension(nzmax) :: &
       rrainm_cond,  & ! Mean KK (dr_r/dt) due to evaporation      [(kg/kg)/s]
       rrainm_auto,  & ! Mean KK (dr_r/dt) due to autoconversion   [(kg/kg)/s]
       rrainm_accr,  & ! Mean KK (dr_r/dt) due to accretion        [(kg/kg)/s]
@@ -187,18 +191,18 @@ module KK_microphys_module
       Nrm_auto,     & ! Mean KK (dN_r/dt) due to autoconversion   [(num/kg)/s]
       mean_vol_rad    ! Mean KK rain drop mean volume radius      [m]
 
-    real :: &
+    real( kind = core_rknd ) :: &
       T_liq_in_K, & ! Mean liquid water temperature, T_l                [K]
       r_sl,       & ! Liquid water saturation mixing ratio, r_s(T_l,p)  [kg/kg]
       Beta_Tl       ! Parameter Beta, Beta(T_l)                         [-]
 
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_evap_coef, & ! KK evaporation coefficient                  [(kg/kg)/s]
       KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
       KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
 
-    real, dimension(:), pointer :: &
+    real( kind = core_rknd ), dimension(:), pointer :: &
       varnce_rt1,  & ! Variance of r_t (1st PDF component)           [kg^2/kg^2]
       varnce_rt2,  & ! Variance of r_t (2nd PDF component)           [kg^2/kg^2]
       varnce_thl1, & ! Variance of theta_l (1st PDF component)       [K^2]
@@ -213,7 +217,7 @@ module KK_microphys_module
       stdev_s2,    & ! Standard deviation of s (2nd PDF component)   [kg/kg]
       mixt_frac      ! Mixture fraction                              [-]
 
-    real :: &
+    real( kind = core_rknd ) :: &
       mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
       mu_Nr_n,      & ! Mean of ln Nr (both components)                     [-]
       mu_Nc_n,      & ! Mean of ln Nc (both components)                     [-]
@@ -228,7 +232,7 @@ module KK_microphys_module
       corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component) [-]
       corr_rrNr_n     ! Correlation between ln rr & ln Nr (both components) [-]
 
-    real :: &
+    real( kind = core_rknd ) :: &
       sigma_rt_1,  & ! Standard deviation of r_t (1st PDF component)     [kg/kg]
       sigma_rt_2,  & ! Standard deviation of r_t (2nd PDF component)     [kg/kg]
       sigma_thl_1, & ! Standard deviation of theta_l (1st PDF component) [K]
@@ -240,7 +244,7 @@ module KK_microphys_module
       corr_sNc_1,  & ! Correlation between s and Nc (1st PDF component)  [-]
       corr_sNc_2     ! Correlation between s and Nc (2nd PDF component)  [-]
 
-    real, dimension(nzmax) :: &
+    real( kind = core_rknd ), dimension(nzmax) :: &
       rrp2_on_rrainm2, & ! Specified ratio of < r_r >^2 to < r_r'^2 >       [-]
       Nrp2_on_Nrm2,    & ! Specified ratio of < N_r >^2 to < N_r'^2 >       [-]
       Ncp2_on_Ncm2,    & ! Specified ratio of < N_c >^2 to < N_c'^2 >       [-]
@@ -263,7 +267,7 @@ module KK_microphys_module
 !      corr_rtNc_n
 !      corr_thlNc_n
 
-    real ::  &
+    real( kind = core_rknd ) ::  &
       rrainm_source,     & ! Total source term rate for rrainm       [(kg/kg)/s]
       Nrm_source,        & ! Total source term rate for Nrm         [(num/kg)/s]
       rrainm_src_max,    & ! Maximum allowable rrainm source rate    [(kg/kg)/s]
@@ -271,7 +275,7 @@ module KK_microphys_module
       total_rc_needed      ! Amount of r_c needed to over the timestep
                            ! for rain source terms                       [kg/kg]
 
-    real, dimension(nzmax) ::  &
+    real( kind = core_rknd ), dimension(nzmax) ::  &
       rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
       Nrm_src_adj       ! Total adjustment to Nrm source terms     [{num/kg)/s]
 
@@ -301,7 +305,7 @@ module KK_microphys_module
     ! Sedimentation Velocities.
     Vrr => hydromet_vel(:,iirrainm)
     VNr => hydromet_vel(:,iiNrm)
-    hydromet_vel(:,iiNcm) = 0.0
+    hydromet_vel(:,iiNcm) = 0.0_core_rknd
 
     ! Mean field tendencies.
     rrainm_mc_tndcy => hydromet_mc(:,iirrainm)
@@ -407,18 +411,21 @@ module KK_microphys_module
                          * ( Lv / ( Cp * T_liq_in_K ) )
 
        ! Coefficient for KK evaporation.
-       KK_evap_coef = 3.0 * C_evap * G_T_p( T_liq_in_K, p_in_Pa(k) )  &
-                          * ( (4.0/3.0) * pi * rho_lw )**(2.0/3.0)  &
-                          * ( ( 1.0 + Beta_Tl * r_sl ) / r_sl )
+       KK_evap_coef = 3.0_core_rknd * C_evap * &
+                 real(G_T_p( real(T_liq_in_K), real(p_in_Pa(k)) ), kind = core_rknd)  &
+                          * ( (4.0_core_rknd/3.0_core_rknd) * pi * rho_lw )**&
+                            (2.0_core_rknd/3.0_core_rknd)  &
+                          * ( ( 1.0_core_rknd + Beta_Tl * r_sl ) / r_sl )
 
        ! Coefficient for KK autoconversion.
-       KK_auto_coef = 7.4188e13 * rho(k)**(-1.79)
+       KK_auto_coef = 7.4188e13_core_rknd * rho(k)**(-1.79_core_rknd)
 
        ! Coefficient for KK accretion.
-       KK_accr_coef = 67.0
+       KK_accr_coef = 67.0_core_rknd
 
        ! Coefficient for KK rain drop mean volume radius.
-       KK_mvr_coef = ( (4.0/3.0) * pi * rho_lw )**(-1.0/3.0)
+       KK_mvr_coef = ( (4.0_core_rknd/3.0_core_rknd) * pi * rho_lw )**&
+                       (-1.0_core_rknd/3.0_core_rknd)
 
 
        !!! KK rain water mixing ratio microphysics tendencies.
@@ -431,18 +438,23 @@ module KK_microphys_module
 
           ! Normalized mean of rain water mixing ratio.
           if ( rrainm(k) > rr_tol ) then
-             mu_rr_n = mean_L2N( rrainm(k), &
-                                 rrp2_on_rrainm2(k) * rrainm(k)**2 )
+             mu_rr_n = real(mean_L2N( real(rrainm(k)), &
+                                 real(rrp2_on_rrainm2(k) * rrainm(k)**2) ), &
+                       kind = core_rknd)
           endif
 
           ! Normalized mean of rain drop concentration.
           if ( Nrm(k) > Nr_tol ) then
-             mu_Nr_n = mean_L2N( Nrm(k), Nrp2_on_Nrm2(k) * Nrm(k)**2 )
+             mu_Nr_n = real(mean_L2N( real(Nrm(k)), real(Nrp2_on_Nrm2(k) * Nrm(k)**2) ), &
+                       kind = core_rknd)
+
           endif
 
           ! Normalized mean of cloud droplet concentration.
           if ( Ncm(k) > Nc_tol ) then
-             mu_Nc_n = mean_L2N( Ncm(k), Ncp2_on_Ncm2(k) * Ncm(k)**2 )
+             mu_Nc_n = real(mean_L2N( real(Ncm(k)), real(Ncp2_on_Ncm2(k) * Ncm(k)**2) ), &
+                       kind = core_rknd)
+
           endif
 
           !!! Calculate the standard deviation of variables that have an assumed
@@ -468,18 +480,24 @@ module KK_microphys_module
 
           ! Normalized standard deviation of rain water mixing ratio.
           if ( rrainm(k) > rr_tol ) then
-             sigma_rr_n = stdev_L2N( rrainm(k), &
-                                     rrp2_on_rrainm2(k) * rrainm(k)**2 )
+             sigma_rr_n = real(stdev_L2N( real(rrainm(k)), &
+                                     real(rrp2_on_rrainm2(k) * rrainm(k)**2) ), &
+                          kind = core_rknd)
+
           endif
 
           ! Normalized standard deviation of rain drop concentration.
           if ( Nrm(k) > Nr_tol ) then
-             sigma_Nr_n = stdev_L2N( Nrm(k), Nrp2_on_Nrm2(k) * Nrm(k)**2 )
+             sigma_Nr_n = real(stdev_L2N( real(Nrm(k)), real(Nrp2_on_Nrm2(k) * Nrm(k)**2) ), &
+                          kind = core_rknd)
+
           endif
 
           ! Normalized standard deviation of cloud droplet concentration.
           if ( Ncm(k) > Nc_tol ) then
-             sigma_Nc_n = stdev_L2N( Ncm(k), Ncp2_on_Ncm2(k) * Ncm(k)**2 )
+             sigma_Nc_n = real(stdev_L2N( real(Ncm(k)), real(Ncp2_on_Ncm2(k) * Ncm(k)**2) ), &
+                          kind = core_rknd)
+
           endif
 
           ! Note:  the standard deviation of extended liquid water mixing ratio,
@@ -491,33 +509,39 @@ module KK_microphys_module
 
           ! Calculate the correlation between s and r_r in PDF component 1.
           corr_srr_1  &
-          = calc_corr_sx( crt1(k), cthl1(k), sigma_rt_1, sigma_thl_1,  &
-                          stdev_s1(k), corr_rtrr_NL(k), corr_thlrr_NL(k) )
+          = real(calc_corr_sx( real(crt1(k)), real(cthl1(k)), real(sigma_rt_1),&
+                    real(sigma_thl_1), real(stdev_s1(k)), real(corr_rtrr_NL(k)), &
+                    real(corr_thlrr_NL(k)) ), kind = core_rknd)
 
           ! Calculate the correlation between s and r_r in PDF component 2.
           corr_srr_2  &
-          = calc_corr_sx( crt2(k), cthl2(k), sigma_rt_2, sigma_thl_2,  &
-                          stdev_s2(k), corr_rtrr_NL(k), corr_thlrr_NL(k) )
+          = real(calc_corr_sx( real(crt2(k)), real(cthl2(k)), real(sigma_rt_2),&
+                    real(sigma_thl_2), real(stdev_s2(k)), real(corr_rtrr_NL(k)), &
+                    real(corr_thlrr_NL(k)) ), kind = core_rknd)
 
           ! Calculate the correlation between s and N_r in PDF component 1.
           corr_sNr_1  &
-          = calc_corr_sx( crt1(k), cthl1(k), sigma_rt_1, sigma_thl_1,  &
-                          stdev_s1(k), corr_rtNr_NL(k), corr_thlNr_NL(k) )
+          = real(calc_corr_sx( real(crt1(k)), real(cthl1(k)), real(sigma_rt_1),&
+                    real(sigma_thl_1), real(stdev_s1(k)),real(corr_rtNr_NL(k)),&
+                    real(corr_thlNr_NL(k)) ), kind = core_rknd)
 
           ! Calculate the correlation between s and N_r in PDF component 2.
           corr_sNr_2  &
-          = calc_corr_sx( crt2(k), cthl2(k), sigma_rt_2, sigma_thl_2,  &
-                          stdev_s2(k), corr_rtNr_NL(k), corr_thlNr_NL(k) )
+          = real(calc_corr_sx( real(crt2(k)), real(cthl2(k)), real(sigma_rt_2),&
+                    real(sigma_thl_2), real(stdev_s2(k)), real(corr_rtNr_NL(k)), &
+                    real(corr_thlNr_NL(k)) ), kind = core_rknd)
 
           ! Calculate the correlation between s and N_c in PDF component 1.
           corr_sNc_1  &
-          = calc_corr_sx( crt1(k), cthl1(k), sigma_rt_1, sigma_thl_1,  &
-                          stdev_s1(k), corr_rtNc_NL(k), corr_thlNc_NL(k) )
+          = real(calc_corr_sx( real(crt1(k)), real(cthl1(k)), real(sigma_rt_1),&
+                    real(sigma_thl_1), real(stdev_s1(k)), real(corr_rtNc_NL(k)), &
+                    real(corr_thlNc_NL(k)) ), kind = core_rknd)
 
           ! Calculate the correlation between s and N_c in PDF component 2.
           corr_sNc_2  &
-          = calc_corr_sx( crt2(k), cthl2(k), sigma_rt_2, sigma_thl_2,  &
-                          stdev_s2(k), corr_rtNc_NL(k), corr_thlNc_NL(k) )
+          = real(calc_corr_sx( real(crt2(k)), real(cthl2(k)), real(sigma_rt_2),&
+                    real(sigma_thl_2), real(stdev_s2(k)), real(corr_rtNc_NL(k)), &
+                    real(corr_thlNc_NL(k)) ), kind = core_rknd)
 
           !!! Calculate the normalized correlation between variables that have
           !!! an assumed normal distribution and variables that have an assumed
@@ -528,37 +552,44 @@ module KK_microphys_module
           if ( rrainm(k) > rr_tol ) then
 
              ! Normalize the correlation between s and r_r in PDF component 1.
-             corr_srr_1_n = corr_NL2NN( corr_srr_1, sigma_rr_n )
+             corr_srr_1_n = real(corr_NL2NN( real(corr_srr_1), real(sigma_rr_n) ), &
+                            kind = core_rknd )
 
              ! Normalize the correlation between s and r_r in PDF component 2.
-             corr_srr_2_n = corr_NL2NN( corr_srr_2, sigma_rr_n )
+             corr_srr_2_n = real(corr_NL2NN( real(corr_srr_2), real(sigma_rr_n) ), &
+                            kind = core_rknd )
 
            endif
 
           if ( Nrm(k) > Nr_tol ) then
 
              ! Normalize the correlation between s and N_r in PDF component 1.
-             corr_sNr_1_n = corr_NL2NN( corr_sNr_1, sigma_Nr_n )
+             corr_sNr_1_n = real(corr_NL2NN( real(corr_sNr_1), real(sigma_Nr_n) ), &
+                            kind = core_rknd )
 
              ! Normalize the correlation between s and N_r in PDF component 2.
-             corr_sNr_2_n = corr_NL2NN( corr_sNr_2, sigma_Nr_n )
+             corr_sNr_2_n = real(corr_NL2NN( real(corr_sNr_2), real(sigma_Nr_n) ), &
+                            kind = core_rknd )
 
           endif
 
           if ( Ncm(k) > Nc_tol ) then
 
              ! Normalize the correlation between s and N_c in PDF component 1.
-             corr_sNc_1_n = corr_NL2NN( corr_sNc_1, sigma_Nc_n )
+             corr_sNc_1_n = real(corr_NL2NN( real(corr_sNc_1), real(sigma_Nc_n) ), &
+                            kind = core_rknd )
 
              ! Normalize the correlation between s and N_c in PDF component 2.
-             corr_sNc_2_n = corr_NL2NN( corr_sNc_2, sigma_Nc_n )
+             corr_sNc_2_n = real(corr_NL2NN( real(corr_sNc_2), real(sigma_Nc_n) ), &
+                            kind = core_rknd )
 
           endif
 
 !          if ( rrainm(k) > rr_tol ) then
 !
 !             ! Normalize the correlation between s and r_r in PDF component 1.
-!             corr_srr_1_n = corr_NL2NN( corr_srr_NL(k), sigma_rr_n )
+!             corr_srr_1_n = real(corr_NL2NN( real(corr_srr_NL(k)), real(sigma_rr_n) ), &
+!                            kind = core_rknd )
 !
 !             ! Normalize the correlation between s and r_r in PDF component 2.
 !             corr_srr_2_n = corr_srr_1_n
@@ -568,7 +599,8 @@ module KK_microphys_module
 !          if ( Nrm(k) > Nr_tol ) then
 !
 !             ! Normalize the correlation between s and N_r in PDF component 1.
-!             corr_sNr_1_n = corr_NL2NN( corr_sNr_NL(k), sigma_Nr_n )
+!             corr_sNr_1_n = real(corr_NL2NN( real(corr_sNr_NL(k)), real(sigma_Nr_n) ), &
+!                            kind = core_rknd )
 !
 !             ! Normalize the correlation between s and N_r in PDF component 2.
 !             corr_sNr_2_n = corr_sNr_1_n
@@ -578,7 +610,8 @@ module KK_microphys_module
 !          if ( Ncm(k) > Nc_tol ) then
 !
 !             ! Normalize the correlation between s and N_c in PDF component 1.
-!             corr_sNc_1_n = corr_NL2NN( corr_sNc_NL(k), sigma_Nc_n )
+!             corr_sNc_1_n = real(corr_NL2NN( real(corr_sNc_NL(k)), real(sigma_Nc_n) ), &
+!                            kind = core_rknd )
 !
 !             ! Normalize the correlation between s and N_c in PDF component 2.
 !             corr_sNc_2_n = corr_sNc_1_n
@@ -592,7 +625,9 @@ module KK_microphys_module
           ! Normalize the correlation between rr and Nr (this is the same for
           ! both PDF components).
           if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
-             corr_rrNr_n = corr_LL2NN( corr_rrNr_LL(k), sigma_rr_n, sigma_Nr_n )
+             corr_rrNr_n = real(corr_LL2NN( real(corr_rrNr_LL(k)), &
+                           real(sigma_rr_n), real(sigma_Nr_n) ), &
+                           kind = core_rknd )
           endif
 
 
@@ -600,12 +635,13 @@ module KK_microphys_module
           if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
              mean_vol_rad(k) &
-             = KK_mvr_upscaled_mean( mu_rr_n, mu_Nr_n, sigma_rr_n, &
-                                     sigma_Nr_n, corr_rrNr_n, KK_mvr_coef )
+             = real(KK_mvr_upscaled_mean( real(mu_rr_n), real(mu_Nr_n), real(sigma_rr_n), &
+                                     real(sigma_Nr_n), real(corr_rrNr_n), real(KK_mvr_coef) ), &
+               kind = core_rknd )
 
-          else  ! r_r or N_r = 0.
+          else  ! r_r or N_r = 0._core_rknd
 
-             mean_vol_rad(k) = 0.0
+             mean_vol_rad(k) = 0.0_core_rknd
 
           endif
 
@@ -615,15 +651,16 @@ module KK_microphys_module
           if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
              rrainm_cond(k)  &
-             = KK_evap_upscaled_mean( s1(k), s2(k), mu_rr_n, mu_Nr_n, &
-                                      stdev_s1(k), stdev_s2(k), sigma_rr_n, &
-                                      sigma_Nr_n, corr_srr_1_n, corr_srr_2_n, &
-                                      corr_sNr_1_n, corr_sNr_2_n, corr_rrNr_n, &
-                                      KK_evap_coef, mixt_frac(k) )
+             = real(KK_evap_upscaled_mean( real(s1(k)), real(s2(k)), real(mu_rr_n), real(mu_Nr_n),&
+                                      real(stdev_s1(k)), real(stdev_s2(k)), real(sigma_rr_n), &
+                                      real(sigma_Nr_n), real(corr_srr_1_n), real(corr_srr_2_n), &
+                                      real(corr_sNr_1_n), real(corr_sNr_2_n), real(corr_rrNr_n), &
+                                      real(KK_evap_coef), real(mixt_frac(k)) ),&
+                kind = core_rknd )
 
-          else  ! r_r or N_r = 0.
+          else  ! r_r or N_r = 0._core_rknd
 
-             rrainm_cond(k) = 0.0
+             rrainm_cond(k) = 0.0_core_rknd
 
           endif
 
@@ -631,13 +668,14 @@ module KK_microphys_module
           if ( Ncm(k) > Nc_tol ) then
 
              rrainm_auto(k)  &
-             = KK_auto_upscaled_mean( s1(k), s2(k), mu_Nc_n, stdev_s1(k), &
-                                      stdev_s2(k), sigma_Nc_n, corr_sNc_1_n, &
-                                      corr_sNc_2_n, KK_auto_coef, mixt_frac(k) )
+             = real(KK_auto_upscaled_mean( real(s1(k)), real(s2(k)), &
+                      real(mu_Nc_n), real(stdev_s1(k)), real(stdev_s2(k)), &
+                      real(sigma_Nc_n), real(corr_sNc_1_n), real(corr_sNc_2_n),&
+                      real(KK_auto_coef), real(mixt_frac(k)) ), kind = core_rknd )
 
-          else  ! N_c = 0.
+          else  ! N_c = 0._core_rknd
 
-             rrainm_auto(k) = 0.0
+             rrainm_auto(k) = 0.0_core_rknd
 
           endif
 
@@ -645,13 +683,15 @@ module KK_microphys_module
           if ( rrainm(k) > rr_tol ) then
 
              rrainm_accr(k)  &
-             = KK_accr_upscaled_mean( s1(k), s2(k), mu_rr_n, stdev_s1(k), &
-                                      stdev_s2(k), sigma_rr_n, corr_srr_1_n, &
-                                      corr_srr_2_n, KK_accr_coef, mixt_frac(k) )
+             = real(KK_accr_upscaled_mean( &
+                    real(s1(k)), real(s2(k)), real(mu_rr_n), real(stdev_s1(k)), &
+                    real(stdev_s2(k)), real(sigma_rr_n), real(corr_srr_1_n), &
+                    real(corr_srr_2_n), real(KK_accr_coef), real(mixt_frac(k)) ), &
+               kind = core_rknd )
 
-          else  ! r_r = 0.
+          else  ! r_r = 0._core_rknd
 
-             rrainm_accr(k) = 0.0
+             rrainm_accr(k) = 0.0_core_rknd
 
           endif
 
@@ -674,11 +714,12 @@ module KK_microphys_module
           if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
              mean_vol_rad(k)  &
-             = KK_mvr_local_mean( rrainm(k), Nrm(k), KK_mvr_coef )
+             = real(KK_mvr_local_mean( real(rrainm(k)), real(Nrm(k)), real(KK_mvr_coef) ), &
+               kind = core_rknd )
 
-          else  ! r_r or N_r = 0.
+          else  ! r_r or N_r = 0._core_rknd
 
-             mean_vol_rad(k) = 0.0
+             mean_vol_rad(k) = 0.0_core_rknd
 
           endif
 
@@ -688,12 +729,12 @@ module KK_microphys_module
           if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
              rrainm_cond(k)  &
-             = KK_evap_local_mean( s_mellor(k), rrainm(k), Nrm(k), &
-                                   KK_evap_coef )
+             = real(KK_evap_local_mean( real(s_mellor(k)), real(rrainm(k)), real(Nrm(k)), &
+                                   real(KK_evap_coef) ), kind = core_rknd )
 
-          else  ! r_r or N_r = 0.
+          else  ! r_r or N_r = 0._core_rknd
 
-             rrainm_cond(k) = 0.0
+             rrainm_cond(k) = 0.0_core_rknd
 
           endif
 
@@ -701,11 +742,12 @@ module KK_microphys_module
           if ( Ncm(k) > Nc_tol ) then
 
              rrainm_auto(k)  &
-             = KK_auto_local_mean( s_mellor(k), Ncm(k), KK_auto_coef )
+             = real(KK_auto_local_mean( real(s_mellor(k)), real(Ncm(k)), real(KK_auto_coef) ), &
+               kind = core_rknd )
 
-          else  ! N_c = 0.
+          else  ! N_c = 0._core_rknd
 
-             rrainm_auto(k) = 0.0
+             rrainm_auto(k) = 0.0_core_rknd
 
           endif
 
@@ -713,11 +755,12 @@ module KK_microphys_module
           if ( rrainm(k) > rr_tol ) then
 
              rrainm_accr(k)  &
-             = KK_accr_local_mean( s_mellor(k), rrainm(k), KK_accr_coef )
+             = real(KK_accr_local_mean( real(s_mellor(k)), real(rrainm(k)), real(KK_accr_coef) ), &
+               kind = core_rknd )
 
-          else  ! r_r = 0.
+          else  ! r_r = 0._core_rknd
 
-             rrainm_accr(k) = 0.0
+             rrainm_accr(k) = 0.0_core_rknd
 
           endif
 
@@ -730,16 +773,17 @@ module KK_microphys_module
        !!! Calculate the KK N_r evaporation tendency.
        if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
-          Nrm_cond(k) = KK_Nrm_evap( rrainm_cond(k), Nrm(k), rrainm(k) )
+          Nrm_cond(k) = real(KK_Nrm_evap( real(rrainm_cond(k)), real(Nrm(k)), real(rrainm(k)) ), &
+                        kind = core_rknd )
 
-       else  ! r_r or N_r = 0.
+       else  ! r_r or N_r = 0._core_rknd
 
-          Nrm_cond(k) = 0.0
+          Nrm_cond(k) = 0.0_core_rknd
 
        endif
 
        !!! Calculate the KK N_r autoconversion tendency.
-       Nrm_auto(k) = KK_Nrm_auto( rrainm_auto(k) )
+       Nrm_auto(k) = real(KK_Nrm_auto( real(rrainm_auto(k)) ), kind = core_rknd)
 
 
        ! Statistics
@@ -775,12 +819,12 @@ module KK_microphys_module
        ! the total source rate multiplied by the time step length cannot exceed
        ! the total amount of cloud water available.  If it does, then the rate
        ! must be adjusted.
-       total_rc_needed = real( rrainm_source * dt )
+       total_rc_needed = real( rrainm_source, kind = core_rknd ) * real( dt, kind = core_rknd )
 
        if ( total_rc_needed > rcm(k) .and. l_src_adj_enabled ) then
 
           ! The maximum allowable rate of the source terms is rcm/dt.
-          rrainm_src_max = real( rcm(k) / dt )
+          rrainm_src_max = real( rcm(k), kind = core_rknd ) / real( dt, kind = core_rknd )
 
           ! The amount of adjustment to the source terms.
           ! This value should always be negative.
@@ -800,15 +844,16 @@ module KK_microphys_module
           ! Nrm source term.
           rrainm_auto_ratio = rrainm_auto(k) /  &
                               ( rrainm_auto(k) + rrainm_accr(k) )
-          Nrm_src_adj(k) = KK_Nrm_auto( rrainm_auto_ratio * rrainm_src_adj(k) )
+          Nrm_src_adj(k) = real(KK_Nrm_auto( real(rrainm_auto_ratio * rrainm_src_adj(k)) ), &
+                           kind = core_rknd )
 
           ! Change Nrm by Nrm_src_adj.  Nrm_src_adj will always be negative.
           Nrm_source = Nrm_source + Nrm_src_adj(k)
 
        else
 
-          rrainm_src_adj(k) = 0.0
-          Nrm_src_adj(k)    = 0.0
+          rrainm_src_adj(k) = 0.0_core_rknd
+          Nrm_src_adj(k)    = 0.0_core_rknd
 
        endif
 
@@ -838,38 +883,38 @@ module KK_microphys_module
 
     ! Explicit contributions to rrainm and Nrm from microphysics are not set at
     ! thermodynamic level k = 1 because it is below the model lower boundary.
-    rrainm_mc_tndcy(1) = 0.0
-    Nrm_mc_tndcy(1)    = 0.0
+    rrainm_mc_tndcy(1) = 0.0_core_rknd
+    Nrm_mc_tndcy(1)    = 0.0_core_rknd
 
-    rrainm_mc_tndcy(nzmax) = 0.0
-    Nrm_mc_tndcy(nzmax)    = 0.0
+    rrainm_mc_tndcy(nzmax) = 0.0_core_rknd
+    Nrm_mc_tndcy(nzmax)    = 0.0_core_rknd
 
     ! Boundary conditions
-    mean_vol_rad(1)    = 0.0
-    mean_vol_rad(nzmax) = 0.0
+    mean_vol_rad(1)    = 0.0_core_rknd
+    mean_vol_rad(nzmax) = 0.0_core_rknd
 
-    rvm_mc(1)    = 0.0
-    rvm_mc(nzmax) = 0.0
+    rvm_mc(1)    = 0.0_core_rknd
+    rvm_mc(nzmax) = 0.0_core_rknd
 
-    rcm_mc(1)    = 0.0
-    rcm_mc(nzmax) = 0.0
+    rcm_mc(1)    = 0.0_core_rknd
+    rcm_mc(nzmax) = 0.0_core_rknd
 
-    thlm_mc(1)    = 0.0
-    thlm_mc(nzmax) = 0.0
+    thlm_mc(1)    = 0.0_core_rknd
+    thlm_mc(nzmax) = 0.0_core_rknd
 
     !!! Sedimentation velocities
     forall ( k = 1:nzmax-1 )
 
        ! Sedimentation velocity of rrainm.
-!       Vrr(k) = 0.012 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.2
-       Vrr(k) = 0.012 * ( 1.0e6 * mean_vol_rad(k) )  -  0.2
+!       Vrr(k) = 0.012_core_rknd * ( 1.0_e6core_rknd * zt2zm(mean_vol_rad,k) )  -  0.2_core_rknd
+       Vrr(k) = 0.012_core_rknd * ( 1.0e6_core_rknd * mean_vol_rad(k) )  -  0.2_core_rknd
 
        ! Sedimentation velocity is positive upwards.
        Vrr(k) = -max( Vrr(k), zero_threshold )
 
        ! Sedimentation velocity of Nrm.
-!       VNr(k) = 0.007 * ( 1.0e6 * zt2zm(mean_vol_rad,k) )  -  0.1
-       VNr(k) = 0.007 * ( 1.0e6 * mean_vol_rad(k) )  -  0.1
+!       VNr(k) = 0.007_core_rknd * ( 1.0e6_core_rknd * zt2zm(mean_vol_rad,k) )  -  0.1_core_rknd
+       VNr(k) = 0.007_core_rknd * ( 1.0e6_core_rknd * mean_vol_rad(k) )  -  0.1_core_rknd
 
        ! Sedimentation velocity is positive upwards.
        VNr(k) = -max( VNr(k), zero_threshold )
@@ -880,8 +925,8 @@ module KK_microphys_module
 
     ! The flux of rain water through the model top is 0.
     ! Vrr and VNr are set to 0 at the highest model level.
-    Vrr(nzmax) = 0.0
-    VNr(nzmax) = 0.0
+    Vrr(nzmax) = 0.0_core_rknd
+    VNr(nzmax) = 0.0_core_rknd
 
 
     return

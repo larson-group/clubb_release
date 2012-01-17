@@ -2,7 +2,8 @@
 module latin_hypercube_arrays
 
   use clubb_precision, only: &
-    dp ! double precision
+    dp, & ! double precision
+    core_rknd
 
   implicit none
 
@@ -13,11 +14,11 @@ module latin_hypercube_arrays
   integer, public :: d_variables
 !omp threadprivate(d_variables)
 
-  real, public, dimension(:), allocatable :: &
+  real( kind = core_rknd ), public, dimension(:), allocatable :: &
     xp2_on_xm2_array_cloud, &
     xp2_on_xm2_array_below
 
-  real, public, dimension(:,:), allocatable :: &
+  real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
     corr_array_cloud, &
     corr_array_below
 !$omp threadprivate(xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
@@ -91,11 +92,14 @@ module latin_hypercube_arrays
       ricep2_on_ricem2_below, & 
       Nicep2_on_Nicem2_below
  
-    use matrix_operations, only: set_lower_triangular_matrix_sp ! Procedure(s)
+    use matrix_operations, only: set_lower_triangular_matrix_core_rknd ! Procedure(s)
 
 !   use matrix_operations, only: print_lower_triangular_matrix ! Procedure(s)
 
     use constants_clubb, only: fstdout
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -158,8 +162,8 @@ module latin_hypercube_arrays
     allocate( xp2_on_xm2_array_cloud(d_variables) )
     allocate( xp2_on_xm2_array_below(d_variables) )
 
-    xp2_on_xm2_array_cloud(:) = 0.0
-    xp2_on_xm2_array_below(:) = 0.0
+    xp2_on_xm2_array_cloud(:) = 0.0_core_rknd
+    xp2_on_xm2_array_below(:) = 0.0_core_rknd
 
     file_path = input_path//trim( runtype )//cloud_file_name
 
@@ -205,11 +209,11 @@ module latin_hypercube_arrays
 
     ! Sampling for graupel (disabled)
     if ( iiLH_rgraupel > 0 ) then
-      xp2_on_xm2_array_cloud(iiLH_rgraupel) = -999.
+      xp2_on_xm2_array_cloud(iiLH_rgraupel) = -999._core_rknd
 
 
       if ( iiLH_Ngraupel > 0 ) then
-        xp2_on_xm2_array_cloud(iiLH_Ngraupel) = -999.
+        xp2_on_xm2_array_cloud(iiLH_Ngraupel) = -999._core_rknd
 
 
       end if ! iiLH_Ngraupel > 0
@@ -255,11 +259,11 @@ module latin_hypercube_arrays
     end if ! iiLH_rice > 0
 
     if ( iiLH_rgraupel > 0 ) then
-      xp2_on_xm2_array_below(iiLH_rgraupel) = -999.
+      xp2_on_xm2_array_below(iiLH_rgraupel) = -999._core_rknd
 
 
       if ( iiLH_Ngraupel > 0 ) then
-        xp2_on_xm2_array_below(iiLH_Ngraupel) = -999.
+        xp2_on_xm2_array_below(iiLH_Ngraupel) = -999._core_rknd
 
 
       end if ! iiLH_Ngraupel > 0
@@ -377,9 +381,12 @@ module latin_hypercube_arrays
       one_dim_read_var, & ! Variable(s)
       read_one_dim_file, deallocate_one_dim_vars, count_columns ! Procedure(s)
 
-    use matrix_operations, only: set_lower_triangular_matrix_sp ! Procedure(s)
+    use matrix_operations, only: set_lower_triangular_matrix_core_rknd ! Procedure(s)
 
     use constants_clubb, only: fstderr ! Variable(s)
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -391,7 +398,7 @@ module latin_hypercube_arrays
     character(len=*), intent(in) :: input_file ! Path to the file
 
     ! Input/Output Variable(s)
-    real, dimension(d_variables,d_variables), intent(inout) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(inout) :: &
       corr_array ! Correlation variance array
 
     ! Local Variable(s)
@@ -415,11 +422,11 @@ module latin_hypercube_arrays
 
     ! Initializing to zero means that correlations we don't have
     ! (e.g. Nc and any variable other than s_mellor ) are assumed to be 0.
-    corr_array(:,:) = 0.0
+    corr_array(:,:) = 0.0_core_rknd
 
     ! Set main diagonal to 1
     do i=1, d_variables
-      corr_array(i,i) = 1.0
+      corr_array(i,i) = 1.0_core_rknd
     end do
 
     ! Read the values from the specified file
@@ -439,7 +446,7 @@ module latin_hypercube_arrays
         do j=1, (i-1)
           var_index2 = get_corr_var_index( retVars(j)%name )
           if( var_index2 > -1 ) then
-            call set_lower_triangular_matrix_sp &
+            call set_lower_triangular_matrix_core_rknd &
                  ( d_variables, var_index1, var_index2, retVars(i)%values(j), &
                    corr_array )
           end if

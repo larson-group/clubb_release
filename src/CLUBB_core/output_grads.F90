@@ -18,6 +18,9 @@ module output_grads
 !   Chris Golaz, updated 2/18/2003
 !-------------------------------------------------------------------------------
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   public  :: open_grads, write_grads
@@ -26,7 +29,7 @@ module output_grads
     determine_time_inc
 
   ! Undefined value
-  real, private, parameter :: undef = -9.99e33
+  real( kind = core_rknd ), private, parameter :: undef = -9.99e33_core_rknd
 
   private ! Default scope
 
@@ -69,14 +72,14 @@ module output_grads
       ia,                    & ! Lower Bound of z      [-]
       iz                       ! Upper Bound of z      [-]
 
-    real, dimension(:), intent(in) :: z
+    real( kind = core_rknd ), dimension(:), intent(in) :: z
 
     integer, intent(in) ::  & 
       day,           & ! Day of Month at Model Start    [dd]
       month,         & ! Month of Year at Model start   [mm]
       year             ! Year at Model Start            [yyyy]
 
-    real, dimension(1), intent(in) :: &
+    real( kind = core_rknd ), dimension(1), intent(in) :: &
       rlat, rlon ! Latitude and Longitude [Degrees N/E]
 
     real(kind=time_precision), intent(in) ::  & 
@@ -255,7 +258,7 @@ module output_grads
 
     real(kind=time_precision) :: dtwrite_in
 
-    real, dimension(:), allocatable :: z_in
+    real( kind = core_rknd ), dimension(:), allocatable :: z_in
 
     type (variable), dimension(:), pointer :: var_in
 
@@ -465,7 +468,8 @@ module output_grads
       stat_file ! Type
 
     use clubb_precision, only:  & 
-      time_precision ! Variable(s)
+      time_precision, & ! Variable(s)
+      core_rknd
 
     implicit none
 
@@ -620,7 +624,8 @@ module output_grads
 !   None
 !---------------------------------------------------------
     use clubb_precision, only:  & 
-      time_precision ! Variable(s)
+      time_precision, & ! Variable(s)
+      core_rknd
 
     use calendar, only:  & 
       compute_current_date ! Procedure(s)

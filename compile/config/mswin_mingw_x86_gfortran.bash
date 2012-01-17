@@ -55,8 +55,8 @@ FFLAGS="$ARCH $DEBUG $OPTIMIZE"
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 #NETCDF_INCLUDE="$NETCDF/include/" 
-#CPPDEFS="-DNETCDF -D__GFORTRAN__ -Dnooverlap -Dradoffline"
-CPPDEFS="-D__GFORTRAN__ -Dnooverlap -Dradoffline"
+#CPPDEFS="-DNETCDF -D__GFORTRAN__ -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=4"
+CPPDEFS="-D__GFORTRAN__ -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=4"
 #CPPFLAGS="-I$NETCDF_INCLUDE"
 
 # == Static library processing ==

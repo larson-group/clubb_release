@@ -148,13 +148,16 @@ module gmres_cache
     ! References:
     !  None
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     integer, intent(in) :: &
       numeqns, &  ! The number of equations in the solution vector
       gmres_idx   ! The index for the particular matrix solved by GMRES
 
-    real, dimension(numeqns), intent(in) :: &
+    real( kind = core_rknd ), dimension(numeqns), intent(in) :: &
       solution    ! The solution vector to be cached
 
     gmres_prev_soln(1:numeqns,gmres_idx) = solution

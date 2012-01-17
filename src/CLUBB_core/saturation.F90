@@ -12,6 +12,8 @@ module saturation
        I_sat_sphum
 #endif
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
 
   implicit none
 
@@ -24,47 +26,67 @@ module saturation
   private  :: sat_vapor_press_ice_flatau, sat_vapor_press_ice_bolton
 
   ! Lookup table of values for saturation 
-  real, private, dimension(188:343) :: &
+  real( kind = core_rknd ), private, dimension(188:343) :: &
     svp_liq_lookup_table
 
   data svp_liq_lookup_table(188:343) / &
-    0.049560547, 0.059753418, 0.070129395, 0.083618164, 0.09814453, &
-    0.11444092, 0.13446045, 0.15686035, 0.18218994, 0.21240234, &
-    0.24725342, 0.28668213, 0.33184814, 0.3826294, 0.4416504, &
-    0.50775146, 0.58343506, 0.6694946, 0.7668457, 0.87750244, &
-    1.0023804, 1.1434937, 1.3028564, 1.482544, 1.6847534, &
-    1.9118042, 2.1671143, 2.4535522, 2.774231, 3.1330566, &
-    3.5343628, 3.9819336, 4.480713, 5.036072, 5.6540527, &
-    6.340088, 7.1015015, 7.9450684, 8.8793335, 9.91217, &
-    11.053528, 12.313049, 13.70166, 15.231018, 16.91394, &
-    18.764038, 20.795898, 23.025574, 25.470093, 28.147766, &
-    31.078003, 34.282043, 37.782593, 41.60382, 45.771606, &
-    50.31366, 55.259644, 60.641174, 66.492004, 72.84802, &
-    79.74756, 87.23126, 95.34259, 104.12747, 113.634796, &
-    123.91641, 135.02725, 147.02563, 159.97308, 173.93488, &
-    188.97995, 205.18109, 222.61517, 241.36334, 261.51108, &
-    283.14853, 306.37054, 331.27698, 357.97278, 386.56842, &
-    417.17978, 449.9286, 484.94254, 522.3556, 562.30804, &
-    604.947, 650.42645, 698.9074, 750.55835, 805.55554, &
-    864.0828, 926.3325, 992.5052, 1062.8102, 1137.4657, &
-    1216.6995, 1300.7483, 1389.8594, 1484.2896, 1584.3064, &
-    1690.1881, 1802.224, 1920.7146, 2045.9724, 2178.3218, &
-    2318.099, 2465.654, 2621.3489, 2785.5596, 2958.6758, &
-    3141.101, 3333.2534, 3535.5657, 3748.4863, 3972.4792, &
-    4208.024, 4455.616, 4715.7686, 4989.0127, 5275.8945, &
-    5576.9795, 5892.8535, 6224.116, 6571.3926, 6935.3213, &
-    7316.5674, 7715.8105, 8133.755, 8571.125, 9028.667, &
-    9507.15, 10007.367, 10530.132, 11076.282, 11646.683, &
-    12242.221, 12863.808, 13512.384, 14188.913, 14894.385, &
-    15629.823, 16396.268, 17194.799, 18026.516, 18892.55, &
-    19794.07, 20732.262, 21708.352, 22723.592, 23779.273, &
-    24876.709, 26017.258, 27202.3, 28433.256, 29711.578, &
-    31038.766 /
+    0.049560547_core_rknd, 0.059753418_core_rknd, 0.070129395_core_rknd, &
+    0.083618164_core_rknd, 0.09814453_core_rknd, 0.11444092_core_rknd,   &
+    0.13446045_core_rknd, 0.15686035_core_rknd, 0.18218994_core_rknd,    &
+    0.21240234_core_rknd, 0.24725342_core_rknd, 0.28668213_core_rknd,    &
+    0.33184814_core_rknd, 0.3826294_core_rknd, 0.4416504_core_rknd,      &
+    0.50775146_core_rknd, 0.58343506_core_rknd, 0.6694946_core_rknd,     &
+    0.7668457_core_rknd, 0.87750244_core_rknd, 1.0023804_core_rknd,      &
+    1.1434937_core_rknd, 1.3028564_core_rknd, 1.482544_core_rknd,        &
+    1.6847534_core_rknd, 1.9118042_core_rknd, 2.1671143_core_rknd,       &
+    2.4535522_core_rknd, 2.774231_core_rknd, 3.1330566_core_rknd,        &
+    3.5343628_core_rknd, 3.9819336_core_rknd, 4.480713_core_rknd,        &
+    5.036072_core_rknd, 5.6540527_core_rknd, 6.340088_core_rknd,         &
+    7.1015015_core_rknd, 7.9450684_core_rknd, 8.8793335_core_rknd,       &
+    9.91217_core_rknd, 11.053528_core_rknd, 12.313049_core_rknd,         &
+    13.70166_core_rknd, 15.231018_core_rknd, 16.91394_core_rknd,         &
+    18.764038_core_rknd, 20.795898_core_rknd, 23.025574_core_rknd,       &
+    25.470093_core_rknd, 28.147766_core_rknd, 31.078003_core_rknd,       &
+    34.282043_core_rknd, 37.782593_core_rknd, 41.60382_core_rknd,        &
+    45.771606_core_rknd, 50.31366_core_rknd, 55.259644_core_rknd,        &
+    60.641174_core_rknd, 66.492004_core_rknd, 72.84802_core_rknd,        &
+    79.74756_core_rknd, 87.23126_core_rknd, 95.34259_core_rknd,          &
+    104.12747_core_rknd, 113.634796_core_rknd, 123.91641_core_rknd,      &
+    135.02725_core_rknd, 147.02563_core_rknd, 159.97308_core_rknd,       &
+    173.93488_core_rknd, 188.97995_core_rknd, 205.18109_core_rknd,       &
+    222.61517_core_rknd, 241.36334_core_rknd, 261.51108_core_rknd,       &
+    283.14853_core_rknd, 306.37054_core_rknd, 331.27698_core_rknd,       &
+    357.97278_core_rknd, 386.56842_core_rknd, 417.17978_core_rknd,       &
+    449.9286_core_rknd, 484.94254_core_rknd, 522.3556_core_rknd,         &
+    562.30804_core_rknd, 604.947_core_rknd, 650.42645_core_rknd,         &
+    698.9074_core_rknd, 750.55835_core_rknd, 805.55554_core_rknd,        &
+    864.0828_core_rknd, 926.3325_core_rknd, 992.5052_core_rknd,          &
+    1062.8102_core_rknd, 1137.4657_core_rknd, 1216.6995_core_rknd,       &
+    1300.7483_core_rknd, 1389.8594_core_rknd, 1484.2896_core_rknd,       &
+    1584.3064_core_rknd, 1690.1881_core_rknd, 1802.224_core_rknd,        &
+    1920.7146_core_rknd, 2045.9724_core_rknd, 2178.3218_core_rknd,       &
+    2318.099_core_rknd, 2465.654_core_rknd, 2621.3489_core_rknd,         &
+    2785.5596_core_rknd, 2958.6758_core_rknd, 3141.101_core_rknd,        &
+    3333.2534_core_rknd, 3535.5657_core_rknd, 3748.4863_core_rknd,       &
+    3972.4792_core_rknd, 4208.024_core_rknd, 4455.616_core_rknd,         &
+    4715.7686_core_rknd, 4989.0127_core_rknd, 5275.8945_core_rknd,       &
+    5576.9795_core_rknd, 5892.8535_core_rknd, 6224.116_core_rknd,        &
+    6571.3926_core_rknd, 6935.3213_core_rknd, 7316.5674_core_rknd,       &
+    7715.8105_core_rknd, 8133.755_core_rknd, 8571.125_core_rknd,         &
+    9028.667_core_rknd, 9507.15_core_rknd, 10007.367_core_rknd,          &
+    10530.132_core_rknd, 11076.282_core_rknd, 11646.683_core_rknd,       &
+    12242.221_core_rknd, 12863.808_core_rknd, 13512.384_core_rknd,       &
+    14188.913_core_rknd, 14894.385_core_rknd, 15629.823_core_rknd,       &
+    16396.268_core_rknd, 17194.799_core_rknd, 18026.516_core_rknd,       &
+    18892.55_core_rknd, 19794.07_core_rknd, 20732.262_core_rknd,         &
+    21708.352_core_rknd, 22723.592_core_rknd, 23779.273_core_rknd,       &
+    24876.709_core_rknd, 26017.258_core_rknd, 27202.3_core_rknd,         &
+    28433.256_core_rknd, 29711.578_core_rknd, 31038.766_core_rknd /
 
   contains
 
 !-------------------------------------------------------------------------
-  elemental real function sat_mixrat_liq( p_in_Pa, T_in_K )
+  elemental real( kind = core_rknd ) function sat_mixrat_liq( p_in_Pa, T_in_K )
 
 ! Description:
 !   Used to compute the saturation mixing ratio of liquid water.
@@ -77,15 +99,18 @@ module saturation
       ep, & ! Variable
       fstderr
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       p_in_Pa,  & ! Pressure    [Pa]
       T_in_K      ! Temperature [K]
 
    ! Local Variables
-    real :: esatv
+    real( kind = core_rknd ) :: esatv
 
     ! --- Begin Code ---
 
@@ -94,7 +119,7 @@ module saturation
 
     ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
     !   and set rsat = ep = 0.622
-    if ( p_in_Pa-esatv < 1.0 ) then
+    if ( p_in_Pa-esatv < 1.0_core_rknd ) then
       sat_mixrat_liq = ep
     else
 
@@ -103,7 +128,7 @@ module saturation
     ! GFDL uses specific humidity
     ! Formula for Saturation Specific Humidity
      if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-           sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - (1.0-ep) * esatv ) )
+           sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - (1.0_core_rknd-ep) * esatv ) )
      else
            sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - esatv ) )
      endif                     ! h1g, 2010-06-18 end mod
@@ -121,7 +146,7 @@ module saturation
   end function sat_mixrat_liq
 
 !-------------------------------------------------------------------------
-  elemental real function sat_mixrat_liq_lookup( p_in_Pa, T_in_K )
+  elemental real( kind = core_rknd ) function sat_mixrat_liq_lookup( p_in_Pa, T_in_K )
 
 ! Description:
 !   Used to compute the saturation mixing ratio of liquid water.
@@ -137,15 +162,18 @@ module saturation
       ep, & ! Variable
       fstderr
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       p_in_Pa,  & ! Pressure    [Pa]
       T_in_K      ! Temperature [K]
 
    ! Local Variables
-    real :: esatv
+    real( kind = core_rknd ) :: esatv
 
     ! --- Begin Code ---
 
@@ -154,7 +182,7 @@ module saturation
 
     ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
     !   and set rsat = ep = 0.622
-    if ( p_in_Pa-esatv < 1.0 ) then
+    if ( p_in_Pa-esatv < 1.0_core_rknd ) then
       sat_mixrat_liq_lookup = ep
     else
 
@@ -163,7 +191,7 @@ module saturation
     ! GFDL uses specific humidity
     ! Formula for Saturation Specific Humidity
      if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-           sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - (1.0-ep) * esatv ) )
+           sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - (1.0_core_rknd-ep) * esatv ) )
      else
            sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - esatv ) )
      endif                     ! h1g, 2010-06-18 end mod
@@ -196,16 +224,19 @@ module saturation
       saturation_gfdl, &
       saturation_flatau
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: T_in_K     ! Temperature                          [K]
+    real( kind = core_rknd ), intent(in) :: T_in_K     ! Temperature                          [K]
 
     ! Output Variables
-    real :: esat      ! Saturation Vapor Pressure over Water [Pa]
+    real( kind = core_rknd ) :: esat      ! Saturation Vapor Pressure over Water [Pa]
 
     ! Undefined approximation
-    esat = -99999.999
+    esat = -99999.999_core_rknd
 
     ! Saturation Vapor Pressure, esat, can be found to be approximated
     ! in many different ways.
@@ -251,10 +282,10 @@ module saturation
     intrinsic :: max, min, int, anint
 
     ! Input Variables
-    real, intent(in) :: T_in_K   ! Temperature   [K]
+    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
 
     ! Output Variables
-    real :: esat  ! Saturation vapor pressure over water [Pa]
+    real( kind = core_rknd ) :: esat  ! Saturation vapor pressure over water [Pa]
 
     ! Local Variables
     integer :: T_in_K_int
@@ -287,6 +318,9 @@ module saturation
 
     use constants_clubb, only: T_freeze_K
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Relative error norm expansion (-50 to 50 deg_C) from
@@ -298,19 +332,20 @@ module saturation
 !            0.638780966E-10 /)
     ! Relative error norm expansion (-85 to 70 deg_C) from
     ! Table 4 of pp. 1511 of Flatau et al.
-    real, dimension(9), parameter :: a = & 
-    100.* (/ 6.11583699,      0.444606896,     0.143177157E-01, & 
-             0.264224321E-03, 0.299291081E-05, 0.203154182E-07, & 
-             0.702620698E-10, 0.379534310E-13,-0.321582393E-15 /)
+    real( kind = core_rknd ), dimension(9), parameter :: a = & 
+    100._core_rknd * &
+             (/ 6.11583699_core_rknd,      0.444606896_core_rknd,     0.143177157E-01_core_rknd, &
+             0.264224321E-03_core_rknd, 0.299291081E-05_core_rknd, 0.203154182E-07_core_rknd, & 
+             0.702620698E-10_core_rknd, 0.379534310E-13_core_rknd,-0.321582393E-15_core_rknd /)
 
     ! Input Variables
-    real, intent(in) :: T_in_K   ! Temperature   [K]
+    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
 
     ! Output Variables
-    real :: esat  ! Saturation vapor pressure over water [Pa]
+    real( kind = core_rknd ) :: esat  ! Saturation vapor pressure over water [Pa]
 
     ! Local Variables
-    real :: T_in_C
+    real( kind = core_rknd ) :: T_in_C
 !   integer :: i ! Loop index
 
     ! ---- Begin Code ----
@@ -320,7 +355,7 @@ module saturation
 
     ! Since this approximation is only good out to -85 degrees Celsius we
     ! truncate the result here (Flatau, et al. 1992)
-    T_in_C = max( T_in_C, -85. ) ! Known magic number
+    T_in_C = max( T_in_C, -85._core_rknd ) ! Known magic number
 
     ! Polynomial approx. (Flatau, et al. 1992)
 
@@ -355,20 +390,24 @@ module saturation
 
     use constants_clubb, only: T_freeze_K
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: exp
 
     ! Input Variables
-    real, intent(in) :: T_in_K   ! Temperature   [K]
+    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
 
     ! Output Variables
-    real :: esat  ! Saturation vapor pressure over water [Pa]
+    real( kind = core_rknd ) :: esat  ! Saturation vapor pressure over water [Pa]
 
     ! (Bolton 1980) approx.
     ! Generally this more computationally expensive than the Flatau polnomial expansion
-    esat = 611.2 * exp( (17.67*(T_in_K-T_freeze_K)) / (T_in_K-29.65) ) ! Known magic number
+    esat = 611.2_core_rknd * exp( (17.67_core_rknd*(T_in_K-T_freeze_K)) / &
+      (T_in_K-29.65_core_rknd) ) ! Known magic number
 
     return
   end function sat_vapor_press_liq_bolton
@@ -386,28 +425,33 @@ module saturation
 !  T_in_K  is input in units of K.
 !------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: T_in_K   ! Temperature   [K]
+    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
 
     ! Output Variables
-    real :: esat  ! Saturation vapor pressure over water [Pa]
+    real( kind = core_rknd ) :: esat  ! Saturation vapor pressure over water [Pa]
 
 ! Goff Gatch equation, uncertain below -70 C
       
-         esat = 10.**(-7.90298*(373.16/T_in_K-1.)+ &
-             5.02808*log10(373.16/T_in_K)- &
-             1.3816e-7*(10.**(11.344*(1.-T_in_K/373.16))-1.)+ &
-             8.1328e-3*(10.**(-3.49149*(373.16/T_in_K-1.))-1.)+ &
-             log10(1013.246))*100. ! Known magic number
+         esat = 10._core_rknd**(-7.90298_core_rknd*(373.16_core_rknd/T_in_K-1._core_rknd)+ &
+             5.02808_core_rknd*log10(373.16_core_rknd/T_in_K)- &
+             1.3816e-7_core_rknd*(10._core_rknd**(11.344_core_rknd &
+               *(1._core_rknd-T_in_K/373.16_core_rknd))-1._core_rknd)+ &
+             8.1328e-3_core_rknd*(10._core_rknd**(-3.49149_core_rknd &
+               *(373.16_core_rknd/T_in_K-1._core_rknd))-1._core_rknd)+ &
+             log10(1013.246_core_rknd))*100._core_rknd ! Known magic number
 
     return
   end function sat_vapor_press_liq_gfdl
 ! <--- h1g, 2010-06-16
 
 !------------------------------------------------------------------------
-  elemental real function sat_mixrat_ice( p_in_Pa, T_in_K )
+  elemental real( kind = core_rknd ) function sat_mixrat_ice( p_in_Pa, T_in_K )
 
 ! Description:
 !   Used to compute the saturation mixing ratio of ice.
@@ -419,6 +463,9 @@ module saturation
     use constants_clubb, only: & 
         ep ! Variable(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -426,13 +473,13 @@ module saturation
 
     ! Input Variables
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       p_in_Pa, &          ! Pressure [Pa]
       T_in_K              ! Temperature [K]
 
     ! Local Variables
 
-    real :: esat_ice
+    real( kind = core_rknd ) :: esat_ice
 
     ! --- Begin Code ---
 
@@ -441,7 +488,7 @@ module saturation
 
     ! If esat_ice exceeds the air pressure, then assume esat_ice~=0.5*pressure 
     !   and set rsat = ep = 0.622
-    if ( p_in_Pa-esat_ice < 1.0 ) then
+    if ( p_in_Pa-esat_ice < 1.0_core_rknd ) then
       sat_mixrat_ice = ep
     else
 
@@ -449,7 +496,7 @@ module saturation
     ! GFDL uses specific humidity
     ! Formula for Saturation Specific Humidity
      if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-           sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - (1.0-ep) * esat_ice ) )
+           sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - (1.0_core_rknd-ep) * esat_ice ) )
      else
            sat_mixrat_ice  = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
      endif                     ! h1g, 2010-06-18 end mod
@@ -483,17 +530,20 @@ module saturation
       saturation_gfdl, &
       saturation_flatau
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variable
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       T_in_K      ! Temperature     [K]
 
     ! Output Variable
-    real :: esat_ice    ! Saturation Vapor Pressure over Ice [Pa]
+    real( kind = core_rknd ) :: esat_ice    ! Saturation Vapor Pressure over Ice [Pa]
 
     ! Undefined approximation
-    esat_ice = -99999.999
+    esat_ice = -99999.999_core_rknd
 
     select case ( saturation_formula )
     case ( saturation_bolton )
@@ -531,6 +581,8 @@ module saturation
 !------------------------------------------------------------------------
     use constants_clubb, only: T_freeze_K
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -539,19 +591,19 @@ module saturation
 
     ! Relative error norm expansion (-90 to 0 deg_C) from
     ! Table 4 of pp. 1511 of Flatau et al. 1992 (Ice)
-    real, dimension(9), parameter :: a = & 
-    100. * (/ 6.09868993,      0.499320233,     0.184672631E-01, &
-              0.402737184E-03, 0.565392987E-05, 0.521693933E-07, &
-              0.307839583E-09, 0.105785160E-11, 0.161444444E-14 /)
+    real( kind = core_rknd ), dimension(9), parameter :: a = & 
+    100._core_rknd * (/ 6.09868993_core_rknd, 0.499320233_core_rknd, 0.184672631E-01_core_rknd, &
+              0.402737184E-03_core_rknd, 0.565392987E-05_core_rknd, 0.521693933E-07_core_rknd, &
+              0.307839583E-09_core_rknd, 0.105785160E-11_core_rknd, 0.161444444E-14_core_rknd /)
 
     ! Input Variables
-    real, intent(in) :: T_in_K   ! Temperature   [deg_K]
+    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [deg_K]
 
     ! Output Variables
-    real :: esati  ! Saturation vapor pressure over ice [Pa]
+    real( kind = core_rknd ) :: esati  ! Saturation vapor pressure over ice [Pa]
 
     ! Local Variables
-    real :: T_in_C ! Temperature [deg_C]
+    real( kind = core_rknd ) :: T_in_C ! Temperature [deg_C]
 !   integer :: i
 
     ! ---- Begin Code ----
@@ -561,7 +613,7 @@ module saturation
 
     ! Since this approximation is only good out to -90 degrees Celsius we
     ! truncate the result here (Flatau, et al. 1992)
-    T_in_C = max( T_in_C, -90. ) ! Known magic number
+    T_in_C = max( T_in_C, -90._core_rknd ) ! Known magic number
 
     ! Polynomial approx. (Flatau, et al. 1992)
 !   esati = a(1)
@@ -588,19 +640,23 @@ module saturation
 !------------------------------------------------------------------------
     use constants_clubb, only: T_freeze_K
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: exp, log
 
     ! Input Variables
-    real, intent(in) :: T_in_K   ! Temperature   [K]
+    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
 
     ! Output Variables
-    real :: esati  ! Saturation vapor pressure over ice [Pa]
+    real( kind = core_rknd ) :: esati  ! Saturation vapor pressure over ice [Pa]
 
     ! Exponential approx.
-    esati = 100.0 * exp( 23.33086 - (6111.72784/T_in_K) + (0.15215*log( T_in_K )) )
+    esati = 100.0_core_rknd * exp( 23.33086_core_rknd - &
+      (6111.72784_core_rknd/T_in_K) + (0.15215_core_rknd*log( T_in_K )) )
 
     return
 
@@ -619,19 +675,24 @@ module saturation
 !  T_in_K is input in units of K.
 !------------------------------------------------------------------------
  
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: T_in_K   ! Temperature   [K]
+    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
 
     ! Output Variables
-    real :: esati  ! Saturation vapor pressure over ice [Pa]
+    real( kind = core_rknd ) :: esati  ! Saturation vapor pressure over ice [Pa]
 
 ! Goff Gatch equation (good down to -100 C)
 
-          esati = 10.**(-9.09718*(273.16/T_in_k-1.)-3.56654* &
-          log10(273.16/T_in_k)+0.876793*(1.-T_in_k/273.16)+ &
-          log10(6.1071))*100. ! Known magic number
+          esati = 10._core_rknd**(-9.09718_core_rknd* &
+            (273.16_core_rknd/T_in_k-1._core_rknd)-3.56654_core_rknd* &
+          log10(273.16_core_rknd/T_in_k)+0.876793_core_rknd* &
+            (1._core_rknd-T_in_k/273.16_core_rknd)+ &
+          log10(6.1071_core_rknd))*100._core_rknd ! Known magic number
 
     return
 
@@ -650,6 +711,9 @@ module saturation
     !   None
     !-------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use constants_clubb, only: & 
         Cp,            & ! Variable(s)
         Lv,            &
@@ -658,8 +722,8 @@ module saturation
     implicit none
 
     ! Local Constant(s)
-    real, parameter :: &
-      tolerance = 0.001 ! Tolerance on theta calculation [K]
+    real( kind = core_rknd ), parameter :: &
+      tolerance = 0.001_core_rknd ! Tolerance on theta calculation [K]
 
     integer, parameter :: &
       itermax = 1000000 ! Maximum interations
@@ -668,17 +732,17 @@ module saturation
     intrinsic :: max, abs
 
     ! Input Variable(s)
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       thlm,    & ! Liquid Water Potential Temperature [K]
       rtm,     & ! Total Water Mixing Ratio       [kg/kg]
       p_in_Pa, & ! Pressure                          [Pa]
       exner      ! Exner function                     [-]
 
     ! Output Variable(s)
-    real :: rcm ! Cloud water mixing ratio      [kg/kg]
+    real( kind = core_rknd ) :: rcm ! Cloud water mixing ratio      [kg/kg]
 
     ! Local Variable(s)
-    real :: &
+    real( kind = core_rknd ) :: &
       theta, answer, too_low, too_high ! [K]
 
     integer :: iteration
@@ -687,8 +751,8 @@ module saturation
 
     ! Default initialization
     theta = thlm
-    too_high = 0.0
-    too_low = 0.0
+    too_high = 0.0_core_rknd
+    too_low = 0.0_core_rknd
 
     DO iteration = 1, itermax, 1
 
@@ -707,10 +771,10 @@ module saturation
       ! For the first timestep, be sure to set a "too_high"
       ! that is "way too high."
       IF ( iteration == 1 ) THEN
-        too_high = theta + 20.0
+        too_high = theta + 20.0_core_rknd
       ENDIF
 
-      theta = (too_low + too_high)/2.0
+      theta = (too_low + too_high)/2.0_core_rknd
 
     END DO ! 1..itermax
 

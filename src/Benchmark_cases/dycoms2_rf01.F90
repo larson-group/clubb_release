@@ -32,21 +32,24 @@ module dycoms2_rf01
 
     use grid_class, only: gr
 
+    use clubb_precision, only: core_rknd ! Variable(s)
+
     implicit none
 
     ! Output Variables
-    real, intent(out), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing      ! Total water mixing ratio tendency            [kg/kg/s]
 
-    real, intent(out), dimension(gr%nz, sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz, sclr_dim) :: & 
       sclrm_forcing   ! Passive scalar tendency         [units/s]
 
-    real, intent(out), dimension(gr%nz, edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz, edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
-    thlm_forcing = 0.
-    rtm_forcing  = 0.
+    thlm_forcing = 0._core_rknd
+    rtm_forcing  = 0._core_rknd
+
 
     ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
@@ -81,7 +84,7 @@ module dycoms2_rf01
                                   T_sfc_given, &
                                   time_select ! Procedure(s)
 
-  use clubb_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
   
   use interpolation, only: linear_interp_factor ! Procedure(s)
 
@@ -92,7 +95,7 @@ module dycoms2_rf01
     time ! The current time [s]
   integer, intent(in) :: &
     sfctype
-  real, intent(in) ::  &
+  real( kind = core_rknd ), intent(in) ::  &
     p_sfc,      & ! Surface pressure                              [Pa]
     exner_sfc, & ! Exner function                                [-]
     ubar,      & ! mean sfc wind speed                           [m/s]
@@ -101,17 +104,17 @@ module dycoms2_rf01
     rho_sfc   ! Density at the surface                        [kg/m^3]
 
   ! Output variables
-  real, intent(out) ::  & 
+  real( kind = core_rknd ), intent(out) ::  & 
     wpthlp_sfc,  &  ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   &  ! w'rt' surface flux        [(m kg)/(kg s)]
     ustar,       &
     T_sfc           ! Surface temperature       [K]
     
   ! Local Variable
-  real, parameter :: & 
-    Cd = 0.0011   ! Coefficient
+  real( kind = core_rknd ), parameter :: & 
+    Cd = 0.0011_core_rknd   ! Coefficient
     
-  real :: &
+  real( kind = core_rknd ) :: &
     sens_ht, &  ! Sensible heat flux
     latent_ht, &  ! Latent heat flux
     time_frac ! The time fraction used for interpolation
@@ -121,7 +124,7 @@ module dycoms2_rf01
 
   !-----------------BEGIN CODE-----------------------
 
-  ustar = 0.25
+  ustar = 0.25_core_rknd
 
   call time_select( time, size(time_sfc_given), time_sfc_given, &
                     before_time, after_time, time_frac )

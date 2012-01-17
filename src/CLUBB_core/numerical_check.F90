@@ -49,13 +49,17 @@ module numerical_check
 !---------------------------------------------------------------------------------
     use grid_class, only: & 
         gr ! Variable
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant Parameters
     character(*), parameter :: proc_name = "compute_length"
 
     ! Input Variables
-    real, dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       Lscale,     & ! Mixing length                 [m]
       Lscale_up,  & ! Upward mixing length          [m]
       Lscale_down   ! Downward mixing length        [m]
@@ -103,6 +107,9 @@ module numerical_check
       iwprtpthlp, &
       iwpthlp2
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Parameter Constants
@@ -110,7 +117,7 @@ module numerical_check
       "pdf_closure"
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       wp4,             & ! w'^4                  [m^4/s^4]
       wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
       wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
@@ -135,7 +142,7 @@ module numerical_check
       pdf_params        ! PDF parameters          [units vary]
 
     ! Input (Optional passive scalar variables)
-    real, dimension(sclr_dim), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) ::  & 
       sclrpthvp,  & 
       sclrprcp,  & 
       wpsclrp2, & 
@@ -246,6 +253,9 @@ module numerical_check
         sclr_dim,  & ! Variable
         edsclr_dim
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant Parameters
@@ -254,7 +264,7 @@ module numerical_check
       proc_name = "parameterization_timestep"
 
     ! Input variables
-    real, intent(in), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
       um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
@@ -272,14 +282,14 @@ module numerical_check
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
       wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
       upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
       vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
 
     ! These are prognostic or are planned to be in the future
-    real, intent(in), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       um,      & ! u mean wind component (thermodynamic levels)   [m/s]
       upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
       vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
@@ -298,13 +308,13 @@ module numerical_check
 
     character(len=*), intent(in) :: prefix ! Location where subroutine is called
 
-    real, intent(in), dimension(sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
       wpsclrp_sfc    ! Scalar flux at surface [units m/s]
 
-    real, intent(in), dimension(edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(edsclr_dim) :: & 
       wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
 
-    real, intent(in),dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in),dimension(gr%nz,sclr_dim) :: & 
       sclrm,         & ! Passive scalar mean      [units vary]
       wpsclrp,       & ! w'sclr'                  [units vary]
       sclrp2,        & ! sclr'^2                  [units vary]
@@ -312,7 +322,7 @@ module numerical_check
       sclrpthlp,     & ! sclr'thl'                [units vary]
       sclrm_forcing    ! Passive scalar forcing   [units / s]
 
-    real, intent(in),dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(in),dimension(gr%nz,edsclr_dim) :: & 
       edsclrm,         & ! Eddy passive scalar mean    [units vary]
       edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
 
@@ -435,6 +445,9 @@ module numerical_check
     use parameters_model, only: & 
         sclr_dim ! Variable
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant Parameters
@@ -443,7 +456,7 @@ module numerical_check
       proc_name = "surface_varnce"
 
     ! Input Variables
-    real,intent(in) ::  & 
+    real( kind = core_rknd ),intent(in) ::  & 
       wp2_sfc,     & ! Vertical velocity variance        [m^2/s^2]
       up2_sfc,     & ! u'^2                              [m^2/s^2]
       vp2_sfc,     & ! u'^2                              [m^2/s^2]
@@ -452,7 +465,7 @@ module numerical_check
       rtpthlp_sfc    ! thetal rt covariance              [kg K/kg]
 
 
-    real, dimension(sclr_dim), intent(in) :: & 
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: & 
       sclrp2_sfc,    & ! Passive scalar variance                 [units^2]
       sclrprtp_sfc,  & ! Passive scalar r_t covariance           [units kg/kg]
       sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
@@ -500,6 +513,9 @@ module numerical_check
     use grid_class, only: & 
         gr ! Variable
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant Parameters
@@ -507,7 +523,7 @@ module numerical_check
       proc_name = "Before BUGSrad."
 
     ! Input/Output variables
-    real, dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       thlm,           & ! Liquid Water Potential Temperature   [K/s]
       rcm,            & ! Liquid Water Mixing Ratio            [kg/kg]
       rtm,            & ! Total Water Mixing Ratio             [kg/kg]
@@ -518,7 +534,7 @@ module numerical_check
       rho_zm            ! Air Density                          [kg/m^3]
 
     ! Local variables
-    real,dimension(gr%nz) :: rvm
+    real( kind = core_rknd ),dimension(gr%nz) :: rvm
 
 !-------------------------------------------------------------------------
 
@@ -746,10 +762,14 @@ module numerical_check
     use parameters_model, only: &
       PosInf ! Variable(s)
 #endif
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: xarg
+    real( kind = core_rknd ), intent(in) :: xarg
 
 #ifdef __GFORTRAN__  /* if the isnan extension is available, we use it here */
     is_nan_sclr = isnan( xarg )
@@ -786,13 +806,16 @@ module numerical_check
 
 !------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: any
 
     ! Input Variables
-    real, dimension(:), intent(in) :: x2d
+    real( kind = core_rknd ), dimension(:), intent(in) :: x2d
 
     ! Local Variables
     integer :: k
@@ -826,13 +849,16 @@ module numerical_check
     use error_code, only:  & 
         clubb_var_less_than_zero ! Variable(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
     intrinsic :: any, present
 
     ! Input Variables
-    real, intent(in), dimension(:) :: var
+    real( kind = core_rknd ), intent(in), dimension(:) :: var
 
     character(len=*), intent(in)::  & 
     varname,     & ! Varible being examined
@@ -841,7 +867,7 @@ module numerical_check
     ! Optional In/Out Variable
     integer, optional, intent(inout) :: err_code
 
-    if ( any( var < 0.0 ) ) then
+    if ( any( var < 0.0_core_rknd ) ) then
 
       write(fstderr,*) varname, " < 0 in ", operation
       if ( present( err_code ) ) then
@@ -872,6 +898,9 @@ module numerical_check
     use error_code, only:  & 
         clubb_var_less_than_zero ! Variable
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -880,7 +909,7 @@ module numerical_check
     ! Input Variables
     integer, intent(in) :: ndim
 
-    real, intent(in), dimension(ndim) :: var
+    real( kind = core_rknd ), intent(in), dimension(ndim) :: var
 
     character(len=*), intent(in)::  & 
     varname,     & ! Varible being examined
@@ -894,7 +923,7 @@ module numerical_check
 
     do k=1,ndim,1
 
-      if ( var(k) < 0.0 )  then
+      if ( var(k) < 0.0_core_rknd )  then
 
         write(fstderr,*) varname, " < 0 in ", operation,  & 
                          " at k = ", k
@@ -926,6 +955,8 @@ module numerical_check
         fstderr ! Variable(s)
     use error_code, only:  & 
         clubb_var_equals_NaN ! Variable(s)
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -933,7 +964,7 @@ module numerical_check
     intrinsic :: present
 
     ! Input variables
-    real, intent(in), dimension(:) :: var ! Variable being examined
+    real( kind = core_rknd ), intent(in), dimension(:) :: var ! Variable being examined
 
     character(len=*), intent(in)::  & 
       varname,  & ! Name of variable
@@ -965,6 +996,8 @@ module numerical_check
         fstderr ! Variable
     use error_code, only:  & 
         clubb_var_equals_NaN ! Variable
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -972,7 +1005,7 @@ module numerical_check
     intrinsic :: present
 
     ! Input Variables
-    real, intent(in) :: var        ! Variable being examined
+    real( kind = core_rknd ), intent(in) :: var        ! Variable being examined
 
     character(len=*), intent(in)::  & 
       varname,    & ! Name of variable being examined
@@ -1008,10 +1041,13 @@ module numerical_check
 !
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       integral_after, &   ! Vertically-integrated quantity after dt time  [units vary]
       integral_before, &  ! Vertically-integrated quantity before dt time [units vary]
       flux_top, &         ! Total flux at the top of the domain           [units vary]
@@ -1020,7 +1056,7 @@ module numerical_check
       dt                  ! Timestep size                                 [s]
 
     ! Return Variable
-    real :: spurious_source ! [units vary]
+    real( kind = core_rknd ) :: spurious_source ! [units vary]
 
 !--------------------------------------------------------------------
 

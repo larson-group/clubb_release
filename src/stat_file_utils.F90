@@ -44,6 +44,9 @@ module stat_file_utils
     use interpolation, only: &
       lin_int
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -62,7 +65,7 @@ module stat_file_utils
       t1,      & ! Beginning timestep to look at
       t2         ! Ending timestep to look at
 
-    real, dimension(out_nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(out_nz), intent(in) :: &
       out_heights ! Heights of the output grid [m]
 
     character(len=*), intent(in) :: & 
@@ -87,14 +90,14 @@ module stat_file_utils
       l_error ! error status for this function
 
     ! Return Variable for function
-    real, dimension(out_nz) :: stat_file_average
+    real( kind = core_rknd ), dimension(out_nz) :: stat_file_average
 
     ! Local Variables
     type (stat_file) :: faverage ! Data file derived type
 
-    real, allocatable, dimension(:) :: file_variable ! Temporary variable
+    real( kind = core_rknd ), allocatable, dimension(:) :: file_variable ! Temporary variable
 
-    real, dimension(out_nz) ::  interp_variable ! Temporary variable
+    real( kind = core_rknd ), dimension(out_nz) ::  interp_variable ! Temporary variable
 
     integer :: & 
       t, &  ! Timestep loop index
@@ -122,7 +125,7 @@ module stat_file_utils
     l_error = .false.
 
     num_timesteps = ( t2 - t1 ) + 1
-    stat_file_average = 0.0
+    stat_file_average = 0.0_core_rknd
 
     ! Determine file type
     l_grads_file = .not. l_netcdf_file( filename ) 
@@ -214,7 +217,7 @@ module stat_file_utils
             interp_variable(k) = file_variable(1)
           else
             ! Set undefined points to NaN
-            interp_variable(k) = PosInf
+            interp_variable(k) = real(PosInf, kind = core_rknd)
           end if
         end do
 
@@ -224,7 +227,7 @@ module stat_file_utils
 !         interp_variable(k) = interp_variable(k-1)
 
           ! Set undefined points to NaN
-          interp_variable(k) = PosInf
+          interp_variable(k) = real(PosInf, kind = core_rknd)
         end do
 
       else
@@ -257,7 +260,8 @@ module stat_file_utils
     end if
 
     ! Take average over num_timesteps
-    stat_file_average(1:out_nz) = stat_file_average(1:out_nz) / real( num_timesteps )
+    stat_file_average(1:out_nz) = stat_file_average(1:out_nz) / &
+               real( num_timesteps, kind = core_rknd )
 
     return
   end function stat_file_average
@@ -279,6 +283,9 @@ module stat_file_utils
 !-------------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Variable(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant Parameters
@@ -298,7 +305,7 @@ module stat_file_utils
     character(len=*), intent(in) ::  & 
       variable_name  ! Name of the variable to read in
 
-    real, dimension(nzmax), intent(in) :: out_heights
+    real( kind = core_rknd ), dimension(nzmax), intent(in) :: out_heights
 
     integer, intent(in) ::  & 
       npower ! exponent applied to data retrieved from the file (1 or 2)
@@ -308,11 +315,11 @@ module stat_file_utils
       l_error ! status of this function
 
     ! Return Variables
-    real, dimension(nzmax) ::  & 
+    real( kind = core_rknd ), dimension(nzmax) ::  & 
       stat_file_average_interval
 
     ! Local Variables
-    real, dimension(nzmax) :: stat_file_temp
+    real( kind = core_rknd ), dimension(nzmax) :: stat_file_temp
 
     integer ::  & 
       i,       & ! Loop variable 
@@ -343,7 +350,7 @@ module stat_file_utils
     = stat_file_average( filename, nzmax, &
                          t(1), t(2), out_heights, variable_name, &
                          npower, l_spec_bound_cond, l_error )  & 
-          * real( t(2) - t(1) )
+          * real( t(2) - t(1), kind = core_rknd )
 
     divisor = t(2) - t(1)
 
@@ -355,11 +362,12 @@ module stat_file_utils
                                t(i), t(i+1), out_heights, variable_name, &
                                npower, l_spec_bound_cond, l_error )
       stat_file_average_interval  & 
-        = stat_file_average_interval + stat_file_temp * real( t(i+1) - t(i) )
+        = stat_file_average_interval + stat_file_temp * real( t(i+1) - t(i), kind = core_rknd )
       divisor = divisor + ( t(i+1) - t(i) )
     end do
 
-    stat_file_average_interval(1:nzmax)  = stat_file_average_interval(1:nzmax) / real( divisor )
+    stat_file_average_interval(1:nzmax)  = stat_file_average_interval(1:nzmax) /&
+         real( divisor, kind = core_rknd )
 
     return
   end function stat_file_average_interval
@@ -450,6 +458,9 @@ module stat_file_utils
 
     use constants_clubb, only: fstderr
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
 #ifdef NETCDF
     use input_netcdf, only: open_netcdf_read, close_netcdf_read ! Procedure(s)
 #endif
@@ -465,7 +476,7 @@ module stat_file_utils
       nzmax ! Number of vertical levels
 
     ! Output Variables
-    real, dimension(nzmax) :: stat_file_vertical_levels
+    real( kind = core_rknd ), dimension(nzmax) :: stat_file_vertical_levels
 
     ! Local Variables
     type (stat_file) :: fz  ! Data file
@@ -566,13 +577,16 @@ module stat_file_utils
     use constants_clubb, only:  &
         fstderr ! Constant
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables.
     type(stat_file), intent(in) ::  &
       fread_var  ! Information about LES run.
 
-    real, dimension(:), intent(in) ::  &
+    real( kind = core_rknd ), dimension(:), intent(in) ::  &
       CLUBB_grid ! Altitude of CLUBB grid levels
                  ! (either thermodynamic or momentum grid levels)  [m]
 
@@ -670,13 +684,16 @@ module stat_file_utils
     use stat_file_module, only:  &
         stat_file  ! Variable type
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables.
     type(stat_file), intent(in) ::  &
       fread_var  ! Information about LES run.
 
-    real, dimension(:), intent(in) ::  &
+    real( kind = core_rknd ), dimension(:), intent(in) ::  &
       CLUBB_grid ! Altitude of CLUBB grid levels
                  ! (either thermodynamic or momentum grid levels)  [m]
 

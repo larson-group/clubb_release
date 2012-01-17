@@ -39,25 +39,27 @@ module bomex
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
+    use clubb_precision, only: core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variable
-    real, intent(in), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
       rtm    ! Total water mixing ratio (thermodynamic levels)        [kg/kg]
 
     ! Output Variables
-    real, intent(out), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
       thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing      ! Total water mixing ratio tendency            [kg/kg/s]
 
-    real, intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar forcing        [units vary/s]
 
-    real, intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar forcing [units vary/s]
 
     ! Local Variables
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       qtm_forcing  ! Specified total water spec. humidity tendency    [kg/kg/s]
 
     integer :: k
@@ -65,21 +67,22 @@ module bomex
     ! ---- Begin Code ----
 
     ! Radiative theta-l tendency
-    thlm_forcing = 0.0
+    thlm_forcing = 0.0_core_rknd
 
     ! Large scale advective moisture tendency
     ! The BOMEX specifications give large-scale advective moisture tendency in
     ! terms of total water specific humidity.
     do k = 2, gr%nz
 
-      if ( gr%zt(k) >= 0. .and. gr%zt(k) < 300. ) then
-        qtm_forcing(k) = -1.2e-8
-      else if ( gr%zt(k) >= 300. .and. gr%zt(k) < 500. ) then
+      if ( gr%zt(k) >= 0._core_rknd .and. gr%zt(k) < 300._core_rknd ) then
+        qtm_forcing(k) = -1.2e-8_core_rknd
+      else if ( gr%zt(k) >= 300._core_rknd .and. gr%zt(k) < 500._core_rknd ) then
         qtm_forcing(k)  & 
-          = - 1.2e-8  & 
-              * ( 1. - ( gr%zt(k) - 300. )/( 500. - 300. ) ) !Known magic number
+          = - 1.2e-8_core_rknd  & 
+              * ( 1._core_rknd - ( gr%zt(k) - 300._core_rknd )/ &
+              ( 500._core_rknd - 300._core_rknd ) ) !Known magic number
       else
-        qtm_forcing(k) = 0.
+        qtm_forcing(k) = 0._core_rknd
       end if
 
       ! Convert forcings from terms of total water specific humidity to terms of
@@ -90,8 +93,8 @@ module bomex
 
 
     ! Boundary conditions
-    thlm_forcing(1) = 0.0  ! Below surface
-    rtm_forcing(1)  = 0.0  ! Below surface
+    thlm_forcing(1) = 0.0_core_rknd  ! Below surface
+    rtm_forcing(1)  = 0.0_core_rknd  ! Below surface
 
     ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
@@ -126,7 +129,7 @@ module bomex
     use interpolation, only: &
         linear_interp_factor ! Procedure(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     implicit none
 
@@ -134,23 +137,23 @@ module bomex
     real(time_precision), intent(in) ::  & 
       time    ! the current time [s]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       rtm_sfc    ! rtm(2) [kg/kg]
 
     ! Output variables
-    real, intent(out) ::  & 
+    real( kind = core_rknd ), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t' at (1)    [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
 
     ! Local variables
-    real :: wpqtp_sfc, &  ! w'q_t' at (1)         [(m kg)/(s kg)]   
+    real( kind = core_rknd ) :: wpqtp_sfc, &  ! w'q_t' at (1)         [(m kg)/(s kg)]   
             time_frac ! The time fraction used for interpolation.
 
     integer :: before_time, after_time ! The time bounds used for interpolation
 
     ! Declare the value of ustar.
-    ustar = 0.28
+    ustar = 0.28_core_rknd
 
     ! Compute heat and moisture fluxes
 

@@ -3,13 +3,13 @@
 module enhanced_simann
 ! Description:
 !   Implementation of Siarry's Enhanced simulated annealing algorthm in
-!   Fortran 90/95. 
+!   Fortran 90/95.
 
 ! References: 
 !   ``Enhanced Simulated Annealing for Many Globally Minimized Functions
 !   of Many-Continuous Variables'', Siarry, et al. ACMS TOMS Vol. 23,
 !   No. 2, June 1997, pp. 209--228.
-!-------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
 
   implicit none
 
@@ -38,6 +38,9 @@ module enhanced_simann
 
     use error, only: nfobj => iter ! Variable
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -57,16 +60,16 @@ module enhanced_simann
       nvariations = 50 ! Number of points in the problem space used for dgyini
 
     ! Parameters for temperature adjustment
-    real, parameter :: &
-      rmxtmp = 0.9, &
-      rmitmp = 0.1
+    real( kind = core_rknd ), parameter :: &
+      rmxtmp = 0.9_core_rknd, &
+      rmitmp = 0.1_core_rknd
 
     ! Parameters for step vector adjustment
-    real, parameter :: &
-      ratmax = 0.2,  &
-      ratmin = 0.05, &
-      extstp = 2.0,  &
-      shrstp = 0.5
+    real( kind = core_rknd ), parameter :: &
+      ratmax = 0.2_core_rknd,  &
+      ratmin = 0.05_core_rknd, &
+      extstp = 2.0_core_rknd,  &
+      shrstp = 0.5_core_rknd
 
     ! Call the cost function 50 times to determine the correct temperature
     ! based on Siarry, et al.
@@ -74,32 +77,32 @@ module enhanced_simann
       l_compute_optimal_temp = .false. 
 
     ! Input variables
-    real, dimension(:), intent(in) :: &
+    real( kind = core_rknd ), dimension(:), intent(in) :: &
       x0min,  & ! Minimum values for the x vector
       x0max,  & ! Maximum values for the x vector
       rostep, & ! Increments for step vector
       xinit     ! Initial argument for fobj
    
-    real, intent(inout) :: &
+    real( kind = core_rknd ), intent(inout) :: &
       tmpini ! Initial temperature
 
     ! Output variables
-    real, dimension(:), intent(out) :: &
+    real( kind = core_rknd ), dimension(:), intent(out) :: &
       xopt  ! Optimal point for x
 
-    real, intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       enopt   ! Optimal value of the cost function
 
     ! Local variables
 
     ! Variable names based on the paper
-    real, dimension(size( xinit )) :: &
+    real( kind = core_rknd ), dimension(size( xinit )) :: &
       xstart, & ! Starting point for x 
       xtry, &   ! Test point for x 
       stpini, & ! Initial step vector
       stpmst    ! Current step vector
 
-    real :: &
+    real( kind = core_rknd ) :: &
       epsrel, epsabs, & ! Stop conditions from paper
       einit, & ! Initial value of the cost function
       oldrgy, & ! Old energy level
@@ -112,7 +115,7 @@ module enhanced_simann
       temp,   & ! Anneal temperature
       rftmp
 
-    real, dimension(nvariations) :: &
+    real( kind = core_rknd ), dimension(nvariations) :: &
       init_moves ! Initial vector of moves
 
     integer, dimension(size( xinit ),4) :: &
@@ -134,7 +137,7 @@ module enhanced_simann
       nmvust, & ! Number of accepted uphill moves at current temperature stage
       nmvst    ! Number of attempted moves at current temp stage
 
-    real :: &
+    real( kind = core_rknd ) :: &
       rok,    & ! Step vector adjustment variable
       elowst, & ! Minimal fobj value at current temp stage
       avgyst, & ! Sum of successive fobj values at current temp stage
@@ -155,7 +158,7 @@ module enhanced_simann
 
       ! Attempt to make these machine independent (variable names from paper)
       ! epsrel is 1e2 times that of epsabs
-      epsrel = 1.e2 * epsilon( xinit ) ! Known magic number
+      epsrel = 1.e2_core_rknd * epsilon( xinit ) ! Known magic number
       epsabs = epsilon( xinit )
 
       ! Siarry's epsilon values in the paper
@@ -173,13 +176,13 @@ module enhanced_simann
       ! Normalization is handled wthin min_les_clubb_diff
 !     inorm = 1
 
-      probok = 0.5 ! Probability of accepting an uphill move
+      probok = 0.5_core_rknd ! Probability of accepting an uphill move
 
       ! Compute initial cost function
-      einit = fobj( xinit )
+      einit = real(fobj( real(xinit) ), kind = core_rknd)
 
       ! Suggested value from the paper
-!     rostep(:) = 0.25
+!     rostep(:) = 0.25_core_rknd
 
       ! Step vector
       stpini(:) = ( x0max(:) - x0min(:) ) * rostep
@@ -197,9 +200,9 @@ module enhanced_simann
         end do ! 1 .. size of init_moves
 
         ! Compute std dev
-        init_avg = sum( init_moves ) / real( size( init_moves ) )
+        init_avg = sum( init_moves ) / real( size( init_moves ), kind = core_rknd )
         dgyini = sqrt( sum( ( init_moves-init_avg )**2 ) &
-                       / real( size( init_moves ) ) &
+                       / real( size( init_moves ), kind = core_rknd ) &
                      )
         if ( l_esa_debug_statements ) then
           write(6,*) "Intial moves ="
@@ -220,7 +223,7 @@ module enhanced_simann
       ! -dschanen 21 March 2011
 !     tstop = -( epsrel * dgyini + epsabs/log( epsrel * probok + epsabs ) )
 
-      tstop = 0.1 ! Use a fixed value
+      tstop = 0.1_core_rknd ! Use a fixed value
 
       if ( l_esa_debug_statements ) then
         print *, "Stop temp = ", tstop
@@ -249,8 +252,8 @@ module enhanced_simann
       nmvst = 0      ! Number of attempted moves at current temp stage
       mtotst(:) = 0  ! Vector with numbers of attempted moves at current temp stage
       elowst = einit ! Minimal fobj value at current temp stage
-      avgyst = 0.    ! Sum of successive fobj values at current temp stage
-      sdgyup = 0.    ! Sum of accepted uphill fobj variations at current temp stage
+      avgyst = 0._core_rknd    ! Sum of successive fobj values at current temp stage
+      sdgyup = 0._core_rknd    ! Sum of accepted uphill fobj variations at current temp stage
 
       ! Added by dschanen for non-exclusive stop test number 1 pp 217
       n   = 1 ! nth temperature stage
@@ -284,7 +287,7 @@ module enhanced_simann
         avgyst = avgyst + rnewgy
 
         ! Step 4: Acceptance or Rejection of this movement
-        if ( deltae <= 0.0 ) then  
+        if ( deltae <= 0.0_core_rknd ) then  
             ! Accept xtry
             l_accept_xtry = .true.
             if ( rnewgy < enopt ) then
@@ -298,13 +301,13 @@ module enhanced_simann
            call genrand_real1( rand )
 
            ! Accept the number with probability of exp(-deltae / temp)
-           if ( real( rand ) <= exp( -deltae/temp ) ) then
+           if ( real( rand, kind = core_rknd ) <= exp( -deltae/temp ) ) then
              ! Accept xtry
              l_accept_xtry = .true.
              nmvust = nmvust + 1
              sdgyup = sdgyup + deltae
            end if
-        end if ! deltae <= 0.0
+        end if ! deltae <= 0.0_core_rknd
 
         if ( l_accept_xtry ) then
           xstart = xtry
@@ -333,14 +336,14 @@ module enhanced_simann
 
         ! Step 6: Temperature Adjustment
 
-        avgyst = avgyst / real( nmvst )
+        avgyst = avgyst / real( nmvst, kind = core_rknd )
         rftmp = max( min( elowst/avgyst, rmxtmp), rmitmp )
         temp = rftmp * temp
 
         ! Step 7: Step Vector Adjustment
         do i = 1, np, 1
           if ( spartition(i) ) then
-            rok = real( mokst(i,n) ) / real( mtotst(i) )
+            rok = real( mokst(i,n), kind = core_rknd ) / real( mtotst(i), kind = core_rknd )
             if ( rok > ratmax ) then
               stpmst(i) = stpmst(i) * extstp
             else if ( rok < ratmin ) then
@@ -405,8 +408,8 @@ module enhanced_simann
         nmvust = 0
         nmvst  = 0
         elowst = oldrgy
-        avgyst = 0.
-        sdgyup = 0.
+        avgyst = 0._core_rknd
+        sdgyup = 0._core_rknd
 
       end do
 
@@ -431,6 +434,9 @@ module enhanced_simann
 
     use mt95, only: genrand_real ! Constant
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -441,18 +447,18 @@ module enhanced_simann
     ! Input Variables
     logical, dimension(:), intent(in) :: spartition
 
-    real, dimension(:), intent(in) :: x0max, x0min, step
+    real( kind = core_rknd ), dimension(:), intent(in) :: x0max, x0min, step
 
     ! Input/Output Variables
-    real, dimension(:), intent(inout) :: x
+    real( kind = core_rknd ), dimension(:), intent(inout) :: x
 
     ! Output Variables
-    real, intent(out) :: cost
+    real( kind = core_rknd ), intent(out) :: cost
 
     ! Local variables
     real(kind=genrand_real), dimension(size( x )) :: xrand, srand
 
-    real :: xtmp
+    real( kind = core_rknd ) :: xtmp
 
     integer :: k
 
@@ -471,17 +477,17 @@ module enhanced_simann
 
         ! Apply a random sign to each xrand value. 
         if ( srand(k) >= 0.5_genrand_real ) then
-          xtmp = x(k) + real( xrand(k) ) * step(k)
+          xtmp = x(k) + real( xrand(k), kind = core_rknd ) * step(k)
         else
-          xtmp = x(k) - real( xrand(k) ) * step(k)
+          xtmp = x(k) - real( xrand(k), kind = core_rknd ) * step(k)
         end if
 
         ! According to Siarry pp 216 if a number is outside the x range, we
         ! should change the sign of the step accordingly
         if ( xtmp > x0max(k) ) then
-          xtmp = x(k) - real( xrand(k) ) * step(k)
+          xtmp = x(k) - real( xrand(k), kind = core_rknd ) * step(k)
         else if ( xtmp < x0min(k) ) then
-          xtmp = x(k) + real( xrand(k) ) * step(k)
+          xtmp = x(k) + real( xrand(k), kind = core_rknd ) * step(k)
         end if
 
         x(k) = xtmp
@@ -490,7 +496,7 @@ module enhanced_simann
 
     end do ! 1 .. size( k )
 
-    cost = fobj( x )
+    cost = real(fobj( real(x) ), kind = core_rknd)
 
     return
   end subroutine exec_movement

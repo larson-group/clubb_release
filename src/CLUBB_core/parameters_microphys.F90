@@ -9,7 +9,8 @@ module parameters_microphys
 !   None
 !-------------------------------------------------------------------------------
   use clubb_precision, only: &
-    time_precision
+    time_precision, &
+    core_rknd
 
   implicit none
 
@@ -87,7 +88,7 @@ module parameters_microphys
 
 !$omp threadprivate(microphys_start_time)
 
-  real, public :: &
+  real( kind = core_rknd ), public :: &
     Ncm_initial ! Initial cloud droplet number concentration [#/cc]
 
 !$omp threadprivate(Ncm_initial)
@@ -95,7 +96,7 @@ module parameters_microphys
   ! Statistical rain parameters        .
 
   ! Parameters for in-cloud (from SAM RF02 DO).
-  real, public :: &       ! RF02 value
+  real( kind = core_rknd ), public :: &       ! RF02 value
     rrp2_on_rrainm2_cloud, & ! 0.766
     Nrp2_on_Nrm2_cloud,    & ! 0.429
     Ncp2_on_Ncm2_cloud,    & ! 0.003
@@ -116,7 +117,7 @@ module parameters_microphys
 !$omp   corr_srr_NL_cloud,  corr_sNr_NL_cloud,  corr_sNc_NL_cloud )
 
   ! Parameters for below-cloud (from SAM RF02 DO).
-  real, public :: &       ! RF02 value
+  real( kind = core_rknd ), public :: &       ! RF02 value
     rrp2_on_rrainm2_below, & ! 8.97
     Nrp2_on_Nrm2_below,    & ! 12.03
     Ncp2_on_Ncm2_below,    & ! 0.00 ! Not applicable below cloud.
@@ -137,14 +138,14 @@ module parameters_microphys
 !$omp   corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below )
 
   ! Other needed parameters
-  real, public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of
+  real( kind = core_rknd ), public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of
   ! drizzle drop mean geometric radius to
   ! drizzle drop mean volume radius.
   ! Khairoutdinov and Kogan (2000); p. 233.
   !real, public :: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
   !real, public :: C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
 
-  real, public :: r_0 ! 25.0e-6   ! Assumed radius of all new drops; m.
+  real( kind = core_rknd ), public :: r_0 ! 25.0e-6   ! Assumed radius of all new drops; m.
   ! Value specified in KK (2000); p. 235.
   ! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
   !REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
@@ -157,7 +158,7 @@ module parameters_microphys
 
   ! Parameters added for ice microphysics and latin hypercube sampling
 
-  real, public :: &
+  real( kind = core_rknd ), public :: &
     rsnowp2_on_rsnowm2_cloud, & 
     Nsnowp2_on_Nsnowm2_cloud, & 
     ricep2_on_ricem2_cloud, & 
@@ -166,7 +167,7 @@ module parameters_microphys
 !$omp threadprivate( rsnowp2_on_rsnowm2_cloud, Nsnowp2_on_Nsnowm2_cloud, & 
 !$omp   ricep2_on_ricem2_cloud, Nicep2_on_Nicem2_cloud )
 
-   real, public :: &
+   real( kind = core_rknd ), public :: &
      rsnowp2_on_rsnowm2_below, & 
      Nsnowp2_on_Nsnowm2_below, & 
      ricep2_on_ricem2_below, & 

@@ -62,21 +62,23 @@ module rad_lwsw_module
 
     use interpolation, only: lin_int ! Procedure(s)
 
+    use clubb_precision, only: core_rknd ! Variable(s)
+
     implicit none
 
 ! Input Variables
     integer, intent(in) :: kk ! Number of vertical levels   [-]
 
-    real, dimension(kk), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(kk), intent(in) ::  & 
       qc3,   & ! Cloud water mixing ratio at time t + dt       [kg/kg]
       rbm,   & ! Density of reference state at mass levels     [kg/m^3]
       dsigm    ! Thickness of sigma (mass) levels              [m]
 
-    real, dimension(kk+1), intent(in) :: & 
+    real( kind = core_rknd ), dimension(kk+1), intent(in) :: & 
       coamps_zm,  & ! Altitude of momentum levels w/ COAMPS grid indices      [m]
       coamps_zt  ! Altitude of thermodynamic levels w/ COAMPS grid indices [m]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       xi_abs,  & ! Cosine of the solar zenith angle               [-]
       F0,      & ! Coefficient for cloud top heating, see Stevens [W/m^2]
       F1,      & !     "                      "                   [W/m^2]
@@ -84,7 +86,7 @@ module rad_lwsw_module
              ! where his value is 130 m^2/kg.                 [m^2/kg]
       radius     ! Effective droplet radius.                      [m]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       A,     & ! Albedo- sea surface, according to Lenderink             [-]
       gc,    & ! Asymmetry parameter, "g" in Duynkerke.                  [-] 
       Fs0,   & ! Incident incoming SW insolation at cloud top in 
@@ -97,19 +99,19 @@ module rad_lwsw_module
       l_lw_on      ! Is longwave radiation on?     [-]
 
 ! Output Variables
-    real, dimension(kk), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(kk), intent(out) ::  & 
       radhtk,    & ! Total radiational heating (dT/dt)           [K/s]
       radht_SW,  & ! Shortwave component of radiational heating  [K/s]
       radht_LW     ! Longwave component of radiational heating   [K/s]
 
-    real, dimension(kk+1), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(kk+1), intent(out) ::  & 
       Frad,     & ! Total radiative flux         [W/m^2]
       Frad_SW,  & ! Shortwave radiative flux     [W/m^2]
       Frad_LW     ! Longwave radiative flux      [W/m^2]
 
 ! Local Variables
-    real, dimension(kk+1) :: lwp ! Liquid water path from domain top [kg/m^2]
-    real, dimension(kk+1) :: & 
+    real( kind = core_rknd ), dimension(kk+1) :: lwp ! Liquid water path from domain top [kg/m^2]
+    real( kind = core_rknd ), dimension(kk+1) :: & 
       lwp_coamps_zm   ! Liquid water path interpolated
     ! to COAMPS momentum (or w) levels  [kg/m^2]
 
@@ -155,7 +157,7 @@ module rad_lwsw_module
 !-----------------------------------------------------------------------
 
     if ( l_lw_on ) then
-      lwp(1) = 0.0
+      lwp(1) = 0.0_core_rknd
       do k=2,kk+1
         lwp(k) = lwp(k-1) & 
                + rbm(k-1)*qc3(k-1)*dsigm(k-1) !/aoz(i,j)
@@ -257,7 +259,7 @@ module rad_lwsw_module
       ! The value of liquid water path (lwp) at momentum (or w)
       ! level 1 (the uppermost level) is defined to be 1/2 of the
       ! value of liquid water path at thermodynamic level 1.
-      lwp_coamps_zm(1) = lwp(1)/2.
+      lwp_coamps_zm(1) = lwp(1)/2._core_rknd
 
       if ( l_center ) then
         Frad_LW(1) = F0 * exp( -kay * lwp_coamps_zm(1) ) & 
@@ -278,7 +280,7 @@ module rad_lwsw_module
 
     else ! this 'else' means l_lw_on is .FALSE.
       do k=1,kk+1
-        Frad_LW(k) = 0.
+        Frad_LW(k) = 0._core_rknd
       enddo
     endif
 
@@ -289,7 +291,7 @@ module rad_lwsw_module
                       Frad_SW )
     else
       do k=1,kk+1
-        Frad_SW(k) = 0.
+        Frad_SW(k) = 0._core_rknd
       enddo
     endif
 
@@ -322,11 +324,11 @@ module rad_lwsw_module
 !-----------------------------------------------------------------------
 
     do k=1,kk
-      radhtk(k)   = (-1.0/(Cp*rbm(k))) & 
+      radhtk(k)   = (-1.0_core_rknd/(Cp*rbm(k))) & 
                 * (Frad(k)-Frad(k+1))/dsigm(k)
-      radht_SW(k) = (-1.0/(Cp*rbm(k))) & 
+      radht_SW(k) = (-1.0_core_rknd/(Cp*rbm(k))) & 
                 * (Frad_SW(k)-Frad_SW(k+1))/dsigm(k)
-      radht_LW(k) = (-1.0/(Cp*rbm(k))) & 
+      radht_LW(k) = (-1.0_core_rknd/(Cp*rbm(k))) & 
                 * (Frad_LW(k)-Frad_LW(k+1))/dsigm(k)
     enddo
 
@@ -386,6 +388,7 @@ module rad_lwsw_module
       three_halves
 
     use interpolation, only: lin_int ! Procedure(s)
+    use clubb_precision, only: core_rknd ! Variable(s)
 
     implicit none
 
@@ -393,16 +396,16 @@ module rad_lwsw_module
 
     integer, intent(in) :: kk
 
-    real, dimension(kk), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(kk), intent(in) ::  & 
       qc3, & 
       rbm, & 
       dsigm
 
-    real, dimension(kk+1), intent(in) :: & 
+    real( kind = core_rknd ), dimension(kk+1), intent(in) :: & 
       coamps_zm,  & ! Altitude of momentum levels w/ COAMPS grid indices      [m]
       coamps_zt  ! Altitude of thermodynamic levels w/ COAMPS grid indices [m]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       xi_abs, & 
       radius,  & 
       A,  & 
@@ -414,24 +417,24 @@ module rad_lwsw_module
       l_center
 
     ! Output variables
-    real, dimension(kk+1), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(kk+1), intent(out) ::  & 
       Frad_SW
 
 
 ! Local Variables
-    real, dimension(kk+1) :: & 
+    real( kind = core_rknd ), dimension(kk+1) :: & 
       tau,     & ! Optical depth of an incremental layer.        [-]
       taude,   & ! Delta-Eddington transformation of tau.        [-]
       F_diff,  & ! Diffuse component of SW radiation             [W/m^2]
       F_dir      ! Diffuse component of LW radiation             [W/m^2]
 
-    real :: taupath, tauc, t1, t2, t3, c1, c2, omegade, & 
+    real( kind = core_rknd ) :: taupath, tauc, t1, t2, t3, c1, c2, omegade, & 
          x1, x2, x3, rk, rk2, xi_abs2, rp, alpha, beta, rtt, & 
          exmu0, expk, exmk, xp23p, xm23p, ap23b, taucde
 
     integer :: k
 
-    real :: ff, gcde
+    real( kind = core_rknd ) :: ff, gcde
 
 !-----------------------------------------------------------------------
 !  CONSTANTS/PARAMETERS
@@ -445,7 +448,7 @@ module rad_lwsw_module
 !-----------------------------------------------------------------------
 
     ff = gc*gc
-    gcde = gc/(1.0+gc)
+    gcde = gc/(1.0_core_rknd+gc)
 
 !-----------------------------------------------------------------------
 !
@@ -464,7 +467,7 @@ module rad_lwsw_module
 !-----------------------------------------------------------------------
 
 
-    tauc = 0.0
+    tauc = 0.0_core_rknd
     do k=1, kk
 
       tau(k) = three_halves * qc3(k) * rbm(k) * dsigm(k)  & !/ aoz(i,j)
@@ -473,11 +476,11 @@ module rad_lwsw_module
     enddo
     tau(kk+1) = tau(kk)
 
-    omegade = (1.0-ff)*omega/(1.0-omega*ff)
-    taucde = (1.0-omega*ff)*tauc
+    omegade = (1.0_core_rknd-ff)*omega/(1.0_core_rknd-omega*ff)
+    taucde = (1.0_core_rknd-omega*ff)*tauc
 
     do k=1, kk+1
-      taude(k) = (1.0-omega*ff)*tau(k)
+      taude(k) = (1.0_core_rknd-omega*ff)*tau(k)
     enddo
 
 
@@ -538,27 +541,27 @@ module rad_lwsw_module
 !
 !-----------------------------------------------------------------------
 
-    x1 = 1.0-omegade*gcde
-    x2 = 1.0-omegade
-    rk = sqrt( 3.0*x2*x1 )
+    x1 = 1.0_core_rknd-omegade*gcde
+    x2 = 1.0_core_rknd-omegade
+    rk = sqrt( 3.0_core_rknd*x2*x1 )
     xi_abs2 = xi_abs*xi_abs
     rk2 = rk*rk
-    x3 = 4.0*(1.0-rk2*xi_abs2)
-    rp = sqrt( 3.0*x2/x1 )
-    alpha = 3.0*omegade*xi_abs2*(1.0+gcde*x2)/x3
-    beta = 3.0*omegade*xi_abs*(1.0+3.0*gcde*xi_abs2*x2)/x3
+    x3 = 4.0_core_rknd*(1.0_core_rknd-rk2*xi_abs2)
+    rp = sqrt( 3.0_core_rknd*x2/x1 )
+    alpha = 3.0_core_rknd*omegade*xi_abs2*(1.0_core_rknd+gcde*x2)/x3
+    beta = 3.0_core_rknd*omegade*xi_abs*(1.0_core_rknd+3.0_core_rknd*gcde*xi_abs2*x2)/x3
 
-    rtt = 2.0/3.0
+    rtt = 2.0_core_rknd/3.0_core_rknd
     exmu0 = exp( -taucde/xi_abs )
     expk = exp( rk*taucde )
-    exmk = 1.0/expk
-    xp23p = 1.0+rtt*rp
-    xm23p = 1.0-rtt*rp
+    exmk = 1.0_core_rknd/expk
+    xp23p = 1.0_core_rknd+rtt*rp
+    xm23p = 1.0_core_rknd-rtt*rp
     ap23b = alpha+rtt*beta
 
-    t1 = 1.-A-rtt*(1.0+A)*rp
-    t2 = 1.-A+rtt*(1.0+A)*rp
-    t3 = (1.-A)*alpha-rtt*(1.+A)*beta+A*xi_abs
+    t1 = 1._core_rknd-A-rtt*(1.0_core_rknd+A)*rp
+    t2 = 1._core_rknd-A+rtt*(1.0_core_rknd+A)*rp
+    t3 = (1._core_rknd-A)*alpha-rtt*(1._core_rknd+A)*beta+A*xi_abs
 
 
 !-----------------------------------------------------------------------
@@ -637,12 +640,12 @@ module rad_lwsw_module
 !-----------------------------------------------------------------------
 
     if ( l_center ) then
-      taupath = 0.5*taude(1)
+      taupath = 0.5_core_rknd*taude(1)
     else
-      taupath = 0.
+      taupath = 0._core_rknd
     endif
 
-    F_diff(1) = (-4.0/3.0) * Fs0 & 
+    F_diff(1) = (-4.0_core_rknd/3.0_core_rknd) * Fs0 & 
               * (  & 
                  rp * & 
                      (  & 
@@ -665,7 +668,7 @@ module rad_lwsw_module
       endif
 
 
-      F_diff(k) = (-4.0/3.0) * Fs0 & 
+      F_diff(k) = (-4.0_core_rknd/3.0_core_rknd) * Fs0 & 
                 * (  & 
                    rp * & 
                        (  & 

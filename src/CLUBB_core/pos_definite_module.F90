@@ -53,7 +53,8 @@ module pos_definite_module
       zero_threshold
 
     use clubb_precision, only:  & 
-      time_precision ! Variable(s)
+      time_precision, & ! Variable(s)
+      core_rknd
 
     use error_code, only: &
       clubb_at_least_debug_level
@@ -70,16 +71,16 @@ module pos_definite_module
     character(len=2), intent(in) :: & 
       field_grid ! The grid of the field, either zt or zm
 
-    real, dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       field_n ! The field (e.g. rtm) at n, prior to n+1
 
-    real, dimension(gr%nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  & 
       flux_pd,  & ! Budget of the change in the flux term due to the scheme
       field_pd    ! Budget of the change in the mean term due to the scheme
 
     ! Output Variables
 
-    real, intent(inout), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
       field_np1,   & ! Field at n+1 (e.g. rtm in [kg/kg])
       flux_np1    ! Flux applied to field
 
@@ -91,13 +92,13 @@ module pos_definite_module
     integer ::  & 
       k, kmhalf, kp1, kphalf ! Loop indices
 
-    real, dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
       flux_plus, flux_minus, & ! [F_i+1/2]^+ [F_i+1/2]^- in Smolarkiewicz 
       fout,                  & ! (A4) F_i{}^OUT, or the sum flux_plus+flux_minus
       flux_lim,              & ! Correction applied to flux at n+1
       field_nonlim          ! Temporary variable for calculation
 
-    real, dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
       dz_over_dt ! Conversion factor  [m/s]
 
 
@@ -105,9 +106,9 @@ module pos_definite_module
 
     ! If all the values are positive or the values at the previous
     ! timestep were negative, then just return
-    if ( .not. any( field_np1 < 0. ) .or. any( field_n < 0. ) ) then
-      flux_pd  = 0.
-      field_pd = 0.
+    if ( .not. any( field_np1 < 0._core_rknd ) .or. any( field_n < 0._core_rknd ) ) then
+      flux_pd  = 0._core_rknd
+      field_pd = 0._core_rknd
       return
     end if
 
@@ -137,10 +138,10 @@ module pos_definite_module
       flux_minus(k) = -min( zero_threshold, flux_np1(k) ) ! defined on flux levels
 
       if ( field_grid == "zm" ) then
-        dz_over_dt(k) = ( 1./gr%invrs_dzm(k) ) / real( dt )
+        dz_over_dt(k) = ( 1._core_rknd/gr%invrs_dzm(k) ) / real( dt, kind = core_rknd )
 
       else if ( field_grid == "zt" ) then
-        dz_over_dt(k) = ( 1./gr%invrs_dzt(k) ) / real( dt )
+        dz_over_dt(k) = ( 1._core_rknd/gr%invrs_dzt(k) ) / real( dt, kind = core_rknd )
 
       end if
 
@@ -191,24 +192,24 @@ module pos_definite_module
     flux_lim(1) = flux_np1(1)
     flux_lim(gr%nz) = flux_np1(gr%nz)
 
-    flux_pd = ( flux_lim - flux_np1 ) / real( dt )
+    flux_pd = ( flux_lim - flux_np1 ) / real( dt, kind = core_rknd )
 
     field_nonlim = field_np1
 
     ! Apply change to field at n+1
     if ( field_grid == "zt" ) then
 
-      field_np1 = -real( dt ) * ddzm( flux_lim - flux_np1 ) + field_np1
+      field_np1 = -real( dt, kind = core_rknd ) * ddzm( flux_lim - flux_np1 ) + field_np1
 
     else if ( field_grid == "zm" ) then
 
-      field_np1 = -real( dt ) * ddzt( flux_lim - flux_np1 ) + field_np1
+      field_np1 = -real( dt, kind = core_rknd ) * ddzt( flux_lim - flux_np1 ) + field_np1
 
     end if
 
     ! Determine the total time tendency in field due to this calculation
     ! (for diagnostic purposes)
-    field_pd = ( field_np1 - field_nonlim ) / real( dt )
+    field_pd = ( field_np1 - field_nonlim ) / real( dt, kind = core_rknd )
 
     ! Replace the non-limited flux with the limited flux
     flux_np1 = flux_lim

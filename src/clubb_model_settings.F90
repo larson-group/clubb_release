@@ -1,7 +1,7 @@
 ! $Id$
 module clubb_model_settings  
 
-  use clubb_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
   implicit none
 
@@ -38,7 +38,7 @@ module clubb_model_settings
 !$omp threadprivate(extend_atmos_bottom_level, extend_atmos_top_level)
 !$omp threadprivate(extend_atmos_range_size, lin_int_buffer)
 
-  real, public ::  & 
+  real( kind = core_rknd ), public ::  & 
     deltaz,  & ! Change per grid level                 [m]
     zm_init, & ! Initial point on the momentum grid    [m]
     zm_top     ! Maximum point on the momentum grid    [m]
@@ -57,13 +57,13 @@ module clubb_model_settings
 
 !$omp threadprivate(day, month, year)
 
-  real, public ::  & 
+  real( kind = core_rknd ), public ::  & 
     rlat,  & ! Latitude  [Degrees North]
     rlon     ! Longitude [Degrees East]
 
 !$omp threadprivate(rlat, rlon)
 
-  real, public ::  &
+  real( kind = core_rknd ), public ::  &
     sfc_elevation  ! Elevation of ground level  [m AMSL]
 
 !$omp threadprivate(sfc_elevation)

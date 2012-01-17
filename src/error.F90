@@ -33,6 +33,9 @@ module error
 
   use mt95, only: genrand_real ! Constant
 
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   ! Constant Parameters
@@ -62,7 +65,7 @@ module error
   !-----------------------------------------------------------------------
 
 
-  real, public ::  & 
+  real( kind = core_rknd ), public ::  & 
     f_tol,        & ! The precision to tune for
     anneal_temp ! Initial temperature for the simulated annealing algorithm
 
@@ -100,13 +103,13 @@ module error
   ! Additions for using imposed weights as scaling factors
   logical :: l_initialize_sigma
 
-  real, dimension(:,:), allocatable, private ::  & 
+  real( kind = core_rknd ), dimension(:,:), allocatable, private ::  & 
     err_terms, & 
     invsigma2, & 
     min_err_terms, & 
     init_err_terms
 
-  real, dimension(:), allocatable, private ::  & 
+  real( kind = core_rknd ), dimension(:), allocatable, private ::  & 
     weight_case, weight_var
 
   ! End additions for using imposed weights
@@ -124,20 +127,20 @@ module error
   integer, public :: &
     iter ! Total number of iterations amoeba spent calculating optimal values
 
-  real, public :: & 
+  real( kind = core_rknd ), public :: & 
     init_err,  & ! error for the initial constants
     min_err      ! the lowest the minimization algorithm could go
 
-  real, dimension(nparams), private :: & 
+  real( kind = core_rknd ), dimension(nparams), private :: & 
     params  ! Vector of all possible CLUBB parameters
 
   integer, dimension(nparams), private :: & 
     params_index  ! Index of the params elements that are used in the simplex
 
-  real, allocatable, dimension(:,:), public ::  & 
+  real( kind = core_rknd ), allocatable, dimension(:,:), public ::  & 
     param_vals_matrix ! Holds 2D simplex the CLUBB constant parameters
 
-  real, allocatable, dimension(:), public :: & 
+  real( kind = core_rknd ), allocatable, dimension(:), public :: & 
     param_vals_spread,  & ! Amount to vary each respec. constant by
     cost_fnc_vector    ! cache of differences between the LES and CLUBB
 
@@ -175,6 +178,9 @@ module error
 
     use mt95, only: genrand_real1 ! Procedure
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant Variables
@@ -194,7 +200,7 @@ module error
 
     ! Local Variables
 
-    real, dimension(nparams) :: rtmp ! Scratch space
+    real( kind = core_rknd ), dimension(nparams) :: rtmp ! Scratch space
 
     integer :: i, j, & ! looping variables
                iunit ! file unit
@@ -212,9 +218,9 @@ module error
     integer, dimension(max_run) :: z_i_nl, z_f_nl
 
     ! Addition to use imposed weights as scaling factors
-    real, dimension(max_run) :: weight_case_nl
+    real( kind = core_rknd ), dimension(max_run) :: weight_case_nl
 
-    real, dimension(max_variables) :: weight_var_nl
+    real( kind = core_rknd ), dimension(max_variables) :: weight_var_nl
 
     character(len=100), dimension(max_run) ::  & 
       run_file_nl, & 
@@ -247,8 +253,8 @@ module error
       time_nl = 0
 
       ! Imposed weights as scaling factors
-      weight_case_nl = 0.0
-      weight_var_nl  = 0.0
+      weight_case_nl = 0.0_core_rknd
+      weight_var_nl  = 0.0_core_rknd
 
       z_i_nl = 0
       z_f_nl = 0
@@ -361,11 +367,12 @@ module error
 
         do i = 2, ndim+1, 1
           ! Vince Larson made entries of param_vals_matrix random  10 Feb 2005
-          ! param_vals_matrix(i,j) = param_vals_matrix(1,j)*
-          !                             (1.0+((real(i)-1.)/real(ndim)*0.5))
+          ! param_vals_matrix(i,j) = param_vals_matrix(1,j)* &
+          !     (1.0_core_rknd+((real(i, kind = core_rknd)-1._core_rknd)/ &
+          !     real(ndim, kind = core_rknd)*0.5_core_rknd))
           param_vals_matrix(i,j) = param_vals_matrix(1,j)* & 
-          ( (1.0 - param_vals_spread(j))  & 
-           + real( rand_vect(i-1) )*param_vals_spread(j)*2. )
+          ( (1.0_core_rknd - param_vals_spread(j))  & 
+           + real( rand_vect(i-1), kind = core_rknd )*param_vals_spread(j)*2._core_rknd )
           ! End of Vince Larson's change
         end do ! i..ndim+1
 
@@ -376,7 +383,8 @@ module error
     ! First call is used to initialize weights
 
     l_initialize_sigma = .true.
-    cost_fnc_vector(1) =  min_les_clubb_diff( param_vals_matrix(1,1:ndim) )
+    cost_fnc_vector(1) =  real(min_les_clubb_diff( &
+        real(param_vals_matrix(1,1:ndim)) ), kind = core_rknd)
     l_initialize_sigma = .false.
 
     ! Note: min_les_clubb_diff is written to deal with undefined and
@@ -400,7 +408,7 @@ module error
       ! This is done by calling min_les_clubb_diff with the initial vector
       do i = 2, ndim+1, 1
         cost_fnc_vector(i) =  & 
-             min_les_clubb_diff( param_vals_matrix(i,1:ndim) )
+             real(min_les_clubb_diff( real(param_vals_matrix(i,1:ndim))), kind = core_rknd )
       end do
     end if
 
@@ -415,7 +423,7 @@ module error
   end subroutine tuner_init
 
   !-----------------------------------------------------------------------
-  real function min_les_clubb_diff( param_vals_vector )
+  real function min_les_clubb_diff( param_vals_vector_r4 )
 
 ! Description:
 !   Function that returns the sum of the error between the dependent
@@ -445,6 +453,9 @@ module error
 
     use constants_clubb, only: fstderr ! Constant(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -458,12 +469,15 @@ module error
     ! The interface declaration in the nr module prevents us from making
     ! this a fixed length array declaration
     real, dimension(:), intent(in) ::  & 
-      param_vals_vector ! Tuning vector(ndim dimension) contains
+      param_vals_vector_r4 ! Tuning vector(ndim dimension) contains
                         ! parameterization constants (C1, C2 etc.)
 
     ! Local Variables
 
-    real, dimension(nparams) :: & 
+    real( kind = core_rknd ), dimension(size(param_vals_vector_r4)) :: &
+      param_vals_vector ! core_rknd version of param_vals_vector_r4
+
+    real( kind = core_rknd ), dimension(nparams) :: & 
       params_local ! Local copy of the CLUBB parameters fed into run_clubb
 
     ! These are read after each run from the GrADS control files
@@ -476,23 +490,23 @@ module error
     integer ::  & 
       AllocateStatus ! For hoc_zl, les_zl
 
-    real ::  & 
+    real( kind = core_rknd ) ::  & 
       err_sum  ! scalar sum of all z-levels
 
     integer ::  & 
       c_terms ! num of terms in err_sum (for normalization)
 
     ! LES and CLUBB values over nzmax z-levels
-    real, dimension(:), allocatable ::  & 
+    real( kind = core_rknd ), dimension(:), allocatable ::  & 
       clubb_zl, & 
       clubb2_zl, & 
       les_zl, &
       clubb_grid_heights
 
-    real, dimension(:,:), allocatable ::  & 
+    real( kind = core_rknd ), dimension(:,:), allocatable ::  & 
       err_sums  ! To save breakdown of cost function
 
-    real ::  & 
+    real( kind = core_rknd ) ::  & 
       les_minmax ! The largest LES value subtracted from the
     ! smallest value of all zlvl's (for normalization)
 
@@ -505,6 +519,8 @@ module error
     integer :: i, j, c_run ! looping variables
 
     !-----------------------------------------------------------------------
+
+    param_vals_vector = real(param_vals_vector_r4, kind = core_rknd)
 
     l_error = .false.
 
@@ -545,8 +561,8 @@ module error
     allocate( err_sums(c_total, v_total) )
 
     ! Initialize
-    err_sum  = 0.0
-    err_sums = 0.0
+    err_sum  = 0.0_core_rknd
+    err_sums = 0.0_core_rknd
     c_terms  = 0
     err_code = clubb_no_error
     run_stat(1:c_total) = clubb_no_error
@@ -615,8 +631,8 @@ module error
     ! Amoeba (the downhill simplex)
     if ( fatal_error( err_code ) ) then
       write(fstderr,*) "Warning: the parameter set has caused CLUBB to crash"
-      min_les_clubb_diff = 2. * maxval( cost_fnc_vector )  & 
-                       - minval( cost_fnc_vector )
+      min_les_clubb_diff = real(2._core_rknd * maxval( cost_fnc_vector )  & 
+                       - minval( cost_fnc_vector ))
 
       if ( l_stdout_on_invalid ) then
         inv_count = modulo( inv_count, 3 ) + 1 ! 1,2,3,1,2,3...
@@ -715,7 +731,7 @@ module error
         les_minmax = maxval( les_zl(z_i(c_run):z_f(c_run)) ) &
           - minval( les_zl(z_i(c_run):z_f(c_run)) )
 
-        if ( les_minmax == 0.0 ) then
+        if ( les_minmax == 0.0_core_rknd ) then
           stop "An LES variable was 0 from z_i to z_f."
         end if
 
@@ -771,15 +787,15 @@ module error
     ! Save total error and error contributions breakdown
     !---------------------------------------------------------------
     err_terms = err_sums
-    min_les_clubb_diff = err_sum
+    min_les_clubb_diff = real(err_sum)
 
     deallocate( err_sums )
 
     ! Save tuning results in file if specified
     if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
       action='write', position='append')
-    call write_text( "Cost function= ", min_les_clubb_diff, l_save_tuning_run, &
-      file_unit, '(a, f12.5)' )
+    call write_text( "Cost function= ", real(min_les_clubb_diff, kind = core_rknd), &
+      l_save_tuning_run, file_unit, '(a, f12.5)' )
     if( l_save_tuning_run ) close(unit=file_unit)
 
     return
@@ -828,7 +844,7 @@ module error
     write(unit=iunit,fmt='(A3,F15.6)') "$$ ", min_err
 
     write(unit=iunit,fmt=*) "Approx. percent increase in accuracy:",  & 
-      ((init_err - min_err) / init_err*100.0), "%" ! Known magic number
+      ((init_err - min_err) / init_err*100.0_core_rknd), "%" ! Known magic number
 
     return
   end subroutine write_results
@@ -851,6 +867,9 @@ module error
 
     use parameters_tunable, only: params_list ! Variable(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -863,11 +882,11 @@ module error
     character(len=*), intent(in) ::  & 
     results_f ! Name of the results file to write to
 
-    real, intent(in), dimension(:) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(:) ::  & 
     param_vals_vector ! The current tuning parameters
 
     ! Local Variables
-    real, dimension(nparams) :: params_local
+    real( kind = core_rknd ), dimension(nparams) :: params_local
 
     integer :: i, j, & ! loop variable
                iunit   ! file unit
@@ -958,7 +977,7 @@ module error
     ! Copy the spread into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
       ! If the variable isn't being changed, set it to zero
-      params_local(i) = 0.0
+      params_local(i) = 0.0_core_rknd
       do j=1, ndim, 1
         if ( i == params_index(j) ) then
           ! Copy variable from param_vals_vector argument
@@ -1008,11 +1027,11 @@ module error
     character(len=*), intent(in) :: & 
       results_f ! Results file to write to
 
-    real, intent(in), dimension(ndim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ndim) :: & 
       param_vals_vector ! the current constants
 
     ! Local variables
-    real, dimension(nparams) :: params_local
+    real( kind = core_rknd ), dimension(nparams) :: params_local
 
     integer   :: i, j  ! loop variables
 
@@ -1061,7 +1080,7 @@ module error
   end subroutine output_nml_standalone
 
 !-----------------------------------------------------------------------
-  real function mean_sqr_diff & 
+  real( kind = core_rknd ) function mean_sqr_diff & 
                 ( nzmax, z_init, z_final, scm_zl, les_zl, norm_term )
 ! Description
 !   Calculate the mean squared difference between two input vectors,
@@ -1070,6 +1089,10 @@ module error
 ! References:
 !   None
 !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -1081,14 +1104,14 @@ module error
       z_init,  & ! Initial point for the purposes of computing the sum
       z_final    ! Final point for the purpose of computign the sum
 
-    real, intent(in), dimension(nzmax) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
       scm_zl, &! CLUBB GrADS variable   [units vary]
       les_zl   ! The LES GrADS variable [units vary]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       norm_term ! normalization term; typically maxval(les) - minval(les)
 
-    real, dimension(nzmax) ::  & 
+    real( kind = core_rknd ), dimension(nzmax) ::  & 
       tmp_zl
 
     integer :: k
@@ -1097,7 +1120,7 @@ module error
 
     ! ---- Begin Code ----
 
-    tmp_zl = 0.0
+    tmp_zl = 0.0_core_rknd
 
     do k = z_init, z_final, 1
       tmp_zl(k) = ( ( scm_zl(k) - les_zl(k) ) / norm_term )**2
@@ -1108,7 +1131,7 @@ module error
     return
   end function mean_sqr_diff
 !-----------------------------------------------------------------------
-  real function mean_sqr_diff_2 & 
+  real( kind = core_rknd ) function mean_sqr_diff_2 & 
                 ( nzmax, z_init, z_final, scm_zl,  & 
                   scm2_zl, les_zl, norm_term )
 ! Description:
@@ -1131,6 +1154,9 @@ module error
 !   None
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -1142,16 +1168,16 @@ module error
       z_init,  & ! Initial point for the purposes of computing the sum
       z_final    ! Final point for the purpose of computign the sum
 
-    real, intent(in), dimension(nzmax) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
       scm_zl,  & ! CLUBB GrADS variable [units vary]
       scm2_zl, & ! CLUBB GrADS variable [units vary]
       les_zl     ! The LES GrADS variable [units vary]
 
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       norm_term ! normalization term. Typically maxval(les) - minval(les)
 
     ! Local Variables
-    real, dimension(nzmax) ::  & 
+    real( kind = core_rknd ), dimension(nzmax) ::  & 
       tmp_zl
 
     integer :: k
@@ -1160,10 +1186,10 @@ module error
 
     ! ---- Begin Code ----
 
-    tmp_zl = 0.0
+    tmp_zl = 0.0_core_rknd
 
     do k = z_init, z_final, 1
-      tmp_zl(k) = ( scm2_zl(k) - 2.0 * scm_zl(k)*les_zl(k) + les_zl(k)**2 ) &
+      tmp_zl(k) = ( scm2_zl(k) - 2.0_core_rknd * scm_zl(k)*les_zl(k) + les_zl(k)**2 ) &
         / norm_term**2
     end do
 

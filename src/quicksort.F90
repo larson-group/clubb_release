@@ -29,11 +29,14 @@ module quicksort
 
   recursive subroutine Qsort_flags( table, cost  )
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input/Output Variables
     logical, intent(inout), dimension(:,:) :: table
-    real, intent(inout), dimension(:) :: cost
+    real( kind = core_rknd ), intent(inout), dimension(:) :: cost
 
     ! Local Variables
     integer :: iq
@@ -48,20 +51,24 @@ module quicksort
   end subroutine Qsort_flags
 
   subroutine Partition( table, cost, marker )
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Intput/Output Variables
     logical, intent(inout), dimension(:,:) :: table
-    real, intent(inout), dimension(:) :: cost
+    real( kind = core_rknd ), intent(inout), dimension(:) :: cost
 
     ! Output Variables
     integer, intent(out) :: marker
 
     ! Local Variables
     integer :: i, j
-    real :: temp
+    real( kind = core_rknd ) :: temp
     logical, dimension(size( table(1,:) )) :: logic_temp
-    real :: x  ! pivot point
+    real( kind = core_rknd ) :: x  ! pivot point
 
     ! ---- Begin Code ----
 

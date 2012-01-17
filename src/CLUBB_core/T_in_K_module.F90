@@ -26,15 +26,18 @@ module T_in_K_module
       Cp,  & ! Dry air specific heat at constant p [J/kg/K]
       Lv     ! Latent heat of vaporization         [J/kg]
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input 
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       thlm,   & ! Liquid potential temperature  [K]
       exner,  & ! Exner function                [-]
       rcm       ! Liquid water mixing ratio     [kg/kg]
 
-    real :: & 
+    real( kind = core_rknd ) :: & 
       T_in_K ! Result temperature [K]
 
     ! ---- Begin Code ----
@@ -58,16 +61,19 @@ module T_in_K_module
       Cp,  & ! Dry air specific heat at constant p [J/kg/K]
       Lv     ! Latent heat of vaporization         [J/kg]
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
-  ! Input 
-  real, intent(in) :: & 
-    T_in_K, &! Result temperature [K]
-    exner,  & ! Exner function                [-]
-    rcm       ! Liquid water mixing ratio     [kg/kg]
+    ! Input 
+    real( kind = core_rknd ), intent(in) :: & 
+      T_in_K, &! Result temperature [K]
+      exner,  & ! Exner function                [-]
+      rcm       ! Liquid water mixing ratio     [kg/kg]
 
-   real :: & 
-    thlm    ! Liquid potential temperature  [K]
+    real( kind = core_rknd ) :: & 
+      thlm    ! Liquid potential temperature  [K]
 
     ! ---- Begin Code ----
 

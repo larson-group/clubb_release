@@ -572,6 +572,9 @@ module KK_utilities
         Lv,         & 
         Rv
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
@@ -594,7 +597,7 @@ module KK_utilities
 
 
     ! Temperature in degrees Celsius.
-    Celsius = T_in_K - T_freeze_K
+    Celsius = T_in_K - real(T_freeze_K)
 
     ! Coefficient of thermal conductivity of air.
     Ka = ( 5.69 + 0.017 * Celsius ) * 0.00001  ! Ka in cal./(cm.*sec.*C)
@@ -606,12 +609,12 @@ module KK_utilities
     Dv = Dv / 10000.0  ! Dv in (m.^2)/sec.
 
     ! Calculate saturation mixing ratio and saturation vapor pressure.
-    esatv = sat_vapor_press_liq( T_in_K )
+    esatv = real(sat_vapor_press_liq( real(T_in_K, kind = core_rknd )))
 
     ! The values of F_k and F_d are found in Rogers and Yau (1989);
     ! Eq. 7.17 and 7.18.
-    Fk = ( Lv / ( Rv * T_in_K ) - 1.0 ) * ( Lv * rho_lw ) / ( Ka * T_in_K )
-    Fd = ( rho_lw * Rv * T_in_K ) / ( Dv * esatv )
+    Fk = ( real(Lv) / ( real(Rv) * T_in_K ) - 1.0 ) * ( real(Lv) * real(rho_lw) ) / ( Ka * T_in_K )
+    Fd = ( real(rho_lw) * real(Rv) * T_in_K ) / ( Dv * esatv )
 
     ! Calculate G(T,p).
     G_T_p = 1.0 / (Fk + Fd)

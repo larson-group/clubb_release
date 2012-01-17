@@ -28,33 +28,33 @@ module wangara
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use array_index, only: iisclr_thl, iisclr_rt, iiedsclr_thl, iiedsclr_rt ! Variable(s)
 
     implicit none
 
     ! Output Variables
-    real, intent(out), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
       wm_zt,        & ! w wind on thermodynamic grid                [m/s]
       wm_zm,        & ! w wind on momentum grid                     [m/s]
       thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
       rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
-    real, intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar tendency [units/s]
 
-    real, intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar tendency [units/s]
 
     ! No large-scale subsidence for now
-    wm_zt = 0.0
-    wm_zm = 0.0
+    wm_zt = 0.0_core_rknd
+    wm_zm = 0.0_core_rknd
 
     ! No large-scale water tendency or cooling
 
-    rtm_forcing  = 0.0
-    thlm_forcing = 0.0
+    rtm_forcing  = 0.0_core_rknd
+    thlm_forcing = 0.0_core_rknd
 
     ! Test scalars with thetal and rt if desired
     if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
@@ -81,7 +81,7 @@ module wangara
 
     use constants_clubb, only: pi, fstderr, sec_per_day ! Variable(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     implicit none
 
@@ -92,7 +92,7 @@ module wangara
       time    ! Current time  [s]
 
     ! Output variables
-    real, intent(out) ::  & 
+    real( kind = core_rknd ), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
       wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
       ustar           ! surface friction velocity [m/s]
@@ -108,7 +108,7 @@ module wangara
 
 
     ! Declare the value of ustar.
-    ustar = 0.13
+    ustar = 0.13_core_rknd
 
     ! Compute UTC time of the day in seconds
 
@@ -120,15 +120,16 @@ module wangara
 
     if ( time_est < 27000._time_precision .or. time_est > 63000._time_precision ) then
       write(fstderr,*) "wangara_sfclyr: error local time must" & 
-        //" be between 730 and 1730."
+        //" be between 730 and 1730._core_rknd"
       write(fstderr,*) 'time_est = ',time_est
       stop
     end if
 
     ! Compute heat and moisture fluxes
 
-    wpthlp_sfc = real(0.18 * cos( (real( time_est )-45000.0)/36000.0 * pi )) ! Known magic number
-    wprtp_sfc  = 1.3e-4 * wpthlp_sfc ! Known magic number
+    wpthlp_sfc = real(0.18_core_rknd * cos( (real( time_est, kind = core_rknd )-&
+         45000.0_core_rknd)/36000.0_core_rknd * pi ), kind = core_rknd) ! Known magic number
+    wprtp_sfc  = 1.3e-4_core_rknd * wpthlp_sfc ! Known magic number
 
     return
   end subroutine wangara_sfclyr

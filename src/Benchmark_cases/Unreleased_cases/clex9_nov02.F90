@@ -33,7 +33,8 @@ module clex9_nov02
 !--------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      time_precision ! Variable(s)
+      time_precision, & ! Variable(s)
+      core_rknd
 
     use time_dependent_input, only: time_sfc_given, & ! Variable(s)
                                     sens_ht_given, latent_ht_given, &
@@ -48,12 +49,12 @@ module clex9_nov02
       time             ! Current time          [s]
 
     ! Output variables
-    real, intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       sens_ht,    &   ! sensible heat flux [W/m^2]
       latent_ht         ! latent heat flux [W/m^2]
 
     ! Local variables
-    real :: &
+    real( kind = core_rknd ) :: &
       time_frac ! time fraction used for interpolation
 
     integer :: &

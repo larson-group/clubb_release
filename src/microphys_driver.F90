@@ -189,7 +189,8 @@ module microphys_driver
     use gfdl_activation, only: Loading ! Procedure
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
@@ -231,7 +232,7 @@ module microphys_driver
     character(len=30) :: LH_microphys_type
     integer, parameter :: res = 20   ! Used for lookup tables with GFDL activation
     integer, parameter :: res2 = 20  ! Used for lookup tables with GFDL activation
-    real, dimension( res, res, res, res, res ) :: &
+    real( kind = core_rknd ), dimension( res, res, res, res, res ) :: &
       droplets, droplets2            ! Used for lookup tables with GFDL activation
 
     namelist /microphysics_setting/ &
@@ -291,14 +292,14 @@ module microphys_driver
     !---------------------------------------------------------------------------
     l_local_kk = .false. ! Use the local parameterization for K&K
 
-    C_evap = 0.86    ! Khairoutdinov and Kogan (2000) ratio of
+    C_evap = 0.86_core_rknd    ! Khairoutdinov and Kogan (2000) ratio of
     ! drizzle drop mean geometric radius to
     ! drizzle drop mean volume radius.
-    ! Khairoutdinov and Kogan (2000); p. 233.
-    !C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
-    !C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
+    ! Khairoutdinov and Kogan (2000); p. 233
+    !C_evap = 0.86_core_rknd*0.2_core_rknd ! COAMPS value of KK C_evap
+    !C_evap = 0.55_core_rknd     ! KK 2000, Marshall-Palmer (1948) value.
 
-    r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
+    r_0 = 25.0e-6_core_rknd   ! Assumed radius of all new drops; m.
 
     !---------------------------------------------------------------------------
     ! Parameters for Khairoutdinov and Kogan microphysics analytic solution
@@ -306,104 +307,104 @@ module microphys_driver
     !  Kogan or Morrison microphysics).
     !---------------------------------------------------------------------------
     ! Parameters for in-cloud (from SAM RF02 DO).
-    rrp2_on_rrainm2_cloud = 0.766
-    Nrp2_on_Nrm2_cloud    = 0.429
-    Ncp2_on_Ncm2_cloud    = 0.003
-    corr_rrNr_LL_cloud    = 0.786
-    corr_rtrr_NL_cloud    = 0.268
-    corr_rtNr_NL_cloud    = 0.295
-    corr_rtNc_NL_cloud    = 0.413
-    corr_thlrr_NL_cloud   = -0.185
-    corr_thlNr_NL_cloud   = -0.258
-    corr_thlNc_NL_cloud   = -0.420
-!    corr_srr_NL_cloud     = 0.242
-!    corr_sNr_NL_cloud     = 0.285
-!    corr_sNc_NL_cloud     = 0.433
+    rrp2_on_rrainm2_cloud = 0.766_core_rknd
+    Nrp2_on_Nrm2_cloud    = 0.429_core_rknd
+    Ncp2_on_Ncm2_cloud    = 0.003_core_rknd
+    corr_rrNr_LL_cloud    = 0.786_core_rknd
+    corr_rtrr_NL_cloud    = 0.268_core_rknd
+    corr_rtNr_NL_cloud    = 0.295_core_rknd
+    corr_rtNc_NL_cloud    = 0.413_core_rknd
+    corr_thlrr_NL_cloud   = -0.185_core_rknd
+    corr_thlNr_NL_cloud   = -0.258_core_rknd
+    corr_thlNc_NL_cloud   = -0.420_core_rknd
+!    corr_srr_NL_cloud     = 0.242_core_rknd
+!    corr_sNr_NL_cloud     = 0.285_core_rknd
+!    corr_sNc_NL_cloud     = 0.433_core_rknd
     ! Parameters for below-cloud (from SAM RF02 DO).
-    rrp2_on_rrainm2_below = 8.97
-    Nrp2_on_Nrm2_below    = 12.03
-    Ncp2_on_Ncm2_below    = 0.00  ! Not applicable below cloud.
-    corr_rrNr_LL_below    = 0.886
-    corr_rtrr_NL_below    = -0.005
-    corr_rtNr_NL_below    = -0.041
-    corr_rtNc_NL_below    = 0.00  ! Not applicable below cloud.
-    corr_thlrr_NL_below   = -0.241
-    corr_thlNr_NL_below   = -0.217
-    corr_thlNc_NL_below   = 0.00  ! Not applicable below cloud.
-!    corr_srr_NL_below     = 0.056
-!    corr_sNr_NL_below     = 0.015
-!    corr_sNc_NL_below     = 0.00  ! Not applicable below cloud.
+    rrp2_on_rrainm2_below = 8.97_core_rknd
+    Nrp2_on_Nrm2_below    = 12.03_core_rknd
+    Ncp2_on_Ncm2_below    = 0.00_core_rknd  ! Not applicable below cloud.
+    corr_rrNr_LL_below    = 0.886_core_rknd
+    corr_rtrr_NL_below    = -0.005_core_rknd
+    corr_rtNr_NL_below    = -0.041_core_rknd
+    corr_rtNc_NL_below    = 0.00_core_rknd  ! Not applicable below cloud.
+    corr_thlrr_NL_below   = -0.241_core_rknd
+    corr_thlNr_NL_below   = -0.217_core_rknd
+    corr_thlNc_NL_below   = 0.00_core_rknd  ! Not applicable below cloud.
+!    corr_srr_NL_below     = 0.056_core_rknd
+!    corr_sNr_NL_below     = 0.015_core_rknd
+!    corr_sNc_NL_below     = 0.00_core_rknd  ! Not applicable below cloud.
     ! Other needed parameters
 
     ! Made up values for the variance of ice/snow, since we currently lack data
     ! for this.
-    rsnowp2_on_rsnowm2_cloud = 0.766
-    Nsnowp2_on_Nsnowm2_cloud = 0.429
-    ricep2_on_ricem2_cloud = 1.0
-    Nicep2_on_Nicem2_cloud = 1.0
+    rsnowp2_on_rsnowm2_cloud = 0.766_core_rknd
+    Nsnowp2_on_Nsnowm2_cloud = 0.429_core_rknd
+    ricep2_on_ricem2_cloud = 1.0_core_rknd
+    Nicep2_on_Nicem2_cloud = 1.0_core_rknd
 
-    rsnowp2_on_rsnowm2_below = 0.766
-    Nsnowp2_on_Nsnowm2_below = 0.429
-    ricep2_on_ricem2_below = 1.0
-    Nicep2_on_Nicem2_below = 1.0
+    rsnowp2_on_rsnowm2_below = 0.766_core_rknd
+    Nsnowp2_on_Nsnowm2_below = 0.429_core_rknd
+    ricep2_on_ricem2_below = 1.0_core_rknd
+    Nicep2_on_Nicem2_below = 1.0_core_rknd
 
     ! MPACE-A values for the correlation of ice/snow
-!   corr_srsnow_NL_cloud     = 0.24
+!   corr_srsnow_NL_cloud     = 0.24_core_rknd
 !   corr_srsnow_NL_below     = corr_srsnow_NL_cloud
-!   corr_sNsnow_NL_cloud     = 0.29
+!   corr_sNsnow_NL_cloud     = 0.29_core_rknd
 !   corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
-!   corr_rsnowNsnow_LL_cloud = 0.88
+!   corr_rsnowNsnow_LL_cloud = 0.88_core_rknd
 !   corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
-!   corr_srice_NL_cloud      = 0.31
+!   corr_srice_NL_cloud      = 0.31_core_rknd
 !   corr_srice_NL_below      = corr_srice_NL_cloud
-!   corr_sNi_NL_cloud        = 0.36
+!   corr_sNi_NL_cloud        = 0.36_core_rknd
 !   corr_sNi_NL_below        = corr_sNi_NL_cloud
-!   corr_riceNi_LL_cloud     = 0.01
+!   corr_riceNi_LL_cloud     = 0.01_core_rknd
 !   corr_riceNi_LL_below     = corr_riceNi_LL_cloud
-!   corr_sNc_NL_cloud        = 0.67
-!   corr_sNc_NL_below        = 0.67
+!   corr_sNc_NL_cloud        = 0.67_core_rknd
+!   corr_sNc_NL_below        = 0.67_core_rknd
 
-!   corr_sw_NN_cloud         = 0.09
+!   corr_sw_NN_cloud         = 0.09_core_rknd
 
-!   corr_wrice_NL_cloud      = 0.64
+!   corr_wrice_NL_cloud      = 0.64_core_rknd
 !   corr_wrice_NL_below      = corr_wrice_NL_cloud
-!   corr_wNi_NL_cloud        = -0.35
+!   corr_wNi_NL_cloud        = -0.35_core_rknd
 !   corr_wNi_NL_below        = corr_wNi_NL_cloud
-!   corr_wrsnow_NL_cloud     = 0.45
+!   corr_wrsnow_NL_cloud     = 0.45_core_rknd
 !   corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
-!   corr_wNsnow_NL_cloud     = 0.58
+!   corr_wNsnow_NL_cloud     = 0.58_core_rknd
 !   corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
-!   corr_wNc_NL_cloud        = 0.38
-!   corr_wNc_NL_below        = 0.38
+!   corr_wNc_NL_cloud        = 0.38_core_rknd
+!   corr_wNc_NL_below        = 0.38_core_rknd
 
 
     ! MPACE-B values for the correlation of ice/snow
-!   corr_srsnow_NL_cloud     = 0.43
+!   corr_srsnow_NL_cloud     = 0.43_core_rknd
 !   corr_srsnow_NL_below     = corr_srsnow_NL_cloud
-!   corr_sNsnow_NL_cloud     = 0.55
+!   corr_sNsnow_NL_cloud     = 0.55_core_rknd
 !   corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
-!   corr_rsnowNsnow_LL_cloud = 0.91
+!   corr_rsnowNsnow_LL_cloud = 0.91_core_rknd
 !   corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
-!   corr_srice_NL_cloud      = 0.61
+!   corr_srice_NL_cloud      = 0.61_core_rknd
 !   corr_srice_NL_below      = corr_srice_NL_cloud
-!   corr_sNi_NL_cloud        = 0.90
+!   corr_sNi_NL_cloud        = 0.90_core_rknd
 !   corr_sNi_NL_below        = corr_sNi_NL_cloud
-!   corr_riceNi_LL_cloud     = 0.63
+!   corr_riceNi_LL_cloud     = 0.63_core_rknd
 !   corr_riceNi_LL_below     = corr_riceNi_LL_cloud
-!   corr_sNc_NL_cloud        = 0.94
-!   corr_sNc_NL_below        = 0.94
+!   corr_sNc_NL_cloud        = 0.94_core_rknd
+!   corr_sNc_NL_below        = 0.94_core_rknd
 
-!   corr_sw_NN_cloud         = 0.20
+!   corr_sw_NN_cloud         = 0.20_core_rknd
 
-!   corr_wrice_NL_cloud      = 0.01
+!   corr_wrice_NL_cloud      = 0.01_core_rknd
 !   corr_wrice_NL_below      = corr_wrice_NL_cloud
-!   corr_wNi_NL_cloud        = 0.25
+!   corr_wNi_NL_cloud        = 0.25_core_rknd
 !   corr_wNi_NL_below        = corr_wNi_NL_cloud
-!   corr_wrsnow_NL_cloud     = 0.01
+!   corr_wrsnow_NL_cloud     = 0.01_core_rknd
 !   corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
-!   corr_wNsnow_NL_cloud     = 0.02
+!   corr_wNsnow_NL_cloud     = 0.02_core_rknd
 !   corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
-!   corr_wNc_NL_cloud        = 0.24
+!   corr_wNc_NL_cloud        = 0.24_core_rknd
 !   corr_wNc_NL_below        = corr_wNc_NL_cloud
 
 ! NOTE: These values are commented out because they have been
@@ -411,32 +412,32 @@ module microphys_driver
 !       files. - Kenneth Connor, August 22, 2011
 
     ! ISDAC values for the correlation of ice/snow
-!    corr_srsnow_NL_cloud     = 0.06
+!    corr_srsnow_NL_cloud     = 0.06_core_rknd
 !    corr_srsnow_NL_below     = corr_srsnow_NL_cloud
-!    corr_sNsnow_NL_cloud     = 0.04
+!    corr_sNsnow_NL_cloud     = 0.04_core_rknd
 !    corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
-!    corr_rsnowNsnow_LL_cloud = 0.95
+!    corr_rsnowNsnow_LL_cloud = 0.95_core_rknd
 !    corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
-!    corr_srice_NL_cloud      = -0.08
+!    corr_srice_NL_cloud      = -0.08_core_rknd
 !    corr_srice_NL_below      = corr_srice_NL_cloud
-!    corr_sNi_NL_cloud        = 0.28
+!    corr_sNi_NL_cloud        = 0.28_core_rknd
 !    corr_sNi_NL_below        = corr_sNi_NL_cloud
-!    corr_riceNi_LL_cloud     = 0.77
+!    corr_riceNi_LL_cloud     = 0.77_core_rknd
 !    corr_riceNi_LL_below     = corr_riceNi_LL_cloud
-!   corr_sNc_NL_cloud        = 0.09
+!   corr_sNc_NL_cloud        = 0.09_core_rknd
 !   corr_sNc_NL_below        = corr_sNc_NL_cloud
 
-!    corr_sw_NN_cloud         = 0.09
+!    corr_sw_NN_cloud         = 0.09_core_rknd
 
-!    corr_wrice_NL_cloud      = 0.44
+!    corr_wrice_NL_cloud      = 0.44_core_rknd
 !    corr_wrice_NL_below      = corr_wrice_NL_cloud
-!    corr_wNi_NL_cloud        = 0.55
+!    corr_wNi_NL_cloud        = 0.55_core_rknd
 !    corr_wNi_NL_below        = corr_wNi_NL_cloud
-!    corr_wrsnow_NL_cloud     = 0.65
+!    corr_wrsnow_NL_cloud     = 0.65_core_rknd
 !    corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
-!    corr_wNsnow_NL_cloud     = 0.73
+!    corr_wNsnow_NL_cloud     = 0.73_core_rknd
 !    corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
-!    corr_wNc_NL_cloud        = 0.34
+!    corr_wNc_NL_cloud        = 0.34_core_rknd
 !    corr_wNc_NL_below        = corr_wNc_NL_cloud
 
     !---------------------------------------------------------------------------
@@ -486,7 +487,7 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for Morrison microphysics and Khairoutdinov & Kogan microphysics
     !---------------------------------------------------------------------------
-    Ncm_initial = 100. ! #/cm^3
+    Ncm_initial = 100._core_rknd ! #/cm^3
 
     ! We fix the correlations between s and t to avoid factorizing the
     ! correlation matrix more than once per simulation. 
@@ -614,18 +615,18 @@ module microphys_driver
         l_write_to_file, iunit )
       call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
       call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
-      call write_text ( "microphys_start_time = ", real( microphys_start_time ), &
+      call write_text ( "microphys_start_time = ", real( microphys_start_time, kind = core_rknd ), &
         l_write_to_file, iunit )
       call write_text ( "Ncm_initial = ", Ncm_initial, l_write_to_file, iunit )
-      call write_text ( "ccnconst = ", ccnconst, l_write_to_file, iunit )
-      call write_text ( "ccnexpnt = ", ccnexpnt, l_write_to_file, iunit )
-      call write_text ( "aer_rm1 = ", aer_rm1, l_write_to_file, iunit )
-      call write_text ( "aer_rm2 = ", aer_rm2, l_write_to_file, iunit )
-      call write_text ( "aer_n1 = ", aer_n1, l_write_to_file, iunit )
-      call write_text ( "aer_n2 = ", aer_n2, l_write_to_file, iunit )
-      call write_text ( "aer_sig1 = ", aer_sig1, l_write_to_file, iunit )
-      call write_text ( "aer_sig2 = ", aer_sig2, l_write_to_file, iunit )
-      call write_text ( "pgam_fixed = ", pgam_fixed, l_write_to_file, iunit )
+      call write_text ( "ccnconst = ", real(ccnconst, kind = core_rknd), l_write_to_file, iunit )
+      call write_text ( "ccnexpnt = ", real(ccnexpnt, kind = core_rknd), l_write_to_file, iunit )
+      call write_text ( "aer_rm1 = ", real(aer_rm1, kind = core_rknd), l_write_to_file, iunit )
+      call write_text ( "aer_rm2 = ", real(aer_rm2, kind = core_rknd), l_write_to_file, iunit )
+      call write_text ( "aer_n1 = ", real(aer_n1, kind = core_rknd), l_write_to_file, iunit )
+      call write_text ( "aer_n2 = ", real(aer_n2, kind = core_rknd), l_write_to_file, iunit )
+      call write_text ( "aer_sig1 = ", real(aer_sig1, kind = core_rknd), l_write_to_file, iunit )
+      call write_text ( "aer_sig2 = ", real(aer_sig2, kind = core_rknd), l_write_to_file, iunit )
+      call write_text ( "pgam_fixed = ", real(pgam_fixed, kind = core_rknd),l_write_to_file,iunit)
 
       if ( trim( micro_scheme ) == "khairoutdinov_kogan" .and. l_predictnc ) then
         call write_text("WARNING: l_predictnc has been set to .false. for KK microphysics.", &
@@ -660,12 +661,12 @@ module microphys_driver
 
           ! Initialize the activation variables
           call aer_ccn_act_k_init                            &
-                 ( droplets, droplets2, res, res2, nooc,     &
-                   sul_concen, low_concen, high_concen,      &
-                   lowup, highup, lowup2, highup2, lowmass2, &
-                   highmass2, lowmass3, highmass3,           &
-                   lowmass4, highmass4, lowmass5, highmass5, &
-                   lowT2, highT2 )
+                 ( real(droplets), real(droplets2), res, res2, nooc,     &
+                   real(sul_concen), real(low_concen), real(high_concen),      &
+                   real(lowup), real(highup), real(lowup2), real(highup2), real(lowmass2), &
+                   real(highmass2), real(lowmass3), real(highmass3),           &
+                   real(lowmass4), real(highmass4), real(lowmass5), real(highmass5), &
+                   real(lowT2),real( highT2) )
       end if ! coamps .or. morrison .or. khairoutdinov_kogan
     end if ! l_gfdl_activation
 
@@ -702,7 +703,7 @@ module microphys_driver
       hydromet_list(iiNcm)       = "Ncm"
 
       ! Set Nc0 in the Morrison code (module_MP_graupel) based on Ncm_initial
-      Nc0 = Ncm_initial
+      Nc0 = real(Ncm_initial)
 
       ! Set flags from the Morrison scheme as in GRAUPEL_INIT
       if ( l_predictnc ) then
@@ -796,11 +797,11 @@ module microphys_driver
       l_hydromet_sed(iirgraupelm) = .false.
 
       ! Convert from μ to m as in SAM
-      aer_rm1 = aer_rm1 / micron_per_m
-      aer_rm2 = aer_rm2 / micron_per_m
+      aer_rm1 = real(real(aer_rm1, kind = core_rknd) / micron_per_m)
+      aer_rm2 = real(real(aer_rm2, kind = core_rknd) / micron_per_m)
       ! Convert from #/cm3 to #/m3
-      aer_n1 = cm3_per_m3 * aer_n1
-      aer_n2 = cm3_per_m3 * aer_n2
+      aer_n1 = real(cm3_per_m3 * real(aer_n1, kind = core_rknd))
+      aer_n2 = real(cm3_per_m3 * real(aer_n2, kind = core_rknd))
 
       ! Setup the Morrison scheme
       call GRAUPEL_INIT()
@@ -1066,7 +1067,8 @@ module microphys_driver
 
     use clubb_precision, only:  & 
         time_precision, & ! Variable(s)
-        dp
+        dp, &
+        core_rknd
 
     use error_code, only:  & 
         fatal_error, & ! Procedure
@@ -1169,6 +1171,9 @@ module microphys_driver
       LH_microphys_non_interactive, & ! Feed the subcolumns into the microphysics with no feedback
       LH_microphys_disabled           ! Disable latin hypercube entirely
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
       d_variables ! Variable(s)
@@ -1191,7 +1196,7 @@ module microphys_driver
     real(kind=time_precision), intent(in) ::  & 
       time_current ! Current time     [s]
 
-    real, dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       thlm,       & ! Liquid potential temp.                 [K]
       p_in_Pa,    & ! Pressure                               [Pa]
       exner,      & ! Exner function                         [-]
@@ -1207,7 +1212,7 @@ module microphys_driver
     type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
       pdf_params     ! PDF parameters
 
-    real, dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       wp2_zt,    & ! w'^2 on the thermo. grid               [m^2/s^2]
       rho_ds_zm, & ! Dry, static density on moment. levels  [kg/m^3]
       rho_ds_zt    ! Dry, static density on thermo. levels  [kg/m^3]
@@ -1218,22 +1223,22 @@ module microphys_driver
     integer, dimension(gr%nz,LH_microphys_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Which mixture component the sample is in
 
-    real, dimension(gr%nz,LH_microphys_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz,LH_microphys_calls), intent(in) :: &
       LH_rt, LH_thl ! Samples of rt, thl	[kg/kg,K]
 
-    real, dimension(LH_microphys_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(LH_microphys_calls), intent(in) :: &
       LH_sample_point_weights ! Weights for cloud weighted sampling
 
     ! Note:
     ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
     ! and Nim & Ncm are computed within subroutine adjtg.
-    real, dimension(gr%nz), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
       Ncnm       ! Cloud nuclei number concentration     [count/m^3]
 
-    real, dimension(gr%nz,hydromet_dim), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: & 
       hydromet      ! Array of rain, prist. ice, graupel, etc. [units vary]
 
-    real, dimension(gr%nz), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
       rcm_mc,  & ! Microphysics contributions to liquid water           [kg/kg/s]
       rvm_mc,  & ! Microphysics contributions to vapor water            [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp. [K/s]
@@ -1241,42 +1246,42 @@ module microphys_driver
     integer, intent(out) :: err_code ! Exit code returned from subroutine
 
     ! Local Variables
-    real, dimension(3,gr%nz) :: & 
+    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
       lhs ! Left hand side of tridiagonal matrix
 
-    real, dimension(gr%nz,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
       hydromet_vel,    & ! Contains vel. of the hydrometeors        [m/s]
       hydromet_vel_zt
 
-    real, dimension(gr%nz,hydromet_dim) :: & 
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: & 
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       delta_zt  ! Difference in thermo. height levels     [m]
 
-   real, dimension(gr%nz) :: &
+   real( kind = core_rknd ), dimension(gr%nz) :: &
      T_in_K  ! Temperature          [K]
 
-    real, dimension(1,1,gr%nz) :: & 
+    real( kind = core_rknd ), dimension(1,1,gr%nz) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
 
     ! Eddy diffusivity for rain and rain drop concentration.
     ! It is also used for the other hydrometeor variables.
     ! Kr = Constant * Kh_zm; Constant is named c_Krrainm.
-    real, dimension(gr%nz) :: Kr   ! [m^2/s]
+    real( kind = core_rknd ), dimension(gr%nz) :: Kr   ! [m^2/s]
 
     ! Variable needed to handle correction to rtm and thlm microphysics
     ! tendency arrays, as well rrainm_cond and Nrm_cond statistical
     ! tendency arrays, due to a negative result being produced by
     ! over-evaporation of rain water over the course of a timestep.
     ! Brian Griffin.  April 14, 2007.
-    real :: overevap_rate ! Absolute value of negative evap. rate.
+    real( kind = core_rknd ) :: overevap_rate ! Absolute value of negative evap. rate.
 
-    real, dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       wtmp,    & ! Standard dev. of w                   [m/s]
       s_mellor   ! The variable 's' in Mellor (1977)    [kg/kg]
 
-    real :: &
+    real( kind = core_rknd ) :: &
       max_velocity, & ! Maximum sedimentation velocity [m/s]
       temp            ! Temporary variables     [units vary]
 
@@ -1284,15 +1289,19 @@ module microphys_driver
 
     integer :: ixrm_cl, ixrm_bt, ixrm_mc
 
-    real, dimension(gr%nz) :: Ndrop_max  ! GFDL droplet activation concentration [#/kg]
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Ndrop_max  ! GFDL droplet activation concentration [#/kg]
 
     !Input aerosol mass concentration: the unit is 10^12 ug/m3.
-    !For example, aeromass=2.25e-12 means that the aerosol mass concentration is 2.25 ug/m3.
+    !For example, aeromass=2.25e-12 means that the aerosol mass 
+    !concentration is 2.25 ug/m3.
     !This value of aeromass was recommended by Huan Guo
     !See http://carson.math.uwm.edu/trac/climate_process_team/ticket/46#comment:12
-    real, dimension(gr%nz, 4) :: aeromass ! ug/m^3
+    real( kind = core_rknd ), dimension(gr%nz, 4) :: &
+      aeromass ! ug/m^3
 
-    real, dimension(gr%nz) :: Ncm_in_cloud ! cloud average droplet concentration [#/kg]
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Ncm_in_cloud ! cloud average droplet concentration [#/kg]
 
     character(len=10) :: hydromet_name
 
@@ -1302,7 +1311,7 @@ module microphys_driver
 
     ! ---- Begin code ----
 
-    Ndrop_max = 0.
+    Ndrop_max = 0._core_rknd
     ! Set the value of the aerosol mass array to a constant
     aeromass = aeromass_value
 
@@ -1324,20 +1333,20 @@ module microphys_driver
 
     ! Determine 's' from Mellor (1977)
     s_mellor(:) = pdf_params(:)%mixt_frac * pdf_params(:)%s1 &
-                + (1.0-pdf_params(:)%mixt_frac) * pdf_params(:)%s2
+                + (1.0_core_rknd-pdf_params(:)%mixt_frac) * pdf_params(:)%s2
 
     ! Compute standard deviation of vertical velocity in the grid column
     wtmp(:) = sqrt( wp2_zt(:) )
 
     ! Compute difference in thermodynamic height levels
-    delta_zt(1:gr%nz) = 1./gr%invrs_dzm(1:gr%nz)
+    delta_zt(1:gr%nz) = 1._core_rknd/gr%invrs_dzm(1:gr%nz)
 
     ! Calculate T_in_K
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
     ! Start Ncm budget to capture Ncm_act term
     if( l_stats_samp ) then
-      call stat_begin_update( iNcm_bt, hydromet(:, iiNcm) / real( dt ), zt )
+      call stat_begin_update( iNcm_bt, hydromet(:, iiNcm) / real( dt, kind = core_rknd ), zt )
     end if
     
     ! Call GFDL activation code
@@ -1349,7 +1358,7 @@ module microphys_driver
 
         ! Save the initial Ncm value for the Ncm_act term
         if( l_stats_samp ) then
-          call stat_begin_update( iNcm_act, hydromet(:, iiNcm) / real( dt ), zt )
+          call stat_begin_update( iNcm_act, hydromet(:, iiNcm) / real( dt, kind = core_rknd ), zt )
         end if
 
         call aer_act_clubb_quadrature_Gauss( aeromass, T_in_K, Ndrop_max )
@@ -1365,20 +1374,21 @@ module microphys_driver
         do k=1, gr%nz
 
 ! ---> h1g, 2011-04-20,   no liquid drop nucleation if T < -40 C
-          if( T_in_K(k) <= 233.15 )  Ndrop_max(k) = 0.0  ! if T<-40C, no liquid drop nucleation
+          if( T_in_K(k) <= 233.15_core_rknd )  Ndrop_max(k) = &
+             0.0_core_rknd  ! if T<-40C, no liquid drop nucleation
 ! <--- h1g, 2011-04-20
 
           ! Clip Ncm to only be where there is cloud to avoid divide by zero errors
           if( cloud_frac(k) > cloud_frac_min ) then
                 hydromet(k, iiNcm) = max( Ndrop_max(k), hydromet(k, iiNcm) )
           else
-                hydromet(k, iiNcm) = 0.0
+                hydromet(k, iiNcm) = 0.0_core_rknd
           end if
         end do
 
         ! Update the Ncm_act term
         if( l_stats_samp ) then
-          call stat_end_update( iNcm_act, hydromet(:,iiNcm) / real( dt ), zt )
+          call stat_end_update( iNcm_act, hydromet(:,iiNcm) / real( dt, kind = core_rknd ), zt )
         end if
 
       else
@@ -1399,9 +1409,9 @@ module microphys_driver
     case ( "coamps" )
 
       ! Initialize tendencies to zero
-      hydromet_mc(:,:) = 0.0
-      hydromet_vel(:,:) = 0.0
-      hydromet_vel_zt(:,:) = 0.0
+      hydromet_mc(:,:) = 0.0_core_rknd
+      hydromet_vel(:,:) = 0.0_core_rknd
+      hydromet_vel_zt(:,:) = 0.0_core_rknd
 #ifdef COAMPS_MICRO
       call coamps_micro_driver & 
            ( runtype, time_current, dt, & 
@@ -1418,7 +1428,7 @@ module microphys_driver
              rvm_mc, rcm_mc, thlm_mc )
 #else
       stop "Not compiled with COAMPS microphysics"
-      cond = -999.
+      cond = -999._core_rknd
       if ( cond(1,1,1) /= cond(1,1,1) ) stop
 #endif
 
@@ -1443,15 +1453,15 @@ module microphys_driver
     case ( "morrison" )
 
       ! Initialize tendencies to zero
-      hydromet_mc(:,:) = 0.0
-      rcm_mc(:) = 0.0
-      rvm_mc(:) = 0.0
-      thlm_mc(:) = 0.0
+      hydromet_mc(:,:) = 0.0_core_rknd
+      rcm_mc(:) = 0.0_core_rknd
+      rvm_mc(:) = 0.0_core_rknd
+      thlm_mc(:) = 0.0_core_rknd
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef LATIN_HYPERCUBE
         call LH_microphys_driver &
-             ( real( dt ), gr%nz, LH_microphys_calls, d_variables, & ! In
+             ( dt, gr%nz, LH_microphys_calls, d_variables, & ! In
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, wtmp, delta_zt, cloud_frac, & ! In
@@ -1473,17 +1483,17 @@ module microphys_driver
 
       ! Based on YSU PBL interface to the Morrison scheme WRF driver, the standard dev. of w
       ! will be clipped to be between 0.1 m/s and 4.0 m/s in WRF.  -dschanen 23 Mar 2009
-!     wtmp(:) = max( 0.1, wtmp ) ! Disabled for now
-!     wtmp(:) = min( 4., wtmp )
+!     wtmp(:) = max( 0.1_core_rknd, wtmp ) ! Disabled for now
+!     wtmp(:) = min( 4._core_rknd, wtmp )
 
-!     wtmp = 0.5 ! %% debug
+!     wtmp = 0.5_core_rknd ! %% debug
       ! Call the microphysics if we don't want to have feedback effects from the
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
         l_local_kk_input = .false.
         l_latin_hypercube_input = .false.
         call morrison_micro_driver & 
-             ( real( dt ), gr%nz, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
+             ( dt, gr%nz, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
                thlm, p_in_Pa, exner, rho, pdf_params, &
                wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
                hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
@@ -1493,20 +1503,20 @@ module microphys_driver
     case ( "morrison-gettelman" )
 
       ! Initialize tendencies to zero
-      hydromet_mc(:,:) = 0.0
-      rcm_mc(:) = 0.0
-      rvm_mc(:) = 0.0
-      thlm_mc(:) = 0.0
+      hydromet_mc(:,:) = 0.0_core_rknd
+      rcm_mc(:) = 0.0_core_rknd
+      rvm_mc(:) = 0.0_core_rknd
+      thlm_mc(:) = 0.0_core_rknd
 
-      hydromet_vel = 0.0
-      hydromet_vel_zt = 0.0
+      hydromet_vel = 0.0_core_rknd
+      hydromet_vel_zt = 0.0_core_rknd
 
       ! Fix Nc for testing purposes -dschanen 5 Jan 2012
       if ( .not. l_predictnc ) then
         where ( rcm >= rc_tol )
           hydromet(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
         else where
-          hydromet(:,iiNcm) = 0.0
+          hydromet(:,iiNcm) = 0.0_core_rknd
         end where
       end if
 
@@ -1518,23 +1528,23 @@ module microphys_driver
       call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
 
       call mg_microphys_driver &
-          ( real( dt ), gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
+          ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
               rho, pdf_params, rcm, rtm-rcm, Ncnm, hydromet, &
               hydromet_mc, rcm_mc, rvm_mc, thlm_mc )
           
     case ( "khairoutdinov_kogan" )
 
       ! Initialize tendencies to zero
-      hydromet_mc(:,:) = 0.0
-      rcm_mc(:) = 0.0
-      rvm_mc(:) = 0.0
-      thlm_mc(:) = 0.0
+      hydromet_mc(:,:) = 0.0_core_rknd
+      rcm_mc(:) = 0.0_core_rknd
+      rvm_mc(:) = 0.0_core_rknd
+      thlm_mc(:) = 0.0_core_rknd
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 
 #ifdef LATIN_HYPERCUBE
         call LH_microphys_driver &
-             ( real( dt ), gr%nz, LH_microphys_calls, d_variables, & ! In
+             ( dt, gr%nz, LH_microphys_calls, d_variables, & ! In
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, wtmp, delta_zt, cloud_frac, & ! In
@@ -1562,13 +1572,13 @@ module microphys_driver
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
 
-!         call KK_micro_driver( real( dt ), l_local_kk, thlm, rho, p_in_Pa, &
+!         call KK_micro_driver( real( dt, kind = core_rknd ), l_local_kk, thlm, rho, p_in_Pa, &
 !                               exner, s_mellor, rcm, hydromet, &
 !                               pdf_params, hydromet_mc, hydromet_vel_zt, &
 !                               rcm_mc, rvm_mc, thlm_mc )
          l_latin_hypercube_input = .false.
          call KK_micro_driver &
-                 ( real( dt ), gr%nz, l_stats_samp, l_local_kk, &
+                 ( dt, gr%nz, l_stats_samp, l_local_kk, &
                    l_latin_hypercube_input, thlm, p_in_Pa, exner, rho, &
                    pdf_params, wm_zt, wtmp, delta_zt, rcm, s_mellor, &
                    rtm-rcm, hydromet, hydromet_mc, hydromet_vel_zt, &
@@ -1600,7 +1610,7 @@ module microphys_driver
         ! Initializing max_velocity in order to avoid a compiler warning.
         ! Regardless of the case, it will be reset in the 'select case'
         ! statement immediately below.
-        max_velocity = 0.0
+        max_velocity = 0.0_core_rknd
 
         select case ( trim( hydromet_list(i) ) )
         case ( "rrainm" )
@@ -1608,14 +1618,14 @@ module microphys_driver
           ixrm_cl = irrainm_cl
           ixrm_mc = irrainm_mc
 
-          max_velocity = -9.1 ! m/s
+          max_velocity = -9.1_core_rknd ! m/s
 
         case ( "ricem" )
           ixrm_bt = iricem_bt
           ixrm_cl = iricem_cl
           ixrm_mc = iricem_mc
 
-          max_velocity = -1.2 ! m/s
+          max_velocity = -1.2_core_rknd ! m/s
 
         case ( "rsnowm" )
           ixrm_bt = irsnowm_bt
@@ -1623,32 +1633,32 @@ module microphys_driver
           ixrm_mc = irsnowm_mc
 
           ! Morrison limit
-!         max_velocity = -1.2 ! m/s
+!         max_velocity = -1.2_core_rknd ! m/s
           ! Made up limit.  The literature suggests that it is quite possible
           ! that snow flake might achieve a terminal velocity of 2 m/s, and this
           ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
-          max_velocity = -2.0 ! m/s
+          max_velocity = -2.0_core_rknd ! m/s
 
         case ( "rgraupelm" )
           ixrm_bt = irgraupelm_bt
           ixrm_cl = irgraupelm_cl
           ixrm_mc = irgraupelm_mc
 
-          max_velocity = -20. ! m/s
+          max_velocity = -20._core_rknd ! m/s
 
         case ( "Nrm" )
           ixrm_bt = iNrm_bt
           ixrm_cl = iNrm_cl
           ixrm_mc = iNrm_mc
 
-          max_velocity = -9.1 ! m/s
+          max_velocity = -9.1_core_rknd ! m/s
 
         case ( "Nim" )
           ixrm_bt = iNim_bt
           ixrm_cl = iNim_cl
           ixrm_mc = iNim_mc
 
-          max_velocity = -1.2 ! m/s
+          max_velocity = -1.2_core_rknd ! m/s
 
         case ( "Nsnowm" )
           ixrm_bt = iNsnowm_bt
@@ -1656,18 +1666,18 @@ module microphys_driver
           ixrm_mc = iNsnowm_mc
 
           ! Morrison limit
-!         max_velocity = -1.2 ! m/s
+!         max_velocity = -1.2_core_rknd ! m/s
           ! Made up limit.  The literature suggests that it is quite possible
           ! that snow flake might achieve a terminal velocity of 2 m/s, and this
           ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
-          max_velocity = -2.0 ! m/s
+          max_velocity = -2.0_core_rknd ! m/s
 
         case ( "Ngraupelm" )
           ixrm_bt = iNgraupelm_bt
           ixrm_cl = iNgraupelm_cl
           ixrm_mc = iNgraupelm_mc
 
-          max_velocity = -20. ! m/s
+          max_velocity = -20._core_rknd ! m/s
 
         case ( "Ncm" )
           ixrm_bt = iNcm_bt
@@ -1677,14 +1687,14 @@ module microphys_driver
           ! Use the rain water limit, since Morrison has no explicit limit on
           ! cloud water.  Presumably these numbers are never large.
           ! -dschanen 28 Sept 2009
-          max_velocity = -9.1 ! m/s
+          max_velocity = -9.1_core_rknd ! m/s
 
         case default
           ixrm_bt = 0
           ixrm_cl = 0
           ixrm_mc = 0
 
-          max_velocity = -9.1 ! m/s
+          max_velocity = -9.1_core_rknd ! m/s
 
         end select
 
@@ -1700,7 +1710,7 @@ module microphys_driver
           ! subroutine is called prior to the GFDL activation code, so we can't call
           ! it here again. -meyern
           if ( ixrm_bt /= iNcm_bt ) then
-            call stat_begin_update( ixrm_bt, hydromet(:,i) / real( dt ), zt )
+            call stat_begin_update( ixrm_bt, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
           end if
 
         end if
@@ -1725,7 +1735,7 @@ module microphys_driver
         ! Interpolate velocity to the momentum grid for a centered difference
         ! approximation of the sedimenation term.
         hydromet_vel(:,i) = zt2zm( hydromet_vel_zt(:,i) )
-        hydromet_vel(gr%nz,i) = 0.0 ! Upper boundary condition
+        hydromet_vel(gr%nz,i) = 0.0_core_rknd ! Upper boundary condition
 
         ! Don't calculate if we aren't trying to predict Ncm in a meaningful way
         if ( trim( hydromet_list(i) ) /= "Ncm" .or. l_predictnc ) then
@@ -1759,7 +1769,7 @@ module microphys_driver
             ! Handle over-evaporation of rrainm and adjust rt and theta-l
             ! hydrometeor tendency arrays accordingly.
             do k = 1, gr%nz, 1
-              if ( hydromet(k,i) < 0.0 ) then
+              if ( hydromet(k,i) < 0.0_core_rknd ) then
                 l_sed = .true.
                 call adj_microphys_tndcy & 
                    ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
@@ -1785,7 +1795,7 @@ module microphys_driver
                 if ( l_stats_samp ) then
 
                   call stat_update_var_pt( irrainm_cond_adj, k,  & 
-                                      0.0, zt )
+                                      0.0_core_rknd, zt )
                 end if
                 ! Joshua Faschinj December 2007
               end if
@@ -1797,7 +1807,7 @@ module microphys_driver
             ! of Nrm there is no effect on rtm or on thlm.
             ! Brian Griffin.  April 14, 2007.
             do k = 1, gr%nz, 1
-              if ( hydromet(k,i) < 0.0 ) then
+              if ( hydromet(k,i) < 0.0_core_rknd ) then
                 l_sed = .true.
                 call adj_microphys_tndcy & 
                      ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
@@ -1811,7 +1821,7 @@ module microphys_driver
                 end if
               else
                 if ( l_stats_samp ) then
-                  call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )
+                  call stat_update_var_pt( iNrm_cond_adj,k, 0.0_core_rknd, zt )
                 end if
 
               end if ! Nrm(k) < 0
@@ -1824,7 +1834,7 @@ module microphys_driver
         if ( l_stats_samp ) then
 
           call stat_begin_update & 
-             ( ixrm_cl, hydromet(:,i) / real( dt ), zt )
+             ( ixrm_cl, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
 
         end if
 
@@ -1860,7 +1870,7 @@ module microphys_driver
 
                   ! Set temp to the time tendency applied to vapor and removed
                   ! from the hydrometeor.
-                  temp = hydromet(k,i) / real( dt )
+                  temp = hydromet(k,i) / real( dt, kind = core_rknd )
 
                   ! Adjust the tendency rvm_mc accordingly
                   rvm_mc(k) = rvm_mc(k) + temp
@@ -1903,10 +1913,10 @@ module microphys_driver
         if ( l_stats_samp ) then
 
           ! Effects of clipping
-          call stat_end_update( ixrm_cl, hydromet(:,i) / real( dt ), zt )
+          call stat_end_update( ixrm_cl, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
 
           ! Total time tendency
-          call stat_end_update( ixrm_bt, hydromet(:,i) / real( dt ), zt )
+          call stat_end_update( ixrm_bt, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
 
         end if ! l_stats_samp
 
@@ -1940,7 +1950,7 @@ module microphys_driver
          ( hydromet(:,iirrainm)  & 
            * zm2zt( abs( hydromet_vel(:,iirrainm) ) ) ) & 
            * ( rho / rho_lw ) & 
-           * real( sec_per_day ) * mm_per_m, zt )
+           * real( sec_per_day, kind = core_rknd ) * mm_per_m, zt )
 
       ! Precipitation Flux (W/m^2) should be defined on
       ! momentum levels.  -Brian
@@ -1960,7 +1970,7 @@ module microphys_driver
            ( hydromet(2,iirrainm) & 
              * abs( zm2zt( hydromet_vel(:,iirrainm), 2 ) ) ) & 
              * ( rho(2) / rho_lw ) & 
-             * real( sec_per_day ) * mm_per_m, sfc )
+             * real( sec_per_day, kind = core_rknd ) * mm_per_m, sfc )
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
            ( zt2zm( hydromet(:,iirrainm), 1 )  & 
@@ -2034,7 +2044,8 @@ module microphys_driver
         gr ! Variable(s)
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use lapack_wrap, only:  & 
         tridag_solve !,& ! Procedure(s)
@@ -2101,22 +2112,22 @@ module microphys_driver
 
     ! Explicit contrbution to the hydrometeor, e.g. evaporation
     ! from Brian Griffin's K & K microphysics implementation
-    real, intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       xrm_tndcy, &  !                                 [units/s]
       cloud_frac    ! Cloud fraction                  [-]
 
     ! Input/Output Variables
-    real, intent(inout), dimension(3,gr%nz) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(3,gr%nz) :: & 
       lhs ! Left hand side
 
-    real, intent(inout), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
       xrm ! Hydrometeor being solved for              [units vary]
 
     ! Output Variables
     integer, intent(out) :: err_code
 
     ! Local Variables
-    real, dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
       rhs ! Right hand side
 
     integer :: k, kp1, km1 ! Array indices
@@ -2180,14 +2191,14 @@ module microphys_driver
 
     ! RHS of equation, following Brian's method from the rain subroutine
     rhs(2:gr%nz-1)  & 
-      = (xrm(2:gr%nz-1) / real( dt )  & ! Time tendency
+      = (xrm(2:gr%nz-1) / real( dt, kind = core_rknd )  & ! Time tendency
       + xrm_tndcy(2:gr%nz-1))
 
 
     ! Boundary condition on the RHS
-    rhs(1) = xrm(1) / real( dt )
+    rhs(1) = xrm(1) / real( dt, kind = core_rknd )
     rhs(gr%nz) =  & 
-       ( xrm(gr%nz) / real( dt ) + xrm_tndcy(gr%nz) )
+       ( xrm(gr%nz) / real( dt, kind = core_rknd ) + xrm_tndcy(gr%nz) )
 
 
     ! Solve system using tridag_solve. This uses LAPACK sgtsv,
@@ -2284,7 +2295,8 @@ module microphys_driver
         zt2zm    ! Procedure(s)
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use diffusion, only:  & 
         diffusion_zt_lhs, & ! Procedure(s)
@@ -2333,8 +2345,8 @@ module microphys_driver
       k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
       km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
-    real, parameter :: &
-      cloud_frac_thresh = 1.e-3 ! Minimum threshold on cloud fraction
+    real( kind = core_rknd ), parameter :: &
+      cloud_frac_thresh = 1.e-3_core_rknd ! Minimum threshold on cloud fraction
 
     ! Input Variables
     character(len=*), intent(in) :: &
@@ -2346,23 +2358,23 @@ module microphys_driver
     real(kind=time_precision), intent(in) ::  & 
       dt       ! Model timestep                                           [s]
 
-    real, dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       nu       ! Background diffusion coefficient                         [m^2/s]
 
-    real, intent(in), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       cloud_frac, & ! Cloud fraction                                          [-]
       wm_zt,      & ! w wind component on thermodynamic levels                [m/s]
       V_hm,       & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
       V_hmt,      & ! Sedimentation velocity of hydrometeor (thermo. levels)  [m/s]
       Kr            ! Eddy diffusivity for hydrometeor on momentum levels     [m^2/s]
 
-    real, intent(out), dimension(3,gr%nz) :: & 
+    real( kind = core_rknd ), intent(out), dimension(3,gr%nz) :: & 
       lhs      ! Left hand side of tridiagonal matrix.
 
     ! Local Variables
-    real, dimension(3) :: tmp
+    real( kind = core_rknd ), dimension(3) :: tmp
 
-    real, dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
       cloud_frac_zt, & ! Cloud fraction on thermodynamic levels  [-]
       cloud_frac_zm    ! Cloud fraction on momentum levels       [-]
 
@@ -2419,13 +2431,13 @@ module microphys_driver
     if ( solve_type == "Ncm".and. l_in_cloud_Nc_diff ) then
       ! Impose a threshold on cloud fract to avoid a divide by 0.
       cloud_frac_zt = max( cloud_frac, cloud_frac_thresh )
-!     cloud_frac_zt = 1.0 ! %% Debug
+!     cloud_frac_zt = 1.0_core_rknd ! %% Debug
       ! Don't impose a threshold on cloud_frac_zm in the numerator.
       cloud_frac_zm = zt2zm( cloud_frac )
     end if
 
     ! Reset LHS Matrix for current timestep.
-    lhs = 0.0
+    lhs = 0.0_core_rknd
 
     ! Setup LHS Matrix
     do k = 2, gr%nz-1, 1
@@ -2436,7 +2448,7 @@ module microphys_driver
       ! Main diagonal
 
       ! LHS time tendency.
-      lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0 / real( dt ) )
+      lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0_core_rknd / real( dt, kind = core_rknd ) )
 
 
       ! All diagonals
@@ -2569,7 +2581,7 @@ module microphys_driver
     !        variables referenced at the km1 level don't factor into the equation.
 
     ! LHS time tendency at the lower boundary.
-    lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0 / real( dt ) )
+    lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0_core_rknd / real( dt, kind = core_rknd ) )
 
     ! LHS eddy-diffusion term at the lower boundary.
     lhs(kp1_tdiag:km1_tdiag,k) &
@@ -2615,7 +2627,7 @@ module microphys_driver
     km1 = max( k-1, 1 )
 
     ! LHS time tendency at the upper boundary.
-    lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0 / real( dt ) )
+    lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0_core_rknd / real( dt, kind = core_rknd ) )
 
     ! LHS eddy-diffusion term at the upper boundary.
     lhs(kp1_tdiag:km1_tdiag,k) &
@@ -2708,7 +2720,7 @@ module microphys_driver
     ! model domain).  Thus, the quantity of the hydrometeor over the entire
     ! vertical domain should not be conserved due to the process of
     ! sedimentation.  Thus, not all of the column totals in the left-hand side
-    ! matrix should be equal to 0.  Instead, the sum of all the column totals
+    ! matrix should be equal to 0. Instead, the sum of all the column totals
     ! should equal the flux of hm out the bottom (zm(1) level) of the domain,
     ! -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in parentheses
     ! is the interpolated value of hm at the zm(1) level.  Furthermore, most
@@ -2780,6 +2792,9 @@ module microphys_driver
     use grid_class, only:  & 
         gr ! Variable(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -2793,7 +2808,7 @@ module microphys_driver
       t_below = 2       ! Index for lower thermodynamic level grid weight.
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       V_hm,      & ! Sedimentation velocity of hydrometeor (k)     [m/s]
       V_hmm1,    & ! Sedimentation velocity of hydrometeor (k-1)   [m/s]
       invrs_dzt    ! Inverse of grid spacing (k)                   [m]
@@ -2802,7 +2817,7 @@ module microphys_driver
       level ! Central thermodynamic level (on which calculation occurs).
 
     ! Return Variable
-    real, dimension(3) :: lhs
+    real( kind = core_rknd ), dimension(3) :: lhs
 
     ! Local Variables
     integer :: & 
@@ -2829,13 +2844,13 @@ module microphys_driver
       ! k = 1 (bottom level); lower boundary level; no effects.
 
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = 0.0
+      lhs(kp1_tdiag) = 0.0_core_rknd
 
       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)   = 0.0
+      lhs(k_tdiag)   = 0.0_core_rknd
 
       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = 0.0
+      lhs(km1_tdiag) = 0.0_core_rknd
 
 
     else if ( level > 1 .and. level < gr%nz ) then
@@ -2879,13 +2894,13 @@ module microphys_driver
       ! k = gr%nz (top level); upper boundary level; no flux.
 
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = 0.0
+      lhs(kp1_tdiag) = 0.0_core_rknd
 
       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)   = 0.0
+      lhs(k_tdiag)   = 0.0_core_rknd
 
       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = 0.0
+      lhs(km1_tdiag) = 0.0_core_rknd
 
 
     end if
@@ -2907,6 +2922,9 @@ module microphys_driver
     use grid_class, only:  & 
         gr ! Variable(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -2916,7 +2934,7 @@ module microphys_driver
       km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       V_hmt,   & ! Sedimentation velocity of hydrometeor (thermo. levels) (k)   [m/s]
       V_hmtp1, & ! Sedimentation velocity of hydrometeor (thermo. levels) (k+1) [m/s]
       invrs_dzm  ! Inverse of grid spacing (k)                   [m]
@@ -2925,7 +2943,7 @@ module microphys_driver
       level ! Central thermodynamic level (on which calculation occurs).
 
     ! Return Variable
-    real, dimension(3) :: lhs
+    real( kind = core_rknd ), dimension(3) :: lhs
 
     ! ---- Begin Code ----
 
@@ -2936,13 +2954,13 @@ module microphys_driver
       ! k = gr%nz (top level); upper boundary level; no flux.
 
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = 0.0
+      lhs(kp1_tdiag) = 0.0_core_rknd
 
       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)   = 0.0
+      lhs(k_tdiag)   = 0.0_core_rknd
 
       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = 0.0
+      lhs(km1_tdiag) = 0.0_core_rknd
 
 
     else  
@@ -2956,7 +2974,7 @@ module microphys_driver
         = - invrs_dzm * V_hmt
 
       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = 0.0
+      lhs(km1_tdiag) = 0.0_core_rknd
 
     end if
 
@@ -2983,7 +3001,7 @@ module microphys_driver
     ! hydrometeor (rain water mixing ratio) does not fall below 0.
     !
     ! Besides over-evaporation of a hydrometeor, other factors may come into
-    ! play that cause the value of a hydrometeor to fall below 0.  These
+    ! play that cause the value of a hydrometeor to fall below 0. These
     ! factors are due to the nature of implicit discretization and numerical
     ! errors.  In a nutshell, the eddy diffusion parameter used currently in
     ! this model smooths out the entire hydrometeor profile as a whole at
@@ -3073,7 +3091,8 @@ module microphys_driver
         zm2zt ! Procedure(s)
 
     use clubb_precision, only: & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use diffusion, only:  & 
         diffusion_zt_lhs ! Procedure(s)
@@ -3088,14 +3107,15 @@ module microphys_driver
 
     ! Input variables.
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       xrm_tndcy, & ! Hydrometeor microphysical tendency.                      [hm_units/s]
       wm_zt,     & ! Vertical velocity (thermo. levels).                      [m/s]
       V_hm,      & ! Sedimentation velocity (interpolated to moment. levels). [m/s]
       V_hmt,     & ! Sedimentation velocity (thermo. levels).                 [m/s]
       Kr           ! Eddy diffusivity for hydrometeors (m-lev).               [m^2/s]
 
-    real, dimension(gr%nz), intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      nu  ! Diffusion coefficient      [m^2/s]
 
     real(kind=time_precision), intent(in) :: dt  ! Timestep   [s]
 
@@ -3106,41 +3126,41 @@ module microphys_driver
 
     ! Input/output variable.
 
-    real, dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       xrm  ! Hydrometeor.  [hm_units]
 
     ! Output variable.
 
     ! Excess evaporation rate.
-    real, intent(out) :: overevap_rate                 ! [hm_units/s]
+    real( kind = core_rknd ), intent(out) :: overevap_rate                 ! [hm_units/s]
 
     ! Local variables.
-    real :: ma_subdiag   ! Term to be multiplied by xrm(k-1) in m.a. eq.
-    real :: ma_maindiag  ! Term to be multiplied by xrm(k) in m.a. eq.
-    real :: ma_supdiag   ! Term to be multiplied by xrm(k+1) in m.a. eq.
-    real :: sd_subdiag   ! Term to be multiplied by xrm(k-1) in sed. eq.
-    real :: sd_maindiag  ! Term to be multiplied by xrm(k) in sed. eq.
-    real :: sd_supdiag   ! Term to be multiplied by xrm(k+1) in sed. eq.
-    real :: df_subdiag   ! Term to be multiplied by xrm(k-1) in diff. eq.
-    real :: df_maindiag  ! Term to be multiplied by xrm(k) in diff. eq.
-    real :: df_supdiag   ! Term to be multiplied by xrm(k+1) in diff. eq.
+    real( kind = core_rknd ) :: ma_subdiag   ! Term to be multiplied by xrm(k-1) in m.a. eq.
+    real( kind = core_rknd ) :: ma_maindiag  ! Term to be multiplied by xrm(k) in m.a. eq.
+    real( kind = core_rknd ) :: ma_supdiag   ! Term to be multiplied by xrm(k+1) in m.a. eq.
+    real( kind = core_rknd ) :: sd_subdiag   ! Term to be multiplied by xrm(k-1) in sed. eq.
+    real( kind = core_rknd ) :: sd_maindiag  ! Term to be multiplied by xrm(k) in sed. eq.
+    real( kind = core_rknd ) :: sd_supdiag   ! Term to be multiplied by xrm(k+1) in sed. eq.
+    real( kind = core_rknd ) :: df_subdiag   ! Term to be multiplied by xrm(k-1) in diff. eq.
+    real( kind = core_rknd ) :: df_maindiag  ! Term to be multiplied by xrm(k) in diff. eq.
+    real( kind = core_rknd ) :: df_supdiag   ! Term to be multiplied by xrm(k+1) in diff. eq.
 
-    real :: ma_tndcy     ! Mean advection tendency  [hm_units/s]
-    real :: sd_tndcy     ! Sedimentation tendency   [hm_units/s]
-    real :: df_tndcy     ! Diffusion tendency       [hm_units/s]
+    real( kind = core_rknd ) :: ma_tndcy     ! Mean advection tendency  [hm_units/s]
+    real( kind = core_rknd ) :: sd_tndcy     ! Sedimentation tendency   [hm_units/s]
+    real( kind = core_rknd ) :: df_tndcy     ! Diffusion tendency       [hm_units/s]
 
-    real :: trnsprt_sed_tndcy ! Total transport and sedimentation tendency.
-    real :: tot_tndcy         ! Overall hydrometeor total tendency.
-    real :: xrm_chge          ! Total change in hydrometeor over last t.s.
-    real :: xrm_old           ! Value of hydrometeor at previous timestep.
-    real :: xrm_chge_trsed    ! Net change in hm. due to only transport/sed.
-    real :: xrm_trsed_only    ! New hm. val. due only to transport/sed.
+    real( kind = core_rknd ) :: trnsprt_sed_tndcy ! Total transport and sedimentation tendency.
+    real( kind = core_rknd ) :: tot_tndcy         ! Overall hydrometeor total tendency.
+    real( kind = core_rknd ) :: xrm_chge          ! Total change in hydrometeor over last t.s.
+    real( kind = core_rknd ) :: xrm_old           ! Value of hydrometeor at previous timestep.
+    real( kind = core_rknd ) :: xrm_chge_trsed    ! Net change in hm. due to only transport/sed.
+    real( kind = core_rknd ) :: xrm_trsed_only    ! New hm. val. due only to transport/sed.
 
 !   real :: evap_amt          ! The actual evaporation amount over the t.s.
 !   real :: evap_rate         ! The time-averaged rate.
-    real :: overevap_amt      ! The amount of h.m. that was over-evap.
+    real( kind = core_rknd ) :: overevap_amt      ! The amount of h.m. that was over-evap.
 
-    real, dimension(1:3) :: tmp
+    real( kind = core_rknd ), dimension(1:3) :: tmp
 
     integer :: k, km1, kp1
 
@@ -3213,7 +3233,7 @@ module microphys_driver
 
     else
 
-      sd_tndcy = 0.0
+      sd_tndcy = 0.0_core_rknd
 
     end if
 
@@ -3244,20 +3264,20 @@ module microphys_driver
     tot_tndcy = trnsprt_sed_tndcy + xrm_tndcy(k)
 
     ! The net amount of change in the hydrometeor over the last timestep.
-    xrm_chge = tot_tndcy * real( dt )
+    xrm_chge = tot_tndcy * real( dt, kind = core_rknd )
 
     ! The value of xrm at the previous timestep.
     xrm_old = xrm(k) - xrm_chge
 
     ! The net amount of change in the hydrometeor due to only the transport
     ! (mean advection and diffusion) and sedimentation terms.
-    xrm_chge_trsed = trnsprt_sed_tndcy * real( dt )
+    xrm_chge_trsed = trnsprt_sed_tndcy * real( dt, kind = core_rknd )
 
     ! The new value of the hydrometeor at this timestep due to only
     ! the transport and sedimentation terms.
     xrm_trsed_only = xrm_old + xrm_chge_trsed
 
-    if ( xrm_trsed_only >= 0.0 ) then
+    if ( xrm_trsed_only >= 0.0_core_rknd ) then
       ! The negative value of hydrometeor (xrm) is due ONLY to microphysical
       ! tendencies, namely the over-evaporation of xrm.
       ! Find the actual amount of the hydrometeor that evaporated during the
@@ -3272,9 +3292,9 @@ module microphys_driver
       ! positive.  This rate should also be the difference between the
       ! computed evaporation rate (xrm_tndcy) and the actual evaporation rate
       ! (evap_rate).
-      overevap_rate = overevap_amt / real( dt )
+      overevap_rate = overevap_amt / real( dt, kind = core_rknd )
       ! Reset the value of the hydrometeor (xrm) to 0.
-      xrm(k) = 0.0
+      xrm(k) = 0.0_core_rknd
     else
       ! The negative value of hydrometeor (xrm) is due to transport (mean
       ! advection and diffusion) and sedimentation.  Find the actual amount of
@@ -3283,12 +3303,12 @@ module microphys_driver
       ! code may have computed an evaporation rate, we figure that the
       ! transport and sedimentation terms made the value of the hydrometeor
       ! negative, so we say that the evaporation amount and rate is 0.
-      !evap_amt = 0.0
-      !evap_rate = 0.0
+      !evap_amt = 0.0_core_rknd
+      !evap_rate = 0.0_core_rknd
       ! The amount of the hydrometeor that was artificially excessively
       ! evaporated.  Define as positive.  In this case, any evaporation that
       ! was computed is considered to be over-evaporation.
-      overevap_amt = -xrm_tndcy(k) * real( dt )
+      overevap_amt = -xrm_tndcy(k) * real( dt, kind = core_rknd )
       overevap_rate = -xrm_tndcy(k)
       ! Currently reset xrm to xrm_trsed_only.  This is done to make the
       ! statistical budget for xrm balance correctly.  The value of xrm(k)

@@ -6,6 +6,10 @@ module sponge_layer_damping
 ! References:
 !   None
 !---------------------------------------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
+
   implicit none
 
   public :: sponge_damp_xm, initialize_tau_sponge_damp, finalize_tau_sponge_damp, &
@@ -14,7 +18,7 @@ module sponge_layer_damping
 
   type sponge_damp_settings
 
-    real :: &
+    real( kind = core_rknd ) :: &
       tau_sponge_damp_min, & ! Minimum damping time-scale (at the top) [s]
       tau_sponge_damp_max, & ! Maximum damping time-scale (base of damping layer) [s]
       sponge_damp_depth      ! damping depth as a fraction of domain height [-]
@@ -25,7 +29,7 @@ module sponge_layer_damping
   end type sponge_damp_settings
 
   type sponge_damp_profile
-    real, pointer, dimension(:) :: &
+    real( kind = core_rknd ), pointer, dimension(:) :: &
       tau_sponge_damp ! Damping factor
 
     integer :: &
@@ -64,7 +68,7 @@ module sponge_layer_damping
 
     use grid_class, only: gr ! Variable(s)
 
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     implicit none
 
@@ -74,19 +78,19 @@ module sponge_layer_damping
     ! Input Variable(s)
     real(kind=time_precision), intent(in) :: dt ! Model Timestep
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       xm_ref ! Reference to damp to [-]
 
-    real, dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       xm ! Variable being damped [-]
 
     type(sponge_damp_profile), intent(in) :: &
         damping_profile
 
     ! Output Variable(s)
-    real, dimension(gr%nz) :: xm_p ! Variable damped [-]
+    real( kind = core_rknd ), dimension(gr%nz) :: xm_p ! Variable damped [-]
 
-    real :: dt_on_tau ! Ratio of timestep to damping timescale [-]
+    real( kind = core_rknd ) :: dt_on_tau ! Ratio of timestep to damping timescale [-]
 
     integer :: k
 
@@ -102,12 +106,12 @@ module sponge_layer_damping
 ! reduce noise in rtm in cloud_feedback_s12 (CGILS) 
 !        xm_p(k) = xm(k) - real( ( ( xm(k) - xm_ref(k) ) / & 
 !                        damping_profile%tau_sponge_damp(k) ) * dt )
-        dt_on_tau = real( dt ) / damping_profile%tau_sponge_damp(k)
+        dt_on_tau = real( dt, kind = core_rknd ) / damping_profile%tau_sponge_damp(k)
 
 ! Really, we should be using xm_ref at time n+1 rather than n.
 ! However, for steady profiles of xm_ref, it won't matter.        
         xm_p(k) = ( xm(k) + dt_on_tau * xm_ref(k) ) / &
-                        ( 1.0 + dt_on_tau )
+                        ( 1.0_core_rknd + dt_on_tau )
 ! End Vince Larson's change
       end do ! k
 
@@ -129,7 +133,7 @@ module sponge_layer_damping
     ! References:
     !   None
     !-------------------------------------------------------------------------------------------
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
     
     use constants_clubb, only: fstderr ! Constant(s)
 
@@ -154,7 +158,7 @@ module sponge_layer_damping
 
     allocate( damping_profile%tau_sponge_damp(1:gr%nz))
 
-    if( settings%tau_sponge_damp_min < 2. * real( dt ) ) then
+    if( settings%tau_sponge_damp_min < 2._core_rknd * real( dt, kind = core_rknd ) ) then
       write(fstderr,*) 'Error: in damping() tau_sponge_damp_min is too small!'
       stop
     end if

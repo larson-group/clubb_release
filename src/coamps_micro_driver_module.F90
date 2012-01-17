@@ -47,7 +47,7 @@ module coamps_micro_driver_module
       Cp, Lv, pi, Lf, Ls, Rv, Rd, p0, T_freeze_K, cm3_per_m3, & ! Variable(s)
       fstderr ! Constant(s)
     use saturation, only: sat_mixrat_liq, sat_mixrat_ice ! Procedure(s)
-    use clubb_precision, only: time_precision ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
     use error_code, only: clubb_debug ! Procedure(s)
     use grid_class, only: zt2zm ! Procedure(s)
     use grid_class, only: gr ! Variable(s)
@@ -162,7 +162,7 @@ module coamps_micro_driver_module
       timea_in,         & ! Current model time                   [s]
       deltf_in         ! Timestep (i.e. dt_main in CLUBB)      [s]
 
-    real, dimension(gr%nz), intent(in) :: & 
+    real(kind = core_rknd), dimension(gr%nz), intent(in) :: & 
       rtm,     & ! Total water mixing ratio                        [kg/kg]
       rcm,     & ! Cloud water mixing ratio                        [kg/kg]
       wm_zm,   & ! Vertical wind                                   [m/s]
@@ -171,23 +171,23 @@ module coamps_micro_driver_module
       rho,     & ! Mean density                                    [kg/m^3]
       thlm       ! Liquid potential temperature                    [K]
 
-    real, dimension(gr%nz), intent(in) :: & 
+    real(kind = core_rknd), dimension(gr%nz), intent(in) :: & 
       ricem,      & ! Ice water mixing ratio     [kg/kg]
       rrainm,     & ! Rain water mixing ratio    [kg/kg]
       rgraupelm,  & ! Graupel water mixing ratio [kg/kg]
       rsnowm,     & ! Snow water mixing ratio    [kg/kg]
       Nrm           ! Number of rain drops       [count/kg]
 
-    real, dimension(gr%nz), intent(inout) :: & 
+    real(kind = core_rknd), dimension(gr%nz), intent(inout) :: & 
       Ncm,        & ! Number of cloud droplets   [count/kg]
       Ncnm,       & ! Number of cloud nuclei     [count/m^3]
       Nim           ! Number of ice crystals     [count/kg]
 
-    real, dimension(1,1,gr%nz-1), intent(inout) :: &
+    real(kind = core_rknd), dimension(1,1,gr%nz-1), intent(inout) :: &
       cond ! condensation/evaporation of liquid water
 
 ! Output Variables
-    real, dimension(gr%nz), intent(out) :: & 
+    real(kind = core_rknd), dimension(gr%nz), intent(out) :: & 
       ritend,     & ! d(ri)/dt                   [kg/kg/s]
       rrtend,     & ! d(rr)/dt                   [kg/kg/s]
       rgtend,     & ! d(rg)/dt                   [kg/kg/s]
@@ -197,7 +197,7 @@ module coamps_micro_driver_module
       thlm_mc,    & ! d(thlm)/dt                 [K/s]
       nrmtend       ! d(Nrm)/dt                  [count/kg/s]
 
-    real, dimension(gr%nz), intent(out) :: & 
+    real(kind = core_rknd), dimension(gr%nz), intent(out) :: & 
       Vrr,      & ! Rain mixing ratio fall speed   [m/s]
       VNr,      & ! Rain conc. fall speed          [m/s]
       Vsnow,    & ! Snow fall speed                [m/s]
@@ -506,21 +506,21 @@ module coamps_micro_driver_module
 ! Set up initial fields
 
 ! Compute quantities for computing tendencies
-    rvm = rtm - rcm
+    rvm = real(rtm - rcm)
 
     if ( any( rvm < 0. ) ) then
       call clubb_debug(1, 'in COAMPS (R) micro driver rvm < 0')
       where ( rvm < 0. ) rvm = 0.
     end if
 
-      thm(1:kk+1) = thlm(1:kk+1) & 
-                  + ( Lv /( Cp * exner(1:kk+1) )* rcm(1:kk+1) )
+      thm(1:kk+1) = real(thlm(1:kk+1) & 
+                  + ( Lv /( Cp * exner(1:kk+1) )* rcm(1:kk+1) ))
 
       ! Determine absolute temperature
-      T_in_K = thlm2T_in_K( thlm, exner, rcm )
+      T_in_K = real(thlm2T_in_K( thlm, exner, rcm ))
 
       ! Setup COAMPS verical velocity / mass grid variables
-      w3(1,1,1:kk+1) = wm_zm(1:kk+1)
+      w3(1,1,1:kk+1) = real(wm_zm(1:kk+1))
 
 
 !     do k=1, kk+1, 1
@@ -544,24 +544,28 @@ module coamps_micro_driver_module
 ! Comments by Michael Falk, David Schanen, and Vince Larson
 
 ! The top point is undefined and unreferenced in these '3d' arrays
-      pr3d(1,1,1:kk)   = p_in_Pa(2:kk+1)
-      th2t3d(1,1,1:kk) = exner(2:kk+1)
+      pr3d(1,1,1:kk)   = real(p_in_Pa(2:kk+1))
+      th2t3d(1,1,1:kk) = real(exner(2:kk+1))
       temp3d(1,1,1:kk) = T_in_K(2:kk+1)
 
       do k=1, kk, 1
-        qsatv3d(1,1,k) = sat_mixrat_liq( pr3d(1,1,k), temp3d(1,1,k) )
-        qsati3d(1,1,k) = sat_mixrat_ice( pr3d(1,1,k), temp3d(1,1,k) )
+        qsatv3d(1,1,k) = real(sat_mixrat_liq( &
+                real(pr3d(1,1,k), kind = core_rknd), &
+                real(temp3d(1,1,k), kind = core_rknd) ))
+        qsati3d(1,1,k) = real(sat_mixrat_ice( &
+                real(pr3d(1,1,k), kind = core_rknd), &
+                real(temp3d(1,1,k), kind = core_rknd) ))
       end do
 
 ! Setup COAMPS m (mass) grid variables
-      qt3(1,1,1:kk)  = rtm(2:kk+1)
-      qc3(1,1,1:kk)  = rcm(2:kk+1)
-      qr3(1,1,1:kk)  = rrainm(2:kk+1)
-      qg3(1,1,1:kk)  = rgraupelm(2:kk+1)
-      qs3(1,1,1:kk)  = rsnowm(2:kk+1)
-      qi3(1,1,1:kk)  = ricem(2:kk+1)
-      exbm(1,1,1:kk) = exner(2:kk+1)
-      rbm(1,1,1:kk)  = rho(2:kk+1)
+      qt3(1,1,1:kk)  = real(rtm(2:kk+1))
+      qc3(1,1,1:kk)  = real(rcm(2:kk+1))
+      qr3(1,1,1:kk)  = real(rrainm(2:kk+1))
+      qg3(1,1,1:kk)  = real(rgraupelm(2:kk+1))
+      qs3(1,1,1:kk)  = real(rsnowm(2:kk+1))
+      qi3(1,1,1:kk)  = real(ricem(2:kk+1))
+      exbm(1,1,1:kk) = real(exner(2:kk+1))
+      rbm(1,1,1:kk)  = real(rho(2:kk+1))
       th3(1,1,1:kk)  = thm(2:kk+1)
       qv3(1,1,1:kk)  = rvm(2:kk+1)
 
@@ -572,12 +576,12 @@ module coamps_micro_driver_module
         ! Nrm, Ncm, Ncnm are in kg^-1, and need to coverted to 1e-6 * kg^-1. 
         ! They will be converted to #/cc within adjtq if ldrizzle is true, 
         ! or ignored if ldrizzle is false.
-        nc3(1,1,k)  = Ncm(k+1) / cm3_per_m3
-        nr3(1,1,k)  = Nrm(k+1) / cm3_per_m3
-        ncn3(1,1,k) = Ncnm(k+1) / cm3_per_m3
+        nc3(1,1,k)  = real(Ncm(k+1) / cm3_per_m3)
+        nr3(1,1,k)  = real(Nrm(k+1) / cm3_per_m3)
+        ncn3(1,1,k) = real(Ncnm(k+1) / cm3_per_m3)
 
         ! Nim is in #/m^3 within adjtq (See conice.F).
-        ni3(1,1,k)  = Nim(k+1) * rho(k+1)
+        ni3(1,1,k)  = real(Nim(k+1) * rho(k+1))
 
       end do
 
@@ -602,19 +606,19 @@ module coamps_micro_driver_module
       ex7g = 0.31 * gmbov2g ! Known magic number
       ex4  = aprpr/visair
       ex4g = abar/visair
-      ex5  = pi*aprpr*snzero*gmbp3/4.0
+      ex5  = real(pi)*aprpr*snzero*gmbp3/4.0
 
 !     Lf     = Ls - Lv   ! Latent heat of fusion (occurs in constants)
-      hlvoka = Lv/therco
-      hkaolf = therco/Lf
-      hlsoka = Ls/therco
-      hlvorv = Lv/Rv
-      hlsorv = Ls/Rv
-      rvochi = Rv/difvap
-      cpor   = Cp / Rd
-      lfocp  = Lf/Cp
-      lvocp  = Lv/Cp
-      lsocp  = Ls/Cp
+      hlvoka = real(Lv)/therco
+      hkaolf = therco/real(Lf)
+      hlsoka = real(Ls)/therco
+      hlvorv = real(Lv/Rv)
+      hlsorv = real(Ls/Rv)
+      rvochi = real(Rv)/difvap
+      cpor   = real(Cp / Rd)
+      lfocp  = real(Lf/Cp)
+      lvocp  = real(Lv/Cp)
+      lsocp  = real(Ls/Cp)
 
       ary1d(1,1:kk,1) = 0. ! 1d graphics parameters
       nkpts = 0
@@ -655,7 +659,7 @@ module coamps_micro_driver_module
         if ( .not. l_ice_micro ) then
           sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
         else
-          if ( temp3d_flip(1,1,k) >= T_freeze_K ) then
+          if ( temp3d_flip(1,1,k) >= real(T_freeze_K) ) then
             sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
           else
             sat = qv3_flip(1,1,k)/qsati3d_flip(1,1,k)-1.0
@@ -680,9 +684,9 @@ module coamps_micro_driver_module
         icomp(i) = 1
       end do
 
-      sloper = pi * rholiq * rnzero * 1.0e-8
-      slopes = pi * rhosno * snzero * 1.0e-8
-      slopeg = pi * rhogrp * gnzero * 1.0e-8
+      sloper = real(pi) * rholiq * rnzero * 1.0e-8
+      slopes = real(pi) * rhosno * snzero * 1.0e-8
+      slopeg = real(pi) * rhogrp * gnzero * 1.0e-8
 
 ! Michael Falk, 17 Jul 2007, is initializing fallspeed arrays
       do k=1,kk+1
@@ -723,13 +727,13 @@ module coamps_micro_driver_module
              ,exbm_flip(1,1,1:kk),rbm_flip(1,1,1:kk) &
 !     3       ,nc3,nr3,ncn3,ni3,cp,deltf,Lf,Ls,Lv 
              ,nc3(1,1,kk:1:-1),nr3(1,1,kk:1:-1),ncn3(1,1,kk:1:-1) &
-             ,ni3(1,1,kk:1:-1),cp,deltf,Lf,Ls,Lv &
-             ,pcut,p0,Rd,Rv,sloper,slopes,slopeg,timea,l_ice_micro &
+             ,ni3(1,1,kk:1:-1),real(Cp),deltf,real(Lf),real(Ls),real(Lv) &
+             ,pcut,real(p0),real(Rd),real(Rv),sloper,slopes,slopeg,timea,l_ice_micro &
              ,nne,kk,i1d,j1d,ary1d,i1dflg,n1d,maxpt1d,maxvr1d &
              ,kmax,nrdamp,ipts,nkpts,icomp,kcomp,j &
              ,xland,aa0,aa1,aa2,aa3,abar,apr,aprpr,bsnow &
              ,cbeta,cnzero,cimass,cpor,cw,difvap,erc,esi,eic &
-             ,eri,egc,esc,esr,egi,egr,egs,mw,pi,praut1,praut2 &
+             ,eri,egc,esc,esr,egi,egr,egs,mw,real(pi),praut1,praut2 &
              ,rholiq,rhosno,rnzero,snzero,gnzero,therco,tice &
              ,tvr1,tvr2,tvr3,tvr4,tzero,visair,gm3,gm4,gm5,gm6 &
              ,gm7,gm8,gm9,gmbp3,gmbov2,gmbov2g,bgrp,ex1,ex2 &
@@ -756,7 +760,7 @@ module coamps_micro_driver_module
              ,rvc,rvr)
 
 ! reassigning flipped versions of variables to normal versions
-      cond(1,1,1:kk) = cond_flip(1,1,kk:1:-1)
+      cond(1,1,1:kk) = real(cond_flip(1,1,kk:1:-1), kind = core_rknd)
       p3(1,1,1:kk) = p3_flip(1,1,kk:1:-1)
       qt3(1,1,1:kk) = qt3_flip(1,1,kk:1:-1)
       qv3(1,1,1:kk) = qv3_flip(1,1,kk:1:-1)
@@ -818,11 +822,11 @@ module coamps_micro_driver_module
       do k=1, kk, 1
         ! Convert to MKS as needed
         ! ncn3 & nc3 are in cm^-3, and need to be converted to m^-3
-        Ncm(k+1)  = nc3(1,1,k) * cm3_per_m3
-        Ncnm(k+1) = ncn3(1,1,k) * cm3_per_m3
+        Ncm(k+1)  = real(nc3(1,1,k), kind = core_rknd) * cm3_per_m3
+        Ncnm(k+1) = real(ncn3(1,1,k), kind = core_rknd) * cm3_per_m3
 
         ! Convert ice number concentration to #/kg
-        Nim(k+1)  = ni3(1,1,k) / rho(k+1)
+        Nim(k+1)  = real(ni3(1,1,k), kind = core_rknd) / rho(k+1)
       end do ! k=1..kk+1
 
 !-------------------------------------------------
@@ -840,7 +844,7 @@ module coamps_micro_driver_module
           Nsnowm(k+1) = snzero / snowslope(1,1,k)
         end if
         ! Convert to #/kg for comparison to Morrison -dschanen 12 Nov 2009
-        Nsnowm(k+1) = Nsnowm(k+1) / rho(k+1)
+        Nsnowm(k+1) = Nsnowm(k+1) / real(rho(k+1))
       end do
 
 !-------------------------------------------------
@@ -855,55 +859,61 @@ module coamps_micro_driver_module
       fallg(1,1,1) = .5 * ( fallg(1,1,2) + fallg(1,1,3) )
       falls(1,1,1) = .5 * ( falls(1,1,2) + falls(1,1,3) )
 
-      Vrr      = zt2zm( fallr(1,1,:) )
-      VNr      = zt2zm( falln(1,1,:) )
-      Vsnow    = zt2zm( snowv(1,1,:) )
-      Vice     = zt2zm( falli(1,1,:) )
-      Vgraupel = zt2zm( fallg(1,1,:) )
+      Vrr      = zt2zm( real(fallr(1,1,:), kind = core_rknd) )
+      VNr      = zt2zm( real(falln(1,1,:), kind = core_rknd) )
+      Vsnow    = zt2zm( real(snowv(1,1,:), kind = core_rknd) )
+      Vice     = zt2zm( real(falli(1,1,:), kind = core_rknd) )
+      Vgraupel = zt2zm( real(fallg(1,1,:), kind = core_rknd) )
 
 ! Compute tendencies
       do k=1, kk, 1
-        rrtend(k+1)    = ( qr3(1,1,k) - rrainm(k+1) ) / deltf
-        rgtend(k+1)    = ( qg3(1,1,k) - rgraupelm(k+1) ) / deltf
-        ritend(k+1)    = ( qi3(1,1,k) - ricem(k+1) ) / deltf
-        nrmtend(k+1)   = ( (nr3(1,1,k)*cm3_per_m3) - Nrm(k+1) ) / deltf ! Conversion factor
-        rsnowtend(k+1) = ( qs3(1,1,k) - rsnowm(k+1) ) / deltf
-        rvm_mc(k+1)    = ((qv3(1,1,k) - rvm(k+1)) / deltf)
-        rcm_mc(k+1)    = ((qc3(1,1,k) - rcm(k+1)) / deltf)
+        rrtend(k+1)    = ( real(qr3(1,1,k), kind = core_rknd) - rrainm(k+1) ) &
+                           / real(deltf, kind = core_rknd)
+        rgtend(k+1)    = ( real(qg3(1,1,k), kind = core_rknd) - rgraupelm(k+1) )&
+                           / real(deltf, kind = core_rknd)
+        ritend(k+1)    = ( real(qi3(1,1,k), kind = core_rknd) - ricem(k+1) ) &
+                           / real(deltf, kind = core_rknd)
+        nrmtend(k+1)   = ( (real(nr3(1,1,k), kind = core_rknd)*cm3_per_m3) - Nrm(k+1) ) &
+                           / real(deltf, kind = core_rknd) ! Conversion factor
+        rsnowtend(k+1) = ( real(qs3(1,1,k), kind = core_rknd) - rsnowm(k+1) ) &
+                           / real(deltf, kind = core_rknd)
+        rvm_mc(k+1)    = real(((qv3(1,1,k) - rvm(k+1)) / deltf), kind = core_rknd)
+        rcm_mc(k+1)    = (real(qc3(1,1,k), kind = core_rknd) - rcm(k+1)) &
+                           / real(deltf, kind = core_rknd)
         thlm_mc(k+1)  & 
-        = ( ( th3(1,1,k) - (Lv / (Cp * exbm(1,1,k)) * qc3(1,1,k) ) ) & 
-            - thlm(k+1) ) / deltf
+        = real(( ( th3(1,1,k) - (real(Lv) / (real(Cp) * exbm(1,1,k)) * qc3(1,1,k) ) ) & 
+            - real(thlm(k+1)) ) / deltf, kind = core_rknd)
       end do ! k=1..kk
 
-      rrtend(1)    = 0.0
-      rgtend(1)    = 0.0
-      ritend(1)    = 0.0
-      nrmtend(1)   = 0.0
-      rsnowtend(1) = 0.0
-      rcm_mc(1)    = 0.0
-      rvm_mc(1)    = 0.0
-      thlm_mc(1)   = 0.0
+      rrtend(1)    = 0.0_core_rknd
+      rgtend(1)    = 0.0_core_rknd
+      ritend(1)    = 0.0_core_rknd
+      nrmtend(1)   = 0.0_core_rknd
+      rsnowtend(1) = 0.0_core_rknd
+      rcm_mc(1)    = 0.0_core_rknd
+      rvm_mc(1)    = 0.0_core_rknd
+      thlm_mc(1)   = 0.0_core_rknd
 
       if ( l_stats_samp ) then
         ! Mean volume radius of rain and cloud droplets
         do k=2,kk+1
           call stat_update_var_pt( im_vol_rad_rain, k, &
-               rvr(1,1,k-1) / 100.0, zt )
+               real(rvr(1,1,k-1) / 100.0, kind = core_rknd), zt )
           call stat_update_var_pt( im_vol_rad_cloud, k, &
-               rvc(1,1,k-1) / 100.0, zt )
+               real(rvc(1,1,k-1) / 100.0, kind = core_rknd), zt )
         end do
 
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding calculation for snow particle number concentration
         do k = 2,kk,1
-          call stat_update_var_pt( isnowslope, k, snowslope(1,1,k), zt)
+          call stat_update_var_pt( isnowslope, k, real(snowslope(1,1,k), kind = core_rknd), zt)
         end do
 
 ! Addition by Adam Smith, 25 April 2008
 ! Adding calculation for snow particle number concentration
         do k=2, kk+1
-          call stat_update_var_pt( iNsnowm, k, Nsnowm(k) ,zt )
+          call stat_update_var_pt( iNsnowm, k, real(Nsnowm(k), kind = core_rknd) ,zt )
         end do
 
       end if

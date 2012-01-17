@@ -38,6 +38,8 @@ module rico
 
   use constants_clubb, only: g_per_kg ! Variable(s)
 
+  use clubb_precision, only: core_rknd ! Variable(s)
+
  
 !  use stats_variables
 
@@ -46,36 +48,39 @@ module rico
 
   ! Input Variables
 
-  real, dimension(gr%nz), intent(in) :: & 
+  real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
   exner    ! Exner function                         [-]
 
   ! Output Variables
-  real, dimension(gr%nz), intent(out) :: & 
+  real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
     thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
     rtm_forcing     ! Large-scale rtm tendency                [kg kg^-1 s^-1]
 
-  real, intent(out), dimension(gr%nz,sclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
     sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-  real, intent(out), dimension(gr%nz,edsclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
     edsclrm_forcing ! Passive eddy-scalar LS tendency     [units/s]
 
   ! Local Variables, general
   integer :: k          ! Loop index
-  real    :: t_tendency ! Temperature (not potential temperature) tendency [K s^-1]
+  real( kind = core_rknd )    :: &
+    t_tendency ! Temperature (not potential temperature) tendency [K s^-1]
 
   ! Compute large-scale horizontal temperature advection
   ! NEW-- "And Radiation"... 15 Dec 2006, Michael Falk
   ! Equations located in 1D models > Set up short composite run on reference site
   do k=1,gr%nz
-    if (gr%zt(k) < 4000. ) then
-      t_tendency = -2.51 / 86400. + & 
-        (-2.18 + 2.51) / (86400.*4000.) * gr%zt(k)  ! Units [K s^-1] - known magic number
-    else if (gr%zt(k) < 5000. ) then
-      t_tendency = -2.18 / 86400. + & 
-        (2.18) / (86400.*(5000.-4000.)) * (gr%zt(k)-4000.)  ! Units [K s^-1] - known magic number
+    if (gr%zt(k) < 4000._core_rknd ) then
+      t_tendency = -2.51_core_rknd / 86400._core_rknd + & 
+        (-2.18_core_rknd + 2.51_core_rknd) / (86400._core_rknd*4000._core_rknd) &
+        * gr%zt(k)  ! Units [K s^-1] - known magic number
+    else if (gr%zt(k) < 5000._core_rknd ) then
+      t_tendency = -2.18_core_rknd / 86400._core_rknd + & 
+        (2.18_core_rknd) / (86400._core_rknd*(5000._core_rknd-4000._core_rknd)) &
+        * (gr%zt(k)-4000._core_rknd)  ! Units [K s^-1] - known magic number
     else
-      t_tendency = 0.  ! Units [K s^-1]
+      t_tendency = 0._core_rknd  ! Units [K s^-1]
     end if
     ! Convert to units of [K s^-1] but potential T instead of T
 !          thlm_forcing(k) = (t_tendency * ((p_sfc/p(k)) ** (Rd/Cp)))
@@ -86,16 +91,19 @@ module rico
   ! Compute large-scale horizontal moisture advection [g kg^-1 s^-1]
   ! Equations located in 1D models > Set up short composite run on reference site
   do k=1,gr%nz
-    if (gr%zt(k) < 3000.) then
-      rtm_forcing(k) = - 1.0 / 86400. + & 
-        (0.345+1.0) / (86400. * 3000.) * gr%zt(k)  ! Units [g kg^-1 s^-1] - known magic number
-    else if (gr%zt(k) < 4000. ) then
-      rtm_forcing(k) = 0.345 / 86400.  ! Units [g kg^-1 s^-1] - known magic number
-    else if (gr%zt(k) < 5000. ) then
-      rtm_forcing(k) = 0.345 / 86400. + & 
-       (-0.345) / (86400.*(5000.-4000.)) * (gr%zt(k)-4000.)! Units [g kg^-1 s^-1] known magic number
+    if (gr%zt(k) < 3000._core_rknd) then
+      rtm_forcing(k) = - 1.0_core_rknd / 86400._core_rknd + & 
+        (0.345_core_rknd+1.0_core_rknd) / (86400._core_rknd * 3000._core_rknd) &
+        * gr%zt(k)  ! Units [g kg^-1 s^-1] - known magic number
+    else if (gr%zt(k) < 4000._core_rknd ) then
+      rtm_forcing(k) = 0.345_core_rknd / 86400._core_rknd  
+                ! Units [g kg^-1 s^-1] - known magic number
+    else if (gr%zt(k) < 5000._core_rknd ) then
+      rtm_forcing(k) = 0.345_core_rknd / 86400._core_rknd + & 
+       (-0.345_core_rknd) / (86400._core_rknd*(5000._core_rknd-4000._core_rknd)) &
+       * (gr%zt(k)-4000._core_rknd)! Units [g kg^-1 s^-1] known magic number
     else
-      rtm_forcing(k) = 0.  ! Units [g kg^-1 s^-1]
+      rtm_forcing(k) = 0._core_rknd  ! Units [g kg^-1 s^-1]
     end if
     rtm_forcing(k) = rtm_forcing(k) / g_per_kg  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
   end do
@@ -142,26 +150,26 @@ module rico
 
   use interpolation, only: linear_interp_factor   ! Procedure(s)
 
-  use clubb_precision, only: time_precision ! Variable(s)
+  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
   implicit none
 
   intrinsic :: max, log, sqrt
 
   ! Constants
-  real, parameter :: & 
-    C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
-    C_m_20  = 0.001229,  & ! Drag coefficient, defined by RICO 3D specification
-    C_h_20  = 0.001094,  & ! Drag coefficient, defined by RICO 3D specification
-    C_q_20  = 0.001133,  & ! Drag coefficient, defined by RICO 3D specification
-    z0      = 0.00015      ! Roughness length, defined by ATEX specification
+  real( kind = core_rknd ), parameter :: & 
+    C_10    = 0.0013_core_rknd,    & ! Drag coefficient, defined by ATEX specification
+    C_m_20  = 0.001229_core_rknd,  & ! Drag coefficient, defined by RICO 3D specification
+    C_h_20  = 0.001094_core_rknd,  & ! Drag coefficient, defined by RICO 3D specification
+    C_q_20  = 0.001133_core_rknd,  & ! Drag coefficient, defined by RICO 3D specification
+    z0      = 0.00015_core_rknd      ! Roughness length, defined by ATEX specification
 
-  real, parameter :: &
-    standard_flux_alt = 20. ! default height at which surface flux is computed [m]
+  real( kind = core_rknd ), parameter :: &
+    standard_flux_alt = 20._core_rknd ! default height at which surface flux is computed [m]
 
 
   ! Internal variables
-  real :: & 
+  real( kind = core_rknd ) :: & 
     ubar, & ! This is root (u^2 + v^2), per ATEX and RICO spec.
     Cz,   & ! This is C_10 scaled to the height of the lowest model level.
     Cm,   & ! This is C_m_20 scaled to the height of the lowest model level.
@@ -179,7 +187,7 @@ module rico
   real(time_precision), intent(in) :: &
     time ! the current time
 
-  real, intent(in) :: & 
+  real( kind = core_rknd ), intent(in) :: & 
     um_sfc,        & ! This is u at the lowest above-ground model level.  [m/s]
     vm_sfc,        & ! This is v at the lowest above-ground model level.  [m/s]
     thlm,          & ! This is theta-l at the lowest above-ground model level.  
@@ -190,7 +198,7 @@ module rico
     exner_sfc
 
   ! Output variables
-  real, intent(out) ::  & 
+  real( kind = core_rknd ), intent(out) ::  & 
     upwp_sfc,   & ! The upward flux of u-momentum         [(m^2 s^-2]
     vpwp_sfc,   & ! The Upward flux of v-momentum         [(m^2 s^-2]
     wpthlp_sfc, & ! The upward flux of theta-l            [K m s^-1]
@@ -209,7 +217,7 @@ module rico
                                 T_sfc_given(before_time) )
 
   ! Declare the value of ustar.
-  ustar = 0.3
+  ustar = 0.3_core_rknd
 
   ! Choose which scheme to use
   l_use_old_atex = .FALSE.
@@ -219,8 +227,8 @@ module rico
 
   ! (Stevens, et al. 2000, eq 3)
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-  Cz   = C_10 * ((log(10./z0))/(log(lowestlevel/z0))) * & 
-         ((log(10./z0))/(log(lowestlevel/z0))) ! Known magic number        
+  Cz   = C_10 * ((log(10._core_rknd/z0))/(log(lowestlevel/z0))) * & 
+         ((log(10._core_rknd/z0))/(log(lowestlevel/z0))) ! Known magic number        
   ! Modification in case lowest model level isn't at 10 m, from ATEX specification
   Cm   = C_m_20 * ((log(standard_flux_alt/z0))/(log(lowestlevel/z0))) * & 
          ((log(standard_flux_alt/z0))/(log(lowestlevel/z0)))

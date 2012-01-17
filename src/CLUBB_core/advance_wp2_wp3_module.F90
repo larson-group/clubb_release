@@ -93,7 +93,8 @@ module advance_wp2_wp3_module
         l_hyper_dfsn ! Variable(s)
 
     use clubb_precision, only:  & 
-        time_precision ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
 
     use error_code, only:  & 
         fatal_error,  & ! Procedure(s)
@@ -107,10 +108,10 @@ module advance_wp2_wp3_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Model timestep                            [s]
 
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       sfc_elevation      ! Elevation of ground level                 [m AMSL]
 
-    real, intent(in), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)             [-]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
@@ -140,27 +141,27 @@ module advance_wp2_wp3_module
       mixt_frac          ! Weight of 1st normal distribution         [-]
 
     ! Input/Output
-    real, dimension(gr%nz), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
       wp2,  & ! w'^2 (momentum levels)                    [m^2/s^2]
       wp3,  & ! w'^3 (thermodynamic levels)               [m^3/s^3]
       wp3_zm  ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
-    real, dimension(gr%nz), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       wp2_zt  ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
 
     integer, intent(inout) :: err_code ! Diagnostic
 
     ! Local Variables
-    real, dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
       tauw3t  ! Currently just tau_zt                           [s]
 
     ! Eddy Diffusion for w'^2 and w'^3.
-    real, dimension(gr%nz) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
-    real, dimension(gr%nz) :: Kw8    ! w'^3 coef. eddy diff.  [m^2/s]
+    real( kind = core_rknd ), dimension(gr%nz) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
+    real( kind = core_rknd ), dimension(gr%nz) :: Kw8    ! w'^3 coef. eddy diff.  [m^2/s]
 
     ! Internal variables for C11 function, Vince Larson 13 Mar 2005
     ! Brian added C1 function.
-    real, dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
       C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied              [-]
       C11_Skw_fnc    ! C_11 parameter with Sk_w applied             [-]
     ! End Vince Larson's addition.
@@ -182,21 +183,21 @@ module advance_wp2_wp3_module
 
 !        tauw3t = tau_zt
 !     .           / ( 1.
-!     .                   + 3.0 * max(
-!     .                     min(1.-(mixt_frac-0.01)/(0.05-0.01)
+!     .                   + 3.0_core_rknd * max(
+!     .                     min(1.-(mixt_frac-0.01_core_rknd)/(0.05_core_rknd-0.01_core_rknd)
 !     .                         ,1.)
 !     .                         ,0.)
-!     .                   + 3.0 * max(
-!     .                     min(1.-(mixt_frac-0.99)/(0.95-0.99)
+!     .                   + 3.0_core_rknd * max(
+!     .                     min(1.-(mixt_frac-0.99_core_rknd)/(0.95_core_rknd-0.99_core_rknd)
 !     .                         ,1.)
 !     .                         ,0.)
 !     .              )
 
 !        do k=1,gr%nz
 !
-!          Skw = abs( wp3(k)/max(wp2(k),1.e-8)**1.5 )
-!          Skw = min( 5.0, Skw )
-!          tauw3t(k) = tau_zt(k) / ( 0.005*Skw**4 + 1.0 )
+!          Skw = abs( wp3(k)/max(wp2(k),1.e-8)**1.5_core_rknd )
+!          Skw = min( 5.0_core_rknd, Skw )
+!          tauw3t(k) = tau_zt(k) / ( 0.005_core_rknd*Skw**4 + 1.0_core_rknd )
 !
 !        end do
 
@@ -210,7 +211,7 @@ module advance_wp2_wp3_module
     ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
     if ( C11 /= C11b ) then
       C11_Skw_fnc(1:gr%nz) =  & 
-        C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skw_zt(1:gr%nz)/C11c)**2 )
+        C11b + (C11-C11b)*EXP( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zt(1:gr%nz)/C11c)**2 )
     else
       C11_Skw_fnc(1:gr%nz) = C11b
     end if
@@ -218,7 +219,7 @@ module advance_wp2_wp3_module
     ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
     if ( C1 /= C1b ) then
       C1_Skw_fnc(1:gr%nz) =  & 
-        C1b + (C1-C1b)*EXP( -(1.0/2.0) * (Skw_zm(1:gr%nz)/C1c)**2 )
+        C1b + (C1-C1b)*EXP( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zm(1:gr%nz)/C1c)**2 )
     else
       C1_Skw_fnc(1:gr%nz) = C1b 
     end if
@@ -353,7 +354,8 @@ module advance_wp2_wp3_module
         l_gmres
 
     use clubb_precision, only:  & 
-        time_precision  ! Variable(s)
+        time_precision, &  ! Variable(s)
+        core_rknd
 
     use lapack_wrap, only:  & 
         band_solve,  & ! Procedure(s) 
@@ -449,10 +451,10 @@ module advance_wp2_wp3_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       sfc_elevation      ! Elevation of ground level                 [m AMSL]
 
-    real, intent(in), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)             [-]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
@@ -487,35 +489,35 @@ module advance_wp2_wp3_module
       nsup      ! Number of superdiagonals in the LHS matrix.
 
     ! Input/Output Variables
-    real, dimension(gr%nz), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
       wp2,  & ! w'^2 (momentum levels)                            [m^2/s^2]
       wp3,  & ! w'^3 (thermodynamic levels)                       [m^3/s^3]
       wp3_zm  ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
-    real, dimension(gr%nz), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       wp2_zt  ! w'^2 interpolated to thermodyamic levels          [m^2/s^2]
 
     integer, intent(inout) :: err_code ! Have any errors occured?
 
     ! Local Variables
-    real, dimension(nsup+nsub+1,2*gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(nsup+nsub+1,2*gr%nz) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
 
-    real, dimension(2*gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(2*gr%nz) ::  & 
       rhs   ! RHS of band matrix
 
 !        real, target, dimension(2*gr%nz) ::
-    real, dimension(2*gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(2*gr%nz) ::  & 
       solut ! Solution to band diagonal system.
 
-    real, dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
       a1,   & ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
       a1_zt   ! a_1 interpolated to thermodynamic levels                    [-]
 
 !      real, dimension(gr%nz) ::  &
 !        wp2_n ! w'^2 at the previous timestep           [m^2/s^2]
 
-    real ::  & 
+    real( kind = core_rknd ) ::  & 
       rcond  ! Est. of the reciprocal of the condition #
 
     ! Array indices
@@ -534,7 +536,7 @@ module advance_wp2_wp3_module
     ! They are variables that are both functions of sigma_sqd_w (where
     ! sigma_sqd_w is located on momentum levels).
 
-    a1 = 1.0 / ( 1.0 - sigma_sqd_w )
+    a1 = 1.0_core_rknd / ( 1.0_core_rknd - sigma_sqd_w )
 
     ! Interpolate a_1 from momentum levels to thermodynamic
     ! levels.  This will be used for the w'^3 turbulent advection
@@ -578,7 +580,7 @@ module advance_wp2_wp3_module
                           lhs, rhs, solut, rcond, err_code )
 
         ! Est. of the condition number of the w'^2/w^3 LHS matrix
-        call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0 / rcond, sfc )
+        call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0_core_rknd / rcond, sfc )
 
       else
         ! Perform LU decomp and solve system (LAPACK)
@@ -751,7 +753,7 @@ module advance_wp2_wp3_module
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
-      call stat_begin_update( iwp2_pd, wp2 / real( dt ), zm )
+      call stat_begin_update( iwp2_pd, wp2 / real( dt, kind = core_rknd ), zm )
     endif
 
     if ( l_hole_fill .and. any( wp2 < w_tol_sqd ) ) then
@@ -767,11 +769,11 @@ module advance_wp2_wp3_module
     ! type found on the Climate Process Team ticket #49.  Chris Golaz found that
     ! instability caused by large wp2 in CLUBB led unrealistic results in AM3.
     ! -dschanen 11 Apr 2011
-    where ( wp2 > 1000. ) wp2 = 1000.
+    where ( wp2 > 1000._core_rknd ) wp2 = 1000._core_rknd
 
     if ( l_stats_samp ) then
       ! Store updated value for effect of the positive definite scheme
-      call stat_end_update( iwp2_pd, wp2 / real( dt ), zm )
+      call stat_end_update( iwp2_pd, wp2 / real( dt, kind = core_rknd ), zm )
     endif
 
 
@@ -811,7 +813,8 @@ module advance_wp2_wp3_module
         gr  ! Variable(s) 
 
     use clubb_precision, only:  & 
-        time_precision  ! Variable(s)
+        time_precision, &  ! Variable(s)
+        core_rknd
 
 #ifdef MKL
     use error_code, only: &
@@ -856,10 +859,10 @@ module advance_wp2_wp3_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
-    real, dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       wp2                ! w'^2 (momentum levels)                    [m^2/s^2]
 
-    real, intent(in), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
       a1,              & ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
@@ -889,28 +892,28 @@ module advance_wp2_wp3_module
                 ! (GMRES currently only supports 1)
 
     ! Input/Output variables
-    real, dimension(2*gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(2*gr%nz), intent(inout) :: &
       rhs       ! Right hand side vector
 
     ! Output variables
-    real, dimension(2*gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(2*gr%nz), intent(out) :: &
       solut     ! Solution to band diagonal system
 
     integer, intent(out) :: err_code ! Have any errors occured?
 
 #ifdef MKL
     ! Local variables
-    real, dimension(nsup+nsub+1,2*gr%nz) :: &
+    real( kind = core_rknd ), dimension(nsup+nsub+1,2*gr%nz) :: &
       lhs, &    ! Implicit contributions to wp2/wp3 (band diag. matrix)
       lhs_cache ! Backup cache of LHS matrix
 
-    real, dimension(intlc_5d_5d_ja_size) :: &
+    real( kind = core_rknd ), dimension(intlc_5d_5d_ja_size) :: &
       lhs_a_csr ! Implicit contributions to wp2/wp3 (CSR format)
 
-    real, dimension(2*gr%nz) :: &
+    real( kind = core_rknd ), dimension(2*gr%nz) :: &
       rhs_cache ! Backup cache of RHS vector
 
-    real ::  & 
+    real( kind = core_rknd )::  & 
       rcond  ! Est. of the reciprocal of the condition #
 
     ! Begin code
@@ -978,7 +981,7 @@ module advance_wp2_wp3_module
                           lhs, rhs, solut, rcond, err_code )
 
         ! Est. of the condition number of the w'^2/w^3 LHS matrix
-        call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0 / rcond, sfc )
+        call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0_core_rknd / rcond, sfc )
 
       else
         ! Perform LU decomp and solve system (LAPACK)
@@ -1076,7 +1079,9 @@ module advance_wp2_wp3_module
         hyper_dfsn_4th_ord_zm_lhs,  &
         hyper_dfsn_4th_ord_zt_lhs
 
-    use clubb_precision, only: time_precision
+    use clubb_precision, only: &
+        time_precision, &
+        core_rknd
 
     use stats_variables, only: & 
         zmscr01,    &
@@ -1172,7 +1177,7 @@ module advance_wp2_wp3_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep length                            [s]
 
-    real, dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       wp2,             & ! w'^2 (momentum levels)                     [m^2/s^2]
       wm_zm,           & ! w wind component on momentum levels        [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels   [m/s]
@@ -1201,7 +1206,7 @@ module advance_wp2_wp3_module
       nsup      ! Number of superdiagonals in the LHS matrix.
 
     ! Output Variable
-    real, dimension(5-nsup:5+nsub,2*gr%nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(5-nsup:5+nsub,2*gr%nz), intent(out) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
 
     ! Local Variables
@@ -1210,11 +1215,11 @@ module advance_wp2_wp3_module
     integer :: k, km1, km2, kp1, kp2, k_wp2, k_wp3, k_wp2_low, k_wp2_high, &
                k_wp3_low, k_wp3_high
 
-    real, dimension(5) :: tmp
+    real( kind = core_rknd ), dimension(5) :: tmp
 
 
     ! Initialize the left-hand side matrix to 0.
-    lhs = 0.0
+    lhs = 0.0_core_rknd
 
     do k = 2, gr%nz-1, 1
 
@@ -1254,7 +1259,7 @@ module advance_wp2_wp3_module
 
       ! LHS time tendency.
       lhs(m_k_mdiag,k_wp2) & 
-      = + 1.0 / real( dt )
+      = + 1.0_core_rknd / real( dt, kind = core_rknd )
 
       ! LHS mean advection (ma) term.
       lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
@@ -1287,7 +1292,7 @@ module advance_wp2_wp3_module
         ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
         lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
         = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
-        + (1.0/2.0) & 
+        + (1.0_core_rknd/2.0_core_rknd) & 
         * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                             gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                             gr%invrs_dzm(k), k )
@@ -1344,7 +1349,7 @@ module advance_wp2_wp3_module
           if ( l_crank_nich_diff ) then
             ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
             tmp(1:3) & 
-            = (1.0/2.0) & 
+            = (1.0_core_rknd/2.0_core_rknd) & 
             * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                                 gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                                 gr%invrs_dzm(k), k )
@@ -1382,14 +1387,14 @@ module advance_wp2_wp3_module
         !        C_5 input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_ac > 0 ) then
           zmscr10(k) =  & 
-          - wp2_terms_ac_pr2_lhs( 0.0, wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k)  )
+          - wp2_terms_ac_pr2_lhs( 0.0_core_rknd, wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k)  )
         endif
 
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
         !        C_5 input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_pr2 > 0 ) then
           zmscr11(k) =  & 
-          - wp2_terms_ac_pr2_lhs( (1.0+C5), wm_zt(kp1), wm_zt(k),  & 
+          - wp2_terms_ac_pr2_lhs( (1.0_core_rknd+C5), wm_zt(kp1), wm_zt(k),  & 
                                   gr%invrs_dzm(k)  )
         endif
 
@@ -1445,7 +1450,7 @@ module advance_wp2_wp3_module
 
       ! LHS time tendency.
       lhs(t_k_tdiag,k_wp3) & 
-      =  + 1.0 / real( dt )
+      =  + 1.0_core_rknd / real( dt, kind = core_rknd )
 
       ! LHS mean advection (ma) term.
       lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
@@ -1497,7 +1502,7 @@ module advance_wp2_wp3_module
         ! Eddy diffusion for wp3 using a Crank-Nicholson time step.
         lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
         = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
-        + C12 * (1.0/2.0) & 
+        + C12 * (1.0_core_rknd/2.0_core_rknd) & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                             gr%invrs_dzt(k), k )
@@ -1540,11 +1545,12 @@ module advance_wp2_wp3_module
           = gamma_over_implicit_ts  &
           * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                                  a1(k), a1_zt(k), a1(km1),  &
-                                 a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
+                                 a3(k)+3.0_core_rknd, a3_zt(k)+3.0_core_rknd, &
+                                 a3(km1)+3.0_core_rknd,  &
                                  wp3_on_wp2(k), wp3_on_wp2(km1), &
                                  rho_ds_zm(k), rho_ds_zm(km1),  &
                                  invrs_rho_ds_zt(k),  &
-                                 0.0,  &
+                                 0.0_core_rknd,  &
                                  gr%invrs_dzt(k), k )
           ztscr05(k) = -tmp(5)
           ztscr06(k) = -tmp(4)
@@ -1564,9 +1570,10 @@ module advance_wp2_wp3_module
           tmp(1:5)  &
           = gamma_over_implicit_ts  &
           * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
-                                 0.0, 0.0, 0.0,  &
-                                 0.0-3.0, 0.0-3.0, 0.0-3.0,  &
-                                 0.0, 0.0, &
+                                 0.0_core_rknd, 0.0_core_rknd, 0.0_core_rknd,  &
+                                 0.0_core_rknd-3.0_core_rknd, 0.0_core_rknd-3.0_core_rknd, &
+                                 0.0_core_rknd-3.0_core_rknd,  &
+                                 0.0_core_rknd, 0.0_core_rknd, &
                                  rho_ds_zm(k), rho_ds_zm(km1),  &
                                  invrs_rho_ds_zt(k),  &
                                  three_halves,  &
@@ -1587,7 +1594,7 @@ module advance_wp2_wp3_module
         !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
         if ( iwp3_ac > 0 ) then
           ztscr15(k) =  & 
-          - wp3_terms_ac_pr2_lhs( 0.0, & 
+          - wp3_terms_ac_pr2_lhs( 0.0_core_rknd, & 
                                   wm_zm(k), wm_zm(km1), gr%invrs_dzt(k) )
         endif
 
@@ -1595,7 +1602,7 @@ module advance_wp2_wp3_module
         !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
         if ( iwp3_pr2 > 0 ) then
           ztscr16(k) = & 
-          - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)), & 
+          - wp3_terms_ac_pr2_lhs( (1.0_core_rknd+C11_Skw_fnc(k)), & 
                                   wm_zm(k), wm_zm(km1), gr%invrs_dzt(k) )
         endif
 
@@ -1613,7 +1620,7 @@ module advance_wp2_wp3_module
           if ( l_crank_nich_diff ) then
             ! Eddy diffusion for wp3 using a Crank-Nicholson time step.
             tmp(1:3) & 
-            = C12 * (1.0/2.0) & 
+            = C12 * (1.0_core_rknd/2.0_core_rknd) & 
             * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                                 gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                                 gr%invrs_dzt(k), k )
@@ -1743,7 +1750,9 @@ module advance_wp2_wp3_module
         hyper_dfsn_4th_ord_zm_lhs,  &
         hyper_dfsn_4th_ord_zt_lhs
 
-    use clubb_precision, only: time_precision
+    use clubb_precision, only: &
+        time_precision, &
+        core_rknd
 
     use stats_variables, only: & 
         zmscr01,    &
@@ -1843,7 +1852,7 @@ module advance_wp2_wp3_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep length                            [s]
 
-    real, dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       wp2,             & ! w'^2 (momentum levels)                     [m^2/s^2]
       wm_zm,           & ! w wind component on momentum levels        [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels   [m/s]
@@ -1872,7 +1881,7 @@ module advance_wp2_wp3_module
 !      nsup      ! Number of superdiagonals in the LHS matrix.
 
     ! Output Variable
-    real, dimension(intlc_5d_5d_ja_size), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(intlc_5d_5d_ja_size), intent(out) ::  & 
       lhs_a_csr ! Implicit contributions to wp2/wp3 (band diag. matrix)
 
     ! Local Variables
@@ -1880,11 +1889,11 @@ module advance_wp2_wp3_module
     ! Array indices
     integer :: k, km1, km2, kp1, kp2, k_wp2, k_wp3, wp2_cur_row, wp3_cur_row
 
-    real, dimension(5) :: tmp
+    real( kind = core_rknd ), dimension(5) :: tmp
 
 
     ! Initialize the left-hand side matrix to 0.
-    lhs_a_csr = 0.0
+    lhs_a_csr = 0.0_core_rknd
 
     do k = 2, gr%nz-1, 1
 
@@ -1957,7 +1966,7 @@ module advance_wp2_wp3_module
 
       ! LHS time tendency.
       lhs_a_csr(m_k_mdiag) & 
-      = real( + 1.0 / dt )
+      = real( + 1.0_core_rknd / dt )
 
       ! LHS mean advection (ma) term.
       lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
@@ -1990,7 +1999,7 @@ module advance_wp2_wp3_module
         ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
         lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
         = lhs_a_csr((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/)) & 
-        + (1.0/2.0) & 
+        + (1.0_core_rknd/2.0_core_rknd) & 
         * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                             gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                             gr%invrs_dzm(k), k )
@@ -2049,7 +2058,7 @@ module advance_wp2_wp3_module
           if ( l_crank_nich_diff ) then
             ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
             tmp(1:3) & 
-            = (1.0/2.0) & 
+            = (1.0_core_rknd/2.0_core_rknd) & 
             * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                               gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                               gr%invrs_dzm(k), k )
@@ -2087,14 +2096,14 @@ module advance_wp2_wp3_module
         !        C_5 input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_ac > 0 ) then
           zmscr10(k) =  & 
-          - wp2_terms_ac_pr2_lhs( 0.0, wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k)  )
+          - wp2_terms_ac_pr2_lhs( 0.0_core_rknd, wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k)  )
         endif
 
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
         !        C_5 input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_pr2 > 0 ) then
           zmscr11(k) =  & 
-          - wp2_terms_ac_pr2_lhs( (1.0+C5), wm_zt(kp1), wm_zt(k),  & 
+          - wp2_terms_ac_pr2_lhs( (1.0_core_rknd+C5), wm_zt(kp1), wm_zt(k),  & 
                                   gr%invrs_dzm(k)  )
         endif
 
@@ -2181,7 +2190,7 @@ module advance_wp2_wp3_module
 
       ! LHS time tendency.
       lhs_a_csr(t_k_tdiag) & 
-      = real( + 1.0 / dt )
+      = real( + 1.0_core_rknd / dt )
 
       ! LHS mean advection (ma) term.
       lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
@@ -2233,7 +2242,7 @@ module advance_wp2_wp3_module
         ! Eddy diffusion for wp3 using a Crank-Nicholson time step.
         lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
         = lhs_a_csr((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/)) & 
-        + C12 * (1.0/2.0) & 
+        + C12 * (1.0_core_rknd/2.0_core_rknd) & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                             gr%invrs_dzt(k), k )
@@ -2278,11 +2287,12 @@ module advance_wp2_wp3_module
           = gamma_over_implicit_ts  &
           * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                                  a1(k), a1_zt(k), a1(km1),  &
-                                 a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
+                                 a3(k)+3.0_core_rknd, a3_zt(k)+3.0_core_rknd, &
+                                 a3(km1)+3.0_core_rknd,  &
                                  wp3_on_wp2(k), wp3_on_wp2(km1), &
                                  rho_ds_zm(k), rho_ds_zm(km1),  &
                                  invrs_rho_ds_zt(k),  &
-                                 0.0,  &
+                                 0.0_core_rknd,  &
                                  gr%invrs_dzt(k), k )
           ztscr05(k) = -tmp(5)
           ztscr06(k) = -tmp(4)
@@ -2302,9 +2312,10 @@ module advance_wp2_wp3_module
           tmp(1:5)  &
           = gamma_over_implicit_ts  &
           * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
-                                 0.0, 0.0, 0.0,  &
-                                 0.0-3.0, 0.0-3.0, 0.0-3.0,  &
-                                 0.0, 0.0, &
+                                 0.0_core_rknd, 0.0_core_rknd, 0.0_core_rknd,  &
+                                 0.0_core_rknd-3.0_core_rknd, 0.0_core_rknd-3.0_core_rknd, &
+                                 0.0_core_rknd-3.0_core_rknd,  &
+                                 0.0_core_rknd, 0.0_core_rknd, &
                                  rho_ds_zm(k), rho_ds_zm(km1),  &
                                  invrs_rho_ds_zt(k),  &
                                  three_halves,  &
@@ -2325,7 +2336,7 @@ module advance_wp2_wp3_module
         !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
         if ( iwp3_ac > 0 ) then
           ztscr15(k) =  & 
-          - wp3_terms_ac_pr2_lhs( 0.0, & 
+          - wp3_terms_ac_pr2_lhs( 0.0_core_rknd, & 
                                   wm_zm(k), wm_zm(km1), gr%invrs_dzt(k) )
         endif
 
@@ -2333,7 +2344,7 @@ module advance_wp2_wp3_module
         !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
         if ( iwp3_pr2 > 0 ) then
           ztscr16(k) = & 
-          - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)), & 
+          - wp3_terms_ac_pr2_lhs( (1.0_core_rknd+C11_Skw_fnc(k)), & 
                                   wm_zm(k), wm_zm(km1), gr%invrs_dzt(k) )
         endif
 
@@ -2351,7 +2362,7 @@ module advance_wp2_wp3_module
           if ( l_crank_nich_diff ) then
             ! Eddy diffusion for wp3 using a Crank-Nicholson time step.
             tmp(1:3) & 
-            = C12 * (1.0/2.0) & 
+            = C12 * (1.0_core_rknd/2.0_core_rknd) & 
             * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                                 gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                                 gr%invrs_dzt(k), k )
@@ -2414,19 +2425,19 @@ module advance_wp2_wp3_module
     wp2_cur_row = 4
 
     ! w'^2
-    lhs_a_csr(wp2_cur_row:wp2_cur_row + 3) = 0.0
-    lhs_a_csr(wp2_cur_row + 1) = 1.0
+    lhs_a_csr(wp2_cur_row:wp2_cur_row + 3) = 0.0_core_rknd
+    lhs_a_csr(wp2_cur_row + 1) = 1.0_core_rknd
 
     ! w'^3
-    lhs_a_csr(wp3_cur_row:wp3_cur_row + 2) = 0.0
-    lhs_a_csr(wp3_cur_row) = 1.0
+    lhs_a_csr(wp3_cur_row:wp3_cur_row + 2) = 0.0_core_rknd
+    lhs_a_csr(wp3_cur_row) = 1.0_core_rknd
 
     ! w'^2
-    !lhs(:,k_wp2)         = 0.0
-    !lhs(m_k_mdiag,k_wp2) = 1.0
+    !lhs(:,k_wp2)         = 0.0_core_rknd
+    !lhs(m_k_mdiag,k_wp2) = 1.0_core_rknd
     ! w'^3
-    !lhs(:,k_wp3)         = 0.0
-    !lhs(t_k_tdiag,k_wp3) = 1.0
+    !lhs(:,k_wp3)         = 0.0_core_rknd
+    !lhs(t_k_tdiag,k_wp3) = 1.0_core_rknd
 
     ! Upper boundary
     k = gr%nz
@@ -2434,19 +2445,19 @@ module advance_wp2_wp3_module
     k_wp2 = 2*k
 
     ! w'^2
-    lhs_a_csr(intlc_5d_5d_ja_size - 2:intlc_5d_5d_ja_size) = 0.0
-    lhs_a_csr(intlc_5d_5d_ja_size) = 1.0
+    lhs_a_csr(intlc_5d_5d_ja_size - 2:intlc_5d_5d_ja_size) = 0.0_core_rknd
+    lhs_a_csr(intlc_5d_5d_ja_size) = 1.0_core_rknd
 
     ! w'^3
-    lhs_a_csr(intlc_5d_5d_ja_size - 6:intlc_5d_5d_ja_size - 3) = 0.0
-    lhs_a_csr(intlc_5d_5d_ja_size - 4) = 1.0
+    lhs_a_csr(intlc_5d_5d_ja_size - 6:intlc_5d_5d_ja_size - 3) = 0.0_core_rknd
+    lhs_a_csr(intlc_5d_5d_ja_size - 4) = 1.0_core_rknd
 
     ! w'^2
-    !lhs(:,k_wp2)         = 0.0
-    !lhs(m_k_mdiag,k_wp2) = 1.0
+    !lhs(:,k_wp2)         = 0.0_core_rknd
+    !lhs(m_k_mdiag,k_wp2) = 1.0_core_rknd
     ! w'^3
-    !lhs(:,k_wp3)         = 0.0
-    !lhs(t_k_tdiag,k_wp3) = 1.0
+    !lhs(:,k_wp3)         = 0.0_core_rknd
+    !lhs(t_k_tdiag,k_wp3) = 1.0_core_rknd
 
 
     return
@@ -2500,7 +2511,8 @@ module advance_wp2_wp3_module
         diffusion_zt_lhs
 
     use clubb_precision, only:  & 
-        time_precision ! Variable
+        time_precision, & ! Variable
+        core_rknd
 
     use stats_variables, only:  & 
         l_stats_samp, iwp2_dp1, iwp2_dp2, zm, iwp2_bp,   & ! Variable(s)
@@ -2525,7 +2537,7 @@ module advance_wp2_wp3_module
     real(kind=time_precision), intent(in) ::  & 
       dt                 ! Timestep length                           [s]
 
-    real, dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       wp2,             & ! w'^2 (momentum levels)                    [m^2/s^2]
       wp3,             & ! w'^3 (thermodynamic levels)               [m^3/s^3]
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)    [-]
@@ -2558,11 +2570,11 @@ module advance_wp2_wp3_module
       l_crank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
 
     ! Output Variable
-    real, dimension(2*gr%nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(2*gr%nz), intent(out) :: & 
       rhs   ! RHS of band matrix
 
     ! Local Variables
-    real, dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
       dum_dz, dvm_dz ! Vertical derivatives of um and vm
 
     ! Array indices
@@ -2576,24 +2588,24 @@ module advance_wp2_wp3_module
     ! means that the LHS contribution is given extra weight (>1) in order to
     ! increase numerical stability.  A weighted factor must then be applied to
     ! the RHS in order to balance the weight.
-    real, dimension(5) :: lhs_fnc_output
+    real( kind = core_rknd ), dimension(5) :: lhs_fnc_output
 
-    real, dimension(3) :: &
+    real( kind = core_rknd ), dimension(3) :: &
       rhs_diff ! For use in Crank-Nicholson eddy diffusion.
 
-    real :: temp
+    real( kind = core_rknd ) :: temp
 
 
     ! Initialize the right-hand side vector to 0.
-    rhs = 0.0
+    rhs = 0.0_core_rknd
 
     if ( l_wp3_2nd_buoyancy_term ) then
       ! Compute the vertical derivative of the u and v winds
       dum_dz = ddzt( um )
       dvm_dz = ddzt( vm )
     else
-      dum_dz = -999.
-      dvm_dz = -999.
+      dum_dz = -999._core_rknd
+      dvm_dz = -999._core_rknd
     end if
 
     do k = 2, gr%nz-1, 1
@@ -2614,7 +2626,7 @@ module advance_wp2_wp3_module
 
       ! RHS time tendency.
       rhs(k_wp2) & 
-      = + ( 1.0 / real( dt ) ) * wp2(k)
+      = + ( 1.0_core_rknd / real( dt, kind = core_rknd ) ) * wp2(k)
 
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
       rhs(k_wp2) & 
@@ -2643,7 +2655,7 @@ module advance_wp2_wp3_module
       = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
       rhs(k_wp2)  &
       = rhs(k_wp2)  &
-      + ( 1.0 - gamma_over_implicit_ts )  &
+      + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
       * ( - lhs_fnc_output(1) * wp2(k) )
 
       ! RHS eddy diffusion term: dissipation term 2 (dp2).
@@ -2651,7 +2663,7 @@ module advance_wp2_wp3_module
         ! These lines are for the diffusional term with a Crank-Nicholson
         ! time step.  They are not used for completely implicit diffusion.
         rhs_diff(1:3) & 
-        = (1.0/2.0) & 
+        = (1.0_core_rknd/2.0_core_rknd) & 
         * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1_vert_res_dep, & 
                             gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
                             gr%invrs_dzm(k), k )
@@ -2679,7 +2691,7 @@ module advance_wp2_wp3_module
         = wp2_term_pr1_lhs( C4, tau1m(k) )
         rhs(k_wp2)  &
         = rhs(k_wp2)  &
-        + ( 1.0 - gamma_over_implicit_ts )  &
+        + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
         * ( - lhs_fnc_output(1) * wp2(k) )
 
       endif
@@ -2705,7 +2717,7 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
         !        C_5 input to function wp2_terms_bp_pr2_rhs.
         call stat_update_var_pt( iwp2_bp, k, & 
-          wp2_terms_bp_pr2_rhs( 0.0, thv_ds_zm(k), wpthvp(k) ), zm )
+          wp2_terms_bp_pr2_rhs( 0.0_core_rknd, thv_ds_zm(k), wpthvp(k) ), zm )
 
         ! w'^2 term pr1 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -2722,7 +2734,7 @@ module advance_wp2_wp3_module
           lhs_fnc_output(1)  &
           = wp2_term_pr1_lhs( C4, tau1m(k) )
           call stat_modify_pt( iwp2_pr1, k, &
-                               + ( 1.0 - gamma_over_implicit_ts )  &
+                               + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
                                * ( - lhs_fnc_output(1) * wp2(k) ), zm )
         endif
 
@@ -2732,7 +2744,7 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
         !        C_5 input to function wp2_terms_bp_pr2_rhs.
         call stat_begin_update_pt( iwp2_pr2, k, & 
-          -wp2_terms_bp_pr2_rhs( (1.0+C5), thv_ds_zm(k), wpthvp(k) ), zm )
+          -wp2_terms_bp_pr2_rhs( (1.0_core_rknd+C5), thv_ds_zm(k), wpthvp(k) ), zm )
 
         ! w'^2 term dp1 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -2747,7 +2759,7 @@ module advance_wp2_wp3_module
         lhs_fnc_output(1)  &
         = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
         call stat_modify_pt( iwp2_dp1, k, &
-                             + ( 1.0 - gamma_over_implicit_ts )  &
+                             + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(1) * wp2(k) ), zm )
 
         ! w'^2 term pr3 is completely explicit; call stat_update_var_pt.
@@ -2766,7 +2778,7 @@ module advance_wp2_wp3_module
 
       ! RHS time tendency.
       rhs(k_wp3) = & 
-      + ( 1.0 / real( dt ) * wp3(k) )
+      + ( 1.0_core_rknd / real( dt, kind = core_rknd ) * wp3(k) )
 
       ! RHS turbulent advection (ta) and turbulent production (tp) terms.
 !     rhs(k_wp3)  & 
@@ -2807,7 +2819,7 @@ module advance_wp2_wp3_module
                              gr%invrs_dzt(k), k )
       rhs(k_wp3)  & 
       = rhs(k_wp3)  &
-      + ( 1.0 - gamma_over_implicit_ts )  &
+      + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
       * ( - lhs_fnc_output(1) * wp3(kp1)  &
           - lhs_fnc_output(2) * wp2(k)  &
           - lhs_fnc_output(3) * wp3(k)  &
@@ -2832,7 +2844,7 @@ module advance_wp2_wp3_module
       = wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
       rhs(k_wp3)  & 
       = rhs(k_wp3)  &
-      + ( 1.0 - gamma_over_implicit_ts )  &
+      + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
       * ( - lhs_fnc_output(1) * wp3(k) )
 
       ! RHS eddy diffusion term: dissipation term 1 (dp1).
@@ -2840,7 +2852,7 @@ module advance_wp2_wp3_module
         ! These lines are for the diffusional term with a Crank-Nicholson
         ! time step.  They are not used for completely implicit diffusion.
         rhs_diff(1:3) & 
-        = C12 * (1.0/2.0) & 
+        = C12 * (1.0_core_rknd/2.0_core_rknd) & 
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                             gr%invrs_dzt(k), k )
@@ -2873,14 +2885,15 @@ module advance_wp2_wp3_module
 !         -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
 !                               wp2(k), wp2(km1),  &
 !                               a1(k), a1_zt(k), a1(km1),  &
-!                               a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
+!                               a3(k)+3.0_core_rknd, a3_zt(k)+3.0_core_rknd, 
+!                               a3(km1)+3.0_core_rknd,  &
 !                               wp3_on_wp2(k), wp3_on_wp2(km1), &
 !                               rho_ds_zm(k), rho_ds_zm(km1),  &
 !                               invrs_rho_ds_zt(k),  &
-!                               0.0,  &
+!                               0.0_core_rknd,  &
 !                               gr%invrs_dzt(k) ),  &
 !                                  zt )
-        call stat_begin_update_pt( iwp3_ta, k, 0.0, zt )
+        call stat_begin_update_pt( iwp3_ta, k, 0.0_core_rknd, zt )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -2889,14 +2902,15 @@ module advance_wp2_wp3_module
         lhs_fnc_output(1:5)  &
         = wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                                a1(k), a1_zt(k), a1(km1),  &
-                               a3(k)+3.0, a3_zt(k)+3.0, a3(km1)+3.0,  &
+                               a3(k)+3.0_core_rknd, a3_zt(k)+3.0_core_rknd, &
+                               a3(km1)+3.0_core_rknd,  &
                                wp3_on_wp2(k), wp3_on_wp2(km1), &
                                rho_ds_zm(k), rho_ds_zm(km1),  &
                                invrs_rho_ds_zt(k),  &
-                               0.0,  &
+                               0.0_core_rknd,  &
                                gr%invrs_dzt(k), k )
         call stat_modify_pt( iwp3_ta, k,  &
-                             + ( 1.0 - gamma_over_implicit_ts )  &
+                             + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(1) * wp3(kp1)  &
                                  - lhs_fnc_output(2) * wp2(k)  &
                                  - lhs_fnc_output(3) * wp3(k)  &
@@ -2912,15 +2926,16 @@ module advance_wp2_wp3_module
 !       call stat_begin_update_pt( iwp3_tp, k,  &
 !         -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),  &
 !                               wp2(k), wp2(km1),  &
-!                               0.0, 0.0, 0.0,  &
-!                               0.0-3.0, 0.0-3.0, 0.0-3.0,  &
-!                               0.0, 0.0, &
+!                               0.0_core_rknd, 0.0_core_rknd, 0.0_core_rknd,  &
+!                               0.0_core_rknd-3.0_core_rknd, 0.0_core_rknd-3.0_core_rknd, 
+!                               0.0_core_rknd-3.0_core_rknd,  &
+!                               0.0_core_rknd, 0.0_core_rknd, &
 !                               rho_ds_zm(k), rho_ds_zm(km1),  &
 !                               invrs_rho_ds_zt(k),  &
 !                               three_halves,  &
 !                               gr%invrs_dzt(k) ),  &
 !                                  zt )
-        call stat_begin_update_pt( iwp3_tp, k,  0.0, zt )
+        call stat_begin_update_pt( iwp3_tp, k,  0.0_core_rknd, zt )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -2928,15 +2943,16 @@ module advance_wp2_wp3_module
         !        advection (ta) and turbulent production (tp) terms).
         lhs_fnc_output(1:5)  &
         = wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
-                               0.0, 0.0, 0.0,  &
-                               0.0-3.0, 0.0-3.0, 0.0-3.0,  &
-                               0.0, 0.0, &
+                               0.0_core_rknd, 0.0_core_rknd, 0.0_core_rknd,  &
+                               0.0_core_rknd-3.0_core_rknd, 0.0_core_rknd-3.0_core_rknd, &
+                               0.0_core_rknd-3.0_core_rknd,  &
+                               0.0_core_rknd, 0.0_core_rknd, &
                                rho_ds_zm(k), rho_ds_zm(km1), &
                                invrs_rho_ds_zt(k), &
                                three_halves, &
                                gr%invrs_dzt(k), k )
         call stat_modify_pt( iwp3_tp, k,  &
-                             + ( 1.0 - gamma_over_implicit_ts )  &
+                             + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(2) * wp2(k)  &
                                  - lhs_fnc_output(4) * wp2(km1) ), zt )
 
@@ -2944,7 +2960,7 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
         !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
         call stat_update_var_pt( iwp3_bp1, k, & 
-          wp3_terms_bp1_pr2_rhs( 0.0, thv_ds_zt(k), wp2thvp(k) ), zt )
+          wp3_terms_bp1_pr2_rhs( 0.0_core_rknd, thv_ds_zt(k), wp2thvp(k) ), zt )
 
         ! w'^3 term pr2 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -2952,7 +2968,7 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
         !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
         call stat_begin_update_pt( iwp3_pr2, k, & 
-          -wp3_terms_bp1_pr2_rhs( (1.0+C11_Skw_fnc(k)), thv_ds_zt(k), &
+          -wp3_terms_bp1_pr2_rhs( (1.0_core_rknd+C11_Skw_fnc(k)), thv_ds_zt(k), &
                                  wp2thvp(k) ), & 
                                    zt )
 
@@ -2970,7 +2986,7 @@ module advance_wp2_wp3_module
         lhs_fnc_output(1)  &
         = wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
         call stat_modify_pt( iwp3_pr1, k,  &
-                             + ( 1.0 - gamma_over_implicit_ts )  &
+                             + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(1) * wp3(k) ), zt )
 
         ! w'^3 term dp1 has both implicit and explicit components (if the
@@ -3033,7 +3049,7 @@ module advance_wp2_wp3_module
     call set_boundary_conditions_rhs( &
             wp2(1), k_wp2_low, w_tol_sqd, k_wp2_high, & ! Intent(in)
             rhs, & ! Intent(inout)
-            0.0, k_wp3_low, 0.0, k_wp3_high )
+            0.0_core_rknd, k_wp3_low, 0.0_core_rknd, k_wp3_high )
 
     return
 
@@ -3089,6 +3105,9 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Constant parameters
@@ -3097,14 +3116,14 @@ module advance_wp2_wp3_module
       k_tdiag   = 2       ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1)  [kg/m^3]
       rho_ds_zt,       & ! Dry, static density at thermo. level (k)    [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. lev. (k) [m^3/kg]
       invrs_dzm          ! Inverse of grid spacing (k)                 [1/m]
 
     ! Return Variable
-    real, dimension(2) :: lhs
+    real( kind = core_rknd ), dimension(2) :: lhs
 
     ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
     lhs(kp1_tdiag) & 
@@ -3173,21 +3192,24 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C5,        & ! Model parameter C_5                            [-]
-      wm_ztp1,   & ! w wind component at thermodynamic levels (k+1) [m/s]
+      wm_ztp1,   & ! w wind component at t:hermodynamic levels (k+1) [m/s]
       wm_zt,     & ! w wind component at thermodynamic levels (k)   [m/s]
       invrs_dzm    ! Inverse of grid spacing (k)                    [1/m]
 
     ! Return Variable
-    real :: lhs
+    real( kind = core_rknd ) :: lhs
 
     ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
     lhs & 
-    = + ( 1.0 - C5 ) * 2.0 * invrs_dzm * ( wm_ztp1 - wm_zt )
+    = + ( 1.0_core_rknd - C5 ) * 2.0_core_rknd * invrs_dzm * ( wm_ztp1 - wm_zt )
 
     return
 
@@ -3229,15 +3251,18 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
       tau1m          ! Time-scale tau at momentum levels (k) [s]
 
     ! Return Variable
-    real :: lhs
+    real( kind = core_rknd ) :: lhs
 
     ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
     lhs & 
@@ -3284,19 +3309,22 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C4,   & ! Model parameter C_4                   [-]
       tau1m   ! Time-scale tau at momentum levels (k) [s]
 
     ! Return Variable
-    real :: lhs
+    real( kind = core_rknd ) :: lhs
 
     ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
     lhs & 
-    = + ( 2.0 * C4 ) / ( 3.0 * tau1m )
+    = + ( 2.0_core_rknd * C4 ) / ( 3.0_core_rknd * tau1m )
 
     return
   end function wp2_term_pr1_lhs
@@ -3327,6 +3355,9 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use constants_clubb, only:  & 
     ! Variable(s)        
         grav ! Gravitational acceleration [m/s^2]
@@ -3334,16 +3365,16 @@ module advance_wp2_wp3_module
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C5,        & ! Model parameter C_5                             [-]
       thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)   [K]
       wpthvp       ! w'th_v'(k)                                      [K m/s]
 
     ! Return Variable
-    real :: rhs
+    real( kind = core_rknd ) :: rhs
 
     rhs & 
-    = + ( 1.0 - C5 ) * 2.0 * ( grav / thv_ds_zm ) * wpthvp
+    = + ( 1.0_core_rknd - C5 ) * 2.0_core_rknd * ( grav / thv_ds_zm ) * wpthvp
 
     return
   end function wp2_terms_bp_pr2_rhs
@@ -3375,16 +3406,19 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
       tau1m,       & ! Time-scale tau at momentum levels (k) [s]
       threshold      ! Minimum allowable value of w'^2       [m^2/s^2]
 
     ! Return Variable
-    real :: rhs
+    real( kind = core_rknd ) :: rhs
 
     rhs & 
     = + ( C1_Skw_fnc / tau1m ) * threshold
@@ -3429,6 +3463,9 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use constants_clubb, only: & ! Variables 
         grav, & ! Gravitational acceleration [m/s^2]
         zero_threshold
@@ -3436,7 +3473,7 @@ module advance_wp2_wp3_module
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C5,        & ! Model parameter C_5                            [-]
       thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
       wpthvp,    & ! w'th_v'(k)                                     [K m/s]
@@ -3449,18 +3486,18 @@ module advance_wp2_wp3_module
       invrs_dzm    ! Inverse of grid spacing (k)                    [1/m]
 
     ! Return Variable
-    real :: rhs
+    real( kind = core_rknd ) :: rhs
 
     rhs & 
     ! Michael Falk, 2 August 2007
     ! Use the following code for standard mixing, with c_k=0.548:
-    = + (2.0/3.0) * C5 & 
+    = + (2.0_core_rknd/3.0_core_rknd) * C5 & 
                   * ( ( grav / thv_ds_zm ) * wpthvp & 
                       - upwp * invrs_dzm * ( ump1 - um ) & 
                       - vpwp * invrs_dzm * ( vmp1 - vm ) & 
                     )
      ! Use the following code for alternate mixing, with c_k=0.1 or 0.2
-!    = + (2.0/3.0) * C5 &
+!    = + (2.0_core_rknd/3.0_core_rknd) * C5 &
 !                  * ( ( grav / thv_ds_zm ) * wpthvp &
 !                      - 0. * upwp * invrs_dzm * ( ump1 - um ) &
 !                      - 0. * vpwp * invrs_dzm * ( vmp1 - vm ) &
@@ -3507,20 +3544,23 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C4,   & ! Model parameter C_4                   [-]
       up2,  & ! u'^2(k)                               [m^2/s^2]
       vp2,  & ! v'^2(k)                               [m^2/s^2]
       tau1m   ! Time-scale tau at momentum levels (k) [s]
 
     ! Return Variable
-    real :: rhs
+    real( kind = core_rknd ) :: rhs
 
     rhs & 
-    = + ( C4 * ( up2 + vp2 ) ) / ( 3.0 * tau1m )
+    = + ( C4 * ( up2 + vp2 ) ) / ( 3.0_core_rknd * tau1m )
 
     return
   end function wp2_term_pr1_rhs
@@ -3644,6 +3684,9 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use grid_class, only:  &
         gr ! Variable gr%weights_zt2zm
 
@@ -3668,7 +3711,7 @@ module advance_wp2_wp3_module
       t_below = 2       ! Index for lower thermodynamic level grid weight.
 
     ! Input Variables
-    real, intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       wp2,                & ! w'^2(k)                                  [m^2/s^2]
       wp2m1,              & ! w'^2(k-1)                                [m^2/s^2]
       a1,                 & ! a_1(k)                                   [-]
@@ -3689,7 +3732,7 @@ module advance_wp2_wp3_module
       level ! Central thermodynamic level (on which calculation occurs).
 
     ! Return Variable
-    real, dimension(5) :: lhs
+    real( kind = core_rknd ), dimension(5) :: lhs
 
     ! Local Variables
     integer :: & 
@@ -3878,22 +3921,25 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)      [-]
       wm_zm,        & ! w wind component at momentum levels (k)   [m/s]
       wm_zmm1,      & ! w wind component at momentum levels (k-1) [m/s]
       invrs_dzt       ! Inverse of grid spacing (k)               [1/m]
 
     ! Return Variable
-    real :: lhs
+    real( kind = core_rknd ) :: lhs
 
     ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
     lhs & 
-    = + ( 1.0 - C11_Skw_fnc ) & 
-        * 3.0 * invrs_dzt * ( wm_zm - wm_zmm1 )
+    = + ( 1.0_core_rknd - C11_Skw_fnc ) & 
+        * 3.0_core_rknd * invrs_dzt * ( wm_zm - wm_zmm1 )
 
     return
   end function wp3_terms_ac_pr2_lhs
@@ -3945,21 +3991,24 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C8,      & ! Model parameter C_8                        [-]
       C8b,     & ! Model parameter C_8b                       [-]
       tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
       Skw_zt     ! Skewness of w at thermodynamic levels (k)  [-]
 
     ! Return Variable
-    real :: lhs
+    real( kind = core_rknd ) :: lhs
 
     ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
     lhs & 
-    = + ( C8 / tauw3t ) * ( 5.0 * C8b * Skw_zt**4 + 1.0 )
+    = + ( C8 / tauw3t ) * ( 5.0_core_rknd * C8b * Skw_zt**4 + 1.0_core_rknd )
 
     return
   end function wp3_term_pr1_lhs
@@ -4199,22 +4248,25 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use constants_clubb, only: & ! Constant(s) 
         grav ! Gravitational acceleration [m/s^2]
 
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C11_Skw_fnc, & ! C_11 parameter with Sk_w applied (k)        [-]
       thv_ds_zt,   & ! Dry, base-state theta_v at thermo. lev. (k) [K]
       wp2thvp        ! w'^2th_v'(k)                                [K m^2/s^2]
 
     ! Return Variable
-    real :: rhs
+    real( kind = core_rknd ) :: rhs
 
     rhs & 
-    = + ( 1.0 - C11_Skw_fnc ) * 3.0 * ( grav / thv_ds_zt ) * wp2thvp
+    = + ( 1.0_core_rknd - C11_Skw_fnc ) * 3.0_core_rknd * ( grav / thv_ds_zt ) * wp2thvp
 
     return
   end function wp3_terms_bp1_pr2_rhs
@@ -4240,13 +4292,16 @@ module advance_wp2_wp3_module
     !   None
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     use constants_clubb, only: & ! Constant(s) 
         grav ! Gravitational acceleration [m/s^2]
 
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       C15,       & ! Model parameter C15                [-]
       Kh_zt,     & ! Eddy-diffusivity on moment. levels [m^2/s]
       wpthvp,    & ! w'th_v'(k)                         [K m/s]
@@ -4263,7 +4318,7 @@ module advance_wp2_wp3_module
       invrs_dzt    ! Inverse of grid spacing (k)        [1/m]
 
     ! Return Variable
-    real :: rhs
+    real( kind = core_rknd ) :: rhs
 
     ! ---- Begin Code ----
 
@@ -4321,10 +4376,13 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       C8,      & ! Model parameter C_8                        [-]
       C8b,     & ! Model parameter C_8b                       [-]
       tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
@@ -4332,10 +4390,10 @@ module advance_wp2_wp3_module
       wp3        ! w'^3(k)                                    [m^3/s^3]
 
     ! Return Variable
-    real :: rhs
+    real( kind = core_rknd ) :: rhs
 
     rhs & 
-    = + ( C8 / tauw3t ) * ( 4.0 * C8b * Skw_zt**4 ) * wp3
+    = + ( C8 / tauw3t ) * ( 4.0_core_rknd * C8b * Skw_zt**4 ) * wp3
 
     return
   end function wp3_term_pr1_rhs

@@ -59,7 +59,7 @@ FFLAGS="$OPTIMIZE $ARCH"
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -M<include path> to set a module file directory
-CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DNO_LAPACK_ISNAN"
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DNO_LAPACK_ISNAN -DCLUBB_REAL_TYPE=4"
 CPPFLAGS="-M$NETCDF/include"
 
 # == Static library processing ==

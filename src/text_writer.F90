@@ -65,6 +65,9 @@ module text_writer
     !   None
     !----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -72,7 +75,7 @@ module text_writer
 
     ! Input Variable(s)
     character(len = *), intent(in) :: text ! The text to write/display
-    real, intent(in) :: value              ! The value to write/display
+    real( kind = core_rknd ), intent(in) :: value              ! The value to write/display
     logical, intent(in) :: l_write_to_file ! Whether or not to write to a file
     integer, intent(in) :: iunit           ! The file to write to
     character(len = *), optional, intent(in) :: disp_format ! The way to format the text
@@ -104,6 +107,9 @@ module text_writer
     !   None
     !----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
     implicit none
 
     ! External
@@ -111,7 +117,7 @@ module text_writer
 
     ! Input Variable(s)
     character(len = *), intent(in) :: text  ! The text to write/display
-    real, dimension(:), intent(in) :: value ! The value to write/display
+    real( kind = core_rknd ), dimension(:), intent(in) :: value ! The value to write/display
     logical, intent(in) :: l_write_to_file  ! Whether or not to write to a file
     integer, intent(in) :: iunit            ! The file to write to
     character(len = *), optional, intent(in) :: disp_format ! The way to format the text

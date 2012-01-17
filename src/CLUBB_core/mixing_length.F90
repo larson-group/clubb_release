@@ -67,10 +67,13 @@ module mixing_length
         fatal_error
 
     use error_code, only:  & 
-      clubb_no_error ! Constant
+        clubb_no_error ! Constant
 
     use model_flags, only: &
         l_sat_mixrat_lookup ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -78,12 +81,12 @@ module mixing_length
     intrinsic :: max, sqrt
 
     ! Constant Parameters
-    real, parameter ::  & 
-      zlmin = 0.1 !,  &
+    real( kind = core_rknd ), parameter ::  & 
+      zlmin = 0.1_core_rknd !,  &
     !zeps  = 1.e-10
 
     ! Input Variables
-    real, dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       thvm,    & ! Virtual potential temp. on themodynamic level  [K]
       thlm,    & ! Liquid potential temp. on themodynamic level   [K]
       rtm,     & ! Total water mixing ratio on themodynamic level [kg/kg]
@@ -93,7 +96,7 @@ module mixing_length
       thv_ds     ! Dry, base-state theta_v on thermodynamic level [K]
     ! Note:  thv_ds used as a reference theta_l here
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu  ! mu Fractional extrainment rate per unit altitude      [1/m]
 
     logical, intent(in) :: &
@@ -103,40 +106,40 @@ module mixing_length
     integer, intent(inout) :: & 
       err_code
 
-    real, dimension(gr%nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  & 
       Lscale  ! Mixing length                 [m]
 
     ! Local Variables
     integer :: i, j, &
       err_code_Lscale
 
-    real :: tke_i, CAPE_incr
+    real( kind = core_rknd ) :: tke_i, CAPE_incr
 
-    real :: dCAPE_dz_j, dCAPE_dz_j_minus_1, dCAPE_dz_j_plus_1
+    real( kind = core_rknd ) :: dCAPE_dz_j, dCAPE_dz_j_minus_1, dCAPE_dz_j_plus_1
 
     ! Temporary arrays to store calculations to speed runtime
-    real, dimension(gr%nz) :: exp_mu_dzm, invrs_dzm_on_mu
+    real( kind = core_rknd ), dimension(gr%nz) :: exp_mu_dzm, invrs_dzm_on_mu
 
     ! Minimum value for Lscale that will taper off with height
-    real :: lminh
+    real( kind = core_rknd ) :: lminh
 
     ! Parcel quantities at grid level j
-    real :: thl_par_j, rt_par_j, rc_par_j, thv_par_j
+    real( kind = core_rknd ) :: thl_par_j, rt_par_j, rc_par_j, thv_par_j
 
     ! Used in latent heating calculation
-    real :: tl_par_j, rsl_par_j, beta_par_j, & 
+    real( kind = core_rknd ) :: tl_par_j, rsl_par_j, beta_par_j, & 
             s_par_j
 
     ! Parcel quantities at grid level j-1
-    real :: thl_par_j_minus_1, rt_par_j_minus_1
+    real( kind = core_rknd ) :: thl_par_j_minus_1, rt_par_j_minus_1
 
     ! Parcel quantities at grid level j+1
-    real :: thl_par_j_plus_1, rt_par_j_plus_1
+    real( kind = core_rknd ) :: thl_par_j_plus_1, rt_par_j_plus_1
 
     ! Variables to make L nonlocal
-    real :: Lscale_up_max_alt, Lscale_down_min_alt
+    real( kind = core_rknd ) :: Lscale_up_max_alt, Lscale_down_min_alt
 
-    real, parameter :: Lscale_sfclyr_depth = 500. ! [m]
+    real( kind = core_rknd ), parameter :: Lscale_sfclyr_depth = 500._core_rknd ! [m]
 
     ! ---- Begin Code ----
     err_code_Lscale = clubb_no_error
@@ -145,8 +148,8 @@ module mixing_length
 
     ! Avoid uninitialized memory (these values are not used in Lscale)
     ! -dschanen 12 March 2008
-    Lscale_up(1)   = 0.0
-    Lscale_down(1) = 0.0
+    Lscale_up(1)   = 0.0_core_rknd
+    Lscale_down(1) = 0.0_core_rknd
 
     ! Initialize exp_mu_dzm--sets each exp_mu_dzm value to its corresponding
     !   exp(-mu/gr%invrs_dzm) value. In theory, this saves 11 computations of
@@ -164,7 +167,7 @@ module mixing_length
 
     ! Upwards loop
 
-    Lscale_up_max_alt = 0.
+    Lscale_up_max_alt = 0._core_rknd
     do i = 2, gr%nz, 1
 
       tke_i = zm2zt( em, i )   ! TKE interpolated to thermodynamic level
@@ -174,9 +177,9 @@ module mixing_length
 
       thl_par_j_minus_1 = thlm(i)
       rt_par_j_minus_1  = rtm(i)
-      dCAPE_dz_j_minus_1 = 0.0
+      dCAPE_dz_j_minus_1 = 0.0_core_rknd
 
-      do while ((tke_i > 0.) .and. (j < gr%nz))
+      do while ((tke_i > 0._core_rknd) .and. (j < gr%nz))
 
         ! thl, rt of parcel are conserved except for entrainment
 
@@ -206,7 +209,7 @@ module mixing_length
         ! For the special case where entrainment rate, mu, is set to 0,
         ! thl_par remains constant as the parcel ascends.
 
-        if ( mu /= 0.0 ) then
+        if ( mu /= 0.0_core_rknd ) then
 
           ! The ascending parcel is entraining at rate mu.
 
@@ -217,7 +220,7 @@ module mixing_length
           ! ~EIHoppe//20100728
 
           thl_par_j = thlm(j) - thlm(j-1)*exp_mu_dzm(j-1)  &
-                      - ( 1.0 - exp_mu_dzm(j-1))  &
+                      - ( 1.0_core_rknd - exp_mu_dzm(j-1))  &
                         * ( (thlm(j) - thlm(j-1))  &
                         * invrs_dzm_on_mu(j-1) ) &
 !                               / (mu/gr%invrs_dzm(j-1)) )  &
@@ -256,7 +259,7 @@ module mixing_length
         ! For the special case where entrainment rate, mu, is set to 0,
         ! rt_par remains constant as the parcel ascends.
 
-        if ( mu /= 0.0 ) then
+        if ( mu /= 0.0_core_rknd ) then
 
           ! The ascending parcel is entraining at rate mu.
 
@@ -267,7 +270,7 @@ module mixing_length
           ! ~EIHoppe//20100728
 
           rt_par_j = rtm(j) - rtm(j-1)*exp_mu_dzm(j-1)  &
-                     - ( 1.0 - exp_mu_dzm(j-1))  &
+                     - ( 1.0_core_rknd - exp_mu_dzm(j-1))  &
                        * ( (rtm(j) - rtm(j-1)) &
                         * invrs_dzm_on_mu(j-1) ) &
 !                          / (mu/gr%invrs_dzm(j-1)) )  &
@@ -296,7 +299,7 @@ module mixing_length
         ! SD's beta (eqn. 8)
         beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
         ! s from Lewellen and Yoh 1993 (LY) eqn. 1
-        s_par_j = (rt_par_j-rsl_par_j)/(1.+beta_par_j*rsl_par_j)
+        s_par_j = (rt_par_j-rsl_par_j)/(1._core_rknd+beta_par_j*rsl_par_j)
         rc_par_j = max( s_par_j, zero_threshold )
 
         ! theta_v of entraining parcel at grid level j.
@@ -336,10 +339,10 @@ module mixing_length
 
         dCAPE_dz_j = ( grav/thvm(j) ) * ( thv_par_j - thvm(j) )
 
-        CAPE_incr = 0.5 * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 )  &
+        CAPE_incr = 0.5_core_rknd * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 )  &
                           / gr%invrs_dzm(j-1)
 
-        if ( tke_i + CAPE_incr > 0.0 ) then
+        if ( tke_i + CAPE_incr > 0.0_core_rknd ) then
 
           ! The total amount of CAPE increment has not exhausted the initial
           ! TKE (plus any additions by CAPE increments due to upward
@@ -381,7 +384,7 @@ module mixing_length
                  ( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) )  &
                  / gr%invrs_dzm(j-1)  &
             - sqrt( dCAPE_dz_j_minus_1**2  &
-                    - 2.0 * tke_i * gr%invrs_dzm(j-1)  &
+                    - 2.0_core_rknd * tke_i * gr%invrs_dzm(j-1)  &
                       * ( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) )  &
                  / ( dCAPE_dz_j - dCAPE_dz_j_minus_1 )  &
                  / gr%invrs_dzm(j-1)
@@ -451,9 +454,9 @@ module mixing_length
 
       thl_par_j_plus_1 = thlm(i)
       rt_par_j_plus_1 = rtm(i)
-      dCAPE_dz_j_plus_1 = 0.0
+      dCAPE_dz_j_plus_1 = 0.0_core_rknd
 
-      do while ( (tke_i > 0.) .and. (j >= 2) )
+      do while ( (tke_i > 0._core_rknd) .and. (j >= 2) )
 
         ! thl, rt of parcel are conserved except for entrainment
 
@@ -493,7 +496,7 @@ module mixing_length
         ! For the special case where entrainment rate, mu, is set to 0,
         ! thl_par remains constant as the parcel descends.
 
-        if ( mu /= 0.0 ) then
+        if ( mu /= 0.0_core_rknd ) then
 
           ! The descending parcel is entraining at rate mu.
 
@@ -504,7 +507,7 @@ module mixing_length
           ! ~EIHoppe//20100728
 
           thl_par_j = thlm(j) - thlm(j+1)*exp_mu_dzm(j)  &
-                      - ( 1.0 - exp_mu_dzm(j))  &
+                      - ( 1.0_core_rknd - exp_mu_dzm(j))  &
                         * ( (thlm(j) - thlm(j+1)) &
                         * invrs_dzm_on_mu(j) ) &
 !                          / (mu/gr%invrs_dzm(j)) )  &
@@ -553,7 +556,7 @@ module mixing_length
         ! For the special case where entrainment rate, mu, is set to 0,
         ! rt_par remains constant as the parcel descends.
 
-        if ( mu /= 0.0 ) then
+        if ( mu /= 0.0_core_rknd ) then
 
           ! The descending parcel is entraining at rate mu.
 
@@ -564,7 +567,7 @@ module mixing_length
           ! ~EIHoppe//20100728
 
           rt_par_j = rtm(j) - rtm(j+1)*exp_mu_dzm(j)  &
-                     - ( 1.0 - exp_mu_dzm(j) )  &
+                     - ( 1.0_core_rknd - exp_mu_dzm(j) )  &
                        * ( (rtm(j) - rtm(j+1)) &
 !                         / (mu/gr%invrs_dzm(j)) )  &
                         * invrs_dzm_on_mu(j) ) &
@@ -593,7 +596,7 @@ module mixing_length
         ! SD's beta (eqn. 8)
         beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
         ! s from Lewellen and Yoh 1993 (LY) eqn. 1
-        s_par_j = (rt_par_j-rsl_par_j)/(1.+beta_par_j*rsl_par_j)
+        s_par_j = (rt_par_j-rsl_par_j)/(1._core_rknd+beta_par_j*rsl_par_j)
         rc_par_j = max( s_par_j, zero_threshold )
 
         ! theta_v of the entraining parcel at grid level j.
@@ -635,9 +638,9 @@ module mixing_length
 
         dCAPE_dz_j = ( grav/thvm(j) ) * ( thv_par_j - thvm(j) )
 
-        CAPE_incr = 0.5 * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) / gr%invrs_dzm(j)
+        CAPE_incr = 0.5_core_rknd * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) / gr%invrs_dzm(j)
 
-        if ( tke_i - CAPE_incr > 0.0 ) then
+        if ( tke_i - CAPE_incr > 0.0_core_rknd ) then
 
           ! The total amount of CAPE increment has not exhausted the initial
           ! TKE (plus any additions by CAPE increments due to downward
@@ -682,7 +685,7 @@ module mixing_length
                  ( dCAPE_dz_j - dCAPE_dz_j_plus_1 ) )  &
                  / gr%invrs_dzm(j)  &
             + sqrt( dCAPE_dz_j_plus_1**2  &
-                    + 2.0 * tke_i * gr%invrs_dzm(j)  &
+                    + 2.0_core_rknd * tke_i * gr%invrs_dzm(j)  &
                       * ( dCAPE_dz_j - dCAPE_dz_j_plus_1 ) )  &
                  / ( dCAPE_dz_j - dCAPE_dz_j_plus_1 )  &
                  / gr%invrs_dzm(j)

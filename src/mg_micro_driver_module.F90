@@ -96,6 +96,10 @@ module mg_micro_driver_module
 
     use shr_kind_mod, only: r8 => shr_kind_r8 
 
+    use clubb_precision, only: &
+      core_rknd, & ! Variable(s)
+      time_precision
+
     use stats_variables, only: & 
       irrainm_auto, & ! Variables
       irrainm_accr, &
@@ -115,14 +119,14 @@ module mg_micro_driver_module
     logical, parameter :: sub_column = .false.
 
     ! Input Variables
-    real, intent(in) :: dt ! Model timestep        [s]
+    real( kind = time_precision ), intent(in) :: dt ! Model timestep        [s]
 
     integer, intent(in) :: nz ! Points in the Vertical        [-]
 
     logical, intent(in) :: &
       l_stats_samp  ! Whether to accumulate statistics [T/F]
 
-    real, dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       invrs_dzt,  & ! Inverse of the grid spacing   [1/m]
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
@@ -132,20 +136,20 @@ module mg_micro_driver_module
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params    ! PDF parameters
 
-    real, dimension(nz), intent(in) :: &
-      rcm,        & ! Liquid water mixing ratio          [kg/kg]
-      rvm,        & ! Vapor water mixing ratio           [kg/kg]
-      Ncnm          ! Cloud nuclei number concentration  [count/m^3]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rcm,      & ! Liquid water mixing ratio          [kg/kg]
+      rvm,      & ! Vapor water mixing ratio           [kg/kg]
+      Ncnm        ! Cloud nuclei number concentration  [count/m^3]
 
-    real, dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet      ! Hydrometeor species    [units vary]
 
     ! Input/Output Variables
-    real, dimension(nz,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
       hydromet_mc   ! Hydrometeor time tendency          [(units vary)/s]
 
     ! Output Variables
-    real, dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
@@ -156,7 +160,7 @@ module mg_micro_driver_module
 
     real(r8) :: cldfsnow ! Radiative cloud fraction at sfc level for calcuating swp   [-]
 
-    real, dimension(nz) :: & 
+    real( kind = core_rknd ), dimension(nz) :: & 
       T_in_K,       & ! Temperature                                                   [K]
       T_in_K_new,   & ! Temperature after microphysics                                [K]
       tlat,         & ! Latent heating rate                                           [W/kg]
@@ -241,7 +245,7 @@ module mg_micro_driver_module
       qcic_flip
 
     ! The above variables flipped to the CLUBB zt grid
-    real, dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       rrainm_auto, & ! Autoconversion rate    [kg/kg/s]
       rrainm_accr, & ! Accretion rate         [kg/kg/s]
       rcm_in_cloud   ! Liquid water in cloud  [kg/kg]
@@ -254,7 +258,7 @@ module mg_micro_driver_module
        hydromet_flip, &  ! Hydrometeor species                               [units vary]
        hydromet_mc_flip  ! Hydrometeor time tendency                         [units vary]
 
-    real :: xtmp
+    real( kind = core_rknd ) :: xtmp
 
     integer :: i, k, ncols, icol
 
@@ -274,18 +278,18 @@ module mg_micro_driver_module
     npccn_flip = 0.0_r8
     rndst_flip = 0.0_r8
     nacon_flip = 0.0_r8
-    effc(:) = 0.0
-    effi(:) = 0.0
-    reff_rain(:) = 0.0
-    reff_snow(:) = 0.0
-    rsnowm(:) = 0.0
-    rrainm(:) = 0.0
-    tlat(:) = 0.0
-    rcm_new(:) = 0.0
-    T_in_K_new(:) = 0.0
-    rcm_mc(:) = 0.0
-    rvm_mc(:) = 0.0
-    hydromet_mc(:,:) = 0.0
+    effc(:) = 0.0_core_rknd
+    effi(:) = 0.0_core_rknd
+    reff_rain(:) = 0.0_core_rknd
+    reff_snow(:) = 0.0_core_rknd
+    rsnowm(:) = 0.0_core_rknd
+    rrainm(:) = 0.90_core_rknd
+    tlat(:) = 0.0_core_rknd
+    rcm_new(:) = 0.0_core_rknd
+    T_in_K_new(:) = 0.0_core_rknd
+    rcm_mc(:) = 0.0_core_rknd
+    rvm_mc(:) = 0.0_core_rknd
+    hydromet_mc(:,:) = 0.0_core_rknd
     hydromet_mc_flip(1:pcols,:,:) = 0.0_r8
 
     ! Determine temperature
@@ -294,7 +298,7 @@ module mg_micro_driver_module
     ! Use sgs cloud fraction to weight tendencies
     cloud_frac(1:nz) = max( zero_threshold, &
                       pdf_params%mixt_frac * pdf_params%cloud_frac1 &
-                      + (1.-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
+                      + (1._core_rknd-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
     
     ! MG's grid is flipped with respect to CLUBB.
     ! Flip CLUBB variables before inputting them into MG.
@@ -431,19 +435,19 @@ module mg_micro_driver_module
            qcic_flip, T_in_K_flip_inout ) !in/out
 
     ! Flip MG variables into CLUBB grid
-    rcm_mc(2:nz) = real( flip( dble(rcm_mc_flip(icol,1:nz-1) ), nz-1 ) )
-    rvm_mc(2:nz) = real( flip( dble(rvm_mc_flip(icol,1:nz-1) ), nz-1 ) )
-    rcm_new(2:nz) = real( flip( dble(rcm_flip(icol,1:nz-1) ), nz-1 ) )
-    effc(2:nz) = real( flip( dble(effc_flip(icol,1:nz-1) ), nz-1 ) )
-    effi(2:nz) = real( flip( dble(effi_flip(icol,1:nz-1) ), nz-1 ) )
-    reff_rain(2:nz) = real( flip( dble(reff_rain_flip(icol,1:nz-1) ), nz-1 ) )
-    reff_snow(2:nz) = real( flip( dble(reff_snow_flip(icol,1:nz-1) ), nz-1 ) )
-    tlat(2:nz) = real( flip( dble(tlat_flip(icol,1:nz-1) ), nz-1 ) )
-    rsnowm(2:nz) = real( flip( dble(qsout_flip(icol,1:nz-1) ), nz-1 ) )
-    rrainm(2:nz) = real( flip( dble(qrout_flip(icol,1:nz-1) ), nz-1 ) )
-
+    rcm_mc(2:nz) = real( flip( dble(rcm_mc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    rvm_mc(2:nz) = real( flip( dble(rvm_mc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    rcm_new(2:nz) = real( flip( dble(rcm_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    effc(2:nz) = real( flip( dble(effc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    effi(2:nz) = real( flip( dble(effi_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    reff_rain(2:nz) = real( flip( dble(reff_rain_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    reff_snow(2:nz) = real( flip( dble(reff_snow_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    tlat(2:nz) = real( flip( dble(tlat_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    rsnowm(2:nz) = real( flip( dble(qsout_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    rrainm(2:nz) = real( flip( dble(qrout_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+      
     do i = 1, hydromet_dim, 1      
-      hydromet_mc(2:nz, i) = real( hydromet_mc_flip(icol,nz-1:1:-1, i) )
+      hydromet_mc(2:nz, i) = real( hydromet_mc_flip(icol,nz-1:1:-1, i), kind = core_rknd )
     end do
 
     ! Compute the snow water path
@@ -456,11 +460,11 @@ module mg_micro_driver_module
     
     ! Update thetal based on absolute temperature. We use this rather than tlat
     ! because using the latter seemed to cause spurious heating effects.
-    T_in_K_new(2:nz) = real( flip( dble(T_in_K_flip_inout(icol,1:nz-1) ), nz-1 ) )
+    T_in_K_new(2:nz) = real( flip( dble(T_in_K_flip_inout(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     T_in_K_new(1) = T_in_K(1)
    
     ! Compute total change in thlm using ( thlm_new - thlm_old ) / dt
-    thlm_mc = ( T_in_K2thlm( T_in_K_new, exner, rcm_new ) - thlm ) / real( dt )
+    thlm_mc = ( T_in_K2thlm( T_in_K_new, exner, rcm_new ) - thlm ) / real( dt, kind = core_rknd )
     
     if ( l_stats_samp ) then
 
@@ -476,26 +480,27 @@ module mg_micro_driver_module
 
       ! Rain rates at the bottom of the domain, in mm/day
       call stat_update_var_pt( irain_rate_sfc, 1, &
-                               real( prect(icol) ) * mm_per_m * real( sec_per_day ), sfc )
+                               real( prect(icol), kind = core_rknd ) * mm_per_m * &
+                               real( sec_per_day, kind = core_rknd ), sfc )
 
      ! Snow water path is updated in stats_subs.F90
      ! call stat_update_var_pt( iswp, 1, real( hydromet_mc(3,iirsnowm) / max( 0.0001, cldfsnow ) * &
      !                          pdel_flip(nz-1) / gravit ), sfc )
 
       ! Compute autoconversion
-      rrainm_auto(2:nz) = real( flip( dble( prco_flip(icol,1:nz-1) ), nz-1 ) )
-      rrainm_auto(1) = 0.0
+      rrainm_auto(2:nz) = real( flip( dble( prco_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+      rrainm_auto(1) = 0.0_core_rknd
       call stat_update_var( irrainm_auto, rrainm_auto, zt )
 
       ! Compute accretion
-      rrainm_accr(2:nz) = real( flip( dble( prao_flip(icol,1:nz-1) ), nz-1 ) )
-      rrainm_accr(1) = 0.0
+      rrainm_accr(2:nz) = real( flip( dble( prao_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+      rrainm_accr(1) = 0.0_core_rknd
       call stat_update_var( irrainm_accr, rrainm_accr, zt )
 
       ! Compute cloud water mixing ratio in cloud (based on a threshold in the
       ! MG microphysics)
-      rcm_in_cloud(2:nz) = real( flip( dble( qcic_flip(icol,1:nz-1) ), nz-1 ) )
-      rcm_in_cloud(1) = 0.0
+      rcm_in_cloud(2:nz) = real( flip( dble( qcic_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+      rcm_in_cloud(1) = 0.0_core_rknd
       call stat_update_var( ircm_in_cloud, rcm_in_cloud, zt )
 
 
