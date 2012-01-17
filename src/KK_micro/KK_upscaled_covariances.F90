@@ -994,7 +994,8 @@ module KK_upscaled_covariances
     ! quadrivariate equation to use.
 
     if ( sigma_x1 <= x1_tol .and.  &
-         ( sigma_x2 <= x2_tol .or. abs( s_cc ) > parab_cyl_max_input ) ) then
+         ( sigma_x2 <= x2_tol .or.  &
+           abs( s_cc ) > dble( parab_cyl_max_input ) ) ) then
 
        ! The ith PDF component variance of both x (r_t, th_l, or w) and s is 0.
        quadrivar_NNLL_covar_eq  &
@@ -1019,7 +1020,8 @@ module KK_upscaled_covariances
                                         alpha_exp, beta_exp, gamma_exp ) )
 
 
-    elseif ( sigma_x2 <= x2_tol .or. abs( s_cc ) > parab_cyl_max_input ) then
+    elseif ( sigma_x2 <= x2_tol .or.  &
+             abs( s_cc ) > dble( parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of s is 0.
        quadrivar_NNLL_covar_eq  &
@@ -1207,7 +1209,8 @@ module KK_upscaled_covariances
     ! equation to use.
 
     if ( sigma_x1 <= x1_tol .and.  &
-         ( sigma_x2 <= x2_tol .or. abs( s_c ) > parab_cyl_max_input ) ) then
+         ( sigma_x2 <= x2_tol .or.  &
+           abs( s_c ) > dble( parab_cyl_max_input ) ) ) then
 
        ! The ith PDF component variance of both x (r_t, th_l, or w) and s is 0.
        trivar_NNL_covar_eq  &
@@ -1227,7 +1230,8 @@ module KK_upscaled_covariances
                                           alpha_exp, beta_exp ) )
 
 
-    elseif ( sigma_x2 <= x2_tol .or. abs( s_c ) > parab_cyl_max_input ) then
+    elseif ( sigma_x2 <= x2_tol .or.  &
+             abs( s_c ) > dble( parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of s is 0.
        trivar_NNL_covar_eq  &
