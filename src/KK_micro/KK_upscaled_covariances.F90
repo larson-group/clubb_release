@@ -233,6 +233,9 @@ module KK_upscaled_covariances
     ! References:
     !-----------------------------------------------------------------------
 
+    use KK_upscaled_means, only:  &
+        trivar_NLL_mean_eq  ! Procedure
+
     implicit none
 
     ! Input Variables
@@ -289,6 +292,15 @@ module KK_upscaled_covariances
                                        corr_sNr_1_n, corr_rrNr_n, mu_t_1, &
                                        KK_evap_tndcy, KK_evap_coef, t_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
+            - trivar_NLL_mean_eq( mu_s_1, mu_rr_n, mu_Nr_n, &
+                                  sigma_s_1, sigma_rr_n, sigma_Nr_n, &
+                                  corr_srr_1_n, corr_sNr_1_n, corr_rrNr_n, &
+                                  alpha_exp + 1.0, beta_exp, gamma_exp )  &
+            + mu_s_1  &
+              * trivar_NLL_mean_eq( mu_s_1, mu_rr_n, mu_Nr_n, &
+                                    sigma_s_1, sigma_rr_n, sigma_Nr_n, &
+                                    corr_srr_1_n, corr_sNr_1_n, corr_rrNr_n, &
+                                    alpha_exp, beta_exp, gamma_exp )  &
             )  &
         + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl2 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_2, mu_s_2, mu_rr_n, mu_Nr_n, &
@@ -298,6 +310,15 @@ module KK_upscaled_covariances
                                        corr_sNr_2_n, corr_rrNr_n, mu_t_2, &
                                        KK_evap_tndcy, KK_evap_coef, t_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
+            - trivar_NLL_mean_eq( mu_s_2, mu_rr_n, mu_Nr_n, &
+                                  sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                                  corr_srr_2_n, corr_sNr_2_n, corr_rrNr_n, &
+                                  alpha_exp + 1.0, beta_exp, gamma_exp )  &
+            + mu_s_2  &
+              * trivar_NLL_mean_eq( mu_s_2, mu_rr_n, mu_Nr_n, &
+                                    sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                                    corr_srr_2_n, corr_sNr_2_n, corr_rrNr_n, &
+                                    alpha_exp, beta_exp, gamma_exp )  &
             )  &
         )
 
@@ -393,6 +414,9 @@ module KK_upscaled_covariances
     ! References:
     !-----------------------------------------------------------------------
 
+    use KK_upscaled_means, only:  &
+        bivar_NL_mean_eq  ! Procedure
+
     implicit none
 
     ! Input Variables
@@ -439,6 +463,11 @@ module KK_upscaled_covariances
                                    corr_ts_1, corr_tNc_1_n, corr_sNc_1_n, &
                                    mu_t_1, KK_auto_tndcy, KK_auto_coef, &
                                    t_tol, alpha_exp, beta_exp )  &
+            + bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                                corr_sNc_1_n, alpha_exp + 1.0, beta_exp )  &
+            - mu_s_1  &
+              * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                                  corr_sNc_1_n, alpha_exp, beta_exp )  &
             )  &
         + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt2 ) )  &
           * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Nc_n, &
@@ -446,6 +475,11 @@ module KK_upscaled_covariances
                                    corr_ts_2, corr_tNc_2_n, corr_sNc_2_n, &
                                    mu_t_2, KK_auto_tndcy, KK_auto_coef, &
                                    t_tol, alpha_exp, beta_exp )  &
+            + bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                                corr_sNc_2_n, alpha_exp + 1.0, beta_exp )  &
+            - mu_s_2  &
+              * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                                  corr_sNc_2_n, alpha_exp, beta_exp )  &
             )  &
         )
 
@@ -466,6 +500,9 @@ module KK_upscaled_covariances
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use KK_upscaled_means, only:  &
+        bivar_NL_mean_eq  ! Procedure
 
     implicit none
 
@@ -513,6 +550,11 @@ module KK_upscaled_covariances
                                    corr_ts_1, corr_tNc_1_n, corr_sNc_1_n, &
                                    mu_t_1, KK_auto_tndcy, KK_auto_coef, &
                                    t_tol, alpha_exp, beta_exp )  &
+            - bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                                corr_sNc_1_n, alpha_exp + 1.0, beta_exp )  &
+            + mu_s_1  &
+              * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                                  corr_sNc_1_n, alpha_exp, beta_exp )  &
             )  &
         + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl2 ) )  &
           * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Nc_n, &
@@ -520,6 +562,11 @@ module KK_upscaled_covariances
                                    corr_ts_2, corr_tNc_2_n, corr_sNc_2_n, &
                                    mu_t_2, KK_auto_tndcy, KK_auto_coef, &
                                    t_tol, alpha_exp, beta_exp )  &
+            - bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                                corr_sNc_2_n, alpha_exp + 1.0, beta_exp )  &
+            + mu_s_2  &
+              * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                                  corr_sNc_2_n, alpha_exp, beta_exp )  &    
             )  &
         )
 
@@ -615,6 +662,9 @@ module KK_upscaled_covariances
     ! References:
     !-----------------------------------------------------------------------
 
+    use KK_upscaled_means, only:  &
+        bivar_NL_mean_eq
+
     implicit none
 
     ! Input Variables
@@ -661,6 +711,11 @@ module KK_upscaled_covariances
                                    corr_ts_1, corr_trr_1_n, corr_srr_1_n, &
                                    mu_t_1, KK_accr_tndcy, KK_accr_coef, &
                                    t_tol, alpha_exp, beta_exp )  &
+            + bivar_NL_mean_eq( mu_s_1, mu_rr_n, sigma_s_1, sigma_rr_n, &
+                                corr_srr_1_n, alpha_exp + 1.0, beta_exp )  &
+            - mu_s_1  &
+              * bivar_NL_mean_eq( mu_s_1, mu_rr_n, sigma_s_1, sigma_rr_n, &
+                                  corr_srr_1_n, alpha_exp, beta_exp )  &
             )  &
         + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * crt2 ) )  &
           * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_rr_n, &
@@ -668,6 +723,11 @@ module KK_upscaled_covariances
                                    corr_ts_2, corr_trr_2_n, corr_srr_2_n, &
                                    mu_t_2, KK_accr_tndcy, KK_accr_coef, &
                                    t_tol, alpha_exp, beta_exp )  &
+            + bivar_NL_mean_eq( mu_s_2, mu_rr_n, sigma_s_2, sigma_rr_n, &
+                                corr_srr_2_n, alpha_exp + 1.0, beta_exp )  &
+            - mu_s_2  &
+              * bivar_NL_mean_eq( mu_s_2, mu_rr_n, sigma_s_2, sigma_rr_n, &
+                                  corr_srr_2_n, alpha_exp, beta_exp )  &
             )  &
         )
 
@@ -688,6 +748,9 @@ module KK_upscaled_covariances
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use KK_upscaled_means, only:  &
+        bivar_NL_mean_eq
 
     implicit none
 
@@ -735,6 +798,11 @@ module KK_upscaled_covariances
                                    corr_ts_1, corr_trr_1_n, corr_srr_1_n, &
                                    mu_t_1, KK_accr_tndcy, KK_accr_coef, &
                                    t_tol, alpha_exp, beta_exp )  &
+            - bivar_NL_mean_eq( mu_s_1, mu_rr_n, sigma_s_1, sigma_rr_n, &
+                                corr_srr_1_n, alpha_exp + 1.0, beta_exp )  &
+            + mu_s_1  &
+              * bivar_NL_mean_eq( mu_s_1, mu_rr_n, sigma_s_1, sigma_rr_n, &
+                                  corr_srr_1_n, alpha_exp, beta_exp )  &
             )  &
         + ( 1.0 - mixt_frac ) * ( 1.0 / ( 2.0 * cthl2 ) )  &
           * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_rr_n, &
@@ -742,6 +810,11 @@ module KK_upscaled_covariances
                                    corr_ts_2, corr_trr_2_n, corr_srr_2_n, &
                                    mu_t_2, KK_accr_tndcy, KK_accr_coef, &
                                    t_tol, alpha_exp, beta_exp )  &
+            - bivar_NL_mean_eq( mu_s_2, mu_rr_n, sigma_s_2, sigma_rr_n, &
+                                corr_srr_2_n, alpha_exp + 1.0, beta_exp )  &
+            + mu_s_2  &
+              * bivar_NL_mean_eq( mu_s_2, mu_rr_n, sigma_s_2, sigma_rr_n, &
+                                  corr_srr_2_n, alpha_exp, beta_exp )  &
             )  &
         )
 
