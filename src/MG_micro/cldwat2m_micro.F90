@@ -383,7 +383,7 @@ subroutine mmicro_pcond ( sub_column,       &
    bergso,bergo,melto,homoo,qcreso,prcio,praio,qireso,&
    mnuccro,pracso,meltsdt,frzrdt,mnuccdo &
 #ifdef CLUBB
-   ,qcic &
+   ,qcic, t &
 #endif
    )
 
@@ -1661,7 +1661,6 @@ subroutine mmicro_pcond ( sub_column,       &
 	nric(i,k) = (rho(i,k-1)*unr(k-1)*nric(i,k-1)*cldmax(i,k-1)+ &
          (rho(i,k)*dz(i,k)*(nprc(k)*lcldm(i,k)+(nsubr(k-1)-npracs(k-1)-nnuccr(k-1)+nragg(k-1))*cldmax(i,k))))&
                    /(dum1*rho(i,k)*cldmax(i,k))
-
 	end if
 
 !.......................................................................

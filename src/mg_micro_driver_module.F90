@@ -220,7 +220,8 @@ module mg_micro_driver_module
       effi_flip,     & ! cloud ice effective radius                           [μ]
       reff_rain_flip,& ! rain effective radius                                [μ]
       reff_snow_flip,& ! snow effective radius                                [μ]
-      qrout_flip       ! rain mixing ratio                                    [kg/kg]
+      qrout_flip,    & ! rain mixing ratio                                    [kg/kg]
+      T_in_K_flip_inout! Absolute temperature                                 [K]
       
     ! MG zt variables that are not used in CLUBB.
     real(r8), dimension(pcols,nz-1) :: &
@@ -238,9 +239,6 @@ module mg_micro_driver_module
     real(r8), dimension(pcols,nz-1) :: &
       prcio_flip, praio_flip, &
       qcic_flip
-
-    real(r8), dimension(nz-1) :: &
-      dum
 
     ! The above variables flipped to the CLUBB zt grid
     real, dimension(nz) :: &
@@ -404,6 +402,8 @@ module mg_micro_driver_module
 
     qcic_flip(icol,:) = 0.0_r8 ! This is needed in case qc is 0 everywhere, due to a goto statement
 
+    T_in_K_flip_inout = T_in_K_flip ! Set the output variable to the current values
+
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond                                                                        &! in
          ( sub_column,                                                                       &! in
@@ -428,7 +428,7 @@ module mg_micro_driver_module
            bergso_flip, bergo_flip, melto_flip, homoo_flip, qcreso_flip, prcio_flip, praio_flip, &
            qireso_flip,                                                                       &! out
            mnuccro_flip, pracso_flip, meltsdt_flip, frzrdt_flip, mnuccdo_flip,                &! out
-           qcic_flip ) !in/out
+           qcic_flip, T_in_K_flip_inout ) !in/out
 
     ! Flip MG variables into CLUBB grid
     rcm_mc(2:nz) = real( flip( dble(rcm_mc_flip(icol,1:nz-1) ), nz-1 ) )
@@ -454,14 +454,13 @@ module mg_micro_driver_module
       cldfsnow = 0.25_r8
     end if
     
-    ! Update thetal based on absolute temperature
-    T_in_K_new(:) = T_in_K(:) + (tlat(:) / Cp ) * real( dt )
-    
-    ! TODO: To remove compile warnings:
-    dum = real( T_in_K_new(1:nz-1), kind=r8 )
-    ! TODO: T_in_K is not changed within MG, so the change in temperature will need to be
-    ! calculated another way. However, using the equation above does not seem to work correctly.
-    thlm_mc = ( T_in_K2thlm( T_in_K, exner, rcm_new ) - thlm ) / real( dt )
+    ! Update thetal based on absolute temperature. We use this rather than tlat
+    ! because using the latter seemed to cause spurious heating effects.
+    T_in_K_new(2:nz) = real( flip( dble(T_in_K_flip_inout(icol,1:nz-1) ), nz-1 ) )
+    T_in_K_new(1) = T_in_K(1)
+   
+    ! Compute total change in thlm using ( thlm_new - thlm_old ) / dt
+    thlm_mc = ( T_in_K2thlm( T_in_K_new, exner, rcm_new ) - thlm ) / real( dt )
     
     if ( l_stats_samp ) then
 
@@ -477,7 +476,7 @@ module mg_micro_driver_module
 
       ! Rain rates at the bottom of the domain, in mm/day
       call stat_update_var_pt( irain_rate_sfc, 1, &
-                               real( prect(1) ) * mm_per_m * real( sec_per_day ), sfc )
+                               real( prect(icol) ) * mm_per_m * real( sec_per_day ), sfc )
 
      ! Snow water path is updated in stats_subs.F90
      ! call stat_update_var_pt( iswp, 1, real( hydromet_mc(3,iirsnowm) / max( 0.0001, cldfsnow ) * &
