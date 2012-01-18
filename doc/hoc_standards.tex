@@ -715,7 +715,7 @@ svn diff | egrep '(^(\+|-).*!|^---|^\+\+\+|^@@|^===)' -
 
 Each pipe in this egrep command represents an OR statement. The first section includes all lines from the diff that include an exclamation mark, which represents a comment. The rest of the lines include the lines that show information about the filenames and line numbers.
 
-\item CLUBB uses a generalized precision that can be specified with a compiler flag. This compiler flag is CLUBB_REAL_TYPE. This maps to the variable in clubb_precision.F90 called core_rknd. When using any real variables, please use a real of kind core_rknd instead of a standard real, unless it is absolutely necessary to use single or double precision all the time. Also, when assigning values to these variables, you must specify the precision of the value using _core_rknd (E.g. 1.23_core_rknd). Here is an example of declaring a variable as core_rknd and assigning a value to it:
+\item CLUBB uses a generalized precision that can be specified with a compiler flag. This compiler flag is CLUBB\_REAL\_TYPE. This maps to the variable in clubb\_precision.F90 called core\_rknd. When using any real variables, please use a real of kind core\_rknd instead of a standard real, unless it is absolutely necessary to use single or double precision all the time. Also, when assigning values to these variables, you must specify the precision of the value using \_core\_rknd (E.g. 1.23\_core\_rknd). Here is an example of declaring a variable as core\_rknd and assigning a value to it:
 
 \begin{verbatim}
 use clubb_precision, only &
