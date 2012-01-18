@@ -591,11 +591,15 @@ module stats_variables
 
   ! Sedimentation velocities
   integer, public :: & 
-    iVrr,      & ! Brian
-    iVNr,      & !  " "
-    iVsnow,    & ! COAMPS
-    iVice,     & !  " "
-    iVgraupel    !  " "
+    iVrr,        &
+    iVrr_mass,   &
+    iVNr,        &
+    iVNr_mass,   &
+    iVsnow,      &
+    iVsnow_mass, &
+    iVice,       &
+    iVice_mass,  &
+    iVgraupel
 
 !$omp   threadprivate(iVrr, iVNr, iVsnow, iVice, iVgraupel)
 

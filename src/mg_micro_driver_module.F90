@@ -36,20 +36,31 @@ module mg_micro_driver_module
       Cp
       
     use stats_variables, only: & 
-      zt, &  ! Variables
-      sfc, &
-      irsnowm, &
-      irrainm, &
-      iswp, &
+      zt,            &  ! Variables
+      zm,            &
+      sfc,           &
+      irsnowm,       &
+      irrainm,       &
+      iswp,          &
       irain_rate_sfc, &
       ieff_rad_cloud, &
-      ieff_rad_ice, &
+      ieff_rad_ice,  &
       ieff_rad_rain, &
       ieff_rad_snow, &
-      irrainm_auto, &
-      irrainm_accr, &
-      irwp, &
-      ircm_in_cloud
+      irrainm_auto,  &
+      irrainm_accr,  &
+      irwp,          &
+      ircm_in_cloud, &
+      iNsnowm,       &
+      iNrm,          &
+      iVrr,          &
+      iVrr_mass,     &
+      iVNr,          &
+      iVNr_mass,     &
+      iVsnow,        &
+      iVsnow_mass,   &
+      iVice,         &
+      iVice_mass
 
     use stats_type, only:  & 
       stat_update_var, &
@@ -236,13 +247,44 @@ module mg_micro_driver_module
     ! MG zt variables that are diagnostics.
     real(r8), dimension(pcols,nz-1) :: &
       prcio_flip, praio_flip, &
-      qcic_flip
+      qcic_flip, &  ! In-cloud cloud liquid mixing ratio
+      nsic_flip, &  ! In-precip snow number concentration
+      nric_flip, &  ! In-precip rain number concentration
+      cldmax        ! Precip frac assuming max overlap
 
     ! The above variables flipped to the CLUBB zt grid
     real( kind = core_rknd ), dimension(nz) :: &
-      rrainm_auto, & ! Autoconversion rate    [kg/kg/s]
-      rrainm_accr, & ! Accretion rate         [kg/kg/s]
-      rcm_in_cloud   ! Liquid water in cloud  [kg/kg]
+      rrainm_auto, &  ! Autoconversion rate                 [kg/kg/s]
+      rrainm_accr, &  ! Accretion rate                      [kg/kg/s]
+      rcm_in_cloud, & ! Liquid water in cloud               [kg/kg]
+      Nsnowm,       & ! Snow particle number concentration  [num/kg]
+      Nrm,          & ! Rain droplet number concentration   [num/kg]
+      cloud_frac_max  ! Cloud frac assuming max overlap     [-]
+
+    ! MG zm variables that are diagnostics.
+    real(r8), dimension(nz-1) :: &
+      uns_flip,  &  ! Number-weighted snow fallspeed
+      ums_flip,  &  ! Mass-weighted snow fallspeed
+      unr_flip,  &  ! Number-weighted rain fallspeed
+      umr_flip      ! Mass-weighted rain fallspeed
+      
+    real(r8) ::  &
+      uni,  &  ! Number-weighted cloud ice fallspeed
+      umi,  &  ! Mass-weighted cloud ice fallspeed
+      unc,  &  ! Number-weighted cloud droplet fallspeed
+      umc      ! Mass-weighted cloud droplet fallspeed
+
+    ! The above variables flipped to the CLUBB zm grid
+    real( kind = core_rknd ), dimension(nz) :: &
+      Vsnow,        & ! Number-weighted snow sedimentation velocity          [m/s]
+      Vsnow_mass,   & ! Mass-weighted snow sedimentation velocity            [m/s]
+      Vrr,          & ! Number-weighted rain sedimentation velocity          [m/s]
+      Vrr_mass,     & ! Mass-weighted rain sedimentation velocity            [m/s]
+      Vice,         & ! Number-weighted cloud ice sedimentation velocity     [m/s]
+      Vice_mass,    & ! Mass-weighted cloud ice sedimentation velocity       [m/s]
+      VNr,          & ! Number-weighted cloud droplet sedimentation velocity [m/s]
+      VNr_mass        ! Mass-weighted cloud droplet sedimentation velocity   [m/s]
+
 
     ! MG zm variables that are not used in CLUBB
     real(r8), dimension(pcols,nz) :: &
@@ -283,6 +325,7 @@ module mg_micro_driver_module
     rcm_mc(:) = 0.0_core_rknd
     rvm_mc(:) = 0.0_core_rknd
     hydromet_mc(:,:) = 0.0_core_rknd
+    cloud_frac_max(:) = 0.0_core_rknd
     hydromet_mc_flip(1:pcols,:,:) = 0.0_r8
 
     ! Determine temperature
@@ -398,6 +441,16 @@ module mg_micro_driver_module
     smaw_flip(icol,:) = 1._r8
 
     qcic_flip(icol,:) = 0.0_r8 ! This is needed in case qc is 0 everywhere, due to a goto statement
+    nsic_flip(icol,:) = 0.0_r8
+    nric_flip(icol,:) = 0.0_r8
+    uni = 0.0_r8
+    umi = 0.0_r8
+    uns_flip(:) = 0.0_r8
+    ums_flip(:) = 0.0_r8
+    unr_flip(:) = 0.0_r8
+    umr_flip(:) = 0.0_r8
+    unc = 0.0_r8
+    umc = 0.0_r8
 
     T_in_K_flip_inout = T_in_K_flip ! Set the output variable to the current values
 
@@ -425,7 +478,8 @@ module mg_micro_driver_module
            bergso_flip, bergo_flip, melto_flip, homoo_flip, qcreso_flip, prcio_flip, praio_flip, &
            qireso_flip,                                                                       &! out
            mnuccro_flip, pracso_flip, meltsdt_flip, frzrdt_flip, mnuccdo_flip,                &! out
-           qcic_flip, T_in_K_flip_inout ) !in/out
+           qcic_flip, T_in_K_flip_inout, nsic_flip, nric_flip, uni, umi,                      &! out
+           uns_flip, ums_flip, unr_flip, umr_flip, unc, umc, cldmax )                          ! out
 
     ! Flip MG variables into CLUBB grid
     rcm_mc(2:nz) = real( flip( dble(rcm_mc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
@@ -437,6 +491,8 @@ module mg_micro_driver_module
     reff_snow(2:nz) = real( flip( dble(reff_snow_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     rsnowm(2:nz) = real( flip( dble(qsout_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     rrainm(2:nz) = real( flip( dble(qrout_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+
+    cloud_frac_max(2:nz) = real( cldmax(icol,:), kind = core_rknd )
       
     do i = 1, hydromet_dim, 1      
       hydromet_mc(2:nz, i) = real( hydromet_mc_flip(icol,nz-1:1:-1, i), kind = core_rknd )
@@ -495,6 +551,51 @@ module mg_micro_driver_module
       rcm_in_cloud(1) = 0.0_core_rknd
       call stat_update_var( ircm_in_cloud, rcm_in_cloud, zt )
 
+      ! Compute in precipitation snow number concentration
+      Nsnowm(2:nz) = real( flip( dble( nsic_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd )
+      Nsnowm(1) = 0.0_core_rknd
+      call stat_update_var( iNsnowm, Nsnowm * cloud_frac_max, zt )
+
+      ! Compute in precipitation rain number concentration
+      Nrm(2:nz) = real( flip( dble( nric_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd )
+      Nrm(1) = 0.0_core_rknd
+      call stat_update_var( iNrm, Nrm * cloud_frac_max, zt )
+
+      ! Compute snow sedimentation
+      ! Using number concentration
+      Vsnow(2:nz) = real( flip( dble( uns_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      Vsnow(1) = 0.0_core_rknd
+      call stat_update_var( iVsnow, Vsnow, zm )
+      ! Using mass
+      Vsnow_mass(2:nz) = real( flip( dble( ums_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      Vsnow_mass(1) = 0.0_core_rknd
+      call stat_update_var( iVsnow_mass, Vsnow_mass, zm )
+
+      ! Compute rain sedimentation velocity
+      ! Using number concentration
+      Vrr(2:nz) = real( flip( dble( unr_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      Vrr(1) = 0.0_core_rknd
+      call stat_update_var( iVrr, Vrr, zm )
+      ! Using mass
+      Vrr_mass(2:nz) = real( flip( dble( umr_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      Vrr_mass(1) = 0.0_core_rknd
+      call stat_update_var( iVrr_mass, Vrr_mass, zm )
+
+      ! Compute ice sedimentation
+      ! Using number concentration
+      Vice(:) = real( uni, kind = core_rknd )
+      call stat_update_var( iVice, Vice, zm )
+      ! Using mass
+      Vice_mass(:) = real( umi, kind = core_rknd )
+      call stat_update_var( iVice_mass, Vice_mass, zm )
+
+      ! Compute cloud droplet sedimentation
+      ! Using number concentration
+      VNr(:) = real( unc, kind = core_rknd )
+      call stat_update_var( iVNr, VNr, zm )
+      ! Using mass
+      VNr_mass(:) = real( umc, kind = core_rknd )
+      call stat_update_var( iVNr_mass, VNr_mass, zm )
 
       ! Compute Rain Water Path
       if ( irwp > 0 ) then

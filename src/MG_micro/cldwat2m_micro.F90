@@ -383,7 +383,8 @@ subroutine mmicro_pcond ( sub_column,       &
    bergso,bergo,melto,homoo,qcreso,prcio,praio,qireso,&
    mnuccro,pracso,meltsdt,frzrdt,mnuccdo &
 #ifdef CLUBB
-   ,qcic, t &
+   ,qcic, t, nsic, nric, uni, umi  &
+   ,uns, ums, unr, umr, unc, umc, cldmax &
 #endif
    )
 

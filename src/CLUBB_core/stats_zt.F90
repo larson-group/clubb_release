@@ -265,6 +265,7 @@ module stats_zt
 
     use stats_variables, only: & 
       iNsnowm, & ! Variable(s)
+      iNrm, &
       iNgraupelm, &
       iNim, & 
       iNsnowm_bt, &
