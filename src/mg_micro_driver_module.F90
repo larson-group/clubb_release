@@ -48,7 +48,8 @@ module mg_micro_driver_module
       ieff_rad_snow, &
       irrainm_auto, &
       irrainm_accr, &
-      irwp
+      irwp, &
+      ircm_in_cloud
 
     use stats_type, only:  & 
       stat_update_var, &
@@ -99,12 +100,6 @@ module mg_micro_driver_module
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
       time_precision
-
-    use stats_variables, only: & 
-      irrainm_auto, & ! Variables
-      irrainm_accr, &
-      irrainm_cond, &
-      ircm_in_cloud
 
     use fill_holes, only: &
       vertical_integral ! Procedure(s)
@@ -163,7 +158,6 @@ module mg_micro_driver_module
     real( kind = core_rknd ), dimension(nz) :: & 
       T_in_K,       & ! Temperature                                                   [K]
       T_in_K_new,   & ! Temperature after microphysics                                [K]
-      tlat,         & ! Latent heating rate                                           [W/kg]
       cloud_frac,   & ! Liquid Cloud fraction                                         [-]
       rcm_new,      & ! Cloud water mixing ratio after microphysics                   [kg/kg]
       rsnowm,       & ! Snow mixing ratio (not in hydromet because it is diagnostic)  [kg/kg]
@@ -284,7 +278,6 @@ module mg_micro_driver_module
     reff_snow(:) = 0.0_core_rknd
     rsnowm(:) = 0.0_core_rknd
     rrainm(:) = 0.90_core_rknd
-    tlat(:) = 0.0_core_rknd
     rcm_new(:) = 0.0_core_rknd
     T_in_K_new(:) = 0.0_core_rknd
     rcm_mc(:) = 0.0_core_rknd
@@ -442,7 +435,6 @@ module mg_micro_driver_module
     effi(2:nz) = real( flip( dble(effi_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     reff_rain(2:nz) = real( flip( dble(reff_rain_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     reff_snow(2:nz) = real( flip( dble(reff_snow_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
-    tlat(2:nz) = real( flip( dble(tlat_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     rsnowm(2:nz) = real( flip( dble(qsout_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     rrainm(2:nz) = real( flip( dble(qrout_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
       
