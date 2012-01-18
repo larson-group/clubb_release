@@ -27,7 +27,11 @@ module PDF_integrals_means
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        pi_dp  ! Constant(s)
+        pi_dp,         &  ! Constant(s)
+        two_dp,        &
+        one_dp,        &
+        one_half_dp,   &
+        one_fourth_dp
 
     use KK_utilities, only:  &
         Dv_fnc  ! Procedure(s)
@@ -68,18 +72,18 @@ module PDF_integrals_means
            + rho_x1x3_n * sigma_x3_n * gamma_exp
 
     trivar_NLL_mean  &
-    = ( 1.0_dp / sqrt( 2.0_dp*pi_dp ) ) * ( - sigma_x1 )**alpha_exp  &
+    = ( one_dp / sqrt( two_dp*pi_dp ) ) * ( - sigma_x1 )**alpha_exp  &
       * exp( mu_x2_n * beta_exp + mu_x3_n * gamma_exp )  &
-      * exp( 0.5_dp *  &
-             (   ( 1.0_dp - rho_x1x2_n**2 ) * sigma_x2_n**2 * beta_exp**2  &
-               + ( 1.0_dp - rho_x1x3_n**2 ) * sigma_x3_n**2 * gamma_exp**2  &
-               + 2.0_dp * ( rho_x2x3_n - rho_x1x2_n * rho_x1x3_n )  &
-                     * sigma_x2_n * beta_exp * sigma_x3_n * gamma_exp  &
+      * exp( one_half_dp *  &
+             (   ( one_dp - rho_x1x2_n**2 ) * sigma_x2_n**2 * beta_exp**2  &
+               + ( one_dp - rho_x1x3_n**2 ) * sigma_x3_n**2 * gamma_exp**2  &
+               + two_dp * ( rho_x2x3_n - rho_x1x2_n * rho_x1x3_n )  &
+                        * sigma_x2_n * beta_exp * sigma_x3_n * gamma_exp  &
              )  &
            )  &
-      * exp( 0.25_dp * s_cc**2 - ( mu_x1 / sigma_x1 ) * s_cc  &
-             + 0.5_dp * ( mu_x1**2 / sigma_x1**2 ) )  &
-      * gamma( alpha_exp + 1.0_dp ) * Dv_fnc( -(alpha_exp + 1.0_dp), s_cc )
+      * exp( one_fourth_dp * s_cc**2 - ( mu_x1 / sigma_x1 ) * s_cc  &
+             + one_half_dp * ( mu_x1**2 / sigma_x1**2 ) )  &
+      * gamma( alpha_exp + one_dp ) * Dv_fnc( -(alpha_exp + one_dp), s_cc )
 
     return
 
@@ -95,6 +99,10 @@ module PDF_integrals_means
     ! References:
     !  Larson, V. E. and B. M. Griffin (2010)
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one_half_dp,   &  ! Constant(s)
+        zero_dp
 
     use clubb_precision, only: &
         dp ! double precision
@@ -117,18 +125,18 @@ module PDF_integrals_means
     real( kind = dp ) ::  &
       trivar_NLL_mean_const_x1
 
-    if ( mu_x1 <= 0.0_dp ) then
+    if ( mu_x1 <= zero_dp ) then
 
        trivar_NLL_mean_const_x1  &
        = mu_x1**alpha_exp  &
          * exp( mu_x2_n * beta_exp + mu_x3_n * gamma_exp  &
-                + 0.5_dp * sigma_x2_n**2 * beta_exp**2  &
-                + 0.5_dp * sigma_x3_n**2 * gamma_exp**2  &
+                + one_half_dp * sigma_x2_n**2 * beta_exp**2  &
+                + one_half_dp * sigma_x3_n**2 * gamma_exp**2  &
                 + rho_x2x3_n * sigma_x2_n * beta_exp * sigma_x3_n * gamma_exp )
 
     else ! mu_x1 > 0
 
-       trivar_NLL_mean_const_x1 = 0.0_dp
+       trivar_NLL_mean_const_x1 = zero_dp
 
     endif
 
@@ -148,7 +156,11 @@ module PDF_integrals_means
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        pi_dp  ! Constant(s)
+        pi_dp,         &  ! Constant(s)
+        two_dp,        &
+        one_dp,        &
+        one_half_dp,   &
+        one_fourth_dp
 
     use KK_utilities, only:  &
         Dv_fnc  ! Procedure(s)
@@ -182,10 +194,11 @@ module PDF_integrals_means
     s_c = ( mu_x1 / sigma_x1 ) + rho_x1x2_n * sigma_x2_n * beta_exp
 
     bivar_NL_mean  &
-    = ( 1.0_dp / sqrt( 2.0_dp*pi_dp ) ) * sigma_x1**alpha_exp  &
+    = ( one_dp / sqrt( two_dp*pi_dp ) ) * sigma_x1**alpha_exp  &
       * exp( mu_x2_n * beta_exp  &
-             + 0.5_dp * sigma_x2_n**2 * beta_exp**2 - 0.25_dp * s_c**2 )  &
-      * gamma( alpha_exp + 1.0_dp ) * Dv_fnc( -(alpha_exp + 1.0_dp), -s_c )
+             + one_half_dp * sigma_x2_n**2 * beta_exp**2  &
+             - one_fourth_dp * s_c**2 )  &
+      * gamma( alpha_exp + one_dp ) * Dv_fnc( -(alpha_exp + one_dp), -s_c )
 
     return
 
@@ -201,6 +214,10 @@ module PDF_integrals_means
     ! References:
     !  Larson, V. E. and B. M. Griffin (2010)
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one_half_dp,   &  ! Constant(s)
+        zero_dp
 
     use clubb_precision, only: &
         dp ! double precision
@@ -219,16 +236,16 @@ module PDF_integrals_means
     real( kind = dp ) :: &
       bivar_NL_mean_const_x1
 
-    if ( mu_x1 >= 0.0_dp ) then
+    if ( mu_x1 >= zero_dp ) then
 
        bivar_NL_mean_const_x1  &
        = mu_x1**alpha_exp  &
          * exp( mu_x2_n * beta_exp  &
-                + 0.5_dp * sigma_x2_n**2 * beta_exp**2 )
+                + one_half_dp * sigma_x2_n**2 * beta_exp**2 )
 
     else ! mu_x1 < 0
 
-       bivar_NL_mean_const_x1 = 0.0_dp
+       bivar_NL_mean_const_x1 = zero_dp
 
     endif
 
@@ -246,6 +263,9 @@ module PDF_integrals_means
     ! References:
     !  Larson, V. E. and B. M. Griffin (2010)
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one_half_dp  ! Constant(s)
 
     use clubb_precision, only: &
         dp ! double precision
@@ -268,8 +288,8 @@ module PDF_integrals_means
 
     bivar_LL_mean  &
     = exp( mu_x1_n * alpha_exp + mu_x2_n * beta_exp  &
-           + 0.5_dp * sigma_x1_n**2 * alpha_exp**2  &
-           + 0.5_dp * sigma_x2_n**2 * beta_exp**2  &
+           + one_half_dp * sigma_x1_n**2 * alpha_exp**2  &
+           + one_half_dp * sigma_x2_n**2 * beta_exp**2  &
            + rho_x1x2_n * sigma_x1_n * alpha_exp * sigma_x2_n * beta_exp )
 
     return

@@ -38,8 +38,6 @@ module constants_clubb
   ! Maximum variable name length in CLUBB GrADS or netCDF output
   integer, parameter, public ::  & 
     var_length = 30
-
-  ! The parameter parab_cyl_max_input is the largest magnitude that the input to
   ! the parabolic cylinder function is allowed to have.  When the value of the
   ! input to the parabolic cylinder function is too large in magnitude
   ! (depending on the order of the parabolic cylinder function), overflow
@@ -115,6 +113,13 @@ module constants_clubb
   real( kind = core_rknd ), parameter, public :: &
     sqrt_2pi = 2.5066282746310005024_core_rknd, &  ! sqrt(2*pi)
     sqrt_2   = 1.4142135623730950488_core_rknd     ! sqrt(2)
+
+  real( kind = dp ), parameter, public::  &
+    two_dp        = 2.0_dp,  & ! 2
+    one_dp        = 1.0_dp,  & ! 1
+    one_half_dp   = 0.5_dp,  & ! 1/2
+    one_fourth_dp = 0.25_dp, & ! 1/4
+    zero_dp       = 0.0_dp     ! 0
 
   real( kind = core_rknd ), parameter, public :: &
     three_halves = 3.0_core_rknd/2.0_core_rknd   ! 3/2
