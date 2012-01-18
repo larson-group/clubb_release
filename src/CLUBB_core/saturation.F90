@@ -30,58 +30,45 @@ module saturation
     svp_liq_lookup_table
 
   data svp_liq_lookup_table(188:343) / &
-    0.049560547_core_rknd, 0.059753418_core_rknd, 0.070129395_core_rknd, &
-    0.083618164_core_rknd, 0.09814453_core_rknd, 0.11444092_core_rknd,   &
-    0.13446045_core_rknd, 0.15686035_core_rknd, 0.18218994_core_rknd,    &
-    0.21240234_core_rknd, 0.24725342_core_rknd, 0.28668213_core_rknd,    &
-    0.33184814_core_rknd, 0.3826294_core_rknd, 0.4416504_core_rknd,      &
-    0.50775146_core_rknd, 0.58343506_core_rknd, 0.6694946_core_rknd,     &
-    0.7668457_core_rknd, 0.87750244_core_rknd, 1.0023804_core_rknd,      &
-    1.1434937_core_rknd, 1.3028564_core_rknd, 1.482544_core_rknd,        &
-    1.6847534_core_rknd, 1.9118042_core_rknd, 2.1671143_core_rknd,       &
-    2.4535522_core_rknd, 2.774231_core_rknd, 3.1330566_core_rknd,        &
-    3.5343628_core_rknd, 3.9819336_core_rknd, 4.480713_core_rknd,        &
-    5.036072_core_rknd, 5.6540527_core_rknd, 6.340088_core_rknd,         &
-    7.1015015_core_rknd, 7.9450684_core_rknd, 8.8793335_core_rknd,       &
-    9.91217_core_rknd, 11.053528_core_rknd, 12.313049_core_rknd,         &
-    13.70166_core_rknd, 15.231018_core_rknd, 16.91394_core_rknd,         &
-    18.764038_core_rknd, 20.795898_core_rknd, 23.025574_core_rknd,       &
-    25.470093_core_rknd, 28.147766_core_rknd, 31.078003_core_rknd,       &
-    34.282043_core_rknd, 37.782593_core_rknd, 41.60382_core_rknd,        &
-    45.771606_core_rknd, 50.31366_core_rknd, 55.259644_core_rknd,        &
-    60.641174_core_rknd, 66.492004_core_rknd, 72.84802_core_rknd,        &
-    79.74756_core_rknd, 87.23126_core_rknd, 95.34259_core_rknd,          &
-    104.12747_core_rknd, 113.634796_core_rknd, 123.91641_core_rknd,      &
-    135.02725_core_rknd, 147.02563_core_rknd, 159.97308_core_rknd,       &
-    173.93488_core_rknd, 188.97995_core_rknd, 205.18109_core_rknd,       &
-    222.61517_core_rknd, 241.36334_core_rknd, 261.51108_core_rknd,       &
-    283.14853_core_rknd, 306.37054_core_rknd, 331.27698_core_rknd,       &
-    357.97278_core_rknd, 386.56842_core_rknd, 417.17978_core_rknd,       &
-    449.9286_core_rknd, 484.94254_core_rknd, 522.3556_core_rknd,         &
-    562.30804_core_rknd, 604.947_core_rknd, 650.42645_core_rknd,         &
-    698.9074_core_rknd, 750.55835_core_rknd, 805.55554_core_rknd,        &
-    864.0828_core_rknd, 926.3325_core_rknd, 992.5052_core_rknd,          &
-    1062.8102_core_rknd, 1137.4657_core_rknd, 1216.6995_core_rknd,       &
-    1300.7483_core_rknd, 1389.8594_core_rknd, 1484.2896_core_rknd,       &
-    1584.3064_core_rknd, 1690.1881_core_rknd, 1802.224_core_rknd,        &
-    1920.7146_core_rknd, 2045.9724_core_rknd, 2178.3218_core_rknd,       &
-    2318.099_core_rknd, 2465.654_core_rknd, 2621.3489_core_rknd,         &
-    2785.5596_core_rknd, 2958.6758_core_rknd, 3141.101_core_rknd,        &
-    3333.2534_core_rknd, 3535.5657_core_rknd, 3748.4863_core_rknd,       &
-    3972.4792_core_rknd, 4208.024_core_rknd, 4455.616_core_rknd,         &
-    4715.7686_core_rknd, 4989.0127_core_rknd, 5275.8945_core_rknd,       &
-    5576.9795_core_rknd, 5892.8535_core_rknd, 6224.116_core_rknd,        &
-    6571.3926_core_rknd, 6935.3213_core_rknd, 7316.5674_core_rknd,       &
-    7715.8105_core_rknd, 8133.755_core_rknd, 8571.125_core_rknd,         &
-    9028.667_core_rknd, 9507.15_core_rknd, 10007.367_core_rknd,          &
-    10530.132_core_rknd, 11076.282_core_rknd, 11646.683_core_rknd,       &
-    12242.221_core_rknd, 12863.808_core_rknd, 13512.384_core_rknd,       &
-    14188.913_core_rknd, 14894.385_core_rknd, 15629.823_core_rknd,       &
-    16396.268_core_rknd, 17194.799_core_rknd, 18026.516_core_rknd,       &
-    18892.55_core_rknd, 19794.07_core_rknd, 20732.262_core_rknd,         &
-    21708.352_core_rknd, 22723.592_core_rknd, 23779.273_core_rknd,       &
-    24876.709_core_rknd, 26017.258_core_rknd, 27202.3_core_rknd,         &
-    28433.256_core_rknd, 29711.578_core_rknd, 31038.766_core_rknd /
+    0.049560547_core_rknd, 0.059753418_core_rknd, 0.070129395_core_rknd, 0.083618164_core_rknd, &
+    0.09814453_core_rknd, 0.11444092_core_rknd, 0.13446045_core_rknd, 0.15686035_core_rknd,     &
+    0.18218994_core_rknd, 0.21240234_core_rknd, 0.24725342_core_rknd, 0.28668213_core_rknd,     &
+    0.33184814_core_rknd, 0.3826294_core_rknd, 0.4416504_core_rknd, 0.50775146_core_rknd,       &
+    0.58343506_core_rknd, 0.6694946_core_rknd, 0.7668457_core_rknd, 0.87750244_core_rknd,       &
+    1.0023804_core_rknd, 1.1434937_core_rknd, 1.3028564_core_rknd, 1.482544_core_rknd,          &
+    1.6847534_core_rknd, 1.9118042_core_rknd, 2.1671143_core_rknd, 2.4535522_core_rknd,         &
+    2.774231_core_rknd, 3.1330566_core_rknd, 3.5343628_core_rknd, 3.9819336_core_rknd,          &
+    4.480713_core_rknd, 5.036072_core_rknd, 5.6540527_core_rknd, 6.340088_core_rknd,            &
+    7.1015015_core_rknd, 7.9450684_core_rknd, 8.8793335_core_rknd, 9.91217_core_rknd,           &
+    11.053528_core_rknd, 12.313049_core_rknd, 13.70166_core_rknd, 15.231018_core_rknd,          &
+    16.91394_core_rknd, 18.764038_core_rknd, 20.795898_core_rknd, 23.025574_core_rknd,          &
+    25.470093_core_rknd, 28.147766_core_rknd, 31.078003_core_rknd, 34.282043_core_rknd,         &
+    37.782593_core_rknd, 41.60382_core_rknd, 45.771606_core_rknd, 50.31366_core_rknd,           &
+    55.259644_core_rknd, 60.641174_core_rknd, 66.492004_core_rknd, 72.84802_core_rknd,          &
+    79.74756_core_rknd, 87.23126_core_rknd, 95.34259_core_rknd, 104.12747_core_rknd,            &
+    113.634796_core_rknd, 123.91641_core_rknd, 135.02725_core_rknd, 147.02563_core_rknd,        &
+    159.97308_core_rknd, 173.93488_core_rknd, 188.97995_core_rknd, 205.18109_core_rknd,         &
+    222.61517_core_rknd, 241.36334_core_rknd, 261.51108_core_rknd, 283.14853_core_rknd,         &
+    306.37054_core_rknd, 331.27698_core_rknd, 357.97278_core_rknd, 386.56842_core_rknd,         &
+    417.17978_core_rknd, 449.9286_core_rknd, 484.94254_core_rknd, 522.3556_core_rknd,           &
+    562.30804_core_rknd, 604.947_core_rknd, 650.42645_core_rknd, 698.9074_core_rknd,            &
+    750.55835_core_rknd, 805.55554_core_rknd, 864.0828_core_rknd, 926.3325_core_rknd,           &
+    992.5052_core_rknd, 1062.8102_core_rknd, 1137.4657_core_rknd, 1216.6995_core_rknd,          &
+    1300.7483_core_rknd, 1389.8594_core_rknd, 1484.2896_core_rknd, 1584.3064_core_rknd,         &
+    1690.1881_core_rknd, 1802.224_core_rknd, 1920.7146_core_rknd, 2045.9724_core_rknd,          &
+    2178.3218_core_rknd, 2318.099_core_rknd, 2465.654_core_rknd, 2621.3489_core_rknd,           &
+    2785.5596_core_rknd, 2958.6758_core_rknd, 3141.101_core_rknd, 3333.2534_core_rknd,          &
+    3535.5657_core_rknd, 3748.4863_core_rknd, 3972.4792_core_rknd, 4208.024_core_rknd,          &
+    4455.616_core_rknd, 4715.7686_core_rknd, 4989.0127_core_rknd, 5275.8945_core_rknd,          &
+    5576.9795_core_rknd, 5892.8535_core_rknd, 6224.116_core_rknd, 6571.3926_core_rknd,          &
+    6935.3213_core_rknd, 7316.5674_core_rknd, 7715.8105_core_rknd, 8133.755_core_rknd,          &
+    8571.125_core_rknd, 9028.667_core_rknd, 9507.15_core_rknd, 10007.367_core_rknd,             &
+    10530.132_core_rknd, 11076.282_core_rknd, 11646.683_core_rknd, 12242.221_core_rknd,         &
+    12863.808_core_rknd, 13512.384_core_rknd, 14188.913_core_rknd, 14894.385_core_rknd,         &
+    15629.823_core_rknd, 16396.268_core_rknd, 17194.799_core_rknd, 18026.516_core_rknd,         &
+    18892.55_core_rknd, 19794.07_core_rknd, 20732.262_core_rknd, 21708.352_core_rknd,           &
+    22723.592_core_rknd, 23779.273_core_rknd, 24876.709_core_rknd, 26017.258_core_rknd,         &
+    27202.3_core_rknd, 28433.256_core_rknd, 29711.578_core_rknd, 31038.766_core_rknd /
 
   contains
 
