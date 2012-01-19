@@ -769,7 +769,7 @@ module PDF_integrals_all_mixed_moments
     implicit none
 
     ! Input Variables
-    real( kind = dp ) intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
       mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x3_n,    & ! Mean of ln x3 (ith PDF component)                     [-]
