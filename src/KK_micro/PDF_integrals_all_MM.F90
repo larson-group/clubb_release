@@ -350,7 +350,7 @@ module PDF_integrals_all_mixed_moments
                    + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q**2  &
                    + one_half_dp * sigma_x4_n**2 * gamma_exp**2 * q**2  &
                    + rho_x3x4_n * sigma_x3_n * beta_exp  &
-                     * sigma_x4_n * gamma_exp * q**2  &
+                                * sigma_x4_n * gamma_exp * q**2  &
                  )
 
        enddo
