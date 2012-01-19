@@ -39,10 +39,13 @@ module KK_upscaled_covariances
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)                       [-]
       mu_x_2,        & ! Mean of x (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
@@ -73,11 +76,11 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       covar_x_KK_evap  ! Covariance between x and KK evaporation tendency    [-]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 1.0,       & ! Exponent on s                               [-]
       beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
       gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
@@ -127,10 +130,13 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         trivar_NLL_mean_eq  ! Procedure
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
       mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
@@ -162,11 +168,11 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       covar_rt_KK_evap  ! Covariance between r_t and KK evaporation tendency [-]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 1.0,       & ! Exponent on s                               [-]
       beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
       gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
@@ -236,10 +242,13 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         trivar_NLL_mean_eq  ! Procedure
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
       mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
@@ -271,11 +280,11 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       covar_thl_KK_evap  ! Covariance between th_l and KK evap. tendency     [-]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 1.0,       & ! Exponent on s                               [-]
       beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
       gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
@@ -343,10 +352,13 @@ module KK_upscaled_covariances
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)                       [-]
       mu_x_2,        & ! Mean of x (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
@@ -370,11 +382,11 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       covar_x_KK_auto  ! Covariance between x and KK autoconversion tendency [-]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 2.47,  & ! Exponent on s                                   [-]
       beta_exp  = -1.79    ! Exponent on r_r                                 [-]
 
@@ -417,10 +429,13 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         bivar_NL_mean_eq  ! Procedure
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
       mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
@@ -445,11 +460,11 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       covar_rt_KK_auto  ! Covariance between r_t and KK autoconv. tendency   [-]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 2.47,  & ! Exponent on s                                   [-]
       beta_exp  = -1.79    ! Exponent on r_r                                 [-]
 
@@ -504,10 +519,13 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         bivar_NL_mean_eq  ! Procedure
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
       mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
@@ -532,11 +550,11 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       covar_thl_KK_auto  ! Covariance between th_l and KK autoconv. tendency [-]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 2.47,  & ! Exponent on s                                   [-]
       beta_exp  = -1.79    ! Exponent on r_r                                 [-]
 
@@ -591,10 +609,13 @@ module KK_upscaled_covariances
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)                       [-]
       mu_x_2,        & ! Mean of x (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
@@ -618,11 +639,11 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       covar_x_KK_accr  ! Covariance between x and KK accretion tendency      [-]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 1.15, & ! Exponent on s                                    [-]
       beta_exp  = 1.15    ! Exponent on r_r                                  [-]
 
@@ -665,10 +686,13 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         bivar_NL_mean_eq
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
       mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
@@ -693,11 +717,11 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       covar_rt_KK_accr  ! Covariance between r_t and KK accretion tendency   [-]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 1.15, & ! Exponent on s                                    [-]
       beta_exp  = 1.15    ! Exponent on r_r                                  [-]
 
@@ -752,10 +776,13 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         bivar_NL_mean_eq
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_t_1,        & ! Mean of t (1st PDF component)                       [-]
       mu_t_2,        & ! Mean of t (2nd PDF component)                       [-]
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
@@ -780,11 +807,11 @@ module KK_upscaled_covariances
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       covar_thl_KK_accr  ! Covariance between th_l and KK accretion tendency [-]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 1.15, & ! Exponent on s                                    [-]
       beta_exp  = 1.15    ! Exponent on r_r                                  [-]
 
@@ -861,12 +888,13 @@ module KK_upscaled_covariances
         parab_cyl_max_input
 
     use clubb_precision, only: &
-        dp ! double precision
+        dp,        & ! double precision
+        core_rknd    ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_x_i,       & ! Mean of x (ith PDF component)                       [-]
       mu_s_i,       & ! Mean of s (ith PDF component)                       [-]
       mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
@@ -882,19 +910,19 @@ module KK_upscaled_covariances
       corr_sNr_i_n, & ! Correlation between s and ln Nr (ith PDF component) [-]
       corr_rrNr_n     ! Correlation between ln rr & ln Nr (both components) [-]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       x_mean,        & ! Mean of x (overall)                       [units vary]
       mc_tndcy_mean, & ! Mean of microphysics tendency              [(kg/kg)/s]
       mc_coef,       & ! Coefficient of microphysics tendency       [(kg/kg)/s]
       x_tol            ! Tolerance value of x                      [units vary]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       alpha_exp_in,  & ! Exponent alpha, corresponding to s                 [-]
       beta_exp_in,   & ! Exponent beta, corresponding to rr                 [-]
       gamma_exp_in     ! Exponent gamma, corresponding to Nr                [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       quadrivar_NNLL_covar_eq
 
     ! Local Variables
@@ -1004,7 +1032,8 @@ module KK_upscaled_covariances
                                            sigma_x3_n, sigma_x4_n, &
                                            rho_x3x4_n, x1_mean, &
                                            x2_alpha_x3_beta_x4_gamma_mean, &
-                                           alpha_exp, beta_exp, gamma_exp ) )
+                                           alpha_exp, beta_exp, gamma_exp ),  &
+         kind = core_rknd )
 
 
     elseif ( sigma_x1 <= x1_tol ) then
@@ -1017,7 +1046,8 @@ module KK_upscaled_covariances
                                         rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
                                         x1_mean, &
                                         x2_alpha_x3_beta_x4_gamma_mean, &
-                                        alpha_exp, beta_exp, gamma_exp ) )
+                                        alpha_exp, beta_exp, gamma_exp ),  &
+         kind = core_rknd )
 
 
     elseif ( sigma_x2 <= x2_tol .or.  &
@@ -1031,7 +1061,8 @@ module KK_upscaled_covariances
                                         rho_x1x3_n, rho_x1x4_n, rho_x3x4_n, &
                                         x1_mean, &
                                         x2_alpha_x3_beta_x4_gamma_mean, &
-                                        alpha_exp, beta_exp, gamma_exp ) )
+                                        alpha_exp, beta_exp, gamma_exp ),  &
+         kind = core_rknd )
 
 
     else  ! sigma_x1 > 0 and sigma_x2 > 0.
@@ -1045,7 +1076,8 @@ module KK_upscaled_covariances
                                rho_x1x2, rho_x1x3_n, rho_x1x4_n, &
                                rho_x2x3_n, rho_x2x4_n, rho_x3x4_n, &
                                x1_mean, x2_alpha_x3_beta_x4_gamma_mean, &
-                               alpha_exp, beta_exp, gamma_exp ) )
+                               alpha_exp, beta_exp, gamma_exp ),  &
+         kind = core_rknd )
 
 
     endif
@@ -1093,12 +1125,13 @@ module KK_upscaled_covariances
         parab_cyl_max_input
 
     use clubb_precision, only: &
-        dp ! double precision
+        dp,        & ! double precision
+        core_rknd    ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_x_i,      & ! Mean of x (ith PDF component)                        [-]
       mu_s_i,      & ! Mean of s (ith PDF component)                        [-]
       mu_y_n,      & ! Mean of ln y (both components)                       [-]
@@ -1109,18 +1142,18 @@ module KK_upscaled_covariances
       corr_xy_i_n, & ! Correlation between x and ln y (ith PDF component)   [-]
       corr_sy_i_n    ! Correlation between s and ln y (ith PDF component)   [-]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       x_mean,        & ! Mean of x (overall)                       [units vary]
       mc_tndcy_mean, & ! Mean of microphysics tendency              [(kg/kg)/s]
       mc_coef,       & ! Coefficient of microphysics                [(kg/kg)/s]
       x_tol            ! Tolerance value of x                      [units vary]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       alpha_exp_in,  & ! Exponent alpha, corresponding to s                 [-]
       beta_exp_in      ! Exponent beta, corresponding to y                  [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       trivar_NNL_covar_eq
 
     ! Local Variables
@@ -1217,7 +1250,8 @@ module KK_upscaled_covariances
        = real( &
          trivar_NNL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
                                        x1_mean, x2_alpha_x3_beta_mean, &
-                                       alpha_exp, beta_exp ) )
+                                       alpha_exp, beta_exp ),  &
+         kind = core_rknd )
 
 
     elseif ( sigma_x1 <= x1_tol ) then
@@ -1227,7 +1261,8 @@ module KK_upscaled_covariances
        = real( trivar_NNL_covar_const_x1( mu_x1, mu_x2, mu_x3_n, &
                                           sigma_x2, sigma_x3_n, rho_x2x3_n, &
                                           x1_mean, x2_alpha_x3_beta_mean, &
-                                          alpha_exp, beta_exp ) )
+                                          alpha_exp, beta_exp ),  &
+               kind = core_rknd )
 
 
     elseif ( sigma_x2 <= x2_tol .or.  &
@@ -1238,7 +1273,8 @@ module KK_upscaled_covariances
        = real( trivar_NNL_covar_const_x2( mu_x1, mu_x2, mu_x3_n, &
                                           sigma_x1, sigma_x3_n, rho_x1x3_n, &
                                           x1_mean, x2_alpha_x3_beta_mean, &
-                                          alpha_exp, beta_exp ) )
+                                          alpha_exp, beta_exp ),  &
+               kind = core_rknd )
 
 
     else  ! sigma_x1 > 0 and sigma_x2 > 0.
@@ -1250,7 +1286,7 @@ module KK_upscaled_covariances
                                  sigma_x1, sigma_x2, sigma_x3_n, &
                                  rho_x1x2, rho_x1x3_n, rho_x2x3_n, &
                                  x1_mean, x2_alpha_x3_beta_mean, &
-                                 alpha_exp, beta_exp ) )
+                                 alpha_exp, beta_exp ), kind = core_rknd )
 
 
     endif

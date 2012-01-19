@@ -31,10 +31,13 @@ module KK_upscaled_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
       mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
       mu_rr_n,       & ! Mean of ln rr (both components)                     [-]
@@ -52,11 +55,11 @@ module KK_upscaled_means
       mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_evap_upscaled_mean  ! Mean of KK evaporation tendency       [(kg/kg)/s]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 1.0,       & ! Exponent on s                               [-]
       beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
       gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
@@ -94,10 +97,13 @@ module KK_upscaled_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_s_1,       & ! Mean of s (1st PDF component)                       [-]
       mu_s_2,       & ! Mean of s (2nd PDF component)                       [-]
       mu_Nc_n,      & ! Mean of ln Nc (both components)                     [-]
@@ -110,11 +116,11 @@ module KK_upscaled_means
       mixt_frac       ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_auto_upscaled_mean  ! Mean of KK autoconversion tendency   [(kg/kg)/s]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 2.47,  & ! Exponent on s                                  [-]
       beta_exp  = -1.79    ! Exponent on r_r                                [-]
 
@@ -147,10 +153,13 @@ module KK_upscaled_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_s_1,       & ! Mean of s (1st PDF component)                       [-]
       mu_s_2,       & ! Mean of s (2nd PDF component)                       [-]
       mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
@@ -163,11 +172,11 @@ module KK_upscaled_means
       mixt_frac       ! Mixture fraction                                    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_accr_upscaled_mean  ! Mean of KK accretion tendency        [(kg/kg)/s]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 1.15, & ! Exponent on s                                   [-]
       beta_exp  = 1.15    ! Exponent on r_r                                 [-]
 
@@ -199,10 +208,13 @@ module KK_upscaled_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_rr_n,     & ! Mean of ln rr (both components)                     [-]
       mu_Nr_n,     & ! Mean of ln Nr (both components)                     [-]
       sigma_rr_n,  & ! Standard deviation of ln rr (both components)       [-]
@@ -211,11 +223,11 @@ module KK_upscaled_means
       KK_mvr_coef    ! KK mean volume radius coefficient                   [m]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_mvr_upscaled_mean  ! Mean of KK rain drop mean volume radius      [m]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = (1.0/3.0),  & ! Exponent on r_r                          [-]
       beta_exp  = (-1.0/3.0)    ! Exponent on N_r                          [-]
 
@@ -263,12 +275,13 @@ module KK_upscaled_means
         parab_cyl_max_input
 
     use clubb_precision, only: &
-        dp ! double precision
+        dp,        & ! double precision
+        core_rknd    ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_s_i,       & ! Mean of s (ith PDF component)                       [-]
       mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
       mu_Nr_n,      & ! Mean of ln Nr (both components)                     [-]
@@ -279,13 +292,13 @@ module KK_upscaled_means
       corr_sNr_i_n, & ! Correlation between s and ln Nr (ith PDF component) [-]
       corr_rrNr_n     ! Correlation between ln rr & ln Nr (both components) [-]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       alpha_exp_in,  & ! Exponent alpha, corresponding to s                 [-]
       beta_exp_in,   & ! Exponent beta, corresponding to rr                 [-]
       gamma_exp_in     ! Exponent gamma, corresponding to Nr                [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       trivar_NLL_mean_eq
 
     ! Local Variables
@@ -370,7 +383,8 @@ module KK_upscaled_means
        trivar_NLL_mean_eq  &
        = real( trivar_NLL_mean_const_x1( mu_x1, mu_x2_n, mu_x3_n, &
                                          sigma_x2_n, sigma_x3_n, rho_x2x3_n, &
-                                         alpha_exp, beta_exp, gamma_exp ) )
+                                         alpha_exp, beta_exp, gamma_exp ),  &
+               kind = core_rknd )
 
 
     else  ! sigma_x1 > 0
@@ -380,7 +394,8 @@ module KK_upscaled_means
        = real( trivar_NLL_mean( mu_x1, mu_x2_n, mu_x3_n, &
                                 sigma_x1, sigma_x2_n, sigma_x3_n, &
                                 rho_x1x2_n, rho_x1x3_n, rho_x2x3_n, &
-                                alpha_exp, beta_exp, gamma_exp ) )
+                                alpha_exp, beta_exp, gamma_exp ),  &
+               kind = core_rknd )
 
 
     endif
@@ -421,24 +436,25 @@ module KK_upscaled_means
         parab_cyl_max_input
 
     use clubb_precision, only: &
-        dp ! double precision
+        dp,        & ! double precision
+        core_rknd    ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_s_i,      & ! Mean of s (ith PDF component)                        [-]
       mu_y_n,      & ! Mean of ln y (both components)                       [-]
       sigma_s_i,   & ! Standard deviation of s (ith PDF component)          [-]
       sigma_y_n,   & ! Standard deviation of ln y (both components)         [-]
       corr_sy_i_n    ! Correlation between s and ln y (ith PDF component)   [-]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       alpha_exp_in,  & ! Exponent alpha, corresponding to s                 [-]
       beta_exp_in      ! Exponent beta, corresponding to y                  [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       bivar_NL_mean_eq
 
     ! Local Variables
@@ -512,7 +528,7 @@ module KK_upscaled_means
        ! The ith PDF component variance of s is 0.
        bivar_NL_mean_eq  &
        = real( bivar_NL_mean_const_x1( mu_x1, mu_x2_n, sigma_x2_n, &
-                                       alpha_exp, beta_exp ) )
+                                       alpha_exp, beta_exp ), kind = core_rknd )
 
 
     else  ! sigma_x1 > 0
@@ -520,7 +536,8 @@ module KK_upscaled_means
        ! All fields vary in the ith PDF component.
        bivar_NL_mean_eq  &
        = real( bivar_NL_mean( mu_x1, mu_x2_n, sigma_x1, sigma_x2_n, &
-                              rho_x1x2_n, alpha_exp, beta_exp ) )
+                              rho_x1x2_n, alpha_exp, beta_exp ),  &
+               kind = core_rknd )
 
 
     endif
@@ -551,24 +568,25 @@ module KK_upscaled_means
         bivar_LL_mean  ! Procedure(s)
 
     use clubb_precision, only: &
-        dp ! double precision
+        dp,        & ! double precision
+        core_rknd    ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
       mu_Nr_n,      & ! Mean of ln Nr (both components)                     [-]
       sigma_rr_n,   & ! Standard deviation of ln rr (both components)       [-]
       sigma_Nr_n,   & ! Standard deviation of ln Nr (both components)       [-]
       corr_rrNr_n     ! Correlation between ln rr & ln Nr (both components) [-]
 
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       alpha_exp_in,  & ! Exponent alpha, corresponding to rr                [-]
       beta_exp_in      ! Exponent beta, corresponding to Nr                 [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       bivar_LL_mean_eq
 
     ! Local Variables
@@ -603,7 +621,8 @@ module KK_upscaled_means
     ! Calculate the mean of the bivariate lognormal equation.
     bivar_LL_mean_eq  &
     = real( bivar_LL_mean( mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, &
-                           rho_x1x2_n, alpha_exp, beta_exp ) )
+                           rho_x1x2_n, alpha_exp, beta_exp ),  &
+            kind = core_rknd )
 
 
     return

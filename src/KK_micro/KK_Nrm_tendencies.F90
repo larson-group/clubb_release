@@ -49,16 +49,19 @@ module KK_Nrm_tendencies
     !  -- Eq. 23.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       KK_rrm_evap_tndcy, & ! Mean < dr_r/dt > due to evaporation    [(kg/kg)/s]
       Nrm,               & ! Mean rain drop concentration, < N_r >  [num/kg]
       rrm                  ! Mean rain water mixing ratio, < r_r >  [kg/kg]
 
     ! Return Variables
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_Nrm_evap  ! KK rain drop concentration evaporation rate    [(kg/kg)/s]
  
 
@@ -103,19 +106,22 @@ module KK_Nrm_tendencies
     use parameters_microphys, only: &
         r_0 ! Constant(s)
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       KK_rrm_auto_tndcy  ! KK rain water autoconversion rate   [(kg/kg)/s]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_Nrm_auto  ! KK rain drop concentration autoconversion rate [(kg/kg)/s]
 
 
     ! Production of N_r through autoconversion.
-    KK_Nrm_auto = KK_rrm_auto_tndcy / ( (4.0/3.0) * real(pi) * real(rho_lw) * real(r_0)**3 )
+    KK_Nrm_auto = KK_rrm_auto_tndcy / ( (4.0/3.0) * pi * rho_lw * r_0**3 )
 
 
     return

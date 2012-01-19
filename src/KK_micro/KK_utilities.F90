@@ -37,15 +37,18 @@ module KK_utilities
     !  -- App. B.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       mu_x,        & ! Mean of x (ith PDF component)       [-]
       sigma_sqd_x    ! Variance of x (ith PDF component)   [-]
 
     ! Return Variable
-    real ::  &
+    real( kind = core_rknd ) ::  &
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
@@ -56,7 +59,7 @@ module KK_utilities
 
   !=============================================================================
   pure function mean_L2N_dp( mu_x, sigma_sqd_x )  &
-    result( mu_x_n )
+  result( mu_x_n )
   
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the mean of
@@ -72,7 +75,7 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      dp ! double precision
+        dp ! double precision
 
     implicit none
 
@@ -93,7 +96,7 @@ module KK_utilities
 
   !=============================================================================
   pure function stdev_L2N( mu_x, sigma_sqd_x )  &
-    result( sigma_x_n )
+  result( sigma_x_n )
 
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the standard
@@ -108,15 +111,18 @@ module KK_utilities
     !  -- App. B.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       mu_x,        & ! Mean of x (ith PDF component)       [-]
       sigma_sqd_x    ! Variance of x (ith PDF component)   [-]
 
     ! Return Variable
-    real ::  &
+    real( kind = core_rknd ) ::  &
       sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
 
     ! Find the standard deviation of ln x for the ith component of the PDF.
@@ -144,7 +150,7 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      dp ! double precision
+        dp ! double precision
 
     implicit none
 
@@ -181,15 +187,18 @@ module KK_utilities
     !  -- Eq. B-1.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       corr_xy,   & ! Correlation between x and y (ith PDF component)  [-]
       sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
 
     ! Return Variable
-    real ::  &
+    real( kind = core_rknd ) ::  &
       corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
 
     ! Find the correlation between x and ln y for the ith component of the PDF.
@@ -218,7 +227,7 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      dp ! double precision
+        dp ! double precision
 
     implicit none
 
@@ -255,16 +264,19 @@ module KK_utilities
     !  -- Eq. C-3.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       corr_xy,   & ! Correlation between x and y (ith PDF component)  [-]
       sigma_x_n, & ! Standard deviation of ln x (ith PDF component)   [-]
       sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
 
     ! Return Variable
-    real ::  &
+    real( kind = core_rknd ) ::  &
       corr_xy_n  ! Correlation between ln x and ln y (ith PDF component)  [-]
 
     ! Find the correlation between ln x and ln y for the ith component of the
@@ -296,7 +308,7 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      dp ! double precision
+        dp ! double precision
 
     implicit none
 
@@ -366,7 +378,7 @@ module KK_utilities
         gamma  ! Procedure(s)
 
     use clubb_precision, only: &
-      dp ! double precision
+        dp ! double precision
 
     implicit none
 
@@ -507,10 +519,13 @@ module KK_utilities
     !  -- Eq. 13 and 14.
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       crt_i,       & ! Coefficient of r_t for s' (ith PDF component)         [-]
       cthl_i,      & ! Coefficient of th_l for s' (ith PDF component)      [1/K]
       sigma_rt_i,  & ! Standard deviation of r_t (ith PDF component)     [kg/kg]
@@ -520,7 +535,7 @@ module KK_utilities
       corr_thlx_i    ! Correlation between th_l and x (ith PDF component)    [-]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       corr_sx_i  ! Correlation of s and x (ith PDF component)   [-]
 
 
@@ -578,16 +593,16 @@ module KK_utilities
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       T_in_K,  & ! Temperature  [K]
       p_in_Pa    ! Pressure     [Pa]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       G_T_p  ! Function G(T,p) as found in the evaporation equation  [m^2/s]
 
     ! Local Variables
-    real :: &
+    real( kind = core_rknd ) :: &
       Ka,      & ! Coefficient of thermal conductivity of air          [J/(msK)]
       Dv,      & ! Coefficient of diffusion of water vapor in air      [m^2/s]
       Fk,      & ! Term in denominator associated with heat conduction [s/m^2]
@@ -597,24 +612,25 @@ module KK_utilities
 
 
     ! Temperature in degrees Celsius.
-    Celsius = T_in_K - real(T_freeze_K)
+    Celsius = T_in_K - T_freeze_K
 
     ! Coefficient of thermal conductivity of air.
-    Ka = ( 5.69 + 0.017 * Celsius ) * 0.00001  ! Ka in cal./(cm.*sec.*C)
-    Ka = 4.1868 * 100.0 * Ka                   ! Ka in J./(m.*sec.*K)
+    Ka = ( 5.69_core_rknd + 0.017_core_rknd * Celsius )  &
+         * 0.00001_core_rknd                       ! Ka in cal./(cm.*sec.*C)
+    Ka = 4.1868_core_rknd * 100.0_core_rknd * Ka   ! Ka in J./(m.*sec.*K)
 
     ! Coefficient of diffusion of water vapor in air.
-    Dv = 0.221 * ( (T_in_K/273.16)**1.94 ) * ( 101325.0 / p_in_Pa )
-                       ! Dv in (cm.^2)/sec.  ! .221 is correct.
-    Dv = Dv / 10000.0  ! Dv in (m.^2)/sec.
+    Dv = 0.221_core_rknd * ( (T_in_K/273.16_core_rknd)**1.94_core_rknd )  &
+         * ( 101325.0_core_rknd / p_in_Pa )   ! Dv in (cm.^2)/sec.
+    Dv = Dv / 10000.0_core_rknd               ! Dv in (m.^2)/sec.
 
     ! Calculate saturation mixing ratio and saturation vapor pressure.
-    esatv = real(sat_vapor_press_liq( real(T_in_K, kind = core_rknd )))
+    esatv = sat_vapor_press_liq( T_in_K )
 
     ! The values of F_k and F_d are found in Rogers and Yau (1989);
     ! Eq. 7.17 and 7.18.
-    Fk = ( real(Lv) / ( real(Rv) * T_in_K ) - 1.0 ) * ( real(Lv) * real(rho_lw) ) / ( Ka * T_in_K )
-    Fd = ( real(rho_lw) * real(Rv) * T_in_K ) / ( Dv * esatv )
+    Fk = ( Lv / ( Rv * T_in_K ) - 1.0 ) * ( Lv * rho_lw ) / ( Ka * T_in_K )
+    Fd = ( rho_lw * Rv * T_in_K ) / ( Dv * esatv )
 
     ! Calculate G(T,p).
     G_T_p = 1.0 / (Fk + Fd)

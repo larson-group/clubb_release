@@ -21,21 +21,24 @@ module KK_local_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mean_s,       & ! Mean value of extended liquid water mixing ratio     [-]
       rrm,          & ! Mean rain water mixing ratio                         [-]
       Nrm,          & ! Mean rain drop concentration                         [-]
       KK_evap_coef    ! KK evaporation coefficient                   [(kg/kg)/s]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_evap_local_mean  ! Mean of KK evaporation tendency          [(kg/kg)/s]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 1.0,       & ! Exponent on s                               [-]
       beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
       gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
@@ -67,20 +70,23 @@ module KK_local_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mean_s,       & ! Mean value of extended liquid water mixing ratio    [-]
       Ncm,          & ! Mean cloud droplet concentration                    [-]
       KK_auto_coef    ! KK autoconversion coefficient               [(kg/kg)/s]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_auto_local_mean  ! Mean of KK autoconversion tendency      [(kg/kg)/s]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 2.47,  & ! Exponent on s                                  [-]
       beta_exp  = -1.79    ! Exponent on N_c                                [-]
 
@@ -110,20 +116,23 @@ module KK_local_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mean_s,       & ! Mean value of extended liquid water mixing ratio    [-]
       rrm,          & ! Mean rain water mixing ratio                        [-]
       KK_accr_coef    ! KK accretion coefficient                    [(kg/kg)/s]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_accr_local_mean  ! Mean of KK accretion tendency           [(kg/kg)/s]
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = 1.15, & ! Exponent on s                                   [-]
       beta_exp  = 1.15    ! Exponent on r_r                                 [-]
 
@@ -153,20 +162,23 @@ module KK_local_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
     implicit none
 
     ! Input Variables
-    real, intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       rrm,         & ! Mean rain water mixing ratio        [-]
       Nrm,         & ! Mean rain drop concentration        [-]
       KK_mvr_coef    ! KK mean volume radius coefficient   [m]
 
     ! Return Variable
-    real :: &
+    real( kind = core_rknd ) :: &
       KK_mvr_local_mean  ! Mean
 
     ! Constant Parameters
-    real, parameter :: &
+    real( kind = core_rknd ), parameter :: &
       alpha_exp = (1.0/3.0),  & ! Exponent on r_r          [-]
       beta_exp  = (-1.0/3.0)    ! Exponent on N_r          [-]
 
