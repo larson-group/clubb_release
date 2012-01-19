@@ -19,7 +19,7 @@ module coamps_micro_driver_module
            rtm, wm_zm, p_in_Pa, exner, rho, & 
            thlm, ricem, rrainm, rgraupelm, rsnowm, & 
            rcm, Ncm, Nrm, Ncnm, Nim, & 
-           cond, Vsnow, Vice, Vrr, VNr, Vgraupel, & 
+           cond, Vrsnow, Vrice, Vrr, VNr, Vrgraupel, & 
            ritend, rrtend, rgtend,  & 
            rsnowtend, nrmtend, & 
            rvm_mc, rcm_mc, thlm_mc )
@@ -198,11 +198,11 @@ module coamps_micro_driver_module
       nrmtend       ! d(Nrm)/dt                  [count/kg/s]
 
     real(kind = core_rknd), dimension(gr%nz), intent(out) :: & 
-      Vrr,      & ! Rain mixing ratio fall speed   [m/s]
-      VNr,      & ! Rain conc. fall speed          [m/s]
-      Vsnow,    & ! Snow fall speed                [m/s]
-      Vgraupel, & ! Graupel fall speed             [m/s]
-      Vice     ! Pristine ice fall speed        [m/s]
+      Vrr,       & ! Rain mixing ratio fall speed        [m/s]
+      VNr,       & ! Rain conc. fall speed               [m/s]
+      Vrsnow,    & ! Snow mixing ratio fall speed        [m/s]
+      Vrgraupel, & ! Graupel fall speed                  [m/s]
+      Vrice      ! Pristine ice mixing ratio fall speed  [m/s]
 
 ! Local Variables
 
@@ -861,9 +861,9 @@ module coamps_micro_driver_module
 
       Vrr      = zt2zm( real(fallr(1,1,:), kind = core_rknd) )
       VNr      = zt2zm( real(falln(1,1,:), kind = core_rknd) )
-      Vsnow    = zt2zm( real(snowv(1,1,:), kind = core_rknd) )
-      Vice     = zt2zm( real(falli(1,1,:), kind = core_rknd) )
-      Vgraupel = zt2zm( real(fallg(1,1,:), kind = core_rknd) )
+      Vrsnow    = zt2zm( real(snowv(1,1,:), kind = core_rknd) )
+      Vrice     = zt2zm( real(falli(1,1,:), kind = core_rknd) )
+      Vrgraupel = zt2zm( real(fallg(1,1,:), kind = core_rknd) )
 
 ! Compute tendencies
       do k=1, kk, 1

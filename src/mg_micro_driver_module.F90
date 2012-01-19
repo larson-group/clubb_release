@@ -12,7 +12,7 @@ module mg_micro_driver_module
   subroutine mg_microphys_driver &
              ( dt, nz, l_stats_samp, invrs_dzt, thlm, p_in_Pa, exner, &
                rho, pdf_params, rcm, rvm, Ncnm, hydromet, &
-               hydromet_mc, rcm_mc, rvm_mc, thlm_mc )
+               hydromet_mc, hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
 !   Wrapper for the Morrison-Gettelman microphysics
 ! References:
@@ -53,14 +53,16 @@ module mg_micro_driver_module
       ircm_in_cloud, &
       iNsnowm,       &
       iNrm,          &
-      iVrr,          &
-      iVrr_mass,     &
       iVNr,          &
-      iVNr_mass,     &
-      iVsnow,        &
-      iVsnow_mass,   &
-      iVice,         &
-      iVice_mass
+      iVrr,          &
+      iVNc,          &
+      iVrc,          &
+      iVNsnow,       &
+      iVrsnow,       &
+      iVNice,        &
+      iVrice,        &
+      ircm_sd_mg_morr,&
+      iricem_sd_mg_morr
 
     use stats_type, only:  & 
       stat_update_var, &
@@ -152,7 +154,8 @@ module mg_micro_driver_module
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
-      hydromet_mc   ! Hydrometeor time tendency          [(units vary)/s]
+      hydromet_mc, &  ! Hydrometeor time tendency          [(units vary)/s]
+      hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -176,7 +179,9 @@ module mg_micro_driver_module
       effc,         & ! Droplet effective radius                                      [μ]
       effi,         & ! cloud ice effective radius                                    [μ]
       reff_rain,    & ! rain effective radius                                         [μ]
-      reff_snow       ! snow effective radius                                         [μ]
+      reff_snow,    & ! snow effective radius                                         [μ]
+      ricem_sten,   & ! Ice sedimentation tendency                                    [kg/kg/s]
+      rcm_sten        ! Cloud dropet sedimentation tendency                           [kg/kg/s]
 
     real(r8), dimension(pcols,nz) :: & 
       turbtype_flip,& ! Turbulence type at each interface                             [-]
@@ -258,8 +263,7 @@ module mg_micro_driver_module
       rrainm_accr, &  ! Accretion rate                      [kg/kg/s]
       rcm_in_cloud, & ! Liquid water in cloud               [kg/kg]
       Nsnowm,       & ! Snow particle number concentration  [num/kg]
-      Nrm,          & ! Rain droplet number concentration   [num/kg]
-      cloud_frac_max  ! Cloud frac assuming max overlap     [-]
+      Nrm             ! Rain droplet number concentration   [num/kg]
 
     ! MG zm variables that are diagnostics.
     real(r8), dimension(nz-1) :: &
@@ -276,14 +280,14 @@ module mg_micro_driver_module
 
     ! The above variables flipped to the CLUBB zm grid
     real( kind = core_rknd ), dimension(nz) :: &
-      Vsnow,        & ! Number-weighted snow sedimentation velocity          [m/s]
-      Vsnow_mass,   & ! Mass-weighted snow sedimentation velocity            [m/s]
-      Vrr,          & ! Number-weighted rain sedimentation velocity          [m/s]
-      Vrr_mass,     & ! Mass-weighted rain sedimentation velocity            [m/s]
-      Vice,         & ! Number-weighted cloud ice sedimentation velocity     [m/s]
-      Vice_mass,    & ! Mass-weighted cloud ice sedimentation velocity       [m/s]
-      VNr,          & ! Number-weighted cloud droplet sedimentation velocity [m/s]
-      VNr_mass        ! Mass-weighted cloud droplet sedimentation velocity   [m/s]
+      VNsnow,       & ! Number-weighted snow sedimentation velocity          [m/s]
+      Vrsnow,       & ! Mass-weighted snow sedimentation velocity            [m/s]
+      VNr,          & ! Number-weighted rain sedimentation velocity          [m/s]
+      Vrr,          & ! Mass-weighted rain sedimentation velocity            [m/s]
+      VNice,        & ! Number-weighted cloud ice sedimentation velocity     [m/s]
+      Vrice,        & ! Mass-weighted cloud ice sedimentation velocity       [m/s]
+      VNc,          & ! Number-weighted cloud droplet sedimentation velocity [m/s]
+      Vrc             ! Mass-weighted cloud droplet sedimentation velocity   [m/s]
 
 
     ! MG zm variables that are not used in CLUBB
@@ -291,8 +295,8 @@ module mg_micro_driver_module
       rflx_flip, sflx_flip
       
     real(r8), dimension(pcols,nz-1,hydromet_dim) :: &
-       hydromet_flip, &  ! Hydrometeor species                               [units vary]
-       hydromet_mc_flip  ! Hydrometeor time tendency                         [units vary]
+       hydromet_flip,    &  ! Hydrometeor species                            [units vary]
+       hydromet_mc_flip     ! Hydrometeor time tendency                      [units vary]
 
     real( kind = core_rknd ) :: xtmp
 
@@ -325,8 +329,9 @@ module mg_micro_driver_module
     rcm_mc(:) = 0.0_core_rknd
     rvm_mc(:) = 0.0_core_rknd
     hydromet_mc(:,:) = 0.0_core_rknd
-    cloud_frac_max(:) = 0.0_core_rknd
-    hydromet_mc_flip(1:pcols,:,:) = 0.0_r8
+    rcm_sten(:) = 0.0_core_rknd
+    ricem_sten(:) = 0.0_core_rknd
+    hydromet_mc_flip(:,:,:) = 0.0_r8
 
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
@@ -491,9 +496,10 @@ module mg_micro_driver_module
     reff_snow(2:nz) = real( flip( dble(reff_snow_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     rsnowm(2:nz) = real( flip( dble(qsout_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     rrainm(2:nz) = real( flip( dble(qrout_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    rcm_sten(2:nz) = real( flip( dble(qcsedten_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd )
+    ricem_sten(2:nz) = real( flip( dble(qisedten_flip(icol, 1:nz-1) ), nz-1 ), &
+                               kind = core_rknd )
 
-    cloud_frac_max(2:nz) = real( cldmax(icol,:), kind = core_rknd )
-      
     do i = 1, hydromet_dim, 1      
       hydromet_mc(2:nz, i) = real( hydromet_mc_flip(icol,nz-1:1:-1, i), kind = core_rknd )
     end do
@@ -551,51 +557,60 @@ module mg_micro_driver_module
       rcm_in_cloud(1) = 0.0_core_rknd
       call stat_update_var( ircm_in_cloud, rcm_in_cloud, zt )
 
-      ! Compute in precipitation snow number concentration
-      Nsnowm(2:nz) = real( flip( dble( nsic_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd )
+      ! Compute in-precipitation snow number concentration
+      Nsnowm(2:nz) = real( flip( dble( nsic_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd ) &
+                     * real( cldmax(icol, 1:nz-1), kind = core_rknd )
       Nsnowm(1) = 0.0_core_rknd
-      call stat_update_var( iNsnowm, Nsnowm * cloud_frac_max, zt )
+      call stat_update_var( iNsnowm, Nsnowm, zt )
 
       ! Compute in precipitation rain number concentration
-      Nrm(2:nz) = real( flip( dble( nric_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd )
+      Nrm(2:nz) = real( flip( dble( nric_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd ) &
+                  * real( cldmax(icol, 1:nz-1), kind = core_rknd )
       Nrm(1) = 0.0_core_rknd
-      call stat_update_var( iNrm, Nrm * cloud_frac_max, zt )
+      call stat_update_var( iNrm, Nrm, zt )
 
-      ! Compute snow sedimentation
+      ! Compute snow sedimentation velocity
       ! Using number concentration
-      Vsnow(2:nz) = real( flip( dble( uns_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
-      Vsnow(1) = 0.0_core_rknd
-      call stat_update_var( iVsnow, Vsnow, zm )
-      ! Using mass
-      Vsnow_mass(2:nz) = real( flip( dble( ums_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
-      Vsnow_mass(1) = 0.0_core_rknd
-      call stat_update_var( iVsnow_mass, Vsnow_mass, zm )
+      VNsnow(2:nz) = real( flip( dble( uns_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      VNsnow(1) = 0.0_core_rknd
+      call stat_update_var( iVNsnow, VNsnow, zm )
+      ! Using mixing ratio
+      Vrsnow(2:nz) = real( flip( dble( ums_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      Vrsnow(1) = 0.0_core_rknd
+      call stat_update_var( iVrsnow, Vrsnow, zm )
 
       ! Compute rain sedimentation velocity
       ! Using number concentration
-      Vrr(2:nz) = real( flip( dble( unr_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      VNr(2:nz) = real( flip( dble( unr_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      VNr(1) = 0.0_core_rknd
+      call stat_update_var( iVNr, VNr, zm )
+      ! Using mixing ratio
+      Vrr(2:nz) = real( flip( dble( umr_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
       Vrr(1) = 0.0_core_rknd
       call stat_update_var( iVrr, Vrr, zm )
-      ! Using mass
-      Vrr_mass(2:nz) = real( flip( dble( umr_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
-      Vrr_mass(1) = 0.0_core_rknd
-      call stat_update_var( iVrr_mass, Vrr_mass, zm )
 
-      ! Compute ice sedimentation
+      ! Compute ice sedimentation velocity
       ! Using number concentration
-      Vice(:) = real( uni, kind = core_rknd )
-      call stat_update_var( iVice, Vice, zm )
-      ! Using mass
-      Vice_mass(:) = real( umi, kind = core_rknd )
-      call stat_update_var( iVice_mass, Vice_mass, zm )
+      VNice(:) = real( uni, kind = core_rknd )
+      call stat_update_var( iVNice, VNice, zm )
+      ! Using mixing ratio
+      Vrice(:) = real( umi, kind = core_rknd )
+      call stat_update_var( iVrice, Vrice, zm )
 
       ! Compute cloud droplet sedimentation
       ! Using number concentration
-      VNr(:) = real( unc, kind = core_rknd )
-      call stat_update_var( iVNr, VNr, zm )
-      ! Using mass
-      VNr_mass(:) = real( umc, kind = core_rknd )
-      call stat_update_var( iVNr_mass, VNr_mass, zm )
+      VNc(:) = real( unc, kind = core_rknd )
+      call stat_update_var( iVNc, VNc, zm )
+      ! Using mixing ratio
+      Vrc(:) = real( umc, kind = core_rknd )
+      call stat_update_var( iVrc, Vrc, zm )
+
+      ! Output sedimentation tendencies
+      call stat_update_var( ircm_sd_mg_morr, rcm_sten, zt )
+      call stat_update_var( iricem_sd_mg_morr, ricem_sten, zt ) 
+
+      ! Sedimentation is handled within the MG microphysics
+      hydromet_vel(:,:) = 0.0_core_rknd
 
       ! Compute Rain Water Path
       if ( irwp > 0 ) then

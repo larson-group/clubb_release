@@ -37,10 +37,11 @@ module morrison_micro_driver_module
 
     use stats_variables, only: & 
       irsnowm_sd_morr, & ! Variables
-      iricem_sd_morr, & 
+      iricem_sd_mg_morr, & 
       irrainm_sd_morr, & 
       irsnowm_sd_morr, &
       irgraupelm_sd_morr, &
+      ircm_sd_mg_morr, &
       ircm_in_cloud
 
     use stats_variables, only: & 
@@ -279,8 +280,11 @@ module morrison_micro_driver_module
       call stat_update_var( irsnowm_sd_morr, &
                  real(hydromet_sten(:,iirsnowm), kind = core_rknd), zt )
 
-      call stat_update_var( iricem_sd_morr, &
+      call stat_update_var( iricem_sd_mg_morr, &
                  real(hydromet_sten(:,iiricem), kind = core_rknd), zt )
+
+      call stat_update_var( ircm_sd_mg_morr, &
+                 real(rcm_sten, kind = core_rknd), zt )
 
       where ( cloud_frac(:) > real(cloud_frac_thresh, kind = core_rknd) ) 
         rcm_in_cloud(:) = rcm / cloud_frac

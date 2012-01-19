@@ -93,15 +93,15 @@ module stats_zm
           ivp2_cl, & 
           ivp2_pd, & 
           ivp2_sf, &
-          iVrr,     & 
-          iVrr_mass, &
-          iVNr,     & 
-          iVNr_mass, &
-          iVice,     & 
-          iVice_mass, &
-          iVsnow,     &
-          iVsnow_mass, &
-          iVgraupel
+          iVNr,  & 
+          iVrr, &
+          iVNc, & 
+          iVrc, &
+          iVNice, & 
+          iVrice, &
+          iVNsnow, &
+          iVrsnow, &
+          iVrgraupel
 
     use stats_variables, only: & 
           iwp2_bt, & 
@@ -316,15 +316,15 @@ module stats_zm
     ivp2_sf  = 0
 
     ! Sedimentation velocities
-    iVrr        = 0
-    iVrr_mass   = 0
-    iVNr        = 0
-    iVNr_mass   = 0
-    iVice       = 0
-    iVice_mass  = 0
-    iVgraupel   = 0
-    iVsnow      = 0
-    iVsnow_mass = 0
+    iVNr       = 0
+    iVrr       = 0
+    iVNc       = 0
+    iVrc       = 0
+    iVNice     = 0
+    iVrice     = 0
+    iVrgraupel  = 0
+    iVNsnow    = 0
+    iVrsnow    = 0
 
     ! Vertical velocity budgets
     iwp2_bt   = 0
@@ -683,67 +683,67 @@ module stats_zm
              "kg/(s*m^2)",zm)
         k = k + 1
 
-      case ('Vrr')           ! Brian
-        iVrr = k
-
-        call stat_assign(iVrr,"Vrr", & 
-             "rrainm sedimentation velocity [m/s]","m/s",zm)
-        k = k + 1
-
-      case ('Vrr_mass')
-        iVrr_mass = k
-
-        call stat_assign(iVrr_mass,"Vrr_mass", & 
-             "rrainm sedimentation velocity calculated using mass [m/s]","m/s",zm)
-        k = k + 1
-
-      case ('VNr')           ! Brian
+      case ('VNr')
         iVNr = k
 
         call stat_assign(iVNr,"VNr", & 
-             "Nrm sedimentation velocity [m/s]","m/s",zm)
+             "rrainm concentration fallspeed [m/s]","m/s",zm)
         k = k + 1
 
-      case ('VNr_mass')
-        iVNr_mass = k
+      case ('Vrr')
+        iVrr = k
 
-        call stat_assign(iVNr_mass,"VNr_mass", & 
-             "Nrm sedimentation velocity calculated using mass [m/s]","m/s",zm)
+        call stat_assign(iVrr,"Vrr", & 
+             "rrainm mixing ratio fallspeed [m/s]","m/s",zm)
         k = k + 1
 
-      case ('Vsnow')
-        iVsnow = k
+      case ('VNc')
+        iVNc = k
 
-        call stat_assign(iVsnow,"Vsnow", & 
-             "Snow sedimentation velocity [m/s]","m/s",zm)
+        call stat_assign(iVNc,"VNc", & 
+             "Nrm concentration fallspeed [m/s]","m/s",zm)
         k = k + 1
 
-      case ('Vsnow_mass')
-        iVsnow_mass = k
+      case ('Vrc')
+        iVrc = k
 
-        call stat_assign(iVsnow_mass,"Vsnow_mass", & 
-             "Snow sedimentation velocity calculated using mass [m/s]","m/s",zm)
+        call stat_assign(iVrc,"Vrc", & 
+             "Nrm mixing ratio fallspeed [m/s]","m/s",zm)
         k = k + 1
 
-      case ('Vgraupel')
-        iVgraupel = k
+      case ('VNsnow')
+        iVNsnow = k
 
-        call stat_assign(iVgraupel,"Vgraupel", & 
+        call stat_assign(iVNsnow,"VNsnow", & 
+             "Snow concentration fallspeed [m/s]","m/s",zm)
+        k = k + 1
+
+      case ('Vrsnow')
+        iVrsnow = k
+
+        call stat_assign(iVrsnow,"Vrsnow", & 
+             "Snow mixing ratio fallspeed [m/s]","m/s",zm)
+        k = k + 1
+
+      case ('Vrgraupel')
+        iVrgraupel = k
+
+        call stat_assign(iVrgraupel,"Vrgraupel", & 
              "Graupel sedimentation velocity [m/s]","m/s",zm)
         k = k + 1
 
-      case ('Vice')
-        iVice = k
+      case ('VNice')
+        iVNice = k
 
-        call stat_assign(iVice,"Vice", & 
-             "Cloud ice sedimentation velocity [m/s]","m/s",zm)
+        call stat_assign(iVNice,"VNice", & 
+             "Cloud ice concentration fallspeed [m/s]","m/s",zm)
         k = k + 1
 
-      case ('Vice_mass')
-        iVice_mass = k
+      case ('Vrice')
+        iVrice = k
 
-        call stat_assign(iVice_mass,"Vice_mass", & 
-             "Cloud ice sedimentation velocity calculated using mass [m/s]","m/s",zm)
+        call stat_assign(iVrice,"Vrice", & 
+             "Cloud ice mixing ratio fallspeed [m/s]","m/s",zm)
         k = k + 1
 
       case ('wp2_bt')

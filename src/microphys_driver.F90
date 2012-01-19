@@ -1090,9 +1090,9 @@ module microphys_driver
     use stats_variables, only: & 
       iVrr,  & ! Variable(s)
       iVNr, & 
-      iVsnow, & 
-      iVice, & 
-      iVgraupel, & 
+      iVrsnow, & 
+      iVrice, & 
+      iVrgraupel, & 
       irain_rate_zt, & 
       iFprec, & 
       irrainm_bt, & 
@@ -1441,13 +1441,13 @@ module microphys_driver
         call stat_update_var(iVNr, zt2zm( hydromet_vel(:,iiNrm) ), zm )
 
         ! Sedimentation velocity for snow
-        call stat_update_var(iVsnow, zt2zm( hydromet_vel(:,iirsnowm) ), zm )
+        call stat_update_var(iVrsnow, zt2zm( hydromet_vel(:,iirsnowm) ), zm )
 
         ! Sedimentation velocity for pristine ice
-        call stat_update_var( iVice, zt2zm( hydromet_vel(:,iiricem) ), zm )
+        call stat_update_var( iVrice, zt2zm( hydromet_vel(:,iiricem) ), zm )
 
         ! Sedimentation velocity for graupel
-        call stat_update_var( iVgraupel, zt2zm( hydromet_vel(:,iirgraupelm) ), zm )
+        call stat_update_var( iVrgraupel, zt2zm( hydromet_vel(:,iirgraupelm) ), zm )
       end if ! l_stats_samp
 
     case ( "morrison" )
@@ -1530,7 +1530,7 @@ module microphys_driver
       call mg_microphys_driver &
           ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
               rho, pdf_params, rcm, rtm-rcm, Ncnm, hydromet, &
-              hydromet_mc, rcm_mc, rvm_mc, thlm_mc )
+              hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
           
     case ( "khairoutdinov_kogan" )
 

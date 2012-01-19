@@ -115,6 +115,7 @@ module stats_zt
         irtm_mc, &
         irtm_sdmp, &
         ircm_mc, &
+        ircm_sd_mg_morr, &
         irvm_mc, &
         irtm_mfl, &
         irtm_tacl, & 
@@ -199,7 +200,7 @@ module stats_zt
         iricem_bt, & 
         iricem_ma, & 
         iricem_sd, &
-        iricem_sd_morr, &
+        iricem_sd_mg_morr, &
         iricem_dff, & 
         iricem_mc, & 
         iricem_cl, & 
@@ -457,31 +458,32 @@ module stats_zt
     ieff_rad_rain    = 0
     ieff_rad_graupel = 0
 
-    irsnowm       = 0
-    irgraupelm    = 0
-    iricem        = 0
+    irsnowm         = 0
+    irgraupelm      = 0
+    iricem          = 0
 
-    irtm_bt       = 0
-    irtm_ma       = 0
-    irtm_ta       = 0
-    irtm_forcing  = 0
-    irtm_sdmp     = 0
-    irtm_mc       = 0
-    ircm_mc       = 0 ! For the change due to COAMPS/Morrison microphysics
-    irvm_mc       = 0 ! "     "
-    irtm_mfl      = 0
-    irtm_tacl     = 0
-    irtm_cl       = 0 ! Josh
-    irtm_pd       = 0
-    ithlm_bt      = 0
-    ithlm_ma      = 0
-    ithlm_ta      = 0
-    ithlm_forcing = 0
-    ithlm_mc      = 0
-    ithlm_sdmp    = 0
-    ithlm_mfl     = 0
-    ithlm_tacl    = 0
-    ithlm_cl      = 0 ! Josh
+    irtm_bt         = 0
+    irtm_ma         = 0
+    irtm_ta         = 0
+    irtm_forcing    = 0
+    irtm_sdmp       = 0
+    irtm_mc         = 0
+    ircm_mc         = 0 ! For the change due to COAMPS/Morrison microphysics
+    ircm_sd_mg_morr = 0
+    irvm_mc         = 0 ! For the change due to COAMPS/Morrison microphysics
+    irtm_mfl        = 0
+    irtm_tacl       = 0
+    irtm_cl         = 0 ! Josh
+    irtm_pd         = 0
+    ithlm_bt        = 0
+    ithlm_ma        = 0
+    ithlm_ta        = 0
+    ithlm_forcing   = 0
+    ithlm_mc        = 0
+    ithlm_sdmp      = 0
+    ithlm_mfl       = 0
+    ithlm_tacl      = 0
+    ithlm_cl        = 0 ! Josh
 
     ithlm_mfl_min = 0
     ithlm_mfl_max = 0
@@ -570,13 +572,13 @@ module stats_zt
     irgraupelm_mc      = 0
     irgraupelm_cl      = 0
 
-    iricem_bt      = 0
-    iricem_ma      = 0
-    iricem_sd      = 0
-    iricem_sd_morr = 0
-    iricem_dff     = 0
-    iricem_mc      = 0
-    iricem_cl      = 0
+    iricem_bt         = 0
+    iricem_ma         = 0
+    iricem_sd         = 0
+    iricem_sd_mg_morr = 0
+    iricem_dff        = 0
+    iricem_mc         = 0
+    iricem_cl         = 0
 
     ivm_bt   = 0
     ivm_ma   = 0
@@ -863,6 +865,13 @@ module stats_zt
         call stat_assign( ircm_mc, "rcm_mc", & 
              "Time tendency of liquid water mixing ratio due microphysics [kg/kg/s]", &
              "kg/kg/s", zt )
+        k = k + 1
+
+      case ('rcm_sd_mg_morr')
+        ircm_sd_mg_morr = k
+        call stat_assign( ircm_sd_mg_morr, "rcm_sd_mg_morr", & 
+             "rcm sedimentation when using morrision or MG microphysics (not in budget," &
+             // " included in rcm_mc) [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('thlm_mfl_min')
@@ -1733,12 +1742,12 @@ module stats_zt
              "ricem budget: ricem sedimentation [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('ricem_sd_morr')
-        iricem_sd_morr = k
+      case ('ricem_sd_mg_morr')
+        iricem_sd_mg_morr = k
 
-        call stat_assign( iricem_sd_morr, "ricem_sd_morr", & 
-             "ricem sedimentation when using morrison microphysics (not in budget, included in" &
-             // " ricem_mc) [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iricem_sd_mg_morr, "ricem_sd_mg_morr", & 
+             "ricem sedimentation when using morrison or MG microphysics (not in budget," &
+             // " included in ricem_mc) [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
       case ('ricem_dff')
