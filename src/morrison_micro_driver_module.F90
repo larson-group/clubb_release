@@ -211,6 +211,7 @@ module morrison_micro_driver_module
     rvm_mc(1:nz) = 0.0_core_rknd
     hydromet_mc(1:nz,:) = 0.0_core_rknd
     hydromet_sten(1:nz,:) = 0.0
+    rcm_sten = 0.0_core_rknd
 
     ! Initialize effective radius to zero
     effc = 0.0
