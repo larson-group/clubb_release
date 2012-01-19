@@ -132,6 +132,7 @@ module constants_clubb
     three         = 3.0_core_rknd,               & ! 3
     two           = 2.0_core_rknd,               & ! 2
     three_halves  = 3.0_core_rknd/2.0_core_rknd, & ! 3/2
+    four_thirds   = 4.0_core_rknd/3.0_core_rknd, & ! 4/3
     one           = 1.0_core_rknd,               & ! 1
     three_fourths = 0.75_core_rknd,              & ! 3/4
     two_thirds    = 2.0_core_rknd/3.0_core_rknd, & ! 2/3
