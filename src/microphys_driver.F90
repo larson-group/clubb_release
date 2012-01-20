@@ -1527,7 +1527,7 @@ module microphys_driver
         l_latin_hypercube_input = .false.
         call morrison_micro_driver & 
              ( dt, gr%nz, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
-               thlm, p_in_Pa, exner, rho, pdf_params, &
+               thlm, p_in_Pa, exner, rho, cloud_frac, pdf_params, &
                wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
                hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
       end if
@@ -1612,7 +1612,7 @@ module microphys_driver
          l_latin_hypercube_input = .false.
          call KK_micro_driver &
                  ( dt, gr%nz, l_stats_samp, l_local_kk, &
-                   l_latin_hypercube_input, thlm, p_in_Pa, exner, rho, &
+                   l_latin_hypercube_input, thlm, p_in_Pa, exner, rho, cloud_frac, &
                    pdf_params, wm_zt, wtmp, delta_zt, rcm, s_mellor, &
                    rtm-rcm, hydromet, hydromet_mc, hydromet_vel_zt, &
                    rcm_mc, rvm_mc, thlm_mc )

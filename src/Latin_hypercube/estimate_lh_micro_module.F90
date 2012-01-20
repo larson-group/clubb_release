@@ -307,7 +307,7 @@ module estimate_lh_micro_module
     call est_single_column_tndcy( dt, nz, n_micro_calls, d_variables, & ! In
                                 k_lh_start, LH_rt, LH_thl, & ! In
                                 X_nl_all_levs, LH_sample_point_weights, & ! In
-                                p_in_Pa, exner, rho, w_std_dev, & ! In
+                                p_in_Pa, exner, rho, cloud_frac, w_std_dev, & ! In
                                 dzq, pdf_params, hydromet, & ! In
                                 X_mixt_comp_all_levs, & ! In
                                 lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, & ! Out

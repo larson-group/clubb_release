@@ -14,7 +14,7 @@ module estimate_scm_microphys_module
              ( dt, nz, n_micro_calls, d_variables, &
                k_lh_start, LH_rt, LH_thl, &
                X_nl_all_levs, LH_sample_point_weights, &
-               p_in_Pa, exner, rho, w_std_dev, &
+               p_in_Pa, exner, rho, cloud_frac, w_std_dev, &
                dzq, pdf_params, hydromet,  &
                X_mixt_comp_all_levs, &
                lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
@@ -118,11 +118,10 @@ module estimate_scm_microphys_module
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
-      rho           ! Density on thermo. grid  [kg/m^3]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      w_std_dev, & ! Standard deviation of w    [m/s]
-      dzq          ! Difference in height per gridbox   [m]
+      rho,        & ! Density on thermo. grid  [kg/m^3]
+      cloud_frac, & ! Cloud fraction           [-]
+      w_std_dev,  & ! Standard deviation of w    [m/s]
+      dzq           ! Difference in height per gridbox   [m]
 
     type(pdf_parameter), dimension(nz), intent(in) :: pdf_params
 
@@ -263,7 +262,7 @@ module estimate_scm_microphys_module
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nz, l_stats_samp, l_local_kk, l_latin_hypercube, & ! In
-             thl_column, p_in_Pa, exner, rho, pdf_params, & ! In
+             thl_column, p_in_Pa, exner, rho, cloud_frac, pdf_params, & ! In
              w_column, w_std_dev, dzq, & ! In
              rc_column, s_mellor_column, & ! In
              rv_column, hydromet_columns,  & ! In

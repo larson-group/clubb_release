@@ -3,7 +3,7 @@
 ! number and type of arguments as this does.
 interface
   subroutine microphys_sub( dt, nnzp, l_stats_sample, l_local_kk, l_latin_hypercube, &
-                            thlm, p_in_Pa, exner, rho, pdf_params, &
+                            thlm, p_in_Pa, exner, rho, cloud_frac, pdf_params, &
                             wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
                             hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 
@@ -26,7 +26,8 @@ interface
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
-      rho           ! Density on thermo. grid            [kg/m^3]
+      rho,        & ! Density on thermo. grid            [kg/m^3]
+      cloud_frac    ! Cloud fraction                     [-]
 
     type(pdf_parameter), target, dimension(nnzp), intent(in) :: &
       pdf_params ! PDF parameters

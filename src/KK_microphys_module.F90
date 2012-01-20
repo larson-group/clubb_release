@@ -17,7 +17,7 @@ module KK_microphys_module
 !                              rcm_mc, rvm_mc, thlm_mc )
   subroutine KK_micro_driver( dt, nzmax, l_stats_samp, l_local_kk, &
                               l_latin_hypercube, thlm, p_in_Pa, exner, rho, &
-                              pdf_params, wm, w_std_dev, dzq, rcm, s_mellor, &
+                              cloud_frac, pdf_params, wm, w_std_dev, dzq, rcm, s_mellor, &
                               rvm, hydromet, hydromet_mc, hydromet_vel, &
                               rcm_mc, rvm_mc, thlm_mc )
 
@@ -148,12 +148,13 @@ module KK_microphys_module
       l_latin_hypercube    ! Flag to use Latin Hypercube interface
 
     real( kind = core_rknd ), dimension(nzmax), intent(in) :: &
-      thlm,     & ! Mean liquid water potential temperature  [K]
-      rho,      & ! Density                                  [kg/m^3]
-      p_in_Pa,  & ! Pressure                                 [Pa]
-      exner,    & ! Exner function                           [-]
-      s_mellor, & ! Mean extended liquid water mixing ratio  [kg/kg]
-      rcm         ! Mean cloud water mixing ratio            [kg/kg]
+      thlm,       & ! Mean liquid water potential temperature  [K]
+      rho,        & ! Density                                  [kg/m^3]
+      cloud_frac, & ! Cloud fraction                           [-]
+      p_in_Pa,    & ! Pressure                                 [Pa]
+      exner,      & ! Exner function                           [-]
+      s_mellor,   & ! Mean extended liquid water mixing ratio  [kg/kg]
+      rcm           ! Mean cloud water mixing ratio            [kg/kg]
 
     real( kind = core_rknd ), dimension(nzmax), intent(in) :: &
       wm,        & ! Mean vertical velocity, w (for LH interface)        [m/s] 
@@ -300,6 +301,7 @@ module KK_microphys_module
       rrainm_src_adj = rvm
       rrainm_src_adj = w_std_dev
       rrainm_src_adj = wm
+      rrainm_src_adj = cloud_frac
     end if
 
     ! Assign pointers for hydrometeor variables.

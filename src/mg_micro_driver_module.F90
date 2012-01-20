@@ -303,6 +303,9 @@ module mg_micro_driver_module
     integer :: i, k, ncols, icol
 
     ! ---- Begin Code ----
+    if ( .false. ) then
+      xtmp = pdf_params(1)%mixt_frac ! To make compiler warnings go away
+    end if
 
     ncols = pcols ! This should be 1
 
