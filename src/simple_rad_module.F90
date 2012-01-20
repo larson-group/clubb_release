@@ -463,7 +463,7 @@ module simple_rad_module
   end subroutine simple_rad_lba_init
 
 !-------------------------------------------------------------------------------
-  pure function liq_water_path( nzmax, rho, rcm, invrs_dzt )
+  pure function liq_water_path( nz, rho, rcm, invrs_dzt )
 
 ! Description:
 !   Compute liquid water path
@@ -477,28 +477,28 @@ module simple_rad_module
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: nzmax
+    integer, intent(in) :: nz ! Number of vertical levels in the model
 
-    real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz) :: &
       rho, &       ! Air Density                      [kg/m^3]
       rcm, &       ! Cloud water mixing ratio         [kg/kg]
       invrs_dzt    ! Inverse of distance per level    [1/m]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nzmax) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       liq_water_path ! Liquid water path
 
     integer :: k
 
     ! ---- Begin Code ----
 
-    liq_water_path(nzmax) = 0.0_core_rknd
+    liq_water_path(nz) = 0.0_core_rknd
 
     ! Liquid water path is defined on the intermediate model levels between the
     ! rcm and rho levels (i.e. the momentum levels in CLUBB).
-    do k = nzmax-1, 1, -1
+    do k = nz-1, 1, -1
        liq_water_path(k) = liq_water_path(k+1) + rcm(k+1)*rho(k+1) / invrs_dzt(k+1)
-    end do ! k = nzmax..1
+    end do ! k = nz..1
 
     return
   end function liq_water_path
@@ -570,7 +570,7 @@ module simple_rad_module
     ! ---- Begin Code ----
 
     ! Certain arrays in sunray_sw lack a ghost point and are therefore
-    ! dimension nzmax-1
+    ! dimension nz-1
     do k = 1, gr%nz-1
       kflip = gr%nz+1-k
       rcm_flipped(k) = rcm(kflip)

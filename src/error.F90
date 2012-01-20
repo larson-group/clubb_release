@@ -496,7 +496,7 @@ module error
     integer ::  & 
       c_terms ! num of terms in err_sum (for normalization)
 
-    ! LES and CLUBB values over nzmax z-levels
+    ! LES and CLUBB values over nz z-levels
     real( kind = core_rknd ), dimension(:), allocatable ::  & 
       clubb_zl, & 
       clubb2_zl, & 
@@ -1081,7 +1081,7 @@ module error
 
 !-----------------------------------------------------------------------
   real( kind = core_rknd ) function mean_sqr_diff & 
-                ( nzmax, z_init, z_final, scm_zl, les_zl, norm_term )
+                ( nz, z_init, z_final, scm_zl, les_zl, norm_term )
 ! Description
 !   Calculate the mean squared difference between two input vectors,
 !   then normalize.
@@ -1100,18 +1100,18 @@ module error
 
     ! Input Variables
     integer, intent(in) ::  & 
-      nzmax,      & ! Vertical extent for CLUBB
+      nz,      & ! Vertical extent for CLUBB
       z_init,  & ! Initial point for the purposes of computing the sum
       z_final    ! Final point for the purpose of computign the sum
 
-    real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(nz) ::  & 
       scm_zl, &! CLUBB GrADS variable   [units vary]
       les_zl   ! The LES GrADS variable [units vary]
 
     real( kind = core_rknd ), intent(in) ::  & 
       norm_term ! normalization term; typically maxval(les) - minval(les)
 
-    real( kind = core_rknd ), dimension(nzmax) ::  & 
+    real( kind = core_rknd ), dimension(nz) ::  & 
       tmp_zl
 
     integer :: k
@@ -1132,7 +1132,7 @@ module error
   end function mean_sqr_diff
 !-----------------------------------------------------------------------
   real( kind = core_rknd ) function mean_sqr_diff_2 & 
-                ( nzmax, z_init, z_final, scm_zl,  & 
+                ( nz, z_init, z_final, scm_zl,  & 
                   scm2_zl, les_zl, norm_term )
 ! Description:
 !   Alternate function to compute mean difference between input
@@ -1164,11 +1164,11 @@ module error
 
     ! Input Variables
     integer, intent(in) ::  & 
-      nzmax,      & ! Vertical extent for CLUBB
+      nz,      & ! Vertical extent for CLUBB
       z_init,  & ! Initial point for the purposes of computing the sum
       z_final    ! Final point for the purpose of computign the sum
 
-    real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(nz) ::  & 
       scm_zl,  & ! CLUBB GrADS variable [units vary]
       scm2_zl, & ! CLUBB GrADS variable [units vary]
       les_zl     ! The LES GrADS variable [units vary]
@@ -1177,7 +1177,7 @@ module error
       norm_term ! normalization term. Typically maxval(les) - minval(les)
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(nzmax) ::  & 
+    real( kind = core_rknd ), dimension(nz) ::  & 
       tmp_zl
 
     integer :: k

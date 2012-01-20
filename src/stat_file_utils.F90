@@ -268,7 +268,7 @@ module stat_file_utils
 
 !-------------------------------------------------------------------------
   function stat_file_average_interval & 
-           ( filename, nzmax, t, variable_name, & 
+           ( filename, nz, t, variable_name, & 
              out_heights, npower, l_error )
 
 ! Description:
@@ -297,7 +297,7 @@ module stat_file_utils
       filename ! Name of the file
 
     integer, intent(in) ::  & 
-      nzmax     ! Number of vertical grid levels in the host model
+      nz     ! Number of vertical grid levels in the host model
 
     integer, dimension(:), intent(in) ::  & 
       t ! Timesteps to use for taking an average over an interval
@@ -305,7 +305,7 @@ module stat_file_utils
     character(len=*), intent(in) ::  & 
       variable_name  ! Name of the variable to read in
 
-    real( kind = core_rknd ), dimension(nzmax), intent(in) :: out_heights
+    real( kind = core_rknd ), dimension(nz), intent(in) :: out_heights
 
     integer, intent(in) ::  & 
       npower ! exponent applied to data retrieved from the file (1 or 2)
@@ -315,11 +315,11 @@ module stat_file_utils
       l_error ! status of this function
 
     ! Return Variables
-    real( kind = core_rknd ), dimension(nzmax) ::  & 
+    real( kind = core_rknd ), dimension(nz) ::  & 
       stat_file_average_interval
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(nzmax) :: stat_file_temp
+    real( kind = core_rknd ), dimension(nz) :: stat_file_temp
 
     integer ::  & 
       i,       & ! Loop variable 
@@ -347,7 +347,7 @@ module stat_file_utils
 
     l_spec_bound_cond = .false.
     stat_file_average_interval & 
-    = stat_file_average( filename, nzmax, &
+    = stat_file_average( filename, nz, &
                          t(1), t(2), out_heights, variable_name, &
                          npower, l_spec_bound_cond, l_error )  & 
           * real( t(2) - t(1), kind = core_rknd )
@@ -358,7 +358,7 @@ module stat_file_utils
 
     do i=3, tdim, 2
       l_spec_bound_cond = .false.
-      stat_file_temp = stat_file_average( filename, nzmax, &
+      stat_file_temp = stat_file_average( filename, nz, &
                                t(i), t(i+1), out_heights, variable_name, &
                                npower, l_spec_bound_cond, l_error )
       stat_file_average_interval  & 
@@ -366,7 +366,7 @@ module stat_file_utils
       divisor = divisor + ( t(i+1) - t(i) )
     end do
 
-    stat_file_average_interval(1:nzmax)  = stat_file_average_interval(1:nzmax) /&
+    stat_file_average_interval(1:nz)  = stat_file_average_interval(1:nz) /&
          real( divisor, kind = core_rknd )
 
     return
@@ -450,7 +450,7 @@ module stat_file_utils
   end function stat_file_num_vertical_levels
 
 !-------------------------------------------------------------------------
-  function stat_file_vertical_levels( varname, filename, nzmax )
+  function stat_file_vertical_levels( varname, filename, nz )
 
     use stat_file_module, only: stat_file ! Type(s)
 
@@ -473,10 +473,10 @@ module stat_file_utils
       varname     ! Variable name
 
     integer, intent(in) :: &
-      nzmax ! Number of vertical levels
+      nz ! Number of vertical levels
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nzmax) :: stat_file_vertical_levels
+    real( kind = core_rknd ), dimension(nz) :: stat_file_vertical_levels
 
     ! Local Variables
     type (stat_file) :: fz  ! Data file
@@ -510,7 +510,7 @@ module stat_file_utils
     end if
 
     ! Set return variable
-    stat_file_vertical_levels(1:nzmax) = fz%z(1:nzmax)
+    stat_file_vertical_levels(1:nz) = fz%z(1:nz)
 
     ! Close file
     if ( l_grads_file ) then

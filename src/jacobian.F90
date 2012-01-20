@@ -63,14 +63,14 @@ program jacobian
   type variable_array
 
     integer ::  & 
-      nzmax,   & ! Z dimension [grid boxes] 
+      nz,   & ! Z dimension [grid boxes] 
       entries ! Total variables
 
     real( kind = core_rknd ), pointer, dimension(:) :: z
 
     character(len=12), pointer :: name(:)
 
-    real( kind = core_rknd ), pointer, dimension(:,:) :: value ! (1:nzmax, entries)
+    real( kind = core_rknd ), pointer, dimension(:,:) :: value ! (1:nz, entries)
 
   end type variable_array
   !-----------------------------------------------------------------------------
@@ -197,9 +197,9 @@ program jacobian
   if (alloc_stat /= 0 ) stop "allocate failed"
 
   var1zt%entries = nvarzt
-  var1zt%nzmax      = nzt
+  var1zt%nz      = nzt
   var2zt%entries = nvarzt
-  var2zt%nzmax      = nzt
+  var2zt%nz      = nzt
 
   var1zt%z = stat_file_vertical_levels &
     ( var1zt%name(1), "../output/"//trim( fname_zt )//".ctl", nzt )
@@ -217,9 +217,9 @@ program jacobian
   if (alloc_stat /= 0 ) stop "allocate failed"
 
   var1zm%entries = nvarzm
-  var1zm%nzmax      = nzm
+  var1zm%nz      = nzm
   var2zm%entries = nvarzm
-  var2zm%nzmax      = nzm
+  var2zm%nz      = nzm
 
   var1zm%z = stat_file_vertical_levels &
     ( var1zm%name(1), "../output/"//trim( fname_zm )//".ctl", nzm )
@@ -405,9 +405,9 @@ program jacobian
 
     do k = 1, varray%entries, 1
 
-      varray%value(1:varray%nzmax, k) =  & 
+      varray%value(1:varray%nz, k) =  & 
       stat_file_average_interval & 
-      ( "../output/"//fname_zx, varray%nzmax, times(:), varray%name(k), &
+      ( "../output/"//fname_zx, varray%nz, times(:), varray%name(k), &
         varray%z, 1, l_error )
 
       if ( l_error ) then

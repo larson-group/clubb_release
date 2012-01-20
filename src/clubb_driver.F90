@@ -4054,7 +4054,7 @@ module clubb_driver
 
 
   !-----------------------------------------------------------------------------
-  subroutine update_radiation_variables( nzmax )
+  subroutine update_radiation_variables( nz )
 
     ! Description:
     !   Updates the radiation variables using the stat_var_update() subroutine.
@@ -4100,7 +4100,7 @@ module clubb_driver
 
     ! Input Variables
 
-    integer, intent(in) :: nzmax
+    integer, intent(in) :: nz ! Model domain / # of vertical levels     [-]
 
     ! Local Variables
 
@@ -4127,8 +4127,8 @@ module clubb_driver
 
       if ( l_output_rad_files ) then
 
-        rad_zt_dim = (nzmax-1)+lin_int_buffer+extend_atmos_range_size
-        rad_zm_dim = (nzmax-1)+lin_int_buffer+extend_atmos_range_size+1
+        rad_zt_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size
+        rad_zm_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size+1
 
         call stat_update_var( iT_in_K_rad, real( flip(T_in_K(1,:), rad_zt_dim),&
                  kind = core_rknd ), rad_zt )
