@@ -37,6 +37,9 @@ module KK_utilities
     !  -- App. B.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one  ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -52,7 +55,7 @@ module KK_utilities
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x / sqrt( 1.0 + sigma_sqd_x / mu_x**2 ) )
+    mu_x_n = log( mu_x / sqrt( one + sigma_sqd_x / mu_x**2 ) )
 
     return
   end function mean_L2N
@@ -74,6 +77,9 @@ module KK_utilities
     !  -- App. B.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one_dp  ! Constant(s)
+
     use clubb_precision, only: &
         dp ! double precision
 
@@ -89,7 +95,7 @@ module KK_utilities
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x / sqrt( 1.0_dp + sigma_sqd_x / mu_x**2 ) )
+    mu_x_n = log( mu_x / sqrt( one_dp + sigma_sqd_x / mu_x**2 ) )
 
     return
   end function mean_L2N_dp
@@ -111,6 +117,9 @@ module KK_utilities
     !  -- App. B.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one  ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -126,7 +135,7 @@ module KK_utilities
       sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
 
     ! Find the standard deviation of ln x for the ith component of the PDF.
-    sigma_x_n = sqrt( log( 1.0 + sigma_sqd_x / mu_x**2 ) )
+    sigma_x_n = sqrt( log( one + sigma_sqd_x / mu_x**2 ) )
 
     return
   end function stdev_L2N
@@ -149,6 +158,9 @@ module KK_utilities
     !  -- App. B.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one_dp  ! Constant(s)
+
     use clubb_precision, only: &
         dp ! double precision
 
@@ -164,7 +176,7 @@ module KK_utilities
       sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
 
     ! Find the standard deviation of ln x for the ith component of the PDF.
-    sigma_x_n = sqrt( log( 1.0_dp + sigma_sqd_x / mu_x**2 ) )
+    sigma_x_n = sqrt( log( one_dp + sigma_sqd_x / mu_x**2 ) )
 
     return
   end function stdev_L2N_dp
@@ -187,6 +199,9 @@ module KK_utilities
     !  -- Eq. B-1.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one  ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -202,7 +217,7 @@ module KK_utilities
       corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
 
     ! Find the correlation between x and ln y for the ith component of the PDF.
-    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2 ) - 1.0 ) / sigma_y_n 
+    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2 ) - one ) / sigma_y_n 
 
     return
   end function corr_NL2NN
@@ -226,6 +241,9 @@ module KK_utilities
     !  -- Eq. B-1.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one_dp  ! Constant(s)
+
     use clubb_precision, only: &
         dp ! double precision
 
@@ -241,7 +259,7 @@ module KK_utilities
       corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
 
     ! Find the correlation between x and ln y for the ith component of the PDF.
-    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2 ) - 1.0_dp ) / sigma_y_n 
+    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2 ) - one_dp ) / sigma_y_n 
 
     return
   end function corr_NL2NN_dp
@@ -264,6 +282,9 @@ module KK_utilities
     !  -- Eq. C-3.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one  ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -281,8 +302,8 @@ module KK_utilities
 
     ! Find the correlation between ln x and ln y for the ith component of the
     ! PDF.
-    corr_xy_n = log( 1.0 + corr_xy * sqrt( exp( sigma_x_n**2 ) - 1.0 )  &
-                                   * sqrt( exp( sigma_y_n**2 ) - 1.0 )  )  &
+    corr_xy_n = log( one + corr_xy * sqrt( exp( sigma_x_n**2 ) - one )  &
+                                   * sqrt( exp( sigma_y_n**2 ) - one )  )  &
                 / ( sigma_x_n * sigma_y_n )
 
     return
@@ -307,6 +328,9 @@ module KK_utilities
     !  -- Eq. C-3.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one_dp  ! Constant(s)
+
     use clubb_precision, only: &
         dp ! double precision
 
@@ -324,8 +348,9 @@ module KK_utilities
 
     ! Find the correlation between ln x and ln y for the ith component of the
     ! PDF.
-    corr_xy_n = log( 1.0_dp + corr_xy * sqrt( exp( sigma_x_n**2 ) - 1.0_dp )  &
-                                     * sqrt( exp( sigma_y_n**2 ) - 1.0_dp )  )  &
+    corr_xy_n = log( one_dp  &
+                     + corr_xy * sqrt( exp( sigma_x_n**2 ) - one_dp )  &
+                               * sqrt( exp( sigma_y_n**2 ) - one_dp )  )  &
                 / ( sigma_x_n * sigma_y_n )
 
     return
@@ -419,7 +444,10 @@ module KK_utilities
         parab
 
     use constants_clubb, only:  & 
-        pi_dp ! Variable(s)
+        pi_dp,       & ! Constant(s)
+        one_dp,      &
+        one_half_dp, &
+        zero_dp
 
     use clubb_precision, only: &
         dp ! double precision
@@ -452,12 +480,12 @@ module KK_utilities
 
     integer :: ierr ! Error condition
 
-    if ( argument <= 0.0_dp ) then
-      call parab( -order-0.5_dp, -argument, scaling, uaxx, vaxx, ierr )
-      Dv_fnc = vaxx(1) / ( (1.0_dp/pi_dp) * gamma( -order ) ) & 
-             - sin( pi_dp * ( -order-0.5_dp ) ) * uaxx(1)
+    if ( argument <= zero_dp ) then
+      call parab( -order-one_half_dp, -argument, scaling, uaxx, vaxx, ierr )
+      Dv_fnc = vaxx(1) / ( (one_dp/pi_dp) * gamma( -order ) ) & 
+             - sin( pi_dp * ( -order-one_half_dp ) ) * uaxx(1)
     else
-      call parab( -order-0.5_dp, argument, scaling, uaxx, vaxx, ierr )
+      call parab( -order-one_half_dp, argument, scaling, uaxx, vaxx, ierr )
       Dv_fnc = uaxx(1)
     end if
 
@@ -519,6 +547,9 @@ module KK_utilities
     !  -- Eq. 13 and 14.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        zero  ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -540,7 +571,7 @@ module KK_utilities
 
 
     ! Calculate the correlation of s and x in the ith PDF component.
-    if ( sigma_s_i > 0.0 ) then
+    if ( sigma_s_i > zero ) then
 
        corr_sx_i = crt_i * ( sigma_rt_i / sigma_s_i ) * corr_rtx_i  &
                    - cthl_i * ( sigma_thl_i / sigma_s_i ) * corr_thlx_i
@@ -550,7 +581,7 @@ module KK_utilities
        ! The variance of s_(i) is 0.  This means that s is constant within the
        ! ith PDF component and covariance <s'x'_(i)> is also 0.  The correlation
        ! between s and x is 0 in the ith PDF component.
-       corr_sx_i = 0.0
+       corr_sx_i = zero
 
     endif
 
@@ -576,6 +607,10 @@ module KK_utilities
     !    edition, Butterworth-Heinemann, 290 pp.
     !  -- Eq. 7.17 and 7.18.
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one_hundred, & ! Constant(s)
+        one
 
     use saturation, only: & 
         sat_vapor_press_liq ! Procedure(s)
@@ -617,7 +652,7 @@ module KK_utilities
     ! Coefficient of thermal conductivity of air.
     Ka = ( 5.69_core_rknd + 0.017_core_rknd * Celsius )  &
          * 0.00001_core_rknd                       ! Ka in cal./(cm.*sec.*C)
-    Ka = 4.1868_core_rknd * 100.0_core_rknd * Ka   ! Ka in J./(m.*sec.*K)
+    Ka = 4.1868_core_rknd * one_hundred * Ka       ! Ka in J./(m.*sec.*K)
 
     ! Coefficient of diffusion of water vapor in air.
     Dv = 0.221_core_rknd * ( (T_in_K/273.16_core_rknd)**1.94_core_rknd )  &
@@ -629,11 +664,11 @@ module KK_utilities
 
     ! The values of F_k and F_d are found in Rogers and Yau (1989);
     ! Eq. 7.17 and 7.18.
-    Fk = ( Lv / ( Rv * T_in_K ) - 1.0 ) * ( Lv * rho_lw ) / ( Ka * T_in_K )
+    Fk = ( Lv / ( Rv * T_in_K ) - one ) * ( Lv * rho_lw ) / ( Ka * T_in_K )
     Fd = ( rho_lw * Rv * T_in_K ) / ( Dv * esatv )
 
     ! Calculate G(T,p).
-    G_T_p = 1.0 / (Fk + Fd)
+    G_T_p = one / (Fk + Fd)
 
 
     return

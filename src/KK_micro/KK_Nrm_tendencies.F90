@@ -100,8 +100,9 @@ module KK_Nrm_tendencies
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: & 
-        rho_lw,  & ! Constant(s)
-        pi
+        rho_lw,      & ! Constant(s)
+        pi,          &
+        four_thirds
 
     use parameters_microphys, only: &
         r_0 ! Constant(s)
@@ -121,7 +122,7 @@ module KK_Nrm_tendencies
 
 
     ! Production of N_r through autoconversion.
-    KK_Nrm_auto = KK_rrm_auto_tndcy / ( (4.0/3.0) * pi * rho_lw * r_0**3 )
+    KK_Nrm_auto = KK_rrm_auto_tndcy / ( four_thirds * pi * rho_lw * r_0**3 )
 
 
     return

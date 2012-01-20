@@ -21,6 +21,9 @@ module KK_local_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        zero  ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -45,7 +48,7 @@ module KK_local_means
 
 
     ! Calculate the local KK evaporation tendency.
-    if ( mean_s <= 0.0 ) then
+    if ( mean_s <= zero ) then
 
        KK_evap_local_mean  &
        = KK_evap_coef * mean_s**alpha_exp * rrm**beta_exp * Nrm**gamma_exp
@@ -53,7 +56,7 @@ module KK_local_means
     else  ! mean_s > 0.
 
        ! The air is cloudy, and rain does not evaporate.
-       KK_evap_local_mean = 0.0
+       KK_evap_local_mean = zero
 
     endif
 
@@ -69,6 +72,9 @@ module KK_local_means
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero  ! Constant(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -92,14 +98,14 @@ module KK_local_means
 
 
     ! Calculate the local KK autoconversion tendency.
-    if ( mean_s > 0.0 ) then
+    if ( mean_s > zero ) then
 
        KK_auto_local_mean = KK_auto_coef * mean_s**alpha_exp * Ncm**beta_exp
 
     else  ! mean_s <= 0.
 
        ! The air is clear, and rain cannot be produced.
-       KK_auto_local_mean = 0.0
+       KK_auto_local_mean = zero
 
     endif
 
@@ -115,6 +121,9 @@ module KK_local_means
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero  ! Constant(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -138,14 +147,14 @@ module KK_local_means
 
 
     ! Calculate the local KK accretion tendency.
-    if ( mean_s > 0.0 ) then
+    if ( mean_s > zero ) then
 
        KK_accr_local_mean = KK_accr_coef * mean_s**alpha_exp * rrm**beta_exp
 
     else  ! mean_s <= 0.
 
        ! The air is clear, and rain cannot be produced.
-       KK_accr_local_mean = 0.0
+       KK_accr_local_mean = zero
 
     endif
 

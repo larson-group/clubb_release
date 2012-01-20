@@ -31,6 +31,9 @@ module KK_upscaled_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one  ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -73,7 +76,7 @@ module KK_upscaled_means
                                 sigma_s_1, sigma_rr_n, sigma_Nr_n, &
                                 corr_srr_1_n, corr_sNr_1_n, corr_rrNr_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
-        + ( 1.0 - mixt_frac ) &
+        + ( one - mixt_frac ) &
           * trivar_NLL_mean_eq( mu_s_2, mu_rr_n, mu_Nr_n, &
                                 sigma_s_2, sigma_rr_n, sigma_Nr_n, &
                                 corr_srr_2_n, corr_sNr_2_n, corr_rrNr_n, &
@@ -96,6 +99,9 @@ module KK_upscaled_means
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one  ! Constant(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -131,7 +137,7 @@ module KK_upscaled_means
       * ( mixt_frac &
         * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
                             corr_sNc_1_n, alpha_exp, beta_exp ) &
-        + ( 1.0 - mixt_frac ) &
+        + ( one - mixt_frac ) &
         * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
                             corr_sNc_2_n, alpha_exp, beta_exp ) &
         )
@@ -152,6 +158,9 @@ module KK_upscaled_means
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one  ! Constant(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -187,7 +196,7 @@ module KK_upscaled_means
       * ( mixt_frac &
         * bivar_NL_mean_eq( mu_s_1, mu_rr_n, sigma_s_1, sigma_rr_n, &
                             corr_srr_1_n, alpha_exp, beta_exp ) &
-        + ( 1.0 - mixt_frac ) &
+        + ( one - mixt_frac ) &
         * bivar_NL_mean_eq( mu_s_2, mu_rr_n, sigma_s_2, sigma_rr_n, &
                             corr_srr_2_n, alpha_exp, beta_exp ) &
         )
