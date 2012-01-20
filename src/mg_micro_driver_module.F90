@@ -11,7 +11,7 @@ module mg_micro_driver_module
 !-------------------------------------------------------------------------------
   subroutine mg_microphys_driver &
              ( dt, nz, l_stats_samp, invrs_dzt, thlm, p_in_Pa, exner, &
-               rho, pdf_params, rcm, rvm, Ncnm, hydromet, &
+               rho, cloud_frac, pdf_params, rcm, rvm, Ncnm, hydromet, &
                hydromet_mc, hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
 !   Wrapper for the Morrison-Gettelman microphysics
@@ -139,7 +139,8 @@ module mg_micro_driver_module
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
-      rho           ! Density on thermo. grid            [kg/m^3]
+      rho,        & ! Density on thermo. grid            [kg/m^3]
+      cloud_frac    ! Cloud fraction                     [-]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params    ! PDF parameters
@@ -172,7 +173,6 @@ module mg_micro_driver_module
     real( kind = core_rknd ), dimension(nz) :: & 
       T_in_K,       & ! Temperature                                                   [K]
       T_in_K_new,   & ! Temperature after microphysics                                [K]
-      cloud_frac,   & ! Liquid Cloud fraction                                         [-]
       rcm_new,      & ! Cloud water mixing ratio after microphysics                   [kg/kg]
       rsnowm,       & ! Snow mixing ratio (not in hydromet because it is diagnostic)  [kg/kg]
       rrainm,       & ! Rain mixing ratio (not in hydromet because it is diagnostic)  [kg/kg]
@@ -336,11 +336,6 @@ module mg_micro_driver_module
     ! Determine temperature
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
     
-    ! Use sgs cloud fraction to weight tendencies
-    cloud_frac(1:nz) = max( zero_threshold, &
-                      pdf_params%mixt_frac * pdf_params%cloud_frac1 &
-                      + (1._core_rknd-pdf_params%mixt_frac) * pdf_params%cloud_frac2 )
-    
     ! MG's grid is flipped with respect to CLUBB.
     ! Flip CLUBB variables before inputting them into MG.
     Kh_zm_flip(icol,1:nz) = real( flip( dble(Kh_zm(1:nz) ), nz ), kind=r8 )
@@ -352,7 +347,7 @@ module mg_micro_driver_module
     rcm_flip(icol,1:nz-1) = real( flip( dble(rcm(2:nz) ), nz-1 ), kind=r8 )
     p_in_Pa_flip(icol,1:nz-1) = real( flip( dble(p_in_Pa(2:nz) ), nz-1 ), kind=r8 )
     liqcldf_flip(icol,1:nz-1) = real( flip( dble(cloud_frac(2:nz) ), nz-1 ), kind=r8 )
-    
+
     ! Hydromet is 2 dimensional, so flip function doesn't work
     do i = 1, hydromet_dim, 1
       hydromet_flip(icol,1:nz-1, i) = real( hydromet(nz:2:-1, i), kind=r8 )
@@ -384,6 +379,7 @@ module mg_micro_driver_module
 
       liqcldf_flip(icol,k) = cldn_flip(icol,k)
       icecldf_flip(icol,k) = cldn_flip(icol,k)
+
     end do ! k = 1 .. nz-1
     
     ! Initialize grid variables. These are imported in the MG code.

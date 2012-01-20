@@ -1562,7 +1562,7 @@ module microphys_driver
 
       call mg_microphys_driver &
           ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
-              rho, pdf_params, rcm, rtm-rcm, Ncnm, hydromet, &
+              rho, cloud_frac, pdf_params, rcm, rtm-rcm, Ncnm, hydromet, &
               hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
           
     case ( "khairoutdinov_kogan" )
