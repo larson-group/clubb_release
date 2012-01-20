@@ -156,6 +156,18 @@ module parameters_microphys
 
 !$omp threadprivate( C_evap, r_0 )
 
+  ! Values of exponents in KK microphysics
+  real( kind = core_rknd ), public :: &
+    KK_evap_S_exp,  & ! Exponent on S (Supersat.) in KK evaporation equation; 1.
+    KK_evap_rr_exp, & ! Exponent on r_r in KK evaporation equation; 1/3.
+    KK_evap_Nr_exp, & ! Exponent on N_r in KK evaporaiton equation; 2/3.
+    KK_auto_rc_exp, & ! Exponent on r_c in KK autoconversion equation; 2.47.
+    KK_auto_Nc_exp, & ! Exponent on N_c in KK autoconversion equation; -1.79.
+    KK_accr_rc_exp, & ! Exponent on r_c in KK accretion equation; 1.15.
+    KK_accr_rr_exp, & ! Exponent on r_r in KK_accretion equation; 1.15.
+    KK_mvr_rr_exp,  & ! Exponent on r_r in KK mean volume radius equation; 1/3.
+    KK_mvr_Nr_exp     ! Exponent on N_r in KK mean volume radius equation; -1/3.
+
   ! Parameters added for ice microphysics and latin hypercube sampling
 
   real( kind = core_rknd ), public :: &

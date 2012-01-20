@@ -127,7 +127,16 @@ module microphys_driver
       corr_sNr_NL_below,     &
       corr_sNc_NL_below,     &
       C_evap,                &
-      r_0
+      r_0,                   &
+      KK_evap_S_exp,         &
+      KK_evap_rr_exp,        &
+      KK_evap_Nr_exp,        &
+      KK_auto_rc_exp,        &
+      KK_auto_Nc_exp,        &
+      KK_accr_rc_exp,        &
+      KK_accr_rr_exp,        &
+      KK_mvr_rr_exp,         &
+      KK_mvr_Nr_exp
 
     use parameters_microphys, only: &
       rsnowp2_on_rsnowm2_cloud, & ! Variables
@@ -141,6 +150,11 @@ module microphys_driver
 
     use parameters_microphys, only: &
       LH_microphys_type_int => LH_microphys_type ! Determines how the LH samples are used
+
+    use constants_clubb, only: &
+        one,        & ! Constant(s)
+        two_thirds, &
+        one_third
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
@@ -291,6 +305,25 @@ module microphys_driver
     ! Parameters for Khairoutdinov and Kogan microphysics
     !---------------------------------------------------------------------------
     l_local_kk = .false. ! Use the local parameterization for K&K
+
+    ! Exponent on S (Supersatuation) in KK evaporation equation.
+    KK_evap_S_exp  = one
+    ! Exponent on r_r in KK evaporation equation.
+    KK_evap_rr_exp = one_third
+    ! Exponent on N_r in KK evaporaiton equation.
+    KK_evap_Nr_exp = two_thirds
+    ! Exponent on r_c in KK autoconversion equation.
+    KK_auto_rc_exp = 2.47_core_rknd
+    ! Exponent on N_c in KK autoconversion equation.
+    KK_auto_Nc_exp = -1.79_core_rknd
+    ! Exponent on r_c in KK accretion equation.
+    KK_accr_rc_exp = 1.15_core_rknd
+    ! Exponent on r_r in KK_accretion equation.
+    KK_accr_rr_exp = 1.15_core_rknd
+    ! Exponent on r_r in KK mean volume radius equation.
+    KK_mvr_rr_exp  = one_third
+    ! Exponent on N_r in KK mean volume radius equation.
+    KK_mvr_Nr_exp  = -one_third
 
     C_evap = 0.86_core_rknd    ! Khairoutdinov and Kogan (2000) ratio of
     ! drizzle drop mean geometric radius to
