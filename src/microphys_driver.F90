@@ -128,7 +128,7 @@ module microphys_driver
       corr_sNc_NL_below,     &
       C_evap,                &
       r_0,                   &
-      KK_evap_S_exp,         &
+      KK_evap_Supersat_exp,  &
       KK_evap_rr_exp,        &
       KK_evap_Nr_exp,        &
       KK_auto_rc_exp,        &
@@ -306,24 +306,33 @@ module microphys_driver
     !---------------------------------------------------------------------------
     l_local_kk = .false. ! Use the local parameterization for K&K
 
-    ! Exponent on S (Supersatuation) in KK evaporation equation.
-    KK_evap_S_exp  = one
-    ! Exponent on r_r in KK evaporation equation.
-    KK_evap_rr_exp = one_third
-    ! Exponent on N_r in KK evaporaiton equation.
-    KK_evap_Nr_exp = two_thirds
-    ! Exponent on r_c in KK autoconversion equation.
-    KK_auto_rc_exp = 2.47_core_rknd
-    ! Exponent on N_c in KK autoconversion equation.
-    KK_auto_Nc_exp = -1.79_core_rknd
-    ! Exponent on r_c in KK accretion equation.
-    KK_accr_rc_exp = 1.15_core_rknd
-    ! Exponent on r_r in KK_accretion equation.
-    KK_accr_rr_exp = 1.15_core_rknd
-    ! Exponent on r_r in KK mean volume radius equation.
-    KK_mvr_rr_exp  = one_third
-    ! Exponent on N_r in KK mean volume radius equation.
-    KK_mvr_Nr_exp  = -one_third
+    ! Exponent on Supersaturation (S) in the KK evaporation equation.
+    ! The standard value is 1.
+    KK_evap_Supersat_exp  = one
+    ! Exponent on r_r in the KK evaporation equation.
+    ! The standard value is 1/3.
+    KK_evap_rr_exp        = one_third
+    ! Exponent on N_r in the KK evaporation equation.
+    ! The standard value is 2/3.
+    KK_evap_Nr_exp        = two_thirds
+    ! Exponent on r_c in the KK autoconversion equation.
+    ! The standard value is 2.47.
+    KK_auto_rc_exp        = 2.47_core_rknd
+    ! Exponent on N_c in the KK autoconversion equation.
+    ! The standard value is -1.79.
+    KK_auto_Nc_exp        = -1.79_core_rknd
+    ! Exponent on r_c in the KK accretion equation.
+    ! The standard value is 1.15.
+    KK_accr_rc_exp        = 1.15_core_rknd
+    ! Exponent on r_r in the KK accretion equation.
+    ! The standard value is 1.15.
+    KK_accr_rr_exp        = 1.15_core_rknd
+    ! Exponent on r_r in the KK mean volume radius equation.
+    ! The standard value is 1/3.
+    KK_mvr_rr_exp         = one_third
+    ! Exponent on N_r in the KK mean volume radius equation.
+    ! The standard value is -1/3.
+    KK_mvr_Nr_exp         = -one_third
 
     C_evap = 0.86_core_rknd    ! Khairoutdinov and Kogan (2000) ratio of
     ! drizzle drop mean geometric radius to

@@ -42,6 +42,11 @@ module KK_upscaled_covariances
     use constants_clubb, only: &
         one  ! Constant(s)
 
+    use parameters_microphys, only: &
+        KK_evap_Supersat_exp, & ! Variable(s)
+        KK_evap_rr_exp,       &
+        KK_evap_Nr_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -82,12 +87,17 @@ module KK_upscaled_covariances
     real( kind = core_rknd ) :: &
       covar_x_KK_evap  ! Covariance between x and KK evaporation tendency    [-]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 1.0,       & ! Exponent on s                               [-]
-      beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
-      gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp,  & ! Exponent on r_r                                         [-]
+      gamma_exp    ! Exponent on N_r                                         [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_evap_Supersat_exp
+    beta_exp  = KK_evap_rr_exp
+    gamma_exp = KK_evap_Nr_exp
 
     ! Calculate the covariance of x and KK evaporation tendency.
     covar_x_KK_evap  &
@@ -137,6 +147,11 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         trivar_NLL_mean_eq  ! Procedure
 
+    use parameters_microphys, only: &
+        KK_evap_Supersat_exp, & ! Variable(s)
+        KK_evap_rr_exp,       &
+        KK_evap_Nr_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -178,12 +193,17 @@ module KK_upscaled_covariances
     real( kind = core_rknd ) :: &
       covar_rt_KK_evap  ! Covariance between r_t and KK evaporation tendency [-]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 1.0,       & ! Exponent on s                               [-]
-      beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
-      gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp,  & ! Exponent on r_r                                         [-]
+      gamma_exp    ! Exponent on N_r                                         [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_evap_Supersat_exp
+    beta_exp  = KK_evap_rr_exp
+    gamma_exp = KK_evap_Nr_exp
 
     ! Calculate the covariance of r_t and KK evaporation tendency.
     covar_rt_KK_evap  &
@@ -253,6 +273,11 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         trivar_NLL_mean_eq  ! Procedure
 
+    use parameters_microphys, only: &
+        KK_evap_Supersat_exp, & ! Variable(s)
+        KK_evap_rr_exp,       &
+        KK_evap_Nr_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -294,12 +319,17 @@ module KK_upscaled_covariances
     real( kind = core_rknd ) :: &
       covar_thl_KK_evap  ! Covariance between th_l and KK evap. tendency     [-]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 1.0,       & ! Exponent on s                               [-]
-      beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
-      gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp,  & ! Exponent on r_r                                         [-]
+      gamma_exp    ! Exponent on N_r                                         [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_evap_Supersat_exp
+    beta_exp  = KK_evap_rr_exp
+    gamma_exp = KK_evap_Nr_exp
 
     ! Calculate the covariance of th_l and KK evaporation tendency.
     covar_thl_KK_evap  &
@@ -366,6 +396,10 @@ module KK_upscaled_covariances
     use constants_clubb, only: &
         one  ! Constant(s)
 
+    use parameters_microphys, only: &
+        KK_auto_rc_exp, & ! Variable(s)
+        KK_auto_Nc_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -399,11 +433,15 @@ module KK_upscaled_covariances
     real( kind = core_rknd ) :: &
       covar_x_KK_auto  ! Covariance between x and KK autoconversion tendency [-]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 2.47,  & ! Exponent on s                                   [-]
-      beta_exp  = -1.79    ! Exponent on r_r                                 [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp     ! Exponent on N_c                                         [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_auto_rc_exp
+    beta_exp  = KK_auto_Nc_exp
 
     ! Calculate the covariance of x and KK autoconversion tendency.
     covar_x_KK_auto  &
@@ -447,6 +485,10 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         bivar_NL_mean_eq  ! Procedure
 
+    use parameters_microphys, only: &
+        KK_auto_rc_exp, & ! Variable(s)
+        KK_auto_Nc_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -481,11 +523,15 @@ module KK_upscaled_covariances
     real( kind = core_rknd ) :: &
       covar_rt_KK_auto  ! Covariance between r_t and KK autoconv. tendency   [-]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 2.47,  & ! Exponent on s                                   [-]
-      beta_exp  = -1.79    ! Exponent on r_r                                 [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp     ! Exponent on N_c                                         [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_auto_rc_exp
+    beta_exp  = KK_auto_Nc_exp
 
     ! Calculate the covariance of r_t and KK autoconversion tendency.
     covar_rt_KK_auto  &
@@ -541,6 +587,10 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         bivar_NL_mean_eq  ! Procedure
 
+    use parameters_microphys, only: &
+        KK_auto_rc_exp, & ! Variable(s)
+        KK_auto_Nc_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -575,11 +625,15 @@ module KK_upscaled_covariances
     real( kind = core_rknd ) :: &
       covar_thl_KK_auto  ! Covariance between th_l and KK autoconv. tendency [-]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 2.47,  & ! Exponent on s                                   [-]
-      beta_exp  = -1.79    ! Exponent on r_r                                 [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp     ! Exponent on N_c                                         [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_auto_rc_exp
+    beta_exp  = KK_auto_Nc_exp
 
     ! Calculate the covariance of th_l and KK autoconversion tendency.
     covar_thl_KK_auto  &
@@ -634,6 +688,10 @@ module KK_upscaled_covariances
     use constants_clubb, only: &
         one  ! Constant(s)
 
+    use parameters_microphys, only: &
+        KK_accr_rc_exp, & ! Variable(s)
+        KK_accr_rr_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -667,11 +725,15 @@ module KK_upscaled_covariances
     real( kind = core_rknd ) :: &
       covar_x_KK_accr  ! Covariance between x and KK accretion tendency      [-]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 1.15, & ! Exponent on s                                    [-]
-      beta_exp  = 1.15    ! Exponent on r_r                                  [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp     ! Exponent on r_r                                         [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_accr_rc_exp
+    beta_exp  = KK_accr_rr_exp
 
     ! Calculate the covariance of x and KK accretion tendency.
     covar_x_KK_accr  &
@@ -715,6 +777,10 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         bivar_NL_mean_eq
 
+    use parameters_microphys, only: &
+        KK_accr_rc_exp, & ! Variable(s)
+        KK_accr_rr_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -749,11 +815,15 @@ module KK_upscaled_covariances
     real( kind = core_rknd ) :: &
       covar_rt_KK_accr  ! Covariance between r_t and KK accretion tendency   [-]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 1.15, & ! Exponent on s                                    [-]
-      beta_exp  = 1.15    ! Exponent on r_r                                  [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp     ! Exponent on r_r                                         [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_accr_rc_exp
+    beta_exp  = KK_accr_rr_exp
 
     ! Calculate the covariance of r_t and KK accretion tendency.
     covar_rt_KK_accr  &
@@ -809,6 +879,10 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         bivar_NL_mean_eq
 
+    use parameters_microphys, only: &
+        KK_accr_rc_exp, & ! Variable(s)
+        KK_accr_rr_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -843,11 +917,15 @@ module KK_upscaled_covariances
     real( kind = core_rknd ) :: &
       covar_thl_KK_accr  ! Covariance between th_l and KK accretion tendency [-]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 1.15, & ! Exponent on s                                    [-]
-      beta_exp  = 1.15    ! Exponent on r_r                                  [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp     ! Exponent on r_r                                         [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_accr_rc_exp
+    beta_exp  = KK_accr_rr_exp
 
     ! Calculate the covariance of th_l and KK accretion tendency.
     covar_thl_KK_accr  &

@@ -34,6 +34,11 @@ module KK_upscaled_means
     use constants_clubb, only: &
         one  ! Constant(s)
 
+    use parameters_microphys, only: &
+        KK_evap_Supersat_exp, & ! Variable(s)
+        KK_evap_rr_exp,       &
+        KK_evap_Nr_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -61,12 +66,17 @@ module KK_upscaled_means
     real( kind = core_rknd ) :: &
       KK_evap_upscaled_mean  ! Mean of KK evaporation tendency       [(kg/kg)/s]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 1.0,       & ! Exponent on s                               [-]
-      beta_exp  = (1.0/3.0), & ! Exponent on r_r                             [-]
-      gamma_exp = (2.0/3.0)    ! Exponent on N_r                             [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp,  & ! Exponent on r_r                                         [-]
+      gamma_exp    ! Exponent on N_r                                         [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_evap_Supersat_exp
+    beta_exp  = KK_evap_rr_exp
+    gamma_exp = KK_evap_Nr_exp
 
     ! Calculate the mean KK evaporation tendency.
     KK_evap_upscaled_mean  &
@@ -103,6 +113,10 @@ module KK_upscaled_means
     use constants_clubb, only: &
         one  ! Constant(s)
 
+    use parameters_microphys, only: &
+        KK_auto_rc_exp, & ! Variable(s)
+        KK_auto_Nc_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -125,11 +139,15 @@ module KK_upscaled_means
     real( kind = core_rknd ) :: &
       KK_auto_upscaled_mean  ! Mean of KK autoconversion tendency   [(kg/kg)/s]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 2.47,  & ! Exponent on s                                  [-]
-      beta_exp  = -1.79    ! Exponent on r_r                                [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                          [-]
+      beta_exp     ! Exponent on N_c                                        [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_auto_rc_exp
+    beta_exp  = KK_auto_Nc_exp
 
     ! Calculate the mean KK autoconversion tendency.
     KK_auto_upscaled_mean  &
@@ -162,6 +180,10 @@ module KK_upscaled_means
     use constants_clubb, only: &
         one  ! Constant(s)
 
+    use parameters_microphys, only: &
+        KK_accr_rc_exp, & ! Variable(s)
+        KK_accr_rr_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -184,11 +206,15 @@ module KK_upscaled_means
     real( kind = core_rknd ) :: &
       KK_accr_upscaled_mean  ! Mean of KK accretion tendency        [(kg/kg)/s]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = 1.15, & ! Exponent on s                                   [-]
-      beta_exp  = 1.15    ! Exponent on r_r                                 [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                          [-]
+      beta_exp     ! Exponent on r_r                                        [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_accr_rc_exp
+    beta_exp  = KK_accr_rr_exp
 
     ! Calculate the mean KK accretion tendency.
     KK_accr_upscaled_mean  &
@@ -217,6 +243,10 @@ module KK_upscaled_means
     ! References:
     !-----------------------------------------------------------------------
 
+    use parameters_microphys, only: &
+        KK_mvr_rr_exp, & ! Variable(s)
+        KK_mvr_Nr_exp
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -235,11 +265,15 @@ module KK_upscaled_means
     real( kind = core_rknd ) :: &
       KK_mvr_upscaled_mean  ! Mean of KK rain drop mean volume radius      [m]
 
-    ! Constant Parameters
-    real( kind = core_rknd ), parameter :: &
-      alpha_exp = (1.0/3.0),  & ! Exponent on r_r                          [-]
-      beta_exp  = (-1.0/3.0)    ! Exponent on N_r                          [-]
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on r_r                                       [-]
+      beta_exp     ! Exponent on N_r                                       [-]
 
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_mvr_rr_exp
+    beta_exp  = KK_mvr_Nr_exp
 
     ! Calculate the KK mean volume radius of rain drops.
     KK_mvr_upscaled_mean  &
