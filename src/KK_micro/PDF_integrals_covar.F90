@@ -9,11 +9,11 @@ module PDF_integrals_covars
   public :: quadrivar_NNLL_covar, &
             quadrivar_NNLL_covar_const_x1, &
             quadrivar_NNLL_covar_const_x2, &
-            quadrivar_NNLL_covar_const_x1_x2, &
+            quadrivar_NNLL_covar_const_x1x2, &
             trivar_NNL_covar, &
             trivar_NNL_covar_const_x1, &
             trivar_NNL_covar_const_x2, &
-            trivar_NNL_covar_const_x1_x2
+            trivar_NNL_covar_const_x1x2
 
   contains
 
@@ -279,11 +279,11 @@ module PDF_integrals_covars
   end function quadrivar_NNLL_covar_const_x2
 
   !=============================================================================
-  function quadrivar_NNLL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
-                                             sigma_x3_n, sigma_x4_n, &
-                                             rho_x3x4_n, x1_mean, &
-                                             x2_alpha_x3_beta_x4_gamma_mean, &
-                                             alpha_exp, beta_exp, gamma_exp )
+  function quadrivar_NNLL_covar_const_x1x2( mu_x1, mu_x2, mu_x3_n, mu_x4_n, &
+                                            sigma_x3_n, sigma_x4_n, &
+                                            rho_x3x4_n, x1_mean, &
+                                            x2_alpha_x3_beta_x4_gamma_mean, &
+                                            alpha_exp, beta_exp, gamma_exp )
 
     ! Description:
 
@@ -321,11 +321,11 @@ module PDF_integrals_covars
 
     ! Return Variable
     real( kind = dp ) ::  &
-      quadrivar_NNLL_covar_const_x1_x2
+      quadrivar_NNLL_covar_const_x1x2
 
     if ( mu_x2 <= zero_dp ) then
 
-       quadrivar_NNLL_covar_const_x1_x2  &
+       quadrivar_NNLL_covar_const_x1x2  &
        = mu_x2**alpha_exp  &
          * ( mu_x1 - x1_mean )  &
          * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
@@ -337,14 +337,14 @@ module PDF_integrals_covars
 
     else ! mu_x2 > 0
 
-       quadrivar_NNLL_covar_const_x1_x2  &
+       quadrivar_NNLL_covar_const_x1x2  &
        = - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
 
     endif
 
     return
 
-  end function quadrivar_NNLL_covar_const_x1_x2
+  end function quadrivar_NNLL_covar_const_x1x2
 
   !=============================================================================
   function trivar_NNL_covar( mu_x1, mu_x2, mu_x3_n, &
@@ -562,9 +562,9 @@ module PDF_integrals_covars
   end function trivar_NNL_covar_const_x2
 
   !=============================================================================
-  function trivar_NNL_covar_const_x1_x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
-                                         x1_mean, x2_alpha_x3_beta_mean, &
-                                         alpha_exp, beta_exp )
+  function trivar_NNL_covar_const_x1x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
+                                        x1_mean, x2_alpha_x3_beta_mean, &
+                                        alpha_exp, beta_exp )
 
     ! Description:
 
@@ -598,11 +598,11 @@ module PDF_integrals_covars
 
     ! Return Variable
     real( kind = dp ) ::  &
-      trivar_NNL_covar_const_x1_x2
+      trivar_NNL_covar_const_x1x2
 
     if ( mu_x2 >= zero_dp ) then
 
-       trivar_NNL_covar_const_x1_x2  &
+       trivar_NNL_covar_const_x1x2  &
        = mu_x2**alpha_exp  &
          * ( mu_x1 - x1_mean )  &
          * exp( mu_x3_n * beta_exp  &
@@ -611,14 +611,14 @@ module PDF_integrals_covars
 
     else ! mu_x2 < 0
 
-       trivar_NNL_covar_const_x1_x2  &
+       trivar_NNL_covar_const_x1x2  &
        = - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
 
     endif
   
     return
 
-  end function trivar_NNL_covar_const_x1_x2
+  end function trivar_NNL_covar_const_x1x2
 
 !===============================================================================
 
