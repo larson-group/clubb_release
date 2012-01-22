@@ -104,12 +104,6 @@ module microphys_driver
       Nrp2_on_Nrm2_cloud,    &
       Ncp2_on_Ncm2_cloud,    &
       corr_rrNr_LL_cloud,    &
-      corr_rtrr_NL_cloud,    &
-      corr_rtNr_NL_cloud,    &
-      corr_rtNc_NL_cloud,    &
-      corr_thlrr_NL_cloud,   &
-      corr_thlNr_NL_cloud,   &
-      corr_thlNc_NL_cloud,   &
       corr_srr_NL_cloud,     &
       corr_sNr_NL_cloud,     &
       corr_sNc_NL_cloud,     &
@@ -117,12 +111,6 @@ module microphys_driver
       Nrp2_on_Nrm2_below,    &
       Ncp2_on_Ncm2_below,    &
       corr_rrNr_LL_below,    &
-      corr_rtrr_NL_below,    &
-      corr_rtNr_NL_below,    &
-      corr_rtNc_NL_below,    &
-      corr_thlrr_NL_below,   &
-      corr_thlNr_NL_below,   &
-      corr_thlNc_NL_below,   &
       corr_srr_NL_below,     &
       corr_sNr_NL_below,     &
       corr_sNc_NL_below,     &
@@ -257,14 +245,10 @@ module microphys_driver
       LH_microphys_type, l_local_kk, LH_microphys_calls, LH_sequence_length, &
       l_lh_cloud_weighted_sampling, l_fix_s_t_correlations, l_lh_vert_overlap, &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
-      corr_rrNr_LL_cloud, corr_rtrr_NL_cloud, corr_rtNr_NL_cloud, &
-      corr_rtNc_NL_cloud, corr_thlrr_NL_cloud, corr_thlNr_NL_cloud, &
-      corr_thlNc_NL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
+      corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
       corr_sNc_NL_cloud, rrp2_on_rrainm2_below, &
       Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
-      corr_rrNr_LL_below, corr_rtrr_NL_below, corr_rtNr_NL_below, &
-      corr_rtNc_NL_below, corr_thlrr_NL_below, corr_thlNr_NL_below, &
-      corr_thlNc_NL_below, corr_srr_NL_below, &
+      corr_rrNr_LL_below, corr_srr_NL_below, &
       corr_sNr_NL_below, corr_sNc_NL_below, &
       C_evap, r_0, microphys_start_time, &
       Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
@@ -353,29 +337,17 @@ module microphys_driver
     Nrp2_on_Nrm2_cloud    = 0.429_core_rknd
     Ncp2_on_Ncm2_cloud    = 0.003_core_rknd
     corr_rrNr_LL_cloud    = 0.786_core_rknd
-    corr_rtrr_NL_cloud    = 0.268_core_rknd
-    corr_rtNr_NL_cloud    = 0.295_core_rknd
-    corr_rtNc_NL_cloud    = 0.413_core_rknd
-    corr_thlrr_NL_cloud   = -0.185_core_rknd
-    corr_thlNr_NL_cloud   = -0.258_core_rknd
-    corr_thlNc_NL_cloud   = -0.420_core_rknd
-!    corr_srr_NL_cloud     = 0.242_core_rknd
-!    corr_sNr_NL_cloud     = 0.285_core_rknd
-!    corr_sNc_NL_cloud     = 0.433_core_rknd
+    corr_srr_NL_cloud     = 0.242_core_rknd
+    corr_sNr_NL_cloud     = 0.285_core_rknd
+    corr_sNc_NL_cloud     = 0.433_core_rknd
     ! Parameters for below-cloud (from SAM RF02 DO).
     rrp2_on_rrainm2_below = 8.97_core_rknd
     Nrp2_on_Nrm2_below    = 12.03_core_rknd
     Ncp2_on_Ncm2_below    = 0.00_core_rknd  ! Not applicable below cloud.
     corr_rrNr_LL_below    = 0.886_core_rknd
-    corr_rtrr_NL_below    = -0.005_core_rknd
-    corr_rtNr_NL_below    = -0.041_core_rknd
-    corr_rtNc_NL_below    = 0.00_core_rknd  ! Not applicable below cloud.
-    corr_thlrr_NL_below   = -0.241_core_rknd
-    corr_thlNr_NL_below   = -0.217_core_rknd
-    corr_thlNc_NL_below   = 0.00_core_rknd  ! Not applicable below cloud.
-!    corr_srr_NL_below     = 0.056_core_rknd
-!    corr_sNr_NL_below     = 0.015_core_rknd
-!    corr_sNc_NL_below     = 0.00_core_rknd  ! Not applicable below cloud.
+    corr_srr_NL_below     = 0.056_core_rknd
+    corr_sNr_NL_below     = 0.015_core_rknd
+    corr_sNc_NL_below     = 0.00_core_rknd  ! Not applicable below cloud.
     ! Other needed parameters
 
     ! Made up values for the variance of ice/snow, since we currently lack data
@@ -611,18 +583,6 @@ module microphys_driver
         l_write_to_file, iunit )
       call write_text ( "corr_rrNr_LL_cloud = ", corr_rrNr_LL_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "corr_rtrr_NL_cloud = ", corr_rtrr_NL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_rtNr_NL_cloud = ", corr_rtNr_NL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_rtNc_NL_cloud = ", corr_rtNc_NL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_thlrr_NL_cloud = ", corr_thlrr_NL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_thlNr_NL_cloud = ", corr_thlNr_NL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_thlNc_NL_cloud = ", corr_thlNc_NL_cloud, &
-        l_write_to_file, iunit )
       call write_text ( "corr_srr_NL_cloud = ", corr_srr_NL_cloud, &
         l_write_to_file, iunit )
       call write_text ( "corr_sNr_NL_cloud = ", corr_sNr_NL_cloud, &
@@ -636,18 +596,6 @@ module microphys_driver
       call write_text ( "Ncp2_on_Ncm2_below = ", Ncp2_on_Ncm2_below, &
         l_write_to_file, iunit )
       call write_text ( "corr_rrNr_LL_below = ", corr_rrNr_LL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_rtrr_NL_below = ", corr_rtrr_NL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_rtNr_NL_below = ", corr_rtNr_NL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_rtNc_NL_below = ", corr_rtNc_NL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_thlrr_NL_below = ", corr_thlrr_NL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_thlNr_NL_below = ", corr_thlNr_NL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_thlNc_NL_below = ", corr_thlNc_NL_below, &
         l_write_to_file, iunit )
       call write_text ( "corr_srr_NL_below = ", corr_srr_NL_below, &
         l_write_to_file, iunit )
