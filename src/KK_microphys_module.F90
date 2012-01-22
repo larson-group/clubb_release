@@ -30,22 +30,24 @@ module KK_microphys_module
 !        gr  ! Variable(s)
 
     use constants_clubb, only: &
-        Rd,          & ! Constant(s)
-        Rv,          &
-        Lv,          &
-        Cp,          &
-        pi,          &
-        three,       &
-        four_thirds, &
-        one,         &
-        two_thirds,  &
-        one_third,   &
-        zero,        &
-        rho_lw,      &
-        rc_tol,      &
-        rr_tol,      &
-        Nr_tol,      &
-        Nc_tol
+        Rd,           & ! Constant(s)
+        Rv,           &
+        Lv,           &
+        Cp,           &
+        pi,           &
+        three,        &
+        four_thirds,  &
+        one,          &
+        two_thirds,   &
+        one_third,    &
+        zero,         &
+        rho_lw,       &
+        rc_tol,       &
+        rr_tol,       &
+        Nr_tol,       &
+        Nc_tol,       &
+        cm3_per_m3,   &
+        micron_per_m
 
     use parameters_microphys, only: &
         rrp2_on_rrainm2_cloud, & ! Constant(s)
@@ -74,6 +76,7 @@ module KK_microphys_module
         corr_thlNr_NL_below,   &
         corr_thlNc_NL_cloud,   &
         corr_thlNc_NL_below,   &
+        KK_auto_Nc_exp,        &
         C_evap
 
     use KK_utilities, only: &
@@ -425,7 +428,7 @@ module KK_microphys_module
                             * ( ( one + Beta_Tl * r_sl ) / r_sl )
 
        ! Coefficient for KK autoconversion.
-       KK_auto_coef = 7.4188e13_core_rknd * rho(k)**(-1.79_core_rknd)
+       KK_auto_coef = 1350.0_core_rknd * ( rho(k) / cm3_per_m3 )**KK_auto_Nc_exp
 
        ! Coefficient for KK accretion.
        KK_accr_coef = 67.0_core_rknd
@@ -874,18 +877,18 @@ module KK_microphys_module
     forall ( k = 1:nz-1 )
 
        ! Sedimentation velocity of rrainm.
-!       Vrr(k) = 0.012_core_rknd * ( 1.0e6_core_rknd * zt2zm(mean_vol_rad,k) ) &
+!       Vrr(k) = 0.012_core_rknd * ( micron_per_m * zt2zm(mean_vol_rad,k) ) &
 !                - 0.2_core_rknd
-       Vrr(k) = 0.012_core_rknd * ( 1.0e6_core_rknd * mean_vol_rad(k) )  &
+       Vrr(k) = 0.012_core_rknd * ( micron_per_m * mean_vol_rad(k) )  &
                 - 0.2_core_rknd
 
        ! Sedimentation velocity is positive upwards.
        Vrr(k) = -max( Vrr(k), zero )
 
        ! Sedimentation velocity of Nrm.
-!       VNr(k) = 0.007_core_rknd * ( 1.0e6_core_rknd * zt2zm(mean_vol_rad,k) ) &
+!       VNr(k) = 0.007_core_rknd * ( micron_per_m * zt2zm(mean_vol_rad,k) ) &
 !                - 0.1_core_rknd
-       VNr(k) = 0.007_core_rknd * ( 1.0e6_core_rknd * mean_vol_rad(k) )  &
+       VNr(k) = 0.007_core_rknd * ( micron_per_m * mean_vol_rad(k) )  &
                 - 0.1_core_rknd
 
        ! Sedimentation velocity is positive upwards.
