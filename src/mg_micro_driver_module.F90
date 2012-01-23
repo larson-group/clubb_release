@@ -326,7 +326,7 @@ module mg_micro_driver_module
     reff_rain(:) = 0.0_core_rknd
     reff_snow(:) = 0.0_core_rknd
     rsnowm(:) = 0.0_core_rknd
-    rrainm(:) = 0.90_core_rknd
+    rrainm(:) = 0.0_core_rknd
     rcm_new(:) = 0.0_core_rknd
     T_in_K_new(:) = 0.0_core_rknd
     rcm_mc(:) = 0.0_core_rknd
