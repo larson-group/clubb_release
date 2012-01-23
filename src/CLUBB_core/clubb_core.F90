@@ -986,6 +986,9 @@ module clubb_core
       rcm = rcm_in_layer
     end if
 
+    ! Clip cloud fraction here if it still exceeds 1.0 due to round off
+    cloud_frac = min( 1.0_core_rknd, cloud_frac )
+
     !----------------------------------------------------------------
     ! Compute thvm
     !----------------------------------------------------------------
