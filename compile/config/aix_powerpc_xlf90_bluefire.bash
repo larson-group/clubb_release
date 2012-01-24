@@ -73,7 +73,7 @@ FFLAGS="$ARCH $OPTIMIZE"
 #CPPFLAGS="-WF,-DNETCDF,-qmoddir=$NETCDF/include,-Dnooverlap,-Dradoffline"
 #CPPFLAGS="-I$NETCDF/include -WF,-DNETCDF,-Dnooverlap,-Dradoffline"
 CPPFLAGS="-I$NETCDF/include"
-CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=4"
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=8"
 
 # == Static library processing ==
 AR=ar

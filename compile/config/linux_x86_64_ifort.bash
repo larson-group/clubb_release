@@ -61,7 +61,7 @@ FFLAGS="$ARCH $DEBUG"
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
 
-CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DMKL -DCLUBB_REAL_TYPE=4"
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DMKL -DCLUBB_REAL_TYPE=8"
 CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include"
 
 # == Static library processing ==
