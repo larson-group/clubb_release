@@ -397,6 +397,12 @@ module mg_micro_driver_module
 !   do i=1, hydromet_dim, 1
 !     hydromet_flip(:,i) = max( 1e-8_r8, hydromet_flip(:,i) ) ! Known magic number
 !   end do
+
+    ! These variables are unused in CLUBB, so they are initialized to 1 before input into
+    ! microp_aero_ts. 
+    aer_mmr_flip(icol,:,:) = 1._r8
+    turbtype_flip(icol,:) = 1._r8
+    smaw_flip(icol,:) = 1._r8
    
     if( l_microp_aero_ts ) then
       ! Need to prevent a floating-point exception below;  the result doesn't
@@ -436,13 +442,7 @@ module mg_micro_driver_module
       rndst_flip(icol,:,4) = 1.0_r8
       nacon_flip(icol,:,1:4) = 0.0_r8
 
-    end if
-
-    ! These variables are unused in CLUBB, so they are initialized to 1 before input into
-    ! microp_aero_ts. 
-    aer_mmr_flip(icol,:,:) = 1._r8
-    turbtype_flip(icol,:) = 1._r8
-    smaw_flip(icol,:) = 1._r8
+    end if 
 
     qcic_flip(icol,:) = 0.0_r8 ! This is needed in case qc is 0 everywhere, due to a goto statement
     nsic_flip(icol,:) = 0.0_r8
