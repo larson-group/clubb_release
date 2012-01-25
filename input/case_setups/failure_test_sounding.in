@@ -4,7 +4,7 @@
 ! If vertical velocity is time dependent, insert missing values throughout column.
 ! In all cases, missing values are denoted by -999.9
 z[m]     thm[K]   rt[kg\kg]   u[m\s]   v[m\s]    w[m\s]         ug[m\s]   vg[m\s]   
-0.      50.0       0.10      5.e99    5.e99   -5e99            0.        0.        
-2000.   100.0      0.08      5.e99    5.e99   -5e99            0.        0. 
-3000.   150.0      0.05      5.e99    5.e99    5e99            0.        0.
-4500.   200.0      0.01      5.e99    5.e99    5e99            0.        0.        
+0.      50.0       0.10      5.e9999    5.e9999   -5e9999            0.        0.        
+2000.   100.0      0.08      5.e9999    5.e9999   -5e9999            0.        0. 
+3000.   150.0      0.05      5.e9999    5.e9999    5e9999            0.        0.
+4500.   200.0      0.01      5.e9999    5.e9999    5e9999            0.        0.        
