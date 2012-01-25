@@ -1512,7 +1512,7 @@ c
         end if
         qg3 (iindex,j,kindex)= qgtemp(ilen)
 
-c       cond(iindex,j,kindex)= condrt(ilen)
+        cond(iindex,j,kindex)= condrt(ilen)
 
 c Addition by Adam Smith, 08 August 2006
 c Adding snow slope factor and fall velocity to conversion

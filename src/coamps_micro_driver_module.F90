@@ -627,7 +627,7 @@ module coamps_micro_driver_module
 ! Michael Falk, 6 July 2007
 ! Assigning values to the "flip" variables, in which k=1 is the top of the domain
 
-!     cond_flip(1,1,1:kk) = cond(1,1,kk:1:-1) ! this is uninitialized -dschanen
+      cond_flip(1,1,1:kk) = 0.
       p3_flip(1,1,1:kk)  = p3(1,1,kk:1:-1)     ! Pressure
       qt3_flip(1,1,1:kk) = qt3(1,1,kk:1:-1)   ! Total water mixing ratio
       qv3_flip(1,1,1:kk) = qv3(1,1,kk:1:-1)   ! Vapor water mixing ratio
