@@ -443,7 +443,7 @@ module clubb_core
       cloud_frac    ! cloud fraction (thermodynamic levels)   [-]
 
 #ifdef NCAR
-    real, intent(out), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
       khzt, &       ! eddy diffusivity on thermo levels
       khzm          ! eddy diffusivity on momentum levels     
 #endif
