@@ -44,8 +44,12 @@ elseif strfind ( filename, '_cam' ) %For cam cases
    varPhis = netcdf.inqVarID( nc_file, 'PHIS');
    PHIS = netcdf.getVar( nc_file, varPhis );
    z(:,1) = alt(1,1,:,1) - (PHIS(1,:,1)/9.81);
+elseif strfind ( filename, 'twp_ice' ) % For twp_ice
+   zvarid = netcdf.inqVarID(nc_file, 'altitude');
+   z = netcdf.getVar( nc_file, zvarid );
 else
-  z = netcdf.getVar( nc_file, 2 );
+   zvarid = netcdf.inqVarID(nc_file, 'z');
+   z = netcdf.getVar( nc_file, zvarid );
 end
 
 nzmax = size(z, 1);
