@@ -2,7 +2,8 @@ This directory contains platform specific configuration files for the mkmf
 script.  This allows users to have a setup for their specific computer
 and compiler configuration.
 
-Adding a new case should be fairly straightforward.  The easiest method is to 
+Adding a new compiler or operating system should be fairly straightforward for
+UNIX-compatible operating systems.  The easiest method is to 
 copy an existing file to a new .bash file and modify it for your platform.  We
 have adopted a loose convention for naming files based on the operating system,
 architecture, and compiler used. That is:
@@ -20,6 +21,6 @@ Followed by the compiler vendor or the command used to compile.
 In some cases we've chosen to use the more common name for the OS rather than
 the results of uname -s to make things more clear for users.  Hence we used 
 "solaris" rather than "SunOS", and "macosx" rather than "Darwin" to indentify
-the operating systems of Oracle and Apple.  When adding new config the name
+the operating systems of Oracle and Apple.  When adding a new config the name
 used is at the discretion of the person porting CLUBB to the new platform, 
-but it should chosen to avoid confusion with new users if possible.
+but it should chosen to avoid confusion for new users if possible.
