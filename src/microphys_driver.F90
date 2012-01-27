@@ -107,6 +107,9 @@ module microphys_driver
       corr_srr_NL_cloud,     &
       corr_sNr_NL_cloud,     &
       corr_sNc_NL_cloud,     &
+      corr_trr_NL_cloud,     &
+      corr_tNr_NL_cloud,     &
+      corr_tNc_NL_cloud,     &
       rrp2_on_rrainm2_below, &
       Nrp2_on_Nrm2_below,    &
       Ncp2_on_Ncm2_below,    &
@@ -114,6 +117,9 @@ module microphys_driver
       corr_srr_NL_below,     &
       corr_sNr_NL_below,     &
       corr_sNc_NL_below,     &
+      corr_trr_NL_below,     &
+      corr_tNr_NL_below,     &
+      corr_tNc_NL_below,     &
       C_evap,                &
       r_0,                   &
       KK_evap_Supersat_exp,  &
@@ -142,7 +148,8 @@ module microphys_driver
     use constants_clubb, only: &
         one,        & ! Constant(s)
         two_thirds, &
-        one_third
+        one_third,  &
+        zero
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
@@ -340,14 +347,20 @@ module microphys_driver
     corr_srr_NL_cloud     = 0.242_core_rknd
     corr_sNr_NL_cloud     = 0.285_core_rknd
     corr_sNc_NL_cloud     = 0.433_core_rknd
+    corr_trr_NL_cloud     = 0.260_core_rknd 
+    corr_tNr_NL_cloud     = 0.204_core_rknd
+    corr_tNc_NL_cloud     = 0.165_core_rknd
     ! Parameters for below-cloud (from SAM RF02 DO).
     rrp2_on_rrainm2_below = 8.97_core_rknd
     Nrp2_on_Nrm2_below    = 12.03_core_rknd
-    Ncp2_on_Ncm2_below    = 0.00_core_rknd  ! Not applicable below cloud.
+    Ncp2_on_Ncm2_below    = zero  ! Not applicable below cloud.
     corr_rrNr_LL_below    = 0.886_core_rknd
     corr_srr_NL_below     = 0.056_core_rknd
     corr_sNr_NL_below     = 0.015_core_rknd
-    corr_sNc_NL_below     = 0.00_core_rknd  ! Not applicable below cloud.
+    corr_sNc_NL_below     = zero  ! Not applicable below cloud.
+    corr_trr_NL_below     = -0.066_core_rknd
+    corr_tNr_NL_below     = -0.094_core_rknd
+    corr_tNc_NL_below     = zero  ! Not applicable below cloud.
     ! Other needed parameters
 
     ! Made up values for the variance of ice/snow, since we currently lack data

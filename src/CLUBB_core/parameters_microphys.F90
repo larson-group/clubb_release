@@ -103,10 +103,14 @@ module parameters_microphys
     corr_rrNr_LL_cloud,    & ! 0.786
     corr_srr_NL_cloud,     & ! 0.242
     corr_sNr_NL_cloud,     & ! 0.285
-    corr_sNc_NL_cloud        ! 0.433
+    corr_sNc_NL_cloud,     & ! 0.433
+    corr_trr_NL_cloud,     & ! 0.260
+    corr_tNr_NL_cloud,     & ! 0.204
+    corr_tNc_NL_cloud        ! 0.165
 
 !$omp threadprivate( rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
-!$omp   corr_rrNr_LL_cloud, corr_srr_NL_cloud,  corr_sNr_NL_cloud,  corr_sNc_NL_cloud )
+!$omp   corr_rrNr_LL_cloud, corr_srr_NL_cloud,  corr_sNr_NL_cloud,  corr_sNc_NL_cloud, &
+!$omp   corr_trr_NL_cloud, corr_tNr_NL_cloud, corr_tNc_NL_cloud )
 
   ! Parameters for below-cloud (from SAM RF02 DO).
   real( kind = core_rknd ), public :: &       ! RF02 value
@@ -116,10 +120,14 @@ module parameters_microphys
     corr_rrNr_LL_below,    & ! 0.886
     corr_srr_NL_below,     & ! 0.056
     corr_sNr_NL_below,     & ! 0.015
-    corr_sNc_NL_below        ! 0.00 ! Not applicable below cloud.
+    corr_sNc_NL_below,     & ! 0.00 ! Not applicable below cloud.
+    corr_trr_NL_below,     & ! -0.066
+    corr_tNr_NL_below,     & ! -0.094
+    corr_tNc_NL_below        ! 0.00 ! Not applicable below cloud.
 
 !$omp threadprivate( rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
-!$omp   corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below )
+!$omp   corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below, &
+!$omp   corr_trr_NL_below, corr_tNr_NL_below, corr_tNC_NL_below )
 
   ! Other needed parameters
   real( kind = core_rknd ), public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of
