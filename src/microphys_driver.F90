@@ -253,11 +253,11 @@ module microphys_driver
       l_lh_cloud_weighted_sampling, l_fix_s_t_correlations, l_lh_vert_overlap, &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
       corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
-      corr_sNc_NL_cloud, rrp2_on_rrainm2_below, &
-      Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below, &
-      corr_rrNr_LL_below, corr_srr_NL_below, &
-      corr_sNr_NL_below, corr_sNc_NL_below, &
-      C_evap, r_0, microphys_start_time, &
+      corr_sNc_NL_cloud, corr_trr_NL_cloud, corr_tNr_NL_cloud, &
+      corr_tNc_NL_cloud, rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, &
+      Ncp2_on_Ncm2_below, corr_rrNr_LL_below, corr_srr_NL_below, &
+      corr_sNr_NL_below, corr_sNc_NL_below, corr_trr_NL_below, &
+      corr_tNr_NL_below, corr_tNc_NL_below, C_evap, r_0, microphys_start_time, &
       Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
 
@@ -602,6 +602,12 @@ module microphys_driver
         l_write_to_file, iunit )
       call write_text ( "corr_sNc_NL_cloud = ", corr_sNc_NL_cloud, &
         l_write_to_file, iunit )
+      call write_text ( "corr_trr_NL_cloud = ", corr_trr_NL_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_tNr_NL_cloud = ", corr_tNr_NL_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_tNc_NL_cloud = ", corr_tNc_NL_cloud, &
+        l_write_to_file, iunit )
       call write_text ( "rrp2_on_rrainm2_below = ", rrp2_on_rrainm2_below, &
         l_write_to_file, iunit )
       call write_text ( "Nrp2_on_Nrm2_below = ", Nrp2_on_Nrm2_below, &
@@ -615,6 +621,12 @@ module microphys_driver
       call write_text ( "corr_sNr_NL_below = ", corr_sNr_NL_below, &
         l_write_to_file, iunit )
       call write_text ( "corr_sNc_NL_below = ", corr_sNc_NL_below, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_trr_NL_below = ", corr_trr_NL_below, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_tNr_NL_below = ", corr_tNr_NL_below, &
+        l_write_to_file, iunit )
+      call write_text ( "corr_tNc_NL_below = ", corr_tNc_NL_below, &
         l_write_to_file, iunit )
       call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
       call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
