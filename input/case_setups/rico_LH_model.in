@@ -155,14 +155,20 @@ corr_rrNr_LL_cloud    = 0.786
 corr_srr_NL_cloud     = 0.242
 corr_sNr_NL_cloud     = 0.285
 corr_sNc_NL_cloud     = 0.0
+corr_trr_NL_cloud     = 0.260
+corr_tNr_NL_cloud     = 0.204
+corr_tNc_NL_cloud     = 0.0
 
-rrp2_on_rrainm2_below = 1.  ! Reduced by a factor of 10
-Nrp2_on_Nrm2_below    = 1.  ! Reduced
-Ncp2_on_Ncm2_below    = 0.
+rrp2_on_rrainm2_below = 1.0  ! Reduced by a factor of 10
+Nrp2_on_Nrm2_below    = 1.0  ! Reduced
+Ncp2_on_Ncm2_below    = 0.0
 corr_rrNr_LL_below    = 0.886
 corr_srr_NL_below     = 0.056
 corr_sNr_NL_below     = 0.015
-corr_sNc_NL_below     = 0.00
+corr_sNc_NL_below     = 0.0
+corr_trr_NL_below     = -0.066
+corr_tNr_NL_below     = -0.094
+corr_tNc_NL_below     = 0.0
 
 C_evap = 0.5
 r_0 = 100.0e-6
