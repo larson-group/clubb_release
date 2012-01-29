@@ -426,13 +426,19 @@ module stats_variables
      is1, & 
      is2, & 
      istdev_s1, & 
-     istdev_s2, & 
+     istdev_s2, &
+     istdev_t1, &
+     istdev_t2, &
+     icovar_st_1, &
+     icovar_st_2, &
+     icorr_st_1, &
+     icorr_st_2, &
      irrtthl
 
 !$omp   threadprivate(imixt_frac, iw1, iw2, ivarnce_w1, ivarnce_w2, ithl1, ithl2, ivarnce_thl1, &
 !$omp     ivarnce_thl2, irt1, irt2, ivarnce_rt1, ivarnce_rt2, irc1, irc2, &
 !$omp     irsl1, irsl2, icloud_frac1, icloud_frac2, is1, is2, istdev_s1, istdev_s2, &
-!$omp     irrtthl)
+!$omp     istdev_t1, istdev_t2, icovar_st_1, icovar_st_2, icorr_st_1, icorr_st_2, irrtthl)
 
   integer, public :: & 
      iwp2_zt, & 
@@ -522,17 +528,6 @@ module stats_variables
 
 !$omp threadprivate(iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncp2_zt, iLH_rcp2_zt, iLH_rtp2_zt, &
 !$omp               iLH_thlp2_zt, iLH_rrainp2_zt)
-
-  integer, public :: &
-    itp2_mellor_1, &
-    itp2_mellor_2, &
-    isptp_mellor_1, &
-    isptp_mellor_2, &
-    icorr_st_mellor1, &
-    icorr_st_mellor2
-
-!$omp threadprivate(itp2_mellor_1, itp2_mellor_2, isptp_mellor_1, &
-!$omp   isptp_mellor_2, icorr_st_mellor1, icorr_st_mellor2)
 
   ! Indices for statistics in zm file
   integer, public :: & 

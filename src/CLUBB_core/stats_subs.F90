@@ -1255,7 +1255,13 @@ module stats_subs
         is1, & 
         is2, & 
         istdev_s1, & 
-        istdev_s2, & 
+        istdev_s2, &
+        istdev_t1, &
+        istdev_t2, &
+        icovar_st_1, &
+        icovar_st_2, &
+        icorr_st_1, &
+        icorr_st_2, &
         irrtthl, &
         is_mellor
 
@@ -1347,12 +1353,6 @@ module stats_subs
       ithlm_zm
 
     use stats_variables, only: &
-      itp2_mellor_1, & ! Variables
-      itp2_mellor_2, &
-      isptp_mellor_1, &
-      isptp_mellor_2, &
-      icorr_st_mellor1, &
-      icorr_st_mellor2, &
       iwp3_on_wp2, &
       iwp3_on_wp2_zt, &
       iSkw_velocity
@@ -1432,11 +1432,6 @@ module stats_subs
       wp3_on_wp2, &
       wp3_on_wp2_zt, &
       Skw_velocity
-
-    use variables_diagnostic_module, only: & 
-      sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
-      tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
-      corr_st_mellor1, corr_st_mellor2 ! Correlation between s and t [-]
 
     use pdf_parameter_module, only: & 
       pdf_parameter ! Type
@@ -1631,6 +1626,12 @@ module stats_subs
       call stat_update_var( is2, pdf_params%s2, zt )
       call stat_update_var( istdev_s1, pdf_params%stdev_s1, zt )
       call stat_update_var( istdev_s2, pdf_params%stdev_s2, zt )
+      call stat_update_var( istdev_t1, pdf_params%stdev_t1, zt )
+      call stat_update_var( istdev_t2, pdf_params%stdev_t2, zt )
+      call stat_update_var( icovar_st_1, pdf_params%covar_st_1, zt )
+      call stat_update_var( icovar_st_2, pdf_params%covar_st_2, zt )
+      call stat_update_var( icorr_st_1, pdf_params%corr_st_1, zt )
+      call stat_update_var( icorr_st_2, pdf_params%corr_st_2, zt )
       call stat_update_var( irrtthl, pdf_params%rrtthl, zt )
       call stat_update_var( iwp2_zt, wp2_zt, zt )
       call stat_update_var( ithlp2_zt, thlp2_zt, zt )
@@ -1695,13 +1696,6 @@ module stats_subs
       call stat_update_var( ithv_ds_zm, thv_ds_zm, zm )
       call stat_update_var( iem, em, zm )
       call stat_update_var( iFrad, Frad, zm )
-
-      call stat_update_var( isptp_mellor_1, sptp_mellor_1, zm )
-      call stat_update_var( isptp_mellor_2, sptp_mellor_2, zm )
-      call stat_update_var( itp2_mellor_1, tp2_mellor_1, zm )
-      call stat_update_var( itp2_mellor_2, tp2_mellor_2, zm )
-      call stat_update_var( icorr_st_mellor1, corr_st_mellor1, zm )
-      call stat_update_var( icorr_st_mellor2, corr_st_mellor2, zm )
 
       call stat_update_var( iSkw_velocity, Skw_velocity, zm )
       call stat_update_var( ia3_coef, a3_coef, zm )

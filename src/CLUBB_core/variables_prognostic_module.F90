@@ -178,9 +178,10 @@ module variables_prognostic_module
 !   None
 !-----------------------------------------------------------------------
     use constants_clubb, only:  & 
-        rt_tol, &
-        thl_tol, &
-        w_tol_sqd
+        rt_tol,    & ! Constant(s)
+        thl_tol,   &
+        w_tol_sqd, &
+        zero
 
     use parameters_model, only: & 
         sclr_dim,  & ! Variable(s)
@@ -334,36 +335,42 @@ module variables_prognostic_module
     sigma_sqd_w           = 0.0_core_rknd ! PDF width parameter (momentum levels)
 
     ! Variables for PDF closure scheme
-    pdf_params(:)%w1          = 0.0_core_rknd
-    pdf_params(:)%w2          = 0.0_core_rknd
-    pdf_params(:)%varnce_w1   = 0.0_core_rknd
-    pdf_params(:)%varnce_w2   = 0.0_core_rknd
-    pdf_params(:)%rt1         = 0.0_core_rknd
-    pdf_params(:)%rt2         = 0.0_core_rknd
-    pdf_params(:)%varnce_rt1  = 0.0_core_rknd
-    pdf_params(:)%varnce_rt2  = 0.0_core_rknd
-    pdf_params(:)%thl1        = 0.0_core_rknd
-    pdf_params(:)%thl2        = 0.0_core_rknd
-    pdf_params(:)%varnce_thl1 = 0.0_core_rknd
-    pdf_params(:)%varnce_thl2 = 0.0_core_rknd
-    pdf_params(:)%mixt_frac   = 0.0_core_rknd
-    pdf_params(:)%rc1         = 0.0_core_rknd
-    pdf_params(:)%rc2         = 0.0_core_rknd
-    pdf_params(:)%rsl1        = 0.0_core_rknd
-    pdf_params(:)%rsl2        = 0.0_core_rknd
-    pdf_params(:)%cloud_frac1 = 0.0_core_rknd
-    pdf_params(:)%cloud_frac2 = 0.0_core_rknd
-    pdf_params(:)%s1          = 0.0_core_rknd
-    pdf_params(:)%s2          = 0.0_core_rknd
-    pdf_params(:)%stdev_s1    = 0.0_core_rknd
-    pdf_params(:)%stdev_s2    = 0.0_core_rknd
-    pdf_params(:)%rrtthl      = 0.0_core_rknd
-    pdf_params(:)%alpha_thl   = 0.0_core_rknd
-    pdf_params(:)%alpha_rt    = 0.0_core_rknd
-    pdf_params(:)%crt1        = 0.0_core_rknd
-    pdf_params(:)%crt2        = 0.0_core_rknd
-    pdf_params(:)%cthl1       = 0.0_core_rknd
-    pdf_params(:)%cthl2       = 0.0_core_rknd
+    pdf_params(:)%w1          = zero
+    pdf_params(:)%w2          = zero
+    pdf_params(:)%varnce_w1   = zero
+    pdf_params(:)%varnce_w2   = zero
+    pdf_params(:)%rt1         = zero
+    pdf_params(:)%rt2         = zero
+    pdf_params(:)%varnce_rt1  = zero
+    pdf_params(:)%varnce_rt2  = zero
+    pdf_params(:)%thl1        = zero
+    pdf_params(:)%thl2        = zero
+    pdf_params(:)%varnce_thl1 = zero
+    pdf_params(:)%varnce_thl2 = zero
+    pdf_params(:)%rrtthl      = zero
+    pdf_params(:)%alpha_thl   = zero
+    pdf_params(:)%alpha_rt    = zero
+    pdf_params(:)%crt1        = zero
+    pdf_params(:)%crt2        = zero
+    pdf_params(:)%cthl1       = zero
+    pdf_params(:)%cthl2       = zero
+    pdf_params(:)%s1          = zero
+    pdf_params(:)%s2          = zero
+    pdf_params(:)%stdev_s1    = zero
+    pdf_params(:)%stdev_s2    = zero
+    pdf_params(:)%stdev_t1    = zero
+    pdf_params(:)%stdev_t2    = zero
+    pdf_params(:)%covar_st_1  = zero
+    pdf_params(:)%covar_st_2  = zero
+    pdf_params(:)%corr_st_1   = zero
+    pdf_params(:)%corr_st_2   = zero
+    pdf_params(:)%rsl1        = zero
+    pdf_params(:)%rsl2        = zero
+    pdf_params(:)%rc1         = zero
+    pdf_params(:)%rc2         = zero
+    pdf_params(:)%cloud_frac1 = zero
+    pdf_params(:)%cloud_frac2 = zero
+    pdf_params(:)%mixt_frac   = zero
 
     ! Surface fluxes
     wpthlp_sfc = 0.0_core_rknd

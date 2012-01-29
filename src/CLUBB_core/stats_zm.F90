@@ -210,12 +210,6 @@ module stats_zm
     use stats_variables, only: &
       ia3_coef, &
       iwp3_on_wp2, &
-      itp2_mellor_1, &
-      itp2_mellor_2, &
-      isptp_mellor_1, &
-      isptp_mellor_2, &
-      icorr_st_mellor1, &
-      icorr_st_mellor2, &
       iSkw_velocity, &
       igamma_Skw_fnc, &
       iC6rt_Skw_fnc, &
@@ -412,15 +406,6 @@ module stats_zm
     iwprtp_mfl_max = 0
     iwprtp_enter_mfl = 0
     iwprtp_exit_mfl = 0
-
-    ! Diagnostics for s and t Mellor
-    itp2_mellor_1 = 0
-    itp2_mellor_2 = 0
-    isptp_mellor_1 = 0
-    isptp_mellor_2 = 0
-
-    icorr_st_mellor1 = 0
-    icorr_st_mellor2 = 0
 
     ! Skewness velocity
     iSkw_velocity = 0
@@ -1394,42 +1379,6 @@ module stats_zm
         ithlm_zm = k
         call stat_assign( ithlm_zm, "thlm_zm", & 
              "Liquid potential temperature [K]", "K", zm )
-        k = k + 1
-
-      case ( 'tp2_mellor_1' )
-        itp2_mellor_1 = k
-        call stat_assign( itp2_mellor_1, "tp2_mellor_1", & 
-             "Variance of t_mellor_1 [kg^2/kg^2]", "kg^2/kg^2", zm )
-        k = k + 1
-
-      case ( 'tp2_mellor_2' )
-        itp2_mellor_2 = k
-        call stat_assign( itp2_mellor_2, "tp2_mellor_2", & 
-             "Variance of t_mellor_2 [kg^2/kg^2]", "kg^2/kg^2", zm )
-        k = k + 1
-
-      case ( 'sptp_mellor_1' )
-        isptp_mellor_1 = k
-        call stat_assign( isptp_mellor_1, "sptp_mellor_1", & 
-             "Covariance between s_mellor_1 and t_mellor_1 [kg^2/kg^2]", "kg^2/kg^2", zm )
-        k = k + 1
-
-      case ( 'sptp_mellor_2' )
-        isptp_mellor_2 = k
-        call stat_assign( isptp_mellor_2, "sptp_mellor_2", & 
-             "Covariance between s_mellor_2 and t_mellor_2 [kg^2/kg^2]", "kg^2/kg^2", zm )
-        k = k + 1
-
-      case ( 'corr_st_mellor1' )
-        icorr_st_mellor1 = k
-        call stat_assign( icorr_st_mellor1, "corr_st_mellor1", & 
-             "Correlation between s_mellor_1 and t_mellor_1 [-]", "count", zm )
-        k = k + 1
-
-      case ( 'corr_st_mellor2' )
-        icorr_st_mellor2 = k
-        call stat_assign( icorr_st_mellor2, "corr_st_mellor2", & 
-             "Correlation between s_mellor_2 and t_mellor_2 [-]", "count", zm )
         k = k + 1
 
       case ( 'Skw_velocity' )

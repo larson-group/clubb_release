@@ -244,7 +244,13 @@ module stats_zt
         is1, & 
         is2, & 
         istdev_s1, & 
-        istdev_s2, & 
+        istdev_s2, &
+        istdev_t1, &
+        istdev_t2, &
+        icovar_st_1, &
+        icovar_st_2, &
+        icorr_st_1, &
+        icorr_st_2, &
         irrtthl, & 
         iwp2_zt, & 
         ithlp2_zt, & 
@@ -621,6 +627,12 @@ module stats_zt
     is2           = 0
     istdev_s1     = 0
     istdev_s2     = 0
+    istdev_t1     = 0
+    istdev_t2     = 0
+    icovar_st_1   = 0
+    icovar_st_2   = 0
+    icorr_st_1    = 0
+    icorr_st_2    = 0
     irrtthl       = 0
 
     is_mellor = 0
@@ -2214,11 +2226,53 @@ module stats_zt
              "pdf parameter: Std dev of s2 [kg/kg]", "kg/kg", zt )
         k = k + 1
 
+      case ('stdev_t1')
+        istdev_t1 = k
+
+        call stat_assign( istdev_t1, "stdev_t1", & 
+             "Standard dev. of t (1st PDF component) [kg/kg]", "kg/kg", zt )
+        k = k + 1
+
+      case ('stdev_t2')
+        istdev_t2 = k
+
+        call stat_assign( istdev_t2, "stdev_t2", & 
+             "Standard dev. of t (2nd PDF component) [kg/kg]", "kg/kg", zt )
+        k = k + 1
+
+      case ('covar_st_1')
+        icovar_st_1 = k
+
+        call stat_assign( icovar_st_1, "covar_st_1", & 
+             "Covariance of s and t (1st PDF component) [kg^2/kg^2]", "kg^2/kg^2", zt )
+        k = k + 1
+
+      case ('covar_st_2')
+        icovar_st_2 = k
+
+        call stat_assign( icovar_st_2, "covar_st_2", & 
+             "Covariance of s and t (2nd PDF component) [kg^2/kg^2]", "kg^2/kg^2", zt )
+        k = k + 1
+
+      case ('corr_st_1')
+        icorr_st_1 = k
+
+        call stat_assign( icorr_st_1, "corr_st_1", & 
+             "Correlation btw. s and t (1st PDF component) [-]", "-", zt )
+        k = k + 1
+
+      case ('corr_st_2')
+        icorr_st_2 = k
+
+        call stat_assign( icorr_st_2, "corr_st_2", & 
+             "Correlation btw. s and t (2nd PDF component) [-]", "-", zt )
+        k = k + 1
+
       case ('rrtthl')
         irrtthl = k
 
         call stat_assign( irrtthl, "rrtthl", & 
-             "pdf parameter: Within-component correlation of rt and thl [count]", "count", zt )
+             "Correlation btw. rt and thl (both components) [-]", "-", zt )
         k = k + 1
 
       case('wp2_zt')

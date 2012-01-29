@@ -183,14 +183,6 @@ module variables_diagnostic_module
 !$omp threadprivate(lh_AKm, AKm, AKstd, AKstd_cld, lh_rcm_avg, AKm_rcm, &
 !$omp   AKm_rcc)
 
-  ! Diagnostics from the pdf_closure subroutine
-  real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
-    sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
-    tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
-    corr_st_mellor1, corr_st_mellor2 ! Correlation between s and t [-]
-!$omp threadprivate(sptp_mellor_1, sptp_mellor_2, tp2_mellor_1, tp2_mellor_2, &
-!$omp   corr_st_mellor1, corr_st_mellor2 )
-
   real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     Skw_velocity, & ! Skewness velocity    [m/s]
     a3_coef,      & ! The a3 coefficient from CLUBB eqns                [-]
@@ -214,15 +206,16 @@ module variables_diagnostic_module
 !-----------------------------------------------------------------------
 
     use constants_clubb, only:  & 
-      em_min ! Variables
+        em_min, & ! Constant(s)
+        zero
 
     use parameters_model, only: & 
-      hydromet_dim, & ! Variables
-      sclr_dim, &
-      edsclr_dim
+        hydromet_dim, & ! Variables
+        sclr_dim, &
+        edsclr_dim
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -339,14 +332,6 @@ module variables_diagnostic_module
     ! Eddy Diff. Scalars
     allocate( wpedsclrp(1:nzmax, 1:edsclr_dim) )
 
-    ! Diagnostics for s and t Mellor
-    allocate( sptp_mellor_1(1:nzmax) )
-    allocate( sptp_mellor_2(1:nzmax) )
-    allocate( tp2_mellor_1(1:nzmax) )
-    allocate( tp2_mellor_2(1:nzmax) )
-    allocate( corr_st_mellor1(1:nzmax) )
-    allocate( corr_st_mellor2(1:nzmax) )
-
     allocate( Skw_velocity(1:nzmax) )
 
     allocate( a3_coef(1:nzmax) )
@@ -381,37 +366,42 @@ module variables_diagnostic_module
 
 
     ! pdf_params on momentum levels
-    pdf_params_zm%w1          = 0.0_core_rknd
-    pdf_params_zm%w2          = 0.0_core_rknd
-    pdf_params_zm%varnce_w1   = 0.0_core_rknd
-    pdf_params_zm%varnce_w2   = 0.0_core_rknd
-    pdf_params_zm%rt1         = 0.0_core_rknd
-    pdf_params_zm%rt2         = 0.0_core_rknd
-    pdf_params_zm%varnce_rt1  = 0.0_core_rknd
-    pdf_params_zm%varnce_rt2  = 0.0_core_rknd
-    pdf_params_zm%thl1        = 0.0_core_rknd
-    pdf_params_zm%thl2        = 0.0_core_rknd
-    pdf_params_zm%varnce_thl1 = 0.0_core_rknd
-    pdf_params_zm%varnce_thl2 = 0.0_core_rknd
-    pdf_params_zm%mixt_frac   = 0.0_core_rknd
-    pdf_params_zm%rc1         = 0.0_core_rknd
-    pdf_params_zm%rc2         = 0.0_core_rknd
-    pdf_params_zm%rsl1        = 0.0_core_rknd
-    pdf_params_zm%rsl2        = 0.0_core_rknd
-    pdf_params_zm%cloud_frac1 = 0.0_core_rknd
-    pdf_params_zm%cloud_frac2 = 0.0_core_rknd
-    pdf_params_zm%s1          = 0.0_core_rknd
-    pdf_params_zm%s2          = 0.0_core_rknd
-    pdf_params_zm%stdev_s1    = 0.0_core_rknd
-    pdf_params_zm%stdev_s2    = 0.0_core_rknd
-    pdf_params_zm%rrtthl      = 0.0_core_rknd
-    pdf_params_zm%alpha_thl   = 0.0_core_rknd
-    pdf_params_zm%alpha_rt    = 0.0_core_rknd
-    pdf_params_zm%crt1        = 0.0_core_rknd
-    pdf_params_zm%crt2        = 0.0_core_rknd
-    pdf_params_zm%cthl1       = 0.0_core_rknd
-    pdf_params_zm%cthl2       = 0.0_core_rknd
-
+    pdf_params_zm(:)%w1          = zero
+    pdf_params_zm(:)%w2          = zero
+    pdf_params_zm(:)%varnce_w1   = zero
+    pdf_params_zm(:)%varnce_w2   = zero
+    pdf_params_zm(:)%rt1         = zero
+    pdf_params_zm(:)%rt2         = zero
+    pdf_params_zm(:)%varnce_rt1  = zero
+    pdf_params_zm(:)%varnce_rt2  = zero
+    pdf_params_zm(:)%thl1        = zero
+    pdf_params_zm(:)%thl2        = zero
+    pdf_params_zm(:)%varnce_thl1 = zero
+    pdf_params_zm(:)%varnce_thl2 = zero
+    pdf_params_zm(:)%rrtthl      = zero
+    pdf_params_zm(:)%alpha_thl   = zero
+    pdf_params_zm(:)%alpha_rt    = zero
+    pdf_params_zm(:)%crt1        = zero
+    pdf_params_zm(:)%crt2        = zero
+    pdf_params_zm(:)%cthl1       = zero
+    pdf_params_zm(:)%cthl2       = zero
+    pdf_params_zm(:)%s1          = zero
+    pdf_params_zm(:)%s2          = zero
+    pdf_params_zm(:)%stdev_s1    = zero
+    pdf_params_zm(:)%stdev_s2    = zero
+    pdf_params_zm(:)%stdev_t1    = zero
+    pdf_params_zm(:)%stdev_t2    = zero
+    pdf_params_zm(:)%covar_st_1  = zero
+    pdf_params_zm(:)%covar_st_2  = zero
+    pdf_params_zm(:)%corr_st_1   = zero
+    pdf_params_zm(:)%corr_st_2   = zero
+    pdf_params_zm(:)%rsl1        = zero
+    pdf_params_zm(:)%rsl2        = zero
+    pdf_params_zm(:)%rc1         = zero
+    pdf_params_zm(:)%rc2         = zero
+    pdf_params_zm(:)%cloud_frac1 = zero
+    pdf_params_zm(:)%cloud_frac2 = zero
+    pdf_params_zm(:)%mixt_frac   = zero
 
     ! Second order moments
     thlprcp = 0.0_core_rknd
@@ -485,14 +475,6 @@ module variables_diagnostic_module
     if ( edsclr_dim > 0 ) then
       wpedsclrp(:,:)     = 0.0_core_rknd
     end if
-
-    sptp_mellor_1 = 0.0_core_rknd
-    sptp_mellor_2 = 0.0_core_rknd
-    tp2_mellor_1  = 0.0_core_rknd
-    tp2_mellor_2  = 0.0_core_rknd
-
-    corr_st_mellor1 = 0.0_core_rknd
-    corr_st_mellor2 = 0.0_core_rknd
 
     Skw_velocity = 0.0_core_rknd
 
@@ -617,14 +599,6 @@ module variables_diagnostic_module
     deallocate( wpsclrpthlp )
 
     deallocate( wpedsclrp )
-
-    ! Diagnostics for s and t Mellor
-    deallocate( sptp_mellor_1 )
-    deallocate( sptp_mellor_2 )
-    deallocate( tp2_mellor_1 )
-    deallocate( tp2_mellor_2 )
-    deallocate( corr_st_mellor1 )
-    deallocate( corr_st_mellor2 )
 
     deallocate( Skw_velocity )
 

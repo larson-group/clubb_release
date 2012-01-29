@@ -190,11 +190,6 @@ module clubb_core
       a3_coef,      & ! The a3 coefficient      [-]
       a3_coef_zt      ! The a3 coefficient interp. to the zt grid [-]
 
-    use variables_diagnostic_module, only: &
-      sptp_mellor_1, sptp_mellor_2, &      ! Covariance of s and t[(kg/kg)^2] 
-      tp2_mellor_1, tp2_mellor_2,   &      ! Variance of t [(kg/kg)^2]
-      corr_st_mellor1, corr_st_mellor2 ! Correlation between s and t [-]
-
     use variables_diagnostic_module, only: & 
       wp3_on_wp2,   & ! Variable(s)
       wp3_on_wp2_zt
@@ -310,12 +305,6 @@ module clubb_core
       ithlm_spur_src
 
     use stats_variables, only: &
-      itp2_mellor_1, & ! Variables
-      itp2_mellor_2, &
-      isptp_mellor_1, &
-      isptp_mellor_2, &
-      icorr_st_mellor1, &
-      icorr_st_mellor2, &
       iSkw_velocity, &
       igamma_Skw_fnc
 
@@ -773,10 +762,7 @@ module clubb_core
            thlprcp_zt(k), rcp2_zt(k), pdf_params(k),           & ! intent(out)
            err_code_pdf_closure,                               & ! intent(out)
            wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),  & ! intent(out)
-           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),  & ! intent(out)
-           sptp_mellor_1(k), sptp_mellor_2(k),                 & ! intent(out)
-           tp2_mellor_1(k), tp2_mellor_2(k),                   & ! intent(out)
-           corr_st_mellor1(k), corr_st_mellor2(k)          ) ! intent(out)
+           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:)   ) ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
@@ -849,10 +835,7 @@ module clubb_core
              thlprcp(k), rcp2(k), pdf_params_zm(k),                 & ! intent(out)
              err_code_pdf_closure,                                  & ! intent(out)
              wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
-             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),  & ! intent(out)
-             sptp_mellor_1(k), sptp_mellor_2(k),                    & ! intent(out)
-             tp2_mellor_1(k), tp2_mellor_2(k),                      & ! intent(out)
-             corr_st_mellor1(k), corr_st_mellor2(k)             ) ! intent(out)
+             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:)   ) ! intent(out)
 
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
@@ -887,32 +870,6 @@ module clubb_core
       if ( ircp2 > 0 ) then
         rcp2 = max( zt2zm( rcp2_zt ), zero_threshold )  ! Pos. def. quantity
         rcp2(gr%nz) = 0.0_core_rknd
-      end if
-
-      if ( icorr_st_mellor1 > 0 ) then
-        corr_st_mellor1 = zt2zm( corr_st_mellor1 )
-      end if
-
-      if ( icorr_st_mellor2 > 0 ) then
-        corr_st_mellor2 = zt2zm( corr_st_mellor2 )
-      end if
-
-      if ( isptp_mellor_1 > 0 ) then
-        sptp_mellor_1 = zt2zm( sptp_mellor_1 )
-      end if
-
-      if ( isptp_mellor_2 > 0 ) then
-        sptp_mellor_2 = zt2zm( sptp_mellor_2 )
-      end if
-
-      if ( itp2_mellor_1 > 0 ) then
-        tp2_mellor_1 = max( zt2zm( tp2_mellor_1 ), zero_threshold )
-        tp2_mellor_1(gr%nz) = 0.0_core_rknd
-      end if
-
-      if ( itp2_mellor_2 > 0 ) then
-        tp2_mellor_2 = max( zt2zm( tp2_mellor_2 ), zero_threshold )
-        tp2_mellor_2(gr%nz) = 0.0_core_rknd
       end if
 
       wpthvp            = zt2zm( wpthvp_zt )
