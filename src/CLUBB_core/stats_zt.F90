@@ -251,7 +251,9 @@ module stats_zt
         icovar_st_2, &
         icorr_st_1, &
         icorr_st_2, &
-        irrtthl, & 
+        irrtthl
+
+    use stats_variables, only: & 
         iwp2_zt, & 
         ithlp2_zt, & 
         iwpthlp_zt, & 
