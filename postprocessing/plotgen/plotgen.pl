@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 ###########################################################################
-# Plotgen v3.95
+# Plotgen v3.96
 #
 # Documentation is available here:
 # http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
@@ -1224,5 +1224,5 @@ sub main::HELP_MESSAGE()
 ###############################################################################
 sub main::VERSION_MESSAGE()
 {
-    print("Plotgen version $VERSION, Copyright (C) 2011 Larson Group.\n");
+    print("Plotgen version $VERSION, Copyright (C) 2012 Larson Group.\n");
 }
