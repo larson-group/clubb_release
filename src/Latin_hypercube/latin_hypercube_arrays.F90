@@ -91,7 +91,7 @@ module latin_hypercube_arrays
       Nsnowp2_on_Nsnowm2_below, & 
       ricep2_on_ricem2_below, & 
       Nicep2_on_Nicem2_below
- 
+
     use matrix_operations, only: set_lower_triangular_matrix_core_rknd ! Procedure(s)
 
 !   use matrix_operations, only: print_lower_triangular_matrix ! Procedure(s)
@@ -111,7 +111,7 @@ module latin_hypercube_arrays
     character(len=*), parameter :: &
       cloud_file_name = "_corr_array_cloud.in", & ! File names
       below_file_name = "_corr_array_below.in"
- 
+
     ! Input Variables
     integer, intent(in) :: &
       iiNcm,    & ! Index of cloud droplet number conc.
@@ -373,9 +373,9 @@ module latin_hypercube_arrays
   subroutine read_correlation_matrix( iunit, input_file, d_variables, &
                                      corr_array )
 
-  ! Description:
-  !   Reads a correlation variance array from a file and stores it in an array.
-  !-----------------------------------------------------------------------------
+    ! Description:
+    !   Reads a correlation variance array from a file and stores it in an array.
+    !-----------------------------------------------------------------------------
 
     use input_reader, only: &
       one_dim_read_var, & ! Variable(s)
@@ -462,9 +462,9 @@ module latin_hypercube_arrays
   !--------------------------------------------------------------------------
   function get_corr_var_index( var_name ) result( i )
 
-  ! Definition:
-  !   Returns the index for a variable based on its name.
-  !--------------------------------------------------------------------------
+    ! Definition:
+    !   Returns the index for a variable based on its name.
+    !--------------------------------------------------------------------------
 
     implicit none
 
@@ -477,38 +477,38 @@ module latin_hypercube_arrays
 
     select case( trim(var_name) )
 
-      case( "s" )
-        i = iiLH_s_mellor
- 
-      case( "t" )
-        i = iiLH_t_mellor
+    case( "s" )
+      i = iiLH_s_mellor
 
-      case( "w" )
-        i = iiLH_w
+    case( "t" )
+      i = iiLH_t_mellor
 
-      case( "Nc" )
-        i = iiLH_Nc
+    case( "w" )
+      i = iiLH_w
 
-      case( "rrain" )
-        i = iiLH_rrain
+    case( "Nc" )
+      i = iiLH_Nc
 
-      case( "Nr" )
-        i = iiLH_Nr
+    case( "rrain" )
+      i = iiLH_rrain
 
-      case( "rice" )
-        i = iiLH_rice
+    case( "Nr" )
+      i = iiLH_Nr
 
-      case( "Ni" )
-        i = iiLH_Ni
+    case( "rice" )
+      i = iiLH_rice
 
-      case( "rsnow" )
-        i = iiLH_rsnow
+    case( "Ni" )
+      i = iiLH_Ni
 
-      case( "Nsnow" )
-        i = iiLH_Nsnow
+    case( "rsnow" )
+      i = iiLH_rsnow
 
-      case default
-        i = -1
+    case( "Nsnow" )
+      i = iiLH_Nsnow
+
+    case default
+      i = -1
 
     end select
 
