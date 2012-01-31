@@ -163,7 +163,7 @@ if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
 	ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
 fi
 if [ -e $srcdir/Latin_hypercube ]; then
-	ls $srcdir/Latin_hypercube/*.F90 >> $dir/file_list/latin_hypercube_files
+	ls $srcdir/Latin_hypercube/*.F90 > $dir/file_list/latin_hypercube_files
 fi
 if [ -e $srcdir/COAMPS_micro ]; then
 	ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
