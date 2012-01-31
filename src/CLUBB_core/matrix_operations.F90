@@ -49,7 +49,7 @@ module matrix_operations
 
     ! ---- Begin Code ----
 
-    corr = 0. ! Initialize to 0
+    corr = 0._dp ! Initialize to 0
 
     do i = 1, ndim
       do j = 1, i
