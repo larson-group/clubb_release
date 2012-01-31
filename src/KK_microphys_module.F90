@@ -8,6 +8,8 @@ module KK_microphys_module
 
   public :: KK_micro_driver
 
+  private :: KK_upscaled_covar_driver
+
   contains
 
   !=============================================================================
@@ -59,14 +61,14 @@ module KK_microphys_module
         KK_auto_Nc_exp,        &
         C_evap
 
-   use KK_fixed_correlations, only: &
-        corr_srr_NL_cloud,     & ! Variable(s)
-        corr_srr_NL_below,     &
-        corr_sNr_NL_cloud,     &
-        corr_sNr_NL_below,     &
-        corr_sNc_NL_cloud,     &
-        corr_sNc_NL_below,     &
-        corr_rrNr_LL_cloud,    &
+    use KK_fixed_correlations, only: &
+        corr_srr_NL_cloud,  & ! Variable(s)
+        corr_srr_NL_below,  &
+        corr_sNr_NL_cloud,  &
+        corr_sNr_NL_below,  &
+        corr_sNc_NL_cloud,  &
+        corr_sNc_NL_below,  &
+        corr_rrNr_LL_cloud, &
         corr_rrNr_LL_below
 
     use KK_utilities, only: &
@@ -132,7 +134,7 @@ module KK_microphys_module
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
-      nz        ! Number of model vertical grid levels
+      nz          ! Number of model vertical grid levels
 
     logical, intent(in) :: &
       l_stats_samp,      & ! Flag to sample statistics
@@ -762,6 +764,440 @@ module KK_microphys_module
     return
 
   end subroutine KK_micro_driver
+
+  !=============================================================================
+  subroutine KK_upscaled_covar_driver( w_mean, exner, rcm, rrainm, Nrm, Ncm, &
+                                       mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                       mu_Nc_n, sigma_s_1, sigma_s_2, &
+                                       sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+                                       corr_srr_1_n, corr_srr_2_n, &
+                                       corr_sNr_1_n, corr_sNr_2_n, &
+                                       corr_sNc_1_n, corr_sNc_2_n, &
+                                       corr_rrNr_n,  mixt_frac, &
+                                       KK_evap_coef, KK_auto_coef, &
+                                       KK_accr_coef, KK_evap_tndcy, &
+                                       KK_auto_tndcy, KK_accr_tndcy, &
+                                       pdf_params, wprtp_mc_src_tndcy, &
+                                       wpthlp_mc_src_tndcy, &
+                                       rtp2_mc_src_tndcy, thlp2_mc_src_tndcy, &
+                                       rtpthlp_mc_src_tndcy )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        two,          & ! Constant(s)
+        zero,         &
+        Lv,           &
+        Cp,           &
+        w_tol,        &
+        t_mellor_tol, &
+        rc_tol,       &
+        rr_tol,       & 
+        Nr_tol,       & 
+        Nc_tol
+
+    use KK_upscaled_covariances, only: &
+        covar_x_KK_evap,   & ! Procedure(s)
+        covar_rt_KK_evap,  &
+        covar_thl_KK_evap, &
+        covar_x_KK_auto,   &
+        covar_rt_KK_auto,  &
+        covar_thl_KK_auto, &
+        covar_x_KK_accr,   &
+        covar_rt_KK_accr,  &
+        covar_thl_KK_accr
+
+    use KK_utilities, only: &
+        corr_NL2NN  ! Procedure(s)
+
+    use pdf_parameter_module, only: &
+        pdf_parameter  ! Variable(s) type
+
+    use KK_fixed_correlations, only: &
+        corr_trr_NL_cloud, & ! Variable(s)
+        corr_tNr_NL_cloud, &
+        corr_tNc_NL_cloud, &
+        corr_trr_NL_below, &
+        corr_tNr_NL_below, &
+        corr_tNc_NL_below
+
+    use clubb_precision, only: &
+        core_rknd,      & ! Variable(s)
+        time_precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      w_mean, & ! Mean vertical velocity              [m/s]
+      exner,  & ! Exner function                      [-]
+      rcm,    & ! Mean cloud water mixing ratio       [kg/kg]
+      rrainm, & ! Mean rain water mixing ratio        [kg/kg]
+      Nrm,    & ! Mean rain drop concentration        [num/kg]
+      Ncm       ! Mean cloud droplet concentration    [num/kg]
+
+    real( kind = core_rknd ), intent(in) :: &
+      mu_s_1,       & ! Mean of s (1st PDF component)                    [kg/kg]
+      mu_s_2,       & ! Mean of s (2nd PDF component)                    [kg/kg]
+      mu_rr_n,      & ! Mean of ln rr (both components)              [ln(kg/kg)]
+      mu_Nr_n,      & ! Mean of ln Nr (both components)             [ln(num/kg)]
+      mu_Nc_n,      & ! Mean of ln Nc (both components)             [ln(num/kg)]
+      sigma_s_1,    & ! Standard deviation of s (1st PDF component)      [kg/kg]
+      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)      [kg/kg]
+      sigma_rr_n,   & ! Standard deviation of ln rr (both comps.)    [ln(kg/kg)]
+      sigma_Nr_n,   & ! Standard deviation of ln Nr (both comps.)   [ln(num/kg)]
+      sigma_Nc_n,   & ! Standard deviation of ln Nc (both comps.)   [ln(num/kg)]
+      corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component)  [-]
+      corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component)  [-]
+      corr_sNr_1_n, & ! Correlation between s and ln Nr (1st PDF component)  [-]
+      corr_sNr_2_n, & ! Correlation between s and ln Nr (2nd PDF component)  [-]
+      corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component)  [-]
+      corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component)  [-]
+      corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
+      mixt_frac       ! Mixture fraction                                     [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      KK_evap_coef, & ! KK evaporation coefficient          [(kg/kg)/s]
+      KK_auto_coef, & ! KK autoconversion coefficient       [(kg/kg)/s]
+      KK_accr_coef    ! KK accretion coefficient            [(kg/kg)/s]
+
+    real( kind = core_rknd ), intent(in) :: &
+      KK_evap_tndcy, & ! KK evaporation tendency            [(kg/kg)/s]
+      KK_auto_tndcy, & ! KK autoconversion tendency         [(kg/kg)/s]
+      KK_accr_tndcy    ! KK accretion tendency              [(kg/kg)/s]
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params    ! PDF parameters                        [units vary]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      wprtp_mc_src_tndcy,   & ! Microphysics tendency for w'rt'  [m*(kg/kg)/s^2]
+      wpthlp_mc_src_tndcy,  & ! Microphysics tendency for w'thl'   [m*K/s^2]
+      rtp2_mc_src_tndcy,    & ! Microphysics tendency for rt'^2    [(kg/kg)^2/s]
+      thlp2_mc_src_tndcy,   & ! Microphysics tendency for thl'^2   [K^2/s]
+      rtpthlp_mc_src_tndcy    ! Microphysics tendency for rt'thl'  [K*(kg/kg)/s]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      mu_w_1,     & ! Mean of w (1st PDF component)                    [m/s]
+      mu_w_2,     & ! Mean of w (2nd PDF component)                    [m/s]
+      sigma_w_1,  & ! Standard deviation of w (1st PDF component)      [m/s]
+      sigma_w_2,  & ! Standard deviation of w (2nd PDF component)      [m/s]
+      sigma_t_1,  & ! Standard deviation of t (1st PDF component)      [kg/kg]
+      sigma_t_2,  & ! Standard deviation of t (2nd PDF component)      [kg/kg]   
+      corr_wrr_1, & ! Correlation between w and rr (1st PDF component) [-]
+      corr_wrr_2, & ! Correlation between w and rr (2nd PDF component) [-] 
+      corr_wNr_1, & ! Correlation between w and Nr (1st PDF component) [-] 
+      corr_wNr_2, & ! Correlation between w and Nr (2nd PDF component) [-] 
+      corr_wNc_1, & ! Correlation between w and Nc (1st PDF component) [-] 
+      corr_wNc_2, & ! Correlation between w and Nc (2nd PDF component) [-] 
+      corr_ts_1,  & ! Correlation between t and s (1st PDF component)  [-]
+      corr_ts_2,  & ! Correlation between t and s (2nd PDF component)  [-]
+      corr_trr_1, & ! Correlation between t and rr (1st PDF component) [-] 
+      corr_trr_2, & ! Correlation between t and rr (2nd PDF component) [-]
+      corr_tNr_1, & ! Correlation between t and Nr (1st PDF component) [-]
+      corr_tNr_2, & ! Correlation between t and Nr (2nd PDF component) [-]
+      corr_tNc_1, & ! Correlation between t and Nc (1st PDF component) [-]
+      corr_tNc_2    ! Correlation between t and Nc (2nd PDF component) [-]
+
+    real( kind = core_rknd ) :: &
+      corr_wrr_1_n, & ! Correlation between w and ln rr (1st PDF component) [-]
+      corr_wrr_2_n, & ! Correlation between w and ln rr (2nd PDF component) [-]
+      corr_wNr_1_n, & ! Correlation between w and ln Nr (1st PDF component) [-]
+      corr_wNr_2_n, & ! Correlation between w and ln Nr (2nd PDF component) [-]
+      corr_wNc_1_n, & ! Correlation between w and ln Nc (1st PDF component) [-]
+      corr_wNc_2_n, & ! Correlation between w and ln Nc (2nd PDF component) [-]
+      corr_trr_1_n, & ! Correlation between t and ln rr (1st PDF component) [-]
+      corr_trr_2_n, & ! Correlation between t and ln rr (2nd PDF component) [-]
+      corr_tNr_1_n, & ! Correlation between t and ln Nr (1st PDF component) [-]
+      corr_tNr_2_n, & ! Correlation between t and ln Nr (2nd PDF component) [-]
+      corr_tNc_1_n, & ! Correlation between t and ln Nc (1st PDF component) [-]
+      corr_tNc_2_n    ! Correlation between t and ln Nc (2nd PDF component) [-]
+
+    real( kind = core_rknd ) :: &
+      crt1,  & ! Coefficient c_rt (1st PDF component)    [-]
+      crt2,  & ! Coefficient c_rt (2nd PDF component)    [-]
+      cthl1, & ! Coefficient c_thl (1st PDF component)   [(kg/kg)/K]
+      cthl2    ! Coefficient c_thl (2nd PDF component)   [(kg/kg)/K]
+
+    real( kind = core_rknd ) :: &
+      w_KK_evap_covar,   & ! Covar. btw. w and KK evap. tend.    [m*(kg/kg)/s^2]
+      rt_KK_evap_covar,  & ! Covar. btw. rt and KK evap. tend.   [(kg/kg)^2/s]
+      thl_KK_evap_covar, & ! Covar. btw. thl and KK evap. tend.  [K*(kg/kg)/s]
+      w_KK_auto_covar,   & ! Covar. btw. w and KK auto. tend.    [m*(kg/kg)/s^2]
+      rt_KK_auto_covar,  & ! Covar. btw. rt and KK auto. tend.   [(kg/kg)^2/s]
+      thl_KK_auto_covar, & ! Covar. btw. thl and KK auto. tend.  [K*(kg/kg)/s]
+      w_KK_accr_covar,   & ! Covar. btw. w and KK accr. tend.    [m*(kg/kg)/s^2]
+      rt_KK_accr_covar,  & ! Covar. btw. rt and KK accr. tend.   [(kg/kg)^2/s]
+      thl_KK_accr_covar    ! Covar. btw. thl and KK accr. tend.  [K*(kg/kg)/s]
+
+    ! Constant Parameters
+    !
+    ! Set the correlations between vertical velocity (w) and extended liquid
+    ! water mixing ratio (s_*) to 0.
+    ! Note:  The component correlations of w and r_t and the component
+    !        correlations of w and theta_l are both set to be 0 within the CLUBB
+    !        model code.  In other words, w and r_t (theta_l) have overall
+    !        covariance w'r_t' (w'theta_l'), but the single component covariance
+    !        and correlation are defined to be 0.  Likewise, the single
+    !        component correlation and covariance of w and s, as well as
+    !        w and t, are defined to be 0.
+    real( kind = core_rknd ), parameter :: &
+      corr_ws_1 = zero, & ! Correlation between w and s (1st PDF component) [-]
+      corr_ws_2 = zero    ! Correlation between w and s (2nd PDF component) [-]
+    !
+    ! Set the component mean values of t_* to 0.
+    ! Note:  The component mean values of t_* are not important.  They can be
+    !        set to anything.  They cancel out in the model code.  However, the
+    !        best thing to do is to set them to 0 and avoid any kind of
+    !        numerical error.
+    real( kind = core_rknd ), parameter :: &
+      mu_t_1 = zero, & ! Mean of t (1st PDF component)  [kg/kg]
+      mu_t_2 = zero    ! Mean of t (2nd PDF component)  [kg/kg]
+
+
+    ! Enter the PDF parameters.
+    mu_w_1    = pdf_params%w1
+    mu_w_2    = pdf_params%w2
+    sigma_w_1 = sqrt( pdf_params%varnce_w1 )
+    sigma_w_2 = sqrt( pdf_params%varnce_w2 )
+    sigma_t_1 = pdf_params%stdev_t1
+    sigma_t_2 = pdf_params%stdev_t2
+    corr_ts_1 = pdf_params%corr_st_1
+    corr_ts_2 = pdf_params%corr_st_2
+    crt1      = pdf_params%crt1
+    crt2      = pdf_params%crt2
+    cthl1     = pdf_params%cthl1
+    cthl2     = pdf_params%cthl2
+
+    ! Set all the correlations between vertical velocity (w) and hydrometeor
+    ! variables to 0 for now.
+    corr_wrr_1 = zero
+    corr_wrr_2 = zero
+    corr_wNr_1 = zero
+    corr_wNr_2 = zero
+    corr_wNc_1 = zero
+    corr_wNc_2 = zero
+
+    if ( rrainm > rr_tol ) then
+
+       ! Normalize the correlation between w and r_r in PDF component 1.
+       corr_wrr_1_n = corr_NL2NN( corr_wrr_1, sigma_rr_n )
+
+       ! Normalize the correlation between w and r_r in PDF component 2.
+       corr_wrr_2_n = corr_NL2NN( corr_wrr_2, sigma_rr_n )
+
+    endif
+
+    if ( Nrm > Nr_tol ) then
+
+       ! Normalize the correlation between w and N_r in PDF component 1.
+       corr_wNr_1_n = corr_NL2NN( corr_wNr_1, sigma_Nr_n )
+
+       ! Normalize the correlation between w and N_r in PDF component 2.
+       corr_wNr_2_n = corr_NL2NN( corr_wNr_2, sigma_Nr_n )
+
+    endif
+
+    if ( Ncm > Nc_tol ) then
+
+       ! Normalize the correlation between s and N_c in PDF component 1.
+       corr_wNc_1_n = corr_NL2NN( corr_wNc_1, sigma_Nc_n )
+
+       ! Normalize the correlation between s and N_c in PDF component 2.
+       corr_wNc_2_n = corr_NL2NN( corr_wNc_2, sigma_Nc_n )
+
+    endif
+
+    
+    ! Set up the values of the statistical correlations and variances.  Since we
+    ! currently do not have enough variables to compute the correlations and
+    ! variances directly, we have obtained these values by analyzing LES runs of
+    ! certain cases.  We have divided those results into an inside-cloud average
+    ! and an outside-cloud (or below-cloud) average.  This coding leaves the
+    ! software architecture in place in case we ever have the variables in place
+    ! to compute these values directly.  It also allows us to use separate
+    ! inside-cloud and outside-cloud parameter values.
+    !
+    ! Set the value of the parameters based on whether the altitude is above or
+    ! below cloud base.  Determine whether there is cloud at any given vertical
+    ! level.  In order for a vertical level to have cloud, the amount of cloud
+    ! water (rcm) must be greater than or equal to the tolerance level (rc_tol).
+    ! If there is cloud at a given vertical level, then the ###_cloud value is
+    ! used.  Otherwise, the ###_below value is used.
+    if ( rcm >= rc_tol ) then
+       corr_trr_1 = corr_trr_NL_cloud
+       corr_trr_2 = corr_trr_NL_cloud
+       corr_tNr_1 = corr_tNr_NL_cloud
+       corr_tNr_2 = corr_tNr_NL_cloud
+       corr_tNc_1 = corr_tNc_NL_cloud
+       corr_tNc_2 = corr_tNc_NL_cloud
+    else
+       corr_trr_1 = corr_trr_NL_below
+       corr_trr_2 = corr_trr_NL_below
+       corr_tNr_1 = corr_tNr_NL_below
+       corr_tNr_2 = corr_tNr_NL_below
+       corr_tNc_1 = corr_tNc_NL_below
+       corr_tNc_2 = corr_tNc_NL_below
+    endif
+
+    if ( rrainm > rr_tol ) then
+
+       ! Normalize the correlation between t and r_r in PDF component 1.
+       corr_trr_1_n = corr_NL2NN( corr_trr_1, sigma_rr_n )
+
+       ! Normalize the correlation between t and r_r in PDF component 2.
+       corr_trr_2_n = corr_NL2NN( corr_trr_2, sigma_rr_n )
+
+    endif
+
+    if ( Nrm > Nr_tol ) then
+
+       ! Normalize the correlation between t and N_r in PDF component 1.
+       corr_tNr_1_n = corr_NL2NN( corr_tNr_1, sigma_Nr_n )
+
+       ! Normalize the correlation between t and N_r in PDF component 2.
+       corr_tNr_2_n = corr_NL2NN( corr_tNr_2, sigma_Nr_n )
+
+    endif
+
+    if ( Ncm > Nc_tol ) then
+
+       ! Normalize the correlation between t and N_c in PDF component 1.
+       corr_tNc_1_n = corr_NL2NN( corr_tNc_1, sigma_Nc_n )
+
+       ! Normalize the correlation between t and N_c in PDF component 2.
+       corr_tNc_2_n = corr_NL2NN( corr_tNc_2, sigma_Nc_n )
+
+    endif
+
+
+    ! Calculate the covariance of vertical velocity and KK evaporation tendency.
+    w_KK_evap_covar  &
+    = covar_x_KK_evap( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_rr_n, &
+                       mu_Nr_n, sigma_w_1, sigma_w_2, sigma_s_1, &
+                       sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                       corr_ws_1, corr_ws_2, corr_wrr_1_n, &
+                       corr_wrr_2_n, corr_wNr_1_n, corr_wNr_2_n, &
+                       corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                       corr_sNr_2_n, corr_rrNr_n, w_mean, &
+                       KK_evap_tndcy, KK_evap_coef, w_tol, mixt_frac )
+
+    ! Calculate the covariance of total water mixing ratio and KK evaporation
+    ! tendency.
+    rt_KK_evap_covar  &
+    = covar_rt_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                        mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
+                        sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                        corr_ts_1, corr_ts_2, corr_trr_1_n, &
+                        corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
+                        corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                        corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
+                        KK_evap_coef, t_mellor_tol, crt1, crt2, mixt_frac )
+
+    ! Calculate the covariance of liquid water potential temperature and
+    ! KK evaporation tendency.
+    thl_KK_evap_covar  &
+    = covar_thl_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                         mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
+                         sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                         corr_ts_1, corr_ts_2, corr_trr_1_n, &
+                         corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
+                         corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                         corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
+                         KK_evap_coef, t_mellor_tol, cthl1, cthl2, mixt_frac )
+
+    ! Calculate the covariance of vertical velocity and KK autoconversion
+    ! tendency.
+    w_KK_auto_covar  &
+    = covar_x_KK_auto( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_Nc_n, &
+                       sigma_w_1, sigma_w_2, sigma_s_1, sigma_s_2, &
+                       sigma_Nc_n, corr_ws_1, corr_ws_2, &
+                       corr_wNc_1_n, corr_wNc_2_n, corr_sNc_1_n, &
+                       corr_sNc_2_n, w_mean, KK_auto_tndcy, &
+                       KK_auto_coef, w_tol, mixt_frac )
+
+    ! Calculate the covariance of total water mixing ratio and KK autoconversion
+    ! tendency.
+    rt_KK_auto_covar  &
+    = covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
+                        sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                        sigma_Nc_n, corr_ts_1, corr_ts_2, &
+                        corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
+                        corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
+                        t_mellor_tol, crt1, crt2, mixt_frac )
+
+    ! Calculate the covariance of liquid water potential temperature and
+    ! KK autoconversion tendency.
+    thl_KK_auto_covar  &
+    = covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
+                         sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                         sigma_Nc_n, corr_ts_1, corr_ts_2, &
+                         corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
+                         corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
+                         t_mellor_tol, cthl1, cthl2, mixt_frac )
+
+    ! Calculate the covariance of vertical velocity and KK accretion tendency.
+    w_KK_accr_covar  &
+    = covar_x_KK_accr( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_rr_n, &
+                       sigma_w_1, sigma_w_2, sigma_s_1, sigma_s_2, &
+                       sigma_rr_n, corr_ws_1, corr_ws_2, &
+                       corr_wrr_1_n, corr_wrr_2_n, corr_srr_1_n, &
+                       corr_srr_2_n, w_mean, KK_accr_tndcy, &
+                       KK_accr_coef, w_tol, mixt_frac )
+
+    ! Calculate the covariance of total water mixing ratio and KK accretion
+    ! tendency.
+    rt_KK_accr_covar  &
+    = covar_rt_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                        sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                        sigma_rr_n, corr_ts_1, corr_ts_2, &
+                        corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
+                        corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
+                        t_mellor_tol, crt1, crt2, mixt_frac )
+
+    ! Calculate the covariance of liquid water potential temperature and
+    ! KK accretion tendency.
+    thl_KK_accr_covar  &
+    = covar_thl_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                         sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                         sigma_rr_n, corr_ts_1, corr_ts_2, &
+                         corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
+                         corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
+                         t_mellor_tol, cthl1, cthl2, mixt_frac )
+
+
+    ! Calculate the microphysics tendency for <w'r_t'>.
+    wprtp_mc_src_tndcy  &
+    = - ( w_KK_auto_covar + w_KK_accr_covar + w_KK_evap_covar )
+
+    ! Calculate the microphysics tendency for <w'th_l'>.
+    wpthlp_mc_src_tndcy  &
+    = ( Lv / ( Cp * exner ) )  &
+      * ( w_KK_auto_covar + w_KK_accr_covar + w_KK_evap_covar )
+
+    ! Calculate the microphysics tendency for <r_t'^2>.
+    rtp2_mc_src_tndcy  &
+    = - two * ( rt_KK_auto_covar + rt_KK_accr_covar + rt_KK_evap_covar )
+
+    ! Calculate the microphysics tendency for <th_l'^2>.
+    thlp2_mc_src_tndcy  &
+    = two * ( Lv / ( Cp * exner ) )  &
+          * ( thl_KK_auto_covar + thl_KK_accr_covar + thl_KK_evap_covar )
+
+    ! Calculate the microphysics tendency for <r_t'th_l'>.
+    rtpthlp_mc_src_tndcy  &
+    = ( Lv / ( Cp * exner ) )  &
+      * ( rt_KK_auto_covar + rt_KK_accr_covar + rt_KK_evap_covar )  &
+      - ( thl_KK_auto_covar + thl_KK_accr_covar + thl_KK_evap_covar )
+
+
+    return
+
+  end subroutine KK_upscaled_covar_driver
 
 !===============================================================================
 
