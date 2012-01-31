@@ -66,7 +66,7 @@ module generate_lh_sample_module
       iiNgraupelm, &
       iirgraupelm
 
-    use latin_hypercube_arrays, only: &
+    use corr_matrix_module, only: &
       iiLH_rrain, & ! Variables
       iiLH_rsnow, &
       iiLH_rice, &
@@ -905,7 +905,7 @@ module generate_lh_sample_module
 !   None
 !----------------------------------------------------------------------
 
-    use latin_hypercube_arrays, only: &
+    use corr_matrix_module, only: &
       iiLH_s_mellor, & ! Variables
       iiLH_t_mellor
 
@@ -1939,7 +1939,7 @@ module generate_lh_sample_module
 ! References:
 !   None.
 !-------------------------------------------------------------------------------
-    use latin_hypercube_arrays, only: &
+    use corr_matrix_module, only: &
       iiLH_s_mellor, & ! Variable(s)
       iiLH_t_mellor, &
       iiLH_w

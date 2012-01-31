@@ -50,22 +50,24 @@ module KK_microphys_module
         micron_per_m
 
     use parameters_microphys, only: &
-        rrp2_on_rrainm2_cloud, & ! Constant(s)
+        rrp2_on_rrainm2_cloud, & ! Variable(s)
         rrp2_on_rrainm2_below, &
         Nrp2_on_Nrm2_cloud,    &
         Nrp2_on_Nrm2_below,    &
         Ncp2_on_Ncm2_cloud,    &
         Ncp2_on_Ncm2_below,    &
-        corr_srr_NL_cloud,     &
+        KK_auto_Nc_exp,        &
+        C_evap
+
+   use KK_fixed_correlations, only: &
+        corr_srr_NL_cloud,     & ! Variable(s)
         corr_srr_NL_below,     &
         corr_sNr_NL_cloud,     &
         corr_sNr_NL_below,     &
         corr_sNc_NL_cloud,     &
         corr_sNc_NL_below,     &
         corr_rrNr_LL_cloud,    &
-        corr_rrNr_LL_below,    &
-        KK_auto_Nc_exp,        &
-        C_evap
+        corr_rrNr_LL_below
 
     use KK_utilities, only: &
         mean_L2N,   & ! Procedure(s)

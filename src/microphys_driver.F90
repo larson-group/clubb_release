@@ -103,23 +103,9 @@ module microphys_driver
       rrp2_on_rrainm2_cloud, & ! Variable(s)
       Nrp2_on_Nrm2_cloud,    &
       Ncp2_on_Ncm2_cloud,    &
-      corr_rrNr_LL_cloud,    &
-      corr_srr_NL_cloud,     &
-      corr_sNr_NL_cloud,     &
-      corr_sNc_NL_cloud,     &
-      corr_trr_NL_cloud,     &
-      corr_tNr_NL_cloud,     &
-      corr_tNc_NL_cloud,     &
       rrp2_on_rrainm2_below, &
       Nrp2_on_Nrm2_below,    &
       Ncp2_on_Ncm2_below,    &
-      corr_rrNr_LL_below,    &
-      corr_srr_NL_below,     &
-      corr_sNr_NL_below,     &
-      corr_sNc_NL_below,     &
-      corr_trr_NL_below,     &
-      corr_tNr_NL_below,     &
-      corr_tNc_NL_below,     &
       C_evap,                &
       r_0,                   &
       KK_evap_Supersat_exp,  &
@@ -150,6 +136,9 @@ module microphys_driver
         two_thirds, &
         one_third,  &
         zero
+
+    use KK_fixed_correlations, only: &
+      setup_KK_corr ! Procedure(s)
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
@@ -212,10 +201,10 @@ module microphys_driver
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file.
 
-#ifdef LATIN_HYPERCUBE
-    character(len=21), parameter :: &
-      LH_input_path = "../input/case_setups/"
-#endif
+    character(len=*), parameter :: &
+      corr_input_path = "../input/case_setups/", & ! Path to correlation files
+      cloud_file_ext  = "_corr_array_cloud.in", & ! File extensions for correlation files
+      below_file_ext  = "_corr_array_below.in"
 
     ! External
     intrinsic :: trim
@@ -244,6 +233,8 @@ module microphys_driver
     real( kind = core_rknd ), dimension( res, res, res, res, res ) :: &
       droplets, droplets2            ! Used for lookup tables with GFDL activation
 
+    character(len=128) :: corr_file_path_cloud, corr_file_path_below
+
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, &
       l_ice_micro, l_graupel, l_hail, l_upwind_diff_sed, &
@@ -252,12 +243,8 @@ module microphys_driver
       LH_microphys_type, l_local_kk, LH_microphys_calls, LH_sequence_length, &
       l_lh_cloud_weighted_sampling, l_fix_s_t_correlations, l_lh_vert_overlap, &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
-      corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, &
-      corr_sNc_NL_cloud, corr_trr_NL_cloud, corr_tNr_NL_cloud, &
-      corr_tNc_NL_cloud, rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, &
-      Ncp2_on_Ncm2_below, corr_rrNr_LL_below, corr_srr_NL_below, &
-      corr_sNr_NL_below, corr_sNc_NL_below, corr_trr_NL_below, &
-      corr_tNr_NL_below, corr_tNc_NL_below, C_evap, r_0, microphys_start_time, &
+      rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, &
+      Ncp2_on_Ncm2_below, C_evap, r_0, microphys_start_time, &
       Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
 
@@ -284,7 +271,7 @@ module microphys_driver
     ! Parameters for NNUCCD & NNUCCC coefficients on clex9_oct14 case
     !--------------------------------------------------------------------------
 
-    select case (trim(runtype))
+    select case (trim( runtype ))
     case ( "clex9_oct14")
       NNUCCD_REDUCE_COEF = .01 ! Reduce NNUCCD by factor of 100 for clex9_oct14
       NNUCCC_REDUCE_COEF = .01 ! Reduce NNUCCC by factor of 100 for clex9_oct14
@@ -295,7 +282,7 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for Khairoutdinov and Kogan microphysics
     !---------------------------------------------------------------------------
-    l_local_kk = .false. ! Use the local parameterization for K&K
+    l_local_kk = .false. ! When true we use the local parameterization for K&K
 
     ! Exponent on Supersaturation (S) in the KK evaporation equation.
     ! The standard value is 1.
@@ -339,28 +326,16 @@ module microphys_driver
     ! (local_kk = .false.), or latin hypercube sampling (using either Khairoutdinov
     !  Kogan or Morrison microphysics).
     !---------------------------------------------------------------------------
-    ! Parameters for in-cloud (from SAM RF02 DO).
+    ! Parameters for in-cloud (default values are from SAM RF02 DO).
     rrp2_on_rrainm2_cloud = 0.766_core_rknd
     Nrp2_on_Nrm2_cloud    = 0.429_core_rknd
     Ncp2_on_Ncm2_cloud    = 0.003_core_rknd
-    corr_rrNr_LL_cloud    = 0.786_core_rknd
-    corr_srr_NL_cloud     = 0.242_core_rknd
-    corr_sNr_NL_cloud     = 0.285_core_rknd
-    corr_sNc_NL_cloud     = 0.433_core_rknd
-    corr_trr_NL_cloud     = 0.260_core_rknd 
-    corr_tNr_NL_cloud     = 0.204_core_rknd
-    corr_tNc_NL_cloud     = 0.165_core_rknd
-    ! Parameters for below-cloud (from SAM RF02 DO).
+
+    ! Parameters for below-cloud (default values are from SAM RF02 DO).
     rrp2_on_rrainm2_below = 8.97_core_rknd
     Nrp2_on_Nrm2_below    = 12.03_core_rknd
     Ncp2_on_Ncm2_below    = zero  ! Not applicable below cloud.
-    corr_rrNr_LL_below    = 0.886_core_rknd
-    corr_srr_NL_below     = 0.056_core_rknd
-    corr_sNr_NL_below     = 0.015_core_rknd
-    corr_sNc_NL_below     = zero  ! Not applicable below cloud.
-    corr_trr_NL_below     = -0.066_core_rknd
-    corr_tNr_NL_below     = -0.094_core_rknd
-    corr_tNc_NL_below     = zero  ! Not applicable below cloud.
+
     ! Other needed parameters
 
     ! Made up values for the variance of ice/snow, since we currently lack data
@@ -374,98 +349,6 @@ module microphys_driver
     Nsnowp2_on_Nsnowm2_below = 0.429_core_rknd
     ricep2_on_ricem2_below = 1.0_core_rknd
     Nicep2_on_Nicem2_below = 1.0_core_rknd
-
-    ! MPACE-A values for the correlation of ice/snow
-!   corr_srsnow_NL_cloud     = 0.24_core_rknd
-!   corr_srsnow_NL_below     = corr_srsnow_NL_cloud
-!   corr_sNsnow_NL_cloud     = 0.29_core_rknd
-!   corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
-!   corr_rsnowNsnow_LL_cloud = 0.88_core_rknd
-!   corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
-!   corr_srice_NL_cloud      = 0.31_core_rknd
-!   corr_srice_NL_below      = corr_srice_NL_cloud
-!   corr_sNi_NL_cloud        = 0.36_core_rknd
-!   corr_sNi_NL_below        = corr_sNi_NL_cloud
-!   corr_riceNi_LL_cloud     = 0.01_core_rknd
-!   corr_riceNi_LL_below     = corr_riceNi_LL_cloud
-!   corr_sNc_NL_cloud        = 0.67_core_rknd
-!   corr_sNc_NL_below        = 0.67_core_rknd
-
-!   corr_sw_NN_cloud         = 0.09_core_rknd
-
-!   corr_wrice_NL_cloud      = 0.64_core_rknd
-!   corr_wrice_NL_below      = corr_wrice_NL_cloud
-!   corr_wNi_NL_cloud        = -0.35_core_rknd
-!   corr_wNi_NL_below        = corr_wNi_NL_cloud
-!   corr_wrsnow_NL_cloud     = 0.45_core_rknd
-!   corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
-!   corr_wNsnow_NL_cloud     = 0.58_core_rknd
-!   corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
-!   corr_wNc_NL_cloud        = 0.38_core_rknd
-!   corr_wNc_NL_below        = 0.38_core_rknd
-
-
-    ! MPACE-B values for the correlation of ice/snow
-!   corr_srsnow_NL_cloud     = 0.43_core_rknd
-!   corr_srsnow_NL_below     = corr_srsnow_NL_cloud
-!   corr_sNsnow_NL_cloud     = 0.55_core_rknd
-!   corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
-!   corr_rsnowNsnow_LL_cloud = 0.91_core_rknd
-!   corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
-!   corr_srice_NL_cloud      = 0.61_core_rknd
-!   corr_srice_NL_below      = corr_srice_NL_cloud
-!   corr_sNi_NL_cloud        = 0.90_core_rknd
-!   corr_sNi_NL_below        = corr_sNi_NL_cloud
-!   corr_riceNi_LL_cloud     = 0.63_core_rknd
-!   corr_riceNi_LL_below     = corr_riceNi_LL_cloud
-!   corr_sNc_NL_cloud        = 0.94_core_rknd
-!   corr_sNc_NL_below        = 0.94_core_rknd
-
-!   corr_sw_NN_cloud         = 0.20_core_rknd
-
-!   corr_wrice_NL_cloud      = 0.01_core_rknd
-!   corr_wrice_NL_below      = corr_wrice_NL_cloud
-!   corr_wNi_NL_cloud        = 0.25_core_rknd
-!   corr_wNi_NL_below        = corr_wNi_NL_cloud
-!   corr_wrsnow_NL_cloud     = 0.01_core_rknd
-!   corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
-!   corr_wNsnow_NL_cloud     = 0.02_core_rknd
-!   corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
-!   corr_wNc_NL_cloud        = 0.24_core_rknd
-!   corr_wNc_NL_below        = corr_wNc_NL_cloud
-
-! NOTE: These values are commented out because they have been
-!       moved to *_corr_array_cloud.in and *_corr_array_below.in
-!       files. - Kenneth Connor, August 22, 2011
-
-    ! ISDAC values for the correlation of ice/snow
-!    corr_srsnow_NL_cloud     = 0.06_core_rknd
-!    corr_srsnow_NL_below     = corr_srsnow_NL_cloud
-!    corr_sNsnow_NL_cloud     = 0.04_core_rknd
-!    corr_sNsnow_NL_below     = corr_sNsnow_NL_cloud
-!    corr_rsnowNsnow_LL_cloud = 0.95_core_rknd
-!    corr_rsnowNsnow_LL_below = corr_rsnowNsnow_LL_cloud
-!    corr_srice_NL_cloud      = -0.08_core_rknd
-!    corr_srice_NL_below      = corr_srice_NL_cloud
-!    corr_sNi_NL_cloud        = 0.28_core_rknd
-!    corr_sNi_NL_below        = corr_sNi_NL_cloud
-!    corr_riceNi_LL_cloud     = 0.77_core_rknd
-!    corr_riceNi_LL_below     = corr_riceNi_LL_cloud
-!   corr_sNc_NL_cloud        = 0.09_core_rknd
-!   corr_sNc_NL_below        = corr_sNc_NL_cloud
-
-!    corr_sw_NN_cloud         = 0.09_core_rknd
-
-!    corr_wrice_NL_cloud      = 0.44_core_rknd
-!    corr_wrice_NL_below      = corr_wrice_NL_cloud
-!    corr_wNi_NL_cloud        = 0.55_core_rknd
-!    corr_wNi_NL_below        = corr_wNi_NL_cloud
-!    corr_wrsnow_NL_cloud     = 0.65_core_rknd
-!    corr_wrsnow_NL_below     = corr_wrsnow_NL_cloud
-!    corr_wNsnow_NL_cloud     = 0.73_core_rknd
-!    corr_wNsnow_NL_below     = corr_wNsnow_NL_cloud
-!    corr_wNc_NL_cloud        = 0.34_core_rknd
-!    corr_wNc_NL_below        = corr_wNc_NL_cloud
 
     !---------------------------------------------------------------------------
     ! Parameters for Morrison and COAMPS microphysics
@@ -516,10 +399,12 @@ module microphys_driver
     !---------------------------------------------------------------------------
     Ncm_initial = 100._core_rknd ! #/cm^3
 
-    ! We fix the correlations between s and t to avoid factorizing the
-    ! correlation matrix more than once per simulation. 
-    ! -dschanen 24 Jan 2010
-    l_fix_s_t_correlations = .true. 
+    ! In the Latin hypercube code, we can fix the correlations between s and t.
+    ! The reasons for this are twofold:
+    ! 1. It avoids the cost of factorizing the correlation matrices at every altitude and timestep.
+    ! 2. At higher altitudes decomposing a matrix of covariances directly becomes
+    !    unstable.  This makes that approach impractical for ice microphysics.
+    l_fix_s_t_correlations = .false. 
 
     l_lh_cloud_weighted_sampling = .false.
     l_lh_vert_overlap = .false.
@@ -594,39 +479,11 @@ module microphys_driver
         l_write_to_file, iunit )
       call write_text ( "Ncp2_on_Ncm2_cloud = ", Ncp2_on_Ncm2_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "corr_rrNr_LL_cloud = ", corr_rrNr_LL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_srr_NL_cloud = ", corr_srr_NL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_sNr_NL_cloud = ", corr_sNr_NL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_sNc_NL_cloud = ", corr_sNc_NL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_trr_NL_cloud = ", corr_trr_NL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_tNr_NL_cloud = ", corr_tNr_NL_cloud, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_tNc_NL_cloud = ", corr_tNc_NL_cloud, &
-        l_write_to_file, iunit )
       call write_text ( "rrp2_on_rrainm2_below = ", rrp2_on_rrainm2_below, &
         l_write_to_file, iunit )
       call write_text ( "Nrp2_on_Nrm2_below = ", Nrp2_on_Nrm2_below, &
         l_write_to_file, iunit )
       call write_text ( "Ncp2_on_Ncm2_below = ", Ncp2_on_Ncm2_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_rrNr_LL_below = ", corr_rrNr_LL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_srr_NL_below = ", corr_srr_NL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_sNr_NL_below = ", corr_sNr_NL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_sNc_NL_below = ", corr_sNc_NL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_trr_NL_below = ", corr_trr_NL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_tNr_NL_below = ", corr_tNr_NL_below, &
-        l_write_to_file, iunit )
-      call write_text ( "corr_tNc_NL_below = ", corr_tNc_NL_below, &
         l_write_to_file, iunit )
       call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
       call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
@@ -923,6 +780,11 @@ module microphys_driver
       l_hydromet_sed(iiNrm)    = .true.
       l_hydromet_sed(iiNcm)    = .false.
 
+      corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
+      corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
+
+      call setup_KK_corr( iunit, corr_file_path_cloud, corr_file_path_below )
+
     case ( "simplified_ice" )
       iirrainm    = -1
       iirsnowm    = -1
@@ -992,10 +854,12 @@ module microphys_driver
     if ( LH_microphys_type_int /= LH_microphys_disabled ) then
 
 #ifdef LATIN_HYPERCUBE
+      corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
+      corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
       ! Allocate and set the arrays containing the correlations
       ! and the X'^2 / X'^2 terms
       call setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
-                                    LH_input_path, iunit, runtype )
+                                    corr_file_path_cloud, corr_file_path_below, iunit )
 
 #endif
 

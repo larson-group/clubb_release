@@ -53,7 +53,7 @@ module estimate_scm_microphys_module
       iiNgraupelm, &
       iiNcm
 
-    use latin_hypercube_arrays, only: &
+    use corr_matrix_module, only: &
       iiLH_rrain, &
       iiLH_rsnow, &
       iiLH_rice, &
@@ -330,7 +330,7 @@ module estimate_scm_microphys_module
       iiNgraupelm, &
       iiNcm
 
-    use latin_hypercube_arrays, only: &
+    use corr_matrix_module, only: &
       iiLH_rrain, &
       iiLH_rsnow, &
       iiLH_rice, &

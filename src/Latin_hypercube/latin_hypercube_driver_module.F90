@@ -37,9 +37,11 @@ module latin_hypercube_driver_module
 !   None
 !-------------------------------------------------------------------------------
 
+    use corr_matrix_module, only: &
+      iiLH_s_mellor    ! Variables
+
     use latin_hypercube_arrays, only: &
-      iiLH_s_mellor, & ! Variables
-      height_time_matrix
+      height_time_matrix ! Variables
 
     use parameters_model, only: hydromet_dim ! Variable
 
@@ -641,7 +643,7 @@ module latin_hypercube_driver_module
                zt, time_initial )
 !-------------------------------------------------------------------------------
 
-    use latin_hypercube_arrays, only: &
+    use corr_matrix_module, only: &
       iiLH_s_mellor, & ! Variables
       iiLH_t_mellor, &
       iiLH_w, &
@@ -1472,7 +1474,7 @@ module latin_hypercube_driver_module
       iiNgraupelm, &
       iiNcm
 
-    use latin_hypercube_arrays, only: &
+    use corr_matrix_module, only: &
       iiLH_rrain, & ! Variable(s)
       iiLH_rsnow, &
       iiLH_rice, &
