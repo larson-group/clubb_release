@@ -47,6 +47,12 @@ elseif strfind ( filename, '_cam' ) %For cam cases
 elseif strfind ( filename, 'twp_ice' ) % For twp_ice
    zvarid = netcdf.inqVarID(nc_file, 'altitude');
    z = netcdf.getVar( nc_file, zvarid );
+elseif strfind ( filename, '_zt' )
+   zvarid = netcdf.inqVarID(nc_file, 'altitude');
+   z = netcdf.getVar( nc_file, zvarid );
+elseif strfind ( filename, '_zm' )
+   zvarid = netcdf.inqVarID(nc_file, 'altitude');
+   z = netcdf.getVar( nc_file, zvarid );
 else
    zvarid = netcdf.inqVarID(nc_file, 'z');
    z = netcdf.getVar( nc_file, zvarid );
