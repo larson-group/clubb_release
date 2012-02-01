@@ -52,31 +52,11 @@ module KK_microphys_module
         micron_per_m
 
     use parameters_microphys, only: &
-        rrp2_on_rrainm2_cloud, & ! Variable(s)
-        rrp2_on_rrainm2_below, &
-        Nrp2_on_Nrm2_cloud,    &
-        Nrp2_on_Nrm2_below,    &
-        Ncp2_on_Ncm2_cloud,    &
-        Ncp2_on_Ncm2_below,    &
         KK_auto_Nc_exp,        &
         C_evap
 
-    use KK_fixed_correlations, only: &
-        corr_srr_NL_cloud,  & ! Variable(s)
-        corr_srr_NL_below,  &
-        corr_sNr_NL_cloud,  &
-        corr_sNr_NL_below,  &
-        corr_sNc_NL_cloud,  &
-        corr_sNc_NL_below,  &
-        corr_rrNr_LL_cloud, &
-        corr_rrNr_LL_below
-
     use KK_utilities, only: &
-        mean_L2N,   & ! Procedure(s)
-        stdev_L2N,  &
-        corr_NL2NN, &
-        corr_LL2NN, &
-        G_T_p
+        G_T_p  ! Procedure(s)
 
     use KK_upscaled_means, only: &
         KK_mvr_upscaled_mean,  & ! Procedure(s)
@@ -194,9 +174,9 @@ module KK_microphys_module
       mean_vol_rad    ! Mean KK rain drop mean volume radius      [m]
 
     real( kind = core_rknd ) :: &
-      T_liq_in_K, & ! Mean liquid water temperature, T_l                [K]
-      r_sl,       & ! Liquid water saturation mixing ratio, r_s(T_l,p)  [kg/kg]
-      Beta_Tl       ! Parameter Beta, Beta(T_l)                         [-]
+      T_liq_in_K, & ! Mean liquid water temperature, T_            [K]
+      r_sl,       & ! Liquid water sat. mixing ratio, r_s(T_l,p)   [kg/kg]
+      Beta_Tl       ! Parameter Beta, Beta(T_l)                    [1/(kg/kg)]
 
     real( kind = core_rknd ) :: &
       KK_evap_coef, & ! KK evaporation coefficient                  [(kg/kg)/s]
@@ -204,36 +184,25 @@ module KK_microphys_module
       KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
 
-    real( kind = core_rknd ), dimension(:), pointer :: &
-      s1,          & ! Mean of s (1st PDF component)                 [kg/kg]
-      s2,          & ! Mean of s (2nd PDF component)                 [kg/kg]
-      stdev_s1,    & ! Standard deviation of s (1st PDF component)   [kg/kg]
-      stdev_s2,    & ! Standard deviation of s (2nd PDF component)   [kg/kg]
-      mixt_frac      ! Mixture fraction                              [-]
-
     real( kind = core_rknd ) :: &
-      mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
-      mu_Nr_n,      & ! Mean of ln Nr (both components)                     [-]
-      mu_Nc_n,      & ! Mean of ln Nc (both components)                     [-]
-      sigma_rr_n,   & ! Standard deviation of ln rr (both components)       [-]
-      sigma_Nr_n,   & ! Standard deviation of ln Nr (both components)       [-]
-      sigma_Nc_n,   & ! Standard deviation of ln Nc (both components)       [-]
-      corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component) [-]
-      corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component) [-]
-      corr_sNr_1_n, & ! Correlation between s and ln Nr (1st PDF component) [-]
-      corr_sNr_2_n, & ! Correlation between s and ln Nr (2nd PDF component) [-]
-      corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component) [-]
-      corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component) [-]
-      corr_rrNr_n     ! Correlation between ln rr & ln Nr (both components) [-]
-
-    real( kind = core_rknd ), dimension(nz) :: &
-      rrp2_on_rrainm2, & ! Specified ratio of < r_r >^2 to < r_r'^2 >       [-]
-      Nrp2_on_Nrm2,    & ! Specified ratio of < N_r >^2 to < N_r'^2 >       [-]
-      Ncp2_on_Ncm2,    & ! Specified ratio of < N_c >^2 to < N_c'^2 >       [-]
-      corr_rrNr_LL,    & ! Specified correlation between r_r and N_r        [-]
-      corr_srr_NL,     & ! Specified correlation between s and r_r          [-]
-      corr_sNr_NL,     & ! Specified correlation between s and N_r          [-]
-      corr_sNc_NL        ! Specified correlation between s and N_c          [-]
+      mu_s_1,       & ! Mean of s (1st PDF component)                    [kg/kg]
+      mu_s_2,       & ! Mean of s (2nd PDF component)                    [kg/kg]
+      mu_rr_n,      & ! Mean of ln rr (both components)              [ln(kg/kg)]
+      mu_Nr_n,      & ! Mean of ln Nr (both components)             [ln(num/kg)]
+      mu_Nc_n,      & ! Mean of ln Nc (both components)             [ln(num/kg)]
+      sigma_s_1,    & ! Standard deviation of s (1st PDF component)      [kg/kg]
+      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)      [kg/kg]
+      sigma_rr_n,   & ! Standard deviation of ln rr (both comps.)    [ln(kg/kg)]
+      sigma_Nr_n,   & ! Standard deviation of ln Nr (both comps.)   [ln(num/kg)]
+      sigma_Nc_n,   & ! Standard deviation of ln Nc (both comps.)   [ln(num/kg)]
+      corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component)  [-]
+      corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component)  [-]
+      corr_sNr_1_n, & ! Correlation between s and ln Nr (1st PDF component)  [-]
+      corr_sNr_2_n, & ! Correlation between s and ln Nr (2nd PDF component)  [-]
+      corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component)  [-]
+      corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component)  [-]
+      corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
+      mixt_frac       ! Mixture fraction                                     [-]
 
     real( kind = core_rknd ) ::  &
       rrainm_source,     & ! Total source term rate for rrainm       [(kg/kg)/s]
@@ -279,15 +248,6 @@ module KK_microphys_module
     ! Mean field tendencies.
     rrainm_mc_tndcy => hydromet_mc(:,iirrainm)
     Nrm_mc_tndcy    => hydromet_mc(:,iiNrm)
-    
-    ! Assign pointers for PDF parameters.
-    ! Note:  these are only necessary for upscaled KK microphysics; however,
-    !        they need to be initialized here to avoid a compiler warning.
-    mixt_frac   => pdf_params(:)%mixt_frac
-    s1          => pdf_params(:)%s1
-    s2          => pdf_params(:)%s2
-    stdev_s1    => pdf_params(:)%stdev_s1
-    stdev_s2    => pdf_params(:)%stdev_s2
 
 
     if ( .not. l_local_kk ) then
@@ -297,47 +257,6 @@ module KK_microphys_module
     endif
 
     l_src_adj_enabled = .true.
-
-
-    if ( l_upscaled ) then
-
-       ! Set up the values of the statistical correlations and variances.  Since
-       ! we currently do not have enough variables to compute the correlations
-       ! and variances directly, we have obtained these values by analyzing LES
-       ! runs of certain cases.  We have divided those results into an
-       ! inside-cloud average and an outside-cloud (or below-cloud) average.
-       ! This coding leaves the software architecture in place in case we ever
-       ! have the variables in place to compute these values directly.  It also
-       ! allows us to use separate inside-cloud and outside-cloud parameter
-       ! values.
-       ! Brian Griffin; February 3, 2007.
-       !
-       ! Set the value of the parameters based on whether the altitude is above
-       ! or below cloud base.  Determine whether there is cloud at any given
-       ! vertical level.  In order for a vertical level to have cloud, the
-       ! amount of cloud water (rcm) must be greater than or equal to the
-       ! tolerance level (rc_tol).  If there is cloud at a given vertical level,
-       ! then the ###_cloud value is used.  Otherwise, the ###_below value is
-       ! used.
-       where ( rcm >= rc_tol )
-          rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
-          Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
-          Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
-          corr_rrNr_LL    = corr_rrNr_LL_cloud
-          corr_srr_NL     = corr_srr_NL_cloud
-          corr_sNr_NL     = corr_sNr_NL_cloud
-          corr_sNc_NL     = corr_sNc_NL_cloud
-       else where
-          rrp2_on_rrainm2 = rrp2_on_rrainm2_below
-          Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
-          Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
-          corr_rrNr_LL    = corr_rrNr_LL_below
-          corr_srr_NL     = corr_srr_NL_below
-          corr_sNr_NL     = corr_sNr_NL_below
-          corr_sNc_NL     = corr_sNc_NL_below
-       end where
-
-    endif  ! l_upscaled
 
 
     ! Microphysics tendency loop.
@@ -377,96 +296,15 @@ module KK_microphys_module
        !!! KK rain water mixing ratio microphysics tendencies.
        if ( l_upscaled ) then
 
-
-          !!! Calculate the normalized mean of variables that have an assumed
-          !!! (single) lognormal distribution, given the mean and variance of
-          !!! those variables.
-
-          ! Normalized mean of rain water mixing ratio.
-          if ( rrainm(k) > rr_tol ) then
-             mu_rr_n = mean_L2N( rrainm(k), &
-                                 rrp2_on_rrainm2(k) * rrainm(k)**2 )
-          endif
-
-          ! Normalized mean of rain drop concentration.
-          if ( Nrm(k) > Nr_tol ) then
-             mu_Nr_n = mean_L2N( Nrm(k), Nrp2_on_Nrm2(k) * Nrm(k)**2 )
-          endif
-
-          ! Normalized mean of cloud droplet concentration.
-          if ( Ncm(k) > Nc_tol ) then
-             mu_Nc_n = mean_L2N( Ncm(k), Ncp2_on_Ncm2(k) * Ncm(k)**2 )
-          endif
-
-          !!! Calculate the normalized standard deviation of variables that have
-          !!! an assumed (single) lognormal distribution, given the mean and
-          !!! variance of those variables.
-
-          ! Normalized standard deviation of rain water mixing ratio.
-          if ( rrainm(k) > rr_tol ) then
-             sigma_rr_n = stdev_L2N( rrainm(k), &
-                                     rrp2_on_rrainm2(k) * rrainm(k)**2 )
-          endif
-
-          ! Normalized standard deviation of rain drop concentration.
-          if ( Nrm(k) > Nr_tol ) then
-             sigma_Nr_n = stdev_L2N( Nrm(k), Nrp2_on_Nrm2(k) * Nrm(k)**2 )
-          endif
-
-          ! Normalized standard deviation of cloud droplet concentration.
-          if ( Ncm(k) > Nc_tol ) then
-             sigma_Nc_n = stdev_L2N( Ncm(k), Ncp2_on_Ncm2(k) * Ncm(k)**2 )
-          endif
-
-          ! Note:  the standard deviation of extended liquid water mixing ratio,
-          !        s, is given by stdev_s1 for PDF component 1 and stdev_s2 for
-          !        PDF component 2.
-
-          !!! Calculate the normalized correlation between variables that have
-          !!! an assumed normal distribution and variables that have an assumed
-          !!! (single) lognormal distribution for the ith PDF component, given
-          !!! their correlation and the normalized standard deviation of the
-          !!! variable with the assumed lognormal distribution.
-
-          if ( rrainm(k) > rr_tol ) then
-
-             ! Normalize the correlation between s and r_r in PDF component 1.
-             corr_srr_1_n = corr_NL2NN( corr_srr_NL(k), sigma_rr_n )
-
-             ! Normalize the correlation between s and r_r in PDF component 2.
-             corr_srr_2_n = corr_srr_1_n
-
-          endif
-
-          if ( Nrm(k) > Nr_tol ) then
-
-             ! Normalize the correlation between s and N_r in PDF component 1.
-             corr_sNr_1_n = corr_NL2NN( corr_sNr_NL(k), sigma_Nr_n )
-
-             ! Normalize the correlation between s and N_r in PDF component 2.
-             corr_sNr_2_n = corr_sNr_1_n
-
-          endif
-
-          if ( Ncm(k) > Nc_tol ) then
-
-             ! Normalize the correlation between s and N_c in PDF component 1.
-             corr_sNc_1_n = corr_NL2NN( corr_sNc_NL(k), sigma_Nc_n )
-
-             ! Normalize the correlation between s and N_c in PDF component 2.
-             corr_sNc_2_n = corr_sNc_1_n
-
-          endif
-
-          !!! Calculate the normalized correlation between two variables that
-          !!! both have an assumed lognormal distribution, given their
-          !!! correlation and both of their normalized standard deviations.
-
-          ! Normalize the correlation between rr and Nr (this is the same for
-          ! both PDF components).
-          if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
-             corr_rrNr_n = corr_LL2NN( corr_rrNr_LL(k), sigma_rr_n, sigma_Nr_n )
-          endif
+          call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), &
+                                  Ncm(k), pdf_params(k), &
+                                  mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                  mu_Nc_n, sigma_s_1, sigma_s_2, &
+                                  sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+                                  corr_srr_1_n, corr_srr_2_n, &
+                                  corr_sNr_1_n, corr_sNr_2_n, &
+                                  corr_sNc_1_n, corr_sNc_2_n, &
+                                  corr_rrNr_n, mixt_frac )
 
 
           !!! Calculate the upscaled KK rain drop mean volume radius.
@@ -488,11 +326,11 @@ module KK_microphys_module
           if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
              rrainm_cond(k)  &
-             = KK_evap_upscaled_mean( s1(k), s2(k), mu_rr_n, mu_Nr_n, &
-                                      stdev_s1(k), stdev_s2(k), sigma_rr_n, &
+             = KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                      sigma_s_1, sigma_s_2, sigma_rr_n, &
                                       sigma_Nr_n, corr_srr_1_n, corr_srr_2_n, &
                                       corr_sNr_1_n, corr_sNr_2_n, corr_rrNr_n, &
-                                      KK_evap_coef, mixt_frac(k) )
+                                      KK_evap_coef, mixt_frac )
 
           else  ! r_r or N_r = 0.
 
@@ -504,9 +342,9 @@ module KK_microphys_module
           if ( Ncm(k) > Nc_tol ) then
 
              rrainm_auto(k)  &
-             = KK_auto_upscaled_mean( s1(k), s2(k), mu_Nc_n, stdev_s1(k), &
-                                      stdev_s2(k), sigma_Nc_n, corr_sNc_1_n, &
-                                      corr_sNc_2_n, KK_auto_coef, mixt_frac(k) )
+             = KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_n, sigma_s_1, &
+                                      sigma_s_2, sigma_Nc_n, corr_sNc_1_n, &
+                                      corr_sNc_2_n, KK_auto_coef, mixt_frac )
 
           else  ! N_c = 0.
 
@@ -518,9 +356,9 @@ module KK_microphys_module
           if ( rrainm(k) > rr_tol ) then
 
              rrainm_accr(k)  &
-             = KK_accr_upscaled_mean( s1(k), s2(k), mu_rr_n, stdev_s1(k), &
-                                      stdev_s2(k), sigma_rr_n, corr_srr_1_n, &
-                                      corr_srr_2_n, KK_accr_coef, mixt_frac(k) )
+             = KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
+                                      sigma_s_2, sigma_rr_n, corr_srr_1_n, &
+                                      corr_srr_2_n, KK_accr_coef, mixt_frac )
 
           else  ! r_r = 0.
 
@@ -766,6 +604,240 @@ module KK_microphys_module
   end subroutine KK_micro_driver
 
   !=============================================================================
+  subroutine KK_upscaled_setup( rcm, rrainm, Nrm, & 
+                                Ncm, pdf_params, &
+                                mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                mu_Nc_n, sigma_s_1, sigma_s_2, &
+                                sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+                                corr_srr_1_n, corr_srr_2_n, &
+                                corr_sNr_1_n, corr_sNr_2_n, &
+                                corr_sNc_1_n, corr_sNc_2_n, &
+                                corr_rrNr_n, mixt_frac )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        rc_tol, & ! Constant(s)
+        rr_tol, & 
+        Nr_tol, & 
+        Nc_tol
+
+    use KK_utilities, only: &
+        mean_L2N,   & ! Procedure(s)
+        stdev_L2N,  &
+        corr_NL2NN, &
+        corr_LL2NN
+
+    use pdf_parameter_module, only: &
+        pdf_parameter  ! Variable(s) type
+
+    use parameters_microphys, only: &
+        rrp2_on_rrainm2_cloud, & ! Variable(s)
+        rrp2_on_rrainm2_below, &
+        Nrp2_on_Nrm2_cloud,    &
+        Nrp2_on_Nrm2_below,    &
+        Ncp2_on_Ncm2_cloud,    &
+        Ncp2_on_Ncm2_below
+
+    use KK_fixed_correlations, only: &
+        corr_srr_NL_cloud,  & ! Variable(s)
+        corr_sNr_NL_cloud,  &
+        corr_sNc_NL_cloud,  &
+        corr_srr_NL_below,  &
+        corr_sNr_NL_below,  &
+        corr_sNc_NL_below,  &
+        corr_rrNr_LL_cloud, &
+        corr_rrNr_LL_below
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      rcm,    & ! Mean cloud water mixing ratio       [kg/kg]
+      rrainm, & ! Mean rain water mixing ratio        [kg/kg]
+      Nrm,    & ! Mean rain drop concentration        [num/kg]
+      Ncm       ! Mean cloud droplet concentration    [num/kg]
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params    ! PDF parameters                        [units vary]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      mu_s_1,       & ! Mean of s (1st PDF component)                    [kg/kg]
+      mu_s_2,       & ! Mean of s (2nd PDF component)                    [kg/kg]
+      mu_rr_n,      & ! Mean of ln rr (both components)              [ln(kg/kg)]
+      mu_Nr_n,      & ! Mean of ln Nr (both components)             [ln(num/kg)]
+      mu_Nc_n,      & ! Mean of ln Nc (both components)             [ln(num/kg)]
+      sigma_s_1,    & ! Standard deviation of s (1st PDF component)      [kg/kg]
+      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)      [kg/kg]
+      sigma_rr_n,   & ! Standard deviation of ln rr (both comps.)    [ln(kg/kg)]
+      sigma_Nr_n,   & ! Standard deviation of ln Nr (both comps.)   [ln(num/kg)]
+      sigma_Nc_n,   & ! Standard deviation of ln Nc (both comps.)   [ln(num/kg)]
+      corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component)  [-]
+      corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component)  [-]
+      corr_sNr_1_n, & ! Correlation between s and ln Nr (1st PDF component)  [-]
+      corr_sNr_2_n, & ! Correlation between s and ln Nr (2nd PDF component)  [-]
+      corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component)  [-]
+      corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component)  [-]
+      corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
+      mixt_frac       ! Mixture fraction                                     [-]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      rrp2_on_rrainm2, & ! Ratio of < r_r >^2 to < r_r'^2 >                 [-]
+      Nrp2_on_Nrm2,    & ! Ratio of < N_r >^2 to < N_r'^2 >                 [-]
+      Ncp2_on_Ncm2,    & ! Ratio of < N_c >^2 to < N_c'^2 >                 [-]
+      corr_srr_1,      & ! Correlation between s and rr (1st PDF component) [-] 
+      corr_srr_2,      & ! Correlation between s and rr (2nd PDF component) [-]
+      corr_sNr_1,      & ! Correlation between s and Nr (1st PDF component) [-]
+      corr_sNr_2,      & ! Correlation between s and Nr (2nd PDF component) [-]
+      corr_sNc_1,      & ! Correlation between s and Nc (1st PDF component) [-]
+      corr_sNc_2,      & ! Correlation between s and Nc (2nd PDF component) [-]
+      corr_rrNr          ! Correlation between rr and Nr (both components)  [-]
+
+
+    ! Enter the PDF parameters.
+    mu_s_1    = pdf_params%s1
+    mu_s_2    = pdf_params%s2
+    sigma_s_1 = pdf_params%stdev_s1
+    sigma_s_2 = pdf_params%stdev_s2
+    mixt_frac = pdf_params%mixt_frac
+    
+    ! Set up the values of the statistical correlations and variances.  Since we
+    ! currently do not have enough variables to compute the correlations and
+    ! variances directly, we have obtained these values by analyzing LES runs of
+    ! certain cases.  We have divided those results into an inside-cloud average
+    ! and an outside-cloud (or below-cloud) average.  This coding leaves the
+    ! software architecture in place in case we ever have the variables in place
+    ! to compute these values directly.  It also allows us to use separate
+    ! inside-cloud and outside-cloud parameter values.
+    ! Brian Griffin; February 3, 2007.
+    !
+    ! Set the value of the parameters based on whether the altitude is above or
+    ! below cloud base.  Determine whether there is cloud at any given vertical
+    ! level.  In order for a vertical level to have cloud, the amount of cloud
+    ! water (rcm) must be greater than or equal to the tolerance level (rc_tol).
+    ! If there is cloud at a given vertical level, then the ###_cloud value is
+    ! used.  Otherwise, the ###_below value is used.
+    if ( rcm > rc_tol ) then
+       rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+       Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
+       Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
+       corr_rrNr       = corr_rrNr_LL_cloud
+       corr_srr_1      = corr_srr_NL_cloud
+       corr_srr_2      = corr_srr_NL_cloud
+       corr_sNr_1      = corr_sNr_NL_cloud
+       corr_sNr_2      = corr_sNr_NL_cloud
+       corr_sNc_1      = corr_sNc_NL_cloud
+       corr_sNc_2      = corr_sNc_NL_cloud
+    else
+       rrp2_on_rrainm2 = rrp2_on_rrainm2_below
+       Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
+       Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
+       corr_rrNr       = corr_rrNr_LL_below
+       corr_srr_1      = corr_srr_NL_below
+       corr_srr_2      = corr_srr_NL_below
+       corr_sNr_1      = corr_sNr_NL_below
+       corr_sNr_2      = corr_sNr_NL_below
+       corr_sNc_1      = corr_sNc_NL_below
+       corr_sNc_2      = corr_sNc_NL_below
+    endif
+
+    !!! Calculate the normalized mean of variables that have an assumed (single)
+    !!! lognormal distribution, given the mean and variance of those variables.
+
+    ! Normalized mean of rain water mixing ratio.
+    if ( rrainm > rr_tol ) then
+       mu_rr_n = mean_L2N( rrainm, rrp2_on_rrainm2 * rrainm**2 )
+    endif
+
+    ! Normalized mean of rain drop concentration.
+    if ( Nrm > Nr_tol ) then
+       mu_Nr_n = mean_L2N( Nrm, Nrp2_on_Nrm2 * Nrm**2 )
+    endif
+
+    ! Normalized mean of cloud droplet concentration.
+    if ( Ncm > Nc_tol ) then
+       mu_Nc_n = mean_L2N( Ncm, Ncp2_on_Ncm2 * Ncm**2 )
+    endif
+
+    !!! Calculate the normalized standard deviation of variables that have
+    !!! an assumed (single) lognormal distribution, given the mean and
+    !!! variance of those variables.
+
+    ! Normalized standard deviation of rain water mixing ratio.
+    if ( rrainm > rr_tol ) then
+       sigma_rr_n = stdev_L2N( rrainm, rrp2_on_rrainm2 * rrainm**2 )
+    endif
+
+    ! Normalized standard deviation of rain drop concentration.
+    if ( Nrm > Nr_tol ) then
+       sigma_Nr_n = stdev_L2N( Nrm, Nrp2_on_Nrm2 * Nrm**2 )
+    endif
+
+    ! Normalized standard deviation of cloud droplet concentration.
+    if ( Ncm > Nc_tol ) then
+       sigma_Nc_n = stdev_L2N( Ncm, Ncp2_on_Ncm2 * Ncm**2 )
+    endif
+
+    !!! Calculate the normalized correlation between variables that have
+    !!! an assumed normal distribution and variables that have an assumed
+    !!! (single) lognormal distribution for the ith PDF component, given their
+    !!! correlation and the normalized standard deviation of the variable with
+    !!! the assumed lognormal distribution.
+
+    if ( rrainm > rr_tol ) then
+
+       ! Normalize the correlation between s and r_r in PDF component 1.
+       corr_srr_1_n = corr_NL2NN( corr_srr_1, sigma_rr_n )
+
+       ! Normalize the correlation between s and r_r in PDF component 2.
+       corr_srr_2_n = corr_NL2NN( corr_srr_2, sigma_rr_n )
+
+    endif
+
+    if ( Nrm > Nr_tol ) then
+
+       ! Normalize the correlation between s and N_r in PDF component 1.
+       corr_sNr_1_n = corr_NL2NN( corr_sNr_1, sigma_Nr_n )
+
+       ! Normalize the correlation between s and N_r in PDF component 2.
+       corr_sNr_2_n = corr_NL2NN( corr_sNr_2, sigma_Nr_n )
+
+    endif
+
+    if ( Ncm > Nc_tol ) then
+
+       ! Normalize the correlation between s and N_c in PDF component 1.
+       corr_sNc_1_n = corr_NL2NN( corr_sNc_1, sigma_Nc_n )
+
+       ! Normalize the correlation between s and N_c in PDF component 2.
+       corr_sNc_2_n = corr_NL2NN( corr_sNc_2, sigma_Nc_n )
+
+    endif
+
+    !!! Calculate the normalized correlation between two variables that both
+    !!! have an assumed lognormal distribution, given their correlation and both
+    !!! of their normalized standard deviations.
+
+    ! Normalize the correlation between rr and Nr (this is the same for
+    ! both PDF components).
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+       corr_rrNr_n = corr_LL2NN( corr_rrNr, sigma_rr_n, sigma_Nr_n )
+    endif
+
+
+    return
+
+  end subroutine KK_upscaled_setup
+
+  !=============================================================================
   subroutine KK_upscaled_covar_driver( w_mean, exner, rcm, rrainm, Nrm, Ncm, &
                                        mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
                                        mu_Nc_n, sigma_s_1, sigma_s_2, &
@@ -788,16 +860,18 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        two,          & ! Constant(s)
-        zero,         &
-        Lv,           &
-        Cp,           &
-        w_tol,        &
-        t_mellor_tol, &
-        rc_tol,       &
-        rr_tol,       & 
-        Nr_tol,       & 
+        two,    & ! Constant(s)
+        zero,   &
+        Lv,     &
+        Cp,     &
+        w_tol,  &
+        rc_tol, &
+        rr_tol, & 
+        Nr_tol, & 
         Nc_tol
+
+    use constants_clubb, only:  &
+        t_tol => t_mellor_tol  ! Constant
 
     use KK_upscaled_covariances, only: &
         covar_x_KK_evap,   & ! Procedure(s)
@@ -982,6 +1056,12 @@ module KK_microphys_module
     corr_wNc_1 = zero
     corr_wNc_2 = zero
 
+    !!! Calculate the normalized correlation between variables that have
+    !!! an assumed normal distribution and variables that have an assumed
+    !!! (single) lognormal distribution for the ith PDF component, given their
+    !!! correlation and the normalized standard deviation of the variable with
+    !!! the assumed lognormal distribution.
+
     if ( rrainm > rr_tol ) then
 
        ! Normalize the correlation between w and r_r in PDF component 1.
@@ -1028,7 +1108,7 @@ module KK_microphys_module
     ! water (rcm) must be greater than or equal to the tolerance level (rc_tol).
     ! If there is cloud at a given vertical level, then the ###_cloud value is
     ! used.  Otherwise, the ###_below value is used.
-    if ( rcm >= rc_tol ) then
+    if ( rcm > rc_tol ) then
        corr_trr_1 = corr_trr_NL_cloud
        corr_trr_2 = corr_trr_NL_cloud
        corr_tNr_1 = corr_tNr_NL_cloud
@@ -1043,6 +1123,12 @@ module KK_microphys_module
        corr_tNc_1 = corr_tNc_NL_below
        corr_tNc_2 = corr_tNc_NL_below
     endif
+
+    !!! Calculate the normalized correlation between variables that have
+    !!! an assumed normal distribution and variables that have an assumed
+    !!! (single) lognormal distribution for the ith PDF component, given their
+    !!! correlation and the normalized standard deviation of the variable with
+    !!! the assumed lognormal distribution.
 
     if ( rrainm > rr_tol ) then
 
@@ -1076,98 +1162,170 @@ module KK_microphys_module
 
 
     ! Calculate the covariance of vertical velocity and KK evaporation tendency.
-    w_KK_evap_covar  &
-    = covar_x_KK_evap( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_rr_n, &
-                       mu_Nr_n, sigma_w_1, sigma_w_2, sigma_s_1, &
-                       sigma_s_2, sigma_rr_n, sigma_Nr_n, &
-                       corr_ws_1, corr_ws_2, corr_wrr_1_n, &
-                       corr_wrr_2_n, corr_wNr_1_n, corr_wNr_2_n, &
-                       corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                       corr_sNr_2_n, corr_rrNr_n, w_mean, &
-                       KK_evap_tndcy, KK_evap_coef, w_tol, mixt_frac )
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+
+       w_KK_evap_covar  &
+       = covar_x_KK_evap( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_rr_n, &
+                          mu_Nr_n, sigma_w_1, sigma_w_2, sigma_s_1, &
+                          sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                          corr_ws_1, corr_ws_2, corr_wrr_1_n, &
+                          corr_wrr_2_n, corr_wNr_1_n, corr_wNr_2_n, &
+                          corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                          corr_sNr_2_n, corr_rrNr_n, w_mean, &
+                          KK_evap_tndcy, KK_evap_coef, w_tol, mixt_frac )
+
+    else  ! r_r or N_r = 0.
+
+       w_KK_evap_covar = zero
+
+    endif
 
     ! Calculate the covariance of total water mixing ratio and KK evaporation
     ! tendency.
-    rt_KK_evap_covar  &
-    = covar_rt_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
-                        mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
-                        sigma_s_2, sigma_rr_n, sigma_Nr_n, &
-                        corr_ts_1, corr_ts_2, corr_trr_1_n, &
-                        corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
-                        corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                        corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
-                        KK_evap_coef, t_mellor_tol, crt1, crt2, mixt_frac )
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+
+       rt_KK_evap_covar  &
+       = covar_rt_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                           mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
+                           sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                           corr_ts_1, corr_ts_2, corr_trr_1_n, &
+                           corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
+                           corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                           corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
+                           KK_evap_coef, t_tol, crt1, crt2, mixt_frac )
+
+    else  ! r_r or N_r = 0.
+
+       rt_KK_evap_covar = zero
+
+    endif
 
     ! Calculate the covariance of liquid water potential temperature and
     ! KK evaporation tendency.
-    thl_KK_evap_covar  &
-    = covar_thl_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
-                         mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
-                         sigma_s_2, sigma_rr_n, sigma_Nr_n, &
-                         corr_ts_1, corr_ts_2, corr_trr_1_n, &
-                         corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
-                         corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                         corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
-                         KK_evap_coef, t_mellor_tol, cthl1, cthl2, mixt_frac )
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+
+       thl_KK_evap_covar  &
+       = covar_thl_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                            mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
+                            sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+                            corr_ts_1, corr_ts_2, corr_trr_1_n, &
+                            corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
+                            corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                            corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
+                            KK_evap_coef, t_tol, cthl1, cthl2, mixt_frac )
+
+    else  ! r_r or N_r = 0.
+
+       thl_KK_evap_covar = zero
+
+    endif
 
     ! Calculate the covariance of vertical velocity and KK autoconversion
     ! tendency.
-    w_KK_auto_covar  &
-    = covar_x_KK_auto( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_Nc_n, &
-                       sigma_w_1, sigma_w_2, sigma_s_1, sigma_s_2, &
-                       sigma_Nc_n, corr_ws_1, corr_ws_2, &
-                       corr_wNc_1_n, corr_wNc_2_n, corr_sNc_1_n, &
-                       corr_sNc_2_n, w_mean, KK_auto_tndcy, &
-                       KK_auto_coef, w_tol, mixt_frac )
+    if ( Ncm > Nc_tol ) then
+
+       w_KK_auto_covar  &
+       = covar_x_KK_auto( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_Nc_n, &
+                          sigma_w_1, sigma_w_2, sigma_s_1, sigma_s_2, &
+                          sigma_Nc_n, corr_ws_1, corr_ws_2, &
+                          corr_wNc_1_n, corr_wNc_2_n, corr_sNc_1_n, &
+                          corr_sNc_2_n, w_mean, KK_auto_tndcy, &
+                          KK_auto_coef, w_tol, mixt_frac )
+
+    else  ! N_c = 0.
+
+       w_KK_auto_covar = zero
+
+    endif
 
     ! Calculate the covariance of total water mixing ratio and KK autoconversion
     ! tendency.
-    rt_KK_auto_covar  &
-    = covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
-                        sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                        sigma_Nc_n, corr_ts_1, corr_ts_2, &
-                        corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
-                        corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
-                        t_mellor_tol, crt1, crt2, mixt_frac )
+    if ( Ncm > Nc_tol ) then
+
+       rt_KK_auto_covar  &
+       = covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
+                           sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                           sigma_Nc_n, corr_ts_1, corr_ts_2, &
+                           corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
+                           corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
+                           t_tol, crt1, crt2, mixt_frac )
+
+    else  ! N_c = 0.
+
+       rt_KK_auto_covar = zero
+
+    endif
 
     ! Calculate the covariance of liquid water potential temperature and
     ! KK autoconversion tendency.
-    thl_KK_auto_covar  &
-    = covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
-                         sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                         sigma_Nc_n, corr_ts_1, corr_ts_2, &
-                         corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
-                         corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
-                         t_mellor_tol, cthl1, cthl2, mixt_frac )
+    if ( Ncm > Nc_tol ) then
+
+       thl_KK_auto_covar  &
+       = covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
+                            sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                            sigma_Nc_n, corr_ts_1, corr_ts_2, &
+                            corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
+                            corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
+                            t_tol, cthl1, cthl2, mixt_frac )
+
+    else  ! N_c = 0.
+
+       thl_KK_auto_covar = zero
+
+    endif
 
     ! Calculate the covariance of vertical velocity and KK accretion tendency.
-    w_KK_accr_covar  &
-    = covar_x_KK_accr( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_rr_n, &
-                       sigma_w_1, sigma_w_2, sigma_s_1, sigma_s_2, &
-                       sigma_rr_n, corr_ws_1, corr_ws_2, &
-                       corr_wrr_1_n, corr_wrr_2_n, corr_srr_1_n, &
-                       corr_srr_2_n, w_mean, KK_accr_tndcy, &
-                       KK_accr_coef, w_tol, mixt_frac )
+    if ( rrainm > rr_tol ) then
+
+       w_KK_accr_covar  &
+       = covar_x_KK_accr( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_rr_n, &
+                          sigma_w_1, sigma_w_2, sigma_s_1, sigma_s_2, &
+                          sigma_rr_n, corr_ws_1, corr_ws_2, &
+                          corr_wrr_1_n, corr_wrr_2_n, corr_srr_1_n, &
+                          corr_srr_2_n, w_mean, KK_accr_tndcy, &
+                          KK_accr_coef, w_tol, mixt_frac )
+
+    else  ! r_r = 0.
+
+       w_KK_accr_covar = zero
+
+    endif
 
     ! Calculate the covariance of total water mixing ratio and KK accretion
     ! tendency.
-    rt_KK_accr_covar  &
-    = covar_rt_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
-                        sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                        sigma_rr_n, corr_ts_1, corr_ts_2, &
-                        corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
-                        corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
-                        t_mellor_tol, crt1, crt2, mixt_frac )
+    if ( rrainm > rr_tol ) then
+
+       rt_KK_accr_covar  &
+       = covar_rt_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                           sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                           sigma_rr_n, corr_ts_1, corr_ts_2, &
+                           corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
+                           corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
+                           t_tol, crt1, crt2, mixt_frac )
+
+    else  ! r_r = 0.
+
+       rt_KK_accr_covar = zero
+
+    endif
 
     ! Calculate the covariance of liquid water potential temperature and
     ! KK accretion tendency.
-    thl_KK_accr_covar  &
-    = covar_thl_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
-                         sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                         sigma_rr_n, corr_ts_1, corr_ts_2, &
-                         corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
-                         corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
-                         t_mellor_tol, cthl1, cthl2, mixt_frac )
+    if ( rrainm > rr_tol ) then
+
+       thl_KK_accr_covar  &
+       = covar_thl_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+                            sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+                            sigma_rr_n, corr_ts_1, corr_ts_2, &
+                            corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
+                            corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
+                            t_tol, cthl1, cthl2, mixt_frac )
+
+    else  ! r_r = 0.
+
+       thl_KK_accr_covar = zero
+
+    endif
 
 
     ! Calculate the microphysics tendency for <w'r_t'>.
