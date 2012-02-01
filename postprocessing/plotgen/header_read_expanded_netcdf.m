@@ -53,6 +53,9 @@ elseif strfind ( filename, '_zt' )
 elseif strfind ( filename, '_zm' )
    zvarid = netcdf.inqVarID(nc_file, 'altitude');
    z = netcdf.getVar( nc_file, zvarid );
+elseif strfind ( filename, '_sfc' )
+   zvarid = netcdf.inqVarID(nc_file, 'altitude');
+   z = netcdf.getVar( nc_file, zvarid );
 else
    zvarid = netcdf.inqVarID(nc_file, 'z');
    z = netcdf.getVar( nc_file, zvarid );
