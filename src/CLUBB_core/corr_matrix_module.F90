@@ -46,7 +46,7 @@ module corr_matrix_module
       one_dim_read_var, & ! Variable(s)
       read_one_dim_file, deallocate_one_dim_vars, count_columns ! Procedure(s)
 
-    use matrix_operations, only: set_lower_triangular_matrix_core_rknd ! Procedure(s)
+    use matrix_operations, only: set_lower_triangular_matrix ! Procedure(s)
 
     use constants_clubb, only: fstderr ! Variable(s)
 
@@ -111,7 +111,7 @@ module corr_matrix_module
         do j=1, (i-1)
           var_index2 = get_corr_var_index( retVars(j)%name )
           if( var_index2 > -1 ) then
-            call set_lower_triangular_matrix_core_rknd &
+            call set_lower_triangular_matrix &
                  ( d_variables, var_index1, var_index2, retVars(i)%values(j), &
                    corr_array )
           end if

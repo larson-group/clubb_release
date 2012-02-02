@@ -7,7 +7,7 @@ module matrix_operations
   public :: symm_covar_matrix_2_corr_matrix, Cholesky_factor, &
     row_mult_lower_tri_matrix, print_lower_triangular_matrix, &
     get_lower_triangular_matrix, set_lower_triangular_matrix_dp, &
-    set_lower_triangular_matrix_core_rknd
+    set_lower_triangular_matrix
 
   private :: Symm_matrix_eigenvalues
 
@@ -370,8 +370,8 @@ module matrix_operations
     return
   end subroutine Symm_matrix_eigenvalues
 !-------------------------------------------------------------------------------
-  subroutine set_lower_triangular_matrix_core_rknd( d_variables, index1, index2, xpyp, &
-                                             matrix )
+  subroutine set_lower_triangular_matrix( d_variables, index1, index2, xpyp, &
+                                          matrix )
 ! Description:
 !   Set a value for the lower triangular portion of a matrix.
 ! References:
@@ -411,7 +411,7 @@ module matrix_operations
     end if
 
     return
-  end subroutine set_lower_triangular_matrix_core_rknd
+  end subroutine set_lower_triangular_matrix
 
 !-------------------------------------------------------------------------------
   subroutine set_lower_triangular_matrix_dp( d_variables, index1, index2, xpyp, &

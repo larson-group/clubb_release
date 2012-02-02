@@ -540,7 +540,7 @@ module generate_lh_sample_module
       if ( iiLH_Nc > 0 ) then
 !       Ncm = real(hydromet(iiNcm), kind = dp)
         ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
-        var_Nc1 = log( 1.+ Xp2_on_Xm2_array(iiLH_Nc) )
+        var_Nc1 = log( 1._dp+ Xp2_on_Xm2_array(iiLH_Nc) )
         var_Nc2 = var_Nc1
         Sigma_stw_1(iiLH_Nc,iiLH_Nc) = var_Nc1
         Sigma_stw_2(iiLH_Nc,iiLH_Nc) = var_Nc2
@@ -548,7 +548,7 @@ module generate_lh_sample_module
 
       if ( iiLH_Nr > 0 ) then
         ! var_Nr1,2 = PDF param for width of plume 1,2. [var_Nr1,2] = (#/kg)**2
-        var_Nr1 = log( 1.+ Xp2_on_Xm2_array(iiLH_Nr) )
+        var_Nr1 = log( 1._dp+ Xp2_on_Xm2_array(iiLH_Nr) )
         var_Nr2 = var_Nr1
         Sigma_stw_1(iiLH_Nr,iiLH_Nr) = var_Nr1
         Sigma_stw_2(iiLH_Nr,iiLH_Nr) = var_Nr2
@@ -556,7 +556,7 @@ module generate_lh_sample_module
 
       if ( iiLH_rrain > 0 ) then
         ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
-        var_rr1 = log( 1.+ Xp2_on_Xm2_array(iiLH_rrain) )
+        var_rr1 = log( 1._dp+ Xp2_on_Xm2_array(iiLH_rrain) )
         var_rr2 = var_rr1
         Sigma_stw_1(iiLH_rrain,iiLH_rrain) = var_rr1
         Sigma_stw_2(iiLH_rrain,iiLH_rrain) = var_rr2
@@ -745,12 +745,12 @@ module generate_lh_sample_module
         call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Corr_stw_1 )
         call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Corr_stw_2 )
 
-        if ( any( Corr_stw_1 > 1.0) .or. any( Corr_stw_1 < -1.0) ) then
+        if ( any( Corr_stw_1 > 1.0_dp ) .or. any( Corr_stw_1 < -1.0_dp ) ) then
           write(fstderr,*) "Sigma_stw_1 has a correlation > 1 or < -1"
           call print_lower_triangular_matrix( fstderr, d_variables, &
             real( Corr_stw_1, kind = core_rknd ) )
         end if
-        if ( any( Corr_stw_2 > 1.0 ) .or. any( Corr_stw_2 < -1.0 ) ) then
+        if ( any( Corr_stw_2 > 1.0_dp ) .or. any( Corr_stw_2 < -1.0_dp ) ) then
           write(fstderr,*) "Sigma_stw_2 has a correlation > 1 or < -1"
           call print_lower_triangular_matrix( fstderr, d_variables, &
             real( Corr_stw_2, kind = core_rknd ) )
@@ -1167,7 +1167,8 @@ module generate_lh_sample_module
 
     call genrand_real3( rand ) ! genrand_real3's range is (0,1)
 
-    choose_permuted_random = (1.0_genrand_real/nt_repeat)*(p_matrix_element + rand )
+    choose_permuted_random = (1.0_genrand_real/real( nt_repeat, kind=genrand_real) ) &
+       *(p_matrix_element + rand )
 
     return
   end function choose_permuted_random
@@ -1264,7 +1265,7 @@ module generate_lh_sample_module
     end if
 
     ! Make sure there is some cloud.
-    if (mixt_frac*cloud_frac1 < 0.001_dp .and. (1-mixt_frac)*cloud_frac2 < 0.001_dp) then
+    if (mixt_frac*cloud_frac1 < 0.001_dp .and. (1._dp-mixt_frac)*cloud_frac2 < 0.001_dp) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
                          'there is no cloud or almost no cloud!'
@@ -1386,7 +1387,7 @@ module generate_lh_sample_module
     end if
 
     ! Make sure there is some cloud.
-    if (mixt_frac*cloud_frac1 < 0.001_dp .and. (1-mixt_frac) * cloud_frac2 < 0.001_dp) then
+    if (mixt_frac*cloud_frac1 < 0.001_dp .and. (1._dp-mixt_frac) * cloud_frac2 < 0.001_dp) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'Error in truncate_gaus_mixt:  ',  &
                          'there is no cloud or almost no cloud!'
@@ -1739,7 +1740,7 @@ module generate_lh_sample_module
     end if
 
     ! Make sure there is some cloud.
-    if ( mixt_frac*cloud_frac1 < 0.001_dp .and. (1-mixt_frac)*cloud_frac2 < 0.001_dp ) then
+    if ( mixt_frac*cloud_frac1 < 0.001_dp .and. (1._dp-mixt_frac)*cloud_frac2 < 0.001_dp ) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) 'Error in st_2_rtthl:  ',  &
                          'there is no cloud or almost no cloud!'
@@ -1811,7 +1812,7 @@ module generate_lh_sample_module
     ! correct because of the 0.5 coefficient. I.e. sqrt( Xm^2 ) = Xm.
     ! Here we use epsilon to impose a limit on the numerator to prevent
     ! taking the log of 0 while still imposing an upper bound.
-    X1 = 0.5 * log( max( Xm, epsilon( Xm ) )**2 / ( 1. + Xp2_on_Xm2 ) )
+    X1 = 0.5 * log( max( Xm, epsilon( Xm ) )**2 / ( 1._dp + Xp2_on_Xm2 ) )
     X2 = X1
 
     return
@@ -1984,11 +1985,11 @@ module generate_lh_sample_module
     ! distributed (e.g. rain water mixing ratio).
     LN_index = max( iiLH_s_mellor, iiLH_t_mellor, iiLH_w )+1
 
-    corr_stw_matrix = 0.0 ! Initialize to 0
+    corr_stw_matrix = 0.0_dp ! Initialize to 0
 
     do i = 1, LN_index-1, 1
       ! Set main diagonal to 1
-      corr_stw_matrix(i,i) = 1.0
+      corr_stw_matrix(i,i) = 1.0_dp
     end do
 
     ! Set the correlation of s and t. For this part of the code we assume a
@@ -2019,7 +2020,7 @@ module generate_lh_sample_module
 
     index1 = iiLH_t_mellor
     index2 = iiLH_w
-    if ( corr_sw /= 0 ) then
+    if ( corr_sw /= 0._core_rknd ) then
       ! Approximate the covariance of t and w
       corr_tw = corr_st * corr_sw
     else
@@ -2192,7 +2193,7 @@ module generate_lh_sample_module
          ( d_variables, iiLH_s_mellor, index1, real(covar_sx, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
-    if ( corr_sx /= 0 ) then
+    if ( corr_sx /= 0._core_rknd ) then
       ! Approximate the covariance of t and x
       ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
       covar_tx = ( corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) * covar_sx )

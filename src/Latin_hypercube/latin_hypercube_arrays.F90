@@ -79,7 +79,7 @@ module latin_hypercube_arrays
       ricep2_on_ricem2_below, & 
       Nicep2_on_Nicem2_below
 
-    use matrix_operations, only: set_lower_triangular_matrix_core_rknd ! Procedure(s)
+    use matrix_operations, only: set_lower_triangular_matrix ! Procedure(s)
 
 !   use matrix_operations, only: print_lower_triangular_matrix ! Procedure(s)
 
@@ -132,8 +132,6 @@ module latin_hypercube_arrays
     ! Local variables
 
     integer :: i
-
-    character(len=128) :: file_path
 
     ! ---- Begin Code ----
     iiLH_s_mellor = 1 ! Extended rcm
