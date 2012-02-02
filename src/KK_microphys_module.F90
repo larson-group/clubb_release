@@ -8,7 +8,9 @@ module KK_microphys_module
 
   public :: KK_micro_driver
 
-  private :: KK_upscaled_covar_driver
+  private :: KK_upscaled_setup, &
+             KK_upscaled_means_driver, &
+             KK_upscaled_covar_driver
 
   contains
 
@@ -57,12 +59,6 @@ module KK_microphys_module
 
     use KK_utilities, only: &
         G_T_p  ! Procedure(s)
-
-    use KK_upscaled_means, only: &
-        KK_mvr_upscaled_mean,  & ! Procedure(s)
-        KK_evap_upscaled_mean, &
-        KK_auto_upscaled_mean, &
-        KK_accr_upscaled_mean
 
     use KK_local_means, only: &
         KK_mvr_local_mean,  & ! Procedure(s)
@@ -155,6 +151,13 @@ module KK_microphys_module
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc    ! Time tendency of liquid potential temperature [K/s]
 
+!    real( kind = core_rknd ), intent(out) :: &
+!      wprtp_mc_src_tndcy,   & ! Microphysics tendency for w'rt'  [m*(kg/kg)/s^2]
+!      wpthlp_mc_src_tndcy,  & ! Microphysics tendency for w'thl' [m*K/s^2]
+!      rtp2_mc_src_tndcy,    & ! Microphysics tendency for rt'^2  [(kg/kg)^2/s]
+!      thlp2_mc_src_tndcy,   & ! Microphysics tendency for thl'^2 [K^2/s]
+!      rtpthlp_mc_src_tndcy    ! Microphysics tend. for rt'thl'   [K*(kg/kg)/s]
+
     ! Local Variables
     real( kind = core_rknd ), dimension(:), pointer ::  &
       rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
@@ -166,15 +169,17 @@ module KK_microphys_module
       Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      rrainm_cond,  & ! Mean KK (dr_r/dt) due to evaporation      [(kg/kg)/s]
-      rrainm_auto,  & ! Mean KK (dr_r/dt) due to autoconversion   [(kg/kg)/s]
-      rrainm_accr,  & ! Mean KK (dr_r/dt) due to accretion        [(kg/kg)/s]
-      Nrm_cond,     & ! Mean KK (dN_r/dt) due to condensation     [(num/kg)/s]
-      Nrm_auto,     & ! Mean KK (dN_r/dt) due to autoconversion   [(num/kg)/s]
-      mean_vol_rad    ! Mean KK rain drop mean volume radius      [m]
+      KK_evap_tndcy,   & ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
+      KK_auto_tndcy,   & ! Mean KK (dr_r/dt) due to autoconversion  [(kg/kg)/s]
+      KK_accr_tndcy,   & ! Mean KK (dr_r/dt) due to accretion       [(kg/kg)/s]
+      KK_mean_vol_rad    ! Mean KK rain drop mean volume radius     [m]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation  [(num/kg)/s]
+      KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.    [(num/kg)/s]
 
     real( kind = core_rknd ) :: &
-      T_liq_in_K, & ! Mean liquid water temperature, T_            [K]
+      T_liq_in_K, & ! Mean liquid water temperature, T_l           [K]
       r_sl,       & ! Liquid water sat. mixing ratio, r_s(T_l,p)   [kg/kg]
       Beta_Tl       ! Parameter Beta, Beta(T_l)                    [1/(kg/kg)]
 
@@ -306,75 +311,39 @@ module KK_microphys_module
                                   corr_sNc_1_n, corr_sNc_2_n, &
                                   corr_rrNr_n, mixt_frac )
 
-
-          !!! Calculate the upscaled KK rain drop mean volume radius.
-          if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
-
-             mean_vol_rad(k) &
-             = KK_mvr_upscaled_mean( mu_rr_n, mu_Nr_n, sigma_rr_n, &
-                                     sigma_Nr_n, corr_rrNr_n, KK_mvr_coef )
-
-          else  ! r_r or N_r = 0.
-
-             mean_vol_rad(k) = zero
-
-          endif
-
           !!! Calculate the values of the upscaled KK microphysics tendencies.
-
-          !!! Calculate the upscaled KK evaporation tendency.
-          if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
-
-             rrainm_cond(k)  &
-             = KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
-                                      sigma_s_1, sigma_s_2, sigma_rr_n, &
-                                      sigma_Nr_n, corr_srr_1_n, corr_srr_2_n, &
-                                      corr_sNr_1_n, corr_sNr_2_n, corr_rrNr_n, &
-                                      KK_evap_coef, mixt_frac )
-
-          else  ! r_r or N_r = 0.
-
-             rrainm_cond(k) = zero
-
-          endif
-
-          !!! Calculate the upscaled KK autoconversion tendency.
-          if ( Ncm(k) > Nc_tol ) then
-
-             rrainm_auto(k)  &
-             = KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_n, sigma_s_1, &
-                                      sigma_s_2, sigma_Nc_n, corr_sNc_1_n, &
-                                      corr_sNc_2_n, KK_auto_coef, mixt_frac )
-
-          else  ! N_c = 0.
-
-             rrainm_auto(k) = zero
-
-          endif
-
-          !!! Calculate the upscaled KK accretion tendency.
-          if ( rrainm(k) > rr_tol ) then
-
-             rrainm_accr(k)  &
-             = KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
-                                      sigma_s_2, sigma_rr_n, corr_srr_1_n, &
-                                      corr_srr_2_n, KK_accr_coef, mixt_frac )
-
-          else  ! r_r = 0.
-
-             rrainm_accr(k) = zero
-
-          endif
+          call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
+                                         mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                         mu_Nc_n, sigma_s_1, sigma_s_2, &
+                                         sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+                                         corr_srr_1_n, corr_srr_2_n, &
+                                         corr_sNr_1_n, corr_sNr_2_n, &
+                                         corr_sNc_1_n, corr_sNc_2_n, &
+                                         corr_rrNr_n,  mixt_frac, &
+                                         KK_evap_coef, KK_auto_coef, &
+                                         KK_accr_coef, KK_mvr_coef, &
+                                         KK_evap_tndcy(k), KK_auto_tndcy(k), &
+                                         KK_accr_tndcy(k), KK_mean_vol_rad(k) )
+          
 
 !          if ( l_var_covar_src ) then
 !
-!             ! Calculate the correlation between s and r_t in PDF component 1.
-!
-!             ! Calculate the correlation between s and r_t in PDF component 2.
-!
-!             ! Calculate the correlation between s and th_l in PDF component 1.
-!
-!             ! Calculate the correlation between s and th_l in PDF component 2.
+!             call KK_upscaled_covar_driver( wm_zt(k), exner(k), rcm(k),  &
+!                                            rrainm(k), Nrm(k), Ncm(k), &
+!                                            mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+!                                            mu_Nc_n, sigma_s_1, sigma_s_2, &
+!                                            sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+!                                            corr_srr_1_n, corr_srr_2_n, &
+!                                            corr_sNr_1_n, corr_sNr_2_n, &
+!                                            corr_sNc_1_n, corr_sNc_2_n, &
+!                                            corr_rrNr_n,  mixt_frac, &
+!                                            KK_evap_coef, KK_auto_coef, &
+!                                            KK_accr_coef, KK_evap_tndcy(k), &
+!                                            KK_auto_tndcy(k), KK_accr_tndcy(k), &
+!                                            pdf_params(k), wprtp_mc_tndcy(k), &
+!                                            wpthlp_mc_tndcy(k), &
+!                                            rtp2_mc_tndcy(k), thlp2_mc_tndcy(k), &
+!                                            rtpthlp_mc_tndcy(k) )
 !
 !          endif
 
@@ -384,12 +353,12 @@ module KK_microphys_module
           !!! Calculate the local KK rain drop mean volume radius.
           if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
-             mean_vol_rad(k)  &
+             KK_mean_vol_rad(k)  &
              = KK_mvr_local_mean( rrainm(k), Nrm(k), KK_mvr_coef )
 
           else  ! r_r or N_r = 0.
 
-             mean_vol_rad(k) = zero
+             KK_mean_vol_rad(k) = zero
 
           endif
 
@@ -398,37 +367,37 @@ module KK_microphys_module
           !!! Calculate the local KK evaporation tendency.
           if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
-             rrainm_cond(k)  &
+             KK_evap_tndcy(k)  &
              = KK_evap_local_mean( s_mellor(k), rrainm(k), Nrm(k), &
                                    KK_evap_coef )
 
           else  ! r_r or N_r = 0.
 
-             rrainm_cond(k) = zero
+             KK_evap_tndcy(k) = zero
 
           endif
 
           !!! Calculate the local KK autoconversion tendency.
           if ( Ncm(k) > Nc_tol ) then
 
-             rrainm_auto(k)  &
+             KK_auto_tndcy(k)  &
              = KK_auto_local_mean( s_mellor(k), Ncm(k), KK_auto_coef )
 
           else  ! N_c = 0.
 
-             rrainm_auto(k) = zero
+             KK_auto_tndcy(k) = zero
 
           endif
 
           !!! Calculate the local KK accretion tendency.
           if ( rrainm(k) > rr_tol ) then
 
-             rrainm_accr(k)  &
+             KK_accr_tndcy(k)  &
              = KK_accr_local_mean( s_mellor(k), rrainm(k), KK_accr_coef )
 
           else  ! r_r = 0.
 
-             rrainm_accr(k) = zero
+             KK_accr_tndcy(k) = zero
 
           endif
 
@@ -441,43 +410,44 @@ module KK_microphys_module
        !!! Calculate the KK N_r evaporation tendency.
        if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
-          Nrm_cond(k) = KK_Nrm_evap( rrainm_cond(k), Nrm(k), rrainm(k) )
+          KK_Nrm_evap_tndcy(k)  &
+          = KK_Nrm_evap( KK_evap_tndcy(k), Nrm(k), rrainm(k) )
 
        else  ! r_r or N_r = 0.
 
-          Nrm_cond(k) = zero
+          KK_Nrm_evap_tndcy(k) = zero
 
        endif
 
        !!! Calculate the KK N_r autoconversion tendency.
-       Nrm_auto(k) = KK_Nrm_auto( rrainm_auto(k) )
+       KK_Nrm_auto_tndcy(k) = KK_Nrm_auto( KK_auto_tndcy(k) )
 
 
        ! Statistics
        if ( l_stats_samp ) then
 
           ! Rain drop mean volume radius.
-          call stat_update_var_pt( im_vol_rad_rain, k, mean_vol_rad(k), zt )
+          call stat_update_var_pt( im_vol_rad_rain, k, KK_mean_vol_rad(k), zt )
 
           ! Explicit contributions to rrainm.
-          call stat_update_var_pt( irrainm_cond, k, rrainm_cond(k), zt )
+          call stat_update_var_pt( irrainm_cond, k, KK_evap_tndcy(k), zt )
 
-          call stat_update_var_pt( irrainm_auto, k, rrainm_auto(k), zt )
+          call stat_update_var_pt( irrainm_auto, k, KK_auto_tndcy(k), zt )
 
-          call stat_update_var_pt( irrainm_accr, k, rrainm_accr(k), zt )
+          call stat_update_var_pt( irrainm_accr, k, KK_accr_tndcy(k), zt )
 
           ! Explicit contributions to Nrm.
-          call stat_update_var_pt( iNrm_cond, k, Nrm_cond(k), zt )
+          call stat_update_var_pt( iNrm_cond, k, KK_Nrm_evap_tndcy(k), zt )
 
-          call stat_update_var_pt( iNrm_auto, k, Nrm_auto(k), zt )
+          call stat_update_var_pt( iNrm_auto, k, KK_Nrm_auto_tndcy(k), zt )
 
        endif  ! l_stats_samp
 
 
        !!! Source-adjustment code for rrainm and Nrm.
 
-       rrainm_source = rrainm_auto(k) + rrainm_accr(k)
-       Nrm_source = Nrm_auto(k)
+       rrainm_source = KK_auto_tndcy(k) + KK_accr_tndcy(k)
+       Nrm_source = KK_Nrm_auto_tndcy(k)
 
        ! The increase of rain due to autoconversion and accretion both draw
        ! their water from the available cloud water.  Over a long time step
@@ -509,8 +479,8 @@ module KK_microphys_module
           ! source term.  Then, plug the rrainm autoconversion adjustment into
           ! the equation for Nrm autoconversion to determine the effect on the
           ! Nrm source term.
-          rrainm_auto_ratio = rrainm_auto(k) /  &
-                              ( rrainm_auto(k) + rrainm_accr(k) )
+          rrainm_auto_ratio = KK_auto_tndcy(k) /  &
+                              ( KK_auto_tndcy(k) + KK_accr_tndcy(k) )
           Nrm_src_adj(k) = KK_Nrm_auto( rrainm_auto_ratio * rrainm_src_adj(k) )
 
           ! Change Nrm by Nrm_src_adj.  Nrm_src_adj will always be negative.
@@ -533,11 +503,11 @@ module KK_microphys_module
 
 
        !!! Calculate overall KK microphysics tendencies.
-       rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_source
-       Nrm_mc_tndcy(k)    = Nrm_cond(k) + Nrm_source
+       rrainm_mc_tndcy(k) = KK_evap_tndcy(k) + rrainm_source
+       Nrm_mc_tndcy(k)    = KK_Nrm_evap_tndcy(k) + Nrm_source
 
        !!! Explicit contributions to thlm and rtm from the microphysics
-       rvm_mc(k)  = -rrainm_cond(k)
+       rvm_mc(k)  = -KK_evap_tndcy(k)
        rcm_mc(k)  = -rrainm_source  ! Accretion + Autoconversion
        thlm_mc(k) = ( Lv / ( Cp * exner(k) ) ) * rrainm_mc_tndcy(k)
 
@@ -556,34 +526,34 @@ module KK_microphys_module
     Nrm_mc_tndcy(nz)    = zero
 
     ! Boundary conditions
-    mean_vol_rad(1)     = zero
-    mean_vol_rad(nz) = zero
+    KK_mean_vol_rad(1)  = zero
+    KK_mean_vol_rad(nz) = zero
 
-    rvm_mc(1)     = zero
+    rvm_mc(1)  = zero
     rvm_mc(nz) = zero
 
-    rcm_mc(1)     = zero
+    rcm_mc(1)  = zero
     rcm_mc(nz) = zero
 
-    thlm_mc(1)     = zero
+    thlm_mc(1)  = zero
     thlm_mc(nz) = zero
 
     !!! Sedimentation velocities
     forall ( k = 1:nz-1 )
 
        ! Sedimentation velocity of rrainm.
-!       Vrr(k) = 0.012_core_rknd * ( micron_per_m * zt2zm(mean_vol_rad,k) ) &
+!       Vrr(k) = 0.012_core_rknd * ( micron_per_m * zt2zm(KK_mean_vol_rad,k) ) &
 !                - 0.2_core_rknd
-       Vrr(k) = 0.012_core_rknd * ( micron_per_m * mean_vol_rad(k) )  &
+       Vrr(k) = 0.012_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) )  &
                 - 0.2_core_rknd
 
        ! Sedimentation velocity is positive upwards.
        Vrr(k) = -max( Vrr(k), zero )
 
        ! Sedimentation velocity of Nrm.
-!       VNr(k) = 0.007_core_rknd * ( micron_per_m * zt2zm(mean_vol_rad,k) ) &
+!       VNr(k) = 0.007_core_rknd * ( micron_per_m * zt2zm(KK_mean_vol_rad,k) ) &
 !                - 0.1_core_rknd
-       VNr(k) = 0.007_core_rknd * ( micron_per_m * mean_vol_rad(k) )  &
+       VNr(k) = 0.007_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) )  &
                 - 0.1_core_rknd
 
        ! Sedimentation velocity is positive upwards.
@@ -838,7 +808,146 @@ module KK_microphys_module
   end subroutine KK_upscaled_setup
 
   !=============================================================================
-  subroutine KK_upscaled_covar_driver( w_mean, exner, rcm, rrainm, Nrm, Ncm, &
+  subroutine KK_upscaled_means_driver( rrainm, Nrm, Ncm, &
+                                       mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                       mu_Nc_n, sigma_s_1, sigma_s_2, &
+                                       sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+                                       corr_srr_1_n, corr_srr_2_n, &
+                                       corr_sNr_1_n, corr_sNr_2_n, &
+                                       corr_sNc_1_n, corr_sNc_2_n, &
+                                       corr_rrNr_n,  mixt_frac, &
+                                       KK_evap_coef, KK_auto_coef, &
+                                       KK_accr_coef, KK_mvr_coef, &
+                                       KK_evap_tndcy, KK_auto_tndcy, &
+                                       KK_accr_tndcy, KK_mean_vol_rad )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        rr_tol, & ! Constant(s)
+        Nr_tol, & 
+        Nc_tol, &
+        zero
+
+    use KK_upscaled_means, only: & 
+        KK_evap_upscaled_mean, & ! Procedure(s)
+        KK_auto_upscaled_mean, &
+        KK_accr_upscaled_mean, &
+        KK_mvr_upscaled_mean
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      rrainm, & ! Mean rain water mixing ratio        [kg/kg]
+      Nrm,    & ! Mean rain drop concentration        [num/kg]
+      Ncm       ! Mean cloud droplet concentration    [num/kg]
+
+    real( kind = core_rknd ), intent(in) :: &
+      mu_s_1,       & ! Mean of s (1st PDF component)                    [kg/kg]
+      mu_s_2,       & ! Mean of s (2nd PDF component)                    [kg/kg]
+      mu_rr_n,      & ! Mean of ln rr (both components)              [ln(kg/kg)]
+      mu_Nr_n,      & ! Mean of ln Nr (both components)             [ln(num/kg)]
+      mu_Nc_n,      & ! Mean of ln Nc (both components)             [ln(num/kg)]
+      sigma_s_1,    & ! Standard deviation of s (1st PDF component)      [kg/kg]
+      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)      [kg/kg]
+      sigma_rr_n,   & ! Standard deviation of ln rr (both comps.)    [ln(kg/kg)]
+      sigma_Nr_n,   & ! Standard deviation of ln Nr (both comps.)   [ln(num/kg)]
+      sigma_Nc_n,   & ! Standard deviation of ln Nc (both comps.)   [ln(num/kg)]
+      corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component)  [-]
+      corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component)  [-]
+      corr_sNr_1_n, & ! Correlation between s and ln Nr (1st PDF component)  [-]
+      corr_sNr_2_n, & ! Correlation between s and ln Nr (2nd PDF component)  [-]
+      corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component)  [-]
+      corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component)  [-]
+      corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
+      mixt_frac       ! Mixture fraction                                     [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      KK_evap_coef, & ! KK evaporation coefficient          [(kg/kg)/s]
+      KK_auto_coef, & ! KK autoconversion coefficient       [(kg/kg)/s]
+      KK_accr_coef, & ! KK accretion coefficient            [(kg/kg)/s]
+      KK_mvr_coef     ! KK mean volume radius coefficient   [m]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      KK_evap_tndcy,   & ! KK evaporation tendency          [(kg/kg)/s]
+      KK_auto_tndcy,   & ! KK autoconversion tendency       [(kg/kg)/s]
+      KK_accr_tndcy,   & ! KK accretion tendency            [(kg/kg)/s]
+      KK_mean_vol_rad    ! KK rain drop mean volume radius  [m]
+
+
+    !!! Calculate the upscaled KK evaporation tendency.
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+
+       KK_evap_tndcy  &
+       = KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                sigma_s_1, sigma_s_2, sigma_rr_n, &
+                                sigma_Nr_n, corr_srr_1_n, corr_srr_2_n, &
+                                corr_sNr_1_n, corr_sNr_2_n, corr_rrNr_n, &
+                                KK_evap_coef, mixt_frac )
+
+    else  ! r_r or N_r = 0.
+
+       KK_evap_tndcy = zero
+
+    endif
+
+    !!! Calculate the upscaled KK autoconversion tendency.
+    if ( Ncm > Nc_tol ) then
+
+       KK_auto_tndcy  &
+       = KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_n, sigma_s_1, &
+                                sigma_s_2, sigma_Nc_n, corr_sNc_1_n, &
+                                corr_sNc_2_n, KK_auto_coef, mixt_frac )
+
+    else  ! N_c = 0.
+
+       KK_auto_tndcy = zero
+
+    endif
+
+    !!! Calculate the upscaled KK accretion tendency.
+    if ( rrainm > rr_tol ) then
+
+       KK_accr_tndcy  &
+       = KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
+                                sigma_s_2, sigma_rr_n, corr_srr_1_n, &
+                                corr_srr_2_n, KK_accr_coef, mixt_frac )
+
+    else  ! r_r = 0.
+
+       KK_accr_tndcy = zero
+
+    endif
+
+    !!! Calculate the upscaled KK rain drop mean volume radius.
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+
+       KK_mean_vol_rad &
+       = KK_mvr_upscaled_mean( mu_rr_n, mu_Nr_n, sigma_rr_n, &
+                               sigma_Nr_n, corr_rrNr_n, KK_mvr_coef )
+
+    else  ! r_r or N_r = 0.
+
+       KK_mean_vol_rad = zero
+
+    endif
+
+
+    return
+
+  end subroutine KK_upscaled_means_driver
+
+  !=============================================================================
+  subroutine KK_upscaled_covar_driver( w_mean, exner, rcm, &
+                                       rrainm, Nrm, Ncm, &
                                        mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
                                        mu_Nc_n, sigma_s_1, sigma_s_2, &
                                        sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
@@ -949,10 +1058,10 @@ module KK_microphys_module
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
       wprtp_mc_src_tndcy,   & ! Microphysics tendency for w'rt'  [m*(kg/kg)/s^2]
-      wpthlp_mc_src_tndcy,  & ! Microphysics tendency for w'thl'   [m*K/s^2]
-      rtp2_mc_src_tndcy,    & ! Microphysics tendency for rt'^2    [(kg/kg)^2/s]
-      thlp2_mc_src_tndcy,   & ! Microphysics tendency for thl'^2   [K^2/s]
-      rtpthlp_mc_src_tndcy    ! Microphysics tendency for rt'thl'  [K*(kg/kg)/s]
+      wpthlp_mc_src_tndcy,  & ! Microphysics tendency for w'thl' [m*K/s^2]
+      rtp2_mc_src_tndcy,    & ! Microphysics tendency for rt'^2  [(kg/kg)^2/s]
+      thlp2_mc_src_tndcy,   & ! Microphysics tendency for thl'^2 [K^2/s]
+      rtpthlp_mc_src_tndcy    ! Microphysics tend. for rt'thl'   [K*(kg/kg)/s]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
