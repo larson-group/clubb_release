@@ -202,22 +202,27 @@ $mkmf -t $bindir/mkmf_template -p $libdir/libclubb_param.a -m Make.clubb_param -
   -o "${WARNINGS}" $clubb_param_mods $dir/file_list/clubb_param_files
 
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_bugsrad.a -m Make.clubb_bugsrad -c "${CPPDEFS}" $dir/file_list/clubb_bugsrad_files
+  -p $libdir/libclubb_bugsrad.a -m Make.clubb_bugsrad -c "${CPPDEFS}" \
+  $dir/file_list/clubb_bugsrad_files
 
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_coamps.a -m Make.clubb_coamps -c "${CPPDEFS}" $dir/file_list/clubb_coamps_files
+  -p $libdir/libclubb_coamps.a -m Make.clubb_coamps -c "${CPPDEFS}" \
+  $dir/file_list/clubb_coamps_files
 
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_morrison.a -m Make.clubb_morrison -c "${CPPDEFS} -DCLUBB" $dir/file_list/clubb_morrison_files
+  -p $libdir/libclubb_morrison.a -m Make.clubb_morrison -c "${CPPDEFS} -DCLUBB" \
+  $dir/file_list/clubb_morrison_files
   
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_mg.a -m Make.clubb_mg -c "${CPPDEFS} -DCLUBB" $dir/file_list/clubb_mg_files
 
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_gfdlact.a -m Make.clubb_gfdlact -c "${CPPDEFS} -DCLUBB" $dir/file_list/clubb_gfdl_activation_files
+  -p $libdir/libclubb_gfdlact.a -m Make.clubb_gfdlact -c "${CPPDEFS} -DCLUBB" \
+  $dir/file_list/clubb_gfdl_activation_files
 
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/liblatin_hypercube.a -m Make.latin_hypercube -c "${CPPDEFS}" $dir/file_list/latin_hypercube_files
+  -p $libdir/liblatin_hypercube.a -m Make.latin_hypercube -c "${CPPDEFS}" -o "${WARNINGS}" \
+  $dir/file_list/latin_hypercube_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   -m Make.clubb_standalone -c "${CPPDEFS} ${WARNINGS}" $clubb_standalone_mods \

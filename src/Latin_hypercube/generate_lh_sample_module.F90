@@ -382,8 +382,8 @@ module generate_lh_sample_module
 !   cloud_frac1 = real(cloud_frac1_in, kind = dp)
 !   cloud_frac2 = real(cloud_frac2_in, kind = dp)
     ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
-    cloud_frac1 = 1.0
-    cloud_frac2 = 1.0
+    cloud_frac1 = 1.0_dp
+    cloud_frac2 = 1.0_dp
 
     !---------------------------------------------------------------------------
     ! Generate a set of sample points for a microphysics scheme
@@ -827,7 +827,7 @@ module generate_lh_sample_module
       stdev_t2 = sqrt( tp2_mellor_2 )
 
       if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 1 ) ) then
-        Sigma1_Cholesky = 0.
+        Sigma1_Cholesky = 0._dp
 
         temp_3_elements = (/ dble( stdev_s1 ), stdev_t1, sqrt( dble(varnce_w1) ) /)
 
@@ -843,7 +843,7 @@ module generate_lh_sample_module
       end if ! any( X_mixt_comp_one_lev(1:n) == 1 )
 
       if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 2 ) ) then
-        Sigma2_Cholesky = 0.
+        Sigma2_Cholesky = 0._dp
 
         temp_3_elements = (/ dble( stdev_s2 ), stdev_t2, sqrt( dble(varnce_w2) ) /)
 
@@ -1168,7 +1168,7 @@ module generate_lh_sample_module
     call genrand_real3( rand ) ! genrand_real3's range is (0,1)
 
     choose_permuted_random = (1.0_genrand_real/real( nt_repeat, kind=genrand_real) ) &
-       *(p_matrix_element + rand )
+       *( real( p_matrix_element, kind=genrand_real ) + rand )
 
     return
   end function choose_permuted_random
@@ -1517,7 +1517,7 @@ module generate_lh_sample_module
                d4 =  3.754408661907416d+00)
 
     ! Default initialization
-    z = 0.0
+    z = 0.0_dp
 
 !  Define break-points.
     plow  = 0.02425_dp
@@ -1528,7 +1528,7 @@ module generate_lh_sample_module
 
 !  Rational approximation for lower region:
     if (p > 0._dp .and. p < plow) then
-      q = sqrt( -2 * log(p) )
+      q = sqrt( -2._dp * log( p ) )
       z = (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/ & 
                 ((((d1*q+d2)*q+d3)*q+d4)*q+1._dp)
 !  Rational approximation for central region:
@@ -1559,7 +1559,7 @@ module generate_lh_sample_module
 !  Cases when output will be NaN:
 !   k = p < 0 | p > 1 | isnan(p);
 ! usually inf*inf --> NaN's.
-    if (p < 0._dp .or. p > 1_dp) then
+    if (p < 0._dp .or. p > 1._dp) then
       z = (1._dp/z1)**2
     end if
 
@@ -1758,16 +1758,16 @@ module generate_lh_sample_module
 !     if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
         LH_rt(sample)  = real( rt1 + (0.5_dp/crt1)*(s_mellor(sample)-mu_s1) +  & 
-                               (0.5_dp/crt1)*t_mellor(sample) )
+                               (0.5_dp/crt1)*t_mellor(sample), kind=core_rknd )
         LH_thl(sample) = real( thl1 + (-0.5_dp/cthl1)*(s_mellor(sample)-mu_s1) +  & 
-                               (0.5_dp/cthl1)*t_mellor(sample) )
+                               (0.5_dp/cthl1)*t_mellor(sample), kind=core_rknd )
 
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
         ! mixture fraction 2
         LH_rt(sample)  = real( rt2 + (0.5_dp/crt2)*(s_mellor(sample)-mu_s2) +  & 
-                               (0.5_dp/crt2)*t_mellor(sample) )
+                               (0.5_dp/crt2)*t_mellor(sample), kind=core_rknd )
         LH_thl(sample) = real( thl2 + (-0.5_dp/cthl2)*(s_mellor(sample)-mu_s2) +  & 
-                              (0.5_dp/cthl2)*t_mellor(sample) )
+                              (0.5_dp/cthl2)*t_mellor(sample), kind=core_rknd )
 
       else
         stop "Error determining mixture fraction in st_2_rtthl"
@@ -1812,7 +1812,7 @@ module generate_lh_sample_module
     ! correct because of the 0.5 coefficient. I.e. sqrt( Xm^2 ) = Xm.
     ! Here we use epsilon to impose a limit on the numerator to prevent
     ! taking the log of 0 while still imposing an upper bound.
-    X1 = 0.5 * log( max( Xm, epsilon( Xm ) )**2 / ( 1._dp + Xp2_on_Xm2 ) )
+    X1 = 0.5_dp * log( max( Xm, epsilon( Xm ) )**2 / ( 1._dp + Xp2_on_Xm2 ) )
     X2 = X1
 
     return

@@ -151,7 +151,7 @@ module latin_hypercube_driver_module
 
     integer :: p_matrix(n_micro_calls,d_variables+1)
 
-    real :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
+    real(kind=core_rknd) :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
 
     ! Try to obtain 12 digit accuracy for a diagnostic mean
     real(kind=selected_real_kind( p=12 ) ) :: mean_weight
@@ -438,7 +438,7 @@ module latin_hypercube_driver_module
       do sample = 1, n_micro_calls
         mean_weight = mean_weight + LH_sample_point_weights(sample)
       end do
-      mean_weight = mean_weight / real( n_micro_calls )
+      mean_weight = mean_weight / real( n_micro_calls, kind=core_rknd )
 
       ! Using more precision for mean_weight should make this work out.
       ! The formula below could probably be redefined to estimate maximal ulps
@@ -447,7 +447,7 @@ module latin_hypercube_driver_module
       ! when we're using 4 or 8 byte precision floats.
       ! -dschanen 19 Nov 2010
       if ( abs( mean_weight - 1.0_core_rknd ) > &
-           real( n_micro_calls ) * epsilon( LH_sample_point_weights ) ) then
+           real( n_micro_calls, kind=core_rknd ) * epsilon( LH_sample_point_weights ) ) then
         write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
         stop
       end if
@@ -937,7 +937,7 @@ module latin_hypercube_driver_module
 
     ! Constant parameters
     real( kind = core_rknd), parameter :: &
-      max_iter_numerator = 100.
+      max_iter_numerator = 100._core_rknd
 
     ! Input Variables
     logical, intent(in) :: &
@@ -1111,7 +1111,7 @@ module latin_hypercube_driver_module
         X_u_s_mellor_element = 1._dp + 2._dp &
           * (real(p_matrix_element, kind = dp)/real(n_micro_calls, kind = dp) &
           - 1._dp) * cloud_frac_n &
-          + real(rand, kind = dp) * ( 2._dp/n_micro_calls ) * cloud_frac_n
+          + real(rand, kind = dp) * ( 2._dp/real( n_micro_calls, kind=dp ) ) * cloud_frac_n
       else
         X_u_s_mellor_element = cloud_frac_n * real(rand, kind = dp) &
           + (1._dp-cloud_frac_n)
@@ -1138,7 +1138,7 @@ module latin_hypercube_driver_module
       ! Scale and translate sample point to reside in clear air (no cloud)
       if ( l_use_p_matrix ) then
         ! New formula based on p_matrix
-        X_u_s_mellor_element = p_matrix_element &
+        X_u_s_mellor_element = real( p_matrix_element, kind=dp ) &
           * (2._dp/real(n_micro_calls, kind = dp) ) * (1._dp-cloud_frac_n) &
           + (2._dp/real(n_micro_calls, kind = dp) * (1._dp-cloud_frac_n) &
           * real(rand, kind = dp))
@@ -1243,23 +1243,23 @@ module latin_hypercube_driver_module
 
       kp1 = k+1 ! This is the level we're computing
 
-      if ( vert_corr(kp1) < 0. .or. vert_corr(kp1) > 1.) then
+      if ( vert_corr(kp1) < 0._dp .or. vert_corr(kp1) > 1._dp ) then
         stop "vert_corr(kp1) not between 0 and 1"
       end if
 
-      half_width = 1.0 - vert_corr(kp1)
+      half_width = 1.0_dp - vert_corr(kp1)
       min_val = X_u_one_var_all_levs(k) - half_width
 
       call genrand_real3( rand ) ! (0,1)
-      offset = 2.0 * half_width * real(rand, kind = dp)
+      offset = 2.0_dp * half_width * real(rand, kind = dp)
 
       unbounded_point = min_val + offset
 
       ! If unbounded_point lies outside the range [0,1],
       ! fold it back so that it is between [0,1]
-      if ( unbounded_point > 1.0 ) then
-        X_u_one_var_all_levs(kp1) = 2.0 - unbounded_point
-      else if ( unbounded_point < 0.0 ) then
+      if ( unbounded_point > 1.0_dp ) then
+        X_u_one_var_all_levs(kp1) = 2.0_dp - unbounded_point
+      else if ( unbounded_point < 0.0_dp ) then
         X_u_one_var_all_levs(kp1) = - unbounded_point
       else
         X_u_one_var_all_levs(kp1) = unbounded_point
@@ -1274,23 +1274,23 @@ module latin_hypercube_driver_module
 
       km1 = k-1 ! This is the level we're computing
 
-      if ( vert_corr(km1) < 0. .or. vert_corr(km1) > 1.) then
+      if ( vert_corr(km1) < 0._dp .or. vert_corr(km1) > 1._dp ) then
         stop "vert_corr(km1) not between 0 and 1"
       end if
 
-      half_width = 1.0 - vert_corr(km1)
+      half_width = 1.0_dp - vert_corr(km1)
       min_val = X_u_one_var_all_levs(k) - half_width
 
       call genrand_real3( rand ) ! (0,1)
-      offset = 2.0 * half_width * real(rand, kind = dp)
+      offset = 2.0_dp * half_width * real(rand, kind = dp)
 
       unbounded_point = min_val + offset
 
       ! If unbounded_point lies outside the range [0,1],
       ! fold it back so that it is between [0,1]
-      if ( unbounded_point > 1.0 ) then
-        X_u_one_var_all_levs(km1) = 2.0 - unbounded_point
-      else if ( unbounded_point < 0.0 ) then
+      if ( unbounded_point > 1.0_dp ) then
+        X_u_one_var_all_levs(km1) = 2.0_dp - unbounded_point
+      else if ( unbounded_point < 0.0_dp ) then
         X_u_one_var_all_levs(km1) = - unbounded_point
       else
         X_u_one_var_all_levs(km1) = unbounded_point
@@ -1541,12 +1541,12 @@ module latin_hypercube_driver_module
       LH_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
       LH_cloud_frac    ! Average value of the latin hypercube est. of cloud fraction    [-]
 
-    integer :: k, sample, ivar
+    integer :: sample, ivar
 
     ! ---- Begin Code ----
 
     ! Clip 's' from Mellor to obtain cloud-water mixing ratio
-    rc_all_points = max( zero_threshold, real( X_nl_all_levs(:,:,iiLH_s_mellor) ) )
+    rc_all_points = max( zero_threshold, real( X_nl_all_levs(:,:,iiLH_s_mellor), kind=core_rknd ) )
 
     if ( l_stats_samp ) then
 

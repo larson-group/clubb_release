@@ -16,7 +16,6 @@ module estimate_scm_microphys_module
                X_nl_all_levs, LH_sample_point_weights, &
                p_in_Pa, exner, rho, cloud_frac, w_std_dev, &
                dzq, pdf_params, hydromet,  &
-               X_mixt_comp_all_levs, &
                lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                lh_hydromet_vel, lh_thlm_mc, &
                microphys_sub )
@@ -128,9 +127,6 @@ module estimate_scm_microphys_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    integer, dimension(nz,n_micro_calls), intent(in) :: &
-      X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
-
     real( kind = core_rknd ), dimension(n_micro_calls), intent(in) :: &
        LH_sample_point_weights ! Weight for cloud weighted sampling
 
@@ -139,6 +135,7 @@ module estimate_scm_microphys_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
       lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
+
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
@@ -166,8 +163,6 @@ module estimate_scm_microphys_module
       rc_column,  & ! Liquid water                [kg/kg]
       w_column      ! Vertical velocity           [m/s]
 
-    integer, dimension(nz) :: n1, n2, zero
-
     real( kind = dp ), pointer, dimension(:,:) :: &
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
       w_all_points            ! n_micro_calls values of vertical velocity      [m/s]
@@ -177,8 +172,6 @@ module estimate_scm_microphys_module
     integer :: &
       in_cloud_points, &
       out_of_cloud_points
-
-    logical :: l_error
 
     ! ---- Begin Code ----
 
@@ -293,13 +286,13 @@ module estimate_scm_microphys_module
 
     ! Grid box average.
     forall( ivar = 1:hydromet_dim )
-      lh_hydromet_vel(:,ivar) = real( lh_hydromet_vel_sum(:,ivar) ) / real( n_micro_calls )
-      lh_hydromet_mc(:,ivar) = real( lh_hydromet_mc_sum(:,ivar) ) / real( n_micro_calls )
+      lh_hydromet_vel(:,ivar) = lh_hydromet_vel_sum(:,ivar) / real( n_micro_calls, kind=core_rknd )
+      lh_hydromet_mc(:,ivar) = lh_hydromet_mc_sum(:,ivar) / real( n_micro_calls, kind=core_rknd )
     end forall
 
-    lh_rcm_mc = real( lh_rcm_mc_sum  ) / real( n_micro_calls )
-    lh_rvm_mc = real( lh_rvm_mc_sum ) / real( n_micro_calls )
-    lh_thlm_mc = real( lh_thlm_mc_sum ) / real( n_micro_calls )
+    lh_rcm_mc = lh_rcm_mc_sum / real( n_micro_calls, kind=core_rknd )
+    lh_rvm_mc = lh_rvm_mc_sum / real( n_micro_calls, kind=core_rknd )
+    lh_thlm_mc = lh_thlm_mc_sum / real( n_micro_calls, kind=core_rknd )
 
     return
   end subroutine est_single_column_tndcy

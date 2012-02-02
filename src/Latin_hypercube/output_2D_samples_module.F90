@@ -196,6 +196,8 @@ module output_2D_samples_module
 
     use mt95, only: genrand_real ! Constant(s)
 
+    use clubb_precision, only: core_rknd ! Constant(s)
+
     implicit none
 
     ! Input Variables
@@ -226,9 +228,10 @@ module output_2D_samples_module
         uniform_sample_file%var(j)%ptr(sample,1,1:nz) = X_u_all_levs(1:nz,sample,j)
       end do
       uniform_sample_file%var(dp1+1)%ptr(sample,1,1:nz) = &
-        real( X_mixt_comp_all_levs(1:nz,sample) )
+        real( X_mixt_comp_all_levs(1:nz,sample), kind=core_rknd )
       do k = 1, nz 
-        uniform_sample_file%var(dp1+2)%ptr(sample,1,k) = real( p_matrix_s_element(sample) )
+        uniform_sample_file%var(dp1+2)%ptr(sample,1,k) = &
+          real( p_matrix_s_element(sample), kind=core_rknd )
       end do
     end do
 

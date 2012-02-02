@@ -240,7 +240,7 @@ module estimate_lh_micro_module
              X_mixt_comp_all_levs(level,: ), lh_rcm_avg_dp )
 
       ! Convert to real number
-      lh_rcm_avg(level) = real( lh_rcm_avg_dp )
+      lh_rcm_avg(level) = real( lh_rcm_avg_dp, kind=core_rknd )
 
       ! A test of the scheme:
       ! Compare exact (rcm) and Monte Carlo estimates (lh_rcm_avg) of
@@ -254,14 +254,14 @@ module estimate_lh_micro_module
       r_crit            = 0.2e-3_core_rknd
       K_one             = 1.e-3_core_rknd
       sn1_crit          = (s1-r_crit)/max( stdev_s1, s_mellor_tol )
-      cloud_frac1_crit  = 0.5_core_rknd*(1+erf(sn1_crit/sqrt(2.0_core_rknd)))
+      cloud_frac1_crit  = 0.5_core_rknd*(1._core_rknd+erf(sn1_crit/sqrt(2.0_core_rknd)))
       AK1               = K_one * ( (s1-r_crit)*cloud_frac1_crit  & 
-                         + stdev_s1*exp(-0.5_core_rknd*sn1_crit**2)/(sqrt(2*pi)) )
+                         + stdev_s1*exp(-0.5_core_rknd*sn1_crit**2)/(sqrt(2._dp*pi)) )
       sn2_crit          = (s2-r_crit)/max( stdev_s2, s_mellor_tol )
-      cloud_frac2_crit  = 0.5_core_rknd*(1+erf(sn2_crit/sqrt(2.0_core_rknd)))
+      cloud_frac2_crit  = 0.5_core_rknd*(1._core_rknd+erf(sn2_crit/sqrt(2.0_core_rknd)))
       AK2               = K_one * ( (s2-r_crit)*cloud_frac2_crit  & 
-                         + stdev_s2*exp(-0.5_core_rknd*sn2_crit**2)/(sqrt(2*pi)) )
-      AKm(level)        = mixt_frac * AK1 + (1-mixt_frac) * AK2
+                         + stdev_s2*exp(-0.5_core_rknd*sn2_crit**2)/(sqrt(2._dp*pi)) )
+      AKm(level)        = mixt_frac * AK1 + (1._dp-mixt_frac) * AK2
 
       ! Exact Kessler standard deviation in units of (kg/kg)/s
       ! For some reason, sometimes AK1var, AK2var are negative
@@ -273,13 +273,13 @@ module estimate_lh_micro_module
                - AK2**2  )
       ! This formula is for a grid box average:
       AKstd(level)  = sqrt( mixt_frac * ( (AK1-AKm(level))**2 + AK1var ) & 
-                  + (1-mixt_frac) * ( (AK2-AKm(level))**2 + AK2var ) & 
+                  + (1._dp-mixt_frac) * ( (AK2-AKm(level))**2 + AK2var ) & 
                   )
       ! This formula is for a within-cloud average:
-      if ( cloud_frac(level) > 0 ) then
+      if ( cloud_frac(level) > 0._dp ) then
         AKstd_cld(level) = sqrt( max( zero_threshold,   & 
-                  (1./cloud_frac(level)) * ( mixt_frac * ( AK1**2 + AK1var ) & 
-                            + (1-mixt_frac) * ( AK2**2 + AK2var )  & 
+                  (1._dp/cloud_frac(level)) * ( mixt_frac * ( AK1**2 + AK1var ) & 
+                            + (1._dp-mixt_frac) * ( AK2**2 + AK2var )  & 
                             ) & 
                  - (AKm(level)/cloud_frac(level))**2  ) & 
                         )
@@ -309,7 +309,6 @@ module estimate_lh_micro_module
                                 X_nl_all_levs, LH_sample_point_weights, & ! In
                                 p_in_Pa, exner, rho, cloud_frac, w_std_dev, & ! In
                                 dzq, pdf_params, hydromet, & ! In
-                                X_mixt_comp_all_levs, & ! In
                                 lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, & ! Out
                                 lh_hydromet_vel, lh_thlm_mc, &  ! Out
                                 microphys_sub ) ! Procedure
@@ -350,7 +349,7 @@ module estimate_lh_micro_module
     logical, parameter :: &
       l_cloud_weighted_averaging = .false.
 
-    real, parameter :: &
+    real(kind=dp), parameter :: &
     ! r_crit = 0.3_dp
     ! r_crit = 0.7_dp
     r_crit_g_kg = 0.2_dp
@@ -428,7 +427,7 @@ module estimate_lh_micro_module
     ! Autoconversion formula prefactor and exponent.
     ! These are for Kessler autoconversion in (kg/kg)/s.
     coeff  = 1.d-3
-    r_crit = r_crit_g_kg / g_per_kg
+    r_crit = r_crit_g_kg / real( g_per_kg, kind=dp )
     ! expn   = 1._dp
 
     ! Initialize autoconversion in each mixture component
@@ -510,11 +509,11 @@ module estimate_lh_micro_module
       !    then we estimate the plume liquid water by the
       !    other plume's value.
       if ( .not. (n1 == 0) ) then
-        ac_m1 = ac_m1/n1
+        ac_m1 = ac_m1/ real( n1, kind=dp )
       end if
 
       if ( .not. (n2 == 0) ) then
-        ac_m2 = ac_m2/n2
+        ac_m2 = ac_m2/ real( n2, kind=dp )
       end if
 
       if ( n1 == 0 ) then
@@ -526,10 +525,10 @@ module estimate_lh_micro_module
       end if
 
       ! Grid box average.
-      ac_m = mixt_frac*cloud_frac1*ac_m1 + (1.-mixt_frac)*cloud_frac2*ac_m2
+      ac_m = mixt_frac*cloud_frac1*ac_m1 + (1._dp-mixt_frac)*cloud_frac2*ac_m2
 
     else
-      ac_m = ( ac_m1 + ac_m2 ) / dble( n_micro_calls )
+      ac_m = ( ac_m1 + ac_m2 ) / real( n_micro_calls, kind=dp )
 
     end if
 
@@ -683,11 +682,11 @@ module estimate_lh_micro_module
 
     if ( l_cloud_weighted_averaging ) then
       if ( .not. (n1 == 0) ) then
-        rc_m1 = rc_m1/n1
+        rc_m1 = rc_m1/real( n1, kind=dp )
       end if
 
       if ( .not. (n2 == 0) ) then
-        rc_m2 = rc_m2/n2
+        rc_m2 = rc_m2/real( n2, kind=dp )
       end if
 
       if (n1 == 0) then
@@ -698,7 +697,7 @@ module estimate_lh_micro_module
         rc_m2 = rc_m1
       end if
       ! Grid box average.
-      rc_m = mixt_frac*C1*rc_m1 + (1.-mixt_frac)*C2*rc_m2
+      rc_m = mixt_frac*C1*rc_m1 + (1._dp-mixt_frac)*C2*rc_m2
 
     end if ! l_cloud_weighted_averaging
 

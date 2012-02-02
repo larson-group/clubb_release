@@ -36,7 +36,7 @@ module math_utilities
       vect1, vect2
 
     ! Return type
-    real :: corrcoef
+    real(kind=core_rknd) :: corrcoef
 
     corrcoef = covar( vect1, vect2, n ) / & 
            sqrt( covar( vect1, vect1, n ) * covar( vect2, vect2, n ) )
@@ -67,9 +67,9 @@ module math_utilities
       vector
 
     ! Return type
-    real std
+    real(kind=core_rknd) :: std
 
-    std = sqrt( covar( vector, vector, n )*( n/(n-1) ) )
+    std = sqrt( covar( vector, vector, n )*real( n/(n-1), kind=core_rknd ) )
 
     return
   end function std
@@ -96,10 +96,10 @@ module math_utilities
       vect1, vect2
 
     ! Return type
-    real :: covar
+    real(kind=core_rknd) :: covar
 
     ! Local variables
-    real :: total, avg1, avg2
+    real(kind=core_rknd) :: total, avg1, avg2
     integer :: j
 
     ! ---- Begin Code ----
@@ -153,7 +153,8 @@ module math_utilities
     ! ---- Begin Code ----
 
     forall( k = 1:n_levels )
-      mean(k) = sum( weight(1:n_samples) * x_sample(k,1:n_samples) ) / real( n_samples )
+      mean(k) = sum( weight(1:n_samples) * x_sample(k,1:n_samples) ) &
+              / real( n_samples, kind=core_rknd )
     end forall
 
     return
@@ -204,7 +205,7 @@ module math_utilities
         + weight(sample) * ( x_sample(1:n_levels,sample) - x_mean(1:n_levels) )**2
     end do
 
-    variance(1:n_levels) = variance(1:n_levels) / real( n_samples )
+    variance(1:n_levels) = variance(1:n_levels) / real( n_samples, kind=core_rknd )
 
     return
   end function compute_sample_variance
