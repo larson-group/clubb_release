@@ -505,7 +505,7 @@ module microphys_driver
           l_write_to_file, iunit )
       end if
 
-      if ( l_write_to_file ) close(unit=iunit);
+      if ( l_write_to_file ) close(unit=iunit)
 
     end if ! clubb_at_least_debug_level(1)
 
@@ -783,7 +783,8 @@ module microphys_driver
       corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
       corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
 
-      call setup_KK_corr( iunit, corr_file_path_cloud, corr_file_path_below )
+      call setup_KK_corr( iunit, corr_file_path_cloud, corr_file_path_below, & ! In
+                          l_write_to_file, case_info_file ) ! In
 
     case ( "simplified_ice" )
       iirrainm    = -1
