@@ -79,8 +79,6 @@ module latin_hypercube_arrays
       ricep2_on_ricem2_below, & 
       Nicep2_on_Nicem2_below
 
-    use matrix_operations, only: set_lower_triangular_matrix ! Procedure(s)
-
 !   use matrix_operations, only: print_lower_triangular_matrix ! Procedure(s)
 
     use constants_clubb, only: &

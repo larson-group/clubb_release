@@ -1475,16 +1475,7 @@ module latin_hypercube_driver_module
       iiNcm
 
     use corr_matrix_module, only: &
-      iiLH_rrain, & ! Variable(s)
-      iiLH_rsnow, &
-      iiLH_rice, &
-      iiLH_rgraupel, &
-      iiLH_Nr, &
-      iiLH_Nsnow, &
-      iiLH_Ngraupel, &
-      iiLH_Nc, &
-      iiLH_Ni, &
-      iiLH_s_mellor, &
+      iiLH_s_mellor, & ! Variable(s)
       iiLH_w
 
     use estimate_scm_microphys_module, only: &

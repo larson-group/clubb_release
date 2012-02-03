@@ -41,33 +41,9 @@ module estimate_scm_microphys_module
     use parameters_microphys, only: &
       l_lh_cloud_weighted_sampling
 
-    use array_index, only: &
-      iirrainm, & ! Variables
-      iirsnowm, & 
-      iiricem, & 
-      iirgraupelm, & 
-      iiNrm, &
-      iiNsnowm, &
-      iiNim, &
-      iiNgraupelm, &
-      iiNcm
-
     use corr_matrix_module, only: &
-      iiLH_rrain, &
-      iiLH_rsnow, &
-      iiLH_rice, &
-      iiLH_rgraupel, &
-      iiLH_Nr, &
-      iiLH_Nsnow, &
-      iiLH_Ngraupel, &
-      iiLH_Nc, &
-      iiLH_Ni, &
       iiLH_s_mellor, &
       iiLH_w
-
-    use math_utilities, only: &
-      compute_sample_variance, & ! Procedure
-      compute_sample_mean
 
     use pdf_parameter_module, only: &
       pdf_parameter ! Type
@@ -89,7 +65,6 @@ module estimate_scm_microphys_module
 
     ! Constant parameters
     logical, parameter :: &
-      l_compute_diagnostic_average = .true., &
       l_stats_samp                 = .false., &
       l_local_kk                   = .true., &
       l_latin_hypercube            = .true.
@@ -332,9 +307,7 @@ module estimate_scm_microphys_module
       iiLH_Nsnow, &
       iiLH_Ngraupel, &
       iiLH_Nc, &
-      iiLH_Ni, &
-      iiLH_s_mellor, &
-      iiLH_w
+      iiLH_Ni
 
     use clubb_precision, only: &
       dp, & ! double precision
