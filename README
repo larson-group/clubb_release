@@ -320,6 +320,16 @@ To compile the code, perform the following three steps:
    $ ./compile.bash ./config/<PLATFORM>.bash
    if you wish to pass in the config file as a parameter
 
+                            *** Important Note ***
+   If you have a linking error related to a symbol with a name like _sisnan or
+   _disnan you have and older version of LAPACK. You will either need to 
+   upgrade LAPACK or add -DNO_LAPACK_ISNAN to the CPPDEFS variable in your 
+   ./config/<PLATFORM>.bash;  note however that we haven't tested this 
+   alternate code with many compilers with high levels of optimization. Certain 
+   assumptions made by high levels of optimization may disable code in CLUBB 
+   that tests for NaN/Undefined variables in parts of the code when the flag
+   -DNO_LAPACK_ISNAN is added.
+
 The executables and Makefile will appear in <CLUBB BASE DIRECTORY>/bin 
 and libraries in <CLUBB BASE DIRECTORY>/lib.  The object (.o) and 
 module (.mod) files will appear in <CLUBB BASE DIRECTORY>/obj.
