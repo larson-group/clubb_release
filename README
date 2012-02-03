@@ -322,12 +322,12 @@ To compile the code, perform the following three steps:
 
                             *** Important Note ***
    If you have a linking error related to a symbol with a name like _sisnan or
-   _disnan you have and older version of LAPACK. You will either need to 
-   upgrade LAPACK or add -DNO_LAPACK_ISNAN to the CPPDEFS variable in your 
+   _disnan you have an older version of LAPACK. You will either need to 
+   upgrade LAPACK, or add -DNO_LAPACK_ISNAN to the CPPDEFS variable in your 
    ./config/<PLATFORM>.bash;  note however that we haven't tested this 
-   alternate code with many compilers with high levels of optimization. Certain 
-   assumptions made by high levels of optimization may disable code in CLUBB 
-   that tests for NaN/Undefined variables in parts of the code when the flag
+   alternate code with many compilers using high levels of optimization. Certain
+   assumptions made by high levels of optimization may disable checks in CLUBB 
+   that test for NaN/Undefined variables after solving a matrix if the flag
    -DNO_LAPACK_ISNAN is added.
 
 The executables and Makefile will appear in <CLUBB BASE DIRECTORY>/bin 
