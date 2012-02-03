@@ -89,7 +89,7 @@ module parameters_microphys
 !$omp threadprivate(microphys_start_time)
 
   real( kind = core_rknd ), public :: &
-    Ncm_initial ! Initial cloud droplet number concentration [#/cc]
+    Ncm_initial ! Initial cloud droplet number concentration [#/m^3]
 
 !$omp threadprivate(Ncm_initial)
 

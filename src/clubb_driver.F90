@@ -3483,7 +3483,7 @@ module clubb_driver
       LH_microphys_calls
 
     use constants_clubb, only: & 
-      rc_tol, fstderr, cm3_per_m3 ! Variable(s)
+      rc_tol, fstderr ! Variable(s)
 
     use clubb_precision, only: time_precision, dp, core_rknd ! Variable(s)
 

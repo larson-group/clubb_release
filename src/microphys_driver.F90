@@ -166,9 +166,7 @@ module microphys_driver
       ini_microp_aero ! Subroutine
 
     use constants_clubb, only: &
-      fstderr,   & ! Constant
-      cm3_per_m3, &
-      micron_per_m
+      fstderr    ! Constant
 
     use text_writer, only: &
       write_text   ! Used to write microphysics settings to setup.txt file
