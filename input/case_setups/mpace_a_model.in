@@ -57,8 +57,8 @@ time_final   = 309600.0 ! Model end time [seconds since midnight on start date]
 !time_final   = 50460.0  ! Model end time [seconds since midnight on start date]
 
 
-dt_main    = 60.0   ! Model timestep [s]
-dt_rad = 60.0   ! Radiation timestep [s] 
+dt_main = 60.0   ! Model timestep [s]
+dt_rad  = 60.0   ! Radiation timestep [s] 
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -160,7 +160,7 @@ Ncp2_on_Ncm2_below    = 0.0
 
 C_evap = 0.5
 r_0 = 100.0e-6
-Ncm_initial = 70. ! #/cm3 
+Ncm_initial = 70.e-6 ! #/m3 
 
 LH_microphys_type = "disabled",
 l_lh_vert_overlap = .true.,
@@ -169,12 +169,13 @@ LH_microphys_calls = 4,
 LH_sequence_length = 1,
 l_fix_s_t_correlations = .true.,
 
-aer_rm1 = 0.052   ! two aerosol mode defaults from MPACE (from Hugh)
+! two aerosol mode defaults from MPACE (from Hugh)
+aer_rm1 = 0.052e-6  
 aer_sig1 = 2.04
-aer_n1 = 72.2
-aer_rm2 = 1.3
+aer_n1 = 72.2e6
+aer_rm2 = 1.3e-6
 aer_sig2 = 2.5
-aer_n2 = 1.8
+aer_n2 = 1.8e6
 
 /
 

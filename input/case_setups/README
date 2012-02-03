@@ -277,7 +277,7 @@ microphys_start_time | real, minimum 12 digits of precision
   cases.
 
 Ncm_initial 
-  Initial value for Ncm (cloud droplet number concentration) in #/cc.
+  Initial value for Ncm (cloud droplet number concentration) in #/m^3.
   (K&K, l_cloud_sed = .true., Morrison).
 
 rrp2_on_rrainm2_cloud | real, default precision
@@ -292,34 +292,6 @@ Ncp2_on_Ncm2_cloud | real, default precision
 Ncp2_on_Ncm2_below | real, default precision
   Variance of cloud water num. conc. divided by the mean squared (K&K).
 
-corr_rrNr_LL_cloud | real, default precision
-corr_rrNr_LL_below | real, default precision
-  Correlation between rain water mixing ratio and number conc. (K&K)
-
-corr_rtrr_NL_cloud | real, default precision
-corr_rtrr_NL_below | real, default precision
-  Correlation between rain water mixing ratio and total water (K&K).
-
-corr_rtNr_NL_cloud | real, default precision
-corr_rtNr_NL_below | real, default precision
-  Correlation between rain water num. conc. ratio and total water (K&K).
-
-corr_rtNc_NL_cloud | real, default precision
-corr_rtNc_NL_below | real, default precision
-  Correlation between cloud droplet number conc. and total water (K&K).
-
-corr_thlrr_NL_cloud | real, default precision
-corr_rtrr_NL_below | real, default precision
-  Correlation between rain water mixing ratio and total water (K&K).
-
-corr_thlNr_NL_cloud | real, default precision
-corr_thlNr_NL_below | real, default precision
-  Correlation between rain water num. conc. ratio and total water (K&K).
-
-corr_thlNc_NL_cloud | real, default precision
-corr_thlNc_NL_below | real, default precision
-  Correlation between cloud droplet number conc. and total water (K&K).
-
 C_evap | real, default precision
   Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric radius to
   mean volume radius (K&K)
@@ -328,18 +300,18 @@ r_0 | real, default precision
   Assumed radius of all new drops (K&K) [m].
 
 ccnconst | real, default precision
-  Parameter for powerlaw CCN (Morrison) [#/cc].
+  Parameter for powerlaw CCN (Morrison) [#/m^3].
 
 ccnexpnt | real, default precision
   Exponent for powerlaw CCN (Morrison).
 
 aer_rm1 | real, default precision 
 aer_rm2 | real, default precision
-  Mean geometric radius (Morrison) [μ].
+  Mean geometric radius (Morrison) [m].
 
 aer_n1 | real, default precision
 aer_n2 | real, default precision
-  Aerosol concentration (Morrison) [#/cc].
+  Aerosol concentration (Morrison) [#/m^3].
 
 aer_sig1 | real, default precision
 aer_sig2 | real, default precision

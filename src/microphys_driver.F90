@@ -379,14 +379,14 @@ module microphys_driver
     l_cloud_edge_activation = .true.
 
     ! Aerosol for RF02 from Mikhail Ovtchinnikov
-    aer_rm1  = 0.011 ! Mean geometric radius                 [μ]
-    aer_rm2  = 0.06
+    aer_rm1  = 0.011e-6 ! Mean geometric radius  [m]
+    aer_rm2  = 0.06e-6
 
     aer_sig1 = 1.2   ! Std dev of aerosol size distribution  [-]
     aer_sig2 = 1.7
 
-    aer_n1   = 125.  ! Aerosol contentration                 [#/cm3]
-    aer_n2   = 65.
+    aer_n1   = 125.e6  ! Aerosol contentration                 [#/m3]
+    aer_n2   = 65.e6
 
     ! Other parameters, set as in SAM
     ccnconst = 120. ! Parameter for powerlaw CCN [#/cm3]
@@ -397,7 +397,7 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for Morrison microphysics and Khairoutdinov & Kogan microphysics
     !---------------------------------------------------------------------------
-    Ncm_initial = 100._core_rknd ! #/cm^3
+    Ncm_initial = 100.e6_core_rknd ! #/m^3
 
     ! In the Latin hypercube code, we can fix the correlations between s and t.
     ! The reasons for this are twofold:
@@ -668,14 +668,6 @@ module microphys_driver
       l_hydromet_sed(iiricem)     = .false.
       l_hydromet_sed(iirgraupelm) = .false.
 
-      ! Convert from μ to m as in SAM
-      aer_rm1 = real(real(aer_rm1, kind = core_rknd) / micron_per_m)
-      aer_rm2 = real(real(aer_rm2, kind = core_rknd) / micron_per_m)
-      ! Convert from #/cm3 to #/m3
-      aer_n1 = real(cm3_per_m3 * real(aer_n1, kind = core_rknd))
-      aer_n2 = real(cm3_per_m3 * real(aer_n2, kind = core_rknd))
-
-      ! Setup the Morrison scheme
       call GRAUPEL_INIT()
       
     case ( "morrison-gettelman" )
@@ -1394,7 +1386,7 @@ module microphys_driver
       ! Fix Nc for testing purposes -dschanen 5 Jan 2012
       if ( .not. l_predictnc ) then
         where ( rcm >= rc_tol )
-          hydromet(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
+          hydromet(:,iiNcm) = Ncm_initial / rho
         else where
           hydromet(:,iiNcm) = 0.0_core_rknd
         end where

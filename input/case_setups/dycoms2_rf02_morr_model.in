@@ -135,7 +135,7 @@ l_prescribed_avg_deltaz = .false.
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "morrison"
-Ncm_initial  = 55. ! #/cm3
+Ncm_initial  = 55.e-6 ! #/m^3
 l_predictnc = .false.,
 
 /
