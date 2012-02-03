@@ -1338,7 +1338,7 @@ module clubb_driver
       ! Lower boundary condition
       hydromet(1,iiNcm) = 0._core_rknd
 
-      hydromet(2:gr%nz-1,iiNcm) = cm3_per_m3 * Ncm_initial / rho(2:gr%nz-1)
+      hydromet(2:gr%nz-1,iiNcm) = Ncm_initial / rho(2:gr%nz-1)
 
       ! Upper boundary condition
       hydromet(gr%nz,iiNcm) = 0._core_rknd
@@ -1347,7 +1347,7 @@ module clubb_driver
       ! Lower boundary condition
       hydromet(1,iiNcm) = 0._core_rknd
 
-      hydromet(2:gr%nz-1,iiNcm) = cm3_per_m3 * Ncm_initial / rho(2:gr%nz-1)
+      hydromet(2:gr%nz-1,iiNcm) = Ncm_initial / rho(2:gr%nz-1)
 
       ! Upper boundary condition
       hydromet(gr%nz,iiNcm) = 0._core_rknd
@@ -3683,7 +3683,7 @@ module clubb_driver
       ! Note: While the name "Ncm" usually means layer-averaged cloud droplet concentration in
       ! CLUBB, KK microphysics treats Ncm as within-cloud droplet concentration.
       where ( rcm >= rc_tol )
-        hydromet(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
+        hydromet(:,iiNcm) = Ncm_initial / rho
       else where
         hydromet(:,iiNcm) = 0.0_core_rknd
       end where
