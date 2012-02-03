@@ -139,7 +139,7 @@ l_cloud_sed  = .true.   ! Flag for cloud water sedimentation.
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "none"
-Ncm_initial  = 55.e-6 ! #/cm3
+Ncm_initial  = 55.e6 ! #/m^3
 /
 
 &radiation_setting
