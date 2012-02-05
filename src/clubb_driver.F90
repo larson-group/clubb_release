@@ -88,7 +88,7 @@ module clubb_driver
       advance_clubb_core
 
     use constants_clubb, only: fstdout, fstderr, & ! Variable(s)
-      rt_tol, thl_tol, w_tol, w_tol_sqd
+      rt_tol, thl_tol, w_tol, w_tol_sqd, zero
 
     use error_code, only: &
       clubb_var_out_of_bounds,  & ! Variable(s)
@@ -322,6 +322,13 @@ module clubb_driver
       rcm_mc, & ! Tendency of liquid water due to microphysics     [kg/kg/s]
       rvm_mc, & ! Tendency of vapor water due to microphysics      [kg/kg/s]
       thlm_mc   ! Tendecy of liquid pot. temp. due to microphysics [K/s]
+
+    real( kind = core_rknd ), allocatable, dimension(:) :: &
+      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     real( kind = core_rknd ) :: sigma_g
 
@@ -761,10 +768,25 @@ module clubb_driver
     ! Allocate rvm_mc, rcm_mc, thlm_mc
     allocate( rvm_mc(gr%nz), rcm_mc(gr%nz), thlm_mc(gr%nz) )
 
-    ! Initialize to 0.0
-    rvm_mc  = 0.0_core_rknd
-    rcm_mc  = 0.0_core_rknd
-    thlm_mc = 0.0_core_rknd
+    ! Initialize to 0.
+    rvm_mc  = zero
+    rcm_mc  = zero
+    thlm_mc = zero
+
+    ! Allocate microphysics tendencies for <w'rt'>, <w'thl'>,
+    ! <rt'^2>, <thl'^2>, and <rt'thl'>.
+    allocate( wprtp_mc_tndcy(gr%nz) )
+    allocate( wpthlp_mc_tndcy(gr%nz) )
+    allocate( rtp2_mc_tndcy(gr%nz) )
+    allocate( thlp2_mc_tndcy(gr%nz) )
+    allocate( rtpthlp_mc_tndcy(gr%nz) )
+
+    ! Initialize to 0.
+    wprtp_mc_tndcy   = zero
+    wpthlp_mc_tndcy  = zero
+    rtp2_mc_tndcy    = zero
+    thlp2_mc_tndcy   = zero
+    rtpthlp_mc_tndcy = zero
 
     if ( .not. l_restart ) then
 
@@ -1019,7 +1041,10 @@ module clubb_driver
              Kh_zm, wp2_zt, Lscale, pdf_params,                    & ! Intent(in)
              rho_ds_zt, rho_ds_zm, sigma_g,                        & ! Intent(in)
              Ncnm, hydromet,                                       & ! Intent(inout)
-             rvm_mc, rcm_mc, thlm_mc, err_code )                     ! Intent(inout)
+             rvm_mc, rcm_mc, thlm_mc,                              & ! Intent(inout)
+             wprtp_mc_tndcy, wpthlp_mc_tndcy,                      & ! Intent(inout)
+             rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,      & ! Intent(inout)
+             err_code )                                              ! Intent(inout)
 
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
@@ -3468,7 +3493,11 @@ module clubb_driver
                Kh_zm, wp2_zt, Lscale, pdf_params, &
                rho_ds_zt,  rho_ds_zm, sigma_g, & 
                Ncnm, hydromet, &
-               rvm_mc, rcm_mc, thlm_mc, err_code )
+               rvm_mc, rcm_mc, thlm_mc, &
+               wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+               err_code )
+
 ! Description:
 !   Advance a microphysics scheme
 ! References:
@@ -3483,7 +3512,7 @@ module clubb_driver
       LH_microphys_calls
 
     use constants_clubb, only: & 
-      rc_tol, fstderr ! Variable(s)
+      rc_tol, zero, fstderr ! Variable(s)
 
     use clubb_precision, only: time_precision, dp, core_rknd ! Variable(s)
 
@@ -3582,6 +3611,13 @@ module clubb_driver
       rcm_mc,    & ! r_c microphysical tendency     [(kg/kg)/s]
       rvm_mc       ! r_v microphysical tendency     [(kg/kg)/s]
 
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+
     integer, intent(inout) :: & 
       err_code ! Error code from the microphysics
 
@@ -3608,9 +3644,15 @@ module clubb_driver
 
     ! ---- Begin Code ----
 
-    rcm_mc  = 0.0_core_rknd
-    rvm_mc  = 0.0_core_rknd
-    thlm_mc = 0.0_core_rknd
+    rcm_mc  = zero
+    rvm_mc  = zero
+    thlm_mc = zero
+
+    wprtp_mc_tndcy   = zero
+    wpthlp_mc_tndcy  = zero
+    rtp2_mc_tndcy    = zero
+    thlp2_mc_tndcy   = zero
+    rtpthlp_mc_tndcy = zero
 
 #ifdef LATIN_HYPERCUBE
     !----------------------------------------------------------------
@@ -3702,6 +3744,8 @@ module clubb_driver
              X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
              Ncnm, hydromet, &                                          ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
+             wprtp_mc_tndcy, wpthlp_mc_tndcy, &                         ! Intent(inout)
+             rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &         ! Intent(inout)
              err_code_microphys )                                       ! Intent(out)
 
       if ( fatal_error( err_code_microphys ) ) then

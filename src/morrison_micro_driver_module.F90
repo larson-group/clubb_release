@@ -10,10 +10,14 @@ module morrison_micro_driver_module
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_micro_driver &
-             ( dt, nz, l_stats_samp, l_local_kk, l_latin_hypercube, &
-               thlm, p_in_Pa, exner, rho, cloud_frac, pdf_params, &
-               wm, w_std_dev, dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
-               hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
+             ( dt, nz, l_stats_samp, l_local_kk, &
+               l_latin_hypercube, thlm, wm, p_in_Pa, &
+               exner, rho, cloud_frac, pdf_params, w_std_dev, &
+               dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
+               hydromet_vel, rcm_mc, rvm_mc, thlm_mc, &
+               wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
+
 ! Description:
 !   Wrapper for the Morrison microphysics
 !
@@ -71,6 +75,7 @@ module morrison_micro_driver_module
 
     use constants_clubb, only: &
       sec_per_day, &
+      zero, &
       zero_threshold
 
     use clubb_precision, only: &
@@ -129,6 +134,13 @@ module morrison_micro_driver_module
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
+
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     ! Local Variables
     real, dimension(nz) :: & 
@@ -274,6 +286,13 @@ module morrison_micro_driver_module
 
     ! Sedimentation is handled within the Morrison microphysics
     hydromet_vel(:,:) = 0.0_core_rknd
+
+    ! Set microphysics tendencies for model variances and covariances to 0.
+    wprtp_mc_tndcy   = zero
+    wpthlp_mc_tndcy  = zero
+    rtp2_mc_tndcy    = zero
+    thlp2_mc_tndcy   = zero
+    rtpthlp_mc_tndcy = zero
 
     if ( l_stats_samp ) then
 

@@ -142,6 +142,13 @@ module estimate_scm_microphys_module
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
       w_all_points            ! n_micro_calls values of vertical velocity      [m/s]
 
+    real( kind = core_rknd ), dimension(nz) :: &
+      lh_wprtp_mc_tndcy,   & ! LH micro. tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      lh_wpthlp_mc_tndcy,  & ! LH micro. tendency for <w'thl'>  [m*K/s^2]
+      lh_rtp2_mc_tndcy,    & ! LH micro. tendency for <rt'^2>   [(kg/kg)^2/s]
+      lh_thlp2_mc_tndcy,   & ! LH micro. tendency for <thl'^2>  [K^2/s]
+      lh_rtpthlp_mc_tndcy    ! LH micro. tendency for <rt'thl'> [K*(kg/kg)/s]
+
     integer :: ivar, k, sample
 
     integer :: &
@@ -229,12 +236,14 @@ module estimate_scm_microphys_module
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
-           ( dt, nz, l_stats_samp, l_local_kk, l_latin_hypercube, & ! In
-             thl_column, p_in_Pa, exner, rho, cloud_frac, pdf_params, & ! In
-             w_column, w_std_dev, dzq, & ! In
-             rc_column, s_mellor_column, & ! In
-             rv_column, hydromet_columns,  & ! In
-             lh_hydromet_mc, lh_hydromet_vel, lh_rcm_mc, lh_rvm_mc, lh_thlm_mc ) ! Out
+           ( dt, nz, l_stats_samp, l_local_kk, & ! In
+             l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
+             exner, rho, cloud_frac, pdf_params, w_std_dev, & ! In
+             dzq, rc_column, s_mellor_column, rv_column, hydromet_columns, & ! In
+             lh_hydromet_mc, lh_hydromet_vel, & ! Out
+             lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
+             lh_wprtp_mc_tndcy, lh_wpthlp_mc_tndcy, & ! Out
+             lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, lh_rtpthlp_mc_tndcy ) ! Out
 
       if ( l_lh_cloud_weighted_sampling ) then
         ! Weight the output results depending on whether we're calling the

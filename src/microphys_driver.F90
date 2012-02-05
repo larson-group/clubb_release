@@ -868,6 +868,8 @@ module microphys_driver
                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &
                Ncnm, hydromet, & 
                rvm_mc, rcm_mc, thlm_mc, &
+               wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
                err_code )
 
     ! Description:
@@ -1067,17 +1069,17 @@ module microphys_driver
       time_current ! Current time     [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      thlm,       & ! Liquid potential temp.                 [K]
-      p_in_Pa,    & ! Pressure                               [Pa]
-      exner,      & ! Exner function                         [-]
-      rho,        & ! Density on thermo. grid                [kg/m^3]
-      rho_zm,     & ! Density on moment. grid                [kg/m^3]
-      rtm,        & ! Total water mixing ratio               [kg/kg]
-      rcm,        & ! Liquid water mixing ratio              [kg/kg]
-      cloud_frac, & ! Cloud fraction                         [-]
-      wm_zt,      & ! w wind on moment. grid                 [m/s]
-      wm_zm,      & ! w wind on thermo. grid                 [m/s]
-      Kh_zm         ! Kh Eddy diffusivity on momentum grid   [m^2/s]
+      thlm,       & ! Liquid potential temp.                    [K]
+      p_in_Pa,    & ! Pressure                                  [Pa]
+      exner,      & ! Exner function                            [-]
+      rho,        & ! Density on thermodynamic levels           [kg/m^3]
+      rho_zm,     & ! Density on momentum levels                [kg/m^3]
+      rtm,        & ! Total water mixing ratio                  [kg/kg]
+      rcm,        & ! Liquid water mixing ratio                 [kg/kg]
+      cloud_frac, & ! Cloud fraction                            [-]
+      wm_zt,      & ! w wind component on thermodynamic levels  [m/s]
+      wm_zm,      & ! w wind component on momentum levels       [m/s]
+      Kh_zm         ! Kh Eddy diffusivity on momentum grid      [m^2/s]
 
     type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
       pdf_params     ! PDF parameters
@@ -1112,6 +1114,13 @@ module microphys_driver
       rcm_mc,  & ! Microphysics contributions to liquid water           [kg/kg/s]
       rvm_mc,  & ! Microphysics contributions to vapor water            [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp. [K/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     integer, intent(out) :: err_code ! Exit code returned from subroutine
 
@@ -1363,11 +1372,14 @@ module microphys_driver
         l_local_kk_input = .false.
         l_latin_hypercube_input = .false.
         call morrison_micro_driver & 
-             ( dt, gr%nz, l_stats_samp, l_local_kk_input, l_latin_hypercube_input, &
-               thlm, p_in_Pa, exner, rho, cloud_frac, pdf_params, &
-               wm_zt, wtmp, delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
-               hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
-      end if
+             ( dt, gr%nz, l_stats_samp, l_local_kk_input, &
+               l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
+               exner, rho, cloud_frac, pdf_params, wtmp, &
+               delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
+               hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc, &
+               wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
+      endif
       
 
     case ( "morrison-gettelman" )
@@ -1442,19 +1454,17 @@ module microphys_driver
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
 
-!         call KK_micro_driver( real( dt, kind = core_rknd ), l_local_kk, thlm, rho, p_in_Pa, &
-!                               exner, s_mellor, rcm, hydromet, &
-!                               pdf_params, hydromet_mc, hydromet_vel_zt, &
-!                               rcm_mc, rvm_mc, thlm_mc )
          l_latin_hypercube_input = .false.
-         call KK_micro_driver &
-                 ( dt, gr%nz, l_stats_samp, l_local_kk, &
-                   l_latin_hypercube_input, thlm, p_in_Pa, exner, rho, cloud_frac, &
-                   pdf_params, wm_zt, wtmp, delta_zt, rcm, s_mellor, &
-                   rtm-rcm, hydromet, hydromet_mc, hydromet_vel_zt, &
-                   rcm_mc, rvm_mc, thlm_mc )
+         call KK_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
+                               l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
+                               exner, rho, cloud_frac, pdf_params, wtmp, &
+                               delta_zt, rcm, s_mellor, rtm-rcm, hydromet, &
+                               hydromet_mc, hydromet_vel_zt, &
+                               rcm_mc, rvm_mc, thlm_mc, &
+                               wprtp_mc_tndcy, wpthlp_mc_tndcy, & 
+                               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
 
-      end if
+      endif
 
       if ( l_stats_samp ) then
         ! Sedimentation velocity for rrainm

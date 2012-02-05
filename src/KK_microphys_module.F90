@@ -15,23 +15,22 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-!  subroutine KK_micro_driver( dt, l_local_kk, thlm, rho, p_in_Pa, &
-!                              exner, s_mellor, rcm, hydromet, &
-!                              pdf_params, hydromet_mc, hydromet_vel, &
-!                              rcm_mc, rvm_mc, thlm_mc )
   subroutine KK_micro_driver( dt, nz, l_stats_samp, l_local_kk, &
-                              l_latin_hypercube, thlm, p_in_Pa, exner, rho, &
-                              cloud_frac, pdf_params, wm, w_std_dev, dzq, rcm, s_mellor, &
-                              rvm, hydromet, hydromet_mc, hydromet_vel, &
-                              rcm_mc, rvm_mc, thlm_mc )
+                              l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
+                              exner, rho, cloud_frac, pdf_params, w_std_dev, &
+                              dzq, rcm, s_mellor, rvm, hydromet, &
+                              hydromet_mc, hydromet_vel, &
+                              rcm_mc, rvm_mc, thlm_mc, &
+                              wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
 
     ! Description:
 
     ! References:
     !-----------------------------------------------------------------------
 
-!    use grid_class, only: &
-!        gr  ! Variable(s)
+    use grid_class, only: &
+        zt2zm  ! Procedure(s)
 
     use constants_clubb, only: &
         Rd,           & ! Constant(s)
@@ -93,7 +92,6 @@ module KK_microphys_module
 
     use stats_variables, only: & 
         zt,                 & ! Variable(s)
-!        l_stats_samp,       &
         im_vol_rad_rain, &
         irrainm_cond,       &
         irrainm_auto,       &
@@ -118,16 +116,19 @@ module KK_microphys_module
       l_latin_hypercube    ! Flag to use Latin Hypercube interface
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      thlm,       & ! Mean liquid water potential temperature  [K]
-      rho,        & ! Density                                  [kg/m^3]
-      cloud_frac, & ! Cloud fraction                           [-]
-      p_in_Pa,    & ! Pressure                                 [Pa]
-      exner,      & ! Exner function                           [-]
-      s_mellor,   & ! Mean extended liquid water mixing ratio  [kg/kg]
-      rcm           ! Mean cloud water mixing ratio            [kg/kg]
+      thlm,       & ! Mean liquid water potential temperature         [K]
+      wm_zt,      & ! Mean vertical velocity on thermodynamic levels  [m/s]
+      p_in_Pa,    & ! Pressure                                        [Pa]
+      exner,      & ! Exner function                                  [-]
+      rho,        & ! Density                                         [kg/m^3]
+      cloud_frac, & ! Cloud fraction                                  [-]
+      rcm,        & ! Mean cloud water mixing ratio                   [kg/kg]
+      s_mellor      ! Mean extended liquid water mixing ratio         [kg/kg]
+
+    type(pdf_parameter), dimension(nz), target, intent(in) :: &
+      pdf_params    ! PDF parameters                         [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      wm,        & ! Mean vertical velocity, w (for LH interface)        [m/s] 
       w_std_dev, & ! Standard deviation of w (for LH interface)          [m/s]
       dzq,       & ! Thickness between thermo. levels (for LH interface) [m]
       rvm          ! Mean water vapor mixing ratio (for LH interface)    [kg/kg]
@@ -135,9 +136,6 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
-
-    type(pdf_parameter), dimension(nz), target, intent(in) :: &
-      pdf_params    ! PDF parameters                         [units vary]
 
     ! Input / Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
@@ -151,12 +149,12 @@ module KK_microphys_module
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc    ! Time tendency of liquid potential temperature [K/s]
 
-!    real( kind = core_rknd ), intent(out) :: &
-!      wprtp_mc_src_tndcy,   & ! Microphysics tendency for w'rt'  [m*(kg/kg)/s^2]
-!      wpthlp_mc_src_tndcy,  & ! Microphysics tendency for w'thl' [m*K/s^2]
-!      rtp2_mc_src_tndcy,    & ! Microphysics tendency for rt'^2  [(kg/kg)^2/s]
-!      thlp2_mc_src_tndcy,   & ! Microphysics tendency for thl'^2 [K^2/s]
-!      rtpthlp_mc_src_tndcy    ! Microphysics tend. for rt'thl'   [K*(kg/kg)/s]
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(:), pointer ::  &
@@ -209,6 +207,13 @@ module KK_microphys_module
       corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
       mixt_frac       ! Mixture fraction                                     [-]
 
+    real( kind = core_rknd ), dimension(nz) :: &
+      wprtp_mc_tndcy_zt,   & ! Micro. tend. for <w'rt'>; t-lev   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy_zt,  & ! Micro. tend. for <w'thl'>; t-lev  [m*K/s^2]
+      rtp2_mc_tndcy_zt,    & ! Micro. tend. for <rt'^2>; t-lev   [(kg/kg)^2/s]
+      thlp2_mc_tndcy_zt,   & ! Micro. tend. for <thl'^2>; t-lev  [K^2/s]
+      rtpthlp_mc_tndcy_zt    ! Micro. tend. for <rt'thl'>; t-lev [K*(kg/kg)/s]
+
     real( kind = core_rknd ) ::  &
       rrainm_source,     & ! Total source term rate for rrainm       [(kg/kg)/s]
       Nrm_source,        & ! Total source term rate for Nrm         [(num/kg)/s]
@@ -223,6 +228,7 @@ module KK_microphys_module
 
     logical :: &
       l_upscaled,        & ! Flag for using upscaled KK microphysics.
+      l_var_covar_src,   & ! Flag for using upscaled covariances.
       l_src_adj_enabled    ! Flag to enable rrainm/Nrm source adjustment
 
     integer :: &
@@ -234,7 +240,6 @@ module KK_microphys_module
       rrainm_src_adj = dzq
       rrainm_src_adj = rvm
       rrainm_src_adj = w_std_dev
-      rrainm_src_adj = wm
       rrainm_src_adj = cloud_frac
     end if
 
@@ -260,6 +265,8 @@ module KK_microphys_module
     else
        l_upscaled = .false.
     endif
+
+    l_var_covar_src = .false.
 
     l_src_adj_enabled = .true.
 
@@ -326,26 +333,28 @@ module KK_microphys_module
                                          KK_accr_tndcy(k), KK_mean_vol_rad(k) )
           
 
-!          if ( l_var_covar_src ) then
-!
-!             call KK_upscaled_covar_driver( wm_zt(k), exner(k), rcm(k),  &
-!                                            rrainm(k), Nrm(k), Ncm(k), &
-!                                            mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
-!                                            mu_Nc_n, sigma_s_1, sigma_s_2, &
-!                                            sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
-!                                            corr_srr_1_n, corr_srr_2_n, &
-!                                            corr_sNr_1_n, corr_sNr_2_n, &
-!                                            corr_sNc_1_n, corr_sNc_2_n, &
-!                                            corr_rrNr_n,  mixt_frac, &
-!                                            KK_evap_coef, KK_auto_coef, &
-!                                            KK_accr_coef, KK_evap_tndcy(k), &
-!                                            KK_auto_tndcy(k), KK_accr_tndcy(k), &
-!                                            pdf_params(k), wprtp_mc_tndcy(k), &
-!                                            wpthlp_mc_tndcy(k), &
-!                                            rtp2_mc_tndcy(k), thlp2_mc_tndcy(k), &
-!                                            rtpthlp_mc_tndcy(k) )
-!
-!          endif
+          if ( l_var_covar_src ) then
+
+            call KK_upscaled_covar_driver( wm_zt(k), exner(k), rcm(k),  &
+                                           rrainm(k), Nrm(k), Ncm(k), &
+                                           mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                           mu_Nc_n, sigma_s_1, sigma_s_2, &
+                                           sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+                                           corr_srr_1_n, corr_srr_2_n, &
+                                           corr_sNr_1_n, corr_sNr_2_n, &
+                                           corr_sNc_1_n, corr_sNc_2_n, &
+                                           corr_rrNr_n,  mixt_frac, &
+                                           KK_evap_coef, KK_auto_coef, &
+                                           KK_accr_coef, KK_evap_tndcy(k), &
+                                           KK_auto_tndcy(k), KK_accr_tndcy(k), &
+                                           pdf_params(k), &
+                                           wprtp_mc_tndcy_zt(k), &
+                                           wpthlp_mc_tndcy_zt(k), &
+                                           rtp2_mc_tndcy_zt(k), &
+                                           thlp2_mc_tndcy_zt(k), &
+                                           rtpthlp_mc_tndcy_zt(k) )
+
+          endif
 
 
        else  ! local KK
@@ -513,6 +522,28 @@ module KK_microphys_module
 
 
     enddo  ! Microphysics tendency loop: k = 2, nz-1, 1
+
+
+    if ( l_upscaled .and. l_var_covar_src ) then
+
+       ! Output microphysics tendency terms for
+       ! model variances and covariances on momentum levels.
+       wprtp_mc_tndcy   = zt2zm( wprtp_mc_tndcy_zt )
+       wpthlp_mc_tndcy  = zt2zm( wpthlp_mc_tndcy_zt )
+       rtp2_mc_tndcy    = zt2zm( rtp2_mc_tndcy_zt )
+       thlp2_mc_tndcy   = zt2zm( thlp2_mc_tndcy_zt )
+       rtpthlp_mc_tndcy = zt2zm( rtpthlp_mc_tndcy_zt )
+
+    else
+
+       ! Set values to 0.
+       wprtp_mc_tndcy   = zero
+       wpthlp_mc_tndcy  = zero
+       rtp2_mc_tndcy    = zero
+       thlp2_mc_tndcy   = zero
+       rtpthlp_mc_tndcy = zero
+
+    endif
 
 
     !!! Boundary conditions for microphysics tendencies.
@@ -958,9 +989,11 @@ module KK_microphys_module
                                        KK_evap_coef, KK_auto_coef, &
                                        KK_accr_coef, KK_evap_tndcy, &
                                        KK_auto_tndcy, KK_accr_tndcy, &
-                                       pdf_params, wprtp_mc_src_tndcy, &
+                                       pdf_params, &
+                                       wprtp_mc_src_tndcy, &
                                        wpthlp_mc_src_tndcy, &
-                                       rtp2_mc_src_tndcy, thlp2_mc_src_tndcy, &
+                                       rtp2_mc_src_tndcy, &
+                                       thlp2_mc_src_tndcy, &
                                        rtpthlp_mc_src_tndcy )
 
     ! Description:
