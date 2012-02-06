@@ -96,12 +96,12 @@ module pdf_closure_module
        sat_mixrat_ice
 #endif
 
-    use error_code, only:  & 
-      clubb_var_equals_NaN,  & ! Constant(s)
-      clubb_no_error
+    use error_code, only: & 
+      clubb_no_error ! Constant(s)
 
     use error_code, only:  & 
-      clubb_at_least_debug_level ! Procedure(s)
+      clubb_at_least_debug_level, & ! Procedure(s)
+      fatal_error
 
     use stats_variables, only: &
       iwp4,       & ! Variables
@@ -699,16 +699,16 @@ module pdf_closure_module
 
     ! Correlation between s and t for each component.
     if ( stdev_s1 * stdev_t1 > zero ) then
-       corr_st_1 = covar_st_1 / ( stdev_s1 * stdev_t1 )
+      corr_st_1 = covar_st_1 / ( stdev_s1 * stdev_t1 )
     else
-       corr_st_1 = zero
-    endif 
+      corr_st_1 = zero
+    endif
 
     if ( stdev_s2 * stdev_t2 > zero ) then
-       corr_st_2 = covar_st_2 / ( stdev_s2 * stdev_t2 )
+      corr_st_2 = covar_st_2 / ( stdev_s2 * stdev_t2 )
     else
-       corr_st_2 = zero
-    endif 
+      corr_st_2 = zero
+    endif
 
     ! We need to introduce a threshold value for the variance of s
 
@@ -892,7 +892,7 @@ module pdf_closure_module
       ! Error Reporting
       ! Joshua Fasching February 2008
 
-      if ( err_code == clubb_var_equals_NaN ) then
+      if ( fatal_error( err_code ) ) then
 
         write(fstderr,*) "Error in pdf_closure_new"
 
@@ -987,7 +987,7 @@ module pdf_closure_module
           write(fstderr,*) "wp2sclrp = ", wp2sclrp
         end if
 
-      end if ! err_code == clubb_var_equals_NaN
+      end if ! Fatal error
 
     end if ! clubb_at_least_debug_level
 
