@@ -1832,6 +1832,10 @@ module clubb_core
 
     implicit none
 
+    ! Constant parameters
+    logical, parameter :: &
+      l_apply_rule_to_pdf_params = .false. ! Apply the trapezoidal rule to pdf_params
+
     ! Input variables
     logical, intent(in) :: l_call_pdf_closure_twice
 
@@ -1873,7 +1877,6 @@ module clubb_core
       pdf_params_zm ! PDF parameters on momentum grid [units vary]
 
     ! Local variables
-    integer :: i
 
     ! Components of PDF_parameters on the momentum grid (_zm) and on the thermo. grid (_zt)
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -1933,6 +1936,10 @@ module clubb_core
       stdev_s1_zt,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
       stdev_s2_zm,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
       stdev_s2_zt,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      stdev_t1_zm,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
+      stdev_t1_zt,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
+      stdev_t2_zm,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
+      stdev_t2_zt,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
       rrtthl_zm,      & ! Within-a-normal correlation of r_t and th_l             [-]
       rrtthl_zt,      & ! Within-a-normal correlation of r_t and th_l             [-]
       alpha_thl_zm,   & ! Factor relating to normalized variance for th_l         [-]
@@ -1940,39 +1947,45 @@ module clubb_core
       alpha_rt_zm,    & ! Factor relating to normalized variance for r_t          [-]
       alpha_rt_zt       ! Factor relating to normalized variance for r_t          [-]
 
+    integer :: i
+
     !----------------------- Begin Code -----------------------------
 
     ! Store components of pdf_params in the locally declared variables
-    w1_zt          = pdf_params%w1
-    w2_zt          = pdf_params%w2
-    varnce_w1_zt   = pdf_params%varnce_w1
-    varnce_w2_zt   = pdf_params%varnce_w2
-    rt1_zt         = pdf_params%rt1
-    rt2_zt         = pdf_params%rt2
-    varnce_rt1_zt  = pdf_params%varnce_rt1
-    varnce_rt2_zt  = pdf_params%varnce_rt2
-    crt1_zt        = pdf_params%crt1
-    crt2_zt        = pdf_params%crt2
-    cthl1_zt       = pdf_params%cthl1
-    cthl2_zt       = pdf_params%cthl2
-    thl1_zt        = pdf_params%thl1
-    thl2_zt        = pdf_params%thl2
-    varnce_thl1_zt = pdf_params%varnce_thl1
-    varnce_thl2_zt = pdf_params%varnce_thl2
-    mixt_frac_zt   = pdf_params%mixt_frac
-    rc1_zt         = pdf_params%rc1
-    rc2_zt         = pdf_params%rc2
-    rsl1_zt        = pdf_params%rsl1
-    rsl2_zt        = pdf_params%rsl2
-    cloud_frac1_zt = pdf_params%cloud_frac1
-    cloud_frac2_zt = pdf_params%cloud_frac2
-    s1_zt          = pdf_params%s1
-    s2_zt          = pdf_params%s2
-    stdev_s1_zt    = pdf_params%stdev_s1
-    stdev_s2_zt    = pdf_params%stdev_s2
-    rrtthl_zt      = pdf_params%rrtthl
-    alpha_thl_zt   = pdf_params%alpha_thl
-    alpha_rt_zt    = pdf_params%alpha_rt
+    if ( l_apply_rule_to_pdf_params ) then
+      w1_zt          = pdf_params%w1
+      w2_zt          = pdf_params%w2
+      varnce_w1_zt   = pdf_params%varnce_w1
+      varnce_w2_zt   = pdf_params%varnce_w2
+      rt1_zt         = pdf_params%rt1
+      rt2_zt         = pdf_params%rt2
+      varnce_rt1_zt  = pdf_params%varnce_rt1
+      varnce_rt2_zt  = pdf_params%varnce_rt2
+      crt1_zt        = pdf_params%crt1
+      crt2_zt        = pdf_params%crt2
+      cthl1_zt       = pdf_params%cthl1
+      cthl2_zt       = pdf_params%cthl2
+      thl1_zt        = pdf_params%thl1
+      thl2_zt        = pdf_params%thl2
+      varnce_thl1_zt = pdf_params%varnce_thl1
+      varnce_thl2_zt = pdf_params%varnce_thl2
+      mixt_frac_zt   = pdf_params%mixt_frac
+      rc1_zt         = pdf_params%rc1
+      rc2_zt         = pdf_params%rc2
+      rsl1_zt        = pdf_params%rsl1
+      rsl2_zt        = pdf_params%rsl2
+      cloud_frac1_zt = pdf_params%cloud_frac1
+      cloud_frac2_zt = pdf_params%cloud_frac2
+      s1_zt          = pdf_params%s1
+      s2_zt          = pdf_params%s2
+      stdev_s1_zt    = pdf_params%stdev_s1
+      stdev_s2_zt    = pdf_params%stdev_s2
+      stdev_t1_zt    = pdf_params%stdev_t1
+      stdev_t2_zt    = pdf_params%stdev_t2
+      rrtthl_zt      = pdf_params%rrtthl
+      alpha_thl_zt   = pdf_params%alpha_thl
+      alpha_rt_zt    = pdf_params%alpha_rt
+    end if
 
     ! If l_call_pdf_closure_twice is true, the _zm variables already have
     ! values from the second call to pdf_closure in advance_clubb_core.
@@ -1981,36 +1994,40 @@ module clubb_core
 
       ! Store, in locally declared variables, the pdf_params output
       ! from the second call to pdf_closure
-      w1_zm          = pdf_params_zm%w1
-      w2_zm          = pdf_params_zm%w2
-      varnce_w1_zm   = pdf_params_zm%varnce_w1
-      varnce_w2_zm   = pdf_params_zm%varnce_w2
-      rt1_zm         = pdf_params_zm%rt1
-      rt2_zm         = pdf_params_zm%rt2
-      varnce_rt1_zm  = pdf_params_zm%varnce_rt1
-      varnce_rt2_zm  = pdf_params_zm%varnce_rt2
-      crt1_zm        = pdf_params_zm%crt1
-      crt2_zm        = pdf_params_zm%crt2
-      cthl1_zm       = pdf_params_zm%cthl1
-      cthl2_zm       = pdf_params_zm%cthl2
-      thl1_zm        = pdf_params_zm%thl1
-      thl2_zm        = pdf_params_zm%thl2
-      varnce_thl1_zm = pdf_params_zm%varnce_thl1
-      varnce_thl2_zm = pdf_params_zm%varnce_thl2
-      mixt_frac_zm   = pdf_params_zm%mixt_frac
-      rc1_zm         = pdf_params_zm%rc1
-      rc2_zm         = pdf_params_zm%rc2
-      rsl1_zm        = pdf_params_zm%rsl1
-      rsl2_zm        = pdf_params_zm%rsl2
-      cloud_frac1_zm = pdf_params_zm%cloud_frac1
-      cloud_frac2_zm = pdf_params_zm%cloud_frac2
-      s1_zm          = pdf_params_zm%s1
-      s2_zm          = pdf_params_zm%s2
-      stdev_s1_zm    = pdf_params_zm%stdev_s1
-      stdev_s2_zm    = pdf_params_zm%stdev_s2
-      rrtthl_zm      = pdf_params_zm%rrtthl
-      alpha_thl_zm   = pdf_params_zm%alpha_thl
-      alpha_rt_zm    = pdf_params_zm%alpha_rt
+      if ( l_apply_rule_to_pdf_params ) then
+        w1_zm          = pdf_params_zm%w1
+        w2_zm          = pdf_params_zm%w2
+        varnce_w1_zm   = pdf_params_zm%varnce_w1
+        varnce_w2_zm   = pdf_params_zm%varnce_w2
+        rt1_zm         = pdf_params_zm%rt1
+        rt2_zm         = pdf_params_zm%rt2
+        varnce_rt1_zm  = pdf_params_zm%varnce_rt1
+        varnce_rt2_zm  = pdf_params_zm%varnce_rt2
+        crt1_zm        = pdf_params_zm%crt1
+        crt2_zm        = pdf_params_zm%crt2
+        cthl1_zm       = pdf_params_zm%cthl1
+        cthl2_zm       = pdf_params_zm%cthl2
+        thl1_zm        = pdf_params_zm%thl1
+        thl2_zm        = pdf_params_zm%thl2
+        varnce_thl1_zm = pdf_params_zm%varnce_thl1
+        varnce_thl2_zm = pdf_params_zm%varnce_thl2
+        mixt_frac_zm   = pdf_params_zm%mixt_frac
+        rc1_zm         = pdf_params_zm%rc1
+        rc2_zm         = pdf_params_zm%rc2
+        rsl1_zm        = pdf_params_zm%rsl1
+        rsl2_zm        = pdf_params_zm%rsl2
+        cloud_frac1_zm = pdf_params_zm%cloud_frac1
+        cloud_frac2_zm = pdf_params_zm%cloud_frac2
+        s1_zm          = pdf_params_zm%s1
+        s2_zm          = pdf_params_zm%s2
+        stdev_s1_zm    = pdf_params_zm%stdev_s1
+        stdev_s2_zm    = pdf_params_zm%stdev_s2
+        stdev_t1_zm    = pdf_params_zm%stdev_t1
+        stdev_t2_zm    = pdf_params_zm%stdev_t2
+        rrtthl_zm      = pdf_params_zm%rrtthl
+        alpha_thl_zm   = pdf_params_zm%alpha_thl
+        alpha_rt_zm    = pdf_params_zm%alpha_rt
+      end if
 
     else
 
@@ -2039,66 +2056,72 @@ module clubb_core
         wpsclrpthlp_zm(gr%nz,i) = 0.0_core_rknd
       end do ! i = 1, sclr_dim
 
-      w1_zm                   = zt2zm( pdf_params%w1 )
-      w1_zm(gr%nz)          = 0.0_core_rknd
-      w2_zm                   = zt2zm( pdf_params%w2 )
-      w2_zm(gr%nz)          = 0.0_core_rknd
-      varnce_w1_zm            = zt2zm( pdf_params%varnce_w1 )
-      varnce_w1_zm(gr%nz)   = 0.0_core_rknd
-      varnce_w2_zm            = zt2zm( pdf_params%varnce_w2 )
-      varnce_w2_zm(gr%nz)   = 0.0_core_rknd
-      rt1_zm                  = zt2zm( pdf_params%rt1 )
-      rt1_zm(gr%nz)         = 0.0_core_rknd
-      rt2_zm                  = zt2zm( pdf_params%rt2 )
-      rt2_zm(gr%nz)         = 0.0_core_rknd
-      varnce_rt1_zm           = zt2zm( pdf_params%varnce_rt1 )
-      varnce_rt1_zm(gr%nz)  = 0.0_core_rknd
-      varnce_rt2_zm           = zt2zm( pdf_params%varnce_rt2 )
-      varnce_rt2_zm(gr%nz)  = 0.0_core_rknd
-      crt1_zm                 = zt2zm( pdf_params%crt1 )
-      crt1_zm(gr%nz)        = 0.0_core_rknd
-      crt2_zm                 = zt2zm( pdf_params%crt2 )
-      crt2_zm(gr%nz)        = 0.0_core_rknd
-      cthl1_zm                = zt2zm( pdf_params%cthl1 )
-      cthl1_zm(gr%nz)       = 0.0_core_rknd
-      cthl2_zm                = zt2zm( pdf_params%cthl2 )
-      cthl2_zm(gr%nz)       = 0.0_core_rknd
-      thl1_zm                 = zt2zm( pdf_params%thl1 )
-      thl1_zm(gr%nz)        = 0.0_core_rknd
-      thl2_zm                 = zt2zm( pdf_params%thl2 )
-      thl2_zm(gr%nz)        = 0.0_core_rknd
-      varnce_thl1_zm          = zt2zm( pdf_params%varnce_thl1 )
-      varnce_thl1_zm(gr%nz) = 0.0_core_rknd
-      varnce_thl2_zm          = zt2zm( pdf_params%varnce_thl2 )
-      varnce_thl2_zm(gr%nz) = 0.0_core_rknd
-      mixt_frac_zm            = zt2zm( pdf_params%mixt_frac )
-      mixt_frac_zm(gr%nz)   = 0.0_core_rknd
-      rc1_zm                  = zt2zm( pdf_params%rc1 )
-      rc1_zm(gr%nz)         = 0.0_core_rknd
-      rc2_zm                  = zt2zm( pdf_params%rc2 )
-      rc2_zm(gr%nz)         = 0.0_core_rknd
-      rsl1_zm                 = zt2zm( pdf_params%rsl1 )
-      rsl1_zm(gr%nz)        = 0.0_core_rknd
-      rsl2_zm                 = zt2zm( pdf_params%rsl2 )
-      rsl2_zm(gr%nz)        = 0.0_core_rknd
-      cloud_frac1_zm          = zt2zm( pdf_params%cloud_frac1 )
-      cloud_frac1_zm(gr%nz) = 0.0_core_rknd
-      cloud_frac2_zm          = zt2zm( pdf_params%cloud_frac2 )
-      cloud_frac2_zm(gr%nz) = 0.0_core_rknd
-      s1_zm                   = zt2zm( pdf_params%s1 )
-      s1_zm(gr%nz)          = 0.0_core_rknd
-      s2_zm                   = zt2zm( pdf_params%s2 )
-      s2_zm(gr%nz)          = 0.0_core_rknd
-      stdev_s1_zm             = zt2zm( pdf_params%stdev_s1 )
-      stdev_s1_zm(gr%nz)    = 0.0_core_rknd
-      stdev_s2_zm             = zt2zm( pdf_params%stdev_s2 )
-      stdev_s2_zm(gr%nz)    = 0.0_core_rknd
-      rrtthl_zm               = zt2zm( pdf_params%rrtthl )
-      rrtthl_zm(gr%nz)      = 0.0_core_rknd
-      alpha_thl_zm            = zt2zm( pdf_params%alpha_thl )
-      alpha_thl_zm(gr%nz)   = 0.0_core_rknd
-      alpha_rt_zm             = zt2zm( pdf_params%alpha_rt )
-      alpha_rt_zm(gr%nz)    = 0.0_core_rknd
+      if ( l_apply_rule_to_pdf_params ) then
+        w1_zm                 = zt2zm( pdf_params%w1 )
+        w1_zm(gr%nz)          = 0.0_core_rknd
+        w2_zm                 = zt2zm( pdf_params%w2 )
+        w2_zm(gr%nz)          = 0.0_core_rknd
+        varnce_w1_zm          = zt2zm( pdf_params%varnce_w1 )
+        varnce_w1_zm(gr%nz)   = 0.0_core_rknd
+        varnce_w2_zm          = zt2zm( pdf_params%varnce_w2 )
+        varnce_w2_zm(gr%nz)   = 0.0_core_rknd
+        rt1_zm                = zt2zm( pdf_params%rt1 )
+        rt1_zm(gr%nz)         = 0.0_core_rknd
+        rt2_zm                = zt2zm( pdf_params%rt2 )
+        rt2_zm(gr%nz)         = 0.0_core_rknd
+        varnce_rt1_zm         = zt2zm( pdf_params%varnce_rt1 )
+        varnce_rt1_zm(gr%nz)  = 0.0_core_rknd
+        varnce_rt2_zm         = zt2zm( pdf_params%varnce_rt2 )
+        varnce_rt2_zm(gr%nz)  = 0.0_core_rknd
+        crt1_zm               = zt2zm( pdf_params%crt1 )
+        crt1_zm(gr%nz)        = 0.0_core_rknd
+        crt2_zm               = zt2zm( pdf_params%crt2 )
+        crt2_zm(gr%nz)        = 0.0_core_rknd
+        cthl1_zm              = zt2zm( pdf_params%cthl1 )
+        cthl1_zm(gr%nz)       = 0.0_core_rknd
+        cthl2_zm              = zt2zm( pdf_params%cthl2 )
+        cthl2_zm(gr%nz)       = 0.0_core_rknd
+        thl1_zm               = zt2zm( pdf_params%thl1 )
+        thl1_zm(gr%nz)        = 0.0_core_rknd
+        thl2_zm               = zt2zm( pdf_params%thl2 )
+        thl2_zm(gr%nz)        = 0.0_core_rknd
+        varnce_thl1_zm        = zt2zm( pdf_params%varnce_thl1 )
+        varnce_thl1_zm(gr%nz) = 0.0_core_rknd
+        varnce_thl2_zm        = zt2zm( pdf_params%varnce_thl2 )
+        varnce_thl2_zm(gr%nz) = 0.0_core_rknd
+        mixt_frac_zm          = zt2zm( pdf_params%mixt_frac )
+        mixt_frac_zm(gr%nz)   = 0.0_core_rknd
+        rc1_zm                = zt2zm( pdf_params%rc1 )
+        rc1_zm(gr%nz)         = 0.0_core_rknd
+        rc2_zm                = zt2zm( pdf_params%rc2 )
+        rc2_zm(gr%nz)         = 0.0_core_rknd
+        rsl1_zm               = zt2zm( pdf_params%rsl1 )
+        rsl1_zm(gr%nz)        = 0.0_core_rknd
+        rsl2_zm               = zt2zm( pdf_params%rsl2 )
+        rsl2_zm(gr%nz)        = 0.0_core_rknd
+        cloud_frac1_zm        = zt2zm( pdf_params%cloud_frac1 )
+        cloud_frac1_zm(gr%nz) = 0.0_core_rknd
+        cloud_frac2_zm        = zt2zm( pdf_params%cloud_frac2 )
+        cloud_frac2_zm(gr%nz) = 0.0_core_rknd
+        s1_zm                 = zt2zm( pdf_params%s1 )
+        s1_zm(gr%nz)          = 0.0_core_rknd
+        s2_zm                 = zt2zm( pdf_params%s2 )
+        s2_zm(gr%nz)          = 0.0_core_rknd
+        stdev_s1_zm           = zt2zm( pdf_params%stdev_s1 )
+        stdev_s1_zm(gr%nz)    = 0.0_core_rknd
+        stdev_s2_zm           = zt2zm( pdf_params%stdev_s2 )
+        stdev_s2_zm(gr%nz)    = 0.0_core_rknd
+        stdev_t1_zm           = zt2zm( pdf_params%stdev_s1 )
+        stdev_t1_zm(gr%nz)    = 0.0_core_rknd
+        stdev_t2_zm           = zt2zm( pdf_params%stdev_s2 )
+        stdev_t2_zm(gr%nz)    = 0.0_core_rknd
+        rrtthl_zm             = zt2zm( pdf_params%rrtthl )
+        rrtthl_zm(gr%nz)      = 0.0_core_rknd
+        alpha_thl_zm          = zt2zm( pdf_params%alpha_thl )
+        alpha_thl_zm(gr%nz)   = 0.0_core_rknd
+        alpha_rt_zm           = zt2zm( pdf_params%alpha_rt )
+        alpha_rt_zm(gr%nz)    = 0.0_core_rknd
+      end if
     end if ! l_call_pdf_closure_twice
 
     if ( l_stats ) then
@@ -2124,42 +2147,48 @@ module clubb_core
           wpsclrp2(:,i)    = trapezoid_zt( wpsclrp2(:,i), wpsclrp2_zm(:,i) )
         end if
       end do ! i = 1, sclr_dim
-    end if
+    end if ! l_stats
 
     cloud_frac = trapezoid_zt( cloud_frac, cloud_frac_zm )
     rcm        = trapezoid_zt( rcm, rcm_zm )
+
     wp2thvp    = trapezoid_zt( wp2thvp, wp2thvp_zm )
 
-    pdf_params%w1          = trapezoid_zt( w1_zt, w1_zm )
-    pdf_params%w2          = trapezoid_zt( w2_zt, w2_zm )
-    pdf_params%varnce_w1   = trapezoid_zt( varnce_w1_zt, varnce_w1_zm )
-    pdf_params%varnce_w2   = trapezoid_zt( varnce_w2_zt, varnce_w2_zm )
-    pdf_params%rt1         = trapezoid_zt( rt1_zt, rt1_zm )
-    pdf_params%rt2         = trapezoid_zt( rt2_zt, rt2_zm )
-    pdf_params%varnce_rt1  = trapezoid_zt( varnce_rt1_zt, varnce_rt1_zm )
-    pdf_params%varnce_rt2  = trapezoid_zt( varnce_rt2_zt, varnce_rt2_zm )
-    pdf_params%crt1        = trapezoid_zt( crt1_zt, crt1_zm )
-    pdf_params%crt2        = trapezoid_zt( crt2_zt, crt2_zm )
-    pdf_params%cthl1       = trapezoid_zt( cthl1_zt, cthl1_zm )
-    pdf_params%cthl2       = trapezoid_zt( cthl2_zt, cthl2_zm )
-    pdf_params%thl1        = trapezoid_zt( thl1_zt, thl1_zm )
-    pdf_params%thl2        = trapezoid_zt( thl2_zt, thl2_zm )
-    pdf_params%varnce_thl1 = trapezoid_zt( varnce_thl1_zt, varnce_thl1_zm )
-    pdf_params%varnce_thl2 = trapezoid_zt( varnce_thl2_zt, varnce_thl2_zm )
-    pdf_params%mixt_frac   = trapezoid_zt( mixt_frac_zt, mixt_frac_zm )
-    pdf_params%rc1         = trapezoid_zt( rc1_zt, rc1_zm )
-    pdf_params%rc2         = trapezoid_zt( rc2_zt, rc2_zm )
-    pdf_params%rsl1        = trapezoid_zt( rsl1_zt, rsl1_zm )
-    pdf_params%rsl2        = trapezoid_zt( rsl2_zt, rsl2_zm )
-    pdf_params%cloud_frac1 = trapezoid_zt( cloud_frac1_zt, cloud_frac1_zm )
-    pdf_params%cloud_frac2 = trapezoid_zt( cloud_frac2_zt, cloud_frac2_zm )
-    pdf_params%s1          = trapezoid_zt( s1_zt, s1_zm )
-    pdf_params%s2          = trapezoid_zt( s2_zt, s2_zm )
-    pdf_params%stdev_s1    = trapezoid_zt( stdev_s1_zt, stdev_s1_zm )
-    pdf_params%stdev_s2    = trapezoid_zt( stdev_s2_zt, stdev_s2_zm )
-    pdf_params%rrtthl      = trapezoid_zt( rrtthl_zt, rrtthl_zm )
-    pdf_params%alpha_thl   = trapezoid_zt( alpha_thl_zt, alpha_thl_zm )
-    pdf_params%alpha_rt    = trapezoid_zt( alpha_rt_zt, alpha_rt_zm )
+    if ( l_apply_rule_to_pdf_params ) then
+      pdf_params%w1          = trapezoid_zt( w1_zt, w1_zm )
+      pdf_params%w2          = trapezoid_zt( w2_zt, w2_zm )
+      pdf_params%varnce_w1   = trapezoid_zt( varnce_w1_zt, varnce_w1_zm )
+      pdf_params%varnce_w2   = trapezoid_zt( varnce_w2_zt, varnce_w2_zm )
+      pdf_params%rt1         = trapezoid_zt( rt1_zt, rt1_zm )
+      pdf_params%rt2         = trapezoid_zt( rt2_zt, rt2_zm )
+      pdf_params%varnce_rt1  = trapezoid_zt( varnce_rt1_zt, varnce_rt1_zm )
+      pdf_params%varnce_rt2  = trapezoid_zt( varnce_rt2_zt, varnce_rt2_zm )
+      pdf_params%crt1        = trapezoid_zt( crt1_zt, crt1_zm )
+      pdf_params%crt2        = trapezoid_zt( crt2_zt, crt2_zm )
+      pdf_params%cthl1       = trapezoid_zt( cthl1_zt, cthl1_zm )
+      pdf_params%cthl2       = trapezoid_zt( cthl2_zt, cthl2_zm )
+      pdf_params%thl1        = trapezoid_zt( thl1_zt, thl1_zm )
+      pdf_params%thl2        = trapezoid_zt( thl2_zt, thl2_zm )
+      pdf_params%varnce_thl1 = trapezoid_zt( varnce_thl1_zt, varnce_thl1_zm )
+      pdf_params%varnce_thl2 = trapezoid_zt( varnce_thl2_zt, varnce_thl2_zm )
+      pdf_params%mixt_frac   = trapezoid_zt( mixt_frac_zt, mixt_frac_zm )
+      pdf_params%rc1         = trapezoid_zt( rc1_zt, rc1_zm )
+      pdf_params%rc2         = trapezoid_zt( rc2_zt, rc2_zm )
+      pdf_params%rsl1        = trapezoid_zt( rsl1_zt, rsl1_zm )
+      pdf_params%rsl2        = trapezoid_zt( rsl2_zt, rsl2_zm )
+      pdf_params%cloud_frac1 = trapezoid_zt( cloud_frac1_zt, cloud_frac1_zm )
+      pdf_params%cloud_frac2 = trapezoid_zt( cloud_frac2_zt, cloud_frac2_zm )
+      pdf_params%s1          = trapezoid_zt( s1_zt, s1_zm )
+      pdf_params%s2          = trapezoid_zt( s2_zt, s2_zm )
+      pdf_params%rrtthl      = trapezoid_zt( rrtthl_zt, rrtthl_zm )
+      pdf_params%alpha_thl   = trapezoid_zt( alpha_thl_zt, alpha_thl_zm )
+      pdf_params%alpha_rt    = trapezoid_zt( alpha_rt_zt, alpha_rt_zm )
+      pdf_params%stdev_s1    = trapezoid_zt( stdev_s1_zt, stdev_s1_zm )
+      pdf_params%stdev_s2    = trapezoid_zt( stdev_s2_zt, stdev_s2_zm )
+      pdf_params%stdev_t1    = trapezoid_zt( stdev_s1_zt, stdev_s1_zm )
+      pdf_params%stdev_t2    = trapezoid_zt( stdev_s2_zt, stdev_s2_zm )
+    end if
+
     ! End of trapezoidal rule
 
     return
