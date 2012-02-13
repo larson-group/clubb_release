@@ -1952,6 +1952,13 @@ module clubb_core
     !----------------------- Begin Code -----------------------------
 
     ! Store components of pdf_params in the locally declared variables
+    ! We only apply the trapezoidal rule to these when l_apply_rule_to_pdf_params is true.  This is
+    ! because when we apply the rule to the final result of pdf_closure rather than the intermediate
+    ! results it can lead to an inconsistency in how we determine which gaussian a point is in and
+    ! whether the point is in or out of cloud, which is turn will break the latin hypercube code
+    ! that samples preferentially in cloud. -dschanen 13 Feb 2012
+    ! See ticket #497 for more details on this
+
     if ( l_apply_rule_to_pdf_params ) then
       w1_zt          = pdf_params%w1
       w2_zt          = pdf_params%w2
