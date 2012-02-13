@@ -1309,9 +1309,6 @@ module stats_subs
         iz_cloud_base, & 
         ilwp, &
         ivwp, &
-        iswp, &
-        irwp, &
-        iiwp, &
         ithlm_vert_avg, &
         irtm_vert_avg, &
         ium_vert_avg, &
@@ -1368,7 +1365,6 @@ module stats_subs
       zt2zm ! Procedure(s)
 
     use variables_diagnostic_module, only: & 
-        hydromet, &
         thvm, & ! Variable(s)
         ug, & 
         vg, & 
@@ -1457,9 +1453,6 @@ module stats_subs
 
     use interpolation, only: & 
         lin_int             ! Procedure
-
-    use array_index, only: & 
-        iirsnowm, iiricem, iirrainm ! Variable(s)
 
     use saturation, only: &
       sat_mixrat_ice ! Procedure
@@ -1789,42 +1782,6 @@ module stats_subs
 
       end if
 
-      ! Snow Water Path
-      if ( iswp > 0 .and. iirsnowm > 0 ) then
-
-        ! Calculate snow water path
-        xtmp &
-        = vertical_integral &
-               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirsnowm), gr%invrs_dzt(2:gr%nz) )
-
-        call stat_update_var_pt( iswp, 1, xtmp, sfc )
-
-      end if
-
-      ! Ice Water Path
-      if ( iiwp > 0 .and. iiricem > 0 ) then
-
-        xtmp &
-        = vertical_integral &
-               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iiricem), gr%invrs_dzt(2:gr%nz) )
-
-        call stat_update_var_pt( iiwp, 1, xtmp, sfc )
-
-      end if
-
-      ! Rain Water Path
-      if ( irwp > 0 .and. iirrainm > 0 ) then
-
-        xtmp &
-        = vertical_integral &
-               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirrainm), gr%invrs_dzt(2:gr%nz) )
-
-        call stat_update_var_pt( irwp, 1, xtmp, sfc )
-
-      end if
 
       ! Vertical average of thermodynamic level variables.
 
@@ -1900,7 +1857,7 @@ module stats_subs
     return
   end subroutine stats_accumulate
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_hydromet( hydromet )
+  subroutine stats_accumulate_hydromet( hydromet, rho_ds_zt )
 ! Description:
 !   Compute stats related the hydrometeors
 
@@ -1918,7 +1875,8 @@ module stats_subs
       iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
 
     use stats_variables, only: &
-      irrainm, & ! Variable(s)
+      sfc, & ! Variable(s)
+      irrainm, & 
       irsnowm, & 
       iricem, & 
       irgraupelm, & 
@@ -1926,10 +1884,17 @@ module stats_subs
       iNim, & 
       iNrm, & 
       iNsnowm, &
-      iNgraupelm
+      iNgraupelm, &
+      iswp, &
+      irwp, &
+      iiwp
+
+    use fill_holes, only: &
+      vertical_integral ! Procedure(s)
 
     use stats_type, only: & 
-        stat_update_var ! Procedure(s)
+      stat_update_var, & ! Procedure(s)
+      stat_update_var_pt
 
     use stats_variables, only: &
       zt, & ! Variables
@@ -1943,6 +1908,14 @@ module stats_subs
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet ! All hydrometeors except for rcm        [units vary]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      rho_ds_zt ! Dry, static density (thermo. levs.)      [kg/m^3]
+
+    ! Local Variables
+    real(kind=core_rknd) :: xtmp
+
+    ! ---- Begin Code ----
 
     if ( l_stats_samp ) then
 
@@ -1983,6 +1956,42 @@ module stats_subs
         call stat_update_var( iNgraupelm, hydromet(:,iiNgraupelm), zt )
       end if
 
+      ! Snow Water Path
+      if ( iswp > 0 .and. iirsnowm > 0 ) then
+
+        ! Calculate snow water path
+        xtmp &
+        = vertical_integral &
+               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                 hydromet(2:gr%nz,iirsnowm), gr%invrs_dzt(2:gr%nz) )
+
+        call stat_update_var_pt( iswp, 1, xtmp, sfc )
+
+      end if
+
+      ! Ice Water Path
+      if ( iiwp > 0 .and. iiricem > 0 ) then
+
+        xtmp &
+        = vertical_integral &
+               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                 hydromet(2:gr%nz,iiricem), gr%invrs_dzt(2:gr%nz) )
+
+        call stat_update_var_pt( iiwp, 1, xtmp, sfc )
+
+      end if
+
+      ! Rain Water Path
+      if ( irwp > 0 .and. iirrainm > 0 ) then
+
+        xtmp &
+        = vertical_integral &
+               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                 hydromet(2:gr%nz,iirrainm), gr%invrs_dzt(2:gr%nz) )
+
+        call stat_update_var_pt( irwp, 1, xtmp, sfc )
+
+      end if
     end if ! l_stats_samp
 
     return

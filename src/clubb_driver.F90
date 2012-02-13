@@ -1168,8 +1168,9 @@ module clubb_driver
       hydromet_dim
 
     use parameters_microphys, only: &
-      Ncm_initial,     & ! Variable(s)
-      micro_scheme
+      Ncm_initial,  & ! Variable(s)
+      micro_scheme, &
+      l_predictnc
 
     use parameters_radiation, only: radiation_top, rad_scheme ! Variable(s)
 
@@ -1359,23 +1360,24 @@ module clubb_driver
     ! Determine initial value cloud droplet number concentration for the
     ! Morrison microphysics
     select case ( trim( micro_scheme ) )
-    case ( "morrison" )
-      ! Lower boundary condition
-      hydromet(1,iiNcm) = 0._core_rknd
+    case ( "morrison", "morrison-gettelman" )
+      if ( l_predictnc ) then
+        ! Lower boundary condition
+        hydromet(1,iiNcm) = 0._core_rknd
 
-      hydromet(2:gr%nz-1,iiNcm) = Ncm_initial / rho(2:gr%nz-1)
+        hydromet(2:gr%nz-1,iiNcm) = Ncm_initial / rho(2:gr%nz-1)
 
-      ! Upper boundary condition
-      hydromet(gr%nz,iiNcm) = 0._core_rknd
+        ! Upper boundary condition
+        hydromet(gr%nz,iiNcm) = 0._core_rknd
 
-    case ( "morrison-gettelman" )
-      ! Lower boundary condition
-      hydromet(1,iiNcm) = 0._core_rknd
+        ! Lower boundary condition
+        hydromet(1,iiNcm) = 0._core_rknd
 
-      hydromet(2:gr%nz-1,iiNcm) = Ncm_initial / rho(2:gr%nz-1)
+        hydromet(2:gr%nz-1,iiNcm) = Ncm_initial / rho(2:gr%nz-1)
 
-      ! Upper boundary condition
-      hydromet(gr%nz,iiNcm) = 0._core_rknd
+        ! Upper boundary condition
+        hydromet(gr%nz,iiNcm) = 0._core_rknd
+      end if
 
     case ( "coamps" )
       ! Initialize Ncnm as in COAMPS
@@ -2705,8 +2707,7 @@ module clubb_driver
       l_soil_veg ! Variable(s)
 
     use parameters_microphys, only : &
-      micro_scheme, & ! Variable
-      l_cloud_sed
+      micro_scheme  ! Variable
 
     implicit none
 
@@ -2836,10 +2837,6 @@ module clubb_driver
       input_Nim = .false.
 
     end select
-
-    if ( l_cloud_sed ) then
-      input_Ncm = .true.
-    end if
 
     if ( l_soil_veg ) then
       input_veg_T_in_K = .true.
@@ -3533,9 +3530,6 @@ module clubb_driver
     use grid_class, only: &
       gr ! Instance of a type
 
-    use array_index, only: & 
-      iiNcm ! Variable
-
     use clubb_model_settings, only: &
       time_current, & ! Variable(s)
       runtype
@@ -3622,6 +3616,10 @@ module clubb_driver
       err_code ! Error code from the microphysics
 
     ! Local Variables
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Ncm_in_cloud ! In-cloud value for Nc      [#/kg]
+
     real( kind = dp ), dimension(gr%nz,LH_microphys_calls,d_variables) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
@@ -3698,39 +3696,6 @@ module clubb_driver
     !----------------------------------------------------------------
     ! Compute Microphysics
     !----------------------------------------------------------------
-    ! Determine Ncm for K&K microphysics or cloud droplet sedimentation
-    if ( l_cloud_sed .or. trim( micro_scheme ) == "khairoutdinov_kogan" ) then
-
-      ! The following lines of code specify cloud droplet
-      ! concentration (Ncm).  The cloud droplet concentration has
-      ! been moved here instead of being stated in KK_microphys
-      ! for the following reasons:
-      !    a) The effects of cloud droplet sedimentation can be computed
-      !       without having to call the precipitation scheme.
-      !    b) Ncm tends to be a case-specific parameter.  Therefore, it
-      !       is appropriate to declare in the same place as other
-      !       case-specific parameters.
-      !
-      ! Someday, we could move the setting of Ncm to pdf_closure
-      ! for the following reasons:
-      !    a) The cloud water mixing ratio (rcm) is computed using the
-      !       PDF scheme.  Perhaps someday Ncm can also be computed by
-      !       the same scheme.
-      !    b) It seems more appropriate to declare Ncm in the same place
-      !       where rcm is computed.
-      !
-      ! Since cloud base (z_cloud_base) is determined by the mixing ratio rc_tol,
-      ! so will cloud droplet number concentration (Ncm).
-      !
-      ! Note: While the name "Ncm" usually means layer-averaged cloud droplet concentration in
-      ! CLUBB, KK microphysics treats Ncm as within-cloud droplet concentration.
-      where ( rcm >= rc_tol )
-        hydromet(:,iiNcm) = Ncm_initial / rho
-      else where
-        hydromet(:,iiNcm) = 0.0_core_rknd
-      end where
-
-    end if ! cloud_sed / K&K
 
     ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS for rain microphysics.
 
@@ -3761,9 +3726,40 @@ module clubb_driver
 
     if ( l_cloud_sed ) then
 
-      call cloud_drop_sed( rcm, hydromet(:,iiNcm), rho_zm, rho, & ! Intent(in)
-                           exner, sigma_g,  &               ! Intent(in)
-                           rcm_mc, thlm_mc )              ! Intent(inout)
+      ! Determine Ncm forcloud droplet sedimentation
+
+      ! The following lines of code specify cloud droplet
+      ! concentration (Ncm).  The cloud droplet concentration has
+      ! been moved here instead of being stated in KK_microphys
+      ! for the following reasons:
+      !    a) The effects of cloud droplet sedimentation can be computed
+      !       without having to call the precipitation scheme.
+      !    b) Ncm tends to be a case-specific parameter.  Therefore, it
+      !       is appropriate to declare in the same place as other
+      !       case-specific parameters.
+      !
+      ! Someday, we could move the setting of Ncm to pdf_closure
+      ! for the following reasons:
+      !    a) The cloud water mixing ratio (rcm) is computed using the
+      !       PDF scheme.  Perhaps someday Ncm can also be computed by
+      !       the same scheme.
+      !    b) It seems more appropriate to declare Ncm in the same place
+      !       where rcm is computed.
+      !
+      ! Since cloud base (z_cloud_base) is determined by the mixing ratio rc_tol,
+      ! so will cloud droplet number concentration (Ncm).
+      !
+      ! Note: While the name "Ncm" usually means layer-averaged cloud droplet concentration in
+      ! CLUBB, KK microphysics treats Ncm as within-cloud droplet concentration.
+      where ( rcm >= rc_tol )
+        Ncm_in_cloud(:) = Ncm_initial / rho
+      else where
+        Ncm_in_cloud(:) = 0.0_core_rknd
+      end where
+
+      call cloud_drop_sed( rcm, Ncm_in_cloud, rho_zm, rho, & ! Intent(in)
+                           exner, sigma_g,  &                ! Intent(in)
+                           rcm_mc, thlm_mc )                 ! Intent(inout)
 
     end if
 

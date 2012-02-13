@@ -13,7 +13,7 @@ module morrison_micro_driver_module
              ( dt, nz, l_stats_samp, l_local_kk, &
                l_latin_hypercube, thlm, wm, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, w_std_dev, &
-               dzq, rcm, s_mellor, rvm, hydromet, hydromet_mc, &
+               dzq, rcm, Ncm_in_cloud, s_mellor, rvm, hydromet, hydromet_mc, &
                hydromet_vel, rcm_mc, rvm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
@@ -117,9 +117,10 @@ module morrison_micro_driver_module
       dzq          ! Change in altitude                  [m]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rcm,      & ! Liquid water mixing ratio        [kg/kg]
-      s_mellor, & ! The variable 's' from Mellor     [kg/kg]
-      rvm         ! Vapor water mixing ratio         [kg/kg]
+      rcm,          & ! Cloud water mixing ratio                [kg/kg]
+      Ncm_in_cloud, & ! In cloud value for cloud drop num. conc.[#/kg]
+      s_mellor,     & ! The variable 's' from Mellor            [kg/kg]
+      rvm             ! Vapor water mixing ratio                [kg/kg]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -149,15 +150,17 @@ module morrison_micro_driver_module
     real, dimension(nz) :: & 
       T_in_K,        & ! Temperature                        [K]
       T_in_K_mc,     & ! Temperature tendency               [K/s]
-      rcm_tmp,       & ! Temporary array for cloud water mixing ratio  [kg/kg]
-      rvm_tmp,       & ! Temporary array for vapor water mixing ratio  [kg/kg]
+      rcm_r4,        & ! Temporary array for cloud water mixing ratio  [kg/kg]
+      Ncm_r4,        & ! Temporary array for cloud number conc.        [#/kg]
+      Ncm_mc_r4,     & ! Temporary array for cloud number conc.        [#/kg/s]
+      rvm_r4,        & ! Temporary array for vapor water mixing ratio  [kg/kg]
       rcm_sten,      & ! Cloud dropet sedimentation tendency           [kg/kg/s]
       cloud_frac_in, & ! Cloud fraction used as input for the Morrison scheme [-]
       rrainm_auto,   & ! Autoconvesion rate     [kg/kg/s]
       rrainm_accr      ! Accretion rate         [kg/kg/s]
 
     real( kind = core_rknd ), dimension(nz) :: & 
-      rcm_in_cloud  ! Liquid water in cloud        [kg/kg]
+      rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
 
     real( kind = core_rknd ), pointer, dimension(:,:) :: &
       dummy
@@ -168,7 +171,7 @@ module morrison_micro_driver_module
     real :: Morr_snow_rate, Morr_rain_rate
 
     real, dimension(nz,hydromet_dim) :: &
-      hydromet_tmp, &   ! Temporary variable
+      hydromet_r4, &   ! Temporary variable
       hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
       hydromet_mc_r4
 
@@ -178,8 +181,8 @@ module morrison_micro_driver_module
       P_in_pa_r4, &
       rho_r4, &
       dzq_r4, &
-      wm_tmp, &     ! Mean vertical velocity   [m/s]
-      w_std_dev_tmp ! Standard deviation of w  [m/s]
+      wm_r4, &     ! Mean vertical velocity   [m/s]
+      w_std_dev_r4 ! Standard deviation of w  [m/s]
 
     integer :: i
 
@@ -204,22 +207,30 @@ module morrison_micro_driver_module
       ! Don't use sgs cloud fraction to weight the tendencies
       cloud_frac_in(1:nz) = 0.0
 
-      wm_tmp = real( max( wm, w_thresh ) ) ! Impose a minimum value on w
-      w_std_dev_tmp = 0. ! Don't add in a standard deviation for aerosol activation
+      wm_r4 = real( max( wm, w_thresh ) ) ! Impose a minimum value on w
+      w_std_dev_r4 = 0. ! Don't add in a standard deviation for aerosol activation
 
     else 
       ! Use sgs cloud fraction to weight tendencies
       cloud_frac_in(1:nz) = real( cloud_frac(1:nz) )
 
-      wm_tmp = real( wm ) ! Use the mean value without a threshold
-      w_std_dev_tmp = real( w_std_dev ) ! Add in a standard deviation
+      wm_r4 = real( wm ) ! Use the mean value without a threshold
+      w_std_dev_r4 = real( w_std_dev ) ! Add in a standard deviation
     end if
 
-    rcm_tmp = real( rcm )
-    rvm_tmp = real( rvm )
+    rcm_r4 = real( rcm )
+    rvm_r4 = real( rvm )
+
+    ! Note: The Ncm_r4 variable is only used if INUM = 0 in the Morrison code;
+    ! otherwise the NDCNST variable is used as the fixed value.
+    Ncm_r4 = -999.
 
     do i = 1, hydromet_dim, 1
-      hydromet_tmp(1:nz,i) = real( hydromet(1:nz,i) )
+      if ( i == iiNcm ) then
+        Ncm_r4(1:nz) = real( hydromet(1:nz,i) )
+      else
+        hydromet_r4(1:nz,i) = real( hydromet(1:nz,i) )
+      end if
     end do
     
     ! Initialize tendencies to zero
@@ -229,6 +240,7 @@ module morrison_micro_driver_module
     hydromet_mc(1:nz,:) = 0.0_core_rknd
     hydromet_sten(1:nz,:) = 0.0
     rcm_sten = 0.0
+    Ncm_mc_r4 = 0.0
 
     ! Initialize effective radius to zero
     effc = 0.0
@@ -251,22 +263,22 @@ module morrison_micro_driver_module
     ! Call the Morrison microphysics
     call M2005MICRO_GRAUPEL &
          ( rcm_mc_r4, hydromet_mc_r4(:,iiricem), hydromet_mc_r4(:,iirsnowm), &
-           hydromet_mc_r4(:,iirrainm), hydromet_mc_r4(:,iiNcm), &
+           hydromet_mc_r4(:,iirrainm), Ncm_mc_r4(:), &
            hydromet_mc_r4(:,iiNim), hydromet_mc_r4(:,iiNsnowm), &
-           hydromet_mc_r4(:,iiNrm), rcm_tmp, hydromet_tmp(:,iiricem), &
-           hydromet_tmp(:,iirsnowm), hydromet_tmp(:,iirrainm), hydromet_tmp(:,iiNcm), &
-           hydromet_tmp(:,iiNim), hydromet_tmp(:,iiNsnowm), hydromet_tmp(:,iiNrm), &
-           T_in_K_mc, rvm_mc_r4, T_in_K, rvm_tmp, P_in_pa_r4, rho_r4, dzq_r4, &
-           wm_tmp, w_std_dev_tmp, &
+           hydromet_mc_r4(:,iiNrm), rcm_r4, hydromet_r4(:,iiricem), &
+           hydromet_r4(:,iirsnowm), hydromet_r4(:,iirrainm), Ncm_r4(:), &
+           hydromet_r4(:,iiNim), hydromet_r4(:,iiNsnowm), hydromet_r4(:,iiNrm), &
+           T_in_K_mc, rvm_mc_r4, T_in_K, rvm_r4, P_in_pa_r4, rho_r4, dzq_r4, &
+           wm_r4, w_std_dev_r4, &
            Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, real( dt ), &
            1,1, 1,1, 1,nz, 1,1, 1,1, 2,nz, &
            hydromet_mc_r4(:,iirgraupelm), hydromet_mc_r4(:,iiNgraupelm), &
-           hydromet_tmp(:,iirgraupelm), hydromet_tmp(:,iiNgraupelm), effg, &
+           hydromet_r4(:,iirgraupelm), hydromet_r4(:,iiNgraupelm), effg, &
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
            hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
            rcm_sten, cloud_frac_in, rrainm_auto, rrainm_accr )
 
-    hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
+    !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
     rvm_mc = real( rvm_mc_r4, kind = core_rknd )
 
@@ -275,14 +287,19 @@ module morrison_micro_driver_module
     ! This done because the hydromet_mc arrays that are produced by
     ! M2005MICRO_GRAUPEL don't include the clipping term.
     do i = 1, hydromet_dim, 1
-      hydromet_mc(2:,i) = ( real( hydromet_tmp(2:,i), kind = core_rknd ) - &
-                            hydromet(2:,i)  ) / real( dt, kind = core_rknd )
+      if ( i == iiNcm ) then
+        hydromet_mc(2:,iiNcm) = ( real( Ncm_r4(2:), kind = core_rknd ) - &
+                                hydromet(2:,iiNcm) ) / real( dt, kind=core_rknd )
+      else
+        hydromet_mc(2:,i) = ( real( hydromet_r4(2:,i), kind = core_rknd ) - &
+                              hydromet(2:,i)  ) / real( dt, kind = core_rknd )
+      end if
     end do
     hydromet_mc(1,:) = 0.0_core_rknd ! Boundary condition
 
     ! Update thetal based on absolute temperature
     thlm_mc = ( T_in_K2thlm( real( T_in_K, kind = core_rknd ), exner, &
-                real( rcm_tmp, kind = core_rknd ) ) - thlm ) / real( dt, kind = core_rknd )
+                real( rcm_r4, kind = core_rknd ) ) - thlm ) / real( dt, kind = core_rknd )
 
     ! Sedimentation is handled within the Morrison microphysics
     hydromet_vel(:,:) = 0.0_core_rknd

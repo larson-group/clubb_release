@@ -143,7 +143,7 @@ l_prescribed_avg_deltaz = .false.
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
 ! "coamps", "simplified_ice", "none"
-micro_scheme = "khairoutdinov_kogan"
+micro_scheme = "morrison",
 
 !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
 !!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.

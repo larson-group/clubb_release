@@ -135,7 +135,8 @@ module microphys_driver
         one,        & ! Constant(s)
         two_thirds, &
         one_third,  &
-        zero
+        zero, &
+        cm3_per_m3
 
     use KK_fixed_correlations, only: &
       setup_KK_corr ! Procedure(s)
@@ -158,10 +159,10 @@ module microphys_driver
 
     use module_mp_Graupel, only: &
       GRAUPEL_INIT ! Subroutine
-      
+
     use cldwat2m_micro, only: &
       ini_micro ! Subroutine
-      
+
     use microp_aero, only: &
       ini_microp_aero ! Subroutine
 
@@ -224,7 +225,7 @@ module microphys_driver
     integer, intent(out) :: & 
       hydromet_dim ! Number of hydrometeor fields.
 
-    ! Local variables 
+    ! Local variables
     character(len=30) :: LH_microphys_type
     integer, parameter :: res = 20   ! Used for lookup tables with GFDL activation
     integer, parameter :: res2 = 20  ! Used for lookup tables with GFDL activation
@@ -357,7 +358,7 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for Khairoutdinov & Kogan and COAMPS microphysics
     !---------------------------------------------------------------------------
-    ! Enable to use an upwind differencing approximation for sedimentation 
+    ! Enable to use an upwind differencing approximation for sedimentation
     ! rather than a 3 point difference approximation.
     l_upwind_diff_sed = .false.
 
@@ -366,9 +367,9 @@ module microphys_driver
     !---------------------------------------------------------------------------
     l_hail = .false. ! Graupel will have properties of hail when true
 
-    ! Enable to Use Seifert and Beheng (2001) warm rain parameterization 
+    ! Enable to Use Seifert and Beheng (2001) warm rain parameterization
     ! rather than Khairoutdinov Kogan (2000)
-    l_seifert_beheng = .false. 
+    l_seifert_beheng = .false.
     l_predictnc = .true. ! Predict cloud droplet number concentration
     specify_aerosol = "morrison_lognormal"
     l_subgrid_w = .true.
@@ -402,7 +403,7 @@ module microphys_driver
     ! 1. It avoids the cost of factorizing the correlation matrices at every altitude and timestep.
     ! 2. At higher altitudes decomposing a matrix of covariances directly becomes
     !    unstable.  This makes that approach impractical for ice microphysics.
-    l_fix_s_t_correlations = .false. 
+    l_fix_s_t_correlations = .false.
 
     l_lh_cloud_weighted_sampling = .false.
     l_lh_vert_overlap = .false.
@@ -415,7 +416,7 @@ module microphys_driver
     !---------------------------------------------------------------------------
     microphys_start_time = 0.0_time_precision ! [s]
 
-    l_in_cloud_Nc_diff = .false. ! Don't use in cloud values of Nc for diffusion
+    l_in_cloud_Nc_diff = .true. ! Use in cloud values of Nc for diffusion
 
     ! The next three lines open the cases model.in file and replace values of
     ! the parameters if they exist in the file.
@@ -498,22 +499,9 @@ module microphys_driver
       call write_text ( "aer_sig2 = ", real(aer_sig2, kind = core_rknd), l_write_to_file, iunit )
       call write_text ( "pgam_fixed = ", real(pgam_fixed, kind = core_rknd),l_write_to_file,iunit)
 
-      if ( trim( micro_scheme ) == "khairoutdinov_kogan" .and. l_predictnc ) then
-        call write_text("WARNING: l_predictnc has been set to .false. for KK microphysics.", &
-          l_write_to_file, iunit )
-      end if
-
       if ( l_write_to_file ) close(unit=iunit)
 
     end if ! clubb_at_least_debug_level(1)
-
-    ! Change l_predictnc if we are using KK microphysics
-    ! This flag is typically used only in Morrison microphysics, but has been adapted
-    ! for use with KK microphysics.  It is used to turn off the budget terms for Ncm
-    ! since Ncm is essentially clipped every timestep when using KK microphysics.
-    if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
-      l_predictnc = .false.
-    end if
 
     ! Read in the name list for initialization, if it exists
     open(unit=iunit, file=namelist_file, status='old', action='read')
@@ -526,17 +514,17 @@ module microphys_driver
       if( trim( micro_scheme ) == "coamps" .or. trim( micro_scheme ) == "morrison" & 
             .or. trim( micro_scheme ) == "morrison-gettelman") then
 
-          ! Read in the lookup tables
-          call Loading( droplets, droplets2 )
+        ! Read in the lookup tables
+        call Loading( droplets, droplets2 )
 
-          ! Initialize the activation variables
-          call aer_ccn_act_k_init                            &
-                 ( real(droplets), real(droplets2), res, res2, nooc,     &
-                   real(sul_concen), real(low_concen), real(high_concen),      &
-                   real(lowup), real(highup), real(lowup2), real(highup2), real(lowmass2), &
-                   real(highmass2), real(lowmass3), real(highmass3),           &
-                   real(lowmass4), real(highmass4), real(lowmass5), real(highmass5), &
-                   real(lowT2),real( highT2) )
+        ! Initialize the activation variables
+        call aer_ccn_act_k_init                            &
+               ( real(droplets), real(droplets2), res, res2, nooc,     &
+                 real(sul_concen), real(low_concen), real(high_concen),      &
+                 real(lowup), real(highup), real(lowup2), real(highup2), real(lowmass2), &
+                 real(highmass2), real(lowmass3), real(highmass3),           &
+                 real(lowmass4), real(highmass4), real(lowmass5), real(highmass5), &
+                 real(lowT2),real( highT2) )
       end if ! coamps .or. morrison .or. khairoutdinov_kogan
     end if ! l_gfdl_activation
 
@@ -555,9 +543,14 @@ module microphys_driver
       iiNsnowm    = 6
       iiNim       = 7
       iiNgraupelm = 8
-      iiNcm       = 9
+      if ( l_predictnc ) then
+        iiNcm       = 9
+        hydromet_dim = 9
+      else
+        iiNcm        = -1
+        hydromet_dim = 8
+      end if
 
-      hydromet_dim = 9
 
       allocate( hydromet_list(hydromet_dim) )
 
@@ -570,10 +563,12 @@ module microphys_driver
       hydromet_list(iiNsnowm)    = "Nsnowm"
       hydromet_list(iiNim)       = "Nim"
       hydromet_list(iiNgraupelm) = "Ngraupelm"
-      hydromet_list(iiNcm)       = "Ncm"
+      if ( l_predictnc ) then
+        hydromet_list(iiNcm)       = "Ncm"
+      end if
 
       ! Set Nc0 in the Morrison code (module_MP_graupel) based on Ncm_initial
-      Nc0 = real(Ncm_initial)
+      Nc0 = real( Ncm_initial / cm3_per_m3 ) ! Units on Nc0 are per cm^3
 
       ! Set flags from the Morrison scheme as in GRAUPEL_INIT
       if ( l_predictnc ) then
@@ -590,7 +585,7 @@ module microphys_driver
       else if ( trim( specify_aerosol ) == "morrison_lognormal" ) then
         aerosol_mode = morrison_lognormal
       else
-        stop "Unknown Morrison aerosol mode." 
+        stop "Unknown Morrison aerosol mode."
       end if
 
       if ( l_cloud_edge_activation ) then
@@ -657,7 +652,9 @@ module microphys_driver
       ! Sedimentation is handled within the Morrison microphysics
       l_hydromet_sed(iiNrm) = .false.
       l_hydromet_sed(iiNim) = .false.
-      l_hydromet_sed(iiNcm) = .false.
+      if ( l_predictnc ) then
+        l_hydromet_sed(iiNcm) = .false.
+      end if
       l_hydromet_sed(iiNgraupelm) = .false.
       l_hydromet_sed(iiNsnowm) = .false.
 
@@ -667,7 +664,7 @@ module microphys_driver
       l_hydromet_sed(iirgraupelm) = .false.
 
       call GRAUPEL_INIT()
-      
+
     case ( "morrison-gettelman" )
       iirrainm    = -1
       iirsnowm    = -1
@@ -678,10 +675,17 @@ module microphys_driver
       iiNsnowm    = -1
       iiNim       = 2
       iiNgraupelm = -1
-      iiNcm       = 3
+      if ( l_predictnc ) then
+        write(fstderr,*) "Morrison-Gettelman microphysics is not currently configured for "// &
+          "l_predictnc = T"
+        stop "Fatal error."
+        iiNcm       = 3
+        hydromet_dim = 3
+      else
+        iiNcm       = -1
+        hydromet_dim = 2
+      end if
 
-      hydromet_dim = 3
-      
       if ( l_cloud_sed ) then
         write(fstderr,*) "Morrison-Gettelman microphysics has seperate code for cloud water"
         write(fstderr,*) "sedimentation, therefore l_cloud_sed should be set to .false."
@@ -689,25 +693,33 @@ module microphys_driver
       end if
 
       allocate( hydromet_list(hydromet_dim) )
-      
+
       hydromet_list(iiricem)     = "ricem"
       hydromet_list(iiNim)       = "Nim"
-      hydromet_list(iiNcm)       = "Ncm"
-      
+      if ( l_predictnc ) then
+        hydromet_list(iiNcm)       = "Ncm"
+      end if
+
       allocate( l_hydromet_sed(hydromet_dim) )
       ! Sedimentation is handled within the MG microphysics
       l_hydromet_sed(iiricem)     = .false.
       l_hydromet_sed(iiNim)       = .false.
-      l_hydromet_sed(iiNcm)       = .false.
-      
+      if ( l_predictnc ) then
+        l_hydromet_sed(iiNcm)       = .false.
+      end if
+
       ! Initialize constants for aerosols
       call ini_microp_aero()
 
       ! Setup the MG scheme
       call ini_micro()
       call pbuf_init()
-      
+
     case ( "coamps" )
+      if ( .not. l_predictnc ) then
+        write(fstderr,*) "COAMPS microphysics does not support l_predictnc = F"
+        stop "Fatal Error"
+      end if
       iirrainm    = 1
       iirsnowm    = 2
       iiricem     = 3
@@ -745,6 +757,10 @@ module microphys_driver
       l_hydromet_sed(iirgraupelm) = .true.
 
     case ( "khairoutdinov_kogan" )
+      if ( l_predictnc ) then
+        write(fstderr,*) "Khairoutdinov-Kogan microphysics does not support l_predictnc = T"
+        stop "Fatal Error"
+      end if
       iirrainm    = 1
       iirsnowm    = -1
       iiricem     = -1
@@ -754,9 +770,9 @@ module microphys_driver
       iiNsnowm    = -1
       iiNim       = -1
       iiNgraupelm = -1
-      iiNcm       = 3
+      iiNcm       = -1
 
-      hydromet_dim = 3
+      hydromet_dim = 2
 
       allocate( l_hydromet_sed(hydromet_dim) )
 
@@ -764,11 +780,9 @@ module microphys_driver
 
       hydromet_list(iirrainm) = "rrainm"
       hydromet_list(iiNrm) = "Nrm"
-      hydromet_list(iiNcm) = "Ncm"
 
       l_hydromet_sed(iirrainm) = .true.
       l_hydromet_sed(iiNrm)    = .true.
-      l_hydromet_sed(iiNcm)    = .false.
 
       corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
       corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
@@ -776,7 +790,7 @@ module microphys_driver
       call setup_KK_corr( iunit, corr_file_path_cloud, corr_file_path_below, & ! In
                           l_write_to_file, case_info_file ) ! In
 
-    case ( "simplified_ice" )
+    case ( "simplified_ice", "none" )
       iirrainm    = -1
       iirsnowm    = -1
       iiricem     = -1
@@ -789,29 +803,6 @@ module microphys_driver
       iiNcm       = -1
 
       hydromet_dim = 0
-
-    case ( "none" )
-      if ( l_cloud_sed ) then
-        iiNcm       = 1
-        hydromet_dim = 1
-
-        allocate( l_hydromet_sed(hydromet_dim) )
-        allocate( hydromet_list(hydromet_dim) )
-        hydromet_list(iiNcm) = "Ncm"
-      else
-        iiNcm = -1
-        hydromet_dim = 0
-      end if
-
-      iirrainm    = -1
-      iirsnowm    = -1
-      iiricem     = -1
-      iirgraupelm = -1
-
-      iiNrm       = -1
-      iiNsnowm    = -1
-      iiNim       = -1
-      iiNgraupelm = -1
 
     case default
       write(fstderr,*) "Unknown micro_scheme: "// trim( micro_scheme )
@@ -851,7 +842,6 @@ module microphys_driver
       ! and the X'^2 / X'^2 terms
       call setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
                                     corr_file_path_cloud, corr_file_path_below, iunit )
-
 #endif
 
     end if
@@ -890,7 +880,7 @@ module microphys_driver
 
     use morrison_micro_driver_module, only: &
         morrison_micro_driver
-      
+
     use mg_micro_driver_module, only: &
       mg_microphys_driver
 
@@ -1004,7 +994,8 @@ module microphys_driver
       iNcm_bt, & 
       iNcm_cl, &
       iNcm_mc, &
-      iNcm_act
+      iNcm_act, &
+      iNcm
 
     use stats_subs, only: & 
      stats_accumulate_LH_tend ! Procedure(s)
@@ -1096,7 +1087,7 @@ module microphys_driver
       X_mixt_comp_all_levs ! Which mixture component the sample is in
 
     real( kind = core_rknd ), dimension(gr%nz,LH_microphys_calls), intent(in) :: &
-      LH_rt, LH_thl ! Samples of rt, thl	[kg/kg,K]
+      LH_rt, LH_thl ! Samples of rt, thl        [kg/kg,K]
 
     real( kind = core_rknd ), dimension(LH_microphys_calls), intent(in) :: &
       LH_sample_point_weights ! Weights for cloud weighted sampling
@@ -1138,8 +1129,10 @@ module microphys_driver
     real( kind = core_rknd ), dimension(gr%nz) :: &
       delta_zt  ! Difference in thermo. height levels     [m]
 
-   real( kind = core_rknd ), dimension(gr%nz) :: &
-     T_in_K  ! Temperature          [K]
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      T_in_K, & ! Temperature              [K]
+      Ncm,    & ! Mean cloud droplet number concentration [#/kg]
+      rvm       ! Vapor water mixing ratio [kg/kg]
 
     real( kind = core_rknd ), dimension(1,1,gr%nz) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
@@ -1172,7 +1165,7 @@ module microphys_driver
       Ndrop_max  ! GFDL droplet activation concentration [#/kg]
 
     !Input aerosol mass concentration: the unit is 10^12 ug/m3.
-    !For example, aeromass=2.25e-12 means that the aerosol mass 
+    !For example, aeromass=2.25e-12 means that the aerosol mass
     !concentration is 2.25 ug/m3.
     !This value of aeromass was recommended by Huan Guo
     !See http://carson.math.uwm.edu/trac/climate_process_team/ticket/46#comment:12
@@ -1224,19 +1217,18 @@ module microphys_driver
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
     ! Start Ncm budget to capture Ncm_act term
-    if( l_stats_samp ) then
+    if ( l_stats_samp .and. iiNcm > 0 ) then
       call stat_begin_update( iNcm_bt, hydromet(:, iiNcm) / real( dt, kind = core_rknd ), zt )
     end if
-    
+
     ! Call GFDL activation code
     if( l_gfdl_activation ) then
       ! Ensure a microphysics that has Ncm is being used
-      ! Note: KK micro is not used because it resets Ncm every timestep 
-      if( trim( micro_scheme ) == "coamps" .or. trim( micro_scheme ) == "morrison" & 
-            .or. trim( micro_scheme ) == "morrison-gettelman" ) then
+      ! Note: KK micro is not used because it resets Ncm every timestep
+      if ( l_predictnc ) then
 
         ! Save the initial Ncm value for the Ncm_act term
-        if( l_stats_samp ) then
+        if ( l_stats_samp ) then
           call stat_begin_update( iNcm_act, hydromet(:, iiNcm) / real( dt, kind = core_rknd ), zt )
         end if
 
@@ -1259,9 +1251,9 @@ module microphys_driver
 
           ! Clip Ncm to only be where there is cloud to avoid divide by zero errors
           if( cloud_frac(k) > cloud_frac_min ) then
-                hydromet(k, iiNcm) = max( Ndrop_max(k), hydromet(k, iiNcm) )
+            hydromet(k, iiNcm) = max( Ndrop_max(k), hydromet(k, iiNcm) )
           else
-                hydromet(k, iiNcm) = 0.0_core_rknd
+            hydromet(k, iiNcm) = 0.0_core_rknd
           end if
         end do
 
@@ -1352,10 +1344,10 @@ module microphys_driver
         stop "Latin hypercube was not enabled at compile time"
         ! Get rid of compiler warnings
         if ( .false. .and. size( X_nl_all_levs ) < 1 ) then
-           rcm_mc(1) = + LH_rt(1,1) + LH_thl(1,1) &
-             + LH_sample_point_weights(1) + real( X_mixt_comp_all_levs(1,1) )
+          rcm_mc(1) = + LH_rt(1,1) + LH_thl(1,1) &
+            + LH_sample_point_weights(1) + real( X_mixt_comp_all_levs(1,1) )
         end if
-#endif
+#endif /* LATIN_HYPERCUBE */
         call stats_accumulate_LH_tend( hydromet_mc, thlm_mc, rvm_mc, rcm_mc )
 
       end if ! LH isn't disabled
@@ -1371,16 +1363,25 @@ module microphys_driver
       if ( LH_microphys_type /= LH_microphys_interactive ) then
         l_local_kk_input = .false.
         l_latin_hypercube_input = .false.
+        rvm = rtm - rcm
+        Ncm_in_cloud = -999._core_rknd ! We don't use this variable for the Morrison code
         call morrison_micro_driver & 
              ( dt, gr%nz, l_stats_samp, l_local_kk_input, &
                l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, wtmp, &
-               delta_zt, rcm, s_mellor, rtm-rcm, hydromet, hydromet_mc, &
+               delta_zt, rcm, Ncm_in_cloud, s_mellor, rvm, hydromet, hydromet_mc, &
                hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
-      endif
-      
+
+      end if ! LH_microphys_type /= interactive
+
+      ! If we're using fixed Nc, then output the grid box mean as a diagnostic
+      if ( l_stats_samp .and. .not. l_predictnc ) then
+        Ncm(1:gr%nz) = ( Ncm_initial / rho(1:gr%nz) ) * cloud_frac(1:gr%nz)
+        call stat_update_var( iNcm, Ncm, zt )
+      end if ! l_stats_samp
+
 
     case ( "morrison-gettelman" )
 
@@ -1393,13 +1394,13 @@ module microphys_driver
       hydromet_vel = 0.0_core_rknd
       hydromet_vel_zt = 0.0_core_rknd
 
-      ! Fix Nc for testing purposes -dschanen 5 Jan 2012
+      ! We fix Nc for testing purposes -dschanen 5 Jan 2012
       if ( .not. l_predictnc ) then
-        where ( rcm >= rc_tol )
-          hydromet(:,iiNcm) = Ncm_initial / rho
-        else where
-          hydromet(:,iiNcm) = 0.0_core_rknd
-        end where
+        Ncm(1:gr%nz) = ( Ncm_initial / rho(gr%nz) ) & ! Convert to #/kg air
+               * cloud_frac(gr%nz)
+        if ( l_stats_samp ) then
+          call stat_update_var( iNcm, Ncm, zt )
+        end if ! l_stats_samp
       end if
 
       ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
@@ -1409,11 +1410,12 @@ module microphys_driver
       call pbuf_allocate()
       call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
 
+      rvm = rtm - rcm
       call mg_microphys_driver &
           ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
-              rho, cloud_frac, pdf_params, rcm, rtm-rcm, Ncnm, hydromet, &
-              hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
-          
+            rho, cloud_frac, rcm, Ncm, rvm, Ncnm, hydromet, &
+            hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
+
     case ( "khairoutdinov_kogan" )
 
       ! Initialize tendencies to zero
@@ -1436,7 +1438,7 @@ module microphys_driver
                KK_micro_driver ) ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
-#endif
+#endif /* LATIN_HYPERCUBE */
 
         call stats_accumulate_LH_tend( hydromet_mc, thlm_mc, rvm_mc, rcm_mc )
 
@@ -1450,29 +1452,45 @@ module microphys_driver
 
       end if ! LH isn't disabled
 
+      ! Compute the in cloud value of Nc from a fixed number; the current code
+      ! uses a fixed number for this value
+      where ( rcm >= rc_tol )
+        Ncm_in_cloud = Ncm_initial / rho ! Convert to #/kg air
+      else where
+        Ncm_in_cloud = 0.0_core_rknd
+      end where
+
       ! Call the microphysics if we don't want to have feedback effects from the
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
 
-         l_latin_hypercube_input = .false.
-         call KK_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
-                               l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
-                               exner, rho, cloud_frac, pdf_params, wtmp, &
-                               delta_zt, rcm, s_mellor, rtm-rcm, hydromet, &
-                               hydromet_mc, hydromet_vel_zt, &
-                               rcm_mc, rvm_mc, thlm_mc, &
-                               wprtp_mc_tndcy, wpthlp_mc_tndcy, & 
-                               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
+        l_latin_hypercube_input = .false.
+        rvm = rtm - rcm
 
-      endif
+        call KK_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
+                              l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
+                              exner, rho, cloud_frac, pdf_params, wtmp, &
+                              delta_zt, rcm, Ncm_in_cloud, s_mellor, rvm, hydromet, &
+                              hydromet_mc, hydromet_vel_zt, &
+                              rcm_mc, rvm_mc, thlm_mc, &
+                              wprtp_mc_tndcy, wpthlp_mc_tndcy, & 
+                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
+
+      end if ! LH_microphys_type /= interactive
 
       if ( l_stats_samp ) then
+
+        ! Output the grid box mean and in cloud values of Nc
+        call stat_update_var( iNcm_in_cloud, Ncm_in_cloud, zt )
+        call stat_update_var( iNcm, Ncm_in_cloud * cloud_frac, zt )
+
         ! Sedimentation velocity for rrainm
         call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zm )
 
         ! Sedimentation velocity for Nrm
         call stat_update_var( iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zm )
-      end if
+
+      end if ! l_stats_samp
 
     case default
 
@@ -1483,327 +1501,314 @@ module microphys_driver
     !       advection and diffusion.
     !-----------------------------------------------------------------------
 
-    if ( hydromet_dim > 0 ) then
+    do i = 1, hydromet_dim
 
-      do i = 1, hydromet_dim
+      ! Initializing max_velocity in order to avoid a compiler warning.
+      ! Regardless of the case, it will be reset in the 'select case'
+      ! statement immediately below.
+      max_velocity = 0.0_core_rknd
 
-        ! Initializing max_velocity in order to avoid a compiler warning.
-        ! Regardless of the case, it will be reset in the 'select case'
-        ! statement immediately below.
-        max_velocity = 0.0_core_rknd
+      select case ( trim( hydromet_list(i) ) )
+      case ( "rrainm" )
+        ixrm_bt = irrainm_bt
+        ixrm_cl = irrainm_cl
+        ixrm_mc = irrainm_mc
 
-        select case ( trim( hydromet_list(i) ) )
-        case ( "rrainm" )
-          ixrm_bt = irrainm_bt
-          ixrm_cl = irrainm_cl
-          ixrm_mc = irrainm_mc
+        max_velocity = -9.1_core_rknd ! m/s
 
-          max_velocity = -9.1_core_rknd ! m/s
+      case ( "ricem" )
+        ixrm_bt = iricem_bt
+        ixrm_cl = iricem_cl
+        ixrm_mc = iricem_mc
 
-        case ( "ricem" )
-          ixrm_bt = iricem_bt
-          ixrm_cl = iricem_cl
-          ixrm_mc = iricem_mc
+        max_velocity = -1.2_core_rknd ! m/s
 
-          max_velocity = -1.2_core_rknd ! m/s
+      case ( "rsnowm" )
+        ixrm_bt = irsnowm_bt
+        ixrm_cl = irsnowm_cl
+        ixrm_mc = irsnowm_mc
 
-        case ( "rsnowm" )
-          ixrm_bt = irsnowm_bt
-          ixrm_cl = irsnowm_cl
-          ixrm_mc = irsnowm_mc
-
-          ! Morrison limit
+        ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
-          ! Made up limit.  The literature suggests that it is quite possible
-          ! that snow flake might achieve a terminal velocity of 2 m/s, and this
-          ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
-          max_velocity = -2.0_core_rknd ! m/s
+        ! Made up limit.  The literature suggests that it is quite possible
+        ! that snow flake might achieve a terminal velocity of 2 m/s, and this
+        ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
+        max_velocity = -2.0_core_rknd ! m/s
 
-        case ( "rgraupelm" )
-          ixrm_bt = irgraupelm_bt
-          ixrm_cl = irgraupelm_cl
-          ixrm_mc = irgraupelm_mc
+      case ( "rgraupelm" )
+        ixrm_bt = irgraupelm_bt
+        ixrm_cl = irgraupelm_cl
+        ixrm_mc = irgraupelm_mc
 
-          max_velocity = -20._core_rknd ! m/s
+        max_velocity = -20._core_rknd ! m/s
 
-        case ( "Nrm" )
-          ixrm_bt = iNrm_bt
-          ixrm_cl = iNrm_cl
-          ixrm_mc = iNrm_mc
+      case ( "Nrm" )
+        ixrm_bt = iNrm_bt
+        ixrm_cl = iNrm_cl
+        ixrm_mc = iNrm_mc
 
-          max_velocity = -9.1_core_rknd ! m/s
+        max_velocity = -9.1_core_rknd ! m/s
 
-        case ( "Nim" )
-          ixrm_bt = iNim_bt
-          ixrm_cl = iNim_cl
-          ixrm_mc = iNim_mc
+      case ( "Nim" )
+        ixrm_bt = iNim_bt
+        ixrm_cl = iNim_cl
+        ixrm_mc = iNim_mc
 
-          max_velocity = -1.2_core_rknd ! m/s
+        max_velocity = -1.2_core_rknd ! m/s
 
-        case ( "Nsnowm" )
-          ixrm_bt = iNsnowm_bt
-          ixrm_cl = iNsnowm_cl
-          ixrm_mc = iNsnowm_mc
+      case ( "Nsnowm" )
+        ixrm_bt = iNsnowm_bt
+        ixrm_cl = iNsnowm_cl
+        ixrm_mc = iNsnowm_mc
 
-          ! Morrison limit
+        ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
-          ! Made up limit.  The literature suggests that it is quite possible
-          ! that snow flake might achieve a terminal velocity of 2 m/s, and this
-          ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
-          max_velocity = -2.0_core_rknd ! m/s
+        ! Made up limit.  The literature suggests that it is quite possible
+        ! that snow flake might achieve a terminal velocity of 2 m/s, and this
+        ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
+        max_velocity = -2.0_core_rknd ! m/s
 
-        case ( "Ngraupelm" )
-          ixrm_bt = iNgraupelm_bt
-          ixrm_cl = iNgraupelm_cl
-          ixrm_mc = iNgraupelm_mc
+      case ( "Ngraupelm" )
+        ixrm_bt = iNgraupelm_bt
+        ixrm_cl = iNgraupelm_cl
+        ixrm_mc = iNgraupelm_mc
 
-          max_velocity = -20._core_rknd ! m/s
+        max_velocity = -20._core_rknd ! m/s
 
-        case ( "Ncm" )
-          ixrm_bt = iNcm_bt
-          ixrm_cl = iNcm_cl
-          ixrm_mc = iNcm_mc
+      case ( "Ncm" )
+        ixrm_bt = iNcm_bt
+        ixrm_cl = iNcm_cl
+        ixrm_mc = iNcm_mc
 
-          ! Use the rain water limit, since Morrison has no explicit limit on
-          ! cloud water.  Presumably these numbers are never large.
-          ! -dschanen 28 Sept 2009
-          max_velocity = -9.1_core_rknd ! m/s
+        ! Use the rain water limit, since Morrison has no explicit limit on
+        ! cloud water.  Presumably these numbers are never large.
+        ! -dschanen 28 Sept 2009
+        max_velocity = -9.1_core_rknd ! m/s
 
-        case default
-          ixrm_bt = 0
-          ixrm_cl = 0
-          ixrm_mc = 0
+      case default
+        ixrm_bt = 0
+        ixrm_cl = 0
+        ixrm_mc = 0
 
-          max_velocity = -9.1_core_rknd ! m/s
+        max_velocity = -9.1_core_rknd ! m/s
 
-        end select
+      end select
 
-        if ( l_stats_samp ) then
+      if ( l_stats_samp ) then
 
-          ! Update explicit contributions to the hydrometeor species
-          call stat_update_var( ixrm_mc, hydromet_mc(:,i), zt )
+        ! Update explicit contributions to the hydrometeor species
+        call stat_update_var( ixrm_mc, hydromet_mc(:,i), zt )
 
-          ! Save prior value of the hydrometeors for determining total time
-          ! tendency
-          ! This kludge is to allow Ncm_bt to include the Ncm_act budget term
-          ! that is calculated before microphysics is called.  The stat_begin_update
-          ! subroutine is called prior to the GFDL activation code, so we can't call
-          ! it here again. -meyern
-          if ( ixrm_bt /= iNcm_bt ) then
-            call stat_begin_update( ixrm_bt, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
-          end if
-
+        ! Save prior value of the hydrometeors for determining total time
+        ! tendency
+        ! This kludge is to allow Ncm_bt to include the Ncm_act budget term
+        ! that is calculated before microphysics is called.  The stat_begin_update
+        ! subroutine is called prior to the GFDL activation code, so we can't call
+        ! it here again. -meyern
+        if ( ixrm_bt /= iNcm_bt ) then
+          call stat_begin_update( ixrm_bt, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
         end if
 
-        ! Set realistic limits on sedimentation velocities, following the
-        ! numbers in the Morrison microphysics.
+      end if
 
-        do k = 1, gr%nz
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            ! Print a warning if the velocity has a large magnitude or the
-            ! velocity is in the wrong direction.
-            if ( hydromet_vel_zt(k,i) < max_velocity .or. &   
-                 hydromet_vel_zt(k,i) > zero_threshold ) then  
+      ! Set realistic limits on sedimentation velocities, following the
+      ! numbers in the Morrison microphysics.
 
-              write(fstderr,*) trim( hydromet_list(i) )// &
-                " velocity at k = ", k, " = ", hydromet_vel_zt(k,i), "m/s"
+      do k = 1, gr%nz
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          ! Print a warning if the velocity has a large magnitude or the
+          ! velocity is in the wrong direction.
+          if ( hydromet_vel_zt(k,i) < max_velocity .or. &   
+               hydromet_vel_zt(k,i) > zero_threshold ) then
+
+            write(fstderr,*) trim( hydromet_list(i) )// &
+              " velocity at k = ", k, " = ", hydromet_vel_zt(k,i), "m/s"
+          end if
+        end if
+        hydromet_vel_zt(k,i) = min( max( hydromet_vel_zt(k,i), max_velocity ), zero_threshold )
+      end do ! k = 1..gr%nz
+
+      ! Interpolate velocity to the momentum grid for a centered difference
+      ! approximation of the sedimenation term.
+      hydromet_vel(:,i) = zt2zm( hydromet_vel_zt(:,i) )
+      hydromet_vel(gr%nz,i) = 0.0_core_rknd ! Upper boundary condition
+
+      ! Add implicit terms to the LHS matrix
+      call microphys_lhs & 
+           ( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
+             dt, Kr, nu_r_vert_res_dep, wm_zt, &  ! In
+             hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
+             lhs ) ! Out
+
+      if ( trim( hydromet_list(i) ) == "Ncm" .and. l_in_cloud_Nc_diff ) then
+        Ncm_in_cloud = hydromet(:,iiNcm) / max( cloud_frac, cloud_frac_min )
+        call microphys_solve &
+             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, lhs, &
+               hydromet_mc(:,i)/max( cloud_frac, cloud_frac_min ),  & 
+               Ncm_in_cloud, err_code )
+
+        hydromet(:,iiNcm) = Ncm_in_cloud * max( cloud_frac, cloud_frac_min )
+
+      else
+        call microphys_solve & 
+             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, &
+               lhs, hydromet_mc(:,i), hydromet(:,i), err_code )
+      end if
+
+      if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
+        if ( i == iirrainm ) then
+          ! Handle over-evaporation of rrainm and adjust rt and theta-l
+          ! hydrometeor tendency arrays accordingly.
+          do k = 1, gr%nz, 1
+            if ( hydromet(k,i) < 0.0_core_rknd ) then
+              l_sed = .true.
+              call adj_microphys_tndcy & 
+                 ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
+                   Kr, nu_r_vert_res_dep, dt, k, l_sed, & 
+                   hydromet(:,i), overevap_rate )
+
+              ! overevap_rate is defined as positive.
+              ! It is a correction factor.
+              rcm_mc(k)  = rcm_mc(k) - overevap_rate
+
+              thlm_mc(k) = thlm_mc(k) + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
+
+              ! Moved from adj_microphys_tndcy
+              if ( l_stats_samp ) then
+
+                call stat_update_var_pt( irrainm_cond_adj, k,  & 
+                                         overevap_rate, zt )
+              end if
+
+            else
+
+
+              if ( l_stats_samp ) then
+
+                call stat_update_var_pt( irrainm_cond_adj, k,  & 
+                                    0.0_core_rknd, zt )
+              end if
+              ! Joshua Faschinj December 2007
             end if
-          end if
-          hydromet_vel_zt(k,i) = min( max( hydromet_vel_zt(k,i), max_velocity ), zero_threshold )
-        end do ! k = 1..gr%nz
 
-        ! Interpolate velocity to the momentum grid for a centered difference
-        ! approximation of the sedimenation term.
-        hydromet_vel(:,i) = zt2zm( hydromet_vel_zt(:,i) )
-        hydromet_vel(gr%nz,i) = 0.0_core_rknd ! Upper boundary condition
+          end do ! k=1..gr%nz
 
-        ! Don't calculate if we aren't trying to predict Ncm in a meaningful way
-        if ( trim( hydromet_list(i) ) /= "Ncm" .or. l_predictnc ) then
-
-          ! Add implicit terms to the LHS matrix
-          call microphys_lhs & 
-               ( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
-                 dt, Kr, cloud_frac, nu_r_vert_res_dep, wm_zt, &  ! In
-                 hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
-                 lhs ) ! Out
-
-          if ( trim( hydromet_list(i) ) == "Ncm" ) then
-            Ncm_in_cloud = hydromet(:,iiNcm) / max( cloud_frac, cloud_frac_min )
-            call microphys_solve &
-                 ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, lhs, &
-                   hydromet_mc(:,i)/max( cloud_frac, cloud_frac_min ),  & 
-                   Ncm_in_cloud, err_code )
-
-            hydromet(:,iiNcm) = Ncm_in_cloud * max( cloud_frac, cloud_frac_min )
-
-          else
-            call microphys_solve & 
-                 ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, &
-                   lhs, hydromet_mc(:,i), hydromet(:,i), err_code )
-          end if
-
-        end if ! hydromet /= Ncm .or. l_predictnc
-
-        if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
-          if ( i == iirrainm ) then
-            ! Handle over-evaporation of rrainm and adjust rt and theta-l
-            ! hydrometeor tendency arrays accordingly.
-            do k = 1, gr%nz, 1
-              if ( hydromet(k,i) < 0.0_core_rknd ) then
-                l_sed = .true.
-                call adj_microphys_tndcy & 
+        else if ( i == iiNrm ) then
+          ! Handle over-evaporation similar to rrainm.  However, in the case
+          ! of Nrm there is no effect on rtm or on thlm.
+          ! Brian Griffin.  April 14, 2007.
+          do k = 1, gr%nz, 1
+            if ( hydromet(k,i) < 0.0_core_rknd ) then
+              l_sed = .true.
+              call adj_microphys_tndcy & 
                    ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
                      Kr, nu_r_vert_res_dep, dt, k, l_sed, & 
                      hydromet(:,i), overevap_rate )
 
-                ! overevap_rate is defined as positive.
-                ! It is a correction factor.
-                rcm_mc(k)  = rcm_mc(k) - overevap_rate
-
-                thlm_mc(k) = thlm_mc(k) + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
-
-                ! Moved from adj_microphys_tndcy
-                if ( l_stats_samp ) then
-
-                  call stat_update_var_pt( irrainm_cond_adj, k,  & 
-                                           overevap_rate, zt )
-                end if
-
-              else
-
-
-                if ( l_stats_samp ) then
-
-                  call stat_update_var_pt( irrainm_cond_adj, k,  & 
-                                      0.0_core_rknd, zt )
-                end if
-                ! Joshua Faschinj December 2007
+              ! Moved from adj_microphys_tndcy
+              if ( l_stats_samp ) then
+                call stat_update_var_pt( iNrm_cond_adj, k,  & 
+                                         overevap_rate, zt )
+              end if
+            else
+              if ( l_stats_samp ) then
+                call stat_update_var_pt( iNrm_cond_adj,k, 0.0_core_rknd, zt )
               end if
 
-            end do ! k=1..gr%nz
+            end if ! Nrm(k) < 0
+            ! Joshua Fasching December 2007
+          end do ! k = 1..gr%nz
 
-          else if ( i == iiNrm ) then
-            ! Handle over-evaporation similar to rrainm.  However, in the case
-            ! of Nrm there is no effect on rtm or on thlm.
-            ! Brian Griffin.  April 14, 2007.
-            do k = 1, gr%nz, 1
-              if ( hydromet(k,i) < 0.0_core_rknd ) then
-                l_sed = .true.
-                call adj_microphys_tndcy & 
-                     ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
-                       Kr, nu_r_vert_res_dep, dt, k, l_sed, & 
-                       hydromet(:,i), overevap_rate )
+        end if ! i == rrainm else if i == Nrm
+      end if ! trim( micro_scheme  ) == khairoutdinov_kogan
 
-                ! Moved from adj_microphys_tndcy
-                if ( l_stats_samp ) then
-                  call stat_update_var_pt( iNrm_cond_adj, k,  & 
-                                           overevap_rate, zt )
-                end if
-              else
-                if ( l_stats_samp ) then
-                  call stat_update_var_pt( iNrm_cond_adj,k, 0.0_core_rknd, zt )
-                end if
+      if ( l_stats_samp ) then
 
-              end if ! Nrm(k) < 0
-              ! Joshua Fasching December 2007
-            end do ! k = 1..gr%nz
+        call stat_begin_update & 
+           ( ixrm_cl, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
 
-          end if ! i == rrainm else if i == Nrm
-        end if ! trim( micro_scheme  ) == khairoutdinov_kogan
+      end if
 
-        if ( l_stats_samp ) then
-
-          call stat_begin_update & 
-             ( ixrm_cl, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
-
+      ! Clip all hydrometeor species to be >= zero
+      if ( any( hydromet(:,i) < zero_threshold ) ) then
+        hydromet_name = hydromet_list(i)
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          do k = 1, gr%nz
+            if ( hydromet(k,i) < zero_threshold ) then
+              write(fstderr,*) trim( hydromet_name ) //" < ", zero_threshold, &
+                " in advance_microphys at k= ", k
+            end if
+          end do
         end if
 
-        ! Don't clip Ncm if we aren't trying to predict Ncm in a meaningful way
-        if ( trim( hydromet_list(i) ) /= "Ncm" .or. l_predictnc ) then
+        ! If we're dealing with a mixing ratio and hole filling is enabled,
+        ! then we apply the hole filling algorithm
+        if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
+          ! Apply the hole filling algorithm
+          call fill_holes_driver( 2, zero_threshold, "zt", &
+                                 rho_ds_zt, rho_ds_zm, &
+                                 hydromet(:,i) )
 
-          ! Clip all hydrometeor species to be >= zero
-          if ( any( hydromet(:,i) < zero_threshold ) ) then
-            hydromet_name = hydromet_list(i)
-            if ( clubb_at_least_debug_level( 1 ) ) then
-              do k = 1, gr%nz
-                if ( hydromet(k,i) < zero_threshold ) then
-                  write(fstderr,*) trim( hydromet_name ) //" < ", zero_threshold, &
-                    " in advance_microphys at k= ", k
-                end if
-              end do
-            end if
+          ! If the hole filling algorithm failed, then we attempt to fill
+          ! the missing mass with water vapor mixing ratio.
+          ! We noticed this is needed for ASEX A209, particularly if Latin
+          ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
+          do k = 2, gr%nz
+            if ( hydromet(k,i) < zero_threshold ) then
 
-            ! If we're dealing with a mixing ratio and hole filling is enabled,
-            ! then we apply the hole filling algorithm
-            if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
-              ! Apply the hole filling algorithm
-              call fill_holes_driver( 2, zero_threshold, "zt", &
-                                     rho_ds_zt, rho_ds_zm, &
-                                     hydromet(:,i) )
+              ! Set temp to the time tendency applied to vapor and removed
+              ! from the hydrometeor.
+              temp = hydromet(k,i) / real( dt, kind = core_rknd )
 
-              ! If the hole filling algorithm failed, then we attempt to fill
-              ! the missing mass with water vapor mixing ratio.
-              ! We noticed this is needed for ASEX A209, particularly if Latin
-              ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
-              do k = 2, gr%nz
-                if ( hydromet(k,i) < zero_threshold ) then
+              ! Adjust the tendency rvm_mc accordingly
+              rvm_mc(k) = rvm_mc(k) + temp
 
-                  ! Set temp to the time tendency applied to vapor and removed
-                  ! from the hydrometeor.
-                  temp = hydromet(k,i) / real( dt, kind = core_rknd )
+              ! Adjust the tendency of thlm_mc according to whether the effect
+              ! is an evaporation or sublimation tendency.
+              select case ( trim( hydromet_name ) )
+              case( "rrainm" )
+                thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
+              case( "ricem", "rsnowm", "rgraupelm" )
+                thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
+              case default
+                stop "Fatal error in microphys_driver"
+              end select
 
-                  ! Adjust the tendency rvm_mc accordingly
-                  rvm_mc(k) = rvm_mc(k) + temp
+              ! Set the mixing ratio to 0
+              hydromet(k,i) = zero_threshold
 
-                  ! Adjust the tendency of thlm_mc according to whether the effect
-                  ! is an evaporation or sublimation tendency.
-                  select case ( trim( hydromet_name ) )
-                  case( "rrainm" )
-                    thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
-                  case( "ricem", "rsnowm", "rgraupelm" )
-                    thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
-                  case default
-                    stop "Fatal error in microphys_driver"
-                  end select
+            end if ! hydromet(k,i) < 0
+          end do ! k = 2..gr%nz
 
-                  ! Set the mixing ratio to 0
-                  hydromet(k,i) = zero_threshold
+          ! Boundary condition
+          ! Rain, snow and graupel which is at the ghost point has presumably
+          ! sedimented out of the model domain, and is not conserved.
+          if ( hydromet(1,i) < zero_threshold ) then
+            hydromet(1,i) = zero_threshold
+          end if
 
-                end if ! hydromet(k,i) < 0
-              end do ! k = 2..gr%nz
+        else
+          ! This includes the case where the variable is a number
+          ! concentration and is therefore not conserved.
+          where ( hydromet(:,i) < zero_threshold )
+            hydromet(:,i) = zero_threshold
+          end where
 
-              ! Boundary condition
-              ! Rain, snow and graupel which is at the ghost point has presumably
-              ! sedimented out of the model domain, and is not conserved.
-              if ( hydromet(1,i) < zero_threshold ) then
-                hydromet(1,i) = zero_threshold
-              end if
+        end if ! Variable is a mixing ratio and l_hole_fill is true
 
-            else
-            ! This includes the case where the variable is a number
-            ! concentration and is therefore not conserved.
-            where ( hydromet(:,i) < zero_threshold ) hydromet(:,i) = zero_threshold
+      end if ! hydromet(:,i) < 0
 
-            end if ! Variable is a mixing ratio and l_hole_fill is true
+      if ( l_stats_samp ) then
 
-          end if ! hydromet(:,i) < 0
+        ! Effects of clipping
+        call stat_end_update( ixrm_cl, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
 
-        end if ! hydromet_list(i) /= Ncm .or. l_predictnc
+        ! Total time tendency
+        call stat_end_update( ixrm_bt, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
 
-        if ( l_stats_samp ) then
+      end if ! l_stats_samp
 
-          ! Effects of clipping
-          call stat_end_update( ixrm_cl, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
-
-          ! Total time tendency
-          call stat_end_update( ixrm_bt, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
-
-        end if ! l_stats_samp
-
-      end do ! i=1..hydromet_dim
-
-    end if ! hydromet_dim > 0
-
+    end do ! i=1..hydromet_dim
 
     ! Call the ice diffusion scheme
     if ( trim( micro_scheme ) == "simplified_ice" ) then
@@ -1863,7 +1868,7 @@ module microphys_driver
 
     end if ! l_stats_samp
 
-    call stats_accumulate_hydromet( hydromet )
+    call stats_accumulate_hydromet( hydromet, rho_ds_zt )
 
 !       Error Report
 !       Joshua Fasching Feb 2008
@@ -2097,7 +2102,7 @@ module microphys_driver
         ! Finalize implicit contributions
 
         ! xrm term ma is completely implicit; call stat_update_var_pt.
-        if ( solve_type == "Ncm" ) then
+        if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
           ! For Ncm, we divide by cloud_frac when entering the subroutine, but
           ! do not multiply until we return from the subroutine, so we must
           ! account for this here for the budget to balance
@@ -2121,7 +2126,7 @@ module microphys_driver
         end if
 
         ! xrm term dff is completely implicit; call stat_update_var_pt.
-        if ( solve_type == "Ncm" ) then
+        if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
           ! For Ncm, we divide by cloud_frac when entering the subroutine, but
           ! do not multiply until we return from the subroutine, so we must
           ! account for this here for the budget to balance
@@ -2154,20 +2159,20 @@ module microphys_driver
 
 !===============================================================================
   subroutine microphys_lhs & 
-             ( solve_type, l_sed, dt, Kr, cloud_frac, nu, wm_zt, &
+             ( solve_type, l_sed, dt, Kr, nu, wm_zt, &
                V_hm, V_hmt, &
                lhs )
 
-  ! Description:
-  !   Setup the matrix of implicit contributions to a term.
-  !   Can include the effects of sedimentation, diffusion, and advection.
-  !   The Morrison microphysics has an explicit sedimentation code, which is
-  !   handled elsewhere.
-  !
-  ! Notes:
-  !   Setup for tridiagonal system and boundary conditions should be the same as
-  !   the original rain subroutine code.
-  !-------------------------------------------------------------------------------
+    ! Description:
+    !   Setup the matrix of implicit contributions to a term.
+    !   Can include the effects of sedimentation, diffusion, and advection.
+    !   The Morrison microphysics has an explicit sedimentation code, which is
+    !   handled elsewhere.
+    !
+    ! Notes:
+    !   Setup for tridiagonal system and boundary conditions should be the same as
+    !   the original rain subroutine code.
+    !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
         gr,    & ! Variable(s)
@@ -2179,8 +2184,7 @@ module microphys_driver
         core_rknd
 
     use diffusion, only:  & 
-        diffusion_zt_lhs, & ! Procedure(s)
-        diffusion_cloud_frac_zt_lhs
+        diffusion_zt_lhs ! Procedure(s)
 
     use mean_adv, only:  & 
         term_ma_zt_lhs ! Procedure(s)
@@ -2225,9 +2229,6 @@ module microphys_driver
       k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
       km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
-    real( kind = core_rknd ), parameter :: &
-      cloud_frac_thresh = 1.e-3_core_rknd ! Minimum threshold on cloud fraction
-
     ! Input Variables
     character(len=*), intent(in) :: &
       solve_type  ! Description of which hydrometeor is being solved for.
@@ -2242,7 +2243,6 @@ module microphys_driver
       nu       ! Background diffusion coefficient                         [m^2/s]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
-      cloud_frac, & ! Cloud fraction                                          [-]
       wm_zt,      & ! w wind component on thermodynamic levels                [m/s]
       V_hm,       & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
       V_hmt,      & ! Sedimentation velocity of hydrometeor (thermo. levels)  [m/s]
@@ -2253,10 +2253,6 @@ module microphys_driver
 
     ! Local Variables
     real( kind = core_rknd ), dimension(3) :: tmp
-
-    real( kind = core_rknd ), dimension(gr%nz) :: & 
-      cloud_frac_zt, & ! Cloud fraction on thermodynamic levels  [-]
-      cloud_frac_zm    ! Cloud fraction on momentum levels       [-]
 
     ! Array indices
     integer :: k, km1, kp1
@@ -2307,15 +2303,6 @@ module microphys_driver
       ixrm_dff = 0
     end select
 
-    ! Determine cloud fraction for diffusion of Ncm
-    if ( solve_type == "Ncm".and. l_in_cloud_Nc_diff ) then
-      ! Impose a threshold on cloud fract to avoid a divide by 0.
-      cloud_frac_zt = max( cloud_frac, cloud_frac_thresh )
-!     cloud_frac_zt = 1.0_core_rknd ! %% Debug
-      ! Don't impose a threshold on cloud_frac_zm in the numerator.
-      cloud_frac_zm = zt2zm( cloud_frac )
-    end if
-
     ! Reset LHS Matrix for current timestep.
     lhs = 0.0_core_rknd
 
@@ -2332,23 +2319,11 @@ module microphys_driver
 
 
       ! All diagonals
-
-      ! LHS eddy-diffusion term.
-      if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
-        lhs(kp1_tdiag:km1_tdiag,k) & 
-          = lhs(kp1_tdiag:km1_tdiag,k) & 
-          + diffusion_cloud_frac_zt_lhs &
-            ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
-              cloud_frac_zt(k+1), cloud_frac_zm(k), &
-              cloud_frac_zm(k-1), &
-              nu, gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
-      else ! All other cases
-        lhs(kp1_tdiag:km1_tdiag,k) & 
-          = lhs(kp1_tdiag:km1_tdiag,k) & 
-          + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                              gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                              gr%invrs_dzt(k), k )
-      end if
+      lhs(kp1_tdiag:km1_tdiag,k) & 
+        = lhs(kp1_tdiag:km1_tdiag,k) & 
+        + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                            gr%invrs_dzt(k), k )
 
       ! LHS mean advection term.
       lhs(kp1_tdiag:km1_tdiag,k) & 
@@ -2358,7 +2333,7 @@ module microphys_driver
       ! LHS hydrometeor sedimentation term.
       ! Note: the Morrison microphysics has its own sedimentation code, which
       ! is applied through the _mc terms to each hydrometeor species.
-      ! Therefore, l_sed will always be false when the Morrison microphysics 
+      ! Therefore, l_sed will always be false when the Morrison microphysics
       ! is enabled.  -dschanen 24 Jan 2011
       if ( l_sed ) then
         if ( .not. l_upwind_diff_sed ) then
@@ -2376,15 +2351,7 @@ module microphys_driver
 
         ! Statistics:  implicit contributions to hydrometeor xrm.
 
-        if ( solve_type == "Ncm" .and. ixrm_ma > 0 ) then
-          tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
-            gr%invrs_dzm(km1) )
-
-          ztscr01(k) = -tmp(3)
-          ztscr02(k) = -tmp(2)
-          ztscr03(k) = -tmp(1)
-
-        else if ( ixrm_ma > 0 ) then
+        if ( ixrm_ma > 0 ) then
           tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
             gr%invrs_dzm(km1) )
 
@@ -2405,28 +2372,7 @@ module microphys_driver
           ztscr06(k) = -tmp(1)
         end if
 
-        if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff &
-             .and. ixrm_dff > 0 ) then
-          tmp(1:3) &
-            = diffusion_cloud_frac_zt_lhs &
-              ( Kr(k), Kr(km1), cloud_frac_zt(k), cloud_frac_zt(k-1), &
-                cloud_frac_zt(k+1), cloud_frac_zm(k), &
-                cloud_frac_zm(k-1), &
-                nu, gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
-          ztscr07(k) = -tmp(3)
-          ztscr08(k) = -tmp(2)
-          ztscr09(k) = -tmp(1)
-
-        else if ( solve_type == "Ncm" .and. ixrm_dff > 0 ) then
-          tmp(1:3) & 
-            = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                                gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                                gr%invrs_dzt(k), k )
-          ztscr07(k) = -tmp(3)
-          ztscr08(k) = -tmp(2)
-          ztscr09(k) = -tmp(1)
-
-        else if ( ixrm_dff > 0 ) then
+        if ( ixrm_dff > 0 ) then
           tmp(1:3) & 
             = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
                                 gr%invrs_dzm(km1), gr%invrs_dzm(k), &
@@ -2662,7 +2608,7 @@ module microphys_driver
     ! References:
     ! None
 
-    ! Notes:  
+    ! Notes:
     !   Both COAMPS Microphysics and Brian Griffin's implementation use
     !   Khairoutdinov and Kogan (2000) for the calculation of rain
     !   mixing ratio and rain droplet number concentration sedimentation
@@ -2792,13 +2738,13 @@ module microphys_driver
   pure function sed_upwind_diff_lhs( V_hmt, V_hmtp1, invrs_dzm, level ) & 
     result( lhs )
 
-  ! Description:
-  !   Setup the LHS matrix (implicit component) for the upwind difference
-  !   approximation for the sedimentation of a hydrometeor.
-  ! 
-  ! References:
-  !   None
-  !---------------------------------------------------------------------------
+    ! Description:
+    !   Setup the LHS matrix (implicit component) for the upwind difference
+    !   approximation for the sedimentation of a hydrometeor.
+    !
+    ! References:
+    !   None
+    !---------------------------------------------------------------------------
     use grid_class, only:  & 
         gr ! Variable(s)
 
@@ -2843,7 +2789,7 @@ module microphys_driver
       lhs(km1_tdiag) = 0.0_core_rknd
 
 
-    else  
+    else
 
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
       lhs(kp1_tdiag)  & 
@@ -3109,7 +3055,7 @@ module microphys_driver
           + sd_supdiag  * xrm(kp1) & 
           + sd_maindiag * xrm(k)
 
-      end if ! ~l_upwind_diff_sed 
+      end if ! ~l_upwind_diff_sed
 
     else
 

@@ -5,7 +5,7 @@ interface
   subroutine microphys_sub( dt, nnzp, l_stats_sample, l_local_kk, &
                             l_latin_hypercube, thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, pdf_params, w_std_dev, &
-                            dzq, rcm, s_mellor, rvm, hydromet, &
+                            dzq, rcm, Ncm_in_cloud, s_mellor, rvm, hydromet, &
                             hydromet_mc, hydromet_vel, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             wprtp_mc_tndcy, wpthlp_mc_tndcy, &
@@ -42,9 +42,10 @@ interface
       dzq          ! Difference in height       [m]
 
     real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
-      rcm,      & ! Liquid water mixing ratio        [kg/kg]
-      s_mellor, & ! The variable 's' from Mellor     [kg/kg]
-      rvm         ! Vapor water mixing ratio         [kg/kg]
+      rcm,          & ! Cloud water mixing ratio            [kg/kg]
+      Ncm_in_cloud, & ! Cloud droplet number conc. in cloud [#/kg]
+      s_mellor,     & ! The variable 's' from Mellor        [kg/kg]
+      rvm             ! Vapor water mixing ratio            [kg/kg]
 
     real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]

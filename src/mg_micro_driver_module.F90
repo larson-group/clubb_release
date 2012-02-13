@@ -11,15 +11,13 @@ module mg_micro_driver_module
 !-------------------------------------------------------------------------------
   subroutine mg_microphys_driver &
              ( dt, nz, l_stats_samp, invrs_dzt, thlm, p_in_Pa, exner, &
-               rho, cloud_frac, pdf_params, rcm, rvm, Ncnm, hydromet, &
+               rho, cloud_frac, rcm, Ncm, rvm, Ncnm, hydromet, &
                hydromet_mc, hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
 !   Wrapper for the Morrison-Gettelman microphysics
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-
-    use pdf_parameter_module, only: pdf_parameter
 
     use parameters_model, only: hydromet_dim
 
@@ -142,11 +140,9 @@ module mg_micro_driver_module
       rho,        & ! Density on thermo. grid            [kg/m^3]
       cloud_frac    ! Cloud fraction                     [-]
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
-      pdf_params    ! PDF parameters
-
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm,      & ! Liquid water mixing ratio          [kg/kg]
+      Ncm,      & ! Cloud droplet number concentration [count/kg]
       rvm,      & ! Vapor water mixing ratio           [kg/kg]
       Ncnm        ! Cloud nuclei number concentration  [count/m^3]
 
@@ -294,6 +290,10 @@ module mg_micro_driver_module
     real(r8), dimension(pcols,nz) :: &
       rflx_flip, sflx_flip
       
+    real(r8), dimension(pcols,nz-1) :: &
+      Ncm_flip, & ! Flipped array for cloud droplet number concentration   [#/kg]
+      Ncm_mc_flip
+
     real(r8), dimension(pcols,nz-1,hydromet_dim) :: &
        hydromet_flip,    &  ! Hydrometeor species                            [units vary]
        hydromet_mc_flip     ! Hydrometeor time tendency                      [units vary]
@@ -303,9 +303,6 @@ module mg_micro_driver_module
     integer :: i, k, ncols, icol
 
     ! ---- Begin Code ----
-    if ( .false. ) then
-      xtmp = pdf_params(1)%mixt_frac ! To make compiler warnings go away
-    end if
 
     ncols = pcols ! This should be 1
 
@@ -348,6 +345,7 @@ module mg_micro_driver_module
     T_in_K_flip(icol,1:nz-1) = real( flip( dble(T_in_K(2:nz) ), nz-1 ), kind=r8 )
     rvm_flip(icol,1:nz-1) = real( flip( dble(rvm(2:nz) ), nz-1 ), kind=r8 )
     rcm_flip(icol,1:nz-1) = real( flip( dble(rcm(2:nz) ), nz-1 ), kind=r8 )
+    Ncm_flip(icol,1:nz-1) = real( flip( dble(Ncm(2:nz) ), nz-1 ), kind=r8 )
     p_in_Pa_flip(icol,1:nz-1) = real( flip( dble(p_in_Pa(2:nz) ), nz-1 ), kind=r8 )
     liqcldf_flip(icol,1:nz-1) = real( flip( dble(cloud_frac(2:nz) ), nz-1 ), kind=r8 )
 
@@ -411,15 +409,15 @@ module mg_micro_driver_module
 
       ! Calculate aerosol activiation, dust size, and number for contact nucleation
       call microp_aero_ts &
-         ( lchnk, ncols, real( dt, kind=r8), T_in_K_flip, unused_in, &                         ! in
-         rvm_flip, rcm_flip, hydromet_flip(:,:,iiricem), &                                      ! in
-         hydromet_flip(:,:,iiNcm), hydromet_flip(:,:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip,&!in
-         liqcldf_flip, icecldf_flip, &                                                        ! in
-         cldo_flip, unused_in, unused_in, unused_in, unused_in, &                             ! in
+         ( lchnk, ncols, real( dt, kind=r8), T_in_K_flip, unused_in, &              ! in
+         rvm_flip, rcm_flip, hydromet_flip(:,:,iiricem), &                          ! in
+         Ncm_flip, hydromet_flip(:,:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &  ! in
+         liqcldf_flip, icecldf_flip, &                                              ! in
+         cldo_flip, unused_in, unused_in, unused_in, unused_in, &                   ! in
          aer_mmr_flip, &
          pbuf, &
          Kh_zm_flip, em_flip, turbtype_flip, smaw_flip, wsub_flip, wsubi_flip, &
-         naai_flip, naai_hom_flip, npccn_flip, rndst_flip, nacon_flip )                       ! out
+         naai_flip, naai_hom_flip, npccn_flip, rndst_flip, nacon_flip )             ! out
 
     else
 
@@ -462,14 +460,14 @@ module mg_micro_driver_module
     call mmicro_pcond                                                                        &! in
          ( sub_column,                                                                       &! in
            lchnk, ncols, real( dt, kind=r8), T_in_K_flip,                                    &! in
-           rvm_flip, rcm_flip, hydromet_flip(:,:,iiricem),                                     &! in
-           hydromet_flip(:,:,iiNcm), hydromet_flip(:,:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &
+           rvm_flip, rcm_flip, hydromet_flip(:,:,iiricem),                                    &! in
+           Ncm_flip, hydromet_flip(:,:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip,            &
            liqcldf_flip, icecldf_flip,                                                        &! in
            cldo_flip,                                                                         &! in
            rate1ord_cw2pr_st_flip,                                                            &! out
-           naai_flip, npccn_flip, rndst_flip, nacon_flip,                                      &! in
+           naai_flip, npccn_flip, rndst_flip, nacon_flip,                                     &! in
            tlat_flip, rvm_mc_flip,                                                            &! out
-           rcm_mc_flip, hydromet_mc_flip(:,:,iiricem), hydromet_mc_flip(:,:,iiNcm),           &! out
+           rcm_mc_flip, hydromet_mc_flip(:,:,iiricem), Ncm_mc_flip,                           &! out
            hydromet_mc_flip(:,:,iiNim), effc_flip,                                            &! out
            effc_fn_flip, effi_flip, prect, preci,                                             &! out
            nevapr_flip, evapsnow_flip,                                                        &! out
@@ -487,6 +485,8 @@ module mg_micro_driver_module
 
     ! Flip MG variables into CLUBB grid
     rcm_mc(2:nz) = real( flip( dble(rcm_mc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    ! Since we fix Ncm the change in Ncm isn't needed
+!   Ncm_mc(2:nz) = real( flip( dble(Ncm_mc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     rvm_mc(2:nz) = real( flip( dble(rvm_mc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     rcm_new(2:nz) = real( flip( dble(rcm_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     effc(2:nz) = real( flip( dble(effc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
@@ -498,7 +498,7 @@ module mg_micro_driver_module
     rcm_sten(2:nz) = real( flip( dble(qcsedten_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd )
     ricem_sten(2:nz) = real( flip( dble(qisedten_flip(icol, 1:nz-1) ), nz-1 ), &
                                kind = core_rknd )
-
+    
     do i = 1, hydromet_dim, 1      
       hydromet_mc(2:nz, i) = real( hydromet_mc_flip(icol,nz-1:1:-1, i), kind = core_rknd )
     end do

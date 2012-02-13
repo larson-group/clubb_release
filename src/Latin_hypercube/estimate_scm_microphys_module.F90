@@ -35,8 +35,8 @@ module estimate_scm_microphys_module
     use parameters_model, only: &
       hydromet_dim ! Variable
 
-!   use parameters_microphys, only: &
-!     Ncm_initial
+    use parameters_microphys, only: &
+      Ncm_initial
 
     use parameters_microphys, only: &
       l_lh_cloud_weighted_sampling
@@ -135,8 +135,9 @@ module estimate_scm_microphys_module
     real( kind = core_rknd ), dimension(nz) :: &
       rv_column,  & ! Vapor water                  [kg/kg]
       thl_column, & ! Liquid potential temperature [K]
-      rc_column,  & ! Liquid water                [kg/kg]
-      w_column      ! Vertical velocity           [m/s]
+      rc_column,  & ! Liquid water                 [kg/kg]
+      w_column,   & ! Vertical velocity            [m/s]
+      Ncm_in_cloud  ! In cloud values of Nc        [#/kg]
 
     real( kind = dp ), pointer, dimension(:,:) :: &
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
@@ -182,6 +183,14 @@ module estimate_scm_microphys_module
           write(fstderr,*) "The cloudy sample points do not equal the out of cloud points"
           write(fstderr,*) "in_cloud_points =", in_cloud_points
           write(fstderr,*) "out_of_cloud_points =", out_of_cloud_points
+          write(fstderr,*)  "s_mellor_all_points  ", "weight   ", "cloud_frac"
+          do sample = 1, n_micro_calls, 1
+            write(fstderr,'(I4,3G20.4)') &
+              sample, s_mellor_all_points(k_lh_start,sample), LH_sample_point_weights(sample), &
+              cloud_frac(k_lh_start)
+          end do
+          write(fstderr,*) "k_lh_start = ", k_lh_start, "nz = ", nz
+          PAUSE
         end if
       end if ! l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling
     end if ! clubb_at_least_debug_level 2
@@ -234,12 +243,20 @@ module estimate_scm_microphys_module
                                     hydromet, & ! In
                                     hydromet_columns )
 
+      ! Compute the in-cloud value of Nc for K&K.  The Morrison microphysics
+      ! with predicted Nc shouldn't need this variable.
+      where ( rc_column >= rc_tol ) 
+        Ncm_in_cloud(:) = Ncm_initial / rho
+      else where
+        Ncm_in_cloud(:) = 0.0_core_rknd
+      end where
+
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nz, l_stats_samp, l_local_kk, & ! In
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
              exner, rho, cloud_frac, pdf_params, w_std_dev, & ! In
-             dzq, rc_column, s_mellor_column, rv_column, hydromet_columns, & ! In
+             dzq, rc_column, Ncm_in_cloud, s_mellor_column, rv_column, hydromet_columns, & ! In
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
              lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
              lh_wprtp_mc_tndcy, lh_wpthlp_mc_tndcy, & ! Out
@@ -329,7 +346,7 @@ module estimate_scm_microphys_module
       d_variables,   & ! Number of variates (normally=5) 
       n_micro_calls    ! Number of calls to microphysics (normally=2)
 
-    real( kind = dp ), target, dimension(nz,n_micro_calls,d_variables), intent(in) :: &
+    real( kind = dp ), dimension(nz,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
@@ -364,9 +381,6 @@ module estimate_scm_microphys_module
             real( X_nl_all_levs(:,sample,iiLH_rgraupel), kind = core_rknd )
 
         else if ( ivar == iiNcm .and. iiLH_Nc > 0 ) then
-          ! Kluge for when we don't have correlations between Nc, other variables
-!         hydromet_all_points(:,iiNcm) = Ncm_initial * cm3_per_m3 / rho
-          ! Use a sampled value of cloud droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
             real( X_nl_all_levs(:,sample,iiLH_Nc), kind = core_rknd )
 
@@ -391,7 +405,7 @@ module estimate_scm_microphys_module
             real( X_nl_all_levs(:,sample,iiLH_Ni), kind = core_rknd )
 
         else ! Use the mean field, rather than a sample point
-          ! This is the case for ice phase fields in the Morrison microphysics
+          ! This is the case for hail and graupel in the Morrison microphysics
           ! currently -dschanen 23 March 2010
           hydromet_all_points(:,sample,ivar) = hydromet(:,ivar)
 

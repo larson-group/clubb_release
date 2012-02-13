@@ -18,7 +18,7 @@ module KK_microphys_module
   subroutine KK_micro_driver( dt, nz, l_stats_samp, l_local_kk, &
                               l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                               exner, rho, cloud_frac, pdf_params, w_std_dev, &
-                              dzq, rcm, s_mellor, rvm, hydromet, &
+                              dzq, rcm, Ncm, s_mellor, rvm, hydromet, &
                               hydromet_mc, hydromet_vel, &
                               rcm_mc, rvm_mc, thlm_mc, &
                               wprtp_mc_tndcy, wpthlp_mc_tndcy, &
@@ -74,7 +74,6 @@ module KK_microphys_module
 
     use array_index, only: &
         iirrainm, & ! Constant(s)
-        iiNcm,    &
         iiNrm
 
     use pdf_parameter_module, only: &
@@ -123,6 +122,7 @@ module KK_microphys_module
       rho,        & ! Density                                         [kg/m^3]
       cloud_frac, & ! Cloud fraction                                  [-]
       rcm,        & ! Mean cloud water mixing ratio                   [kg/kg]
+      Ncm,        & ! Mean cloud droplet conc., < N_c >               [num/kg]
       s_mellor      ! Mean extended liquid water mixing ratio         [kg/kg]
 
     type(pdf_parameter), dimension(nz), target, intent(in) :: &
@@ -160,7 +160,6 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(:), pointer ::  &
       rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
       Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
-      Ncm,             & ! Mean cloud droplet conc., < N_c >        [num/kg]
       Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
       VNr,             & ! Mean sedimentation velocity of < N_r >   [m/s]
       rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
@@ -234,7 +233,6 @@ module KK_microphys_module
     integer :: &
       k   ! Loop index
 
-
     ! Remove compiler warnings
     if ( .false. .and. l_latin_hypercube ) then
       rrainm_src_adj = dzq
@@ -248,12 +246,10 @@ module KK_microphys_module
     ! Mean fields.
     rrainm => hydromet(:,iirrainm)
     Nrm    => hydromet(:,iiNrm)
-    Ncm    => hydromet(:,iiNcm)
 
     ! Sedimentation Velocities.
     Vrr => hydromet_vel(:,iirrainm)
     VNr => hydromet_vel(:,iiNrm)
-    hydromet_vel(:,iiNcm) = zero
 
     ! Mean field tendencies.
     rrainm_mc_tndcy => hydromet_mc(:,iirrainm)
