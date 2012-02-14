@@ -1169,13 +1169,13 @@ module clubb_core
     !----------------------------------------------------------------
     if ( l_call_pdf_closure_twice ) then
       w1_zm        = pdf_params_zm%w1
-      w2_zm        = pdf_params_zm%w1
+      w2_zm        = pdf_params_zm%w2
       varnce_w1_zm = pdf_params_zm%varnce_w1
       varnce_w2_zm = pdf_params_zm%varnce_w2
       mixt_frac_zm = pdf_params_zm%mixt_frac
     else
       w1_zm        = zt2zm( pdf_params%w1 )
-      w2_zm        = zt2zm( pdf_params%w1 )
+      w2_zm        = zt2zm( pdf_params%w2 )
       varnce_w1_zm = zt2zm( pdf_params%varnce_w1 )
       varnce_w2_zm = zt2zm( pdf_params%varnce_w2 )
       mixt_frac_zm = zt2zm( pdf_params%mixt_frac )
