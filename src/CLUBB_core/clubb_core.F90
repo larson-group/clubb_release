@@ -467,8 +467,13 @@ module clubb_core
       sclrpthlp_zt   ! sclr' th_l' on thermo. levels
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      p_in_Pa_zm, &  ! Pressure interpolated to momentum levels  [Pa]
-      exner_zm       ! Exner interpolated to momentum levels     [-]
+      p_in_Pa_zm,   & ! Pressure interpolated to momentum levels  [Pa]
+      exner_zm,     & ! Exner interpolated to momentum levels     [-]
+      w1_zm,        & ! Mean w (1st PDF component)                   [m/s]
+      w2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
+      varnce_w1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
+      varnce_w2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
+      mixt_frac_zm    ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     integer :: &
       wprtp_cl_num,   & ! Instance of w'r_t' clipping (1st or 3rd).
@@ -1162,14 +1167,27 @@ module clubb_core
     !----------------------------------------------------------------
     ! Advance rtm/wprtp and thlm/wpthlp one time step
     !----------------------------------------------------------------
-
+    if ( l_call_pdf_closure_twice ) then
+      w1_zm        = pdf_params_zm%w1
+      w2_zm        = pdf_params_zm%w1
+      varnce_w1_zm = pdf_params_zm%varnce_w1
+      varnce_w2_zm = pdf_params_zm%varnce_w2
+      mixt_frac_zm = pdf_params_zm%mixt_frac
+    else
+      w1_zm        = zt2zm( pdf_params%w1 )
+      w2_zm        = zt2zm( pdf_params%w1 )
+      varnce_w1_zm = zt2zm( pdf_params%varnce_w1 )
+      varnce_w2_zm = zt2zm( pdf_params%varnce_w2 )
+      mixt_frac_zm = zt2zm( pdf_params%mixt_frac )
+    end if
     call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,          & ! intent(in)
                           Lscale, wp3_on_wp2, wp3_on_wp2_zt,           & ! intent(in)
                           Kh_zt, tau_zm, Skw_zm, rtpthvp, rtm_forcing, & ! intent(in)
                           thlpthvp, rtm_ref, thlm_ref, thlm_forcing,   & ! intent(in)
                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,       & ! intent(in)
                           invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,     & ! intent(in)
-                          pdf_params, l_implemented,                   & ! intent(in)
+                          w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, mixt_frac_zm, & ! intent(in)
+                          l_implemented,                               & ! intent(in)
                           sclrpthvp, sclrm_forcing, sclrp2,            & ! intent(in)
                           rtm, wprtp, thlm, wpthlp,                    & ! intent(inout)
                           err_code,                                    & ! intent(inout)

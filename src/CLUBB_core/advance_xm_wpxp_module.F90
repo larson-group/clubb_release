@@ -46,7 +46,8 @@ module advance_xm_wpxp_module
                               thlpthvp, rtm_ref, thlm_ref, thlm_forcing, &
                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                               invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2, &
-                              pdf_params, l_implemented, &
+                              w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, mixt_frac_zm, &
+                              l_implemented, &
                               sclrpthvp, sclrm_forcing, sclrp2, &
                               rtm, wprtp, thlm, wpthlp, &
                               err_code, &
@@ -181,11 +182,13 @@ module advance_xm_wpxp_module
       thv_ds_zm,       & ! Dry, base-state theta_v on moment. levs. [K]
       ! Added for clipping by Vince Larson 29 Sep 2007
       rtp2,            & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
-      thlp2              ! th_l'^2 (momentum levels)                [K^2]
+      thlp2,           & ! th_l'^2 (momentum levels)                [K^2]
       ! End of Vince Larson's addition.
-
-    type(pdf_parameter), dimension(gr%nz), intent(in) ::  &
-      pdf_params   ! PDF parameters     [units vary]
+      w1_zm,           & ! Mean w (1st PDF component)                   [m/s]
+      w2_zm,           & ! Mean w (2nd PDF component)                   [m/s]
+      varnce_w1_zm,    & ! Variance of w (1st PDF component)            [m^2/s^2]
+      varnce_w2_zm,    & ! Variance of w (2nd PDF component)            [m^2/s^2]
+      mixt_frac_zm       ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     logical, intent(in) ::  & 
       l_implemented      ! Flag for CLUBB being implemented in a larger model.
@@ -324,8 +327,9 @@ module advance_xm_wpxp_module
     ! have an effect on the central thermodynamic level during the course of
     ! one time step due to turbulent advection.  This is used as part of the
     ! monotonic turbulent advection scheme.
-    call calc_turb_adv_range( dt, pdf_params,  &
-                              low_lev_effect, high_lev_effect )
+    call calc_turb_adv_range( dt, w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, & ! In
+                              mixt_frac_zm, &  ! In
+                              low_lev_effect, high_lev_effect ) ! Out
 
 
     ! Define a_1 (located on momentum levels).
@@ -755,11 +759,11 @@ module advance_xm_wpxp_module
       write(fstderr,*) "thv_ds_zm = ", thv_ds_zm
       write(fstderr,*) "rtp2 = ", rtp2
       write(fstderr,*) "thlp2 = ", thlp2
-      write(fstderr,*) "pdf_params%w1 = ", pdf_params%w1
-      write(fstderr,*) "pdf_params%w2 = ", pdf_params%w2
-      write(fstderr,*) "pdf_params%sw1 = ", pdf_params%varnce_w1
-      write(fstderr,*) "pdf_params%sw2 = ", pdf_params%varnce_w2
-      write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
+      write(fstderr,*) "w1_zm = ", w1_zm
+      write(fstderr,*) "w2_zm = ", w2_zm
+      write(fstderr,*) "varnce_w1_zm = ", varnce_w1_zm
+      write(fstderr,*) "varnce_w2_zm = ", varnce_w2_zm
+      write(fstderr,*) "mixt_frac_zm = ", mixt_frac_zm
       write(fstderr,*) "l_implemented = ", l_implemented
  
       if ( sclr_dim > 0 )  then

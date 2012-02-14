@@ -1112,7 +1112,8 @@ module mono_flux_limiter
   end subroutine mfl_xm_solve
 
   !=============================================================================
-  subroutine calc_turb_adv_range( dt, pdf_params,  &
+  subroutine calc_turb_adv_range( dt, w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, &
+                                  mixt_frac_zm, &
                                   low_lev_effect, high_lev_effect )
 
     ! Description:
@@ -1147,21 +1148,29 @@ module mono_flux_limiter
     use grid_class, only:  &
         gr  ! Variable(s)
 
-    use pdf_parameter_module, only: &
-        pdf_parameter  ! Type
-
     use clubb_precision, only:  & 
         time_precision, & ! Variable(s)
         core_rknd
 
     implicit none
-    
+   
+    ! Constant parameters 
+    logical, parameter ::  &
+      l_constant_thickness = .false.  ! Toggle constant or variable thickness.
+
+    real( kind = core_rknd ), parameter ::  &
+      const_thick = 150.0_core_rknd  ! Constant thickness value               [m]
+
     ! Input Variables
     real(kind=time_precision), intent(in) ::  &
-      dt        ! Model timestep length                            [s]
+      dt ! Model timestep length                       [s]
 
-    type(pdf_parameter), dimension(gr%nz), intent(in) ::  &
-      pdf_params   ! PDF parameters     [units vary]
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+      w1_zm,        & ! Mean w (1st PDF component)                   [m/s]
+      w2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
+      varnce_w1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
+      varnce_w2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
+      mixt_frac_zm    ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     ! Output Variables
     integer, dimension(gr%nz), intent(out) ::  &
@@ -1179,12 +1188,7 @@ module mono_flux_limiter
 
     integer :: k, j
 
-    logical, parameter ::  &
-      l_constant_thickness = .false.  ! Toggle constant or variable thickness.
-
-    real( kind = core_rknd ), parameter ::  &
-      const_thick = 150.0_core_rknd  ! Constant thickness value               [m]
-
+    ! ---- Begin Code ----
 
     if ( l_constant_thickness ) then ! thickness is a constant value.
 
@@ -1285,7 +1289,8 @@ module mono_flux_limiter
        ! vertical velocity.
        ! Note:  A level that has all vertical wind moving downwards will have a
        !        vert_vel_up value that is 0, and vice versa.
-       call mean_vert_vel_up_down( pdf_params, 0.0_core_rknd,  &
+       call mean_vert_vel_up_down( w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, & !  In
+                                   mixt_frac_zm, 0.0_core_rknd,  & ! In
                                    vert_vel_down, vert_vel_up )
 
        ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
@@ -1462,7 +1467,8 @@ module mono_flux_limiter
   end subroutine calc_turb_adv_range
 
   !=============================================================================
-  subroutine mean_vert_vel_up_down( pdf_params, w_ref,  &
+  subroutine mean_vert_vel_up_down( w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, &
+                                    mixt_frac_zm, w_ref, &
                                     mean_w_down, mean_w_up )
 
     ! Description
@@ -1651,9 +1657,6 @@ module mono_flux_limiter
         sqrt_2pi, &
         sqrt_2
 
-    use pdf_parameter_module, only: &
-        pdf_parameter  ! type
-
     use anl_erf, only:  & 
         erf ! Procedure(s)
             ! The error function
@@ -1673,8 +1676,12 @@ module mono_flux_limiter
     implicit none
 
     ! Input Variables
-    type(pdf_parameter), dimension(gr%nz), intent(in) ::  &
-      pdf_params     ! PDF parameters
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+      w1_zm,        & ! Mean w (1st PDF component)                   [m/s]
+      w2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
+      varnce_w1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
+      varnce_w2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
+      mixt_frac_zm    ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     real( kind = core_rknd ), intent(in) ::  &
       w_ref          ! Reference velocity, w|_ref (normally = 0)   [m/s]
@@ -1685,14 +1692,6 @@ module mono_flux_limiter
       mean_w_up      ! Overall mean w (>= w|_ref)                  [m/s]
 
     ! Local Variables
-
-    ! PDF parameters unpacked and interpolated to momentum levels
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      w1,  & ! Mean of w for 1st normal distribution               [m/s]
-      w2,  & ! Mean of w for 2nd normal distribution               [m/s]
-      varnce_w1, & ! Variance of w for 1st normal distribution           [m^2/s^2]
-      varnce_w2, & ! Variance of w for 2nd normal distribution           [m^2/s^2]
-      mixt_frac    ! Weight of 1st normal distribution (Sk_w dependent)  [-]
 
     real( kind = core_rknd ) :: &
       sigma_w1, & ! Standard deviation of w for 1st normal distribution    [m/s]
@@ -1706,69 +1705,60 @@ module mono_flux_limiter
 
     integer :: k  ! Vertical loop index
 
-
-    ! All of the PDF parameters are computed on thermodynamic levels.
-    ! Interpolate the needed PDF parameters from thermodynamic levels
-    ! to momentum levels.
-    w1  = zt2zm( pdf_params%w1 )
-    w2  = zt2zm( pdf_params%w2 )
-    varnce_w1 = zt2zm( pdf_params%varnce_w1 )
-    varnce_w2 = zt2zm( pdf_params%varnce_w2 )
-    mixt_frac = zt2zm( pdf_params%mixt_frac )
-
+    ! ---- Begin Code ----
 
     ! Loop over momentum levels from 2 to gr%nz-1.  Levels 1 and gr%nz
     ! are not needed.
     do k = 2, gr%nz-1, 1
 
        ! Standard deviation of w for the 1st normal distribution.
-       sigma_w1 = sqrt( varnce_w1(k) )
+       sigma_w1 = sqrt( varnce_w1_zm(k) )
 
        ! Standard deviation of w for the 2nd normal distribution.
-       sigma_w2 = sqrt( varnce_w2(k) )
+       sigma_w2 = sqrt( varnce_w2_zm(k) )
 
 
        ! Contributions from the 1st normal distribution.
-       if ( w1(k) + 3._core_rknd*sigma_w1 <= w_ref ) then
+       if ( w1_zm(k) + 3._core_rknd*sigma_w1 <= w_ref ) then
 
           ! The entire 1st normal is on the negative side of w|_ref.
-          mean_w_down_1st = w1(k)
+          mean_w_down_1st = w1_zm(k)
           mean_w_up_1st   = 0.0_core_rknd
 
-       elseif ( w1(k) - 3._core_rknd*sigma_w1 >= w_ref ) then
+       elseif ( w1_zm(k) - 3._core_rknd*sigma_w1 >= w_ref ) then
 
           ! The entire 1st normal is on the positive side of w|_ref.
           mean_w_down_1st = 0.0_core_rknd
-          mean_w_up_1st   = w1(k)
+          mean_w_up_1st   = w1_zm(k)
 
        else
 
           ! The exponential calculation is pulled out as it is reused in both
           ! equations. This should save one calculation of the
-          ! exp( -(w_ref-w1(k))**2 ... etc. part of the formula.
+          ! exp( -(w_ref-w1_zm(k))**2 ... etc. part of the formula.
           ! ~~EIHoppe//20090618
-          exp_cache = exp( -(w_ref-w1(k))**2 / (2.0_core_rknd*sigma_w1**2) ) 
+          exp_cache = exp( -(w_ref-w1_zm(k))**2 / (2.0_core_rknd*sigma_w1**2) ) 
 
           ! Added cache of the error function calculations.
           ! This should save one calculation of the erf(...) part
           ! of the formula.
           ! ~~EIHoppe//20090623
-          erf_cache = erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) )
+          erf_cache = erf( (w_ref-w1_zm(k)) / (sqrt_2*sigma_w1) )
 
           ! The 1st normal has values on both sides of w_ref.
           mean_w_down_1st =  &
              - (sigma_w1/sqrt_2pi)  &
-!             * exp( -(w_ref-w1(k))**2 / (2.0_core_rknd*sigma_w1**2) )  &
+!             * exp( -(w_ref-w1_zm(k))**2 / (2.0_core_rknd*sigma_w1**2) )  &
              * exp_cache  &
 !             + w1(k) * 0.5_core_rknd*( 1.0_core_rknd + erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
-             + w1(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
+             + w1_zm(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
 
           mean_w_up_1st =  &
              + (sigma_w1/sqrt_2pi)  &
 !             * exp( -(w_ref-w1(k))**2 / (2.0_core_rknd*sigma_w1**2) )  &
              * exp_cache  &
 !             + w1(k) * 0.5_core_rknd*( 1.0_core_rknd - erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
-             + w1(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
+             + w1_zm(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
 
           ! /EIHoppe changes
 
@@ -1776,17 +1766,17 @@ module mono_flux_limiter
 
 
        ! Contributions from the 2nd normal distribution.
-       if ( w2(k) + 3._core_rknd*sigma_w2 <= w_ref ) then
+       if ( w2_zm(k) + 3._core_rknd*sigma_w2 <= w_ref ) then
 
           ! The entire 2nd normal is on the negative side of w|_ref.
-          mean_w_down_2nd = w2(k)
+          mean_w_down_2nd = w2_zm(k)
           mean_w_up_2nd   = 0.0_core_rknd
 
-       elseif ( w2(k) - 3._core_rknd*sigma_w2 >= w_ref ) then
+       elseif ( w2_zm(k) - 3._core_rknd*sigma_w2 >= w_ref ) then
 
           ! The entire 2nd normal is on the positive side of w|_ref.
           mean_w_down_2nd = 0.0_core_rknd
-          mean_w_up_2nd   = w2(k)
+          mean_w_up_2nd   = w2_zm(k)
 
        else
 
@@ -1794,40 +1784,40 @@ module mono_flux_limiter
           ! equations. This should save one calculation of the
           ! exp( -(w_ref-w1(k))**2 ... etc. part of the formula.
           ! ~~EIHoppe//20090618
-          exp_cache = exp( -(w_ref-w2(k))**2 / (2.0_core_rknd*sigma_w2**2) ) 
+          exp_cache = exp( -(w_ref-w2_zm(k))**2 / (2.0_core_rknd*sigma_w2**2) ) 
 
           ! Added cache of the error function calculations.
           ! This should save one calculation of the erf(...) part
           ! of the formula.
           ! ~~EIHoppe//20090623
-          erf_cache = erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) )
+          erf_cache = erf( (w_ref-w2_zm(k)) / (sqrt_2*sigma_w2) )
 
           ! The 2nd normal has values on both sides of w_ref.
           mean_w_down_2nd =  &
              - (sigma_w2/sqrt_2pi)  &
-!             * exp( -(w_ref-w2(k))**2 / (2.0_core_rknd*sigma_w2**2) )  &
+!            * exp( -(w_ref-w2_zm(k))**2 / (2.0_core_rknd*sigma_w2**2) )  &
              * exp_cache  &
-!             + w2(k) * 0.5_core_rknd*( 1.0_core_rknd + erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
-             + w2(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
+!            + w2_zm(k) * 0.5_core_rknd*( 1.0_core_rknd + erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
+             + w2_zm(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
 
           mean_w_up_2nd =  &
              + (sigma_w2/sqrt_2pi)  &
-!             * exp( -(w_ref-w2(k))**2 / (2.0_core_rknd*sigma_w2**2) )  &
+!            * exp( -(w_ref-w2(k))**2 / (2.0_core_rknd*sigma_w2**2) )  &
              * exp_cache  &
-!             + w2(k) * 0.5_core_rknd*( 1.0_core_rknd - erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
-             + w2(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
+!            + w2(k) * 0.5_core_rknd*( 1.0_core_rknd - erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
+             + w2_zm(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
 
           ! /EIHoppe changes
 
        endif
 
        ! Overall mean of downwards w.
-       mean_w_down(k) = mixt_frac(k) * mean_w_down_1st  &
-                        + ( 1.0_core_rknd - mixt_frac(k) ) * mean_w_down_2nd
+       mean_w_down(k) = mixt_frac_zm(k) * mean_w_down_1st  &
+                        + ( 1.0_core_rknd - mixt_frac_zm(k) ) * mean_w_down_2nd
 
        ! Overall mean of upwards w.
-       mean_w_up(k) = mixt_frac(k) * mean_w_up_1st  &
-                      + ( 1.0_core_rknd - mixt_frac(k) ) * mean_w_up_2nd
+       mean_w_up(k) = mixt_frac_zm(k) * mean_w_up_1st  &
+                      + ( 1.0_core_rknd - mixt_frac_zm(k) ) * mean_w_up_2nd
 
        if ( l_stats_samp ) then
 
