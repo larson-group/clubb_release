@@ -2210,8 +2210,8 @@ module clubb_core
       pdf_params%alpha_rt    = trapezoid_zt( alpha_rt_zt, alpha_rt_zm )
       pdf_params%stdev_s1    = trapezoid_zt( stdev_s1_zt, stdev_s1_zm )
       pdf_params%stdev_s2    = trapezoid_zt( stdev_s2_zt, stdev_s2_zm )
-      pdf_params%stdev_t1    = trapezoid_zt( stdev_t1_zt, stdev_s1_zm )
-      pdf_params%stdev_t2    = trapezoid_zt( stdev_t2_zt, stdev_s2_zm )
+      pdf_params%stdev_t1    = trapezoid_zt( stdev_t1_zt, stdev_t1_zm )
+      pdf_params%stdev_t2    = trapezoid_zt( stdev_t2_zt, stdev_t2_zm )
     end if
 
     ! End of trapezoidal rule
