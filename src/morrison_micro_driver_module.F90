@@ -197,6 +197,7 @@ module morrison_micro_driver_module
       rcm_in_cloud = dummy(:,1)
       rcm_in_cloud = s_mellor
       rcm_in_cloud = dummy_1D
+      rcm_in_cloud = Ncm_in_cloud
       if ( l_local_kk ) stop
     end if
 
