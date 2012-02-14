@@ -420,9 +420,9 @@ module latin_hypercube_driver_module
     ! This is for the uniform sample only.  Another assertion check is in the
     ! estimate_lh_micro_module for X_nl_all_levs.
     if ( l_lh_cloud_weighted_sampling ) then
-      if(clubb_at_least_debug_level( 2 ) .and. &
-         lh_start_cloud_frac < 0.5_core_rknd .and. lh_start_cloud_frac > cloud_frac_thresh ) then
-        print *, "first assertion check"
+      if ( clubb_at_least_debug_level( 2 ) .and. &
+           lh_start_cloud_frac < 0.5_core_rknd .and. &
+           lh_start_cloud_frac > cloud_frac_thresh ) then
         call assert_check_half_cloudy &
              ( n_micro_calls, pdf_params(k_lh_start)%cloud_frac1, &
                pdf_params(k_lh_start)%cloud_frac2, X_mixt_comp_all_levs(k_lh_start,:), &
