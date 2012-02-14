@@ -163,37 +163,38 @@ module estimate_scm_microphys_module
     w_all_points        => X_nl_all_levs(:,:,iiLH_w)
 
     ! Assertion check
-    if ( clubb_at_least_debug_level( 2 ) ) then
-      if ( l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling .and. &
-           all( LH_sample_point_weights(:) /= 1.0_core_rknd ) ) then 
-              ! The 1.0 indicates cloud_frac is > 0.5
-        ! Verify every other sample point is out of cloud if we're doing
-        ! cloud weighted sampling
-        in_cloud_points     = 0
-        out_of_cloud_points = 0
-        do sample = 1, n_micro_calls, 1
-          if ( s_mellor_all_points(k_lh_start,sample) > 0._core_rknd) then
-            in_cloud_points = in_cloud_points + 1
-          else if ( s_mellor_all_points(k_lh_start,sample) <= 0._core_rknd) then
-            out_of_cloud_points = out_of_cloud_points + 1
-          end if
-        end do ! 1..n_micro_calls
-        if ( in_cloud_points /= out_of_cloud_points ) then
+    if ( l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling .and. &
+         all( LH_sample_point_weights(:) /= 1.0_core_rknd ) ) then 
+        ! The 1.0 indicates cloud_frac is > 0.5
+
+      ! Verify every other sample point is out of cloud if we're doing
+      ! cloud weighted sampling
+      in_cloud_points     = 0
+      out_of_cloud_points = 0
+      do sample = 1, n_micro_calls, 1
+        if ( s_mellor_all_points(k_lh_start,sample) > 0._core_rknd) then
+          in_cloud_points = in_cloud_points + 1
+        else if ( s_mellor_all_points(k_lh_start,sample) <= 0._core_rknd) then
+          out_of_cloud_points = out_of_cloud_points + 1
+        end if
+      end do ! 1..n_micro_calls
+      if ( in_cloud_points /= out_of_cloud_points ) then
+        if ( clubb_at_least_debug_level( 2 ) ) then
           write(fstderr,*) "In est_single_column_tndcy:"
           write(fstderr,*) "The cloudy sample points do not equal the out of cloud points"
           write(fstderr,*) "in_cloud_points =", in_cloud_points
           write(fstderr,*) "out_of_cloud_points =", out_of_cloud_points
-          write(fstderr,*)  "s_mellor_all_points  ", "weight   ", "cloud_frac"
-          do sample = 1, n_micro_calls, 1
-            write(fstderr,'(I4,3G20.4)') &
-              sample, s_mellor_all_points(k_lh_start,sample), LH_sample_point_weights(sample), &
-              cloud_frac(k_lh_start)
-          end do
+          write(fstderr,*)  "cloud fraction = ", cloud_frac(k_lh_start)
           write(fstderr,*) "k_lh_start = ", k_lh_start, "nz = ", nz
-          PAUSE
-        end if
-      end if ! l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling
-    end if ! clubb_at_least_debug_level 2
+          write(fstderr,'(4X,A,A)')  "s_mellor_all_points  ", "weight   "
+          do sample = 1, n_micro_calls, 1
+            write(fstderr,'(I4,2G20.4)') &
+              sample, s_mellor_all_points(k_lh_start,sample), LH_sample_point_weights(sample)
+          end do
+        end if ! clubb_at_least_debug_level 2
+        stop "Fatal Error in est_single_column_tndcy "
+     end if  ! in_cloud_points /= out_of_cloud_points
+    end if ! l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling
 
     lh_hydromet_vel(:,:) = 0._core_rknd
 
