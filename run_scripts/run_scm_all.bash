@@ -78,10 +78,13 @@ if [ $SHORT_CASES == true ] ; then # Run only short cases
     # Populate the list of cases to ingore here. These ignored cases are the
     # cases that take the longest to run.
     IGNORE_CASES[0]=gabls2
-    IGNORE_CASES[1]=cloud_feedback_s6
-    IGNORE_CASES[2]=cloud_feedback_s11
-    IGNORE_CASES[3]=cloud_feedback_s12
-    IGNORE_CASES[4]=twp_ice
+    IGNORE_CASES[1]=cgils_s6
+    IGNORE_CASES[2]=cgils_s11
+    IGNORE_CASES[3]=cgils_s12
+    IGNORE_CASES[4]=cloud_feedback_s6
+    IGNORE_CASES[5]=cloud_feedback_s11
+    IGNORE_CASES[6]=cloud_feedback_s12
+    IGNORE_CASES[7]=twp_ice
 
     a=0
     while read line
@@ -122,9 +125,9 @@ elif [ $PRIORITY_CASES == true ] ; then
     PRIORITY_CASE_ARRAY[8]="rico"
     PRIORITY_CASE_ARRAY[9]="wangara"
     PRIORITY_CASE_ARRAY[10]="arm_97"
-    PRIORITY_CASE_ARRAY[11]="cloud_feedback_s6"
-    PRIORITY_CASE_ARRAY[12]="cloud_feedback_s11"
-    PRIORITY_CASE_ARRAY[13]="cloud_feedback_s12"
+    PRIORITY_CASE_ARRAY[11]="cgils_s6"
+    PRIORITY_CASE_ARRAY[12]="cgils_s11"
+    PRIORITY_CASE_ARRAY[13]="cgils_s12"
     PRIORITY_CASE_ARRAY[14]="gabls3_night"
     PRIORITY_CASE_ARRAY[15]="lba"
     PRIORITY_CASE_ARRAY[16]="twp_ice"

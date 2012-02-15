@@ -110,7 +110,10 @@ module clubb_core
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
       edsclr_dim, &
-      sclr_tol
+      sclr_tol, &
+      ts_nudge, &
+      rtm_min, &
+      rtm_nudge_max_altitude
 
     use model_flags, only: & 
       l_tke_aniso, &  ! Variable(s)
@@ -119,7 +122,8 @@ module clubb_core
       l_trapezoidal_rule_zm, &
       l_call_pdf_closure_twice, &
       l_host_applies_sfc_fluxes, &
-      l_use_cloud_cover
+      l_use_cloud_cover, &
+      l_rtm_nudge
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -783,6 +787,13 @@ module clubb_core
       end if
 
     end do ! k = 1, gr%nz, 1
+
+    if( l_rtm_nudge ) then
+      ! Nudge rtm to prevent excessive drying
+      where( rtm < rtm_min .and. gr%zt < rtm_nudge_max_altitude )
+        rtm = rtm + (rtm_ref - rtm) * ( real( dt, kind = core_rknd ) / ts_nudge )
+      end where
+    end if
 
 
     if ( l_call_pdf_closure_twice ) then

@@ -206,11 +206,15 @@ module clubb_driver
 
     use model_flags, only: &
       setup_configurable_model_flags, & ! Procedure(s)
-      read_model_flags_from_file
+      read_model_flags_from_file, &
+      l_rtm_nudge
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
 
+    use parameters_model, only: &
+      rtm_min, &
+      rtm_nudge_max_altitude
     implicit none
 
     ! Because Fortran I/O is not thread safe, we use this here to
@@ -349,7 +353,7 @@ module clubb_driver
       time_restart, l_input_fields, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
-      l_prescribed_avg_deltaz
+      l_prescribed_avg_deltaz, l_rtm_nudge, rtm_min, rtm_nudge_max_altitude
 
 
     namelist /stats_setting/ & 
@@ -422,6 +426,10 @@ module clubb_driver
     restart_path_case = "none"
     time_restart  = 0._time_precision
     debug_level   = 2
+
+    l_rtm_nudge = .false.
+    rtm_min = 0.0_core_rknd
+    rtm_nudge_max_altitude = 0.0_core_rknd
 
     ! Use the Flatau polynomial approximation for computing saturation in clubb_core
     saturation_formula = "flatau"
@@ -3294,7 +3302,9 @@ module clubb_driver
 
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
-           "cloud_feedback_s12", "cloud_feedback_s12_p2k"  ) ! Cloud Feedback cases
+           "cloud_feedback_s12", "cloud_feedback_s12_p2k", &
+           "cgils_s6", "cgils_s6_p2k", "cgils_s11",        &
+           "cgils_s11_p2k", "cgils_s12", "cgils_s12_p2k"  ) ! Cloud Feedback cases
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       l_fixed_flux            = .true.

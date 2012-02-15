@@ -75,9 +75,10 @@ module model_flags
 
 
   logical, public :: & 
-    l_uv_nudge = .false., & ! For wind speed nudging. - Michael Falk
-    l_tke_aniso = .true.    ! For anisotropic turbulent kinetic energy, 
-                            ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+    l_uv_nudge = .false.,  & ! For wind speed nudging. - Michael Falk
+    l_rtm_nudge = .false., & ! For rtm nudging
+    l_tke_aniso = .true.     ! For anisotropic turbulent kinetic energy, 
+                             ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 ! OpenMP directives.
 !$omp threadprivate(l_uv_nudge, l_tke_aniso)
 

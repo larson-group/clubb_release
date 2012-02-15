@@ -42,6 +42,11 @@ module parameters_model
 
 
 !$omp threadprivate(T0, ts_nudge)
+
+  real( kind = core_rknd), public :: &
+    rtm_min, &             ! Value below which rtm will be nudged [kg/kg]
+    rtm_nudge_max_altitude ! Highest altitude at which to nudge rtm [m]
+
   integer, public :: & 
     sclr_dim,        & ! Number of passive scalars
     edsclr_dim,      & ! Number of eddy-diff. passive scalars
