@@ -3553,6 +3553,15 @@ module clubb_driver
       time_current, & ! Variable(s)
       runtype
 
+    use stats_variables, only: &
+      zt, & ! Variable(s)
+      l_stats_samp, &
+      iNcm, &
+      iNcm_in_cloud
+
+    use stats_type, only: &
+       stat_update_var ! Procedure(s)
+
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
       xp2_on_xm2_array_cloud, &
@@ -3780,6 +3789,11 @@ module clubb_driver
                            exner, sigma_g,  &                ! Intent(in)
                            rcm_mc, thlm_mc )                 ! Intent(inout)
 
+      if ( l_stats_samp .and. trim( micro_scheme ) == "none" ) then
+        ! Output the grid box mean and in cloud values of Nc
+        call stat_update_var( iNcm_in_cloud, Ncm_in_cloud, zt )
+        call stat_update_var( iNcm, Ncm_in_cloud * cloud_frac, zt )
+      end if
     end if
 
     return
