@@ -80,7 +80,7 @@ module model_flags
     l_tke_aniso = .true.     ! For anisotropic turbulent kinetic energy, 
                              ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 ! OpenMP directives.
-!$omp threadprivate(l_uv_nudge, l_tke_aniso)
+!$omp threadprivate(l_uv_nudge, l_tke_aniso, l_rtm_nudge)
 
   ! Use 2 calls to pdf_closure and the trapezoidal rule to  compute the 
   ! varibles that are output from high order closure
