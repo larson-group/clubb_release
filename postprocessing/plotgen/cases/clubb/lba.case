@@ -173,6 +173,10 @@
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'SWP / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'lba_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Lscale', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
     'nightlyOutput' =>

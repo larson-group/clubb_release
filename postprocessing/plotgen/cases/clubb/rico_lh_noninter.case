@@ -66,6 +66,10 @@
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/rico_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => '( ncm ./ 1.0e-6 ) ./ dn0', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfExist( LH_Ncm, Ncm ) .* cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Lscale', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
     'nightlyOutput' =>

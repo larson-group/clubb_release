@@ -25,6 +25,10 @@
        {'plotTitle' => 'scalar(2)^2', 'axisLabel' => 'sclr2p2', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'sclr2p2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'gabls2_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Lscale', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
     'nightlyOutput' =>
