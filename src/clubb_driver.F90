@@ -2715,7 +2715,8 @@ module clubb_driver
       l_soil_veg ! Variable(s)
 
     use parameters_microphys, only : &
-      micro_scheme  ! Variable
+      micro_scheme, &  ! Variable
+      l_predictnc
 
     implicit none
 
@@ -2810,7 +2811,11 @@ module clubb_driver
       input_ricem = .true.
       input_rgraupelm = .true.
       input_Ncnm = .false.
-      input_Ncm = .true.
+      if ( l_predictnc ) then
+        input_Ncm = .true.
+      else
+        input_Ncm = .false.
+      end if
       input_Nrm = .true.
       input_Nim =  .true.
 
@@ -2820,7 +2825,11 @@ module clubb_driver
       input_ricem = .true.
       input_rgraupelm = .false.
       input_Ncnm = .false.
-      input_Ncm = .true.
+      if ( l_predictnc ) then
+        input_Ncm = .true.
+      else
+        input_Ncm = .false.
+      end if
       input_Nrm = .false.
       input_Nim =  .true.
 
@@ -2830,7 +2839,7 @@ module clubb_driver
       input_ricem = .false.
       input_rgraupelm = .false.
       input_Ncnm = .false.
-      input_Ncm = .true.
+      input_Ncm = .false.
       input_Nrm = .true.
       input_Nim = .false.
 
