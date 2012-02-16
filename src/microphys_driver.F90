@@ -1396,8 +1396,8 @@ module microphys_driver
 
       ! We fix Nc for testing purposes -dschanen 5 Jan 2012
       if ( .not. l_predictnc ) then
-        Ncm(1:gr%nz) = ( Ncm_initial / rho(gr%nz) ) & ! Convert to #/kg air
-               * cloud_frac(gr%nz)
+        Ncm(1:gr%nz) = ( Ncm_initial / rho(1:gr%nz) ) & ! Convert to #/kg air
+               * cloud_frac(1:gr%nz)
         if ( l_stats_samp ) then
           call stat_update_var( iNcm, Ncm, zt )
         end if ! l_stats_samp
