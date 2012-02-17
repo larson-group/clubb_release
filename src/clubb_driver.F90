@@ -1013,14 +1013,8 @@ module clubb_driver
       ! Add microphysical tendencies to the forcings
       rtm_forcing(:) = rtm_forcing(:) + rcm_mc(:) + rvm_mc(:)
 
-      ! This is a kluge added because the _tndcy subroutines will sometimes
-      ! compute radht from an analytic formula and add it to thlm_forcing before
-      ! we reach this point in the clubb_driver. -dschanen 17 Aug 2009
-      if ( trim( rad_scheme ) /= "none" ) then
-        thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:) + radht(:)
-      else
-        thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:)
-      end if
+      ! Add radiation and microphysical tendencies to thlm_forcing
+      thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:) + radht(:)
 
       ! Call the parameterization one timestep
       call advance_clubb_core & 
@@ -3893,7 +3887,7 @@ module clubb_driver
       hydromet ! Hydrometeor species    [units vary]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       radht ! Radiative heating rate                   [K/s]
 
     integer, intent(inout) :: err_code ! Error code
@@ -3925,6 +3919,8 @@ module clubb_driver
     Frad_LW_up = 0._core_rknd
     Frad_SW_down = 0._core_rknd
     Frad_LW_down = 0._core_rknd
+
+    radht = 0._core_rknd ! Initialize the radiative heating rate to 0.
 
     err_code_radiation = clubb_no_error
 
