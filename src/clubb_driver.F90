@@ -4138,7 +4138,7 @@ module clubb_driver
       io3l_rad, irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad, &
       iradht_rad, iradht_LW_rad, iradht_SW_rad, iFrad_SW_rad, &
       iFrad_LW_rad, iFrad_SW_up_rad, iFrad_LW_up_rad, iFrad_SW_down_rad, &
-      iFrad_LW_down_rad, ifdswcl, ifuswcl, ifdlwcl, ifulwcl
+      iFrad_LW_down_rad, ifdswcl, ifuswcl, ifdlwcl, ifulwcl, iradht
 
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW, T_in_k, rcil, o3l, & ! Variables
@@ -4147,9 +4147,10 @@ module clubb_driver
       fdswcl, fuswcl, fdlwcl, fulwcl
 
     use variables_diagnostic_module, only: &
-      Frad_LW_down, Frad_LW_up, Frad_SW_down, Frad_SW_up ! Variables
+      radht, Frad_LW_down, Frad_LW_up, Frad_SW_down, Frad_SW_up ! Variables
 
-    use grid_class, only: flip ! Prodecure(s)
+    use grid_class, only: &
+      flip ! Prodecure(s)
 
     use stats_variables, only: zt, zm, rad_zt, rad_zm ! Type
 
@@ -4175,8 +4176,11 @@ module clubb_driver
 
     integer :: rad_zt_dim, rad_zm_dim ! Dimensions of the radiation grid
 
+    ! ---- Begin Code ----
 
     if ( l_stats_samp ) then
+
+      call stat_update_var( iradht, radht, zt )
 
       call stat_update_var( iradht_LW, radht_LW, zt )
 

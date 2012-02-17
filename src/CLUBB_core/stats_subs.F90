@@ -1229,8 +1229,7 @@ module stats_subs
         irsat, & 
         irsati, & 
         iAKm, & 
-        iLH_AKm, & 
-        iradht
+        iLH_AKm
 
     use stats_variables, only: & 
         imixt_frac, &  ! Variable(s)
@@ -1383,8 +1382,7 @@ module stats_subs
         sigma_sqd_w_zt, & 
         rsat, & 
         AKm, & 
-        lh_AKm, & 
-        radht
+        lh_AKm
 
     use variables_diagnostic_module, only: & 
         wp2_zt, &  ! Variable(s)
@@ -1533,6 +1531,8 @@ module stats_subs
 
     real( kind = core_rknd ) :: xtmp
 
+    ! ---- Begin Code ----
+
     ! Sample fields
 
     if ( l_stats_samp ) then
@@ -1595,7 +1595,6 @@ module stats_subs
       call stat_update_var( iAKm_rcm, AKm_rcm, zt)
       call stat_update_var( iAKm_rcc, AKm_rcc, zt )
 
-      call stat_update_var( iradht, radht, zt )
       call stat_update_var( imixt_frac, pdf_params%mixt_frac, zt )
       call stat_update_var( iw1, pdf_params%w1, zt )
       call stat_update_var( iw2, pdf_params%w2, zt )
