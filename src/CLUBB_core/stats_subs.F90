@@ -53,7 +53,7 @@ module stats_subs
       ztscr21
 
     use stats_variables, only: & 
-      zm,      & 
+      zm,      & ! Variables
       zmscr01, & 
       zmscr02, & 
       zmscr03, & 
@@ -89,11 +89,11 @@ module stats_subs
       l_grads
 
     use clubb_precision, only: & 
-      time_precision, &   ! Variable(s)
+      time_precision, & ! Constant(s)
       core_rknd
 
     use output_grads, only: & 
-      open_grads  ! Procedure
+      open_grads ! Procedure
 
 #ifdef NETCDF
     use output_netcdf, only: & 
@@ -174,6 +174,11 @@ module stats_subs
 
 
     ! Local Variables
+    logical :: l_error
+
+    character(len=200) :: fname
+
+    integer :: i, ntot, read_status
 
     ! Namelist Variables
 
@@ -201,13 +206,7 @@ module stats_subs
       vars_rad_zm, & 
       vars_sfc
 
-    ! Local Variables
-
-    logical :: l_error
-
-    character(len=200) :: fname
-
-    integer :: i, ntot, read_status
+    ! ---- Begin Code ----
 
     ! Initialize
     l_error = .false.
@@ -256,7 +255,8 @@ module stats_subs
       write(fstderr,*) "Maximum variables allowed for var_rad_zm = ", nvarmax_rad_zm
       write(fstderr,*) "Maximum variables allowed for var_sfc = ", nvarmax_sfc
       stop "stats_init: Error reading stats namelist."
-    end if
+    end if ! read_status /= 0
+
     close(unit=iunit)
 
     if ( clubb_at_least_debug_level( 1 ) ) then
@@ -313,10 +313,9 @@ module stats_subs
     fname_sfc = trim( fname_prefix )//"_sfc"
 
     ! Parse the file type for stats output.  Currently only GrADS and
-    ! NetCDF v3 are supported by this code.
-
-    select case( trim( stats_fmt ) )
-    case( "GrADS", "grads", "gr" )
+    ! netCDF > version 3.5 are supported by this code.
+    select case ( trim( stats_fmt ) )
+    case ( "GrADS", "grads", "gr" )
       l_netcdf = .false.
       l_grads  = .true.
 
@@ -325,8 +324,9 @@ module stats_subs
       l_grads  = .false.
 
     case default
-      write(fstderr,*) "Invalid data format "//trim( stats_fmt )
-      stop
+      write(fstderr,*) "In module stats_subs subroutine stats_init: "
+      write(fstderr,*) "Invalid stats output format "//trim( stats_fmt )
+      stop "Fatal error"
 
     end select
 
@@ -363,7 +363,7 @@ module stats_subs
                .and. len_trim(vars_zt(i)) /= 0 & 
                .and. i <= nvarmax_zt )
       i = i + 1
-    enddo
+    end do
     ntot = i - 1
     if ( ntot == nvarmax_zt ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
@@ -452,7 +452,7 @@ module stats_subs
                         time_current+stats_tout, stats_tout, zt%nn, &  ! In
                         zt%f ) ! InOut
 #else
-      stop "netCDF support was not compiled into this build."
+      stop "This CLUBB program was not compiled with netCDF support."
 #endif
 
     end if
@@ -514,6 +514,7 @@ module stats_subs
     allocate( zmscr16(zm%kk) )
     allocate( zmscr17(zm%kk) )
 
+    ! Initialize to 0
     zmscr01 = 0.0_core_rknd
     zmscr02 = 0.0_core_rknd
     zmscr03 = 0.0_core_rknd
@@ -551,7 +552,7 @@ module stats_subs
                         zm%f ) ! InOut
 
 #else
-      stop "netCDF support was not compiled into this build."
+      stop "This CLUBB program was not compiled with netCDF support."
 #endif
     end if
 
@@ -650,7 +651,7 @@ module stats_subs
                           rad_zt%nn, rad_zt%f )
 
 #else
-        stop "netCDF support was not compiled into this build."
+        stop "This CLUBB program was not compiled with netCDF support."
 #endif
       end if
 
@@ -747,7 +748,7 @@ module stats_subs
                           rad_zm%nn, rad_zm%f )
 
 #else
-        stop "netCDF support was not compiled into this build."
+        stop "This CLUBB program was not compiled with netCDF support."
 #endif
       end if
 
@@ -807,7 +808,7 @@ module stats_subs
                         sfc%f ) ! InOut
 
 #else
-      stop "netCDF support was not compiled into this build."
+      stop "This CLUBB program was not compiled with netCDF support."
 #endif
     end if
 
@@ -817,7 +818,7 @@ module stats_subs
 
     if ( l_error ) then
       write(fstderr,*) 'stats_init:  errors found'
-      stop
+      stop "Fatal error"
     endif
 
     return
@@ -835,8 +836,10 @@ module stats_subs
   !-----------------------------------------------------------------------
   subroutine stats_zero( kk, nn, x, n, l_in_update )
 
-    !     Description:
-    !     Initialize stats to zero
+    ! Description:
+    !   Initialize stats to zero
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
     use clubb_precision, only: & 
         stat_rknd,   & ! Variable(s)
@@ -844,10 +847,10 @@ module stats_subs
 
     implicit none
 
-    ! Input
+    ! Input Variable(s)
     integer, intent(in) :: kk, nn
 
-    ! Output
+    ! Output Variable(s)
     real(kind=stat_rknd), dimension(1,1,kk,nn), intent(out)    :: x
     integer(kind=stat_nknd), dimension(1,1,kk,nn), intent(out) :: n
     logical, dimension(1,1,kk,nn), intent(out) :: l_in_update
@@ -866,8 +869,10 @@ module stats_subs
   !-----------------------------------------------------------------------
   subroutine stats_avg( kk, nn, x, n )
 
-    !     Description:
-    !     Compute the average of stats fields
+    ! Description:
+    !   Compute the average of stats fields
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
     use clubb_precision, only: & 
         stat_rknd,   & ! Variable(s)
@@ -875,28 +880,27 @@ module stats_subs
 
     implicit none
 
-    ! Input
-    integer, intent(in) :: nn, kk
-    integer(kind=stat_nknd), dimension(1,1,kk,nn), intent(in) :: n
+    ! External
+    intrinsic :: real
 
-    ! Output
-    real(kind=stat_rknd), dimension(1,1,kk,nn), intent(inout)  :: x
+    ! Input Variable(s)
+    integer, intent(in) :: &
+      kk, & ! Number of levels in vertical (i.e. Z) dimension
+      nn    ! Number of variables being sampled in x
 
-    ! Internal
+    integer(kind=stat_nknd), dimension(1,1,kk,nn), intent(in) :: &
+      n ! The variable n is the number of samples per x per kk
 
-    integer k,m
+    ! Output Variable(s)
+    real(kind=stat_rknd), dimension(1,1,kk,nn), intent(inout) :: &
+      x ! The variable x is a set of nn variables being averaged over n
+
+    ! ---- Begin Code ----
 
     ! Compute averages
-
-    do m=1,nn
-      do k=1,kk
-
-        if ( n(1,1,k,m) > 0 ) then
-          x(1,1,k,m) = x(1,1,k,m) / real( n(1,1,k,m), kind=stat_rknd )
-        end if
-
-      end do
-    end do
+    where ( n(1,1,1:kk,1:nn) > 0 )
+      x(1,1,1:kk,1:nn) = x(1,1,1:kk,1:nn) / real( n(1,1,1:kk,1:nn), kind=stat_rknd )
+    end where
 
     return
   end subroutine stats_avg
@@ -922,8 +926,10 @@ module stats_subs
 
     implicit none
 
-    ! Input
+    ! External
+    intrinsic :: mod
 
+    ! Input Variable(s)
     real(kind=time_precision), intent(in) ::  & 
       time_elapsed ! Elapsed model time       [s]
 
@@ -951,9 +957,13 @@ module stats_subs
   !-----------------------------------------------------------------------
   subroutine stats_end_timestep( )
 
-    !     Description: Called when the stats timestep has ended. This subroutine
-    !     is responsible for calling statistics to be written to the output
-    !     format.
+    ! Description: 
+    !   Called when the stats timestep has ended. This subroutine
+    !   is responsible for calling statistics to be written to the output
+    !   format.
+    !
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -993,6 +1003,8 @@ module stats_subs
 
     logical :: l_error
 
+    ! ---- Begin Code ----
+
     ! Check if it is time to write to file
 
     if ( .not. l_stats_last ) return
@@ -1015,12 +1027,12 @@ module stats_subs
                              trim(zt%f%var(i)%name), ' in zt ',  &
                              'at k = ', k,  &
                              '; zt%n(',k,',',i,') = ', zt%n(1,1,k,i)
-          endif
+          end if ! clubb_at_lest_debug_level 1
 
-        endif
+        end if ! n /= 0 and n /= stats_tout/stats_tsamp
 
-      enddo
-    enddo
+      end do ! k = 1 .. zt%kk
+    end do ! i = 1 .. zt%nn
 
     ! Look for errors by checking the number of sampling points
     ! for each variable in the zm statistics at each vertical level.
@@ -1037,14 +1049,14 @@ module stats_subs
                              trim(zm%f%var(i)%name), ' in zm ',  &
                              'at k = ', k,  &
                              '; zm%n(',k,',',i,') = ', zm%n(1,1,k,i)
-          endif
+          end if ! clubb_at_least_debug_level 1
 
-        endif
+        end if ! n /= 0 and n /= stats_tout/stats_tsamp
 
-      enddo
-    enddo
+      end do ! k = 1 .. zm%kk
+    end do ! i = 1 .. zm%nn
 
-    if (l_output_rad_files) then
+    if ( l_output_rad_files ) then
       ! Look for errors by checking the number of sampling points
       ! for each variable in the rad_zt statistics at each vertical level.
       do i = 1, rad_zt%nn
@@ -1060,12 +1072,12 @@ module stats_subs
                                trim(rad_zt%f%var(i)%name), ' in rad_zt ',  &
                                'at k = ', k,  &
                                '; rad_zt%n(',k,',',i,') = ', rad_zt%n(1,1,k,i)
-            endif
+            end if ! clubb_at_lest_debug_level 1
 
-          endif
+          end if ! n /= 0 and n /= stats_tout/stats_tsamp
 
-        enddo
-      enddo
+        end do ! k = 1 .. rad_zt%kk
+      end do !  i = 1 .. rad_zt%nn
 
       ! Look for errors by checking the number of sampling points
       ! for each variable in the rad_zm statistics at each vertical level.
@@ -1082,12 +1094,13 @@ module stats_subs
                                trim(rad_zm%f%var(i)%name), ' in rad_zm ',  &
                                'at k = ', k,  &
                                '; rad_zm%n(',k,',',i,') = ', rad_zm%n(1,1,k,i)
-            endif
+            end if ! clubb_at_lest_debug_level 1
 
-          endif
+          end if ! n /= 0 and n /= stats_tout/stats_tsamp
 
-        enddo
-      enddo
+        end do ! k = 1 .. rad_zm%kk
+      end do !  i = 1 .. rad_zm%nn
+
     end if ! l_output_rad_files
 
     ! Look for errors by checking the number of sampling points
@@ -1105,12 +1118,12 @@ module stats_subs
                              trim(sfc%f%var(i)%name), ' in sfc ',  &
                              'at k = ', k,  &
                              '; sfc%n(',k,',',i,') = ', sfc%n(1,1,k,i)
-          endif
+          end if ! clubb_at_lest_debug_level 1
 
-        endif
+        end if ! n /= 0 and n /= stats_tout/stats_tsamp
 
-      enddo
-    enddo
+      end do ! k = 1 .. sfc%kk
+    end do !  i = 1 .. sfc%nn
 
     ! Stop the run if errors are found.
     if ( l_error ) then
@@ -1118,12 +1131,12 @@ module stats_subs
       write(fstderr,*) 'For details, set debug_level to a value of at ',  &
                        'least 1 in the appropriate model.in file.'
       stop 'stats_end_timestep:  error(s) found'
-    endif
+    end if ! l_error
 
     ! Compute averages
     call stats_avg( zt%kk, zt%nn, zt%x, zt%n )
     call stats_avg( zm%kk, zm%nn, zm%x, zm%n )
-    if (l_output_rad_files) then
+    if ( l_output_rad_files ) then
       call stats_avg( rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n )
       call stats_avg( rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n )
     end if
@@ -1142,20 +1155,20 @@ module stats_subs
 #ifdef NETCDF
       call write_netcdf( zt%f  )
       call write_netcdf( zm%f  )
-      if (l_output_rad_files) then
+      if ( l_output_rad_files ) then
         call write_netcdf( rad_zt%f  )
         call write_netcdf( rad_zm%f  )
       end if
       call write_netcdf( sfc%f  )
 #else
       stop "This program was not compiled with netCDF support"
-#endif
-    endif
+#endif /* NETCDF */
+    end if ! l_grads
 
     ! Reset sample fields
     call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
     call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
-    if (l_output_rad_files) then
+    if ( l_output_rad_files ) then
       call stats_zero( rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n, rad_zt%l_in_update )
       call stats_zero( rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n, rad_zm%l_in_update )
     end if
@@ -1183,6 +1196,9 @@ module stats_subs
     !   Accumulate those stats variables that are preserved in CLUBB from timestep to
     !   timestep, but not those stats that are not, (e.g. budget terms, longwave and
     !   shortwave components, etc.)
+    !
+    ! References:
+    !   None
     !----------------------------------------------------------------------
 
     use stats_variables, only: & 
@@ -1460,7 +1476,7 @@ module stats_subs
 
     implicit none
 
-    ! Input Variable
+    ! Input Variable(s)
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       um,      & ! u wind                        [m/s]
       vm,      & ! v wind                        [m/s]
@@ -1524,10 +1540,10 @@ module stats_subs
     integer :: i, k
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      T_in_K, &  ! Absolute temperature [K]
-      rsati,  &  ! Saturation w.r.t ice [kg/kg]
-      shear,  &  ! Wind shear production term [m^2/s^3]
-      s_mellor   ! Mellor's 's'               [kg/kg]
+      T_in_K, &  ! Absolute temperature         [K]
+      rsati,  &  ! Saturation w.r.t ice         [kg/kg]
+      shear,  &  ! Wind shear production term   [m^2/s^3]
+      s_mellor   ! Mellor's 's'                 [kg/kg]
 
     real( kind = core_rknd ) :: xtmp
 
@@ -1725,7 +1741,7 @@ module stats_subs
                      - vpwp(k) * ( vm(k+1) - vm(k) ) * gr%invrs_dzm(k)
         enddo
         shear(gr%nz) = 0.0_core_rknd
-      endif
+      end if
       call stat_update_var( ishear, shear, zm )
 
       ! sfc variables
@@ -1741,7 +1757,7 @@ module stats_subs
           k = k + 1
         enddo
 
-        if ( k > 1 .AND. k < gr%nz) then
+        if ( k > 1 .and. k < gr%nz) then
 
           ! Use linear interpolation to find the exact height of the
           ! rc_tol kg/kg level.  Brian.
@@ -1753,9 +1769,9 @@ module stats_subs
           ! Set the cloud base output to -10m, if it's clear. 
           call stat_update_var_pt( iz_cloud_base, 1, -10.0_core_rknd , sfc ) ! Known magic number
  
-        endif
+        end if ! k > 1 and k < gr%nz
 
-      endif
+      end if ! iz_cloud_base > 0
 
       ! Liquid Water Path
       if ( ilwp > 0 ) then
@@ -1850,7 +1866,7 @@ module stats_subs
                                sfc )
 
 
-    endif  ! l_stats_samp
+    end if ! l_stats_samp
 
 
     return
@@ -1966,7 +1982,7 @@ module stats_subs
 
         call stat_update_var_pt( iswp, 1, xtmp, sfc )
 
-      end if
+      end if ! iswp > 0 .and. iirsnowm > 0
 
       ! Ice Water Path
       if ( iiwp > 0 .and. iiricem > 0 ) then
@@ -1990,7 +2006,7 @@ module stats_subs
 
         call stat_update_var_pt( irwp, 1, xtmp, sfc )
 
-      end if
+      end if ! irwp > 0 .and. irrainm > 0
     end if ! l_stats_samp
 
     return
@@ -2348,7 +2364,7 @@ module stats_subs
       deallocate( iwpsclrpthlp )
       deallocate( iwpedsclrp )
 
-    endif ! l_stats
+    end if ! l_stats
 
 
     return
