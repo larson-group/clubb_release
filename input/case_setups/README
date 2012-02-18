@@ -479,6 +479,9 @@ Large-scale tendency applied to mean fields (e.g. um, vm, thlm, rtm). Cases that
 were implemented in clubb_standalone prior to adding this code may use hardwired
 values that are set in the source code instead. See l_t_dependent, above.
 
+For latin hypercube sampling you must have the following 2 files or will 
+recieve an error message:
+
 <Case Name>_corr_array_cloud.in
 The in cloud (where rcm >= rc_tol) correlation values for computing the
 latin hypercube sample points fed into the microphysics.
