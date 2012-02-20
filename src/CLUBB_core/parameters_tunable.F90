@@ -83,6 +83,7 @@ module parameters_tunable
     gamma_coefb = 0.320000_core_rknd,    & ! High Skewness in gamma coefficient Skewness Function.
     gamma_coefc = 5.000000_core_rknd,   & ! Degree of Slope of gamma coefficient Skewness Function.
     mu          = 1.000E-3_core_rknd,    & ! Fractional entrainment rate per unit altitude.
+    mult_coef   = 1.500000_core_rknd,    & ! Coefficient applied to log( avg dz / threshold )
     taumin      = 90.00000_core_rknd,    & ! Minimum allowable value of time-scale tau.
     taumax      = 3600.000_core_rknd,    & ! Maximum allowable value of time-scale tau.
     lmin                              ! Minimum value for the length scale.
@@ -108,7 +109,7 @@ module parameters_tunable
 !$omp     C13, C14, C15, &
 !$omp     c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, &
 !$omp     c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, nu_hd, &
-!$omp     gamma_coef, gamma_coefb, gamma_coefc, &
+!$omp     gamma_coef, gamma_coefb, gamma_coefc, mult_coef, &
 !$omp     taumin, taumax, mu, lmin, Lscale_mu_coef, Lscale_pert_coef)
 
   real( kind = core_rknd ), public, allocatable, dimension(:) :: & 
@@ -157,8 +158,8 @@ module parameters_tunable
     C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
     c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
-    nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
-    lmin_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef
+    nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
+    mult_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -185,8 +186,8 @@ module parameters_tunable
        "nu6             ", "c_K8            ", "nu8             ", "c_K9            ", &
        "nu9             ", "nu10            ", "c_Krrainm       ", "nu_r            ", &
        "nu_hd           ", "gamma_coef      ", "gamma_coefb     ", "gamma_coefc     ", &
-       "mu              ", "beta            ", "lmin_coef       ", "taumin          ", &
-       "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef" /)
+       "mu              ", "beta            ", "lmin_coef       ", "mult_coef       ", &
+       "taumin          ", "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef" /)
 
   real( kind = core_rknd ), parameter :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -271,7 +272,7 @@ module parameters_tunable
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                             c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-                            mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+                            mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                             Lscale_pert_coef )
 
 
@@ -362,8 +363,7 @@ module parameters_tunable
     ! are increased.  Traditionally, the threshold grid spacing has been set to
     ! 40.0 meters.  This is only relevant if l_adj_low_res_nu is turned on.
     real( kind = core_rknd ), parameter :: &
-      grid_spacing_thresh = 40.0_core_rknd, &  ! grid spacing threshold  [m]
-      mult_coef = 1.5_core_rknd ! Coefficient applied to log( avg dz / threshold )
+      grid_spacing_thresh = 40.0_core_rknd  ! grid spacing threshold  [m]
 
     ! Input Variables
 
@@ -604,7 +604,7 @@ module parameters_tunable
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-                          mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+                          mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, params )
 
     l_error = .false.
@@ -673,7 +673,7 @@ module parameters_tunable
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
       c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
-      lmin_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef
+      lmin_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef
 
     ! Initialize values to -999.
     call init_parameters_999( )
@@ -694,7 +694,7 @@ module parameters_tunable
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-                          mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+                          mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, param_spread )
 
     l_error = .false.
@@ -737,7 +737,7 @@ module parameters_tunable
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
                c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, &
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
-               mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+               mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                Lscale_pert_coef, params )
 
     ! Description:
@@ -809,6 +809,7 @@ module parameters_tunable
       imu, & 
       ibeta, & 
       ilmin_coef, & 
+      imult_coef, &
       itaumin, & 
       itaumax, & 
       iLscale_mu_coef, &
@@ -826,8 +827,8 @@ module parameters_tunable
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, nu10, c_Krrainm, nu_r, nu_hd, gamma_coef, &
-      gamma_coefb, gamma_coefc, mu, beta, lmin_coef, taumin, &
-      taumax, Lscale_mu_coef, Lscale_pert_coef
+      gamma_coefb, gamma_coefc, mu, beta, lmin_coef, mult_coef, &
+      taumin, taumax, Lscale_mu_coef, Lscale_pert_coef
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
@@ -893,6 +894,7 @@ module parameters_tunable
     params(ibeta) = beta
 
     params(ilmin_coef) = lmin_coef
+    params(imult_coef) = mult_coef
 
     params(itaumin) = taumin
     params(itaumax) = taumax
@@ -914,7 +916,7 @@ module parameters_tunable
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
                c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-               mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+               mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                Lscale_pert_coef )
 
     ! Description:
@@ -986,6 +988,7 @@ module parameters_tunable
       imu, & 
       ibeta, & 
       ilmin_coef, & 
+      imult_coef, &
       itaumin, & 
       itaumax, & 
       iLscale_mu_coef, &
@@ -1007,7 +1010,7 @@ module parameters_tunable
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
       c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-      mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+      mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef
 
     C1      = params(iC1)
@@ -1071,6 +1074,7 @@ module parameters_tunable
     beta = params(ibeta)
 
     lmin_coef = params(ilmin_coef)
+    mult_coef = params(imult_coef)
 
     taumin = params(itaumin)
     taumax = params(itaumax)
@@ -1104,7 +1108,7 @@ module parameters_tunable
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
-                          mu, beta, lmin_coef, taumin, taumax, Lscale_mu_coef, &
+                          mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, params )
 
     return
@@ -1181,6 +1185,7 @@ module parameters_tunable
     gamma_coef         = init_value
     gamma_coefb        = init_value
     gamma_coefc        = init_value
+    mult_coef          = init_value
     taumin             = init_value
     taumax             = init_value
     lmin_coef          = init_value
