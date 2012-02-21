@@ -21,7 +21,7 @@ TIMESTEP_TEST=false
 ZT_GRID=false
 ZM_GRID=false
 PERFORMANCE_TEST=false
-OUTPUT_DIR="/home/`whoami`/nightly_tests/output"
+OUTPUT_DIR="/usr/nightly_tests/nightly_tests/output"
 NAMELISTS="clubb.in"
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 
