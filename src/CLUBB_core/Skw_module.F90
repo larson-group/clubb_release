@@ -34,6 +34,11 @@ module Skw_module
     intrinsic :: min, max
 
     ! Parameter Constants
+    ! Factor to decrease sensitivity in the denominator of Skw calculation
+    real( kind = core_rknd ), parameter :: &
+      Skw_denom_coef = 8.0_core_rknd ! [-]
+
+    ! Whether to apply clipping to the final result
     logical, parameter ::  & 
       l_clipping_kluge = .false.
 
@@ -41,10 +46,6 @@ module Skw_module
     real( kind = core_rknd ), intent(in) :: & 
       wp2,  & ! w'^2    [m^2/s^2]
       wp3     ! w'^3    [m^3/s^3]
-
-    real( kind = core_rknd ), parameter :: &
-      Skw_denom_coef = 8.0_core_rknd  ! Factor to decrease sensitivity in the denominator
-                                     ! of Skw calculation
 
     ! Output Variable
     real( kind = core_rknd ) :: & 
@@ -55,9 +56,9 @@ module Skw_module
     !Skw = wp3 / ( max( wp2, w_tol_sqd ) )**1.5_core_rknd
     ! Calculation of skewness to help reduce the sensitivity of this value to
     ! small values of wp2.
-    Skw = wp3 / ( ( wp2 + Skw_denom_coef * w_tol_sqd ) )**1.5_core_rknd
+    Skw = wp3 / ( wp2 + Skw_denom_coef * w_tol_sqd )**1.5_core_rknd
 
-    ! This is no longer need since clipping is already
+    ! This is no longer needed since clipping is already
     ! imposed on wp2 and wp3 elsewhere in the code
     if ( l_clipping_kluge ) then
       Skw = min( max( Skw, -Skw_max_mag ), Skw_max_mag )
