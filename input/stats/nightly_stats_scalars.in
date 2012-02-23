@@ -3,7 +3,7 @@ vars_zt =
 'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3',
 'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
 'Ncm', 'rgraupelm', 'ricem', 'Nim',
-'sclr1m', 'sclr2m',
+'sclr1m', 'sclr2m','Lscale'
 ''
 
 vars_zm =
