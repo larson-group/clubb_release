@@ -89,6 +89,7 @@ gamma_coefc = 0.
 taumin      = 0.
 taumax      = 0.
 lmin_coef   = 0.
+mult_coef   = 0.
 mu          = 0.
 Lscale_mu_coef = 0.
 Lscale_pert_coef = 0.
