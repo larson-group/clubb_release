@@ -21,9 +21,11 @@ TIMESTEP_TEST=false
 ZT_GRID=false
 ZM_GRID=false
 PERFORMANCE_TEST=false
+OUTPUT_SPECIFIED=false
 OUTPUT_DIR="/usr/nightly_tests/nightly_tests/output"
 NAMELISTS="clubb.in"
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
+CUSTOM_OUTPUT_DIR=""
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
@@ -64,7 +66,7 @@ run_case()
 # Note that we use `"$@"' to let each command-line parameter expand to a 
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o z:m:l:t:s:p:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,performance_test,nightly,help \
+TEMP=`getopt -o z:m:l:t:s:p:o:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,output_directory:,performance_test,nightly,help \
      -n 'run_scm.bash' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -151,6 +153,22 @@ while true ; do
 			PERFORMANCE_TEST=true
 
 			shift;;
+		-o|--output_directory)
+			OUTPUT_SPECIFIED=true
+
+			CUSTOM_OUTPUT_DIR=$2
+			
+			if [ ! -d $CUSTOM_OUTPUT_DIR ] && [ -n $CUSTOM_OUTPUT_DIR ] ;
+			then
+				if [ ${CUSTOM_OUTPUT_DIR:0:1} = "-" ];
+				then
+					echo "Invalid output directory specified"
+					exit 1;
+				else
+					mkdir $CUSTOM_OUTPUT_DIR
+				fi
+			fi
+			shift 2 ;;
 		-h|--help) # Print the help message
 			echo -e "Usage: run_scm.bash [OPTION]... case_name"
 			echo -e "\t-z, --zt_grid=FILE\t\tThe path to the zt grid file"
@@ -161,6 +179,7 @@ while true ; do
 			echo -e "\t-p, --parameter_file\t\tSet the parameter file to use"
 			echo -e "\t-r, --performance_test\t\tDisable statistics output and set debug"
 			echo -e "\t\t\t\t\tlevel to 0 for performance testing"
+			echo -e "\t-o, --output_directory\t\tSpecify an output directory"
 			echo -e "\t-h, --help\t\t\tPrints this help message"
 
 			exit 1 ;;
@@ -386,6 +405,15 @@ else
 	cat $parameter_file $FLAGS_FILE $model_file $stats_file > $NAMELISTS
 
 	run_case
+fi
+
+if [ $OUTPUT_SPECIFIED == true ];
+then
+	# Move files from default output directory to the specified directory
+	if [ $NIGHTLY == false ];
+	then
+		mv ../output/* $CUSTOM_OUTPUT_DIR
+	fi
 fi
 
 cd $restoreDir
