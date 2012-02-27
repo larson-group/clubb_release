@@ -1,12 +1,13 @@
-This directory contains scripts to compile CLUBB. 
+This directory contains scripts to compile CLUBB.  The CLUBB single-column model and other programs
+use the script here called mkmf to determine Fortran module dependencies.
 
-If you want to compile with the default compiler (g95):
+If you want to compile with the default compiler (GNU Fortran on Redhat Linux):
   ./compile.bash
 
 To compile with a different compiler, pass the .bash script for the compiler
 you want to use (found in ./config/) into the compile script:
-  ./compile.bash [COMPILER_CONFIG]
+  ./compile.bash [PATH TO CONFIG FILE]
 
-If you want to run the compiler tests, which compiles CLUBB using the g95, 
-SunStudio, and Intel Fortran compilers:
+If you want to run the compiler tests, which compiles CLUBB using the g95, gfortran
+Oracle, and Intel Fortran compilers:
   ./compiler_tests.bash
