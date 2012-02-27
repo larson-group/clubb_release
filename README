@@ -26,6 +26,14 @@ For a detailed description of the model code see:
   Method and Model Description'' Golaz, et al. (2002)
   JAS, Vol. 59, pp. 3540--3551.
 
+``A PDF-Based Model for Boundary Layer Clouds.  Part II: 
+  Model Results.''  J.-C. Golaz, V. E. Larson, W. R. Cotton.  
+  JAS, Vol. 59, 3552--3571.  
+
+``Using Probability Density Functions to Derive Consistent Closure Relationships 
+  among Higher-Order Moments.''  V. E. Larson and J.-C. Golaz.  
+  Mon. Wea. Rev., 133, 1023-1042.
+
    See also the ./doc/hoceqns.pdf file in the svn repository for
 finer details on how the discretization was done.
 
@@ -57,7 +65,7 @@ executed using scripts written in the GNU Bash scripting language.
 
 This quick start guide has instructions for checking CLUBB out from the UWM
 repositories, compiling CLUBB using the gfortran compiler, running one of the
-benchmark test cases, and creating plots using the included plotgen tool.
+benchmark test cases, and creating plots.
 
 -------------------------------------------------------
 - STEP 1: OBTAINING THE CODE FROM THE REPOSITORY
@@ -139,10 +147,11 @@ the CLUBB checkout.
 - STEP 4: VIEWING THE RESULTS WITH PLOTGEN
 -------------------------------------------------------
 After a case has been run, the resulting output can be used to create graphs.
-There are many programs available that can be used to do this, 
+There are many programs available that can be used to do this,
 but one way is to use an included perl script called plotgen. 
 Plotgen interfaces with MATLAB to produce high-quality plots that allow 
-CLUBB's output to be easily visualized.
+CLUBB's output to be easily visualized.  Other options for plotting the output 
+can be found at http://www.unidata.ucar.edu/software/netcdf/software.html.
 
 **************************************************************************
                                   NOTE:
@@ -465,8 +474,8 @@ by CLUBB in a host model.  These include:
   production simulations, since it appears to have a high OpenMP overhead 
   when solving the matrices in CLUBB.
 
-3. If the host model's timestep is less than a minute, then sub-cycle 
-  the CLUBB code so that CLUBB is being called at a 60 or 120
+3. If the host model's timestep is less than a minute, then an option is to
+  sub-cycle the CLUBB code so that CLUBB is being called at a 60 or 120
   second timestep rather than the host model timestep.  The CLUBB code 
   uses a semi-implicit discretization, and should not require a small timestep.
 
@@ -474,7 +483,9 @@ by CLUBB in a host model.  These include:
   statistics code for a particular horizontal grid column (e.g. output the
   first column of the third row on the domain).  This is meant to be used
   for diagnostic purposes and should be disabled (l_stats = .false.) when
-  the model is used for production runs.
+  the model is used for production runs.  Alternatively, a small number of CLUBB's 
+  variables could be output rather than all of them. That way, not as many variables 
+  would need to be written to the disk.
 
 5. Host models should call set_clubb_debug_level at initialization.  For
   production simulations, use an argument of 0 rather than 1 or 2.  This 
@@ -599,7 +610,7 @@ LES GrADS files (available only to larson group members):
 Input:
 -----
 
-Note that at the begginning of a run the run scripts combine all the namelist
+Note that at the beginning of a run the run scripts combine all the namelist
 files into one file, named clubb.in, which is then fed into the CLUBB main code.
   
 The namelist files:
@@ -1129,7 +1140,7 @@ in a parameter value.
    crash, which will result in no data (results for that term will come
    back as NaN).
 
-3. $  ./run_jacobian.bash <CASE NAME> [PARAMETER FILE] [STATS FILE]
+3. $  ./run_jacobian.bash <CASE NAME> [PATH TO PARAMETER FILE] [PATH TO STATS FILE]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -1387,7 +1398,7 @@ _sfc= ground or ocean surface   E.g., T_sfc is the temperature of
 -------------------------------------------------------------------------
 
 gr         = <grid>    = Main grid class reference for CLUBB                   [-]
-gr%nz   = Number of vertical levels in grid                                 [-]
+gr%nz      = Number of vertical levels in grid                                 [-]
 gr%zm      = Grid levels (altitudes) of "momentum" variables (wp2, etc.)       [m]
 gr%zt      = Grid levels (altitudes) of "thermodynamic" variables (rtm, etc.)  [m]
 thlm       = <θ_l>     = Liquid water potential temperature                    [K]
@@ -1410,8 +1421,64 @@ up2        = <u'2>     = Variance of u                                         [
 vp2        = <v'2>     = Variance of v                                         [m^2/s^2]
 rrainm     = Mean rainwater mixing ratio                                       [kg/kg]
 
-****************************************************************************
+Information on and a description of CLUBB's vertical grid can be found at ../src/CLUBB_core/grid_class.F90.
 
+-------------------------------------------------------------------------                            
+- (7.3) Variable locations in CLUBB:
+-------------------------------------------------------------------------
+
+1. Thermodynamic-level Variables
+
+  CLUBB generally defines mean fields (thlm, rtm, rcm, um, vm, etc.) and third-order moments (wp3, wp2thlp,
+  wprtp2, etc.) to be thermodynamic-level variables. Furthermore, pressure variables (p_in_Pa and exner) are
+  thermodynamic-level variables. Their "home" is on thermodynamic levels.
+
+  Furthermore, most variables that are diagnosed based purely on thermodynamic-level variables are thermodynamic-
+  level variables themselves. A good example of this is Lscale. Lscale is computed in subroutine compute_length
+  based on the following thermodynamic-level inputs: thvm, thlm, rtm, rcm, p_in_Pa, and exner. There is only one
+  momentum-level variable input into compute_length, and that is em (as a side note, em is a rare exception to the
+  "mean field" rule because it is diagnosed based purely on three momentum-level variables, wp2, up2, and vp2).
+  Thus, em is interpolated to thermodynamic-levels within compute_length. Another good example of this rule is thvm,
+  which is diagnosed based on thermodynamic-level variables thlm, rtm, exner, and rcm.
+
+  When thermodynamic-level variables are at their "home" thermodynamic levels, they simply use their "base" name
+  (thlm, wp2rcp, wp3, Lscale, etc.). However, when thermodynamic-level variables are interpolated to momentum levels
+  (or computed on momentum levels in some instances), the general naming convention is to tack a "_zm" onto the end
+  of their "base" name. For example, thlm is thlm at thermodynamic levels and thlm_zm when interpolated to momentum
+  levels.
+
+2. Momentum-level Variables
+
+  CLUBB generally defines second-order moments (wpthlp, rtp2, wp2, sclrpthlp, etc.) and fourth-order moments (wp4) to be
+  momentum-level variables. Their "home" is on momentum levels.
+
+  Furthermore, most variables that are diagnosed based purely on momentum-level variables are momentum-level variables
+  themselves. A good example of this is sigma_sqd_w, which is diagnosed based purely on momentum-level variables wpthlp,
+  wp2, thlp2, wprtp, and rtp2. Another example of this, as referenced above in the section on "Thermodynamic-level
+  variables", is em, which is diagnosed based purely on momentum-level variables wp2, up2, and vp2.
+
+  When momentum-level variables are at their "home" momentum levels, they simply use their "base" name (wprtp, up2,
+  sigma_sqd_w, rtpthlp, etc.). However, when momentum-level variables are interpolated to thermodynamic levels (or computed
+  on thermodynamic levels in some instances), the general naming convention is to tack a "_zt" onto the end of their "base"
+  name. For example, rtp2 is rtp2 at momentum levels and rtp2_zt when interpolated to thermodynamic levels. Likewise,
+  sigma_sqd_w is sigma_sqd_w at momentum levels and sigma_sqd_w_zt when interpolated to thermodynamic levels.
+
+3. Homeless Variables
+
+  There are some variables in the CLUBB code that don't have a definitive "home". Rather, they just have numerous cardboard
+  boxes scattered amongst the various different vertical levels.
+ 
+  Generally, these are variables that are diagnosed based on nearly equal contributions from momentum-level variables and
+  thermodynamic-level variables. A great example of this is Skewness of w. The skewness of w, Skw, equals wp3 / wp21.5. It
+  is based on one thermodynamic-level variable, wp3, and one momentum-level variable, wp2. Thus, when calculating Skw on
+  thermodynamic levels, Skw = wp3 / wp2_zt1.5, and when calculating Skw on momentum levels, Skw = wp3_zm / wp21.5. Two more
+  great examples of this are eddy diffusivity, Kh, and time-scale, tau. Both are based on one thermodynamic-level variable,
+  Lscale, and one momentum-level variable, em.
+
+  When a homeless variable is at it's cardboard box on momentum levels, a "_zm" extension is tacked onto it, and when it is
+  at it's cardboard box on thermodynamic levels, a "_zt" extension is tacked onto it. Thus, skewness of w is called Skw_zt
+  at thermodynamic levels and Skw_zm at momentum levels. Likewise, eddy diffusivity and time-scale are Kh_zt and tau_zt,
+  respectively, at thermodynamic levels, and Kh_zm and tau_zm, respectively, at momentum levels.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
