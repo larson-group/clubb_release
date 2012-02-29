@@ -277,7 +277,7 @@ module estimate_lh_micro_module
                   )
       ! This formula is for a within-cloud average:
       if ( cloud_frac(level) > 0._dp ) then
-        AKstd_cld(level) = sqrt( max( zero_threshold,   & 
+        AKstd_cld(level) = sqrt( max( real( zero_threshold, kind=dp ),   & 
                   (1._dp/cloud_frac(level)) * ( mixt_frac * ( AK1**2 + AK1var ) & 
                             + (1._dp-mixt_frac) * ( AK2**2 + AK2var )  & 
                             ) & 

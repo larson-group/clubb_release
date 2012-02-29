@@ -213,7 +213,7 @@ module estimate_scm_microphys_module
 
       s_mellor_column = real( s_mellor_all_points(:,sample), kind = core_rknd )
 
-      where( s_mellor_all_points(:,sample) > 0.0_core_rknd )
+      where( s_mellor_all_points(:,sample) > 0.0_dp )
         rc_column = real( s_mellor_all_points(:,sample), kind = core_rknd )
       else where
         rc_column = 0.0_core_rknd
