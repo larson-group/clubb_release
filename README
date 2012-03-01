@@ -34,7 +34,7 @@ For a detailed description of the model code see:
   among Higher-Order Moments.''  V. E. Larson and J.-C. Golaz.  
   Mon. Wea. Rev., 133, 1023-1042.
 
-   See also the ./doc/hoceqns.pdf file in the svn repository for
+   See also the ./doc/CLUBBeqns.pdf file in the svn repository for
 finer details on how the discretization was done.
 
 The single column model executable ("clubb_standalone") runs a particular 
