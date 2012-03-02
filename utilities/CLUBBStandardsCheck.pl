@@ -37,7 +37,7 @@ use strict;
 
 # Includes
 use Getopt::Long;
-use Thread;
+use threads;
 
 # Global Variables
 
@@ -188,7 +188,7 @@ else{
 	# For Every File
 	foreach $file (@ARGV)
 	{
-		$thr = new Thread \&fileThread, $file, $thr;
+		$thr = threads->create(\&fileThread, $file, $thr);
 	}
 	
 	while ( my(@list)=threads->list()) {
