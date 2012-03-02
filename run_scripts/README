@@ -20,7 +20,21 @@ run_jacobian.bash:
 run_scm_all.bash: 
   Runs all of the cases CLUBB is set up to do.
 
-  NOTE: Optionally, you can specify a manual grid for the runs. This is done
+  NOTE: 
+  You can specify to run the cases in nightly mode using --nightly (or -n).
+  In nightly mode, the output is sent to /usr/nightly_tests/nightly_tests/output/CLUBB_current.
+  Whatever was in this directory before is copied to  /usr/nightly_tests/nightly_tests/output/CLUBB_previous
+  Both of these directories are created if they don't exist.
+
+  You can specify to run only the short cases using --short-cases (or -c).  This omits the 
+  gabls2, cloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12, and twp_ice cases.
+
+  You can specify to run the priority cases using --priority-cases (or -i). This will include
+  only the following cases if they are in RUN_CASES: arm, atex,bomex, dycoms2_rf01, 
+  dycoms2_rf01_fixed_sst, dycoms2_rf02_ds,dycoms2_rf02_nd, mpace_b, rico, wangara, arm_97,
+  cloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12, gabls3_night, lba, and twp_ice.
+
+  You can specify a manual grid for the runs. This is done
   with the command line options --zt_grid (or -z) and --zm_grid (or -m).
   These options are used by first specifying the desired grid file, then the
   number of grid levels after the command line option -l (or --levels).
@@ -29,8 +43,17 @@ run_scm_all.bash:
     OR
   ./run_scm_all.bash -z ../input/grid/coarse_30lev_32km_zt_grid.grd -l 30
 
-  To specify a custom stats file, use the --stats option. For example, to use
+  You can specify the timestep to run the cases at using --timestep_test (or -t) followed by a number.
+  For example, ./run_scm_all.bash -t 360.
+
+  To specify a custom stats file, use the --stats (or -s) option. For example, to use
   the nightly stats, ./run_scm_all.bash --stats ../input/stats/nightly_stats.in
+
+  To specify a custom parameter file, use the --parameter_file (or -p) option followed by a paramter
+  file.
+
+  To run a performance test, use the --performance_test (or -r) option.  This will disable
+  statistics output and set debug level to 0 for performance testing.
 
   To specify a custom output directory, use the --output_directory (or -o).  For example,
   to use the home directory, ./run_scm_all.bash -o $HOME.
@@ -44,18 +67,29 @@ new case.
 run_scm.bash: 
   Runs CLUBB for a specified case. The case is specified with the model name.
 
-  NOTE: Optionally, you can specify a manual grid for a model run. This is done
+  NOTE: Optionally, You can specify a manual grid for the runs. This is done
   with the command line options --zt_grid (or -z) and --zm_grid (or -m).
-  These options are used by first specifying the desired grid file, then the 
+  These options are used by first specifying the desired grid file, then the
   number of grid levels after the command line option -l (or --levels).
-  For example, to use a 30-level coarse grid specified on the zt points 
-  to run the arm case:
-  ./run_scm.bash --zt_grid ../input/grid/coarse_30lev_32km_zt_grid.grd --levels 30 arm
+  For example, to use a 30-level coarse grid specified on the zt points:
+  ./run_scm.bash --zt_grid ../input/grid/coarse_30lev_32km_zt_grid.grd --levels 30
     OR
-  ./run_scm.bash -z ../input/grid/coarse_30lev_32km_zt_grid.grd -l 30 arm
+  ./run_scm.bash -z ../input/grid/coarse_30lev_32km_zt_grid.grd -l 30
+
+  You can specify the timestep to run the cases at using --timestep_test (or -t) followed by a number.
+  For example, ./run_scm.bash -t 360.
+
+  To specify a custom stats file, use the --stats (or -s) option. For example, to use
+  the nightly stats, ./run_scm.bash --stats ../input/stats/nightly_stats.in
+
+  To specify a custom parameter file, use the --parameter_file (or -p) option followed by a paramter
+  file.
+
+  To run a performance test, use the --performance_test (or -r) option.  This will disable
+  statistics output and set debug level to 0 for performance testing.
 
   To specify a custom output directory, use the --output_directory (or -o).  For example,
-  to use the home directory, ./run_scm_all.bash -o $HOME
+  to use the home directory, ./run_scm.bash -o $HOME.
 
 rum_scm_collect.bash: 
   Runs a case in CLUBB while using the Sun Studio profiler to collect runtime 
