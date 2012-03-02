@@ -32,6 +32,9 @@ run_scm_all.bash:
   To specify a custom stats file, use the --stats option. For example, to use
   the nightly stats, ./run_scm_all.bash --stats ../input/stats/nightly_stats.in
 
+  To specify a custom output directory, use the --output_directory (or -o).  For example,
+  to use the home directory, ./run_scm_all.bash -o $HOME.
+
 RUN_CASES:
   The file RUN_CASES lists all the cases to be run with run_bindiff_all.bash 
 and run_scm_all.bash. This makes it easier for external users to run CLUBB 
@@ -50,6 +53,9 @@ run_scm.bash:
   ./run_scm.bash --zt_grid ../input/grid/coarse_30lev_32km_zt_grid.grd --levels 30 arm
     OR
   ./run_scm.bash -z ../input/grid/coarse_30lev_32km_zt_grid.grd -l 30 arm
+
+  To specify a custom output directory, use the --output_directory (or -o).  For example,
+  to use the home directory, ./run_scm_all.bash -o $HOME
 
 rum_scm_collect.bash: 
   Runs a case in CLUBB while using the Sun Studio profiler to collect runtime 
