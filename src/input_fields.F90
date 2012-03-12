@@ -41,7 +41,8 @@ module inputfields
 
   integer, parameter, private :: &
     coamps_input_type = 1, &
-    clubb_input_type =  2
+    clubb_input_type  = 2, &
+    rams_input_type   = 3
 
   integer, private :: &
     stats_input_type
@@ -94,6 +95,13 @@ module inputfields
       stat_file_sfc = trim( file_prefix )//"_coamps_sfc.ctl"
 
       stats_input_type = coamps_input_type
+
+    case ( "rams_les", "RAMS_LES", "rams" )
+      stat_file_zt = trim( file_prefix )//"_rams.ctl"
+      stat_file_zm = ""
+      stat_file_sfc = ""
+
+      stats_input_type = rams_input_type
 
     case ( "clubb_scm", "CLUBB_SCM", "clubb" )
       stat_file_zt = trim( file_prefix )//"_zt.ctl"
@@ -191,7 +199,7 @@ module inputfields
         rt_tol,    & ! Variable(s)
         thl_tol,   &
         w_tol_sqd, &
-        em_min,     &
+        em_min,    &
         fstderr
 
     use array_index, only:  & 
@@ -787,10 +795,10 @@ module inputfields
       enddo
 
 
-      ! Initialize l_read_error for case ( "les" )
+      ! Initialize l_read_error for the COAMPS-LES case
       l_read_error = .false.
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_um, fread_var, "um", timestep, gr%nz, &               ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -811,7 +819,7 @@ module inputfields
         endif
       endif
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_vm, fread_var, "vm", timestep, gr%nz, &               ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -832,7 +840,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_rtm, fread_var, "qtm", timestep, gr%nz, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -851,7 +859,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_thlm, fread_var, "thlm", timestep, gr%nz, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -871,7 +879,7 @@ module inputfields
 
       ! We obtain wp2 from stats_sw
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_wp3, fread_var, "wp3", timestep, gr%nz, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -889,7 +897,7 @@ module inputfields
         endif
       endif
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_wprtp, fread_var, "wpqtp", timestep, gr%nz, &         ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -911,8 +919,8 @@ module inputfields
         endif
       endif
 
-      call get_coamps_variable_interp( &
-              input_wpthlp, fread_var, "wpthltp", timestep, gr%nz, &      ! Intent(in)
+      call get_les_variable_interp( &
+              input_wpthlp, fread_var, "wpthlp", timestep, gr%nz, &      ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               wpthlp, l_read_error )                       ! Intent(in/out), Intent(out)
@@ -934,7 +942,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_rtp2, fread_var, "qtp2", timestep, gr%nz, &           ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -949,15 +957,14 @@ module inputfields
         ! Using a linear extension here resulted in negatives.
         if ( k_lowest_zm_input == 2 ) then
           rtp2(1) =  rtp2(2)
-        endif
-        if ( any( rtp2(1:gr%nz) < rt_tol**2 ) ) then
-          do k=1, gr%nz
-            rtp2(k) = max(rtp2(k), rt_tol**2)
-          enddo
-        endif
-      endif
+        end if
 
-      call get_coamps_variable_interp( &
+        where ( rtp2 < rt_tol**2 )
+          rtp2 = rt_tol**2
+        end where
+      end if ! input_rtp2
+
+      call get_les_variable_interp( &
               input_thlp2, fread_var, "thlp2", timestep, gr%nz, &         ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -973,15 +980,15 @@ module inputfields
         if ( k_lowest_zm_input == 2 ) then
           thlp2(1) = thlp2(2)
         endif
-        if ( any( thlp2(1:gr%nz) < thl_tol**2 ) ) then
-          do k=1, gr%nz
-            thlp2(k) = max(thlp2(k), thl_tol**2)
-          enddo
-        endif
-      endif
+
+        where ( thlp2 < thl_tol**2 )
+          thlp2 = thl_tol**2
+        end where
+
+      endif ! input_thlp2
 
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_rtpthlp, fread_var, "qtpthlp", timestep, gr%nz, &     ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1003,7 +1010,6 @@ module inputfields
         endif
       endif
 
-      ! upwp/vpwp in stats_sw
       if ( input_ug ) then
         write(fstderr,*) "The variable ug is not setup for input_type" &
           //trim( input_type )
@@ -1016,8 +1022,8 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-
-      call get_coamps_variable_interp( &
+      ! Liquid water mixing ratio
+      call get_les_variable_interp( &
               input_rcm, fread_var, "qcm", timestep, gr%nz, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1025,8 +1031,8 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
-
-      call get_coamps_variable_interp( &
+      ! Imposed large-scale subsidence
+      call get_les_variable_interp( &
               input_wm_zt, fread_var, "wlsm", timestep, gr%nz, &          ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1034,8 +1040,8 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
-
-      call get_coamps_variable_interp( &
+      ! Exner function
+      call get_les_variable_interp( &
               input_exner, fread_var, "ex0", timestep, gr%nz, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1044,7 +1050,8 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
-      call get_coamps_variable_interp( &
+      ! SGS TKE
+      call get_les_variable_interp( &
               input_em, fread_var, "em", timestep, gr%nz, &               ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1054,7 +1061,8 @@ module inputfields
 
       temp = 0.0_core_rknd ! Initialize temp to 0.0
 
-      call get_coamps_variable_interp( &
+      ! Resolved TKE
+      call get_les_variable_interp( &
               input_em, fread_var, "tke", timestep, gr%nz, &              ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1070,9 +1078,7 @@ module inputfields
         where ( em < em_min ) em = em_min
       end if
 
-
-
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_p, fread_var, "pm", timestep, gr%nz, &                ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1080,17 +1086,15 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
+      ! rho_zt is in stats_sm
 
-
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_rho, fread_var, "dn0", timestep, gr%nz, &             ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
               rho, l_read_error )                          ! Intent(in/out), Intent(out)
 
       l_fatal_error = l_fatal_error .or. l_read_error
-
-      ! rho_zm is in stats_sw
 
       if ( input_Lscale ) then
         write(fstderr,*) "The variable Lscale is not setup for input_type" &
@@ -1110,9 +1114,8 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-
-
-      call get_coamps_variable_interp( &
+      ! Eddy diffusivity
+      call get_les_variable_interp( &
               input_Kh_zt, fread_var, "kh", timestep, gr%nz, &            ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1139,8 +1142,8 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-
-      call get_coamps_variable_interp( &
+      ! Buoyancy flux
+      call get_les_variable_interp( &
               input_wpthvp, fread_var, "wpthvp", timestep, gr%nz, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1148,6 +1151,7 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
+      ! PDF parameters that are not produced by LES models
 
       if ( input_thl1 ) then
         write(fstderr,*) "The variable thl1 is not setup for input_type" &
@@ -1203,8 +1207,8 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-
-      call get_coamps_variable_interp( &
+      ! Virtual potential temperature
+      call get_les_variable_interp( &
               input_thvm, fread_var, "thvm", timestep, gr%nz, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1219,7 +1223,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interp( &
+          call get_les_variable_interp( &
                   input_rrainm, fread_var, "qrm", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1235,7 +1239,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interp( &
+          call get_les_variable_interp( &
                   input_Nrm, fread_var, "nrm", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1252,7 +1256,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interp( &
+          call get_les_variable_interp( &
                   input_Ncm, fread_var, "ncm", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1269,7 +1273,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interp( &
+          call get_les_variable_interp( &
                   input_rsnowm, fread_var, "qsm", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1286,7 +1290,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interp( &
+          call get_les_variable_interp( &
                   input_ricem, fread_var, "qim", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1303,7 +1307,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interp( &
+          call get_les_variable_interp( &
                   input_rgraupelm, fread_var, "qgm", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1314,7 +1318,7 @@ module inputfields
       end if
 
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_Ncnm, fread_var, "ncnm", timestep, gr%nz, &           ! Intent(in)
               gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
               upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1329,7 +1333,7 @@ module inputfields
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
         else
-          call get_coamps_variable_interp( &
+          call get_les_variable_interp( &
                   input_Nim, fread_var, "nim", timestep, gr%nz, &          ! Intent(in)
                   gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
                   upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
@@ -1352,8 +1356,7 @@ module inputfields
         l_fatal_error = .true.
       end if
 
-
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_up2, fread_var, "up2", timestep, gr%nz, &             ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1361,23 +1364,13 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_up2 ) then
-        ! Clip up2 to be no smaller than w_tol_sqd
-        where ( up2 < w_tol_sqd ) up2 = w_tol_sqd
-      endif
-
-
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_vp2, fread_var, "vp2", timestep, gr%nz, &             ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
               vp2, l_read_error )                          ! Intent(in/out), Intent(out)
 
       l_fatal_error = l_fatal_error .or. l_read_error
-
-      if ( input_vp2 ) then
-         where ( vp2 < w_tol_sqd ) vp2 = w_tol_sqd
-      endif
 
       if ( input_sigma_sqd_w ) then
         write(fstderr,*) "The variable sigma_sqd_w is not setup for input_type" &
@@ -1488,7 +1481,7 @@ module inputfields
       ! Note:  wpup_sgs and wpvp_sgs must be added to make the u'w' and v'w' terms
       !        as they are in CLUBB.
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_upwp, fread_var, "wpup", timestep, gr%nz, &           ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1497,7 +1490,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       temp = 0.0_core_rknd  ! clear temp
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_upwp, fread_var, "wpup_sgs", timestep, gr%nz, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1512,7 +1505,7 @@ module inputfields
       endif
 
 
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_vpwp, fread_var, "wpvp", timestep, gr%nz, &           ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1521,7 +1514,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       temp = 0.0_core_rknd  ! clear temp
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_vpwp, fread_var, "wpvp_sgs", timestep, gr%nz, &       ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1535,8 +1528,7 @@ module inputfields
         end do
       endif
 
-
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_wp2, fread_var, "wp2", timestep, gr%nz, &            ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1544,16 +1536,9 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
-      if ( input_wp2 ) then
-         if ( any( wp2(1:gr%nz) < w_tol_sqd ) ) then
-          do k=1, gr%nz
-            wp2(k) = max( wp2(k), w_tol_sqd )
-          enddo
-        endif
-      endif
+      ! rho_zm is in the file stats_sw
 
-
-      call get_coamps_variable_interp( &
+      call get_les_variable_interp( &
               input_rho_zm, fread_var, "dn0", timestep, gr%nz, &          ! Intent(in)
               gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
               upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
@@ -1574,7 +1559,125 @@ module inputfields
 
       call close_grads_read( fread_var )
 
+    case ( rams_input_type )
+      unit_number = 15
+
+      ! stats_sm
+      call open_grads_read( unit_number, stat_file_zt,  & 
+                            fread_var, l_read_error )
+
+      if ( l_read_error ) then
+        write(fstderr,*) "Error opening file "// trim( stat_file_zt )
+        stop "Fatal error"
+      end if
+
+      l_fatal_error = .false.
+
+      ! Allocate a temporary variable for the LES variables
+      allocate( LES_tmp1(fread_var%ia:fread_var%iz) )
+
+      ! Determine which CLUBB levels lie within the LES data file's domain
+      call CLUBB_levels_within_LES_domain( fread_var, gr%zt,  &
+                                           k_lowest_zt_input, k_highest_zt_input )
+
+      allocate( exact_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
+      allocate( lower_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
+      allocate( upper_lev_idx_zt(k_lowest_zt_input:k_highest_zt_input) )
+      allocate( l_lin_int_zt(k_lowest_zt_input:k_highest_zt_input) )
+
+      do k = k_lowest_zt_input, k_highest_zt_input, 1
+        call LES_grid_to_CLUBB_grid( fread_var, gr%zt, k,  &
+                                     exact_lev_idx_zt(k), lower_lev_idx_zt(k),  &
+                                     upper_lev_idx_zt(k), l_lin_int_zt(k) )
+      end do
+
+      call get_les_variable_interp( &
+              input_wp3, fread_var, "wp3", timestep, gr%nz, &               ! Intent(in)
+              gr%zt, k_lowest_zt_input, k_highest_zt_input, l_lin_int_zt, & ! Intent(in)
+              upper_lev_idx_zt, lower_lev_idx_zt, exact_lev_idx_zt, &       ! Intent(in)
+              wp3, l_read_error )                           ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+
+      ! Deallocate variables for interpolating to the zt grid
+      deallocate( exact_lev_idx_zt )
+      deallocate( lower_lev_idx_zt )
+      deallocate( upper_lev_idx_zt )
+      deallocate( l_lin_int_zt )
+
+      ! Determine which levels from the CLUBB zm grid are within the RAMS grid
+      call CLUBB_levels_within_LES_domain( fread_var, gr%zm,  & ! In
+                                           k_lowest_zm_input, k_highest_zm_input ) ! Out
+
+      ! Allocate the needed interpolation levels
+      allocate( exact_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+      allocate( lower_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+      allocate( upper_lev_idx_zm(k_lowest_zm_input:k_highest_zm_input) )
+      allocate( l_lin_int_zm(k_lowest_zm_input:k_highest_zm_input) )
+
+      do k = k_lowest_zm_input, k_highest_zm_input, 1
+        call LES_grid_to_CLUBB_grid( fread_var, gr%zm, k,  &
+                                     exact_lev_idx_zm(k), lower_lev_idx_zm(k),  &
+                                     upper_lev_idx_zm(k), l_lin_int_zm(k) )
+      end do
+
+      call get_les_variable_interp( &
+              input_wp2, fread_var, "wp2", timestep, gr%nz, &               ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              wp2, l_read_error )                           ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_les_variable_interp( &
+              input_up2, fread_var, "up2", timestep, gr%nz, &               ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              up2, l_read_error )                           ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_les_variable_interp( &
+              input_vp2, fread_var, "vp2", timestep, gr%nz, &               ! Intent(in)
+              gr%zm, k_lowest_zm_input, k_highest_zm_input, l_lin_int_zm, & ! Intent(in)
+              upper_lev_idx_zm, lower_lev_idx_zm, exact_lev_idx_zm, &       ! Intent(in)
+              vp2, l_read_error )                           ! Intent(in/out), Intent(out)
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      deallocate( exact_lev_idx_zm )
+      deallocate( lower_lev_idx_zm )
+      deallocate( upper_lev_idx_zm )
+      deallocate( l_lin_int_zm )
+
+      ! Deallocate temporary storage variable LES_tmp1.
+      deallocate( LES_tmp1 )
+
+      call close_grads_read( fread_var )
+
+      if ( l_fatal_error ) stop "get_grads_var failed for rams in stat_fields_reader"
+
     end select
+
+     ! Clipping on the variance of u, v and w
+    if ( input_wp2 ) then
+      where ( wp2 < w_tol_sqd )
+        wp2 = w_tol_sqd
+      end where
+    end if
+
+    if ( input_up2 ) then
+      where ( up2 < w_tol_sqd ) 
+        up2 = w_tol_sqd
+      end where
+    end if
+
+    if ( input_vp2 ) then
+      where ( vp2 < w_tol_sqd )
+        vp2 = w_tol_sqd
+      end where
+    end if
 
     return
   end subroutine stat_fields_reader
@@ -1788,7 +1891,7 @@ module inputfields
   end subroutine get_clubb_variable_interpolated
 
   !--------------------------------------------------------------------------
-  subroutine get_coamps_variable_interp( &
+  subroutine get_les_variable_interp( &
                  l_input_var, fread_var, var_name, timestep, vardim, &
                  clubb_heights, k_lowest, k_highest, l_lin_int, &
                  upper_lev_idx, lower_lev_idx, exact_lev_idx, &
@@ -1879,7 +1982,7 @@ module inputfields
 
     end if
 
-  end subroutine get_coamps_variable_interp
+  end subroutine get_les_variable_interp
         
 
 

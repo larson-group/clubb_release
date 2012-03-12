@@ -334,7 +334,7 @@ module input_grads
     if ( ierr /= 0 ) then
       write(unit=fstderr,fmt=*)  & 
         "input_grads: error opening binary file"
-      write(unit=fstderr,fmt=*) "iostat = ", ierr
+      write(unit=fstderr,fmt=*) "iostat = ", ierr, "filename = ", grads_file%fname
       l_error = .true.
       return
     end if
