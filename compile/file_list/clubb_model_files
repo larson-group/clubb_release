@@ -49,6 +49,6 @@
 ../src/extend_atmosphere_module.F90
 ../src/input_netcdf.F90
 ../src/input_interpret.F90
-../src/inputfields.F90
+../src/input_fields.F90
 ../src/input_grads.F90
 ../src/gfdl_activation.F90
