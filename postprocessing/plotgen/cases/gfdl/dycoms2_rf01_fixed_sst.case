@@ -2,7 +2,7 @@
 
 %CASE = 
 (
-    'name' => 'dycoms2_rf01',
+    'name' => 'dycoms2_rf01_fixed_sst',
     'enabled' => 'true',
     'type' => 'standard',
     'headerText' => 'DYCOMS II RF01 Fixed SST Minutes 1380-1440',
