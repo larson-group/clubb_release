@@ -18,7 +18,7 @@ function [filename, nzmax, z, t_time_steps, time_step_length, numvars, listofpar
 %         numvars          --    The total number of variables
 %         listofparams     --    The names of all the variables, in vector form
 
-[dummy, filename, dummy, dummy] = fileparts(file_header);
+[dummy, filename, dummy] = fileparts(file_header);
 
 nc_file = netcdf.open(file_header, 'NC_NOWRITE');
 
