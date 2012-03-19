@@ -540,7 +540,7 @@ module generate_lh_sample_module
       if ( iiLH_Nc > 0 ) then
 !       Ncm = real(hydromet(iiNcm), kind = dp)
         ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
-        var_Nc1 = log( 1._dp+ Xp2_on_Xm2_array(iiLH_Nc) )
+        var_Nc1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiLH_Nc), kind=dp ) )
         var_Nc2 = var_Nc1
         Sigma_stw_1(iiLH_Nc,iiLH_Nc) = var_Nc1
         Sigma_stw_2(iiLH_Nc,iiLH_Nc) = var_Nc2
@@ -548,7 +548,7 @@ module generate_lh_sample_module
 
       if ( iiLH_Nr > 0 ) then
         ! var_Nr1,2 = PDF param for width of plume 1,2. [var_Nr1,2] = (#/kg)**2
-        var_Nr1 = log( 1._dp+ Xp2_on_Xm2_array(iiLH_Nr) )
+        var_Nr1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiLH_Nr), kind=dp ) )
         var_Nr2 = var_Nr1
         Sigma_stw_1(iiLH_Nr,iiLH_Nr) = var_Nr1
         Sigma_stw_2(iiLH_Nr,iiLH_Nr) = var_Nr2
@@ -1062,7 +1062,8 @@ module generate_lh_sample_module
     real( kind = dp ) :: crt_sqd, cthl_sqd
 
     real( kind = dp ) :: &
-      sqrt_sp2_tp2 ! sqrt of the product of the variances of s and t [kg/kg]
+      sqrt_sp2_tp2, & ! sqrt of the product of the variances of s and t [kg/kg]
+      max_mag_corr_dp
 
     ! ---- Begin Code ----
 
@@ -1078,8 +1079,9 @@ module generate_lh_sample_module
 
     ! Reduce the correlation of s and t Mellor if it's greater than 0.99
     sqrt_sp2_tp2 = sqrt( sp2 * tp2 )
-    sptp = min( max( -max_mag_correlation * sqrt_sp2_tp2, sptp ), &
-                max_mag_correlation * sqrt_sp2_tp2 )
+    max_mag_corr_dp = real( max_mag_correlation, kind=dp )
+    sptp = min( max( -max_mag_corr_dp * sqrt_sp2_tp2, sptp ), &
+                max_mag_corr_dp * sqrt_sp2_tp2 )
 
 !   sptp = 0.3 * sqrt( sp2 ) * sqrt( tp2 )
 
