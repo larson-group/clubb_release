@@ -670,14 +670,14 @@ module stat_file_utils
 
 !===============================================================================
   pure subroutine LES_grid_to_CLUBB_grid( fread_var, CLUBB_grid, k,  &
-                                     exact_lev_idx, lower_lev_idx,  &
-                                     upper_lev_idx, l_lin_int )
+                                          exact_lev_idx, lower_lev_idx,  &
+                                          upper_lev_idx, l_lin_int )
 
     ! Description:
-    ! Finds the level on the LES grid that is exactly even with the CLUBB
-    ! grid level (either thermodynamic or momentum grid) that is input
-    ! (level k).  Else, it finds the two LES levels that sandwich the CLUBB
-    ! grid level that is input.
+    !   Finds the level on the LES grid that is exactly even with the CLUBB
+    !   grid level (either thermodynamic or momentum grid) that is input
+    !   (level k).  Else, it finds the two LES levels that sandwich the CLUBB
+    !   grid level that is input.
 
     !-----------------------------------------------------------------------
 
@@ -723,9 +723,8 @@ module stat_file_utils
 
     ! Initialize LES vertical grid loop index, j, at the lowest LES grid index,
     ! which is fread_var%ia.
-    j = fread_var%ia
 
-    do
+    do j = fread_var%ia, fread_var%iz, 1
 
       if ( fread_var%z(j) == CLUBB_grid(k) ) then
 
@@ -734,19 +733,19 @@ module stat_file_utils
         exact_lev_idx = j
         l_lin_int = .false.
 
-      elseif ( fread_var%z(j) < CLUBB_grid(k) ) then
+      else if ( fread_var%z(j) < CLUBB_grid(k) ) then
 
         ! The LES level altitude at LES level j is lower than the CLUBB level
         ! altitude at CLUBB grid level k.
         lower_lev_idx = j
 
-      else   ! fread_var%z(j) > CLUBB_grid(k)
+      else  ! fread_var%z(j) > CLUBB_grid(k)
 
         ! The LES level altitude at LES level j is higher than the CLUBB level
         ! altitude at CLUBB grid level k.
         upper_lev_idx = j
 
-      endif
+      end if
 
       if ( exact_lev_idx > 0 ) exit  ! An exact answer has been found,
       ! exit the loop.
@@ -759,12 +758,9 @@ module stat_file_utils
         l_lin_int = .true.
         exit
 
-      endif
+      end if
 
-      ! An answer has not been found yet, iterate the j index.
-      j = j + 1
-
-    enddo
+    end do
 
     return
   end subroutine LES_grid_to_CLUBB_grid
