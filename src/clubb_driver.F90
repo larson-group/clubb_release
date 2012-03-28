@@ -75,7 +75,7 @@ module clubb_driver
 
     use inputfields, only: &
       inputfields_init, compute_timestep, stat_fields_reader, & ! Procedure(s)
-      input_wp3                                                 ! Variable(s)
+      l_input_wp3                                                 ! Variable(s)
 
     use inputfields, only: stat_file_zt
 
@@ -953,7 +953,6 @@ module clubb_driver
 !-------------------------------------------------------------------------------
 
     do itime = iinit, ifinal, 1
-
       ! When this time step is over, the time will be time + dt_main
 
       ! We use elapsed time for stats_begin_step
@@ -969,14 +968,14 @@ module clubb_driver
       ! model arrays from a netCDF or GrADS file
       if ( l_input_fields ) then
         l_restart_input = .false.
-        call compute_timestep( iunit, stat_file_zt, l_restart_input, time_current, &  ! Intent(in)
-                               itime_nearest )                                  ! Intent(out)
+        call compute_timestep( &
+             iunit, stat_file_zt, l_restart_input, time_current, &  ! Intent(in)
+             itime_nearest )    ! Intent(out)
 
         call stat_fields_reader( max( itime_nearest, 1 ) )                     ! Intent(in)
-
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
-        if( input_wp3 ) then
+        if( l_input_wp3 ) then
           call clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
         end if
       end if
@@ -2670,27 +2669,27 @@ module clubb_driver
     !-----------------------------------------------------------------------
     use inputfields,only:  & 
         input_type, &  ! Variable(s)
-        input_um, input_vm, input_rtm, input_thlm, & 
-        input_wp2, input_wprtp, input_wpthlp,  & 
-        input_wp3, input_rtp2, input_thlp2,  & 
-        input_rtpthlp, input_upwp, input_vpwp, & 
-        input_ug, input_vg, input_rcm,  & 
-        input_wm_zt, input_exner, input_em, & 
-        input_p, input_rho, input_rho_zm, &
-        input_rho_ds_zm, input_rho_ds_zt, &
-        input_thv_ds_zm, input_thv_ds_zt, &
-        input_Lscale, input_Lscale_up, input_Lscale_down, & 
-        input_Kh_zt, input_Kh_zm, input_tau_zm, input_tau_zt, & 
-        input_wpthvp, input_radht, &
-        input_thl1, input_thl2, input_mixt_frac, input_s1, input_s2, &
-        input_stdev_s1, input_stdev_s2, input_rc1, input_rc2, &
-        input_thvm, input_rrainm,input_Nrm,  & 
-        input_rsnowm, input_ricem, input_rgraupelm,  & 
-        input_thlm_forcing, input_rtm_forcing, & 
-        input_up2, input_vp2, input_sigma_sqd_w, input_Ncm,  & 
-        input_Ncnm, input_Nim, input_cloud_frac, input_sigma_sqd_w_zt, &
-        input_veg_T_in_K, input_deep_soil_T_in_K, &
-        input_sfc_soil_T_in_K, stat_file_zt
+        l_input_um, l_input_vm, l_input_rtm, l_input_thlm, & 
+        l_input_wp2, l_input_wprtp, l_input_wpthlp,  & 
+        l_input_wp3, l_input_rtp2, l_input_thlp2,  & 
+        l_input_rtpthlp, l_input_upwp, l_input_vpwp, & 
+        l_input_ug, l_input_vg, l_input_rcm,  & 
+        l_input_wm_zt, l_input_exner, l_input_em, & 
+        l_input_p, l_input_rho, l_input_rho_zm, &
+        l_input_rho_ds_zm, l_input_rho_ds_zt, &
+        l_input_thv_ds_zm, l_input_thv_ds_zt, &
+        l_input_Lscale, l_input_Lscale_up, l_input_Lscale_down, & 
+        l_input_Kh_zt, l_input_Kh_zm, l_input_tau_zm, l_input_tau_zt, & 
+        l_input_wpthvp, l_input_radht, &
+        l_input_thl1, l_input_thl2, l_input_mixt_frac, l_input_s1, l_input_s2, &
+        l_input_stdev_s1, l_input_stdev_s2, l_input_rc1, l_input_rc2, &
+        l_input_thvm, l_input_rrainm,l_input_Nrm,  & 
+        l_input_rsnowm, l_input_ricem, l_input_rgraupelm,  & 
+        l_input_thlm_forcing, l_input_rtm_forcing, & 
+        l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
+        l_input_Ncnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
+        l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
+        l_input_sfc_soil_T_in_K, stat_file_zt
 
     use inputfields, only: &
       compute_timestep,  & ! Procedure(s)
@@ -2750,130 +2749,132 @@ module clubb_driver
 
     ! Inform inputfields module
     input_type = "clubb"
-    input_um   = .true.
-    input_vm   = .true.
-    input_rtm  = .true.
-    input_thlm = .true.
-    input_wp2  = .true.
-    input_ug   = .true.
-    input_vg   = .true.
-    input_rcm  = .true.
-    input_wm_zt  = .true.
-    input_exner = .true.
-    input_em = .true.
-    input_p = .true.
-    input_rho = .true.
-    input_rho_zm = .true.
-    input_rho_ds_zm = .true.
-    input_rho_ds_zt = .true.
-    input_thv_ds_zm = .true.
-    input_thv_ds_zt = .true.
-    input_Lscale = .true.
-    input_Lscale_up = .true.
-    input_Lscale_down = .true.
-    input_Kh_zt = .true.
-    input_Kh_zm = .true.
-    input_tau_zm = .true.
-    input_tau_zt = .true.
-    input_thvm = .true.
-    input_wpthvp = .true.
-    input_thl1 = .true.
-    input_thl2 = .true.
-    input_mixt_frac = .true.
-    input_s1   = .true.
-    input_s2   = .true.
-    input_stdev_s1  = .true.
-    input_stdev_s2  = .true.
-    input_rc1  = .true.
-    input_rc2  = .true.
-    input_radht = .true.
+    l_input_um   = .true.
+    l_input_vm   = .true.
+    l_input_rtm  = .true.
+    l_input_thlm = .true.
+    l_input_wp2  = .true.
+    l_input_ug   = .true.
+    l_input_vg   = .true.
+    l_input_rcm  = .true.
+    l_input_wm_zt  = .true.
+    l_input_exner = .true.
+    l_input_em = .true.
+    l_input_p = .true.
+    l_input_rho = .true.
+    l_input_rho_zm = .true.
+    l_input_rho_ds_zm = .true.
+    l_input_rho_ds_zt = .true.
+    l_input_thv_ds_zm = .true.
+    l_input_thv_ds_zt = .true.
+    l_input_Lscale = .true.
+    l_input_Lscale_up = .true.
+    l_input_Lscale_down = .true.
+    l_input_Kh_zt = .true.
+    l_input_Kh_zm = .true.
+    l_input_tau_zm = .true.
+    l_input_tau_zt = .true.
+    l_input_thvm = .true.
+    l_input_wpthvp = .true.
+    l_input_thl1 = .true.
+    l_input_thl2 = .true.
+    l_input_mixt_frac = .true.
+    l_input_s1   = .true.
+    l_input_s2   = .true.
+    l_input_stdev_s1  = .true.
+    l_input_stdev_s2  = .true.
+    l_input_rc1  = .true.
+    l_input_rc2  = .true.
+    l_input_radht = .true.
 
     select case ( trim( micro_scheme ) )
     case ( "coamps" )
-      input_rrainm = .true.
-      input_rsnowm = .true.
-      input_ricem = .true.
-      input_rgraupelm = .true.
-      input_Ncnm = .true.
-      input_Ncm = .true.
-      input_Nrm = .true.
-      input_Nim =  .true.
+      l_input_rrainm = .true.
+      l_input_rsnowm = .true.
+      l_input_ricem = .true.
+      l_input_rgraupelm = .true.
+      l_input_Ncnm = .true.
+      l_input_Ncm = .true.
+      l_input_Nrm = .true.
+      l_input_Nim =  .true.
 
     case ( "morrison" )
-      input_rrainm = .true.
-      input_rsnowm = .true.
-      input_ricem = .true.
-      input_rgraupelm = .true.
-      input_Ncnm = .false.
+      l_input_rrainm = .true.
+      l_input_rsnowm = .true.
+      l_input_ricem = .true.
+      l_input_rgraupelm = .true.
+      l_input_Ncnm = .false.
       if ( l_predictnc ) then
-        input_Ncm = .true.
+        l_input_Ncm = .true.
       else
-        input_Ncm = .false.
+        l_input_Ncm = .false.
       end if
-      input_Nrm = .true.
-      input_Nim =  .true.
+      l_input_Nrm = .true.
+      l_input_Nim =  .true.
 
     case ( "morrison-gettelman" )
-      input_rrainm = .false.
-      input_rsnowm = .false.
-      input_ricem = .true.
-      input_rgraupelm = .false.
-      input_Ncnm = .false.
+      l_input_rrainm = .false.
+      l_input_rsnowm = .false.
+      l_input_ricem = .true.
+      l_input_rgraupelm = .false.
+      l_input_Ncnm = .false.
       if ( l_predictnc ) then
-        input_Ncm = .true.
+        l_input_Ncm = .true.
       else
-        input_Ncm = .false.
+        l_input_Ncm = .false.
       end if
-      input_Nrm = .false.
-      input_Nim =  .true.
+      l_input_Nrm = .false.
+      l_input_Nim =  .true.
 
     case ( "khairoutdinov_kogan" )
-      input_rrainm = .true.
-      input_rsnowm = .false.
-      input_ricem = .false.
-      input_rgraupelm = .false.
-      input_Ncnm = .false.
-      input_Ncm = .false.
-      input_Nrm = .true.
-      input_Nim = .false.
+      l_input_rrainm = .true.
+      l_input_rsnowm = .false.
+      l_input_ricem = .false.
+      l_input_rgraupelm = .false.
+      l_input_Ncnm = .false.
+      l_input_Ncm = .false.
+      l_input_Nrm = .true.
+      l_input_Nim = .false.
 
     case default
-      input_rrainm = .false.
-      input_rsnowm = .false.
-      input_ricem = .false.
-      input_rgraupelm = .false.
-      input_Ncnm = .false.
-      input_Ncm = .false.
-      input_Nrm = .false.
-      input_Nim = .false.
+      l_input_rrainm = .false.
+      l_input_rsnowm = .false.
+      l_input_ricem = .false.
+      l_input_rgraupelm = .false.
+      l_input_Ncnm = .false.
+      l_input_Ncm = .false.
+      l_input_Nrm = .false.
+      l_input_Nim = .false.
 
     end select
 
     if ( l_soil_veg ) then
-      input_veg_T_in_K = .true.
-      input_deep_soil_T_in_K = .true.
-      input_sfc_soil_T_in_K = .true.
+      l_input_veg_T_in_K = .true.
+      l_input_deep_soil_T_in_K = .true.
+      l_input_sfc_soil_T_in_K = .true.
     end if
 
-    input_wprtp = .true.
-    input_wpthlp = .true.
-    input_wp3 = .true.
-    input_rtp2 = .true.
-    input_thlp2 = .true.
-    input_rtpthlp = .true.
-    input_upwp = .true.
-    input_vpwp = .true.
-    input_thlm_forcing = .true.
-    input_rtm_forcing = .true.
-    input_up2 = .true.
-    input_vp2 = .true.
-    input_sigma_sqd_w = .true.
-    input_cloud_frac  = .true.
-    input_sigma_sqd_w_zt = .true.
+    l_input_wprtp = .true.
+    l_input_wpthlp = .true.
+    l_input_wp3 = .true.
+    l_input_rtp2 = .true.
+    l_input_thlp2 = .true.
+    l_input_rtpthlp = .true.
+    l_input_upwp = .true.
+    l_input_vpwp = .true.
+    l_input_thlm_forcing = .true.
+    l_input_rtm_forcing = .true.
+    l_input_up2 = .true.
+    l_input_vp2 = .true.
+    l_input_sigma_sqd_w = .true.
+    l_input_cloud_frac  = .true.
+    l_input_sigma_sqd_w_zt = .true.
+
     call set_filenames( "../"//trim( restart_path_case ) )
     ! Determine the nearest timestep in the GRADS file to the
     ! restart time.
     l_restart = .true.
+
     call compute_timestep &
       ( iunit, stat_file_zt, l_restart, time_restart, &! Intent(in)
         timestep )                                                                 ! Intent(out)

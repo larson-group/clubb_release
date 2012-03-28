@@ -232,7 +232,7 @@ module input_netcdf
   end subroutine open_netcdf_read
 
 !----------------------------------------------------------------------
-  subroutine get_netcdf_var( ncf, varname, itime, x, l_error )
+  subroutine get_netcdf_var( ncf, varname, itime, l_convert_to_MKS, x, l_error )
 
 ! Description:
 !   Read in values from a netCDF file.
@@ -266,10 +266,6 @@ module input_netcdf
 
     implicit none
 
-    ! Constant parameter
-    logical, parameter :: &
-      l_convert_to_MKS = .true. ! Convert to MKS units
-
     ! Input Variables
     type (stat_file), intent(in) :: &
       ncf ! NetCDF file structure
@@ -279,6 +275,9 @@ module input_netcdf
 
     integer, intent(in) :: & 
       itime ! Obtain variable varname at time itime [m]
+
+    logical, intent(in) :: &
+      l_convert_to_MKS ! Convert variables to MKS upon reading
 
     ! Output
     real( kind = core_rknd ), dimension(:), intent(out) ::  & 

@@ -119,6 +119,9 @@ module stat_file_utils
       k_lowest_input, &
       k_highest_input
 
+    logical :: &
+      l_convert_to_MKS ! convert inputs to MKS units
+
 !-----------------------------------------------------------------------
 
     ! Initialize variables
@@ -182,7 +185,8 @@ module stat_file_utils
                             file_variable(1:file_nz), l_error )
       else
 #ifdef NETCDF
-        call get_netcdf_var( faverage, variable_name, t, &
+        l_convert_to_MKS = .true.
+        call get_netcdf_var( faverage, variable_name, t, l_convert_to_MKS, &
                              file_variable(1:file_nz), l_error )
 #endif
       end if
