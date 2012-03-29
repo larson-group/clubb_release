@@ -2011,6 +2011,25 @@ module inputfields
 
     end select
 
+    ! Clipping on the variance of u, v and w 
+    if ( l_input_wp2 ) then 
+      where ( wp2 < w_tol_sqd ) 
+        wp2 = w_tol_sqd 
+      end where 
+    end if 
+
+    if ( l_input_up2 ) then 
+      where ( up2 < w_tol_sqd )  
+        up2 = w_tol_sqd 
+      end where 
+    end if 
+
+    if ( l_input_vp2 ) then 
+      where ( vp2 < w_tol_sqd ) 
+        vp2 = w_tol_sqd 
+      end where 
+    end if 
+
     return
   end subroutine stat_fields_reader
 
