@@ -325,11 +325,12 @@ module clubb_core
 
     ! Constant Parameters
     logical, parameter :: &
-      l_avg_Lscale = .true.  ! Lscale is calculated in subroutine compute_length; if l_avg_Lscale
+      l_avg_Lscale = .true., &  ! Lscale is calculated in subroutine compute_length; if l_avg_Lscale
     ! is true, compute_length is called two additional times with
     ! perturbed values of rtm and thlm.  An average value of Lscale
     ! from the three calls to compute_length is then calculated.
     ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
+    l_Lscale_plume_centered = .false. ! Alternate that uses the PDF to compute the perturbed values
 
     logical, parameter :: &
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
@@ -461,7 +462,9 @@ module clubb_core
       gamma_Skw_fnc, & ! Gamma as a function of skewness          [???]
       Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
       thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
-      rtm_pert_1, rtm_pert_2          ! For avg. calculation of Lscale  [kg/kg]
+      rtm_pert_1, rtm_pert_2,   &     ! For avg. calculation of Lscale  [kg/kg]
+      thlm_pert_pos, thlm_pert_neg, &     ! For avg. calculation of Lscale  [K]
+      rtm_pert_pos, rtm_pert_neg          ! For avg. calculation of Lscale  [kg/kg]
 
     ! For pdf_closure
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: & 
@@ -535,7 +538,8 @@ module clubb_core
       thlm_flux_top, &
       thlm_flux_sfc, &
       thlm_spur_src, &
-      mu_pert_1, mu_pert_2          ! For avg. calculation of Lscale  [1/m]
+      mu_pert_1, mu_pert_2, & ! For l_avg_Lscale
+      mu_pert_pos, mu_pert_neg ! For l_Lscale_plume_centered
 
     !----- Begin Code -----
 
@@ -1006,17 +1010,56 @@ module clubb_core
                            err_code, &                                 ! intent(inout)
                            Lscale_pert_2 )                             ! intent(out)
 
+    else if ( l_Lscale_plume_centered ) then
+
+      ! Take the values of thl and rt based one 1st or 2nd plume
+      thlm_pert_pos = max( pdf_params%thl1, pdf_params%thl2 ) &
+                    + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
+      thlm_pert_neg = min( pdf_params%thl1, pdf_params%thl2 ) &
+                    - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
+      rtm_pert_pos = max( pdf_params%rt1, pdf_params%rt2 ) & 
+                   + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+      rtm_pert_neg = min( pdf_params%rt1, pdf_params%rt2 ) & 
+                   - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+
+      mu_pert_pos  = mu * Lscale_mu_coef
+      mu_pert_neg  = mu / Lscale_mu_coef
+
+      ! Check if thl and rt are correlated
+      where ( pdf_params(:)%rrtthl >= 0.0_core_rknd )
+        ! Positive correlation (dry convection)
+        thlm_pert_1(:) = thlm_pert_pos(:)
+        thlm_pert_2(:) = thlm_pert_neg(:)
+
+      else where 
+        ! Negative correlation (cloudy convection)
+        thlm_pert_1(:) = thlm_pert_neg(:)
+        thlm_pert_2(:) = thlm_pert_pos(:)
+
+      end where
+
+      ! Call length with perturbed values of thl and rt
+      call compute_length( thvm, thlm_pert_1, rtm_pert_pos, em, &        ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu_pert_neg, l_implemented, & ! intent(in)
+                           err_code, &                                 ! intent(inout)
+                           Lscale_pert_1 )                             ! intent(out)
+
+      call compute_length( thvm, thlm_pert_2, rtm_pert_neg, em,  &        ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu_pert_pos, l_implemented, & ! intent(in)
+                           err_code, &                                 ! intent(inout)
+                           Lscale_pert_2 )                             ! intent(out)
     end if ! l_avg_Lscale
 
     ! ********** NOTE: **********
     ! This call to compute_length must be last.  Otherwise, the values of
-    ! Lscale_up and Lscale_down will not be correctly saved stats.
+    ! Lscale_up and Lscale_down in stats will be based on perturbation length scales 
+    ! rather than the mean length scale.
     call compute_length( thvm, thlm, rtm, em, &                      ! intent(in)
                          p_in_Pa, exner, thv_ds_zt, mu, l_implemented, & ! intent(in)
                          err_code, &                                 ! intent(inout)
                          Lscale )                                    ! intent(out)
 
-    if ( l_avg_Lscale ) then
+    if ( l_avg_Lscale .or. l_Lscale_plume_centered ) then
       Lscale = (1.0_core_rknd/3.0_core_rknd) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
     end if
 
