@@ -325,7 +325,7 @@ module clubb_core
 
     ! Constant Parameters
     logical, parameter :: &
-      l_avg_Lscale = .true., &  ! Lscale is calculated in subroutine compute_length; if l_avg_Lscale
+      l_avg_Lscale = .true., & ! Lscale is calculated in subroutine compute_length; if l_avg_Lscale
     ! is true, compute_length is called two additional times with
     ! perturbed values of rtm and thlm.  An average value of Lscale
     ! from the three calls to compute_length is then calculated.
@@ -988,7 +988,7 @@ module clubb_core
     ! Compute mixing length
     !----------------------------------------------------------------
 
-    if ( l_avg_Lscale ) then
+    if ( l_avg_Lscale .and. .not. l_Lscale_plume_centered ) then
       ! Call compute length two additional times with perturbed values
       ! of rtm and thlm so that an average value of Lscale may be calculated.
 
@@ -1010,7 +1010,7 @@ module clubb_core
                            err_code, &                                 ! intent(inout)
                            Lscale_pert_2 )                             ! intent(out)
 
-    else if ( l_Lscale_plume_centered ) then
+    else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
 
       ! Take the values of thl and rt based one 1st or 2nd plume
       thlm_pert_pos = max( pdf_params%thl1, pdf_params%thl2 ) &
@@ -1048,6 +1048,10 @@ module clubb_core
                            p_in_Pa, exner, thv_ds_zt, mu_pert_pos, l_implemented, & ! intent(in)
                            err_code, &                                 ! intent(inout)
                            Lscale_pert_2 )                             ! intent(out)
+    else
+      Lscale_pert_1 = -999.
+      Lscale_pert_2 = -999.
+
     end if ! l_avg_Lscale
 
     ! ********** NOTE: **********
@@ -1059,7 +1063,7 @@ module clubb_core
                          err_code, &                                 ! intent(inout)
                          Lscale )                                    ! intent(out)
 
-    if ( l_avg_Lscale .or. l_Lscale_plume_centered ) then
+    if ( l_avg_Lscale ) then
       Lscale = (1.0_core_rknd/3.0_core_rknd) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
     end if
 
