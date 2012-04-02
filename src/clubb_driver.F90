@@ -808,9 +808,9 @@ module clubb_driver
              tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
              rho, rho_zm, rho_ds_zm, rho_ds_zt,                & ! Intent(inout)
              invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! Intent(inout)
-             thv_ds_zm, thv_ds_zt, Lscale,                     & ! Intent(inout)
+             thv_ds_zm, thv_ds_zt,                             & ! Intent(inout)
              rtm_ref, thlm_ref,                                & ! Intent(inout) 
-             Kh_zt, Kh_zm, um_ref, vm_ref,                     & ! Intent(inout)
+             um_ref, vm_ref,                                   & ! Intent(inout)
              hydromet, Ncnm,                                   & ! Intent(inout)
              sclrm, edsclrm, err_code )                          ! Intent(out)
 
@@ -830,9 +830,9 @@ module clubb_driver
              tau_zt, tau_zm, thvm, p_in_Pa,                                    & ! Intent(inout)
              rho, rho_zm, rho_ds_zm, rho_ds_zt,                                & ! Intent(inout)
              invrs_rho_ds_zm, invrs_rho_ds_zt,                                 & ! Intent(inout)
-             thv_ds_zm, thv_ds_zt, Lscale,                                     & ! Intent(inout)
+             thv_ds_zm, thv_ds_zt,                                             & ! Intent(inout)
              rtm_ref, thlm_ref,                                                & ! Intent(inout) 
-             Kh_zt, Kh_zm, um_ref, vm_ref,                                     & ! Intent(inout)
+             um_ref, vm_ref,                                                   & ! Intent(inout)
              hydromet, Ncnm,                                                   & ! Intent(inout)
              sclrm, edsclrm, err_code )                                          ! Intent(out)
 
@@ -1141,9 +1141,9 @@ module clubb_driver
                tau_zt, tau_zm, thvm, p_in_Pa, &
                rho, rho_zm, rho_ds_zm, rho_ds_zt, &
                invrs_rho_ds_zm, invrs_rho_ds_zt, &
-               thv_ds_zm, thv_ds_zt, Lscale, &
+               thv_ds_zm, thv_ds_zt, &
                rtm_ref, thlm_ref, &
-               Kh_zt, Kh_zm, um_ref, vm_ref, &
+               um_ref, vm_ref, &
                hydromet, Ncnm, &
                sclrm, edsclrm, err_code )
     ! Description:
@@ -1282,8 +1282,6 @@ module clubb_driver
       invrs_rho_ds_zt, & ! Inv. dry, static density (t-levs.)  [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v (m-levs.)   [K]
       thv_ds_zt,       & ! Dry, base-state theta_v (t-levs.)   [K]
-      Lscale,          & ! Mixing length                       [m] 
-      Kh_zt, Kh_zm,    & ! Eddy diffusivity                    [m^2/s]
       um_ref,          & ! Initial profile of u wind           [m/s]
       vm_ref,          & ! Initial profile of v wind           [m/s]
       rtm_ref,         & ! Initial profile of rtm              [kg/kg]
@@ -1803,40 +1801,6 @@ module clubb_driver
       wp2 = (2.0_core_rknd/3.0_core_rknd) * em
 
     end if ! l_tke_aniso
-
-    ! Compute mixing length
-    call compute_length( thvm, thlm, rtm, em,   &                    ! Intent(in)
-                         p_in_Pa, exner, thv_ds_zt, mu, &            ! Intent(in)  
-                         l_implemented,              &               ! Intent(in)    
-                         err_code,                   &               ! Intent(inout)
-                         Lscale )                                    ! Intent(out)
-    if ( fatal_error( err_code ) .and. clubb_at_least_debug_level( 1 ) ) then
-      write(fstderr,*) "initialize_clubb: Fatal error in compute_length"
-    end if
-    ! Dissipation time
-    tmp1 = sqrt( max( em_min, zm2zt( em ) ) )
-    tau_zt = min( Lscale / tmp1, taumax )
-    tau_zm = min( ( max( zt2zm( Lscale ), zero_threshold ) &
-                   / sqrt( max( em_min, em ) ) ), taumax )
-
-    ! Modification to damp noise in stable region
-! Brian commented this out to match code found in advance_clubb_core.
-! Vince Larson commented out because it may prevent turbulence from
-!    initiating in unstable regions.  7 Jul 2007
-!    do k=1,gr%nz
-!      if ( wp2(k) <= 0.005_core_rknd ) then
-!        tau_zt(k) = taumin
-!        tau_zm(k) = taumin
-!      end if
-!    end do
-! End Vince Larson's commenting.
-
-    ! Eddy diffusivity coefficient
-    ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
-
-    Kh_zt = c_K * Lscale * tmp1
-    Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
-                * sqrt( max( em, em_min ) )
 
     ! Moved this to be more general -dschanen July 16 2007
     if ( l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then
