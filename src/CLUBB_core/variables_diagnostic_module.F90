@@ -199,7 +199,7 @@ module variables_diagnostic_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine setup_diagnostic_variables( nzmax )
+  subroutine setup_diagnostic_variables( nz )
 ! Description:
 !   Allocates and initializes prognostic scalar and array variables
 !   for the CLUBB model code
@@ -220,7 +220,7 @@ module variables_diagnostic_module
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: nzmax ! Nunber of grid levels [-]
+    integer, intent(in) :: nz ! Nunber of grid levels [-]
 
     ! Local Variables
     integer :: i
@@ -229,116 +229,116 @@ module variables_diagnostic_module
 
     ! Diagnostic variables
 
-    allocate( sigma_sqd_w_zt(1:nzmax) ) ! PDF width parameter interp. to t-levs.
-    allocate( Skw_zm(1:nzmax) )         ! Skewness of w on momentum levels
-    allocate( Skw_zt(1:nzmax) )         ! Skewness of w on thermodynamic levels
-    allocate( ug(1:nzmax) )             ! u geostrophic wind
-    allocate( vg(1:nzmax) )             ! v geostrophic wind
-    allocate( um_ref(1:nzmax) )         ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
-    allocate( vm_ref(1:nzmax) )         ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
-    allocate( thlm_ref(1:nzmax) )       ! Reference liquid water potential for nudging
-    allocate( rtm_ref(1:nzmax) )        ! Reference total water mixing ratio for nudging
-    allocate( thvm(1:nzmax) )           ! Virtual potential temperature
+    allocate( sigma_sqd_w_zt(1:nz) ) ! PDF width parameter interp. to t-levs.
+    allocate( Skw_zm(1:nz) )         ! Skewness of w on momentum levels
+    allocate( Skw_zt(1:nz) )         ! Skewness of w on thermodynamic levels
+    allocate( ug(1:nz) )             ! u geostrophic wind
+    allocate( vg(1:nz) )             ! v geostrophic wind
+    allocate( um_ref(1:nz) )         ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
+    allocate( vm_ref(1:nz) )         ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
+    allocate( thlm_ref(1:nz) )       ! Reference liquid water potential for nudging
+    allocate( rtm_ref(1:nz) )        ! Reference total water mixing ratio for nudging
+    allocate( thvm(1:nz) )           ! Virtual potential temperature
 
-    allocate( rsat(1:nzmax) )       ! Saturation mixing ratio  ! Brian
+    allocate( rsat(1:nz) )       ! Saturation mixing ratio  ! Brian
 
-    allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
-    allocate( Frad_SW_up(1:nzmax) )
-    allocate( Frad_LW_up(1:nzmax) )
-    allocate( Frad_SW_down(1:nzmax) )
-    allocate( Frad_LW_down(1:nzmax) )
+    allocate( Frad(1:nz) )      ! radiative flux (momentum point)
+    allocate( Frad_SW_up(1:nz) )
+    allocate( Frad_LW_up(1:nz) )
+    allocate( Frad_SW_down(1:nz) )
+    allocate( Frad_LW_down(1:nz) )
 
-    allocate( radht(1:nzmax) )     ! SW + LW heating rate
+    allocate( radht(1:nz) )     ! SW + LW heating rate
 
     ! pdf_params on momentum levels
-    allocate( pdf_params_zm(1:nzmax) )
+    allocate( pdf_params_zm(1:nz) )
 
     ! Second order moments
 
-    allocate( thlprcp(1:nzmax) )   ! thl'rc'
-    allocate( rtprcp(1:nzmax) )    ! rt'rc'
-    allocate( rcp2(1:nzmax) )      ! rc'^2
+    allocate( thlprcp(1:nz) )   ! thl'rc'
+    allocate( rtprcp(1:nz) )    ! rt'rc'
+    allocate( rcp2(1:nz) )      ! rc'^2
 
     ! Third order moments
 
-    allocate( wpthlp2(1:nzmax) )   ! w'thl'^2
-    allocate( wp2thlp(1:nzmax) )   ! w'^2thl'
-    allocate( wprtp2(1:nzmax) )    ! w'rt'^2
-    allocate( wp2rtp(1:nzmax) )    ! w'^2rt'
-    allocate( wprtpthlp(1:nzmax) ) ! w'rt'thl'
-    allocate( wp2rcp(1:nzmax) )    ! w'^2rc'
+    allocate( wpthlp2(1:nz) )   ! w'thl'^2
+    allocate( wp2thlp(1:nz) )   ! w'^2thl'
+    allocate( wprtp2(1:nz) )    ! w'rt'^2
+    allocate( wp2rtp(1:nz) )    ! w'^2rt'
+    allocate( wprtpthlp(1:nz) ) ! w'rt'thl'
+    allocate( wp2rcp(1:nz) )    ! w'^2rc'
 
-    allocate( wp3_zm(1:nzmax) )    ! w'^3
+    allocate( wp3_zm(1:nz) )    ! w'^3
 
     ! Fourth order moments
 
-    allocate( wp4(1:nzmax) )
+    allocate( wp4(1:nz) )
 
     ! Buoyancy related moments
 
-    allocate( rtpthvp(1:nzmax) )  ! rt'thv'
-    allocate( thlpthvp(1:nzmax) ) ! thl'thv'
-    allocate( wpthvp(1:nzmax) )   ! w'thv'
-    allocate( wp2thvp(1:nzmax) )  ! w'^2thv'
+    allocate( rtpthvp(1:nz) )  ! rt'thv'
+    allocate( thlpthvp(1:nz) ) ! thl'thv'
+    allocate( wpthvp(1:nz) )   ! w'thv'
+    allocate( wp2thvp(1:nz) )  ! w'^2thv'
 
-    allocate( Kh_zt(1:nzmax) )  ! Eddy diffusivity coefficient: thermo. levels
-    allocate( Kh_zm(1:nzmax) )  ! Eddy diffusivity coefficient: momentum levels
+    allocate( Kh_zt(1:nz) )  ! Eddy diffusivity coefficient: thermo. levels
+    allocate( Kh_zm(1:nz) )  ! Eddy diffusivity coefficient: momentum levels
 
-    allocate( em(1:nzmax) )
-    allocate( Lscale(1:nzmax) )
-    allocate( Lscale_up(1:nzmax) )
-    allocate( Lscale_down(1:nzmax) )
+    allocate( em(1:nz) )
+    allocate( Lscale(1:nz) )
+    allocate( Lscale_up(1:nz) )
+    allocate( Lscale_down(1:nz) )
 
-    allocate( tau_zm(1:nzmax) ) ! Eddy dissipation time scale: momentum levels
-    allocate( tau_zt(1:nzmax) ) ! Eddy dissipation time scale: thermo. levels
+    allocate( tau_zm(1:nz) ) ! Eddy dissipation time scale: momentum levels
+    allocate( tau_zt(1:nz) ) ! Eddy dissipation time scale: thermo. levels
 
 
     ! Interpolated Variables
-    allocate( wp2_zt(1:nzmax) )     ! w'^2 on thermo. grid
-    allocate( thlp2_zt(1:nzmax) )   ! thl'^2 on thermo. grid
-    allocate( wpthlp_zt(1:nzmax) )  ! w'thl' on thermo. grid
-    allocate( wprtp_zt(1:nzmax) )   ! w'rt' on thermo. grid
-    allocate( rtp2_zt(1:nzmax) )    ! rt'^2 on thermo. grid
-    allocate( rtpthlp_zt(1:nzmax) ) ! rt'thl' on thermo. grid
-    allocate( up2_zt(1:nzmax) )     ! u'^2 on thermo. grid
-    allocate( vp2_zt(1:nzmax) )     ! v'^2 on thermo. grid
-    allocate( upwp_zt(1:nzmax) )    ! u'w' on thermo. grid
-    allocate( vpwp_zt(1:nzmax) )    ! v'w' on thermo. grid
+    allocate( wp2_zt(1:nz) )     ! w'^2 on thermo. grid
+    allocate( thlp2_zt(1:nz) )   ! thl'^2 on thermo. grid
+    allocate( wpthlp_zt(1:nz) )  ! w'thl' on thermo. grid
+    allocate( wprtp_zt(1:nz) )   ! w'rt' on thermo. grid
+    allocate( rtp2_zt(1:nz) )    ! rt'^2 on thermo. grid
+    allocate( rtpthlp_zt(1:nz) ) ! rt'thl' on thermo. grid
+    allocate( up2_zt(1:nz) )     ! u'^2 on thermo. grid
+    allocate( vp2_zt(1:nz) )     ! v'^2 on thermo. grid
+    allocate( upwp_zt(1:nz) )    ! u'w' on thermo. grid
+    allocate( vpwp_zt(1:nz) )    ! v'w' on thermo. grid
 
 
     ! Microphysics Variables
-    allocate( Ncnm(1:nzmax) )
-    allocate( hydromet(1:nzmax,1:hydromet_dim) ) ! All hydrometeor fields
+    allocate( Ncnm(1:nz) )
+    allocate( hydromet(1:nz,1:hydromet_dim) ) ! All hydrometeor fields
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-    allocate( lh_AKm(1:nzmax) )    ! Kessler ac estimate
-    allocate( AKm(1:nzmax) )        ! Exact Kessler ac
-    allocate( AKstd(1:nzmax) )      ! St dev of exact Kessler ac
-    allocate( AKstd_cld(1:nzmax) )  ! St dev of exact w/in cloud Kessler ac
-    allocate( lh_rcm_avg(1:nzmax) )      ! Monte Carlo rcm estimate
-    allocate( AKm_rcm(1:nzmax) )      ! Kessler ac based on rcm
-    allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cloud_frac
+    allocate( lh_AKm(1:nz) )    ! Kessler ac estimate
+    allocate( AKm(1:nz) )        ! Exact Kessler ac
+    allocate( AKstd(1:nz) )      ! St dev of exact Kessler ac
+    allocate( AKstd_cld(1:nz) )  ! St dev of exact w/in cloud Kessler ac
+    allocate( lh_rcm_avg(1:nz) )      ! Monte Carlo rcm estimate
+    allocate( AKm_rcm(1:nz) )      ! Kessler ac based on rcm
+    allocate( AKm_rcc(1:nz) )      ! Kessler ac based on rcm/cloud_frac
     ! End of variables for Latin hypercube.
 
     ! High-order passive scalars
-    allocate( sclrpthvp(1:nzmax, 1:sclr_dim) )
-    allocate( sclrprcp(1:nzmax, 1:sclr_dim) )
+    allocate( sclrpthvp(1:nz, 1:sclr_dim) )
+    allocate( sclrprcp(1:nz, 1:sclr_dim) )
 
-    allocate( wp2sclrp(1:nzmax, 1:sclr_dim) )
-    allocate( wpsclrp2(1:nzmax, 1:sclr_dim) )
-    allocate( wpsclrprtp(1:nzmax, 1:sclr_dim) )
-    allocate( wpsclrpthlp(1:nzmax, 1:sclr_dim) )
+    allocate( wp2sclrp(1:nz, 1:sclr_dim) )
+    allocate( wpsclrp2(1:nz, 1:sclr_dim) )
+    allocate( wpsclrprtp(1:nz, 1:sclr_dim) )
+    allocate( wpsclrpthlp(1:nz, 1:sclr_dim) )
 
     ! Eddy Diff. Scalars
-    allocate( wpedsclrp(1:nzmax, 1:edsclr_dim) )
+    allocate( wpedsclrp(1:nz, 1:edsclr_dim) )
 
-    allocate( Skw_velocity(1:nzmax) )
+    allocate( Skw_velocity(1:nz) )
 
-    allocate( a3_coef(1:nzmax) )
-    allocate( a3_coef_zt(1:nzmax) )
+    allocate( a3_coef(1:nz) )
+    allocate( a3_coef_zt(1:nz) )
 
-    allocate( wp3_on_wp2(1:nzmax) )
-    allocate( wp3_on_wp2_zt(1:nzmax) )
+    allocate( wp3_on_wp2(1:nz) )
+    allocate( wp3_on_wp2_zt(1:nz) )
 
     !   --- Initializaton ---
 
@@ -444,10 +444,10 @@ module variables_diagnostic_module
     tau_zt = 0.0_core_rknd ! Eddy dissipation time scale: thermo. levels
 
     ! Hydrometer types
-    Ncnm(1:nzmax) = 0.0_core_rknd ! Cloud nuclei number concentration (COAMPS)
+    Ncnm(1:nz) = 0.0_core_rknd ! Cloud nuclei number concentration (COAMPS)
 
     do i = 1, hydromet_dim, 1
-      hydromet(1:nzmax,i) = 0.0_core_rknd
+      hydromet(1:nz,i) = 0.0_core_rknd
     end do
 
 
