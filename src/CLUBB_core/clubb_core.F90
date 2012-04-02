@@ -158,6 +158,8 @@ module clubb_core
       thvm, & 
       em, & 
       Lscale, &
+      Lscale_up,  & 
+      Lscale_down, &
       tau_zm, &
       tau_zt, &
       Kh_zm, &
@@ -309,8 +311,10 @@ module clubb_core
       ithlm_spur_src
 
     use stats_variables, only: &
-      iSkw_velocity, &
-      igamma_Skw_fnc
+      iSkw_velocity, & ! Variable(s)
+      igamma_Skw_fnc, &
+      iLscale_pert_1, &
+      iLscale_pert_2
 
     use fill_holes, only: &
       vertical_integral ! Procedure(s)
@@ -1003,12 +1007,12 @@ module clubb_core
       call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, &        ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
                            err_code, &                                 ! intent(inout)
-                           Lscale_pert_1 )                             ! intent(out)
+                           Lscale_pert_1, Lscale_up, Lscale_down )     ! intent(out)
 
-      call compute_length( thvm, thlm_pert_2, rtm_pert_2, em,  &        ! intent(in)
+      call compute_length( thvm, thlm_pert_2, rtm_pert_2, em,  &       ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_2, l_implemented, & ! intent(in)
                            err_code, &                                 ! intent(inout)
-                           Lscale_pert_2 )                             ! intent(out)
+                           Lscale_pert_2, Lscale_up, Lscale_down )     ! intent(out)
 
     else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
 
@@ -1039,20 +1043,25 @@ module clubb_core
       end where
 
       ! Call length with perturbed values of thl and rt
-      call compute_length( thvm, thlm_pert_1, rtm_pert_pos, em, &        ! intent(in)
+      call compute_length( thvm, thlm_pert_1, rtm_pert_pos, em, &  ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_neg, l_implemented, & ! intent(in)
-                           err_code, &                                 ! intent(inout)
-                           Lscale_pert_1 )                             ! intent(out)
+                           err_code, &                             ! intent(inout)
+                           Lscale_pert_1, Lscale_up, Lscale_down ) ! intent(out)
 
-      call compute_length( thvm, thlm_pert_2, rtm_pert_neg, em,  &        ! intent(in)
+      call compute_length( thvm, thlm_pert_2, rtm_pert_neg, em,  & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_pos, l_implemented, & ! intent(in)
-                           err_code, &                                 ! intent(inout)
-                           Lscale_pert_2 )                             ! intent(out)
+                           err_code, &                             ! intent(inout)
+                           Lscale_pert_2, Lscale_up, Lscale_down ) ! intent(out)
     else
-      Lscale_pert_1 = -999.
-      Lscale_pert_2 = -999.
+      Lscale_pert_1 = -999._core_rknd
+      Lscale_pert_2 = -999._core_rknd
 
     end if ! l_avg_Lscale
+
+    if ( l_stats_samp ) then
+      call stat_update_var( iLscale_pert_1, Lscale_pert_1, zt )
+      call stat_update_var( iLscale_pert_2, Lscale_pert_2, zt )
+    end if ! l_stats_samp
 
     ! ********** NOTE: **********
     ! This call to compute_length must be last.  Otherwise, the values of
@@ -1061,7 +1070,7 @@ module clubb_core
     call compute_length( thvm, thlm, rtm, em, &                      ! intent(in)
                          p_in_Pa, exner, thv_ds_zt, mu, l_implemented, & ! intent(in)
                          err_code, &                                 ! intent(inout)
-                         Lscale )                                    ! intent(out)
+                         Lscale, Lscale_up, Lscale_down )            ! intent(out)
 
     if ( l_avg_Lscale ) then
       Lscale = (1.0_core_rknd/3.0_core_rknd) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )

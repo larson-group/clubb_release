@@ -14,7 +14,7 @@ module mixing_length
   subroutine compute_length( thvm, thlm, rtm, em, &
                              p_in_Pa, exner, thv_ds, mu, l_implemented, &
                              err_code, &
-                             Lscale )
+                             Lscale, Lscale_up, Lscale_down )
     ! Description:
     ! Larson's 5th moist, nonlocal length scale
 
@@ -58,10 +58,6 @@ module mixing_length
         sat_mixrat_liq, & ! Procedure(s)
         sat_mixrat_liq_lookup
 
-    use variables_diagnostic_module, only:  & 
-        Lscale_up,  & ! Variable(s)
-        Lscale_down
-
     use error_code, only:  & 
         clubb_at_least_debug_level, & ! Procedure(s)
         fatal_error
@@ -78,12 +74,12 @@ module mixing_length
     implicit none
 
     ! External
-    intrinsic :: max, sqrt
+    intrinsic :: min, max, sqrt
 
     ! Constant Parameters
     real( kind = core_rknd ), parameter ::  & 
-      zlmin = 0.1_core_rknd !,  &
-    !zeps  = 1.e-10
+      zlmin = 0.1_core_rknd, & ! Minimum value for Lscale [m]
+      Lscale_sfclyr_depth = 500._core_rknd ! [m]
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
@@ -107,9 +103,12 @@ module mixing_length
       err_code
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  & 
-      Lscale  ! Mixing length                 [m]
+      Lscale,    & ! Mixing length      [m]
+      Lscale_up, & ! Mixing length up   [m]
+      Lscale_down  ! Mixing length down [m]
 
     ! Local Variables
+
     integer :: i, j, &
       err_code_Lscale
 
@@ -139,9 +138,8 @@ module mixing_length
     ! Variables to make L nonlocal
     real( kind = core_rknd ) :: Lscale_up_max_alt, Lscale_down_min_alt
 
-    real( kind = core_rknd ), parameter :: Lscale_sfclyr_depth = 500._core_rknd ! [m]
-
     ! ---- Begin Code ----
+
     err_code_Lscale = clubb_no_error
 
     !---------- Mixing length computation ----------------------------------

@@ -82,6 +82,8 @@ module stats_variables
      iwp2rtp, & 
      iLscale_up, & 
      iLscale_down, & 
+     iLscale_pert_1, & 
+     iLscale_pert_2, & 
      itau_zt, & 
      iKh_zt, & 
      iwp2thvp, & 
@@ -120,6 +122,7 @@ module stats_variables
 !$omp   iwm_zt, iwm_zm, iug, ivg, icloud_frac, ircm_in_layer, ircm_in_cloud, icloud_cover, &
 !$omp   ip_in_Pa, iexner, irho_ds_zt, ithv_ds_zt, iLscale, iwp3, &
 !$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, &
+!$omp   iLscale_pert_1, iLscale_pert_2, &
 !$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, &
 !$omp   irho, irel_humidity, iNcm, iNcnm, isnowslope, &
 !$omp   ised_rcm, irsat, irsati, irrainm, &

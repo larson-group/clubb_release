@@ -359,13 +359,17 @@ module stats_zt
       iwp3_on_wp2_zt, &
       ia3_coef_zt
       
+    use stats_variables, only: &
+      iLscale_pert_1, & ! Variable(s)
+      iLscale_pert_2
 
     use stats_type, only: & 
         stat_assign ! Procedure
 
     use parameters_model, only: &
-        sclr_dim,&
+        sclr_dim,& ! Variable(s)
         edsclr_dim
+
 !use error_code, only: &
 !    clubb_at_least_debug_level ! Function
 
@@ -378,7 +382,7 @@ module stats_zt
     ! Output Variable        
     logical, intent(inout) :: l_error
 
-! Local Varables
+    ! Local Varables
     integer :: i, j, k
 
     logical :: l_found
@@ -444,7 +448,7 @@ module stats_zt
     iradht_LW       = 0
     iradht_SW       = 0
 
-! Number concentrations
+    ! Number concentrations
     iNsnowm    = 0  ! Adam Smith, 22 April 2008
     iNrm       = 0  ! Brian
     iNgraupelm = 0
@@ -455,11 +459,11 @@ module stats_zt
     ircm_icedfs     = 0
     iu_T_cm         = 0
 
-! From K&K microphysics
+    ! From K&K microphysics
     im_vol_rad_rain  = 0  ! Brian
     im_vol_rad_cloud = 0
 
-! From Morrison microphysics
+    ! From Morrison microphysics
     ieff_rad_cloud   = 0
     ieff_rad_ice     = 0
     ieff_rad_snow    = 0
@@ -695,6 +699,9 @@ module stats_zt
     iC11_Skw_fnc = 0
     ia3_coef_zt = 0
     iwp3_on_wp2_zt = 0
+
+    iLscale_pert_1 = 0
+    iLscale_pert_2 = 0
 
     allocate( isclrm(1:sclr_dim) )
     allocate( isclrm_f(1:sclr_dim) )
@@ -1000,6 +1007,18 @@ module stats_zt
         iLscale_down = k
         call stat_assign( iLscale_down, "Lscale_down", & 
              "Downward mixing length [m]", "m", zt )
+        k = k + 1
+
+      case ('Lscale_pert_1')
+        iLscale_pert_1 = k
+        call stat_assign( iLscale_pert_1, "Lscale_pert_1", & 
+             "Mixing length using a perturbed value of rtm/thlm [m]", "m", zt )
+        k = k + 1
+
+      case ('Lscale_pert_2')
+        iLscale_pert_2 = k
+        call stat_assign( iLscale_pert_2, "Lscale_pert_2", & 
+             "Mixing length using a perturbed value of rtm/thlm [m]", "m", zt )
         k = k + 1
 
       case ('tau_zt')
