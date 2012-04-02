@@ -802,10 +802,10 @@ module clubb_driver
       iinit = 1
 
       call initialize_clubb &
-           ( iunit, trim( forcings_file_path ), p_sfc, zm_init, l_implemented, & ! Intent(in)
+           ( iunit, trim( forcings_file_path ), p_sfc, zm_init, & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,    & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                          & ! Intent(inout)
-             tau_zt, tau_zm, thvm, p_in_Pa,                    & ! Intent(inout)
+             thvm, p_in_Pa,                                    & ! Intent(inout)
              rho, rho_zm, rho_ds_zm, rho_ds_zt,                & ! Intent(inout)
              invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! Intent(inout)
              thv_ds_zm, thv_ds_zt,                             & ! Intent(inout)
@@ -824,17 +824,17 @@ module clubb_driver
       ! There for it should be executed prior to a restart. The restart should overwrite
       ! the initial sounding anyway.
       call initialize_clubb &
-           ( iunit, trim( forcings_file_path ), p_sfc, zm_init, l_implemented, & ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,                    & ! Intent(inout)
-             wm_zt, wm_zm, em, exner,                                          & ! Intent(inout)
-             tau_zt, tau_zm, thvm, p_in_Pa,                                    & ! Intent(inout)
-             rho, rho_zm, rho_ds_zm, rho_ds_zt,                                & ! Intent(inout)
-             invrs_rho_ds_zm, invrs_rho_ds_zt,                                 & ! Intent(inout)
-             thv_ds_zm, thv_ds_zt,                                             & ! Intent(inout)
-             rtm_ref, thlm_ref,                                                & ! Intent(inout) 
-             um_ref, vm_ref,                                                   & ! Intent(inout)
-             hydromet, Ncnm,                                                   & ! Intent(inout)
-             sclrm, edsclrm, err_code )                                          ! Intent(out)
+           ( iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
+             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,      & ! Intent(inout)
+             wm_zt, wm_zm, em, exner,                            & ! Intent(inout)
+             thvm, p_in_Pa,                                      & ! Intent(inout)
+             rho, rho_zm, rho_ds_zm, rho_ds_zt,                  & ! Intent(inout)
+             invrs_rho_ds_zm, invrs_rho_ds_zt,                   & ! Intent(inout)
+             thv_ds_zm, thv_ds_zt,                               & ! Intent(inout)
+             rtm_ref, thlm_ref,                                  & ! Intent(inout) 
+             um_ref, vm_ref,                                     & ! Intent(inout)
+             hydromet, Ncnm,                                     & ! Intent(inout)
+             sclrm, edsclrm, err_code )                            ! Intent(out)
 
       if ( fatal_error( err_code ) ) return
 
@@ -1135,10 +1135,10 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine initialize_clubb &
-             ( iunit, forcings_file_path, p_sfc, zm_init, l_implemented, &
+             ( iunit, forcings_file_path, p_sfc, zm_init, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
-               tau_zt, tau_zm, thvm, p_in_Pa, &
+               thvm, p_in_Pa, &
                rho, rho_zm, rho_ds_zm, rho_ds_zt, &
                invrs_rho_ds_zm, invrs_rho_ds_zt, &
                thv_ds_zm, thv_ds_zt, &
@@ -1254,9 +1254,6 @@ module clubb_driver
       p_sfc,  & ! Pressure at the surface        [Pa]
       zm_init   ! Initial moment. level altitude [m]
 
-    logical, intent(in) :: &
-      l_implemented ! Flag for CLUBB being implemented in a larger model
-
     ! Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
       thlm,            & ! Theta_l mean                        [K] 
@@ -1272,7 +1269,6 @@ module clubb_driver
       wm_zt, wm_zm,    & ! w wind                              [m/s]
       em,              & ! Turbulence kinetic energy           [m^2/s^2]
       exner,           & ! Exner function                      [-] 
-      tau_zm, tau_zt,  & ! Dissipation time                    [s]
       thvm,            & ! Virtual potential temperature       [K]
       p_in_Pa,         & ! Pressure                            [Pa]
       rho, rho_zm,     & ! Density                             [kg/m^3]
@@ -1304,8 +1300,6 @@ module clubb_driver
       err_code ! Indicates an error condition
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: tmp1
-
     real( kind = core_rknd ) ::  &
       rtm_sfc,          & ! Surface total water mixing ratio       [kg/kg]
       thlm_sfc,         & ! Surface liq. water potential temp.     [K]
