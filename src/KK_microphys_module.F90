@@ -343,7 +343,7 @@ module KK_microphys_module
                                            KK_evap_coef, KK_auto_coef, &
                                            KK_accr_coef, KK_evap_tndcy(k), &
                                            KK_auto_tndcy(k), KK_accr_tndcy(k), &
-                                           pdf_params(k), &
+                                           pdf_params(k), k, l_stats_samp, &
                                            wprtp_mc_tndcy_zt(k), &
                                            wpthlp_mc_tndcy_zt(k), &
                                            rtp2_mc_tndcy_zt(k), &
@@ -985,7 +985,7 @@ module KK_microphys_module
                                        KK_evap_coef, KK_auto_coef, &
                                        KK_accr_coef, KK_evap_tndcy, &
                                        KK_auto_tndcy, KK_accr_tndcy, &
-                                       pdf_params, &
+                                       pdf_params, level, l_stats_samp, &
                                        wprtp_mc_src_tndcy, &
                                        wpthlp_mc_src_tndcy, &
                                        rtp2_mc_src_tndcy, &
@@ -1040,6 +1040,21 @@ module KK_microphys_module
         core_rknd,      & ! Variable(s)
         time_precision
 
+    use stats_type, only: & 
+        stat_update_var_pt  ! Procedure(s)
+
+    use stats_variables, only: & 
+        zt,                    & ! Variable(s)
+        iw_KK_evap_covar_zt,   &
+        irt_KK_evap_covar_zt,  &
+        ithl_KK_evap_covar_zt, &
+        iw_KK_auto_covar_zt,   &
+        irt_KK_auto_covar_zt,  &
+        ithl_KK_auto_covar_zt, &
+        iw_KK_accr_covar_zt,   &
+        irt_KK_accr_covar_zt,  &
+        ithl_KK_accr_covar_zt
+
     implicit none
 
     ! Input Variables
@@ -1083,6 +1098,12 @@ module KK_microphys_module
 
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                        [units vary]
+
+    integer, intent(in) :: &
+      level         ! Vertical level index                  [-]
+
+    logical, intent(in) :: &
+      l_stats_samp     ! Flag to record statistical output.
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -1464,6 +1485,73 @@ module KK_microphys_module
        thl_KK_accr_covar = zero
 
     endif
+
+
+    ! Statistics
+    if ( l_stats_samp ) then
+
+       ! All of these covariance variables are being calculated on thermodynamic
+       ! grid levels (all inputs are on thermodynamic grid levels, so the output
+       ! is also on thermodynamic grid levels).  These covariances will be
+       ! combined in various ways to produce the microphysics tendency terms for
+       ! various model predictive variances and covariances.  These source
+       ! tendency terms will be interpolated to momentum grid levels.
+
+       ! Covariance of w and KK evaporation tendency.
+       if ( iw_KK_evap_covar_zt > 0 ) then
+          call stat_update_var_pt( iw_KK_evap_covar_zt, level, &
+                                   w_KK_evap_covar, zt )
+       endif
+
+       ! Covariance of r_t and KK evaporation tendency.
+       if ( irt_KK_evap_covar_zt > 0 ) then
+          call stat_update_var_pt( irt_KK_evap_covar_zt, level, &
+                                   rt_KK_evap_covar, zt )
+       endif
+
+       ! Covariance of theta_l and KK evaporation tendency.
+       if ( ithl_KK_evap_covar_zt > 0 ) then
+          call stat_update_var_pt( ithl_KK_evap_covar_zt, level, &
+                                   thl_KK_evap_covar, zt )
+       endif
+
+       ! Covariance of w and KK autoconversion tendency.
+       if ( iw_KK_auto_covar_zt > 0 ) then
+          call stat_update_var_pt( iw_KK_auto_covar_zt, level, &
+                                   w_KK_auto_covar, zt )
+       endif
+
+       ! Covariance of r_t and KK autoconversion tendency.
+       if ( irt_KK_auto_covar_zt > 0 ) then
+          call stat_update_var_pt( irt_KK_auto_covar_zt, level, &
+                                   rt_KK_auto_covar, zt )
+       endif
+
+       ! Covariance of theta_l and KK autoconversion tendency.
+       if ( ithl_KK_auto_covar_zt > 0 ) then
+          call stat_update_var_pt( ithl_KK_auto_covar_zt, level, &
+                                   thl_KK_auto_covar, zt )
+       endif
+
+       ! Covariance of w and KK accretion tendency.
+       if ( iw_KK_auto_covar_zt > 0 ) then
+          call stat_update_var_pt( iw_KK_accr_covar_zt, level, &
+                                   w_KK_accr_covar, zt )
+       endif
+
+       ! Covariance of r_t and KK accretion tendency.
+       if ( irt_KK_auto_covar_zt > 0 ) then
+          call stat_update_var_pt( irt_KK_accr_covar_zt, level, &
+                                   rt_KK_accr_covar, zt )
+       endif
+
+       ! Covariance of theta_l and KK accretion tendency.
+       if ( ithl_KK_auto_covar_zt > 0 ) then
+          call stat_update_var_pt( ithl_KK_accr_covar_zt, level, &
+                                   thl_KK_accr_covar, zt )
+       endif
+
+    endif ! l_stats_samp
 
 
     ! Calculate the microphysics tendency for <w'r_t'>.

@@ -304,6 +304,17 @@ module stats_zt
       iNcm_cl, &
       iNcm_act
 
+    use stats_variables, only: &
+        iw_KK_evap_covar_zt,   &
+        irt_KK_evap_covar_zt,  &
+        ithl_KK_evap_covar_zt, &
+        iw_KK_auto_covar_zt,   &
+        irt_KK_auto_covar_zt,  &
+        ithl_KK_auto_covar_zt, &
+        iw_KK_accr_covar_zt,   &
+        irt_KK_accr_covar_zt,  &
+        ithl_KK_accr_covar_zt
+
     use stats_variables, only: & 
       ieff_rad_cloud, &
       ieff_rad_ice, &
@@ -591,6 +602,16 @@ module stats_zt
     iricem_dff        = 0
     iricem_mc         = 0
     iricem_cl         = 0
+
+    iw_KK_evap_covar_zt   = 0
+    irt_KK_evap_covar_zt  = 0
+    ithl_KK_evap_covar_zt = 0
+    iw_KK_auto_covar_zt   = 0
+    irt_KK_auto_covar_zt  = 0
+    ithl_KK_auto_covar_zt = 0
+    iw_KK_accr_covar_zt   = 0
+    irt_KK_accr_covar_zt  = 0
+    ithl_KK_accr_covar_zt = 0
 
     ivm_bt   = 0
     ivm_ma   = 0
@@ -1984,6 +2005,70 @@ module stats_zt
         call stat_assign( iNcm_cl, "Ncm_cl", & 
              "Ncm budget: Ncm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
+
+      case ('w_KK_evap_covar_zt')
+       iw_KK_evap_covar_zt = k
+
+       call stat_assign( iw_KK_evap_covar_zt, "w_KK_evap_covar_zt", &
+            "Covariance of w and KK evaporation rate", "m*(kg/kg)/s^2", zt )
+       k = k + 1
+
+      case ('rt_KK_evap_covar_zt')
+       irt_KK_evap_covar_zt = k
+
+       call stat_assign( irt_KK_evap_covar_zt, "rt_KK_evap_covar_zt", &
+            "Covariance of r_t and KK evaporation rate", "(kg/kg)^2/s", zt )
+       k = k + 1
+
+      case ('thl_KK_evap_covar_zt')
+       ithl_KK_evap_covar_zt = k
+
+       call stat_assign( ithl_KK_evap_covar_zt, "thl_KK_evap_covar_zt", &
+            "Covariance of theta_l and KK evaporation rate", "K*(kg/kg)/s", zt )
+       k = k + 1
+
+      case ('w_KK_auto_covar_zt')
+       iw_KK_auto_covar_zt = k
+
+       call stat_assign( iw_KK_auto_covar_zt, "w_KK_auto_covar_zt", &
+            "Covariance of w and KK autoconversion rate", "m*(kg/kg)/s^2", zt )
+       k = k + 1
+
+      case ('rt_KK_auto_covar_zt')
+       irt_KK_auto_covar_zt = k
+
+       call stat_assign( irt_KK_auto_covar_zt, "rt_KK_auto_covar_zt", &
+            "Covariance of r_t and KK autoconversion rate", "(kg/kg)^2/s", zt )
+       k = k + 1
+
+      case ('thl_KK_auto_covar_zt')
+       ithl_KK_auto_covar_zt = k
+
+       call stat_assign( ithl_KK_auto_covar_zt, "thl_KK_auto_covar_zt", &
+            "Covariance of theta_l and KK autoconversion rate", "K*(kg/kg)/s", &
+            zt )
+       k = k + 1
+
+      case ('w_KK_accr_covar_zt')
+       iw_KK_accr_covar_zt = k
+
+       call stat_assign( iw_KK_accr_covar_zt, "w_KK_accr_covar_zt", &
+            "Covariance of w and KK accretion rate", "m*(kg/kg)/s^2", zt )
+       k = k + 1
+
+      case ('rt_KK_accr_covar_zt')
+       irt_KK_accr_covar_zt = k
+
+       call stat_assign( irt_KK_accr_covar_zt, "rt_KK_accr_covar_zt", &
+            "Covariance of r_t and KK accretion rate", "(kg/kg)^2/s", zt )
+       k = k + 1
+
+      case ('thl_KK_accr_covar_zt')
+       ithl_KK_accr_covar_zt = k
+
+       call stat_assign( ithl_KK_accr_covar_zt, "thl_KK_accr_covar_zt", &
+            "Covariance of theta_l and KK accretion rate", "K*(kg/kg)/s", zt )
+       k = k + 1
 
       case ('vm_bt')
         ivm_bt = k

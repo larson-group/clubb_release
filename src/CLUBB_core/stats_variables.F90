@@ -378,6 +378,23 @@ module stats_variables
 !$omp threadprivate(iNcm_bt, iNcm_ma, iNcm_dff, &
 !$omp   iNcm_mc, iNcm_cl)
 
+  ! Covariances between w, r_t, theta_l and KK microphysics tendencies.
+  ! These are calculated on thermodynamic grid levels.
+  integer, public :: &
+    iw_KK_evap_covar_zt,   & ! Covariance of w and KK evaporation tendency.
+    irt_KK_evap_covar_zt,  & ! Covariance of r_t and KK evaporation tendency.
+    ithl_KK_evap_covar_zt, & ! Covariance of theta_l and KK evap. tendency.
+    iw_KK_auto_covar_zt,   & ! Covariance of w and KK autoconversion tendency.
+    irt_KK_auto_covar_zt,  & ! Covariance of r_t and KK autoconversion tendency.
+    ithl_KK_auto_covar_zt, & ! Covariance of theta_l and KK autoconv. tendency.
+    iw_KK_accr_covar_zt,   & ! Covariance of w and KK accretion tendency.
+    irt_KK_accr_covar_zt,  & ! Covariance of r_t and KK accretion tendency.
+    ithl_KK_accr_covar_zt    ! Covariance of theta_l and KK accretion tendency.
+
+!$omp threadprivate( iw_KK_evap_covar_zt, irt_KK_evap_covar_zt, &
+!$omp   ithl_KK_evap_covar_zt, iw_KK_auto_covar_zt, irt_KK_auto_covar_zt, &
+!$omp   ithl_KK_auto_covar_zt, iw_KK_accr_covar_zt, irt_KK_accr_covar_zt, &
+!$omp   ithl_KK_accr_covar_zt )
 
   ! Wind budgets
   integer, public :: & 
