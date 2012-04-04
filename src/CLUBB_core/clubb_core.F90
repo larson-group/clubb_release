@@ -468,7 +468,8 @@ module clubb_core
       thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
       rtm_pert_1, rtm_pert_2,   &     ! For avg. calculation of Lscale  [kg/kg]
       thlm_pert_pos, thlm_pert_neg, &     ! For avg. calculation of Lscale  [K]
-      rtm_pert_pos, rtm_pert_neg          ! For avg. calculation of Lscale  [kg/kg]
+      rtm_pert_pos, rtm_pert_neg, &       ! For avg. calculation of Lscale  [kg/kg]
+      Lscale_weight
 
     ! For pdf_closure
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: & 
@@ -1021,10 +1022,23 @@ module clubb_core
                     + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
       thlm_pert_neg = min( pdf_params%thl1, pdf_params%thl2 ) &
                     - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-      rtm_pert_pos = max( pdf_params%rt1, pdf_params%rt2 ) & 
-                   + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-      rtm_pert_neg = min( pdf_params%rt1, pdf_params%rt2 ) & 
-                   - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+!     rtm_pert_pos = max( pdf_params%rt1, pdf_params%rt2 ) & 
+!                  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+!     rtm_pert_neg = min( pdf_params%rt1, pdf_params%rt2 ) & 
+!                  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+      where ( pdf_params%rt1 > pdf_params%rt2 )
+        rtm_pert_pos = pdf_params%rt1 &
+                     + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+        rtm_pert_neg = pdf_params%rt2 & 
+                     - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+        Lscale_weight = pdf_params%mixt_frac
+      else where
+        rtm_pert_pos = pdf_params%rt2 &
+                     + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+        rtm_pert_neg = pdf_params%rt1 & 
+                     - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+        Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
+      end where
 
       mu_pert_pos  = mu * Lscale_mu_coef
       mu_pert_neg  = mu / Lscale_mu_coef
@@ -1073,7 +1087,12 @@ module clubb_core
                          Lscale, Lscale_up, Lscale_down )            ! intent(out)
 
     if ( l_avg_Lscale ) then
-      Lscale = (1.0_core_rknd/3.0_core_rknd) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
+      if ( l_Lscale_plume_centered ) then
+        Lscale = 0.5_core_rknd * ( Lscale + Lscale_weight*Lscale_pert_1 &
+                                   + (1.0_core_rknd-Lscale_weight)*Lscale_pert_2 )
+      else
+        Lscale = (1.0_core_rknd/3.0_core_rknd) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
+      end if
     end if
 
     !----------------------------------------------------------------
