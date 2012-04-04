@@ -45,11 +45,13 @@ module inputfields
   integer, parameter, private :: &
     coamps_input_type = 1, &
     clubb_input_type =  2, &
-    sam_input_type = 3
+    sam_input_type = 3, &
+    rams_input_type = 4
 
   integer, parameter, private :: &
     num_sam_inputfields = 62, & ! The number of input fields for SAM
-    num_coamps = 61 ! The number of input fields for coamps
+    num_coamps = 61, & ! The number of input fields for coamps
+    num_rams_inputfields =  4 ! The number of input fields for the RAMS LES case
 
   integer, private :: &
     stats_input_type
@@ -147,6 +149,14 @@ module inputfields
       stat_file_sfc = trim( file_prefix )
 
       stats_input_type = sam_input_type
+
+    case ( "rams_les", "RAMS_LES", "rams" )
+      ! RAMS uses one file for all of it's output.
+      stat_file_zt = trim( file_prefix )//"_rams.ctl"
+      stat_file_zm = stat_file_zt
+      stat_file_sfc = stat_file_zt
+
+      stats_input_type = rams_input_type
 
     case default
       write(fstderr,*) "Don't know how to handle input_type = "// & 
@@ -282,13 +292,17 @@ module inputfields
 
     type (input_field), dimension(:), allocatable :: &
       SAM_variables, & ! A list of SAM variables to read in.
-      coamps_variables ! A list of coamps variables to read in.
-
+      coamps_variables, & ! A list of coamps variables to read in.
+      RAMS_variables ! A list of RAMS LES variables to read in.
 
     ! ---- Begin Code ----
 
     select case ( stats_input_type )
 
+
+    !-------------------------------------
+    ! CLUBB stats data
+    !-------------------------------------
     case ( clubb_input_type )
 
       !  Thermo grid - zt file
@@ -711,7 +725,12 @@ module inputfields
 
       if ( l_fatal_error ) stop "oops, get_grads_var failed in stat_fields_reader"
 
-    case ( coamps_input_type ) ! COAMPS LES stats data     
+
+    !---------------------------------------
+    ! COAMPS LES stats data
+    !--------------------------------------
+
+    case ( coamps_input_type )    
       l_fatal_error = .false.
 
       allocate( coamps_variables( num_coamps ) )
@@ -1244,7 +1263,8 @@ module inputfields
       if ( l_fatal_error ) stop "oops, bad input for inputfields"
       
       call get_input_variables_interp &
-             (k, coamps_variables, stat_file_zt, timestep, &
+             (k, coamps_variables, stat_file_zt, stat_file_zm, &
+              stat_file_sfc, timestep, &
               k_lowest_zt_input, k_highest_zt_input, &
               k_lowest_zm_input, k_highest_zm_input, l_fatal_error )
 
@@ -1444,7 +1464,12 @@ module inputfields
       endif
 
       deallocate(coamps_variables)
+    
 
+
+    !-------------------------------------------
+    ! SAM stats data
+    !-------------------------------------------
     case( sam_input_type )
 
       allocate( SAM_variables(num_sam_inputfields) )
@@ -1906,7 +1931,8 @@ module inputfields
       SAM_variables(k)%input_name = "none"
 
       call get_input_variables_interp &
-             (k, SAM_variables, stat_file_zt, timestep, &
+             (k, SAM_variables, stat_file_zt, stat_file_zm, &
+              stat_file_sfc, timestep, &
               k_lowest_zt_input, k_highest_zt_input, &
               k_lowest_zm_input, k_highest_zm_input, l_fatal_error )
 
@@ -2008,6 +2034,58 @@ module inputfields
       if ( l_fatal_error ) stop "Failed to read inputfields for SAM."
 
       deallocate( SAM_variables )
+
+
+
+    !---------------------------------------------------
+    ! RAMS LES stats data
+    !---------------------------------------------------
+    case ( rams_input_type )
+      allocate( RAMS_variables(num_rams_inputfields) )
+
+      l_fatal_error = .false.
+
+      k = 1
+
+      RAMS_variables(k)%l_input_var = l_input_wp3
+      RAMS_variables(k)%input_name = "wp3"
+      RAMS_variables(k)%clubb_var => wp3
+      RAMS_variables(k)%adjustment = 1.0_core_rknd
+      RAMS_variables(k)%grid_type = "zt"
+
+      k = k + 1
+
+      RAMS_variables(k)%l_input_var = l_input_wp2
+      RAMS_variables(k)%input_name = "wp2"
+      RAMS_variables(k)%clubb_var => wp2
+      RAMS_variables(k)%adjustment = 1.0_core_rknd
+      RAMS_variables(k)%grid_type = "zm"
+
+      k = k + 1
+
+      RAMS_variables(k)%l_input_var = l_input_up2
+      RAMS_variables(k)%input_name = "up2"
+      RAMS_variables(k)%clubb_var => up2
+      RAMS_variables(k)%adjustment = 1.0_core_rknd
+      RAMS_variables(k)%grid_type = "zm"
+
+      k = k + 1
+
+      RAMS_variables(k)%l_input_var = l_input_vp2
+      RAMS_variables(k)%input_name = "vp2"
+      RAMS_variables(k)%clubb_var => vp2
+      RAMS_variables(k)%adjustment = 1.0_core_rknd
+      RAMS_variables(k)%grid_type = "zm"
+
+      call get_input_variables_interp &
+             (k, RAMS_variables, stat_file_zt, stat_file_zm, &
+              stat_file_sfc, timestep, &
+              k_lowest_zt_input, k_highest_zt_input, &
+              k_lowest_zm_input, k_highest_zm_input, l_fatal_error )
+
+      if( l_fatal_error ) then
+        STOP "Error reading RAMS LES input fields"
+      end if
 
     end select
 
@@ -2248,7 +2326,8 @@ module inputfields
   end subroutine get_clubb_variable_interpolated
 
   !--------------------------------------------------------------------------
-  subroutine get_input_variables_interp( nvars, variables, filename, timestep, &
+  subroutine get_input_variables_interp( nvars, variables, filename_zt, filename_zm, &
+                                   filename_sfc, timestep, &
                                    k_lowest_zt_input, k_highest_zt_input, &
                                    k_lowest_zm_input, k_highest_zm_input, l_error )
 
@@ -2275,7 +2354,6 @@ module inputfields
       close_netcdf_read
 #endif
 
-
     use stat_file_utils, only: & 
        LES_grid_to_CLUBB_grid, & ! Procedure(s)
        CLUBB_levels_within_LES_domain, &
@@ -2294,7 +2372,9 @@ module inputfields
       variables ! The list of external variables to be read in.
 
     character(len=*), intent(in) :: &
-      filename ! The name of the file that the variables are located in.
+      filename_zt, & ! The names of the files that the variables are located in.
+      filename_zm, &
+      filename_sfc
   
     ! These variables are output by this subroutine in case certain variables
     ! need special adjustments.
@@ -2324,7 +2404,9 @@ module inputfields
       current_var ! The current variable
 
     type (stat_file) :: &
-      fread_var
+      fread_var_zt, &
+      fread_var_zm, &
+      fread_var_sfc
 
     integer, parameter :: &
       unit_number = 15
@@ -2334,17 +2416,25 @@ module inputfields
 
     l_error = .false.
 
-    l_grads_file = .not. l_netcdf_file(filename)
+    l_grads_file = .not. l_netcdf_file(filename_zt)
 
     if( l_grads_file ) then
-      call open_grads_read( unit_number, filename, &
-                           fread_var, l_internal_error )
+      call open_grads_read( unit_number, filename_zt, &
+                           fread_var_zt, l_internal_error )
+      call open_grads_read( unit_number, filename_zm, &
+                           fread_var_zm, l_internal_error )
+      call open_grads_read( unit_number, filename_sfc, &
+                           fread_var_sfc, l_internal_error )
 
     else
 
 #ifdef NETCDF
-      call open_netcdf_read( "THETAL", filename,  &
-                            fread_var, l_internal_error )
+      call open_netcdf_read( "THETAL", filename_zt,  &
+                            fread_var_zt, l_internal_error )
+      call open_netcdf_read( "THETAL", filename_zm,  &
+                            fread_var_zm, l_internal_error )
+      call open_netcdf_read( "THETAL", filename_sfc,  &
+                            fread_var_sfc, l_internal_error )
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
       write(fstderr,*) "Error reading file "// trim( filename )
@@ -2357,15 +2447,15 @@ module inputfields
 
     ! Find the lowest and highest indices of CLUBB thermodynamic levels that
     ! fall within the domain of the LES output.
-    call CLUBB_levels_within_LES_domain( fread_var, gr%zt,  &
+    call CLUBB_levels_within_LES_domain( fread_var_zt, gr%zt,  &
                                        k_lowest_zt_input, k_highest_zt_input )
 
     ! Find the lowest and highest indices of CLUBB momentum levels that
     ! fall within the domain of the LES output.
-    call CLUBB_levels_within_LES_domain( fread_var, gr%zm,  &
+    call CLUBB_levels_within_LES_domain( fread_var_zm, gr%zm,  &
                                        k_lowest_zm_input, k_highest_zm_input )
 
-    allocate( LES_tmp(fread_var%ia:fread_var%iz) )
+    allocate( LES_tmp(fread_var_zt%ia:fread_var_zt%iz) )
 
     do i=1, nvars
 
@@ -2382,13 +2472,23 @@ module inputfields
       if( current_var%l_input_var ) then
 
         if( l_grads_file ) then
-          call get_grads_var( fread_var, current_var%input_name, timestep, &
-                        LES_tmp(fread_var%ia:fread_var%iz), l_error )
+          if( current_var%grid_type == "zt" ) then
+            call get_grads_var( fread_var_zt, current_var%input_name, timestep, &
+                        LES_tmp(fread_var_zt%ia:fread_var_zt%iz), l_error )
+          else if( current_var%grid_type == "zm" ) then
+            call get_grads_var( fread_var_zm, current_var%input_name, timestep, &
+                        LES_tmp(fread_var_zm%ia:fread_var_zm%iz), l_error )
+          end if
         else
 #ifdef NETCDF
           l_convert_to_MKS = .false.
-          call get_netcdf_var( fread_var, current_var%input_name, timestep, l_convert_to_MKS, &
-                        LES_tmp(fread_var%ia:fread_var%iz), l_error )
+          if( current_var%grid_type == "zt" ) then
+            call get_netcdf_var( fread_var_zt, current_var%input_name, timestep, l_convert_to_MKS,&
+                        LES_tmp(fread_var_zt%ia:fread_var_zt%iz), l_error )
+          else if( current_var%grid_type == "zm" ) then
+            call get_netcdf_var( fread_var_zm, current_var%input_name, timestep, l_convert_to_MKS,&
+                        LES_tmp(fread_var_zm%ia:fread_var_zm%iz), l_error )
+          end if
 #else
           write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
           l_error = .true.
@@ -2398,7 +2498,7 @@ module inputfields
         l_error = l_error .or. l_internal_error
 
         call inputfields_interp_and_adjust( current_var%clubb_var, current_var%grid_type, &
-                                            fread_var, current_var%adjustment, &
+                                            fread_var_zt, fread_var_zm, current_var%adjustment, &
                                             LES_tmp, k_lowest_zt_input, k_highest_zt_input, &
                                             k_lowest_zm_input, k_highest_zm_input )
 
@@ -2406,12 +2506,17 @@ module inputfields
     end do
 
     if( l_grads_file ) then
-      call close_grads_read( fread_var )
+      call close_grads_read( fread_var_zt )
+      call close_grads_read( fread_var_zm )
+      call close_grads_read( fread_var_sfc )
 
     else
 
 #ifdef NETCDF
-      call close_netcdf_read( fread_var )
+      call close_netcdf_read( fread_var_zt )
+      call close_netcdf_read( fread_var_zm )
+      call close_netcdf_read( fread_var_sfc )
+
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
       write(fstderr,*) "Error reading file "// trim( filename )
@@ -2423,8 +2528,8 @@ module inputfields
   end subroutine get_input_variables_interp
         
   !----------------------------------------------------------------------------------------
-  subroutine inputfields_interp_and_adjust( clubb_var, grid_type, fread_var, adjustment, &
-                                       LES_tmp, k_lowest_zt_input, k_highest_zt_input,& 
+  subroutine inputfields_interp_and_adjust( clubb_var, grid_type, fread_var_zt, fread_var_zm, &
+                                       adjustment, LES_tmp, k_lowest_zt_input, k_highest_zt_input,& 
                                        k_lowest_zm_input, k_highest_zm_input )
   !
   !  Interpolates an input field as needed and adjusts it for unit conversion.
@@ -2458,12 +2563,13 @@ module inputfields
       grid_type ! The type of the grid, either "zm" or "zt"
 
     type (stat_file), intent(in) :: &
-      fread_var
+      fread_var_zt, &
+      fread_var_zm
 
     real( kind = core_rknd ), intent(in) :: &
       adjustment ! The value used to adjust the variable for unit conversions
 
-    real( kind = core_rknd ), dimension(fread_var%ia:fread_var%iz), intent(in) :: &
+    real( kind = core_rknd ), dimension(fread_var_zt%ia:fread_var_zt%iz), intent(in) :: &
       LES_tmp ! The values that were read in from the file.
 
     integer, intent(in) :: &
@@ -2507,7 +2613,7 @@ module inputfields
 
       ! CLUBB vertical level k is found at an altitude that is within the
       ! domain of the LES output.
-      call LES_grid_to_CLUBB_grid( fread_var, gr%zt, k,  &
+      call LES_grid_to_CLUBB_grid( fread_var_zt, gr%zt, k,  &
                                  exact_lev_idx_zt(k), lower_lev_idx_zt(k),  &
                                  upper_lev_idx_zt(k), l_lin_int_zt(k) )
     enddo
@@ -2519,7 +2625,7 @@ module inputfields
     do k = k_lowest_zm_input, k_highest_zm_input, 1
       ! CLUBB vertical level k is found at an altitude that is within the
       ! domain of the LES output.
-      call LES_grid_to_CLUBB_grid( fread_var, gr%zm, k,  &
+      call LES_grid_to_CLUBB_grid( fread_var_zm, gr%zm, k,  &
                                  exact_lev_idx_zm(k), lower_lev_idx_zm(k),  &
                                  upper_lev_idx_zm(k), l_lin_int_zm(k) )
     enddo
@@ -2531,8 +2637,8 @@ module inputfields
           ! CLUBB level k is found at an altitude that is between two
           ! LES levels.  Linear interpolation is required.
            clubb_var(k) = lin_int( gr%zt(k), &
-                            fread_var%z(upper_lev_idx_zt(k)), &
-                            fread_var%z(lower_lev_idx_zt(k)), &
+                            fread_var_zt%z(upper_lev_idx_zt(k)), &
+                            fread_var_zt%z(lower_lev_idx_zt(k)), &
                             LES_tmp(upper_lev_idx_zt(k)), &
                             LES_tmp(lower_lev_idx_zt(k)) )
         else
@@ -2551,8 +2657,8 @@ module inputfields
           ! CLUBB level k is found at an altitude that is between two
           ! LES levels.  Linear interpolation is required.
           clubb_var(k) = lin_int( gr%zm(k), &
-                           fread_var%z(upper_lev_idx_zm(k)), &
-                           fread_var%z(lower_lev_idx_zm(k)), &
+                           fread_var_zm%z(upper_lev_idx_zm(k)), &
+                           fread_var_zm%z(lower_lev_idx_zm(k)), &
                            LES_tmp(upper_lev_idx_zm(k)), &
                            LES_tmp(lower_lev_idx_zm(k)) )
         else
