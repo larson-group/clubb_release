@@ -654,12 +654,13 @@ module stats_variables
      iwprtp_mfl, &
      iwprtp_cl, & 
      iwprtp_sicl, & 
-     iwprtp_pd
+     iwprtp_pd, &
+     iwprtp_mc
 
 !$omp   threadprivate(iwprtp_bt, iwprtp_ma, iwprtp_ta, iwprtp_tp)
 !$omp   threadprivate(iwprtp_ac, iwprtp_bp, iwprtp_pr1, iwprtp_pr2)
 !$omp   threadprivate(iwprtp_pr3, iwprtp_dp1, iwprtp_mfl, iwprtp_cl)
-!$omp   threadprivate(iwprtp_sicl, iwprtp_pd)
+!$omp   threadprivate(iwprtp_sicl, iwprtp_pd, iwprtp_mc)
 
   integer, public :: & 
      iwpthlp_bt, & 
@@ -674,12 +675,13 @@ module stats_variables
      iwpthlp_dp1, &
      iwpthlp_mfl, &
      iwpthlp_cl, & 
-     iwpthlp_sicl
+     iwpthlp_sicl, &
+     iwpthlp_mc
 
 !$omp   threadprivate(iwpthlp_bt, iwpthlp_ma, iwpthlp_ta, iwpthlp_tp)
 !$omp   threadprivate(iwpthlp_ac, iwpthlp_bp, iwpthlp_pr1, iwpthlp_pr2)
 !$omp   threadprivate(iwpthlp_pr3, iwpthlp_dp1, iwpthlp_mfl, iwpthlp_cl)
-!$omp   threadprivate(iwpthlp_sicl)
+!$omp   threadprivate(iwpthlp_sicl, iwpthlp_mc)
 
 !    Dr. Golaz's new variance budget terms
 !    qt was changed to rt to avoid confusion
@@ -693,10 +695,11 @@ module stats_variables
      irtp2_dp2, & 
      irtp2_pd, & 
      irtp2_cl, &
-     irtp2_sf
+     irtp2_sf, &
+     irtp2_mc
      
-!$omp   threadprivate(irtp2_bt, irtp2_ma, irtp2_ta, irtp2_tp)
-!$omp   threadprivate(irtp2_dp1, irtp2_dp2, irtp2_pd, irtp2_cl)
+!$omp   threadprivate(irtp2_bt, irtp2_ma, irtp2_ta, irtp2_tp, irtp2_dp1)
+!$omp   threadprivate(irtp2_dp2, irtp2_pd, irtp2_cl, irtp2_sf, irtp2_mc)
 
   integer, public :: & 
      ithlp2_bt, & 
@@ -707,10 +710,11 @@ module stats_variables
      ithlp2_dp2, & 
      ithlp2_pd, & 
      ithlp2_cl, &
-     ithlp2_sf
+     ithlp2_sf, &
+     ithlp2_mc
 
-!$omp   threadprivate(ithlp2_bt, ithlp2_ma, ithlp2_ta, ithlp2_tp)
-!$omp   threadprivate(ithlp2_dp1, ithlp2_dp2, ithlp2_pd, ithlp2_cl)
+!$omp   threadprivate(ithlp2_bt, ithlp2_ma, ithlp2_ta, ithlp2_tp, ithlp2_dp1)
+!$omp   threadprivate(ithlp2_dp2, ithlp2_pd, ithlp2_cl, ithlp2_sf, ithlp2_mc)
 
   integer, public :: & 
     irtpthlp_bt, & 
@@ -721,11 +725,12 @@ module stats_variables
     irtpthlp_dp1, & 
     irtpthlp_dp2, & 
     irtpthlp_cl, &
-    irtpthlp_sf
+    irtpthlp_sf, &
+    irtpthlp_mc
 
 !$omp   threadprivate(irtpthlp_bt, irtpthlp_ma, irtpthlp_ta)
 !$omp   threadprivate(irtpthlp_tp1, irtpthlp_tp2, irtpthlp_dp1)
-!$omp   threadprivate(irtpthlp_dp2, irtpthlp_cl)
+!$omp   threadprivate(irtpthlp_dp2, irtpthlp_cl, irtpthlp_sf, irtpthlp_mc)
 
   integer, public :: & 
     iup2, & 

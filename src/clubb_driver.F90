@@ -118,13 +118,20 @@ module clubb_driver
     use stats_variables, only: l_stats_last, l_stats_samp, & ! Variable(s)
       l_output_rad_files
 
-    use stats_variables, only: zt ! Type
+    use stats_variables, only: &
+        zt, & ! Type
+        zm
 
     use stats_variables, only: &
-      irtm_mc, & ! Variables
-      irvm_mc, &
-      ircm_mc, &
-      ithlm_mc
+        irtm_mc,     & ! Variables
+        irvm_mc,     &
+        ircm_mc,     &
+        ithlm_mc,    &
+        iwprtp_mc,   &
+        iwpthlp_mc,  &
+        irtp2_mc,    &
+        ithlp2_mc,   &
+        irtpthlp_mc
 
     use stats_subs, only:  & 
       stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
@@ -1007,7 +1014,12 @@ module clubb_driver
         call stat_update_var( ircm_mc, rcm_mc, zt ) ! kg/kg/s
         call stat_update_var( irtm_mc, rvm_mc+rcm_mc, zt ) ! kg/kg/s
         call stat_update_var( ithlm_mc, thlm_mc, zt ) ! K/s
-      end if
+        call stat_update_var( iwprtp_mc, wprtp_mc_tndcy, zm ) ! m*(kg/kg)/s^2
+        call stat_update_var( iwpthlp_mc, wpthlp_mc_tndcy, zm ) ! K*m/s^2
+        call stat_update_var( irtp2_mc, rtp2_mc_tndcy, zm ) ! (kg/kg)^2/s
+        call stat_update_var( ithlp2_mc, thlp2_mc_tndcy, zm ) ! K^2/s
+        call stat_update_var( irtpthlp_mc, thlp2_mc_tndcy, zm ) ! K*(kg/kg)/s
+      endif
 
       ! Add microphysical tendencies to the forcings
       rtm_forcing(:) = rtm_forcing(:) + rcm_mc(:) + rvm_mc(:)
