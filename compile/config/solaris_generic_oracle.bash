@@ -1,5 +1,6 @@
 # $Id$
 # Makefile definitions for Oracle Solaris Studio Fortran compiler (SPARC or x64)
+# Tested with version 12.3
 
 # Fortran 95 compiler and linker
 FC=f95 # Sun/Oracle Fortran
@@ -21,7 +22,7 @@ DEBUG="-g -C -fns=no -ftrap=%none" #-stackvar -xcheck=init_local -ftrap=common
 WARNINGS="-w3 -ansi"
 # == Machine specific flags ==
 # Note that when linking to sunperf (for LAPACK) you must use -dalign
-ARCH="-xarch=native64 -xcache=native -xchip=native -dalign"
+ARCH="-m64 -xarch=native -dalign"
 
 # == Used to promote all real's to double precision ==
 # Note the on SPARC the compiler will allow as large as quad precision if desired, 
@@ -35,24 +36,25 @@ DOUBLE_PRECISION="-xtypemap=real:64,double:64,integer:32"
 # Note that -g is needed for both profiling and debugging.
 # These options are valid on a SPARC and x64 machine
 OPTIMIZE="-g -xO3 -xvector=lib -ftrap=%none"
-# These are more aggresive options that enable OpenMP
-#OPTIMIZE="-g -xopenmp -xparallel -stackvar -xipo=2 -xvector=simd -xO4 -ftrap=%none"
 
 # == NetCDF Location  ==
-NETCDF="/usr/local/netcdf-sun64"
+# Note: Solaris studio 12.3 does not appear to compile the latest netCDF.
+# The 3.6.x version will compile and pass "make test".
+NETCDF="/usr/local/netcdf-3.6.3"
 
 # == LAPACK libraries ==
 LAPACK="-xlic_lib=sunperf"
+
+# == Compiler flags ==
+# You will need to `make clean' if you change these
+FFLAGS="$OPTIMIZE $ARCH"
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # -Bstatic; for static linking of libraries
 # -xlibmopt; link the optimized version of libm (this can affect results)
-LDFLAGS="-L$NETCDF/lib -lnetcdf -xlibmopt $LAPACK"
+LDFLAGS="$FFLAGS -L$NETCDF/lib -lnetcdf -xlibmopt $LAPACK"
 
-# == Compiler flags ==
-# You will need to `make clean' if you change these
-FFLAGS="$OPTIMIZE $ARCH"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
