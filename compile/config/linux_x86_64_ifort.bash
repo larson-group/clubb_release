@@ -20,8 +20,7 @@ DEBUG="-g -traceback -check bounds -check uninit"
 WARNINGS="-warn -warn notruncated_source"
 
 # == Machine specific options ==
-ARCH="-msse2 -fp-model precise" # This should work on carson/steele (AMD Opteron)
-#ARCH="-mssse3 -fp-model precise"# Core2 Duo (overlie)
+ARCH="-msse2 -fp-model precise" # This should work on most modern AMD/Intel computers
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-real-size 64"
 
@@ -33,17 +32,13 @@ NETCDF="/usr/local/netcdf-intel64"
 
 # == LAPACK libraries ==
 # Intel Math Kernel Library (v11.1)
-MKLPATH="/opt/intel/Compiler/11.1/064/mkl/lib/em64t"
-# Intel Math Kernel Library (v10)
-#MKLPATH=/opt/intel/mkl/10.0.5.025/lib/em64t 
-# Intel Math Kernel Library (v10.2)
-#MKLPATH="/opt/intel/mkl/10.2.5.035/lib/em64t"
-LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_solver_lp64 -lmkl_core -lguide -lpthread"
-# (v8)
+#MKLPATH="/opt/intel/Compiler/11.1/064/mkl/lib/em64t"
 #LAPACK="-L/opt/intel/mkl/8.1/lib/64 -Wl,-rpath,/opt/intel/mkl/8.1/lib/64 -lmkl_lapack64 -lmkl_i2p -lmkl -lmkl_vml_i2p -lmkl_vml -lvml -lguide -lpthread"
 # Generic library
 #LAPACK="-llapack -lblas -lgfortran"
-#LAPACK="-L/usr/local/lib -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster then generic library)
+# AMD Core Math Library
+ACML="/opt/acml5.1.0/ifort64/lib"
+LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
@@ -61,7 +56,7 @@ FFLAGS="$ARCH $DEBUG"
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
 
-CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DMKL -DCLUBB_REAL_TYPE=8"
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=8"
 CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include"
 
 # == Static library processing ==
