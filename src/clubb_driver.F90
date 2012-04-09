@@ -59,8 +59,9 @@ module clubb_driver
       wprcp, rho, wprtp, wpthlp_sfc, wprtp_sfc, &
       upwp_sfc, vpwp_sfc, rho_ds_zm, rho_ds_zt, &
       invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
-      thv_ds_zt, thlm_forcing, rtm_forcing, &
-      um_forcing, vm_forcing, &
+      thv_ds_zt, thlm_forcing, rtm_forcing, um_forcing, &
+      vm_forcing, wprtp_forcing, wpthlp_forcing, &
+      rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
       up2, vp2, wp3, rtp2, pdf_params, &
       thlp2, rtpthlp, cloud_frac, &
       rcm_in_layer, cloud_cover
@@ -1018,14 +1019,22 @@ module clubb_driver
         call stat_update_var( iwpthlp_mc, wpthlp_mc_tndcy, zm ) ! K*m/s^2
         call stat_update_var( irtp2_mc, rtp2_mc_tndcy, zm ) ! (kg/kg)^2/s
         call stat_update_var( ithlp2_mc, thlp2_mc_tndcy, zm ) ! K^2/s
-        call stat_update_var( irtpthlp_mc, thlp2_mc_tndcy, zm ) ! K*(kg/kg)/s
+        call stat_update_var( irtpthlp_mc, rtpthlp_mc_tndcy, zm ) ! K*(kg/kg)/s
       endif
 
-      ! Add microphysical tendencies to the forcings
+      ! Add microphysical tendencies to rtm_forcing
       rtm_forcing(:) = rtm_forcing(:) + rcm_mc(:) + rvm_mc(:)
 
       ! Add radiation and microphysical tendencies to thlm_forcing
       thlm_forcing(:) = thlm_forcing(:) + thlm_mc(:) + radht(:)
+
+      ! Add microphysical tendencies to the forcings for the predictive
+      ! variances and covariances.
+      wprtp_forcing(:)   = wprtp_forcing(:) + wprtp_mc_tndcy(:)
+      wpthlp_forcing(:)  = wpthlp_forcing(:) + wpthlp_mc_tndcy(:)
+      rtp2_forcing(:)    = rtp2_forcing(:) + rtp2_mc_tndcy(:)
+      thlp2_forcing(:)   = thlp2_forcing(:) + thlp2_mc_tndcy(:)
+      rtpthlp_forcing(:) = rtpthlp_forcing(:) + rtpthlp_mc_tndcy(:)
 
       ! Call the parameterization one timestep
       call advance_clubb_core & 

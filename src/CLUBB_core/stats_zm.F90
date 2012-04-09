@@ -133,7 +133,8 @@ module stats_zm
           iwprtp_mfl, & 
           iwprtp_cl, & 
           iwprtp_sicl, & 
-          iwprtp_pd, & 
+          iwprtp_pd, &
+          iwprtp_forcing, & 
           iwprtp_mc, & 
           iwpthlp_bt, & 
           iwpthlp_ma, & 
@@ -148,6 +149,7 @@ module stats_zm
           iwpthlp_mfl, & 
           iwpthlp_cl, & 
           iwpthlp_sicl, &
+          iwpthlp_forcing, &
           iwpthlp_mc
 
     use stats_variables, only: & 
@@ -160,6 +162,7 @@ module stats_zm
         irtp2_cl, & 
         irtp2_pd, &
         irtp2_sf, &
+        irtp2_forcing, &
         irtp2_mc, &
         ithlp2_bt, & 
         ithlp2_ma, & 
@@ -170,6 +173,7 @@ module stats_zm
         ithlp2_cl, & 
         ithlp2_pd, &
         ithlp2_sf, &
+        ithlp2_forcing, &
         ithlp2_mc, &
         irtpthlp_bt, & 
         irtpthlp_ma, & 
@@ -180,6 +184,7 @@ module stats_zm
         irtpthlp_dp2, & 
         irtpthlp_cl, &
         irtpthlp_sf, &
+        irtpthlp_forcing, &
         irtpthlp_mc
     
     use stats_variables, only: & 
@@ -342,70 +347,75 @@ module stats_zm
     iwp2_sf   = 0
 
     ! Flux budgets
-    iwprtp_bt   = 0
-    iwprtp_ma   = 0
-    iwprtp_ta   = 0
-    iwprtp_tp   = 0
-    iwprtp_ac   = 0
-    iwprtp_bp   = 0
-    iwprtp_pr1  = 0
-    iwprtp_pr2  = 0
-    iwprtp_pr3  = 0
-    iwprtp_dp1  = 0
-    iwprtp_mfl  = 0
-    iwprtp_cl   = 0
-    iwprtp_sicl = 0
-    iwprtp_pd   = 0
-    iwprtp_mc   = 0
+    iwprtp_bt      = 0
+    iwprtp_ma      = 0
+    iwprtp_ta      = 0
+    iwprtp_tp      = 0
+    iwprtp_ac      = 0
+    iwprtp_bp      = 0
+    iwprtp_pr1     = 0
+    iwprtp_pr2     = 0
+    iwprtp_pr3     = 0
+    iwprtp_dp1     = 0
+    iwprtp_mfl     = 0
+    iwprtp_cl      = 0
+    iwprtp_sicl    = 0
+    iwprtp_pd      = 0
+    iwprtp_forcing = 0
+    iwprtp_mc      = 0
 
-    iwpthlp_bt   = 0
-    iwpthlp_ma   = 0
-    iwpthlp_ta   = 0
-    iwpthlp_tp   = 0
-    iwpthlp_ac   = 0
-    iwpthlp_bp   = 0
-    iwpthlp_pr1  = 0
-    iwpthlp_pr2  = 0
-    iwpthlp_pr3  = 0
-    iwpthlp_dp1  = 0
-    iwpthlp_mfl  = 0
-    iwpthlp_cl   = 0
-    iwpthlp_sicl = 0
-    iwpthlp_mc   = 0
+    iwpthlp_bt      = 0
+    iwpthlp_ma      = 0
+    iwpthlp_ta      = 0
+    iwpthlp_tp      = 0
+    iwpthlp_ac      = 0
+    iwpthlp_bp      = 0
+    iwpthlp_pr1     = 0
+    iwpthlp_pr2     = 0
+    iwpthlp_pr3     = 0
+    iwpthlp_dp1     = 0
+    iwpthlp_mfl     = 0
+    iwpthlp_cl      = 0
+    iwpthlp_sicl    = 0
+    iwpthlp_forcing = 0
+    iwpthlp_mc      = 0
 
     ! Variance budgets
-    irtp2_bt    = 0
-    irtp2_ma    = 0
-    irtp2_ta    = 0
-    irtp2_tp    = 0
-    irtp2_dp1   = 0
-    irtp2_dp2   = 0
-    irtp2_cl    = 0
-    irtp2_pd    = 0
-    irtp2_sf    = 0
-    irtp2_mc    = 0
+    irtp2_bt      = 0
+    irtp2_ma      = 0
+    irtp2_ta      = 0
+    irtp2_tp      = 0
+    irtp2_dp1     = 0
+    irtp2_dp2     = 0
+    irtp2_cl      = 0
+    irtp2_pd      = 0
+    irtp2_sf      = 0
+    irtp2_forcing = 0
+    irtp2_mc      = 0
 
-    ithlp2_bt    = 0
-    ithlp2_ma    = 0
-    ithlp2_ta    = 0
-    ithlp2_tp    = 0
-    ithlp2_dp1   = 0
-    ithlp2_dp2   = 0
-    ithlp2_cl    = 0
-    ithlp2_pd    = 0
-    ithlp2_sf    = 0
-    ithlp2_mc    = 0
+    ithlp2_bt      = 0
+    ithlp2_ma      = 0
+    ithlp2_ta      = 0
+    ithlp2_tp      = 0
+    ithlp2_dp1     = 0
+    ithlp2_dp2     = 0
+    ithlp2_cl      = 0
+    ithlp2_pd      = 0
+    ithlp2_sf      = 0
+    ithlp2_forcing = 0
+    ithlp2_mc      = 0
 
-    irtpthlp_bt  = 0
-    irtpthlp_ma  = 0
-    irtpthlp_ta  = 0
-    irtpthlp_tp1 = 0
-    irtpthlp_tp2 = 0
-    irtpthlp_dp1 = 0
-    irtpthlp_dp2 = 0
-    irtpthlp_cl  = 0
-    irtpthlp_sf  = 0
-    irtpthlp_mc  = 0
+    irtpthlp_bt      = 0
+    irtpthlp_ma      = 0
+    irtpthlp_ta      = 0
+    irtpthlp_tp1     = 0
+    irtpthlp_tp2     = 0
+    irtpthlp_dp1     = 0
+    irtpthlp_dp2     = 0
+    irtpthlp_cl      = 0
+    irtpthlp_sf      = 0
+    irtpthlp_forcing = 0
+    irtpthlp_mc      = 0
 
     !Monatonic flux limiter diagnostic output
     iwpthlp_mfl_min = 0
@@ -939,6 +949,14 @@ module stats_zm
              "(m kg)/(s^2 kg)",zm)
         k = k + 1
 
+      case ('wprtp_forcing')
+        iwprtp_forcing = k
+
+        call stat_assign( iwprtp_forcing, "wprtp_forcing", & 
+             "wprtp budget: wprtp forcing (includes microphysics tendency) [(m kg/kg)/s^2]", &
+             "(m kg/kg)/s^2", zm )
+        k = k + 1
+
       case ('wprtp_mc')
         iwprtp_mc = k
 
@@ -1032,6 +1050,14 @@ module stats_zm
              "wpthlp budget: wpthlp semi-implicit clipping term [(m K)/s^2]","(m K)/s^2",zm)
         k = k + 1
 
+      case ('wpthlp_forcing')
+        iwpthlp_forcing = k
+
+        call stat_assign( iwpthlp_forcing, "wpthlp_forcing", & 
+             "wpthlp budget: wpthlp forcing (includes microphysics tendency) [(m K)/s^2]", &
+             "(m K)/s^2", zm )
+        k = k + 1
+
       case ('wpthlp_mc')
         iwpthlp_mc = k
 
@@ -1091,6 +1117,14 @@ module stats_zm
              "(kg^2)/(kg^2 s)", zm )
         k = k + 1
 
+      case ('rtp2_forcing')
+        irtp2_forcing = k
+
+        call stat_assign( irtp2_forcing, "rtp2_forcing", & 
+             "rtp2 budget: rtp2 forcing (includes microphysics tendency) [(kg/kg)^2/s]", &
+             "(kg/kg)^2/s", zm )
+        k = k + 1
+
       case ('rtp2_mc')
         irtp2_mc = k
 
@@ -1146,6 +1180,12 @@ module stats_zm
         call stat_assign( ithlp2_sf, "thlp2_sf", & 
              "thlp2 budget: thlp2 surface variance [(K^2)/s]", "K^2/s", zm )
         k = k + 1
+      case ('thlp2_forcing')
+        ithlp2_forcing = k
+        call stat_assign( ithlp2_forcing, "thlp2_forcing", & 
+             "thlp2 budget: thlp2 forcing (includes microphysics tendency) [K^2/s]", &
+             "K^2/s", zm )
+        k = k + 1
       case ('thlp2_mc')
         ithlp2_mc = k
         call stat_assign( ithlp2_mc, "thlp2_mc", & 
@@ -1197,6 +1237,12 @@ module stats_zm
         irtpthlp_sf = k
         call stat_assign(irtpthlp_sf,"rtpthlp_sf", & 
              "rtpthlp budget: rtpthlp surface variance [(kg K)/(kg s)]","(kg K)/(kg s)",zm)
+        k = k + 1
+      case ('rtpthlp_forcing')
+        irtpthlp_forcing = k
+        call stat_assign( irtpthlp_forcing, "rtpthlp_forcing", & 
+             "rtpthlp budget: rtpthlp forcing (includes microphysics tendency) [(K kg/kg)/s]", &
+             "(K kg/kg)/s", zm )
         k = k + 1
       case ('rtpthlp_mc')
         irtpthlp_mc = k

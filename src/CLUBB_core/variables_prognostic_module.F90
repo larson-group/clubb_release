@@ -86,11 +86,17 @@ module variables_prognostic_module
     thlm_forcing,    & ! thlm large-scale forcing                      [K/s]
     rtm_forcing,     & ! rtm large-scale forcing                       [kg/kg/s]
     um_forcing,      & ! u wind forcing                                [m/s/s] 
-    vm_forcing         ! v wind forcing                                [m/s/s]
+    vm_forcing,      & ! v wind forcing                                [m/s/s]
+    wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)      [m*K/s^2]
+    wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)     [m*(kg/kg)/s^2]
+    rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)      [(kg/kg)^2/s]
+    thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)     [K^2/s]
+    rtpthlp_forcing    ! <r_t'th_l'> forcing (momentum levels)   [K*(kg/kg)/s]
 
-!$omp   threadprivate(p_in_Pa, exner, rho, rho_zm, rho_ds_zm, &
-!$omp     rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
-!$omp     thv_ds_zt, thlm_forcing, rtm_forcing, um_forcing, vm_forcing)
+!$omp   threadprivate( p_in_Pa, exner, rho, rho_zm, rho_ds_zm, rho_ds_zt, &
+!$omp     invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+!$omp     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, wprtp_forcing, &
+!$omp     wpthlp_forcing, rtp2_forcing, thlp2_forcing, rtpthlp_forcing )
 
   ! Imposed large scale w
   real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
@@ -241,6 +247,11 @@ module variables_prognostic_module
     allocate( rtm_forcing(1:nz) )     ! rtm ls forcing
     allocate( um_forcing(1:nz) )      ! u forcing
     allocate( vm_forcing(1:nz) )      ! v forcing
+    allocate( wprtp_forcing(1:nz) )   ! <w'r_t'> forcing (microphysics)
+    allocate( wpthlp_forcing(1:nz) )  ! <w'th_l'> forcing (microphysics)
+    allocate( rtp2_forcing(1:nz) )    ! <r_t'^2> forcing (microphysics)
+    allocate( thlp2_forcing(1:nz) )   ! <th_l'^2> forcing (microphysics)
+    allocate( rtpthlp_forcing(1:nz) ) ! <r_t'th_l'> forcing (microphysics)
 
     ! Imposed large scale w
 
@@ -315,10 +326,15 @@ module variables_prognostic_module
     thv_ds_zm(1:nz) = 0.0_core_rknd        ! dry, base-state theta_v: m-levs
     thv_ds_zt(1:nz) = 0.0_core_rknd        ! dry, base-state theta_v: t-levs
 
-    thlm_forcing(1:nz) = 0.0_core_rknd     ! thlm large-scale forcing
-    rtm_forcing(1:nz)  = 0.0_core_rknd     ! rtm large-scale forcing
-    um_forcing(1:nz) = 0.0_core_rknd       ! u forcing
-    vm_forcing(1:nz) = 0.0_core_rknd       ! v forcing
+    thlm_forcing(1:nz)    = zero  ! thlm large-scale forcing
+    rtm_forcing(1:nz)     = zero  ! rtm large-scale forcing
+    um_forcing(1:nz)      = zero  ! u forcing
+    vm_forcing(1:nz)      = zero  ! v forcing
+    wprtp_forcing(1:nz)   = zero  ! <w'r_t'> forcing (microphysics)
+    wpthlp_forcing(1:nz)  = zero  ! <w'th_l'> forcing (microphysics)
+    rtp2_forcing(1:nz)    = zero  ! <r_t'^2> forcing (microphysics)
+    thlp2_forcing(1:nz)   = zero  ! <th_l'^2> forcing (microphysics)
+    rtpthlp_forcing(1:nz) = zero  ! <r_t'th_l'> forcing (microphysics)
 
     ! Imposed large scale w
 
@@ -449,10 +465,15 @@ module variables_prognostic_module
     deallocate( thv_ds_zm )       ! dry, base-state theta_v: m-levs
     deallocate( thv_ds_zt )       ! dry, base-state theta_v: t-levs
 
-    deallocate( thlm_forcing )
-    deallocate( rtm_forcing )
-    deallocate( um_forcing )
-    deallocate( vm_forcing )
+    deallocate( thlm_forcing )    ! thlm large-scale forcing
+    deallocate( rtm_forcing )     ! rtm large-scale forcing
+    deallocate( um_forcing )      ! u forcing
+    deallocate( vm_forcing )      ! v forcing
+    deallocate( wprtp_forcing )   ! <w'r_t'> forcing (microphysics)
+    deallocate( wpthlp_forcing )  ! <w'th_l'> forcing (microphysics)
+    deallocate( rtp2_forcing )    ! <r_t'^2> forcing (microphysics)
+    deallocate( thlp2_forcing )   ! <th_l'^2> forcing (microphysics)
+    deallocate( rtpthlp_forcing ) ! <r_t'th_l'> forcing (microphysics)
 
     ! Imposed large scale w
 
