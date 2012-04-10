@@ -1018,51 +1018,38 @@ module clubb_core
     else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
 
       ! Take the values of thl and rt based one 1st or 2nd plume
-      thlm_pert_pos = max( pdf_params%thl1, pdf_params%thl2 ) &
-                    + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-      thlm_pert_neg = min( pdf_params%thl1, pdf_params%thl2 ) &
-                    - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-!     rtm_pert_pos = max( pdf_params%rt1, pdf_params%rt2 ) & 
-!                  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-!     rtm_pert_neg = min( pdf_params%rt1, pdf_params%rt2 ) & 
-!                  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
       where ( pdf_params%rt1 > pdf_params%rt2 )
         rtm_pert_pos = pdf_params%rt1 &
-                     + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
+        thlm_pert_pos = pdf_params%thl1 &
+                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) )
+        thlm_pert_neg = pdf_params%thl2 &
+                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) )
         rtm_pert_neg = pdf_params%rt2 & 
-                     - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+                     - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
         Lscale_weight = pdf_params%mixt_frac
       else where
         rtm_pert_pos = pdf_params%rt2 &
-                     + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
+        thlm_pert_pos = pdf_params%thl2 &
+                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) )
+        thlm_pert_neg = pdf_params%thl1 &
+                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) )
         rtm_pert_neg = pdf_params%rt1 & 
-                     - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+                     - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
         Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
       end where
 
       mu_pert_pos  = mu * Lscale_mu_coef
       mu_pert_neg  = mu / Lscale_mu_coef
 
-      ! Check if thl and rt are correlated
-      where ( pdf_params(:)%rrtthl >= 0.0_core_rknd )
-        ! Positive correlation (dry convection)
-        thlm_pert_1(:) = thlm_pert_pos(:)
-        thlm_pert_2(:) = thlm_pert_neg(:)
-
-      else where 
-        ! Negative correlation (cloudy convection)
-        thlm_pert_1(:) = thlm_pert_neg(:)
-        thlm_pert_2(:) = thlm_pert_pos(:)
-
-      end where
-
       ! Call length with perturbed values of thl and rt
-      call compute_length( thvm, thlm_pert_1, rtm_pert_pos, em, &  ! intent(in)
+      call compute_length( thvm, thlm_pert_pos, rtm_pert_pos, em, &  ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_neg, l_implemented, & ! intent(in)
                            err_code, &                             ! intent(inout)
                            Lscale_pert_1, Lscale_up, Lscale_down ) ! intent(out)
 
-      call compute_length( thvm, thlm_pert_2, rtm_pert_neg, em,  & ! intent(in)
+      call compute_length( thvm, thlm_pert_neg, rtm_pert_neg, em,  & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_pos, l_implemented, & ! intent(in)
                            err_code, &                             ! intent(inout)
                            Lscale_pert_2, Lscale_up, Lscale_down ) ! intent(out)
@@ -1088,8 +1075,15 @@ module clubb_core
 
     if ( l_avg_Lscale ) then
       if ( l_Lscale_plume_centered ) then
-        Lscale = 0.5_core_rknd * ( Lscale + Lscale_weight*Lscale_pert_1 &
-                                   + (1.0_core_rknd-Lscale_weight)*Lscale_pert_2 )
+        ! Weighted average of mean, pert_1, & pert_2
+!       Lscale = 0.5_core_rknd * ( Lscale + Lscale_weight*Lscale_pert_1 &
+!                                  + (1.0_core_rknd-Lscale_weight)*Lscale_pert_2 )
+
+        ! Weighted average of just the perturbed values
+!       Lscale = Lscale_weight*Lscale_pert_1 + (1.0_core_rknd-Lscale_weight)*Lscale_pert_2
+
+        ! Un-weighted average of just the perturbed values
+        Lscale = 0.5_core_rknd*( Lscale_pert_1 + Lscale_pert_2 )
       else
         Lscale = (1.0_core_rknd/3.0_core_rknd) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
       end if
