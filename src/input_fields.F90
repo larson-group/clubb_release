@@ -2459,7 +2459,7 @@ module inputfields
 
     do i=1, nvars
 
-      current_var = variables(i);
+      current_var = variables(i)
 
       if( current_var%input_name == "none" .and. &
           current_var%l_input_var ) then
@@ -2497,10 +2497,11 @@ module inputfields
  
         l_error = l_error .or. l_internal_error
 
-        call inputfields_interp_and_adjust( current_var%clubb_var, current_var%grid_type, &
-                                            fread_var_zt, fread_var_zm, current_var%adjustment, &
-                                            LES_tmp, k_lowest_zt_input, k_highest_zt_input, &
-                                            k_lowest_zm_input, k_highest_zm_input )
+        call inputfields_interp_and_adjust( current_var%grid_type, fread_var_zt, fread_var_zm, &! In
+                                            current_var%adjustment, & ! In
+                                            LES_tmp, k_lowest_zt_input, k_highest_zt_input, & ! In
+                                            k_lowest_zm_input, k_highest_zm_input, & ! In
+                                            current_var%clubb_var ) ! In/out
 
       end if
     end do
@@ -2528,14 +2529,17 @@ module inputfields
   end subroutine get_input_variables_interp
         
   !----------------------------------------------------------------------------------------
-  subroutine inputfields_interp_and_adjust( clubb_var, grid_type, fread_var_zt, fread_var_zm, &
-                                       adjustment, LES_tmp, k_lowest_zt_input, k_highest_zt_input,& 
-                                       k_lowest_zm_input, k_highest_zm_input )
-  !
-  !  Interpolates an input field as needed and adjusts it for unit conversion.
+  subroutine inputfields_interp_and_adjust( grid_type, fread_var_zt, fread_var_zm, &
+                                            adjustment, &
+                                            LES_tmp, k_lowest_zt_input, k_highest_zt_input, &
+                                            k_lowest_zm_input, k_highest_zm_input, &
+                                            clubb_var )
+
+  ! Description:
+  !   Interpolates an input field as needed and adjusts it for unit conversion.
   !
   !  References:
-  !    none
+  !    None
   !----------------------------------------------------------------------------------------
     
     use interpolation, only: &
@@ -2556,8 +2560,7 @@ module inputfields
 
     implicit none
 
-    real( kind = core_rknd ), dimension(:), pointer, intent(in) :: &
-      clubb_var ! The clubb variable to store the result in
+    ! Input Variable(s)
 
     character(len = 3), intent(in) :: &
       grid_type ! The type of the grid, either "zm" or "zt"
@@ -2577,6 +2580,12 @@ module inputfields
       k_highest_zt_input, & ! The highest CLUBB thermodynamic level that's within the LES domain.
       k_lowest_zm_input, &  ! The lowest CLUBB momentum level that's within the LES domain.
       k_highest_zm_input    ! The highest CLUBB momentum level that's within the LES domain.
+
+    ! Output Variable(s)
+    real( kind = core_rknd ), dimension(:), pointer, intent(inout) :: &
+      clubb_var ! The clubb variable to store the result in
+
+    ! Local Variable(s)
 
     ! Variables used to reconcile CLUBB thermodynamic levels with LES vertical levels.
     integer, dimension(k_lowest_zt_input:k_highest_zt_input) ::  &
@@ -2605,6 +2614,8 @@ module inputfields
     integer :: &
       k ! loop counter
 
+    ! ---- Begin Code ----
+
     ! For all CLUBB thermodynamic levels, k, that are within the LES domain,
     ! find either the index of the LES level that exactly matches the altitude
     ! of the CLUBB level, or find the two indices of the LES levels that are on
@@ -2614,8 +2625,8 @@ module inputfields
       ! CLUBB vertical level k is found at an altitude that is within the
       ! domain of the LES output.
       call LES_grid_to_CLUBB_grid( fread_var_zt, gr%zt, k,  &
-                                 exact_lev_idx_zt(k), lower_lev_idx_zt(k),  &
-                                 upper_lev_idx_zt(k), l_lin_int_zt(k) )
+                                   exact_lev_idx_zt(k), lower_lev_idx_zt(k),  &
+                                   upper_lev_idx_zt(k), l_lin_int_zt(k) )
     enddo
 
     ! For all CLUBB momentum levels, k, that are within the LES domain,
@@ -2626,8 +2637,8 @@ module inputfields
       ! CLUBB vertical level k is found at an altitude that is within the
       ! domain of the LES output.
       call LES_grid_to_CLUBB_grid( fread_var_zm, gr%zm, k,  &
-                                 exact_lev_idx_zm(k), lower_lev_idx_zm(k),  &
-                                 upper_lev_idx_zm(k), l_lin_int_zm(k) )
+                                   exact_lev_idx_zm(k), lower_lev_idx_zm(k),  &
+                                   upper_lev_idx_zm(k), l_lin_int_zm(k) )
     enddo
 
     !LES_tmp is the value of the variable from the LES GrADS file.
@@ -2676,6 +2687,7 @@ module inputfields
       STOP "Grid type does not exist."
     end if
 
+    return
   end subroutine inputfields_interp_and_adjust
 
 !-------------------------------------------------------------------------------
