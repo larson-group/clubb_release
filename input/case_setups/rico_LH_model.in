@@ -61,8 +61,8 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 259200.0  ! Model end time [seconds since midnight on start date]
 
 
-dt_main    = 60.0   ! Model timestep [s]
-dt_rad = 60.0   ! Radiation timestep [s] 
+dt_main = 60.0   ! Model timestep [s]
+dt_rad  = 60.0   ! Radiation timestep [s] 
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -143,7 +143,7 @@ l_prescribed_avg_deltaz = .false.
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
 ! "coamps", "simplified_ice", "none"
-micro_scheme = "morrison",
+micro_scheme = "khairoutdinov_kogan",
 
 !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
 !!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.
