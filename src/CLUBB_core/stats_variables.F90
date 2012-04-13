@@ -43,12 +43,13 @@ module stats_variables
 
   character(len=200), public ::  & 
     fname_zt,  &    ! Name of the stats file for thermodynamic grid fields
+    fname_LH_zt,  & ! Name of the stats file for LH variables on the zt grid
     fname_zm,  &    ! Name of the stats file for momentum grid fields
     fname_rad_zt, & ! Name of the stats file for the zt radiation grid fields
     fname_rad_zm, & ! Name of the stats file for the zm radiation grid fields
     fname_sfc       ! Name of the stats file for surface only fields
 
-!$omp   threadprivate(fname_zt, fname_zm, fname_rad_zt, fname_rad_zm, fname_sfc)
+!$omp   threadprivate(fname_zt, fname_zm, fname_LH_zt, fname_rad_zt, fname_rad_zm, fname_sfc)
 
 !       Indices for statistics in zt file
 
@@ -513,6 +514,11 @@ module stats_variables
 !$omp     iLH_rgraupelm_mc, iLH_Ngraupelm_mc, iLH_ricem_mc, iLH_Nim_mc )
 
   integer, public :: &
+    iLH_rrainm_auto, & ! Latin hypercube estimate of autoconversion
+    iLH_rrainm_accr    ! Latin hypercube estimate of accretion
+!$omp   threadprivate( iLH_rrainm_auto, iLH_rrainm_accr )
+
+  integer, public :: &
     iLH_Vrr, & ! Latin hypercube estimate of rrainm sedimentation velocity
     iLH_VNr    ! Latin hypercube estimate of Nrm sedimentation velocity  
 !$omp   threadprivate(iLH_Vrr,  iLH_VNr)
@@ -906,6 +912,7 @@ module stats_variables
 
   type (stats), target, public :: zt,   &    ! zt grid
                                   zm,   &    ! zm grid
+                                  LH_zt,  & ! rad_zt grid
                                   rad_zt,  & ! rad_zt grid
                                   rad_zm,  & ! rad_zm grid
                                   sfc        ! sfc

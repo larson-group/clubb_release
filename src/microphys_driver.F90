@@ -1001,6 +1001,7 @@ module microphys_driver
      stats_accumulate_LH_tend ! Procedure(s)
 
     use stats_variables, only: & 
+      LH_zt, & ! Variable(s)
       iLH_Vrr, &
       iLH_VNr
 
@@ -1444,9 +1445,9 @@ module microphys_driver
 
         if ( l_stats_samp ) then
           ! Latin hypercube estimate for sedimentation velocities
-          call stat_update_var( iLH_Vrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zt )
+          call stat_update_var( iLH_Vrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), LH_zt )
 
-          call stat_update_var( iLH_VNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zt )
+          call stat_update_var( iLH_VNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), LH_zt )
 
         end if
 

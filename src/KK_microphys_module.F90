@@ -91,7 +91,10 @@ module KK_microphys_module
 
     use stats_variables, only: & 
         zt,                 & ! Variable(s)
-        im_vol_rad_rain, &
+        LH_zt,              &
+        iLH_rrainm_auto,    &
+        iLH_rrainm_accr,    &
+        im_vol_rad_rain,    &
         irrainm_cond,       &
         irrainm_auto,       &
         irrainm_accr,       &
@@ -429,7 +432,7 @@ module KK_microphys_module
 
 
        ! Statistics
-       if ( l_stats_samp ) then
+       if ( l_stats_samp .and. .not. l_latin_hypercube ) then
 
           ! Rain drop mean volume radius.
           call stat_update_var_pt( im_vol_rad_rain, k, KK_mean_vol_rad(k), zt )
@@ -446,7 +449,12 @@ module KK_microphys_module
 
           call stat_update_var_pt( iNrm_auto, k, KK_Nrm_auto_tndcy(k), zt )
 
-       endif  ! l_stats_samp
+       else if ( l_stats_samp .and. l_latin_hypercube ) then
+          call stat_update_var_pt( iLH_rrainm_auto, k, KK_auto_tndcy(k), LH_zt )
+
+          call stat_update_var_pt( iLH_rrainm_accr, k, KK_accr_tndcy(k), LH_zt )
+
+       endif  ! l_stats_samp and not l_latin_hypercube
 
 
        !!! Source-adjustment code for rrainm and Nrm.
@@ -498,7 +506,7 @@ module KK_microphys_module
 
        endif
 
-       if ( l_stats_samp ) then
+       if ( l_stats_samp .and. .not. l_latin_hypercube ) then
 
           call stat_update_var_pt( irrainm_src_adj, k, rrainm_src_adj(k), zt )
 
@@ -1489,7 +1497,6 @@ module KK_microphys_module
 
     ! Statistics
     if ( l_stats_samp ) then
-
        ! All of these covariance variables are being calculated on thermodynamic
        ! grid levels (all inputs are on thermodynamic grid levels, so the output
        ! is also on thermodynamic grid levels).  These covariances will be

@@ -56,6 +56,9 @@ module estimate_scm_microphys_module
       core_rknd, &
       time_precision
 
+    use stats_variables, only: &
+      l_stats_samp ! Variable(s)
+
     implicit none
 
     ! External
@@ -65,7 +68,6 @@ module estimate_scm_microphys_module
 
     ! Constant parameters
     logical, parameter :: &
-      l_stats_samp                 = .false., &
       l_local_kk                   = .true., &
       l_latin_hypercube            = .true.
 
@@ -77,7 +79,7 @@ module estimate_scm_microphys_module
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
-      nz,          & ! Number of vertical levels
+      nz,            & ! Number of vertical levels
       n_micro_calls, & ! Number of calls to microphysics (normally=2)
       d_variables,   & ! Number of variates (normally=5) 
       k_lh_start       ! Starting level for computing arbitrary overlap

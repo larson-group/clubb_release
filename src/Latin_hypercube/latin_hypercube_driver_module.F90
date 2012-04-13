@@ -1453,7 +1453,7 @@ module latin_hypercube_driver_module
       iLH_rtp2_zt, &
       iLH_thlp2_zt, &
       iLH_rrainp2_zt, &
-      zt
+      LH_zt
 
     use math_utilities, only: &
       compute_sample_mean, & ! Procedure(s)
@@ -1546,26 +1546,26 @@ module latin_hypercube_driver_module
       if ( iLH_rcm + iLH_rcp2_zt > 0 ) then
         LH_rcm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                       rc_all_points )
-        call stat_update_var( iLH_rcm, LH_rcm, zt )
+        call stat_update_var( iLH_rcm, LH_rcm, LH_zt )
       end if
 
       if ( iLH_thlm + iLH_thlp2_zt > 0 ) then
         LH_thlm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                        real( LH_thl, kind = core_rknd ) )
-        call stat_update_var( iLH_thlm, LH_thlm, zt )
+        call stat_update_var( iLH_thlm, LH_thlm, LH_zt )
       end if
 
       if ( iLH_rvm + iLH_rtp2_zt > 0 ) then
         rv_all_points = LH_rt - rc_all_points
         LH_rvm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                       rv_all_points )
-        call stat_update_var( iLH_rvm, LH_rvm, zt )
+        call stat_update_var( iLH_rvm, LH_rvm, LH_zt )
       end if
 
       if ( iLH_wm + iLH_wp2_zt > 0 ) then
         LH_wm  = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                       real( X_nl_all_levs(:,:,iiLH_w), kind = core_rknd) )
-        call stat_update_var( iLH_wm, LH_wm, zt )
+        call stat_update_var( iLH_wm, LH_wm, LH_zt )
       end if
 
       if ( iLH_rrainm + iLH_Nrm + iLH_ricem + iLH_Nim + iLH_rsnowm + iLH_Nsnowm + &
@@ -1587,13 +1587,13 @@ module latin_hypercube_driver_module
       if ( iLH_cloud_frac > 0 ) then
         LH_cloud_frac = 0._core_rknd
         do sample = 1, n_micro_calls
-          where ( X_nl_all_levs(:,sample,iiLH_s_mellor) > 0._core_rknd)
+          where ( X_nl_all_levs(:,sample,iiLH_s_mellor) > 0._core_rknd )
             LH_cloud_frac(:) = LH_cloud_frac(:) + 1.0_core_rknd * LH_sample_point_weights(sample)
           end where
         end do
         LH_cloud_frac(:) = LH_cloud_frac(:) / real( n_micro_calls, kind = core_rknd )
 
-        call stat_update_var( iLH_cloud_frac, LH_cloud_frac, zt )
+        call stat_update_var( iLH_cloud_frac, LH_cloud_frac, LH_zt )
       end if
 
       if ( iLH_wp2_zt > 0 ) then
@@ -1601,7 +1601,7 @@ module latin_hypercube_driver_module
         LH_wp2_zt = compute_sample_variance( nz, n_micro_calls, &
                                              real( X_nl_all_levs(:,:,iiLH_w), kind = core_rknd ), &
                                              LH_sample_point_weights, LH_wm )
-        call stat_update_var( iLH_wp2_zt, LH_wp2_zt, zt )
+        call stat_update_var( iLH_wp2_zt, LH_wp2_zt, LH_zt )
       end if
 
       if ( iLH_rcp2_zt  > 0 ) then
@@ -1609,7 +1609,7 @@ module latin_hypercube_driver_module
         LH_rcp2_zt = compute_sample_variance &
                      ( nz, n_micro_calls, rc_all_points, &
                        LH_sample_point_weights, LH_rcm )
-        call stat_update_var( iLH_rcp2_zt, LH_rcp2_zt, zt )
+        call stat_update_var( iLH_rcp2_zt, LH_rcp2_zt, LH_zt )
       end if
 
       if ( iLH_rtp2_zt > 0 ) then
@@ -1617,14 +1617,14 @@ module latin_hypercube_driver_module
         LH_rtp2_zt = compute_sample_variance &
                      ( nz, n_micro_calls, &
                        real( LH_rt, kind = core_rknd ), LH_sample_point_weights, LH_rvm+LH_rcm )
-        call stat_update_var( iLH_rtp2_zt, LH_rtp2_zt, zt )
+        call stat_update_var( iLH_rtp2_zt, LH_rtp2_zt, LH_zt )
       end if
 
       if ( iLH_thlp2_zt > 0 ) then
         ! Compute the variance of liquid potential temperature
         LH_thlp2_zt = compute_sample_variance( nz, n_micro_calls, &
                         real( LH_thl, kind = core_rknd ), LH_sample_point_weights, LH_thlm )
-        call stat_update_var( iLH_thlp2_zt, LH_thlp2_zt, zt )
+        call stat_update_var( iLH_thlp2_zt, LH_thlp2_zt, LH_zt )
       end if
 
       ! Compute the variance of rain water mixing ratio
@@ -1632,7 +1632,7 @@ module latin_hypercube_driver_module
         LH_rrainp2_zt = compute_sample_variance &
                         ( nz, n_micro_calls, hydromet_all_points(:,:,iirrainm), &
                           LH_sample_point_weights, LH_hydromet(:,iirrainm) )
-        call stat_update_var( iLH_rrainp2_zt, LH_rrainp2_zt, zt )
+        call stat_update_var( iLH_rrainp2_zt, LH_rrainp2_zt, LH_zt )
       end if
 
       ! Compute the variance of cloud droplet number concentration
@@ -1640,44 +1640,44 @@ module latin_hypercube_driver_module
         LH_Ncp2_zt = compute_sample_variance &
                      ( nz, n_micro_calls, hydromet_all_points(:,:,iiNcm), &
                        LH_sample_point_weights, LH_hydromet(:,iiNcm) )
-        call stat_update_var( iLH_Ncp2_zt, LH_Ncp2_zt, zt )
+        call stat_update_var( iLH_Ncp2_zt, LH_Ncp2_zt, LH_zt )
       end if
 
       ! Compute the variance of rain droplet number concentration
       if ( iiNrm > 0 .and. iLH_Nrp2_zt > 0 ) then
         LH_Nrp2_zt = compute_sample_variance( nz, n_micro_calls, hydromet_all_points(:,:,iiNrm),&
                                               LH_sample_point_weights, LH_hydromet(:,iiNrm) )
-        call stat_update_var( iLH_Nrp2_zt, LH_Nrp2_zt, zt )
+        call stat_update_var( iLH_Nrp2_zt, LH_Nrp2_zt, LH_zt )
       end if
 
       ! Averages of points being fed into the microphysics
       ! These are for diagnostic purposes, and are not needed for anything
       if ( iirrainm > 0 ) then
-        call stat_update_var( iLH_rrainm, LH_hydromet(:,iirrainm), zt )
+        call stat_update_var( iLH_rrainm, LH_hydromet(:,iirrainm), LH_zt )
       end if
       if ( iiNrm > 0 ) then
-        call stat_update_var( iLH_Nrm, LH_hydromet(:,iiNrm), zt )
+        call stat_update_var( iLH_Nrm, LH_hydromet(:,iiNrm), LH_zt )
       end if
       if ( iiricem > 0 ) then
-        call stat_update_var( iLH_ricem, LH_hydromet(:,iiricem), zt )
+        call stat_update_var( iLH_ricem, LH_hydromet(:,iiricem), LH_zt )
       end if
       if ( iiNim > 0 ) then
-        call stat_update_var( iLH_Nim, LH_hydromet(:,iiNim), zt )
+        call stat_update_var( iLH_Nim, LH_hydromet(:,iiNim), LH_zt )
       end if
       if ( iirsnowm > 0 ) then
-        call stat_update_var( iLH_rsnowm, LH_hydromet(:,iirsnowm), zt )
+        call stat_update_var( iLH_rsnowm, LH_hydromet(:,iirsnowm), LH_zt )
       end if
       if ( iiNsnowm > 0 ) then
-        call stat_update_var( iLH_Nsnowm, LH_hydromet(:,iiNsnowm), zt )
+        call stat_update_var( iLH_Nsnowm, LH_hydromet(:,iiNsnowm), LH_zt )
       end if
       if ( iirgraupelm > 0 ) then
-        call stat_update_var( iLH_rgraupelm, LH_hydromet(:,iirgraupelm), zt )
+        call stat_update_var( iLH_rgraupelm, LH_hydromet(:,iirgraupelm), LH_zt )
       end if
       if ( iiNgraupelm > 0 ) then
-        call stat_update_var( iLH_Ngraupelm, LH_hydromet(:,iiNgraupelm), zt )
+        call stat_update_var( iLH_Ngraupelm, LH_hydromet(:,iiNgraupelm), LH_zt )
       end if
       if ( iiNcm > 0 ) then
-        call stat_update_var( iLH_Ncm, LH_hydromet(:,iiNcm), zt )
+        call stat_update_var( iLH_Ncm, LH_hydromet(:,iiNcm), LH_zt )
       end if
 
     end if ! l_stats_samp

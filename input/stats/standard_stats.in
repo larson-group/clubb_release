@@ -23,14 +23,7 @@ vars_zt =
 'sed_rcm', 'rsat', 'rsati',
 'rrainm', 'Nrm', 'm_vol_rad_rain', 'm_vol_rad_cloud',
 'eff_rad_cloud', 'eff_rad_ice', 'eff_rad_snow', 'eff_rad_rain', 'eff_rad_graupel',
-'rain_rate_zt', 'AKm', 'LH_AKm', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',
-'LH_thlm_mc', 'LH_rvm_mc', 'LH_rcm_mc', 'LH_Ncm_mc', 'LH_rrainm_mc', 'LH_Nrm_mc',
-'LH_rsnowm_mc', 'LH_Nsnowm_mc', 'LH_rgraupelm_mc', 'LH_Ngraupelm_mc', 'LH_ricem_mc', 'LH_Nim_mc',
-'LH_Vrr', 'LH_VNr', 'LH_rrainm', 'LH_ricem', 'LH_rsnowm', 'LH_rgraupelm',
-'LH_thlm', 'LH_rcm', 'LH_rvm', 'LH_wm', 'LH_rcp2_zt', 'LH_rrainp2_zt', 
-'LH_Nrp2_zt', 'LH_Ncp2_zt', 'LH_wp2_zt', 'LH_cloud_frac',
-'LH_rtp2_zt', 'LH_thlp2_zt',
-'LH_Nrm', 'LH_Nim', 'LH_Ncm', 'LH_Ngraupelm', 'LH_Nsnowm', 'LH_rcm_avg',
+'rain_rate_zt', 
 'rsnowm', 'ricem', 'rgraupelm',
 'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
 'rtm_bt', 'rtm_ma', 'rtm_ta', 'rtm_mfl', 'rtm_tacl', 'rtm_cl',
@@ -67,6 +60,18 @@ vars_zt =
 'corr_st_1', 'corr_st_2', 'rrtthl', 's_mellor', 'C11_Skw_fnc',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
 'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt',
+''
+
+vars_LH_zt =
+'AKm', 'LH_AKm', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',
+'LH_thlm_mc', 'LH_rvm_mc', 'LH_rcm_mc', 'LH_Ncm_mc', 'LH_rrainm_mc', 'LH_Nrm_mc',
+'LH_rsnowm_mc', 'LH_Nsnowm_mc', 'LH_rgraupelm_mc', 'LH_Ngraupelm_mc', 'LH_ricem_mc', 'LH_Nim_mc',
+'LH_Vrr', 'LH_VNr', 'LH_rrainm', 'LH_ricem', 'LH_rsnowm', 'LH_rgraupelm',
+'LH_thlm', 'LH_rcm', 'LH_rvm', 'LH_wm', 'LH_rcp2_zt', 'LH_rrainp2_zt', 
+'LH_Nrp2_zt', 'LH_Ncp2_zt', 'LH_wp2_zt', 'LH_cloud_frac',
+'LH_rtp2_zt', 'LH_thlp2_zt',
+'LH_Nrm', 'LH_Nim', 'LH_Ncm', 'LH_Ngraupelm', 'LH_Nsnowm', 'LH_rcm_avg',
+'LH_rrainm_auto', 'LH_rrainm_accr',
 ''
 
 vars_zm = 

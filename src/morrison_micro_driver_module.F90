@@ -52,6 +52,11 @@ module morrison_micro_driver_module
       irrainm_accr
 
     use stats_variables, only: & 
+      LH_zt, & ! Variable(s)
+      iLH_rrainm_auto, & 
+      iLH_rrainm_accr
+
+    use stats_variables, only: & 
       ieff_rad_cloud, & ! Variables
       ieff_rad_ice, &
       ieff_rad_snow, &
@@ -312,7 +317,7 @@ module morrison_micro_driver_module
     thlp2_mc_tndcy   = zero
     rtpthlp_mc_tndcy = zero
 
-    if ( l_stats_samp ) then
+    if ( l_stats_samp .and. .not. l_latin_hypercube ) then
 
       ! -------- Sedimentation tendency from Morrison microphysics --------
 
@@ -362,6 +367,12 @@ module morrison_micro_driver_module
       call stat_update_var_pt( imorr_snow_rate, 1, &
         real(Morr_snow_rate, kind = core_rknd) * &
         real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), sfc )
+
+    else if ( l_stats_samp .and. l_latin_hypercube ) then
+      ! Save autoconversion and accretion rate for statistics
+      call stat_update_var( iLH_rrainm_auto, real( rrainm_auto, kind=core_rknd ), LH_zt )
+      call stat_update_var( iLH_rrainm_accr, real( rrainm_accr, kind=core_rknd ), LH_zt )
+
     end if ! l_stats_samp
 
     return
