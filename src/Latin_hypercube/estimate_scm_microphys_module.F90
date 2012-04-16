@@ -59,6 +59,14 @@ module estimate_scm_microphys_module
     use stats_variables, only: &
       l_stats_samp ! Variable(s)
 
+    use stats_variables, only: & 
+      LH_zt, & ! Variable(s)
+      iLH_rrainm_auto, & 
+      iLH_rrainm_accr
+
+    use stats_type, only: & 
+      stat_update_var ! Procedure(s)
+
     implicit none
 
     ! External
@@ -72,7 +80,8 @@ module estimate_scm_microphys_module
       l_latin_hypercube            = .true.
 
     logical, parameter :: &
-      l_check_lh_cloud_weighting = .true. ! Verify every other sample point is out of cloud
+      l_check_lh_cloud_weighting = .true., & ! Verify every other sample point is out of cloud
+      l_stats_samp_in_sub = .false. ! Disable stats sampling in the subroutine
 
     ! Input Variables
     real( kind = time_precision ), intent(in) :: &
@@ -141,16 +150,18 @@ module estimate_scm_microphys_module
       w_column,   & ! Vertical velocity            [m/s]
       Ncm_in_cloud  ! In cloud values of Nc        [#/kg]
 
-    real( kind = dp ), pointer, dimension(:,:) :: &
-      s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
-      w_all_points            ! n_micro_calls values of vertical velocity      [m/s]
-
     real( kind = core_rknd ), dimension(nz) :: &
       lh_wprtp_mc_tndcy,   & ! LH micro. tendency for <w'rt'>   [m*(kg/kg)/s^2]
       lh_wpthlp_mc_tndcy,  & ! LH micro. tendency for <w'thl'>  [m*K/s^2]
       lh_rtp2_mc_tndcy,    & ! LH micro. tendency for <rt'^2>   [(kg/kg)^2/s]
       lh_thlp2_mc_tndcy,   & ! LH micro. tendency for <thl'^2>  [K^2/s]
-      lh_rtpthlp_mc_tndcy    ! LH micro. tendency for <rt'thl'> [K*(kg/kg)/s]
+      lh_rtpthlp_mc_tndcy, & ! LH micro. tendency for <rt'thl'> [K*(kg/kg)/s]
+      lh_rrainm_auto,      & ! Autoconversion budget for rain water mixing ratio [kg/kg/s]
+      lh_rrainm_accr         ! Accretion budget for rain water mixing ratio      [kg/kg/s]
+
+    real( kind = dp ), pointer, dimension(:,:) :: &
+      s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
+      w_all_points            ! n_micro_calls values of vertical velocity      [m/s]
 
     integer :: ivar, k, sample
 
@@ -256,14 +267,15 @@ module estimate_scm_microphys_module
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
-           ( dt, nz, l_stats_samp, l_local_kk, & ! In
+           ( dt, nz, l_stats_samp_in_sub, l_local_kk, & ! In
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
              exner, rho, cloud_frac, pdf_params, w_std_dev, & ! In
              dzq, rc_column, Ncm_in_cloud, s_mellor_column, rv_column, hydromet_columns, & ! In
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
              lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
              lh_wprtp_mc_tndcy, lh_wpthlp_mc_tndcy, & ! Out
-             lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, lh_rtpthlp_mc_tndcy ) ! Out
+             lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, lh_rtpthlp_mc_tndcy, &
+             lh_rrainm_auto, lh_rrainm_accr ) ! Out
 
       if ( l_lh_cloud_weighted_sampling ) then
         ! Weight the output results depending on whether we're calling the
@@ -273,6 +285,13 @@ module estimate_scm_microphys_module
         lh_rcm_mc(:) = lh_rcm_mc(:) * LH_sample_point_weights(sample)
         lh_rvm_mc(:) = lh_rvm_mc(:) * LH_sample_point_weights(sample)
         lh_thlm_mc(:) = lh_thlm_mc(:) * LH_sample_point_weights(sample)
+        lh_rrainm_auto(:) = lh_rrainm_auto(:) * LH_sample_point_weights(sample)
+        lh_rrainm_accr(:) = lh_rrainm_accr(:) * LH_sample_point_weights(sample)
+      end if
+      if ( l_stats_samp ) then
+        ! Save autoconversion and accretion rate for statistics
+        call stat_update_var( iLH_rrainm_auto, lh_rrainm_auto, LH_zt )
+        call stat_update_var( iLH_rrainm_accr, lh_rrainm_accr, LH_zt )
       end if
 
       do ivar = 1, hydromet_dim

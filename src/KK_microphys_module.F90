@@ -22,7 +22,8 @@ module KK_microphys_module
                               hydromet_mc, hydromet_vel, &
                               rcm_mc, rvm_mc, thlm_mc, &
                               wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
+                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+                              KK_auto_tndcy, KK_accr_tndcy )
 
     ! Description:
 
@@ -91,9 +92,6 @@ module KK_microphys_module
 
     use stats_variables, only: & 
         zt,                 & ! Variable(s)
-        LH_zt,              &
-        iLH_rrainm_auto,    &
-        iLH_rrainm_accr,    &
         im_vol_rad_rain,    &
         irrainm_cond,       &
         irrainm_auto,       &
@@ -157,7 +155,9 @@ module KK_microphys_module
       wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
       rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
       thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
-      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      rtpthlp_mc_tndcy, & ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      KK_auto_tndcy,    & ! Mean KK (dr_r/dt) due to autoconversion  [(kg/kg)/s]
+      KK_accr_tndcy       ! Mean KK (dr_r/dt) due to accretion       [(kg/kg)/s]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(:), pointer ::  &
@@ -170,8 +170,6 @@ module KK_microphys_module
 
     real( kind = core_rknd ), dimension(nz) :: &
       KK_evap_tndcy,   & ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
-      KK_auto_tndcy,   & ! Mean KK (dr_r/dt) due to autoconversion  [(kg/kg)/s]
-      KK_accr_tndcy,   & ! Mean KK (dr_r/dt) due to accretion       [(kg/kg)/s]
       KK_mean_vol_rad    ! Mean KK rain drop mean volume radius     [m]
 
     real( kind = core_rknd ), dimension(nz) :: &
@@ -432,7 +430,7 @@ module KK_microphys_module
 
 
        ! Statistics
-       if ( l_stats_samp .and. .not. l_latin_hypercube ) then
+       if ( l_stats_samp ) then
 
           ! Rain drop mean volume radius.
           call stat_update_var_pt( im_vol_rad_rain, k, KK_mean_vol_rad(k), zt )
@@ -449,12 +447,7 @@ module KK_microphys_module
 
           call stat_update_var_pt( iNrm_auto, k, KK_Nrm_auto_tndcy(k), zt )
 
-       else if ( l_stats_samp .and. l_latin_hypercube ) then
-          call stat_update_var_pt( iLH_rrainm_auto, k, KK_auto_tndcy(k), LH_zt )
-
-          call stat_update_var_pt( iLH_rrainm_accr, k, KK_accr_tndcy(k), LH_zt )
-
-       endif  ! l_stats_samp and not l_latin_hypercube
+       endif  ! l_stats_samp
 
 
        !!! Source-adjustment code for rrainm and Nrm.
@@ -506,7 +499,7 @@ module KK_microphys_module
 
        endif
 
-       if ( l_stats_samp .and. .not. l_latin_hypercube ) then
+       if ( l_stats_samp ) then
 
           call stat_update_var_pt( irrainm_src_adj, k, rrainm_src_adj(k), zt )
 

@@ -9,7 +9,8 @@ interface
                             hydromet_mc, hydromet_vel, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-                            rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
+                            rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+                            rrainm_auto, rrainm_accr )
 
     use pdf_parameter_module, only: pdf_parameter
 
@@ -65,6 +66,10 @@ interface
       rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
       thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
       rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+
+    real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
+      rrainm_auto, & ! Autoconversion budget for rain water mixing ratio [kg/kg/s]
+      rrainm_accr    ! Accretion budget for rain water mixing ratio      [kg/kg/s]
 
   end subroutine microphys_sub
 end interface

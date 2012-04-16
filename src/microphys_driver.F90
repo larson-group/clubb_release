@@ -1135,6 +1135,10 @@ module microphys_driver
       Ncm,    & ! Mean cloud droplet number concentration [#/kg]
       rvm       ! Vapor water mixing ratio [kg/kg]
 
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
+      rrainm_auto, & ! Autoconversion rate for rrainm [kg/kg/s]
+      rrainm_accr    ! Accretion rate for rrainm      [kg/kg/s]
+
     real( kind = core_rknd ), dimension(1,1,gr%nz) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
 
@@ -1373,7 +1377,8 @@ module microphys_driver
                delta_zt, rcm, Ncm_in_cloud, s_mellor, rvm, hydromet, hydromet_mc, &
                hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
+               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,  &
+               rrainm_auto, rrainm_accr )
 
       end if ! LH_microphys_type /= interactive
 
@@ -1475,7 +1480,8 @@ module microphys_driver
                               hydromet_mc, hydromet_vel_zt, &
                               rcm_mc, rvm_mc, thlm_mc, &
                               wprtp_mc_tndcy, wpthlp_mc_tndcy, & 
-                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
+                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+                              rrainm_auto, rrainm_accr )
 
       end if ! LH_microphys_type /= interactive
 

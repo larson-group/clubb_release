@@ -16,7 +16,8 @@ module morrison_micro_driver_module
                dzq, rcm, Ncm_in_cloud, s_mellor, rvm, hydromet, hydromet_mc, &
                hydromet_vel, rcm_mc, rvm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy )
+               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+               rrainm_auto, rrainm_accr )
 
 ! Description:
 !   Wrapper for the Morrison microphysics
@@ -50,11 +51,6 @@ module morrison_micro_driver_module
       ircm_in_cloud, &
       irrainm_auto, &
       irrainm_accr
-
-    use stats_variables, only: & 
-      LH_zt, & ! Variable(s)
-      iLH_rrainm_auto, & 
-      iLH_rrainm_accr
 
     use stats_variables, only: & 
       ieff_rad_cloud, & ! Variables
@@ -146,7 +142,9 @@ module morrison_micro_driver_module
       wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
       rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
       thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
-      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      rtpthlp_mc_tndcy, & ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      rrainm_auto,      & ! Autoconversion rate     [kg/kg/s]
+      rrainm_accr         ! Accretion rate         [kg/kg/s]
 
     ! Local Variables
     real, dimension(nz) :: & 
@@ -161,8 +159,8 @@ module morrison_micro_driver_module
       rvm_r4,        & ! Temporary array for vapor water mixing ratio  [kg/kg]
       rcm_sten,      & ! Cloud dropet sedimentation tendency           [kg/kg/s]
       cloud_frac_in, & ! Cloud fraction used as input for the Morrison scheme [-]
-      rrainm_auto,   & ! Autoconvesion rate     [kg/kg/s]
-      rrainm_accr      ! Accretion rate         [kg/kg/s]
+      rrainm_auto_r4,& ! Autoconversion rate     [kg/kg/s]
+      rrainm_accr_r4   ! Accretion rate         [kg/kg/s]
 
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
@@ -256,8 +254,8 @@ module morrison_micro_driver_module
     effr = 0.0
 
     ! Initialize autoconversion/accretion to zero
-    rrainm_auto = 0.0
-    rrainm_accr = 0.0
+    rrainm_auto_r4 = 0.0
+    rrainm_accr_r4 = 0.0
 
     hydromet_mc_r4 = real( hydromet_mc )
     rcm_mc_r4 = real( rcm_mc )
@@ -282,12 +280,14 @@ module morrison_micro_driver_module
            hydromet_r4(:,iirgraupelm), hydromet_r4(:,iiNgraupelm), effg, &
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
            hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
-           rcm_sten, cloud_frac_in, rrainm_auto, rrainm_accr )
+           rcm_sten, cloud_frac_in, rrainm_auto_r4, rrainm_accr_r4 )
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
     rvm_mc = real( rvm_mc_r4, kind = core_rknd )
 
+    rrainm_auto = real( rrainm_auto_r4, kind = core_rknd )
+    rrainm_accr = real( rrainm_accr_r4, kind = core_rknd ) 
            
     ! Update hydrometeor tendencies
     ! This done because the hydromet_mc arrays that are produced by
@@ -317,7 +317,7 @@ module morrison_micro_driver_module
     thlp2_mc_tndcy   = zero
     rtpthlp_mc_tndcy = zero
 
-    if ( l_stats_samp .and. .not. l_latin_hypercube ) then
+    if ( l_stats_samp ) then
 
       ! -------- Sedimentation tendency from Morrison microphysics --------
 
@@ -367,11 +367,6 @@ module morrison_micro_driver_module
       call stat_update_var_pt( imorr_snow_rate, 1, &
         real(Morr_snow_rate, kind = core_rknd) * &
         real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), sfc )
-
-    else if ( l_stats_samp .and. l_latin_hypercube ) then
-      ! Save autoconversion and accretion rate for statistics
-      call stat_update_var( iLH_rrainm_auto, real( rrainm_auto, kind=core_rknd ), LH_zt )
-      call stat_update_var( iLH_rrainm_accr, real( rrainm_accr, kind=core_rknd ), LH_zt )
 
     end if ! l_stats_samp
 
