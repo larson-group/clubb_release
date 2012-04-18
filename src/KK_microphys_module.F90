@@ -242,6 +242,9 @@ module KK_microphys_module
       rrainm_src_adj = cloud_frac
     end if
 
+    KK_auto_tndcy = 0._core_rknd
+    KK_accr_tndcy = 0._core_rknd
+
     ! Assign pointers for hydrometeor variables.
 
     ! Mean fields.
