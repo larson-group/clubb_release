@@ -646,6 +646,7 @@ module microphys_driver
            .and. trim( LH_microphys_type ) /= "disabled" ) then
         write(fstderr,*) "The variable l_fix_s_t_correlations must be true in order to "// &
           "enable latin hypercube sampling and ice microphysics."
+        write(fstderr,*) "Therefore l_ice_micro must be set to false to use this option."
         stop "Fatal error."
       end if
       allocate( l_hydromet_sed(hydromet_dim) )
