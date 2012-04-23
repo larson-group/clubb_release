@@ -137,6 +137,7 @@ l_prescribed_avg_deltaz = .false.
 micro_scheme = "morrison"
 Ncm_initial  = 55.e6 ! #/m^3
 l_predictnc = .false.,
+l_ice_micro = .false.,
 
 /
 

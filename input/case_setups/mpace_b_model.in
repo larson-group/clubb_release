@@ -146,6 +146,7 @@ l_prescribed_avg_deltaz = .false.
 ! "coamps", "simplified_ice", "none"
 !micro_scheme = "simplified_ice"
 micro_scheme = "coamps"
+l_ice_micro = .true.
 l_graupel = .false.
 
 /

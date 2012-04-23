@@ -143,6 +143,7 @@ l_prescribed_avg_deltaz = .false.
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "coamps"
+l_ice_micro = .true.
 /
 
 &radiation_setting

@@ -114,6 +114,7 @@ rad_scheme = "bugsrad",
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "morrison"
+l_ice_micro = .true.
 /
 
 &stats_setting

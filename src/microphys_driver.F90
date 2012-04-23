@@ -352,8 +352,8 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for Morrison and COAMPS microphysics
     !---------------------------------------------------------------------------
-    l_ice_micro = .true. ! Enable non-sedimenting ice and snow
-    l_graupel = .true.   ! Enable graupel formation
+    l_ice_micro = .false. ! Disable non-sedimenting ice and snow by default
+    l_graupel = .false.   ! Disable graupel formation by default
 
     !---------------------------------------------------------------------------
     ! Parameters for Khairoutdinov & Kogan and COAMPS microphysics
@@ -842,6 +842,7 @@ module microphys_driver
       ! Allocate and set the arrays containing the correlations
       ! and the X'^2 / X'^2 terms
       call setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
+                                    l_ice_micro, &
                                     corr_file_path_cloud, corr_file_path_below, iunit )
 #endif
 

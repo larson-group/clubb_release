@@ -55,6 +55,7 @@ module latin_hypercube_arrays
   contains
 !===============================================================================
   subroutine setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
+                                      l_ice_micro, &
                                       input_file_cloud, input_file_below, iunit )
 
 ! Description:
@@ -120,6 +121,9 @@ module latin_hypercube_arrays
       iirsnowm, & ! Index snow mixing ratio
       iiNsnowm    ! Index of snow number conc.
 
+    logical, intent(in) :: &
+      l_ice_micro  ! Whether the microphysics scheme will do ice
+
     integer, intent(in) :: &
       iunit ! The file unit
 
@@ -141,10 +145,17 @@ module latin_hypercube_arrays
     call return_LH_index( iiNcm, i, iiLH_Nc )
     call return_LH_index( iirrainm, i, iiLH_rrain )
     call return_LH_index( iiNrm, i, iiLH_Nr )
-    call return_LH_index( iiricem, i, iiLH_rice )
-    call return_LH_index( iiNim, i, iiLH_Ni )
-    call return_LH_index( iirsnowm, i, iiLH_rsnow )
-    call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
+    if ( l_ice_micro ) then
+      call return_LH_index( iiricem, i, iiLH_rice )
+      call return_LH_index( iiNim, i, iiLH_Ni )
+      call return_LH_index( iirsnowm, i, iiLH_rsnow )
+      call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
+    else
+      iiLH_rice = -1
+      iiLH_Ni = -1
+      iiLH_rsnow = -1
+      iiLH_Nsnow = -1
+    end if
     ! Disabled until we have values for the correlations of graupel and
     ! other variates in the latin hypercube sampling.
     iiLH_rgraupel = -1
