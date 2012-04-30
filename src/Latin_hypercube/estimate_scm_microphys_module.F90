@@ -255,7 +255,7 @@ module estimate_scm_microphys_module
       call copy_X_nl_into_hydromet( nz, d_variables, 1, & ! In
                                     X_nl_all_levs(:,sample,:), & ! In
                                     hydromet, & ! In
-                                    hydromet_columns )
+                                    hydromet_columns ) ! Out
 
       ! Compute the in-cloud value of Nc for K&K.  The Morrison microphysics
       ! with predicted Nc shouldn't need this variable.
@@ -274,7 +274,7 @@ module estimate_scm_microphys_module
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
              lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
              lh_wprtp_mc_tndcy, lh_wpthlp_mc_tndcy, & ! Out
-             lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, lh_rtpthlp_mc_tndcy, &
+             lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, lh_rtpthlp_mc_tndcy, & ! Out
              lh_rrainm_auto, lh_rrainm_accr ) ! Out
 
       if ( l_lh_cloud_weighted_sampling ) then
