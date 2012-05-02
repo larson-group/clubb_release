@@ -80,10 +80,15 @@ module latin_hypercube_arrays
       ricep2_on_ricem2_below, & 
       Nicep2_on_Nicem2_below
 
+    use parameters_microphys, only: &
+      l_fix_s_t_correlations ! Variable(s)
+
 !   use matrix_operations, only: print_lower_triangular_matrix ! Procedure(s)
 
     use constants_clubb, only: &
-      fstdout ! Constant(s)
+      fstdout, & ! Constant(s)
+      fstderr, &
+      zero
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -104,7 +109,6 @@ module latin_hypercube_arrays
 
     use corr_matrix_module, only: &
       read_correlation_matrix ! Procedure(s)
-      
 
     implicit none
 
@@ -132,10 +136,12 @@ module latin_hypercube_arrays
       input_file_below    ! Path to the out of cloud correlation file
 
     ! Local variables
-
+    character(len=1) :: response
+    logical :: l_warning
     integer :: i
 
     ! ---- Begin Code ----
+
     iiLH_s_mellor = 1 ! Extended rcm
     iiLH_t_mellor = 2 ! 't' orthogonal to 's'
     iiLH_w        = 3 ! vertical velocity
@@ -169,14 +175,36 @@ module latin_hypercube_arrays
     allocate( xp2_on_xm2_array_cloud(d_variables) )
     allocate( xp2_on_xm2_array_below(d_variables) )
 
-    xp2_on_xm2_array_cloud(:) = 0.0_core_rknd
-    xp2_on_xm2_array_below(:) = 0.0_core_rknd
+    xp2_on_xm2_array_cloud(:) = zero
+    xp2_on_xm2_array_below(:) = zero
 
-    call read_correlation_matrix( iunit, trim( input_file_cloud ), d_variables, &
-                                  corr_array_cloud )
+    call read_correlation_matrix( iunit, trim( input_file_cloud ), d_variables, & ! In
+                                  corr_array_cloud ) ! Out
 
-    call read_correlation_matrix( iunit, trim( input_file_below ), d_variables, &
-                                  corr_array_below )
+    call read_correlation_matrix( iunit, trim( input_file_below ), d_variables, & ! In
+                                  corr_array_below ) ! Out
+
+    ! Sanity check to avoid confusing non-convergence results.
+    if ( .not. l_fix_s_t_correlations .and. iiLH_Nc > 0 ) then
+      l_warning = .false.
+      do i = 1, d_variables 
+        if ( corr_array_cloud(i,iiLH_Nc) /= zero .or. &
+             corr_array_below(i,iiLH_Nc) /= zero .and. &
+             i /= iiLH_Nc ) then
+          l_warning = .true.
+        end if
+      end do ! 1..d_variables
+      if ( l_warning ) then
+        write(fstderr,*) "Warning: the specified correlations for s and Nc are non-zero."
+        write(fstderr,*) "The latin hypercube code will not converge to the analytic solution "// &
+          "using these settings."
+        write(fstderr,'(A)',advance='no') "Continue? "
+        read *, response
+        if ( response /= 'y' .or. response /= 'Y' ) then
+           stop "Exiting..."
+        end if
+      end if
+    end if ! l_fix_s_t_correlations
 
     if ( iiLH_Nc > 0 ) then
       xp2_on_xm2_array_cloud(iiLH_Nc) = Ncp2_on_Ncm2_cloud
@@ -271,14 +299,6 @@ module latin_hypercube_arrays
 
       end if ! iiLH_Ngraupel > 0
     end if ! iiLH_rgraupel > 0
-
-    ! Fill in values for t_mellor using s_mellor correlations
-!   do i = 3, d_variables
-!     corr_array_cloud(i,iiLH_t_mellor) = corr_array_cloud(i,iiLH_s_mellor) &
-!       * corr_array_cloud(iiLH_t_mellor,iiLH_s_mellor)
-!     corr_array_below(i,iiLH_t_mellor) = corr_array_below(i,iiLH_s_mellor) &
-!       * corr_array_below(iiLH_t_mellor,iiLH_s_mellor)
-!   end do
 
     return
   end subroutine setup_corr_varnce_array
