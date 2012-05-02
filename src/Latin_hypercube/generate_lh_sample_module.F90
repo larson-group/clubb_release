@@ -2020,15 +2020,14 @@ module generate_lh_sample_module
          ( d_variables, index1, index2, real(corr_sw, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
+    ! Obtain the fixed value for the correlation between t and w.
     index1 = iiLH_t_mellor
     index2 = iiLH_w
-    if ( corr_sw /= 0._core_rknd ) then
-      ! Approximate the covariance of t and w
-      corr_tw = corr_st * corr_sw
-    else
-      corr_tw = 0._core_rknd
-    end if
+    call get_lower_triangular_matrix &
+         ( d_variables, index1, index2, corr_array, & ! In
+            corr_tw ) ! Out
 
+    ! Add the correlation to the matrix
     call set_lower_triangular_matrix_dp &
          ( d_variables, index1, index2, real(corr_tw, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
@@ -2051,10 +2050,10 @@ module generate_lh_sample_module
     ! Correlations involving s,t and the lognormal variates
     do index1 = LN_index, d_variables
       call add_corr_to_matrix_gaus_LN &
-           ( d_variables, iiLH_s_mellor, &
-             iiLH_t_mellor, iiLH_w, index1, &
-             xp2_on_xm2_array, corr_array, &
-             corr_stw_matrix )
+           ( d_variables, iiLH_s_mellor, & ! In
+             iiLH_t_mellor, iiLH_w, index1, & ! In
+             xp2_on_xm2_array, corr_array, & ! In
+             corr_stw_matrix ) ! In/Out
     end do
 
     return
