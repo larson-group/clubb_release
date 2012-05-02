@@ -76,9 +76,10 @@ module clubb_driver
 
     use inputfields, only: &
       inputfields_init, compute_timestep, stat_fields_reader, & ! Procedure(s)
+      cleanup_input_fields, &
       l_input_wp3                                                 ! Variable(s)
 
-    use inputfields, only: stat_file_zt
+    use inputfields, only: stat_files
 
     use parameters_tunable, only: &
       l_prescribed_avg_deltaz, params_list ! Variable(s)     
@@ -977,7 +978,7 @@ module clubb_driver
       if ( l_input_fields ) then
         l_restart_input = .false.
         call compute_timestep( &
-             iunit, stat_file_zt, l_restart_input, time_current, &  ! Intent(in)
+             iunit, stat_files(1), l_restart_input, time_current, &  ! Intent(in)
              itime_nearest )    ! Intent(out)
 
         call stat_fields_reader( max( itime_nearest, 1 ) )                     ! Intent(in)
@@ -1141,6 +1142,10 @@ module clubb_driver
     call cleanup_radiation_variables( )
 
     call cleanup_microphys( )
+
+    if( l_input_fields ) then
+      call cleanup_input_fields()
+    end if
 
     call stats_finalize( )
 
@@ -2668,7 +2673,7 @@ module clubb_driver
         l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
         l_input_Ncnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
         l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
-        l_input_sfc_soil_T_in_K, stat_file_zt
+        l_input_sfc_soil_T_in_K, stat_files
 
     use inputfields, only: &
       compute_timestep,  & ! Procedure(s)
@@ -2855,7 +2860,7 @@ module clubb_driver
     l_restart = .true.
 
     call compute_timestep &
-      ( iunit, stat_file_zt, l_restart, time_restart, &! Intent(in)
+      ( iunit, stat_files(1), l_restart, time_restart, &! Intent(in)
         timestep )                                                                 ! Intent(out)
 
     ! Sanity check for input time_restart

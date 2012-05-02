@@ -14,8 +14,8 @@ module inputfields
   implicit none
 
   ! Run information
-  character(len=100), public :: & 
-    stat_file_zt, stat_file_zm, stat_file_sfc
+  character(len=100), dimension(:), allocatable, public :: & 
+    stat_files ! a list of all files used for input
 
   character(len=10), public :: input_type
 
@@ -48,6 +48,16 @@ module inputfields
     sam_input_type = 3, &
     rams_input_type = 4
 
+  ! These represent the index of each file in the stat_files dimension for each input type
+  integer, parameter, private :: &
+    clubb_zt = 1, &
+    clubb_zm = 2, &
+    clubb_sfc = 3, &
+    coamps_sm = 1, &
+    coamps_sw = 2, &
+    sam_file = 1, &
+    rams_file =1
+
   integer, parameter, private :: &
     num_sam_inputfields = 62, & ! The number of input fields for SAM
     num_coamps = 61, & ! The number of input fields for coamps
@@ -60,7 +70,8 @@ module inputfields
   public  :: stat_fields_reader, &
              compute_timestep, &
              inputfields_init, &
-             set_filenames
+             set_filenames, &
+             cleanup_input_fields
 
   private ! Default Scope
 
@@ -73,10 +84,13 @@ module inputfields
       clubb_name  ! The name of the variable in CLUBB
 
     character(len = 3) :: &
-      grid_type ! The type of the grid, either "zm" or "zt"
+      clubb_grid_type  ! The type of the grid for clubb, either "zm" or "zt"
+
+    integer :: &
+      input_file_index ! The index of the file this variable is located in
 
     real( kind = core_rknd ), dimension(:), pointer :: &
-      clubb_var ! The clubb variable to store the result in
+      clubb_var  ! The clubb variable to store the result in
 
     real( kind = core_rknd ) :: &
       adjustment ! The SAM variable will be multiplied by this amount
@@ -119,42 +133,40 @@ module inputfields
     select case ( trim( input_type ) )
 
     case ( "coamps_les", "COAMPS_LES", "coamps" )
-      stat_file_zt = trim( file_prefix )//"_coamps_sm.ctl"
-      stat_file_zm = trim( file_prefix )//"_coamps_sw.ctl"
-      stat_file_sfc = trim( file_prefix )//"_coamps_sfc.ctl"
+      allocate(stat_files(1:2))
+      stat_files(coamps_sm) = trim( file_prefix )//"_coamps_sm.ctl"
+      stat_files(coamps_sw) = trim( file_prefix )//"_coamps_sw.ctl"
 
       stats_input_type = coamps_input_type
 
     case ( "clubb_scm", "CLUBB_SCM", "clubb" )
-      stat_file_zt = trim( file_prefix )//"_zt.ctl"
-      stat_file_zm = trim( file_prefix )//"_zm.ctl"
-      stat_file_sfc = trim( file_prefix )//"_sfc.ctl"
+      allocate(stat_files(1:3))
+      stat_files(clubb_zt) = trim( file_prefix )//"_zt.ctl"
+      stat_files(clubb_zm) = trim( file_prefix )//"_zm.ctl"
+      stat_files(clubb_sfc) = trim( file_prefix )//"_sfc.ctl"
 
       stats_input_type = clubb_input_type
 
-      inquire(file=stat_file_zt,exist=l_grads)
+      inquire(file=stat_files(clubb_zt),exist=l_grads)
 
       if ( .not. l_grads ) then
         write(fstdout,*) "inputfields: Cannot find GrADS ctl file, assuming netCDF input"
-        stat_file_zt = trim( file_prefix )// "_zt.nc"
-        stat_file_zm = trim( file_prefix )// "_zm.nc"
-        stat_file_sfc = trim( file_prefix )// "_sfc.nc"
+        stat_files(clubb_zt) = trim( file_prefix )// "_zt.nc"
+        stat_files(clubb_zm) = trim( file_prefix )// "_zm.nc"
+        stat_files(clubb_sfc) = trim( file_prefix )// "_sfc.nc"
       end if
 
     case ( "SAM", "sam" )
+      allocate(stat_files(1:1))
       ! SAM uses one netCDF file for all of its output, so the entire filename
       ! should be provided in file_prefix
-      stat_file_zt = trim( file_prefix )
-      stat_file_zm = trim( file_prefix )
-      stat_file_sfc = trim( file_prefix )
-
+      stat_files(sam_file) = trim( file_prefix )
       stats_input_type = sam_input_type
 
     case ( "rams_les", "RAMS_LES", "rams" )
+      allocate(stat_files(1:1))
       ! RAMS uses one file for all of it's output.
-      stat_file_zt = trim( file_prefix )//"_rams.ctl"
-      stat_file_zm = stat_file_zt
-      stat_file_sfc = stat_file_zt
+      stat_files(rams_file) = trim( file_prefix )//"_rams.ctl"
 
       stats_input_type = rams_input_type
 
@@ -277,11 +289,11 @@ module inputfields
 
     real( kind = core_rknd ), dimension(gr%nz+1) :: tmp1
 
-    integer ::  &
-      k_lowest_zt_input, &  ! The lowest CLUBB thermodynamic level that's within the LES domain.
-      k_highest_zt_input, & ! The highest CLUBB thermodynamic level that's within the LES domain.
-      k_lowest_zm_input, &  ! The lowest CLUBB momentum level that's within the LES domain.
-      k_highest_zm_input    ! The highest CLUBB momentum level that's within the LES domain.
+    integer, dimension(1:size(stat_files)) ::  &
+      k_lowest_zt, &  ! The lowest CLUBB thermodynamic level that's within the LES domain.
+      k_highest_zt, & ! The highest CLUBB thermodynamic level that's within the LES domain.
+      k_lowest_zm, &  ! The lowest CLUBB momentum level that's within the LES domain.
+      k_highest_zm    ! The highest CLUBB momentum level that's within the LES domain.
 
     integer :: k  ! Array index
  
@@ -311,44 +323,44 @@ module inputfields
       l_fatal_error = .false.
 
       call get_clubb_variable_interpolated &
-           ( l_input_um, stat_file_zt, "um", gr%nz, timestep, &
+           ( l_input_um, stat_files(clubb_zt), "um", gr%nz, timestep, &
              gr%zt, um, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_vm, stat_file_zt, "vm", gr%nz, timestep, &
+           ( l_input_vm, stat_files(clubb_zt), "vm", gr%nz, timestep, &
              gr%zt, vm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rtm, stat_file_zt, "rtm", gr%nz, timestep, &
+           ( l_input_rtm, stat_files(clubb_zt), "rtm", gr%nz, timestep, &
              gr%zt, rtm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
-           ( l_input_thlm, stat_file_zt, "thlm", gr%nz, timestep, &
+           ( l_input_thlm, stat_files(clubb_zt), "thlm", gr%nz, timestep, &
              gr%zt, thlm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_wp3, stat_file_zt, "wp3", gr%nz, timestep, &
+           ( l_input_wp3, stat_files(clubb_zt), "wp3", gr%nz, timestep, &
              gr%zt, wp3, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_tau_zt, stat_file_zt, "tau_zt", gr%nz, timestep, &
+           ( l_input_tau_zt, stat_files(clubb_zt), "tau_zt", gr%nz, timestep, &
              gr%zt, tau_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rrainm, stat_file_zt, "rrainm", gr%nz, timestep, & 
+           ( l_input_rrainm, stat_files(clubb_zt), "rrainm", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_rrainm ) then
         hydromet(1:gr%nz,iirrainm) = tmp1(1:gr%nz)
@@ -356,7 +368,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rsnowm, stat_file_zt, "rsnowm", gr%nz, timestep, & 
+           ( l_input_rsnowm, stat_files(clubb_zt), "rsnowm", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_rsnowm ) then
         hydromet(1:gr%nz,iirsnowm) = tmp1(1:gr%nz)
@@ -364,7 +376,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_ricem, stat_file_zt, "ricem", gr%nz, timestep, & 
+           ( l_input_ricem, stat_files(clubb_zt), "ricem", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_ricem ) then
         hydromet(1:gr%nz,iiricem) = tmp1(1:gr%nz)
@@ -372,7 +384,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rgraupelm, stat_file_zt, "rgraupelm", gr%nz, timestep, & 
+           ( l_input_rgraupelm, stat_files(clubb_zt), "rgraupelm", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_rgraupelm ) then
         hydromet(1:gr%nz,iirgraupelm) = tmp1(1:gr%nz)
@@ -382,104 +394,104 @@ module inputfields
 !--------------------------------------------------------
 ! Added variables for clubb_restart
       call get_clubb_variable_interpolated &
-           ( l_input_p, stat_file_zt, "p_in_Pa", gr%nz, timestep, &
+           ( l_input_p, stat_files(clubb_zt), "p_in_Pa", gr%nz, timestep, &
              gr%zt, p_in_Pa, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_exner, stat_file_zt, "exner", gr%nz, timestep, &
+           ( l_input_exner, stat_files(clubb_zt), "exner", gr%nz, timestep, &
              gr%zt, exner, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_ug, stat_file_zt, "ug", gr%nz, timestep, &
+           ( l_input_ug, stat_files(clubb_zt), "ug", gr%nz, timestep, &
              gr%zt, ug, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_vg, stat_file_zt, "vg", gr%nz, timestep, &
+           ( l_input_vg, stat_files(clubb_zt), "vg", gr%nz, timestep, &
              gr%zt, vg, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rcm, stat_file_zt, "rcm", gr%nz, timestep, &
+           ( l_input_rcm, stat_files(clubb_zt), "rcm", gr%nz, timestep, &
              gr%zt, rcm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_wm_zt, stat_file_zt, "wm", gr%nz, timestep, &
+           ( l_input_wm_zt, stat_files(clubb_zt), "wm", gr%nz, timestep, &
              gr%zt, wm_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
-           ( l_input_rho, stat_file_zt, "rho", gr%nz, timestep, &
+           ( l_input_rho, stat_files(clubb_zt), "rho", gr%nz, timestep, &
              gr%zt, rho, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rho_ds_zt, stat_file_zt, "rho_ds_zt", gr%nz, timestep, &
+           ( l_input_rho_ds_zt, stat_files(clubb_zt), "rho_ds_zt", gr%nz, timestep, &
              gr%zt, rho_ds_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_thv_ds_zt, stat_file_zt, "thv_ds_zt", gr%nz, timestep, &
+           ( l_input_thv_ds_zt, stat_files(clubb_zt), "thv_ds_zt", gr%nz, timestep, &
              gr%zt, thv_ds_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_Lscale, stat_file_zt, "Lscale", gr%nz, timestep, &
+           ( l_input_Lscale, stat_files(clubb_zt), "Lscale", gr%nz, timestep, &
              gr%zt, Lscale, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_Lscale_up, stat_file_zt, "Lscale_up", gr%nz, timestep, &
+           ( l_input_Lscale_up, stat_files(clubb_zt), "Lscale_up", gr%nz, timestep, &
              gr%zt, Lscale_up, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_Lscale_down, stat_file_zt, "Lscale_down", gr%nz, timestep, &
+           ( l_input_Lscale_down, stat_files(clubb_zt), "Lscale_down", gr%nz, timestep, &
              gr%zt, Lscale_down, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_Kh_zt, stat_file_zt, "Kh_zt", gr%nz, timestep, &
+           ( l_input_Kh_zt, stat_files(clubb_zt), "Kh_zt", gr%nz, timestep, &
              gr%zt, Kh_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_thvm, stat_file_zt, "thvm", gr%nz, timestep, &
+           ( l_input_thvm, stat_files(clubb_zt), "thvm", gr%nz, timestep, &
              gr%zt, thvm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_thlm_forcing, stat_file_zt, "thlm_forcing", gr%nz, timestep, &
+           ( l_input_thlm_forcing, stat_files(clubb_zt), "thlm_forcing", gr%nz, timestep, &
              gr%zt, thlm_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rtm_forcing, stat_file_zt, "rtm_forcing", gr%nz, timestep, &
+           ( l_input_rtm_forcing, stat_files(clubb_zt), "rtm_forcing", gr%nz, timestep, &
              gr%zt, rtm_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_Ncm, stat_file_zt, "Ncm", gr%nz, timestep, &
+           ( l_input_Ncm, stat_files(clubb_zt), "Ncm", gr%nz, timestep, &
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_Ncm ) then
         hydromet(1:gr%nz,iiNcm) = tmp1(1:gr%nz)
@@ -488,13 +500,13 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_Ncnm, stat_file_zt, "Ncnm", gr%nz, timestep, &
+           ( l_input_Ncnm, stat_files(clubb_zt), "Ncnm", gr%nz, timestep, &
              gr%zt, Ncnm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_Nim, stat_file_zt, "Nim", gr%nz, timestep, &
+           ( l_input_Nim, stat_files(clubb_zt), "Nim", gr%nz, timestep, &
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_Nim ) then
         hydromet(1:gr%nz, iiNcm) = tmp1(1:gr%nz)
@@ -503,13 +515,13 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_cloud_frac, stat_file_zt, "cloud_frac", gr%nz, timestep, &
+           ( l_input_cloud_frac, stat_files(clubb_zt), "cloud_frac", gr%nz, timestep, &
              gr%zt, cloud_frac, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_Nrm, stat_file_zt, "Nrm", gr%nz, timestep, &
+           ( l_input_Nrm, stat_files(clubb_zt), "Nrm", gr%nz, timestep, &
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_Nrm ) then
         hydromet(1:gr%nz, iiNrm) = tmp1(1:gr%nz)
@@ -518,68 +530,68 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_sigma_sqd_w_zt, stat_file_zt, "sigma_sqd_w_zt", gr%nz, timestep, &
+           ( l_input_sigma_sqd_w_zt, stat_files(clubb_zt), "sigma_sqd_w_zt", gr%nz, timestep, &
              gr%zt, sigma_sqd_w_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_radht, stat_file_zt, "radht", gr%nz, timestep, &
+           ( l_input_radht, stat_files(clubb_zt), "radht", gr%nz, timestep, &
              gr%zt, radht, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       ! PDF Parameters (needed for K&K microphysics)
       call get_clubb_variable_interpolated &
-           ( l_input_thl1, stat_file_zt, "thl1", gr%nz, timestep, &
+           ( l_input_thl1, stat_files(clubb_zt), "thl1", gr%nz, timestep, &
              gr%zt, pdf_params%thl1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_thl2, stat_file_zt, "thl2", gr%nz, timestep, &
+           ( l_input_thl2, stat_files(clubb_zt), "thl2", gr%nz, timestep, &
              gr%zt, pdf_params%thl2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_mixt_frac, stat_file_zt, "mixt_frac", gr%nz, timestep, &
+           ( l_input_mixt_frac, stat_files(clubb_zt), "mixt_frac", gr%nz, timestep, &
              gr%zt, pdf_params%mixt_frac, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_s1, stat_file_zt, "s1", gr%nz, timestep, &
+           ( l_input_s1, stat_files(clubb_zt), "s1", gr%nz, timestep, &
              gr%zt, pdf_params%s1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_s2, stat_file_zt, "s2", gr%nz, timestep, &
+           ( l_input_s2, stat_files(clubb_zt), "s2", gr%nz, timestep, &
              gr%zt, pdf_params%s2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_stdev_s1, stat_file_zt, "stdev_s1", gr%nz, timestep, &
+           ( l_input_stdev_s1, stat_files(clubb_zt), "stdev_s1", gr%nz, timestep, &
              gr%zt, pdf_params%stdev_s1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_stdev_s2, stat_file_zt, "stdev_s2", gr%nz, timestep, &
+           ( l_input_stdev_s2, stat_files(clubb_zt), "stdev_s2", gr%nz, timestep, &
              gr%zt, pdf_params%stdev_s2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rc1, stat_file_zt, "rc1", gr%nz, timestep, &
+           ( l_input_rc1, stat_files(clubb_zt), "rc1", gr%nz, timestep, &
              gr%zt, pdf_params%rc1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rc2, stat_file_zt, "rc2", gr%nz, timestep, &
+           ( l_input_rc2, stat_files(clubb_zt), "rc2", gr%nz, timestep, &
              gr%zt, pdf_params%rc2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
@@ -589,110 +601,110 @@ module inputfields
       ! Read in the zm file
 
       call get_clubb_variable_interpolated &
-           ( l_input_wp2, stat_file_zm, "wp2", gr%nz, timestep, &
+           ( l_input_wp2, stat_files(clubb_zm), "wp2", gr%nz, timestep, &
              gr%zm, wp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_wprtp, stat_file_zm, "wprtp", gr%nz, timestep, &
+           ( l_input_wprtp, stat_files(clubb_zm), "wprtp", gr%nz, timestep, &
              gr%zm, wprtp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_wpthlp, stat_file_zm, "wpthlp", gr%nz, timestep, &
+           ( l_input_wpthlp, stat_files(clubb_zm), "wpthlp", gr%nz, timestep, &
              gr%zm, wpthlp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_wpthvp, stat_file_zm, "wpthvp", gr%nz, timestep, &
+           ( l_input_wpthvp, stat_files(clubb_zm), "wpthvp", gr%nz, timestep, &
              gr%zm, wpthvp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rtp2, stat_file_zm, "rtp2", gr%nz, timestep, &
+           ( l_input_rtp2, stat_files(clubb_zm), "rtp2", gr%nz, timestep, &
              gr%zm, rtp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_thlp2, stat_file_zm, "thlp2", gr%nz, timestep, &
+           ( l_input_thlp2, stat_files(clubb_zm), "thlp2", gr%nz, timestep, &
              gr%zm, thlp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rtpthlp, stat_file_zm, "rtpthlp", gr%nz, timestep, &
+           ( l_input_rtpthlp, stat_files(clubb_zm), "rtpthlp", gr%nz, timestep, &
              gr%zm, rtpthlp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_upwp, stat_file_zm, "upwp", gr%nz, timestep, &
+           ( l_input_upwp, stat_files(clubb_zm), "upwp", gr%nz, timestep, &
              gr%zm, upwp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_vpwp, stat_file_zm, "vpwp", gr%nz, timestep, &
+           ( l_input_vpwp, stat_files(clubb_zm), "vpwp", gr%nz, timestep, &
              gr%zm, vpwp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 !-----------------------------------------------------------
       call get_clubb_variable_interpolated &
-           ( l_input_em, stat_file_zm, "em", gr%nz, timestep, &
+           ( l_input_em, stat_files(clubb_zm), "em", gr%nz, timestep, &
              gr%zm, em, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rho_zm, stat_file_zm, "rho_zm", gr%nz, timestep, &
+           ( l_input_rho_zm, stat_files(clubb_zm), "rho_zm", gr%nz, timestep, &
              gr%zm, rho_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rho_ds_zm, stat_file_zm, "rho_ds_zm", gr%nz, timestep, &
+           ( l_input_rho_ds_zm, stat_files(clubb_zm), "rho_ds_zm", gr%nz, timestep, &
              gr%zm, rho_ds_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_thv_ds_zm, stat_file_zm, "thv_ds_zm", gr%nz, timestep, &
+           ( l_input_thv_ds_zm, stat_files(clubb_zm), "thv_ds_zm", gr%nz, timestep, &
              gr%zm, thv_ds_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_Kh_zm, stat_file_zm, "Kh_zm", gr%nz, timestep, &
+           ( l_input_Kh_zm, stat_files(clubb_zm), "Kh_zm", gr%nz, timestep, &
              gr%zm, Kh_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_tau_zm, stat_file_zm, "tau_zm", gr%nz, timestep, &
+           ( l_input_tau_zm, stat_files(clubb_zm), "tau_zm", gr%nz, timestep, &
              gr%zm, tau_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_up2, stat_file_zm, "up2", gr%nz, timestep, &
+           ( l_input_up2, stat_files(clubb_zm), "up2", gr%nz, timestep, &
              gr%zm, up2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_vp2, stat_file_zm, "vp2", gr%nz, timestep, &
+           ( l_input_vp2, stat_files(clubb_zm), "vp2", gr%nz, timestep, &
              gr%zm, vp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_sigma_sqd_w, stat_file_zm, "sigma_sqd_w", gr%nz, timestep, &
+           ( l_input_sigma_sqd_w, stat_files(clubb_zm), "sigma_sqd_w", gr%nz, timestep, &
              gr%zm, sigma_sqd_w, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
@@ -701,21 +713,21 @@ module inputfields
 !-----------------------------------------------------------
 
       call get_clubb_variable_interpolated &
-           ( l_input_veg_T_in_K, stat_file_sfc, "veg_T_in_K", 1, timestep, &
+           ( l_input_veg_T_in_K, stat_files(clubb_sfc), "veg_T_in_K", 1, timestep, &
              (/0._core_rknd/), tmp1(1), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
       veg_T_in_K = tmp1(1)
 
       call get_clubb_variable_interpolated &
-           ( l_input_deep_soil_T_in_K, stat_file_sfc, "deep_soil_T_in_K", 1, timestep, &
+           ( l_input_deep_soil_T_in_K, stat_files(clubb_sfc), "deep_soil_T_in_K", 1, timestep, &
              (/0._core_rknd/), tmp1(1), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
       deep_soil_T_in_K = tmp1(1)
 
       call get_clubb_variable_interpolated &
-           ( l_input_sfc_soil_T_in_K, stat_file_sfc, "sfc_soil_T_in_K", 1, timestep, &
+           ( l_input_sfc_soil_T_in_K, stat_files(clubb_sfc), "sfc_soil_T_in_K", 1, timestep, &
              (/0._core_rknd/), tmp1(1), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
@@ -741,7 +753,8 @@ module inputfields
       coamps_variables(k)%input_name = "um"
       coamps_variables(k)%clubb_var => um
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -749,7 +762,8 @@ module inputfields
       coamps_variables(k)%input_name = "vm"
       coamps_variables(k)%clubb_var => vm
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -757,7 +771,8 @@ module inputfields
       coamps_variables(k)%input_name = "qtm"
       coamps_variables(k)%clubb_var => rtm
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -765,7 +780,8 @@ module inputfields
       coamps_variables(k)%input_name = "thlm"
       coamps_variables(k)%clubb_var => thlm
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -775,7 +791,8 @@ module inputfields
       coamps_variables(k)%input_name = "wp3"
       coamps_variables(k)%clubb_var => wp3
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -783,7 +800,8 @@ module inputfields
       coamps_variables(k)%input_name = "wpqtp"
       coamps_variables(k)%clubb_var => wprtp
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -791,7 +809,8 @@ module inputfields
       coamps_variables(k)%input_name = "wpthlp"
       coamps_variables(k)%clubb_var => wpthlp
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -799,7 +818,8 @@ module inputfields
       coamps_variables(k)%input_name = "qtp2"
       coamps_variables(k)%clubb_var => rtp2
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -807,7 +827,8 @@ module inputfields
       coamps_variables(k)%input_name = "thlp2"
       coamps_variables(k)%clubb_var => thlp2
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -815,7 +836,8 @@ module inputfields
       coamps_variables(k)%input_name = "qtpthlp"
       coamps_variables(k)%clubb_var => rtpthlp
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -835,7 +857,8 @@ module inputfields
       coamps_variables(k)%input_name = "qcm"
       coamps_variables(k)%clubb_var => rcm
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -843,7 +866,8 @@ module inputfields
       coamps_variables(k)%input_name = "wlsm"
       coamps_variables(k)%clubb_var => wm_zt
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -851,7 +875,8 @@ module inputfields
       coamps_variables(k)%input_name = "ex0"
       coamps_variables(k)%clubb_var => exner
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -861,7 +886,8 @@ module inputfields
       coamps_variables(k)%input_name = "em"
       coamps_variables(k)%clubb_var => em
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -871,7 +897,8 @@ module inputfields
       coamps_variables(k)%input_name = "tke"
       coamps_variables(k)%clubb_var => temp_tke
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -879,7 +906,8 @@ module inputfields
       coamps_variables(k)%input_name = "pm"
       coamps_variables(k)%clubb_var => p_in_Pa
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -887,7 +915,8 @@ module inputfields
       coamps_variables(k)%input_name = "dn0"
       coamps_variables(k)%clubb_var => rho
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -917,7 +946,8 @@ module inputfields
       coamps_variables(k)%input_name = "kh"
       coamps_variables(k)%clubb_var => Kh_zt
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -943,7 +973,8 @@ module inputfields
       coamps_variables(k)%input_name = "wpthvp"
       coamps_variables(k)%clubb_var => wpthvp
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -1005,7 +1036,8 @@ module inputfields
       coamps_variables(k)%input_name = "thvm"
       coamps_variables(k)%clubb_var => thvm
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -1021,7 +1053,8 @@ module inputfields
           coamps_variables(k)%input_name = "qrm"
           coamps_variables(k)%clubb_var => temp_rrainm
           coamps_variables(k)%adjustment = 1.0_core_rknd
-          coamps_variables(k)%grid_type = "zt"
+          coamps_variables(k)%clubb_grid_type = "zt"
+          coamps_variables(k)%input_file_index = coamps_sm
 
           k = k + 1
         end if
@@ -1039,7 +1072,8 @@ module inputfields
           coamps_variables(k)%input_name = "nrm"
           coamps_variables(k)%clubb_var => temp_Nrm
           coamps_variables(k)%adjustment = 1.0_core_rknd
-          coamps_variables(k)%grid_type = "zt"
+          coamps_variables(k)%clubb_grid_type = "zt"
+          coamps_variables(k)%input_file_index = coamps_sm
 
           k = k + 1
         end if
@@ -1057,7 +1091,8 @@ module inputfields
           coamps_variables(k)%input_name = "ncm"
           coamps_variables(k)%clubb_var => temp_Ncm
           coamps_variables(k)%adjustment = 1.0_core_rknd
-          coamps_variables(k)%grid_type = "zt"
+          coamps_variables(k)%clubb_grid_type = "zt"
+          coamps_variables(k)%input_file_index = coamps_sm
 
           k = k + 1
         end if
@@ -1075,7 +1110,8 @@ module inputfields
           coamps_variables(k)%input_name = "qsm"
           coamps_variables(k)%clubb_var => temp_rsnowm
           coamps_variables(k)%adjustment = 1.0_core_rknd
-          coamps_variables(k)%grid_type = "zt"
+          coamps_variables(k)%clubb_grid_type = "zt"
+          coamps_variables(k)%input_file_index = coamps_sm
 
           k = k + 1
         end if
@@ -1093,7 +1129,8 @@ module inputfields
           coamps_variables(k)%input_name = "qim"
           coamps_variables(k)%clubb_var => temp_ricem
           coamps_variables(k)%adjustment = 1.0_core_rknd
-          coamps_variables(k)%grid_type = "zt"
+          coamps_variables(k)%clubb_grid_type = "zt"
+          coamps_variables(k)%input_file_index = coamps_sm
 
           k = k + 1
         end if
@@ -1111,7 +1148,8 @@ module inputfields
           coamps_variables(k)%input_name = "qgm"
           coamps_variables(k)%clubb_var => temp_rgraupelm
           coamps_variables(k)%adjustment = 1.0_core_rknd
-          coamps_variables(k)%grid_type = "zt"
+          coamps_variables(k)%clubb_grid_type = "zt"
+          coamps_variables(k)%input_file_index = coamps_sm
 
           k = k + 1
         end if
@@ -1121,7 +1159,8 @@ module inputfields
       coamps_variables(k)%input_name = "ncnm"
       coamps_variables(k)%clubb_var => Ncnm
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zt"
+      coamps_variables(k)%clubb_grid_type = "zt"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -1137,7 +1176,8 @@ module inputfields
           coamps_variables(k)%input_name = "nim"
           coamps_variables(k)%clubb_var => temp_Nim
           coamps_variables(k)%adjustment = 1.0_core_rknd
-          coamps_variables(k)%grid_type = "zt"
+          coamps_variables(k)%clubb_grid_type = "zt"
+          coamps_variables(k)%input_file_index = coamps_sm
 
           k = k + 1
         end if
@@ -1159,7 +1199,8 @@ module inputfields
       coamps_variables(k)%input_name = "up2"
       coamps_variables(k)%clubb_var => up2
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -1167,7 +1208,8 @@ module inputfields
       coamps_variables(k)%input_name = "vp2"
       coamps_variables(k)%clubb_var => vp2
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sm
 
       k = k + 1
 
@@ -1205,13 +1247,22 @@ module inputfields
       coamps_variables(k)%input_name = "none"
       coamps_variables(k)%clubb_name = "sfc_soil_T_in_K"
 
+      k = k + 1
+
+      coamps_variables(k)%l_input_var = l_input_radht
+      coamps_variables(k)%input_name = "none"
+      coamps_variables(k)%clubb_name = "radht"
+
+      k = k + 1
+
       ! Note:  wpup_sgs and wpvp_sgs must be added to make the u'w' and v'w' terms
       !        as they are in CLUBB.
       coamps_variables(k)%l_input_var = l_input_upwp
       coamps_variables(k)%input_name = "wpup"
       coamps_variables(k)%clubb_var => upwp
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sw
 
       k = k + 1
 
@@ -1221,7 +1272,8 @@ module inputfields
       coamps_variables(k)%input_name = "wpup_sgs"
       coamps_variables(k)%clubb_var => temp_wpup_sgs
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sw
 
       k = k + 1
 
@@ -1229,7 +1281,8 @@ module inputfields
       coamps_variables(k)%input_name = "wpvp"
       coamps_variables(k)%clubb_var => vpwp
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sw
 
       k = k + 1
 
@@ -1239,7 +1292,8 @@ module inputfields
       coamps_variables(k)%input_name = "wpvp_sgs"
       coamps_variables(k)%clubb_var => temp_wpvp_sgs
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sw
 
       k = k + 1
 
@@ -1247,7 +1301,8 @@ module inputfields
       coamps_variables(k)%input_name = "wp2"
       coamps_variables(k)%clubb_var => wp2
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sw
 
       k = k + 1
 
@@ -1255,7 +1310,8 @@ module inputfields
       coamps_variables(k)%input_name = "dn0"
       coamps_variables(k)%clubb_var => rho_zm
       coamps_variables(k)%adjustment = 1.0_core_rknd
-      coamps_variables(k)%grid_type = "zm"
+      coamps_variables(k)%clubb_grid_type = "zm"
+      coamps_variables(k)%input_file_index = coamps_sw
 
       ! Initialize l_read_error for case ( "les" )
       l_read_error = .false.
@@ -1263,17 +1319,16 @@ module inputfields
       if ( l_fatal_error ) stop "oops, bad input for inputfields"
       
       call get_input_variables_interp &
-             (k, coamps_variables, stat_file_zt, stat_file_zm, &
-              stat_file_sfc, timestep, &
-              k_lowest_zt_input, k_highest_zt_input, &
-              k_lowest_zm_input, k_highest_zm_input, l_fatal_error )
+             (k, coamps_variables, timestep, &
+              k_lowest_zt, k_highest_zt, &
+              k_lowest_zm, k_highest_zm, l_fatal_error )
 
       if ( l_input_um ) then
         ! When this is a standard scenario, where CLUBB thermodynamic level 2 is
         ! the first thermodynamic level at or above the lowest LES level, use the
         ! values of um at thermodynamic levels 3 and 2 to find the value at
         ! thermodynamic level 1 through the use of a linear extension.
-        if ( k_lowest_zt_input == 2 ) then
+        if ( k_lowest_zt(coamps_sm) == 2 ) then
           um(1)  & 
           = lin_ext_zt_bottom( um(3), um(2), & 
                                gr%zt(3), gr%zt(2), gr%zt(1) )
@@ -1286,7 +1341,7 @@ module inputfields
         ! the first thermodynamic level at or above the lowest LES level, use the
         ! values of vm at thermodynamic levels 3 and 2 to find the value at
         ! thermodynamic level 1 through the use of a linear extension.
-        if ( k_lowest_zt_input == 2 ) then
+        if ( k_lowest_zt(coamps_sm) == 2 ) then
           vm(1) = lin_ext_zt_bottom( vm(3), vm(2), & 
                                      gr%zt(3), gr%zt(2), gr%zt(1) )
         endif
@@ -1297,7 +1352,7 @@ module inputfields
         ! the first thermodynamic level at or above the lowest LES level, set the
         ! value of rtm at thermodynamic level 1 to the value at thermodynamic
         ! level 2, as it is done in advance_xm_wpxp.
-        if ( k_lowest_zt_input == 2 ) then
+        if ( k_lowest_zt(coamps_sm) == 2 ) then
           rtm(1) = rtm(2)
         endif
       endif
@@ -1307,7 +1362,7 @@ module inputfields
         ! the first thermodynamic level at or above the lowest LES level, set the
         ! value of thlm at thermodynamic level 1 to the value at thermodynamic
         ! level 2, as it is done in advance_xm_wpxp.
-        if ( k_lowest_zt_input == 2 ) then
+        if ( k_lowest_zt(coamps_sm) == 2 ) then
           thlm(1) = thlm(2)
         endif
       endif
@@ -1317,44 +1372,44 @@ module inputfields
         ! the first thermodynamic level at or above the lowest LES level, set the
         ! value of wp3 at thermodynamic level 1 to 0, as it is done in
         ! advance_wp2_wp3.
-        if ( k_lowest_zt_input == 2 ) then
+        if ( k_lowest_zt(coamps_sm) == 2 ) then
           wp3(1) = 0.0_core_rknd
         endif
       endif
 
       if ( l_input_rrainm ) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iirrainm) = &
-                    temp_rrainm(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iirrainm) = &
+                    temp_rrainm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
       if ( l_input_Nrm ) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iiNrm) = &
-                    temp_Nrm(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iiNrm) = &
+                    temp_Nrm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
       if ( l_input_Ncm ) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iiNcm) = &
-                    temp_Ncm(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iiNcm) = &
+                    temp_Ncm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
       if ( l_input_rsnowm ) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iirsnowm) = &
-                    temp_rsnowm(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iirsnowm) = &
+                    temp_rsnowm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
       if ( l_input_ricem ) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iiricem) = &
-                    temp_ricem(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iiricem) = &
+                    temp_ricem(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
       if ( l_input_rgraupelm ) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iirgraupelm) = &
-                    temp_rgraupelm(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iirgraupelm) = &
+                    temp_rgraupelm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
       if ( l_input_Nim ) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iiNim) = &
-                    temp_Nim(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iiNim) = &
+                    temp_Nim(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
       if ( l_input_wprtp ) then
@@ -1364,7 +1419,7 @@ module inputfields
         ! through the use of a linear extension.  It should be pointed out that
         ! the boundary flux is usually solved in LES or CLUBB via a subroutine
         ! like surface_varnce.
-        if ( k_lowest_zm_input == 2 ) then
+        if ( k_lowest_zm(coamps_sm) == 2 ) then
           wprtp(1) = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
                                         gr%zm(3), gr%zm(2), gr%zm(1) )
         endif
@@ -1377,7 +1432,7 @@ module inputfields
         ! through the use of a linear extension.  It should be pointed out that
         ! the boundary flux is usually solved in LES or CLUBB via a subroutine
         ! like surface_varnce.
-        if ( k_lowest_zm_input == 2 ) then
+        if ( k_lowest_zm(coamps_sm) == 2 ) then
           wpthlp(1) = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
                                          gr%zm(3), gr%zm(2), gr%zm(1) )
         endif
@@ -1388,14 +1443,13 @@ module inputfields
         ! first momentum level above the lowest LES level, set the value of rtp2
         ! at momentum level 1 to the value at momentum level 2.
         ! Using a linear extension here resulted in negatives.
-        if ( k_lowest_zm_input == 2 ) then
+        if ( k_lowest_zm(coamps_sm) == 2 ) then
           rtp2(1) =  rtp2(2)
         endif
-        if ( any( rtp2(1:gr%nz) < rt_tol**2 ) ) then
-          do k=1, gr%nz
-            rtp2(k) = max(rtp2(k), rt_tol**2)
-          enddo
-        endif
+
+        where ( rtp2 < rt_tol**2 )
+          rtp2 = rt_tol**2
+        end where
       endif
 
       if ( l_input_thlp2 ) then
@@ -1403,14 +1457,13 @@ module inputfields
         ! first momentum level above the lowest LES level, set the value of thlp2
         ! at momentum level 1 to the value at momentum level 2.
         ! Using a linear extension here resulted in negatives.
-        if ( k_lowest_zm_input == 2 ) then
+        if ( k_lowest_zm(coamps_sm) == 2 ) then
           thlp2(1) = thlp2(2)
         endif
-        if ( any( thlp2(1:gr%nz) < thl_tol**2 ) ) then
-          do k=1, gr%nz
-            thlp2(k) = max(thlp2(k), thl_tol**2)
-          enddo
-        endif
+        
+        where ( thlp2 < thl_tol**2 )
+          thlp2 = thl_tol**2
+        end where
       endif
 
       if ( l_input_rtpthlp) then
@@ -1420,14 +1473,14 @@ module inputfields
         ! through the use of a linear extension.  It should be pointed out that
         ! the boundary flux is usually solved in LES or CLUBB via a subroutine
         ! like surface_varnce.
-        if ( k_lowest_zm_input == 2 ) then
+        if ( k_lowest_zm(coamps_sm) == 2 ) then
           rtpthlp(1) = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
                                           gr%zm(3), gr%zm(2), gr%zm(1) )
         endif
       endif
 
       if( l_input_em ) then
-        do k=k_lowest_zm_input, k_highest_zm_input, 1
+        do k=k_lowest_zm(coamps_sm), k_highest_zm(coamps_sm), 1
           em(k) = em(k) + temp_tke(k)
         end do
 
@@ -1436,32 +1489,34 @@ module inputfields
 
       if ( l_input_up2 ) then
         ! Clip up2 to be no smaller than w_tol_sqd
-        where ( up2 < w_tol_sqd ) up2 = w_tol_sqd
+        where ( up2 < w_tol_sqd ) 
+          up2 = w_tol_sqd
+        end where
       endif
 
       if ( l_input_vp2 ) then
-         where ( vp2 < w_tol_sqd ) vp2 = w_tol_sqd
+         where ( vp2 < w_tol_sqd ) 
+           vp2 = w_tol_sqd
+         end where
       endif
 
        if ( l_input_upwp) then
-        do k=k_lowest_zm_input, k_highest_zm_input, 1
-          upwp(k) = upwp(k) + temp_wpup_sgs(k)
+        do k=k_lowest_zm(coamps_sw), k_highest_zm(coamps_sw), 1
+          upwp(k) = temp_wpup_sgs(k)
         end do
       endif
 
       if ( l_input_vpwp) then
-        do k=k_lowest_zm_input, k_highest_zm_input, 1
+        do k=k_lowest_zm(coamps_sw), k_highest_zm(coamps_sw), 1
           vpwp(k) = temp_wpvp_sgs(k)
         end do
       endif
 
       if ( l_input_wp2 ) then
-         if ( any( wp2(1:gr%nz) < w_tol_sqd ) ) then
-          do k=1, gr%nz
-            wp2(k) = max( wp2(k), w_tol_sqd )
-          enddo
-        endif
-      endif
+        where ( wp2 < w_tol_sqd )
+          wp2 = w_tol_sqd
+        end where
+      end if
 
       deallocate(coamps_variables)
     
@@ -1482,7 +1537,8 @@ module inputfields
       SAM_variables(k)%input_name = "U"
       SAM_variables(k)%clubb_var => um
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1490,7 +1546,8 @@ module inputfields
       SAM_variables(k)%input_name = "V"
       SAM_variables(k)%clubb_var => vm
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1498,7 +1555,8 @@ module inputfields
       SAM_variables(k)%input_name = "QT"
       SAM_variables(k)%clubb_var => rtm
       SAM_variables(k)%adjustment = 1.0e-3_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1506,7 +1564,8 @@ module inputfields
       SAM_variables(k)%input_name = "THETAL"
       SAM_variables(k)%clubb_var => thlm
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1514,7 +1573,8 @@ module inputfields
       SAM_variables(k)%input_name = "W2"
       SAM_variables(k)%clubb_var => wp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1522,7 +1582,8 @@ module inputfields
       SAM_variables(k)%input_name = "RHO"
       SAM_variables(k)%clubb_var => rho
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1532,7 +1593,8 @@ module inputfields
       SAM_variables(k)%input_name = "QTFLUX"
       SAM_variables(k)%clubb_var => wprtp
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1542,7 +1604,8 @@ module inputfields
       SAM_variables(k)%input_name = "TLFLUX"
       SAM_variables(k)%clubb_var => wpthlp
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1550,7 +1613,8 @@ module inputfields
       SAM_variables(k)%input_name = "W3"
       SAM_variables(k)%clubb_var => wp3
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1558,7 +1622,8 @@ module inputfields
       SAM_variables(k)%input_name = "QT2"
       SAM_variables(k)%clubb_var => rtp2
       SAM_variables(k)%adjustment = 1.0e-6_core_rknd
-      SAM_variables(k)%grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1566,7 +1631,8 @@ module inputfields
       SAM_variables(k)%input_name = "TL2"
       SAM_variables(k)%clubb_var => thlp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1580,7 +1646,8 @@ module inputfields
       SAM_variables(k)%input_name = "UW"
       SAM_variables(k)%clubb_var => upwp
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1588,7 +1655,8 @@ module inputfields
       SAM_variables(k)%input_name = "VW"
       SAM_variables(k)%clubb_var => vpwp
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1596,7 +1664,8 @@ module inputfields
       SAM_variables(k)%input_name = "UOBS"
       SAM_variables(k)%clubb_var => ug
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1604,7 +1673,8 @@ module inputfields
       SAM_variables(k)%input_name = "VOBS"
       SAM_variables(k)%clubb_var => vg
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1612,7 +1682,8 @@ module inputfields
       SAM_variables(k)%input_name = "QCL"
       SAM_variables(k)%clubb_var => rcm
       SAM_variables(k)%adjustment = 1.0e-3_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1620,7 +1691,8 @@ module inputfields
       SAM_variables(k)%input_name = "WOBS"
       SAM_variables(k)%clubb_var => wm_zt
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1634,7 +1706,8 @@ module inputfields
       SAM_variables(k)%input_name = "TKE"
       SAM_variables(k)%clubb_var => em
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1642,7 +1715,8 @@ module inputfields
       SAM_variables(k)%input_name = "PRES"
       SAM_variables(k)%clubb_var => p_in_Pa
       SAM_variables(k)%adjustment = pascal_per_mb
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1698,7 +1772,8 @@ module inputfields
       SAM_variables(k)%input_name = "TKH"
       SAM_variables(k)%clubb_var => Kh_zt
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1777,7 +1852,8 @@ module inputfields
       SAM_variables(k)%input_name = "THETAV"
       SAM_variables(k)%clubb_var => thvm
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1787,7 +1863,8 @@ module inputfields
       SAM_variables(k)%input_name = "QPL"
       SAM_variables(k)%clubb_var => temp_rrainm
       SAM_variables(k)%adjustment = 1.0_core_rknd/g_per_kg
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1799,7 +1876,8 @@ module inputfields
       SAM_variables(k)%input_name = "NR"
       SAM_variables(k)%clubb_var => temp_Nrm
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
       temp_Ncm = 0.0_core_rknd! initialize to 0.0
@@ -1810,7 +1888,8 @@ module inputfields
       SAM_variables(k)%input_name = "NC"
       SAM_variables(k)%clubb_var => temp_Ncm
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1820,7 +1899,8 @@ module inputfields
       SAM_variables(k)%input_name = "QS"
       SAM_variables(k)%clubb_var => temp_rsnowm
       SAM_variables(k)%adjustment = 1.0_core_rknd/g_per_kg
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1830,7 +1910,8 @@ module inputfields
       SAM_variables(k)%input_name = "QI"
       SAM_variables(k)%clubb_var => temp_ricem
       SAM_variables(k)%adjustment = 1.0_core_rknd/g_per_kg
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1840,7 +1921,8 @@ module inputfields
       SAM_variables(k)%input_name = "QG"
       SAM_variables(k)%clubb_var => temp_rgraupelm
       SAM_variables(k)%adjustment = 1.0_core_rknd/g_per_kg
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1858,7 +1940,8 @@ module inputfields
       SAM_variables(k)%input_name = "NI"
       SAM_variables(k)%clubb_var => temp_Nim
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1880,7 +1963,8 @@ module inputfields
       SAM_variables(k)%input_name = "U2"
       SAM_variables(k)%clubb_var => up2
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1890,7 +1974,8 @@ module inputfields
       SAM_variables(k)%input_name = "V2"
       SAM_variables(k)%clubb_var => vp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1904,7 +1989,8 @@ module inputfields
       SAM_variables(k)%input_name = "CLD"
       SAM_variables(k)%clubb_var => cloud_frac
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%grid_type = "zt"
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
@@ -1931,17 +2017,16 @@ module inputfields
       SAM_variables(k)%input_name = "none"
 
       call get_input_variables_interp &
-             (k, SAM_variables, stat_file_zt, stat_file_zm, &
-              stat_file_sfc, timestep, &
-              k_lowest_zt_input, k_highest_zt_input, &
-              k_lowest_zm_input, k_highest_zm_input, l_fatal_error )
+             (k, SAM_variables, timestep, &
+              k_lowest_zt, k_highest_zt, &
+              k_lowest_zm, k_highest_zm, l_fatal_error )
 
       if( l_fatal_error ) then
         STOP "Error reading SAM input fields"
       end if
 
       ! Perform non-constant adjustments
-      do k=k_lowest_zt_input, k_highest_zt_input
+      do k=k_lowest_zt(sam_file), k_highest_zt(sam_file)
         if(l_input_Nrm) then
           ! Nrm = NR * (1.0e6 / RHO)
           temp_Nrm(k) = temp_Nrm(k) * (1.0e6_core_rknd / rho(k))
@@ -1959,7 +2044,7 @@ module inputfields
  
       end do
 
-      do k=k_lowest_zm_input, k_highest_zm_input
+      do k=k_lowest_zm(sam_file), k_highest_zm(sam_file)
         if(l_input_wprtp) then
           ! wprtp = QTFLUX / (RHO*Lv)
           wprtp(k) = wprtp(k) / (rho(k)*Lv)
@@ -1997,38 +2082,38 @@ module inputfields
        
       ! Add hydromet variables.
       if( l_input_Nrm .and. iiNrm > 0) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iiNrm) = &
-                   temp_Nrm(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNrm) = &
+                   temp_Nrm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
       if( l_input_Ncm .and. iiNcm > 0) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iiNcm) = &
-                   temp_Ncm(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNcm) = &
+                   temp_Ncm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
       if( l_input_Nim .and. iiNim > 0) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iiNim) = &
-                 temp_Nim(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNim) = &
+                 temp_Nim(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
       if( l_input_rrainm .and. iirrainm > 0) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iirrainm) = &
-                   temp_rrainm(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirrainm) = &
+                   temp_rrainm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
       if( l_input_rgraupelm .and. iirgraupelm > 0) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iirgraupelm) = &
-                   temp_rgraupelm(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirgraupelm) = &
+                   temp_rgraupelm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
       if( l_input_ricem .and. iiricem > 0) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iiricem) = &
-                   temp_ricem(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiricem) = &
+                   temp_ricem(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
       if( l_input_rsnowm .and. iirsnowm > 0) then
-        hydromet(k_lowest_zt_input:k_highest_zt_input,iirsnowm) = &
-                   temp_rsnowm(k_lowest_zt_input:k_highest_zt_input)
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirsnowm) = &
+                   temp_rsnowm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
       if ( l_fatal_error ) stop "Failed to read inputfields for SAM."
@@ -2051,7 +2136,8 @@ module inputfields
       RAMS_variables(k)%input_name = "wp3"
       RAMS_variables(k)%clubb_var => wp3
       RAMS_variables(k)%adjustment = 1.0_core_rknd
-      RAMS_variables(k)%grid_type = "zt"
+      RAMS_variables(k)%clubb_grid_type = "zt"
+      RAMS_variables(k)%input_file_index = rams_file
 
       k = k + 1
 
@@ -2059,15 +2145,18 @@ module inputfields
       RAMS_variables(k)%input_name = "wp2"
       RAMS_variables(k)%clubb_var => wp2
       RAMS_variables(k)%adjustment = 1.0_core_rknd
-      RAMS_variables(k)%grid_type = "zm"
+      RAMS_variables(k)%clubb_grid_type = "zm"
+      RAMS_variables(k)%input_file_index = rams_file
 
       k = k + 1
 
       RAMS_variables(k)%l_input_var = l_input_up2
       RAMS_variables(k)%input_name = "up2"
+
       RAMS_variables(k)%clubb_var => up2
       RAMS_variables(k)%adjustment = 1.0_core_rknd
-      RAMS_variables(k)%grid_type = "zm"
+      RAMS_variables(k)%clubb_grid_type = "zm"
+      RAMS_variables(k)%input_file_index = rams_file
 
       k = k + 1
 
@@ -2075,17 +2164,19 @@ module inputfields
       RAMS_variables(k)%input_name = "vp2"
       RAMS_variables(k)%clubb_var => vp2
       RAMS_variables(k)%adjustment = 1.0_core_rknd
-      RAMS_variables(k)%grid_type = "zm"
+      RAMS_variables(k)%clubb_grid_type = "zm"
+      RAMS_variables(k)%input_file_index = rams_file
 
       call get_input_variables_interp &
-             (k, RAMS_variables, stat_file_zt, stat_file_zm, &
-              stat_file_sfc, timestep, &
-              k_lowest_zt_input, k_highest_zt_input, &
-              k_lowest_zm_input, k_highest_zm_input, l_fatal_error )
+             (k, RAMS_variables, timestep, &
+              k_lowest_zt, k_highest_zt, &
+              k_lowest_zm, k_highest_zm, l_fatal_error )
 
       if( l_fatal_error ) then
         STOP "Error reading RAMS LES input fields"
       end if
+
+      deallocate( RAMS_variables )
 
     end select
 
@@ -2326,10 +2417,9 @@ module inputfields
   end subroutine get_clubb_variable_interpolated
 
   !--------------------------------------------------------------------------
-  subroutine get_input_variables_interp( nvars, variables, filename_zt, filename_zm, &
-                                   filename_sfc, timestep, &
-                                   k_lowest_zt_input, k_highest_zt_input, &
-                                   k_lowest_zm_input, k_highest_zm_input, l_error )
+  subroutine get_input_variables_interp( nvars, variables , timestep, &
+                                         k_lowest_zt, k_highest_zt,   &
+                                         k_lowest_zm, k_highest_zm, l_error )
 
   ! Description:
   !   Obtains profiles for COAMPS or SAM variables from a GrADS or NetCDF file and
@@ -2370,31 +2460,28 @@ module inputfields
 
     type (input_field), dimension(nvars), intent(in) :: &
       variables ! The list of external variables to be read in.
-
-    character(len=*), intent(in) :: &
-      filename_zt, & ! The names of the files that the variables are located in.
-      filename_zm, &
-      filename_sfc
   
     ! These variables are output by this subroutine in case certain variables
     ! need special adjustments.
-    integer, intent(out) ::  &
-      k_lowest_zt_input, &  ! The lowest CLUBB thermodynamic level that's within the LES domain.
-      k_highest_zt_input, & ! The highest CLUBB thermodynamic level that's within the LES domain.
-      k_lowest_zm_input, &  ! The lowest CLUBB momentum level that's within the LES domain.
-      k_highest_zm_input    ! The highest CLUBB momentum level that's within the LES domain.
+    integer, dimension(1:size(stat_files)), intent(out) ::  &
+      k_lowest_zt, &  ! The lowest CLUBB thermodynamic level that's within the LES domain.
+      k_highest_zt, & ! The highest CLUBB thermodynamic level that's within the LES domain.
+      k_lowest_zm, &  ! The lowest CLUBB momentum level that's within the LES domain.
+      k_highest_zm    ! The highest CLUBB momentum level that's within the LES domain.
 
     logical, intent(out) :: &
       l_error ! Error flag
 
     ! Local variables
 
-    real( kind = core_rknd), dimension(:), allocatable :: &
+    real( kind = core_rknd), dimension(:,:), allocatable :: &
       LES_tmp ! Temporary variable
 
     integer :: &
-      i ! index variable
-
+      i, &          ! index variable
+      file_index, & ! index of the files
+      min_ia, &     ! minimum ia value from all files
+      max_iz        ! maximum iz value from all files
 
     logical l_grads_file, & ! use grads or netcdf
             l_internal_error, &
@@ -2403,38 +2490,32 @@ module inputfields
     type (input_field) :: &
       current_var ! The current variable
 
-    type (stat_file) :: &
-      fread_var_zt, &
-      fread_var_zm, &
-      fread_var_sfc
+    type (stat_file), dimension(1:size(stat_files)) :: &
+      fread_vars
 
     integer, parameter :: &
-      unit_number = 15
-
+      base_unit_number = 15
 
     !--------------------------- BEGIN CODE ---------------------------------
 
     l_error = .false.
 
-    l_grads_file = .not. l_netcdf_file(filename_zt)
+    l_grads_file = .not. l_netcdf_file(stat_files(1))
 
     if( l_grads_file ) then
-      call open_grads_read( unit_number, filename_zt, &
-                           fread_var_zt, l_internal_error )
-      call open_grads_read( unit_number, filename_zm, &
-                           fread_var_zm, l_internal_error )
-      call open_grads_read( unit_number, filename_sfc, &
-                           fread_var_sfc, l_internal_error )
-
+      do file_index=1, size(stat_files)
+        call open_grads_read( base_unit_number + (file_index-1), stat_files(file_index), &
+                              fread_vars(file_index), l_internal_error )
+        l_error = l_error .or. l_internal_error
+      end do ! file_index=1, size(stat_files)
     else
 
 #ifdef NETCDF
-      call open_netcdf_read( "THETAL", filename_zt,  &
-                            fread_var_zt, l_internal_error )
-      call open_netcdf_read( "THETAL", filename_zm,  &
-                            fread_var_zm, l_internal_error )
-      call open_netcdf_read( "THETAL", filename_sfc,  &
-                            fread_var_sfc, l_internal_error )
+      do file_index=1, size(stat_files)
+        call open_netcdf_read( "THETAL", stat_files(file_index),  &
+                              fread_vars(file_index), l_internal_error )
+        l_error = l_error .or. l_internal_error
+      end do ! file_index=1, size(stat_files)
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
       write(fstderr,*) "Error reading file "// trim( filename )
@@ -2443,19 +2524,29 @@ module inputfields
 #endif
     end if
 
-    l_error = l_error .or. l_internal_error
+    ! initialize to boundary values to determine min and max later
+    min_ia = 9999
+    max_iz = -1
 
-    ! Find the lowest and highest indices of CLUBB thermodynamic levels that
-    ! fall within the domain of the LES output.
-    call CLUBB_levels_within_LES_domain( fread_var_zt, gr%zt,  &
-                                       k_lowest_zt_input, k_highest_zt_input )
+    do file_index=1, size(stat_files)
+      ! Find the lowest and highest indices of CLUBB thermodynamic levels that
+      ! fall within the domain of the LES output.
+      call CLUBB_levels_within_LES_domain( fread_vars(file_index), gr%zt,  &
+                      k_lowest_zt(file_index), k_highest_zt(file_index) )
 
-    ! Find the lowest and highest indices of CLUBB momentum levels that
-    ! fall within the domain of the LES output.
-    call CLUBB_levels_within_LES_domain( fread_var_zm, gr%zm,  &
-                                       k_lowest_zm_input, k_highest_zm_input )
+      ! Find the lowest and highest indices of CLUBB momentum levels that
+      ! fall within the domain of the LES output.
+      call CLUBB_levels_within_LES_domain( fread_vars(file_index), gr%zm,  &
+                      k_lowest_zm(file_index), k_highest_zm(file_index) )
 
-    allocate( LES_tmp(fread_var_zt%ia:fread_var_zt%iz) )
+      ! update the min and max variables to allocate LES_tmp
+      min_ia = min(min_ia, fread_vars(file_index)%ia)
+      max_iz = max(max_iz, fread_vars(file_index)%iz)
+
+    end do ! file_index=1, size(stat_files)
+
+    ! Allocate the LES_tmp variables
+    allocate( LES_tmp(1:size(stat_files), min_ia:max_iz) )
 
     do i=1, nvars
 
@@ -2470,69 +2561,67 @@ module inputfields
       end if
 
       if( current_var%l_input_var ) then
+        file_index = current_var%input_file_index
 
         if( l_grads_file ) then
-          if( current_var%grid_type == "zt" ) then
-            call get_grads_var( fread_var_zt, current_var%input_name, timestep, &
-                        LES_tmp(fread_var_zt%ia:fread_var_zt%iz), l_error )
-          else if( current_var%grid_type == "zm" ) then
-            call get_grads_var( fread_var_zm, current_var%input_name, timestep, &
-                        LES_tmp(fread_var_zm%ia:fread_var_zm%iz), l_error )
-          end if
+          call get_grads_var( fread_vars(file_index), current_var%input_name, timestep, &
+                      LES_tmp(file_index, fread_vars(file_index)%ia:fread_vars(file_index)%iz), &
+                      l_internal_error )
         else
 #ifdef NETCDF
           l_convert_to_MKS = .false.
-          if( current_var%grid_type == "zt" ) then
-            call get_netcdf_var( fread_var_zt, current_var%input_name, timestep, l_convert_to_MKS,&
-                        LES_tmp(fread_var_zt%ia:fread_var_zt%iz), l_error )
-          else if( current_var%grid_type == "zm" ) then
-            call get_netcdf_var( fread_var_zm, current_var%input_name, timestep, l_convert_to_MKS,&
-                        LES_tmp(fread_var_zm%ia:fread_var_zm%iz), l_error )
-          end if
+          call get_netcdf_var( fread_vars(file_index), current_var%input_name, timestep, &
+                      l_convert_to_MKS,&
+                      LES_tmp(file_index, fread_vars(file_index)%ia:fread_vars(file_index)%iz), &
+                      l_internal_error )
 #else
           write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-          l_error = .true.
+          l_internal_error = .true.
 #endif
-        end if
- 
+        end if ! l_grads_file
+
         l_error = l_error .or. l_internal_error
 
-        call inputfields_interp_and_adjust( current_var%grid_type, fread_var_zt, fread_var_zm, &! In
-                                            current_var%adjustment, & ! In
-                                            LES_tmp, k_lowest_zt_input, k_highest_zt_input, & ! In
-                                            k_lowest_zm_input, k_highest_zm_input, & ! In
-                                            current_var%clubb_var ) ! In/out
+        if( current_var%clubb_grid_type == "zt" ) then
+          call inputfields_interp_and_adjust( current_var%clubb_grid_type, & ! In
+                    fread_vars(file_index), current_var%adjustment, & ! In
+                    LES_tmp(file_index, :), k_lowest_zt(file_index), k_highest_zt(file_index), &!In
+                      current_var%clubb_var ) ! In/out
+        else if( current_var%clubb_grid_type == "zm" ) then
+          call inputfields_interp_and_adjust( current_var%clubb_grid_type, & ! In
+                    fread_vars(file_index), current_var%adjustment, & ! In
+                    LES_tmp(file_index, :), k_lowest_zm(file_index), k_highest_zm(file_index), &!In
+                      current_var%clubb_var ) ! In/out
+        end if ! current_var%clubb_grid_type == "zt"
 
-      end if
-    end do
+      end if ! current_var%l_input_var
+    end do ! i=1, nvars
 
     if( l_grads_file ) then
-      call close_grads_read( fread_var_zt )
-      call close_grads_read( fread_var_zm )
-      call close_grads_read( fread_var_sfc )
-
+      do file_index=1, size(stat_files)
+        call close_grads_read( fread_vars(file_index) )
+      end do ! file_index=1, size(stat_files)
     else
 
 #ifdef NETCDF
-      call close_netcdf_read( fread_var_zt )
-      call close_netcdf_read( fread_var_zm )
-      call close_netcdf_read( fread_var_sfc )
-
+      do file_index=1, size(stat_files)
+        call close_netcdf_read( fread_vars(file_index) )
+      end do ! file_index=1, size(stat_files)
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
       write(fstderr,*) "Error reading file "// trim( filename )
       stop "Fatal error"
 
 #endif
-    end if
+    end if ! l_grads_file
+
+    deallocate(LES_tmp)
 
   end subroutine get_input_variables_interp
         
   !----------------------------------------------------------------------------------------
-  subroutine inputfields_interp_and_adjust( grid_type, fread_var_zt, fread_var_zm, &
-                                            adjustment, &
-                                            LES_tmp, k_lowest_zt_input, k_highest_zt_input, &
-                                            k_lowest_zm_input, k_highest_zm_input, &
+  subroutine inputfields_interp_and_adjust( clubb_grid_type, fread_var, adjustment, &
+                                            LES_tmp, k_lowest_input, k_highest_input, &
                                             clubb_var )
 
   ! Description:
@@ -2563,129 +2652,88 @@ module inputfields
     ! Input Variable(s)
 
     character(len = 3), intent(in) :: &
-      grid_type ! The type of the grid, either "zm" or "zt"
+      clubb_grid_type ! The type of the grid, either "zm" or "zt"
 
     type (stat_file), intent(in) :: &
-      fread_var_zt, &
-      fread_var_zm
+      fread_var
 
     real( kind = core_rknd ), intent(in) :: &
       adjustment ! The value used to adjust the variable for unit conversions
 
-    real( kind = core_rknd ), dimension(fread_var_zt%ia:fread_var_zt%iz), intent(in) :: &
+    real( kind = core_rknd ), dimension(fread_var%ia:fread_var%iz), intent(in) :: &
       LES_tmp ! The values that were read in from the file.
 
     integer, intent(in) :: &
-      k_lowest_zt_input, &  ! The lowest CLUBB thermodynamic level that's within the LES domain.
-      k_highest_zt_input, & ! The highest CLUBB thermodynamic level that's within the LES domain.
-      k_lowest_zm_input, &  ! The lowest CLUBB momentum level that's within the LES domain.
-      k_highest_zm_input    ! The highest CLUBB momentum level that's within the LES domain.
+      k_lowest_input, &  ! The lowest CLUBB level that's within the LES domain.
+      k_highest_input ! The highest CLUBB level that's within the LES domain.
 
     ! Output Variable(s)
+    
     real( kind = core_rknd ), dimension(:), pointer, intent(inout) :: &
       clubb_var ! The clubb variable to store the result in
 
     ! Local Variable(s)
 
-    ! Variables used to reconcile CLUBB thermodynamic levels with LES vertical levels.
-    integer, dimension(k_lowest_zt_input:k_highest_zt_input) ::  &
-      exact_lev_idx_zt, & ! In case of an exact match, index of LES level that is
+    ! Variables used to reconcile CLUBB levels with LES vertical levels.
+    integer, dimension(k_lowest_input:k_highest_input) ::  &
+      exact_lev_idx, & ! In case of an exact match, index of LES level that is
                           ! exactly even with CLUBB thermodynamic level k.
-      lower_lev_idx_zt, & ! In case linear interpolation is needed, index of LES
+      lower_lev_idx, & ! In case linear interpolation is needed, index of LES
                           ! level that is immediately below CLUBB thermo. level k.
-      upper_lev_idx_zt    ! In case linear interpolation is needed, index of LES
+      upper_lev_idx    ! In case linear interpolation is needed, index of LES
                           ! level that is immediately above CLUBB thermo. level k.
 
-    logical, dimension(k_lowest_zt_input:k_highest_zt_input) ::  &
-      l_lin_int_zt  ! Flag that is turned on if linear interpolation is needed.
-
-    ! Variables used to reconcile CLUBB momentum levels with LES vertical levels.
-    integer, dimension(k_lowest_zm_input:k_highest_zm_input) ::  &
-      exact_lev_idx_zm, & ! In case of an exact match, index of LES level that is
-                          ! exactly even with CLUBB momentum level k.
-      lower_lev_idx_zm, & ! In case linear interpolation is needed, index of LES
-                          ! level that is immediately below CLUBB momentum level k
-      upper_lev_idx_zm    ! In case linear interpolation is needed, index of LES
-                          ! level that is immediately above CLUBB momentum level k
-
-    logical, dimension(k_lowest_zm_input:k_highest_zm_input) ::  &
-      l_lin_int_zm  ! Flag that is turned on if linear interpolation is needed.
+    logical, dimension(k_lowest_input:k_highest_input) ::  &
+      l_lin_int  ! Flag that is turned on if linear interpolation is needed.
 
     integer :: &
       k ! loop counter
+    
+    real( kind = core_rknd ), pointer, dimension(:) :: &
+      grid ! the momentum or thermo grid
 
-    ! ---- Begin Code ----
+    !----------------BEGIN CODE----------------
 
-    ! For all CLUBB thermodynamic levels, k, that are within the LES domain,
+    if ( clubb_grid_type == "zt" ) then
+      grid => gr%zt
+    else if ( clubb_grid_type == "zm" ) then
+      grid => gr%zm
+    end if
+
+    ! For all CLUBB levels, k, that are within the LES domain,
     ! find either the index of the LES level that exactly matches the altitude
     ! of the CLUBB level, or find the two indices of the LES levels that are on
     ! either side of the CLUBB level.
-    do k = k_lowest_zt_input, k_highest_zt_input, 1
+    do k = k_lowest_input, k_highest_input, 1
 
       ! CLUBB vertical level k is found at an altitude that is within the
       ! domain of the LES output.
-      call LES_grid_to_CLUBB_grid( fread_var_zt, gr%zt, k,  &
-                                   exact_lev_idx_zt(k), lower_lev_idx_zt(k),  &
-                                   upper_lev_idx_zt(k), l_lin_int_zt(k) )
-    enddo
-
-    ! For all CLUBB momentum levels, k, that are within the LES domain,
-    ! find either the index of the LES level that exactly matches the altitude
-    ! of the CLUBB level, or find the two indices of the LES levels that are on
-    ! either side of the CLUBB level.
-    do k = k_lowest_zm_input, k_highest_zm_input, 1
-      ! CLUBB vertical level k is found at an altitude that is within the
-      ! domain of the LES output.
-      call LES_grid_to_CLUBB_grid( fread_var_zm, gr%zm, k,  &
-                                   exact_lev_idx_zm(k), lower_lev_idx_zm(k),  &
-                                   upper_lev_idx_zm(k), l_lin_int_zm(k) )
+      call LES_grid_to_CLUBB_grid( fread_var, grid, k,  &
+                                   exact_lev_idx(k), lower_lev_idx(k),  &
+                                   upper_lev_idx(k), l_lin_int(k) )
     enddo
 
     !LES_tmp is the value of the variable from the LES GrADS file.
-    if( grid_type == "zt" ) then
-      do k = k_lowest_zt_input, k_highest_zt_input, 1
-        if( l_lin_int_zt(k) ) then
-          ! CLUBB level k is found at an altitude that is between two
-          ! LES levels.  Linear interpolation is required.
-           clubb_var(k) = lin_int( gr%zt(k), &
-                            fread_var_zt%z(upper_lev_idx_zt(k)), &
-                            fread_var_zt%z(lower_lev_idx_zt(k)), &
-                            LES_tmp(upper_lev_idx_zt(k)), &
-                            LES_tmp(lower_lev_idx_zt(k)) )
-        else
-          ! CLUBB level k is found at an altitude that is an exact
-          ! match with an LES level altitude.
-          clubb_var(k) = LES_tmp(exact_lev_idx_zt(k))
-        end if
-        if( adjustment /= 1.0_core_rknd ) then
-          clubb_var(k) = clubb_var(k) &
-                           * adjustment
-        end if
-      end do
-    else if( grid_type == "zm" ) then
-      do k = k_lowest_zm_input, k_highest_zm_input, 1
-        if( l_lin_int_zm(k) ) then
-          ! CLUBB level k is found at an altitude that is between two
-          ! LES levels.  Linear interpolation is required.
-          clubb_var(k) = lin_int( gr%zm(k), &
-                           fread_var_zm%z(upper_lev_idx_zm(k)), &
-                           fread_var_zm%z(lower_lev_idx_zm(k)), &
-                           LES_tmp(upper_lev_idx_zm(k)), &
-                           LES_tmp(lower_lev_idx_zm(k)) )
-        else
-          ! CLUBB level k is found at an altitude that is an exact
-          ! match with an LES level altitude.
-          clubb_var(k) = LES_tmp(exact_lev_idx_zm(k))
-        end if
-        if( adjustment /= 1.0_core_rknd ) then
-          clubb_var(k) = clubb_var(k) &
-                           * adjustment
-        end if
-      end do
-    else
-      write(fstderr,*) "Invalid grid_type specified in input field: "// grid_type
-      STOP "Grid type does not exist."
-    end if
+    do k = k_lowest_input, k_highest_input, 1
+      if( l_lin_int(k) ) then
+        ! CLUBB level k is found at an altitude that is between two
+        ! LES levels.  Linear interpolation is required.
+         clubb_var(k) = lin_int( grid(k), &
+                          fread_var%z(upper_lev_idx(k)), &
+                          fread_var%z(lower_lev_idx(k)), &
+                          LES_tmp(upper_lev_idx(k)), &
+                          LES_tmp(lower_lev_idx(k)) )
+
+      else
+        ! CLUBB level k is found at an altitude that is an exact
+        ! match with an LES level altitude.
+        clubb_var(k) = LES_tmp(exact_lev_idx(k))
+      end if
+      if( adjustment /= 1.0_core_rknd ) then
+        clubb_var(k) = clubb_var(k) &
+                         * adjustment
+      end if
+    end do
 
     return
   end subroutine inputfields_interp_and_adjust
@@ -2693,14 +2741,7 @@ module inputfields
 !-------------------------------------------------------------------------------
   subroutine inputfields_init( iunit, namelist_filename )
 
-! Description:
-!   This subroutine reads in a namelist to determine which variables are to be 
-!   read in, etc.
-
-! References:
-!   None
 !-------------------------------------------------------------------------------
-
     implicit none
 
     ! Input Variables
@@ -2812,7 +2853,25 @@ module inputfields
 
     return
   end subroutine inputfields_init
-!-----------------------------------------------------------------------
+
+  !-------------------------------------------------------------------------------
+  subroutine cleanup_input_fields()
+
+  ! Description:
+  !   Cleans up any inputfields variables that were allocated during setup and now
+  !   need to be deallocated. This must be called before CLUBB ends or there will
+  !   be memory leaks.
+  !
+  !  References:
+  !    None
+  !-------------------------------------------------------------------------------
+
+    implicit none
+
+    deallocate(stat_files)
+
+  end subroutine cleanup_input_fields
+  !-----------------------------------------------------------------------
 
 !===============================================================================
 
