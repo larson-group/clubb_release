@@ -199,8 +199,8 @@ module latin_hypercube_arrays
         write(fstderr,*) "The latin hypercube code will not converge to the analytic solution "// &
           "using these settings."
         write(fstderr,'(A)',advance='no') "Continue? "
-        read *, response
-        if ( response /= 'y' .or. response /= 'Y' ) then
+        read(*,*) response
+        if ( .not. ( response(1:1) /= 'y' .or. response(1:1) /= 'Y' ) ) then
            stop "Exiting..."
         end if
       end if
