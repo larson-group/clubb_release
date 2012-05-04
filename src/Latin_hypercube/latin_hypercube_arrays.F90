@@ -145,10 +145,10 @@ module latin_hypercube_arrays
     iiLH_s_mellor = 1 ! Extended rcm
     iiLH_t_mellor = 2 ! 't' orthogonal to 's'
     iiLH_w        = 3 ! vertical velocity
+    iiLH_Nc       = 4 ! Cloud droplet number concentration
 
-    i = iiLH_w
+    i = iiLH_Nc
 
-    call return_LH_index( iiNcm, i, iiLH_Nc )
     call return_LH_index( iirrainm, i, iiLH_rrain )
     call return_LH_index( iiNrm, i, iiLH_Nr )
     if ( l_ice_micro ) then
@@ -187,11 +187,12 @@ module latin_hypercube_arrays
     ! Sanity check to avoid confusing non-convergence results.
     if ( .not. l_fix_s_t_correlations .and. iiLH_Nc > 0 ) then
       l_warning = .false.
-      do i = 1, d_variables 
-        if ( corr_array_cloud(i,iiLH_Nc) /= zero .or. &
-             corr_array_below(i,iiLH_Nc) /= zero .and. &
+      do i = 1, d_variables
+        if ( ( corr_array_cloud(i,iiLH_Nc) /= zero .or.  &
+               corr_array_below(i,iiLH_Nc) /= zero ) .and. &
              i /= iiLH_Nc ) then
           l_warning = .true.
+          print *, i, corr_array_cloud(i,iiLH_Nc) 
         end if
       end do ! 1..d_variables
       if ( l_warning ) then
@@ -200,7 +201,7 @@ module latin_hypercube_arrays
           "using these settings."
         write(fstderr,'(A)',advance='no') "Continue? "
         read(*,*) response
-        if ( .not. ( response(1:1) /= 'y' .or. response(1:1) /= 'Y' ) ) then
+        if ( response(1:1) /= 'y' .and. response(1:1) /= 'Y' ) then
            stop "Exiting..."
         end if
       end if

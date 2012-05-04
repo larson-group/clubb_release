@@ -3499,6 +3499,9 @@ module clubb_driver
 !   None
 !-------------------------------------------------------------------------------
 
+    use array_index, only: &
+      iiNcm ! Variable(s)
+
     use pdf_parameter_module, only: &
       pdf_parameter ! Derived type
 
@@ -3551,7 +3554,8 @@ module clubb_driver
 
     use parameters_microphys, only: &
       LH_microphys_type, LH_microphys_disabled, & ! Variable(s)
-      l_lh_vert_overlap, LH_sequence_length
+      l_lh_vert_overlap, LH_sequence_length, &
+      l_predictnc
 
     use latin_hypercube_driver_module, only: &
       LH_subcolumn_generator, & ! Procedure(s)
@@ -3625,7 +3629,7 @@ module clubb_driver
     ! Local Variables
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Ncm_in_cloud ! In-cloud value for Nc      [#/kg]
+      Ncm ! Cloud droplet number concentration
 
     real( kind = dp ), dimension(gr%nz,LH_microphys_calls,d_variables) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
@@ -3678,9 +3682,15 @@ module clubb_driver
         Lscale_vert_avg = -999._core_rknd
       end if
 
+      if ( l_predictnc ) then
+        Ncm = hydromet(:,iiNcm)
+      else
+        Ncm = ( Ncm_initial / rho ) * cloud_frac
+      end if
+
       call LH_subcolumn_generator &
            ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
-             thlm, pdf_params, wm_zt, 1._core_rknd/gr%invrs_dzt, rcm, rtm-rcm, & ! In
+             thlm, pdf_params, wm_zt, 1._core_rknd/gr%invrs_dzt, rcm, Ncm, rtm-rcm, & ! In
              hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
              corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
              X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out 
@@ -3758,20 +3768,16 @@ module clubb_driver
       !
       ! Note: While the name "Ncm" usually means layer-averaged cloud droplet concentration in
       ! CLUBB, KK microphysics treats Ncm as within-cloud droplet concentration.
-      where ( rcm >= rc_tol )
-        Ncm_in_cloud(:) = Ncm_initial / rho
-      else where
-        Ncm_in_cloud(:) = 0.0_core_rknd
-      end where
+      Ncm(:) = ( Ncm_initial / rho ) * cloud_frac
 
-      call cloud_drop_sed( rcm, Ncm_in_cloud, rho_zm, rho, & ! Intent(in)
-                           exner, sigma_g,  &                ! Intent(in)
-                           rcm_mc, thlm_mc )                 ! Intent(inout)
+      call cloud_drop_sed( rcm, Ncm, rho_zm, rho, & ! Intent(in)
+                           exner, sigma_g,  &       ! Intent(in)
+                           rcm_mc, thlm_mc )        ! Intent(inout)
 
       if ( l_stats_samp .and. trim( micro_scheme ) == "none" ) then
         ! Output the grid box mean and in cloud values of Nc
-        call stat_update_var( iNcm_in_cloud, Ncm_in_cloud, zt )
-        call stat_update_var( iNcm, Ncm_in_cloud * cloud_frac, zt )
+!       call stat_update_var( iNcm_in_cloud, Ncm, zt )
+        call stat_update_var( iNcm, Ncm, zt )
       end if
     end if
 

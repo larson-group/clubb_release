@@ -1371,7 +1371,11 @@ module microphys_driver
         l_local_kk_input = .false.
         l_latin_hypercube_input = .false.
         rvm = rtm - rcm
-        Ncm_in_cloud = -999._core_rknd ! We don't use this variable for the Morrison code
+        if ( l_predictnc ) then
+          Ncm_in_cloud = hydromet(:,iiNcm)
+        else
+          Ncm_in_cloud = -999. ! Not used in the Morrison code
+        end if
         call morrison_micro_driver & 
              ( dt, gr%nz, l_stats_samp, l_local_kk_input, &
                l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &

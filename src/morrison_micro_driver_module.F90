@@ -13,7 +13,7 @@ module morrison_micro_driver_module
              ( dt, nz, l_stats_samp, l_local_kk, &
                l_latin_hypercube, thlm, wm, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, w_std_dev, &
-               dzq, rcm, Ncm_in_cloud, s_mellor, rvm, hydromet, hydromet_mc, &
+               dzq, rcm, Ncm, s_mellor, rvm, hydromet, hydromet_mc, &
                hydromet_vel, rcm_mc, rvm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
@@ -119,7 +119,7 @@ module morrison_micro_driver_module
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm,          & ! Cloud water mixing ratio                [kg/kg]
-      Ncm_in_cloud, & ! In cloud value for cloud drop num. conc.[#/kg]
+      Ncm, & ! In cloud value for cloud drop num. conc.[#/kg]
       s_mellor,     & ! The variable 's' from Mellor            [kg/kg]
       rvm             ! Vapor water mixing ratio                [kg/kg]
 
@@ -200,7 +200,6 @@ module morrison_micro_driver_module
       rcm_in_cloud = dummy(:,1)
       rcm_in_cloud = s_mellor
       rcm_in_cloud = dummy_1D
-      rcm_in_cloud = Ncm_in_cloud
       if ( l_local_kk ) stop
     end if
 
@@ -227,15 +226,11 @@ module morrison_micro_driver_module
 
     ! Note: The Ncm_r4 variable is only used if INUM = 0 in the Morrison code;
     ! otherwise the NDCNST variable is used as the fixed value.
-    Ncm_r4 = -999.
+    Ncm_r4 = real( Ncm )
 
-    do i = 1, hydromet_dim, 1
-      if ( i == iiNcm ) then
-        Ncm_r4(1:nz) = real( hydromet(1:nz,i) )
-      else
-        hydromet_r4(1:nz,i) = real( hydromet(1:nz,i) )
-      end if
-    end do
+    forall ( i = 1:hydromet_dim )
+      hydromet_r4(1:nz,i) = real( hydromet(1:nz,i) )
+    end forall
     
     ! Initialize tendencies to zero
     T_in_K_mc(1:nz) = 0.0

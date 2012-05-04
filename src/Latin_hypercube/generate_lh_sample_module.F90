@@ -24,7 +24,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
              ( n_micro_calls, d_variables, hydromet_dim, & 
-               wm, rcm, rvm, thlm, & 
+               wm, rcm, Ncm, rvm, thlm, & 
                mixt_frac, rrtthl, &
                w1_in, w2_in, varnce_w1_in, varnce_w2_in, &
                thl1_in, thl2_in, varnce_thl1_in, varnce_thl2_in, &
@@ -56,8 +56,7 @@ module generate_lh_sample_module
       Nc_tol            ! Nc tolerance in #/kg
 
     use array_index, only: &
-      iiNcm,    & ! Variables
-      iiNim,    &
+      iiNim,    & ! Variables
       iiNsnowm, &
       iiNrm,    &
       iirrainm, &
@@ -130,6 +129,7 @@ module generate_lh_sample_module
     real( kind = core_rknd ), intent(in) :: &
       wm,         & ! Vertical velocity                   [m/s]
       rcm,        & ! Mean liquid water mixing ratio      [kg/kg]
+      Ncm,        & ! Cloud droplet number concentration  [#/kg]
       rvm,        & ! Mean vapor water mixing ratio       [kg/kg]
       thlm          ! Mean liquid potential temperature   [K]
 
@@ -213,7 +213,6 @@ module generate_lh_sample_module
     real( kind = dp ) :: &
       cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
       cloud_frac2    ! Cloud fraction for 2nd normal distribution              [-]
-
 
     ! Use to clip the magnitude of the correlation between rt and thl
     real( kind = core_rknd ) :: rrtthl_reduced ! Correlation between rt and thl [-]
@@ -424,7 +423,7 @@ module generate_lh_sample_module
 
     if ( iiLH_Nc > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Nc, real(hydromet(iiNcm), kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiLH_Nc, real(Ncm, kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
@@ -538,7 +537,6 @@ module generate_lh_sample_module
       Sigma_stw_2(iiLH_w,iiLH_w) = real(varnce_w2, kind = dp)
 
       if ( iiLH_Nc > 0 ) then
-!       Ncm = real(hydromet(iiNcm), kind = dp)
         ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
         var_Nc1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiLH_Nc), kind=dp ) )
         var_Nc2 = var_Nc1
@@ -2357,7 +2355,7 @@ module generate_lh_sample_module
     implicit none
 
     ! External
-    intrinsic :: log
+    intrinsic :: sqrt, log
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
