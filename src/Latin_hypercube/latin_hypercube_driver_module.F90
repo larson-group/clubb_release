@@ -231,11 +231,9 @@ module latin_hypercube_driver_module
 
     if ( i_rmd == 0 ) then
       call permute_height_time( nz, nt_repeat, d_variables+1, & ! intent(in)
-                                height_time_matrix )              ! intent(out)
+                                height_time_matrix )            ! intent(out)
     end if
     ! End Latin hypercube sample generation
-
-    ! print*, 'latin_hypercube_driver: i_rmd=', i_rmd
 
     !--------------------------------------------------------------
     ! Latin hypercube sampling
@@ -1265,8 +1263,6 @@ module latin_hypercube_driver_module
         X_u_one_var_all_levs(kp1) = unbounded_point
       end if
 
-!     print *, k, X_u_one_var_all_levs(k), kp1, X_u_one_var_all_levs(kp1)
-
     end do ! k_lh_start..nz-1
 
     ! Downwards loop
@@ -1295,8 +1291,6 @@ module latin_hypercube_driver_module
       else
         X_u_one_var_all_levs(km1) = unbounded_point
       end if
-
-!     print *, k, X_u_one_var_all_levs(k), km1, X_u_one_var_all_levs(km1)
 
     end do ! k_lh_start..2 decrementing
 
@@ -1386,7 +1380,8 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+      dp, & ! Variable(s)
+      core_rknd
 
     implicit none
 
@@ -1394,8 +1389,8 @@ module latin_hypercube_driver_module
     intrinsic :: exp
 
     ! Parameter Constants
-    real( kind = core_rknd ), parameter :: &
-      vert_corr_coef = 0.03_core_rknd ! Empirically defined correlation constant [-]
+    real( kind = dp ), parameter :: &
+      vert_corr_coef = 0.03_dp ! Empirically defined correlation constant [-]
 
     ! Input Variables
     integer, intent(in) :: &
@@ -1406,11 +1401,12 @@ module latin_hypercube_driver_module
       Lscale_vert_avg ! Vertically averaged Lscale      [m]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = dp ), dimension(nz) :: &
       vert_corr ! The vertical correlation      [-]
 
     ! ---- Begin Code ----
-    vert_corr(1:nz) = exp( -vert_corr_coef * ( delta_zm(1:nz) / Lscale_vert_avg(1:nz) ) )
+    vert_corr(1:nz) = exp( -vert_corr_coef &
+                            * real( delta_zm(1:nz) / Lscale_vert_avg(1:nz), kind=dp ) )
 
     return
   end function compute_vert_corr
