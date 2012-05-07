@@ -841,7 +841,7 @@ module microphys_driver
       corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
       ! Allocate and set the arrays containing the correlations
       ! and the X'^2 / X'^2 terms
-      call setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
+      call setup_corr_varnce_array( iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
                                     l_ice_micro, &
                                     corr_file_path_cloud, corr_file_path_below, iunit )
 #endif
@@ -1374,7 +1374,7 @@ module microphys_driver
         if ( l_predictnc ) then
           Ncm_in_cloud = hydromet(:,iiNcm)
         else
-          Ncm_in_cloud = -999. ! Not used in the Morrison code
+          Ncm_in_cloud = -999._core_rknd ! Not used in the Morrison code
         end if
         call morrison_micro_driver & 
              ( dt, gr%nz, l_stats_samp, l_local_kk_input, &

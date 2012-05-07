@@ -54,7 +54,7 @@ module latin_hypercube_arrays
 
   contains
 !===============================================================================
-  subroutine setup_corr_varnce_array( iiNcm, iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
+  subroutine setup_corr_varnce_array( iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
                                       l_ice_micro, &
                                       input_file_cloud, input_file_below, iunit )
 
@@ -117,7 +117,6 @@ module latin_hypercube_arrays
 
     ! Input Variables
     integer, intent(in) :: &
-      iiNcm,    & ! Index of cloud droplet number conc.
       iirrainm, & ! Index of rain water mixing ratio
       iiNrm,    & ! Index of rain droplet number conc.
       iiricem,  & ! Index of ice water mixing ratio
