@@ -72,12 +72,12 @@ module estimate_scm_microphys_module
     ! External
 #include "../microphys_interface.inc"
 
-    intrinsic :: real, dble
+    intrinsic :: real, all, any
 
     ! Constant parameters
     logical, parameter :: &
-      l_local_kk                   = .true., &
-      l_latin_hypercube            = .true.
+      l_local_kk        = .true., &
+      l_latin_hypercube = .true.
 
     logical, parameter :: &
       l_check_lh_cloud_weighting = .true., & ! Verify every other sample point is out of cloud
@@ -256,7 +256,7 @@ module estimate_scm_microphys_module
                                     X_nl_all_levs(:,sample,:), & ! In
                                     hydromet, & ! In
                                     hydromet_columns, &  ! Out
-                                    Ncm )
+                                    Ncm ) ! Out
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &

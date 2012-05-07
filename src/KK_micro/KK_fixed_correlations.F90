@@ -13,7 +13,7 @@ module KK_fixed_correlations
   private ! Default scope
 
   ! Parameters for in-cloud (from SAM RF02 DO).
-  real( kind = core_rknd ), public :: &       ! RF02 value
+  real( kind = core_rknd ), public :: &  ! RF02 value
     corr_rrNr_LL_cloud,    & ! 0.786
     corr_srr_NL_cloud,     & ! 0.242
     corr_sNr_NL_cloud,     & ! 0.285
@@ -26,7 +26,7 @@ module KK_fixed_correlations
 !$omp   corr_trr_NL_cloud, corr_tNr_NL_cloud, corr_tNc_NL_cloud )
 
   ! Parameters for below-cloud (from SAM RF02 DO).
-  real( kind = core_rknd ), public :: &       ! RF02 value
+  real( kind = core_rknd ), public :: &  ! RF02 value
     corr_rrNr_LL_below,    & ! 0.886
     corr_srr_NL_below,     & ! 0.056
     corr_sNr_NL_below,     & ! 0.015
@@ -37,6 +37,13 @@ module KK_fixed_correlations
 
 !$omp threadprivate( corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below, &
 !$omp   corr_trr_NL_below, corr_tNr_NL_below, corr_tNc_NL_below )
+
+  real( kind = core_rknd ), public :: &
+    corr_st_NN_cloud, & ! Only needed when l_fix_s_t_correlations is true
+    corr_st_NN_below
+
+!$omp threadprivate( corr_st_NN_cloud, corr_st_NN_below )
+
   contains
 
 !---------------------------------------------------------------------------------------------------
@@ -56,6 +63,9 @@ module KK_fixed_correlations
       iiLH_rrain, &
       iiLH_Nc, &
       iiLH_Nr
+
+    use parameters_microphys, only: &
+      l_fix_s_t_correlations ! Variable(s)
 
     use corr_matrix_module, only: &
       read_correlation_matrix ! Procedure(s)
@@ -117,8 +127,14 @@ module KK_fixed_correlations
 
     corr_rrNr_LL_cloud = corr_matrix(iiLH_Nr,iiLH_rrain)
 
-    call read_correlation_matrix( iunit, input_file_below, d_variables, &
-                                  corr_matrix )
+    if ( l_fix_s_t_correlations ) then
+      corr_st_NN_cloud = corr_matrix(iiLH_t_mellor,iiLH_s_mellor)
+    else
+      corr_st_NN_cloud = -999._core_rknd ! Don't fix the value of the correlation
+    end if
+
+    call read_correlation_matrix( iunit, input_file_below, d_variables, & ! In
+                                  corr_matrix ) ! In/Out
 
     corr_srr_NL_below  = corr_matrix(iiLH_rrain,iiLH_s_mellor)
     corr_sNr_NL_below  = corr_matrix(iiLH_Nr,iiLH_s_mellor)
@@ -129,6 +145,12 @@ module KK_fixed_correlations
     corr_tNc_NL_below  = corr_matrix(iiLH_Nc,iiLH_t_mellor)
 
     corr_rrNr_LL_below = corr_matrix(iiLH_Nr,iiLH_rrain)
+
+    if ( l_fix_s_t_correlations ) then
+      corr_st_NN_below = corr_matrix(iiLH_t_mellor,iiLH_s_mellor)
+    else
+      corr_st_NN_below = -999._core_rknd ! As above, we let this vary in space and time
+    end if
 
     ! Set all indices back to -1, to avoid the introduction of bugs
     iiLH_s_mellor = -1; iiLH_t_mellor = -1; iiLH_rrain = -1; iiLH_Nc = -1; iiLH_Nr = -1
@@ -159,6 +181,10 @@ module KK_fixed_correlations
                        l_write_to_file, iunit )
       call write_text( "corr_tNc_NL_below = ", corr_tNc_NL_below, &
                        l_write_to_file, iunit )
+      if ( l_fix_s_t_correlations ) then
+        call write_text( "corr_st_NN_below = ", corr_st_NN_below, &
+                         l_write_to_file, iunit )
+      end if
 
       ! In cloud
       call write_text( "corr_rrNr_LL_cloud = ", corr_rrNr_LL_cloud, &
@@ -175,6 +201,10 @@ module KK_fixed_correlations
                        l_write_to_file, iunit )
       call write_text( "corr_tNc_NL_cloud = ", corr_tNc_NL_cloud, &
                        l_write_to_file, iunit )
+      if ( l_fix_s_t_correlations ) then
+        call write_text( "corr_st_NN_cloud = ", corr_st_NN_cloud, &
+                         l_write_to_file, iunit )
+      end if
 
       ! Close the prior file
       if ( l_write_to_file ) close(unit=iunit)

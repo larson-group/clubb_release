@@ -1038,7 +1038,12 @@ module KK_microphys_module
         corr_tNc_NL_cloud, &
         corr_trr_NL_below, &
         corr_tNr_NL_below, &
-        corr_tNc_NL_below
+        corr_tNc_NL_below, &
+        corr_st_NN_cloud, &
+        corr_st_NN_below
+
+    use parameters_microphys, only: &
+      l_fix_s_t_correlations ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd,      & ! Variable(s)
@@ -1203,8 +1208,23 @@ module KK_microphys_module
     sigma_w_2 = sqrt( pdf_params%varnce_w2 )
     sigma_t_1 = pdf_params%stdev_t1
     sigma_t_2 = pdf_params%stdev_t2
-    corr_ts_1 = pdf_params%corr_st_1
-    corr_ts_2 = pdf_params%corr_st_2
+
+    if ( l_fix_s_t_correlations ) then
+      if ( mu_s_1 > zero ) then
+        corr_ts_1 = corr_st_NN_cloud
+      else
+        corr_ts_1 = corr_st_NN_below
+      end if
+      if ( mu_s_2 > zero ) then
+        corr_ts_2 = corr_st_NN_cloud
+      else
+        corr_ts_2 = corr_st_NN_below
+      end if
+    else
+      corr_ts_1 = pdf_params%corr_st_1
+      corr_ts_2 = pdf_params%corr_st_2
+    end if
+
     crt1      = pdf_params%crt1
     crt2      = pdf_params%crt2
     cthl1     = pdf_params%cthl1
