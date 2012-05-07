@@ -595,7 +595,6 @@ Nota bene: Our numerical output is usually in GrADS format
 describes the file format, which variables are output in which order, etc.  
 CLUBB also can output in netCDF (.nc) format.
 
-
 Output:
 ------
 
