@@ -3765,9 +3765,7 @@ module clubb_driver
       !
       ! Since cloud base (z_cloud_base) is determined by the mixing ratio rc_tol,
       ! so will cloud droplet number concentration (Ncm).
-      !
-      ! Note: While the name "Ncm" usually means layer-averaged cloud droplet concentration in
-      ! CLUBB, KK microphysics treats Ncm as within-cloud droplet concentration.
+
       Ncm(:) = ( Ncm_initial / rho ) * cloud_frac
 
       call cloud_drop_sed( rcm, Ncm, rho_zm, rho, & ! Intent(in)

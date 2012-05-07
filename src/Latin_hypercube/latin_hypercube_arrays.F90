@@ -192,7 +192,6 @@ module latin_hypercube_arrays
                corr_array_below(i,iiLH_Nc) /= zero ) .and. &
              i /= iiLH_Nc ) then
           l_warning = .true.
-          print *, i, corr_array_cloud(i,iiLH_Nc) 
         end if
       end do ! 1..d_variables
       if ( l_warning ) then
