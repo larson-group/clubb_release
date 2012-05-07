@@ -185,9 +185,9 @@ module estimate_scm_microphys_module
       in_cloud_points     = 0
       out_of_cloud_points = 0
       do sample = 1, n_micro_calls, 1
-        if ( s_mellor_all_points(k_lh_start,sample) > 0._core_rknd) then
+        if ( s_mellor_all_points(k_lh_start,sample) > 0._dp ) then
           in_cloud_points = in_cloud_points + 1
-        else if ( s_mellor_all_points(k_lh_start,sample) <= 0._core_rknd) then
+        else if ( s_mellor_all_points(k_lh_start,sample) <= 0._dp ) then
           out_of_cloud_points = out_of_cloud_points + 1
         end if
       end do ! 1..n_micro_calls
@@ -288,13 +288,15 @@ module estimate_scm_microphys_module
       end if
 
       do ivar = 1, hydromet_dim
-        lh_hydromet_vel_sum(:,ivar) = lh_hydromet_vel_sum(:,ivar) + lh_hydromet_vel(:,ivar)
-        lh_hydromet_mc_sum(:,ivar) = lh_hydromet_mc_sum(:,ivar) + lh_hydromet_mc(:,ivar)
+        lh_hydromet_vel_sum(:,ivar) = lh_hydromet_vel_sum(:,ivar) &
+                                    + real( lh_hydromet_vel(:,ivar), kind=dp )
+        lh_hydromet_mc_sum(:,ivar) = lh_hydromet_mc_sum(:,ivar) &
+                                   + real( lh_hydromet_mc(:,ivar), kind=dp )
       end do
 
-      lh_rcm_mc_sum(:) = lh_rcm_mc_sum(:) + lh_rcm_mc(:)
-      lh_rvm_mc_sum(:) = lh_rvm_mc_sum(:) + lh_rvm_mc(:)
-      lh_thlm_mc_sum(:) = lh_thlm_mc_sum(:) + lh_thlm_mc(:)
+      lh_rcm_mc_sum(:) = lh_rcm_mc_sum(:) + real( lh_rcm_mc(:), kind=dp )
+      lh_rvm_mc_sum(:) = lh_rvm_mc_sum(:) + real( lh_rvm_mc(:), kind=dp )
+      lh_thlm_mc_sum(:) = lh_thlm_mc_sum(:) + real( lh_thlm_mc(:), kind=dp )
 
       ! Loop to get new sample
     end do ! sample = 1, n_micro_calls
@@ -302,13 +304,15 @@ module estimate_scm_microphys_module
 
     ! Grid box average.
     forall( ivar = 1:hydromet_dim )
-      lh_hydromet_vel(:,ivar) = lh_hydromet_vel_sum(:,ivar) / real( n_micro_calls, kind=core_rknd )
-      lh_hydromet_mc(:,ivar) = lh_hydromet_mc_sum(:,ivar) / real( n_micro_calls, kind=core_rknd )
+      lh_hydromet_vel(:,ivar) = real( lh_hydromet_vel_sum(:,ivar), kind=core_rknd ) &
+                              / real( n_micro_calls, kind=core_rknd )
+      lh_hydromet_mc(:,ivar) = real( lh_hydromet_mc_sum(:,ivar), kind=core_rknd ) &
+                             / real( n_micro_calls, kind=core_rknd )
     end forall
 
-    lh_rcm_mc = lh_rcm_mc_sum / real( n_micro_calls, kind=core_rknd )
-    lh_rvm_mc = lh_rvm_mc_sum / real( n_micro_calls, kind=core_rknd )
-    lh_thlm_mc = lh_thlm_mc_sum / real( n_micro_calls, kind=core_rknd )
+    lh_rcm_mc = real( lh_rcm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
+    lh_rvm_mc = real( lh_rvm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
+    lh_thlm_mc = real( lh_thlm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
 
     return
   end subroutine est_single_column_tndcy

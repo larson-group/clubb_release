@@ -155,7 +155,7 @@ module latin_hypercube_driver_module
     real(kind=core_rknd) :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
 
     ! Try to obtain 12 digit accuracy for a diagnostic mean
-    real(kind=selected_real_kind( p=12 ) ) :: mean_weight
+    real(kind=dp) :: mean_weight
 
     real(kind=dp), dimension(n_micro_calls) :: &
       X_u_dp1_k_lh_start, X_u_s_mellor_k_lh_start
@@ -432,11 +432,11 @@ module latin_hypercube_driver_module
 
     ! Assertion check to ensure that the sample point weights sum to approximately 1
     if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) ) then
-      mean_weight = 0._core_rknd
+      mean_weight = 0._dp
       do sample = 1, n_micro_calls
         mean_weight = mean_weight + LH_sample_point_weights(sample)
       end do
-      mean_weight = mean_weight / real( n_micro_calls, kind=core_rknd )
+      mean_weight = mean_weight / real( n_micro_calls, kind=dp )
 
       ! Using more precision for mean_weight should make this work out.
       ! The formula below could probably be redefined to estimate maximal ulps
@@ -444,7 +444,7 @@ module latin_hypercube_driver_module
       ! n_micro_calls, but the formula below seems to be an ok approximation
       ! when we're using 4 or 8 byte precision floats.
       ! -dschanen 19 Nov 2010
-      if ( abs( mean_weight - 1.0_core_rknd ) > &
+      if ( abs( mean_weight - 1.0_dp ) > &
            real( n_micro_calls, kind=core_rknd ) * epsilon( LH_sample_point_weights ) ) then
         write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
         stop
