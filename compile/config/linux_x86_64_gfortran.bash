@@ -8,8 +8,8 @@
 # Fedora Core.
 
 # Fortran 95 compiler and linker
-FC=gfortran44
-LD=gfortran44
+FC=gfortran
+LD=gfortran
 
 # Define path to directories
 dir=`pwd` # dir where this script resides
