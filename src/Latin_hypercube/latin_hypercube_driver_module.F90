@@ -511,8 +511,8 @@ module latin_hypercube_driver_module
     ! Verify total water isn't negative
     if ( any( LH_rt < 0._core_rknd) ) then
       if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) "Total water negative in LH sample"
-        write(fstderr,*) "Applying non-conservative hard clipping to rv sample."
+        write(fstderr,*) "Total water negative in LH sample point"
+        write(fstderr,*) "Applying non-conservative hard clipping to rv sample point."
       end if ! clubb_at_least_debug_level( 1 )
       where ( LH_rt < 0._core_rknd)
         LH_rt = zero_threshold
@@ -1363,7 +1363,7 @@ module latin_hypercube_driver_module
         "cloudy samples =", number_cloudy_samples
       write(fstderr,*) "cloud_frac1 = ", cloud_frac1
       write(fstderr,*) "cloud_frac2 = ", cloud_frac2
-      stop "Fatal Error"
+      !stop "Fatal Error"
     end if
 
     return
