@@ -1,3 +1,4 @@
+% $Id$
 function [ P_i ] = PDF_comp_Normal( x, mu_x_i, sigma_x_i )
 
 % This function calculates probability density given by the Probability

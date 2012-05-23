@@ -1,3 +1,4 @@
+% $Id$
 function [ P_i ] = PDF_comp_Lognormal( x, mu_x_ni, sigma_x_ni )
 
 % This function calculates probability density given by the Probability
