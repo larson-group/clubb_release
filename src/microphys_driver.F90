@@ -1372,15 +1372,15 @@ module microphys_driver
         l_latin_hypercube_input = .false.
         rvm = rtm - rcm
         if ( l_predictnc ) then
-          Ncm_in_cloud = hydromet(:,iiNcm)
+          Ncm = hydromet(:,iiNcm)
         else
-          Ncm_in_cloud = -999._core_rknd ! Not used in the Morrison code
+          Ncm = -999._core_rknd ! Not used in the Morrison code
         end if
         call morrison_micro_driver & 
              ( dt, gr%nz, l_stats_samp, l_local_kk_input, &
                l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, wtmp, &
-               delta_zt, rcm, Ncm_in_cloud, s_mellor, rvm, hydromet, hydromet_mc, &
+               delta_zt, rcm, Ncm, s_mellor, rvm, hydromet, hydromet_mc, &
                hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,  &
@@ -1467,9 +1467,9 @@ module microphys_driver
       ! Compute the in cloud value of Nc from a fixed number; the current code
       ! uses a fixed number for this value
       where ( rcm >= rc_tol )
-        Ncm_in_cloud = Ncm_initial / rho ! Convert to #/kg air
+        Ncm = cloud_frac * ( Ncm_initial / rho ) ! Convert to #/kg air
       else where
-        Ncm_in_cloud = 0.0_core_rknd
+        Ncm = 0.0_core_rknd
       end where
 
       ! Call the microphysics if we don't want to have feedback effects from the
@@ -1482,7 +1482,7 @@ module microphys_driver
         call KK_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
                               l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
                               exner, rho, cloud_frac, pdf_params, wtmp, &
-                              delta_zt, rcm, Ncm_in_cloud, s_mellor, rvm, hydromet, &
+                              delta_zt, rcm, Ncm, s_mellor, rvm, hydromet, &
                               hydromet_mc, hydromet_vel_zt, &
                               rcm_mc, rvm_mc, thlm_mc, &
                               wprtp_mc_tndcy, wpthlp_mc_tndcy, & 
@@ -1494,8 +1494,7 @@ module microphys_driver
       if ( l_stats_samp ) then
 
         ! Output the grid box mean and in cloud values of Nc
-        call stat_update_var( iNcm_in_cloud, Ncm_in_cloud, zt )
-        call stat_update_var( iNcm, Ncm_in_cloud * cloud_frac, zt )
+        call stat_update_var( iNcm, Ncm, zt )
 
         ! Sedimentation velocity for rrainm
         call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zm )
