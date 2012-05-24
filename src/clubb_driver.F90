@@ -3678,7 +3678,7 @@ module clubb_driver
 
       call LH_subcolumn_generator &
            ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
-             thlm, pdf_params, wm_zt, 1._core_rknd/gr%invrs_dzt, rcm, Ncm, rtm-rcm, & ! In
+             thlm, pdf_params, wm_zt, gr%dzt, rcm, Ncm, rtm-rcm, & ! In
              hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
              corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
              X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out 

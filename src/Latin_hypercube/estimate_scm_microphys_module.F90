@@ -36,9 +36,6 @@ module estimate_scm_microphys_module
       hydromet_dim ! Variable
 
     use parameters_microphys, only: &
-      Ncm_initial
-
-    use parameters_microphys, only: &
       l_lh_cloud_weighted_sampling
 
     use corr_matrix_module, only: &
@@ -226,7 +223,7 @@ module estimate_scm_microphys_module
 
       s_mellor_column = real( s_mellor_all_points(:,sample), kind = core_rknd )
 
-      where( s_mellor_all_points(:,sample) > 0.0_dp )
+      where ( s_mellor_all_points(:,sample) > 0.0_dp )
         rc_column = real( s_mellor_all_points(:,sample), kind = core_rknd )
       else where
         rc_column = 0.0_core_rknd
