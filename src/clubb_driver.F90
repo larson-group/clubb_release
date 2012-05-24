@@ -343,8 +343,6 @@ module clubb_driver
       thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
       rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
-    real( kind = core_rknd ) :: sigma_g
-
     logical :: l_restart_input
 
     ! Definition of namelists
@@ -728,17 +726,6 @@ module clubb_driver
     call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & !Intent(in)
                          hydromet_dim )                    ! Intent(out)
 
-    ! Set the value of sigma_g to be used for cloud_sed module
-    ! It is set here because calling runtype into advance_clubb_microphys
-    ! causes a bug. kcwhite Aug 2010
-    if ( trim( runtype ) == 'astex_a209' ) then
-      sigma_g = 1.2_core_rknd
-
-    else
-      sigma_g = 1.5_core_rknd
-
-    end if
-
     ! Setup radiation parameters
     call init_radiation( iunit, runfile, case_info_file ) ! Intent(in)
 #ifdef UNRELEASED_CODE /* Special case for LBA */
@@ -1062,7 +1049,7 @@ module clubb_driver
            ( itime, dt_main, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
              rtm, rcm, wm_zt, wm_zm,                               & ! Intent(in)
              Kh_zm, wp2_zt, Lscale, pdf_params,                    & ! Intent(in)
-             rho_ds_zt, rho_ds_zm, sigma_g,                        & ! Intent(in)
+             rho_ds_zt, rho_ds_zm,                                 & ! Intent(in)
              Ncnm, hydromet,                                       & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc,                              & ! Intent(inout)
              wprtp_mc_tndcy, wpthlp_mc_tndcy,                      & ! Intent(inout)
@@ -3486,7 +3473,7 @@ module clubb_driver
              ( iter, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
                rtm, rcm, wm_zt, wm_zm, &
                Kh_zm, wp2_zt, Lscale, pdf_params, &
-               rho_ds_zt,  rho_ds_zm, sigma_g, & 
+               rho_ds_zt,  rho_ds_zm, & 
                Ncnm, hydromet, &
                rvm_mc, rcm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
@@ -3601,9 +3588,6 @@ module clubb_driver
       rho_ds_zt, & ! Dry, static density on thermo. levels     [kg/m^3]
       rho_ds_zm    ! Dry, static density on moment. levels     [kg/m^3]
 
-    real( kind = core_rknd ), intent(in) :: &
-      sigma_g ! Geometric std. dev. of cloud droplets falling in a stokes regime
-
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       Ncnm ! Cloud nuclei number concentration (COAMPS microphyics)     [#/kg]
@@ -3685,7 +3669,11 @@ module clubb_driver
       if ( l_predictnc ) then
         Ncm = hydromet(:,iiNcm)
       else
-        Ncm = ( Ncm_initial / rho ) * cloud_frac
+        where ( rcm >= rc_tol )
+          Ncm = ( Ncm_initial / rho ) * cloud_frac
+        else where
+          Ncm = 0._core_rknd
+        end where
       end if
 
       call LH_subcolumn_generator &
@@ -3714,69 +3702,24 @@ module clubb_driver
     ! Compute Microphysics
     !----------------------------------------------------------------
 
-    ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS for rain microphysics.
+    call advance_microphys &
+         ( iter, runtype, dt, time_current, &                         ! Intent(in)
+           thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
+           wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
+           wp2_zt, rho_ds_zt, rho_ds_zm, LH_sample_point_weights, &   ! Intent(in)
+           X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
+           Ncnm, hydromet, &                                          ! Intent(inout)
+           rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
+           wprtp_mc_tndcy, wpthlp_mc_tndcy, &                         ! Intent(inout)
+           rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &         ! Intent(inout)
+           err_code_microphys )                                       ! Intent(out)
 
-    if ( trim( micro_scheme ) /= "none" ) then
-
-      call advance_microphys &
-           ( iter, runtype, dt, time_current, &                         ! Intent(in)
-             thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
-             wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
-             wp2_zt, rho_ds_zt, rho_ds_zm, LH_sample_point_weights, &   ! Intent(in)
-             X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
-             Ncnm, hydromet, &                                          ! Intent(inout)
-             rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
-             wprtp_mc_tndcy, wpthlp_mc_tndcy, &                         ! Intent(inout)
-             rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &         ! Intent(inout)
-             err_code_microphys )                                       ! Intent(out)
-
-      if ( fatal_error( err_code_microphys ) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
-          write(fstderr,*) "Fatal error in advance_clubb_microphys:"
-          call reportError( err_code_microphys )
-        end if
-        err_code = err_code_microphys
+    if ( fatal_error( err_code_microphys ) ) then
+      if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) "Fatal error in advance_clubb_microphys:"
+        call reportError( err_code_microphys )
       end if
-
-    end if
-
-
-    if ( l_cloud_sed ) then
-
-      ! Determine Ncm forcloud droplet sedimentation
-
-      ! The following lines of code specify cloud droplet
-      ! concentration (Ncm).  The cloud droplet concentration has
-      ! been moved here instead of being stated in KK_microphys
-      ! for the following reasons:
-      !    a) The effects of cloud droplet sedimentation can be computed
-      !       without having to call the precipitation scheme.
-      !    b) Ncm tends to be a case-specific parameter.  Therefore, it
-      !       is appropriate to declare in the same place as other
-      !       case-specific parameters.
-      !
-      ! Someday, we could move the setting of Ncm to pdf_closure
-      ! for the following reasons:
-      !    a) The cloud water mixing ratio (rcm) is computed using the
-      !       PDF scheme.  Perhaps someday Ncm can also be computed by
-      !       the same scheme.
-      !    b) It seems more appropriate to declare Ncm in the same place
-      !       where rcm is computed.
-      !
-      ! Since cloud base (z_cloud_base) is determined by the mixing ratio rc_tol,
-      ! so will cloud droplet number concentration (Ncm).
-
-      Ncm(:) = ( Ncm_initial / rho ) * cloud_frac
-
-      call cloud_drop_sed( rcm, Ncm, rho_zm, rho, & ! Intent(in)
-                           exner, sigma_g,  &       ! Intent(in)
-                           rcm_mc, thlm_mc )        ! Intent(inout)
-
-      if ( l_stats_samp .and. trim( micro_scheme ) == "none" ) then
-        ! Output the grid box mean and in cloud values of Nc
-!       call stat_update_var( iNcm_in_cloud, Ncm, zt )
-        call stat_update_var( iNcm, Ncm, zt )
-      end if
+      err_code = err_code_microphys
     end if
 
     return

@@ -93,6 +93,11 @@ module parameters_microphys
 
 !$omp threadprivate(Ncm_initial)
 
+  real( kind = core_rknd ), public :: &
+    sigma_g ! Geometric std. dev. of cloud droplets falling in a stokes regime.
+
+!$omp threadprivate(sigma_g)
+
   ! Statistical rain parameters        .
 
   ! Parameters for in-cloud (from SAM RF02 DO).

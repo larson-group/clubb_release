@@ -210,6 +210,10 @@ l_cloud_sed | logical
   Cloud water sedimentation (K&K or no microphysics).
   This uses the formula from the DYCOMS II RF02 specification.
 
+sigma_g	| real
+  Geometric std. dev. of cloud droplets falling in a stokes regime.  Used by
+  the cloud water sedimenation code.
+
 l_ice_micro | logical
   Compute ice and snow (COAMPS / Morrison)
 

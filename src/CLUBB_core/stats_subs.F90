@@ -2000,7 +2000,7 @@ module stats_subs
 
     use array_index, only:  & 
       iirrainm, iirsnowm, iiricem, iirgraupelm, & ! Variable(s)
-      iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
+      iiNrm, iiNsnowm, iiNim, iiNgraupelm
 
     use stats_variables, only: &
       sfc, & ! Variable(s)
@@ -2008,7 +2008,6 @@ module stats_subs
       irsnowm, & 
       iricem, & 
       irgraupelm, & 
-      iNcm, &
       iNim, & 
       iNrm, & 
       iNsnowm, &
@@ -2046,10 +2045,6 @@ module stats_subs
     ! ---- Begin Code ----
 
     if ( l_stats_samp ) then
-
-      if ( iiNcm > 0 ) then
-        call stat_update_var( iNcm, hydromet(:,iiNcm), zt )
-      end if
 
       if ( iirrainm > 0 ) then
         call stat_update_var( irrainm, hydromet(:,iirrainm), zt )

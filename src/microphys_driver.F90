@@ -39,6 +39,7 @@ module microphys_driver
     micro_scheme,                 & ! The microphysical scheme in use
     hydromet_list,                & ! Names of the hydrometeor species
     microphys_start_time,         & ! When to start the microphysics [s]
+    sigma_g,                      & ! Parameter used in the cloud droplet sedimentation code
     Ncm_initial                     ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
 
   use parameters_microphys, only: &
@@ -235,7 +236,7 @@ module microphys_driver
     character(len=128) :: corr_file_path_cloud, corr_file_path_below
 
     namelist /microphysics_setting/ &
-      micro_scheme, l_cloud_sed, &
+      micro_scheme, l_cloud_sed, sigma_g, &
       l_ice_micro, l_graupel, l_hail, l_upwind_diff_sed, &
       l_seifert_beheng, l_predictnc, specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, l_in_cloud_Nc_diff, &
@@ -265,6 +266,7 @@ module microphys_driver
     ! Cloud water sedimentation from the RF02 case
     ! This has no effect on Morrison's cloud water sedimentation
     l_cloud_sed = .false.
+    sigma_g = 1.5_core_rknd ! Parameter for cloud droplet sedimentation code (RF02 value)
 
     !--------------------------------------------------------------------------
     ! Parameters for NNUCCD & NNUCCC coefficients on clex9_oct14 case
@@ -443,6 +445,7 @@ module microphys_driver
       call write_text ( "micro_scheme = " //  micro_scheme, l_write_to_file, &
         iunit )
       call write_text ( "l_cloud_sed = ", l_cloud_sed, l_write_to_file, iunit )
+      call write_text ( "sigma_g = ", sigma_g, l_write_to_file, iunit )
       call write_text ( "l_graupel = ", l_graupel, l_write_to_file, iunit )
       call write_text ( "l_hail = ", l_hail, l_write_to_file, iunit )
       call write_text ( "l_seifert_beheng = ", l_seifert_beheng, &
@@ -880,6 +883,8 @@ module microphys_driver
     use KK_microphys_module, only: & 
         KK_micro_driver  ! Procedure(s)
 
+    use cloud_sed_module, only: cloud_drop_sed ! Procedure(s)
+
     use morrison_micro_driver_module, only: &
         morrison_micro_driver
 
@@ -1273,8 +1278,42 @@ module microphys_driver
 
         stop "Unsupported microphysics scheme for GFDL activation."
 
-      end if  ! coamps .or. morrison .or. khairoutdinov_kogan
+      end if  ! l_predictnc
     end if ! l_gfdl_activation
+
+    ! Determine how Ncm and Ncm_in_cloud will be computed
+    select case ( trim( micro_scheme ) )
+
+    case ( "coamps", "morrison", "morrison-gettelman", "khairoutdinov_kogan" )
+      if ( l_predictnc ) then
+        Ncm = hydromet(:,iiNcm)
+      else ! Compute the fixed value by multiplying by cloud fraction
+        where ( rcm >= rc_tol )
+          Ncm = cloud_frac * ( Ncm_initial / rho ) ! Convert to #/kg air
+        else where
+          Ncm = 0.0_core_rknd
+        end where
+        Ncm_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
+
+      end if
+
+    case default
+
+      if ( l_cloud_sed ) then
+        where ( rcm >= rc_tol )
+          Ncm = cloud_frac * ( Ncm_initial / rho ) ! Convert to #/kg air
+        else where
+          Ncm = 0.0_core_rknd
+        end where
+        Ncm_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
+
+      else
+        ! These quantites are undefined
+        Ncm = -999._core_rknd
+        Ncm_in_cloud = -999._core_rknd
+      end if
+
+    end select ! micro_scheme
 
     ! Begin by calling Brian Griffin's implementation of the
     ! Khairoutdinov and Kogan microphysics (analytic or local formulas),
@@ -1359,23 +1398,12 @@ module microphys_driver
 
       end if ! LH isn't disabled
 
-      ! Based on YSU PBL interface to the Morrison scheme WRF driver, the standard dev. of w
-      ! will be clipped to be between 0.1 m/s and 4.0 m/s in WRF.  -dschanen 23 Mar 2009
-!     wtmp(:) = max( 0.1_core_rknd, wtmp ) ! Disabled for now
-!     wtmp(:) = min( 4._core_rknd, wtmp )
-
-!     wtmp = 0.5_core_rknd ! %% debug
       ! Call the microphysics if we don't want to have feedback effects from the
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
         l_local_kk_input = .false.
         l_latin_hypercube_input = .false.
         rvm = rtm - rcm
-        if ( l_predictnc ) then
-          Ncm = hydromet(:,iiNcm)
-        else
-          Ncm = -999._core_rknd ! Not used in the Morrison code
-        end if
         call morrison_micro_driver & 
              ( dt, gr%nz, l_stats_samp, l_local_kk_input, &
                l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
@@ -1388,13 +1416,6 @@ module microphys_driver
 
       end if ! LH_microphys_type /= interactive
 
-      ! If we're using fixed Nc, then output the grid box mean as a diagnostic
-      if ( l_stats_samp .and. .not. l_predictnc ) then
-        Ncm(1:gr%nz) = ( Ncm_initial / rho(1:gr%nz) ) * cloud_frac(1:gr%nz)
-        call stat_update_var( iNcm, Ncm, zt )
-      end if ! l_stats_samp
-
-
     case ( "morrison-gettelman" )
 
       ! Initialize tendencies to zero
@@ -1405,15 +1426,6 @@ module microphys_driver
 
       hydromet_vel = 0.0_core_rknd
       hydromet_vel_zt = 0.0_core_rknd
-
-      ! We fix Nc for testing purposes -dschanen 5 Jan 2012
-      if ( .not. l_predictnc ) then
-        Ncm(1:gr%nz) = ( Ncm_initial / rho(1:gr%nz) ) & ! Convert to #/kg air
-               * cloud_frac(1:gr%nz)
-        if ( l_stats_samp ) then
-          call stat_update_var( iNcm, Ncm, zt )
-        end if ! l_stats_samp
-      end if
 
       ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
       ! Placed here because parameters cannot be changed on mg_microphys_driver with
@@ -1464,14 +1476,6 @@ module microphys_driver
 
       end if ! LH isn't disabled
 
-      ! Compute the in cloud value of Nc from a fixed number; the current code
-      ! uses a fixed number for this value
-      where ( rcm >= rc_tol )
-        Ncm = cloud_frac * ( Ncm_initial / rho ) ! Convert to #/kg air
-      else where
-        Ncm = 0.0_core_rknd
-      end where
-
       ! Call the microphysics if we don't want to have feedback effects from the
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
@@ -1479,6 +1483,7 @@ module microphys_driver
         l_latin_hypercube_input = .false.
         rvm = rtm - rcm
 
+        ! Note: Ncm is a fixed value set above, since KK doesn't currently predict Nc
         call KK_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
                               l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
                               exner, rho, cloud_frac, pdf_params, wtmp, &
@@ -1493,9 +1498,6 @@ module microphys_driver
 
       if ( l_stats_samp ) then
 
-        ! Output the grid box mean and in cloud values of Nc
-        call stat_update_var( iNcm, Ncm, zt )
-
         ! Sedimentation velocity for rrainm
         call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zm )
 
@@ -1504,9 +1506,21 @@ module microphys_driver
 
       end if ! l_stats_samp
 
+    case ( "simplified_ice" )
+
+      ! Call the simplified ice diffusion scheme
+      call ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, rcm_mc, thlm_mc )
+
     case default
+      ! Do nothing
 
     end select ! micro_scheme
+
+    ! Re-compute Ncm and Ncm_in_cloud if needed
+    if ( iiNcm > 0 ) then
+      Ncm = hydromet(:,iiNcm)
+      Ncm_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
+    end if
 
     !-----------------------------------------------------------------------
     !       Loop over all hydrometeor species and apply sedimentation,
@@ -1653,7 +1667,7 @@ module microphys_driver
              lhs ) ! Out
 
       if ( trim( hydromet_list(i) ) == "Ncm" .and. l_in_cloud_Nc_diff ) then
-        Ncm_in_cloud = hydromet(:,iiNcm) / max( cloud_frac, cloud_frac_min )
+        ! Ncm in cloud is computed above
         call microphys_solve &
              ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, lhs, &
                hydromet_mc(:,i)/max( cloud_frac, cloud_frac_min ),  & 
@@ -1822,20 +1836,42 @@ module microphys_driver
 
     end do ! i=1..hydromet_dim
 
-    ! Call the ice diffusion scheme
-    if ( trim( micro_scheme ) == "simplified_ice" ) then
-      call ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, rcm_mc, thlm_mc )
-    end if
+    if ( l_cloud_sed ) then
+
+      ! For the GCSS DYCOMS II RF02 case the following lines of code are 
+      ! currently setup to use a specified cloud droplet number
+      ! concentration (Ncm).  The cloud droplet concentration has
+      ! been moved here instead of being stated in KK_microphys
+      ! for the following reasons:
+      !    a) The effects of cloud droplet sedimentation can be computed
+      !       without having to call the precipitation scheme.
+      !    b) Ncm tends to be a case-specific parameter.  Therefore, it
+      !       is appropriate to declare in the same place as other
+      !       case-specific parameters.
+      !
+      ! Someday, we could move the setting of Ncm to pdf_closure
+      ! for the following reasons:
+      !    a) The cloud water mixing ratio (rcm) is computed using the
+      !       PDF scheme.  Perhaps someday Ncm can also be computed by
+      !       the same scheme.
+      !    b) It seems more appropriate to declare Ncm in the same place
+      !       where rcm is computed.
+      !
+      ! Since cloud base (z_cloud_base) is determined by the mixing ratio rc_tol,
+      ! so will cloud droplet number concentration (Ncm).
+
+      call cloud_drop_sed( rcm, Ncm, rho_zm, rho, & ! Intent(in)
+                           exner, sigma_g,  &       ! Intent(in)
+                           rcm_mc, thlm_mc )        ! Intent(inout)
+    end if ! l_cloud_sed
 
     if ( l_stats_samp ) then
-      if ( iiNcm > 0 ) then
-        call stat_update_var( iNcm_in_cloud, &
-               hydromet(:, iiNcm) / max( cloud_frac, cloud_frac_min ) , zt )
-      end if
-
       call stat_update_var( iNcnm, Ncnm, zt )
 
-
+      ! In the case where Ncm is neither a fixed number nor predicted these will
+      ! be set to -999.
+      call stat_update_var( iNcm, Ncm, zt )
+      call stat_update_var( iNcm_in_cloud, Ncm_in_cloud, zt )
     end if ! l_stats_samp
 
     if ( l_stats_samp .and. iirrainm > 0 ) then
@@ -1993,7 +2029,6 @@ module microphys_driver
     use stats_variables, only: & 
         iNcm_ma, & 
         iNcm_dff
-
 
     use stats_type, only: stat_update_var_pt ! Procedure(s)
 
