@@ -7,20 +7,20 @@ function [ P_i ] ...
 
 % This function calculates probability density given by the Probability
 % Density Function (PDF) for a quadrivariate normal distribution.  Since
-% the overall PDF consists of mulitple components, this function gives the
+% the overall PDF consists of multiple components, this function gives the
 % results for one component, i.
 
-% x1:  a variable that has a normal marginal distribution in the ith
-%      component of the PDF.
+% x1:  a variable that has a normal individual marginal distribution in
+%      the ith component of the PDF.
 %
-% x2:  a variable that has a normal marginal distribution in the ith
-%      component of the PDF.
+% x2:  a variable that has a normal individual marginal distribution in
+%      the ith component of the PDF.
 %
-% x3:  a variable that has a normal marginal distribution in the ith
-%      component of the PDF.
+% x3:  a variable that has a normal individual marginal distribution in
+%      the ith component of the PDF.
 %
-% x4:  a variable that has a normal marginal distribution in the ith
-%      component of the PDF.
+% x4:  a variable that has a normal individual marginal distribution in
+%      the ith component of the PDF.
 %
 % mu_x1_i:  the mean of x1 in the ith component of the PDF.  The overall
 %           mean of x1 is x1_bar.
