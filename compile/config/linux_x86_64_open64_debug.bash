@@ -31,8 +31,8 @@ NETCDF="/usr/local/netcdf-open64"
 
 # == LAPACK libraries ==
 #LAPACK="-llapack -lblas"
-ACML_PATH="/opt/acml4.4.0/open64_64/lib"
-LAPACK="-L$ACML_PATH -Wl,-rpath $ACML_PATH -lacml -lacml_mv"
+ACML_PATH="/opt/acml5.0.0/open64_64/lib"
+LAPACK="-L$ACML_PATH -Wl,-rpath $ACML_PATH -lacml"
 
 # == Linking Flags ==
 LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK"
@@ -46,7 +46,7 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
-CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DBYTESWAP_IO -DCLUBB_REAL_TYPE=8"
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DBYTESWAP_IO -DCLUBB_REAL_TYPE=4"
 CPPFLAGS="-I$NETCDF/include"
 
 # == Static library processing ==
