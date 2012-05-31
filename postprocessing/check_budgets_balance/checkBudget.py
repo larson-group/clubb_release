@@ -242,7 +242,7 @@ def findGradsErrorsAtTimestep(iteration, ctlFile, fileName, numVarsIndx, numVars
             if componentTerm == termName:
             
                 # Vars in the budget have descriptions that include "budget:"
-                if line.find("budget:") != -1 and re.match("rrainm_src_adj", line) == None and re.match("Nrm_src_adj", line) == None:
+                if line.find("budget:") != -1:
                     
                     componentValue = array(readBinaryData.readGradsData \
                         (FILEPATH + datFileName, numLevels, iteration, iteration, varNum, numVars))
