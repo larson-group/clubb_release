@@ -1,10 +1,8 @@
 function PDF_integrate_fnc_driver
 
-%for x2_opt = 1:1:3
-for x2_opt = 2:1:3
+for x2_opt = 1:1:3
 
-   %for i = 1:1:11
-   for i = 1:1:1
+   for i = 1:1:11
 
       switch i
          case 1

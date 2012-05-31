@@ -19,16 +19,16 @@ addpath( '../' )
 
 format long
 
-x1_bar = 2.0e-2;
+x1_bar = -0.5;
 x2_alpha_x3_beta_x4_gamma_bar = -2.0e-4;
 
 % The actual means, variances, and correlations of x1, x2, x3, and x4.
-mu_x1 = 1.0e-2;
+mu_x1 = -1.0;
 %mu_x2 = -1.0e-3;
 mu_x3 = 1.0e-4;
-mu_x4 = 1.0e+2;
-sigma_x3 = 1.25e-5;
-sigma_x4 = 8.0e+0;
+mu_x4 = 100.0;
+sigma_x3 = 2.0e-5;
+sigma_x4 = 20.0;
 rho_x3x4 = 0.3;
 if ( x2_opt == 1 )
    % Since sigma_x2 = 0, x2 is less than 0.

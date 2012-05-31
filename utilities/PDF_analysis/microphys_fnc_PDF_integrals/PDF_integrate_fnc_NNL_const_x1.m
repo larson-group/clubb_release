@@ -19,15 +19,15 @@ addpath( '../' )
 
 format long
 
-x1_bar = 2.0e-2;
+x1_bar = -0.5;
 x2_alpha_x3_beta_bar = 1.0e-8; 
 
 % The actual means, variances, and correlations of x1, x2, and x3.
-mu_x1 = 1.0e-2;
+mu_x1 = -1.0;
 %mu_x2 = 1.0e-3;
 mu_x3 = 1.0e-4;
 %sigma_x2 = 1.25e-4;
-sigma_x3 = 1.25e-5;
+sigma_x3 = 2.0e-5;
 rho_x2x3 = -0.05;
 if ( x2_opt == 1 )
    % The individual marginal PDF of x2 is basically entirely greater than 0.
