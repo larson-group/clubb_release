@@ -1426,7 +1426,7 @@ module stats_zt
         irrainm_cond = k
 
         call stat_assign( irrainm_cond, "rrainm_cond", & 
-             "rrainm condensation/evaporation [kg kg^{-1} s^{-1}]", &
+             "rrainm budget: rrainm condensation/evaporation [kg kg^{-1} s^{-1}]", &
              "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
@@ -1434,13 +1434,13 @@ module stats_zt
         irrainm_auto = k
 
         call stat_assign( irrainm_auto, "rrainm_auto", & 
-             "rrainm autoconversion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm autoconversion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_accr')
         irrainm_accr = k
         call stat_assign( irrainm_accr, "rrainm_accr", & 
-             "rrainm accretion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm accretion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_cond_adj')
@@ -1469,7 +1469,7 @@ module stats_zt
         irrainm_mc = k
 
         call stat_assign( irrainm_mc, "rrainm_mc", & 
-             "rrainm budget: Change in rrainm due to microphysics [kg kg^{-1} s^{-1}]", &
+             "Change in rrainm due to microphysics [kg kg^{-1} s^{-1}]", &
              "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
@@ -1506,14 +1506,14 @@ module stats_zt
         iNrm_cond = k
 
         call stat_assign( iNrm_cond, "Nrm_cond", & 
-             "Change in Nrm due to condensation [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Change in Nrm due to condensation [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nrm_auto')
         iNrm_auto = k
 
         call stat_assign( iNrm_auto, "Nrm_auto", & 
-             "Change in Nrm due to autoconversion [(num/kg)/s]", "(num/kg)/s", zt )
+             "Nrm budget: Change in Nrm due to autoconversion [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1542,7 +1542,7 @@ module stats_zt
       case ('Nrm_mc')
         iNrm_mc = k
         call stat_assign( iNrm_mc, "Nrm_mc", & 
-             "Nrm budget: Change in Nrm due to microphysics (Not in budget) [(num/kg)/s]", &
+             "Change in Nrm due to microphysics (Not in budget) [(num/kg)/s]", &
              "(num/kg)/s", zt )
         k = k + 1
 
