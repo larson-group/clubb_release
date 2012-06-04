@@ -1,4 +1,4 @@
-function[] = voca_output_creator( )
+function[] = voca_output_creator2( infile_name, action )
 % VOCA_OUTPUT_CREATOR This function creates netCDF files required by the VOCA
 % 3-d intercomparison. It uses WRF-CLUBB output files as source information.
 %
@@ -29,9 +29,45 @@ function[] = voca_output_creator( )
 %           functions.
 %
 
+%   @params: 
+%   infile_name - string containing the path to the wrfout file
+%   action - string that specifies the action of this script after reading
+%   the data ('write', 'plot', 'keyboard')
+%       
+%       -> 'write': writes the netCDF output for the intercomparison
+%       -> 'plot': plots cloud cover and liquid water path
+%       -> 'keyboard': stops the code after reading and interpolating the data
+%       and waits for user input
+
 
 % Necessary include
 addpath '../../matlab_include/' 
+
+% initialize and set nuber of files
+numfiles=0;
+
+% checking the input args
+if ischar(infile_name)==1
+    numfiles=1;
+end
+
+if iscellstr(infile_name)==1
+    s=size(infile_name)
+    numfiles=s(1);
+end
+
+i_action = 0; % integer to determine the user action (0 = undefined, 1 = write, 2 = plot)
+if strcmp(action,'write')==1
+    i_action = 1;
+elseif strcmp(action, 'plot')==1
+    i_action = 2;
+elseif strcmp(action, 'keyboard')==1
+    i_action = 3;
+else
+    disp('Fatal Error: Action cannot be determined!');
+    return
+end
+    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -42,16 +78,16 @@ addpath '../../matlab_include/'
 curr_case = 'VOCA';
 
 % set number of files
-numfiles=3;
+%numfiles=1;
 
 % define filenames
 % These files are stored on hd1 in 
 %   /share6/LS/ldgrant_a/VOCA_output/VOCA_runs_from_bluefire/VOCA_78/
 % each file is in a subdirectory within VOCA_78/.  I copied these files
 % over to steele in order to run this script.
-WRFout_filename1 = 'VOCA_78/wrfout_d01_2008-10-12_00:00:00';
-WRFout_filename2 = 'VOCA_78/wrfout_d01_2008-10-23_00:00:00';
-WRFout_filename3 = 'VOCA_78/wrfout_d01_2008-11-05_12:00:00';
+% WRFout_filename1 = '/home/matlabuser/hoft/wrfout_d01_2008-10-14_00:00:00';
+% WRFout_filename2 = 'VOCA_78/wrfout_d01_2008-10-23_00:00:00';
+% WRFout_filename3 = 'VOCA_78/wrfout_d01_2008-11-05_12:00:00';
 % Created file on 2011-7-15
 
 % set up domain for output - do this here outside of the loop
@@ -73,103 +109,104 @@ totaltimes= 8.0*32.0+1; % = 257 times; for the output file, this will be 256 3-h
 % runs.  This loop ends after the interpolation to the voca domain.
 for ifilenum=1:numfiles
 
-if ifilenum==1
-  % Open the WRF netCDF file and read information
-  ncid = netcdf.open(WRFout_filename1,'NOWRITE'); % use ncid to reference WRF file
-elseif ifilenum==2
-  ncid = netcdf.open(WRFout_filename2,'NOWRITE');
-elseif ifilenum==3
-  ncid = netcdf.open(WRFout_filename3,'NOWRITE');
-end
-        
-
-[numdims,numvars,numglobalatts,unlimdimid] = netcdf.inq(ncid);
-
-% This loops through all dimensions and sets their values
-% e.g. bottom_top = 44, the number of unstaggered vertical levels 
-for i=1:numdims
-    [dimname,dimlen] = netcdf.inqDim(ncid,i-1);
-    eval([dimname,' = dimlen']) % print out dimensions
-end
-
-% Rename Time dimension name since it needs to be used later
-numTimes=Time; clear Time
-
-% Array of WRF variables to get
-% Only get variables necessary since WRF files are so large
-WRFvars = [
-    'Times   ' % 19-length time characters: yyyy-mm-dd_hh:mm:ss
-    'ZNU     ' % eta values unstaggered in z, half (mass) levels
-    'ZNW     ' % eta values staggered in z, full (w) levels
-    'P_TOP   ' % Pressure of model top, Pa
-    'U       ' % u-wind, m/s (staggered in x)
-    'V       ' % v-wind, m/s (staggerd in y)
-    'W       ' % vertical velocity, m/s (staggered in z)
-    'PH      ' % perturbation geopotential, m2/s2 (staggered in z)
-    'PHB     ' % base-state geopotential, m2/s2 (staggered in z)
-    'T       ' % perturbation potential temp, K (base state always 300 K)
-    'P       ' % perturbation pressure, Pa
-    'PB      ' % base state pressure, Pa
-    'PSFC    ' % surface pressure, Pa
-    'Q2      ' % 2-m Qv, kg/kg
-    'T2      ' % 2-m Temp, K
-    'U10     ' % 10-m u-wind, m/s
-    'V10     ' % 10-m v-wind, m/s
-    'QVAPOR  ' % water vapor mix ratio, kg/kg
-    'QCLOUD  ' % cloud water mix ratio, kg/kg
-    'QRAIN   ' % rain water mix ratio, kg/kg
-    'QICE    ' % ice water mix ratio, kg/kg
-    'RAINNC  ' % accumulated total grid scale precip, mm
-    'LANDMASK' % 1=land, 0=water
-    'CF_CLUBB' % clubb cloud frac
-    'HGT     ' % terrain height, m
-    'TSK     ' % surface skin temp, K
-    'XLAT    ' % latitude
-    'XLONG   ' % longitude
-    'XLAT_U  ' % latitude staggered in x-dir
-    'XLONG_U ' % longitude staggered in x-dir
-    'XLAT_V  ' % latitude staggered in y-dir
-    'XLONG_V ' % longitude staggered in y-dir
-    'HFX     ' % Upward heat flux at sfc, W/m2
-    'LH      ' % Latent heat flux at sfc, W/m2
-    'OLR     ' % TOA outgoing LW, W/m2
-    'GLW     ' % Sfc downward LW flux, W/m2
-    'SWDOWN  ' % Sfc downward SW flux, W/m2
-    ];
-
-for i=1:numvars
-    varname = netcdf.inqVar(ncid,i-1);
-    getvar='F';
-    for j=1:size(WRFvars,1)
-        if strcmp( varname, strtrim(WRFvars(j,:)) ) == 1;
-            getvar='T';
-        end
+    % if there is only 1 file to read, infile_name is a string; otherwise
+    % it's a cellstring
+    if numfiles==1
+        ncid = netcdf.open(infile_name,'NOWRITE');
+    else
+        % Open the WRF netCDF file and read information
+        ncid = netcdf.open(char(infile_name(ifilenum)),'NOWRITE'); % use ncid to reference WRF file
     end
     
-    if strcmp(getvar,'T') == 1
-        data = netcdf.getVar(ncid,i-1);
-        eval([varname,' = data;']);
+    % ncid = netcdf.open(infile_name,'NOWRITE'); % use ncid to reference WRF file
+
+    [numdims,numvars,numglobalatts,unlimdimid] = netcdf.inq(ncid);
+
+    % This loops through all dimensions and sets their values
+    % e.g. bottom_top = 44, the number of unstaggered vertical levels 
+    for i=1:numdims
+        [dimname,dimlen] = netcdf.inqDim(ncid,i-1);
+        eval([dimname,' = dimlen']) % print out dimensions
     end
-end
-clear getvar varname data;
 
-% Close the WRF output file which was read
-netcdf.close(ncid)
-clear ncid
-disp('Done reading in WRF variables for file:'); disp(ifilenum);
+    % Rename Time dimension name since it needs to be used later
+    numTimes=Time; clear Time
 
-% compress variables that don't vary in time
-XLAT1(:,:)=XLAT(:,:,1); clear XLAT;
-XLONG1(:,:)=XLONG(:,:,1); clear XLONG;
-XLAT1_U(:,:)=XLAT_U(:,:,1); clear XLAT_U;
-XLONG1_U(:,:)=XLONG_U(:,:,1); clear XLONG_U;
-XLAT1_V(:,:)=XLAT_V(:,:,1); clear XLAT_V;
-XLONG1_V(:,:)=XLONG_V(:,:,1); clear XLONG_V;
-HGT1(:,:)=HGT(:,:,1); clear HGT;
-LANDMASK1(:,:)=LANDMASK(:,:,1); clear LANDMASK
-eta(:,1)=ZNU(:,1); clear ZNU
-eta_stag(:,1)=ZNW(:,1); clear ZNW;
-Ptop=P_TOP(1); clear P_TOP;
+    % Array of WRF variables to get
+    % Only get variables necessary since WRF files are so large
+    WRFvars = [
+        'Times   ' % 19-length time characters: yyyy-mm-dd_hh:mm:ss
+        'ZNU     ' % eta values unstaggered in z, half (mass) levels
+        'ZNW     ' % eta values staggered in z, full (w) levels
+        'P_TOP   ' % Pressure of model top, Pa
+        'U       ' % u-wind, m/s (staggered in x)
+        'V       ' % v-wind, m/s (staggerd in y)
+        'W       ' % vertical velocity, m/s (staggered in z)
+        'PH      ' % perturbation geopotential, m2/s2 (staggered in z)
+        'PHB     ' % base-state geopotential, m2/s2 (staggered in z)
+        'T       ' % perturbation potential temp, K (base state always 300 K)
+        'P       ' % perturbation pressure, Pa
+        'PB      ' % base state pressure, Pa
+        'PSFC    ' % surface pressure, Pa
+        'Q2      ' % 2-m Qv, kg/kg
+        'T2      ' % 2-m Temp, K
+        'U10     ' % 10-m u-wind, m/s
+        'V10     ' % 10-m v-wind, m/s
+        'QVAPOR  ' % water vapor mix ratio, kg/kg
+        'QCLOUD  ' % cloud water mix ratio, kg/kg
+        'QRAIN   ' % rain water mix ratio, kg/kg
+        'QICE    ' % ice water mix ratio, kg/kg
+        'RAINNC  ' % accumulated total grid scale precip, mm
+        'LANDMASK' % 1=land, 0=water
+        'CF_CLUBB' % clubb cloud frac
+        'HGT     ' % terrain height, m
+        'TSK     ' % surface skin temp, K
+        'XLAT    ' % latitude
+        'XLONG   ' % longitude
+        'XLAT_U  ' % latitude staggered in x-dir
+        'XLONG_U ' % longitude staggered in x-dir
+        'XLAT_V  ' % latitude staggered in y-dir
+        'XLONG_V ' % longitude staggered in y-dir
+        'HFX     ' % Upward heat flux at sfc, W/m2
+        'LH      ' % Latent heat flux at sfc, W/m2
+        'OLR     ' % TOA outgoing LW, W/m2
+        'GLW     ' % Sfc downward LW flux, W/m2
+        'SWDOWN  ' % Sfc downward SW flux, W/m2
+        ];
+
+    for i=1:numvars
+        varname = netcdf.inqVar(ncid,i-1);
+        getvar='F';
+        for j=1:size(WRFvars,1)
+            if strcmp( varname, strtrim(WRFvars(j,:)) ) == 1;
+                getvar='T';
+            end
+        end
+
+        if strcmp(getvar,'T') == 1
+            data = netcdf.getVar(ncid,i-1);
+            eval([varname,' = data;']);
+        end
+    end
+    clear getvar varname data;
+
+    % Close the WRF output file which was read
+    netcdf.close(ncid)
+    clear ncid
+    disp('Done reading in WRF variables for file:');disp(infile_name); %disp(ifilenum);
+
+    % compress variables that don't vary in time
+    XLAT1(:,:)=XLAT(:,:,1); clear XLAT;
+    XLONG1(:,:)=XLONG(:,:,1); clear XLONG;
+    XLAT1_U(:,:)=XLAT_U(:,:,1); clear XLAT_U;
+    XLONG1_U(:,:)=XLONG_U(:,:,1); clear XLONG_U;
+    XLAT1_V(:,:)=XLAT_V(:,:,1); clear XLAT_V;
+    XLONG1_V(:,:)=XLONG_V(:,:,1); clear XLONG_V;
+    HGT1(:,:)=HGT(:,:,1); clear HGT;
+    LANDMASK1(:,:)=LANDMASK(:,:,1); clear LANDMASK
+    eta(:,1)=ZNU(:,1); clear ZNU
+    eta_stag(:,1)=ZNW(:,1); clear ZNW;
+    Ptop=P_TOP(1); clear P_TOP;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -177,106 +214,126 @@ Ptop=P_TOP(1); clear P_TOP;
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if ifilenum==1
-  % Find index of initial time (Oct 15)
-  % This checks the 10th row of Times, which is the second
-  % digit of the date, and returns the first index for which 
-  % the 2nd digit of the date is > 4, i.e. finds the index of
-  % Oct 15 00Z.  This works if the model start time is not before Oct 06
-  % Only do this if reading the first file
-  tWRFstart = find(Times(10,:)=='5',1,'first');
-  tWRFend = numTimes;
-  
-  tstart1=1; tend1=numTimes-tWRFstart+1;
-  
-  tstart=tstart1; tend=tend1; % set for loop
-elseif ifilenum==2
-  tWRFstart = 2; % because time 1 in this wrfout file is identical to the end time from the previous file
-  tWRFend = numTimes;
-  
-  tstart2=tend1+1; tend2=tstart2+numTimes-2;
-  
-  tstart=tstart2; tend=tend2; % set for loop
-elseif ifilenum==3
-  tWRFstart = 2; % because time 1 in this wrfout file is identical to the end time from the previous file
-  tWRFend = numTimes;
-  
-  tstart3=tend2+1; tend3=tstart3+numTimes-2;
-  
-  tstart=tstart3; tend=tend3; % set for loop
-end
 
 
-% allocate space for speed, but allocate for the entire duration
-% (totaltimes); therefore, only do this on first pass through loop
-if ifilenum==1
-  u=zeros(length(voca_lons),length(voca_lats),bottom_top,totaltimes);
-  v=u; theta=u; press=u; qvapor=u; qcloud=u; qrain=u; qice=u; cf=u;
-end
-% Interpolate data to lats,lons domain and clear other arrays for memory
-for n = tstart:tend
-  % unstaggered variables
-  nwrf=n-tstart+tWRFstart;
-  for k = 1:bottom_top % # of unstagerred vertical levels
-      % U and V are staggered in x- and y- directions as well
-      u(:,:,k,n) = interp2(XLAT1_U,XLONG1_U,U(:,:,k,nwrf),lats,lons); 
-      v(:,:,k,n) = interp2(XLAT1_V,XLONG1_V,V(:,:,k,nwrf),lats,lons); 
-      % Potential temp = base state theta (=300K) + perturbation theta
-      theta(:,:,k,n) = interp2(XLAT1,XLONG1,T(:,:,k,nwrf)+300,lats,lons); 
-      % pressure = base state + perturbation
-      press(:,:,k,n) = interp2(XLAT1,XLONG1,P(:,:,k,nwrf)+PB(:,:,k,nwrf),lats,lons); 
-      qvapor(:,:,k,n) = interp2(XLAT1,XLONG1,QVAPOR(:,:,k,nwrf),lats,lons); 
-      qcloud(:,:,k,n) = interp2(XLAT1,XLONG1,QCLOUD(:,:,k,nwrf),lats,lons); 
-      qrain(:,:,k,n) = interp2(XLAT1,XLONG1,QRAIN(:,:,k,nwrf),lats,lons); 
-      qice(:,:,k,n) = interp2(XLAT1,XLONG1,QICE(:,:,k,nwrf),lats,lons);
-      cf(:,:,k,n) = interp2(XLAT1,XLONG1,CF_CLUBB(:,:,k,nwrf),lats,lons);
-  end
-end
-clear U V T P PB QVAPOR QCLOUD QRAIN QICE CF_CLUBB % for space
-disp('Done interpolating unstaggered 3-D variables to VOCA domain for file:'); disp(ifilenum);
+    
+    if ifilenum==1
+        % Find index of initial time (Oct 15)
+        % This checks the 10th row of Times, which is the second
+        % digit of the date, and returns the first index for which 
+        % the 2nd digit of the date is > 4, i.e. finds the index of
+        % Oct 15 00Z.  This works if the model start time is not before Oct 06
+        % Only do this if reading the first file
+        offset = find(Times(10,:)=='5',1,'first');
+        tWRFstart = offset;
+        tstartv = zeros(numfiles,1);
+        tendv = zeros(numfiles,1);
+        tstartv(1) = 1;
+        tendv(1)=numTimes-tWRFstart+1;
 
-if ifilenum==1
-  q2=zeros(length(voca_lons),length(voca_lats),totaltimes);
-  psfc=q2; t2=q2; u10=q2; v10=q2; glw=q2; hfx=q2; hgt=q2; lh=q2; olr=q2;
-    swdown=q2; tsk=q2; landmask=q2; rainnc=q2;
-end
-% 2-D unstaggered variables
-for n = tstart:tend
-  nwrf=n-tstart+tWRFstart;
-    psfc(:,:,n) = interp2(XLAT1,XLONG1,PSFC(:,:,nwrf),lats,lons);
-    q2(:,:,n) = interp2(XLAT1,XLONG1,Q2(:,:,nwrf),lats,lons); 
-    t2(:,:,n) = interp2(XLAT1,XLONG1,T2(:,:,nwrf),lats,lons); 
-    u10(:,:,n) = interp2(XLAT1,XLONG1,U10(:,:,nwrf),lats,lons);
-    v10(:,:,n) = interp2(XLAT1,XLONG1,V10(:,:,nwrf),lats,lons);
-    glw(:,:,n) = interp2(XLAT1,XLONG1,GLW(:,:,nwrf),lats,lons);
-    hfx(:,:,n) = interp2(XLAT1,XLONG1,HFX(:,:,nwrf),lats,lons);
-    hgt(:,:,n) = interp2(XLAT1,XLONG1,HGT1,lats,lons);
-    lh(:,:,n) = interp2(XLAT1,XLONG1,LH(:,:,nwrf),lats,lons);
-    olr(:,:,n) = interp2(XLAT1,XLONG1,OLR(:,:,nwrf),lats,lons);
-    swdown(:,:,n) = interp2(XLAT1,XLONG1,SWDOWN(:,:,nwrf),lats,lons);
-    tsk(:,:,n) = interp2(XLAT1,XLONG1,TSK(:,:,nwrf),lats,lons);
-    landmask(:,:,n) = interp2(XLAT1,XLONG1,LANDMASK1,lats,lons);
-    rainnc(:,:,n) = interp2(XLAT1,XLONG1,RAINNC(:,:,nwrf),lats,lons);
-end
-clear PSFC Q2 T2 U10 V10 GLW HFX HGT1 LH OLR SWDOWN TSK LANDMASK1 RAINNC % for space
+        % allocate space for speed, but allocate for the entire duration
+        % (totaltimes); therefore, only do this on first pass through loop
+        u=zeros(length(voca_lons),length(voca_lats),bottom_top,totaltimes);
+        v=u; theta=u; press=u; qvapor=u; qcloud=u; qrain=u; qice=u; cf=u;
 
-if ifilenum==1
-  w=zeros(length(voca_lons),length(voca_lats),bottom_top_stag,totaltimes);
-  phi=w;
-end
-for n = tstart:tend
-  % staggered variables
-  nwrf=n-tstart+tWRFstart;
-  for k = 1:bottom_top_stag % # of staggered vertical levels
-      w(:,:,k,n) = interp2(XLAT1,XLONG1,W(:,:,k,nwrf),lats,lons); 
-      % geopotential, phi, = base state geopotential, PH, + perturbation geopotential, PHB
-      phi(:,:,k,n) = interp2(XLAT1,XLONG1,PH(:,:,k,nwrf)+PHB(:,:,k,nwrf),lats,lons); 
-  end
-end
-clear W PH PHB
+    else
+        tWRFstart = 2; % because time 1 in this wrfout file is identical to the end time from the previous file
+        tstartv(ifilenum)=tendv(ifilenum-1)+1;
+        tendv(ifilenum)=tstartv(ifilenum)+numTimes-2;
+    end
 
-disp('Done interpolating variables to VOCA domain for file:'); disp(ifilenum);
-%keyboard
+      tWRFend = numTimes;
+      tstart=tstartv(ifilenum); tend=tendv(ifilenum); % set for loop
+    % elseif ifilenum==2
+    %   tWRFstart = 2; % because time 1 in this wrfout file is identical to the end time from the previous file
+    %   tWRFend = numTimes;
+    %   
+    %   tstart2=tend1+1; tend2=tstart2+numTimes-2;
+    %   
+    %   tstart=tstart2; tend=tend2; % set for loop
+    % elseif ifilenum==3
+    %   tWRFstart = 2; % because time 1 in this wrfout file is identical to the end time from the previous file
+    %   tWRFend = numTimes;
+    %   
+    %   tstart3=tend2+1; tend3=tstart3+numTimes-2;
+    %   
+    %   tstart=tstart3; tend=tend3; % set for loop
+    % end
+
+    % keyboard;
+
+    % tstart = 1;
+    % tend = numTimes;
+
+
+
+    
+    % Interpolate data to lats,lons domain and clear other arrays for memory
+    for n = tstart:tend
+      % unstaggered variables
+      nwrf=n-tstart+tWRFstart;
+      for k = 1:bottom_top % # of unstagerred vertical levels
+          % U and V are staggered in x- and y- directions as well
+          u(:,:,k,n) = interp2(XLAT1_U,XLONG1_U,U(:,:,k,nwrf),lats,lons); 
+          v(:,:,k,n) = interp2(XLAT1_V,XLONG1_V,V(:,:,k,nwrf),lats,lons); 
+          % Potential temp = base state theta (=300K) + perturbation theta
+          theta(:,:,k,n) = interp2(XLAT1,XLONG1,T(:,:,k,nwrf)+300,lats,lons); 
+          % pressure = base state + perturbation
+          press(:,:,k,n) = interp2(XLAT1,XLONG1,P(:,:,k,nwrf)+PB(:,:,k,nwrf),lats,lons); 
+          qvapor(:,:,k,n) = interp2(XLAT1,XLONG1,QVAPOR(:,:,k,nwrf),lats,lons); 
+          qcloud(:,:,k,n) = interp2(XLAT1,XLONG1,QCLOUD(:,:,k,nwrf),lats,lons); 
+          qrain(:,:,k,n) = interp2(XLAT1,XLONG1,QRAIN(:,:,k,nwrf),lats,lons); 
+          qice(:,:,k,n) = interp2(XLAT1,XLONG1,QICE(:,:,k,nwrf),lats,lons);
+          cf(:,:,k,n) = interp2(XLAT1,XLONG1,CF_CLUBB(:,:,k,nwrf),lats,lons);
+      end
+    end
+    clear U V T P PB QVAPOR QCLOUD QRAIN QICE CF_CLUBB % for space
+    disp('Done interpolating unstaggered 3-D variables to VOCA domain for file:'); %disp(ifilenum);
+
+    %if ifilenum==1
+      q2=zeros(length(voca_lons),length(voca_lats),totaltimes);
+      psfc=q2; t2=q2; u10=q2; v10=q2; glw=q2; hfx=q2; hgt=q2; lh=q2; olr=q2;
+        swdown=q2; tsk=q2; landmask=q2; rainnc=q2;
+    %end
+    % 2-D unstaggered variables
+    for n = tstart:tend
+      nwrf=n-tstart+tWRFstart;
+        psfc(:,:,n) = interp2(XLAT1,XLONG1,PSFC(:,:,nwrf),lats,lons);
+        q2(:,:,n) = interp2(XLAT1,XLONG1,Q2(:,:,nwrf),lats,lons); 
+        t2(:,:,n) = interp2(XLAT1,XLONG1,T2(:,:,nwrf),lats,lons); 
+        u10(:,:,n) = interp2(XLAT1,XLONG1,U10(:,:,nwrf),lats,lons);
+        v10(:,:,n) = interp2(XLAT1,XLONG1,V10(:,:,nwrf),lats,lons);
+        glw(:,:,n) = interp2(XLAT1,XLONG1,GLW(:,:,nwrf),lats,lons);
+        hfx(:,:,n) = interp2(XLAT1,XLONG1,HFX(:,:,nwrf),lats,lons);
+        hgt(:,:,n) = interp2(XLAT1,XLONG1,HGT1,lats,lons);
+        lh(:,:,n) = interp2(XLAT1,XLONG1,LH(:,:,nwrf),lats,lons);
+        olr(:,:,n) = interp2(XLAT1,XLONG1,OLR(:,:,nwrf),lats,lons);
+        swdown(:,:,n) = interp2(XLAT1,XLONG1,SWDOWN(:,:,nwrf),lats,lons);
+        tsk(:,:,n) = interp2(XLAT1,XLONG1,TSK(:,:,nwrf),lats,lons);
+        landmask(:,:,n) = interp2(XLAT1,XLONG1,LANDMASK1,lats,lons);
+        rainnc(:,:,n) = interp2(XLAT1,XLONG1,RAINNC(:,:,nwrf),lats,lons);
+    end
+    clear PSFC Q2 T2 U10 V10 GLW HFX HGT1 LH OLR SWDOWN TSK LANDMASK1 RAINNC % for space
+
+    if ifilenum==1
+      w=zeros(length(voca_lons),length(voca_lats),bottom_top_stag,totaltimes);
+      phi=w;
+    end
+
+    for n = tstart:tend
+      % staggered variables
+      nwrf=n-tstart+tWRFstart;
+      for k = 1:bottom_top_stag % # of staggered vertical levels
+          w(:,:,k,n) = interp2(XLAT1,XLONG1,W(:,:,k,nwrf),lats,lons); 
+          % geopotential, phi, = base state geopotential, PH, + perturbation geopotential, PHB
+          phi(:,:,k,n) = interp2(XLAT1,XLONG1,PH(:,:,k,nwrf)+PHB(:,:,k,nwrf),lats,lons); 
+      end
+    end
+    clear W PH PHB
+
+    disp('Done interpolating variables to VOCA domain for file:'); %disp(ifilenum);
+    %keyboard
+    
 end % for loop around file names!
 
 
@@ -302,7 +359,43 @@ cldlow=calc_low_cloud_frac( cf, press );
 % add to days vector in 3-hour increments
 daysarray = [ 1.5/24.0 : 3.0/24.0 : 3.0/24.0*(totaltimes-1) ];
 
-keyboard
+
+% keyboard
+
+% call function based on the 'action' input
+if i_action==1
+    write_output( infile_name, totaltimes, voca_lats, voca_lons, bottom_top, bottom_top_stag, daysarray, eta_stag, tsk, hgt, landmask, ...
+                    psfc, t2, q2, u10, v10, u, v, w, press, press_stag, hfx, lh, olr, glw, swdown, rho, qvapor, qcloud, ...
+                    qrain, geopot_ht, cldlow, rainnc, temp, qice, cf );
+                
+elseif i_action==2
+    tmp = qcloud+qrain;
+    
+    % calculate liquid water content
+    rs = 287;
+    cp = 1005;
+    t = theta.*(press./1e5).^(rs/cp);
+    rho = press./(rs*t);
+    lwc = rho.*qcloud;
+%     keyboard;
+    % the last 8 timesteps are either NaN or zero, because the first day
+    % of the simulation is skipped. So we don't want to include the last 8
+    % timesteps in the plots.
+    plot_results( rho(:,:,:,1:(totaltimes-offset+1)), tmp(:,:,:,1:(totaltimes-offset+1)), geopot_ht(:,:,:,1:(totaltimes-offset+1)), cldlow(:,:,1:(totaltimes-offset+1)), cf(:,:,:,1:(totaltimes-offset+1)), qvapor(:,:,:,1:(totaltimes-offset+1)), lwc(:,:,:,1:(totaltimes-offset+1)), infile_name );
+%     plot_results( rho, tmp, geopot_ht, cldlow, infile_name );
+elseif i_action==3
+    disp('Type in your command: ')
+    keyboard
+else
+    disp('Fatal Error: Action cannot be determined!');    
+end
+
+end % end function voca_output_creater()
+
+
+function[] = write_output( infile_name, totaltimes, voca_lats, voca_lons, bottom_top, bottom_top_stag, daysarray, eta_stag, tsk, hgt, landmask, ...
+                            psfc, t2, q2, u10, v10, u, v, w, press, press_stag, hfx, lh, olr, glw, swdown, rho, qvapor, qcloud, ...
+                            qrain, geopot_ht, cldlow, rainnc, temp, qice, cf )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -310,8 +403,16 @@ keyboard
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Create the new files. By default they are in definition mode.
-ncid = netcdf.create( 'WRF-CLUBB_UWM_outer_MET.nc','NC_WRITE' );
+% create output file name
+if iscellstr(infile_name)
+    outfile_name=strcat( char(infile_name(1)),'_conv.nc' );
+else
+    outfile_name=strcat( infile_name,'_conv.nc' );
+end 
+    
+disp(strcat( 'Creating output file:', outfile_name ));
+% Create the new files. By default they are in definition mode.0
+ncid = netcdf.create( outfile_name,'NC_WRITE' );
 
 % Define Global Attributes
 netcdf.putAtt(ncid,netcdf.getConstant('NC_GLOBAL'),'Title','UWM WRF-CLUBB MET simulation for the VOCA Modeling Experiment');
@@ -327,11 +428,11 @@ netcdf.putAtt(ncid,netcdf.getConstant('NC_GLOBAL'),'Radiation_schemes','RRTM Lon
 % time, zlevels, lat, lon
 % Time has one less value than vars defined above because VOCA spec wants
 % output averaged over 00-3Z, 3-6Z, etc.
-timedimid = netcdf.defdim(ncid,'time', totaltimes-1 );
-latdimid = netcdf.defdim(ncid,'lat', length(voca_lats) );
-londimid = netcdf.defdim(ncid,'lon', length(voca_lons) );
-zlevdimid = netcdf.defdim(ncid,'zlevels', bottom_top);
-zlev_stagdimid = netcdf.defdim(ncid,'zlevels_stag',bottom_top_stag);
+timedimid = netcdf.defDim(ncid,'time', totaltimes-1 );
+latdimid = netcdf.defDim(ncid,'lat', length(voca_lats) );
+londimid = netcdf.defDim(ncid,'lon', length(voca_lons) );
+zlevdimid = netcdf.defDim(ncid,'zlevels', bottom_top);
+zlev_stagdimid = netcdf.defDim(ncid,'zlevels_stag',bottom_top_stag);
 
 % Define variables:  function define_var( varname, dscrptn, unit, dim_ids, file_id )
 
@@ -470,9 +571,129 @@ disp('Done writing 3-D variables')
 % Close file so it is written correctly
 netcdf.close(ncid);
 
+disp('Type in your command:')
 keyboard % pause if you want to plot anything
 % clear; clc; close all; % clear memory
-end % end function voca_output_creater
+end % end function write_output
+
+% function to plot liquid water path and cloud cover
+function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, infile_name)
+    
+    % calculate liquid water path and cloud cover
+    lwp = calc_water_path( rho, mix_rat, heights );
+%     disp('Your turn: ');
+%     keyboard
+%     cloud_cover = cldlow;
+
+    % check if infile_name is a cellstring; if so, get the first filename
+    % as prefix for the output file
+    if iscellstr(infile_name)==1
+        outfile_prefix=char(infile_name(1));
+    else
+        outfile_prefix=infile_name;
+    end
+
+    % plot liquid water path time average
+    lwp_t_avg = (sum(lwp,3)/size(lwp,3))';
+%     keyboard
+    lwp_t_avg = adjust_max(lwp_t_avg, 0.2);
+    colormap(jet(50));
+    f1=figure;
+    image(-110:5:-70, -40:10:0, lwp_t_avg(:,1:40) , 'CDataMapping','scaled')
+    set(gca,'YDir', 'normal')
+    colorbar()
+    xlabel('Longitude [Degrees]')
+    ylabel('Latitude [Degrees]')
+    title('Liquid water path [kg m^{-2}]')
+    print(f1, '-dpng', strcat(outfile_prefix,'_lwp')) 
+
+    
+    %plot cloud cover
+    cldlow_t_avg = (sum(cldlow,3)/size(cldlow,3))';
+    cldlow_t_avg = adjust_max(cldlow_t_avg, 1);
+    f2=figure;
+    image(-110:5:-70, -40:10:0, cldlow_t_avg(:,1:40) , 'CDataMapping','scaled')
+    set(gca,'YDir', 'normal')
+    colorbar()
+    xlabel('Longitude [Degrees]')
+    ylabel('Latitude [Degrees]')
+    title('Cloud cover [Dimensionless]')
+    print(f2, '-dpng', strcat(outfile_prefix,'_cloudcov')) 
+    
+    %plot cross section along 20 S for cloud fraction
+    cf_t_avg = (sum(cf,4)/size(cf,4));
+    cf_20 = zeros(size(cf_t_avg,1),size(cf_t_avg,3));
+    
+    for i=1:(size(cf_20,1))
+        cf_20(i,:)=cf_t_avg(i,21,:);
+    end
+    
+    f3=figure;
+    image(-90:5:-70, 0:4:44, (cf_20(21:40,:))' , 'CDataMapping','scaled')
+    set(gca,'YDir', 'normal')
+    colorbar()
+    xlabel('Longitude [Degrees]')
+    ylabel('Height [gbox]')
+    title('Cloud fraction [whatever]')
+    print(f3, '-dpng', strcat(outfile_prefix,'_cloudfrac')) 
+    
+    %plot cross section along 20 S for liquid water content (rho.*qcloud)
+    cloudwater_t_avg = (sum(cloudwater,4)/size(cloudwater,4));
+    cloudwater_20 = zeros(size(cloudwater_t_avg,1),size(cloudwater_t_avg,3));
+    
+    for i=1:(size(cf_20,1))
+        cloudwater_20(i,:)=cloudwater_t_avg(i,21,:);
+    end
+    
+    cloudwater_20 = adjust_max(cloudwater_20, 0.2e-3);
+    
+    f4=figure;
+    image(-90:5:-70, 0:4:44, (cloudwater_20(21:40,:))' , 'CDataMapping','scaled')
+    set(gca,'YDir', 'normal')
+    colorbar()
+    xlabel('Longitude [Degrees]')
+    ylabel('Height [gbox]')
+    title('Liquid water content [kg/kg]')
+    print(f4, '-dpng', strcat(outfile_prefix,'_cloudwater')) 
+    
+    %plot cross section along 20 S for qv (thermodynamic profile)
+    qv_t_avg = (sum(qv,4)/size(qv,4));
+    qv_20 = zeros(size(qv_t_avg,1),size(qv_t_avg,3));
+    
+    for i=1:(size(cf_20,1))
+        qv_20(i,:)=qv_t_avg(i,21,:);
+    end
+    
+    f4=figure;
+    image(-90:5:-70, 0:4:44, (qv_20(21:40,:))' , 'CDataMapping','scaled')
+    set(gca,'YDir', 'normal')
+    colorbar()
+    xlabel('Longitude [Degrees]')
+    ylabel('Height [gbox]')
+    title('q_v [kg/kg]')
+    print(f4, '-dpng', strcat(outfile_prefix,'_qv'))
+    
+    %keyboard;
+    
+    return
+
+end % end function plot_results
+
+% Function to set the maximum value for a matrix (mostly used to adjust the
+% colorscale of the plots)
+function adjmtx=adjust_max( mtx2d, maxval )
+
+    for i=1:size(mtx2d, 1)
+        for j=1:size(mtx2d, 2)
+            if mtx2d(i,j) > maxval
+                mtx2d(i,j) = maxval;
+            end
+        end
+    end
+    
+    adjmtx=mtx2d;
+
+end % functiom
 
 % Functions used to convert units, calculate variables, etc.
 
@@ -604,11 +825,12 @@ function low_cloud_frac = calc_low_cloud_frac( cloud_frac, pressure )
     for i=1:size(cloud_frac,1)
     for j=1:size(cloud_frac,2)
     for n=1:size(cloud_frac,4)
+       % disp(n); disp('size = '); disp(size(cloud_frac,3));
         if pressure(i,j,1,n) > 70000. % Pa ; skip this column if psfc<700mb since already set low_cloud_frac to zeros
             for k=1:size(cloud_frac,3)
                 if low_cloud_frac(i,j,n) < cloud_frac(i,j,k,n)
                     low_cloud_frac(i,j,n) = cloud_frac(i,j,k,n); % this sets low_cloud_frac to the max value below 700mb
-                    if pressure(i,j,k+1,n) < 70000.
+                    if (k<size(cloud_frac,3)) && (pressure(i,j,k+1,n) < 70000.)
                         break % leave loop if p<700mb
                     end
                 end
