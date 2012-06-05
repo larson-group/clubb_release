@@ -60,7 +60,7 @@ rho_x3x4_n = ( 1.0 / ( sigma_x3_n * sigma_x4_n ) ) ...
                           * sqrt( exp( sigma_x4_n^2 ) - 1.0 ) );
 
 % Numerical integration.
-num_std_dev_x1 = 15.0;
+num_std_dev_x1 = 10.0;
 num_std_dev_x3 = 15.0;
 num_std_dev_x4 = 15.0;
 

@@ -49,7 +49,7 @@ sigma_x3_n = sqrt( log( 1.0 + sigma_x3^2 / mu_x3^2 ) );
 rho_x1x3_n = rho_x1x3 * sqrt( exp( sigma_x3_n^2 ) - 1.0 ) / sigma_x3_n;
 
 % Numerical integration.
-num_std_dev_x1 = 20.0;
+num_std_dev_x1 = 10.0;
 num_std_dev_x3 = 20.0;
 
 % lower bound for x1

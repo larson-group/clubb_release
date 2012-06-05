@@ -56,8 +56,8 @@ rho_x1x3_n = rho_x1x3 * sqrt( exp( sigma_x3_n^2 ) - 1.0 ) / sigma_x3_n;
 rho_x2x3_n = rho_x2x3 * sqrt( exp( sigma_x3_n^2 ) - 1.0 ) / sigma_x3_n;
 
 % Numerical integration.
-num_std_dev_x1 = 20.0;
-num_std_dev_x2 = 20.0;
+num_std_dev_x1 = 10.0;
+num_std_dev_x2 = 10.0;
 num_std_dev_x3 = 20.0;
 
 % lower bound for x1
@@ -77,7 +77,7 @@ integral_ub_x3 = mu_x3 + num_std_dev_x3 * sigma_x3;
 
 % Number of partitions
 num_partitions_x1 = 100;
-num_partitions_x2 = 100;
+num_partitions_x2 = 400;
 num_partitions_x3 = 400;
 
 fprintf( 'number of partitions: x1: %d; x2: %d; x3: %d\n', ...

@@ -70,8 +70,8 @@ rho_x3x4_n = ( 1.0 / ( sigma_x3_n * sigma_x4_n ) ) ...
                           * sqrt( exp( sigma_x4_n^2 ) - 1.0 ) );
 
 % Numerical integration.
-num_std_dev_x1 = 15.0;
-num_std_dev_x2 = 15.0;
+num_std_dev_x1 = 10.0;
+num_std_dev_x2 = 10.0;
 num_std_dev_x3 = 15.0;
 num_std_dev_x4 = 15.0;
 
@@ -97,7 +97,7 @@ integral_ub_x4 = mu_x4 + num_std_dev_x4 * sigma_x4;
 
 % Number of partitions
 num_partitions_x1 = 50;
-num_partitions_x2 = 50;
+num_partitions_x2 = 200;
 num_partitions_x3 = 200;
 num_partitions_x4 = 200;
 
