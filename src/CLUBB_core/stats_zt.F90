@@ -1426,7 +1426,7 @@ module stats_zt
         irrainm_cond = k
 
         call stat_assign( irrainm_cond, "rrainm_cond", & 
-             "rrainm budget: rrainm condensation/evaporation [kg kg^{-1} s^{-1}]", &
+             "rrainm condensation/evaporation [kg kg^{-1} s^{-1}]", &
              "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
@@ -1434,13 +1434,13 @@ module stats_zt
         irrainm_auto = k
 
         call stat_assign( irrainm_auto, "rrainm_auto", & 
-             "rrainm budget: rrainm autoconversion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm autoconversion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_accr')
         irrainm_accr = k
         call stat_assign( irrainm_accr, "rrainm_accr", & 
-             "rrainm budget: rrainm accretion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm accretion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_cond_adj')
@@ -1455,7 +1455,7 @@ module stats_zt
         irrainm_src_adj = k
 
         call stat_assign( irrainm_src_adj, "rrainm_src_adj", & 
-             "rrainm budget: rrainm source term adjustment due to over-depletion " // &
+             "rrainm source term adjustment due to over-depletion " // &
              "[kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
@@ -1469,7 +1469,7 @@ module stats_zt
         irrainm_mc = k
 
         call stat_assign( irrainm_mc, "rrainm_mc", & 
-             "Change in rrainm due to microphysics [kg kg^{-1} s^{-1}]", &
+             "rrainm budget: Change in rrainm due to microphysics [kg kg^{-1} s^{-1}]", &
              "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
@@ -1506,14 +1506,14 @@ module stats_zt
         iNrm_cond = k
 
         call stat_assign( iNrm_cond, "Nrm_cond", & 
-             "Nrm budget: Change in Nrm due to condensation [(num/kg)/s]", "(num/kg)/s", zt )
+             "Change in Nrm due to condensation [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nrm_auto')
         iNrm_auto = k
 
         call stat_assign( iNrm_auto, "Nrm_auto", & 
-             "Nrm budget: Change in Nrm due to autoconversion [(num/kg)/s]", "(num/kg)/s", zt )
+             "Change in Nrm due to autoconversion [(num/kg)/s]", "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1529,7 +1529,7 @@ module stats_zt
         iNrm_src_adj = k
 
         call stat_assign( iNrm_src_adj, "Nrm_src_adj", & 
-             "Nrm budget: Nrm source term adjustment due to over-depletion [(num/kg)/s]", &
+             "Nrm source term adjustment due to over-depletion [(num/kg)/s]", &
              "(num/kg)/s", zt )
         k = k + 1
 
@@ -1542,7 +1542,7 @@ module stats_zt
       case ('Nrm_mc')
         iNrm_mc = k
         call stat_assign( iNrm_mc, "Nrm_mc", & 
-             "Change in Nrm due to microphysics (Not in budget) [(num/kg)/s]", &
+             "Nrm budget: Change in Nrm due to microphysics (Not in budget) [(num/kg)/s]", &
              "(num/kg)/s", zt )
         k = k + 1
 
