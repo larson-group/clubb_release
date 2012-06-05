@@ -36,6 +36,7 @@ module stats_zt
         ithvm, & 
         irtm, & 
         ircm, &
+        irfrzm, &
         irvm, & 
         ium, & 
         ivm, & 
@@ -359,6 +360,7 @@ module stats_zt
     ithvm           = 0
     irtm            = 0
     ircm            = 0
+    irfrzm          = 0
     irvm            = 0
     ium             = 0
     ivm             = 0
@@ -684,6 +686,13 @@ module stats_zt
         call stat_assign( ircm, "rcm", & 
               "Cloud water mixing ratio [kg/kg]", "kg/kg", zt )
         k = k + 1
+
+      case ('rfrzm')
+        irfrzm = k
+        call stat_assign( irfrzm, "rfrzm", & 
+              "Total ice phase water mixing ratio [kg/kg]", "kg/kg", zt )
+        k = k + 1
+
       case ('rvm')
         irvm = k
         call stat_assign( irvm, "rvm", & 

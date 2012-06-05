@@ -50,6 +50,7 @@ module clubb_core
                p_in_Pa, rho_zm, rho, exner, &
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+               rfrzm, &
                um, vm, upwp, vpwp, up2, vp2, &
                thlm, rtm, wprtp, wpthlp, &
                wp2, wp3, rtp2, thlp2, rtpthlp, &
@@ -311,6 +312,9 @@ module clubb_core
       ithlm_spur_src
 
     use stats_variables, only: &
+      irfrzm ! Variable(s)
+
+    use stats_variables, only: &
       iSkw_velocity, & ! Variable(s)
       igamma_Skw_fnc, &
       iLscale_pert_1, &
@@ -366,7 +370,8 @@ module clubb_core
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
+      rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
 
     real( kind = core_rknd ), intent(in) ::  & 
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
@@ -586,7 +591,12 @@ module clubb_core
     end if
     !-----------------------------------------------------------------------
 
-    ! Set up stats variables.
+    if ( l_stats_samp ) then
+      call stat_update_var( irfrzm, rfrzm, & ! In
+                            zt ) ! Out
+    end if
+
+    ! Set up budget stats variables.
     if ( l_stats_samp ) then
 
       call stat_begin_update( iwp2_bt, wp2 / real( dt , kind = core_rknd ), &          ! Intent(in)

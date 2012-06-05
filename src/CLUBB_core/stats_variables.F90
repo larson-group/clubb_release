@@ -132,6 +132,10 @@ module stats_variables
 !$omp   iradht, iradht_LW, iradht_SW, &
 !$omp   iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc)
 
+  integer, public :: & 
+   irfrzm
+!$omp threadprivate(irfrzm)
+
   ! Skewness functions on zt grid
   integer, public :: &
     iC11_Skw_fnc

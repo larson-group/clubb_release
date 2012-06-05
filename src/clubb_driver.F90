@@ -107,7 +107,8 @@ module clubb_driver
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
-      iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
+      iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2, &
+      iiricem, iirsnowm, iirgraupelm
 
     use microphys_driver, only: init_microphys, cleanup_microphys ! Subroutines
 
@@ -342,6 +343,9 @@ module clubb_driver
       rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
       thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
       rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+
+    real( kind = core_rknd ), allocatable, dimension(:) :: &
+      rfrzm ! Total ice-phase water mixing ratio        [kg/kg]
 
     logical :: l_restart_input
 
@@ -792,6 +796,9 @@ module clubb_driver
     thlp2_mc_tndcy   = zero
     rtpthlp_mc_tndcy = zero
 
+    allocate( rfrzm(gr%nz) )
+    rfrzm = zero
+
     if ( .not. l_restart ) then
 
       time_current = time_initial
@@ -1024,6 +1031,18 @@ module clubb_driver
       thlp2_forcing(:)   = thlp2_forcing(:) + thlp2_mc_tndcy(:)
       rtpthlp_forcing(:) = rtpthlp_forcing(:) + rtpthlp_mc_tndcy(:)
 
+      ! Compute total water in ice phase mixing ratio
+      rfrzm = zero
+      if ( iiricem > 0 ) then
+        rfrzm = rfrzm + hydromet(:,iiricem)
+      end if
+      if ( iirsnowm > 0 ) then
+        rfrzm = rfrzm + hydromet(:,iirsnowm)
+      end if
+      if ( iirgraupelm > 0 ) then
+        rfrzm = rfrzm + hydromet(:,iirgraupelm)
+      end if
+
       ! Call the parameterization one timestep
       call advance_clubb_core & 
            ( l_implemented, dt_main, fcor, sfc_elevation, &            ! Intent(in)
@@ -1034,6 +1053,7 @@ module clubb_driver
              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in)
+             rfrzm, &                                             ! Intent(in)
              um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
              wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
