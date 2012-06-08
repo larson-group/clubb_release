@@ -65,7 +65,7 @@ module clubb_core
 #endif
                rcm, wprcp, cloud_frac, & 
                rcm_in_layer, cloud_cover, &
-#ifdef NCAR
+#if defined(NCAR) || defined(GFDL)
                khzm, khzt, &
 #endif  
                pdf_params )
@@ -444,8 +444,8 @@ module clubb_core
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
       wprcp,      & ! w'r_c' (momentum levels)                [(kg/kg) m/s]
       cloud_frac    ! cloud fraction (thermodynamic levels)   [-]
-
-#ifdef NCAR
+      
+#if defined(NCAR) || defined(GFDL)
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
       khzt, &       ! eddy diffusivity on thermo levels
       khzm          ! eddy diffusivity on momentum levels     
@@ -1139,7 +1139,7 @@ module clubb_core
     Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
                 * sqrt( max( em, em_min ) )
 
-#ifdef NCAR		
+#if defined(NCAR) || defined(GFDL)
     khzt(:) = Kh_zt(:)
     khzm(:) = Kh_zm(:)
 #endif

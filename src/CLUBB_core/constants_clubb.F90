@@ -21,6 +21,22 @@ module constants_clubb
                            shr_const_mwwv, shr_const_stebol, shr_const_tkfrz, &
                            shr_const_mwdair, shr_const_g, shr_const_karman, &
                            shr_const_rhofw
+#elif GFDL
+ ! use GFDL constants, and then rename them to avoid confusion in case 
+ ! that the constants share the same names between GFDL and CLUBB
+  use constants_mod, only:  pi_gfdl                 => PI,          &
+                            radians_per_deg_dp_gfdl => DEG_TO_RAD,  &
+                            Cp_gfdl                 => CP_AIR,      &
+                            Lv_gfdl                 => HLV,         &
+                            Ls_gfdl                 => HLS,         &
+                            Lf_gfdl                 => HLF,         &
+                            Rd_gfdl                 => RDGAS,       &
+                            Rv_gfdl                 => RVGAS,       &
+                            stefan_boltzmann_gfdl   => STEFAN,      &
+                            T_freeze_K_gfdl         => TFREEZE,     &
+                            grav_gfdl               => GRAV,        &
+                            vonk_gfdl               => VONKARM,     &
+                            rho_lw_gfdl             => DENS_H2O
 #endif
 
   implicit none
@@ -105,11 +121,20 @@ module constants_clubb
   real( kind = dp ), parameter, public ::  & 
     pi_dp = 3.14159265358979323846_dp
 
+#ifdef GFDL
+  real( kind = core_rknd ), parameter, public ::  & 
+    pi = pi_gfdl ! The ratio of radii to their circumference
+
+  real( kind = dp ), parameter, public :: &
+    radians_per_deg_dp = radians_per_deg_dp_gfdl
+#else
+
   real( kind = core_rknd ), parameter, public ::  & 
     pi = 3.141592654_core_rknd ! The ratio of radii to their circumference
 
   real( kind = dp ), parameter, public :: &
     radians_per_deg_dp = pi_dp / 180._dp
+#endif
 
   real( kind = core_rknd ), parameter, public :: &
     sqrt_2pi = 2.5066282746310005024_core_rknd, &  ! sqrt(2*pi)
@@ -179,6 +204,45 @@ module constants_clubb
   real( kind = core_rknd ), parameter, public :: & 
     vonk   = shr_const_karman,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
     rho_lw = shr_const_rhofw    ! Density of liquid water                [kg/m^3]
+
+
+#elif GFDL
+  real( kind = core_rknd ), parameter, public ::  & 
+    Cp = Cp_gfdl,    & ! Dry air specific heat at constant p [J/kg/K]
+    Lv = Lv_gfdl,    & ! Latent heat of vaporization         [J/kg]
+    Ls = Ls_gfdl,    & ! Latent heat of sublimation          [J/kg]
+    Lf = Lf_gfdl,    & ! Latent heat of fusion               [J/kg]
+    Rd = Rd_gfdl,    & ! Dry air gas constant                [J/kg/K]
+    Rv = Rv_gfdl       ! Water vapor gas constant            [J/kg/K]
+
+
+  real( kind = core_rknd ), parameter, public :: &
+    stefan_boltzmann = stefan_boltzmann_gfdl ! Stefan-Boltzmann constant [W/(m^2 K^4)]
+
+  real( kind = core_rknd ), parameter, public :: &
+    T_freeze_K = T_freeze_K_gfdl ! Freezing point of water [K]
+
+  ! Useful combinations of Rd and Rv
+  real( kind = core_rknd ), parameter, public ::  & 
+    ep  = Rd / Rv,    & ! ep  = 0.622  [-]
+    ep1 = (1.0-ep)/ep,& ! ep1 = 0.61   [-]
+    ep2 = 1.0/ep        ! ep2 = 1.61   [-]
+
+  real( kind = core_rknd ), parameter, public :: & 
+    kappa = Rd / Cp     ! kappa        [-]
+
+  ! Changed g to grav to make it easier to find in the code 5/25/05
+  ! real, parameter :: grav  = 9.80665 ! Gravitational acceleration [m/s^2]
+  real( kind = core_rknd ), parameter, public :: & 
+    grav = grav_gfdl, & ! Gravitational acceleration     [m/s^2]
+    p0   = 1.0e5   ! Reference pressure             [Pa]
+
+  ! Von Karman's constant
+  ! Constant of the logarithmic wind profile in the surface layer
+  real( kind = core_rknd ), parameter, public :: & 
+    vonk   = vonk_gfdl,    & ! Accepted value is 0.40 (+/-) 0.01      [-]
+    rho_lw = rho_lw_gfdl    ! Density of liquid water                [kg/m^3]
+
 
 #else
 
