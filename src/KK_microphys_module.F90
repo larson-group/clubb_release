@@ -242,8 +242,8 @@ module KK_microphys_module
       rrainm_src_adj = cloud_frac
     end if
 
-    KK_auto_tndcy = 0._core_rknd
-    KK_accr_tndcy = 0._core_rknd
+    KK_auto_tndcy = zero
+    KK_accr_tndcy = zero
 
     ! Assign pointers for hydrometeor variables.
 
@@ -273,7 +273,7 @@ module KK_microphys_module
 
     ! Microphysics tendency loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
-    do k = 2, nz-1, 1
+    do k = 2, nz, 1
 
        ! Compute supersaturation via s1, s2.
        !     Larson et al 2002, JAS, Vol 59, p 3534.
@@ -521,7 +521,7 @@ module KK_microphys_module
        thlm_mc(k) = ( Lv / ( Cp * exner(k) ) ) * rrainm_mc_tndcy(k)
 
 
-    enddo  ! Microphysics tendency loop: k = 2, nz-1, 1
+    enddo  ! Microphysics tendency loop: k = 2, nz, 1
 
 
     if ( l_upscaled .and. l_var_covar_src ) then
@@ -533,6 +533,19 @@ module KK_microphys_module
        rtp2_mc_tndcy    = zt2zm( rtp2_mc_tndcy_zt )
        thlp2_mc_tndcy   = zt2zm( thlp2_mc_tndcy_zt )
        rtpthlp_mc_tndcy = zt2zm( rtpthlp_mc_tndcy_zt )
+
+       ! Set values of microphysics tendency terms to 0 at model lower boundary.
+       wprtp_mc_tndcy(1)   = zero
+       wpthlp_mc_tndcy(1)  = zero
+       rtp2_mc_tndcy(1)    = zero
+       thlp2_mc_tndcy(1)   = zero
+       rtpthlp_mc_tndcy(1) = zero
+       ! Set values of microphysics tendency terms to 0 at model upper boundary.
+       wprtp_mc_tndcy(nz)   = zero
+       wpthlp_mc_tndcy(nz)  = zero
+       rtp2_mc_tndcy(nz)    = zero
+       thlp2_mc_tndcy(nz)   = zero
+       rtpthlp_mc_tndcy(nz) = zero
 
     else
 
