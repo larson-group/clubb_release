@@ -143,7 +143,8 @@ Ncp2_on_Ncm2_below    = 0.0,
 C_evap = 0.5,
 r_0 = 100.0e-6,
 
-! For cloud_drop_sed = .true.
+l_cloud_sed = .true.,
+! This parameter is only used with l_cloud_sed = .true.
 sigma_g = 1.2,
 /
 
