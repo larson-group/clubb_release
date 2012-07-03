@@ -236,12 +236,13 @@ module saturation
       ! Using the Flatau, et al. polynomial approximation for SVP over vapor
       esat = sat_vapor_press_liq_flatau( T_in_K )
 
-    ! Add new cases after this
 ! ---> h1g
     case ( saturation_gfdl )
       ! Using GFDL polynomial approximation for SVP with respect to liquid
       esat = sat_vapor_press_liq_gfdl( T_in_K )
 ! <--- h1g
+
+      ! Add new cases after this
 
     end select
 
@@ -310,6 +311,8 @@ module saturation
 
     implicit none
 
+    ! Constant parameters
+
     ! Relative error norm expansion (-50 to 50 deg_C) from
     ! Table 3 of pp. 1510 of Flatau et al. 1992 (Water Vapor)
     ! (The 100 coefficient converts from mb to Pa)
@@ -317,6 +320,7 @@ module saturation
 !   100.* (/ 6.11176750,      0.443986062,     0.143053301E-01, & 
 !            0.265027242E-03, 0.302246994E-05, 0.203886313E-07, & 
 !            0.638780966E-10 /)
+
     ! Relative error norm expansion (-85 to 70 deg_C) from
     ! Table 4 of pp. 1511 of Flatau et al.
     real( kind = core_rknd ), dimension(9), parameter :: a = & 
@@ -324,6 +328,8 @@ module saturation
              (/ 6.11583699_core_rknd,      0.444606896_core_rknd,     0.143177157E-01_core_rknd, &
              0.264224321E-03_core_rknd, 0.299291081E-05_core_rknd, 0.203154182E-07_core_rknd, & 
              0.702620698E-10_core_rknd, 0.379534310E-13_core_rknd,-0.321582393E-15_core_rknd /)
+
+    real( kind = core_rknd ), parameter :: min_T_in_C = -85._core_rknd ! [deg_C]
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
@@ -342,7 +348,7 @@ module saturation
 
     ! Since this approximation is only good out to -85 degrees Celsius we
     ! truncate the result here (Flatau, et al. 1992)
-    T_in_C = max( T_in_C, -85._core_rknd ) ! Known magic number
+    T_in_C = max( T_in_C, min_T_in_C )
 
     ! Polynomial approx. (Flatau, et al. 1992)
 
@@ -583,6 +589,9 @@ module saturation
               0.402737184E-03_core_rknd, 0.565392987E-05_core_rknd, 0.521693933E-07_core_rknd, &
               0.307839583E-09_core_rknd, 0.105785160E-11_core_rknd, 0.161444444E-14_core_rknd /)
 
+    real( kind = core_rknd ), parameter :: min_T_in_C = -90._core_rknd ! [deg_C]
+
+
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [deg_K]
 
@@ -600,7 +609,7 @@ module saturation
 
     ! Since this approximation is only good out to -90 degrees Celsius we
     ! truncate the result here (Flatau, et al. 1992)
-    T_in_C = max( T_in_C, -90._core_rknd ) ! Known magic number
+    T_in_C = max( T_in_C, min_T_in_C )
 
     ! Polynomial approx. (Flatau, et al. 1992)
 !   esati = a(1)
