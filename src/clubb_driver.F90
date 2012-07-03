@@ -1388,8 +1388,6 @@ module clubb_driver
     select case ( trim( micro_scheme ) )
     case ( "morrison", "morrison-gettelman" )
       if ( l_predictnc ) then
-        ! Lower boundary condition
-        hydromet(1,iiNcm) = 0._core_rknd
 
         hydromet(2:gr%nz-1,iiNcm) = Ncm_initial / rho(2:gr%nz-1)
 
@@ -1399,14 +1397,10 @@ module clubb_driver
         ! Lower boundary condition
         hydromet(1,iiNcm) = 0._core_rknd
 
-        hydromet(2:gr%nz-1,iiNcm) = Ncm_initial / rho(2:gr%nz-1)
-
-        ! Upper boundary condition
-        hydromet(gr%nz,iiNcm) = 0._core_rknd
       end if
 
     case ( "coamps" )
-      ! Initialize Ncnm as in COAMPS
+      ! Initialize Ncnm as in COAMPS-LES
       Ncnm(1:gr%nz) = 30.0_core_rknd * (1.0_core_rknd + &
              exp( -gr%zt(1:gr%nz)/2000.0_core_rknd )) * &
              cm3_per_m3 ! Known magic number
@@ -3502,6 +3496,7 @@ module clubb_driver
 
 ! Description:
 !   Advance a microphysics scheme
+!
 ! References:
 !   None
 !-------------------------------------------------------------------------------
@@ -3859,7 +3854,7 @@ module clubb_driver
 
     real( kind = core_rknd ) :: Fs0, amu0_sp
 
-    real( kind = dp ) :: amu0
+    real( kind = dp ) :: amu0 ! Cosine of the solar zenith angle [-]
 
     integer :: i, err_code_radiation
 
@@ -3981,7 +3976,7 @@ module clubb_driver
       end if  ! clubb_at_least_debug_level( 2 )
 
       call compute_bugsrad_radiation &
-           ( gr%zm, gr%nz, lin_int_buffer,        & ! Intent(in)
+           ( gr%zm, gr%nz, lin_int_buffer,          & ! Intent(in)
              extend_atmos_range_size,               & ! Intent(in)
              extend_atmos_bottom_level,             & ! Intent(in)
              extend_atmos_top_level,                & ! Intent(in)
@@ -4019,6 +4014,7 @@ module clubb_driver
       !----------------------------------------------------------------
 
       ! The sunray_sw code cannot handle negative values of cosine
+      ! so we check that the value of amu0 is positive here.
       if ( l_sw_radiation .and. amu0 > 0._dp ) then
         amu0_sp = real( amu0, kind = core_rknd )
         if ( nparam > 1 ) then
@@ -4054,10 +4050,13 @@ module clubb_driver
                            radht ) ! Out
 
     case ( "none" )
+      radht_SW = 0._core_rknd
+      Frad_SW  = 0._core_rknd
+      radht    = 0._core_rknd
 
     case default
-
-      stop "Unknown rad_scheme"
+      write(fstderr,*) "Undefined value for namelist variable rad_scheme: "//trim( rad_scheme )
+      stop "Fatal error encountered in advance_clubb_radiation."
 
     end select ! Radiation scheme
 
