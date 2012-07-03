@@ -13,8 +13,8 @@ module calendar
 
   ! 3 Letter Month Abbreviations
   character(len=3), dimension(12), public, parameter :: & 
-    month = (/'JAN','FEB','MAR','APR','MAY','JUN', & 
-              'JUL','AUG','SEP','OCT','NOV','DEC'/)
+    month_names = (/'JAN','FEB','MAR','APR','MAY','JUN', & 
+                    'JUL','AUG','SEP','OCT','NOV','DEC'/)
 
   ! Number of days per month (Jan..Dec) for a non leap year
   integer, public, dimension(12), parameter :: & 
@@ -75,9 +75,9 @@ module calendar
 
     ! Output Variable(s)
     integer, intent(out)::  & 
-    day,     & ! Gregorian calender day for given Month       [dd]
-    month,   & ! Gregorian calender month for given Year      [mm]
-    year       ! Gregorian calender year                      [yyyy]
+      day,     & ! Gregorian calender day for given Month       [dd]
+      month,   & ! Gregorian calender month for given Year      [mm]
+      year       ! Gregorian calender year                      [yyyy]
 
     ! Local Variables
     integer :: i, j, k, n, l
@@ -140,6 +140,8 @@ module calendar
 !   Computes the current Gregorian date from a previous date and
 !   the seconds that have transpired since that date.
 !
+! References:
+!   None
 !----------------------------------------------------------------------------
     use clubb_precision, only: & 
       time_precision  ! Variable(s)
@@ -216,8 +218,10 @@ module calendar
 
     implicit none
 
-    ! Input Variable(s)
+    ! External
+    intrinsic :: sum
 
+    ! Input Variable(s)
     integer, intent(in) :: & 
      day,             & ! Day of the Month      [dd]
      month,           & ! Month of the Year     [mm]
@@ -226,21 +230,18 @@ module calendar
     ! ---- Begin Code ----
 
     ! Add the days from the previous months
-    gregorian2julian_day = day + sum(days_per_month(1:month-1))
-!        do j = 1, month-1, 1
-!          julian_day = julian_day + days_per_month(j)
-!        end do
+    gregorian2julian_day = day + sum( days_per_month(1:month-1) )
 
     ! Kluge for a leap year
     ! If the date were 29 Feb 2000 this would not increment julian_day
     ! However 01 March 2000 would need the 1 day bump
-    if ( leap_year(year) .and. month > 2 ) then
+    if ( leap_year( year ) .and. month > 2 ) then
       gregorian2julian_day = gregorian2julian_day + 1
     end if
 
     if ( ( leap_year( year ) .and. gregorian2julian_day > 366 ) .or. & 
          ( .not. leap_year( year ) .and. gregorian2julian_day > 365 ) ) then
-      stop "Problem with Julian day conversion."
+      stop "Problem with Julian day conversion in gregorian2julian_day."
     end if
 
     return

@@ -631,7 +631,7 @@ module output_grads
       compute_current_date ! Procedure(s)
 
     use calendar, only: & 
-      month ! Variable(s)
+      month_names ! Variable(s)
 
     use constants_clubb, only: &
       sec_per_hr, & ! Variable(s)
@@ -674,7 +674,7 @@ module output_grads
 
     date = 'hh:mmZddmmmyyyy'
     write(unit=date(7:8),fmt='(i2.2)') iday
-    write(unit=date(9:11),fmt='(a3)') month(imonth)
+    write(unit=date(9:11),fmt='(a3)') month_names(imonth)
     write(unit=date(12:15),fmt='(i4.4)') iyear
     write(unit=date(1:2),fmt='(i2.2)') floor( time/sec_per_hr )
     write(unit=date(4:5),fmt='(i2.2)')  & 
