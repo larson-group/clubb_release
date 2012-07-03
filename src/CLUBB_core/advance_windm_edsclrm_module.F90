@@ -192,9 +192,10 @@ module advance_windm_edsclrm_module
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
     integer :: &
-      err_code_windm, err_code_edsclrm ! Error code for each LAPACK solve
+      err_code_windm, err_code_edsclrm, & ! Error code for each LAPACK solve
+      nrhs ! Number of right hand side terms
 
-    integer :: i     ! Array index
+    integer :: i  ! Array index
 
     logical :: l_first_clip_ts, l_last_clip_ts ! flags for clip_covar
 
@@ -231,17 +232,19 @@ module advance_windm_edsclrm_module
 
     ! Compute the explicit portion of the um equation.
     ! Build the right-hand side vector.
-    rhs(1:gr%nz,1) = windm_edsclrm_rhs( windm_edsclrm_um, dt, nu10_vert_res_dep, Kh_zm, um, & ! in
-                                          um_tndcy,  &  ! in
-                                          rho_ds_zm, invrs_rho_ds_zt,  &     ! in
-                                          l_imp_sfc_momentum_flux, upwp(1) ) ! in
+    rhs(1:gr%nz,windm_edsclrm_um) &
+      = windm_edsclrm_rhs( windm_edsclrm_um, dt, nu10_vert_res_dep, Kh_zm, um, & ! in
+                           um_tndcy,  &  ! in
+                           rho_ds_zm, invrs_rho_ds_zt,  &     ! in
+                           l_imp_sfc_momentum_flux, upwp(1) ) ! in
 
     ! Compute the explicit portion of the vm equation.
     ! Build the right-hand side vector.
-    rhs(1:gr%nz,2) = windm_edsclrm_rhs( windm_edsclrm_vm, dt, nu10_vert_res_dep, Kh_zm, vm, & ! in
-                                          vm_tndcy,  &  ! in
-                                          rho_ds_zm, invrs_rho_ds_zt,  &     ! in
-                                          l_imp_sfc_momentum_flux, vpwp(1) ) ! in
+    rhs(1:gr%nz,windm_edsclrm_vm) &
+      = windm_edsclrm_rhs( windm_edsclrm_vm, dt, nu10_vert_res_dep, Kh_zm, vm, & ! in
+                           vm_tndcy,  &  ! in
+                           rho_ds_zm, invrs_rho_ds_zt,  &     ! in
+                           l_imp_sfc_momentum_flux, vpwp(1) ) ! in
 
 
     ! Store momentum flux (explicit component)
@@ -278,19 +281,20 @@ module advance_windm_edsclrm_module
                             lhs )                                        ! out
 
     ! Decompose and back substitute for um and vm
-    call windm_edsclrm_solve( 2, iwindm_matrix_condt_num, & ! in
-                              lhs, rhs, &                   ! in/out
-                              solution, err_code_windm )    ! out
+    nrhs = 2
+    call windm_edsclrm_solve( nrhs, iwindm_matrix_condt_num, & ! in
+                              lhs, rhs, &                      ! in/out
+                              solution, err_code_windm )       ! out
 
     !----------------------------------------------------------------
     ! Update zonal (west-to-east) component of mean wind, um
     !----------------------------------------------------------------
-    um(1:gr%nz) = solution(1:gr%nz,1)
+    um(1:gr%nz) = solution(1:gr%nz,windm_edsclrm_um)
 
     !----------------------------------------------------------------
     ! Update meridional (south-to-north) component of mean wind, vm
     !----------------------------------------------------------------
-    vm(1:gr%nz) = solution(1:gr%nz,2)
+    vm(1:gr%nz) = solution(1:gr%nz,windm_edsclrm_vm)
 
     if ( l_stats_samp ) then
 
@@ -1106,8 +1110,7 @@ module advance_windm_edsclrm_module
     ! Input Variables
 
     integer, intent(in) :: &
-      nrhs   ! Number of right-hand side (explicit) vectors.
-    ! Number of solution vectors.
+      nrhs ! Number of right-hand side (explicit) vectors & Number of solution vectors.
 
     integer, intent(in) :: &
       ixm_matrix_condt_num  ! Stats index of the condition numbers
@@ -1131,16 +1134,16 @@ module advance_windm_edsclrm_module
     ! Solve tridiagonal system for xm.
     if ( l_stats_samp .and. ixm_matrix_condt_num > 0 ) then
       call tridag_solvex & 
-           ( "windm_edsclrm", gr%nz, nrhs, &                          ! Intent(in) 
+           ( "windm_edsclrm", gr%nz, nrhs, &                            ! Intent(in) 
              lhs(kp1_tdiag,:), lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, & ! Intent(inout)
              solution, rcond, err_code )                                ! Intent(out)
 
       ! Est. of the condition number of the variance LHS matrix
-      call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0_core_rknd / rcond, &  ! Intent(in)
-                               sfc )                                       ! Intent(inout)
+      call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0_core_rknd/rcond, &  ! Intent(in)
+                               sfc )                                            ! Intent(inout)
     else
 
-      call tridag_solve( "windm_edsclrm", gr%nz, nrhs, &                           ! In
+      call tridag_solve( "windm_edsclrm", gr%nz, nrhs, &                             ! In
                          lhs(kp1_tdiag,:),  lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, & ! Inout
                          solution, err_code )                                        ! Out
     end if
@@ -1491,7 +1494,7 @@ module advance_windm_edsclrm_module
 
     ! --- Begin Code ---
 
-    ! Initialize the LHS array.
+    ! Initialize the LHS array to zero.
     lhs = 0.0_core_rknd
 
     do k = 2, gr%nz, 1
@@ -1507,7 +1510,7 @@ module advance_windm_edsclrm_module
         + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
 
       else
-
+        ! The host model is assumed to apply the advection term to the mean elsewhere in this case.
         lhs(kp1_tdiag:km1_tdiag,k)  &
         = lhs(kp1_tdiag:km1_tdiag,k) + 0.0_core_rknd
 
@@ -1543,6 +1546,7 @@ module advance_windm_edsclrm_module
       if ( l_stats_samp ) then
 
         ! Statistics:  implicit contributions for um or vm.
+        ! Note: we don't track these budgets for the eddy scalar variables
 
         if ( ium_ma + ivm_ma > 0 ) then
           if ( .not. l_implemented ) then
