@@ -1047,7 +1047,9 @@ module clubb_driver
       call advance_clubb_core & 
            ( l_implemented, dt_main, fcor, sfc_elevation, &            ! Intent(in)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
-             sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &      ! Intent(in)
+             sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
+             wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
+             rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
@@ -2911,6 +2913,8 @@ module clubb_driver
 
     use variables_prognostic_module, only: &
       rtm_forcing, thlm_forcing,  & ! Variable(s)
+      wprtp_forcing, wpthlp_forcing, &
+      rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
       wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
       exner, rho_zm, um, p_sfc, vm, & 
       upwp_sfc, vpwp_sfc, T_sfc, & 
@@ -2935,7 +2939,7 @@ module clubb_driver
 
     use constants_clubb, only: & 
       Cp, Lv, kappa, p0, & ! Variable(s)
-      rc_tol, fstderr, cm3_per_m3
+      rc_tol, zero, fstderr, cm3_per_m3
 
     use variables_prognostic_module, only:  & 
       sclrm_forcing,   & ! Passive scalar variables
@@ -3068,8 +3072,13 @@ module clubb_driver
 
     ! These lines were added to reset the forcing arrays to 0 each iteration.
     ! This was previously done in the <case>_tndcy subroutine.
-    rtm_forcing = 0.0_core_rknd
-    thlm_forcing = 0.0_core_rknd
+    rtm_forcing = zero
+    thlm_forcing = zero
+    wprtp_forcing = zero
+    wpthlp_forcing = zero
+    rtp2_forcing = zero
+    thlp2_forcing = zero
+    rtpthlp_forcing = zero
 
     if ( l_t_dependent .and. .not. l_ignore_forcings ) then
       ! This should include the following:
@@ -3089,8 +3098,8 @@ module clubb_driver
       ! so much sponge damping, which is associated with sawtooth noise
       ! in the cloud_feedback cases.  I don't know how it will affect
       ! the other cases.
-      rtm_forcing(gr%nz) = 0._core_rknd
-      thlm_forcing(gr%nz) = 0._core_rknd
+      rtm_forcing(gr%nz) = zero
+      thlm_forcing(gr%nz) = zero
       ! End Vince Larson's addition
 
     else ! Legacy method of setting the forcings

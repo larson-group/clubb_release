@@ -44,7 +44,9 @@ module clubb_core
   subroutine advance_clubb_core &
              ( l_implemented, dt, fcor, sfc_elevation, &
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
-               sclrm_forcing, edsclrm_forcing, wm_zm, wm_zt, &
+               sclrm_forcing, edsclrm_forcing, wprtp_forcing, &
+               wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
+               rtpthlp_forcing, wm_zm, wm_zt, &
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &
                wpsclrp_sfc, wpedsclrp_sfc, &
                p_in_Pa, rho_zm, rho, exner, &
@@ -359,6 +361,11 @@ module clubb_core
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
       um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
       vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
+      wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
+      wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
+      rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
       wm_zm,           & ! w mean wind component on momentum levels  [m/s]
       wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
       p_in_Pa,         & ! Air pressure (thermodynamic levels)       [Pa]
@@ -1270,18 +1277,19 @@ module clubb_core
       varnce_w2_zm = zt2zm( pdf_params%varnce_w2 )
       mixt_frac_zm = zt2zm( pdf_params%mixt_frac )
     end if
-    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,          & ! intent(in)
-                          Lscale, wp3_on_wp2, wp3_on_wp2_zt,           & ! intent(in)
-                          Kh_zt, tau_zm, Skw_zm, rtpthvp, rtm_forcing, & ! intent(in)
-                          thlpthvp, rtm_ref, thlm_ref, thlm_forcing,   & ! intent(in)
-                          rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,       & ! intent(in)
-                          invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,     & ! intent(in)
-                          w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, mixt_frac_zm, & ! intent(in)
-                          l_implemented,                               & ! intent(in)
-                          sclrpthvp, sclrm_forcing, sclrp2,            & ! intent(in)
-                          rtm, wprtp, thlm, wpthlp,                    & ! intent(inout)
-                          err_code,                                    & ! intent(inout)
-                          sclrm, wpsclrp                               ) ! intent(inout)
+    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,       & ! intent(in)
+                          Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, & ! intent(in)
+                          tau_zm, Skw_zm, rtpthvp, rtm_forcing,     & ! intent(in)
+                          wprtp_forcing, rtm_ref, thlpthvp,         & ! intent(in)
+                          thlm_forcing, wpthlp_forcing, thlm_ref,   & ! intent(in)
+                          rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,    & ! intent(in)
+                          invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,  & ! intent(in)
+                          w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, & ! intent(in)
+                          mixt_frac_zm, l_implemented,              & ! intent(in)
+                          sclrpthvp, sclrm_forcing, sclrp2,         & ! intent(in)
+                          rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
+                          err_code,                                 & ! intent(inout)
+                          sclrm, wpsclrp                            ) ! intent(inout)
 
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
@@ -1306,22 +1314,18 @@ module clubb_core
     ! at shorter timesteps so these are prognosed now.
 
     ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
-    call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp,     & ! intent(in)
-                           thlm, wpthlp, wpthvp, um, vm,  & ! intent(in)
-                           wp2, wp2_zt, wp3, upwp, vpwp,  & ! intent(in)
-                           sigma_sqd_w, Skw_zm, Kh_zt,    & ! intent(in)
-                           rho_ds_zm, rho_ds_zt,          & ! intent(in)
-                           invrs_rho_ds_zm, thv_ds_zm,    & ! intent(in)
-                           Lscale, wp3_on_wp2, wp3_on_wp2_zt, & ! intent(in)
- ! Vince Larson used prognostic timestepping of variances 
- !    in order to increase numerical stability.  17 Jul 2007
- !                          .false., dt,                   & ! intent(in)
-                           l_iter_xp2_xpyp, dt,           & ! intent(in)
-                           sclrm, wpsclrp,                & ! intent(in) 
-                           rtp2, thlp2, rtpthlp,          & ! intent(inout)
-                           up2, vp2,                      & ! intent(inout)
-                           err_code,                      & ! intent(inout)
-                           sclrp2, sclrprtp, sclrpthlp    ) ! intent(inout)
+    call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,       & ! intent(in)
+                           wpthlp, wpthvp, um, vm, wp2, wp2_zt,   & ! intent(in)
+                           wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,  & ! intent(in)
+                           Kh_zt, rtp2_forcing, thlp2_forcing,    & ! intent(in)
+                           rtpthlp_forcing, rho_ds_zm, rho_ds_zt, & ! intent(in)
+                           invrs_rho_ds_zm, thv_ds_zm,            & ! intent(in)
+                           Lscale, wp3_on_wp2, wp3_on_wp2_zt,     & ! intent(in)
+                           l_iter_xp2_xpyp, dt,                   & ! intent(in)
+                           sclrm, wpsclrp,                        & ! intent(in) 
+                           rtp2, thlp2, rtpthlp, up2, vp2,        & ! intent(inout)
+                           err_code,                              & ! intent(inout)
+                           sclrp2, sclrprtp, sclrpthlp            ) ! intent(inout)
 
     !----------------------------------------------------------------
     ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
@@ -2060,12 +2064,13 @@ module clubb_core
     !----------------------- Begin Code -----------------------------
 
     ! Store components of pdf_params in the locally declared variables
-    ! We only apply the trapezoidal rule to these when l_apply_rule_to_pdf_params is true.  This is
-    ! because when we apply the rule to the final result of pdf_closure rather than the intermediate
-    ! results it can lead to an inconsistency in how we determine which gaussian a point is in and
-    ! whether the point is in or out of cloud, which is turn will break the latin hypercube code
-    ! that samples preferentially in cloud. -dschanen 13 Feb 2012
-    ! See ticket #497 for more details on this
+    ! We only apply the trapezoidal rule to these when
+    ! l_apply_rule_to_pdf_params is true.  This is because when we apply the
+    ! rule to the final result of pdf_closure rather than the intermediate
+    ! results it can lead to an inconsistency in how we determine which
+    ! PDF component a point is in and whether the point is in or out of cloud,
+    ! which is turn will break the latin hypercube code that samples
+    ! preferentially in cloud. -dschanen 13 Feb 2012
 
     if ( l_apply_rule_to_pdf_params ) then
       w1_zt          = pdf_params%w1

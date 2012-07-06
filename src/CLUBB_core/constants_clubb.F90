@@ -69,9 +69,9 @@ module constants_clubb
   ! The largest allowable magnitude of the input to the parabolic cylinder
   ! function (before overflow occurs) is dependent on the order of parabolic
   ! cylinder function.  However, after a lot of testing, it was determined that
-  ! an absolute value of 375 works well for an order of 12 or less.
+  ! an absolute value of 49 works well for an order of 12 or less.
   real( kind = core_rknd ), parameter, public :: &
-    parab_cyl_max_input = 375._core_rknd  ! Largest allowable input to parab. cyl. fnct.
+    parab_cyl_max_input = 49.0_core_rknd  ! Largest allowable input to parab. cyl. fnct.
 
   ! "Over-implicit" weighted time step.
   !
