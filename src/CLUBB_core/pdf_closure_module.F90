@@ -18,7 +18,7 @@ module pdf_closure_module
                wpsclrp, sclrp2, sclrprtp,        &
                sclrpthlp, level,                 &
 #ifdef GFDL
-               RH_crit,                          &  ! h1g, 2010-06-15
+               RH_crit,  do_liquid_only_in_clubb,&  ! h1g, 2010-06-15
 #endif
                wp4, wprtp2, wp2rtp,              &
                wpthlp2, wp2thlp, wprtpthlp,      &
@@ -146,6 +146,9 @@ module pdf_closure_module
     ! critial relative humidity for nucleation
     real( kind = core_rknd ), dimension( min(1,sclr_dim), 2 ), intent(in) ::  & ! h1g, 2010-06-15
        RH_crit     ! critical relative humidity for droplet and ice nucleation
+! ---> h1g, 2012-06-14
+    logical, intent(in)                 ::  do_liquid_only_in_clubb
+! <--- h1g, 2012-06-14
 #endif
 
     integer, intent(in) ::  &
@@ -268,6 +271,12 @@ module pdf_closure_module
     real( kind = core_rknd ) :: width_factor_1, width_factor_2
 
     integer :: i   ! Index
+
+#ifdef GFDL
+    real ( kind = core_rknd ), parameter :: t1_combined = 273.16, &
+                                            t2_combined = 268.16, &
+                                            t3_combined = 238.16 
+#endif
 
 !------------------------ Code Begins ----------------------------------
 
@@ -605,31 +614,35 @@ module pdf_closure_module
     tl2  = thl2*exner
 
 #ifdef GFDL
-    if( sclr_dim > 0 ) then ! h1g, 2010-06-16 begin mod
+    if( sclr_dim > 0  .and.  (.not. do_liquid_only_in_clubb) ) then ! h1g, 2010-06-16 begin mod
 
-      if( tl1 > 250.0_core_rknd) then
+      if( tl1 > t1_combined ) then
         rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
+      elseif( tl1 > t2_combined )  then
+        rsl1 = sat_mixrat_liq( p_in_Pa, tl1 ) * (tl1 - t2_combined)/(t1_combined - t2_combined) &
+             + sat_mixrat_ice( p_in_Pa, tl1 ) * (t1_combined - tl1)/(t1_combined - t2_combined)
+      elseif( tl1 > t3_combined )  then
+        rsl1 = sat_mixrat_ice( p_in_Pa, tl1 ) &
+             + sat_mixrat_ice( p_in_Pa, tl1 ) * (RH_crit(1, 1) -1._core_rknd ) &
+               * ( t2_combined -tl1)/(t2_combined - t3_combined)
       else
-        rsl1 = sat_mixrat_ice( p_in_Pa, tl1 )
-        if( tl1 > 238.15_core_rknd)  then
-          rsl1 = 1.2_core_rknd * rsl1
-        else
-          rsl1 = RH_crit(1, 1) * rsl1
-        endif
+        rsl1 = sat_mixrat_ice( p_in_Pa, tl1 ) * RH_crit(1, 1)
       endif
 
-      if( tl2 > 250.0_core_rknd) then
+      if( tl2 > t1_combined ) then
         rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
+      elseif( tl2 > t2_combined )  then
+        rsl2 = sat_mixrat_liq( p_in_Pa, tl2 ) * (tl2 - t2_combined)/(t1_combined - t2_combined) &
+             + sat_mixrat_ice( p_in_Pa, tl2 ) * (t1_combined - tl2)/(t1_combined - t2_combined)
+      elseif( tl2 > t3_combined )  then
+        rsl2 = sat_mixrat_ice( p_in_Pa, tl2 ) &
+             + sat_mixrat_ice( p_in_Pa, tl2 )* (RH_crit(1, 2) -1._core_rknd) &
+               * ( t2_combined -tl2)/(t2_combined - t3_combined)
       else
-        rsl2 = sat_mixrat_ice( p_in_Pa, tl2 )
-        if( tl2 > 238.15_core_rknd)  then
-          rsl2 = 1.2_core_rknd * rsl2
-        else
-          rsl2 = RH_crit(1, 2)* rsl2
-        endif
+        rsl2 = sat_mixrat_ice( p_in_Pa, tl2 ) * RH_crit(1, 2)
       endif
 
-    else !sclr_dim <= 0
+    else !sclr_dim <= 0  or  do_liquid_only_in_clubb = .T.
       rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
       rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
 

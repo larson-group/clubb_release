@@ -63,7 +63,7 @@ module clubb_core
                sclrp2, sclrprtp, sclrpthlp, &
                wpsclrp, edsclrm, err_code, &
 #ifdef GFDL
-               RH_crit, &  ! h1g, 2010-06-16
+               RH_crit,  do_liquid_only_in_clubb, &  ! h1g, 2010-06-16
 #endif
                rcm, wprcp, cloud_frac, & 
                rcm_in_layer, cloud_cover, &
@@ -466,6 +466,9 @@ module clubb_core
     ! hlg, 2010-06-16
     real( kind = core_rknd ), intent(inOUT), dimension(gr%nz, min(1,sclr_dim) , 2) :: & 
       RH_crit  ! critical relative humidity for droplet and ice nucleation
+! ---> h1g, 2012-06-14
+    logical, intent(in)                 ::  do_liquid_only_in_clubb
+! <--- h1g, 2012-06-14      
 #endif
 
     !!! Local Variables
@@ -787,7 +790,7 @@ module clubb_core
            wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),  & ! intent(in)
            sclrpthlp_zt(k,:), k,                               & ! intent(in)
 #ifdef GFDL
-           RH_crit(k, : , :),                                  & ! intent(in)  h1g, 2010-06-16
+           RH_crit(k, : , :),   do_liquid_only_in_clubb,       & ! intent(in)  h1g, 2010-06-16
 #endif
            wp4_zt(k), wprtp2(k), wp2rtp(k),                    & ! intent(out)
            wpthlp2(k), wp2thlp(k), wprtpthlp(k),               & ! intent(out)
@@ -867,7 +870,7 @@ module clubb_core
              wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),              & ! intent(in)
              sclrpthlp(k,:), k,                                     & ! intent(in)
 #ifdef GFDL
-             RH_crit(k, : , :),                                     & ! intent(in)  h1g, 2010-06-16
+             RH_crit(k, : , :),  do_liquid_only_in_clubb,           & ! intent(in)  h1g, 2010-06-16
 #endif
              wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
              wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
