@@ -1,4 +1,4 @@
-function[] = voca_output_creator2( infile_name, action )
+function[] = voca_output_creator( infile_name, action )
 % VOCA_OUTPUT_CREATOR This function creates netCDF files required by the VOCA
 % 3-d intercomparison. It uses WRF-CLUBB output files as source information.
 %
@@ -36,6 +36,7 @@ function[] = voca_output_creator2( infile_name, action )
 %       
 %       -> 'write': writes the netCDF output for the intercomparison
 %       -> 'plot': plots cloud cover and liquid water path
+%       -> 'animation': creates an animation showing the timely evolution of cloud fraction 
 %       -> 'keyboard': stops the code after reading and interpolating the data
 %       and waits for user input
 
@@ -63,6 +64,8 @@ elseif strcmp(action, 'plot')==1
     i_action = 2;
 elseif strcmp(action, 'keyboard')==1
     i_action = 3;
+elseif strcmp(action, 'animation')==1
+    i_action = 4;    
 else
     disp('Fatal Error: Action cannot be determined!');
     return
@@ -135,43 +138,44 @@ for ifilenum=1:numfiles
     % Array of WRF variables to get
     % Only get variables necessary since WRF files are so large
     WRFvars = [
-        'Times   ' % 19-length time characters: yyyy-mm-dd_hh:mm:ss
-        'ZNU     ' % eta values unstaggered in z, half (mass) levels
-        'ZNW     ' % eta values staggered in z, full (w) levels
-        'P_TOP   ' % Pressure of model top, Pa
-        'U       ' % u-wind, m/s (staggered in x)
-        'V       ' % v-wind, m/s (staggerd in y)
-        'W       ' % vertical velocity, m/s (staggered in z)
-        'PH      ' % perturbation geopotential, m2/s2 (staggered in z)
-        'PHB     ' % base-state geopotential, m2/s2 (staggered in z)
-        'T       ' % perturbation potential temp, K (base state always 300 K)
-        'P       ' % perturbation pressure, Pa
-        'PB      ' % base state pressure, Pa
-        'PSFC    ' % surface pressure, Pa
-        'Q2      ' % 2-m Qv, kg/kg
-        'T2      ' % 2-m Temp, K
-        'U10     ' % 10-m u-wind, m/s
-        'V10     ' % 10-m v-wind, m/s
-        'QVAPOR  ' % water vapor mix ratio, kg/kg
-        'QCLOUD  ' % cloud water mix ratio, kg/kg
-        'QRAIN   ' % rain water mix ratio, kg/kg
-        'QICE    ' % ice water mix ratio, kg/kg
-        'RAINNC  ' % accumulated total grid scale precip, mm
-        'LANDMASK' % 1=land, 0=water
-        'CF_CLUBB' % clubb cloud frac
-        'HGT     ' % terrain height, m
-        'TSK     ' % surface skin temp, K
-        'XLAT    ' % latitude
-        'XLONG   ' % longitude
-        'XLAT_U  ' % latitude staggered in x-dir
-        'XLONG_U ' % longitude staggered in x-dir
-        'XLAT_V  ' % latitude staggered in y-dir
-        'XLONG_V ' % longitude staggered in y-dir
-        'HFX     ' % Upward heat flux at sfc, W/m2
-        'LH      ' % Latent heat flux at sfc, W/m2
-        'OLR     ' % TOA outgoing LW, W/m2
-        'GLW     ' % Sfc downward LW flux, W/m2
-        'SWDOWN  ' % Sfc downward SW flux, W/m2
+        'Times    ' % 19-length time characters: yyyy-mm-dd_hh:mm:ss
+        'ZNU      ' % eta values unstaggered in z, half (mass) levels
+        'ZNW      ' % eta values staggered in z, full (w) levels
+        'P_TOP    ' % Pressure of model top, Pa
+        'U        ' % u-wind, m/s (staggered in x)
+        'V        ' % v-wind, m/s (staggerd in y)
+        'W        ' % vertical velocity, m/s (staggered in z)
+        'PH       ' % perturbation geopotential, m2/s2 (staggered in z)
+        'PHB      ' % base-state geopotential, m2/s2 (staggered in z)
+        'T        ' % perturbation potential temp, K (base state always 300 K)
+        'P        ' % perturbation pressure, Pa
+        'PB       ' % base state pressure, Pa
+        'PSFC     ' % surface pressure, Pa
+        'Q2       ' % 2-m Qv, kg/kg
+        'T2       ' % 2-m Temp, K
+        'U10      ' % 10-m u-wind, m/s
+        'V10      ' % 10-m v-wind, m/s
+        'QVAPOR   ' % water vapor mix ratio, kg/kg
+        'QCLOUD   ' % cloud water mix ratio, kg/kg
+        'QRAIN    ' % rain water mix ratio, kg/kg
+        'QICE     ' % ice water mix ratio, kg/kg
+        'RAINNC   ' % accumulated total grid scale precip, mm
+        'LANDMASK ' % 1=land, 0=water
+        'CF_CLUBB ' % clubb cloud frac
+        'HGT      ' % terrain height, m
+        'TSK      ' % surface skin temp, K
+        'XLAT     ' % latitude
+        'XLONG    ' % longitude
+        'XLAT_U   ' % latitude staggered in x-dir
+        'XLONG_U  ' % longitude staggered in x-dir
+        'XLAT_V   ' % latitude staggered in y-dir
+        'XLONG_V  ' % longitude staggered in y-dir
+        'HFX      ' % Upward heat flux at sfc, W/m2
+        'LH       ' % Latent heat flux at sfc, W/m2
+        'OLR      ' % TOA outgoing LW, W/m2
+        'GLW      ' % Sfc downward LW flux, W/m2
+        'SWDOWN   ' % Sfc downward SW flux, W/m2
+        'RCM_CLUBB' 
         ];
 
     for i=1:numvars
@@ -207,6 +211,12 @@ for ifilenum=1:numfiles
     eta(:,1)=ZNU(:,1); clear ZNU
     eta_stag(:,1)=ZNW(:,1); clear ZNW;
     Ptop=P_TOP(1); clear P_TOP;
+
+    % create animation if specified by user action
+    if i_action==4
+       create_animation(XLAT1, XLONG1, Times, CF_CLUBB) 
+       exit 
+    end 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -369,7 +379,7 @@ if i_action==1
                     qrain, geopot_ht, cldlow, rainnc, temp, qice, cf );
                 
 elseif i_action==2
-    tmp = qcloud+qrain;
+    tmp = qcloud; %+qrain;
     
     % calculate liquid water content
     rs = 287;
@@ -579,11 +589,6 @@ end % end function write_output
 % function to plot liquid water path and cloud cover
 function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, infile_name)
     
-    % calculate liquid water path and cloud cover
-    lwp = calc_water_path( rho, mix_rat, heights );
-%     disp('Your turn: ');
-%     keyboard
-%     cloud_cover = cldlow;
 
     % check if infile_name is a cellstring; if so, get the first filename
     % as prefix for the output file
@@ -593,91 +598,336 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
         outfile_prefix=infile_name;
     end
 
+    % get path and name of the directory where the input files are located
+    ind=strfind(outfile_prefix, '/');
+    path=outfile_prefix(1:ind(size(ind,2)));
+    dir_name=outfile_prefix((ind(size(ind,2)-1)+1):(ind(size(ind,2))-1));
+    
+    % read message from run.nfo
+    fid = fopen(strcat(path,'run.nfo'));
+    
+    if fid==-1
+        infotext = '';
+        disp('Warning: The run.nfo could not be opened. No info text will be displayed in the plots.')
+    else
+        infotext = fgetl(fid);
+    end %if
+    
+    
+    
+    % calculate liquid water path and cloud cover
+    lwp = calc_water_path( rho, mix_rat, heights );
+%     disp('Your turn: ');
+%     keyboard
+%     cloud_cover = cldlow;
+
+
     % plot liquid water path time average
     lwp_t_avg = (sum(lwp,3)/size(lwp,3))';
 %     keyboard
     lwp_t_avg = adjust_max(lwp_t_avg, 0.2);
     colormap(jet(50));
     f1=figure;
+    subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
     image(-110:5:-70, -40:10:0, lwp_t_avg(:,1:40) , 'CDataMapping','scaled')
-    set(gca,'YDir', 'normal')
+    set(gca,'YDir', 'normal')   % otherwise the y-axis is upside down
     colorbar()
     xlabel('Longitude [Degrees]')
     ylabel('Latitude [Degrees]')
     title('Liquid water path [kg m^{-2}]')
-    print(f1, '-dpng', strcat(outfile_prefix,'_lwp')) 
-
     
+    %put the info text
+    ah=gca;
+    axes('position',[0,0,1,1],'visible','off');
+    text(.3,.175,infotext);
+    axes(ah)
+    
+    %write to png and eps file
+    print(f1, '-dpng', strcat(outfile_prefix,'_lwp')) 
+    print(f1, '-depsc', strcat(outfile_prefix,'_lwp'))
+    
+    
+        
     %plot cloud cover
     cldlow_t_avg = (sum(cldlow,3)/size(cldlow,3))';
     cldlow_t_avg = adjust_max(cldlow_t_avg, 1);
     f2=figure;
+    subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
     image(-110:5:-70, -40:10:0, cldlow_t_avg(:,1:40) , 'CDataMapping','scaled')
     set(gca,'YDir', 'normal')
     colorbar()
     xlabel('Longitude [Degrees]')
     ylabel('Latitude [Degrees]')
     title('Cloud cover [Dimensionless]')
+        
+    %put the info text
+    ah=gca;
+    axes('position',[0,0,1,1],'visible','off');
+    text(.3,.175,infotext);
+    axes(ah)
+    
     print(f2, '-dpng', strcat(outfile_prefix,'_cloudcov')) 
+    print(f2, '-depsc', strcat(outfile_prefix,'_cloudcov'))
     
-    %plot cross section along 20 S for cloud fraction
-    cf_t_avg = (sum(cf,4)/size(cf,4));
-    cf_20 = zeros(size(cf_t_avg,1),size(cf_t_avg,3));
-    
-    for i=1:(size(cf_20,1))
-        cf_20(i,:)=cf_t_avg(i,21,:);
+    % approximate unstaggered z level heights
+    hgt_20 = zeros(size(heights,1),size(heights,3),size(heights,4));
+    for i=1:(size(heights,1))
+        for j=1:(size(heights,4))
+            hgt_20(i,:,j)=heights(i,21,:,j);
+        end
     end
     
+    hgt_20_stagg = zeros(size(hgt_20,1),size(hgt_20,2)-1,size(hgt_20,3));
+    for i=1:(size(hgt_20_stagg,1))
+        for j=1:(size(hgt_20_stagg,2))
+            for k=1:(size(hgt_20_stagg,3))
+                hgt_20_stagg(i,j,k)=.5*(hgt_20(i,j,k)+hgt_20(i,j+1,k));
+            end
+        end
+    end
+    
+%     hgt_int = 30:(19900-30)/43:19900;
+    hgt_int = 0:100:20000;
+
+    %interpolate to a equally spaced z-grid
+    cf_20 = zeros(size(cf,1),size(cf,3),size(cf,4));
+    
+    for i=1:(size(cf_20,1))
+        for j=1:(size(cf_20,3))
+            cf_20(i,:,j)=cf(i,21,:,j);
+        end
+    end
+    
+    cf_int = zeros(size(cf,1),size(hgt_int,2),size(cf,4));
+    
+    for i=1:(size(cf_20,1))
+        for j=1:(size(cf_20,3))
+            cf_int(i,:,j)=interp1(hgt_20_stagg(i,:,j),cf_20(i,:,j),hgt_int,'pchip');
+        end
+    end
+    
+    cf_t_avg = (sum(cf_int,3)/size(cf_int,3));
+    cf_t_avg = adjust_max(cf_t_avg, 0.8);
+%     cf_20 = zeros(size(cf_t_avg,1),size(cf_t_avg,3));
+%     
+%     for i=1:(size(cf_20,1))
+%         cf_20(i,:)=cf_t_avg(i,21,:);
+%     end
+    
+    %keyboard
+    %plot cross section along 20 S for cloud fraction
     f3=figure;
-    image(-90:5:-70, 0:4:44, (cf_20(21:40,:))' , 'CDataMapping','scaled')
+    subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
+    image(-85:5:-70, hgt_int(1:5:31), (cf_t_avg(25:40,1:31))' , 'CDataMapping','scaled')
     set(gca,'YDir', 'normal')
     colorbar()
     xlabel('Longitude [Degrees]')
-    ylabel('Height [gbox]')
-    title('Cloud fraction [whatever]')
+    ylabel('Altitude [m]')
+    title('Cloud fraction')
+        
+    %put the info text
+    ah=gca;
+    axes('position',[0,0,1,1],'visible','off');
+    text(.3,.175,infotext);
+    axes(ah)
+    
     print(f3, '-dpng', strcat(outfile_prefix,'_cloudfrac')) 
+    print(f3, '-depsc', strcat(outfile_prefix,'_cloudfrac')) 
     
-    %plot cross section along 20 S for liquid water content (rho.*qcloud)
-    cloudwater_t_avg = (sum(cloudwater,4)/size(cloudwater,4));
-    cloudwater_20 = zeros(size(cloudwater_t_avg,1),size(cloudwater_t_avg,3));
     
-    for i=1:(size(cf_20,1))
-        cloudwater_20(i,:)=cloudwater_t_avg(i,21,:);
+    %interpolate to a equally spaced z-grid
+    cloudwater_20 = zeros(size(cloudwater,1),size(cloudwater,3),size(cloudwater,4));
+    
+    for i=1:(size(cloudwater_20,1))
+        for j=1:(size(cloudwater_20,3))
+            cloudwater_20(i,:,j)=cloudwater(i,21,:,j);
+        end
     end
     
-    cloudwater_20 = adjust_max(cloudwater_20, 0.2e-3);
+    cloudwater_int = zeros(size(cloudwater,1),size(hgt_int,2),size(cloudwater,4));
+    
+    for i=1:(size(cloudwater_20,1))
+        for j=1:(size(cloudwater_20,3))
+            cloudwater_int(i,:,j)=interp1(hgt_20_stagg(i,:,j),cloudwater_20(i,:,j),hgt_int,'pchip');
+        end
+    end
+    
+    cloudwater_t_avg = (sum(cloudwater_int,3)/size(cloudwater_int,3));
+    
+    
+    % plot cross section along 20 S for liquid water content (rho.*qcloud)
+%     cloudwater_t_avg = (sum(cloudwater,4)/size(cloudwater,4));
+%     cloudwater_20 = zeros(size(cloudwater_t_avg,1),size(cloudwater_t_avg,3));
+    
+%     for i=1:(size(cf_20,1))
+%         cloudwater_20(i,:)=cloudwater_t_avg(i,21,:);
+%     end
+    
+%     keyboard;
+    cloudwater_t_avg = adjust_max(cloudwater_t_avg, 0.2e-3);
     
     f4=figure;
-    image(-90:5:-70, 0:4:44, (cloudwater_20(21:40,:))' , 'CDataMapping','scaled')
+    subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
+    image(-85:5:-70, hgt_int(1:5:31), (cloudwater_t_avg(21:40,1:31))' , 'CDataMapping','scaled')
     set(gca,'YDir', 'normal')
     colorbar()
     xlabel('Longitude [Degrees]')
-    ylabel('Height [gbox]')
-    title('Liquid water content [kg/kg]')
+    ylabel('Altitude [m]')
+    title('Liquid water content [g/m^3]')
+        
+    %put the info text
+    ah=gca;
+    axes('position',[0,0,1,1],'visible','off');
+    text(.3,.175,infotext);
+    axes(ah)
+    
     print(f4, '-dpng', strcat(outfile_prefix,'_cloudwater')) 
+    print(f4, '-depsc', strcat(outfile_prefix,'_cloudwater'))
+    
+    
+    % interpolate to a equally spaced z-grid
+    qv_20 = zeros(size(qv,1),size(qv,3),size(qv,4));
+    
+    for i=1:(size(qv_20,1))
+        for j=1:(size(qv_20,3))
+            qv_20(i,:,j)=qv(i,21,:,j);
+        end
+    end
+    
+    qv_int = zeros(size(qv,1),size(hgt_int,2),size(qv,4));
+    
+    for i=1:(size(qv_20,1))
+        for j=1:(size(qv_20,3))
+            qv_int(i,:,j)=interp1(hgt_20_stagg(i,:,j),qv_20(i,:,j),hgt_int,'pchip');
+        end
+    end
+    
+    qv_t_avg = (sum(qv_int,3)/size(qv_int,3));
+    qv_t_avg = adjust_max(qv_t_avg, 10e-3);
     
     %plot cross section along 20 S for qv (thermodynamic profile)
-    qv_t_avg = (sum(qv,4)/size(qv,4));
-    qv_20 = zeros(size(qv_t_avg,1),size(qv_t_avg,3));
+%     qv_t_avg = (sum(qv,4)/size(qv,4));
+%     qv_20 = zeros(size(qv_t_avg,1),size(qv_t_avg,3));
+%     
+%     for i=1:(size(cf_20,1))
+%         qv_20(i,:)=qv_t_avg(i,21,:);
+%     end
     
-    for i=1:(size(cf_20,1))
-        qv_20(i,:)=qv_t_avg(i,21,:);
-    end
-    
-    f4=figure;
-    image(-90:5:-70, 0:4:44, (qv_20(21:40,:))' , 'CDataMapping','scaled')
+    f5=figure;
+    subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
+    image(-85:5:-70, hgt_int(1:5:31), (qv_t_avg(25:40,1:31))' , 'CDataMapping','scaled')
     set(gca,'YDir', 'normal')
     colorbar()
     xlabel('Longitude [Degrees]')
-    ylabel('Height [gbox]')
+    ylabel('Altitude [m]')
     title('q_v [kg/kg]')
-    print(f4, '-dpng', strcat(outfile_prefix,'_qv'))
+        
+    %put the info text
+    ah=gca;
+    axes('position',[0,0,1,1],'visible','off');
+    text(.3,.175,infotext);
+    axes(ah)
+    
+    print(f5, '-dpng', strcat(outfile_prefix,'_qv'))
+    print(f5, '-depsc', strcat(outfile_prefix,'_qv'))
     
     %keyboard;
     
     return
 
 end % end function plot_results
+
+function[] = create_animation( latitude, longitude, times, cf_clubb)
+    % Written for VOCA run 69 by Leah Grant, spring 2011
+% This script will create a movie of cloud fraction and save it as an MPEG file
+
+% Originally written on a Mac computer in the Atmo Lab, W434 
+% The way this script is currently written, it needs a workspace; 
+% as of Spring 2011, the workspace voca_workspace that
+% is loaded below was located in
+% /Users/ldgrant/Desktop/VOCA_run69/wrfout_d01_2008-10-12_00:00:00_69/
+% on the 2nd computer from the window in the back row (computer name Haboob).
+
+% voca_workspace contained data for all x,y values and for only 5-days
+% Includes variables:
+%   times (41 x 19):  characters corresponding to 2008-10-25 00Z through 2008-10-30 00Z
+%   cf_clubb (255 x 247 x 44 x 41): cloud fraction for (x,y,z,t)
+%   latitude (255 x 247): (x,y)
+%   longitude (255 x 247): (x,y)
+
+% To use this script to create a cloud fraction "movie", you will probably need to
+% write some code to read in the above variables -- Times, cf_CLUBB, XLAT, and XLONG --
+% from a wrfout file.  See, e.g., the voca output script in the clubb repository.
+% You will also need to download and compile mpgwrite, a program which converts a
+% matlab movie matrix into an MPEG file.  I downloaded this and compiled it on the 
+% Mac, so compiling will probably be different for Linux.  To download it, just
+% google "matlab mpgwrite".  Note the path to mpgwrite below may need to be changed.
+
+
+% load workspace -- change this code if necessary to obtain the correct WRF varibles!
+% load voca_workspace
+
+% keyboard
+addpath ../../matlab_include/m_map/
+% calculate max cloud fraction
+cf_max = squeeze(max(cf_clubb,[],3));
+
+% Find indices of latitude and longitude for range 40S to equator and
+% 110W to 60W
+ilatmin=find(latitude(1,:)>-40,1,'first')-1;
+ilatmax=find(latitude(1,:)<0,1,'last')+1;
+ilonmin=find(longitude(:,1)>-110,1,'first')-1;
+ilonmax=find(longitude(:,1)<-60,1,'last')+1;
+
+% For world map (convert to double precision otherwise an error appears)
+latlim=double([latitude(1,ilatmin) latitude(1,ilatmax)]);
+lonlim=double([longitude(ilonmin,1) longitude(ilonmax,1)]);
+
+% Define latplot, lonplot, and cf_max_plot for contourfm plotting
+latplot = double( latitude(ilonmin:ilonmax,ilatmin:ilatmax) );
+lonplot = double( longitude(ilonmin:ilonmax,ilatmin:ilatmax) );
+cf_max_plot = double( cf_max(ilonmin:ilonmax,ilatmin:ilatmax,:) );
+
+% Plot cloud fraction, save frames for a movie
+framenum=0; % initialize
+ifig=figure;
+% pause % resize figure here for movie
+
+winsize = get(ifig,'Position'); % Record size of plot window
+winsize(1:2) = [0 0]; % Adjust size of this window to include the whole figure window in movie
+plots_per_frame=8; % so movie will play slower
+numframes=size(times,1)*plots_per_frame; % set number of frames
+
+cf_movie=moviein(numframes,ifig,winsize); % initialize movie
+
+for n=1:size(times,1)
+%     worldmap(latlim, lonlim);
+%     S = shaperead('landareas','UseGeoCoords',true);
+%     geoshow([S.Lat], [S.Lon],'Color','black','linewidth',3);
+%     contourfm( latplot, lonplot, cf_max_plot(:,:,n) )% time n
+%     contourf( latplot, lonplot, cf_max_plot(:,:,n) )% time n
+    m_proj('mercator','lon',[-110 -65], 'lat', [-40 0]);
+    m_coast;
+    m_grid;
+    m_elev('contourf',cf_max_plot(:,:,n));
+    colorbar
+    timetxt(1:10)=times(n,1:10); timetxt(11)=' '; timetxt(12:13)=times(n,12:13); timetxt(14)='Z';
+    title(sprintf('Max Cloud Fraction at %s',timetxt),'fontsize',16)
+    
+    for i=1:plots_per_frame % so movie will play slower
+      framenum=framenum+1;
+      cf_movie(:,framenum) = getframe(ifig,winsize);
+    end
+end
+
+% Save movie matrix as MPEG
+% Change these paths if you installed mpgwrite in a different location
+addpath ./mpgwrite_6.0_update
+addpath ./mpgwrite_6.0_update/src
+mpgwrite(cf_movie,jet,'VOCA_cf_movie.mpg')
+
+end % create_animation
+
 
 % Function to set the maximum value for a matrix (mostly used to adjust the
 % colorscale of the plots)
