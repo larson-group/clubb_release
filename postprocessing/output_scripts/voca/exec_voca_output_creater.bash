@@ -64,29 +64,38 @@ fi
 if [ "$infile" != "" ] && [ -f $infile ]; then
 
 	if [ $background = true ]; then
-		echo "matlab -r voca_output_creater2\(\'$infile\'\,\'$action\'\)" >tmp
+		echo "matlab -r voca_output_creater\(\'$infile\'\,\'$action\'\)" >tmp
 		at now -f tmp
 		rm tmp
 	else
-		matlab -r voca_output_creater2\(\'$infile\'\,\'$action\'\)
+		matlab -r voca_output_creater\(\'$infile\'\,\'$action\'\)
 	fi	
 
 # if an existing input directory was specified
 elif [ "$indir" != "" ] && [ -d $indir ]; then
 	k=0	
 	for curFile in $indir*; do
-		if [ "${curFile/*./}" != "png" ]; then
+		if [ "${curFile/*./}" != "png" ] && [ "${curFile/*./}" != "eps" ]; then
 			files[$k]=$curFile;
-			k=$k+1;
+			let k=k+1;
 		fi	
 	done
 
+	# create string for the matlab call 
+	let n=k-1;	
+	fileList="\{\'"${files[0]}"\'"
+	for i in `seq 1 $n`; do
+		 fileList=$fileList"\;\'"${files[$i]}"\'"
+	done
+	fileList=$fileList'\}'
+
 	if [ $background = true ]; then
-		echo "matlab -r voca_output_creater2\(\{\'${files[0]}\'\;\'${files[1]}\'\;\'${files[2]}\'\}\,\'$action\'\)" >tmp
+		echo "matlab -r voca_output_creater\($fileList\,\'$action\'\)" >tmp
 		at now -f tmp
 		rm tmp
-	else
-		matlab -r voca_output_creater2\(\{\'${files[0]}\'\;\'${files[1]}\'\;\'${files[2]}\'\}\,\'$action\'\)
+	else		
+		echo "matlab -r voca_output_creater\($fileList\,\'$action\'\)"
+		matlab -r voca_output_creater\($fileList\,\'$action\'\)
 	fi
 	
 else
