@@ -400,6 +400,8 @@ else
     disp('Fatal Error: Action cannot be determined!');    
 end
 
+exit
+
 end % end function voca_output_creater()
 
 
