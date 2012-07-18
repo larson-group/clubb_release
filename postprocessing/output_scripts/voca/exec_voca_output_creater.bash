@@ -11,7 +11,7 @@ echo "you have large input files the -b option might be very usefull. The matlab
 echo "script will be running in the background then and you don't have to stay"
 echo "logged in. For more Information have a look at ticket 47 of the WRF trac."
 echo "" 
-echo "Usage: ./exec_voc.bash [-b] -a <action> -f <infile> | -d <indir>"
+echo "Usage: ./exec_voca_output_creater.bash [-bm] -a <action> -f <infile> | -d <indir>"
 echo ""
 echo "Options:"
 echo "-h -- show this page"
@@ -19,6 +19,7 @@ echo "-f -- use input file <infile>"
 echo "-d -- use input directory <indir>"
 echo "-a -- perform action <action>"
 echo "-b -- run the script in the background"
+echo "-m -- merge the eps-graphics to a pdf-file"
 echo "------------------------------------------------------------------------------------"
 }
 
@@ -27,14 +28,16 @@ infile=''
 indir=''
 action=''
 background=false
+merge=false
 
-while getopts hbca:f:d: opt
+while getopts hbma:f:d: opt
 do
   case "$opt" in
     f) infile="$OPTARG";;
     a) action="$OPTARG";;
     d) indir="$OPTARG";;
     b) background=true;;
+    m) merge=true;;
     h) myhelp; exit;;
     \?) echo "Error: Unknown option $opt."; myhelp;;
   esac
@@ -65,15 +68,22 @@ if [ "$infile" != "" ] && [ -f $infile ]; then
 
 	if [ $background = true ]; then
 		echo "matlab -r voca_output_creater\(\'$infile\'\,\'$action\'\)" >tmp
+		if [ $merge = true ]; then	
+			echo "./mergeEPS.bash -f ${infile%/*}/ ${infile%/*}/plots.pdf">>tmp
+		fi 
 		at now -f tmp
 		rm tmp
 	else
 		matlab -r voca_output_creater\(\'$infile\'\,\'$action\'\)
+		if [ $merge = true ]; then	
+			./mergeEPS.bash -f ${infile%/*}/ ${infile%/*}/plots.pdf
+		fi 
 	fi	
 
 # if an existing input directory was specified
 elif [ "$indir" != "" ] && [ -d $indir ]; then
 	k=0	
+	#get files from indir; exclude all png and eps
 	for curFile in $indir*; do
 		if [ "${curFile/*./}" != "png" ] && [ "${curFile/*./}" != "eps" ]; then
 			files[$k]=$curFile;
@@ -91,11 +101,17 @@ elif [ "$indir" != "" ] && [ -d $indir ]; then
 
 	if [ $background = true ]; then
 		echo "matlab -r voca_output_creater\($fileList\,\'$action\'\)" >tmp
+		if [ $merge = true ]; then	
+			echo "./mergeEPS.bash -f ${infile%/*}/ ${infile%/*}/plots.pdf">>tmp
+		fi 
 		at now -f tmp
 		rm tmp
 	else		
 		echo "matlab -r voca_output_creater\($fileList\,\'$action\'\)"
 		matlab -r voca_output_creater\($fileList\,\'$action\'\)
+		if [ $merge = true ]; then	
+			./mergeEPS.bash -f ${infile%/*}/ ${infile%/*}/plots.pdf
+		fi 
 	fi
 	
 else
