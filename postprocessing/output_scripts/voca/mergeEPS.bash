@@ -33,6 +33,11 @@ indir=$1
 outfile=$2
 overwrite='no'
 
+if [ "$outfile" = "" ]; then
+	echo "ERROR: No output file specified!"
+	exit	
+fi
+
 if [ ! -d $indir ]; then
 	echo "ERROR: Input directory does not exist!"
 	exit
@@ -65,7 +70,7 @@ mkdir mergeEPStmp
 touch mergeEPStmp/tmp.tex
 
 #header
-echo '\documentclass[letterpaper,12pt]{article}'>>mergeEPStmp/tmp.tex
+echo '\documentclass{beamer}'>>mergeEPStmp/tmp.tex
 echo '\usepackage{graphicx}'>>mergeEPStmp/tmp.tex
 echo '\begin{document}'>>mergeEPStmp/tmp.tex
 echo '\thispagestyle{empty}'>>mergeEPStmp/tmp.tex
@@ -102,5 +107,8 @@ cd ..
 #clean up
 rm -r mergeEPStmp
 
-echo "Operation successful. Output has been written to $outfile."
-
+if [ -f $outfile ]; then
+	echo "Operation successful. Output has been written to $outfile."
+else
+	echo "ERROR: Something went wrong while compiling the tex-document."
+fi
