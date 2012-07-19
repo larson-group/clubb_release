@@ -2483,9 +2483,9 @@ module inputfields
       min_ia, &     ! minimum ia value from all files
       max_iz        ! maximum iz value from all files
 
-    logical l_grads_file, & ! use grads or netcdf
-            l_internal_error, &
-            l_convert_to_MKS ! convert inputs to MKS units
+    logical :: l_grads_file, & ! use grads or netcdf
+      l_internal_error, &
+      l_convert_to_MKS ! convert inputs to MKS units
 
     type (input_field) :: &
       current_var ! The current variable
@@ -2518,7 +2518,6 @@ module inputfields
       end do ! file_index=1, size(stat_files)
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-      write(fstderr,*) "Error reading file "// trim( filename )
       stop "Fatal error"
 
 #endif
@@ -2609,7 +2608,6 @@ module inputfields
       end do ! file_index=1, size(stat_files)
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-      write(fstderr,*) "Error reading file "// trim( filename )
       stop "Fatal error"
 
 #endif
