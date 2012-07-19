@@ -627,11 +627,11 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
     % plot liquid water path time average
     lwp_t_avg = (sum(lwp,3)/size(lwp,3))';
 %     keyboard
-    lwp_t_avg = adjust_max(lwp_t_avg, 0.2);
+    lwp_t_avg = adjust_max(lwp_t_avg(:,1:40), 0.2);
     colormap(jet(50));
     f1=figure;
     subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
-    image(-110:5:-70, -40:10:0, lwp_t_avg(:,1:40) , 'CDataMapping','scaled')
+    image(-110:5:-70, -40:10:0, lwp_t_avg , 'CDataMapping','scaled')
     set(gca,'YDir', 'normal')   % otherwise the y-axis is upside down
     colorbar()
     xlabel('Longitude [Degrees]')
@@ -652,10 +652,10 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
         
     %plot cloud cover
     cldlow_t_avg = (sum(cldlow,3)/size(cldlow,3))';
-    cldlow_t_avg = adjust_max(cldlow_t_avg, 1);
+    cldlow_t_avg = adjust_max(cldlow_t_avg(:,1:40), 1);
     f2=figure;
     subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
-    image(-110:5:-70, -40:10:0, cldlow_t_avg(:,1:40) , 'CDataMapping','scaled')
+    image(-110:5:-70, -40:10:0, cldlow_t_avg , 'CDataMapping','scaled')
     set(gca,'YDir', 'normal')
     colorbar()
     xlabel('Longitude [Degrees]')
@@ -709,7 +709,7 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
     end
     
     cf_t_avg = (sum(cf_int,3)/size(cf_int,3));
-    cf_t_avg = adjust_max(cf_t_avg, 0.8);
+    cf_t_avg = adjust_max(cf_t_avg(25:40,1:31), 0.8);
 %     cf_20 = zeros(size(cf_t_avg,1),size(cf_t_avg,3));
 %     
 %     for i=1:(size(cf_20,1))
@@ -720,7 +720,7 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
     %plot cross section along 20 S for cloud fraction
     f3=figure;
     subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
-    image(-85:5:-70, hgt_int(1:5:31), (cf_t_avg(25:40,1:31))' , 'CDataMapping','scaled')
+    image(-85:5:-70, hgt_int(1:5:31), (cf_t_avg)' , 'CDataMapping','scaled')
     set(gca,'YDir', 'normal')
     colorbar()
     xlabel('Longitude [Degrees]')
@@ -766,11 +766,11 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
 %     end
     
 %     keyboard;
-    cloudwater_t_avg = adjust_max(cloudwater_t_avg, 0.2e-3);
+    cloudwater_t_avg = adjust_max(cloudwater_t_avg(21:40,1:31), 0.2e-3);
     
     f4=figure;
     subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
-    image(-85:5:-70, hgt_int(1:5:31), (cloudwater_t_avg(21:40,1:31))' , 'CDataMapping','scaled')
+    image(-85:5:-70, hgt_int(1:5:31), (cloudwater_t_avg)' , 'CDataMapping','scaled')
     set(gca,'YDir', 'normal')
     colorbar()
     xlabel('Longitude [Degrees]')
@@ -805,7 +805,7 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
     end
     
     qv_t_avg = (sum(qv_int,3)/size(qv_int,3));
-    qv_t_avg = adjust_max(qv_t_avg, 10e-3);
+    qv_t_avg = adjust_max(qv_t_avg(25:40,1:31), 10e-3);
     
     %plot cross section along 20 S for qv (thermodynamic profile)
 %     qv_t_avg = (sum(qv,4)/size(qv,4));
@@ -817,7 +817,7 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
     
     f5=figure;
     subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
-    image(-85:5:-70, hgt_int(1:5:31), (qv_t_avg(25:40,1:31))' , 'CDataMapping','scaled')
+    image(-85:5:-70, hgt_int(1:5:31), (qv_t_avg)' , 'CDataMapping','scaled')
     set(gca,'YDir', 'normal')
     colorbar()
     xlabel('Longitude [Degrees]')
@@ -833,7 +833,7 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
     print(f5, '-dpng', strcat(outfile_prefix,'_qv'))
     print(f5, '-depsc', strcat(outfile_prefix,'_qv'))
     
-    %keyboard;
+%     keyboard;
     
     return
 
@@ -931,7 +931,7 @@ mpgwrite(cf_movie,jet,'VOCA_cf_movie.mpg')
 end % create_animation
 
 
-% Function to set the maximum value for a matrix (mostly used to adjust the
+% Function to set the maximum value for a matrix (used to adjust the
 % colorscale of the plots)
 function adjmtx=adjust_max( mtx2d, maxval )
 
@@ -943,6 +943,9 @@ function adjmtx=adjust_max( mtx2d, maxval )
         end
     end
     
+    S = size(mtx2d);
+    mtx2d(S(1),S(2)) = maxval;
+%     keyboard;
     adjmtx=mtx2d;
 
 end % functiom
