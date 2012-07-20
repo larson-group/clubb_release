@@ -240,14 +240,34 @@ for ifilenum=1:numfiles
         tendv = zeros(numfiles,1);
         tstartv(1) = 1;
         tendv(1)=numTimes-tWRFstart+1;
+        
 
+        % save last date of the first file
+        tlast = Times(:,size(Times,2));
+        
         % allocate space for speed, but allocate for the entire duration
         % (totaltimes); therefore, only do this on first pass through loop
         u=zeros(length(voca_lons),length(voca_lats),bottom_top,totaltimes);
         v=u; theta=u; press=u; qvapor=u; qcloud=u; qrain=u; qice=u; cf=u;
 
+    elseif ifilenum==2
+        
+        % get first date of 2nd file
+        tfirst=Times(:,1);
+        if strcmp(tfirst,tlast)
+            tWRFstart = 2 % because time 1 in this wrfout file is identical to the end time from the previous file
+        else
+            tWRFstart = 1
+        end
+        tstartv(ifilenum)=tendv(ifilenum-1)+1;
+        tendv(ifilenum)=tstartv(ifilenum)+numTimes-2;
     else
-        tWRFstart = 2; % because time 1 in this wrfout file is identical to the end time from the previous file
+        if strcmp(tfirst,tlast)
+            tWRFstart = 2 % because time 1 in this wrfout file is identical to the end time from the previous file
+        else
+            tWRFstart = 1
+        end
+        
         tstartv(ifilenum)=tendv(ifilenum-1)+1;
         tendv(ifilenum)=tstartv(ifilenum)+numTimes-2;
     end
