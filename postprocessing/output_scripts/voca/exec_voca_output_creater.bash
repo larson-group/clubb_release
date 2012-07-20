@@ -92,14 +92,14 @@ if [ "$infile" != "" ] && [ -f $infile ]; then
 	else
 		# hd1 run
 		if [ $hd1 = true ]; then
-			if [ -f run_matlab.job ]; then
-				rm run_matlab.job
+			if [ -f run_matlab_tmp.job ]; then
+				rm run_matlab_tmp.job
 			fi
-			touch run_matlab.job
-			echo '#BSUB -J MatlabJob'>>run_matlab.job
-			echo '#BSUB -o MatlabJob_output'>>run_matlab.job
-			echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\(\'$infile\'\,\'$action\'\)">>run_matlab.job
-			bsub < run_matlab.job
+			touch run_matlab_tmp.job
+			echo '#BSUB -J MatlabJob'>>run_matlab_tmp.job
+			echo '#BSUB -o MatlabJob_output_%J'>>run_matlab_tmp.job
+			echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\(\'$infile\'\,\'$action\'\)">>run_matlab_tmp.job
+			bsub < run_matlab_tmp.job
 
 		# usual run		
 		else
@@ -117,7 +117,7 @@ elif [ "$indir" != "" ] && [ -d $indir ]; then
 	k=0	
 	# get files from indir; exclude all png and eps
 	for curFile in $indir*; do
-		if [ "${curFile/*./}" != "png" ] && [ "${curFile/*./}" != "eps" ]; then
+		if [ "${curFile/*./}" != "png" ] && [ "${curFile/*./}" != "eps" ] && [ "${curFile/*./}" != "pdf" ]; then
 			files[$k]=$curFile;
 			let k=k+1;
 		fi	
@@ -147,14 +147,14 @@ elif [ "$indir" != "" ] && [ -d $indir ]; then
 	else		
 		# hd1 run
 		if [ $hd1 = true ]; then
-			if [ -f run_matlab.job ]; then
-				rm run_matlab.job
+			if [ -f run_matlab_tmp.job ]; then
+				rm run_matlab_tmp.job
 			fi
 			touch run_matlab.job
-			echo '#BSUB -J MatlabJob'>>run_matlab.job
-			echo '#BSUB -o MatlabJob_output'>>run_matlab.job
-			echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\($fileList\,\'$action\'\)">>run_matlab.job
-			bsub < run_matlab.job
+			echo '#BSUB -J MatlabJob'>>run_matlab_tmp.job
+			echo '#BSUB -o MatlabJob_output_%J'>>run_matlab_tmp.job
+			echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\($fileList\,\'$action\'\)">>run_matlab_tmp.job
+			bsub < run_matlab_tmp.job
 
 		# usual run
 		else 
