@@ -12,9 +12,17 @@ echo "option might be very usefull. The matlab script will be running in the "
 echo "background then and you don't have to stay logged in. For more Information"
 echo "have a look at ticket 47 of the WRF trac."
 echo ""
+echo "Note: If you are using this script to create plots, you can put additional"
+echo "information on the plots by creating a file named run.nfo which contains one"
+echo "line of text. This file has to be located in <indir>."
+echo ""
+echo "Attention: If you are using the -d option, all wrfout files have to be located"
+echo "directly in <indir>. No other files should be in that directory except files"
+echo "with the following extensions: .pdf, .png, .eps, .nfo."
+echo ""
 echo "Dependencies: matlab, [atd, bsub]"
 echo "" 
-echo "Usage: ./exec_voca_output_creater.bash [-bm] -a <action> -f <infile> | -d <indir>"
+echo "Usage: ./exec_voca_output_creater.bash [-bmH] -a <action> -f <infile> | -d <indir>"
 echo ""
 echo "Options:"
 echo "-h -- show this page"
@@ -23,6 +31,7 @@ echo "-d -- use input directory <indir>"
 echo "-a -- perform action <action>"
 echo "-b -- run the script in the background"
 echo "-m -- merge the eps-graphics to a pdf-file"
+echo "-H -- run the script on HD1"
 echo "------------------------------------------------------------------------------------"
 }
 
@@ -117,7 +126,7 @@ elif [ "$indir" != "" ] && [ -d $indir ]; then
 	k=0	
 	# get files from indir; exclude all png and eps
 	for curFile in $indir*; do
-		if [ "${curFile/*./}" != "png" ] && [ "${curFile/*./}" != "eps" ] && [ "${curFile/*./}" != "pdf" ]; then
+		if [ "${curFile/*./}" != "png" ] && [ "${curFile/*./}" != "eps" ] && [ "${curFile/*./}" != "pdf" ] && [ "${curFile/*./}" != "nfo" ]; then
 			files[$k]=$curFile;
 			let k=k+1;
 		fi	
