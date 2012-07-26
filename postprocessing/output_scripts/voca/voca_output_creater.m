@@ -104,7 +104,7 @@ voca_lons=[-110:1:-65];
 
 % define total number of times
 % 8 3-hr intervals per day, and Oct 15 2008 00Z - Nov 16 2008 00Z = 32 days
-totaltimes= 8.0*32.0+1; % = 257 times; for the output file, this will be 256 3-hr avg time intervals
+% totaltimes= 8.0*32.0+1; % = 257 times; for the output file, this will be 256 3-hr avg time intervals
 
 
 % LOOP THROUGH FILES -- this is necessary for WRFout files from Bluefire
@@ -198,7 +198,10 @@ for ifilenum=1:numfiles
     netcdf.close(ncid)
     clear ncid
     disp('Done reading in WRF variables for file:');disp(infile_name); %disp(ifilenum);
-
+    
+    %number of timesteps in the simulation
+    totaltimes = size(Times,2)
+    
     % compress variables that don't vary in time
     XLAT1(:,:)=XLAT(:,:,1); clear XLAT;
     XLONG1(:,:)=XLONG(:,:,1); clear XLONG;
@@ -212,7 +215,9 @@ for ifilenum=1:numfiles
     eta_stag(:,1)=ZNW(:,1); clear ZNW;
     Ptop=P_TOP(1); clear P_TOP;
 
-    % create animation if specified by user action
+    % create animation if specified by user action 
+    % ATTENTION: This function does not work on our Linux machines. It is
+    % not tested anywhere else yet
     if i_action==4
        create_animation(XLAT1, XLONG1, Times, CF_CLUBB) 
        exit 
