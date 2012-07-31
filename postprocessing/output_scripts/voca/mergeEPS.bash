@@ -6,6 +6,7 @@ myhelp()
 { 
 echo "------------------------------------------------------------------------------------"
 echo "This script combines all eps-files contained in the input directory to one pdf file." 
+echo "The pdf file will be stored in the input directory."
 echo ""
 echo "Usage: ./mergeEPS.bash [-f|h] <indir> <outfile>"
 echo ""
@@ -27,11 +28,13 @@ do
   esac
 done
 
-
 # check arguments
 indir=$1
 outfile=$2
 overwrite='no'
+
+# make sure there is a '/' at the end of the path
+indir=${indir%*/}'/'
 
 if [ "$outfile" = "" ]; then
 	echo "ERROR: No output file specified!"
@@ -43,7 +46,7 @@ if [ ! -d $indir ]; then
 	exit
 fi
 
-if [ -f $outfile ] && [ $force = false ]; then
+if [ -f $indir''$outfile ] && [ $force = false ]; then
 	echo "Outputfile already exists. Do you want to overwrite it? (yes/no)"
 	read overwrite
 	
@@ -101,13 +104,13 @@ echo '\end{document}'>>mergeEPStmp/tmp.tex
 #convert tex->pdf
 cd mergeEPStmp
 pdflatex tmp.tex >> /dev/null
-mv tmp.pdf $outfile
+mv tmp.pdf $indir''$outfile
 cd ..
 
 #clean up
 rm -r mergeEPStmp
 
-if [ -f $outfile ]; then
+if [ -f $indir''$outfile ]; then
 	echo "Operation successful. Output has been written to $outfile."
 else
 	echo "ERROR: Something went wrong while compiling the tex-document."
