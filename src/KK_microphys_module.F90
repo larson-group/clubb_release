@@ -1046,7 +1046,13 @@ module KK_microphys_module
         pdf_parameter  ! Variable(s) type
 
     use KK_fixed_correlations, only: &
-        corr_trr_NL_cloud, & ! Variable(s)
+        corr_wrr_NL_cloud, & ! Variable(s)
+        corr_wNr_NL_cloud, &
+        corr_wNc_NL_cloud, &
+        corr_wrr_NL_below, &
+        corr_wNr_NL_below, &
+        corr_wNc_NL_below, &
+        corr_trr_NL_cloud, &
         corr_tNr_NL_cloud, &
         corr_tNc_NL_cloud, &
         corr_trr_NL_below, &
@@ -1223,34 +1229,26 @@ module KK_microphys_module
     sigma_t_2 = pdf_params%stdev_t2
 
     if ( l_fix_s_t_correlations ) then
-      if ( mu_s_1 > zero ) then
-        corr_ts_1 = corr_st_NN_cloud
-      else
-        corr_ts_1 = corr_st_NN_below
-      end if
-      if ( mu_s_2 > zero ) then
-        corr_ts_2 = corr_st_NN_cloud
-      else
-        corr_ts_2 = corr_st_NN_below
-      end if
+       if ( mu_s_1 > zero ) then
+          corr_ts_1 = corr_st_NN_cloud
+       else
+          corr_ts_1 = corr_st_NN_below
+       endif
+       if ( mu_s_2 > zero ) then
+          corr_ts_2 = corr_st_NN_cloud
+       else
+          corr_ts_2 = corr_st_NN_below
+       endif
     else
-      corr_ts_1 = pdf_params%corr_st_1
-      corr_ts_2 = pdf_params%corr_st_2
-    end if
+       corr_ts_1 = pdf_params%corr_st_1
+       corr_ts_2 = pdf_params%corr_st_2
+    endif
 
     crt1      = pdf_params%crt1
     crt2      = pdf_params%crt2
     cthl1     = pdf_params%cthl1
     cthl2     = pdf_params%cthl2
 
-    ! Set all the correlations between vertical velocity (w) and hydrometeor
-    ! variables to 0 for now.
-    corr_wrr_1 = zero
-    corr_wrr_2 = zero
-    corr_wNr_1 = zero
-    corr_wNr_2 = zero
-    corr_wNc_1 = zero
-    corr_wNc_2 = zero
 
     !!! Calculate the normalized correlation between variables that have
     !!! an assumed normal distribution and variables that have an assumed
@@ -1305,6 +1303,12 @@ module KK_microphys_module
     ! If there is cloud at a given vertical level, then the ###_cloud value is
     ! used.  Otherwise, the ###_below value is used.
     if ( rcm > rc_tol ) then
+       corr_wrr_1 = corr_wrr_NL_cloud
+       corr_wrr_2 = corr_wrr_NL_cloud
+       corr_wNr_1 = corr_wNr_NL_cloud
+       corr_wNr_2 = corr_wNr_NL_cloud
+       corr_wNc_1 = corr_wNc_NL_cloud
+       corr_wNc_2 = corr_wNc_NL_cloud
        corr_trr_1 = corr_trr_NL_cloud
        corr_trr_2 = corr_trr_NL_cloud
        corr_tNr_1 = corr_tNr_NL_cloud
@@ -1312,6 +1316,12 @@ module KK_microphys_module
        corr_tNc_1 = corr_tNc_NL_cloud
        corr_tNc_2 = corr_tNc_NL_cloud
     else
+       corr_wrr_1 = corr_wrr_NL_below
+       corr_wrr_2 = corr_wrr_NL_below
+       corr_wNr_1 = corr_wNr_NL_below
+       corr_wNr_2 = corr_wNr_NL_below
+       corr_wNc_1 = corr_wNc_NL_below
+       corr_wNc_2 = corr_wNc_NL_below
        corr_trr_1 = corr_trr_NL_below
        corr_trr_2 = corr_trr_NL_below
        corr_tNr_1 = corr_tNr_NL_below
