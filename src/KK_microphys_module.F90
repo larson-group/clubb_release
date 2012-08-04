@@ -1249,43 +1249,6 @@ module KK_microphys_module
     cthl1     = pdf_params%cthl1
     cthl2     = pdf_params%cthl2
 
-
-    !!! Calculate the normalized correlation between variables that have
-    !!! an assumed normal distribution and variables that have an assumed
-    !!! (single) lognormal distribution for the ith PDF component, given their
-    !!! correlation and the normalized standard deviation of the variable with
-    !!! the assumed lognormal distribution.
-
-    if ( rrainm > rr_tol ) then
-
-       ! Normalize the correlation between w and r_r in PDF component 1.
-       corr_wrr_1_n = corr_NL2NN( corr_wrr_1, sigma_rr_n )
-
-       ! Normalize the correlation between w and r_r in PDF component 2.
-       corr_wrr_2_n = corr_NL2NN( corr_wrr_2, sigma_rr_n )
-
-    endif
-
-    if ( Nrm > Nr_tol ) then
-
-       ! Normalize the correlation between w and N_r in PDF component 1.
-       corr_wNr_1_n = corr_NL2NN( corr_wNr_1, sigma_Nr_n )
-
-       ! Normalize the correlation between w and N_r in PDF component 2.
-       corr_wNr_2_n = corr_NL2NN( corr_wNr_2, sigma_Nr_n )
-
-    endif
-
-    if ( Ncm > Nc_tol ) then
-
-       ! Normalize the correlation between s and N_c in PDF component 1.
-       corr_wNc_1_n = corr_NL2NN( corr_wNc_1, sigma_Nc_n )
-
-       ! Normalize the correlation between s and N_c in PDF component 2.
-       corr_wNc_2_n = corr_NL2NN( corr_wNc_2, sigma_Nc_n )
-
-    endif
-
     
     ! Set up the values of the statistical correlations and variances.  Since we
     ! currently do not have enough variables to compute the correlations and
@@ -1338,6 +1301,12 @@ module KK_microphys_module
 
     if ( rrainm > rr_tol ) then
 
+       ! Normalize the correlation between w and r_r in PDF component 1.
+       corr_wrr_1_n = corr_NL2NN( corr_wrr_1, sigma_rr_n )
+
+       ! Normalize the correlation between w and r_r in PDF component 2.
+       corr_wrr_2_n = corr_NL2NN( corr_wrr_2, sigma_rr_n )
+
        ! Normalize the correlation between t and r_r in PDF component 1.
        corr_trr_1_n = corr_NL2NN( corr_trr_1, sigma_rr_n )
 
@@ -1348,6 +1317,12 @@ module KK_microphys_module
 
     if ( Nrm > Nr_tol ) then
 
+       ! Normalize the correlation between w and N_r in PDF component 1.
+       corr_wNr_1_n = corr_NL2NN( corr_wNr_1, sigma_Nr_n )
+
+       ! Normalize the correlation between w and N_r in PDF component 2.
+       corr_wNr_2_n = corr_NL2NN( corr_wNr_2, sigma_Nr_n )
+
        ! Normalize the correlation between t and N_r in PDF component 1.
        corr_tNr_1_n = corr_NL2NN( corr_tNr_1, sigma_Nr_n )
 
@@ -1357,6 +1332,12 @@ module KK_microphys_module
     endif
 
     if ( Ncm > Nc_tol ) then
+
+       ! Normalize the correlation between s and N_c in PDF component 1.
+       corr_wNc_1_n = corr_NL2NN( corr_wNc_1, sigma_Nc_n )
+
+       ! Normalize the correlation between s and N_c in PDF component 2.
+       corr_wNc_2_n = corr_NL2NN( corr_wNc_2, sigma_Nc_n )
 
        ! Normalize the correlation between t and N_c in PDF component 1.
        corr_tNc_1_n = corr_NL2NN( corr_tNc_1, sigma_Nc_n )
