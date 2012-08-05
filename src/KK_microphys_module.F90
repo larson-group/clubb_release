@@ -54,8 +54,9 @@ module KK_microphys_module
         micron_per_m
 
     use parameters_microphys, only: &
-        KK_auto_Nc_exp,        &
-        C_evap
+        KK_auto_Nc_exp,  & ! Constant(s)
+        C_evap,          &
+        l_var_covar_src    ! Flag for using variance and covariance src terms
 
     use KK_utilities, only: &
         G_T_p  ! Procedure(s)
@@ -228,7 +229,6 @@ module KK_microphys_module
 
     logical :: &
       l_upscaled,        & ! Flag for using upscaled KK microphysics.
-      l_var_covar_src,   & ! Flag for using upscaled covariances.
       l_src_adj_enabled    ! Flag to enable rrainm/Nrm source adjustment
 
     integer :: &
@@ -265,8 +265,6 @@ module KK_microphys_module
     else
        l_upscaled = .false.
     endif
-
-    l_var_covar_src = .false.
 
     l_src_adj_enabled = .true.
 

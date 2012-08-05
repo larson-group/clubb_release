@@ -1,5 +1,5 @@
-!------------------------------------------------------------------------------
 ! $Id$
+!===============================================================================
 module microphys_driver
 
   ! Description:
@@ -14,7 +14,7 @@ module microphys_driver
   !  Khairoutdinov, M. and Kogan, Y.: A new cloud physics parameterization in a
   !  large-eddy simulation model of marine stratocumulus, Mon. Wea. Rev., 128,
   !  229-243, 2000.
-  !-----------------------------------------------------------------------------
+  !-------------------------------------------------------------------------
 
   use parameters_microphys, only: &
     l_in_cloud_Nc_diff,           & ! Use in cloud values of Nc for diffusion
@@ -36,6 +36,7 @@ module microphys_driver
     LH_sequence_length,           & ! Number of timesteps before the latin hypercube seq. repeats
     l_local_kk,                   & ! Use local formula for K&K
     l_upwind_diff_sed,            & ! Use the upwind differencing approx. for sediementation
+    l_var_covar_src,              & ! Flag for using variance and covariance src terms
     micro_scheme,                 & ! The microphysical scheme in use
     hydromet_list,                & ! Names of the hydrometeor species
     microphys_start_time,         & ! When to start the microphysics [s]
@@ -87,50 +88,50 @@ module microphys_driver
 
 ! Adding coefficient variable for clex9_oct14 case to reduce NNUCCD and NNUCCC
     use module_mp_graupel, only: &
-      NNUCCD_REDUCE_COEF, &
-      NNUCCC_REDUCE_COEF
+        NNUCCD_REDUCE_COEF, &
+        NNUCCC_REDUCE_COEF
 ! Change by Marc Pilon on 11/16/11
 
     use array_index, only: & 
-      iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
-      iiNcm, iiNsnowm, iiNim, iiNgraupelm
+        iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, & ! Variables
+        iiNcm, iiNsnowm, iiNim, iiNgraupelm
 
     use parameters_microphys, only: &
-      morrison_no_aerosol, &  ! Constants
-      morrison_power_law,  &
-      morrison_lognormal
+        morrison_no_aerosol, &  ! Constants
+        morrison_power_law,  &
+        morrison_lognormal
 
     use parameters_microphys, only: &
-      rrp2_on_rrainm2_cloud, & ! Variable(s)
-      Nrp2_on_Nrm2_cloud,    &
-      Ncp2_on_Ncm2_cloud,    &
-      rrp2_on_rrainm2_below, &
-      Nrp2_on_Nrm2_below,    &
-      Ncp2_on_Ncm2_below,    &
-      C_evap,                &
-      r_0,                   &
-      KK_evap_Supersat_exp,  &
-      KK_evap_rr_exp,        &
-      KK_evap_Nr_exp,        &
-      KK_auto_rc_exp,        &
-      KK_auto_Nc_exp,        &
-      KK_accr_rc_exp,        &
-      KK_accr_rr_exp,        &
-      KK_mvr_rr_exp,         &
-      KK_mvr_Nr_exp
+        rrp2_on_rrainm2_cloud, & ! Variable(s)
+        Nrp2_on_Nrm2_cloud,    &
+        Ncp2_on_Ncm2_cloud,    &
+        rrp2_on_rrainm2_below, &
+        Nrp2_on_Nrm2_below,    &
+        Ncp2_on_Ncm2_below,    &
+        C_evap,                &
+        r_0,                   &
+        KK_evap_Supersat_exp,  &
+        KK_evap_rr_exp,        &
+        KK_evap_Nr_exp,        &
+        KK_auto_rc_exp,        &
+        KK_auto_Nc_exp,        &
+        KK_accr_rc_exp,        &
+        KK_accr_rr_exp,        &
+        KK_mvr_rr_exp,         &
+        KK_mvr_Nr_exp
 
     use parameters_microphys, only: &
-      rsnowp2_on_rsnowm2_cloud, & ! Variables
-      Nsnowp2_on_Nsnowm2_cloud, & 
-      ricep2_on_ricem2_cloud, & 
-      Nicep2_on_Nicem2_cloud, &
-      rsnowp2_on_rsnowm2_below, & 
-      Nsnowp2_on_Nsnowm2_below, & 
-      ricep2_on_ricem2_below, & 
-      Nicep2_on_Nicem2_below
+        rsnowp2_on_rsnowm2_cloud, & ! Variables
+        Nsnowp2_on_Nsnowm2_cloud, & 
+        ricep2_on_ricem2_cloud, & 
+        Nicep2_on_Nicem2_cloud, &
+        rsnowp2_on_rsnowm2_below, & 
+        Nsnowp2_on_Nsnowm2_below, & 
+        ricep2_on_ricem2_below, & 
+        Nicep2_on_Nicem2_below
 
     use parameters_microphys, only: &
-      LH_microphys_type_int => LH_microphys_type ! Determines how the LH samples are used
+        LH_microphys_type_int => LH_microphys_type ! Determines how the LH samples are used
 
     use constants_clubb, only: &
         one,        & ! Constant(s)
@@ -140,47 +141,47 @@ module microphys_driver
         cm3_per_m3
 
     use KK_fixed_correlations, only: &
-      setup_KK_corr ! Procedure(s)
+        setup_KK_corr ! Procedure(s)
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
-      Nc0, ccnconst, ccnexpnt, & ! Variables
-      aer_rm1, aer_rm2, aer_n1, aer_n2, &
-      aer_sig1, aer_sig2, pgam_fixed, &
-      doicemicro, &         ! use ice species (snow/cloud ice/graupel)
-      dograupel, &          ! use graupel
-      dohail, &             ! make graupel species have properties of hail
-      dosb_warm_rain, &     ! use Seifert & Beheng (2001) warm rain parameterization
-      dopredictNc, &        ! prediction of cloud droplet number
-      aerosol_mode, &       ! specify two modes of (sulfate) aerosol
-      dosubgridw, &         ! input estimate of subgrid w to microphysics
-      doarcticicenucl, &    ! use arctic parameter values for ice nucleation
-      docloudedgeactivation,& ! activate cloud droplets throughout the cloud
-      dofix_pgam            ! option to fix value of pgam (exponent in cloud water gamma distn)
+        Nc0, ccnconst, ccnexpnt, & ! Variables
+        aer_rm1, aer_rm2, aer_n1, aer_n2, &
+        aer_sig1, aer_sig2, pgam_fixed, &
+        doicemicro, &         ! use ice species (snow/cloud ice/graupel)
+        dograupel, &          ! use graupel
+        dohail, &             ! make graupel species have properties of hail
+        dosb_warm_rain, &     ! use Seifert & Beheng (2001) warm rain parameterization
+        dopredictNc, &        ! prediction of cloud droplet number
+        aerosol_mode, &       ! specify two modes of (sulfate) aerosol
+        dosubgridw, &         ! input estimate of subgrid w to microphysics
+        doarcticicenucl, &    ! use arctic parameter values for ice nucleation
+        docloudedgeactivation,& ! activate cloud droplets throughout the cloud
+        dofix_pgam            ! option to fix value of pgam (exponent in cloud water gamma distn)
 
     use module_mp_Graupel, only: &
-      GRAUPEL_INIT ! Subroutine
+        GRAUPEL_INIT ! Subroutine
 
     use cldwat2m_micro, only: &
-      ini_micro ! Subroutine
+        ini_micro ! Subroutine
 
     use microp_aero, only: &
-      ini_microp_aero ! Subroutine
+        ini_microp_aero ! Subroutine
 
     use constants_clubb, only: &
-      fstderr    ! Constant
+        fstderr    ! Constant
 
     use text_writer, only: &
-      write_text   ! Used to write microphysics settings to setup.txt file
+        write_text   ! Used to write microphysics settings to setup.txt file
 
     use error_code, only: clubb_at_least_debug_level ! Function
 
     use gfdl_activation, only: nooc, sul_concen, & ! Variables
-      low_concen, high_concen, &
-      lowup, highup, lowup2, highup2, &
-      lowmass2, highmass2, lowmass3, highmass3, &
-      lowmass4, highmass4, lowmass5, highmass5, &
-      lowT2, highT2, aeromass_value
+        low_concen, high_concen, &
+        lowup, highup, lowup2, highup2, &
+        lowmass2, highmass2, lowmass3, highmass3, &
+        lowmass4, highmass4, lowmass5, highmass5, &
+        lowT2, highT2, aeromass_value
 
     use aer_ccn_act_k_mod, only: aer_ccn_act_k_init ! Procedure
 
@@ -192,7 +193,7 @@ module microphys_driver
 
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
-      setup_corr_varnce_array   ! Procedure(s)
+        setup_corr_varnce_array   ! Procedure(s)
 #endif /* LATIN_HYPERCUBE */
 
     implicit none
@@ -237,7 +238,7 @@ module microphys_driver
 
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, sigma_g, &
-      l_ice_micro, l_graupel, l_hail, l_upwind_diff_sed, &
+      l_ice_micro, l_graupel, l_hail, l_var_covar_src, l_upwind_diff_sed, &
       l_seifert_beheng, l_predictnc, specify_aerosol, l_subgrid_w, &
       l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, l_in_cloud_Nc_diff, &
       LH_microphys_type, l_local_kk, LH_microphys_calls, LH_sequence_length, &
@@ -351,6 +352,8 @@ module microphys_driver
     ricep2_on_ricem2_below = 1.0_core_rknd
     Nicep2_on_Nicem2_below = 1.0_core_rknd
 
+    l_var_covar_src = .false.
+
     !---------------------------------------------------------------------------
     ! Parameters for Morrison and COAMPS microphysics
     !---------------------------------------------------------------------------
@@ -460,6 +463,8 @@ module microphys_driver
         l_write_to_file, iunit )
       call write_text ( "l_fix_pgam = ", l_fix_pgam, l_write_to_file, iunit )
       call write_text ( "l_in_cloud_Nc_diff = ", l_in_cloud_Nc_diff, &
+        l_write_to_file, iunit )
+      call write_text ( "l_var_covar_src = ", l_var_covar_src, &
         l_write_to_file, iunit )
       call write_text ( "l_upwind_diff_sed = ", l_upwind_diff_sed, &
         l_write_to_file, iunit )

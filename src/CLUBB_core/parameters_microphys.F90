@@ -1,13 +1,14 @@
-!-------------------------------------------------------------------------------
 ! $Id$
+!===============================================================================
 module parameters_microphys
 
 ! Description:
-!   Parameters for microphysical schemes
+! Parameters for microphysical schemes
 
 ! References:
-!   None
-!-------------------------------------------------------------------------------
+! None
+!-------------------------------------------------------------------------
+
   use clubb_precision, only: &
     time_precision, &
     core_rknd
@@ -28,21 +29,24 @@ module parameters_microphys
 
   ! Local Variables
   logical, public :: & 
-    l_cloud_sed,       & ! Cloud water sedimentation (K&K/No microphysics)
-    l_ice_micro,       & ! Compute ice (COAMPS/Morrison)
-    l_upwind_diff_sed, & ! Use the upwind differencing approximation for sedimentation (K&K/COAMPS)
-    l_graupel,         & ! Compute graupel (COAMPS/Morrison)
-    l_hail,            & ! Assumption about graupel/hail? (Morrison)
-    l_seifert_beheng,  & ! Use Seifert and Behneng warm drizzle (Morrison)
-    l_predictnc,       & ! Predict cloud droplet number conc (Morrison)
-    l_subgrid_w,       & ! Use subgrid w (Morrison)
-    l_arctic_nucl,     & ! Use MPACE observations (Morrison)
-    l_fix_pgam,        & ! Fix pgam (Morrison)
-    l_in_cloud_Nc_diff   ! Use in cloud values of Nc for diffusion
+    l_cloud_sed,        & ! Cloud water sedimentation (K&K/No microphysics)
+    l_ice_micro,        & ! Compute ice (COAMPS/Morrison)
+    l_upwind_diff_sed,  & ! Use upwind differencing approx. for sedimentation (K&K/COAMPS)
+    l_graupel,          & ! Compute graupel (COAMPS/Morrison)
+    l_hail,             & ! Assumption about graupel/hail? (Morrison)
+    l_seifert_beheng,   & ! Use Seifert and Behneng warm drizzle (Morrison)
+    l_predictnc,        & ! Predict cloud droplet number conc (Morrison)
+    l_subgrid_w,        & ! Use subgrid w (Morrison)
+    l_arctic_nucl,      & ! Use MPACE observations (Morrison)
+    l_fix_pgam,         & ! Fix pgam (Morrison)
+    l_in_cloud_Nc_diff, & ! Use in cloud values of Nc for diffusion
+    l_var_covar_src       ! Flag for using upscaled microphysics source terms
+                          ! for predictive variances and covariances (KK micro)
 
-!$omp threadprivate(l_cloud_sed, l_ice_micro, l_graupel, l_hail, l_upwind_diff_sed, &
-!$omp   l_seifert_beheng, l_predictnc, l_subgrid_w, &
-!$omp   l_arctic_nucl, l_fix_pgam, l_in_cloud_Nc_diff)
+!$omp threadprivate( l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
+!$omp                l_upwind_diff_sed, l_seifert_beheng, l_predictnc, &
+!$omp                l_subgrid_w, l_arctic_nucl, l_fix_pgam, &
+!$omp                l_in_cloud_Nc_diff, l_var_covar_src )
 
   logical, public :: & 
     l_cloud_edge_activation,    & ! Activate on cloud edges (Morrison)
@@ -59,44 +63,45 @@ module parameters_microphys
     l_lh_cloud_weighted_sampling, & ! Limit noise by sampling in-cloud
     l_lh_vert_overlap               ! Assume maximum overlap for s_mellor
 
-!$omp threadprivate(l_fix_s_t_correlations, l_lh_cloud_weighted_sampling, &
-!$omp   l_lh_vert_overlap)
+!$omp threadprivate( l_fix_s_t_correlations, l_lh_cloud_weighted_sampling, &
+!$omp                l_lh_vert_overlap )
 
   integer, public :: &
     LH_microphys_calls, & ! Number of latin hypercube samples to call the microphysics with
     LH_sequence_length    ! Number of timesteps before the latin hypercube seq. repeats
-!$omp threadprivate(LH_microphys_calls,LH_sequence_length)
+
+!$omp threadprivate( LH_microphys_calls, LH_sequence_length )
 
   ! Determines how the latin hypercube samples should be used with the microphysics
   integer, public :: &
     LH_microphys_type 
 
-!$omp threadprivate(LH_microphys_type)
+!$omp threadprivate( LH_microphys_type )
 
   character(len=50), public :: &
     micro_scheme ! khairoutdinv_kogan, simplified_ice, coamps, etc.
 
-!$omp threadprivate(micro_scheme)
+!$omp threadprivate( micro_scheme )
 
   character(len=10), dimension(:), allocatable, public :: & 
     hydromet_list
 
-!$omp threadprivate(hydromet_list)
+!$omp threadprivate( hydromet_list )
 
   real(kind=time_precision), public :: &
     microphys_start_time  ! When to start the microphysics      [s]
 
-!$omp threadprivate(microphys_start_time)
+!$omp threadprivate( microphys_start_time )
 
   real( kind = core_rknd ), public :: &
     Ncm_initial ! Initial cloud droplet number concentration [#/m^3]
 
-!$omp threadprivate(Ncm_initial)
+!$omp threadprivate( Ncm_initial )
 
   real( kind = core_rknd ), public :: &
     sigma_g ! Geometric std. dev. of cloud droplets falling in a stokes regime.
 
-!$omp threadprivate(sigma_g)
+!$omp threadprivate( sigma_g )
 
   ! Statistical rain parameters        .
 
@@ -106,8 +111,8 @@ module parameters_microphys
     Nrp2_on_Nrm2_cloud,    & ! 0.429
     Ncp2_on_Ncm2_cloud       ! 0.003
 
-
-!$omp threadprivate( rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud )
+!$omp threadprivate( rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, &
+!$omp                Ncp2_on_Ncm2_cloud )
 
   ! Parameters for below-cloud (from SAM RF02 DO).
   real( kind = core_rknd ), public :: &       ! RF02 value
@@ -115,7 +120,8 @@ module parameters_microphys
     Nrp2_on_Nrm2_below,    & ! 12.03
     Ncp2_on_Ncm2_below       ! 0.00 ! Not applicable below cloud.
 
-!$omp threadprivate( rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below )
+!$omp threadprivate( rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, &
+!$omp                Ncp2_on_Ncm2_below )
 
   ! Other needed parameters
   real( kind = core_rknd ), public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of
@@ -148,9 +154,9 @@ module parameters_microphys
     KK_mvr_rr_exp,        & ! Exponent on r_r in KK mean volume radius eq.; 1/3
     KK_mvr_Nr_exp           ! Exponent on N_r in KK mean volume radius eq.; -1/3
 
-!$omp threadprivate(KK_evap_Supersat_exp, KK_evap_rr_exp, KK_evap_Nr_exp, &
-!$omp   KK_auto_rc_exp, KK_auto_Nc_exp, KK_accr_rc_exp, KK_accr_rr_exp,  &
-!$omp   KK_mvr_rr_exp, KK_mvr_Nr_exp)
+!$omp threadprivate( KK_evap_Supersat_exp, KK_evap_rr_exp, KK_evap_Nr_exp, &
+!$omp                KK_auto_rc_exp, KK_auto_Nc_exp, KK_accr_rc_exp, &
+!$omp                KK_accr_rr_exp, KK_mvr_rr_exp, KK_mvr_Nr_exp )
 
   ! Parameters added for ice microphysics and latin hypercube sampling
 
@@ -161,7 +167,7 @@ module parameters_microphys
     Nicep2_on_Nicem2_cloud
 
 !$omp threadprivate( rsnowp2_on_rsnowm2_cloud, Nsnowp2_on_Nsnowm2_cloud, & 
-!$omp   ricep2_on_ricem2_cloud, Nicep2_on_Nicem2_cloud )
+!$omp                ricep2_on_ricem2_cloud, Nicep2_on_Nicem2_cloud )
 
    real( kind = core_rknd ), public :: &
      rsnowp2_on_rsnowm2_below, & 
@@ -170,7 +176,7 @@ module parameters_microphys
      Nicep2_on_Nicem2_below
 
 !$omp threadprivate( rsnowp2_on_rsnowm2_below, Nsnowp2_on_Nsnowm2_below, & 
-!$omp   ricep2_on_ricem2_below, Nicep2_on_Nicem2_below )
+!$omp                ricep2_on_ricem2_below, Nicep2_on_Nicem2_below )
    
   private ! Default Scope
 
