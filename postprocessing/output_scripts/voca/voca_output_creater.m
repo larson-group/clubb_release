@@ -151,7 +151,7 @@ end % for numfiles
 % IF YOU DON'T WANT TO INCLUDE ALL TIMESTEPS IN THE PLOTS, SET THIS VARIABLE TO
 % THE TOTAL NUMBER OF TIMESTEPS YOU WANT TO INCLUDE; OTHERWISE SET IT TO
 % TOTALTIMES
-my_totaltimes = 180;
+my_totaltimes = totaltimes;
 
 
 % Close the WRF output file which was read
