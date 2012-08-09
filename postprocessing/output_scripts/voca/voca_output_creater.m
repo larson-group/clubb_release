@@ -323,7 +323,7 @@ for ifilenum=1:numfiles
         tstart = tend + 1
         tend = tstart + numTimes - tWRFstart - 1
 
-        cur_times = my_totaltimes + numTimes;
+        cur_times = cur_times + numTimes;
         
         if cur_times > my_totaltimes
             tend = calc_times
