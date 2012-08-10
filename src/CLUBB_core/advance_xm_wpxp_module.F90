@@ -125,6 +125,9 @@ module advance_xm_wpxp_module
         reportError, &
         fatal_error
 
+    use error_code, only:  & 
+      clubb_var_out_of_range ! Constant(s)
+
     use stats_type, only: &
         stat_begin_update, & ! Procedure(s)
         stat_end_update, &
@@ -324,7 +327,15 @@ module advance_xm_wpxp_module
       call stat_update_var( iC6rt_Skw_fnc, C6rt_Skw_fnc, zm )
       call stat_update_var( iC6thl_Skw_fnc, C6thl_Skw_fnc, zm )
 
-    endif
+    end if
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      ! Assertion check for C7_Skw_fnc
+      if ( any( C7_Skw_fnc(:) > one ) .or. any( C7_Skw_fnc(:) < zero ) ) then
+        err_code = clubb_var_out_of_range
+        return
+      end if
+    end if
 
     ! Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
     ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
