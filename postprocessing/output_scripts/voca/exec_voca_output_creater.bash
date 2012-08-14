@@ -14,7 +14,10 @@ echo "have a look at ticket 47 of the WRF trac."
 echo ""
 echo "Note: If you are using this script to create plots, you can put additional"
 echo "information on the plots by creating a file named run.nfo which contains one"
-echo "line of text. This file has to be located in <indir>."
+echo "line of text. This file has to be located in <indir>. You can also use the"
+echo "-n option to assign a <name> to jobs. If the -m option is used <name> will"
+echo "show up in the name of the pdf-output. If used on HD1, <name> will appear"
+echo "in the bjobs table and in the job output filename. "
 echo ""
 echo "Attention: If you are using the -d option, all wrfout files have to be located"
 echo "directly in <indir>. No other files should be in that directory except files"
@@ -22,7 +25,7 @@ echo "with the following extensions: .pdf, .png, .eps, .nfo."
 echo ""
 echo "Dependencies: matlab, [atd, bsub]"
 echo "" 
-echo "Usage: ./exec_voca_output_creater.bash [-bmH] -a <action> -f <infile> | -d <indir>"
+echo "Usage: ./exec_voca_output_creater.bash [-bmH] [-n <name>] -a <action> -f <infile> | -d <indir>"
 echo ""
 echo "Options:"
 echo "-h -- show this page"
@@ -31,6 +34,7 @@ echo "-d -- use input directory <indir>"
 echo "-a -- perform action <action>"
 echo "-b -- run the script in the background"
 echo "-m -- merge the eps-graphics to a pdf-file"
+echo "-n -- Jobname <name>"
 echo "-H -- run the script on HD1"
 echo "------------------------------------------------------------------------------------"
 }
@@ -42,8 +46,9 @@ action=''
 background=false
 merge=false
 hd1=false
+hd1name=MatlabJob
 
-while getopts hHbma:f:d: opt
+while getopts hHbmn:a:f:d: opt
 do
   case "$opt" in
     f) infile="$OPTARG";;
@@ -52,6 +57,7 @@ do
     b) background=true;;
     m) merge=true;;
     H) hd1=true;;
+    n) hd1name="$OPTARG";;
     h) myhelp; exit;;
     \?) echo "Error: Unknown option."; myhelp;;
   esac
@@ -105,10 +111,15 @@ if [ "$infile" != "" ] && [ -f $infile ]; then
 				rm run_matlab_tmp.job
 			fi
 			touch run_matlab_tmp.job
-			echo '#BSUB -J MatlabJob'>>run_matlab_tmp.job
-			echo '#BSUB -o MatlabJob_output_%J'>>run_matlab_tmp.job
+			echo '#BSUB -J '$hd1name>>run_matlab_tmp.job
+			echo '#BSUB -o MatlabJob_'$hd1name'_%J'>>run_matlab_tmp.job
+			echo '#BSUB -K'>>run_matlab_tmp.job
 			echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\(\'$infile\'\,\'$action\'\)">>run_matlab_tmp.job
 			bsub < run_matlab_tmp.job
+			while [ ! -e 'MatlabJob_'$hd1name'_'* ]; do
+				sleep 1
+			done
+			mv 'MatlabJob_'$hd1name'_'* ${infile%/*}/
 
 		# usual run		
 		else
@@ -117,7 +128,7 @@ if [ "$infile" != "" ] && [ -f $infile ]; then
 			
 		# merge eps to pdf
 		if [ $merge = true ]; then	
-			./mergeEPS.bash -f ${infile%/*}/ ${infile%/*}/plots.pdf
+			./mergeEPS.bash -f ${infile%/*}/ plots_"$hd1name".pdf
 		fi 
 	fi	
 
@@ -160,10 +171,16 @@ elif [ "$indir" != "" ] && [ -d $indir ]; then
 				rm run_matlab_tmp.job
 			fi
 			touch run_matlab.job
-			echo '#BSUB -J MatlabJob'>>run_matlab_tmp.job
-			echo '#BSUB -o MatlabJob_output_%J'>>run_matlab_tmp.job
+			echo '#BSUB -J '$hd1name>>run_matlab_tmp.job
+			echo '#BSUB -o MatlabJob_'$hd1name'_output_%J'>>run_matlab_tmp.job
+			echo '#BSUB -K'>>run_matlab_tmp.job
 			echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\($fileList\,\'$action\'\)">>run_matlab_tmp.job
 			bsub < run_matlab_tmp.job
+			while [ ! -e 'MatlabJob_'$hd1name'_'* ]; do
+				sleep 1
+			done
+			echo "moving to ${indir%*/}/"
+			mv 'MatlabJob_'$hd1name'_'* ${indir%*/}/
 
 		# usual run
 		else 
@@ -173,7 +190,7 @@ elif [ "$indir" != "" ] && [ -d $indir ]; then
 
 		# merge eps to pdf
 		if [ $merge = true ]; then	
-			./mergeEPS.bash -f ${infile%/*}/ ${infile%/*}/plots.pdf
+			./mergeEPS.bash -f ${indir%*/}/ plots_"$hd1name".pdf
 		fi 
 	fi
 	
