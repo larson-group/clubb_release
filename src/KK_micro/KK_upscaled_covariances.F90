@@ -17,7 +17,8 @@ module KK_upscaled_covariances
             covar_thl_KK_accr
 
   private :: quadrivar_NNLL_covar_eq, &
-             trivar_NNL_covar_eq
+             trivar_NNL_covar_eq, &
+             trivar_NNL_covar_eq_Nc0
 
   contains
 
@@ -1406,6 +1407,199 @@ module KK_upscaled_covariances
     return
 
   end function trivar_NNL_covar_eq
+
+  !=============================================================================
+  function trivar_NNL_covar_eq_Nc0( mu_x_i, mu_s_i, Nc0_in_cloud, &
+                                    sigma_x_i, sigma_s_i, corr_xs_i, &
+                                    x_mean, mc_tndcy_mean, mc_coef, &
+                                    x_tol, alpha_exp_in, beta_exp_in )
+
+    ! Description:
+    ! This function calculates the contribution by the ith PDF component to the
+    ! expression < y1'y2'_(i) >, where y1 = x1 ( = x, which is w or t), and
+    ! where y2 = x2^alpha x3^beta ( = s^alpha y^beta, where y is N_c or r_r for
+    ! autoconversion or accretion, respectively, and which also equals
+    ! KK_auto_tndcy / KK_auto_coef or KK_accr_tndcy / KK_accr_coef,
+    ! respectively).  The value of covariance of x and the KK microphysics
+    ! tendency is:
+    !
+    ! < x'KK_mc' > = KK_mc_coef
+    !                * ( mixt_frac < y1'y2'_(1) >
+    !                    + ( 1 - mixt_frac ) < y1'y2'_(2) > ).
+    ! 
+    ! One of four functions are called, based on whether x1 and/or x2 (x and/or
+    ! s) vary.  Each one of these four functions is the result of an evaluated
+    ! integral based on the specific situation.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use PDF_integrals_covars, only: &
+        trivar_NNL_covar_const_x3,     & ! Procedure(s)
+        trivar_NNL_covar_const_x1x3,   &
+        trivar_NNL_covar_const_x2x3,   &
+        trivar_NNL_covar_const_all
+
+    use constants_clubb, only: &
+        s_mellor_tol, & ! Constant(s)
+        parab_cyl_max_input
+
+    use clubb_precision, only: &
+        dp,        & ! double precision
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_x_i,       & ! Mean of x (ith PDF component)                       [-]
+      mu_s_i,       & ! Mean of s (ith PDF component)                   [kg/kg]
+      Nc0_in_cloud, & ! Constant in-cloud value of cloud droplet conc. [num/kg]
+      sigma_x_i,    & ! Standard deviation of x (ith PDF component)         [-]
+      sigma_s_i,    & ! Standard deviation of s (ith PDF component)     [kg/kg]
+      corr_xs_i       ! Correlation between x and s (ith PDF component)     [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      x_mean,        & ! Mean of x (overall)                       [units vary]
+      mc_tndcy_mean, & ! Mean of microphysics tendency              [(kg/kg)/s]
+      mc_coef,       & ! Coefficient of microphysics                [(kg/kg)/s]
+      x_tol            ! Tolerance value of x                      [units vary]
+
+    real( kind = core_rknd ), intent(in) :: &
+      alpha_exp_in,  & ! Exponent alpha, corresponding to s                 [-]
+      beta_exp_in      ! Exponent beta, corresponding to y                  [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      trivar_NNL_covar_eq_Nc0
+
+    ! Local Variables
+    real( kind = dp ) :: &
+      mu_x1,    & ! Mean of x1 (ith PDF component)                          [-]
+      mu_x2,    & ! Mean of x2 (ith PDF component)                          [-]
+      Nc0,      & ! Constant in-cloud value of cloud droplet conc.     [num/kg]
+      sigma_x1, & ! Standard deviation of x1 (ith PDF component)            [-]
+      sigma_x2, & ! Standard deviation of x2 (ith PDF component)            [-]
+      rho_x1x2    ! Correlation between x1 and x2 (ith PDF component)       [-]
+
+    real( kind = dp ) :: &
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
+    
+    real( kind = dp ) :: &
+      alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
+      beta_exp      ! Exponent beta, corresponding to x3                    [-]
+
+    real( kind = dp ) :: &
+      x1_tol, & ! Tolerance value of x1                                     [-]
+      x2_tol, & ! Tolerance value of x2                                     [-]
+      s_c       ! Parabolic cylinder function input value                   [-]
+
+
+    ! Means for the ith PDF component. 
+    mu_x1 = dble( mu_x_i ) ! x is w or t (ith component).
+    mu_x2 = dble( mu_s_i )
+    Nc0   = dble( Nc0_in_cloud )
+
+    ! Standard deviations for the ith PDF component.
+    sigma_x1 = dble( sigma_x_i ) ! x is w or t (ith component).
+    sigma_x2 = dble( sigma_s_i )
+
+    ! Correlations for the ith PDF component.
+    rho_x1x2 = dble( corr_xs_i )    ! x is w or t (ith component).
+
+    ! Overall means.
+    x1_mean = dble( x_mean )  ! x is w or t.
+    x2_alpha_x3_beta_mean = dble( mc_tndcy_mean / mc_coef )
+
+    ! Exponents.
+    alpha_exp = dble( alpha_exp_in )
+    beta_exp  = dble( beta_exp_in )
+
+    ! Tolerance values.
+    ! When the standard deviation of a variable is below the tolerance values,
+    ! it is considered to be zero, and the variable is considered to have a
+    ! constant value.
+    x1_tol = dble( x_tol )  ! x is w or t.
+    x2_tol = dble( s_mellor_tol )
+
+    ! Determine the value of the parabolic cylinder function input value, s_c.
+    ! The value s_c is being fed into the parabolic cylinder function.  When
+    ! the value of s_c is too large in magnitude (depending on the order of the
+    ! parabolic cylinder function), overflow occurs, and the output of the
+    ! parabolic cylinder function is +/-Inf.  This is primarily due to a large
+    ! ratio of mu_x2 to sigma_x2.  When the value of s_c is very large, the
+    ! distribution of x2 is basically a spike near the mean, so x2 is treated as
+    ! a constant.
+    if ( sigma_x2 > x2_tol ) then
+       s_c = mu_x2 / sigma_x2
+    else  ! sigma_x2 = 0
+       ! Note:  s_c is +inf when mu_x2 > 0 and sigma_x2 = 0, and s_c is -inf
+       !        when mu_x2 < 0 and sigma_x2 = 0.  Furthermore, s_c is undefined
+       !        when mu_x2 = 0 and sigma_x2 = 0.  However, within the context of
+       !        this particular function, only the absolute value of s_c is
+       !        relevant, and furthermore the absolute value of s_c is only
+       !        relevant when sigma_x2 > 0.  Therefore, this statement only
+       !        serves as divide-by-zero and compiler warning prevention.
+       s_c = huge( s_c )
+    endif
+
+
+    ! Based on the values of sigma_x1 and sigma_x2 (including the value of s_c
+    ! compared to parab_cyl_max_input), find the correct form of the trivariate
+    ! equation to use.
+
+    if ( sigma_x1 <= x1_tol .and.  &
+         ( sigma_x2 <= x2_tol .or.  &
+           abs( s_c ) > dble( parab_cyl_max_input ) ) ) then
+
+       ! The ith PDF component variance of both x (w or t) and s is 0.
+       trivar_NNL_covar_eq_Nc0  &
+       = real( trivar_NNL_covar_const_all( mu_x1, mu_x2, Nc0, &
+                                           x1_mean, x2_alpha_x3_beta_mean, &
+                                           alpha_exp, beta_exp ),  &
+         kind = core_rknd )
+
+
+    elseif ( sigma_x1 <= x1_tol ) then
+
+       ! The ith PDF component variance of x (w or t) is 0.
+       trivar_NNL_covar_eq_Nc0  &
+       = real( trivar_NNL_covar_const_x1x3( mu_x1, mu_x2, Nc0, sigma_x2, &
+                                            x1_mean, x2_alpha_x3_beta_mean, &
+                                            alpha_exp, beta_exp ),  &
+               kind = core_rknd )
+
+
+    elseif ( sigma_x2 <= x2_tol .or.  &
+             abs( s_c ) > dble( parab_cyl_max_input ) ) then
+
+       ! The ith PDF component variance of s is 0.
+       trivar_NNL_covar_eq_Nc0  &
+       = real( trivar_NNL_covar_const_x2x3( mu_x1, mu_x2, Nc0, &
+                                            x1_mean, x2_alpha_x3_beta_mean, &
+                                            alpha_exp, beta_exp ),  &
+               kind = core_rknd )
+
+
+    else  ! sigma_x1 > 0 and sigma_x2 > 0.
+
+       ! This is the complete value of the trivariate.
+       ! All fields vary in the ith PDF component.
+       trivar_NNL_covar_eq_Nc0  &
+       = real( trivar_NNL_covar_const_x3( mu_x1, mu_x2, Nc0, &
+                                          sigma_x1, sigma_x2, rho_x1x2, &
+                                          x1_mean, x2_alpha_x3_beta_mean, &
+                                          alpha_exp, beta_exp ),  &
+               kind = core_rknd )
+
+
+    endif
+
+
+    return
+
+  end function trivar_NNL_covar_eq_Nc0
 
 !===============================================================================
 

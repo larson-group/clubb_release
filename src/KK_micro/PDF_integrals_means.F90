@@ -10,6 +10,8 @@ module PDF_integrals_means
             trivar_NLL_mean_const_x1, &
             bivar_NL_mean, &
             bivar_NL_mean_const_x1, &
+            bivar_NL_mean_const_x2, &
+            bivar_NL_mean_const_all, &
             bivar_LL_mean
 
   contains
@@ -253,6 +255,101 @@ module PDF_integrals_means
     return
 
   end function bivar_NL_mean_const_x1
+
+  !=============================================================================
+  function bivar_NL_mean_const_x2( mu_x1, mu_x2, sigma_x1, &
+                                   alpha_exp, beta_exp )
+
+    ! Description:
+
+    ! References:
+    !  Larson, V. E. and B. M. Griffin (2010)
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        pi_dp,         &  ! Constant(s)
+        two_dp,        &
+        one_dp,        &
+        one_fourth_dp
+
+    use KK_utilities, only:  &
+        Dv_fnc  ! Procedure(s)
+
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
+
+    use clubb_precision, only: &
+        dp ! double precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) :: &
+      mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
+      mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
+      sigma_x1,   & ! Standard deviation of x1 (ith PDF component)          [-]
+      alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
+      beta_exp      ! Exponent beta, corresponding to x2                    [-]
+
+    ! Return Variable
+    real( kind = dp ) ::  &
+      bivar_NL_mean_const_x2
+
+    bivar_NL_mean_const_x2  &
+    = ( one_dp / sqrt( two_dp*pi_dp ) )  &
+      * sigma_x1**alpha_exp * mu_x2**beta_exp  &
+      * exp( - one_fourth_dp * ( mu_x1**2 / sigma_x1**2 ) )  &
+      * gamma( alpha_exp + one_dp )  &
+      * Dv_fnc( -(alpha_exp + one_dp), -( mu_x1 / sigma_x1 ) )
+
+    return
+
+  end function bivar_NL_mean_const_x2
+
+  !=============================================================================
+  function bivar_NL_mean_const_all( mu_x1, mu_x2, alpha_exp, beta_exp )
+
+
+    ! Description:
+
+    ! References:
+    !  Larson, V. E. and B. M. Griffin (2010)
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &  
+        zero_dp  ! Constant(s)
+
+    use clubb_precision, only: &
+        dp ! double precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) :: &
+      mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
+      mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
+      alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
+      beta_exp      ! Exponent beta, corresponding to x2                    [-]
+
+    ! Return Variable
+    real( kind = dp ) :: &
+      bivar_NL_mean_const_all
+
+    if ( mu_x1 >= zero_dp ) then
+
+       bivar_NL_mean_const_all  &
+       = mu_x1**alpha_exp * mu_x2**beta_exp
+
+    else ! mu_x1 < 0
+
+       bivar_NL_mean_const_all = zero_dp
+
+    endif
+
+
+    return
+
+  end function bivar_NL_mean_const_all
 
   !=============================================================================
   function bivar_LL_mean( mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, &

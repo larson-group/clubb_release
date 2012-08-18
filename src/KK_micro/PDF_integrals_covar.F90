@@ -13,7 +13,11 @@ module PDF_integrals_covars
             trivar_NNL_covar, &
             trivar_NNL_covar_const_x1, &
             trivar_NNL_covar_const_x2, &
-            trivar_NNL_covar_const_x1x2
+            trivar_NNL_covar_const_x3, &
+            trivar_NNL_covar_const_x1x2, &
+            trivar_NNL_covar_const_x1x3, &
+            trivar_NNL_covar_const_x2x3, &
+            trivar_NNL_covar_const_all
 
   contains
 
@@ -483,7 +487,7 @@ module PDF_integrals_covars
     real( kind = dp ) ::  &
       s_c    !
 
-    s_c = ( mu_x2 / sigma_x2 ) + rho_x2x3_n * sigma_x3_n * beta_exp;
+    s_c = ( mu_x2 / sigma_x2 ) + rho_x2x3_n * sigma_x3_n * beta_exp
    
     trivar_NNL_covar_const_x1  &
     = ( one_dp / sqrt( two_dp*pi_dp ) ) * ( mu_x1 - x1_mean )  &
@@ -562,6 +566,73 @@ module PDF_integrals_covars
   end function trivar_NNL_covar_const_x2
 
   !=============================================================================
+  function trivar_NNL_covar_const_x3( mu_x1, mu_x2, mu_x3, &
+                                      sigma_x1, sigma_x2, rho_x1x2, &
+                                      x1_mean, x2_alpha_x3_beta_mean, &
+                                      alpha_exp, beta_exp )
+
+    ! Description:
+
+    ! References:
+    !  Griffin, B. M. (2011)
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        pi_dp,         &  ! Constant(s)
+        two_dp,        &
+        one_dp,        &
+        one_fourth_dp
+
+    use KK_utilities, only:  &
+        Dv_fnc  ! Procedure(s)
+
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
+
+    use clubb_precision, only: &
+        dp ! double precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) :: &
+      mu_x1,    & ! Mean of x1 (ith PDF component)                          [-]
+      mu_x2,    & ! Mean of x2 (ith PDF component)                          [-]
+      mu_x3,    & ! Mean of x3 (ith PDF component)                          [-]
+      sigma_x1, & ! Standard deviation of x1 (ith PDF component)            [-]
+      sigma_x2, & ! Standard deviation of x2 (ith PDF component)            [-]
+      rho_x1x2    ! Correlation between x1 and x2 (ith PDF component)       [-]
+
+    real( kind = dp ), intent(in) :: &
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
+    
+    real( kind = dp ), intent(in) :: &
+      alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
+      beta_exp      ! Exponent beta, corresponding to x3                    [-]
+
+    ! Return Variable
+    real( kind = dp ) ::  &
+      trivar_NNL_covar_const_x3
+
+    trivar_NNL_covar_const_x3  &
+    = one_dp / sqrt( two_dp*pi_dp )  &
+      * sigma_x2**alpha_exp * mu_x3**beta_exp  &
+      * exp( - one_fourth_dp * ( mu_x2**2 / sigma_x2**2 ) )  &
+      * ( rho_x1x2 * sigma_x1 * gamma( alpha_exp + two_dp )  &
+          * Dv_fnc( -(alpha_exp + two_dp), -( mu_x2 / sigma_x2 ) )  &
+        + ( mu_x1 - x1_mean  &
+            - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1 )  &
+          * gamma( alpha_exp + one_dp )  &
+          * Dv_fnc( -(alpha_exp + one_dp), -( mu_x2 / sigma_x2 ) )  &
+        )  &
+      - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
+
+    return
+
+  end function trivar_NNL_covar_const_x3
+
+  !=============================================================================
   function trivar_NNL_covar_const_x1x2( mu_x1, mu_x2, mu_x3_n, sigma_x3_n, &
                                         x1_mean, x2_alpha_x3_beta_mean, &
                                         alpha_exp, beta_exp )
@@ -619,6 +690,174 @@ module PDF_integrals_covars
     return
 
   end function trivar_NNL_covar_const_x1x2
+
+  !=============================================================================
+  function trivar_NNL_covar_const_x1x3( mu_x1, mu_x2, mu_x3, sigma_x2, &
+                                        x1_mean, x2_alpha_x3_beta_mean, &
+                                        alpha_exp, beta_exp )
+
+    ! Description:
+
+    ! References:
+    !  Griffin, B. M. (2011)
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        pi_dp,         &  ! Constant(s)
+        two_dp,        &
+        one_dp,        &
+        one_fourth_dp
+
+    use KK_utilities, only:  &
+        Dv_fnc  ! Procedure(s)
+
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
+
+    use clubb_precision, only: &
+        dp ! double precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) :: &
+      mu_x1,    & ! Mean of x1 (ith PDF component)                          [-]
+      mu_x2,    & ! Mean of x2 (ith PDF component)                          [-]
+      mu_x3,    & ! Mean of x3 (ith PDF component)                          [-]
+      sigma_x2    ! Standard deviation of x2 (ith PDF component)            [-]
+
+    real( kind = dp ), intent(in) :: &
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
+    
+    real( kind = dp ), intent(in) :: &
+      alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
+      beta_exp      ! Exponent beta, corresponding to x3                    [-]
+
+    ! Return Variable
+    real( kind = dp ) ::  &
+      trivar_NNL_covar_const_x1x3   
+
+    trivar_NNL_covar_const_x1x3  &
+    = ( one_dp / sqrt( two_dp*pi_dp ) ) * ( mu_x1 - x1_mean )  &
+      * sigma_x2**alpha_exp * mu_x3**beta_exp  &
+      * exp( - one_fourth_dp * ( mu_x2**2 / sigma_x2**2 ) )  &
+      * gamma( alpha_exp + one_dp )  &
+      * Dv_fnc( -(alpha_exp + one_dp), -( mu_x2 / sigma_x2 ) )  &
+      - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
+
+    return
+
+  end function trivar_NNL_covar_const_x1x3
+
+  !=============================================================================
+  function trivar_NNL_covar_const_x2x3( mu_x1, mu_x2, mu_x3, &
+                                        x1_mean, x2_alpha_x3_beta_mean, &
+                                        alpha_exp, beta_exp )
+
+    ! Description:
+
+    ! References:
+    !  Griffin, B. M. (2011)
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        zero_dp  ! Constant(s)
+
+    use clubb_precision, only: &
+        dp ! double precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) :: &
+      mu_x1, & ! Mean of x1 (ith PDF component)                             [-]
+      mu_x2, & ! Mean of x2 (ith PDF component)                             [-]
+      mu_x3    ! Mean of x3 (ith PDF component)                             [-]
+
+    real( kind = dp ), intent(in) :: &
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
+    
+    real( kind = dp ), intent(in) :: &
+      alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
+      beta_exp      ! Exponent beta, corresponding to x3                    [-]
+
+    ! Return Variable
+    real( kind = dp ) ::  &
+      trivar_NNL_covar_const_x2x3
+
+    if ( mu_x2 >= zero_dp ) then
+
+       trivar_NNL_covar_const_x2x3  &
+       = ( mu_x1 - x1_mean ) &
+         * ( mu_x2**alpha_exp * mu_x3**beta_exp - x2_alpha_x3_beta_mean ) 
+
+    else ! mu_x2 < 0
+
+       trivar_NNL_covar_const_x2x3  &
+       = - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
+
+    endif
+  
+    return
+
+  end function trivar_NNL_covar_const_x2x3
+
+!=============================================================================
+  function trivar_NNL_covar_const_all( mu_x1, mu_x2, mu_x3, &
+                                       x1_mean, x2_alpha_x3_beta_mean, &
+                                       alpha_exp, beta_exp )
+
+    ! Description:
+
+    ! References:
+    !  Griffin, B. M. (2011)
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one_half_dp,   &  ! Constant(s)
+        zero_dp
+
+    use clubb_precision, only: &
+        dp ! double precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) :: &
+      mu_x1, & ! Mean of x1 (ith PDF component)                             [-]
+      mu_x2, & ! Mean of x2 (ith PDF component)                             [-]
+      mu_x3    ! Mean of x3 (ith PDF component)                             [-]
+
+    real( kind = dp ), intent(in) :: &
+      x1_mean,               & ! Mean of x1 (overall)                       [-]
+      x2_alpha_x3_beta_mean    ! Mean of x2^alpha x3^beta                   [-]
+    
+    real( kind = dp ), intent(in) :: &
+      alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
+      beta_exp      ! Exponent beta, corresponding to x3                    [-]
+
+    ! Return Variable
+    real( kind = dp ) ::  &
+      trivar_NNL_covar_const_all
+
+    if ( mu_x2 >= zero_dp ) then
+
+       trivar_NNL_covar_const_all  &
+       = ( mu_x1 - x1_mean )  &
+         * ( mu_x2**alpha_exp * mu_x3**beta_exp - x2_alpha_x3_beta_mean )
+
+    else ! mu_x2 < 0
+
+       trivar_NNL_covar_const_all  &
+       = - x2_alpha_x3_beta_mean * ( mu_x1 - x1_mean )
+
+    endif
+  
+    return
+
+  end function trivar_NNL_covar_const_all
 
 !===============================================================================
 
