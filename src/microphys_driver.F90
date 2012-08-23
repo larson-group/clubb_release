@@ -24,6 +24,7 @@ module microphys_driver
     l_hail,                       & ! See module_mp_graupel for a description
     l_seifert_beheng,             & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
     l_predictnc,                  & ! Predict cloud droplet number conc (Morrison)
+    l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
     specify_aerosol,              & ! Specify aerosol (Morrison)
     l_subgrid_w,                  & ! Use subgrid w  (Morrison)
     l_arctic_nucl,                & ! Use MPACE observations (Morrison)
@@ -239,10 +240,11 @@ module microphys_driver
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, sigma_g, &
       l_ice_micro, l_graupel, l_hail, l_var_covar_src, l_upwind_diff_sed, &
-      l_seifert_beheng, l_predictnc, specify_aerosol, l_subgrid_w, &
-      l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, l_in_cloud_Nc_diff, &
-      LH_microphys_type, l_local_kk, LH_microphys_calls, LH_sequence_length, &
-      l_lh_cloud_weighted_sampling, l_fix_s_t_correlations, l_lh_vert_overlap, &
+      l_seifert_beheng, l_predictnc, l_const_Nc_in_cloud, specify_aerosol, &
+      l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
+      l_in_cloud_Nc_diff, LH_microphys_type, l_local_kk, LH_microphys_calls, &
+      LH_sequence_length, l_lh_cloud_weighted_sampling, &
+      l_fix_s_t_correlations, l_lh_vert_overlap, &
       rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
       rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, &
       Ncp2_on_Ncm2_below, C_evap, r_0, microphys_start_time, &
@@ -314,10 +316,10 @@ module microphys_driver
     ! The standard value is -1/3.
     KK_mvr_Nr_exp         = -one_third
 
-    C_evap = 0.86_core_rknd    ! Khairoutdinov and Kogan (2000) ratio of
-    ! drizzle drop mean geometric radius to
-    ! drizzle drop mean volume radius.
+    ! Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric
+    ! radius to drizzle drop mean volume radius.
     ! Khairoutdinov and Kogan (2000); p. 233
+    C_evap = 0.86_core_rknd
     !C_evap = 0.86_core_rknd*0.2_core_rknd ! COAMPS value of KK C_evap
     !C_evap = 0.55_core_rknd     ! KK 2000, Marshall-Palmer (1948) value.
 
@@ -353,6 +355,8 @@ module microphys_driver
     Nicep2_on_Nicem2_below = 1.0_core_rknd
 
     l_var_covar_src = .false.
+
+    l_const_Nc_in_cloud = .false.
 
     !---------------------------------------------------------------------------
     ! Parameters for Morrison and COAMPS microphysics
@@ -454,6 +458,8 @@ module microphys_driver
       call write_text ( "l_seifert_beheng = ", l_seifert_beheng, &
         l_write_to_file, iunit )
       call write_text ( "l_predictnc = ", l_predictnc, l_write_to_file, iunit )
+      call write_text ( "l_const_Nc_in_cloud = ", l_const_Nc_in_cloud, &
+        l_write_to_file, iunit )
       call write_text ( "specify_aerosol = "// specify_aerosol, &
         l_write_to_file, iunit )
       call write_text ( "l_subgrid_w = ", l_subgrid_w, l_write_to_file, iunit )
@@ -572,8 +578,8 @@ module microphys_driver
       hydromet_list(iiNim)       = "Nim"
       hydromet_list(iiNgraupelm) = "Ngraupelm"
       if ( l_predictnc ) then
-        hydromet_list(iiNcm)       = "Ncm"
-      end if
+        hydromet_list(iiNcm)     = "Ncm"
+      endif
 
       ! Set Nc0 in the Morrison code (module_MP_graupel) based on Ncm_initial
       Nc0 = real( Ncm_initial / cm3_per_m3 ) ! Units on Nc0 are per cm^3
@@ -699,23 +705,23 @@ module microphys_driver
         write(fstderr,*) "Morrison-Gettelman microphysics has seperate code for cloud water"
         write(fstderr,*) "sedimentation, therefore l_cloud_sed should be set to .false."
         stop "Fatal error."
-      end if
+      endif
 
       allocate( hydromet_list(hydromet_dim) )
 
-      hydromet_list(iiricem)     = "ricem"
-      hydromet_list(iiNim)       = "Nim"
+      hydromet_list(iiricem) = "ricem"
+      hydromet_list(iiNim)   = "Nim"
       if ( l_predictnc ) then
-        hydromet_list(iiNcm)       = "Ncm"
+        hydromet_list(iiNcm) = "Ncm"
       end if
 
       allocate( l_hydromet_sed(hydromet_dim) )
       ! Sedimentation is handled within the MG microphysics
-      l_hydromet_sed(iiricem)     = .false.
-      l_hydromet_sed(iiNim)       = .false.
+      l_hydromet_sed(iiricem) = .false.
+      l_hydromet_sed(iiNim)   = .false.
       if ( l_predictnc ) then
-        l_hydromet_sed(iiNcm)       = .false.
-      end if
+        l_hydromet_sed(iiNcm) = .false.
+      endif
 
       ! Initialize constants for aerosols
       call ini_microp_aero()
@@ -1413,8 +1419,9 @@ module microphys_driver
              ( dt, gr%nz, l_stats_samp, l_local_kk_input, &
                l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, wtmp, &
-               delta_zt, rcm, Ncm, s_mellor, rvm, hydromet, hydromet_mc, &
-               hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc, &
+               delta_zt, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
+               hydromet_mc, hydromet_vel_zt, &
+               rcm_mc, rvm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,  &
                rrainm_auto, rrainm_accr )
@@ -1492,7 +1499,8 @@ module microphys_driver
         call KK_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
                               l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
                               exner, rho, cloud_frac, pdf_params, wtmp, &
-                              delta_zt, rcm, Ncm, s_mellor, rvm, hydromet, &
+                              delta_zt, rcm, Ncm, s_mellor, rvm, &
+                              Ncm_in_cloud, hydromet, &
                               hydromet_mc, hydromet_vel_zt, &
                               rcm_mc, rvm_mc, thlm_mc, &
                               wprtp_mc_tndcy, wpthlp_mc_tndcy, & 

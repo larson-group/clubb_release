@@ -29,24 +29,25 @@ module parameters_microphys
 
   ! Local Variables
   logical, public :: & 
-    l_cloud_sed,        & ! Cloud water sedimentation (K&K/No microphysics)
-    l_ice_micro,        & ! Compute ice (COAMPS/Morrison)
-    l_upwind_diff_sed,  & ! Use upwind differencing approx. for sedimentation (K&K/COAMPS)
-    l_graupel,          & ! Compute graupel (COAMPS/Morrison)
-    l_hail,             & ! Assumption about graupel/hail? (Morrison)
-    l_seifert_beheng,   & ! Use Seifert and Behneng warm drizzle (Morrison)
-    l_predictnc,        & ! Predict cloud droplet number conc (Morrison)
-    l_subgrid_w,        & ! Use subgrid w (Morrison)
-    l_arctic_nucl,      & ! Use MPACE observations (Morrison)
-    l_fix_pgam,         & ! Fix pgam (Morrison)
-    l_in_cloud_Nc_diff, & ! Use in cloud values of Nc for diffusion
-    l_var_covar_src       ! Flag for using upscaled microphysics source terms
-                          ! for predictive variances and covariances (KK micro)
+    l_cloud_sed,         & ! Cloud water sedimentation (K&K/No microphysics)
+    l_ice_micro,         & ! Compute ice (COAMPS/Morrison)
+    l_upwind_diff_sed,   & ! Use upwind differencing approx. for sedimentation (K&K/COAMPS)
+    l_graupel,           & ! Compute graupel (COAMPS/Morrison)
+    l_hail,              & ! Assumption about graupel/hail? (Morrison)
+    l_seifert_beheng,    & ! Use Seifert and Behneng warm drizzle (Morrison)
+    l_predictnc,         & ! Predict cloud droplet conconcentration (Morrison)
+    l_const_Nc_in_cloud, & ! Use a constant cloud droplet conc. within cloud (K&K)
+    l_subgrid_w,         & ! Use subgrid w (Morrison)
+    l_arctic_nucl,       & ! Use MPACE observations (Morrison)
+    l_fix_pgam,          & ! Fix pgam (Morrison)
+    l_in_cloud_Nc_diff,  & ! Use in cloud values of Nc for diffusion
+    l_var_covar_src        ! Flag for using upscaled microphysics source terms
+                           ! for predictive variances and covariances (KK micro)
 
 !$omp threadprivate( l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
 !$omp                l_upwind_diff_sed, l_seifert_beheng, l_predictnc, &
-!$omp                l_subgrid_w, l_arctic_nucl, l_fix_pgam, &
-!$omp                l_in_cloud_Nc_diff, l_var_covar_src )
+!$omp                l_const_Nc_in_cloud, l_subgrid_w, l_arctic_nucl, &
+!$omp                l_fix_pgam, l_in_cloud_Nc_diff, l_var_covar_src )
 
   logical, public :: & 
     l_cloud_edge_activation,    & ! Activate on cloud edges (Morrison)

@@ -5,7 +5,7 @@ interface
   subroutine microphys_sub( dt, nnzp, l_stats_sample, l_local_kk, &
                             l_latin_hypercube, thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, pdf_params, w_std_dev, &
-                            dzq, rcm, Ncm, s_mellor, rvm, hydromet, &
+                            dzq, rcm, Ncm, s_mellor, rvm, Nc0, hydromet, &
                             hydromet_mc, hydromet_vel, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             wprtp_mc_tndcy, wpthlp_mc_tndcy, &
@@ -46,7 +46,15 @@ interface
       rcm,           & ! Cloud water mixing ratio            [kg/kg]
       Ncm,           & ! Cloud droplet number conc. in cloud [#/kg]
       s_mellor,      & ! The variable 's' from Mellor        [kg/kg]
-      rvm             ! Vapor water mixing ratio            [kg/kg]
+      rvm              ! Vapor water mixing ratio            [kg/kg]
+
+    ! Nc0 is a constant cloud droplet concentration NcV0 (#/m^3) / rho.
+    ! This is normally used for cases that specify a constant cloud droplet
+    ! concentration within cloud.  Set it to 0 when this is not required.
+    ! Additionally, the flag l_const_Nc_in_cloud may have to be turned on to
+    ! use a constant cloud droplet concentration within cloud. 
+    real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
+      Nc0    ! Constant cloud droplet concentration within cloud  [#/kg] 
 
     real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]

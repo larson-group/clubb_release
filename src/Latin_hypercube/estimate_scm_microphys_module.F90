@@ -135,17 +135,18 @@ module estimate_scm_microphys_module
       lh_thlm_mc_sum    ! LH est of time tendency of liquid potential temperature [K/s]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
-      hydromet_columns ! Hydrometeor species    [units vary]
+      hydromet_columns ! Hydrometeor species                    [units vary]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      s_mellor_column    ! 's' (Mellor 1977)            [kg/kg]
+      s_mellor_column    ! 's' (Mellor 1977)                    [kg/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      rv_column,  & ! Vapor water                  [kg/kg]
-      thl_column, & ! Liquid potential temperature [K]
-      rc_column,  & ! Liquid water                 [kg/kg]
-      w_column,   & ! Vertical velocity            [m/s]
-      Ncm           ! Cloud droplet number conc.   [#/kg]
+      rv_column,  & ! Vapor water                               [kg/kg]
+      thl_column, & ! Liquid potential temperature              [K]
+      rc_column,  & ! Liquid water                              [kg/kg]
+      w_column,   & ! Vertical velocity                         [m/s]
+      Ncm,        & ! Cloud droplet concentration               [#/kg]
+      Nc0           ! Constant cloud droplet conc. within cloud [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
       lh_wprtp_mc_tndcy,   & ! LH micro. tendency for <w'rt'>   [m*(kg/kg)/s^2]
@@ -255,12 +256,20 @@ module estimate_scm_microphys_module
                                     hydromet_columns, &  ! Out
                                     Ncm ) ! Out
 
+      ! Nc0 is a constant cloud droplet concentration NcV0 (#/m^3) / rho.
+      ! This is normally used for cases that specify a constant cloud droplet
+      ! concentration within cloud.  Set it to 0 when this is not required.
+      ! Additionally, the flag l_const_Nc_in_cloud may have to be turned on to
+      ! use a constant cloud droplet concentration within cloud. 
+      Nc0(:) = 0.0_core_rknd
+
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nz, l_stats_samp_in_sub, l_local_kk, & ! In
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
              exner, rho, cloud_frac, pdf_params, w_std_dev, & ! In
-             dzq, rc_column, Ncm, s_mellor_column, rv_column, hydromet_columns, & ! In
+             dzq, rc_column, Ncm, s_mellor_column, rv_column, Nc0, & ! In
+             hydromet_columns, & ! In
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
              lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
              lh_wprtp_mc_tndcy, lh_wpthlp_mc_tndcy, & ! Out

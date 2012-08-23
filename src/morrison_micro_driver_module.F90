@@ -13,8 +13,9 @@ module morrison_micro_driver_module
              ( dt, nz, l_stats_samp, l_local_kk, &
                l_latin_hypercube, thlm, wm, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, w_std_dev, &
-               dzq, rcm, Ncm, s_mellor, rvm, hydromet, hydromet_mc, &
-               hydromet_vel, rcm_mc, rvm_mc, thlm_mc, &
+               dzq, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
+               hydromet_mc, hydromet_vel, &
+               rcm_mc, rvm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
                rrainm_auto, rrainm_accr )
@@ -118,10 +119,11 @@ module morrison_micro_driver_module
       dzq          ! Change in altitude                  [m]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rcm,          & ! Cloud water mixing ratio                [kg/kg]
-      Ncm, & ! In cloud value for cloud drop num. conc.[#/kg]
-      s_mellor,     & ! The variable 's' from Mellor            [kg/kg]
-      rvm             ! Vapor water mixing ratio                [kg/kg]
+      rcm,          & ! Cloud water mixing ratio                  [kg/kg]
+      Ncm,          & ! In cloud value for cloud droplet conc.    [#/kg]
+      s_mellor,     & ! The variable 's' from Mellor              [kg/kg]
+      rvm,          & ! Vapor water mixing ratio                  [kg/kg]
+      Ncm_in_cloud    ! Constant cloud droplet conc. within cloud [#/kg] 
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -200,6 +202,7 @@ module morrison_micro_driver_module
       rcm_in_cloud = dummy(:,1)
       rcm_in_cloud = s_mellor
       rcm_in_cloud = dummy_1D
+      rcm_in_cloud = Ncm_in_cloud
       if ( l_local_kk ) stop
     end if
 

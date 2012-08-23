@@ -11,7 +11,8 @@ module KK_upscaled_means
             KK_accr_upscaled_mean, &
             KK_mvr_upscaled_mean,  &
             trivar_NLL_mean_eq,    &
-            bivar_NL_mean_eq
+            bivar_NL_mean_eq,      &
+            bivar_NL_mean_eq_Nc0
 
   private :: bivar_LL_mean_eq
 
@@ -101,7 +102,8 @@ module KK_upscaled_means
   !=============================================================================
   function KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_n, sigma_s_1, &
                                   sigma_s_2, sigma_Nc_n, corr_sNc_1_n, &
-                                  corr_sNc_2_n, KK_auto_coef, mixt_frac )
+                                  corr_sNc_2_n, KK_auto_coef, mixt_frac, &
+                                  Nc0_in_cloud, l_const_Nc_in_cloud )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain water
@@ -133,7 +135,11 @@ module KK_upscaled_means
       corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component) [-]
       corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component) [-]
       KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
-      mixt_frac       ! Mixture fraction                                    [-]
+      mixt_frac,    & ! Mixture fraction                                    [-]
+      Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc. [num/kg]
+
+    logical, intent(in) :: &
+      l_const_Nc_in_cloud  ! Flag to use a constant value of N_c within cloud
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -150,15 +156,31 @@ module KK_upscaled_means
     beta_exp  = KK_auto_Nc_exp
 
     ! Calculate the mean KK autoconversion tendency.
-    KK_auto_upscaled_mean  &
-    = KK_auto_coef &
-      * ( mixt_frac &
-        * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
-                            corr_sNc_1_n, alpha_exp, beta_exp ) &
-        + ( one - mixt_frac ) &
-        * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
-                            corr_sNc_2_n, alpha_exp, beta_exp ) &
-        )
+    if ( .not. l_const_Nc_in_cloud ) then
+
+       KK_auto_upscaled_mean  &
+       = KK_auto_coef &
+         * ( mixt_frac &
+           * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                               corr_sNc_1_n, alpha_exp, beta_exp ) &
+           + ( one - mixt_frac ) &
+           * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                               corr_sNc_2_n, alpha_exp, beta_exp ) &
+           )
+
+    else
+
+       KK_auto_upscaled_mean  &
+       = KK_auto_coef &
+         * ( mixt_frac &
+           * bivar_NL_mean_eq_Nc0( mu_s_1, Nc0_in_cloud, sigma_s_1, &
+                                   alpha_exp, beta_exp ) &
+           + ( one - mixt_frac ) &
+           * bivar_NL_mean_eq_Nc0( mu_s_2, Nc0_in_cloud, sigma_s_2, &
+                                   alpha_exp, beta_exp ) &
+           )
+
+    endif
 
 
     return
@@ -589,6 +611,137 @@ module KK_upscaled_means
     return
 
   end function bivar_NL_mean_eq
+
+  !=============================================================================
+  function bivar_NL_mean_eq_Nc0( mu_s_i, Nc0_in_cloud, sigma_s_i, &
+                                 alpha_exp_in, beta_exp_in )
+
+    ! Description:
+    ! This function calculates the contribution by the ith PDF component to the
+    ! expression < x1^alpha x2^beta >, where x1 = s and x2 = N_c or r_r,
+    ! depending on whether this function is being called for autoconversion or
+    ! accretion, respectively.  The total value of KK mean microphysics tendency
+    ! is given by:
+    !
+    ! < KK_mc > = KK_mc_coef
+    !             * ( mixt_frac < s^alpha y^beta (1) >
+    !                 + ( 1 - mixt_frac ) < s^alpha y^beta (2) > );
+    !
+    ! where y stands for either N_c or r_r.  One of two functions is called,
+    ! based on whether x1 (s) varies.  Each one of these two functions is the
+    ! result of an evaluated integral based on the specific situation.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use PDF_integrals_means, only: &
+        bivar_NL_mean_const_all, &
+        bivar_NL_mean_const_x2
+
+    use constants_clubb, only: &
+        s_mellor_tol, & ! Constant(s)
+        parab_cyl_max_input
+
+    use clubb_precision, only: &
+        dp,        & ! double precision
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_s_i,       & ! Mean of s (ith PDF component)                       [-]
+      Nc0_in_cloud, & ! Constant in-cloud value of cloud droplet conc. [num/kg]
+      sigma_s_i       ! Standard deviation of s (ith PDF component)         [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      alpha_exp_in,  & ! Exponent alpha, corresponding to s                 [-]
+      beta_exp_in      ! Exponent beta, corresponding to y                  [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      bivar_NL_mean_eq_Nc0
+
+    ! Local Variables
+    real( kind = dp ) :: &
+      mu_x1,    & ! Mean of x1 (ith PDF component)                          [-]
+      Nc0,      & ! Constant in-cloud value of cloud droplet conc.     [num/kg]
+      sigma_x1    ! Standard deviation of x1 (ith PDF component)            [-]
+    
+    real( kind = dp ) :: &
+      alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
+      beta_exp      ! Exponent beta, corresponding to x2                    [-]
+
+    real( kind = dp ) :: &
+      x1_tol, & ! Tolerance value of x1                                     [-]
+      s_c       ! Parabolic cylinder function input value                   [-]
+
+
+    ! Means for the ith PDF component. 
+    mu_x1 = dble( mu_s_i )
+    Nc0   = dble( Nc0_in_cloud )
+
+    ! Standard deviations for the ith PDF component.
+    sigma_x1   = dble( sigma_s_i )
+
+    ! Exponents.
+    alpha_exp = dble( alpha_exp_in )
+    beta_exp  = dble( beta_exp_in )
+
+    ! Tolerance values.
+    ! When the standard deviation of a variable is below the tolerance values,
+    ! it is considered to be zero, and the variable is considered to have a
+    ! constant value.
+    x1_tol = dble( s_mellor_tol )
+
+    ! Determine the value of the parabolic cylinder function input value, s_c.
+    ! The value s_c is being fed into the parabolic cylinder function.  When
+    ! the value of s_c is too large in magnitude (depending on the order of the
+    ! parabolic cylinder function), overflow occurs, and the output of the
+    ! parabolic cylinder function is +/-Inf.  This is primarily due to a large
+    ! ratio of mu_x1 to sigma_x1.  When the value of s_c is very large, the
+    ! distribution of x1 is basically a spike near the mean, so x1 is treated as
+    ! a constant.
+    if ( sigma_x1 > x1_tol ) then
+       s_c = mu_x1 / sigma_x1
+    else  ! sigma_x1 = 0
+       ! Note:  s_c is +inf when mu_x1 > 0 and sigma_x1 = 0, and s_c is -inf
+       !        when mu_x1 < 0 and sigma_x1 = 0.  Furthermore, s_c is undefined
+       !        when mu_x1 = 0 and sigma_x1 = 0.  However, within the context of
+       !        this particular function, only the absolute value of s_c is
+       !        relevant, and furthermore the absolute value of s_c is only
+       !        relevant when sigma_x1 > 0.  Therefore, this statement only
+       !        serves as divide-by-zero and compiler warning prevention.
+       s_c = huge( s_c )
+    endif
+
+
+    ! Based on the value of sigma_x1 (including the value of s_c compared to
+    ! parab_cyl_max_input), find the correct form of the bivariate equation to
+    ! use.
+
+    if ( sigma_x1 <= x1_tol .or. abs( s_c ) > dble( parab_cyl_max_input ) ) then
+
+       ! The ith PDF component variance of s is 0.
+       bivar_NL_mean_eq_Nc0  &
+       = real( bivar_NL_mean_const_all( mu_x1, Nc0, alpha_exp, beta_exp ), &
+               kind = core_rknd )
+
+
+    else  ! sigma_x1 > 0
+
+       ! All fields vary in the ith PDF component.
+       bivar_NL_mean_eq_Nc0  &
+       = real( bivar_NL_mean_const_x2( mu_x1, Nc0, sigma_x1, &
+                                       alpha_exp, beta_exp ), kind = core_rknd )
+
+
+    endif
+
+
+    return
+
+  end function bivar_NL_mean_eq_Nc0
 
   !=============================================================================
   function bivar_LL_mean_eq( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &

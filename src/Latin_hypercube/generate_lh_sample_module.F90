@@ -1408,7 +1408,7 @@ module generate_lh_sample_module
                    + (1._dp - cloud_frac1 ) )
         ! Convert to nonstandard normal with mean mu1 and variance Sigma1
         truncated_column(sample) =  & 
-                   s_std * sqrt( Sigma1(col,col) ) + mu1(col)
+                   s_std * sqrt( Sigma1(col,col) ) + dble( mu1(col) )
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
 
         ! Replace first dimension (s) with
@@ -1418,7 +1418,7 @@ module generate_lh_sample_module
 
         ! Convert to nonstandard normal with mean mu2 and variance Sigma2
         truncated_column(sample) =  & 
-                      s_std * sqrt( Sigma2(col,col) ) + mu2(col)
+                      s_std * sqrt( Sigma2(col,col) ) + dble( mu2(col) )
       else
         stop "Error in truncate_gaus_mixt"
       end if
@@ -2032,7 +2032,7 @@ module generate_lh_sample_module
 
     ! Compute the main diagonal for each lognormal variate
     forall ( i = LN_index:d_variables )
-      corr_stw_matrix(i,i) = log( 1._core_rknd + Xp2_on_Xm2_array(i) )
+      corr_stw_matrix(i,i) = dble( log( 1._core_rknd + Xp2_on_Xm2_array(i) ) )
     end forall
 
     do index1 = LN_index, d_variables
@@ -2197,8 +2197,8 @@ module generate_lh_sample_module
       ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
       covar_tx = ( corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) * covar_sx )
     else
-      covar_tx = 0._core_rknd
-    end if
+      covar_tx = dble( 0._core_rknd )
+    endif
 
     call set_lower_triangular_matrix_dp &
          ( d_variables, iiLH_t_mellor, index1, real(covar_tx, kind = dp), & ! In
