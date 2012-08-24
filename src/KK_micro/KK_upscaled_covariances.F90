@@ -384,7 +384,8 @@ module KK_upscaled_covariances
                             sigma_Nc_n, corr_xs_1, corr_xs_2, &
                             corr_xNc_1_n, corr_xNc_2_n, corr_sNc_1_n, &
                             corr_sNc_2_n, x_mean, KK_auto_tndcy, &
-                            KK_auto_coef, x_tol, mixt_frac )
+                            KK_auto_coef, x_tol, mixt_frac, &
+                            Nc0_in_cloud, l_const_Nc_in_cloud )
 
     ! Description:
     ! This function calculates the correlation between x and KK autoconversion
@@ -428,7 +429,11 @@ module KK_upscaled_covariances
       KK_auto_tndcy, & ! KK autoconversion tendency                  [(kg/kg)/s]
       KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
       x_tol,         & ! Tolerance value of x                       [units vary]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      Nc0_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
+
+    logical, intent(in) :: &
+      l_const_Nc_in_cloud  ! Flag to use a constant value of N_c within cloud
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -445,21 +450,41 @@ module KK_upscaled_covariances
     beta_exp  = KK_auto_Nc_exp
 
     ! Calculate the covariance of x and KK autoconversion tendency.
-    covar_x_KK_auto  &
-    = KK_auto_coef &
-      * ( mixt_frac &
-          * trivar_NNL_covar_eq( mu_x_1, mu_s_1, mu_Nc_n, &
-                                 sigma_x_1, sigma_s_1, sigma_Nc_n, &
-                                 corr_xs_1, corr_xNc_1_n, corr_sNc_1_n, &
-                                 x_mean, KK_auto_tndcy, KK_auto_coef, &
-                                 x_tol, alpha_exp, beta_exp ) &
-        + ( one - mixt_frac ) &
-          * trivar_NNL_covar_eq( mu_x_2, mu_s_2, mu_Nc_n, &
-                                 sigma_x_2, sigma_s_2, sigma_Nc_n, &
-                                 corr_xs_2, corr_xNc_2_n, corr_sNc_2_n, &
-                                 x_mean, KK_auto_tndcy, KK_auto_coef, &
-                                 x_tol, alpha_exp, beta_exp ) &
-        )
+    if ( l_const_Nc_in_cloud ) then
+
+       covar_x_KK_auto  &
+       = KK_auto_coef &
+         * ( mixt_frac &
+             * trivar_NNL_covar_eq_Nc0( mu_x_1, mu_s_1, Nc0_in_cloud, &
+                                        sigma_x_1, sigma_s_1, corr_xs_1, &
+                                        x_mean, KK_auto_tndcy, KK_auto_coef, &
+                                        x_tol, alpha_exp, beta_exp ) &
+           + ( one - mixt_frac ) &
+             * trivar_NNL_covar_eq_Nc0( mu_x_2, mu_s_2, Nc0_in_cloud, &
+                                        sigma_x_2, sigma_s_2, corr_xs_2, &
+                                        x_mean, KK_auto_tndcy, KK_auto_coef, &
+                                        x_tol, alpha_exp, beta_exp ) &
+           )
+
+    else
+
+       covar_x_KK_auto  &
+       = KK_auto_coef &
+         * ( mixt_frac &
+             * trivar_NNL_covar_eq( mu_x_1, mu_s_1, mu_Nc_n, &
+                                    sigma_x_1, sigma_s_1, sigma_Nc_n, &
+                                    corr_xs_1, corr_xNc_1_n, corr_sNc_1_n, &
+                                    x_mean, KK_auto_tndcy, KK_auto_coef, &
+                                    x_tol, alpha_exp, beta_exp ) &
+           + ( one - mixt_frac ) &
+             * trivar_NNL_covar_eq( mu_x_2, mu_s_2, mu_Nc_n, &
+                                    sigma_x_2, sigma_s_2, sigma_Nc_n, &
+                                    corr_xs_2, corr_xNc_2_n, corr_sNc_2_n, &
+                                    x_mean, KK_auto_tndcy, KK_auto_coef, &
+                                    x_tol, alpha_exp, beta_exp ) &
+           )
+
+    endif
 
 
     return
@@ -472,7 +497,8 @@ module KK_upscaled_covariances
                              sigma_Nc_n, corr_ts_1, corr_ts_2, &
                              corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
                              corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
-                             t_tol, crt1, crt2, mixt_frac )
+                             t_tol, crt1, crt2, mixt_frac, &
+                             Nc0_in_cloud, l_const_Nc_in_cloud )
 
     ! Description:
 
@@ -484,7 +510,8 @@ module KK_upscaled_covariances
         one
 
     use KK_upscaled_means, only:  &
-        bivar_NL_mean_eq  ! Procedure
+        bivar_NL_mean_eq,     & ! Procedure(s)
+        bivar_NL_mean_eq_Nc0
 
     use parameters_microphys, only: &
         KK_auto_rc_exp, & ! Variable(s)
@@ -518,7 +545,11 @@ module KK_upscaled_covariances
       t_tol,         & ! Tolerance value of t                       [units vary]
       crt1,          & ! Coefficient c_rt (1st PDF component)                [-]
       crt2,          & ! Coefficient c_rt (2nd PDF component)                [-]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      Nc0_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
+
+    logical, intent(in) :: &
+      l_const_Nc_in_cloud  ! Flag to use a constant value of N_c within cloud
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -535,33 +566,65 @@ module KK_upscaled_covariances
     beta_exp  = KK_auto_Nc_exp
 
     ! Calculate the covariance of r_t and KK autoconversion tendency.
-    covar_rt_KK_auto  &
-    = KK_auto_coef  &
-      * ( mixt_frac * ( one / ( two * crt1 ) )  &
-          * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_Nc_n, &
-                                   sigma_t_1, sigma_s_1, sigma_Nc_n, &
-                                   corr_ts_1, corr_tNc_1_n, corr_sNc_1_n, &
-                                   mu_t_1, KK_auto_tndcy, KK_auto_coef, &
-                                   t_tol, alpha_exp, beta_exp )  &
-            + bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
-                                corr_sNc_1_n, alpha_exp + one, beta_exp )  &
-            - mu_s_1  &
-              * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
-                                  corr_sNc_1_n, alpha_exp, beta_exp )  &
+    if ( l_const_Nc_in_cloud ) then
+
+       covar_rt_KK_auto  &
+       = KK_auto_coef  &
+         * ( mixt_frac * ( one / ( two * crt1 ) )  &
+             * ( trivar_NNL_covar_eq_Nc0( mu_t_1, mu_s_1, Nc0_in_cloud, &
+                                          sigma_t_1, sigma_s_1, corr_ts_1, &
+                                          mu_t_1, KK_auto_tndcy, KK_auto_coef, &
+                                          t_tol, alpha_exp, beta_exp )  &
+               + bivar_NL_mean_eq_Nc0( mu_s_1, Nc0_in_cloud, sigma_s_1, &
+                                       alpha_exp + one, beta_exp )  &
+               - mu_s_1  &
+                 * bivar_NL_mean_eq_Nc0( mu_s_1, Nc0_in_cloud, sigma_s_1, &
+                                         alpha_exp, beta_exp )  &
+               )  &
+           + ( one - mixt_frac ) * ( one / ( two * crt2 ) )  &
+             * ( trivar_NNL_covar_eq_Nc0( mu_t_2, mu_s_2, Nc0_in_cloud, &
+                                          sigma_t_2, sigma_s_2, corr_ts_2, &
+                                          mu_t_2, KK_auto_tndcy, KK_auto_coef, &
+                                          t_tol, alpha_exp, beta_exp )  &
+               + bivar_NL_mean_eq_Nc0( mu_s_2, Nc0_in_cloud, sigma_s_2, &
+                                       alpha_exp + one, beta_exp )  &
+               - mu_s_2  &
+                 * bivar_NL_mean_eq_Nc0( mu_s_2, Nc0_in_cloud, sigma_s_2, &
+                                         alpha_exp, beta_exp )  &
+               )  &
+           )
+
+    else
+
+       covar_rt_KK_auto  &
+       = KK_auto_coef  &
+         * ( mixt_frac * ( one / ( two * crt1 ) )  &
+             * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_Nc_n, &
+                                      sigma_t_1, sigma_s_1, sigma_Nc_n, &
+                                      corr_ts_1, corr_tNc_1_n, corr_sNc_1_n, &
+                                      mu_t_1, KK_auto_tndcy, KK_auto_coef, &
+                                      t_tol, alpha_exp, beta_exp )  &
+               + bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                                   corr_sNc_1_n, alpha_exp + one, beta_exp )  &
+               - mu_s_1  &
+                 * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                                     corr_sNc_1_n, alpha_exp, beta_exp )  &
             )  &
-        + ( one - mixt_frac ) * ( one / ( two * crt2 ) )  &
-          * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Nc_n, &
-                                   sigma_t_2, sigma_s_2, sigma_Nc_n, &
-                                   corr_ts_2, corr_tNc_2_n, corr_sNc_2_n, &
-                                   mu_t_2, KK_auto_tndcy, KK_auto_coef, &
-                                   t_tol, alpha_exp, beta_exp )  &
-            + bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
-                                corr_sNc_2_n, alpha_exp + one, beta_exp )  &
-            - mu_s_2  &
-              * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
-                                  corr_sNc_2_n, alpha_exp, beta_exp )  &
-            )  &
-        )
+           + ( one - mixt_frac ) * ( one / ( two * crt2 ) )  &
+             * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Nc_n, &
+                                      sigma_t_2, sigma_s_2, sigma_Nc_n, &
+                                      corr_ts_2, corr_tNc_2_n, corr_sNc_2_n, &
+                                      mu_t_2, KK_auto_tndcy, KK_auto_coef, &
+                                      t_tol, alpha_exp, beta_exp )  &
+               + bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                                   corr_sNc_2_n, alpha_exp + one, beta_exp )  &
+               - mu_s_2  &
+                 * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                                     corr_sNc_2_n, alpha_exp, beta_exp )  &
+               )  &
+           )
+
+    endif
 
 
     return
@@ -574,7 +637,8 @@ module KK_upscaled_covariances
                               sigma_Nc_n, corr_ts_1, corr_ts_2, &
                               corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
                               corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
-                              t_tol, cthl1, cthl2, mixt_frac )
+                              t_tol, cthl1, cthl2, mixt_frac, &
+                              Nc0_in_cloud, l_const_Nc_in_cloud )
 
     ! Description:
 
@@ -586,7 +650,8 @@ module KK_upscaled_covariances
         one
 
     use KK_upscaled_means, only:  &
-        bivar_NL_mean_eq  ! Procedure
+        bivar_NL_mean_eq,     & ! Procedure(s)
+        bivar_NL_mean_eq_Nc0
 
     use parameters_microphys, only: &
         KK_auto_rc_exp, & ! Variable(s)
@@ -620,7 +685,11 @@ module KK_upscaled_covariances
       t_tol,         & ! Tolerance value of t                       [units vary]
       cthl1,         & ! Coefficient c_thl (1st PDF component)               [-]
       cthl2,         & ! Coefficient c_thl (2nd PDF component)               [-]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      Nc0_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
+
+    logical, intent(in) :: &
+      l_const_Nc_in_cloud  ! Flag to use a constant value of N_c within cloud
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -637,33 +706,65 @@ module KK_upscaled_covariances
     beta_exp  = KK_auto_Nc_exp
 
     ! Calculate the covariance of th_l and KK autoconversion tendency.
-    covar_thl_KK_auto  &
-    = KK_auto_coef  &
-      * ( mixt_frac * ( one / ( two * cthl1 ) )  &
-          * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_Nc_n, &
-                                   sigma_t_1, sigma_s_1, sigma_Nc_n, &
-                                   corr_ts_1, corr_tNc_1_n, corr_sNc_1_n, &
-                                   mu_t_1, KK_auto_tndcy, KK_auto_coef, &
-                                   t_tol, alpha_exp, beta_exp )  &
-            - bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
-                                corr_sNc_1_n, alpha_exp + one, beta_exp )  &
-            + mu_s_1  &
-              * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
-                                  corr_sNc_1_n, alpha_exp, beta_exp )  &
-            )  &
-        + ( one - mixt_frac ) * ( one / ( two * cthl2 ) )  &
-          * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Nc_n, &
-                                   sigma_t_2, sigma_s_2, sigma_Nc_n, &
-                                   corr_ts_2, corr_tNc_2_n, corr_sNc_2_n, &
-                                   mu_t_2, KK_auto_tndcy, KK_auto_coef, &
-                                   t_tol, alpha_exp, beta_exp )  &
-            - bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
-                                corr_sNc_2_n, alpha_exp + one, beta_exp )  &
-            + mu_s_2  &
-              * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
-                                  corr_sNc_2_n, alpha_exp, beta_exp )  &    
-            )  &
-        )
+    if ( l_const_Nc_in_cloud ) then
+
+       covar_thl_KK_auto  &
+       = KK_auto_coef  &
+         * ( mixt_frac * ( one / ( two * cthl1 ) )  &
+             * ( trivar_NNL_covar_eq_Nc0( mu_t_1, mu_s_1, Nc0_in_cloud, &
+                                          sigma_t_1, sigma_s_1, corr_ts_1, &
+                                          mu_t_1, KK_auto_tndcy, KK_auto_coef, &
+                                          t_tol, alpha_exp, beta_exp )  &
+               - bivar_NL_mean_eq_Nc0( mu_s_1, Nc0_in_cloud, sigma_s_1, &
+                                       alpha_exp + one, beta_exp )  &
+               + mu_s_1  &
+                 * bivar_NL_mean_eq_Nc0( mu_s_1, Nc0_in_cloud, sigma_s_1, &
+                                         alpha_exp, beta_exp )  &
+               )  &
+           + ( one - mixt_frac ) * ( one / ( two * cthl2 ) )  &
+             * ( trivar_NNL_covar_eq_Nc0( mu_t_2, mu_s_2, Nc0_in_cloud, &
+                                          sigma_t_2, sigma_s_2, corr_ts_2, &
+                                          mu_t_2, KK_auto_tndcy, KK_auto_coef, &
+                                          t_tol, alpha_exp, beta_exp )  &
+               - bivar_NL_mean_eq_Nc0( mu_s_2, Nc0_in_cloud, sigma_s_2, &
+                                       alpha_exp + one, beta_exp )  &
+               + mu_s_2  &
+                 * bivar_NL_mean_eq_Nc0( mu_s_2, Nc0_in_cloud, sigma_s_2, &
+                                         alpha_exp, beta_exp )  &    
+               )  &
+           )
+
+    else
+
+       covar_thl_KK_auto  &
+       = KK_auto_coef  &
+         * ( mixt_frac * ( one / ( two * cthl1 ) )  &
+             * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_Nc_n, &
+                                      sigma_t_1, sigma_s_1, sigma_Nc_n, &
+                                      corr_ts_1, corr_tNc_1_n, corr_sNc_1_n, &
+                                      mu_t_1, KK_auto_tndcy, KK_auto_coef, &
+                                      t_tol, alpha_exp, beta_exp )  &
+               - bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                                   corr_sNc_1_n, alpha_exp + one, beta_exp )  &
+               + mu_s_1  &
+                 * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                                     corr_sNc_1_n, alpha_exp, beta_exp )  &
+               )  &
+           + ( one - mixt_frac ) * ( one / ( two * cthl2 ) )  &
+             * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Nc_n, &
+                                      sigma_t_2, sigma_s_2, sigma_Nc_n, &
+                                      corr_ts_2, corr_tNc_2_n, corr_sNc_2_n, &
+                                      mu_t_2, KK_auto_tndcy, KK_auto_coef, &
+                                      t_tol, alpha_exp, beta_exp )  &
+               - bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                                   corr_sNc_2_n, alpha_exp + one, beta_exp )  &
+               + mu_s_2  &
+                 * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                                     corr_sNc_2_n, alpha_exp, beta_exp )  &    
+               )  &
+           )
+
+    endif
 
 
     return

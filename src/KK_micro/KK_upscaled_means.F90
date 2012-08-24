@@ -156,19 +156,7 @@ module KK_upscaled_means
     beta_exp  = KK_auto_Nc_exp
 
     ! Calculate the mean KK autoconversion tendency.
-    if ( .not. l_const_Nc_in_cloud ) then
-
-       KK_auto_upscaled_mean  &
-       = KK_auto_coef &
-         * ( mixt_frac &
-           * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
-                               corr_sNc_1_n, alpha_exp, beta_exp ) &
-           + ( one - mixt_frac ) &
-           * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
-                               corr_sNc_2_n, alpha_exp, beta_exp ) &
-           )
-
-    else
+    if ( l_const_Nc_in_cloud ) then
 
        KK_auto_upscaled_mean  &
        = KK_auto_coef &
@@ -178,6 +166,18 @@ module KK_upscaled_means
            + ( one - mixt_frac ) &
            * bivar_NL_mean_eq_Nc0( mu_s_2, Nc0_in_cloud, sigma_s_2, &
                                    alpha_exp, beta_exp ) &
+           )
+
+    else
+
+       KK_auto_upscaled_mean  &
+       = KK_auto_coef &
+         * ( mixt_frac &
+           * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+                               corr_sNc_1_n, alpha_exp, beta_exp ) &
+           + ( one - mixt_frac ) &
+           * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+                               corr_sNc_2_n, alpha_exp, beta_exp ) &
            )
 
     endif
