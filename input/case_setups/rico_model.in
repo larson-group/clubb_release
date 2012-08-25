@@ -162,6 +162,7 @@ r_0 = 100.0e-6
 !!!!!!! END RICO COMMENTS --modified by Leah Grant, Apr. 2010
 Ncm_initial = 70.e6 ! #/m^3
 l_predictnc = .false.
+l_const_Nc_in_cloud = .true.
 /
 
 &radiation_setting
