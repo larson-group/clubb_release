@@ -416,6 +416,9 @@ module microphys_driver
 
     l_lh_cloud_weighted_sampling = .false.
     l_lh_vert_overlap = .false.
+    
+    ! Setting LH_microphys_calls here does only effect CLUBB-Standalone.
+    ! The number of LH sample points for WRF-CLUBB are set in the namelist.input file.
     LH_microphys_calls = 2
     LH_sequence_length = 1
 
