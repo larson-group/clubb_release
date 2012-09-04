@@ -217,7 +217,8 @@ module clubb_driver
     use model_flags, only: &
       setup_configurable_model_flags, & ! Procedure(s)
       read_model_flags_from_file, &
-      l_rtm_nudge
+      l_rtm_nudge, &
+			l_diagnose_correlations
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
@@ -349,8 +350,6 @@ module clubb_driver
 
     logical :: l_restart_input
 
-		logical :: l_diagnose_correlations
-
     ! Definition of namelists
     namelist /model_setting/  & 
       runtype, nzmax, grid_type, deltaz, zm_init, zm_top, & 
@@ -416,8 +415,6 @@ module clubb_driver
     l_t_dependent   = .false.
     l_input_xpwp_sfc = .false.
     l_ignore_forcings = .false.
-
-		l_diagnose_correlations = .false.
 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.

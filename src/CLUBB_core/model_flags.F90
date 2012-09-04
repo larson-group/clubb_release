@@ -133,6 +133,9 @@ module model_flags
     saturation_formula = saturation_flatau ! Integer that stores the saturation formula to be used
 
 !$omp threadprivate(saturation_formula)
+
+	logical, public :: &
+		l_diagnose_correlations = .false. ! Diagnose correlations instead of using fixed ones
  
 #ifdef GFDL
   logical, public :: &

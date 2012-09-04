@@ -674,6 +674,9 @@ module KK_microphys_module
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
+		use model_flags, only: &
+				l_diagnose_correlations	! Variable(s)
+
     implicit none
 
     ! Input Variables
@@ -745,27 +748,59 @@ module KK_microphys_module
     ! If there is cloud at a given vertical level, then the ###_cloud value is
     ! used.  Otherwise, the ###_below value is used.
     if ( rcm > rc_tol ) then
-       rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
-       Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
-       Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
-       corr_rrNr       = corr_rrNr_LL_cloud
-       corr_srr_1      = corr_srr_NL_cloud
-       corr_srr_2      = corr_srr_NL_cloud
-       corr_sNr_1      = corr_sNr_NL_cloud
-       corr_sNr_2      = corr_sNr_NL_cloud
-       corr_sNc_1      = corr_sNc_NL_cloud
-       corr_sNc_2      = corr_sNc_NL_cloud
+
+			if ( l_diagnose_correlations == .true. ) then
+				print *, "Warning: Diagnosing correlations is not yet implemented!"
+       	rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+       	Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
+       	Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
+       	corr_rrNr       = corr_rrNr_LL_cloud
+       	corr_srr_1      = corr_srr_NL_cloud
+       	corr_srr_2      = corr_srr_NL_cloud
+       	corr_sNr_1      = corr_sNr_NL_cloud
+       	corr_sNr_2      = corr_sNr_NL_cloud
+       	corr_sNc_1      = corr_sNc_NL_cloud
+       	corr_sNc_2      = corr_sNc_NL_cloud
+			else
+				rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+       	Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
+       	Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
+				corr_rrNr       = corr_rrNr_LL_cloud
+       	corr_srr_1      = corr_srr_NL_cloud
+       	corr_srr_2      = corr_srr_NL_cloud
+       	corr_sNr_1      = corr_sNr_NL_cloud
+       	corr_sNr_2      = corr_sNr_NL_cloud
+       	corr_sNc_1      = corr_sNc_NL_cloud
+       	corr_sNc_2      = corr_sNc_NL_cloud
+			end if 
+
     else
-       rrp2_on_rrainm2 = rrp2_on_rrainm2_below
-       Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
-       Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
-       corr_rrNr       = corr_rrNr_LL_below
-       corr_srr_1      = corr_srr_NL_below
-       corr_srr_2      = corr_srr_NL_below
-       corr_sNr_1      = corr_sNr_NL_below
-       corr_sNr_2      = corr_sNr_NL_below
-       corr_sNc_1      = corr_sNc_NL_below
-       corr_sNc_2      = corr_sNc_NL_below
+
+			if ( l_diagnose_correlations == .true. ) then
+				print *, "Warning: Diagnosing correlations is not yet implemented!"
+        rrp2_on_rrainm2 = rrp2_on_rrainm2_below
+        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
+        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
+        corr_rrNr       = corr_rrNr_LL_below
+        corr_srr_1      = corr_srr_NL_below
+        corr_srr_2      = corr_srr_NL_below
+        corr_sNr_1      = corr_sNr_NL_below
+        corr_sNr_2      = corr_sNr_NL_below
+        corr_sNc_1      = corr_sNc_NL_below
+        corr_sNc_2      = corr_sNc_NL_below
+			else
+        rrp2_on_rrainm2 = rrp2_on_rrainm2_below
+        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
+        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
+        corr_rrNr       = corr_rrNr_LL_below
+        corr_srr_1      = corr_srr_NL_below
+        corr_srr_2      = corr_srr_NL_below
+        corr_sNr_1      = corr_sNr_NL_below
+        corr_sNr_2      = corr_sNr_NL_below
+        corr_sNc_1      = corr_sNc_NL_below
+        corr_sNc_2      = corr_sNc_NL_below
+			end if
+
     endif
 
     !!! Calculate the normalized mean of variables that have an assumed (single)
