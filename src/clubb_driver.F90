@@ -349,6 +349,8 @@ module clubb_driver
 
     logical :: l_restart_input
 
+		logical :: l_diagnose_correlations
+
     ! Definition of namelists
     namelist /model_setting/  & 
       runtype, nzmax, grid_type, deltaz, zm_init, zm_top, & 
@@ -364,7 +366,8 @@ module clubb_driver
       time_restart, l_input_fields, debug_level, & 
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
-      l_prescribed_avg_deltaz, l_rtm_nudge, rtm_min, rtm_nudge_max_altitude
+      l_prescribed_avg_deltaz, l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
+			l_diagnose_correlations
 
 
     namelist /stats_setting/ & 
@@ -413,6 +416,8 @@ module clubb_driver
     l_t_dependent   = .false.
     l_input_xpwp_sfc = .false.
     l_ignore_forcings = .false.
+
+		l_diagnose_correlations = .false.
 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
@@ -476,6 +481,7 @@ module clubb_driver
     read(unit=iunit, nml=model_setting)
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
+
     call read_model_flags_from_file( iunit, runfile )
 
     case_info_file = &
