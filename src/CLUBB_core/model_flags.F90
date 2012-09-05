@@ -134,9 +134,11 @@ module model_flags
 
 !$omp threadprivate(saturation_formula)
 
-	logical, public :: &
-		l_diagnose_correlations = .false. ! Diagnose correlations instead of using fixed ones
+  logical, public :: &
+    l_diagnose_correlations = .false. ! Diagnose correlations instead of using fixed ones
  
+!$omp threadprivate(l_diagnose_correlations)
+
 #ifdef GFDL
   logical, public :: &
      I_sat_sphum       ! h1g, 2010-06-15

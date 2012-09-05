@@ -674,8 +674,8 @@ module KK_microphys_module
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-		use model_flags, only: &
-				l_diagnose_correlations	! Variable(s)
+    use model_flags, only: &
+      l_diagnose_correlations ! Variable(s)
 
     implicit none
 
@@ -749,35 +749,35 @@ module KK_microphys_module
     ! used.  Otherwise, the ###_below value is used.
     if ( rcm > rc_tol ) then
 
-			if ( l_diagnose_correlations == .true. ) then
-				print *, "Warning: Diagnosing correlations is not yet implemented!"
-       	rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
-       	Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
-       	Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
-       	corr_rrNr       = corr_rrNr_LL_cloud
-       	corr_srr_1      = corr_srr_NL_cloud
-       	corr_srr_2      = corr_srr_NL_cloud
-       	corr_sNr_1      = corr_sNr_NL_cloud
-       	corr_sNr_2      = corr_sNr_NL_cloud
-       	corr_sNc_1      = corr_sNc_NL_cloud
-       	corr_sNc_2      = corr_sNc_NL_cloud
-			else
-				rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
-       	Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
-       	Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
-				corr_rrNr       = corr_rrNr_LL_cloud
-       	corr_srr_1      = corr_srr_NL_cloud
-       	corr_srr_2      = corr_srr_NL_cloud
-       	corr_sNr_1      = corr_sNr_NL_cloud
-       	corr_sNr_2      = corr_sNr_NL_cloud
-       	corr_sNc_1      = corr_sNc_NL_cloud
-       	corr_sNc_2      = corr_sNc_NL_cloud
-			end if 
+      if ( l_diagnose_correlations ) then
+        print *, "Warning: Diagnosing correlations is not yet implemented!"
+        rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
+        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
+        corr_rrNr       = corr_rrNr_LL_cloud
+        corr_srr_1      = corr_srr_NL_cloud
+        corr_srr_2      = corr_srr_NL_cloud
+        corr_sNr_1      = corr_sNr_NL_cloud
+        corr_sNr_2      = corr_sNr_NL_cloud
+        corr_sNc_1      = corr_sNc_NL_cloud
+        corr_sNc_2      = corr_sNc_NL_cloud
+      else
+        rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
+        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
+        corr_rrNr       = corr_rrNr_LL_cloud
+        corr_srr_1      = corr_srr_NL_cloud
+        corr_srr_2      = corr_srr_NL_cloud
+        corr_sNr_1      = corr_sNr_NL_cloud
+        corr_sNr_2      = corr_sNr_NL_cloud
+        corr_sNc_1      = corr_sNc_NL_cloud
+        corr_sNc_2      = corr_sNc_NL_cloud
+      end if 
 
     else
 
-			if ( l_diagnose_correlations == .true. ) then
-				print *, "Warning: Diagnosing correlations is not yet implemented!"
+      if ( l_diagnose_correlations ) then
+        print *, "Warning: Diagnosing correlations is not yet implemented!"
         rrp2_on_rrainm2 = rrp2_on_rrainm2_below
         Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
         Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
@@ -788,7 +788,7 @@ module KK_microphys_module
         corr_sNr_2      = corr_sNr_NL_below
         corr_sNc_1      = corr_sNc_NL_below
         corr_sNc_2      = corr_sNc_NL_below
-			else
+      else
         rrp2_on_rrainm2 = rrp2_on_rrainm2_below
         Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
         Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
@@ -799,9 +799,9 @@ module KK_microphys_module
         corr_sNr_2      = corr_sNr_NL_below
         corr_sNc_1      = corr_sNc_NL_below
         corr_sNc_2      = corr_sNc_NL_below
-			end if
+      end if
 
-    endif
+    endif ! rcm > rc_tol
 
     !!! Calculate the normalized mean of variables that have an assumed (single)
     !!! lognormal distribution, given the mean and variance of those variables.

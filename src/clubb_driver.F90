@@ -218,7 +218,7 @@ module clubb_driver
       setup_configurable_model_flags, & ! Procedure(s)
       read_model_flags_from_file, &
       l_rtm_nudge, &
-			l_diagnose_correlations
+      l_diagnose_correlations
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
@@ -226,12 +226,13 @@ module clubb_driver
     use parameters_model, only: &
       rtm_min, &
       rtm_nudge_max_altitude
+
     implicit none
 
+#ifdef _OPENMP
     ! Because Fortran I/O is not thread safe, we use this here to
     ! ensure that no model uses the same file number simultaneously
     ! when doing a tuning run. -dschanen 31 Jan 2007
-#ifdef _OPENMP
     integer :: omp_get_thread_num ! Function
 #endif
     ! External
@@ -366,7 +367,7 @@ module clubb_driver
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_prescribed_avg_deltaz, l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
-			l_diagnose_correlations
+      l_diagnose_correlations
 
 
     namelist /stats_setting/ & 
