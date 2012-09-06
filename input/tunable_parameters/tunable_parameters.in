@@ -66,4 +66,5 @@ mult_coef   = 1.500000 ! Coefficient applied to log( avg dz / threshold )
 mu          = 1.000E-3 ! Constant Parcel Entrainment Rate (Lscale) [1/m]
 Lscale_mu_coef = 2.0   ! Coefficient to perturb mu for an average calculation of Lscale
 Lscale_pert_coef = 0.1 ! Coefficient to perturb thlm and rtm for an average calculation of Lscale.
+alpha_corr = 0.15 ! Coefficient for the correlation diagnosis algorithm.
 /
