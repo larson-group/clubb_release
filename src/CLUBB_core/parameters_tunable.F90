@@ -192,7 +192,7 @@ module parameters_tunable
        "nu_hd           ", "gamma_coef      ", "gamma_coefb     ", "gamma_coefc     ", &
        "mu              ", "beta            ", "lmin_coef       ", "mult_coef       ", &
        "taumin          ", "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef", &
-			 "alpha_corr			"/)
+       "alpha_corr      "/)
 
   real( kind = core_rknd ), parameter :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
