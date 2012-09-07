@@ -16,7 +16,7 @@ module KK_fixed_correlations
     corr_wrr_NL_cloud,  & ! 
     corr_wNr_NL_cloud,  & !
     corr_wNc_NL_cloud,  & !
-		corr_sw_NN_cloud,   & !
+    corr_sw_NN_cloud,   & !
     corr_srr_NL_cloud,  & ! 0.242
     corr_sNr_NL_cloud,  & ! 0.285
     corr_sNc_NL_cloud,  & ! 0.433
@@ -134,7 +134,8 @@ module KK_fixed_correlations
     corr_wNr_NL_cloud  = corr_matrix(iiLH_Nr,iiLH_w)
     corr_wNc_NL_cloud  = corr_matrix(iiLH_Nc,iiLH_w)
 
-    corr_sw_NN_cloud	 = corr_matrix(iiLH_w,iiLH_s_mellor)
+    corr_sw_NN_cloud   = corr_matrix(iiLH_w,iiLH_s_mellor)
+
     corr_srr_NL_cloud  = corr_matrix(iiLH_rrain,iiLH_s_mellor)
     corr_sNr_NL_cloud  = corr_matrix(iiLH_Nr,iiLH_s_mellor)
     corr_sNc_NL_cloud  = corr_matrix(iiLH_Nc,iiLH_s_mellor)
@@ -159,7 +160,8 @@ module KK_fixed_correlations
     corr_wNr_NL_below  = corr_matrix(iiLH_Nr,iiLH_w)
     corr_wNc_NL_below  = corr_matrix(iiLH_Nc,iiLH_w)
 
-    corr_sw_NN_below	 = corr_matrix(iiLH_w,iiLH_s_mellor)
+    corr_sw_NN_below   = corr_matrix(iiLH_w,iiLH_s_mellor)
+
     corr_srr_NL_below  = corr_matrix(iiLH_rrain,iiLH_s_mellor)
     corr_sNr_NL_below  = corr_matrix(iiLH_Nr,iiLH_s_mellor)
     corr_sNc_NL_below  = corr_matrix(iiLH_Nc,iiLH_s_mellor)
