@@ -92,8 +92,8 @@ module parameters_tunable
     Lscale_mu_coef   = 2.0_core_rknd, & ! Coefficient to perturb mu for an avg calculation of Lscale
     Lscale_pert_coef = 0.1_core_rknd     ! Coeff to perturb thlm and rtm for an avg calc of Lscale.
 
-	real( kind = core_rknd ), public :: &
-		alpha_corr = 0.15_core_rknd ! Coefficient for the correlation diagnosis algorithm.
+  real( kind = core_rknd ), public :: &
+    alpha_corr  = 0.15_core_rknd   ! Coefficient for the correlation diagnosis algoritm
 
   real( kind = core_rknd ), private :: & 
     nu1         = 20.00000_core_rknd,    & ! Background Coefficient of Eddy Diffusion for wp2.
@@ -163,7 +163,7 @@ module parameters_tunable
     c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
     mult_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef, &
-		alpha_corr
+    alpha_corr
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -192,7 +192,7 @@ module parameters_tunable
        "nu_hd           ", "gamma_coef      ", "gamma_coefb     ", "gamma_coefc     ", &
        "mu              ", "beta            ", "lmin_coef       ", "mult_coef       ", &
        "taumin          ", "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef", &
-       "alpha_corr      "/)
+       "alpha_corr      " /)
 
   real( kind = core_rknd ), parameter :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -678,8 +678,8 @@ module parameters_tunable
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
       c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
-      lmin_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef, &
-		  alpha_corr
+      lmin_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
+      Lscale_pert_coef, alpha_corr
 
     ! Initialize values to -999.
     call init_parameters_999( )
@@ -820,7 +820,7 @@ module parameters_tunable
       itaumax, & 
       iLscale_mu_coef, &
       iLscale_pert_coef, &
-			ialpha_corr, &
+      ialpha_corr, &
       nparams
 
     implicit none
@@ -908,7 +908,7 @@ module parameters_tunable
 
     params(iLscale_mu_coef) = Lscale_mu_coef
     params(iLscale_pert_coef) = Lscale_pert_coef
-		params(ialpha_corr) = alpha_corr
+    params(ialpha_corr) = alpha_corr
 
     return
   end subroutine pack_parameters
@@ -1001,7 +1001,7 @@ module parameters_tunable
       itaumax, & 
       iLscale_mu_coef, &
       iLscale_pert_coef, &
-			ialpha_corr, &
+      ialpha_corr, &
       nparams
 
     implicit none
@@ -1090,7 +1090,7 @@ module parameters_tunable
 
     Lscale_mu_coef = params(iLscale_mu_coef)
     Lscale_pert_coef = params(iLscale_pert_coef)
-		alpha_corr = params(ialpha_corr)
+    alpha_corr = params(ialpha_corr)
 
     return
   end subroutine unpack_parameters
@@ -1202,8 +1202,7 @@ module parameters_tunable
     mu                 = init_value
     Lscale_mu_coef     = init_value
     Lscale_pert_coef   = init_value
-		alpha_corr				 = init_value
- 
+    alpha_corr         = init_value
     nu_hd_vert_res_dep = init_value
 
     return
