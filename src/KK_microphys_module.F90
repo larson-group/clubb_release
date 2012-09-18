@@ -662,9 +662,17 @@ module KK_microphys_module
         Ncp2_on_Ncm2_below
 
     use KK_fixed_correlations, only: &
-        corr_srr_NL_cloud,  & ! Variable(s)
+        corr_wrr_NL_cloud,  & ! Variable(s) 
+        corr_wNr_NL_cloud,  & 
+        corr_wNc_NL_cloud,  & 
+        corr_sw_NN_cloud,   & 
+        corr_srr_NL_cloud,  & 
         corr_sNr_NL_cloud,  &
         corr_sNc_NL_cloud,  &
+        corr_wrr_NL_below,  & 
+        corr_wNr_NL_below,  & 
+        corr_wNc_NL_below,  & 
+        corr_sw_NN_below,   & 
         corr_srr_NL_below,  &
         corr_sNr_NL_below,  &
         corr_sNc_NL_below,  &
@@ -676,6 +684,9 @@ module KK_microphys_module
 
     use model_flags, only: &
       l_diagnose_correlations ! Variable(s)
+
+    use diagnose_correlations_module, only: &
+      diagnose_KK_corr ! Procedure(s)
 
     implicit none
 
@@ -750,10 +761,16 @@ module KK_microphys_module
     if ( rcm > rc_tol ) then
 
       if ( l_diagnose_correlations ) then
-        print *, "Warning: Diagnosing correlations is not yet implemented!"
         rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
         Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
         Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
+
+        call diagnose_KK_corr( Ncm, rrainm, Nrm,  & ! intent(in)
+                      Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2,  &
+                      corr_sw_NN_cloud, corr_wrr_NL_cloud, corr_wNr_NL_cloud, corr_wNc_NL_cloud,  &
+                      corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, & ! intent(inout)
+                      corr_sNc_NL_cloud) 
+
         corr_rrNr       = corr_rrNr_LL_cloud
         corr_srr_1      = corr_srr_NL_cloud
         corr_srr_2      = corr_srr_NL_cloud
@@ -761,6 +778,7 @@ module KK_microphys_module
         corr_sNr_2      = corr_sNr_NL_cloud
         corr_sNc_1      = corr_sNc_NL_cloud
         corr_sNc_2      = corr_sNc_NL_cloud
+        
       else
         rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
         Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
@@ -777,10 +795,16 @@ module KK_microphys_module
     else
 
       if ( l_diagnose_correlations ) then
-        print *, "Warning: Diagnosing correlations is not yet implemented!"
         rrp2_on_rrainm2 = rrp2_on_rrainm2_below
         Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
         Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
+
+        call diagnose_KK_corr( Ncm, rrainm, Nrm,   & ! intent(in)
+                      Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2,  &
+                      corr_sw_NN_below, corr_wrr_NL_below, corr_wNr_NL_below, corr_wNc_NL_below,  &
+                      corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, & ! intent(inout)
+                      corr_sNc_NL_below ) 
+
         corr_rrNr       = corr_rrNr_LL_below
         corr_srr_1      = corr_srr_NL_below
         corr_srr_2      = corr_srr_NL_below
@@ -788,6 +812,8 @@ module KK_microphys_module
         corr_sNr_2      = corr_sNr_NL_below
         corr_sNc_1      = corr_sNc_NL_below
         corr_sNc_2      = corr_sNc_NL_below
+
+
       else
         rrp2_on_rrainm2 = rrp2_on_rrainm2_below
         Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
