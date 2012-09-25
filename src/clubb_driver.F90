@@ -917,6 +917,7 @@ module clubb_driver
                        day, month, year, & ! Intent(in)
                        (/rlat/), (/rlon/), time_current, dt_main ) ! Intent(in)
     end if
+  
 
 #ifdef LATIN_HYPERCUBE
     if ( LH_microphys_type /= LH_microphys_disabled ) then
@@ -3578,6 +3579,10 @@ module clubb_driver
 
     use fill_holes, only: &
       vertical_avg  ! Procedure(s)
+
+    use model_flags, only: &
+      l_diagnose_correlations ! Variable(s)
+
 #else
 #define d_variables 0
 #endif
@@ -3674,6 +3679,15 @@ module clubb_driver
     rtp2_mc_tndcy    = zero
     thlp2_mc_tndcy   = zero
     rtpthlp_mc_tndcy = zero
+
+
+    !The algorithm for diagnosing the correlations only works with the KK microphysics by now. 
+    !<Changes by janhft 09/25/12>
+    if ( l_diagnose_correlations .and. ( (micro_scheme /= "khairoutdinov_kogan") &
+         .or. (LH_microphys_type /= LH_microphys_disabled) ) ) then
+       write(fstderr,*) "Error: The diagnose_corr algorithm only works for KK microphysics by now."
+       stop
+    end if  
 
 #ifdef LATIN_HYPERCUBE
     !----------------------------------------------------------------
