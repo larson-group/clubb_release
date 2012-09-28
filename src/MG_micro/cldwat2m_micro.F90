@@ -1711,13 +1711,16 @@ subroutine mmicro_pcond ( sub_column,       &
                    * ( real( rho(i,k), kind = core_rknd ) &
                        / cm3_per_m3 )**KK_auto_Nc_exp
 
+                 ! Function KK_auto_upscaled_mean provides the grid-level mean
+                 ! autoconversion rate.  Divide the result by cloud fraction
+                 ! (lcldm) to find the mean in-cloud rate.
                  prc(k) = real( &
                  KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_n, sigma_s_1, &
                                         sigma_s_2, sigma_Nc_n, corr_sNc_1_n, &
                                         corr_sNc_2_n, KK_auto_coef, mixt_frac, &
                                         real( ncic(i,k), kind = core_rknd ), &
                                         l_const_Nc_in_cloud ), &
-                          kind = r8 )
+                          kind = r8 ) / lcldm(i,k)
                  nprc(k) = prc(k)/cons22
                  nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
 
@@ -2141,8 +2144,12 @@ subroutine mmicro_pcond ( sub_column,       &
 
               else
 
+                 ! The level-mean rain water mixing ratio is found by
+                 ! multiplying in-precip rain water mixing ratio (qric) by
+                 ! the precipitation fraction (cldmax).
                  call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), &
-                                         real( qric(i,k), kind = core_rknd ), &
+                                         real( qric(i,k) * cldmax(i,k), &
+                                               kind = core_rknd ), &
                                          zero, &
                                          zero, pdf_params(k), &
                                          mu_s_1, mu_s_2, mu_rr_n, dum_out1, &
@@ -2155,12 +2162,15 @@ subroutine mmicro_pcond ( sub_column,       &
 
                  KK_accr_coef = 67.0_core_rknd
 
+                 ! Function KK_accr_upscaled_mean provides the grid-level mean
+                 ! accretion rate.  Divide the result by cloud fraction (lcldm)
+                 ! to find the mean in-cloud rate.
                  pra(k) = real( &
                  KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
                                         sigma_s_2, sigma_rr_n, corr_srr_1_n, &
                                         corr_srr_2_n, KK_accr_coef, &
                                         mixt_frac ), &
-                          kind = r8 )
+                          kind = r8 ) / lcldm(i,k)
                  npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
 
               endif
