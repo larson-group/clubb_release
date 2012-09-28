@@ -109,6 +109,11 @@ real(r8), private:: lammaxs
 real(r8), private:: tmax_fsnow ! max temperature for transition to convective snow
 real(r8), private:: tmin_fsnow ! min temperature for transition to convective snow
 
+! Flag to use CLUBB's PDF for upscaling KK autoconversion and accretion.
+logical, parameter, public :: &
+  l_use_CLUBB_pdf_in_mg = .false.
+!----
+
 !needed for findsp
 real(r8), private:: tt0       ! Freezing temperature
 
@@ -368,6 +373,9 @@ subroutine mmicro_pcond ( sub_column,       &
    nc, ni, p, pdel, cldn,                   &
    liqcldf, icecldf,                        &
    cldo,                                    &
+   ! Upscaled KK for autoconversion and accretion
+   pdf_params,                              &
+   !----
    rate1ord_cw2pr_st,                       &   
    naai, npccnin, rndst,nacon,              &
    tlat, qvlat,        &
@@ -393,6 +401,29 @@ subroutine mmicro_pcond ( sub_column,       &
 
    use wv_saturation, only: vqsatd_water
 
+   ! Upscaled KK for autoconversion and accretion
+   use KK_microphys_module, only: &
+       KK_upscaled_setup  ! Procedure(s)
+
+   use KK_upscaled_means, only: &
+       KK_auto_upscaled_mean, & ! Procedure(s)
+       KK_accr_upscaled_mean
+
+   use pdf_parameter_module, only: &
+       pdf_parameter  ! Variable(s)
+
+   use constants_clubb, only: &
+       zero,       &  ! Constant(s)
+       cm3_per_m3
+
+   use parameters_microphys, only: &
+       KK_auto_Nc_exp,      & ! Variable(s)
+       l_const_Nc_in_cloud
+
+   use clubb_precision, only: &
+       core_rknd  ! Variable(s)
+   !----
+
    ! input arguments
    logical,  intent(in) :: sub_column  ! True = configure for sub-columns  False = use w/o sub-columns (standard)
    integer,  intent(in) :: lchnk
@@ -412,6 +443,11 @@ subroutine mmicro_pcond ( sub_column,       &
    real(r8), intent(in) :: icecldf(pcols,pver)  ! ice cloud fraction   
    real(r8), intent(in) :: liqcldf(pcols,pver)  ! liquid cloud fraction
    real(r8), intent(inout) :: cldo(pcols,pver)  ! old cloud fraction
+
+   ! Upscaled KK for autoconversion and accretion
+   type(pdf_parameter), dimension(pver), intent(in) :: &
+     pdf_params    ! PDF parameters               [units vary]
+   !----
 
    real(r8), intent(out) :: rate1ord_cw2pr_st(pcols,pver) ! 1st order rate for direct cw to precip conversion 
                                                           ! used for scavenging
@@ -799,6 +835,36 @@ subroutine mmicro_pcond ( sub_column,       &
   
       real(r8), parameter :: cdnl    = 0.e6_r8    ! cloud droplet number limiter
 
+   ! Upscaled KK for autoconversion and accretion
+   real( kind = core_rknd ) :: &
+     mu_s_1,       & ! Mean of s (1st PDF component)                   [kg/kg]
+     mu_s_2,       & ! Mean of s (2nd PDF component)                   [kg/kg]
+     mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
+     mu_Nc_n,      & ! Mean of ln Nc (both components)                     [-]
+     sigma_s_1,    & ! Standard deviation of s (1st PDF component)     [kg/kg]
+     sigma_s_2,    & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+     sigma_rr_n,   & ! Standard deviation of ln rr (both components)       [-]
+     sigma_Nc_n,   & ! Standard deviation of ln Nc (both components)       [-]
+     corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component) [-]
+     corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component) [-]
+     corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component) [-]
+     corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component) [-]
+     KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
+     KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
+     mixt_frac       ! Mixture fraction                                    [-]
+
+   ! Dummy output 
+   real( kind = core_rknd ) :: &
+     dum_out1, &
+     dum_out2, &
+     dum_out3, &
+     dum_out4, &
+     dum_out5, &
+     dum_out6, &
+     dum_out7, &
+     dum_out8, &
+     dum_out9
+   !----
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 ! initialize  output fields for number conc qand ice nucleation
@@ -1618,10 +1684,50 @@ subroutine mmicro_pcond ( sub_column,       &
  
            else
 
-              prc(k) = cons2/(cons3*cons18)*1350._r8*qcic(i,k)**2.47_r8* &
-              (ncic(i,k)/1.e6_r8*rho(i,k))**(-1.79_r8)
-              nprc(k) = prc(k)/cons22
-              nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
+              ! Upscaled KK for autoconversion and accretion
+              if ( .not. l_use_CLUBB_pdf_in_mg ) then
+
+                 prc(k) = cons2/(cons3*cons18)*1350._r8*qcic(i,k)**2.47_r8* &
+                 (ncic(i,k)/1.e6_r8*rho(i,k))**(-1.79_r8)
+                 nprc(k) = prc(k)/cons22
+                 nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
+
+              else
+
+                 call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), &
+                                         zero, zero, &
+                                         real( nc(i,k), kind = core_rknd ), &
+                                         pdf_params(k), &
+                                         mu_s_1, mu_s_2, dum_out1, dum_out2, &
+                                         mu_Nc_n, sigma_s_1, sigma_s_2, &
+                                         dum_out3, dum_out4, sigma_Nc_n, &
+                                         dum_out5, dum_out6, &
+                                         dum_out7, dum_out8, &
+                                         corr_sNc_1_n, corr_sNc_2_n, &
+                                         dum_out9, mixt_frac )
+
+                 KK_auto_coef &
+                 = 1350.0_core_rknd &
+                   * ( real( rho(i,k), kind = core_rknd ) &
+                       / cm3_per_m3 )**KK_auto_Nc_exp
+
+                 prc(k) = real( &
+                 KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_n, sigma_s_1, &
+                                        sigma_s_2, sigma_Nc_n, corr_sNc_1_n, &
+                                        corr_sNc_2_n, KK_auto_coef, mixt_frac, &
+                                        real( ncic(i,k), kind = core_rknd ), &
+                                        l_const_Nc_in_cloud ), &
+                          kind = r8 )
+                 nprc(k) = prc(k)/cons22
+                 nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
+
+              endif
+              !----
+
+!              prc(k) = cons2/(cons3*cons18)*1350._r8*qcic(i,k)**2.47_r8* &
+!              (ncic(i,k)/1.e6_r8*rho(i,k))**(-1.79_r8)
+!              nprc(k) = prc(k)/cons22
+!              nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
  
            end if               ! sub-column switch
 
@@ -2026,9 +2132,43 @@ subroutine mmicro_pcond ( sub_column,       &
  
            else
 
-              pra(k) = cons12/(cons3*cons20)* &
-                      67._r8*(qcic(i,k)*qric(i,k))**1.15_r8
-              npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
+              ! Upscaled KK for autoconversion and accretion
+              if ( .not. l_use_CLUBB_pdf_in_mg ) then
+
+                 pra(k) = cons12/(cons3*cons20)* &
+                         67._r8*(qcic(i,k)*qric(i,k))**1.15_r8
+                 npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
+
+              else
+
+                 call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), &
+                                         real( qric(i,k), kind = core_rknd ), &
+                                         zero, &
+                                         zero, pdf_params(k), &
+                                         mu_s_1, mu_s_2, mu_rr_n, dum_out1, &
+                                         dum_out2, sigma_s_1, sigma_s_2, &
+                                         sigma_rr_n, dum_out3, dum_out4, &
+                                         corr_srr_1_n, corr_srr_2_n, &
+                                         dum_out5, dum_out6, &
+                                         dum_out7, dum_out8, &
+                                         dum_out9, mixt_frac )
+
+                 KK_accr_coef = 67.0_core_rknd
+
+                 pra(k) = real( &
+                 KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
+                                        sigma_s_2, sigma_rr_n, corr_srr_1_n, &
+                                        corr_srr_2_n, KK_accr_coef, &
+                                        mixt_frac ), &
+                          kind = r8 )
+                 npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
+
+              endif
+              !----
+
+!              pra(k) = cons12/(cons3*cons20)* &
+!                      67._r8*(qcic(i,k)*qric(i,k))**1.15_r8
+!              npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
 
            end if               ! sub-column switch
 

@@ -11,7 +11,7 @@ module mg_micro_driver_module
 !-------------------------------------------------------------------------------
   subroutine mg_microphys_driver &
              ( dt, nz, l_stats_samp, invrs_dzt, thlm, p_in_Pa, exner, &
-               rho, cloud_frac, rcm, Ncm, rvm, Ncnm, hydromet, &
+               rho, cloud_frac, rcm, Ncm, rvm, Ncnm, pdf_params, hydromet, &
                hydromet_mc, hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
 !   Wrapper for the Morrison-Gettelman microphysics
@@ -115,6 +115,9 @@ module mg_micro_driver_module
     use fill_holes, only: &
       vertical_integral ! Procedure(s)
 
+    use pdf_parameter_module, only: &
+        pdf_parameter  ! Variable(s)
+
     implicit none
 
     ! External
@@ -145,6 +148,9 @@ module mg_micro_driver_module
       Ncm,      & ! Cloud droplet number concentration [count/kg]
       rvm,      & ! Vapor water mixing ratio           [kg/kg]
       Ncnm        ! Cloud nuclei number concentration  [count/m^3]
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params    ! PDF parameters                   [units vary]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet      ! Hydrometeor species    [units vary]
@@ -298,6 +304,9 @@ module mg_micro_driver_module
        hydromet_flip,    &  ! Hydrometeor species                            [units vary]
        hydromet_mc_flip     ! Hydrometeor time tendency                      [units vary]
 
+    type(pdf_parameter), dimension(nz-1) :: &
+      pdf_params_flip    ! PDF parameters flipped for MG grid       [units vary]
+
     real( kind = core_rknd ) :: xtmp
 
     integer :: i, k, ncols, icol
@@ -353,6 +362,9 @@ module mg_micro_driver_module
     do i = 1, hydromet_dim, 1
       hydromet_flip(icol,1:nz-1, i) = real( hydromet(nz:2:-1, i), kind=r8 )
     end do
+
+    ! Flip the CLUBB PDF parameters.
+    pdf_params_flip(1:nz-1) = pdf_params(nz:2:-1)
     
     ! Initialize MG input variables. The top level is skipped because MG's grid is flipped with
     ! respect to CLUBB's, and MG doesn't include CLUBB's lowest level.
@@ -464,6 +476,7 @@ module mg_micro_driver_module
            Ncm_flip, hydromet_flip(:,:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip,            &
            liqcldf_flip, icecldf_flip,                                                        &! in
            cldo_flip,                                                                         &! in
+           pdf_params_flip,                                                                   & ! in
            rate1ord_cw2pr_st_flip,                                                            &! out
            naai_flip, npccn_flip, rndst_flip, nacon_flip,                                     &! in
            tlat_flip, rvm_mc_flip,                                                            &! out

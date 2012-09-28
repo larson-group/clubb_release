@@ -13,11 +13,11 @@ module diagnose_correlations_module
 
 
 !-----------------------------------------------------------------------
-  subroutine diagnose_KK_corr( Ncm, rrainm, Nrm, 												& 	! intent(in)
-														 Ncp2_on_Ncm2, rrp2_on_rrm2, Nrp2_on_Nrm2,  &
-														 corr_sw, corr_rrw, corr_Nrw, corr_Ncw, 								&
-														 corr_rrNr, corr_srr, corr_sNr, corr_sNc) 			! intent(inout)
-					 
+  subroutine diagnose_KK_corr( Ncm, rrainm, Nrm, & ! intent(in)
+                               Ncp2_on_Ncm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
+                               corr_sw, corr_rrw, corr_Nrw, corr_Ncw, &
+                               corr_rrNr, corr_srr, corr_sNr, corr_sNc ) ! intent(inout)
+
 ! Description:
 !   This subroutine diagnoses the correlation matrix in order to feed it 
 !   into KK microphysics.   

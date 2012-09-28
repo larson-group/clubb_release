@@ -6,10 +6,10 @@ module KK_microphys_module
 
   private
 
-  public :: KK_micro_driver
+  public :: KK_micro_driver, &
+            KK_upscaled_setup
 
-  private :: KK_upscaled_setup, &
-             KK_upscaled_means_driver, &
+  private :: KK_upscaled_means_driver, &
              KK_upscaled_covar_driver
 
   contains
@@ -642,7 +642,8 @@ module KK_microphys_module
         rc_tol, & ! Constant(s)
         rr_tol, & 
         Nr_tol, & 
-        Nc_tol
+        Nc_tol, &
+        zero
 
     use KK_utilities, only: &
         mean_L2N,   & ! Procedure(s)
@@ -683,10 +684,10 @@ module KK_microphys_module
         core_rknd  ! Variable(s)
 
     use model_flags, only: &
-      l_diagnose_correlations ! Variable(s)
+        l_diagnose_correlations ! Variable(s)
 
     use diagnose_correlations_module, only: &
-      diagnose_KK_corr ! Procedure(s)
+        diagnose_KK_corr ! Procedure(s)
 
     implicit none
 
@@ -760,72 +761,79 @@ module KK_microphys_module
     ! used.  Otherwise, the ###_below value is used.
     if ( rcm > rc_tol ) then
 
-      if ( l_diagnose_correlations ) then
-        rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
-        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
-        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
+       if ( l_diagnose_correlations ) then
 
-        call diagnose_KK_corr( Ncm, rrainm, Nrm,  & ! intent(in)
-                      Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2,  &
-                      corr_sw_NN_cloud, corr_wrr_NL_cloud, corr_wNr_NL_cloud, corr_wNc_NL_cloud,  &
-                      corr_rrNr_LL_cloud, corr_srr_NL_cloud, corr_sNr_NL_cloud, & ! intent(inout)
-                      corr_sNc_NL_cloud) 
+          rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+          Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
+          Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
 
-        corr_rrNr       = corr_rrNr_LL_cloud
-        corr_srr_1      = corr_srr_NL_cloud
-        corr_srr_2      = corr_srr_NL_cloud
-        corr_sNr_1      = corr_sNr_NL_cloud
-        corr_sNr_2      = corr_sNr_NL_cloud
-        corr_sNc_1      = corr_sNc_NL_cloud
-        corr_sNc_2      = corr_sNc_NL_cloud
+          call diagnose_KK_corr( Ncm, rrainm, Nrm, &
+                                 Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
+                                 corr_sw_NN_cloud, corr_wrr_NL_cloud, &
+                                 corr_wNr_NL_cloud, corr_wNc_NL_cloud,  &
+                                 corr_rrNr_LL_cloud, corr_srr_NL_cloud, &
+                                 corr_sNr_NL_cloud, corr_sNc_NL_cloud ) 
+
+          corr_rrNr       = corr_rrNr_LL_cloud
+          corr_srr_1      = corr_srr_NL_cloud
+          corr_srr_2      = corr_srr_NL_cloud
+          corr_sNr_1      = corr_sNr_NL_cloud
+          corr_sNr_2      = corr_sNr_NL_cloud
+          corr_sNc_1      = corr_sNc_NL_cloud
+          corr_sNc_2      = corr_sNc_NL_cloud
         
-      else
-        rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
-        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
-        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
-        corr_rrNr       = corr_rrNr_LL_cloud
-        corr_srr_1      = corr_srr_NL_cloud
-        corr_srr_2      = corr_srr_NL_cloud
-        corr_sNr_1      = corr_sNr_NL_cloud
-        corr_sNr_2      = corr_sNr_NL_cloud
-        corr_sNc_1      = corr_sNc_NL_cloud
-        corr_sNc_2      = corr_sNc_NL_cloud
-      end if 
+       else
+
+          rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+          Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
+          Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
+          corr_rrNr       = corr_rrNr_LL_cloud
+          corr_srr_1      = corr_srr_NL_cloud
+          corr_srr_2      = corr_srr_NL_cloud
+          corr_sNr_1      = corr_sNr_NL_cloud
+          corr_sNr_2      = corr_sNr_NL_cloud
+          corr_sNc_1      = corr_sNc_NL_cloud
+          corr_sNc_2      = corr_sNc_NL_cloud
+
+       endif 
 
     else
 
-      if ( l_diagnose_correlations ) then
-        rrp2_on_rrainm2 = rrp2_on_rrainm2_below
-        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
-        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
+       if ( l_diagnose_correlations ) then
 
-        call diagnose_KK_corr( Ncm, rrainm, Nrm,   & ! intent(in)
-                      Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2,  &
-                      corr_sw_NN_below, corr_wrr_NL_below, corr_wNr_NL_below, corr_wNc_NL_below,  &
-                      corr_rrNr_LL_below, corr_srr_NL_below, corr_sNr_NL_below, & ! intent(inout)
-                      corr_sNc_NL_below ) 
+          rrp2_on_rrainm2 = rrp2_on_rrainm2_below
+          Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
+          Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
 
-        corr_rrNr       = corr_rrNr_LL_below
-        corr_srr_1      = corr_srr_NL_below
-        corr_srr_2      = corr_srr_NL_below
-        corr_sNr_1      = corr_sNr_NL_below
-        corr_sNr_2      = corr_sNr_NL_below
-        corr_sNc_1      = corr_sNc_NL_below
-        corr_sNc_2      = corr_sNc_NL_below
+          call diagnose_KK_corr( Ncm, rrainm, Nrm, &
+                                 Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
+                                 corr_sw_NN_below, corr_wrr_NL_below, &
+                                 corr_wNr_NL_below, corr_wNc_NL_below,  &
+                                 corr_rrNr_LL_below, corr_srr_NL_below, &
+                                 corr_sNr_NL_below, corr_sNc_NL_below ) 
 
+          corr_rrNr       = corr_rrNr_LL_below
+          corr_srr_1      = corr_srr_NL_below
+          corr_srr_2      = corr_srr_NL_below
+          corr_sNr_1      = corr_sNr_NL_below
+          corr_sNr_2      = corr_sNr_NL_below
+          corr_sNc_1      = corr_sNc_NL_below
+          corr_sNc_2      = corr_sNc_NL_below
 
-      else
-        rrp2_on_rrainm2 = rrp2_on_rrainm2_below
-        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
-        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
-        corr_rrNr       = corr_rrNr_LL_below
-        corr_srr_1      = corr_srr_NL_below
-        corr_srr_2      = corr_srr_NL_below
-        corr_sNr_1      = corr_sNr_NL_below
-        corr_sNr_2      = corr_sNr_NL_below
-        corr_sNc_1      = corr_sNc_NL_below
-        corr_sNc_2      = corr_sNc_NL_below
-      end if
+       else
+
+          rrp2_on_rrainm2 = rrp2_on_rrainm2_below
+          Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
+          Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
+          corr_rrNr       = corr_rrNr_LL_below
+          corr_srr_1      = corr_srr_NL_below
+          corr_srr_2      = corr_srr_NL_below
+          corr_sNr_1      = corr_sNr_NL_below
+          corr_sNr_2      = corr_sNr_NL_below
+          corr_sNc_1      = corr_sNc_NL_below
+          corr_sNc_2      = corr_sNc_NL_below
+
+       endif
 
     endif ! rcm > rc_tol
 
@@ -835,16 +843,37 @@ module KK_microphys_module
     ! Normalized mean of rain water mixing ratio.
     if ( rrainm > rr_tol ) then
        mu_rr_n = mean_L2N( rrainm, rrp2_on_rrainm2 * rrainm**2 )
+    else
+       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
+       ! considered to have a value of 0.  There is not any rain at this
+       ! grid level.  The value of mu_rr_n should be -inf.  It will be set to
+       ! -huge for purposes of assigning it a value.  This value will not be
+       ! used again in the CLUBB code.
+       mu_rr_n = -huge( mu_rr_n )
     endif
 
     ! Normalized mean of rain drop concentration.
     if ( Nrm > Nr_tol ) then
        mu_Nr_n = mean_L2N( Nrm, Nrp2_on_Nrm2 * Nrm**2 )
+    else
+       ! Mean rain drop concentration is less than the tolerance amount.  It is
+       ! considered to have a value of 0.  There is not any rain at this
+       ! grid level.  The value of mu_Nr_n should be -inf.  It will be set to
+       ! -huge for purposes of assigning it a value.  This value will not be
+       ! used again in the CLUBB code.
+       mu_Nr_n = -huge( mu_Nr_n )
     endif
 
     ! Normalized mean of cloud droplet concentration.
     if ( Ncm > Nc_tol ) then
        mu_Nc_n = mean_L2N( Ncm, Ncp2_on_Ncm2 * Ncm**2 )
+    else
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There isn't any cloud at this
+       ! grid level.  The value of mu_Nc_n should be -inf.  It will be set to
+       ! -huge for purposes of assigning it a value.  This value will not be
+       ! used again in the CLUBB code.
+       mu_Nc_n = -huge( mu_Nc_n )
     endif
 
     !!! Calculate the normalized standard deviation of variables that have
@@ -854,16 +883,34 @@ module KK_microphys_module
     ! Normalized standard deviation of rain water mixing ratio.
     if ( rrainm > rr_tol ) then
        sigma_rr_n = stdev_L2N( rrainm, rrp2_on_rrainm2 * rrainm**2 )
+    else
+       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
+       ! considered to have a value of 0.  There is not any rain at this grid
+       ! level.  The standard deviation is simply 0 since rain water mixing
+       ! ratio does not vary at this grid level.
+       sigma_rr_n = zero
     endif
 
     ! Normalized standard deviation of rain drop concentration.
     if ( Nrm > Nr_tol ) then
        sigma_Nr_n = stdev_L2N( Nrm, Nrp2_on_Nrm2 * Nrm**2 )
+    else
+       ! Mean rain drop concentration is less than the tolerance amount.  It is
+       ! considered to have a value of 0.  There is not any rain at this grid
+       ! level.  The standard deviation is simply 0 since rain drop
+       ! concentration does not vary at this grid level.
+       sigma_Nr_n = zero
     endif
 
     ! Normalized standard deviation of cloud droplet concentration.
     if ( Ncm > Nc_tol ) then
        sigma_Nc_n = stdev_L2N( Ncm, Ncp2_on_Ncm2 * Ncm**2 )
+    else
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There is not any cloud at this
+       ! grid level.  The standard deviation is simply 0 since cloud droplet
+       ! concentration does not vary at this grid level.
+       sigma_Nc_n = zero
     endif
 
     !!! Calculate the normalized correlation between variables that have
@@ -880,6 +927,15 @@ module KK_microphys_module
        ! Normalize the correlation between s and r_r in PDF component 2.
        corr_srr_2_n = corr_NL2NN( corr_srr_2, sigma_rr_n )
 
+    else
+
+       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
+       ! considered to have a value of 0.  There is not any rain at this grid
+       ! level.  The correlations involving rain water mixing ratio are 0 since
+       ! rain water mixing ratio does not vary at this grid level.
+       corr_srr_1_n = zero
+       corr_srr_2_n = zero
+
     endif
 
     if ( Nrm > Nr_tol ) then
@@ -889,6 +945,15 @@ module KK_microphys_module
 
        ! Normalize the correlation between s and N_r in PDF component 2.
        corr_sNr_2_n = corr_NL2NN( corr_sNr_2, sigma_Nr_n )
+
+    else
+
+       ! Mean rain drop concentration is less than the tolerance amount.  It is
+       ! considered to have a value of 0.  There is not any rain at this grid
+       ! level.  The correlations involving rain drop concentration are 0 since
+       ! rain drop concentration does not vary at this grid level.
+       corr_sNr_1_n = zero
+       corr_sNr_2_n = zero
 
     endif
 
@@ -900,6 +965,15 @@ module KK_microphys_module
        ! Normalize the correlation between s and N_c in PDF component 2.
        corr_sNc_2_n = corr_NL2NN( corr_sNc_2, sigma_Nc_n )
 
+    else
+
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There is not any cloud at this
+       ! grid level.  The correlations involving cloud droplet concentration are
+       ! 0 since cloud droplet concentration does not vary at this grid level.
+       corr_sNc_1_n = zero
+       corr_sNc_2_n = zero
+
     endif
 
     !!! Calculate the normalized correlation between two variables that both
@@ -909,7 +983,18 @@ module KK_microphys_module
     ! Normalize the correlation between rr and Nr (this is the same for
     ! both PDF components).
     if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+
        corr_rrNr_n = corr_LL2NN( corr_rrNr, sigma_rr_n, sigma_Nr_n )
+
+    else
+
+       ! Mean rain water mixing ratio and (or) mean rain drop concentration are
+       ! (is) less than their (its) respective tolerance amount(s), and are (is)
+       ! considered to have a value of 0.  There is not any rain at this grid
+       ! level.  The correlation is 0 since rain does not vary at this grid
+       ! level.
+       corr_rrNr_n = zero
+
     endif
 
 
@@ -1390,6 +1475,17 @@ module KK_microphys_module
        ! Normalize the correlation between t and r_r in PDF component 2.
        corr_trr_2_n = corr_NL2NN( corr_trr_2, sigma_rr_n )
 
+    else
+
+       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
+       ! considered to have a value of 0.  There is not any rain at this grid
+       ! level.  The correlations involving rain water mixing ratio are 0 since
+       ! rain water mixing ratio does not vary at this grid level.
+       corr_wrr_1_n = zero
+       corr_wrr_2_n = zero
+       corr_trr_1_n = zero
+       corr_trr_2_n = zero
+
     endif
 
     if ( Nrm > Nr_tol ) then
@@ -1406,6 +1502,17 @@ module KK_microphys_module
        ! Normalize the correlation between t and N_r in PDF component 2.
        corr_tNr_2_n = corr_NL2NN( corr_tNr_2, sigma_Nr_n )
 
+    else
+
+       ! Mean rain drop concentration is less than the tolerance amount.  It is
+       ! considered to have a value of 0.  There is not any rain at this grid
+       ! level.  The correlations involving rain drop concentration are 0 since
+       ! rain drop concentration does not vary at this grid level.
+       corr_wNr_1_n = zero
+       corr_wNr_2_n = zero
+       corr_tNr_1_n = zero
+       corr_tNr_2_n = zero
+
     endif
 
     if ( Ncm > Nc_tol ) then
@@ -1421,6 +1528,17 @@ module KK_microphys_module
 
        ! Normalize the correlation between t and N_c in PDF component 2.
        corr_tNc_2_n = corr_NL2NN( corr_tNc_2, sigma_Nc_n )
+
+    else
+
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There is not any cloud at this
+       ! grid level.  The correlations involving cloud droplet concentration are
+       ! 0 since cloud droplet concentration does not vary at this grid level.
+       corr_wNc_1_n = zero
+       corr_wNc_2_n = zero
+       corr_tNc_1_n = zero
+       corr_tNc_2_n = zero
 
     endif
 

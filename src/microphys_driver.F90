@@ -164,7 +164,8 @@ module microphys_driver
         GRAUPEL_INIT ! Subroutine
 
     use cldwat2m_micro, only: &
-        ini_micro ! Subroutine
+        ini_micro,             & ! Subroutine
+        l_use_CLUBB_pdf_in_mg    ! Flag
 
     use microp_aero, only: &
         ini_microp_aero ! Subroutine
@@ -732,6 +733,16 @@ module microphys_driver
       ! Setup the MG scheme
       call ini_micro()
       call pbuf_init()
+
+      if ( l_use_CLUBB_pdf_in_mg ) then
+
+         corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
+         corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
+
+         call setup_KK_corr( iunit, corr_file_path_cloud, corr_file_path_below, & ! In
+                             l_write_to_file, case_info_file ) ! In
+
+      endif
 
     case ( "coamps" )
       if ( .not. l_predictnc ) then
@@ -1452,7 +1463,7 @@ module microphys_driver
       rvm = rtm - rcm
       call mg_microphys_driver &
           ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
-            rho, cloud_frac, rcm, Ncm, rvm, Ncnm, hydromet, &
+            rho, cloud_frac, rcm, Ncm, rvm, Ncnm, pdf_params, hydromet, &
             hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
 
     case ( "khairoutdinov_kogan" )
