@@ -367,29 +367,29 @@ subroutine ini_micro
 !===============================================================================
 !microphysics routine for each timestep goes here...
 
-subroutine mmicro_pcond ( sub_column,       &
-   lchnk, ncol, deltatin, tn,               &
-   qn, qc, qi,                              &
-   nc, ni, p, pdel, cldn,                   &
-   liqcldf, icecldf,                        &
-   cldo,                                    &
+subroutine mmicro_pcond ( sub_column,           &
+   lchnk, ncol, deltatin, tn,                   &
+   qn, qc, qi,                                  &
+   nc, ni, p, pdel, cldn,                       &
+   liqcldf, icecldf,                            &
+   cldo,                                        &
    ! Upscaled KK for autoconversion and accretion
-   pdf_params,                              &
+   pdf_params,                                  &
    !----
-   rate1ord_cw2pr_st,                       &   
-   naai, npccnin, rndst,nacon,              &
-   tlat, qvlat,        &
-   qctend, qitend, nctend, nitend, effc,    &
-   effc_fn, effi, prect, preci,             &  
-   nevapr, evapsnow,      &
-   prain, prodsnow, cmeout, deffi, pgamrad, &
-   lamcrad,qsout,dsout, &
+   rate1ord_cw2pr_st,                           &   
+   naai, npccnin, rndst,nacon,                  &
+   tlat, qvlat,                                 &
+   qctend, qitend, nctend, nitend, effc,        &
+   effc_fn, effi, prect, preci,                 &  
+   nevapr, evapsnow,                            &
+   prain, prodsnow, cmeout, deffi, pgamrad,     &
+   lamcrad,qsout,dsout,                         &
          rflx,sflx, qrout,reff_rain,reff_snow,  &
-   qcsevap,qisevap,qvres,cmeiout, &
-   vtrmc,vtrmi,qcsedten,qisedten, &
-   prao,prco,mnuccco,mnuccto,msacwio,psacwso,&
+   qcsevap,qisevap,qvres,cmeiout,               &
+   vtrmc,vtrmi,qcsedten,qisedten,               &
+   prao,prco,mnuccco,mnuccto,msacwio,psacwso,   &
    bergso,bergo,melto,homoo,qcreso,prcio,praio,qireso,&
-   mnuccro,pracso,meltsdt,frzrdt,mnuccdo &
+   mnuccro,pracso,meltsdt,frzrdt,mnuccdo        &
 #ifdef CLUBB
    ,qcic, t, nsic, nric, uni, umi  &
    ,uns, ums, unr, umr, unc, umc, cldmax &
@@ -1704,7 +1704,7 @@ subroutine mmicro_pcond ( sub_column,       &
                                          dum_out5, dum_out6, &
                                          dum_out7, dum_out8, &
                                          corr_sNc_1_n, corr_sNc_2_n, &
-                                         dum_out9, mixt_frac )
+                                         dum_out9, mixt_frac, pver - k + 2)
 
                  KK_auto_coef &
                  = 1350.0_core_rknd &
@@ -2158,7 +2158,7 @@ subroutine mmicro_pcond ( sub_column,       &
                                          corr_srr_1_n, corr_srr_2_n, &
                                          dum_out5, dum_out6, &
                                          dum_out7, dum_out8, &
-                                         dum_out9, mixt_frac )
+                                         dum_out9, mixt_frac, pver - k + 2)
 
                  KK_accr_coef = 67.0_core_rknd
 
