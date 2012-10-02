@@ -94,6 +94,12 @@ module stats_variables
      irho, &
      irel_humidity
 
+  integer, public :: & ! janhft 09/25/12
+     icorr_rrNr, &
+     icorr_srr, &
+     icorr_sNr, &
+     icorr_sNc
+
   integer, public :: & 
      iNcm,            & ! Brian
      iNcnm,           & 
@@ -130,7 +136,8 @@ module stats_variables
 !$omp   im_vol_rad_rain, im_vol_rad_cloud, &
 !$omp   irain_rate_zt, iAKm, iLH_AKm, &
 !$omp   iradht, iradht_LW, iradht_SW, &
-!$omp   iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc)
+!$omp   iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc, &
+!$omp   icorr_rrNr, icorr_srr, icorr_sNr, icorr_sNc)
 
   integer, public :: & 
    irfrzm

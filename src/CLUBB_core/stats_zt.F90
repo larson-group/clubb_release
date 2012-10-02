@@ -68,6 +68,12 @@ module stats_zt
         iwprtpthlp, & 
         isigma_sqd_w_zt
 
+    use stats_variables, only: & ! janhft 09/25/12
+        icorr_rrNr, &
+        icorr_srr, & 
+        icorr_sNr, &
+        icorr_sNc
+
     use stats_variables, only: & 
         irel_humidity, &
         irho, & 
@@ -417,6 +423,12 @@ module stats_zt
     imass_ice_cryst = 0
     ircm_icedfs     = 0
     iu_T_cm         = 0
+
+    ! Correlations
+    icorr_rrNr = 0
+    icorr_srr  = 0
+    icorr_sNr  = 0
+    icorr_sNc  = 0
 
     ! From K&K microphysics
     im_vol_rad_rain  = 0  ! Brian
@@ -2344,6 +2356,32 @@ module stats_zt
         call stat_assign( iwp3_on_wp2_zt, "wp3_on_wp2_zt", & 
              "Smoothed version of wp3 / wp2 [m/s]", "m/s", zt )
         k = k + 1
+
+      ! changes by janhft 09/25/12
+      case ('corr_rrNr')
+        icorr_rrNr = k
+        call stat_assign( icorr_rrNr, "corr_rrNr", & 
+             "Correlation between rrain and Nrain []", "", zt )
+        k = k + 1
+
+      case ('corr_srr')
+        icorr_srr = k
+        call stat_assign( icorr_srr, "corr_srr", & 
+             "Correlation between s and rrain []", "", zt )
+        k = k + 1
+
+      case ('corr_sNr')
+        icorr_sNr = k
+        call stat_assign( icorr_sNr, "corr_sNr", & 
+             "Correlation between s and Nrain []", "", zt )
+        k = k + 1
+
+      case ('corr_sNc')
+        icorr_sNc = k
+        call stat_assign( icorr_sNc, "corr_sNc", & 
+             "Correlation between s and Nc []", "", zt )
+        k = k + 1
+      ! end changes by janhft 09/25/12
 
       case default
 

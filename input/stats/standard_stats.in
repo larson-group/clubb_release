@@ -59,7 +59,7 @@ vars_zt =
 's1', 's2', 'stdev_s1', 'stdev_s2', 'stdev_t1', 'stdev_t2', 'covar_st_1', 'covar_st_2',
 'corr_st_1', 'corr_st_2', 'rrtthl', 's_mellor', 'C11_Skw_fnc',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
-'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt',
+'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt', 'corr_rrNr', 'corr_srr', 'corr_sNr', 'corr_sNc',
 ''
 
 vars_LH_zt =

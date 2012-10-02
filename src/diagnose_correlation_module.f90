@@ -207,20 +207,10 @@ module diagnose_correlations_module
     ! Diagnose the missing correlations (upper triangle)
     do i = 2, (n_variables-1)
       do j = (i+1), n_variables
-        
-        !print *, "-- i = ", i, ", j = ", j
-        !print *, "---- c_1", i, " = ", corr_matrix_approx(1,i)
-        !print *, "---- c_1", j, " = ", corr_matrix_approx(1,j)
-        !print *, "---- s_1", i, " = ", s_1j(i)
-        !print *, "---- s_1", j, " = ", s_1j(j)
 
         ! formula (16) in the ref. paper 
         f_ij = alpha_corr * sqrt_xp2_on_xm2(i) * sqrt_xp2_on_xm2(j) &
         * sign(1.0_core_rknd,corr_matrix_approx(1,i)*corr_matrix_approx(1,j)) 
-
-        !print *, "---- S_", i, " = ", sqrt_xp2_on_xm2(i)
-        !print *, "---- S_", j, " = ", sqrt_xp2_on_xm2(j)
-        !print *, "---- f_", i, j, " = ", f_ij
 
         ! make sure -0.99<=f_ij<=0.99
         if ( clubb_at_least_debug_level( 2 ) ) then
@@ -234,8 +224,6 @@ module diagnose_correlations_module
         ! formula (15) in the ref. paper
         corr_matrix_approx(i,j) = corr_matrix_approx(1,i) * corr_matrix_approx(1,j) &
         + f_ij * s_1j(i) * s_1j(j)
-
-        !print *, "---- c_", i, j, " = ", corr_matrix_approx(i,j)
 
       end do ! do j
     end do ! do i

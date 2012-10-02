@@ -319,7 +319,7 @@ module KK_microphys_module
                                   corr_srr_1_n, corr_srr_2_n, &
                                   corr_sNr_1_n, corr_sNr_2_n, &
                                   corr_sNc_1_n, corr_sNc_2_n, &
-                                  corr_rrNr_n, mixt_frac )
+                                  corr_rrNr_n, mixt_frac, k )
 
           !!! Calculate the values of the upscaled KK microphysics tendencies.
           call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
@@ -631,7 +631,7 @@ module KK_microphys_module
                                 corr_srr_1_n, corr_srr_2_n, &
                                 corr_sNr_1_n, corr_sNr_2_n, &
                                 corr_sNc_1_n, corr_sNc_2_n, &
-                                corr_rrNr_n, mixt_frac )
+                                corr_rrNr_n, mixt_frac, level )
 
     ! Description:
 
@@ -680,6 +680,16 @@ module KK_microphys_module
         corr_rrNr_LL_cloud, &
         corr_rrNr_LL_below
 
+    use stats_type, only: & ! janhft 09/25/12
+        stat_update_var_pt  ! Procedure(s)
+
+    use stats_variables, only : & ! janhft 09/25/12
+        icorr_rrNr, &            
+        icorr_srr, &
+        icorr_sNr, &
+        icorr_sNc, &
+        zt
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
@@ -697,6 +707,9 @@ module KK_microphys_module
       rrainm, & ! Mean rain water mixing ratio        [kg/kg]
       Nrm,    & ! Mean rain drop concentration        [num/kg]
       Ncm       ! Mean cloud droplet concentration    [num/kg]
+
+    integer, intent(in) :: &
+      level   ! current height level 
 
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                        [units vary]
@@ -836,6 +849,35 @@ module KK_microphys_module
        endif
 
     endif ! rcm > rc_tol
+
+    ! changes by janhft 09/25/12
+
+    !!! Output the correlations
+
+    ! Correlation of rrain and Nrain.
+    if ( icorr_rrNr > 0 ) then
+       call stat_update_var_pt( icorr_rrNr, level, &
+                                corr_rrNr, zt )
+    endif
+
+    ! Correlation of s and rrain.
+    if ( icorr_srr > 0 ) then
+       call stat_update_var_pt( icorr_srr, level, &
+                                corr_srr_1, zt )
+    endif
+
+    ! Correlation of s and Nrain.
+    if ( icorr_sNr > 0 ) then
+       call stat_update_var_pt( icorr_sNr, level, &
+                                corr_sNr_1, zt )
+    endif
+
+    ! Correlation of rrain and Nrain.
+    if ( icorr_sNc > 0 ) then
+       call stat_update_var_pt( icorr_sNc, level, &
+                                corr_sNc_1, zt )
+    endif
+    !end changes by janhft 09/25/12
 
     !!! Calculate the normalized mean of variables that have an assumed (single)
     !!! lognormal distribution, given the mean and variance of those variables.
