@@ -134,10 +134,12 @@ module model_flags
 
 !$omp threadprivate(saturation_formula)
 
+  ! See clubb:ticket:514 for details
   logical, public :: &
-    l_diagnose_correlations = .false. ! Diagnose correlations instead of using fixed ones
+    l_diagnose_correlations = .false., & ! Diagnose correlations instead of using fixed ones
+    l_calc_w_corr = .false. ! Calculate the correlations between w and the hydrometeors  
  
-!$omp threadprivate(l_diagnose_correlations)
+!$omp threadprivate(l_diagnose_correlations, l_calc_w_corr)
 
 #ifdef GFDL
   logical, public :: &

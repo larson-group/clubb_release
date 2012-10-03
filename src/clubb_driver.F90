@@ -218,7 +218,8 @@ module clubb_driver
       setup_configurable_model_flags, & ! Procedure(s)
       read_model_flags_from_file, &
       l_rtm_nudge, &
-      l_diagnose_correlations
+      l_diagnose_correlations, &
+      l_calc_w_corr
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
@@ -367,7 +368,7 @@ module clubb_driver
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_prescribed_avg_deltaz, l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
-      l_diagnose_correlations
+      l_diagnose_correlations, l_calc_w_corr
 
 
     namelist /stats_setting/ & 
