@@ -25,11 +25,14 @@ module generate_lh_sample_module
   subroutine generate_lh_sample &
              ( n_micro_calls, d_variables, hydromet_dim, & 
                wm, rcm, Ncm, rvm, thlm, & 
-               mixt_frac, rrtthl, &
+               mixt_frac, &
                w1_in, w2_in, varnce_w1_in, varnce_w2_in, &
                thl1_in, thl2_in, varnce_thl1_in, varnce_thl2_in, &
                rt1_in, rt2_in, varnce_rt1_in, varnce_rt2_in, &
-               s1_in, s2_in, stdev_s1_in, stdev_s2_in, &
+               s1_in, s2_in, &
+               stdev_s1_in, stdev_s2_in, &
+               stdev_t1_in, stdev_t2_in, &
+               covar_st_1, covar_st_2, &
                crt1, crt2, cthl1, cthl2, &
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
                corr_array_cloud, corr_array_below, &
@@ -47,6 +50,7 @@ module generate_lh_sample_module
     use constants_clubb, only:  &
       max_mag_correlation, &  ! Constant
       s_mellor_tol,  &  ! s tolerance in kg/kg
+      t_mellor_tol,  &  ! t tolerance in kg/kg
       rt_tol, &         ! rt tolerance in kg/kg
       thl_tol, &        ! thetal tolerance in K
       w_tol_sqd, &      ! w^2 tolerance in m^2/s^2
@@ -103,7 +107,8 @@ module generate_lh_sample_module
       clubb_at_least_debug_level  ! Procedure(s)
 
     use constants_clubb, only:  &
-      fstderr  ! Constant(s)
+      fstderr, &  ! Constant(s)
+      max_mag_correlation 
 
     use parameters_microphys, only: &
       l_fix_s_t_correlations ! Varible(s)
@@ -135,8 +140,6 @@ module generate_lh_sample_module
 
     real( kind = core_rknd ), intent(in) :: &
       mixt_frac,      & ! Mixture fraction					[-]
-      rrtthl,         & ! Sub-plume correlation coefficient between rt, thl 
-      !			  varies between -1 < rrtthl < 1			[-]
       w1_in,          & ! Mean of w for 1st normal distribution                 [m/s]
       w2_in,          & ! Mean of w for 2nd normal distribution                 [m/s]
       varnce_w1_in,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
@@ -153,6 +156,10 @@ module generate_lh_sample_module
       s2_in,          & ! Mean of s for 2nd normal distribution               [kg/kg]
       stdev_s1_in,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
       stdev_s2_in,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      stdev_t1_in,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
+      stdev_t2_in,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
+      covar_st_1,     & ! Covariance of s and t for 1st normal distribution   [kg/kg]
+      covar_st_2,     & ! Covariance of s and t for 2nd normal distribution   [kg/kg]
       crt1,           & ! Coefficient for s'                                      [-]
       crt2,           & ! Coefficient for s'                                      [-]
       cthl1,          & ! Coefficient for s'                                    [1/K]
@@ -203,6 +210,8 @@ module generate_lh_sample_module
       varnce_rt2,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
       s1,          & ! Mean of s for 1st normal distribution               [kg/kg]
       s2,          & ! Mean of s for 2nd normal distribution               [kg/kg]
+      t1,          & ! Mean of t for 1st normal distribution               [kg/kg]
+      t2,          & ! Mean of t for 2nd normal distribution               [kg/kg]
       stdev_s1,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
       stdev_s2       ! Standard deviation of s for 2nd normal distribution [kg/kg]
 
@@ -213,13 +222,6 @@ module generate_lh_sample_module
     real( kind = dp ) :: &
       cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
       cloud_frac2    ! Cloud fraction for 2nd normal distribution              [-]
-
-    ! Use to clip the magnitude of the correlation between rt and thl
-    real( kind = core_rknd ) :: rrtthl_reduced ! Correlation between rt and thl [-]
-
-    real( kind = dp ) :: &
-      rrtthl_covar_reduced1, & ! Covariance of rtthl for plume 1 [K^2/kg^2]
-      rrtthl_covar_reduced2    ! Covariance of rtthl for plume 2 [K^2/kg^2]
 
     ! Means of s, t, w, & hydrometeors for plumes 1 and 2
     real( kind = core_rknd ), dimension(d_variables) :: &
@@ -336,6 +338,9 @@ module generate_lh_sample_module
       ! Set standard deviation of s1/s2
       stdev_s1 = stdev_s1_in
       stdev_s2 = stdev_s2_in
+
+      stdev_t1 = stdev_t1_in
+      stdev_t2 = stdev_t2_in
     else
       call set_min_varnce_and_mean &
           ( wm, w_tol_sqd, w1_in, varnce_w1_in, & ! In
@@ -376,6 +381,11 @@ module generate_lh_sample_module
       call set_min_varnce_and_mean &
           ( s_mellor, s_mellor_tol, s2_in, stdev_s2_in, & ! In
             stdev_s2, s2 ) ! Out
+
+      ! The mean of t is zero;  we set the std to allow the matrix to be decomposed
+      stdev_t1 = max( stdev_t1_in, t_mellor_tol )
+      stdev_t2 = max( stdev_t2_in, t_mellor_tol )
+
     end if ! l_fix_s_t_correlations
 
 !   cloud_frac1 = real(cloud_frac1_in, kind = dp)
@@ -485,29 +495,31 @@ module generate_lh_sample_module
 
     ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
 
+    t1 = 0._core_rknd
+    t2 = 0._core_rknd
+
     mu1((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
-      = (/ s1, 0._core_rknd, w1 /)
+      = (/ s1, t1, w1 /)
     mu2((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
-      = (/ s2, 0._core_rknd, w2 /)
+      = (/ s2, t2, w2 /)
+
+    tp2_mellor_1 = stdev_t1**2
+    tp2_mellor_2 = stdev_t2**2
+
+    sp2_mellor_1 = stdev_s1**2
+    sp2_mellor_2 = stdev_s2**2
 
     ! An old subroutine, gaus_rotate, couldn't handle large correlations;
     !   I assume the replacement, gaus_condt, has equal trouble.
     !   Therefore we input smaller correlations
     !   The current code uses a Cholesky decomposition, which also cannot handle
-    !   a correlation of exactly 1. -dschanen 5 Oct 2010
+    !   a correlation of exactly 1 without using the modified method -dschanen 11 Oct 2012
     ! max_mag_correlation = 0.99_core_rknd in constants.F90
-    rrtthl_reduced = min( max_mag_correlation, max( rrtthl, -max_mag_correlation ) )
 
-    ! Within-plume rt-thl correlation terms with rt in kg/kg
-    rrtthl_covar_reduced1 = real(rrtthl_reduced*sqrt( varnce_rt1*varnce_thl1 ), kind = dp)
-    rrtthl_covar_reduced2 = real(rrtthl_reduced*sqrt( varnce_rt2*varnce_thl2 ), kind = dp)
-
-    call rtpthlp_2_sptp( dble( stdev_s1 ), dble( varnce_rt1 ), dble( varnce_thl1 ), & 
-                         dble( rrtthl_covar_reduced1 ), dble( crt1 ), dble( cthl1 ), & ! In
-                         tp2_mellor_1, sp2_mellor_1, sptp_mellor_1 ) ! Out
-    call rtpthlp_2_sptp( dble( stdev_s2 ), dble( varnce_rt2 ), dble( varnce_thl2 ), & 
-                         dble( rrtthl_covar_reduced2 ), dble( crt2 ), dble( cthl2 ), & ! In
-                         tp2_mellor_2, sp2_mellor_2, sptp_mellor_2 ) ! Out
+    sptp_mellor_1 = min( max( -max_mag_correlation * stdev_t1 * stdev_s1, covar_st_1 ), &
+      max_mag_correlation * stdev_t1 * stdev_s1 )
+    sptp_mellor_2 = min( max( -max_mag_correlation * stdev_t2 * stdev_s2, covar_st_2 ), &
+      max_mag_correlation * stdev_t2 * stdev_s2 )
 
     if ( .not. l_fix_s_t_correlations ) then
       ! Covariance (not correlation) matrices of rt-thl-w
