@@ -21,7 +21,7 @@ vars_zm =
 'wpthvp', 'rtpthvp', 'thlpthvp', 'tau_zm', 'Kh_zm', 'wprcp',
 'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'rho_zm', 'sigma_sqd_w',
 'rho_ds_zm', 'thv_ds_zm', 'em', 'shear', 'Frad',
-'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
+'Vrr', 'VNr',
 ''
 
 vars_sfc = 
