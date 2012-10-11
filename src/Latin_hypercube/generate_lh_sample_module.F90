@@ -164,8 +164,8 @@ module generate_lh_sample_module
       xp2_on_xm2_array_below
 
     real( kind = core_rknd ), dimension(d_variables,d_variables), target, intent(in) :: &
-      corr_array_cloud, & ! Correlations for sampled variables    [-]
-      corr_array_below
+      corr_array_cloud, & ! Correlations in cloud for sampled variables  [-]
+      corr_array_below    ! Correlations out of cloud                    [-]
 
     real( kind = dp ), intent(in), dimension(n_micro_calls,d_variables+1) :: & 
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
@@ -827,7 +827,7 @@ module generate_lh_sample_module
       if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 1 ) ) then
         Sigma1_Cholesky = 0._dp
 
-        temp_3_elements = (/ dble( stdev_s1 ), stdev_t1, sqrt( dble(varnce_w1) ) /)
+        temp_3_elements = (/ dble( stdev_s1 ), stdev_t1, sqrt( dble( varnce_w1 ) ) /)
 
         call row_mult_lower_tri_matrix &
              ( 3, temp_3_elements, corr_stw_matrix_Cholesky(1:3,1:3), & ! In
@@ -843,7 +843,7 @@ module generate_lh_sample_module
       if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 2 ) ) then
         Sigma2_Cholesky = 0._dp
 
-        temp_3_elements = (/ dble( stdev_s2 ), stdev_t2, sqrt( dble(varnce_w2) ) /)
+        temp_3_elements = (/ dble( stdev_s2 ), stdev_t2, sqrt( dble( varnce_w2 ) ) /)
 
         call row_mult_lower_tri_matrix &
              ( 3, temp_3_elements, corr_stw_matrix_Cholesky(1:3,1:3), & ! In
@@ -1002,6 +1002,7 @@ module generate_lh_sample_module
                      X_nl_one_lev(1:n_micro_calls,iiLH_t_mellor), & ! In
                      X_mixt_comp_one_lev, & ! In
                      LH_rt, LH_thl ) ! Out
+
     ! Convert lognormal variates (e.g. Nc and rr) to lognormal
     forall ( sample = 1:n_micro_calls )
       where ( l_d_variable_lognormal )
@@ -1145,6 +1146,13 @@ module generate_lh_sample_module
 !----------------------------------------------------------------------
   function choose_permuted_random( nt_repeat, p_matrix_element )
 
+! Description:
+!   Chooses a permuted random using the Mersenne Twister algorithm.
+!
+! References:
+!   None
+!----------------------------------------------------------------------
+
     use mt95, only: genrand_real3 ! Procedure(s)
 
     use mt95, only: genrand_real ! Constants
@@ -1184,6 +1192,7 @@ module generate_lh_sample_module
 ! Description:
 !   Generates n random samples from a d-dimensional Gaussian-mixture PDF.
 !   Uses Latin hypercube method.
+!
 ! References:
 !   None
 !----------------------------------------------------------------------
@@ -1317,6 +1326,7 @@ module generate_lh_sample_module
 ! Description:
 !   Converts sample points drawn from a uniform distribution
 !    to truncated Gaussian points.
+!
 ! References:
 !   None
 !-------------------------------------------------------------------------------
@@ -1667,7 +1677,9 @@ module generate_lh_sample_module
                          s_mellor, t_mellor, X_mixt_comp_one_lev, &
                          LH_rt, LH_thl )
 ! Description:
-!   Converts from s, t variables to rt, thl
+!   Converts from s, t variables to rt, thl.  Also sets a limit on the value
+!   of cthl1 and cthl2 to prevent extreme values of temperature.
+!
 ! References:
 !   None
 !-----------------------------------------------------------------------
@@ -1683,7 +1695,14 @@ module generate_lh_sample_module
 
     implicit none
 
-    ! Input
+    ! Constant Parameters
+
+    ! Reduce the below value if model seems to crashing due excessive
+    ! lh_thlp2_zt and it will limit the extremes of the samples.
+    real(kind = dp), parameter :: &
+      cthl_thresh = 5e-4_dp ! Threshold on cthl1 and cthl2 [kg/kg/K]
+
+    ! Input Variables
 
     integer, intent(in) :: &
       n_micro_calls   ! Number of calls to microphysics (normally=2)
@@ -1699,12 +1718,12 @@ module generate_lh_sample_module
       cloud_frac1, cloud_frac2 ! Cloud fraction associated with 1st / 2nd mixture component
 
     real( kind = core_rknd ), intent(in) :: &
-      mu_s1, mu_s2
+      mu_s1, mu_s2 ! Mean for s1 and s2         [kg/kg]
 
     ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
     real( kind = dp ), intent(in), dimension(n_micro_calls) :: &
-      s_mellor, & 
-      t_mellor
+      s_mellor, &  ! [kg/kg]
+      t_mellor     ! [-]
 
     integer, dimension(n_micro_calls), intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
@@ -1714,11 +1733,19 @@ module generate_lh_sample_module
     real( kind = core_rknd ), dimension(n_micro_calls), intent(out) :: &
       LH_rt, LH_thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
 
-    ! Local
+    ! Local Variables
 
-    integer :: sample
+    integer :: sample ! Loop iterator
+
+    real( kind= dp ) :: cthl1_clip, cthl2_clip ! Clipped values of cthl1,2 [kg/kg/K]
 
     ! ---- Begin Code ----
+
+    ! Clip the value of cthl1,2.  This prevents large values of theta_l when the
+    ! saturation point is low and limits the chance of instability.
+    ! See ticket #527 on the CLUBB TRAC
+    cthl1_clip = max( cthl1, cthl_thresh )
+    cthl2_clip = max( cthl2, cthl_thresh )
 
     ! Handle some possible errors re: proper ranges of mixt_frac,
     ! cloud_frac1, cloud_frac2.
@@ -1755,19 +1782,18 @@ module generate_lh_sample_module
 !     fraction_1     = mixt_frac*cloud_frac1 / &
 !                      (mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2)
 
-!     if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
         LH_rt(sample)  = real( rt1 + (0.5_dp/crt1)*(s_mellor(sample)-mu_s1) +  & 
                                (0.5_dp/crt1)*t_mellor(sample), kind=core_rknd )
-        LH_thl(sample) = real( thl1 + (-0.5_dp/cthl1)*(s_mellor(sample)-mu_s1) +  & 
-                               (0.5_dp/cthl1)*t_mellor(sample), kind=core_rknd )
+        LH_thl(sample) = real( thl1 + (-0.5_dp/cthl1_clip)*(s_mellor(sample)-mu_s1) +  & 
+                               (0.5_dp/cthl1_clip)*t_mellor(sample), kind=core_rknd )
 
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
         ! mixture fraction 2
         LH_rt(sample)  = real( rt2 + (0.5_dp/crt2)*(s_mellor(sample)-mu_s2) +  & 
                                (0.5_dp/crt2)*t_mellor(sample), kind=core_rknd )
-        LH_thl(sample) = real( thl2 + (-0.5_dp/cthl2)*(s_mellor(sample)-mu_s2) +  & 
-                              (0.5_dp/cthl2)*t_mellor(sample), kind=core_rknd )
+        LH_thl(sample) = real( thl2 + (-0.5_dp/cthl2_clip)*(s_mellor(sample)-mu_s2) +  & 
+                              (0.5_dp/cthl2_clip)*t_mellor(sample), kind=core_rknd )
 
       else
         stop "Error determining mixture fraction in st_2_rtthl"
@@ -1775,7 +1801,7 @@ module generate_lh_sample_module
       end if
 
       ! Loop to get new sample
-    end do
+    end do ! 1..n_micro_calls
 
     return
   end subroutine st_2_rtthl
