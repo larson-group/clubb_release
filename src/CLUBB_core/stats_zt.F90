@@ -252,7 +252,12 @@ module stats_zt
         icovar_st_2, &
         icorr_st_1, &
         icorr_st_2, &
-        irrtthl
+        irrtthl, &
+        icrt1, &
+        icrt2, &
+        icthl1, &
+        icthl2
+
 
     use stats_variables, only: & 
         iwp2_zt, & 
@@ -621,6 +626,10 @@ module stats_zt
     icorr_st_1    = 0
     icorr_st_2    = 0
     irrtthl       = 0
+    icrt1         = 0
+    icrt2         = 0
+    icthl1        = 0
+    icthl2        = 0
 
     is_mellor = 0
 
@@ -2264,6 +2273,35 @@ module stats_zt
         call stat_assign( irrtthl, "rrtthl", & 
              "Correlation btw. rt and thl (both components) [-]", "-", zt )
         k = k + 1
+
+      case ('crt1')
+        icrt1 = k
+
+        call stat_assign( icrt1, "crt1", & 
+             " Coef. on r_t in s/t eqns. (1st PDF comp.)  [-]", "count", zt )
+        k = k + 1
+
+      case ('crt2')
+        icrt2 = k
+
+        call stat_assign( icrt2, "crt2", & 
+             " Coef. on r_t in s/t eqns. (2nd PDF comp.)  [-]", "count", zt )
+        k = k + 1
+
+      case ('cthl1')
+        icthl1 = k
+
+        call stat_assign( icthl1, "cthl1", & 
+             " Coef. on theta_l in s/t eqns. (1st PDF comp.)  [kg/kg/K]", "kg/kg/K", zt )
+        k = k + 1
+
+      case ('cthl2')
+        icthl2 = k
+
+        call stat_assign( icthl2, "cthl2", & 
+             " Coef. on theta_l in s/t eqns. (2nd PDF comp.)  [kg/kg/K]", "kg/kg/K", zt )
+        k = k + 1
+
 
       case('wp2_zt')
         iwp2_zt = k

@@ -1414,6 +1414,10 @@ module stats_subs
         icovar_st_2, &
         icorr_st_1, &
         icorr_st_2, &
+        icrt1, &
+        icrt2, &
+        icthl1, &
+        icthl2, &
         irrtthl, &
         is_mellor
 
@@ -1755,6 +1759,10 @@ module stats_subs
       call stat_update_var( icorr_st_1, pdf_params%corr_st_1, zt )
       call stat_update_var( icorr_st_2, pdf_params%corr_st_2, zt )
       call stat_update_var( irrtthl, pdf_params%rrtthl, zt )
+      call stat_update_var( icrt1, pdf_params%crt1, zt )
+      call stat_update_var( icrt2, pdf_params%crt2, zt )
+      call stat_update_var( icthl1, pdf_params%cthl1, zt )
+      call stat_update_var( icthl2, pdf_params%cthl2, zt )
       call stat_update_var( iwp2_zt, wp2_zt, zt )
       call stat_update_var( ithlp2_zt, thlp2_zt, zt )
       call stat_update_var( iwpthlp_zt, wpthlp_zt, zt )

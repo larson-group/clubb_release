@@ -465,12 +465,17 @@ module stats_variables
      icovar_st_2, &
      icorr_st_1, &
      icorr_st_2, &
-     irrtthl
+     irrtthl, &
+     icrt1, &
+     icrt2, &
+     icthl1, &
+     icthl2
 
 !$omp   threadprivate(imixt_frac, iw1, iw2, ivarnce_w1, ivarnce_w2, ithl1, ithl2, ivarnce_thl1, &
 !$omp     ivarnce_thl2, irt1, irt2, ivarnce_rt1, ivarnce_rt2, irc1, irc2, &
 !$omp     irsl1, irsl2, icloud_frac1, icloud_frac2, is1, is2, istdev_s1, istdev_s2, &
-!$omp     istdev_t1, istdev_t2, icovar_st_1, icovar_st_2, icorr_st_1, icorr_st_2, irrtthl)
+!$omp     istdev_t1, istdev_t2, icovar_st_1, icovar_st_2, icorr_st_1, icorr_st_2, irrtthl, &
+!$omp     icrt1, icrt2, icthl1, icthl2 )
 
   integer, public :: & 
      iwp2_zt, & 
