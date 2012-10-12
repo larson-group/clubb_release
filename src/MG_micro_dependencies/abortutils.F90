@@ -1,7 +1,7 @@
 ! $Id$
 module abortutils
 !
-! Dummy module for importing variables into morrison-gettelman microphysics
+! Dummy module for importing variables into morrison_gettelman microphysics
 !---------------------------------------------------------------------------------------------------
 
   implicit none

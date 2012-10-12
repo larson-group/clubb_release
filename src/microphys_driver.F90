@@ -52,7 +52,7 @@ module microphys_driver
   use constants_clubb, only: &
     cloud_frac_min
 
-  use phys_buffer, only: & ! Used for placing wp2_zt in morrison-gettelman microphysics
+  use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
     pbuf_init,           &
     pbuf_deallocate
 
@@ -530,7 +530,7 @@ module microphys_driver
     if( l_gfdl_activation ) then
       ! Ensure a microphysics that has Ncm is being used
       if( trim( micro_scheme ) == "coamps" .or. trim( micro_scheme ) == "morrison" & 
-            .or. trim( micro_scheme ) == "morrison-gettelman") then
+            .or. trim( micro_scheme ) == "morrison_gettelman") then
 
         ! Read in the lookup tables
         call Loading( droplets, droplets2 )
@@ -684,7 +684,7 @@ module microphys_driver
 
       call GRAUPEL_INIT()
 
-    case ( "morrison-gettelman" )
+    case ( "morrison_gettelman" )
       iirrainm    = -1
       iirsnowm    = -1
       iiricem     = 1
@@ -1054,7 +1054,7 @@ module microphys_driver
       vertical_avg, & ! Procedure(s)
       fill_holes_driver
 
-    use phys_buffer, only: & ! Used for placing wp2_zt in morrison-gettelman microphysics
+    use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
       pbuf_add,            &
       pbuf_allocate,       &
       pbuf_setval
@@ -1309,7 +1309,7 @@ module microphys_driver
     ! Determine how Ncm and Ncm_in_cloud will be computed
     select case ( trim( micro_scheme ) )
 
-    case ( "coamps", "morrison", "morrison-gettelman", "khairoutdinov_kogan" )
+    case ( "coamps", "morrison", "morrison_gettelman", "khairoutdinov_kogan" )
       if ( l_predictnc ) then
         Ncm = hydromet(:,iiNcm)
       else ! Compute the fixed value by multiplying by cloud fraction
@@ -1442,7 +1442,7 @@ module microphys_driver
 
       end if ! LH_microphys_type /= interactive
 
-    case ( "morrison-gettelman" )
+    case ( "morrison_gettelman" )
 
       ! Initialize tendencies to zero
       hydromet_mc(:,:) = 0.0_core_rknd
@@ -3247,7 +3247,7 @@ module microphys_driver
       deallocate( l_hydromet_sed )
     end if
 
-    if ( trim( micro_scheme ) == "morrison-gettelman" ) then
+    if ( trim( micro_scheme ) == "morrison_gettelman" ) then
       call pbuf_deallocate()
     end if
 

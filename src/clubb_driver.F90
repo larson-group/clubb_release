@@ -1394,7 +1394,7 @@ module clubb_driver
     ! Determine initial value cloud droplet number concentration for the
     ! Morrison microphysics
     select case ( trim( micro_scheme ) )
-    case ( "morrison", "morrison-gettelman" )
+    case ( "morrison", "morrison_gettelman" )
       if ( l_predictnc ) then
 
         hydromet(2:gr%nz-1,iiNcm) = Ncm_initial / rho(2:gr%nz-1)
@@ -2805,7 +2805,7 @@ module clubb_driver
       l_input_Nrm = .true.
       l_input_Nim =  .true.
 
-    case ( "morrison-gettelman" )
+    case ( "morrison_gettelman" )
       l_input_rrainm = .false.
       l_input_rsnowm = .false.
       l_input_ricem = .true.

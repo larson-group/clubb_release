@@ -111,7 +111,7 @@ rad_scheme = "bugsrad",
 /
 
 &microphysics_setting
-! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
+! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "morrison"
 l_ice_micro = .true.

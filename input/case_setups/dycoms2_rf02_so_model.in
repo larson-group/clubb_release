@@ -136,7 +136,7 @@ l_prescribed_avg_deltaz = .false.
 
 &microphysics_setting
 l_cloud_sed  = .true.   ! Flag for cloud water sedimentation.
-! The schemes are: "khairoutdinov_kogan", "morrison", "morrison-gettelman",
+! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "none"
 Ncm_initial  = 55.e6 ! #/m^3

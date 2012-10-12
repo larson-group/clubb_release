@@ -1,7 +1,7 @@
 ! $Id$
 module shr_kind_mod
 !
-! Dummy module for importing variables into morrison-gettelman microphysics
+! Dummy module for importing variables into morrison_gettelman microphysics
 !---------------------------------------------------------------------------------------------------
 
 ! use kinds, only: &

@@ -1,7 +1,7 @@
 ! $Id$
 module cldwat2m_macro
 !
-! Dummy module for importing variables into morrison-gettelman microphysics
+! Dummy module for importing variables into morrison_gettelman microphysics
 !---------------------------------------------------------------------------------------------------
 
   use shr_kind_mod, only: r8 => shr_kind_r8
