@@ -332,6 +332,7 @@ module advance_xm_wpxp_module
     if ( clubb_at_least_debug_level( 2 ) ) then
       ! Assertion check for C7_Skw_fnc
       if ( any( C7_Skw_fnc(:) > one ) .or. any( C7_Skw_fnc(:) < zero ) ) then
+        write(fstderr,*) "The C7_Skw_fnc variable is outside the valid range"
         err_code = clubb_var_out_of_range
         return
       end if

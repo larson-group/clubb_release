@@ -132,6 +132,7 @@ module advance_xp2_xpyp_module
 
     use error_code, only:  & 
       clubb_no_error,  & ! Variable(s)
+      clubb_var_out_of_range, &
       clubb_singular_matrix
 
     use error_code, only:  & 
@@ -277,6 +278,15 @@ module advance_xp2_xpyp_module
     integer :: i, k
 
     !---------------------------- Begin Code ----------------------------------
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      ! Assertion check for C5
+      if ( C5 > one .or. C5 < zero ) then
+        write(fstderr,*) "The C5 variable is outside the valid range"
+        err_code = clubb_var_out_of_range
+        return
+      end if
+    end if
 
     if ( l_single_C2_Skw ) then
       ! Use a single value of C2 for all equations.

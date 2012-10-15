@@ -100,6 +100,9 @@ module advance_wp2_wp3_module
         fatal_error,  & ! Procedure(s)
         clubb_at_least_debug_level
 
+    use error_code, only: &
+      clubb_var_out_of_range ! Constant(s)
+
     implicit none
 
     intrinsic :: exp
@@ -226,6 +229,15 @@ module advance_wp2_wp3_module
 
     !C11_Skw_fnc = C11
     !C1_Skw_fnc = C1
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      ! Assertion check for C11_Skw_fnc
+      if ( any( C11_Skw_fnc(:) > 1._core_rknd ) .or. any( C11_Skw_fnc(:) < 0._core_rknd ) ) then
+        write(fstderr,*) "The C11_Skw_fnc is outside the valid range for this variable"
+        err_code = clubb_var_out_of_range
+        return
+      end if
+    end if
 
     if ( l_stats_samp ) then
       call stat_update_var( iC11_Skw_fnc, C11_Skw_fnc, zt )
