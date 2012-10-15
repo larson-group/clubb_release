@@ -41,6 +41,17 @@ module generate_lh_sample_module
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
 
+! Assumptions:
+!   When l_fix_st_correlations is false, then there is no correlation between Nc
+!   and the other variates.  This is because we have data for the correlation of
+!   e.g. s and Nc, s and rr, but not Nc and rr.  This in turn makes decomposing
+!   the covariance matrix impossible.  In order to compare analytic K&K with the
+!   latin hypercube code the correlation of s and Nc must therefore be zero in
+!   order to achieve convergence.
+!   The l_fix_st_correlation = true code does not have these same limitations,
+!   but use a value for the covariance of the s and t that is not the same as
+!   that computed by the PDF.
+
 ! References:
 !   ``Supplying Local Microphysical Parameterizations with Information about
 !     Subgrid Variability: Latin Hypercube Sampling'', JAS Vol. 62,
@@ -517,6 +528,7 @@ module generate_lh_sample_module
     mu2((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
       = (/ s2, t2, w2 /)
 
+    ! Define the variane of s and t
     tp2_mellor_1 = stdev_t1**2
     tp2_mellor_2 = stdev_t2**2
 
@@ -536,10 +548,11 @@ module generate_lh_sample_module
       max_mag_correlation * stdev_t2 * stdev_s2 )
 
     if ( .not. l_fix_s_t_correlations ) then
+
       ! Covariance (not correlation) matrices of rt-thl-w
       !    for Gaussians 1 and 2
       ! For now, assume no within-plume correlation of w with
-      !    any other variables.
+      !    any other variables when the s and t correlations are not fixed.
 
       ! Sigma_stw_1,2
       Sigma_stw_1 = 0._dp ! Start with no covariance, and add matrix elements
@@ -695,7 +708,7 @@ module generate_lh_sample_module
                  Sigma_stw_1 ) ! In/out
         end if
 
-        if ( stdev_s2 > s_mellor_tol .and. rrainm > real(rr_tol, kind = dp) ) then
+        if ( stdev_s2 > s_mellor_tol .and. rrainm > real( rr_tol, kind = dp ) ) then
 
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
@@ -809,7 +822,6 @@ module generate_lh_sample_module
              ( d_variables, corr_array_cloud, & ! In
                xp2_on_xm2_array_cloud, & ! In
                corr_stw_matrix ) ! Out
-
 
         ! Compute choleksy factorization for the correlation matrix (in cloud)
         call Cholesky_factor( d_variables, real(corr_stw_matrix, kind = dp), & ! In
@@ -1736,6 +1748,10 @@ module generate_lh_sample_module
 
     implicit none
 
+    ! External
+
+    intrinsic :: max, real
+
     ! Constant Parameters
 
     ! Reduce the below value if model seems to crashing due excessive
@@ -1892,6 +1908,7 @@ module generate_lh_sample_module
 ! Description:
 !   Compute the covariance of s_mellor and a lognormal variate,
 !   converting from lognormal to gaussian space as required.
+!
 ! References:
 !   None
 !-------------------------------------------------------------------------------
@@ -2004,6 +2021,9 @@ module generate_lh_sample_module
                corr_stw_matrix )
 ! Description:
 !   Construct a correlation matrix containing s,t,w and the lognormal variates.
+!   This code is only called when l_fix_s_t_correlations is true.  It does not
+!   assume zero correlation between w and the other variates.
+!
 ! References:
 !   None.
 !-------------------------------------------------------------------------------
