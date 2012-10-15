@@ -2352,6 +2352,12 @@ module stats_subs
       iwpsclrpthlp, & 
       iwpedsclrp
 
+    use parameters_microphys, only: &
+      LH_microphys_disabled ! Constant(s)
+
+    use parameters_microphys, only: &
+      LH_microphys_type ! Variable(s)
+
 #ifdef NETCDF
     use output_netcdf, only:  & 
         close_netcdf ! Procedure
@@ -2410,18 +2416,20 @@ module stats_subs
       deallocate ( ztscr21 )
 
       ! De-allocate all LH_zt variables
-      deallocate( LH_zt%z )
+      if ( LH_microphys_type /= LH_microphys_disabled ) then
+        deallocate( LH_zt%z )
 
-      deallocate( LH_zt%x )
+        deallocate( LH_zt%x )
 
-      deallocate( LH_zt%n )
-      deallocate( LH_zt%l_in_update )
+        deallocate( LH_zt%n )
+        deallocate( LH_zt%l_in_update )
 
 
-      deallocate( LH_zt%f%var )
-      deallocate( LH_zt%f%z )
-      deallocate( LH_zt%f%rlat )
-      deallocate( LH_zt%f%rlon )
+        deallocate( LH_zt%f%var )
+        deallocate( LH_zt%f%z )
+        deallocate( LH_zt%f%rlat )
+        deallocate( LH_zt%f%rlon )
+      end if
 
       ! De-allocate all zm variables
       deallocate( zm%z )
