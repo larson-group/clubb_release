@@ -3279,7 +3279,7 @@ module clubb_driver
       ustar = 0._core_rknd
 
       ! However, the Nov. 11 Altocumulus case has a one-time adjustment
-      ! of rtm at t=3600s after the start of the simulation.droid x pictures
+      ! of rtm at t=3600s after the start of the simulation.
       ! As the nov11_altocu_tndcy subroutine is now obsolete, this was
       ! moved to a separate subroutine, nov11_altocu_rtm_adjust.
       ! This subroutine is called here, as the surface momentum/heat fluxes
