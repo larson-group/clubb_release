@@ -315,7 +315,9 @@ module generate_lh_sample_module
 
       ! For fixed correlations, these don't appear in the correlation matrix, so
       ! we don't need them to be over some threshold.  In deep convective cases
-      ! we don't want e.g. the variance of rt aloft to be rt_tol^2 necessarily.
+      ! we don't want e.g. the variance of rt aloft to be rt_tol^2 necessarily,
+      ! since this can lead to negative values of total water, so using the fixed s,t
+      ! code may work better for those cases. -dschanen 15 Oct 2012
 
       ! Set means
       w1 = w1_in
@@ -341,7 +343,12 @@ module generate_lh_sample_module
 
       stdev_t1 = stdev_t1_in
       stdev_t2 = stdev_t2_in
-    else
+
+    else ! don't fixed the correlation of s and t.
+
+      ! In this case we may need to set the variance to minimum value or the
+      ! variance matrix cannot be decomposed
+
       call set_min_varnce_and_mean &
           ( wm, w_tol_sqd, w1_in, varnce_w1_in, & ! In
             varnce_w1, w1 ) ! Out
@@ -382,15 +389,19 @@ module generate_lh_sample_module
           ( s_mellor, s_mellor_tol, s2_in, stdev_s2_in, & ! In
             stdev_s2, s2 ) ! Out
 
-      ! The mean of t is zero;  we set the std to allow the matrix to be decomposed
+      ! The mean of t is zero;  we set the standard deviation to allow the 
+      ! matrix to be decomposed for the t element
       stdev_t1 = max( stdev_t1_in, t_mellor_tol )
       stdev_t2 = max( stdev_t2_in, t_mellor_tol )
 
     end if ! l_fix_s_t_correlations
 
-!   cloud_frac1 = real(cloud_frac1_in, kind = dp)
-!   cloud_frac2 = real(cloud_frac2_in, kind = dp)
-    ! Sample non-cloudy grid boxes as well -dschanen 3 June 2009
+!   cloud_frac1 = real( cloud_frac1_in, kind = dp )
+!   cloud_frac2 = real( cloud_frac2_in, kind = dp )
+
+    ! We sample non-cloudy grid boxes as well now in order to generalize for
+    ! microphysics schemes that normally work on subcolumns rather than points
+    ! in the atmosphere -dschanen 3 June 2009
     cloud_frac1 = 1.0_dp
     cloud_frac2 = 1.0_dp
 
@@ -411,6 +422,8 @@ module generate_lh_sample_module
     ! Select the in-cloud or out of cloud values if the correlations and
     ! x'^2 /  xm^2 terms.
 
+    ! We define in cloud to be those points where mean liquid water is greater
+    ! than rc_tol.  This is consistent with analytic K&K code.
     if ( rcm > rc_tol ) then
       xp2_on_xm2_array => xp2_on_xm2_array_cloud
       corr_array => corr_array_cloud
@@ -427,7 +440,7 @@ module generate_lh_sample_module
     ! Nc  = droplet number concentration.  [Nc] = number / kg air
     ! Ncm  = mean of Nc
     ! Ncp2_on_Ncm2 = variance of Nc divided by Ncm^2
-    !  We must have a Ncp2_on_Ncm2 >= machine epsilon
+    !  We must have a Ncp2_on_Ncm2 >= machine epsilon for the matrix
     ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
     ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
 
@@ -495,6 +508,7 @@ module generate_lh_sample_module
 
     ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
 
+    ! The mean of t is always 0.
     t1 = 0._core_rknd
     t2 = 0._core_rknd
 
@@ -819,6 +833,8 @@ module generate_lh_sample_module
 
       end if
 
+      ! Determine if the point is in or out of cloud for the purposes of picking
+      ! the values of the correlations to use
       if ( l_in_cloud ) then
         l_Sigma1_scaling = l_corr_stw_cloud_scaling
         l_Sigma2_scaling = l_corr_stw_cloud_scaling
@@ -832,19 +848,21 @@ module generate_lh_sample_module
         Sigma1_scaling = corr_stw_below_scaling
         Sigma2_scaling = corr_stw_below_scaling
       end if
-      ! Compute the standard deviation of t_mellor 1,2
-      stdev_t1 = sqrt( tp2_mellor_1 )
-      stdev_t2 = sqrt( tp2_mellor_2 )
 
       if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 1 ) ) then
-        Sigma1_Cholesky = 0._dp
+
+        Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
 
         temp_3_elements = (/ dble( stdev_s1 ), stdev_t1, sqrt( dble( varnce_w1 ) ) /)
 
+        ! Multiply the first three elements of the variance matrix by the
+        ! values of the standard deviation of s1, t1, and w1
         call row_mult_lower_tri_matrix &
              ( 3, temp_3_elements, corr_stw_matrix_Cholesky(1:3,1:3), & ! In
                Sigma1_Cholesky(1:3,1:3) ) ! Out
 
+        ! Set the remaining elements (the lognormal variates) to the value
+        ! contained in the matrix, since they don't vary in space in time
         do ivar1 = 4, d_variables
           do ivar2 = 4, ivar1
             Sigma1_Cholesky(ivar1,ivar2) = corr_stw_matrix_Cholesky(ivar1,ivar2)
@@ -857,10 +875,14 @@ module generate_lh_sample_module
 
         temp_3_elements = (/ dble( stdev_s2 ), stdev_t2, sqrt( dble( varnce_w2 ) ) /)
 
+        ! Multiply the first three elements of the variance matrix by the
+        ! values of the standard deviation of s2, t2, and w2
         call row_mult_lower_tri_matrix &
              ( 3, temp_3_elements, corr_stw_matrix_Cholesky(1:3,1:3), & ! In
                Sigma2_Cholesky(1:3,1:3) ) ! Out
 
+        ! Set the remaining elements (the lognormal variates) to the value
+        ! contained in the matrix, since they don't vary in space in time
         do ivar1 = 4, d_variables
           do ivar2 = 4, ivar1
             Sigma2_Cholesky(ivar1,ivar2) = corr_stw_matrix_Cholesky(ivar1,ivar2)
@@ -870,6 +892,8 @@ module generate_lh_sample_module
 
     end if ! l_fix_s_t_correlations
 
+    ! Compute the new set of sample points using the update variance matrices
+    ! for this level
     call sample_points( n_micro_calls, d_variables, dble( mixt_frac ), &  ! In
                         dble( rt1 ), dble( thl1 ), &  ! In
                         dble( rt2 ), dble( thl2 ), &  ! In
@@ -1036,10 +1060,15 @@ module generate_lh_sample_module
 !   Transform covariance matrix from rt', theta_l' coordinates
 !   to s', t' coordinates.
 !   Use linear approximation for s', t'.
+!
 ! References:
 !   ``Supplying Local Microphysics Parameterizations with Information about
 !     Subgrid Variability: Latin Hypercube Sampling'', V.E. Larson et al.,
 !     JAS 62 pp. 4015
+!
+! Notes:
+!   We no longer use this subroutine since the code in pdf_closure will compute
+!   the value of the variance of t, s, and the covariance of the two directly.
 !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -2281,6 +2310,12 @@ module generate_lh_sample_module
 
     implicit none
 
+    ! External
+
+    intrinsic :: real
+
+    ! Input Variables
+
     integer, intent(in) :: &
       d_variables, & ! Number of variates
       index1         ! Index of x in mu1 and mu1
@@ -2291,8 +2326,12 @@ module generate_lh_sample_module
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: & 
       xp2_on_xm2 ! X'^2 / Xm^2 array [-]
 
+    ! Input /Output Variables
+
     real( kind = core_rknd ), dimension(d_variables), intent(inout) :: &
       mu1, mu2 ! Mu 1 and 2     [-]
+
+    ! Local Variables
 
     real( kind = dp ) :: &
       xp2_on_xm2_element, & ! X'^2 / Xm^2 array [-]
@@ -2300,13 +2339,13 @@ module generate_lh_sample_module
 
     ! ---- Begin Code ----
 
-    xp2_on_xm2_element = real(xp2_on_xm2(index1), kind = dp)
+    xp2_on_xm2_element = real( xp2_on_xm2(index1), kind = dp )
 
     call log_sqd_normalized( Xm, xp2_on_xm2_element, & ! In
                              X1, X2 ) ! Out
 
-    mu1(index1) = real(X1, kind = core_rknd)
-    mu2(index1) = real(X2, kind = core_rknd)
+    mu1(index1) = real( X1, kind = core_rknd )
+    mu2(index1) = real( X2, kind = core_rknd )
 
     return
   end subroutine add_mu_element_LN
@@ -2314,10 +2353,10 @@ module generate_lh_sample_module
   !-----------------------------------------------------------------------------
   pure function corr_LN_to_covar_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus ) &
     result( covar_xy_gaus )
+
   ! Description:
 
   ! References:
-
   !-----------------------------------------------------------------------------
 
     use clubb_precision, only: &
