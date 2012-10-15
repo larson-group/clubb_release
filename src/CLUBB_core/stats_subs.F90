@@ -2265,6 +2265,7 @@ module stats_subs
 
     use stats_variables, only: & 
         zt,  & ! Variable(s)
+        LH_zt, &
         zm, &
         rad_zt, &
         rad_zm, & 
@@ -2361,6 +2362,7 @@ module stats_subs
     if ( l_stats .and. l_netcdf ) then
 #ifdef NETCDF
       call close_netcdf( zt%f )
+      call close_netcdf( LH_zt%f )
       call close_netcdf( zm%f )
       call close_netcdf( rad_zt%f )
       call close_netcdf( rad_zm%f )
@@ -2406,6 +2408,20 @@ module stats_subs
       deallocate ( ztscr19 )
       deallocate ( ztscr20 )
       deallocate ( ztscr21 )
+
+      ! De-allocate all LH_zt variables
+      deallocate( LH_zt%z )
+
+      deallocate( LH_zt%x )
+
+      deallocate( LH_zt%n )
+      deallocate( LH_zt%l_in_update )
+
+
+      deallocate( LH_zt%f%var )
+      deallocate( LH_zt%f%z )
+      deallocate( LH_zt%f%rlat )
+      deallocate( LH_zt%f%rlon )
 
       ! De-allocate all zm variables
       deallocate( zm%z )
