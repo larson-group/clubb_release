@@ -42,15 +42,25 @@ module generate_lh_sample_module
 !   This subroutine generates a Latin Hypercube sample.
 
 ! Assumptions:
-!   When l_fix_st_correlations is false, then there is no correlation between Nc
-!   and the other variates.  This is because we have data for the correlation of
-!   e.g. s and Nc, s and rr, but not Nc and rr.  This in turn makes decomposing
-!   the covariance matrix impossible.  In order to compare analytic K&K with the
-!   latin hypercube code the correlation of s and Nc must therefore be zero in
-!   order to achieve convergence.
-!   The l_fix_st_correlation = true code does not have these same limitations,
-!   but use a value for the covariance of the s and t that is not the same as
-!   that computed by the PDF.
+!   The l_fix_st_correlations = false code does not set the correlation 
+!   between Nc and the other variates.  This is because while we have data for the 
+!   correlation of e.g. s and Nc, s and rr, but not between Nc and rr;  it would
+!   not be possible to decompose the covariance matrix with zero
+!   correlation between rr and Nc if the correlation between s and Nc is
+!   non-zero and the code would have to halt.
+!
+!   One implication of this is that if l_fix_st_correlations = false 
+!   then the correlation of s and Nc must be set to 
+!   zero in the correlation file to check the convergence of a non-interactive
+!   SILHS solution against the analytic K&K solution.
+!
+!   The l_fix_st_correlation = true code does not have the above limitation
+!   and will use a value for the covariance of the s and t that is not necessarily 
+!   equal to the one computed by the PDF, so setting the correlation of 
+!   s and Nc to zero is not needed.
+!   It will also fix the value of the correlation between s and t in the 
+!   analytic K&K code, which should allow for convergence between the two solutions.
+!   If it does not, then there is probably a new bug in the code.
 
 ! References:
 !   ``Supplying Local Microphysical Parameterizations with Information about
