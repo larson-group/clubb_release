@@ -14,6 +14,8 @@ objdir="$dir/../obj"  # dir for *.o and *.mod files
 libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
+# The -fpe0 option will catch overflow, divide by zero, and invalid.
+#DEBUG="-g -fpe0 -traceback -check bounds -check uninit"
 DEBUG="-g -traceback -check bounds -check uninit"
 
 # == Warnings ==
