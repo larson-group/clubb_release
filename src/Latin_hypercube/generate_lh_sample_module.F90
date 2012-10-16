@@ -215,30 +215,28 @@ module generate_lh_sample_module
       l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
     real( kind = core_rknd ) :: &
-      rtm,         & ! Mean total water mixing ratio                       [kg/kg]
-      s_mellor,    & ! Mean s_mellor (for when stdev_s1 < s_mellor_tol)    [kg/kg]
-      w1,          & ! Mean of w for 1st normal distribution                 [m/s]
-      w2,          & ! Mean of w for 2nd normal distribution                 [m/s]
-      varnce_w1,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
-      varnce_w2,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
-      thl1,        & ! Mean of th_l for 1st normal distribution                [K]
-      thl2,        & ! Mean of th_l for 2nd normal distribution                [K]
-      varnce_thl1, & ! Variance of th_l for 1st normal distribution          [K^2]
-      varnce_thl2, & ! Variance of th_l for 2nd normal distribution          [K^2]
-      rt1,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
-      rt2,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
-      varnce_rt1,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
-      varnce_rt2,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-      s1,          & ! Mean of s for 1st normal distribution               [kg/kg]
-      s2,          & ! Mean of s for 2nd normal distribution               [kg/kg]
-      t1,          & ! Mean of t for 1st normal distribution               [kg/kg]
-      t2,          & ! Mean of t for 2nd normal distribution               [kg/kg]
-      stdev_s1,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
-      stdev_s2       ! Standard deviation of s for 2nd normal distribution [kg/kg]
-
-    real( kind = dp ) :: &
-      stdev_t1, &  ! Standard deviation of t for the 1st normal distribution [kg/kg]
-      stdev_t2     ! Standard deviation of t for the 1st normal distribution [kg/kg]
+      rtm,         & ! Mean total water mixing ratio                           [kg/kg]
+      s_mellor,    & ! Mean s_mellor (for when stdev_s1 < s_mellor_tol)        [kg/kg]
+      w1,          & ! Mean of w for 1st normal distribution                     [m/s]
+      w2,          & ! Mean of w for 2nd normal distribution                     [m/s]
+      varnce_w1,   & ! Variance of w for 1st normal distribution             [m^2/s^2]
+      varnce_w2,   & ! Variance of w for 2nd normal distribution             [m^2/s^2]
+      thl1,        & ! Mean of th_l for 1st normal distribution                    [K]
+      thl2,        & ! Mean of th_l for 2nd normal distribution                    [K]
+      varnce_thl1, & ! Variance of th_l for 1st normal distribution              [K^2]
+      varnce_thl2, & ! Variance of th_l for 2nd normal distribution              [K^2]
+      rt1,         & ! Mean of r_t for 1st normal distribution                 [kg/kg]
+      rt2,         & ! Mean of r_t for 2nd normal distribution                 [kg/kg]
+      varnce_rt1,  & ! Variance of r_t for 1st normal distribution         [kg^2/kg^2]
+      varnce_rt2,  & ! Variance of r_t for 2nd normal distribution         [kg^2/kg^2]
+      s1,          & ! Mean of s for 1st normal distribution                   [kg/kg]
+      s2,          & ! Mean of s for 2nd normal distribution                   [kg/kg]
+      t1,          & ! Mean of t for 1st normal distribution                   [kg/kg]
+      t2,          & ! Mean of t for 2nd normal distribution                   [kg/kg]
+      stdev_s1,    & ! Standard deviation of s for 1st normal distribution     [kg/kg]
+      stdev_s2,    & ! Standard deviation of s for 2nd normal distribution     [kg/kg]
+      stdev_t1,    & ! Standard deviation of t for the 1st normal distribution [kg/kg]
+      stdev_t2       ! Standard deviation of t for the 1st normal distribution [kg/kg]
 
     real( kind = dp ) :: &
       cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
@@ -538,12 +536,12 @@ module generate_lh_sample_module
     mu2((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
       = (/ s2, t2, w2 /)
 
-    ! Define the variane of s and t
-    tp2_mellor_1 = stdev_t1**2
-    tp2_mellor_2 = stdev_t2**2
+    ! Define the variance of s and t
+    tp2_mellor_1 = dble( stdev_t1 )**2
+    tp2_mellor_2 = dble( stdev_t2 )**2
 
-    sp2_mellor_1 = stdev_s1**2
-    sp2_mellor_2 = stdev_s2**2
+    sp2_mellor_1 = dble( stdev_s1 )**2
+    sp2_mellor_2 = dble( stdev_s2 )**2
 
     ! An old subroutine, gaus_rotate, couldn't handle large correlations;
     !   I assume the replacement, gaus_condt, has equal trouble.
@@ -552,10 +550,10 @@ module generate_lh_sample_module
     !   a correlation of exactly 1 without using the modified method -dschanen 11 Oct 2012
     ! max_mag_correlation = 0.99_core_rknd in constants.F90
 
-    sptp_mellor_1 = min( max( -max_mag_correlation * stdev_t1 * stdev_s1, covar_st_1 ), &
-      max_mag_correlation * stdev_t1 * stdev_s1 )
-    sptp_mellor_2 = min( max( -max_mag_correlation * stdev_t2 * stdev_s2, covar_st_2 ), &
-      max_mag_correlation * stdev_t2 * stdev_s2 )
+    sptp_mellor_1 = dble( min( max( -max_mag_correlation * stdev_t1 * stdev_s1, covar_st_1 ), &
+      max_mag_correlation * stdev_t1 * stdev_s1 ) )
+    sptp_mellor_2 = dble( min( max( -max_mag_correlation * stdev_t2 * stdev_s2, covar_st_2 ), &
+      max_mag_correlation * stdev_t2 * stdev_s2 ) )
 
     if ( .not. l_fix_s_t_correlations ) then
 
@@ -603,7 +601,7 @@ module generate_lh_sample_module
 
       if ( iiLH_rrain > 0 ) then
         ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
-        var_rr1 = log( 1._dp+ Xp2_on_Xm2_array(iiLH_rrain) )
+        var_rr1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiLH_rrain), kind=dp ) )
         var_rr2 = var_rr1
         Sigma_stw_1(iiLH_rrain,iiLH_rrain) = var_rr1
         Sigma_stw_2(iiLH_rrain,iiLH_rrain) = var_rr2
@@ -875,7 +873,7 @@ module generate_lh_sample_module
 
         Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
 
-        temp_3_elements = (/ dble( stdev_s1 ), stdev_t1, sqrt( dble( varnce_w1 ) ) /)
+        temp_3_elements = (/ dble( stdev_s1 ), dble( stdev_t1 ), sqrt( dble( varnce_w1 ) ) /)
 
         ! Multiply the first three elements of the variance matrix by the
         ! values of the standard deviation of s1, t1, and w1
@@ -895,7 +893,7 @@ module generate_lh_sample_module
       if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 2 ) ) then
         Sigma2_Cholesky = 0._dp
 
-        temp_3_elements = (/ dble( stdev_s2 ), stdev_t2, sqrt( dble( varnce_w2 ) ) /)
+        temp_3_elements = (/ dble( stdev_s2 ), dble( stdev_t2 ), sqrt( dble( varnce_w2 ) ) /)
 
         ! Multiply the first three elements of the variance matrix by the
         ! values of the standard deviation of s2, t2, and w2
@@ -1055,7 +1053,8 @@ module generate_lh_sample_module
 !            X_u_one_lev, rtp, thlp )
     call st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & ! In
                      crt1, cthl1, crt2, cthl2, & ! In
-                     cloud_frac1, cloud_frac2, mu1(iiLH_s_mellor), mu2(iiLH_s_mellor), & ! In
+                     cloud_frac1, cloud_frac2, & ! In
+                     dble( mu1(iiLH_s_mellor) ), dble( mu2(iiLH_s_mellor) ), & ! In
                      X_nl_one_lev(1:n_micro_calls,iiLH_s_mellor), & ! In
                      X_nl_one_lev(1:n_micro_calls,iiLH_t_mellor), & ! In
                      X_mixt_comp_one_lev, & ! In
@@ -1736,7 +1735,8 @@ module generate_lh_sample_module
 !-----------------------------------------------------------------------
   subroutine st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
-                         cloud_frac1, cloud_frac2, mu_s1, mu_s2, &
+                         cloud_frac1, cloud_frac2, &
+                         mu_s1, mu_s2, &
                          s_mellor, t_mellor, X_mixt_comp_one_lev, &
                          LH_rt, LH_thl )
 ! Description:
@@ -1784,7 +1784,7 @@ module generate_lh_sample_module
     real( kind = dp ), intent(in) :: &
       cloud_frac1, cloud_frac2 ! Cloud fraction associated with 1st / 2nd mixture component
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = dp ), intent(in) :: &
       mu_s1, mu_s2 ! Mean for s1 and s2         [kg/kg]
 
     ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
@@ -2292,13 +2292,13 @@ module generate_lh_sample_module
     if ( corr_sx /= 0._core_rknd ) then
       ! Approximate the covariance of t and x
       ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
-      covar_tx = ( corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) * covar_sx )
+      covar_tx = corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) * dble( covar_sx )
     else
-      covar_tx = dble( 0._core_rknd )
-    endif
+      covar_tx = 0._dp
+    end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiLH_t_mellor, index1, real(covar_tx, kind = dp), & ! In
+         ( d_variables, iiLH_t_mellor, index1, covar_tx, & ! In
            corr_stw_matrix ) ! In/out
 
     ! Correlations involving w and lognormal variate x
