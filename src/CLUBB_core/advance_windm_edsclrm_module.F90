@@ -7,13 +7,13 @@ module advance_windm_edsclrm_module
 
   private ! Set Default Scope
 
-  public :: advance_windm_edsclrm
+  public :: advance_windm_edsclrm, xpwp_fnc
 
   private :: windm_edsclrm_solve, &
     compute_uv_tndcy,  &
     windm_edsclrm_lhs, &
-    windm_edsclrm_rhs, &
-    xpwp_fnc
+    windm_edsclrm_rhs
+    
 
   ! Private named constants to avoid string comparisons
   integer, parameter, private :: &

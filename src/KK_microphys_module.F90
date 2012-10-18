@@ -32,7 +32,9 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        zt2zm  ! Procedure(s)
+        zt2zm, &  ! Procedure(s)
+        zm2zt, &
+        gr
 
     use constants_clubb, only: &
         Rd,           & ! Constant(s)
@@ -103,6 +105,22 @@ module KK_microphys_module
         iNrm_cond,          &
         iNrm_auto,          &
         iNrm_src_adj
+
+    use model_flags, only: &
+        l_calc_w_corr
+
+    use advance_windm_edsclrm_module, only: &
+        xpwp_fnc
+
+    use diagnose_correlations_module, only: &
+        calc_mean, &
+        setup_w_covars
+
+    use variables_diagnostic_module, only: &
+        Kh_zm
+
+    use parameters_tunable, only: &
+        c_Krrainm
 
     implicit none
 
@@ -230,7 +248,20 @@ module KK_microphys_module
 
     real( kind = core_rknd ), dimension(nz) ::  &
       rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
-      Nrm_src_adj       ! Total adjustment to Nrm source terms     [{num/kg)/s]
+      Nrm_src_adj       ! Total adjustment to Nrm source terms     [(num/kg)/s]
+
+    ! changes by janhft 10/04/12
+    real( kind = core_rknd ), dimension(nz) ::  &
+      wpsp_zm,  &  ! Covariance of s and w on the zm-grid
+      wprrp_zm, &  ! Covariance of rrain and w on the zm-grid
+      wpNrp_zm, &  ! Covariance of Nr and w on the zm-grid
+      wpNcp_zm, &  ! Covariance of Nc and w on the zm-grid
+      wpsp_zt,  &  ! Covariance of s and w on the zt-grid
+      wprrp_zt, &  ! Covariance of rrain and w on the zt-grid
+      wpNrp_zt, &  ! Covariance of Nr and w on the zt-grid
+      wpNcp_zt, &   ! Covariance of Nc and w on the zt-grid
+      s_mellor_m
+    ! end changes by janhft 10/04/12
 
     logical :: &
       l_upscaled,        & ! Flag for using upscaled KK microphysics.
@@ -273,6 +304,43 @@ module KK_microphys_module
 
     l_src_adj_enabled = .true.
 
+    ! calculate the covariances of w with the hydrometeors
+    if ( l_calc_w_corr ) then
+      
+      ! calculate the mean of s_mellor
+      do k = 1, nz, 1
+
+        s_mellor_m(k) = calc_mean( pdf_params(k)%mixt_frac, pdf_params(k)%s1, pdf_params(k)%s2 )  
+
+      end do
+
+      ! calculate the covariances of w with the hydrometeors
+      do k = 1, nz
+        wpsp_zm(k) = pdf_params(k)%mixt_frac * (1 - pdf_params(k)%mixt_frac) &
+                   * (pdf_params(k)%s1 - pdf_params(k)%s2) * (pdf_params(k)%w1 - pdf_params(k)%w2)
+      end do
+
+      wprrp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), rrainm(1:nz-1), &
+                                   rrainm(2:nz), gr%invrs_dzm(1:nz-1) )
+      wpNrp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Nrm(1:nz-1), & 
+                                   Nrm(2:nz), gr%invrs_dzm(1:nz-1) )
+      wpNcp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncm(1:nz-1), & 
+                                   Ncm(2:nz), gr%invrs_dzm(1:nz-1) )
+
+      ! Boundary conditions; We are assuming constant flux at the top.
+      wprrp_zm(nz) = wprrp_zm(nz-1)
+      wpNrp_zm(nz) = wpNrp_zm(nz-1)
+      wpNcp_zm(nz) = wpNcp_zm(nz-1)
+
+      ! interpolate back to zt-grid
+
+      wpsp_zt = zm2zt(wpsp_zm)
+      wprrp_zt = zm2zt(wprrp_zm)
+      wpNrp_zt = zm2zt(wpNrp_zm)
+      wpNcp_zt = zm2zt(wpNcp_zm)
+
+    end if
+
 
     ! Microphysics tendency loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
@@ -306,6 +374,13 @@ module KK_microphys_module
 
        ! Coefficient for KK rain drop mean volume radius.
        KK_mvr_coef = ( four_thirds * pi * rho_lw )**(-one_third)
+
+       ! Setup the w-covariances for the diagnosing module
+       if ( l_calc_w_corr ) then
+
+         call setup_w_covars( wpsp_zt(k), wprrp_zt(k), wpNrp_zt(k), wpNcp_zt(k), w_std_dev(k) )
+
+       end if
 
 
        !!! KK rain water mixing ratio microphysics tendencies.
@@ -525,9 +600,15 @@ module KK_microphys_module
        rcm_mc(k)  = -rrainm_source  ! Accretion + Autoconversion
        thlm_mc(k) = ( Lv / ( Cp * exner(k) ) ) * rrainm_mc_tndcy(k)
 
-
     enddo  ! Microphysics tendency loop: k = 2, nz, 1
 
+    print *, "rvm_mc = ", rvm_mc
+    print *, "rcm_mc = ", rcm_mc
+    print *, "thlm_mc = ", thlm_mc
+
+    print *, "KK_evap_tndcy = ", KK_evap_tndcy
+    print *, "KK_auto_tndcy = ", KK_auto_tndcy
+    print *, "KK_accr_tndcy = ", KK_accr_tndcy
 
     if ( l_upscaled .and. l_var_covar_src ) then
 
@@ -774,77 +855,62 @@ module KK_microphys_module
     ! used.  Otherwise, the ###_below value is used.
     if ( rcm > rc_tol ) then
 
+       rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+       Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
+       Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
+
+       corr_rrNr       = corr_rrNr_LL_cloud
+       corr_srr_1      = corr_srr_NL_cloud
+       corr_srr_2      = corr_srr_NL_cloud
+       corr_sNr_1      = corr_sNr_NL_cloud
+       corr_sNr_2      = corr_sNr_NL_cloud
+       corr_sNc_1      = corr_sNc_NL_cloud
+       corr_sNc_2      = corr_sNc_NL_cloud
+
        if ( l_diagnose_correlations ) then
 
-          rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
-          Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
-          Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
-
-          call diagnose_KK_corr( Ncm, rrainm, Nrm, &
+          call diagnose_KK_corr( Ncm, rrainm, Nrm, & ! intent(in)
                                  Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
                                  corr_sw_NN_cloud, corr_wrr_NL_cloud, &
                                  corr_wNr_NL_cloud, corr_wNc_NL_cloud,  &
-                                 corr_rrNr_LL_cloud, corr_srr_NL_cloud, &
-                                 corr_sNr_NL_cloud, corr_sNc_NL_cloud ) 
+                                 pdf_params, &
+                                 corr_rrNr, corr_srr_1, & ! intent(inout)
+                                 corr_sNr_1, corr_sNc_1 ) 
 
-          corr_rrNr       = corr_rrNr_LL_cloud
-          corr_srr_1      = corr_srr_NL_cloud
-          corr_srr_2      = corr_srr_NL_cloud
-          corr_sNr_1      = corr_sNr_NL_cloud
-          corr_sNr_2      = corr_sNr_NL_cloud
-          corr_sNc_1      = corr_sNc_NL_cloud
-          corr_sNc_2      = corr_sNc_NL_cloud
-        
-       else
-
-          rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
-          Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
-          Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
-          corr_rrNr       = corr_rrNr_LL_cloud
-          corr_srr_1      = corr_srr_NL_cloud
-          corr_srr_2      = corr_srr_NL_cloud
-          corr_sNr_1      = corr_sNr_NL_cloud
-          corr_sNr_2      = corr_sNr_NL_cloud
-          corr_sNc_1      = corr_sNc_NL_cloud
-          corr_sNc_2      = corr_sNc_NL_cloud
-
+          corr_srr_2      = corr_srr_1
+          corr_sNr_2      = corr_sNr_1
+          corr_sNc_2      = corr_sNc_1
+          
        endif 
 
     else
 
-       if ( l_diagnose_correlations ) then
 
-          rrp2_on_rrainm2 = rrp2_on_rrainm2_below
-          Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
-          Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
+       rrp2_on_rrainm2 = rrp2_on_rrainm2_below
+       Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
+       Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
+
+       corr_rrNr       = corr_rrNr_LL_below
+       corr_srr_1      = corr_srr_NL_below
+       corr_srr_2      = corr_srr_NL_below
+       corr_sNr_1      = corr_sNr_NL_below
+       corr_sNr_2      = corr_sNr_NL_below
+       corr_sNc_1      = corr_sNc_NL_below
+       corr_sNc_2      = corr_sNc_NL_below
+
+       if ( l_diagnose_correlations ) then
 
           call diagnose_KK_corr( Ncm, rrainm, Nrm, &
                                  Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
                                  corr_sw_NN_below, corr_wrr_NL_below, &
                                  corr_wNr_NL_below, corr_wNc_NL_below,  &
-                                 corr_rrNr_LL_below, corr_srr_NL_below, &
-                                 corr_sNr_NL_below, corr_sNc_NL_below ) 
+                                 pdf_params, &
+                                 corr_rrNr, corr_srr_1, &
+                                 corr_sNr_1, corr_sNc_1 ) 
 
-          corr_rrNr       = corr_rrNr_LL_below
-          corr_srr_1      = corr_srr_NL_below
-          corr_srr_2      = corr_srr_NL_below
-          corr_sNr_1      = corr_sNr_NL_below
-          corr_sNr_2      = corr_sNr_NL_below
-          corr_sNc_1      = corr_sNc_NL_below
-          corr_sNc_2      = corr_sNc_NL_below
-
-       else
-
-          rrp2_on_rrainm2 = rrp2_on_rrainm2_below
-          Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
-          Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
-          corr_rrNr       = corr_rrNr_LL_below
-          corr_srr_1      = corr_srr_NL_below
-          corr_srr_2      = corr_srr_NL_below
-          corr_sNr_1      = corr_sNr_NL_below
-          corr_sNr_2      = corr_sNr_NL_below
-          corr_sNc_1      = corr_sNc_NL_below
-          corr_sNc_2      = corr_sNc_NL_below
+          corr_srr_2      = corr_srr_1
+          corr_sNr_2      = corr_sNr_1
+          corr_sNc_2      = corr_sNc_1
 
        endif
 
@@ -856,6 +922,7 @@ module KK_microphys_module
 
     ! Correlation of rrain and Nrain.
     if ( icorr_rrNr > 0 ) then
+
        call stat_update_var_pt( icorr_rrNr, level, &
                                 corr_rrNr, zt )
     endif
