@@ -62,6 +62,7 @@ vars_zt =
 'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt',
 'sclr1m', 'sclr1m_f', 'sclr2m', 'sclr2m_f',
 'edsclr1m', 'edsclr2m', 'edsclr1m_f', 'edsclr2m_f', 'corr_rrNr', 'corr_srr', 'corr_sNr', 'corr_sNc',
+'corr_sw', 'corr_wrr', 'corr_wNr', 'corr_wNc',
 ''
 
 vars_LH_zt =

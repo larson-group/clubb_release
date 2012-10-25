@@ -98,7 +98,11 @@ module stats_variables
      icorr_rrNr, &
      icorr_srr, &
      icorr_sNr, &
-     icorr_sNc
+     icorr_sNc, &
+     icorr_sw, &
+     icorr_wrr, &
+     icorr_wNr, &
+     icorr_wNc
 
   integer, public :: & 
      iNcm,            & ! Brian

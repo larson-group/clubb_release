@@ -113,10 +113,6 @@ module KK_microphys_module
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
 
-    use diagnose_correlations_module, only: &
-        calc_mean, &
-        setup_w_covars
-
     use variables_diagnostic_module, only: &
         Kh_zm
 
@@ -234,6 +230,10 @@ module KK_microphys_module
       corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component)  [-]
       corr_rrNr,    & ! Correlation between rr and Nr (both components)      [-]
       corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
+      corr_sw,      & ! Correlation between s & w (both components)          [-]
+      corr_wrr,     & ! Correlation between rr & w (both components)         [-]
+      corr_wNr,     & ! Correlation between Nr & w (both components)         [-]
+      corr_wNc,     & ! Correlation between Nc & w (both components)         [-]
       mixt_frac       ! Mixture fraction                                     [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
@@ -264,8 +264,7 @@ module KK_microphys_module
       wpsp_zt,  &  ! Covariance of s and w on the zt-grid
       wprrp_zt, &  ! Covariance of rrain and w on the zt-grid
       wpNrp_zt, &  ! Covariance of Nr and w on the zt-grid
-      wpNcp_zt, &   ! Covariance of Nc and w on the zt-grid
-      s_mellor_m
+      wpNcp_zt     ! Covariance of Nc and w on the zt-grid
     ! end changes by janhft 10/04/12
 
     logical :: &
@@ -311,16 +310,10 @@ module KK_microphys_module
 
     ! calculate the covariances of w with the hydrometeors
     if ( l_calc_w_corr ) then
-      
-      ! calculate the mean of s_mellor
-      do k = 1, nz, 1
-
-        s_mellor_m(k) = calc_mean( pdf_params(k)%mixt_frac, pdf_params(k)%s1, pdf_params(k)%s2 )  
-
-      end do
 
       ! calculate the covariances of w with the hydrometeors
       do k = 1, nz
+        ! see clubb:ticket:514:comment:30
         wpsp_zm(k) = pdf_params(k)%mixt_frac * (1 - pdf_params(k)%mixt_frac) &
                    * (pdf_params(k)%s1 - pdf_params(k)%s2) * (pdf_params(k)%w1 - pdf_params(k)%w2)
       end do
@@ -338,7 +331,6 @@ module KK_microphys_module
       wpNcp_zm(nz) = wpNcp_zm(nz-1)
 
       ! interpolate back to zt-grid
-
       wpsp_zt = zm2zt(wpsp_zm)
       wprrp_zt = zm2zt(wprrp_zm)
       wpNrp_zt = zm2zt(wpNrp_zm)
@@ -380,29 +372,28 @@ module KK_microphys_module
        ! Coefficient for KK rain drop mean volume radius.
        KK_mvr_coef = ( four_thirds * pi * rho_lw )**(-one_third)
 
-       ! Setup the w-covariances for the diagnosing module
-       if ( l_calc_w_corr ) then
-
-         call setup_w_covars( wpsp_zt(k), wprrp_zt(k), wpNrp_zt(k), wpNcp_zt(k), w_std_dev(k) )
-
-       end if
-
-
        !!! KK rain water mixing ratio microphysics tendencies.
        if ( l_upscaled ) then
 
-          call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), &
+          call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), & ! Intent(in)
                                   Ncm(k), pdf_params(k), &
-                                  mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                  wpsp_zt(k), wprrp_zt(k), wpNrp_zt(k), wpNcp_zt(k), &
+                                  w_std_dev(k), k, &
+                                  mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, & ! Intent(out)
                                   mu_Nc_n, sigma_s_1, sigma_s_2, &
-                                  sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+                                  sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &  
                                   corr_srr_1, corr_srr_1_n, corr_srr_2_n, &
                                   corr_sNr_1, corr_sNr_1_n, corr_sNr_2_n, &
                                   corr_sNc_1, corr_sNc_1_n, corr_sNc_2_n, &
-                                  corr_rrNr, corr_rrNr_n, mixt_frac )
+                                  corr_rrNr, corr_rrNr_n, &
+                                  corr_sw, corr_wrr, corr_wNr, corr_wNc, &
+                                  mixt_frac )
+
 
           call KK_stat_output( corr_srr_1, corr_sNr_1,  &
-                               corr_sNc_1, corr_rrNr, k )
+                               corr_sNc_1, corr_rrNr, &
+                               corr_sw, corr_wrr, corr_wNr, corr_wNc, &
+                               k )
 
           !!! Calculate the values of the upscaled KK microphysics tendencies.
           call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
@@ -610,13 +601,6 @@ module KK_microphys_module
 
     enddo  ! Microphysics tendency loop: k = 2, nz, 1
 
-    print *, "rvm_mc = ", rvm_mc
-    print *, "rcm_mc = ", rcm_mc
-    print *, "thlm_mc = ", thlm_mc
-
-    print *, "KK_evap_tndcy = ", KK_evap_tndcy
-    print *, "KK_auto_tndcy = ", KK_auto_tndcy
-    print *, "KK_accr_tndcy = ", KK_accr_tndcy
 
     if ( l_upscaled .and. l_var_covar_src ) then
 
@@ -712,15 +696,19 @@ module KK_microphys_module
   end subroutine KK_micro_driver
 
   !=============================================================================
-  subroutine KK_upscaled_setup( rcm, rrainm, Nrm, & 
+  subroutine KK_upscaled_setup( rcm, rrainm, Nrm, & ! Intent(in)
                                 Ncm, pdf_params, &
-                                mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+                                wpsp, wprrp, wpNrp, wpNcp, &
+                                stdev_w, level, &   
+                                mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, & ! Intent(out)
                                 mu_Nc_n, sigma_s_1, sigma_s_2, &
                                 sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
                                 corr_srr_1, corr_srr_1_n, corr_srr_2_n, &
                                 corr_sNr_1, corr_sNr_1_n, corr_sNr_2_n, &
                                 corr_sNc_1, corr_sNc_1_n, corr_sNc_2_n, &
-                                corr_rrNr, corr_rrNr_n, mixt_frac )
+                                corr_rrNr, corr_rrNr_n, &
+                                corr_sw, corr_wrr, corr_wNr, corr_wNc, &
+                                mixt_frac )
 
     ! Description:
 
@@ -773,19 +761,37 @@ module KK_microphys_module
         core_rknd  ! Variable(s)
 
     use model_flags, only: &
-        l_diagnose_correlations ! Variable(s)
+        l_diagnose_correlations, & ! Variable(s)
+        l_calc_w_corr
 
     use diagnose_correlations_module, only: &
-        diagnose_KK_corr ! Procedure(s)
+        diagnose_KK_corr, & ! Procedure(s)
+        calc_mean, &
+        calc_w_corr
+
+    use constants_clubb, only: &
+        w_tol,         & ! [m/s]
+        s_mellor_tol,  & ! [kg/kg]
+        Nc_tol,        & ! [#/kg]
+        rr_tol,        & ! [kg/kg] 
+        Nr_tol           ! [#/kg]
 
     implicit none
 
     ! Input Variables
+
+    integer, intent(in) :: level ! current height level [-]
+
     real( kind = core_rknd ), intent(in) :: &
       rcm,    & ! Mean cloud water mixing ratio       [kg/kg]
       rrainm, & ! Mean rain water mixing ratio        [kg/kg]
       Nrm,    & ! Mean rain drop concentration        [num/kg]
-      Ncm       ! Mean cloud droplet concentration    [num/kg]
+      Ncm,    & ! Mean cloud droplet concentration    [num/kg]
+      wpsp,   & ! Covariance of w and s_mellor        [-]
+      wprrp,  & ! Covariance of w and rrain           [-] 
+      wpNrp,  & ! Covariance of w and Nr              [-] 
+      wpNcp,  & ! Covariance of w and Nc              [-]
+      stdev_w   ! Standard deviation of w             [-]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                        [units vary]
@@ -813,6 +819,10 @@ module KK_microphys_module
       corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component)  [-]
       corr_rrNr,    & ! Correlation between rr and Nr (both components)      [-]
       corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
+      corr_sw,      & ! Correlation between s & w (both components)          [-]
+      corr_wrr,     & ! Correlation between rr & w (both components)         [-]
+      corr_wNr,     & ! Correlation between Nr & w (both components)         [-]
+      corr_wNc,     & ! Correlation between Nc & w (both components)         [-]
       mixt_frac       ! Mixture fraction                                     [-]
 
     ! Local Variables
@@ -822,8 +832,12 @@ module KK_microphys_module
       Ncp2_on_Ncm2,    & ! Ratio of < N_c >^2 to < N_c'^2 >                 [-]
       corr_srr_2,      & ! Correlation between s and rr (2nd PDF component) [-]
       corr_sNr_2,      & ! Correlation between s and Nr (2nd PDF component) [-]
-      corr_sNc_2         ! Correlation between s and Nc (2nd PDF component) [-]
+      corr_sNc_2,      & ! Correlation between s and Nc (2nd PDF component) [-]
+      s_mellor_m,      & ! Mean of s_mellor                                 [-]
+      stdev_s_mellor     ! Standard deviation of s_mellor                   [-]
 
+
+    ! --- Begin Code ---
 
     ! Enter the PDF parameters.
     mu_s_1    = pdf_params%s1
@@ -831,6 +845,15 @@ module KK_microphys_module
     sigma_s_1 = pdf_params%stdev_s1
     sigma_s_2 = pdf_params%stdev_s2
     mixt_frac = pdf_params%mixt_frac
+
+    if ( l_calc_w_corr ) then
+
+          corr_sw = corr_sw_NN_cloud
+          corr_wrr = corr_wrr_NL_cloud
+          corr_wNr = corr_wNr_NL_cloud
+          corr_wNc = corr_wNc_NL_cloud
+      
+    end if
     
     ! Set up the values of the statistical correlations and variances.  Since we
     ! currently do not have enough variables to compute the correlations and
@@ -854,6 +877,15 @@ module KK_microphys_module
        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
 
+       if ( .not. l_calc_w_corr ) then
+  
+          corr_sw = corr_sw_NN_cloud
+          corr_wrr = corr_wrr_NL_cloud
+          corr_wNr = corr_wNr_NL_cloud
+          corr_wNc = corr_wNc_NL_cloud
+
+       end if
+
        corr_rrNr       = corr_rrNr_LL_cloud
        corr_srr_1      = corr_srr_NL_cloud
        corr_srr_2      = corr_srr_NL_cloud
@@ -862,27 +894,20 @@ module KK_microphys_module
        corr_sNc_1      = corr_sNc_NL_cloud
        corr_sNc_2      = corr_sNc_NL_cloud
 
-       if ( l_diagnose_correlations ) then
-
-          call diagnose_KK_corr( Ncm, rrainm, Nrm, & ! intent(in)
-                                 Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
-                                 corr_sw_NN_cloud, corr_wrr_NL_cloud, &
-                                 corr_wNr_NL_cloud, corr_wNc_NL_cloud,  &
-                                 pdf_params, &
-                                 corr_rrNr, corr_srr_1, & ! intent(inout)
-                                 corr_sNr_1, corr_sNc_1 ) 
-
-          corr_srr_2      = corr_srr_1
-          corr_sNr_2      = corr_sNr_1
-          corr_sNc_2      = corr_sNc_1
-          
-       endif 
-
     else
 
        rrp2_on_rrainm2 = rrp2_on_rrainm2_below
        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
+
+       if ( .not. l_calc_w_corr ) then
+  
+          corr_sw = corr_sw_NN_below
+          corr_wrr = corr_wrr_NL_below
+          corr_wNr = corr_wNr_NL_below
+          corr_wNc = corr_wNc_NL_below
+
+       end if
 
        corr_rrNr       = corr_rrNr_LL_below
        corr_srr_1      = corr_srr_NL_below
@@ -892,23 +917,37 @@ module KK_microphys_module
        corr_sNc_1      = corr_sNc_NL_below
        corr_sNc_2      = corr_sNc_NL_below
 
-       if ( l_diagnose_correlations ) then
-
-          call diagnose_KK_corr( Ncm, rrainm, Nrm, &
-                                 Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
-                                 corr_sw_NN_below, corr_wrr_NL_below, &
-                                 corr_wNr_NL_below, corr_wNc_NL_below,  &
-                                 pdf_params, &
-                                 corr_rrNr, corr_srr_1, &
-                                 corr_sNr_1, corr_sNc_1 ) 
-
-          corr_srr_2      = corr_srr_1
-          corr_sNr_2      = corr_sNr_1
-          corr_sNc_2      = corr_sNc_1
-
-       endif
-
     endif ! rcm > rc_tol
+
+    if ( l_diagnose_correlations ) then
+
+       if ( l_calc_w_corr ) then
+          
+          s_mellor_m = calc_mean( pdf_params%mixt_frac, pdf_params%s1, pdf_params%s2 )
+          stdev_s_mellor = sqrt( pdf_params%mixt_frac * ( ( pdf_params%s1 - s_mellor_m )**2 + &
+                           pdf_params%stdev_s1**2 ) + ( 1 - pdf_params%mixt_frac ) *  &
+                           ( ( pdf_params%s2 - s_mellor_m )**2 + pdf_params%stdev_s2**2 ) )
+
+          corr_sw  = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
+          corr_wrr = calc_w_corr( wprrp, stdev_w, sqrt(rrp2_on_rrainm2) * rrainm, w_tol, rr_tol )
+          corr_wNr = calc_w_corr( wpNrp, stdev_w, sqrt(Nrp2_on_Nrm2) * Nrm, w_tol, Nr_tol )
+          corr_wNc = calc_w_corr( wpNcp, stdev_w, sqrt(Ncp2_on_Ncm2) * Ncm, w_tol, Nc_tol )
+
+       end if
+
+       call diagnose_KK_corr( Ncm, rrainm, Nrm, &
+                              Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
+                              corr_sw, corr_wrr, corr_wNr, corr_wNc,  &
+                              pdf_params, &
+                              corr_rrNr, corr_srr_1, &
+                              corr_sNr_1, corr_sNc_1 ) 
+
+       corr_srr_2      = corr_srr_1
+       corr_sNr_2      = corr_sNr_1
+       corr_sNc_2      = corr_sNc_1
+
+    endif
+
 
     !!! Calculate the normalized mean of variables that have an assumed (single)
     !!! lognormal distribution, given the mean and variance of those variables.
@@ -1077,7 +1116,8 @@ module KK_microphys_module
 
   !=============================================================================
   subroutine KK_stat_output( corr_srr_1, corr_sNr_1,  &
-                             corr_sNc_1, corr_rrNr, level )
+                             corr_sNc_1, corr_rrNr, &
+                             corr_sw, corr_wrr, corr_wNr, corr_wNc, level )
 
     ! Description:
 
@@ -1095,6 +1135,10 @@ module KK_microphys_module
         icorr_srr, &
         icorr_sNr, &
         icorr_sNc, &
+        icorr_sw, &
+        icorr_wrr, &
+        icorr_wNr, &
+        icorr_wNc, &
         zt
 
     implicit none
@@ -1104,7 +1148,11 @@ module KK_microphys_module
       corr_srr_1, & ! Correlation between s and rr (1st PDF component) [-] 
       corr_sNr_1, & ! Correlation between s and Nr (1st PDF component) [-]
       corr_sNc_1, & ! Correlation between s and Nc (1st PDF component) [-]
-      corr_rrNr     ! Correlation between rr and Nr (both components)  [-]
+      corr_rrNr,  & ! Correlation between rr and Nr (both components)  [-]
+      corr_sw,    & ! Correlation between s and w   (both components)  [-]
+      corr_wrr,   & ! Correlation between w and rr  (both components)  [-]
+      corr_wNr,   & ! Correlation between w and Nr  (both components)  [-]
+      corr_wNc      ! Correlation between w and Nc  (both components)  [-]
 
     integer, intent(in) :: &
       level   ! Vertical level index 
@@ -1132,6 +1180,25 @@ module KK_microphys_module
        call stat_update_var_pt( icorr_sNc, level, corr_sNc_1, zt )
     endif
 
+    ! Correlation of s_mellor and w.
+    if ( icorr_sw > 0 ) then
+       call stat_update_var_pt( icorr_sw, level, corr_sw, zt )
+    endif
+
+    ! Correlation of w and rrain.
+    if ( icorr_wrr > 0 ) then
+       call stat_update_var_pt( icorr_wrr, level, corr_wrr, zt )
+    endif
+
+    ! Correlation of w and Nr.
+    if ( icorr_wNr > 0 ) then
+       call stat_update_var_pt( icorr_wNr, level, corr_wNr, zt )
+    endif
+
+    ! Correlation of w and Nc.
+    if ( icorr_wNc > 0 ) then
+       call stat_update_var_pt( icorr_wNc, level, corr_wNc, zt )
+    endif
 
     return
 

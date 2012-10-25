@@ -10,20 +10,13 @@ module diagnose_correlations_module
   implicit none 
 
   public :: diagnose_KK_corr, diagnose_LH_corr, &
-            calc_mean, calc_varnce
+            calc_mean, calc_varnce, calc_w_corr
             
 
-  private :: diagnose_corr, calc_w_corr
+  private :: diagnose_corr 
 
-  real( kind = core_rknd ) :: &
-      spwp,  &  ! Covariance of s and w on the zt-grid
-      rrpwp, &  ! Covariance of rrain and w on the zt-grid
-      Nrpwp, &  ! Covariance of Nr and w on the zt-grid
-      Ncpwp, &  ! Covariance of Nc and w on the zt-grid
-      stdev_w
 
   contains 
-
 
 
 !-----------------------------------------------------------------------
@@ -64,6 +57,9 @@ module diagnose_correlations_module
         Nc_tol,        & ! [#/kg]
         rr_tol,        & ! [kg/kg] 
         Nr_tol           ! [#/kg]
+
+    use stats_type, only: & 
+        stat_update_var_pt  ! Procedure(s)
 
     implicit none
 
@@ -149,53 +145,15 @@ module diagnose_correlations_module
     end do
 
 
-    if ( l_calc_w_corr ) then
+    ! set the first row to the corresponding prescribed correlations
+    corr_matrix_approx(1,ii_s) = corr_sw
+    corr_matrix_approx(1,ii_rrain) = corr_rrw
+    corr_matrix_approx(1,ii_Nr) = corr_Nrw
+    corr_matrix_approx(1,ii_Nc) = corr_Ncw
 
-      ! set up xm
-      xm(ii_w) = 1
-      xm(ii_s) = calc_mean( pdf_params%mixt_frac, pdf_params%s1, pdf_params%s2)
-      xm(ii_rrain) = rrainm
-      xm(ii_Nr) = Nrm
-      xm(ii_Nc) = Ncm
+    !end if ! l_calc_w_corr
 
-      ! calculate the standard deviations
-      stdev_x(ii_w) = stdev_w
-
-      ! same formula as wpsp, but spsp=sp2 and therefore sqrt(sp2)=stdev_s
-      stdev_x(ii_s) = sqrt( pdf_params%mixt_frac * ( 1 - pdf_params%mixt_frac ) ) &
-                      * ( pdf_params%s1 - pdf_params%s2 ) 
-
-      stdev_x(ii_rrain) = sqrt_xp2_on_xm2(ii_rrain) * xm(ii_rrain)
-      stdev_x(ii_Nr) = sqrt_xp2_on_xm2(ii_Nr) * xm(ii_Nr)
-      stdev_x(ii_Nc) = sqrt_xp2_on_xm2(ii_Nc) * xm(ii_Nc)
-
-      ! set up wpxp
-      wpxp(ii_w) = 1
-      wpxp(ii_s) = spwp
-      wpxp(ii_rrain) = rrpwp
-      wpxp(ii_Nr) = Nrpwp
-      wpxp(ii_Nc) = Ncpwp
-
-      ! set up x_tol
-      x_tol(ii_w) = w_tol
-      x_tol(ii_s) = s_mellor_tol
-      x_tol(ii_rrain) = rr_tol
-      x_tol(ii_Nr) = Nr_tol
-      x_tol(ii_Nc) = Nc_tol
-
-      call calc_w_corr( n_variables, wpxp, stdev_x, x_tol, & ! intent(in) 
-                          corr_matrix_approx )  ! intent(inout)
-
-
-    else
-
-      ! set the first row to the corresponding prescribed correlations
-      corr_matrix_approx(1,ii_s) = corr_sw
-      corr_matrix_approx(1,ii_rrain) = corr_rrw
-      corr_matrix_approx(1,ii_Nr) = corr_Nrw
-      corr_matrix_approx(1,ii_Nc) = corr_Ncw
-
-    end if ! l_calc_w_corr
+    
 
     call diagnose_corr( n_variables, sqrt_xp2_on_xm2, & !intent(in)
                         corr_matrix_approx ) ! intent(inout)    
@@ -250,9 +208,6 @@ module diagnose_correlations_module
     !   (see CLUBB Trac ticket#514)
     !-----------------------------------------------------------------------
 
-    use error_code, only:  & 
-        clubb_at_least_debug_level ! Function
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -268,15 +223,15 @@ module diagnose_correlations_module
       sqrt, abs, sign
 
     ! Input Variables
-    integer :: &
-      n_variables  ! number of variables in the correlation matrix
+    integer, intent(in) :: &
+      n_variables  ! number of variables in the correlation matrix [-]
     
     real( kind = core_rknd ), dimension(n_variables), intent(in) :: & 
-      sqrt_xp2_on_xm2    ! sqrt of x_variance / x_mean^2
+      sqrt_xp2_on_xm2    ! sqrt of x_variance / x_mean^2 [-]
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(inout) :: &
-      corr_matrix_approx ! correlation matrix
+      corr_matrix_approx ! correlation matrix [-]
 
 
     ! Local Variables
@@ -300,26 +255,23 @@ module diagnose_correlations_module
     do i = 2, (n_variables-1)
       do j = (i+1), n_variables
 
-        ! formula (16) in the ref. paper 
+        ! formula (16) in the ref. paper (Larson et al. (2011))
         f_ij = alpha_corr * sqrt_xp2_on_xm2(i) * sqrt_xp2_on_xm2(j) &
         * sign(1.0_core_rknd,corr_matrix_approx(1,i)*corr_matrix_approx(1,j)) 
 
         ! make sure -1 < f_ij < 1
-        if ( clubb_at_least_debug_level( 2 ) ) then
+        if ( f_ij < -max_mag_correlation ) then
 
-           if ( f_ij < -max_mag_correlation ) then
+           f_ij = -max_mag_correlation
 
-              f_ij = -max_mag_correlation
+        else if ( f_ij > max_mag_correlation ) then
 
-           else if ( f_ij > max_mag_correlation ) then
-
-              f_ij = max_mag_correlation
-
-           end if
+           f_ij = max_mag_correlation
 
         end if
 
-        ! formula (15) in the ref. paper
+
+        ! formula (15) in the ref. paper (Larson et al. (2011))
         corr_matrix_approx(i,j) = corr_matrix_approx(1,i) * corr_matrix_approx(1,j) &
         + f_ij * s_1j(i) * s_1j(j)
 
@@ -328,43 +280,8 @@ module diagnose_correlations_module
     
   end subroutine diagnose_corr 
 
-  !------------------------------------------------------------------------
-  subroutine setup_w_covars( spwp_zt, rrpwp_zt, Nrpwp_zt, Ncpwp_zt, std_dev_w )  ! intent(in)
-    ! Description:
-    ! Setup the covariances of w with the hydrometeors. The covariances at 
-    ! the current height level are stored in global variales. These will be 
-    ! needed to calculate the corresponding correlations. 
-
-    ! References:
-    ! clubb:ticket:514
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd   ! Variable(s)
-
-    implicit none
-
-    ! Input Variables    
-    real( kind = core_rknd ), intent(in) ::  &
-      spwp_zt,  &  ! Covariance of s and w on the zt-grid
-      rrpwp_zt, &  ! Covariance of rrain and w on the zt-grid
-      Nrpwp_zt, &  ! Covariance of Nr and w on the zt-grid
-      Ncpwp_zt, &  ! Covariance of Nc and w on the zt-grid
-      std_dev_w
-
-    ! --- Begin Code ---
-
-    spwp = spwp_zt
-    rrpwp = rrpwp_zt
-    Nrpwp = Nrpwp_zt
-    Ncpwp = Ncpwp_zt
-    stdev_w = std_dev_w
-
-  end subroutine setup_w_covars
-
   !-----------------------------------------------------------------------
-  subroutine calc_w_corr( n_variables, wpxp, stdev_x, x_tol, & ! intent(in)
-                          corr_matrix_approx )  ! intent(inout)
+  function calc_w_corr( wpxp, stdev_w, stdev_x, w_tol, x_tol )
     ! Description:
     ! Compute the correlations of w with the hydrometeors.
 
@@ -383,41 +300,36 @@ module diagnose_correlations_module
     intrinsic :: max
 
     ! Input Variables
-    integer, intent(in) :: &
-      n_variables  ! Number of variables involved (size of xm et al.)
-
-    real( kind = core_rknd ), dimension(n_variables), intent(in) :: &
-      stdev_x,  & ! standard deviation of x ( x(1)=sqrt(wp2) )
+    real( kind = core_rknd ), intent(in) :: &
+      stdev_w,  & ! standard deviation of w
+      stdev_x,  & ! standard deviation of x
       wpxp,     & ! Covariances of w with the hydrometeors ( wpxp(1)=1 to keep the vector length equal )
-      x_tol       ! tolerances for the x variables
-    
-    ! Input/Output Variables
-    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(inout) :: &
-      corr_matrix_approx ! correlation matrix
+      w_tol,    & ! tolerance for w
+      x_tol       ! tolerance for x
 
     ! Local Variables
     integer :: i ! Loop iterator
 
+    real( kind = core_rknd ) :: &
+      calc_w_corr
+
     ! --- Begin Code ---
-  
-    do i = 2, n_variables
 
-      corr_matrix_approx(1, i) = wpxp(i) / ( max(stdev_x(i), x_tol(i)) * max(stdev_x(1), x_tol(1)) )
+    calc_w_corr = wpxp / ( max(stdev_x, x_tol) * max(stdev_w, w_tol) )
 
-      ! Make sure the correlation is in [-1,1]
-      if ( corr_matrix_approx(1, i) < -max_mag_correlation ) then
+    ! Make sure the correlation is in [-1,1]
+    if ( calc_w_corr < -max_mag_correlation ) then
 
-        corr_matrix_approx(1, i) = -max_mag_correlation
+      calc_w_corr = -max_mag_correlation
 
-      else if ( corr_matrix_approx(1, i) > max_mag_correlation ) then
+    else if ( calc_w_corr > max_mag_correlation ) then
 
-        corr_matrix_approx(1, i) = max_mag_correlation
+      calc_w_corr = max_mag_correlation
 
-      end if
+    end if
+   
+  end function calc_w_corr
 
-    end do
-    
-  end subroutine calc_w_corr
 
   !-----------------------------------------------------------------------
   function calc_varnce( mixt_frac, x1, x2, xm, x1p2, x2p2 )

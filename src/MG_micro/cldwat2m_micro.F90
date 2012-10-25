@@ -867,7 +867,11 @@ subroutine mmicro_pcond ( sub_column,           &
      dum_out10, &
      dum_out11, &
      dum_out12, &
-     dum_out13
+     dum_out13, &
+     dum_out14, &
+     dum_out15, &
+     dum_out16, &
+     dum_out17
    !----
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -1698,17 +1702,21 @@ subroutine mmicro_pcond ( sub_column,           &
 
               else
 
-                 call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), &
+                 call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                          zero, zero, &
                                          real( nc(i,k), kind = core_rknd ), &
                                          pdf_params(k), &
-                                         mu_s_1, mu_s_2, dum_out1, dum_out2, &
+                                         zero, zero, zero, zero, &
+                                         zero, pver - k + 2, &
+                                         mu_s_1, mu_s_2, dum_out1, dum_out2, & ! Intent(out)
                                          mu_Nc_n, sigma_s_1, sigma_s_2, &
                                          dum_out3, dum_out4, sigma_Nc_n, &
                                          dum_out5, dum_out6, dum_out7, &
                                          dum_out8, dum_out9, dum_out10, &
                                          dum_out11, corr_sNc_1_n, corr_sNc_2_n, &
-                                         dum_out12, dum_out13, mixt_frac )
+                                         dum_out12, dum_out13, &
+                                         dum_out14, dum_out15, dum_out16, dum_out17, &
+                                         mixt_frac )
 
                  KK_auto_coef &
                  = 1350.0_core_rknd &
@@ -2151,17 +2159,21 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! The level-mean rain water mixing ratio is found by
                  ! multiplying in-precip rain water mixing ratio (qric) by
                  ! the precipitation fraction (cldmax).
-                 call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), &
+                 call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                          real( qric(i,k), kind = core_rknd ), &
                                          zero, &
                                          zero, pdf_params(k), &
-                                         mu_s_1, mu_s_2, mu_rr_n, dum_out1, &
+                                         zero, zero, zero, zero, &
+                                         zero, pver - k + 2, &
+                                         mu_s_1, mu_s_2, mu_rr_n, dum_out1, & ! Intent(out)
                                          dum_out2, sigma_s_1, sigma_s_2, &
                                          sigma_rr_n, dum_out3, dum_out4, &
                                          dum_out5, corr_srr_1_n, corr_srr_2_n, &
                                          dum_out6, dum_out7, dum_out8, &
                                          dum_out9, dum_out10, dum_out11, &
-                                         dum_out12, dum_out13, mixt_frac )
+                                         dum_out12, dum_out13, &
+                                         dum_out14, dum_out15, dum_out16, dum_out17, &
+                                         mixt_frac )
 
                  KK_accr_coef = 67.0_core_rknd
 

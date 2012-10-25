@@ -72,7 +72,11 @@ module stats_zt
         icorr_rrNr, &
         icorr_srr, & 
         icorr_sNr, &
-        icorr_sNc
+        icorr_sNc, &
+        icorr_sw,  &
+        icorr_wrr, &
+        icorr_wNr, &
+        icorr_wNc
 
     use stats_variables, only: & 
         irel_humidity, &
@@ -434,6 +438,10 @@ module stats_zt
     icorr_srr  = 0
     icorr_sNr  = 0
     icorr_sNc  = 0
+    icorr_sw   = 0
+    icorr_wrr  = 0
+    icorr_wNr  = 0
+    icorr_wNc  = 0
 
     ! From K&K microphysics
     im_vol_rad_rain  = 0  ! Brian
@@ -2418,6 +2426,30 @@ module stats_zt
         icorr_sNc = k
         call stat_assign( icorr_sNc, "corr_sNc", & 
              "Correlation between s and Nc []", "", zt )
+        k = k + 1
+
+      case ('corr_sw')
+        icorr_sw = k
+        call stat_assign( icorr_sw, "corr_sw", & 
+             "Correlation between s and w []", "", zt )
+        k = k + 1
+
+      case ('corr_wrr')
+        icorr_wrr = k
+        call stat_assign( icorr_wrr, "corr_wrr", & 
+             "Correlation between w and rrain []", "", zt )
+        k = k + 1
+
+      case ('corr_wNr')
+        icorr_wNr = k
+        call stat_assign( icorr_wNr, "corr_wNr", & 
+             "Correlation between w and Nr []", "", zt )
+        k = k + 1
+
+      case ('corr_wNc')
+        icorr_wNc = k
+        call stat_assign( icorr_wNc, "corr_wNc", & 
+             "Correlation between w and Nc []", "", zt )
         k = k + 1
       ! end changes by janhft 09/25/12
 
