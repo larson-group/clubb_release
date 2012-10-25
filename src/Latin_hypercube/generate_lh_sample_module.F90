@@ -1767,7 +1767,7 @@ module generate_lh_sample_module
     ! Reduce the below value if model seems to crashing due excessive
     ! lh_thlp2_zt and it will limit the extremes of the samples.
     real(kind = dp), parameter :: &
-      cthl_thresh = 5e-4_dp ! Threshold on cthl1 and cthl2 [kg/kg/K]
+      cthl_thresh = 1e-5_dp ! Threshold on cthl1 and cthl2 [kg/kg/K]
 
     ! Input Variables
 
