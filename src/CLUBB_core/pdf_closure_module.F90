@@ -257,8 +257,7 @@ module pdf_closure_module
     ! Quantities needed to predict higher order moments
     real( kind = core_rknd ) ::  & 
       tl1, tl2,  & 
-      beta1, beta2,  & 
-      zeta1, zeta2
+      beta1, beta2
 
     real( kind = core_rknd ) :: sqrt_wp2
 
@@ -725,33 +724,11 @@ module pdf_closure_module
 
     ! We need to introduce a threshold value for the variance of s
 
-    if ( stdev_s1 > s_mellor_tol ) then
-      zeta1 = s1/stdev_s1
-      cloud_frac1  = 0.5_core_rknd*( 1._core_rknd + erf( zeta1/sqrt_2 )  )
-      rc1          = s1*cloud_frac1+stdev_s1*exp( -0.5_core_rknd*zeta1**2 )/( sqrt_2pi )
-    else
-      if ( s1 < 0.0_core_rknd ) then
-        cloud_frac1  = 0.0_core_rknd
-        rc1          = 0.0_core_rknd
-      else
-        cloud_frac1  = 1.0_core_rknd
-        rc1          = s1
-      end if ! s1 < 0
-    end if ! stdev_s1 > s_mellor_tol
-
-    if ( stdev_s2 > s_mellor_tol ) then
-      zeta2       = s2/stdev_s2
-      cloud_frac2 = 0.5_core_rknd*( 1._core_rknd + erf( zeta2/sqrt_2 ) )
-      rc2         = s2*cloud_frac2+stdev_s2*exp( -0.5_core_rknd*zeta2**2 )/( sqrt_2pi )
-    else
-      if ( s2 < 0.0_core_rknd ) then
-        cloud_frac2  = 0.0_core_rknd
-        rc2          = 0.0_core_rknd
-      else
-        cloud_frac2  = 1.0_core_rknd
-        rc2          = s2
-      end if ! s2 < 0
-    end if ! stdev_s2 > s_mellor_tol
+    ! Calculate cloud_frac1 and rc1 (s_at_sat for liquid is always zero)
+    call calc_cloud_frac_component(s1, stdev_s1, 0._core_rknd, cloud_frac1, rc1)
+    
+    ! Calculate cloud_frac2 and rc2 (s_at_sat for liquid is always zero)
+    call calc_cloud_frac_component(s2, stdev_s2, 0._core_rknd, cloud_frac2, rc2)
 
     ! Compute moments that depend on theta_v
     !
@@ -1006,5 +983,73 @@ module pdf_closure_module
 
     return
   end subroutine pdf_closure
+  
+  !-----------------------------------------------------------------------
+  subroutine calc_cloud_frac_component(s, stdev_s, s_at_sat, cloud_fracN, rcN)
+  ! Description:
+  !   Given the mean and standard deviation of 's', this subroutine
+  !   calculates cloud_frac<n>, where n is the PDF component (either 1 or
+  !   2). In addition, the subroutine can also optionally calculate rc<n>,
+  !   the mean of r_c
+  !
+  ! References:
+  !   See ticket#529
+  !-----------------------------------------------------------------------
+    
+    use constants_clubb, only: &
+      s_mellor_tol,&! Tolerance for pdf parameter s       [kg/kg]
+      sqrt_2pi,    &! sqrt(2*pi)
+      sqrt_2        ! sqrt(2)
+    
+    use clubb_precision, only: &
+      core_rknd     ! Precision
+    
+    use anl_erf, only:  & 
+      erf ! Procedure(s)
+    ! The error function
+    
+    implicit none
+    
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      s,          & ! Mean of 's' component
+      stdev_s,    & ! Standard deviation of s
+      s_at_sat      ! Value of 's' at exact saturation with respect to ice
+                    ! Negative (or zero for liquid)
+    
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      cloud_fracN   ! Component of cloud_frac
+    
+    ! Output Variable
+    ! Note: this parameter can be optionally computed.
+    real( kind = core_rknd), intent(out), optional :: &
+      rcN           ! Mean of r_c 
+    
+    ! Local Variables
+    real( kind = core_rknd) :: zetaN
+    
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+    if ( stdev_s > s_mellor_tol ) then
+      zetaN = (s - s_at_sat) / stdev_s
+      cloud_fracN  = 0.5_core_rknd*( 1._core_rknd + erf( zetaN/sqrt_2 )  )
+      if (present(rcN)) &
+        rcN        = s*cloud_fracN + stdev_s*exp( -0.5_core_rknd*zetaN**2 )/( sqrt_2pi )
+    else
+      if ( s < 0.0_core_rknd ) then
+        cloud_fracN  = 0.0_core_rknd
+        if (present(rcN)) &
+          rcN        = 0.0_core_rknd
+      else
+        cloud_fracN  = 1.0_core_rknd
+        if (present(rcN)) &
+          rcN        = s
+      end if ! s < 0
+    end if ! stdev_s > s_mellor_tol
+    
+    
+  end subroutine calc_cloud_frac_component
+  !-----------------------------------------------------------------------
 
 end module pdf_closure_module
