@@ -268,6 +268,13 @@ module pdf_closure_module
     ! variables for a generalization of Chris Golaz' closure
     ! varies width of plumes in theta_l, rt
     real( kind = core_rknd ) :: width_factor_1, width_factor_2
+    
+    ! variables for computing ice cloud fraction
+    real( kind = core_rknd) :: &
+      ice_supersat_frac1, & ! first  pdf component of ice_supersat_frac
+      ice_supersat_frac2, & ! second pdf component of ice_supersat_frac
+      ice_supersat_frac     ! Fraction of grid box that is supersaturated
+                            !  with respect to ice
 
     integer :: i   ! Index
 
@@ -725,10 +732,16 @@ module pdf_closure_module
     ! We need to introduce a threshold value for the variance of s
 
     ! Calculate cloud_frac1 and rc1 (s_at_sat for liquid is always zero)
-    call calc_cloud_frac_component(s1, stdev_s1, 0._core_rknd, cloud_frac1, rc1)
+    call calc_cloud_frac_component(s1, stdev_s1, 0.0_core_rknd, cloud_frac1, rc1)
     
     ! Calculate cloud_frac2 and rc2 (s_at_sat for liquid is always zero)
-    call calc_cloud_frac_component(s2, stdev_s2, 0._core_rknd, cloud_frac2, rc2)
+    call calc_cloud_frac_component(s2, stdev_s2, 0.0_core_rknd, cloud_frac2, rc2)
+    
+    ! Calculate ice_supersat_frac1 (Temporarily let s_at_sat = 0)
+    call calc_cloud_frac_component(s1, stdev_s1, 0.0_core_rknd, ice_supersat_frac1)
+    
+    ! Calculate ice_supersat_frac2 (Temporarily let s_at_sat = 0)
+    call calc_cloud_frac_component(s2, stdev_s2, 0.0_core_rknd, ice_supersat_frac2)
 
     ! Compute moments that depend on theta_v
     !
@@ -794,28 +807,13 @@ module pdf_closure_module
     end if ! l_scalar_calc
 
     ! Compute mean cloud fraction and cloud water
-
-    cloud_frac = mixt_frac * cloud_frac1 + (1._core_rknd-mixt_frac) * cloud_frac2
+    cloud_frac = calc_cloud_frac(cloud_frac1, cloud_frac2, mixt_frac)
     rcm        = mixt_frac * rc1         + (1._core_rknd-mixt_frac) * rc2
-
-    ! Note: Brian added the following lines to ensure that there
-    ! are never any negative liquid water values (or any negative
-    ! cloud fraction values, for that matter).  According to
-    ! Vince Larson, the analytic formula should not produce any
-    ! negative results, but such computer-induced errors such as
-    ! round-off error may produce such a value.  This has been
-    ! corrected because Brian found a small negative value of
-    ! rcm in the first timestep of the FIRE case.
-
-    cloud_frac  = max( zero_threshold, cloud_frac )
-    if ( clubb_at_least_debug_level( 2 ) ) then
-      if ( cloud_frac > 1.0_core_rknd ) then
-        write(fstderr,*) "Cloud fraction > 1"
-      end if
-    end if
-    cloud_frac = min( 1.0_core_rknd, cloud_frac )
-
+    
     rcm = max( zero_threshold, rcm )
+    
+    ! Compute ice cloud fraction, ice_supersat_frac
+    ice_supersat_frac = calc_cloud_frac(ice_supersat_frac1, ice_supersat_frac2, mixt_frac)
 
     ! Compute variance of liquid water mixing ratio.
     ! This is not needed for closure.  Statistical Analysis only.
@@ -920,6 +918,7 @@ module pdf_closure_module
         write(fstderr,*) "wp2rtp = ", wp2rtp
         write(fstderr,*) "wpthlp2 = ", wpthlp2
         write(fstderr,*) "cloud_frac = ", cloud_frac
+        write(fstderr,*) "ice_supersat_frac = ", ice_supersat_frac
         write(fstderr,*) "rcm = ", rcm
         write(fstderr,*) "wpthvp = ", wpthvp
         write(fstderr,*) "wp2thvp = ", wp2thvp
@@ -1015,7 +1014,7 @@ module pdf_closure_module
       s,          & ! Mean of 's' component
       stdev_s,    & ! Standard deviation of s
       s_at_sat      ! Value of 's' at exact saturation with respect to ice
-                    ! Negative (or zero for liquid)
+                    !  Negative (or zero for liquid)
     
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -1050,6 +1049,72 @@ module pdf_closure_module
     
     
   end subroutine calc_cloud_frac_component
+  !-----------------------------------------------------------------------
+  
+  !-----------------------------------------------------------------------
+  function calc_cloud_frac(cloud_frac1, cloud_frac2, mixt_frac)
+  ! Description:
+  !   Given the the two pdf components of a cloud fraction, and the weight
+  !   of the first component, this fuction calculates the cloud fraction,
+  !   cloud_frac
+  !
+  ! References:
+  !   See ticket#530
+  !-----------------------------------------------------------------------
+    
+    use constants_clubb, only: &
+      fstderr,        &! Standard error output
+      zero_threshold   ! A physical quantity equal to zero
+    
+    use clubb_precision, only: &
+      core_rknd        ! Precision
+      
+    use error_code, only: &
+      clubb_at_least_debug_level ! Function to check whether clubb is in
+                                 !  at least the specified debug level 
+      
+    implicit none
+    
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      cloud_frac1,  & ! First PDF component of cloud_frac
+      cloud_frac2,  & ! Second PDF component of cloud_frac
+      mixt_frac       ! Weight of 1st PDF component (Sk_w dependent)
+    
+    ! Output Variables
+    real( kind = core_rknd) :: &
+      calc_cloud_frac ! Cloud fraction
+    
+    ! Local Variables
+    real( kind = core_rknd) :: &
+      cloud_frac      ! Cloud fraction (used as a holding variable for
+                      !                    output)
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+    cloud_frac = mixt_frac * cloud_frac1 + (1.0_core_rknd-mixt_frac) * cloud_frac2
+    
+    ! Note: Brian added the following lines to ensure that there
+    ! are never any negative liquid water values (or any negative
+    ! cloud fraction values, for that matter).  According to
+    ! Vince Larson, the analytic formula should not produce any
+    ! negative results, but such computer-induced errors such as
+    ! round-off error may produce such a value.  This has been
+    ! corrected because Brian found a small negative value of
+    ! rcm in the first timestep of the FIRE case.
+
+    cloud_frac  = max( zero_threshold, cloud_frac )
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( cloud_frac > 1.0_core_rknd ) then
+        write(fstderr,*) "Cloud fraction > 1"
+      end if
+    end if
+    cloud_frac = min( 1.0_core_rknd, cloud_frac )
+
+    calc_cloud_frac = cloud_frac
+    return
+    
+  end function calc_cloud_frac
   !-----------------------------------------------------------------------
 
 end module pdf_closure_module
