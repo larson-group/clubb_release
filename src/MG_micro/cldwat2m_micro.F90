@@ -389,7 +389,8 @@ subroutine mmicro_pcond ( sub_column,           &
    vtrmc,vtrmi,qcsedten,qisedten,               &
    prao,prco,mnuccco,mnuccto,msacwio,psacwso,   &
    bergso,bergo,melto,homoo,qcreso,prcio,praio,qireso,&
-   mnuccro,pracso,meltsdt,frzrdt,mnuccdo        &
+   mnuccro,pracso,meltsdt,frzrdt,mnuccdo,       &
+   t_out                                        &
 #ifdef CLUBB
    ,qcic, t, nsic, nric, uni, umi  &
    ,uns, ums, unr, umr, unc, umc, cldmax &
@@ -508,6 +509,7 @@ subroutine mmicro_pcond ( sub_column,           &
    real(r8), intent(out) :: meltsdt(pcols,pver) ! latent heating rate due to melting of snow  (W/kg)
    real(r8), intent(out) :: frzrdt (pcols,pver) ! latent heating rate due to homogeneous freezing of rain (W/kg)
    real(r8), intent(out) :: mnuccdo(pcols,pver) ! mass tendency from ice nucleation
+   real(r8), intent(out) :: t_out(pcols,pver)   ! new temperature output (before t is reset to the start-of-timestep value)  [K]
 
 ! local workspace
 ! all units mks unless otherwise stated
@@ -2937,6 +2939,10 @@ subroutine mmicro_pcond ( sub_column,           &
 	preci(i)=preci1(i)/real(iter)
 
        do k=1,pver
+
+       ! Save the updated value of temperature for output to CLUBB before it is
+       ! reset to t1 (the start-of-timestep value).
+       t_out(i,k) = t(i,k)
 
 ! assign variables back to start-of-timestep values before updating after sub-steps 
 

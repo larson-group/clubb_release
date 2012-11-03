@@ -227,17 +227,18 @@ module mg_micro_driver_module
       preci           ! Unused
 
     real(r8), dimension(pcols,nz-1) :: &
-      tlat_flip,     & ! Latent heating rate                                  [W/kg]
-      rcm_mc_flip,   & ! Time tendency of liquid water mixing ratio           [kg/kg/s]
-      rvm_mc_flip,   & ! Time tendency of vapor water mixing ratio            [kg/kg/s]
-      cldo_flip,     & ! Old cloud fraction.                                  [-]
-      qsout_flip,    & ! Snow mixing ratio                                    [kg/kg]
-      effc_flip,     & ! Droplet effective radius                             [μ]
-      effi_flip,     & ! cloud ice effective radius                           [μ]
-      reff_rain_flip,& ! rain effective radius                                [μ]
-      reff_snow_flip,& ! snow effective radius                                [μ]
-      qrout_flip,    & ! rain mixing ratio                                    [kg/kg]
-      T_in_K_flip_inout! Absolute temperature                                 [K]
+      tlat_flip,         & ! Latent heating rate                       [W/kg]
+      rcm_mc_flip,       & ! Time tend. of liquid water mixing ratio   [kg/kg/s]
+      rvm_mc_flip,       & ! Time tendency of vapor water mixing ratio [kg/kg/s]
+      cldo_flip,         & ! Old cloud fraction.                       [-]
+      qsout_flip,        & ! Snow mixing ratio                         [kg/kg]
+      effc_flip,         & ! Droplet effective radius                  [μ]
+      effi_flip,         & ! cloud ice effective radius                [μ]
+      reff_rain_flip,    & ! rain effective radius                     [μ]
+      reff_snow_flip,    & ! snow effective radius                     [μ]
+      qrout_flip,        & ! rain mixing ratio                         [kg/kg]
+      T_in_K_flip_inout, & ! Absolute temperature                      [K]
+      T_in_K_flip_out      ! Absolute temperature (before reset)       [K]
       
     ! MG zt variables that are not used in CLUBB.
     real(r8), dimension(pcols,nz-1) :: &
@@ -467,6 +468,7 @@ module mg_micro_driver_module
     umc = 0.0_r8
 
     T_in_K_flip_inout = T_in_K_flip ! Set the output variable to the current values
+    T_in_K_flip_out   = T_in_K_flip ! Set the output variable to the current values
 
     ! Call the Morrison-Gettelman microphysics
     call mmicro_pcond                                                                        &! in
@@ -493,6 +495,7 @@ module mg_micro_driver_module
            bergso_flip, bergo_flip, melto_flip, homoo_flip, qcreso_flip, prcio_flip, praio_flip, &
            qireso_flip,                                                                       &! out
            mnuccro_flip, pracso_flip, meltsdt_flip, frzrdt_flip, mnuccdo_flip,                &! out
+           T_in_K_flip_out,                                                                   &! out
            qcic_flip, T_in_K_flip_inout, nsic_flip, nric_flip, uni, umi,                      &! out
            uns_flip, ums_flip, unr_flip, umr_flip, unc, umc, cldmax )                          ! out
 
@@ -526,7 +529,7 @@ module mg_micro_driver_module
     
     ! Update thetal based on absolute temperature. We use this rather than tlat
     ! because using the latter seemed to cause spurious heating effects.
-    T_in_K_new(2:nz) = real( flip( dble(T_in_K_flip_inout(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    T_in_K_new(2:nz) = real( flip( dble(T_in_K_flip_out(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
     T_in_K_new(1) = T_in_K(1)
    
     ! Compute total change in thlm using ( thlm_new - thlm_old ) / dt
