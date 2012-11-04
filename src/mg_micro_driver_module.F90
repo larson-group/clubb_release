@@ -31,6 +31,7 @@ module mg_micro_driver_module
     use constants_clubb, only: &
       zero_threshold, &
       T_freeze_K, &
+!      Lv, &
       Cp
       
     use stats_variables, only: & 
@@ -175,6 +176,7 @@ module mg_micro_driver_module
     real( kind = core_rknd ), dimension(nz) :: & 
       T_in_K,       & ! Temperature                                                   [K]
       T_in_K_new,   & ! Temperature after microphysics                                [K]
+!      T_in_K_mc,    & ! Temperature tendency due to microphysics                      [K/s]
       rcm_new,      & ! Cloud water mixing ratio after microphysics                   [kg/kg]
       rsnowm,       & ! Snow mixing ratio (not in hydromet because it is diagnostic)  [kg/kg]
       rrainm,       & ! Rain mixing ratio (not in hydromet because it is diagnostic)  [kg/kg]
@@ -336,6 +338,7 @@ module mg_micro_driver_module
     rrainm(:) = 0.0_core_rknd
     rcm_new(:) = 0.0_core_rknd
     T_in_K_new(:) = 0.0_core_rknd
+!    T_in_K_mc(:) = 0.0_core_rknd
     rcm_mc(:) = 0.0_core_rknd
     rvm_mc(:) = 0.0_core_rknd
     hydromet_mc(:,:) = 0.0_core_rknd
@@ -534,6 +537,27 @@ module mg_micro_driver_module
    
     ! Compute total change in thlm using ( thlm_new - thlm_old ) / dt
     thlm_mc = ( T_in_K2thlm( T_in_K_new, exner, rcm_new ) - thlm ) / real( dt, kind = core_rknd )
+
+    ! Rate of change of thlm due to microphysics
+    !
+    ! The rate of change of mean temperature with respect to time due to
+    ! microphysics, T_in_K_mc, is based on tlat, where dT/dt = tlat / Cp.
+    ! The rate of change of thlm with respect to time due to microphysics,
+    ! thlm_mc, is given by:
+    !
+    ! dthlm/dt|_mc = ( 1 / exner ) * dT/dt - ( Lv / ( Cp *exner ) ) * drcm/dt;
+    !
+    ! where drcm/dt is the rate of change of mean cloud water mixing ratio
+    ! with respect to time, rcm_mc.  The equation for dthlm/dt|_mc can be
+    ! written in terms of tlat:
+    !
+    ! dthlm/dt|_mc = ( 1 / ( Cp * exner ) ) * ( tlat - Lv * drcm/dt )
+
+!    T_in_K_mc(2:nz) = real( flip( dble( tlat_flip(icol,1:nz-1) ), nz-1 ), &
+!                            kind = core_rknd ) / Cp
+!    T_in_K_mc(1) = 0.0_core_rknd
+!
+!    thlm_mc = ( T_in_K_mc / exner ) - ( Lv / ( Cp * exner ) ) * rcm_mc
     
     if ( l_stats_samp ) then
 
