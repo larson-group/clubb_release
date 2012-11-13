@@ -18,11 +18,10 @@ module diagnose_correlations_module
 
   contains 
 
-
 !-----------------------------------------------------------------------
   subroutine diagnose_KK_corr( Ncm, rrainm, Nrm, & ! intent(in)
                                Ncp2_on_Ncm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
-                               corr_sw, corr_rrw, corr_Nrw, corr_Ncw, &
+                               corr_ws, corr_wrr, corr_wNr, corr_wNc, &
                                pdf_params, &
                                corr_rrNr, corr_srr, corr_sNr, corr_sNc ) ! intent(inout)
 
@@ -54,9 +53,9 @@ module diagnose_correlations_module
     use constants_clubb, only: &
         w_tol,         & ! [m/s]
         s_mellor_tol,  & ! [kg/kg]
-        Nc_tol,        & ! [#/kg]
+        Nc_tol,        & ! [num/kg]
         rr_tol,        & ! [kg/kg] 
-        Nr_tol           ! [#/kg]
+        Nr_tol           ! [num/kg]
 
     use stats_type, only: & 
         stat_update_var_pt  ! Procedure(s)
@@ -72,42 +71,42 @@ module diagnose_correlations_module
     ! Input Variables
 
     real( kind = core_rknd ), intent(in) :: &
-      Ncm,            &  
-      rrainm,         &
-      Nrm,            &
-      Ncp2_on_Ncm2,   &
-      rrp2_on_rrm2,   &
-      Nrp2_on_Nrm2,   &
-      corr_sw,        &  ! Correlation between s_mellor and w
-      corr_rrw,       &  ! Correlation between rrain and w
-      corr_Nrw,       &  ! Correlation between Nr and w
-      corr_Ncw           ! Correlation between Nc and w
+      Ncm,            &  ! Cloud droplet number conc.            [num/kg]
+      rrainm,         &  ! rain water mixing ratio               [kg/kg]
+      Nrm,            &  ! Mean rain drop concentration          [num/kg]
+      Ncp2_on_Ncm2,   &  ! Variance of Nc divided by Ncm^2       [-]
+      rrp2_on_rrm2,   &  ! Variance of rrain divided by rrainm^2 [-]
+      Nrp2_on_Nrm2,   &  ! Variance of Nr divided by Nrm^2       [-]
+      corr_ws,        &  ! Correlation between s_mellor and w    [-]
+      corr_wrr,       &  ! Correlation between rrain and w       [-]
+      corr_wNr,       &  ! Correlation between Nr and w          [-]
+      corr_wNc           ! Correlation between Nc and w          [-]
       
     type(pdf_parameter), target, intent(in) :: &
-      pdf_params    ! PDF parameters                         [units vary]
+      pdf_params    ! PDF parameters  [units vary]
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout) :: &
-      corr_rrNr, &
-      corr_srr,  &
-      corr_sNr,  &
-      corr_sNc
+      corr_rrNr, &  ! Correlation between rrain and Nr [-]
+      corr_srr,  &  ! Correlation between s and rrain  [-]
+      corr_sNr,  &  ! Correlation between s and Nr     [-]
+      corr_sNc      ! Correlation between s and Nc     [-]
 
 
     ! Local Variables
     real( kind = core_rknd ), dimension(n_variables, n_variables) :: &
-      corr_matrix_approx
+      corr_matrix_approx ! []
 
     real( kind = core_rknd ), dimension(n_variables) :: &
-      sqrt_xp2_on_xm2, & ! sqrt of x_variance / x_mean^2
-      xm,              & ! means of the hydrometeors
-      stdev_x,         & ! ratios of x_variance / x_mean^2
-      wpxp,            & ! Covariances of w with the hydrometeors
-      xp2_on_xm2,      & ! ratios of x_variance over x_mean^2
-      x_tol              ! tolerances for the x variables
+      sqrt_xp2_on_xm2, & ! sqrt of x_variance / x_mean^2          [units vary]
+      xm,              & ! means of the hydrometeors              [units vary]
+      stdev_x,         & ! ratios of x_variance / x_mean^2        [units vary]
+      wpxp,            & ! Covariances of w with the hydrometeors [units vary]
+      xp2_on_xm2,      & ! ratios of x_variance over x_mean^2     [units vary]
+      x_tol              ! tolerances for the x variables         [units vary]
 
     real( kind = core_rknd ) :: &
-      s_mellorp2_on_s_mellorm2
+      s_mellorp2_on_s_mellorm2 ! Variance of s_mellor divided by s_mellor^2 [-]
 
     ! Indices of the hydrometeors
     integer :: &
@@ -122,12 +121,13 @@ module diagnose_correlations_module
 
     !-------------------- Begin code --------------------
 
-    ! S_i is set to 1 for s_mellor, because s_mellorm could be 0
-    s_mellorp2_on_s_mellorm2 = 1
-
     ! set up xp2_on_xm2
+
+    ! TODO Why is wp2_on_wm2=1
+    ! S_i is set to 1 for s_mellor and w, because s_mellorm could be 0
     sqrt_xp2_on_xm2(ii_w) = 1
     sqrt_xp2_on_xm2(ii_s) = 1
+
     sqrt_xp2_on_xm2(ii_rrain) = sqrt(rrp2_on_rrm2)
     sqrt_xp2_on_xm2(ii_Nr) = sqrt(Nrp2_on_Nrm2)
     sqrt_xp2_on_xm2(ii_Nc) = sqrt(Ncp2_on_Ncm2)
@@ -146,10 +146,10 @@ module diagnose_correlations_module
 
 
     ! set the first row to the corresponding prescribed correlations
-    corr_matrix_approx(1,ii_s) = corr_sw
-    corr_matrix_approx(1,ii_rrain) = corr_rrw
-    corr_matrix_approx(1,ii_Nr) = corr_Nrw
-    corr_matrix_approx(1,ii_Nc) = corr_Ncw
+    corr_matrix_approx(1,ii_s) = corr_ws
+    corr_matrix_approx(1,ii_rrain) = corr_wrr
+    corr_matrix_approx(1,ii_Nr) = corr_wNr
+    corr_matrix_approx(1,ii_Nc) = corr_wNc
 
     !end if ! l_calc_w_corr
 
@@ -227,7 +227,7 @@ module diagnose_correlations_module
       n_variables  ! number of variables in the correlation matrix [-]
     
     real( kind = core_rknd ), dimension(n_variables), intent(in) :: & 
-      sqrt_xp2_on_xm2    ! sqrt of x_variance / x_mean^2 [-]
+      sqrt_xp2_on_xm2    ! sqrt of x_variance / x_mean^2 [units vary]
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(inout) :: &
@@ -301,14 +301,11 @@ module diagnose_correlations_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      stdev_w,  & ! standard deviation of w
-      stdev_x,  & ! standard deviation of x
-      wpxp,     & ! Covariances of w with the hydrometeors ( wpxp(1)=1 to keep the vector length equal )
-      w_tol,    & ! tolerance for w
-      x_tol       ! tolerance for x
-
-    ! Local Variables
-    integer :: i ! Loop iterator
+      stdev_w,  & ! standard deviation of w [m/s]
+      stdev_x,  & ! standard deviation of x [units vary]
+      wpxp,     & ! Covariances of w with the hydrometeors [units vary]
+      w_tol,    & ! tolerance for w [m/s]
+      x_tol       ! tolerance for x [units vary]
 
     real( kind = core_rknd ) :: &
       calc_w_corr
@@ -341,7 +338,7 @@ module diagnose_correlations_module
     !   Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02,
     !   page 3535
     !-----------------------------------------------------------------------
-    
+
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
@@ -349,16 +346,16 @@ module diagnose_correlations_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mixt_frac, &
-      x1, &         ! first component of the double gaussian
-      x2, &         ! second component of the double gaussian
-      xm, &         ! mean of x
-      x1p2, &       ! variance of the first component
-      x2p2          ! variance of the second component
+      mixt_frac, &  ! mixing ratio [-]
+      x1, &         ! first component of the double gaussian [units vary]
+      x2, &         ! second component of the double gaussian [units vary]
+      xm, &         ! mean of x [units vary]
+      x1p2, &       ! variance of the first component [units vary]
+      x2p2          ! variance of the second component [units vary]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      calc_varnce
+      calc_varnce ! variance of x (both components) [units vary]
 
     ! --- Begin Code ---
 
@@ -385,13 +382,13 @@ module diagnose_correlations_module
 
     ! Input Variables
     real( kind = core_rknd ) :: &
-      mixt_frac, &
-      x1, &         ! first component of the double gaussian
-      x2            ! second component of the double gaussian
+      mixt_frac, &  ! mixing ratio [-]
+      x1, &         ! first component of the double gaussian [units vary]
+      x2            ! second component of the double gaussian [units vary]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      calc_mean
+      calc_mean  ! mean of x (both components) [units vary]
 
     ! --- Begin Code ---
 
