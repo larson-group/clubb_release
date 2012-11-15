@@ -7,23 +7,23 @@ module KK_utilities
   private ! Set default scope to private
 
   public :: mean_L2N,      &
-            mean_L2N_dp,   &
-            stdev_L2N,     &
-            stdev_L2N_dp,  &
-            corr_NL2NN,    &
-            corr_NL2NN_dp, &
-            corr_LL2NN,    &
-            corr_LL2NN_dp, &
-            factorial,     &
-            Dv_fnc,        & ! Parabolic Cylinder Function, D.
-            calc_corr_sx,  &
-            G_T_p
+    mean_L2N_dp,   &
+    stdev_L2N,     &
+    stdev_L2N_dp,  &
+    corr_NL2NN,    &
+    corr_NL2NN_dp, &
+    corr_LL2NN,    &
+    corr_LL2NN_dp, &
+    factorial,     &
+    Dv_fnc,        & ! Parabolic Cylinder Function, D.
+    calc_corr_sx,  &
+    G_T_p
 
-  contains
+contains
 
   !=============================================================================
   pure function mean_L2N( mu_x, sigma_sqd_x )  &
-  result( mu_x_n )
+    result( mu_x_n )
   
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the mean of
@@ -38,10 +38,10 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one  ! Constant(s)
+      one  ! Constant(s)
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -62,7 +62,7 @@ module KK_utilities
 
   !=============================================================================
   pure function mean_L2N_dp( mu_x, sigma_sqd_x )  &
-  result( mu_x_n )
+    result( mu_x_n )
   
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the mean of
@@ -78,10 +78,10 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one_dp  ! Constant(s)
+      one_dp  ! Constant(s)
 
     use clubb_precision, only: &
-        dp ! double precision
+      dp ! double precision
 
     implicit none
 
@@ -102,7 +102,7 @@ module KK_utilities
 
   !=============================================================================
   pure function stdev_L2N( mu_x, sigma_sqd_x )  &
-  result( sigma_x_n )
+    result( sigma_x_n )
 
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the standard
@@ -118,10 +118,10 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one  ! Constant(s)
+      one  ! Constant(s)
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -142,7 +142,7 @@ module KK_utilities
 
   !=============================================================================
   pure function stdev_L2N_dp( mu_x, sigma_sqd_x )  &
-  result( sigma_x_n )
+    result( sigma_x_n )
 
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the standard
@@ -159,10 +159,10 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one_dp  ! Constant(s)
+      one_dp  ! Constant(s)
 
     use clubb_precision, only: &
-        dp ! double precision
+      dp ! double precision
 
     implicit none
 
@@ -183,7 +183,7 @@ module KK_utilities
 
   !=============================================================================
   pure function corr_NL2NN( corr_xy, sigma_y_n )  &
-  result( corr_xy_n )
+    result( corr_xy_n )
 
     ! Description:
     ! For a normally-distributed variable x and a lognormally-distributed
@@ -200,10 +200,10 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one  ! Constant(s)
+      one  ! Constant(s)
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -224,7 +224,7 @@ module KK_utilities
 
   !=============================================================================
   pure function corr_NL2NN_dp( corr_xy, sigma_y_n )  &
-  result( corr_xy_n )
+    result( corr_xy_n )
 
     ! Description:
     ! For a normally-distributed variable x and a lognormally-distributed
@@ -242,10 +242,10 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one_dp  ! Constant(s)
+      one_dp  ! Constant(s)
 
     use clubb_precision, only: &
-        dp ! double precision
+      dp ! double precision
 
     implicit none
 
@@ -265,8 +265,8 @@ module KK_utilities
   end function corr_NL2NN_dp
 
   !=============================================================================
-  pure function corr_LL2NN( corr_xy, sigma_x_n, sigma_y_n )  &
-  result( corr_xy_n )
+  function corr_LL2NN( corr_xy, sigma_x_n, sigma_y_n )  &
+    result( corr_xy_n )
 
     ! Description:
     ! For lognormally-distributed variables x and y, this function finds the
@@ -283,10 +283,16 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one  ! Constant(s)
+      one, &  ! Constant(s)
+      fstdout, &
+      max_mag_correlation
+
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+      core_rknd ! Variable(s)
+
+    use error_code, only: &
+      clubb_at_least_debug_level ! Function(s)
 
     implicit none
 
@@ -296,22 +302,41 @@ module KK_utilities
       sigma_x_n, & ! Standard deviation of ln x (ith PDF component)   [-]
       sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
 
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      log_arg
+
     ! Return Variable
     real( kind = core_rknd ) ::  &
       corr_xy_n  ! Correlation between ln x and ln y (ith PDF component)  [-]
 
     ! Find the correlation between ln x and ln y for the ith component of the
     ! PDF.
-    corr_xy_n = log( one + corr_xy * sqrt( exp( sigma_x_n**2 ) - one )  &
-                                   * sqrt( exp( sigma_y_n**2 ) - one )  )  &
-                / ( sigma_x_n * sigma_y_n )
+
+    log_arg = one + corr_xy * sqrt( exp( sigma_x_n**2 ) - one )  &
+      * sqrt( exp( sigma_y_n**2 ) - one )
+
+    ! Clipping
+    if ( log_arg > 0 ) then
+
+      corr_xy_n = log( log_arg ) / ( sigma_x_n * sigma_y_n )
+
+    else
+
+      corr_xy_n = 0;
+
+      if ( clubb_at_least_debug_level( 2 ) ) then
+        write(fstdout,*) "Warning: Values clipped in LL2NN(), since the argument of log was < 0."
+      end if
+
+    end if
 
     return
   end function corr_LL2NN
 
   !=============================================================================
   pure function corr_LL2NN_dp( corr_xy, sigma_x_n, sigma_y_n )  &
-  result( corr_xy_n )
+    result( corr_xy_n )
 
     ! Description:
     ! For lognormally-distributed variables x and y, this function finds the
@@ -329,10 +354,10 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one_dp  ! Constant(s)
+      one_dp  ! Constant(s)
 
     use clubb_precision, only: &
-        dp ! double precision
+      dp ! double precision
 
     implicit none
 
@@ -349,47 +374,47 @@ module KK_utilities
     ! Find the correlation between ln x and ln y for the ith component of the
     ! PDF.
     corr_xy_n = log( one_dp  &
-                     + corr_xy * sqrt( exp( sigma_x_n**2 ) - one_dp )  &
-                               * sqrt( exp( sigma_y_n**2 ) - one_dp )  )  &
-                / ( sigma_x_n * sigma_y_n )
+      + corr_xy * sqrt( exp( sigma_x_n**2 ) - one_dp )  &
+      * sqrt( exp( sigma_y_n**2 ) - one_dp )  )  &
+      / ( sigma_x_n * sigma_y_n )
 
     return
   end function corr_LL2NN_dp
 
-!  !=============================================================================
-!  recursive function factorial( num )  &
-!  result( fact )
-!
-!    ! Description:
-!    ! Calculates the factorial of an integer (num).
-!    !
-!    ! Note:  Performing this operation on an integer data type means that
-!    !        overflow occurs at any integer higher than 12.
-!    !        In the future, this function may be better replaced by a simple
-!    !        call to the gamma function.
-!
-!    ! References:
-!    !-----------------------------------------------------------------------
-!
-!    implicit none
-!
-!    ! Input Variable
-!    integer, intent(in) :: &
-!      num  ! Integer of which to take the factorial.
-!
-!    ! Return Variable
-!    integer ::  &
-!      fact  ! Factorial of num.
-!
-!    if ( num == 0 ) then
-!       fact = 1
-!    else
-!       fact = num * factorial( num - 1 )
-!    endif
-!
-!    return
-!  end function factorial
-!
+  !  !=============================================================================
+  !  recursive function factorial( num )  &
+  !  result( fact )
+  !
+  !    ! Description:
+  !    ! Calculates the factorial of an integer (num).
+  !    !
+  !    ! Note:  Performing this operation on an integer data type means that
+  !    !        overflow occurs at any integer higher than 12.
+  !    !        In the future, this function may be better replaced by a simple
+  !    !        call to the gamma function.
+  !
+  !    ! References:
+  !    !-----------------------------------------------------------------------
+  !
+  !    implicit none
+  !
+  !    ! Input Variable
+  !    integer, intent(in) :: &
+  !      num  ! Integer of which to take the factorial.
+  !
+  !    ! Return Variable
+  !    integer ::  &
+  !      fact  ! Factorial of num.
+  !
+  !    if ( num == 0 ) then
+  !       fact = 1
+  !    else
+  !       fact = num * factorial( num - 1 )
+  !    endif
+  !
+  !    return
+  !  end function factorial
+  !
   !=============================================================================
   function factorial( num )
 
@@ -400,10 +425,10 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use parabolic, only:  &
-        gamma  ! Procedure(s)
+      gamma  ! Procedure(s)
 
     use clubb_precision, only: &
-        dp ! double precision
+      dp ! double precision
 
     implicit none
 
@@ -440,17 +465,17 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use parabolic, only:  & 
-        gamma,  & ! Procedure(s) 
-        parab
+      gamma,  & ! Procedure(s)
+      parab
 
     use constants_clubb, only:  & 
-        pi_dp,       & ! Constant(s)
-        one_dp,      &
-        one_half_dp, &
-        zero_dp
+      pi_dp,       & ! Constant(s)
+      one_dp,      &
+      one_half_dp, &
+      zero_dp
 
     use clubb_precision, only: &
-        dp ! double precision
+      dp ! double precision
 
     implicit none
 
@@ -483,7 +508,7 @@ module KK_utilities
     if ( argument <= zero_dp ) then
       call parab( -order-one_half_dp, -argument, scaling, uaxx, vaxx, ierr )
       Dv_fnc = vaxx(1) / ( (one_dp/pi_dp) * gamma( -order ) ) & 
-             - sin( pi_dp * ( -order-one_half_dp ) ) * uaxx(1)
+        - sin( pi_dp * ( -order-one_half_dp ) ) * uaxx(1)
     else
       call parab( -order-one_half_dp, argument, scaling, uaxx, vaxx, ierr )
       Dv_fnc = uaxx(1)
@@ -499,8 +524,8 @@ module KK_utilities
 
   !=============================================================================
   pure function calc_corr_sx( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &
-                              sigma_s_i, corr_rtx_i, corr_thlx_i )  &
-  result( corr_sx_i )
+    sigma_s_i, corr_rtx_i, corr_thlx_i )  &
+    result( corr_sx_i )
 
     ! Description:
     ! This function calculates the correlation between extended liquid water
@@ -548,10 +573,10 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero  ! Constant(s)
+      zero  ! Constant(s)
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -573,15 +598,15 @@ module KK_utilities
     ! Calculate the correlation of s and x in the ith PDF component.
     if ( sigma_s_i > zero ) then
 
-       corr_sx_i = crt_i * ( sigma_rt_i / sigma_s_i ) * corr_rtx_i  &
-                   - cthl_i * ( sigma_thl_i / sigma_s_i ) * corr_thlx_i
+      corr_sx_i = crt_i * ( sigma_rt_i / sigma_s_i ) * corr_rtx_i  &
+        - cthl_i * ( sigma_thl_i / sigma_s_i ) * corr_thlx_i
 
     else  ! sigma_s_i = 0
 
-       ! The variance of s_(i) is 0.  This means that s is constant within the
-       ! ith PDF component and covariance <s'x'_(i)> is also 0.  The correlation
-       ! between s and x is 0 in the ith PDF component.
-       corr_sx_i = zero
+      ! The variance of s_(i) is 0.  This means that s is constant within the
+      ! ith PDF component and covariance <s'x'_(i)> is also 0.  The correlation
+      ! between s and x is 0 in the ith PDF component.
+      corr_sx_i = zero
 
     endif
 
@@ -609,21 +634,21 @@ module KK_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one_hundred, & ! Constant(s)
-        one
+      one_hundred, & ! Constant(s)
+      one
 
     use saturation, only: & 
-        sat_vapor_press_liq ! Procedure(s)
+      sat_vapor_press_liq ! Procedure(s)
 
     use constants_clubb, only: & 
-        T_freeze_K, & ! Constant(s)
-        ep,         &
-        rho_lw,     & 
-        Lv,         & 
-        Rv
+      T_freeze_K, & ! Constant(s)
+      ep,         &
+      rho_lw,     &
+      Lv,         &
+      Rv
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+      core_rknd ! Variable(s)
 
     implicit none
 
@@ -651,12 +676,12 @@ module KK_utilities
 
     ! Coefficient of thermal conductivity of air.
     Ka = ( 5.69_core_rknd + 0.017_core_rknd * Celsius )  &
-         * 0.00001_core_rknd                       ! Ka in cal./(cm.*sec.*C)
+      * 0.00001_core_rknd                       ! Ka in cal./(cm.*sec.*C)
     Ka = 4.1868_core_rknd * one_hundred * Ka       ! Ka in J./(m.*sec.*K)
 
     ! Coefficient of diffusion of water vapor in air.
     Dv = 0.221_core_rknd * ( (T_in_K/273.16_core_rknd)**1.94_core_rknd )  &
-         * ( 101325.0_core_rknd / p_in_Pa )   ! Dv in (cm.^2)/sec.
+      * ( 101325.0_core_rknd / p_in_Pa )   ! Dv in (cm.^2)/sec.
     Dv = Dv / 10000.0_core_rknd               ! Dv in (m.^2)/sec.
 
     ! Calculate saturation mixing ratio and saturation vapor pressure.

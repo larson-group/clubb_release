@@ -102,7 +102,8 @@ module stats_variables
      icorr_sw, &
      icorr_wrr, &
      icorr_wNr, &
-     icorr_wNc
+     icorr_wNc, &
+     icorr_rrNr_n !<janhft> 11/12/12
 
   integer, public :: & 
      iNcm,            & ! Brian

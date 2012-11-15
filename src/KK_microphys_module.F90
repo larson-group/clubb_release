@@ -7,25 +7,25 @@ module KK_microphys_module
   private
 
   public :: KK_micro_driver, &
-            KK_upscaled_setup, &
-            KK_stat_output
+    KK_upscaled_setup, &
+    KK_stat_output
 
   private :: KK_upscaled_means_driver, &
-             KK_upscaled_covar_driver
+    KK_upscaled_covar_driver
 
-  contains
+contains
 
   !=============================================================================
   subroutine KK_micro_driver( dt, nz, l_stats_samp, l_local_kk, &
-                              l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
-                              exner, rho, cloud_frac, pdf_params, w_std_dev, &
-                              dzq, rcm, Ncm, s_mellor, rvm, Nc0_in_cloud, &
-                              hydromet, &
-                              hydromet_mc, hydromet_vel, &
-                              rcm_mc, rvm_mc, thlm_mc, &
-                              wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
-                              KK_auto_tndcy, KK_accr_tndcy )
+    l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
+    exner, rho, cloud_frac, pdf_params, w_std_dev, &
+    dzq, rcm, Ncm, s_mellor, rvm, Nc0_in_cloud, &
+    hydromet, &
+    hydromet_mc, hydromet_vel, &
+    rcm_mc, rvm_mc, thlm_mc, &
+    wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+    rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+    KK_auto_tndcy, KK_accr_tndcy )
 
     ! Description:
 
@@ -33,91 +33,91 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        zt2zm, &  ! Procedure(s)
-        zm2zt, &
-        gr
+      zt2zm, &  ! Procedure(s)
+      zm2zt, &
+      gr
 
     use constants_clubb, only: &
-        Rd,           & ! Constant(s)
-        Rv,           &
-        Lv,           &
-        Cp,           &
-        pi,           &
-        three,        &
-        four_thirds,  &
-        one,          &
-        two_thirds,   &
-        one_third,    &
-        zero,         &
-        rho_lw,       &
-        rc_tol,       &
-        rr_tol,       &
-        Nr_tol,       &
-        Nc_tol,       &
-        cm3_per_m3,   &
-        micron_per_m
+      Rd,           & ! Constant(s)
+      Rv,           &
+      Lv,           &
+      Cp,           &
+      pi,           &
+      three,        &
+      four_thirds,  &
+      one,          &
+      two_thirds,   &
+      one_third,    &
+      zero,         &
+      rho_lw,       &
+      rc_tol,       &
+      rr_tol,       &
+      Nr_tol,       &
+      Nc_tol,       &
+      cm3_per_m3,   &
+      micron_per_m
 
     use parameters_microphys, only: &
-        KK_auto_Nc_exp,      & ! Constant(s)
-        C_evap,              &
-        l_var_covar_src,     & ! Flag for using variance/covariance src terms
-        l_const_Nc_in_cloud    ! Flag to use a constant value of N_c within cloud
+      KK_auto_Nc_exp,      & ! Constant(s)
+      C_evap,              &
+      l_var_covar_src,     & ! Flag for using variance/covariance src terms
+      l_const_Nc_in_cloud    ! Flag to use a constant value of N_c within cloud
 
     use KK_utilities, only: &
-        G_T_p  ! Procedure(s)
+      G_T_p  ! Procedure(s)
 
     use KK_local_means, only: &
-        KK_mvr_local_mean,  & ! Procedure(s)
-        KK_evap_local_mean, &
-        KK_auto_local_mean, &
-        KK_accr_local_mean
+      KK_mvr_local_mean,  & ! Procedure(s)
+      KK_evap_local_mean, &
+      KK_auto_local_mean, &
+      KK_accr_local_mean
 
     use KK_Nrm_tendencies, only: &
-        KK_Nrm_evap, & ! Procedure(s)
-        KK_Nrm_auto
+      KK_Nrm_evap, & ! Procedure(s)
+      KK_Nrm_auto
 
     use saturation, only: & 
-        sat_mixrat_liq  ! Procedure(s)
+      sat_mixrat_liq  ! Procedure(s)
 
     use array_index, only: &
-        iirrainm, & ! Constant(s)
-        iiNrm
+      iirrainm, & ! Constant(s)
+      iiNrm
 
     use pdf_parameter_module, only: &
-        pdf_parameter  ! Variable(s)
+      pdf_parameter  ! Variable(s)
 
     use parameters_model, only: &
-        hydromet_dim  ! Variable(s)
+      hydromet_dim  ! Variable(s)
 
     use clubb_precision, only: &
-        core_rknd,      & ! Variable(s)
-        time_precision
+      core_rknd,      & ! Variable(s)
+      time_precision
 
     use stats_type, only: & 
-        stat_update_var_pt  ! Procedure(s)
+      stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only: & 
-        zt,                 & ! Variable(s)
-        im_vol_rad_rain,    &
-        irrainm_cond,       &
-        irrainm_auto,       &
-        irrainm_accr,       &
-        irrainm_src_adj,    &
-        iNrm_cond,          &
-        iNrm_auto,          &
-        iNrm_src_adj
+      zt,                 & ! Variable(s)
+      im_vol_rad_rain,    &
+      irrainm_cond,       &
+      irrainm_auto,       &
+      irrainm_accr,       &
+      irrainm_src_adj,    &
+      iNrm_cond,          &
+      iNrm_auto,          &
+      iNrm_src_adj
 
     use model_flags, only: &
-        l_calc_w_corr
+      l_calc_w_corr
 
     use advance_windm_edsclrm_module, only: &
-        xpwp_fnc
+      xpwp_fnc
 
     use variables_diagnostic_module, only: &
-        Kh_zm
+      Kh_zm
 
     use parameters_tunable, only: &
-        c_Krrainm
+      c_Krrainm
 
     implicit none
 
@@ -156,12 +156,12 @@ module KK_microphys_module
       Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(in) :: &
+      target, intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
 
     ! Input / Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(inout) :: &
+      target, intent(inout) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
@@ -257,14 +257,14 @@ module KK_microphys_module
 
     ! changes by janhft 10/04/12
     real( kind = core_rknd ), dimension(nz) ::  &
-      wpsp_zm,  &  ! Covariance of s and w on the zm-grid
-      wprrp_zm, &  ! Covariance of rrain and w on the zm-grid
-      wpNrp_zm, &  ! Covariance of Nr and w on the zm-grid
-      wpNcp_zm, &  ! Covariance of Nc and w on the zm-grid
-      wpsp_zt,  &  ! Covariance of s and w on the zt-grid
-      wprrp_zt, &  ! Covariance of rrain and w on the zt-grid
-      wpNrp_zt, &  ! Covariance of Nr and w on the zt-grid
-      wpNcp_zt     ! Covariance of Nc and w on the zt-grid
+      wpsp_zm,  &  ! Covariance of s and w on the zm-grid [(m/s)(kg/kg)]
+      wprrp_zm, &  ! Covariance of rrain and w on the zm-grid [(m/s)(kg/kg)]
+      wpNrp_zm, &  ! Covariance of Nr and w on the zm-grid [(m/s)(#/kg)]
+      wpNcp_zm, &  ! Covariance of Nc and w on the zm-grid []
+      wpsp_zt,  &  ! Covariance of s and w on the zt-grid []
+      wprrp_zt, &  ! Covariance of rrain and w on the zt-grid []
+      wpNrp_zt, &  ! Covariance of Nr and w on the zt-grid []
+      wpNcp_zt     ! Covariance of Nc and w on the zt-grid []
     ! end changes by janhft 10/04/12
 
     logical :: &
@@ -301,9 +301,9 @@ module KK_microphys_module
 
 
     if ( .not. l_local_kk ) then
-       l_upscaled = .true.
+      l_upscaled = .true.
     else
-       l_upscaled = .false.
+      l_upscaled = .false.
     endif
 
     l_src_adj_enabled = .true.
@@ -315,15 +315,15 @@ module KK_microphys_module
       do k = 1, nz
         ! see clubb:ticket:514:comment:30
         wpsp_zm(k) = pdf_params(k)%mixt_frac * (1 - pdf_params(k)%mixt_frac) &
-                   * (pdf_params(k)%s1 - pdf_params(k)%s2) * (pdf_params(k)%w1 - pdf_params(k)%w2)
+          * (pdf_params(k)%s1 - pdf_params(k)%s2) * (pdf_params(k)%w1 - pdf_params(k)%w2)
       end do
 
       wprrp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), rrainm(1:nz-1), &
-                                   rrainm(2:nz), gr%invrs_dzm(1:nz-1) )
+        rrainm(2:nz), gr%invrs_dzm(1:nz-1) )
       wpNrp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Nrm(1:nz-1), & 
-                                   Nrm(2:nz), gr%invrs_dzm(1:nz-1) )
+        Nrm(2:nz), gr%invrs_dzm(1:nz-1) )
       wpNcp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncm(1:nz-1), & 
-                                   Ncm(2:nz), gr%invrs_dzm(1:nz-1) )
+        Ncm(2:nz), gr%invrs_dzm(1:nz-1) )
 
       ! Boundary conditions; We are assuming constant flux at the top.
       wprrp_zm(nz) = wprrp_zm(nz-1)
@@ -343,296 +343,296 @@ module KK_microphys_module
     ! Loop over all model thermodynamic level above the model lower boundary.
     do k = 2, nz, 1
 
-       ! Compute supersaturation via s1, s2.
-       !     Larson et al 2002, JAS, Vol 59, p 3534.
-       ! This allows a more direct comparison of local, upscaled formulas.
+      ! Compute supersaturation via s1, s2.
+      !     Larson et al 2002, JAS, Vol 59, p 3534.
+      ! This allows a more direct comparison of local, upscaled formulas.
 
-       ! Liquid water temperature.
-       T_liq_in_K = thlm(k) * exner(k)
+      ! Liquid water temperature.
+      T_liq_in_K = thlm(k) * exner(k)
 
-       ! Saturation mixing ratio (based on liquid water temperature and
-       ! pressure), r_sl = r_s(T_l,p).
-       r_sl = sat_mixrat_liq( p_in_Pa(k), T_liq_in_K )
+      ! Saturation mixing ratio (based on liquid water temperature and
+      ! pressure), r_sl = r_s(T_l,p).
+      r_sl = sat_mixrat_liq( p_in_Pa(k), T_liq_in_K )
 
-       ! Beta(T_l).
-       Beta_Tl = (Rd/Rv) * ( Lv / ( Rd * T_liq_in_K ) )  &
-                         * ( Lv / ( Cp * T_liq_in_K ) )
+      ! Beta(T_l).
+      Beta_Tl = (Rd/Rv) * ( Lv / ( Rd * T_liq_in_K ) )  &
+        * ( Lv / ( Cp * T_liq_in_K ) )
 
-       ! Coefficient for KK evaporation.
-       KK_evap_coef = three * C_evap * G_T_p( T_liq_in_K, p_in_Pa(k) )   &
-                            * ( four_thirds * pi * rho_lw )**two_thirds  &
-                            * ( ( one + Beta_Tl * r_sl ) / r_sl )
+      ! Coefficient for KK evaporation.
+      KK_evap_coef = three * C_evap * G_T_p( T_liq_in_K, p_in_Pa(k) )   &
+        * ( four_thirds * pi * rho_lw )**two_thirds  &
+        * ( ( one + Beta_Tl * r_sl ) / r_sl )
 
-       ! Coefficient for KK autoconversion.
-       KK_auto_coef = 1350.0_core_rknd * ( rho(k) / cm3_per_m3 )**KK_auto_Nc_exp
+      ! Coefficient for KK autoconversion.
+      KK_auto_coef = 1350.0_core_rknd * ( rho(k) / cm3_per_m3 )**KK_auto_Nc_exp
 
-       ! Coefficient for KK accretion.
-       KK_accr_coef = 67.0_core_rknd
+      ! Coefficient for KK accretion.
+      KK_accr_coef = 67.0_core_rknd
 
-       ! Coefficient for KK rain drop mean volume radius.
-       KK_mvr_coef = ( four_thirds * pi * rho_lw )**(-one_third)
+      ! Coefficient for KK rain drop mean volume radius.
+      KK_mvr_coef = ( four_thirds * pi * rho_lw )**(-one_third)
 
-       !!! KK rain water mixing ratio microphysics tendencies.
-       if ( l_upscaled ) then
+      !!! KK rain water mixing ratio microphysics tendencies.
+      if ( l_upscaled ) then
 
-          call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), & ! Intent(in)
-                                  Ncm(k), pdf_params(k), &
-                                  wpsp_zt(k), wprrp_zt(k), wpNrp_zt(k), wpNcp_zt(k), &
-                                  w_std_dev(k), k, &
-                                  mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, & ! Intent(out)
-                                  mu_Nc_n, sigma_s_1, sigma_s_2, &
-                                  sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &  
-                                  corr_srr_1, corr_srr_1_n, corr_srr_2_n, &
-                                  corr_sNr_1, corr_sNr_1_n, corr_sNr_2_n, &
-                                  corr_sNc_1, corr_sNc_1_n, corr_sNc_2_n, &
-                                  corr_rrNr, corr_rrNr_n, &
-                                  corr_sw, corr_wrr, corr_wNr, corr_wNc, &
-                                  mixt_frac )
+        call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), & ! Intent(in)
+          Ncm(k), pdf_params(k), &
+          wpsp_zt(k), wprrp_zt(k), wpNrp_zt(k), wpNcp_zt(k), &
+          w_std_dev(k), k, &
+          mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, & ! Intent(out)
+          mu_Nc_n, sigma_s_1, sigma_s_2, &
+          sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+          corr_srr_1, corr_srr_1_n, corr_srr_2_n, &
+          corr_sNr_1, corr_sNr_1_n, corr_sNr_2_n, &
+          corr_sNc_1, corr_sNc_1_n, corr_sNc_2_n, &
+          corr_rrNr, corr_rrNr_n, &
+          corr_sw, corr_wrr, corr_wNr, corr_wNc, &
+          mixt_frac )
 
 
-          call KK_stat_output( corr_srr_1, corr_sNr_1,  &
-                               corr_sNc_1, corr_rrNr, &
-                               corr_sw, corr_wrr, corr_wNr, corr_wNc, &
-                               k )
+        call KK_stat_output( corr_srr_1, corr_sNr_1,  &
+          corr_sNc_1, corr_rrNr, &
+          corr_sw, corr_wrr, corr_wNr, corr_wNc, &
+          k )
 
-          !!! Calculate the values of the upscaled KK microphysics tendencies.
-          call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
-                                         mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
-                                         mu_Nc_n, sigma_s_1, sigma_s_2, &
-                                         sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
-                                         corr_srr_1_n, corr_srr_2_n, &
-                                         corr_sNr_1_n, corr_sNr_2_n, &
-                                         corr_sNc_1_n, corr_sNc_2_n, &
-                                         corr_rrNr_n,  mixt_frac, &
-                                         Nc0_in_cloud(k), l_const_Nc_in_cloud, &
-                                         KK_evap_coef, KK_auto_coef, &
-                                         KK_accr_coef, KK_mvr_coef, &
-                                         KK_evap_tndcy(k), KK_auto_tndcy(k), &
-                                         KK_accr_tndcy(k), KK_mean_vol_rad(k) )
+        !!! Calculate the values of the upscaled KK microphysics tendencies.
+        call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
+          mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+          mu_Nc_n, sigma_s_1, sigma_s_2, &
+          sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+          corr_srr_1_n, corr_srr_2_n, &
+          corr_sNr_1_n, corr_sNr_2_n, &
+          corr_sNc_1_n, corr_sNc_2_n, &
+          corr_rrNr_n,  mixt_frac, &
+          Nc0_in_cloud(k), l_const_Nc_in_cloud, &
+          KK_evap_coef, KK_auto_coef, &
+          KK_accr_coef, KK_mvr_coef, &
+          KK_evap_tndcy(k), KK_auto_tndcy(k), &
+          KK_accr_tndcy(k), KK_mean_vol_rad(k) )
           
 
-          if ( l_var_covar_src ) then
+        if ( l_var_covar_src ) then
 
-            call KK_upscaled_covar_driver( wm_zt(k), exner(k), rcm(k),  &
-                                           rrainm(k), Nrm(k), Ncm(k), &
-                                           mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
-                                           mu_Nc_n, sigma_s_1, sigma_s_2, &
-                                           sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
-                                           corr_srr_1_n, corr_srr_2_n, &
-                                           corr_sNr_1_n, corr_sNr_2_n, &
-                                           corr_sNc_1_n, corr_sNc_2_n, &
-                                           corr_rrNr_n,  mixt_frac, &
-                                           Nc0_in_cloud(k), l_const_Nc_in_cloud, &
-                                           KK_evap_coef, KK_auto_coef, &
-                                           KK_accr_coef, KK_evap_tndcy(k), &
-                                           KK_auto_tndcy(k), KK_accr_tndcy(k), &
-                                           pdf_params(k), k, l_stats_samp, &
-                                           wprtp_mc_tndcy_zt(k), &
-                                           wpthlp_mc_tndcy_zt(k), &
-                                           rtp2_mc_tndcy_zt(k), &
-                                           thlp2_mc_tndcy_zt(k), &
-                                           rtpthlp_mc_tndcy_zt(k) )
+          call KK_upscaled_covar_driver( wm_zt(k), exner(k), rcm(k),  &
+            rrainm(k), Nrm(k), Ncm(k), &
+            mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+            mu_Nc_n, sigma_s_1, sigma_s_2, &
+            sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+            corr_srr_1_n, corr_srr_2_n, &
+            corr_sNr_1_n, corr_sNr_2_n, &
+            corr_sNc_1_n, corr_sNc_2_n, &
+            corr_rrNr_n,  mixt_frac, &
+            Nc0_in_cloud(k), l_const_Nc_in_cloud, &
+            KK_evap_coef, KK_auto_coef, &
+            KK_accr_coef, KK_evap_tndcy(k), &
+            KK_auto_tndcy(k), KK_accr_tndcy(k), &
+            pdf_params(k), k, l_stats_samp, &
+            wprtp_mc_tndcy_zt(k), &
+            wpthlp_mc_tndcy_zt(k), &
+            rtp2_mc_tndcy_zt(k), &
+            thlp2_mc_tndcy_zt(k), &
+            rtpthlp_mc_tndcy_zt(k) )
 
-          endif
-
-
-       else  ! local KK
-
-          !!! Calculate the local KK rain drop mean volume radius.
-          if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
-
-             KK_mean_vol_rad(k)  &
-             = KK_mvr_local_mean( rrainm(k), Nrm(k), KK_mvr_coef )
-
-          else  ! r_r or N_r = 0.
-
-             KK_mean_vol_rad(k) = zero
-
-          endif
-
-          !!! Calculate the values of the local KK microphysics tendencies.
-
-          !!! Calculate the local KK evaporation tendency.
-          if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
-
-             KK_evap_tndcy(k)  &
-             = KK_evap_local_mean( s_mellor(k), rrainm(k), Nrm(k), &
-                                   KK_evap_coef )
-
-          else  ! r_r or N_r = 0.
-
-             KK_evap_tndcy(k) = zero
-
-          endif
-
-          !!! Calculate the local KK autoconversion tendency.
-          if ( Ncm(k) > Nc_tol ) then
-
-             KK_auto_tndcy(k)  &
-             = KK_auto_local_mean( s_mellor(k), Ncm(k), KK_auto_coef )
-
-          else  ! N_c = 0.
-
-             KK_auto_tndcy(k) = zero
-
-          endif
-
-          !!! Calculate the local KK accretion tendency.
-          if ( rrainm(k) > rr_tol ) then
-
-             KK_accr_tndcy(k)  &
-             = KK_accr_local_mean( s_mellor(k), rrainm(k), KK_accr_coef )
-
-          else  ! r_r = 0.
-
-             KK_accr_tndcy(k) = zero
-
-          endif
+        endif
 
 
-       endif ! l_upscaled
+      else  ! local KK
+
+        !!! Calculate the local KK rain drop mean volume radius.
+        if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+
+          KK_mean_vol_rad(k)  &
+            = KK_mvr_local_mean( rrainm(k), Nrm(k), KK_mvr_coef )
+
+        else  ! r_r or N_r = 0.
+
+          KK_mean_vol_rad(k) = zero
+
+        endif
+
+        !!! Calculate the values of the local KK microphysics tendencies.
+
+        !!! Calculate the local KK evaporation tendency.
+        if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+
+          KK_evap_tndcy(k)  &
+            = KK_evap_local_mean( s_mellor(k), rrainm(k), Nrm(k), &
+            KK_evap_coef )
+
+        else  ! r_r or N_r = 0.
+
+          KK_evap_tndcy(k) = zero
+
+        endif
+
+        !!! Calculate the local KK autoconversion tendency.
+        if ( Ncm(k) > Nc_tol ) then
+
+          KK_auto_tndcy(k)  &
+            = KK_auto_local_mean( s_mellor(k), Ncm(k), KK_auto_coef )
+
+        else  ! N_c = 0.
+
+          KK_auto_tndcy(k) = zero
+
+        endif
+
+        !!! Calculate the local KK accretion tendency.
+        if ( rrainm(k) > rr_tol ) then
+
+          KK_accr_tndcy(k)  &
+            = KK_accr_local_mean( s_mellor(k), rrainm(k), KK_accr_coef )
+
+        else  ! r_r = 0.
+
+          KK_accr_tndcy(k) = zero
+
+        endif
 
 
-       !!! KK rain drop concentration microphysics tendencies.
+      endif ! l_upscaled
 
-       !!! Calculate the KK N_r evaporation tendency.
-       if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
-          KK_Nrm_evap_tndcy(k)  &
+      !!! KK rain drop concentration microphysics tendencies.
+
+      !!! Calculate the KK N_r evaporation tendency.
+      if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+
+        KK_Nrm_evap_tndcy(k)  &
           = KK_Nrm_evap( KK_evap_tndcy(k), Nrm(k), rrainm(k) )
 
-       else  ! r_r or N_r = 0.
+      else  ! r_r or N_r = 0.
 
-          KK_Nrm_evap_tndcy(k) = zero
+        KK_Nrm_evap_tndcy(k) = zero
 
-       endif
+      endif
 
-       !!! Calculate the KK N_r autoconversion tendency.
-       KK_Nrm_auto_tndcy(k) = KK_Nrm_auto( KK_auto_tndcy(k) )
-
-
-       ! Statistics
-       if ( l_stats_samp ) then
-
-          ! Rain drop mean volume radius.
-          call stat_update_var_pt( im_vol_rad_rain, k, KK_mean_vol_rad(k), zt )
-
-          ! Explicit contributions to rrainm.
-          call stat_update_var_pt( irrainm_cond, k, KK_evap_tndcy(k), zt )
-
-          call stat_update_var_pt( irrainm_auto, k, KK_auto_tndcy(k), zt )
-
-          call stat_update_var_pt( irrainm_accr, k, KK_accr_tndcy(k), zt )
-
-          ! Explicit contributions to Nrm.
-          call stat_update_var_pt( iNrm_cond, k, KK_Nrm_evap_tndcy(k), zt )
-
-          call stat_update_var_pt( iNrm_auto, k, KK_Nrm_auto_tndcy(k), zt )
-
-       endif  ! l_stats_samp
+      !!! Calculate the KK N_r autoconversion tendency.
+      KK_Nrm_auto_tndcy(k) = KK_Nrm_auto( KK_auto_tndcy(k) )
 
 
-       !!! Source-adjustment code for rrainm and Nrm.
+      ! Statistics
+      if ( l_stats_samp ) then
 
-       rrainm_source = KK_auto_tndcy(k) + KK_accr_tndcy(k)
-       Nrm_source = KK_Nrm_auto_tndcy(k)
+        ! Rain drop mean volume radius.
+        call stat_update_var_pt( im_vol_rad_rain, k, KK_mean_vol_rad(k), zt )
 
-       ! The increase of rain due to autoconversion and accretion both draw
-       ! their water from the available cloud water.  Over a long time step
-       ! these rates may over-deplete cloud water.  In other words, these
-       ! processes may draw more cloud water than there is available.  Thus,
-       ! the total source rate multiplied by the time step length cannot exceed
-       ! the total amount of cloud water available.  If it does, then the rate
-       ! must be adjusted.
-       total_rc_needed = rrainm_source * real( dt, kind = core_rknd )
+        ! Explicit contributions to rrainm.
+        call stat_update_var_pt( irrainm_cond, k, KK_evap_tndcy(k), zt )
 
-       if ( total_rc_needed > rcm(k) .and. l_src_adj_enabled ) then
+        call stat_update_var_pt( irrainm_auto, k, KK_auto_tndcy(k), zt )
 
-          ! The maximum allowable rate of the source terms is rcm/dt.
-          rrainm_src_max = rcm(k) / real( dt, kind = core_rknd )
+        call stat_update_var_pt( irrainm_accr, k, KK_accr_tndcy(k), zt )
 
-          ! The amount of adjustment to the source terms.
-          ! This value should always be negative.
-          rrainm_src_adj(k) = rrainm_src_max - rrainm_source
+        ! Explicit contributions to Nrm.
+        call stat_update_var_pt( iNrm_cond, k, KK_Nrm_evap_tndcy(k), zt )
 
-          ! Reset the value of the source terms to the maximum allowable value
-          ! of the source terms.
-          rrainm_source = rrainm_src_max
+        call stat_update_var_pt( iNrm_auto, k, KK_Nrm_auto_tndcy(k), zt )
 
-          ! The rrainm source terms are made up of autoconversion and accretion.
-          ! Only the sum of those two terms is corrected.  However, Nrm has only
-          ! an autoconversion term for a source term.  Figure that change in the
-          ! rrainm autoconversion term is proportional to to the total rrainm
-          ! adjustment rate by the ratio of rrainm autoconversion to the overall
-          ! source term.  Then, plug the rrainm autoconversion adjustment into
-          ! the equation for Nrm autoconversion to determine the effect on the
-          ! Nrm source term.
-          rrainm_auto_ratio = KK_auto_tndcy(k) /  &
-                              ( KK_auto_tndcy(k) + KK_accr_tndcy(k) )
-          Nrm_src_adj(k) = KK_Nrm_auto( rrainm_auto_ratio * rrainm_src_adj(k) )
-
-          ! Change Nrm by Nrm_src_adj.  Nrm_src_adj will always be negative.
-          Nrm_source = Nrm_source + Nrm_src_adj(k)
-
-       else
-
-          rrainm_src_adj(k) = zero
-          Nrm_src_adj(k)    = zero
-
-       endif
-
-       if ( l_stats_samp ) then
-
-          call stat_update_var_pt( irrainm_src_adj, k, rrainm_src_adj(k), zt )
-
-          call stat_update_var_pt( iNrm_src_adj, k, Nrm_src_adj(k), zt )
-
-       endif ! l_stats_samp
+      endif  ! l_stats_samp
 
 
-       !!! Calculate overall KK microphysics tendencies.
-       rrainm_mc_tndcy(k) = KK_evap_tndcy(k) + rrainm_source
-       Nrm_mc_tndcy(k)    = KK_Nrm_evap_tndcy(k) + Nrm_source
+      !!! Source-adjustment code for rrainm and Nrm.
 
-       !!! Explicit contributions to thlm and rtm from the microphysics
-       rvm_mc(k)  = -KK_evap_tndcy(k)
-       rcm_mc(k)  = -rrainm_source  ! Accretion + Autoconversion
-       thlm_mc(k) = ( Lv / ( Cp * exner(k) ) ) * rrainm_mc_tndcy(k)
+      rrainm_source = KK_auto_tndcy(k) + KK_accr_tndcy(k)
+      Nrm_source = KK_Nrm_auto_tndcy(k)
+
+      ! The increase of rain due to autoconversion and accretion both draw
+      ! their water from the available cloud water.  Over a long time step
+      ! these rates may over-deplete cloud water.  In other words, these
+      ! processes may draw more cloud water than there is available.  Thus,
+      ! the total source rate multiplied by the time step length cannot exceed
+      ! the total amount of cloud water available.  If it does, then the rate
+      ! must be adjusted.
+      total_rc_needed = rrainm_source * real( dt, kind = core_rknd )
+
+      if ( total_rc_needed > rcm(k) .and. l_src_adj_enabled ) then
+
+        ! The maximum allowable rate of the source terms is rcm/dt.
+        rrainm_src_max = rcm(k) / real( dt, kind = core_rknd )
+
+        ! The amount of adjustment to the source terms.
+        ! This value should always be negative.
+        rrainm_src_adj(k) = rrainm_src_max - rrainm_source
+
+        ! Reset the value of the source terms to the maximum allowable value
+        ! of the source terms.
+        rrainm_source = rrainm_src_max
+
+        ! The rrainm source terms are made up of autoconversion and accretion.
+        ! Only the sum of those two terms is corrected.  However, Nrm has only
+        ! an autoconversion term for a source term.  Figure that change in the
+        ! rrainm autoconversion term is proportional to to the total rrainm
+        ! adjustment rate by the ratio of rrainm autoconversion to the overall
+        ! source term.  Then, plug the rrainm autoconversion adjustment into
+        ! the equation for Nrm autoconversion to determine the effect on the
+        ! Nrm source term.
+        rrainm_auto_ratio = KK_auto_tndcy(k) /  &
+          ( KK_auto_tndcy(k) + KK_accr_tndcy(k) )
+        Nrm_src_adj(k) = KK_Nrm_auto( rrainm_auto_ratio * rrainm_src_adj(k) )
+
+        ! Change Nrm by Nrm_src_adj.  Nrm_src_adj will always be negative.
+        Nrm_source = Nrm_source + Nrm_src_adj(k)
+
+      else
+
+        rrainm_src_adj(k) = zero
+        Nrm_src_adj(k)    = zero
+
+      endif
+
+      if ( l_stats_samp ) then
+
+        call stat_update_var_pt( irrainm_src_adj, k, rrainm_src_adj(k), zt )
+
+        call stat_update_var_pt( iNrm_src_adj, k, Nrm_src_adj(k), zt )
+
+      endif ! l_stats_samp
+
+
+      !!! Calculate overall KK microphysics tendencies.
+      rrainm_mc_tndcy(k) = KK_evap_tndcy(k) + rrainm_source
+      Nrm_mc_tndcy(k)    = KK_Nrm_evap_tndcy(k) + Nrm_source
+
+      !!! Explicit contributions to thlm and rtm from the microphysics
+      rvm_mc(k)  = -KK_evap_tndcy(k)
+      rcm_mc(k)  = -rrainm_source  ! Accretion + Autoconversion
+      thlm_mc(k) = ( Lv / ( Cp * exner(k) ) ) * rrainm_mc_tndcy(k)
 
     enddo  ! Microphysics tendency loop: k = 2, nz, 1
 
 
     if ( l_upscaled .and. l_var_covar_src ) then
 
-       ! Output microphysics tendency terms for
-       ! model variances and covariances on momentum levels.
-       wprtp_mc_tndcy   = zt2zm( wprtp_mc_tndcy_zt )
-       wpthlp_mc_tndcy  = zt2zm( wpthlp_mc_tndcy_zt )
-       rtp2_mc_tndcy    = zt2zm( rtp2_mc_tndcy_zt )
-       thlp2_mc_tndcy   = zt2zm( thlp2_mc_tndcy_zt )
-       rtpthlp_mc_tndcy = zt2zm( rtpthlp_mc_tndcy_zt )
+      ! Output microphysics tendency terms for
+      ! model variances and covariances on momentum levels.
+      wprtp_mc_tndcy   = zt2zm( wprtp_mc_tndcy_zt )
+      wpthlp_mc_tndcy  = zt2zm( wpthlp_mc_tndcy_zt )
+      rtp2_mc_tndcy    = zt2zm( rtp2_mc_tndcy_zt )
+      thlp2_mc_tndcy   = zt2zm( thlp2_mc_tndcy_zt )
+      rtpthlp_mc_tndcy = zt2zm( rtpthlp_mc_tndcy_zt )
 
-       ! Set values of microphysics tendency terms to 0 at model lower boundary.
-       wprtp_mc_tndcy(1)   = zero
-       wpthlp_mc_tndcy(1)  = zero
-       rtp2_mc_tndcy(1)    = zero
-       thlp2_mc_tndcy(1)   = zero
-       rtpthlp_mc_tndcy(1) = zero
-       ! Set values of microphysics tendency terms to 0 at model upper boundary.
-       wprtp_mc_tndcy(nz)   = zero
-       wpthlp_mc_tndcy(nz)  = zero
-       rtp2_mc_tndcy(nz)    = zero
-       thlp2_mc_tndcy(nz)   = zero
-       rtpthlp_mc_tndcy(nz) = zero
+      ! Set values of microphysics tendency terms to 0 at model lower boundary.
+      wprtp_mc_tndcy(1)   = zero
+      wpthlp_mc_tndcy(1)  = zero
+      rtp2_mc_tndcy(1)    = zero
+      thlp2_mc_tndcy(1)   = zero
+      rtpthlp_mc_tndcy(1) = zero
+      ! Set values of microphysics tendency terms to 0 at model upper boundary.
+      wprtp_mc_tndcy(nz)   = zero
+      wpthlp_mc_tndcy(nz)  = zero
+      rtp2_mc_tndcy(nz)    = zero
+      thlp2_mc_tndcy(nz)   = zero
+      rtpthlp_mc_tndcy(nz) = zero
 
     else
 
-       ! Set values to 0.
-       wprtp_mc_tndcy   = zero
-       wpthlp_mc_tndcy  = zero
-       rtp2_mc_tndcy    = zero
-       thlp2_mc_tndcy   = zero
-       rtpthlp_mc_tndcy = zero
+      ! Set values to 0.
+      wprtp_mc_tndcy   = zero
+      wpthlp_mc_tndcy  = zero
+      rtp2_mc_tndcy    = zero
+      thlp2_mc_tndcy   = zero
+      rtpthlp_mc_tndcy = zero
 
     endif
 
@@ -663,23 +663,23 @@ module KK_microphys_module
     !!! Sedimentation velocities
     forall ( k = 1:nz-1 )
 
-       ! Sedimentation velocity of rrainm.
-!       Vrr(k) = 0.012_core_rknd * ( micron_per_m * zt2zm(KK_mean_vol_rad,k) ) &
-!                - 0.2_core_rknd
-       Vrr(k) = 0.012_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) )  &
-                - 0.2_core_rknd
+      ! Sedimentation velocity of rrainm.
+      !       Vrr(k) = 0.012_core_rknd * ( micron_per_m * zt2zm(KK_mean_vol_rad,k) ) &
+      !                - 0.2_core_rknd
+      Vrr(k) = 0.012_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) )  &
+        - 0.2_core_rknd
 
-       ! Sedimentation velocity is positive upwards.
-       Vrr(k) = -max( Vrr(k), zero )
+      ! Sedimentation velocity is positive upwards.
+      Vrr(k) = -max( Vrr(k), zero )
 
-       ! Sedimentation velocity of Nrm.
-!       VNr(k) = 0.007_core_rknd * ( micron_per_m * zt2zm(KK_mean_vol_rad,k) ) &
-!                - 0.1_core_rknd
-       VNr(k) = 0.007_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) )  &
-                - 0.1_core_rknd
+      ! Sedimentation velocity of Nrm.
+      !       VNr(k) = 0.007_core_rknd * ( micron_per_m * zt2zm(KK_mean_vol_rad,k) ) &
+      !                - 0.1_core_rknd
+      VNr(k) = 0.007_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) )  &
+        - 0.1_core_rknd
 
-       ! Sedimentation velocity is positive upwards.
-       VNr(k) = -max( VNr(k), zero )
+      ! Sedimentation velocity is positive upwards.
+      VNr(k) = -max( VNr(k), zero )
 
     end forall ! 1..nz-1
 
@@ -697,18 +697,18 @@ module KK_microphys_module
 
   !=============================================================================
   subroutine KK_upscaled_setup( rcm, rrainm, Nrm, & ! Intent(in)
-                                Ncm, pdf_params, &
-                                wpsp, wprrp, wpNrp, wpNcp, &
-                                stdev_w, level, &   
-                                mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, & ! Intent(out)
-                                mu_Nc_n, sigma_s_1, sigma_s_2, &
-                                sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
-                                corr_srr_1, corr_srr_1_n, corr_srr_2_n, &
-                                corr_sNr_1, corr_sNr_1_n, corr_sNr_2_n, &
-                                corr_sNc_1, corr_sNc_1_n, corr_sNc_2_n, &
-                                corr_rrNr, corr_rrNr_n, &
-                                corr_sw, corr_wrr, corr_wNr, corr_wNc, &
-                                mixt_frac )
+    Ncm, pdf_params, &
+    wpsp, wprrp, wpNrp, wpNcp, &
+    stdev_w, level, &
+    mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, & ! Intent(out)
+    mu_Nc_n, sigma_s_1, sigma_s_2, &
+    sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+    corr_srr_1, corr_srr_1_n, corr_srr_2_n, &
+    corr_sNr_1, corr_sNr_1_n, corr_sNr_2_n, &
+    corr_sNc_1, corr_sNc_1_n, corr_sNc_2_n, &
+    corr_rrNr, corr_rrNr_n, &
+    corr_sw, corr_wrr, corr_wNr, corr_wNc, &
+    mixt_frac )
 
     ! Description:
 
@@ -716,65 +716,73 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        rc_tol, & ! Constant(s)
-        rr_tol, & 
-        Nr_tol, & 
-        Nc_tol, &
-        zero
+      rc_tol, & ! Constant(s)
+      rr_tol, &
+      Nr_tol, &
+      Nc_tol, &
+      zero
 
     use KK_utilities, only: &
-        mean_L2N,   & ! Procedure(s)
-        stdev_L2N,  &
-        corr_NL2NN, &
-        corr_LL2NN
+      mean_L2N,   & ! Procedure(s)
+      stdev_L2N,  &
+      corr_NL2NN, &
+      corr_LL2NN
 
     use pdf_parameter_module, only: &
-        pdf_parameter  ! Variable(s) type
+      pdf_parameter  ! Variable(s) type
 
     use parameters_microphys, only: &
-        rrp2_on_rrainm2_cloud, & ! Variable(s)
-        rrp2_on_rrainm2_below, &
-        Nrp2_on_Nrm2_cloud,    &
-        Nrp2_on_Nrm2_below,    &
-        Ncp2_on_Ncm2_cloud,    &
-        Ncp2_on_Ncm2_below
+      rrp2_on_rrainm2_cloud, & ! Variable(s)
+      rrp2_on_rrainm2_below, &
+      Nrp2_on_Nrm2_cloud,    &
+      Nrp2_on_Nrm2_below,    &
+      Ncp2_on_Ncm2_cloud,    &
+      Ncp2_on_Ncm2_below
 
     use KK_fixed_correlations, only: &
-        corr_wrr_NL_cloud,  & ! Variable(s) 
-        corr_wNr_NL_cloud,  & 
-        corr_wNc_NL_cloud,  & 
-        corr_sw_NN_cloud,   & 
-        corr_srr_NL_cloud,  & 
-        corr_sNr_NL_cloud,  &
-        corr_sNc_NL_cloud,  &
-        corr_wrr_NL_below,  & 
-        corr_wNr_NL_below,  & 
-        corr_wNc_NL_below,  & 
-        corr_sw_NN_below,   & 
-        corr_srr_NL_below,  &
-        corr_sNr_NL_below,  &
-        corr_sNc_NL_below,  &
-        corr_rrNr_LL_cloud, &
-        corr_rrNr_LL_below
+      corr_wrr_NL_cloud,  & ! Variable(s)
+      corr_wNr_NL_cloud,  &
+      corr_wNc_NL_cloud,  &
+      corr_sw_NN_cloud,   &
+      corr_srr_NL_cloud,  &
+      corr_sNr_NL_cloud,  &
+      corr_sNc_NL_cloud,  &
+      corr_wrr_NL_below,  &
+      corr_wNr_NL_below,  &
+      corr_wNc_NL_below,  &
+      corr_sw_NN_below,   &
+      corr_srr_NL_below,  &
+      corr_sNr_NL_below,  &
+      corr_sNc_NL_below,  &
+      corr_rrNr_LL_cloud, &
+      corr_rrNr_LL_below
 
     use clubb_precision, only: &
-        core_rknd  ! Variable(s)
+      core_rknd  ! Variable(s)
 
     use model_flags, only: &
-        l_diagnose_correlations, & ! Variable(s)
-        l_calc_w_corr
+      l_diagnose_correlations, & ! Variable(s)
+      l_calc_w_corr
 
     use diagnose_correlations_module, only: &
-        diagnose_KK_corr, & ! Procedure(s)
-        calc_mean, &
-        calc_w_corr
+      diagnose_KK_corr, & ! Procedure(s)
+      calc_mean, &
+      calc_w_corr
 
     use constants_clubb, only: &
-        w_tol,         & ! [m/s]
-        s_mellor_tol,  & ! [kg/kg]
-        Nc_tol,        & ! [#/kg]
-        rr_tol,        & ! [kg/kg] 
-        Nr_tol           ! [#/kg]
+      w_tol,         & ! [m/s]
+      s_mellor_tol,  & ! [kg/kg]
+      Nc_tol,        & ! [#/kg]
+      rr_tol,        & ! [kg/kg]
+      Nr_tol           ! [#/kg]
+
+    use stats_type, only: &
+        stat_update_var_pt  ! Procedure(s)
+
+    use stats_variables, only : &
+        icorr_rrNr_n, &
+        zt
+
 
     implicit none
 
@@ -848,10 +856,10 @@ module KK_microphys_module
 
     if ( l_calc_w_corr ) then
 
-          corr_sw = corr_sw_NN_cloud
-          corr_wrr = corr_wrr_NL_cloud
-          corr_wNr = corr_wNr_NL_cloud
-          corr_wNc = corr_wNc_NL_cloud
+      corr_sw = corr_sw_NN_cloud
+      corr_wrr = corr_wrr_NL_cloud
+      corr_wNr = corr_wNr_NL_cloud
+      corr_wNc = corr_wNc_NL_cloud
       
     end if
     
@@ -873,78 +881,78 @@ module KK_microphys_module
     ! used.  Otherwise, the ###_below value is used.
     if ( rcm > rc_tol ) then
 
-       rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
-       Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
-       Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
+      rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+      Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
+      Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
 
-       if ( .not. l_calc_w_corr ) then
+      if ( .not. l_calc_w_corr ) then
   
-          corr_sw = corr_sw_NN_cloud
-          corr_wrr = corr_wrr_NL_cloud
-          corr_wNr = corr_wNr_NL_cloud
-          corr_wNc = corr_wNc_NL_cloud
+        corr_sw = corr_sw_NN_cloud
+        corr_wrr = corr_wrr_NL_cloud
+        corr_wNr = corr_wNr_NL_cloud
+        corr_wNc = corr_wNc_NL_cloud
 
-       end if
+      end if
 
-       corr_rrNr       = corr_rrNr_LL_cloud
-       corr_srr_1      = corr_srr_NL_cloud
-       corr_srr_2      = corr_srr_NL_cloud
-       corr_sNr_1      = corr_sNr_NL_cloud
-       corr_sNr_2      = corr_sNr_NL_cloud
-       corr_sNc_1      = corr_sNc_NL_cloud
-       corr_sNc_2      = corr_sNc_NL_cloud
+      corr_rrNr       = corr_rrNr_LL_cloud
+      corr_srr_1      = corr_srr_NL_cloud
+      corr_srr_2      = corr_srr_NL_cloud
+      corr_sNr_1      = corr_sNr_NL_cloud
+      corr_sNr_2      = corr_sNr_NL_cloud
+      corr_sNc_1      = corr_sNc_NL_cloud
+      corr_sNc_2      = corr_sNc_NL_cloud
 
     else
 
-       rrp2_on_rrainm2 = rrp2_on_rrainm2_below
-       Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
-       Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
+      rrp2_on_rrainm2 = rrp2_on_rrainm2_below
+      Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
+      Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
 
-       if ( .not. l_calc_w_corr ) then
+      if ( .not. l_calc_w_corr ) then
   
-          corr_sw = corr_sw_NN_below
-          corr_wrr = corr_wrr_NL_below
-          corr_wNr = corr_wNr_NL_below
-          corr_wNc = corr_wNc_NL_below
+        corr_sw = corr_sw_NN_below
+        corr_wrr = corr_wrr_NL_below
+        corr_wNr = corr_wNr_NL_below
+        corr_wNc = corr_wNc_NL_below
 
-       end if
+      end if
 
-       corr_rrNr       = corr_rrNr_LL_below
-       corr_srr_1      = corr_srr_NL_below
-       corr_srr_2      = corr_srr_NL_below
-       corr_sNr_1      = corr_sNr_NL_below
-       corr_sNr_2      = corr_sNr_NL_below
-       corr_sNc_1      = corr_sNc_NL_below
-       corr_sNc_2      = corr_sNc_NL_below
+      corr_rrNr       = corr_rrNr_LL_below
+      corr_srr_1      = corr_srr_NL_below
+      corr_srr_2      = corr_srr_NL_below
+      corr_sNr_1      = corr_sNr_NL_below
+      corr_sNr_2      = corr_sNr_NL_below
+      corr_sNc_1      = corr_sNc_NL_below
+      corr_sNc_2      = corr_sNc_NL_below
 
     endif ! rcm > rc_tol
 
     if ( l_diagnose_correlations ) then
 
-       if ( l_calc_w_corr ) then
+      if ( l_calc_w_corr ) then
           
-          s_mellor_m = calc_mean( pdf_params%mixt_frac, pdf_params%s1, pdf_params%s2 )
-          stdev_s_mellor = sqrt( pdf_params%mixt_frac * ( ( pdf_params%s1 - s_mellor_m )**2 + &
-                           pdf_params%stdev_s1**2 ) + ( 1 - pdf_params%mixt_frac ) *  &
-                           ( ( pdf_params%s2 - s_mellor_m )**2 + pdf_params%stdev_s2**2 ) )
+        s_mellor_m = calc_mean( pdf_params%mixt_frac, pdf_params%s1, pdf_params%s2 )
+        stdev_s_mellor = sqrt( pdf_params%mixt_frac * ( ( pdf_params%s1 - s_mellor_m )**2 + &
+          pdf_params%stdev_s1**2 ) + ( 1 - pdf_params%mixt_frac ) *  &
+          ( ( pdf_params%s2 - s_mellor_m )**2 + pdf_params%stdev_s2**2 ) )
 
-          corr_sw  = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
-          corr_wrr = calc_w_corr( wprrp, stdev_w, sqrt(rrp2_on_rrainm2) * rrainm, w_tol, rr_tol )
-          corr_wNr = calc_w_corr( wpNrp, stdev_w, sqrt(Nrp2_on_Nrm2) * Nrm, w_tol, Nr_tol )
-          corr_wNc = calc_w_corr( wpNcp, stdev_w, sqrt(Ncp2_on_Ncm2) * Ncm, w_tol, Nc_tol )
+        corr_sw  = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
+        corr_wrr = calc_w_corr( wprrp, stdev_w, sqrt(rrp2_on_rrainm2) * rrainm, w_tol, rr_tol )
+        corr_wNr = calc_w_corr( wpNrp, stdev_w, sqrt(Nrp2_on_Nrm2) * Nrm, w_tol, Nr_tol )
+        corr_wNc = calc_w_corr( wpNcp, stdev_w, sqrt(Ncp2_on_Ncm2) * Ncm, w_tol, Nc_tol )
 
-       end if
+      end if
 
-       call diagnose_KK_corr( Ncm, rrainm, Nrm, &
-                              Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
-                              corr_sw, corr_wrr, corr_wNr, corr_wNc,  &
-                              pdf_params, &
-                              corr_rrNr, corr_srr_1, &
-                              corr_sNr_1, corr_sNc_1 ) 
+      call diagnose_KK_corr( Ncm, rrainm, Nrm, &
+        Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
+        corr_sw, corr_wrr, corr_wNr, corr_wNc,  &
+        pdf_params, &
+        corr_rrNr, corr_srr_1, &
+        corr_sNr_1, corr_sNc_1 )
 
-       corr_srr_2      = corr_srr_1
-       corr_sNr_2      = corr_sNr_1
-       corr_sNc_2      = corr_sNc_1
+      corr_srr_2      = corr_srr_1
+      corr_sNr_2      = corr_sNr_1
+      corr_sNc_2      = corr_sNc_1
 
     endif
 
@@ -954,38 +962,38 @@ module KK_microphys_module
 
     ! Normalized mean of rain water mixing ratio.
     if ( rrainm > rr_tol ) then
-       mu_rr_n = mean_L2N( rrainm, rrp2_on_rrainm2 * rrainm**2 )
+      mu_rr_n = mean_L2N( rrainm, rrp2_on_rrainm2 * rrainm**2 )
     else
-       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this
-       ! grid level.  The value of mu_rr_n should be -inf.  It will be set to
-       ! -huge for purposes of assigning it a value.  This value will not be
-       ! used again in the CLUBB code.
-       mu_rr_n = -huge( mu_rr_n )
+      ! Mean rain water mixing ratio is less than the tolerance amount.  It is
+      ! considered to have a value of 0.  There is not any rain at this
+      ! grid level.  The value of mu_rr_n should be -inf.  It will be set to
+      ! -huge for purposes of assigning it a value.  This value will not be
+      ! used again in the CLUBB code.
+      mu_rr_n = -huge( mu_rr_n )
     endif
 
     ! Normalized mean of rain drop concentration.
     if ( Nrm > Nr_tol ) then
-       mu_Nr_n = mean_L2N( Nrm, Nrp2_on_Nrm2 * Nrm**2 )
+      mu_Nr_n = mean_L2N( Nrm, Nrp2_on_Nrm2 * Nrm**2 )
     else
-       ! Mean rain drop concentration is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this
-       ! grid level.  The value of mu_Nr_n should be -inf.  It will be set to
-       ! -huge for purposes of assigning it a value.  This value will not be
-       ! used again in the CLUBB code.
-       mu_Nr_n = -huge( mu_Nr_n )
+      ! Mean rain drop concentration is less than the tolerance amount.  It is
+      ! considered to have a value of 0.  There is not any rain at this
+      ! grid level.  The value of mu_Nr_n should be -inf.  It will be set to
+      ! -huge for purposes of assigning it a value.  This value will not be
+      ! used again in the CLUBB code.
+      mu_Nr_n = -huge( mu_Nr_n )
     endif
 
     ! Normalized mean of cloud droplet concentration.
     if ( Ncm > Nc_tol ) then
-       mu_Nc_n = mean_L2N( Ncm, Ncp2_on_Ncm2 * Ncm**2 )
+      mu_Nc_n = mean_L2N( Ncm, Ncp2_on_Ncm2 * Ncm**2 )
     else
-       ! Mean cloud droplet concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There isn't any cloud at this
-       ! grid level.  The value of mu_Nc_n should be -inf.  It will be set to
-       ! -huge for purposes of assigning it a value.  This value will not be
-       ! used again in the CLUBB code.
-       mu_Nc_n = -huge( mu_Nc_n )
+      ! Mean cloud droplet concentration is less than the tolerance amount.  It
+      ! is considered to have a value of 0.  There isn't any cloud at this
+      ! grid level.  The value of mu_Nc_n should be -inf.  It will be set to
+      ! -huge for purposes of assigning it a value.  This value will not be
+      ! used again in the CLUBB code.
+      mu_Nc_n = -huge( mu_Nc_n )
     endif
 
     !!! Calculate the normalized standard deviation of variables that have
@@ -994,36 +1002,49 @@ module KK_microphys_module
 
     ! Normalized standard deviation of rain water mixing ratio.
     if ( rrainm > rr_tol ) then
-       sigma_rr_n = stdev_L2N( rrainm, rrp2_on_rrainm2 * rrainm**2 )
+      sigma_rr_n = stdev_L2N( rrainm, rrp2_on_rrainm2 * rrainm**2 )
     else
-       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The standard deviation is simply 0 since rain water mixing
-       ! ratio does not vary at this grid level.
-       sigma_rr_n = zero
+      ! Mean rain water mixing ratio is less than the tolerance amount.  It is
+      ! considered to have a value of 0.  There is not any rain at this grid
+      ! level.  The standard deviation is simply 0 since rain water mixing
+      ! ratio does not vary at this grid level.
+      sigma_rr_n = zero
     endif
 
     ! Normalized standard deviation of rain drop concentration.
     if ( Nrm > Nr_tol ) then
-       sigma_Nr_n = stdev_L2N( Nrm, Nrp2_on_Nrm2 * Nrm**2 )
+      sigma_Nr_n = stdev_L2N( Nrm, Nrp2_on_Nrm2 * Nrm**2 )
     else
-       ! Mean rain drop concentration is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The standard deviation is simply 0 since rain drop
-       ! concentration does not vary at this grid level.
-       sigma_Nr_n = zero
+      ! Mean rain drop concentration is less than the tolerance amount.  It is
+      ! considered to have a value of 0.  There is not any rain at this grid
+      ! level.  The standard deviation is simply 0 since rain drop
+      ! concentration does not vary at this grid level.
+      sigma_Nr_n = zero
     endif
 
     ! Normalized standard deviation of cloud droplet concentration.
     if ( Ncm > Nc_tol ) then
-       sigma_Nc_n = stdev_L2N( Ncm, Ncp2_on_Ncm2 * Ncm**2 )
+      sigma_Nc_n = stdev_L2N( Ncm, Ncp2_on_Ncm2 * Ncm**2 )
     else
-       ! Mean cloud droplet concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There is not any cloud at this
-       ! grid level.  The standard deviation is simply 0 since cloud droplet
-       ! concentration does not vary at this grid level.
-       sigma_Nc_n = zero
+      ! Mean cloud droplet concentration is less than the tolerance amount.  It
+      ! is considered to have a value of 0.  There is not any cloud at this
+      ! grid level.  The standard deviation is simply 0 since cloud droplet
+      ! concentration does not vary at this grid level.
+      sigma_Nc_n = zero
     endif
+
+    ! <janhft> 11/12/12
+    print *, "============================"
+    print *, "rrainm = ", rrainm
+    print *, "Nrm = ", Nrm
+    print *, "corr_sw = ", corr_sw
+    print *, "corr_wrr = ", corr_wrr
+    print *, "corr_wNr = ", corr_wNr
+    print *, "corr_wNc = ", corr_wNc
+    print *, "corr_srr_1 = ", corr_srr_1
+    print *, "corr_sNr_1 = ", corr_sNr_1
+    print *, "corr_sNc_1 = ", corr_sNc_1
+    print *, "corr_rrNr = ", corr_rrNr
 
     !!! Calculate the normalized correlation between variables that have
     !!! an assumed normal distribution and variables that have an assumed
@@ -1033,58 +1054,58 @@ module KK_microphys_module
 
     if ( rrainm > rr_tol ) then
 
-       ! Normalize the correlation between s and r_r in PDF component 1.
-       corr_srr_1_n = corr_NL2NN( corr_srr_1, sigma_rr_n )
+      ! Normalize the correlation between s and r_r in PDF component 1.
+      corr_srr_1_n = corr_NL2NN( corr_srr_1, sigma_rr_n )
 
-       ! Normalize the correlation between s and r_r in PDF component 2.
-       corr_srr_2_n = corr_NL2NN( corr_srr_2, sigma_rr_n )
+      ! Normalize the correlation between s and r_r in PDF component 2.
+      corr_srr_2_n = corr_NL2NN( corr_srr_2, sigma_rr_n )
 
     else
 
-       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The correlations involving rain water mixing ratio are 0 since
-       ! rain water mixing ratio does not vary at this grid level.
-       corr_srr_1_n = zero
-       corr_srr_2_n = zero
+      ! Mean rain water mixing ratio is less than the tolerance amount.  It is
+      ! considered to have a value of 0.  There is not any rain at this grid
+      ! level.  The correlations involving rain water mixing ratio are 0 since
+      ! rain water mixing ratio does not vary at this grid level.
+      corr_srr_1_n = zero
+      corr_srr_2_n = zero
 
     endif
 
     if ( Nrm > Nr_tol ) then
 
-       ! Normalize the correlation between s and N_r in PDF component 1.
-       corr_sNr_1_n = corr_NL2NN( corr_sNr_1, sigma_Nr_n )
+      ! Normalize the correlation between s and N_r in PDF component 1.
+      corr_sNr_1_n = corr_NL2NN( corr_sNr_1, sigma_Nr_n )
 
-       ! Normalize the correlation between s and N_r in PDF component 2.
-       corr_sNr_2_n = corr_NL2NN( corr_sNr_2, sigma_Nr_n )
+      ! Normalize the correlation between s and N_r in PDF component 2.
+      corr_sNr_2_n = corr_NL2NN( corr_sNr_2, sigma_Nr_n )
 
     else
 
-       ! Mean rain drop concentration is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The correlations involving rain drop concentration are 0 since
-       ! rain drop concentration does not vary at this grid level.
-       corr_sNr_1_n = zero
-       corr_sNr_2_n = zero
+      ! Mean rain drop concentration is less than the tolerance amount.  It is
+      ! considered to have a value of 0.  There is not any rain at this grid
+      ! level.  The correlations involving rain drop concentration are 0 since
+      ! rain drop concentration does not vary at this grid level.
+      corr_sNr_1_n = zero
+      corr_sNr_2_n = zero
 
     endif
 
     if ( Ncm > Nc_tol ) then
 
-       ! Normalize the correlation between s and N_c in PDF component 1.
-       corr_sNc_1_n = corr_NL2NN( corr_sNc_1, sigma_Nc_n )
+      ! Normalize the correlation between s and N_c in PDF component 1.
+      corr_sNc_1_n = corr_NL2NN( corr_sNc_1, sigma_Nc_n )
 
-       ! Normalize the correlation between s and N_c in PDF component 2.
-       corr_sNc_2_n = corr_NL2NN( corr_sNc_2, sigma_Nc_n )
+      ! Normalize the correlation between s and N_c in PDF component 2.
+      corr_sNc_2_n = corr_NL2NN( corr_sNc_2, sigma_Nc_n )
 
     else
 
-       ! Mean cloud droplet concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There is not any cloud at this
-       ! grid level.  The correlations involving cloud droplet concentration are
-       ! 0 since cloud droplet concentration does not vary at this grid level.
-       corr_sNc_1_n = zero
-       corr_sNc_2_n = zero
+      ! Mean cloud droplet concentration is less than the tolerance amount.  It
+      ! is considered to have a value of 0.  There is not any cloud at this
+      ! grid level.  The correlations involving cloud droplet concentration are
+      ! 0 since cloud droplet concentration does not vary at this grid level.
+      corr_sNc_1_n = zero
+      corr_sNc_2_n = zero
 
     endif
 
@@ -1096,17 +1117,25 @@ module KK_microphys_module
     ! both PDF components).
     if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
 
-       corr_rrNr_n = corr_LL2NN( corr_rrNr, sigma_rr_n, sigma_Nr_n )
+      corr_rrNr_n = corr_LL2NN( corr_rrNr, sigma_rr_n, sigma_Nr_n )
 
     else
 
-       ! Mean rain water mixing ratio and (or) mean rain drop concentration are
-       ! (is) less than their (its) respective tolerance amount(s), and are (is)
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The correlation is 0 since rain does not vary at this grid
-       ! level.
-       corr_rrNr_n = zero
+      ! Mean rain water mixing ratio and (or) mean rain drop concentration are
+      ! (is) less than their (its) respective tolerance amount(s), and are (is)
+      ! considered to have a value of 0.  There is not any rain at this grid
+      ! level.  The correlation is 0 since rain does not vary at this grid
+      ! level.
+      corr_rrNr_n = zero
 
+    endif
+
+
+    ! <janhft> 11/12/12
+    print *, "corr_rrNr_n = ", corr_rrNr_n
+
+    if ( icorr_rrNr_n > 0 ) then
+       call stat_update_var_pt( icorr_rrNr_n, level, corr_rrNr_n, zt )
     endif
 
 
@@ -1116,8 +1145,8 @@ module KK_microphys_module
 
   !=============================================================================
   subroutine KK_stat_output( corr_srr_1, corr_sNr_1,  &
-                             corr_sNc_1, corr_rrNr, &
-                             corr_sw, corr_wrr, corr_wNr, corr_wNc, level )
+    corr_sNc_1, corr_rrNr, &
+    corr_sw, corr_wrr, corr_wNr, corr_wNc, level )
 
     ! Description:
 
@@ -1125,21 +1154,21 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-        core_rknd   ! Variable(s)
+      core_rknd   ! Variable(s)
 
     use stats_type, only: &
-        stat_update_var_pt  ! Procedure(s)
+      stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only : &
-        icorr_rrNr, &            
-        icorr_srr, &
-        icorr_sNr, &
-        icorr_sNc, &
-        icorr_sw, &
-        icorr_wrr, &
-        icorr_wNr, &
-        icorr_wNc, &
-        zt
+      icorr_rrNr, &
+      icorr_srr, &
+      icorr_sNr, &
+      icorr_sNc, &
+      icorr_sw, &
+      icorr_wrr, &
+      icorr_wNr, &
+      icorr_wNc, &
+      zt
 
     implicit none
 
@@ -1162,42 +1191,42 @@ module KK_microphys_module
 
     ! Correlation of rrain and Nrain.
     if ( icorr_rrNr > 0 ) then
-       call stat_update_var_pt( icorr_rrNr, level, corr_rrNr, zt )
+      call stat_update_var_pt( icorr_rrNr, level, corr_rrNr, zt )
     endif
 
     ! Correlation of s and rrain.
     if ( icorr_srr > 0 ) then
-       call stat_update_var_pt( icorr_srr, level, corr_srr_1, zt )
+      call stat_update_var_pt( icorr_srr, level, corr_srr_1, zt )
     endif
 
     ! Correlation of s and Nrain.
     if ( icorr_sNr > 0 ) then
-       call stat_update_var_pt( icorr_sNr, level, corr_sNc_1, zt )
+      call stat_update_var_pt( icorr_sNr, level, corr_sNc_1, zt )
     endif
 
     ! Correlation of rrain and Nrain.
     if ( icorr_sNc > 0 ) then
-       call stat_update_var_pt( icorr_sNc, level, corr_sNc_1, zt )
+      call stat_update_var_pt( icorr_sNc, level, corr_sNc_1, zt )
     endif
 
     ! Correlation of s_mellor and w.
     if ( icorr_sw > 0 ) then
-       call stat_update_var_pt( icorr_sw, level, corr_sw, zt )
+      call stat_update_var_pt( icorr_sw, level, corr_sw, zt )
     endif
 
     ! Correlation of w and rrain.
     if ( icorr_wrr > 0 ) then
-       call stat_update_var_pt( icorr_wrr, level, corr_wrr, zt )
+      call stat_update_var_pt( icorr_wrr, level, corr_wrr, zt )
     endif
 
     ! Correlation of w and Nr.
     if ( icorr_wNr > 0 ) then
-       call stat_update_var_pt( icorr_wNr, level, corr_wNr, zt )
+      call stat_update_var_pt( icorr_wNr, level, corr_wNr, zt )
     endif
 
     ! Correlation of w and Nc.
     if ( icorr_wNc > 0 ) then
-       call stat_update_var_pt( icorr_wNc, level, corr_wNc, zt )
+      call stat_update_var_pt( icorr_wNc, level, corr_wNc, zt )
     endif
 
     return
@@ -1206,18 +1235,18 @@ module KK_microphys_module
 
   !=============================================================================
   subroutine KK_upscaled_means_driver( rrainm, Nrm, Ncm, &
-                                       mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
-                                       mu_Nc_n, sigma_s_1, sigma_s_2, &
-                                       sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
-                                       corr_srr_1_n, corr_srr_2_n, &
-                                       corr_sNr_1_n, corr_sNr_2_n, &
-                                       corr_sNc_1_n, corr_sNc_2_n, &
-                                       corr_rrNr_n,  mixt_frac, &
-                                       Nc0_in_cloud, l_const_Nc_in_cloud, &
-                                       KK_evap_coef, KK_auto_coef, &
-                                       KK_accr_coef, KK_mvr_coef, &
-                                       KK_evap_tndcy, KK_auto_tndcy, &
-                                       KK_accr_tndcy, KK_mean_vol_rad )
+    mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+    mu_Nc_n, sigma_s_1, sigma_s_2, &
+    sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+    corr_srr_1_n, corr_srr_2_n, &
+    corr_sNr_1_n, corr_sNr_2_n, &
+    corr_sNc_1_n, corr_sNc_2_n, &
+    corr_rrNr_n,  mixt_frac, &
+    Nc0_in_cloud, l_const_Nc_in_cloud, &
+    KK_evap_coef, KK_auto_coef, &
+    KK_accr_coef, KK_mvr_coef, &
+    KK_evap_tndcy, KK_auto_tndcy, &
+    KK_accr_tndcy, KK_mean_vol_rad )
 
     ! Description:
 
@@ -1225,19 +1254,19 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        rr_tol, & ! Constant(s)
-        Nr_tol, & 
-        Nc_tol, &
-        zero
+      rr_tol, & ! Constant(s)
+      Nr_tol, &
+      Nc_tol, &
+      zero
 
     use KK_upscaled_means, only: & 
-        KK_evap_upscaled_mean, & ! Procedure(s)
-        KK_auto_upscaled_mean, &
-        KK_accr_upscaled_mean, &
-        KK_mvr_upscaled_mean
+      KK_evap_upscaled_mean, & ! Procedure(s)
+      KK_auto_upscaled_mean, &
+      KK_accr_upscaled_mean, &
+      KK_mvr_upscaled_mean
 
     use clubb_precision, only: &
-        core_rknd  ! Variable(s)
+      core_rknd  ! Variable(s)
 
     implicit none
 
@@ -1288,58 +1317,58 @@ module KK_microphys_module
     !!! Calculate the upscaled KK evaporation tendency.
     if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
 
-       KK_evap_tndcy  &
-       = KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
-                                sigma_s_1, sigma_s_2, sigma_rr_n, &
-                                sigma_Nr_n, corr_srr_1_n, corr_srr_2_n, &
-                                corr_sNr_1_n, corr_sNr_2_n, corr_rrNr_n, &
-                                KK_evap_coef, mixt_frac )
+      KK_evap_tndcy  &
+        = KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+        sigma_s_1, sigma_s_2, sigma_rr_n, &
+        sigma_Nr_n, corr_srr_1_n, corr_srr_2_n, &
+        corr_sNr_1_n, corr_sNr_2_n, corr_rrNr_n, &
+        KK_evap_coef, mixt_frac )
 
     else  ! r_r or N_r = 0.
 
-       KK_evap_tndcy = zero
+      KK_evap_tndcy = zero
 
     endif
 
     !!! Calculate the upscaled KK autoconversion tendency.
     if ( Ncm > Nc_tol ) then
 
-       KK_auto_tndcy  &
-       = KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_n, sigma_s_1, &
-                                sigma_s_2, sigma_Nc_n, corr_sNc_1_n, &
-                                corr_sNc_2_n, KK_auto_coef, mixt_frac, &
-                                Nc0_in_cloud, l_const_Nc_in_cloud )
+      KK_auto_tndcy  &
+        = KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_n, sigma_s_1, &
+        sigma_s_2, sigma_Nc_n, corr_sNc_1_n, &
+        corr_sNc_2_n, KK_auto_coef, mixt_frac, &
+        Nc0_in_cloud, l_const_Nc_in_cloud )
 
     else  ! N_c = 0.
 
-       KK_auto_tndcy = zero
+      KK_auto_tndcy = zero
 
     endif
 
     !!! Calculate the upscaled KK accretion tendency.
     if ( rrainm > rr_tol ) then
 
-       KK_accr_tndcy  &
-       = KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
-                                sigma_s_2, sigma_rr_n, corr_srr_1_n, &
-                                corr_srr_2_n, KK_accr_coef, mixt_frac )
+      KK_accr_tndcy  &
+        = KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
+        sigma_s_2, sigma_rr_n, corr_srr_1_n, &
+        corr_srr_2_n, KK_accr_coef, mixt_frac )
 
     else  ! r_r = 0.
 
-       KK_accr_tndcy = zero
+      KK_accr_tndcy = zero
 
     endif
 
     !!! Calculate the upscaled KK rain drop mean volume radius.
     if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
 
-       KK_mean_vol_rad &
-       = KK_mvr_upscaled_mean( mu_rr_n, mu_Nr_n, sigma_rr_n, &
-                               sigma_Nr_n, corr_rrNr_n, KK_mvr_coef )
+      KK_mean_vol_rad &
+        = KK_mvr_upscaled_mean( mu_rr_n, mu_Nr_n, sigma_rr_n, &
+        sigma_Nr_n, corr_rrNr_n, KK_mvr_coef )
 
     else  ! r_r or N_r = 0.
 
-       KK_mean_vol_rad = zero
+      KK_mean_vol_rad = zero
 
     endif
 
@@ -1350,24 +1379,24 @@ module KK_microphys_module
 
   !=============================================================================
   subroutine KK_upscaled_covar_driver( w_mean, exner, rcm, &
-                                       rrainm, Nrm, Ncm, &
-                                       mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
-                                       mu_Nc_n, sigma_s_1, sigma_s_2, &
-                                       sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
-                                       corr_srr_1_n, corr_srr_2_n, &
-                                       corr_sNr_1_n, corr_sNr_2_n, &
-                                       corr_sNc_1_n, corr_sNc_2_n, &
-                                       corr_rrNr_n,  mixt_frac, &
-                                       Nc0_in_cloud, l_const_Nc_in_cloud, &
-                                       KK_evap_coef, KK_auto_coef, &
-                                       KK_accr_coef, KK_evap_tndcy, &
-                                       KK_auto_tndcy, KK_accr_tndcy, &
-                                       pdf_params, level, l_stats_samp, &
-                                       wprtp_mc_src_tndcy, &
-                                       wpthlp_mc_src_tndcy, &
-                                       rtp2_mc_src_tndcy, &
-                                       thlp2_mc_src_tndcy, &
-                                       rtpthlp_mc_src_tndcy )
+    rrainm, Nrm, Ncm, &
+    mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
+    mu_Nc_n, sigma_s_1, sigma_s_2, &
+    sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
+    corr_srr_1_n, corr_srr_2_n, &
+    corr_sNr_1_n, corr_sNr_2_n, &
+    corr_sNc_1_n, corr_sNc_2_n, &
+    corr_rrNr_n,  mixt_frac, &
+    Nc0_in_cloud, l_const_Nc_in_cloud, &
+    KK_evap_coef, KK_auto_coef, &
+    KK_accr_coef, KK_evap_tndcy, &
+    KK_auto_tndcy, KK_accr_tndcy, &
+    pdf_params, level, l_stats_samp, &
+    wprtp_mc_src_tndcy, &
+    wpthlp_mc_src_tndcy, &
+    rtp2_mc_src_tndcy, &
+    thlp2_mc_src_tndcy, &
+    rtpthlp_mc_src_tndcy )
 
     ! Description:
 
@@ -1375,73 +1404,73 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        two,    & ! Constant(s)
-        zero,   &
-        Lv,     &
-        Cp,     &
-        w_tol,  &
-        rc_tol, &
-        rr_tol, & 
-        Nr_tol, & 
-        Nc_tol
+      two,    & ! Constant(s)
+      zero,   &
+      Lv,     &
+      Cp,     &
+      w_tol,  &
+      rc_tol, &
+      rr_tol, &
+      Nr_tol, &
+      Nc_tol
 
     use constants_clubb, only:  &
-        t_tol => t_mellor_tol  ! Constant
+      t_tol => t_mellor_tol  ! Constant
 
     use KK_upscaled_covariances, only: &
-        covar_x_KK_evap,   & ! Procedure(s)
-        covar_rt_KK_evap,  &
-        covar_thl_KK_evap, &
-        covar_x_KK_auto,   &
-        covar_rt_KK_auto,  &
-        covar_thl_KK_auto, &
-        covar_x_KK_accr,   &
-        covar_rt_KK_accr,  &
-        covar_thl_KK_accr
+      covar_x_KK_evap,   & ! Procedure(s)
+      covar_rt_KK_evap,  &
+      covar_thl_KK_evap, &
+      covar_x_KK_auto,   &
+      covar_rt_KK_auto,  &
+      covar_thl_KK_auto, &
+      covar_x_KK_accr,   &
+      covar_rt_KK_accr,  &
+      covar_thl_KK_accr
 
     use KK_utilities, only: &
-        corr_NL2NN  ! Procedure(s)
+      corr_NL2NN  ! Procedure(s)
 
     use pdf_parameter_module, only: &
-        pdf_parameter  ! Variable(s) type
+      pdf_parameter  ! Variable(s) type
 
     use KK_fixed_correlations, only: &
-        corr_wrr_NL_cloud, & ! Variable(s)
-        corr_wNr_NL_cloud, &
-        corr_wNc_NL_cloud, &
-        corr_wrr_NL_below, &
-        corr_wNr_NL_below, &
-        corr_wNc_NL_below, &
-        corr_trr_NL_cloud, &
-        corr_tNr_NL_cloud, &
-        corr_tNc_NL_cloud, &
-        corr_trr_NL_below, &
-        corr_tNr_NL_below, &
-        corr_tNc_NL_below, &
-        corr_st_NN_cloud, &
-        corr_st_NN_below
+      corr_wrr_NL_cloud, & ! Variable(s)
+      corr_wNr_NL_cloud, &
+      corr_wNc_NL_cloud, &
+      corr_wrr_NL_below, &
+      corr_wNr_NL_below, &
+      corr_wNc_NL_below, &
+      corr_trr_NL_cloud, &
+      corr_tNr_NL_cloud, &
+      corr_tNc_NL_cloud, &
+      corr_trr_NL_below, &
+      corr_tNr_NL_below, &
+      corr_tNc_NL_below, &
+      corr_st_NN_cloud, &
+      corr_st_NN_below
 
     use parameters_microphys, only: &
       l_fix_s_t_correlations ! Variable(s)
 
     use clubb_precision, only: &
-        core_rknd,      & ! Variable(s)
-        time_precision
+      core_rknd,      & ! Variable(s)
+      time_precision
 
     use stats_type, only: & 
-        stat_update_var_pt  ! Procedure(s)
+      stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only: & 
-        zt,                    & ! Variable(s)
-        iw_KK_evap_covar_zt,   &
-        irt_KK_evap_covar_zt,  &
-        ithl_KK_evap_covar_zt, &
-        iw_KK_auto_covar_zt,   &
-        irt_KK_auto_covar_zt,  &
-        ithl_KK_auto_covar_zt, &
-        iw_KK_accr_covar_zt,   &
-        irt_KK_accr_covar_zt,  &
-        ithl_KK_accr_covar_zt
+      zt,                    & ! Variable(s)
+      iw_KK_evap_covar_zt,   &
+      irt_KK_evap_covar_zt,  &
+      ithl_KK_evap_covar_zt, &
+      iw_KK_auto_covar_zt,   &
+      irt_KK_auto_covar_zt,  &
+      ithl_KK_auto_covar_zt, &
+      iw_KK_accr_covar_zt,   &
+      irt_KK_accr_covar_zt,  &
+      ithl_KK_accr_covar_zt
 
     implicit none
 
@@ -1593,19 +1622,19 @@ module KK_microphys_module
     sigma_t_2 = pdf_params%stdev_t2
 
     if ( l_fix_s_t_correlations ) then
-       if ( mu_s_1 > zero ) then
-          corr_ts_1 = corr_st_NN_cloud
-       else
-          corr_ts_1 = corr_st_NN_below
-       endif
-       if ( mu_s_2 > zero ) then
-          corr_ts_2 = corr_st_NN_cloud
-       else
-          corr_ts_2 = corr_st_NN_below
-       endif
+      if ( mu_s_1 > zero ) then
+        corr_ts_1 = corr_st_NN_cloud
+      else
+        corr_ts_1 = corr_st_NN_below
+      endif
+      if ( mu_s_2 > zero ) then
+        corr_ts_2 = corr_st_NN_cloud
+      else
+        corr_ts_2 = corr_st_NN_below
+      endif
     else
-       corr_ts_1 = pdf_params%corr_st_1
-       corr_ts_2 = pdf_params%corr_st_2
+      corr_ts_1 = pdf_params%corr_st_1
+      corr_ts_2 = pdf_params%corr_st_2
     endif
 
     crt1      = pdf_params%crt1
@@ -1630,31 +1659,31 @@ module KK_microphys_module
     ! If there is cloud at a given vertical level, then the ###_cloud value is
     ! used.  Otherwise, the ###_below value is used.
     if ( rcm > rc_tol ) then
-       corr_wrr_1 = corr_wrr_NL_cloud
-       corr_wrr_2 = corr_wrr_NL_cloud
-       corr_wNr_1 = corr_wNr_NL_cloud
-       corr_wNr_2 = corr_wNr_NL_cloud
-       corr_wNc_1 = corr_wNc_NL_cloud
-       corr_wNc_2 = corr_wNc_NL_cloud
-       corr_trr_1 = corr_trr_NL_cloud
-       corr_trr_2 = corr_trr_NL_cloud
-       corr_tNr_1 = corr_tNr_NL_cloud
-       corr_tNr_2 = corr_tNr_NL_cloud
-       corr_tNc_1 = corr_tNc_NL_cloud
-       corr_tNc_2 = corr_tNc_NL_cloud
+      corr_wrr_1 = corr_wrr_NL_cloud
+      corr_wrr_2 = corr_wrr_NL_cloud
+      corr_wNr_1 = corr_wNr_NL_cloud
+      corr_wNr_2 = corr_wNr_NL_cloud
+      corr_wNc_1 = corr_wNc_NL_cloud
+      corr_wNc_2 = corr_wNc_NL_cloud
+      corr_trr_1 = corr_trr_NL_cloud
+      corr_trr_2 = corr_trr_NL_cloud
+      corr_tNr_1 = corr_tNr_NL_cloud
+      corr_tNr_2 = corr_tNr_NL_cloud
+      corr_tNc_1 = corr_tNc_NL_cloud
+      corr_tNc_2 = corr_tNc_NL_cloud
     else
-       corr_wrr_1 = corr_wrr_NL_below
-       corr_wrr_2 = corr_wrr_NL_below
-       corr_wNr_1 = corr_wNr_NL_below
-       corr_wNr_2 = corr_wNr_NL_below
-       corr_wNc_1 = corr_wNc_NL_below
-       corr_wNc_2 = corr_wNc_NL_below
-       corr_trr_1 = corr_trr_NL_below
-       corr_trr_2 = corr_trr_NL_below
-       corr_tNr_1 = corr_tNr_NL_below
-       corr_tNr_2 = corr_tNr_NL_below
-       corr_tNc_1 = corr_tNc_NL_below
-       corr_tNc_2 = corr_tNc_NL_below
+      corr_wrr_1 = corr_wrr_NL_below
+      corr_wrr_2 = corr_wrr_NL_below
+      corr_wNr_1 = corr_wNr_NL_below
+      corr_wNr_2 = corr_wNr_NL_below
+      corr_wNc_1 = corr_wNc_NL_below
+      corr_wNc_2 = corr_wNc_NL_below
+      corr_trr_1 = corr_trr_NL_below
+      corr_trr_2 = corr_trr_NL_below
+      corr_tNr_1 = corr_tNr_NL_below
+      corr_tNr_2 = corr_tNr_NL_below
+      corr_tNc_1 = corr_tNc_NL_below
+      corr_tNc_2 = corr_tNc_NL_below
     endif
 
     !!! Calculate the normalized correlation between variables that have
@@ -1665,82 +1694,82 @@ module KK_microphys_module
 
     if ( rrainm > rr_tol ) then
 
-       ! Normalize the correlation between w and r_r in PDF component 1.
-       corr_wrr_1_n = corr_NL2NN( corr_wrr_1, sigma_rr_n )
+      ! Normalize the correlation between w and r_r in PDF component 1.
+      corr_wrr_1_n = corr_NL2NN( corr_wrr_1, sigma_rr_n )
 
-       ! Normalize the correlation between w and r_r in PDF component 2.
-       corr_wrr_2_n = corr_NL2NN( corr_wrr_2, sigma_rr_n )
+      ! Normalize the correlation between w and r_r in PDF component 2.
+      corr_wrr_2_n = corr_NL2NN( corr_wrr_2, sigma_rr_n )
 
-       ! Normalize the correlation between t and r_r in PDF component 1.
-       corr_trr_1_n = corr_NL2NN( corr_trr_1, sigma_rr_n )
+      ! Normalize the correlation between t and r_r in PDF component 1.
+      corr_trr_1_n = corr_NL2NN( corr_trr_1, sigma_rr_n )
 
-       ! Normalize the correlation between t and r_r in PDF component 2.
-       corr_trr_2_n = corr_NL2NN( corr_trr_2, sigma_rr_n )
+      ! Normalize the correlation between t and r_r in PDF component 2.
+      corr_trr_2_n = corr_NL2NN( corr_trr_2, sigma_rr_n )
 
     else
 
-       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The correlations involving rain water mixing ratio are 0 since
-       ! rain water mixing ratio does not vary at this grid level.
-       corr_wrr_1_n = zero
-       corr_wrr_2_n = zero
-       corr_trr_1_n = zero
-       corr_trr_2_n = zero
+      ! Mean rain water mixing ratio is less than the tolerance amount.  It is
+      ! considered to have a value of 0.  There is not any rain at this grid
+      ! level.  The correlations involving rain water mixing ratio are 0 since
+      ! rain water mixing ratio does not vary at this grid level.
+      corr_wrr_1_n = zero
+      corr_wrr_2_n = zero
+      corr_trr_1_n = zero
+      corr_trr_2_n = zero
 
     endif
 
     if ( Nrm > Nr_tol ) then
 
-       ! Normalize the correlation between w and N_r in PDF component 1.
-       corr_wNr_1_n = corr_NL2NN( corr_wNr_1, sigma_Nr_n )
+      ! Normalize the correlation between w and N_r in PDF component 1.
+      corr_wNr_1_n = corr_NL2NN( corr_wNr_1, sigma_Nr_n )
 
-       ! Normalize the correlation between w and N_r in PDF component 2.
-       corr_wNr_2_n = corr_NL2NN( corr_wNr_2, sigma_Nr_n )
+      ! Normalize the correlation between w and N_r in PDF component 2.
+      corr_wNr_2_n = corr_NL2NN( corr_wNr_2, sigma_Nr_n )
 
-       ! Normalize the correlation between t and N_r in PDF component 1.
-       corr_tNr_1_n = corr_NL2NN( corr_tNr_1, sigma_Nr_n )
+      ! Normalize the correlation between t and N_r in PDF component 1.
+      corr_tNr_1_n = corr_NL2NN( corr_tNr_1, sigma_Nr_n )
 
-       ! Normalize the correlation between t and N_r in PDF component 2.
-       corr_tNr_2_n = corr_NL2NN( corr_tNr_2, sigma_Nr_n )
+      ! Normalize the correlation between t and N_r in PDF component 2.
+      corr_tNr_2_n = corr_NL2NN( corr_tNr_2, sigma_Nr_n )
 
     else
 
-       ! Mean rain drop concentration is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The correlations involving rain drop concentration are 0 since
-       ! rain drop concentration does not vary at this grid level.
-       corr_wNr_1_n = zero
-       corr_wNr_2_n = zero
-       corr_tNr_1_n = zero
-       corr_tNr_2_n = zero
+      ! Mean rain drop concentration is less than the tolerance amount.  It is
+      ! considered to have a value of 0.  There is not any rain at this grid
+      ! level.  The correlations involving rain drop concentration are 0 since
+      ! rain drop concentration does not vary at this grid level.
+      corr_wNr_1_n = zero
+      corr_wNr_2_n = zero
+      corr_tNr_1_n = zero
+      corr_tNr_2_n = zero
 
     endif
 
     if ( Ncm > Nc_tol ) then
 
-       ! Normalize the correlation between s and N_c in PDF component 1.
-       corr_wNc_1_n = corr_NL2NN( corr_wNc_1, sigma_Nc_n )
+      ! Normalize the correlation between s and N_c in PDF component 1.
+      corr_wNc_1_n = corr_NL2NN( corr_wNc_1, sigma_Nc_n )
 
-       ! Normalize the correlation between s and N_c in PDF component 2.
-       corr_wNc_2_n = corr_NL2NN( corr_wNc_2, sigma_Nc_n )
+      ! Normalize the correlation between s and N_c in PDF component 2.
+      corr_wNc_2_n = corr_NL2NN( corr_wNc_2, sigma_Nc_n )
 
-       ! Normalize the correlation between t and N_c in PDF component 1.
-       corr_tNc_1_n = corr_NL2NN( corr_tNc_1, sigma_Nc_n )
+      ! Normalize the correlation between t and N_c in PDF component 1.
+      corr_tNc_1_n = corr_NL2NN( corr_tNc_1, sigma_Nc_n )
 
-       ! Normalize the correlation between t and N_c in PDF component 2.
-       corr_tNc_2_n = corr_NL2NN( corr_tNc_2, sigma_Nc_n )
+      ! Normalize the correlation between t and N_c in PDF component 2.
+      corr_tNc_2_n = corr_NL2NN( corr_tNc_2, sigma_Nc_n )
 
     else
 
-       ! Mean cloud droplet concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There is not any cloud at this
-       ! grid level.  The correlations involving cloud droplet concentration are
-       ! 0 since cloud droplet concentration does not vary at this grid level.
-       corr_wNc_1_n = zero
-       corr_wNc_2_n = zero
-       corr_tNc_1_n = zero
-       corr_tNc_2_n = zero
+      ! Mean cloud droplet concentration is less than the tolerance amount.  It
+      ! is considered to have a value of 0.  There is not any cloud at this
+      ! grid level.  The correlations involving cloud droplet concentration are
+      ! 0 since cloud droplet concentration does not vary at this grid level.
+      corr_wNc_1_n = zero
+      corr_wNc_2_n = zero
+      corr_tNc_1_n = zero
+      corr_tNc_2_n = zero
 
     endif
 
@@ -1748,19 +1777,19 @@ module KK_microphys_module
     ! Calculate the covariance of vertical velocity and KK evaporation tendency.
     if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
 
-       w_KK_evap_covar  &
-       = covar_x_KK_evap( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_rr_n, &
-                          mu_Nr_n, sigma_w_1, sigma_w_2, sigma_s_1, &
-                          sigma_s_2, sigma_rr_n, sigma_Nr_n, &
-                          corr_ws_1, corr_ws_2, corr_wrr_1_n, &
-                          corr_wrr_2_n, corr_wNr_1_n, corr_wNr_2_n, &
-                          corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                          corr_sNr_2_n, corr_rrNr_n, w_mean, &
-                          KK_evap_tndcy, KK_evap_coef, w_tol, mixt_frac )
+      w_KK_evap_covar  &
+        = covar_x_KK_evap( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_rr_n, &
+        mu_Nr_n, sigma_w_1, sigma_w_2, sigma_s_1, &
+        sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+        corr_ws_1, corr_ws_2, corr_wrr_1_n, &
+        corr_wrr_2_n, corr_wNr_1_n, corr_wNr_2_n, &
+        corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+        corr_sNr_2_n, corr_rrNr_n, w_mean, &
+        KK_evap_tndcy, KK_evap_coef, w_tol, mixt_frac )
 
     else  ! r_r or N_r = 0.
 
-       w_KK_evap_covar = zero
+      w_KK_evap_covar = zero
 
     endif
 
@@ -1768,19 +1797,19 @@ module KK_microphys_module
     ! tendency.
     if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
 
-       rt_KK_evap_covar  &
-       = covar_rt_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
-                           mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
-                           sigma_s_2, sigma_rr_n, sigma_Nr_n, &
-                           corr_ts_1, corr_ts_2, corr_trr_1_n, &
-                           corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
-                           corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                           corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
-                           KK_evap_coef, t_tol, crt1, crt2, mixt_frac )
+      rt_KK_evap_covar  &
+        = covar_rt_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+        mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
+        sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+        corr_ts_1, corr_ts_2, corr_trr_1_n, &
+        corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
+        corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+        corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
+        KK_evap_coef, t_tol, crt1, crt2, mixt_frac )
 
     else  ! r_r or N_r = 0.
 
-       rt_KK_evap_covar = zero
+      rt_KK_evap_covar = zero
 
     endif
 
@@ -1788,19 +1817,19 @@ module KK_microphys_module
     ! KK evaporation tendency.
     if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
 
-       thl_KK_evap_covar  &
-       = covar_thl_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
-                            mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
-                            sigma_s_2, sigma_rr_n, sigma_Nr_n, &
-                            corr_ts_1, corr_ts_2, corr_trr_1_n, &
-                            corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
-                            corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                            corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
-                            KK_evap_coef, t_tol, cthl1, cthl2, mixt_frac )
+      thl_KK_evap_covar  &
+        = covar_thl_KK_evap( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+        mu_Nr_n, sigma_t_1, sigma_t_2, sigma_s_1, &
+        sigma_s_2, sigma_rr_n, sigma_Nr_n, &
+        corr_ts_1, corr_ts_2, corr_trr_1_n, &
+        corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
+        corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+        corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
+        KK_evap_coef, t_tol, cthl1, cthl2, mixt_frac )
 
     else  ! r_r or N_r = 0.
 
-       thl_KK_evap_covar = zero
+      thl_KK_evap_covar = zero
 
     endif
 
@@ -1808,18 +1837,18 @@ module KK_microphys_module
     ! tendency.
     if ( Ncm > Nc_tol ) then
 
-       w_KK_auto_covar  &
-       = covar_x_KK_auto( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_Nc_n, &
-                          sigma_w_1, sigma_w_2, sigma_s_1, sigma_s_2, &
-                          sigma_Nc_n, corr_ws_1, corr_ws_2, &
-                          corr_wNc_1_n, corr_wNc_2_n, corr_sNc_1_n, &
-                          corr_sNc_2_n, w_mean, KK_auto_tndcy, &
-                          KK_auto_coef, w_tol, mixt_frac, &
-                          Nc0_in_cloud, l_const_Nc_in_cloud )
+      w_KK_auto_covar  &
+        = covar_x_KK_auto( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_Nc_n, &
+        sigma_w_1, sigma_w_2, sigma_s_1, sigma_s_2, &
+        sigma_Nc_n, corr_ws_1, corr_ws_2, &
+        corr_wNc_1_n, corr_wNc_2_n, corr_sNc_1_n, &
+        corr_sNc_2_n, w_mean, KK_auto_tndcy, &
+        KK_auto_coef, w_tol, mixt_frac, &
+        Nc0_in_cloud, l_const_Nc_in_cloud )
 
     else  ! N_c = 0.
 
-       w_KK_auto_covar = zero
+      w_KK_auto_covar = zero
 
     endif
 
@@ -1827,18 +1856,18 @@ module KK_microphys_module
     ! tendency.
     if ( Ncm > Nc_tol ) then
 
-       rt_KK_auto_covar  &
-       = covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
-                           sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                           sigma_Nc_n, corr_ts_1, corr_ts_2, &
-                           corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
-                           corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
-                           t_tol, crt1, crt2, mixt_frac, &
-                           Nc0_in_cloud, l_const_Nc_in_cloud )
+      rt_KK_auto_covar  &
+        = covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
+        sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+        sigma_Nc_n, corr_ts_1, corr_ts_2, &
+        corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
+        corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
+        t_tol, crt1, crt2, mixt_frac, &
+        Nc0_in_cloud, l_const_Nc_in_cloud )
 
     else  ! N_c = 0.
 
-       rt_KK_auto_covar = zero
+      rt_KK_auto_covar = zero
 
     endif
 
@@ -1846,35 +1875,35 @@ module KK_microphys_module
     ! KK autoconversion tendency.
     if ( Ncm > Nc_tol ) then
 
-       thl_KK_auto_covar  &
-       = covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
-                            sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                            sigma_Nc_n, corr_ts_1, corr_ts_2, &
-                            corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
-                            corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
-                            t_tol, cthl1, cthl2, mixt_frac, &
-                            Nc0_in_cloud, l_const_Nc_in_cloud )
+      thl_KK_auto_covar  &
+        = covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
+        sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+        sigma_Nc_n, corr_ts_1, corr_ts_2, &
+        corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
+        corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
+        t_tol, cthl1, cthl2, mixt_frac, &
+        Nc0_in_cloud, l_const_Nc_in_cloud )
 
     else  ! N_c = 0.
 
-       thl_KK_auto_covar = zero
+      thl_KK_auto_covar = zero
 
     endif
 
     ! Calculate the covariance of vertical velocity and KK accretion tendency.
     if ( rrainm > rr_tol ) then
 
-       w_KK_accr_covar  &
-       = covar_x_KK_accr( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_rr_n, &
-                          sigma_w_1, sigma_w_2, sigma_s_1, sigma_s_2, &
-                          sigma_rr_n, corr_ws_1, corr_ws_2, &
-                          corr_wrr_1_n, corr_wrr_2_n, corr_srr_1_n, &
-                          corr_srr_2_n, w_mean, KK_accr_tndcy, &
-                          KK_accr_coef, w_tol, mixt_frac )
+      w_KK_accr_covar  &
+        = covar_x_KK_accr( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_rr_n, &
+        sigma_w_1, sigma_w_2, sigma_s_1, sigma_s_2, &
+        sigma_rr_n, corr_ws_1, corr_ws_2, &
+        corr_wrr_1_n, corr_wrr_2_n, corr_srr_1_n, &
+        corr_srr_2_n, w_mean, KK_accr_tndcy, &
+        KK_accr_coef, w_tol, mixt_frac )
 
     else  ! r_r = 0.
 
-       w_KK_accr_covar = zero
+      w_KK_accr_covar = zero
 
     endif
 
@@ -1882,17 +1911,17 @@ module KK_microphys_module
     ! tendency.
     if ( rrainm > rr_tol ) then
 
-       rt_KK_accr_covar  &
-       = covar_rt_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
-                           sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                           sigma_rr_n, corr_ts_1, corr_ts_2, &
-                           corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
-                           corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
-                           t_tol, crt1, crt2, mixt_frac )
+      rt_KK_accr_covar  &
+        = covar_rt_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+        sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+        sigma_rr_n, corr_ts_1, corr_ts_2, &
+        corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
+        corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
+        t_tol, crt1, crt2, mixt_frac )
 
     else  ! r_r = 0.
 
-       rt_KK_accr_covar = zero
+      rt_KK_accr_covar = zero
 
     endif
 
@@ -1900,108 +1929,108 @@ module KK_microphys_module
     ! KK accretion tendency.
     if ( rrainm > rr_tol ) then
 
-       thl_KK_accr_covar  &
-       = covar_thl_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
-                            sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                            sigma_rr_n, corr_ts_1, corr_ts_2, &
-                            corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
-                            corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
-                            t_tol, cthl1, cthl2, mixt_frac )
+      thl_KK_accr_covar  &
+        = covar_thl_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+        sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
+        sigma_rr_n, corr_ts_1, corr_ts_2, &
+        corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
+        corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
+        t_tol, cthl1, cthl2, mixt_frac )
 
     else  ! r_r = 0.
 
-       thl_KK_accr_covar = zero
+      thl_KK_accr_covar = zero
 
     endif
 
 
     ! Statistics
     if ( l_stats_samp ) then
-       ! All of these covariance variables are being calculated on thermodynamic
-       ! grid levels (all inputs are on thermodynamic grid levels, so the output
-       ! is also on thermodynamic grid levels).  These covariances will be
-       ! combined in various ways to produce the microphysics tendency terms for
-       ! various model predictive variances and covariances.  These source
-       ! tendency terms will be interpolated to momentum grid levels.
+      ! All of these covariance variables are being calculated on thermodynamic
+      ! grid levels (all inputs are on thermodynamic grid levels, so the output
+      ! is also on thermodynamic grid levels).  These covariances will be
+      ! combined in various ways to produce the microphysics tendency terms for
+      ! various model predictive variances and covariances.  These source
+      ! tendency terms will be interpolated to momentum grid levels.
 
-       ! Covariance of w and KK evaporation tendency.
-       if ( iw_KK_evap_covar_zt > 0 ) then
-          call stat_update_var_pt( iw_KK_evap_covar_zt, level, &
-                                   w_KK_evap_covar, zt )
-       endif
+      ! Covariance of w and KK evaporation tendency.
+      if ( iw_KK_evap_covar_zt > 0 ) then
+        call stat_update_var_pt( iw_KK_evap_covar_zt, level, &
+          w_KK_evap_covar, zt )
+      endif
 
-       ! Covariance of r_t and KK evaporation tendency.
-       if ( irt_KK_evap_covar_zt > 0 ) then
-          call stat_update_var_pt( irt_KK_evap_covar_zt, level, &
-                                   rt_KK_evap_covar, zt )
-       endif
+      ! Covariance of r_t and KK evaporation tendency.
+      if ( irt_KK_evap_covar_zt > 0 ) then
+        call stat_update_var_pt( irt_KK_evap_covar_zt, level, &
+          rt_KK_evap_covar, zt )
+      endif
 
-       ! Covariance of theta_l and KK evaporation tendency.
-       if ( ithl_KK_evap_covar_zt > 0 ) then
-          call stat_update_var_pt( ithl_KK_evap_covar_zt, level, &
-                                   thl_KK_evap_covar, zt )
-       endif
+      ! Covariance of theta_l and KK evaporation tendency.
+      if ( ithl_KK_evap_covar_zt > 0 ) then
+        call stat_update_var_pt( ithl_KK_evap_covar_zt, level, &
+          thl_KK_evap_covar, zt )
+      endif
 
-       ! Covariance of w and KK autoconversion tendency.
-       if ( iw_KK_auto_covar_zt > 0 ) then
-          call stat_update_var_pt( iw_KK_auto_covar_zt, level, &
-                                   w_KK_auto_covar, zt )
-       endif
+      ! Covariance of w and KK autoconversion tendency.
+      if ( iw_KK_auto_covar_zt > 0 ) then
+        call stat_update_var_pt( iw_KK_auto_covar_zt, level, &
+          w_KK_auto_covar, zt )
+      endif
 
-       ! Covariance of r_t and KK autoconversion tendency.
-       if ( irt_KK_auto_covar_zt > 0 ) then
-          call stat_update_var_pt( irt_KK_auto_covar_zt, level, &
-                                   rt_KK_auto_covar, zt )
-       endif
+      ! Covariance of r_t and KK autoconversion tendency.
+      if ( irt_KK_auto_covar_zt > 0 ) then
+        call stat_update_var_pt( irt_KK_auto_covar_zt, level, &
+          rt_KK_auto_covar, zt )
+      endif
 
-       ! Covariance of theta_l and KK autoconversion tendency.
-       if ( ithl_KK_auto_covar_zt > 0 ) then
-          call stat_update_var_pt( ithl_KK_auto_covar_zt, level, &
-                                   thl_KK_auto_covar, zt )
-       endif
+      ! Covariance of theta_l and KK autoconversion tendency.
+      if ( ithl_KK_auto_covar_zt > 0 ) then
+        call stat_update_var_pt( ithl_KK_auto_covar_zt, level, &
+          thl_KK_auto_covar, zt )
+      endif
 
-       ! Covariance of w and KK accretion tendency.
-       if ( iw_KK_auto_covar_zt > 0 ) then
-          call stat_update_var_pt( iw_KK_accr_covar_zt, level, &
-                                   w_KK_accr_covar, zt )
-       endif
+      ! Covariance of w and KK accretion tendency.
+      if ( iw_KK_auto_covar_zt > 0 ) then
+        call stat_update_var_pt( iw_KK_accr_covar_zt, level, &
+          w_KK_accr_covar, zt )
+      endif
 
-       ! Covariance of r_t and KK accretion tendency.
-       if ( irt_KK_auto_covar_zt > 0 ) then
-          call stat_update_var_pt( irt_KK_accr_covar_zt, level, &
-                                   rt_KK_accr_covar, zt )
-       endif
+      ! Covariance of r_t and KK accretion tendency.
+      if ( irt_KK_auto_covar_zt > 0 ) then
+        call stat_update_var_pt( irt_KK_accr_covar_zt, level, &
+          rt_KK_accr_covar, zt )
+      endif
 
-       ! Covariance of theta_l and KK accretion tendency.
-       if ( ithl_KK_auto_covar_zt > 0 ) then
-          call stat_update_var_pt( ithl_KK_accr_covar_zt, level, &
-                                   thl_KK_accr_covar, zt )
-       endif
+      ! Covariance of theta_l and KK accretion tendency.
+      if ( ithl_KK_auto_covar_zt > 0 ) then
+        call stat_update_var_pt( ithl_KK_accr_covar_zt, level, &
+          thl_KK_accr_covar, zt )
+      endif
 
     endif ! l_stats_samp
 
 
     ! Calculate the microphysics tendency for <w'r_t'>.
     wprtp_mc_src_tndcy  &
-    = - ( w_KK_auto_covar + w_KK_accr_covar + w_KK_evap_covar )
+      = - ( w_KK_auto_covar + w_KK_accr_covar + w_KK_evap_covar )
 
     ! Calculate the microphysics tendency for <w'th_l'>.
     wpthlp_mc_src_tndcy  &
-    = ( Lv / ( Cp * exner ) )  &
+      = ( Lv / ( Cp * exner ) )  &
       * ( w_KK_auto_covar + w_KK_accr_covar + w_KK_evap_covar )
 
     ! Calculate the microphysics tendency for <r_t'^2>.
     rtp2_mc_src_tndcy  &
-    = - two * ( rt_KK_auto_covar + rt_KK_accr_covar + rt_KK_evap_covar )
+      = - two * ( rt_KK_auto_covar + rt_KK_accr_covar + rt_KK_evap_covar )
 
     ! Calculate the microphysics tendency for <th_l'^2>.
     thlp2_mc_src_tndcy  &
-    = two * ( Lv / ( Cp * exner ) )  &
-          * ( thl_KK_auto_covar + thl_KK_accr_covar + thl_KK_evap_covar )
+      = two * ( Lv / ( Cp * exner ) )  &
+      * ( thl_KK_auto_covar + thl_KK_accr_covar + thl_KK_evap_covar )
 
     ! Calculate the microphysics tendency for <r_t'th_l'>.
     rtpthlp_mc_src_tndcy  &
-    = ( Lv / ( Cp * exner ) )  &
+      = ( Lv / ( Cp * exner ) )  &
       * ( rt_KK_auto_covar + rt_KK_accr_covar + rt_KK_evap_covar )  &
       - ( thl_KK_auto_covar + thl_KK_accr_covar + thl_KK_evap_covar )
 

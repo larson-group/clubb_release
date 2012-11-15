@@ -61,7 +61,7 @@ vars_zt =
 's_mellor', 'C11_Skw_fnc',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
 'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt', 'corr_rrNr', 'corr_srr', 'corr_sNr', 'corr_sNc',
-'corr_sw', 'corr_wrr', 'corr_wNr', 'corr_wNc',
+'corr_sw', 'corr_wrr', 'corr_wNr', 'corr_wNc', 'corr_rrNr_n',
 ''
 
 vars_LH_zt =
