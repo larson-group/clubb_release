@@ -265,7 +265,7 @@ module KK_utilities
   end function corr_NL2NN_dp
 
   !=============================================================================
-  pure function corr_LL2NN( corr_xy, sigma_x_n, sigma_y_n )  &
+  function corr_LL2NN( corr_xy, sigma_x_n, sigma_y_n )  &
   result( corr_xy_n )
 
     ! Description:
