@@ -63,7 +63,7 @@ module clubb_driver
       vm_forcing, wprtp_forcing, wpthlp_forcing, &
       rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
       up2, vp2, wp3, rtp2, pdf_params, &
-      thlp2, rtpthlp, cloud_frac, &
+      thlp2, rtpthlp, cloud_frac, ice_supersat_frac, &
       rcm_in_layer, cloud_cover
 
     use variables_prognostic_module, only:  & 
@@ -1067,7 +1067,7 @@ module clubb_driver
              wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
              sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
              wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
-             rcm, wprcp, cloud_frac, &                            ! Intent(out)
+             rcm, wprcp, cloud_frac, ice_supersat_frac, &         ! Intent(out)
              rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity

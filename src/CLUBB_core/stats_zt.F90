@@ -45,7 +45,8 @@ module stats_zt
         ivm_ref, &
         iug, & 
         ivg, & 
-        icloud_frac, & 
+        icloud_frac, &
+        iice_supersat_frac, &
         ircm_in_layer, &
         ircm_in_cloud, &
         icloud_cover, &
@@ -371,57 +372,58 @@ module stats_zt
 
 ! Default initialization for array indices for zt
 
-    ithlm           = 0
-    iT_in_K         = 0
-    ithvm           = 0
-    irtm            = 0
-    ircm            = 0
-    irfrzm          = 0
-    irvm            = 0
-    ium             = 0
-    ivm             = 0
-    iwm_zt          = 0
-    ium_ref         = 0
-    ivm_ref         = 0
-    iug             = 0
-    ivg             = 0
-    icloud_frac     = 0
-    ircm_in_layer   = 0
-    ircm_in_cloud   = 0
-    icloud_cover    = 0
-    ip_in_Pa        = 0
-    iexner          = 0
-    irho_ds_zt      = 0
-    ithv_ds_zt      = 0
-    iLscale         = 0
-    iwp3            = 0
-    iwpthlp2        = 0
-    iwp2thlp        = 0
-    iwprtp2         = 0
-    iwp2rtp         = 0
-    iLscale_up      = 0
-    iLscale_down    = 0
-    itau_zt         = 0
-    iKh_zt          = 0
-    iwp2thvp        = 0
-    iwp2rcp         = 0
-    iwprtpthlp      = 0
-    isigma_sqd_w_zt = 0
-    irho            = 0
-    irel_humidity   = 0
-    iNcm            = 0  ! Brian
-    iNcm_in_cloud   = 0
-    iNc_activated   = 0
-    iNcnm           = 0
-    iNim            = 0
-    isnowslope      = 0  ! Adam Smith, 22 April 2008
-    ised_rcm        = 0  ! Brian
-    irsat           = 0  ! Brian
-    irrainm      = 0  ! Brian
-    irain_rate_zt   = 0  ! Brian
-    iradht          = 0
-    iradht_LW       = 0
-    iradht_SW       = 0
+    ithlm               = 0
+    iT_in_K             = 0
+    ithvm               = 0
+    irtm                = 0
+    ircm                = 0
+    irfrzm              = 0
+    irvm                = 0
+    ium                 = 0
+    ivm                 = 0
+    iwm_zt              = 0
+    ium_ref             = 0
+    ivm_ref             = 0
+    iug                 = 0
+    ivg                 = 0
+    icloud_frac         = 0
+    iice_supersat_frac  = 0
+    ircm_in_layer       = 0
+    ircm_in_cloud       = 0
+    icloud_cover        = 0
+    ip_in_Pa            = 0
+    iexner              = 0
+    irho_ds_zt          = 0
+    ithv_ds_zt          = 0
+    iLscale             = 0
+    iwp3                = 0
+    iwpthlp2            = 0
+    iwp2thlp            = 0
+    iwprtp2             = 0
+    iwp2rtp             = 0
+    iLscale_up          = 0
+    iLscale_down        = 0
+    itau_zt             = 0
+    iKh_zt              = 0
+    iwp2thvp            = 0
+    iwp2rcp             = 0
+    iwprtpthlp          = 0
+    isigma_sqd_w_zt     = 0
+    irho                = 0
+    irel_humidity       = 0
+    iNcm                = 0  ! Brian
+    iNcm_in_cloud       = 0
+    iNc_activated       = 0
+    iNcnm               = 0
+    iNim                = 0
+    isnowslope          = 0  ! Adam Smith, 22 April 2008
+    ised_rcm            = 0  ! Brian
+    irsat               = 0  ! Brian
+    irrainm             = 0  ! Brian
+    irain_rate_zt       = 0  ! Brian
+    iradht              = 0
+    iradht_LW           = 0
+    iradht_SW           = 0
 
     ! Number concentrations
     iNsnowm    = 0  ! Adam Smith, 22 April 2008
@@ -773,6 +775,12 @@ module stats_zt
         icloud_frac = k
         call stat_assign( icloud_frac, "cloud_frac", & 
              "Cloud fraction (between 0 and 1) [-]", "count", zt )
+        k = k + 1
+      
+      case ('ice_supersat_frac')
+        iice_supersat_frac = k
+        call stat_assign( iice_supersat_frac, "ice_supersat_frac", & 
+             "Ice cloud fraction (between 0 and 1) [-]", "count", zt )
         k = k + 1
 
       case ('rcm_in_layer')

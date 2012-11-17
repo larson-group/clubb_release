@@ -68,6 +68,7 @@ module stats_variables
      iug, & 
      ivg, & 
      icloud_frac, &
+     iice_supersat_frac, &
      ircm_in_layer, &
      ircm_in_cloud, &
      icloud_cover, &
@@ -91,8 +92,7 @@ module stats_variables
      iwp2rcp, & 
      iwprtpthlp, & 
      isigma_sqd_w_zt, & 
-     irho, &
-     irel_humidity
+     irho
 
   integer, public :: & ! janhft 09/25/12
      icorr_rrNr, &
@@ -122,7 +122,8 @@ module stats_variables
      iLH_AKm,         & ! LH Kessler.  Vince Larson  22 May 2005
      iradht,          & ! Radiative heating.
      iradht_LW,       & !   "           "   Long-wave component
-     iradht_SW          !   "           "   Short-wave component
+     iradht_SW,       & !   "           "   Short-wave component
+     irel_humidity
 
   integer, public :: & 
      iAKstd,     & 

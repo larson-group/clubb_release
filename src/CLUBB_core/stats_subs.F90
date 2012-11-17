@@ -1324,7 +1324,7 @@ module stats_subs
                      p_in_Pa, exner, rho, rho_zm, &
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, &
                      thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, &
-                     rcm_zm, rtm_zm, thlm_zm, cloud_frac, &
+                     rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac, &
                      cloud_frac_zm, rcm_in_layer, cloud_cover, &
                      sigma_sqd_w, pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
@@ -1356,7 +1356,8 @@ module stats_subs
         iwm_zm, & 
         iug, & 
         ivg, & 
-        icloud_frac, & 
+        icloud_frac, &
+        iice_supersat_frac, & 
         ircm_in_layer, &
         icloud_cover, &
         ip_in_Pa, & 
@@ -1634,15 +1635,16 @@ module stats_subs
       wm_zm           ! w on momentum levels                     [m/s]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
-      rcm_zm,        & ! Total water mixing ratio                 [kg/kg]
-      rtm_zm,        & ! Total water mixing ratio                 [kg/kg]
-      thlm_zm,       & ! Liquid potential temperature             [K]
-      rcm,           & ! Cloud water mixing ratio                 [kg/kg]
-      wprcp,         & ! w'rc'                                    [(kg/kg) m/s]
-      cloud_frac,    & ! Cloud fraction                           [-]
-      cloud_frac_zm, & ! Cloud fraction on zm levels              [-]
-      rcm_in_layer,  & ! Cloud water mixing ratio in cloud layer  [kg/kg]
-      cloud_cover      ! Cloud cover                              [-]
+      rcm_zm,             & ! Total water mixing ratio                 [kg/kg]
+      rtm_zm,             & ! Total water mixing ratio                 [kg/kg]
+      thlm_zm,            & ! Liquid potential temperature             [K]
+      rcm,                & ! Cloud water mixing ratio                 [kg/kg]
+      wprcp,              & ! w'rc'                                    [(kg/kg) m/s]
+      cloud_frac,         & ! Cloud fraction                           [-]
+      ice_supersat_frac,  & ! Ice cloud fracion                        [-]
+      cloud_frac_zm,      & ! Cloud fraction on zm levels              [-]
+      rcm_in_layer,       & ! Cloud water mixing ratio in cloud layer  [kg/kg]
+      cloud_cover           ! Cloud cover                              [-]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
@@ -1702,6 +1704,7 @@ module stats_subs
       call stat_update_var( iug, ug, zt )
       call stat_update_var( ivg, vg, zt )
       call stat_update_var( icloud_frac, cloud_frac, zt )
+      call stat_update_var( iice_supersat_frac, ice_supersat_frac, zt)
       call stat_update_var( ircm_in_layer, rcm_in_layer, zt )
       call stat_update_var( icloud_cover, cloud_cover, zt )
       call stat_update_var( ip_in_Pa, p_in_Pa, zt )

@@ -65,7 +65,7 @@ module clubb_core
 #ifdef GFDL
                RH_crit,  do_liquid_only_in_clubb, &  ! h1g, 2010-06-16
 #endif
-               rcm, wprcp, cloud_frac, & 
+               rcm, wprcp, cloud_frac, ice_supersat_frac, & 
                rcm_in_layer, cloud_cover, &
 #if defined(NCAR) || defined(GFDL)
                khzm, khzt, &
@@ -449,8 +449,9 @@ module clubb_core
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
-      wprcp,      & ! w'r_c' (momentum levels)                [(kg/kg) m/s]
-      cloud_frac    ! cloud fraction (thermodynamic levels)   [-]
+      wprcp,            & ! w'r_c' (momentum levels)                  [(kg/kg) m/s]
+      cloud_frac,       & ! cloud fraction (thermodynamic levels)     [-]
+      ice_supersat_frac   ! ice cloud fraction (thermodynamic levels) [-]
       
 #if defined(NCAR) || defined(GFDL)
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
@@ -559,8 +560,8 @@ module clubb_core
       thlm_flux_sfc, &
       thlm_spur_src, &
       mu_pert_1, mu_pert_2, & ! For l_avg_Lscale
-      mu_pert_pos, mu_pert_neg ! For l_Lscale_plume_centered
-
+      mu_pert_pos, mu_pert_neg, & ! For l_Lscale_plume_centered
+      ice_supersat_frac_zm ! Dummy variable for pdf_closure output
     !----- Begin Code -----
 
     if ( l_stats .and. l_stats_samp ) then
@@ -782,25 +783,25 @@ module clubb_core
     do k = 1, gr%nz, 1
 
       call pdf_closure & 
-         ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),       & ! intent(in)
-           wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),               & ! intent(in)
-           Skw_zt(k), rtm(k), rtp2_zt(k),                      & ! intent(in)
-           zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),            & ! intent(in)
-           zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),      & ! intent(in)
-           wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),  & ! intent(in)
-           sclrpthlp_zt(k,:), k,                               & ! intent(in)
+         ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),        & ! intent(in)
+           wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),                & ! intent(in)
+           Skw_zt(k), rtm(k), rtp2_zt(k),                       & ! intent(in)
+           zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),             & ! intent(in)
+           zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),       & ! intent(in)
+           wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),   & ! intent(in)
+           sclrpthlp_zt(k,:), k,                                & ! intent(in)
 #ifdef GFDL
-           RH_crit(k, : , :),   do_liquid_only_in_clubb,       & ! intent(in)  h1g, 2010-06-16
+           RH_crit(k, : , :),   do_liquid_only_in_clubb,        & ! intent(in)  h1g, 2010-06-16
 #endif
-           wp4_zt(k), wprtp2(k), wp2rtp(k),                    & ! intent(out)
-           wpthlp2(k), wp2thlp(k), wprtpthlp(k),               & ! intent(out)
-           cloud_frac(k), rcm(k), wpthvp_zt(k),                & ! intent(out)
-           wp2thvp(k), rtpthvp_zt(k), thlpthvp_zt(k),          & ! intent(out)
-           wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),               & ! intent(out)
-           thlprcp_zt(k), rcp2_zt(k), pdf_params(k),           & ! intent(out)
-           err_code_pdf_closure,                               & ! intent(out)
-           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),  & ! intent(out)
-           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:)   ) ! intent(out)
+           wp4_zt(k), wprtp2(k), wp2rtp(k),                     & ! intent(out)
+           wpthlp2(k), wp2thlp(k), wprtpthlp(k),                & ! intent(out)
+           cloud_frac(k), ice_supersat_frac(k),                 & ! intent(out)
+           rcm(k), wpthvp_zt(k), wp2thvp(k), rtpthvp_zt(k),     & ! intent(out
+           thlpthvp_zt(k), wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),& ! intent(out)
+           thlprcp_zt(k), rcp2_zt(k), pdf_params(k),            & ! intent(out)
+           err_code_pdf_closure,                                & ! intent(out)
+           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),   & ! intent(out)
+           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:)   )  ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
@@ -874,9 +875,9 @@ module clubb_core
 #endif
              wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
              wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
-             cloud_frac_zm(k), rcm_zm(k), wpthvp(k),                & ! intent(out)
-             wp2thvp_zm(k), rtpthvp(k), thlpthvp(k),                & ! intent(out)
-             wprcp(k), wp2rcp_zm(k), rtprcp(k),                     & ! intent(out)
+             cloud_frac_zm(k), ice_supersat_frac_zm,                & ! intent(out) 
+             rcm_zm(k), wpthvp(k), wp2thvp_zm(k), rtpthvp(k),       & ! intent(out)
+             thlpthvp(k), wprcp(k), wp2rcp_zm(k), rtprcp(k),        & ! intent(out)
              thlprcp(k), rcp2(k), pdf_params_zm(k),                 & ! intent(out)
              err_code_pdf_closure,                                  & ! intent(out)
              wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),  & ! intent(out)
@@ -1455,17 +1456,17 @@ module clubb_core
     end if
 
     call stats_accumulate & 
-         ( um, vm, upwp, vpwp, up2, vp2,                      & ! intent(in)
-           thlm, rtm, wprtp, wpthlp,                          & ! intent(in)
-           wp2, wp3, rtp2, thlp2, rtpthlp,                    & ! intent(in)
-           p_in_Pa, exner, rho, rho_zm,                       & ! intent(in)
-           rho_ds_zm, rho_ds_zt, thv_ds_zm,                   & ! intent(in)
-           thv_ds_zt, wm_zt, wm_zm, rcm, wprcp,               & ! intent(in)
-           rcm_zm, rtm_zm, thlm_zm, cloud_frac,               & ! intent(in)
-           cloud_frac_zm, rcm_in_layer, cloud_cover,          & ! intent(in)
-           sigma_sqd_w, pdf_params,                           & ! intent(in)
-           sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & ! intent(in)
-           wpsclrp, edsclrm, edsclrm_forcing                  ) ! intent(in)
+         ( um, vm, upwp, vpwp, up2, vp2,                          & ! intent(in)
+           thlm, rtm, wprtp, wpthlp,                              & ! intent(in)
+           wp2, wp3, rtp2, thlp2, rtpthlp,                        & ! intent(in)
+           p_in_Pa, exner, rho, rho_zm,                           & ! intent(in)
+           rho_ds_zm, rho_ds_zt, thv_ds_zm,                       & ! intent(in)
+           thv_ds_zt, wm_zt, wm_zm, rcm, wprcp,                   & ! intent(in)
+           rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac,& ! intent(in)
+           cloud_frac_zm, rcm_in_layer, cloud_cover,              & ! intent(in)
+           sigma_sqd_w, pdf_params,                               & ! intent(in)
+           sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,     & ! intent(in)
+           wpsclrp, edsclrm, edsclrm_forcing                  )     ! intent(in)
 
 
     if ( clubb_at_least_debug_level( 2 ) ) then

@@ -22,9 +22,9 @@ module pdf_closure_module
 #endif
                wp4, wprtp2, wp2rtp,              &
                wpthlp2, wp2thlp, wprtpthlp,      &
-               cloud_frac, rcm, wpthvp,          &
-               wp2thvp, rtpthvp, thlpthvp,       &
-               wprcp, wp2rcp, rtprcp,            &
+               cloud_frac, ice_supersat_frac,    &
+               rcm, wpthvp, wp2thvp, rtpthvp,    &
+               thlpthvp, wprcp, wp2rcp, rtprcp,  &
                thlprcp, rcp2, pdf_params,        &
                err_code,                         &
                wpsclrprtp, wpsclrp2, sclrpthvp,  &
@@ -157,23 +157,24 @@ module pdf_closure_module
     ! Output Variables
 
     real( kind = core_rknd ), intent(out) ::  & 
-      wp4,         & ! w'^4                  [m^4/s^4]
-      wprtp2,      & ! w' r_t'               [(m kg)/(s kg)]
-      wp2rtp,      & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
-      wpthlp2,     & ! w' th_l'^2            [(m K^2)/s]
-      wp2thlp,     & ! w'^2 th_l'            [(m^2 K)/s^2]
-      cloud_frac,  & ! Cloud fraction        [-]
-      rcm,         & ! Mean liquid water     [kg/kg]
-      wpthvp,      & ! Buoyancy flux         [(K m)/s] 
-      wp2thvp,     & ! w'^2 th_v'            [(m^2 K)/s^2]
-      rtpthvp,     & ! r_t' th_v'            [(kg K)/kg]
-      thlpthvp,    & ! th_l' th_v'           [K^2]
-      wprcp,       & ! w' r_c'               [(m kg)/(s kg)]
-      wp2rcp,      & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
-      rtprcp,      & ! r_t' r_c'             [(kg^2)/(kg^2)]
-      thlprcp,     & ! th_l' r_c'            [(K kg)/kg]
-      rcp2,        & ! r_c'^2                [(kg^2)/(kg^2)]
-      wprtpthlp      ! w' r_t' th_l'         [(m kg K)/(s kg)]
+      wp4,                & ! w'^4                  [m^4/s^4]
+      wprtp2,             & ! w' r_t'               [(m kg)/(s kg)]
+      wp2rtp,             & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
+      wpthlp2,            & ! w' th_l'^2            [(m K^2)/s]
+      wp2thlp,            & ! w'^2 th_l'            [(m^2 K)/s^2]
+      cloud_frac,         & ! Cloud fraction        [-]
+      ice_supersat_frac,  & ! Ice cloud fracion     [-]
+      rcm,                & ! Mean liquid water     [kg/kg]
+      wpthvp,             & ! Buoyancy flux         [(K m)/s] 
+      wp2thvp,            & ! w'^2 th_v'            [(m^2 K)/s^2]
+      rtpthvp,            & ! r_t' th_v'            [(kg K)/kg]
+      thlpthvp,           & ! th_l' th_v'           [K^2]
+      wprcp,              & ! w' r_c'               [(m kg)/(s kg)]
+      wp2rcp,             & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
+      rtprcp,             & ! r_t' r_c'             [(kg^2)/(kg^2)]
+      thlprcp,            & ! th_l' r_c'            [(K kg)/kg]
+      rcp2,               & ! r_c'^2                [(kg^2)/(kg^2)]
+      wprtpthlp             ! w' r_t' th_l'         [(m kg K)/(s kg)]
 
     type(pdf_parameter), intent(out) :: & 
       pdf_params     ! pdf paramters         [units vary]
@@ -272,9 +273,7 @@ module pdf_closure_module
     ! variables for computing ice cloud fraction
     real( kind = core_rknd) :: &
       ice_supersat_frac1, & ! first  pdf component of ice_supersat_frac
-      ice_supersat_frac2, & ! second pdf component of ice_supersat_frac
-      ice_supersat_frac     ! Fraction of grid box that is supersaturated
-                            !  with respect to ice
+      ice_supersat_frac2    ! second pdf component of ice_supersat_frac
 
     integer :: i   ! Index
 

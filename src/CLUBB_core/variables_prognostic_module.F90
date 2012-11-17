@@ -107,10 +107,11 @@ module variables_prognostic_module
 
   ! Cloud water variables
   real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
-    rcm,          & ! Cloud water mixing ratio                 [kg/kg]
-    cloud_frac,   & ! Cloud fraction                           [-]
-    rcm_in_layer, & ! Cloud water mixing ratio in cloud layer  [kg/kg]
-    cloud_cover     ! Cloud cover                              [-]
+    rcm,                & ! Cloud water mixing ratio                 [kg/kg]
+    cloud_frac,         & ! Cloud fraction                           [-]
+    ice_supersat_frac,  & ! Ice cloud fraction                       [-]
+    rcm_in_layer,       & ! Cloud water mixing ratio in cloud layer  [kg/kg]
+    cloud_cover           ! Cloud cover                              [-]
 
 !$omp   threadprivate(rcm, cloud_frac, rcm_in_layer, cloud_cover)
 
@@ -262,6 +263,7 @@ module variables_prognostic_module
 
     allocate( rcm(1:nz) )
     allocate( cloud_frac(1:nz) )
+    allocate( ice_supersat_frac(1:nz) )
     allocate( rcm_in_layer(1:nz) )
     allocate( cloud_cover(1:nz) )
 
@@ -343,10 +345,11 @@ module variables_prognostic_module
 
     ! Cloud water variables
 
-    rcm(1:nz)          = 0.0_core_rknd
-    cloud_frac(1:nz)   = 0.0_core_rknd
-    rcm_in_layer(1:nz) = 0.0_core_rknd
-    cloud_cover(1:nz)  = 0.0_core_rknd
+    rcm(1:nz)               = 0.0_core_rknd
+    cloud_frac(1:nz)        = 0.0_core_rknd
+    ice_supersat_frac(1:nz) = 0.0_core_rknd
+    rcm_in_layer(1:nz)      = 0.0_core_rknd
+    cloud_cover(1:nz)       = 0.0_core_rknd
 
     sigma_sqd_w           = 0.0_core_rknd ! PDF width parameter (momentum levels)
 
@@ -484,6 +487,7 @@ module variables_prognostic_module
 
     deallocate( rcm )
     deallocate( cloud_frac )
+    deallocate( ice_supersat_frac )
     deallocate( rcm_in_layer )
     deallocate( cloud_cover )
 
