@@ -22,8 +22,8 @@ module bugsrad_driver
                extend_atmos_top_level,              &
                amu0, &
                thlm, rcm, rtm, rsnowm, rim,& 
-               cloud_frac, p_in_Pa, p_in_Pam,       &
-               exner, rho_zm,                       &
+               cloud_frac, ice_supersat_frac,       &
+               p_in_Pa, p_in_Pam, exner, rho_zm,    &
                radht, Frad,                         &
                Frad_SW_up, Frad_LW_up,              &
                Frad_SW_down, Frad_LW_down )
@@ -78,7 +78,7 @@ module bugsrad_driver
       slr
 
     use variables_radiation_module, only: radht_LW, radht_SW, Frad_SW, Frad_LW,&
-      T_in_K, rcil, o3l, rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, &
+      T_in_K, rcil, o3l, rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, &
       radht_SW_2d, radht_LW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW
 
     implicit none
@@ -97,17 +97,18 @@ module bugsrad_driver
     integer, intent(in) :: lin_int_buffer, extend_atmos_range_size
 
     real( kind = core_rknd ), intent(in), dimension(nz) :: &
-      alt,          & ! Altitudes of the model              [m]
-      thlm,         & ! Liquid potential temp.              [K]
-      rcm,          & ! Liquid water mixing ratio           [kg/kg]
-      rsnowm,       & ! Snow water mixing ratio             [kg/kg]
-      rim,          & ! Ice water mixing ratio              [kg/kg]
-      rtm,          & ! Total water mixing ratio            [kg/kg]
-      rho_zm,       & ! Density                             [kg/m^3]
-      cloud_frac,   & ! Cloud fraction                      [-]
-      p_in_Pa,      & ! Pressure on the t grid              [Pa]
-      p_in_Pam,     & ! Pressure on the m grid              [Pa]
-      exner           ! Exner function                      [-]
+      alt,              & ! Altitudes of the model              [m]
+      thlm,             & ! Liquid potential temp.              [K]
+      rcm,              & ! Liquid water mixing ratio           [kg/kg]
+      rsnowm,           & ! Snow water mixing ratio             [kg/kg]
+      rim,              & ! Ice water mixing ratio              [kg/kg]
+      rtm,              & ! Total water mixing ratio            [kg/kg]
+      rho_zm,           & ! Density                             [kg/m^3]
+      cloud_frac,       & ! Cloud fraction                      [-]
+      ice_supersat_frac,& ! Ice cloud fraction                  [-]
+      p_in_Pa,          & ! Pressure on the t grid              [Pa]
+      p_in_Pam,         & ! Pressure on the m grid              [Pa]
+      exner               ! Exner function                      [-]
 
 
     integer,intent(in) ::&
@@ -191,6 +192,7 @@ module bugsrad_driver
     rsnowm_2d(1,buffer+1:(nz-1)+buffer)       = flip( dble( rsnowm(2:nz) ), nz-1 )
     rcm_in_cloud_2d(1,buffer+1:(nz-1)+buffer) = flip( dble( rcm_in_cloud(2:nz) ), nz-1 )
     cloud_frac_2d(1,buffer+1:(nz-1)+buffer)   = flip( dble( cloud_frac(2:nz) ), nz-1 )
+    ice_supersat_frac_2d(1,buffer+1:(nz-1)+buffer)   = flip( dble( ice_supersat_frac(2:nz) ), nz-1 )
 
     T_in_K(1,buffer+1:(nz-1)+buffer) = flip( T_in_K(1,1:(nz-1)), nz-1 )
 
@@ -202,10 +204,11 @@ module bugsrad_driver
     o3l(1,buffer+1:(nz-1)+buffer) = flip( o3l(1,1:(nz-1)), nz-1 )
 
     ! Assume these are all zero above the CLUBB profile
-    rsnowm_2d(1,1:buffer)       = 0.0_dp
-    rcil(1,1:buffer)            = 0.0_dp
-    rcm_in_cloud_2d(1,1:buffer) = 0.0_dp
-    cloud_frac_2d(1,1:buffer)   = 0.0_dp
+    rsnowm_2d(1,1:buffer)             = 0.0_dp
+    rcil(1,1:buffer)                  = 0.0_dp
+    rcm_in_cloud_2d(1,1:buffer)       = 0.0_dp
+    cloud_frac_2d(1,1:buffer)         = 0.0_dp
+    ice_supersat_frac_2d(1,1:buffer)  = 0.0_dp
 
     if ( dble( alt(nz) ) > extend_alt(extend_atmos_dim) ) then
 

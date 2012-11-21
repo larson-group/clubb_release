@@ -1097,7 +1097,7 @@ module clubb_driver
         ! -dschanen 17 Aug 2009
         call advance_clubb_radiation &
              ( time_current, rho, rho_zm, p_in_Pa, &          ! Intent(in)
-               exner, cloud_frac, thlm, rtm, rcm, hydromet, & ! Intent(in)
+               exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, & ! Intent(in)
                err_code, &                                    ! Intent(inout)
                radht, Frad, Frad_SW_up, Frad_LW_up, &         ! Intent(out)
                Frad_SW_down, Frad_LW_down )                   ! Intent(out)
@@ -3771,7 +3771,7 @@ module clubb_driver
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_radiation &
              ( time_current, rho, rho_zm, p_in_Pa, &
-               exner, cloud_frac, thlm, rtm, rcm, hydromet, &
+               exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, &
                err_code, &
                radht, Frad, Frad_SW_up, Frad_LW_up, &
                Frad_SW_down, Frad_LW_down )
@@ -3849,14 +3849,15 @@ module clubb_driver
       time_current ! Current time (UTC)    [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      rho,        & ! Density on thermo. grid                          [kg/m^3]
-      rho_zm,     & ! Density on moment. grid                          [kg/m^3]
-      p_in_Pa,    & ! Pressure.                                        [Pa] 
-      exner,      & ! Exner function.                                  [-]
-      cloud_frac, & ! Cloud fraction (thermodynamic levels)            [-]
-      thlm,       & ! Liquid potential temperature                     [K]
-      rtm,        & ! Total water mixing ratio, r_t (thermo. levels)   [kg/kg]
-      rcm           ! Cloud water mixing ratio, r_c (thermo. levels)   [kg/kg]
+      rho,              & ! Density on thermo. grid                          [kg/m^3]
+      rho_zm,           & ! Density on moment. grid                          [kg/m^3]
+      p_in_Pa,          & ! Pressure.                                        [Pa] 
+      exner,            & ! Exner function.                                  [-]
+      cloud_frac,       & ! Cloud fraction (thermodynamic levels)            [-]
+      ice_supersat_frac,& ! Ice cloud fraction (thermodynamic levels)        [-]
+      thlm,             & ! Liquid potential temperature                     [K]
+      rtm,              & ! Total water mixing ratio, r_t (thermo. levels)   [kg/kg]
+      rcm                 ! Cloud water mixing ratio, r_c (thermo. levels)   [kg/kg]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -4004,17 +4005,17 @@ module clubb_driver
       end if  ! clubb_at_least_debug_level( 2 )
 
       call compute_bugsrad_radiation &
-           ( gr%zm, gr%nz, lin_int_buffer,          & ! Intent(in)
-             extend_atmos_range_size,               & ! Intent(in)
-             extend_atmos_bottom_level,             & ! Intent(in)
-             extend_atmos_top_level,                & ! Intent(in)
-             amu0,                                  & ! Intent(in)
-             thlm, rcm, rtm, rsnowm, ricem,         & ! Intent(in)
-             cloud_frac, p_in_Pa, zt2zm( p_in_Pa ), & ! Intent(in)
-             exner, rho_zm,                         & ! Intent(in)
-             radht, Frad,                           & ! Intent(out)
-             Frad_SW_up, Frad_LW_up,                & ! Intent(out)
-             Frad_SW_down, Frad_LW_down )             ! Intent(out)
+           ( gr%zm, gr%nz, lin_int_buffer,            & ! Intent(in)
+             extend_atmos_range_size,                 & ! Intent(in)
+             extend_atmos_bottom_level,               & ! Intent(in)
+             extend_atmos_top_level,                  & ! Intent(in)
+             amu0,                                    & ! Intent(in)
+             thlm, rcm, rtm, rsnowm, ricem,           & ! Intent(in)
+             cloud_frac, ice_supersat_frac,           & ! Intent(in)
+             p_in_Pa, zt2zm( p_in_Pa ), exner, rho_zm,& ! Intent(in)
+             radht, Frad,                             & ! Intent(out)
+             Frad_SW_up, Frad_LW_up,                  & ! Intent(out)
+             Frad_SW_down, Frad_LW_down )               ! Intent(out)
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 
@@ -4114,14 +4115,14 @@ module clubb_driver
     use stats_variables, only: &
       iradht_LW, iradht_SW, iFrad_SW, iFrad_LW, iFrad_SW_up, & ! Variables
       iFrad_LW_up, iFrad_SW_down, iFrad_LW_down, iT_in_k_rad, ircil_rad, &
-      io3l_rad, irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad, &
+      io3l_rad, irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad, iice_supersat_frac_rad, &
       iradht_rad, iradht_LW_rad, iradht_SW_rad, iFrad_SW_rad, &
       iFrad_LW_rad, iFrad_SW_up_rad, iFrad_LW_up_rad, iFrad_SW_down_rad, &
       iFrad_LW_down_rad, ifdswcl, ifuswcl, ifdlwcl, ifulwcl, iradht
 
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW, T_in_k, rcil, o3l, & ! Variables
-      rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, radht_LW_2d, &
+      rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, radht_LW_2d, &
       radht_SW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
       fdswcl, fuswcl, fdlwcl, fulwcl
 
@@ -4199,6 +4200,9 @@ module clubb_driver
 
         call stat_update_var( icloud_frac_rad, &
           real( flip(cloud_frac_2d(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
+        
+        call stat_update_var( iice_supersat_frac_rad, &
+          real( flip(ice_supersat_frac_2d(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
 
         call stat_update_var( iradht_rad, real(flip((radht_SW_2d(1,:) + &
                radht_LW_2d(1,:)), rad_zt_dim), kind = core_rknd  ), rad_zt )

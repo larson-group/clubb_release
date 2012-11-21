@@ -157,6 +157,7 @@ module stats_variables
 
   integer, public :: &
     icloud_frac_zm, &
+    iice_supersat_frac_zm, &
     ircm_zm, &
     irtm_zm, &
     ithlm_zm
@@ -834,6 +835,7 @@ module stats_variables
     irsnowm_rad, &
     ircm_in_cloud_rad, &
     icloud_frac_rad, & 
+    iice_supersat_frac_rad, &
     iradht_rad, &
     iradht_LW_rad, &
     iradht_SW_rad

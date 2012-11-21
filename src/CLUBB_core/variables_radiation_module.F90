@@ -39,7 +39,8 @@ module variables_radiation_module
   real(kind = dp), public, dimension(:,:), allocatable :: &
     rsnowm_2d,& ! Two-dimensional copies of the input parameters
     rcm_in_cloud_2d, &
-    cloud_frac_2d
+    cloud_frac_2d, &
+    ice_supersat_frac_2d
 
 !$omp threadprivate(rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d)
 
@@ -116,6 +117,7 @@ module variables_radiation_module
     allocate( rsnowm_2d(nlen, rad_zt_dim ) )
     allocate( rcm_in_cloud_2d(nlen, rad_zt_dim ) )
     allocate( cloud_frac_2d(nlen, rad_zt_dim ) )
+    allocate( ice_supersat_frac_2d(nlen, rad_zt_dim ) )
 
     allocate( radht_SW_2d(nlen, rad_zt_dim ) )
     allocate( radht_LW_2d(nlen, rad_zt_dim ) )
@@ -143,6 +145,7 @@ module variables_radiation_module
     rsnowm_2d = 0.0_dp
     rcm_in_cloud_2d = 0.0_dp
     cloud_frac_2d = 0.0_dp
+    ice_supersat_frac_2d = 0.0_dp
     radht_SW_2d = 0.0_dp
     radht_LW_2d = 0.0_dp
     Frad_uLW = 0.0_dp
@@ -179,6 +182,7 @@ module variables_radiation_module
     deallocate( rsnowm_2d )
     deallocate( rcm_in_cloud_2d )
     deallocate( cloud_frac_2d )
+    deallocate( ice_supersat_frac_2d )
 
     deallocate( radht_SW_2d )
     deallocate( radht_LW_2d )

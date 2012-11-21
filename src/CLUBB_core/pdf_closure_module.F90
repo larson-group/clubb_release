@@ -88,13 +88,8 @@ module pdf_closure_module
       pdf_closure_check ! Procedure(s)
 
     use saturation, only:  & 
-      sat_mixrat_liq ! Procedure(s)
-
-#ifdef GFDL
-    ! including ice clouds
-    use saturation, only:  & ! h1g, 2010-06-15
-       sat_mixrat_ice
-#endif
+      sat_mixrat_liq, & ! Procedure(s)
+      sat_mixrat_ice
 
     use error_code, only: & 
       clubb_no_error ! Constant(s)
@@ -274,6 +269,11 @@ module pdf_closure_module
     real( kind = core_rknd) :: &
       ice_supersat_frac1, & ! first  pdf component of ice_supersat_frac
       ice_supersat_frac2    ! second pdf component of ice_supersat_frac
+    
+    real( kind = core_rknd ), parameter :: &
+      s_at_ice_sat1 = 0.0_core_rknd, & ! Temporary, this will not equal zero for long
+      s_at_ice_sat2 = 0.0_core_rknd, & ! Temporary, this will not equal zero for long
+      s_at_liq_sat  = 0.0_core_rknd    ! Always zero
 
     integer :: i   ! Index
 
@@ -730,17 +730,17 @@ module pdf_closure_module
 
     ! We need to introduce a threshold value for the variance of s
 
-    ! Calculate cloud_frac1 and rc1 (s_at_sat for liquid is always zero)
-    call calc_cloud_frac_component(s1, stdev_s1, 0.0_core_rknd, cloud_frac1, rc1)
+    ! Calculate cloud_frac1 and rc1
+    call calc_cloud_frac_component(s1, stdev_s1, s_at_liq_sat, cloud_frac1, rc1)
     
-    ! Calculate cloud_frac2 and rc2 (s_at_sat for liquid is always zero)
-    call calc_cloud_frac_component(s2, stdev_s2, 0.0_core_rknd, cloud_frac2, rc2)
+    ! Calculate cloud_frac2 and rc2
+    call calc_cloud_frac_component(s2, stdev_s2, s_at_liq_sat, cloud_frac2, rc2)
     
-    ! Calculate ice_supersat_frac1 (Temporarily let s_at_sat = 0)
-    call calc_cloud_frac_component(s1, stdev_s1, 0.0_core_rknd, ice_supersat_frac1)
+    ! Calculate ice_supersat_frac1
+    call calc_cloud_frac_component(s1, stdev_s1, s_at_ice_sat1, ice_supersat_frac1)
     
-    ! Calculate ice_supersat_frac2 (Temporarily let s_at_sat = 0)
-    call calc_cloud_frac_component(s2, stdev_s2, 0.0_core_rknd, ice_supersat_frac2)
+    ! Calculate ice_supersat_frac2
+    call calc_cloud_frac_component(s2, stdev_s2, s_at_ice_sat2, ice_supersat_frac2)
 
     ! Compute moments that depend on theta_v
     !

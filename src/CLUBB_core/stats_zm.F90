@@ -200,6 +200,7 @@ module stats_zm
     use stats_variables, only: & 
       iwm_zm,  &  ! Variable
       icloud_frac_zm, &
+      iice_supersat_frac_zm, &
       ircm_zm, &
       irtm_zm, &
       ithlm_zm
@@ -1453,6 +1454,12 @@ module stats_zm
         icloud_frac_zm = k
         call stat_assign( icloud_frac_zm, "cloud_frac_zm", & 
                           "Cloud fraction", "count", zm )
+        k = k + 1
+      
+      case ('ice_supersat_frac_zm')
+        iice_supersat_frac_zm = k
+        call stat_assign( iice_supersat_frac_zm, "ice_supersat_frac_zm", & 
+                          "Ice cloud fraction", "count", zm )
         k = k + 1
 
       case ('rcm_zm')

@@ -527,17 +527,18 @@ module clubb_core
       sclrprcp_zt     ! sclr'rc' (on thermo. grid)
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
-      wp2rtp_zm,     & ! w'^2 rt' on momentum grid                  [m^2 kg/kg]
-      wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
-      wp2thlp_zm,    & ! w'^2 thl' on momentum grid                 [m^2 K/s^2]
-      wprtpthlp_zm,  & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
-      cloud_frac_zm, & ! Cloud Fraction on momentum grid            [-]
-      rtm_zm,        & ! Total water mixing ratio                   [kg/kg]
-      thlm_zm,       & ! Liquid potential temperature               [kg/kg]
-      rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
-      wp2thvp_zm,    & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
-      wp2rcp_zm        ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
+      wprtp2_zm,            & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
+      wp2rtp_zm,            & ! w'^2 rt' on momentum grid                  [m^2 kg/kg]
+      wpthlp2_zm,           & ! w'thl'^2 on momentum grid                  [m K^2/s]
+      wp2thlp_zm,           & ! w'^2 thl' on momentum grid                 [m^2 K/s^2]
+      wprtpthlp_zm,         & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
+      cloud_frac_zm,        & ! Cloud Fraction on momentum grid            [-]
+      ice_supersat_frac_zm, & ! Ice Cloud Fraction on momentum grid        [-]
+      rtm_zm,               & ! Total water mixing ratio                   [kg/kg]
+      thlm_zm,              & ! Liquid potential temperature               [kg/kg]
+      rcm_zm,               & ! Liquid water mixing ratio on momentum grid [kg/kg]
+      wp2thvp_zm,           & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
+      wp2rcp_zm               ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
 
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
@@ -560,8 +561,8 @@ module clubb_core
       thlm_flux_sfc, &
       thlm_spur_src, &
       mu_pert_1, mu_pert_2, & ! For l_avg_Lscale
-      mu_pert_pos, mu_pert_neg, & ! For l_Lscale_plume_centered
-      ice_supersat_frac_zm ! Dummy variable for pdf_closure output
+      mu_pert_pos, mu_pert_neg ! For l_Lscale_plume_centered
+
     !----- Begin Code -----
 
     if ( l_stats .and. l_stats_samp ) then
@@ -875,7 +876,7 @@ module clubb_core
 #endif
              wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
              wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
-             cloud_frac_zm(k), ice_supersat_frac_zm,                & ! intent(out) 
+             cloud_frac_zm(k), ice_supersat_frac_zm(k),             & ! intent(out) 
              rcm_zm(k), wpthvp(k), wp2thvp_zm(k), rtpthvp(k),       & ! intent(out)
              thlpthvp(k), wprcp(k), wp2rcp_zm(k), rtprcp(k),        & ! intent(out)
              thlprcp(k), rcp2(k), pdf_params_zm(k),                 & ! intent(out)
@@ -948,12 +949,12 @@ module clubb_core
       call trapezoidal_rule_zt &
            ( l_call_pdf_closure_twice,                    & ! intent(in)
              wprtp2, wpthlp2,                             & ! intent(inout)
-             wprtpthlp, cloud_frac, rcm, wp2thvp,         & ! intent(inout)
-             wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
-             pdf_params,                                  & ! intent(inout)
+             wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
+             rcm, wp2thvp, wpsclrprtp, wpsclrp2,          & ! intent(inout)
+             wpsclrpthlp, pdf_params,                     & ! intent(inout)
              wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
              wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
-             rcm_zm, wp2thvp_zm,                          & ! intent(inout)
+             ice_supersat_frac_zm, rcm_zm, wp2thvp_zm,    & ! intent(inout)
              wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
              pdf_params_zm )                                ! intent(inout)
     end if ! l_trapezoidal_rule_zt
@@ -986,11 +987,14 @@ module clubb_core
     ! increase cloudiness at coarser grid resolutions.
     if ( l_use_cloud_cover ) then
       cloud_frac = cloud_cover
+      ice_supersat_frac = cloud_cover !?-mark
       rcm = rcm_in_layer
     end if
 
     ! Clip cloud fraction here if it still exceeds 1.0 due to round off
     cloud_frac = min( 1.0_core_rknd, cloud_frac )
+    ! Ditto with ice cloud fraction
+    ice_supersat_frac = min( 1.0_core_rknd, ice_supersat_frac )
 
     !----------------------------------------------------------------
     ! Compute thvm
@@ -1463,8 +1467,8 @@ module clubb_core
            rho_ds_zm, rho_ds_zt, thv_ds_zm,                       & ! intent(in)
            thv_ds_zt, wm_zt, wm_zm, rcm, wprcp,                   & ! intent(in)
            rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac,& ! intent(in)
-           cloud_frac_zm, rcm_in_layer, cloud_cover,              & ! intent(in)
-           sigma_sqd_w, pdf_params,                               & ! intent(in)
+           cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer,     & ! intent(in)
+           cloud_cover, sigma_sqd_w, pdf_params,                  & ! intent(in)
            sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,     & ! intent(in)
            wpsclrp, edsclrm, edsclrm_forcing                  )     ! intent(in)
 
@@ -1893,14 +1897,14 @@ module clubb_core
   subroutine trapezoidal_rule_zt &
              ( l_call_pdf_closure_twice,                    & ! intent(in)
                wprtp2, wpthlp2,                             & ! intent(inout)
-               wprtpthlp, cloud_frac, rcm, wp2thvp,         & ! intent(inout)
-               wpsclrprtp, wpsclrp2, wpsclrpthlp,           & ! intent(inout)
-               pdf_params,                                  & ! intent(inout)
+               wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
+               rcm, wp2thvp, wpsclrprtp, wpsclrp2,          & ! intent(inout)
+               wpsclrpthlp, pdf_params,                     & ! intent(inout)
                wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
                wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
-               rcm_zm, wp2thvp_zm,                          & ! intent(inout)
+               ice_supersat_frac_zm, rcm_zm, wp2thvp_zm,    & ! intent(inout)
                wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
-               pdf_params_zm )                   ! intent(inout)
+               pdf_params_zm )                                ! intent(inout)
     !
     ! Description:
     !   This subroutine takes the output variables on the thermo.
@@ -1958,12 +1962,13 @@ module clubb_core
     ! Input/Output variables
     ! Thermodynamic level variables output from the first call to pdf_closure
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      wprtp2,      & ! w'rt'^2                   [m kg^2/kg^2]
-      wpthlp2,     & ! w'thl'^2                  [m K^2/s]
-      wprtpthlp,   & ! w'rt'thl'                 [m kg K/kg s]
-      cloud_frac,  & ! Cloud Fraction            [-]
-      rcm,         & ! Liquid water mixing ratio [kg/kg]
-      wp2thvp        ! w'^2 th_v'                [m^2 K/s^2]
+      wprtp2,             & ! w'rt'^2                   [m kg^2/kg^2]
+      wpthlp2,            & ! w'thl'^2                  [m K^2/s]
+      wprtpthlp,          & ! w'rt'thl'                 [m kg K/kg s]
+      cloud_frac,         & ! Cloud Fraction            [-]
+      ice_supersat_frac,  & ! Ice Cloud Fraction        [-]
+      rcm,                & ! Liquid water mixing ratio [kg/kg]
+      wp2thvp               ! w'^2 th_v'                [m^2 K/s^2]
 
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(inout) :: & 
       wpsclrprtp,  & ! w'sclr'rt' 
@@ -1977,12 +1982,13 @@ module clubb_core
     ! interpolation (in subroutine trapezoidal_rule_zt) or by
     ! the second call to pdf_closure (in subroutine advance_clubb_core)
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      wprtp2_zm,     & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
-      wpthlp2_zm,    & ! w'thl'^2 on momentum grid                  [m K^2/s]
-      wprtpthlp_zm,  & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
-      cloud_frac_zm, & ! Cloud Fraction on momentum grid            [-]
-      rcm_zm,        & ! Liquid water mixing ratio on momentum grid [kg/kg]
-      wp2thvp_zm       ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
+      wprtp2_zm,            & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
+      wpthlp2_zm,           & ! w'thl'^2 on momentum grid                  [m K^2/s]
+      wprtpthlp_zm,         & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
+      cloud_frac_zm,        & ! Cloud Fraction on momentum grid            [-]
+      ice_supersat_frac_zm, & ! Ice Cloud Fraction on momentum grid        [-]
+      rcm_zm,               & ! Liquid water mixing ratio on momentum grid [kg/kg]
+      wp2thvp_zm              ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
 
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(inout) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
@@ -2166,6 +2172,8 @@ module clubb_core
       wprtpthlp_zm(gr%nz)  = 0.0_core_rknd
       cloud_frac_zm          = zt2zm( cloud_frac )
       cloud_frac_zm(gr%nz) = 0.0_core_rknd
+      ice_supersat_frac_zm   = zt2zm( ice_supersat_frac )
+      ice_supersat_frac_zm(gr%nz) = 0.0_core_rknd
       rcm_zm                 = zt2zm( rcm )
       rcm_zm(gr%nz)        = 0.0_core_rknd
       wp2thvp_zm             = zt2zm( wp2thvp )
@@ -2274,6 +2282,7 @@ module clubb_core
     end if ! l_stats
 
     cloud_frac = trapezoid_zt( cloud_frac, cloud_frac_zm )
+    ice_supersat_frac = trapezoid_zt( ice_supersat_frac, ice_supersat_frac_zm )
     rcm        = trapezoid_zt( rcm, rcm_zm )
 
     wp2thvp    = trapezoid_zt( wp2thvp, wp2thvp_zm )

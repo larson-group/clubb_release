@@ -35,6 +35,7 @@ module stats_rad_zt
         irsnowm_rad, &
         ircm_in_cloud_rad, &
         icloud_frac_rad, & 
+        iice_supersat_frac_rad, &
         iradht_rad, &
         iradht_LW_rad, &
         iradht_SW_rad
@@ -63,6 +64,7 @@ module stats_rad_zt
     irsnowm_rad = 0
     ircm_in_cloud_rad = 0
     icloud_frac_rad = 0
+    iice_supersat_frac_rad = 0
     iradht_rad = 0
     iradht_LW_rad = 0
     iradht_SW_rad = 0
@@ -114,6 +116,13 @@ module stats_rad_zt
 
         call stat_assign( icloud_frac_rad, "cloud_frac_rad", & 
              "Cloud fraction (between 0 and 1) [-]", "count", rad_zt )
+        k = k + 1
+      
+      case ('ice_supersat_frac_rad')
+        iice_supersat_frac_rad = k
+
+        call stat_assign( iice_supersat_frac_rad, "ice_supersat_frac_rad", & 
+             "Ice cloud fraction (between 0 and 1) [-]", "count", rad_zt )
         k = k + 1
 
       case ('radht_rad')
