@@ -14,9 +14,11 @@ objdir="$dir/../obj"  # dir for *.o and *.mod files
 libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
-# The -fpe0 option will catch overflow, divide by zero, and invalid.
-#DEBUG="-g -fpe0 -traceback -check bounds -check uninit"
-DEBUG="-g -traceback -check bounds -check uninit"
+
+# == Debug ==
+# NO DEBUG flags
+DEBUG=""
+#DEBUG="-g -traceback -check bounds -check uninit -fpe0 -ftz"
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"
@@ -47,7 +49,7 @@ LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
 # Use -L<library path> -l<lib> to link in an external library
 LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
 
-FFLAGS="$ARCH $DEBUG"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output

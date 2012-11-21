@@ -14,7 +14,8 @@ objdir="$dir/../obj"  # dir for *.o and *.mod files
 libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
-DEBUG="-g -traceback -fpe:0 -fpe-all=0 -check uninit" # -check all -check boundary
+# == Debugging ==
+DEBUG="-g -traceback -check bounds -check uninit" # -check all -fpe-all=0
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"

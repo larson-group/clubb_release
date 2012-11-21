@@ -1,6 +1,6 @@
-# $Id$
+# $Id: linux_x86_64_ifort.bash 5959 2012-10-16 19:46:45Z dschanen@uwm.edu $
 # Makefile definitions customized for Linux x86_64 using the Intel Fortran 
-# compiler and ACML.  This uses a 4 byte real for the purposes of linking WRF-CLUBB.
+# compiler 
 
 
 # Fortran 95 compiler and linker
@@ -14,10 +14,9 @@ objdir="$dir/../obj"  # dir for *.o and *.mod files
 libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
-# == Debugging ==
-# No Debug flags
-DEBUG=""
-#DEBUG="-g -traceback -check bounds -check uninit -fpe0 -fpz"
+# == Debug ==
+# The -fpe0 option will catch overflow, divide by zero, and invalid.
+DEBUG="-g -traceback -check bounds -check uninit -fpe0 -ftz"
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"
@@ -28,16 +27,22 @@ ARCH="-msse2 -fp-model precise" # This should work on most modern AMD/Intel comp
 DOUBLE_PRECISION="-real-size 64"
 
 # == Optimization ==
-OPTIMIZE="-O3 -vec-report0"
+# No optimization
+OPTIMIZE=""
+#OPTIMIZE="-O3 -vec-report0"
 
 # == NetCDF Location ==
 NETCDF="/usr/local/netcdf-intel64"
 
 # == LAPACK libraries ==
-ACML="/opt/acml5.1.0/ifort64/lib"
-LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
+# Intel Math Kernel Library (v11.1)
+#MKLPATH="/opt/intel/Compiler/11.1/064/mkl/lib/em64t"
+#LAPACK="-L/opt/intel/mkl/8.1/lib/64 -Wl,-rpath,/opt/intel/mkl/8.1/lib/64 -lmkl_lapack64 -lmkl_i2p -lmkl -lmkl_vml_i2p -lmkl_vml -lvml -lguide -lpthread"
 # Generic library
 #LAPACK="-llapack -lblas -lgfortran"
+# AMD Core Math Library
+ACML="/opt/acml5.1.0/ifort64/lib"
+LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
@@ -55,8 +60,8 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
 
-CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=4"
-CPPFLAGS="-I$NETCDF/include"
+CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=8"
+CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include"
 
 # == Static library processing ==
 AR=ar
