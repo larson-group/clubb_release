@@ -9,6 +9,14 @@ module pdf_closure_module
 
   contains
 !------------------------------------------------------------------------
+
+  !#######################################################################
+  !#######################################################################
+  ! If you change the argument list of apdf_closure you also have to 
+  ! change the calls to this function in the host models CAM, WRF, SAM 
+  ! and GFDL.
+  !#######################################################################
+  !#######################################################################
   subroutine pdf_closure &
              ( p_in_Pa, exner, thv_ds, wm,       &
                wp2, wp3, sigma_sqd_w,            &

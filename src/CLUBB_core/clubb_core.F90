@@ -41,6 +41,14 @@ module clubb_core
   contains
 
   !-----------------------------------------------------------------------
+
+  !#######################################################################
+  !#######################################################################
+  ! If you change the argument list of advance_clubb_core you also have to 
+  ! change the calls to this function in the host models CAM, WRF, SAM 
+  ! and GFDL.
+  !#######################################################################
+  !#######################################################################
   subroutine advance_clubb_core &
              ( l_implemented, dt, fcor, sfc_elevation, &
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
