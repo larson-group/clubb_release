@@ -256,7 +256,8 @@ module pdf_closure_module
 !     sclr1_n, sclr2_n,
 
     logical :: &
-      l_scalar_calc  ! True if sclr_dim > 0
+      l_scalar_calc, &  ! True if sclr_dim > 0
+      l_calc_ice_supersat_frac ! True if we should calculate ice_supersat_frac
 
     ! Quantities needed to predict higher order moments
     real( kind = core_rknd ) ::  & 
@@ -276,11 +277,14 @@ module pdf_closure_module
     ! variables for computing ice cloud fraction
     real( kind = core_rknd) :: &
       ice_supersat_frac1, & ! first  pdf component of ice_supersat_frac
-      ice_supersat_frac2    ! second pdf component of ice_supersat_frac
+      ice_supersat_frac2, & ! second pdf component of ice_supersat_frac
+      T_in_K1, T_in_K2, &
+      rt_at_ice_sat1, rt_at_ice_sat2, &
+      rsl_liq1, rsl_liq2, &
+      s_at_ice_sat1, s_at_ice_sat2
+      
     
     real( kind = core_rknd ), parameter :: &
-      s_at_ice_sat1 = 0.0_core_rknd, & ! Temporary, this will not equal zero for long
-      s_at_ice_sat2 = 0.0_core_rknd, & ! Temporary, this will not equal zero for long
       s_at_liq_sat  = 0.0_core_rknd    ! Always zero
 
     integer :: i   ! Index
@@ -735,6 +739,19 @@ module pdf_closure_module
     else
       corr_st_2 = zero
     endif
+    
+    ! Determine whether to compute ice_supersat_frac. We do not compute
+    ! ice_supersat_frac for GFDL (unless do_liquid_only_in_clubb is true),
+    ! because liquid and ice are both fed into rtm, ruining the calculation.
+#ifdef GFDL
+    if (do_liquid_only_in_clubb) then
+      l_calc_ice_supersat_frac = .true.
+    else
+      l_calc_ice_supersat_frac = .false.
+    end if
+#else
+    l_calc_ice_supersat_frac = .true.
+#endif
 
     ! We need to introduce a threshold value for the variance of s
 
@@ -743,12 +760,25 @@ module pdf_closure_module
     
     ! Calculate cloud_frac2 and rc2
     call calc_cloud_frac_component(s2, stdev_s2, s_at_liq_sat, cloud_frac2, rc2)
-    
-    ! Calculate ice_supersat_frac1
-    call calc_cloud_frac_component(s1, stdev_s1, s_at_ice_sat1, ice_supersat_frac1)
-    
-    ! Calculate ice_supersat_frac2
-    call calc_cloud_frac_component(s2, stdev_s2, s_at_ice_sat2, ice_supersat_frac2)
+
+    if (l_calc_ice_supersat_frac) then
+      ! We must compute s_at_ice_sat1 and s_at_ice_sat2
+      T_in_K1 = tl1 + (Lv/Cp) * rc1
+      rt_at_ice_sat1 = sat_mixrat_ice( p_in_Pa, T_in_K1 )
+      rsl_liq1 = sat_mixrat_liq( p_in_Pa, tl1 )
+      s_at_ice_sat1 = ( rt_at_ice_sat1 - rsl_liq1 ) / ( 1._core_rknd + beta1 * rsl_liq1 )
+      
+      T_in_K2 = tl2 + (Lv/Cp) * rc2
+      rt_at_ice_sat2 = sat_mixrat_ice( p_in_Pa, T_in_K2 )
+      rsl_liq2 = sat_mixrat_liq( p_in_Pa, tl2 )
+      s_at_ice_sat2 = ( rt_at_ice_sat2 - rsl_liq2 ) / ( 1._core_rknd + beta2 * rsl_liq2 )
+
+      ! Calculate ice_supersat_frac1
+      call calc_cloud_frac_component(s1, stdev_s1, s_at_ice_sat1, ice_supersat_frac1)
+      
+      ! Calculate ice_supersat_frac2
+      call calc_cloud_frac_component(s2, stdev_s2, s_at_ice_sat2, ice_supersat_frac2)
+    end if
 
     ! Compute moments that depend on theta_v
     !
@@ -819,9 +849,17 @@ module pdf_closure_module
     
     rcm = max( zero_threshold, rcm )
     
-    ! Compute ice cloud fraction, ice_supersat_frac
-    ice_supersat_frac = calc_cloud_frac(ice_supersat_frac1, ice_supersat_frac2, mixt_frac)
-
+    if (l_calc_ice_supersat_frac) then
+      ! Compute ice cloud fraction, ice_supersat_frac
+      ice_supersat_frac = calc_cloud_frac(ice_supersat_frac1, ice_supersat_frac2, mixt_frac)
+    else
+      ! ice_supersat_frac will be garbage if computed as above
+      ice_supersat_frac = 0.0_core_rknd
+      if (clubb_at_least_debug_level( 1 )) then
+         write(fstderr,*) "Warning: ice_supersat_frac has garbage values if &
+                         & do_liquid_only_in_clubb = .false."
+      end if
+    end if
     ! Compute variance of liquid water mixing ratio.
     ! This is not needed for closure.  Statistical Analysis only.
     if ( ircp2 > 0 ) then
