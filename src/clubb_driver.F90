@@ -3681,7 +3681,7 @@ module clubb_driver
     thlp2_mc_tndcy   = zero
     rtpthlp_mc_tndcy = zero
 
-
+#ifdef LATIN_HYPERCUBE
     !The algorithm for diagnosing the correlations only works with the KK microphysics by now. 
     !<Changes by janhft 09/25/12>
     if ( l_diagnose_correlations .and. ( (micro_scheme /= "khairoutdinov_kogan") &
@@ -3690,7 +3690,6 @@ module clubb_driver
        stop
     end if  
 
-#ifdef LATIN_HYPERCUBE
     !----------------------------------------------------------------
     ! Compute subcolumns if enabled
     !----------------------------------------------------------------
