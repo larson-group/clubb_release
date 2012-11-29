@@ -1,4 +1,9 @@
-function[] = voca_output_creator( infile_name, action )
+function[] = voca_output_creator( infile_name, action, crs_lat )
+%
+% Call:
+%   voca_output_creator( infile_name, action )
+%   voca_output_creator( infile_name, action, crs_lat )
+%
 % VOCA_OUTPUT_CREATOR This function creates netCDF files required by the VOCA
 % 3-d intercomparison. It uses WRF-CLUBB output files as source information.
 %
@@ -32,17 +37,33 @@ function[] = voca_output_creator( infile_name, action )
 %   @params:
 %   infile_name - string containing the path to the wrfout file
 %   action - string that specifies the action of this script after reading
-%   the data ('write', 'plot', 'keyboard')
+%            the data ('write', 'plot', 'keyboard')
 %
-%       -> 'write': writes the netCDF output for the intercomparison
-%       -> 'plot': plots cloud cover and liquid water path
-%       -> 'animation': creates an animation showing the timely evolution of cloud fraction
-%       -> 'keyboard': stops the code after reading and interpolating the data
-%       and waits for user input
+%       -> 'write':     writes the netCDF output for the intercomparison
+%       -> 'plot':      plots cloud cover and liquid water path
+%       -> 'animation': creates an animation showing the timely evolution 
+%                       of cloud fraction (not yet working)
+%       -> 'keyboard':  stops the code after reading and interpolating the 
+%                       data and waits for user input
+%
+%   crs_lat - latitude for the cross section plots in [degrees S]; has to 
+%             be between 0 and 40 (default=20)
 
 
 % Necessary include
 addpath '../../matlab_include/'
+
+% Set default value for the cross section latitude
+  if nargin < 3 
+      crs_lat = 20;
+  end
+  
+  crs_lat
+  
+% Make sure crs_lat is in [0, 40]
+  if crs_lat < 0 || crs_lat > 40
+      disp('Error: crs_lat must be an integer between 0 and 40.');
+  end
 
 % initialize and set nuber of files
 numfiles=0;
@@ -476,7 +497,7 @@ elseif i_action==2
     % of the simulation is skipped. So we don't want to include the last 8
     % timesteps in the plots.
 %     plot_results( rho(:,:,:,1:(totaltimes-offset+1)), tmp(:,:,:,1:(totaltimes-offset+1)), geopot_ht(:,:,:,1:(totaltimes-offset+1)), cldlow(:,:,1:(totaltimes-offset+1)), cf(:,:,:,1:(totaltimes-offset+1)), qvapor(:,:,:,1:(totaltimes-offset+1)), lwc(:,:,:,1:(totaltimes-offset+1)), infile_name );
-    plot_results( rho, tmp, geopot_ht, cldlow, cf, qvapor, lwc, infile_name );
+    plot_results( rho, tmp, geopot_ht, cldlow, cf, qvapor, lwc, infile_name, crs_lat );
     
 elseif i_action==3
     disp('Type in your command: ')
@@ -674,7 +695,7 @@ keyboard % pause if you want to plot anything
 end % end function write_output
 
 % function to plot liquid water path and cloud cover
-function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, infile_name)
+function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, infile_name, lat)
 
 
 % check if infile_name is a cellstring; if so, get the first filename
@@ -772,19 +793,19 @@ end
 hgt_int = 0:100:20000;
 
 %interpolate to a equally spaced z-grid
-cf_20 = zeros(size(cf,1),size(cf,3),size(cf,4));
+cf_lat = zeros(size(cf,1),size(cf,3),size(cf,4));
 
-for i=1:(size(cf_20,1))
-    for j=1:(size(cf_20,3))
-        cf_20(i,:,j)=cf(i,21,:,j);
+for i=1:(size(cf_lat,1))
+    for j=1:(size(cf_lat,3))
+        cf_lat(i,:,j)=cf(i,lat+1,:,j);
     end
 end
 
 cf_int = zeros(size(cf,1),size(hgt_int,2),size(cf,4));
 
-for i=1:(size(cf_20,1))
-    for j=1:(size(cf_20,3))
-        cf_int(i,:,j)=interp1(hgt_20_stagg(i,:,j),cf_20(i,:,j),hgt_int,'pchip');
+for i=1:(size(cf_lat,1))
+    for j=1:(size(cf_lat,3))
+        cf_int(i,:,j)=interp1(hgt_20_stagg(i,:,j),cf_lat(i,:,j),hgt_int,'pchip');
     end
 end
 
@@ -792,7 +813,7 @@ cf_t_avg = (sum(cf_int,3)/size(cf_int,3));
 cf_t_avg = adjust_max(cf_t_avg(25:40,1:31), 0.8);
 
 
-%plot cross section along 20 S for cloud fraction
+%plot cross section along <lat> degrees S for cloud fraction
 f3=figure;
 subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
 image(-85:5:-70, hgt_int(1:5:31), (cf_t_avg)' , 'CDataMapping','scaled')
@@ -800,7 +821,7 @@ set(gca,'YDir', 'normal')
 colorbar()
 xlabel('Longitude [Degrees]')
 ylabel('Altitude [m]')
-title('Cloud fraction')
+title(strcat('Cloud fraction (',num2str(lat),' S)'))
 
 %put the info text
 ah=gca;
@@ -813,34 +834,26 @@ print(f3, '-depsc', strcat(outfile_prefix,'_cloudfrac'))
 
 
 %interpolate to a equally spaced z-grid
-cloudwater_20 = zeros(size(cloudwater,1),size(cloudwater,3),size(cloudwater,4));
+cloudwater_lat = zeros(size(cloudwater,1),size(cloudwater,3),size(cloudwater,4));
 
-for i=1:(size(cloudwater_20,1))
-    for j=1:(size(cloudwater_20,3))
-        cloudwater_20(i,:,j)=cloudwater(i,21,:,j);
+for i=1:(size(cloudwater_lat,1))
+    for j=1:(size(cloudwater_lat,3))
+        cloudwater_lat(i,:,j)=cloudwater(i,lat+1,:,j);
     end
 end
 
 cloudwater_int = zeros(size(cloudwater,1),size(hgt_int,2),size(cloudwater,4));
 
-for i=1:(size(cloudwater_20,1))
-    for j=1:(size(cloudwater_20,3))
-        cloudwater_int(i,:,j)=interp1(hgt_20_stagg(i,:,j),cloudwater_20(i,:,j),hgt_int,'pchip');
+for i=1:(size(cloudwater_lat,1))
+    for j=1:(size(cloudwater_lat,3))
+        cloudwater_int(i,:,j)=interp1(hgt_20_stagg(i,:,j),cloudwater_lat(i,:,j),hgt_int,'pchip');
     end
 end
 
 cloudwater_t_avg = (sum(cloudwater_int,3)/size(cloudwater_int,3));
 
 
-% plot cross section along 20 S for liquid water content (rho.*qcloud)
-%     cloudwater_t_avg = (sum(cloudwater,4)/size(cloudwater,4));
-%     cloudwater_20 = zeros(size(cloudwater_t_avg,1),size(cloudwater_t_avg,3));
-
-%     for i=1:(size(cf_20,1))
-%         cloudwater_20(i,:)=cloudwater_t_avg(i,21,:);
-%     end
-
-%     keyboard;
+% plot cross section along <lat> degrees S for liquid water content (rho.*qcloud)
 cloudwater_t_avg = adjust_max(cloudwater_t_avg(21:40,1:31), 0.2e-3);
 
 f4=figure;
@@ -850,7 +863,7 @@ set(gca,'YDir', 'normal')
 colorbar()
 xlabel('Longitude [Degrees]')
 ylabel('Altitude [m]')
-title('Liquid water content [g/m^3]')
+title(strcat('Liquid water content [g/m^3] (',num2str(lat),' S)'))
 
 %put the info text
 ah=gca;
@@ -863,33 +876,26 @@ print(f4, '-depsc', strcat(outfile_prefix,'_cloudwater'))
 
 
 % interpolate to a equally spaced z-grid
-qv_20 = zeros(size(qv,1),size(qv,3),size(qv,4));
+qv_lat = zeros(size(qv,1),size(qv,3),size(qv,4));
 
-for i=1:(size(qv_20,1))
-    for j=1:(size(qv_20,3))
-        qv_20(i,:,j)=qv(i,21,:,j);
+for i=1:(size(qv_lat,1))
+    for j=1:(size(qv_lat,3))
+        qv_lat(i,:,j)=qv(i,lat+1,:,j);
     end
 end
 
 qv_int = zeros(size(qv,1),size(hgt_int,2),size(qv,4));
 
-for i=1:(size(qv_20,1))
-    for j=1:(size(qv_20,3))
-        qv_int(i,:,j)=interp1(hgt_20_stagg(i,:,j),qv_20(i,:,j),hgt_int,'pchip');
+for i=1:(size(qv_lat,1))
+    for j=1:(size(qv_lat,3))
+        qv_int(i,:,j)=interp1(hgt_20_stagg(i,:,j),qv_lat(i,:,j),hgt_int,'pchip');
     end
 end
 
 qv_t_avg = (sum(qv_int,3)/size(qv_int,3));
 qv_t_avg = adjust_max(qv_t_avg(25:40,1:31), 10e-3);
 
-%plot cross section along 20 S for qv (thermodynamic profile)
-%     qv_t_avg = (sum(qv,4)/size(qv,4));
-%     qv_20 = zeros(size(qv_t_avg,1),size(qv_t_avg,3));
-%
-%     for i=1:(size(cf_20,1))
-%         qv_20(i,:)=qv_t_avg(i,21,:);
-%     end
-
+% plot cross section along <lat> degrees S for qv
 f5=figure;
 subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
 image(-85:5:-70, hgt_int(1:5:31), (qv_t_avg)' , 'CDataMapping','scaled')
@@ -897,7 +903,7 @@ set(gca,'YDir', 'normal')
 colorbar()
 xlabel('Longitude [Degrees]')
 ylabel('Altitude [m]')
-title('q_v [kg/kg]')
+title(strcat('q_v [kg/kg] (',num2str(lat),' S)'))
 
 %put the info text
 ah=gca;

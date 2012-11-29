@@ -8,7 +8,8 @@ echo "--------------------------------------------------------------------------
 echo "This bash script was created to run the matlab script voca_output_creater.m."
 echo "The Matlab script has to be located in the same directory as this script. To"
 echo "run jobs on HD1 use the -H option. If you have large input files the -b "
-echo "option might be very usefull. The matlab script will be running in the "
+echo "option might be very usefull. Use the -l <lat> option to set the latitude "
+echo "<lat> for the cross section plots. The matlab script will be running in the "
 echo "background then and you don't have to stay logged in. For more Information"
 echo "have a look at ticket 47 of the WRF trac."
 echo ""
@@ -25,13 +26,14 @@ echo "with the following extensions: .pdf, .png, .eps, .nfo."
 echo ""
 echo "Dependencies: matlab, [atd, bsub]"
 echo "" 
-echo "Usage: ./exec_voca_output_creater.bash [-bmH] [-n <name>] -a <action> -f <infile> | -d <indir>"
+echo "Usage: ./exec_voca_output_creater.bash [-bmH] [-n <name>] [-l <lat>] -a <action> -f <infile> | -d <indir>"
 echo ""
 echo "Options:"
 echo "-h -- show this page"
 echo "-f -- use input file <infile>"
 echo "-d -- use input directory <indir>"
 echo "-a -- perform action <action>"
+echo "-l -- set latitude for cross section plots"
 echo "-b -- run the script in the background"
 echo "-m -- merge the eps-graphics to a pdf-file"
 echo "-n -- Jobname <name>"
@@ -43,17 +45,19 @@ echo "--------------------------------------------------------------------------
 infile=''
 indir=''
 action=''
+lat=''
 background=false
 merge=false
 hd1=false
 hd1name=MatlabJob
 
-while getopts hHbmn:a:f:d: opt
+while getopts hHbmn:a:f:d:l: opt
 do
   case "$opt" in
     f) infile="$OPTARG";;
     a) action="$OPTARG";;
     d) indir="$OPTARG";;
+    l) lat="$OPTARG";;
     b) background=true;;
     m) merge=true;;
     H) hd1=true;;
@@ -93,7 +97,12 @@ if [ "$infile" != "" ] && [ -f $infile ]; then
 
 	#run in background
 	if [ $background = true ]; then
-		echo "matlab -r voca_output_creater\(\'$infile\'\,\'$action\'\)" >tmp
+
+		if [ "$lat" != "" ]; then
+			echo "matlab -r voca_output_creater\(\'$infile\'\,\'$action\'\,$lat\)" >tmp
+		else
+			echo "matlab -r voca_output_creater\(\'$infile\'\,\'$action\'\)" >tmp
+		fi
 
 		# merge eps to pdf
 		if [ $merge = true ]; then	
@@ -110,20 +119,34 @@ if [ "$infile" != "" ] && [ -f $infile ]; then
 			if [ -f run_matlab_tmp.job ]; then
 				rm run_matlab_tmp.job
 			fi
+
 			touch run_matlab_tmp.job
+
 			echo '#BSUB -J '$hd1name>>run_matlab_tmp.job
 			echo '#BSUB -o MatlabJob_'$hd1name'_%J'>>run_matlab_tmp.job
 			echo '#BSUB -K'>>run_matlab_tmp.job
-			echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\(\'$infile\'\,\'$action\'\)">>run_matlab_tmp.job
+
+			if [ "$lat" != "" ]; then
+				echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\(\'$infile\'\,\'$action\'\,$lat\)">>run_matlab_tmp.job
+			else
+				echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\(\'$infile\'\,\'$action\'\)">>run_matlab_tmp.job
+			fi
+
 			bsub < run_matlab_tmp.job
+
 			while [ ! -e 'MatlabJob_'$hd1name'_'* ]; do
 				sleep 1
 			done
+
 			mv 'MatlabJob_'$hd1name'_'* ${infile%/*}/
 
 		# usual run		
 		else
-			matlab -r voca_output_creater\(\'$infile\'\,\'$action\'\)
+			if [ "$lat" != "" ]; then
+				matlab -r voca_output_creater\(\'$infile\'\,\'$action\'\,$lat\)
+			else
+				matlab -r voca_output_creater\(\'$infile\'\,\'$action\'\)
+			fi
 		fi		
 			
 		# merge eps to pdf
@@ -134,6 +157,7 @@ if [ "$infile" != "" ] && [ -f $infile ]; then
 
 # if an existing input directory was specified
 elif [ "$indir" != "" ] && [ -d $indir ]; then
+	
 	k=0	
 	# get files from indir; exclude all png and eps
 	for curFile in $indir*; do
@@ -153,8 +177,13 @@ elif [ "$indir" != "" ] && [ -d $indir ]; then
 
 	# run in background
 	if [ $background = true ]; then
-		echo "matlab -r voca_output_creater\($fileList\,\'$action\'\)" >tmp
-		
+
+		if [ "$lat" != "" ]; then
+			echo "matlab -r voca_output_creater\($fileList\,\'$action\'\,$lat\)" >tmp
+		else
+			echo "matlab -r voca_output_creater\($fileList\,\'$action\'\)" >tmp
+		fi
+
 		# merge eps to pdf
 		if [ $merge = true ]; then	
 			echo "./mergeEPS.bash -f ${infile%/*}/ ${infile%/*}/plots.pdf">>tmp
@@ -167,25 +196,41 @@ elif [ "$indir" != "" ] && [ -d $indir ]; then
 	else		
 		# hd1 run
 		if [ $hd1 = true ]; then
+
 			if [ -f run_matlab_tmp.job ]; then
 				rm run_matlab_tmp.job
 			fi
+
 			touch run_matlab.job
+
 			echo '#BSUB -J '$hd1name>>run_matlab_tmp.job
 			echo '#BSUB -o MatlabJob_'$hd1name'_output_%J'>>run_matlab_tmp.job
 			echo '#BSUB -K'>>run_matlab_tmp.job
-			echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\($fileList\,\'$action\'\)">>run_matlab_tmp.job
+
+			if [ "$lat" != "" ]; then
+				echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\($fileList\,\'$action\'\,$lat\)">>run_matlab_tmp.job
+			else
+				echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\($fileList\,\'$action\'\)">>run_matlab_tmp.job
+			fi
+
 			bsub < run_matlab_tmp.job
+
 			while [ ! -e 'MatlabJob_'$hd1name'_'* ]; do
 				sleep 1
 			done
+
 			echo "moving to ${indir%*/}/"
 			mv 'MatlabJob_'$hd1name'_'* ${indir%*/}/
 
 		# usual run
 		else 
-			echo "matlab -r voca_output_creater\($fileList\,\'$action\'\)"
-			matlab -r voca_output_creater\($fileList\,\'$action\'\)
+			if [ "$lat" != "" ]; then
+				echo "matlab -r voca_output_creater\($fileList\,\'$action\'\,$lat\)"
+				matlab -r voca_output_creater\($fileList\,\'$action\'\,$lat\)
+			else
+				echo "matlab -r voca_output_creater\($fileList\,\'$action\'\)"
+				matlab -r voca_output_creater\($fileList\,\'$action\'\)
+			fi
 		fi		
 
 		# merge eps to pdf
