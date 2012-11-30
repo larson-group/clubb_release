@@ -927,6 +927,11 @@ module KK_microphys_module
                            pdf_params%stdev_s1**2 ) + ( 1 - pdf_params%mixt_frac ) *  &
                            ( ( pdf_params%s2 - s_mellor_m )**2 + pdf_params%stdev_s2**2 ) )
 
+          ! Just for debugging
+          if ( level == 50 ) then
+            print *, 'For debugging..'
+          end if
+
           corr_sw  = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
           corr_wrr = calc_w_corr( wprrp, stdev_w, sqrt(rrp2_on_rrainm2) * rrainm, w_tol, rr_tol )
           corr_wNr = calc_w_corr( wpNrp, stdev_w, sqrt(Nrp2_on_Nrm2) * Nrm, w_tol, Nr_tol )
@@ -1202,7 +1207,7 @@ module KK_microphys_module
     endif
 
     ! Correlation of ln r_r and ln N_r.
-    if ( icorr_rrNr > 0 ) then
+    if ( icorr_rrNr_n > 0 ) then
        call stat_update_var_pt( icorr_rrNr_n, level, corr_rrNr_n, zt )
     endif
 
