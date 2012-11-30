@@ -41,8 +41,9 @@ The single column model executable ("clubb_standalone") runs a particular
 case (e.g. BOMEX) and outputs statistical data in either Grid Analysis and
 Display System (GrADS) format or Network Common Data Form (netCDF) format.
 GrADS is both a data file format and a plotting program.  See
-<http://www.iges.org/grads/> for a description of GrADS.  NetCDF is data file
-format that can be read by the GrADS plotting program or by MATLAB.  See
+<http://www.iges.org/grads/> for a description of GrADS.  NetCDF is a self 
+describing data file format that can be read by the GrADS plotting program, 
+MATLAB, and other scientific programs.  See
 <http://www.unidata.ucar.edu/software/netcdf/> for a description of netCDF.
 A list of software packages that can be used to display netCDF data can be
 found at <http://www.unidata.ucar.edu/software/netcdf/software.html>.
@@ -116,7 +117,7 @@ For instance, on a Linux machine, to compile with gfortran, use the following
 command:
 user@computer compile$ ./compile.bash config/linux_x86_64_gfortran.bash
 
-To run this on a MAC OS X machine, you should use the following command:
+To run this on a Mac OS X machine, you should use the following command:
 
 $ ./compile.bash config/macosx_x86_64_gfortran.bash
 
@@ -158,7 +159,7 @@ can be found at http://www.unidata.ucar.edu/software/netcdf/software.html.
 
 **************************************************************************
                                   NOTE:
-MATLAB, Imagemagick, and Ghostscript are required for plotgen to function!
+MATLAB, ImageMagick, and Ghostscript are required for plotgen to function!
 **************************************************************************
 
 The plotgen.pl script is located in the postprocessing/plotgen directory
@@ -363,7 +364,7 @@ to one of the file lists in directory compile/file_list.
 
 Several compilers allows for promotion of real variables without a "kind="
 statement to double precision at compile time through the use of a compiler
-flag.  This will not currently work with the the numerical recipes subroutines
+flag.  This will not currently work with the numerical recipes subroutines
 referenced by the tuner because they use operator overloading (therefore you can
 only use tune_type = 2 when all real variables are promoted)
 
@@ -394,7 +395,7 @@ There are two basic ways to doing this:
 Do 1, 2, & 3 as above.  Important Note: The host model, CLUBB, and ancillary 
 programs such as netCDF and MPI need to be compiled using the same version 
 of Fortran and with the same compiler flags.  Not using the same compiler and 
-flags may cause errors and/or spurious results. 
+the same flags may cause errors and/or spurious results. 
 
 Optionally, you can safely remove everything but libclubb_param.a from the 
 "all" section of the compile.bash script if you only want to use CLUBB in 
@@ -442,7 +443,8 @@ changes to the CLUBB parameterization with just one compile step.
 There are 3 key caveats when this method however:
 1. The netCDF library still needs to be linked in if -DNETCDF is defined
 for compiling CLUBB's source files.  If the host model itself uses the 
-netCDF library, this shouldn't require any modifications to the linking.
+netCDF library, this shouldn't require any modifications to the linking
+(this is usually in the LDFLAGS variable for the host model).
 2. The LAPACK and BLAS libraries still need to be linked into the host
 model application.
 3. The CLUBB model has files with a .F90 extension in addition to .f90;
@@ -629,7 +631,7 @@ The namelist files:
 
   input/stats/all_stats.in, nobudgets_stats.in, etc.
   These files specify statistics output for each simulation.  See
-  all_stats.in for a complete list of the all output supported.
+  all_stats.in for a complete list of the all variables that can be output.
 
 The surface files:
 
@@ -749,7 +751,7 @@ This script can be found in "clubb/postprocessing/run_comparisons".
 
 Usage: find_grads_differences( 'casename_to_check.ctl', 
                           lower_time_bound(or 'begin'),
-	                  upper_time_bound(or 'end'), digits_of_precision)
+                          upper_time_bound(or 'end'), digits_of_precision)
 
 Note that this script must be run in Matlab while in the directory where the
 file resides.  Also, the path1, path2 and path3 variables will likely need to
@@ -841,7 +843,7 @@ Therefore, when l_input_fields is true, always use GrADS data output
 at 1mn increments or greater.
 
 You will need to set 'input_type' to the type of run you are using for input
-to "clubb" or "coamps_les".
+to ether "clubb", "coamps_les", "sam", or "rams_les".
 
 Then, change your directory to run_scripts and execute the run_scm.bash
 as you would usually.
@@ -936,7 +938,7 @@ about when you are allowed to change the ramdisk size.
    kernel /vmlinuz-2.4.21-40.EL ro root=LABEL=/ ramdisk_size=262144
 
 This sets ram disks to be 256 megabytes in size.  Note that your own system may
-have other options besides the ramdisk_size.
+already have other options besides the ramdisk_size on this line.
 
 2. $ mkfs.ext2 /dev/ram0
 
@@ -1057,9 +1059,10 @@ an example of how to do this.
   This is an optional interactive radiation scheme, developed separately from
   CLUBB by Stephens, et al. The code used in CLUBB was obtained from Norm Wood 
   on 2004/07/10.
-  When enabled, the analytic computation normally
-  used for radiation is disabled.  BUGSrad is enabled in the 
-  input/case_setups/<CASE NAME>_model.in file by setting rad_scheme = "bugsrad".
+  When enabled, the radiation will be calculated using this interative scheme rather
+  than an analytic computation or prescribed radiation scheme (to prevent double counting).
+  BUGSrad is enabled in the input/case_setups/<CASE NAME>_model.in file by setting the
+  variable rad_scheme = "bugsrad" in namelist &radiation_setting.
   
   Some important pre-processor directives for BUGSrad follow:
 
@@ -1143,7 +1146,7 @@ Logical flag                 |  If true then:
     graupel.
 
   l_seifert_beheng = .true.   Use Seifert and Beheng (2001) rain scheme,
-    rather than Khairoutdinov and Kogen (2000).
+    rather than Khairoutdinov and Kogan (2000).
 
   l_predictnc      = .true.   Prognose droplet number concentration
     (rather than specify it with Ncm_initial).
@@ -1152,7 +1155,7 @@ Logical flag                 |  If true then:
     derive ccn spectra, rather than power-law.
 
   l_subgrid_w       = .true.  Use the SGS calculation of the std of w to
-    determine cloud droplet activation.
+    determine cloud droplet activation (recommended when using CLUBB).
 
   l_arctic_nucl     = .true.  Use the MPACE observations rather than the
     Rasmussen et al., 2002 ice nucleation formula.
@@ -1166,16 +1169,16 @@ Logical flag                 |  If true then:
 
   Other parameters:
 
-  Ncm_initial      =  #/cc    Either the initial value of cloud droplet number
-    concentration, or the constant value if l_predictnc is true.
+  Ncm_initial      =  Either the initial value of cloud droplet number
+    concentration, or the constant value if l_predictnc is true.   [num/m^3]
 
-  pgam_fixed  = #  Value to use for a fixed pgam
+  pgam_fixed       =  Value to use for a fixed pgam [num]
 
-  aer_n1,n2   = #/cm3  Aerosol concentration
+  aer_n1,n2        = Aerosol concentration [num/m^3]
 
-  aer_sig1,sig2 = # Standard deviation of aerosol size distribution
+  aer_sig1,sig2    = Standard deviation of aerosol size distribution [num]
 
-  aer_rm1,rm2   = μ Mean geometric radius 
+  aer_rm1,rm2      = Mean geometric radius [m]
 
 The budgets for the mixing ratio and number concentrations when using 
 the Morrison microphysics are as follows:
@@ -1237,7 +1240,7 @@ _zm = interpolated to the       E.g., rho_zm is the density on the
 _zt = interpolated to the       E.g., wp2_zt is wp2 on the
       thermodynamic grid.           thermodynamic grid
 _sfc= ground or ocean surface   E.g., T_sfc is the temperature of 
-				    the ground or ocean
+                                    the ground or ocean
 
 -------------------------------------------------------------------------                            
 - (7.2) Some important variables in CLUBB:
