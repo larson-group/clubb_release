@@ -995,7 +995,7 @@ module clubb_core
     ! increase cloudiness at coarser grid resolutions.
     if ( l_use_cloud_cover ) then
       cloud_frac = cloud_cover
-      ice_supersat_frac = cloud_cover !?-mark
+      !ice_supersat_frac = cloud_cover !?-mark
       rcm = rcm_in_layer
     end if
 

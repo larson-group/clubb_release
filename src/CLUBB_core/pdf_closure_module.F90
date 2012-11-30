@@ -12,7 +12,7 @@ module pdf_closure_module
 
   !#######################################################################
   !#######################################################################
-  ! If you change the argument list of apdf_closure you also have to 
+  ! If you change the argument list of pdf_closure you also have to 
   ! change the calls to this function in the host models CAM, WRF, SAM 
   ! and GFDL.
   !#######################################################################
@@ -73,6 +73,7 @@ module pdf_closure_module
       rt_tol,        & ! Tolerance for r_t                   [kg/kg]
       thl_tol,       & ! Tolerance for th_l                  [K]
       s_mellor_tol,  & ! Tolerance for pdf parameter s       [kg/kg]
+      T_freeze_K,    & ! Freezing point of water             [K]
       fstderr,       &
       zero_threshold
 
@@ -278,9 +279,7 @@ module pdf_closure_module
     real( kind = core_rknd) :: &
       ice_supersat_frac1, & ! first  pdf component of ice_supersat_frac
       ice_supersat_frac2, & ! second pdf component of ice_supersat_frac
-      T_in_K1, T_in_K2, &
       rt_at_ice_sat1, rt_at_ice_sat2, &
-      rsl_liq1, rsl_liq2, &
       s_at_ice_sat1, s_at_ice_sat2
       
     
@@ -763,15 +762,23 @@ module pdf_closure_module
 
     if (l_calc_ice_supersat_frac) then
       ! We must compute s_at_ice_sat1 and s_at_ice_sat2
-      T_in_K1 = tl1 + (Lv/Cp) * rc1
-      rt_at_ice_sat1 = sat_mixrat_ice( p_in_Pa, T_in_K1 )
-      rsl_liq1 = sat_mixrat_liq( p_in_Pa, tl1 )
-      s_at_ice_sat1 = ( rt_at_ice_sat1 - rsl_liq1 ) / ( 1._core_rknd + beta1 * rsl_liq1 )
-      
-      T_in_K2 = tl2 + (Lv/Cp) * rc2
-      rt_at_ice_sat2 = sat_mixrat_ice( p_in_Pa, T_in_K2 )
-      rsl_liq2 = sat_mixrat_liq( p_in_Pa, tl2 )
-      s_at_ice_sat2 = ( rt_at_ice_sat2 - rsl_liq2 ) / ( 1._core_rknd + beta2 * rsl_liq2 )
+      if (tl1 <= T_freeze_K) then
+        rt_at_ice_sat1 = sat_mixrat_ice( p_in_Pa, tl1 )
+        s_at_ice_sat1 = ( rt_at_ice_sat1 - rsl1 ) / ( 1._core_rknd + beta1 * rsl1 )
+      else
+        ! If the temperature is warmer than freezing (> 0C) then ice_supersat_frac
+        ! is not defined, so we use s_at_liq_sat
+        s_at_ice_sat1 = s_at_liq_sat
+      end if
+
+      if (tl2 <= T_freeze_K) then
+        rt_at_ice_sat2 = sat_mixrat_ice( p_in_Pa, tl2 )
+        s_at_ice_sat2 = ( rt_at_ice_sat2 - rsl2 ) / ( 1._core_rknd + beta2 * rsl2 )
+      else
+        ! If the temperature is warmer than freezing (> 0C) then ice_supersat_frac
+        ! is not defined, so we use s_at_liq_sat
+        s_at_ice_sat2 = s_at_liq_sat
+      end if
 
       ! Calculate ice_supersat_frac1
       call calc_cloud_frac_component(s1, stdev_s1, s_at_ice_sat1, ice_supersat_frac1)

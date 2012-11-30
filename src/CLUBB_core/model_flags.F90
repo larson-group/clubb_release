@@ -126,7 +126,7 @@ module model_flags
   ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help increase cloudiness
   ! at coarser grid resolutions.
   logical, public :: &
-    l_use_cloud_cover = .true.
+    l_use_cloud_cover = .false.
 !$omp threadprivate(l_use_cloud_cover)
 
   integer, public :: &
