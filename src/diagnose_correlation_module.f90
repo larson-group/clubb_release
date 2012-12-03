@@ -20,7 +20,7 @@ module diagnose_correlations_module
 
 !-----------------------------------------------------------------------
   subroutine diagnose_KK_corr( Ncm, rrainm, Nrm, & ! intent(in)
-                               Ncp2_on_Ncm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
+                               Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
                                corr_ws, corr_wrr, corr_wNr, corr_wNc, &
                                pdf_params, &
                                corr_rrNr, corr_srr, corr_sNr, corr_sNc ) ! intent(inout)
@@ -75,7 +75,7 @@ module diagnose_correlations_module
       rrainm,         &  ! rain water mixing ratio               [kg/kg]
       Nrm,            &  ! Mean rain drop concentration          [num/kg]
       Ncp2_on_Ncm2,   &  ! Variance of Nc divided by Ncm^2       [-]
-      rrp2_on_rrm2,   &  ! Variance of rrain divided by rrainm^2 [-]
+      rrp2_on_rrainm2,   &  ! Variance of rrain divided by rrainm^2 [-]
       Nrp2_on_Nrm2,   &  ! Variance of Nr divided by Nrm^2       [-]
       corr_ws,        &  ! Correlation between s_mellor and w    [-]
       corr_wrr,       &  ! Correlation between rrain and w       [-]
@@ -128,7 +128,7 @@ module diagnose_correlations_module
     sqrt_xp2_on_xm2(ii_w) = 1
     sqrt_xp2_on_xm2(ii_s) = 1
 
-    sqrt_xp2_on_xm2(ii_rrain) = sqrt(rrp2_on_rrm2)
+    sqrt_xp2_on_xm2(ii_rrain) = sqrt(rrp2_on_rrainm2)
     sqrt_xp2_on_xm2(ii_Nr) = sqrt(Nrp2_on_Nrm2)
     sqrt_xp2_on_xm2(ii_Nc) = sqrt(Ncp2_on_Ncm2)
 
@@ -257,7 +257,7 @@ module diagnose_correlations_module
 
         ! formula (16) in the ref. paper (Larson et al. (2011))
         f_ij = alpha_corr * sqrt_xp2_on_xm2(i) * sqrt_xp2_on_xm2(j) &
-        * sign(1.0_core_rknd,corr_matrix_approx(1,i)*corr_matrix_approx(1,j)) 
+             * sign(1.0_core_rknd,corr_matrix_approx(1,i)*corr_matrix_approx(1,j)) 
 
         ! make sure -1 < f_ij < 1
         if ( f_ij < -max_mag_correlation ) then

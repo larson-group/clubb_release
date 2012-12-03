@@ -921,16 +921,12 @@ module KK_microphys_module
     if ( l_diagnose_correlations ) then
 
        if ( l_calc_w_corr ) then
-          
+
           s_mellor_m = calc_mean( pdf_params%mixt_frac, pdf_params%s1, pdf_params%s2 )
+
           stdev_s_mellor = sqrt( pdf_params%mixt_frac * ( ( pdf_params%s1 - s_mellor_m )**2 + &
                            pdf_params%stdev_s1**2 ) + ( 1 - pdf_params%mixt_frac ) *  &
                            ( ( pdf_params%s2 - s_mellor_m )**2 + pdf_params%stdev_s2**2 ) )
-
-          ! Just for debugging
-          if ( level == 50 ) then
-            print *, 'For debugging..'
-          end if
 
           corr_sw  = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
           corr_wrr = calc_w_corr( wprrp, stdev_w, sqrt(rrp2_on_rrainm2) * rrainm, w_tol, rr_tol )
