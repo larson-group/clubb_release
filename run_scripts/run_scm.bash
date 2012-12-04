@@ -350,7 +350,7 @@ then
 	cat $parameter_file > $NAMELISTS
 	cat $FLAGS_FILE >> $NAMELISTS
 	# Use this version if statistical output is desired.
-	#cat $MODEL_IN | sed -e 's/dt_main\s*=\s*.*/dt_main = '$test_ts'/g' \
+	#cat $model_file | sed -e 's/dt_main\s*=\s*.*/dt_main = '$test_ts'/g' \
 	#                    -e 's/dt_rad\s*=\s*.*/dt_rad = '$test_ts'/g' \
 	#                    -e 's/stats_tsamp\s*=\s*.*/stats_tsamp = '$test_ts'/g' \
 	#                    -e 's/stats_tout\s*=\s*.*/stats_tout = '$test_ts'/g' >> $NAMELISTS
