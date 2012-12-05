@@ -178,6 +178,42 @@
        {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Lscale', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation between s and w', 'axisLabel' => 'corr\_sw [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_sw', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation between w and rrain', 'axisLabel' => 'corr\_wrr [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_wrr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation between w and Nr', 'axisLabel' => 'corr\_wNr [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_wNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation between w and Nc', 'axisLabel' => 'corr\_wNc [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_wNc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation between s and rrain', 'axisLabel' => 'corr\_srr [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_srr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation between s and Nr', 'axisLabel' => 'corr\_sNr [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_sNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation between s and Nc', 'axisLabel' => 'corr\_sNc [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_sNc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation between rrain and Nr', 'axisLabel' => 'corr\_rrNr [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_rrNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation between ln rrain and ln Nr', 'axisLabel' => 'corr\_rrNr\_n [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_rrNr_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
     'nightlyOutput' =>
