@@ -67,8 +67,8 @@ module latin_hypercube_arrays
 !-------------------------------------------------------------------------------
 
     use parameters_microphys, only: &
-      rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
-      rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below
+      rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
+      rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below
 
     use parameters_microphys, only: &
       rsnowp2_on_rsnowm2_cloud, & ! Variables
@@ -210,7 +210,7 @@ module latin_hypercube_arrays
     end if
 
     if ( iiLH_rrain > 0 ) then
-      xp2_on_xm2_array_cloud(iiLH_rrain) = rrp2_on_rrainm2_cloud
+      xp2_on_xm2_array_cloud(iiLH_rrain) = rrp2_on_rrm2_cloud
       if ( iiLH_Nr > 0 ) then
         xp2_on_xm2_array_cloud(iiLH_Nr) = Nrp2_on_Nrm2_cloud
       end if ! iiLH_Nr > 0
@@ -257,7 +257,7 @@ module latin_hypercube_arrays
     end if
 
     if ( iiLH_rrain > 0 ) then
-      xp2_on_xm2_array_below(iiLH_rrain) = rrp2_on_rrainm2_below
+      xp2_on_xm2_array_below(iiLH_rrain) = rrp2_on_rrm2_below
 
 
 

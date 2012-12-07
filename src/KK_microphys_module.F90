@@ -731,8 +731,8 @@ module KK_microphys_module
         pdf_parameter  ! Variable(s) type
 
     use parameters_microphys, only: &
-        rrp2_on_rrainm2_cloud, & ! Variable(s)
-        rrp2_on_rrainm2_below, &
+        rrp2_on_rrm2_cloud, & ! Variable(s)
+        rrp2_on_rrm2_below, &
         Nrp2_on_Nrm2_cloud,    &
         Nrp2_on_Nrm2_below,    &
         Ncp2_on_Ncm2_cloud,    &
@@ -826,7 +826,7 @@ module KK_microphys_module
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      rrp2_on_rrainm2, & ! Ratio of < r_r >^2 to < r_r'^2 >                 [-]
+      rrp2_on_rrm2, & ! Ratio of < r_r >^2 to < r_r'^2 >                 [-]
       Nrp2_on_Nrm2,    & ! Ratio of < N_r >^2 to < N_r'^2 >                 [-]
       Ncp2_on_Ncm2,    & ! Ratio of < N_c >^2 to < N_c'^2 >                 [-]
       corr_srr_2,      & ! Correlation between s and rr (2nd PDF component) [-]
@@ -872,7 +872,7 @@ module KK_microphys_module
     ! used.  Otherwise, the ###_below value is used.
     if ( rcm > rc_tol ) then
 
-       rrp2_on_rrainm2 = rrp2_on_rrainm2_cloud
+       rrp2_on_rrm2 = rrp2_on_rrm2_cloud
        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_cloud
        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_cloud
 
@@ -895,7 +895,7 @@ module KK_microphys_module
 
     else
 
-       rrp2_on_rrainm2 = rrp2_on_rrainm2_below
+       rrp2_on_rrm2 = rrp2_on_rrm2_below
        Nrp2_on_Nrm2    = Nrp2_on_Nrm2_below
        Ncp2_on_Ncm2    = Ncp2_on_Ncm2_below
 
@@ -929,14 +929,14 @@ module KK_microphys_module
                            ( ( pdf_params%s2 - s_mellor_m )**2 + pdf_params%stdev_s2**2 ) )
 
           corr_sw  = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
-          corr_wrr = calc_w_corr( wprrp, stdev_w, sqrt(rrp2_on_rrainm2) * rrainm, w_tol, rr_tol )
+          corr_wrr = calc_w_corr( wprrp, stdev_w, sqrt(rrp2_on_rrm2) * rrainm, w_tol, rr_tol )
           corr_wNr = calc_w_corr( wpNrp, stdev_w, sqrt(Nrp2_on_Nrm2) * Nrm, w_tol, Nr_tol )
           corr_wNc = calc_w_corr( wpNcp, stdev_w, sqrt(Ncp2_on_Ncm2) * Ncm, w_tol, Nc_tol )
 
        end if
 
        call diagnose_KK_corr( Ncm, rrainm, Nrm, &
-                              Ncp2_on_Ncm2, rrp2_on_rrainm2, Nrp2_on_Nrm2, &
+                              Ncp2_on_Ncm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
                               corr_sw, corr_wrr, corr_wNr, corr_wNc,  &
                               pdf_params, &
                               corr_rrNr, corr_srr_1, &
@@ -954,7 +954,7 @@ module KK_microphys_module
 
     ! Normalized mean of rain water mixing ratio.
     if ( rrainm > rr_tol ) then
-       mu_rr_n = mean_L2N( rrainm, rrp2_on_rrainm2 * rrainm**2 )
+       mu_rr_n = mean_L2N( rrainm, rrp2_on_rrm2 * rrainm**2 )
     else
        ! Mean rain water mixing ratio is less than the tolerance amount.  It is
        ! considered to have a value of 0.  There is not any rain at this
@@ -994,7 +994,7 @@ module KK_microphys_module
 
     ! Normalized standard deviation of rain water mixing ratio.
     if ( rrainm > rr_tol ) then
-       sigma_rr_n = stdev_L2N( rrainm, rrp2_on_rrainm2 * rrainm**2 )
+       sigma_rr_n = stdev_L2N( rrainm, rrp2_on_rrm2 * rrainm**2 )
     else
        ! Mean rain water mixing ratio is less than the tolerance amount.  It is
        ! considered to have a value of 0.  There is not any rain at this grid

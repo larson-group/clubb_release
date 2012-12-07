@@ -103,10 +103,10 @@ module microphys_driver
         morrison_lognormal
 
     use parameters_microphys, only: &
-        rrp2_on_rrainm2_cloud, & ! Variable(s)
+        rrp2_on_rrm2_cloud, & ! Variable(s)
         Nrp2_on_Nrm2_cloud,    &
         Ncp2_on_Ncm2_cloud,    &
-        rrp2_on_rrainm2_below, &
+        rrp2_on_rrm2_below, &
         Nrp2_on_Nrm2_below,    &
         Ncp2_on_Ncm2_below,    &
         C_evap,                &
@@ -246,8 +246,8 @@ module microphys_driver
       l_in_cloud_Nc_diff, LH_microphys_type, l_local_kk, LH_microphys_calls, &
       LH_sequence_length, l_lh_cloud_weighted_sampling, &
       l_fix_s_t_correlations, l_lh_vert_overlap, &
-      rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
-      rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, &
+      rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
+      rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
       Ncp2_on_Ncm2_below, C_evap, r_0, microphys_start_time, &
       Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
@@ -332,12 +332,12 @@ module microphys_driver
     !  Kogan or Morrison microphysics).
     !---------------------------------------------------------------------------
     ! Parameters for in-cloud (default values are from SAM RF02 DO).
-    rrp2_on_rrainm2_cloud = 0.766_core_rknd
+    rrp2_on_rrm2_cloud = 0.766_core_rknd
     Nrp2_on_Nrm2_cloud    = 0.429_core_rknd
     Ncp2_on_Ncm2_cloud    = 0.003_core_rknd
 
     ! Parameters for below-cloud (default values are from SAM RF02 DO).
-    rrp2_on_rrainm2_below = 8.97_core_rknd
+    rrp2_on_rrm2_below = 8.97_core_rknd
     Nrp2_on_Nrm2_below    = 12.03_core_rknd
     Ncp2_on_Ncm2_below    = zero  ! Not applicable below cloud.
 
@@ -490,13 +490,13 @@ module microphys_driver
         l_write_to_file, iunit )
       call write_text ( "l_lh_vert_overlap = ", l_lh_vert_overlap, &
         l_write_to_file, iunit )
-      call write_text ( "rrp2_on_rrainm2_cloud = ", rrp2_on_rrainm2_cloud, &
+      call write_text ( "rrp2_on_rrm2_cloud = ", rrp2_on_rrm2_cloud, &
         l_write_to_file, iunit )
       call write_text ( "Nrp2_on_Nrm2_cloud = ", Nrp2_on_Nrm2_cloud, &
         l_write_to_file, iunit )
       call write_text ( "Ncp2_on_Ncm2_cloud = ", Ncp2_on_Ncm2_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "rrp2_on_rrainm2_below = ", rrp2_on_rrainm2_below, &
+      call write_text ( "rrp2_on_rrm2_below = ", rrp2_on_rrm2_below, &
         l_write_to_file, iunit )
       call write_text ( "Nrp2_on_Nrm2_below = ", Nrp2_on_Nrm2_below, &
         l_write_to_file, iunit )

@@ -108,20 +108,20 @@ module parameters_microphys
 
   ! Parameters for in-cloud (from SAM RF02 DO).
   real( kind = core_rknd ), public :: &       ! RF02 value
-    rrp2_on_rrainm2_cloud, & ! 0.766
+    rrp2_on_rrm2_cloud, & ! 0.766
     Nrp2_on_Nrm2_cloud,    & ! 0.429
     Ncp2_on_Ncm2_cloud       ! 0.003
 
-!$omp threadprivate( rrp2_on_rrainm2_cloud, Nrp2_on_Nrm2_cloud, &
+!$omp threadprivate( rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, &
 !$omp                Ncp2_on_Ncm2_cloud )
 
   ! Parameters for below-cloud (from SAM RF02 DO).
   real( kind = core_rknd ), public :: &       ! RF02 value
-    rrp2_on_rrainm2_below, & ! 8.97
+    rrp2_on_rrm2_below, & ! 8.97
     Nrp2_on_Nrm2_below,    & ! 12.03
     Ncp2_on_Ncm2_below       ! 0.00 ! Not applicable below cloud.
 
-!$omp threadprivate( rrp2_on_rrainm2_below, Nrp2_on_Nrm2_below, &
+!$omp threadprivate( rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
 !$omp                Ncp2_on_Ncm2_below )
 
   ! Other needed parameters
