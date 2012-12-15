@@ -60,6 +60,8 @@ addpath '../../matlab_include/'
   
   crs_lat
   
+  infile_name
+  
 % Make sure crs_lat is in [0, 40]
   if crs_lat < 0 || crs_lat > 40
       disp('Error: crs_lat must be an integer between 0 and 40.');
@@ -131,7 +133,7 @@ for ifilenum=1:numfiles
     
     % if there is only 1 file to read, infile_name is a string; otherwise
     % it's a cellstring
-    if numfiles==1
+    if ischar(infile_name)
         ncid = netcdf.open(infile_name,'NOWRITE');
     else
         % Open the WRF netCDF file and read information
@@ -185,7 +187,7 @@ for ifilenum=1:numfiles
     
     % if there is only 1 file to read, infile_name is a string; otherwise
     % it's a cellstring
-    if numfiles==1
+    if ischar(infile_name)
         ncid = netcdf.open(infile_name,'NOWRITE');
     else
         % Open the WRF netCDF file and read information
