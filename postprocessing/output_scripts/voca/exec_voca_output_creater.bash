@@ -158,12 +158,22 @@ if [ "$infile" != "" ] && [ -f $infile ]; then
 # if an existing input directory was specified
 elif [ "$indir" != "" ] && [ -d $indir ]; then
 	
+	# make sure indir has a '/' at the end
+	indir=${indir/%\//}/
+
 	k=0	
-	# get files from indir; exclude all png and eps
+	# get files from indir
 	for curFile in $indir*; do
-		if [ "${curFile/*./}" != "png" ] && [ "${curFile/*./}" != "eps" ] && [ "${curFile/*./}" != "pdf" ] && [ "${curFile/*./}" != "nfo" ]; then
+		
+		# substring to check if the file is a MatlabJob oputput file
+		tmp=${curFile/*\//}
+
+		# exclude all .png, .eps, .pdf, .nfo and MatlabJob output files
+		if [ "${curFile/*./}" != "png" ] && [ "${curFile/*./}" != "eps" ] && [ "${curFile/*./}" != "pdf" ] && [ "${curFile/*./}" != "nfo" ] &&                     			   [ "${tmp:0:9}" != "MatlabJob" ]; 
+		then
 			files[$k]=$curFile;
 			let k=k+1;
+			echo $curFile > tmp.txt;
 		fi	
 	done
 
