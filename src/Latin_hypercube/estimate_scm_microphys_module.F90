@@ -347,8 +347,7 @@ module estimate_scm_microphys_module
       iiNrm, &
       iiNsnowm, &
       iiNim, &
-      iiNgraupelm, &
-      iiNcm
+      iiNgraupelm
 
     use corr_matrix_module, only: &
       iiLH_rrain, &

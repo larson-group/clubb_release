@@ -46,7 +46,7 @@ module clubb_driver
     use parameter_indices, only: nparams ! Variable(s)
 
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
-      tau_zm, tau_zt, thvm, Lscale, Kh_zm, Kh_zt, &
+      thvm, Lscale, Kh_zm, &
       um_ref, vm_ref, Ncnm, wp2_zt, &
       hydromet, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
@@ -1200,10 +1200,6 @@ module clubb_driver
       zero_threshold, &
       cm3_per_m3
 
-    use parameters_tunable, only:  & 
-      taumax,  &  ! Variable(s)
-      c_K
-
     use parameters_model, only:  & 
       sclr_dim, &
       edsclr_dim, &
@@ -1235,12 +1231,8 @@ module clubb_driver
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
-    use mixing_length, only: compute_length ! Procedure(s)
-
     use error_code, only: &
-      clubb_no_error, & ! Variable(s)
-      clubb_at_least_debug_level, & ! Procedure(s)
-      fatal_error
+      clubb_no_error ! Variable(s)
 
     use constants_clubb, only: fstderr ! Variables(s)
 
@@ -1276,10 +1268,7 @@ module clubb_driver
       dt_main
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    use parameters_tunable, only: &
-      mu  ! Variable(s)     
+      core_rknd ! Variable(s)  
 
     implicit none
 
@@ -3523,7 +3512,7 @@ module clubb_driver
       pdf_parameter ! Derived type
 
     use parameters_microphys, only: &
-      micro_scheme, l_cloud_sed, Ncm_initial, &  ! Variables
+      micro_scheme, Ncm_initial, &  ! Variables
       LH_microphys_calls
 
     use constants_clubb, only: & 
@@ -3532,8 +3521,6 @@ module clubb_driver
     use clubb_precision, only: time_precision, dp, core_rknd ! Variable(s)
 
     use microphys_driver, only: advance_microphys ! Procedure(s)
-
-    use cloud_sed_module, only: cloud_drop_sed ! Procedure(s)
 
     use parameters_model, only: hydromet_dim ! Variable(s)
 
@@ -3551,15 +3538,6 @@ module clubb_driver
     use clubb_model_settings, only: &
       time_current, & ! Variable(s)
       runtype
-
-    use stats_variables, only: &
-      zt, & ! Variable(s)
-      l_stats_samp, &
-      iNcm, &
-      iNcm_in_cloud
-
-    use stats_type, only: &
-       stat_update_var ! Procedure(s)
 
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &

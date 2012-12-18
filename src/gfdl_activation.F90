@@ -102,9 +102,11 @@ module gfdl_activation
             / sqrt( 2.0_core_rknd*pdf_params(iz_clubb)%varnce_w1) )
         P1_updraft = P1_updraft * pdf_params(iz_clubb)%mixt_frac &
             * pdf_params(iz_clubb)%cloud_frac1
-      else
-        if( pdf_params( iz_clubb)%w1 > 0.0_core_rknd) &
+      else if( pdf_params( iz_clubb)%w1 > 0.0_core_rknd) then
           P1_updraft = pdf_params( iz_clubb)%mixt_frac * pdf_params( iz_clubb)%cloud_frac1
+      else
+        ! Eric Raut added to remove compiler warning
+          P1_updraft = 0.0_core_rknd
       end if
 
 
@@ -114,10 +116,12 @@ module gfdl_activation
                       / sqrt( 2.0_core_rknd*pdf_params(iz_clubb)%varnce_w2) )
         P2_updraft = P2_updraft * ( 1.0_core_rknd-pdf_params( iz_clubb )%mixt_frac ) &
                       * pdf_params( iz_clubb)%cloud_frac2
-      else
-        if( pdf_params( iz_clubb)%w2 > 0.0_core_rknd) &
+      else if( pdf_params( iz_clubb)%w2 > 0.0_core_rknd) then
            P2_updraft = ( 1.0_core_rknd-pdf_params( iz_clubb )%mixt_frac ) &
                           * pdf_params( iz_clubb)%cloud_frac2
+      else
+        ! Eric Raut added to remove compiler warning
+        P2_updraft = 0.0_core_rknd
       end if
 
       if( P1_updraft + P2_updraft   > P_updraft_eps  ) then
@@ -129,6 +133,8 @@ module gfdl_activation
       end if
 
       aeromass_clubb_r4 = real(aeromass_clubb(iz_clubb, :))
+      ! Eric Raut initialized drop, which was previously uninitialized!!!
+      drop = 0.0_core_rknd
       drop_r4 = real(drop)
 
       call aer_ccn_act_wpdf_k( real(temp_clubb_act(iz_clubb)), real(p_in_Pa(iz_clubb)),&!intent(in)
@@ -268,6 +274,8 @@ end subroutine aer_act_clubb_quadrature_Gauss
     end do
 
     if(i==100)then
+      ! Eric Raut added to remove compiler warning (obviously result is not used)
+      get_unit = 0
       stop "Unable to open unit."
     else
       get_unit = i

@@ -31,8 +31,7 @@ module stats_LH_zt
       fstderr ! Constant(s)
 
     use stats_variables, only: & 
-      LH_zt, & ! Variable(s)
-      fname_LH_zt
+      LH_zt    ! Variable
 
     use stats_variables, only: & 
       iAKm, &  ! Variable(s)

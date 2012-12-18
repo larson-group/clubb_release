@@ -139,6 +139,7 @@ module corr_matrix_module
     integer :: i
 
     !------------------ BEGIN CODE -----------------------------
+    i = -1
 
     select case( trim(var_name) )
 
@@ -171,9 +172,6 @@ module corr_matrix_module
 
     case( "Nsnow" )
       i = iiLH_Nsnow
-
-    case default
-      i = -1
 
     end select
 

@@ -230,6 +230,9 @@ module morrison_micro_driver_module
     ! Note: The Ncm_r4 variable is only used if INUM = 0 in the Morrison code;
     ! otherwise the NDCNST variable is used as the fixed value.
     Ncm_r4 = real( Ncm )
+    
+    ! Eric Raut added to remove compiler warning (initial value not used)
+    i = 1
 
     forall ( i = 1:hydromet_dim )
       hydromet_r4(1:nz,i) = real( hydromet(1:nz,i) )

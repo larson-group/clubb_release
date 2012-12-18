@@ -492,8 +492,8 @@ module clubb_core
       thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
       rtm_pert_1, rtm_pert_2,   &     ! For avg. calculation of Lscale  [kg/kg]
       thlm_pert_pos, thlm_pert_neg, &     ! For avg. calculation of Lscale  [K]
-      rtm_pert_pos, rtm_pert_neg, &       ! For avg. calculation of Lscale  [kg/kg]
-      Lscale_weight
+      rtm_pert_pos, rtm_pert_neg          ! For avg. calculation of Lscale  [kg/kg]
+      !Lscale_weight Uncomment this if you need to use this vairable at some point.
 
     ! For pdf_closure
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: & 
@@ -1060,7 +1060,7 @@ module clubb_core
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) )
         rtm_pert_neg = pdf_params%rt2 & 
                      - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
-        Lscale_weight = pdf_params%mixt_frac
+        !Lscale_weight = pdf_params%mixt_frac
       else where
         rtm_pert_pos = pdf_params%rt2 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
@@ -1070,7 +1070,7 @@ module clubb_core
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) )
         rtm_pert_neg = pdf_params%rt1 & 
                      - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
-        Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
+        !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
       end where
 
       mu_pert_pos  = mu * Lscale_mu_coef

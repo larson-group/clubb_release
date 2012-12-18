@@ -113,9 +113,6 @@ module advance_xm_wpxp_module
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
 
-    use pdf_parameter_module, only: &
-        pdf_parameter  ! Type
-
     use clubb_precision, only:  & 
         time_precision, & ! Variable(s)
         core_rknd

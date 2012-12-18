@@ -1349,7 +1349,6 @@ module stats_subs
         ithvm, & 
         irtm, & 
         ircm, & 
-        irfrzm, &
         ium, & 
         ivm, & 
         iwm_zt, & 

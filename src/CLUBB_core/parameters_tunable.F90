@@ -490,7 +490,8 @@ module parameters_tunable
           = ( thermodynamic_heights(nzmax) - thermodynamic_heights(1) )  &
              / real( nzmax - 1, kind = core_rknd )
       else
-
+        ! Eric Raut added to remove compiler warning. (Obviously, this value is not used)
+        avg_deltaz = 0.0_core_rknd
         write(fstderr,*) "Invalid grid_type:", grid_type
         stop "Fatal error"
 

@@ -26,7 +26,7 @@ module mg_micro_driver_module
       thlm2T_in_K
 
     use array_index, only:  &
-      iiricem, iiNim, iiNcm
+      iiricem, iiNim
 
     use constants_clubb, only: &
       zero_threshold, &

@@ -1473,8 +1473,7 @@ module latin_hypercube_driver_module
       iiNrm, &
       iiNsnowm, &
       iiNim, &
-      iiNgraupelm, &
-      iiNcm
+      iiNgraupelm
 
     use corr_matrix_module, only: &
       iiLH_s_mellor, & ! Variable(s)
@@ -1583,6 +1582,7 @@ module latin_hypercube_driver_module
                                       LH_hydromet, & ! In
                                       hydromet_all_points, &  ! Out
                                       Nc_all_points )
+
         forall ( ivar = 1:hydromet_dim )
           LH_hydromet(:,ivar) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights,&
                                                      hydromet_all_points(:,:,ivar) )
