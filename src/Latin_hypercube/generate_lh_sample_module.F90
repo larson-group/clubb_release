@@ -1766,8 +1766,11 @@ module generate_lh_sample_module
 
     ! Reduce the below value if model seems to crashing due excessive
     ! lh_thlp2_zt and it will limit the extremes of the samples.
+!   real(kind = dp), parameter :: &
+!     cthl_thresh = 1e-5_dp ! Threshold on cthl1 and cthl2 [kg/kg/K]
+
     real(kind = dp), parameter :: &
-      cthl_thresh = 1e-5_dp ! Threshold on cthl1 and cthl2 [kg/kg/K]
+      thl_dev_lim = 5.0_dp ! Max deviation from mean thetal [K]
 
     ! Input Variables
 
@@ -1804,15 +1807,16 @@ module generate_lh_sample_module
 
     integer :: sample ! Loop iterator
 
-    real( kind= dp ) :: cthl1_clip, cthl2_clip ! Clipped values of cthl1,2 [kg/kg/K]
+!   real( kind= dp ) :: cthl1_clip, cthl2_clip, & ! Clipped values of cthl1,2 [kg/kg/K]
+    real( kind= dp ) :: LH_dev_thl_lim ! Limited value of the deviation on thetal [K]
 
     ! ---- Begin Code ----
 
     ! Clip the value of cthl1,2.  This prevents large values of theta_l when the
     ! saturation point is low and limits the chance of instability.
     ! See ticket #527 on the CLUBB TRAC
-    cthl1_clip = max( cthl1, cthl_thresh )
-    cthl2_clip = max( cthl2, cthl_thresh )
+!   cthl1_clip = max( cthl1, cthl_thresh )
+!   cthl2_clip = max( cthl2, cthl_thresh )
 
     ! Handle some possible errors re: proper ranges of mixt_frac,
     ! cloud_frac1, cloud_frac2.
@@ -1852,16 +1856,35 @@ module generate_lh_sample_module
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
         LH_rt(sample)  = real( rt1 + (0.5_dp/crt1)*(s_mellor(sample)-mu_s1) +  & 
                                (0.5_dp/crt1)*t_mellor(sample), kind=core_rknd )
-        LH_thl(sample) = real( thl1 + (-0.5_dp/cthl1_clip)*(s_mellor(sample)-mu_s1) +  & 
-                               (0.5_dp/cthl1_clip)*t_mellor(sample), kind=core_rknd )
+
+        ! Limit the quantity that temperature can vary by (in K)
+        LH_dev_thl_lim = (-0.5_dp/cthl1)*(s_mellor(sample)-mu_s1) & 
+                       + (0.5_dp/cthl1)*t_mellor(sample)
+
+        LH_dev_thl_lim = max( min( LH_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
+
+        LH_thl(sample) = real( thl1 + LH_dev_thl_lim, kind=core_rknd )
+
+        ! Old code
+!       LH_thl(sample) = real( thl1 + (-0.5_dp/cthl1_clip)*(s_mellor(sample)-mu_s1) +  & 
+!                              (0.5_dp/cthl1_clip)*t_mellor(sample), kind=core_rknd )
 
       else if ( X_mixt_comp_one_lev(sample) == 2 ) then
         ! mixture fraction 2
         LH_rt(sample)  = real( rt2 + (0.5_dp/crt2)*(s_mellor(sample)-mu_s2) +  & 
                                (0.5_dp/crt2)*t_mellor(sample), kind=core_rknd )
-        LH_thl(sample) = real( thl2 + (-0.5_dp/cthl2_clip)*(s_mellor(sample)-mu_s2) +  & 
-                              (0.5_dp/cthl2_clip)*t_mellor(sample), kind=core_rknd )
 
+        ! Limit the quantity that temperature can vary by (in K)
+        LH_dev_thl_lim = (-0.5_dp/cthl2)*(s_mellor(sample)-mu_s2) & 
+                         + (0.5_dp/cthl2)*t_mellor(sample)
+
+        LH_dev_thl_lim = max( min( LH_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
+
+        LH_thl(sample) = real( thl2 + LH_dev_thl_lim, kind=core_rknd )
+
+        ! Old code
+!       LH_thl(sample) = real( thl2 + (-0.5_dp/cthl2_clip)*(s_mellor(sample)-mu_s2) +  & 
+!                             (0.5_dp/cthl2_clip)*t_mellor(sample), kind=core_rknd )
       else
         stop "Error determining mixture fraction in st_2_rtthl"
 
