@@ -67,7 +67,7 @@ module estimate_scm_microphys_module
     implicit none
 
     ! External
-#include "../microphys_interface.inc"
+#include "microphys_interface.inc"
 
     intrinsic :: real, all, any
 
