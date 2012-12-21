@@ -343,67 +343,60 @@ then
 			fi
 			;;
 	esac
-elif [ $TIMESTEP_TEST == true ]; 
-then
-	# Set the model timestep for all cases (and the stats output timestep
-	# unless l_stats is overwritten to .false.) to timestep test_ts.
-	cat $parameter_file > $NAMELISTS
-	cat $FLAGS_FILE >> $NAMELISTS
-	# Use this version if statistical output is desired.
-	#cat $model_file | sed -e 's/dt_main\s*=\s*.*/dt_main = '$test_ts'/g' \
-	#                    -e 's/dt_rad\s*=\s*.*/dt_rad = '$test_ts'/g' \
-	#                    -e 's/stats_tsamp\s*=\s*.*/stats_tsamp = '$test_ts'/g' \
-	#                    -e 's/stats_tout\s*=\s*.*/stats_tout = '$test_ts'/g' >> $NAMELISTS
-	# Use this version if statistical output is not desired.
-	cat $model_file | sed -e 's/dt_main\s*=\s*.*/dt_main = '$test_ts'/g' \
-						-e 's/dt_rad\s*=\s*.*/dt_rad = '$test_ts'/g' \
-						-e 's/l_stats\s*=\s*.*/l_stats = .false./g' >> $NAMELISTS
-	cat $stats_file >> $NAMELISTS
-
-	run_case
-elif [ $ZT_GRID == true ];
-then
-	cat $parameter_file > $NAMELISTS
-	cat $FLAGS_FILE >> $NAMELISTS
-	cat $model_file | sed -e 's/^nzmax\s*=\s*.*//g' \
-		-e 's/^grid_type\s*=\s*.*//g' \
-		-e 's/^zm_grid_fname\s*=\s*.*//g' \
-		-e "s/^zt_grid_fname\s*=\s*.*//g" \
-		-e 's/^\&model_setting/\&model_setting\n \
-		nzmax = '$grid_nz'\n \
-		zt_grid_fname ='\'$grid_path\''\n \
-		grid_type = 2\n/g' >> $NAMELISTS
-	cat $stats_file >> $NAMELISTS
-
-	run_case
-elif [ $ZM_GRID == true ];
-then
-	cat $parameter_file > $NAMELISTS
-	cat $FLAGS_FILE >> $NAMELISTS
-	cat $model_file | sed -e 's/^nzmax\s*=\s*.*//g' \
+else
+	# "cat" the parameter_file and FLAGS_FILE into NAMELISTS for all cases
+	cat $parameter_file $FLAGS_FILE > $NAMELISTS
+	# Create a modified model file that will be edited later
+	MOD_MODEL_FILE=`mktemp`
+	cat $model_file > $MOD_MODEL_FILE
+	if [ $TIMESTEP_TEST == true ]; 
+	then
+		# Set the model timestep for all cases (and the stats output timestep
+		# unless l_stats is overwritten to .false.) to timestep test_ts.
+		# Use this version if statistical output is desired.
+		#sed -i -e 's/dt_main\s*=\s*.*/dt_main = '$test_ts'/g' \
+		#                     -e 's/dt_rad\s*=\s*.*/dt_rad = '$test_ts'/g' \
+		#                     -e 's/stats_tsamp\s*=\s*.*/stats_tsamp = '$test_ts'/g' \
+		#                     -e 's/stats_tout\s*=\s*.*/stats_tout = '$test_ts'/g' $MOD_MODEL_FILE
+		# Use this version if statistical output is not desired.
+		sed -i -e 's/dt_main\s*=\s*.*/dt_main = '$test_ts'/g' \
+							-e 's/dt_rad\s*=\s*.*/dt_rad = '$test_ts'/g' \
+							-e 's/l_stats\s*=\s*.*/l_stats = .false./g' $MOD_MODEL_FILE
+	fi
+	if [ $ZT_GRID == true ];
+	then
+		sed -i -e 's/^nzmax\s*=\s*.*//g' \
 			-e 's/^grid_type\s*=\s*.*//g' \
-			-e 's/^zt_grid_fname\s*=\s*.*//g' \
 			-e 's/^zm_grid_fname\s*=\s*.*//g' \
+			-e "s/^zt_grid_fname\s*=\s*.*//g" \
 			-e 's/^\&model_setting/\&model_setting\n \
 			nzmax = '$grid_nz'\n \
-			zm_grid_fname ='\'$grid_path\''\n \
-			grid_type = 3\n/g' >> $NAMELISTS
+			zt_grid_fname ='\'$grid_path\''\n \
+			grid_type = 2\n/g' $MOD_MODEL_FILE
+	fi
+	if [ $ZM_GRID == true ];
+	then
+		sed -i -e 's/^nzmax\s*=\s*.*//g' \
+				-e 's/^grid_type\s*=\s*.*//g' \
+				-e 's/^zt_grid_fname\s*=\s*.*//g' \
+				-e 's/^zm_grid_fname\s*=\s*.*//g' \
+				-e 's/^\&model_setting/\&model_setting\n \
+				nzmax = '$grid_nz'\n \
+				zm_grid_fname ='\'$grid_path\''\n \
+				grid_type = 3\n/g' $MOD_MODEL_FILE
+	fi
+	if [ $PERFORMANCE_TEST == true ];
+	then
+		sed -i 's/l_stats\s*=\s*.*/l_stats = \.false\./g' $MOD_MODEL_FILE
+		sed -i 's/debug_level\s*=\s*.*/debug_level = 0/g' $MOD_MODEL_FILE
+	fi
+	# Input the modified model file
+	cat $MOD_MODEL_FILE >> $NAMELISTS
+	# Also do this...
 	cat $stats_file >> $NAMELISTS
-
-	run_case
-elif [ $PERFORMANCE_TEST == true ];
-then
-	cat $parameter_file > $NAMELISTS
-	cat $FLAGS_FILE >> $NAMELISTS
-	cat $model_file | sed 's/l_stats\s*=\s*.*/l_stats = \.false\./g' \
-					| sed 's/debug_level\s*=\s*.*/debug_level = 0/g' \
-					>> $NAMELISTS
-	cat $stats_file >> $NAMELISTS
-
-	run_case
-else
-	cat $parameter_file $FLAGS_FILE $model_file $stats_file > $NAMELISTS
-
+	# Delete that modified model file we just created
+	rm $MOD_MODEL_FILE
+	# And away we go...
 	run_case
 fi
 
