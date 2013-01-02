@@ -15,7 +15,7 @@ module clubb_core
 !
 !                         Copyright Notice:
 !
-!   This code and the source code it references are (C) 2006-2012
+!   This code and the source code it references are (C) 2006-2013
 !   Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin,
 !   David P. Schanen, Adam J. Smith, and Michael J. Falk.
 !
