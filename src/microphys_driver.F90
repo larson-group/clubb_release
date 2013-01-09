@@ -385,7 +385,7 @@ module microphys_driver
     l_subgrid_w = .true.
     l_arctic_nucl = .false.
     l_fix_pgam  = .false.
-    l_cloud_edge_activation = .true.
+    l_cloud_edge_activation = .false.
 
     ! Aerosol for RF02 from Mikhail Ovtchinnikov
     aer_rm1  = 0.011e-6 ! Mean geometric radius  [m]
@@ -596,15 +596,20 @@ module microphys_driver
       end if
 
       ! Set the mode of aerosol to be used
-      if ( trim( specify_aerosol ) == "morrison_no_aerosol" ) then
+      select case ( trim( specify_aerosol ) )
+      case ( "morrison_no_aerosol" )
         aerosol_mode = morrison_no_aerosol
-      else if ( trim( specify_aerosol ) == "morrison_power_law" ) then
+
+      case ( "morrison_power_law" )
         aerosol_mode = morrison_power_law
-      else if ( trim( specify_aerosol ) == "morrison_lognormal" ) then
+
+      case ( "morrison_lognormal" )
         aerosol_mode = morrison_lognormal
-      else
+
+      case default
         stop "Unknown Morrison aerosol mode."
-      end if
+
+      end select
 
       if ( l_cloud_edge_activation ) then
         docloudedgeactivation = .true.
