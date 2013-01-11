@@ -3,7 +3,7 @@
 %CASE = 
 (
     'name' => 'GATE_shear_rlsf',
-    'enabled' => 'true',
+    'enabled' => 'false',
     'type' => 'standard',
     'headerText' => 'GATE Shear RLSF Hours 10-12',
     'startTime' => 540.0,  # [minutes]

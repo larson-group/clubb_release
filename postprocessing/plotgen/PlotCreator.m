@@ -1,4 +1,4 @@
-function PlotCreator( caseName, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, tickCount, dispLegend, varargin )
+function PlotCreator( caseName, caseType, plotTitle, plotNum, plotType, startTime, endTime, startHeight, endHeight, plotUnits, tickCount, dispLegend, varargin )
 
 %Add functions to be used in case files
 addpath('CaseFunctions');
@@ -26,6 +26,9 @@ optargin = size(varargin,2);
 %Optional argument format is as follows:
 %'/PATH/TO/FILE', 'timeseries or profile', 'varname', 'title', 'units', 'lineWidth', 'lineType', 'lineColor'
 
+%Declare font size for budget plot axis and title
+budgetFontSize = 20;
+
 %This means we can easily figure out the number of lines on the plot by dividing by the number of arguments per line
 argsPerLine = 6;
 numLines = optargin / argsPerLine;
@@ -33,6 +36,11 @@ numLines = optargin / argsPerLine;
 %Create a blank plot of the proper type so we have somewhere to draw lines
 fig_height = 220;
 fig_width = 250;
+if strcmp(caseType, 'budget')
+	fig_height = 440;
+	fig_width = 500;
+end
+
 
 % Open figure to set size.
 figure('Position',[ 0 0 fig_width fig_height ])
@@ -52,7 +60,11 @@ clear legendText;
 for i=1:numLines
 	filePath = varargin{1 + ((i - 1) * argsPerLine)};
 	varExpression = varargin{2 + ((i - 1) * argsPerLine)};
+
 	lineName = ['\fontsize{6}', varargin{3 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
+	if strcmp(caseType, 'budget')
+		lineName = ['\fontsize{10}', varargin{3 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
+	end
 	lineWidth = varargin{4 + ((i - 1) * argsPerLine)};
 	lineType = varargin{5 + ((i - 1) * argsPerLine)};
 	lineColor = varargin{6 + ((i - 1) * argsPerLine)};
@@ -161,10 +173,27 @@ for i=1:numLines
 end
 
 %Add a legend and scale the axis
-if strcmp(plotType, 'profile')	
+if strcmp(plotType, 'profile')
+	minVal = min(minVals);
+	maxVal = max(maxVals);
+	if strcmp(caseType, 'budget')
+		if(abs(minVal) > abs(maxVal) && minVal < 0)
+			maxVal = minVal * -1;
+		elseif(abs(maxVal) > abs(minVal) && maxVal > 0)
+			minVal = maxVal * -1;
+		end
+	end	
 	ProfileFunctions.setTitle(plotTitle);
-	ProfileFunctions.setAxisLabels(plotUnits, 'Height [m]'); 
-	ProfileFunctions.setAxis(min(minVals), max(maxVals), startHeight, endHeight);
+	if strcmp(caseType, 'standard')
+		ProfileFunctions.setTitle(plotTitle);
+		ProfileFunctions.setAxisLabels(plotUnits, 'Height [m]');
+		ProfileFunctions.setAxis(minVal, maxVal, startHeight, endHeight); 
+	elseif strcmp(caseType, 'budget')
+		ProfileFunctions.setTitleWithSize(plotTitle, budgetFontSize);
+		ProfileFunctions.setAxisLabelsWithSize(plotUnits, 'Height [m]', budgetFontSize); 
+		ProfileFunctions.setAxisWithSize(minVal, maxVal, startHeight, endHeight, budgetFontSize);
+	end
+
         if(dispLegend == 1)
 		ProfileFunctions.addLegend(lines, legendText);
 	end

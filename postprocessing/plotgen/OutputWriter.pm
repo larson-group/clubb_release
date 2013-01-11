@@ -252,6 +252,102 @@ HTML
 }
 
 ###############################################################################
+# Writes the SAM_CLUBB Budgets Variable Equivalence Table
+###############################################################################
+sub writeSamBudgetSubHeader()
+{
+    shift(@_);
+    my $fh = shift(@_);
+
+    OutputWriter->writeSubHeader($fh, "");
+     
+    my $text = <<HTML;
+    <br />
+    <DIV ALIGN="CENTER"><TABLE CELLPADDING=3 BORDER="1">
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=11><B>Budget Variable Equivalence Table</B></TD>
+    </TR>
+    <TR>
+	<TD ALIGN="CENTER" COLSPAN=2><B>W2 (wp2)</B></TD>
+	<TD ALIGN="CENTER" COLSPAN=2><B>TW/QW (wpthlp/wprtp)</B></TD>
+	<TD ALIGN="CENTER" COLSPAN=2><B>T2/Q2 (thlp2/rtp2)</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER"><B>SAM</B></TD>
+        <TD ALIGN="CENTER"><B>CLUBB</B></TD>
+        <TD ALIGN="CENTER"><B>SAM</B></TD>
+        <TD ALIGN="CENTER"><B>CLUBB</B></TD>
+        <TD ALIGN="CENTER"><B>SAM</B></TD>
+        <TD ALIGN="CENTER"><B>CLUBB</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">ADV (T)</TD>
+        <TD ALIGN="CENTER">ta</TD>
+        <TD ALIGN="CENTER">ADV (T)</TD>
+        <TD ALIGN="CENTER">ta</TD>
+        <TD ALIGN="CENTER">ADVTR (T)</TD>
+        <TD ALIGN="CENTER">ta</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">PRES (P)</TD>
+        <TD ALIGN="CENTER">pr2+pr3</TD>
+        <TD ALIGN="CENTER">PRES (P)</TD>
+        <TD ALIGN="CENTER">pr1+pr2+pr3</TD>
+        <TD ALIGN="CENTER">GRAD (G)</TD>
+        <TD ALIGN="CENTER">tp</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">REDIS (R)</TD>
+        <TD ALIGN="CENTER">pr1</TD>
+        <TD ALIGN="CENTER">GRAD (G)</TD>
+        <TD ALIGN="CENTER">tp</TD>
+        <TD ALIGN="CENTER">DISSIP (D)</TD>
+        <TD ALIGN="CENTER">dp1</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">BUOY (B)</TD>
+        <TD ALIGN="CENTER">bp</TD>
+        <TD ALIGN="CENTER">BUOY (B)</TD>
+        <TD ALIGN="CENTER">bp</TD>
+        <TD ALIGN="CENTER">DIFFTR</TD>
+        <TD ALIGN="CENTER">dp2</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">DIFF (D)</TD>
+        <TD ALIGN="CENTER">dp1+dp2</TD>
+        <TD ALIGN="CENTER">DIFF (D)</TD>
+        <TD ALIGN="CENTER">dp1</TD>
+        <TD ALIGN="CENTER">PREC (PC)</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">_RES (Residual)</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">PREC (PC)</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">_RES (Residual)</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">_RES (Residual)</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+    </TR>
+</TABLE>
+<br />
+<B>Equivalencies above are derived from equations in <a href="http://journals.ametsoc.org/doi/pdf/10.1175/1520-0469%282002%29059%3C2550%3ASODCCC%3E2.0.CO%3B2"> this paper.</a></B>
+<br />
+<br />
+</DIV>
+HTML
+    
+    OutputWriter->writeSubHtml($fh, $text);
+}
+
+###############################################################################
 # Writes the HTML header for WRF
 ###############################################################################
 sub writeWrfHeader()

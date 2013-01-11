@@ -81,6 +81,9 @@ my $plotgenMode = "plotgen";
 #   netcdf
 my $dataFileType = "grads";
 
+# Flag for if budget plots should be plotted (Default: false)
+my $plotBudgets = 0;
+
 # Specifies to overwrite a directory (Default: false)
 my $overwrite = 0;
 my @inputDirs;
@@ -279,6 +282,10 @@ sub main()
                 {
                     OutputWriter->writeSamSubHeader($outputIndex);
                 }
+		if($plotBudgets == 1)
+		{
+		    OutputWriter->writeSamBudgetSubHeader($outputIndex);
+		}
             }
             elsif($plotgenMode eq "plotgen")
             {
@@ -443,14 +450,26 @@ sub runCases()
                 }
                 
                 # Check to see if this is a budget plot or standard plot
-                if($CASE::CASE{'type'} eq "budget")
+                if($CASE::CASE{'type'} eq "budget" && $plotBudgets)
                 {
-                    buildMatlabStringBudget($CASE::CASE, $count);
+                    #buildMatlabStringBudget($CASE::CASE, $count);
                     
                     # Add image file to HTML page
-                    placeImages($CASE::CASE{'name'} . "_" . $count . "_budget", $plotCount, 0);
+                    #placeImages($CASE::CASE{'name'} . "_" . $count . "_budget", $plotCount, 0);
+
+                    my $nightlyCase = 0;
+
+                    if($nightly == 1 && $file =~ m/_nightly/)
+                    {
+                        $nightlyCase = 1;
+                    }
+
+                    buildMatlabStringStd($CASE::CASE, $nightlyCase);
+                    
+                    # Add image file to HTML page
+                    placeImages($CASE::CASE{'name'}, $plotCount, $nightlyCase);
                 }
-                else
+                if($CASE::CASE{'type'} eq "standard")
                 {
                     my $nightlyCase = 0;
 
@@ -633,7 +652,7 @@ sub buildMatlabStringBudget()
             }
 
 
-            my $matlabArgs = "\'$caseName\', \'$plotTitle\', $totPlotNum, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
+            my $matlabArgs = "\'$caseName\', \'$CASE::CASE{'type'}\', \'$plotTitle\', $totPlotNum, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
             my $tempMatlabArgs = $matlabArgs;
         
             my @lines;
@@ -666,6 +685,7 @@ sub buildMatlabStringBudget()
             }
             else
             {
+
                 executeMatlab($matlabArgs);
                 $totPlotNum ++;
                 $plotCount++;
@@ -741,7 +761,7 @@ sub buildMatlabStringStd()
             $endTime = $endTimeOverride;
         }
 
-        my $matlabArgs = "\'$caseName\', \'$plotTitle\', $count, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt, $displayLegend";
+        my $matlabArgs = "\'$caseName\', \'$CASE::CASE{'type'}\', \'$plotTitle\', $count, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt, $displayLegend";
         my $tempMatlabArgs = $matlabArgs;
 
         my @lines;
@@ -822,7 +842,26 @@ sub buildMatlabStringStd()
                     my $lineWidth = $lines[$lineNum]{'lineWidth'};
                     my $lineStyle = $lines[$lineNum]{'lineType'};
                     my $lineColor = $lines[$lineNum]{'lineColor'};
-    
+
+
+		    if($lineWidth eq "auto")
+		    {
+			$lineWidth = $lineWidths[$lineWidthCounter];
+		    }
+		    if($lineStyle eq "auto")
+		    {
+			$lineStyle = $lineStyles[$lineStyleCounter];
+		    }
+		    if($lineColor eq "auto")
+		    {
+			$lineColor = $lineColors[$lineColorCounter];
+    		    }
+
+		    if(($lineWidth eq "auto") || ($lineStyle eq "auto") || ($lineColor eq "auto"))
+		    {
+			incrementLineTypes();
+		    }
+
                     $matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
                 }                
             }
@@ -1081,6 +1120,7 @@ sub readArgs()
     case 'w' { $plotgenMode = "wrfgen"; }
     case 'cam' { $plotgenMode = "camgen"; }
     case 'gfdl' { $plotgenMode = "gfdlgen"; }
+    case 'bu' {$plotBudgets = 1; }
     case 'h' { main::HELP_MESSAGE(); } #Prints help message
     else { main::HELP_MESSAGE(); }
     }
@@ -1212,6 +1252,7 @@ sub main::HELP_MESSAGE()
     print("  -thin\tUses thin solid lines\n");
     print("  -nolegend\tPlot without legends\n");
     print("  -ensemble\tUsed for plotting ensemble tuner runs\n");
+    print("  -bu\tUsed to plot budget plots\n");
     print("  -h\tPrints this help message.\n");
     print("Each option must be seperate, eg -r -a not -ra\n");
     exit(0);

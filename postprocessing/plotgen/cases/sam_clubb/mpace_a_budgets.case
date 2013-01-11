@@ -1,0 +1,77 @@
+# MPACE A BUDGETS SAM_CLUBB Case File
+
+%CASE = 
+(
+    'name' => 'MPACE_A_BUDGETS',
+    'enabled' => 'true',
+    'type' => 'budget',
+    'headerText' => ' MPACE A Budgets Minutes 4141-4320',
+    'startTime' => 4141.0,  # [minutes]
+    'endTime' => 4320.0,    # [minutes]
+    'startHeight' => 0.0,  # [m]
+    'endHeight' => 10000.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'W2 SAM 3D Benchmark Budgets', 'axisLabel' => 'W2 [m^2/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'W2ADV', 'expression' => 'W2ADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'W2PRES', 'expression' => 'W2PRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'W2REDIS', 'expression' => 'W2REDIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'W2BUOY', 'expression' => 'W2BUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'W2DIFF', 'expression' => 'W2DIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'W2\_RES', 'expression' => '-1*(W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'TW SAM 3D Benchmark Budgets', 'axisLabel' => 'TW [(m K)/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'TWGRAD', 'expression' => 'TWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'TWADV', 'expression' => 'TWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'TWDIFF', 'expression' => 'TWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'TWBUOY', 'expression' => 'TWBUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'TWPRES', 'expression' => 'TWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'TWPREC', 'expression' => 'TWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'TW\_RES', 'expression' => '-1*(TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'QW SAM 3D Benchmark Budgets', 'axisLabel' => 'QW [m/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'QWGRAD', 'expression' => 'QWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'QWADV', 'expression' => 'QWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'QWDIFF', 'expression' => 'QWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'QWBUOY', 'expression' => 'QWBUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'QWPRES', 'expression' => 'QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'QWPREC', 'expression' => 'QWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'QW\_RES', 'expression' => '-1*(QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'T2 SAM 3D Benchmark Budgets', 'axisLabel' => 'T2 [K^2/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'T2ADVTR', 'expression' => 'T2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'T2GRAD', 'expression' => 'T2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'T2DISSIP', 'expression' => 'T2DISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'T2DIFTR', 'expression' => 'T2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'T2PREC', 'expression' => 'T2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'T2\_RES', 'expression' => '-1*(T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'Q2 SAM 3D Benchmark Budgets', 'axisLabel' => 'Q2 [1/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'Q2ADVTR', 'expression' => 'Q2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'Q2GRAD', 'expression' => 'Q2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'Q2DISSIP', 'expression' => 'Q2DISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'Q2DIFTR', 'expression' => 'Q2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'Q2PREC', 'expression' => 'Q2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'auto', 'name' => 'Q2\_RES', 'expression' => '-1*(Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]}
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)

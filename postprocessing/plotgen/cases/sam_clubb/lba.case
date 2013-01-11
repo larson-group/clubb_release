@@ -3,7 +3,7 @@
 %CASE = 
 (
     'name' => 'LBA',
-    'enabled' => 'true',
+    'enabled' => 'false',
     'type' => 'standard',
     'headerText' => 'LBA Hour 6',
     'startTime' => 300.0,  # [minutes]
