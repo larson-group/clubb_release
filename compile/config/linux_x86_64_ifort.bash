@@ -16,15 +16,13 @@ srcdir="$dir/../src"  # dir where the source files reside
 
 
 # == Debug ==
-# NO DEBUG flags
-DEBUG=""
-#DEBUG="-g -traceback -check bounds -check uninit -fpe0 -ftz"
+#DEBUG="-debug full -traceback -check bounds -check uninit -fpe0 -ftz"
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"
 
 # == Machine specific options ==
-ARCH="-msse2 -fp-model precise" # This should work on most modern AMD/Intel computers
+ARCH="-xHost" # This should work on most modern AMD/Intel computers
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-real-size 64"
 
@@ -35,21 +33,18 @@ OPTIMIZE="-O3 -vec-report0"
 NETCDF="/usr/local/netcdf-intel64"
 
 # == LAPACK libraries ==
-# Intel Math Kernel Library (v11.1)
-#MKLPATH="/opt/intel/Compiler/11.1/064/mkl/lib/em64t"
-#LAPACK="-L/opt/intel/mkl/8.1/lib/64 -Wl,-rpath,/opt/intel/mkl/8.1/lib/64 -lmkl_lapack64 -lmkl_i2p -lmkl -lmkl_vml_i2p -lmkl_vml -lvml -lguide -lpthread"
-# Generic library
-#LAPACK="-llapack -lblas -lgfortran"
 # AMD Core Math Library
-ACML="/opt/acml5.1.0/ifort64/lib"
-LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
+#ACML="/opt/acml5.1.0/ifort64/lib"
+#LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
+# Intel MKL
+LAPACK="-mkl=sequential"
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
 
-FFLAGS="$ARCH $OPTIMIZE $DEBUG"
+FFLAGS="$ARCH $OPTIMIZE"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
