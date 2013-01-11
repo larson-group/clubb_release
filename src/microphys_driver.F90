@@ -35,6 +35,7 @@ module microphys_driver
     l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (Latin Hypercube)
     LH_microphys_calls,           & ! # of latin hypercube samples to call the microphysics with 
     LH_sequence_length,           & ! Number of timesteps before the latin hypercube seq. repeats
+    LH_seed,                      & ! Integer seed for the Mersenne twister
     l_local_kk,                   & ! Use local formula for K&K
     l_upwind_diff_sed,            & ! Use the upwind differencing approx. for sediementation
     l_var_covar_src,              & ! Flag for using variance and covariance src terms
@@ -244,7 +245,7 @@ module microphys_driver
       l_seifert_beheng, l_predictnc, l_const_Nc_in_cloud, specify_aerosol, &
       l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       l_in_cloud_Nc_diff, LH_microphys_type, l_local_kk, LH_microphys_calls, &
-      LH_sequence_length, l_lh_cloud_weighted_sampling, &
+      LH_sequence_length, LH_seed, l_lh_cloud_weighted_sampling, &
       l_fix_s_t_correlations, l_lh_vert_overlap, &
       rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, &
       rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
@@ -422,6 +423,7 @@ module microphys_driver
     ! The number of LH sample points for WRF-CLUBB are set in the namelist.input file.
     LH_microphys_calls = 2
     LH_sequence_length = 1
+    LH_seed = 5489 ! Default seed from mt95.f90
 
     LH_microphys_type = "disabled"
     !---------------------------------------------------------------------------
@@ -484,6 +486,7 @@ module microphys_driver
         l_write_to_file, iunit )
       call write_text ( "LH_sequence_length = ", LH_sequence_length, &
         l_write_to_file, iunit )
+      call write_text ( "LH_seed = ", LH_seed, l_write_to_file, iunit )
       call write_text ( "l_lh_cloud_weighted_sampling = ", &
         l_lh_cloud_weighted_sampling, l_write_to_file, iunit )
       call write_text ( "l_fix_s_t_correlations = ", l_fix_s_t_correlations, &

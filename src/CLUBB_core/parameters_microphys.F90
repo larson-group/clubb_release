@@ -69,9 +69,10 @@ module parameters_microphys
 
   integer, public :: &
     LH_microphys_calls, & ! Number of latin hypercube samples to call the microphysics with
-    LH_sequence_length    ! Number of timesteps before the latin hypercube seq. repeats
+    LH_sequence_length, & ! Number of timesteps before the latin hypercube seq. repeats
+    LH_seed               ! Seed for the Mersenne
 
-!$omp threadprivate( LH_microphys_calls, LH_sequence_length )
+!$omp threadprivate( LH_microphys_calls, LH_sequence_length, LH_seed )
 
   ! Determines how the latin hypercube samples should be used with the microphysics
   integer, public :: &

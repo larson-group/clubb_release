@@ -94,8 +94,7 @@ module latin_hypercube_driver_module
 
     ! Find in and out of cloud points using the rejection method rather than scaling
     logical, parameter :: &
-      l_use_rejection_method = .false., &
-      l_re_seed = .true. ! Re-seed the Mersenne twister algorithm
+      l_use_rejection_method = .false.
 
     ! Input Variables
     integer, intent(in) :: &
@@ -189,13 +188,6 @@ module latin_hypercube_driver_module
       allocate( height_time_matrix(nz, nt_repeat, d_variables+1) )
 
       prior_iter = iter
-
-      ! Re-seed
-      if ( l_re_seed ) then
-        ! This is the default seed in mt95. Change this number to try
-        ! non-default values.
-        call genrand_init( put=5489_genrand_intg ) ! Known magic number
-      end if
 
       ! Check for a bug where the iteration number isn't incrementing correctly,
       ! which will lead to improper sampling.

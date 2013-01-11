@@ -173,7 +173,8 @@ module clubb_driver
 #ifdef LATIN_HYPERCUBE
     use parameters_microphys, only: &
       LH_microphys_type, & ! Variable(s)
-      LH_microphys_disabled
+      LH_microphys_disabled, &
+      LH_seed
 
     use latin_hypercube_driver_module, only: &
       latin_hypercube_2D_output, & ! Procedure(s)
@@ -183,6 +184,8 @@ module clubb_driver
       cleanup_latin_hypercube_arrays ! Procedure(s)
 
     use simple_rad_module, only: simple_rad_lba_init ! Procedure(s)
+
+    use mt95, only: genrand_init ! Procedure(s)
 
 #endif
 
@@ -823,6 +826,12 @@ module clubb_driver
              sclrm, edsclrm, err_code )                          ! Intent(out)
 
       if ( fatal_error( err_code ) ) return
+
+#ifdef LATIN_HYPERCUBE
+      if ( LH_microphys_type /= LH_microphys_disabled ) then
+        call genrand_init( put=LH_seed )
+      end if
+#endif
 
     else  ! restart
 
