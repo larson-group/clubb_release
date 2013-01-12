@@ -197,6 +197,9 @@ module microphys_driver
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
         setup_corr_varnce_array   ! Procedure(s)
+
+    use mt95, only: &
+        genrand_intg
 #endif /* LATIN_HYPERCUBE */
 
     implicit none
@@ -423,7 +426,7 @@ module microphys_driver
     ! The number of LH sample points for WRF-CLUBB are set in the namelist.input file.
     LH_microphys_calls = 2
     LH_sequence_length = 1
-    LH_seed = 5489 ! Default seed from mt95.f90
+    LH_seed = 5489_genrand_intg ! Default seed from mt95.f90
 
     LH_microphys_type = "disabled"
     !---------------------------------------------------------------------------

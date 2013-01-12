@@ -13,6 +13,9 @@ module parameters_microphys
     time_precision, &
     core_rknd
 
+  use mt95, only: &
+    genrand_intg
+
   implicit none
 
   ! Constant Parameters
@@ -69,7 +72,9 @@ module parameters_microphys
 
   integer, public :: &
     LH_microphys_calls, & ! Number of latin hypercube samples to call the microphysics with
-    LH_sequence_length, & ! Number of timesteps before the latin hypercube seq. repeats
+    LH_sequence_length    ! Number of timesteps before the latin hypercube seq. repeats
+
+  integer(kind=genrand_intg), public :: &
     LH_seed               ! Seed for the Mersenne
 
 !$omp threadprivate( LH_microphys_calls, LH_sequence_length, LH_seed )
