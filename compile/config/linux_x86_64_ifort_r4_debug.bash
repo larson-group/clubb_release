@@ -1,4 +1,4 @@
-# $Id: linux_x86_64_ifort.bash 6008 2013-01-11 17:42:01Z dschanen@uwm.edu $
+# $Id$
 # Makefile definitions customized for Linux x86_64 using the Intel Fortran 
 # compiler 
 
