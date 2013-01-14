@@ -16,6 +16,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 
 
 # == Debug ==
+DEBUG=""
 #DEBUG="-debug full -traceback -check bounds -check uninit -fpe0 -ftz"
 
 # == Warnings ==
@@ -44,7 +45,7 @@ LAPACK="-mkl=sequential"
 # Use -L<library path> -l<lib> to link in an external library
 LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
 
-FFLAGS="$ARCH $OPTIMIZE"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output

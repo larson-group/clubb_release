@@ -1,4 +1,4 @@
-# $Id: linux_x86_64_ifort.bash 5959 2012-10-16 19:46:45Z dschanen@uwm.edu $
+# $Id: linux_x86_64_ifort.bash 6008 2013-01-11 17:42:01Z dschanen@uwm.edu $
 # Makefile definitions customized for Linux x86_64 using the Intel Fortran 
 # compiler 
 
@@ -14,15 +14,15 @@ objdir="$dir/../obj"  # dir for *.o and *.mod files
 libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
+
 # == Debug ==
-# The -fpe0 option will catch overflow, divide by zero, and invalid.
-DEBUG="-g -traceback -check bounds -check uninit -fpe0 -ftz"
+DEBUG="-debug full -traceback -check bounds -check uninit -fpe0 -ftz"
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"
 
 # == Machine specific options ==
-ARCH="-msse2 -fp-model precise" # This should work on most modern AMD/Intel computers
+ARCH="-xHost" # This should work on most modern AMD/Intel computers
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-real-size 64"
 
@@ -35,14 +35,11 @@ OPTIMIZE=""
 NETCDF="/usr/local/netcdf-intel64"
 
 # == LAPACK libraries ==
-# Intel Math Kernel Library (v11.1)
-#MKLPATH="/opt/intel/Compiler/11.1/064/mkl/lib/em64t"
-#LAPACK="-L/opt/intel/mkl/8.1/lib/64 -Wl,-rpath,/opt/intel/mkl/8.1/lib/64 -lmkl_lapack64 -lmkl_i2p -lmkl -lmkl_vml_i2p -lmkl_vml -lvml -lguide -lpthread"
-# Generic library
-#LAPACK="-llapack -lblas -lgfortran"
 # AMD Core Math Library
-ACML="/opt/acml5.1.0/ifort64/lib"
-LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
+#ACML="/opt/acml5.1.0/ifort64/lib"
+#LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
+# Intel MKL
+LAPACK="-mkl=sequential"
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 

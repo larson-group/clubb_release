@@ -1,6 +1,6 @@
 # $Id$
 # Makefile definitions customized for Linux x86_64 using the Intel Fortran 
-# compiler and ACML.  This uses a 4 byte real for the purposes of linking WRF-CLUBB.
+# compiler  This uses a 4 byte real for the purposes of linking WRF-CLUBB.
 
 
 # Fortran 95 compiler and linker
@@ -14,16 +14,16 @@ objdir="$dir/../obj"  # dir for *.o and *.mod files
 libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
-# == Debugging ==
-# No Debug flags
+
+# == Debug ==
 DEBUG=""
-#DEBUG="-g -traceback -check bounds -check uninit -fpe0 -fpz"
+#DEBUG="-debug full -traceback -check bounds -check uninit -fpe0 -ftz"
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"
 
 # == Machine specific options ==
-ARCH="-msse2 -fp-model precise" # This should work on most modern AMD/Intel computers
+ARCH="-xHost" # This should work on most modern AMD/Intel computers
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-real-size 64"
 
@@ -34,10 +34,11 @@ OPTIMIZE="-O3 -vec-report0"
 NETCDF="/usr/local/netcdf-intel64"
 
 # == LAPACK libraries ==
-ACML="/opt/acml5.1.0/ifort64/lib"
-LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
-# Generic library
-#LAPACK="-llapack -lblas -lgfortran"
+# AMD Core Math Library
+#ACML="/opt/acml5.1.0/ifort64/lib"
+#LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
+# Intel MKL
+LAPACK="-mkl=sequential"
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
@@ -56,7 +57,7 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 # Need location of include and *.mod files for the netcdf library
 
 CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=4"
-CPPFLAGS="-I$NETCDF/include"
+CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include"
 
 # == Static library processing ==
 AR=ar
