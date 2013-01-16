@@ -409,46 +409,47 @@ sub runCases()
             if($runCase eq 'true' && dataExists($CASE::CASE) && ($CASE::CASE{'enabled'} ne 'false'))
             {
                 push(@casesExecuted, $CASE::CASE{'name'});
-
-                # Print the case title to the HTML page
-                OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
-                OutputWriter->writeNavPageCase("$outputTemp/$navigationPage", $CASE::CASE{'name'}, $CASE::CASE{'headerText'});
-        
-                # Print any additional text/html specified
-                if($nightly == 1) # If in nightly mode
-                {
-                    my $nightlySubText = $CASE::CASE{'nightlyOutput'}{'subText'};
-                    my $nightlySubHtml = $CASE::CASE{'nightlyOutput'}{'subHtml'};
-                    
-                    # Check to see if there was any additional text specified. If there was,
-                    # write it to the HTML file.
-                    if($nightlySubText ne "")
-                    {
-                        OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
-                    }
-                    
-                    if($nightlySubHtml ne "")
-                    {
-                        OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
-                    }
+		if( ($CASE::CASE{'type'} eq "budget" && $plotBudgets == 1) || ($CASE::CASE{'type'} ne "budget") )
+		{
+		        # Print the case title to the HTML page
+		        OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
+		        OutputWriter->writeNavPageCase("$outputTemp/$navigationPage", $CASE::CASE{'name'}, $CASE::CASE{'headerText'});
+		
+		        # Print any additional text/html specified
+		        if($nightly == 1) # If in nightly mode
+		        {
+		            my $nightlySubText = $CASE::CASE{'nightlyOutput'}{'subText'};
+		            my $nightlySubHtml = $CASE::CASE{'nightlyOutput'}{'subHtml'};
+		            
+		            # Check to see if there was any additional text specified. If there was,
+		            # write it to the HTML file.
+		            if($nightlySubText ne "")
+		            {
+		                OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
+		            }
+		            
+		            if($nightlySubHtml ne "")
+		            {
+		                OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
+		            }
+		        }
+		        else # If not in nightly mode
+		        {
+		            my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
+		            my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
+		            
+		            if($subText ne "")
+		            {
+		                OutputWriter->writeSubHeader($outputIndex, $subText);
+		            }
+		            
+		            if($subHtml ne "")
+		            {
+		                OutputWriter->writeSubHtml($outputIndex, $subHtml);
+		            }
+		
+		        }
                 }
-                else # If not in nightly mode
-                {
-                    my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
-                    my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
-                    
-                    if($subText ne "")
-                    {
-                        OutputWriter->writeSubHeader($outputIndex, $subText);
-                    }
-                    
-                    if($subHtml ne "")
-                    {
-                        OutputWriter->writeSubHtml($outputIndex, $subHtml);
-                    }
-        
-                }
-                
                 # Check to see if this is a budget plot or standard plot
                 if($CASE::CASE{'type'} eq "budget" && $plotBudgets)
                 {
