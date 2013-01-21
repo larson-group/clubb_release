@@ -14,12 +14,12 @@
     [
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thlm [K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'THETAL', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QT ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(QT-QI) ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>

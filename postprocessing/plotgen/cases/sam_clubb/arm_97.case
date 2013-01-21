@@ -15,18 +15,18 @@
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thetal [K]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'THETAL', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'THETAL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'THETAL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'THETAL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm / qt [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QT / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => 'QT / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => 'QT / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => 'QT / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(QT-QI) / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'ARM9707_16x1x32_4km_CLUBB.nc', 'type' => 'auto', 'name' => '4km {0}', 'expression' => '(QT-QI) / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x1x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '16km {0}', 'expression' => '(QT-QI) / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_4x4x32_16km_CLUBB.nc', 'type' => 'auto', 'name' => '3D {0}', 'expression' => '(QT-QI) / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 	{'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
        [
