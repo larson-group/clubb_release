@@ -166,6 +166,12 @@ function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend
         eval([varname,' = data;']);
       end
     end
+
+    if ifilenum == 1
+      times_all = Times
+    else
+      times_all = [ times_all Times ]
+    end
     
     % determine overlap
     if numfiles > 1
@@ -492,7 +498,7 @@ function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend
     % of the simulation is skipped. So we don't want to include the last 8
     % timesteps in the plots.
     % plot_results( rho(:,:,:,1:(totaltimes-offset+1)), tmp(:,:,:,1:(totaltimes-offset+1)), geopot_ht(:,:,:,1:(totaltimes-offset+1)), cldlow(:,:,1:(totaltimes-offset+1)), cf(:,:,:,1:(totaltimes-offset+1)), qvapor(:,:,:,1:(totaltimes-offset+1)), lwc(:,:,:,1:(totaltimes-offset+1)), infile_name );
-    plot_results( rho, tmp, geopot_ht, cldlow, cf, qvapor, lwc, infile_name, crs_lat, Times(:, 1:calc_times), tstart_avg, tend_avg );
+    plot_results( rho, tmp, geopot_ht, cldlow, cf, qvapor, lwc, infile_name, crs_lat, times_all(:, 1:calc_times), tstart_avg, tend_avg );
     
   elseif i_action==3
     disp('Type in your command: ')
@@ -917,7 +923,6 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
   print(f5, '-dpng', strcat(outfile_prefix,'_qv'))
   print(f5, '-depsc', strcat(outfile_prefix,'_qv'))
 
-  keyboard
   return
 
 end % end function plot_results
