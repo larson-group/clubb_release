@@ -7,6 +7,7 @@ module KK_microphys_module
   private
 
   public :: KK_micro_driver, &
+            KK_in_precip_values, &
             KK_upscaled_setup, &
             KK_stat_output
 
@@ -208,21 +209,30 @@ module KK_microphys_module
       KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
 
+    real( kind = core_rknd ), dimension(nz) :: &
+      precip_frac    ! Precipitation fraction                       [-]
+
     real( kind = core_rknd ) :: &
       mu_s_1,       & ! Mean of s (1st PDF component)                    [kg/kg]
       mu_s_2,       & ! Mean of s (2nd PDF component)                    [kg/kg]
+      mu_rr,        & ! Mean of rr (both components)                     [kg/kg]
+      mu_Nr,        & ! Mean of Nr (both components)                    [num/kg]
       mu_rr_n,      & ! Mean of ln rr (both components)              [ln(kg/kg)]
       mu_Nr_n,      & ! Mean of ln Nr (both components)             [ln(num/kg)]
       mu_Nc_n,      & ! Mean of ln Nc (both components)             [ln(num/kg)]
       sigma_s_1,    & ! Standard deviation of s (1st PDF component)      [kg/kg]
       sigma_s_2,    & ! Standard deviation of s (2nd PDF component)      [kg/kg]
+      sigma_rr,     & ! Standard deviation of rr (both components)       [kg/kg]
+      sigma_Nr,     & ! Standard deviation of Nr (both components)      [num/kg]
       sigma_rr_n,   & ! Standard deviation of ln rr (both comps.)    [ln(kg/kg)]
       sigma_Nr_n,   & ! Standard deviation of ln Nr (both comps.)   [ln(num/kg)]
       sigma_Nc_n,   & ! Standard deviation of ln Nc (both comps.)   [ln(num/kg)]
-      corr_srr_1,   & ! Correlation between s and rr (1st PDF component)     [-] 
+      corr_srr_1,   & ! Correlation between s and rr (1st PDF component)     [-]
+      corr_srr_2,   & ! Correlation between s and rr (2nd PDF component)     [-]
       corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component)  [-]
       corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component)  [-]
       corr_sNr_1,   & ! Correlation between s and Nr (1st PDF component)     [-]
+      corr_sNr_2,   & ! Correlation between s and Nr (2nd PDF component)     [-]
       corr_sNr_1_n, & ! Correlation between s and ln Nr (1st PDF component)  [-]
       corr_sNr_2_n, & ! Correlation between s and ln Nr (2nd PDF component)  [-]
       corr_sNc_1,   & ! Correlation between s and Nc (1st PDF component)     [-]
@@ -281,6 +291,9 @@ module KK_microphys_module
       rrainm_src_adj = w_std_dev
       rrainm_src_adj = cloud_frac
     end if
+
+    ! Set precipitation fraction
+    precip_frac = one
 
     KK_auto_tndcy = zero
     KK_accr_tndcy = zero
@@ -375,6 +388,12 @@ module KK_microphys_module
        !!! KK rain water mixing ratio microphysics tendencies.
        if ( l_upscaled ) then
 
+          call KK_in_precip_values( rrainm(k), Nrm(k), rcm(k), &
+                                    precip_frac(k), k, l_stats_samp, &
+                                    mu_rr, mu_Nr, sigma_rr, sigma_Nr, &
+                                    corr_srr_1, corr_srr_2, corr_sNr_1, &
+                                    corr_sNr_2, corr_rrNr )
+
           call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), & ! Intent(in)
                                   Ncm(k), pdf_params(k), &
                                   wpsp_zt(k), wprrp_zt(k), wpNrp_zt(k), wpNcp_zt(k), &
@@ -390,7 +409,7 @@ module KK_microphys_module
                                   mixt_frac )
 
 
-          call KK_stat_output( corr_srr_1, corr_sNr_1, corr_sNc_1, corr_rrNr, &
+          call KK_stat_output( corr_srr_1, corr_sNr_1, corr_sNc_1, &
                                corr_sw, corr_wrr, corr_wNr, corr_wNc, &
                                corr_rrNr_n, k )
 
@@ -695,6 +714,258 @@ module KK_microphys_module
   end subroutine KK_micro_driver
 
   !=============================================================================
+  subroutine KK_in_precip_values( rrainm, Nrm, rcm, &
+                                  precip_frac, level, l_stats_samp, &
+                                  mu_rr, mu_Nr, sigma_rr, sigma_Nr, &
+                                  corr_srr_1, corr_srr_2, corr_sNr_1, &
+                                  corr_sNr_2, corr_rrNr )
+       
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        rc_tol, & ! Constant(s)
+        rr_tol, & 
+        Nr_tol, & 
+        zero
+
+    use parameters_microphys, only: &
+        rrp2_on_rrm2_cloud, & ! Variable(s)
+        rrp2_on_rrm2_below, &
+        Nrp2_on_Nrm2_cloud, &
+        Nrp2_on_Nrm2_below
+
+    use KK_fixed_correlations, only: &
+        corr_srr_NL_cloud,  & ! Variable(s) 
+        corr_srr_NL_below,  &
+        corr_sNr_NL_cloud,  &
+        corr_sNr_NL_below,  &
+        corr_rrNr_LL_cloud, &
+        corr_rrNr_LL_below
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use stats_type, only: & 
+        stat_update_var_pt  ! Procedure(s)
+
+    use stats_variables, only: &
+        imu_rr,      & ! Variable(s)
+        imu_Nr,      &
+        isigma_rr,   &
+        isigma_Nr,   &
+        icorr_srr_1, &
+        icorr_srr_2, &
+        icorr_sNr_1, &
+        icorr_sNr_2, &
+        icorr_rrNr,  &
+        zt
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      rrainm,      & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
+      Nrm,         & ! Mean rain drop concentration, < N_r >    [num/kg]
+      rcm,         & ! Mean cloud water mixing ratio, < r_c >   [kg/kg]
+      precip_frac    ! Precipitation fraction                   [-]
+
+    integer, intent(in) :: &
+      level         ! Vertical level index                      [-]
+
+    logical, intent(in) :: &
+      l_stats_samp     ! Flag to record statistical output.
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      mu_rr,      & ! Mean of rr (both components)                     [kg/kg]
+      mu_Nr,      & ! Mean of Nr (both components)                    [num/kg]
+      sigma_rr,   & ! Standard deviation of rr (both components)       [kg/kg]
+      sigma_Nr,   & ! Standard deviation of Nr (both components)      [num/kg]
+      corr_srr_1, & ! Correlation between s and rr (1st PDF component)     [-]
+      corr_srr_2, & ! Correlation between s and rr (2nd PDF component)     [-]
+      corr_sNr_1, & ! Correlation between s and Nr (1st PDF component)     [-]
+      corr_sNr_2, & ! Correlation between s and Nr (2nd PDF component)     [-]
+      corr_rrNr     ! Correlation between rr and Nr (both components)      [-]
+
+
+    ! Mean of in-precip rain water mixing ratio.
+    if ( rrainm > rr_tol ) then
+       mu_rr = rrainm / precip_frac
+    else
+       ! Mean in-precip rain water mixing ratio is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.
+       mu_rr = zero
+    endif
+
+    ! Mean of in-precip rain drop concentration.
+    if ( Nrm > Nr_tol ) then
+       mu_Nr = Nrm / precip_frac
+    else
+       ! Mean in-precip rain drop concentration is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.
+       mu_Nr = zero
+    endif
+
+    ! Standard deviation of in-precip rain water mixing ratio.
+    if ( rrainm > rr_tol ) then
+       if ( rcm > rc_tol ) then
+          sigma_rr = sqrt( rrp2_on_rrm2_cloud ) * mu_rr
+       else
+          sigma_rr = sqrt( rrp2_on_rrm2_below ) * mu_rr
+       endif
+    else
+       ! Mean in-precip rain water mixing ratio is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.  The standard deviation is simply 0 since rain
+       ! water mixing ratio does not vary at this grid level.
+       sigma_rr = zero
+    endif
+
+    ! Standard deviation of in-precip rain drop concentration.
+    if ( Nrm > Nr_tol ) then
+       if ( rcm > rc_tol ) then
+          sigma_Nr = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr
+       else
+          sigma_Nr = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr
+       endif
+    else
+       ! Mean in-precip rain drop concentration is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.  The standard deviation is simply 0 since rain drop
+       ! concentration does not vary at this grid level.
+       sigma_Nr = zero
+    endif
+
+    ! Correlation (in-precip) between s and r_r.
+    if ( rrainm > rr_tol ) then
+
+       ! Correlation (in-precip) between s and r_r in PDF component 1.
+       if ( rcm > rc_tol ) then
+          corr_srr_1 = corr_srr_NL_cloud
+       else
+          corr_srr_1 = corr_srr_NL_below
+       endif
+
+       ! Correlation (in-precip) between s and r_r in PDF component 2.
+       if ( rcm > rc_tol ) then
+          corr_srr_2 = corr_srr_NL_cloud
+       else
+          corr_srr_2 = corr_srr_NL_below
+       endif
+
+    else
+
+       ! Mean in-precip rain water mixing ratio is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.  The correlations involving rain water mixing ratio
+       ! are 0 since rain water mixing ratio does not vary at this grid level.
+       corr_srr_1 = zero
+       corr_srr_2 = zero
+
+    endif
+
+    ! Correlation (in-precip) between s and N_r.
+    if ( Nrm > Nr_tol ) then
+
+       ! Correlation (in-precip) between s and N_r in PDF component 1.
+       if ( rcm > rc_tol ) then
+          corr_sNr_1 = corr_sNr_NL_cloud
+       else
+          corr_sNr_1 = corr_sNr_NL_below
+       endif
+
+       ! Correlation (in-precip) between s and N_r in PDF component 2.
+       if ( rcm > rc_tol ) then
+          corr_sNr_2 = corr_sNr_NL_cloud
+       else
+          corr_sNr_2 = corr_sNr_NL_below
+       endif
+
+    else
+
+       ! Mean in-precip rain drop concentration is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.  The correlations involving rain drop concentration
+       ! are 0 since rain water mixing ratio does not vary at this grid level.
+       corr_sNr_1 = zero
+       corr_sNr_2 = zero
+
+    endif
+
+    ! Correlation (in-precip) between rr and Nr (this is the same for both PDF
+    ! components).
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+
+       if ( rcm > rc_tol ) then
+          corr_rrNr = corr_rrNr_LL_cloud
+       else
+          corr_rrNr = corr_rrNr_LL_below
+       endif
+
+    else
+
+       ! Mean in-precip rain water mixing ratio and (or) mean in-precip rain
+       ! drop concentration are (is) less than their (its) respective tolerance
+       ! amount(s), and are (is) considered to have a value of 0.  There is not
+       ! any rain at this grid level.  The correlation is 0 since rain does not
+       ! vary at this grid level.
+       corr_rrNr = zero
+
+    endif
+
+
+    ! Statistics
+    if ( l_stats_samp ) then
+
+       if ( imu_rr > 0 ) then
+          call stat_update_var_pt( imu_rr, level, mu_rr, zt )
+       endif
+
+       if ( imu_Nr > 0 ) then
+          call stat_update_var_pt( imu_Nr, level, mu_Nr, zt )
+       endif
+
+       if ( isigma_rr > 0 ) then
+          call stat_update_var_pt( isigma_rr, level, sigma_rr, zt )
+       endif
+
+       if ( isigma_Nr > 0 ) then
+          call stat_update_var_pt( isigma_Nr, level, sigma_Nr, zt )
+       endif
+
+       if ( icorr_srr_1 > 0 ) then
+          call stat_update_var_pt( icorr_srr_1, level, corr_srr_1, zt )
+       endif
+
+       if ( icorr_srr_2 > 0 ) then
+          call stat_update_var_pt( icorr_srr_2, level, corr_srr_2, zt )
+       endif
+
+       if ( icorr_sNr_1 > 0 ) then
+          call stat_update_var_pt( icorr_sNr_1, level, corr_sNr_1, zt )
+       endif
+
+       if ( icorr_sNr_2 > 0 ) then
+          call stat_update_var_pt( icorr_sNr_2, level, corr_sNr_2, zt )
+       endif
+
+       if ( icorr_rrNr > 0 ) then
+          call stat_update_var_pt( icorr_rrNr, level, corr_rrNr, zt )
+       endif
+
+    endif
+
+
+    return    
+
+  end subroutine KK_in_precip_values
+
+  !=============================================================================
   subroutine KK_upscaled_setup( rcm, rrainm, Nrm, & ! Intent(in)
                                 Ncm, pdf_params, &
                                 wpsp, wprrp, wpNrp, wpNcp, &
@@ -952,27 +1223,27 @@ module KK_microphys_module
     !!! Calculate the normalized mean of variables that have an assumed (single)
     !!! lognormal distribution, given the mean and variance of those variables.
 
-    ! Normalized mean of rain water mixing ratio.
+    ! Normalized mean of in-precip rain water mixing ratio.
     if ( rrainm > rr_tol ) then
        mu_rr_n = mean_L2N( rrainm, rrp2_on_rrm2 * rrainm**2 )
     else
-       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this
-       ! grid level.  The value of mu_rr_n should be -inf.  It will be set to
-       ! -huge for purposes of assigning it a value.  This value will not be
-       ! used again in the CLUBB code.
+       ! Mean in-precip rain water mixing ratio is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.  The value of mu_rr_n should be -inf.  It will be
+       ! set to -huge for purposes of assigning it a value.  This value will not
+       ! be used again in the CLUBB code.
        mu_rr_n = -huge( mu_rr_n )
     endif
 
-    ! Normalized mean of rain drop concentration.
+    ! Normalized mean of in-precip rain drop concentration.
     if ( Nrm > Nr_tol ) then
        mu_Nr_n = mean_L2N( Nrm, Nrp2_on_Nrm2 * Nrm**2 )
     else
-       ! Mean rain drop concentration is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this
-       ! grid level.  The value of mu_Nr_n should be -inf.  It will be set to
-       ! -huge for purposes of assigning it a value.  This value will not be
-       ! used again in the CLUBB code.
+       ! Mean in-precip rain drop concentration is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.  The value of mu_Nr_n should be -inf.  It will be
+       ! set to -huge for purposes of assigning it a value.  This value will not
+       ! be used again in the CLUBB code.
        mu_Nr_n = -huge( mu_Nr_n )
     endif
 
@@ -992,24 +1263,24 @@ module KK_microphys_module
     !!! an assumed (single) lognormal distribution, given the mean and
     !!! variance of those variables.
 
-    ! Normalized standard deviation of rain water mixing ratio.
+    ! Normalized standard deviation of in-precip rain water mixing ratio.
     if ( rrainm > rr_tol ) then
        sigma_rr_n = stdev_L2N( rrainm, rrp2_on_rrm2 * rrainm**2 )
     else
-       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The standard deviation is simply 0 since rain water mixing
-       ! ratio does not vary at this grid level.
+       ! Mean in-precip rain water mixing ratio is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.  The standard deviation is simply 0 since rain
+       ! water mixing ratio does not vary at this grid level.
        sigma_rr_n = zero
     endif
 
-    ! Normalized standard deviation of rain drop concentration.
+    ! Normalized standard deviation of in-precip rain drop concentration.
     if ( Nrm > Nr_tol ) then
        sigma_Nr_n = stdev_L2N( Nrm, Nrp2_on_Nrm2 * Nrm**2 )
     else
-       ! Mean rain drop concentration is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The standard deviation is simply 0 since rain drop
+       ! Mean in-precip rain drop concentration is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.  The standard deviation is simply 0 since rain drop
        ! concentration does not vary at this grid level.
        sigma_Nr_n = zero
     endif
@@ -1033,18 +1304,20 @@ module KK_microphys_module
 
     if ( rrainm > rr_tol ) then
 
-       ! Normalize the correlation between s and r_r in PDF component 1.
+       ! Normalize the correlation (in-precip) between s and r_r in PDF
+       ! component 1.
        corr_srr_1_n = corr_NL2NN( corr_srr_1, sigma_rr_n )
 
-       ! Normalize the correlation between s and r_r in PDF component 2.
+       ! Normalize the correlation (in-precip) between s and r_r in PDF
+       ! component 2.
        corr_srr_2_n = corr_NL2NN( corr_srr_2, sigma_rr_n )
 
     else
 
-       ! Mean rain water mixing ratio is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The correlations involving rain water mixing ratio are 0 since
-       ! rain water mixing ratio does not vary at this grid level.
+       ! Mean in-precip rain water mixing ratio is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.  The correlations involving rain water mixing ratio
+       ! are 0 since rain water mixing ratio does not vary at this grid level.
        corr_srr_1_n = zero
        corr_srr_2_n = zero
 
@@ -1052,18 +1325,20 @@ module KK_microphys_module
 
     if ( Nrm > Nr_tol ) then
 
-       ! Normalize the correlation between s and N_r in PDF component 1.
+       ! Normalize the correlation (in-precip) between s and N_r in PDF
+       ! component 1.
        corr_sNr_1_n = corr_NL2NN( corr_sNr_1, sigma_Nr_n )
 
-       ! Normalize the correlation between s and N_r in PDF component 2.
+       ! Normalize the correlation (in-precip) between s and N_r in PDF
+       ! component 2.
        corr_sNr_2_n = corr_NL2NN( corr_sNr_2, sigma_Nr_n )
 
     else
 
-       ! Mean rain drop concentration is less than the tolerance amount.  It is
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The correlations involving rain drop concentration are 0 since
-       ! rain drop concentration does not vary at this grid level.
+       ! Mean in-precip rain drop concentration is less than the tolerance
+       ! amount.  It is considered to have a value of 0.  There is not any rain
+       ! at this grid level.  The correlations involving rain drop concentration
+       ! are 0 since rain drop concentration does not vary at this grid level.
        corr_sNr_1_n = zero
        corr_sNr_2_n = zero
 
@@ -1092,19 +1367,19 @@ module KK_microphys_module
     !!! have an assumed lognormal distribution, given their correlation and both
     !!! of their normalized standard deviations.
 
-    ! Normalize the correlation between rr and Nr (this is the same for
-    ! both PDF components).
+    ! Normalize the correlation (in-precip) between rr and Nr (this is the same
+    ! for both PDF components).
     if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
 
        corr_rrNr_n = corr_LL2NN( corr_rrNr, sigma_rr_n, sigma_Nr_n )
 
     else
 
-       ! Mean rain water mixing ratio and (or) mean rain drop concentration are
-       ! (is) less than their (its) respective tolerance amount(s), and are (is)
-       ! considered to have a value of 0.  There is not any rain at this grid
-       ! level.  The correlation is 0 since rain does not vary at this grid
-       ! level.
+       ! Mean in-precip rain water mixing ratio and (or) mean in-precip rain
+       ! drop concentration are (is) less than their (its) respective tolerance
+       ! amount(s), and are (is) considered to have a value of 0.  There is not
+       ! any rain at this grid level.  The correlation is 0 since rain does not
+       ! vary at this grid level.
        corr_rrNr_n = zero
 
     endif
@@ -1115,7 +1390,7 @@ module KK_microphys_module
   end subroutine KK_upscaled_setup
 
   !=============================================================================
-  subroutine KK_stat_output( corr_srr_1, corr_sNr_1, corr_sNc_1, corr_rrNr, &
+  subroutine KK_stat_output( corr_srr_1, corr_sNr_1, corr_sNc_1, &
                              corr_sw, corr_wrr, corr_wNr, corr_wNc, &
                              corr_rrNr_n, level )
 
@@ -1131,7 +1406,6 @@ module KK_microphys_module
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only : &
-        icorr_rrNr,   & ! Variable(s) 
         icorr_srr,    &
         icorr_sNr,    &
         icorr_sNc,    &
@@ -1149,7 +1423,6 @@ module KK_microphys_module
       corr_srr_1,  & ! Correlation between s and r_r (1st PDF component)     [-]
       corr_sNr_1,  & ! Correlation between s and N_r (1st PDF component)     [-]
       corr_sNc_1,  & ! Correlation between s and N_c (1st PDF component)     [-]
-      corr_rrNr,   & ! Correlation between r_r and N_r (both components)     [-]
       corr_sw,     & ! Correlation between s and w  (both components)        [-]
       corr_wrr,    & ! Correlation between w and r_r (both components)       [-]
       corr_wNr,    & ! Correlation between w and N_r (both components)       [-]
@@ -1161,11 +1434,6 @@ module KK_microphys_module
 
 
     !!! Output the correlations
-
-    ! Correlation of r_r and Nr.
-    if ( icorr_rrNr > 0 ) then
-       call stat_update_var_pt( icorr_rrNr, level, corr_rrNr, zt )
-    endif
 
     ! Correlation of s and r_r.
     if ( icorr_srr > 0 ) then
@@ -1429,7 +1697,7 @@ module KK_microphys_module
         corr_st_NN_below
 
     use parameters_microphys, only: &
-      l_fix_s_t_correlations ! Variable(s)
+        l_fix_s_t_correlations ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd,      & ! Variable(s)

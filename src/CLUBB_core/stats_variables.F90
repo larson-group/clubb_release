@@ -94,12 +94,22 @@ module stats_variables
      isigma_sqd_w_zt, & 
      irho
 
+  integer, public :: &
+     imu_rr,      &
+     imu_Nr,      &
+     isigma_rr,   &
+     isigma_Nr,   &
+     icorr_srr_1, &
+     icorr_srr_2, &
+     icorr_sNr_1, &
+     icorr_sNr_2, &
+     icorr_rrNr
+
   integer, public :: & ! janhft 09/25/12
-     icorr_rrNr, &
      icorr_srr, &
      icorr_sNr, &
      icorr_sNc, &
-     icorr_sw, &
+     icorr_sw,  &
      icorr_wrr, &
      icorr_wNr, &
      icorr_wNc, &

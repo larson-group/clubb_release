@@ -69,8 +69,18 @@ module stats_zt
         iwprtpthlp, & 
         isigma_sqd_w_zt
 
+    use stats_variables, only: &
+        imu_rr,      &
+        imu_Nr,      &
+        isigma_rr,   &
+        isigma_Nr,   &
+        icorr_srr_1, &
+        icorr_srr_2, &
+        icorr_sNr_1, &
+        icorr_sNr_2, &
+        icorr_rrNr
+
     use stats_variables, only: & ! janhft 09/25/12
-        icorr_rrNr, &
         icorr_srr, & 
         icorr_sNr, &
         icorr_sNc, &
@@ -435,6 +445,16 @@ module stats_zt
     imass_ice_cryst = 0
     ircm_icedfs     = 0
     iu_T_cm         = 0
+
+    imu_rr      = 0
+    imu_Nr      = 0
+    isigma_rr   = 0
+    isigma_Nr   = 0
+    icorr_srr_1 = 0
+    icorr_srr_2 = 0
+    icorr_sNr_1 = 0
+    icorr_sNr_2 = 0
+    icorr_rrNr  = 0
 
     ! Correlations
     icorr_rrNr = 0
@@ -2413,13 +2433,71 @@ module stats_zt
              "Smoothed version of wp3 / wp2 [m/s]", "m/s", zt )
         k = k + 1
 
-      ! changes by janhft 09/25/12
-      case ('corr_rrNr')
-        icorr_rrNr = k
-        call stat_assign( icorr_rrNr, "corr_rrNr", & 
-             "Correlation between rrain and Nrain []", "", zt )
+      case ( 'mu_rr' )
+        imu_rr = k
+        call stat_assign( imu_rr, "mu_rr", & 
+             "Mean (in-precip) of rr (both components) [kg/kg]", &
+             "kg/kg", zt )
         k = k + 1
 
+      case ( 'mu_Nr' )
+        imu_Nr = k
+        call stat_assign( imu_Nr, "mu_Nr", & 
+             "Mean (in-precip) of Nr (both components) [num/kg]", &
+             "num/kg", zt )
+        k = k + 1
+
+      case ( 'sigma_rr' )
+        isigma_rr = k
+        call stat_assign( isigma_rr, "sigma_rr", & 
+             "Standard deviation (in-precip) of rr (both components) [kg/kg]", &
+             "kg/kg", zt )
+        k = k + 1
+
+      case ( 'sigma_Nr' )
+        isigma_Nr = k
+        call stat_assign( isigma_Nr, "sigma_Nr", & 
+             "Standard deviation (in-precip) of Nr (both components) [num/kg]", &
+             "num/kg", zt )
+        k = k + 1
+
+      case ( 'corr_srr_1' )
+        icorr_srr_1 = k
+        call stat_assign( icorr_srr_1, "corr_srr_1", & 
+             "Correlation (in-precip) between s and rr (1st PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_srr_2' )
+        icorr_srr_2 = k
+        call stat_assign( icorr_srr_2, "corr_srr_2", & 
+             "Correlation (in-precip) between s and rr (2nd PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_sNr_1' )
+        icorr_sNr_1 = k
+        call stat_assign( icorr_sNr_1, "corr_sNr_1", & 
+             "Correlation (in-precip) between s and Nr (1st PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_sNr_2' )
+        icorr_sNr_2 = k
+        call stat_assign( icorr_sNr_2, "corr_sNr_2", & 
+             "Correlation (in-precip) between s and Nr (2nd PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_rrNr' )
+        icorr_rrNr = k
+        call stat_assign( icorr_rrNr, "corr_rrNr", & 
+             "Correlation (in-precip) between rr and Nr (both components) [-]", &
+             "-", zt )
+        k = k + 1
+
+
+      ! changes by janhft 09/25/12
       case ('corr_srr')
         icorr_srr = k
         call stat_assign( icorr_srr, "corr_srr", & 
