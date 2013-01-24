@@ -93,7 +93,7 @@ function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend
   end
 
   if iscellstr(infile_name)==1
-    s=size(infile_name)
+    s=size(infile_name);
     numfiles=s(1);
   end
 
@@ -168,22 +168,22 @@ function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend
     end
 
     if ifilenum == 1
-      times_all = Times
+      times_all = Times;
     else
-      times_all = [ times_all Times ]
+      times_all = [ times_all Times ];
     end
     
     % determine overlap
     if numfiles > 1
       % determine if the input files overlap in one timestep
       if ifilenum == 1
-        t_last = Times(:,size(Times,2))
+        t_last = Times(:,size(Times,2));
             
       elseif ifilenum == 2
-        t_first = Times(:,1)
+        t_first = Times(:,1);
             
         if strcmp(t_last,t_first) == 1
-          overlap = 1
+          overlap = 1;
         end
             
       end % if ifilenum == 1
@@ -749,7 +749,7 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
   ah=gca;
   axes('position',[0,0,1,1],'visible','off');
   text(.3,.175,infotext);
-  text(.3,.14,strcat('Averaged over ', tstart_avg, ' to ', tend_avg));
+  text(.3,.14,strcat('Averaged over: ', tstart_avg, ' - ', tend_avg));
   axes(ah)
 
   %write to png and eps file
