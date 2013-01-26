@@ -65,12 +65,12 @@
        ]}, 
        {'plotTitle' => 'HL 3D SAM Benchmark Budgets', 'axisLabel' => 'HL [K/day]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707_128x128x128_1km_LES.nc', 'type' => 'auto', 'name' => 'HLADV', 'expression' => 'HLADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES.nc', 'type' => 'auto', 'name' => 'HLDIFF', 'expression' => 'HLDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '-1*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLADV', 'expression' => 'HLADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLDIFF', 'expression' => 'HLDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '-1*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]}
     ],
     'nightlyOutput' =>
