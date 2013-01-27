@@ -848,7 +848,7 @@ module stats_zt
       case ('thlm_forcing')
         ithlm_forcing = k
         call stat_assign( ithlm_forcing, "thlm_forcing", & 
-             "thlm budget: thetal forcing [K s^{-1}]", "K s^{-1}", zt )
+             "thlm budget: thetal forcing (includes thlm_mc and radht) [K s^{-1}]", "K s^{-1}", zt )
         k = k + 1
       case ('thlm_mc')
         ithlm_mc = k
@@ -858,7 +858,7 @@ module stats_zt
       case ('rtm_forcing')
         irtm_forcing = k
         call stat_assign( irtm_forcing, "rtm_forcing", & 
-             "rtm budget: rt forcing [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rtm budget: rt forcing (includes rtm_mc) [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rtm_mc')
