@@ -347,7 +347,9 @@ else
 	# "cat" the parameter_file and FLAGS_FILE into NAMELISTS for all cases
 	cat $parameter_file $FLAGS_FILE > $NAMELISTS
 	# Create a modified model file that will be edited later
-	MOD_MODEL_FILE=`mktemp`
+	MOD_MODEL_FILE="MOD_MODEL_TEMP_$RANDOM"
+	#TEST
+	echo $MOD_MODEL_FILE
 	cat $model_file > $MOD_MODEL_FILE
 	if [ $TIMESTEP_TEST == true ]; 
 	then
