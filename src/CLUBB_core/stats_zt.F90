@@ -858,7 +858,8 @@ module stats_zt
       case ('rtm_forcing')
         irtm_forcing = k
         call stat_assign( irtm_forcing, "rtm_forcing", & 
-             "rtm budget: rt forcing (includes rtm_mc) [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rtm budget: rt forcing (includes rtm_mc) [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", &
+             zt )
         k = k + 1
 
       case ('rtm_mc')
