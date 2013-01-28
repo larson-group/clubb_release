@@ -98,8 +98,6 @@ restart_path_case = "restart/arm_97"
 time_restart = 0.0       ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
 
-l_input_fields = .true.
-
 ! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
@@ -144,7 +142,7 @@ l_graupel = .true.
 
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
-rad_scheme = "none",
+rad_scheme = "bugsrad",
 l_sw_radiation = .true.
 ! Flag indicating if U.S. Std Atmosphere should 
 ! be used to extend the grid in radiation.
@@ -168,10 +166,5 @@ stats_fmt    = "grads"   ! Type of statistical output file ("grads" or "netcdf")
 
 /
 
-&setfields
 
-datafile = "ARM9707.nc"
-input_type = "sam"
-l_input_radht = .true.
 
-/
