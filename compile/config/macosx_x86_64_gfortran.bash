@@ -3,8 +3,8 @@
 # as well but is not tested.
 
 # Fortran 95 compiler and linker
-FC=gfortran
-LD=gfortran
+FC=gfortran-4.7
+LD=gfortran-4.7
 
 # Define path to directories
 dir=`pwd` # dir where this script resides
@@ -26,7 +26,8 @@ WARNINGS="-Wall -pedantic" # This enabled most compiler warnings
 # == Machine specific flags ==
 # Note: If the native architecture is 64 bit (most newer Mac's) then the 
 # netCDF and LAPACK libraries used must be 64 bit too
-ARCH="-march=native -msse3 -mfpmath=sse -fopenmp"
+ARCH="-march=native"
+#ARCH="-m64"
 
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-fdefault-real-8"
@@ -53,7 +54,8 @@ LDFLAGS="$ARCH $LAPACK" # No netCDF
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these.
-FFLAGS="$ARCH $OPTIMIZE $DEBUG"
+#FFLAGS="$ARCH $OPTIMIZE $DEBUG"
+FFLAGS="$ARCH $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
@@ -78,4 +80,4 @@ SHAREDFLAGS="-fPIC -shared"
 mkmf=$dir/mkmf
 
 # gmake command to use and options: '-j 2' enables parallel compilation
-gmake="make"
+gmake="make -j2"
