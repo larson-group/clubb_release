@@ -404,7 +404,8 @@ subroutine mmicro_pcond ( sub_column,           &
 
    ! Upscaled KK for autoconversion and accretion
    use KK_microphys_module, only: &
-       KK_upscaled_setup  ! Procedure(s)
+       KK_in_precip_values, & ! Procedure(s)
+       KK_upscaled_setup
 
    use KK_upscaled_means, only: &
        KK_auto_upscaled_mean, & ! Procedure(s)
@@ -841,19 +842,30 @@ subroutine mmicro_pcond ( sub_column,           &
    real( kind = core_rknd ) :: &
      mu_s_1,       & ! Mean of s (1st PDF component)                   [kg/kg]
      mu_s_2,       & ! Mean of s (2nd PDF component)                   [kg/kg]
-     mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
-     mu_Nc_n,      & ! Mean of ln Nc (both components)                     [-]
+     mu_rr_n,      & ! Mean of ln r_r (both components) in-precip (ip)     [-]
+     mu_Nc_n,      & ! Mean of ln N_c (both components)                    [-]
      sigma_s_1,    & ! Standard deviation of s (1st PDF component)     [kg/kg]
      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-     sigma_rr_n,   & ! Standard deviation of ln rr (both components)       [-]
-     sigma_Nc_n,   & ! Standard deviation of ln Nc (both components)       [-]
-     corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component) [-]
-     corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component) [-]
-     corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component) [-]
-     corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component) [-]
+     sigma_rr,     & ! Standard deviation of r_r (both components) ip      [-]
+     sigma_rr_n,   & ! Standard deviation of ln r_r (both components) ip   [-]
+     sigma_Nc_n,   & ! Standard deviation of ln N_c (both components)      [-]
+     corr_srr_1,   & ! Correlation between s and r_r (1st PDF comp.) ip    [-]
+     corr_srr_2,   & ! Correlation between s and r_r (2nd PDF comp.) ip    [-]
+     corr_srr_1_n, & ! Correlation between s and ln r_r (1st PDF comp.) ip [-]
+     corr_srr_2_n, & ! Correlation between s and ln r_r (2nd PDF comp.) ip [-]
+     corr_sNc_1_n, & ! Correlation between s and ln N_c (1st PDF comp.)    [-]
+     corr_sNc_2_n, & ! Correlation between s and ln N_c (2nd PDF comp.)    [-]
      KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
      KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
      mixt_frac       ! Mixture fraction                                    [-]
+
+   ! Dummy input/output 
+   real( kind = core_rknd ) :: &
+     dum_inout1, &
+     dum_inout2, &
+     dum_inout3, &
+     dum_inout4, &
+     dum_inout5
 
    ! Dummy output 
    real( kind = core_rknd ) :: &
@@ -871,9 +883,7 @@ subroutine mmicro_pcond ( sub_column,           &
      dum_out12, &
      dum_out13, &
      dum_out14, &
-     dum_out15, &
-     dum_out16, &
-     dum_out17
+     dum_out15
    !----
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -1707,17 +1717,19 @@ subroutine mmicro_pcond ( sub_column,           &
                  call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                          zero, zero, &
                                          real( nc(i,k), kind = core_rknd ), &
-                                         pdf_params(k), &
                                          zero, zero, zero, zero, &
-                                         zero, pver - k + 2, &
+                                         zero, zero, zero, zero, &
+                                         zero, pdf_params(k), &
+                                         dum_inout1, dum_inout2, dum_inout3, & ! Intent(inout)
+                                         dum_inout4, dum_inout5, &
                                          mu_s_1, mu_s_2, dum_out1, dum_out2, & ! Intent(out)
                                          mu_Nc_n, sigma_s_1, sigma_s_2, &
                                          dum_out3, dum_out4, sigma_Nc_n, &
-                                         dum_out5, dum_out6, dum_out7, &
-                                         dum_out8, dum_out9, dum_out10, &
-                                         dum_out11, corr_sNc_1_n, corr_sNc_2_n, &
-                                         dum_out12, dum_out13, &
-                                         dum_out14, dum_out15, dum_out16, dum_out17, &
+                                         dum_out5, dum_out6, &
+                                         dum_out7, dum_out8, &
+                                         dum_out9, dum_out10, &
+                                         corr_sNc_1_n, corr_sNc_2_n, dum_out11, &
+                                         dum_out12, dum_out13, dum_out14, dum_out15, &
                                          mixt_frac )
 
                  KK_auto_coef &
@@ -2161,20 +2173,32 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! The level-mean rain water mixing ratio is found by
                  ! multiplying in-precip rain water mixing ratio (qric) by
                  ! the precipitation fraction (cldmax).
+                 call KK_in_precip_values( real( qric(i,k) * cldmax(i,k), &
+                                                 kind = core_rknd ), &
+                                           zero, &
+                                           real( qc(i,k), kind = core_rknd ), &
+                                           cldmax(i,k), &
+                                           dum_out1, dum_out2, sigma_rr, dum_out3, &
+                                           corr_srr_1, corr_srr_2, dum_out4, &
+                                           dum_out5, dum_out6 )
+
                  call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                         real( qric(i,k), kind = core_rknd ), &
-                                         zero, &
-                                         zero, pdf_params(k), &
+                                         real( qric(i,k) * cldmax(i,k), kind = core_rknd ), &
+                                         zero, zero, &
+                                         real( qric(i,k), kind = core_rknd ), zero, &
+                                         sigma_rr, zero, &
                                          zero, zero, zero, zero, &
-                                         zero, pver - k + 2, &
+                                         zero, pdf_params(k), &
+                                         corr_srr_1, corr_srr_2, dum_inout1, &
+                                         dum_inout2, dum_inout3, &
                                          mu_s_1, mu_s_2, mu_rr_n, dum_out1, & ! Intent(out)
                                          dum_out2, sigma_s_1, sigma_s_2, &
                                          sigma_rr_n, dum_out3, dum_out4, &
-                                         dum_out5, corr_srr_1_n, corr_srr_2_n, &
-                                         dum_out6, dum_out7, dum_out8, &
+                                         corr_srr_1_n, corr_srr_2_n, &
+                                         dum_out5, dum_out6, &
+                                         dum_out7, dum_out8, &
                                          dum_out9, dum_out10, dum_out11, &
-                                         dum_out12, dum_out13, &
-                                         dum_out14, dum_out15, dum_out16, dum_out17, &
+                                         dum_out12, dum_out13, dum_out14, dum_out15, &
                                          mixt_frac )
 
                  KK_accr_coef = 67.0_core_rknd
