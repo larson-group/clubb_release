@@ -2177,7 +2177,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                                  kind = core_rknd ), &
                                            zero, &
                                            real( qc(i,k), kind = core_rknd ), &
-                                           cldmax(i,k), &
+                                           real( cldmax(i,k), kind = core_rknd ), &
                                            dum_out1, dum_out2, sigma_rr, dum_out3, &
                                            corr_srr_1, corr_srr_2, dum_out4, &
                                            dum_out5, dum_out6 )
