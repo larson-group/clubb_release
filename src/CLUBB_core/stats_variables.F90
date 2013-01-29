@@ -95,25 +95,31 @@ module stats_variables
      irho
 
   integer, public :: &
-     imu_rr,      &
-     imu_Nr,      &
-     isigma_rr,   &
-     isigma_Nr,   &
-     icorr_srr_1, &
-     icorr_srr_2, &
-     icorr_sNr_1, &
-     icorr_sNr_2, &
-     icorr_rrNr
+     imu_rr,        &
+     imu_rr_n,      &
+     imu_Nr,        &
+     imu_Nr_n,      &
+     isigma_rr,     &
+     isigma_rr_n,   &
+     isigma_Nr,     &
+     isigma_Nr_n,   &
+     icorr_srr_1,   &
+     icorr_srr_2,   &
+     icorr_srr_1_n, &
+     icorr_srr_2_n, &
+     icorr_sNr_1,   &
+     icorr_sNr_2,   &
+     icorr_sNr_1_n, &
+     icorr_sNr_2_n, &
+     icorr_rrNr,    &
+     icorr_rrNr_n
 
   integer, public :: & ! janhft 09/25/12
-     icorr_srr, &
-     icorr_sNr, &
      icorr_sNc, &
      icorr_sw,  &
      icorr_wrr, &
      icorr_wNr, &
-     icorr_wNc, &
-     icorr_rrNr_n !<janhft> 11/12/12
+     icorr_wNc
 
   integer, public :: & 
      iNcm,            & ! Brian
@@ -153,7 +159,12 @@ module stats_variables
 !$omp   irain_rate_zt, iAKm, iLH_AKm, &
 !$omp   iradht, iradht_LW, iradht_SW, &
 !$omp   iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc, &
-!$omp   icorr_rrNr, icorr_srr, icorr_sNr, icorr_sNc)
+!$omp   imu_rr, imu_rr_n, imu_Nr, imu_Nr_n, &
+!$omp   isigma_rr, isigma_rr_n, isigma_Nr, isigma_Nr_n, &
+!$omp   icorr_srr_1, icorr_srr_2, icorr_srr_1_n, icorr_srr_2_n, &
+!$omp   icorr_sNr_1, icorr_sNr_2, icorr_sNr_1_n, icorr_sNr_2_n, & 
+!$omp   icorr_rrNr, icorr_rrNr_n, icorr_sNc, &
+!$omp   icorr_sw, icorr_wrr, icorr_wNr, icorr_wNc )
 
   integer, public :: & 
    irfrzm

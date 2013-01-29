@@ -57,14 +57,17 @@ vars_zt =
 'cloud_frac1', 'cloud_frac2', 'a3_coef_zt', 'wp3_on_wp2_zt',
 's1', 's2', 'stdev_s1', 'stdev_s2', 'stdev_t1', 'stdev_t2', 'covar_st_1', 'covar_st_2',
 'corr_st_1', 'corr_st_2', 'rrtthl', 'crt1', 'crt2', 'cthl1', 'cthl2',
-'mu_rr', 'mu_Nr', 'sigma_rr', 'sigma_Nr', 'corr_srr_1',
-'corr_srr_2', 'corr_sNr_1', 'corr_sNr_2', 'corr_rrNr',
+'mu_rr', 'mu_rr_n', 'mu_Nr', 'mu_Nr_n',
+'sigma_rr', 'sigma_rr_n', 'sigma_Nr', 'sigma_Nr_n',
+'corr_srr_1', 'corr_srr_2', 'corr_srr_1_n', 'corr_srr_2_n',
+'corr_sNr_1', 'corr_sNr_2', 'corr_sNr_1_n', 'corr_sNr_2_n',
+'corr_rrNr', 'corr_rrNr_n', 'corr_sNc',
+'corr_sw', 'corr_wrr', 'corr_wNr', 'corr_wNc',
 's_mellor', 'C11_Skw_fnc',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
 'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt',
 'sclr1m', 'sclr1m_f', 'sclr2m', 'sclr2m_f',
-'edsclr1m', 'edsclr2m', 'edsclr1m_f', 'edsclr2m_f', 'corr_srr', 'corr_sNr', 'corr_sNc',
-'corr_sw', 'corr_wrr', 'corr_wNr', 'corr_wNc', 'corr_rrNr_n',
+'edsclr1m', 'edsclr2m', 'edsclr1m_f', 'edsclr2m_f',
 ''
 
 vars_LH_zt =
