@@ -871,6 +871,18 @@ module microphys_driver
       stop "Error determining LH_microphys_type"
 
     end select
+    
+    ! Make sure the user didn't select LH sampling using
+    ! coamps, morrison-gettelman, or simplified_ice microphysics
+    ! (ticket:539)
+    if ( (.not. (LH_microphys_type_int == LH_microphys_disabled)) .and. ( &
+      trim( micro_scheme ) == "coamps" .or. &
+      trim( micro_scheme ) == "morrison_gettelman" .or. &
+      trim( micro_scheme ) == "simplified_ice" &
+    ) ) then
+      stop "LH sampling can not be enabled when using coamps, morrison_gettelman, or &
+           &simplified_ice microphysics types"
+    end if
 
     ! Setup index variables for latin hypercube sampling
     if ( LH_microphys_type_int /= LH_microphys_disabled ) then
