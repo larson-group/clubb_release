@@ -715,7 +715,17 @@ svn diff | egrep '(^(\+|-).*!|^---|^\+\+\+|^@@|^===)' -
 
 Each pipe in this egrep command represents an OR statement. The first section includes all lines from the diff that include an exclamation mark, which represents a comment. The rest of the lines include the lines that show information about the filenames and line numbers.
 
-\item CLUBB uses a generalized precision that can be specified with a compiler flag. This compiler flag is CLUBB\_REAL\_TYPE. This maps to the variable in clubb\_precision.F90 called core\_rknd. When using any real variables, please use a real of kind core\_rknd instead of a standard real, unless it is absolutely necessary to use single or double precision all the time. Also, when assigning values to these variables, you must specify the precision of the value using \_core\_rknd (E.g. 1.23\_core\_rknd). Here is an example of declaring a variable as core\_rknd and assigning a value to it:
+\item CLUBB uses a generalized precision that can be specified with a compiler flag. This compiler flag is CLUBB\_REAL\_TYPE. This maps to the variable in clubb\_precision.F90 called core\_rknd. When using any real variables, please use a real of kind core\_rknd instead of a standard real, unless it is absolutely necessary to use single or double precision all the time. 
+
+It is particularly important to specify core\_rknd when passing variables between CLUBB and an external model, such as WRF, which uses single precision by default, or MG microphysics, which uses double precision by default.  If core\_rknd is not explicitly specified in an argument list from the external model, e.g.
+
+\begin{verbatim}
+real( exciting_WRF_variable(k), kind = core_rknd ) ,
+\end{verbatim}
+
+then CLUBB will fail to compile when CLUBB's precision is changed, i.e. CLUBB\_REAL\_TYPE is changed.
+
+Also, when assigning values to these variables, you must specify the precision of the value using \_core\_rknd (E.g. 1.23\_core\_rknd). Here is an example of declaring a variable as core\_rknd and assigning a value to it:
 
 \begin{verbatim}
 use clubb_precision, only &

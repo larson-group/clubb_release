@@ -3,7 +3,7 @@
            "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta name="GENERATOR" content="TtM 3.85" />
+<meta name="GENERATOR" content="TtM Unregistered 4.02" />
  <style type="text/css">
  div.p { margin-top: 7pt; }
  span.roman {font-family: serif; font-style: normal; font-weight: normal;} 
@@ -12,7 +12,7 @@
   
 <title> {Standards and Coding Practices for CLUBB} </title>
 </head>
-<body>
+<body><div>
  
 <h1 align="center"><b>Standards and Coding Practices for CLUBB</b> </h1>
 
@@ -894,6 +894,39 @@ svn&nbsp;diff&nbsp;|&nbsp;egrep&nbsp;'(^(\+|-).*!|^---|^\+\+\+|^@@|^===)'&nbsp;-
 Each pipe in this egrep command represents an OR statement. The first section includes all lines from the diff that include an exclamation mark, which represents a comment. The rest of the lines include the lines that show information about the filenames and line numbers.
 <div class="p"><!----></div>
 </li>
+
+<li> CLUBB uses a generalized precision that can be specified with a compiler flag. This compiler flag is CLUBB_REAL_TYPE. This maps to the variable in clubb_precision.F90 called core_rknd. When using any real variables, please use a real of kind core_rknd instead of a standard real, unless it is absolutely necessary to use single or double precision all the time. 
+
+<div class="p"><!----></div>
+It is particularly important to specify core_rknd when passing variables between CLUBB and an external model, such as WRF, which uses single precision by default, or MG microphysics, which uses double precision by default.  If core_rknd is not explicitly specified in an argument list from the external model, e.g.
+
+<div class="p"><!----></div>
+
+<pre>
+real(&nbsp;exciting_WRF_variable(k),&nbsp;kind&nbsp;=&nbsp;core_rknd&nbsp;)&nbsp;,
+
+</pre>
+
+<div class="p"><!----></div>
+then CLUBB will fail to compile when CLUBB's precision is changed, i.e. CLUBB_REAL_TYPE is changed.
+
+<div class="p"><!----></div>
+Also, when assigning values to these variables, you must specify the precision of the value using _core_rknd (E.g. 1.23_core_rknd). Here is an example of declaring a variable as core_rknd and assigning a value to it:
+
+<div class="p"><!----></div>
+
+<pre>
+use&nbsp;clubb_precision,&nbsp;only&nbsp;&amp;
+&nbsp;&nbsp;core_rknd&nbsp;!&nbsp;generalized&nbsp;precision
+
+real(&nbsp;kind&nbsp;=&nbsp;core_rknd&nbsp;)&nbsp;::&nbsp;&amp;
+&nbsp;&nbsp;variable
+
+variable&nbsp;=&nbsp;0.0_core_rknd
+
+</pre>
+<div class="p"><!----></div>
+</li>
 </ol>
 
 <div class="p"><!----></div>
@@ -901,6 +934,6 @@ Each pipe in this egrep command represents an OR statement. The first section in
 <br /><br /><hr /><small>File translated from
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
-T<sub><font size="-1">T</font></sub>M</a>,
-version 3.85.<br />On  7 Dec 2011, 11:30.</small>
-</body></html>
+T<sub><font size="-1">T</font></sub>M Unregistered</a>,
+version 4.02.<br />On 29 Jan 2013, 14:41.</small>
+</div></body></html>
