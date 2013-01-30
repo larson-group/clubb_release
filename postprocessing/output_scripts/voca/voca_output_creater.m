@@ -84,6 +84,7 @@ function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend
       disp('Error: crs_lat must be an integer between 0 and 40.');
   end
 
+  
   % initialize and set nuber of files
   numfiles=0;
 
@@ -467,7 +468,7 @@ function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend
   geopot_ht = phi/gravity; % m; ~= height
 
   % calculate pressure on staggered grid
-  press_stag = calc_pressure_staggered( psfc, Ptop, eta_stag );
+press_stag = calc_pressure_staggered( psfc, Ptop, eta_stag );
 
   % calculate low cloud fraction below 700mb
   cldlow=calc_low_cloud_frac( cf, press );
@@ -498,7 +499,7 @@ function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend
     % of the simulation is skipped. So we don't want to include the last 8
     % timesteps in the plots.
     % plot_results( rho(:,:,:,1:(totaltimes-offset+1)), tmp(:,:,:,1:(totaltimes-offset+1)), geopot_ht(:,:,:,1:(totaltimes-offset+1)), cldlow(:,:,1:(totaltimes-offset+1)), cf(:,:,:,1:(totaltimes-offset+1)), qvapor(:,:,:,1:(totaltimes-offset+1)), lwc(:,:,:,1:(totaltimes-offset+1)), infile_name );
-    plot_results( rho, tmp, geopot_ht, cldlow, cf, qvapor, lwc, infile_name, crs_lat, times_all(:, 1:calc_times), tstart_avg, tend_avg );
+    plot_results( rho, tmp, qrain, geopot_ht, cldlow, cf, qvapor, lwc, infile_name, crs_lat, times_all(:, 1:calc_times), tstart_avg, tend_avg );
     
   elseif i_action==3
     disp('Type in your command: ')
@@ -702,7 +703,7 @@ end % end function write_output
 
 
 
-function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, infile_name, lat, Times, tstart_avg, tend_avg )
+function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv, cloudwater, infile_name, lat, Times, tstart_avg, tend_avg )
 % Creates plots similar to these in Rob Wood's talk (see wrf:ticket:47)
 
   % check if infile_name is a cellstring; if so, get the first filename
@@ -728,8 +729,10 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
     infotext = fgetl(fid);
   end %if
 
+
+
   % calculate liquid water path and cloud cover
-  lwp = calc_water_path( rho, mix_rat, heights );
+  lwp = calc_water_path( rho, mix_rat_qc, heights );
 
   % plot liquid water path time average
   lwp_t_avg = calc_time_avg_3d(lwp, Times, tstart_avg, tend_avg);
@@ -750,17 +753,55 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
   axes('position',[0,0,1,1],'visible','off');
   text(.3,.175,infotext);
   text(.3,.14,strcat('Averaged over: ', tstart_avg, ' - ', tend_avg));
+
   axes(ah)
 
+  
+  
   %write to png and eps file
   print(f1, '-dpng', strcat(outfile_prefix,'_lwp'))
   print(f1, '-depsc', strcat(outfile_prefix,'_lwp'))
+
+
+
+
+ % calculate rain water path and cloud cover
+  rwp = calc_water_path( rho, mix_rat_qr, heights );
+
+  % plot liquid water path time average
+  rwp_t_avg = calc_time_avg_3d(rwp, Times, tstart_avg, tend_avg);
+  rwp_t_avg = rwp_t_avg';
+  rwp_t_avg = adjust_max(rwp_t_avg(:,1:40), 0.2);
+  colormap(jet(50));
+  f2=figure;
+  subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
+  image(-110:5:-70, -40:10:0, rwp_t_avg , 'CDataMapping','scaled')
+  set(gca,'YDir', 'normal')   % otherwise the y-axis is upside down
+  colorbar()
+  xlabel('Longitude [Degrees]')
+  ylabel('Latitude [Degrees]')
+  title('Rain water path [kg m^{-2}]')
+
+  %put the info text
+  ah=gca;
+  axes('position',[0,0,1,1],'visible','off');
+  text(.3,.175,infotext);
+  text(.3,.14,strcat('Averaged over: ', tstart_avg, ' - ', tend_avg));
+  axes(ah)
+
+  
+  %write to png and eps file
+  print(f2, '-dpng', strcat(outfile_prefix,'_rwp'))
+  print(f2, '-depsc', strcat(outfile_prefix,'_rwp'))
+
+
+
 
   %plot cloud cover
   cldlow_t_avg = calc_time_avg_3d(cldlow, Times, tstart_avg, tend_avg);
   cldlow_t_avg = cldlow_t_avg';
   cldlow_t_avg = adjust_max(cldlow_t_avg(:,1:40), 1);
-  f2=figure;
+  f3=figure;
   subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
   image(-110:5:-70, -40:10:0, cldlow_t_avg , 'CDataMapping','scaled')
   set(gca,'YDir', 'normal')
@@ -776,8 +817,8 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
   text(.3,.14,strcat('Averaged over ', tstart_avg, ' to ', tend_avg));
   axes(ah)
 
-  print(f2, '-dpng', strcat(outfile_prefix,'_cloudcov'))
-  print(f2, '-depsc', strcat(outfile_prefix,'_cloudcov'))
+  print(f3, '-dpng', strcat(outfile_prefix,'_cloudcov'))
+  print(f3, '-depsc', strcat(outfile_prefix,'_cloudcov'))
 
   % approximate unstaggered z level heights
   hgt_20 = zeros(size(heights,1),size(heights,3),size(heights,4));
@@ -820,7 +861,7 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
 
 
   %plot cross section along <lat> degrees S for cloud fraction
-  f3=figure;
+  f4=figure;
   subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
   image(-85:5:-70, hgt_int(1:5:31), (cf_t_avg)' , 'CDataMapping','scaled')
   set(gca,'YDir', 'normal')
@@ -836,8 +877,8 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
   text(.3,.14,strcat('Averaged over ', tstart_avg, ' to ', tend_avg));
   axes(ah)
  
-  print(f3, '-dpng', strcat(outfile_prefix,'_cloudfrac'))
-  print(f3, '-depsc', strcat(outfile_prefix,'_cloudfrac'))
+  print(f4, '-dpng', strcat(outfile_prefix,'_cloudfrac'))
+  print(f4, '-depsc', strcat(outfile_prefix,'_cloudfrac'))
 
 
   %interpolate to a equally spaced z-grid
@@ -863,7 +904,7 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
   % plot cross section along <lat> degrees S for liquid water content (rho.*qcloud)
   cloudwater_t_avg = adjust_max(cloudwater_t_avg(21:40,1:31), 0.2e-3);
 
-  f4=figure;
+  f5=figure;
   subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
   image(-85:5:-70, hgt_int(1:5:31), (cloudwater_t_avg)' , 'CDataMapping','scaled')
   set(gca,'YDir', 'normal')
@@ -879,8 +920,8 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
   text(.3,.14,strcat('Averaged over ', tstart_avg, ' to ', tend_avg));
   axes(ah)
 
-  print(f4, '-dpng', strcat(outfile_prefix,'_cloudwater'))
-  print(f4, '-depsc', strcat(outfile_prefix,'_cloudwater'))
+  print(f5, '-dpng', strcat(outfile_prefix,'_cloudwater'))
+  print(f5, '-depsc', strcat(outfile_prefix,'_cloudwater'))
 
 
   % interpolate to a equally spaced z-grid
@@ -904,7 +945,7 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
   qv_t_avg = adjust_max(qv_t_avg(25:40,1:31), 10e-3);
 
   % plot cross section along <lat> degrees S for qv
-  f5=figure;
+  f6=figure;
   subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
   image(-85:5:-70, hgt_int(1:5:31), (qv_t_avg)' , 'CDataMapping','scaled')
   set(gca,'YDir', 'normal')
@@ -920,8 +961,8 @@ function[] = plot_results( rho, mix_rat, heights, cldlow, cf, qv, cloudwater, in
   text(.3,.14,strcat('Averaged over ', tstart_avg, ' to ', tend_avg));
   axes(ah)
 
-  print(f5, '-dpng', strcat(outfile_prefix,'_qv'))
-  print(f5, '-depsc', strcat(outfile_prefix,'_qv'))
+  print(f6, '-dpng', strcat(outfile_prefix,'_qv'))
+  print(f6, '-depsc', strcat(outfile_prefix,'_qv'))
 
   return
 
