@@ -10,7 +10,7 @@ module stats_zt
   public :: stats_init_zt
 
 ! Constant parameters
-  integer, parameter, public :: nvarmax_zt = 300 ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zt = 350 ! Maximum variables allowed
 
   contains
 
@@ -74,10 +74,14 @@ module stats_zt
         imu_rr_n,      &
         imu_Nr,        &
         imu_Nr_n,      &
+        imu_Nc,        &
+        imu_Nc_n,      &
         isigma_rr,     &
         isigma_rr_n,   &
         isigma_Nr,     &
         isigma_Nr_n,   &
+        isigma_Nc,     &
+        isigma_Nc_n,   &
         icorr_srr_1,   &
         icorr_srr_2,   &
         icorr_srr_1_n, &
@@ -86,11 +90,26 @@ module stats_zt
         icorr_sNr_2,   &
         icorr_sNr_1_n, &
         icorr_sNr_2_n, &
+        icorr_sNc_1,   &
+        icorr_sNc_2,   &
+        icorr_sNc_1_n, &
+        icorr_sNc_2_n, &
+        icorr_trr_1,   &
+        icorr_trr_2,   &
+        icorr_trr_1_n, &
+        icorr_trr_2_n, &
+        icorr_tNr_1,   &
+        icorr_tNr_2,   &
+        icorr_tNr_1_n, &
+        icorr_tNr_2_n, &
+        icorr_tNc_1,   &
+        icorr_tNc_2,   &
+        icorr_tNc_1_n, &
+        icorr_tNc_2_n, &
         icorr_rrNr,    &
         icorr_rrNr_n
 
     use stats_variables, only: & ! janhft 09/25/12
-        icorr_sNc, &
         icorr_sw,  &
         icorr_wrr, &
         icorr_wNr, &
@@ -456,10 +475,14 @@ module stats_zt
     imu_rr_n      = 0
     imu_Nr        = 0
     imu_Nr_n      = 0
+    imu_Nc        = 0
+    imu_Nc_n      = 0
     isigma_rr     = 0
     isigma_rr_n   = 0
     isigma_Nr     = 0
     isigma_Nr_n   = 0
+    isigma_Nc     = 0
+    isigma_Nc_n   = 0
     icorr_srr_1   = 0
     icorr_srr_2   = 0
     icorr_srr_1_n = 0
@@ -468,11 +491,26 @@ module stats_zt
     icorr_sNr_2   = 0
     icorr_sNr_1_n = 0
     icorr_sNr_2_n = 0
+    icorr_sNc_1   = 0
+    icorr_sNc_2   = 0
+    icorr_sNc_1_n = 0
+    icorr_sNc_2_n = 0
+    icorr_trr_1   = 0
+    icorr_trr_2   = 0
+    icorr_trr_1_n = 0
+    icorr_trr_2_n = 0
+    icorr_tNr_1   = 0
+    icorr_tNr_2   = 0
+    icorr_tNr_1_n = 0
+    icorr_tNr_2_n = 0
+    icorr_tNc_1   = 0
+    icorr_tNc_2   = 0
+    icorr_tNc_1_n = 0
+    icorr_tNc_2_n = 0
     icorr_rrNr    = 0
     icorr_rrNr_n  = 0
 
     ! Correlations
-    icorr_sNc  = 0
     icorr_sw   = 0
     icorr_wrr  = 0
     icorr_wNr  = 0
@@ -2473,6 +2511,18 @@ module stats_zt
              "ln(num/kg)", zt )
         k = k + 1
 
+      case ( 'mu_Nc' )
+        imu_Nc = k
+        call stat_assign( imu_Nc, "mu_Nc", & 
+             "Mean of N_c (both components) [num/kg]", "num/kg", zt )
+        k = k + 1
+
+      case ( 'mu_Nc_n' )
+        imu_Nc_n = k
+        call stat_assign( imu_Nc_n, "mu_Nc_n", & 
+             "Mean of ln N_c (both components) [ln(num/kg)]", "ln(num/kg)", zt )
+        k = k + 1
+
       case ( 'sigma_rr' )
         isigma_rr = k
         call stat_assign( isigma_rr, "sigma_rr", & 
@@ -2498,6 +2548,20 @@ module stats_zt
         isigma_Nr_n = k
         call stat_assign( isigma_Nr_n, "sigma_Nr_n", & 
              "Standard deviation (in-precip) of ln N_r (both components) [ln(num/kg)]", &
+             "ln(num/kg)", zt )
+        k = k + 1
+
+      case ( 'sigma_Nc' )
+        isigma_Nc = k
+        call stat_assign( isigma_Nc, "sigma_Nc", & 
+             "Standard deviation of N_c (both components) [num/kg]", &
+             "num/kg", zt )
+        k = k + 1
+
+      case ( 'sigma_Nc_n' )
+        isigma_Nc_n = k
+        call stat_assign( isigma_Nc_n, "sigma_Nc_n", & 
+             "Standard deviation of ln N_c (both components) [ln(num/kg)]", &
              "ln(num/kg)", zt )
         k = k + 1
 
@@ -2557,6 +2621,114 @@ module stats_zt
              "-", zt )
         k = k + 1
 
+      case ( 'corr_sNc_1' )
+        icorr_sNc_1 = k
+        call stat_assign( icorr_sNc_1, "corr_sNc_1", & 
+             "Correlation between s and N_c (1st PDF component) [-]", "-", zt )
+        k = k + 1
+
+      case ( 'corr_sNc_2' )
+        icorr_sNc_2 = k
+        call stat_assign( icorr_sNc_2, "corr_sNc_2", & 
+             "Correlation between s and N_c (2nd PDF component) [-]", "-", zt )
+        k = k + 1
+
+      case ( 'corr_sNc_1_n' )
+        icorr_sNc_1_n = k
+        call stat_assign( icorr_sNc_1_n, "corr_sNc_1_n", & 
+             "Correlation between s and ln N_c (1st PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_sNc_2_n' )
+        icorr_sNc_2_n = k
+        call stat_assign( icorr_sNc_2_n, "corr_sNc_2_n", & 
+             "Correlation between s and ln N_c (2nd PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_trr_1' )
+        icorr_trr_1 = k
+        call stat_assign( icorr_trr_1, "corr_trr_1", & 
+             "Correlation (in-precip) between t and r_r (1st PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_trr_2' )
+        icorr_trr_2 = k
+        call stat_assign( icorr_trr_2, "corr_trr_2", & 
+             "Correlation (in-precip) between t and r_r (2nd PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_trr_1_n' )
+        icorr_trr_1_n = k
+        call stat_assign( icorr_trr_1_n, "corr_trr_1_n", & 
+             "Correlation (in-precip) between t and ln r_r (1st PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_trr_2_n' )
+        icorr_trr_2_n = k
+        call stat_assign( icorr_trr_2_n, "corr_trr_2_n", & 
+             "Correlation (in-precip) between t and ln r_r (2nd PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_tNr_1' )
+        icorr_tNr_1 = k
+        call stat_assign( icorr_tNr_1, "corr_tNr_1", & 
+             "Correlation (in-precip) between t and N_r (1st PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_tNr_2' )
+        icorr_tNr_2 = k
+        call stat_assign( icorr_tNr_2, "corr_tNr_2", & 
+             "Correlation (in-precip) between t and N_r (2nd PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_tNr_1_n' )
+        icorr_tNr_1_n = k
+        call stat_assign( icorr_tNr_1_n, "corr_tNr_1_n", & 
+             "Correlation (in-precip) between t and ln N_r (1st PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_tNr_2_n' )
+        icorr_tNr_2_n = k
+        call stat_assign( icorr_tNr_2_n, "corr_tNr_2_n", & 
+             "Correlation (in-precip) between t and ln N_r (2nd PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_tNc_1' )
+        icorr_tNc_1 = k
+        call stat_assign( icorr_tNc_1, "corr_tNc_1", & 
+             "Correlation between t and N_c (1st PDF component) [-]", "-", zt )
+        k = k + 1
+
+      case ( 'corr_tNc_2' )
+        icorr_tNc_2 = k
+        call stat_assign( icorr_tNc_2, "corr_tNc_2", & 
+             "Correlation between t and N_c (2nd PDF component) [-]", "-", zt )
+        k = k + 1
+
+      case ( 'corr_tNc_1_n' )
+        icorr_tNc_1_n = k
+        call stat_assign( icorr_tNc_1_n, "corr_tNc_1_n", & 
+             "Correlation between t and ln N_c (1st PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
+      case ( 'corr_tNc_2_n' )
+        icorr_tNc_2_n = k
+        call stat_assign( icorr_tNc_2_n, "corr_tNc_2_n", & 
+             "Correlation between t and ln N_c (2nd PDF component) [-]", &
+             "-", zt )
+        k = k + 1
+
       case ( 'corr_rrNr' )
         icorr_rrNr = k
         call stat_assign( icorr_rrNr, "corr_rrNr", & 
@@ -2573,12 +2745,6 @@ module stats_zt
 
 
       ! changes by janhft 09/25/12
-      case ('corr_sNc')
-        icorr_sNc = k
-        call stat_assign( icorr_sNc, "corr_sNc", & 
-             "Correlation between s and Nc [-]", "-", zt )
-        k = k + 1
-
       case ('corr_sw')
         icorr_sw = k
         call stat_assign( icorr_sw, "corr_sw", & 

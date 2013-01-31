@@ -883,7 +883,9 @@ subroutine mmicro_pcond ( sub_column,           &
      dum_out12, &
      dum_out13, &
      dum_out14, &
-     dum_out15
+     dum_out15, &
+     dum_out16, &
+     dum_out17
    !----
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -1723,13 +1725,14 @@ subroutine mmicro_pcond ( sub_column,           &
                                          dum_inout1, dum_inout2, dum_inout3, & ! Intent(inout)
                                          dum_inout4, dum_inout5, &
                                          mu_s_1, mu_s_2, dum_out1, dum_out2, & ! Intent(out)
-                                         mu_Nc_n, sigma_s_1, sigma_s_2, &
-                                         dum_out3, dum_out4, sigma_Nc_n, &
-                                         dum_out5, dum_out6, &
+                                         dum_out3, mu_Nc_n, sigma_s_1, sigma_s_2, &
+                                         dum_out4, dum_out5, &
+                                         dum_out6, sigma_Nc_n, &
                                          dum_out7, dum_out8, &
                                          dum_out9, dum_out10, &
-                                         corr_sNc_1_n, corr_sNc_2_n, dum_out11, &
-                                         dum_out12, dum_out13, dum_out14, dum_out15, &
+                                         dum_out11, dum_out12, &
+                                         corr_sNc_1_n, corr_sNc_2_n, dum_out13, &
+                                         dum_out14, dum_out15, dum_out16, dum_out17, &
                                          mixt_frac )
 
                  KK_auto_coef &
@@ -2192,13 +2195,14 @@ subroutine mmicro_pcond ( sub_column,           &
                                          corr_srr_1, corr_srr_2, dum_inout1, &
                                          dum_inout2, dum_inout3, &
                                          mu_s_1, mu_s_2, mu_rr_n, dum_out1, & ! Intent(out)
-                                         dum_out2, sigma_s_1, sigma_s_2, &
-                                         sigma_rr_n, dum_out3, dum_out4, &
-                                         corr_srr_1_n, corr_srr_2_n, &
+                                         dum_out2, dum_out3, sigma_s_1, sigma_s_2, &
+                                         sigma_rr_n, dum_out4, &
                                          dum_out5, dum_out6, &
+                                         corr_srr_1_n, corr_srr_2_n, &
                                          dum_out7, dum_out8, &
-                                         dum_out9, dum_out10, dum_out11, &
-                                         dum_out12, dum_out13, dum_out14, dum_out15, &
+                                         dum_out9, dum_out10, &
+                                         dum_out11, dum_out12, dum_out13, &
+                                         dum_out14, dum_out15, dum_out16, dum_out17, &
                                          mixt_frac )
 
                  KK_accr_coef = 67.0_core_rknd

@@ -99,10 +99,14 @@ module stats_variables
      imu_rr_n,      &
      imu_Nr,        &
      imu_Nr_n,      &
+     imu_Nc,        &
+     imu_Nc_n,      &
      isigma_rr,     &
      isigma_rr_n,   &
      isigma_Nr,     &
      isigma_Nr_n,   &
+     isigma_Nc,     &
+     isigma_Nc_n,   &
      icorr_srr_1,   &
      icorr_srr_2,   &
      icorr_srr_1_n, &
@@ -111,34 +115,49 @@ module stats_variables
      icorr_sNr_2,   &
      icorr_sNr_1_n, &
      icorr_sNr_2_n, &
+     icorr_sNc_1,   &
+     icorr_sNc_2,   &
+     icorr_sNc_1_n, &
+     icorr_sNc_2_n, &
+     icorr_trr_1,   &
+     icorr_trr_2,   &
+     icorr_trr_1_n, &
+     icorr_trr_2_n, &
+     icorr_tNr_1,   &
+     icorr_tNr_2,   &
+     icorr_tNr_1_n, &
+     icorr_tNr_2_n, &
+     icorr_tNc_1,   &
+     icorr_tNc_2,   &
+     icorr_tNc_1_n, &
+     icorr_tNc_2_n, &
      icorr_rrNr,    &
      icorr_rrNr_n
 
   integer, public :: & ! janhft 09/25/12
-     icorr_sNc, &
      icorr_sw,  &
      icorr_wrr, &
      icorr_wNr, &
      icorr_wNc
 
   integer, public :: & 
-     iNcm,            & ! Brian
-     iNcnm,           & 
-     iNcm_in_cloud,   &
-     iNc_activated,   &
-     isnowslope,      & ! Adam Smith, 22 April 2008
-     ised_rcm,        & ! Brian
-     irsat,           & ! Brian
-     irsati, & 
-     irrainm,         & ! Brian
-     im_vol_rad_rain,   & ! Brian
-     im_vol_rad_cloud,  & ! COAMPS only. dschanen 6 Dec 2006
-     irain_rate_zt,      & ! Brian
-     iAKm,            & ! analytic Kessler.  Vince Larson 22 May 2005 
-     iLH_AKm,         & ! LH Kessler.  Vince Larson  22 May 2005
-     iradht,          & ! Radiative heating.
-     iradht_LW,       & !   "           "   Long-wave component
-     iradht_SW,       & !   "           "   Short-wave component
+     iNcm,             & ! Brian
+     iNcnm,            & 
+     iNcm_in_cloud,    &
+     iNc_activated,    &
+     isnowslope,       & ! Adam Smith, 22 April 2008
+     ised_rcm,         & ! Brian
+     irsat,            & ! Brian
+     irsati,           & 
+     irrainm,          & ! Brian
+     im_vol_rad_rain,  & ! Brian
+     im_vol_rad_cloud, & ! COAMPS only. dschanen 6 Dec 2006
+     irain_rate_zt,    & ! Brian
+     iAKm,             & ! analytic Kessler.  Vince Larson 22 May 2005 
+     iLH_AKm,          & ! LH Kessler.  Vince Larson  22 May 2005
+     iradht,           & ! Radiative heating.
+     iradht_LW,        & !   "           "   Long-wave component
+     iradht_SW,        & !   "           "   Short-wave component
      irel_humidity
 
   integer, public :: & 
@@ -158,12 +177,18 @@ module stats_variables
 !$omp   im_vol_rad_rain, im_vol_rad_cloud, &
 !$omp   irain_rate_zt, iAKm, iLH_AKm, &
 !$omp   iradht, iradht_LW, iradht_SW, &
-!$omp   iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc, &
-!$omp   imu_rr, imu_rr_n, imu_Nr, imu_Nr_n, &
+!$omp   iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc )
+
+!$omp threadprivate( imu_rr, imu_rr_n, imu_Nr, imu_Nr_n, imu_Nc, imu_Nc_n, &
 !$omp   isigma_rr, isigma_rr_n, isigma_Nr, isigma_Nr_n, &
+!$omp   isigma_Nc, isigma_Nc_n, &
 !$omp   icorr_srr_1, icorr_srr_2, icorr_srr_1_n, icorr_srr_2_n, &
 !$omp   icorr_sNr_1, icorr_sNr_2, icorr_sNr_1_n, icorr_sNr_2_n, & 
-!$omp   icorr_rrNr, icorr_rrNr_n, icorr_sNc, &
+!$omp   icorr_sNc_1, icorr_sNc_2, icorr_sNc_1_n, icorr_sNc_2_n, & 
+!$omp   icorr_trr_1, icorr_trr_2, icorr_trr_1_n, icorr_trr_2_n, &
+!$omp   icorr_tNr_1, icorr_tNr_2, icorr_tNr_1_n, icorr_tNr_2_n, & 
+!$omp   icorr_tNc_1, icorr_tNc_2, icorr_tNc_1_n, icorr_tNc_2_n, & 
+!$omp   icorr_rrNr, icorr_rrNr_n, &
 !$omp   icorr_sw, icorr_wrr, icorr_wNr, icorr_wNc )
 
   integer, public :: & 
