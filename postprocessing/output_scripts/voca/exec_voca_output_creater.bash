@@ -133,12 +133,10 @@ elif [ "$indir" != "" ] && [ -d $indir ]; then
 		# substring to check if the file is a MatlabJob oputput file
 		tmp=${curFile/*\//}
 
-		# exclude all .png, .eps, .pdf, .nfo and MatlabJob output files
-		if [ "${curFile/*./}" != "png" ] && [ "${curFile/*./}" != "eps" ] && [ "${curFile/*./}" != "pdf" ] && [ "${curFile/*./}" != "nfo" ] && [ "${tmp:0:9}" != "MatlabJob" ]; 
-		then
+		# exclude all non-wrfout files
+		if [[ $tmp == wrfout_*_[0-9][0-9]:[0-9][0-9]:[0-9][0-9] ]]; then
 			files[$k]=$curFile;
 			let k=k+1;
-			echo $curFile > tmp.txt;
 		fi	
 	done
 
