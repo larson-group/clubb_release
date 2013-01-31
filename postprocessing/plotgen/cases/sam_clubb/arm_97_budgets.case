@@ -80,7 +80,7 @@
           {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
 	      {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED+QTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]}
 
     ],
