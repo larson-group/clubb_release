@@ -63,23 +63,24 @@
           {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'Q2PREC', 'expression' => 'Q2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'Q2\_RES', 'expression' => '-1*(Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}, 
-       {'plotTitle' => 'HL 3D SAM Benchmark Budgets', 'axisLabel' => 'HL [K/day]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'HL 3D SAM Benchmark Budgets', 'axisLabel' => 'HL [K/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLADV', 'expression' => 'HLADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLDIFF', 'expression' => 'HLDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '-1*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLADV', 'expression' => 'HLADV/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLDIFF', 'expression' => 'HLDIFF/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '(-1/86400.)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'QTO 3D SAM Benchmark Budgets', 'axisLabel' => 'HL [K/day]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'QTO 3D SAM Benchmark Budgets', 'axisLabel' => 'QTO [1/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTOADV', 'expression' => 'QTOADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTODIFF', 'expression' => 'QTODIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTOLSADV', 'expression' => 'QTOLSADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '-1*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTOADV', 'expression' => 'QTOADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTODIFF', 'expression' => 'QTODIFF/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTOLSADV', 'expression' => 'QTOLSADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	      {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_2km_LES.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]}
 
     ],
