@@ -59,7 +59,7 @@ module inputfields
     rams_file =1
 
   integer, parameter, private :: &
-    num_sam_inputfields = 62, & ! The number of input fields for SAM
+    num_sam_inputfields = 63, & ! The number of input fields for SAM
     num_coamps = 61, & ! The number of input fields for coamps
     num_rams_inputfields =  4 ! The number of input fields for the RAMS LES case
 
@@ -255,7 +255,8 @@ module inputfields
         Cp, &
         Lv, &
         pascal_per_mb, &
-        g_per_kg
+        g_per_kg, &
+        sec_per_day
 
     use array_index, only:  & 
         iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, iiNim, iiNcm
@@ -2015,6 +2016,16 @@ module inputfields
       SAM_variables(k)%l_input_var = l_input_sfc_soil_T_in_K
       SAM_variables(k)%clubb_name = "sfc_soil_T_in_K"
       SAM_variables(k)%input_name = "none"
+
+      k = k + 1
+
+      SAM_variables(k)%l_input_var = l_input_radht
+      SAM_variables(k)%clubb_name = "radht"
+      SAM_variables(k)%input_name = "RADQR"
+      SAM_variables(k)%clubb_var => radht
+      SAM_variables(k)%adjustment = 1.0_core_rknd/sec_per_day
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
 
       call get_input_variables_interp &
              (k, SAM_variables, timestep, &
