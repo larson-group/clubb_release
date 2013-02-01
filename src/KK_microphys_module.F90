@@ -56,7 +56,8 @@ module KK_microphys_module
         Nr_tol,       &
         Nc_tol,       &
         cm3_per_m3,   &
-        micron_per_m
+        micron_per_m, &
+        eps
 
     use parameters_microphys, only: &
         KK_auto_Nc_exp,      & ! Constant(s)
@@ -327,32 +328,41 @@ module KK_microphys_module
     ! calculate the covariances of w with the hydrometeors
     if ( l_calc_w_corr ) then
 
-      ! calculate the covariances of w with the hydrometeors
-      do k = 1, nz
-        ! see clubb:ticket:514:comment:30
-        wpsp_zm(k) = pdf_params(k)%mixt_frac * (1 - pdf_params(k)%mixt_frac) &
-                   * (pdf_params(k)%s1 - pdf_params(k)%s2) * (pdf_params(k)%w1 - pdf_params(k)%w2)
-      end do
+       ! calculate the covariances of w with the hydrometeors
+       do k = 1, nz
+          wpsp_zm(k) = pdf_params(k)%mixt_frac &
+                       * (one - pdf_params(k)%mixt_frac ) &
+                       * ( pdf_params(k)%s1 - pdf_params(k)%s2 ) &
+                       * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
+       enddo
 
-      wprrp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), rrainm(1:nz-1), &
-                                   rrainm(2:nz), gr%invrs_dzm(1:nz-1) )
-      wpNrp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Nrm(1:nz-1), & 
-                                   Nrm(2:nz), gr%invrs_dzm(1:nz-1) )
-      wpNcp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncm(1:nz-1), & 
-                                   Ncm(2:nz), gr%invrs_dzm(1:nz-1) )
+       wprrp_zm(1:nz-1) &
+       = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+                   rrainm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
+                   rrainm(2:nz) / max( precip_frac(2:nz), eps ), &
+                   gr%invrs_dzm(1:nz-1) )
 
-      ! Boundary conditions; We are assuming constant flux at the top.
-      wprrp_zm(nz) = wprrp_zm(nz-1)
-      wpNrp_zm(nz) = wpNrp_zm(nz-1)
-      wpNcp_zm(nz) = wpNcp_zm(nz-1)
+       wpNrp_zm(1:nz-1) &
+       = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+                   Nrm(1:nz-1) / max( precip_frac(1:nz-1), eps ), & 
+                   Nrm(2:nz) / max( precip_frac(2:nz), eps ), &
+                   gr%invrs_dzm(1:nz-1) )
 
-      ! interpolate back to zt-grid
-      wpsp_zt = zm2zt(wpsp_zm)
-      wprrp_zt = zm2zt(wprrp_zm)
-      wpNrp_zt = zm2zt(wpNrp_zm)
-      wpNcp_zt = zm2zt(wpNcp_zm)
+       wpNcp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncm(1:nz-1), & 
+                                    Ncm(2:nz), gr%invrs_dzm(1:nz-1) )
 
-    end if
+       ! Boundary conditions; We are assuming constant flux at the top.
+       wprrp_zm(nz) = wprrp_zm(nz-1)
+       wpNrp_zm(nz) = wpNrp_zm(nz-1)
+       wpNcp_zm(nz) = wpNcp_zm(nz-1)
+
+       ! interpolate back to zt-grid
+       wpsp_zt  = zm2zt(wpsp_zm)
+       wprrp_zt = zm2zt(wprrp_zm)
+       wpNrp_zt = zm2zt(wpNrp_zm)
+       wpNcp_zt = zm2zt(wpNcp_zm)
+
+    endif
 
 
     ! Microphysics tendency loop.
@@ -1197,16 +1207,20 @@ module KK_microphys_module
 
           s_mellor_m = calc_mean( pdf_params%mixt_frac, pdf_params%s1, pdf_params%s2 )
 
-          stdev_s_mellor = sqrt( pdf_params%mixt_frac * ( ( pdf_params%s1 - s_mellor_m )**2 + &
-                           pdf_params%stdev_s1**2 ) + ( 1 - pdf_params%mixt_frac ) *  &
-                           ( ( pdf_params%s2 - s_mellor_m )**2 + pdf_params%stdev_s2**2 ) )
+          stdev_s_mellor &
+          = sqrt( pdf_params%mixt_frac &
+                  * ( ( pdf_params%s1 - s_mellor_m )**2 &
+                      + pdf_params%stdev_s1**2 ) &
+                  + ( 1 - pdf_params%mixt_frac ) &
+                    * ( ( pdf_params%s2 - s_mellor_m )**2 &
+                        + pdf_params%stdev_s2**2 ) )
 
           corr_sw  = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
           corr_wrr = calc_w_corr( wprrp, stdev_w, sigma_rr, w_tol, rr_tol )
           corr_wNr = calc_w_corr( wpNrp, stdev_w, sigma_Nr, w_tol, Nr_tol )
           corr_wNc = calc_w_corr( wpNcp, stdev_w, sigma_Nc, w_tol, Nc_tol )
 
-       end if
+       endif
 
        if ( rrainm > rr_tol ) then
           rrp2_on_rrm2 = (sigma_rr/mu_rr)**2

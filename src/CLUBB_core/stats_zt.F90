@@ -2732,7 +2732,7 @@ module stats_zt
       case ( 'corr_rrNr' )
         icorr_rrNr = k
         call stat_assign( icorr_rrNr, "corr_rrNr", & 
-             "Correlation (in-precip) between rr and Nr (both components) [-]", &
+             "Correlation (in-precip) between r_r and N_r (both components) [-]", &
              "-", zt )
         k = k + 1
 
