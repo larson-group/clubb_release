@@ -1253,7 +1253,11 @@ module KK_microphys_module
        ! at this grid level.  The value of mu_rr_n should be -inf.  It will be
        ! set to -huge for purposes of assigning it a value.  This value will not
        ! be used again in the CLUBB code.
-       mu_rr_n = -huge( mu_rr_n )
+       !mu_rr_n = -huge( mu_rr_n )
+       ! Some compilers have issues outputting to stats files (in single
+       ! precision) when the default CLUBB kind is in double precision.
+       ! Set to -huge for single precision.
+       mu_rr_n = -huge( 0.0 )
     endif
 
     ! Normalized mean of in-precip rain drop concentration.
@@ -1265,7 +1269,11 @@ module KK_microphys_module
        ! at this grid level.  The value of mu_Nr_n should be -inf.  It will be
        ! set to -huge for purposes of assigning it a value.  This value will not
        ! be used again in the CLUBB code.
-       mu_Nr_n = -huge( mu_Nr_n )
+       !mu_Nr_n = -huge( mu_Nr_n )
+       ! Some compilers have issues outputting to stats files (in single
+       ! precision) when the default CLUBB kind is in double precision.
+       ! Set to -huge for single precision.
+       mu_Nr_n = -huge( 0.0 )
     endif
 
     ! Normalized mean of cloud droplet concentration.
@@ -1277,7 +1285,11 @@ module KK_microphys_module
        ! grid level.  The value of mu_Nc_n should be -inf.  It will be set to
        ! -huge for purposes of assigning it a value.  This value will not be
        ! used again in the CLUBB code.
-       mu_Nc_n = -huge( mu_Nc_n )
+       !mu_Nc_n = -huge( mu_Nc_n )
+       ! Some compilers have issues outputting to stats files (in single
+       ! precision) when the default CLUBB kind is in double precision.
+       ! Set to -huge for single precision.
+       mu_Nc_n = -huge( 0.0 )
     endif
 
     !!! Calculate the normalized standard deviation of variables that have
