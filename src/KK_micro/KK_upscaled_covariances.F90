@@ -30,7 +30,8 @@ module KK_upscaled_covariances
                             corr_xrr_2_n, corr_xNr_1_n, corr_xNr_2_n, &
                             corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                             corr_sNr_2_n, corr_rrNr_n, x_mean, &
-                            KK_evap_tndcy, KK_evap_coef, x_tol, mixt_frac )
+                            KK_evap_tndcy, KK_evap_coef, x_tol, &
+                            mixt_frac, precip_frac )
 
     ! Description:
     ! This function calculates the covariance between x and KK evaporation
@@ -82,7 +83,8 @@ module KK_upscaled_covariances
       KK_evap_tndcy, & ! KK evaporation tendency                     [(kg/kg)/s]
       KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
       x_tol,         & ! Tolerance value of x                       [units vary]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac      ! Precipitation fraction                              [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -103,6 +105,7 @@ module KK_upscaled_covariances
     ! Calculate the covariance of x and KK evaporation tendency.
     covar_x_KK_evap  &
     = KK_evap_coef  &
+      * precip_frac &
       * ( mixt_frac  &
           * quadrivar_NNLL_covar_eq( mu_x_1, mu_s_1, mu_rr_n, mu_Nr_n, &
                                      sigma_x_1, sigma_s_1, sigma_rr_n, &
@@ -134,7 +137,8 @@ module KK_upscaled_covariances
                              corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
                              corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                              corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
-                             KK_evap_coef, t_tol, crt1, crt2, mixt_frac )
+                             KK_evap_coef, t_tol, crt1, crt2, &
+                             mixt_frac, precip_frac )
 
     ! Description:
 
@@ -188,7 +192,8 @@ module KK_upscaled_covariances
       t_tol,         & ! Tolerance value of t                                [-]
       crt1,          & ! Coefficient c_rt (1st PDF component)                [-]
       crt2,          & ! Coefficient c_rt (2nd PDF component)                [-]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac      ! Precipitation fraction                              [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -209,6 +214,7 @@ module KK_upscaled_covariances
     ! Calculate the covariance of r_t and KK evaporation tendency.
     covar_rt_KK_evap  &
     = KK_evap_coef  &
+      * precip_frac &
       * ( mixt_frac * ( one / ( two * crt1 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_1, mu_s_1, mu_rr_n, mu_Nr_n, &
                                        sigma_t_1, sigma_s_1, sigma_rr_n, &
@@ -260,7 +266,8 @@ module KK_upscaled_covariances
                               corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
                               corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                               corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
-                              KK_evap_coef, t_tol, cthl1, cthl2, mixt_frac )
+                              KK_evap_coef, t_tol, cthl1, cthl2, &
+                              mixt_frac, precip_frac )
 
     ! Description:
 
@@ -314,7 +321,8 @@ module KK_upscaled_covariances
       t_tol,         & ! Tolerance value of t                                [-]
       cthl1,         & ! Coefficient c_thl (1st PDF component)               [-]
       cthl2,         & ! Coefficient c_thl (2nd PDF component)               [-]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac      ! Precipitation fraction                              [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -335,6 +343,7 @@ module KK_upscaled_covariances
     ! Calculate the covariance of th_l and KK evaporation tendency.
     covar_thl_KK_evap  &
     = KK_evap_coef  &
+      * precip_frac &
       * ( mixt_frac * ( one / ( two * cthl1 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_1, mu_s_1, mu_rr_n, mu_Nr_n, &
                                        sigma_t_1, sigma_s_1, sigma_rr_n, &
@@ -777,7 +786,7 @@ module KK_upscaled_covariances
                             sigma_rr_n, corr_xs_1, corr_xs_2, &
                             corr_xrr_1_n, corr_xrr_2_n, corr_srr_1_n, &
                             corr_srr_2_n, x_mean, KK_accr_tndcy, &
-                            KK_accr_coef, x_tol, mixt_frac )
+                            KK_accr_coef, x_tol, mixt_frac, precip_frac )
 
     ! Description:
     ! This function calculates the covariance between x and KK accretion
@@ -821,7 +830,8 @@ module KK_upscaled_covariances
       KK_accr_tndcy, & ! KK accretion tendency                       [(kg/kg)/s]
       KK_accr_coef,  & ! KK accretion coefficient                    [(kg/kg)/s]
       x_tol,         & ! Tolerance value of x                       [units vary]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac      ! Precipitation fraction                              [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -840,6 +850,7 @@ module KK_upscaled_covariances
     ! Calculate the covariance of x and KK accretion tendency.
     covar_x_KK_accr  &
     = KK_accr_coef &
+      * precip_frac &
       * ( mixt_frac &
           * trivar_NNL_covar_eq( mu_x_1, mu_s_1, mu_rr_n, &
                                  sigma_x_1, sigma_s_1, sigma_rr_n, &
@@ -865,7 +876,7 @@ module KK_upscaled_covariances
                              sigma_rr_n, corr_ts_1, corr_ts_2, &
                              corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
                              corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
-                             t_tol, crt1, crt2, mixt_frac )
+                             t_tol, crt1, crt2, mixt_frac, precip_frac )
 
     ! Description:
 
@@ -911,7 +922,8 @@ module KK_upscaled_covariances
       t_tol,         & ! Tolerance value of t                       [units vary]
       crt1,          & ! Coefficient c_rt (1st PDF component)                [-]
       crt2,          & ! Coefficient c_rt (2nd PDF component)                [-]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac      ! Precipitation fraction                              [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -930,6 +942,7 @@ module KK_upscaled_covariances
     ! Calculate the covariance of r_t and KK accretion tendency.
     covar_rt_KK_accr  &
     = KK_accr_coef  &
+      * precip_frac &
       * ( mixt_frac * ( one / ( two * crt1 ) )  &
           * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_rr_n, &
                                    sigma_t_1, sigma_s_1, sigma_rr_n, &
@@ -967,7 +980,7 @@ module KK_upscaled_covariances
                               sigma_rr_n, corr_ts_1, corr_ts_2, &
                               corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
                               corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
-                              t_tol, cthl1, cthl2, mixt_frac )
+                              t_tol, cthl1, cthl2, mixt_frac, precip_frac )
 
     ! Description:
 
@@ -1013,7 +1026,8 @@ module KK_upscaled_covariances
       t_tol,         & ! Tolerance value of t                       [units vary]
       cthl1,         & ! Coefficient c_thl (1st PDF component)               [-]
       cthl2,         & ! Coefficient c_thl (2nd PDF component)               [-]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac      ! Precipitation fraction                              [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -1032,6 +1046,7 @@ module KK_upscaled_covariances
     ! Calculate the covariance of th_l and KK accretion tendency.
     covar_thl_KK_accr  &
     = KK_accr_coef  &
+      * precip_frac &
       * ( mixt_frac * ( one / ( two * cthl1 ) )  &
           * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_rr_n, &
                                    sigma_t_1, sigma_s_1, sigma_rr_n, &

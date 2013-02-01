@@ -23,7 +23,7 @@ module KK_upscaled_means
                                   sigma_s_1, sigma_s_2, sigma_rr_n, &
                                   sigma_Nr_n, corr_srr_1_n, corr_srr_2_n, &
                                   corr_sNr_1_n, corr_sNr_2_n, corr_rrNr_n, &
-                                  KK_evap_coef, mixt_frac )
+                                  KK_evap_coef, mixt_frac, precip_frac )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain water
@@ -47,21 +47,22 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
-      mu_rr_n,       & ! Mean of ln rr (both components)                     [-]
-      mu_Nr_n,       & ! Mean of ln Nr (both components)                     [-]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
-      sigma_rr_n,    & ! Standard deviation of ln rr (both components)       [-]
-      sigma_Nr_n,    & ! Standard deviation of ln Nr (both components)       [-]
-      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF component) [-]
-      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF component) [-]
-      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF component) [-]
-      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF component) [-]
-      corr_rrNr_n,   & ! Correlation between ln rr & ln Nr (both components) [-]
-      KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mu_s_1,       & ! Mean of s (1st PDF component)                        [-]
+      mu_s_2,       & ! Mean of s (2nd PDF component)                        [-]
+      mu_rr_n,      & ! Mean of ln rr (both components)                      [-]
+      mu_Nr_n,      & ! Mean of ln Nr (both components)                      [-]
+      sigma_s_1,    & ! Standard deviation of s (1st PDF component)          [-]
+      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)          [-]
+      sigma_rr_n,   & ! Standard deviation of ln rr (both components)        [-]
+      sigma_Nr_n,   & ! Standard deviation of ln Nr (both components)        [-]
+      corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component)  [-]
+      corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component)  [-]
+      corr_sNr_1_n, & ! Correlation between s and ln Nr (1st PDF component)  [-]
+      corr_sNr_2_n, & ! Correlation between s and ln Nr (2nd PDF component)  [-]
+      corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
+      KK_evap_coef, & ! KK evaporation coefficient                   [(kg/kg)/s]
+      mixt_frac,    & ! Mixture fraction                                     [-]
+      precip_frac     ! Precipitation fraction                               [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -82,6 +83,7 @@ module KK_upscaled_means
     ! Calculate the mean KK evaporation tendency.
     KK_evap_upscaled_mean  &
     = KK_evap_coef &
+      * precip_frac &
       * ( mixt_frac &
           * trivar_NLL_mean_eq( mu_s_1, mu_rr_n, mu_Nr_n, &
                                 sigma_s_1, sigma_rr_n, sigma_Nr_n, &
@@ -190,7 +192,8 @@ module KK_upscaled_means
   !=============================================================================
   function KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
                                   sigma_s_2, sigma_rr_n, corr_srr_1_n, &
-                                  corr_srr_2_n, KK_accr_coef, mixt_frac )
+                                  corr_srr_2_n, KK_accr_coef, mixt_frac, &
+                                  precip_frac )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain water
@@ -222,7 +225,8 @@ module KK_upscaled_means
       corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component) [-]
       corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component) [-]
       KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
-      mixt_frac       ! Mixture fraction                                    [-]
+      mixt_frac,    & ! Mixture fraction                                    [-]
+      precip_frac     ! Precipitation fraction                              [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -241,6 +245,7 @@ module KK_upscaled_means
     ! Calculate the mean KK accretion tendency.
     KK_accr_upscaled_mean  &
     = KK_accr_coef &
+      * precip_frac &
       * ( mixt_frac &
         * bivar_NL_mean_eq( mu_s_1, mu_rr_n, sigma_s_1, sigma_rr_n, &
                             corr_srr_1_n, alpha_exp, beta_exp ) &
@@ -256,7 +261,8 @@ module KK_upscaled_means
 
   !=============================================================================
   function KK_mvr_upscaled_mean( mu_rr_n, mu_Nr_n, sigma_rr_n, &
-                                 sigma_Nr_n, corr_rrNr_n, KK_mvr_coef )
+                                 sigma_Nr_n, corr_rrNr_n, KK_mvr_coef, &
+                                 precip_frac )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain drop mean
@@ -281,7 +287,8 @@ module KK_upscaled_means
       sigma_rr_n,  & ! Standard deviation of ln rr (both components)       [-]
       sigma_Nr_n,  & ! Standard deviation of ln Nr (both components)       [-]
       corr_rrNr_n, & ! Correlation between ln rr & ln Nr (both components) [-]
-      KK_mvr_coef    ! KK mean volume radius coefficient                   [m]
+      KK_mvr_coef, & ! KK mean volume radius coefficient                   [m]
+      precip_frac    ! Precipitation fraction                              [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -300,6 +307,7 @@ module KK_upscaled_means
     ! Calculate the KK mean volume radius of rain drops.
     KK_mvr_upscaled_mean  &
     = KK_mvr_coef &
+      * precip_frac &
       * bivar_LL_mean_eq( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
                           corr_rrNr_n, alpha_exp, beta_exp )
 

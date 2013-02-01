@@ -2210,13 +2210,12 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! Function KK_accr_upscaled_mean provides the grid-level mean
                  ! accretion rate.  Divide the result by cloud fraction (lcldm)
                  ! to find the mean in-cloud rate.
-                 pra(k) = ( cldmax(i,k) / lcldm(i,k) ) &
-                          * real( &
+                 pra(k) = real( &
                  KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
                                         sigma_s_2, sigma_rr_n, corr_srr_1_n, &
-                                        corr_srr_2_n, KK_accr_coef, &
-                                        mixt_frac ), &
-                            kind = r8 )
+                                        corr_srr_2_n, KK_accr_coef, mixt_frac, &
+                                        real( cldmax(i,k), kind = core_rknd ) ), &
+                          kind = r8 ) / lcldm(i,k)
                  npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
 
               endif

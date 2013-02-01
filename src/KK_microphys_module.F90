@@ -432,7 +432,8 @@ module KK_microphys_module
                                          corr_sNr_1_n, corr_sNr_2_n, &
                                          corr_sNc_1_n, corr_sNc_2_n, &
                                          corr_rrNr_n,  mixt_frac, &
-                                         Nc0_in_cloud(k), l_const_Nc_in_cloud, &
+                                         precip_frac(k), Nc0_in_cloud(k), &
+                                         l_const_Nc_in_cloud, &
                                          KK_evap_coef, KK_auto_coef, &
                                          KK_accr_coef, KK_mvr_coef, &
                                          KK_evap_tndcy(k), KK_auto_tndcy(k), &
@@ -450,7 +451,8 @@ module KK_microphys_module
                                            corr_sNr_1_n, corr_sNr_2_n, &
                                            corr_sNc_1_n, corr_sNc_2_n, &
                                            corr_rrNr_n,  mixt_frac, &
-                                           Nc0_in_cloud(k), l_const_Nc_in_cloud, &
+                                           precip_frac(k), Nc0_in_cloud(k), &
+                                           l_const_Nc_in_cloud, &
                                            KK_evap_coef, KK_auto_coef, &
                                            KK_accr_coef, KK_evap_tndcy(k), &
                                            KK_auto_tndcy(k), KK_accr_tndcy(k), &
@@ -1701,7 +1703,8 @@ module KK_microphys_module
                                        corr_sNr_1_n, corr_sNr_2_n, &
                                        corr_sNc_1_n, corr_sNc_2_n, &
                                        corr_rrNr_n,  mixt_frac, &
-                                       Nc0_in_cloud, l_const_Nc_in_cloud, &
+                                       precip_frac, Nc0_in_cloud, &
+                                       l_const_Nc_in_cloud, &
                                        KK_evap_coef, KK_auto_coef, &
                                        KK_accr_coef, KK_mvr_coef, &
                                        KK_evap_tndcy, KK_auto_tndcy, &
@@ -1754,6 +1757,7 @@ module KK_microphys_module
       corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component)  [-]
       corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
       mixt_frac,    & ! Mixture fraction                                     [-]
+      precip_frac,  & ! Precipitation fraction                               [-]
       Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
 
     logical, intent(in) :: &
@@ -1781,7 +1785,7 @@ module KK_microphys_module
                                 sigma_s_1, sigma_s_2, sigma_rr_n, &
                                 sigma_Nr_n, corr_srr_1_n, corr_srr_2_n, &
                                 corr_sNr_1_n, corr_sNr_2_n, corr_rrNr_n, &
-                                KK_evap_coef, mixt_frac )
+                                KK_evap_coef, mixt_frac, precip_frac )
 
     else  ! r_r or N_r = 0.
 
@@ -1810,7 +1814,8 @@ module KK_microphys_module
        KK_accr_tndcy  &
        = KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
                                 sigma_s_2, sigma_rr_n, corr_srr_1_n, &
-                                corr_srr_2_n, KK_accr_coef, mixt_frac )
+                                corr_srr_2_n, KK_accr_coef, mixt_frac, &
+                                precip_frac )
 
     else  ! r_r = 0.
 
@@ -1823,7 +1828,8 @@ module KK_microphys_module
 
        KK_mean_vol_rad &
        = KK_mvr_upscaled_mean( mu_rr_n, mu_Nr_n, sigma_rr_n, &
-                               sigma_Nr_n, corr_rrNr_n, KK_mvr_coef )
+                               sigma_Nr_n, corr_rrNr_n, KK_mvr_coef, &
+                               precip_frac )
 
     else  ! r_r or N_r = 0.
 
@@ -1846,7 +1852,8 @@ module KK_microphys_module
                                        corr_sNr_1_n, corr_sNr_2_n, &
                                        corr_sNc_1_n, corr_sNc_2_n, &
                                        corr_rrNr_n,  mixt_frac, &
-                                       Nc0_in_cloud, l_const_Nc_in_cloud, &
+                                       precip_frac, Nc0_in_cloud, &
+                                       l_const_Nc_in_cloud, &
                                        KK_evap_coef, KK_auto_coef, &
                                        KK_accr_coef, KK_evap_tndcy, &
                                        KK_auto_tndcy, KK_accr_tndcy, &
@@ -1906,7 +1913,7 @@ module KK_microphys_module
         corr_trr_NL_below, &
         corr_tNr_NL_below, &
         corr_tNc_NL_below, &
-        corr_st_NN_cloud, &
+        corr_st_NN_cloud,  &
         corr_st_NN_below
 
     use parameters_microphys, only: &
@@ -1961,6 +1968,7 @@ module KK_microphys_module
       corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component)  [-]
       corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
       mixt_frac,    & ! Mixture fraction                                     [-]
+      precip_frac,  & ! Precipitation fraction                               [-]
       Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
 
     logical, intent(in) :: &
@@ -2000,7 +2008,7 @@ module KK_microphys_module
       sigma_w_1,  & ! Standard deviation of w (1st PDF component)      [m/s]
       sigma_w_2,  & ! Standard deviation of w (2nd PDF component)      [m/s]
       sigma_t_1,  & ! Standard deviation of t (1st PDF component)      [kg/kg]
-      sigma_t_2,  & ! Standard deviation of t (2nd PDF component)      [kg/kg]   
+      sigma_t_2,  & ! Standard deviation of t (2nd PDF component)      [kg/kg]
       corr_wrr_1, & ! Correlation between w and rr (1st PDF component) [-]
       corr_wrr_2, & ! Correlation between w and rr (2nd PDF component) [-] 
       corr_wNr_1, & ! Correlation between w and Nr (1st PDF component) [-] 
@@ -2244,7 +2252,8 @@ module KK_microphys_module
                           corr_wrr_2_n, corr_wNr_1_n, corr_wNr_2_n, &
                           corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                           corr_sNr_2_n, corr_rrNr_n, w_mean, &
-                          KK_evap_tndcy, KK_evap_coef, w_tol, mixt_frac )
+                          KK_evap_tndcy, KK_evap_coef, w_tol, &
+                          mixt_frac, precip_frac )
 
     else  ! r_r or N_r = 0.
 
@@ -2264,7 +2273,8 @@ module KK_microphys_module
                            corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
                            corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                            corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
-                           KK_evap_coef, t_tol, crt1, crt2, mixt_frac )
+                           KK_evap_coef, t_tol, crt1, crt2, &
+                           mixt_frac, precip_frac )
 
     else  ! r_r or N_r = 0.
 
@@ -2284,7 +2294,8 @@ module KK_microphys_module
                             corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
                             corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                             corr_sNr_2_n, corr_rrNr_n, KK_evap_tndcy, &
-                            KK_evap_coef, t_tol, cthl1, cthl2, mixt_frac )
+                            KK_evap_coef, t_tol, cthl1, cthl2, &
+                            mixt_frac, precip_frac )
 
     else  ! r_r or N_r = 0.
 
@@ -2358,7 +2369,7 @@ module KK_microphys_module
                           sigma_rr_n, corr_ws_1, corr_ws_2, &
                           corr_wrr_1_n, corr_wrr_2_n, corr_srr_1_n, &
                           corr_srr_2_n, w_mean, KK_accr_tndcy, &
-                          KK_accr_coef, w_tol, mixt_frac )
+                          KK_accr_coef, w_tol, mixt_frac, precip_frac )
 
     else  ! r_r = 0.
 
@@ -2376,7 +2387,7 @@ module KK_microphys_module
                            sigma_rr_n, corr_ts_1, corr_ts_2, &
                            corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
                            corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
-                           t_tol, crt1, crt2, mixt_frac )
+                           t_tol, crt1, crt2, mixt_frac, precip_frac )
 
     else  ! r_r = 0.
 
@@ -2394,7 +2405,7 @@ module KK_microphys_module
                             sigma_rr_n, corr_ts_1, corr_ts_2, &
                             corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
                             corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
-                            t_tol, cthl1, cthl2, mixt_frac )
+                            t_tol, cthl1, cthl2, mixt_frac, precip_frac )
 
     else  ! r_r = 0.
 
