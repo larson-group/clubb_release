@@ -23,6 +23,7 @@ module diagnose_correlations_module
                                Ncp2_on_Ncm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
                                corr_ws, corr_wrr, corr_wNr, corr_wNc, &
                                pdf_params, &
+                               corr_rrNr_p, corr_srr_p, corr_sNr_p, corr_sNc_p, &
                                corr_rrNr, corr_srr, corr_sNr, corr_sNc ) ! intent(inout)
 
     ! Description:
@@ -87,15 +88,20 @@ module diagnose_correlations_module
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout) :: &
-      corr_rrNr, &  ! Correlation between rrain and Nr [-]
-      corr_srr,  &  ! Correlation between s and rrain  [-]
-      corr_sNr,  &  ! Correlation between s and Nr     [-]
-      corr_sNc      ! Correlation between s and Nc     [-]
+      corr_rrNr,   &  ! Correlation between rrain and Nr [-]
+      corr_srr,    &  ! Correlation between s and rrain  [-]
+      corr_sNr,    &  ! Correlation between s and Nr     [-]
+      corr_sNc,    &  ! Correlation between s and Nc     [-]
+      corr_rrNr_p, &  ! Prescribed correlation between rrain and Nr [-]
+      corr_srr_p,  &  ! Prescribed correlation between s and rrain  [-]
+      corr_sNr_p,  &  ! Prescribed correlation between s and Nr     [-]
+      corr_sNc_p      ! Prescribed correlation between s and Nc     [-]
 
 
     ! Local Variables
     real( kind = core_rknd ), dimension(n_variables, n_variables) :: &
-      corr_matrix_approx ! []
+      corr_matrix_approx, & ! [-]
+      corr_matrix_prescribed ! [-]
 
     real( kind = core_rknd ), dimension(n_variables) :: &
       sqrt_xp2_on_xm2, & ! sqrt of x_variance / x_mean^2          [units vary]
@@ -136,12 +142,14 @@ module diagnose_correlations_module
     do i=2, n_variables
        do j=1, n_variables
           corr_matrix_approx(i,j) = 0
+          corr_matrix_prescribed(i,j) = 0
        end do
     end do
 
     ! set diagonal of the corraltion matrix to 1
     do i = 1, n_variables
        corr_matrix_approx(i,i) = 1
+       corr_matrix_prescribed(i,i) = 1
     end do
 
 
@@ -151,11 +159,15 @@ module diagnose_correlations_module
     corr_matrix_approx(1,ii_Nr) = corr_wNr
     corr_matrix_approx(1,ii_Nc) = corr_wNc
 
-    !end if ! l_calc_w_corr
+    !corr_matrix_prescribed = corr_matrix_approx
 
+    ! set up the prescribed correlation matrix
+    corr_matrix_prescribed(ii_rrain, ii_Nr) = corr_rrNr_p
+    corr_matrix_prescribed(ii_s, ii_rrain) = corr_srr_p
+    corr_matrix_prescribed(ii_s, ii_Nr) = corr_sNr_p
+    corr_matrix_prescribed(ii_s, ii_Nc) = corr_sNc_p
     
-
-    call diagnose_corr( n_variables, sqrt_xp2_on_xm2, & !intent(in)
+    call diagnose_corr( n_variables, sqrt_xp2_on_xm2, corr_matrix_prescribed, & !intent(in)
                         corr_matrix_approx ) ! intent(inout)    
 
     corr_rrNr = corr_matrix_approx(ii_rrain, ii_Nr)
@@ -166,8 +178,8 @@ module diagnose_correlations_module
   end subroutine diagnose_KK_corr
 
 !-----------------------------------------------------------------------
-  subroutine diagnose_LH_corr( xp2_on_xm2, & !intent(in)
-                               corr_matrix_approx ) ! intent(inout)
+  subroutine diagnose_LH_corr( xp2_on_xm2, d_variables, corr_matrix_prescribed, & !intent(in)
+                               corr_array ) ! intent(inout)
 
     ! Description:
     !   This subroutine diagnoses the correlation matrix in order to feed it 
@@ -181,23 +193,73 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    ! Local Constants
-    integer, parameter :: &
-      n_variables = 5
+    use corr_matrix_module, only: &
+      iiLH_s_mellor, & ! Variable(s)
+      iiLH_t_mellor, &
+      iiLH_w, &
+      iiLH_rrain, &
+      iiLH_rsnow, &
+      iiLH_rice, &
+      iiLH_rgraupel, &
+      iiLH_Nr, &
+      iiLH_Nsnow, &
+      iiLH_Ni, &
+      iiLH_Ngraupel, &
+      iiLH_Nc
 
-    ! Input/Output variables
-    real( kind = core_rknd ), dimension(n_variables, n_variables), intent(inout) :: &
-      corr_matrix_approx
+    implicit none
 
-    ! Local Variables
-    real( kind = core_rknd ), dimension(n_variables) :: & 
+    intrinsic :: max, sqrt
+
+    ! Input Variables
+    integer, intent(in) :: d_variables
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+      corr_matrix_prescribed
+
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
       xp2_on_xm2 ! ratios of x_variance over x_mean^2
 
-  
+    ! Input/Output variables
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(inout) :: &
+      corr_array
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
+      corr_matrix_pre_swapped
+
+    real( kind = core_rknd ), dimension(d_variables) :: &
+      swap_array
+
+    !-------------------- Begin code --------------------
+
+    print *, "d_variables = ", d_variables
+
+    ! Swap the w-correlations to the first row
+    swap_array = corr_array(1,:)
+    corr_array(1, :) = corr_array(iiLH_w, :)
+    corr_array(iiLH_w, :) = swap_array
+
+    corr_matrix_pre_swapped = corr_matrix_prescribed
+    swap_array = corr_matrix_pre_swapped (1,:)
+    corr_matrix_pre_swapped(1, :) = corr_matrix_pre_swapped(iiLH_w, :)
+    corr_matrix_pre_swapped(iiLH_w, :) = swap_array
+
+    ! diagnose correlations
+    call diagnose_corr( d_variables, sqrt(xp2_on_xm2), corr_matrix_pre_swapped, &
+                        corr_array)
+
+    ! Swap rows back
+    swap_array = corr_array(1,:)
+    corr_array(1, :) = corr_array(iiLH_w, :)
+    corr_array(iiLH_w, :) = swap_array
+
+    print *, "inside corr_array = ", corr_array
+
   end subroutine diagnose_LH_corr
 
 !-----------------------------------------------------------------------
-  subroutine diagnose_corr( n_variables, sqrt_xp2_on_xm2, & !intent(in)
+  subroutine diagnose_corr( n_variables, sqrt_xp2_on_xm2, corr_matrix_prescribed, & !intent(in)
                             corr_matrix_approx ) ! intent(inout)
 
     ! Description:
@@ -229,6 +291,9 @@ module diagnose_correlations_module
     real( kind = core_rknd ), dimension(n_variables), intent(in) :: & 
       sqrt_xp2_on_xm2    ! sqrt of x_variance / x_mean^2 [units vary]
 
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
+      corr_matrix_prescribed ! correlation matrix [-]
+
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(inout) :: &
       corr_matrix_approx ! correlation matrix [-]
@@ -236,7 +301,11 @@ module diagnose_correlations_module
 
     ! Local Variables
     integer :: i, j ! Loop iterator
-    real( kind = core_rknd ) :: f_ij
+
+    real( kind = core_rknd ) :: &
+      f_ij, &
+      f_ij_o
+
     real( kind = core_rknd ), dimension(n_variables) :: &
       s_1j ! s_1j = sqrt(1-c_1j^2)
 
@@ -256,8 +325,16 @@ module diagnose_correlations_module
       do j = (i+1), n_variables
 
         ! formula (16) in the ref. paper (Larson et al. (2011))
-        f_ij = alpha_corr * sqrt_xp2_on_xm2(i) * sqrt_xp2_on_xm2(j) &
-             * sign(1.0_core_rknd,corr_matrix_approx(1,i)*corr_matrix_approx(1,j)) 
+        !f_ij = alpha_corr * sqrt_xp2_on_xm2(i) * sqrt_xp2_on_xm2(j) &
+        !        * sign(1.0_core_rknd,corr_matrix_approx(1,i)*corr_matrix_approx(1,j))
+
+        ! If the predicting c1i's are small then cij will be closer to the prescribed value. If
+        ! the c1i's are bigger, then cij will be closer to formular (15) from the ref. paper. See
+        ! clubb:ticket:514:comment:61 for details.
+        !f_ij = (1-abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j)))*corr_matrix_prescribed(i,j) &
+        !       + abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j))*f_ij_o
+
+        f_ij = corr_matrix_prescribed(i,j)
 
         ! make sure -1 < f_ij < 1
         if ( f_ij < -max_mag_correlation ) then
