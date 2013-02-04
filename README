@@ -831,7 +831,7 @@ variable l_input_fields enabled the code when true, and then a separate
 namelist called &setfields is used to control which variables are read in.
 
 To execute an input fields run, you need to set the 'datafile' variable in the
-setfields namelist to the location of the data files, and set 'input_'<varname>
+setfields namelist to the location of the data files, and set 'l_input_<varname>'
 to .true. for those fields for which you want to use a fixed value from
 the LES dataset at the beginning of each timestep.
 
