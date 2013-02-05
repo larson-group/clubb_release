@@ -468,7 +468,7 @@ function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend
   geopot_ht = phi/gravity; % m; ~= height
 
   % calculate pressure on staggered grid
-press_stag = calc_pressure_staggered( psfc, Ptop, eta_stag );
+  press_stag = calc_pressure_staggered( psfc, Ptop, eta_stag );
 
   % calculate low cloud fraction below 700mb
   cldlow=calc_low_cloud_frac( cf, press );
