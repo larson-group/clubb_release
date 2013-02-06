@@ -19,6 +19,7 @@ echo "-m -- merge the plots to <pdf_name>.pdf"
 echo "-d -- set daytime to the time interval <daytime>"
 echo "-n -- set daytime to the time interval <nighttime>"
 echo "-H -- run the script on HD1"
+echo "-j -- name of the job"
 echo ""
 echo "Using the -d or -n option requires a the following format for the time intervals:   "
 echo "hh:mm:ss-hh:mm:ss"
@@ -30,60 +31,52 @@ daytime='05:00:00-08:00:00'
 nighttime='17:00:00-20:00:00'
 pdf_name=''
 hd1=false
+hd1opt=''
 merge=false
+jobname="MatlabJob"
+indir=''
 
-while getopts Hd:n:m: opt
+
+while getopts Hd:n:m:j:i: opt
 do
+  echo $opt
   case "$opt" in
-    H) hd1=true; shift;;
+    H) hd1=true;;
     d) daytime="$OPTARG";;
     n) nighttime="$OPTARG";;
     m) merge=true; pdf_name="$OPTARG";;
+    j) jobname="$OPTARG";;
+    i) indir="$OPTARG";;
     h) myhelp; exit;;
     \?) echo "Error: Unknown option $opt."; myhelp;;
   esac
 done
 
-# check arguments
-indir=$1
+if [ "$indir" = "" ]; then
+	echo "Error: You have to specify a valid input directory! Use the -i option."
+	exit
+fi
 
 # running on HD1
 if [ $hd1 = true ]; then
-
-  # daytime run
-  ./exec_voca_output_creater.bash -H -d $indir -a plot -t $daytime -o daytime
-	mkdir $indir/plots_daytime 
-	mv $indir/daytime_* $indir/plots_daytime 
-
-	# nighttime run
-  ./exec_voca_output_creater.bash -H -d $indir -a plot -t $nighttime -o nighttime
-	mkdir $indir/plots_nighttime
-	mv $indir/nighttime_* $indir/plots_nighttime
-
-	# overall run
-  ./exec_voca_output_creater.bash -H -d $indir -a plot -o fulltime
-	mkdir $indir/plots_fulltime
-	mv $indir/fulltime_* $indir/plots_fulltime
-
-# running elsewhere
-else
-
-  # daytime run
-  ./exec_voca_output_creater.bash -d $indir -a plot -t $daytime -o daytime
-	mkdir $indir/plots_daytime 
-	mv $indir/daytime_* $indir/plots_daytime 
-
-	# nighttime run
-  ./exec_voca_output_creater.bash -d $indir -a plot -t $nighttime -o nighttime
-	mkdir $indir/plots_nighttime
-	mv $indir/nighttime_* $indir/plots_nighttime
-
-	# overall run
-  ./exec_voca_output_creater.bash -d $indir -a plot -o fulltime
-	mkdir $indir/plots_fulltime
-	mv $indir/fulltime_* $indir/plots_fulltime
-
+        hd1opt="-H"
 fi
+
+# daytime run
+./exec_voca_output_creater.bash $hd1opt -d $indir -a plot -t $daytime -o daytime -n $jobname"_day"
+	mkdir $indir/plots_daytime 
+	mv $indir/daytime_* $indir/plots_daytime 
+
+# nighttime run
+./exec_voca_output_creater.bash $hd1opt -d $indir -a plot -t $nighttime -o nighttime -n $jobname"_night"
+	mkdir $indir/plots_nighttime
+	mv $indir/nighttime_* $indir/plots_nighttime
+
+# overall run
+./exec_voca_output_creater.bash $hd1opt -d $indir -a plot -o fulltime -n $jobname"_full"
+	mkdir $indir/plots_fulltime
+	mv $indir/fulltime_* $indir/plots_fulltime
+
 
 if [ $merge = true ]; then
 	
