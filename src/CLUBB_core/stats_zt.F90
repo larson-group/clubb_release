@@ -67,7 +67,8 @@ module stats_zt
         iwp2thvp, & 
         iwp2rcp, & 
         iwprtpthlp, & 
-        isigma_sqd_w_zt
+        isigma_sqd_w_zt, &
+        iprecip_frac
 
     use stats_variables, only: &
         imu_rr,        &
@@ -470,6 +471,8 @@ module stats_zt
     imass_ice_cryst = 0
     ircm_icedfs     = 0
     iu_T_cm         = 0
+
+    iprecip_frac  = 0
 
     imu_rr        = 0
     imu_rr_n      = 0
@@ -2481,6 +2484,12 @@ module stats_zt
         iwp3_on_wp2_zt = k
         call stat_assign( iwp3_on_wp2_zt, "wp3_on_wp2_zt", & 
              "Smoothed version of wp3 / wp2 [m/s]", "m/s", zt )
+        k = k + 1
+
+      case ( 'precip_frac' )
+        iprecip_frac = k
+        call stat_assign( iprecip_frac, "precip_frac", &
+             "Precipitation Fraction [-]", "-", zt )
         k = k + 1
 
       case ( 'mu_rr' )

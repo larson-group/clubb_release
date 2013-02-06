@@ -58,6 +58,7 @@ vars_zt =
 'cloud_frac1', 'cloud_frac2', 'a3_coef_zt', 'wp3_on_wp2_zt',
 's1', 's2', 'stdev_s1', 'stdev_s2', 'stdev_t1', 'stdev_t2', 'covar_st_1', 'covar_st_2',
 'corr_st_1', 'corr_st_2', 'rrtthl', 'crt1', 'crt2', 'cthl1', 'cthl2',
+'precip_frac',
 'mu_rr', 'mu_rr_n', 'mu_Nr', 'mu_Nr_n', 'mu_Nc', 'mu_Nc_n', 
 'sigma_rr', 'sigma_rr_n', 'sigma_Nr', 'sigma_Nr_n', 'sigma_Nc', 'sigma_Nc_n',
 'corr_srr_1', 'corr_srr_2', 'corr_srr_1_n', 'corr_srr_2_n',

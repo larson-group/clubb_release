@@ -7,6 +7,7 @@ module KK_microphys_module
   private
 
   public :: KK_micro_driver, &
+            precip_fraction, &
             KK_in_precip_values, &
             KK_upscaled_setup, &
             KK_stat_output
@@ -96,20 +97,23 @@ module KK_microphys_module
         time_precision
 
     use stats_type, only: & 
-        stat_update_var_pt  ! Procedure(s)
+        stat_update_var_pt, & ! Procedure(s)
+        stat_update_var
 
     use stats_variables, only: & 
-        zt,                 & ! Variable(s)
-        im_vol_rad_rain,    &
-        irrainm_cond,       &
-        irrainm_auto,       &
-        irrainm_accr,       &
-        irrainm_src_adj,    &
-        iNrm_cond,          &
-        iNrm_auto,          &
-        iNrm_src_adj
+        zt,              & ! Variable(s)
+        im_vol_rad_rain, &
+        irrainm_cond,    &
+        irrainm_auto,    &
+        irrainm_accr,    &
+        irrainm_src_adj, &
+        iNrm_cond,       &
+        iNrm_auto,       &
+        iNrm_src_adj,    &
+        iprecip_frac
 
     use model_flags, only: &
+        l_use_precip_frac, & ! Flag(s)
         l_calc_w_corr
 
     use advance_windm_edsclrm_module, only: &
@@ -296,9 +300,6 @@ module KK_microphys_module
       rrainm_src_adj = cloud_frac
     end if
 
-    ! Set precipitation fraction
-    precip_frac = one
-
     KK_auto_tndcy = zero
     KK_accr_tndcy = zero
 
@@ -325,13 +326,29 @@ module KK_microphys_module
 
     l_src_adj_enabled = .true.
 
+    ! Precipitation fraction
+    if ( l_use_precip_frac ) then
+
+       call precip_fraction( nz, rrainm, cloud_frac, precip_frac )
+
+    else
+
+       precip_frac = one
+
+    endif
+
+    ! Statistics
+    if ( l_stats_samp ) then
+       call stat_update_var( iprecip_frac, precip_frac, zt )
+    endif
+
     ! calculate the covariances of w with the hydrometeors
     if ( l_calc_w_corr ) then
 
        ! calculate the covariances of w with the hydrometeors
        do k = 1, nz
           wpsp_zm(k) = pdf_params(k)%mixt_frac &
-                       * (one - pdf_params(k)%mixt_frac ) &
+                       * ( one - pdf_params(k)%mixt_frac ) &
                        * ( pdf_params(k)%s1 - pdf_params(k)%s2 ) &
                        * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
        enddo
@@ -734,6 +751,76 @@ module KK_microphys_module
     return
 
   end subroutine KK_micro_driver
+
+  !=============================================================================
+  subroutine precip_fraction( nz, rrainm, cloud_frac, precip_frac )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero,           & ! Constant(s)
+        rr_tol,         &
+        cloud_frac_min
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variable
+    integer, intent(in) :: &
+      nz          ! Number of model vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rrainm,     & ! Mean rain water mixing ratio     [kg/kg]
+      cloud_frac    ! Cloud fraction                   [-]
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      precip_frac    ! Precipitation fraction          [-]
+
+    ! Local Variables
+    real( kind = core_rknd ), parameter :: &
+      precip_frac_tol = cloud_frac_min  ! Minimum precip. frac. [-]
+    
+    integer :: &
+      k   ! Loop index
+
+
+    precip_frac(nz) = zero
+
+    do k = nz-1, 1, -1
+
+       ! The precipitation fraction is the greatest cloud fraction at or above a
+       ! vertical level.
+       precip_frac(k) = max( precip_frac(k+1), cloud_frac(k) )
+
+       if ( rrainm(k) > rr_tol .and. precip_frac(k) < precip_frac_tol ) then
+
+          ! In a scenario where we find rain at this grid level, but no cloud at
+          ! or above this grid level, set precipitation fraction to a minimum
+          ! threshold value.
+          precip_frac(k) = precip_frac_tol
+
+       elseif ( rrainm(k) < rr_tol .and. precip_frac(k) < precip_frac_tol ) then
+
+          ! Mean rain water mixing ratio is less than the tolerance amount.  It
+          ! is considered to have a value of 0.  There is not any rain at this
+          ! grid level.  There is also no cloud at or above this grid level, so
+          ! set precipitation fraction to 0.
+          precip_frac(k) = zero
+
+       endif
+
+    enddo
+
+
+    return
+
+  end subroutine precip_fraction
 
   !=============================================================================
   subroutine KK_in_precip_values( rrainm, Nrm, rcm, precip_frac, &

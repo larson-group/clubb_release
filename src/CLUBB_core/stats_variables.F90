@@ -92,7 +92,8 @@ module stats_variables
      iwp2rcp, & 
      iwprtpthlp, & 
      isigma_sqd_w_zt, & 
-     irho
+     irho, &
+     iprecip_frac
 
   integer, public :: &
      imu_rr,        &
@@ -172,7 +173,7 @@ module stats_variables
 !$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, &
 !$omp   iLscale_pert_1, iLscale_pert_2, &
 !$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, &
-!$omp   irho, irel_humidity, iNcm, iNcnm, isnowslope, &
+!$omp   irho, iprecip_frac, irel_humidity, iNcm, iNcnm, isnowslope, &
 !$omp   ised_rcm, irsat, irsati, irrainm, &
 !$omp   im_vol_rad_rain, im_vol_rad_cloud, &
 !$omp   irain_rate_zt, iAKm, iLH_AKm, &
