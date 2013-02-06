@@ -19,6 +19,8 @@ echo "line of text. This file has to be located in <indir>. You can also use the
 echo "-n option to assign a <name> to jobs. If the -m option is used <name> will"
 echo "show up in the name of the pdf-output. If used on HD1, <name> will appear"
 echo "in the bjobs table and in the job output filename. "
+echo "If you are using the -t option, you have to use the following format for"
+echo "the <timeinterval>: hh:mm:ss-hh:mm:ss."
 echo ""
 echo "Attention: If you are using the -d option, all wrfout files have to be located"
 echo "directly in <indir>. No other files should be in that directory except files"
@@ -26,13 +28,15 @@ echo "with the following extensions: .pdf, .png, .eps, .nfo."
 echo ""
 echo "Dependencies: matlab, [atd, bsub]"
 echo "" 
-echo "Usage: ./exec_voca_output_creater.bash [-bmH] [-n <name>] [-l <lat>] -a <action> -f <infile> | -d <indir>"
+echo "Usage: ./exec_voca_output_creater.bash [-bmH] [-n <name>] [-l <lat>] [-t <timeinterval>] [-o <outfile_prefix>] -a <action> -f <infile> | -d <indir>"
 echo ""
 echo "Options:"
 echo "-h -- show this page"
 echo "-f -- use input file <infile>"
 echo "-d -- use input directory <indir>"
+echo "-o -- set output file prefix"
 echo "-a -- perform action <action>"
+echo "-t -- average over <timeinterval>"
 echo "-l -- set latitude for cross section plots"
 echo "-b -- run the script in the background"
 echo "-m -- merge the eps-graphics to a pdf-file"
@@ -48,6 +52,7 @@ lat_default=20
 infile=''
 indir=''
 action=''
+outfile_prefix=''
 lat=''
 background=false
 merge=false
@@ -56,12 +61,13 @@ hd1name=MatlabJob
 timestr=''
 l_valid_time=false
 
-while getopts hHbmn:a:f:d:l:t: opt
+while getopts hHbmn:a:f:d:o:l:t: opt
 do
   case "$opt" in
     f) infile="$OPTARG";;
     a) action="$OPTARG";;
     d) indir="$OPTARG";;
+    o) outfile_prefix="$OPTARG";;
     l) lat="$OPTARG";;
     b) background=true;;
     m) merge=true;;
@@ -119,6 +125,11 @@ if [ "$infile" != "" ] && [ -f $infile ]; then
   fileList="\'$infile\'"
   path=${infile%/*}"/"
 
+	# set outfile_prefix if not specified
+  if [ "$outfile_prefix" = "" ]; then
+		outfile_prefix=${infile/*\//}
+	fi
+
 elif [ "$indir" != "" ] && [ -d $indir ]; then
 
   # make sure indir has a '/' at the end
@@ -136,6 +147,12 @@ elif [ "$indir" != "" ] && [ -d $indir ]; then
 		# exclude all non-wrfout files
 		if [[ $tmp == wrfout_*_[0-9][0-9]:[0-9][0-9]:[0-9][0-9] ]]; then
 			files[$k]=$curFile;
+			
+			# set outfile_prefix if not specified
+      if [ $k = 0 ] && [ "$outfile_prefix" = "" ]; then
+				outfile_prefix=$tmp
+			fi
+
 			let k=k+1;
 		fi	
 	done
@@ -154,7 +171,7 @@ else
 fi
 
 # generate argument list for matlab call
-arg_list="$fileList\,\'$action\'"
+arg_list="$fileList\,\'$action\'\,\'$outfile_prefix\'"
 
 if [ "$lat" != "" ]; then
 	arg_list=$arg_list"\,$lat"
@@ -181,27 +198,29 @@ if [ $background = true ]; then # background run
 
 else # foreground run
 
+	jobfilename='run_'$hd1name'_tmp.job'
+
 	if [ $hd1 = true ]; then # hd1 run
-		if [ -f run_matlab_tmp.job ]; then
-			rm run_matlab_tmp.job
+		if [ -f $jobfilename ]; then
+			rm $jobfilename
 		fi
 
-		touch run_matlab_tmp.job
+		touch $jobfilename
 
-		echo '#BSUB -J '$hd1name>>run_matlab_tmp.job
-		echo '#BSUB -o MatlabJob_'$hd1name'_%J'>>run_matlab_tmp.job
-		echo '#BSUB -K'>>run_matlab_tmp.job
+		echo '#BSUB -J '$hd1name>>$jobfilename
+		echo '#BSUB -o MatlabJob_'$hd1name'_%J'>>$jobfilename
+		echo '#BSUB -K'>>$jobfilename
 
-		echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\($arg_list\)">>run_matlab_tmp.job
+		echo '/sharedapps/LS/matlab/bin/matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\($arg_list\)">>$jobfilename
 
-		bsub < run_matlab_tmp.job
+		bsub < $jobfilename
 
-		while [ ! -e 'MatlabJob_'$hd1name'_'* ]; do
-			sleep 1
-		done
+		#while [ ! -e 'MatlabJob_'$hd1name'_'* ]; do
+		#	sleep 1
+		#done
 
-		echo "Moving output to $path"
-  	mv 'MatlabJob_'$hd1name'_'* $path
+		#echo "Moving output to $path"
+  	#mv 'MatlabJob_'$hd1name'_'* $path
 
 	# usual run		
 	else

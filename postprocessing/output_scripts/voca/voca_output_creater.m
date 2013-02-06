@@ -1,4 +1,4 @@
-function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend_avg )
+function[] = voca_output_creator( infile_name, action, outfile_prefix, crs_lat, tstart_avg, tend_avg )
 
 % CALL:
 %   voca_output_creator( infile_name, action )
@@ -59,19 +59,23 @@ function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend
   addpath '../../matlab_include/'
   
   % Set default values
-  if nargin < 5
+  if nargin < 6
     tstart_avg = '00:00:00';
     tend_avg = '24:00:00';
     
-    if nargin == 4
+    if nargin == 5
       disp('WARNING: No value for tend_avg. Using default values for the averaging time interval.')
     end
   end 
   
-  if nargin < 3 
+  if nargin < 4 
     crs_lat = 20;
   end
   
+	if nargin < 3
+		disp('ERROR: No output file prefix specified!')
+	end
+
   crs_lat
   
   infile_name
@@ -499,7 +503,7 @@ function[] = voca_output_creator( infile_name, action, crs_lat, tstart_avg, tend
     % of the simulation is skipped. So we don't want to include the last 8
     % timesteps in the plots.
     % plot_results( rho(:,:,:,1:(totaltimes-offset+1)), tmp(:,:,:,1:(totaltimes-offset+1)), geopot_ht(:,:,:,1:(totaltimes-offset+1)), cldlow(:,:,1:(totaltimes-offset+1)), cf(:,:,:,1:(totaltimes-offset+1)), qvapor(:,:,:,1:(totaltimes-offset+1)), lwc(:,:,:,1:(totaltimes-offset+1)), infile_name );
-    plot_results( rho, tmp, qrain, geopot_ht, cldlow, cf, qvapor, lwc, infile_name, crs_lat, times_all(:, 1:calc_times), tstart_avg, tend_avg );
+    plot_results( rho, tmp, qrain, geopot_ht, cldlow, cf, qvapor, lwc, infile_name, outfile_prefix, crs_lat, times_all(:, 1:calc_times), tstart_avg, tend_avg );
     
   elseif i_action==3
     disp('Type in your command: ')
@@ -703,21 +707,21 @@ end % end function write_output
 
 
 
-function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv, cloudwater, infile_name, lat, Times, tstart_avg, tend_avg )
+function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv, cloudwater, infile_name, outfile_prefix, lat, Times, tstart_avg, tend_avg )
 % Creates plots similar to these in Rob Wood's talk (see wrf:ticket:47)
 
   % check if infile_name is a cellstring; if so, get the first filename
   % as prefix for the output file
   if iscellstr(infile_name)==1
-    outfile_prefix=char(infile_name(1));
+    infile=char(infile_name(1));
   else
-    outfile_prefix=infile_name;
+    infile=infile_name;
   end
 
   % get path and name of the directory where the input files are located
-  ind=strfind(outfile_prefix, '/');
-  path=outfile_prefix(1:ind(size(ind,2)));
-  dir_name=outfile_prefix((ind(size(ind,2)-1)+1):(ind(size(ind,2))-1));
+  ind=strfind(infile, '/');
+  path=infile(1:ind(size(ind,2)));
+  dir_name=infile((ind(size(ind,2)-1)+1):(ind(size(ind,2))-1));
 
   % read message from run.nfo
   fid = fopen(strcat(path,'run.nfo'));
@@ -759,8 +763,8 @@ function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv,
   
   
   %write to png and eps file
-  print(f1, '-dpng', strcat(outfile_prefix,'_lwp'))
-  print(f1, '-depsc', strcat(outfile_prefix,'_lwp'))
+  print(f1, '-dpng', strcat(path,outfile_prefix,'_lwp'))
+  print(f1, '-depsc', strcat(path,outfile_prefix,'_lwp'))
 
 
 
@@ -791,8 +795,8 @@ function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv,
 
   
   %write to png and eps file
-  print(f2, '-dpng', strcat(outfile_prefix,'_rwp'))
-  print(f2, '-depsc', strcat(outfile_prefix,'_rwp'))
+  print(f2, '-dpng', strcat(path,outfile_prefix,'_rwp'))
+  print(f2, '-depsc', strcat(path,outfile_prefix,'_rwp'))
 
 
 
@@ -817,8 +821,8 @@ function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv,
   text(.3,.14,strcat('Averaged over ', tstart_avg, ' to ', tend_avg));
   axes(ah)
 
-  print(f3, '-dpng', strcat(outfile_prefix,'_cloudcov'))
-  print(f3, '-depsc', strcat(outfile_prefix,'_cloudcov'))
+  print(f3, '-dpng', strcat(path,outfile_prefix,'_cloudcov'))
+  print(f3, '-depsc', strcat(path,outfile_prefix,'_cloudcov'))
 
   % approximate unstaggered z level heights
   hgt_20 = zeros(size(heights,1),size(heights,3),size(heights,4));
@@ -877,8 +881,8 @@ function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv,
   text(.3,.14,strcat('Averaged over ', tstart_avg, ' to ', tend_avg));
   axes(ah)
  
-  print(f4, '-dpng', strcat(outfile_prefix,'_cloudfrac'))
-  print(f4, '-depsc', strcat(outfile_prefix,'_cloudfrac'))
+  print(f4, '-dpng', strcat(path,outfile_prefix,'_cloudfrac'))
+  print(f4, '-depsc', strcat(path,outfile_prefix,'_cloudfrac'))
 
 
   %interpolate to a equally spaced z-grid
@@ -920,8 +924,8 @@ function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv,
   text(.3,.14,strcat('Averaged over ', tstart_avg, ' to ', tend_avg));
   axes(ah)
 
-  print(f5, '-dpng', strcat(outfile_prefix,'_cloudwater'))
-  print(f5, '-depsc', strcat(outfile_prefix,'_cloudwater'))
+  print(f5, '-dpng', strcat(path,outfile_prefix,'_cloudwater'))
+  print(f5, '-depsc', strcat(path,outfile_prefix,'_cloudwater'))
 
 
   % interpolate to a equally spaced z-grid
@@ -961,8 +965,8 @@ function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv,
   text(.3,.14,strcat('Averaged over ', tstart_avg, ' to ', tend_avg));
   axes(ah)
 
-  print(f6, '-dpng', strcat(outfile_prefix,'_qv'))
-  print(f6, '-depsc', strcat(outfile_prefix,'_qv'))
+  print(f6, '-dpng', strcat(path,outfile_prefix,'_qv'))
+  print(f6, '-depsc', strcat(path,outfile_prefix,'_qv'))
 
   return
 
