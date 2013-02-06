@@ -775,7 +775,7 @@ function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv,
   % plot liquid water path time average
   rwp_t_avg = calc_time_avg_3d(rwp, Times, tstart_avg, tend_avg);
   rwp_t_avg = rwp_t_avg';
-  % rwp_t_avg = adjust_max(rwp_t_avg(:,1:40), 0.2);
+  rwp_t_avg = adjust_max(rwp_t_avg(:,1:40), 0.065);
   colormap(jet(50));
   f2=figure;
   subplot('Position',[0.3 0.3 0.6 0.6])   % make the image smaller in order to get the text proportionally larger
