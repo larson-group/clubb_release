@@ -27,8 +27,7 @@
           {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'TWGRAD', 'expression' => 'TWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'TWADV', 'expression' => 'TWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'TWDIFF', 'expression' => 'TWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'TWBUOY', 'expression' => 'TWBUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'TWPRES', 'expression' => 'TWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'TWB+P', 'expression' => 'TWBUOY + TWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'TWPREC', 'expression' => 'TWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'TW\_RES', 'expression' => '-1*(TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
@@ -38,8 +37,7 @@
           {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'QWGRAD', 'expression' => 'QWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'QWADV', 'expression' => 'QWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'QWDIFF', 'expression' => 'QWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'QWBUOY', 'expression' => 'QWBUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'QWPRES', 'expression' => 'QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'QWB+P', 'expression' => 'QWBUOY + QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'QWPREC', 'expression' => 'QWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ctl_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'auto', 'name' => 'QW\_RES', 'expression' => '-1*(QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
