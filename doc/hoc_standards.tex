@@ -3,7 +3,7 @@
 %
 
 \documentclass[letterpaper,12pt]{article}
-\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsmath,amssymb,amsfonts,hyperref}
 %\usepackage{amsfonts}
 
 %% These cannot be interpreted by TTM
@@ -736,6 +736,9 @@ real( kind = core_rknd ) :: &
 
 variable = 0.0_core_rknd
 \end{verbatim}
+
+\item
+We should avoid adding new use of command line applications, e.g. mktemp, to our compile or run scripts unless we're certain they're portable between Linux/BSD/MacOS/Unix.  See \url{http://carson.math.uwm.edu/trac/clubb/ticket/531#comment:24}
 
 \end{enumerate}
 
