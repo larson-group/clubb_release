@@ -148,6 +148,10 @@
        [
           {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Lscale', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'LW + SW radiative heating rate', 'axisLabel' => 'radht [K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Correlation between s and w', 'axisLabel' => 'corr\_sw [-]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_sw', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
