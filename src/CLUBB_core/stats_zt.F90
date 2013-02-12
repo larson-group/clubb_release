@@ -361,7 +361,9 @@ module stats_zt
         ithl_KK_auto_covar_zt, &
         iw_KK_accr_covar_zt,   &
         irt_KK_accr_covar_zt,  &
-        ithl_KK_accr_covar_zt
+        ithl_KK_accr_covar_zt, &
+        irr_KK_mvr_covar_zt,   &
+        iNr_KK_mvr_covar_zt
 
     use stats_variables, only: & 
       ieff_rad_cloud, &
@@ -661,6 +663,8 @@ module stats_zt
     iw_KK_accr_covar_zt   = 0
     irt_KK_accr_covar_zt  = 0
     ithl_KK_accr_covar_zt = 0
+    irr_KK_mvr_covar_zt   = 0
+    iNr_KK_mvr_covar_zt   = 0
 
     ivm_bt   = 0
     ivm_ma   = 0
@@ -2052,6 +2056,22 @@ module stats_zt
 
        call stat_assign( ithl_KK_accr_covar_zt, "thl_KK_accr_covar_zt", &
             "Covariance of theta_l and KK accretion rate", "K*(kg/kg)/s", zt )
+       k = k + 1
+
+      case ('rr_KK_mvr_covar_zt')
+       irr_KK_mvr_covar_zt = k
+
+       call stat_assign( irr_KK_mvr_covar_zt, "rr_KK_mvr_covar_zt", &
+            "Covariance of r_r and KK rain drop mean volume radius [(kg/kg)m]", &
+            "(kg/kg)m", zt )
+       k = k + 1
+
+      case ('Nr_KK_mvr_covar_zt')
+       iNr_KK_mvr_covar_zt = k
+
+       call stat_assign( iNr_KK_mvr_covar_zt, "Nr_KK_mvr_covar_zt", &
+            "Covariance of N_r and KK rain drop mean volume radius [(kg/kg)m]", &
+            "(kg/kg)m", zt )
        k = k + 1
 
       case ('vm_bt')

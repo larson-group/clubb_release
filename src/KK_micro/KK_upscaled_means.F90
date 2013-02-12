@@ -12,9 +12,8 @@ module KK_upscaled_means
             KK_mvr_upscaled_mean,  &
             trivar_NLL_mean_eq,    &
             bivar_NL_mean_eq,      &
-            bivar_NL_mean_eq_Nc0
-
-  private :: bivar_LL_mean_eq
+            bivar_NL_mean_eq_Nc0,  &
+            bivar_LL_mean_eq
 
   contains
 

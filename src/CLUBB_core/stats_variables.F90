@@ -50,7 +50,7 @@ module stats_variables
     fname_rad_zm, & ! Name of the stats file for the zm radiation grid fields
     fname_sfc       ! Name of the stats file for surface only fields
 
-!$omp   threadprivate(fname_zt, fname_zm, fname_LH_zt, fname_LH_sfc fname_rad_zt, &
+!$omp   threadprivate(fname_zt, fname_zm, fname_LH_zt, fname_LH_sfc, fname_rad_zt, &
 !$omp     fname_rad_zm, fname_sfc)
 
 !       Indices for statistics in zt file
@@ -447,7 +447,8 @@ module stats_variables
 !$omp   iNcm_mc, iNcm_cl)
 
   ! Covariances between w, r_t, theta_l and KK microphysics tendencies.
-  ! These are calculated on thermodynamic grid levels.
+  ! Additionally, covariances between r_r and N_r and KK rain drop mean
+  ! volume radius.  These are all calculated on thermodynamic grid levels.
   integer, public :: &
     iw_KK_evap_covar_zt,   & ! Covariance of w and KK evaporation tendency.
     irt_KK_evap_covar_zt,  & ! Covariance of r_t and KK evaporation tendency.
@@ -457,12 +458,14 @@ module stats_variables
     ithl_KK_auto_covar_zt, & ! Covariance of theta_l and KK autoconv. tendency.
     iw_KK_accr_covar_zt,   & ! Covariance of w and KK accretion tendency.
     irt_KK_accr_covar_zt,  & ! Covariance of r_t and KK accretion tendency.
-    ithl_KK_accr_covar_zt    ! Covariance of theta_l and KK accretion tendency.
+    ithl_KK_accr_covar_zt, & ! Covariance of theta_l and KK accretion tendency.
+    irr_KK_mvr_covar_zt,   & ! Covariance of r_r and KK mean volume radius.
+    iNr_KK_mvr_covar_zt      ! Covariance of N_r and KK mean volume radius.
 
 !$omp threadprivate( iw_KK_evap_covar_zt, irt_KK_evap_covar_zt, &
 !$omp   ithl_KK_evap_covar_zt, iw_KK_auto_covar_zt, irt_KK_auto_covar_zt, &
 !$omp   ithl_KK_auto_covar_zt, iw_KK_accr_covar_zt, irt_KK_accr_covar_zt, &
-!$omp   ithl_KK_accr_covar_zt )
+!$omp   ithl_KK_accr_covar_zt, irr_KK_mvr_covar_zt, iNr_KK_mvr_covar_zt )
 
   ! Wind budgets
   integer, public :: & 

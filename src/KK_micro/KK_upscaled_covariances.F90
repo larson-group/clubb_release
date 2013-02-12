@@ -14,7 +14,9 @@ module KK_upscaled_covariances
             covar_thl_KK_auto, &
             covar_x_KK_accr, &
             covar_rt_KK_accr, &
-            covar_thl_KK_accr
+            covar_thl_KK_accr, &
+            covar_rr_KK_mvr, &
+            covar_Nr_KK_mvr
 
   private :: quadrivar_NNLL_covar_eq, &
              trivar_NNL_covar_eq, &
@@ -1077,6 +1079,138 @@ module KK_upscaled_covariances
     return
 
   end function covar_thl_KK_accr
+
+  !=============================================================================
+  function covar_rr_KK_mvr( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
+                            corr_rrNr_n, rrm, KK_mean_vol_rad, &
+                            KK_mvr_coef, precip_frac )
+
+    ! Description:
+    ! This function calculates the covariance between r_r and KK mean volume
+    ! radius of rain drops (R_vr), which can be written as < r_r'R_vr' >.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one
+
+    use KK_upscaled_means, only:  &
+        bivar_LL_mean_eq
+
+    use parameters_microphys, only: &
+        KK_mvr_rr_exp, & ! Variable(s)
+        KK_mvr_Nr_exp
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_rr_n,         & ! Mean of ln rr (both components) in-precip (ip)    [-]
+      mu_Nr_n,         & ! Mean of ln Nr (both components) ip                [-]
+      sigma_rr_n,      & ! Standard deviation of ln rr (both components) ip  [-]
+      sigma_Nr_n,      & ! Standard deviation of ln Nr (both components) ip  [-]
+      corr_rrNr_n,     & ! Correlation betw. ln rr & ln Nr (both comps.) ip  [-]
+      rrm,             & ! Mean rain water mixing ratio                  [kg/kg]
+      KK_mean_vol_rad, & ! KK mean volume radius of rain drops               [m]
+      KK_mvr_coef,     & ! KK mean volume radius coefficient                 [m]
+      precip_frac        ! Precipitation fraction                            [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      covar_rr_KK_mvr  ! Covar of rr and KK rain drop mean vol rad    [(kg/kg)m]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on r_r
+      beta_exp     ! Exponent on N_r
+
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_mvr_rr_exp
+    beta_exp  = KK_mvr_Nr_exp
+
+    ! Calculate the covariance of r_r and KK mean volume radius of rain drops.
+    covar_rr_KK_mvr  &
+    = KK_mvr_coef &
+      * precip_frac &
+      * bivar_LL_mean_eq( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
+                          corr_rrNr_n, alpha_exp + one, beta_exp ) &
+      - rrm * KK_mean_vol_rad
+
+
+    return
+
+  end function covar_rr_KK_mvr
+
+  !=============================================================================
+  function covar_Nr_KK_mvr( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
+                            corr_rrNr_n, Nrm, KK_mean_vol_rad, &
+                            KK_mvr_coef, precip_frac )
+
+    ! Description:
+    ! This function calculates the covariance between N_r and KK mean volume
+    ! radius of rain drops (R_vr), which can be written as < N_r'R_vr' >.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one
+
+    use KK_upscaled_means, only:  &
+        bivar_LL_mean_eq
+
+    use parameters_microphys, only: &
+        KK_mvr_rr_exp, & ! Variable(s)
+        KK_mvr_Nr_exp
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_rr_n,         & ! Mean of ln rr (both components) in-precip (ip)    [-]
+      mu_Nr_n,         & ! Mean of ln Nr (both components) ip                [-]
+      sigma_rr_n,      & ! Standard deviation of ln rr (both components) ip  [-]
+      sigma_Nr_n,      & ! Standard deviation of ln Nr (both components) ip  [-]
+      corr_rrNr_n,     & ! Correlation betw. ln rr & ln Nr (both comps.) ip  [-]
+      Nrm,             & ! Mean rain drop concentration                 [num/kg]
+      KK_mean_vol_rad, & ! KK mean volume radius of rain drops               [m]
+      KK_mvr_coef,     & ! KK mean volume radius coefficient                 [m]
+      precip_frac        ! Precipitation fraction                            [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      covar_Nr_KK_mvr  ! Covar of Nr and KK rain drop mean vol rad   [(num/kg)m]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on r_r
+      beta_exp     ! Exponent on N_r
+
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_mvr_rr_exp
+    beta_exp  = KK_mvr_Nr_exp
+
+    ! Calculate the covariance of N_r and KK mean volume radius of rain drops.
+    covar_Nr_KK_mvr  &
+    = KK_mvr_coef &
+      * precip_frac &
+      * bivar_LL_mean_eq( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
+                          corr_rrNr_n, alpha_exp, beta_exp + one ) &
+      - Nrm * KK_mean_vol_rad
+
+
+    return
+
+  end function covar_Nr_KK_mvr
 
   !=============================================================================
   function quadrivar_NNLL_covar_eq( mu_x_i, mu_s_i, mu_rr_n, mu_Nr_n, &

@@ -13,6 +13,7 @@ module KK_microphys_module
             KK_stat_output
 
   private :: KK_upscaled_means_driver, &
+             KK_sed_vel_covars, &
              KK_upscaled_covar_driver
 
   contains
@@ -255,6 +256,10 @@ module KK_microphys_module
       mixt_frac       ! Mixture fraction                                     [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
+      Vrrprrp_zt, & ! Covariance of V_rr and r_r; thermo. levs.   [(m/s)(kg/kg)]
+      VNrpNrp_zt    ! Covariance of V_Nr and N_r; thermo. levs.  [(m/s)(num/kg)]
+
+    real( kind = core_rknd ), dimension(nz) :: &
       wprtp_mc_tndcy_zt,   & ! Micro. tend. for <w'rt'>; t-lev   [m*(kg/kg)/s^2]
       wpthlp_mc_tndcy_zt,  & ! Micro. tend. for <w'thl'>; t-lev  [m*K/s^2]
       rtp2_mc_tndcy_zt,    & ! Micro. tend. for <rt'^2>; t-lev   [(kg/kg)^2/s]
@@ -473,6 +478,12 @@ module KK_microphys_module
                                          KK_accr_coef, KK_mvr_coef, &
                                          KK_evap_tndcy(k), KK_auto_tndcy(k), &
                                          KK_accr_tndcy(k), KK_mean_vol_rad(k) )
+
+          call KK_sed_vel_covars( rrainm(k), Nrm(k), KK_mean_vol_rad(k), &
+                                  mu_rr_n, mu_Nr_n, sigma_rr_n, &
+                                  sigma_Nr_n, corr_rrNr_n, KK_mvr_coef, &
+                                  precip_frac(k), k, l_stats_samp_in_sub, &
+                                  Vrrprrp_zt(k), VNrpNrp_zt(k) )
           
 
           if ( l_var_covar_src ) then
@@ -491,7 +502,8 @@ module KK_microphys_module
                                            KK_evap_coef, KK_auto_coef, &
                                            KK_accr_coef, KK_evap_tndcy(k), &
                                            KK_auto_tndcy(k), KK_accr_tndcy(k), &
-                                           pdf_params(k), k, l_stats_samp_in_sub, &
+                                           pdf_params(k), k, &
+                                           l_stats_samp_in_sub, &
                                            wprtp_mc_tndcy_zt(k), &
                                            wpthlp_mc_tndcy_zt(k), &
                                            rtp2_mc_tndcy_zt(k), &
@@ -1954,6 +1966,129 @@ module KK_microphys_module
   end subroutine KK_upscaled_means_driver
 
   !=============================================================================
+  subroutine KK_sed_vel_covars( rrainm, Nrm, KK_mean_vol_rad, &
+                                mu_rr_n, mu_Nr_n, sigma_rr_n, &
+                                sigma_Nr_n, corr_rrNr_n, KK_mvr_coef, &
+                                precip_frac, level, l_stats_samp, &
+                                Vrrprrp, VNrpNrp )
+
+    ! Description:
+    ! 
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        micron_per_m, & ! Constant(s)
+        rr_tol, &
+        Nr_tol, &
+        zero
+
+    use KK_upscaled_covariances, only: &
+        covar_rr_KK_mvr, & ! Procedure(s)
+        covar_Nr_KK_mvr
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use stats_type, only: & 
+        stat_update_var_pt  ! Procedure(s)
+
+    use stats_variables, only: & 
+        zt,                  & ! Variable(s)
+        irr_KK_mvr_covar_zt, &
+        iNr_KK_mvr_covar_zt
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      rrainm,          & ! Mean rain water mixing ratio                  [kg/kg]
+      Nrm,             & ! Mean rain drop concentration                 [num/kg]
+      KK_mean_vol_rad, & ! KK mean volume radius of rain drops               [m]
+      mu_rr_n,         & ! Mean of ln rr (both components) in-precip (ip)    [-]
+      mu_Nr_n,         & ! Mean of ln Nr (both components) ip                [-]
+      sigma_rr_n,      & ! Standard deviation of ln rr (both components) ip  [-]
+      sigma_Nr_n,      & ! Standard deviation of ln Nr (both components) ip  [-]
+      corr_rrNr_n,     & ! Correlation betw. ln rr & ln Nr (both comps.) ip  [-]
+      KK_mvr_coef,     & ! KK mean volume radius coefficient                 [m]
+      precip_frac        ! Precipitation fraction                            [-]
+
+    integer, intent(in) :: &
+      level   ! Vertical level index 
+
+    logical, intent(in) :: &
+      l_stats_samp     ! Flag to record statistical output.
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      Vrrprrp, & ! Covariance between V_rr and r_r, <V_rr'r_r'>   [(m/s)(kg/kg)]
+      VNrpNrp    ! Covariance between V_Nr and N_r, <V_Nr'N_r'>  [(m/s)(num/kg)]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      rr_KK_mvr_covar, & ! Covariance of r_r and KK mean vol rad   [(kg/kg)m]
+      Nr_KK_mvr_covar    ! Covariance of N_r and KK mean vol rad  [(num/kg)m]
+
+
+    ! Calculate the covariance between the sedimentation velocity of r_r
+    ! and r_r, < V_rr'r_r' >.
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+
+       rr_KK_mvr_covar  &
+       = covar_rr_KK_mvr( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
+                          corr_rrNr_n, rrainm, KK_mean_vol_rad, &
+                          KK_mvr_coef, precip_frac )
+
+    else  ! r_r or N_r = 0.
+
+       rr_KK_mvr_covar = zero
+
+    endif
+
+    Vrrprrp = - 0.012_core_rknd * micron_per_m * rr_KK_mvr_covar
+
+
+    ! Calculate the covariance between the sedimentation velocity of N_r
+    ! and N_r, < V_Nr'N_r' >.
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+
+       Nr_KK_mvr_covar  &
+       = covar_Nr_KK_mvr( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
+                          corr_rrNr_n, Nrm, KK_mean_vol_rad, &
+                          KK_mvr_coef, precip_frac )
+
+    else  ! r_r or N_r = 0.
+
+       Nr_KK_mvr_covar = zero
+
+    endif
+
+    VNrpNrp = - 0.007_core_rknd * micron_per_m * Nr_KK_mvr_covar
+
+
+    if ( l_stats_samp ) then
+
+       ! Covariance between r_r and KK rain drop mean volume radius.
+       if ( irr_KK_mvr_covar_zt > 0 ) then
+          call stat_update_var_pt( irr_KK_mvr_covar_zt, level, &
+                                   rr_KK_mvr_covar, zt )
+       endif
+
+       ! Covariance between N_r and KK rain drop mean volume radius.
+       if ( iNr_KK_mvr_covar_zt > 0 ) then
+          call stat_update_var_pt( iNr_KK_mvr_covar_zt, level, &
+                                   Nr_KK_mvr_covar, zt )
+       endif
+
+    endif ! l_stats_samp
+
+
+    return
+
+  end subroutine KK_sed_vel_covars
+
+  !=============================================================================
   subroutine KK_upscaled_covar_driver( w_mean, exner, rcm, &
                                        rrainm, Nrm, Ncm, &
                                        mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
@@ -1968,7 +2103,8 @@ module KK_microphys_module
                                        KK_evap_coef, KK_auto_coef, &
                                        KK_accr_coef, KK_evap_tndcy, &
                                        KK_auto_tndcy, KK_accr_tndcy, &
-                                       pdf_params, level, l_stats_samp, &
+                                       pdf_params, level, &
+                                       l_stats_samp, &
                                        wprtp_mc_src_tndcy, &
                                        wpthlp_mc_src_tndcy, &
                                        rtp2_mc_src_tndcy, &
