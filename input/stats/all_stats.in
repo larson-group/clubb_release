@@ -86,6 +86,9 @@ vars_LH_zt =
 'LH_Nrm', 'LH_Nim', 'LH_Ncm', 'LH_Ngraupelm', 'LH_Nsnowm', 'LH_rcm_avg',
 'LH_rrainm_auto', 'LH_rrainm_accr',
 ''
+vars_LH_sfc =
+'LH_morr_rain_rate', 'LH_morr_snow_rate',
+''
 
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4', 'up2', 'vp2',

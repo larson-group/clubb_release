@@ -3,10 +3,10 @@
 module parameters_microphys
 
 ! Description:
-! Parameters for microphysical schemes
+!   Parameters for microphysical schemes
 
 ! References:
-! None
+!   None
 !-------------------------------------------------------------------------
 
   use clubb_precision, only: &
@@ -22,7 +22,7 @@ module parameters_microphys
   integer, parameter, public :: &
     LH_microphys_interactive     = 1, & ! Feed the samples into the microphysics and allow feedback
     LH_microphys_non_interactive = 2, & ! Feed the samples into the microphysics with no feedback
-    LH_microphys_disabled        = 3    ! Disable latin hypercube entirely
+    LH_microphys_disabled        = 3    ! Disable Latin hypercube entirely
 
   ! Morrison aerosol parameters
   integer, parameter, public :: &

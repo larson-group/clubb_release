@@ -77,8 +77,7 @@ module estimate_scm_microphys_module
       l_latin_hypercube = .true.
 
     logical, parameter :: &
-      l_check_lh_cloud_weighting = .true., & ! Verify every other sample point is out of cloud
-      l_stats_samp_in_sub = .false. ! Disable stats sampling in the subroutine
+      l_check_lh_cloud_weighting = .true. ! Verify every other sample point is out of cloud
 
     ! Input Variables
     real( kind = time_precision ), intent(in) :: &
@@ -265,7 +264,7 @@ module estimate_scm_microphys_module
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
-           ( dt, nz, l_stats_samp_in_sub, l_local_kk, & ! In
+           ( dt, nz, l_stats_samp, l_local_kk, & ! In
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
              exner, rho, cloud_frac, pdf_params, w_std_dev, & ! In
              dzq, rc_column, Ncm, s_mellor_column, rv_column, Nc0, & ! In

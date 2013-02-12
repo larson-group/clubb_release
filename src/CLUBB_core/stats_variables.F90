@@ -44,12 +44,14 @@ module stats_variables
   character(len=200), public ::  & 
     fname_zt,  &    ! Name of the stats file for thermodynamic grid fields
     fname_LH_zt,  & ! Name of the stats file for LH variables on the zt grid
+    fname_LH_sfc,  & ! Name of the stats file for LH variables on the zt grid
     fname_zm,  &    ! Name of the stats file for momentum grid fields
     fname_rad_zt, & ! Name of the stats file for the zt radiation grid fields
     fname_rad_zm, & ! Name of the stats file for the zm radiation grid fields
     fname_sfc       ! Name of the stats file for surface only fields
 
-!$omp   threadprivate(fname_zt, fname_zm, fname_LH_zt, fname_rad_zt, fname_rad_zm, fname_sfc)
+!$omp   threadprivate(fname_zt, fname_zm, fname_LH_zt, fname_LH_sfc fname_rad_zt, &
+!$omp     fname_rad_zm, fname_sfc)
 
 !       Indices for statistics in zt file
 
@@ -979,11 +981,17 @@ module stats_variables
     iwp3_on_wp2_zt  ! w'^3 / w'^2 [m/s]
 !$omp threadprivate(iwp3_on_wp2, iwp3_on_wp2_zt)
 
+  integer, public :: & 
+    iLH_morr_rain_rate, &
+    iLH_morr_snow_rate
+!$omp threadprivate( iLH_morr_rain_rate, iLH_morr_snow_rate )
+
   ! Variables that contains all the statistics
 
   type (stats), target, public :: zt,   &    ! zt grid
                                   zm,   &    ! zm grid
-                                  LH_zt,  & ! rad_zt grid
+                                  LH_zt,  &  ! LH_zt grid
+                                  LH_sfc,  & ! LH_sfc grid
                                   rad_zt,  & ! rad_zt grid
                                   rad_zm,  & ! rad_zm grid
                                   sfc        ! sfc

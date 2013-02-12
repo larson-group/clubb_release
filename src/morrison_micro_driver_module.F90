@@ -40,6 +40,7 @@ module morrison_micro_driver_module
 
     use stats_variables, only: &
       zt,  & ! Variables
+      LH_sfc, &
       sfc
 
     use stats_variables, only: & 
@@ -62,7 +63,9 @@ module morrison_micro_driver_module
 
     use stats_variables, only: & 
       imorr_rain_rate, & ! Variables
-      imorr_snow_rate
+      imorr_snow_rate, &
+      iLH_morr_rain_rate, &
+      iLH_morr_snow_rate
 
     use stats_type, only:  & 
         stat_update_var, stat_update_var_pt  ! Procedure(s)
@@ -318,7 +321,7 @@ module morrison_micro_driver_module
     thlp2_mc_tndcy   = zero
     rtpthlp_mc_tndcy = zero
 
-    if ( l_stats_samp ) then
+    if ( .not. l_latin_hypercube .and. l_stats_samp ) then
 
       ! -------- Sedimentation tendency from Morrison microphysics --------
 
@@ -369,7 +372,21 @@ module morrison_micro_driver_module
         real(Morr_snow_rate, kind = core_rknd) * &
         real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), sfc )
 
+    end if ! .not. l_latin_hypercube .and l_stats_samp
+
+    if ( l_stats_samp ) then
+      ! Snow and Rain rates at the bottom of the domain, in mm/day
+      call stat_update_var_pt( iLH_morr_rain_rate, 1, &
+        real( Morr_rain_rate, kind = core_rknd ) * &
+        real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), LH_sfc )
+
+      call stat_update_var_pt( iLH_morr_snow_rate, 1, &
+        real( Morr_snow_rate, kind = core_rknd ) * &
+        real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), LH_sfc )
+
     end if ! l_stats_samp
+
+    return
 
     return
   end subroutine morrison_micro_driver

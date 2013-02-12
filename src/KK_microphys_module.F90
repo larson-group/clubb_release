@@ -287,17 +287,25 @@ module KK_microphys_module
 
     logical :: &
       l_upscaled,        & ! Flag for using upscaled KK microphysics.
-      l_src_adj_enabled    ! Flag to enable rrainm/Nrm source adjustment
+      l_src_adj_enabled, & ! Flag to enable rrainm/Nrm source adjustment
+      l_stats_samp_in_sub  ! Used to disable stats when SILHS is enabled
 
     integer :: &
       k   ! Loop index
 
     ! Remove compiler warnings
-    if ( .false. .and. l_latin_hypercube ) then
+    if ( .false. ) then
       rrainm_src_adj = dzq
       rrainm_src_adj = rvm
       rrainm_src_adj = w_std_dev
       rrainm_src_adj = cloud_frac
+    end if
+
+    ! Disable stats when latin hypercube is enabled
+    if ( .not. l_latin_hypercube .and. l_stats_samp ) then
+     l_stats_samp_in_sub = .true.
+    else
+     l_stats_samp_in_sub = .false.
     end if
 
     KK_auto_tndcy = zero
@@ -338,7 +346,7 @@ module KK_microphys_module
     endif
 
     ! Statistics
-    if ( l_stats_samp ) then
+    if ( l_stats_samp_in_sub ) then
        call stat_update_var( iprecip_frac, precip_frac, zt )
     endif
 
@@ -448,7 +456,7 @@ module KK_microphys_module
                                corr_srr_2_n, corr_sNr_1, corr_sNr_2, &
                                corr_sNr_1_n, corr_sNr_2_n, corr_sNc_1, &
                                corr_sNc_2, corr_sNc_1_n, corr_sNc_2_n, &
-                               corr_rrNr, corr_rrNr_n, k, l_stats_samp )
+                               corr_rrNr, corr_rrNr_n, k, l_stats_samp_in_sub )
 
           !!! Calculate the values of the upscaled KK microphysics tendencies.
           call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
@@ -483,7 +491,7 @@ module KK_microphys_module
                                            KK_evap_coef, KK_auto_coef, &
                                            KK_accr_coef, KK_evap_tndcy(k), &
                                            KK_auto_tndcy(k), KK_accr_tndcy(k), &
-                                           pdf_params(k), k, l_stats_samp, &
+                                           pdf_params(k), k, l_stats_samp_in_sub, &
                                            wprtp_mc_tndcy_zt(k), &
                                            wpthlp_mc_tndcy_zt(k), &
                                            rtp2_mc_tndcy_zt(k), &
@@ -569,7 +577,7 @@ module KK_microphys_module
 
 
        ! Statistics
-       if ( l_stats_samp ) then
+       if ( l_stats_samp_in_sub ) then
 
           ! Rain drop mean volume radius.
           call stat_update_var_pt( im_vol_rad_rain, k, KK_mean_vol_rad(k), zt )
@@ -586,7 +594,7 @@ module KK_microphys_module
 
           call stat_update_var_pt( iNrm_auto, k, KK_Nrm_auto_tndcy(k), zt )
 
-       endif  ! l_stats_samp
+       endif  ! l_stats_samp_in_sub
 
 
        !!! Source-adjustment code for rrainm and Nrm.
@@ -638,13 +646,13 @@ module KK_microphys_module
 
        endif
 
-       if ( l_stats_samp ) then
+       if ( l_stats_samp_in_sub ) then
 
           call stat_update_var_pt( irrainm_src_adj, k, rrainm_src_adj(k), zt )
 
           call stat_update_var_pt( iNrm_src_adj, k, Nrm_src_adj(k), zt )
 
-       endif ! l_stats_samp
+       endif ! l_stats_samp_in_sub
 
 
        !!! Calculate overall KK microphysics tendencies.
