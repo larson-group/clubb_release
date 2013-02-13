@@ -502,8 +502,7 @@ function[] = voca_output_creator( infile_name, action, outfile_prefix, crs_lat, 
     % the last 8 timesteps are either NaN or zero, because the first day
     % of the simulation is skipped. So we don't want to include the last 8
     % timesteps in the plots.
-    % plot_results( rho(:,:,:,1:(totaltimes-offset+1)), tmp(:,:,:,1:(totaltimes-offset+1)), geopot_ht(:,:,:,1:(totaltimes-offset+1)), cldlow(:,:,1:(totaltimes-offset+1)), cf(:,:,:,1:(totaltimes-offset+1)), qvapor(:,:,:,1:(totaltimes-offset+1)), lwc(:,:,:,1:(totaltimes-offset+1)), infile_name );
-    plot_results( rho, tmp, qrain, geopot_ht, cldlow, cf, qvapor, lwc, infile_name, outfile_prefix, crs_lat, times_all(:, 1:calc_times), tstart_avg, tend_avg );
+    plot_results( rho, tmp, qrain, geopot_ht, cldlow, cf, qvapor, lwc, infile_name, outfile_prefix, crs_lat, times_all(:, (offset+1):end), tstart_avg, tend_avg );
     
   elseif i_action==3
     disp('Type in your command: ')
