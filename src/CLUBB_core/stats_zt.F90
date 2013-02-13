@@ -2070,8 +2070,8 @@ module stats_zt
        iNr_KK_mvr_covar_zt = k
 
        call stat_assign( iNr_KK_mvr_covar_zt, "Nr_KK_mvr_covar_zt", &
-            "Covariance of N_r and KK rain drop mean volume radius [(kg/kg)m]", &
-            "(kg/kg)m", zt )
+            "Covariance of N_r and KK rain drop mean volume radius [(num/kg)m]", &
+            "(num/kg)m", zt )
        k = k + 1
 
       case ('vm_bt')
