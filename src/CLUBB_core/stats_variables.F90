@@ -698,7 +698,13 @@ module stats_variables
     iVrice,  &
     iVrgraupel
 
+  ! Covariance of sedimentation velocity and hydrometeor, <V_xx'x_x'>.
+  integer, public :: &
+    iVrrprrp, &
+    iVNrpNrp
+
 !$omp   threadprivate(iVNr, iVrr, iVNc, iVrc, iVNsnow, iVrsnow, iVNice, iVrice, iVrgraupel)
+!$omp   threadprivate(iVrrprrp, iVNrpNrp)
 
   integer, public :: & 
      iwp2_bt, & 

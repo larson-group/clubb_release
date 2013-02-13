@@ -973,7 +973,8 @@ module microphys_driver
         Cp, & 
         rho_lw, & 
         rc_tol, &
-        fstderr, & 
+        fstderr, &
+        zero, &
         zero_threshold, &
         sec_per_day, &
         cm3_per_m3, &
@@ -1009,7 +1010,9 @@ module microphys_driver
       iVNr, & 
       iVrsnow, & 
       iVrice, & 
-      iVrgraupel, & 
+      iVrgraupel, &
+      iVrrprrp, &
+      iVNrpNrp, & 
       irain_rate_zt, & 
       iFprec, & 
       irrainm_bt, & 
@@ -1182,6 +1185,9 @@ module microphys_driver
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: & 
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
 
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
+      hydromet_vel_covar    ! Covariance of V_xx and x_x (m-levs) [(m/s)(units)]
+
     real( kind = core_rknd ), dimension(gr%nz) :: &
       delta_zt  ! Difference in thermo. height levels     [m]
 
@@ -1243,7 +1249,7 @@ module microphys_driver
 
     ! ---- Begin code ----
 
-    Ndrop_max = 0._core_rknd
+    Ndrop_max = zero
     ! Set the value of the aerosol mass array to a constant
     aeromass = aeromass_value
 
@@ -1257,6 +1263,11 @@ module microphys_driver
     ! Return if there is delay between the model start time and start of the
     ! microphysics
     if ( time_current < microphys_start_time ) return
+
+    ! Initialize the values of the covariances of hydrometeor sedimentation
+    ! velocities and their associated hydrometeors (for example, <V_rr'r_r'>
+    ! and <V_Nr'N_r'>) to 0.
+    hydromet_vel_covar = zero
 
     ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
     do k = 1, gr%nz, 1
@@ -1458,7 +1469,7 @@ module microphys_driver
                exner, rho, cloud_frac, pdf_params, wtmp, &
                delta_zt, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
-               rcm_mc, rvm_mc, thlm_mc, &
+               rcm_mc, rvm_mc, thlm_mc, hydromet_vel_covar, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,  &
                rrainm_auto, rrainm_accr )
@@ -1539,7 +1550,7 @@ module microphys_driver
                               delta_zt, rcm, Ncm, s_mellor, rvm, &
                               Ncm_in_cloud, hydromet, &
                               hydromet_mc, hydromet_vel_zt, &
-                              rcm_mc, rvm_mc, thlm_mc, &
+                              rcm_mc, rvm_mc, thlm_mc, hydromet_vel_covar, &
                               wprtp_mc_tndcy, wpthlp_mc_tndcy, & 
                               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
                               rrainm_auto, rrainm_accr )
@@ -1565,6 +1576,17 @@ module microphys_driver
       ! Do nothing
 
     end select ! micro_scheme
+
+    ! Statistics for covariances <V_rr'r_r'> and <V_Nr'N_r'>.
+    if ( l_stats_samp ) then
+
+       ! Covariance of sedimentation velocity of r_r and r_r.
+       call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrainm), zm )
+
+       ! Covariance of sedimentation velocity of N_r and N_r.
+       call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNrm), zm )
+
+    endif ! l_stats_samp
 
     ! Re-compute Ncm and Ncm_in_cloud if needed
     if ( iiNcm > 0 ) then
@@ -2014,7 +2036,7 @@ module microphys_driver
 
 !===============================================================================
   subroutine microphys_solve( solve_type, l_sed, dt, cloud_frac, lhs, & 
-                                xrm_tndcy, xrm, err_code )
+                              xrm_tndcy, xrm, err_code )
 
     ! Description:
     ! Solve the tridiagonal system for hydrometeor variable.

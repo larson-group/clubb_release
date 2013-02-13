@@ -7,7 +7,7 @@ interface
                             exner, rho, cloud_frac, pdf_params, w_std_dev, &
                             dzq, rcm, Ncm, s_mellor, rvm, Nc0, hydromet, &
                             hydromet_mc, hydromet_vel, &
-                            rcm_mc, rvm_mc, thlm_mc, &
+                            rcm_mc, rvm_mc, thlm_mc, hydromet_vel_covar, &
                             wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                             rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
                             rrainm_auto, rrainm_accr )
@@ -67,6 +67,10 @@ interface
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
+
+    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), &
+    target, intent(out) :: &
+      hydromet_vel_covar    ! Covariance of V_xx and x_x (m-levs) [(m/s)(units)]
 
     real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
       wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]

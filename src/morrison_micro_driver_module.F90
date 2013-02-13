@@ -15,7 +15,7 @@ module morrison_micro_driver_module
                exner, rho, cloud_frac, pdf_params, w_std_dev, &
                dzq, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
                hydromet_mc, hydromet_vel, &
-               rcm_mc, rvm_mc, thlm_mc, &
+               rcm_mc, rvm_mc, thlm_mc, hydromet_vel_covar, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
                rrainm_auto, rrainm_accr )
@@ -142,6 +142,9 @@ module morrison_micro_driver_module
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+      hydromet_vel_covar    ! Covariance of V_xx and x_x (m-levs) [(m/s)(units)]
+
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
       wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
@@ -249,6 +252,10 @@ module morrison_micro_driver_module
     hydromet_sten(1:nz,:) = 0.0
     rcm_sten = 0.0
     Ncm_mc_r4 = 0.0
+
+    ! Set the covariances of hydrometeor sedimentation velocities and their
+    ! associated hydrometeors (for example, <V_rr'r_r'> and <V_Nr'N_r'>) to 0.
+    hydromet_vel_covar = 0.0_core_rknd
 
     ! Initialize effective radius to zero
     effc = 0.0

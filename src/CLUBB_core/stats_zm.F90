@@ -92,7 +92,9 @@ module stats_zm
           ivp2_pr2, & 
           ivp2_cl, & 
           ivp2_pd, & 
-          ivp2_sf, &
+          ivp2_sf
+
+    use stats_variables, only: & 
           iVNr,  & 
           iVrr, &
           iVNc, & 
@@ -101,7 +103,9 @@ module stats_zm
           iVrice, &
           iVNsnow, &
           iVrsnow, &
-          iVrgraupel
+          iVrgraupel, &
+          iVrrprrp, &
+          iVNrpNrp
 
     use stats_variables, only: & 
           iwp2_bt, & 
@@ -330,6 +334,10 @@ module stats_zm
     iVrgraupel  = 0
     iVNsnow    = 0
     iVrsnow    = 0
+
+    ! Covariance of sedimentation velocity and hydrometeor, <V_xx'x_x'>
+    iVrrprrp = 0
+    iVNrpNrp = 0
 
     ! Vertical velocity budgets
     iwp2_bt   = 0
@@ -750,6 +758,22 @@ module stats_zm
 
         call stat_assign(iVrice,"Vrice", & 
              "Cloud ice mixing ratio fallspeed [m/s]","m/s",zm)
+        k = k + 1
+
+      case ('Vrrprrp')
+        iVrrprrp = k
+
+        call stat_assign( iVrrprrp, "Vrrprrp", & 
+             "Covariance of V_rr (r_r sed. vel.) and r_r [(m/s)(kg/kg)]", &
+             "(m/s)(kg/kg)", zm )
+        k = k + 1
+
+      case ('VNrpNrp')
+        iVNrpNrp = k
+
+        call stat_assign( iVNrpNrp, "VNrpNrp", & 
+             "Covariance of V_Nr (N_r sed. vel.) and N_r [(m/s)(num/kg)]", &
+             "(m/s)(num/kg)", zm )
         k = k + 1
 
       case ('wp2_bt')

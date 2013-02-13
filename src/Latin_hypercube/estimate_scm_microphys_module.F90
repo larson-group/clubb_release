@@ -147,6 +147,9 @@ module estimate_scm_microphys_module
       Ncm,        & ! Cloud droplet concentration               [#/kg]
       Nc0           ! Constant cloud droplet conc. within cloud [#/kg]
 
+    real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
+      lh_hydromet_vel_covar    ! LH covariance of V_xx and x_x  [(m/s)(units)]
+
     real( kind = core_rknd ), dimension(nz) :: &
       lh_wprtp_mc_tndcy,   & ! LH micro. tendency for <w'rt'>   [m*(kg/kg)/s^2]
       lh_wpthlp_mc_tndcy,  & ! LH micro. tendency for <w'thl'>  [m*K/s^2]
@@ -270,7 +273,7 @@ module estimate_scm_microphys_module
              dzq, rc_column, Ncm, s_mellor_column, rv_column, Nc0, & ! In
              hydromet_columns, & ! In
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
-             lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
+             lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, lh_hydromet_vel_covar, & ! Out
              lh_wprtp_mc_tndcy, lh_wpthlp_mc_tndcy, & ! Out
              lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, lh_rtpthlp_mc_tndcy, & ! Out
              lh_rrainm_auto, lh_rrainm_accr ) ! Out
