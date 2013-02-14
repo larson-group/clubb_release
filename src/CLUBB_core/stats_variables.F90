@@ -335,6 +335,7 @@ module stats_variables
      irrainm_bt, &
      irrainm_ma, &
      irrainm_sd, &
+     irrainm_ts, &
      irrainm_sd_morr, &
      irrainm_dff, &
      irrainm_cond, &
@@ -345,7 +346,8 @@ module stats_variables
      irrainm_mc, &
      irrainm_cl
 
-!$omp   threadprivate(irrainm_bt, irrainm_ma, irrainm_sd, irrainm_sd_morr, irrainm_dff)
+!$omp   threadprivate(irrainm_bt, irrainm_ma, irrainm_sd, irrainm_ts)
+!$omp   threadprivate(irrainm_sd_morr, irrainm_dff)
 !$omp   threadprivate(irrainm_cond, irrainm_auto, irrainm_accr)
 !$omp   threadprivate(irrainm_cond_adj, irrainm_src_adj, irrainm_mc, irrainm_cl)
 
@@ -353,6 +355,7 @@ module stats_variables
      iNrm_bt, &
      iNrm_ma, &
      iNrm_sd, &
+     iNrm_ts, &
      iNrm_dff, &
      iNrm_cond, &
      iNrm_auto, &
@@ -361,7 +364,7 @@ module stats_variables
      iNrm_mc, &
      iNrm_cl
 
-!$omp   threadprivate(iNrm_bt, iNrm_ma, iNrm_sd, iNrm_dff, iNrm_cond)
+!$omp   threadprivate(iNrm_bt, iNrm_ma, iNrm_sd, iNrm_ts, iNrm_dff, iNrm_cond)
 !$omp   threadprivate(iNrm_auto, iNrm_cond_adj, iNrm_src_adj, iNrm_mc, iNrm_cl)
 
 

@@ -205,6 +205,7 @@ module stats_zt
         irrainm_bt, & 
         irrainm_ma, & 
         irrainm_sd, &
+        irrainm_ts, &
         irrainm_sd_morr, &
         irrainm_dff, & 
         irrainm_cond, & 
@@ -217,20 +218,21 @@ module stats_zt
         iNrm_bt, & 
         iNrm_ma, & 
         iNrm_sd, & 
+        iNrm_ts, & 
         iNrm_dff, & 
         iNrm_cond, & 
         iNrm_auto, & 
         iNrm_cond_adj, & 
         iNrm_src_adj, & 
         iNrm_mc, & 
-        iNrm_cl, & 
+        iNrm_cl
+
+    use stats_variables, only: & 
         irsnowm_bt, & 
         irsnowm_ma, & 
         irsnowm_sd, &
         irsnowm_sd_morr, &
-        irsnowm_dff
-
-    use stats_variables, only: & 
+        irsnowm_dff, &
         irsnowm_mc, & 
         irsnowm_cl, & 
         irgraupelm_bt, & 
@@ -246,7 +248,9 @@ module stats_zt
         iricem_sd_mg_morr, &
         iricem_dff, & 
         iricem_mc, & 
-        iricem_cl, & 
+        iricem_cl
+ 
+    use stats_variables, only: & 
         ivm_bt, & 
         ivm_ma, & 
         ivm_gf, & 
@@ -588,6 +592,7 @@ module stats_zt
     irrainm_bt       = 0
     irrainm_ma       = 0
     irrainm_sd       = 0
+    irrainm_ts       = 0
     irrainm_sd_morr  = 0
     irrainm_dff      = 0
     irrainm_cond     = 0
@@ -601,6 +606,7 @@ module stats_zt
     iNrm_bt       = 0
     iNrm_ma       = 0
     iNrm_sd       = 0
+    iNrm_ts       = 0
     iNrm_dff      = 0
     iNrm_cond     = 0
     iNrm_auto     = 0
@@ -1529,7 +1535,17 @@ module stats_zt
         irrainm_sd = k
 
         call stat_assign( irrainm_sd, "rrainm_sd", & 
-             "rrainm budget: rrainm sedimentation [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm sedimentation [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt )
+        k = k + 1
+
+      case ('rrainm_ts')
+        irrainm_ts = k
+
+        call stat_assign( irrainm_ts, "rrainm_ts", & 
+             "rrainm budget: rrainm turbulent sedimentation" &
+             //" (-d<V_rr'r_r'>/dz) [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_sd_morr')
@@ -1618,6 +1634,15 @@ module stats_zt
         call stat_assign( iNrm_sd, "Nrm_sd", & 
              "Nrm budget: Nrm sedimentation [(num/kg)/s]", "(num/kg)/s", zt )
 
+        k = k + 1
+
+      case ('Nrm_ts')
+        iNrm_ts = k
+
+        call stat_assign( iNrm_ts, "Nrm_ts", & 
+             "Nrm budget: Nrm turbulent sedimentation (-d<V_Nr'N_r'>/dz)" &
+             //" [(num/kg)/s]", &
+             "(num/kg)/s", zt )
         k = k + 1
 
       case ('Nrm_dff')

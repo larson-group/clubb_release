@@ -1740,32 +1740,43 @@ module microphys_driver
              hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
              lhs ) ! Out
 
+      ! Advance hydrometeor one time step.
       if ( trim( hydromet_list(i) ) == "Ncm" .and. l_in_cloud_Nc_diff ) then
+
         ! Ncm in cloud is computed above
         call microphys_solve &
-             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, lhs, &
-               hydromet_mc(:,i)/max( cloud_frac, cloud_frac_min ),  & 
-               Ncm_in_cloud, err_code )
+             ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, &
+               lhs, hydromet_mc(:,i)/max( cloud_frac, cloud_frac_min ), &
+               hydromet_vel_covar(:,i), Ncm_in_cloud, err_code )
 
         hydromet(:,iiNcm) = Ncm_in_cloud * max( cloud_frac, cloud_frac_min )
 
       else
-        call microphys_solve & 
+
+        call microphys_solve &
              ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, &
-               lhs, hydromet_mc(:,i), hydromet(:,i), err_code )
-      end if
+               lhs, hydromet_mc(:,i), hydromet_vel_covar(:,i), hydromet(:,i), &
+               err_code )
+
+      endif
 
       if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
+
         if ( i == iirrainm ) then
+
           ! Handle over-evaporation of rrainm and adjust rt and theta-l
           ! hydrometeor tendency arrays accordingly.
           do k = 1, gr%nz, 1
+
             if ( hydromet(k,i) < 0.0_core_rknd ) then
+
               l_sed = .true.
-              call adj_microphys_tndcy & 
-                 ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
-                   Kr, nu_r_vert_res_dep, dt, k, l_sed, & 
-                   hydromet(:,i), overevap_rate )
+
+              call adj_microphys_tndcy &
+                   ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), &
+                     hydromet_vel_zt(:,i), hydromet_vel_covar(:,i), &
+                     Kr, nu_r_vert_res_dep, dt, k, l_sed, & 
+                     hydromet(:,i), overevap_rate )
 
               ! overevap_rate is defined as positive.
               ! It is a correction factor.
@@ -1778,7 +1789,8 @@ module microphys_driver
 
                 call stat_update_var_pt( irrainm_cond_adj, k,  & 
                                          overevap_rate, zt )
-              end if
+
+              endif
 
             else
 
@@ -1786,41 +1798,52 @@ module microphys_driver
               if ( l_stats_samp ) then
 
                 call stat_update_var_pt( irrainm_cond_adj, k,  & 
-                                    0.0_core_rknd, zt )
-              end if
+                                         0.0_core_rknd, zt )
+
+              endif
               ! Joshua Faschinj December 2007
-            end if
+            endif
 
-          end do ! k=1..gr%nz
+          enddo ! k=1..gr%nz
 
-        else if ( i == iiNrm ) then
+        elseif ( i == iiNrm ) then
+
           ! Handle over-evaporation similar to rrainm.  However, in the case
           ! of Nrm there is no effect on rtm or on thlm.
           ! Brian Griffin.  April 14, 2007.
           do k = 1, gr%nz, 1
+
             if ( hydromet(k,i) < 0.0_core_rknd ) then
+
               l_sed = .true.
-              call adj_microphys_tndcy & 
-                   ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), hydromet_vel_zt(:,i), & 
+
+              call adj_microphys_tndcy &
+                   ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), &
+                     hydromet_vel_zt(:,i), hydromet_vel_covar(:,i), &
                      Kr, nu_r_vert_res_dep, dt, k, l_sed, & 
                      hydromet(:,i), overevap_rate )
 
               ! Moved from adj_microphys_tndcy
               if ( l_stats_samp ) then
+
                 call stat_update_var_pt( iNrm_cond_adj, k,  & 
                                          overevap_rate, zt )
-              end if
+
+              endif
+
             else
+
               if ( l_stats_samp ) then
                 call stat_update_var_pt( iNrm_cond_adj,k, 0.0_core_rknd, zt )
-              end if
+              endif
 
             end if ! Nrm(k) < 0
             ! Joshua Fasching December 2007
-          end do ! k = 1..gr%nz
+          enddo ! k = 1..gr%nz
 
-        end if ! i == rrainm else if i == Nrm
-      end if ! trim( micro_scheme  ) == khairoutdinov_kogan
+        endif ! i == rrainm else if i == Nrm
+
+      endif ! trim( micro_scheme  ) == khairoutdinov_kogan
 
       if ( l_stats_samp ) then
 
@@ -2037,8 +2060,8 @@ module microphys_driver
   end subroutine advance_microphys
 
 !===============================================================================
-  subroutine microphys_solve( solve_type, l_sed, dt, cloud_frac, lhs, & 
-                              xrm_tndcy, xrm, err_code )
+  subroutine microphys_solve( solve_type, l_sed, dt, cloud_frac, &
+                              lhs, xrm_tndcy, Vxrpxrp, xrm, err_code )
 
     ! Description:
     ! Solve the tridiagonal system for hydrometeor variable.
@@ -2065,6 +2088,7 @@ module microphys_driver
         zt,  & ! Variable(s)
         irrainm_ma, & 
         irrainm_sd, & 
+        irrainm_ts, & 
         irrainm_dff, & 
         iricem_ma, & 
         iricem_sd, & 
@@ -2089,6 +2113,7 @@ module microphys_driver
     use stats_variables, only: & 
         iNrm_ma, & 
         iNrm_sd, & 
+        iNrm_ts, & 
         iNrm_dff, & 
         iNim_ma, & 
         iNim_sd, & 
@@ -2114,97 +2139,137 @@ module microphys_driver
     real(kind=time_precision), intent(in) :: dt ! Timestep     [s]
 
     logical, intent(in) :: &
-      l_sed ! Whether sedimentation is included in lhs (T/F)
+      l_sed    ! Flag for hydrometeor sedimentation
 
     ! Explicit contrbution to the hydrometeor, e.g. evaporation
     ! from Brian Griffin's K & K microphysics implementation
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
-      xrm_tndcy, &  !                                 [units/s]
-      cloud_frac    ! Cloud fraction                  [-]
+      xrm_tndcy,  & ! Microphysics tendency (thermodynamic levels) [units/s]
+      Vxrpxrp,    & ! Covariance of V_xr and x_r (momentum levels) [(m/s) units]
+      cloud_frac    ! Cloud fraction (thermodynamic levels)        [-]
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(3,gr%nz) :: & 
-      lhs ! Left hand side
+      lhs   ! Left hand side
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
-      xrm ! Hydrometeor being solved for              [units vary]
+      xrm   ! Hydrometeor being solved for              [units vary]
 
     ! Output Variables
     integer, intent(out) :: err_code
 
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: & 
-      rhs ! Right hand side
+      rhs   ! Right hand side
 
     integer :: k, kp1, km1 ! Array indices
 
     integer :: & 
       ixrm_ma,  & ! Mean advection budget stats toggle
       ixrm_sd,  & ! Sedimentation budget stats toggle
+      ixrm_ts,  & ! Turbulent sedimentation budget stats toggle
       ixrm_dff    ! Diffusion budget stats toggle
 
     err_code = clubb_no_error  ! Initialize to the value for no errors
 
-    ! Initializing ixrm_ma, ixrm_sd, and ixrm_dff in order to avoid compiler
-    ! warnings.
+    ! Initializing ixrm_ma, ixrm_sd, ixrm_ts, and ixrm_dff in order to avoid
+    ! compiler warnings.
     ixrm_ma  = 0
     ixrm_sd  = 0
+    ixrm_ts  = 0
     ixrm_dff = 0
 
     select case( solve_type )
     case( "rrainm" )
       ixrm_ma  = irrainm_ma
       ixrm_sd  = irrainm_sd
+      ixrm_ts  = irrainm_ts
       ixrm_dff = irrainm_dff
     case( "ricem" )
       ixrm_ma  = iricem_ma
       ixrm_sd  = iricem_sd
+      ixrm_ts  = 0
       ixrm_dff = iricem_dff
     case( "rsnowm" )
       ixrm_ma  = irsnowm_ma
       ixrm_sd  = irsnowm_sd
+      ixrm_ts  = 0
       ixrm_dff = irsnowm_dff
     case( "rgraupelm" )
       ixrm_ma  = irgraupelm_ma
       ixrm_sd  = irgraupelm_sd
+      ixrm_ts  = 0
       ixrm_dff = irgraupelm_dff
     case( "Ncm" )
       ixrm_ma  = iNcm_ma
       ixrm_sd  = 0
+      ixrm_ts  = 0
       ixrm_dff = iNcm_dff
     case( "Nrm" )
       ixrm_ma  = iNrm_ma
       ixrm_sd  = iNrm_sd
+      ixrm_ts  = iNrm_ts
       ixrm_dff = iNrm_dff
     case( "Nim" )
       ixrm_ma  = iNim_ma
       ixrm_sd  = iNim_sd
+      ixrm_ts  = 0
       ixrm_dff = iNim_dff
     case( "Nsnowm" )
       ixrm_ma  = iNsnowm_ma
       ixrm_sd  = iNsnowm_sd
+      ixrm_ts  = 0
       ixrm_dff = iNsnowm_dff
     case( "Ngraupelm" )
       ixrm_ma  = iNgraupelm_ma
       ixrm_sd  = iNgraupelm_sd
+      ixrm_ts  = 0
       ixrm_dff = iNgraupelm_dff
     case default
       ixrm_ma  = 0
       ixrm_sd  = 0
+      ixrm_ts  = 0
       ixrm_dff = 0
     end select
 
 
     ! RHS of equation, following Brian's method from the rain subroutine
-    rhs(2:gr%nz-1)  & 
-      = (xrm(2:gr%nz-1) / real( dt, kind = core_rknd )  & ! Time tendency
-      + xrm_tndcy(2:gr%nz-1))
+    do k = 2, gr%nz, 1
 
+       km1 = max( k-1, 1 )
+       kp1 = min( k+1, gr%nz )
 
-    ! Boundary condition on the RHS
+       ! RHS time tendency.
+       rhs(k) = xrm(k) / real( dt, kind = core_rknd )
+
+       ! RHS microphysics tendency term (autoconversion, accretion, evaporation,
+       ! etc.).
+       rhs(k) = rhs(k) + xrm_tndcy(k)
+
+       ! RHS turbulent sedimentation ( - d<V_xr'x_r'> / dz ) term.
+       if ( l_sed ) then
+          rhs(k) = rhs(k) - gr%invrs_dzt(k) * ( Vxrpxrp(k) - Vxrpxrp(km1) )
+       endif
+
+       
+       if ( l_stats_samp ) then
+
+          ! Statistics: explicit contributions.
+
+          ! xrm term ts is completely explicit; call stat_update_var_pt.
+          if ( l_sed ) then
+             call stat_update_var_pt( ixrm_ts, k, &
+                                      - gr%invrs_dzt(k) &
+                                        * ( Vxrpxrp(k) - Vxrpxrp(km1) ), zt )
+          endif ! l_sed
+
+       endif ! l_stats_samp
+
+    enddo ! k = 2, gr%nz, 1
+    
+
+    ! Lower boundary conditions on the RHS
     rhs(1) = xrm(1) / real( dt, kind = core_rknd )
-    rhs(gr%nz) =  & 
-       ( xrm(gr%nz) / real( dt, kind = core_rknd ) + xrm_tndcy(gr%nz) )
 
 
     ! Solve system using tridag_solve. This uses LAPACK sgtsv,
@@ -2213,6 +2278,8 @@ module microphys_driver
          ( solve_type, gr%nz, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
            rhs, xrm, err_code )
 
+
+    ! Statistics
     if ( l_stats_samp ) then
 
       do k = 1, gr%nz, 1
@@ -2224,6 +2291,7 @@ module microphys_driver
 
         ! xrm term ma is completely implicit; call stat_update_var_pt.
         if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
+
           ! For Ncm, we divide by cloud_frac when entering the subroutine, but
           ! do not multiply until we return from the subroutine, so we must
           ! account for this here for the budget to balance
@@ -2231,12 +2299,15 @@ module microphys_driver
                 ztscr01(k) * xrm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
                 + ztscr02(k) * xrm(k) * max( cloud_frac(k), cloud_frac_min ) & 
                 + ztscr03(k) * xrm(kp1) * max( cloud_frac(k), cloud_frac_min ), zt)
+
         else
+
           call stat_update_var_pt( ixrm_ma, k, & 
                 ztscr01(k) * xrm(km1) & 
                 + ztscr02(k) * xrm(k) & 
                 + ztscr03(k) * xrm(kp1), zt)
-        end if
+
+        endif
 
         ! xrm term sd is completely implicit; call stat_update_var_pt.
         if ( l_sed ) then
@@ -2244,10 +2315,11 @@ module microphys_driver
                 ztscr04(k) * xrm(km1) & 
                 + ztscr05(k) * xrm(k) & 
                 + ztscr06(k) * xrm(kp1), zt )
-        end if
+        endif
 
         ! xrm term dff is completely implicit; call stat_update_var_pt.
         if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
+
           ! For Ncm, we divide by cloud_frac when entering the subroutine, but
           ! do not multiply until we return from the subroutine, so we must
           ! account for this here for the budget to balance
@@ -2255,16 +2327,19 @@ module microphys_driver
                 ztscr07(k) * xrm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
                 + ztscr08(k) * xrm(k) * max( cloud_frac(k), cloud_frac_min ) & 
                 + ztscr09(k) * xrm(kp1) * max( cloud_frac(k), cloud_frac_min ), zt )
+
         else
+
           call stat_update_var_pt( ixrm_dff, k, & 
                 ztscr07(k) * xrm(km1) & 
                 + ztscr08(k) * xrm(k) & 
                 + ztscr09(k) * xrm(kp1), zt )
-        end if
+
+        endif
 
       enddo ! 1..gr%nz
 
-    end if ! l_stats_samp
+    endif ! l_stats_samp
 
 
     ! Boundary conditions on results
@@ -2276,6 +2351,7 @@ module microphys_driver
     ! eMFc
 
     return
+
   end subroutine microphys_solve
 
 !===============================================================================
@@ -2928,8 +3004,9 @@ module microphys_driver
     return
   end function sed_upwind_diff_lhs
 !===============================================================================
-  subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, V_hmt, Kr, nu, & 
-                                  dt, level, l_sed, & 
+  subroutine adj_microphys_tndcy( xrm_tndcy, wm_zt, V_hm, &
+                                  V_hmt, Vxrpxrp, &
+                                  Kr, nu, dt, level, l_sed, & 
                                   xrm, overevap_rate )
 
     ! DESCRIPTION:  Correction for the over-evaporation of a hydrometeor.
@@ -3055,31 +3132,28 @@ module microphys_driver
     ! Input variables.
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      xrm_tndcy, & ! Hydrometeor microphysical tendency.                      [hm_units/s]
-      wm_zt,     & ! Vertical velocity (thermo. levels).                      [m/s]
-      V_hm,      & ! Sedimentation velocity (interpolated to moment. levels). [m/s]
-      V_hmt,     & ! Sedimentation velocity (thermo. levels).                 [m/s]
-      Kr           ! Eddy diffusivity for hydrometeors (m-lev).               [m^2/s]
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      nu  ! Diffusion coefficient      [m^2/s]
+      xrm_tndcy, & ! Hydrometeor microphysical tendency             [units/s]
+      wm_zt,     & ! Vertical velocity (thermo. levels)             [m/s]
+      V_hm,      & ! Sedimentation velocity (interp. to m-levs.)    [m/s]
+      V_hmt,     & ! Sedimentation velocity (thermo. levels)        [m/s]
+      Vxrpxrp,   & ! Covariance of V_xr and x_r (momentum levels)   [(m/s)units]
+      Kr,        & ! Eddy diffusivity for hydrometeors (m-lev)      [m^2/s]
+      nu           ! Diffusion coefficient                          [m^2/s]
 
     real(kind=time_precision), intent(in) :: dt  ! Timestep   [s]
 
     integer, intent(in) :: level  ! Vertical grid index
 
-    logical, intent(in) :: l_sed   ! Whether to add a sedimentation term
+    logical, intent(in) :: l_sed   ! Flag for hydrometeor sedimentation
 
 
     ! Input/output variable.
-
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      xrm  ! Hydrometeor.  [hm_units]
+      xrm    ! Hydrometeor    [units]
 
     ! Output variable.
-
-    ! Excess evaporation rate.
-    real( kind = core_rknd ), intent(out) :: overevap_rate                 ! [hm_units/s]
+    real( kind = core_rknd ), intent(out) :: &
+      overevap_rate    ! Excess evaporation rate    [units/s]
 
     ! Local variables.
     real( kind = core_rknd ) :: ma_subdiag   ! Term to be multiplied by xrm(k-1) in m.a. eq.
@@ -3092,9 +3166,10 @@ module microphys_driver
     real( kind = core_rknd ) :: df_maindiag  ! Term to be multiplied by xrm(k) in diff. eq.
     real( kind = core_rknd ) :: df_supdiag   ! Term to be multiplied by xrm(k+1) in diff. eq.
 
-    real( kind = core_rknd ) :: ma_tndcy     ! Mean advection tendency  [hm_units/s]
-    real( kind = core_rknd ) :: sd_tndcy     ! Sedimentation tendency   [hm_units/s]
-    real( kind = core_rknd ) :: df_tndcy     ! Diffusion tendency       [hm_units/s]
+    real( kind = core_rknd ) :: ma_tndcy     ! Mean advection tendency [units/s]
+    real( kind = core_rknd ) :: sd_tndcy     ! Sedimentation tendency  [units/s]
+    real( kind = core_rknd ) :: ts_tndcy     ! Turbulent sed. tendency [units/s]
+    real( kind = core_rknd ) :: df_tndcy     ! Diffusion tendency      [units/s]
 
     real( kind = core_rknd ) :: trnsprt_sed_tndcy ! Total transport and sedimentation tendency.
     real( kind = core_rknd ) :: tot_tndcy         ! Overall hydrometeor total tendency.
@@ -3184,6 +3259,12 @@ module microphys_driver
 
     end if
 
+    ! Turbulent sedimentation ( - d<V_xr'x_r'> / dz ) tendency component
+    if ( l_sed ) then
+      ts_tndcy = - gr%invrs_dzt(k) * ( Vxrpxrp(k) - Vxrpxrp(km1) )
+    else
+      ts_tndcy = 0.0_core_rknd
+    endif
 
     ! Diffusion tendency component
 
@@ -3205,7 +3286,7 @@ module microphys_driver
 
 
     ! Total transport and sedimentation tendency
-    trnsprt_sed_tndcy = ma_tndcy + df_tndcy + sd_tndcy
+    trnsprt_sed_tndcy = ma_tndcy + df_tndcy + sd_tndcy + ts_tndcy
 
     ! Overall hydrometeor tendency
     tot_tndcy = trnsprt_sed_tndcy + xrm_tndcy(k)
@@ -3225,6 +3306,7 @@ module microphys_driver
     xrm_trsed_only = xrm_old + xrm_chge_trsed
 
     if ( xrm_trsed_only >= 0.0_core_rknd ) then
+
       ! The negative value of hydrometeor (xrm) is due ONLY to microphysical
       ! tendencies, namely the over-evaporation of xrm.
       ! Find the actual amount of the hydrometeor that evaporated during the
@@ -3242,7 +3324,9 @@ module microphys_driver
       overevap_rate = overevap_amt / real( dt, kind = core_rknd )
       ! Reset the value of the hydrometeor (xrm) to 0.
       xrm(k) = 0.0_core_rknd
+
     else
+
       ! The negative value of hydrometeor (xrm) is due to transport (mean
       ! advection and diffusion) and sedimentation.  Find the actual amount of
       ! the hydrometeor that evaporated during the timestep to make the value
@@ -3265,7 +3349,9 @@ module microphys_driver
       ! and sedimentation, will be zeroed out in clipping in the subroutine
       ! that calls this one.
       xrm(k) = xrm_trsed_only
-    end if
+
+    endif
+
 
     return
   end subroutine adj_microphys_tndcy
