@@ -337,13 +337,13 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for in-cloud (default values are from SAM RF02 DO).
     rrp2_on_rrm2_cloud = 0.766_core_rknd
-    Nrp2_on_Nrm2_cloud    = 0.429_core_rknd
-    Ncp2_on_Ncm2_cloud    = 0.003_core_rknd
+    Nrp2_on_Nrm2_cloud = 0.429_core_rknd
+    Ncp2_on_Ncm2_cloud = 0.003_core_rknd
 
     ! Parameters for below-cloud (default values are from SAM RF02 DO).
     rrp2_on_rrm2_below = 8.97_core_rknd
-    Nrp2_on_Nrm2_below    = 12.03_core_rknd
-    Ncp2_on_Ncm2_below    = zero  ! Not applicable below cloud.
+    Nrp2_on_Nrm2_below = 12.03_core_rknd
+    Ncp2_on_Ncm2_below = zero  ! Not applicable below cloud.
 
     ! Other needed parameters
 
@@ -351,13 +351,13 @@ module microphys_driver
     ! for this.
     rsnowp2_on_rsnowm2_cloud = 0.766_core_rknd
     Nsnowp2_on_Nsnowm2_cloud = 0.429_core_rknd
-    ricep2_on_ricem2_cloud = 1.0_core_rknd
-    Nicep2_on_Nicem2_cloud = 1.0_core_rknd
+    ricep2_on_ricem2_cloud   = 1.0_core_rknd
+    Nicep2_on_Nicem2_cloud   = 1.0_core_rknd
 
     rsnowp2_on_rsnowm2_below = 0.766_core_rknd
     Nsnowp2_on_Nsnowm2_below = 0.429_core_rknd
-    ricep2_on_ricem2_below = 1.0_core_rknd
-    Nicep2_on_Nicem2_below = 1.0_core_rknd
+    ricep2_on_ricem2_below   = 1.0_core_rknd
+    Nicep2_on_Nicem2_below   = 1.0_core_rknd
 
     l_var_covar_src = .false.
 
@@ -1267,7 +1267,9 @@ module microphys_driver
     ! Initialize the values of the covariances of hydrometeor sedimentation
     ! velocities and their associated hydrometeors (for example, <V_rr'r_r'>
     ! and <V_Nr'N_r'>) to 0.
-    hydromet_vel_covar = zero
+    if ( hydromet_dim > 0 ) then
+       hydromet_vel_covar = zero
+    endif
 
     ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
     do k = 1, gr%nz, 1
@@ -1578,7 +1580,7 @@ module microphys_driver
     end select ! micro_scheme
 
     ! Statistics for covariances <V_rr'r_r'> and <V_Nr'N_r'>.
-    if ( l_stats_samp ) then
+    if ( l_stats_samp .and. hydromet_dim > 0 ) then
 
        ! Covariance of sedimentation velocity of r_r and r_r.
        call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrainm), zm )
