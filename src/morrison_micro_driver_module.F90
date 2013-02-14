@@ -128,11 +128,13 @@ module morrison_micro_driver_module
       rvm,          & ! Vapor water mixing ratio                  [kg/kg]
       Ncm_in_cloud    ! Constant cloud droplet conc. within cloud [#/kg] 
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
+    target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
+    target, intent(inout) :: &
       hydromet_mc,   & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel     ! Hydrometeor sedimentation velocity [m/s]
 
@@ -142,7 +144,8 @@ module morrison_micro_driver_module
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
+    target, intent(out) :: &
       hydromet_vel_covar    ! Covariance of V_xx and x_x (m-levs) [(m/s)(units)]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -204,6 +207,7 @@ module morrison_micro_driver_module
       dummy => hydromet
       dummy => hydromet_mc
       dummy => hydromet_vel
+      dummy => hydromet_vel_covar
       dummy_1D => pdf_params(:)%cloud_frac1
       rcm_in_cloud = dummy(:,1)
       rcm_in_cloud = s_mellor
