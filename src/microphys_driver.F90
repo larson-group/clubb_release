@@ -1972,46 +1972,65 @@ module microphys_driver
     end if ! l_stats_samp
 
     if ( l_stats_samp .and. iirrainm > 0 ) then
-      ! Rainfall rate (mm/day) should be defined on thermodynamic
-      ! levels.  -Brian
-      ! The absolute value of Vrr is taken because rainfall rate
-      ! is a scalar quantity, and is therefore positive.
-      call stat_update_var( irain_rate_zt,  & 
-         ( hydromet(:,iirrainm)  & 
-           * zm2zt( abs( hydromet_vel(:,iirrainm) ) ) ) & 
-           * ( rho / rho_lw ) & 
-           * real( sec_per_day, kind = core_rknd ) * mm_per_m, zt )
 
-      ! Precipitation Flux (W/m^2) should be defined on
-      ! momentum levels.  -Brian
-      ! Normally, a flux is a vector quantity.  Since rain obviously
-      ! falls downward, the sign of the flux would normally be negative.
-      ! However, it is generally a convention in meteorology to show
-      ! Precipitation Flux as a positive downward quantity.  Thus, the
-      ! absolute value of vrr is taken.
+      ! Rainfall rate (mm/day) is defined on thermodynamic levels.  The rainfall
+      ! rate is given by the equation:
+      ! Rainfall rate (mm/day) = - V_rr * r_r * ( rho_a / rho_lw )
+      !                            * ( 86400 s/day ) * ( 1000 mm/m ).
+      ! The level average rainfall rate is given by:
+      ! < Rainfall rate (mm/day) > = - < V_rr * r_r > * ( rho_a / rho_lw )
+      !                                * ( 86400 s/day ) * ( 1000 mm/m );
+      ! which can also be written as:
+      ! < Rainfall rate (mm/day) > = - ( < V_rr > * < r_r > + < V_rr'r_r' > )
+      !                                * ( rho_a / rho_lw )
+      !                                * ( 86400 s/day ) * ( 1000 mm/m ).
+      ! Rainfall rate is defined as positive.  Since V_rr is always negative,
+      ! the minus (-) sign is necessary.
+      call stat_update_var( irain_rate_zt,  & 
+                            - ( hydromet(:,iirrainm) &
+                                * zm2zt( hydromet_vel(:,iirrainm) ) &
+                                + zm2zt( hydromet_vel_covar(:,iirrainm) ) ) &
+                              * ( rho / rho_lw ) & 
+                              * real( sec_per_day, kind = core_rknd ) &
+                              * mm_per_m, zt )
+
+      ! Precipitation Flux (W/m^2) is defined on momentum levels.  The
+      ! precipitation flux is given by the equation:
+      ! Precip. flux (W/m^2) = - V_rr * r_r * rho_a * L_v.
+      ! The level average precipitation flux is given by:
+      ! < Precip. flux (W/m^2) > = - < V_rr * r_r > * rho_a * L_v;
+      ! which can also be written as:
+      ! < Precip. flux (W/m^2) > = - ( < V_rr > * < r_r > + < V_rr'r_r' > )
+      !                              * rho_a * L_v.
+      ! It is generally a convention in meteorology to show Precipitation Flux
+      ! as a positive downward quantity, so the minus (-) sign is necessary.
       call stat_update_var( iFprec,  & 
-           ( zt2zm( hydromet(:,iirrainm) )  & 
-             * abs( hydromet_vel(:,iirrainm) ) ) & 
-             * ( rho_zm / rho_lw ) * rho_lw * Lv, zm )
+                            - ( zt2zm( hydromet(:,iirrainm) )  & 
+                                * hydromet_vel(:,iirrainm) &
+                                + hydromet_vel_covar(:,iirrainm) ) & 
+                              * rho_zm * Lv, zm )
 
       ! Store values of surface fluxes for statistics
       ! See notes above.
       call stat_update_var_pt( irain_rate_sfc, 1,  & 
-           ( hydromet(2,iirrainm) & 
-             * abs( zm2zt( hydromet_vel(:,iirrainm), 2 ) ) ) & 
-             * ( rho(2) / rho_lw ) & 
-             * real( sec_per_day, kind = core_rknd ) * mm_per_m, sfc )
+                            - ( hydromet(2,iirrainm) &
+                                * zm2zt( hydromet_vel(:,iirrainm), 2 ) &
+                                + zm2zt( hydromet_vel_covar(:,iirrainm), 2 ) ) &
+                              * ( rho(2) / rho_lw ) & 
+                              * real( sec_per_day, kind = core_rknd ) &
+                              * mm_per_m, sfc )
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
-           ( zt2zm( hydromet(:,iirrainm), 1 )  & 
-             * abs( hydromet_vel(1,iirrainm) ) ) * ( rho_zm(1) / rho_lw )  & 
-             * rho_lw * Lv, sfc )
+                               - ( zt2zm( hydromet(:,iirrainm), 1 )  & 
+                                   * hydromet_vel(1,iirrainm) &
+                                   + hydromet_vel_covar(1,iirrainm) ) & 
+                                 * rho_zm(1) * Lv, sfc )
 
       ! Also store the value of surface rain water mixing ratio.
       call stat_update_var_pt( irrainm_sfc, 1,  & 
-           ( zt2zm( hydromet(:,iirrainm), 1 ) ), sfc )
+                               ( zt2zm( hydromet(:,iirrainm), 1 ) ), sfc )
 
-    end if ! l_stats_samp
+    endif ! l_stats_samp
 
     call stats_accumulate_hydromet( hydromet, rho_ds_zt )
 
