@@ -3673,9 +3673,9 @@ module clubb_driver
 
 #ifdef LATIN_HYPERCUBE
     !The algorithm for diagnosing the correlations only works with the KK microphysics by now. 
-    !<Changes by janhft 09/25/12>
+    !<Changes by janhft 02/19/13>
     if ( l_diagnose_correlations .and. ( (micro_scheme /= "khairoutdinov_kogan") &
-         .or. (LH_microphys_type /= LH_microphys_disabled) ) ) then
+         .and. (LH_microphys_type == LH_microphys_disabled) ) ) then
        write(fstderr,*) "Error: The diagnose_corr algorithm only works for KK microphysics by now."
        stop
     end if  

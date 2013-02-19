@@ -254,8 +254,6 @@ module diagnose_correlations_module
     corr_array(1, :) = corr_array(iiLH_w, :)
     corr_array(iiLH_w, :) = swap_array
 
-    print *, "inside corr_array = ", corr_array
-
   end subroutine diagnose_LH_corr
 
 !-----------------------------------------------------------------------

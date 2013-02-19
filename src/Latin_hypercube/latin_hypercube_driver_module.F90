@@ -465,7 +465,7 @@ module latin_hypercube_driver_module
              pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
              hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
              corr_array_cloud, corr_array_below, & ! In
-             X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In
+             X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), k, & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k = k_lh_start..nz
 
@@ -489,7 +489,7 @@ module latin_hypercube_driver_module
              pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
              hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
              corr_array_cloud, corr_array_below, & ! In
-             X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), & ! In
+             X_u_all_levs(k,:,:), X_mixt_comp_all_levs(k,:), k, & ! In
              LH_rt(k,:), LH_thl(k,:), X_nl_all_levs(k,:,:) ) ! Out
     end do ! k_lh_start-1..1
 
