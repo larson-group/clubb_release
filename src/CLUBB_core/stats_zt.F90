@@ -214,6 +214,8 @@ module stats_zt
         irrainm_cond_adj, & 
         irrainm_src_adj, & 
         irrainm_mc, & 
+        irrainm_hf, & 
+        irrainm_wvhf, & 
         irrainm_cl, & 
         iNrm_bt, & 
         iNrm_ma, & 
@@ -234,6 +236,8 @@ module stats_zt
         irsnowm_sd_morr, &
         irsnowm_dff, &
         irsnowm_mc, & 
+        irsnowm_hf, & 
+        irsnowm_wvhf, & 
         irsnowm_cl, & 
         irgraupelm_bt, & 
         irgraupelm_ma, & 
@@ -241,6 +245,8 @@ module stats_zt
         irgraupelm_sd_morr, &
         irgraupelm_dff, & 
         irgraupelm_mc, & 
+        irgraupelm_hf, & 
+        irgraupelm_wvhf, & 
         irgraupelm_cl, & 
         iricem_bt, & 
         iricem_ma, & 
@@ -248,6 +254,8 @@ module stats_zt
         iricem_sd_mg_morr, &
         iricem_dff, & 
         iricem_mc, & 
+        iricem_hf, &
+        iricem_wvhf, &
         iricem_cl
  
     use stats_variables, only: & 
@@ -601,6 +609,8 @@ module stats_zt
     irrainm_cond_adj = 0
     irrainm_src_adj  = 0
     irrainm_mc       = 0
+    irrainm_hf       = 0
+    irrainm_wvhf     = 0
     irrainm_cl       = 0
 
     iNrm_bt       = 0
@@ -642,6 +652,8 @@ module stats_zt
     irsnowm_sd_morr = 0
     irsnowm_dff     = 0
     irsnowm_mc      = 0
+    irsnowm_hf      = 0
+    irsnowm_wvhf    = 0
     irsnowm_cl      = 0
 
     irgraupelm_bt      = 0
@@ -650,6 +662,8 @@ module stats_zt
     irgraupelm_sd_morr = 0
     irgraupelm_dff     = 0
     irgraupelm_mc      = 0
+    irgraupelm_hf      = 0
+    irgraupelm_wvhf    = 0
     irgraupelm_cl      = 0
 
     iricem_bt         = 0
@@ -658,6 +672,8 @@ module stats_zt
     iricem_sd_mg_morr = 0
     iricem_dff        = 0
     iricem_mc         = 0
+    iricem_hf         = 0
+    iricem_wvhf       = 0
     iricem_cl         = 0
 
     iw_KK_evap_covar_zt   = 0
@@ -1600,10 +1616,25 @@ module stats_zt
              "[kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
+      case ('rrainm_hf')
+        irrainm_hf = k
+        call stat_assign( irrainm_hf, "rrainm_hf", & 
+             "rrainm budget: rrainm hole-filling term [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt )
+        k = k + 1
+
+      case ('rrainm_wvhf')
+        irrainm_wvhf = k
+        call stat_assign( irrainm_wvhf, "rrainm_wvhf", & 
+             "rrainm budget: rrainm water vapor hole-filling term [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt )
+        k = k + 1
+
       case ('rrainm_cl')
         irrainm_cl = k
         call stat_assign( irrainm_cl, "rrainm_cl", & 
-             "rrainm budget: rrainm clipping term [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+             "rrainm budget: rrainm clipping term [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_mc')
@@ -1737,6 +1768,21 @@ module stats_zt
              "rsnowm budget: Change in rsnowm due to microphysics [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
+      case ('rsnowm_hf')
+        irsnowm_hf = k
+
+        call stat_assign( irsnowm_hf, "rsnowm_hf", & 
+             "rsnowm budget: rsnowm hole-filling term [(kg/kg)/s]", "(kg/kg)/s", zt )
+        k = k + 1
+
+      case ('rsnowm_wvhf')
+        irsnowm_wvhf = k
+
+        call stat_assign( irsnowm_wvhf, "rsnowm_wvhf", & 
+             "rsnowm budget: rsnowm water vapor hole-filling term [(kg/kg)/s]", &
+             "(kg/kg)/s", zt )
+        k = k + 1
+
       case ('rsnowm_cl')
         irsnowm_cl = k
 
@@ -1831,6 +1877,21 @@ module stats_zt
              "ricem budget: Change in ricem due to microphysics [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
+      case ('ricem_hf')
+        iricem_hf = k
+
+        call stat_assign( iricem_hf, "ricem_hf", & 
+             "ricem budget: ricem hole-filling term [(kg/kg)/s]", "(kg/kg)/s", zt )
+        k = k + 1
+
+      case ('ricem_wvhf')
+        iricem_wvhf = k
+
+        call stat_assign( iricem_wvhf, "ricem_wvhf", & 
+             "ricem budget: ricem water vapor hole-filling term [(kg/kg)/s]", &
+             "(kg/kg)/s", zt )
+        k = k + 1
+
       case ('ricem_cl')
         iricem_cl = k
 
@@ -1882,11 +1943,28 @@ module stats_zt
              "(kg/kg)/s", zt )
         k = k + 1
 
+      case ('rgraupelm_hf')
+        irgraupelm_hf = k
+
+        call stat_assign( irgraupelm_hf, "rgraupelm_hf", & 
+             "rgraupelm budget: rgraupelm hole-filling term [(kg/kg)/s]", &
+             "(kg/kg)/s", zt )
+        k = k + 1
+
+      case ('rgraupelm_wvhf')
+        irgraupelm_wvhf = k
+
+        call stat_assign( irgraupelm_wvhf, "rgraupelm_wvhf", & 
+             "rgraupelm budget: rgraupelm water vapor hole-filling term [(kg/kg)/s]", &
+             "(kg/kg)/s", zt )
+        k = k + 1
+
       case ('rgraupelm_cl')
         irgraupelm_cl = k
 
         call stat_assign( irgraupelm_cl, "rgraupelm_cl", & 
-             "rgraupelm budget: rgraupelm clipping term [(kg/kg)/s]", "(kg/kg)/s", zt )
+             "rgraupelm budget: rgraupelm clipping term [(kg/kg)/s]", &
+             "(kg/kg)/s", zt )
         k = k + 1
 
       case ('Ngraupelm_bt')

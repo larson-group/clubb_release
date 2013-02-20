@@ -937,11 +937,11 @@ module microphys_driver
         morrison_micro_driver
 
     use mg_micro_driver_module, only: &
-      mg_microphys_driver
+        mg_microphys_driver
 
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_driver_module, only: &
-      LH_microphys_driver ! Procedure
+        LH_microphys_driver ! Procedure
 
 !   use latin_hypercube_arrays, only: &
 !     X_nl_all_levs, & ! Variable(s)
@@ -981,7 +981,7 @@ module microphys_driver
         mm_per_m
 
     use model_flags, only: &
-      l_hole_fill ! Variable(s)
+        l_hole_fill ! Variable(s)
 
     use clubb_precision, only:  & 
         time_precision, & ! Variable(s)
@@ -1006,62 +1006,72 @@ module microphys_driver
         iiNrm, iiNim, iiNcm
 
     use stats_variables, only: & 
-      iVrr,  & ! Variable(s)
-      iVNr, & 
-      iVrsnow, & 
-      iVrice, & 
-      iVrgraupel, &
-      iVrrprrp, &
-      iVNrpNrp, & 
-      irain_rate_zt, & 
-      iFprec, & 
-      irrainm_bt, & 
-      irrainm_mc, & 
-      irrainm_cond_adj, & 
-      irrainm_cl, & 
-      iNrm_bt, & 
-      iNrm_mc, & 
-      iNrm_cond_adj, & 
-      iNrm_cl, &
-      iNcm_in_cloud, &
-      iNc_activated, &
-      iNcnm, & 
-      iricem_bt, & 
-      iricem_mc, & 
-      iricem_cl, & 
-      irgraupelm_bt, & 
-      irgraupelm_mc, & 
-      irgraupelm_cl, & 
-      irsnowm_bt, & 
-      irsnowm_mc, & 
-      irsnowm_cl, & 
-      irain_rate_sfc, & 
-      irain_flux_sfc, & 
-      irrainm_sfc
+        iVrr,  & ! Variable(s)
+        iVNr, & 
+        iVrsnow, & 
+        iVrice, & 
+        iVrgraupel, &
+        iVrrprrp, &
+        iVNrpNrp, & 
+        irain_rate_zt, & 
+        iFprec
 
     use stats_variables, only: & 
-      iNim_bt, &
-      iNim_cl, &
-      iNim_mc, &
-      iNsnowm_bt, &
-      iNsnowm_cl, &
-      iNsnowm_mc, &
-      iNgraupelm_bt, &
-      iNgraupelm_cl, &
-      iNgraupelm_mc, &
-      iNcm_bt, & 
-      iNcm_cl, &
-      iNcm_mc, &
-      iNcm_act, &
-      iNcm
+        irrainm_bt,       & ! Variable(s)
+        irrainm_mc,       & 
+        irrainm_cond_adj, & 
+        irrainm_hf,       & 
+        irrainm_wvhf,     &
+        irrainm_cl,       &
+        iricem_bt,        & 
+        iricem_mc,        &
+        iricem_hf,        &
+        iricem_wvhf,      &
+        iricem_cl,        &
+        irgraupelm_bt,    &
+        irgraupelm_mc,    &
+        irgraupelm_hf,    &
+        irgraupelm_wvhf,  &
+        irgraupelm_cl,    &
+        irsnowm_bt,       & 
+        irsnowm_mc,       &
+        irsnowm_hf,       &
+        irsnowm_wvhf,     &
+        irsnowm_cl,       &
+        irain_rate_sfc,   & 
+        irain_flux_sfc,   & 
+        irrainm_sfc
+
+    use stats_variables, only: & 
+        iNrm_bt,       & ! Variable(s)
+        iNrm_mc,       &
+        iNrm_cond_adj, & 
+        iNrm_cl,       &
+        iNim_bt,       &
+        iNim_cl,       &
+        iNim_mc,       &
+        iNsnowm_bt,    &
+        iNsnowm_cl,    &
+        iNsnowm_mc,    &
+        iNgraupelm_bt, &
+        iNgraupelm_cl, &
+        iNgraupelm_mc, &
+        iNcm_in_cloud, &
+        iNc_activated, &
+        iNcnm,         &
+        iNcm_bt,       &
+        iNcm_cl,       &
+        iNcm_mc,       &
+        iNcm_act,      &
+        iNcm
 
     use stats_subs, only: & 
-     stats_accumulate_LH_tend ! Procedure(s)
+        stats_accumulate_LH_tend ! Procedure(s)
 
     use stats_variables, only: & 
-      LH_zt, & ! Variable(s)
-      iLH_Vrr, &
-      iLH_VNr
+        LH_zt, & ! Variable(s)
+        iLH_Vrr, &
+        iLH_VNr
 
     use stats_variables, only: & 
         zt, &  ! Variables
@@ -1070,35 +1080,37 @@ module microphys_driver
         l_stats_samp
 
     use stats_type, only: & 
-        stat_update_var, stat_update_var_pt, & ! Procedure(s)
-        stat_begin_update, stat_end_update
+        stat_update_var,    & ! Procedure(s)
+        stat_update_var_pt, &
+        stat_begin_update,  &
+        stat_end_update
 
     use stats_subs, only: &
         stats_accumulate_hydromet
 
     use fill_holes, only: &
-      vertical_avg, & ! Procedure(s)
-      fill_holes_driver
+        vertical_avg, & ! Procedure(s)
+        fill_holes_driver
 
     use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
-      pbuf_add,            &
-      pbuf_allocate,       &
-      pbuf_setval
+        pbuf_add,            &
+        pbuf_allocate,       &
+        pbuf_setval
 
     use shr_kind_mod, only: r8 => shr_kind_r8
 
     use parameters_microphys, only: &
-      LH_microphys_type, & ! Determines how the LH samples are used
-      LH_microphys_interactive,     & ! Feed the subcolumns into the microphysics and allow feedback
-      LH_microphys_non_interactive, & ! Feed the subcolumns into the microphysics with no feedback
-      LH_microphys_disabled           ! Disable latin hypercube entirely
+        LH_microphys_type, & ! Determines how the LH samples are used
+        LH_microphys_interactive,     & ! Feed the subcols into the microphys and allow feedback
+        LH_microphys_non_interactive, & ! Feed the subcols into the microphys with no feedback
+        LH_microphys_disabled           ! Disable latin hypercube entirely
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
-      d_variables ! Variable(s)
+        d_variables ! Variable(s)
 #else
 #define d_variables 0
 #endif /* LATIN_HYPERCUBE */
@@ -1225,7 +1237,7 @@ module microphys_driver
 
     integer :: i, k ! Loop iterators / Array indices
 
-    integer :: ixrm_cl, ixrm_bt, ixrm_mc
+    integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, ixrm_bt, ixrm_mc
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Ndrop_max  ! GFDL droplet activation concentration [#/kg]
@@ -1610,23 +1622,29 @@ module microphys_driver
 
       select case ( trim( hydromet_list(i) ) )
       case ( "rrainm" )
-        ixrm_bt = irrainm_bt
-        ixrm_cl = irrainm_cl
-        ixrm_mc = irrainm_mc
+        ixrm_bt   = irrainm_bt
+        ixrm_hf   = irrainm_hf
+        ixrm_wvhf = irrainm_wvhf
+        ixrm_cl   = irrainm_cl
+        ixrm_mc   = irrainm_mc
 
         max_velocity = -9.1_core_rknd ! m/s
 
       case ( "ricem" )
-        ixrm_bt = iricem_bt
-        ixrm_cl = iricem_cl
-        ixrm_mc = iricem_mc
+        ixrm_bt   = iricem_bt
+        ixrm_hf   = iricem_hf
+        ixrm_wvhf = iricem_wvhf
+        ixrm_cl   = iricem_cl
+        ixrm_mc   = iricem_mc
 
         max_velocity = -1.2_core_rknd ! m/s
 
       case ( "rsnowm" )
-        ixrm_bt = irsnowm_bt
-        ixrm_cl = irsnowm_cl
-        ixrm_mc = irsnowm_mc
+        ixrm_bt   = irsnowm_bt
+        ixrm_hf   = irsnowm_hf
+        ixrm_wvhf = irsnowm_wvhf
+        ixrm_cl   = irsnowm_cl
+        ixrm_mc   = irsnowm_mc
 
         ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
@@ -1636,30 +1654,38 @@ module microphys_driver
         max_velocity = -2.0_core_rknd ! m/s
 
       case ( "rgraupelm" )
-        ixrm_bt = irgraupelm_bt
-        ixrm_cl = irgraupelm_cl
-        ixrm_mc = irgraupelm_mc
+        ixrm_bt   = irgraupelm_bt
+        ixrm_hf   = irgraupelm_hf
+        ixrm_wvhf = irgraupelm_wvhf
+        ixrm_cl   = irgraupelm_cl
+        ixrm_mc   = irgraupelm_mc
 
         max_velocity = -20._core_rknd ! m/s
 
       case ( "Nrm" )
-        ixrm_bt = iNrm_bt
-        ixrm_cl = iNrm_cl
-        ixrm_mc = iNrm_mc
+        ixrm_bt   = iNrm_bt
+        ixrm_hf   = 0
+        ixrm_wvhf = 0
+        ixrm_cl   = iNrm_cl
+        ixrm_mc   = iNrm_mc
 
         max_velocity = -9.1_core_rknd ! m/s
 
       case ( "Nim" )
-        ixrm_bt = iNim_bt
-        ixrm_cl = iNim_cl
-        ixrm_mc = iNim_mc
+        ixrm_bt   = iNim_bt
+        ixrm_hf   = 0
+        ixrm_wvhf = 0
+        ixrm_cl   = iNim_cl
+        ixrm_mc   = iNim_mc
 
         max_velocity = -1.2_core_rknd ! m/s
 
       case ( "Nsnowm" )
-        ixrm_bt = iNsnowm_bt
-        ixrm_cl = iNsnowm_cl
-        ixrm_mc = iNsnowm_mc
+        ixrm_bt   = iNsnowm_bt
+        ixrm_hf   = 0
+        ixrm_wvhf = 0
+        ixrm_cl   = iNsnowm_cl
+        ixrm_mc   = iNsnowm_mc
 
         ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
@@ -1669,16 +1695,20 @@ module microphys_driver
         max_velocity = -2.0_core_rknd ! m/s
 
       case ( "Ngraupelm" )
-        ixrm_bt = iNgraupelm_bt
-        ixrm_cl = iNgraupelm_cl
-        ixrm_mc = iNgraupelm_mc
+        ixrm_bt   = iNgraupelm_bt
+        ixrm_hf   = 0
+        ixrm_wvhf = 0
+        ixrm_cl   = iNgraupelm_cl
+        ixrm_mc   = iNgraupelm_mc
 
         max_velocity = -20._core_rknd ! m/s
 
       case ( "Ncm" )
-        ixrm_bt = iNcm_bt
-        ixrm_cl = iNcm_cl
-        ixrm_mc = iNcm_mc
+        ixrm_bt   = iNcm_bt
+        ixrm_hf   = 0
+        ixrm_wvhf = 0
+        ixrm_cl   = iNcm_cl
+        ixrm_mc   = iNcm_mc
 
         ! Use the rain water limit, since Morrison has no explicit limit on
         ! cloud water.  Presumably these numbers are never large.
@@ -1686,9 +1716,11 @@ module microphys_driver
         max_velocity = -9.1_core_rknd ! m/s
 
       case default
-        ixrm_bt = 0
-        ixrm_cl = 0
-        ixrm_mc = 0
+        ixrm_bt   = 0
+        ixrm_hf   = 0
+        ixrm_wvhf = 0
+        ixrm_cl   = 0
+        ixrm_mc   = 0
 
         max_velocity = -9.1_core_rknd ! m/s
 
@@ -1740,7 +1772,7 @@ module microphys_driver
              hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
              lhs ) ! Out
 
-      ! Advance hydrometeor one time step.
+      !!!!! Advance hydrometeor one time step.
       if ( trim( hydromet_list(i) ) == "Ncm" .and. l_in_cloud_Nc_diff ) then
 
         ! Ncm in cloud is computed above
@@ -1845,93 +1877,149 @@ module microphys_driver
 
       endif ! trim( micro_scheme  ) == khairoutdinov_kogan
 
-      if ( l_stats_samp ) then
 
-        call stat_begin_update & 
-           ( ixrm_cl, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
-
-      end if
-
-      ! Clip all hydrometeor species to be >= zero
+      ! Print warning message if any hydrometeor species has a value < 0.
       if ( any( hydromet(:,i) < zero_threshold ) ) then
-        hydromet_name = hydromet_list(i)
-        if ( clubb_at_least_debug_level( 1 ) ) then
-          do k = 1, gr%nz
-            if ( hydromet(k,i) < zero_threshold ) then
-              write(fstderr,*) trim( hydromet_name ) //" < ", zero_threshold, &
-                " in advance_microphys at k= ", k
-            end if
-          end do
-        end if
 
-        ! If we're dealing with a mixing ratio and hole filling is enabled,
-        ! then we apply the hole filling algorithm
-        if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
-          ! Apply the hole filling algorithm
-          call fill_holes_driver( 2, zero_threshold, "zt", &
-                                 rho_ds_zt, rho_ds_zm, &
-                                 hydromet(:,i) )
+         hydromet_name = hydromet_list(i)
 
-          ! If the hole filling algorithm failed, then we attempt to fill
-          ! the missing mass with water vapor mixing ratio.
-          ! We noticed this is needed for ASEX A209, particularly if Latin
-          ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
-          do k = 2, gr%nz
-            if ( hydromet(k,i) < zero_threshold ) then
+         if ( clubb_at_least_debug_level( 1 ) ) then
+            do k = 1, gr%nz
+               if ( hydromet(k,i) < zero_threshold ) then
+                  write(fstderr,*) trim( hydromet_name ) //" < ", &
+                                   zero_threshold, &
+                                   " in advance_microphys at k= ", k
+               endif
+            enddo
+         endif
 
-              ! Set temp to the time tendency applied to vapor and removed
-              ! from the hydrometeor.
-              temp = hydromet(k,i) / real( dt, kind = core_rknd )
+      endif ! hydromet(:,i) < 0
 
-              ! Adjust the tendency rvm_mc accordingly
-              rvm_mc(k) = rvm_mc(k) + temp
+      ! Store the previous value of the hydrometeor for the effect of the
+      ! hole-filling scheme.
+      if ( l_stats_samp ) then
+         call stat_begin_update( ixrm_hf, hydromet(:,i) &
+                                          / real( dt, kind = core_rknd ), zt )
+      endif
 
-              ! Adjust the tendency of thlm_mc according to whether the effect
-              ! is an evaporation or sublimation tendency.
-              select case ( trim( hydromet_name ) )
-              case( "rrainm" )
-                thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
-              case( "ricem", "rsnowm", "rgraupelm" )
-                thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
-              case default
-                stop "Fatal error in microphys_driver"
-              end select
+      ! If we're dealing with a mixing ratio and hole filling is enabled,
+      ! then we apply the hole filling algorithm
+      if ( any( hydromet(:,i) < zero_threshold ) ) then
 
-              ! Set the mixing ratio to 0
-              hydromet(k,i) = zero_threshold
+         if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
 
-            end if ! hydromet(k,i) < 0
-          end do ! k = 2..gr%nz
+            ! Apply the hole filling algorithm
+            call fill_holes_driver( 2, zero_threshold, "zt", &
+                                    rho_ds_zt, rho_ds_zm, &
+                                    hydromet(:,i) )
 
-          ! Boundary condition
-          ! Rain, snow and graupel which is at the ghost point has presumably
-          ! sedimented out of the model domain, and is not conserved.
-          if ( hydromet(1,i) < zero_threshold ) then
-            hydromet(1,i) = zero_threshold
-          end if
+         endif ! Variable is a mixing ratio and l_hole_fill is true
 
-        else
-          ! This includes the case where the variable is a number
-          ! concentration and is therefore not conserved.
-          where ( hydromet(:,i) < zero_threshold )
-            hydromet(:,i) = zero_threshold
-          end where
+      endif ! hydromet(:,i) < 0
 
-        end if ! Variable is a mixing ratio and l_hole_fill is true
+      ! Enter the new value of the hydrometeor for the effect of the
+      ! hole-filling scheme.
+      if ( l_stats_samp ) then
+         call stat_end_update( ixrm_hf, hydromet(:,i) &
+                                        / real( dt, kind = core_rknd ), zt )
+      endif
 
-      end if ! hydromet(:,i) < 0
+      ! Store the previous value of the hydrometeor for the effect of the water
+      ! vapor hole-filling scheme.
+      if ( l_stats_samp ) then
+         call stat_begin_update( ixrm_wvhf, hydromet(:,i) &
+                                            / real( dt, kind = core_rknd ), zt )
+      endif
+
+      if ( any( hydromet(:,i) < zero_threshold ) ) then
+
+         if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
+
+            ! If the hole filling algorithm failed, then we attempt to fill
+            ! the missing mass with water vapor mixing ratio.
+            ! We noticed this is needed for ASEX A209, particularly if Latin
+            ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
+            do k = 2, gr%nz, 1
+
+               if ( hydromet(k,i) < zero_threshold ) then
+
+                  ! Set temp to the time tendency applied to vapor and removed
+                  ! from the hydrometeor.
+                  temp = hydromet(k,i) / real( dt, kind = core_rknd )
+
+                  ! Adjust the tendency rvm_mc accordingly
+                  rvm_mc(k) = rvm_mc(k) + temp
+
+                  ! Adjust the tendency of thlm_mc according to whether the
+                  ! effect is an evaporation or sublimation tendency.
+                  select case ( trim( hydromet_name ) )
+                  case( "rrainm" )
+                     thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
+                  case( "ricem", "rsnowm", "rgraupelm" )
+                     thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
+                  case default
+                     stop "Fatal error in microphys_driver"
+                  end select
+
+                  ! Set the mixing ratio to 0
+                  hydromet(k,i) = zero_threshold
+
+               endif ! hydromet(k,i) < 0
+
+            enddo ! k = 2..gr%nz
+
+         endif ! Variable is a mixing ratio and l_hole_fill is true
+
+      endif ! hydromet(:,i) < 0
+
+      ! Enter the new value of the hydrometeor for the effect of the water vapor
+      ! hole-filling scheme.
+      if ( l_stats_samp ) then
+         call stat_end_update( ixrm_wvhf, hydromet(:,i) &
+                                          / real( dt, kind = core_rknd ), zt )
+      endif
+
+      ! Store the previous value of the hydrometeor for the effect of clipping.
+      if ( l_stats_samp ) then
+         call stat_begin_update( ixrm_cl, hydromet(:,i) & 
+                                          / real( dt, kind = core_rknd ), zt )
+      endif
+
+      if ( any( hydromet(:,i) < zero_threshold ) ) then
+
+           ! Clip any remaining negative values of hydrometeors to 0.
+           ! This includes the case where the variable is a number
+           ! concentration and is therefore not conserved.
+           where ( hydromet(:,i) < zero_threshold )
+              hydromet(:,i) = zero_threshold
+           end where
+
+      endif ! hydromet(:,i) < 0
+
+      ! Enter the new value of the hydrometeor for the effect of clipping.
+      if ( l_stats_samp ) then
+         call stat_end_update( ixrm_cl, hydromet(:,i) &
+                                        / real( dt, kind = core_rknd ), zt )
+      endif
+
+
+      ! Lower boundary condition
+      ! Hydrometeors that are below the model lower boundary level have
+      ! sedimented out of the model domain, and is not conserved.
+      if ( hydromet(1,i) < zero_threshold ) then
+         hydromet(1,i) = zero_threshold
+      endif
+
 
       if ( l_stats_samp ) then
+         ! Total time tendency
+         call stat_end_update( ixrm_bt, hydromet(:,i) &
+                                        / real( dt, kind = core_rknd ), zt )
+      endif ! l_stats_samp
 
-        ! Effects of clipping
-        call stat_end_update( ixrm_cl, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
 
-        ! Total time tendency
-        call stat_end_update( ixrm_bt, hydromet(:,i) / real( dt, kind = core_rknd ), zt )
+    enddo ! i=1..hydromet_dim
 
-      end if ! l_stats_samp
-
-    end do ! i=1..hydromet_dim
 
     if ( l_cloud_sed ) then
 

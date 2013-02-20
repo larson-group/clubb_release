@@ -344,12 +344,15 @@ module stats_variables
      irrainm_cond_adj, &
      irrainm_src_adj, &
      irrainm_mc, &
+     irrainm_hf, &
+     irrainm_wvhf, &
      irrainm_cl
 
 !$omp   threadprivate(irrainm_bt, irrainm_ma, irrainm_sd, irrainm_ts)
 !$omp   threadprivate(irrainm_sd_morr, irrainm_dff)
 !$omp   threadprivate(irrainm_cond, irrainm_auto, irrainm_accr)
-!$omp   threadprivate(irrainm_cond_adj, irrainm_src_adj, irrainm_mc, irrainm_cl)
+!$omp   threadprivate(irrainm_cond_adj, irrainm_src_adj, irrainm_mc)
+!$omp   threadprivate(irrainm_hf, irrainm_wvhf, irrainm_cl)
 
   integer, public :: &
      iNrm_bt, &
@@ -376,10 +379,12 @@ module stats_variables
      irsnowm_sd_morr, &
      irsnowm_dff, & 
      irsnowm_mc, & 
+     irsnowm_hf, &
+     irsnowm_wvhf, &
      irsnowm_cl
 
 !$omp   threadprivate(irsnowm_bt, irsnowm_ma, irsnowm_sd, irsnowm_sd_morr, irsnowm_dff)
-!$omp   threadprivate(irsnowm_mc, irsnowm_cl)
+!$omp   threadprivate(irsnowm_mc, irsnowm_hf, irsnowm_wvhf, irsnowm_cl)
 
   integer, public :: & 
      irgraupelm_bt, & 
@@ -388,10 +393,13 @@ module stats_variables
      irgraupelm_sd_morr, &
      irgraupelm_dff, & 
      irgraupelm_mc, & 
+     irgraupelm_hf, &
+     irgraupelm_wvhf, &
      irgraupelm_cl
 
 !$omp   threadprivate(irgraupelm_bt, irgraupelm_ma, irgraupelm_sd, irgraupelm_sd_morr)
-!$omp   threadprivate(irgraupelm_dff, irgraupelm_mc, irgraupelm_cl)
+!$omp   threadprivate(irgraupelm_dff, irgraupelm_mc)
+!$omp   threadprivate(irgraupelm_hf, irgraupelm_wvhf, irgraupelm_cl)
 
   integer, public :: & 
      iricem_bt, & 
@@ -400,10 +408,12 @@ module stats_variables
      iricem_sd_mg_morr, &
      iricem_dff, & 
      iricem_mc, & 
+     iricem_hf, &
+     iricem_wvhf, &
      iricem_cl
 
 !$omp   threadprivate(iricem_bt, iricem_ma, iricem_sd, iricem_sd_mg_morr, iricem_dff)
-!$omp   threadprivate(iricem_mc, iricem_cl)
+!$omp   threadprivate(iricem_mc, iricem_hf, iricem_wvhf, iricem_cl)
 
   integer, public :: &
     iNsnowm_bt,  &
