@@ -1142,16 +1142,22 @@ module KK_microphys_module
         Ncp2_on_Ncm2_below
 
     use KK_fixed_correlations, only: &
-        corr_wrr_NL_cloud, & ! Variable(s) 
-        corr_wNr_NL_cloud, & 
-        corr_wNc_NL_cloud, & 
-        corr_sw_NN_cloud,  & 
-        corr_sNc_NL_cloud, &
-        corr_wrr_NL_below, & 
-        corr_wNr_NL_below, & 
-        corr_wNc_NL_below, & 
-        corr_sw_NN_below,  & 
-        corr_sNc_NL_below
+        corr_wrr_NL_cloud,  & ! Variable(s) 
+        corr_wNr_NL_cloud,  & 
+        corr_wNc_NL_cloud,  & 
+        corr_sw_NN_cloud,   & 
+        corr_sNc_NL_cloud,  &
+        corr_sNr_NL_cloud,  &
+        corr_srr_NL_cloud,  &
+        corr_rrNr_LL_cloud, &
+        corr_wrr_NL_below,  & 
+        corr_wNr_NL_below,  & 
+        corr_wNc_NL_below,  & 
+        corr_sw_NN_below,   & 
+        corr_sNc_NL_below,  &
+        corr_sNr_NL_below,  &
+        corr_srr_NL_below,  &
+        corr_rrNr_LL_below
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1321,10 +1327,20 @@ module KK_microphys_module
 
     if ( l_calc_w_corr ) then
 
-       corr_sw  = corr_sw_NN_cloud
-       corr_wrr = corr_wrr_NL_cloud
-       corr_wNr = corr_wNr_NL_cloud
-       corr_wNc = corr_wNc_NL_cloud
+      s_mellor_m = calc_mean( pdf_params%mixt_frac, pdf_params%s1, pdf_params%s2 )
+
+      stdev_s_mellor &
+        = sqrt( pdf_params%mixt_frac &
+                * ( ( pdf_params%s1 - s_mellor_m )**2 &
+                    + pdf_params%stdev_s1**2 ) &
+              + ( 1 - pdf_params%mixt_frac ) &
+                * ( ( pdf_params%s2 - s_mellor_m )**2 &
+                    + pdf_params%stdev_s2**2 ) )
+
+          corr_sw  = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
+          corr_wrr = calc_w_corr( wprrp, stdev_w, sigma_rr, w_tol, rr_tol )
+          corr_wNr = calc_w_corr( wpNrp, stdev_w, sigma_Nr, w_tol, Nr_tol )
+          corr_wNc = calc_w_corr( wpNcp, stdev_w, sigma_Nc, w_tol, Nc_tol )
       
     else ! .not. l_calc_w_corr
 
@@ -1349,25 +1365,6 @@ module KK_microphys_module
 
     if ( l_diagnose_correlations ) then
 
-       if ( l_calc_w_corr ) then
-
-          s_mellor_m = calc_mean( pdf_params%mixt_frac, pdf_params%s1, pdf_params%s2 )
-
-          stdev_s_mellor &
-          = sqrt( pdf_params%mixt_frac &
-                  * ( ( pdf_params%s1 - s_mellor_m )**2 &
-                      + pdf_params%stdev_s1**2 ) &
-                  + ( 1 - pdf_params%mixt_frac ) &
-                    * ( ( pdf_params%s2 - s_mellor_m )**2 &
-                        + pdf_params%stdev_s2**2 ) )
-
-          corr_sw  = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
-          corr_wrr = calc_w_corr( wprrp, stdev_w, sigma_rr, w_tol, rr_tol )
-          corr_wNr = calc_w_corr( wpNrp, stdev_w, sigma_Nr, w_tol, Nr_tol )
-          corr_wNc = calc_w_corr( wpNcp, stdev_w, sigma_Nc, w_tol, Nc_tol )
-
-       endif
-
        if ( rrainm > rr_tol ) then
           rrp2_on_rrm2 = (sigma_rr/mu_rr)**2
        else
@@ -1389,14 +1386,25 @@ module KK_microphys_module
           Ncp2_on_Ncm2 = zero
        endif
 
-       call diagnose_KK_corr( Ncm, rrainm, Nrm, &
-                              Ncp2_on_Ncm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
-                              corr_sw, corr_wrr, corr_wNr, corr_wNc,  &
-                              pdf_params, &
-                              corr_rrNr, corr_srr_1, &
-                              corr_sNr_1, corr_sNc_1, & 
-                              corr_rrNr, corr_srr_1, &
-                              corr_sNr_1, corr_sNc_1 )
+       if ( rcm > rc_tol ) then
+         call diagnose_KK_corr( Ncm, rrainm, Nrm, &
+                                Ncp2_on_Ncm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
+                                corr_sw, corr_wrr, corr_wNr, corr_wNc,  &
+                                pdf_params, &
+                                corr_rrNr_LL_cloud, corr_srr_NL_cloud, &
+                                corr_sNr_NL_cloud, corr_sNc_NL_cloud, & 
+                                corr_rrNr, corr_srr_1, &
+                                corr_sNr_1, corr_sNc_1 )
+       else
+         call diagnose_KK_corr( Ncm, rrainm, Nrm, &
+                                Ncp2_on_Ncm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
+                                corr_sw, corr_wrr, corr_wNr, corr_wNc,  &
+                                pdf_params, &
+                                corr_rrNr_LL_below, corr_srr_NL_below, &
+                                corr_sNr_NL_below, corr_sNc_NL_below, & 
+                                corr_rrNr, corr_srr_1, &
+                                corr_sNr_1, corr_sNc_1 )
+       endif
 
        corr_srr_2      = corr_srr_1
        corr_sNr_2      = corr_sNr_1

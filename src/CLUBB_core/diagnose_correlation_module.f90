@@ -81,7 +81,11 @@ module diagnose_correlations_module
       corr_ws,        &  ! Correlation between s_mellor and w    [-]
       corr_wrr,       &  ! Correlation between rrain and w       [-]
       corr_wNr,       &  ! Correlation between Nr and w          [-]
-      corr_wNc           ! Correlation between Nc and w          [-]
+      corr_wNc,       &  ! Correlation between Nc and w          [-]
+      corr_rrNr_p,    &  ! Prescribed correlation between rrain and Nr [-]
+      corr_srr_p,     &  ! Prescribed correlation between s and rrain  [-]
+      corr_sNr_p,     &  ! Prescribed correlation between s and Nr     [-]
+      corr_sNc_p         ! Prescribed correlation between s and Nc     [-]
       
     type(pdf_parameter), target, intent(in) :: &
       pdf_params    ! PDF parameters  [units vary]
@@ -91,11 +95,8 @@ module diagnose_correlations_module
       corr_rrNr,   &  ! Correlation between rrain and Nr [-]
       corr_srr,    &  ! Correlation between s and rrain  [-]
       corr_sNr,    &  ! Correlation between s and Nr     [-]
-      corr_sNc,    &  ! Correlation between s and Nc     [-]
-      corr_rrNr_p, &  ! Prescribed correlation between rrain and Nr [-]
-      corr_srr_p,  &  ! Prescribed correlation between s and rrain  [-]
-      corr_sNr_p,  &  ! Prescribed correlation between s and Nr     [-]
-      corr_sNc_p      ! Prescribed correlation between s and Nc     [-]
+      corr_sNc        ! Correlation between s and Nc     [-]
+
 
 
     ! Local Variables
@@ -139,14 +140,14 @@ module diagnose_correlations_module
     sqrt_xp2_on_xm2(ii_Nc) = sqrt(Ncp2_on_Ncm2)
 
     ! initialize the correlation matrix with 0
-    do i=2, n_variables
+    do i=1, n_variables
        do j=1, n_variables
           corr_matrix_approx(i,j) = 0
           corr_matrix_prescribed(i,j) = 0
        end do
     end do
 
-    ! set diagonal of the corraltion matrix to 1
+    ! set diagonal of the correlation matrix to 1
     do i = 1, n_variables
        corr_matrix_approx(i,i) = 1
        corr_matrix_prescribed(i,i) = 1
@@ -154,26 +155,64 @@ module diagnose_correlations_module
 
 
     ! set the first row to the corresponding prescribed correlations
-    corr_matrix_approx(1,ii_s) = corr_ws
-    corr_matrix_approx(1,ii_rrain) = corr_wrr
-    corr_matrix_approx(1,ii_Nr) = corr_wNr
-    corr_matrix_approx(1,ii_Nc) = corr_wNc
+    corr_matrix_approx(ii_s,1) = corr_ws
+    corr_matrix_approx(ii_rrain,1) = corr_wrr
+    corr_matrix_approx(ii_Nr,1) = corr_wNr
+    corr_matrix_approx(ii_Nc,1) = corr_wNc
 
     !corr_matrix_prescribed = corr_matrix_approx
 
     ! set up the prescribed correlation matrix
-    corr_matrix_prescribed(ii_rrain, ii_Nr) = corr_rrNr_p
-    corr_matrix_prescribed(ii_s, ii_rrain) = corr_srr_p
-    corr_matrix_prescribed(ii_s, ii_Nr) = corr_sNr_p
-    corr_matrix_prescribed(ii_s, ii_Nc) = corr_sNc_p
+    if( ii_rrain > ii_Nr ) then
+      corr_matrix_prescribed(ii_rrain, ii_Nr) = corr_rrNr_p
+    else
+      corr_matrix_prescribed(ii_Nr, ii_rrain) = corr_rrNr_p
+    end if
+
+    if ( ii_s > ii_rrain ) then
+      corr_matrix_prescribed(ii_s, ii_rrain) = corr_srr_p
+    else
+      corr_matrix_prescribed(ii_rrain, ii_s) = corr_srr_p
+    end if
+
+    if ( ii_s > ii_Nr ) then
+      corr_matrix_prescribed(ii_s, ii_Nr) = corr_sNr_p
+    else
+      corr_matrix_prescribed(ii_Nr, ii_s) = corr_sNr_p
+    end if
+
+    if ( ii_s > ii_Nc ) then
+      corr_matrix_prescribed(ii_s, ii_Nc) = corr_sNc_p
+    else
+      corr_matrix_prescribed(ii_Nc, ii_s) = corr_sNc_p
+    end if
     
     call diagnose_corr( n_variables, sqrt_xp2_on_xm2, corr_matrix_prescribed, & !intent(in)
                         corr_matrix_approx ) ! intent(inout)    
 
-    corr_rrNr = corr_matrix_approx(ii_rrain, ii_Nr)
-    corr_srr = corr_matrix_approx(ii_s, ii_rrain)
-    corr_sNr = corr_matrix_approx(ii_s, ii_Nr)
-    corr_sNc = corr_matrix_approx(ii_s, ii_Nc)
+    if( ii_rrain > ii_Nr ) then
+      corr_rrNr = corr_matrix_approx(ii_rrain, ii_Nr)
+    else
+      corr_rrNr = corr_matrix_approx(ii_Nr, ii_rrain)
+    end if
+
+    if ( ii_s > ii_rrain ) then
+      corr_srr = corr_matrix_approx(ii_s, ii_rrain)
+    else
+      corr_srr = corr_matrix_approx(ii_rrain, ii_s)
+    end if
+
+    if ( ii_s > ii_Nr ) then
+      corr_sNr = corr_matrix_approx(ii_s, ii_Nr)
+    else
+      corr_sNr = corr_matrix_approx(ii_Nr, ii_s)
+    end if
+
+    if ( ii_s > ii_Nc ) then
+      corr_sNc = corr_matrix_approx(ii_s, ii_Nc)
+    else
+      corr_sNc = corr_matrix_approx(ii_Nc, ii_s)
+    end if
 
   end subroutine diagnose_KK_corr
 
@@ -209,7 +248,7 @@ module diagnose_correlations_module
 
     implicit none
 
-    intrinsic :: max, sqrt
+    intrinsic :: max, sqrt, transpose
 
     ! Input Variables
     integer, intent(in) :: d_variables
@@ -233,26 +272,35 @@ module diagnose_correlations_module
 
     !-------------------- Begin code --------------------
 
-    print *, "d_variables = ", d_variables
+    print *, "corr_array before swapping: ", corr_array
 
     ! Swap the w-correlations to the first row
-    swap_array = corr_array(1,:)
-    corr_array(1, :) = corr_array(iiLH_w, :)
-    corr_array(iiLH_w, :) = swap_array
+    swap_array = corr_array(:, 1)
+    corr_array(1:iiLH_w, 1) = corr_array(iiLH_w, iiLH_w:1:-1)
+    corr_array((iiLH_w+1):d_variables, 1) = corr_array((iiLH_w+1):d_variables, iiLH_w)
+    corr_array(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+    corr_array((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
 
     corr_matrix_pre_swapped = corr_matrix_prescribed
-    swap_array = corr_matrix_pre_swapped (1,:)
-    corr_matrix_pre_swapped(1, :) = corr_matrix_pre_swapped(iiLH_w, :)
-    corr_matrix_pre_swapped(iiLH_w, :) = swap_array
+    swap_array = corr_matrix_pre_swapped (:,1)
+    corr_matrix_pre_swapped(1:iiLH_w, 1) = corr_matrix_pre_swapped(iiLH_w, iiLH_w:1:-1)
+    corr_matrix_pre_swapped((iiLH_w+1):d_variables, 1) = corr_matrix_pre_swapped( &
+                                                         (iiLH_w+1):d_variables, iiLH_w)
+    corr_matrix_pre_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+    corr_matrix_pre_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+
+    print *, "corr_array after swapping: ", corr_array
 
     ! diagnose correlations
     call diagnose_corr( d_variables, sqrt(xp2_on_xm2), corr_matrix_pre_swapped, &
                         corr_array)
 
     ! Swap rows back
-    swap_array = corr_array(1,:)
-    corr_array(1, :) = corr_array(iiLH_w, :)
-    corr_array(iiLH_w, :) = swap_array
+    swap_array = corr_array(:, 1)
+    corr_array(1:iiLH_w, 1) = corr_array(iiLH_w, iiLH_w:1:-1)
+    corr_array((iiLH_w+1):d_variables, 1) = corr_array((iiLH_w+1):d_variables, iiLH_w)
+    corr_array(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+    corr_array((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
 
   end subroutine diagnose_LH_corr
 
@@ -313,14 +361,14 @@ module diagnose_correlations_module
     ! calculate all square roots
     do i = 1, n_variables
 
-       s_1j(i) = sqrt(1._core_rknd-corr_matrix_approx(1,i)**2)
+       s_1j(i) = sqrt(1._core_rknd-corr_matrix_approx(i,1)**2)
 
     end do
 
 
     ! Diagnose the missing correlations (upper triangle)
-    do i = 2, (n_variables-1)
-      do j = (i+1), n_variables
+    do j = 2, (n_variables-1)
+      do i = (j+1), n_variables
 
         ! formula (16) in the ref. paper (Larson et al. (2011))
         !f_ij = alpha_corr * sqrt_xp2_on_xm2(i) * sqrt_xp2_on_xm2(j) &
@@ -347,7 +395,7 @@ module diagnose_correlations_module
 
 
         ! formula (15) in the ref. paper (Larson et al. (2011))
-        corr_matrix_approx(i,j) = corr_matrix_approx(1,i) * corr_matrix_approx(1,j) &
+        corr_matrix_approx(i,j) = corr_matrix_approx(i,1) * corr_matrix_approx(j,1) &
         + f_ij * s_1j(i) * s_1j(j)
 
       end do ! do j
