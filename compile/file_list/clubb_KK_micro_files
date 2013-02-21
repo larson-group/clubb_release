@@ -12,4 +12,4 @@
 ../src/AiryFunction.f90
 ../src/Parabolic.f90
 ../src/text_writer.F90
-../src/diagnose_correlation_module.f90
+../src/CLUBB_core/diagnose_correlation_module.f90
