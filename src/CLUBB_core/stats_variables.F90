@@ -83,7 +83,9 @@ module stats_variables
      iwpthlp2, & 
      iwp2thlp, & 
      iwprtp2, & 
-     iwp2rtp, & 
+     iwp2rtp
+ 
+  integer, public :: & 
      iLscale_up, & 
      iLscale_down, & 
      iLscale_pert_1, & 
