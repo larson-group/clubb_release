@@ -1198,7 +1198,8 @@ module microphys_driver
       hydromet_mc  ! Change in hydrometeors due to microphysics  [units/s]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
-      hydromet_vel_covar    ! Covariance of V_xx and x_x (m-levs) [(m/s)(units)]
+      hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
+      hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       delta_zt  ! Difference in thermo. height levels     [m]
@@ -1280,7 +1281,8 @@ module microphys_driver
     ! velocities and their associated hydrometeors (for example, <V_rr'r_r'>
     ! and <V_Nr'N_r'>) to 0.
     if ( hydromet_dim > 0 ) then
-       hydromet_vel_covar = zero
+       hydromet_vel_covar    = zero
+       hydromet_vel_covar_zt = zero
     endif
 
     ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
@@ -1483,7 +1485,8 @@ module microphys_driver
                exner, rho, cloud_frac, pdf_params, wtmp, &
                delta_zt, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
-               rcm_mc, rvm_mc, thlm_mc, hydromet_vel_covar, &
+               rcm_mc, rvm_mc, thlm_mc, &
+               hydromet_vel_covar, hydromet_vel_covar_zt, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,  &
                rrainm_auto, rrainm_accr )
@@ -1564,7 +1567,8 @@ module microphys_driver
                               delta_zt, rcm, Ncm, s_mellor, rvm, &
                               Ncm_in_cloud, hydromet, &
                               hydromet_mc, hydromet_vel_zt, &
-                              rcm_mc, rvm_mc, thlm_mc, hydromet_vel_covar, &
+                              rcm_mc, rvm_mc, thlm_mc, &
+                              hydromet_vel_covar, hydromet_vel_covar_zt, &
                               wprtp_mc_tndcy, wpthlp_mc_tndcy, & 
                               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
                               rrainm_auto, rrainm_accr )
@@ -2076,8 +2080,8 @@ module microphys_driver
       ! the minus (-) sign is necessary.
       call stat_update_var( irain_rate_zt,  & 
                             - ( hydromet(:,iirrainm) &
-                                * zm2zt( hydromet_vel(:,iirrainm) ) &
-                                + zm2zt( hydromet_vel_covar(:,iirrainm) ) ) &
+                                * hydromet_vel_zt(:,iirrainm) &
+                                + hydromet_vel_covar_zt(:,iirrainm) ) &
                               * ( rho / rho_lw ) & 
                               * real( sec_per_day, kind = core_rknd ) &
                               * mm_per_m, zt )
@@ -2102,8 +2106,8 @@ module microphys_driver
       ! See notes above.
       call stat_update_var_pt( irain_rate_sfc, 1,  & 
                             - ( hydromet(2,iirrainm) &
-                                * zm2zt( hydromet_vel(:,iirrainm), 2 ) &
-                                + zm2zt( hydromet_vel_covar(:,iirrainm), 2 ) ) &
+                                * hydromet_vel_zt(2,iirrainm) &
+                                + hydromet_vel_covar_zt(2,iirrainm) ) &
                               * ( rho(2) / rho_lw ) & 
                               * real( sec_per_day, kind = core_rknd ) &
                               * mm_per_m, sfc )

@@ -25,7 +25,8 @@ module KK_microphys_module
                               dzq, rcm, Ncm, s_mellor, rvm, Nc0_in_cloud, &
                               hydromet, &
                               hydromet_mc, hydromet_vel, &
-                              rcm_mc, rvm_mc, thlm_mc, hydromet_vel_covar, &
+                              rcm_mc, rvm_mc, thlm_mc, &
+                              hydromet_vel_covar, hydromet_vel_covar_zt,  &
                               wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
                               KK_auto_tndcy, KK_accr_tndcy )
@@ -180,7 +181,8 @@ module KK_microphys_module
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(out) :: &
-      hydromet_vel_covar    ! Covariance of V_xx and x_x (m-levs) [(m/s)(units)]
+      hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
+      hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
@@ -263,7 +265,7 @@ module KK_microphys_module
       Vrrprrp, & ! Covariance of V_rr and r_r (momentum levels)  [(m/s)(kg/kg)]
       VNrpNrp    ! Covariance of V_Nr and N_r (momentum levels)  [(m/s)(num/kg)]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(:), pointer :: &
       Vrrprrp_zt, & ! Covariance of V_rr and r_r; thermo. levs.  [(m/s)(kg/kg)]
       VNrpNrp_zt    ! Covariance of V_Nr and N_r; thermo. levs.  [(m/s)(num/kg)]
 
@@ -342,6 +344,9 @@ module KK_microphys_module
     ! associated hydrometeors (<V_rr'r_r'> and <V_Nr'N_r'>).
     Vrrprrp => hydromet_vel_covar(:,iirrainm)
     VNrpNrp => hydromet_vel_covar(:,iiNrm)
+
+    Vrrprrp_zt => hydromet_vel_covar_zt(:,iirrainm)
+    VNrpNrp_zt => hydromet_vel_covar_zt(:,iiNrm)
 
     if ( .not. l_local_kk ) then
        l_upscaled = .true.
