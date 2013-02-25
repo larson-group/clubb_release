@@ -133,26 +133,26 @@
 
        {'plotTitle' => 'rtm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_bt', 'expression' => 'rtm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_ma', 'expression' => 'rtm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_ta', 'expression' => 'rtm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_mc', 'expression' => 'rtm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_clipping', 'expression' => 'rtm_mfl+rtm_cl+rtm_tacl+rtm_sdmp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_forcing', 'expression' => 'rtm_forcing-rtm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_pd', 'expression' => 'rtm_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_residual', 'expression' => 'rtm_bt-(rtm_ma+rtm_ta+rtm_mfl+rtm_cl+rtm_tacl+rtm_sdmp+rtm_forcing+rtm_pd)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_bt', 'expression' => 'rtm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_ma', 'expression' => 'rtm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_ta', 'expression' => 'rtm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_mc', 'expression' => 'rtm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_clipping', 'expression' => 'rtm_mfl+rtm_cl+rtm_tacl+rtm_sdmp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_forcing', 'expression' => 'rtm_forcing-rtm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_pd', 'expression' => 'rtm_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_residual', 'expression' => 'rtm_bt-(rtm_ma+rtm_ta+rtm_mfl+rtm_cl+rtm_tacl+rtm_sdmp+rtm_forcing+rtm_pd)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'thlm budgets', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_bt', 'expression' => 'thlm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_ma', 'expression' => 'thlm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_ta', 'expression' => 'thlm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_mc', 'expression' => 'thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_clipping', 'expression' => 'thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'lsforcing', 'expression' => 'thlm_forcing-radht-thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'radht', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-	  {'filename' => 'cgil_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_residual', 'expression' => 'thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_bt', 'expression' => 'thlm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_ma', 'expression' => 'thlm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_ta', 'expression' => 'thlm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_mc', 'expression' => 'thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_clipping', 'expression' => 'thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'lsforcing', 'expression' => 'thlm_forcing-radht-thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'radht', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_residual', 'expression' => 'thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]}
       
 
