@@ -3,6 +3,9 @@ function PlotCreator( caseName, caseType, plotTitle, plotNum, plotType, startTim
 %Add functions to be used in case files
 addpath('CaseFunctions');
 
+if (strcmp(plotTitle, 'HL 3D SAM Benchmark Budgets') || strcmp(plotTitle, 'QTO 3D SAM Benchmark Budgets') )
+	startHeight = 100;
+end
 %Display the variables that were passed in (debug output)
 ConsoleOutput.message(['Case Name: ' caseName]);
 ConsoleOutput.message(['Plot Title: ' plotTitle]);
