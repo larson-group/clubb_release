@@ -12,6 +12,26 @@
     'endHeight' => 2500.0, # [m]
     'plots' =>
     [
+       {'plotTitle' => 'HL 3D SAM Benchmark Budgets', 'axisLabel' => 'HL [K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'HLADV', 'expression' => 'HLADV/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'HLDIFF', 'expression' => 'HLDIFF/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '(-1/86400.)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'QTO 3D SAM Benchmark Budgets', 'axisLabel' => 'QTO [1/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QTOADV', 'expression' => 'QTOADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QTODIFF', 'expression' => 'QTODIFF/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QTOLSADV', 'expression' => 'QTOLSADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	      {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED+QTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
        {'plotTitle' => 'W2 SAM 3D Benchmark Budgets', 'axisLabel' => 'W2 [m^2/s^3]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'W2ADV', 'expression' => 'W2ADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -38,7 +58,6 @@
           {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QWADV', 'expression' => 'QWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QWDIFF', 'expression' => 'QWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QWB+P', 'expression' => 'QWBUOY + QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QWPRES', 'expression' => 'QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QWPREC', 'expression' => 'QWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'BOMEX_64x64x75_100m_40m_LES.nc', 'type' => 'auto', 'name' => 'QW\_RES', 'expression' => '-1*(QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
