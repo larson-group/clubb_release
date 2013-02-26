@@ -30,131 +30,133 @@ module stats_zm
         fstderr ! Constant(s)
 
     use stats_variables, only: & 
-          zm, & 
-          iwp2, & 
-          irtp2, & 
-          ithlp2, & 
-          irtpthlp, & 
-          iwprtp, & 
-          iwpthlp, & 
-          iwp3_zm, & 
-          iwp4, & 
-          iwpthvp, & 
-          irtpthvp, & 
-          ithlpthvp, & 
-          itau_zm, & 
-          iKh_zm, & 
-          iwprcp, & 
-          ithlprcp, & 
-          irtprcp, & 
-          ircp2, & 
-          iupwp, & 
-          ivpwp, & 
-          irho_zm, & 
-          isigma_sqd_w, &
-          irho_ds_zm, &
-          ithv_ds_zm, &
-          iem, & 
-          ishear, &
-          imean_w_up, &
-          imean_w_down, & 
-          iFrad, & 
-          iFrad_LW, & 
-          iFrad_SW, & 
-          iFrad_LW_up, & 
-          iFrad_SW_up, & 
-          iFrad_LW_down, & 
-          iFrad_SW_down, & 
-          iFprec, & 
-          iFcsed
+        zm, & 
+        iwp2, & 
+        irtp2, & 
+        ithlp2, & 
+        irtpthlp, & 
+        iwprtp, & 
+        iwpthlp, & 
+        iwp3_zm, & 
+        iwp4, & 
+        iwpthvp, & 
+        irtpthvp, & 
+        ithlpthvp, & 
+        itau_zm, & 
+        iKh_zm, & 
+        iwprcp, & 
+        ithlprcp, & 
+        irtprcp, & 
+        ircp2, & 
+        iupwp, & 
+        ivpwp, & 
+        irho_zm, & 
+        isigma_sqd_w, &
+        irho_ds_zm, &
+        ithv_ds_zm, &
+        iem, & 
+        ishear, &
+        imean_w_up, &
+        imean_w_down, & 
+        iFrad, & 
+        iFrad_LW, & 
+        iFrad_SW, & 
+        iFrad_LW_up, & 
+        iFrad_SW_up, & 
+        iFrad_LW_down, & 
+        iFrad_SW_down, & 
+        iFprec, & 
+        iFcsed
 
     use stats_variables, only: & 
-          iup2, & 
-          ivp2, & 
-          iup2_bt, & 
-          iup2_ta, & 
-          iup2_tp, & 
-          iup2_ma, & 
-          iup2_dp1, & 
-          iup2_dp2, & 
-          iup2_pr1, & 
-          iup2_pr2, & 
-          iup2_cl, & 
-          iup2_pd, &
-          iup2_sf, &
-          ivp2_bt, & 
-          ivp2_ta, & 
-          ivp2_tp, & 
-          ivp2_ma, & 
-          ivp2_dp1, & 
-          ivp2_dp2, & 
-          ivp2_pr1, & 
-          ivp2_pr2, & 
-          ivp2_cl, & 
-          ivp2_pd, & 
-          ivp2_sf
+        iup2, & 
+        ivp2, & 
+        iup2_bt, & 
+        iup2_ta, & 
+        iup2_tp, & 
+        iup2_ma, & 
+        iup2_dp1, & 
+        iup2_dp2, & 
+        iup2_pr1, & 
+        iup2_pr2, & 
+        iup2_cl, & 
+        iup2_pd, &
+        iup2_sf, &
+        ivp2_bt, & 
+        ivp2_ta, & 
+        ivp2_tp, & 
+        ivp2_ma, & 
+        ivp2_dp1, & 
+        ivp2_dp2, & 
+        ivp2_pr1, & 
+        ivp2_pr2, & 
+        ivp2_cl, & 
+        ivp2_pd, & 
+        ivp2_sf
 
     use stats_variables, only: & 
-          iVNr,  & 
-          iVrr, &
-          iVNc, & 
-          iVrc, &
-          iVNice, & 
-          iVrice, &
-          iVNsnow, &
-          iVrsnow, &
-          iVrgraupel, &
-          iVrrprrp, &
-          iVNrpNrp
+        iVNr,  & 
+        iVrr, &
+        iVNc, & 
+        iVrc, &
+        iVNice, & 
+        iVrice, &
+        iVNsnow, &
+        iVrsnow, &
+        iVrgraupel, &
+        iVrrprrp, &
+        iVNrpNrp, &
+        iVrrprrp_net, &
+        iVNrpNrp_net
 
     use stats_variables, only: & 
-          iwp2_bt, & 
-          iwp2_ma, & 
-          iwp2_ta, & 
-          iwp2_ac, & 
-          iwp2_bp, & 
-          iwp2_pr1, & 
-          iwp2_pr2, & 
-          iwp2_pr3, & 
-          iwp2_dp1, & 
-          iwp2_dp2, &
-          iwp2_4hd, & 
-          iwp2_cl, & 
-          iwp2_pd, &
-          iwp2_sf
+        iwp2_bt, & 
+        iwp2_ma, & 
+        iwp2_ta, & 
+        iwp2_ac, & 
+        iwp2_bp, & 
+        iwp2_pr1, & 
+        iwp2_pr2, & 
+        iwp2_pr3, & 
+        iwp2_dp1, & 
+        iwp2_dp2, &
+        iwp2_4hd, & 
+        iwp2_cl, & 
+        iwp2_pd, &
+        iwp2_sf
 
     use stats_variables, only: & 
-          iwprtp_bt, & 
-          iwprtp_ma, & 
-          iwprtp_ta, & 
-          iwprtp_tp, & 
-          iwprtp_ac, & 
-          iwprtp_bp, & 
-          iwprtp_pr1, & 
-          iwprtp_pr2, & 
-          iwprtp_pr3, & 
-          iwprtp_dp1, & 
-          iwprtp_mfl, & 
-          iwprtp_cl, & 
-          iwprtp_sicl, & 
-          iwprtp_pd, &
-          iwprtp_forcing, & 
-          iwprtp_mc, & 
-          iwpthlp_bt, & 
-          iwpthlp_ma, & 
-          iwpthlp_ta, & 
-          iwpthlp_tp, & 
-          iwpthlp_ac, & 
-          iwpthlp_bp, & 
-          iwpthlp_pr1, & 
-          iwpthlp_pr2, & 
-          iwpthlp_pr3, & 
-          iwpthlp_dp1, & 
-          iwpthlp_mfl, & 
-          iwpthlp_cl, & 
-          iwpthlp_sicl, &
-          iwpthlp_forcing, &
-          iwpthlp_mc
+        iwprtp_bt, & 
+        iwprtp_ma, & 
+        iwprtp_ta, & 
+        iwprtp_tp, & 
+        iwprtp_ac, & 
+        iwprtp_bp, & 
+        iwprtp_pr1, & 
+        iwprtp_pr2, & 
+        iwprtp_pr3, & 
+        iwprtp_dp1, & 
+        iwprtp_mfl, & 
+        iwprtp_cl, & 
+        iwprtp_sicl, & 
+        iwprtp_pd, &
+        iwprtp_forcing, & 
+        iwprtp_mc, & 
+        iwpthlp_bt, & 
+        iwpthlp_ma, & 
+        iwpthlp_ta, & 
+        iwpthlp_tp, & 
+        iwpthlp_ac, & 
+        iwpthlp_bp, & 
+        iwpthlp_pr1, & 
+        iwpthlp_pr2, & 
+        iwpthlp_pr3, & 
+        iwpthlp_dp1, & 
+        iwpthlp_mfl, & 
+        iwpthlp_cl, & 
+        iwpthlp_sicl, &
+        iwpthlp_forcing, &
+        iwpthlp_mc
 
     use stats_variables, only: & 
         irtp2_bt, & 
@@ -202,12 +204,12 @@ module stats_zm
         iwprtp_mfl_max
 
     use stats_variables, only: & 
-      iwm_zm,  &  ! Variable
-      icloud_frac_zm, &
-      iice_supersat_frac_zm, &
-      ircm_zm, &
-      irtm_zm, &
-      ithlm_zm
+        iwm_zm,  &  ! Variable
+        icloud_frac_zm, &
+        iice_supersat_frac_zm, &
+        ircm_zm, &
+        irtm_zm, &
+        ithlm_zm
 
     use stats_variables, only: & 
         isclrprtp, & 
@@ -223,14 +225,14 @@ module stats_zm
         iwpedsclrp
 
     use stats_variables, only: &
-      ia3_coef, &
-      iwp3_on_wp2, &
-      iSkw_velocity, &
-      igamma_Skw_fnc, &
-      iC6rt_Skw_fnc, &
-      iC6thl_Skw_fnc, &
-      iC7_Skw_fnc, &
-      iC1_Skw_fnc
+        ia3_coef, &
+        iwp3_on_wp2, &
+        iSkw_velocity, &
+        igamma_Skw_fnc, &
+        iC6rt_Skw_fnc, &
+        iC6thl_Skw_fnc, &
+        iC7_Skw_fnc, &
+        iC1_Skw_fnc
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -331,13 +333,15 @@ module stats_zm
     iVrc       = 0
     iVNice     = 0
     iVrice     = 0
-    iVrgraupel  = 0
+    iVrgraupel = 0
     iVNsnow    = 0
     iVrsnow    = 0
 
     ! Covariance of sedimentation velocity and hydrometeor, <V_xx'x_x'>
-    iVrrprrp = 0
-    iVNrpNrp = 0
+    iVrrprrp     = 0
+    iVNrpNrp     = 0
+    iVrrprrp_net = 0
+    iVNrpNrp_net = 0
 
     ! Vertical velocity budgets
     iwp2_bt   = 0
@@ -774,6 +778,22 @@ module stats_zm
         call stat_assign( iVNrpNrp, "VNrpNrp", & 
              "Covariance of V_Nr (N_r sed. vel.) and N_r [(m/s)(num/kg)]", &
              "(m/s)(num/kg)", zm )
+        k = k + 1
+
+      case ('Vrrprrp_net')
+        iVrrprrp_net = k
+
+        call stat_assign( iVrrprrp_net, "Vrrprrp_net", & 
+             "Adjusted value of < V_rr'r_r' > (turb. sed. flux limiter)" &
+             //" [(m/s)(kg/kg)]", "(m/s)(kg/kg)", zm )
+        k = k + 1
+
+      case ('VNrpNrp_net')
+        iVNrpNrp_net = k
+
+        call stat_assign( iVNrpNrp_net, "VNrpNrp_net", & 
+             "Adjusted value of < V_Nr'N_r' > (turb. sed. flux limiter)" &
+             //" [(m/s)(num/kg)]", "(m/s)(num/kg)", zm )
         k = k + 1
 
       case ('wp2_bt')
