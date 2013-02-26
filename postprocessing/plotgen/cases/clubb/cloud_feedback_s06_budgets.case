@@ -12,40 +12,28 @@
     'endHeight' => 5950.0, # [m]
     'plots' =>
     [
-       {'plotTitle' => 'wp2 budgets', 'axisLabel' => '[m^2/s^3]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'thlm budgets', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_bt', 'expression' => 'wp2_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_ma', 'expression' => 'wp2_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_ta', 'expression' => 'wp2_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_ac', 'expression' => 'wp2_ac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_bp', 'expression' => 'wp2_bp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_pr1', 'expression' => 'wp2_pr1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_pr2', 'expression' => 'wp2_pr2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_pr3', 'expression' => 'wp2_pr3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_dp1', 'expression' => 'wp2_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_dp2', 'expression' => 'wp2_dp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_4hd', 'expression' => 'wp2_4hd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_cl', 'expression' => 'wp2_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_pd', 'expression' => 'wp2_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_sf', 'expression' => 'wp2_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_residual', 'expression' => 'wp2_bt - (wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 + wp2_4hd + wp2_cl + wp2_pd + wp2_sf)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_bt', 'expression' => 'thlm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_ma', 'expression' => 'thlm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_ta', 'expression' => 'thlm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_mc', 'expression' => 'thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_clipping', 'expression' => 'thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'lsforcing', 'expression' => 'thlm_forcing-radht-thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'radht', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_residual', 'expression' => 'thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'wp3 budgets', 'axisLabel' => '[m^{3} s^{-4}]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rtm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_bt', 'expression' => 'wp3_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_ma', 'expression' => 'wp3_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_ta', 'expression' => 'wp3_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_tp', 'expression' => 'wp3_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_ac', 'expression' => 'wp3_ac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_bp1', 'expression' => 'wp3_bp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_bp2', 'expression' => 'wp3_bp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_pr1', 'expression' => 'wp3_pr1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_pr2', 'expression' => 'wp3_pr2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_dp1', 'expression' => 'wp3_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_4hd', 'expression' => 'wp3_4hd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_cl', 'expression' => 'wp3_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_residual', 'expression' => 'wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_dp1 + wp3_4hd + wp3_cl)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_bt', 'expression' => 'rtm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_ma', 'expression' => 'rtm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_ta', 'expression' => 'rtm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_mc', 'expression' => 'rtm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_clipping', 'expression' => 'rtm_mfl+rtm_cl+rtm_tacl+rtm_sdmp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_forcing', 'expression' => 'rtm_forcing-rtm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_pd', 'expression' => 'rtm_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_residual', 'expression' => 'rtm_bt-(rtm_ma+rtm_ta+rtm_mfl+rtm_cl+rtm_tacl+rtm_sdmp+rtm_forcing+rtm_pd)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'wpthlp budgets', 'axisLabel' => '[(m K)/s^2]', 'type' => 'profile', 'lines' =>
@@ -85,6 +73,42 @@
           {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_pd', 'expression' => 'wprtp_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_forcing', 'expression' => 'wprtp_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_residual', 'expression' => 'wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd + wprtp_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'wp2 budgets', 'axisLabel' => '[m^2/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_bt', 'expression' => 'wp2_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_ma', 'expression' => 'wp2_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_ta', 'expression' => 'wp2_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_ac', 'expression' => 'wp2_ac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_bp', 'expression' => 'wp2_bp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_pr1', 'expression' => 'wp2_pr1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_pr2', 'expression' => 'wp2_pr2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_pr3', 'expression' => 'wp2_pr3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_dp1', 'expression' => 'wp2_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_dp2', 'expression' => 'wp2_dp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_4hd', 'expression' => 'wp2_4hd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_cl', 'expression' => 'wp2_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_pd', 'expression' => 'wp2_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_sf', 'expression' => 'wp2_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_residual', 'expression' => 'wp2_bt - (wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 + wp2_4hd + wp2_cl + wp2_pd + wp2_sf)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'wp3 budgets', 'axisLabel' => '[m^{3} s^{-4}]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_bt', 'expression' => 'wp3_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_ma', 'expression' => 'wp3_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_ta', 'expression' => 'wp3_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_tp', 'expression' => 'wp3_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_ac', 'expression' => 'wp3_ac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_bp1', 'expression' => 'wp3_bp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_bp2', 'expression' => 'wp3_bp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_pr1', 'expression' => 'wp3_pr1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_pr2', 'expression' => 'wp3_pr2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_dp1', 'expression' => 'wp3_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_4hd', 'expression' => 'wp3_4hd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_cl', 'expression' => 'wp3_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_residual', 'expression' => 'wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_dp1 + wp3_4hd + wp3_cl)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'thlp2 budgets', 'axisLabel' => '[(K^2)/s]', 'type' => 'profile', 'lines' =>
@@ -128,30 +152,6 @@
           {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp\_sf', 'expression' => 'rtpthlp_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp\_forcing', 'expression' => 'rtpthlp_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cloud_feedback_s6_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp\_residual', 'expression' => 'rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_sf + rtpthlp_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-
-       {'plotTitle' => 'rtm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_bt', 'expression' => 'rtm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_ma', 'expression' => 'rtm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_ta', 'expression' => 'rtm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_mc', 'expression' => 'rtm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_clipping', 'expression' => 'rtm_mfl+rtm_cl+rtm_tacl+rtm_sdmp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_forcing', 'expression' => 'rtm_forcing-rtm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_pd', 'expression' => 'rtm_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_residual', 'expression' => 'rtm_bt-(rtm_ma+rtm_ta+rtm_mfl+rtm_cl+rtm_tacl+rtm_sdmp+rtm_forcing+rtm_pd)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-       ]},
-
-       {'plotTitle' => 'thlm budgets', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_bt', 'expression' => 'thlm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_ma', 'expression' => 'thlm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_ta', 'expression' => 'thlm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_mc', 'expression' => 'thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_clipping', 'expression' => 'thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'lsforcing', 'expression' => 'thlm_forcing-radht-thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'radht', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-	  {'filename' => 'cloud_feedback_s6_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_residual', 'expression' => 'thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]}
       
 
