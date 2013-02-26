@@ -272,8 +272,6 @@ module diagnose_correlations_module
 
     !-------------------- Begin code --------------------
 
-    print *, "corr_array before swapping: ", corr_array
-
     ! Swap the w-correlations to the first row
     swap_array = corr_array(:, 1)
     corr_array(1:iiLH_w, 1) = corr_array(iiLH_w, iiLH_w:1:-1)
@@ -288,8 +286,6 @@ module diagnose_correlations_module
                                                          (iiLH_w+1):d_variables, iiLH_w)
     corr_matrix_pre_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
     corr_matrix_pre_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
-
-    print *, "corr_array after swapping: ", corr_array
 
     ! diagnose correlations
     call diagnose_corr( d_variables, sqrt(xp2_on_xm2), corr_matrix_pre_swapped, &
