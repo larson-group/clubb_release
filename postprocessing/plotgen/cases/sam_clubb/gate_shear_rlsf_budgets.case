@@ -19,6 +19,7 @@
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'HLSTOR', 'expression' => 'HLSTOR/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '(-1/86400.)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'QTO 3D SAM Benchmark Budgets', 'axisLabel' => 'QTO [1/s]', 'type' => 'profile', 'lines' =>
@@ -28,21 +29,12 @@
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QTOLSADV', 'expression' => 'QTOLSADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-	      {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QTSTOR', 'expression' => 'QTSTOR/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED+QTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'W2 3D SAM Benchmark Budgets', 'axisLabel' => 'W2 [m^2/s^3]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2ADV', 'expression' => 'W2ADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2PRES', 'expression' => 'W2PRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2REDIS', 'expression' => 'W2REDIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2BUOY', 'expression' => 'W2BUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2DIFF', 'expression' => 'W2DIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2\_RES', 'expression' => '-1*(W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-
-       {'plotTitle' => 'TW 3D SAM Benchmark Budgets', 'axisLabel' => 'TW [(m K)/s^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'TW SAM 3D Benchmark Budgets', 'axisLabel' => 'TW [(m K)/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'TWGRAD', 'expression' => 'TWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'TWADV', 'expression' => 'TWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -52,15 +44,26 @@
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'TW\_RES', 'expression' => '-1*(TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
-       {'plotTitle' => 'QW 3D SAM Benchmark Budgets', 'axisLabel' => 'QW [m/s^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'QW SAM 3D Benchmark Budgets', 'axisLabel' => 'QW [m/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QWGRAD', 'expression' => 'QWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QWADV', 'expression' => 'QWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QWDIFF', 'expression' => 'QWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QWB+P', 'expression' => 'QWBUOY + QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QWB+P', 'expression' => 'QWBUOY + QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QWPREC', 'expression' => 'QWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'QW\_RES', 'expression' => '-1*(QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+
+       {'plotTitle' => 'W2 SAM 3D Benchmark Budgets', 'axisLabel' => 'W2 [m^2/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2ADV', 'expression' => 'W2ADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2PRES', 'expression' => 'W2PRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2REDIS', 'expression' => 'W2REDIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2BUOY', 'expression' => 'W2BUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2DIFF', 'expression' => 'W2DIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'GATE_shear_rlsf_64x64x128_1km_5s.nc', 'type' => 'auto', 'name' => 'W2\_RES', 'expression' => '-1*(W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
 
        {'plotTitle' => 'T2 3D SAM Benchmark Budgets', 'axisLabel' => 'T2 [K^2/s]', 'type' => 'profile', 'lines' =>
        [

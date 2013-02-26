@@ -11,13 +11,15 @@
     'startHeight' => 0.0,  # [m]
     'endHeight' => 1550.0, # [m]
     'plots' =>
-    [       {'plotTitle' => 'HL 3D SAM Benchmark Budgets', 'axisLabel' => 'HL [K/s]', 'type' => 'profile', 'lines' =>
+    [
+       {'plotTitle' => 'HL 3D SAM Benchmark Budgets', 'axisLabel' => 'HL [K/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'HLADV', 'expression' => 'HLADV/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'HLDIFF', 'expression' => 'HLDIFF/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'HLSTOR', 'expression' => 'HLSTOR/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '(-1/86400.)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'QTO 3D SAM Benchmark Budgets', 'axisLabel' => 'QTO [1/s]', 'type' => 'profile', 'lines' =>
@@ -27,18 +29,9 @@
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QTOLSADV', 'expression' => 'QTOLSADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-	      {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QTSTOR', 'expression' => 'QTSTOR/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED+QTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-       ]},
-
-       {'plotTitle' => 'W2 SAM 3D Benchmark Budgets', 'axisLabel' => 'W2 [m^2/s^3]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2ADV', 'expression' => 'W2ADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2PRES', 'expression' => 'W2PRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2REDIS', 'expression' => 'W2REDIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2BUOY', 'expression' => 'W2BUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2DIFF', 'expression' => 'W2DIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2\_RES', 'expression' => '-1*(W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'TW SAM 3D Benchmark Budgets', 'axisLabel' => 'TW [(m K)/s^2]', 'type' => 'profile', 'lines' =>
@@ -56,12 +49,23 @@
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QWGRAD', 'expression' => 'QWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QWADV', 'expression' => 'QWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QWDIFF', 'expression' => 'QWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QWB+P', 'expression' => 'QWBUOY + QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QWB+P', 'expression' => 'QWBUOY + QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QWPREC', 'expression' => 'QWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'QW\_RES', 'expression' => '-1*(QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
-       {'plotTitle' => 'T2 SAM 3D Benchmark Budgets', 'axisLabel' => 'T2 [K^2/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'W2 SAM 3D Benchmark Budgets', 'axisLabel' => 'W2 [m^2/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2ADV', 'expression' => 'W2ADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2PRES', 'expression' => 'W2PRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2REDIS', 'expression' => 'W2REDIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2BUOY', 'expression' => 'W2BUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2DIFF', 'expression' => 'W2DIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'W2\_RES', 'expression' => '-1*(W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+
+       {'plotTitle' => 'T2 3D SAM Benchmark Budgets', 'axisLabel' => 'T2 [K^2/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'T2ADVTR', 'expression' => 'T2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'T2GRAD', 'expression' => 'T2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -71,7 +75,7 @@
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'T2\_RES', 'expression' => '-1*(T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
-       {'plotTitle' => 'Q2 SAM 3D Benchmark Budgets', 'axisLabel' => 'Q2 [1/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Q2 3D SAM Benchmark Budgets', 'axisLabel' => 'Q2 [1/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'Q2ADVTR', 'expression' => 'Q2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'p2k_s12_96x96x192_25m_DRZ_fixnudge.nc', 'type' => 'auto', 'name' => 'Q2GRAD', 'expression' => 'Q2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
