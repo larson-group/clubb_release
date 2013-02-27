@@ -59,7 +59,7 @@ module inputfields
     rams_file =1
 
   integer, parameter, private :: &
-    num_sam_inputfields = 64, & ! The number of input fields for SAM
+    num_sam_inputfields = 63, & ! The number of input fields for SAM
     num_coamps = 61, & ! The number of input fields for coamps
     num_rams_inputfields =  4 ! The number of input fields for the RAMS LES case
 
