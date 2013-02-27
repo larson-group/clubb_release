@@ -59,7 +59,7 @@ module inputfields
     rams_file =1
 
   integer, parameter, private :: &
-    num_sam_inputfields = 63, & ! The number of input fields for SAM
+    num_sam_inputfields = 64, & ! The number of input fields for SAM
     num_coamps = 61, & ! The number of input fields for coamps
     num_rams_inputfields =  4 ! The number of input fields for the RAMS LES case
 
@@ -1637,12 +1637,6 @@ module inputfields
 
       k = k + 1
 
-      SAM_variables(k)%l_input_var = l_input_rtpthlp
-      SAM_variables(k)%clubb_name = "rtpthlp"
-      SAM_variables(k)%input_name = "none"
-
-      k = k + 1
-
       SAM_variables(k)%l_input_var = l_input_upwp
       SAM_variables(k)%input_name = "UW"
       SAM_variables(k)%clubb_var => upwp
@@ -2026,6 +2020,17 @@ module inputfields
       SAM_variables(k)%adjustment = 1.0_core_rknd/sec_per_day
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      SAM_variables(k)%l_input_var = l_input_rtpthlp
+      SAM_variables(k)%clubb_name = "rtpthlp"
+      SAM_variables(k)%input_name = "TQ"
+      SAM_variables(k)%clubb_var => rtpthlp
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
 
       call get_input_variables_interp &
              (k, SAM_variables, timestep, &
