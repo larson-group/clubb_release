@@ -483,7 +483,9 @@ module generate_lh_sample_module
     end if
 
     ! Output the correlations to disk
-    call LH_stat_output( corr_array, d_variables, hgt_level )
+    if ( l_diagnose_correlations ) then
+      call LH_stat_output( corr_array, d_variables, hgt_level )
+    end if
 
     ! Compute PDF parameters for Nc, rr.
     ! Assume that Nc, rr obey single-lognormal distributions
@@ -2623,8 +2625,6 @@ module generate_lh_sample_module
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-
-    print *, "In stats_output corr_array = ", corr_array
 
     if ( iiLH_w > iiLH_s_mellor ) then
       call stat_update_var_pt( icorr_sw, level, corr_array(iiLH_w, iiLH_s_mellor), zt )
