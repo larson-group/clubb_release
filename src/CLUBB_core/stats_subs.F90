@@ -1427,7 +1427,7 @@ module stats_subs
                      wp2, wp3, rtp2, thlp2, rtpthlp, &
                      p_in_Pa, exner, rho, rho_zm, &
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, &
-                     thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, &
+                     thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef, &
                      rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac, &
                      cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
                      cloud_cover, sigma_sqd_w, pdf_params, &
@@ -1549,6 +1549,7 @@ module stats_subs
         itau_zm, & 
         iKh_zm, & 
         iwprcp, & 
+        irc_coef, &
         ithlprcp, & 
         irtprcp, & 
         ircp2, & 
@@ -1744,6 +1745,7 @@ module stats_subs
       thlm_zm,              & ! Liquid potential temperature             [K]
       rcm,                  & ! Cloud water mixing ratio                 [kg/kg]
       wprcp,                & ! w'rc'                                    [(kg/kg) m/s]
+      rc_coef,              & ! Coefficient of X' R_l' in Eq. (34)       [-]
       cloud_frac,           & ! Cloud fraction                           [-]
       ice_supersat_frac,    & ! Ice cloud fracion                        [-]
       cloud_frac_zm,        & ! Cloud fraction on zm levels              [-]
@@ -1921,6 +1923,7 @@ module stats_subs
       call stat_update_var( itau_zm, tau_zm, zm )
       call stat_update_var( iKh_zm, Kh_zm, zm )
       call stat_update_var( iwprcp, wprcp, zm )
+      call stat_update_var( irc_coef, rc_coef, zm )
       call stat_update_var( ithlprcp, thlprcp, zm )
       call stat_update_var( irtprcp, rtprcp, zm )
       call stat_update_var( ircp2, rcp2, zm )

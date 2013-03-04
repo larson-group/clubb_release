@@ -36,7 +36,8 @@ module pdf_closure_module
                thlprcp, rcp2, pdf_params,        &
                err_code,                         &
                wpsclrprtp, wpsclrp2, sclrpthvp,  &
-               wpsclrpthlp, sclrprcp, wp2sclrp   )
+               wpsclrpthlp, sclrprcp, wp2sclrp,  &
+               rc_coef                           )
 
 
 ! Description:
@@ -269,7 +270,7 @@ module pdf_closure_module
 
     ! Thermodynamic quantity
 
-    real( kind = core_rknd ) :: rc_coef
+    real( kind = core_rknd ), intent(out) :: rc_coef
 
     ! variables for a generalization of Chris Golaz' closure
     ! varies width of plumes in theta_l, rt

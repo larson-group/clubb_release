@@ -45,6 +45,7 @@ module stats_zm
         itau_zm, & 
         iKh_zm, & 
         iwprcp, & 
+        irc_coef, &
         ithlprcp, & 
         irtprcp, & 
         ircp2, & 
@@ -277,6 +278,7 @@ module stats_zm
     itau_zm       = 0
     iKh_zm        = 0
     iwprcp        = 0
+    irc_coef      = 0
     ithlprcp      = 0
     irtprcp       = 0
     ircp2         = 0
@@ -574,6 +576,12 @@ module stats_zm
         iwprcp = k
         call stat_assign(iwprcp,"wprcp", & 
              "w' rc' [(m/s) (kg/kg)]","(m/s) (kg/kg)",zm)
+        k = k + 1
+      
+      case ('rc_coef')
+        irc_coef = k
+        call stat_assign(irc_coef, "rc_coef", &
+            "Coefficient of X' R_l' in Eq. (34)", "[-]", zm)
         k = k + 1
 
       case ('thlprcp')
