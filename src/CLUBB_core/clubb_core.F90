@@ -1089,12 +1089,12 @@ module clubb_core
 
       ! Call length with perturbed values of thl and rt
       call compute_length( thvm, thlm_pert_pos, rtm_pert_pos, em, &  ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, mu_pert_neg, l_implemented, & ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu_pert_pos, l_implemented, & ! intent(in)
                            err_code, &                             ! intent(inout)
                            Lscale_pert_1, Lscale_up, Lscale_down ) ! intent(out)
 
       call compute_length( thvm, thlm_pert_neg, rtm_pert_neg, em,  & ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, mu_pert_pos, l_implemented, & ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu_pert_neg, l_implemented, & ! intent(in)
                            err_code, &                             ! intent(inout)
                            Lscale_pert_2, Lscale_up, Lscale_down ) ! intent(out)
     else
