@@ -1411,7 +1411,7 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine stats_accumulate_LH &
-             ( nz, n_micro_calls, d_variables, &
+             ( nz, n_micro_calls, d_variables, rho_ds_zt, &
                LH_sample_point_weights, X_nl_all_levs, LH_thl, LH_rt )
 ! Description:
 !   Clip subcolumns from latin hypercube and create stats for diagnostic
@@ -1422,6 +1422,8 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use parameters_model, only: hydromet_dim ! Variable
+
+    use grid_class, only: gr
 
     use stats_variables, only: &
       l_stats_samp, & ! Variable(s)
@@ -1448,14 +1450,18 @@ module latin_hypercube_driver_module
       iLH_rtp2_zt, &
       iLH_thlp2_zt, &
       iLH_rrainp2_zt, &
-      LH_zt
+      iLH_vwp, &
+      iLH_lwp, &
+      LH_zt, &
+      LH_sfc
 
     use math_utilities, only: &
       compute_sample_mean, & ! Procedure(s)
       compute_sample_variance
 
     use stats_type, only: &
-      stat_update_var ! Procedure(s)
+      stat_update_var, & ! Procedure(s)
+      stat_update_var_pt
 
     use array_index, only: &
       iirrainm, & ! Variables
@@ -1483,13 +1489,19 @@ module latin_hypercube_driver_module
       core_rknd, & ! Variable(s)
       dp
 
+   use fill_holes, only: &
+     vertical_integral ! Procedure(s)
+
     implicit none
 
     ! Input Variables
     integer, intent(in) :: &
       d_variables,     & ! Number of variables to sample
       n_micro_calls,   & ! Number of calls to microphysics per timestep (normally=2)
-      nz               ! Number of vertical model levels
+      nz                 ! Number of vertical model levels
+
+    real( kind = core_rknd ), intent(in), dimension(nz) :: &
+      rho_ds_zt  ! Dry, static density (thermo. levs.) [kg/m^3]
 
     real( kind = core_rknd ), intent(in), dimension(n_micro_calls) :: &
       LH_sample_point_weights
@@ -1528,6 +1540,8 @@ module latin_hypercube_driver_module
       LH_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
       LH_cloud_frac    ! Average value of the latin hypercube est. of cloud fraction    [-]
 
+    real(kind=core_rknd) :: xtmp
+
     integer :: sample, ivar
 
     ! ---- Begin Code ----
@@ -1540,10 +1554,19 @@ module latin_hypercube_driver_module
       ! For all cases where l_lh_cloud_weighted_sampling is false, the weights
       ! will be 1 (all points equally weighted)
 
-      if ( iLH_rcm + iLH_rcp2_zt > 0 ) then
+      if ( iLH_rcm + iLH_rcp2_zt + iLH_lwp > 0 ) then
         LH_rcm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                       rc_all_points )
         call stat_update_var( iLH_rcm, LH_rcm, LH_zt )
+
+        if ( iLH_lwp > 0 ) then
+          xtmp &
+          = vertical_integral &
+               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                 LH_rcm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+
+          call stat_update_var_pt( iLH_lwp, 1, xtmp, LH_sfc )
+        end if
       end if
 
       if ( iLH_thlm + iLH_thlp2_zt > 0 ) then
@@ -1557,6 +1580,14 @@ module latin_hypercube_driver_module
         LH_rvm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                       rv_all_points )
         call stat_update_var( iLH_rvm, LH_rvm, LH_zt )
+        if ( iLH_vwp > 0 ) then
+          xtmp &
+          = vertical_integral &
+               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
+                 LH_rvm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+
+          call stat_update_var_pt( iLH_vwp, 1, xtmp, LH_sfc )
+        end if
       end if
 
       if ( iLH_wm + iLH_wp2_zt > 0 ) then

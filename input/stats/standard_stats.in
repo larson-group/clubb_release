@@ -88,7 +88,7 @@ vars_LH_zt =
 ''
 
 vars_LH_sfc =
-'LH_morr_rain_rate', 'LH_morr_snow_rate',
+'LH_morr_rain_rate', 'LH_morr_snow_rate', 'LH_lwp', 'LH_vwp',
 ''
 
 vars_zm = 

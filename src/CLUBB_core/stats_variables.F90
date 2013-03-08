@@ -1014,6 +1014,11 @@ module stats_variables
     iLH_morr_snow_rate
 !$omp threadprivate( iLH_morr_rain_rate, iLH_morr_snow_rate )
 
+  integer, public :: & 
+    iLH_vwp, &
+    iLH_lwp
+!$omp threadprivate( iLH_vwp, iLH_lwp )
+
   ! Variables that contains all the statistics
 
   type (stats), target, public :: zt,   &    ! zt grid

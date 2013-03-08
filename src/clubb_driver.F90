@@ -3717,7 +3717,7 @@ module clubb_driver
              LH_sample_point_weights ) ! Out
 
       call stats_accumulate_LH &
-           ( gr%nz, LH_microphys_calls, d_variables, & ! In
+           ( gr%nz, LH_microphys_calls, d_variables, rho_ds_zt, & ! In
              LH_sample_point_weights,  X_nl_all_levs, LH_thl, LH_rt ) ! In
     end if ! LH_microphys_enabled
 
@@ -3727,7 +3727,7 @@ module clubb_driver
     LH_thl = -999._core_rknd
     X_mixt_comp_all_levs = -999
     LH_sample_point_weights = -999._core_rknd
-    if ( .false. .or. Lscale(1) < 0 ) print *, ""
+    if ( .false. .or. Lscale(1) < 0._core_rknd ) print *, ""
 #endif /* LATIN_HYPERCUBE */
 
     !----------------------------------------------------------------
