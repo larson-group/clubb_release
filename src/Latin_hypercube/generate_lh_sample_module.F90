@@ -43,11 +43,13 @@ module generate_lh_sample_module
 
 ! Assumptions:
 !   The l_fix_st_correlations = false code does not set the correlation 
-!   between Nc and the other variates.  This is because while we have data for the 
-!   correlation of e.g. s and Nc, s and rr, but not between Nc and rr;  it would
-!   not be possible to decompose the covariance matrix with zero
-!   correlation between rr and Nc if the correlation between s and Nc is
-!   non-zero and the code would have to halt.
+!   between Nc and the other variates (i.e. it assumes they are all zero).
+!   We do this is because while we have data for the 
+!   correlation of e.g. s & Nc and s & rr, we do not know the correlation of
+!   Nc and rr.
+!   It would not be possible to decompose a covariance matrix with zero
+!   correlation between rr and Nc when the correlation between s and Nc is
+!   non-zero, and the code would have to halt.
 !
 !   One implication of this is that if l_fix_st_correlations = false 
 !   then the correlation of s and Nc must be set to 
@@ -55,7 +57,7 @@ module generate_lh_sample_module
 !   SILHS solution against the analytic K&K solution.
 !
 !   The l_fix_st_correlation = true code does not have the above limitation
-!   and will use a value for the covariance of the s and t that is not necessarily 
+!   but will use a value for the covariance of the s and t that is not necessarily 
 !   equal to the one computed by the PDF, so setting the correlation of 
 !   s and Nc to zero is not needed.
 !   It will also fix the value of the correlation between s and t in the 
