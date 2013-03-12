@@ -1019,7 +1019,6 @@ module microphys_driver
     use stats_variables, only: & 
         irrainm_bt,       & ! Variable(s)
         irrainm_mc,       & 
-        irrainm_cond_adj, & 
         irrainm_hf,       & 
         irrainm_wvhf,     &
         irrainm_cl,       &
@@ -1045,7 +1044,6 @@ module microphys_driver
     use stats_variables, only: & 
         iNrm_bt,       & ! Variable(s)
         iNrm_mc,       &
-        iNrm_cond_adj, & 
         iNrm_cl,       &
         iNim_bt,       &
         iNim_cl,       &
@@ -1221,13 +1219,6 @@ module microphys_driver
     ! Kr = Constant * Kh_zm; Constant is named c_Krrainm.
     real( kind = core_rknd ), dimension(gr%nz) :: Kr   ! [m^2/s]
 
-    ! Variable needed to handle correction to rtm and thlm microphysics
-    ! tendency arrays, as well rrainm_cond and Nrm_cond statistical
-    ! tendency arrays, due to a negative result being produced by
-    ! over-evaporation of rain water over the course of a timestep.
-    ! Brian Griffin.  April 14, 2007.
-    real( kind = core_rknd ) :: overevap_rate ! Absolute value of negative evap. rate.
-
     real( kind = core_rknd ), dimension(gr%nz) :: &
       wtmp,    & ! Standard dev. of w                   [m/s]
       s_mellor   ! The variable 's' in Mellor (1977)    [kg/kg]
@@ -1256,7 +1247,7 @@ module microphys_driver
 
     character(len=10) :: hydromet_name
 
-    logical :: l_local_kk_input, l_latin_hypercube_input, l_sed
+    logical :: l_local_kk_input, l_latin_hypercube_input
 
 !-------------------------------------------------------------------------------
 
@@ -1795,91 +1786,6 @@ module microphys_driver
                err_code )
 
       endif
-
-      if ( trim( micro_scheme ) == "khairoutdinov_kogan" ) then
-
-        if ( i == iirrainm ) then
-
-          ! Handle over-evaporation of rrainm and adjust rt and theta-l
-          ! hydrometeor tendency arrays accordingly.
-          do k = 1, gr%nz, 1
-
-            if ( hydromet(k,i) < 0.0_core_rknd ) then
-
-              l_sed = .true.
-
-              call adj_microphys_tndcy &
-                   ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), &
-                     hydromet_vel_zt(:,i), hydromet_vel_covar(:,i), &
-                     Kr, nu_r_vert_res_dep, dt, k, l_sed, & 
-                     hydromet(:,i), overevap_rate )
-
-              ! overevap_rate is defined as positive.
-              ! It is a correction factor.
-              rcm_mc(k)  = rcm_mc(k) - overevap_rate
-
-              thlm_mc(k) = thlm_mc(k) + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
-
-              ! Moved from adj_microphys_tndcy
-              if ( l_stats_samp ) then
-
-                call stat_update_var_pt( irrainm_cond_adj, k,  & 
-                                         overevap_rate, zt )
-
-              endif
-
-            else
-
-
-              if ( l_stats_samp ) then
-
-                call stat_update_var_pt( irrainm_cond_adj, k,  & 
-                                         0.0_core_rknd, zt )
-
-              endif
-              ! Joshua Faschinj December 2007
-            endif
-
-          enddo ! k=1..gr%nz
-
-        elseif ( i == iiNrm ) then
-
-          ! Handle over-evaporation similar to rrainm.  However, in the case
-          ! of Nrm there is no effect on rtm or on thlm.
-          ! Brian Griffin.  April 14, 2007.
-          do k = 1, gr%nz, 1
-
-            if ( hydromet(k,i) < 0.0_core_rknd ) then
-
-              l_sed = .true.
-
-              call adj_microphys_tndcy &
-                   ( hydromet_mc(:,i), wm_zt, hydromet_vel(:,i), &
-                     hydromet_vel_zt(:,i), hydromet_vel_covar(:,i), &
-                     Kr, nu_r_vert_res_dep, dt, k, l_sed, & 
-                     hydromet(:,i), overevap_rate )
-
-              ! Moved from adj_microphys_tndcy
-              if ( l_stats_samp ) then
-
-                call stat_update_var_pt( iNrm_cond_adj, k,  & 
-                                         overevap_rate, zt )
-
-              endif
-
-            else
-
-              if ( l_stats_samp ) then
-                call stat_update_var_pt( iNrm_cond_adj,k, 0.0_core_rknd, zt )
-              endif
-
-            end if ! Nrm(k) < 0
-            ! Joshua Fasching December 2007
-          enddo ! k = 1..gr%nz
-
-        endif ! i == rrainm else if i == Nrm
-
-      endif ! trim( micro_scheme  ) == khairoutdinov_kogan
 
 
       ! Print warning message if any hydrometeor species has a value < 0.

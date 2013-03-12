@@ -103,15 +103,17 @@ module KK_microphys_module
         stat_update_var
 
     use stats_variables, only: & 
-        zt,              & ! Variable(s)
-        im_vol_rad_rain, &
-        irrainm_cond,    &
-        irrainm_auto,    &
-        irrainm_accr,    &
-        irrainm_src_adj, &
-        iNrm_cond,       &
-        iNrm_auto,       &
-        iNrm_src_adj,    &
+        zt,               & ! Variable(s)
+        im_vol_rad_rain,  &
+        irrainm_cond,     &
+        irrainm_auto,     &
+        irrainm_accr,     &
+        irrainm_src_adj,  &
+        irrainm_cond_adj, &
+        iNrm_cond,        &
+        iNrm_auto,        &
+        iNrm_src_adj,     &
+        iNrm_cond_adj,    &
         iprecip_frac
 
     use model_flags, only: &
@@ -285,8 +287,10 @@ module KK_microphys_module
                            ! for rain source terms                       [kg/kg]
 
     real( kind = core_rknd ), dimension(nz) ::  &
-      rrainm_src_adj, & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
-      Nrm_src_adj       ! Total adjustment to Nrm source terms     [(num/kg)/s]
+      rrainm_src_adj,  & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
+      Nrm_src_adj,     & ! Total adjustment to Nrm source terms     [(num/kg)/s]
+      rrainm_evap_net, & ! Net evaporation rate of <r_r>            [(kg/kg)/s]
+      Nrm_evap_net       ! Net evaporation rate of <N_r>            [(num/kg)/s]
 
     ! changes by janhft 10/04/12
     real( kind = core_rknd ), dimension(nz) ::  &
@@ -679,21 +683,47 @@ module KK_microphys_module
 
        endif
 
+       ! Prevent over-evaporation of rain over a long model time step.
+       ! Limit the evaporation rate.  The total amount of rain lost due to
+       ! evaporation cannot be so great as to result in negative rain.
+       ! Calculate net evaporation rate of <r_r>.
+       rrainm_evap_net(k) = max( KK_evap_tndcy(k), &
+                                 - rrainm(k) / real( dt, kind = core_rknd ) )
+
+       ! Recalcuate the net evaporation rate of <N_r> based on the net
+       ! evaporation rate of <r_r>.
+       if ( KK_evap_tndcy(k) /= rrainm_evap_net(k) .and. &
+            rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+          Nrm_evap_net(k) = KK_Nrm_evap( rrainm_evap_net(k), Nrm(k), rrainm(k) )
+       else
+          Nrm_evap_net(k) = KK_Nrm_evap_tndcy(k)
+       endif
+
+       Nrm_evap_net(k) = max( Nrm_evap_net(k), &
+                              - Nrm(k) / real( dt, kind = core_rknd ) )
+
+
        if ( l_stats_samp_in_sub ) then
 
           call stat_update_var_pt( irrainm_src_adj, k, rrainm_src_adj(k), zt )
 
           call stat_update_var_pt( iNrm_src_adj, k, Nrm_src_adj(k), zt )
 
+          call stat_update_var_pt( irrainm_cond_adj, k, &
+                                   rrainm_evap_net(k) - KK_evap_tndcy(k), zt )
+
+          call stat_update_var_pt( iNrm_cond_adj, k, &
+                                   Nrm_evap_net(k) - KK_Nrm_evap_tndcy(k), zt )
+
        endif ! l_stats_samp_in_sub
 
 
        !!! Calculate overall KK microphysics tendencies.
-       rrainm_mc_tndcy(k) = KK_evap_tndcy(k) + rrainm_source
-       Nrm_mc_tndcy(k)    = KK_Nrm_evap_tndcy(k) + Nrm_source
+       rrainm_mc_tndcy(k) = rrainm_evap_net(k) + rrainm_source
+       Nrm_mc_tndcy(k)    = Nrm_evap_net(k) + Nrm_source
 
        !!! Explicit contributions to thlm and rtm from the microphysics
-       rvm_mc(k)  = -KK_evap_tndcy(k)
+       rvm_mc(k)  = -rrainm_evap_net(k)
        rcm_mc(k)  = -rrainm_source  ! Accretion + Autoconversion
        thlm_mc(k) = ( Lv / ( Cp * exner(k) ) ) * rrainm_mc_tndcy(k)
 
