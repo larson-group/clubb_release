@@ -1043,11 +1043,11 @@ module clubb_core
 
       thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
       rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-      mu_pert_1  = mu * Lscale_mu_coef
+      mu_pert_1  = mu / Lscale_mu_coef
 
       thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
       rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-      mu_pert_2  = mu / Lscale_mu_coef
+      mu_pert_2  = mu * Lscale_mu_coef
 
       call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, &        ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
@@ -1084,8 +1084,8 @@ module clubb_core
         !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
       end where
 
-      mu_pert_pos  = mu * Lscale_mu_coef
-      mu_pert_neg  = mu / Lscale_mu_coef
+      mu_pert_pos  = mu / Lscale_mu_coef
+      mu_pert_neg  = mu * Lscale_mu_coef
 
       ! Call length with perturbed values of thl and rt
       call compute_length( thvm, thlm_pert_pos, rtm_pert_pos, em, &  ! intent(in)
