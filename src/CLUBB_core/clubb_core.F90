@@ -553,7 +553,8 @@ module clubb_core
       thlm_zm,              & ! Liquid potential temperature               [kg/kg]
       rcm_zm,               & ! Liquid water mixing ratio on momentum grid [kg/kg]
       wp2thvp_zm,           & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
-      wp2rcp_zm               ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
+      wp2rcp_zm,            & ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
+      sign_rtpthlp            ! sign of the covariance rtpthlp             [-]
 
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: & 
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
@@ -1060,15 +1061,19 @@ module clubb_core
                            Lscale_pert_2, Lscale_up, Lscale_down )     ! intent(out)
 
     else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
+      do k = 1, gr%nz, 1
+        sign_rtpthlp(k) = sign(1.0_core_rknd, rtpthlp(k))
+      end do
+
 
       ! Take the values of thl and rt based one 1st or 2nd plume
       where ( pdf_params%rt1 > pdf_params%rt2 )
         rtm_pert_pos_rt = pdf_params%rt1 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
         thlm_pert_pos_rt = pdf_params%thl1 &
-                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) )
+                     + sign_rtpthlp * Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) )
         thlm_pert_neg_rt = pdf_params%thl2 &
-                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) )
+                     - sign_rtpthlp * Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) )
         rtm_pert_neg_rt = pdf_params%rt2 & 
                      - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
         !Lscale_weight = pdf_params%mixt_frac
@@ -1076,9 +1081,9 @@ module clubb_core
         rtm_pert_pos_rt = pdf_params%rt2 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
         thlm_pert_pos_rt = pdf_params%thl2 &
-                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) )
+                     + sign_rtpthlp * Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) )
         thlm_pert_neg_rt = pdf_params%thl1 &
-                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) )
+                     - sign_rtpthlp * Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) )
         rtm_pert_neg_rt = pdf_params%rt1 & 
                      - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
         !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
