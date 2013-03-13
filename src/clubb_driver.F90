@@ -1086,15 +1086,15 @@ module clubb_driver
 
       ! Advance a microphysics scheme
       call advance_clubb_microphys &
-           ( itime, dt_main, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, & ! Intent(in)
-             rtm, rcm, wm_zt, wm_zm,                               & ! Intent(in)
-             Kh_zm, wp2_zt, Lscale, pdf_params,                    & ! Intent(in)
-             rho_ds_zt, rho_ds_zm,                                 & ! Intent(in)
-             Ncnm, hydromet,                                       & ! Intent(inout)
-             rvm_mc, rcm_mc, thlm_mc,                              & ! Intent(inout)
-             wprtp_mc_tndcy, wpthlp_mc_tndcy,                      & ! Intent(inout)
-             rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,      & ! Intent(inout)
-             err_code )                                              ! Intent(inout)
+           ( itime, dt_main, rho, rho_zm, p_in_Pa, exner,     & ! Intent(in)
+             cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
+             Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
+             rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt,           & ! Intent(in)
+             Ncnm, hydromet,                                  & ! Intent(inout)
+             rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
+             wprtp_mc_tndcy, wpthlp_mc_tndcy,                 & ! Intent(inout)
+             rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, & ! Intent(inout)
+             err_code )                                         ! Intent(inout)
 
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
@@ -3500,10 +3500,10 @@ module clubb_driver
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_microphys &
-             ( iter, dt, rho, rho_zm, p_in_Pa, exner, cloud_frac, thlm, &
-               rtm, rcm, wm_zt, wm_zm, &
+             ( iter, dt, rho, rho_zm, p_in_Pa, exner, &
+               cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm, &
                Kh_zm, wp2_zt, Lscale, pdf_params, &
-               rho_ds_zt,  rho_ds_zm, & 
+               rho_ds_zt,  rho_ds_zm, invrs_rho_ds_zt, & 
                Ncnm, hydromet, &
                rvm_mc, rcm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
@@ -3518,17 +3518,17 @@ module clubb_driver
 !-------------------------------------------------------------------------------
 
     use array_index, only: &
-      iiNcm ! Variable(s)
+        iiNcm ! Variable(s)
 
     use pdf_parameter_module, only: &
-      pdf_parameter ! Derived type
+        pdf_parameter ! Derived type
 
     use parameters_microphys, only: &
-      micro_scheme, Ncm_initial, &  ! Variables
-      LH_microphys_calls
+        micro_scheme, Ncm_initial, &  ! Variables
+        LH_microphys_calls
 
     use constants_clubb, only: & 
-      rc_tol, zero, fstderr ! Variable(s)
+        rc_tol, zero, fstderr ! Variable(s)
 
     use clubb_precision, only: time_precision, dp, core_rknd ! Variable(s)
 
@@ -3537,42 +3537,42 @@ module clubb_driver
     use parameters_model, only: hydromet_dim ! Variable(s)
 
     use pdf_parameter_module, only: &
-      pdf_parameter ! Type
+        pdf_parameter ! Type
 
     use error_code, only: &
-      fatal_error, &  ! Procedure(s)
-      clubb_at_least_debug_level, &
-      reportError
+        fatal_error, &  ! Procedure(s)
+        clubb_at_least_debug_level, &
+        reportError
 
     use grid_class, only: &
-      gr ! Instance of a type
+        gr ! Instance of a type
 
     use clubb_model_settings, only: &
-      time_current, & ! Variable(s)
-      runtype
+        time_current, & ! Variable(s)
+        runtype
 
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
-      xp2_on_xm2_array_cloud, &
-      xp2_on_xm2_array_below, &
-      corr_array_cloud, &
-      corr_array_below, &
-      d_variables
+        xp2_on_xm2_array_cloud, &
+        xp2_on_xm2_array_below, &
+        corr_array_cloud, &
+        corr_array_below, &
+        d_variables
 
     use parameters_microphys, only: &
-      LH_microphys_type, LH_microphys_disabled, & ! Variable(s)
-      l_lh_vert_overlap, LH_sequence_length, &
-      l_predictnc
+        LH_microphys_type, LH_microphys_disabled, & ! Variable(s)
+        l_lh_vert_overlap, LH_sequence_length, &
+        l_predictnc
 
     use latin_hypercube_driver_module, only: &
-      LH_subcolumn_generator, & ! Procedure(s)
-      stats_accumulate_LH
+        LH_subcolumn_generator, & ! Procedure(s)
+        stats_accumulate_LH
 
     use fill_holes, only: &
-      vertical_avg  ! Procedure(s)
+        vertical_avg  ! Procedure(s)
 
     use model_flags, only: &
-      l_diagnose_correlations ! Variable(s)
+        l_diagnose_correlations ! Variable(s)
 
 #else
 #define d_variables 0
@@ -3609,8 +3609,9 @@ module clubb_driver
       pdf_params      ! PDF parameters   [units vary]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      rho_ds_zt, & ! Dry, static density on thermo. levels     [kg/m^3]
-      rho_ds_zm    ! Dry, static density on moment. levels     [kg/m^3]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
@@ -3738,7 +3739,8 @@ module clubb_driver
          ( iter, runtype, dt, time_current, &                         ! Intent(in)
            thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
            wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
-           wp2_zt, rho_ds_zt, rho_ds_zm, LH_sample_point_weights, &   ! Intent(in)
+           wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &           ! Intent(in)
+           LH_sample_point_weights, &                                 ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
            Ncnm, hydromet, &                                          ! Intent(inout)
            rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)

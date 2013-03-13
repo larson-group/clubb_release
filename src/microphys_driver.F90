@@ -906,7 +906,8 @@ module microphys_driver
              ( iter, runtype, dt, time_current,  & 
                thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & 
                wm_zt, wm_zm, Kh_zm, pdf_params, & 
-               wp2_zt, rho_ds_zt, rho_ds_zm, LH_sample_point_weights, &
+               wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &
+               LH_sample_point_weights, &
                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &
                Ncnm, hydromet, & 
                rvm_mc, rcm_mc, thlm_mc, &
@@ -1144,9 +1145,10 @@ module microphys_driver
       pdf_params     ! PDF parameters
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      wp2_zt,    & ! w'^2 on the thermo. grid               [m^2/s^2]
-      rho_ds_zm, & ! Dry, static density on moment. levels  [kg/m^3]
-      rho_ds_zt    ! Dry, static density on thermo. levels  [kg/m^3]
+      wp2_zt,          & ! w'^2 on the thermo. grid                 [m^2/s^2]
+      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     real( kind = dp ), dimension(gr%nz,LH_microphys_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
@@ -1773,7 +1775,8 @@ module microphys_driver
         call microphys_solve &
              ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, &
                lhs, hydromet_mc(:,i)/max( cloud_frac, cloud_frac_min ), &
-               hydromet_vel_covar(:,i), Ncm_in_cloud, err_code )
+               hydromet_vel_covar(:,i), rho_ds_zm, invrs_rho_ds_zt, &
+               Ncm_in_cloud, err_code )
 
         hydromet(:,iiNcm) = Ncm_in_cloud * max( cloud_frac, cloud_frac_min )
 
@@ -1781,8 +1784,8 @@ module microphys_driver
 
         call microphys_solve &
              ( trim( hydromet_list(i) ), l_hydromet_sed(i), dt, cloud_frac, &
-               lhs, hydromet_mc(:,i), hydromet_vel_covar(:,i), hydromet(:,i), &
-               err_code )
+               lhs, hydromet_mc(:,i), hydromet_vel_covar(:,i), rho_ds_zm, &
+               invrs_rho_ds_zt, hydromet(:,i), err_code )
 
       endif
 
@@ -2077,7 +2080,8 @@ module microphys_driver
 
 !===============================================================================
   subroutine microphys_solve( solve_type, l_sed, dt, cloud_frac, &
-                              lhs, xrm_tndcy, Vxrpxrp, xrm, err_code )
+                              lhs, xrm_tndcy, Vxrpxrp, rho_ds_zm, &
+                              invrs_rho_ds_zt, xrm, err_code )
 
     ! Description:
     ! Solve the tridiagonal system for hydrometeor variable.
@@ -2159,10 +2163,14 @@ module microphys_driver
 
     ! Explicit contrbution to the hydrometeor, e.g. evaporation
     ! from Brian Griffin's K & K microphysics implementation
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       xrm_tndcy,  & ! Microphysics tendency (thermodynamic levels) [units/s]
       Vxrpxrp,    & ! Covariance of V_xr and x_r (momentum levels) [(m/s) units]
       cloud_frac    ! Cloud fraction (thermodynamic levels)        [-]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(3,gr%nz) :: & 
@@ -2262,9 +2270,14 @@ module microphys_driver
        ! etc.).
        rhs(k) = rhs(k) + xrm_tndcy(k)
 
-       ! RHS turbulent sedimentation ( - d<V_xr'x_r'> / dz ) term.
+       ! RHS turbulent sedimentation term,
+       ! - (1/rho_ds) * d( rho_ds * <V_xr'x_r'> ) / dz.
        if ( l_sed ) then
-          rhs(k) = rhs(k) - gr%invrs_dzt(k) * ( Vxrpxrp(k) - Vxrpxrp(km1) )
+          rhs(k) &
+          = rhs(k) &
+            - invrs_rho_ds_zt(k) &
+              * gr%invrs_dzt(k) * ( rho_ds_zm(k) * Vxrpxrp(k) &
+                                    - rho_ds_zm(km1) * Vxrpxrp(km1) )
        endif
 
        
@@ -2275,8 +2288,11 @@ module microphys_driver
           ! xrm term ts is completely explicit; call stat_update_var_pt.
           if ( l_sed ) then
              call stat_update_var_pt( ixrm_ts, k, &
-                                      - gr%invrs_dzt(k) &
-                                        * ( Vxrpxrp(k) - Vxrpxrp(km1) ), zt )
+                                      - invrs_rho_ds_zt(k) &
+                                        * gr%invrs_dzt(k) &
+                                        * ( rho_ds_zm(k) * Vxrpxrp(k) &
+                                            - rho_ds_zm(km1) * Vxrpxrp(km1) ), &
+                                      zt )
           endif ! l_sed
 
        endif ! l_stats_samp
