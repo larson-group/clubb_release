@@ -496,8 +496,8 @@ module clubb_core
       Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
       thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
       rtm_pert_1, rtm_pert_2,   &     ! For avg. calculation of Lscale  [kg/kg]
-      thlm_pert_pos, thlm_pert_neg, &     ! For avg. calculation of Lscale  [K]
-      rtm_pert_pos, rtm_pert_neg          ! For avg. calculation of Lscale  [kg/kg]
+      thlm_pert_pos_rt, thlm_pert_neg_rt, &     ! For avg. calculation of Lscale  [K]
+      rtm_pert_pos_rt, rtm_pert_neg_rt          ! For avg. calculation of Lscale  [kg/kg]
       !Lscale_weight Uncomment this if you need to use this vairable at some point.
 
     ! For pdf_closure
@@ -576,7 +576,7 @@ module clubb_core
       thlm_flux_sfc, &
       thlm_spur_src, &
       mu_pert_1, mu_pert_2, & ! For l_avg_Lscale
-      mu_pert_pos, mu_pert_neg ! For l_Lscale_plume_centered
+      mu_pert_pos_rt, mu_pert_neg_rt ! For l_Lscale_plume_centered
 
     !----- Begin Code -----
 
@@ -1063,38 +1063,38 @@ module clubb_core
 
       ! Take the values of thl and rt based one 1st or 2nd plume
       where ( pdf_params%rt1 > pdf_params%rt2 )
-        rtm_pert_pos = pdf_params%rt1 &
+        rtm_pert_pos_rt = pdf_params%rt1 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
-        thlm_pert_pos = pdf_params%thl1 &
+        thlm_pert_pos_rt = pdf_params%thl1 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) )
-        thlm_pert_neg = pdf_params%thl2 &
+        thlm_pert_neg_rt = pdf_params%thl2 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) )
-        rtm_pert_neg = pdf_params%rt2 & 
+        rtm_pert_neg_rt = pdf_params%rt2 & 
                      - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
         !Lscale_weight = pdf_params%mixt_frac
       else where
-        rtm_pert_pos = pdf_params%rt2 &
+        rtm_pert_pos_rt = pdf_params%rt2 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
-        thlm_pert_pos = pdf_params%thl2 &
+        thlm_pert_pos_rt = pdf_params%thl2 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) )
-        thlm_pert_neg = pdf_params%thl1 &
+        thlm_pert_neg_rt = pdf_params%thl1 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) )
-        rtm_pert_neg = pdf_params%rt1 & 
+        rtm_pert_neg_rt = pdf_params%rt1 & 
                      - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
         !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
       end where
 
-      mu_pert_pos  = mu / Lscale_mu_coef
-      mu_pert_neg  = mu * Lscale_mu_coef
+      mu_pert_pos_rt  = mu / Lscale_mu_coef
+      mu_pert_neg_rt  = mu * Lscale_mu_coef
 
       ! Call length with perturbed values of thl and rt
-      call compute_length( thvm, thlm_pert_pos, rtm_pert_pos, em, &  ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, mu_pert_pos, l_implemented, & ! intent(in)
+      call compute_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, em, &  ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu_pert_pos_rt, l_implemented, & ! intent(in)
                            err_code, &                             ! intent(inout)
                            Lscale_pert_1, Lscale_up, Lscale_down ) ! intent(out)
 
-      call compute_length( thvm, thlm_pert_neg, rtm_pert_neg, em,  & ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, mu_pert_neg, l_implemented, & ! intent(in)
+      call compute_length( thvm, thlm_pert_neg_rt, rtm_pert_neg_rt, em,  & ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu_pert_neg_rt, l_implemented, & ! intent(in)
                            err_code, &                             ! intent(inout)
                            Lscale_pert_2, Lscale_up, Lscale_down ) ! intent(out)
     else
