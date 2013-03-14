@@ -3,10 +3,7 @@
 module microphys_utilities
 
   ! Description:
-  ! Utilities used in relation to the general microphysics code.  This file
-  ! contains the microphysics term limiters, such as the turbulent sedimentation
-  ! flux limiter and the evaporation limiter, which limits excessive
-  ! evaporation.
+  ! Utilities used in relation to the general microphysics code.
 
   implicit none
 
