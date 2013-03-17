@@ -1781,6 +1781,7 @@ module microphys_driver
            ( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
              dt, Kr, nu_r_vert_res_dep, wm_zt, &  ! In
              hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
+             rho_ds_zm, invrs_rho_ds_zt, & ! In
              lhs ) ! Out
 
       !!!!! Advance hydrometeor one time step.
@@ -2433,18 +2434,19 @@ module microphys_driver
   subroutine microphys_lhs & 
              ( solve_type, l_sed, dt, Kr, nu, wm_zt, &
                V_hm, V_hmt, &
+               rho_ds_zm, invrs_rho_ds_zt, &
                lhs )
 
     ! Description:
-    !   Setup the matrix of implicit contributions to a term.
-    !   Can include the effects of sedimentation, diffusion, and advection.
-    !   The Morrison microphysics has an explicit sedimentation code, which is
-    !   handled elsewhere.
+    ! Setup the matrix of implicit contributions to a term.
+    ! Can include the effects of sedimentation, diffusion, and advection.
+    ! The Morrison microphysics has an explicit sedimentation code, which is
+    ! handled elsewhere.
     !
     ! Notes:
-    !   Setup for tridiagonal system and boundary conditions should be the same as
-    !   the original rain subroutine code.
-    !-------------------------------------------------------------------------------
+    ! Setup for tridiagonal system and boundary conditions should be the same as
+    ! the original rain subroutine code.
+    !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
         gr,    & ! Variable(s)
@@ -2462,7 +2464,8 @@ module microphys_driver
         term_ma_zt_lhs ! Procedure(s)
 
     use constants_clubb, only: &
-      sec_per_day ! Variable(s)
+        one,         & ! Constant(s) 
+        sec_per_day
 
     use stats_variables, only: & 
         irrainm_ma,   & ! Variable(s)
@@ -2509,16 +2512,20 @@ module microphys_driver
       l_sed    ! Whether to add a hydrometeor sedimentation term.
 
     real(kind=time_precision), intent(in) ::  & 
-      dt       ! Model timestep                                           [s]
+      dt       ! Model timestep                                          [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
-      nu       ! Background diffusion coefficient                         [m^2/s]
+      nu       ! Background diffusion coefficient                        [m^2/s]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
-      wm_zt,      & ! w wind component on thermodynamic levels                [m/s]
-      V_hm,       & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
-      V_hmt,      & ! Sedimentation velocity of hydrometeor (thermo. levels)  [m/s]
-      Kr            ! Eddy diffusivity for hydrometeor on momentum levels     [m^2/s]
+      wm_zt, & ! w wind component on thermodynamic levels                [m/s]
+      V_hm,  & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
+      V_hmt, & ! Sedimentation velocity of hydrometeor (thermo. levels)  [m/s]
+      Kr       ! Eddy diffusivity for hydrometeor on momentum levels     [m^2/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     real( kind = core_rknd ), intent(out), dimension(3,gr%nz) :: & 
       lhs      ! Left hand side of tridiagonal matrix.
@@ -2587,7 +2594,7 @@ module microphys_driver
       ! Main diagonal
 
       ! LHS time tendency.
-      lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0_core_rknd / real( dt, kind = core_rknd ) )
+      lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( one / real( dt, kind = core_rknd ) )
 
 
       ! All diagonals
@@ -2608,16 +2615,18 @@ module microphys_driver
       ! Therefore, l_sed will always be false when the Morrison microphysics
       ! is enabled.  -dschanen 24 Jan 2011
       if ( l_sed ) then
-        if ( .not. l_upwind_diff_sed ) then
-          lhs(kp1_tdiag:km1_tdiag,k) & 
+         if ( .not. l_upwind_diff_sed ) then
+            lhs(kp1_tdiag:km1_tdiag,k) & 
             = lhs(kp1_tdiag:km1_tdiag,k) & 
-            + sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
-        else
-          lhs(kp1_tdiag:km1_tdiag,k) & 
+            + sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
+                                     rho_ds_zm(km1), invrs_rho_ds_zt(k), &
+                                     gr%invrs_dzt(k), k )
+         else
+            lhs(kp1_tdiag:km1_tdiag,k) & 
             = lhs(kp1_tdiag:km1_tdiag,k) & 
             + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
-        end if
-      end if
+         endif
+      endif
 
       if ( l_stats_samp ) then
 
@@ -2630,19 +2639,24 @@ module microphys_driver
           ztscr01(k) = -tmp(3)
           ztscr02(k) = -tmp(2)
           ztscr03(k) = -tmp(1)
-        end if
+        endif
 
         if ( ixrm_sd > 0 .and. l_sed ) then
-          if ( .not. l_upwind_diff_sed ) then
-            tmp(1:3) = sed_centered_diff_lhs( V_hm(k), V_hm(km1), gr%invrs_dzt(k), k )
+           if ( .not. l_upwind_diff_sed ) then
+              tmp(1:3) &
+              =  sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
+                                        rho_ds_zm(km1), invrs_rho_ds_zt(k), &
+                                        gr%invrs_dzt(k), k )
           else
-            tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
-          end if
+              tmp(1:3) &
+              = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
+          endif
 
           ztscr04(k) = -tmp(3)
           ztscr05(k) = -tmp(2)
           ztscr06(k) = -tmp(1)
-        end if
+
+        endif
 
         if ( ixrm_dff > 0 ) then
           tmp(1:3) & 
@@ -2754,26 +2768,34 @@ module microphys_driver
   end subroutine microphys_lhs
 
 !===============================================================================
-  pure function sed_centered_diff_lhs( V_hm, V_hmm1, invrs_dzt, level ) & 
+  pure function sed_centered_diff_lhs( V_hm, V_hmm1, rho_ds_zm, &
+                                       rho_ds_zmm1, invrs_rho_ds_zt, &
+                                       invrs_dzt, level ) &
     result( lhs )
 
     ! Description:
-    ! Sedimentation of a hydrometeor:  implicit portion of the code.
+    ! Mean sedimentation of a hydrometeor:  implicit portion of the code.
     !
-    ! The variable "hm" stands for one of the five hydrometeor variables
-    ! currently in the code:  mean rain mixing ratio (rrainm), mean rain drop
-    ! concentration (Nrm), mean ice mixing ratio (ricem), mean snow mixing
-    ! ratio (rsnowm), or mean graupel mixing ratio (rgraupelm).  The variable
-    ! "V_hm" stands for the sedimentation velocity of the appropriate
-    ! hydrometeor.
+    ! The variable "hm" stands for a hydrometeor variable.  The variable "V_hm"
+    ! stands for the sedimentation velocity of the aforementioned hydrometeor.
     !
     ! The d(hm)/dt equation contains a sedimentation term:
     !
-    ! - d(V_hm*hm)/dz.
+    ! - (1/rho_ds) * d( rho_ds * V_hm * hm ) / dz.
+    !
+    ! The variables hm and V_hm in the sedimentation term are divided into mean
+    ! and turbulent components, and the term is averaged, resulting in:
+    !
+    ! - (1/rho_ds) * d( rho_ds * < V_hm > * < hm > ) / dz
+    ! - (1/rho_ds) * d( rho_ds * < V_hm'hm' > ) / dz.
+    !
+    ! The mean sedimentation term in the d<hm>/dt equation is:
+    !
+    ! - (1/rho_ds) * d( rho_ds * < V_hm > * < hm > ) / dz.
     !
     ! This term is solved for completely implicitly, such that:
     !
-    ! - d( V_hm(t) * hm(t+1) )/dz.
+    ! - (1/rho_ds) * d( rho_ds * < V_hm >|_(t) * < hm >|_(t+1) ) / dz.
     !
     ! Note:  When the term is brought over to the left-hand side, the sign is
     !        reversed and the leading "-" in front of the term is changed to
@@ -2781,25 +2803,28 @@ module microphys_driver
     !
     ! Timestep index (t) stands for the index of the current timestep, while
     ! timestep index (t+1) stands for the index of the next timestep, which is
-    ! being advanced to in solving the d(hm)/dt equation.
+    ! being advanced to in solving the d<hm>/dt equation.
     !
     ! This term is discretized as follows when using the centered-difference
     ! approximation:
     !
-    ! The values of hm are found on the thermodynamic levels, while the values
-    ! of V_hm are found on the momentum levels.  The variable hm is
-    ! interpolated to the intermediate momentum levels.  At the intermediate
-    ! momentum levels, the interpolated values of hm are multiplied by the
-    ! values of V_hm.  Then, the derivative of (hm*V_hm) is taken over the
-    ! central thermodynamic level.
+    ! The values of <hm> are found on the thermodynamic levels, while the values
+    ! of <V_hm> are found on the momentum levels.  Additionally, the values of
+    ! rho_ds_zm are found on the momentum levels, and the values of
+    ! invrs_rho_ds_zt are found on the thermodynamic levels.  The variable <hm>
+    ! is interpolated to the intermediate momentum levels.  At the intermediate
+    ! momentum levels, the interpolated values of <hm> are multiplied by the
+    ! values of <V_hm> and the values of rho_ds_zm.  Then, the derivative of
+    ! (rho_ds*<V_hm>*<hm>) is taken over the central thermodynamic level, where
+    ! it is multiplied by invrs_rho_ds_zt.
     !
     ! -----hmp1------------------------------------------------ t(k+1)
     !
-    ! =============hm(interp)=====V_hm========================= m(k)
+    ! =============hm(interp)=====V_hm=====rho_ds_zm=========== m(k)
     !
-    ! -----hm--------------------------------d(V_hm*hm)/dz----- t(k)
+    ! -----hm--------invrs_rho_ds_zt----d(rho_ds*V_hm*hm)/dz--- t(k)
     !
-    ! =============hm(interp)=====V_hmm1======================= m(k-1)
+    ! =============hm(interp)=====V_hmm1===rho_ds_zmm1========= m(k-1)
     !
     ! -----hmm1------------------------------------------------ t(k-1)
     !
@@ -2820,22 +2845,26 @@ module microphys_driver
     ! sedimentation.  Thus, not all of the column totals in the left-hand side
     ! matrix should be equal to 0. Instead, the sum of all the column totals
     ! should equal the flux of hm out the bottom (zm(1) level) of the domain,
-    ! -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in parentheses
-    ! is the interpolated value of hm at the zm(1) level.  Furthermore, most
-    ! of the individual column totals should sum to 0, but the 1st and 2nd
-    ! (from the left) columns should combine to sum to the flux out the bottom
-    ! of the domain.
+    ! -invrs_rho_ds_zt(2) * rho_ds_zm(1) * V_hm(1)
+    !  * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in parentheses is the
+    ! interpolated value of hm at the zm(1) level.  Furthermore, most of the
+    ! individual column totals should sum to 0, but the 1st and 2nd (from the
+    ! left) columns should combine to sum to the flux out the bottom of the
+    ! domain.
     !
     ! To see that this modified conservation law is satisfied, compute the
     ! sedimentation of hm and integrate vertically.  In discretized matrix
     ! notation (where "i" stands for the matrix column and "j" stands for the
     ! matrix row):
     !
-    !  -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
-    !     =
-    !  Sum_j Sum_i ( 1/invrs_dzt )_i ( d (V_hm * weights_hm) / dz )_ij hm_j.
+    !  - invrs_rho_ds_zt(2) * rho_ds_zm(1)
+    !    * V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
+    !  = Sum_j Sum_i
+    !    ( 1/invrs_dzt )_i
+    !    ( invrs_rho_ds_zt * d(rho_ds_zm * V_hm * weights_hm) / dz )_ij hm_j.
     !
-    ! The left-hand side matrix, ( d (V_hm * weights_hm) / dz )_ij, is
+    ! The left-hand side matrix,
+    ! ( invrs_rho_ds_zt * d(rho_ds_zm * V_hm * weights_hm) / dz )_ij, is
     ! partially written below.  The sum over i in the above equation removes
     ! invrs_dzt everywhere from the matrix below.  The sum over j leaves the
     ! column totals and the flux at zm(1) that are desired.
@@ -2843,19 +2872,27 @@ module microphys_driver
     ! Left-hand side matrix contributions from the sedimentation term (only);
     ! first four vertical levels:
     !
-    !     ------------------------------------------------------------------->
+    !     -------------------------------------------------------------------->
     !k=1 |           0                     0                       0
     !    |
-    !k=2 |   -invrs_dzt(k)       +invrs_dzt(k)           +invrs_dzt(k)
-    !    |     *V_hm(k-1)*D(k)     *[ V_hm(k)*B(k)         *V_hm(k)*A(k)
-    !    |                           -V_hm(k-1)*C(k) ]
+    !k=2 |   -invrs_rho_ds_zt(k)  +invrs_rho_ds_zt(k)    +invrs_rho_ds_zt(k)
+    !    |    *invrs_dzt(k)        *invrs_dzt(k)          *invrs_dzt(k)
+    !    |    *rho_ds_zm(k-1)      *[ rho_ds_zm(k)        *rho_ds_zm(k)
+    !    |    *V_hm(k-1)*D(k)         *V_hm(k)*B(k)       *V_hm(k)*A(k)
+    !    |                           -rho_ds_zm(k-1)
+    !    |                            *V_hm(k-1)*C(k) ]
     !    |
-    !k=3 |           0           -invrs_dzt(k)           +invrs_dzt(k)
-    !    |                         *V_hm(k-1)*D(k)         *[ V_hm(k)*B(k)
-    !    |                                                   -V_hm(k-1)*C(k) ]
+    !k=3 |           0            -invrs_rho_ds_zt(k)    +invrs_rho_ds_zt(k)
+    !    |                         *invrs_dzt(k)          *invrs_dzt(k)
+    !    |                         *rho_ds_zm(k-1)        *[ rho_ds_zm(k)
+    !    |                         *V_hm(k-1)*D(k)           *V_hm(k)*B(k)
+    !    |                                                  -rho_ds_zm(k-1)
+    !    |                                                   *V_hm(k-1)*C(k) ]
     !    |
-    !k=4 |           0                     0             -invrs_dzt(k)
-    !    |                                                 *V_hm(k-1)*D(k)
+    !k=4 |           0                     0             -invrs_rho_ds_zt(k)
+    !    |                                                *invrs_dzt(k)
+    !    |                                                *rho_ds_zm(k-1)
+    !    |                                                *V_hm(k-1)*D(k)
     !    |
     !   \ /
     !
@@ -2887,29 +2924,35 @@ module microphys_driver
     !   velocities, but COAMPS has only the local parameterization.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        zero  ! Constant(s)
+
     use grid_class, only:  & 
         gr ! Variable(s)
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
     ! Constant parameters
     integer, parameter :: & 
-      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+      kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2, & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
     integer, parameter :: & 
-      t_above = 1,    & ! Index for upper thermodynamic level grid weight.
-      t_below = 2       ! Index for lower thermodynamic level grid weight.
+      t_above = 1, & ! Index for upper thermodynamic level grid weight.
+      t_below = 2    ! Index for lower thermodynamic level grid weight.
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      V_hm,      & ! Sedimentation velocity of hydrometeor (k)     [m/s]
-      V_hmm1,    & ! Sedimentation velocity of hydrometeor (k-1)   [m/s]
-      invrs_dzt    ! Inverse of grid spacing (k)                   [m]
+      V_hm,            & ! Sedimentation velocity of hydrometeor (k)    [m/s]
+      V_hmm1,          & ! Sedimentation velocity of hydrometeor (k-1)  [m/s]
+      rho_ds_zm,       & ! Dry, static density at momentum level (k)    [kg/m^3]
+      rho_ds_zmm1,     & ! Dry, static density at momentum level (k-1)  [kg/m^3]
+      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. level (k) [m^3/kg]
+      invrs_dzt          ! Inverse of grid spacing (k)                  [m]
 
     integer, intent(in) ::  & 
       level ! Central thermodynamic level (on which calculation occurs).
@@ -2919,8 +2962,8 @@ module microphys_driver
 
     ! Local Variables
     integer :: & 
-      mk,    & ! Momentum level directly above central thermodynamic level.
-      mkm1     ! Momentum level directly below central thermodynamic level.
+      mk,   & ! Momentum level directly above central thermodynamic level.
+      mkm1    ! Momentum level directly below central thermodynamic level.
 
     ! ---- Begin Code ----
 
@@ -2931,82 +2974,64 @@ module microphys_driver
     ! and thermodynamic level (k-1).
     mkm1 = level - 1
 
-    ! Note:  The code is now written so that V_hm has been pulled inside of the
-    !        derivative.  The sedimentation term is now of the form -d(V_hm*hm)/dz,
-    !        rather than of the form -V_hm d(hm)/dz.  The term has been
-    !        re-discretized in a conservative manner and the results are listed
-    !        below, with the old code commented out.
-
     if ( level == 1 ) then
 
       ! k = 1 (bottom level); lower boundary level; no effects.
 
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = 0.0_core_rknd
+      lhs(kp1_tdiag) = zero
 
       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)   = 0.0_core_rknd
+      lhs(k_tdiag)   = zero
 
       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = 0.0_core_rknd
+      lhs(km1_tdiag) = zero
 
 
-    else if ( level > 1 .and. level < gr%nz ) then
+    elseif ( level > 1 .and. level < gr%nz ) then
 
       ! Most of the interior model; normal conditions.
 
-      ! Vince Larson pulled V_hm inside derivative to make conservative.
-      ! 13 Dec 2007
-      !
-      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-!     lhs(kp1_tdiag)  &
-!       = + V_hmzt * invrs_dzt * gr%weights_zt2zm(t_above,mk)
-
-!     ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-!     lhs(k_tdiag)  &
-!       = + V_hmzt * invrs_dzt * (   gr%weights_zt2zm(t_below,mk)  &
-!                                  - gr%weights_zt2zm(t_above,mkm1)  )
-!
-!     ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-!     lhs(km1_tdiag)  &
-!       = - V_hmzt * invrs_dzt * gr%weights_zt2zm(t_below,mkm1)
-
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
       lhs(kp1_tdiag)  & 
-        = + invrs_dzt * V_hm * gr%weights_zt2zm(t_above,mk)
+        = + invrs_rho_ds_zt * invrs_dzt &
+            * rho_ds_zm * V_hm * gr%weights_zt2zm(t_above,mk)
 
       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
       lhs(k_tdiag)  & 
-        = + invrs_dzt * (   V_hm * gr%weights_zt2zm(t_below,mk) & 
-                          - V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
+        = + invrs_rho_ds_zt &
+            * invrs_dzt &
+            * ( rho_ds_zm * V_hm * gr%weights_zt2zm(t_below,mk) & 
+                - rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
 
       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
       lhs(km1_tdiag)  & 
-        = - invrs_dzt * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
+        = - invrs_rho_ds_zt * invrs_dzt &
+            * rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
 
-      !  End Vince Larson change
 
-
-    else if ( level == gr%nz ) then
+    elseif ( level == gr%nz ) then
 
       ! k = gr%nz (top level); upper boundary level; no flux.
 
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = 0.0_core_rknd
+      lhs(kp1_tdiag) = zero
 
       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)   = 0.0_core_rknd
+      lhs(k_tdiag)   = zero
 
       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = 0.0_core_rknd
+      lhs(km1_tdiag) = zero
 
 
-    end if
+    endif
+
 
     return
+
   end function sed_centered_diff_lhs
 
-!---------------------------------------------------------------------------
+!===============================================================================
   pure function sed_upwind_diff_lhs( V_hmt, V_hmtp1, invrs_dzm, level ) & 
     result( lhs )
 
