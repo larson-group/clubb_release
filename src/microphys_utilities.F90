@@ -14,8 +14,7 @@ module microphys_utilities
   contains
 
   !=============================================================================
-  subroutine turb_sed_flux_limiter( solve_type, dt, &
-                                    rho_ds_zm, invrs_rho_ds_zt, &
+  subroutine turb_sed_flux_limiter( dt, rho_ds_zm, invrs_rho_ds_zt, &
                                     hmm, Vhmphmp, Vhmphmp_zt )
 
     ! Description:
@@ -259,21 +258,9 @@ module microphys_utilities
         core_rknd,      & ! Variable(s)
         time_precision
 
-    use stats_type, only: &
-        stat_update_var    ! Procedure(s)
-
-    use stats_variables, only: &
-        iVrrprrp_net, & ! Variable(s)
-        iVNrpNrp_net, &
-        zm,           &
-        l_stats_samp
-
     implicit none
 
     ! Input Variables
-    character(len=*), intent(in) :: &
-      solve_type    ! Description of which hydrometeor is being solved for.
-
     real( kind = time_precision ), intent(in) :: &
       dt          ! Model time step duration    [s]
 
@@ -293,20 +280,6 @@ module microphys_utilities
 
     integer :: k  ! Loop index
 
-    integer :: iVhmphmp_net  ! Stat index
-
-
-    ! Initialize stats variable iVhmphmp_net to avoid compiler warnings.
-    iVhmphmp_net = 0
-       
-    select case( solve_type )
-    case( "rrainm" )
-      iVhmphmp_net = iVrrprrp_net
-    case( "Nrm" )
-      iVhmphmp_net = iVNrpNrp_net
-    case default
-      iVhmphmp_net = 0
-    end select
 
     ! The value of < V_hm'hm' > is set to 0 at the top of the model, as
     ! precipitation doesn't flux out the top of the model.  Likewise, the new
@@ -378,19 +351,6 @@ module microphys_utilities
     ! model lower boundary, is set equal to the value of < V_hm'hm' > at
     ! momentum level 1, which is the model lower boundary.
     Vhmphmp_zt(1) = Vhmphmp(1)
-
-    ! Statistics
-    if ( l_stats_samp ) then
-
-       ! The orignal value of < V_hm'hm' > is stored for statistics as Vhmphmp.
-       ! That was done before this subroutine was called.  The updated or
-       ! adjusted value of < V_hm'hm' > is stored for statistics as Vhmphmp_net,
-       ! which is done here.  The value of Vhmphmp_net overwrites Vhmphmp so
-       ! that the updated value can be used in the code to produce the
-       ! appropriate statisical values for precipitation flux and rain rate.
-       call stat_update_var( iVhmphmp_net, Vhmphmp, zm )
-
-     endif
 
  
   return

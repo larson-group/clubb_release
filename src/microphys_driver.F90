@@ -1016,6 +1016,8 @@ module microphys_driver
         iVrgraupel, &
         iVrrprrp, &
         iVNrpNrp, & 
+        iVrrprrp_net, &
+        iVNrpNrp_net, & 
         irain_rate_zt, & 
         iFprec
 
@@ -1235,7 +1237,8 @@ module microphys_driver
 
     integer :: i, k ! Loop iterators / Array indices
 
-    integer :: ixrm_tsfl, ixrm_hf, ixrm_wvhf, ixrm_cl, ixrm_bt, ixrm_mc
+    integer :: ixrm_tsfl, ixrm_hf, ixrm_wvhf, ixrm_cl, &
+               ixrm_bt, ixrm_mc, iVxrpxrp_net
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Ndrop_max  ! GFDL droplet activation concentration [#/kg]
@@ -1630,6 +1633,8 @@ module microphys_driver
         ixrm_cl   = irrainm_cl
         ixrm_mc   = irrainm_mc
 
+        iVxrpxrp_net = iVrrprrp_net
+
         max_velocity = -9.1_core_rknd ! m/s
 
       case ( "ricem" )
@@ -1640,6 +1645,8 @@ module microphys_driver
         ixrm_cl   = iricem_cl
         ixrm_mc   = iricem_mc
 
+        iVxrpxrp_net = 0
+
         max_velocity = -1.2_core_rknd ! m/s
 
       case ( "rsnowm" )
@@ -1649,6 +1656,8 @@ module microphys_driver
         ixrm_wvhf = irsnowm_wvhf
         ixrm_cl   = irsnowm_cl
         ixrm_mc   = irsnowm_mc
+
+        iVxrpxrp_net = 0
 
         ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
@@ -1665,6 +1674,8 @@ module microphys_driver
         ixrm_cl   = irgraupelm_cl
         ixrm_mc   = irgraupelm_mc
 
+        iVxrpxrp_net = 0
+
         max_velocity = -20._core_rknd ! m/s
 
       case ( "Nrm" )
@@ -1674,6 +1685,8 @@ module microphys_driver
         ixrm_wvhf = 0
         ixrm_cl   = iNrm_cl
         ixrm_mc   = iNrm_mc
+
+        iVxrpxrp_net = iVNrpNrp_net
 
         max_velocity = -9.1_core_rknd ! m/s
 
@@ -1685,6 +1698,8 @@ module microphys_driver
         ixrm_cl   = iNim_cl
         ixrm_mc   = iNim_mc
 
+        iVxrpxrp_net = 0
+
         max_velocity = -1.2_core_rknd ! m/s
 
       case ( "Nsnowm" )
@@ -1694,6 +1709,8 @@ module microphys_driver
         ixrm_wvhf = 0
         ixrm_cl   = iNsnowm_cl
         ixrm_mc   = iNsnowm_mc
+
+        iVxrpxrp_net = 0
 
         ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
@@ -1710,6 +1727,8 @@ module microphys_driver
         ixrm_cl   = iNgraupelm_cl
         ixrm_mc   = iNgraupelm_mc
 
+        iVxrpxrp_net = 0
+
         max_velocity = -20._core_rknd ! m/s
 
       case ( "Ncm" )
@@ -1719,6 +1738,8 @@ module microphys_driver
         ixrm_wvhf = 0
         ixrm_cl   = iNcm_cl
         ixrm_mc   = iNcm_mc
+
+        iVxrpxrp_net = 0
 
         ! Use the rain water limit, since Morrison has no explicit limit on
         ! cloud water.  Presumably these numbers are never large.
@@ -1732,6 +1753,8 @@ module microphys_driver
         ixrm_wvhf = 0
         ixrm_cl   = 0
         ixrm_mc   = 0
+
+        iVxrpxrp_net = 0
 
         max_velocity = -9.1_core_rknd ! m/s
 
@@ -1837,10 +1860,23 @@ module microphys_driver
       if ( any( hydromet(:,i) < zero_threshold ) .and. &
            any( hydromet_vel_covar(:,i) /= zero ) .and. l_hydromet_sed(i) ) then
 
-         call turb_sed_flux_limiter( trim( hydromet_list(i) ), dt, &
-                                     rho_ds_zm, invrs_rho_ds_zt, &
+         call turb_sed_flux_limiter( dt, rho_ds_zm, invrs_rho_ds_zt, &
                                      hydromet(:,i), hydromet_vel_covar(:,i), &
                                      hydromet_vel_covar_zt(:,i) )
+
+      endif
+
+      ! Statistics
+      if ( l_stats_samp ) then
+
+         ! The orignal value of < V_xr'x_r' > is stored for statistics as
+         ! Vxrpxrp.  That was done before subroutine turb_sed_flux_limiter was
+         ! called.  The updated or adjusted value of < V_xr'x_r' > is stored for
+         ! statistics as Vxrpxrp_net, which is done here.  The value of
+         ! Vxrpxrp_net overwrites Vxrpxrp so that the updated value can be used
+         ! in the code to produce the appropriate statisical values for
+         ! precipitation flux and rain rate.
+         call stat_update_var( iVxrpxrp_net, hydromet_vel_covar(:,i), zm )
 
       endif
 
