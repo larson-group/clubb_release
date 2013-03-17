@@ -1804,7 +1804,7 @@ module microphys_driver
            ( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
              dt, Kr, nu_r_vert_res_dep, wm_zt, &  ! In
              hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
-             rho_ds_zm, invrs_rho_ds_zt, & ! In
+             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
              lhs ) ! Out
 
       !!!!! Advance hydrometeor one time step.
@@ -2470,7 +2470,7 @@ module microphys_driver
   subroutine microphys_lhs & 
              ( solve_type, l_sed, dt, Kr, nu, wm_zt, &
                V_hm, V_hmt, &
-               rho_ds_zm, invrs_rho_ds_zt, &
+               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                lhs )
 
     ! Description:
@@ -2536,9 +2536,9 @@ module microphys_driver
 
     ! Constant parameters
     integer, parameter :: & 
-      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+      kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2, & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
     ! Input Variables
     character(len=*), intent(in) :: &
@@ -2561,6 +2561,7 @@ module microphys_driver
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     real( kind = core_rknd ), intent(out), dimension(3,gr%nz) :: & 
@@ -2660,7 +2661,9 @@ module microphys_driver
          else
             lhs(kp1_tdiag:km1_tdiag,k) & 
             = lhs(kp1_tdiag:km1_tdiag,k) & 
-            + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
+            + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+                                   rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                                   gr%invrs_dzm(k), k )
          endif
       endif
 
@@ -2680,13 +2683,15 @@ module microphys_driver
         if ( ixrm_sd > 0 .and. l_sed ) then
            if ( .not. l_upwind_diff_sed ) then
               tmp(1:3) &
-              =  sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
-                                        rho_ds_zm(km1), invrs_rho_ds_zt(k), &
-                                        gr%invrs_dzt(k), k )
-          else
+              = sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
+                                       rho_ds_zm(km1), invrs_rho_ds_zt(k), &
+                                       gr%invrs_dzt(k), k )
+           else
               tmp(1:3) &
-              = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
-          endif
+              = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+                                     rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                                     gr%invrs_dzm(k), k )
+           endif
 
           ztscr04(k) = -tmp(3)
           ztscr05(k) = -tmp(2)
@@ -2711,22 +2716,22 @@ module microphys_driver
 
     ! Boundary Conditions
 
-    ! The hydrometeor eddy-diffusion term has zero-flux boundary conditions, meaning
-    ! that amounts of a hydrometeor are not allowed to escape the model boundaries
-    ! through the process of eddy-diffusion.  It should be noted that amounts of a
-    ! hydrometeor are allowed to leave the model at the lower boundary through the
-    ! process of hydrometeor sedimentation.  However, only the eddy-diffusion term
-    ! contributes to the LHS matrix at the k=1 and k=gr%nz levels.  Thus, function
-    ! diffusion_zt_lhs needs to be called at both the upper boundary level and the
-    ! lower boundary level.
-
+    ! The hydrometeor eddy-diffusion term has zero-flux boundary conditions,
+    ! meaning that amounts of a hydrometeor are not allowed to escape the model
+    ! boundaries through the process of eddy-diffusion.  It should be noted that
+    ! amounts of a hydrometeor are allowed to leave the model at the lower
+    ! boundary through the process of hydrometeor sedimentation.  However, only
+    ! the eddy-diffusion term contributes to the LHS matrix at the k=1 and
+    ! k=gr%nz levels.  Thus, function diffusion_zt_lhs needs to be called at
+    ! both the upper boundary level and the lower boundary level.
 
     ! Lower Boundary
     k   = 1
     km1 = max( k-1, 1 )
     kp1 = k+1
     ! Note:  In function diffusion_zt_lhs, at the k=1 (lower boundary) level,
-    !        variables referenced at the km1 level don't factor into the equation.
+    !        variables referenced at the km1 level don't factor into the
+    !        equation.
 
     ! LHS time tendency at the lower boundary.
     lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0_core_rknd / real( dt, kind = core_rknd ) )
@@ -2742,8 +2747,10 @@ module microphys_driver
     if ( l_sed .and. l_upwind_diff_sed ) then
       lhs(kp1_tdiag:km1_tdiag,k) & 
         = lhs(kp1_tdiag:km1_tdiag,k) & 
-        + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
-    end if
+        + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+                               rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                               gr%invrs_dzm(k), k )
+    endif
 
     if ( l_stats_samp ) then
 
@@ -2760,7 +2767,9 @@ module microphys_driver
       end if
 
       if ( ixrm_sd > 0 .and. l_sed .and. l_upwind_diff_sed ) then
-        tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), gr%invrs_dzm(k), k )
+        tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+                                        rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                                        gr%invrs_dzm(k), k )
 
         ztscr04(k) = -tmp(3)
         ztscr05(k) = -tmp(2)
@@ -2800,17 +2809,20 @@ module microphys_driver
 
     end if  ! l_stats_samp
 
+
     return
+
   end subroutine microphys_lhs
 
-!===============================================================================
+  !=============================================================================
   pure function sed_centered_diff_lhs( V_hm, V_hmm1, rho_ds_zm, &
                                        rho_ds_zmm1, invrs_rho_ds_zt, &
                                        invrs_dzt, level ) &
     result( lhs )
 
     ! Description:
-    ! Mean sedimentation of a hydrometeor:  implicit portion of the code.
+    ! Mean sedimentation of a hydrometeor:  implicit portion of the code, using
+    ! the centered difference approximation to the vertical derivative.
     !
     ! The variable "hm" stands for a hydrometeor variable.  The variable "V_hm"
     ! stands for the sedimentation velocity of the aforementioned hydrometeor.
@@ -2874,36 +2886,34 @@ module microphys_driver
     !
     ! Conservation Properties:
     !
-    ! When a hydrometeor is sedimented to the ground (or out the lower
-    ! boundary of the model), it is removed from the atmosphere (or from the
-    ! model domain).  Thus, the quantity of the hydrometeor over the entire
-    ! vertical domain should not be conserved due to the process of
-    ! sedimentation.  Thus, not all of the column totals in the left-hand side
-    ! matrix should be equal to 0. Instead, the sum of all the column totals
-    ! should equal the flux of hm out the bottom (zm(1) level) of the domain,
-    ! -invrs_rho_ds_zt(2) * rho_ds_zm(1) * V_hm(1)
-    !  * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in parentheses is the
-    ! interpolated value of hm at the zm(1) level.  Furthermore, most of the
-    ! individual column totals should sum to 0, but the 1st and 2nd (from the
-    ! left) columns should combine to sum to the flux out the bottom of the
-    ! domain.
+    ! When a hydrometeor is sedimented to the ground (or out the lower boundary
+    ! of the model), it is removed from the atmosphere (or from the model
+    ! domain).  Thus, the quantity of the hydrometeor over the entire vertical
+    ! domain should not be conserved due to the process of sedimentation.  Thus,
+    ! not all of the column totals in the left-hand side matrix should be equal
+    ! to 0. Instead, the sum of all the column totals should equal the flux of
+    ! <hm> out the bottom (zm(1) level) of the domain,
+    ! -rho_ds_zm(1) * V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in
+    ! parentheses is the interpolated value of hm at the zm(1) level.
+    ! Furthermore, most of the individual column totals should sum to 0, but the
+    ! 1st and 2nd (from the left) columns should combine to sum to the flux out
+    ! the bottom of the domain.
     !
     ! To see that this modified conservation law is satisfied, compute the
     ! sedimentation of hm and integrate vertically.  In discretized matrix
     ! notation (where "i" stands for the matrix column and "j" stands for the
     ! matrix row):
     !
-    !  - invrs_rho_ds_zt(2) * rho_ds_zm(1)
-    !    * V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
-    !  = Sum_j Sum_i
-    !    ( 1/invrs_dzt )_i
-    !    ( invrs_rho_ds_zt * d(rho_ds_zm * V_hm * weights_hm) / dz )_ij hm_j.
+    ! - rho_ds_zm(1) * V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
+    ! = Sum_j Sum_i
+    !   ( 1 / invrs_rho_ds_zt )_i * ( 1 / invrs_dzt )_i
+    !   * ( invrs_rho_ds_zt * d(rho_ds_zm * V_hm * weights_hm) / dz )_ij * hm_j.
     !
     ! The left-hand side matrix,
     ! ( invrs_rho_ds_zt * d(rho_ds_zm * V_hm * weights_hm) / dz )_ij, is
     ! partially written below.  The sum over i in the above equation removes
-    ! invrs_dzt everywhere from the matrix below.  The sum over j leaves the
-    ! column totals and the flux at zm(1) that are desired.
+    ! invrs_rho_ds_zt and invrs_dzt everywhere from the matrix below.  The sum
+    ! over j leaves the column totals and the flux at zm(1) that are desired.
     !
     ! Left-hand side matrix contributions from the sedimentation term (only);
     ! first four vertical levels:
@@ -2960,11 +2970,11 @@ module microphys_driver
     !   velocities, but COAMPS has only the local parameterization.
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        zero  ! Constant(s)
-
     use grid_class, only:  & 
         gr ! Variable(s)
+
+    use constants_clubb, only: &
+        zero  ! Constant(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -3067,36 +3077,160 @@ module microphys_driver
 
   end function sed_centered_diff_lhs
 
-!===============================================================================
-  pure function sed_upwind_diff_lhs( V_hmt, V_hmtp1, invrs_dzm, level ) & 
+  !=============================================================================
+  pure function sed_upwind_diff_lhs( V_hmt, V_hmtp1, rho_ds_zt, &
+                                     rho_ds_ztp1, invrs_rho_ds_zt, &
+                                     invrs_dzm, level ) &
     result( lhs )
 
     ! Description:
-    !   Setup the LHS matrix (implicit component) for the upwind difference
-    !   approximation for the sedimentation of a hydrometeor.
+    ! Mean sedimentation of a hydrometeor:  implicit portion of the code, using
+    ! the "upwind" difference approximation to the vertical derivative.
     !
+    ! The variable "hm" stands for a hydrometeor variable.  The variable "V_hm"
+    ! stands for the sedimentation velocity of the aforementioned hydrometeor.
+    !
+    ! The d(hm)/dt equation contains a sedimentation term:
+    !
+    ! - (1/rho_ds) * d( rho_ds * V_hm * hm ) / dz.
+    !
+    ! The variables hm and V_hm in the sedimentation term are divided into mean
+    ! and turbulent components, and the term is averaged, resulting in:
+    !
+    ! - (1/rho_ds) * d( rho_ds * < V_hm > * < hm > ) / dz
+    ! - (1/rho_ds) * d( rho_ds * < V_hm'hm' > ) / dz.
+    !
+    ! The mean sedimentation term in the d<hm>/dt equation is:
+    !
+    ! - (1/rho_ds) * d( rho_ds * < V_hm > * < hm > ) / dz.
+    !
+    ! This term is solved for completely implicitly, such that:
+    !
+    ! - (1/rho_ds) * d( rho_ds * < V_hm >|_(t) * < hm >|_(t+1) ) / dz.
+    !
+    ! Note:  When the term is brought over to the left-hand side, the sign is
+    !        reversed and the leading "-" in front of the term is changed to
+    !        a "+".
+    !
+    ! Timestep index (t) stands for the index of the current timestep, while
+    ! timestep index (t+1) stands for the index of the next timestep, which is
+    ! being advanced to in solving the d<hm>/dt equation.
+    !
+    ! This term is discretized as follows when using the upwind-difference
+    ! approximation:
+    !
+    ! The values of <hm> and the values of V_hmt are found on the thermodynamic
+    ! levels.  Additionally, the values of rho_ds_zt and the values of
+    ! invrs_rho_ds_zt are found on the thermodynamic levels.  At the
+    ! thermodynamic levels, the values of <hm> are multiplied by the values of
+    ! V_hmt and the values of rho_ds_zt.  Then, the derivative of
+    ! (rho_ds*<V_hm>*<hm>) is taken between the thermodynamic level above the
+    ! central thermodynamic level and the central thermodynamic level.  The
+    ! derivative is multiplied by invrs_rho_ds_zt.
+    !
+    ! --hmp1--V_hmtp1--rho_ds_ztp1--------------------------------------- t(k+1)
+    !
+    ! =================================================================== m(k)
+    !
+    ! --hm----V_hmt----rho_ds_zt--invrs_rho_ds_zt--d(rho_ds*V_hm*hm)/dz-- t(k)
+    !
+    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
+    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
+    ! thermodynamic levels and the letter "m" is used for momentum levels.
+    !
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    !
+    !
+    ! Conservation Properties:
+    !
+    ! When a hydrometeor is sedimented to the ground (or out the lower boundary
+    ! of the model), it is removed from the atmosphere (or from the model
+    ! domain).  Thus, the quantity of the hydrometeor over the entire vertical
+    ! domain should not be conserved due to the process of sedimentation.  Thus,
+    ! not all of the column totals in the left-hand side matrix should be equal
+    ! to 0. Instead, the sum of all the column totals should equal the flux of
+    ! <hm> out the bottom (zm(1) level, approximated by the zt(1) level for the
+    ! "upwind" sedimentation option) of the domain,
+    ! -rho_ds_zt(1) * V_hmt(1) * hm(1).  Furthermore, most of the individual
+    ! column totals should sum to 0, but the 2nd (from the left) column should
+    ! be equal to the flux out the bottom of the domain.
+    !
+    ! To see that this modified conservation law is satisfied, compute the
+    ! sedimentation of hm and integrate vertically.  In discretized matrix
+    ! notation (where "i" stands for the matrix column and "j" stands for the
+    ! matrix row):
+    !
+    ! - rho_ds_zt(1) * V_hmt(1) * hm(1)
+    ! = Sum_j Sum_i
+    !   ( 1 / invrs_rho_ds_zt )_i * ( 1 / invrs_dzm )_i
+    !   * ( invrs_rho_ds_zt * d(rho_ds_zm * V_hm * weights_hm) / dz )_ij * hm_j.
+    !
+    ! The left-hand side matrix,
+    ! ( invrs_rho_ds_zt * d(rho_ds_zm * V_hm * weights_hm) / dz )_ij, is
+    ! partially written below.  The sum over i in the above equation removes
+    ! invrs_rho_ds_zt and invrs_dzm everywhere from the matrix below.  The sum
+    ! over j leaves the column totals and the flux at zt(1) that are desired.
+    !
+    ! Left-hand side matrix contributions from the sedimentation term (only);
+    ! first three vertical levels:
+    !
+    !     -------------------------------------------------------------------->
+    !k=1 | -invrs_rho_ds_zt(k)    +invrs_rho_ds_zt(k)              0
+    !    |  *invrs_dzm(k)          *invrs_dzm(k)
+    !    |  *rho_ds_zt(k)          *rho_ds_zt(k+1)
+    !    |  *V_hmt(k)              *V_hmt(k+1)
+    !    |
+    !k=2 |           0            -invrs_rho_ds_zt(k)    +invrs_rho_ds_zt(k)
+    !    |                         *invrs_dzm(k)          *invrs_dzm(k)
+    !    |                         *rho_ds_zt(k)          *rho_ds_zt(k+1)
+    !    |                         *V_hmt(k)              *V_hmt(k+1)
+    !    |
+    !k=3 |           0                     0             -invrs_rho_ds_zt(k)
+    !    |                                                *invrs_dzm(k)
+    !    |                                                *rho_ds_zt(k)
+    !    |                                                *V_hmt(k)
+    !   \ /
+    !
+    ! Note:  The superdiagonal term from level 3 is not shown on this diagram.
+
     ! References:
-    !   None
-    !---------------------------------------------------------------------------
+    ! None
+
+    ! Notes:
+    ! Both COAMPS Microphysics and Brian Griffin's implementation use
+    ! Khairoutdinov and Kogan (2000) for the calculation of rain
+    ! mixing ratio and rain droplet number concentration sedimentation
+    ! velocities, but COAMPS has only the local parameterization.
+    !
+    ! Please note that "upwind" sedimentation is only 1st-order accurate and
+    ! highly diffusive. 
+    !-----------------------------------------------------------------------
+
     use grid_class, only:  & 
         gr ! Variable(s)
 
+    use constants_clubb, only: &
+        zero  ! Constant(s)
+
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
     ! Constant parameters
     integer, parameter :: & 
-      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+      kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2, & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      V_hmt,   & ! Sedimentation velocity of hydrometeor (thermo. levels) (k)   [m/s]
-      V_hmtp1, & ! Sedimentation velocity of hydrometeor (thermo. levels) (k+1) [m/s]
-      invrs_dzm  ! Inverse of grid spacing (k)                   [m]
+      V_hmtp1,         & ! Sed. velocity of hydrometeor at t-lev (k+1)  [m/s]
+      V_hmt,           & ! Sed. velocity of hydrometeor at t-lev (k)    [m/s]
+      rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1)   [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density at thermo. level (k)     [kg/m^3]
+      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. level (k) [m^3/kg]
+      invrs_dzm          ! Inverse of grid spacing over m-lev. (k)      [m]
 
     integer, intent(in) ::  & 
       level ! Central thermodynamic level (on which calculation occurs).
@@ -3113,42 +3247,43 @@ module microphys_driver
       ! k = gr%nz (top level); upper boundary level; no flux.
 
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = 0.0_core_rknd
+      lhs(kp1_tdiag) = zero
 
       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)   = 0.0_core_rknd
+      lhs(k_tdiag)   = zero
 
       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = 0.0_core_rknd
+      lhs(km1_tdiag) = zero
 
 
     else
 
       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag)  & 
-        = + invrs_dzm * V_hmtp1
+      lhs(kp1_tdiag) = + invrs_rho_ds_zt * invrs_dzm * rho_ds_ztp1 * V_hmtp1
 
       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)  & 
-        = - invrs_dzm * V_hmt
+      lhs(k_tdiag)   = - invrs_rho_ds_zt * invrs_dzm * rho_ds_zt * V_hmt
 
       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = 0.0_core_rknd
+      lhs(km1_tdiag) = zero
 
-    end if
+
+    endif
+
 
     return
 
   end function sed_upwind_diff_lhs
 
-!===============================================================================
+  !=============================================================================
   subroutine cleanup_microphys( )
 
     ! Description:
-    !   De-allocate arrays used by the microphysics
+    ! De-allocate arrays used by the microphysics
+
     ! References:
-    !   None
-    !-------------------------------------------------------------------------
+    ! None
+    !-----------------------------------------------------------------------
 
     implicit none
 
@@ -3169,6 +3304,7 @@ module microphys_driver
     end if
 
     return
+
   end subroutine cleanup_microphys
 !===============================================================================
 
