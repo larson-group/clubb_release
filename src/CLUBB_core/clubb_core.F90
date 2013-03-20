@@ -349,6 +349,9 @@ module clubb_core
     ! from the three calls to compute_length is then calculated.
     ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
     l_Lscale_plume_centered = .false. ! Alternate that uses the PDF to compute the perturbed values
+    
+    logical, parameter :: &
+      l_use_ice_latent = .false. !Includes the effects of ice latent heating in turbulence terms
 
     logical, parameter :: &
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
@@ -460,12 +463,11 @@ module clubb_core
       wprcp,            & ! w'r_c' (momentum levels)                  [(kg/kg) m/s]
       cloud_frac,       & ! cloud fraction (thermodynamic levels)     [-]
       ice_supersat_frac   ! ice cloud fraction (thermodynamic levels) [-]
-    
+      
     ! Eric Raut declared this variable solely for output to disk
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rc_coef             ! Coefficient of X' R_l' in Eq. (34)        [-]
-    
-      
+
 #if defined(NCAR) || defined(GFDL)
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
       khzt, &       ! eddy diffusivity on thermo levels
@@ -535,7 +537,6 @@ module clubb_core
       thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg] 
       rcp2_zt,     & ! r_c'^2 (on thermo. grid)         [(kg^2)/(kg^2)]
       rc_coef_zt     ! X'R_l' coef. (on thermo. grid)   [-]
-    
 
     real( kind = core_rknd ), dimension(gr%nz, sclr_dim) :: &       
       sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid) 
@@ -578,6 +579,47 @@ module clubb_core
       thlm_spur_src, &
       mu_pert_1, mu_pert_2, & ! For l_avg_Lscale
       mu_pert_pos_rt, mu_pert_neg_rt ! For l_Lscale_plume_centered
+    
+    !The following variables are defined for use when l_use_ice_latent = .true.
+    type(pdf_parameter), dimension(gr%nz) :: &
+      pdf_params_frz  
+                   
+    
+    real( kind = core_rknd ), dimension(gr%nz)  :: &
+      rtm_frz, &
+      thlm_frz, &
+      wp4_zt_frz, &
+      wprtp2_frz, &
+      wp2rtp_frz, &
+      wpthlp2_frz, &
+      wp2thlp_frz, &
+      wprtpthlp_frz, &
+      cloud_frac_frz, &
+      ice_supersat_frac_frz, &
+      rcm_frz, &
+      wpthvp_frz, &
+      wpthvp_zt_frz, &
+      wp2thvp_frz, &
+      wp2thvp_zm_frz, &
+      rtpthvp_frz, &
+      rtpthvp_zt_frz, &
+      thlpthvp_frz, &
+      thlpthvp_zt_frz, &
+      wprcp_zt_frz, &
+      wp2rcp_frz, &
+      rtprcp_zt_frz, &
+      thlprcp_zt_frz, &
+      rcp2_zt_frz, &
+      rc_coef_zt_frz
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      wpsclrprtp_frz, &
+      wpsclrp2_frz, &
+      sclrpthvp_zt_frz, &
+      wpsclrpthlp_frz, &
+      sclrprcp_zt_frz, &
+      wp2sclrp_frz
+
 
     !----- Begin Code -----
 
@@ -1016,6 +1058,108 @@ module clubb_core
     ! Ditto with ice cloud fraction
     ice_supersat_frac = min( 1.0_core_rknd, ice_supersat_frac )
 
+    if (l_use_ice_latent) then
+      !A third call to pdf_closure, with terms modified to include the effects
+      !of latent heating due to ice.  Thlm and rtm add the effects of ice, and
+      !the terms are all renamed with "_frz" appended. The modified terms will
+      !be fed into the calculations of the turbulence terms. storer-3/14/13
+
+      thlm_frz = thlm - (Lv / (Cp*exner) ) * rfrzm ! Add effects of ice latent heat
+                                                   ! Ice is treated as liquid water here
+      rtm_frz = rtm + rfrzm
+
+      ! Variables for PDF closure scheme
+      pdf_params_frz(:)%w1          = pdf_params(:)%w1
+      pdf_params_frz(:)%w2          = pdf_params(:)%w2
+      pdf_params_frz(:)%varnce_w1   = pdf_params(:)%varnce_w1
+      pdf_params_frz(:)%varnce_w2   = pdf_params(:)%varnce_w2
+      pdf_params_frz(:)%rt1         = pdf_params(:)%rt1
+      pdf_params_frz(:)%rt2         = pdf_params(:)%rt2
+      pdf_params_frz(:)%varnce_rt1  = pdf_params(:)%varnce_rt1
+      pdf_params_frz(:)%varnce_rt2  = pdf_params(:)%varnce_rt2
+      pdf_params_frz(:)%thl1        = pdf_params(:)%thl1
+      pdf_params_frz(:)%thl2        = pdf_params(:)%thl2
+      pdf_params_frz(:)%varnce_thl1 = pdf_params(:)%varnce_thl1
+      pdf_params_frz(:)%varnce_thl2 = pdf_params(:)%varnce_thl2
+      pdf_params_frz(:)%rrtthl      = pdf_params(:)%rrtthl
+      pdf_params_frz(:)%alpha_thl   = pdf_params(:)%alpha_thl
+      pdf_params_frz(:)%alpha_rt    = pdf_params(:)%alpha_rt
+      pdf_params_frz(:)%crt1        = pdf_params(:)%crt1
+      pdf_params_frz(:)%crt2        = pdf_params(:)%crt2
+      pdf_params_frz(:)%cthl1       = pdf_params(:)%cthl1
+      pdf_params_frz(:)%cthl2       = pdf_params(:)%cthl2
+      pdf_params_frz(:)%s1          = pdf_params(:)%s1
+      pdf_params_frz(:)%s2          = pdf_params(:)%s2
+      pdf_params_frz(:)%stdev_s1    = pdf_params(:)%stdev_s1
+      pdf_params_frz(:)%stdev_s2    = pdf_params(:)%stdev_s2
+      pdf_params_frz(:)%stdev_t1    = pdf_params(:)%stdev_t1
+      pdf_params_frz(:)%stdev_t2    = pdf_params(:)%stdev_t2
+      pdf_params_frz(:)%covar_st_1  = pdf_params(:)%covar_st_1
+      pdf_params_frz(:)%covar_st_2  = pdf_params(:)%covar_st_2
+      pdf_params_frz(:)%corr_st_1   = pdf_params(:)%corr_st_1
+      pdf_params_frz(:)%corr_st_2   = pdf_params(:)%corr_st_2
+      pdf_params_frz(:)%rsl1        = pdf_params(:)%rsl1
+      pdf_params_frz(:)%rsl2        = pdf_params(:)%rsl2
+      pdf_params_frz(:)%rc1         = pdf_params(:)%rc1
+      pdf_params_frz(:)%rc2         = pdf_params(:)%rc2
+      pdf_params_frz(:)%cloud_frac1 = pdf_params(:)%cloud_frac1
+      pdf_params_frz(:)%cloud_frac2 = pdf_params(:)%cloud_frac2
+      pdf_params_frz(:)%mixt_frac   = pdf_params(:)%mixt_frac
+
+
+      do k = 1, gr%nz, 1
+
+      call pdf_closure & 
+         ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),        & ! intent(in)
+           wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),                & ! intent(in)
+           Skw_zt(k), rtm_frz(k), rtp2_zt(k),                       & ! intent(in)
+           zm2zt( wprtp, k ), thlm_frz(k), thlp2_zt(k),             & ! intent(in)
+           zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),       & ! intent(in)
+           wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),   & ! intent(in)
+           sclrpthlp_zt(k,:), k,                                & ! intent(in)
+#ifdef GFDL
+           RH_crit(k, : , :),   do_liquid_only_in_clubb,        & ! intent(in)  h1g, 2010-06-16
+#endif
+           wp4_zt_frz(k), wprtp2_frz(k), wp2rtp_frz(k),                     & ! intent(out)
+           wpthlp2_frz(k), wp2thlp_frz(k), wprtpthlp_frz(k),                & ! intent(out)
+           cloud_frac_frz(k), ice_supersat_frac_frz(k),                 & ! intent(out)
+           rcm_frz(k), wpthvp_zt_frz(k), wp2thvp_frz(k), rtpthvp_zt_frz(k),     & ! intent(out)
+           thlpthvp_zt_frz(k), wprcp_zt_frz(k), wp2rcp_frz(k), rtprcp_zt_frz(k),& ! intent(out)
+           thlprcp_zt_frz(k), rcp2_zt_frz(k), pdf_params_frz(k),            & ! intent(out)
+           err_code_pdf_closure,                                & ! intent(out)
+           wpsclrprtp_frz(k,:), wpsclrp2_frz(k,:), sclrpthvp_zt_frz(k,:),   & ! intent(out)
+           wpsclrpthlp_frz(k,:), sclrprcp_zt_frz(k,:), wp2sclrp_frz(k,:),   & ! intent(out)
+           rc_coef_zt_frz(k)                                        ) ! intent(out)
+
+        ! Subroutine may produce NaN values, and if so, exit gracefully.
+        ! Joshua Fasching March 2008
+
+        if ( fatal_error( err_code_pdf_closure ) ) then 
+
+          if ( clubb_at_least_debug_level ( 1 ) )then
+            write(fstderr,*) "At grid level = ", k
+          end if
+
+          err_code = err_code_pdf_closure
+        end if
+      
+        wp2thvp_frz = zm2zt ( wp2thvp_zm_frz )
+
+      end do ! k  = 1, gr%nz, 1
+      
+      wpthvp_frz            = zt2zm( wpthvp_zt_frz )
+      wpthvp_frz(gr%nz)   = 0.0_core_rknd
+      thlpthvp_frz          = zt2zm( thlpthvp_zt_frz )
+      thlpthvp_frz(gr%nz) = 0.0_core_rknd
+      rtpthvp_frz          = zt2zm( rtpthvp_zt_frz )
+      rtpthvp_frz(gr%nz)  = 0.0_core_rknd
+
+    end if ! l_use_ice_latent = .true.
+
+                      
+
+
+
     !----------------------------------------------------------------
     ! Compute thvm
     !----------------------------------------------------------------
@@ -1041,14 +1185,25 @@ module clubb_core
     if ( l_avg_Lscale .and. .not. l_Lscale_plume_centered ) then
       ! Call compute length two additional times with perturbed values
       ! of rtm and thlm so that an average value of Lscale may be calculated.
+      if ( l_use_ice_latent ) then
+        !Include the effects of ice in the length scale calculation
 
-      thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-      rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-      mu_pert_1  = mu / Lscale_mu_coef
-
-      thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-      rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-      mu_pert_2  = mu * Lscale_mu_coef
+        thlm_pert_1 = thlm_frz + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
+        rtm_pert_1  = rtm_frz  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+        mu_pert_1  = mu / Lscale_mu_coef
+  
+        thlm_pert_2 = thlm_frz - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
+        rtm_pert_2  = rtm_frz  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+        mu_pert_2  = mu * Lscale_mu_coef
+      else
+        thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
+        rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+        mu_pert_1  = mu / Lscale_mu_coef
+  
+        thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
+        rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+        mu_pert_2  = mu * Lscale_mu_coef
+      end if
 
       call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, &        ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
@@ -1061,34 +1216,57 @@ module clubb_core
                            Lscale_pert_2, Lscale_up, Lscale_down )     ! intent(out)
 
     else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
+      ! Take the values of thl and rt based one 1st or 2nd plume
+
       do k = 1, gr%nz, 1
         sign_rtpthlp(k) = sign(1.0_core_rknd, rtpthlp(k))
       end do
 
-
-      ! Take the values of thl and rt based one 1st or 2nd plume
-      where ( pdf_params%rt1 > pdf_params%rt2 )
-        rtm_pert_pos_rt = pdf_params%rt1 &
+      if ( l_use_ice_latent ) then
+        where ( pdf_params_frz%rt1 > pdf_params_frz%rt2 )
+          rtm_pert_pos_rt = pdf_params_frz%rt1 &
+                     + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt1, rt_tol**2 ) )
+          thlm_pert_pos_rt = pdf_params_frz%thl1 + ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params_frz%varnce_thl1, thl_tol**2 ) ) )
+          thlm_pert_neg_rt = pdf_params_frz%thl2 - ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params_frz%varnce_thl2, thl_tol**2 ) ) )
+          rtm_pert_neg_rt = pdf_params_frz%rt2 & 
+                     - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt2, rt_tol**2 ) )
+          !Lscale_weight = pdf_params%mixt_frac
+        else where
+          rtm_pert_pos_rt = pdf_params_frz%rt2 &
+                     + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt2, rt_tol**2 ) )
+          thlm_pert_pos_rt = pdf_params_frz%thl2 + ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params_frz%varnce_thl2, thl_tol**2 ) ) )
+          thlm_pert_neg_rt = pdf_params_frz%thl1 - ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params_frz%varnce_thl1, thl_tol**2 ) ) )
+          rtm_pert_neg_rt = pdf_params_frz%rt1 & 
+                     - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt1, rt_tol**2 ) )
+          !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
+        end where
+      else      
+        where ( pdf_params%rt1 > pdf_params%rt2 )
+          rtm_pert_pos_rt = pdf_params%rt1 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
-        thlm_pert_pos_rt = pdf_params%thl1 + ( sign_rtpthlp * Lscale_pert_coef &
+          thlm_pert_pos_rt = pdf_params%thl1 + ( sign_rtpthlp * Lscale_pert_coef &
                      * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) ) )
-        thlm_pert_neg_rt = pdf_params%thl2 - ( sign_rtpthlp * Lscale_pert_coef &
+          thlm_pert_neg_rt = pdf_params%thl2 - ( sign_rtpthlp * Lscale_pert_coef &
                      * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) ) )
-        rtm_pert_neg_rt = pdf_params%rt2 & 
+          rtm_pert_neg_rt = pdf_params%rt2 & 
                      - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
-        !Lscale_weight = pdf_params%mixt_frac
-      else where
-        rtm_pert_pos_rt = pdf_params%rt2 &
+          !Lscale_weight = pdf_params%mixt_frac
+        else where
+          rtm_pert_pos_rt = pdf_params%rt2 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
-        thlm_pert_pos_rt = pdf_params%thl2 + ( sign_rtpthlp * Lscale_pert_coef &
+          thlm_pert_pos_rt = pdf_params%thl2 + ( sign_rtpthlp * Lscale_pert_coef &
                      * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) ) )
-        thlm_pert_neg_rt = pdf_params%thl1 - ( sign_rtpthlp * Lscale_pert_coef &
+          thlm_pert_neg_rt = pdf_params%thl1 - ( sign_rtpthlp * Lscale_pert_coef &
                      * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) ) )
-        rtm_pert_neg_rt = pdf_params%rt1 & 
+          rtm_pert_neg_rt = pdf_params%rt1 & 
                      - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
-        !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
-      end where
-
+          !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
+        end where
+      end if
       mu_pert_pos_rt  = mu / Lscale_mu_coef
       mu_pert_neg_rt  = mu * Lscale_mu_coef
 
@@ -1309,7 +1487,24 @@ module clubb_core
       varnce_w2_zm = zt2zm( pdf_params%varnce_w2 )
       mixt_frac_zm = zt2zm( pdf_params%mixt_frac )
     end if
-    call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,       & ! intent(in)
+
+    if ( l_use_ice_latent ) then
+      !calculate turbulence with terms including ice latent heating
+      call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,     & ! intent(in)
+                          Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, & ! intent(in)
+                          tau_zm, Skw_zm, rtpthvp_frz, rtm_forcing, & ! intent(in)
+                          wprtp_forcing, rtm_ref, thlpthvp_frz,     & ! intent(in)
+                          thlm_forcing, wpthlp_forcing, thlm_ref,   & ! intent(in)
+                          rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,    & ! intent(in)
+                          invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,  & ! intent(in)
+                          w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, & ! intent(in)
+                          mixt_frac_zm, l_implemented,              & ! intent(in)
+                          sclrpthvp, sclrm_forcing, sclrp2,         & ! intent(in)
+                          rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
+                          err_code,                                 & ! intent(inout)
+                          sclrm, wpsclrp                            ) ! intent(inout)
+    else    
+      call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,     & ! intent(in)
                           Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, & ! intent(in)
                           tau_zm, Skw_zm, rtpthvp, rtm_forcing,     & ! intent(in)
                           wprtp_forcing, rtm_ref, thlpthvp,         & ! intent(in)
@@ -1322,6 +1517,7 @@ module clubb_core
                           rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
                           err_code,                                 & ! intent(inout)
                           sclrm, wpsclrp                            ) ! intent(inout)
+    end if
 
     ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
     ! This code won't work unless rtm >= 0 !!!
@@ -1346,18 +1542,34 @@ module clubb_core
     ! at shorter timesteps so these are prognosed now.
 
     ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
-    call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,       & ! intent(in)
-                           wpthlp, wpthvp, um, vm, wp2, wp2_zt,   & ! intent(in)
-                           wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,  & ! intent(in)
-                           Kh_zt, rtp2_forcing, thlp2_forcing,    & ! intent(in)
-                           rtpthlp_forcing, rho_ds_zm, rho_ds_zt, & ! intent(in)
-                           invrs_rho_ds_zm, thv_ds_zm,            & ! intent(in)
-                           Lscale, wp3_on_wp2, wp3_on_wp2_zt,     & ! intent(in)
-                           l_iter_xp2_xpyp, dt,                   & ! intent(in)
-                           sclrm, wpsclrp,                        & ! intent(in) 
-                           rtp2, thlp2, rtpthlp, up2, vp2,        & ! intent(inout)
-                           err_code,                              & ! intent(inout)
-                           sclrp2, sclrprtp, sclrpthlp            ) ! intent(inout)
+    if ( l_use_ice_latent) then
+      ! calculate turbulence with terms including ice latent heating
+      call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,       & ! intent(in)
+                           wpthlp, wpthvp_frz, um, vm, wp2, wp2_zt, & ! intent(in)
+                           wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,    & ! intent(in)
+                           Kh_zt, rtp2_forcing, thlp2_forcing,      & ! intent(in)
+                           rtpthlp_forcing, rho_ds_zm, rho_ds_zt,   & ! intent(in)
+                           invrs_rho_ds_zm, thv_ds_zm,              & ! intent(in)
+                           Lscale, wp3_on_wp2, wp3_on_wp2_zt,       & ! intent(in)
+                           l_iter_xp2_xpyp, dt,                     & ! intent(in)
+                           sclrm, wpsclrp,                          & ! intent(in) 
+                           rtp2, thlp2, rtpthlp, up2, vp2,          & ! intent(inout)
+                           err_code,                                & ! intent(inout)
+                           sclrp2, sclrprtp, sclrpthlp              ) ! intent(inout)
+    else
+      call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,       & ! intent(in)
+                           wpthlp, wpthvp, um, vm, wp2, wp2_zt,     & ! intent(in)
+                           wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,    & ! intent(in)
+                           Kh_zt, rtp2_forcing, thlp2_forcing,      & ! intent(in)
+                           rtpthlp_forcing, rho_ds_zm, rho_ds_zt,   & ! intent(in)
+                           invrs_rho_ds_zm, thv_ds_zm,              & ! intent(in)
+                           Lscale, wp3_on_wp2, wp3_on_wp2_zt,       & ! intent(in)
+                           l_iter_xp2_xpyp, dt,                     & ! intent(in)
+                           sclrm, wpsclrp,                          & ! intent(in) 
+                           rtp2, thlp2, rtpthlp, up2, vp2,          & ! intent(inout)
+                           err_code,                                & ! intent(inout)
+                           sclrp2, sclrprtp, sclrpthlp              ) ! intent(inout)
+    end if
 
     !----------------------------------------------------------------
     ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
@@ -1381,7 +1593,18 @@ module clubb_core
     ! by one timestep
     !----------------------------------------------------------------
 
-    call advance_wp2_wp3 &
+    if ( l_use_ice_latent) then
+      call advance_wp2_wp3 &
+         ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! intent(in)
+           a3_coef, a3_coef_zt, wp3_on_wp2,              & ! intent(in)
+           wpthvp_frz, wp2thvp_frz, um, vm, upwp, vpwp,  & ! intent(in)
+           up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,       & ! intent(in)
+           Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,         & ! intent(in)
+           invrs_rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
+           thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
+           wp2, wp3, wp3_zm, wp2_zt, err_code           ) ! intent(inout)
+    else
+      call advance_wp2_wp3 &
          ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! intent(in)
            a3_coef, a3_coef_zt, wp3_on_wp2,              & ! intent(in)
            wpthvp, wp2thvp, um, vm, upwp, vpwp,          & ! intent(in)
@@ -1390,6 +1613,7 @@ module clubb_core
            invrs_rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
            thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
            wp2, wp3, wp3_zm, wp2_zt, err_code           ) ! intent(inout)
+    end if
 
     !----------------------------------------------------------------
     ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
