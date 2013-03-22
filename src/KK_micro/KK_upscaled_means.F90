@@ -18,11 +18,13 @@ module KK_upscaled_means
   contains
 
   !=============================================================================
-  function KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
-                                  sigma_s_1, sigma_s_2, sigma_rr_n, &
-                                  sigma_Nr_n, corr_srr_1_n, corr_srr_2_n, &
-                                  corr_sNr_1_n, corr_sNr_2_n, corr_rrNr_n, &
-                                  KK_evap_coef, mixt_frac, precip_frac )
+  function KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
+                                  mu_Nr_1_n, mu_Nr_2_n, sigma_s_1, &
+                                  sigma_s_2, sigma_rr_1_n, sigma_rr_2_n, &
+                                  sigma_Nr_1_n, sigma_Nr_2_n, corr_srr_1_n, &
+                                  corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
+                                  corr_rrNr_1_n, corr_rrNr_2_n, KK_evap_coef, &
+                                  mixt_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain water
@@ -46,22 +48,28 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,       & ! Mean of s (1st PDF component)                        [-]
-      mu_s_2,       & ! Mean of s (2nd PDF component)                        [-]
-      mu_rr_n,      & ! Mean of ln rr (both components)                      [-]
-      mu_Nr_n,      & ! Mean of ln Nr (both components)                      [-]
-      sigma_s_1,    & ! Standard deviation of s (1st PDF component)          [-]
-      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)          [-]
-      sigma_rr_n,   & ! Standard deviation of ln rr (both components)        [-]
-      sigma_Nr_n,   & ! Standard deviation of ln Nr (both components)        [-]
-      corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component)  [-]
-      corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component)  [-]
-      corr_sNr_1_n, & ! Correlation between s and ln Nr (1st PDF component)  [-]
-      corr_sNr_2_n, & ! Correlation between s and ln Nr (2nd PDF component)  [-]
-      corr_rrNr_n,  & ! Correlation between ln rr & ln Nr (both components)  [-]
-      KK_evap_coef, & ! KK evaporation coefficient                   [(kg/kg)/s]
-      mixt_frac,    & ! Mixture fraction                                     [-]
-      precip_frac     ! Precipitation fraction                               [-]
+      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) in-precip (ip)    [-]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip                [-]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip                [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_rr_1_n,  & ! Standard deviation of ln rr (1st PDF component) ip  [-]
+      sigma_rr_2_n,  & ! Standard deviation of ln rr (2nd PDF component) ip  [-]
+      sigma_Nr_1_n,  & ! Standard deviation of ln Nr (1st PDF component) ip  [-]
+      sigma_Nr_2_n,  & ! Standard deviation of ln Nr (2nd PDF component) ip  [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
+      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
+      corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+      KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -82,16 +90,17 @@ module KK_upscaled_means
     ! Calculate the mean KK evaporation tendency.
     KK_evap_upscaled_mean  &
     = KK_evap_coef &
-      * precip_frac &
       * ( mixt_frac &
-          * trivar_NLL_mean_eq( mu_s_1, mu_rr_n, mu_Nr_n, &
-                                sigma_s_1, sigma_rr_n, sigma_Nr_n, &
-                                corr_srr_1_n, corr_sNr_1_n, corr_rrNr_n, &
+          * precip_frac_1 &
+          * trivar_NLL_mean_eq( mu_s_1, mu_rr_1_n, mu_Nr_1_n, &
+                                sigma_s_1, sigma_rr_1_n, sigma_Nr_1_n, &
+                                corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         + ( one - mixt_frac ) &
-          * trivar_NLL_mean_eq( mu_s_2, mu_rr_n, mu_Nr_n, &
-                                sigma_s_2, sigma_rr_n, sigma_Nr_n, &
-                                corr_srr_2_n, corr_sNr_2_n, corr_rrNr_n, &
+          * precip_frac_2 &
+          * trivar_NLL_mean_eq( mu_s_2, mu_rr_2_n, mu_Nr_2_n, &
+                                sigma_s_2, sigma_rr_2_n, sigma_Nr_2_n, &
+                                corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         )
 
@@ -101,9 +110,10 @@ module KK_upscaled_means
   end function KK_evap_upscaled_mean
 
   !=============================================================================
-  function KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_n, sigma_s_1, &
-                                  sigma_s_2, sigma_Nc_n, corr_sNc_1_n, &
-                                  corr_sNc_2_n, KK_auto_coef, mixt_frac, &
+  function KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_1_n, mu_Nc_2_n, &
+                                  sigma_s_1, sigma_s_2, sigma_Nc_1_n, &
+                                  sigma_Nc_2_n, corr_sNc_1_n, corr_sNc_2_n, &
+                                  KK_auto_coef, mixt_frac, &
                                   Nc0_in_cloud, l_const_Nc_in_cloud )
 
     ! Description:
@@ -129,10 +139,12 @@ module KK_upscaled_means
     real( kind = core_rknd ), intent(in) :: &
       mu_s_1,       & ! Mean of s (1st PDF component)                       [-]
       mu_s_2,       & ! Mean of s (2nd PDF component)                       [-]
-      mu_Nc_n,      & ! Mean of ln Nc (both components)                     [-]
+      mu_Nc_1_n,    & ! Mean of ln Nc (1st PDF component)                   [-]
+      mu_Nc_2_n,    & ! Mean of ln Nc (2nd PDF component)                   [-]
       sigma_s_1,    & ! Standard deviation of s (1st PDF component)         [-]
       sigma_s_2,    & ! Standard deviation of s (2nd PDF component)         [-]
-      sigma_Nc_n,   & ! Standard deviation of ln Nc (both components)       [-]
+      sigma_Nc_1_n, & ! Standard deviation of ln Nc (1st PDF component)     [-]
+      sigma_Nc_2_n, & ! Standard deviation of ln Nc (2nd PDF component)     [-]
       corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component) [-]
       corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component) [-]
       KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
@@ -174,10 +186,10 @@ module KK_upscaled_means
        KK_auto_upscaled_mean  &
        = KK_auto_coef &
          * ( mixt_frac &
-           * bivar_NL_mean_eq( mu_s_1, mu_Nc_n, sigma_s_1, sigma_Nc_n, &
+           * bivar_NL_mean_eq( mu_s_1, mu_Nc_1_n, sigma_s_1, sigma_Nc_1_n, &
                                corr_sNc_1_n, alpha_exp, beta_exp ) &
            + ( one - mixt_frac ) &
-           * bivar_NL_mean_eq( mu_s_2, mu_Nc_n, sigma_s_2, sigma_Nc_n, &
+           * bivar_NL_mean_eq( mu_s_2, mu_Nc_2_n, sigma_s_2, sigma_Nc_2_n, &
                                corr_sNc_2_n, alpha_exp, beta_exp ) &
            )
 
@@ -189,10 +201,11 @@ module KK_upscaled_means
   end function KK_auto_upscaled_mean
 
   !=============================================================================
-  function KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_n, sigma_s_1, &
-                                  sigma_s_2, sigma_rr_n, corr_srr_1_n, &
-                                  corr_srr_2_n, KK_accr_coef, mixt_frac, &
-                                  precip_frac )
+  function KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
+                                  sigma_s_1, sigma_s_2, sigma_rr_1_n, &
+                                  sigma_rr_2_n, corr_srr_1_n, corr_srr_2_n, &
+                                  KK_accr_coef, mixt_frac, precip_frac_1, &
+                                  precip_frac_2 )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain water
@@ -215,26 +228,29 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,       & ! Mean of s (1st PDF component)                       [-]
-      mu_s_2,       & ! Mean of s (2nd PDF component)                       [-]
-      mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
-      sigma_s_1,    & ! Standard deviation of s (1st PDF component)         [-]
-      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)         [-]
-      sigma_rr_n,   & ! Standard deviation of ln rr (both components)       [-]
-      corr_srr_1_n, & ! Correlation between s and ln rr (1st PDF component) [-]
-      corr_srr_2_n, & ! Correlation between s and ln rr (2nd PDF component) [-]
-      KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
-      mixt_frac,    & ! Mixture fraction                                    [-]
-      precip_frac     ! Precipitation fraction                              [-]
+      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) in-precip (ip)    [-]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_rr_1_n,  & ! Standard deviation of ln rr (1st PDF component) ip  [-]
+      sigma_rr_2_n,  & ! Standard deviation of ln rr (2nd PDF component) ip  [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
+      KK_accr_coef,  & ! KK accretion coefficient                    [(kg/kg)/s]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      KK_accr_upscaled_mean  ! Mean of KK accretion tendency        [(kg/kg)/s]
+      KK_accr_upscaled_mean  ! Mean of KK accretion tendency         [(kg/kg)/s]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      alpha_exp, & ! Exponent on s                                          [-]
-      beta_exp     ! Exponent on r_r                                        [-]
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp     ! Exponent on r_r                                         [-]
 
 
     ! Values of the KK exponents.
@@ -244,13 +260,14 @@ module KK_upscaled_means
     ! Calculate the mean KK accretion tendency.
     KK_accr_upscaled_mean  &
     = KK_accr_coef &
-      * precip_frac &
       * ( mixt_frac &
-        * bivar_NL_mean_eq( mu_s_1, mu_rr_n, sigma_s_1, sigma_rr_n, &
-                            corr_srr_1_n, alpha_exp, beta_exp ) &
+          * precip_frac_1 &
+          * bivar_NL_mean_eq( mu_s_1, mu_rr_1_n, sigma_s_1, sigma_rr_1_n, &
+                              corr_srr_1_n, alpha_exp, beta_exp ) &
         + ( one - mixt_frac ) &
-        * bivar_NL_mean_eq( mu_s_2, mu_rr_n, sigma_s_2, sigma_rr_n, &
-                            corr_srr_2_n, alpha_exp, beta_exp ) &
+          * precip_frac_2 &
+          * bivar_NL_mean_eq( mu_s_2, mu_rr_2_n, sigma_s_2, sigma_rr_2_n, &
+                              corr_srr_2_n, alpha_exp, beta_exp ) &
         )
 
 
@@ -259,9 +276,11 @@ module KK_upscaled_means
   end function KK_accr_upscaled_mean
 
   !=============================================================================
-  function KK_mvr_upscaled_mean( mu_rr_n, mu_Nr_n, sigma_rr_n, &
-                                 sigma_Nr_n, corr_rrNr_n, KK_mvr_coef, &
-                                 precip_frac )
+  function KK_mvr_upscaled_mean( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
+                                 sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                                 sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+                                 KK_mvr_coef, mixt_frac, precip_frac_1, &
+                                 precip_frac_2 )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain drop mean
@@ -269,6 +288,9 @@ module KK_upscaled_means
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one  ! Constant(s)
 
     use parameters_microphys, only: &
         KK_mvr_rr_exp, & ! Variable(s)
@@ -281,22 +303,29 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_rr_n,     & ! Mean of ln rr (both components)                     [-]
-      mu_Nr_n,     & ! Mean of ln Nr (both components)                     [-]
-      sigma_rr_n,  & ! Standard deviation of ln rr (both components)       [-]
-      sigma_Nr_n,  & ! Standard deviation of ln Nr (both components)       [-]
-      corr_rrNr_n, & ! Correlation between ln rr & ln Nr (both components) [-]
-      KK_mvr_coef, & ! KK mean volume radius coefficient                   [m]
-      precip_frac    ! Precipitation fraction                              [-]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) in-precip (ip)    [-]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip                [-]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip                [-]
+      sigma_rr_1_n,  & ! Standard deviation of ln rr (1st PDF component) ip  [-]
+      sigma_rr_2_n,  & ! Standard deviation of ln rr (2nd PDF component) ip  [-]
+      sigma_Nr_1_n,  & ! Standard deviation of ln Nr (1st PDF component) ip  [-]
+      sigma_Nr_2_n,  & ! Standard deviation of ln Nr (2nd PDF component) ip  [-]
+      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
+      corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+      KK_mvr_coef,   & ! KK mean volume radius coefficient                   [m]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      KK_mvr_upscaled_mean  ! Mean of KK rain drop mean volume radius      [m]
+      KK_mvr_upscaled_mean  ! Mean of KK rain drop mean volume radius        [m]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      alpha_exp, & ! Exponent on r_r                                       [-]
-      beta_exp     ! Exponent on N_r                                       [-]
+      alpha_exp, & ! Exponent on r_r                                         [-]
+      beta_exp     ! Exponent on N_r                                         [-]
 
 
     ! Values of the KK exponents.
@@ -306,9 +335,17 @@ module KK_upscaled_means
     ! Calculate the KK mean volume radius of rain drops.
     KK_mvr_upscaled_mean  &
     = KK_mvr_coef &
-      * precip_frac &
-      * bivar_LL_mean_eq( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
-                          corr_rrNr_n, alpha_exp, beta_exp )
+      * ( mixt_frac &
+          * precip_frac_1 &
+          * bivar_LL_mean_eq( mu_rr_1_n, mu_Nr_1_n, sigma_rr_1_n, &
+                              sigma_Nr_1_n, corr_rrNr_1_n, &
+                              alpha_exp, beta_exp ) &
+        + ( one - mixt_frac ) &
+          * precip_frac_2 &
+          * bivar_LL_mean_eq( mu_rr_2_n, mu_Nr_2_n, sigma_rr_2_n, &
+                              sigma_Nr_2_n, corr_rrNr_2_n, &
+                              alpha_exp, beta_exp ) &
+        ) 
 
 
     return
@@ -316,9 +353,9 @@ module KK_upscaled_means
   end function KK_mvr_upscaled_mean
 
   !=============================================================================
-  function trivar_NLL_mean_eq( mu_s_i, mu_rr_n, mu_Nr_n, &
-                               sigma_s_i, sigma_rr_n, sigma_Nr_n, &
-                               corr_srr_i_n, corr_sNr_i_n, corr_rrNr_n, &
+  function trivar_NLL_mean_eq( mu_s_i, mu_rr_i_n, mu_Nr_i_n, &
+                               sigma_s_i, sigma_rr_i_n, sigma_Nr_i_n, &
+                               corr_srr_i_n, corr_sNr_i_n, corr_rrNr_i_n, &
                                alpha_exp_in, beta_exp_in, gamma_exp_in )
 
     ! Description:
@@ -354,20 +391,20 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_i,       & ! Mean of s (ith PDF component)                       [-]
-      mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
-      mu_Nr_n,      & ! Mean of ln Nr (both components)                     [-]
-      sigma_s_i,    & ! Standard deviation of s (ith PDF component)         [-]
-      sigma_rr_n,   & ! Standard deviation of ln rr (both components)       [-]
-      sigma_Nr_n,   & ! Standard deviation of ln Nr (both components)       [-]
-      corr_srr_i_n, & ! Correlation between s and ln rr (ith PDF component) [-]
-      corr_sNr_i_n, & ! Correlation between s and ln Nr (ith PDF component) [-]
-      corr_rrNr_n     ! Correlation between ln rr & ln Nr (both components) [-]
+      mu_s_i,        & ! Mean of s (ith PDF component)                       [-]
+      mu_rr_i_n,     & ! Mean of ln rr (ith PDF component) in-precip (ip)    [-]
+      mu_Nr_i_n,     & ! Mean of ln Nr (ith PDF component) ip                [-]
+      sigma_s_i,     & ! Standard deviation of s (ith PDF component)         [-]
+      sigma_rr_i_n,  & ! Standard deviation of ln rr (ith PDF component) ip  [-]
+      sigma_Nr_i_n,  & ! Standard deviation of ln Nr (ith PDF component) ip  [-]
+      corr_srr_i_n,  & ! Correlation between s and ln rr (ith PDF comp.) ip  [-]
+      corr_sNr_i_n,  & ! Correlation between s and ln Nr (ith PDF comp.) ip  [-]
+      corr_rrNr_i_n    ! Correlation btwn. ln rr & ln Nr (ith PDF comp.) ip  [-]
 
     real( kind = core_rknd ), intent(in) :: &
-      alpha_exp_in,  & ! Exponent alpha, corresponding to s                 [-]
-      beta_exp_in,   & ! Exponent beta, corresponding to rr                 [-]
-      gamma_exp_in     ! Exponent gamma, corresponding to Nr                [-]
+      alpha_exp_in,  & ! Exponent alpha, corresponding to s                  [-]
+      beta_exp_in,   & ! Exponent beta, corresponding to rr                  [-]
+      gamma_exp_in     ! Exponent gamma, corresponding to Nr                 [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -397,18 +434,18 @@ module KK_upscaled_means
 
     ! Means for the ith PDF component. 
     mu_x1   = dble( mu_s_i )
-    mu_x2_n = dble( mu_rr_n ) ! The same for both PDF components.
-    mu_x3_n = dble( mu_Nr_n ) ! The same for both PDF components.
+    mu_x2_n = dble( mu_rr_i_n )
+    mu_x3_n = dble( mu_Nr_i_n )
 
     ! Standard deviations for the ith PDF component.
     sigma_x1   = dble( sigma_s_i )
-    sigma_x2_n = dble( sigma_rr_n ) ! The same for both PDF components.
-    sigma_x3_n = dble( sigma_Nr_n ) ! The same for both PDF components.
+    sigma_x2_n = dble( sigma_rr_i_n )
+    sigma_x3_n = dble( sigma_Nr_i_n )
 
     ! Correlations for the ith PDF component.
     rho_x1x2_n = dble( corr_srr_i_n )
     rho_x1x3_n = dble( corr_sNr_i_n )
-    rho_x2x3_n = dble( corr_rrNr_n )  ! The same for both PDF components.
+    rho_x2x3_n = dble( corr_rrNr_i_n )
 
     ! Exponents.
     alpha_exp = dble( alpha_exp_in )
@@ -449,7 +486,8 @@ module KK_upscaled_means
     ! parab_cyl_max_input), find the correct form of the trivariate equation to
     ! use.
 
-    if ( sigma_x1 <= x1_tol .or. abs( s_cc ) > dble( parab_cyl_max_input ) ) then
+    if ( sigma_x1 <= x1_tol &
+         .or. abs( s_cc ) > dble( parab_cyl_max_input ) ) then
 
        ! The ith PDF component variance of s is 0.
        trivar_NLL_mean_eq  &
@@ -478,7 +516,7 @@ module KK_upscaled_means
   end function trivar_NLL_mean_eq
 
   !=============================================================================
-  function bivar_NL_mean_eq( mu_s_i, mu_y_n, sigma_s_i, sigma_y_n, &
+  function bivar_NL_mean_eq( mu_s_i, mu_y_i_n, sigma_s_i, sigma_y_i_n, &
                              corr_sy_i_n, alpha_exp_in, beta_exp_in )
 
     ! Description:
@@ -516,9 +554,9 @@ module KK_upscaled_means
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       mu_s_i,      & ! Mean of s (ith PDF component)                        [-]
-      mu_y_n,      & ! Mean of ln y (both components)                       [-]
+      mu_y_i_n,    & ! Mean of ln y (ith PDF component)                     [-]
       sigma_s_i,   & ! Standard deviation of s (ith PDF component)          [-]
-      sigma_y_n,   & ! Standard deviation of ln y (both components)         [-]
+      sigma_y_i_n, & ! Standard deviation of ln y (ith PDF component)       [-]
       corr_sy_i_n    ! Correlation between s and ln y (ith PDF component)   [-]
 
     real( kind = core_rknd ), intent(in) :: &
@@ -548,13 +586,11 @@ module KK_upscaled_means
 
     ! Means for the ith PDF component. 
     mu_x1   = dble( mu_s_i )
-    mu_x2_n = dble( mu_y_n ) ! y is N_c (autoconversion) or r_r (accretion).
-                             ! The same for both PDF components.
+    mu_x2_n = dble( mu_y_i_n ) ! y is N_c (autoconversion) or r_r (accretion).
 
     ! Standard deviations for the ith PDF component.
     sigma_x1   = dble( sigma_s_i )
-    sigma_x2_n = dble( sigma_y_n ) ! y is N_c (auto.) or r_r (accr.).
-                                   ! The same for both PDF components.
+    sigma_x2_n = dble( sigma_y_i_n ) ! y is N_c (auto.) or r_r (accr.).
 
     ! Correlations for the ith PDF component.
     rho_x1x2_n = dble( corr_sy_i_n ) ! y is N_c (auto.) or r_r (accr.).
@@ -751,18 +787,19 @@ module KK_upscaled_means
   end function bivar_NL_mean_eq_Nc0
 
   !=============================================================================
-  function bivar_LL_mean_eq( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
-                             corr_rrNr_n, alpha_exp_in, beta_exp_in )
+  function bivar_LL_mean_eq( mu_rr_i_n, mu_Nr_i_n, sigma_rr_i_n, &
+                             sigma_Nr_i_n, corr_rrNr_i_n, &
+                             alpha_exp_in, beta_exp_in )
 
     ! Description:
     ! This function calculates the expression < x1^alpha x2^beta >, where
     ! x1 = r_r and x2 = N_r.  The value of mean volume radius is given by:
     !
-    ! < KK_mvr > = KK_mvr_coef * < r_r^alpha N_r^beta >.
+    ! < KK_mvr > = KK_mvr_coef
+    !              * ( mixt_frac < r_r^alpha N_r^beta (1) >
+    !                  + ( 1 - mixt_frac ) < r_r^alpha N_r^beta (2) > ).
     !
-    ! Since both r_r and N_r are the same for both components of the PDF, this
-    ! function only needs to be called once, rather than once for each PDF
-    ! component.
+    ! These function is the result of an evaluated integral.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -778,15 +815,15 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_rr_n,      & ! Mean of ln rr (both components)                     [-]
-      mu_Nr_n,      & ! Mean of ln Nr (both components)                     [-]
-      sigma_rr_n,   & ! Standard deviation of ln rr (both components)       [-]
-      sigma_Nr_n,   & ! Standard deviation of ln Nr (both components)       [-]
-      corr_rrNr_n     ! Correlation between ln rr & ln Nr (both components) [-]
+      mu_rr_i_n,     & ! Mean of ln rr (ith PDF component) in-precip (ip)    [-]
+      mu_Nr_i_n,     & ! Mean of ln Nr (ith PDF component) ip                [-]
+      sigma_rr_i_n,  & ! Standard deviation of ln rr (ith PDF component) ip  [-]
+      sigma_Nr_i_n,  & ! Standard deviation of ln Nr (ith PDF component) ip  [-]
+      corr_rrNr_i_n    ! Correlation btwn. ln rr & ln Nr (ith PDF comp.) ip  [-]
 
     real( kind = core_rknd ), intent(in) :: &
-      alpha_exp_in,  & ! Exponent alpha, corresponding to rr                [-]
-      beta_exp_in      ! Exponent beta, corresponding to Nr                 [-]
+      alpha_exp_in,  & ! Exponent alpha, corresponding to rr                 [-]
+      beta_exp_in      ! Exponent beta, corresponding to Nr                  [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -806,15 +843,15 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component.
-    mu_x1_n = dble( mu_rr_n ) ! The same for both PDF components.
-    mu_x2_n = dble( mu_Nr_n ) ! The same for both PDF components.
+    mu_x1_n = dble( mu_rr_i_n )
+    mu_x2_n = dble( mu_Nr_i_n )
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1_n = dble( sigma_rr_n ) ! The same for both PDF components.
-    sigma_x2_n = dble( sigma_Nr_n ) ! The same for both PDF components.
+    sigma_x1_n = dble( sigma_rr_i_n )
+    sigma_x2_n = dble( sigma_Nr_i_n )
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = dble( corr_rrNr_n ) ! The same for both PDF components.
+    rho_x1x2_n = dble( corr_rrNr_i_n )
 
     ! Exponents.
     alpha_exp = dble( alpha_exp_in )

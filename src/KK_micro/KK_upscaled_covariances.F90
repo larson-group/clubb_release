@@ -1081,9 +1081,11 @@ module KK_upscaled_covariances
   end function covar_thl_KK_accr
 
   !=============================================================================
-  function covar_rr_KK_mvr( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
-                            corr_rrNr_n, rrm, KK_mean_vol_rad, &
-                            KK_mvr_coef, precip_frac )
+  function covar_rr_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
+                            sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                            sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+                            rrm, KK_mean_vol_rad, KK_mvr_coef, &
+                            mixt_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
     ! This function calculates the covariance between r_r and KK mean volume
@@ -1109,15 +1111,22 @@ module KK_upscaled_covariances
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_rr_n,         & ! Mean of ln rr (both components) in-precip (ip)    [-]
-      mu_Nr_n,         & ! Mean of ln Nr (both components) ip                [-]
-      sigma_rr_n,      & ! Standard deviation of ln rr (both components) ip  [-]
-      sigma_Nr_n,      & ! Standard deviation of ln Nr (both components) ip  [-]
-      corr_rrNr_n,     & ! Correlation betw. ln rr & ln Nr (both comps.) ip  [-]
+      mu_rr_1_n,       & ! Mean of ln rr (1st PDF component) in-precip (ip)  [-]
+      mu_rr_2_n,       & ! Mean of ln rr (2nd PDF component) ip              [-]
+      mu_Nr_1_n,       & ! Mean of ln Nr (1st PDF component) ip              [-]
+      mu_Nr_2_n,       & ! Mean of ln Nr (2nd PDF component) ip              [-]
+      sigma_rr_1_n,    & ! Standard deviation of ln rr (1st PDF comp.) ip    [-]
+      sigma_rr_2_n,    & ! Standard deviation of ln rr (2nd PDF comp.) ip    [-]
+      sigma_Nr_1_n,    & ! Standard deviation of ln Nr (1st PDF comp.) ip    [-]
+      sigma_Nr_2_n,    & ! Standard deviation of ln Nr (2nd PDF comp.) ip    [-]
+      corr_rrNr_1_n,   & ! Corr. betw. ln rr & ln Nr (1st PDF comp.) ip      [-]
+      corr_rrNr_2_n,   & ! Corr. betw. ln rr & ln Nr (2nd PDF comp.) ip      [-]
       rrm,             & ! Mean rain water mixing ratio                  [kg/kg]
       KK_mean_vol_rad, & ! KK mean volume radius of rain drops               [m]
       KK_mvr_coef,     & ! KK mean volume radius coefficient                 [m]
-      precip_frac        ! Precipitation fraction                            [-]
+      mixt_frac,       & ! Mixture fraction                                  [-]
+      precip_frac_1,   & ! Precipitation fraction (1st PDF component)        [-]
+      precip_frac_2      ! Precipitation fraction (2nd PDF component)        [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -1136,9 +1145,17 @@ module KK_upscaled_covariances
     ! Calculate the covariance of r_r and KK mean volume radius of rain drops.
     covar_rr_KK_mvr  &
     = KK_mvr_coef &
-      * precip_frac &
-      * bivar_LL_mean_eq( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
-                          corr_rrNr_n, alpha_exp + one, beta_exp ) &
+      * ( mixt_frac &
+          * precip_frac_1 &
+          * bivar_LL_mean_eq( mu_rr_1_n, mu_Nr_1_n, sigma_rr_1_n, &
+                              sigma_Nr_1_n, corr_rrNr_1_n, &
+                              alpha_exp + one, beta_exp ) &
+        + ( one - mixt_frac ) &
+          * precip_frac_2 &
+          * bivar_LL_mean_eq( mu_rr_2_n, mu_Nr_2_n, sigma_rr_2_n, &
+                              sigma_Nr_2_n, corr_rrNr_2_n, &
+                              alpha_exp + one, beta_exp ) &
+        ) &
       - rrm * KK_mean_vol_rad
 
 
@@ -1147,9 +1164,11 @@ module KK_upscaled_covariances
   end function covar_rr_KK_mvr
 
   !=============================================================================
-  function covar_Nr_KK_mvr( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
-                            corr_rrNr_n, Nrm, KK_mean_vol_rad, &
-                            KK_mvr_coef, precip_frac )
+  function covar_Nr_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
+                            sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                            sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+                            Nrm, KK_mean_vol_rad, KK_mvr_coef, &
+                            mixt_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
     ! This function calculates the covariance between N_r and KK mean volume
@@ -1175,15 +1194,22 @@ module KK_upscaled_covariances
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_rr_n,         & ! Mean of ln rr (both components) in-precip (ip)    [-]
-      mu_Nr_n,         & ! Mean of ln Nr (both components) ip                [-]
-      sigma_rr_n,      & ! Standard deviation of ln rr (both components) ip  [-]
-      sigma_Nr_n,      & ! Standard deviation of ln Nr (both components) ip  [-]
-      corr_rrNr_n,     & ! Correlation betw. ln rr & ln Nr (both comps.) ip  [-]
+      mu_rr_1_n,       & ! Mean of ln rr (1st PDF component) in-precip (ip)  [-]
+      mu_rr_2_n,       & ! Mean of ln rr (2nd PDF component) ip              [-]
+      mu_Nr_1_n,       & ! Mean of ln Nr (1st PDF component) ip              [-]
+      mu_Nr_2_n,       & ! Mean of ln Nr (2nd PDF component) ip              [-]
+      sigma_rr_1_n,    & ! Standard deviation of ln rr (1st PDF comp.) ip    [-]
+      sigma_rr_2_n,    & ! Standard deviation of ln rr (2nd PDF comp.) ip    [-]
+      sigma_Nr_1_n,    & ! Standard deviation of ln Nr (1st PDF comp.) ip    [-]
+      sigma_Nr_2_n,    & ! Standard deviation of ln Nr (2nd PDF comp.) ip    [-]
+      corr_rrNr_1_n,   & ! Corr. betw. ln rr & ln Nr (1st PDF comp.) ip      [-]
+      corr_rrNr_2_n,   & ! Corr. betw. ln rr & ln Nr (2nd PDF comp.) ip      [-]
       Nrm,             & ! Mean rain drop concentration                 [num/kg]
       KK_mean_vol_rad, & ! KK mean volume radius of rain drops               [m]
       KK_mvr_coef,     & ! KK mean volume radius coefficient                 [m]
-      precip_frac        ! Precipitation fraction                            [-]
+      mixt_frac,       & ! Mixture fraction                                  [-]
+      precip_frac_1,   & ! Precipitation fraction (1st PDF component)        [-]
+      precip_frac_2      ! Precipitation fraction (2nd PDF component)        [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -1202,9 +1228,17 @@ module KK_upscaled_covariances
     ! Calculate the covariance of N_r and KK mean volume radius of rain drops.
     covar_Nr_KK_mvr  &
     = KK_mvr_coef &
-      * precip_frac &
-      * bivar_LL_mean_eq( mu_rr_n, mu_Nr_n, sigma_rr_n, sigma_Nr_n, &
-                          corr_rrNr_n, alpha_exp, beta_exp + one ) &
+      * ( mixt_frac &
+          * precip_frac_1 &
+          * bivar_LL_mean_eq( mu_rr_1_n, mu_Nr_1_n, sigma_rr_1_n, &
+                              sigma_Nr_1_n, corr_rrNr_1_n, &
+                              alpha_exp, beta_exp + one ) &
+        + ( one - mixt_frac ) &
+          * precip_frac_2 &
+          * bivar_LL_mean_eq( mu_rr_2_n, mu_Nr_2_n, sigma_rr_2_n, &
+                              sigma_Nr_2_n, corr_rrNr_2_n, &
+                              alpha_exp, beta_exp + one ) &
+        ) &
       - Nrm * KK_mean_vol_rad
 
 

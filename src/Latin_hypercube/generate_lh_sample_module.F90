@@ -2602,10 +2602,10 @@ module generate_lh_sample_module
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only : &
-        icorr_rrNr,   & ! Variable(s)
-        icorr_srr_1,    &
-        icorr_sNr_1,    &
-        icorr_sNc_1,    &
+        icorr_rrNr_1, & ! Variable(s)
+        icorr_srr_1,  &
+        icorr_sNr_1,  &
+        icorr_sNc_1,  &
         icorr_sw,     &
         icorr_wrr,    &
         icorr_wNr,    &
@@ -2653,9 +2653,9 @@ module generate_lh_sample_module
     endif
 
     if ( iiLH_rrain > iiLH_Nr ) then
-      call stat_update_var_pt( icorr_rrNr, level, corr_array(iiLH_rrain, iiLH_Nr), zt )
+      call stat_update_var_pt( icorr_rrNr_1, level, corr_array(iiLH_rrain, iiLH_Nr), zt )
     else
-      call stat_update_var_pt( icorr_rrNr, level, corr_array(iiLH_Nr, iiLH_rrain), zt )
+      call stat_update_var_pt( icorr_rrNr_1, level, corr_array(iiLH_Nr, iiLH_rrain), zt )
     endif
 
     if ( iiLH_s_mellor > iiLH_rrain ) then

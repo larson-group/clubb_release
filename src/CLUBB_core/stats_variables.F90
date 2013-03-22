@@ -97,47 +97,65 @@ module stats_variables
      iwprtpthlp, & 
      isigma_sqd_w_zt, & 
      irho, &
-     iprecip_frac
+     iprecip_frac, &
+     iprecip_frac_1, &
+     iprecip_frac_2
 
   integer, public :: &
-     imu_rr,        &
-     imu_rr_n,      &
-     imu_Nr,        &
-     imu_Nr_n,      &
-     imu_Nc,        &
-     imu_Nc_n,      &
-     isigma_rr,     &
-     isigma_rr_n,   &
-     isigma_Nr,     &
-     isigma_Nr_n,   &
-     isigma_Nc,     &
-     isigma_Nc_n,   &
-     icorr_srr_1,   &
-     icorr_srr_2,   &
-     icorr_srr_1_n, &
-     icorr_srr_2_n, &
-     icorr_sNr_1,   &
-     icorr_sNr_2,   &
-     icorr_sNr_1_n, &
-     icorr_sNr_2_n, &
-     icorr_sNc_1,   &
-     icorr_sNc_2,   &
-     icorr_sNc_1_n, &
-     icorr_sNc_2_n, &
-     icorr_trr_1,   &
-     icorr_trr_2,   &
-     icorr_trr_1_n, &
-     icorr_trr_2_n, &
-     icorr_tNr_1,   &
-     icorr_tNr_2,   &
-     icorr_tNr_1_n, &
-     icorr_tNr_2_n, &
-     icorr_tNc_1,   &
-     icorr_tNc_2,   &
-     icorr_tNc_1_n, &
-     icorr_tNc_2_n, &
-     icorr_rrNr,    &
-     icorr_rrNr_n
+     imu_rr_1,      &
+     imu_rr_2,      &
+     imu_Nr_1,      &
+     imu_Nr_2,      &
+     imu_Nc_1,      &
+     imu_Nc_2,      &
+     imu_rr_1_n,    &
+     imu_rr_2_n,    &
+     imu_Nr_1_n,    &
+     imu_Nr_2_n,    &
+     imu_Nc_1_n,    &
+     imu_Nc_2_n,    &
+     isigma_rr_1,   &
+     isigma_rr_2,   &
+     isigma_Nr_1,   &
+     isigma_Nr_2,   &
+     isigma_Nc_1,   &
+     isigma_Nc_2,   &
+     isigma_rr_1_n, &
+     isigma_rr_2_n, &
+     isigma_Nr_1_n, &
+     isigma_Nr_2_n, &
+     isigma_Nc_1_n, &
+     isigma_Nc_2_n
+
+  integer, public :: &
+     icorr_srr_1,    &
+     icorr_srr_2,    &
+     icorr_sNr_1,    &
+     icorr_sNr_2,    &
+     icorr_sNc_1,    &
+     icorr_sNc_2,    &
+     icorr_trr_1,    &
+     icorr_trr_2,    &
+     icorr_tNr_1,    &
+     icorr_tNr_2,    &
+     icorr_tNc_1,    &
+     icorr_tNc_2,    &
+     icorr_rrNr_1,   &
+     icorr_rrNr_2,   &
+     icorr_srr_1_n,  &
+     icorr_srr_2_n,  &
+     icorr_sNr_1_n,  &
+     icorr_sNr_2_n,  &
+     icorr_sNc_1_n,  &
+     icorr_sNc_2_n,  &
+     icorr_trr_1_n,  &
+     icorr_trr_2_n,  &
+     icorr_tNr_1_n,  &
+     icorr_tNr_2_n,  &
+     icorr_tNc_1_n,  &
+     icorr_tNc_2_n,  &
+     icorr_rrNr_1_n, &
+     icorr_rrNr_2_n
 
   integer, public :: & ! janhft 09/25/12
      icorr_sw,  &
@@ -177,23 +195,26 @@ module stats_variables
 !$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, &
 !$omp   iLscale_pert_1, iLscale_pert_2, &
 !$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, &
-!$omp   irho, iprecip_frac, irel_humidity, iNcm, iNcnm, isnowslope, &
+!$omp   irho, iprecip_frac, iprecip_frac_1, iprecip_frac_2, irel_humidity, &
+!$omp   iNcm, iNcnm, isnowslope, &
 !$omp   ised_rcm, irsat, irsati, irrainm, &
 !$omp   im_vol_rad_rain, im_vol_rad_cloud, &
 !$omp   irain_rate_zt, iAKm, iLH_AKm, &
 !$omp   iradht, iradht_LW, iradht_SW, &
 !$omp   iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc )
 
-!$omp threadprivate( imu_rr, imu_rr_n, imu_Nr, imu_Nr_n, imu_Nc, imu_Nc_n, &
-!$omp   isigma_rr, isigma_rr_n, isigma_Nr, isigma_Nr_n, &
-!$omp   isigma_Nc, isigma_Nc_n, &
-!$omp   icorr_srr_1, icorr_srr_2, icorr_srr_1_n, icorr_srr_2_n, &
-!$omp   icorr_sNr_1, icorr_sNr_2, icorr_sNr_1_n, icorr_sNr_2_n, & 
-!$omp   icorr_sNc_1, icorr_sNc_2, icorr_sNc_1_n, icorr_sNc_2_n, & 
-!$omp   icorr_trr_1, icorr_trr_2, icorr_trr_1_n, icorr_trr_2_n, &
-!$omp   icorr_tNr_1, icorr_tNr_2, icorr_tNr_1_n, icorr_tNr_2_n, & 
-!$omp   icorr_tNc_1, icorr_tNc_2, icorr_tNc_1_n, icorr_tNc_2_n, & 
-!$omp   icorr_rrNr, icorr_rrNr_n, &
+!$omp threadprivate( imu_rr_1, imu_rr_2, imu_Nr_1, imu_Nr_2, &
+!$omp   imu_Nc_1, imu_Nc_2, imu_rr_1_n, imu_rr_2_n, imu_Nr_1_n, imu_Nr_2_n, &
+!$omp   imu_Nc_1_n, imu_Nc_2_n, isigma_rr_1, isigma_rr_2, isigma_Nr_1, &
+!$omp   isigma_Nr_2, isigma_Nc_1, isigma_Nc_2, isigma_rr_1_n, isigma_rr_2_n, &
+!$omp   isigma_Nr_1_n, isigma_Nr_2_n, isigma_Nc_1_n, isigma_Nc_2_n, &
+!$omp   icorr_srr_1, icorr_srr_2, icorr_sNr_1, icorr_sNr_2, &
+!$omp   icorr_sNc_1, icorr_sNc_2, icorr_trr_1, icorr_trr_2, &
+!$omp   icorr_tNr_1, icorr_tNr_2, icorr_tNc_1, icorr_tNc_2, &
+!$omp   icorr_rrNr_1, icorr_rrNr_2, icorr_srr_1_n, icorr_srr_2_n, &
+!$omp   icorr_sNr_1_n, icorr_sNr_2_n, icorr_sNc_1_n, icorr_sNc_2_n, &
+!$omp   icorr_trr_1_n, icorr_trr_2_n, icorr_tNr_1_n, icorr_tNr_2_n, &
+!$omp   icorr_tNc_1_n, icorr_tNc_2_n, icorr_rrNr_1_n, icorr_rrNr_2_n, &
 !$omp   icorr_sw, icorr_wrr, icorr_wNr, icorr_wNc )
 
   integer, public :: & 
