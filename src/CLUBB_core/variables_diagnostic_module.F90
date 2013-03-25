@@ -50,7 +50,8 @@ module variables_diagnostic_module
 !$omp threadprivate(rsat)
 
   type(pdf_parameter), allocatable, dimension(:), target, public :: &
-    pdf_params_zm ! pdf_params on momentum levels  [units vary]
+    pdf_params_zm, & ! pdf_params on momentum levels  [units vary]
+    pdf_params_zm_frz !used when l_use_ice_latent = .true.
 
 !$omp threadprivate(pdf_params_zm)
 
@@ -252,6 +253,7 @@ module variables_diagnostic_module
 
     ! pdf_params on momentum levels
     allocate( pdf_params_zm(1:nz) )
+    allocate( pdf_params_zm_frz(1:nz) )
 
     ! Second order moments
 
@@ -403,6 +405,43 @@ module variables_diagnostic_module
     pdf_params_zm(:)%cloud_frac2 = zero
     pdf_params_zm(:)%mixt_frac   = zero
 
+    pdf_params_zm_frz(:)%w1          = zero
+    pdf_params_zm_frz(:)%w2          = zero
+    pdf_params_zm_frz(:)%varnce_w1   = zero
+    pdf_params_zm_frz(:)%varnce_w2   = zero
+    pdf_params_zm_frz(:)%rt1         = zero
+    pdf_params_zm_frz(:)%rt2         = zero
+    pdf_params_zm_frz(:)%varnce_rt1  = zero
+    pdf_params_zm_frz(:)%varnce_rt2  = zero
+    pdf_params_zm_frz(:)%thl1        = zero
+    pdf_params_zm_frz(:)%thl2        = zero
+    pdf_params_zm_frz(:)%varnce_thl1 = zero
+    pdf_params_zm_frz(:)%varnce_thl2 = zero
+    pdf_params_zm_frz(:)%rrtthl      = zero
+    pdf_params_zm_frz(:)%alpha_thl   = zero
+    pdf_params_zm_frz(:)%alpha_rt    = zero
+    pdf_params_zm_frz(:)%crt1        = zero
+    pdf_params_zm_frz(:)%crt2        = zero
+    pdf_params_zm_frz(:)%cthl1       = zero
+    pdf_params_zm_frz(:)%cthl2       = zero
+    pdf_params_zm_frz(:)%s1          = zero
+    pdf_params_zm_frz(:)%s2          = zero
+    pdf_params_zm_frz(:)%stdev_s1    = zero
+    pdf_params_zm_frz(:)%stdev_s2    = zero
+    pdf_params_zm_frz(:)%stdev_t1    = zero
+    pdf_params_zm_frz(:)%stdev_t2    = zero
+    pdf_params_zm_frz(:)%covar_st_1  = zero
+    pdf_params_zm_frz(:)%covar_st_2  = zero
+    pdf_params_zm_frz(:)%corr_st_1   = zero
+    pdf_params_zm_frz(:)%corr_st_2   = zero
+    pdf_params_zm_frz(:)%rsl1        = zero
+    pdf_params_zm_frz(:)%rsl2        = zero
+    pdf_params_zm_frz(:)%rc1         = zero
+    pdf_params_zm_frz(:)%rc2         = zero
+    pdf_params_zm_frz(:)%cloud_frac1 = zero
+    pdf_params_zm_frz(:)%cloud_frac2 = zero
+    pdf_params_zm_frz(:)%mixt_frac   = zero
+
     ! Second order moments
     thlprcp = 0.0_core_rknd
     rtprcp  = 0.0_core_rknd
@@ -522,6 +561,7 @@ module variables_diagnostic_module
     deallocate( radht )     ! SW + LW heating rate
 
     deallocate( pdf_params_zm )
+    deallocate( pdf_params_zm_frz )
 
     ! Second order moments
 
