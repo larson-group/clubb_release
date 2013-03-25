@@ -89,7 +89,7 @@
           {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp3\_residual', 'expression' => 'wp3_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'thlp2 budgets', 'axisLabel' => '[(K^2)/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'thp2 budgets', 'axisLabel' => '[(K^2)/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thp2\_bt', 'expression' => 'thp2_bt + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_bt - 2 .* (2490 ./ ex0) .* thpqcp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thp2\_dp', 'expression' => 'thp2_dp + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_dp - 2 .* (2490 ./ ex0) .* thpqcp_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
