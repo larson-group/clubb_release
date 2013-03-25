@@ -167,7 +167,8 @@ module variables_prognostic_module
 !$omp threadprivate(sigma_sqd_w)
 
   type(pdf_parameter), target, allocatable, dimension(:), public :: &
-    pdf_params
+    pdf_params, &
+    pdf_params_frz !for use when l_use_ice_latent = .true.
 
 !$omp threadprivate(pdf_params)
 
@@ -292,6 +293,7 @@ module variables_prognostic_module
 
     ! Variables for pdf closure scheme
     allocate( pdf_params(1:nz) )
+    allocate( pdf_params_frz(1:nz) )
 
 !--------- Set initial values for array variables ---------
 
@@ -390,6 +392,43 @@ module variables_prognostic_module
     pdf_params(:)%cloud_frac1 = zero
     pdf_params(:)%cloud_frac2 = zero
     pdf_params(:)%mixt_frac   = zero
+
+    pdf_params_frz(:)%w1          = zero
+    pdf_params_frz(:)%w2          = zero
+    pdf_params_frz(:)%varnce_w1   = zero
+    pdf_params_frz(:)%varnce_w2   = zero
+    pdf_params_frz(:)%rt1         = zero
+    pdf_params_frz(:)%rt2         = zero
+    pdf_params_frz(:)%varnce_rt1  = zero
+    pdf_params_frz(:)%varnce_rt2  = zero
+    pdf_params_frz(:)%thl1        = zero
+    pdf_params_frz(:)%thl2        = zero
+    pdf_params_frz(:)%varnce_thl1 = zero
+    pdf_params_frz(:)%varnce_thl2 = zero
+    pdf_params_frz(:)%rrtthl      = zero
+    pdf_params_frz(:)%alpha_thl   = zero
+    pdf_params_frz(:)%alpha_rt    = zero
+    pdf_params_frz(:)%crt1        = zero
+    pdf_params_frz(:)%crt2        = zero
+    pdf_params_frz(:)%cthl1       = zero
+    pdf_params_frz(:)%cthl2       = zero
+    pdf_params_frz(:)%s1          = zero
+    pdf_params_frz(:)%s2          = zero
+    pdf_params_frz(:)%stdev_s1    = zero
+    pdf_params_frz(:)%stdev_s2    = zero
+    pdf_params_frz(:)%stdev_t1    = zero
+    pdf_params_frz(:)%stdev_t2    = zero
+    pdf_params_frz(:)%covar_st_1  = zero
+    pdf_params_frz(:)%covar_st_2  = zero
+    pdf_params_frz(:)%corr_st_1   = zero
+    pdf_params_frz(:)%corr_st_2   = zero
+    pdf_params_frz(:)%rsl1        = zero
+    pdf_params_frz(:)%rsl2        = zero
+    pdf_params_frz(:)%rc1         = zero
+    pdf_params_frz(:)%rc2         = zero
+    pdf_params_frz(:)%cloud_frac1 = zero
+    pdf_params_frz(:)%cloud_frac2 = zero
+    pdf_params_frz(:)%mixt_frac   = zero
 
     ! Surface fluxes
     wpthlp_sfc = 0.0_core_rknd
@@ -495,6 +534,7 @@ module variables_prognostic_module
 
     ! Variable for pdf closure scheme
     deallocate( pdf_params )
+    deallocate( pdf_params_frz )
 
     ! Passive scalars
     deallocate( wpsclrp_sfc, wpedsclrp_sfc )
