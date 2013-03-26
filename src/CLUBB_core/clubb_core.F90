@@ -348,7 +348,8 @@ module clubb_core
     ! perturbed values of rtm and thlm.  An average value of Lscale
     ! from the three calls to compute_length is then calculated.
     ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
-      l_Lscale_plume_centered = .false. ! Alternate that uses the PDF to compute the perturbed values
+      l_Lscale_plume_centered = .false. ! Alternate that uses the PDF to
+                                        ! compute the perturbed values
 
     logical, parameter :: &
       l_use_ice_latent = .false. !Includes the effects of ice latent heating in turbulence terms
