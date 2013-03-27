@@ -608,7 +608,9 @@ module clubb_core
       thlpthvp_frz, &
       thlpthvp_zt_frz, &
       wprcp_zt_frz, &
-      wp2rcp_frz, &
+      wp2rcp_frz
+
+    real( kind = core_rknd ), dimension(gr%nz)  :: &
       rtprcp_zt_frz, &
       thlprcp_zt_frz, &
       rcp2_zt_frz, &
