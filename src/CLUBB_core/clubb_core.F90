@@ -75,7 +75,7 @@ module clubb_core
 #endif
                rcm, wprcp, cloud_frac, ice_supersat_frac, & 
                rcm_in_layer, cloud_cover, &
-#if defined(NCAR) || defined(GFDL)
+#if defined(CLUBB_CAM) || defined(GFDL)
                khzm, khzt, &
 #endif
                pdf_params )
@@ -469,7 +469,7 @@ module clubb_core
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rc_coef             ! Coefficient of X' R_l' in Eq. (34)        [-]
 
-#if defined(NCAR) || defined(GFDL)
+#if defined(CLUBB_CAM) || defined(GFDL)
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
       khzt, &       ! eddy diffusivity on thermo levels
       khzm          ! eddy diffusivity on momentum levels
@@ -1425,7 +1425,7 @@ module clubb_core
       Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
                   * sqrt( max( em, em_min ) )
 
-#if defined(NCAR) || defined(GFDL)
+#if defined(CLUBB_CAM) || defined(GFDL)
       khzt(:) = Kh_zt(:)
       khzm(:) = Kh_zm(:)
 #endif
