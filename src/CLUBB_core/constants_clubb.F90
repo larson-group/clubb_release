@@ -15,7 +15,7 @@ module constants_clubb
       dp, &
       core_rknd
 
-#ifdef CLUBB_CAM /* Set constants as they're set in CAM */
+#ifdef NCAR /* Set constants as they're set in CAM */
   use shr_const_mod, only: shr_const_rdair, shr_const_cpdair, shr_const_latvap, &
                            shr_const_latice, shr_const_latsub, shr_const_rgas, &
                            shr_const_mwwv, shr_const_stebol, shr_const_tkfrz, &
@@ -170,7 +170,7 @@ module constants_clubb
   ! Physical constants
   !-----------------------------------------------------------------------------
 
-#ifdef CLUBB_CAM
+#ifdef NCAR
 
   real( kind = core_rknd ), parameter, public ::  & 
     Cp = shr_const_cpdair,  & ! Dry air specific heat at constant p [J/kg/K]
