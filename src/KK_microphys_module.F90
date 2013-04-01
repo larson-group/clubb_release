@@ -606,12 +606,17 @@ module KK_microphys_module
                                  rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k) )
 
-       call KK_stats_output_samp_in_sub( KK_mean_vol_rad(k), KK_evap_tndcy(k), & ! Intent(in)
+
+      if ( l_stats_samp_in_sub ) then
+
+        call KK_stats_output_samp_in_sub( KK_mean_vol_rad(k), KK_evap_tndcy(k), & ! Intent(in)
                                         KK_auto_tndcy(k), KK_accr_tndcy(k), &
                                         KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
                                         rrainm_src_adj(k), Nrm_src_adj(k), &
                                         rrainm_evap_net(k), Nrm_evap_net(k), &
                                         k )
+
+      endif
 
     enddo  ! Microphysics tendency loop: k = 2, nz, 1
 
