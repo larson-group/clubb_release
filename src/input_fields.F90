@@ -2683,7 +2683,7 @@ module inputfields
 
     ! Output Variable(s)
     
-    real( kind = core_rknd ), dimension(:), pointer, intent(inout) :: &
+    real( kind = core_rknd ), dimension(:), pointer :: &
       clubb_var ! The clubb variable to store the result in
 
     ! Local Variable(s)
