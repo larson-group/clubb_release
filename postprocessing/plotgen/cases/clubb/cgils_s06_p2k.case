@@ -59,7 +59,7 @@
        ]},
        {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6_p2K/p2k_s6_96x96x128_100m_DRZ_N100_tqndg.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QT2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6_p2K/p2k_s6_96x96x128_100m_DRZ_N100_tqndg.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QT2 * 1.0e-6', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
