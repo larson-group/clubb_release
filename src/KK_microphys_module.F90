@@ -114,7 +114,9 @@ module KK_microphys_module
         iNrm_auto,        &
         iNrm_src_adj,     &
         iNrm_cond_adj,    &
-        iprecip_frac
+        iprecip_frac,     &
+        iprecip_frac_1,   &
+        iprecip_frac_2
 
     use model_flags, only: &
         l_use_precip_frac, & ! Flag(s)
@@ -224,9 +226,9 @@ module KK_microphys_module
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
 
     real( kind = core_rknd ), dimension(nz) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2, & ! Precipitation fraction (2nd PDF component) [-]
-      precip_frac      ! Precipitation fraction (overall)           [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
     real( kind = core_rknd ) :: &
       mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
@@ -344,12 +346,12 @@ module KK_microphys_module
     end if
 
     call KK_init_micro_driver( nz, hydromet, hydromet_mc, hydromet_vel, & ! Intent(in)
-                                   hydromet_vel_covar, hydromet_vel_covar_zt, &
-                                   rrainm, Nrm, Vrr, VNr, & ! Intent(out)
-                                   rrainm_mc_tndcy, Nrm_mc_tndcy, &
-                                   KK_auto_tndcy, KK_accr_tndcy, &
-                                   Vrrprrp, VNrpNrp, Vrrprrp_zt, &
-                                   VNrpNrp_zt, l_src_adj_enabled )
+                               hydromet_vel_covar, hydromet_vel_covar_zt, &
+                               rrainm, Nrm, Vrr, VNr, & ! Intent(out)
+                               rrainm_mc_tndcy, Nrm_mc_tndcy, &
+                               KK_auto_tndcy, KK_accr_tndcy, &
+                               Vrrprrp, VNrpNrp, Vrrprrp_zt, &
+                               VNrpNrp_zt, l_src_adj_enabled )
 
     if ( .not. l_local_kk ) then
        l_upscaled = .true.
@@ -360,21 +362,23 @@ module KK_microphys_module
     ! Precipitation fraction
     if ( l_use_precip_frac ) then
 
-       call precip_fraction( nz, rrainm, cloud_frac, precip_frac )
+       call precip_fraction( nz, rrainm, cloud_frac, &
+                             pdf_params%cloud_frac1, pdf_params%mixt_frac, &
+                             precip_frac, precip_frac_1, precip_frac_2 )
 
     else
 
-       precip_frac = one
+       precip_frac   = one
+       precip_frac_1 = one
+       precip_frac_2 = one
 
     endif
-
-    ! Set precipitation fraction for each PDF component.
-    precip_frac_1 = precip_frac
-    precip_frac_2 = precip_frac
 
     ! Statistics
     if ( l_stats_samp_in_sub ) then
        call stat_update_var( iprecip_frac, precip_frac, zt )
+       call stat_update_var( iprecip_frac_1, precip_frac_1, zt )
+       call stat_update_var( iprecip_frac_2, precip_frac_2, zt )
     endif
 
     ! calculate the covariances of w with the hydrometeors
@@ -597,24 +601,24 @@ module KK_microphys_module
 
 
       call KK_microphys_adjust( rrainm(k), Nrm(k), rcm(k), exner(k), & ! Intent(in)
-                                 KK_evap_tndcy(k), KK_auto_tndcy(k), KK_accr_tndcy(k), &
-                                 dt, l_src_adj_enabled, &
-                                 rrainm_source, Nrm_source, & ! Intent(out)
-                                 KK_Nrm_auto_tndcy(k), KK_Nrm_evap_tndcy(k), &
-                                 rrainm_src_adj(k), Nrm_src_adj(k), &
-                                 rrainm_evap_net(k), Nrm_evap_net(k), &
-                                 rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
-                                 rvm_mc(k), rcm_mc(k), thlm_mc(k) )
+                                KK_evap_tndcy(k), KK_auto_tndcy(k), KK_accr_tndcy(k), &
+                                dt, l_src_adj_enabled, &
+                                rrainm_source, Nrm_source, & ! Intent(out)
+                                KK_Nrm_auto_tndcy(k), KK_Nrm_evap_tndcy(k), &
+                                rrainm_src_adj(k), Nrm_src_adj(k), &
+                                rrainm_evap_net(k), Nrm_evap_net(k), &
+                                rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
+                                rvm_mc(k), rcm_mc(k), thlm_mc(k) )
 
 
       if ( l_stats_samp_in_sub ) then
 
         call KK_stats_output_samp_in_sub( KK_mean_vol_rad(k), KK_evap_tndcy(k), & ! Intent(in)
-                                        KK_auto_tndcy(k), KK_accr_tndcy(k), &
-                                        KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
-                                        rrainm_src_adj(k), Nrm_src_adj(k), &
-                                        rrainm_evap_net(k), Nrm_evap_net(k), &
-                                        k )
+                                          KK_auto_tndcy(k), KK_accr_tndcy(k), &
+                                          KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
+                                          rrainm_src_adj(k), Nrm_src_adj(k), &
+                                          rrainm_evap_net(k), Nrm_evap_net(k), &
+                                          k )
 
       endif
 
@@ -663,12 +667,16 @@ module KK_microphys_module
                            Vrrprrp, VNrpNrp, &
                            Vrrprrp_zt, VNrpNrp_zt, &
                            KK_mean_vol_rad )
+
+
     return
 
   end subroutine KK_micro_driver
 
   !=============================================================================
-  subroutine precip_fraction( nz, rrainm, cloud_frac, precip_frac )
+  subroutine precip_fraction( nz, rrainm, cloud_frac, &
+                              cloud_frac1, mixt_frac, &
+                              precip_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
 
@@ -676,7 +684,8 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero,           & ! Constant(s)
+        one,            & ! Constant(s)
+        zero,           &
         rr_tol,         &
         cloud_frac_min
 
@@ -685,19 +694,26 @@ module KK_microphys_module
 
     implicit none
 
-    ! Input Variable
+    ! Input Variables
     integer, intent(in) :: &
       nz          ! Number of model vertical grid levels
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rrainm,     & ! Mean rain water mixing ratio     [kg/kg]
-      cloud_frac    ! Cloud fraction                   [-]
+      rrainm,      & ! Mean rain water mixing ratio        [kg/kg]
+      cloud_frac,  & ! Cloud fraction (overall)            [-]
+      cloud_frac1, & ! Cloud fraction (1st PDF component)  [-]
+      mixt_frac      ! Mixture fraction                    [-]
 
-    ! Output Variable
+    ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      precip_frac    ! Precipitation fraction          [-]
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(nz) :: &
+      weighted_pfrac1    ! Product of mixt_frac and precip_frac_1 [-]
+
     real( kind = core_rknd ), parameter :: &
       precip_frac_tol = cloud_frac_min  ! Minimum precip. frac. [-]
     
@@ -705,13 +721,16 @@ module KK_microphys_module
       k   ! Loop index
 
 
-    precip_frac(nz) = zero
-
-    do k = nz-1, 1, -1
+    !!! Find overall precipitation fraction.
+    do k = nz, 1, -1
 
        ! The precipitation fraction is the greatest cloud fraction at or above a
        ! vertical level.
-       precip_frac(k) = max( precip_frac(k+1), cloud_frac(k) )
+       if ( k < nz ) then
+          precip_frac(k) = max( precip_frac(k+1), cloud_frac(k) )
+       else  ! k = nz
+          precip_frac(k) = cloud_frac(k)
+       endif
 
        if ( rrainm(k) > rr_tol .and. precip_frac(k) < precip_frac_tol ) then
 
@@ -730,6 +749,117 @@ module KK_microphys_module
 
        endif
 
+    enddo ! Overall precipitation fraction loop: k = nz, 1, -1.
+
+
+    ! The overall precipitation fraction, f_p, is given by the equation:
+    !
+    ! f_p = a * f_p(1) + ( 1 - a ) * f_p(2);
+    !
+    ! where a is the mixture fraction (weight of PDF component 1), f_p(1) is
+    ! the precipitation fraction within PDF component 1, and f_p(2) is the
+    ! precipitation fraction within PDF component 2.  Overall precipitation
+    ! fraction is found according the method above, and mixture fraction is
+    ! already determined, leaving f_p(1) and f_p(2) to be solved for.  The
+    ! values for f_p(1) and f_p(2) must satisfy the above equation.
+
+
+    !!! Find precipitation fraction within PDF component 1.
+    ! The method used to find overall precipitation fraction will also be to
+    ! find precipitation fraction within PDF component 1.  In order to do so, it
+    ! is assumed (poorly) that PDF component 1 overlaps PDF component 1 at every
+    ! vertical level in the vertical profile.
+    do k = nz, 1, -1
+
+       ! The weighted precipitation fraction (PDF component 1) is the greatest
+       ! value of the product of mixture fraction and cloud fraction (PDF
+       ! component 1) at or above a vertical level.
+       if ( k < nz ) then
+          weighted_pfrac1(k) = max( weighted_pfrac1(k+1), &
+                                    mixt_frac(k) * cloud_frac1(k) )
+       else  ! k = nz
+          weighted_pfrac1(k) = mixt_frac(k) * cloud_frac1(k)
+       endif
+
+       precip_frac_1(k) = weighted_pfrac1(k) / mixt_frac(k)
+
+       ! Special cases for precip_frac_1.
+       ! Using the above method, it is possible for precip_frac_1 to be greater
+       ! than 1.  For example, the mixture fraction at level k+1 is 0.10 and the
+       ! cloud_frac1 at level k+1 is 1, resulting in a weighted_pfrac1 of 0.10.
+       ! This product is greater than the product of mixt_frac and cloud_frac1
+       ! at level k.  The mixture fraction at level k is 0.05, resulting in a
+       ! precip_frac_1 of 2.  The value of precip_frac_1 is limited at 1.  The
+       ! leftover precipitation fraction (a result of the decreasing weight of
+       ! PDF component 1 between the levels) is applied to PDF component 2.
+       if ( precip_frac_1(k) > one ) then
+          precip_frac_1(k) = one
+       endif
+
+    enddo ! Precipitation fraction (1st PDF component) loop: k = nz, 1, -1.
+
+
+    !!! Find precipitation fraction within PDF component 2.
+    ! The equation for precipitation fraction within PDF component 2 is:
+    !
+    ! f_p(2) = ( f_p - a * f_p(1) ) / ( 1 - a );
+    !
+    ! given the overall precipitation fraction, f_p (calculated above), the
+    ! precipitation fraction within PDF component 1, f_p(1) (calculated above),
+    ! and mixture fraction, a.  Any leftover precipitation fraction from
+    ! precip_frac_1 will be included in this calculation of precip_frac_2.
+    do k = 1, nz, 1
+
+       precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) * precip_frac_1(k) ) &
+                          / ( one - mixt_frac(k) )
+
+       ! Special cases for precip_frac_2.
+       ! Again, it is possible for precip_frac_2 to be greater than 1.  For
+       ! example, the mixture fraction at level k+1 is 0.10 and the cloud_frac1
+       ! at level k+1 is 1, resulting in a weighted_pfrac1 of 0.10.  This
+       ! product is greater than the product of mixt_frac and cloud_frac1 at
+       ! level k.  Additionally, precip_frac (overall) is 1 for level k.  The
+       ! mixture fraction at level k is 0.5, resulting in a precip_frac_1 of
+       ! 0.2.  Using the above equation, precip_frac_2 is calculated to be 1.8.
+       ! The value of precip_frac_2 is limited at 1.  The leftover precipitation
+       ! fraction (as a result of the increasing weight of component 1 between
+       ! the levels) is applied to PDF component 1.
+       if ( precip_frac_2(k) > one ) then
+
+          precip_frac_2(k) = one
+
+          precip_frac_1(k) &
+          = ( precip_frac(k) - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
+            / mixt_frac(k)
+
+          ! Prevent numerical round off causing values of precip_frac_1
+          ! greater than 1 or less than 0.
+          if ( precip_frac_1(k) > one ) then
+             precip_frac_1(k) = one
+          elseif ( precip_frac_1(k) < zero ) then
+             precip_frac_1(k) = zero
+          endif
+
+       elseif ( precip_frac_2(k) < zero ) then
+
+          ! Prevent numerical round off causing values of precip_frac_2
+          ! less than 0.
+          precip_frac_2(k) = zero
+
+       endif
+
+    enddo ! Precipitation fraction (2nd PDF component) loop: k = 1, nz, 1.
+
+
+    ! Check special cases
+    do k = 1, nz, 1
+       if ( precip_frac(k) == precip_frac_tol ) then
+          precip_frac_1(k) = precip_frac_tol
+          precip_frac_2(k) = precip_frac_tol
+       elseif ( precip_frac(k) == zero ) then
+          precip_frac_1(k) = zero
+          precip_frac_2(k) = zero
+       endif
     enddo
 
 
@@ -803,7 +933,7 @@ module KK_microphys_module
 
 
     ! Mean of in-precip rain water mixing ratio in PDF component 1.
-    if ( rrainm > rr_tol ) then
+    if ( rrainm > rr_tol .and. precip_frac_1 > zero ) then
        mu_rr_1 = rrainm / precip_frac_1
     else
        ! Mean in-precip rain water mixing ratio is less than the tolerance
@@ -813,7 +943,7 @@ module KK_microphys_module
     endif
 
     ! Mean of in-precip rain water mixing ratio in PDF component 2.
-    if ( rrainm > rr_tol ) then
+    if ( rrainm > rr_tol .and. precip_frac_2 > zero ) then
        mu_rr_2 = rrainm / precip_frac_2
     else
        ! Mean in-precip rain water mixing ratio is less than the tolerance
@@ -823,7 +953,7 @@ module KK_microphys_module
     endif
 
     ! Mean of in-precip rain drop concentration in PDF component 1.
-    if ( Nrm > Nr_tol ) then
+    if ( Nrm > Nr_tol .and. precip_frac_2 > zero ) then
        mu_Nr_1 = Nrm / precip_frac_1
     else
        ! Mean in-precip rain drop concentration is less than the tolerance
@@ -833,7 +963,7 @@ module KK_microphys_module
     endif
 
     ! Mean of in-precip rain drop concentration in PDF component 2.
-    if ( Nrm > Nr_tol ) then
+    if ( Nrm > Nr_tol .and. precip_frac_2 > zero ) then
        mu_Nr_2 = Nrm / precip_frac_2
     else
        ! Mean in-precip rain drop concentration is less than the tolerance
@@ -861,7 +991,7 @@ module KK_microphys_module
 
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 1.
-    if ( rrainm > rr_tol ) then
+    if ( mu_rr_1 > rr_tol ) then
        if ( rcm > rc_tol ) then
           sigma_rr_1 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_1
        else
@@ -877,7 +1007,7 @@ module KK_microphys_module
 
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 2.
-    if ( rrainm > rr_tol ) then
+    if ( mu_rr_2 > rr_tol ) then
        if ( rcm > rc_tol ) then
           sigma_rr_2 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_2
        else
@@ -893,7 +1023,7 @@ module KK_microphys_module
 
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 1.
-    if ( Nrm > Nr_tol ) then
+    if ( mu_Nr_1 > Nr_tol ) then
        if ( rcm > rc_tol ) then
           sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_1
        else
@@ -909,7 +1039,7 @@ module KK_microphys_module
 
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 2.
-    if ( Nrm > Nr_tol ) then
+    if ( mu_Nr_2 > Nr_tol ) then
        if ( rcm > rc_tol ) then
           sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_2
        else
@@ -2999,11 +3129,10 @@ module KK_microphys_module
 
   end subroutine KK_upscaled_covar_driver
 
-
-!===============================================================================
-  subroutine KK_init_micro_driver( nz, hydromet, hydromet_mc, hydromet_vel, & ! Intent(in)
+  !=============================================================================
+  subroutine KK_init_micro_driver( nz, hydromet, hydromet_mc, hydromet_vel, &
                                    hydromet_vel_covar, hydromet_vel_covar_zt, &
-                                   rrainm, Nrm, Vrr, VNr, & ! Intent(out)
+                                   rrainm, Nrm, Vrr, VNr, &
                                    rrainm_mc_tndcy, Nrm_mc_tndcy, &
                                    KK_auto_tndcy, KK_accr_tndcy, &
                                    Vrrprrp, VNrpNrp, Vrrprrp_zt, &
@@ -3030,7 +3159,6 @@ module KK_microphys_module
     implicit none
 
     ! Input Variables
-
     integer, intent(in) :: &
       nz          ! Number of model vertical grid levels
 
@@ -3072,6 +3200,7 @@ module KK_microphys_module
     logical, intent(out) :: &
       l_src_adj_enabled ! Flag to enable rrainm/Nrm source adjustment
 
+
     KK_auto_tndcy = zero
     KK_accr_tndcy = zero
 
@@ -3099,10 +3228,12 @@ module KK_microphys_module
 
     l_src_adj_enabled = .true.
 
-  end subroutine KK_init_micro_driver
-!===============================================================================
 
-!===============================================================================
+    return
+
+  end subroutine KK_init_micro_driver
+
+  !=============================================================================
   subroutine KK_supersaturation( thlm, exner, p_in_Pa, rho, & ! Intent(in)
                                  KK_evap_coef, KK_auto_coef, & ! Intent(out)
                                  KK_accr_coef, KK_mvr_coef )
@@ -3142,7 +3273,6 @@ module KK_microphys_module
     implicit none
 
     ! Input Variables
-
     real( kind = core_rknd ), intent(in) :: &
       thlm,       & ! Mean liquid water potential temperature         [K]
       p_in_Pa,    & ! Pressure                                        [Pa]
@@ -3161,6 +3291,7 @@ module KK_microphys_module
       T_liq_in_K, & ! Mean liquid water temperature, T_l           [K]
       r_sl,       & ! Liquid water sat. mixing ratio, r_s(T_l,p)   [kg/kg]
       Beta_Tl       ! Parameter Beta, Beta(T_l)                    [1/(kg/kg)]
+
 
     ! Compute supersaturation via s1, s2.
     !     Larson et al 2002, JAS, Vol 59, p 3534.
@@ -3191,10 +3322,12 @@ module KK_microphys_module
     ! Coefficient for KK rain drop mean volume radius.
     KK_mvr_coef = ( four_thirds * pi * rho_lw )**(-one_third)
 
-  end subroutine KK_supersaturation
-!===============================================================================
 
-!===============================================================================
+    return
+
+  end subroutine KK_supersaturation
+
+  !===============================================================================
   subroutine KK_microphys_adjust( rrainm, Nrm, rcm, exner, & ! Intent(in)
                                  KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                                  dt, l_src_adj_enabled, &
@@ -3228,7 +3361,6 @@ module KK_microphys_module
     implicit none
 
     ! Input Variables
-
     real( kind = time_precision ), intent(in) :: &
       dt          ! Model time step duration                 [s]
 
@@ -3249,7 +3381,6 @@ module KK_microphys_module
       l_src_adj_enabled   ! Flag to enable rrainm/Nrm source adjustment
 
     ! Output Variables
-
     real( kind = core_rknd ), intent(out) ::  &
       rrainm_source,     & ! Total source term rate for rrainm       [(kg/kg)/s]
       Nrm_source,        & ! Total source term rate for Nrm         [(num/kg)/s]
@@ -3277,7 +3408,7 @@ module KK_microphys_module
       rrainm_auto_ratio, & ! Ratio of rrainm autoconv to overall source term [-]
       total_rc_needed      ! Amount of r_c needed to over the timestep
                            ! for rain source terms                       [kg/kg]
-    ! ---- Begin Code ----
+
 
     !!! KK rain drop concentration microphysics tendencies.
 
@@ -3374,10 +3505,11 @@ module KK_microphys_module
     rcm_mc  = -rrainm_source  ! Accretion + Autoconversion
     thlm_mc = ( Lv / ( Cp * exner ) ) * rrainm_mc_tndcy
 
-  end subroutine KK_microphys_adjust
-!===============================================================================
+    return
 
-!===============================================================================
+  end subroutine KK_microphys_adjust
+
+  !=============================================================================
   subroutine KK_stats_output_samp_in_sub( KK_mean_vol_rad, KK_evap_tndcy, & ! Intent(in)
                                         KK_auto_tndcy, KK_accr_tndcy, &
                                         KK_Nrm_evap_tndcy, KK_Nrm_auto_tndcy, &
@@ -3414,7 +3546,6 @@ module KK_microphys_module
     implicit none
 
     ! Input Variables
-
     integer, intent(in) :: k ! height level
 
     real( kind = core_rknd ), intent(in) :: &
@@ -3456,41 +3587,40 @@ module KK_microphys_module
     call stat_update_var_pt( iNrm_cond_adj, k, &
                              Nrm_evap_net - KK_Nrm_evap_tndcy, zt )
 
+
+    return
+
   end subroutine KK_stats_output_samp_in_sub
+
 !===============================================================================
+  subroutine KK_sedimentation( nz, &
+                               Vrr, VNr, &
+                               rrainm_mc_tndcy, Nrm_mc_tndcy, &
+                               rcm_mc, rvm_mc, thlm_mc, &
+                               Vrrprrp, VNrpNrp, &
+                               Vrrprrp_zt, VNrpNrp_zt, &
+                               KK_mean_vol_rad )
 
-subroutine KK_sedimentation( nz, & ! Intent(in)
-                           Vrr, VNr, & ! Intent(InOut)
-                           rrainm_mc_tndcy, Nrm_mc_tndcy, &
-                           rcm_mc, rvm_mc, thlm_mc, &
-                           Vrrprrp, VNrpNrp, &
-                           Vrrprrp_zt, VNrpNrp_zt, &
-                           KK_mean_vol_rad )
+    ! Description:
 
-  ! Description:
-  !
-  ! Bogus example
-  ! References:
-  !
-  ! None
-  !-----------------------------------------------------------------------
+    ! References:
+    !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        micron_per_m  ! Constant(s)
+        micron_per_m    ! Constant(s)
 
     use clubb_precision, only: &
-        core_rknd       ! Variable(s)
+        core_rknd    ! Variable(s)
 
     use constants_clubb, only: &
-        zero ! Constant(s)
+        zero   ! Constant(s)
 
     use grid_class, only: &
-        zt2zm ! Procedure(s)
+        zt2zm   ! Procedure(s)
 
     implicit none
 
     ! Input Variables
-
     integer, intent(in) :: &
       nz          ! Number of model vertical grid levels
 
@@ -3518,16 +3648,10 @@ subroutine KK_sedimentation( nz, & ! Intent(in)
       KK_mean_vol_rad    ! Mean KK rain drop mean volume radius     [m]
 
     ! Local Variables
-
     integer :: k ! Loop iterator
 
 
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-
-      !!! Boundary conditions for microphysics tendencies.
+    !!! Boundary conditions for microphysics tendencies.
 
     ! Explicit contributions to rrainm and Nrm from microphysics are not set at
     ! thermodynamic level k = 1 because it is below the model lower boundary.
@@ -3599,8 +3723,10 @@ subroutine KK_sedimentation( nz, & ! Intent(in)
     VNrpNrp(nz) = zero
 
 
-  return
-end subroutine KK_sedimentation
-!-----------------------------------------------------------------------
+    return
+
+  end subroutine KK_sedimentation
+
+!===============================================================================
 
 end module KK_microphys_module
