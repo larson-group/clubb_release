@@ -929,7 +929,8 @@ module microphys_driver
         zt2zm
 
     use KK_microphys_module, only: & 
-        KK_micro_driver  ! Procedure(s)
+        KK_local_micro_driver, &  ! Procedure(s)
+        KK_upscaled_micro_driver
 
     use cloud_sed_module, only: cloud_drop_sed ! Procedure(s)
 
@@ -1536,7 +1537,7 @@ module microphys_driver
                hydromet, X_mixt_comp_all_levs, & !In 
                hydromet_mc, hydromet_vel_zt, & ! In/Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
-               KK_micro_driver ) ! Procedure
+               KK_local_micro_driver ) ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
 #endif /* LATIN_HYPERCUBE */
@@ -1561,17 +1562,43 @@ module microphys_driver
         rvm = rtm - rcm
 
         ! Note: Ncm is a fixed value set above, since KK doesn't currently predict Nc
-        call KK_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
-                              l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
-                              exner, rho, cloud_frac, pdf_params, wtmp, &
-                              delta_zt, rcm, Ncm, s_mellor, rvm, &
-                              Ncm_in_cloud, hydromet, &
-                              hydromet_mc, hydromet_vel_zt, &
-                              rcm_mc, rvm_mc, thlm_mc, &
-                              hydromet_vel_covar, hydromet_vel_covar_zt, &
-                              wprtp_mc_tndcy, wpthlp_mc_tndcy, & 
-                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
-                              rrainm_auto, rrainm_accr )
+!        call KK_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
+!                              l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
+!                              exner, rho, cloud_frac, pdf_params, wtmp, &
+!                              delta_zt, rcm, Ncm, s_mellor, rvm, &
+!                              Ncm_in_cloud, hydromet, &
+!                              hydromet_mc, hydromet_vel_zt, &
+!                              rcm_mc, rvm_mc, thlm_mc, &
+!                              hydromet_vel_covar, hydromet_vel_covar_zt, &
+!                              wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+!                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+!                              rrainm_auto, rrainm_accr )
+
+        if ( l_local_kk ) then
+          call KK_local_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
+                                      l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
+                                      exner, rho, cloud_frac, pdf_params, wtmp, &
+                                      delta_zt, rcm, Ncm, s_mellor, rvm, &
+                                      Ncm_in_cloud, hydromet, &
+                                      hydromet_mc, hydromet_vel_zt, &
+                                      rcm_mc, rvm_mc, thlm_mc, &
+                                      hydromet_vel_covar, hydromet_vel_covar_zt, &
+                                      wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+                                      rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+                                      rrainm_auto, rrainm_accr )
+        else
+          call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
+                                         l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
+                                         exner, rho, cloud_frac, pdf_params, wtmp, &
+                                         delta_zt, rcm, Ncm, s_mellor, rvm, &
+                                         Ncm_in_cloud, hydromet, &
+                                         hydromet_mc, hydromet_vel_zt, &
+                                         rcm_mc, rvm_mc, thlm_mc, &
+                                         hydromet_vel_covar, hydromet_vel_covar_zt, &
+                                         wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+                                         rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+                                         rrainm_auto, rrainm_accr )
+        endif
 
       end if ! LH_microphys_type /= interactive
 

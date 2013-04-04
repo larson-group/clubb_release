@@ -7,6 +7,8 @@ module KK_microphys_module
   private
 
   public :: KK_micro_driver, &
+            KK_local_micro_driver, &
+            KK_upscaled_micro_driver, &
             precip_fraction, &
             KK_in_precip_values, &
             KK_upscaled_setup, &
@@ -672,6 +674,951 @@ module KK_microphys_module
     return
 
   end subroutine KK_micro_driver
+
+   !=============================================================================
+  subroutine KK_local_micro_driver( dt, nz, l_stats_samp, l_local_kk, &
+                              l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
+                              exner, rho, cloud_frac, pdf_params, w_std_dev, &
+                              dzq, rcm, Ncm, s_mellor, rvm, Nc0_in_cloud, &
+                              hydromet, &
+                              hydromet_mc, hydromet_vel, &
+                              rcm_mc, rvm_mc, thlm_mc, &
+                              hydromet_vel_covar, hydromet_vel_covar_zt,  &
+                              wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+                              KK_auto_tndcy, KK_accr_tndcy )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        zm2zt, & ! Procedure(s)
+        gr
+
+    use constants_clubb, only: &
+        one,          & ! Constant(s)
+        zero,         &
+        rho_lw,       &
+        rr_tol,       &
+        Nr_tol,       &
+        Nc_tol,       &
+        eps
+
+    use KK_local_means, only: &
+        KK_mvr_local_mean,  & ! Procedure(s)
+        KK_evap_local_mean, &
+        KK_auto_local_mean, &
+        KK_accr_local_mean
+
+    use pdf_parameter_module, only: &
+        pdf_parameter  ! Variable(s)
+
+    use parameters_model, only: &
+        hydromet_dim  ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd,      & ! Variable(s)
+        time_precision
+
+    use stats_type, only: &
+        stat_update_var ! Procedure(s)
+
+    use stats_variables, only: &
+        zt,               & ! Variable(s)
+        iprecip_frac,     &
+        iprecip_frac_1,   &
+        iprecip_frac_2
+
+    use model_flags, only: &
+        l_use_precip_frac, & ! Flag(s)
+        l_calc_w_corr
+
+    use advance_windm_edsclrm_module, only: &
+        xpwp_fnc
+
+    use variables_diagnostic_module, only: &
+        Kh_zm
+
+    use parameters_tunable, only: &
+        c_Krrainm
+
+    implicit none
+
+    ! Input Variables
+    real( kind = time_precision ), intent(in) :: &
+      dt          ! Model time step duration                 [s]
+
+    integer, intent(in) :: &
+      nz          ! Number of model vertical grid levels
+
+    logical, intent(in) :: &
+      l_stats_samp,      & ! Flag to sample statistics
+      l_local_kk,        & ! Flag to use the local form of KK microphysics
+      l_latin_hypercube    ! Flag to use Latin Hypercube interface
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      thlm,       & ! Mean liquid water potential temperature         [K]
+      wm_zt,      & ! Mean vertical velocity on thermodynamic levels  [m/s]
+      p_in_Pa,    & ! Pressure                                        [Pa]
+      exner,      & ! Exner function                                  [-]
+      rho,        & ! Density                                         [kg/m^3]
+      cloud_frac, & ! Cloud fraction                                  [-]
+      rcm,        & ! Mean cloud water mixing ratio                   [kg/kg]
+      Ncm,        & ! Mean cloud droplet conc., < N_c >               [num/kg]
+      s_mellor      ! Mean extended liquid water mixing ratio         [kg/kg]
+
+    type(pdf_parameter), dimension(nz), target, intent(in) :: &
+      pdf_params    ! PDF parameters                         [units vary]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      w_std_dev, & ! Standard deviation of w (for LH interface)          [m/s]
+      dzq,       & ! Thickness between thermo. levels (for LH interface) [m]
+      rvm          ! Mean water vapor mixing ratio (for LH interface)    [kg/kg]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
+    target, intent(in) :: &
+      hydromet    ! Hydrometeor species                      [units vary]
+
+    ! Input / Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
+    target, intent(inout) :: &
+      hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
+      hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      rcm_mc,  & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
+      rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
+      thlm_mc    ! Time tendency of liquid potential temperature [K/s]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
+    target, intent(out) :: &
+      hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
+      hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
+
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc_tndcy, & ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      KK_auto_tndcy,    & ! Mean KK (dr_r/dt) due to autoconversion  [(kg/kg)/s]
+      KK_accr_tndcy       ! Mean KK (dr_r/dt) due to accretion       [(kg/kg)/s]
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(:), pointer ::  &
+      rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
+      Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
+      Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
+      VNr,             & ! Mean sedimentation velocity of < N_r >   [m/s]
+      rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
+      Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      KK_evap_tndcy,   & ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
+      KK_mean_vol_rad    ! Mean KK rain drop mean volume radius     [m]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation  [(num/kg)/s]
+      KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.    [(num/kg)/s]
+
+    real( kind = core_rknd ) :: &
+      KK_evap_coef, & ! KK evaporation coefficient                  [(kg/kg)/s]
+      KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
+      KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
+      KK_mvr_coef     ! KK mean volume radius coefficient           [m]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+
+    real( kind = core_rknd ), dimension(:), pointer :: &
+      Vrrprrp, & ! Covariance of V_rr and r_r (momentum levels)  [(m/s)(kg/kg)]
+      VNrpNrp    ! Covariance of V_Nr and N_r (momentum levels)  [(m/s)(num/kg)]
+
+    real( kind = core_rknd ), dimension(:), pointer :: &
+      Vrrprrp_zt, & ! Covariance of V_rr and r_r; thermo. levs.  [(m/s)(kg/kg)]
+      VNrpNrp_zt    ! Covariance of V_Nr and N_r; thermo. levs.  [(m/s)(num/kg)]
+
+    real( kind = core_rknd ) ::  &
+      rrainm_source,     & ! Total source term rate for rrainm       [(kg/kg)/s]
+      Nrm_source           ! Total source term rate for Nrm         [(num/kg)/s]
+
+    real( kind = core_rknd ), dimension(nz) ::  &
+      rrainm_src_adj,  & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
+      Nrm_src_adj,     & ! Total adjustment to Nrm source terms     [(num/kg)/s]
+      rrainm_evap_net, & ! Net evaporation rate of <r_r>            [(kg/kg)/s]
+      Nrm_evap_net       ! Net evaporation rate of <N_r>            [(num/kg)/s]
+
+    ! changes by janhft 10/04/12
+    real( kind = core_rknd ), dimension(nz) ::  &
+      wpsp_zm,  & ! Covariance of s and w on the zm-grid    [(m/s)(kg/kg)]
+      wprrp_zm, & ! Covariance of r_r and w on the zm-grid  [(m/s)(kg/kg)]
+      wpNrp_zm, & ! Covariance of N_r and w on the zm-grid  [(m/s)(#/kg)]
+      wpNcp_zm, & ! Covariance of N_c and w on the zm-grid  [(m/s)(#/kg)]
+      wpsp_zt,  & ! Covariance of s and w on the zt-grid    [(m/s)(kg/kg)]
+      wprrp_zt, & ! Covariance of r_r and w on the zt-grid  [(m/s)(kg/kg)]
+      wpNrp_zt, & ! Covariance of N_r and w on the zt-grid  [(m/s)(#/kg)]
+      wpNcp_zt    ! Covariance of N_c and w on the zt-grid  [(m/s)(#/kg)]
+    ! end changes by janhft 10/04/12
+
+    logical :: &
+      l_upscaled,        & ! Flag for using upscaled KK microphysics.
+      l_src_adj_enabled, & ! Flag to enable rrainm/Nrm source adjustment
+      l_stats_samp_in_sub  ! Used to disable stats when SILHS is enabled
+
+    integer :: &
+      k   ! Loop index
+
+    ! ----- Begin Code -----
+
+    ! Remove compiler warnings
+    if ( .false. ) then
+      rrainm_src_adj = dzq
+      rrainm_src_adj = rvm
+      rrainm_src_adj = w_std_dev
+      rrainm_src_adj = cloud_frac
+    end if
+
+    ! Disable stats when latin hypercube is enabled
+    if ( .not. l_latin_hypercube .and. l_stats_samp ) then
+     l_stats_samp_in_sub = .true.
+    else
+     l_stats_samp_in_sub = .false.
+    end if
+
+    call KK_init_micro_driver( nz, hydromet, hydromet_mc, hydromet_vel, & ! Intent(in)
+                               hydromet_vel_covar, hydromet_vel_covar_zt, &
+                               rrainm, Nrm, Vrr, VNr, & ! Intent(out)
+                               rrainm_mc_tndcy, Nrm_mc_tndcy, &
+                               KK_auto_tndcy, KK_accr_tndcy, &
+                               Vrrprrp, VNrpNrp, Vrrprrp_zt, &
+                               VNrpNrp_zt, l_src_adj_enabled )
+
+    if ( .not. l_local_kk ) then
+       l_upscaled = .true.
+    else
+       l_upscaled = .false.
+    endif
+
+    ! Precipitation fraction
+    if ( l_use_precip_frac ) then
+
+       call precip_fraction( nz, rrainm, cloud_frac, &
+                             pdf_params%cloud_frac1, pdf_params%mixt_frac, &
+                             precip_frac, precip_frac_1, precip_frac_2 )
+
+    else
+
+       precip_frac   = one
+       precip_frac_1 = one
+       precip_frac_2 = one
+
+    endif
+
+    ! Statistics
+    if ( l_stats_samp_in_sub ) then
+       call stat_update_var( iprecip_frac, precip_frac, zt )
+       call stat_update_var( iprecip_frac_1, precip_frac_1, zt )
+       call stat_update_var( iprecip_frac_2, precip_frac_2, zt )
+    endif
+
+    ! calculate the covariances of w with the hydrometeors
+    if ( l_calc_w_corr ) then
+
+       ! calculate the covariances of w with the hydrometeors
+       do k = 1, nz
+          wpsp_zm(k) = pdf_params(k)%mixt_frac &
+                       * ( one - pdf_params(k)%mixt_frac ) &
+                       * ( pdf_params(k)%s1 - pdf_params(k)%s2 ) &
+                       * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
+       enddo
+
+       wprrp_zm(1:nz-1) &
+       = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+                   rrainm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
+                   rrainm(2:nz) / max( precip_frac(2:nz), eps ), &
+                   gr%invrs_dzm(1:nz-1) )
+
+       wpNrp_zm(1:nz-1) &
+       = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+                   Nrm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
+                   Nrm(2:nz) / max( precip_frac(2:nz), eps ), &
+                   gr%invrs_dzm(1:nz-1) )
+
+       wpNcp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncm(1:nz-1), &
+                                    Ncm(2:nz), gr%invrs_dzm(1:nz-1) )
+
+       ! Boundary conditions; We are assuming constant flux at the top.
+       wprrp_zm(nz) = wprrp_zm(nz-1)
+       wpNrp_zm(nz) = wpNrp_zm(nz-1)
+       wpNcp_zm(nz) = wpNcp_zm(nz-1)
+
+       ! interpolate back to zt-grid
+       wpsp_zt  = zm2zt(wpsp_zm)
+       wprrp_zt = zm2zt(wprrp_zm)
+       wpNrp_zt = zm2zt(wpNrp_zm)
+       wpNcp_zt = zm2zt(wpNcp_zm)
+
+    endif
+
+
+    ! Microphysics tendency loop.
+    ! Loop over all model thermodynamic level above the model lower boundary.
+    do k = 2, nz, 1
+
+      ! Compute supersaturation via s1, s2.
+      !     Larson et al 2002, JAS, Vol 59, p 3534.
+      ! This allows a more direct comparison of local, upscaled formulas.
+
+      call KK_supersaturation( thlm(k), exner(k), p_in_Pa(k), rho(k), & ! Intent(in)
+                               KK_evap_coef, KK_auto_coef, & ! Intent(out)
+                               KK_accr_coef, KK_mvr_coef )
+
+      !!! KK rain water mixing ratio microphysics tendencies.
+
+      !!! Calculate the local KK rain drop mean volume radius.
+      if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+
+         KK_mean_vol_rad(k)  &
+         = KK_mvr_local_mean( rrainm(k), Nrm(k), KK_mvr_coef )
+
+      else  ! r_r or N_r = 0.
+
+         KK_mean_vol_rad(k) = zero
+
+      endif
+
+      !!! Calculate the values of the local KK microphysics tendencies.
+
+      !!! Calculate the local KK evaporation tendency.
+      if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+
+         KK_evap_tndcy(k)  &
+         = KK_evap_local_mean( s_mellor(k), rrainm(k), Nrm(k), &
+                               KK_evap_coef )
+
+      else  ! r_r or N_r = 0.
+
+         KK_evap_tndcy(k) = zero
+
+      endif
+
+      !!! Calculate the local KK autoconversion tendency.
+      if ( Ncm(k) > Nc_tol ) then
+
+         KK_auto_tndcy(k)  &
+         = KK_auto_local_mean( s_mellor(k), Ncm(k), KK_auto_coef )
+
+      else  ! N_c = 0.
+
+         KK_auto_tndcy(k) = zero
+
+      endif
+
+      !!! Calculate the local KK accretion tendency.
+      if ( rrainm(k) > rr_tol ) then
+
+         KK_accr_tndcy(k)  &
+         = KK_accr_local_mean( s_mellor(k), rrainm(k), KK_accr_coef )
+
+      else  ! r_r = 0.
+
+         KK_accr_tndcy(k) = zero
+
+      endif
+
+      ! Set the covariances of hydrometeor sedimentation velocities and
+      ! their associated hydrometeors (<V_rr'r_r'> and <V_Nr'N_r'>) to 0.
+      Vrrprrp_zt(k) = zero
+      VNrpNrp_zt(k) = zero
+
+
+      call KK_microphys_adjust( rrainm(k), Nrm(k), rcm(k), exner(k), & ! Intent(in)
+                                KK_evap_tndcy(k), KK_auto_tndcy(k), KK_accr_tndcy(k), &
+                                dt, l_src_adj_enabled, &
+                                rrainm_source, Nrm_source, & ! Intent(out)
+                                KK_Nrm_auto_tndcy(k), KK_Nrm_evap_tndcy(k), &
+                                rrainm_src_adj(k), Nrm_src_adj(k), &
+                                rrainm_evap_net(k), Nrm_evap_net(k), &
+                                rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
+                                rvm_mc(k), rcm_mc(k), thlm_mc(k) )
+
+
+      if ( l_stats_samp_in_sub ) then
+
+        call KK_stats_output_samp_in_sub( KK_mean_vol_rad(k), KK_evap_tndcy(k), & ! Intent(in)
+                                          KK_auto_tndcy(k), KK_accr_tndcy(k), &
+                                          KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
+                                          rrainm_src_adj(k), Nrm_src_adj(k), &
+                                          rrainm_evap_net(k), Nrm_evap_net(k), &
+                                          k )
+
+      endif
+
+    enddo  ! Microphysics tendency loop: k = 2, nz, 1
+
+
+    ! Set values to 0.
+    wprtp_mc_tndcy   = zero
+    wpthlp_mc_tndcy  = zero
+    rtp2_mc_tndcy    = zero
+    thlp2_mc_tndcy   = zero
+    rtpthlp_mc_tndcy = zero
+
+    call KK_sedimentation( nz, & ! Intent(in)
+                           Vrr, VNr, & ! Intent(InOut)
+                           rrainm_mc_tndcy, Nrm_mc_tndcy, &
+                           rcm_mc, rvm_mc, thlm_mc, &
+                           Vrrprrp, VNrpNrp, &
+                           Vrrprrp_zt, VNrpNrp_zt, &
+                           KK_mean_vol_rad )
+
+
+    return
+
+  end subroutine KK_local_micro_driver
+
+   !=============================================================================
+  subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, l_local_kk, &
+                              l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
+                              exner, rho, cloud_frac, pdf_params, w_std_dev, &
+                              dzq, rcm, Ncm, s_mellor, rvm, Nc0_in_cloud, &
+                              hydromet, &
+                              hydromet_mc, hydromet_vel, &
+                              rcm_mc, rvm_mc, thlm_mc, &
+                              hydromet_vel_covar, hydromet_vel_covar_zt,  &
+                              wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+                              KK_auto_tndcy, KK_accr_tndcy )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        zt2zm, &  ! Procedure(s)
+        zm2zt, &
+        gr
+
+    use constants_clubb, only: &
+        one,          & ! Constant(s)
+        zero,         &
+        eps
+
+    use parameters_microphys, only: &
+        l_var_covar_src,     & ! Flag for using variance/covariance src terms
+        l_const_Nc_in_cloud    ! Flag to use a constant value of N_c within cloud
+
+    use pdf_parameter_module, only: &
+        pdf_parameter  ! Variable(s)
+
+    use parameters_model, only: &
+        hydromet_dim  ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd,      & ! Variable(s)
+        time_precision
+
+    use stats_type, only: &
+        stat_update_var ! Procedure(s)
+
+    use stats_variables, only: &
+        zt,               & ! Variable(s)
+        iprecip_frac,     &
+        iprecip_frac_1,   &
+        iprecip_frac_2
+
+    use model_flags, only: &
+        l_use_precip_frac, & ! Flag(s)
+        l_calc_w_corr
+
+    use advance_windm_edsclrm_module, only: &
+        xpwp_fnc
+
+    use variables_diagnostic_module, only: &
+        Kh_zm
+
+    use parameters_tunable, only: &
+        c_Krrainm
+
+    implicit none
+
+    ! Input Variables
+    real( kind = time_precision ), intent(in) :: &
+      dt          ! Model time step duration                 [s]
+
+    integer, intent(in) :: &
+      nz          ! Number of model vertical grid levels
+
+    logical, intent(in) :: &
+      l_stats_samp,      & ! Flag to sample statistics
+      l_local_kk,        & ! Flag to use the local form of KK microphysics
+      l_latin_hypercube    ! Flag to use Latin Hypercube interface
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      thlm,       & ! Mean liquid water potential temperature         [K]
+      wm_zt,      & ! Mean vertical velocity on thermodynamic levels  [m/s]
+      p_in_Pa,    & ! Pressure                                        [Pa]
+      exner,      & ! Exner function                                  [-]
+      rho,        & ! Density                                         [kg/m^3]
+      cloud_frac, & ! Cloud fraction                                  [-]
+      rcm,        & ! Mean cloud water mixing ratio                   [kg/kg]
+      Ncm,        & ! Mean cloud droplet conc., < N_c >               [num/kg]
+      s_mellor      ! Mean extended liquid water mixing ratio         [kg/kg]
+
+    type(pdf_parameter), dimension(nz), target, intent(in) :: &
+      pdf_params    ! PDF parameters                         [units vary]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      w_std_dev, & ! Standard deviation of w (for LH interface)          [m/s]
+      dzq,       & ! Thickness between thermo. levels (for LH interface) [m]
+      rvm          ! Mean water vapor mixing ratio (for LH interface)    [kg/kg]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
+    target, intent(in) :: &
+      hydromet    ! Hydrometeor species                      [units vary]
+
+    ! Input / Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
+    target, intent(inout) :: &
+      hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
+      hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      rcm_mc,  & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
+      rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
+      thlm_mc    ! Time tendency of liquid potential temperature [K/s]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
+    target, intent(out) :: &
+      hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
+      hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
+
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc_tndcy, & ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      KK_auto_tndcy,    & ! Mean KK (dr_r/dt) due to autoconversion  [(kg/kg)/s]
+      KK_accr_tndcy       ! Mean KK (dr_r/dt) due to accretion       [(kg/kg)/s]
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(:), pointer ::  &
+      rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
+      Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
+      Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
+      VNr,             & ! Mean sedimentation velocity of < N_r >   [m/s]
+      rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
+      Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      KK_evap_tndcy,   & ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
+      KK_mean_vol_rad    ! Mean KK rain drop mean volume radius     [m]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation  [(num/kg)/s]
+      KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.    [(num/kg)/s]
+
+    real( kind = core_rknd ) :: &
+      KK_evap_coef, & ! KK evaporation coefficient                  [(kg/kg)/s]
+      KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
+      KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
+      KK_mvr_coef     ! KK mean volume radius coefficient           [m]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+
+    real( kind = core_rknd ) :: &
+      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
+      mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
+      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
+      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
+      mu_Nc_1,       & ! Mean of Nc (1st PDF component)                 [num/kg]
+      mu_Nc_2,       & ! Mean of Nc (2nd PDF component)                 [num/kg]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
+      mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)          [ln(num/kg)]
+      mu_Nc_2_n,     & ! Mean of ln Nc (2nd PDF component)          [ln(num/kg)]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
+      sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
+      sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
+      sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
+      sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
+      sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
+      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
+      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
+      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
+      sigma_Nc_1_n,  & ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
+      sigma_Nc_2_n,  & ! Standard dev. of ln Nc (2nd PDF comp.)     [ln(num/kg)]
+      corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
+      corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
+      corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
+      corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
+      corr_sNc_1,    & ! Correlation between s and Nc (1st PDF component)    [-]
+      corr_sNc_2,    & ! Correlation between s and Nc (2nd PDF component)    [-]
+      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
+      corr_rrNr_2,   & ! Correlation between rr & Nr (2nd PDF component) ip  [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
+      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF comp.)     [-]
+      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF comp.)     [-]
+      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
+      corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+      corr_sw,       & ! Correlation between s & w (both components)         [-]
+      corr_wrr,      & ! Correlation between rr & w (both components)        [-]
+      corr_wNr,      & ! Correlation between Nr & w (both components)        [-]
+      corr_wNc,      & ! Correlation between Nc & w (both components)        [-]
+      mixt_frac        ! Mixture fraction                                    [-]
+
+    real( kind = core_rknd ), dimension(:), pointer :: &
+      Vrrprrp, & ! Covariance of V_rr and r_r (momentum levels)  [(m/s)(kg/kg)]
+      VNrpNrp    ! Covariance of V_Nr and N_r (momentum levels)  [(m/s)(num/kg)]
+
+    real( kind = core_rknd ), dimension(:), pointer :: &
+      Vrrprrp_zt, & ! Covariance of V_rr and r_r; thermo. levs.  [(m/s)(kg/kg)]
+      VNrpNrp_zt    ! Covariance of V_Nr and N_r; thermo. levs.  [(m/s)(num/kg)]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      wprtp_mc_tndcy_zt,   & ! Micro. tend. for <w'rt'>; t-lev   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy_zt,  & ! Micro. tend. for <w'thl'>; t-lev  [m*K/s^2]
+      rtp2_mc_tndcy_zt,    & ! Micro. tend. for <rt'^2>; t-lev   [(kg/kg)^2/s]
+      thlp2_mc_tndcy_zt,   & ! Micro. tend. for <thl'^2>; t-lev  [K^2/s]
+      rtpthlp_mc_tndcy_zt    ! Micro. tend. for <rt'thl'>; t-lev [K*(kg/kg)/s]
+
+    real( kind = core_rknd ) ::  &
+      rrainm_source,     & ! Total source term rate for rrainm       [(kg/kg)/s]
+      Nrm_source           ! Total source term rate for Nrm         [(num/kg)/s]
+
+
+    real( kind = core_rknd ), dimension(nz) ::  &
+      rrainm_src_adj,  & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
+      Nrm_src_adj,     & ! Total adjustment to Nrm source terms     [(num/kg)/s]
+      rrainm_evap_net, & ! Net evaporation rate of <r_r>            [(kg/kg)/s]
+      Nrm_evap_net       ! Net evaporation rate of <N_r>            [(num/kg)/s]
+
+    ! changes by janhft 10/04/12
+    real( kind = core_rknd ), dimension(nz) ::  &
+      wpsp_zm,  & ! Covariance of s and w on the zm-grid    [(m/s)(kg/kg)]
+      wprrp_zm, & ! Covariance of r_r and w on the zm-grid  [(m/s)(kg/kg)]
+      wpNrp_zm, & ! Covariance of N_r and w on the zm-grid  [(m/s)(#/kg)]
+      wpNcp_zm, & ! Covariance of N_c and w on the zm-grid  [(m/s)(#/kg)]
+      wpsp_zt,  & ! Covariance of s and w on the zt-grid    [(m/s)(kg/kg)]
+      wprrp_zt, & ! Covariance of r_r and w on the zt-grid  [(m/s)(kg/kg)]
+      wpNrp_zt, & ! Covariance of N_r and w on the zt-grid  [(m/s)(#/kg)]
+      wpNcp_zt    ! Covariance of N_c and w on the zt-grid  [(m/s)(#/kg)]
+    ! end changes by janhft 10/04/12
+
+    logical :: &
+      l_upscaled,        & ! Flag for using upscaled KK microphysics.
+      l_src_adj_enabled, & ! Flag to enable rrainm/Nrm source adjustment
+      l_stats_samp_in_sub  ! Used to disable stats when SILHS is enabled
+
+    integer :: &
+      k   ! Loop index
+
+    ! Remove compiler warnings
+    if ( .false. ) then
+      rrainm_src_adj = dzq
+      rrainm_src_adj = rvm
+      rrainm_src_adj = w_std_dev
+      rrainm_src_adj = cloud_frac
+    end if
+
+    ! Disable stats when latin hypercube is enabled
+    if ( .not. l_latin_hypercube .and. l_stats_samp ) then
+     l_stats_samp_in_sub = .true.
+    else
+     l_stats_samp_in_sub = .false.
+    end if
+
+    call KK_init_micro_driver( nz, hydromet, hydromet_mc, hydromet_vel, & ! Intent(in)
+                               hydromet_vel_covar, hydromet_vel_covar_zt, &
+                               rrainm, Nrm, Vrr, VNr, & ! Intent(out)
+                               rrainm_mc_tndcy, Nrm_mc_tndcy, &
+                               KK_auto_tndcy, KK_accr_tndcy, &
+                               Vrrprrp, VNrpNrp, Vrrprrp_zt, &
+                               VNrpNrp_zt, l_src_adj_enabled )
+
+    if ( .not. l_local_kk ) then
+       l_upscaled = .true.
+    else
+       l_upscaled = .false.
+    endif
+
+    ! Precipitation fraction
+    if ( l_use_precip_frac ) then
+
+       call precip_fraction( nz, rrainm, cloud_frac, &
+                             pdf_params%cloud_frac1, pdf_params%mixt_frac, &
+                             precip_frac, precip_frac_1, precip_frac_2 )
+
+    else
+
+       precip_frac   = one
+       precip_frac_1 = one
+       precip_frac_2 = one
+
+    endif
+
+    ! Statistics
+    if ( l_stats_samp_in_sub ) then
+       call stat_update_var( iprecip_frac, precip_frac, zt )
+       call stat_update_var( iprecip_frac_1, precip_frac_1, zt )
+       call stat_update_var( iprecip_frac_2, precip_frac_2, zt )
+    endif
+
+    ! calculate the covariances of w with the hydrometeors
+    if ( l_calc_w_corr ) then
+
+       ! calculate the covariances of w with the hydrometeors
+       do k = 1, nz
+          wpsp_zm(k) = pdf_params(k)%mixt_frac &
+                       * ( one - pdf_params(k)%mixt_frac ) &
+                       * ( pdf_params(k)%s1 - pdf_params(k)%s2 ) &
+                       * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
+       enddo
+
+       wprrp_zm(1:nz-1) &
+       = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+                   rrainm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
+                   rrainm(2:nz) / max( precip_frac(2:nz), eps ), &
+                   gr%invrs_dzm(1:nz-1) )
+
+       wpNrp_zm(1:nz-1) &
+       = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+                   Nrm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
+                   Nrm(2:nz) / max( precip_frac(2:nz), eps ), &
+                   gr%invrs_dzm(1:nz-1) )
+
+       wpNcp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncm(1:nz-1), &
+                                    Ncm(2:nz), gr%invrs_dzm(1:nz-1) )
+
+       ! Boundary conditions; We are assuming constant flux at the top.
+       wprrp_zm(nz) = wprrp_zm(nz-1)
+       wpNrp_zm(nz) = wpNrp_zm(nz-1)
+       wpNcp_zm(nz) = wpNcp_zm(nz-1)
+
+       ! interpolate back to zt-grid
+       wpsp_zt  = zm2zt(wpsp_zm)
+       wprrp_zt = zm2zt(wprrp_zm)
+       wpNrp_zt = zm2zt(wpNrp_zm)
+       wpNcp_zt = zm2zt(wpNcp_zm)
+
+    endif
+
+
+    ! Microphysics tendency loop.
+    ! Loop over all model thermodynamic level above the model lower boundary.
+    do k = 2, nz, 1
+
+      ! Compute supersaturation via s1, s2.
+      !     Larson et al 2002, JAS, Vol 59, p 3534.
+      ! This allows a more direct comparison of local, upscaled formulas.
+
+      call KK_supersaturation( thlm(k), exner(k), p_in_Pa(k), rho(k), & ! Intent(in)
+                               KK_evap_coef, KK_auto_coef, & ! Intent(out)
+                               KK_accr_coef, KK_mvr_coef )
+
+       !!! KK rain water mixing ratio microphysics tendencies.
+      call KK_in_precip_values( rrainm(k), Nrm(k), rcm(k), &
+                                precip_frac_1(k), precip_frac_2(k), &
+                                mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                sigma_Nr_2, corr_srr_1, corr_srr_2, &
+                                corr_sNr_1, corr_sNr_2, corr_rrNr_1, &
+                                corr_rrNr_2 )
+
+      call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), Ncm(k), &
+                              mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                              sigma_rr_1, sigma_rr_2, &
+                              sigma_Nr_1, sigma_Nr_2, &
+                              wpsp_zt(k), wprrp_zt(k), wpNrp_zt(k), &
+                              wpNcp_zt(k), w_std_dev(k), pdf_params(k), &
+                              corr_srr_1, corr_srr_2, corr_sNr_1, &
+                              corr_sNr_2, corr_rrNr_1, corr_rrNr_2, &
+                              mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
+                              mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                              mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
+                              sigma_s_1, sigma_s_2, &
+                              sigma_Nc_1, sigma_Nc_2, &
+                              sigma_rr_1_n, sigma_rr_2_n, &
+                              sigma_Nr_1_n, sigma_Nr_2_n, &
+                              sigma_Nc_1_n, sigma_Nc_2_n, &
+                              corr_sNc_1, corr_sNc_2, &
+                              corr_srr_1_n, corr_srr_2_n, &
+                              corr_sNr_1_n, corr_sNr_2_n, &
+                              corr_sNc_1_n, corr_sNc_2_n, &
+                              corr_rrNr_1_n, corr_rrNr_2_n, &
+                              corr_sw, corr_wrr, corr_wNr, corr_wNc, &
+                              mixt_frac )
+
+      call KK_stat_output( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                           mu_Nc_1, mu_Nc_2, mu_rr_1_n, mu_rr_2_n, &
+                           mu_Nr_1_n, mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
+                           sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                           sigma_Nr_2, sigma_Nc_1, sigma_Nc_2, &
+                           sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                           sigma_Nr_2_n, sigma_Nc_1_n, sigma_Nc_2_n, &
+                           corr_srr_1, corr_srr_2, corr_sNr_1, &
+                           corr_sNr_2, corr_sNc_1, corr_sNc_2, &
+                           corr_rrNr_1, corr_rrNr_2, corr_srr_1_n, &
+                           corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
+                           corr_sNc_1_n, corr_sNc_2_n, corr_rrNr_1_n, &
+                           corr_rrNr_2_n, corr_sw, corr_wrr, corr_wNr, &
+                           corr_wNc, k, l_stats_samp_in_sub )
+
+        !!! Calculate the values of the upscaled KK microphysics tendencies.
+      call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
+                                     mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
+                                     mu_Nr_1_n, mu_Nr_2_n, mu_Nc_1_n, &
+                                     mu_Nc_2_n, sigma_s_1, sigma_s_2, &
+                                     sigma_rr_1_n, sigma_rr_2_n, &
+                                     sigma_Nr_1_n, sigma_Nr_2_n, &
+                                     sigma_Nc_1_n, sigma_Nc_2_n, &
+                                     corr_srr_1_n, corr_srr_2_n, &
+                                     corr_sNr_1_n, corr_sNr_2_n, &
+                                     corr_sNc_1_n, corr_sNc_2_n, &
+                                     corr_rrNr_1_n, corr_rrNr_2_n, &
+                                     mixt_frac, precip_frac_1(k), &
+                                     precip_frac_2(k), Nc0_in_cloud(k), &
+                                     l_const_Nc_in_cloud, &
+                                     KK_evap_coef, KK_auto_coef, &
+                                     KK_accr_coef, KK_mvr_coef, &
+                                     KK_evap_tndcy(k), KK_auto_tndcy(k), &
+                                     KK_accr_tndcy(k), KK_mean_vol_rad(k) )
+
+      call KK_sed_vel_covars( rrainm(k), Nrm(k), KK_mean_vol_rad(k), &
+                              mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
+                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                              sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+                              KK_mvr_coef, mixt_frac, precip_frac_1(k), &
+                              precip_frac_2(k), k, l_stats_samp_in_sub, &
+                              Vrrprrp_zt(k), VNrpNrp_zt(k) )
+
+
+      if ( l_var_covar_src ) then
+
+        call KK_upscaled_covar_driver( wm_zt(k), exner(k), rcm(k),  &
+                                       rrainm(k), Nrm(k), Ncm(k), &
+                                       mu_s_1, mu_s_2, mu_rr_1_n, mu_Nr_1_n, &
+                                       mu_Nc_1_n, sigma_s_1, sigma_s_2, &
+                                       sigma_rr_1_n, sigma_Nr_1_n, sigma_Nc_1_n, &
+                                       corr_srr_1_n, corr_srr_2_n, &
+                                       corr_sNr_1_n, corr_sNr_2_n, &
+                                       corr_sNc_1_n, corr_sNc_2_n, &
+                                       corr_rrNr_1_n,  mixt_frac, &
+                                       precip_frac(k), Nc0_in_cloud(k), &
+                                       l_const_Nc_in_cloud, &
+                                       KK_evap_coef, KK_auto_coef, &
+                                       KK_accr_coef, KK_evap_tndcy(k), &
+                                       KK_auto_tndcy(k), KK_accr_tndcy(k), &
+                                       pdf_params(k), k, &
+                                       l_stats_samp_in_sub, &
+                                       wprtp_mc_tndcy_zt(k), &
+                                       wpthlp_mc_tndcy_zt(k), &
+                                       rtp2_mc_tndcy_zt(k), &
+                                       thlp2_mc_tndcy_zt(k), &
+                                       rtpthlp_mc_tndcy_zt(k) )
+
+      endif
+
+
+      call KK_microphys_adjust( rrainm(k), Nrm(k), rcm(k), exner(k), & ! Intent(in)
+                                KK_evap_tndcy(k), KK_auto_tndcy(k), KK_accr_tndcy(k), &
+                                dt, l_src_adj_enabled, &
+                                rrainm_source, Nrm_source, & ! Intent(out)
+                                KK_Nrm_auto_tndcy(k), KK_Nrm_evap_tndcy(k), &
+                                rrainm_src_adj(k), Nrm_src_adj(k), &
+                                rrainm_evap_net(k), Nrm_evap_net(k), &
+                                rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
+                                rvm_mc(k), rcm_mc(k), thlm_mc(k) )
+
+
+      if ( l_stats_samp_in_sub ) then
+
+        call KK_stats_output_samp_in_sub( KK_mean_vol_rad(k), KK_evap_tndcy(k), & ! Intent(in)
+                                          KK_auto_tndcy(k), KK_accr_tndcy(k), &
+                                          KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
+                                          rrainm_src_adj(k), Nrm_src_adj(k), &
+                                          rrainm_evap_net(k), Nrm_evap_net(k), &
+                                          k )
+
+      endif
+
+    enddo  ! Microphysics tendency loop: k = 2, nz, 1
+
+
+    if ( l_var_covar_src ) then
+
+       ! Output microphysics tendency terms for
+       ! model variances and covariances on momentum levels.
+       wprtp_mc_tndcy   = zt2zm( wprtp_mc_tndcy_zt )
+       wpthlp_mc_tndcy  = zt2zm( wpthlp_mc_tndcy_zt )
+       rtp2_mc_tndcy    = zt2zm( rtp2_mc_tndcy_zt )
+       thlp2_mc_tndcy   = zt2zm( thlp2_mc_tndcy_zt )
+       rtpthlp_mc_tndcy = zt2zm( rtpthlp_mc_tndcy_zt )
+
+       ! Set values of microphysics tendency terms to 0 at model lower boundary.
+       wprtp_mc_tndcy(1)   = zero
+       wpthlp_mc_tndcy(1)  = zero
+       rtp2_mc_tndcy(1)    = zero
+       thlp2_mc_tndcy(1)   = zero
+       rtpthlp_mc_tndcy(1) = zero
+       ! Set values of microphysics tendency terms to 0 at model upper boundary.
+       wprtp_mc_tndcy(nz)   = zero
+       wpthlp_mc_tndcy(nz)  = zero
+       rtp2_mc_tndcy(nz)    = zero
+       thlp2_mc_tndcy(nz)   = zero
+       rtpthlp_mc_tndcy(nz) = zero
+
+    else
+
+       ! Set values to 0.
+       wprtp_mc_tndcy   = zero
+       wpthlp_mc_tndcy  = zero
+       rtp2_mc_tndcy    = zero
+       thlp2_mc_tndcy   = zero
+       rtpthlp_mc_tndcy = zero
+
+    endif
+
+
+    call KK_sedimentation( nz, & ! Intent(in)
+                           Vrr, VNr, & ! Intent(InOut)
+                           rrainm_mc_tndcy, Nrm_mc_tndcy, &
+                           rcm_mc, rvm_mc, thlm_mc, &
+                           Vrrprrp, VNrpNrp, &
+                           Vrrprrp_zt, VNrpNrp_zt, &
+                           KK_mean_vol_rad )
+
+
+    return
+
+  end subroutine KK_upscaled_micro_driver
 
   !=============================================================================
   subroutine precip_fraction( nz, rrainm, cloud_frac, &
