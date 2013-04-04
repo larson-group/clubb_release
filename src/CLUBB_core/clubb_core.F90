@@ -60,7 +60,7 @@ module clubb_core
                p_in_Pa, rho_zm, rho, exner, &
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
-               rfrzm, &
+               rfrzm, radf, &
                um, vm, upwp, vpwp, up2, vp2, &
                thlm, rtm, wprtp, wpthlp, &
                wp2, wp3, rtp2, thlp2, rtpthlp, &
@@ -391,6 +391,9 @@ module clubb_core
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
       rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      radf               ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3] 
 
     real( kind = core_rknd ), intent(in) ::  & 
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
@@ -1669,7 +1672,7 @@ module clubb_core
              wpthvp_frz, wp2thvp_frz, um, vm, upwp, vpwp,  & ! intent(in)
              up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,       & ! intent(in)
              Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,         & ! intent(in)
-             invrs_rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, radf,       & ! intent(in)
              thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt, err_code           ) ! intent(inout)
       else
@@ -1679,7 +1682,7 @@ module clubb_core
              wpthvp, wp2thvp, um, vm, upwp, vpwp,          & ! intent(in)
              up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,       & ! intent(in)
              Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,         & ! intent(in)
-             invrs_rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, radf,       & ! intent(in)
              thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt, err_code           ) ! intent(inout)
       end if

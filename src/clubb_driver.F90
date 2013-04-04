@@ -351,7 +351,11 @@ module clubb_driver
       rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
-      rfrzm ! Total ice-phase water mixing ratio        [kg/kg]
+      rfrzm    ! Total ice-phase water mixing ratio        [kg/kg]
+
+    real( kind = core_rknd ), allocatable, dimension(:) :: &
+      radf     ! Buoyancy production at CL top due to LW radiative cooling [m^2/s^3]
+               ! This is currently set to zero for CLUBB standalone
 
     logical :: l_restart_input
 
@@ -762,7 +766,11 @@ module clubb_driver
            momentum_heights, thermodynamic_heights,           & ! Intent(in)
            dummy_dx, dummy_dy, sfc_elevation,                 & ! Intent(in)
            err_code )                                           ! Intent(out)
+    ! Allocate a correctly-sized array for radf and zero it
+    allocate(radf(gr%nz))
 
+    ! Zero all elements of radf
+    radf(1:gr%nz) = 0.0_core_rknd
 
     if ( fatal_error( err_code ) ) return
 
@@ -1073,7 +1081,7 @@ module clubb_driver
              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in)
-             rfrzm, &                                             ! Intent(in)
+             rfrzm, radf, &                                       ! Intent(in)
              um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
              wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
@@ -1182,6 +1190,8 @@ module clubb_driver
       call cleanup_latin_hypercube_arrays( )
     end if
 #endif
+
+    deallocate(radf)
 
     return
   end subroutine run_clubb
