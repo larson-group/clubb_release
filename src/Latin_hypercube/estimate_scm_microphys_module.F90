@@ -73,7 +73,6 @@ module estimate_scm_microphys_module
 
     ! Constant parameters
     logical, parameter :: &
-      l_local_kk        = .true., &
       l_latin_hypercube = .true.
 
     logical, parameter :: &
@@ -268,7 +267,7 @@ module estimate_scm_microphys_module
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
-           ( dt, nz, l_stats_samp, l_local_kk, & ! In
+           ( dt, nz, l_stats_samp, & ! In
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
              exner, rho, cloud_frac, pdf_params, w_std_dev, & ! In
              dzq, rc_column, Ncm, s_mellor_column, rv_column, Nc0, & ! In

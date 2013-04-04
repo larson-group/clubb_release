@@ -1257,7 +1257,7 @@ module microphys_driver
 
     character(len=10) :: hydromet_name
 
-    logical :: l_local_kk_input, l_latin_hypercube_input
+    logical :: l_latin_hypercube_input
 
 !-------------------------------------------------------------------------------
 
@@ -1477,11 +1477,10 @@ module microphys_driver
       ! Call the microphysics if we don't want to have feedback effects from the
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
-        l_local_kk_input = .false.
         l_latin_hypercube_input = .false.
         rvm = rtm - rcm
         call morrison_micro_driver & 
-             ( dt, gr%nz, l_stats_samp, l_local_kk_input, &
+             ( dt, gr%nz, l_stats_samp, &
                l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, wtmp, &
                delta_zt, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
@@ -1561,21 +1560,8 @@ module microphys_driver
         l_latin_hypercube_input = .false.
         rvm = rtm - rcm
 
-        ! Note: Ncm is a fixed value set above, since KK doesn't currently predict Nc
-!        call KK_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
-!                              l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
-!                              exner, rho, cloud_frac, pdf_params, wtmp, &
-!                              delta_zt, rcm, Ncm, s_mellor, rvm, &
-!                              Ncm_in_cloud, hydromet, &
-!                              hydromet_mc, hydromet_vel_zt, &
-!                              rcm_mc, rvm_mc, thlm_mc, &
-!                              hydromet_vel_covar, hydromet_vel_covar_zt, &
-!                              wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-!                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
-!                              rrainm_auto, rrainm_accr )
-
         if ( l_local_kk ) then
-          call KK_local_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
+          call KK_local_micro_driver( dt, gr%nz, l_stats_samp, &
                                       l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
                                       exner, rho, cloud_frac, pdf_params, wtmp, &
                                       delta_zt, rcm, Ncm, s_mellor, rvm, &
@@ -1587,7 +1573,7 @@ module microphys_driver
                                       rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
                                       rrainm_auto, rrainm_accr )
         else
-          call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, l_local_kk, &
+          call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, &
                                          l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
                                          exner, rho, cloud_frac, pdf_params, wtmp, &
                                          delta_zt, rcm, Ncm, s_mellor, rvm, &

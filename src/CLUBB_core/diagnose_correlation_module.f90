@@ -3,9 +3,6 @@ module diagnose_correlations_module
 
   use clubb_precision, only: &
       core_rknd
-  
-  use grid_class, only: &
-      gr
 
   implicit none 
 
@@ -38,15 +35,6 @@ module diagnose_correlations_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
-    use grid_class, only: &
-        gr ! Variable(s)
-
-    use variables_diagnostic_module, only: &
-        Kh_zt
-
-    use model_flags, only: &
-        l_calc_w_corr
 
     use pdf_parameter_module, only: &
         pdf_parameter  ! Type
@@ -87,7 +75,7 @@ module diagnose_correlations_module
       corr_sNr_p,     &  ! Prescribed correlation between s and Nr     [-]
       corr_sNc_p         ! Prescribed correlation between s and Nc     [-]
       
-    type(pdf_parameter), target, intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters  [units vary]
 
     ! Input/Output Variables
@@ -106,14 +94,7 @@ module diagnose_correlations_module
 
     real( kind = core_rknd ), dimension(n_variables) :: &
       sqrt_xp2_on_xm2, & ! sqrt of x_variance / x_mean^2          [units vary]
-      xm,              & ! means of the hydrometeors              [units vary]
-      stdev_x,         & ! ratios of x_variance / x_mean^2        [units vary]
-      wpxp,            & ! Covariances of w with the hydrometeors [units vary]
-      xp2_on_xm2,      & ! ratios of x_variance over x_mean^2     [units vary]
-      x_tol              ! tolerances for the x variables         [units vary]
-
-    real( kind = core_rknd ) :: &
-      s_mellorp2_on_s_mellorm2 ! Variance of s_mellor divided by s_mellor^2 [-]
+      xm                 ! means of the hydrometeors              [units vary]
 
     ! Indices of the hydrometeors
     integer :: &
@@ -132,8 +113,8 @@ module diagnose_correlations_module
 
     ! TODO Why is wp2_on_wm2=1
     ! S_i is set to 1 for s_mellor and w, because s_mellorm could be 0
-    sqrt_xp2_on_xm2(ii_w) = 1
-    sqrt_xp2_on_xm2(ii_s) = 1
+    sqrt_xp2_on_xm2(ii_w) = 1._core_rknd
+    sqrt_xp2_on_xm2(ii_s) = 1._core_rknd
 
     sqrt_xp2_on_xm2(ii_rrain) = sqrt(rrp2_on_rrm2)
     sqrt_xp2_on_xm2(ii_Nr) = sqrt(Nrp2_on_Nrm2)
@@ -142,15 +123,15 @@ module diagnose_correlations_module
     ! initialize the correlation matrix with 0
     do i=1, n_variables
        do j=1, n_variables
-          corr_matrix_approx(i,j) = 0
-          corr_matrix_prescribed(i,j) = 0
+          corr_matrix_approx(i,j) = 0._core_rknd
+          corr_matrix_prescribed(i,j) = 0._core_rknd
        end do
     end do
 
     ! set diagonal of the correlation matrix to 1
     do i = 1, n_variables
-       corr_matrix_approx(i,i) = 1
-       corr_matrix_prescribed(i,i) = 1
+       corr_matrix_approx(i,i) = 1._core_rknd
+       corr_matrix_prescribed(i,i) = 1._core_rknd
     end do
 
 
@@ -233,18 +214,7 @@ module diagnose_correlations_module
         core_rknd ! Variable(s)
 
     use corr_matrix_module, only: &
-      iiLH_s_mellor, & ! Variable(s)
-      iiLH_t_mellor, &
-      iiLH_w, &
-      iiLH_rrain, &
-      iiLH_rsnow, &
-      iiLH_rice, &
-      iiLH_rgraupel, &
-      iiLH_Nr, &
-      iiLH_Nsnow, &
-      iiLH_Ni, &
-      iiLH_Ngraupel, &
-      iiLH_Nc
+      iiLH_w ! Variable(s)
 
     implicit none
 
@@ -500,7 +470,7 @@ module diagnose_correlations_module
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mixt_frac, &  ! mixing ratio [-]
       x1, &         ! first component of the double gaussian [units vary]
       x2            ! second component of the double gaussian [units vary]

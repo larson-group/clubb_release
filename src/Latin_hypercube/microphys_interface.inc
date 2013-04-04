@@ -2,7 +2,7 @@
 ! hypercube sampling for.  New microphysics drivers will need to have the same
 ! number and type of arguments as this does.
 interface
-  subroutine microphys_sub( dt, nnzp, l_stats_sample, l_local_kk, &
+  subroutine microphys_sub( dt, nnzp, l_stats_sample, &
                             l_latin_hypercube, thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, pdf_params, w_std_dev, &
                             dzq, rcm, Ncm, s_mellor, rvm, Nc0, hydromet, &
@@ -25,7 +25,6 @@ interface
 
     logical, intent(in) :: &
       l_stats_sample,   & ! Whether to accumulate statistics [T/F]
-      l_local_kk,       & ! Whether we're using the local formulas
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
     real( kind = core_rknd ), dimension(nnzp), intent(in) :: &

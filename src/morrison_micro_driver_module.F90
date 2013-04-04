@@ -10,7 +10,7 @@ module morrison_micro_driver_module
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_micro_driver &
-             ( dt, nz, l_stats_samp, l_local_kk, &
+             ( dt, nz, l_stats_samp, &
                l_latin_hypercube, thlm, wm, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, w_std_dev, &
                dzq, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
@@ -104,7 +104,6 @@ module morrison_micro_driver_module
 
     logical, intent(in) :: &
       l_stats_samp,     & ! Whether to accumulate statistics [T/F]
-      l_local_kk,       & ! Whether we're using the local formulas
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -216,7 +215,6 @@ module morrison_micro_driver_module
       rcm_in_cloud = s_mellor
       rcm_in_cloud = dummy_1D
       rcm_in_cloud = Ncm_in_cloud
-      if ( l_local_kk ) stop
     end if
 
     ! Determine temperature

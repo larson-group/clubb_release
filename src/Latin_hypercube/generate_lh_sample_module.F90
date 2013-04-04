@@ -141,13 +141,10 @@ module generate_lh_sample_module
       core_rknd
 
     use model_flags, only: &
-        l_diagnose_correlations, & ! Variable(s)
-        l_calc_w_corr
+        l_diagnose_correlations ! Variable(s)
 
     use diagnose_correlations_module, only: &
-        diagnose_LH_corr, & ! Procedure(s)
-        calc_mean, &
-        calc_w_corr
+        diagnose_LH_corr ! Procedure(s)
 
     implicit none
 
