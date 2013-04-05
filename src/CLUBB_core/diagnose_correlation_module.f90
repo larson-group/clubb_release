@@ -448,7 +448,7 @@ module diagnose_correlations_module
 
     ! --- Begin Code ---
 
-    calc_varnce = mixt_frac * ((x1 - xm)**2 + x1p2) + (1 - mixt_frac) * ((x2 - xm)**2 + x2p2)
+    calc_varnce = mixt_frac * ((x1 - xm)**2 + x1p2) + (1.0_core_rknd - mixt_frac) * ((x2 - xm)**2 + x2p2)
 
     return
   end function calc_varnce
@@ -481,7 +481,7 @@ module diagnose_correlations_module
 
     ! --- Begin Code ---
 
-    calc_mean = mixt_frac * x1 + (1 - mixt_frac) * x2
+    calc_mean = mixt_frac * x1 + (1.0_core_rknd - mixt_frac) * x2
 
     return
   end function calc_mean
