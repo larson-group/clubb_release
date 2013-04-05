@@ -14,7 +14,7 @@ libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
 # == Debugging ==
-DEBUG="-g -C -Kieee -Ktrap=fp"
+DEBUG="-g -C -Kieee -Ktrap=fp -Mstandard"
 #DEBUG="-g -C -Kieee"
 
 
