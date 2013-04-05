@@ -1893,7 +1893,9 @@ module advance_xm_wpxp_module
         iwprtp_dp1, & 
         iwprtp_pd, & 
         iwprtp_sicl, & 
-        ithlm_ta, & 
+        ithlm_ta
+
+    use stats_variables, only: &
         ithlm_ma, & 
         ithlm_cl, & 
         ithlm_matrix_condt_num, & 

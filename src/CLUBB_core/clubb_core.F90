@@ -165,7 +165,9 @@ module clubb_core
       wprtpthlp, &
       wpthvp, &
       wp2thvp, &
-      wp2rcp, &
+      wp2rcp
+
+    use variables_diagnostic_module, only: &
       thvm, & 
       em, & 
       Lscale, &
@@ -301,7 +303,9 @@ module clubb_core
       irsat,         &
       irvm,          &
       irel_humidity, &
-      iwpthlp_zt,    &
+      iwpthlp_zt
+
+    use stats_variables, only: &
       iwprtp_zt,     &
       iup2_zt,       &
       ivp2_zt,       &
@@ -2340,7 +2344,9 @@ module clubb_core
         varnce_rt2_zt,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
         crt1_zm,        & ! Coefficient for s'                                      [-]
         crt1_zt,        & ! Coefficient for s'                                      [-]
-        crt2_zm,        & ! Coefficient for s'                                      [-]
+        crt2_zm           ! Coefficient for s'                                      [-]
+
+      real( kind = core_rknd ), dimension(gr%nz) :: &
         crt2_zt,        & ! Coefficient for s'                                      [-]
         cthl1_zm,       & ! Coefficient for s'                                    [1/K]
         cthl1_zt,       & ! Coefficient for s'                                    [1/K]
@@ -2374,7 +2380,9 @@ module clubb_core
         s1_zt,          & ! Mean of s for 1st normal distribution               [kg/kg]
         s2_zm,          & ! Mean of s for 2nd normal distribution               [kg/kg]
         s2_zt,          & ! Mean of s for 2nd normal distribution               [kg/kg]
-        stdev_s1_zm,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
+        stdev_s1_zm       ! Standard deviation of s for 1st normal distribution [kg/kg]
+
+      real( kind = core_rknd ), dimension(gr%nz) :: &
         stdev_s1_zt,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
         stdev_s2_zm,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
         stdev_s2_zt,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]

@@ -495,7 +495,9 @@ module KK_microphys_module
       sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
       sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
       sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
-      sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
+      sigma_Nr_1       ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
+
+    real( kind = core_rknd ) :: &
       sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
       sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
       sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
@@ -511,7 +513,9 @@ module KK_microphys_module
       corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
       corr_sNc_1,    & ! Correlation between s and Nc (1st PDF component)    [-]
       corr_sNc_2,    & ! Correlation between s and Nc (2nd PDF component)    [-]
-      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
+      corr_rrNr_1      ! Correlation between rr & Nr (1st PDF component) ip  [-]
+
+    real( kind = core_rknd ) :: &
       corr_rrNr_2,   & ! Correlation between rr & Nr (2nd PDF component) ip  [-]
       corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
       corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
@@ -1457,7 +1461,9 @@ module KK_microphys_module
       sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
       sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
       sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-      sigma_Nc_1_n,  & ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
+      sigma_Nc_1_n     ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
+
+    real( kind = core_rknd ), intent(out) :: &
       sigma_Nc_2_n,  & ! Standard dev. of ln Nc (2nd PDF comp.)     [ln(num/kg)]
       corr_sNc_1,    & ! Correlation between s and Nc (1st PDF component)    [-]
       corr_sNc_2,    & ! Correlation between s and Nc (2nd PDF component)    [-]
@@ -2012,7 +2018,9 @@ module KK_microphys_module
         isigma_Nr_2,    &
         isigma_Nc_1,    &
         isigma_Nc_2,    &
-        isigma_rr_1_n,  &
+        isigma_rr_1_n
+
+    use stats_variables, only: &
         isigma_rr_2_n,  &
         isigma_Nr_1_n,  &
         isigma_Nr_2_n,  &
@@ -2026,7 +2034,9 @@ module KK_microphys_module
         icorr_sNc_2,    &
         icorr_rrNr_1,   &
         icorr_rrNr_2,   &
-        icorr_srr_1_n,  &
+        icorr_srr_1_n
+
+    use stats_variables, only: &
         icorr_srr_2_n,  &
         icorr_sNr_1_n,  &
         icorr_sNr_2_n,  &
@@ -2062,7 +2072,9 @@ module KK_microphys_module
       sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
       sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
       sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
-      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+      sigma_rr_1_n     ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+
+    real( kind = core_rknd ), intent(in) :: &
       sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
       sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
       sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]

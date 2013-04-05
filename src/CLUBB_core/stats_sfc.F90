@@ -46,7 +46,9 @@ module stats_sfc
         iz_inversion, & 
         irain_rate_sfc, & 
         irain_flux_sfc, & 
-        irrainm_sfc, &
+        irrainm_sfc
+
+    use stats_variables, only: &
         iwpthlp_sfc, &
         iwprtp_sfc, &
         iupwp_sfc, &

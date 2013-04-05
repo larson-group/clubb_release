@@ -189,7 +189,9 @@ module stats_zt
         ithlm_ta, & 
         ithlm_forcing, & 
         ithlm_mc, &
-        ithlm_sdmp, &
+        ithlm_sdmp
+
+    use stats_variables, only: &
         ithlm_mfl, &
         ithlm_tacl, &
         ithlm_cl, &
@@ -235,7 +237,9 @@ module stats_zt
         irrainm_src_adj, & 
         irrainm_tsfl, &
         irrainm_mc, & 
-        irrainm_hf, & 
+        irrainm_hf
+
+    use stats_variables, only: &
         irrainm_wvhf, & 
         irrainm_cl, & 
         iNrm_bt, & 
@@ -266,7 +270,9 @@ module stats_zt
         irgraupelm_sd, &
         irgraupelm_sd_morr, &
         irgraupelm_dff, & 
-        irgraupelm_mc, & 
+        irgraupelm_mc
+
+    use stats_variables, only: &
         irgraupelm_hf, & 
         irgraupelm_wvhf, & 
         irgraupelm_cl, & 
@@ -317,7 +323,9 @@ module stats_zt
         irsl1, & 
         irsl2, & 
         icloud_frac1, & 
-        icloud_frac2, & 
+        icloud_frac2
+
+    use stats_variables, only: &
         is1, & 
         is2, & 
         istdev_s1, & 

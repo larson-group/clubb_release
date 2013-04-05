@@ -48,7 +48,9 @@ module stats_zm
         irc_coef, &
         ithlprcp, & 
         irtprcp, & 
-        ircp2, & 
+        ircp2
+
+    use stats_variables, only: &
         iupwp, & 
         ivpwp, & 
         irho_zm, & 
@@ -145,7 +147,9 @@ module stats_zm
         iwprtp_mc, & 
         iwpthlp_bt, & 
         iwpthlp_ma, & 
-        iwpthlp_ta, & 
+        iwpthlp_ta
+
+    use stats_variables, only: &
         iwpthlp_tp, & 
         iwpthlp_ac, & 
         iwpthlp_bp, & 
@@ -178,7 +182,9 @@ module stats_zm
         ithlp2_dp1, & 
         ithlp2_dp2, & 
         ithlp2_cl, & 
-        ithlp2_pd, &
+        ithlp2_pd
+
+    use stats_variables, only: &
         ithlp2_sf, &
         ithlp2_forcing, &
         ithlp2_mc, &

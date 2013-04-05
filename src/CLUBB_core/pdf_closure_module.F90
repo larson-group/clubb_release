@@ -224,7 +224,9 @@ module pdf_closure_module
       crt1,        & ! Coef. on r_t in s/t eqns. (1st PDF comp.)             [-]
       crt2,        & ! Coef. on r_t in s/t eqns. (2nd PDF comp.)             [-]
       cthl1,       & ! Coef. on th_l in s/t eqns. (1st PDF comp.)    [(kg/kg)/K]
-      cthl2,       & ! Coef. on th_l in s/t eqns. (2nd PDF comp.)    [(kg/kg)/K]
+      cthl2          ! Coef. on th_l in s/t eqns. (2nd PDF comp.)    [(kg/kg)/K]
+
+    real( kind = core_rknd ) :: &
       s1,          & ! Mean of s (1st PDF component)                     [kg/kg]
       s2,          & ! Mean of s (2nd PDF component)                     [kg/kg]
       stdev_s1,    & ! Standard deviation of s (1st PDF component)       [kg/kg]

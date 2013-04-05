@@ -552,7 +552,9 @@ module stats_variables
      irsl1, & 
      irsl2, & 
      icloud_frac1, & 
-     icloud_frac2, & 
+     icloud_frac2
+
+  integer, public :: & 
      is1, & 
      is2, & 
      istdev_s1, & 
@@ -689,7 +691,9 @@ module stats_variables
      irtprcp, & 
      ircp2, & 
      iupwp, & 
-     ivpwp, & 
+     ivpwp
+
+  integer, public :: &
      irho_zm, & 
      isigma_sqd_w, &
      irho_ds_zm, &
@@ -978,7 +982,9 @@ module stats_variables
     irain_rate_sfc,    &    ! Brian
     irain_flux_sfc,   &    ! Brian
     irrainm_sfc, & ! Brian
-    iwpthlp_sfc, &
+    iwpthlp_sfc
+
+  integer, public :: &
     iwprtp_sfc, &
     iupwp_sfc, &
     ivpwp_sfc, &

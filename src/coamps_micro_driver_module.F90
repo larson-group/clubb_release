@@ -107,7 +107,9 @@ module coamps_micro_driver_module
       eri = 1., & 
       egc = 1., & 
       esc = 1., & 
-      esr = 0.4, & 
+      esr = 0.4
+
+    real, parameter :: &
       egi = 0.1, & 
       egr = 1.0, & 
       egs = 0.1, & 
@@ -265,7 +267,9 @@ module coamps_micro_driver_module
       ex4, & 
       ex4g, & 
       ex5, & 
-      hlvoka, & 
+      hlvoka
+
+    real :: &
       hlsoka, & 
       hlvorv, & 
       hlsorv, & 

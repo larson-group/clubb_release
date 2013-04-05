@@ -1249,7 +1249,9 @@ module advance_xp2_xpyp_module
       iup2_ta, & 
       iup2_ma, & 
       iup2_pr1, & 
-      ivp2_dp1, & 
+      ivp2_dp1
+
+    use stats_variables, only: &
       ivp2_dp2, & 
       ivp2_ta, & 
       ivp2_ma, & 

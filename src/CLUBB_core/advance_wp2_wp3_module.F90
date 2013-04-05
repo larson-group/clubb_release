@@ -430,7 +430,9 @@ module advance_wp2_wp3_module
         zmscr16, &
         zmscr17, &
         ztscr01, &
-        ztscr02, &
+        ztscr02
+
+    use stats_variables, only: &
         ztscr03, &
         ztscr04, &
         ztscr05, &
@@ -1116,7 +1118,9 @@ module advance_wp2_wp3_module
         zmscr16,    &
         zmscr17,    &
         ztscr01,    &
-        ztscr02,    &
+        ztscr02
+
+    use stats_variables, only: &
         ztscr03,    &
         ztscr04,    &
         ztscr05,    &
@@ -1787,7 +1791,9 @@ module advance_wp2_wp3_module
         zmscr16,    &
         zmscr17,    &
         ztscr01,    &
-        ztscr02,    &
+        ztscr02
+
+    use stats_variables, only: &
         ztscr03,    &
         ztscr04,    &
         ztscr05,    &

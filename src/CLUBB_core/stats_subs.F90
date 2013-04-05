@@ -75,7 +75,9 @@ module stats_subs
       zmscr15, &
       zmscr16, &
       zmscr17, &
-      rad_zt,  &
+      rad_zt
+
+    use stats_variables, only: &
       rad_zm,  &
       sfc,     & 
       l_stats, &
@@ -1462,7 +1464,9 @@ module stats_subs
         icloud_frac, &
         iice_supersat_frac, & 
         ircm_in_layer, &
-        icloud_cover, &
+        icloud_cover
+
+    use stats_variables, only: &
         ip_in_Pa, & 
         iexner, & 
         irho_ds_zt, &
@@ -1507,7 +1511,9 @@ module stats_subs
         irsl1, & 
         irsl2, & 
         icloud_frac1, & 
-        icloud_frac2, & 
+        icloud_frac2
+
+    use stats_variables, only: & 
         is1, & 
         is2, & 
         istdev_s1, & 
@@ -1544,7 +1550,9 @@ module stats_subs
         iwpthlp, & 
         iwp4,  & 
         iwpthvp, & 
-        irtpthvp, & 
+        irtpthvp
+
+    use stats_variables, only: & 
         ithlpthvp, & 
         itau_zm, & 
         iKh_zm, & 
