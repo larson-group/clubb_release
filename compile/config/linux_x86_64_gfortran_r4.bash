@@ -27,7 +27,7 @@ DEBUG="-g -fbounds-check -mieee-fp -finit-real=nan -finit-integer=-99999 -finit-
 #DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false" # Floating point trapping enabled
 
 # == Warnings ==
-WARNINGS="-Wall -Wconversion -Wunderflow -Wcharacter-truncation -pedantic"
+WARNINGS="-Wall -Wconversion -Wunderflow -Wcharacter-truncation -std=f95 -pedantic -fall-intrinsics"
 
 # == Machine specific flags ==
 ARCH="-march=native -msse3 -mfpmath=sse -fopenmp"
