@@ -46,6 +46,14 @@ module model_flags
                                  ! is automatically set to 1 when this flag
                                  ! is turned off.
 
+  logical, parameter, public :: &
+    l_morr_xp2_mc_tndcy = .false. !Flag to include the effects of rain evaporation
+                                  !on rtp2 and thlp2.  The moister (rt1 or rt2)
+                                  !and colder (thl1 or thl2) will be fed into
+                                  !the morrison micro, and rain evaporation will
+                                  !be allowed to increase variances
+
+
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,
   ! add the logic to check the strings for the new formula in clubb_core and
