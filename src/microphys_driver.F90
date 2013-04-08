@@ -985,7 +985,8 @@ module microphys_driver
         turb_sed_flux_limiter  ! Procedure(s)
 
     use model_flags, only: &
-        l_hole_fill ! Variable(s)
+        l_hole_fill, & ! Variable(s)
+        l_morr_xp2_mc_tndcy
 
     use clubb_precision, only:  & 
         time_precision, & ! Variable(s)
@@ -1214,8 +1215,8 @@ module microphys_driver
     real( kind = core_rknd ), dimension(gr%nz) :: &
       T_in_K, & ! Temperature              [K]
       Ncm,    & ! Mean cloud droplet number concentration [#/kg]
-      rvm       ! Vapor water mixing ratio [kg/kg]
-
+      rvm,    & ! Vapor water mixing ratio [kg/kg]
+      thlm_morr ! Thlm fed into morrison microphysics [K]
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       rrainm_auto, & ! Autoconversion rate for rrainm [kg/kg/s]
       rrainm_accr    ! Accretion rate for rrainm      [kg/kg/s]
@@ -1478,10 +1479,29 @@ module microphys_driver
       ! latin hypercube result (above)
       if ( LH_microphys_type /= LH_microphys_interactive ) then
         l_latin_hypercube_input = .false.
-        rvm = rtm - rcm
+        
+        if ( l_morr_xp2_mc_tndcy ) then
+          !Use the moister rt1/rt2 rather than rtm in morrison micro
+          !Also use the colder of thl1/thl2
+          where ( pdf_params%rt1 > pdf_params%rt2 )
+            rvm = pdf_params%rt1 - pdf_params%rc1
+          else where
+            rvm = pdf_params%rt2 - pdf_params%rc2
+          end where
+
+          where ( pdf_params%thl1 < pdf_params%thl2 )
+            thlm_morr = pdf_params%thl1
+          else where
+            thlm_morr = pdf_params%thl2
+          end where
+        else
+          rvm = rtm - rcm
+          thlm_morr = thlm
+        end if
+
         call morrison_micro_driver & 
              ( dt, gr%nz, l_stats_samp, &
-               l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
+               l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, wtmp, &
                delta_zt, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
