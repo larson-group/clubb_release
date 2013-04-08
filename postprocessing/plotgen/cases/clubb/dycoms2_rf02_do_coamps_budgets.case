@@ -88,14 +88,14 @@
           {'filename' => 'dycoms2_rf02_do_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp3\_residual', 'expression' => 'wp3_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'thp2 budgets', 'axisLabel' => '[(K^2)/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'thlp2 budgets', 'axisLabel' => '[(K^2)/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thp2\_bt', 'expression' => 'thp2_bt + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_bt - 2 .* (2490 ./ ex0) .* thpqcp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thp2\_dp', 'expression' => 'thp2_dp + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_dp - 2 .* (2490 ./ ex0) .* thpqcp_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thp2\_tp', 'expression' => 'thp2_tp + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_tp - 2 .* (2490 ./ ex0) .* thpqcp_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thp2\_mc', 'expression' => 'thp2_mc + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_mc - 2 .* (2490 ./ ex0) .* thpqcp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thp2\_rad', 'expression' => 'thp2_rad - 2 .* (2490 ./ ex0) .* thpqcp_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thp2\_residual', 'expression' => 'thp2_rs + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_rs - 2 .* (2490 ./ ex0) .* thpqcp_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_bt', 'expression' => 'thp2_bt + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_bt - 2 .* (2490 ./ ex0) .* thpqcp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_dp', 'expression' => 'thp2_dp + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_dp - 2 .* (2490 ./ ex0) .* thpqcp_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_tp', 'expression' => 'thp2_tp + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_tp - 2 .* (2490 ./ ex0) .* thpqcp_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_mc', 'expression' => 'thp2_mc + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_mc - 2 .* (2490 ./ ex0) .* thpqcp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_rad', 'expression' => 'thp2_rad - 2 .* (2490 ./ ex0) .* thpqcp_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_residual', 'expression' => 'thp2_rs + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_rs - 2 .* (2490 ./ ex0) .* thpqcp_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'qtp2 budgets', 'axisLabel' => '[(kg^2)/(kg^2s)]', 'type' => 'profile', 'lines' =>
