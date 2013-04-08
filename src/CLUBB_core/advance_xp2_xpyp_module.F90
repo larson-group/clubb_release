@@ -9,7 +9,8 @@ module advance_xp2_xpyp_module
 
   implicit none
 
-  public :: advance_xp2_xpyp
+  public :: advance_xp2_xpyp, &
+            update_xp2_mc_tndcy
 
   private :: xp2_xpyp_lhs, & 
              xp2_xpyp_solve, & 
@@ -857,34 +858,34 @@ module advance_xp2_xpyp_module
         term_ma_zm_lhs ! Procedure(s)
 
     use stats_variables, only: & 
-        zmscr01, & 
-        zmscr02, & 
-        zmscr03, & 
-        zmscr04, & 
-        zmscr05, & 
-        zmscr06, & 
-        zmscr07, & 
-        zmscr08, & 
-        zmscr09, & 
-        zmscr10, & 
-        l_stats_samp, & 
-        irtp2_ma, & 
-        irtp2_ta, & 
-        irtp2_dp1, & 
-        irtp2_dp2, & 
-        ithlp2_ma, & 
-        ithlp2_ta, & 
-        ithlp2_dp1, & 
-        ithlp2_dp2, & 
-        irtpthlp_ma, & 
-        irtpthlp_ta, & 
-        irtpthlp_dp1, & 
-        irtpthlp_dp2, & 
-        iup2_ma, & 
-        iup2_ta, & 
-        iup2_dp2, & 
-        ivp2_ma, & 
-        ivp2_ta, & 
+        zmscr01, &
+        zmscr02, &
+        zmscr03, &
+        zmscr04, &
+        zmscr05, &
+        zmscr06, &
+        zmscr07, &
+        zmscr08, &
+        zmscr09, &
+        zmscr10, &
+        l_stats_samp, &
+        irtp2_ma, &
+        irtp2_ta, &
+        irtp2_dp1, &
+        irtp2_dp2, &
+        ithlp2_ma, &
+        ithlp2_ta, &
+        ithlp2_dp1, &
+        ithlp2_dp2, &
+        irtpthlp_ma, &
+        irtpthlp_ta, &
+        irtpthlp_dp1, &
+        irtpthlp_dp2, &
+        iup2_ma, &
+        iup2_ta, &
+        iup2_dp2, &
+        ivp2_ma, &
+        ivp2_ta, &
         ivp2_dp2
 
     use advance_helper_module, only: set_boundary_conditions_lhs
@@ -1230,42 +1231,42 @@ module advance_xp2_xpyp_module
       stat_end_update_pt, & ! Procedure(s)
       stat_update_var_pt
 
-    use stats_variables, only: & 
+    use stats_variables, only: &
       zm,  & ! Variable(s) 
-      irtp2_dp1, & 
-      irtp2_dp2, & 
-      irtp2_ta, & 
-      irtp2_ma, & 
-      ithlp2_dp1, & 
-      ithlp2_dp2, & 
-      ithlp2_ta, & 
-      ithlp2_ma, & 
-      irtpthlp_dp1, & 
-      irtpthlp_dp2, & 
-      irtpthlp_ta, & 
-      irtpthlp_ma, & 
-      iup2_dp1, & 
-      iup2_dp2, & 
-      iup2_ta, & 
-      iup2_ma, & 
-      iup2_pr1, & 
+      irtp2_dp1, &
+      irtp2_dp2, &
+      irtp2_ta, &
+      irtp2_ma, &
+      ithlp2_dp1, &
+      ithlp2_dp2, &
+      ithlp2_ta, &
+      ithlp2_ma, &
+      irtpthlp_dp1, &
+      irtpthlp_dp2, &
+      irtpthlp_ta, &
+      irtpthlp_ma, &
+      iup2_dp1, &
+      iup2_dp2, &
+      iup2_ta, &
+      iup2_ma, &
+      iup2_pr1, &
       ivp2_dp1
 
     use stats_variables, only: &
-      ivp2_dp2, & 
-      ivp2_ta, & 
-      ivp2_ma, & 
-      ivp2_pr1, & 
-      zmscr01, & 
-      zmscr02, & 
-      zmscr03, & 
-      zmscr04, & 
-      zmscr05, & 
-      zmscr06, & 
-      zmscr07, & 
-      zmscr08, & 
-      zmscr09, & 
-      zmscr10, & 
+      ivp2_dp2, &
+      ivp2_ta, &
+      ivp2_ma, &
+      ivp2_pr1, &
+      zmscr01, &
+      zmscr02, &
+      zmscr03, &
+      zmscr04, &
+      zmscr05, &
+      zmscr06, &
+      zmscr07, &
+      zmscr08, &
+      zmscr09, &
+      zmscr10, &
       zmscr11
 
     use clubb_precision, only: &
@@ -3314,6 +3315,102 @@ module advance_xp2_xpyp_module
 
     return
   end subroutine pos_definite_variances
+
+  !============================================================================
+  subroutine update_xp2_mc_tndcy( nz, dt, cloud_frac, rcm, rvm, thlm, &
+                                  exner, rrainm_evap, pdf_params,     &
+                                  rtp2_mc_tndcy, thlp2_mc_tndcy       )
+    !Description:
+    !This subroutine is for use when l_morr_xp2_mc_tndcy = .true.
+    !The effects of rain evaporation on rtp2 and thlp2 are included by
+    !assuming rain falls through the moist (cold) portion of the pdf.
+    !This is accomplished by defining a precip_fraction and assuming a double
+    !delta shaped pdf, such that the evaporation makes the moist component 
+    !moister and the colder component colder.  --storer
+
+    use pdf_parameter_module, only: pdf_parameter
+
+    use constants_clubb, only: &
+      cloud_frac_min, &  !Variables
+      Cp, &
+      Lv
+
+    use clubb_precision, only: &
+      core_rknd, & ! Variable(s)
+      time_precision
+
+    implicit none
+
+    !input parameters
+    integer, intent(in) :: nz ! Points in the Vertical        [-]
+
+    real( kind = time_precision ), intent(in) :: dt ! Model timestep        [s]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      cloud_frac, &       !Cloud fraction                        [-]
+      rcm, &              !Cloud water mixing ratio              [kg/kg]
+      rvm, &              !Vapor water mixing ratio              [kg/kg]
+      thlm, &             !Liquid potential temperature          [K]
+      exner, &            !Exner function                        [-]
+      rrainm_evap         !Evaporation of rain                   [kg/kg/s]
+
+    type(pdf_parameter), target, dimension(nz), intent(in) :: &
+      pdf_params ! PDF parameters
+
+    !input/output variables
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+      rtp2_mc_tndcy, &    !Tendency of rtp2 due to evaporation   [(kg/kg)^2/s]
+      thlp2_mc_tndcy      !Tendency of thlp2 due to evaporation  [K^2/s]
+
+    !local variables
+    real( kind = core_rknd ), dimension(nz) :: &
+      temp_rtp2, &        !Used only to calculate rtp2_mc_tndcy  [(kg/kg)^2]
+      temp_thlp2, &       !Used to calculate thlp2_mc_tndcy      [K^2/s]
+      precip_frac, &      !Precipitation fraction                [-]
+      pf_const            ! ( 1 - pf )/( pf )                    [-]
+
+    integer :: k
+
+    ! ---- Begin Code ----
+
+    ! Calculate precip_frac
+    precip_frac(nz) = 0.0_core_rknd
+    do k = nz-1, 1, -1
+      if ( cloud_frac(k) > cloud_frac_min ) then
+        precip_frac(k) = cloud_frac(k)
+      else
+        precip_frac(k) = precip_frac(k+1)
+      end if
+    end do
+
+    !Calculate increased variance (rtp2 and thlp2) due to rain evaporation
+
+    where ( precip_frac > cloud_frac_min )
+      pf_const = ( 1.0_core_rknd - precip_frac ) / precip_frac
+    else where
+      pf_const = 0.0_core_rknd
+    end where
+
+    ! Include effects of rain evaporation on rtp2
+    temp_rtp2 = pdf_params%mixt_frac * ( ( pdf_params%rt1 - ( rcm + rvm ) )**2 &
+                    + pdf_params%varnce_rt1 ) + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
+                    * ( ( pdf_params%rt2 - ( rcm + rvm ) )**2 + pdf_params%varnce_rt2 )
+
+    rtp2_mc_tndcy = rrainm_evap**2 * pf_const * dt &
+                    + 2.0_core_rknd * abs(rrainm_evap) * sqrt(temp_rtp2 * pf_const)
+                    !use absolute value of evaporation, as evaporation will add
+                    !to rt1
+
+    !Include the effects of rain evaporation on thlp2
+    temp_thlp2 = pdf_params%mixt_frac * ( ( pdf_params%thl1 - thlm )**2 &
+                    + pdf_params%varnce_thl1 ) + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
+                    * ( ( pdf_params%thl2 - thlm )**2 + pdf_params%varnce_thl2 )
+
+    thlp2_mc_tndcy = ( rrainm_evap * Lv / ( Cp * exner) )**2 * pf_const * dt & 
+                    + 2.0_core_rknd * rrainm_evap * Lv / ( Cp * exner ) &
+                    * sqrt(temp_thlp2 * pf_const)
+
+  end subroutine update_xp2_mc_tndcy
 
 !===============================================================================
 
