@@ -39,6 +39,9 @@ module morrison_micro_driver_module
     use module_MP_graupel, only: &
       cloud_frac_thresh ! Constant
 
+    use advance_xp2_xpyp_module, only: &
+      update_xp2_mc_tndcy
+
     use stats_variables, only: &
       zt,  & ! Variables
       LH_sfc, &
@@ -87,6 +90,9 @@ module morrison_micro_driver_module
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
       time_precision
+
+    use model_flags, only: &
+      l_morr_xp2_mc_tndcy
 
     implicit none
 
@@ -201,6 +207,13 @@ module morrison_micro_driver_module
 
     integer :: i
 
+    !variables needed to computer rtp2_mc_tndcy when l_morr_xp2_mc_tndcy = .true.
+    real( kind = core_rknd ), dimension(nz) :: &
+      rrainm_evap         !Evaporation of rain   [kg/kg/s]
+
+    real, dimension(nz) :: &
+      rrainm_evap_r4
+
     ! ---- Begin Code ----
 
     ! Some dummy assignments to make compiler warnings go away...
@@ -273,6 +286,7 @@ module morrison_micro_driver_module
     ! Initialize autoconversion/accretion to zero
     rrainm_auto_r4 = 0.0
     rrainm_accr_r4 = 0.0
+    rrainm_evap_r4 = 0.0
 
     hydromet_mc_r4 = real( hydromet_mc )
     rcm_mc_r4 = real( rcm_mc )
@@ -297,7 +311,7 @@ module morrison_micro_driver_module
            hydromet_r4(:,iirgraupelm), hydromet_r4(:,iiNgraupelm), effg, &
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
            hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
-           rcm_sten, cloud_frac_in, rrainm_auto_r4, rrainm_accr_r4 )
+           rcm_sten, cloud_frac_in, rrainm_auto_r4, rrainm_accr_r4, rrainm_evap_r4 )
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
@@ -305,7 +319,8 @@ module morrison_micro_driver_module
 
     rrainm_auto = real( rrainm_auto_r4, kind = core_rknd )
     rrainm_accr = real( rrainm_accr_r4, kind = core_rknd ) 
-           
+    rrainm_evap = real( rrainm_evap_r4, kind = core_rknd )
+
     ! Update hydrometeor tendencies
     ! This done because the hydromet_mc arrays that are produced by
     ! M2005MICRO_GRAUPEL don't include the clipping term.
@@ -333,6 +348,13 @@ module morrison_micro_driver_module
     rtp2_mc_tndcy    = zero
     thlp2_mc_tndcy   = zero
     rtpthlp_mc_tndcy = zero
+
+    if ( l_morr_xp2_mc_tndcy ) then
+      call update_xp2_mc_tndcy( nz, dt, cloud_frac, rcm, rvm, thlm, &
+                                exner, rrainm_evap, pdf_params,     &
+                                rtp2_mc_tndcy, thlp2_mc_tndcy       )
+
+    end if
 
     if ( .not. l_latin_hypercube .and. l_stats_samp ) then
 
