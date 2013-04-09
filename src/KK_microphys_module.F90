@@ -8,6 +8,7 @@ module KK_microphys_module
 
   public :: KK_local_micro_driver, &
             KK_upscaled_micro_driver, &
+            component_means_rain, &
             precip_fraction, &
             KK_in_precip_values, &
             KK_upscaled_setup, &
@@ -319,7 +320,7 @@ module KK_microphys_module
 
   end subroutine KK_local_micro_driver
 
-   !=============================================================================
+  !=============================================================================
   subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, &
                               l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                               exner, rho, cloud_frac, pdf_params, w_std_dev, &
@@ -495,9 +496,7 @@ module KK_microphys_module
       sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
       sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
       sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
-      sigma_Nr_1       ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
-
-    real( kind = core_rknd ) :: &
+      sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
       sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
       sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
       sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
@@ -513,9 +512,7 @@ module KK_microphys_module
       corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
       corr_sNc_1,    & ! Correlation between s and Nc (1st PDF component)    [-]
       corr_sNc_2,    & ! Correlation between s and Nc (2nd PDF component)    [-]
-      corr_rrNr_1      ! Correlation between rr & Nr (1st PDF component) ip  [-]
-
-    real( kind = core_rknd ) :: &
+      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
       corr_rrNr_2,   & ! Correlation between rr & Nr (2nd PDF component) ip  [-]
       corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
       corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
@@ -849,6 +846,351 @@ module KK_microphys_module
     return
 
   end subroutine KK_upscaled_micro_driver
+
+  !=============================================================================
+  subroutine component_means_rain( nz, rrainm, Nrm, rho, &
+                                   rc1, rc2, mixt_frac, &
+                                   rr1, rr2, Nr1, Nr2, LWP1, LWP2 )
+
+    ! Description:
+    ! The values of grid-level mean rain water mixing ratio, <r_r>, and
+    ! grid-level mean rain drop concentration, <N_r>, are solved as part of the
+    ! CLUBB model's predictive equation set.  However, CLUBB has a two component
+    ! PDF.  The grid-level means of r_r and N_r must be subdivided into
+    ! component means for each PDF component.  The equations relating the
+    ! overall means to the component means are:
+    !
+    ! <r_r> = a * rr1 + (1-a) * rr2, and
+    ! <N_r> = a * Nr1 + (1-a) * Nr2;
+    !
+    ! where "a" is the mixture fraction (weight of the 1st PDF component), rr1
+    ! is the mean rain water mixing ratio in PDF component 1, rr2 is the mean
+    ! rain water mixing ratio in PDF component 2, Nr1 is the mean rain drop
+    ! concentration in PDF component 1, and Nr2 is the mean rain drop
+    ! concentration in PDF component 2.  These equations can be rewritten as:
+    !
+    ! <r_r> = rr1 * ( a + (1-a) * rr2/rr1 ), and
+    ! <N_r> = Nr1 * ( a + (1-a) * Nr2/Nr1 ).
+    !
+    ! One way to solve for a component mean is to relate the ratios rr2/rr1 and
+    ! Nr2/Nr1 to other factors.  For now, these ratios based on other factors
+    ! will be called rr2_rr1_ratio (for rr2/rr1) and Nr2_Nr1_ratio
+    ! (for Nr2/Nr1).  These ratios are entered into the above equations,
+    ! allowing the equations to be solved for rr1 and Nr1:
+    !
+    ! rr1 = <r_r> / ( a + (1-a) * rr2_rr1_ratio ), and
+    ! Nr1 = <N_r> / ( a + (1-a) * Nr2_Nr1_ratio ).
+    !
+    ! Once that rr1 and Nr1 have been solved, rr2 and Nr2 can be solved by:
+    !
+    ! rr2 = ( <r_r> - a * rr1 ) / (1-a); and
+    ! Nr2 = ( <N_r> - a * Nr1 ) / (1-a).
+    !
+    ! At a grid level that is at least mostly cloudy, the simplest way to handle
+    ! the ratios rr2/rr1 and Nr2/Nr1 is to set them equal to the ratio rc2/rc1,
+    ! where rc1 is the mean cloud water mixing ratio in PDF component 1 and rc2
+    ! is the mean cloud water mixing ratio in PDF component 2.  However, rain
+    ! sediments, falling from higher altitudes downwards.  The values of cloud
+    ! water mixing ratio at a given grid level are not necessarily indicative
+    ! of the amount of cloud water at higher levels, which has already produced
+    ! rain which has fallen downwards to the given grid level.  Additionally,
+    ! using grid-level cloud water mixing ratio especially does not work for
+    ! rain below cloud base (near the ground).
+    !
+    ! However, an alternative to component cloud water mixing ratio is component
+    ! liquid water path.  Liquid water path accounts for the cloud water mixing
+    ! ratio at the given grid level and at all grid levels higher in altitude.
+    !
+    ! In a stratocumulus case, the cloud water is spread out over all or almost
+    ! all of the horizontal domain over a group of vertical levels.  At a given
+    ! vertical level, the component mean cloud water mixing ratios should be
+    ! almost equal, although usually slightly larger in the component with the
+    ! larger component mean extended liquid water mixing ratio, s.  Likewise,
+    ! the component liquid water paths should be nearly equal, with one
+    ! component having a slightly larger liquid water path than the other
+    ! component.
+    ! 
+    ! In a case of cumulus rising into stratocumulus, the upper portion of the
+    ! cloudy domain will be very similar to the stratocumulus case described
+    ! above, with similar cloud water mixing ratio and liquid water path
+    ! results.  However, below the base of the stratocumulus clouds, where the
+    ! cumulus clouds are found, the horizontal domain at each vertical level is
+    ! only partially cloudy.  At these levels, rain produced in the
+    ! stratocumulus clouds above is evaporating in the clear-air portions, while
+    ! rain is not evaporating in the cloudy portions.  Additionally, more rain
+    ! is being produced in the cloudy portions.  The rain in the cloudy portions
+    ! becomes significantly larger than the rain in the clear portions.  The
+    ! partiallly cloudy levels usually have a PDF where one component is
+    ! significantly more saturated than the other component.  By the time the
+    ! cloud base of the cumulus clouds is reached, the liquid water path for one
+    ! PDF component should be significantly greater than the liquid water path
+    ! for the other PDF component.
+    ! 
+    ! In a cumulus case, the horizontal domain at each level is usually partly
+    ! cloudy.  Throughout the entire vertical domain, at every vertical level,
+    ! one component usually is much more saturated than the other component.
+    ! The liquid water path for one component is much greater than the liquid
+    ! water path in the other component.  Likewise, rain that is formed in cloud
+    ! and falls preferentially through cloud will have large values in a portion
+    ! of the horizontal domain and very small or 0 values over the rest of the 
+    ! horizontal domain.
+    !
+    ! In order to estimate the amount of rain in each PDF component, the ratios
+    ! rr2/rr1 and Nr2/Nr1 are going to be set equal to the ratio LWP2/LWP1,
+    ! where LWP1 is the liquid water path in PDF component 1 and LWP2 is the
+    ! liquid water path in PDF component 2.  LWP1 will be computed by taking the
+    ! vertical integral of cloud water (see equation below) through the 1st PDF
+    ! component from the given vertical level all the way to the top of the
+    ! model.  LWP2 will be computed in the same manner.   It should be noted
+    ! that this method makes the poor assumption that PDF component 1 always
+    ! overlaps PDF component 1 between vertical levels, and likewise for PDF
+    ! component 2.
+    !
+    ! Total liquid water path, LWP, is given by the following equation:
+    !
+    ! LWP(z) = INT(z:z_top) rho_a <r_c> dz';
+    !
+    ! where z is the altitude of the vertical level for which LWP is desired,
+    ! z_top is the altitude at the top of the model domain, and z' is the
+    ! dummy variable of integration.  Mean cloud water mixing ratio can be
+    ! written as:
+    !
+    ! <r_c> = a * rc1 + (1-a) * rc2.
+    !
+    ! The equation for liquid water path is rewritten as:
+    !
+    ! LWP(z) = INT(z:z_top) rho_a ( a rc1 + (1-a) rc2 ) dz'; or
+    !
+    ! LWP(z) = INT(z:z_top) a rho_a rc1 dz'
+    !          + INT(z:z_top) (1-a) rho_a rc2 dz'.
+    !
+    ! This can be rewritten as:
+    !
+    ! LWP(z) = LWP1(z) + LWP2(z);
+    !
+    ! where:
+    !
+    ! LWP1(z) = INT(z:z_top) a rho_a rc1 dz'; and
+    ! LWP2(z) = INT(z:z_top) (1-a) rho_a rc2 dz'.
+    !
+    ! The trapezoidal rule will be used to numerically integrate for LWP1
+    ! and LWP2.
+    
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        gr    ! Variable(s)
+
+    use constants_clubb, only: &
+        one,      & ! Constant(s)
+        one_half, &
+        zero,     &
+        rr_tol,   &
+        Nr_tol
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz           ! Number of model vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rrainm,    & ! Overall mean rain water mixing ratio               [kg/kg]
+      Nrm,       & ! Overall mean rain drop concentration               [num/kg]
+      rho,       & ! Air density                                        [kg/m^3]
+      rc1,       & ! Mean cloud water mixing ratio (1st PDF component)  [kg/kg]
+      rc2,       & ! Mean cloud water mixing ratio (2nd PDF component)  [kg/kg]
+      mixt_frac    ! Mixture fraction                                   [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      rr1,  & ! Mean rain water mixing ratio (1st PDF component)    [kg/kg]
+      rr2,  & ! Mean rain water mixing ratio (2nd PDF component)    [kg/kg]
+      Nr1,  & ! Mean rain drop concentration (1st PDF component)    [num/kg]
+      Nr2,  & ! Mean rain drop concentration (2nd PDF component)    [num/kg]
+      LWP1, & ! Liquid water path (1st PDF component)               [kg/m^2]
+      LWP2    ! Liquid water path (2nd PDF component)               [kg/m^2]
+
+    ! Local Variable
+    integer :: k  ! Array index
+
+
+    !!! Compute component liquid water paths using trapezoidal rule for
+    !!! numerical integration.
+
+    ! At the uppermost thermodynamic level (k = nz), use the trapezoidal rule:
+    !
+    ! 0.5 * (integrand_a + integrand_b) * delta_z,
+    !
+    ! where integrand_a is the integrand at thermodynamic level k = nz,
+    ! integrand_b is the integrand at momentum level k = nz (model upper
+    ! boundary), and delta_z = zm(nz) - zt(nz).  At the upper boundary, r_c is
+    ! set to 0, and the form of the trapezoidal rule is simply:
+    !
+    ! 0.5 * integrand_a * delta_z.
+
+    ! Liquid water path in PDF component 1.
+    LWP1(nz) &
+    = one_half * mixt_frac(nz) * rho(nz) * rc1(nz) * ( gr%zm(nz) - gr%zt(nz) )
+
+    ! Liquid water path in PDF component 2.
+    LWP2(nz) &
+    = one_half * ( one - mixt_frac(nz) ) * rho(nz) * rc2(nz) &
+      * ( gr%zm(nz) - gr%zt(nz) )
+
+    ! At all other thermodynamic levels, compute liquid water path using the
+    ! trapezoidal rule:
+    !
+    ! 0.5 * (integrand_a + integrand_b) * delta_z,
+    !
+    ! where integrand_a is the integrand at thermodynamic level k, integrand_b
+    ! is the integrand at thermodynamic level k+1, and
+    ! delta_z = zt(k+1) - zt(k), or 1/invrs_dzm(k).  The total for the segment
+    ! is added to the sum total of all higher vertical segments to compute the
+    ! total vertical integral.
+    do k = nz-1, 2, -1
+
+       ! Liquid water path in PDF component 1.
+       LWP1(k) &
+       = LWP1(k+1) &
+         + one_half * ( mixt_frac(k+1) * rho(k+1) * rc1(k+1) &
+                        + mixt_frac(k) * rho(k) * rc1(k) ) / gr%invrs_dzm(k)
+
+       ! Liquid water path in PDF component 2.
+       LWP2(k) &
+       = LWP2(k+1) &
+         + one_half * ( ( one - mixt_frac(k+1) ) * rho(k+1) * rc2(k+1) &
+                        + ( one - mixt_frac(k) ) * rho(k) * rc2(k) ) &
+           / gr%invrs_dzm(k)
+
+    enddo ! k = nz-1, 2, -1
+
+
+    !!! Find rr1, rr2, Nr1, and Nr2 based on the ratio of LWP2/LWP1, such that:
+    !!! rr2/rr1 = Nr2/Nr1 = LWP2/LWP1.
+    do k = 2, nz, 1
+
+       !!! Calculate the component means for rain water mixing ratio.
+       if ( rrainm(k) > rr_tol ) then
+
+          if ( LWP1(k) == zero .and. LWP2(k) == zero ) then
+
+             ! There is rain at this level, yet no cloud at or above the
+             ! current level.  This is usually due to a numerical artifact.
+             ! For example, rain is diffused above cloud top.  Simply set
+             ! each component mean equal to the overall mean.
+             rr1(k) = rrainm(k)
+             rr2(k) = rrainm(k)
+
+          elseif ( LWP1(k) > zero .and. LWP2(k)/LWP1(k) == zero ) then
+
+             ! There is rain at this level, and all cloud water at or above
+             ! this level is found in the 1st PDF component.  All rain water
+             ! mixing ratio is found in the 1st PDF component.
+             rr1(k) = rrainm(k) / mixt_frac(k)
+             rr2(k) = zero
+
+          elseif ( LWP2(k) > zero .and. LWP1(k)/LWP2(k) == zero ) then
+
+             ! There is rain at this level, and all cloud water at or above
+             ! this level is found in the 2nd PDF component.  All rain water
+             ! mixing ratio is found in the 2nd PDF component.
+             rr1(k) = zero
+             rr2(k) = rrainm(k) / ( one - mixt_frac(k) )
+
+          else ! LWP1(k) > 0 and LWP2(k) > 0
+
+             ! There is rain at this level, and there is sufficient cloud water
+             ! at or above this level in both PDF components to find rain in
+             ! both PDF components.  Delegate rain water mixing ratio between
+             ! the 1st and 2nd PDF components according to the above equations.
+             rr1(k) &
+             = rrainm(k) &
+               / ( mixt_frac(k) + ( one - mixt_frac(k) ) * LWP2(k)/LWP1(k) )
+
+             rr2(k) &
+             = ( rrainm(k) - mixt_frac(k) * rr1(k) ) / ( one - mixt_frac(k) )
+
+          endif
+
+
+       else ! rrainm(k) <= rr_tol
+
+          ! Overall mean rain water mixing ratio is either 0 or below tolerance
+          ! value (any postive value is considered to be a numerical artifact).
+          ! Simply set each component mean equal to the overall mean.
+           rr1(k) = rrainm(k)
+           rr2(k) = rrainm(k)
+
+       endif
+
+
+       !!! Calculate the component means for rain drop concentration.
+       if ( Nrm(k) > Nr_tol ) then
+
+          if ( LWP1(k) == zero .and. LWP2(k) == zero ) then
+
+             ! There is rain at this level, yet no cloud at or above the
+             ! current level.  This is usually due to a numerical artifact.
+             ! For example, rain is diffused above cloud top.  Simply set
+             ! each component mean equal to the overall mean.
+             Nr1(k) = Nrm(k)
+             Nr2(k) = Nrm(k)
+
+          elseif ( LWP1(k) > zero .and. LWP2(k)/LWP1(k) == zero ) then
+
+             ! There is rain at this level, and all cloud water at or above
+             ! this level is found in the 1st PDF component.  All rain drop
+             ! concentration is found in the 1st PDF component.
+             Nr1(k) = Nrm(k) / mixt_frac(k)
+             Nr2(k) = zero
+
+          elseif ( LWP2(k) > zero .and. LWP1(k)/LWP2(k) == zero ) then
+
+             ! There is rain at this level, and all cloud water at or above
+             ! this level is found in the 2nd PDF component.  All rain drop
+             ! concentration is found in the 2nd PDF component.
+             Nr1(k) = zero
+             Nr2(k) = Nrm(k) / ( one - mixt_frac(k) )
+
+          else ! LWP1(k) > 0 and LWP2(k) > 0
+
+             ! There is rain at this level, and there is sufficient cloud water
+             ! at or above this level in both PDF components to find rain in
+             ! both PDF components.  Delegate rain drop concentration between
+             ! the 1st and 2nd PDF components according to the above equations.
+             Nr1(k) &
+             = Nrm(k) &
+               / ( mixt_frac(k) + ( one - mixt_frac(k) ) * LWP2(k)/LWP1(k) )
+
+             Nr2(k) &
+             = ( Nrm(k) - mixt_frac(k) * Nr1(k) ) / ( one - mixt_frac(k) )
+
+          endif
+
+
+       else ! Nrm(k) <= Nr_tol
+
+          ! Overall mean rain drop concentration is either 0 or below tolerance
+          ! value (any postive value is considered to be a numerical artifact).
+          ! Simply set each component mean equal to the overall mean.
+           Nr1(k) = Nrm(k)
+           Nr2(k) = Nrm(k)
+
+       endif
+
+
+    enddo ! k = 2, nz, 1
+
+
+    return
+
+  end subroutine component_means_rain
 
   !=============================================================================
   subroutine precip_fraction( nz, rrainm, cloud_frac, &
@@ -1461,9 +1803,7 @@ module KK_microphys_module
       sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
       sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
       sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-      sigma_Nc_1_n     ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
-
-    real( kind = core_rknd ), intent(out) :: &
+      sigma_Nc_1_n,  & ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
       sigma_Nc_2_n,  & ! Standard dev. of ln Nc (2nd PDF comp.)     [ln(num/kg)]
       corr_sNc_1,    & ! Correlation between s and Nc (1st PDF component)    [-]
       corr_sNc_2,    & ! Correlation between s and Nc (2nd PDF component)    [-]
@@ -2018,9 +2358,7 @@ module KK_microphys_module
         isigma_Nr_2,    &
         isigma_Nc_1,    &
         isigma_Nc_2,    &
-        isigma_rr_1_n
-
-    use stats_variables, only: &
+        isigma_rr_1_n,  &
         isigma_rr_2_n,  &
         isigma_Nr_1_n,  &
         isigma_Nr_2_n,  &
@@ -2034,9 +2372,7 @@ module KK_microphys_module
         icorr_sNc_2,    &
         icorr_rrNr_1,   &
         icorr_rrNr_2,   &
-        icorr_srr_1_n
-
-    use stats_variables, only: &
+        icorr_srr_1_n,  &
         icorr_srr_2_n,  &
         icorr_sNr_1_n,  &
         icorr_sNr_2_n,  &
@@ -2072,9 +2408,7 @@ module KK_microphys_module
       sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
       sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
       sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
-      sigma_rr_1_n     ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-
-    real( kind = core_rknd ), intent(in) :: &
+      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
       sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
       sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
       sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
