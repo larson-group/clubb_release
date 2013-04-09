@@ -69,7 +69,15 @@ module stats_zt
         iwp2thvp, & 
         iwp2rcp, & 
         iwprtpthlp, & 
-        isigma_sqd_w_zt, &
+        isigma_sqd_w_zt
+
+    use stats_variables, only: & 
+        irr1, & ! Variable(s)
+        irr2, &
+        iNr1, &
+        iNr2, &
+        iLWP1, &
+        iLWP2, &
         iprecip_frac, &
         iprecip_frac_1, &
         iprecip_frac_2
@@ -516,6 +524,12 @@ module stats_zt
     ircm_icedfs     = 0
     iu_T_cm         = 0
 
+    irr1           = 0
+    irr2           = 0
+    iNr1           = 0
+    iNr2           = 0
+    iLWP1          = 0
+    iLWP2          = 0
     iprecip_frac   = 0
     iprecip_frac_1 = 0
     iprecip_frac_2 = 0
@@ -2674,6 +2688,42 @@ module stats_zt
         iwp3_on_wp2_zt = k
         call stat_assign( iwp3_on_wp2_zt, "wp3_on_wp2_zt", & 
              "Smoothed version of wp3 / wp2 [m/s]", "m/s", zt )
+        k = k + 1
+
+      case ( 'rr1' )
+        irr1 = k
+        call stat_assign( irr1, "rr1", & 
+             "Mean of r_r (1st PDF component) [kg/kg]", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'rr2' )
+        irr2 = k
+        call stat_assign( irr2, "rr2", & 
+             "Mean of r_r (2nd PDF component) [kg/kg]", "kg/kg", zt )
+        k = k + 1
+
+      case ( 'Nr1' )
+        iNr1 = k
+        call stat_assign( iNr1, "Nr1", & 
+             "Mean of N_r (1st PDF component) [num/kg]", "num/kg", zt )
+        k = k + 1
+
+      case ( 'Nr2' )
+        iNr2 = k
+        call stat_assign( iNr2, "Nr2", & 
+             "Mean of N_r (2nd PDF component) [num/kg]", "num/kg", zt )
+        k = k + 1
+
+      case ( 'LWP1' )
+        iLWP1 = k
+        call stat_assign( iLWP1, "LWP1", & 
+             "Liquid water path (1st PDF component) [kg/m^2]", "kg/m^2", zt )
+        k = k + 1
+
+      case ( 'LWP2' )
+        iLWP2 = k
+        call stat_assign( iLWP2, "LWP2", & 
+             "Liquid water path (2nd PDF component) [kg/m^2]", "kg/m^2", zt )
         k = k + 1
 
       case ( 'precip_frac' )
