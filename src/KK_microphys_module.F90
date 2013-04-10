@@ -694,7 +694,8 @@ module KK_microphys_module
                                KK_accr_coef, KK_mvr_coef )
 
        !!! KK rain water mixing ratio microphysics tendencies.
-      call KK_in_precip_values( rrainm(k), Nrm(k), rcm(k), &
+      call KK_in_precip_values( rrainm(k), rr1(k), rr2(k), &
+                                Nrm(k), Nr1(k), Nr2(k), rcm(k), &
                                 precip_frac_1(k), precip_frac_2(k), &
                                 mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                 sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
@@ -1616,7 +1617,8 @@ module KK_microphys_module
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine KK_in_precip_values( rrainm, Nrm, rcm, &
+  subroutine KK_in_precip_values( rrainm, rr1, rr2, &
+                                  Nrm, Nr1, Nr2, rcm, &
                                   precip_frac_1, precip_frac_2, &
                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                   sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
@@ -1656,11 +1658,15 @@ module KK_microphys_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      rrainm,        & ! Mean rain water mixing ratio, < r_r >       [kg/kg]
-      Nrm,           & ! Mean rain drop concentration, < N_r >       [num/kg]
-      rcm,           & ! Mean cloud water mixing ratio, < r_c >      [kg/kg]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component)  [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component)  [-]
+      rrainm,        & ! Mean rain water mixing ratio, < r_r >         [kg/kg]
+      rr1,           & ! Mean rain water mixing ratio (1st PDF comp.)  [kg/kg]
+      rr2,           & ! Mean rain water mixing ratio (2nd PDF comp.)  [kg/kg]
+      Nrm,           & ! Mean rain drop concentration, < N_r >         [num/kg]
+      Nr1,           & ! Mean rain drop concentration (1st PDF comp.)  [num/kg]
+      Nr2,           & ! Mean rain drop concentration (2nd PDF comp.)  [num/kg]
+      rcm,           & ! Mean cloud water mixing ratio, < r_c >        [kg/kg]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)    [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)    [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -1681,8 +1687,8 @@ module KK_microphys_module
 
 
     ! Mean of in-precip rain water mixing ratio in PDF component 1.
-    if ( rrainm > rr_tol .and. precip_frac_1 > zero ) then
-       mu_rr_1 = rrainm / precip_frac_1
+    if ( rr1 > rr_tol ) then
+       mu_rr_1 = rr1 / precip_frac_1
     else
        ! Mean in-precip rain water mixing ratio is less than the tolerance
        ! amount.  It is considered to have a value of 0.  There is not any rain
@@ -1691,8 +1697,8 @@ module KK_microphys_module
     endif
 
     ! Mean of in-precip rain water mixing ratio in PDF component 2.
-    if ( rrainm > rr_tol .and. precip_frac_2 > zero ) then
-       mu_rr_2 = rrainm / precip_frac_2
+    if ( rr2 > rr_tol ) then
+       mu_rr_2 = rr2 / precip_frac_2
     else
        ! Mean in-precip rain water mixing ratio is less than the tolerance
        ! amount.  It is considered to have a value of 0.  There is not any rain
@@ -1701,8 +1707,8 @@ module KK_microphys_module
     endif
 
     ! Mean of in-precip rain drop concentration in PDF component 1.
-    if ( Nrm > Nr_tol .and. precip_frac_2 > zero ) then
-       mu_Nr_1 = Nrm / precip_frac_1
+    if ( Nr1 > Nr_tol ) then
+       mu_Nr_1 = Nr1 / precip_frac_1
     else
        ! Mean in-precip rain drop concentration is less than the tolerance
        ! amount.  It is considered to have a value of 0.  There is not any rain
@@ -1711,8 +1717,8 @@ module KK_microphys_module
     endif
 
     ! Mean of in-precip rain drop concentration in PDF component 2.
-    if ( Nrm > Nr_tol .and. precip_frac_2 > zero ) then
-       mu_Nr_2 = Nrm / precip_frac_2
+    if ( Nr2 > Nr_tol ) then
+       mu_Nr_2 = Nr2 / precip_frac_2
     else
        ! Mean in-precip rain drop concentration is less than the tolerance
        ! amount.  It is considered to have a value of 0.  There is not any rain
@@ -1739,7 +1745,7 @@ module KK_microphys_module
 
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 1.
-    if ( mu_rr_1 > rr_tol ) then
+    if ( rr1 > rr_tol ) then
        if ( rcm > rc_tol ) then
           sigma_rr_1 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_1
        else
@@ -1755,7 +1761,7 @@ module KK_microphys_module
 
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 2.
-    if ( mu_rr_2 > rr_tol ) then
+    if ( rr2 > rr_tol ) then
        if ( rcm > rc_tol ) then
           sigma_rr_2 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_2
        else
@@ -1771,7 +1777,7 @@ module KK_microphys_module
 
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 1.
-    if ( mu_Nr_1 > Nr_tol ) then
+    if ( Nr1 > Nr_tol ) then
        if ( rcm > rc_tol ) then
           sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_1
        else
@@ -1787,7 +1793,7 @@ module KK_microphys_module
 
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 2.
-    if ( mu_Nr_2 > Nr_tol ) then
+    if ( Nr2 > Nr_tol ) then
        if ( rcm > rc_tol ) then
           sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_2
        else

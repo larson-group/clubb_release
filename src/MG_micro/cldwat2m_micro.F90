@@ -2198,7 +2198,11 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! the precipitation fraction (cldmax).
                  call KK_in_precip_values( real( qric(i,k) * cldmax(i,k), &
                                                  kind = core_rknd ), &
-                                           zero, &
+                                           real( qric(i,k) * cldmax(i,k), &
+                                                 kind = core_rknd ), &
+                                           real( qric(i,k) * cldmax(i,k), &
+                                                 kind = core_rknd ), &
+                                           zero, zero, zero, &
                                            real( qc(i,k), kind = core_rknd ), &
                                            real( cldmax(i,k), &
                                                  kind = core_rknd ), &
