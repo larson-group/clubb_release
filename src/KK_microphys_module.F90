@@ -321,17 +321,19 @@ module KK_microphys_module
   end subroutine KK_local_micro_driver
 
   !=============================================================================
-  subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, &
-                              l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
-                              exner, rho, cloud_frac, pdf_params, w_std_dev, &
-                              dzq, rcm, Ncm, s_mellor, rvm, Nc0_in_cloud, &
-                              hydromet, &
-                              hydromet_mc, hydromet_vel, &
-                              rcm_mc, rvm_mc, thlm_mc, &
-                              hydromet_vel_covar, hydromet_vel_covar_zt,  &
-                              wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-                              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
-                              KK_auto_tndcy, KK_accr_tndcy )
+  subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, thlm, wm_zt, &
+                                       p_in_Pa, exner, rho, cloud_frac, &
+                                       pdf_params, w_std_dev, rcm, Ncm, &
+                                       s_mellor, Nc0_in_cloud, &
+                                       hydromet, hydromet_mc, &
+                                       hydromet_vel, &
+                                       rcm_mc, rvm_mc, thlm_mc, &
+                                       hydromet_vel_covar, &
+                                       hydromet_vel_covar_zt,  &
+                                       wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+                                       rtp2_mc_tndcy, thlp2_mc_tndcy, &
+                                       rtpthlp_mc_tndcy, &
+                                       KK_auto_tndcy, KK_accr_tndcy )
 
     ! Description:
 
@@ -366,10 +368,14 @@ module KK_microphys_module
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &
-        zt,               & ! Variable(s)
-        iprecip_frac,     &
-        iprecip_frac_1,   &
-        iprecip_frac_2
+        irr1,           & ! Variable(s)
+        irr2,           &
+        iNr1,           &
+        iNr2,           &
+        iprecip_frac,   &
+        iprecip_frac_1, &
+        iprecip_frac_2, &
+        zt
 
     use model_flags, only: &
         l_use_precip_frac, & ! Flag(s)
@@ -394,8 +400,7 @@ module KK_microphys_module
       nz          ! Number of model vertical grid levels
 
     logical, intent(in) :: &
-      l_stats_samp,      & ! Flag to sample statistics
-      l_latin_hypercube    ! Flag to use Latin Hypercube interface
+      l_stats_samp    ! Flag to sample statistics
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       thlm,       & ! Mean liquid water potential temperature         [K]
@@ -412,9 +417,7 @@ module KK_microphys_module
       pdf_params    ! PDF parameters                         [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      w_std_dev, & ! Standard deviation of w (for LH interface)          [m/s]
-      dzq,       & ! Thickness between thermo. levels (for LH interface) [m]
-      rvm          ! Mean water vapor mixing ratio (for LH interface)    [kg/kg]
+      w_std_dev    ! Standard deviation of w (for LH interface)          [m/s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
@@ -471,6 +474,12 @@ module KK_microphys_module
       KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
       KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
       precip_frac,   & ! Precipitation fraction (overall)           [-]
@@ -567,26 +576,11 @@ module KK_microphys_module
     ! end changes by janhft 10/04/12
 
     logical :: &
-      l_src_adj_enabled, & ! Flag to enable rrainm/Nrm source adjustment
-      l_stats_samp_in_sub  ! Used to disable stats when SILHS is enabled
+      l_src_adj_enabled    ! Flag to enable rrainm/Nrm source adjustment
 
     integer :: &
       k   ! Loop index
 
-    ! Remove compiler warnings
-    if ( .false. ) then
-      rrainm_src_adj = dzq
-      rrainm_src_adj = rvm
-      rrainm_src_adj = w_std_dev
-      rrainm_src_adj = cloud_frac
-    end if
-
-    ! Disable stats when latin hypercube is enabled
-    if ( .not. l_latin_hypercube .and. l_stats_samp ) then
-     l_stats_samp_in_sub = .true.
-    else
-     l_stats_samp_in_sub = .false.
-    end if
 
     call KK_init_micro_driver( nz, hydromet, hydromet_mc, hydromet_vel, & ! Intent(in)
                                hydromet_vel_covar, hydromet_vel_covar_zt, &
@@ -599,11 +593,21 @@ module KK_microphys_module
     ! Precipitation fraction
     if ( l_use_precip_frac ) then
 
+       call component_means_rain( nz, rrainm, Nrm, rho, &
+                                  pdf_params%rc1, pdf_params%rc2, &
+                                  pdf_params%mixt_frac, l_stats_samp, &
+                                  rr1, rr2, Nr1, Nr2 )
+
        call precip_fraction( nz, rrainm, cloud_frac, &
                              pdf_params%cloud_frac1, pdf_params%mixt_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
     else
+
+       rr1 = rrainm
+       rr2 = rrainm
+       Nr1 = Nrm
+       Nr2 = Nrm
 
        precip_frac   = one
        precip_frac_1 = one
@@ -612,10 +616,29 @@ module KK_microphys_module
     endif
 
     ! Statistics
-    if ( l_stats_samp_in_sub ) then
+    if ( l_stats_samp ) then
+
+       ! Mean rain water mixing ratio in PDF component 1.
+       call stat_update_var( irr1, rr1, zt )
+
+       ! Mean rain water mixing ratio in PDF component 2.
+       call stat_update_var( irr2, rr2, zt )
+
+       ! Mean rain drop concentration in PDF component 1.
+       call stat_update_var( iNr1, Nr1, zt )
+
+       ! Mean rain drop concentration in PDF component 2.
+       call stat_update_var( iNr2, Nr2, zt )
+
+       ! Overall precipitation fraction.
        call stat_update_var( iprecip_frac, precip_frac, zt )
+
+       ! Precipitation fraction in PDF component 1.
        call stat_update_var( iprecip_frac_1, precip_frac_1, zt )
+
+       ! Precipitation fraction in PDF component 2.
        call stat_update_var( iprecip_frac_2, precip_frac_2, zt )
+
     endif
 
     ! calculate the covariances of w with the hydrometeors
@@ -716,7 +739,7 @@ module KK_microphys_module
                            corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
                            corr_sNc_1_n, corr_sNc_2_n, corr_rrNr_1_n, &
                            corr_rrNr_2_n, corr_sw, corr_wrr, corr_wNr, &
-                           corr_wNc, k, l_stats_samp_in_sub )
+                           corr_wNc, k, l_stats_samp )
 
         !!! Calculate the values of the upscaled KK microphysics tendencies.
       call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
@@ -743,7 +766,7 @@ module KK_microphys_module
                               sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                               sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
                               KK_mvr_coef, mixt_frac, precip_frac_1(k), &
-                              precip_frac_2(k), k, l_stats_samp_in_sub, &
+                              precip_frac_2(k), k, l_stats_samp, &
                               Vrrprrp_zt(k), VNrpNrp_zt(k) )
 
 
@@ -764,7 +787,7 @@ module KK_microphys_module
                                        KK_accr_coef, KK_evap_tndcy(k), &
                                        KK_auto_tndcy(k), KK_accr_tndcy(k), &
                                        pdf_params(k), k, &
-                                       l_stats_samp_in_sub, &
+                                       l_stats_samp, &
                                        wprtp_mc_tndcy_zt(k), &
                                        wpthlp_mc_tndcy_zt(k), &
                                        rtp2_mc_tndcy_zt(k), &
@@ -785,7 +808,7 @@ module KK_microphys_module
                                 rvm_mc(k), rcm_mc(k), thlm_mc(k) )
 
 
-      if ( l_stats_samp_in_sub ) then
+      if ( l_stats_samp ) then
 
         call KK_stats_output_samp_in_sub( KK_mean_vol_rad(k), KK_evap_tndcy(k), & ! Intent(in)
                                           KK_auto_tndcy(k), KK_accr_tndcy(k), &
@@ -849,8 +872,9 @@ module KK_microphys_module
 
   !=============================================================================
   subroutine component_means_rain( nz, rrainm, Nrm, rho, &
-                                   rc1, rc2, mixt_frac, &
-                                   rr1, rr2, Nr1, Nr2, LWP1, LWP2 )
+                                   rc1, rc2, &
+                                   mixt_frac, l_stats_samp, &
+                                   rr1, rr2, Nr1, Nr2 )
 
     ! Description:
     ! The values of grid-level mean rain water mixing ratio, <r_r>, and
@@ -993,6 +1017,14 @@ module KK_microphys_module
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use stats_type, only: &
+        stat_update_var  ! Procedure(s)
+
+    use stats_variables, only : &
+        iLWP1, & ! Variable(s)
+        iLWP2, &
+        zt
+
     implicit none
 
     ! Input Variables
@@ -1007,17 +1039,25 @@ module KK_microphys_module
       rc2,       & ! Mean cloud water mixing ratio (2nd PDF component)  [kg/kg]
       mixt_frac    ! Mixture fraction                                   [-]
 
+    logical, intent(in) :: &
+      l_stats_samp     ! Flag to record statistical output.
+
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      rr1,  & ! Mean rain water mixing ratio (1st PDF component)    [kg/kg]
-      rr2,  & ! Mean rain water mixing ratio (2nd PDF component)    [kg/kg]
-      Nr1,  & ! Mean rain drop concentration (1st PDF component)    [num/kg]
-      Nr2,  & ! Mean rain drop concentration (2nd PDF component)    [num/kg]
-      LWP1, & ! Liquid water path (1st PDF component)               [kg/m^2]
-      LWP2    ! Liquid water path (2nd PDF component)               [kg/m^2]
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
 
     ! Local Variable
+    real( kind = core_rknd ), dimension(nz) :: &
+      LWP1, & ! Liquid water path (1st PDF component) on thermo. levs.  [kg/m^2]
+      LWP2    ! Liquid water path (2nd PDF component) on thermo. levs.  [kg/m^2]
+
     integer :: k  ! Array index
+
+    real( kind = core_rknd ), parameter :: &
+      LWP_tol = 5.0e-7_core_rknd  ! Tolerance value for component LWP
 
 
     !!! Compute component liquid water paths using trapezoidal rule for
@@ -1078,8 +1118,10 @@ module KK_microphys_module
        !!! Calculate the component means for rain water mixing ratio.
        if ( rrainm(k) > rr_tol ) then
 
-          if ( LWP1(k) == zero .and. LWP2(k) == zero ) then
+          if ( LWP1(k) <= LWP_tol .and. LWP2(k) <= LWP_tol ) then
 
+             ! Both LWP1 and LWP2 are 0 (or an insignificant amount).
+             !
              ! There is rain at this level, yet no cloud at or above the
              ! current level.  This is usually due to a numerical artifact.
              ! For example, rain is diffused above cloud top.  Simply set
@@ -1087,24 +1129,32 @@ module KK_microphys_module
              rr1(k) = rrainm(k)
              rr2(k) = rrainm(k)
 
-          elseif ( LWP1(k) > zero .and. LWP2(k)/LWP1(k) == zero ) then
+          elseif ( LWP1(k) > LWP_tol .and. LWP2(k) <= LWP_tol ) then
 
+             ! LWP1 is (significantly) greater than 0, while LWP2 is 0 (or an
+             ! insignificant amount).
+             !
              ! There is rain at this level, and all cloud water at or above
              ! this level is found in the 1st PDF component.  All rain water
              ! mixing ratio is found in the 1st PDF component.
              rr1(k) = rrainm(k) / mixt_frac(k)
              rr2(k) = zero
 
-          elseif ( LWP2(k) > zero .and. LWP1(k)/LWP2(k) == zero ) then
+          elseif ( LWP2(k) > LWP_tol .and. LWP1(k) <= LWP_tol ) then
 
+             ! LWP2 is (significantly) greater than 0, while LWP1 is 0 (or an
+             ! insignificant amount).
+             !
              ! There is rain at this level, and all cloud water at or above
              ! this level is found in the 2nd PDF component.  All rain water
              ! mixing ratio is found in the 2nd PDF component.
              rr1(k) = zero
              rr2(k) = rrainm(k) / ( one - mixt_frac(k) )
 
-          else ! LWP1(k) > 0 and LWP2(k) > 0
+          else ! LWP1(k) > LWP_tol and LWP2(k) > LWP_tol
 
+             ! Both LWP1 and LWP2 are (significantly) greater than 0.
+             !
              ! There is rain at this level, and there is sufficient cloud water
              ! at or above this level in both PDF components to find rain in
              ! both PDF components.  Delegate rain water mixing ratio between
@@ -1133,8 +1183,10 @@ module KK_microphys_module
        !!! Calculate the component means for rain drop concentration.
        if ( Nrm(k) > Nr_tol ) then
 
-          if ( LWP1(k) == zero .and. LWP2(k) == zero ) then
+          if ( LWP1(k) <= LWP_tol .and. LWP2(k) <= LWP_tol ) then
 
+             ! Both LWP1 and LWP2 are 0 (or an insignificant amount).
+             !
              ! There is rain at this level, yet no cloud at or above the
              ! current level.  This is usually due to a numerical artifact.
              ! For example, rain is diffused above cloud top.  Simply set
@@ -1142,24 +1194,32 @@ module KK_microphys_module
              Nr1(k) = Nrm(k)
              Nr2(k) = Nrm(k)
 
-          elseif ( LWP1(k) > zero .and. LWP2(k)/LWP1(k) == zero ) then
+          elseif ( LWP1(k) > LWP_tol .and. LWP2(k) <= LWP_tol ) then
 
+             ! LWP1 is (significantly) greater than 0, while LWP2 is 0 (or an
+             ! insignificant amount).
+             !
              ! There is rain at this level, and all cloud water at or above
              ! this level is found in the 1st PDF component.  All rain drop
              ! concentration is found in the 1st PDF component.
              Nr1(k) = Nrm(k) / mixt_frac(k)
              Nr2(k) = zero
 
-          elseif ( LWP2(k) > zero .and. LWP1(k)/LWP2(k) == zero ) then
+          elseif ( LWP2(k) > LWP_tol .and. LWP1(k) <= LWP_tol ) then
 
+             ! LWP2 is (significantly) greater than 0, while LWP1 is 0 (or an
+             ! insignificant amount).
+             !
              ! There is rain at this level, and all cloud water at or above
              ! this level is found in the 2nd PDF component.  All rain drop
              ! concentration is found in the 2nd PDF component.
              Nr1(k) = zero
              Nr2(k) = Nrm(k) / ( one - mixt_frac(k) )
 
-          else ! LWP1(k) > 0 and LWP2(k) > 0
+          else ! LWP1(k) > LWP_tol and LWP2(k) > LWP_tol
 
+             ! Both LWP1 and LWP2 are (significantly) greater than 0.
+             !
              ! There is rain at this level, and there is sufficient cloud water
              ! at or above this level in both PDF components to find rain in
              ! both PDF components.  Delegate rain drop concentration between
@@ -1186,6 +1246,17 @@ module KK_microphys_module
 
 
     enddo ! k = 2, nz, 1
+
+    ! Statistics
+    if ( l_stats_samp ) then
+
+       ! Liquid water path in PDF component 1.
+       call stat_update_var( iLWP1, LWP1, zt )
+
+       ! Liquid water path in PDF component 2.
+       call stat_update_var( iLWP2, LWP2, zt )
+       
+    endif
 
 
     return
