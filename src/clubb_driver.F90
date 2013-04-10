@@ -849,7 +849,7 @@ module clubb_driver
 
       ! Currently initialize_clubb does more than just read in the initial sounding.
       ! It also includes other important initializations such as um_ref and vm_ref.
-      ! There for it should be executed prior to a restart. The restart should overwrite
+      ! Therefore it should be executed prior to a restart. The restart should overwrite
       ! the initial sounding anyway.
       call initialize_clubb &
            ( iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
