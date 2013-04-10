@@ -3383,8 +3383,9 @@ module advance_xp2_xpyp_module
       end if
     end do
 
-    !Calculate increased variance (rtp2 and thlp2) due to rain evaporation
 
+    !pf_const is calculated so that when precip_frac = 0, rtp2_mc_tndcy and 
+    !thlp2_mc_tndcy will both be zero.  This also avoids a divide by zero error
     where ( precip_frac > cloud_frac_min )
       pf_const = ( 1.0_core_rknd - precip_frac ) / precip_frac
     else where
@@ -3392,8 +3393,9 @@ module advance_xp2_xpyp_module
     end where
 
     ! Include effects of rain evaporation on rtp2
-    temp_rtp2 = pdf_params%mixt_frac * ( ( pdf_params%rt1 - ( rcm + rvm ) )**2 &
-                    + pdf_params%varnce_rt1 ) + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
+    temp_rtp2 = pdf_params%mixt_frac &
+                    * ( ( pdf_params%rt1 - ( rcm + rvm ) )**2 + pdf_params%varnce_rt1 ) &
+                + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
                     * ( ( pdf_params%rt2 - ( rcm + rvm ) )**2 + pdf_params%varnce_rt2 )
 
     rtp2_mc_tndcy = rrainm_evap**2 * pf_const * dt &
@@ -3402,12 +3404,13 @@ module advance_xp2_xpyp_module
                     !to rt1
 
     !Include the effects of rain evaporation on thlp2
-    temp_thlp2 = pdf_params%mixt_frac * ( ( pdf_params%thl1 - thlm )**2 &
-                    + pdf_params%varnce_thl1 ) + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
+    temp_thlp2 = pdf_params%mixt_frac &
+                    * ( ( pdf_params%thl1 - thlm )**2 + pdf_params%varnce_thl1 ) &
+                 + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
                     * ( ( pdf_params%thl2 - thlm )**2 + pdf_params%varnce_thl2 )
 
     thlp2_mc_tndcy = ( rrainm_evap * Lv / ( Cp * exner) )**2 * pf_const * dt & 
-                    + 2.0_core_rknd * rrainm_evap * Lv / ( Cp * exner ) &
+                    + 2.0_core_rknd * abs(rrainm_evap) * Lv / ( Cp * exner ) &
                     * sqrt(temp_thlp2 * pf_const)
 
   end subroutine update_xp2_mc_tndcy
