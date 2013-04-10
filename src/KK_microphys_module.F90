@@ -598,7 +598,7 @@ module KK_microphys_module
                                   pdf_params%mixt_frac, l_stats_samp, &
                                   rr1, rr2, Nr1, Nr2 )
 
-       call precip_fraction( nz, rrainm, cloud_frac, &
+       call precip_fraction( nz, rrainm, rr1, rr2, cloud_frac, &
                              pdf_params%cloud_frac1, pdf_params%mixt_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
@@ -1093,7 +1093,7 @@ module KK_microphys_module
     ! delta_z = zt(k+1) - zt(k), or 1/invrs_dzm(k).  The total for the segment
     ! is added to the sum total of all higher vertical segments to compute the
     ! total vertical integral.
-    do k = nz-1, 2, -1
+    do k = nz-1, 1, -1
 
        ! Liquid water path in PDF component 1.
        LWP1(k) &
@@ -1108,12 +1108,12 @@ module KK_microphys_module
                         + ( one - mixt_frac(k) ) * rho(k) * rc2(k) ) &
            / gr%invrs_dzm(k)
 
-    enddo ! k = nz-1, 2, -1
+    enddo ! k = nz-1, 1, -1
 
 
     !!! Find rr1, rr2, Nr1, and Nr2 based on the ratio of LWP2/LWP1, such that:
     !!! rr2/rr1 = Nr2/Nr1 = LWP2/LWP1.
-    do k = 2, nz, 1
+    do k = 1, nz, 1
 
        !!! Calculate the component means for rain water mixing ratio.
        if ( rrainm(k) > rr_tol ) then
@@ -1245,7 +1245,7 @@ module KK_microphys_module
        endif
 
 
-    enddo ! k = 2, nz, 1
+    enddo ! k = 1, nz, 1
 
     ! Statistics
     if ( l_stats_samp ) then
@@ -1264,11 +1264,14 @@ module KK_microphys_module
   end subroutine component_means_rain
 
   !=============================================================================
-  subroutine precip_fraction( nz, rrainm, cloud_frac, &
+  subroutine precip_fraction( nz, rrainm, rr1, rr2, cloud_frac, &
                               cloud_frac1, mixt_frac, &
                               precip_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
+    ! Determines (overall) precipitation fraction over the horizontal domain, as
+    ! well as the precipitation fraction within each PDF component, at every
+    ! vertical grid level.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -1289,23 +1292,25 @@ module KK_microphys_module
       nz          ! Number of model vertical grid levels
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rrainm,      & ! Mean rain water mixing ratio        [kg/kg]
-      cloud_frac,  & ! Cloud fraction (overall)            [-]
-      cloud_frac1, & ! Cloud fraction (1st PDF component)  [-]
-      mixt_frac      ! Mixture fraction                    [-]
+      rrainm,      & ! Mean rain water mixing ratio (overall)            [kg/kg]
+      rr1,         & ! Mean rain water mixing ratio (1st PDF component)  [kg/kg]
+      rr2,         & ! Mean rain water mixing ratio (2nd PDF component)  [kg/kg]
+      cloud_frac,  & ! Cloud fraction (overall)                          [-]
+      cloud_frac1, & ! Cloud fraction (1st PDF component)                [-]
+      mixt_frac      ! Mixture fraction                                  [-]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+      precip_frac,   & ! Precipitation fraction (overall)                [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)      [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)      [-]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
-      weighted_pfrac1    ! Product of mixt_frac and precip_frac_1 [-]
+      weighted_pfrac1    ! Product of mixt_frac and precip_frac_1        [-]
 
     real( kind = core_rknd ), parameter :: &
-      precip_frac_tol = cloud_frac_min  ! Minimum precip. frac. [-]
+      precip_frac_tol = cloud_frac_min  ! Minimum precip. frac.          [-]
     
     integer :: &
       k   ! Loop index
@@ -1342,6 +1347,8 @@ module KK_microphys_module
     enddo ! Overall precipitation fraction loop: k = nz, 1, -1.
 
 
+    !!! Find precipitation fraction within each PDF component.
+    !
     ! The overall precipitation fraction, f_p, is given by the equation:
     !
     ! f_p = a * f_p(1) + ( 1 - a ) * f_p(2);
@@ -1352,93 +1359,244 @@ module KK_microphys_module
     ! fraction is found according the method above, and mixture fraction is
     ! already determined, leaving f_p(1) and f_p(2) to be solved for.  The
     ! values for f_p(1) and f_p(2) must satisfy the above equation.
+    if ( .false. ) then
 
+       !!! Find precipitation fraction within PDF component 1.
+       ! The method used to find overall precipitation fraction will also be to
+       ! find precipitation fraction within PDF component 1.  In order to do so,
+       ! it is assumed (poorly) that PDF component 1 overlaps PDF component 1 at
+       ! every vertical level in the vertical profile.
+       do k = nz, 1, -1
 
-    !!! Find precipitation fraction within PDF component 1.
-    ! The method used to find overall precipitation fraction will also be to
-    ! find precipitation fraction within PDF component 1.  In order to do so, it
-    ! is assumed (poorly) that PDF component 1 overlaps PDF component 1 at every
-    ! vertical level in the vertical profile.
-    do k = nz, 1, -1
-
-       ! The weighted precipitation fraction (PDF component 1) is the greatest
-       ! value of the product of mixture fraction and cloud fraction (PDF
-       ! component 1) at or above a vertical level.
-       if ( k < nz ) then
-          weighted_pfrac1(k) = max( weighted_pfrac1(k+1), &
-                                    mixt_frac(k) * cloud_frac1(k) )
-       else  ! k = nz
-          weighted_pfrac1(k) = mixt_frac(k) * cloud_frac1(k)
-       endif
-
-       precip_frac_1(k) = weighted_pfrac1(k) / mixt_frac(k)
-
-       ! Special cases for precip_frac_1.
-       ! Using the above method, it is possible for precip_frac_1 to be greater
-       ! than 1.  For example, the mixture fraction at level k+1 is 0.10 and the
-       ! cloud_frac1 at level k+1 is 1, resulting in a weighted_pfrac1 of 0.10.
-       ! This product is greater than the product of mixt_frac and cloud_frac1
-       ! at level k.  The mixture fraction at level k is 0.05, resulting in a
-       ! precip_frac_1 of 2.  The value of precip_frac_1 is limited at 1.  The
-       ! leftover precipitation fraction (a result of the decreasing weight of
-       ! PDF component 1 between the levels) is applied to PDF component 2.
-       if ( precip_frac_1(k) > one ) then
-          precip_frac_1(k) = one
-       endif
-
-    enddo ! Precipitation fraction (1st PDF component) loop: k = nz, 1, -1.
-
-
-    !!! Find precipitation fraction within PDF component 2.
-    ! The equation for precipitation fraction within PDF component 2 is:
-    !
-    ! f_p(2) = ( f_p - a * f_p(1) ) / ( 1 - a );
-    !
-    ! given the overall precipitation fraction, f_p (calculated above), the
-    ! precipitation fraction within PDF component 1, f_p(1) (calculated above),
-    ! and mixture fraction, a.  Any leftover precipitation fraction from
-    ! precip_frac_1 will be included in this calculation of precip_frac_2.
-    do k = 1, nz, 1
-
-       precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) * precip_frac_1(k) ) &
-                          / ( one - mixt_frac(k) )
-
-       ! Special cases for precip_frac_2.
-       ! Again, it is possible for precip_frac_2 to be greater than 1.  For
-       ! example, the mixture fraction at level k+1 is 0.10 and the cloud_frac1
-       ! at level k+1 is 1, resulting in a weighted_pfrac1 of 0.10.  This
-       ! product is greater than the product of mixt_frac and cloud_frac1 at
-       ! level k.  Additionally, precip_frac (overall) is 1 for level k.  The
-       ! mixture fraction at level k is 0.5, resulting in a precip_frac_1 of
-       ! 0.2.  Using the above equation, precip_frac_2 is calculated to be 1.8.
-       ! The value of precip_frac_2 is limited at 1.  The leftover precipitation
-       ! fraction (as a result of the increasing weight of component 1 between
-       ! the levels) is applied to PDF component 1.
-       if ( precip_frac_2(k) > one ) then
-
-          precip_frac_2(k) = one
-
-          precip_frac_1(k) &
-          = ( precip_frac(k) - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
-            / mixt_frac(k)
-
-          ! Prevent numerical round off causing values of precip_frac_1
-          ! greater than 1 or less than 0.
-          if ( precip_frac_1(k) > one ) then
-             precip_frac_1(k) = one
-          elseif ( precip_frac_1(k) < zero ) then
-             precip_frac_1(k) = zero
+          ! The weighted precipitation fraction (PDF component 1) is the
+          ! greatest value of the product of mixture fraction and cloud fraction
+          ! (PDF component 1) at or above a vertical level.
+          if ( k < nz ) then
+             weighted_pfrac1(k) = max( weighted_pfrac1(k+1), &
+                                       mixt_frac(k) * cloud_frac1(k) )
+          else  ! k = nz
+             weighted_pfrac1(k) = mixt_frac(k) * cloud_frac1(k)
           endif
 
-       elseif ( precip_frac_2(k) < zero ) then
+          precip_frac_1(k) = weighted_pfrac1(k) / mixt_frac(k)
 
-          ! Prevent numerical round off causing values of precip_frac_2
-          ! less than 0.
-          precip_frac_2(k) = zero
+          ! Special cases for precip_frac_1.
+          if ( precip_frac_1(k) > one ) then
 
-       endif
+             ! Using the above method, it is possible for precip_frac_1 to be
+             ! greater than 1.  For example, the mixture fraction at level k+1
+             ! is 0.10 and the cloud_frac1 at level k+1 is 1, resulting in a
+             ! weighted_pfrac1 of 0.10.  This product is greater than the
+             ! product of mixt_frac and cloud_frac1 at level k.  The mixture
+             ! fraction at level k is 0.05, resulting in a precip_frac_1 of 2.
+             ! The value of precip_frac_1 is limited at 1.  The leftover
+             ! precipitation fraction (a result of the decreasing weight of PDF
+             ! component 1 between the levels) is applied to PDF component 2.
+             precip_frac_1(k) = one
 
-    enddo ! Precipitation fraction (2nd PDF component) loop: k = 1, nz, 1.
+          elseif ( rr1(k) > rr_tol &
+                   .and. precip_frac_1(k) <= precip_frac_tol ) then
+
+             ! In a scenario where we find rain in the 1st PDF component at this
+             ! grid level, but no cloud in the 1st PDF component at or above
+             ! this grid level, set precipitation fraction (in the 1st PDF
+             ! component) to a minimum threshold value.
+             precip_frac_1(k) = precip_frac_tol
+
+          elseif ( rr1(k) <= rr_tol &
+                   .and. precip_frac_1(k) <= precip_frac_tol ) then
+
+             ! Mean rain water mixing ratio in the 1st PDF component is less
+             ! than the tolerance amount.  It is considered to have a value of
+             ! 0.  There is not any rain in the 1st PDF component at this grid
+             ! level.  There is also no cloud at or above this grid level, so
+             ! set precipitation fraction (in the 1st PDF component) to 0.
+             precip_frac_1(k) = zero
+
+          endif
+
+       enddo ! Precipitation fraction (1st PDF component) loop: k = nz, 1, -1.
+
+
+       !!! Find precipitation fraction within PDF component 2.
+       ! The equation for precipitation fraction within PDF component 2 is:
+       !
+       ! f_p(2) = ( f_p - a * f_p(1) ) / ( 1 - a );
+       !
+       ! given the overall precipitation fraction, f_p (calculated above), the
+       ! precipitation fraction within PDF component 1, f_p(1) (calculated
+       ! above), and mixture fraction, a.  Any leftover precipitation fraction
+       ! from precip_frac_1 will be included in this calculation of
+       ! precip_frac_2.
+       do k = 1, nz, 1
+
+          precip_frac_2(k) &
+          = ( precip_frac(k) - mixt_frac(k) * precip_frac_1(k) ) &
+            / ( one - mixt_frac(k) )
+
+          ! Special cases for precip_frac_2.
+          if ( precip_frac_2(k) > one ) then
+
+             ! Again, it is possible for precip_frac_2 to be greater than 1.
+             ! For example, the mixture fraction at level k+1 is 0.10 and the
+             ! cloud_frac1 at level k+1 is 1, resulting in a weighted_pfrac1 of
+             ! 0.10.  This product is greater than the product of mixt_frac and
+             ! cloud_frac1 at level k.  Additionally, precip_frac (overall) is 1
+             ! for level k.  The mixture fraction at level k is 0.5, resulting
+             ! in a precip_frac_1 of 0.2.  Using the above equation,
+             ! precip_frac_2 is calculated to be 1.8.  The value of
+             ! precip_frac_2 is limited at 1.  The leftover precipitation
+             ! fraction (as a result of the increasing weight of component 1
+             ! between the levels) is applied to PDF component 1.
+             precip_frac_2(k) = one
+
+             ! Recalculate the precipitation fraction in PDF component 1.
+             precip_frac_1(k) &
+             = ( precip_frac(k) - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
+               / mixt_frac(k)
+
+             ! Prevent numerical round off causing values of precip_frac_1
+             ! greater than 1 or less than 0.
+             if ( precip_frac_1(k) > one ) then
+                precip_frac_1(k) = one
+             elseif ( precip_frac_1(k) < zero ) then
+                precip_frac_1(k) = zero
+             endif
+
+          elseif ( rr2(k) > rr_tol &
+                   .and. precip_frac_2(k) <= precip_frac_tol ) then
+
+             ! In a scenario where we find rain in the 2nd PDF component at this
+             ! grid level, but no cloud in the 2nd PDF component at or above
+             ! this grid level, set precipitation fraction (in the 2nd PDF
+             ! component) to a minimum threshold value.
+             precip_frac_2(k) = precip_frac_tol
+
+          elseif ( rr2(k) <= rr_tol &
+                   .and. precip_frac_2(k) <= precip_frac_tol ) then
+
+             ! Mean rain water mixing ratio in the 2nd PDF component is less
+             ! than the tolerance amount.  It is considered to have a value of
+             ! 0.  There is not any rain in the 2nd PDF component at this grid
+             ! level.  There is also no cloud at or above this grid level, so
+             ! set precipitation fraction (in the 2nd PDF component) to 0.
+             precip_frac_2(k) = zero
+
+          endif
+
+       enddo ! Precipitation fraction (2nd PDF component) loop: k = 1, nz, 1.
+
+
+    else  ! .true.
+
+       ! Precipitation fraction in each PDF component is based on mean rain
+       ! water mixing ratio in each PDF component.  The ratio it is based on is:
+       !
+       ! rr1/f_p(1) = rr2/f_p(2);
+       !
+       ! which can be rewritten as:
+       !
+       ! f_p(2)/f_p(1) = rr2/rr1.
+       !
+       ! Since overall precipitation fraction is given by the equation:
+       !
+       ! f_p = a f_p(1) + (1-a) f_p(2);
+       !
+       ! it can be rewritten as:
+       !
+       ! f_p = f_p(1) ( a + (1-a) f_p(2)/f_p(1) ).
+       !
+       ! Substituting the ratio rr2/rr1 for the ratio f_p(2)/f_p(1), the above
+       ! equation can be solved for f_p(1):
+       !
+       ! f_p(1) = f_p / ( a + (1-a) rr2/rr1 ).
+       !
+       ! Then, f_p(2) can be solved for according to the equation:
+       !
+       ! f_p(2) = ( f_p - a f_p(1) ) / (1-a).
+       do k = 1, nz, 1
+
+          if ( rr1(k) <= rr_tol .and. rr2(k) <= rr_tol ) then
+
+             ! There is no rain in each PDF component.  Precipitation fraction
+             ! within each component is set to 0.
+             precip_frac_1(k) = zero
+             precip_frac_2(k) = zero
+
+          elseif ( rr1(k) > rr_tol .and. rr2(k) <= rr_tol ) then
+
+             ! All the rain is within the 1st PDF component.
+             precip_frac_1(k) = precip_frac(k) / mixt_frac(k)
+             precip_frac_2(k) = zero
+
+          elseif ( rr2(k) > rr_tol .and. rr1(k) <= rr_tol ) then
+
+             ! All the rain is within the 2nd PDF component.
+             precip_frac_1(k) = zero
+             precip_frac_2(k) = precip_frac(k) / ( one - mixt_frac(k) )
+
+          else ! rr1(k) > rr_tol and rr2(k) > rr_tol
+
+             ! Rain within both PDF components.
+             precip_frac_1(k) &
+             = precip_frac(k) &
+               / ( mixt_frac(k) + ( one - mixt_frac(k) ) * rr2(k)/rr1(k) )
+
+             precip_frac_2(k) &
+             = ( precip_frac(k) - mixt_frac(k) *  precip_frac_1(k) ) &
+               / ( one - mixt_frac(k) )
+
+          endif
+
+
+          ! Special cases for PDF component 1.
+          if ( rr1(k) > rr_tol .and. precip_frac_1(k) <= precip_frac_tol ) then
+
+             ! In a scenario where we find rain in the 1st PDF component at this
+             ! grid level, but no cloud in the 1st PDF component at or above
+             ! this grid level, set precipitation fraction (in the 1st PDF
+             ! component) to a minimum threshold value.
+             precip_frac_1(k) = precip_frac_tol
+
+          elseif ( rr1(k) <= rr_tol &
+                   .and. precip_frac_1(k) <= precip_frac_tol ) then
+
+             ! Mean rain water mixing ratio in the 1st PDF component is less
+             ! than the tolerance amount.  It is considered to have a value of
+             ! 0.  There is not any rain in the 1st PDF component at this grid
+             ! level.  There is also no cloud at or above this grid level, so
+             ! set precipitation fraction (in the 1st PDF component) to 0.
+             precip_frac_1(k) = zero
+
+          endif
+
+
+          ! Special cases for PDF component 2.
+          if ( rr2(k) > rr_tol .and. precip_frac_2(k) <= precip_frac_tol ) then
+
+             ! In a scenario where we find rain in the 2nd PDF component at this
+             ! grid level, but no cloud in the 2nd PDF component at or above
+             ! this grid level, set precipitation fraction (in the 2nd PDF
+             ! component) to a minimum threshold value.
+             precip_frac_2(k) = precip_frac_tol
+
+          elseif ( rr2(k) <= rr_tol &
+                   .and. precip_frac_2(k) <= precip_frac_tol ) then
+
+             ! Mean rain water mixing ratio in the 2nd PDF component is less
+             ! than the tolerance amount.  It is considered to have a value of
+             ! 0.  There is not any rain in the 2nd PDF component at this grid
+             ! level.  There is also no cloud at or above this grid level, so
+             ! set precipitation fraction (in the 2nd PDF component) to 0.
+             precip_frac_2(k) = zero
+
+          endif
+
+
+       enddo ! Component precipitation fraction loop: k = 1, nz, 1.
+
+
+    endif ! Select component precipitation fraction method.
 
 
     ! Check special cases
