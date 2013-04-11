@@ -598,7 +598,8 @@ module KK_microphys_module
                                   pdf_params%mixt_frac, l_stats_samp, &
                                   rr1, rr2, Nr1, Nr2 )
 
-       call precip_fraction( nz, rrainm, rr1, rr2, cloud_frac, &
+       call precip_fraction( nz, rrainm, rr1, rr2, &
+                             Nrm, Nr1, Nr2, cloud_frac, &
                              pdf_params%cloud_frac1, pdf_params%mixt_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
@@ -1265,7 +1266,8 @@ module KK_microphys_module
   end subroutine component_means_rain
 
   !=============================================================================
-  subroutine precip_fraction( nz, rrainm, rr1, rr2, cloud_frac, &
+  subroutine precip_fraction( nz, rrainm, rr1, rr2, &
+                              Nrm, Nr1, Nr2, cloud_frac, &
                               cloud_frac1, mixt_frac, &
                               precip_frac, precip_frac_1, precip_frac_2 )
 
@@ -1281,6 +1283,7 @@ module KK_microphys_module
         one,            & ! Constant(s)
         zero,           &
         rr_tol,         &
+        Nr_tol,         &
         cloud_frac_min
 
     use clubb_precision, only: &
@@ -1293,25 +1296,28 @@ module KK_microphys_module
       nz          ! Number of model vertical grid levels
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rrainm,      & ! Mean rain water mixing ratio (overall)            [kg/kg]
-      rr1,         & ! Mean rain water mixing ratio (1st PDF component)  [kg/kg]
-      rr2,         & ! Mean rain water mixing ratio (2nd PDF component)  [kg/kg]
-      cloud_frac,  & ! Cloud fraction (overall)                          [-]
-      cloud_frac1, & ! Cloud fraction (1st PDF component)                [-]
-      mixt_frac      ! Mixture fraction                                  [-]
+      rrainm,      & ! Mean rain water mixing ratio (overall)           [kg/kg]
+      rr1,         & ! Mean rain water mixing ratio (1st PDF component) [kg/kg]
+      rr2,         & ! Mean rain water mixing ratio (2nd PDF component) [kg/kg]
+      Nrm,         & ! Mean rain drop concentration (overall)           [num/kg]
+      Nr1,         & ! Mean rain drop concentration (1st PDF component) [num/kg]
+      Nr2,         & ! Mean rain drop concentration (2nd PDF component) [num/kg]
+      cloud_frac,  & ! Cloud fraction (overall)                         [-] 
+      cloud_frac1, & ! Cloud fraction (1st PDF component)               [-]
+      mixt_frac      ! Mixture fraction                                 [-]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      precip_frac,   & ! Precipitation fraction (overall)                [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component)      [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component)      [-]
+      precip_frac,   & ! Precipitation fraction (overall)               [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
-      weighted_pfrac1    ! Product of mixt_frac and precip_frac_1        [-]
+      weighted_pfrac1    ! Product of mixt_frac and precip_frac_1       [-]
 
     real( kind = core_rknd ), parameter :: &
-      precip_frac_tol = cloud_frac_min  ! Minimum precip. frac.          [-]
+      precip_frac_tol = cloud_frac_min  ! Minimum precip. frac.         [-]
     
     integer :: &
       k   ! Loop index
@@ -1328,19 +1334,22 @@ module KK_microphys_module
           precip_frac(k) = cloud_frac(k)
        endif
 
-       if ( rrainm(k) > rr_tol .and. precip_frac(k) < precip_frac_tol ) then
+       if ( ( rrainm(k) > rr_tol .or. Nrm(k) > Nr_tol ) &
+            .and. precip_frac(k) < precip_frac_tol ) then
 
           ! In a scenario where we find rain at this grid level, but no cloud at
           ! or above this grid level, set precipitation fraction to a minimum
           ! threshold value.
           precip_frac(k) = precip_frac_tol
 
-       elseif ( rrainm(k) < rr_tol .and. precip_frac(k) < precip_frac_tol ) then
+       elseif ( ( rrainm(k) < rr_tol .and. Nrm(k) < Nr_tol ) &
+                .and. precip_frac(k) < precip_frac_tol ) then
 
-          ! Mean rain water mixing ratio is less than the tolerance amount.  It
-          ! is considered to have a value of 0.  There is not any rain at this
-          ! grid level.  There is also no cloud at or above this grid level, so
-          ! set precipitation fraction to 0.
+          ! Mean (overall) rain water mixing ratio and mean (overall) rain drop
+          ! concentration are both less than their respective tolerance amounts.
+          ! They are both considered to have values of 0.  There is not any rain
+          ! at this grid level.  There is also no cloud at or above this grid
+          ! level, so set precipitation fraction to 0.
           precip_frac(k) = zero
 
        endif
@@ -1395,7 +1404,7 @@ module KK_microphys_module
              ! component 1 between the levels) is applied to PDF component 2.
              precip_frac_1(k) = one
 
-          elseif ( rr1(k) > rr_tol &
+          elseif ( ( rr1(k) > rr_tol .or. Nr1(k) > Nr_tol ) &
                    .and. precip_frac_1(k) <= precip_frac_tol ) then
 
              ! In a scenario where we find rain in the 1st PDF component at this
@@ -1404,12 +1413,13 @@ module KK_microphys_module
              ! component) to a minimum threshold value.
              precip_frac_1(k) = precip_frac_tol
 
-          elseif ( rr1(k) <= rr_tol &
+          elseif ( ( rr1(k) <= rr_tol .and. Nr1(k) <= Nr_tol ) &
                    .and. precip_frac_1(k) <= precip_frac_tol ) then
 
-             ! Mean rain water mixing ratio in the 1st PDF component is less
-             ! than the tolerance amount.  It is considered to have a value of
-             ! 0.  There is not any rain in the 1st PDF component at this grid
+             ! Mean rain water mixing ratio and mean rain drop concentration in
+             ! the 1st PDF component are both less than their respective
+             ! tolerance amounts.  They are both considered to have values of 0.
+             ! There is not any rain in the 1st PDF component at this grid
              ! level.  There is also no cloud at or above this grid level, so
              ! set precipitation fraction (in the 1st PDF component) to 0.
              precip_frac_1(k) = zero
@@ -1456,15 +1466,18 @@ module KK_microphys_module
              = ( precip_frac(k) - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
                / mixt_frac(k)
 
-             ! Prevent numerical round off causing values of precip_frac_1
-             ! greater than 1 or less than 0.
+             ! Double check for errors in PDF component 1.
              if ( precip_frac_1(k) > one ) then
                 precip_frac_1(k) = one
-             elseif ( precip_frac_1(k) < zero ) then
+             elseif ( ( rr1(k) > rr_tol .or. Nr1(k) > Nr_tol ) &
+                      .and. precip_frac_1(k) <= precip_frac_tol ) then
+                precip_frac_1(k) = precip_frac_tol
+             elseif ( ( rr1(k) <= rr_tol .and. Nr1(k) <= Nr_tol ) &
+                      .and. precip_frac_1(k) <= precip_frac_tol ) then
                 precip_frac_1(k) = zero
              endif
 
-          elseif ( rr2(k) > rr_tol &
+          elseif ( ( rr2(k) > rr_tol .or. Nr2(k) > Nr_tol ) &
                    .and. precip_frac_2(k) <= precip_frac_tol ) then
 
              ! In a scenario where we find rain in the 2nd PDF component at this
@@ -1473,12 +1486,13 @@ module KK_microphys_module
              ! component) to a minimum threshold value.
              precip_frac_2(k) = precip_frac_tol
 
-          elseif ( rr2(k) <= rr_tol &
+          elseif ( ( rr2(k) <= rr_tol .and. Nr2(k) <= Nr_tol ) &
                    .and. precip_frac_2(k) <= precip_frac_tol ) then
 
-             ! Mean rain water mixing ratio in the 2nd PDF component is less
-             ! than the tolerance amount.  It is considered to have a value of
-             ! 0.  There is not any rain in the 2nd PDF component at this grid
+             ! Mean rain water mixing ratio and mean rain drop concentration in
+             ! the 2nd PDF component are both less than their respective
+             ! tolerance amounts.  They are both considered to have values of 0.
+             ! There is not any rain in the 2nd PDF component at this grid
              ! level.  There is also no cloud at or above this grid level, so
              ! set precipitation fraction (in the 2nd PDF component) to 0.
              precip_frac_2(k) = zero
@@ -1517,41 +1531,69 @@ module KK_microphys_module
        ! f_p(2) = ( f_p - a f_p(1) ) / (1-a).
        do k = 1, nz, 1
 
-          if ( rr1(k) <= rr_tol .and. rr2(k) <= rr_tol ) then
+          if ( ( rr1(k) <= rr_tol .and. Nr1(k) <= Nr_tol ) &
+               .and. ( rr2(k) <= rr_tol .and. Nr2(k) <= Nr_tol ) ) then
 
              ! There is no rain in each PDF component.  Precipitation fraction
              ! within each component is set to 0.
              precip_frac_1(k) = zero
              precip_frac_2(k) = zero
 
-          elseif ( rr1(k) > rr_tol .and. rr2(k) <= rr_tol ) then
+          elseif ( ( rr1(k) > rr_tol .or. Nr1(k) > Nr_tol ) &
+                   .and. ( rr2(k) <= rr_tol .and. Nr2(k) <= Nr_tol ) ) then
 
              ! All the rain is within the 1st PDF component.
              precip_frac_1(k) = precip_frac(k) / mixt_frac(k)
              precip_frac_2(k) = zero
 
-          elseif ( rr2(k) > rr_tol .and. rr1(k) <= rr_tol ) then
+          elseif ( ( rr2(k) > rr_tol .or. Nr2(k) > Nr_tol ) &
+                   .and. ( rr1(k) <= rr_tol .and. Nr1(k) <= Nr_tol ) ) then
 
              ! All the rain is within the 2nd PDF component.
              precip_frac_1(k) = zero
              precip_frac_2(k) = precip_frac(k) / ( one - mixt_frac(k) )
 
-          else ! rr1(k) > rr_tol and rr2(k) > rr_tol
+          else ! rr1(k) > rr_tol or Nr1(k) > Nr_tol
+               ! AND rr2(k) > rr_tol or Nr2(k) > Nr_tol
 
              ! Rain within both PDF components.
+
+             !!! Find precipitation fraction within PDF component 1.
              precip_frac_1(k) &
              = precip_frac(k) &
                / ( mixt_frac(k) + ( one - mixt_frac(k) ) * rr2(k)/rr1(k) )
 
+             ! Using the above method, it is possible for precip_frac_1 to be
+             ! greater than 1.  The value of precip_frac_1 is limited at 1.
+             if ( precip_frac_1(k) > one ) then
+                precip_frac_1(k) = one
+             endif
+
+             !!! Find precipitation fraction within PDF component 2.
              precip_frac_2(k) &
              = ( precip_frac(k) - mixt_frac(k) *  precip_frac_1(k) ) &
                / ( one - mixt_frac(k) )
+
+             ! Using the above method, it is possible for precip_frac_2 to be
+             ! greater than 1.  The value of precip_frac_2 is limited at 1.
+             if ( precip_frac_2(k) > one ) then
+
+                precip_frac_2(k) = one
+
+                ! Recalculate the precipitation fraction in PDF component 1.
+                precip_frac_1(k) &
+                = ( precip_frac(k) &
+                    - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
+                  / mixt_frac(k)
+
+             endif
 
           endif
 
 
           ! Special cases for PDF component 1.
-          if ( rr1(k) > rr_tol .and. precip_frac_1(k) <= precip_frac_tol ) then
+          if ( ( rr1(k) > rr_tol .or. Nr1(k) > Nr_tol ) &
+               .and. precip_frac_1(k) <= precip_frac_tol ) then
 
              ! In a scenario where we find rain in the 1st PDF component at this
              ! grid level, but no cloud in the 1st PDF component at or above
@@ -1559,12 +1601,13 @@ module KK_microphys_module
              ! component) to a minimum threshold value.
              precip_frac_1(k) = precip_frac_tol
 
-          elseif ( rr1(k) <= rr_tol &
+          elseif ( ( rr1(k) <= rr_tol .and. Nr1(k) <= Nr_tol ) &
                    .and. precip_frac_1(k) <= precip_frac_tol ) then
 
-             ! Mean rain water mixing ratio in the 1st PDF component is less
-             ! than the tolerance amount.  It is considered to have a value of
-             ! 0.  There is not any rain in the 1st PDF component at this grid
+             ! Mean rain water mixing ratio and mean rain drop concentration in
+             ! the 1st PDF component are both less than their respective
+             ! tolerance amounts.  They are both considered to have values of 0.
+             ! There is not any rain in the 1st PDF component at this grid
              ! level.  There is also no cloud at or above this grid level, so
              ! set precipitation fraction (in the 1st PDF component) to 0.
              precip_frac_1(k) = zero
@@ -1573,7 +1616,8 @@ module KK_microphys_module
 
 
           ! Special cases for PDF component 2.
-          if ( rr2(k) > rr_tol .and. precip_frac_2(k) <= precip_frac_tol ) then
+          if ( ( rr2(k) > rr_tol .or. Nr2(k) > Nr_tol ) &
+               .and. precip_frac_2(k) <= precip_frac_tol ) then
 
              ! In a scenario where we find rain in the 2nd PDF component at this
              ! grid level, but no cloud in the 2nd PDF component at or above
@@ -1581,12 +1625,13 @@ module KK_microphys_module
              ! component) to a minimum threshold value.
              precip_frac_2(k) = precip_frac_tol
 
-          elseif ( rr2(k) <= rr_tol &
+          elseif ( ( rr2(k) <= rr_tol .and. Nr2(k) <= Nr_tol ) &
                    .and. precip_frac_2(k) <= precip_frac_tol ) then
 
-             ! Mean rain water mixing ratio in the 2nd PDF component is less
-             ! than the tolerance amount.  It is considered to have a value of
-             ! 0.  There is not any rain in the 2nd PDF component at this grid
+             ! Mean rain water mixing ratio and mean rain drop concentration in
+             ! the 2nd PDF component are both less than their respective
+             ! tolerance amounts.  They are both considered to have values of 0.
+             ! There is not any rain in the 2nd PDF component at this grid
              ! level.  There is also no cloud at or above this grid level, so
              ! set precipitation fraction (in the 2nd PDF component) to 0.
              precip_frac_2(k) = zero
@@ -1598,18 +1643,6 @@ module KK_microphys_module
 
 
     endif ! Select component precipitation fraction method.
-
-
-    ! Check special cases
-    do k = 1, nz, 1
-       if ( precip_frac(k) == precip_frac_tol ) then
-          precip_frac_1(k) = precip_frac_tol
-          precip_frac_2(k) = precip_frac_tol
-       elseif ( precip_frac(k) == zero ) then
-          precip_frac_1(k) = zero
-          precip_frac_2(k) = zero
-       endif
-    enddo
 
 
     return
