@@ -374,7 +374,7 @@ module clubb_driver
       radf     ! Buoyancy production at CL top due to LW radiative cooling [m^2/s^3]
                ! This is currently set to zero for CLUBB standalone
 
-    logical :: l_restart_input
+    logical :: l_restart_input, corr_file_exist
 
     integer :: k ! Loop iterator
 
@@ -388,7 +388,11 @@ module clubb_driver
       corr_array_cloud, & ! Prescribed correlation matrix (in cloud)
       corr_array_below    ! Prescribed correlation matrix (below cloud)
 
-    character(len=128) :: corr_file_path_cloud, corr_file_path_below
+    character(len=128) :: &
+     corr_file_path_cloud,         &
+     corr_file_path_below,         &
+     corr_file_path_cloud_default, &
+     corr_file_path_below_default
 
     ! Definition of namelists
     namelist /model_setting/  & 
@@ -832,21 +836,44 @@ module clubb_driver
     allocate(corr_array_below(d_variables, d_variables))
 
     ! Initialize all variables for the diagnose correlations code
+
+    ! Path to the prescribed correlation arrays
     corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
 
-    iiLH_s_mellor = 1
-    iiLH_t_mellor = 2
-    iiLH_w = 3
-    iiLH_Nc = 4
-    iiLH_rrain = 5
-    iiLH_Nr = 6
+    ! Path to the default prescribed correlation arrays ( rico case )
+    corr_file_path_cloud_default = corr_input_path//"rico"//cloud_file_ext
+    corr_file_path_below_default = corr_input_path//"rico"//below_file_ext
 
-    call read_correlation_matrix( iunit, corr_file_path_cloud, d_variables, & ! In
-                                  corr_array_cloud ) ! In/Out
+    ! corr_file_exist is true if the *_corr_array_cloud.in file exists
+    ! Note: It is assumed that if the *_corr_array_cloud.in file exists
+    !       then *_corr_array_below.in also exists
+    inquire( file = corr_file_path_cloud, exist = corr_file_exist )
+
+      iiLH_s_mellor = 1
+      iiLH_t_mellor = 2
+      iiLH_w = 3
+      iiLH_Nc = 4
+      iiLH_rrain = 5
+      iiLH_Nr = 6
+
+    if ( corr_file_exist ) then
+
+      call read_correlation_matrix( iunit, corr_file_path_cloud, d_variables, & ! In
+                                    corr_array_cloud ) ! In/Out
  
-    call read_correlation_matrix( iunit, corr_file_path_below, d_variables, & ! In
-                                  corr_array_below ) ! In/Out
+      call read_correlation_matrix( iunit, corr_file_path_below, d_variables, & ! In
+                                    corr_array_below ) ! In/Out
+
+    else ! Read in default correlation matrices (from rico_corr_array_cloud)
+     
+      call read_correlation_matrix( iunit, corr_file_path_cloud_default, d_variables, & ! In
+                                    corr_array_cloud ) ! In/Out
+ 
+      call read_correlation_matrix( iunit, corr_file_path_below_default, d_variables, & ! In
+                                    corr_array_below ) ! In/Out
+
+    endif
 
     ! Initialize to 0.
     rvm_mc  = zero
