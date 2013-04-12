@@ -271,6 +271,130 @@ module diagnose_correlations_module
   end subroutine diagnose_LH_corr
 
 !-----------------------------------------------------------------------
+  subroutine diagnose_correlations( nz, d_variables, rcm, & ! intent(in)
+                                    corr_array_cloud, corr_array_below, &
+                                    corr_array ) ! intent(inout)
+    ! Description:
+    !   This subroutine diagnoses the correlation matrix in order to feed it
+    !   into SILHS microphysics.
+
+    ! References:
+    !   Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
+    !   (see CLUBB Trac ticket#514)
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use corr_matrix_module, only: &
+      iiLH_w ! Variable(s)
+
+    use constants_clubb, only: &
+      rc_tol
+
+    use model_flags, only: &
+        l_calc_w_corr ! Flag(s)
+
+    implicit none
+
+    intrinsic :: max, sqrt, transpose
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables, & ! number of diagnosed correlations
+      nz             ! number of vertical levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rcm
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+      corr_array_cloud, & ! Prescribed correlations in cloud
+      corr_array_below    ! Prescribed correlations below cloud
+
+    ! Input/Output variables
+    real( kind = core_rknd ), dimension(d_variables, d_variables, nz), intent(inout) :: &
+      corr_array
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
+      corr_array_cloud_swapped, &
+      corr_array_below_swapped
+
+    real( kind = core_rknd ), dimension(d_variables) :: &
+      swap_array
+
+    ! We actually don't need this right now
+    real( kind = core_rknd ), dimension(d_variables) :: &
+      xp2_on_xm2_array_cloud, & ! ratios of x_variance over x_mean^2 in cloud
+      xp2_on_xm2_array_below    ! ratios of x_variance over x_mean^2 below cloud
+
+    integer :: k ! loop iterator
+
+    !-------------------- Begin code --------------------
+
+    do k = 1, d_variables
+      xp2_on_xm2_array_cloud(k) = 0
+      xp2_on_xm2_array_below(k) = 0
+    end do
+
+
+    ! Swap the w-correlations to the first row for the prescaribed correlations
+    corr_array_cloud_swapped = corr_array_cloud
+    swap_array = corr_array_cloud_swapped (:,1)
+    corr_array_cloud_swapped(1:iiLH_w, 1) = corr_array_cloud_swapped(iiLH_w, iiLH_w:1:-1)
+    corr_array_cloud_swapped((iiLH_w+1):d_variables, 1) = corr_array_cloud_swapped( &
+                                                         (iiLH_w+1):d_variables, iiLH_w)
+    corr_array_cloud_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+    corr_array_cloud_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+
+    corr_array_below_swapped = corr_array_below
+    swap_array = corr_array_below_swapped (:,1)
+    corr_array_below_swapped(1:iiLH_w, 1) = corr_array_below_swapped(iiLH_w, iiLH_w:1:-1)
+    corr_array_below_swapped((iiLH_w+1):d_variables, 1) = corr_array_below_swapped( &
+                                                         (iiLH_w+1):d_variables, iiLH_w)
+    corr_array_below_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+    corr_array_below_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+
+    do k = 1, nz
+
+      ! Swap the w-correlations to the first row
+!      swap_array = corr_array(:, 1, k)
+!      corr_array(1:iiLH_w, 1, k) = corr_array(iiLH_w, iiLH_w:1:-1, k)
+!      corr_array((iiLH_w+1):d_variables, 1, k) = corr_array((iiLH_w+1):d_variables, iiLH_w, k)
+!      corr_array(iiLH_w, 1:iiLH_w, k) = swap_array(iiLH_w:1:-1)
+!      corr_array((iiLH_w+1):d_variables, iiLH_w, k) = swap_array((iiLH_w+1):d_variables)
+
+      ! diagnose correlations
+      if ( rcm(k) > rc_tol ) then
+
+        if ( .not. l_calc_w_corr ) then
+          corr_array(:, :, k) = corr_array_cloud_swapped(:,:)
+        endif
+
+        call diagnose_corr( d_variables, sqrt(xp2_on_xm2_array_cloud), &
+                            corr_array_cloud_swapped(:,:), corr_array(:,:,k) )
+      else
+
+        if ( .not. l_calc_w_corr ) then
+          corr_array(:, :, k) = corr_array_below_swapped(:,:)
+        endif
+
+        call diagnose_corr( d_variables, sqrt(xp2_on_xm2_array_below), &
+                            corr_array_below_swapped(:,:), corr_array(:,:,k) )
+      endif
+
+      ! Swap rows back
+      swap_array = corr_array(:, 1, k)
+      corr_array(1:iiLH_w, 1, k) = corr_array(iiLH_w, iiLH_w:1:-1, k)
+      corr_array((iiLH_w+1):d_variables, 1, k) = corr_array((iiLH_w+1):d_variables, iiLH_w, k)
+      corr_array(iiLH_w, 1:iiLH_w, k) = swap_array(iiLH_w:1:-1)
+      corr_array((iiLH_w+1):d_variables, iiLH_w, k) = swap_array((iiLH_w+1):d_variables)
+
+    end do
+
+  end subroutine diagnose_correlations
+
+!-----------------------------------------------------------------------
   subroutine diagnose_corr( n_variables, sqrt_xp2_on_xm2, corr_matrix_prescribed, & !intent(in)
                             corr_matrix_approx ) ! intent(inout)
 
@@ -368,6 +492,215 @@ module diagnose_correlations_module
     end do ! do i
     
   end subroutine diagnose_corr 
+
+  !-----------------------------------------------------------------------
+  subroutine approx_w_corr( nz, d_variables, pdf_params, & ! Intent(in)
+                            rrainm, Nrm, Ncm, &
+                            stdev_w, sigma_rr_1, &
+                            sigma_Nr_1, sigma_Nc_1, &
+                            corr_array) ! Intent(out)
+    ! Description:
+    ! Approximate the correlations of w with the hydrometeors.
+
+    ! References:
+    ! clubb:ticket:514
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    use pdf_parameter_module, only:  &
+        pdf_parameter  ! Type
+
+    use constants_clubb, only:  &
+        rr_tol,       & ! Constant(s)
+        Nr_tol,       &
+        Nc_tol,       &
+        w_tol,        & ! [m/s]
+        s_mellor_tol    ! [kg/kg]
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables, & ! Number of diagnosed correlations
+      nz             ! Number of model vertical grid levels
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params    ! PDF parameters                         [units vary]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+      rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
+      Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
+      Ncm,             & ! Mean cloud droplet conc., < N_c >               [num/kg]
+      stdev_w            ! Standard deviation of w                              [m/s]
+
+    real( kind = core_rknd ), intent(in) :: &
+      sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
+      sigma_Nr_1,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
+      sigma_rr_1       ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(d_variables, d_variables, nz), intent(out) :: &
+      corr_array
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(nz) :: &
+      corr_sw,       & ! Correlation between s & w (both components)         [-]
+      corr_wrr,      & ! Correlation between rr & w (both components)        [-]
+      corr_wNr,      & ! Correlation between Nr & w (both components)        [-]
+      corr_wNc         ! Correlation between Nc & w (both components)        [-]
+
+    real( kind = core_rknd ), dimension(nz) ::  &
+      wpsp_zt,  & ! Covariance of s and w on the zt-grid    [(m/s)(kg/kg)]
+      wprrp_zt, & ! Covariance of r_r and w on the zt-grid  [(m/s)(kg/kg)]
+      wpNrp_zt, & ! Covariance of N_r and w on the zt-grid  [(m/s)(#/kg)]
+      wpNcp_zt    ! Covariance of N_c and w on the zt-grid  [(m/s)(#/kg)]
+
+    real( kind = core_rknd ) :: &
+      s_mellor_m,      & ! Mean of s_mellor                              [kg/kg]
+      stdev_s_mellor     ! Standard deviation of s_mellor                [kg/kg]
+
+    integer :: k ! vertical loop iterator
+
+    ! ----- Begin Code -----
+
+    call approx_w_covar( nz, pdf_params, rrainm, Nrm, Ncm, & ! Intent(in)
+                         wpsp_zt, wprrp_zt, wpNrp_zt, wpNcp_zt ) ! Intent(out)
+
+    do k = 1, nz
+
+     s_mellor_m &
+        = calc_mean( pdf_params(k)%mixt_frac, pdf_params(k)%s1, pdf_params(k)%s2 )
+
+      stdev_s_mellor &
+        = sqrt( pdf_params(k)%mixt_frac &
+                * ( ( pdf_params(k)%s1 - s_mellor_m )**2 &
+                    + pdf_params(k)%stdev_s1**2 ) &
+              + ( 1 - pdf_params(k)%mixt_frac ) &
+                * ( ( pdf_params(k)%s2 - s_mellor_m )**2 &
+                    + pdf_params(k)%stdev_s2**2 ) )
+
+      corr_sw(k) = calc_w_corr( wpsp_zt(k), stdev_w(k), stdev_s_mellor, w_tol, s_mellor_tol )
+      corr_wrr(k) = calc_w_corr( wprrp_zt(k), stdev_w(k), sigma_rr_1, w_tol, rr_tol )
+      corr_wNr(k) = calc_w_corr( wpNrp_zt(k), stdev_w(k), sigma_Nr_1, w_tol, Nr_tol )
+      corr_wNc(k) = calc_w_corr( wpNcp_zt(k), stdev_w(k), sigma_Nc_1, w_tol, Nc_tol )
+
+    end do
+
+    call set_w_corr( nz, d_variables, & ! Intent(in)
+                         corr_sw, corr_wrr, corr_wNr, corr_wNc, &
+                         corr_array ) ! Intent(inout)
+
+  end subroutine approx_w_corr
+
+
+  !-----------------------------------------------------------------------
+  subroutine approx_w_covar( nz, pdf_params, rrainm, Nrm, Ncm, & ! Intent(in)
+                             wpsp_zt, wprrp_zt, wpNrp_zt, wpNcp_zt ) ! Intent(out)
+    ! Description:
+    ! Approximate the covariances of w with the hydrometeors using Eddy
+    ! diffusivity.
+
+    ! References:
+    ! clubb:ticket:514
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    use grid_class, only: &
+        gr,  & ! Variable(s)
+        zm2zt,  & ! Procedure(s)
+        zt2zm
+
+    use pdf_parameter_module, only:  &
+        pdf_parameter  ! Type
+
+    use parameters_tunable, only: &
+        c_Krrainm ! Variable(s)
+
+    use constants_clubb, only: &
+        one ! Constant(s)
+
+    use advance_windm_edsclrm_module, only: &
+        xpwp_fnc ! Procedure(s)
+
+    use variables_diagnostic_module, only: &
+        Kh_zm ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz          ! Number of model vertical grid levels
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params    ! PDF parameters                         [units vary]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+      rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
+      Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
+      Ncm                ! Mean cloud droplet conc., < N_c >               [num/kg]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(out) ::  &
+      wpsp_zt,  & ! Covariance of s and w on the zt-grid    [(m/s)(kg/kg)]
+      wprrp_zt, & ! Covariance of r_r and w on the zt-grid  [(m/s)(kg/kg)]
+      wpNrp_zt, & ! Covariance of N_r and w on the zt-grid  [(m/s)(#/kg)]
+      wpNcp_zt    ! Covariance of N_c and w on the zt-grid  [(m/s)(#/kg)]
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(nz) ::  &
+      wpsp_zm,  & ! Covariance of s and w on the zm-grid    [(m/s)(kg/kg)]
+      wprrp_zm, & ! Covariance of r_r and w on the zm-grid  [(m/s)(kg/kg)]
+      wpNrp_zm, & ! Covariance of N_r and w on the zm-grid  [(m/s)(#/kg)]
+      wpNcp_zm    ! Covariance of N_c and w on the zm-grid  [(m/s)(#/kg)]
+
+    integer :: k ! vertical loop iterator
+
+    ! ----- Begin Code -----
+
+    ! calculate the covariances of w with the hydrometeors
+    do k = 1, nz
+      wpsp_zm(k) = pdf_params(k)%mixt_frac &
+                   * ( one - pdf_params(k)%mixt_frac ) &
+                   * ( pdf_params(k)%s1 - pdf_params(k)%s2 ) &
+                   * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
+    enddo
+
+! same for wpNrp
+!    wprrp_zm(1:nz-1) &
+!    = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+!                rrainm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
+!                rrainm(2:nz) / max( precip_frac(2:nz), eps ), &
+!                gr%invrs_dzm(1:nz-1) )
+
+    wprrp_zm(1:nz-1) &
+    = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+                rrainm(1:nz-1), rrainm(2:nz), &
+                gr%invrs_dzm(1:nz-1) )
+
+    wpNrp_zm(1:nz-1) &
+    = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+                Nrm(1:nz-1), Nrm(2:nz), &
+                gr%invrs_dzm(1:nz-1) )
+
+    wpNcp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncm(1:nz-1), &
+                                 Ncm(2:nz), gr%invrs_dzm(1:nz-1) )
+
+    ! Boundary conditions; We are assuming constant flux at the top.
+    wprrp_zm(nz) = wprrp_zm(nz-1)
+    wpNrp_zm(nz) = wpNrp_zm(nz-1)
+    wpNcp_zm(nz) = wpNcp_zm(nz-1)
+
+    ! interpolate back to zt-grid
+    wpsp_zt  = zm2zt(wpsp_zm)
+    wprrp_zt = zm2zt(wprrp_zm)
+    wpNrp_zt = zm2zt(wpNrp_zm)
+    wpNcp_zt = zm2zt(wpNcp_zm)
+
+  end subroutine approx_w_covar
 
   !-----------------------------------------------------------------------
   function calc_w_corr( wpxp, stdev_w, stdev_x, w_tol, x_tol )
@@ -486,4 +819,163 @@ module diagnose_correlations_module
     return
   end function calc_mean
 
-end module diagnose_correlations_module 
+  !-----------------------------------------------------------------------
+  subroutine set_w_corr( nz, d_variables, & ! Intent(in)
+                         corr_sw, corr_wrr, corr_wNr, corr_wNc, &
+                         corr_array ) ! Intent(inout)
+    ! Description:
+    ! Set the first row of corr_array to the according w-correlations.
+
+    ! References:
+    ! clubb:ticket:514
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    use corr_matrix_module, only: &
+      iiLH_w,           & ! Variable(s)
+      iiLH_s_mellor,    &
+      iiLH_rrain,       &
+      iiLH_Nr,          &
+      iiLH_Nc
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,          & ! Number of model vertical grid levels
+      d_variables    ! Number of Variables to be diagnosed
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      corr_sw,       & ! Correlation between s & w (both components)         [-]
+      corr_wrr,      & ! Correlation between rr & w (both components)        [-]
+      corr_wNr,      & ! Correlation between Nr & w (both components)        [-]
+      corr_wNc         ! Correlation between Nc & w (both components)        [-]
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(d_variables, d_variables, nz), intent(inout) :: &
+      corr_array
+
+    ! ----- Begin Code -----
+
+      corr_array(iiLH_w, iiLH_s_mellor, :) = corr_sw
+      corr_array(iiLH_w, iiLH_rrain, :) = corr_wrr
+      corr_array(iiLH_w, iiLH_Nr, :) = corr_wNr
+      corr_array(iiLH_w, iiLH_Nc, :) = corr_wNc
+
+  end subroutine set_w_corr
+
+  !=============================================================================
+  subroutine corr_stat_output( d_variables, nz, corr_array )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd   ! Variable(s)
+
+    use stats_type, only: &
+        stat_update_var  ! Procedure(s)
+
+    use stats_variables, only : &
+        icorr_srr_1,    & ! Variable(s)
+        icorr_srr_2,    &
+        icorr_sNr_1,    &
+        icorr_sNr_2,    &
+        icorr_sNc_1,    &
+        icorr_sNc_2,    &
+        icorr_rrNr_1,   &
+        icorr_rrNr_2,   &
+        icorr_sw,       &
+        icorr_wrr,      &
+        icorr_wNr,      &
+        icorr_wNc,      &
+        zt
+
+    use corr_matrix_module, only: &
+        iiLH_w,                  & ! Variable(s)
+        iiLH_s_mellor,           &
+        iiLH_t_mellor,           &
+        iiLH_Nc,                 &
+        iiLH_rrain,              &
+        iiLH_Nr
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+    nz, &
+    d_variables
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables, nz), intent(in) :: &
+      corr_array
+
+
+    !!! Output the correlations
+
+    ! Statistics
+    if( iiLH_s_mellor > iiLH_w ) then
+      call stat_update_var(icorr_sw, corr_array( iiLH_s_mellor, iiLH_w, : ), zt )
+    else
+      call stat_update_var(icorr_sw, corr_array( iiLH_w, iiLH_s_mellor, : ), zt )
+    end if
+
+    if( iiLH_s_mellor > iiLH_rrain ) then
+      call stat_update_var(icorr_srr_1, corr_array( iiLH_s_mellor, iiLH_rrain, : ), zt )
+      call stat_update_var(icorr_srr_2, corr_array( iiLH_s_mellor, iiLH_rrain, : ), zt )
+    else
+      call stat_update_var(icorr_srr_1, corr_array( iiLH_rrain, iiLH_s_mellor, : ), zt )
+      call stat_update_var(icorr_srr_2, corr_array( iiLH_rrain, iiLH_s_mellor, : ), zt )
+    end if
+
+    if( iiLH_s_mellor > iiLH_Nr ) then
+      call stat_update_var(icorr_sNr_1, corr_array( iiLH_s_mellor, iiLH_Nr, : ), zt )
+      call stat_update_var(icorr_sNr_2, corr_array( iiLH_s_mellor, iiLH_Nr, : ), zt )
+    else
+      call stat_update_var(icorr_sNr_1, corr_array( iiLH_Nr, iiLH_s_mellor, : ), zt )
+      call stat_update_var(icorr_sNr_2, corr_array( iiLH_Nr, iiLH_s_mellor, : ), zt )
+    end if
+
+    if( iiLH_s_mellor > iiLH_Nc ) then
+      call stat_update_var(icorr_sNc_1, corr_array( iiLH_s_mellor, iiLH_Nc, : ), zt )
+      call stat_update_var(icorr_sNc_2, corr_array( iiLH_s_mellor, iiLH_Nc, : ), zt )
+    else
+      call stat_update_var(icorr_sNc_1, corr_array( iiLH_Nc, iiLH_s_mellor, : ), zt )
+      call stat_update_var(icorr_sNc_2, corr_array( iiLH_Nc, iiLH_s_mellor, : ), zt )
+    end if
+
+    if( iiLH_rrain > iiLH_Nr ) then
+      call stat_update_var(icorr_rrNr_1, corr_array( iiLH_rrain, iiLH_Nr, : ), zt )
+      call stat_update_var(icorr_rrNr_2, corr_array( iiLH_rrain, iiLH_Nr, : ), zt )
+    else
+      call stat_update_var(icorr_rrNr_1, corr_array( iiLH_Nr, iiLH_rrain, : ), zt )
+      call stat_update_var(icorr_rrNr_2, corr_array( iiLH_Nr, iiLH_rrain, : ), zt )
+    end if
+
+    if( iiLH_w > iiLH_rrain ) then
+      call stat_update_var(icorr_wrr, corr_array( iiLH_w, iiLH_rrain, : ), zt )
+    else
+      call stat_update_var(icorr_wrr, corr_array( iiLH_rrain, iiLH_w, : ), zt )
+    end if
+
+    if( iiLH_w > iiLH_Nr ) then
+      call stat_update_var(icorr_wNr, corr_array( iiLH_w, iiLH_Nr, : ), zt )
+    else
+      call stat_update_var(icorr_wNr, corr_array( iiLH_Nr, iiLH_w, : ), zt )
+    end if
+
+    if( iiLH_w > iiLH_Nc ) then
+      call stat_update_var(icorr_wNc, corr_array( iiLH_w, iiLH_Nc, : ), zt )
+    else
+      call stat_update_var(icorr_wNc, corr_array( iiLH_Nc, iiLH_w, : ), zt )
+    end if
+
+    return
+
+  end subroutine corr_stat_output
+
+end module diagnose_correlations_module
+

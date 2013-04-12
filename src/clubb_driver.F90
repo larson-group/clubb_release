@@ -90,7 +90,7 @@ module clubb_driver
       advance_clubb_core
 
     use constants_clubb, only: fstdout, fstderr, & ! Variable(s)
-      rt_tol, thl_tol, w_tol, w_tol_sqd, zero
+      rt_tol, thl_tol, w_tol, w_tol_sqd, zero, rc_tol
 
     use error_code, only: &
       clubb_var_out_of_bounds,  & ! Variable(s)
@@ -231,6 +231,19 @@ module clubb_driver
       rtm_min, &
       rtm_nudge_max_altitude
 
+    use diagnose_correlations_module, only: &
+        diagnose_correlations, & ! Procedure(s)
+        corr_stat_output
+
+    use corr_matrix_module, only: &
+        read_correlation_matrix, & ! Procedure(s)
+        iiLH_w,                  & ! Variable(s)
+        iiLH_s_mellor,           &
+        iiLH_t_mellor,           &
+        iiLH_Nc,                 &
+        iiLH_rrain,              &
+        iiLH_Nr
+
     implicit none
 
 #ifdef _OPENMP
@@ -247,15 +260,19 @@ module clubb_driver
       l_host_applies_sfc_fluxes = .false., &
       l_implemented = .false.
 
+    character(len=*), parameter :: &
+      corr_input_path = "../input/case_setups/", & ! Path to correlation files
+      cloud_file_ext  = "_corr_array_cloud.in", & ! File extensions for correlation files
+      below_file_ext  = "_corr_array_below.in"
+
+    integer, parameter :: d_variables = 6 ! Number of correlations to be diagnosed
+
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file
 
     ! Input Variables
     logical, intent(in) ::  & 
       l_stdout   ! Whether to print output per timestep
-
-    real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
-      params  ! Model parameters, C1, nu2, etc.
 
     ! Subroutine Arguments (Model Setting)
     character(len=*), intent(in) ::  & 
@@ -358,6 +375,20 @@ module clubb_driver
                ! This is currently set to zero for CLUBB standalone
 
     logical :: l_restart_input
+
+    integer :: k ! Loop iterator
+
+    real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
+      params  ! Model parameters, C1, nu2, etc.
+
+    real( kind = core_rknd ), dimension(:, :, :), allocatable :: &
+      corr_array ! Correlation matrix
+
+    real( kind = core_rknd ), dimension(:, :), allocatable :: &
+      corr_array_cloud, & ! Prescribed correlation matrix (in cloud)
+      corr_array_below    ! Prescribed correlation matrix (below cloud)
+
+    character(len=128) :: corr_file_path_cloud, corr_file_path_below
 
     ! Definition of namelists
     namelist /model_setting/  & 
@@ -795,6 +826,28 @@ module clubb_driver
     ! Allocate rvm_mc, rcm_mc, thlm_mc
     allocate( rvm_mc(gr%nz), rcm_mc(gr%nz), thlm_mc(gr%nz) )
 
+    ! Allocate the correlation arrays
+    allocate(corr_array(d_variables, d_variables, gr%nz))
+    allocate(corr_array_cloud(d_variables, d_variables))
+    allocate(corr_array_below(d_variables, d_variables))
+
+    ! Initialize all variables for the diagnose correlations code
+    corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
+    corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
+
+    iiLH_s_mellor = 1
+    iiLH_t_mellor = 2
+    iiLH_w = 3
+    iiLH_Nc = 4
+    iiLH_rrain = 5
+    iiLH_Nr = 6
+
+    call read_correlation_matrix( iunit, corr_file_path_cloud, d_variables, & ! In
+                                  corr_array_cloud ) ! In/Out
+ 
+    call read_correlation_matrix( iunit, corr_file_path_below, d_variables, & ! In
+                                  corr_array_below ) ! In/Out
+
     ! Initialize to 0.
     rvm_mc  = zero
     rcm_mc  = zero
@@ -1091,6 +1144,27 @@ module clubb_driver
              rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
+
+      ! Determine correlations
+      if ( l_diagnose_correlations ) then
+ 
+        call diagnose_correlations( gr%nz, d_variables, rcm, & ! intent(in)
+                                   corr_array_cloud, corr_array_below, &
+                                   corr_array ) ! intent(inout)
+
+      else ! Prescribed correlations
+
+        do k = 1, gr%nz
+          if ( rcm(k) > rc_tol ) then
+            corr_array(:,:,k) = corr_array_cloud
+          else
+            corr_array(:,:,k) = corr_array_below
+          endif
+        end do
+
+      end if
+
+      call corr_stat_output( d_variables, gr%nz, corr_array )
 
       ! Advance a microphysics scheme
       call advance_clubb_microphys &

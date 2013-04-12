@@ -2840,104 +2840,104 @@ module KK_microphys_module
        endif
 
        ! Correlation (in-precip) between s and r_r in PDF component 1.
-       if ( icorr_srr_1 > 0 ) then
-          call stat_update_var_pt( icorr_srr_1, level, corr_srr_1, zt )
-       endif
+       !if ( icorr_srr_1 > 0 ) then
+       !   call stat_update_var_pt( icorr_srr_1, level, corr_srr_1, zt )
+       !endif
 
        ! Correlation (in-precip) between s and r_r in PDF component 2.
-       if ( icorr_srr_2 > 0 ) then
-          call stat_update_var_pt( icorr_srr_2, level, corr_srr_2, zt )
-       endif
+       !if ( icorr_srr_2 > 0 ) then
+       !   call stat_update_var_pt( icorr_srr_2, level, corr_srr_2, zt )
+       !endif
 
        ! Correlation (in-precip) between s and N_r in PDF component 1.
-       if ( icorr_sNr_1 > 0 ) then
-          call stat_update_var_pt( icorr_sNr_1, level, corr_sNr_1, zt )
-       endif
+       !if ( icorr_sNr_1 > 0 ) then
+       !   call stat_update_var_pt( icorr_sNr_1, level, corr_sNr_1, zt )
+       !endif
 
        ! Correlation (in-precip) between s and N_r in PDF component 2.
-       if ( icorr_sNr_2 > 0 ) then
-          call stat_update_var_pt( icorr_sNr_2, level, corr_sNr_2, zt )
-       endif
+       !if ( icorr_sNr_2 > 0 ) then
+       !   call stat_update_var_pt( icorr_sNr_2, level, corr_sNr_2, zt )
+       !endif
 
        ! Correlation between s and N_c in PDF component 1.
-       if ( icorr_sNc_1 > 0 ) then
-          call stat_update_var_pt( icorr_sNc_1, level, corr_sNc_1, zt )
-       endif
+       !if ( icorr_sNc_1 > 0 ) then
+       !   call stat_update_var_pt( icorr_sNc_1, level, corr_sNc_1, zt )
+       !endif
 
        ! Correlation between s and N_c in PDF component 2.
-       if ( icorr_sNc_2 > 0 ) then
-          call stat_update_var_pt( icorr_sNc_2, level, corr_sNc_2, zt )
-       endif
+       !if ( icorr_sNc_2 > 0 ) then
+       !   call stat_update_var_pt( icorr_sNc_2, level, corr_sNc_2, zt )
+       !endif
 
        ! Correlation (in-precip) between r_r and N_r in PDF component 1.
-       if ( icorr_rrNr_1 > 0 ) then
-          call stat_update_var_pt( icorr_rrNr_1, level, corr_rrNr_1, zt )
-       endif
+       !if ( icorr_rrNr_1 > 0 ) then
+       !   call stat_update_var_pt( icorr_rrNr_1, level, corr_rrNr_1, zt )
+       !endif
 
        ! Correlation (in-precip) between r_r and N_r in PDF component 2.
-       if ( icorr_rrNr_2 > 0 ) then
-          call stat_update_var_pt( icorr_rrNr_2, level, corr_rrNr_2, zt )
-       endif
+       !if ( icorr_rrNr_2 > 0 ) then
+       !   call stat_update_var_pt( icorr_rrNr_2, level, corr_rrNr_2, zt )
+       !endif
 
        ! Correlation (in-precip) between s and ln r_r in PDF component 1.
-       if ( icorr_srr_1_n > 0 ) then
-          call stat_update_var_pt( icorr_srr_1_n, level, corr_srr_1_n, zt )
-       endif
+       !if ( icorr_srr_1_n > 0 ) then
+       !   call stat_update_var_pt( icorr_srr_1_n, level, corr_srr_1_n, zt )
+       !endif
 
        ! Correlation (in-precip) between s and ln r_r in PDF component 2.
-       if ( icorr_srr_2_n > 0 ) then
-          call stat_update_var_pt( icorr_srr_2_n, level, corr_srr_2_n, zt )
-       endif
+       !if ( icorr_srr_2_n > 0 ) then
+       !   call stat_update_var_pt( icorr_srr_2_n, level, corr_srr_2_n, zt )
+       !endif
 
        ! Correlation (in-precip) between s and ln N_r in PDF component 1.
-       if ( icorr_sNr_1_n > 0 ) then
-          call stat_update_var_pt( icorr_sNr_1_n, level, corr_sNr_1_n, zt )
-       endif
+       !if ( icorr_sNr_1_n > 0 ) then
+       !   call stat_update_var_pt( icorr_sNr_1_n, level, corr_sNr_1_n, zt )
+       !endif
 
        ! Correlation (in-precip) between s and ln N_r in PDF component 2.
-       if ( icorr_sNr_2_n > 0 ) then
-          call stat_update_var_pt( icorr_sNr_2_n, level, corr_sNr_2_n, zt )
-       endif
+       !if ( icorr_sNr_2_n > 0 ) then
+       !   call stat_update_var_pt( icorr_sNr_2_n, level, corr_sNr_2_n, zt )
+       !endif
 
        ! Correlation between s and ln N_c in PDF component 1.
-       if ( icorr_sNc_1_n > 0 ) then
-          call stat_update_var_pt( icorr_sNc_1_n, level, corr_sNc_1_n, zt )
-       endif
+       !if ( icorr_sNc_1_n > 0 ) then
+       !   call stat_update_var_pt( icorr_sNc_1_n, level, corr_sNc_1_n, zt )
+       !endif
 
        ! Correlation between s and ln N_c in PDF component 2.
-       if ( icorr_sNc_2_n > 0 ) then
-          call stat_update_var_pt( icorr_sNc_2_n, level, corr_sNc_2_n, zt )
-       endif
+       !if ( icorr_sNc_2_n > 0 ) then
+       !   call stat_update_var_pt( icorr_sNc_2_n, level, corr_sNc_2_n, zt )
+       !endif
 
        ! Correlation (in-precip) between ln r_r and ln N_r in PDF component 1.
-       if ( icorr_rrNr_1_n > 0 ) then
-          call stat_update_var_pt( icorr_rrNr_1_n, level, corr_rrNr_1_n, zt )
-       endif
+       !if ( icorr_rrNr_1_n > 0 ) then
+       !   call stat_update_var_pt( icorr_rrNr_1_n, level, corr_rrNr_1_n, zt )
+       !endif
 
        ! Correlation (in-precip) between ln r_r and ln N_r in PDF component 2.
-       if ( icorr_rrNr_2_n > 0 ) then
-          call stat_update_var_pt( icorr_rrNr_2_n, level, corr_rrNr_2_n, zt )
-       endif
+       !if ( icorr_rrNr_2_n > 0 ) then
+       !   call stat_update_var_pt( icorr_rrNr_2_n, level, corr_rrNr_2_n, zt )
+       !endif
 
        ! Correlation between s and w.
-       if ( icorr_sw > 0 ) then
-          call stat_update_var_pt( icorr_sw, level, corr_sw, zt )
-       endif
+       !if ( icorr_sw > 0 ) then
+       !   call stat_update_var_pt( icorr_sw, level, corr_sw, zt )
+       !endif
 
        ! Correlation between w and r_r.
-       if ( icorr_wrr > 0 ) then
-          call stat_update_var_pt( icorr_wrr, level, corr_wrr, zt )
-       endif
+       !if ( icorr_wrr > 0 ) then
+       !   call stat_update_var_pt( icorr_wrr, level, corr_wrr, zt )
+       !endif
 
        ! Correlation between w and N_r.
-       if ( icorr_wNr > 0 ) then
-          call stat_update_var_pt( icorr_wNr, level, corr_wNr, zt )
-       endif
+       !if ( icorr_wNr > 0 ) then
+       !   call stat_update_var_pt( icorr_wNr, level, corr_wNr, zt )
+       !endif
 
        ! Correlation between w and N_c.
-       if ( icorr_wNc > 0 ) then
-          call stat_update_var_pt( icorr_wNc, level, corr_wNc, zt )
-       endif
+       !if ( icorr_wNc > 0 ) then
+       !   call stat_update_var_pt( icorr_wNc, level, corr_wNc, zt )
+       !endif
 
     endif
 
