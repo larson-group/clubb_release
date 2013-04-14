@@ -570,8 +570,8 @@ module diagnose_correlations_module
 
     do k = 1, nz
 
-     s_mellor_m &
-        = calc_mean( pdf_params(k)%mixt_frac, pdf_params(k)%s1, pdf_params(k)%s2 )
+      s_mellor_m &
+      = calc_mean( pdf_params(k)%mixt_frac, pdf_params(k)%s1, pdf_params(k)%s2 )
 
       stdev_s_mellor &
         = sqrt( pdf_params(k)%mixt_frac &
@@ -823,6 +823,7 @@ module diagnose_correlations_module
   subroutine set_w_corr( nz, d_variables, & ! Intent(in)
                          corr_sw, corr_wrr, corr_wNr, corr_wNc, &
                          corr_array ) ! Intent(inout)
+
     ! Description:
     ! Set the first row of corr_array to the according w-correlations.
 
@@ -881,101 +882,153 @@ module diagnose_correlations_module
         stat_update_var  ! Procedure(s)
 
     use stats_variables, only : &
-        icorr_srr_1,    & ! Variable(s)
-        icorr_srr_2,    &
-        icorr_sNr_1,    &
-        icorr_sNr_2,    &
-        icorr_sNc_1,    &
-        icorr_sNc_2,    &
-        icorr_rrNr_1,   &
-        icorr_rrNr_2,   &
-        icorr_sw,       &
-        icorr_wrr,      &
-        icorr_wNr,      &
-        icorr_wNc,      &
-        zt
+        icorr_srr_1,  & ! Variable(s)
+        icorr_srr_2,  &
+        icorr_sNr_1,  &
+        icorr_sNr_2,  &
+        icorr_sNc_1,  &
+        icorr_sNc_2,  &
+        icorr_rrNr_1, &
+        icorr_rrNr_2, &
+        icorr_sw,     &
+        icorr_wrr,    &
+        icorr_wNr,    &
+        icorr_wNc,    &
+        zt,           &
+        l_stats_samp
 
     use corr_matrix_module, only: &
-        iiLH_w,                  & ! Variable(s)
-        iiLH_s_mellor,           &
-        iiLH_t_mellor,           &
-        iiLH_Nc,                 &
-        iiLH_rrain,              &
+        iiLH_w,        & ! Variable(s)
+        iiLH_s_mellor, &
+        iiLH_t_mellor, &
+        iiLH_Nc,       &
+        iiLH_rrain,    &
         iiLH_Nr
 
     implicit none
 
     ! Input Variables
     integer, intent(in) :: &
-    nz, &
-    d_variables
+      nz,          & ! Number of vertical levels
+      d_variables    ! Number of variables in correlation array
 
-    real( kind = core_rknd ), dimension(d_variables, d_variables, nz), intent(in) :: &
-      corr_array
+    real( kind = core_rknd ), dimension( d_variables, d_variables, nz ), &
+    intent(in) :: &
+      corr_array    ! Correlation array
 
 
     !!! Output the correlations
 
     ! Statistics
-    if( iiLH_s_mellor > iiLH_w ) then
-      call stat_update_var(icorr_sw, corr_array( iiLH_s_mellor, iiLH_w, : ), zt )
-    else
-      call stat_update_var(icorr_sw, corr_array( iiLH_w, iiLH_s_mellor, : ), zt )
-    end if
+    if ( l_stats_samp ) then
 
-    if( iiLH_s_mellor > iiLH_rrain ) then
-      call stat_update_var(icorr_srr_1, corr_array( iiLH_s_mellor, iiLH_rrain, : ), zt )
-      call stat_update_var(icorr_srr_2, corr_array( iiLH_s_mellor, iiLH_rrain, : ), zt )
-    else
-      call stat_update_var(icorr_srr_1, corr_array( iiLH_rrain, iiLH_s_mellor, : ), zt )
-      call stat_update_var(icorr_srr_2, corr_array( iiLH_rrain, iiLH_s_mellor, : ), zt )
-    end if
+       ! Correlation between w and s.
+       if ( iiLH_s_mellor > iiLH_w ) then
+          call stat_update_var( icorr_sw, &
+                                corr_array( iiLH_s_mellor, iiLH_w, : ), zt )
+       else
+          call stat_update_var( icorr_sw, &
+                                corr_array( iiLH_w, iiLH_s_mellor, : ), zt )
+       endif
 
-    if( iiLH_s_mellor > iiLH_Nr ) then
-      call stat_update_var(icorr_sNr_1, corr_array( iiLH_s_mellor, iiLH_Nr, : ), zt )
-      call stat_update_var(icorr_sNr_2, corr_array( iiLH_s_mellor, iiLH_Nr, : ), zt )
-    else
-      call stat_update_var(icorr_sNr_1, corr_array( iiLH_Nr, iiLH_s_mellor, : ), zt )
-      call stat_update_var(icorr_sNr_2, corr_array( iiLH_Nr, iiLH_s_mellor, : ), zt )
-    end if
+       if ( iiLH_s_mellor > iiLH_rrain ) then
+          ! Correlation (in-precip) between s and r_r in PDF component 1.
+          call stat_update_var( icorr_srr_1, &
+                                corr_array( iiLH_s_mellor, iiLH_rrain, : ), zt )
+          ! Correlation (in-precip) between s and r_r in PDF component 2.
+          call stat_update_var( icorr_srr_2, &
+                                corr_array( iiLH_s_mellor, iiLH_rrain, : ), zt )
+       else
+          ! Correlation (in-precip) between s and r_r in PDF component 1.
+          call stat_update_var( icorr_srr_1, &
+                                corr_array( iiLH_rrain, iiLH_s_mellor, : ), zt )
+          ! Correlation (in-precip) between s and r_r in PDF component 2.
+          call stat_update_var( icorr_srr_2, &
+                                corr_array( iiLH_rrain, iiLH_s_mellor, : ), zt )
+       endif
 
-    if( iiLH_s_mellor > iiLH_Nc ) then
-      call stat_update_var(icorr_sNc_1, corr_array( iiLH_s_mellor, iiLH_Nc, : ), zt )
-      call stat_update_var(icorr_sNc_2, corr_array( iiLH_s_mellor, iiLH_Nc, : ), zt )
-    else
-      call stat_update_var(icorr_sNc_1, corr_array( iiLH_Nc, iiLH_s_mellor, : ), zt )
-      call stat_update_var(icorr_sNc_2, corr_array( iiLH_Nc, iiLH_s_mellor, : ), zt )
-    end if
+       if ( iiLH_s_mellor > iiLH_Nr ) then
+          ! Correlation (in-precip) between s and N_r in PDF component 1.
+          call stat_update_var( icorr_sNr_1, &
+                                corr_array( iiLH_s_mellor, iiLH_Nr, : ), zt )
+          ! Correlation (in-precip) between s and N_r in PDF component 2.
+          call stat_update_var( icorr_sNr_2, &
+                                corr_array( iiLH_s_mellor, iiLH_Nr, : ), zt )
+       else
+          ! Correlation (in-precip) between s and N_r in PDF component 1.
+          call stat_update_var( icorr_sNr_1, &
+                                corr_array( iiLH_Nr, iiLH_s_mellor, : ), zt )
+          ! Correlation (in-precip) between s and N_r in PDF component 2.
+          call stat_update_var( icorr_sNr_2, &
+                                corr_array( iiLH_Nr, iiLH_s_mellor, : ), zt )
+       endif
 
-    if( iiLH_rrain > iiLH_Nr ) then
-      call stat_update_var(icorr_rrNr_1, corr_array( iiLH_rrain, iiLH_Nr, : ), zt )
-      call stat_update_var(icorr_rrNr_2, corr_array( iiLH_rrain, iiLH_Nr, : ), zt )
-    else
-      call stat_update_var(icorr_rrNr_1, corr_array( iiLH_Nr, iiLH_rrain, : ), zt )
-      call stat_update_var(icorr_rrNr_2, corr_array( iiLH_Nr, iiLH_rrain, : ), zt )
-    end if
+       if ( iiLH_s_mellor > iiLH_Nc ) then
+          ! Correlation between s and N_c in PDF component 1.
+          call stat_update_var( icorr_sNc_1, &
+                                corr_array( iiLH_s_mellor, iiLH_Nc, : ), zt )
+          ! Correlation between s and N_c in PDF component 2.
+          call stat_update_var( icorr_sNc_2, &
+                                corr_array( iiLH_s_mellor, iiLH_Nc, : ), zt )
+       else
+          ! Correlation between s and N_c in PDF component 1.
+          call stat_update_var( icorr_sNc_1, &
+                                corr_array( iiLH_Nc, iiLH_s_mellor, : ), zt )
+          ! Correlation between s and N_c in PDF component 2.
+          call stat_update_var( icorr_sNc_2, &
+                                corr_array( iiLH_Nc, iiLH_s_mellor, : ), zt )
+       endif
 
-    if( iiLH_w > iiLH_rrain ) then
-      call stat_update_var(icorr_wrr, corr_array( iiLH_w, iiLH_rrain, : ), zt )
-    else
-      call stat_update_var(icorr_wrr, corr_array( iiLH_rrain, iiLH_w, : ), zt )
-    end if
+       if ( iiLH_rrain > iiLH_Nr ) then
+          ! Correlation (in-precip) between r_r and N_r in PDF component 1.
+          call stat_update_var( icorr_rrNr_1, &
+                                corr_array( iiLH_rrain, iiLH_Nr, : ), zt )
+          ! Correlation (in-precip) between r_r and N_r in PDF component 2.
+          call stat_update_var( icorr_rrNr_2, &
+                                corr_array( iiLH_rrain, iiLH_Nr, : ), zt )
+       else
+          ! Correlation (in-precip) between r_r and N_r in PDF component 1.
+          call stat_update_var( icorr_rrNr_1, &
+                                corr_array( iiLH_Nr, iiLH_rrain, : ), zt )
+          ! Correlation (in-precip) between r_r and N_r in PDF component 2.
+          call stat_update_var( icorr_rrNr_2, &
+                                corr_array( iiLH_Nr, iiLH_rrain, : ), zt )
+       endif
 
-    if( iiLH_w > iiLH_Nr ) then
-      call stat_update_var(icorr_wNr, corr_array( iiLH_w, iiLH_Nr, : ), zt )
-    else
-      call stat_update_var(icorr_wNr, corr_array( iiLH_Nr, iiLH_w, : ), zt )
-    end if
+       ! Correlation between w and r_r.
+       if ( iiLH_w > iiLH_rrain ) then
+          call stat_update_var( icorr_wrr, &
+                                corr_array( iiLH_w, iiLH_rrain, : ), zt )
+       else
+          call stat_update_var( icorr_wrr, &
+                                corr_array( iiLH_rrain, iiLH_w, : ), zt )
+       endif
 
-    if( iiLH_w > iiLH_Nc ) then
-      call stat_update_var(icorr_wNc, corr_array( iiLH_w, iiLH_Nc, : ), zt )
-    else
-      call stat_update_var(icorr_wNc, corr_array( iiLH_Nc, iiLH_w, : ), zt )
-    end if
+       ! Correlation between w and N_r.
+       if ( iiLH_w > iiLH_Nr ) then
+          call stat_update_var( icorr_wNr, &
+                                corr_array( iiLH_w, iiLH_Nr, : ), zt )
+       else
+          call stat_update_var( icorr_wNr, &
+                                corr_array( iiLH_Nr, iiLH_w, : ), zt )
+       endif
+
+       ! Correlation between w and N_c.
+       if ( iiLH_w > iiLH_Nc ) then
+          call stat_update_var( icorr_wNc, &
+                                corr_array( iiLH_w, iiLH_Nc, : ), zt )
+       else
+          call stat_update_var( icorr_wNc, &
+                                corr_array( iiLH_Nc, iiLH_w, : ), zt )
+       endif
+
+    endif ! l_stats_samp
+
 
     return
 
   end subroutine corr_stat_output
 
-end module diagnose_correlations_module
+!===============================================================================
 
+end module diagnose_correlations_module
