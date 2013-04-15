@@ -695,8 +695,7 @@ module KK_microphys_module
                                KK_accr_coef, KK_mvr_coef )
 
        !!! KK rain water mixing ratio microphysics tendencies.
-      call KK_in_precip_values( rrainm(k), rr1(k), rr2(k), &
-                                Nrm(k), Nr1(k), Nr2(k), rcm(k), &
+      call KK_in_precip_values( rr1(k), rr2(k), Nr1(k), Nr2(k), rcm(k), &
                                 precip_frac_1(k), precip_frac_2(k), &
                                 mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                 sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
@@ -705,6 +704,7 @@ module KK_microphys_module
                                 corr_rrNr_2 )
 
       call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), Ncm(k), &
+                              rr1(k), rr2(k), Nr1(k), Nr2(k), &
                               mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                               sigma_rr_1, sigma_rr_2, &
                               sigma_Nr_1, sigma_Nr_2, &
@@ -1648,8 +1648,7 @@ module KK_microphys_module
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine KK_in_precip_values( rrainm, rr1, rr2, &
-                                  Nrm, Nr1, Nr2, rcm, &
+  subroutine KK_in_precip_values( rr1, rr2, Nr1, Nr2, rcm, &
                                   precip_frac_1, precip_frac_2, &
                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                   sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
@@ -1689,10 +1688,8 @@ module KK_microphys_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      rrainm,        & ! Mean rain water mixing ratio, < r_r >         [kg/kg]
       rr1,           & ! Mean rain water mixing ratio (1st PDF comp.)  [kg/kg]
       rr2,           & ! Mean rain water mixing ratio (2nd PDF comp.)  [kg/kg]
-      Nrm,           & ! Mean rain drop concentration, < N_r >         [num/kg]
       Nr1,           & ! Mean rain drop concentration (1st PDF comp.)  [num/kg]
       Nr2,           & ! Mean rain drop concentration (2nd PDF comp.)  [num/kg]
       rcm,           & ! Mean cloud water mixing ratio, < r_c >        [kg/kg]
@@ -1721,9 +1718,9 @@ module KK_microphys_module
     if ( rr1 > rr_tol ) then
        mu_rr_1 = rr1 / precip_frac_1
     else
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.
+       ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.
        mu_rr_1 = zero
     endif
 
@@ -1731,9 +1728,9 @@ module KK_microphys_module
     if ( rr2 > rr_tol ) then
        mu_rr_2 = rr2 / precip_frac_2
     else
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.
+       ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.
        mu_rr_2 = zero
     endif
 
@@ -1741,9 +1738,9 @@ module KK_microphys_module
     if ( Nr1 > Nr_tol ) then
        mu_Nr_1 = Nr1 / precip_frac_1
     else
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.
+       ! Mean in-precip rain drop concentration in PDF component 1 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.
        mu_Nr_1 = zero
     endif
 
@@ -1751,9 +1748,9 @@ module KK_microphys_module
     if ( Nr2 > Nr_tol ) then
        mu_Nr_2 = Nr2 / precip_frac_2
     else
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.
+       ! Mean in-precip rain drop concentration in PDF component 2 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.
        mu_Nr_2 = zero
     endif
 
@@ -1766,13 +1763,6 @@ module KK_microphys_module
     ! to compute these values directly.  It also allows us to use separate
     ! inside-cloud and outside-cloud parameter values.
     ! Brian Griffin; February 3, 2007.
-    !
-    ! Set the value of the parameters based on whether the altitude is above or
-    ! below cloud base.  Determine whether there is cloud at any given vertical
-    ! level.  In order for a vertical level to have cloud, the amount of cloud
-    ! water (rcm) must be greater than or equal to the tolerance level (rc_tol).
-    ! If there is cloud at a given vertical level, then the ###_cloud value is
-    ! used.  Otherwise, the ###_below value is used.
 
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 1.
@@ -1783,10 +1773,11 @@ module KK_microphys_module
           sigma_rr_1 = sqrt( rrp2_on_rrm2_below ) * mu_rr_1
        endif
     else
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The standard deviation is simply 0 since rain
-       ! water mixing ratio does not vary at this grid level.
+       ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.  The standard
+       ! deviation is simply 0 since rain water mixing ratio does not vary in
+       ! this component at this grid level.
        sigma_rr_1 = zero
     endif
 
@@ -1799,10 +1790,11 @@ module KK_microphys_module
           sigma_rr_2 = sqrt( rrp2_on_rrm2_below ) * mu_rr_2
        endif
     else
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The standard deviation is simply 0 since rain
-       ! water mixing ratio does not vary at this grid level.
+       ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.  The standard
+       ! deviation is simply 0 since rain water mixing ratio does not vary in
+       ! this component at this grid level.
        sigma_rr_2 = zero
     endif
 
@@ -1815,10 +1807,11 @@ module KK_microphys_module
           sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_1
        endif
     else
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The standard deviation is simply 0 since rain drop
-       ! concentration does not vary at this grid level.
+       ! Mean in-precip rain drop concentration in PDF component 1 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.  The standard
+       ! deviation is simply 0 since rain drop concentration does not vary in
+       ! this component at this grid level.
        sigma_Nr_1 = zero
     endif
 
@@ -1831,96 +1824,114 @@ module KK_microphys_module
           sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_2
        endif
     else
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The standard deviation is simply 0 since rain drop
-       ! concentration does not vary at this grid level.
+       ! Mean in-precip rain drop concentration in PDF component 2 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.  The standard
+       ! deviation is simply 0 since rain drop concentration does not vary in
+       ! this component at this grid level.
        sigma_Nr_2 = zero
     endif
 
-    ! Correlation (in-precip) between s and r_r.
-    if ( rrainm > rr_tol ) then
-
-       ! Correlation (in-precip) between s and r_r in PDF component 1.
+    ! Correlation (in-precip) between s and r_r in PDF component 1.
+    if ( rr1 > rr_tol ) then
        if ( rcm > rc_tol ) then
           corr_srr_1 = corr_srr_NL_cloud
        else
           corr_srr_1 = corr_srr_NL_below
        endif
+    else
+       ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.  The
+       ! correlations involving rain water mixing ratio in the 1st PDF component
+       ! are 0 since rain water mixing ratio does not vary in this component at
+       ! this grid level.
+       corr_srr_1 = zero
+    endif
 
-       ! Correlation (in-precip) between s and r_r in PDF component 2.
+    ! Correlation (in-precip) between s and r_r in PDF component 2.
+    if ( rr2 > rr_tol ) then
        if ( rcm > rc_tol ) then
           corr_srr_2 = corr_srr_NL_cloud
        else
           corr_srr_2 = corr_srr_NL_below
        endif
-
     else
-
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The correlations involving rain water mixing ratio
-       ! are 0 since rain water mixing ratio does not vary at this grid level.
-       corr_srr_1 = zero
+       ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.  The
+       ! correlations involving rain water mixing ratio in the 2nd PDF component
+       ! are 0 since rain water mixing ratio does not vary in this component at
+       ! this grid level.
        corr_srr_2 = zero
-
     endif
 
-    ! Correlation (in-precip) between s and N_r.
-    if ( Nrm > Nr_tol ) then
-
-       ! Correlation (in-precip) between s and N_r in PDF component 1.
+    ! Correlation (in-precip) between s and N_r in PDF component 1.
+    if ( Nr1 > Nr_tol ) then
        if ( rcm > rc_tol ) then
           corr_sNr_1 = corr_sNr_NL_cloud
        else
           corr_sNr_1 = corr_sNr_NL_below
        endif
+    else
+       ! Mean in-precip rain drop concentration in PDF component 1 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.  The
+       ! correlations involving rain drop concentration in the 1st PDF component
+       ! are 0 since rain drop concentration does not vary in this component at
+       ! this grid level.
+       corr_sNr_1 = zero
+    endif
 
-       ! Correlation (in-precip) between s and N_r in PDF component 2.
+    ! Correlation (in-precip) between s and N_r in PDF component 2.
+    if ( Nr2 > Nr_tol ) then
        if ( rcm > rc_tol ) then
           corr_sNr_2 = corr_sNr_NL_cloud
        else
           corr_sNr_2 = corr_sNr_NL_below
        endif
-
     else
-
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The correlations involving rain drop concentration
-       ! are 0 since rain water mixing ratio does not vary at this grid level.
-       corr_sNr_1 = zero
+       ! Mean in-precip rain drop concentration in PDF component 2 is less than
+       ! the tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.  The
+       ! correlations involving rain drop concentration in the 2nd PDF component
+       ! are 0 since rain drop concentration does not vary in this component at
+       ! this grid level.
        corr_sNr_2 = zero
-
     endif
 
-    ! Correlation (in-precip) between r_r and N_r.
-    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
-
-       ! Correlation (in-precip) between r_r and N_r in PDF component 1.
+    ! Correlation (in-precip) between r_r and N_r in PDF component 1.
+    if ( rr1 > rr_tol .and. Nr1 > Nr_tol ) then
        if ( rcm > rc_tol ) then
           corr_rrNr_1 = corr_rrNr_LL_cloud
        else
           corr_rrNr_1 = corr_rrNr_LL_below
        endif
+    else
+       ! Mean in-precip rain water mixing ratio in PDF component 1 and (or) mean
+       ! in-precip rain drop concentration in PDF component 1 are (is) less than
+       ! their (its) respective tolerance amount(s), and are (is) considered to
+       ! have a value of 0.  There is not any rain in the 1st PDF component at
+       ! this grid level.  The correlation is 0 since rain does not vary in this
+       ! component at this grid level.
+       corr_rrNr_1 = zero
+    endif
 
-       ! Correlation (in-precip) between r_r and N_r in PDF component 2.
+    ! Correlation (in-precip) between r_r and N_r in PDF component 2.
+    if ( rr2 > rr_tol .and. Nr2 > Nr_tol ) then
        if ( rcm > rc_tol ) then
           corr_rrNr_2 = corr_rrNr_LL_cloud
        else
           corr_rrNr_2 = corr_rrNr_LL_below
        endif
-
     else
-
-       ! Mean in-precip rain water mixing ratio and (or) mean in-precip rain
-       ! drop concentration are (is) less than their (its) respective tolerance
-       ! amount(s), and are (is) considered to have a value of 0.  There is not
-       ! any rain at this grid level.  The correlation is 0 since rain does not
-       ! vary at this grid level.
-       corr_rrNr_1 = zero
+       ! Mean in-precip rain water mixing ratio in PDF component 2 and (or) mean
+       ! in-precip rain drop concentration in PDF component 2 are (is) less than
+       ! their (its) respective tolerance amount(s), and are (is) considered to
+       ! have a value of 0.  There is not any rain in the 2nd PDF component at
+       ! this grid level.  The correlation is 0 since rain does not vary in this
+       ! component at this grid level.
        corr_rrNr_2 = zero
-
     endif
 
 
@@ -1930,6 +1941,7 @@ module KK_microphys_module
 
   !=============================================================================
   subroutine KK_upscaled_setup( rcm, rrainm, Nrm, Ncm, &
+                                rr1, rr2, Nr1, Nr2, &
                                 mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                 sigma_rr_1, sigma_rr_2, &
                                 sigma_Nr_1, sigma_Nr_2, &
@@ -2023,6 +2035,10 @@ module KK_microphys_module
       rrainm,     & ! Mean rain water mixing ratio                       [kg/kg]
       Nrm,        & ! Mean rain drop concentration                      [num/kg]
       Ncm,        & ! Mean cloud droplet concentration                  [num/kg]
+      rr1,        & ! Mean rain water mixing ratio (1st PDF component)   [kg/kg]
+      rr2,        & ! Mean rain water mixing ratio (2nd PDF component)   [kg/kg]
+      Nr1,        & ! Mean rain drop concentration (1st PDF component)  [num/kg]
+      Nr2,        & ! Mean rain drop concentration (2nd PDF component)  [num/kg]
       mu_rr_1,    & ! Mean of rr (1st PDF component) in-precip (ip)      [kg/kg]
       mu_rr_2,    & ! Mean of rr (2nd PDF component) ip                  [kg/kg]
       mu_Nr_1,    & ! Mean of Nr (1st PDF component) ip                 [num/kg]
@@ -2172,33 +2188,36 @@ module KK_microphys_module
        sigma_Nc_2 = zero
     endif
 
-    ! Correlation between s and N_c.
+    ! Correlation between s and N_c in PDF component 1.
     if ( Ncm > Nc_tol ) then
-
-       ! Correlation between s and N_c in PDF component 1.
        if ( rcm > rc_tol ) then
           corr_sNc_1 = corr_sNc_NL_cloud
        else
           corr_sNc_1 = corr_sNc_NL_below
        endif
-
-       ! Correlation between s and N_c in PDF component 2.
-       if ( rcm > rc_tol ) then
-          corr_sNc_2 = corr_sNc_NL_cloud
-       else
-          corr_sNc_2 = corr_sNc_NL_below
-       endif
-
     else
-
        ! Mean cloud droplet concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There is not any cloud at this
        ! grid level.  The correlations involving cloud droplet concentration
        ! are 0 since cloud droplet concentration does not vary at this grid
        ! level.
        corr_sNc_1 = zero
-       corr_sNc_2 = zero
+    endif
 
+    ! Correlation between s and N_c in PDF component 2.
+    if ( Ncm > Nc_tol ) then
+       if ( rcm > rc_tol ) then
+          corr_sNc_2 = corr_sNc_NL_cloud
+       else
+          corr_sNc_2 = corr_sNc_NL_below
+       endif
+    else
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There is not any cloud at this
+       ! grid level.  The correlations involving cloud droplet concentration
+       ! are 0 since cloud droplet concentration does not vary at this grid
+       ! level.
+       corr_sNc_2 = zero
     endif
 
     if ( l_calc_w_corr ) then
@@ -2296,67 +2315,55 @@ module KK_microphys_module
     !!! lognormal distribution, given the mean and variance of those variables.
 
     ! Normalized mean of in-precip rain water mixing ratio in PDF component 1.
-    if ( mu_rr_1 > rr_tol ) then
+    if ( rr1 > rr_tol ) then
        mu_rr_1_n = mean_L2N( mu_rr_1, sigma_rr_1**2 )
     else
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The value of mu_rr_n should be -inf.  It will be
-       ! set to -huge for purposes of assigning it a value.  This value will not
-       ! be used again in the CLUBB code.
-       !mu_rr_1_n = -huge( mu_rr_1_n )
-       ! Some compilers have issues outputting to stats files (in single
-       ! precision) when the default CLUBB kind is in double precision.
-       ! Set to -huge for single precision.
-       mu_rr_1_n = -huge( 0.0 )
+       ! Mean rain water mixing ratio in PDF component 1 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.  The mean
+       ! in-precip rain water mixing ratio (1st PDF component) is also 0.  The
+       ! value of mu_rr_1_n should be -inf.  It will be set to -huge for
+       ! purposes of assigning it a value.
+       mu_rr_1_n = -huge( mu_rr_1_n )
     endif
 
     ! Normalized mean of in-precip rain water mixing ratio in PDF component 2.
-    if ( mu_rr_2 > rr_tol ) then
+    if ( rr2 > rr_tol ) then
        mu_rr_2_n = mean_L2N( mu_rr_2, sigma_rr_2**2 )
     else
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The value of mu_rr_n should be -inf.  It will be
-       ! set to -huge for purposes of assigning it a value.  This value will not
-       ! be used again in the CLUBB code.
-       !mu_rr_2_n = -huge( mu_rr_2_n )
-       ! Some compilers have issues outputting to stats files (in single
-       ! precision) when the default CLUBB kind is in double precision.
-       ! Set to -huge for single precision.
-       mu_rr_2_n = -huge( 0.0 )
+       ! Mean rain water mixing ratio in PDF component 2 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.  The mean
+       ! in-precip rain water mixing ratio (2nd PDF component) is also 0.  The
+       ! value of mu_rr_2_n should be -inf.  It will be set to -huge for
+       ! purposes of assigning it a value.
+       mu_rr_2_n = -huge( mu_rr_2_n )
     endif
 
     ! Normalized mean of in-precip rain drop concentration in PDF component 1.
-    if ( mu_Nr_1 > Nr_tol ) then
+    if ( Nr1 > Nr_tol ) then
        mu_Nr_1_n = mean_L2N( mu_Nr_1, sigma_Nr_1**2 )
     else
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The value of mu_Nr_n should be -inf.  It will be
-       ! set to -huge for purposes of assigning it a value.  This value will not
-       ! be used again in the CLUBB code.
-       !mu_Nr_1_n = -huge( mu_Nr_1_n )
-       ! Some compilers have issues outputting to stats files (in single
-       ! precision) when the default CLUBB kind is in double precision.
-       ! Set to -huge for single precision.
-       mu_Nr_1_n = -huge( 0.0 )
+       ! Mean rain drop concentration in PDF component 1 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.  The mean
+       ! in-precip rain drop concentration (1st PDF component) is also 0.  The
+       ! value of mu_Nr_1_n should be -inf.  It will be set to -huge for
+       ! purposes of assigning it a value.
+       mu_Nr_1_n = -huge( mu_Nr_1_n )
     endif
 
     ! Normalized mean of in-precip rain drop concentration in PDF component 2.
-    if ( mu_Nr_2 > Nr_tol ) then
+    if ( Nr2 > Nr_tol ) then
        mu_Nr_2_n = mean_L2N( mu_Nr_2, sigma_Nr_2**2 )
     else
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The value of mu_Nr_n should be -inf.  It will be
-       ! set to -huge for purposes of assigning it a value.  This value will not
-       ! be used again in the CLUBB code.
-       !mu_Nr_2_n = -huge( mu_Nr_2_n )
-       ! Some compilers have issues outputting to stats files (in single
-       ! precision) when the default CLUBB kind is in double precision.
-       ! Set to -huge for single precision.
-       mu_Nr_2_n = -huge( 0.0 )
+       ! Mean rain drop concentration in PDF component 2 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.  The mean
+       ! in-precip rain drop concentration (2nd PDF component) is also 0.  The
+       ! value of mu_Nr_2_n should be -inf.  It will be set to -huge for
+       ! purposes of assigning it a value.
+       mu_Nr_2_n = -huge( mu_Nr_2_n )
     endif
 
     ! Normalized mean of cloud droplet concentration in PDF component 1.
@@ -2366,13 +2373,8 @@ module KK_microphys_module
        ! Mean cloud droplet concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There isn't any cloud at this
        ! grid level.  The value of mu_Nc_n should be -inf.  It will be set to
-       ! -huge for purposes of assigning it a value.  This value will not be
-       ! used again in the CLUBB code.
-       !mu_Nc_1_n = -huge( mu_Nc_1_n )
-       ! Some compilers have issues outputting to stats files (in single
-       ! precision) when the default CLUBB kind is in double precision.
-       ! Set to -huge for single precision.
-       mu_Nc_1_n = -huge( 0.0 )
+       ! -huge for purposes of assigning it a value.
+       mu_Nc_1_n = -huge( mu_Nc_1_n )
     endif
 
     ! Normalized mean of cloud droplet concentration in PDF component 2.
@@ -2382,13 +2384,8 @@ module KK_microphys_module
        ! Mean cloud droplet concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There isn't any cloud at this
        ! grid level.  The value of mu_Nc_n should be -inf.  It will be set to
-       ! -huge for purposes of assigning it a value.  This value will not be
-       ! used again in the CLUBB code.
-       !mu_Nc_2_n = -huge( mu_Nc_2_n )
-       ! Some compilers have issues outputting to stats files (in single
-       ! precision) when the default CLUBB kind is in double precision.
-       ! Set to -huge for single precision.
-       mu_Nc_2_n = -huge( 0.0 )
+       ! -huge for purposes of assigning it a value.
+       mu_Nc_2_n = -huge( mu_Nc_2_n )
     endif
 
     !!! Calculate the normalized standard deviation of variables that have
@@ -2397,49 +2394,57 @@ module KK_microphys_module
 
     ! Normalized standard deviation of in-precip rain water mixing ratio
     ! in PDF component 1.
-    if ( mu_rr_1 > rr_tol ) then
+    if ( rr1 > rr_tol ) then
        sigma_rr_1_n = stdev_L2N( mu_rr_1, sigma_rr_1**2 )
     else
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The standard deviation is simply 0 since rain
-       ! water mixing ratio does not vary at this grid level.
+       ! Mean rain water mixing ratio in PDF component 1 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.  The mean
+       ! in-precip rain water mixing ratio (1st PDF component) is also 0.  The
+       ! standard deviation is simply 0 since rain water mixing ratio does not
+       ! vary in this component at this grid level.
        sigma_rr_1_n = zero
     endif
 
     ! Normalized standard deviation of in-precip rain water mixing ratio
     ! in PDF component 2.
-    if ( mu_rr_2 > rr_tol ) then
+    if ( rr2 > rr_tol ) then
        sigma_rr_2_n = stdev_L2N( mu_rr_2, sigma_rr_2**2 )
     else
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The standard deviation is simply 0 since rain
-       ! water mixing ratio does not vary at this grid level.
+       ! Mean rain water mixing ratio in PDF component 2 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.  The mean
+       ! in-precip rain water mixing ratio (2nd PDF component) is also 0.  The
+       ! standard deviation is simply 0 since rain water mixing ratio does not
+       ! vary in this component at this grid level.
        sigma_rr_2_n = zero
     endif
 
     ! Normalized standard deviation of in-precip rain drop concentration
     ! in PDF component 1.
-    if ( mu_Nr_1 > Nr_tol ) then
+    if ( Nr1 > Nr_tol ) then
        sigma_Nr_1_n = stdev_L2N( mu_Nr_1, sigma_Nr_1**2 )
     else
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The standard deviation is simply 0 since rain drop
-       ! concentration does not vary at this grid level.
+       ! Mean rain drop concentration in PDF component 1 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.  The mean
+       ! in-precip rain drop concentration (1st PDF component) is also 0.  The
+       ! standard deviation is simply 0 since rain water mixing ratio does not
+       ! vary in this component at this grid level.
        sigma_Nr_1_n = zero
     endif
 
     ! Normalized standard deviation of in-precip rain drop concentration
     ! in PDF component 2.
-    if ( mu_Nr_2 > Nr_tol ) then
+    if ( Nr2 > Nr_tol ) then
        sigma_Nr_2_n = stdev_L2N( mu_Nr_2, sigma_Nr_2**2 )
     else
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The standard deviation is simply 0 since rain drop
-       ! concentration does not vary at this grid level.
+       ! Mean rain drop concentration in PDF component 2 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.  The mean
+       ! in-precip rain drop concentration (2nd PDF component) is also 0.  The
+       ! standard deviation is simply 0 since rain water mixing ratio does not
+       ! vary in this component at this grid level.
        sigma_Nr_2_n = zero
     endif
 
@@ -2475,49 +2480,61 @@ module KK_microphys_module
 
     ! Normalize the correlation (in-precip) between s and r_r
     ! in PDF component 1.
-    if ( mu_rr_1 > rr_tol ) then
+    if ( rr1 > rr_tol ) then
        corr_srr_1_n = corr_NL2NN( corr_srr_1, sigma_rr_1_n )
     else
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The correlations involving rain water mixing ratio
-       ! are 0 since rain water mixing ratio does not vary at this grid level.
+       ! Mean rain water mixing ratio in PDF component 1 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.  The mean
+       ! in-precip rain water mixing ratio (1st PDF component) is also 0.  The
+       ! correlations involving in-precip rain water mixing ratio (1st PDF
+       ! component) are 0 since in-precip rain water mixing ratio does not vary
+       ! in this component at this grid level.
        corr_srr_1_n = zero
     endif
 
     ! Normalize the correlation (in-precip) between s and r_r
     ! in PDF component 2.
-    if ( mu_rr_2 > rr_tol ) then
+    if ( rr2 > rr_tol ) then
        corr_srr_2_n = corr_NL2NN( corr_srr_2, sigma_rr_2_n )
     else
-       ! Mean in-precip rain water mixing ratio is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The correlations involving rain water mixing ratio
-       ! are 0 since rain water mixing ratio does not vary at this grid level.
+       ! Mean rain water mixing ratio in PDF component 2 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.  The mean
+       ! in-precip rain water mixing ratio (2nd PDF component) is also 0.  The
+       ! correlations involving in-precip rain water mixing ratio (2nd PDF
+       ! component) are 0 since in-precip rain water mixing ratio does not vary
+       ! in this component at this grid level.
        corr_srr_2_n = zero
     endif
 
     ! Normalize the correlation (in-precip) between s and N_r
     ! in PDF component 1.
-    if ( mu_Nr_1 > Nr_tol ) then
+    if ( Nr1 > Nr_tol ) then
        corr_sNr_1_n = corr_NL2NN( corr_sNr_1, sigma_Nr_1_n )
     else
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The correlations involving rain drop concentration
-       ! are 0 since rain drop concentration does not vary at this grid level.
+       ! Mean rain drop concentration in PDF component 1 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 1st PDF component at this grid level.  The mean
+       ! in-precip rain drop concentration (1st PDF component) is also 0.  The
+       ! correlations involving in-precip rain drop concentration (1st PDF
+       ! component) are 0 since in-precip rain drop concentration does not vary
+       ! in this component at this grid level.
        corr_sNr_1_n = zero
     endif
 
     ! Normalize the correlation (in-precip) between s and N_r
     ! in PDF component 2.
-    if ( mu_Nr_2 > Nr_tol ) then
+    if ( Nr2 > Nr_tol ) then
        corr_sNr_2_n = corr_NL2NN( corr_sNr_2, sigma_Nr_2_n )
     else
-       ! Mean in-precip rain drop concentration is less than the tolerance
-       ! amount.  It is considered to have a value of 0.  There is not any rain
-       ! at this grid level.  The correlations involving rain drop concentration
-       ! are 0 since rain drop concentration does not vary at this grid level.
+       ! Mean rain drop concentration in PDF component 2 is less than the
+       ! tolerance amount.  It is considered to have a value of 0.  There is
+       ! not any rain in the 2nd PDF component at this grid level.  The mean
+       ! in-precip rain drop concentration (2nd PDF component) is also 0.  The
+       ! correlations involving in-precip rain drop concentration (2nd PDF
+       ! component) are 0 since in-precip rain drop concentration does not vary
+       ! in this component at this grid level.
        corr_sNr_2_n = zero
     endif
 
@@ -2549,27 +2566,33 @@ module KK_microphys_module
 
     ! Normalize the correlation (in-precip) between r_r and N_r
     ! in PDF component 1.
-    if ( mu_rr_1 > rr_tol .and. mu_Nr_1 > Nr_tol ) then
+    if ( rr1 > rr_tol .and. Nr1 > Nr_tol ) then
        corr_rrNr_1_n = corr_LL2NN( corr_rrNr_1, sigma_rr_1_n, sigma_Nr_1_n )
     else
-       ! Mean in-precip rain water mixing ratio and (or) mean in-precip rain
-       ! drop concentration are (is) less than their (its) respective tolerance
-       ! amount(s), and are (is) considered to have a value of 0.  There is not
-       ! any rain at this grid level.  The correlation is 0 since rain does not
-       ! vary at this grid level.
+       ! Mean rain water mixing ratio in PDF component 1 and (or) mean rain drop
+       ! concentration in PDF component 1 are (is) less than their (its)
+       ! respective tolerance amount(s), and are (is) considered to have a value
+       ! of 0.  There is not any rain at this grid level.  The mean in-precip
+       ! rain water mixing ratio (1st PDF component) and (or) mean in-precip
+       ! rain drop concentration (1st PDF component) are also considered to have
+       ! a value of 0.  The correlation is 0 since rain does not vary in this
+       ! component at this grid level.
        corr_rrNr_1_n = zero
     endif
 
     ! Normalize the correlation (in-precip) between r_r and N_r
     ! in PDF component 2.
-    if ( mu_rr_2 > rr_tol .and. mu_Nr_2 > Nr_tol ) then
+    if ( rr2 > rr_tol .and. Nr2 > Nr_tol ) then
        corr_rrNr_2_n = corr_LL2NN( corr_rrNr_2, sigma_rr_2_n, sigma_Nr_2_n )
     else
-       ! Mean in-precip rain water mixing ratio and (or) mean in-precip rain
-       ! drop concentration are (is) less than their (its) respective tolerance
-       ! amount(s), and are (is) considered to have a value of 0.  There is not
-       ! any rain at this grid level.  The correlation is 0 since rain does not
-       ! vary at this grid level.
+       ! Mean rain water mixing ratio in PDF component 2 and (or) mean rain drop
+       ! concentration in PDF component 2 are (is) less than their (its)
+       ! respective tolerance amount(s), and are (is) considered to have a value
+       ! of 0.  There is not any rain at this grid level.  The mean in-precip
+       ! rain water mixing ratio (2nd PDF component) and (or) mean in-precip
+       ! rain drop concentration (2nd PDF component) are also considered to have
+       ! a value of 0.  The correlation is 0 since rain does not vary in this
+       ! component at this grid level.
        corr_rrNr_2_n = zero
     endif
 
@@ -2727,32 +2750,98 @@ module KK_microphys_module
 
        ! Mean (in-precip) of ln r_r in PDF component 1.
        if ( imu_rr_1_n > 0 ) then
-          call stat_update_var_pt( imu_rr_1_n, level, mu_rr_1_n, zt )
+          if ( mu_rr_1_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_rr_1_n, level, mu_rr_1_n, zt )
+          else
+             ! When rr1 is 0 (or below tolerance value), mu_rr_1_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_rr_1_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
        endif
 
        ! Mean (in-precip) of ln r_r in PDF component 2.
        if ( imu_rr_2_n > 0 ) then
-          call stat_update_var_pt( imu_rr_2_n, level, mu_rr_2_n, zt )
+          if ( mu_rr_2_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_rr_2_n, level, mu_rr_2_n, zt )
+          else
+             ! When rr2 is 0 (or below tolerance value), mu_rr_2_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_rr_2_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
        endif
 
        ! Mean (in-precip) of ln N_r in PDF component 1.
        if ( imu_Nr_1_n > 0 ) then
-          call stat_update_var_pt( imu_Nr_1_n, level, mu_Nr_1_n, zt )
+          if ( mu_Nr_1_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Nr_1_n, level, mu_Nr_1_n, zt )
+          else
+             ! When Nr1 is 0 (or below tolerance value), mu_Nr_1_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Nr_1_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
        endif
 
        ! Mean (in-precip) of ln N_r in PDF component 2.
        if ( imu_Nr_2_n > 0 ) then
-          call stat_update_var_pt( imu_Nr_2_n, level, mu_Nr_2_n, zt )
+          if ( mu_Nr_2_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Nr_2_n, level, mu_Nr_2_n, zt )
+          else
+             ! When Nr2 is 0 (or below tolerance value), mu_Nr_2_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Nr_2_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
        endif
 
        ! Mean of ln N_c in PDF component 1.
        if ( imu_Nc_1_n > 0 ) then
-          call stat_update_var_pt( imu_Nc_1_n, level, mu_Nc_1_n, zt )
+          if ( mu_Nc_1_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Nc_1_n, level, mu_Nc_1_n, zt )
+          else
+             ! When Ncm is 0 (or below tolerance value), mu_Nc_1_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Nc_1_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
        endif
 
        ! Mean of ln N_c in PDF component 2.
        if ( imu_Nc_2_n > 0 ) then
-          call stat_update_var_pt( imu_Nc_2_n, level, mu_Nc_2_n, zt )
+          if ( mu_Nc_2_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Nc_2_n, level, mu_Nc_2_n, zt )
+          else
+             ! When Ncm is 0 (or below tolerance value), mu_Nc_2_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Nc_2_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
        endif
 
        ! Standard deviation of in-precip rain water mixing ratio

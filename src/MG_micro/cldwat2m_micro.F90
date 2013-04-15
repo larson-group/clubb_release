@@ -1734,6 +1734,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                          real( nc(i,k), kind = core_rknd ), &
                                          zero, zero, zero, zero, &
                                          zero, zero, zero, zero, &
+                                         zero, zero, zero, zero, &
                                          zero, zero, zero, &
                                          zero, zero, pdf_params(k), &
                                          dum_inout1, dum_inout2, dum_inout3, & ! Intent(inout)
@@ -2200,9 +2201,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                                  kind = core_rknd ), &
                                            real( qric(i,k) * cldmax(i,k), &
                                                  kind = core_rknd ), &
-                                           real( qric(i,k) * cldmax(i,k), &
-                                                 kind = core_rknd ), &
-                                           zero, zero, zero, &
+                                           zero, zero, &
                                            real( qc(i,k), kind = core_rknd ), &
                                            real( cldmax(i,k), &
                                                  kind = core_rknd ), &
@@ -2215,6 +2214,11 @@ subroutine mmicro_pcond ( sub_column,           &
                                            dum_out10 )
 
                  call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                         real( qric(i,k) * cldmax(i,k), &
+                                               kind = core_rknd ), &
+                                         zero, zero, &
+                                         real( qric(i,k) * cldmax(i,k), &
+                                               kind = core_rknd ), &
                                          real( qric(i,k) * cldmax(i,k), &
                                                kind = core_rknd ), &
                                          zero, zero, &
