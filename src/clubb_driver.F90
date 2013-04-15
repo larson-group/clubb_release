@@ -265,7 +265,7 @@ module clubb_driver
       cloud_file_ext  = "_corr_array_cloud.in", & ! File extensions for correlation files
       below_file_ext  = "_corr_array_below.in"
 
-    integer, parameter :: d_variables = 6 ! Number of correlations to be diagnosed
+    integer, parameter :: d_variables = 10 ! Number of correlations to be diagnosed
 
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file
