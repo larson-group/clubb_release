@@ -1729,6 +1729,8 @@ subroutine mmicro_pcond ( sub_column,           &
 
               else
 
+                 mixt_frac = pdf_params(k)%mixt_frac
+
                  call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                          zero, zero, &
                                          real( nc(i,k), kind = core_rknd ), &
@@ -1736,7 +1738,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                          zero, zero, zero, zero, &
                                          zero, zero, zero, zero, &
                                          zero, zero, zero, &
-                                         zero, zero, pdf_params(k), &
+                                         zero, zero, mixt_frac, &
+                                         pdf_params(k), &
                                          dum_inout1, dum_inout2, dum_inout3, & ! Intent(inout)
                                          dum_inout4, dum_inout5, dum_inout6, &
                                          mu_s_1, mu_s_2, dum_out1, dum_out2, & ! Intent(out)
@@ -1752,8 +1755,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                          dum_out17, dum_out18, &
                                          corr_sNc_1_n, corr_sNc_2_n, &
                                          dum_out19, dum_out20, &
-                                         dum_out21, dum_out22, dum_out23, dum_out24, &
-                                         mixt_frac )
+                                         dum_out21, dum_out22, dum_out23, dum_out24 )
 
                  KK_auto_coef &
                  = 1350.0_core_rknd &
@@ -2203,6 +2205,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                                  kind = core_rknd ), &
                                            zero, zero, &
                                            real( qc(i,k), kind = core_rknd ), &
+                                           real( qc(i,k), kind = core_rknd ), &
                                            real( cldmax(i,k), &
                                                  kind = core_rknd ), &
                                            real( cldmax(i,k), &
@@ -2212,6 +2215,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                            dum_out6, corr_srr_1, corr_srr_2, &
                                            dum_out7, dum_out8, dum_out9, &
                                            dum_out10 )
+
+                 mixt_frac = pdf_params(k)%mixt_frac
 
                  call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                          real( qric(i,k) * cldmax(i,k), &
@@ -2228,7 +2233,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                          sigma_rr_1, sigma_rr_2, &
                                          zero, zero, &
                                          zero, zero, zero, &
-                                         zero, zero, pdf_params(k), &
+                                         zero, zero, mixt_frac, &
+                                         pdf_params(k), &
                                          corr_srr_1, corr_srr_2, dum_inout1, & ! Intent (inout)
                                          dum_inout2, dum_inout3, dum_inout4, &
                                          mu_s_1, mu_s_2, dum_out1, dum_out2, & ! Intent(out)
@@ -2244,8 +2250,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                          dum_out15, dum_out16, &
                                          dum_out17, dum_out18, &
                                          dum_out19, dum_out20, &
-                                         dum_out21, dum_out22, dum_out23, dum_out24, &
-                                         mixt_frac )
+                                         dum_out21, dum_out22, dum_out23, dum_out24 )
 
                  KK_accr_coef = 67.0_core_rknd
 

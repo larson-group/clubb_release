@@ -476,6 +476,13 @@ module KK_microphys_module
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
 
     real( kind = core_rknd ), dimension(nz) :: &
+      rc1,         & ! Mean of r_c (1st PDF component)              [kg/kg]
+      rc2,         & ! Mean of r_c (2nd PDF component)              [kg/kg]
+      cloud_frac1, & ! Cloud fraction (1st PDF component)           [-]
+      cloud_frac2, & ! Cloud fraction (2nd PDF component)           [-]
+      mixt_frac      ! Mixture fraction                             [-]
+
+    real( kind = core_rknd ), dimension(nz) :: &
       rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
       rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
       Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
@@ -534,8 +541,7 @@ module KK_microphys_module
       corr_sw,       & ! Correlation between s & w (both components)         [-]
       corr_wrr,      & ! Correlation between rr & w (both components)        [-]
       corr_wNr,      & ! Correlation between Nr & w (both components)        [-]
-      corr_wNc,      & ! Correlation between Nc & w (both components)        [-]
-      mixt_frac        ! Mixture fraction                                    [-]
+      corr_wNc         ! Correlation between Nc & w (both components)        [-]
 
     real( kind = core_rknd ), dimension(:), pointer :: &
       Vrrprrp, & ! Covariance of V_rr and r_r (momentum levels)  [(m/s)(kg/kg)]
@@ -590,17 +596,22 @@ module KK_microphys_module
                                Vrrprrp, VNrpNrp, Vrrprrp_zt, &
                                VNrpNrp_zt, l_src_adj_enabled )
 
+    ! Setup some of the PDF parameters
+    rc1         = pdf_params%rc1
+    rc2         = pdf_params%rc2
+    cloud_frac1 = pdf_params%cloud_frac1
+    cloud_frac2 = pdf_params%cloud_frac2
+    mixt_frac   = pdf_params%mixt_frac
+
     ! Precipitation fraction
     if ( l_use_precip_frac ) then
 
-       call component_means_rain( nz, rrainm, Nrm, rho, &
-                                  pdf_params%rc1, pdf_params%rc2, &
-                                  pdf_params%mixt_frac, l_stats_samp, &
+       call component_means_rain( nz, rrainm, Nrm, rho, rc1, rc2, &
+                                  mixt_frac, l_stats_samp, &
                                   rr1, rr2, Nr1, Nr2 )
 
-       call precip_fraction( nz, rrainm, rr1, rr2, &
-                             Nrm, Nr1, Nr2, cloud_frac, &
-                             pdf_params%cloud_frac1, pdf_params%mixt_frac, &
+       call precip_fraction( nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &
+                             cloud_frac, cloud_frac1, mixt_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
     else
@@ -695,8 +706,8 @@ module KK_microphys_module
                                KK_accr_coef, KK_mvr_coef )
 
        !!! KK rain water mixing ratio microphysics tendencies.
-      call KK_in_precip_values( rr1(k), rr2(k), Nr1(k), Nr2(k), rcm(k), &
-                                precip_frac_1(k), precip_frac_2(k), &
+      call KK_in_precip_values( rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
+                                rc2(k), precip_frac_1(k), precip_frac_2(k), &
                                 mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                 sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
                                 sigma_Nr_2, corr_srr_1, corr_srr_2, &
@@ -709,7 +720,8 @@ module KK_microphys_module
                               sigma_rr_1, sigma_rr_2, &
                               sigma_Nr_1, sigma_Nr_2, &
                               wpsp_zt(k), wprrp_zt(k), wpNrp_zt(k), &
-                              wpNcp_zt(k), w_std_dev(k), pdf_params(k), &
+                              wpNcp_zt(k), w_std_dev(k), mixt_frac(k), &
+                              pdf_params(k), &
                               corr_srr_1, corr_srr_2, corr_sNr_1, &
                               corr_sNr_2, corr_rrNr_1, corr_rrNr_2, &
                               mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
@@ -725,8 +737,7 @@ module KK_microphys_module
                               corr_sNr_1_n, corr_sNr_2_n, &
                               corr_sNc_1_n, corr_sNc_2_n, &
                               corr_rrNr_1_n, corr_rrNr_2_n, &
-                              corr_sw, corr_wrr, corr_wNr, corr_wNc, &
-                              mixt_frac )
+                              corr_sw, corr_wrr, corr_wNr, corr_wNc )
 
       call KK_stat_output( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                            mu_Nc_1, mu_Nc_2, mu_rr_1_n, mu_rr_2_n, &
@@ -753,7 +764,7 @@ module KK_microphys_module
                                      corr_sNr_1_n, corr_sNr_2_n, &
                                      corr_sNc_1_n, corr_sNc_2_n, &
                                      corr_rrNr_1_n, corr_rrNr_2_n, &
-                                     mixt_frac, precip_frac_1(k), &
+                                     mixt_frac(k), precip_frac_1(k), &
                                      precip_frac_2(k), Nc0_in_cloud(k), &
                                      l_const_Nc_in_cloud, &
                                      KK_evap_coef, KK_auto_coef, &
@@ -765,7 +776,7 @@ module KK_microphys_module
                               mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
                               sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                               sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
-                              KK_mvr_coef, mixt_frac, precip_frac_1(k), &
+                              KK_mvr_coef, mixt_frac(k), precip_frac_1(k), &
                               precip_frac_2(k), k, l_stats_samp, &
                               Vrrprrp_zt(k), VNrpNrp_zt(k) )
 
@@ -780,7 +791,7 @@ module KK_microphys_module
                                        corr_srr_1_n, corr_srr_2_n, &
                                        corr_sNr_1_n, corr_sNr_2_n, &
                                        corr_sNc_1_n, corr_sNc_2_n, &
-                                       corr_rrNr_1_n,  mixt_frac, &
+                                       corr_rrNr_1_n,  mixt_frac(k), &
                                        precip_frac(k), Nc0_in_cloud(k), &
                                        l_const_Nc_in_cloud, &
                                        KK_evap_coef, KK_auto_coef, &
@@ -871,8 +882,7 @@ module KK_microphys_module
   end subroutine KK_upscaled_micro_driver
 
   !=============================================================================
-  subroutine component_means_rain( nz, rrainm, Nrm, rho, &
-                                   rc1, rc2, &
+  subroutine component_means_rain( nz, rrainm, Nrm, rho, rc1, rc2, &
                                    mixt_frac, l_stats_samp, &
                                    rr1, rr2, Nr1, Nr2 )
 
@@ -1264,9 +1274,8 @@ module KK_microphys_module
   end subroutine component_means_rain
 
   !=============================================================================
-  subroutine precip_fraction( nz, rrainm, rr1, rr2, &
-                              Nrm, Nr1, Nr2, cloud_frac, &
-                              cloud_frac1, mixt_frac, &
+  subroutine precip_fraction( nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &
+                              cloud_frac, cloud_frac1, mixt_frac, &
                               precip_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
@@ -1648,8 +1657,8 @@ module KK_microphys_module
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine KK_in_precip_values( rr1, rr2, Nr1, Nr2, rcm, &
-                                  precip_frac_1, precip_frac_2, &
+  subroutine KK_in_precip_values( rr1, rr2, Nr1, Nr2, rc1, &
+                                  rc2, precip_frac_1, precip_frac_2, &
                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                   sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
                                   sigma_Nr_2, corr_srr_1, corr_srr_2, &
@@ -1692,7 +1701,8 @@ module KK_microphys_module
       rr2,           & ! Mean rain water mixing ratio (2nd PDF comp.)  [kg/kg]
       Nr1,           & ! Mean rain drop concentration (1st PDF comp.)  [num/kg]
       Nr2,           & ! Mean rain drop concentration (2nd PDF comp.)  [num/kg]
-      rcm,           & ! Mean cloud water mixing ratio, < r_c >        [kg/kg]
+      rc1,           & ! Mean of r_c (1st PDF component)               [kg/kg]
+      rc2,           & ! Mean of r_c (2nd PDF component)               [kg/kg]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)    [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)    [-]
 
@@ -1767,7 +1777,7 @@ module KK_microphys_module
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 1.
     if ( rr1 > rr_tol ) then
-       if ( rcm > rc_tol ) then
+       if ( rc1 > rc_tol ) then
           sigma_rr_1 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_1
        else
           sigma_rr_1 = sqrt( rrp2_on_rrm2_below ) * mu_rr_1
@@ -1784,7 +1794,7 @@ module KK_microphys_module
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 2.
     if ( rr2 > rr_tol ) then
-       if ( rcm > rc_tol ) then
+       if ( rc2 > rc_tol ) then
           sigma_rr_2 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_2
        else
           sigma_rr_2 = sqrt( rrp2_on_rrm2_below ) * mu_rr_2
@@ -1801,7 +1811,7 @@ module KK_microphys_module
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 1.
     if ( Nr1 > Nr_tol ) then
-       if ( rcm > rc_tol ) then
+       if ( rc1 > rc_tol ) then
           sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_1
        else
           sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_1
@@ -1818,7 +1828,7 @@ module KK_microphys_module
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 2.
     if ( Nr2 > Nr_tol ) then
-       if ( rcm > rc_tol ) then
+       if ( rc2 > rc_tol ) then
           sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_2
        else
           sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_2
@@ -1834,7 +1844,7 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between s and r_r in PDF component 1.
     if ( rr1 > rr_tol ) then
-       if ( rcm > rc_tol ) then
+       if ( rc1 > rc_tol ) then
           corr_srr_1 = corr_srr_NL_cloud
        else
           corr_srr_1 = corr_srr_NL_below
@@ -1851,7 +1861,7 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between s and r_r in PDF component 2.
     if ( rr2 > rr_tol ) then
-       if ( rcm > rc_tol ) then
+       if ( rc2 > rc_tol ) then
           corr_srr_2 = corr_srr_NL_cloud
        else
           corr_srr_2 = corr_srr_NL_below
@@ -1868,7 +1878,7 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between s and N_r in PDF component 1.
     if ( Nr1 > Nr_tol ) then
-       if ( rcm > rc_tol ) then
+       if ( rc1 > rc_tol ) then
           corr_sNr_1 = corr_sNr_NL_cloud
        else
           corr_sNr_1 = corr_sNr_NL_below
@@ -1885,7 +1895,7 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between s and N_r in PDF component 2.
     if ( Nr2 > Nr_tol ) then
-       if ( rcm > rc_tol ) then
+       if ( rc2 > rc_tol ) then
           corr_sNr_2 = corr_sNr_NL_cloud
        else
           corr_sNr_2 = corr_sNr_NL_below
@@ -1902,7 +1912,7 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 1.
     if ( rr1 > rr_tol .and. Nr1 > Nr_tol ) then
-       if ( rcm > rc_tol ) then
+       if ( rc1 > rc_tol ) then
           corr_rrNr_1 = corr_rrNr_LL_cloud
        else
           corr_rrNr_1 = corr_rrNr_LL_below
@@ -1919,7 +1929,7 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 2.
     if ( rr2 > rr_tol .and. Nr2 > Nr_tol ) then
-       if ( rcm > rc_tol ) then
+       if ( rc2 > rc_tol ) then
           corr_rrNr_2 = corr_rrNr_LL_cloud
        else
           corr_rrNr_2 = corr_rrNr_LL_below
@@ -1946,7 +1956,8 @@ module KK_microphys_module
                                 sigma_rr_1, sigma_rr_2, &
                                 sigma_Nr_1, sigma_Nr_2, &
                                 wpsp, wprrp, wpNrp, &
-                                wpNcp, stdev_w, pdf_params, &
+                                wpNcp, stdev_w, mixt_frac, &
+                                pdf_params, &
                                 corr_srr_1, corr_srr_2, corr_sNr_1, &
                                 corr_sNr_2, corr_rrNr_1, corr_rrNr_2, &
                                 mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
@@ -1962,8 +1973,7 @@ module KK_microphys_module
                                 corr_sNr_1_n, corr_sNr_2_n, &
                                 corr_sNc_1_n, corr_sNc_2_n, &
                                 corr_rrNr_1_n, corr_rrNr_2_n, &
-                                corr_sw, corr_wrr, corr_wNr, corr_wNc, &
-                                mixt_frac )
+                                corr_sw, corr_wrr, corr_wNr, corr_wNc )
 
     ! Description:
 
@@ -2051,7 +2061,8 @@ module KK_microphys_module
       wprrp,      & ! Covariance of w and rrain                     [(m/s)kg/kg]
       wpNrp,      & ! Covariance of w and Nr                       [(m/s)num/kg]
       wpNcp,      & ! Covariance of w and Nc                       [(m/s)num/kg]
-      stdev_w       ! Standard deviation of w                              [m/s]
+      stdev_w,    & ! Standard deviation of w                              [m/s]
+      mixt_frac     ! Mixture fraction                                       [-]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
@@ -2100,8 +2111,7 @@ module KK_microphys_module
       corr_sw,       & ! Correlation between s & w (both components)         [-]
       corr_wrr,      & ! Correlation between rr & w (both components)        [-]
       corr_wNr,      & ! Correlation between Nr & w (both components)        [-]
-      corr_wNc,      & ! Correlation between Nc & w (both components)        [-]
-      mixt_frac        ! Mixture fraction                                    [-]
+      corr_wNc         ! Correlation between Nc & w (both components)        [-]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -2119,7 +2129,6 @@ module KK_microphys_module
     mu_s_2    = pdf_params%s2
     sigma_s_1 = pdf_params%stdev_s1
     sigma_s_2 = pdf_params%stdev_s2
-    mixt_frac = pdf_params%mixt_frac
 
     ! Mean of cloud droplet concentration in PDF component 1.
     if ( Ncm > Nc_tol ) then
