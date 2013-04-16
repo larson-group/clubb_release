@@ -746,11 +746,12 @@ module KK_microphys_module
                            sigma_Nr_2, sigma_Nc_1, sigma_Nc_2, &
                            sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                            sigma_Nr_2_n, sigma_Nc_1_n, sigma_Nc_2_n, &
-                           corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                           corr_sNr_2_n, corr_sNc_1_n, corr_sNc_2_n, &
-                           corr_rrNr_1_n, corr_rrNr_2_n, &
-                           corr_sw, corr_wrr, corr_wNr, &
-                           corr_wNc, k, l_stats_samp )
+                           corr_srr_1, corr_srr_2, corr_sNr_1, &
+                           corr_sNr_2, corr_sNc_1, corr_sNc_2, &
+                           corr_rrNr_1, corr_rrNr_2, corr_srr_1_n, &
+                           corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
+                           corr_sNc_1_n, corr_sNc_2_n, corr_rrNr_1_n, &
+                           corr_rrNr_2_n, k, l_stats_samp )
 
         !!! Calculate the values of the upscaled KK microphysics tendencies.
       call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
@@ -2618,11 +2619,12 @@ module KK_microphys_module
                              sigma_Nr_2, sigma_Nc_1, sigma_Nc_2, &
                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                              sigma_Nr_2_n, sigma_Nc_1_n, sigma_Nc_2_n, &
-                             corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                             corr_sNr_2_n, corr_sNc_1_n, corr_sNc_2_n, &
-                             corr_rrNr_1_n, corr_rrNr_2_n, &
-                             corr_sw, corr_wrr, corr_wNr, &
-                             corr_wNc, level, l_stats_samp )
+                             corr_srr_1, corr_srr_2, corr_sNr_1, &
+                             corr_sNr_2, corr_sNc_1, corr_sNc_2, &
+                             corr_rrNr_1, corr_rrNr_2, corr_srr_1_n, &
+                             corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
+                             corr_sNc_1_n, corr_sNc_2_n, corr_rrNr_1_n, &
+                             corr_rrNr_2_n, level, l_stats_samp )
 
     ! Description:
 
@@ -2660,6 +2662,14 @@ module KK_microphys_module
         isigma_Nr_2_n,  &
         isigma_Nc_1_n,  &
         isigma_Nc_2_n,  &
+        icorr_srr_1,    &
+        icorr_srr_2,    &
+        icorr_sNr_1,    &
+        icorr_sNr_2,    &
+        icorr_sNc_1,    &
+        icorr_sNc_2,    &
+        icorr_rrNr_1,   &
+        icorr_rrNr_2,   &
         icorr_srr_1_n,  &
         icorr_srr_2_n,  &
         icorr_sNr_1_n,  &
@@ -2668,10 +2678,6 @@ module KK_microphys_module
         icorr_sNc_2_n,  &
         icorr_rrNr_1_n, &
         icorr_rrNr_2_n, &
-        icorr_sw,       &
-        icorr_wrr,      &
-        icorr_wNr,      &
-        icorr_wNc,      &
         zt
 
     implicit none
@@ -2702,6 +2708,14 @@ module KK_microphys_module
       sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
       sigma_Nc_1_n,  & ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
       sigma_Nc_2_n,  & ! Standard dev. of ln Nc (2nd PDF comp.)     [ln(num/kg)]
+      corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
+      corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
+      corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
+      corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
+      corr_sNc_1,    & ! Correlation between s and Nc (1st PDF component)    [-]
+      corr_sNc_2,    & ! Correlation between s and Nc (2nd PDF component)    [-]
+      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
+      corr_rrNr_2,   & ! Correlation between rr & Nr (2nd PDF component) ip  [-]
       corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
       corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
       corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
@@ -2709,11 +2723,7 @@ module KK_microphys_module
       corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF comp.)     [-]
       corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF comp.)     [-]
       corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-      corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
-      corr_sw,       & ! Correlation between s & w (both components)         [-]
-      corr_wrr,      & ! Correlation between rr & w (both components)        [-]
-      corr_wNr,      & ! Correlation between Nr & w (both components)        [-]
-      corr_wNc         ! Correlation between Nc & w (both components)        [-]
+      corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
 
     integer, intent(in) :: &
       level   ! Vertical level index 
@@ -2917,6 +2927,46 @@ module KK_microphys_module
           call stat_update_var_pt( isigma_Nc_2_n, level, sigma_Nc_2_n, zt )
        endif
 
+       ! Correlation (in-precip) between s and r_r in PDF component 1.
+       if ( icorr_srr_1 > 0 ) then
+          call stat_update_var_pt( icorr_srr_1, level, corr_srr_1, zt )
+       endif
+
+       ! Correlation (in-precip) between s and r_r in PDF component 2.
+       if ( icorr_srr_2 > 0 ) then
+          call stat_update_var_pt( icorr_srr_2, level, corr_srr_2, zt )
+       endif
+
+       ! Correlation (in-precip) between s and N_r in PDF component 1.
+       if ( icorr_sNr_1 > 0 ) then
+          call stat_update_var_pt( icorr_sNr_1, level, corr_sNr_1, zt )
+       endif
+
+       ! Correlation (in-precip) between s and N_r in PDF component 2.
+       if ( icorr_sNr_2 > 0 ) then
+          call stat_update_var_pt( icorr_sNr_2, level, corr_sNr_2, zt )
+       endif
+
+       ! Correlation between s and N_c in PDF component 1.
+       if ( icorr_sNc_1 > 0 ) then
+          call stat_update_var_pt( icorr_sNc_1, level, corr_sNc_1, zt )
+       endif
+
+       ! Correlation between s and N_c in PDF component 2.
+       if ( icorr_sNc_2 > 0 ) then
+          call stat_update_var_pt( icorr_sNc_2, level, corr_sNc_2, zt )
+       endif
+
+       ! Correlation (in-precip) between r_r and N_r in PDF component 1.
+       if ( icorr_rrNr_1 > 0 ) then
+          call stat_update_var_pt( icorr_rrNr_1, level, corr_rrNr_1, zt )
+       endif
+
+       ! Correlation (in-precip) between r_r and N_r in PDF component 2.
+       if ( icorr_rrNr_2 > 0 ) then
+          call stat_update_var_pt( icorr_rrNr_2, level, corr_rrNr_2, zt )
+       endif
+
        ! Correlation (in-precip) between s and ln r_r in PDF component 1.
        if ( icorr_srr_1_n > 0 ) then
           call stat_update_var_pt( icorr_srr_1_n, level, corr_srr_1_n, zt )
@@ -2956,26 +3006,6 @@ module KK_microphys_module
        if ( icorr_rrNr_2_n > 0 ) then
           call stat_update_var_pt( icorr_rrNr_2_n, level, corr_rrNr_2_n, zt )
        endif
-
-       ! Correlation between s and w.
-       !if ( icorr_sw > 0 ) then
-       !   call stat_update_var_pt( icorr_sw, level, corr_sw, zt )
-       !endif
-
-       ! Correlation between w and r_r.
-       !if ( icorr_wrr > 0 ) then
-       !   call stat_update_var_pt( icorr_wrr, level, corr_wrr, zt )
-       !endif
-
-       ! Correlation between w and N_r.
-       !if ( icorr_wNr > 0 ) then
-       !   call stat_update_var_pt( icorr_wNr, level, corr_wNr, zt )
-       !endif
-
-       ! Correlation between w and N_c.
-       !if ( icorr_wNc > 0 ) then
-       !   call stat_update_var_pt( icorr_wNc, level, corr_wNc, zt )
-       !endif
 
     endif
 

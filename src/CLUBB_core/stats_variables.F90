@@ -166,9 +166,13 @@ module stats_variables
      icorr_rrNr_2_n
 
   integer, public :: & ! janhft 09/25/12
-     icorr_sw,  &
-     icorr_wrr, &
-     icorr_wNr, &
+     icorr_sw,   &
+     icorr_srr,  &
+     icorr_sNr,  &
+     icorr_sNc,  &
+     icorr_rrNr, &
+     icorr_wrr,  &
+     icorr_wNr,  &
      icorr_wNc
 
   integer, public :: & 
@@ -223,8 +227,10 @@ module stats_variables
 !$omp   icorr_rrNr_1, icorr_rrNr_2, icorr_srr_1_n, icorr_srr_2_n, &
 !$omp   icorr_sNr_1_n, icorr_sNr_2_n, icorr_sNc_1_n, icorr_sNc_2_n, &
 !$omp   icorr_trr_1_n, icorr_trr_2_n, icorr_tNr_1_n, icorr_tNr_2_n, &
-!$omp   icorr_tNc_1_n, icorr_tNc_2_n, icorr_rrNr_1_n, icorr_rrNr_2_n, &
-!$omp   icorr_sw, icorr_wrr, icorr_wNr, icorr_wNc )
+!$omp   icorr_tNc_1_n, icorr_tNc_2_n, icorr_rrNr_1_n, icorr_rrNr_2_n )
+
+!$omp threadprivate( icorr_sw, icorr_srr, icorr_sNr, icorr_sNc, icorr_rrNr, &
+!$omp                icorr_wrr, icorr_wNr, icorr_wNc )
 
   integer, public :: & 
    irfrzm

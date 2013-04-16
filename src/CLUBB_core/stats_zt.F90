@@ -139,9 +139,13 @@ module stats_zt
         icorr_rrNr_2_n
 
     use stats_variables, only: & ! janhft 09/25/12
-        icorr_sw,  & ! Variable(s)
-        icorr_wrr, &
-        icorr_wNr, &
+        icorr_sw,   & ! Variable(s)
+        icorr_srr,  &
+        icorr_sNr,  &
+        icorr_sNc,  &
+        icorr_rrNr, &
+        icorr_wrr,  &
+        icorr_wNr,  &
         icorr_wNc
 
     use stats_variables, only: & 
@@ -589,6 +593,10 @@ module stats_zt
 
     ! Correlations
     icorr_sw   = 0
+    icorr_srr  = 0
+    icorr_sNr  = 0
+    icorr_sNc  = 0
+    icorr_rrNr = 0
     icorr_wrr  = 0
     icorr_wNr  = 0
     icorr_wNc  = 0
@@ -3108,6 +3116,33 @@ module stats_zt
         icorr_sw = k
         call stat_assign( icorr_sw, "corr_sw", & 
              "Correlation between s and w [-]", "-", zt )
+        k = k + 1
+
+      case ( 'corr_srr' )
+        icorr_srr = k
+        call stat_assign( icorr_srr, "corr_srr", & 
+             "Correlation (in-precip) between s and r_r (corr array)" &
+             //" [-]", "-", zt )
+        k = k + 1
+
+      case ( 'corr_sNr' )
+        icorr_sNr = k
+        call stat_assign( icorr_sNr, "corr_sNr", & 
+             "Correlation (in-precip) between s and N_r (corr array)" &
+             //" [-]", "-", zt )
+        k = k + 1
+
+      case ( 'corr_sNc' )
+        icorr_sNc = k
+        call stat_assign( icorr_sNc, "corr_sNc", & 
+             "Correlation between s and N_c (corr array) [-]", "-", zt )
+        k = k + 1
+
+      case ( 'corr_rrNr' )
+        icorr_rrNr = k
+        call stat_assign( icorr_rrNr, "corr_rrNr", & 
+             "Correlation (in-precip) between r_r and N_r (corr array)" &
+             //" [-]", "-", zt )
         k = k + 1
 
       case ('corr_wrr')
