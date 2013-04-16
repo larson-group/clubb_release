@@ -2206,6 +2206,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                            zero, zero, &
                                            real( qc(i,k), kind = core_rknd ), &
                                            real( qc(i,k), kind = core_rknd ), &
+                                           real( lcldm(i,k), kind = core_rknd ), &
+                                           real( lcldm(i,k), kind = core_rknd ), &
                                            real( cldmax(i,k), &
                                                  kind = core_rknd ), &
                                            real( cldmax(i,k), &

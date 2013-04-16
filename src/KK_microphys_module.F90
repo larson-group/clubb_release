@@ -705,9 +705,9 @@ module KK_microphys_module
                                KK_evap_coef, KK_auto_coef, & ! Intent(out)
                                KK_accr_coef, KK_mvr_coef )
 
-       !!! KK rain water mixing ratio microphysics tendencies.
       call KK_in_precip_values( rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
-                                rc2(k), precip_frac_1(k), precip_frac_2(k), &
+                                rc2(k), cloud_frac1(k), cloud_frac2(k), &
+                                precip_frac_1(k), precip_frac_2(k), &
                                 mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                 sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
                                 sigma_Nr_2, corr_srr_1, corr_srr_2, &
@@ -753,7 +753,7 @@ module KK_microphys_module
                            corr_sNc_1_n, corr_sNc_2_n, corr_rrNr_1_n, &
                            corr_rrNr_2_n, k, l_stats_samp )
 
-        !!! Calculate the values of the upscaled KK microphysics tendencies.
+      !!! Calculate the values of the upscaled KK microphysics tendencies.
       call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
                                      mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
                                      mu_Nr_1_n, mu_Nr_2_n, mu_Nc_1_n, &
@@ -1659,7 +1659,8 @@ module KK_microphys_module
 
   !=============================================================================
   subroutine KK_in_precip_values( rr1, rr2, Nr1, Nr2, rc1, &
-                                  rc2, precip_frac_1, precip_frac_2, &
+                                  rc2, cloud_frac1, cloud_frac2, &
+                                  precip_frac_1, precip_frac_2, &
                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                   sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
                                   sigma_Nr_2, corr_srr_1, corr_srr_2, &
@@ -1674,7 +1675,8 @@ module KK_microphys_module
     use constants_clubb, only:  &
         rc_tol, & ! Constant(s)
         rr_tol, & 
-        Nr_tol, & 
+        Nr_tol, &
+        one,    & 
         zero
 
     use parameters_microphys, only: &
@@ -1704,6 +1706,8 @@ module KK_microphys_module
       Nr2,           & ! Mean rain drop concentration (2nd PDF comp.)  [num/kg]
       rc1,           & ! Mean of r_c (1st PDF component)               [kg/kg]
       rc2,           & ! Mean of r_c (2nd PDF component)               [kg/kg]
+      cloud_frac1,   & ! Cloud fraction (1st PDF component)            [-]
+      cloud_frac2,   & ! Cloud fraction (2nd PDF component)            [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)    [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)    [-]
 
@@ -1723,6 +1727,18 @@ module KK_microphys_module
       corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component) ip   [-]
       corr_rrNr_1, & ! Correlation between rr and Nr (1st PDF component) ip  [-]
       corr_rrNr_2    ! Correlation between rr and Nr (2nd PDF component) ip  [-]
+
+    ! Local Variable
+
+    ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
+    ! values based on whether or not cloud water mixing ratio has a value of at
+    ! least rc_tol.  However, this does not take into account the amount of
+    ! cloudiness in a component, just whether or not there is any cloud in the
+    ! component.  The option l_interp_prescribed_params allows for an
+    ! interpolated value between the in-cloud and below-cloud parameter value
+    ! based on the component cloud fraction.
+    logical, parameter :: &
+      l_interp_prescribed_params = .false.
 
 
     ! Mean of in-precip rain water mixing ratio in PDF component 1.
@@ -1778,10 +1794,16 @@ module KK_microphys_module
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 1.
     if ( rr1 > rr_tol ) then
-       if ( rc1 > rc_tol ) then
-          sigma_rr_1 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_1
+       if ( l_interp_prescribed_params ) then
+          sigma_rr_1 = sqrt( cloud_frac1 * rrp2_on_rrm2_cloud &
+                             + ( one - cloud_frac1 ) * rrp2_on_rrm2_below ) &
+                       * mu_rr_1
        else
-          sigma_rr_1 = sqrt( rrp2_on_rrm2_below ) * mu_rr_1
+          if ( rc1 > rc_tol ) then
+             sigma_rr_1 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_1
+          else
+             sigma_rr_1 = sqrt( rrp2_on_rrm2_below ) * mu_rr_1
+          endif
        endif
     else
        ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
@@ -1795,10 +1817,16 @@ module KK_microphys_module
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 2.
     if ( rr2 > rr_tol ) then
-       if ( rc2 > rc_tol ) then
-          sigma_rr_2 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_2
+       if ( l_interp_prescribed_params ) then
+          sigma_rr_2 = sqrt( cloud_frac2 * rrp2_on_rrm2_cloud &
+                             + ( one - cloud_frac2 ) * rrp2_on_rrm2_below ) &
+                       * mu_rr_2
        else
-          sigma_rr_2 = sqrt( rrp2_on_rrm2_below ) * mu_rr_2
+          if ( rc2 > rc_tol ) then
+             sigma_rr_2 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_2
+          else
+             sigma_rr_2 = sqrt( rrp2_on_rrm2_below ) * mu_rr_2
+          endif
        endif
     else
        ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
@@ -1812,10 +1840,16 @@ module KK_microphys_module
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 1.
     if ( Nr1 > Nr_tol ) then
-       if ( rc1 > rc_tol ) then
-          sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_1
+       if ( l_interp_prescribed_params ) then
+          sigma_Nr_1 = sqrt( cloud_frac1 * Nrp2_on_Nrm2_cloud &
+                             + ( one - cloud_frac1 ) * Nrp2_on_Nrm2_below ) &
+                       * mu_Nr_1
        else
-          sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_1
+          if ( rc1 > rc_tol ) then
+             sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_1
+          else
+             sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_1
+          endif
        endif
     else
        ! Mean in-precip rain drop concentration in PDF component 1 is less than
@@ -1829,10 +1863,16 @@ module KK_microphys_module
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 2.
     if ( Nr2 > Nr_tol ) then
-       if ( rc2 > rc_tol ) then
-          sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_2
+       if ( l_interp_prescribed_params ) then
+          sigma_Nr_2 = sqrt( cloud_frac2 * Nrp2_on_Nrm2_cloud &
+                             + ( one - cloud_frac2 ) * Nrp2_on_Nrm2_below ) &
+                       * mu_Nr_2
        else
-          sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_2
+          if ( rc2 > rc_tol ) then
+             sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_2
+          else
+             sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_2
+          endif
        endif
     else
        ! Mean in-precip rain drop concentration in PDF component 2 is less than
@@ -1845,10 +1885,15 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between s and r_r in PDF component 1.
     if ( rr1 > rr_tol ) then
-       if ( rc1 > rc_tol ) then
-          corr_srr_1 = corr_srr_NL_cloud
+       if ( l_interp_prescribed_params ) then
+          corr_srr_1 = cloud_frac1 * corr_srr_NL_cloud &
+                       + ( one - cloud_frac1 ) * corr_srr_NL_below
        else
-          corr_srr_1 = corr_srr_NL_below
+          if ( rc1 > rc_tol ) then
+             corr_srr_1 = corr_srr_NL_cloud
+          else
+             corr_srr_1 = corr_srr_NL_below
+          endif
        endif
     else
        ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
@@ -1862,10 +1907,15 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between s and r_r in PDF component 2.
     if ( rr2 > rr_tol ) then
-       if ( rc2 > rc_tol ) then
-          corr_srr_2 = corr_srr_NL_cloud
+       if ( l_interp_prescribed_params ) then
+          corr_srr_2 = cloud_frac2 * corr_srr_NL_cloud &
+                       + ( one - cloud_frac2 ) * corr_srr_NL_below
        else
-          corr_srr_2 = corr_srr_NL_below
+          if ( rc2 > rc_tol ) then
+             corr_srr_2 = corr_srr_NL_cloud
+          else
+             corr_srr_2 = corr_srr_NL_below
+          endif
        endif
     else
        ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
@@ -1879,10 +1929,15 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between s and N_r in PDF component 1.
     if ( Nr1 > Nr_tol ) then
-       if ( rc1 > rc_tol ) then
-          corr_sNr_1 = corr_sNr_NL_cloud
+       if ( l_interp_prescribed_params ) then
+          corr_sNr_1 = cloud_frac1 * corr_sNr_NL_cloud &
+                       + ( one - cloud_frac1 ) * corr_sNr_NL_below
        else
-          corr_sNr_1 = corr_sNr_NL_below
+          if ( rc1 > rc_tol ) then
+             corr_sNr_1 = corr_sNr_NL_cloud
+          else
+             corr_sNr_1 = corr_sNr_NL_below
+          endif
        endif
     else
        ! Mean in-precip rain drop concentration in PDF component 1 is less than
@@ -1896,10 +1951,15 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between s and N_r in PDF component 2.
     if ( Nr2 > Nr_tol ) then
-       if ( rc2 > rc_tol ) then
-          corr_sNr_2 = corr_sNr_NL_cloud
+       if ( l_interp_prescribed_params ) then
+          corr_sNr_2 = cloud_frac2 * corr_sNr_NL_cloud &
+                       + ( one - cloud_frac2 ) * corr_sNr_NL_below
        else
-          corr_sNr_2 = corr_sNr_NL_below
+          if ( rc2 > rc_tol ) then
+             corr_sNr_2 = corr_sNr_NL_cloud
+          else
+             corr_sNr_2 = corr_sNr_NL_below
+          endif
        endif
     else
        ! Mean in-precip rain drop concentration in PDF component 2 is less than
@@ -1913,10 +1973,15 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 1.
     if ( rr1 > rr_tol .and. Nr1 > Nr_tol ) then
-       if ( rc1 > rc_tol ) then
-          corr_rrNr_1 = corr_rrNr_LL_cloud
+       if ( l_interp_prescribed_params ) then
+          corr_rrNr_1 = cloud_frac1 * corr_rrNr_LL_cloud &
+                        + ( one - cloud_frac1 ) * corr_rrNr_LL_below
        else
-          corr_rrNr_1 = corr_rrNr_LL_below
+          if ( rc1 > rc_tol ) then
+             corr_rrNr_1 = corr_rrNr_LL_cloud
+          else
+             corr_rrNr_1 = corr_rrNr_LL_below
+          endif
        endif
     else
        ! Mean in-precip rain water mixing ratio in PDF component 1 and (or) mean
@@ -1930,10 +1995,15 @@ module KK_microphys_module
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 2.
     if ( rr2 > rr_tol .and. Nr2 > Nr_tol ) then
-       if ( rc2 > rc_tol ) then
-          corr_rrNr_2 = corr_rrNr_LL_cloud
+       if ( l_interp_prescribed_params ) then
+          corr_rrNr_2 = cloud_frac2 * corr_rrNr_LL_cloud &
+                        + ( one - cloud_frac2 ) * corr_rrNr_LL_below
        else
-          corr_rrNr_2 = corr_rrNr_LL_below
+          if ( rc2 > rc_tol ) then
+             corr_rrNr_2 = corr_rrNr_LL_cloud
+          else
+             corr_rrNr_2 = corr_rrNr_LL_below
+          endif
        endif
     else
        ! Mean in-precip rain water mixing ratio in PDF component 2 and (or) mean
