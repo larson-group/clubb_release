@@ -19,8 +19,9 @@
           {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'HLSTOR', 'expression' => 'HLSTOR ./ (RHO * 1004)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '(HLSTOR ./ (RHO * 1004)) + (-1/86400.)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'T\_TNDCY', 'expression' => 'T_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'HLSTOR', 'expression' => 'HLSTOR/86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '((HLSTOR/86400) + ((-1/86400.)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND) - T_TNDCY))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'QTO 3D SAM Benchmark Budgets', 'axisLabel' => 'QTO [1/s]', 'type' => 'profile', 'lines' =>
        [
@@ -30,10 +31,11 @@
           {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
 	  {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'QTSTOR', 'expression' => '(QTSTOR ./ (RHO * 2.5104e+6))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(QTSTOR ./ (RHO * 2.5104e+6) / 10) + (-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED+QTEND)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-       ]},
-
+          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'QTSTOR', 'expression' => 'QTSTOR/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'QV\_TNDCY', 'expression' => 'QV_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'QC\_TNDCY', 'expression' => 'QC_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(QTSTOR/(1000.*86400)) + ((-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED+QTEND) - QV_TNDCY - QC_TNDCY)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+      ]},
        {'plotTitle' => 'TW SAM 3D Benchmark Budgets', 'axisLabel' => 'TW [(m K)/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'DYCOMS_RF01_96x96x320_LES_fixed_sst.nc', 'type' => 'auto', 'name' => 'TWGRAD', 'expression' => 'TWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
