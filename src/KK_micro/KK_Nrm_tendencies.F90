@@ -6,41 +6,89 @@ module KK_Nrm_tendencies
 
   private
 
-  public :: KK_Nrm_evap, &
-            KK_Nrm_auto
+  public :: KK_Nrm_evap_upscaled_mean, &
+            KK_Nrm_evap_local_mean, &
+            KK_Nrm_auto_mean
 
   contains
 
   !=============================================================================
-  function KK_Nrm_evap( KK_rrm_evap_tndcy, Nrm, rrm )
+  function KK_Nrm_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
+                                      mu_Nr_1_n, mu_Nr_2_n, sigma_s_1, &
+                                      sigma_s_2, sigma_rr_1_n, sigma_rr_2_n, &
+                                      sigma_Nr_1_n, sigma_Nr_2_n, &
+                                      corr_srr_1_n, corr_srr_2_n, &
+                                      corr_sNr_1_n, corr_sNr_2_n, &
+                                      corr_rrNr_1_n, corr_rrNr_2_n, &
+                                      KK_evap_coef, mixt_frac, &
+                                      precip_frac_1, precip_frac_2, dt )
 
     ! Description:
-    ! This function calculates the evaporation rate of rain drop concentration.
-    ! The KK equation for evaporation rate of rain drop concentration relates
-    ! the rate of change of rain concentration to the rate of change of rain
-    ! water content according to:
+    ! This function calculates the upscaled evaporation rate of rain drop
+    ! concentration.  The KK equation for evaporation of rain drop concentration
+    ! relates the change of rain drop concentration due to evaporation to the
+    ! change of rain water mixing ratio due to evaporation according to:
     !
-    ! ( Delta N_rV / N_rV )_evap = ( Delta r_r / r_r )_evap^nu;
+    ! ( Delta N_rV / N_rV )|_evap = ( ( Delta r_r / r_r )|_evap )^nu;
     !
-    ! where N_rV has units of num/m^3, and nu is a tuned parameter.  However, KK
-    ! suggest nu = 1 is reasonable choice.  This equation can be rearranged and
-    ! written in terms of N_r (in num/kg):
+    ! where N_rV is rain drop concentration per unit volume (units of num/m^3),
+    ! r_r is rain water mixing ratio, and nu is a tuned parameter. However, KK
+    ! suggest nu = 1 is reasonable choice.  This equation can be written in
+    ! terms of rain drop concentration (per unit mass), N_r (in num/kg):
     !
-    ! ( Delta N_r / Delta r_r )_evap = N_r / r_r;
+    ! ( Delta N_r / N_r )|_evap = ( ( Delta r_r / r_r )|_evap )^nu.
     !
-    ! and then can be written as:
+    ! The change in r_r due to evaporation ( Delta r_r ) is given by the
+    ! equation:
     !
-    ! ( dN_r / dr_r )_evap = N_r / r_r.
+    ! ( Delta r_r )|_evap = INT(t_i:t_f) (dr_r/dt)|_evap dt;
     !
-    ! The rate of change of N_r with respect to time can be written as:
+    ! where (dr_r/dt)|_evap is the r_r evaporation rate, t_i is the elapsed time
+    ! at the start of the time step, and t_f is the elapsed time when the time
+    ! step finishes.  Likewise, for N_r:
     !
-    ! ( dN_r / dt )_evap = ( dN_r / dr_r )_evap * ( dr_r / dt )_evap;
+    ! ( Delta N_r )|_evap = INT(t_i:t_f) (dN_r/dt)|_evap dt;
     !
-    ! which becomes:
+    ! where (dN_r/dt)|_evap is the N_r evaporation rate.  Both of these integral
+    ! equations are approximated as:
     !
-    ! ( dN_r / dt )_evap = ( N_r / r_r ) * ( dr_r / dt )_evap;
+    ! ( Delta r_r )|_evap = (dr_r/dt)|_evap Delta t; and
     !
-    ! where ( dr_r / dt )_evap is the KK rain water evaporation rate.
+    ! ( Delta N_r )|_evap = (dN_r/dt)|_evap Delta t;
+    !
+    ! where Delta t = t_f - t_i, which is the duration of one model time step.
+    !
+    ! The equation for the change in N_r due to evaporation becomes:
+    !
+    ! (dN_r/dt)|_evap Delta t / N_r = ( (dr_r/dt)|_evap Delta t / r_r )^nu.
+    !
+    ! This can be rewritten in terms of N_r evaporation rate:
+    !
+    ! (dN_r/dt)|_evap = Delta_t^(nu-1) ( N_r / r_r^nu ) ( (dr_r/dt)|_evap )^nu.
+    !
+    ! The equation for r_r evaporation rate is:
+    !
+    ! (dr_r/dt)|_evap = KK_evap_coef s^alpha r_r^beta N_r^gamma;
+    !
+    ! which is substituted into the (dN_r/dt)|_evap equation, which in turn
+    ! becomes:
+    !
+    ! (dN_r/dt)|_evap
+    ! = Delta_t^(nu-1) ( N_r / r_r^nu )
+    !   ( KK_evap_coef s^alpha r_r^beta N_r^gamma )^nu;
+    !
+    ! and can be rewritten as:
+    !
+    ! (dN_r/dt)|_evap
+    ! = Delta_t^(nu-1) KK_evap_coef^nu
+    !   s^(alpha nu) r_r^((beta - 1) nu) N_r^(gamma nu + 1).
+    !
+    ! The mean value of < N_r > evaporation rate, < (dN_r/dt)|_evap >, is found
+    ! by integrating over a trivariate PDF of s, r_r, and N_r.
+    !
+    ! When nu is set to 1, as suggested, the equation simply becomes:
+    !
+    ! (dN_r/dt)|_evap = KK_evap_coef s^alpha r_r^(beta - 1) N_r^(gamma + 1).
 
     ! References:
     !  Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
@@ -49,8 +97,157 @@ module KK_Nrm_tendencies
     !  -- Eq. 23.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one  ! Constant(s)
+
+    use KK_upscaled_means, only: &
+        trivar_NLL_mean_eq  ! Procedure(s)
+
+    use parameters_microphys, only: &
+        KK_evap_Supersat_exp, & ! Variable(s)
+        KK_evap_rr_exp,       &
+        KK_evap_Nr_exp,       &
+        KK_Nrm_evap_nu
+
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+        time_precision, & ! Variable(s)
+        core_rknd
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) in-precip (ip)    [-]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip                [-]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip                [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_rr_1_n,  & ! Standard deviation of ln rr (1st PDF component) ip  [-]
+      sigma_rr_2_n,  & ! Standard deviation of ln rr (2nd PDF component) ip  [-]
+      sigma_Nr_1_n,  & ! Standard deviation of ln Nr (1st PDF component) ip  [-]
+      sigma_Nr_2_n,  & ! Standard deviation of ln Nr (2nd PDF component) ip  [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
+      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
+      corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+      KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
+
+    real( kind = time_precision ), intent(in) :: &
+      dt               ! Model time step duration                            [s]
+
+    ! Return Variables
+    real( kind = core_rknd ) :: &
+      KK_Nrm_evap_upscaled_mean  ! Mean KK <N_r> evaporation rate   [(num/kg)/s]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on s                                           [-]
+      beta_exp,  & ! Exponent on r_r                                         [-]
+      gamma_exp    ! Exponent on N_r                                         [-]
+
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_evap_Supersat_exp * KK_Nrm_evap_nu
+    beta_exp  = ( KK_evap_rr_exp - one ) * KK_Nrm_evap_nu
+    gamma_exp = KK_evap_Nr_exp * KK_Nrm_evap_nu + one
+
+    ! Calculate the mean KK < N_r > evaporation tendency.
+    KK_Nrm_evap_upscaled_mean &
+    = real( dt, kind = core_rknd )**( KK_Nrm_evap_nu - one ) &
+      * KK_evap_coef**KK_Nrm_evap_nu &
+      * ( mixt_frac &
+          * precip_frac_1 &
+          * trivar_NLL_mean_eq( mu_s_1, mu_rr_1_n, mu_Nr_1_n, &
+                                sigma_s_1, sigma_rr_1_n, sigma_Nr_1_n, &
+                                corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
+                                alpha_exp, beta_exp, gamma_exp ) &
+        + ( one - mixt_frac ) &
+          * precip_frac_2 &
+          * trivar_NLL_mean_eq( mu_s_2, mu_rr_2_n, mu_Nr_2_n, &
+                                sigma_s_2, sigma_rr_2_n, sigma_Nr_2_n, &
+                                corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
+                                alpha_exp, beta_exp, gamma_exp ) &
+        )
+
+
+    return
+
+  end function KK_Nrm_evap_upscaled_mean
+
+  !=============================================================================
+  function KK_Nrm_evap_local_mean( KK_rrm_evap_tndcy, Nrm, rrm, dt )
+
+    ! Description:
+    ! This function calculates the local evaporation rate of rain drop
+    ! concentration.  The KK equation for evaporation of rain drop concentration
+    ! relates the change of rain drop concentration due to evaporation to the
+    ! change of rain water mixing ratio due to evaporation according to:
+    !
+    ! ( Delta N_rV / N_rV )|_evap = ( ( Delta r_r / r_r )|_evap )^nu;
+    !
+    ! where N_rV is rain drop concentration per unit volume (units of num/m^3),
+    ! r_r is rain water mixing ratio, and nu is a tuned parameter. However, KK
+    ! suggest nu = 1 is reasonable choice.  This equation can be written in
+    ! terms of rain drop concentration (per unit mass), N_r (in num/kg):
+    !
+    ! ( Delta N_r / N_r )|_evap = ( ( Delta r_r / r_r )|_evap )^nu.
+    !
+    ! The change in r_r due to evaporation ( Delta r_r ) is given by the
+    ! equation:
+    !
+    ! ( Delta r_r )|_evap = INT(t_i:t_f) (dr_r/dt)|_evap dt;
+    !
+    ! where (dr_r/dt)|_evap is the r_r evaporation rate, t_i is the elapsed time
+    ! at the start of the time step, and t_f is the elapsed time when the time
+    ! step finishes.  Likewise, for N_r:
+    !
+    ! ( Delta N_r )|_evap = INT(t_i:t_f) (dN_r/dt)|_evap dt;
+    !
+    ! where (dN_r/dt)|_evap is the N_r evaporation rate.  Both of these integral
+    ! equations are approximated as:
+    !
+    ! ( Delta r_r )|_evap = (dr_r/dt)|_evap Delta t; and
+    !
+    ! ( Delta N_r )|_evap = (dN_r/dt)|_evap Delta t;
+    !
+    ! where Delta t = t_f - t_i, which is the duration of one model time step.
+    !
+    ! The equation for the change in N_r due to evaporation becomes:
+    !
+    ! (dN_r/dt)|_evap Delta t / N_r = ( (dr_r/dt)|_evap Delta t / r_r )^nu.
+    !
+    ! This can be rewritten in terms of N_r evaporation rate:
+    !
+    ! (dN_r/dt)|_evap = Delta_t^(nu-1) ( N_r / r_r^nu ) ( (dr_r/dt)|_evap )^nu.
+    ! 
+    ! When nu is set to 1, as suggested, the equation simply becomes:
+    !
+    ! (dN_r/dt)|_evap = ( N_r / r_r ) (dr_r/dt)|_evap.
+
+    ! References:
+    !  Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    !    Parameterization in a Large-Eddy Simulation Model of Marine
+    !    Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
+    !  -- Eq. 23.
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one  ! Constant(s)
+
+    use parameters_microphys, only: &
+        KK_Nrm_evap_nu  ! Variable(s)
+
+    use clubb_precision, only: &
+        time_precision, & ! Variable(s)
+        core_rknd
 
     implicit none
 
@@ -60,21 +257,26 @@ module KK_Nrm_tendencies
       Nrm,               & ! Mean rain drop concentration, < N_r >  [num/kg]
       rrm                  ! Mean rain water mixing ratio, < r_r >  [kg/kg]
 
+    real( kind = time_precision ), intent(in) :: &
+      dt                   ! Model time step duration               [s]
+
     ! Return Variables
     real( kind = core_rknd ) :: &
-      KK_Nrm_evap  ! KK rain drop concentration evaporation rate    [(kg/kg)/s]
+      KK_Nrm_evap_local_mean  ! Mean of KK <N_r> evaporation rate   [(num/kg)/s]
  
 
-    ! Evaporation of N_r.
-    KK_Nrm_evap = ( Nrm / rrm ) * KK_rrm_evap_tndcy
+    ! Calculate the local KK < N_r > evaporation tendency.
+    KK_Nrm_evap_local_mean &
+    = real( dt, kind = core_rknd )**( KK_Nrm_evap_nu - one ) &
+      * ( Nrm / rrm**KK_Nrm_evap_nu ) * KK_rrm_evap_tndcy**KK_Nrm_evap_nu
 
 
     return
 
-  end function KK_Nrm_evap
+  end function KK_Nrm_evap_local_mean
 
   !=============================================================================
-  function KK_Nrm_auto( KK_rrm_auto_tndcy )
+  function KK_Nrm_auto_mean( KK_rrm_auto_tndcy )
 
     ! Description:
     ! This function calculates the production rate of rain drop concentration
@@ -114,20 +316,21 @@ module KK_Nrm_tendencies
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      KK_rrm_auto_tndcy  ! KK rain water autoconversion rate   [(kg/kg)/s]
+      KK_rrm_auto_tndcy  ! Mean KK <r_r> autoconversion rate   [(kg/kg)/s]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      KK_Nrm_auto  ! KK rain drop concentration autoconversion rate [(kg/kg)/s]
+      KK_Nrm_auto_mean  ! Mean KK <N_r> autoconversion rate    [(num/kg)/s]
 
 
     ! Production of N_r through autoconversion.
-    KK_Nrm_auto = KK_rrm_auto_tndcy / ( four_thirds * pi * rho_lw * r_0**3 )
+    KK_Nrm_auto_mean &
+    = KK_rrm_auto_tndcy / ( four_thirds * pi * rho_lw * r_0**3 )
 
 
     return
 
-  end function KK_Nrm_auto
+  end function KK_Nrm_auto_mean
 
 !===============================================================================
 

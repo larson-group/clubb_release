@@ -111,23 +111,24 @@ module microphys_driver
         morrison_lognormal
 
     use parameters_microphys, only: &
-        rrp2_on_rrm2_cloud, & ! Variable(s)
-        Nrp2_on_Nrm2_cloud,    &
-        Ncp2_on_Ncm2_cloud,    &
-        rrp2_on_rrm2_below, &
-        Nrp2_on_Nrm2_below,    &
-        Ncp2_on_Ncm2_below,    &
-        C_evap,                &
-        r_0,                   &
-        KK_evap_Supersat_exp,  &
-        KK_evap_rr_exp,        &
-        KK_evap_Nr_exp,        &
-        KK_auto_rc_exp,        &
-        KK_auto_Nc_exp,        &
-        KK_accr_rc_exp,        &
-        KK_accr_rr_exp,        &
-        KK_mvr_rr_exp,         &
-        KK_mvr_Nr_exp
+        KK_evap_Supersat_exp, & ! Variable(s)
+        KK_evap_rr_exp,       &
+        KK_evap_Nr_exp,       &
+        KK_auto_rc_exp,       &
+        KK_auto_Nc_exp,       &
+        KK_accr_rc_exp,       &
+        KK_accr_rr_exp,       &
+        KK_mvr_rr_exp,        &
+        KK_mvr_Nr_exp,        &
+        KK_Nrm_evap_nu,       &
+        rrp2_on_rrm2_cloud,   &
+        Nrp2_on_Nrm2_cloud,   &
+        Ncp2_on_Ncm2_cloud,   &
+        rrp2_on_rrm2_below,   &
+        Nrp2_on_Nrm2_below,   &
+        Ncp2_on_Ncm2_below,   &
+        C_evap,               &
+        r_0
 
     use parameters_microphys, only: &
         rsnowp2_on_rsnowm2_cloud, & ! Variables
@@ -302,31 +303,34 @@ module microphys_driver
 
     ! Exponent on Supersaturation (S) in the KK evaporation equation.
     ! The standard value is 1.
-    KK_evap_Supersat_exp  = one
+    KK_evap_Supersat_exp = one
     ! Exponent on r_r in the KK evaporation equation.
     ! The standard value is 1/3.
-    KK_evap_rr_exp        = one_third
+    KK_evap_rr_exp       = one_third
     ! Exponent on N_r in the KK evaporation equation.
     ! The standard value is 2/3.
-    KK_evap_Nr_exp        = two_thirds
+    KK_evap_Nr_exp       = two_thirds
     ! Exponent on r_c in the KK autoconversion equation.
     ! The standard value is 2.47.
-    KK_auto_rc_exp        = 2.47_core_rknd
+    KK_auto_rc_exp       = 2.47_core_rknd
     ! Exponent on N_c in the KK autoconversion equation.
     ! The standard value is -1.79.
-    KK_auto_Nc_exp        = -1.79_core_rknd
+    KK_auto_Nc_exp       = -1.79_core_rknd
     ! Exponent on r_c in the KK accretion equation.
     ! The standard value is 1.15.
-    KK_accr_rc_exp        = 1.15_core_rknd
+    KK_accr_rc_exp       = 1.15_core_rknd
     ! Exponent on r_r in the KK accretion equation.
     ! The standard value is 1.15.
-    KK_accr_rr_exp        = 1.15_core_rknd
+    KK_accr_rr_exp       = 1.15_core_rknd
     ! Exponent on r_r in the KK mean volume radius equation.
     ! The standard value is 1/3.
-    KK_mvr_rr_exp         = one_third
+    KK_mvr_rr_exp        = one_third
     ! Exponent on N_r in the KK mean volume radius equation.
     ! The standard value is -1/3.
-    KK_mvr_Nr_exp         = -one_third
+    KK_mvr_Nr_exp        = -one_third
+    ! Exponent and parameter in the KK <N_r> evaporation equation.
+    ! The standard value is 1.
+    KK_Nrm_evap_nu       = one
 
     ! Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric
     ! radius to drizzle drop mean volume radius.
@@ -1595,15 +1599,18 @@ module microphys_driver
         if ( l_local_kk ) then
 
           call KK_local_micro_driver( dt, gr%nz, l_stats_samp, &
-                                      l_latin_hypercube_input, thlm, wm_zt, p_in_Pa, &
-                                      exner, rho, cloud_frac, pdf_params, wtmp, &
-                                      delta_zt, rcm, Ncm, s_mellor, rvm, &
-                                      Ncm_in_cloud, hydromet, &
+                                      l_latin_hypercube_input, thlm, wm_zt, &
+                                      p_in_Pa, exner, rho, cloud_frac, &
+                                      pdf_params, wtmp, delta_zt, rcm, &
+                                      Ncm, s_mellor, rvm, Ncm_in_cloud, &
+                                      hydromet, &
                                       hydromet_mc, hydromet_vel_zt, &
                                       rcm_mc, rvm_mc, thlm_mc, &
-                                      hydromet_vel_covar, hydromet_vel_covar_zt, &
+                                      hydromet_vel_covar, &
+                                      hydromet_vel_covar_zt, &
                                       wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-                                      rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
+                                      rtp2_mc_tndcy, thlp2_mc_tndcy, &
+                                      rtpthlp_mc_tndcy, &
                                       rrainm_auto, rrainm_accr )
 
         else

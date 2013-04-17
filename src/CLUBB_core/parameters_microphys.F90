@@ -159,11 +159,13 @@ module parameters_microphys
     KK_accr_rc_exp,       & ! Exponent on r_c in KK accretion eq.; 1.15
     KK_accr_rr_exp,       & ! Exponent on r_r in KK accretion eq.; 1.15
     KK_mvr_rr_exp,        & ! Exponent on r_r in KK mean volume radius eq.; 1/3
-    KK_mvr_Nr_exp           ! Exponent on N_r in KK mean volume radius eq.; -1/3
+    KK_mvr_Nr_exp,        & ! Exponent on N_r in KK mean volume radius eq.; -1/3
+    KK_Nrm_evap_nu          ! Exponent (parameter) in <N_r> evaporation eq.; 1
 
 !$omp threadprivate( KK_evap_Supersat_exp, KK_evap_rr_exp, KK_evap_Nr_exp, &
 !$omp                KK_auto_rc_exp, KK_auto_Nc_exp, KK_accr_rc_exp, &
-!$omp                KK_accr_rr_exp, KK_mvr_rr_exp, KK_mvr_Nr_exp )
+!$omp                KK_accr_rr_exp, KK_mvr_rr_exp, KK_mvr_Nr_exp, &
+!$omp                KK_Nrm_evap_nu )
 
   ! Parameters added for ice microphysics and latin hypercube sampling
 
