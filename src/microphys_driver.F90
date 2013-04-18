@@ -2631,93 +2631,100 @@ module microphys_driver
     ! Setup LHS Matrix
     do k = 2, gr%nz-1, 1
 
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nz )
+       km1 = max( k-1, 1 )
+       kp1 = min( k+1, gr%nz )
 
-      ! Main diagonal
+       ! LHS time tendency.
+       lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( one / real( dt, kind = core_rknd ) )
 
-      ! LHS time tendency.
-      lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( one / real( dt, kind = core_rknd ) )
+       ! LHS turbulent advection term.
+       ! - (1/rho_ds) * d( rho_ds * <w'h_m'> ) / dz.
+       ! Note:  a down gradient closure approximation is made for w'hm', so the
+       !        turbulent advection term has the form of a diffusion term:
+       !        + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
+       lhs(kp1_tdiag:km1_tdiag,k) & 
+       = lhs(kp1_tdiag:km1_tdiag,k) &
+       + invrs_rho_ds_zt(k) &
+       * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
+                           rho_ds_zm(km1) * Kr(km1), nu, & 
+                           gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                           gr%invrs_dzt(k), k )
 
+       ! LHS mean advection term.
+       lhs(kp1_tdiag:km1_tdiag,k) & 
+       = lhs(kp1_tdiag:km1_tdiag,k) & 
+       + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
+                         gr%invrs_dzm(km1) )
 
-      ! All diagonals
-      lhs(kp1_tdiag:km1_tdiag,k) & 
-        = lhs(kp1_tdiag:km1_tdiag,k) & 
-        + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                            gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                            gr%invrs_dzt(k), k )
+       ! LHS hydrometeor sedimentation term.
+       ! Note: the Morrison microphysics has its own sedimentation code, which
+       ! is applied through the _mc terms to each hydrometeor species.
+       ! Therefore, l_sed will always be false when the Morrison microphysics
+       ! is enabled.  -dschanen 24 Jan 2011
+       if ( l_sed ) then
+          if ( .not. l_upwind_diff_sed ) then
+             lhs(kp1_tdiag:km1_tdiag,k) & 
+             = lhs(kp1_tdiag:km1_tdiag,k) & 
+             + sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
+                                      rho_ds_zm(km1), invrs_rho_ds_zt(k), &
+                                      gr%invrs_dzt(k), k )
+          else
+             lhs(kp1_tdiag:km1_tdiag,k) & 
+             = lhs(kp1_tdiag:km1_tdiag,k) & 
+             + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+                                    rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                                    gr%invrs_dzm(k), k )
+          endif
+       endif
 
-      ! LHS mean advection term.
-      lhs(kp1_tdiag:km1_tdiag,k) & 
-        = lhs(kp1_tdiag:km1_tdiag,k) & 
-        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
+       if ( l_stats_samp ) then
 
-      ! LHS hydrometeor sedimentation term.
-      ! Note: the Morrison microphysics has its own sedimentation code, which
-      ! is applied through the _mc terms to each hydrometeor species.
-      ! Therefore, l_sed will always be false when the Morrison microphysics
-      ! is enabled.  -dschanen 24 Jan 2011
-      if ( l_sed ) then
-         if ( .not. l_upwind_diff_sed ) then
-            lhs(kp1_tdiag:km1_tdiag,k) & 
-            = lhs(kp1_tdiag:km1_tdiag,k) & 
-            + sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
-                                     rho_ds_zm(km1), invrs_rho_ds_zt(k), &
-                                     gr%invrs_dzt(k), k )
-         else
-            lhs(kp1_tdiag:km1_tdiag,k) & 
-            = lhs(kp1_tdiag:km1_tdiag,k) & 
-            + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
-                                   rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
-                                   gr%invrs_dzm(k), k )
-         endif
-      endif
+          ! Statistics:  implicit contributions to hydrometeor xrm.
 
-      if ( l_stats_samp ) then
+          if ( ixrm_ma > 0 ) then
+             tmp(1:3) &
+             = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
+                               gr%invrs_dzm(km1) )
 
-        ! Statistics:  implicit contributions to hydrometeor xrm.
+             ztscr01(k) = -tmp(3)
+             ztscr02(k) = -tmp(2)
+             ztscr03(k) = -tmp(1)
+          endif
 
-        if ( ixrm_ma > 0 ) then
-          tmp(1:3) = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
-            gr%invrs_dzm(km1) )
+          if ( ixrm_sd > 0 .and. l_sed ) then
+             if ( .not. l_upwind_diff_sed ) then
+                tmp(1:3) &
+                = sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
+                                         rho_ds_zm(km1), invrs_rho_ds_zt(k), &
+                                         gr%invrs_dzt(k), k )
+             else
+                tmp(1:3) &
+                = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+                                       rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                                       gr%invrs_dzm(k), k )
+             endif
 
-          ztscr01(k) = -tmp(3)
-          ztscr02(k) = -tmp(2)
-          ztscr03(k) = -tmp(1)
-        endif
+             ztscr04(k) = -tmp(3)
+             ztscr05(k) = -tmp(2)
+             ztscr06(k) = -tmp(1)
 
-        if ( ixrm_sd > 0 .and. l_sed ) then
-           if ( .not. l_upwind_diff_sed ) then
-              tmp(1:3) &
-              = sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
-                                       rho_ds_zm(km1), invrs_rho_ds_zt(k), &
-                                       gr%invrs_dzt(k), k )
-           else
-              tmp(1:3) &
-              = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
-                                     rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
-                                     gr%invrs_dzm(k), k )
-           endif
+          endif
 
-          ztscr04(k) = -tmp(3)
-          ztscr05(k) = -tmp(2)
-          ztscr06(k) = -tmp(1)
+          if ( ixrm_dff > 0 ) then
+             tmp(1:3) &
+             = invrs_rho_ds_zt(k) & 
+             * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
+                                 rho_ds_zm(km1) * Kr(km1), nu,  & 
+                                 gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                                 gr%invrs_dzt(k), k )
+             ztscr07(k) = -tmp(3)
+             ztscr08(k) = -tmp(2)
+             ztscr09(k) = -tmp(1)
+          endif
 
-        endif
+       endif ! l_stats_samp
 
-        if ( ixrm_dff > 0 ) then
-          tmp(1:3) & 
-            = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
-                                gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                                gr%invrs_dzt(k), k )
-          ztscr07(k) = -tmp(3)
-          ztscr08(k) = -tmp(2)
-          ztscr09(k) = -tmp(1)
-        end if
-
-      end if ! l_stats_samp
-
-    end do ! 2..gr%nz-1
+    enddo ! 2..gr%nz-1
 
 
     ! Boundary Conditions
@@ -2744,45 +2751,50 @@ module microphys_driver
 
     ! LHS eddy-diffusion term at the lower boundary.
     lhs(kp1_tdiag:km1_tdiag,k) &
-      = lhs(kp1_tdiag:km1_tdiag,k) &
-      + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
-                          gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                          gr%invrs_dzt(k), k )
+    = lhs(kp1_tdiag:km1_tdiag,k) &
+    + invrs_rho_ds_zt(k) &
+    * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
+                        rho_ds_zm(km1) * Kr(km1), nu, & 
+                        gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                        gr%invrs_dzt(k), k )
 
     ! Here we apply the upwind differencing at the lower boundary.
     if ( l_sed .and. l_upwind_diff_sed ) then
-      lhs(kp1_tdiag:km1_tdiag,k) & 
-        = lhs(kp1_tdiag:km1_tdiag,k) & 
-        + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
-                               rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
-                               gr%invrs_dzm(k), k )
+       lhs(kp1_tdiag:km1_tdiag,k) & 
+       = lhs(kp1_tdiag:km1_tdiag,k) & 
+       + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+                              rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                              gr%invrs_dzm(k), k )
     endif
 
     if ( l_stats_samp ) then
 
-      ! Statistics:  implicit contributions to hydrometeor xrm.
+       ! Statistics:  implicit contributions to hydrometeor xrm.
 
-      if ( ixrm_dff > 0 ) then
-        tmp(1:3) & 
-          = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+       if ( ixrm_dff > 0 ) then
+          tmp(1:3) & 
+          = invrs_rho_ds_zt(k) &
+          * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
+                              rho_ds_zm(km1) * Kr(km1), nu, & 
                               gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                               gr%invrs_dzt(k), k )
-        ztscr07(k) = -tmp(3)
-        ztscr08(k) = -tmp(2)
-        ztscr09(k) = -tmp(1)
-      end if
+          ztscr07(k) = -tmp(3)
+          ztscr08(k) = -tmp(2)
+          ztscr09(k) = -tmp(1)
+       endif
 
-      if ( ixrm_sd > 0 .and. l_sed .and. l_upwind_diff_sed ) then
-        tmp(1:3) = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
-                                        rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
-                                        gr%invrs_dzm(k), k )
+       if ( ixrm_sd > 0 .and. l_sed .and. l_upwind_diff_sed ) then
+          tmp(1:3) &
+          = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+                                 rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                                 gr%invrs_dzm(k), k )
 
-        ztscr04(k) = -tmp(3)
-        ztscr05(k) = -tmp(2)
-        ztscr06(k) = -tmp(1)
-      end if
+          ztscr04(k) = -tmp(3)
+          ztscr05(k) = -tmp(2)
+          ztscr06(k) = -tmp(1)
+      endif
 
-    end if  ! l_stats_samp
+    endif  ! l_stats_samp
 
 
     ! Upper Boundary
@@ -2794,26 +2806,30 @@ module microphys_driver
 
     ! LHS eddy-diffusion term at the upper boundary.
     lhs(kp1_tdiag:km1_tdiag,k) &
-      = lhs(kp1_tdiag:km1_tdiag,k) &
-      + diffusion_zt_lhs( Kr(k), Kr(km1), nu,  &
-                          gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                          gr%invrs_dzt(k), k )
+    = lhs(kp1_tdiag:km1_tdiag,k) &
+    + invrs_rho_ds_zt(k) &
+    * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
+                        rho_ds_zm(km1) * Kr(km1), nu, & 
+                        gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                        gr%invrs_dzt(k), k )
 
     if ( l_stats_samp ) then
 
-      ! Statistics:  implicit contributions to hydrometeor xrm.
+       ! Statistics:  implicit contributions to hydrometeor xrm.
 
-      if ( ixrm_dff > 0 ) then
-        tmp(1:3) & 
-          = diffusion_zt_lhs( Kr(k), Kr(km1), nu,  & 
+       if ( ixrm_dff > 0 ) then
+          tmp(1:3) & 
+          = invrs_rho_ds_zt(k) &
+          * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
+                              rho_ds_zm(km1) * Kr(km1), nu, & 
                               gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                               gr%invrs_dzt(k), k )
-        ztscr07(k) = -tmp(3)
-        ztscr08(k) = -tmp(2)
-        ztscr09(k) = -tmp(1)
-      end if
+          ztscr07(k) = -tmp(3)
+          ztscr08(k) = -tmp(2)
+          ztscr09(k) = -tmp(1)
+       endif
 
-    end if  ! l_stats_samp
+    endif  ! l_stats_samp
 
 
     return
