@@ -514,12 +514,14 @@ module stats_variables
     irt_KK_accr_covar_zt,  & ! Covariance of r_t and KK accretion tendency.
     ithl_KK_accr_covar_zt, & ! Covariance of theta_l and KK accretion tendency.
     irr_KK_mvr_covar_zt,   & ! Covariance of r_r and KK mean volume radius.
-    iNr_KK_mvr_covar_zt      ! Covariance of N_r and KK mean volume radius.
+    iNr_KK_mvr_covar_zt,   & ! Covariance of N_r and KK mean volume radius.
+    iKK_mvr_variance_zt      ! Variance of KK rain drop mean volume radius.
 
 !$omp threadprivate( iw_KK_evap_covar_zt, irt_KK_evap_covar_zt, &
 !$omp   ithl_KK_evap_covar_zt, iw_KK_auto_covar_zt, irt_KK_auto_covar_zt, &
 !$omp   ithl_KK_auto_covar_zt, iw_KK_accr_covar_zt, irt_KK_accr_covar_zt, &
-!$omp   ithl_KK_accr_covar_zt, irr_KK_mvr_covar_zt, iNr_KK_mvr_covar_zt )
+!$omp   ithl_KK_accr_covar_zt, irr_KK_mvr_covar_zt, iNr_KK_mvr_covar_zt, &
+!$omp   iKK_mvr_variance_zt )
 
   ! Wind budgets
   integer, public :: & 
@@ -593,19 +595,25 @@ module stats_variables
 !$omp     icrt1, icrt2, icthl1, icthl2 )
 
   integer, public :: & 
-     iwp2_zt, & 
-     ithlp2_zt, & 
-     iwpthlp_zt, & 
-     iwprtp_zt, & 
-     irtp2_zt, & 
-     irtpthlp_zt, &
-     iup2_zt, &
-     ivp2_zt, &
-     iupwp_zt, &
-     ivpwp_zt
+    iwp2_zt, & 
+    ithlp2_zt, & 
+    iwpthlp_zt, & 
+    iwprtp_zt, & 
+    irtp2_zt, & 
+    irtpthlp_zt, &
+    iup2_zt, &
+    ivp2_zt, &
+    iupwp_zt, &
+    ivpwp_zt
 
-!$omp   threadprivate(iwp2_zt, ithlp2_zt, iwpthlp_zt, iwprtp_zt, irtp2_zt, irtpthlp_zt, &
-!$omp     iup2_zt, ivp2_zt, iupwp_zt, ivpwp_zt)
+!$omp   threadprivate( iwp2_zt, ithlp2_zt, iwpthlp_zt, iwprtp_zt, irtp2_zt, &
+!$omp                  irtpthlp_zt, iup2_zt, ivp2_zt, iupwp_zt, ivpwp_zt )
+
+  integer, public :: &
+    irrp2_zt, &
+    iNrp2_zt
+
+!$omp  threadprivate( irrp2_zt, iNrp2_zt )
 
   integer, public :: &
     is_mellor

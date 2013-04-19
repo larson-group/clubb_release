@@ -17,6 +17,7 @@ module KK_utilities
             factorial,     &
             Dv_fnc,        & ! Parabolic Cylinder Function, D.
             calc_corr_sx,  &
+            calc_xp2,      &
             G_T_p
 
   contains
@@ -615,6 +616,68 @@ module KK_utilities
     return
 
   end function calc_corr_sx
+
+  !=============================================================================
+  pure function calc_xp2( mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, &
+                          mixt_frac, x_frac_1, x_frac_2, x_mean )  &
+  result( xp2 )
+
+    ! Description:
+    ! Calculates the overall variance of x, <x'^2>, where the distribution of x
+    ! is a combination of a lognormal distribution and/or 0 in each PDF
+    ! component.  The fraction of each component where x is lognormally
+    ! distributed (amd greater than 0) is x_frac_i (x_frac_1 and x_frac_2 for
+    ! PDF components 1 and 2, respectively).  The fraction of each component
+    ! where x has a value of 0 is ( 1 - x_frac_i ).  This function should be
+    ! called to calculate the total variance for x when <x'^2> is not provided
+    ! by a predictive (or other) equation.
+    !    
+    ! This function is used to calculate the overall variance for rain water
+    ! mixing ratio, <r_r'^2>, and the overall variance for rain drop
+    ! concentration, <N_r'^2>.  The ratio of variance to mean-value-squared is
+    ! specified for the in-precip values of r_r and N_r within each PDF
+    ! component, allowing for the calculation of sigma_rr_i and sigma_Nr_i,
+    ! as well as sigma_rr_i_n and sigma_Nr_i_n.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one, & ! Constant(s)
+        two
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_x_1_n,    & ! Mean of ln x (1st PDF comp.) in x_frac               [-]
+      mu_x_2_n,    & ! Mean of ln x (2nd PDF comp.) in x_frac               [-]
+      sigma_x_1_n, & ! Standard deviation of ln x (1st PDF comp.) in x_frac [-]
+      sigma_x_2_n, & ! Standard deviation of ln x (2nd PDF comp.) in x_frac [-]
+      mixt_frac,   & ! Mixture fraction                                     [-]
+      x_frac_1,    & ! Fraction: x distributed lognormally (1st PDF comp.)  [-]
+      x_frac_2,    & ! Fraction: x distributed lognormally (2nd PDF comp.)  [-]
+      x_mean         ! Overall mean value of x                              [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      xp2            ! Overall variance of x                                [-]
+
+
+    ! Calculate overall variance of x, <x'^2>.
+    xp2 = ( mixt_frac * x_frac_1 &
+            * exp( two * mu_x_1_n + two * sigma_x_1_n**2 ) &
+          + ( one - mixt_frac ) * x_frac_2 &
+            * exp( two * mu_x_2_n + two * sigma_x_2_n**2 ) ) &
+          - x_mean**2
+
+
+    return
+
+  end function calc_xp2
 
   !=============================================================================
   function G_T_p( T_in_K, p_in_Pa )

@@ -21,7 +21,8 @@ module KK_microphys_module
              KK_upscaled_covar_driver, &
              KK_microphys_adjust, &
              KK_stats_output, &
-             KK_sedimentation
+             KK_sedimentation, &
+             variance_KK_mvr
 
   contains
 
@@ -3573,16 +3574,22 @@ module KK_microphys_module
         covar_rr_KK_mvr, & ! Procedure(s)
         covar_Nr_KK_mvr
 
+    use KK_utilities, only: &
+        calc_xp2    ! Procedure(s)
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use stats_type, only: & 
+    use stats_type, only: &
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only: & 
         zt,                  & ! Variable(s)
         irr_KK_mvr_covar_zt, &
-        iNr_KK_mvr_covar_zt
+        iNr_KK_mvr_covar_zt, &
+        iKK_mvr_variance_zt, &
+        irrp2_zt,            &
+        iNrp2_zt
 
     implicit none
 
@@ -3620,11 +3627,14 @@ module KK_microphys_module
     ! Local Variables
     real( kind = core_rknd ) :: &
       rr_KK_mvr_covar, & ! Covariance of r_r and KK mean vol rad   [(kg/kg)m]
-      Nr_KK_mvr_covar    ! Covariance of N_r and KK mean vol rad  [(num/kg)m]
+      Nr_KK_mvr_covar, & ! Covariance of N_r and KK mean vol rad   [(num/kg)m]
+      KK_mvr_variance, & ! Variance of KK rain drop mean vol rad   [m^2]
+      rrp2,            & ! Overall variance of r_r                 [(kg/kg)^2]
+      Nrp2               ! Overall variance of N_r                 [(num/kg)^2]
 
 
-    ! Calculate the covariance between the sedimentation velocity of r_r
-    ! and r_r, < V_rr'r_r' >.
+    ! Calculate the covariance between rain drop mean volume radius and r_r,
+    ! < R_vr'r_r' >.
     if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
 
        rr_KK_mvr_covar  &
@@ -3640,11 +3650,9 @@ module KK_microphys_module
 
     endif
 
-    Vrrprrp = - 0.012_core_rknd * micron_per_m * rr_KK_mvr_covar
 
-
-    ! Calculate the covariance between the sedimentation velocity of N_r
-    ! and N_r, < V_Nr'N_r' >.
+    ! Calculate the covariance between rain drop mean volume radius and N_r,
+    ! < R_vr'N_r' >.
     if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
 
        Nr_KK_mvr_covar  &
@@ -3660,9 +3668,49 @@ module KK_microphys_module
 
     endif
 
-    VNrpNrp = - 0.007_core_rknd * micron_per_m * Nr_KK_mvr_covar
+
+    ! Calculate the variance of KK rain drop mean volume radius, < R_vr'^2 >.
+    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+
+       KK_mvr_variance &
+       = variance_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
+                          sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                          sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+                          KK_mean_vol_rad, KK_mvr_coef, mixt_frac, &
+                          precip_frac_1, precip_frac_2 )
+
+    else  ! r_r or N_r = 0.
+
+       KK_mvr_variance = zero
+
+    endif
+
+    ! Calculate the overall variance of r_r, <r_r'^2>.
+    if ( rrainm > rr_tol ) then
+
+       rrp2 = calc_xp2( mu_rr_1_n, mu_rr_2_n, sigma_rr_1_n, sigma_rr_2_n, &
+                        mixt_frac, precip_frac_1, precip_frac_2, rrainm )
+
+    else ! r_r = 0.
+
+       rrp2 = zero
+
+    endif
+
+    ! Calculate the overall variance of N_r, <N_r'^2>.
+    if ( Nrm > Nr_tol ) then
+
+       Nrp2 = calc_xp2( mu_Nr_1_n, mu_Nr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                        mixt_frac, precip_frac_1, precip_frac_2, Nrm )
+
+    else ! N_r = 0.
+
+       Nrp2 = zero
+
+    endif
 
 
+    ! Statistics
     if ( l_stats_samp ) then
 
        ! Covariance between r_r and KK rain drop mean volume radius.
@@ -3677,7 +3725,30 @@ module KK_microphys_module
                                    Nr_KK_mvr_covar, zt )
        endif
 
+       ! Variance of KK rain drop mean volume radius.
+       if ( iKK_mvr_variance_zt > 0 ) then
+          call stat_update_var_pt( iKK_mvr_variance_zt, level, &
+                                   KK_mvr_variance, zt )
+       endif
+
+       ! Overall variance of r_r.
+       if ( irrp2_zt > 0 ) then
+          call stat_update_var_pt( irrp2_zt, level, rrp2, zt )
+       endif
+
+       ! Overall variance of N_r.
+       if ( iNrp2_zt > 0 ) then
+          call stat_update_var_pt( iNrp2_zt, level, Nrp2, zt )
+       endif
+
     endif ! l_stats_samp
+
+
+    ! Covariance between V_rr and r_r, < V_rr'r_r' >.
+    Vrrprrp = - 0.012_core_rknd * micron_per_m * rr_KK_mvr_covar
+
+    ! Covariance between V_Nr and N_r, < V_Nr'N_r' >.
+    VNrpNrp = - 0.007_core_rknd * micron_per_m * Nr_KK_mvr_covar
 
 
     return
@@ -4734,6 +4805,89 @@ module KK_microphys_module
     return
 
   end subroutine KK_sedimentation
+
+  !=============================================================================
+  function variance_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
+                            sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                            sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+                            KK_mean_vol_rad, KK_mvr_coef, mixt_frac, &
+                            precip_frac_1, precip_frac_2 )
+
+    ! Description:
+    ! This function calculates the variance of KK mean volume radius of rain
+    ! drops (R_vr), which can be written as < R_vr'^2 >.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one, & ! Constant(s)
+        two
+
+    use KK_upscaled_means, only:  &
+        bivar_LL_mean_eq  ! Procedure(s)
+
+    use parameters_microphys, only: &
+        KK_mvr_rr_exp, & ! Variable(s)
+        KK_mvr_Nr_exp
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_rr_1_n,       & ! Mean of ln rr (1st PDF component) in-precip (ip)  [-]
+      mu_rr_2_n,       & ! Mean of ln rr (2nd PDF component) ip              [-]
+      mu_Nr_1_n,       & ! Mean of ln Nr (1st PDF component) ip              [-]
+      mu_Nr_2_n,       & ! Mean of ln Nr (2nd PDF component) ip              [-]
+      sigma_rr_1_n,    & ! Standard deviation of ln rr (1st PDF comp.) ip    [-]
+      sigma_rr_2_n,    & ! Standard deviation of ln rr (2nd PDF comp.) ip    [-]
+      sigma_Nr_1_n,    & ! Standard deviation of ln Nr (1st PDF comp.) ip    [-]
+      sigma_Nr_2_n,    & ! Standard deviation of ln Nr (2nd PDF comp.) ip    [-]
+      corr_rrNr_1_n,   & ! Corr. betw. ln rr & ln Nr (1st PDF comp.) ip      [-]
+      corr_rrNr_2_n,   & ! Corr. betw. ln rr & ln Nr (2nd PDF comp.) ip      [-]
+      KK_mean_vol_rad, & ! KK mean volume radius of rain drops               [m]
+      KK_mvr_coef,     & ! KK mean volume radius coefficient                 [m]
+      mixt_frac,       & ! Mixture fraction                                  [-]
+      precip_frac_1,   & ! Precipitation fraction (1st PDF component)        [-]
+      precip_frac_2      ! Precipitation fraction (2nd PDF component)        [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      variance_KK_mvr    ! Variance of KK rain drop mean volume radius     [m^2]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      alpha_exp, & ! Exponent on r_r
+      beta_exp     ! Exponent on N_r
+
+
+    ! Values of the KK exponents.
+    alpha_exp = KK_mvr_rr_exp
+    beta_exp  = KK_mvr_Nr_exp
+
+    ! Calculate the covariance of r_r and KK mean volume radius of rain drops.
+    variance_KK_mvr  &
+    = KK_mvr_coef**2 &
+      * ( mixt_frac &
+          * precip_frac_1 &
+          * bivar_LL_mean_eq( mu_rr_1_n, mu_Nr_1_n, sigma_rr_1_n, &
+                              sigma_Nr_1_n, corr_rrNr_1_n, &
+                              two * alpha_exp, two * beta_exp ) &
+        + ( one - mixt_frac ) &
+          * precip_frac_2 &
+          * bivar_LL_mean_eq( mu_rr_2_n, mu_Nr_2_n, sigma_rr_2_n, &
+                              sigma_Nr_2_n, corr_rrNr_2_n, &
+                              two * alpha_exp, two * beta_exp ) &
+        ) &
+      - KK_mean_vol_rad**2
+
+
+    return
+
+  end function variance_KK_mvr
 
 !===============================================================================
 

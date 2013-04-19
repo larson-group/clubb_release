@@ -368,6 +368,10 @@ module stats_zt
         ivpwp_zt
 
     use stats_variables, only: & 
+        irrp2_zt, &
+        iNrp2_zt
+ 
+    use stats_variables, only: & 
         zt, & 
         isclrm, & 
         isclrm_f, & 
@@ -417,7 +421,8 @@ module stats_zt
         irt_KK_accr_covar_zt,  &
         ithl_KK_accr_covar_zt, &
         irr_KK_mvr_covar_zt,   &
-        iNr_KK_mvr_covar_zt
+        iNr_KK_mvr_covar_zt,   &
+        iKK_mvr_variance_zt
 
     use stats_variables, only: & 
       ieff_rad_cloud, &
@@ -757,6 +762,7 @@ module stats_zt
     ithl_KK_accr_covar_zt = 0
     irr_KK_mvr_covar_zt   = 0
     iNr_KK_mvr_covar_zt   = 0
+    iKK_mvr_variance_zt   = 0
 
     ivm_bt   = 0
     ivm_ma   = 0
@@ -823,6 +829,9 @@ module stats_zt
     ivp2_zt     = 0
     iupwp_zt    = 0
     ivpwp_zt    = 0
+
+    irrp2_zt = 0
+    iNrp2_zt = 0
 
     iC11_Skw_fnc = 0
     ia3_coef_zt = 0
@@ -2266,6 +2275,13 @@ module stats_zt
             "(num/kg)m", zt )
        k = k + 1
 
+      case ('KK_mvr_variance_zt')
+       iKK_mvr_variance_zt = k
+
+       call stat_assign( iKK_mvr_variance_zt, "KK_mvr_variance_zt", &
+            "Variance of KK rain drop mean volume radius [m^2]", "m^2", zt )
+       k = k + 1
+
       case ('vm_bt')
         ivm_bt = k
 
@@ -2670,6 +2686,20 @@ module stats_zt
         ivpwp_zt = k
         call stat_assign( ivpwp_zt, "vpwp_zt", & 
              "v'w' interpolated to thermodynamic levels [m^2/s^2]", "m^2/s^2", zt )
+        k = k + 1
+
+      case('rrp2_zt')
+        irrp2_zt = k
+
+        call stat_assign( irrp2_zt, "rrp2_zt", & 
+             "<r_r'^2> on thermodyamic levels [(kg/kg)^2]", "(kg/kg)^2", zt )
+        k = k + 1
+
+      case('Nrp2_zt')
+        iNrp2_zt = k
+
+        call stat_assign( iNrp2_zt, "Nrp2_zt", & 
+             "<N_r'^2> on thermodyamic levels [(num/kg)^2]", "(num/kg)^2", zt )
         k = k + 1
 
       case ('C11_Skw_fnc')
