@@ -56,7 +56,7 @@ vars_zt =
 'w_KK_evap_covar_zt', 'rt_KK_evap_covar_zt', 'thl_KK_evap_covar_zt', 
 'w_KK_auto_covar_zt', 'rt_KK_auto_covar_zt', 'thl_KK_auto_covar_zt', 
 'w_KK_accr_covar_zt', 'rt_KK_accr_covar_zt', 'thl_KK_accr_covar_zt',
-'rr_KK_mvr_covar_zt', 'Nr_KK_mvr_covar_zt', 
+'rr_KK_mvr_covar_zt', 'Nr_KK_mvr_covar_zt', 'KK_mvr_variance_zt', 
 'mixt_frac', 'w1', 'w2', 'varnce_w1', 'varnce_w2', 'thl1', 'thl2', 'varnce_thl1', 'varnce_thl2',
 'rt1', 'rt2', 'varnce_rt1', 'varnce_rt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 
 'cloud_frac1', 'cloud_frac2', 'a3_coef_zt', 'wp3_on_wp2_zt',
@@ -79,7 +79,7 @@ vars_zt =
 'corr_wrr', 'corr_wNr', 'corr_wNc',
 's_mellor', 'C11_Skw_fnc',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
-'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt',
+'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt', 'rrp2_zt', 'Nrp2_zt',
 'sclr1m', 'sclr1m_f', 'sclr2m', 'sclr2m_f',
 'edsclr1m', 'edsclr2m', 'edsclr1m_f', 'edsclr2m_f',
 ''
