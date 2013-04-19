@@ -15,11 +15,11 @@ module KK_microphys_module
              component_means_rain, &
              precip_fraction, &
              KK_tendency_coefs, &
-             KK_upscaled_stats, &
              KK_upscaled_means_driver, &
              KK_sed_vel_covars, &
              KK_upscaled_covar_driver, &
              KK_microphys_adjust, &
+             KK_upscaled_stats, &
              KK_stats_output, &
              KK_sedimentation, &
              variance_KK_mvr
@@ -756,6 +756,9 @@ module KK_microphys_module
                               KK_evap_coef, KK_auto_coef, &
                               KK_accr_coef, KK_mvr_coef )
 
+      !!! Calculate the means, standard deviations, and correlations involving
+      !!! rain water mixing ratio and rain drop concentration for each PDF
+      !!! component.
       call KK_in_precip_values( rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
                                 rc2(k), cloud_frac1(k), cloud_frac2(k), &
                                 precip_frac_1(k), precip_frac_2(k), &
@@ -765,6 +768,8 @@ module KK_microphys_module
                                 corr_sNr_1, corr_sNr_2, corr_rrNr_1, &
                                 corr_rrNr_2 )
 
+      !!! Calculate the mean, standard deviations, and correlations involving
+      !!! ln r_r, ln N_r, and ln N_c for each PDF component.
       call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), Ncm(k), &
                               rr1(k), rr2(k), Nr1(k), Nr2(k), &
                               mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
@@ -789,20 +794,6 @@ module KK_microphys_module
                               corr_sNc_1_n, corr_sNc_2_n, &
                               corr_rrNr_1_n, corr_rrNr_2_n, &
                               corr_sw, corr_wrr, corr_wNr, corr_wNc )
-
-      call KK_upscaled_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                              mu_Nc_1, mu_Nc_2, mu_rr_1_n, mu_rr_2_n, &
-                              mu_Nr_1_n, mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
-                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                              sigma_Nr_2, sigma_Nc_1, sigma_Nc_2, &
-                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                              sigma_Nr_2_n, sigma_Nc_1_n, sigma_Nc_2_n, &
-                              corr_srr_1, corr_srr_2, corr_sNr_1, &
-                              corr_sNr_2, corr_sNc_1, corr_sNc_2, &
-                              corr_rrNr_1, corr_rrNr_2, corr_srr_1_n, &
-                              corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
-                              corr_sNc_1_n, corr_sNc_2_n, corr_rrNr_1_n, &
-                              corr_rrNr_2_n, k, l_stats_samp )
 
       !!! Calculate the values of the upscaled KK microphysics tendencies.
       call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
@@ -893,6 +884,24 @@ module KK_microphys_module
                                 l_evap_adj_enabled, l_stats_samp, k, &
                                 rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
                                 rvm_mc(k), rcm_mc(k), thlm_mc(k) )
+
+      !!! Statistical output for upscaled KK.
+      call KK_upscaled_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                              mu_Nc_1, mu_Nc_2, mu_rr_1_n, mu_rr_2_n, &
+                              mu_Nr_1_n, mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
+                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                              sigma_Nr_2, sigma_Nc_1, sigma_Nc_2, &
+                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                              sigma_Nr_2_n, sigma_Nc_1_n, sigma_Nc_2_n, &
+                              corr_srr_1, corr_srr_2, corr_sNr_1, &
+                              corr_sNr_2, corr_sNc_1, corr_sNc_2, &
+                              corr_rrNr_1, corr_rrNr_2, corr_srr_1_n, &
+                              corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
+                              corr_sNc_1_n, corr_sNc_2_n, corr_rrNr_1_n, &
+                              corr_rrNr_2_n, mixt_frac(k), precip_frac_1(k), &
+                              precip_frac_2(k), KK_mvr_coef, &
+                              KK_mean_vol_rad(k), rrainm(k), Nrm(k), k, &
+                              l_stats_samp )
 
       !!! Statistical output for mean microphysics tendenices.
       call KK_stats_output( KK_evap_tndcy(k), KK_auto_tndcy(k), &
@@ -2981,409 +2990,6 @@ module KK_microphys_module
   end subroutine KK_upscaled_setup
 
   !=============================================================================
-  subroutine KK_upscaled_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                mu_Nc_1, mu_Nc_2, mu_rr_1_n, mu_rr_2_n, &
-                                mu_Nr_1_n, mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
-                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                sigma_Nr_2, sigma_Nc_1, sigma_Nc_2, &
-                                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                sigma_Nr_2_n, sigma_Nc_1_n, sigma_Nc_2_n, &
-                                corr_srr_1, corr_srr_2, corr_sNr_1, &
-                                corr_sNr_2, corr_sNc_1, corr_sNc_2, &
-                                corr_rrNr_1, corr_rrNr_2, corr_srr_1_n, &
-                                corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
-                                corr_sNc_1_n, corr_sNc_2_n, corr_rrNr_1_n, &
-                                corr_rrNr_2_n, level, l_stats_samp )
-
-    ! Description:
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd   ! Variable(s)
-
-    use stats_type, only: &
-        stat_update_var_pt  ! Procedure(s)
-
-    use stats_variables, only : &
-        imu_rr_1,       & ! Variable(s)
-        imu_rr_2,       &
-        imu_Nr_1,       &
-        imu_Nr_2,       &
-        imu_Nc_1,       &
-        imu_Nc_2,       &
-        imu_rr_1_n,     &
-        imu_rr_2_n,     &
-        imu_Nr_1_n,     &
-        imu_Nr_2_n,     &
-        imu_Nc_1_n,     &
-        imu_Nc_2_n,     &
-        isigma_rr_1,    &
-        isigma_rr_2,    &
-        isigma_Nr_1,    &
-        isigma_Nr_2,    &
-        isigma_Nc_1,    &
-        isigma_Nc_2,    &
-        isigma_rr_1_n,  &
-        isigma_rr_2_n,  &
-        isigma_Nr_1_n,  &
-        isigma_Nr_2_n,  &
-        isigma_Nc_1_n,  &
-        isigma_Nc_2_n,  &
-        icorr_srr_1,    &
-        icorr_srr_2,    &
-        icorr_sNr_1,    &
-        icorr_sNr_2,    &
-        icorr_sNc_1,    &
-        icorr_sNc_2,    &
-        icorr_rrNr_1,   &
-        icorr_rrNr_2,   &
-        icorr_srr_1_n,  &
-        icorr_srr_2_n,  &
-        icorr_sNr_1_n,  &
-        icorr_sNr_2_n,  &
-        icorr_sNc_1_n,  &
-        icorr_sNc_2_n,  &
-        icorr_rrNr_1_n, &
-        icorr_rrNr_2_n, &
-        zt
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
-      mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
-      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
-      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
-      mu_Nc_1,       & ! Mean of Nc (1st PDF component)                 [num/kg]
-      mu_Nc_2,       & ! Mean of Nc (2nd PDF component)                 [num/kg]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
-      mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)          [ln(num/kg)]
-      mu_Nc_2_n,     & ! Mean of ln Nc (2nd PDF component)          [ln(num/kg)]
-      sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
-      sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
-      sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
-      sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
-      sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
-      sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
-      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
-      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
-      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-      sigma_Nc_1_n,  & ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
-      sigma_Nc_2_n,  & ! Standard dev. of ln Nc (2nd PDF comp.)     [ln(num/kg)]
-      corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
-      corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
-      corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
-      corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
-      corr_sNc_1,    & ! Correlation between s and Nc (1st PDF component)    [-]
-      corr_sNc_2,    & ! Correlation between s and Nc (2nd PDF component)    [-]
-      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
-      corr_rrNr_2,   & ! Correlation between rr & Nr (2nd PDF component) ip  [-]
-      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF comp.)     [-]
-      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF comp.)     [-]
-      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-      corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
-
-    integer, intent(in) :: &
-      level   ! Vertical level index 
-
-    logical, intent(in) :: &
-      l_stats_samp     ! Flag to record statistical output.
-
-
-    !!! Output the correlations
-
-    ! Statistics
-    if ( l_stats_samp ) then
-
-       ! Mean of in-precip rain drop concentration in PDF component 1.
-       if ( imu_rr_1 > 0 ) then
-          call stat_update_var_pt( imu_rr_1, level, mu_rr_1, zt )
-       endif
-
-       ! Mean of in-precip rain drop concentration in PDF component 2.
-       if ( imu_rr_2 > 0 ) then
-          call stat_update_var_pt( imu_rr_2, level, mu_rr_2, zt )
-       endif
-
-       ! Mean of in-precip rain drop concentration in PDF component 1.
-       if ( imu_Nr_1 > 0 ) then
-          call stat_update_var_pt( imu_Nr_1, level, mu_Nr_1, zt )
-       endif
-
-       ! Mean of in-precip rain drop concentration in PDF component 2.
-       if ( imu_Nr_2 > 0 ) then
-          call stat_update_var_pt( imu_Nr_2, level, mu_Nr_2, zt )
-       endif
-
-       ! Mean of cloud droplet concentration in PDF component 1.
-       if ( imu_Nc_1 > 0 ) then
-          call stat_update_var_pt( imu_Nc_1, level, mu_Nc_1, zt )
-       endif
-
-       ! Mean of cloud droplet concentration in PDF component 2.
-       if ( imu_Nc_2 > 0 ) then
-          call stat_update_var_pt( imu_Nc_2, level, mu_Nc_2, zt )
-       endif
-
-       ! Mean (in-precip) of ln r_r in PDF component 1.
-       if ( imu_rr_1_n > 0 ) then
-          if ( mu_rr_1_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_rr_1_n, level, mu_rr_1_n, zt )
-          else
-             ! When rr1 is 0 (or below tolerance value), mu_rr_1_n is -inf, and
-             ! is set to -huge for the default CLUBB kind.  Some compilers have
-             ! issues outputting to stats files (in single precision) when the
-             ! default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_rr_1_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Mean (in-precip) of ln r_r in PDF component 2.
-       if ( imu_rr_2_n > 0 ) then
-          if ( mu_rr_2_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_rr_2_n, level, mu_rr_2_n, zt )
-          else
-             ! When rr2 is 0 (or below tolerance value), mu_rr_2_n is -inf, and
-             ! is set to -huge for the default CLUBB kind.  Some compilers have
-             ! issues outputting to stats files (in single precision) when the
-             ! default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_rr_2_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Mean (in-precip) of ln N_r in PDF component 1.
-       if ( imu_Nr_1_n > 0 ) then
-          if ( mu_Nr_1_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_Nr_1_n, level, mu_Nr_1_n, zt )
-          else
-             ! When Nr1 is 0 (or below tolerance value), mu_Nr_1_n is -inf, and
-             ! is set to -huge for the default CLUBB kind.  Some compilers have
-             ! issues outputting to stats files (in single precision) when the
-             ! default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_Nr_1_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Mean (in-precip) of ln N_r in PDF component 2.
-       if ( imu_Nr_2_n > 0 ) then
-          if ( mu_Nr_2_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_Nr_2_n, level, mu_Nr_2_n, zt )
-          else
-             ! When Nr2 is 0 (or below tolerance value), mu_Nr_2_n is -inf, and
-             ! is set to -huge for the default CLUBB kind.  Some compilers have
-             ! issues outputting to stats files (in single precision) when the
-             ! default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_Nr_2_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Mean of ln N_c in PDF component 1.
-       if ( imu_Nc_1_n > 0 ) then
-          if ( mu_Nc_1_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_Nc_1_n, level, mu_Nc_1_n, zt )
-          else
-             ! When Ncm is 0 (or below tolerance value), mu_Nc_1_n is -inf, and
-             ! is set to -huge for the default CLUBB kind.  Some compilers have
-             ! issues outputting to stats files (in single precision) when the
-             ! default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_Nc_1_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Mean of ln N_c in PDF component 2.
-       if ( imu_Nc_2_n > 0 ) then
-          if ( mu_Nc_2_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_Nc_2_n, level, mu_Nc_2_n, zt )
-          else
-             ! When Ncm is 0 (or below tolerance value), mu_Nc_2_n is -inf, and
-             ! is set to -huge for the default CLUBB kind.  Some compilers have
-             ! issues outputting to stats files (in single precision) when the
-             ! default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_Nc_2_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Standard deviation of in-precip rain water mixing ratio
-       ! in PDF component 1.
-       if ( isigma_rr_1 > 0 ) then
-          call stat_update_var_pt( isigma_rr_1, level, sigma_rr_1, zt )
-       endif
-
-       ! Standard deviation of in-precip rain water mixing ratio
-       ! in PDF component 2.
-       if ( isigma_rr_2 > 0 ) then
-          call stat_update_var_pt( isigma_rr_2, level, sigma_rr_2, zt )
-       endif
-
-       ! Standard deviation of in-precip rain drop concentration
-       ! in PDF component 1.
-       if ( isigma_Nr_1 > 0 ) then
-          call stat_update_var_pt( isigma_Nr_1, level, sigma_Nr_1, zt )
-       endif
-
-       ! Standard deviation of in-precip rain drop concentration
-       ! in PDF component 2.
-       if ( isigma_Nr_2 > 0 ) then
-          call stat_update_var_pt( isigma_Nr_2, level, sigma_Nr_2, zt )
-       endif
-
-       ! Standard deviation of cloud droplet concentration in PDF component 1.
-       if ( isigma_Nc_1 > 0 ) then
-          call stat_update_var_pt( isigma_Nc_1, level, sigma_Nc_1, zt )
-       endif
-
-       ! Standard deviation of cloud droplet concentration in PDF component 2.
-       if ( isigma_Nc_2 > 0 ) then
-          call stat_update_var_pt( isigma_Nc_2, level, sigma_Nc_2, zt )
-       endif
-
-       ! Standard deviation (in-precip) of ln r_r in PDF component 1.
-       if ( isigma_rr_1_n > 0 ) then
-          call stat_update_var_pt( isigma_rr_1_n, level, sigma_rr_1_n, zt )
-       endif
-
-       ! Standard deviation (in-precip) of ln r_r in PDF component 2.
-       if ( isigma_rr_2_n > 0 ) then
-          call stat_update_var_pt( isigma_rr_2_n, level, sigma_rr_2_n, zt )
-       endif
-
-       ! Standard deviation (in-precip) of ln N_r in PDF component 1.
-       if ( isigma_Nr_1_n > 0 ) then
-          call stat_update_var_pt( isigma_Nr_1_n, level, sigma_Nr_1_n, zt )
-       endif
-
-       ! Standard deviation (in-precip) of ln N_r in PDF component 2.
-       if ( isigma_Nr_2_n > 0 ) then
-          call stat_update_var_pt( isigma_Nr_2_n, level, sigma_Nr_2_n, zt )
-       endif
-
-       ! Standard deviation of ln N_c in PDF component 1.
-       if ( isigma_Nc_1_n > 0 ) then
-          call stat_update_var_pt( isigma_Nc_1_n, level, sigma_Nc_1_n, zt )
-       endif
-
-       ! Standard deviation of ln N_c in PDF component 2.
-       if ( isigma_Nc_2_n > 0 ) then
-          call stat_update_var_pt( isigma_Nc_2_n, level, sigma_Nc_2_n, zt )
-       endif
-
-       ! Correlation (in-precip) between s and r_r in PDF component 1.
-       if ( icorr_srr_1 > 0 ) then
-          call stat_update_var_pt( icorr_srr_1, level, corr_srr_1, zt )
-       endif
-
-       ! Correlation (in-precip) between s and r_r in PDF component 2.
-       if ( icorr_srr_2 > 0 ) then
-          call stat_update_var_pt( icorr_srr_2, level, corr_srr_2, zt )
-       endif
-
-       ! Correlation (in-precip) between s and N_r in PDF component 1.
-       if ( icorr_sNr_1 > 0 ) then
-          call stat_update_var_pt( icorr_sNr_1, level, corr_sNr_1, zt )
-       endif
-
-       ! Correlation (in-precip) between s and N_r in PDF component 2.
-       if ( icorr_sNr_2 > 0 ) then
-          call stat_update_var_pt( icorr_sNr_2, level, corr_sNr_2, zt )
-       endif
-
-       ! Correlation between s and N_c in PDF component 1.
-       if ( icorr_sNc_1 > 0 ) then
-          call stat_update_var_pt( icorr_sNc_1, level, corr_sNc_1, zt )
-       endif
-
-       ! Correlation between s and N_c in PDF component 2.
-       if ( icorr_sNc_2 > 0 ) then
-          call stat_update_var_pt( icorr_sNc_2, level, corr_sNc_2, zt )
-       endif
-
-       ! Correlation (in-precip) between r_r and N_r in PDF component 1.
-       if ( icorr_rrNr_1 > 0 ) then
-          call stat_update_var_pt( icorr_rrNr_1, level, corr_rrNr_1, zt )
-       endif
-
-       ! Correlation (in-precip) between r_r and N_r in PDF component 2.
-       if ( icorr_rrNr_2 > 0 ) then
-          call stat_update_var_pt( icorr_rrNr_2, level, corr_rrNr_2, zt )
-       endif
-
-       ! Correlation (in-precip) between s and ln r_r in PDF component 1.
-       if ( icorr_srr_1_n > 0 ) then
-          call stat_update_var_pt( icorr_srr_1_n, level, corr_srr_1_n, zt )
-       endif
-
-       ! Correlation (in-precip) between s and ln r_r in PDF component 2.
-       if ( icorr_srr_2_n > 0 ) then
-          call stat_update_var_pt( icorr_srr_2_n, level, corr_srr_2_n, zt )
-       endif
-
-       ! Correlation (in-precip) between s and ln N_r in PDF component 1.
-       if ( icorr_sNr_1_n > 0 ) then
-          call stat_update_var_pt( icorr_sNr_1_n, level, corr_sNr_1_n, zt )
-       endif
-
-       ! Correlation (in-precip) between s and ln N_r in PDF component 2.
-       if ( icorr_sNr_2_n > 0 ) then
-          call stat_update_var_pt( icorr_sNr_2_n, level, corr_sNr_2_n, zt )
-       endif
-
-       ! Correlation between s and ln N_c in PDF component 1.
-       if ( icorr_sNc_1_n > 0 ) then
-          call stat_update_var_pt( icorr_sNc_1_n, level, corr_sNc_1_n, zt )
-       endif
-
-       ! Correlation between s and ln N_c in PDF component 2.
-       if ( icorr_sNc_2_n > 0 ) then
-          call stat_update_var_pt( icorr_sNc_2_n, level, corr_sNc_2_n, zt )
-       endif
-
-       ! Correlation (in-precip) between ln r_r and ln N_r in PDF component 1.
-       if ( icorr_rrNr_1_n > 0 ) then
-          call stat_update_var_pt( icorr_rrNr_1_n, level, corr_rrNr_1_n, zt )
-       endif
-
-       ! Correlation (in-precip) between ln r_r and ln N_r in PDF component 2.
-       if ( icorr_rrNr_2_n > 0 ) then
-          call stat_update_var_pt( icorr_rrNr_2_n, level, corr_rrNr_2_n, zt )
-       endif
-
-    endif
-
-
-    return
-
-  end subroutine KK_upscaled_stats
-
-  !=============================================================================
   subroutine KK_upscaled_means_driver( rrainm, Nrm, Ncm, &
                                        mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
                                        mu_Nr_1_n, mu_Nr_2_n, mu_Nc_1_n, &
@@ -3574,9 +3180,6 @@ module KK_microphys_module
         covar_rr_KK_mvr, & ! Procedure(s)
         covar_Nr_KK_mvr
 
-    use KK_utilities, only: &
-        calc_xp2    ! Procedure(s)
-
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
@@ -3584,12 +3187,9 @@ module KK_microphys_module
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only: & 
-        zt,                  & ! Variable(s)
-        irr_KK_mvr_covar_zt, &
+        irr_KK_mvr_covar_zt, & ! Variable(s)
         iNr_KK_mvr_covar_zt, &
-        iKK_mvr_variance_zt, &
-        irrp2_zt,            &
-        iNrp2_zt
+        zt
 
     implicit none
 
@@ -3627,10 +3227,7 @@ module KK_microphys_module
     ! Local Variables
     real( kind = core_rknd ) :: &
       rr_KK_mvr_covar, & ! Covariance of r_r and KK mean vol rad   [(kg/kg)m]
-      Nr_KK_mvr_covar, & ! Covariance of N_r and KK mean vol rad   [(num/kg)m]
-      KK_mvr_variance, & ! Variance of KK rain drop mean vol rad   [m^2]
-      rrp2,            & ! Overall variance of r_r                 [(kg/kg)^2]
-      Nrp2               ! Overall variance of N_r                 [(num/kg)^2]
+      Nr_KK_mvr_covar    ! Covariance of N_r and KK mean vol rad   [(num/kg)m]
 
 
     ! Calculate the covariance between rain drop mean volume radius and r_r,
@@ -3669,45 +3266,11 @@ module KK_microphys_module
     endif
 
 
-    ! Calculate the variance of KK rain drop mean volume radius, < R_vr'^2 >.
-    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+    ! Covariance between V_rr and r_r, < V_rr'r_r' >.
+    Vrrprrp = - 0.012_core_rknd * micron_per_m * rr_KK_mvr_covar
 
-       KK_mvr_variance &
-       = variance_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
-                          sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                          sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
-                          KK_mean_vol_rad, KK_mvr_coef, mixt_frac, &
-                          precip_frac_1, precip_frac_2 )
-
-    else  ! r_r or N_r = 0.
-
-       KK_mvr_variance = zero
-
-    endif
-
-    ! Calculate the overall variance of r_r, <r_r'^2>.
-    if ( rrainm > rr_tol ) then
-
-       rrp2 = calc_xp2( mu_rr_1_n, mu_rr_2_n, sigma_rr_1_n, sigma_rr_2_n, &
-                        mixt_frac, precip_frac_1, precip_frac_2, rrainm )
-
-    else ! r_r = 0.
-
-       rrp2 = zero
-
-    endif
-
-    ! Calculate the overall variance of N_r, <N_r'^2>.
-    if ( Nrm > Nr_tol ) then
-
-       Nrp2 = calc_xp2( mu_Nr_1_n, mu_Nr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
-                        mixt_frac, precip_frac_1, precip_frac_2, Nrm )
-
-    else ! N_r = 0.
-
-       Nrp2 = zero
-
-    endif
+    ! Covariance between V_Nr and N_r, < V_Nr'N_r' >.
+    VNrpNrp = - 0.007_core_rknd * micron_per_m * Nr_KK_mvr_covar
 
 
     ! Statistics
@@ -3725,30 +3288,7 @@ module KK_microphys_module
                                    Nr_KK_mvr_covar, zt )
        endif
 
-       ! Variance of KK rain drop mean volume radius.
-       if ( iKK_mvr_variance_zt > 0 ) then
-          call stat_update_var_pt( iKK_mvr_variance_zt, level, &
-                                   KK_mvr_variance, zt )
-       endif
-
-       ! Overall variance of r_r.
-       if ( irrp2_zt > 0 ) then
-          call stat_update_var_pt( irrp2_zt, level, rrp2, zt )
-       endif
-
-       ! Overall variance of N_r.
-       if ( iNrp2_zt > 0 ) then
-          call stat_update_var_pt( iNrp2_zt, level, Nrp2, zt )
-       endif
-
     endif ! l_stats_samp
-
-
-    ! Covariance between V_rr and r_r, < V_rr'r_r' >.
-    Vrrprrp = - 0.012_core_rknd * micron_per_m * rr_KK_mvr_covar
-
-    ! Covariance between V_Nr and N_r, < V_Nr'N_r' >.
-    VNrpNrp = - 0.007_core_rknd * micron_per_m * Nr_KK_mvr_covar
 
 
     return
@@ -4635,6 +4175,484 @@ module KK_microphys_module
     return
 
   end subroutine KK_microphys_adjust
+
+  !=============================================================================
+  subroutine KK_upscaled_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                                mu_Nc_1, mu_Nc_2, mu_rr_1_n, mu_rr_2_n, &
+                                mu_Nr_1_n, mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
+                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                sigma_Nr_2, sigma_Nc_1, sigma_Nc_2, &
+                                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                                sigma_Nr_2_n, sigma_Nc_1_n, sigma_Nc_2_n, &
+                                corr_srr_1, corr_srr_2, corr_sNr_1, &
+                                corr_sNr_2, corr_sNc_1, corr_sNc_2, &
+                                corr_rrNr_1, corr_rrNr_2, corr_srr_1_n, &
+                                corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
+                                corr_sNc_1_n, corr_sNc_2_n, corr_rrNr_1_n, &
+                                corr_rrNr_2_n, mixt_frac, precip_frac_1, &
+                                precip_frac_2, KK_mvr_coef, &
+                                KK_mean_vol_rad, rrainm, Nrm, level, &
+                                l_stats_samp )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        rr_tol, & ! Constant(s)
+        Nr_tol, &
+        zero
+
+    use KK_utilities, only: &
+        calc_xp2    ! Procedure(s)
+
+    use clubb_precision, only: &
+        core_rknd   ! Variable(s)
+
+    use stats_type, only: &
+        stat_update_var_pt  ! Procedure(s)
+
+    use stats_variables, only : &
+        imu_rr_1,       & ! Variable(s)
+        imu_rr_2,       &
+        imu_Nr_1,       &
+        imu_Nr_2,       &
+        imu_Nc_1,       &
+        imu_Nc_2,       &
+        imu_rr_1_n,     &
+        imu_rr_2_n,     &
+        imu_Nr_1_n,     &
+        imu_Nr_2_n,     &
+        imu_Nc_1_n,     &
+        imu_Nc_2_n,     &
+        isigma_rr_1,    &
+        isigma_rr_2,    &
+        isigma_Nr_1,    &
+        isigma_Nr_2,    &
+        isigma_Nc_1,    &
+        isigma_Nc_2,    &
+        isigma_rr_1_n,  &
+        isigma_rr_2_n,  &
+        isigma_Nr_1_n,  &
+        isigma_Nr_2_n,  &
+        isigma_Nc_1_n,  &
+        isigma_Nc_2_n,  &
+        icorr_srr_1,    &
+        icorr_srr_2,    &
+        icorr_sNr_1,    &
+        icorr_sNr_2,    &
+        icorr_sNc_1,    &
+        icorr_sNc_2,    &
+        icorr_rrNr_1,   &
+        icorr_rrNr_2,   &
+        icorr_srr_1_n,  &
+        icorr_srr_2_n,  &
+        icorr_sNr_1_n,  &
+        icorr_sNr_2_n,  &
+        icorr_sNc_1_n,  &
+        icorr_sNc_2_n,  &
+        icorr_rrNr_1_n, &
+        icorr_rrNr_2_n, &
+        zt
+
+    use stats_variables, only : &
+        iKK_mvr_variance_zt, &
+        irrp2_zt,            &
+        iNrp2_zt
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
+      mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
+      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
+      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
+      mu_Nc_1,       & ! Mean of Nc (1st PDF component)                 [num/kg]
+      mu_Nc_2,       & ! Mean of Nc (2nd PDF component)                 [num/kg]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
+      mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)          [ln(num/kg)]
+      mu_Nc_2_n,     & ! Mean of ln Nc (2nd PDF component)          [ln(num/kg)]
+      sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
+      sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
+      sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
+      sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
+      sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
+      sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
+      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
+      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
+      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
+      sigma_Nc_1_n,  & ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
+      sigma_Nc_2_n,  & ! Standard dev. of ln Nc (2nd PDF comp.)     [ln(num/kg)]
+      corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
+      corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
+      corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
+      corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
+      corr_sNc_1,    & ! Correlation between s and Nc (1st PDF component)    [-]
+      corr_sNc_2,    & ! Correlation between s and Nc (2nd PDF component)    [-]
+      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
+      corr_rrNr_2,   & ! Correlation between rr & Nr (2nd PDF component) ip  [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
+      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF comp.)     [-]
+      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF comp.)     [-]
+      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
+      corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      mixt_frac,       & ! Mixture fraction                             [-]
+      precip_frac_1,   & ! Precipitation fraction (1st PDF component)   [-]
+      precip_frac_2,   & ! Precipitation fraction (2nd PDF component)   [-]
+      KK_mvr_coef,     & ! KK mean volume radius coefficient            [m]
+      KK_mean_vol_rad, & ! KK rain drop mean volume radius              [m]
+      rrainm,          & ! Mean rain water mixing ratio                 [kg/kg]
+      Nrm                ! Mean rain drop concentration                 [num/kg]
+
+    integer, intent(in) :: &
+      level   ! Vertical level index 
+
+    logical, intent(in) :: &
+      l_stats_samp     ! Flag to record statistical output.
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      KK_mvr_variance, & ! Variance of KK rain drop mean vol rad   [m^2]
+      rrp2,            & ! Overall variance of r_r                 [(kg/kg)^2]
+      Nrp2               ! Overall variance of N_r                 [(num/kg)^2]
+
+
+    !!! Output the statistics for upscaled KK.
+
+    ! Statistics
+    if ( l_stats_samp ) then
+
+       ! Mean of in-precip rain drop concentration in PDF component 1.
+       if ( imu_rr_1 > 0 ) then
+          call stat_update_var_pt( imu_rr_1, level, mu_rr_1, zt )
+       endif
+
+       ! Mean of in-precip rain drop concentration in PDF component 2.
+       if ( imu_rr_2 > 0 ) then
+          call stat_update_var_pt( imu_rr_2, level, mu_rr_2, zt )
+       endif
+
+       ! Mean of in-precip rain drop concentration in PDF component 1.
+       if ( imu_Nr_1 > 0 ) then
+          call stat_update_var_pt( imu_Nr_1, level, mu_Nr_1, zt )
+       endif
+
+       ! Mean of in-precip rain drop concentration in PDF component 2.
+       if ( imu_Nr_2 > 0 ) then
+          call stat_update_var_pt( imu_Nr_2, level, mu_Nr_2, zt )
+       endif
+
+       ! Mean of cloud droplet concentration in PDF component 1.
+       if ( imu_Nc_1 > 0 ) then
+          call stat_update_var_pt( imu_Nc_1, level, mu_Nc_1, zt )
+       endif
+
+       ! Mean of cloud droplet concentration in PDF component 2.
+       if ( imu_Nc_2 > 0 ) then
+          call stat_update_var_pt( imu_Nc_2, level, mu_Nc_2, zt )
+       endif
+
+       ! Mean (in-precip) of ln r_r in PDF component 1.
+       if ( imu_rr_1_n > 0 ) then
+          if ( mu_rr_1_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_rr_1_n, level, mu_rr_1_n, zt )
+          else
+             ! When rr1 is 0 (or below tolerance value), mu_rr_1_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_rr_1_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Mean (in-precip) of ln r_r in PDF component 2.
+       if ( imu_rr_2_n > 0 ) then
+          if ( mu_rr_2_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_rr_2_n, level, mu_rr_2_n, zt )
+          else
+             ! When rr2 is 0 (or below tolerance value), mu_rr_2_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_rr_2_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Mean (in-precip) of ln N_r in PDF component 1.
+       if ( imu_Nr_1_n > 0 ) then
+          if ( mu_Nr_1_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Nr_1_n, level, mu_Nr_1_n, zt )
+          else
+             ! When Nr1 is 0 (or below tolerance value), mu_Nr_1_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Nr_1_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Mean (in-precip) of ln N_r in PDF component 2.
+       if ( imu_Nr_2_n > 0 ) then
+          if ( mu_Nr_2_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Nr_2_n, level, mu_Nr_2_n, zt )
+          else
+             ! When Nr2 is 0 (or below tolerance value), mu_Nr_2_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Nr_2_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Mean of ln N_c in PDF component 1.
+       if ( imu_Nc_1_n > 0 ) then
+          if ( mu_Nc_1_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Nc_1_n, level, mu_Nc_1_n, zt )
+          else
+             ! When Ncm is 0 (or below tolerance value), mu_Nc_1_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Nc_1_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Mean of ln N_c in PDF component 2.
+       if ( imu_Nc_2_n > 0 ) then
+          if ( mu_Nc_2_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Nc_2_n, level, mu_Nc_2_n, zt )
+          else
+             ! When Ncm is 0 (or below tolerance value), mu_Nc_2_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Nc_2_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Standard deviation of in-precip rain water mixing ratio
+       ! in PDF component 1.
+       if ( isigma_rr_1 > 0 ) then
+          call stat_update_var_pt( isigma_rr_1, level, sigma_rr_1, zt )
+       endif
+
+       ! Standard deviation of in-precip rain water mixing ratio
+       ! in PDF component 2.
+       if ( isigma_rr_2 > 0 ) then
+          call stat_update_var_pt( isigma_rr_2, level, sigma_rr_2, zt )
+       endif
+
+       ! Standard deviation of in-precip rain drop concentration
+       ! in PDF component 1.
+       if ( isigma_Nr_1 > 0 ) then
+          call stat_update_var_pt( isigma_Nr_1, level, sigma_Nr_1, zt )
+       endif
+
+       ! Standard deviation of in-precip rain drop concentration
+       ! in PDF component 2.
+       if ( isigma_Nr_2 > 0 ) then
+          call stat_update_var_pt( isigma_Nr_2, level, sigma_Nr_2, zt )
+       endif
+
+       ! Standard deviation of cloud droplet concentration in PDF component 1.
+       if ( isigma_Nc_1 > 0 ) then
+          call stat_update_var_pt( isigma_Nc_1, level, sigma_Nc_1, zt )
+       endif
+
+       ! Standard deviation of cloud droplet concentration in PDF component 2.
+       if ( isigma_Nc_2 > 0 ) then
+          call stat_update_var_pt( isigma_Nc_2, level, sigma_Nc_2, zt )
+       endif
+
+       ! Standard deviation (in-precip) of ln r_r in PDF component 1.
+       if ( isigma_rr_1_n > 0 ) then
+          call stat_update_var_pt( isigma_rr_1_n, level, sigma_rr_1_n, zt )
+       endif
+
+       ! Standard deviation (in-precip) of ln r_r in PDF component 2.
+       if ( isigma_rr_2_n > 0 ) then
+          call stat_update_var_pt( isigma_rr_2_n, level, sigma_rr_2_n, zt )
+       endif
+
+       ! Standard deviation (in-precip) of ln N_r in PDF component 1.
+       if ( isigma_Nr_1_n > 0 ) then
+          call stat_update_var_pt( isigma_Nr_1_n, level, sigma_Nr_1_n, zt )
+       endif
+
+       ! Standard deviation (in-precip) of ln N_r in PDF component 2.
+       if ( isigma_Nr_2_n > 0 ) then
+          call stat_update_var_pt( isigma_Nr_2_n, level, sigma_Nr_2_n, zt )
+       endif
+
+       ! Standard deviation of ln N_c in PDF component 1.
+       if ( isigma_Nc_1_n > 0 ) then
+          call stat_update_var_pt( isigma_Nc_1_n, level, sigma_Nc_1_n, zt )
+       endif
+
+       ! Standard deviation of ln N_c in PDF component 2.
+       if ( isigma_Nc_2_n > 0 ) then
+          call stat_update_var_pt( isigma_Nc_2_n, level, sigma_Nc_2_n, zt )
+       endif
+
+       ! Correlation (in-precip) between s and r_r in PDF component 1.
+       if ( icorr_srr_1 > 0 ) then
+          call stat_update_var_pt( icorr_srr_1, level, corr_srr_1, zt )
+       endif
+
+       ! Correlation (in-precip) between s and r_r in PDF component 2.
+       if ( icorr_srr_2 > 0 ) then
+          call stat_update_var_pt( icorr_srr_2, level, corr_srr_2, zt )
+       endif
+
+       ! Correlation (in-precip) between s and N_r in PDF component 1.
+       if ( icorr_sNr_1 > 0 ) then
+          call stat_update_var_pt( icorr_sNr_1, level, corr_sNr_1, zt )
+       endif
+
+       ! Correlation (in-precip) between s and N_r in PDF component 2.
+       if ( icorr_sNr_2 > 0 ) then
+          call stat_update_var_pt( icorr_sNr_2, level, corr_sNr_2, zt )
+       endif
+
+       ! Correlation between s and N_c in PDF component 1.
+       if ( icorr_sNc_1 > 0 ) then
+          call stat_update_var_pt( icorr_sNc_1, level, corr_sNc_1, zt )
+       endif
+
+       ! Correlation between s and N_c in PDF component 2.
+       if ( icorr_sNc_2 > 0 ) then
+          call stat_update_var_pt( icorr_sNc_2, level, corr_sNc_2, zt )
+       endif
+
+       ! Correlation (in-precip) between r_r and N_r in PDF component 1.
+       if ( icorr_rrNr_1 > 0 ) then
+          call stat_update_var_pt( icorr_rrNr_1, level, corr_rrNr_1, zt )
+       endif
+
+       ! Correlation (in-precip) between r_r and N_r in PDF component 2.
+       if ( icorr_rrNr_2 > 0 ) then
+          call stat_update_var_pt( icorr_rrNr_2, level, corr_rrNr_2, zt )
+       endif
+
+       ! Correlation (in-precip) between s and ln r_r in PDF component 1.
+       if ( icorr_srr_1_n > 0 ) then
+          call stat_update_var_pt( icorr_srr_1_n, level, corr_srr_1_n, zt )
+       endif
+
+       ! Correlation (in-precip) between s and ln r_r in PDF component 2.
+       if ( icorr_srr_2_n > 0 ) then
+          call stat_update_var_pt( icorr_srr_2_n, level, corr_srr_2_n, zt )
+       endif
+
+       ! Correlation (in-precip) between s and ln N_r in PDF component 1.
+       if ( icorr_sNr_1_n > 0 ) then
+          call stat_update_var_pt( icorr_sNr_1_n, level, corr_sNr_1_n, zt )
+       endif
+
+       ! Correlation (in-precip) between s and ln N_r in PDF component 2.
+       if ( icorr_sNr_2_n > 0 ) then
+          call stat_update_var_pt( icorr_sNr_2_n, level, corr_sNr_2_n, zt )
+       endif
+
+       ! Correlation between s and ln N_c in PDF component 1.
+       if ( icorr_sNc_1_n > 0 ) then
+          call stat_update_var_pt( icorr_sNc_1_n, level, corr_sNc_1_n, zt )
+       endif
+
+       ! Correlation between s and ln N_c in PDF component 2.
+       if ( icorr_sNc_2_n > 0 ) then
+          call stat_update_var_pt( icorr_sNc_2_n, level, corr_sNc_2_n, zt )
+       endif
+
+       ! Correlation (in-precip) between ln r_r and ln N_r in PDF component 1.
+       if ( icorr_rrNr_1_n > 0 ) then
+          call stat_update_var_pt( icorr_rrNr_1_n, level, corr_rrNr_1_n, zt )
+       endif
+
+       ! Correlation (in-precip) between ln r_r and ln N_r in PDF component 2.
+       if ( icorr_rrNr_2_n > 0 ) then
+          call stat_update_var_pt( icorr_rrNr_2_n, level, corr_rrNr_2_n, zt )
+       endif
+
+       ! Calculate the overall variance of r_r, <r_r'^2>.
+       if ( rrainm > rr_tol ) then
+          rrp2 = calc_xp2( mu_rr_1_n, mu_rr_2_n, sigma_rr_1_n, sigma_rr_2_n, &
+                           mixt_frac, precip_frac_1, precip_frac_2, rrainm )
+       else ! r_r = 0.
+          rrp2 = zero
+       endif
+
+       ! Overall variance of r_r.
+       if ( irrp2_zt > 0 ) then
+          call stat_update_var_pt( irrp2_zt, level, rrp2, zt )
+       endif
+
+       ! Calculate the overall variance of N_r, <N_r'^2>.
+       if ( Nrm > Nr_tol ) then
+          Nrp2 = calc_xp2( mu_Nr_1_n, mu_Nr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                           mixt_frac, precip_frac_1, precip_frac_2, Nrm )
+       else ! N_r = 0.
+          Nrp2 = zero
+       endif
+
+       ! Overall variance of N_r.
+       if ( iNrp2_zt > 0 ) then
+          call stat_update_var_pt( iNrp2_zt, level, Nrp2, zt )
+       endif
+
+       ! Calculate the variance of KK rain drop mean volume radius, < R_vr'^2 >.
+       if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+          KK_mvr_variance &
+          = variance_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
+                             sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                             sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+                             KK_mean_vol_rad, KK_mvr_coef, mixt_frac, &
+                             precip_frac_1, precip_frac_2 )
+       else  ! r_r or N_r = 0.
+          KK_mvr_variance = zero
+       endif
+
+       ! Variance of KK rain drop mean volume radius.
+       if ( iKK_mvr_variance_zt > 0 ) then
+          call stat_update_var_pt( iKK_mvr_variance_zt, level, &
+                                   KK_mvr_variance, zt )
+       endif
+
+    endif ! l_stats_samp
+
+
+    return
+
+  end subroutine KK_upscaled_stats
 
   !=============================================================================
   subroutine KK_stats_output( KK_evap_tndcy, KK_auto_tndcy, &
