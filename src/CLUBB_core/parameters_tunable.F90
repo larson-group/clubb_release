@@ -34,76 +34,76 @@ module parameters_tunable
 
   ! Model constant parameters
   real( kind = core_rknd ), public :: & 
-    C1          = 2.500000_core_rknd,    & ! Low Skewness in C1 Skewness Function.
-    C1b         = 2.500000_core_rknd,    & ! High Skewness in C1 Skewness Function.
-    C1c         = 1.000000_core_rknd,    & ! Degree of Slope of C1 Skewness Function.
-    C2          = 1.300000_core_rknd,    & ! Low Skewness in C2 Skewness Function.
-    C2rt        = 1.000000_core_rknd,    & ! C2 coefficient for the rtp2_dp1 term.
-    C2thl       = 1.000000_core_rknd,    & ! C2 coefficient for the thlp2_dp1 term.
-    C2rtthl     = 2.000000_core_rknd,    & ! C2 coefficient for the rtpthlp_dp1 term.
-    C2b         = 1.300000_core_rknd,    & ! High Skewness in C2 Skewness Function.  
-    C2c         = 5.000000_core_rknd,    & ! Degree of Slope of C2 Skewness Function.
-    C4          = 5.200000_core_rknd,    & ! Used only when l_tke_aniso is true.
-    C5          = 0.300000_core_rknd,    & ! Coefficient in pressure terms in the w'^2 eqn.
-    C6rt        = 4.000000_core_rknd,    & ! Low Skewness in C6rt Skewness Function.
-    C6rtb       = 6.000000_core_rknd,    & ! High Skewness in C6rt Skewness Function.
-    C6rtc       = 1.000000_core_rknd,    & ! Degree of Slope of C6rt Skewness Function.
-    C6thl       = 4.000000_core_rknd,    & ! Low Skewness in C6thl Skewness Function.
-    C6thlb      = 6.000000_core_rknd,    & ! High Skewness in C6thl Skewness Function.
-    C6thlc      = 1.000000_core_rknd,    & ! Degree of Slope of C6thl Skewness Function.
-    C7          = 0.500000_core_rknd,    & ! Low Skewness in C7 Skewness Function.
-    C7b         = 0.800000_core_rknd,    & ! High Skewness in C7 Skewness Function.
-    C7c         = 0.500000_core_rknd,    & ! Degree of Slope of C7 Skewness Function.
-    C8          = 3.000000_core_rknd,    & ! Coefficient #1 in C8 Skewness Equation.
-    C8b         = 0.000000_core_rknd,    & ! Coefficient #2 in C8 Skewness Equation.
-    C10         = 3.300000_core_rknd,    & ! Currently Not Used in the Model.
-    C11         = 0.80000_core_rknd,    & ! Low Skewness in C11 Skewness Function.
-    C11b        = 0.350000_core_rknd,    & ! High Skewness in C11 Skewness Function.
-    C11c        = 0.500000_core_rknd,    & ! Degree of Slope of C11 Skewness Function.
-    C12         = 1.000000_core_rknd,    & ! Constant in w'^3 Crank-Nicholson diffusional term.
-    C13         = 0.100000_core_rknd,    & ! Not currently used in model.
-    C14         = 1.000000_core_rknd,    & ! Constant for u'^2 and v'^2 terms.
-    C15         = 0.4_core_rknd            ! Coefficient for the wp3_bp2 term
+    C1          = 2.500000_core_rknd,    & ! Low Skewness in C1 Skewness Function. Units [-]
+    C1b         = 2.500000_core_rknd,    & ! High Skewness in C1 Skewness Function. Units [-]
+    C1c         = 1.000000_core_rknd,    & ! Degree of Slope of C1 Skewness Function. Units [-]
+    C2          = 1.300000_core_rknd,    & ! Low Skewness in C2 Skewness Function. Units [-]
+    C2rt        = 1.000000_core_rknd,    & ! C2 coefficient for the rtp2_dp1 term. Units [-]
+    C2thl       = 1.000000_core_rknd,    & ! C2 coefficient for the thlp2_dp1 term. Units [-]
+    C2rtthl     = 2.000000_core_rknd,    & ! C2 coefficient for the rtpthlp_dp1 term. Units [-]
+    C2b         = 1.300000_core_rknd,    & ! High Skewness in C2 Skewness Function.   Units [-]
+    C2c         = 5.000000_core_rknd,    & ! Degree of Slope of C2 Skewness Function. Units [-]
+    C4          = 5.200000_core_rknd,    & ! Used only when l_tke_aniso is true. Units [-]
+    C5          = 0.300000_core_rknd,    & ! Coefficient in pressure terms in the w'^2 eqn. Units [-]
+    C6rt        = 4.000000_core_rknd,    & ! Low Skewness in C6rt Skewness Function. Units [-]
+    C6rtb       = 6.000000_core_rknd,    & ! High Skewness in C6rt Skewness Function. Units [-]
+    C6rtc       = 1.000000_core_rknd,    & ! Degree of Slope of C6rt Skewness Function. Units [-]
+    C6thl       = 4.000000_core_rknd,    & ! Low Skewness in C6thl Skewness Function. Units [-]
+    C6thlb      = 6.000000_core_rknd,    & ! High Skewness in C6thl Skewness Function. Units [-]
+    C6thlc      = 1.000000_core_rknd,    & ! Degree of Slope of C6thl Skewness Function. Units [-]
+    C7          = 0.500000_core_rknd,    & ! Low Skewness in C7 Skewness Function. Units [-]
+    C7b         = 0.800000_core_rknd,    & ! High Skewness in C7 Skewness Function. Units [-]
+    C7c         = 0.500000_core_rknd,    & ! Degree of Slope of C7 Skewness Function. Units [-]
+    C8          = 3.000000_core_rknd,    & ! Coefficient #1 in C8 Skewness Equation. Units [-]
+    C8b         = 0.000000_core_rknd,    & ! Coefficient #2 in C8 Skewness Equation. Units [-]
+    C10         = 3.300000_core_rknd,    & ! Currently Not Used in the Model. Units [-]
+    C11         = 0.80000_core_rknd,    & ! Low Skewness in C11 Skewness Function. Units [-]
+    C11b        = 0.350000_core_rknd,    & ! High Skewness in C11 Skewness Function. Units [-]
+    C11c        = 0.500000_core_rknd,    & ! Degree of Slope of C11 Skewness Function. Units [-]
+    C12         = 1.000000_core_rknd,    & ! Constant in w'^3 Crank-Nicholson diffusional term. Units [-]
+    C13         = 0.100000_core_rknd,    & ! Not currently used in model. Units [-]
+    C14         = 1.000000_core_rknd,    & ! Constant for u'^2 and v'^2 terms. Units [-]
+    C15         = 0.4_core_rknd            ! Coefficient for the wp3_bp2 term Units [-]
 
   real( kind = core_rknd ), public ::    &
-    C6rt_Lscale0  = 14.0_core_rknd,      & ! Damp C6rt as a function of Lscale
-    C6thl_Lscale0 = 14.0_core_rknd,      & ! Damp C6thl as a function of Lscale
-    C7_Lscale0    = 0.8500000_core_rknd, & ! Damp C7 as a function of Lscale
-    wpxp_L_thresh = 60.0_core_rknd         ! Lscale threshold for damping C6 and C7 coefficients
+    C6rt_Lscale0  = 14.0_core_rknd,      & ! Damp C6rt as a function of Lscale Units [-]
+    C6thl_Lscale0 = 14.0_core_rknd,      & ! Damp C6thl as a function of Lscale Units [-]
+    C7_Lscale0    = 0.8500000_core_rknd, & ! Damp C7 as a function of Lscale Units [-]
+    wpxp_L_thresh = 60.0_core_rknd         ! Lscale threshold for damping C6 and C7 coefficients Units [m]
 
   real( kind = core_rknd ), public :: & 
-    c_K         = 0.200000_core_rknd,    & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
-    c_K1        = 0.750000_core_rknd,    & ! Coefficient of Eddy Diffusion for wp2.
-    c_K2        = 0.125000_core_rknd,    & ! Coefficient of Eddy Diffusion for xp2.
-    c_K6        = 0.375000_core_rknd,    & ! Coefficient of Eddy Diffusion for wpthlp and wprtp.
-    c_K8        = 1.250000_core_rknd,    & ! Coefficient of Eddy Diffusion for wp3.
-    c_K9        = 0.250000_core_rknd,    & ! Coefficient of Eddy Diffusion for up2 and vp2.
-    c_Krrainm   = 0.200000_core_rknd,    & ! Coefficient of Eddy Diffusion for hydrometeors.
-    gamma_coef  = 0.320000_core_rknd,    & ! Low Skewness in gamma coefficient Skewness Function.
-    gamma_coefb = 0.320000_core_rknd,    & ! High Skewness in gamma coefficient Skewness Function.
-    gamma_coefc = 5.000000_core_rknd,   & ! Degree of Slope of gamma coefficient Skewness Function.
-    mu          = 1.000E-3_core_rknd,    & ! Fractional entrainment rate per unit altitude.
-    mult_coef   = 1.500000_core_rknd,    & ! Coefficient applied to log( avg dz / threshold )
-    taumin      = 90.00000_core_rknd,    & ! Minimum allowable value of time-scale tau.
-    taumax      = 3600.000_core_rknd,    & ! Maximum allowable value of time-scale tau.
-    lmin                              ! Minimum value for the length scale.
+    c_K         = 0.200000_core_rknd,    & ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987. Units [m^2/s]
+    c_K1        = 0.750000_core_rknd,    & ! Coefficient of Eddy Diffusion for wp2. Units [m^2/s]
+    c_K2        = 0.125000_core_rknd,    & ! Coefficient of Eddy Diffusion for xp2. Units [m^2/s]
+    c_K6        = 0.375000_core_rknd,    & ! Coefficient of Eddy Diffusion for wpthlp and wprtp. Units [m^2/s]
+    c_K8        = 1.250000_core_rknd,    & ! Coefficient of Eddy Diffusion for wp3. Units [m^2/s]
+    c_K9        = 0.250000_core_rknd,    & ! Coefficient of Eddy Diffusion for up2 and vp2. Units [m^2/s]
+    c_Krrainm   = 0.200000_core_rknd,    & ! Coefficient of Eddy Diffusion for hydrometeors. Units [m^2/s]
+    gamma_coef  = 0.320000_core_rknd,    & ! Low Skewness in gamma coefficient Skewness Function. Units [-]
+    gamma_coefb = 0.320000_core_rknd,    & ! High Skewness in gamma coefficient Skewness Function. Units [-]
+    gamma_coefc = 5.000000_core_rknd,   & ! Degree of Slope of gamma coefficient Skewness Function. Units [-]
+    mu          = 1.000E-3_core_rknd,    & ! Fractional entrainment rate per unit altitude. Units [1/m]
+    mult_coef   = 1.500000_core_rknd,    & ! Coefficient applied to log( avg dz / threshold ) Units [-]
+    taumin      = 90.00000_core_rknd,    & ! Minimum allowable value of time-scale tau. Units [m]
+    taumax      = 3600.000_core_rknd,    & ! Maximum allowable value of time-scale tau. Units [m]
+    lmin                              ! Minimum value for the length scale. Units [-]
 
   real( kind = core_rknd ), public :: &
-    Lscale_mu_coef   = 2.0_core_rknd, & ! Coefficient to perturb mu for an avg calculation of Lscale
-    Lscale_pert_coef = 0.1_core_rknd     ! Coeff to perturb thlm and rtm for an avg calc of Lscale.
+    Lscale_mu_coef   = 2.0_core_rknd, & ! Coefficient to perturb mu for an avg calculation of Lscale Units [-]
+    Lscale_pert_coef = 0.1_core_rknd     ! Coeff to perturb thlm and rtm for an avg calc of Lscale. Units [-]
 
   real( kind = core_rknd ), public :: &
-    alpha_corr  = 0.15_core_rknd   ! Coefficient for the correlation diagnosis algoritm
+    alpha_corr  = 0.15_core_rknd   ! Coefficient for the correlation diagnosis algoritm Units [-]
 
   real( kind = core_rknd ), private :: & 
-    nu1         = 20.00000_core_rknd,    & ! Background Coefficient of Eddy Diffusion for wp2.
-    nu2         = 5.000000_core_rknd,    & ! Background Coefficient of Eddy Diffusion for xp2.
-    nu6         = 5.000000_core_rknd,    & ! Background Coefficient of Eddy Diffusion for wpxp.
-    nu8         = 20.00000_core_rknd,    & ! Background Coefficient of Eddy Diffusion for wp3.
-    nu9         = 20.00000_core_rknd, & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
-    nu10        = 0.00000_core_rknd,&! Background Coef of Eddy Dfsn for edsclrm, um, vm, upwp, vpwp
-    nu_r        = 1.500000_core_rknd,& ! Background Coefficient of Eddy Diffusion for hydrometeors.
-    nu_hd       = 20000.00_core_rknd    ! Constant coefficient for 4th-order hyper-diffusion.
+    nu1         = 20.00000_core_rknd,    & ! Background Coefficient of Eddy Diffusion for wp2. Units [m^2/s]
+    nu2         = 5.000000_core_rknd,    & ! Background Coefficient of Eddy Diffusion for xp2. Units [m^2/s]
+    nu6         = 5.000000_core_rknd,    & ! Background Coefficient of Eddy Diffusion for wpxp. Units [m^2/s]
+    nu8         = 20.00000_core_rknd,    & ! Background Coefficient of Eddy Diffusion for wp3. Units [m^2/s]
+    nu9         = 20.00000_core_rknd, & ! Background Coefficient of Eddy Diffusion for up2 and vp2. Units [m^2/s]
+    nu10        = 0.00000_core_rknd,&! Background Coef of Eddy Dfsn for edsclrm, um, vm, upwp, vpwp Units [m^2/s]
+    nu_r        = 1.500000_core_rknd,& ! Background Coefficient of Eddy Diffusion for hydrometeors. Units [m^2/s]
+    nu_hd       = 20000.00_core_rknd    ! Constant coefficient for 4th-order hyper-diffusion. Units [m^2/s]
 
 !$omp   threadprivate(C1, C1b, C1c, C2, C2b, C2c, &
 !$omp     C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc, &
@@ -116,16 +116,16 @@ module parameters_tunable
 !$omp     taumin, taumax, mu, lmin, Lscale_mu_coef, Lscale_pert_coef)
 
   real( kind = core_rknd ), public, allocatable, dimension(:) :: & 
-    nu1_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp2.
-    nu2_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for xp2.
-    nu6_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wpxp.
-    nu8_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp3.
-    nu9_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
-    nu10_vert_res_dep,  & ! Background Coef of Eddy Dfsn for edsclrm,um,vm,upwp,vpwp.
-    nu_r_vert_res_dep     ! Background Coefficient of Eddy Diffusion for hydrometeors.
+    nu1_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp2. Units [m^2/s]
+    nu2_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for xp2. Units [m^2/s]
+    nu6_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wpxp. Units [m^2/s]
+    nu8_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for wp3. Units [m^2/s]
+    nu9_vert_res_dep,   & ! Background Coefficient of Eddy Diffusion for up2 and vp2. Units [m^2/s]
+    nu10_vert_res_dep,  & ! Background Coef of Eddy Dfsn for edsclrm,um,vm,upwp,vpwp. Units [m^2/s]
+    nu_r_vert_res_dep     ! Background Coefficient of Eddy Diffusion for hydrometeors. Units [m^2/s]
 
   real( kind = core_rknd ), public :: &
-    nu_hd_vert_res_dep    ! Constant coefficient for 4th-order hyper-diffusion.
+    nu_hd_vert_res_dep    ! Constant coefficient for 4th-order hyper-diffusion. Units [m^2/s]
 
 !$omp threadprivate(nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep, &
 !$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, nu_r_vert_res_dep,  &
@@ -134,11 +134,11 @@ module parameters_tunable
   ! Vince Larson added a constant to set plume widths for theta_l and rt
   ! beta should vary between 0 and 3, with 1.5 the standard value
 
-  real( kind = core_rknd ), public :: beta         = 1.750000_core_rknd
+  real( kind = core_rknd ), public :: beta         = 1.750000_core_rknd ! Units [-]
 
 !$omp threadprivate(beta)
 
-  real( kind = core_rknd ), private :: lmin_coef    = 0.500000_core_rknd ! Coefficient of lmin
+  real( kind = core_rknd ), private :: lmin_coef    = 0.500000_core_rknd ! Coefficient of lmin Units [-]
 
 !$omp threadprivate(lmin_coef)
 
