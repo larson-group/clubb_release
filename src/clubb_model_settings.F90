@@ -23,27 +23,31 @@ module clubb_model_settings
   !                      halfway between momentum levels (style
   !                      of WRF stretched grid).
 
+! Note: Do not indent these omp directives, they must begin in the 2nd column
+!$omp threadprivate(nzmax, grid_type)
+
   ! Radiation variables
   integer, public :: &
     extend_atmos_bottom_level, & ! Bottom level of the extended atmosphere
     extend_atmos_top_level,    & ! Top level of the extended atmosphere
     extend_atmos_range_size      ! The number of levels in the extended atmosphere
 
+!$omp threadprivate(extend_atmos_bottom_level, extend_atmos_top_level, &
+!$omp               extend_atmos_range_size)
+
   ! The number of interpolated levels between the computational grid
   ! and the extended atmosphere
   integer, public :: &
     lin_int_buffer
 
-! Note: Do not indent these omp directives, they must begin in the 2nd column
-!$omp threadprivate(extend_atmos_bottom_level, extend_atmos_top_level)
-!$omp threadprivate(extend_atmos_range_size, lin_int_buffer)
+!$omp threadprivate(lin_int_buffer)
 
   real( kind = core_rknd ), public ::  & 
     deltaz,  & ! Change per grid level                 [m]
     zm_init, & ! Initial point on the momentum grid    [m]
     zm_top     ! Maximum point on the momentum grid    [m]
 
-!$omp threadprivate(nzmax, grid_type, zm_init, deltaz)
+!$omp threadprivate(deltaz, zm_init, zm_top)
 
   ! For grid_type 2 or 3 (stretched grid cases)
   character(len=100), public :: & 
