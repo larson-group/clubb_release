@@ -162,10 +162,10 @@
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_ma', 'expression' => 'rrainm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sd', 'expression' => 'rrainm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_dff', 'expression' => 'rrainm_dff', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_conj\_adj', 'expression' => 'rrainm_cond_adj', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_cl', 'expression' => 'rrainm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_turb\_sed', 'expression' => 'rrainm_ts + rrainm_tsfl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_fill\_clip', 'expression' => 'rrainm_hf + rrainm_wvhf + rrainm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_mc', 'expression' => 'rrainm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_residual', 'expression' => 'rrainm_bt - (rrainm_ma + rrainm_sd + rrainm_dff + rrainm_cond_adj + rrainm_cl + rrainm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_residual', 'expression' => 'rrainm_bt - (rrainm_ma + rrainm_sd + rrainm_dff + rrainm_ts + rrainm_tsfl + rrainm_hf + rrainm_wvhf + rrainm_cl + rrainm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
 
        ]},
 
@@ -175,10 +175,10 @@
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_ma', 'expression' => 'Nrm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_sd', 'expression' => 'Nrm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_dff', 'expression' => 'Nrm_dff', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_conj\_adj', 'expression' => 'Nrm_cond_adj', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_turb\_sed', 'expression' => 'Nrm_ts + Nrm_tsfl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_cl', 'expression' => 'Nrm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_mc', 'expression' => 'Nrm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_residual', 'expression' => 'Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_dff + Nrm_cond_adj + Nrm_cl + Nrm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_residual', 'expression' => 'Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_dff + Nrm_ts + Nrm_tsfl + Nrm_cl + Nrm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
 
        ]}
 
