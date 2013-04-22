@@ -4603,49 +4603,58 @@ module KK_microphys_module
           call stat_update_var_pt( icorr_rrNr_2_n, level, corr_rrNr_2_n, zt )
        endif
 
-       ! Calculate the overall variance of r_r, <r_r'^2>.
-       if ( rrainm > rr_tol ) then
-          rrp2 = calc_xp2( mu_rr_1_n, mu_rr_2_n, sigma_rr_1_n, sigma_rr_2_n, &
-                           mixt_frac, precip_frac_1, precip_frac_2, rrainm )
-       else ! r_r = 0.
-          rrp2 = zero
-       endif
-
        ! Overall variance of r_r.
        if ( irrp2_zt > 0 ) then
-          call stat_update_var_pt( irrp2_zt, level, rrp2, zt )
-       endif
 
-       ! Calculate the overall variance of N_r, <N_r'^2>.
-       if ( Nrm > Nr_tol ) then
-          Nrp2 = calc_xp2( mu_Nr_1_n, mu_Nr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
-                           mixt_frac, precip_frac_1, precip_frac_2, Nrm )
-       else ! N_r = 0.
-          Nrp2 = zero
-       endif
+          ! Calculate the overall variance of r_r, <r_r'^2>.
+          if ( rrainm > rr_tol ) then
+             rrp2 &
+             = calc_xp2( mu_rr_1_n, mu_rr_2_n, sigma_rr_1_n, sigma_rr_2_n, &
+                         mixt_frac, precip_frac_1, precip_frac_2, rrainm )
+          else ! r_r = 0.
+             rrp2 = zero
+          endif
+
+          call stat_update_var_pt( irrp2_zt, level, rrp2, zt )
+
+       endif ! irrp2_zt > 0
 
        ! Overall variance of N_r.
        if ( iNrp2_zt > 0 ) then
-          call stat_update_var_pt( iNrp2_zt, level, Nrp2, zt )
-       endif
 
-       ! Calculate the variance of KK rain drop mean volume radius, < R_vr'^2 >.
-       if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
-          KK_mvr_variance &
-          = variance_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
-                             sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                             sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
-                             KK_mean_vol_rad, KK_mvr_coef, mixt_frac, &
-                             precip_frac_1, precip_frac_2 )
-       else  ! r_r or N_r = 0.
-          KK_mvr_variance = zero
-       endif
+          ! Calculate the overall variance of N_r, <N_r'^2>.
+          if ( Nrm > Nr_tol ) then
+             Nrp2 &
+             = calc_xp2( mu_Nr_1_n, mu_Nr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                         mixt_frac, precip_frac_1, precip_frac_2, Nrm )
+          else ! N_r = 0.
+             Nrp2 = zero
+          endif
+
+          call stat_update_var_pt( iNrp2_zt, level, Nrp2, zt )
+
+       endif ! iNrp2_zt > 0
 
        ! Variance of KK rain drop mean volume radius.
        if ( iKK_mvr_variance_zt > 0 ) then
+
+          ! Calculate the variance of KK rain drop mean volume radius,
+          ! < R_vr'^2 >.
+          if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+             KK_mvr_variance &
+             = variance_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
+                                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                                sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+                                KK_mean_vol_rad, KK_mvr_coef, mixt_frac, &
+                                precip_frac_1, precip_frac_2 )
+          else  ! r_r or N_r = 0.
+             KK_mvr_variance = zero
+          endif
+
           call stat_update_var_pt( iKK_mvr_variance_zt, level, &
                                    KK_mvr_variance, zt )
-       endif
+
+       endif ! iKK_mvr_variance_zt > 0
 
     endif ! l_stats_samp
 
