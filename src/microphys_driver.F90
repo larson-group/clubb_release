@@ -1527,6 +1527,9 @@ module microphys_driver
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,  &
                rrainm_auto, rrainm_accr )
 
+        ! Output rain sedimentation velocity
+        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zm)
+
       end if ! LH_microphys_type /= interactive
 
     case ( "morrison_gettelman" )
