@@ -4643,27 +4643,39 @@ module KK_microphys_module
 
 
     !!! Sedimentation velocities
-    forall ( k = 1:nz-1 )
+    do k = 1, nz-1, 1
 
-       ! Sedimentation velocity of rrainm.
-!       Vrr(k) = 0.012_core_rknd * ( micron_per_m * zt2zm(KK_mean_vol_rad,k) ) &
-!                - 0.2_core_rknd
-       Vrr(k) = 0.012_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) )  &
-                - 0.2_core_rknd
+       ! Mean sedimentation velocity of rain water mixing ratio.
+       Vrr(k) = - ( 0.012_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) ) &
+                    - 0.2_core_rknd )
 
-       ! Sedimentation velocity is positive upwards.
-       Vrr(k) = -max( Vrr(k), zero )
+       ! Mean sedimentation velocity of rain water mixing ratio cannot have a
+       ! positive value.
+       if ( Vrr(k) > zero ) then
+          Vrr(k) = zero
+          ! When mean sedimentation velocity of rain water mixing ratio has a
+          ! value of 0, the sedimentation velocity of r_r must have a value of 0
+          ! everywhere at that level.  Variances and covariances involving
+          ! sedimentation velocity of r_r must also have a value of 0.
+          Vrrprrp_zt(k) = zero
+       endif
 
-       ! Sedimentation velocity of Nrm.
-!       VNr(k) = 0.007_core_rknd * ( micron_per_m * zt2zm(KK_mean_vol_rad,k) ) &
-!                - 0.1_core_rknd
-       VNr(k) = 0.007_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) )  &
-                - 0.1_core_rknd
+       ! Mean sedimentation velocity of rain drop concentration.
+       VNr(k) = - ( 0.007_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) )  &
+                    - 0.1_core_rknd )
 
-       ! Sedimentation velocity is positive upwards.
-       VNr(k) = -max( VNr(k), zero )
+       ! Mean sedimentation velocity of rain drop concentration cannot have a
+       ! positive value.
+       if ( VNr(k) > zero ) then
+          VNr(k) = zero
+          ! When mean sedimentation velocity of rain drop concentration has a
+          ! value of 0, the sedimentation velocity of N_r must have a value of 0
+          ! everywhere at that level.  Variances and covariances involving
+          ! sedimentation velocity of N_r must also have a value of 0.
+          VNrpNrp_zt(k) = zero
+       endif
 
-    end forall ! 1..nz-1
+    enddo ! Sedimentation velocity loop: k = 1, nz-1, 1
 
     !!! Boundary conditions for sedimentation velocities.
 
