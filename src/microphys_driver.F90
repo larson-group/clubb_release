@@ -1528,7 +1528,9 @@ module microphys_driver
                rrainm_auto, rrainm_accr )
 
         ! Output rain sedimentation velocity
-        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zm)
+        if ( l_stats_samp ) then
+          call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zm)
+        end if
 
       end if ! LH_microphys_type /= interactive
 
