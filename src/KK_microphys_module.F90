@@ -604,6 +604,12 @@ module KK_microphys_module
       VNrpNrp_zt    ! Covariance of V_Nr and N_r; thermo. levs.  [(m/s)(num/kg)]
 
     real( kind = core_rknd ), dimension(nz) :: &
+      Vrrprrp_zt_impc, & ! Imp. comp. of <V_rr'r_r'>: <r_r> eq.  [(m/s)]
+      Vrrprrp_zt_expc, & ! Exp. comp. of <V_rr'r_r'>: <r_r> eq.  [(m/s)(kg/kg)]
+      VNrpNrp_zt_impc, & ! Imp. comp. of <V_Nr'N_r'>: <N_r> eq.  [(m/s)]
+      VNrpNrp_zt_expc    ! Exp. comp. of <V_Nr'N_r'>: <N_r> eq.  [(m/s)(num/kg)]
+
+    real( kind = core_rknd ), dimension(nz) :: &
       wprtp_mc_tndcy_zt,   & ! Micro. tend. for <w'rt'>; t-lev   [m*(kg/kg)/s^2]
       wpthlp_mc_tndcy_zt,  & ! Micro. tend. for <w'thl'>; t-lev  [m*K/s^2]
       rtp2_mc_tndcy_zt,    & ! Micro. tend. for <rt'^2>; t-lev   [(kg/kg)^2/s]
@@ -817,13 +823,19 @@ module KK_microphys_module
                                      KK_evap_tndcy(k), KK_auto_tndcy(k), &
                                      KK_accr_tndcy(k), KK_mean_vol_rad(k) )
 
-      call KK_sed_vel_covars( rrainm(k), Nrm(k), KK_mean_vol_rad(k), &
+      call KK_sed_vel_covars( rrainm(k), rr1(k), rr2(k), Nrm(k), &
+                              Nr1(k), Nr2(k), KK_mean_vol_rad(k), &
                               mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
                               sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                               sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
                               KK_mvr_coef, mixt_frac(k), precip_frac_1(k), &
                               precip_frac_2(k), k, l_stats_samp, &
-                              Vrrprrp_zt(k), VNrpNrp_zt(k) )
+                              Vrrprrp_zt_impc(k), Vrrprrp_zt_expc(k), &
+                              VNrpNrp_zt_impc(k), VNrpNrp_zt_expc(k) )
+
+      ! Temporarily, calculate < V_rr'r_r' > and < V_Nr'N_r' > explicitly.
+      Vrrprrp_zt(k) = Vrrprrp_zt_impc(k) * rrainm(k) + Vrrprrp_zt_expc(k)
+      VNrpNrp_zt(k) = VNrpNrp_zt_impc(k) * Nrm(k) + VNrpNrp_zt_expc(k)
 
 
       if ( l_var_covar_src ) then
