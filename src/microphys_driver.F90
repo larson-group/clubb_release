@@ -71,6 +71,7 @@ module microphys_driver
   ! Functions
   private :: sed_centered_diff_lhs, &
              sed_upwind_diff_lhs, &
+             term_turb_sed_lhs, &
              term_turb_sed_rhs
 
   ! Variables
@@ -3442,8 +3443,317 @@ module microphys_driver
   end function sed_upwind_diff_lhs
 
   !=============================================================================
-  pure function term_turb_sed_rhs( Vhmphmp, Vhmphmpm1, &
-                                   Vhmphmp_ztp1, Vhmphmp_zt, &
+  pure function term_turb_sed_lhs( Vhmphmp_impcm, Vhmphmp_impcm1, &
+                                   Vhmphmp_zt_impcp1, Vhmphmp_zt_impc, &
+                                   rho_ds_zm, rho_ds_zmm1, &
+                                   rho_ds_ztp1, rho_ds_zt, &
+                                   invrs_dzt, invrs_dzm, &
+                                   invrs_rho_ds_zt, level ) &
+    result( lhs )
+
+    ! Description:
+    ! Turbulent sedimentation of a hydrometeor:  implicit portion of the code.
+    !
+    ! The variable "hm" stands for a hydrometeor variable.  The variable "V_hm"
+    ! stands for the sedimentation velocity of the aforementioned hydrometeor.
+    !
+    ! The d(hm)/dt equation contains a sedimentation term:
+    !
+    ! - (1/rho_ds) * d( rho_ds * V_hm * hm ) / dz.
+    !
+    ! The variables hm and V_hm in the sedimentation term are divided into mean
+    ! and turbulent components, and the term is averaged, resulting in:
+    !
+    ! - (1/rho_ds) * d( rho_ds * < V_hm > * < hm > ) / dz
+    ! - (1/rho_ds) * d( rho_ds * < V_hm'hm' > ) / dz.
+    !
+    ! The turbulent sedimentation term in the d<hm>/dt equation is:
+    !
+    ! - (1/rho_ds) * d( rho_ds * < V_hm'hm' > ) / dz.
+    !
+    ! This term is solved for semi-implicitly by rewritting < V_hm'hm' > based
+    ! on < hm > in the manner:
+    !
+    ! < V_hm'hm' > = Vhmphmp_impc * < hm > + Vhmphmp_expc.
+    !
+    ! This term can also be solved for completely explicitly (it's original
+    ! form) by setting Vhmphmp_inc to 0 and setting Vhmphmp_expc to
+    ! < V_hm'hm' >.  The equation becomes:
+    !
+    ! - (1/rho_ds) 
+    !   * d( rho_ds * ( Vhmphmp_impc * < hm >(t+1) + Vhmphmp_expc ) ) / dz;
+    !
+    ! where the timestep index (t+1) means that the value of < hm > being used
+    ! is from the next timestep, which is being advanced to in solving the
+    ! d<hm>/dt equation.  Implicit and explicit portions of this term are
+    ! produced.  The implicit portion of this term is:
+    !
+    ! - (1/rho_ds) * d( rho_ds * Vhmphmp_impc * < hm >(t+1) ) / dz.
+    !
+    ! Note:  When the term is brought over to the left-hand side, the sign is
+    !        reversed and the leading "-" in front of the d[ ] / dz term is
+    !        changed to a "+".
+    !
+    ! This term can be discretized using the centered-difference approximation
+    ! (which is preferred), or else using the "upwind"-difference approximation.
+    !
+    ! The implicit portion of this term is discretized as follows when using
+    ! the centered-difference approximation:
+    ! 
+    ! The values of < hm > and the values of <V_hm'hm'>|_zt are found on the
+    ! thermodynamic levels.  The values of Vhmphmp_zt_impc are also found on the
+    ! thermodynamic levels.  Additionally, the values of rho_ds_zm are found on
+    ! the momentum levels, and the values of invrs_rho_ds_zt are found on the
+    ! thermodynamic levels.  The variables < hm > and Vhmphmp_zt_impc are both
+    ! interpolated to the intermediate momentum levels.  At the momentum levels,
+    ! the values of interpolated < hm > and interpolated Vhmphmp_zt_impc are
+    ! multiplied together, and their products are multiplied by the values of
+    ! rho_ds_zm.  The mathematical expression F is the product of these three
+    ! variables at momentum levels.  Then, the derivative dF/dz is taken over
+    ! the central thermodynamic level, where it is multiplied by
+    ! invrs_rho_ds_zt.  In this function, the value of F is as follows:
+    !
+    ! F = rho_ds_zm * Vhmphmp_impc(interp) * hmm(interp).
+    !
+    !
+    ! ----hmmp1--------Vhmphmp_zt_impcp1--------------------------------- t(k+1)
+    !
+    ! =====hmm(interp)=====Vhmphmp_impc(interp)=======rho_ds_zm========== m(k)
+    !
+    ! ----hmm----------Vhmphmp_zt_impc-----invrs_rho_ds_zt-----dF/dz----- t(k)
+    !
+    ! =====hmm(interp)=====Vhmphmp_impcm1(interp)=====rho_ds_zmm1======== m(k-1)
+    !
+    ! ----hmmm1--------Vhmphmp_zt_impcm1--------------------------------- t(k-1)
+    !
+    ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond
+    ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.
+    ! The letter "t" is used for thermodynamic levels and the letter "m" is
+    ! used for momentum levels.
+    !
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) ).
+    !
+    ! The implicit portion of this term is discretized as follows when using
+    ! the upwind-difference approximation:
+    !
+    ! The values of < hm > and the values of <V_hm'hm'>|_zt are found on the
+    ! thermodynamic levels.  The values of Vhmphmp_zt_impc are also found on the
+    ! thermodynamic levels.  Additionally, the values of rho_ds_zt and the
+    ! values of invrs_rho_ds_zt are found on the thermodynamic levels.  At the
+    ! thermodynamic levels, the values of < hm > and Vhmphmp_zt_impc are
+    ! multiplied together, and their products are multiplied by the values of
+    ! rho_ds_zt.  The mathematical expression F is the product of these three
+    ! variables at thermodynamic levels.  Then, the derivative dF/dz is taken
+    ! between the thermodynamic level above the central thermodynamic level and
+    ! the central thermodynamic level.  The derivative is multiplied
+    ! by invrs_rho_ds_zt.  In this function, the value of F is as follows:
+    !
+    ! F = rho_ds_zt * Vhmphmp_zt_impc * hmm.
+    !
+    !
+    ! --hmmp1---Vhmphmp_zt_impcp1---rho_ds_ztp1-------------------------- t(k+1)
+    !
+    ! =================================================================== m(k)
+    !
+    ! --hmm-----Vhmphmp_zt_impc-----rho_ds_zt---invrs_rho_ds_zt---dF/dz-- t(k)
+    !
+    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
+    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
+    ! thermodynamic levels and the letter "m" is used for momentum levels.
+    !
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) ).
+
+    ! References:
+    !  None
+    !
+    ! Notes:
+    ! Please note that "upwind" sedimentation is only 1st-order accurate and
+    ! highly diffusive. 
+    !-----------------------------------------------------------------------
+
+    use grid_class, only:  & 
+        gr ! Variable(s)
+
+    use constants_clubb, only: &
+        zero  ! Constant(s)
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Constant parameters
+    integer, parameter :: & 
+      kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2, & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3    ! Thermodynamic subdiagonal index.
+
+    integer, parameter :: & 
+      t_above = 1, & ! Index for upper thermodynamic level grid weight.
+      t_below = 2    ! Index for lower thermodynamic level grid weight.
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      Vhmphmp_impcm,     & ! Imp. comp. <V_hm'h_m'> interp. m-lev (k)   [vary]
+      Vhmphmp_impcm1,    & ! Imp. comp. <V_hm'h_m'> interp. m-lev (k-1) [vary]
+      Vhmphmp_zt_impcp1, & ! Imp. comp. <V_hm'h_m'>|_zt; t-lev (k+1)    [vary]
+      Vhmphmp_zt_impc,   & ! Imp. comp. <V_hm'h_m'>|_zt; t-lev (k)      [vary]
+      rho_ds_zm,         & ! Dry, static density at moment. lev (k)     [kg/m^3]
+      rho_ds_zmm1,       & ! Dry, static density at moment. lev (k-1)   [kg/m^3]
+      rho_ds_ztp1,       & ! Dry, static density at thermo. level (k+1) [kg/m^3]
+      rho_ds_zt,         & ! Dry, static density at thermo. level (k)   [kg/m^3]
+      invrs_dzt,         & ! Inverse of grid spacing over t-levs. (k)   [1/m]
+      invrs_dzm,         & ! Inverse of grid spacing over m-levs. (k)   [1/m]
+      invrs_rho_ds_zt      ! Inv dry, static density @ thermo lev (k)   [m^3/kg]
+
+    integer, intent(in) ::  & 
+      level ! Central thermodynamic level (on which calculation occurs).
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(3) :: lhs
+
+    ! Local Variables
+    integer :: & 
+      mk,   & ! Momentum level directly above central thermodynamic level.
+      mkm1    ! Momentum level directly below central thermodynamic level.
+
+
+    ! Momentum level (k) is between thermodynamic level (k+1)
+    ! and thermodynamic level (k).
+    mk   = level
+    ! Momentum level (k-1) is between thermodynamic level (k)
+    ! and thermodynamic level (k-1).
+    mkm1 = level - 1
+
+
+    ! LHS (implicit component) of turbulent sedimentation term,
+    ! - (1/rho_ds) * d( rho_ds * < V_hm'h_m' > ) / dz.
+    ! = - (1/rho_ds)
+    !     * d( rho_ds * ( Vhmphmp_impc * < h_m > + Vhmphmp_expc ) ) / dz.
+    ! Implicit component:
+    ! - (1/rho_ds) * d( rho_ds * Vhmphmp_impc * < h_m > ) / dz.
+    if ( .not. l_upwind_diff_sed ) then
+
+       ! Sedimentation (both mean and turbulent) uses centered differencing.
+       if ( level == 1 ) then
+
+          ! k = 1 (bottom level); lower boundary level; no effects.
+
+          ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = zero
+
+          ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+          lhs(k_tdiag)   = zero
+
+          ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+          lhs(km1_tdiag) = zero
+
+
+       elseif ( level > 1 .and. level < gr%nz ) then
+
+          ! Most of the interior model; normal conditions.
+
+          ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+          lhs(kp1_tdiag)  & 
+          = + invrs_rho_ds_zt &
+              * invrs_dzt &
+              * rho_ds_zm * Vhmphmp_impcm * gr%weights_zt2zm(t_above,mk)
+
+          ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+          lhs(k_tdiag)  & 
+          = + invrs_rho_ds_zt &
+              * invrs_dzt &
+              * ( rho_ds_zm * Vhmphmp_impcm &
+                            * gr%weights_zt2zm(t_below,mk) & 
+                  - rho_ds_zmm1 * Vhmphmp_impcm1 &
+                                * gr%weights_zt2zm(t_above,mkm1)  )
+
+          ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+          lhs(km1_tdiag)  & 
+          = - invrs_rho_ds_zt &
+              * invrs_dzt &
+              * rho_ds_zmm1 * Vhmphmp_impcm1 * gr%weights_zt2zm(t_below,mkm1)
+
+
+       elseif ( level == gr%nz ) then
+
+          ! k = gr%nz (top level); upper boundary level; no flux.
+
+          ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = zero
+
+          ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+          lhs(k_tdiag)   = zero
+
+          ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+          lhs(km1_tdiag) = zero
+
+
+       endif  ! level
+
+
+    else ! l_upwind_diff_sed
+
+       ! Sedimentation (both mean and turbulent) uses "upwind" differencing.
+       if ( level == 1 ) then
+
+          ! k = 1 (bottom level); lower boundary level; no effects.
+
+          ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = zero
+
+          ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+          lhs(k_tdiag)   = zero
+
+          ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+          lhs(km1_tdiag) = zero
+
+
+       elseif ( level > 1 .and. level < gr%nz ) then
+
+          ! Most of the interior model; normal conditions.
+
+          ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+          lhs(kp1_tdiag) &
+          = + invrs_rho_ds_zt &
+              * invrs_dzm * rho_ds_ztp1 * Vhmphmp_zt_impcp1
+
+          ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+          lhs(k_tdiag) &
+          = - invrs_rho_ds_zt &
+              * invrs_dzm * rho_ds_zt * Vhmphmp_zt_impc
+
+          ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+          lhs(km1_tdiag) = zero
+
+
+       elseif ( level == gr%nz ) then
+
+          ! k = gr%nz (top level); upper boundary level; no flux.
+
+          ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+          lhs(kp1_tdiag) = zero
+
+          ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+          lhs(k_tdiag)   = zero
+
+          ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+          lhs(km1_tdiag) = zero
+
+
+       endif  ! level
+
+
+    endif
+
+
+    return
+
+  end function term_turb_sed_lhs
+
+  !=============================================================================
+  pure function term_turb_sed_rhs( Vhmphmp_expcm, Vhmphmp_expcm1, &
+                                   Vhmphmp_zt_expcp1, Vhmphmp_zt_expc, &
                                    rho_ds_zm, rho_ds_zmm1, &
                                    rho_ds_ztp1, rho_ds_zt, &
                                    invrs_dzt, invrs_dzm, &
@@ -3470,53 +3780,80 @@ module microphys_driver
     !
     ! - (1/rho_ds) * d( rho_ds * < V_hm'hm' > ) / dz.
     !
-    ! This term is solved for completely explicitly, such that:
+    ! This term is solved for semi-implicitly by rewritting < V_hm'hm' > based
+    ! on < hm > in the manner:
     !
-    ! - (1/rho_ds) * d( rho_ds * < V_hm'hm' >|_(t) ) / dz;
+    ! < V_hm'hm' > = Vhmphmp_impc * < hm > + Vhmphmp_expc.
     !
-    ! where timestep index (t) stands for the index of the current timestep.
+    ! This term can also be solved for completely explicitly (it's original
+    ! form) by setting Vhmphmp_inc to 0 and setting Vhmphmp_expc to
+    ! < V_hm'hm' >.  The equation becomes:
+    !
+    ! - (1/rho_ds) 
+    !   * d( rho_ds * ( Vhmphmp_impc * < hm >(t+1) + Vhmphmp_expc ) ) / dz;
+    !
+    ! where the timestep index (t+1) means that the value of < hm > being used
+    ! is from the next timestep, which is being advanced to in solving the
+    ! d<hm>/dt equation.  Implicit and explicit portions of this term are
+    ! produced.  The explicit portion of this term is:
+    !
+    ! - (1/rho_ds) * d( rho_ds * Vhmphmp_expc ) / dz.
     !
     ! This term can be discretized using the centered-difference approximation
     ! (which is preferred), or else using the "upwind"-difference approximation.
     !
-    ! This term is discretized as follows when using the centered-difference
-    ! approximation:
+    ! The explicit portion of this term is discretized as follows when using
+    ! the centered-difference approximation:
     !
-    ! The values of <V_hm'hm'> are found on the momentum levels.  Additionally,
-    ! the values of rho_ds_zm are found on the momentum levels, and the values
-    ! of invrs_rho_ds_zt are found on the thermodynamic levels.  At the
-    ! momentum levels, the values of <V_hm'hm'> are multiplied by the values of
-    ! rho_ds_zm.  Then, the derivative of (rho_ds*<V_hm'hm'>) is taken over the
+    ! The values of < hm > and the values of <V_hm'hm'>|_zt are found on the
+    ! thermodynamic levels.  The values of Vhmphmp_zt_expc are also found on the
+    ! thermodynamic levels.  Additionally, the values of rho_ds_zm are found on
+    ! the momentum levels, and the values of invrs_rho_ds_zt are found on the
+    ! thermodynamic levels.  The variable Vhmphmp_zt_expc is interpolated to the
+    ! intermediate momentum levels.  At the momentum levels, the values of
+    ! interpolated Vhmphmp_zt_expc are multiplied by the values of rho_ds_zm.
+    ! Then, the derivative d(rho_ds*Vhmphmp_zt_expc)/dz is taken over the
     ! central thermodynamic level, where it is multiplied by invrs_rho_ds_zt.
     !
-    ! =============Vhmphmp=================rho_ds_zm=========== m(k)
+    ! ---Vhmphmp_zt_expcp1----------------------------------------------- t(k+1)
     !
-    ! ---------------invrs_rho_ds_zt----d(rho_ds*Vhmphmp)/dz--- t(k)
+    ! ======Vhmphmp_expc(interp)=========rho_ds_zm======================= m(k)
     !
-    ! =============Vhmphmpm1===============rho_ds_zmm1========= m(k-1)
+    ! ---Vhmphmp_zt_expc--invrs_rho_ds_zt--d(rho_ds*Vhmphmp_zt_expc)/dz-- t(k)
     !
-    ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes
-    ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for
-    ! thermodynamic levels and the letter "m" is used for momentum levels.
+    ! ======Vhmphmp_expcm1(interp)=======rho_ds_zmm1===================== m(k-1)
+    !
+    ! ---Vhmphmp_zt_expcm1----------------------------------------------- t(k-1)
+    !
+    ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond
+    ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.
+    ! The letter "t" is used for thermodynamic levels and the letter "m" is
+    ! used for momentum levels.
     !
     ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) ).
     !
-    ! This term is discretized as follows when using the upwind-difference
-    ! approximation:
+    ! The explicit portion of this term is discretized as follows when using
+    ! the upwind-difference approximation:
     !
-    ! The values of <V_hm'hm'>|_zt are found on the thermodynamic levels.
-    ! Additionally, the values of rho_ds_zt and the values of invrs_rho_ds_zt
-    ! are found on the thermodynamic levels.  At the thermodynamic levels, the
-    ! values of <V_hm'hm'>|_zt are multiplied by the values of rho_ds_zt.  Then,
-    ! the derivative of (rho_ds*<V_hm'hm'>|_zt) is taken between the
-    ! thermodynamic level above the central thermodynamic level and the central
-    ! thermodynamic level.  The derivative is multiplied by invrs_rho_ds_zt.
+    ! The values of < hm > and the values of <V_hm'hm'>|_zt are found on the
+    ! thermodynamic levels.  The values of Vhmphmp_zt_expc are also found on the
+    ! thermodynamic levels.  Additionally, the values of rho_ds_zt and the
+    ! values of invrs_rho_ds_zt are found on the thermodynamic levels.  At the
+    ! thermodynamic levels, the values of Vhmphmp_zt_expc are multiplied by the
+    ! values of rho_ds_zt.  The mathematical expression F is the product of
+    ! these variables at thermodynamic levels.  Then, the derivative dF/dz is
+    ! taken between the thermodynamic level above the central thermodynamic
+    ! level and the central thermodynamic level.  The derivative is multiplied
+    ! by invrs_rho_ds_zt.  In this function, the value of F is as follows:
     !
-    ! --Vhmphmp_ztp1--rho_ds_ztp1---------------------------------------- t(k+1)
+    ! F = rho_ds_zt * Vhmphmp_zt_expc.
+    !
+    !
+    ! -----Vhmphmp_zt_expcp1---rho_ds_ztp1------------------------------- t(k+1)
     !
     ! =================================================================== m(k)
     !
-    ! --Vhmphmp_zt--rho_ds_zt--invrs_rho_ds_zt--d(rho_ds*Vhmphmp_zt)/dz-- t(k)
+    ! -----Vhmphmp_zt_expc-----rho_ds_zt----invrs_rho_ds_zt----dF/dz----- t(k)
     !
     ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
@@ -3545,17 +3882,17 @@ module microphys_driver
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      Vhmphmp,         & ! <V_hm'hm'> (k)                             [un. vary]
-      Vhmphmpm1,       & ! <V_hm'hm'> (k-1)                           [un. vary]
-      Vhmphmp_ztp1,    & ! <V_hm'hm'>|_zt (k+1)                       [un. vary]
-      Vhmphmp_zt,      & ! <V_hm'hm'>|_zt (k)                         [un. vary]
-      rho_ds_zm,       & ! Dry, static density at moment. lev (k)     [kg/m^3]
-      rho_ds_zmm1,     & ! Dry, static density at moment. lev (k-1)   [kg/m^3]
-      rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1) [kg/m^3]
-      rho_ds_zt,       & ! Dry, static density at thermo. level (k)   [kg/m^3]
-      invrs_dzt,       & ! Inverse of grid spacing over t-levs. (k)   [1/m]
-      invrs_dzm,       & ! Inverse of grid spacing over m-levs. (k)   [1/m]
-      invrs_rho_ds_zt    ! Inv dry, static density @ thermo lev (k)   [m^3/kg]
+      Vhmphmp_expcm,     & ! Exp. comp. <V_hm'h_m'> interp. m-lev (k)   [vary]
+      Vhmphmp_expcm1,    & ! Exp. comp. <V_hm'h_m'> interp. m-lev (k-1) [vary]
+      Vhmphmp_zt_expcp1, & ! Exp. comp. <V_hm'h_m'>|_zt; t-lev (k+1)    [vary]
+      Vhmphmp_zt_expc,   & ! Exp. comp. <V_hm'h_m'>|_zt; t-lev (k)      [vary]
+      rho_ds_zm,         & ! Dry, static density at moment. lev (k)     [kg/m^3]
+      rho_ds_zmm1,       & ! Dry, static density at moment. lev (k-1)   [kg/m^3]
+      rho_ds_ztp1,       & ! Dry, static density at thermo. level (k+1) [kg/m^3]
+      rho_ds_zt,         & ! Dry, static density at thermo. level (k)   [kg/m^3]
+      invrs_dzt,         & ! Inverse of grid spacing over t-levs. (k)   [1/m]
+      invrs_dzm,         & ! Inverse of grid spacing over m-levs. (k)   [1/m]
+      invrs_rho_ds_zt      ! Inv dry, static density @ thermo lev (k)   [m^3/kg]
 
     integer, intent(in) ::  & 
       level ! Central thermodynamic level (on which calculation occurs).
@@ -3564,21 +3901,34 @@ module microphys_driver
     real( kind = core_rknd ) :: rhs
 
 
-    ! RHS turbulent sedimentation term,
-    ! - (1/rho_ds) * d( rho_ds * <V_xr'x_r'> ) / dz.
+    ! RHS (explicit component) of turbulent sedimentation term,
+    ! - (1/rho_ds) * d( rho_ds * < V_hm'h_m' > ) / dz.
+    ! = - (1/rho_ds)
+    !     * d( rho_ds * ( Vhmphmp_impc * < h_m > + Vhmphmp_expc ) ) / dz.
+    ! Explicit component:  - (1/rho_ds) * d( rho_ds * Vhmphmp_expc ) / dz.
     if ( .not. l_upwind_diff_sed ) then
 
        ! Sedimentation (both mean and turbulent) uses centered differencing.
        if ( level == 1 ) then
 
+          ! k = 1 (bottom level); lower boundary level; no effects.
           rhs = zero
 
-       else ! level > 1
 
+       elseif ( level > 1 .and. level < gr%nz ) then
+
+          ! Most of the interior model; normal conditions.
           rhs &
           = - invrs_rho_ds_zt &
-              * invrs_dzt &
-              * ( rho_ds_zm * Vhmphmp - rho_ds_zmm1 * Vhmphmpm1 )
+              * invrs_dzt * ( rho_ds_zm * Vhmphmp_expcm &
+                              - rho_ds_zmm1 * Vhmphmp_expcm1 )
+
+
+       elseif ( level == gr%nz ) then
+
+          ! k = gr%nz (top level); upper boundary level; no flux.
+          rhs = zero
+
 
        endif
 
@@ -3586,16 +3936,26 @@ module microphys_driver
     else ! l_upwind_diff_sed
 
        ! Sedimentation (both mean and turbulent) uses "upwind" differencing.
-       if ( level == gr%nz ) then
+       if ( level == 1 ) then
 
+          ! k = 1 (bottom level); lower boundary level; no effects.
           rhs = zero
 
-       else
 
+       elseif ( level > 1 .and. level < gr%nz ) then
+
+          ! Most of the interior model; normal conditions.
           rhs &
           = - invrs_rho_ds_zt &
-              * invrs_dzm &
-              * ( rho_ds_ztp1 * Vhmphmp_ztp1 - rho_ds_zt * Vhmphmp_zt )
+              * invrs_dzm * ( rho_ds_ztp1 * Vhmphmp_zt_expcp1 &
+                              - rho_ds_zt * Vhmphmp_zt_expc )
+
+
+       elseif ( level == gr%nz ) then
+
+          ! k = gr%nz (top level); upper boundary level; no flux.
+          rhs = zero
+
 
        endif
 
