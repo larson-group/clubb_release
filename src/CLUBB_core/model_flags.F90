@@ -41,7 +41,7 @@ module model_flags
                                 ! equations are anelastic by default.
 
   logical, parameter, public :: &
-    l_use_precip_frac = .false.  ! Flag to use precipitation fraction in KK
+    l_use_precip_frac = .true.   ! Flag to use precipitation fraction in KK
                                  ! microphysics.  The precipitation fraction
                                  ! is automatically set to 1 when this flag
                                  ! is turned off.

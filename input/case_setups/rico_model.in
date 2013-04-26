@@ -146,6 +146,7 @@ l_calc_w_corr = .false.
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "khairoutdinov_kogan"
+l_upwind_diff_sed = .true.
 
 !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
 !!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.

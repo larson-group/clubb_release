@@ -960,31 +960,6 @@ module KK_microphys_module
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, KK_mean_vol_rad, Vrr, VNr )
 
-    ! The covariance of hydrometeor sedimentation velocity and its associated
-    ! hydrometeor (<V_rr'r_r'> and/or <V_Nr'N_r'>) is set to 0 when its
-    ! associated mean sedimentation velocity (<V_rr> and/or <V_Nr>) is 0.
-    do k = 1, nz-1, 1
-
-       ! When mean sedimentation velocity of rain water mixing ratio has a
-       ! value of 0, the sedimentation velocity of r_r must have a value of 0
-       ! everywhere at that level.  Variances and covariances involving
-       ! sedimentation velocity of r_r must also have a value of 0.
-       if ( Vrr(k) == zero ) then
-          Vrrprrp_zt_impc(k) = zero
-          Vrrprrp_zt_expc(k) = zero
-       endif
-
-       ! When mean sedimentation velocity of rain drop concentration has a
-       ! value of 0, the sedimentation velocity of N_r must have a value of 0
-       ! everywhere at that level.  Variances and covariances involving
-       ! sedimentation velocity of N_r must also have a value of 0.
-       if ( VNr(k) == zero ) then
-          VNrpNrp_zt_impc(k) = zero
-          VNrpNrp_zt_expc(k) = zero
-       endif
-
-    enddo ! Hydrometeor sedimentation velocity covariance loop: k = 1, nz-1, 1
-
     !!! Boundary conditions (lower) for the covariances of hydrometeor
     !!! sedimentation velocities and their associated hydrometeors
     !!! (<V_rr'r_r'> and <V_Nr'N_r'>).
