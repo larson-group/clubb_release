@@ -14,7 +14,7 @@ module morrison_micro_driver_module
                l_latin_hypercube, thlm, wm, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, w_std_dev, &
                dzq, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
-               hydromet_mc, hydromet_vel, &
+               hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
@@ -141,8 +141,8 @@ module morrison_micro_driver_module
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(inout) :: &
-      hydromet_mc,   & ! Hydrometeor time tendency          [(units vary)/s]
-      hydromet_vel     ! Hydrometeor sedimentation velocity [m/s]
+      hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
+      hydromet_vel_zt ! Hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -171,7 +171,7 @@ module morrison_micro_driver_module
       Ncm_mc_r4,     & ! Temporary array for cloud number conc.        [#/kg/s]
       rvm_r4,        & ! Temporary array for vapor water mixing ratio  [kg/kg]
       rcm_sten,      & ! Cloud dropet sedimentation tendency           [kg/kg/s]
-      morr_rain_vel, & ! Rain fall velocity from Morrison microphysics [m/s] 
+      morr_rain_vel_r4, & ! Rain fall velocity from Morrison microphysics [m/s] 
       cloud_frac_in, & ! Cloud fraction used as input for the Morrison scheme [-]
       rrainm_auto_r4,& ! Autoconversion rate     [kg/kg/s]
       rrainm_accr_r4   ! Accretion rate         [kg/kg/s]
@@ -215,6 +215,7 @@ module morrison_micro_driver_module
     ! Some dummy assignments to make compiler warnings go away...
     if ( .false. ) then
       dummy => hydromet
+      dummy => hydromet_vel_zt
       dummy => hydromet_mc
       dummy_1D => pdf_params(:)%cloud_frac1
       rcm_in_cloud = dummy(:,1)
@@ -292,7 +293,7 @@ module morrison_micro_driver_module
            hydromet_r4(:,iirsnowm), hydromet_r4(:,iirrainm), Ncm_r4(:), &
            hydromet_r4(:,iiNim), hydromet_r4(:,iiNsnowm), hydromet_r4(:,iiNrm), &
            T_in_K_mc, rvm_mc_r4, T_in_K, rvm_r4, P_in_pa_r4, rho_r4, dzq_r4, &
-           wm_r4, w_std_dev_r4, morr_rain_vel, &
+           wm_r4, w_std_dev_r4, morr_rain_vel_r4, &
            Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, real( dt ), &
            1,1, 1,1, 1,nz, 1,1, 1,1, 2,nz, &
            hydromet_mc_r4(:,iirgraupelm), hydromet_mc_r4(:,iiNgraupelm), &
@@ -328,11 +329,11 @@ module morrison_micro_driver_module
                 real( rcm_r4, kind = core_rknd ) ) - thlm ) / real( dt, kind = core_rknd )
 
     ! Sedimentation is handled within the Morrison microphysics
-    hydromet_vel(:,:) = 0.0_core_rknd
+    hydromet_vel_zt(:,:) = 0.0_core_rknd
 
     ! Output rain sedimentation velocity
     do k = 1, nz, 1
-      hydromet_vel(k,iirrainm) = real( morr_rain_vel(k), kind = core_rknd )
+      hydromet_vel_zt(k,iirrainm) = real( morr_rain_vel_r4(k), kind = core_rknd )
     end do
 
     ! Set microphysics tendencies for model variances and covariances to 0.
