@@ -16,7 +16,6 @@ module morrison_micro_driver_module
                dzq, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
                hydromet_mc, hydromet_vel, &
                rcm_mc, rvm_mc, thlm_mc, &
-               hydromet_vel_covar, hydromet_vel_covar_zt, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
                rrainm_auto, rrainm_accr )
@@ -151,11 +150,6 @@ module morrison_micro_driver_module
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(out) :: &
-      hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
-      hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
-
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
       wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
@@ -177,7 +171,7 @@ module morrison_micro_driver_module
       Ncm_mc_r4,     & ! Temporary array for cloud number conc.        [#/kg/s]
       rvm_r4,        & ! Temporary array for vapor water mixing ratio  [kg/kg]
       rcm_sten,      & ! Cloud dropet sedimentation tendency           [kg/kg/s]
-      morr_rain_vel, & ! Rain fall velocity from Morrison microphysics 
+      morr_rain_vel, & ! Rain fall velocity from Morrison microphysics [m/s] 
       cloud_frac_in, & ! Cloud fraction used as input for the Morrison scheme [-]
       rrainm_auto_r4,& ! Autoconversion rate     [kg/kg/s]
       rrainm_accr_r4   ! Accretion rate         [kg/kg/s]
@@ -222,8 +216,6 @@ module morrison_micro_driver_module
     if ( .false. ) then
       dummy => hydromet
       dummy => hydromet_mc
-      dummy => hydromet_vel_covar
-      dummy => hydromet_vel_covar_zt
       dummy_1D => pdf_params(:)%cloud_frac1
       rcm_in_cloud = dummy(:,1)
       rcm_in_cloud = s_mellor
@@ -271,11 +263,6 @@ module morrison_micro_driver_module
     hydromet_sten(1:nz,:) = 0.0
     rcm_sten = 0.0
     Ncm_mc_r4 = 0.0
-
-    ! Set the covariances of hydrometeor sedimentation velocities and their
-    ! associated hydrometeors (for example, <V_rr'r_r'> and <V_Nr'N_r'>) to 0.
-    hydromet_vel_covar    = 0.0_core_rknd
-    hydromet_vel_covar_zt = 0.0_core_rknd
 
     ! Initialize effective radius to zero
     effc = 0.0

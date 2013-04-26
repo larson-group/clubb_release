@@ -1226,6 +1226,10 @@ module microphys_driver
       hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
       hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
 
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
+      hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_xx'x_x'> t-levs [m/s]
+      hydromet_vel_covar_zt_expc    ! Exp. comp. <V_xx'x_x'> t-levs [units(m/s)]
+
     real( kind = core_rknd ), dimension(gr%nz) :: &
       delta_zt  ! Difference in thermo. height levels     [m]
 
@@ -1296,12 +1300,13 @@ module microphys_driver
     ! microphysics
     if ( time_current < microphys_start_time ) return
 
-    ! Initialize the values of the covariances of hydrometeor sedimentation
-    ! velocities and their associated hydrometeors (for example, <V_rr'r_r'>
-    ! and <V_Nr'N_r'>) to 0.
+    ! Initialize the values of the implicit and explicit components used to 
+    ! calculate the covariances of hydrometeor sedimentation velocities and
+    ! their associated hydrometeors (for example, <V_rr'r_r'> and <V_Nr'N_r'>)
+    ! to 0.
     if ( hydromet_dim > 0 ) then
-       hydromet_vel_covar    = zero
-       hydromet_vel_covar_zt = zero
+       hydromet_vel_covar_zt_impc = zero
+       hydromet_vel_covar_zt_expc = zero
     endif
 
     ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
@@ -1523,7 +1528,6 @@ module microphys_driver
                delta_zt, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
-               hydromet_vel_covar, hydromet_vel_covar_zt, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,  &
                rrainm_auto, rrainm_accr )
@@ -1612,8 +1616,6 @@ module microphys_driver
                                       hydromet, &
                                       hydromet_mc, hydromet_vel_zt, &
                                       rcm_mc, rvm_mc, thlm_mc, &
-                                      hydromet_vel_covar, &
-                                      hydromet_vel_covar_zt, &
                                       wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                                       rtp2_mc_tndcy, thlp2_mc_tndcy, &
                                       rtpthlp_mc_tndcy, &
@@ -1628,8 +1630,8 @@ module microphys_driver
                                          hydromet, hydromet_mc, &
                                          hydromet_vel_zt, &
                                          rcm_mc, rvm_mc, thlm_mc, &
-                                         hydromet_vel_covar, &
-                                         hydromet_vel_covar_zt, &
+                                         hydromet_vel_covar_zt_impc, &
+                                         hydromet_vel_covar_zt_expc, &
                                          wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                                          rtp2_mc_tndcy, thlp2_mc_tndcy, &
                                          rtpthlp_mc_tndcy, &
@@ -1659,22 +1661,13 @@ module microphys_driver
 
     end select ! micro_scheme
 
-    ! Statistics for covariances <V_rr'r_r'> and <V_Nr'N_r'>.
-    if ( l_stats_samp .and. hydromet_dim > 0 ) then
-
-       ! Covariance of sedimentation velocity of r_r and r_r.
-       call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrainm), zm )
-
-       ! Covariance of sedimentation velocity of N_r and N_r.
-       call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNrm), zm )
-
-    endif ! l_stats_samp
 
     ! Re-compute Ncm and Ncm_in_cloud if needed
     if ( iiNcm > 0 ) then
       Ncm = hydromet(:,iiNcm)
       Ncm_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
     end if
+
 
     !-----------------------------------------------------------------------
     !       Loop over all hydrometeor species and apply sedimentation,
@@ -1868,6 +1861,7 @@ module microphys_driver
            ( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
              dt, Kr, nu_r_vert_res_dep, wm_zt, &  ! In
              hydromet_vel(:,i), hydromet_vel_zt(:,i), & ! In
+             hydromet_vel_covar_zt_impc(:,i), & ! In
              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
              lhs ) ! Out
 
@@ -1877,8 +1871,7 @@ module microphys_driver
          call microphys_rhs( trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
                              Ncm_in_cloud, &
                              hydromet_mc(:,i)/max(cloud_frac,cloud_frac_min), &
-                             hydromet_vel_covar(:,i), &
-                             hydromet_vel_covar_zt(:,i), &
+                             hydromet_vel_covar_zt_expc(:,i), &
                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                              rhs )
 
@@ -1886,8 +1879,7 @@ module microphys_driver
 
          call microphys_rhs( trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
                              hydromet(:,i), hydromet_mc(:,i), &
-                             hydromet_vel_covar(:,i), &
-                             hydromet_vel_covar_zt(:,i), &
+                             hydromet_vel_covar_zt_expc(:,i), &
                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                              rhs )
 
@@ -1912,6 +1904,41 @@ module microphys_driver
 
       endif
 
+
+      !!! Calculate the covariance of hydrometeor sedimentation velocity and the
+      !!! hydrometeor, which is solved semi-implicitly on thermodynamic levels.
+      hydromet_vel_covar_zt(:,i) &
+      = hydromet_vel_covar_zt_impc(:,i) * hydromet(:,i) &
+        + hydromet_vel_covar_zt_expc(:,i)
+
+      ! Boundary conditions for < V_hm'hm' >|_zt.
+      hydromet_vel_covar_zt(1,i) = hydromet_vel_covar_zt(2,i)
+
+      !!! Calculate the covariance of hydrometeor sedimentation velocity and the
+      !!! hydrometeor, < V_hm'h_m' >, by interpolating the thermodynamic level
+      !!! results to momentum levels.
+      hydromet_vel_covar(:,i) = zt2zm( hydromet_vel_covar_zt(:,i) )
+
+      ! Boundary conditions for < V_hm'hm' >.
+      hydromet_vel_covar(1,i)     = hydromet_vel_covar_zt(2,i)
+      hydromet_vel_covar(gr%nz,i) = zero
+
+      ! Statistics for covariances <V_rr'r_r'> and <V_Nr'N_r'>.
+      if ( l_stats_samp .and. hydromet_dim > 0 ) then
+
+         if ( trim( hydromet_list(i) ) == "rrainm" ) then
+
+            ! Covariance of sedimentation velocity of r_r and r_r.
+            call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrainm), zm )
+
+         elseif ( trim( hydromet_list(i) ) == "Nrm" ) then
+
+            ! Covariance of sedimentation velocity of N_r and N_r.
+            call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNrm), zm )
+
+         endif
+
+      endif ! l_stats_samp
 
       ! Print warning message if any hydrometeor species has a value < 0.
       if ( any( hydromet(:,i) < zero_threshold ) ) then
@@ -2245,7 +2272,7 @@ module microphys_driver
   !=============================================================================
   subroutine microphys_solve( solve_type, l_sed, &
                               cloud_frac, &
-                              lhs, rhs, xrm, err_code )
+                              lhs, rhs, hmm, err_code )
 
     ! Description:
     ! Solve the tridiagonal system for hydrometeor variable.
@@ -2270,6 +2297,7 @@ module microphys_driver
         zt,  & ! Variable(s)
         irrainm_ma, & 
         irrainm_sd, & 
+        irrainm_ts, & 
         irrainm_dff, & 
         iricem_ma, & 
         iricem_sd, & 
@@ -2289,11 +2317,15 @@ module microphys_driver
         ztscr06, & 
         ztscr07, & 
         ztscr08, & 
-        ztscr09
+        ztscr09, &
+        ztscr10, &
+        ztscr11, &
+        ztscr12
 
     use stats_variables, only: & 
         iNrm_ma, & 
         iNrm_sd, & 
+        iNrm_ts, & 
         iNrm_dff, & 
         iNim_ma, & 
         iNim_sd, & 
@@ -2310,7 +2342,8 @@ module microphys_driver
         iNcm_dff
 
     use stats_type, only: &
-        stat_update_var_pt ! Procedure(s)
+        stat_update_var_pt, & ! Procedure(s)
+        stat_end_update_pt
 
     implicit none
 
@@ -2332,7 +2365,7 @@ module microphys_driver
       rhs    ! Right hand side vector
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
-      xrm    ! Mean of hydrometeor              [units vary]
+      hmm    ! Mean value of hydrometeor (thermodynamic levels)    [units vary]
 
     ! Output Variables
     integer, intent(out) :: err_code
@@ -2341,138 +2374,161 @@ module microphys_driver
     integer :: k, km1, kp1  ! Array indices
 
     integer :: & 
-      ixrm_ma,  & ! Mean advection budget stats toggle
-      ixrm_sd,  & ! Sedimentation budget stats toggle
-      ixrm_dff    ! Diffusion budget stats toggle
+      ihmm_ma,  & ! Mean advection budget stats toggle
+      ihmm_sd,  & ! Mean sedimentation budget stats toggle
+      ihmm_ts,  & ! Turbulent sedimentation budget stats toggle
+      ihmm_dff    ! Diffusion budget stats toggle
 
 
     err_code = clubb_no_error  ! Initialize to the value for no errors
 
-    ! Initializing ixrm_ma, ixrm_sd, and ixrm_dff in order to avoid
+    ! Initializing ihmm_ma, ihmm_sd, ihmm_ts, and ihmm_dff in order to avoid
     ! compiler warnings.
-    ixrm_ma  = 0
-    ixrm_sd  = 0
-    ixrm_dff = 0
+    ihmm_ma  = 0
+    ihmm_sd  = 0
+    ihmm_ts  = 0
+    ihmm_dff = 0
 
     select case( solve_type )
     case( "rrainm" )
-      ixrm_ma  = irrainm_ma
-      ixrm_sd  = irrainm_sd
-      ixrm_dff = irrainm_dff
+      ihmm_ma  = irrainm_ma
+      ihmm_sd  = irrainm_sd
+      ihmm_ts  = irrainm_ts
+      ihmm_dff = irrainm_dff
     case( "ricem" )
-      ixrm_ma  = iricem_ma
-      ixrm_sd  = iricem_sd
-      ixrm_dff = iricem_dff
+      ihmm_ma  = iricem_ma
+      ihmm_sd  = iricem_sd
+      ihmm_ts  = 0
+      ihmm_dff = iricem_dff
     case( "rsnowm" )
-      ixrm_ma  = irsnowm_ma
-      ixrm_sd  = irsnowm_sd
-      ixrm_dff = irsnowm_dff
+      ihmm_ma  = irsnowm_ma
+      ihmm_sd  = irsnowm_sd
+      ihmm_ts  = 0
+      ihmm_dff = irsnowm_dff
     case( "rgraupelm" )
-      ixrm_ma  = irgraupelm_ma
-      ixrm_sd  = irgraupelm_sd
-      ixrm_dff = irgraupelm_dff
+      ihmm_ma  = irgraupelm_ma
+      ihmm_sd  = irgraupelm_sd
+      ihmm_ts  = 0
+      ihmm_dff = irgraupelm_dff
     case( "Ncm" )
-      ixrm_ma  = iNcm_ma
-      ixrm_sd  = 0
-      ixrm_dff = iNcm_dff
+      ihmm_ma  = iNcm_ma
+      ihmm_sd  = 0
+      ihmm_ts  = 0
+      ihmm_dff = iNcm_dff
     case( "Nrm" )
-      ixrm_ma  = iNrm_ma
-      ixrm_sd  = iNrm_sd
-      ixrm_dff = iNrm_dff
+      ihmm_ma  = iNrm_ma
+      ihmm_sd  = iNrm_sd
+      ihmm_ts  = iNrm_ts
+      ihmm_dff = iNrm_dff
     case( "Nim" )
-      ixrm_ma  = iNim_ma
-      ixrm_sd  = iNim_sd
-      ixrm_dff = iNim_dff
+      ihmm_ma  = iNim_ma
+      ihmm_sd  = iNim_sd
+      ihmm_ts  = 0
+      ihmm_dff = iNim_dff
     case( "Nsnowm" )
-      ixrm_ma  = iNsnowm_ma
-      ixrm_sd  = iNsnowm_sd
-      ixrm_dff = iNsnowm_dff
+      ihmm_ma  = iNsnowm_ma
+      ihmm_sd  = iNsnowm_sd
+      ihmm_ts  = 0
+      ihmm_dff = iNsnowm_dff
     case( "Ngraupelm" )
-      ixrm_ma  = iNgraupelm_ma
-      ixrm_sd  = iNgraupelm_sd
-      ixrm_dff = iNgraupelm_dff
+      ihmm_ma  = iNgraupelm_ma
+      ihmm_sd  = iNgraupelm_sd
+      ihmm_ts  = 0
+      ihmm_dff = iNgraupelm_dff
     case default
-      ixrm_ma  = 0
-      ixrm_sd  = 0
-      ixrm_dff = 0
+      ihmm_ma  = 0
+      ihmm_sd  = 0
+      ihmm_ts  = 0
+      ihmm_dff = 0
     end select
 
 
     ! Solve system using tridag_solve. This uses LAPACK sgtsv,
     ! which relies on Gaussian elimination to decompose the matrix.
     call tridag_solve( solve_type, gr%nz, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
-                       rhs, xrm, err_code )
+                       rhs, hmm, err_code )
 
 
     ! Statistics
     if ( l_stats_samp ) then
 
-      do k = 1, gr%nz, 1
+       do k = 1, gr%nz, 1
 
-        km1 = max( k-1, 1 )
-        kp1 = min( k+1, gr%nz )
+          km1 = max( k-1, 1 )
+          kp1 = min( k+1, gr%nz )
 
-        ! Finalize implicit contributions
+          ! Finalize implicit contributions
 
-        ! xrm term ma is completely implicit; call stat_update_var_pt.
-        if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
+          ! hmm term ma is completely implicit; call stat_update_var_pt.
+          if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
 
-          ! For Ncm, we divide by cloud_frac when entering the subroutine, but
-          ! do not multiply until we return from the subroutine, so we must
-          ! account for this here for the budget to balance
-          call stat_update_var_pt( ixrm_ma, k, & 
-                ztscr01(k) * xrm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
-                + ztscr02(k) * xrm(k) * max( cloud_frac(k), cloud_frac_min ) & 
-                + ztscr03(k) * xrm(kp1) * max( cloud_frac(k), cloud_frac_min ), zt)
+             ! For Ncm, we divide by cloud_frac when entering the subroutine,
+             ! but do not multiply until we return from the subroutine, so we
+             ! must account for this here for the budget to balance.
+             call stat_update_var_pt( ihmm_ma, k, & 
+               ztscr01(k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
+               + ztscr02(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
+               + ztscr03(k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
+                                      zt )
 
-        else
+          else
 
-          call stat_update_var_pt( ixrm_ma, k, & 
-                ztscr01(k) * xrm(km1) & 
-                + ztscr02(k) * xrm(k) & 
-                + ztscr03(k) * xrm(kp1), zt)
+             call stat_update_var_pt( ihmm_ma, k, & 
+                                      ztscr01(k) * hmm(km1) & 
+                                      + ztscr02(k) * hmm(k) & 
+                                      + ztscr03(k) * hmm(kp1), zt)
 
-        endif
+          endif
 
-        ! xrm term sd is completely implicit; call stat_update_var_pt.
-        if ( l_sed ) then
-          call stat_update_var_pt( ixrm_sd, k, & 
-                ztscr04(k) * xrm(km1) & 
-                + ztscr05(k) * xrm(k) & 
-                + ztscr06(k) * xrm(kp1), zt )
-        endif
+          ! hmm term sd is completely implicit; call stat_update_var_pt.
+          if ( l_sed ) then
+             call stat_update_var_pt( ihmm_sd, k, & 
+                                      ztscr04(k) * hmm(km1) & 
+                                      + ztscr05(k) * hmm(k) & 
+                                      + ztscr06(k) * hmm(kp1), zt )
+          endif
 
-        ! xrm term dff is completely implicit; call stat_update_var_pt.
-        if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
+          ! hmm term ts has both implicit and explicit components; call
+          ! stat_end_update_pt.
+          if ( l_sed .and. k > 1 ) then
+             call stat_end_update_pt( ihmm_ts, k, & 
+                                      ztscr07(k) * hmm(km1) & 
+                                      + ztscr08(k) * hmm(k) & 
+                                      + ztscr09(k) * hmm(kp1), zt )
+          endif
 
-          ! For Ncm, we divide by cloud_frac when entering the subroutine, but
-          ! do not multiply until we return from the subroutine, so we must
-          ! account for this here for the budget to balance
-          call stat_update_var_pt( ixrm_dff, k, & 
-                ztscr07(k) * xrm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
-                + ztscr08(k) * xrm(k) * max( cloud_frac(k), cloud_frac_min ) & 
-                + ztscr09(k) * xrm(kp1) * max( cloud_frac(k), cloud_frac_min ), zt )
+          ! hmm term dff is completely implicit; call stat_update_var_pt.
+          if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
 
-        else
+             ! For Ncm, we divide by cloud_frac when entering the subroutine,
+             ! but do not multiply until we return from the subroutine, so we
+             ! must account for this here for the budget to balance.
+             call stat_update_var_pt( ihmm_dff, k, & 
+               ztscr10(k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
+               + ztscr11(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
+               + ztscr12(k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
+                                      zt )
 
-          call stat_update_var_pt( ixrm_dff, k, & 
-                ztscr07(k) * xrm(km1) & 
-                + ztscr08(k) * xrm(k) & 
-                + ztscr09(k) * xrm(kp1), zt )
+          else
 
-        endif
+             call stat_update_var_pt( ihmm_dff, k, & 
+                                      ztscr10(k) * hmm(km1) & 
+                                      + ztscr11(k) * hmm(k) & 
+                                      + ztscr12(k) * hmm(kp1), zt )
 
-      enddo ! 1..gr%nz
+          endif
+
+       enddo ! 1..gr%nz
 
     endif ! l_stats_samp
 
 
     ! Boundary conditions on results
-    !xrm(1) = xrm(2)
+    !hmm(1) = hmm(2)
     ! Michael Falk, 7 Sep 2007, made this change to eliminate problems
     ! with anomalous rain formation at the top boundary.
-    !        xrm(gr%nz) = 0
-    !xrm(gr%nz) = xrm(gr%nz-1)
+    !        hmm(gr%nz) = 0
+    !hmm(gr%nz) = hmm(gr%nz-1)
     ! eMFc
 
     return
@@ -2483,6 +2539,7 @@ module microphys_driver
   subroutine microphys_lhs & 
              ( solve_type, l_sed, dt, Kr, nu, wm_zt, &
                V_hm, V_hmt, &
+               Vhmphmp_zt_impc, &
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                lhs )
 
@@ -2520,9 +2577,11 @@ module microphys_driver
     use stats_variables, only: & 
         irrainm_ma,   & ! Variable(s)
         irrainm_sd, & 
+        irrainm_ts, & 
         irrainm_dff, & 
         iNrm_ma, & 
         iNrm_sd, & 
+        iNrm_ts, & 
         iNrm_dff, & 
         iNcm_ma, &
         iNcm_dff, &
@@ -2544,6 +2603,9 @@ module microphys_driver
         ztscr07, & 
         ztscr08, & 
         ztscr09, & 
+        ztscr10, & 
+        ztscr11, & 
+        ztscr12, & 
         l_stats_samp
 
     implicit none
@@ -2574,6 +2636,7 @@ module microphys_driver
       Kr       ! Eddy diffusivity for hydrometeor on momentum levels     [m^2/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      Vhmphmp_zt_impc, & ! Implicit comp. of <V_hm'h_m'> on t-levs  [units(m/s)]
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
@@ -2584,52 +2647,70 @@ module microphys_driver
     ! Local Variables
     real( kind = core_rknd ), dimension(3) :: tmp
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Vhmphmp_impc    ! Implicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
+
     ! Array indices
     integer :: k, km1, kp1
 
     integer :: & 
-      ixrm_ma,  & ! Mean advection budget stats toggle
-      ixrm_sd,  & ! Sedimentation budget stats toggle
-      ixrm_dff    ! Diffusion budget stats toggle
+      ihmm_ma,  & ! Mean advection budget stats toggle
+      ihmm_sd,  & ! Mean sedimentation budget stats toggle
+      ihmm_ts,  & ! Turbulent sedimentation budget stats toggle
+      ihmm_dff    ! Diffusion budget stats toggle
 
     ! ----- Begin Code -----
 
-    ! Initializing ixrm_ma, ixrm_sd, and ixrm_dff in order to avoid compiler
-    ! warnings.
-    ixrm_ma  = 0
-    ixrm_sd  = 0
-    ixrm_dff = 0
+    ! Initializing ihmm_ma, ihmm_sd, ihmm_ts, and ihmm_dff in order to avoid
+    ! compiler warnings.
+    ihmm_ma  = 0
+    ihmm_sd  = 0
+    ihmm_ts  = 0
+    ihmm_dff = 0
 
     select case( solve_type )
     case ( "rrainm" )
-      ixrm_ma  = irrainm_ma
-      ixrm_sd  = irrainm_sd
-      ixrm_dff = irrainm_dff
+      ihmm_ma  = irrainm_ma
+      ihmm_sd  = irrainm_sd
+      ihmm_ts  = irrainm_ts
+      ihmm_dff = irrainm_dff
     case ( "Nrm" )
-      ixrm_ma  = iNrm_ma
-      ixrm_sd  = iNrm_sd
-      ixrm_dff = iNrm_dff
+      ihmm_ma  = iNrm_ma
+      ihmm_sd  = iNrm_sd
+      ihmm_ts  = iNrm_ts
+      ihmm_dff = iNrm_dff
     case ( "ricem" )
-      ixrm_ma  = iricem_ma
-      ixrm_sd  = iricem_sd
-      ixrm_dff = iricem_dff
+      ihmm_ma  = iricem_ma
+      ihmm_sd  = iricem_sd
+      ihmm_ts  = 0
+      ihmm_dff = iricem_dff
     case ( "rsnowm" )
-      ixrm_ma  = irsnowm_ma
-      ixrm_sd  = irsnowm_sd
-      ixrm_dff = irsnowm_dff
+      ihmm_ma  = irsnowm_ma
+      ihmm_sd  = irsnowm_sd
+      ihmm_ts  = 0
+      ihmm_dff = irsnowm_dff
     case ( "rgraupelm" )
-      ixrm_ma  = irgraupelm_ma
-      ixrm_sd  = irgraupelm_sd
-      ixrm_dff = irgraupelm_dff
+      ihmm_ma  = irgraupelm_ma
+      ihmm_sd  = irgraupelm_sd
+      ihmm_ts  = 0
+      ihmm_dff = irgraupelm_dff
     case ( "Ncm" )
-      ixrm_ma  = iNcm_ma
-      ixrm_sd  = 0
-      ixrm_dff = iNcm_dff
+      ihmm_ma  = iNcm_ma
+      ihmm_sd  = 0
+      ihmm_ts  = 0
+      ihmm_dff = iNcm_dff
     case default
-      ixrm_ma  = 0
-      ixrm_sd  = 0
-      ixrm_dff = 0
+      ihmm_ma  = 0
+      ihmm_sd  = 0
+      ihmm_ts  = 0
+      ihmm_dff = 0
     end select
+
+
+    ! Interpolate the implicit component of < V_hm'h_m' >, a momentum-level
+    ! variable that is calculated on thermodynamic levels, from thermodynamic
+    ! levels to momentum levels.
+    Vhmphmp_impc = zt2zm( Vhmphmp_zt_impc )
 
     ! Reset LHS Matrix for current timestep.
     lhs = zero
@@ -2650,44 +2731,64 @@ module microphys_driver
        !        + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
        lhs(kp1_tdiag:km1_tdiag,k) & 
        = lhs(kp1_tdiag:km1_tdiag,k) &
-       + invrs_rho_ds_zt(k) &
-       * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
-                           rho_ds_zm(km1) * Kr(km1), nu, & 
-                           gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                           gr%invrs_dzt(k), k )
+         + invrs_rho_ds_zt(k) &
+         * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
+                             rho_ds_zm(km1) * Kr(km1), nu, & 
+                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
+                             gr%invrs_dzt(k), k )
 
        ! LHS mean advection term.
        lhs(kp1_tdiag:km1_tdiag,k) & 
        = lhs(kp1_tdiag:km1_tdiag,k) & 
-       + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
-                         gr%invrs_dzm(km1) )
+         + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
+                           gr%invrs_dzm(km1) )
 
-       ! LHS hydrometeor sedimentation term.
-       ! Note: the Morrison microphysics has its own sedimentation code, which
-       ! is applied through the _mc terms to each hydrometeor species.
-       ! Therefore, l_sed will always be false when the Morrison microphysics
-       ! is enabled.  -dschanen 24 Jan 2011
        if ( l_sed ) then
+
+          ! LHS mean sedimentation term.
+          ! Note: the Morrison microphysics has its own sedimentation code,
+          ! which is applied through the _mc terms to each hydrometeor species.
+          ! Therefore, l_sed will always be false when the Morrison microphysics
+          ! is enabled.  -dschanen 24 Jan 2011
           if ( .not. l_upwind_diff_sed ) then
+
+             ! Sedimentation (both mean and turbulent) uses centered
+             ! differencing.  This is the default method.
              lhs(kp1_tdiag:km1_tdiag,k) & 
              = lhs(kp1_tdiag:km1_tdiag,k) & 
-             + sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
-                                      rho_ds_zm(km1), invrs_rho_ds_zt(k), &
-                                      gr%invrs_dzt(k), k )
+               + sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
+                                        rho_ds_zm(km1), invrs_rho_ds_zt(k), &
+                                        gr%invrs_dzt(k), k )
+
           else
+
+             ! Sedimentation (both mean and turbulent) uses "upwind"
+             ! differencing.
              lhs(kp1_tdiag:km1_tdiag,k) & 
              = lhs(kp1_tdiag:km1_tdiag,k) & 
-             + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
-                                    rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
-                                    gr%invrs_dzm(k), k )
+               + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+                                      rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                                      gr%invrs_dzm(k), k )
+
           endif
-       endif
+
+          ! LHS turbulent sedimentation term.
+          lhs(kp1_tdiag:km1_tdiag,k) & 
+          = lhs(kp1_tdiag:km1_tdiag,k) & 
+             + term_turb_sed_lhs( Vhmphmp_impc(k), Vhmphmp_impc(km1), &
+                                  Vhmphmp_zt_impc(kp1), Vhmphmp_zt_impc(k), &
+                                  rho_ds_zm(k), rho_ds_zm(km1), &
+                                  rho_ds_zt(kp1), rho_ds_zt(k), &
+                                  gr%invrs_dzt(k), gr%invrs_dzm(k), &
+                                  invrs_rho_ds_zt(k), k )
+
+       endif ! l_sed
 
        if ( l_stats_samp ) then
 
-          ! Statistics:  implicit contributions to hydrometeor xrm.
+          ! Statistics:  implicit contributions to hydrometeor hmm.
 
-          if ( ixrm_ma > 0 ) then
+          if ( ihmm_ma > 0 ) then
              tmp(1:3) &
              = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
                                gr%invrs_dzm(km1) )
@@ -2697,7 +2798,7 @@ module microphys_driver
              ztscr03(k) = -tmp(1)
           endif
 
-          if ( ixrm_sd > 0 .and. l_sed ) then
+          if ( ihmm_sd > 0 .and. l_sed ) then
              if ( .not. l_upwind_diff_sed ) then
                 tmp(1:3) &
                 = sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
@@ -2716,16 +2817,29 @@ module microphys_driver
 
           endif
 
-          if ( ixrm_dff > 0 ) then
+          if ( ihmm_ts > 0 .and. l_sed ) then
+             tmp(1:3) &
+             = term_turb_sed_lhs( Vhmphmp_impc(k), Vhmphmp_impc(km1), &
+                                  Vhmphmp_zt_impc(kp1), Vhmphmp_zt_impc(k), &
+                                  rho_ds_zm(k), rho_ds_zm(km1), &
+                                  rho_ds_zt(kp1), rho_ds_zt(k), &
+                                  gr%invrs_dzt(k), gr%invrs_dzm(k), &
+                                  invrs_rho_ds_zt(k), k )
+             ztscr07(k) = -tmp(3)
+             ztscr08(k) = -tmp(2)
+             ztscr09(k) = -tmp(1)
+          endif
+
+          if ( ihmm_dff > 0 ) then
              tmp(1:3) &
              = invrs_rho_ds_zt(k) & 
              * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
                                  rho_ds_zm(km1) * Kr(km1), nu,  & 
                                  gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                                  gr%invrs_dzt(k), k )
-             ztscr07(k) = -tmp(3)
-             ztscr08(k) = -tmp(2)
-             ztscr09(k) = -tmp(1)
+             ztscr10(k) = -tmp(3)
+             ztscr11(k) = -tmp(2)
+             ztscr12(k) = -tmp(1)
           endif
 
        endif ! l_stats_samp
@@ -2775,21 +2889,21 @@ module microphys_driver
 
     if ( l_stats_samp ) then
 
-       ! Statistics:  implicit contributions to hydrometeor xrm.
+       ! Statistics:  implicit contributions to hydrometeor hmm.
 
-       if ( ixrm_dff > 0 ) then
+       if ( ihmm_dff > 0 ) then
           tmp(1:3) & 
           = invrs_rho_ds_zt(k) &
           * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
                               rho_ds_zm(km1) * Kr(km1), nu, & 
                               gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                               gr%invrs_dzt(k), k )
-          ztscr07(k) = -tmp(3)
-          ztscr08(k) = -tmp(2)
-          ztscr09(k) = -tmp(1)
+          ztscr10(k) = -tmp(3)
+          ztscr11(k) = -tmp(2)
+          ztscr12(k) = -tmp(1)
        endif
 
-       if ( ixrm_sd > 0 .and. l_sed .and. l_upwind_diff_sed ) then
+       if ( ihmm_sd > 0 .and. l_sed .and. l_upwind_diff_sed ) then
           tmp(1:3) &
           = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
                                  rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
@@ -2821,18 +2935,18 @@ module microphys_driver
 
     if ( l_stats_samp ) then
 
-       ! Statistics:  implicit contributions to hydrometeor xrm.
+       ! Statistics:  implicit contributions to hydrometeor hmm.
 
-       if ( ixrm_dff > 0 ) then
+       if ( ihmm_dff > 0 ) then
           tmp(1:3) & 
           = invrs_rho_ds_zt(k) &
           * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
                               rho_ds_zm(km1) * Kr(km1), nu, & 
                               gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                               gr%invrs_dzt(k), k )
-          ztscr07(k) = -tmp(3)
-          ztscr08(k) = -tmp(2)
-          ztscr09(k) = -tmp(1)
+          ztscr10(k) = -tmp(3)
+          ztscr11(k) = -tmp(2)
+          ztscr12(k) = -tmp(1)
        endif
 
     endif  ! l_stats_samp
@@ -2845,7 +2959,7 @@ module microphys_driver
   !=============================================================================
   subroutine microphys_rhs( solve_type, dt, l_sed, &
                             hmm, hmm_tndcy, &
-                            Vhmphmp, Vhmphmp_zt, &
+                            Vhmphmp_zt_expc, &
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                             rhs )
 
@@ -2858,7 +2972,8 @@ module microphys_driver
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr    ! Variable(s)
+        gr,    & ! Variable(s)
+        zt2zm    ! Procedure(s)
 
     use constants_clubb, only: &
         zero
@@ -2874,7 +2989,7 @@ module microphys_driver
         l_stats_samp
 
     use stats_type, only: &
-        stat_update_var_pt ! Procedure(s)
+        stat_begin_update_pt ! Procedure(s)
 
     implicit none
 
@@ -2889,12 +3004,9 @@ module microphys_driver
       l_sed    ! Flag for hydrometeor sedimentation
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      hmm,        & ! Mean value of hydrometeor                    [units]
-      hmm_tndcy,  & ! Microphysics tendency (thermodynamic levels) [units/s]
-      Vhmphmp,    & ! Covariance of V_hm and hm (momentum levels)  [(m/s) units]
-      Vhmphmp_zt    ! Covariance of V_hm and hm (thermo. levels)   [(m/s) units]
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      hmm,             & ! Mean value of hydrometeor (t-levs.)      [units]
+      hmm_tndcy,       & ! Microphysics tendency (thermo. levels)   [units/s]
+      Vhmphmp_zt_expc, & ! Explicit comp. of <V_hm'h_m'> on t-levs  [units(m/s)]
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
@@ -2904,23 +3016,31 @@ module microphys_driver
       rhs   ! Right hand side
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Vhmphmp_expc    ! Explicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
+
     integer :: k, kp1, km1  ! Array indices
 
-    integer :: ixrm_ts  ! Turbulent sedimentation budget toggle.
+    integer :: ihmm_ts  ! Turbulent sedimentation budget toggle.
  
 
-    ! Initializing ixrm_ts in order to avoid compiler warnings.
-    ixrm_ts = 0
+    ! Initializing ihmm_ts in order to avoid compiler warnings.
+    ihmm_ts = 0
 
     select case( solve_type )
     case ( "rrainm" )
-      ixrm_ts = irrainm_ts
+      ihmm_ts = irrainm_ts
     case ( "Nrm" )
-      ixrm_ts = iNrm_ts
+      ihmm_ts = iNrm_ts
     case default
-      ixrm_ts = 0
+      ihmm_ts = 0
     end select
 
+
+    ! Interpolate the explicit component of < V_hm'h_m' >, a momentum-level
+    ! variable that is calculated on thermodynamic levels, from thermodynamic
+    ! levels to momentum levels.
+    Vhmphmp_expc = zt2zm( Vhmphmp_zt_expc )
 
     ! Initialize right-hand side vector to 0.
     rhs = zero
@@ -2938,17 +3058,16 @@ module microphys_driver
        ! etc.).
        rhs(k) = rhs(k) + hmm_tndcy(k)
 
-       ! RHS turbulent sedimentation term,
-       ! - (1/rho_ds) * d( rho_ds * <V_xr'x_r'> ) / dz.
+       ! RHS turbulent sedimentation term.
        if ( l_sed ) then
           rhs(k) &
           = rhs(k) &
-          + term_turb_sed_rhs( Vhmphmp(k), Vhmphmp(km1), &
-                               Vhmphmp_zt(kp1), Vhmphmp_zt(k), &
-                               rho_ds_zm(k), rho_ds_zm(km1), &
-                               rho_ds_zt(kp1), rho_ds_zt(k), &
-                               gr%invrs_dzt(k), gr%invrs_dzm(k), &
-                               invrs_rho_ds_zt(k), k )
+            + term_turb_sed_rhs( Vhmphmp_expc(k), Vhmphmp_expc(km1), &
+                                 Vhmphmp_zt_expc(kp1), Vhmphmp_zt_expc(k), &
+                                 rho_ds_zm(k), rho_ds_zm(km1), &
+                                 rho_ds_zt(kp1), rho_ds_zt(k), &
+                                 gr%invrs_dzt(k), gr%invrs_dzm(k), &
+                                 invrs_rho_ds_zt(k), k )
        endif
 
        
@@ -2956,16 +3075,18 @@ module microphys_driver
 
           ! Statistics: explicit contributions for the hydrometeor.
 
-          ! xrm term ts is completely explicit; call stat_update_var_pt.
+          ! hmm term ts has both implicit and explicit components; call
+          ! stat_update_var_pt.  Since stat_begin_update_pt automatically
+          ! subtracts the value sent in, reverse the sign on term_turb_sed_rhs.
           if ( l_sed ) then
-             call stat_update_var_pt( ixrm_ts, k, &
-                     term_turb_sed_rhs( Vhmphmp(k), Vhmphmp(km1), &
-                                        Vhmphmp_zt(kp1), Vhmphmp_zt(k), &
-                                        rho_ds_zm(k), rho_ds_zm(km1), &
-                                        rho_ds_zt(kp1), rho_ds_zt(k), &
-                                        gr%invrs_dzt(k), gr%invrs_dzm(k), &
-                                        invrs_rho_ds_zt(k), k ), &
-                                      zt )
+             call stat_begin_update_pt( ihmm_ts, k, &
+                 -term_turb_sed_rhs( Vhmphmp_expc(k), Vhmphmp_expc(km1), &
+                                     Vhmphmp_zt_expc(kp1), Vhmphmp_zt_expc(k), &
+                                     rho_ds_zm(k), rho_ds_zm(km1), &
+                                     rho_ds_zt(kp1), rho_ds_zt(k), &
+                                     gr%invrs_dzt(k), gr%invrs_dzm(k), &
+                                     invrs_rho_ds_zt(k), k ), &
+                                        zt )
           endif ! l_sed
 
        endif ! l_stats_samp
@@ -3189,52 +3310,52 @@ module microphys_driver
 
     if ( level == 1 ) then
 
-      ! k = 1 (bottom level); lower boundary level; no effects.
+       ! k = 1 (bottom level); lower boundary level; no effects.
 
-      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = zero
+       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+       lhs(kp1_tdiag) = zero
 
-      ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)   = zero
+       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+       lhs(k_tdiag)   = zero
 
-      ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = zero
+       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+       lhs(km1_tdiag) = zero
 
 
     elseif ( level > 1 .and. level < gr%nz ) then
 
-      ! Most of the interior model; normal conditions.
+       ! Most of the interior model; normal conditions.
 
-      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag)  & 
-        = + invrs_rho_ds_zt * invrs_dzt &
-            * rho_ds_zm * V_hm * gr%weights_zt2zm(t_above,mk)
+       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+       lhs(kp1_tdiag)  & 
+       = + invrs_rho_ds_zt * invrs_dzt &
+           * rho_ds_zm * V_hm * gr%weights_zt2zm(t_above,mk)
 
-      ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)  & 
-        = + invrs_rho_ds_zt &
-            * invrs_dzt &
-            * ( rho_ds_zm * V_hm * gr%weights_zt2zm(t_below,mk) & 
-                - rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
+       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+       lhs(k_tdiag)  & 
+       = + invrs_rho_ds_zt &
+           * invrs_dzt &
+           * ( rho_ds_zm * V_hm * gr%weights_zt2zm(t_below,mk) & 
+               - rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
 
-      ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag)  & 
-        = - invrs_rho_ds_zt * invrs_dzt &
-            * rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
+       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+       lhs(km1_tdiag)  & 
+       = - invrs_rho_ds_zt * invrs_dzt &
+           * rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
 
 
     elseif ( level == gr%nz ) then
 
-      ! k = gr%nz (top level); upper boundary level; no flux.
+       ! k = gr%nz (top level); upper boundary level; no flux.
 
-      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = zero
+       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+       lhs(kp1_tdiag) = zero
 
-      ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)   = zero
+       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+       lhs(k_tdiag)   = zero
 
-      ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = zero
+       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+       lhs(km1_tdiag) = zero
 
 
     endif
@@ -3411,28 +3532,28 @@ module microphys_driver
     ! (i.e. the V_hmt variable will always be negative).
     if ( level == gr%nz ) then
 
-      ! k = gr%nz (top level); upper boundary level; no flux.
+       ! k = gr%nz (top level); upper boundary level; no flux.
 
-      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = zero
+       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+       lhs(kp1_tdiag) = zero
 
-      ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)   = zero
+       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+       lhs(k_tdiag)   = zero
 
-      ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = zero
+       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+       lhs(km1_tdiag) = zero
 
 
     else
 
-      ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-      lhs(kp1_tdiag) = + invrs_rho_ds_zt * invrs_dzm * rho_ds_ztp1 * V_hmtp1
+       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+       lhs(kp1_tdiag) = + invrs_rho_ds_zt * invrs_dzm * rho_ds_ztp1 * V_hmtp1
 
-      ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-      lhs(k_tdiag)   = - invrs_rho_ds_zt * invrs_dzm * rho_ds_zt * V_hmt
+       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+       lhs(k_tdiag)   = - invrs_rho_ds_zt * invrs_dzm * rho_ds_zt * V_hmt
 
-      ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-      lhs(km1_tdiag) = zero
+       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+       lhs(km1_tdiag) = zero
 
 
     endif

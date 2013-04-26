@@ -1,4 +1,3 @@
-! $Id$
 !===============================================================================
 module KK_microphys_module
 
@@ -34,8 +33,6 @@ module KK_microphys_module
                                     hydromet, &
                                     hydromet_mc, hydromet_vel, &
                                     rcm_mc, rvm_mc, thlm_mc, &
-                                    hydromet_vel_covar, &
-                                    hydromet_vel_covar_zt, &
                                     wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                                     rtp2_mc_tndcy, thlp2_mc_tndcy, &
                                     rtpthlp_mc_tndcy, &
@@ -128,11 +125,6 @@ module KK_microphys_module
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc    ! Time tendency of liquid potential temperature [K/s]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(out) :: &
-      hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
-      hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
-
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
       wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
@@ -164,14 +156,6 @@ module KK_microphys_module
       KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
       KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
-
-    real( kind = core_rknd ), dimension(:), pointer :: &
-      Vrrprrp, & ! Covariance of V_rr and r_r (momentum levels)  [(m/s)(kg/kg)]
-      VNrpNrp    ! Covariance of V_Nr and N_r (momentum levels)  [(m/s)(num/kg)]
-
-    real( kind = core_rknd ), dimension(:), pointer :: &
-      Vrrprrp_zt, & ! Covariance of V_rr and r_r; thermo. levs.  [(m/s)(kg/kg)]
-      VNrpNrp_zt    ! Covariance of V_Nr and N_r; thermo. levs.  [(m/s)(num/kg)]
 
     real( kind = core_rknd ) ::  &
       rrainm_source,     & ! Total source term rate for rrainm       [(kg/kg)/s]
@@ -209,13 +193,11 @@ module KK_microphys_module
 
     !!! Initialize microphysics fields.
     call KK_micro_init( nz, hydromet, hydromet_mc, hydromet_vel, &
-                        hydromet_vel_covar, hydromet_vel_covar_zt, &
                         rrainm, Nrm, Vrr, VNr, &
                         rrainm_mc_tndcy, Nrm_mc_tndcy, &
                         KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                         KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
-                        KK_Nrm_auto_tndcy, Vrrprrp, VNrpNrp, &
-                        Vrrprrp_zt, VNrpNrp_zt, &
+                        KK_Nrm_auto_tndcy, &
                         l_src_adj_enabled, l_evap_adj_enabled )
 
     !!! Microphysics tendency loop.
@@ -278,11 +260,6 @@ module KK_microphys_module
          KK_accr_tndcy(k) = zero
 
       endif
-
-      ! Set the covariances of hydrometeor sedimentation velocities and
-      ! their associated hydrometeors (<V_rr'r_r'> and <V_Nr'N_r'>) to 0.
-      Vrrprrp_zt(k) = zero
-      VNrpNrp_zt(k) = zero
 
 
       !!! KK rain drop concentration microphysics tendencies.
@@ -354,9 +331,7 @@ module KK_microphys_module
     thlm_mc(nz) = zero
 
     !!! Microphysics sedimentation velocities.
-    call KK_sedimentation( nz, KK_mean_vol_rad, &
-                           Vrr, VNr, Vrrprrp, VNrpNrp, &
-                           Vrrprrp_zt, VNrpNrp_zt )
+    call KK_sedimentation( nz, KK_mean_vol_rad, Vrr, VNr )
 
 
     return
@@ -371,8 +346,8 @@ module KK_microphys_module
                                        hydromet, hydromet_mc, &
                                        hydromet_vel, &
                                        rcm_mc, rvm_mc, thlm_mc, &
-                                       hydromet_vel_covar, &
-                                       hydromet_vel_covar_zt,  &
+                                       hydromet_vel_covar_zt_impc, &
+                                       hydromet_vel_covar_zt_expc, &
                                        wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                                        rtp2_mc_tndcy, thlp2_mc_tndcy, &
                                        rtpthlp_mc_tndcy, &
@@ -411,6 +386,10 @@ module KK_microphys_module
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
+
+    use array_index, only: &
+        iirrainm, & ! Constant(s)
+        iiNrm
 
     use clubb_precision, only: &
         core_rknd,      & ! Variable(s)
@@ -492,8 +471,8 @@ module KK_microphys_module
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(out) :: &
-      hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
-      hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
+      hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
+      hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
@@ -596,14 +575,6 @@ module KK_microphys_module
       corr_wNc         ! Correlation between Nc & w (both components)        [-]
 
     real( kind = core_rknd ), dimension(:), pointer :: &
-      Vrrprrp, & ! Covariance of V_rr and r_r (momentum levels)  [(m/s)(kg/kg)]
-      VNrpNrp    ! Covariance of V_Nr and N_r (momentum levels)  [(m/s)(num/kg)]
-
-    real( kind = core_rknd ), dimension(:), pointer :: &
-      Vrrprrp_zt, & ! Covariance of V_rr and r_r; thermo. levs.  [(m/s)(kg/kg)]
-      VNrpNrp_zt    ! Covariance of V_Nr and N_r; thermo. levs.  [(m/s)(num/kg)]
-
-    real( kind = core_rknd ), dimension(nz) :: &
       Vrrprrp_zt_impc, & ! Imp. comp. of <V_rr'r_r'>: <r_r> eq.  [(m/s)]
       Vrrprrp_zt_expc, & ! Exp. comp. of <V_rr'r_r'>: <r_r> eq.  [(m/s)(kg/kg)]
       VNrpNrp_zt_impc, & ! Imp. comp. of <V_Nr'N_r'>: <N_r> eq.  [(m/s)]
@@ -619,7 +590,6 @@ module KK_microphys_module
     real( kind = core_rknd ) ::  &
       rrainm_source,     & ! Total source term rate for rrainm       [(kg/kg)/s]
       Nrm_source           ! Total source term rate for Nrm         [(num/kg)/s]
-
 
     real( kind = core_rknd ), dimension(nz) ::  &
       rrainm_src_adj,  & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
@@ -649,14 +619,20 @@ module KK_microphys_module
 
     !!! Initialize microphysics fields.
     call KK_micro_init( nz, hydromet, hydromet_mc, hydromet_vel, &
-                        hydromet_vel_covar, hydromet_vel_covar_zt, &
                         rrainm, Nrm, Vrr, VNr, &
                         rrainm_mc_tndcy, Nrm_mc_tndcy, &
                         KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                         KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
-                        KK_Nrm_auto_tndcy, Vrrprrp, VNrpNrp, &
-                        Vrrprrp_zt, VNrpNrp_zt, &
+                        KK_Nrm_auto_tndcy, &
                         l_src_adj_enabled, l_evap_adj_enabled )
+
+    ! The implicit and explicit components used to calculate the covariances of
+    ! hydrometeor sedimentation velocities and their associated hydrometeors
+    ! (<V_rr'r_r'> and <V_Nr'N_r'>).
+    Vrrprrp_zt_impc => hydromet_vel_covar_zt_impc(:,iirrainm)
+    Vrrprrp_zt_expc => hydromet_vel_covar_zt_expc(:,iirrainm)
+    VNrpNrp_zt_impc => hydromet_vel_covar_zt_impc(:,iiNrm)
+    VNrpNrp_zt_expc => hydromet_vel_covar_zt_expc(:,iiNrm)
 
     ! Setup some of the PDF parameters
     rc1         = pdf_params%rc1
@@ -833,10 +809,6 @@ module KK_microphys_module
                               Vrrprrp_zt_impc(k), Vrrprrp_zt_expc(k), &
                               VNrpNrp_zt_impc(k), VNrpNrp_zt_expc(k) )
 
-      ! Temporarily, calculate < V_rr'r_r' > and < V_Nr'N_r' > explicitly.
-      Vrrprrp_zt(k) = Vrrprrp_zt_impc(k) * rrainm(k) + Vrrprrp_zt_expc(k)
-      VNrpNrp_zt(k) = VNrpNrp_zt_impc(k) * Nrm(k) + VNrpNrp_zt_expc(k)
-
 
       if ( l_var_covar_src ) then
 
@@ -985,9 +957,48 @@ module KK_microphys_module
     thlm_mc(nz) = zero
 
     !!! Microphysics sedimentation velocities.
-    call KK_sedimentation( nz, KK_mean_vol_rad, &
-                           Vrr, VNr, Vrrprrp, VNrpNrp, &
-                           Vrrprrp_zt, VNrpNrp_zt )
+    call KK_sedimentation( nz, KK_mean_vol_rad, Vrr, VNr )
+
+    ! The covariance of hydrometeor sedimentation velocity and its associated
+    ! hydrometeor (<V_rr'r_r'> and/or <V_Nr'N_r'>) is set to 0 when its
+    ! associated mean sedimentation velocity (<V_rr> and/or <V_Nr>) is 0.
+    do k = 1, nz-1, 1
+
+       ! When mean sedimentation velocity of rain water mixing ratio has a
+       ! value of 0, the sedimentation velocity of r_r must have a value of 0
+       ! everywhere at that level.  Variances and covariances involving
+       ! sedimentation velocity of r_r must also have a value of 0.
+       if ( Vrr(k) == zero ) then
+          Vrrprrp_zt_impc(k) = zero
+          Vrrprrp_zt_expc(k) = zero
+       endif
+
+       ! When mean sedimentation velocity of rain drop concentration has a
+       ! value of 0, the sedimentation velocity of N_r must have a value of 0
+       ! everywhere at that level.  Variances and covariances involving
+       ! sedimentation velocity of N_r must also have a value of 0.
+       if ( VNr(k) == zero ) then
+          VNrpNrp_zt_impc(k) = zero
+          VNrpNrp_zt_expc(k) = zero
+       endif
+
+    enddo ! Hydrometeor sedimentation velocity covariance loop: k = 1, nz-1, 1
+
+    !!! Boundary conditions (lower) for the covariances of hydrometeor
+    !!! sedimentation velocities and their associated hydrometeors
+    !!! (<V_rr'r_r'> and <V_Nr'N_r'>).
+    Vrrprrp_zt_impc(1) = Vrrprrp_zt_impc(2)
+    Vrrprrp_zt_expc(1) = Vrrprrp_zt_expc(2)
+    VNrpNrp_zt_impc(1) = VNrpNrp_zt_impc(2)
+    VNrpNrp_zt_expc(1) = VNrpNrp_zt_expc(2)
+
+    !!! Boundary conditions (upper) for the covariances of hydrometeor
+    !!! sedimentation velocities and their associated hydrometeors
+    !!! (<V_rr'r_r'> and <V_Nr'N_r'>).
+    Vrrprrp_zt_impc(nz) = zero
+    Vrrprrp_zt_expc(nz) = zero
+    VNrpNrp_zt_impc(nz) = zero
+    VNrpNrp_zt_expc(nz) = zero
 
 
     return
@@ -996,13 +1007,11 @@ module KK_microphys_module
 
   !=============================================================================
   subroutine KK_micro_init( nz, hydromet, hydromet_mc, hydromet_vel, &
-                            hydromet_vel_covar, hydromet_vel_covar_zt, &
                             rrainm, Nrm, Vrr, VNr, &
                             rrainm_mc_tndcy, Nrm_mc_tndcy, &
                             KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                             KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
-                            KK_Nrm_auto_tndcy, Vrrprrp, VNrpNrp, &
-                            Vrrprrp_zt, VNrpNrp_zt, &
+                            KK_Nrm_auto_tndcy, &
                             l_src_adj_enabled, l_evap_adj_enabled )
 
     ! Description:
@@ -1038,11 +1047,6 @@ module KK_microphys_module
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(in) :: &
-      hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
-      hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
-
     ! Output Variables
     real( kind = core_rknd ), dimension(:), pointer, intent(out) ::  &
       rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
@@ -1059,14 +1063,6 @@ module KK_microphys_module
       KK_mean_vol_rad,   & ! Mean KK rain drop mean volume radius            [m]
       KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation   [(num/kg)/s]
       KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.     [(num/kg)/s]
-
-    real( kind = core_rknd ), dimension(:), pointer, intent(out) :: &
-      Vrrprrp, & ! Covariance of V_rr and r_r (momentum levels)  [(m/s)(kg/kg)]
-      VNrpNrp    ! Covariance of V_Nr and N_r (momentum levels)  [(m/s)(num/kg)]
-
-    real( kind = core_rknd ), dimension(:), pointer, intent(out) :: &
-      Vrrprrp_zt, & ! Covariance of V_rr and r_r; thermo. levs.  [(m/s)(kg/kg)]
-      VNrpNrp_zt    ! Covariance of V_Nr and N_r; thermo. levs.  [(m/s)(num/kg)]
 
     logical, intent(out) :: &
       l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
@@ -1096,14 +1092,6 @@ module KK_microphys_module
     ! Mean field tendencies.
     rrainm_mc_tndcy => hydromet_mc(:,iirrainm)
     Nrm_mc_tndcy    => hydromet_mc(:,iiNrm)
-
-    ! Covariances of hydrometeor sedimentation velocities and their
-    ! associated hydrometeors (<V_rr'r_r'> and <V_Nr'N_r'>).
-    Vrrprrp => hydromet_vel_covar(:,iirrainm)
-    VNrpNrp => hydromet_vel_covar(:,iiNrm)
-
-    Vrrprrp_zt => hydromet_vel_covar_zt(:,iirrainm)
-    VNrpNrp_zt => hydromet_vel_covar_zt(:,iiNrm)
 
     !!! Set KK microphysics tendency adjustment flags
     l_src_adj_enabled  = .true.
@@ -4607,9 +4595,7 @@ module KK_microphys_module
   end subroutine KK_stats_output
 
   !=============================================================================
-  subroutine KK_sedimentation( nz, KK_mean_vol_rad, &
-                               Vrr, VNr, Vrrprrp, VNrpNrp, &
-                               Vrrprrp_zt, VNrpNrp_zt )
+  subroutine KK_sedimentation( nz, KK_mean_vol_rad, Vrr, VNr )
 
     ! Description:
 
@@ -4625,9 +4611,6 @@ module KK_microphys_module
     use constants_clubb, only: &
         zero   ! Constant(s)
 
-    use grid_class, only: &
-        zt2zm   ! Procedure(s)
-
     implicit none
 
     ! Input Variables
@@ -4642,19 +4625,11 @@ module KK_microphys_module
       Vrr, & ! Mean sedimentation velocity of < r_r >            [m/s]
       VNr    ! Mean sedimentation velocity of < N_r >            [m/s]
 
-    real( kind = core_rknd ), dimension(:), pointer, intent(inout) :: &
-      Vrrprrp, & ! Covariance of V_rr and r_r (momentum levels)  [(m/s)(kg/kg)]
-      VNrpNrp    ! Covariance of V_Nr and N_r (momentum levels)  [(m/s)(num/kg)]
-
-    real( kind = core_rknd ), dimension(:), pointer, intent(inout) :: &
-      Vrrprrp_zt, & ! Covariance of V_rr and r_r; thermo. levs.  [(m/s)(kg/kg)]
-      VNrpNrp_zt    ! Covariance of V_Nr and N_r; thermo. levs.  [(m/s)(num/kg)]
-
     ! Local Variables
     integer :: k ! Loop iterator
 
 
-    !!! Sedimentation velocities
+    !!! Mean sedimentation velocities
     do k = 1, nz-1, 1
 
        ! Mean sedimentation velocity of rain water mixing ratio.
@@ -4665,11 +4640,6 @@ module KK_microphys_module
        ! positive value.
        if ( Vrr(k) > zero ) then
           Vrr(k) = zero
-          ! When mean sedimentation velocity of rain water mixing ratio has a
-          ! value of 0, the sedimentation velocity of r_r must have a value of 0
-          ! everywhere at that level.  Variances and covariances involving
-          ! sedimentation velocity of r_r must also have a value of 0.
-          Vrrprrp_zt(k) = zero
        endif
 
        ! Mean sedimentation velocity of rain drop concentration.
@@ -4680,11 +4650,6 @@ module KK_microphys_module
        ! positive value.
        if ( VNr(k) > zero ) then
           VNr(k) = zero
-          ! When mean sedimentation velocity of rain drop concentration has a
-          ! value of 0, the sedimentation velocity of N_r must have a value of 0
-          ! everywhere at that level.  Variances and covariances involving
-          ! sedimentation velocity of N_r must also have a value of 0.
-          VNrpNrp_zt(k) = zero
        endif
 
     enddo ! Sedimentation velocity loop: k = 1, nz-1, 1
@@ -4695,24 +4660,6 @@ module KK_microphys_module
     ! Vrr and VNr are set to 0 at the highest model level.
     Vrr(nz) = zero
     VNr(nz) = zero
-
-    !!! Boundary conditions (lower) for the covariances of hydrometeor
-    !!! sedimentation velocities and their associated hydrometeors
-    !!! (<V_rr'r_r'> and <V_Nr'N_r'>).
-    Vrrprrp_zt(1) = Vrrprrp_zt(2)
-    VNrpNrp_zt(1) = VNrpNrp_zt(2)
-
-    !!! Interpolate the covariances of hydrometeor sedimentation velocities
-    !!! and their associated hydrometeors (<V_rr'r_r'> and <V_Nr'N_r'>) to
-    !!! momentum levels.
-    Vrrprrp = zt2zm( Vrrprrp_zt )
-    VNrpNrp = zt2zm( VNrpNrp_zt )
-
-    !!! Boundary conditions (upper) for the covariances of hydrometeor
-    !!! sedimentation velocities and their associated hydrometeors
-    !!! (<V_rr'r_r'> and <V_Nr'N_r'>).
-    Vrrprrp(nz) = zero
-    VNrpNrp(nz) = zero
 
 
     return

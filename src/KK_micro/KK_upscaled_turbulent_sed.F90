@@ -127,7 +127,7 @@ module KK_upscaled_turbulent_sed
       Nr_KK_mvr_covar    ! Covariance of N_r and KK mean vol rad     [(num/kg)m]
 
     logical, parameter :: &
-      l_semi_imp_turbulent_sed = .true. ! Flag to use semi-implicit tur. sed.
+      l_semi_imp_turbulent_sed = .false. ! Flag to use semi-implicit tur. sed.
 
 
     ! Calculate the covariance between rain drop mean volume radius and r_r,
