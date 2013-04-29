@@ -25,7 +25,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 61 ! Total tunable parameters
+    nparams = 62 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -102,7 +102,8 @@ module parameter_indices
     itaumax           = 58, &
     iLscale_mu_coef   = 59, &
     iLscale_pert_coef = 60, &
-    ialpha_corr       = 61
+    ialpha_corr       = 61, &
+    iSkw_denom_coef    = 62
 
 end module parameter_indices
 !-----------------------------------------------------------------------

@@ -143,6 +143,11 @@ module parameters_tunable
   real( kind = core_rknd ), private :: &
     lmin_coef = 0.500000_core_rknd    ! Coefficient of lmin    [-]
 
+
+  ! Factor to decrease sensitivity in the denominator of Skw calculation
+  real( kind = core_rknd ), public :: &
+    Skw_denom_coef = 4.0_core_rknd
+
 !$omp threadprivate(lmin_coef)
 
   ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
@@ -166,7 +171,7 @@ module parameters_tunable
     c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
     mult_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef, &
-    alpha_corr
+    alpha_corr, Skw_denom_coef
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -195,7 +200,7 @@ module parameters_tunable
        "nu_hd           ", "gamma_coef      ", "gamma_coefb     ", "gamma_coefc     ", &
        "mu              ", "beta            ", "lmin_coef       ", "mult_coef       ", &
        "taumin          ", "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef", &
-       "alpha_corr      " /)
+       "alpha_corr      ", "Skw_denom_coef  " /)
 
   real( kind = core_rknd ), parameter :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -281,7 +286,7 @@ module parameters_tunable
                             c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                             mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                            Lscale_pert_coef, alpha_corr )
+                            Lscale_pert_coef, alpha_corr, Skw_denom_coef )
 
 
     ! It was decided after some experimentation, that the best
@@ -614,7 +619,7 @@ module parameters_tunable
                           c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                          Lscale_pert_coef, alpha_corr, params )
+                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, params )
 
     l_error = .false.
 
@@ -683,7 +688,7 @@ module parameters_tunable
       c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
-      Lscale_pert_coef, alpha_corr
+      Lscale_pert_coef, alpha_corr, Skw_denom_coef
 
     ! Initialize values to -999.
     call init_parameters_999( )
@@ -705,7 +710,7 @@ module parameters_tunable
                           c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                          Lscale_pert_coef, alpha_corr, param_spread )
+                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, param_spread )
 
     l_error = .false.
 
@@ -748,7 +753,7 @@ module parameters_tunable
                c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, &
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
                mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-               Lscale_pert_coef, alpha_corr, params )
+               Lscale_pert_coef, alpha_corr, Skw_denom_coef,  params )
 
     ! Description:
     ! Takes the list of scalar variables and puts them into a 1D vector.
@@ -825,6 +830,7 @@ module parameters_tunable
       iLscale_mu_coef, &
       iLscale_pert_coef, &
       ialpha_corr, &
+      iSkw_denom_coef, &
       nparams
 
     implicit none
@@ -839,7 +845,8 @@ module parameters_tunable
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, nu10, c_Krrainm, nu_r, nu_hd, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, mult_coef, &
-      taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr
+      taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
+      Skw_denom_coef
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
@@ -913,6 +920,7 @@ module parameters_tunable
     params(iLscale_mu_coef) = Lscale_mu_coef
     params(iLscale_pert_coef) = Lscale_pert_coef
     params(ialpha_corr) = alpha_corr
+    params(iSkw_denom_coef) = Skw_denom_coef
 
     return
   end subroutine pack_parameters
@@ -929,7 +937,7 @@ module parameters_tunable
                c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-               Lscale_pert_coef, alpha_corr )
+               Lscale_pert_coef, alpha_corr, Skw_denom_coef )
 
     ! Description:
     ! Takes the 1D vector and returns the list of scalar variables.
@@ -1006,6 +1014,7 @@ module parameters_tunable
       iLscale_mu_coef, &
       iLscale_pert_coef, &
       ialpha_corr, &
+      iSkw_denom_coef, &
       nparams
 
     implicit none
@@ -1024,7 +1033,7 @@ module parameters_tunable
       c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
       mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-      Lscale_pert_coef, alpha_corr
+      Lscale_pert_coef, alpha_corr, Skw_denom_coef
 
     C1      = params(iC1)
     C1b     = params(iC1b)
@@ -1095,6 +1104,7 @@ module parameters_tunable
     Lscale_mu_coef = params(iLscale_mu_coef)
     Lscale_pert_coef = params(iLscale_pert_coef)
     alpha_corr = params(ialpha_corr)
+    Skw_denom_coef = params(iSkw_denom_coef)
 
     return
   end subroutine unpack_parameters
@@ -1123,7 +1133,7 @@ module parameters_tunable
                           c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                          Lscale_pert_coef, alpha_corr, params )
+                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, params )
 
     return
 

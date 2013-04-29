@@ -28,16 +28,15 @@ module Skw_module
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use parameters_tunable, only: &
+      Skw_denom_coef
+
     implicit none
 
     ! External
     intrinsic :: min, max
 
     ! Parameter Constants
-    ! Factor to decrease sensitivity in the denominator of Skw calculation
-    real( kind = core_rknd ), parameter :: &
-      Skw_denom_coef = 4.0_core_rknd ! [-]
-
     ! Whether to apply clipping to the final result
     logical, parameter ::  & 
       l_clipping_kluge = .false.
