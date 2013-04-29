@@ -201,6 +201,9 @@ module KK_local_means
         KK_mvr_rr_exp, & ! Variable(s)
         KK_mvr_Nr_exp
 
+    use constants_clubb, only: &
+        Nr_tol    ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -227,7 +230,8 @@ module KK_local_means
     beta_exp  = KK_mvr_Nr_exp
 
     ! Calculate the KK mean volume radius of rain drops
-    KK_mvr_local_mean = KK_mvr_coef * rrm**alpha_exp * Nrm**beta_exp
+    KK_mvr_local_mean &
+    = KK_mvr_coef * rrm**alpha_exp * max( Nrm, Nr_tol )**beta_exp
 
 
     return

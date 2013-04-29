@@ -12,7 +12,8 @@ module PDF_integrals_means
             bivar_NL_mean_const_x1, &
             bivar_NL_mean_const_x2, &
             bivar_NL_mean_const_all, &
-            bivar_LL_mean
+            bivar_LL_mean, &
+            bivar_LL_mean_const_x2
 
   contains
 
@@ -373,7 +374,7 @@ module PDF_integrals_means
     real( kind = dp ), intent(in) :: &
       mu_x1_n,    & ! Mean of ln x1 (ith PDF component)                     [-]
       mu_x2_n,    & ! Mean of ln x2 (ith PDF component)                     [-]
-      sigma_x1_n, & ! Standard deviation of x1 (ith PDF component)          [-]
+      sigma_x1_n, & ! Standard deviation of ln x1 (ith PDF component)       [-]
       sigma_x2_n, & ! Standard deviation of ln x2 (ith PDF component)       [-]
       rho_x1x2_n, & ! Correlation between ln x1 & ln x2 (ith PDF component) [-]
       alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
@@ -392,6 +393,43 @@ module PDF_integrals_means
     return
 
   end function bivar_LL_mean
+
+  !=============================================================================
+  function bivar_LL_mean_const_x2( mu_x1_n, mu_x2, sigma_x1_n, &
+                                   alpha_exp, beta_exp )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one_half_dp  ! Constant(s)
+
+    use clubb_precision, only: &
+        dp ! double precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) :: &
+      mu_x1_n,    & ! Mean of ln x1 (ith PDF component)                     [-]
+      mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
+      sigma_x1_n, & ! Standard deviation of ln x1 (ith PDF component)       [-]
+      alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
+      beta_exp      ! Exponent beta, corresponding to x2                    [-]
+
+    ! Return Variable
+    real( kind = dp ) ::  &
+      bivar_LL_mean_const_x2
+
+    bivar_LL_mean_const_x2  &
+    = mu_x2**beta_exp &
+      * exp( mu_x1_n * alpha_exp + one_half_dp * sigma_x1_n**2 * alpha_exp**2 )
+
+    return
+
+  end function bivar_LL_mean_const_x2
 
 !===============================================================================
 

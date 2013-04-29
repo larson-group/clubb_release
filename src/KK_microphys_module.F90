@@ -212,7 +212,7 @@ module KK_microphys_module
 
 
       !!! Calculate the local KK rain drop mean volume radius.
-      if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+      if ( rrainm(k) > rr_tol ) then
 
          KK_mean_vol_rad(k)  &
          = KK_mvr_local_mean( rrainm(k), Nrm(k), KK_mvr_coef )
@@ -783,8 +783,9 @@ module KK_microphys_module
       !!! Calculate the values of the upscaled KK microphysics tendencies.
       call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
                                      mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
-                                     mu_Nr_1_n, mu_Nr_2_n, mu_Nc_1_n, &
-                                     mu_Nc_2_n, sigma_s_1, sigma_s_2, &
+                                     mu_Nr_1, mu_Nr_2, mu_Nr_1_n, &
+                                     mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
+                                     sigma_s_1, sigma_s_2, &
                                      sigma_rr_1_n, sigma_rr_2_n, &
                                      sigma_Nr_1_n, sigma_Nr_2_n, &
                                      sigma_Nc_1_n, sigma_Nc_2_n, &
@@ -802,10 +803,11 @@ module KK_microphys_module
 
       call KK_sed_vel_covars( rrainm(k), rr1(k), rr2(k), Nrm(k), &
                               Nr1(k), Nr2(k), KK_mean_vol_rad(k), &
-                              mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
-                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                              sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
-                              KK_mvr_coef, mixt_frac(k), precip_frac_1(k), &
+                              mu_rr_1_n, mu_rr_2_n, mu_Nr_1, mu_Nr_2, &
+                              mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1_n, &
+                              sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                              corr_rrNr_1_n, corr_rrNr_2_n, KK_mvr_coef, &
+                              mixt_frac(k), precip_frac_1(k), &
                               precip_frac_2(k), k, l_stats_samp, &
                               Vrrprrp_zt_impc(k), Vrrprrp_zt_expc(k), &
                               VNrpNrp_zt_impc(k), VNrpNrp_zt_expc(k) )
@@ -2970,8 +2972,9 @@ module KK_microphys_module
   !=============================================================================
   subroutine KK_upscaled_means_driver( rrainm, Nrm, Ncm, &
                                        mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
-                                       mu_Nr_1_n, mu_Nr_2_n, mu_Nc_1_n, &
-                                       mu_Nc_2_n, sigma_s_1, sigma_s_2, &
+                                       mu_Nr_1, mu_Nr_2, mu_Nr_1_n, &
+                                       mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
+                                       sigma_s_1, sigma_s_2, &
                                        sigma_rr_1_n, sigma_rr_2_n, &
                                        sigma_Nr_1_n, sigma_Nr_2_n, &
                                        sigma_Nc_1_n, sigma_Nc_2_n, &
@@ -3020,6 +3023,8 @@ module KK_microphys_module
       mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
       mu_rr_1_n,     & ! Mean of ln rr (1st PDF comp.) in-precip (ip)[ln(kg/kg)]
       mu_rr_2_n,     & ! Mean of ln rr (2nd PDF comp.) ip            [ln(kg/kg)]
+      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
+      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
       mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
       mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
       mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)          [ln(num/kg)]
@@ -3113,16 +3118,16 @@ module KK_microphys_module
     endif
 
     !!! Calculate the upscaled KK rain drop mean volume radius.
-    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
+    if ( rrainm > rr_tol ) then
 
        KK_mean_vol_rad &
-       = KK_mvr_upscaled_mean( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
-                               sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                               sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
-                               KK_mvr_coef, mixt_frac, precip_frac_1, & 
-                               precip_frac_2 )
+       = KK_mvr_upscaled_mean( mu_rr_1_n, mu_rr_2_n, mu_Nr_1, mu_Nr_2, &
+                               mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1_n, &
+                               sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                               corr_rrNr_1_n, corr_rrNr_2_n, KK_mvr_coef, &
+                               mixt_frac, precip_frac_1, precip_frac_2 )
 
-    else  ! r_r or N_r = 0.
+    else  ! r_r = 0.
 
        KK_mean_vol_rad = zero
 
@@ -4480,9 +4485,10 @@ module KK_microphys_module
           ! < R_vr'^2 >.
           if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
              KK_mvr_variance &
-             = variance_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
-                                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+             = variance_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1, mu_Nr_2, &
+                                mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1_n, &
+                                sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                                corr_rrNr_1_n, corr_rrNr_2_n, &
                                 KK_mean_vol_rad, KK_mvr_coef, mixt_frac, &
                                 precip_frac_1, precip_frac_2 )
           else  ! r_r or N_r = 0.
@@ -4643,9 +4649,10 @@ module KK_microphys_module
   end subroutine KK_sedimentation
 
   !=============================================================================
-  function variance_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
-                            sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                            sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+  function variance_KK_mvr( mu_rr_1_n, mu_rr_2_n, mu_Nr_1, mu_Nr_2, &
+                            mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1_n, &
+                            sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                            corr_rrNr_1_n, corr_rrNr_2_n, &
                             KK_mean_vol_rad, KK_mvr_coef, mixt_frac, &
                             precip_frac_1, precip_frac_2 )
 
@@ -4676,6 +4683,8 @@ module KK_microphys_module
     real( kind = core_rknd ), intent(in) :: &
       mu_rr_1_n,       & ! Mean of ln rr (1st PDF component) in-precip (ip)  [-]
       mu_rr_2_n,       & ! Mean of ln rr (2nd PDF component) ip              [-]
+      mu_Nr_1,         & ! Mean of Nr (1st PDF component) ip                 [-]
+      mu_Nr_2,         & ! Mean of Nr (2nd PDF component) ip                 [-]
       mu_Nr_1_n,       & ! Mean of ln Nr (1st PDF component) ip              [-]
       mu_Nr_2_n,       & ! Mean of ln Nr (2nd PDF component) ip              [-]
       sigma_rr_1_n,    & ! Standard deviation of ln rr (1st PDF comp.) ip    [-]
@@ -4709,13 +4718,13 @@ module KK_microphys_module
     = KK_mvr_coef**2 &
       * ( mixt_frac &
           * precip_frac_1 &
-          * bivar_LL_mean_eq( mu_rr_1_n, mu_Nr_1_n, sigma_rr_1_n, &
-                              sigma_Nr_1_n, corr_rrNr_1_n, &
+          * bivar_LL_mean_eq( mu_rr_1_n, mu_Nr_1, mu_Nr_1_n, &
+                              sigma_rr_1_n, sigma_Nr_1_n, corr_rrNr_1_n, &
                               two * alpha_exp, two * beta_exp ) &
         + ( one - mixt_frac ) &
           * precip_frac_2 &
-          * bivar_LL_mean_eq( mu_rr_2_n, mu_Nr_2_n, sigma_rr_2_n, &
-                              sigma_Nr_2_n, corr_rrNr_2_n, &
+          * bivar_LL_mean_eq( mu_rr_2_n, mu_Nr_2, mu_Nr_2_n, &
+                              sigma_rr_2_n, sigma_Nr_2_n, corr_rrNr_2_n, &
                               two * alpha_exp, two * beta_exp ) &
         ) &
       - KK_mean_vol_rad**2

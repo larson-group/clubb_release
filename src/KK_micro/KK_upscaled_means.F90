@@ -276,11 +276,11 @@ module KK_upscaled_means
   end function KK_accr_upscaled_mean
 
   !=============================================================================
-  function KK_mvr_upscaled_mean( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, &
-                                 sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                 sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
-                                 KK_mvr_coef, mixt_frac, precip_frac_1, &
-                                 precip_frac_2 )
+  function KK_mvr_upscaled_mean( mu_rr_1_n, mu_rr_2_n, mu_Nr_1, mu_Nr_2, &
+                                 mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1_n, &
+                                 sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                                 corr_rrNr_1_n, corr_rrNr_2_n, KK_mvr_coef, &
+                                 mixt_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain drop mean
@@ -305,6 +305,8 @@ module KK_upscaled_means
     real( kind = core_rknd ), intent(in) :: &
       mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) in-precip (ip)    [-]
       mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
+      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip                   [-]
+      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip                   [-]
       mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip                [-]
       mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip                [-]
       sigma_rr_1_n,  & ! Standard deviation of ln rr (1st PDF component) ip  [-]
@@ -337,13 +339,13 @@ module KK_upscaled_means
     = KK_mvr_coef &
       * ( mixt_frac &
           * precip_frac_1 &
-          * bivar_LL_mean_eq( mu_rr_1_n, mu_Nr_1_n, sigma_rr_1_n, &
-                              sigma_Nr_1_n, corr_rrNr_1_n, &
+          * bivar_LL_mean_eq( mu_rr_1_n, mu_Nr_1, mu_Nr_1_n, &
+                              sigma_rr_1_n, sigma_Nr_1_n, corr_rrNr_1_n, &
                               alpha_exp, beta_exp ) &
         + ( one - mixt_frac ) &
           * precip_frac_2 &
-          * bivar_LL_mean_eq( mu_rr_2_n, mu_Nr_2_n, sigma_rr_2_n, &
-                              sigma_Nr_2_n, corr_rrNr_2_n, &
+          * bivar_LL_mean_eq( mu_rr_2_n, mu_Nr_2, mu_Nr_2_n, &
+                              sigma_rr_2_n, sigma_Nr_2_n, corr_rrNr_2_n, &
                               alpha_exp, beta_exp ) &
         ) 
 
@@ -787,8 +789,8 @@ module KK_upscaled_means
   end function bivar_NL_mean_eq_Nc0
 
   !=============================================================================
-  function bivar_LL_mean_eq( mu_rr_i_n, mu_Nr_i_n, sigma_rr_i_n, &
-                             sigma_Nr_i_n, corr_rrNr_i_n, &
+  function bivar_LL_mean_eq( mu_rr_i_n, mu_Nr_i, mu_Nr_i_n, &
+                             sigma_rr_i_n, sigma_Nr_i_n, corr_rrNr_i_n, &
                              alpha_exp_in, beta_exp_in )
 
     ! Description:
@@ -805,7 +807,11 @@ module KK_upscaled_means
     !-----------------------------------------------------------------------
 
     use PDF_integrals_means, only: &
-        bivar_LL_mean  ! Procedure(s)
+        bivar_LL_mean_const_x2, & ! Procedure(s)
+        bivar_LL_mean
+
+    use constants_clubb, only: &
+        Nr_tol    ! Constant(s)
 
     use clubb_precision, only: &
         dp,        & ! double precision
@@ -816,6 +822,7 @@ module KK_upscaled_means
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       mu_rr_i_n,     & ! Mean of ln rr (ith PDF component) in-precip (ip)    [-]
+      mu_Nr_i,       & ! Mean of Nr (ith PDF component) ip                   [-]
       mu_Nr_i_n,     & ! Mean of ln Nr (ith PDF component) ip                [-]
       sigma_rr_i_n,  & ! Standard deviation of ln rr (ith PDF component) ip  [-]
       sigma_Nr_i_n,  & ! Standard deviation of ln Nr (ith PDF component) ip  [-]
@@ -832,6 +839,7 @@ module KK_upscaled_means
     ! Local Variables
     real( kind = dp ) :: &
       mu_x1_n,    & ! Mean of ln x1 (ith PDF component)                     [-]
+      mu_x2,      & ! Mean of x2 (ith PDF component)                        [-]
       mu_x2_n,    & ! Mean of ln x2 (ith PDF component)                     [-]
       sigma_x1_n, & ! Standard deviation of ln x1 (ith PDF component)       [-]
       sigma_x2_n, & ! Standard deviation of ln x2 (ith PDF component)       [-]
@@ -841,9 +849,13 @@ module KK_upscaled_means
       alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
       beta_exp      ! Exponent beta, corresponding to x2                    [-]
 
+    real( kind = dp ) :: &
+      x2_tol    ! Tolerance value of x2                                     [-]
+
 
     ! Means for the ith PDF component.
     mu_x1_n = dble( mu_rr_i_n )
+    mu_x2   = dble( max( mu_Nr_i, Nr_tol ) )
     mu_x2_n = dble( mu_Nr_i_n )
 
     ! Standard deviations for the ith PDF component.
@@ -857,12 +869,32 @@ module KK_upscaled_means
     alpha_exp = dble( alpha_exp_in )
     beta_exp  = dble( beta_exp_in )
 
+    ! Tolerance values.
+    ! When the standard deviation of a variable is below the tolerance values,
+    ! it is considered to be zero, and the variable is considered to have a
+    ! constant value.
+    x2_tol = dble( Nr_tol )
+
 
     ! Calculate the mean of the bivariate lognormal equation.
-    bivar_LL_mean_eq  &
-    = real( bivar_LL_mean( mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, &
-                           rho_x1x2_n, alpha_exp, beta_exp ),  &
-            kind = core_rknd )
+    if ( sigma_x2_n <= x2_tol ) then
+
+       ! The ith PDF component variance of Nr is 0.
+       bivar_LL_mean_eq  &
+       = real( bivar_LL_mean_const_x2( mu_x1_n, mu_x2, sigma_x1_n, &
+                                       alpha_exp, beta_exp ), &
+               kind = core_rknd )
+
+    else  ! sigma_x2 > 0
+
+       ! All fields vary in the ith PDF component.
+       bivar_LL_mean_eq  &
+       = real( bivar_LL_mean( mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, &
+                              rho_x1x2_n, alpha_exp, beta_exp ),  &
+               kind = core_rknd )
+
+
+    endif
 
 
     return
