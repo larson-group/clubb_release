@@ -20,7 +20,7 @@
 ! the matrix are 0.0, but they can be set to any number because they are
 ! ignored.
 s         t         w       Nc      rrain    Nr      rice    Ni      rsnow    Nsnow
-1.0       0.3       0.09    0.0     0.242    0.285   0.0    0.0     0.0      0.0
+1.0       0.3       0.09    0.0     0.742    0.785   0.0    0.0     0.0      0.0
 0.0       1.0       0.027   0.0     0.0168   0.0045  0.0    0.0     0.0      0.0
 0.0       0.0       1.0     0.34    0.0      0.0     0.0    0.0     0.0      0.0
 0.0       0.0       0.0     1.0     0.0      0.0     0.0    0.0     0.0      0.0

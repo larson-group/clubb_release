@@ -159,8 +159,6 @@ rrp2_on_rrm2_below = 1.0  ! Reduced by a factor of 10
 Nrp2_on_Nrm2_below = 1.0  ! Reduced
 Ncp2_on_Ncm2_below = 0.0
 
-C_evap = 0.5
-r_0 = 100.0e-6
 !!!!!!! END RICO COMMENTS --modified by Leah Grant, Apr. 2010
 Ncm_initial = 70.e6 ! #/m^3
 l_predictnc = .false.
