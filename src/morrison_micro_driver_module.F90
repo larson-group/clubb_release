@@ -332,6 +332,8 @@ module morrison_micro_driver_module
     hydromet_vel_zt(:,:) = 0.0_core_rknd
 
     ! Output rain sedimentation velocity
+    ! Multiply by -1 so that negative is associated with falling precip
+    morr_rain_vel_r4(:) = morr_rain_vel_r4(:) * (-1.0)
     do k = 1, nz, 1
       hydromet_vel_zt(k,iirrainm) = real( morr_rain_vel_r4(k), kind = core_rknd )
     end do
