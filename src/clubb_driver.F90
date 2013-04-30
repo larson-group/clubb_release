@@ -3671,8 +3671,12 @@ module clubb_driver
         d_variables
 
     use parameters_microphys, only: &
-        LH_microphys_type, LH_microphys_disabled, & ! Variable(s)
-        l_lh_vert_overlap, LH_sequence_length, &
+        LH_microphys_type, & ! Variable(s)
+        LH_microphys_disabled, &
+        LH_microphys_interactive, &
+        l_lh_vert_overlap, &
+        LH_sequence_length, &
+        l_local_kk, &
         l_predictnc
 
     use latin_hypercube_driver_module, only: &
@@ -3791,6 +3795,10 @@ module clubb_driver
        write(fstderr,*) "Error: The diagnose_corr algorithm only works for KK microphysics by now."
        stop
     end if  
+
+    if ( (.not. l_local_kk) .and. (LH_microphys_type == LH_microphys_interactive)) then
+      stop "Error: The options l_upscaled = .true. and LH_microphys_type = interactive are not allowed together."
+    endif
 
     !----------------------------------------------------------------
     ! Compute subcolumns if enabled
