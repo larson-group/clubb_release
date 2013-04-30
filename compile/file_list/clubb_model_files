@@ -24,7 +24,6 @@
 ../src/ice_dfsn_module.F90
 ../src/mg_micro_driver_module.F90
 ../src/morrison_micro_driver_module.F90
-../src/microphys_utilities.F90
 ../src/microphys_driver.F90
 ../src/microphys_interface.inc
 ../src/text_writer.F90

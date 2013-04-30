@@ -995,9 +995,6 @@ module microphys_driver
         cm3_per_m3, &
         mm_per_m
 
-    use microphys_utilities, only: &
-        turb_sed_flux_limiter  ! Procedure(s)
-
     use model_flags, only: &
         l_hole_fill, & ! Variable(s)
         l_morr_xp2_mc_tndcy
@@ -1032,14 +1029,11 @@ module microphys_driver
         iVrgraupel, &
         iVrrprrp, &
         iVNrpNrp, & 
-        iVrrprrp_net, &
-        iVNrpNrp_net, & 
         irain_rate_zt, & 
         iFprec
 
     use stats_variables, only: & 
         irrainm_bt,       & ! Variable(s)
-        irrainm_tsfl,     &
         irrainm_mc,       & 
         irrainm_hf,       & 
         irrainm_wvhf,     &
@@ -1065,7 +1059,6 @@ module microphys_driver
 
     use stats_variables, only: & 
         iNrm_bt,       & ! Variable(s)
-        iNrm_tsfl,     &
         iNrm_mc,       &
         iNrm_cl,       &
         iNim_bt,       &
@@ -1260,8 +1253,8 @@ module microphys_driver
 
     integer :: i, k ! Loop iterators / Array indices
 
-    integer :: ixrm_tsfl, ixrm_hf, ixrm_wvhf, ixrm_cl, &
-               ixrm_bt, ixrm_mc, iVxrpxrp_net
+    integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
+               ixrm_bt, ixrm_mc
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Ndrop_max  ! GFDL droplet activation concentration [#/kg]
@@ -1684,37 +1677,28 @@ module microphys_driver
       select case ( trim( hydromet_list(i) ) )
       case ( "rrainm" )
         ixrm_bt   = irrainm_bt
-        ixrm_tsfl = irrainm_tsfl
         ixrm_hf   = irrainm_hf
         ixrm_wvhf = irrainm_wvhf
         ixrm_cl   = irrainm_cl
         ixrm_mc   = irrainm_mc
 
-        iVxrpxrp_net = iVrrprrp_net
-
         max_velocity = -9.1_core_rknd ! m/s
 
       case ( "ricem" )
         ixrm_bt   = iricem_bt
-        ixrm_tsfl = 0
         ixrm_hf   = iricem_hf
         ixrm_wvhf = iricem_wvhf
         ixrm_cl   = iricem_cl
         ixrm_mc   = iricem_mc
 
-        iVxrpxrp_net = 0
-
         max_velocity = -1.2_core_rknd ! m/s
 
       case ( "rsnowm" )
         ixrm_bt   = irsnowm_bt
-        ixrm_tsfl = 0
         ixrm_hf   = irsnowm_hf
         ixrm_wvhf = irsnowm_wvhf
         ixrm_cl   = irsnowm_cl
         ixrm_mc   = irsnowm_mc
-
-        iVxrpxrp_net = 0
 
         ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
@@ -1725,49 +1709,37 @@ module microphys_driver
 
       case ( "rgraupelm" )
         ixrm_bt   = irgraupelm_bt
-        ixrm_tsfl = 0
         ixrm_hf   = irgraupelm_hf
         ixrm_wvhf = irgraupelm_wvhf
         ixrm_cl   = irgraupelm_cl
         ixrm_mc   = irgraupelm_mc
 
-        iVxrpxrp_net = 0
-
         max_velocity = -20._core_rknd ! m/s
 
       case ( "Nrm" )
         ixrm_bt   = iNrm_bt
-        ixrm_tsfl = iNrm_tsfl
         ixrm_hf   = 0
         ixrm_wvhf = 0
         ixrm_cl   = iNrm_cl
         ixrm_mc   = iNrm_mc
 
-        iVxrpxrp_net = iVNrpNrp_net
-
         max_velocity = -9.1_core_rknd ! m/s
 
       case ( "Nim" )
         ixrm_bt   = iNim_bt
-        ixrm_tsfl = 0
         ixrm_hf   = 0
         ixrm_wvhf = 0
         ixrm_cl   = iNim_cl
         ixrm_mc   = iNim_mc
 
-        iVxrpxrp_net = 0
-
         max_velocity = -1.2_core_rknd ! m/s
 
       case ( "Nsnowm" )
         ixrm_bt   = iNsnowm_bt
-        ixrm_tsfl = 0
         ixrm_hf   = 0
         ixrm_wvhf = 0
         ixrm_cl   = iNsnowm_cl
         ixrm_mc   = iNsnowm_mc
-
-        iVxrpxrp_net = 0
 
         ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
@@ -1778,25 +1750,19 @@ module microphys_driver
 
       case ( "Ngraupelm" )
         ixrm_bt   = iNgraupelm_bt
-        ixrm_tsfl = 0
         ixrm_hf   = 0
         ixrm_wvhf = 0
         ixrm_cl   = iNgraupelm_cl
         ixrm_mc   = iNgraupelm_mc
 
-        iVxrpxrp_net = 0
-
         max_velocity = -20._core_rknd ! m/s
 
       case ( "Ncm" )
         ixrm_bt   = iNcm_bt
-        ixrm_tsfl = 0
         ixrm_hf   = 0
         ixrm_wvhf = 0
         ixrm_cl   = iNcm_cl
         ixrm_mc   = iNcm_mc
-
-        iVxrpxrp_net = 0
 
         ! Use the rain water limit, since Morrison has no explicit limit on
         ! cloud water.  Presumably these numbers are never large.
@@ -1805,13 +1771,10 @@ module microphys_driver
 
       case default
         ixrm_bt   = 0
-        ixrm_tsfl = 0
         ixrm_hf   = 0
         ixrm_wvhf = 0
         ixrm_cl   = 0
         ixrm_mc   = 0
-
-        iVxrpxrp_net = 0
 
         max_velocity = -9.1_core_rknd ! m/s
 
@@ -1957,46 +1920,6 @@ module microphys_driver
 
       endif ! hydromet(:,i) < 0
 
-      ! Store the previous value of the hydrometeor for the effect of the
-      ! turbulent sedimentation flux limiter.
-      if ( l_stats_samp ) then
-         call stat_begin_update( ixrm_tsfl, hydromet(:,i) &
-                                            / real( dt, kind = core_rknd ), zt )
-      endif
-
-      ! When the value of a hydrometeor is found to be below 0, hydrometeor
-      ! turbulent sedimentation is used, and hydrometeor sedimentation is
-      ! enabled, alter the values of the turbulent sedimentation flux so that
-      ! the hydrometeor remains at a value >= 0.
-      if ( any( hydromet(:,i) < zero_threshold ) .and. &
-           any( hydromet_vel_covar(:,i) /= zero ) .and. l_hydromet_sed(i) ) then
-
-         call turb_sed_flux_limiter( dt, rho_ds_zm, invrs_rho_ds_zt, &
-                                     hydromet(:,i), hydromet_vel_covar(:,i), &
-                                     hydromet_vel_covar_zt(:,i) )
-
-      endif
-
-      ! Statistics
-      if ( l_stats_samp ) then
-
-         ! The orignal value of < V_xr'x_r' > is stored for statistics as
-         ! Vxrpxrp.  That was done before subroutine turb_sed_flux_limiter was
-         ! called.  The updated or adjusted value of < V_xr'x_r' > is stored for
-         ! statistics as Vxrpxrp_net, which is done here.  The value of
-         ! Vxrpxrp_net overwrites Vxrpxrp so that the updated value can be used
-         ! in the code to produce the appropriate statisical values for
-         ! precipitation flux and rain rate.
-         call stat_update_var( iVxrpxrp_net, hydromet_vel_covar(:,i), zm )
-
-      endif
-
-      ! Enter the new value of the hydrometeor for the effect of the
-      ! turbulent sedimentation flux limiter.
-      if ( l_stats_samp ) then
-         call stat_end_update( ixrm_tsfl, hydromet(:,i) &
-                                          / real( dt, kind = core_rknd ), zt )
-      endif
 
       ! Store the previous value of the hydrometeor for the effect of the
       ! hole-filling scheme.

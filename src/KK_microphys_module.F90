@@ -65,6 +65,9 @@ module KK_microphys_module
         KK_Nrm_evap_local_mean, & ! Procedure(s)
         KK_Nrm_auto_mean
 
+    use KK_utilities, only: &
+        get_cloud_top_level    ! Procedure(s)
+
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s)
 
@@ -174,7 +177,8 @@ module KK_microphys_module
       l_stats_samp_in_sub   ! Used to disable stats when SILHS is enabled
 
     integer :: &
-      k   ! Loop index
+      cloud_top_level, & ! Vertical level index of cloud top 
+      k                  ! Loop index
 
 
     ! Remove compiler warnings
@@ -331,8 +335,11 @@ module KK_microphys_module
     thlm_mc(1)  = zero
     thlm_mc(nz) = zero
 
+    ! Find the vertical level index of cloud top.
+    cloud_top_level = get_cloud_top_level( nz, rcm )
+
     !!! Microphysics sedimentation velocities.
-    call KK_sedimentation( nz, KK_mean_vol_rad, Vrr, VNr )
+    call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr )
 
 
     return
@@ -381,6 +388,9 @@ module KK_microphys_module
 
     use KK_upscaled_turbulent_sed, only: &
         KK_sed_vel_covars  ! Procedure(s)
+
+    use KK_utilities, only: &
+        get_cloud_top_level    ! Procedure(s)
 
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s)
@@ -615,7 +625,8 @@ module KK_microphys_module
       l_evap_adj_enabled    ! Flag to enable rrainm/Nrm evaporation adjustment
 
     integer :: &
-      k   ! Loop index
+      cloud_top_level, & ! Vertical level index of cloud top 
+      k                  ! Loop index
 
 
     !!! Initialize microphysics fields.
@@ -959,8 +970,19 @@ module KK_microphys_module
     thlm_mc(1)  = zero
     thlm_mc(nz) = zero
 
+    ! Find the vertical level index of cloud top.
+    cloud_top_level = get_cloud_top_level( nz, rcm )
+
     !!! Microphysics sedimentation velocities.
-    call KK_sedimentation( nz, KK_mean_vol_rad, Vrr, VNr )
+    call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr )
+
+    !!! Turbulent sedimentation above cloud top should have a value of 0.
+    if ( cloud_top_level > 1 ) then
+       Vrrprrp_zt_impc(cloud_top_level+1:nz-1) = zero
+       Vrrprrp_zt_expc(cloud_top_level+1:nz-1) = zero
+       VNrpNrp_zt_impc(cloud_top_level+1:nz-1) = zero
+       VNrpNrp_zt_expc(cloud_top_level+1:nz-1) = zero
+    endif
 
     !!! Boundary conditions (lower) for the covariances of hydrometeor
     !!! sedimentation velocities and their associated hydrometeors
@@ -4577,7 +4599,7 @@ module KK_microphys_module
   end subroutine KK_stats_output
 
   !=============================================================================
-  subroutine KK_sedimentation( nz, KK_mean_vol_rad, Vrr, VNr )
+  subroutine KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr )
 
     ! Description:
 
@@ -4597,7 +4619,8 @@ module KK_microphys_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz          ! Number of model vertical grid levels
+      nz,              & ! Number of model vertical grid levels
+      cloud_top_level    ! Vertical level index of cloud top
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       KK_mean_vol_rad    ! KK rain drop mean volume radius       [m]
@@ -4635,6 +4658,12 @@ module KK_microphys_module
        endif
 
     enddo ! Sedimentation velocity loop: k = 1, nz-1, 1
+
+    !!! Mean sedimentation above cloud top should have a value of 0.
+    if ( cloud_top_level > 1 ) then
+       Vrr(cloud_top_level+1:nz-1) = zero
+       VNr(cloud_top_level+1:nz-1) = zero
+    endif
 
     !!! Boundary conditions for sedimentation velocities.
 
