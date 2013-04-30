@@ -247,7 +247,6 @@ module stats_zt
         irrainm_accr, & 
         irrainm_cond_adj, & 
         irrainm_src_adj, & 
-        irrainm_tsfl, &
         irrainm_mc, & 
         irrainm_hf
 
@@ -263,7 +262,6 @@ module stats_zt
         iNrm_auto, & 
         iNrm_cond_adj, & 
         iNrm_src_adj, & 
-        iNrm_tsfl, & 
         iNrm_mc, & 
         iNrm_cl
 
@@ -681,7 +679,6 @@ module stats_zt
     irrainm_accr     = 0
     irrainm_cond_adj = 0
     irrainm_src_adj  = 0
-    irrainm_tsfl     = 0
     irrainm_mc       = 0
     irrainm_hf       = 0
     irrainm_wvhf     = 0
@@ -696,7 +693,6 @@ module stats_zt
     iNrm_auto     = 0
     iNrm_cond_adj = 0
     iNrm_src_adj  = 0
-    iNrm_tsfl     = 0
     iNrm_mc       = 0
     iNrm_cl       = 0
 
@@ -1697,15 +1693,6 @@ module stats_zt
              "[kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
-      case ('rrainm_tsfl')
-        irrainm_tsfl = k
-
-        call stat_assign( irrainm_tsfl, "rrainm_tsfl", & 
-             "rrainm budget: rrainm turbulent sedimentation flux limiter" &
-             //" [kg kg^{-1} s^{-1}]", &
-             "kg kg^{-1} s^{-1}", zt )
-        k = k + 1
-
       case ('rrainm_hf')
         irrainm_hf = k
         call stat_assign( irrainm_hf, "rrainm_hf", & 
@@ -1800,15 +1787,6 @@ module stats_zt
 
         call stat_assign( iNrm_src_adj, "Nrm_src_adj", & 
              "Nrm source term adjustment due to over-depletion [(num/kg)/s]", &
-             "(num/kg)/s", zt )
-        k = k + 1
-
-      case ('Nrm_tsfl')
-        iNrm_tsfl = k
-
-        call stat_assign( iNrm_tsfl, "Nrm_tsfl", & 
-             "Nrm budget: Nrm turbulent sedimentation flux limiter" &
-             //" [(num/kg)/s]", &
              "(num/kg)/s", zt )
         k = k + 1
 
