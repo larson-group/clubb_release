@@ -152,8 +152,7 @@
           {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp\_sf', 'expression' => 'rtpthlp_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp\_forcing', 'expression' => 'rtpthlp_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp\_residual', 'expression' => 'rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_sf + rtpthlp_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]}
-
+       ]},
 
        {'plotTitle' => 'rrainm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' =>
  'profile', 'lines' =>
