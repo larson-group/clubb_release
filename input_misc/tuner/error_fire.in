@@ -95,4 +95,5 @@ mu          = 0.
 Lscale_mu_coef = 0.
 Lscale_pert_coef = 0.0
 alpha_corr = 0. 
+Skw_denom_coef = 0.
 /
