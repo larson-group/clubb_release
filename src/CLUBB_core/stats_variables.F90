@@ -765,14 +765,14 @@ module stats_variables
 
   ! Covariance of sedimentation velocity and hydrometeor, <V_xx'x_x'>.
   integer, public :: &
-    iVrrprrp,     &
-    iVNrpNrp,     &
-    iVrrprrp_net, &
-    iVNrpNrp_net
+    iVrrprrp,         &
+    iVNrpNrp,         &
+    iVrrprrp_expcalc, &
+    iVNrpNrp_expcalc
     
 
 !$omp   threadprivate(iVNr, iVrr, iVNc, iVrc, iVNsnow, iVrsnow, iVNice, iVrice, iVrgraupel)
-!$omp   threadprivate(iVrrprrp, iVNrpNrp, iVrrprrp_net, iVNrpNrp_net)
+!$omp   threadprivate(iVrrprrp, iVNrpNrp, iVrrprrp_expcalc, iVNrpNrp_expcalc)
 
   integer, public :: & 
      iwp2_bt, & 

@@ -109,8 +109,8 @@ module stats_zm
         iVrgraupel, &
         iVrrprrp, &
         iVNrpNrp, &
-        iVrrprrp_net, &
-        iVNrpNrp_net
+        iVrrprrp_expcalc, &
+        iVNrpNrp_expcalc
 
     use stats_variables, only: & 
         iwp2_bt, & 
@@ -346,10 +346,10 @@ module stats_zm
     iVrsnow    = 0
 
     ! Covariance of sedimentation velocity and hydrometeor, <V_xx'x_x'>
-    iVrrprrp     = 0
-    iVNrpNrp     = 0
-    iVrrprrp_net = 0
-    iVNrpNrp_net = 0
+    iVrrprrp         = 0
+    iVNrpNrp         = 0
+    iVrrprrp_expcalc = 0
+    iVNrpNrp_expcalc = 0
 
     ! Vertical velocity budgets
     iwp2_bt   = 0
@@ -794,19 +794,19 @@ module stats_zm
              "(m/s)(num/kg)", zm )
         k = k + 1
 
-      case ('Vrrprrp_net')
-        iVrrprrp_net = k
+      case ('Vrrprrp_expcalc')
+        iVrrprrp_expcalc = k
 
-        call stat_assign( iVrrprrp_net, "Vrrprrp_net", & 
-             "Adjusted value of < V_rr'r_r' > (turb. sed. flux limiter)" &
+        call stat_assign( iVrrprrp_expcalc, "Vrrprrp_expcalc", & 
+             "< V_rr'r_r' > (completely explicit calculation)" &
              //" [(m/s)(kg/kg)]", "(m/s)(kg/kg)", zm )
         k = k + 1
 
-      case ('VNrpNrp_net')
-        iVNrpNrp_net = k
+      case ('VNrpNrp_expcalc')
+        iVNrpNrp_expcalc = k
 
-        call stat_assign( iVNrpNrp_net, "VNrpNrp_net", & 
-             "Adjusted value of < V_Nr'N_r' > (turb. sed. flux limiter)" &
+        call stat_assign( iVNrpNrp_expcalc, "VNrpNrp_expcalc", & 
+             "< V_Nr'N_r' > (completely explicit calculation)" &
              //" [(m/s)(num/kg)]", "(m/s)(num/kg)", zm )
         k = k + 1
 

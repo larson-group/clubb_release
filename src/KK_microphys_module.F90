@@ -410,14 +410,17 @@ module KK_microphys_module
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &
-        irr1,           & ! Variable(s)
-        irr2,           &
-        iNr1,           &
-        iNr2,           &
-        iprecip_frac,   &
-        iprecip_frac_1, &
-        iprecip_frac_2, &
-        zt
+        irr1,             & ! Variable(s)
+        irr2,             &
+        iNr1,             &
+        iNr2,             &
+        iprecip_frac,     &
+        iprecip_frac_1,   &
+        iprecip_frac_2,   &
+        iVrrprrp_expcalc, &
+        iVNrpNrp_expcalc, &
+        zt,               &
+        zm
 
     use model_flags, only: &
         l_use_precip_frac, & ! Flag(s)
@@ -999,6 +1002,27 @@ module KK_microphys_module
     Vrrprrp_zt_expc(nz) = zero
     VNrpNrp_zt_impc(nz) = zero
     VNrpNrp_zt_expc(nz) = zero
+
+    ! Statistics
+    if ( l_stats_samp ) then
+
+       ! The covariance < V_rr'r_r' > calculated completely explicitly.
+       ! When semi-implicit turbulent advection is used, this result can be
+       ! compared to the < V_rr'r_r' > results used in the code, which are
+       ! calculated semi-implicitly.
+       call stat_update_var( iVrrprrp_expcalc, &
+                             zt2zm( Vrrprrp_zt_impc * rrainm &
+                                    + Vrrprrp_zt_expc ), zm )
+
+       ! The covariance < V_Nr'N_r' > calculated completely explicitly.
+       ! When semi-implicit turbulent advection is used, this result can be
+       ! compared to the < V_Nr'N_r' > results used in the code, which are
+       ! calculated semi-implicitly.
+       call stat_update_var( iVNrpNrp_expcalc, &
+                             zt2zm( VNrpNrp_zt_impc * Nrm + VNrpNrp_zt_expc ), &
+                             zm )
+
+    endif
 
 
     return
