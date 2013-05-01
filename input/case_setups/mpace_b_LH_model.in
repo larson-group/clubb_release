@@ -161,6 +161,7 @@ Ncp2_on_Ncm2_below    = 0.0
 
 
 LH_microphys_type = "interactive",
+l_local_kk = .true.,
 l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
 LH_microphys_calls = 2,
