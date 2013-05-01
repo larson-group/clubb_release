@@ -136,7 +136,7 @@ module parameters_tunable
   ! beta should vary between 0 and 3, with 1.5 the standard value
 
   real( kind = core_rknd ), public :: &
-    beta = 1.750000_core_rknd    ! Beta coefficient     [-]
+    beta = 2.400000_core_rknd    ! Beta coefficient     [-]
 
 !$omp threadprivate(beta)
 
