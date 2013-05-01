@@ -351,8 +351,8 @@ module KK_microphys_module
                                        p_in_Pa, exner, rho, cloud_frac, &
                                        pdf_params, w_std_dev, rcm, Ncm, &
                                        s_mellor, Nc0_in_cloud, &
-                                       hydromet, hydromet_mc, &
-                                       hydromet_vel, &
+                                       hydromet, wphydrometp, &
+                                       hydromet_mc, hydromet_vel, &
                                        rcm_mc, rvm_mc, thlm_mc, &
                                        hydromet_vel_covar_zt_impc, &
                                        hydromet_vel_covar_zt_expc, &
@@ -469,7 +469,8 @@ module KK_microphys_module
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(in) :: &
-      hydromet    ! Hydrometeor species                      [units vary]
+      hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
+      wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
 
     ! Input / Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
@@ -499,12 +500,14 @@ module KK_microphys_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(:), pointer ::  &
-      rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
-      Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
-      Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
-      VNr,             & ! Mean sedimentation velocity of < N_r >   [m/s]
-      rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
-      Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
+      rrainm,          & ! Mean rain water mixing ratio, < r_r > [kg/kg]
+      Nrm,             & ! Mean rain drop concentration, < N_r > [num/kg]
+      wprrp,           & ! Covariance of w and r_r, < w'r_r' >   [(m/s)(kg/kg)]
+      wpNrp,           & ! Covariance of w and N_r, < w'N_r' >   [(m/s)(num/kg)]
+      Vrr,             & ! Mean sedimentation velocity of r_r    [m/s]
+      VNr,             & ! Mean sedimentation velocity of N_r    [m/s]
+      rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics    [(kg/kg)/s]
+      Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics    [(num/kg)/s]
 
     real( kind = core_rknd ), dimension(nz) :: &
       KK_evap_tndcy,   & ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
@@ -614,8 +617,6 @@ module KK_microphys_module
     ! changes by janhft 10/04/12
     real( kind = core_rknd ), dimension(nz) ::  &
       wpsp_zm,  & ! Covariance of s and w on the zm-grid    [(m/s)(kg/kg)]
-      wprrp_zm, & ! Covariance of r_r and w on the zm-grid  [(m/s)(kg/kg)]
-      wpNrp_zm, & ! Covariance of N_r and w on the zm-grid  [(m/s)(#/kg)]
       wpNcp_zm, & ! Covariance of N_c and w on the zm-grid  [(m/s)(#/kg)]
       wpsp_zt,  & ! Covariance of s and w on the zt-grid    [(m/s)(kg/kg)]
       wprrp_zt, & ! Covariance of r_r and w on the zt-grid  [(m/s)(kg/kg)]
@@ -683,26 +684,40 @@ module KK_microphys_module
     ! Statistics
     if ( l_stats_samp ) then
 
-       ! Mean rain water mixing ratio in PDF component 1.
-       call stat_update_var( irr1, rr1, zt )
+       if ( irr1 > 0 ) then
+          ! Mean rain water mixing ratio in PDF component 1.
+          call stat_update_var( irr1, rr1, zt )
+       endif
 
-       ! Mean rain water mixing ratio in PDF component 2.
-       call stat_update_var( irr2, rr2, zt )
+       if ( irr2 > 0 ) then
+          ! Mean rain water mixing ratio in PDF component 2.
+          call stat_update_var( irr2, rr2, zt )
+       endif
 
-       ! Mean rain drop concentration in PDF component 1.
-       call stat_update_var( iNr1, Nr1, zt )
+       if ( iNr1 > 0 ) then
+          ! Mean rain drop concentration in PDF component 1.
+          call stat_update_var( iNr1, Nr1, zt )
+       endif
 
-       ! Mean rain drop concentration in PDF component 2.
-       call stat_update_var( iNr2, Nr2, zt )
+       if ( iNr2 > 0 ) then
+          ! Mean rain drop concentration in PDF component 2.
+          call stat_update_var( iNr2, Nr2, zt )
+       endif
 
-       ! Overall precipitation fraction.
-       call stat_update_var( iprecip_frac, precip_frac, zt )
+       if ( iprecip_frac > 0 ) then
+          ! Overall precipitation fraction.
+          call stat_update_var( iprecip_frac, precip_frac, zt )
+       endif
 
-       ! Precipitation fraction in PDF component 1.
-       call stat_update_var( iprecip_frac_1, precip_frac_1, zt )
+       if ( iprecip_frac_1 > 0 ) then
+          ! Precipitation fraction in PDF component 1.
+          call stat_update_var( iprecip_frac_1, precip_frac_1, zt )
+       endif
 
-       ! Precipitation fraction in PDF component 2.
-       call stat_update_var( iprecip_frac_2, precip_frac_2, zt )
+       if ( iprecip_frac_2 > 0 ) then
+          ! Precipitation fraction in PDF component 2.
+          call stat_update_var( iprecip_frac_2, precip_frac_2, zt )
+       endif
 
     endif
 
@@ -717,30 +732,16 @@ module KK_microphys_module
                        * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
        enddo
 
-       wprrp_zm(1:nz-1) &
-       = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
-                   rrainm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
-                   rrainm(2:nz) / max( precip_frac(2:nz), eps ), &
-                   gr%invrs_dzm(1:nz-1) )
-
-       wpNrp_zm(1:nz-1) &
-       = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
-                   Nrm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
-                   Nrm(2:nz) / max( precip_frac(2:nz), eps ), &
-                   gr%invrs_dzm(1:nz-1) )
-
        wpNcp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncm(1:nz-1), &
                                     Ncm(2:nz), gr%invrs_dzm(1:nz-1) )
 
-       ! Boundary conditions; We are assuming constant flux at the top.
-       wprrp_zm(nz) = wprrp_zm(nz-1)
-       wpNrp_zm(nz) = wpNrp_zm(nz-1)
-       wpNcp_zm(nz) = wpNcp_zm(nz-1)
+       ! Boundary conditions; We are assuming zero flux at the top.
+       wpNcp_zm(nz) = zero
 
        ! interpolate back to zt-grid
        wpsp_zt  = zm2zt(wpsp_zm)
-       wprrp_zt = zm2zt(wprrp_zm)
-       wpNrp_zt = zm2zt(wpNrp_zm)
+       wprrp_zt = zm2zt(wprrp)
+       wpNrp_zt = zm2zt(wpNrp)
        wpNcp_zt = zm2zt(wpNcp_zm)
 
     endif
@@ -1006,23 +1007,31 @@ module KK_microphys_module
     ! Statistics
     if ( l_stats_samp ) then
 
-       ! The covariance < V_rr'r_r' > calculated completely explicitly.
-       ! When semi-implicit turbulent advection is used, this result can be
-       ! compared to the < V_rr'r_r' > results used in the code, which are
-       ! calculated semi-implicitly.
-       call stat_update_var( iVrrprrp_expcalc, &
-                             zt2zm( Vrrprrp_zt_impc * rrainm &
-                                    + Vrrprrp_zt_expc ), zm )
+       if ( iVrrprrp_expcalc > 0 ) then
 
-       ! The covariance < V_Nr'N_r' > calculated completely explicitly.
-       ! When semi-implicit turbulent advection is used, this result can be
-       ! compared to the < V_Nr'N_r' > results used in the code, which are
-       ! calculated semi-implicitly.
-       call stat_update_var( iVNrpNrp_expcalc, &
-                             zt2zm( VNrpNrp_zt_impc * Nrm + VNrpNrp_zt_expc ), &
-                             zm )
+          ! The covariance < V_rr'r_r' > calculated completely explicitly.
+          ! When semi-implicit turbulent advection is used, this result can be
+          ! compared to the < V_rr'r_r' > results used in the code, which are
+          ! calculated semi-implicitly.
+          call stat_update_var( iVrrprrp_expcalc, &
+                                zt2zm( Vrrprrp_zt_impc * rrainm &
+                                       + Vrrprrp_zt_expc ), zm )
 
-    endif
+       endif
+
+       if ( iVNrpNrp_expcalc > 0 ) then
+
+          ! The covariance < V_Nr'N_r' > calculated completely explicitly.
+          ! When semi-implicit turbulent advection is used, this result can be
+          ! compared to the < V_Nr'N_r' > results used in the code, which are
+          ! calculated semi-implicitly.
+          call stat_update_var( iVNrpNrp_expcalc, &
+                                zt2zm( VNrpNrp_zt_impc * Nrm &
+                                       + VNrpNrp_zt_expc ), zm )
+
+       endif
+
+    endif ! l_stats_samp
 
 
     return
@@ -1505,11 +1514,15 @@ module KK_microphys_module
     ! Statistics
     if ( l_stats_samp ) then
 
-       ! Liquid water path in PDF component 1.
-       call stat_update_var( iLWP1, LWP1, zt )
+       if ( iLWP1 > 0 ) then
+          ! Liquid water path in PDF component 1.
+          call stat_update_var( iLWP1, LWP1, zt )
+       endif
 
-       ! Liquid water path in PDF component 2.
-       call stat_update_var( iLWP2, LWP2, zt )
+       if ( iLWP2 > 0 ) then
+          ! Liquid water path in PDF component 2.
+          call stat_update_var( iLWP2, LWP2, zt )
+       endif
        
     endif
 
@@ -2463,9 +2476,9 @@ module KK_microphys_module
       sigma_Nr_1, & ! Standard deviation of Nr (1st PDF component) ip   [num/kg]
       sigma_Nr_2, & ! Standard deviation of Nr (2nd PDF component) ip   [num/kg]
       wpsp,       & ! Covariance of w and s                         [(m/s)kg/kg]
-      wprrp,      & ! Covariance of w and rrain                     [(m/s)kg/kg]
-      wpNrp,      & ! Covariance of w and Nr                       [(m/s)num/kg]
-      wpNcp,      & ! Covariance of w and Nc                       [(m/s)num/kg]
+      wprrp,      & ! Covariance of w and r_r                       [(m/s)kg/kg]
+      wpNrp,      & ! Covariance of w and N_r                      [(m/s)num/kg]
+      wpNcp,      & ! Covariance of w and N_c                      [(m/s)num/kg]
       stdev_w,    & ! Standard deviation of w                              [m/s]
       mixt_frac     ! Mixture fraction                                       [-]
 
@@ -4048,15 +4061,23 @@ module KK_microphys_module
     ! Statistics
     if ( l_stats_samp ) then
 
-       call stat_update_var_pt( irrainm_src_adj, level, rrainm_src_adj, zt )
+       if ( irrainm_src_adj > 0 ) then
+          call stat_update_var_pt( irrainm_src_adj, level, rrainm_src_adj, zt )
+       endif
 
-       call stat_update_var_pt( iNrm_src_adj, level, Nrm_src_adj, zt )
+       if ( iNrm_src_adj > 0 ) then
+          call stat_update_var_pt( iNrm_src_adj, level, Nrm_src_adj, zt )
+       endif
 
-       call stat_update_var_pt( irrainm_cond_adj, level, &
-                                rrainm_evap_net - KK_evap_tndcy, zt )
+       if ( irrainm_cond_adj > 0 ) then
+          call stat_update_var_pt( irrainm_cond_adj, level, &
+                                   rrainm_evap_net - KK_evap_tndcy, zt )
+       endif
 
-       call stat_update_var_pt( iNrm_cond_adj, level, &
-                                Nrm_evap_net - KK_Nrm_evap_tndcy, zt )
+       if ( irrainm_cond_adj > 0 ) then
+          call stat_update_var_pt( iNrm_cond_adj, level, &
+                                   Nrm_evap_net - KK_Nrm_evap_tndcy, zt )
+       endif
 
     endif
 
@@ -4601,19 +4622,31 @@ module KK_microphys_module
     if ( l_stats_samp ) then
 
        ! Mean rain water mixing ratio microphysics tendencies.
-       call stat_update_var_pt( irrainm_cond, level, KK_evap_tndcy, zt )
+       if ( irrainm_cond > 0 ) then
+          call stat_update_var_pt( irrainm_cond, level, KK_evap_tndcy, zt )
+       endif
 
-       call stat_update_var_pt( irrainm_auto, level, KK_auto_tndcy, zt )
+       if ( irrainm_auto > 0 ) then
+          call stat_update_var_pt( irrainm_auto, level, KK_auto_tndcy, zt )
+       endif
 
-       call stat_update_var_pt( irrainm_accr, level, KK_accr_tndcy, zt )
+       if ( irrainm_accr > 0 ) then
+          call stat_update_var_pt( irrainm_accr, level, KK_accr_tndcy, zt )
+       endif
 
        ! Rain drop mean volume radius.
-       call stat_update_var_pt( im_vol_rad_rain, level, KK_mean_vol_rad, zt )
+       if ( im_vol_rad_rain > 0 ) then
+          call stat_update_var_pt( im_vol_rad_rain, level, KK_mean_vol_rad, zt )
+       endif
 
        ! Mean rain drop concentration microphysics tendencies.
-       call stat_update_var_pt( iNrm_cond, level, KK_Nrm_evap_tndcy, zt )
+       if ( iNrm_cond > 0 ) then
+          call stat_update_var_pt( iNrm_cond, level, KK_Nrm_evap_tndcy, zt )
+       endif
 
-       call stat_update_var_pt( iNrm_auto, level, KK_Nrm_auto_tndcy, zt )
+       if ( iNrm_auto > 0 ) then
+          call stat_update_var_pt( iNrm_auto, level, KK_Nrm_auto_tndcy, zt )
+       endif
 
     endif ! l_stats_samp
 

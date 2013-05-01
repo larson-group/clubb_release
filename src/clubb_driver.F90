@@ -48,7 +48,7 @@ module clubb_driver
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       thvm, Lscale, Kh_zm, &
       um_ref, vm_ref, Ncnm, wp2_zt, &
-      hydromet, thlm_ref, rtm_ref, &
+      hydromet, wphydrometp, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
       Frad_LW_up, Frad_SW_down, Frad_LW_down
 
@@ -1199,7 +1199,7 @@ module clubb_driver
              cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
              Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
              rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt,           & ! Intent(in)
-             Ncnm, hydromet,                                  & ! Intent(inout)
+             Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
              wprtp_mc_tndcy, wpthlp_mc_tndcy,                 & ! Intent(inout)
              rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, & ! Intent(inout)
@@ -3615,7 +3615,7 @@ module clubb_driver
                cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm, &
                Kh_zm, wp2_zt, Lscale, pdf_params, &
                rho_ds_zt,  rho_ds_zm, invrs_rho_ds_zt, & 
-               Ncnm, hydromet, &
+               Ncnm, hydromet, wphydrometp, &
                rvm_mc, rcm_mc, thlm_mc, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
@@ -3733,7 +3733,8 @@ module clubb_driver
       Ncnm ! Cloud nuclei number concentration (COAMPS microphyics)     [#/kg]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
-      hydromet ! Hydrometeor species    [units vary]
+      hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
+      wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       thlm_mc,   & ! theta_l microphysical tendency [K/s]
@@ -3861,7 +3862,7 @@ module clubb_driver
            wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &           ! Intent(in)
            LH_sample_point_weights, &                                 ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
-           Ncnm, hydromet, &                                          ! Intent(inout)
+           Ncnm, hydromet, wphydrometp, &                             ! Intent(inout)
            rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
            wprtp_mc_tndcy, wpthlp_mc_tndcy, &                         ! Intent(inout)
            rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &         ! Intent(inout)

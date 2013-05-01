@@ -120,9 +120,11 @@ module variables_diagnostic_module
 
 !$omp threadprivate(em, tau_zm, tau_zt)
 
-! hydrometeors variable array
-  real( kind = core_rknd ), allocatable, dimension(:,:), public :: hydromet
-!$omp threadprivate(hydromet)
+! hydrometeors variable arrays
+  real( kind = core_rknd ), allocatable, dimension(:,:), public :: &
+    hydromet,    & ! Mean hydrometeor (thermodynamic levels)           [units]
+    wphydrometp    ! Covariance of w and hydrometeor (momentum levels) [(m/s)un]
+!$omp threadprivate(hydromet,wphydrometp)
 
   real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     Ncnm     ! Cloud nuclei number concentration       [num/m^3]
@@ -310,7 +312,8 @@ module variables_diagnostic_module
 
     ! Microphysics Variables
     allocate( Ncnm(1:nz) )
-    allocate( hydromet(1:nz,1:hydromet_dim) ) ! All hydrometeor fields
+    allocate( hydromet(1:nz,1:hydromet_dim) )    ! All hydrometeor mean fields
+    allocate( wphydrometp(1:nz,1:hydromet_dim) ) ! All < w'h_m' > fields
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
     allocate( lh_AKm(1:nz) )    ! Kessler ac estimate
@@ -486,7 +489,8 @@ module variables_diagnostic_module
     Ncnm(1:nz) = 0.0_core_rknd ! Cloud nuclei number concentration (COAMPS)
 
     do i = 1, hydromet_dim, 1
-      hydromet(1:nz,i) = 0.0_core_rknd
+      hydromet(1:nz,i)    = 0.0_core_rknd
+      wphydrometp(1:nz,i) = 0.0_core_rknd
     end do
 
 
@@ -605,7 +609,8 @@ module variables_diagnostic_module
 
     deallocate( Ncnm )
 
-    deallocate( hydromet )  ! Hydrometeor fields
+    deallocate( hydromet )     ! Hydrometeor mean fields
+    deallocate( wphydrometp )  ! < w'h_m' > fields
 
 
     ! Interpolated variables for tuning

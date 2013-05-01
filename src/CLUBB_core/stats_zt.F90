@@ -238,10 +238,10 @@ module stats_zt
     use stats_variables, only: & 
         irrainm_bt, & 
         irrainm_ma, & 
+        irrainm_ta, &
         irrainm_sd, &
         irrainm_ts, &
         irrainm_sd_morr, &
-        irrainm_dff, & 
         irrainm_cond, & 
         irrainm_auto, & 
         irrainm_accr, & 
@@ -255,9 +255,9 @@ module stats_zt
         irrainm_cl, & 
         iNrm_bt, & 
         iNrm_ma, & 
+        iNrm_ta, & 
         iNrm_sd, & 
         iNrm_ts, & 
-        iNrm_dff, & 
         iNrm_cond, & 
         iNrm_auto, & 
         iNrm_cond_adj, & 
@@ -270,7 +270,7 @@ module stats_zt
         irsnowm_ma, & 
         irsnowm_sd, &
         irsnowm_sd_morr, &
-        irsnowm_dff, &
+        irsnowm_ta, &
         irsnowm_mc, & 
         irsnowm_hf, & 
         irsnowm_wvhf, & 
@@ -279,7 +279,7 @@ module stats_zt
         irgraupelm_ma, & 
         irgraupelm_sd, &
         irgraupelm_sd_morr, &
-        irgraupelm_dff, & 
+        irgraupelm_ta, & 
         irgraupelm_mc
 
     use stats_variables, only: &
@@ -290,7 +290,7 @@ module stats_zt
         iricem_ma, & 
         iricem_sd, &
         iricem_sd_mg_morr, &
-        iricem_dff, & 
+        iricem_ta, & 
         iricem_mc, & 
         iricem_hf, &
         iricem_wvhf, &
@@ -384,19 +384,19 @@ module stats_zt
       iNsnowm_bt, &
       iNsnowm_mc, &
       iNsnowm_ma, &
-      iNsnowm_dff, &
+      iNsnowm_ta, &
       iNsnowm_sd, &
       iNsnowm_cl, &
       iNgraupelm_bt, &
       iNgraupelm_mc, &
       iNgraupelm_ma, &
-      iNgraupelm_dff, &
+      iNgraupelm_ta, &
       iNgraupelm_sd, &
       iNgraupelm_cl, &
       iNim_bt, &
       iNim_mc, &
       iNim_ma, &
-      iNim_dff, &
+      iNim_ta, &
       iNim_sd, &
       iNim_cl
 
@@ -404,7 +404,7 @@ module stats_zt
       iNcm_bt, &
       iNcm_mc, &
       iNcm_ma, &
-      iNcm_dff, &
+      iNcm_ta, &
       iNcm_cl, &
       iNcm_act
 
@@ -670,10 +670,10 @@ module stats_zt
 
     irrainm_bt       = 0
     irrainm_ma       = 0
+    irrainm_ta       = 0
     irrainm_sd       = 0
     irrainm_ts       = 0
     irrainm_sd_morr  = 0
-    irrainm_dff      = 0
     irrainm_cond     = 0
     irrainm_auto     = 0
     irrainm_accr     = 0
@@ -686,9 +686,9 @@ module stats_zt
 
     iNrm_bt       = 0
     iNrm_ma       = 0
+    iNrm_ta       = 0
     iNrm_sd       = 0
     iNrm_ts       = 0
-    iNrm_dff      = 0
     iNrm_cond     = 0
     iNrm_auto     = 0
     iNrm_cond_adj = 0
@@ -699,20 +699,20 @@ module stats_zt
     iNsnowm_bt    = 0
     iNsnowm_ma    = 0
     iNsnowm_sd    = 0
-    iNsnowm_dff   = 0
+    iNsnowm_ta    = 0
     iNsnowm_mc    = 0
     iNsnowm_cl    = 0
 
     iNim_bt    = 0
     iNim_ma    = 0
     iNim_sd    = 0
-    iNim_dff   = 0
+    iNim_ta    = 0
     iNim_mc    = 0
     iNim_cl    = 0
 
     iNcm_bt    = 0
     iNcm_ma    = 0
-    iNcm_dff   = 0
+    iNcm_ta    = 0
     iNcm_mc    = 0
     iNcm_cl    = 0
     iNcm_act   = 0
@@ -721,7 +721,7 @@ module stats_zt
     irsnowm_ma      = 0
     irsnowm_sd      = 0
     irsnowm_sd_morr = 0
-    irsnowm_dff     = 0
+    irsnowm_ta      = 0
     irsnowm_mc      = 0
     irsnowm_hf      = 0
     irsnowm_wvhf    = 0
@@ -731,7 +731,7 @@ module stats_zt
     irgraupelm_ma      = 0
     irgraupelm_sd      = 0
     irgraupelm_sd_morr = 0
-    irgraupelm_dff     = 0
+    irgraupelm_ta      = 0
     irgraupelm_mc      = 0
     irgraupelm_hf      = 0
     irgraupelm_wvhf    = 0
@@ -741,7 +741,7 @@ module stats_zt
     iricem_ma         = 0
     iricem_sd         = 0
     iricem_sd_mg_morr = 0
-    iricem_dff        = 0
+    iricem_ta         = 0
     iricem_mc         = 0
     iricem_hf         = 0
     iricem_wvhf       = 0
@@ -1647,11 +1647,12 @@ module stats_zt
              // " in rrainm_mc) [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
-      case ('rrainm_dff')
-        irrainm_dff = k
+      case ('rrainm_ta')
+        irrainm_ta = k
 
-        call stat_assign( irrainm_dff, "rrainm_dff", & 
-             "rrainm budget: rrainm diffusion [kg kg^{-1} s^{-1}]", "kg kg^{-1} s^{-1}", zt )
+        call stat_assign( irrainm_ta, "rrainm_ta", & 
+             "rrainm budget: rrainm turbulent advection [kg kg^{-1} s^{-1}]", &
+             "kg kg^{-1} s^{-1}", zt )
         k = k + 1
 
       case ('rrainm_cond')
@@ -1752,10 +1753,11 @@ module stats_zt
              "(num/kg)/s", zt )
         k = k + 1
 
-      case ('Nrm_dff')
-        iNrm_dff = k
-        call stat_assign( iNrm_dff, "Nrm_dff", & 
-             "Nrm budget: Nrm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
+      case ('Nrm_ta')
+        iNrm_ta = k
+        call stat_assign( iNrm_ta, "Nrm_ta", & 
+             "Nrm budget: Nrm turbulent advection [(num/kg)/s]", "(num/kg)/s", &
+             zt )
 
         k = k + 1
 
@@ -1830,11 +1832,12 @@ module stats_zt
              // " rsnowm_mc) [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rsnowm_dff')
-        irsnowm_dff = k
+      case ('rsnowm_ta')
+        irsnowm_ta = k
 
-        call stat_assign( irsnowm_dff, "rsnowm_dff", & 
-             "rsnowm budget: rsnowm diffusion [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( irsnowm_ta, "rsnowm_ta", & 
+             "rsnowm budget: rsnowm turbulent advection [(kg/kg)/s]", &
+             "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rsnowm_mc')
@@ -1888,10 +1891,11 @@ module stats_zt
 
         k = k + 1
 
-      case ('Nsnowm_dff')
-        iNsnowm_dff = k
-        call stat_assign( iNsnowm_dff, "Nsnowm_dff", & 
-             "Nsnowm budget: Nsnowm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
+      case ('Nsnowm_ta')
+        iNsnowm_ta = k
+        call stat_assign( iNsnowm_ta, "Nsnowm_ta", & 
+             "Nsnowm budget: Nsnowm turbulent advection [(num/kg)/s]", &
+             "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -1939,11 +1943,12 @@ module stats_zt
              // " included in ricem_mc) [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('ricem_dff')
-        iricem_dff = k
+      case ('ricem_ta')
+        iricem_ta = k
 
-        call stat_assign( iricem_dff, "ricem_dff", & 
-             "ricem budget: ricem diffusion [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iricem_ta, "ricem_ta", & 
+             "ricem budget: ricem turbulent advection [(kg/kg)/s]", &
+             "(kg/kg)/s", zt )
         k = k + 1
 
       case ('ricem_mc')
@@ -2004,11 +2009,12 @@ module stats_zt
              // " in rgraupelm_mc) [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rgraupelm_dff')
-        irgraupelm_dff = k
+      case ('rgraupelm_ta')
+        irgraupelm_ta = k
 
-        call stat_assign( irgraupelm_dff, "rgraupelm_dff", & 
-             "rgraupelm budget: rgraupelm diffusion [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( irgraupelm_ta, "rgraupelm_ta", & 
+             "rgraupelm budget: rgraupelm turbulent advection [(kg/kg)/s]", &
+             "(kg/kg)/s", zt )
         k = k + 1
 
       case ('rgraupelm_mc')
@@ -2065,10 +2071,11 @@ module stats_zt
 
         k = k + 1
 
-      case ('Ngraupelm_dff')
-        iNgraupelm_dff = k
-        call stat_assign( iNgraupelm_dff, "Ngraupelm_dff", & 
-             "Ngraupelm budget: Ngraupelm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
+      case ('Ngraupelm_ta')
+        iNgraupelm_ta = k
+        call stat_assign( iNgraupelm_ta, "Ngraupelm_ta", & 
+             "Ngraupelm budget: Ngraupelm turbulent advection [(num/kg)/s]", &
+             "(num/kg)/s", zt )
 
         k = k + 1
 
@@ -2108,10 +2115,11 @@ module stats_zt
 
         k = k + 1
 
-      case ('Nim_dff')
-        iNim_dff = k
-        call stat_assign( iNim_dff, "Nim_dff", & 
-             "Nim budget: Nim diffusion [(num/kg)/s]", "(num/kg)/s", zt )
+      case ('Nim_ta')
+        iNim_ta = k
+        call stat_assign( iNim_ta, "Nim_ta", & 
+             "Nim budget: Nim turbulent advection [(num/kg)/s]", "(num/kg)/s", &
+             zt )
 
         k = k + 1
 
@@ -2152,10 +2160,11 @@ module stats_zt
 
         k = k + 1
 
-      case ('Ncm_dff')
-        iNcm_dff = k
-        call stat_assign( iNcm_dff, "Ncm_dff", & 
-             "Ncm budget: Ncm diffusion [(num/kg)/s]", "(num/kg)/s", zt )
+      case ('Ncm_ta')
+        iNcm_ta = k
+        call stat_assign( iNcm_ta, "Ncm_ta", & 
+             "Ncm budget: Ncm turbulent advection [(num/kg)/s]", "(num/kg)/s", &
+             zt )
 
         k = k + 1
 

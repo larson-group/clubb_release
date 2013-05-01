@@ -98,6 +98,17 @@ module stats_zm
         ivp2_sf
 
     use stats_variables, only: & 
+        iwprrp, &
+        iwprip, &
+        iwprsp, &
+        iwprgp, &
+        iwpNrp, &
+        iwpNip, &
+        iwpNsp, &
+        iwpNgp, &
+        iwpNcp
+
+    use stats_variables, only: & 
         iVNr,  & 
         iVrr, &
         iVNc, & 
@@ -333,6 +344,17 @@ module stats_zm
     ivp2_pr2 = 0
     ivp2_cl  = 0
     ivp2_sf  = 0
+
+    ! Covariances of w and hydrometeors, < w'h_m' >
+    iwprrp = 0
+    iwprip = 0
+    iwprsp = 0
+    iwprgp = 0
+    iwpNrp = 0
+    iwpNip = 0
+    iwpNsp = 0
+    iwpNgp = 0
+    iwpNcp = 0
 
     ! Sedimentation velocities
     iVNr       = 0
@@ -713,6 +735,78 @@ module stats_zm
         call stat_assign(iFcsed,"Fcsed", & 
              "cloud water sedimentation flux [kg/(s*m^2)]", & 
              "kg/(s*m^2)",zm)
+        k = k + 1
+
+      case ('wprrp')
+        iwprrp = k
+
+        call stat_assign( iwprrp, "wprrp", &
+             "Covariance of w and rain water mixing ratio [(m/s)(kg/kg)]", &
+             "(m/s)(kg/kg)", zm )
+        k = k + 1
+
+      case ('wprip')
+        iwprip = k
+
+        call stat_assign( iwprip, "wprip", &
+             "Covariance of w and ice mixing ratio [(m/s)(kg/kg)]", &
+             "(m/s)(kg/kg)", zm )
+        k = k + 1
+
+      case ('wprsp')
+        iwprsp = k
+
+        call stat_assign( iwprsp, "wprsp", &
+             "Covariance of w and snow mixing ratio [(m/s)(kg/kg)]", &
+             "(m/s)(kg/kg)", zm )
+        k = k + 1
+
+      case ('wprgp')
+        iwprgp = k
+
+        call stat_assign( iwprgp, "wprgp", &
+             "Covariance of w and graupel mixing ratio [(m/s)(kg/kg)]", &
+             "(m/s)(kg/kg)", zm )
+        k = k + 1
+
+      case ('wpNrp')
+        iwpNrp = k
+
+        call stat_assign( iwpNrp, "wpNrp", &
+             "Covariance of w and rain drop concentration [(m/s)(num/kg)]", &
+             "(m/s)(num/kg)", zm )
+        k = k + 1
+
+      case ('wpNip')
+        iwpNip = k
+
+        call stat_assign( iwpNip, "wpNip", &
+             "Covariance of w and ice concentration [(m/s)(num/kg)]", &
+             "(m/s)(num/kg)", zm )
+        k = k + 1
+
+      case ('wpNsp')
+        iwpNsp = k
+
+        call stat_assign( iwpNsp, "wpNsp", &
+             "Covariance of w and snow concentration [(m/s)(num/kg)]", &
+             "(m/s)(num/kg)", zm )
+        k = k + 1
+
+      case ('wpNgp')
+        iwpNgp = k
+
+        call stat_assign( iwpNgp, "wpNgp", &
+             "Covariance of w and graupel concentration [(m/s)(num/kg)]", &
+             "(m/s)(num/kg)", zm )
+        k = k + 1
+
+      case ('wpNcp')
+        iwpNcp = k
+
+        call stat_assign( iwpNcp, "wpNcp", &
+             "Covariance of w and cloud droplet concentration " &
+             //"[(m/s)(num/kg)]", "(m/s)(num/kg)", zm )
         k = k + 1
 
       case ('VNr')
