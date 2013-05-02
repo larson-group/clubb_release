@@ -376,6 +376,7 @@ module KK_microphys_module
         zero,   &
         rr_tol, &
         Nr_tol, &
+        Nc_tol, &
         eps
 
     use parameters_microphys, only: &
@@ -616,12 +617,12 @@ module KK_microphys_module
 
     ! changes by janhft 10/04/12
     real( kind = core_rknd ), dimension(nz) ::  &
-      wpsp_zm,  & ! Covariance of s and w on the zm-grid    [(m/s)(kg/kg)]
-      wpNcp_zm, & ! Covariance of N_c and w on the zm-grid  [(m/s)(#/kg)]
-      wpsp_zt,  & ! Covariance of s and w on the zt-grid    [(m/s)(kg/kg)]
-      wprrp_zt, & ! Covariance of r_r and w on the zt-grid  [(m/s)(kg/kg)]
-      wpNrp_zt, & ! Covariance of N_r and w on the zt-grid  [(m/s)(#/kg)]
-      wpNcp_zt    ! Covariance of N_c and w on the zt-grid  [(m/s)(#/kg)]
+      wpsp_zm,     & ! Covariance of s and w (momentum levels)   [(m/s)(kg/kg)]
+      wpNcp_zm,    & ! Covariance of N_c and w (momentum levels) [(m/s)(num/kg)]
+      wpsp_zt,     & ! Covariance of s and w on t-levs           [(m/s)(kg/kg)]
+      wprrp_ip_zt, & ! Covar. of r_r and w (in-precip) on t-levs [(m/s)(kg/kg)]
+      wpNrp_ip_zt, & ! Covar. of N_r and w (in-precip) on t-levs [(m/s)(num/kg)]
+      wpNcp_zt       ! Covariance of N_c and w on t-levs         [(m/s)(num/kg)]
     ! end changes by janhft 10/04/12
 
     logical :: &
@@ -641,6 +642,11 @@ module KK_microphys_module
                         KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
                         KK_Nrm_auto_tndcy, &
                         l_src_adj_enabled, l_evap_adj_enabled )
+
+    ! Covariance of vertical velocity and a hydrometeor
+    ! (< w'r_r' > and < w'N_r' >).
+    wprrp => wphydrometp(:,iirrainm)
+    wpNrp => wphydrometp(:,iiNrm)
 
     ! The implicit and explicit components used to calculate the covariances of
     ! hydrometeor sedimentation velocities and their associated hydrometeors
@@ -739,10 +745,22 @@ module KK_microphys_module
        wpNcp_zm(nz) = zero
 
        ! interpolate back to zt-grid
-       wpsp_zt  = zm2zt(wpsp_zm)
-       wprrp_zt = zm2zt(wprrp)
-       wpNrp_zt = zm2zt(wpNrp)
-       wpNcp_zt = zm2zt(wpNcp_zm)
+       wpsp_zt     = zm2zt(wpsp_zm)
+       wprrp_ip_zt = zm2zt(wprrp) / max( precip_frac, eps )
+       wpNrp_ip_zt = zm2zt(wpNrp) / max( precip_frac, eps )
+       wpNcp_zt    = zm2zt(wpNcp_zm)
+
+       do k = 1, nz, 1
+          if ( rrainm(k) <= rr_tol ) then
+             wprrp_ip_zt(k) = zero
+          endif
+          if ( Nrm(k) <= Nr_tol ) then
+             wpNrp_ip_zt(k) = zero
+          endif
+          if ( Ncm(k) <= Nc_tol ) then
+             wpNcp_zt(k) = zero
+          endif
+       enddo
 
     endif
 
@@ -775,7 +793,7 @@ module KK_microphys_module
                               mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                               sigma_rr_1, sigma_rr_2, &
                               sigma_Nr_1, sigma_Nr_2, &
-                              wpsp_zt(k), wprrp_zt(k), wpNrp_zt(k), &
+                              wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &
                               wpNcp_zt(k), w_std_dev(k), mixt_frac(k), &
                               pdf_params(k), &
                               corr_srr_1, corr_srr_2, corr_sNr_1, &
@@ -2373,7 +2391,7 @@ module KK_microphys_module
                                 mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                 sigma_rr_1, sigma_rr_2, &
                                 sigma_Nr_1, sigma_Nr_2, &
-                                wpsp, wprrp, wpNrp, &
+                                wpsp, wprrp_ip, wpNrp_ip, &
                                 wpNcp, stdev_w, mixt_frac, &
                                 pdf_params, &
                                 corr_srr_1, corr_srr_2, corr_sNr_1, &
@@ -2476,8 +2494,8 @@ module KK_microphys_module
       sigma_Nr_1, & ! Standard deviation of Nr (1st PDF component) ip   [num/kg]
       sigma_Nr_2, & ! Standard deviation of Nr (2nd PDF component) ip   [num/kg]
       wpsp,       & ! Covariance of w and s                         [(m/s)kg/kg]
-      wprrp,      & ! Covariance of w and r_r                       [(m/s)kg/kg]
-      wpNrp,      & ! Covariance of w and N_r                      [(m/s)num/kg]
+      wprrp_ip,   & ! Covariance of w and r_r (overall) ip          [(m/s)kg/kg]
+      wpNrp_ip,   & ! Covariance of w and N_r (overall) ip         [(m/s)num/kg]
       wpNcp,      & ! Covariance of w and N_c                      [(m/s)num/kg]
       stdev_w,    & ! Standard deviation of w                              [m/s]
       mixt_frac     ! Mixture fraction                                       [-]
@@ -2662,8 +2680,8 @@ module KK_microphys_module
 
           corr_sw &
           = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
-          corr_wrr = calc_w_corr( wprrp, stdev_w, sigma_rr_1, w_tol, rr_tol )
-          corr_wNr = calc_w_corr( wpNrp, stdev_w, sigma_Nr_1, w_tol, Nr_tol )
+          corr_wrr = calc_w_corr( wprrp_ip, stdev_w, sigma_rr_1, w_tol, rr_tol )
+          corr_wNr = calc_w_corr( wpNrp_ip, stdev_w, sigma_Nr_1, w_tol, Nr_tol )
           corr_wNc = calc_w_corr( wpNcp, stdev_w, sigma_Nc_1, w_tol, Nc_tol )
       
     else ! .not. l_calc_w_corr
