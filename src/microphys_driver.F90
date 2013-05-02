@@ -1946,62 +1946,6 @@ module microphys_driver
       endif
 
 
-      ! Solve for < w'h_m' > at all intermediate (momentum) grid levels, using
-      ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
-      ! A Crank-Nicholson time-stepping scheme is used for this variable.
-      ! This is the portion of the calculation using < h_m > from timestep t+1. 
-      wphydrometp(1:gr%nz-1,i) &
-      = - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
-                               hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
-                               gr%invrs_dzm(1:gr%nz-1) )
-
-      ! A zero-flux boundary condition at the top of the model is used for
-      ! hydrometeors.
-      wphydrometp(gr%nz,i) = zero
-
-      !!! Calculate the covariance of hydrometeor sedimentation velocity and the
-      !!! hydrometeor, which is solved semi-implicitly on thermodynamic levels.
-      hydromet_vel_covar_zt(:,i) &
-      = hydromet_vel_covar_zt_impc(:,i) * hydromet(:,i) &
-        + hydromet_vel_covar_zt_expc(:,i)
-
-      ! Boundary conditions for < V_hm'hm' >|_zt.
-      hydromet_vel_covar_zt(1,i) = hydromet_vel_covar_zt(2,i)
-
-      !!! Calculate the covariance of hydrometeor sedimentation velocity and the
-      !!! hydrometeor, < V_hm'h_m' >, by interpolating the thermodynamic level
-      !!! results to momentum levels.
-      hydromet_vel_covar(:,i) = zt2zm( hydromet_vel_covar_zt(:,i) )
-
-      ! Boundary conditions for < V_hm'hm' >.
-      hydromet_vel_covar(1,i)     = hydromet_vel_covar_zt(2,i)
-      hydromet_vel_covar(gr%nz,i) = zero
-
-      ! Statistics for all covariances involving hydrometeors:  < w'h_m' >,
-      ! <V_rr'r_r'>, and <V_Nr'N_r'>.
-      if ( l_stats_samp ) then
-
-         if ( iwpxrp > 0 ) then
-
-            ! Covariance of vertical velocity and the hydrometeor.
-            call stat_update_var( iwpxrp, wphydrometp(:,i), zm )
-
-         endif
-
-         if ( trim( hydromet_list(i) ) == "rrainm" .and. iVrrprrp > 0 ) then
-
-            ! Covariance of sedimentation velocity of r_r and r_r.
-            call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrainm), zm )
-
-         elseif ( trim( hydromet_list(i) ) == "Nrm" .and. iVNrpNrp > 0 ) then
-
-            ! Covariance of sedimentation velocity of N_r and N_r.
-            call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNrm), zm )
-
-         endif
-
-      endif ! l_stats_samp
-
       ! Print warning message if any hydrometeor species has a value < 0.
       if ( any( hydromet(:,i) < zero_threshold ) ) then
 
@@ -2134,6 +2078,63 @@ module microphys_driver
       if ( hydromet(1,i) < zero_threshold ) then
          hydromet(1,i) = zero_threshold
       endif
+
+
+      ! Solve for < w'h_m' > at all intermediate (momentum) grid levels, using
+      ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
+      ! A Crank-Nicholson time-stepping scheme is used for this variable.
+      ! This is the portion of the calculation using < h_m > from timestep t+1. 
+      wphydrometp(1:gr%nz-1,i) &
+      = - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
+                               hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
+                               gr%invrs_dzm(1:gr%nz-1) )
+
+      ! A zero-flux boundary condition at the top of the model is used for
+      ! hydrometeors.
+      wphydrometp(gr%nz,i) = zero
+
+      !!! Calculate the covariance of hydrometeor sedimentation velocity and the
+      !!! hydrometeor, which is solved semi-implicitly on thermodynamic levels.
+      hydromet_vel_covar_zt(:,i) &
+      = hydromet_vel_covar_zt_impc(:,i) * hydromet(:,i) &
+        + hydromet_vel_covar_zt_expc(:,i)
+
+      ! Boundary conditions for < V_hm'hm' >|_zt.
+      hydromet_vel_covar_zt(1,i) = hydromet_vel_covar_zt(2,i)
+
+      !!! Calculate the covariance of hydrometeor sedimentation velocity and the
+      !!! hydrometeor, < V_hm'h_m' >, by interpolating the thermodynamic level
+      !!! results to momentum levels.
+      hydromet_vel_covar(:,i) = zt2zm( hydromet_vel_covar_zt(:,i) )
+
+      ! Boundary conditions for < V_hm'hm' >.
+      hydromet_vel_covar(1,i)     = hydromet_vel_covar_zt(2,i)
+      hydromet_vel_covar(gr%nz,i) = zero
+
+      ! Statistics for all covariances involving hydrometeors:  < w'h_m' >,
+      ! <V_rr'r_r'>, and <V_Nr'N_r'>.
+      if ( l_stats_samp ) then
+
+         if ( iwpxrp > 0 ) then
+
+            ! Covariance of vertical velocity and the hydrometeor.
+            call stat_update_var( iwpxrp, wphydrometp(:,i), zm )
+
+         endif
+
+         if ( trim( hydromet_list(i) ) == "rrainm" .and. iVrrprrp > 0 ) then
+
+            ! Covariance of sedimentation velocity of r_r and r_r.
+            call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrainm), zm )
+
+         elseif ( trim( hydromet_list(i) ) == "Nrm" .and. iVNrpNrp > 0 ) then
+
+            ! Covariance of sedimentation velocity of N_r and N_r.
+            call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNrm), zm )
+
+         endif
+
+      endif ! l_stats_samp
 
 
       if ( l_stats_samp ) then
