@@ -3687,7 +3687,8 @@ module clubb_driver
         vertical_avg  ! Procedure(s)
 
     use model_flags, only: &
-        l_diagnose_correlations ! Variable(s)
+        l_diagnose_correlations, & ! Variable(s)
+        l_morr_xp2_mc_tndcy
 
 #else
 #define d_variables 0
@@ -3802,10 +3803,20 @@ module clubb_driver
     if ( ( .not. l_local_kk) .and. &
          ( LH_microphys_type == LH_microphys_interactive ) ) then
        write(fstderr,*) "Error:  KK upscaled microphysics " &
-                        // "(l_upscaled = .true.) and interactive Latin " &
+                        // "(l_local_kk = .false.) and interactive Latin " &
                         // "Hypercube (LH_microphys_type = interactive) " &
-                        // "are not allowed together."
+                        // "are incompatible."
       stop
+    endif
+
+    if ( l_morr_xp2_mc_tndcy .and. &
+         ( LH_microphys_type == LH_microphys_interactive ) ) then
+       write(fstderr,*) "Error:  The code to include the effects of rain " &
+                        // "evaporation on rtp2 and thlp2 in Morrison " &
+                        // "microphysics (l_morr_xp2_mc_tndcy = .true.) and " &
+                        // "interactive Latin Hypercube " &
+                        // "(LH_microphys_type = interactive) are incompatible."
+       stop
     endif
 
     !----------------------------------------------------------------
