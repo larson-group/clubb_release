@@ -109,6 +109,14 @@ module diagnose_correlations_module
 
     !-------------------- Begin code --------------------
 
+    ! Remove compiler warnings about unused variables.
+    if ( .false. ) then
+       xm(ii_rrain) = rrainm
+       xm(ii_Nr)    = Nrm
+       xm(ii_Nc)    = Ncm
+       print *, "pdf_params = ", pdf_params
+    endif
+
     ! set up xp2_on_xm2
 
     ! TODO Why is wp2_on_wm2=1
@@ -287,10 +295,11 @@ module diagnose_correlations_module
         core_rknd ! Variable(s)
 
     use corr_matrix_module, only: &
-      iiLH_w ! Variable(s)
+        iiLH_w ! Variable(s)
 
     use constants_clubb, only: &
-      rc_tol
+        rc_tol, &
+        zero
 
     use model_flags, only: &
         l_calc_w_corr ! Flag(s)
@@ -333,8 +342,8 @@ module diagnose_correlations_module
     !-------------------- Begin code --------------------
 
     do k = 1, d_variables
-      xp2_on_xm2_array_cloud(k) = 0
-      xp2_on_xm2_array_below(k) = 0
+      xp2_on_xm2_array_cloud(k) = zero
+      xp2_on_xm2_array_below(k) = zero
     end do
 
 
@@ -448,6 +457,12 @@ module diagnose_correlations_module
 
     !-------------------- Begin code --------------------
 
+    ! Remove compiler warnings about unused variables.
+    if ( .false. ) then
+       print *, "sqrt_xp2_on_xm2 = ", sqrt_xp2_on_xm2
+       print *, "f_ij_o = ", f_ij_o
+    endif
+
     ! calculate all square roots
     do i = 1, n_variables
 
@@ -507,13 +522,14 @@ module diagnose_correlations_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use pdf_parameter_module, only:  &
         pdf_parameter  ! Type
 
     use constants_clubb, only:  &
-        rr_tol,       & ! Constant(s)
+        one,          & ! Constant(s)
+        rr_tol,       &
         Nr_tol,       &
         Nc_tol,       &
         w_tol,        & ! [m/s]
@@ -576,10 +592,10 @@ module diagnose_correlations_module
       stdev_s_mellor &
         = sqrt( pdf_params(k)%mixt_frac &
                 * ( ( pdf_params(k)%s1 - s_mellor_m )**2 &
-                    + pdf_params(k)%stdev_s1**2 ) &
-              + ( 1 - pdf_params(k)%mixt_frac ) &
+                      + pdf_params(k)%stdev_s1**2 ) &
+              + ( one - pdf_params(k)%mixt_frac ) &
                 * ( ( pdf_params(k)%s2 - s_mellor_m )**2 &
-                    + pdf_params(k)%stdev_s2**2 ) )
+                      + pdf_params(k)%stdev_s2**2 ) )
 
       corr_sw(k) = calc_w_corr( wpsp_zt(k), stdev_w(k), stdev_s_mellor, w_tol, s_mellor_tol )
       corr_wrr(k) = calc_w_corr( wprrp_zt(k), stdev_w(k), sigma_rr_1, w_tol, rr_tol )
