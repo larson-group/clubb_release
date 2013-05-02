@@ -3791,17 +3791,20 @@ module clubb_driver
 #ifdef LATIN_HYPERCUBE
     !The algorithm for diagnosing the correlations only works with the KK microphysics by now. 
     !<Changes by janhft 02/19/13>
-    if ( l_diagnose_correlations .and. ( (micro_scheme /= "khairoutdinov_kogan") &
-         .and. (LH_microphys_type == LH_microphys_disabled) ) ) then
-       write(fstderr,*) "Error: The diagnose_corr algorithm only works for KK microphysics by now."
+    if ( l_diagnose_correlations &
+         .and. ( ( trim( micro_scheme ) /= "khairoutdinov_kogan" ) &
+         .and. ( LH_microphys_type == LH_microphys_disabled ) ) ) then
+       write(fstderr,*) "Error: The diagnose_corr algorithm only works " &
+                        // "for KK microphysics by now."
        stop
-    end if  
+    endif  
 
     if ( ( .not. l_local_kk) .and. &
          ( LH_microphys_type == LH_microphys_interactive ) ) then
-      write(fstderr,*) "Error:  KK upscaled microphysics (l_upscaled = .true.) and " 
-      write(fstderr,*) "interactive Latin Hypercube (LH_microphys_type = interactive) " 
-      write(fstderr,*) "are incompatible."
+       write(fstderr,*) "Error:  KK upscaled microphysics " &
+                        // "(l_upscaled = .true.) and interactive Latin " &
+                        // "Hypercube (LH_microphys_type = interactive) " &
+                        // "are not allowed together."
       stop
     endif
 
