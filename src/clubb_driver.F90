@@ -3799,9 +3799,10 @@ module clubb_driver
 
     if ( ( .not. l_local_kk) .and. &
          ( LH_microphys_type == LH_microphys_interactive ) ) then
-       stop "Error:  KK upscaled microphysics (l_upscaled = .true.) and " &
-            //"interactive Latin Hypercube (LH_microphys_type = interactive) " &
-            //"are not allowed together."
+      write(fstderr,*) "Error:  KK upscaled microphysics (l_upscaled = .true.) and " 
+      write(fstderr,*) "interactive Latin Hypercube (LH_microphys_type = interactive) " 
+      write(fstderr,*) "are incompatible."
+      stop
     endif
 
     !----------------------------------------------------------------
