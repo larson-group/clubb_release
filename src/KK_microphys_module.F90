@@ -15,7 +15,6 @@ module KK_microphys_module
              component_means_rain, &
              precip_fraction, &
              KK_tendency_coefs, &
-             KK_upscaled_means_driver, &
              KK_upscaled_covar_driver, &
              KK_microphys_adjust, &
              KK_upscaled_stats, &
@@ -382,6 +381,9 @@ module KK_microphys_module
     use parameters_microphys, only: &
         l_var_covar_src,     & ! Flag for using variance/covariance src terms
         l_const_Nc_in_cloud    ! Flag to use a const. value of N_c within cloud
+
+    use KK_upscaled_means, only: &
+        KK_upscaled_means_driver ! Procedure(s)
 
     use KK_Nrm_tendencies, only: &
         KK_Nrm_evap_upscaled_mean, & ! Procedure(s)
@@ -815,10 +817,13 @@ module KK_microphys_module
 
       !!! Calculate the values of the upscaled KK microphysics tendencies.
       call KK_upscaled_means_driver( rrainm(k), Nrm(k), Ncm(k), &
-                                     mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
-                                     mu_Nr_1, mu_Nr_2, mu_Nr_1_n, &
+                                     mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
+                                     mu_Nr_1, mu_Nr_2, mu_Nc_1, mu_Nc_2, &
+                                     mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
                                      mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
                                      sigma_s_1, sigma_s_2, &
+                                     sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                     sigma_Nr_2, sigma_Nc_1, sigma_Nc_2, &
                                      sigma_rr_1_n, sigma_rr_2_n, &
                                      sigma_Nr_1_n, sigma_Nr_2_n, &
                                      sigma_Nc_1_n, sigma_Nc_2_n, &
@@ -850,8 +855,9 @@ module KK_microphys_module
 
         call KK_upscaled_covar_driver( wm_zt(k), exner(k), rcm(k),  &
                                        rrainm(k), Nrm(k), Ncm(k), &
-                                       mu_s_1, mu_s_2, mu_rr_1_n, mu_Nr_1_n, &
-                                       mu_Nc_1_n, sigma_s_1, sigma_s_2, &
+                                       mu_s_1, mu_s_2, mu_rr_1, mu_Nc_1, &
+                                       mu_rr_1_n, mu_Nr_1_n, mu_Nc_1_n, sigma_s_1, &
+                                       sigma_s_2, sigma_rr_1, sigma_Nc_1,  &
                                        sigma_rr_1_n, sigma_Nr_1_n, sigma_Nc_1_n, &
                                        corr_srr_1_n, corr_srr_2_n, &
                                        corr_sNr_1_n, corr_sNr_2_n, &
@@ -1842,9 +1848,15 @@ module KK_microphys_module
              ! Rain within both PDF components.
 
              !!! Find precipitation fraction within PDF component 1.
-             precip_frac_1(k) &
-             = precip_frac(k) &
-               / ( mixt_frac(k) + ( one - mixt_frac(k) ) * rr2(k)/rr1(k) )
+             if ( rr1(k) > rr_tol ) then
+                precip_frac_1(k) &
+                = precip_frac(k) &
+                  / ( mixt_frac(k) + ( one - mixt_frac(k) ) * rr2(k)/rr1(k) )
+             else ! Nr1 > Nr_tol
+                precip_frac_1(k) &
+                = precip_frac(k) &
+                  / ( mixt_frac(k) + ( one - mixt_frac(k) ) * Nr2(k)/Nr1(k) )
+             endif
 
              ! Using the above method, it is possible for precip_frac_1 to be
              ! greater than 1.  The value of precip_frac_1 is limited at 1.
@@ -3047,179 +3059,11 @@ module KK_microphys_module
   end subroutine KK_upscaled_setup
 
   !=============================================================================
-  subroutine KK_upscaled_means_driver( rrainm, Nrm, Ncm, &
-                                       mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
-                                       mu_Nr_1, mu_Nr_2, mu_Nr_1_n, &
-                                       mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
-                                       sigma_s_1, sigma_s_2, &
-                                       sigma_rr_1_n, sigma_rr_2_n, &
-                                       sigma_Nr_1_n, sigma_Nr_2_n, &
-                                       sigma_Nc_1_n, sigma_Nc_2_n, &
-                                       corr_srr_1_n, corr_srr_2_n, &
-                                       corr_sNr_1_n, corr_sNr_2_n, &
-                                       corr_sNc_1_n, corr_sNc_2_n, &
-                                       corr_rrNr_1_n, corr_rrNr_2_n, &
-                                       mixt_frac, precip_frac_1, &
-                                       precip_frac_2, Nc0_in_cloud, &
-                                       l_const_Nc_in_cloud, &
-                                       KK_evap_coef, KK_auto_coef, &
-                                       KK_accr_coef, KK_mvr_coef, &
-                                       KK_evap_tndcy, KK_auto_tndcy, &
-                                       KK_accr_tndcy, KK_mean_vol_rad )
-
-    ! Description:
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only:  &
-        rr_tol, & ! Constant(s)
-        Nr_tol, & 
-        Nc_tol, &
-        zero
-
-    use KK_upscaled_means, only: & 
-        KK_evap_upscaled_mean, & ! Procedure(s)
-        KK_auto_upscaled_mean, &
-        KK_accr_upscaled_mean, &
-        KK_mvr_upscaled_mean
-
-    use clubb_precision, only: &
-        core_rknd  ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      rrainm, & ! Mean rain water mixing ratio        [kg/kg]
-      Nrm,    & ! Mean rain drop concentration        [num/kg]
-      Ncm       ! Mean cloud droplet concentration    [num/kg]
-
-    real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF comp.) in-precip (ip)[ln(kg/kg)]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF comp.) ip            [ln(kg/kg)]
-      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
-      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
-      mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)          [ln(num/kg)]
-      mu_Nc_2_n,     & ! Mean of ln Nc (2nd PDF component)          [ln(num/kg)]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
-      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
-      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-      sigma_Nc_1_n,  & ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
-      sigma_Nc_2_n,  & ! Standard dev. of ln Nc (2nd PDF comp.)     [ln(num/kg)]
-      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF comp.) ip  [-]
-      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF comp.) ip  [-]
-      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-      corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
-      mixt_frac,     & ! Mixture fraction                                    [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
-      precip_frac_2, & ! Precipitation fraction (2nd PDF component)          [-]
-      Nc0_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
-
-    logical, intent(in) :: &
-      l_const_Nc_in_cloud  ! Flag to use a constant value of N_c within cloud
-
-    real( kind = core_rknd ), intent(in) :: &
-      KK_evap_coef, & ! KK evaporation coefficient          [(kg/kg)/s]
-      KK_auto_coef, & ! KK autoconversion coefficient       [(kg/kg)/s]
-      KK_accr_coef, & ! KK accretion coefficient            [(kg/kg)/s]
-      KK_mvr_coef     ! KK mean volume radius coefficient   [m]
-
-    ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
-      KK_evap_tndcy,   & ! KK evaporation tendency          [(kg/kg)/s]
-      KK_auto_tndcy,   & ! KK autoconversion tendency       [(kg/kg)/s]
-      KK_accr_tndcy,   & ! KK accretion tendency            [(kg/kg)/s]
-      KK_mean_vol_rad    ! KK rain drop mean volume radius  [m]
-
-
-    !!! Calculate the upscaled KK evaporation tendency.
-    if ( rrainm > rr_tol .and. Nrm > Nr_tol ) then
-
-       KK_evap_tndcy  &
-       = KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
-                                mu_Nr_1_n, mu_Nr_2_n, sigma_s_1, &
-                                sigma_s_2, sigma_rr_1_n, sigma_rr_2_n, &
-                                sigma_Nr_1_n, sigma_Nr_2_n, corr_srr_1_n, &
-                                corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
-                                corr_rrNr_1_n, corr_rrNr_2_n, KK_evap_coef, &
-                                mixt_frac, precip_frac_1, precip_frac_2 )
-
-    else  ! r_r or N_r = 0.
-
-       KK_evap_tndcy = zero
-
-    endif
-
-    !!! Calculate the upscaled KK autoconversion tendency.
-    if ( Ncm > Nc_tol ) then
-
-       KK_auto_tndcy  &
-       = KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_1_n, mu_Nc_2_n, &
-                                sigma_s_1, sigma_s_2, sigma_Nc_1_n, &
-                                sigma_Nc_2_n, corr_sNc_1_n, corr_sNc_2_n, &
-                                KK_auto_coef, mixt_frac, &
-                                Nc0_in_cloud, l_const_Nc_in_cloud )
-
-    else  ! N_c = 0.
-
-       KK_auto_tndcy = zero
-
-    endif
-
-    !!! Calculate the upscaled KK accretion tendency.
-    if ( rrainm > rr_tol ) then
-
-       KK_accr_tndcy  &
-       = KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
-                                sigma_s_1, sigma_s_2, sigma_rr_1_n, &
-                                sigma_rr_2_n, corr_srr_1_n, corr_srr_2_n, &
-                                KK_accr_coef, mixt_frac, precip_frac_1, &
-                                precip_frac_2 )
-
-    else  ! r_r = 0.
-
-       KK_accr_tndcy = zero
-
-    endif
-
-    !!! Calculate the upscaled KK rain drop mean volume radius.
-    if ( rrainm > rr_tol ) then
-
-       KK_mean_vol_rad &
-       = KK_mvr_upscaled_mean( mu_rr_1_n, mu_rr_2_n, mu_Nr_1, mu_Nr_2, &
-                               mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1_n, &
-                               sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
-                               corr_rrNr_1_n, corr_rrNr_2_n, KK_mvr_coef, &
-                               mixt_frac, precip_frac_1, precip_frac_2 )
-
-    else  ! r_r = 0.
-
-       KK_mean_vol_rad = zero
-
-    endif
-
-
-    return
-
-  end subroutine KK_upscaled_means_driver
-
-  !=============================================================================
   subroutine KK_upscaled_covar_driver( w_mean, exner, rcm, &
                                        rrainm, Nrm, Ncm, &
-                                       mu_s_1, mu_s_2, mu_rr_n, mu_Nr_n, &
-                                       mu_Nc_n, sigma_s_1, sigma_s_2, &
+                                       mu_s_1, mu_s_2, mu_rr, mu_Nc, &
+                                       mu_rr_n, mu_Nr_n, mu_Nc_n, sigma_s_1, &
+                                       sigma_s_2, sigma_rr, sigma_Nc,  &
                                        sigma_rr_n, sigma_Nr_n, sigma_Nc_n, &
                                        corr_srr_1_n, corr_srr_2_n, &
                                        corr_sNr_1_n, corr_sNr_2_n, &
@@ -3326,11 +3170,15 @@ module KK_microphys_module
     real( kind = core_rknd ), intent(in) :: &
       mu_s_1,       & ! Mean of s (1st PDF component)                    [kg/kg]
       mu_s_2,       & ! Mean of s (2nd PDF component)                    [kg/kg]
+      mu_rr,        & ! Mean of rr (both components)                     [kg/kg]
+      mu_Nc,        & ! Mean of Nc (both components)                    [num/kg]
       mu_rr_n,      & ! Mean of ln rr (both components)              [ln(kg/kg)]
       mu_Nr_n,      & ! Mean of ln Nr (both components)             [ln(num/kg)]
       mu_Nc_n,      & ! Mean of ln Nc (both components)             [ln(num/kg)]
       sigma_s_1,    & ! Standard deviation of s (1st PDF component)      [kg/kg]
       sigma_s_2,    & ! Standard deviation of s (2nd PDF component)      [kg/kg]
+      sigma_rr,     & ! Standard deviation of rr (both components)       [kg/kg]
+      sigma_Nc,     & ! Standard deviation of Nc (both components)      [num/kg]
       sigma_rr_n,   & ! Standard deviation of ln rr (both comps.)    [ln(kg/kg)]
       sigma_Nr_n,   & ! Standard deviation of ln Nr (both comps.)   [ln(num/kg)]
       sigma_Nc_n,   & ! Standard deviation of ln Nc (both comps.)   [ln(num/kg)]
@@ -3701,9 +3549,9 @@ module KK_microphys_module
     if ( Ncm > Nc_tol ) then
 
        rt_KK_auto_covar  &
-       = covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
+       = covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc, mu_Nc_n, &
                            sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                           sigma_Nc_n, corr_ts_1, corr_ts_2, &
+                           sigma_Nc, sigma_Nc_n, corr_ts_1, corr_ts_2, &
                            corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
                            corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
                            t_tol, crt1, crt2, mixt_frac, &
@@ -3720,9 +3568,9 @@ module KK_microphys_module
     if ( Ncm > Nc_tol ) then
 
        thl_KK_auto_covar  &
-       = covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_n, &
+       = covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc, mu_Nc_n, &
                             sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                            sigma_Nc_n, corr_ts_1, corr_ts_2, &
+                            sigma_Nc, sigma_Nc_n, corr_ts_1, corr_ts_2, &
                             corr_tNc_1_n, corr_tNc_2_n, corr_sNc_1_n, &
                             corr_sNc_2_n, KK_auto_tndcy, KK_auto_coef, &
                             t_tol, cthl1, cthl2, mixt_frac, &
@@ -3756,9 +3604,9 @@ module KK_microphys_module
     if ( rrainm > rr_tol ) then
 
        rt_KK_accr_covar  &
-       = covar_rt_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+       = covar_rt_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr, mu_rr_n, &
                            sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                           sigma_rr_n, corr_ts_1, corr_ts_2, &
+                           sigma_rr, sigma_rr_n, corr_ts_1, corr_ts_2, &
                            corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
                            corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
                            t_tol, crt1, crt2, mixt_frac, precip_frac )
@@ -3774,9 +3622,9 @@ module KK_microphys_module
     if ( rrainm > rr_tol ) then
 
        thl_KK_accr_covar  &
-       = covar_thl_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr_n, &
+       = covar_thl_KK_accr( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_rr, mu_rr_n, &
                             sigma_t_1, sigma_t_2, sigma_s_1, sigma_s_2, &
-                            sigma_rr_n, corr_ts_1, corr_ts_2, &
+                            sigma_rr, sigma_rr_n, corr_ts_1, corr_ts_2, &
                             corr_trr_1_n, corr_trr_2_n, corr_srr_1_n, &
                             corr_srr_2_n, KK_accr_tndcy, KK_accr_coef, &
                             t_tol, cthl1, cthl2, mixt_frac, precip_frac )

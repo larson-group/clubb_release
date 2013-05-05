@@ -842,14 +842,20 @@ subroutine mmicro_pcond ( sub_column,           &
    real( kind = core_rknd ) :: &
      mu_s_1,       & ! Mean of s (1st PDF component)                   [kg/kg]
      mu_s_2,       & ! Mean of s (2nd PDF component)                   [kg/kg]
+     mu_rr_1,      & ! Mean of r_r (1st PDF component) in-precip (ip)  [kg/kg]
+     mu_rr_2,      & ! Mean of r_r (2nd PDF component) ip              [kg/kg]
+     mu_Nc_1,      & ! Mean of N_c (1st PDF component)                [num/kg]
+     mu_Nc_2,      & ! Mean of N_c (2nd PDF component)                [num/kg]
      mu_rr_1_n,    & ! Mean of ln r_r (1st PDF component) in-precip (ip)   [-]
      mu_rr_2_n,    & ! Mean of ln r_r (2nd PDF component) ip               [-]
      mu_Nc_1_n,    & ! Mean of ln N_c (1st PDF component)                  [-]
      mu_Nc_2_n,    & ! Mean of ln N_c (2nd PDF component)                  [-]
      sigma_s_1,    & ! Standard deviation of s (1st PDF component)     [kg/kg]
      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-     sigma_rr_1,   & ! Standard deviation of r_r (1st PDF component) ip    [-]
-     sigma_rr_2,   & ! Standard deviation of r_r (2nd PDF component) ip    [-]
+     sigma_rr_1,   & ! Standard deviation of r_r (1st PDF comp.) ip    [kg/kg]
+     sigma_rr_2,   & ! Standard deviation of r_r (2nd PDF comp.) ip    [kg/kg]
+     sigma_Nc_1,   & ! Standard deviation of N_c (1st PDF comp.)      [num/kg]
+     sigma_Nc_2,   & ! Standard deviation of N_c (2nd PDF comp.)      [num/kg]
      sigma_rr_1_n, & ! Standard deviation of ln r_r (1st PDF component) ip [-]
      sigma_rr_2_n, & ! Standard deviation of ln r_r (2nd PDF component) ip [-]
      sigma_Nc_1_n, & ! Standard deviation of ln N_c (1st PDF component)    [-]
@@ -1742,20 +1748,20 @@ subroutine mmicro_pcond ( sub_column,           &
                                          pdf_params(k), &
                                          dum_inout1, dum_inout2, dum_inout3, & ! Intent(inout)
                                          dum_inout4, dum_inout5, dum_inout6, &
-                                         mu_s_1, mu_s_2, dum_out1, dum_out2, & ! Intent(out)
-                                         dum_out3, dum_out4, dum_out5, &
-                                         dum_out6, mu_Nc_1_n, mu_Nc_2_n, &
+                                         mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & ! Intent(out)
+                                         dum_out1, dum_out2, dum_out3, &
+                                         dum_out4, mu_Nc_1_n, mu_Nc_2_n, &
                                          sigma_s_1, sigma_s_2, &
+                                         sigma_Nc_1, sigma_Nc_2, &
+                                         dum_out5, dum_out6, &
                                          dum_out7, dum_out8, &
+                                         sigma_Nc_1_n, sigma_Nc_2_n, &
                                          dum_out9, dum_out10, &
                                          dum_out11, dum_out12, &
-                                         sigma_Nc_1_n, sigma_Nc_2_n, &
                                          dum_out13, dum_out14, &
-                                         dum_out15, dum_out16, &
-                                         dum_out17, dum_out18, &
                                          corr_sNc_1_n, corr_sNc_2_n, &
-                                         dum_out19, dum_out20, &
-                                         dum_out21, dum_out22, dum_out23, dum_out24 )
+                                         dum_out15, dum_out16, &
+                                         dum_out17, dum_out18, dum_out19, dum_out20 )
 
                  KK_auto_coef &
                  = 1350.0_core_rknd &
@@ -1766,10 +1772,11 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! autoconversion rate.  Divide the result by cloud fraction
                  ! (lcldm) to find the mean in-cloud rate.
                  prc(k) = real( &
-                 KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_1_n, mu_Nc_2_n, &
-                                        sigma_s_1, sigma_s_2, sigma_Nc_1_n, &
-                                        sigma_Nc_2_n, corr_sNc_1_n, corr_sNc_2_n, &
-                                        KK_auto_coef, mixt_frac, &
+                 KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
+                                        mu_Nc_1_n, mu_Nc_2_n, sigma_s_1, &
+                                        sigma_s_2, sigma_Nc_1, sigma_Nc_2, &
+                                        sigma_Nc_1_n, sigma_Nc_2_n, corr_sNc_1_n, &
+                                        corr_sNc_2_n, KK_auto_coef, mixt_frac, &
                                         real( ncic(i,k), kind = core_rknd ), &
                                         l_const_Nc_in_cloud ), &
                           kind = r8 ) / lcldm(i,k)
@@ -2260,10 +2267,11 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! accretion rate.  Divide the result by cloud fraction (lcldm)
                  ! to find the mean in-cloud rate.
                  pra(k) = real( &
-                 KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
-                                        sigma_s_1, sigma_s_2, sigma_rr_1_n, &
-                                        sigma_rr_2_n, corr_srr_1_n, corr_srr_2_n, &
-                                        KK_accr_coef, mixt_frac, &
+                 KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
+                                        mu_rr_1_n, mu_rr_2_n, sigma_s_1, &
+                                        sigma_s_2, sigma_rr_1, sigma_rr_2, &
+                                        sigma_rr_1_n, sigma_rr_2_n, corr_srr_1_n, &
+                                        corr_srr_2_n, KK_accr_coef, mixt_frac, &
                                         real( cldmax(i,k), kind = core_rknd ), &
                                         real( cldmax(i,k), kind = core_rknd ) ), &
                           kind = r8 ) / lcldm(i,k)

@@ -1407,17 +1407,31 @@ module microphys_driver
     select case ( trim( micro_scheme ) )
 
     case ( "coamps", "morrison", "morrison_gettelman", "khairoutdinov_kogan" )
-      if ( l_predictnc ) then
-        Ncm = hydromet(:,iiNcm)
-      else ! Compute the fixed value by multiplying by cloud fraction
-        where ( rcm >= rc_tol )
-          Ncm = cloud_frac * ( Ncm_initial / rho ) ! Convert to #/kg air
-        else where
-          Ncm = zero
-        end where
-        Ncm_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
 
-      end if
+       if ( l_predictnc ) then
+
+          Ncm = hydromet(:,iiNcm)
+
+       else ! Compute the fixed value by multiplying by cloud fraction
+
+          if ( .not. l_const_Nc_in_cloud ) then
+             where ( rcm >= rc_tol )
+                Ncm = cloud_frac * ( Ncm_initial / rho ) ! Convert to #/kg air
+             else where
+                Ncm = zero
+             end where
+
+             Ncm_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
+
+          else  ! Constant, specified value of Nc within cloud
+
+             Ncm_in_cloud = Ncm_initial / rho ! Convert to #/kg air.
+
+             Ncm = cloud_frac * ( Ncm_initial / rho ) ! Convert to #/kg air
+
+          endif
+
+      endif
 
     case default
 
