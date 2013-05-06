@@ -49,7 +49,7 @@ my $matlabPipe;
 my $imageConversionLock;
 
 # Plotgen Version Number
-my $VERSION = 3.41;
+my $VERSION = 3.110;
 
 # Used to create a "random" output directory so multiple runs
 # don't overwrite each other.
@@ -82,8 +82,12 @@ my $plotgenMode = "plotgen";
 my $dataFileType = "grads";
 
 # Flag for if budget plots should be plotted (Default: false)
+# Set by -bu
 my $plotBudgets = 0;
 
+# Flag for if Morrison budget plots should be plotted (Default: false)
+# Set by -bumorr
+my $plotMorrBudgets = 0;
 # Specifies to overwrite a directory (Default: false)
 my $overwrite = 0;
 my @inputDirs;
@@ -409,7 +413,7 @@ sub runCases()
             if($runCase eq 'true' && dataExists($CASE::CASE) && ($CASE::CASE{'enabled'} ne 'false'))
             {
                 push(@casesExecuted, $CASE::CASE{'name'});
-		if( ($CASE::CASE{'type'} eq "budget" && $plotBudgets == 1) || ($CASE::CASE{'type'} ne "budget") )
+		if( ($CASE::CASE{'type'} eq "budget" && $plotBudgets == 1) || ($CASE::CASE{'type'} eq "morrbudget" && $plotMorrBudgets == 1) || ($CASE::CASE{'type'} eq "standard") )
 		{
 		        # Print the case title to the HTML page
 		        OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
@@ -451,7 +455,7 @@ sub runCases()
 		        }
                 }
                 # Check to see if this is a budget plot or standard plot
-                if($CASE::CASE{'type'} eq "budget" && $plotBudgets)
+                if($CASE::CASE{'type'} eq "budget" && $plotBudgets || $CASE::CASE{'type'} eq "morrbudget" && $plotMorrBudgets)
                 {
                     #buildMatlabStringBudget($CASE::CASE, $count);
                     
@@ -712,6 +716,7 @@ sub buildMatlabStringStd()
     my $nightlyCaseFile = shift(@_);
 
     $plotCount = 0;
+    my $bool = 0;
     
     # Get Common Case information
     my $caseName;
@@ -747,6 +752,7 @@ sub buildMatlabStringStd()
         my $plotTitle = $plots[$count]{'plotTitle'};
         my $units = $plots[$count]{'axisLabel'};
         my $type = $plots[$count]{'type'};
+
 
         # Check to see if start and end time was specified for the specific plot. This is usually done for timeseries plots. If it isn't
         # use case defined times.
@@ -1132,6 +1138,7 @@ sub readArgs()
     case 'cam' { $plotgenMode = "camgen"; }
     case 'gfdl' { $plotgenMode = "gfdlgen"; }
     case 'bu' {$plotBudgets = 1; }
+    case 'bumorr' {$plotMorrBudgets = 1; }
     case 'h' { main::HELP_MESSAGE(); } #Prints help message
     else { main::HELP_MESSAGE(); }
     }
@@ -1263,7 +1270,8 @@ sub main::HELP_MESSAGE()
     print("  -thin\tUses thin solid lines\n");
     print("  -nolegend\tPlot without legends\n");
     print("  -ensemble\tUsed for plotting ensemble tuner runs\n");
-    print("  -bu\tUsed to plot budget plots\n");
+    print("  -bu\tUsed to plot standard budget plots\n");
+    print("  -bumorr\tUsed to plot Morrison budget plots\n");
     print("  -h\tPrints this help message.\n");
     print("Each option must be seperate, eg -r -a not -ra\n");
     exit(0);
@@ -1276,5 +1284,5 @@ sub main::HELP_MESSAGE()
 ###############################################################################
 sub main::VERSION_MESSAGE()
 {
-    print("Plotgen version $VERSION, Copyright (C) 2012 Larson Group.\n");
+    print("Plotgen version $VERSION, Copyright (C) 2013 Larson Group.\n");
 }

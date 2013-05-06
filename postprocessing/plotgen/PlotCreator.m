@@ -39,7 +39,7 @@ numLines = optargin / argsPerLine;
 %Create a blank plot of the proper type so we have somewhere to draw lines
 fig_height = 220;
 fig_width = 250;
-if strcmp(caseType, 'budget')
+if strcmp(caseType, 'budget') || strcmp(caseType, 'morrbudget')
 	fig_height = 440;
 	fig_width = 500;
 end
@@ -65,7 +65,7 @@ for i=1:numLines
 	varExpression = varargin{2 + ((i - 1) * argsPerLine)};
 
 	lineName = ['\fontsize{6}', varargin{3 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
-	if strcmp(caseType, 'budget')
+	if strcmp(caseType, 'budget') || strcmp(caseType, 'morrbudget')
 		lineName = ['\fontsize{10}', varargin{3 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
 	end
 	lineWidth = varargin{4 + ((i - 1) * argsPerLine)};
@@ -179,7 +179,7 @@ end
 if strcmp(plotType, 'profile')
 	minVal = min(minVals);
 	maxVal = max(maxVals);
-	if strcmp(caseType, 'budget')
+	if strcmp(caseType, 'budget') || strcmp(caseType, 'morrbudget')
 		if(abs(minVal) > abs(maxVal) && minVal < 0)
 			maxVal = minVal * -1;
 		elseif(abs(maxVal) > abs(minVal) && maxVal > 0)
@@ -191,7 +191,7 @@ if strcmp(plotType, 'profile')
 		ProfileFunctions.setTitle(plotTitle);
 		ProfileFunctions.setAxisLabels(plotUnits, 'Height [m]');
 		ProfileFunctions.setAxis(minVal, maxVal, startHeight, endHeight); 
-	elseif strcmp(caseType, 'budget')
+	elseif strcmp(caseType, 'budget') || strcmp(caseType, 'morrbudget')
 		ProfileFunctions.setTitleWithSize(plotTitle, budgetFontSize);
 		ProfileFunctions.setAxisLabelsWithSize(plotUnits, 'Height [m]', budgetFontSize); 
 		ProfileFunctions.setAxisWithSize(minVal, maxVal, startHeight, endHeight, budgetFontSize);
