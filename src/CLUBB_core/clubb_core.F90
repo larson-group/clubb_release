@@ -116,7 +116,8 @@ module clubb_core
       c_K, &
       mu, &
       Lscale_mu_coef, &
-      Lscale_pert_coef
+      Lscale_pert_coef, &
+      c_K10
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
@@ -481,6 +482,9 @@ module clubb_core
       khzt, &       ! eddy diffusivity on thermo levels
       khzm          ! eddy diffusivity on momentum levels
 #endif
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Km_zm
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
@@ -1711,9 +1715,11 @@ module clubb_core
       ! Advance the horizontal mean of the wind in the x-y directions
       ! (i.e. um, vm) and the mean of the eddy-diffusivity scalars
       ! (i.e. edsclrm) by one time step
-      !----------------------------------------------------------------
+      !----------------------------------------------------------------i
 
-      call advance_windm_edsclrm( dt, wm_zt, Kh_zm, ug, vg, um_ref, vm_ref, & ! Intent(in)
+      Km_zm = Kh_zm * c_K10
+
+      call advance_windm_edsclrm( dt, wm_zt, Km_zm, ug, vg, um_ref, vm_ref, & ! Intent(in)
                                   wp2, up2, vp2, um_forcing, vm_forcing,    & ! Intent(in)
                                   edsclrm_forcing,                          & ! Intent(in)
                                   rho_ds_zm, invrs_rho_ds_zt,               & ! Intent(in)
