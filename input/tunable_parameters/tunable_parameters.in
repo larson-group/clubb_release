@@ -67,5 +67,6 @@ mu          = 1.000E-3 ! Constant Parcel Entrainment Rate (Lscale) Units [1/m]
 Lscale_mu_coef = 2.0   ! Coefficient to perturb mu for an average calculation of Lscale Units [-]
 Lscale_pert_coef = 0.1 ! Coefficient to perturb thlm and rtm for an average calculation of Lscale. Units [-]
 alpha_corr = 0.15      ! Coefficient for the correlation diagnosis algorithm. Units [-]
-Skw_denom_coef = 4.0   ! Factor to decrease sensitivity in the denominator of Skw calculation
+Skw_denom_coef = 4.0   ! Factor to decrease sensitivity in the denominator of Skw calculation. Units [-]
+c_K10 = 0.5            ! Coefficient of Kh_zm. Units [-]
 /
