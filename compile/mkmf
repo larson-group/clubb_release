@@ -247,7 +247,7 @@ foreach $target ( @targets ) {
                      $source_of{$object} = $actual_source_of{$object} unless $source_of{$object};
                      $scanned{$path} = $scanOrder++ unless $scanned{$path};
 #command for this file is all of line except the filename
-                     $line =~ /\s+$file/; $line=$`;
+                     $line =~ /\s+\Q$file\E/; $line=$`;
                      if ( $line ) {
                         $compile_cmd{"$name$suffix"} = $line;
                         print "Special command for file $name$suffix: ($line)\n" if $opt_v;
