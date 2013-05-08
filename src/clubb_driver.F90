@@ -3453,7 +3453,7 @@ module clubb_driver
       call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), & ! Intent(in)
                               thlm(2), ubar,                    & ! Intent(in)
                               wpthlp_sfc, wprtp_sfc, ustar) ! Intent(out)
-    case ( "arm_97" )
+    case ( "arm_97", "mc3e" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
