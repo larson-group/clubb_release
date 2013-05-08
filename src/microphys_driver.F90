@@ -2497,7 +2497,6 @@ module microphys_driver
       ihmm_ts = 0
     end select
 
-
     ! Solve system using tridag_solve. This uses LAPACK sgtsv,
     ! which relies on Gaussian elimination to decompose the matrix.
     call tridag_solve( solve_type, gr%nz, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
@@ -3051,6 +3050,15 @@ module microphys_driver
         zt, &
         l_stats_samp
 
+    use stats_variables, only: &
+        iNim_ta, &
+        iNsnowm_ta, &
+        iNgraupelm_ta, &
+        iNcm_ta, &
+        iricem_ta, &
+        irsnowm_ta, &
+        irgraupelm_ta
+
     use stats_type, only: &
         stat_begin_update_pt ! Procedure(s)
 
@@ -3105,6 +3113,27 @@ module microphys_driver
     case ( "Nrm" )
       ihmm_ta = iNrm_ta
       ihmm_ts = iNrm_ts
+    case( "ricem" )
+      ihmm_ta = iricem_ta
+      ihmm_ts = 0
+    case( "rsnowm" )
+      ihmm_ta = irsnowm_ta
+      ihmm_ts = 0
+    case( "rgraupelm" )
+      ihmm_ta = irgraupelm_ta
+      ihmm_ts = 0
+    case( "Ncm" )
+      ihmm_ta = iNcm_ta
+      ihmm_ts = 0
+    case( "Nim" )
+      ihmm_ta = iNim_ta
+      ihmm_ts = 0
+    case( "Nsnowm" )
+      ihmm_ta = iNsnowm_ta
+      ihmm_ts = 0
+    case( "Ngraupelm" )
+      ihmm_ta = iNgraupelm_ta
+      ihmm_ts = 0
     case default
       ihmm_ta = 0
       ihmm_ts = 0
