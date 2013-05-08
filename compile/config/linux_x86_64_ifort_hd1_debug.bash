@@ -15,7 +15,7 @@ libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
 # == Debugging ==
-DEBUG="-g -traceback -check bounds -check uninit" # -check all -fpe-all=0
+DEBUG="-g -traceback -check bounds -check uninit -ftrapuv" # -check all -fpe-all=0
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"

@@ -17,7 +17,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 
 # == Debug ==
 DEBUG=""
-#DEBUG="-debug full -traceback -check bounds -check uninit -fpe0 -ftz"
+#DEBUG="-debug full -traceback -check bounds -check uninit -fpe0 -ftz -ftrapuv"
 
 # == Warnings ==
 WARNINGS="-warn -warn notruncated_source"
