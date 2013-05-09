@@ -3801,6 +3801,7 @@ module clubb_driver
     endif  
 
     if ( ( .not. l_local_kk) .and. &
+         ( trim( micro_scheme ) /= "khairoutdinov_kogan" ) .and. &
          ( LH_microphys_type == LH_microphys_interactive ) ) then
        write(fstderr,*) "Error:  KK upscaled microphysics " &
                         // "(l_local_kk = .false.) and interactive Latin " &
