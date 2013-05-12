@@ -13,14 +13,16 @@ module KK_Nrm_tendencies
   contains
 
   !=============================================================================
-  function KK_Nrm_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1_n, mu_rr_2_n, &
+  function KK_Nrm_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
+                                      mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, &
                                       mu_Nr_1_n, mu_Nr_2_n, sigma_s_1, &
-                                      sigma_s_2, sigma_rr_1_n, sigma_rr_2_n, &
-                                      sigma_Nr_1_n, sigma_Nr_2_n, &
-                                      corr_srr_1_n, corr_srr_2_n, &
-                                      corr_sNr_1_n, corr_sNr_2_n, &
-                                      corr_rrNr_1_n, corr_rrNr_2_n, &
-                                      KK_evap_coef, mixt_frac, &
+                                      sigma_s_2, sigma_rr_1, sigma_rr_2, &
+                                      sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
+                                      sigma_rr_2_n, sigma_Nr_1_n, &
+                                      sigma_Nr_2_n, corr_srr_1_n, &
+                                      corr_srr_2_n, corr_sNr_1_n, &
+                                      corr_sNr_2_n, corr_rrNr_1_n, &
+                                      corr_rrNr_2_n, KK_evap_coef, mixt_frac, &
                                       precip_frac_1, precip_frac_2, dt )
 
     ! Description:
@@ -117,14 +119,22 @@ module KK_Nrm_tendencies
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) in-precip (ip)    [-]
+      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
+      mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
+      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
+      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip                [-]
       mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
       mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip                [-]
       mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip                [-]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
+      sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
+      sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF component) ip  [#/kg]
+      sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF component) ip  [#/kg]
       sigma_rr_1_n,  & ! Standard deviation of ln rr (1st PDF component) ip  [-]
       sigma_rr_2_n,  & ! Standard deviation of ln rr (2nd PDF component) ip  [-]
       sigma_Nr_1_n,  & ! Standard deviation of ln Nr (1st PDF component) ip  [-]
@@ -165,14 +175,16 @@ module KK_Nrm_tendencies
       * KK_evap_coef**KK_Nrm_evap_nu &
       * ( mixt_frac &
           * precip_frac_1 &
-          * trivar_NLL_mean_eq( mu_s_1, mu_rr_1_n, mu_Nr_1_n, &
-                                sigma_s_1, sigma_rr_1_n, sigma_Nr_1_n, &
+          * trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
+                                mu_Nr_1_n, sigma_s_1, sigma_rr_1, &
+                                sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
                                 corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         + ( one - mixt_frac ) &
           * precip_frac_2 &
-          * trivar_NLL_mean_eq( mu_s_2, mu_rr_2_n, mu_Nr_2_n, &
-                                sigma_s_2, sigma_rr_2_n, sigma_Nr_2_n, &
+          * trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
+                                mu_Nr_2_n, sigma_s_2, sigma_rr_2, &
+                                sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
                                 corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         )
