@@ -619,8 +619,9 @@ module KK_utilities
   end function calc_corr_sx
 
   !=============================================================================
-  pure function calc_xp2( mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, &
-                          mixt_frac, x_frac_1, x_frac_2, x_mean )  &
+  pure function calc_xp2( mu_x_1, mu_x_2, mu_x_1_n, mu_x_2_n, sigma_x_1, &
+                          sigma_x_2, sigma_x_1_n, sigma_x_2_n, mixt_frac, &
+                          x_frac_1, x_frac_2, x_mean, x_tol )  &
   result( xp2 )
 
     ! Description:
@@ -654,14 +655,19 @@ module KK_utilities
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
+      mu_x_1,      & ! Mean of x (1st PDF comp.) in x_frac                  [-]
+      mu_x_2,      & ! Mean of x (2nd PDF comp.) in x_frac                  [-]
       mu_x_1_n,    & ! Mean of ln x (1st PDF comp.) in x_frac               [-]
       mu_x_2_n,    & ! Mean of ln x (2nd PDF comp.) in x_frac               [-]
+      sigma_x_1,   & ! Standard deviation of x (1st PDF comp.) in x_frac    [-]
+      sigma_x_2,   & ! Standard deviation of x (2nd PDF comp.) in x_frac    [-]
       sigma_x_1_n, & ! Standard deviation of ln x (1st PDF comp.) in x_frac [-]
       sigma_x_2_n, & ! Standard deviation of ln x (2nd PDF comp.) in x_frac [-]
       mixt_frac,   & ! Mixture fraction                                     [-]
       x_frac_1,    & ! Fraction: x distributed lognormally (1st PDF comp.)  [-]
       x_frac_2,    & ! Fraction: x distributed lognormally (2nd PDF comp.)  [-]
-      x_mean         ! Overall mean value of x                              [-]
+      x_mean,      & ! Overall mean value of x                              [-]
+      x_tol          ! Tolerance value of x                                 [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -669,11 +675,47 @@ module KK_utilities
 
 
     ! Calculate overall variance of x, <x'^2>.
-    xp2 = ( mixt_frac * x_frac_1 &
-            * exp( two * mu_x_1_n + two * sigma_x_1_n**2 ) &
-          + ( one - mixt_frac ) * x_frac_2 &
-            * exp( two * mu_x_2_n + two * sigma_x_2_n**2 ) ) &
-          - x_mean**2
+    if ( sigma_x_1 <= x_tol .and. sigma_x_2 <= x_tol ) then
+
+       ! The value of x is constant within both PDF components.
+       xp2 = ( mixt_frac * x_frac_1 * mu_x_1**2 &
+             + ( one - mixt_frac ) * x_frac_2 * mu_x_2**2 &
+             ) &
+             - x_mean**2
+
+
+    elseif ( sigma_x_1 <= x_tol ) then
+
+       ! The value of x is constant within the 1st PDF component.
+       xp2 = ( mixt_frac * x_frac_1 * mu_x_1**2 &
+             + ( one - mixt_frac ) * x_frac_2 &
+               * exp( two * mu_x_2_n + two * sigma_x_2_n**2 ) &
+             ) &
+             - x_mean**2
+
+
+    elseif ( sigma_x_2 <= x_tol ) then
+
+       ! The value of x is constant within the 2nd PDF component.
+       xp2 = ( mixt_frac * x_frac_1 &
+               * exp( two * mu_x_1_n + two * sigma_x_1_n**2 ) &
+             + ( one - mixt_frac ) * x_frac_2 * mu_x_2**2 &
+             ) &
+             - x_mean**2
+
+
+    else  ! sigma_x_1 and sigma_x_2 > 0
+
+       ! The value of x varies within both PDF component.
+       xp2 = ( mixt_frac * x_frac_1 &
+               * exp( two * mu_x_1_n + two * sigma_x_1_n**2 ) &
+             + ( one - mixt_frac ) * x_frac_2 &
+               * exp( two * mu_x_2_n + two * sigma_x_2_n**2 ) &
+             ) &
+             - x_mean**2
+
+
+    endif
 
 
     return

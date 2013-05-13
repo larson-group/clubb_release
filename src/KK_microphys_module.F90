@@ -2446,8 +2446,7 @@ module KK_microphys_module
         pdf_parameter  ! Variable(s) type
 
     use parameters_microphys, only: &
-        Ncp2_on_Ncm2_cloud, & ! Variable(s)
-        Ncp2_on_Ncm2_below
+        Ncp2_on_Ncm2_cloud  ! Variable(s)
 
     use KK_fixed_correlations, only: &
         corr_wrr_NL_cloud,  & ! Variable(s) 
@@ -2618,11 +2617,7 @@ module KK_microphys_module
 
     ! Standard deviation of cloud droplet concentration in PDF component 1.
     if ( Ncm > Nc_tol ) then
-       if ( rcm > rc_tol ) then
-          sigma_Nc_1 = sqrt( Ncp2_on_Ncm2_cloud ) * mu_Nc_1
-       else
-          sigma_Nc_1 = sqrt( Ncp2_on_Ncm2_below ) * mu_Nc_1
-       endif
+       sigma_Nc_1 = sqrt( Ncp2_on_Ncm2_cloud ) * mu_Nc_1
     else
        ! Mean cloud droplet concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There is not any cloud at this
@@ -2633,11 +2628,7 @@ module KK_microphys_module
 
     ! Standard deviation of cloud droplet concentration in PDF component 2.
     if ( Ncm > Nc_tol ) then
-       if ( rcm > rc_tol ) then
-          sigma_Nc_2 = sqrt( Ncp2_on_Ncm2_cloud ) * mu_Nc_2
-       else
-          sigma_Nc_2 = sqrt( Ncp2_on_Ncm2_below ) * mu_Nc_2
-       endif
+       sigma_Nc_2 = sqrt( Ncp2_on_Ncm2_cloud ) * mu_Nc_2
     else
        ! Mean cloud droplet concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There is not any cloud at this
@@ -2648,11 +2639,7 @@ module KK_microphys_module
 
     ! Correlation between s and N_c in PDF component 1.
     if ( Ncm > Nc_tol ) then
-       if ( rcm > rc_tol ) then
-          corr_sNc_1 = corr_sNc_NL_cloud
-       else
-          corr_sNc_1 = corr_sNc_NL_below
-       endif
+       corr_sNc_1 = corr_sNc_NL_cloud
     else
        ! Mean cloud droplet concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There is not any cloud at this
@@ -2664,11 +2651,7 @@ module KK_microphys_module
 
     ! Correlation between s and N_c in PDF component 2.
     if ( Ncm > Nc_tol ) then
-       if ( rcm > rc_tol ) then
-          corr_sNc_2 = corr_sNc_NL_cloud
-       else
-          corr_sNc_2 = corr_sNc_NL_below
-       endif
+       corr_sNc_2 = corr_sNc_NL_cloud
     else
        ! Mean cloud droplet concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There is not any cloud at this
@@ -4424,8 +4407,9 @@ module KK_microphys_module
           ! Calculate the overall variance of r_r, <r_r'^2>.
           if ( rrainm > rr_tol ) then
              rrp2 &
-             = calc_xp2( mu_rr_1_n, mu_rr_2_n, sigma_rr_1_n, sigma_rr_2_n, &
-                         mixt_frac, precip_frac_1, precip_frac_2, rrainm )
+             = calc_xp2( mu_rr_1, mu_rr_2, mu_rr_1_n, mu_rr_2_n, sigma_rr_1, &
+                         sigma_rr_2, sigma_rr_1_n, sigma_rr_2_n, mixt_frac, &
+                         precip_frac_1, precip_frac_2, rrainm, rr_tol )
           else ! r_r = 0.
              rrp2 = zero
           endif
@@ -4440,8 +4424,9 @@ module KK_microphys_module
           ! Calculate the overall variance of N_r, <N_r'^2>.
           if ( Nrm > Nr_tol ) then
              Nrp2 &
-             = calc_xp2( mu_Nr_1_n, mu_Nr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
-                         mixt_frac, precip_frac_1, precip_frac_2, Nrm )
+             = calc_xp2( mu_Nr_1, mu_Nr_2, mu_Nr_1_n, mu_Nr_2_n, sigma_Nr_1, &
+                         sigma_Nr_2, sigma_Nr_1_n, sigma_Nr_2_n, mixt_frac, &
+                         precip_frac_1, precip_frac_2, Nrm, Nr_tol )
           else ! N_r = 0.
              Nrp2 = zero
           endif
