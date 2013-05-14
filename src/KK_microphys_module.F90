@@ -9,11 +9,11 @@ module KK_microphys_module
   public :: KK_local_micro_driver, &
             KK_upscaled_micro_driver, &
             KK_in_precip_values, &
-            KK_upscaled_setup
+            KK_upscaled_setup, &
+            component_means_rain, &
+            precip_fraction
 
   private :: KK_micro_init, &
-             component_means_rain, &
-             precip_fraction, &
              KK_tendency_coefs, &
              KK_upscaled_covar_driver, &
              KK_microphys_adjust, &

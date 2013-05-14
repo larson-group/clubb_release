@@ -90,7 +90,7 @@ module clubb_driver
       advance_clubb_core
 
     use constants_clubb, only: fstdout, fstderr, & ! Variable(s)
-      rt_tol, thl_tol, w_tol, w_tol_sqd, zero, rc_tol
+      rt_tol, thl_tol, w_tol, w_tol_sqd, zero, rc_tol, one
 
     use error_code, only: &
       clubb_var_out_of_bounds,  & ! Variable(s)
@@ -222,7 +222,9 @@ module clubb_driver
       read_model_flags_from_file, &
       l_rtm_nudge, &
       l_diagnose_correlations, &
-      l_calc_w_corr
+      l_calc_w_corr, &
+      l_use_modified_corr, &
+      l_use_precip_frac
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
@@ -243,6 +245,16 @@ module clubb_driver
         iiLH_Nc,                 &
         iiLH_rrain,              &
         iiLH_Nr
+
+    use KK_microphys_module, only: &
+        KK_in_precip_values, &
+        component_means_rain, &
+        precip_fraction
+
+    use array_index, only: &
+        iiNcm, & ! Variable(s)
+        iirrainm, &
+        iiNrm
 
     implicit none
 
@@ -373,6 +385,39 @@ module clubb_driver
     real( kind = core_rknd ), allocatable, dimension(:) :: &
       radf     ! Buoyancy production at CL top due to LW radiative cooling [m^2/s^3]
                ! This is currently set to zero for CLUBB standalone
+
+    real( kind = core_rknd ) :: &
+      mu_rr_1,     & ! Mean of rr (1st PDF component) in-precip (ip)     [kg/kg]
+      mu_rr_2,     & ! Mean of rr (2nd PDF component) ip                 [kg/kg]
+      mu_Nr_1,     & ! Mean of Nr (1st PDF component) ip                [num/kg]
+      mu_Nr_2,     & ! Mean of Nr (2nd PDF component) ip                [num/kg]
+      sigma_rr_1,  & ! Standard deviation of rr (1st PDF component) ip   [kg/kg]
+      sigma_rr_2,  & ! Standard deviation of rr (2nd PDF component) ip   [kg/kg]
+      sigma_Nr_1,  & ! Standard deviation of Nr (1st PDF component) ip  [num/kg]
+      sigma_Nr_2,  & ! Standard deviation of Nr (2nd PDF component) ip  [num/kg]
+      corr_srr_1,  & ! Correlation between s and rr (1st PDF component) ip   [-]
+      corr_srr_2,  & ! Correlation between s and rr (2nd PDF component) ip   [-]
+      corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component) ip   [-]
+      corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component) ip   [-]
+      corr_rrNr_1, & ! Correlation between rr and Nr (1st PDF component) ip  [-]
+      corr_rrNr_2    ! Correlation between rr and Nr (2nd PDF component) ip  [-]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      rrainm,        & ! Overall mean rain water mixing ratio               [kg/kg]
+      Nrm,           & ! Overall mean rain drop concentration               [num/kg]
+      rc1,           & ! Mean cloud water mixing ratio (1st PDF component)  [kg/kg]
+      rc2,           & ! Mean cloud water mixing ratio (2nd PDF component)  [kg/kg]
+      mixt_frac,     & ! Mixture fraction                                   [-]
+      rr1,           & ! Mean rain water mixing ratio (1st PDF component) [kg/kg]
+      rr2,           & ! Mean rain water mixing ratio (2nd PDF component) [kg/kg]
+      Nr1,           & ! Mean rain drop concentration (1st PDF component) [num/kg]
+      Nr2,           & ! Mean rain drop concentration (2nd PDF component) [num/kg]
+      cloud_frac1,   & ! Cloud fraction (1st PDF component)               [-]
+      cloud_frac2,   & ! Cloud fraction (2nd PDF component)               [-]
+      precip_frac,   & ! Precipitation fraction (overall)               [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
+
 
     logical :: l_restart_input, corr_file_exist
 
@@ -1171,6 +1216,42 @@ module clubb_driver
              rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
+
+      if ( l_use_modified_corr ) then
+
+        mixt_frac = pdf_params%mixt_frac
+        rc1 = pdf_params%rc1
+        rc2 = pdf_params%rc2
+        cloud_frac1 = pdf_params%cloud_frac1
+        cloud_frac2 = pdf_params%cloud_frac2
+
+        rrainm = hydromet(:,iirrainm)
+        Nrm = hydromet(:,iiNrm)
+
+        if ( l_use_precip_frac ) then
+
+          call component_means_rain( gr%nz, rrainm, Nrm, rho, rc1, rc2, &
+                                     mixt_frac, l_stats_samp, &
+                                     rr1, rr2, Nr1, Nr2 )
+
+          call precip_fraction( gr%nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &
+                                cloud_frac, cloud_frac1, mixt_frac, &
+                                precip_frac, precip_frac_1, precip_frac_2 )
+
+        else
+
+           rr1 = rrainm
+           rr2 = rrainm
+           Nr1 = Nrm
+           Nr2 = Nrm
+
+           precip_frac   = one
+           precip_frac_1 = one
+           precip_frac_2 = one
+
+        endif
+
+      endif
 
       ! Determine correlations
       if ( l_diagnose_correlations ) then
@@ -3823,6 +3904,17 @@ module clubb_driver
     !----------------------------------------------------------------
     ! Compute subcolumns if enabled
     !----------------------------------------------------------------
+
+      if ( l_predictnc ) then
+        Ncm = hydromet(:,iiNcm)
+      else
+        where ( rcm >= rc_tol )
+          Ncm = ( Ncm_initial / rho ) * cloud_frac
+        else where
+          Ncm = 0._core_rknd
+        end where
+      end if
+
     if ( LH_microphys_type /= LH_microphys_disabled ) then
       if ( l_lh_vert_overlap ) then
         ! Determine 3pt vertically averaged Lscale
@@ -3838,15 +3930,7 @@ module clubb_driver
         Lscale_vert_avg = -999._core_rknd
       end if
 
-      if ( l_predictnc ) then
-        Ncm = hydromet(:,iiNcm)
-      else
-        where ( rcm >= rc_tol )
-          Ncm = ( Ncm_initial / rho ) * cloud_frac
-        else where
-          Ncm = 0._core_rknd
-        end where
-      end if
+!      print *, "In advance_clubb_microphys: Ncm = ", Ncm
 
       call LH_subcolumn_generator &
            ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In

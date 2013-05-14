@@ -151,7 +151,10 @@ module model_flags
   ! See clubb:ticket:514 for details
   logical, public :: &
     l_diagnose_correlations, & ! Diagnose correlations instead of using fixed ones
-    l_calc_w_corr    ! Calculate the correlations between w and the hydrometeors  
+    l_calc_w_corr    ! Calculate the correlations between w and the hydrometeors
+
+  logical, parameter, public :: &
+  l_use_modified_corr = .false. ! Use the new correlations code (see clubb:comment:87:ticket:514)
  
 !$omp threadprivate(l_diagnose_correlations, l_calc_w_corr)
 
