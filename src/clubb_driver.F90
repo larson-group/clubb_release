@@ -3925,15 +3925,15 @@ module clubb_driver
     ! Compute subcolumns if enabled
     !----------------------------------------------------------------
 
-      if ( l_predictnc ) then
-        Ncm = hydromet(:,iiNcm)
-      else
-        where ( rcm >= rc_tol )
-          Ncm = ( Ncm_initial / rho ) * cloud_frac
-        else where
-          Ncm = 0._core_rknd
-        end where
-      end if
+    if ( l_predictnc .and. iiNcm > 0 ) then
+      Ncm = hydromet(:,iiNcm)
+    else
+      where ( rcm >= rc_tol )
+        Ncm = ( Ncm_initial / rho ) * cloud_frac
+      else where
+        Ncm = 0._core_rknd
+      end where
+    end if
 
     if ( LH_microphys_type /= LH_microphys_disabled ) then
       if ( l_lh_vert_overlap ) then
