@@ -52,9 +52,9 @@ module stat_file_utils
     ! External
     intrinsic :: transfer
 
-    ! Constant paramters
-    integer, parameter :: &
-      iunit = 10
+#ifdef _OPENMP
+    integer :: omp_get_thread_num ! Function
+#endif
 
     ! Input Variables
     character(len=*), intent(in) ::  & 
@@ -103,7 +103,9 @@ module stat_file_utils
       t, &  ! Timestep loop index
       k     ! Vertical loop index
 
-    integer :: file_nz
+    integer :: &
+      file_nz, & ! Number of vertical levels in the file
+      iunit      ! File I/O unit
 
     logical :: l_interpolate, l_grads_file
 
@@ -135,7 +137,11 @@ module stat_file_utils
     
     ! Open GraDS file
     if ( l_grads_file ) then
-
+#ifdef _OPENMP
+    iunit = omp_get_thread_num( ) + 10 ! Known magic number
+#else
+    iunit = 10
+#endif
       call open_grads_read( iunit, filename, faverage, l_error )
 
     else
@@ -402,31 +408,41 @@ module stat_file_utils
 
     implicit none
 
+    ! External
+#ifdef _OPENMP
+    integer :: omp_get_thread_num ! Function
+#endif
+
     ! Input Variables
     character(len=*), intent(in) ::  & 
       filename, & ! File name
       varname     ! Variable name
 
     ! Local Variables
-    type (stat_file) :: fz            ! Data file
+    type (stat_file) :: file_nz ! Data file
 
     logical :: l_grads_file, l_error
 
-    integer :: unit_number ! file unit number
+    integer :: iunit ! File unit number
 
     ! ---- Begin Code ----
 
     l_grads_file = .not. l_netcdf_file( filename )  
 
     if ( l_grads_file ) then
+
+#ifdef _OPENMP
+    iunit = omp_get_thread_num( ) + 10 ! Known magic number
+#else
+    iunit = 10
+#endif
       ! Read in the control file
-      unit_number = 10
-      call open_grads_read( unit_number, filename, fz, l_error )
+      call open_grads_read( iunit, filename, file_nz, l_error )
 
     else
 
 #ifdef NETCDF
-      call open_netcdf_read( varname, filename, fz, l_error )
+      call open_netcdf_read( varname, filename, file_nz, l_error )
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
       l_error = .true.
@@ -439,14 +455,14 @@ module stat_file_utils
     end if
 
     ! Set return variable
-    stat_file_num_vertical_levels = fz%iz
+    stat_file_num_vertical_levels = file_nz%iz
 
     ! Close file
     if ( l_grads_file ) then
-      call close_grads_read( fz )
+      call close_grads_read( file_nz )
     else
 #ifdef NETCDF
-      call close_netcdf_read( fz )
+      call close_netcdf_read( file_nz )
 #endif
     end if
 
@@ -471,6 +487,11 @@ module stat_file_utils
 
     implicit none
 
+    ! External
+#ifdef _OPENMP
+    integer :: omp_get_thread_num ! Function
+#endif
+
     ! Input Variables
     character(len=*), intent(in) ::  & 
       filename, & ! File name
@@ -480,28 +501,33 @@ module stat_file_utils
       nz ! Number of vertical levels
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz) :: stat_file_vertical_levels
+    real( kind = core_rknd ), dimension(nz) :: &
+      stat_file_vertical_levels ! A vector containing the heights of each vertical level [m]
 
     ! Local Variables
-    type (stat_file) :: fz  ! Data file
+    type (stat_file) :: file_levels  ! Data file
 
     logical :: l_grads_file, l_error
 
-    integer :: unit_number ! file unit number
+    integer :: iunit ! file unit number
 
     ! ---- Begin Code ----
 
     l_grads_file = .not. l_netcdf_file( filename )  
 
     if ( l_grads_file ) then
+#ifdef _OPENMP
+    iunit = omp_get_thread_num( ) + 10 ! Known magic number
+#else
+    iunit = 10
+#endif
       ! Read in the control file
-      unit_number = 10
-      call open_grads_read( unit_number, filename, fz, l_error )
+      call open_grads_read( iunit, filename, file_levels, l_error )
 
     else
 
 #ifdef NETCDF
-      call open_netcdf_read( varname, filename, fz, l_error )
+      call open_netcdf_read( varname, filename, file_levels, l_error )
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
       l_error = .true.
@@ -514,14 +540,14 @@ module stat_file_utils
     end if
 
     ! Set return variable
-    stat_file_vertical_levels(1:nz) = fz%z(1:nz)
+    stat_file_vertical_levels(1:nz) = file_levels%z(1:nz)
 
     ! Close file
     if ( l_grads_file ) then
-      call close_grads_read( fz )
+      call close_grads_read( file_levels )
     else
 #ifdef NETCDF
-      call close_netcdf_read( fz )
+      call close_netcdf_read( file_levels )
 #endif
     end if
 
