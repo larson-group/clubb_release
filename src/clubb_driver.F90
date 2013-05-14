@@ -427,7 +427,8 @@ module clubb_driver
       params  ! Model parameters, C1, nu2, etc.
 
     real( kind = core_rknd ), dimension(:, :, :), allocatable :: &
-      corr_array ! Correlation matrix
+      corr_array_1, & ! Correlation matrix for the first pdf component
+      corr_array_2    ! Correlation matrix for the second pdf component
 
     real( kind = core_rknd ), dimension(:, :), allocatable :: &
       corr_array_cloud, & ! Prescribed correlation matrix (in cloud)
@@ -876,7 +877,8 @@ module clubb_driver
     allocate( rvm_mc(gr%nz), rcm_mc(gr%nz), thlm_mc(gr%nz) )
 
     ! Allocate the correlation arrays
-    allocate(corr_array(d_variables, d_variables, gr%nz))
+    allocate(corr_array_1(d_variables, d_variables, gr%nz))
+    allocate(corr_array_2(d_variables, d_variables, gr%nz))
     allocate(corr_array_cloud(d_variables, d_variables))
     allocate(corr_array_below(d_variables, d_variables))
 
@@ -1217,6 +1219,9 @@ module clubb_driver
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
+      print *, "iirrainm = ",iirrainm
+      print *, "iiNrm = ", iiNrm
+
       if ( l_use_modified_corr ) then
 
         mixt_frac = pdf_params%mixt_frac
@@ -1251,6 +1256,20 @@ module clubb_driver
 
         endif
 
+        do k = 1, gr%nz
+          call KK_in_precip_values( rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
+                                    rc2(k), cloud_frac1(k), cloud_frac2(k), &
+                                    precip_frac_1(k), precip_frac_2(k), &
+                                    mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                                    sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                    sigma_Nr_2, &
+                                    corr_array_1(iiLH_s_mellor, iiLH_rrain, k), &
+                                    corr_array_2(iiLH_s_mellor, iiLH_rrain, k), &
+                                    corr_array_1(iiLH_s_mellor, iiLH_Nr, k), &
+                                    corr_array_2(iiLH_s_mellor, iiLH_Nr, k), &
+                                    corr_array_1(iiLH_rrain, iiLH_Nr, k), &
+                                    corr_array_2(iiLH_rrain, iiLH_Nr, k) )
+        end do
       endif
 
       ! Determine correlations
@@ -1258,21 +1277,25 @@ module clubb_driver
  
         call diagnose_correlations( gr%nz, d_variables, rcm, & ! intent(in)
                                    corr_array_cloud, corr_array_below, &
-                                   corr_array ) ! intent(inout)
+                                   corr_array_1 ) ! intent(inout)
+
+        corr_array_2 = corr_array_1
 
       else ! Prescribed correlations
 
         do k = 1, gr%nz
           if ( rcm(k) > rc_tol ) then
-            corr_array(:,:,k) = corr_array_cloud
+            corr_array_1(:,:,k) = corr_array_cloud
+            corr_array_2(:,:,k) = corr_array_cloud
           else
-            corr_array(:,:,k) = corr_array_below
+            corr_array_1(:,:,k) = corr_array_below
+            corr_array_2(:,:,k) = corr_array_below
           endif
         end do
 
       end if
 
-      call corr_stat_output( d_variables, gr%nz, corr_array )
+      call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
       ! Advance a microphysics scheme
       call advance_clubb_microphys &

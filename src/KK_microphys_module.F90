@@ -790,7 +790,7 @@ module KK_microphys_module
 
       !!! Calculate the mean, standard deviations, and correlations involving
       !!! ln r_r, ln N_r, and ln N_c for each PDF component.
-      call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), Ncm(k), &
+      call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), Ncm(k), & ! Intent(in)
                               rr1(k), rr2(k), Nr1(k), Nr2(k), &
                               mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                               sigma_rr_1, sigma_rr_2, &
@@ -798,9 +798,9 @@ module KK_microphys_module
                               wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &
                               wpNcp_zt(k), w_std_dev(k), mixt_frac(k), &
                               pdf_params(k), &
-                              corr_srr_1, corr_srr_2, corr_sNr_1, &
+                              corr_srr_1, corr_srr_2, corr_sNr_1, & ! Intent(inout)
                               corr_sNr_2, corr_rrNr_1, corr_rrNr_2, &
-                              mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
+                              mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & ! Intent(out)
                               mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
                               mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
                               sigma_s_1, sigma_s_2, &
@@ -2399,7 +2399,7 @@ module KK_microphys_module
   end subroutine KK_in_precip_values
 
   !=============================================================================
-  subroutine KK_upscaled_setup( rcm, rrainm, Nrm, Ncm, &
+  subroutine KK_upscaled_setup( rcm, rrainm, Nrm, Ncm, & ! Intent(in)
                                 rr1, rr2, Nr1, Nr2, &
                                 mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                 sigma_rr_1, sigma_rr_2, &
@@ -2407,9 +2407,9 @@ module KK_microphys_module
                                 wpsp, wprrp_ip, wpNrp_ip, &
                                 wpNcp, stdev_w, mixt_frac, &
                                 pdf_params, &
-                                corr_srr_1, corr_srr_2, corr_sNr_1, &
+                                corr_srr_1, corr_srr_2, corr_sNr_1, & ! Intent(inout)
                                 corr_sNr_2, corr_rrNr_1, corr_rrNr_2, &
-                                mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
+                                mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & ! Intent(out)
                                 mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
                                 mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
                                 sigma_s_1, sigma_s_2, &
