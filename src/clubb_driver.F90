@@ -1219,9 +1219,6 @@ module clubb_driver
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
-      print *, "iirrainm = ",iirrainm
-      print *, "iiNrm = ", iiNrm
-
       if ( l_use_modified_corr ) then
 
         mixt_frac = pdf_params%mixt_frac
