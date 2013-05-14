@@ -152,7 +152,7 @@ module parameters_tunable
   real( kind = core_rknd ), public :: &
     c_K10 = 0.6_core_rknd
 
-!$omp threadprivate(lmin_coef)
+!$omp threadprivate(lmin_coef, Skw_denom_coef, c_K10)
 
   ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 #ifdef GFDL
