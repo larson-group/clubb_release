@@ -78,6 +78,8 @@ module microphys_driver
   logical, private, allocatable, dimension(:) :: &
     l_hydromet_sed ! Whether to sediment variables
 
+!$omp threadprivate( l_hydromet_sed )
+
   logical :: l_gfdl_activation ! Flag for GFDL activation code
 
   private ! Default Scope
