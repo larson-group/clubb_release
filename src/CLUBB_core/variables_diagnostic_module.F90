@@ -53,7 +53,7 @@ module variables_diagnostic_module
     pdf_params_zm, & ! pdf_params on momentum levels  [units vary]
     pdf_params_zm_frz !used when l_use_ice_latent = .true.
 
-!$omp threadprivate(pdf_params_zm)
+!$omp threadprivate(pdf_params_zm, pdf_params_zm_frz)
 
   real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     Frad,         & ! Radiative flux (momentum point)   [W/m^2]

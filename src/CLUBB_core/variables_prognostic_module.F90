@@ -113,7 +113,7 @@ module variables_prognostic_module
     rcm_in_layer,       & ! Cloud water mixing ratio in cloud layer  [kg/kg]
     cloud_cover           ! Cloud cover                              [-]
 
-!$omp   threadprivate(rcm, cloud_frac, rcm_in_layer, cloud_cover)
+!$omp   threadprivate(rcm, cloud_frac, ice_supersat_frac, rcm_in_layer, cloud_cover)
 
   ! Surface fluxes
   real( kind = core_rknd ), public ::  & 
@@ -170,7 +170,7 @@ module variables_prognostic_module
     pdf_params, &
     pdf_params_frz !for use when l_use_ice_latent = .true.
 
-!$omp threadprivate(pdf_params)
+!$omp threadprivate(pdf_params, pdf_params_frz)
 
   contains
 !-----------------------------------------------------------------------

@@ -42,7 +42,8 @@ module variables_radiation_module
     cloud_frac_2d, &
     ice_supersat_frac_2d
 
-!$omp threadprivate(rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d)
+!$omp threadprivate(rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, &
+!$omp   ice_supersat_frac_2d)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
     radht_SW_2d, & ! SW Radiative heating rate  [W/m^2]
