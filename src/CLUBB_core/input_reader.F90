@@ -1,10 +1,13 @@
 !$Id$
 module input_reader
-!
+
+! Description:
 !  This module is respondsible for the procedures and structures necessary to
 !  read in "SAM-Like" case specific files. Currently only the
 !  <casename>_sounding.in file is formatted to be used by this module.
 !
+! References:
+!   None
 !---------------------------------------------------------------------------------------------------
 
   use clubb_precision, only: &
@@ -431,6 +434,7 @@ module input_reader
 
   !------------------------------------------------------------------------------------------------
   function linear_fill_blanks( dim_grid, grid, var, default_value ) &
+    result( var_out )
   !
   ! Description: 
   !   This function fills blanks in array var using the grid
@@ -440,7 +444,6 @@ module input_reader
   ! References:
   !   None
   !-----------------------------------------------------------------------------------------------
-  result( var_out )
 
     use interpolation, only: zlinterp_fnc
 
@@ -617,6 +620,9 @@ module input_reader
 
     implicit none
 
+    ! External Functions
+    intrinsic :: trim
+
     ! Input Variable(s)
     integer, intent(in) :: nvar ! Number of variables in retVars
 
@@ -691,7 +697,7 @@ module input_reader
     implicit none
 
     ! External Functions
-    intrinsic :: present, size
+    intrinsic :: present, size, trim
 
     ! Input Variable(s)
     integer, intent(in) :: & 
@@ -794,6 +800,9 @@ module input_reader
 
     implicit none
 
+    ! External
+    intrinsic :: index, trim, size
+
     ! Input Variables
     integer, intent(in) :: iunit ! I/O unit
     character(len=*), intent(in) :: filename ! Name of the file being read from
@@ -813,12 +822,12 @@ module input_reader
     
     isComment = .true.
 
-    open(unit=iunit, file=trim(filename), status = 'old' )
+    open(unit=iunit, file=trim( filename ), status = 'old' )
 
     ! Skip all the comments at the top of the file
     do while(isComment)
       read(iunit,fmt='(A)') tmp
-      k = index(tmp, "!")
+      k = index( tmp, "!" )
       isComment = .false.
       if(k > 0) then
         isComment = .true.
@@ -843,7 +852,7 @@ module input_reader
 
     end if
     
-    do i=1,size(colArray)
+    do i=1,size( colArray )
       if( colArray(i) /= "" ) then ! Increment number of columns until array is blank
         nCols = nCols+1
       end if
