@@ -109,7 +109,7 @@ module parameters_tunable
 !$omp threadprivate(Lscale_mu_coef, Lscale_pert_coef)
 
   real( kind = core_rknd ), public :: &
-    alpha_corr = 0.15_core_rknd   ! Coef. for the corr. diagnosis algoritm   [-]
+    alpha_corr = 0.15_core_rknd   ! Coef. for the corr. diagnosis algorithm  [-]
 
 !$omp threadprivate(alpha_corr)
 
@@ -218,7 +218,7 @@ module parameters_tunable
        "taumin          ", "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef", &
        "alpha_corr      ", "Skw_denom_coef  ", "c_K10           " /)
 
-  real( kind = core_rknd ), parameter :: &
+  real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
 
   contains
