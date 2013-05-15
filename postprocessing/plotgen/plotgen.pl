@@ -615,8 +615,6 @@ sub buildMatlabStringBudget()
     
     # Get Common Case information
     my $caseName =  $CASE::CASE{'name'} . "_" . $budgetNum . "_budget";
-    my $startTime =  $CASE::CASE{'startTime'};
-    my $endTime =  $CASE::CASE{'endTime'};
     my $startHeight =  $CASE::CASE{'startHeight'};
     my $endHeight =  $CASE::CASE{'endHeight'};
     
@@ -640,7 +638,11 @@ sub buildMatlabStringBudget()
             $lineStyleCounter = 0;
             $lineColorCounter = 0;
             $lineWidthCounter = 0;
-
+            
+            # Define startTime and endTime as defined in the global variables for the case file
+            my $startTime =  $CASE::CASE{'startTime'};
+            my $endTime =  $CASE::CASE{'endTime'};
+            
             # Check to see if start and end time was specified for the specific plot. This is usually done for timeseries plots. If it isn't
             # use case defined times.
             my $startTimeOverride = $plots[$plotNum]{'startTime'};
@@ -731,8 +733,6 @@ sub buildMatlabStringStd()
         $caseName = $CASE::CASE{'name'};
     }
 
-    my $startTime =  $CASE::CASE{'startTime'};
-    my $endTime =  $CASE::CASE{'endTime'};
     my $startHeight =  $CASE::CASE{'startHeight'};
     my $endHeight =  $CASE::CASE{'endHeight'};
     
@@ -753,6 +753,9 @@ sub buildMatlabStringStd()
         my $units = $plots[$count]{'axisLabel'};
         my $type = $plots[$count]{'type'};
 
+        # Define the startTime and endTime variables as the global variables in the case file.
+        my $startTime =  $CASE::CASE{'startTime'};
+        my $endTime =  $CASE::CASE{'endTime'};
 
         # Check to see if start and end time was specified for the specific plot. This is usually done for timeseries plots. If it isn't
         # use case defined times.
