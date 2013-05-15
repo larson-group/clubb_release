@@ -2522,9 +2522,9 @@ module microphys_driver
              ! but do not multiply until we return from the subroutine, so we
              ! must account for this here for the budget to balance.
              call stat_update_var_pt( ihmm_ma, k, & 
-             ztscr01(k) * hmm(km1) * max( cloud_frac(km1), cloud_frac_min ) & 
-             + ztscr02(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
-             + ztscr03(k) * hmm(kp1) * max( cloud_frac(kp1), cloud_frac_min ), &
+               ztscr01(k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
+               + ztscr02(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
+               + ztscr03(k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
                                       zt )
 
           else
@@ -2563,9 +2563,9 @@ module microphys_driver
                 ! but do not multiply until we return from the subroutine, so we
                 ! must account for this here for the budget to balance.
                 call stat_end_update_pt( ihmm_ta, k, & 
-             ztscr10(k) * hmm(km1) * max( cloud_frac(km1), cloud_frac_min ) & 
-             + ztscr11(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
-             + ztscr12(k) * hmm(kp1) * max( cloud_frac(kp1), cloud_frac_min ), &
+               ztscr10(k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
+               + ztscr11(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
+               + ztscr12(k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
                                          zt )
 
              else
@@ -3254,12 +3254,9 @@ module microphys_driver
                 ! but do not multiply until we return from the subroutine, so we
                 ! must account for this here for the budget to balance.
                 call stat_begin_update_pt( ihmm_ta, k, & 
-                                   rhs_diff(3) * hmm(km1) &
-                                   * max( cloud_frac(km1), cloud_frac_min ) & 
-                                   + rhs_diff(2) * hmm(k) &
-                                     * max( cloud_frac(k), cloud_frac_min ) & 
-                                   + rhs_diff(1) * hmm(kp1) &
-                                     * max( cloud_frac(kp1), cloud_frac_min ), &
+              rhs_diff(3) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
+              + rhs_diff(2) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
+              + rhs_diff(1) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
                                            zt )
 
              else
