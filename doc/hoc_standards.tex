@@ -512,6 +512,20 @@ E.g.
 
 \end{verbatim}
 
+\item In order to keep CLUBB threadsafe, all variables in a module prior to the \texttt{contains}
+statement (i.e. common block variables) should be declared as \texttt{\$omp threadprivate} in
+a commented line just after the variable declaration.  The only exception to this rule is a 
+variable with the \texttt{parameter} attribute, since these hold a constant value.  Below is a code example: \\
+\begin{verbatim}
+module declination
+  real, public :: angle_in_deg = 30. ! Degree of the angle
+
+!$omp threadprivate(angle_in_deg)
+  contains
+...
+end module declination
+\end{verbatim}
+
 \item Good use of whitespace can make code easier to read and debug.  
 One simple convention used in CLUBB is to put an extra space between 
 parenthesis for functions and subroutines to differentiate them from 
