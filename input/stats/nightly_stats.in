@@ -3,12 +3,13 @@ vars_zt =
 'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3',
 'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
 'Ncm', 'Ncm_in_cloud', 'rgraupelm', 'ricem', 'Nim',
-'rsnowm', 'Nsnowm','Lscale'
+'rsnowm', 'Nsnowm','Lscale', 'radht', 'corr_sw', 'corr_wrr', 'corr_wNr',
+'corr_wNc', 'corr_srr', 'corr_sNr', 'corr_sNc', 'corr_rrNr',
 ''
 
 vars_zm =
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp',
-'upwp', 'vpwp', 'up2', 'vp2', 'wpthvp', 'wprcp', 'rc_coef',
+'upwp', 'vpwp', 'up2', 'vp2', 'wpthvp', 'wprcp', 'rc_coef', 'thlprcp', 'rtprcp',
 ''
 
 vars_sfc =
