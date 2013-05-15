@@ -15,6 +15,11 @@ module parameters_tunable
   !
   ! References:
   !   None
+  ! 
+  ! Notes:
+  !   To make it easier to verify of code correctness, please keep the omp threadprivate
+  !   directives just after the variable declaration.  All parameters in this
+  !   module should be declared threadprivate because of the CLUBB tuner.
   !-----------------------------------------------------------------------
 
   use parameter_indices, only: nparams ! Variable(s)
@@ -64,12 +69,18 @@ module parameters_tunable
     C13     = 0.100000_core_rknd,    & ! Not currently used in model         [-]
     C14     = 1.000000_core_rknd,    & ! Constant for u'^2 and v'^2 terms    [-]
     C15     = 0.4_core_rknd            ! Coefficient for the wp3_bp2 term    [-]
+!$omp threadprivate(C1, C1b, C1c, C2, C2b, C2c, &
+!$omp   C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc, &
+!$omp   C6thl, C6thlb, C6thlc, &
+!$omp   C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, &
+!$omp   C13, C14, C15)
 
   real( kind = core_rknd ), public ::    &
     C6rt_Lscale0  = 14.0_core_rknd,      & ! Damp C6rt as a fnct. of Lscale  [-]
     C6thl_Lscale0 = 14.0_core_rknd,      & ! Damp C6thl as a fnct. of Lscale [-]
     C7_Lscale0    = 0.8500000_core_rknd, & ! Damp C7 as a fnct. of Lscale    [-]
     wpxp_L_thresh = 60.0_core_rknd         ! Lscale threshold: damp C6 & C7  [m]
+!$omp threadprivate(C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh)
 
   ! Note: DD 1987 is Duynkerke & Driedonks (1987).
   real( kind = core_rknd ), public :: & 
@@ -87,14 +98,20 @@ module parameters_tunable
     mult_coef   = 1.500000_core_rknd, & ! Coef. applied to log(avg dz/thresh)[-]
     taumin      = 90.00000_core_rknd, & ! Min. allow. value: time-scale tau  [s]
     taumax      = 3600.000_core_rknd, & ! Max. allow. value: time-scale tau  [s]
-    lmin                                ! Min. value for the length scale    [m]
+    lmin        = 20.00000_core_rknd    ! Min. value for the length scale    [m]
+!$omp threadprivate(c_K, c_K1, c_K2, c_K6, &
+!$omp   c_K8, c_K9, c_Krrainm, gamma_coef, gamma_coefb, gamma_coefc, &
+!$omp   mu, mult_coef, taumin, taumax, lmin)
 
   real( kind = core_rknd ), public :: &
     Lscale_mu_coef   = 2.0_core_rknd, & ! Coef perturb mu: av calc Lscale    [-]
     Lscale_pert_coef = 0.1_core_rknd    ! Coef pert thlm/rtm: av calc Lscale [-]
+!$omp threadprivate(Lscale_mu_coef, Lscale_pert_coef)
 
   real( kind = core_rknd ), public :: &
     alpha_corr = 0.15_core_rknd   ! Coef. for the corr. diagnosis algoritm   [-]
+
+!$omp threadprivate(alpha_corr)
 
   real( kind = core_rknd ), private :: & 
     nu1   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wp2        [m^2/s]
@@ -102,19 +119,11 @@ module parameters_tunable
     nu6   = 5.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wpxp       [m^2/s]
     nu8   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wp3        [m^2/s]
     nu9   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: up2/vp2    [m^2/s]
-    nu10  = 0.00000_core_rknd,  & ! Bg. Coef. Eddy Diffusion: edsclrm    [m^2/s]
+    nu10  = 0.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: edsclrm    [m^2/s]
     nu_r  = 1.500000_core_rknd, & ! Bg. Coef. Eddy Diffusion: hmm        [m^2/s]
     nu_hd = 20000.00_core_rknd    ! Coef. for 4th-order hyper-diffusion  [m^4/s]
+!$omp threadprivate(nu1, nu2, nu6, nu8, nu9, nu10, nu_r, nu_hd)
 
-!$omp   threadprivate(C1, C1b, C1c, C2, C2b, C2c, &
-!$omp     C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc, &
-!$omp     C6thl, C6thlb, C6thlc, &
-!$omp     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, &
-!$omp     C13, C14, C15, &
-!$omp     c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, &
-!$omp     c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, nu_hd, &
-!$omp     gamma_coef, gamma_coefb, gamma_coefc, mult_coef, &
-!$omp     taumin, taumax, mu, lmin, Lscale_mu_coef, Lscale_pert_coef)
 
   real( kind = core_rknd ), public, allocatable, dimension(:) :: & 
     nu1_vert_res_dep,  & ! Background Coef. of Eddy Diffusion: wp2       [m^2/s]
@@ -143,16 +152,19 @@ module parameters_tunable
   real( kind = core_rknd ), private :: &
     lmin_coef = 0.500000_core_rknd    ! Coefficient of lmin    [-]
 
+!$omp threadprivate(lmin_coef)
 
   ! Factor to decrease sensitivity in the denominator of Skw calculation
   real( kind = core_rknd ), public :: &
     Skw_denom_coef = 4.0_core_rknd
 
+!$omp threadprivate(Skw_denom_coef)
+
   ! Coefficient of Kh_zm
   real( kind = core_rknd ), public :: &
     c_K10 = 0.6_core_rknd
 
-!$omp threadprivate(lmin_coef, Skw_denom_coef, c_K10)
+!$omp threadprivate(c_K10)
 
   ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 #ifdef GFDL
@@ -1255,7 +1267,7 @@ module parameters_tunable
                 nu_r_vert_res_dep, stat = ierr )
 
     if ( ierr /= 0 ) then
-      write(fstderr,*) "Nu deallocation failed."
+      write(fstderr,*) "Deallocation of vertically depedent nu arrays failed."
     end if
 
     return
