@@ -1926,7 +1926,7 @@ module microphys_driver
          call microphys_rhs( trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
                              Ncm_in_cloud, &
                              hydromet_mc(:,i)/max(cloud_frac,cloud_frac_min), &
-                             Kr, nu_r_vert_res_dep, &
+                             Kr, nu_r_vert_res_dep, cloud_frac, &
                              hydromet_vel_covar_zt_expc(:,i), &
                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                              rhs )
@@ -1935,7 +1935,7 @@ module microphys_driver
 
          call microphys_rhs( trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
                              hydromet(:,i), hydromet_mc(:,i), &
-                             Kr, nu_r_vert_res_dep, &
+                             Kr, nu_r_vert_res_dep, cloud_frac, &
                              hydromet_vel_covar_zt_expc(:,i), &
                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                              rhs )
@@ -2522,9 +2522,9 @@ module microphys_driver
              ! but do not multiply until we return from the subroutine, so we
              ! must account for this here for the budget to balance.
              call stat_update_var_pt( ihmm_ma, k, & 
-               ztscr01(k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
-               + ztscr02(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
-               + ztscr03(k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
+             ztscr01(k) * hmm(km1) * max( cloud_frac(km1), cloud_frac_min ) & 
+             + ztscr02(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
+             + ztscr03(k) * hmm(kp1) * max( cloud_frac(kp1), cloud_frac_min ), &
                                       zt )
 
           else
@@ -2563,9 +2563,9 @@ module microphys_driver
                 ! but do not multiply until we return from the subroutine, so we
                 ! must account for this here for the budget to balance.
                 call stat_end_update_pt( ihmm_ta, k, & 
-               ztscr10(k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
-               + ztscr11(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
-               + ztscr12(k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
+             ztscr10(k) * hmm(km1) * max( cloud_frac(km1), cloud_frac_min ) & 
+             + ztscr11(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
+             + ztscr12(k) * hmm(kp1) * max( cloud_frac(kp1), cloud_frac_min ), &
                                          zt )
 
              else
@@ -2656,6 +2656,17 @@ module microphys_driver
         irgraupelm_ma, & 
         irgraupelm_sd, & 
         irgraupelm_ta, & 
+        iNim_ma, & 
+        iNim_sd, & 
+        iNim_ta, & 
+        iNsnowm_ma, & 
+        iNsnowm_sd, & 
+        iNsnowm_ta, & 
+        iNgraupelm_ma, & 
+        iNgraupelm_sd, & 
+        iNgraupelm_ta
+
+    use stats_variables, only: & 
         ztscr01, & 
         ztscr02, & 
         ztscr03, & 
@@ -2759,6 +2770,21 @@ module microphys_driver
       ihmm_ma = iNcm_ma
       ihmm_ta = iNcm_ta
       ihmm_sd = 0
+      ihmm_ts = 0
+    case( "Nim" )
+      ihmm_ma = iNim_ma
+      ihmm_ta = iNim_ta
+      ihmm_sd = iNim_sd
+      ihmm_ts = 0
+    case( "Nsnowm" )
+      ihmm_ma = iNsnowm_ma
+      ihmm_ta = iNsnowm_ta
+      ihmm_sd = iNsnowm_sd
+      ihmm_ts = 0
+    case( "Ngraupelm" )
+      ihmm_ma = iNgraupelm_ma
+      ihmm_ta = iNgraupelm_ta
+      ihmm_sd = iNgraupelm_sd
       ihmm_ts = 0
     case default
       ihmm_ma = 0
@@ -3016,7 +3042,7 @@ module microphys_driver
   !=============================================================================
   subroutine microphys_rhs( solve_type, dt, l_sed, &
                             hmm, hmm_tndcy, &
-                            Kr, nu, &
+                            Kr, nu, cloud_frac, &
                             Vhmphmp_zt_expc, &
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                             rhs )
@@ -3081,6 +3107,7 @@ module microphys_driver
       hmm_tndcy,       & ! Microphysics tendency (thermo. levels)   [units/s]
       Kr,              & ! Eddy diffusivity for hydromet on m-levs  [m^2/s]
       nu,              & ! Background diffusion coefficient         [m^2/s]
+      cloud_frac,      & ! Cloud fraction                           [-]
       Vhmphmp_zt_expc, & ! Explicit comp. of <V_hm'h_m'> on t-levs  [units(m/s)]
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
@@ -3220,10 +3247,30 @@ module microphys_driver
           ! subtracts the value sent in, reverse the sign on the right-hand side
           ! turbulent advection component.
           if ( ihmm_ta > 0 ) then
-             call stat_begin_update_pt( ihmm_ta, k, & 
-                                        rhs_diff(3) * hmm(km1) &
-                                        + rhs_diff(2) * hmm(k)   &
-                                        + rhs_diff(1) * hmm(kp1), zt )
+
+             if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
+
+                ! For Ncm, we divide by cloud_frac when entering the subroutine,
+                ! but do not multiply until we return from the subroutine, so we
+                ! must account for this here for the budget to balance.
+                call stat_begin_update_pt( ihmm_ta, k, & 
+                                   rhs_diff(3) * hmm(km1) &
+                                   * max( cloud_frac(km1), cloud_frac_min ) & 
+                                   + rhs_diff(2) * hmm(k) &
+                                     * max( cloud_frac(k), cloud_frac_min ) & 
+                                   + rhs_diff(1) * hmm(kp1) &
+                                     * max( cloud_frac(kp1), cloud_frac_min ), &
+                                           zt )
+
+             else
+
+                call stat_begin_update_pt( ihmm_ta, k, & 
+                                           rhs_diff(3) * hmm(km1) &
+                                           + rhs_diff(2) * hmm(k)   &
+                                           + rhs_diff(1) * hmm(kp1), zt )
+
+             endif
+
           endif
 
           ! hmm term ts has both implicit and explicit components; call
