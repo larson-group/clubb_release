@@ -1253,20 +1253,20 @@ module clubb_driver
 
         endif
 
-        do k = 1, gr%nz
-          call KK_in_precip_values( rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
-                                    rc2(k), cloud_frac1(k), cloud_frac2(k), &
-                                    precip_frac_1(k), precip_frac_2(k), &
-                                    mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                    sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                    sigma_Nr_2, &
-                                    corr_array_1(iiLH_s_mellor, iiLH_rrain, k), &
-                                    corr_array_2(iiLH_s_mellor, iiLH_rrain, k), &
-                                    corr_array_1(iiLH_s_mellor, iiLH_Nr, k), &
-                                    corr_array_2(iiLH_s_mellor, iiLH_Nr, k), &
-                                    corr_array_1(iiLH_rrain, iiLH_Nr, k), &
-                                    corr_array_2(iiLH_rrain, iiLH_Nr, k) )
-        end do
+!        do k = 1, gr%nz
+!          call KK_in_precip_values( rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
+!                                    rc2(k), cloud_frac1(k), cloud_frac2(k), &
+!                                    precip_frac_1(k), precip_frac_2(k), &
+!                                    mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+!                                    sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+!                                    sigma_Nr_2, &
+!                                    corr_array_1(iiLH_s_mellor, iiLH_rrain, k), &
+!                                    corr_array_2(iiLH_s_mellor, iiLH_rrain, k), &
+!                                    corr_array_1(iiLH_s_mellor, iiLH_Nr, k), &
+!                                    corr_array_2(iiLH_s_mellor, iiLH_Nr, k), &
+!                                    corr_array_1(iiLH_rrain, iiLH_Nr, k), &
+!                                    corr_array_2(iiLH_rrain, iiLH_Nr, k) )
+!        end do
       endif
 
       ! Determine correlations

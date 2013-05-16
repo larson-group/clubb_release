@@ -779,41 +779,45 @@ module KK_microphys_module
       !!! Calculate the means, standard deviations, and correlations involving
       !!! rain water mixing ratio and rain drop concentration for each PDF
       !!! component.
-      call KK_in_precip_values( rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
-                                rc2(k), cloud_frac1(k), cloud_frac2(k), &
-                                precip_frac_1(k), precip_frac_2(k), &
-                                mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                sigma_Nr_2, corr_srr_1, corr_srr_2, &
-                                corr_sNr_1, corr_sNr_2, corr_rrNr_1, &
-                                corr_rrNr_2 )
+      call KK_in_precip_values( rcm(k), rrainm(k), Nrm(k), Ncm(k), & ! Intent(in)
+                                rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), & ! Intent(in)
+                                rc2(k), cloud_frac1(k), cloud_frac2(k), & ! Intent(in)
+                                wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
+                                wpNcp_zt(k), w_std_dev(k), mixt_frac(k), & ! Intent(in)
+                                precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
+                                pdf_params(k), & ! Intent(in)
+                                mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & !Intent(out)
+                                mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & !Intent(out)
+                                sigma_s_1, sigma_s_2, sigma_Nc_1, sigma_Nc_2, & !Intent(out)
+                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, & !Intent(out)
+                                sigma_Nr_2, corr_srr_1, corr_srr_2, & !Intent(out)
+                                corr_sNr_1, corr_sNr_2, corr_sNc_1, & !Intent(out)
+                                corr_sNc_2, corr_rrNr_1, corr_rrNr_2, & !Intent(out)
+                                corr_sw, corr_wrr, corr_wNr, corr_wNc ) !Intent(out)
 
       !!! Calculate the mean, standard deviations, and correlations involving
       !!! ln r_r, ln N_r, and ln N_c for each PDF component.
       call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), Ncm(k), & ! Intent(in)
-                              rr1(k), rr2(k), Nr1(k), Nr2(k), &
-                              mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                              sigma_rr_1, sigma_rr_2, &
-                              sigma_Nr_1, sigma_Nr_2, &
-                              wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &
-                              wpNcp_zt(k), w_std_dev(k), mixt_frac(k), &
-                              pdf_params(k), &
-                              corr_srr_1, corr_srr_2, corr_sNr_1, & ! Intent(inout)
-                              corr_sNr_2, corr_rrNr_1, corr_rrNr_2, &
-                              mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & ! Intent(out)
-                              mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                              mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
-                              sigma_s_1, sigma_s_2, &
-                              sigma_Nc_1, sigma_Nc_2, &
-                              sigma_rr_1_n, sigma_rr_2_n, &
-                              sigma_Nr_1_n, sigma_Nr_2_n, &
-                              sigma_Nc_1_n, sigma_Nc_2_n, &
-                              corr_sNc_1, corr_sNc_2, &
-                              corr_srr_1_n, corr_srr_2_n, &
-                              corr_sNr_1_n, corr_sNr_2_n, &
-                              corr_sNc_1_n, corr_sNc_2_n, &
-                              corr_rrNr_1_n, corr_rrNr_2_n, &
-                              corr_sw, corr_wrr, corr_wNr, corr_wNc )
+                              rr1(k), rr2(k), Nr1(k), Nr2(k), & ! Intent(in)
+                              mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & ! Intent(in)
+                              mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(in)
+                              sigma_s_1, sigma_s_2, & ! Intent(in)
+                              sigma_Nc_1, sigma_Nc_2, & ! Intent(in)
+                              sigma_rr_1, sigma_rr_2, & ! Intent(in)
+                              sigma_Nr_1, sigma_Nr_2, & ! Intent(in)
+                              corr_sw, corr_wrr, corr_wNr, corr_wNc, & ! Intent(in)
+                              corr_srr_1, corr_srr_2, corr_sNr_1, & ! Intent(in)
+                              corr_sNr_2, corr_sNc_1, corr_sNc_2, & ! Intent(in)
+                              corr_rrNr_1, corr_rrNr_2, & ! Intent(in)
+                              mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, & ! Intent(out)
+                              mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, & ! Intent(out)
+                              sigma_rr_1_n, sigma_rr_2_n, & ! Intent(out)
+                              sigma_Nr_1_n, sigma_Nr_2_n, & ! Intent(out)
+                              sigma_Nc_1_n, sigma_Nc_2_n, & ! Intent(out)
+                              corr_srr_1_n, corr_srr_2_n, & ! Intent(out)
+                              corr_sNr_1_n, corr_sNr_2_n, & ! Intent(out)
+                              corr_sNc_1_n, corr_sNc_2_n, & ! Intent(out)
+                              corr_rrNr_1_n, corr_rrNr_2_n ) ! Intent(out)
 
       !!! Calculate the values of the upscaled KK microphysics tendencies.
       call KK_upscaled_means_driver( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
@@ -2036,14 +2040,21 @@ module KK_microphys_module
   end subroutine KK_tendency_coefs
 
   !=============================================================================
-  subroutine KK_in_precip_values( rr1, rr2, Nr1, Nr2, rc1, &
-                                  rc2, cloud_frac1, cloud_frac2, &
-                                  precip_frac_1, precip_frac_2, &
-                                  mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                  sigma_Nr_2, corr_srr_1, corr_srr_2, &
-                                  corr_sNr_1, corr_sNr_2, corr_rrNr_1, &
-                                  corr_rrNr_2 )
+  subroutine KK_in_precip_values( rcm, rrainm, Nrm, Ncm, & ! Intent(in)
+                                  rr1, rr2, Nr1, Nr2, rc1, & ! Intent(in)
+                                  rc2, cloud_frac1, cloud_frac2, & ! Intent(in)
+                                  wpsp, wprrp_ip, wpNrp_ip, & ! Intent(in)
+                                  wpNcp, stdev_w, mixt_frac, & ! Intent(in)
+                                  precip_frac_1, precip_frac_2, & ! Intent(in)
+                                  pdf_params, & ! Intent(in)
+                                  mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & !Intent(out)
+                                  mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & !Intent(out)
+                                  sigma_s_1, sigma_s_2, sigma_Nc_1, sigma_Nc_2, & !Intent(out)
+                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, & !Intent(out)
+                                  sigma_Nr_2, corr_srr_1, corr_srr_2, & !Intent(out)
+                                  corr_sNr_1, corr_sNr_2, corr_sNc_1, & !Intent(out)
+                                  corr_sNc_2, corr_rrNr_1, corr_rrNr_2, & !Intent(out)
+                                  corr_sw, corr_wrr, corr_wNr, corr_wNc ) !Intent(out)
        
     ! Description:
 
@@ -2051,10 +2062,13 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        rc_tol, & ! Constant(s)
-        rr_tol, & 
-        Nr_tol, &
-        one,    & 
+        rc_tol,       & ! Constant(s)
+        rr_tol,       &
+        Nr_tol,       &
+        Nc_tol,       &
+        w_tol,        & ! [m/s]
+        s_mellor_tol, & ! [kg/kg]
+        one,          &
         zero
 
     use parameters_microphys, only: &
@@ -2064,30 +2078,69 @@ module KK_microphys_module
         Nrp2_on_Nrm2_below
 
     use KK_fixed_correlations, only: &
-        corr_srr_NL_cloud,  & ! Variable(s) 
-        corr_srr_NL_below,  &
+        corr_wrr_NL_cloud,  & ! Variable(s)
+        corr_wNr_NL_cloud,  &
+        corr_wNc_NL_cloud,  &
+        corr_sw_NN_cloud,   &
+        corr_sNc_NL_cloud,  &
         corr_sNr_NL_cloud,  &
-        corr_sNr_NL_below,  &
+        corr_srr_NL_cloud,  &
         corr_rrNr_LL_cloud, &
+        corr_wrr_NL_below,  &
+        corr_wNr_NL_below,  &
+        corr_wNc_NL_below,  &
+        corr_sw_NN_below,   &
+        corr_sNc_NL_below,  &
+        corr_sNr_NL_below,  &
+        corr_srr_NL_below,  &
         corr_rrNr_LL_below
+
+    use model_flags, only: &
+        l_diagnose_correlations, & ! Variable(s)
+        l_calc_w_corr
+
+    use diagnose_correlations_module, only: &
+        diagnose_KK_corr, & ! Procedure(s)
+        calc_mean, &
+        calc_w_corr
+
+    use parameters_microphys, only: &
+        Ncp2_on_Ncm2_cloud  ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
+
+    use pdf_parameter_module, only: &
+        pdf_parameter  ! Variable(s) type
 
     implicit none
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
+      rcm,           & ! Mean cloud water mixing ratio                      [kg/kg]
+      rrainm,        & ! Mean rain water mixing ratio                       [kg/kg]
+      Nrm,           & ! Mean rain drop concentration                      [num/kg]
+      Ncm,           & ! Mean cloud droplet concentration                  [num/kg]
       rr1,           & ! Mean rain water mixing ratio (1st PDF comp.)  [kg/kg]
       rr2,           & ! Mean rain water mixing ratio (2nd PDF comp.)  [kg/kg]
       Nr1,           & ! Mean rain drop concentration (1st PDF comp.)  [num/kg]
       Nr2,           & ! Mean rain drop concentration (2nd PDF comp.)  [num/kg]
       rc1,           & ! Mean of r_c (1st PDF component)               [kg/kg]
       rc2,           & ! Mean of r_c (2nd PDF component)               [kg/kg]
+      wpsp,          & ! Covariance of w and s                         [(m/s)kg/kg]
+      wprrp_ip,      & ! Covariance of w and r_r (overall) ip          [(m/s)kg/kg]
+      wpNrp_ip,      & ! Covariance of w and N_r (overall) ip         [(m/s)num/kg]
+      wpNcp,         & ! Covariance of w and N_c                      [(m/s)num/kg]
+      stdev_w,       & ! Standard deviation of w                              [m/s]
       cloud_frac1,   & ! Cloud fraction (1st PDF component)            [-]
       cloud_frac2,   & ! Cloud fraction (2nd PDF component)            [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)    [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component)    [-]
+      precip_frac_2, & ! Precipitation fraction (2nd PDF component)    [-]
+      mixt_frac        ! Mixture fraction                                       [-]
+
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params    ! PDF parameters                                [units vary]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -2095,14 +2148,28 @@ module KK_microphys_module
       mu_rr_2,     & ! Mean of rr (2nd PDF component) ip                 [kg/kg]
       mu_Nr_1,     & ! Mean of Nr (1st PDF component) ip                [num/kg]
       mu_Nr_2,     & ! Mean of Nr (2nd PDF component) ip                [num/kg]
+      mu_s_1,      & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,      & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_Nc_1,     & ! Mean of Nc (1st PDF component)                 [num/kg]
+      mu_Nc_2,     & ! Mean of Nc (2nd PDF component)                 [num/kg]
       sigma_rr_1,  & ! Standard deviation of rr (1st PDF component) ip   [kg/kg]
       sigma_rr_2,  & ! Standard deviation of rr (2nd PDF component) ip   [kg/kg]
       sigma_Nr_1,  & ! Standard deviation of Nr (1st PDF component) ip  [num/kg]
       sigma_Nr_2,  & ! Standard deviation of Nr (2nd PDF component) ip  [num/kg]
+      sigma_s_1,   & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,   & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_Nc_1,  & ! Standard deviation of Nc (1st PDF component)   [num/kg]
+      sigma_Nc_2,  & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
+      corr_sw,    & ! Correlation between s & w (both components)         [-]
+      corr_wrr,   & ! Correlation between rr & w (both components)        [-]
+      corr_wNr,   & ! Correlation between Nr & w (both components)        [-]
+      corr_wNc,   & ! Correlation between Nc & w (both components)        [-]
       corr_srr_1,  & ! Correlation between s and rr (1st PDF component) ip   [-]
       corr_srr_2,  & ! Correlation between s and rr (2nd PDF component) ip   [-]
       corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component) ip   [-]
       corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component) ip   [-]
+      corr_sNc_1,  & ! Correlation between s and Nc (1st PDF component)    [-]
+      corr_sNc_2,  & ! Correlation between s and Nc (2nd PDF component)    [-]
       corr_rrNr_1, & ! Correlation between rr and Nr (1st PDF component) ip  [-]
       corr_rrNr_2    ! Correlation between rr and Nr (2nd PDF component) ip  [-]
 
@@ -2118,6 +2185,101 @@ module KK_microphys_module
     logical, parameter :: &
       l_interp_prescribed_params = .false.
 
+    real( kind = core_rknd ) :: &
+      rrp2_on_rrm2,    & ! Ratio of < r_r'^2 > to < r_r >^2              [-]
+      Nrp2_on_Nrm2,    & ! Ratio of < N_r'^2 > to < N_r >^2              [-]
+      Ncp2_on_Ncm2,    & ! Ratio of < N_c'^2 > to < N_c >^2              [-]
+      s_mellor_m,      & ! Mean of s_mellor                              [kg/kg]
+      stdev_s_mellor     ! Standard deviation of s_mellor                [kg/kg]
+
+    ! Enter the PDF parameters.
+    mu_s_1    = pdf_params%s1
+    mu_s_2    = pdf_params%s2
+    sigma_s_1 = pdf_params%stdev_s1
+    sigma_s_2 = pdf_params%stdev_s2
+
+    ! Mean of cloud droplet concentration in PDF component 1.
+    if ( Ncm > Nc_tol ) then
+       mu_Nc_1 = Ncm
+    else
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There is not any cloud at this
+       ! grid level.
+       mu_Nc_1 = zero
+    endif
+
+    ! Mean of cloud droplet concentration in PDF component 2.
+    if ( Ncm > Nc_tol ) then
+       mu_Nc_2 = Ncm
+    else
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There is not any cloud at this
+       ! grid level.
+       mu_Nc_2 = zero
+    endif
+
+    ! Set up the values of the statistical correlations and variances.  Since we
+    ! currently do not have enough variables to compute the correlations and
+    ! variances directly, we have obtained these values by analyzing LES runs of
+    ! certain cases.  We have divided those results into an inside-cloud average
+    ! and an outside-cloud (or below-cloud) average.  This coding leaves the
+    ! software architecture in place in case we ever have the variables in place
+    ! to compute these values directly.  It also allows us to use separate
+    ! inside-cloud and outside-cloud parameter values.
+    ! Brian Griffin; February 3, 2007.
+    !
+    ! Set the value of the parameters based on whether the altitude is above or
+    ! below cloud base.  Determine whether there is cloud at any given vertical
+    ! level.  In order for a vertical level to have cloud, the amount of cloud
+    ! water (rcm) must be greater than or equal to the tolerance level (rc_tol).
+    ! If there is cloud at a given vertical level, then the ###_cloud value is
+    ! used.  Otherwise, the ###_below value is used.
+
+    ! Standard deviation of cloud droplet concentration in PDF component 1.
+    if ( Ncm > Nc_tol ) then
+       sigma_Nc_1 = sqrt( Ncp2_on_Ncm2_cloud ) * mu_Nc_1
+    else
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There is not any cloud at this
+       ! grid level.  The standard deviation is simply 0 since cloud droplet
+       ! concentration does not vary at this grid level.
+       sigma_Nc_1 = zero
+    endif
+
+    ! Standard deviation of cloud droplet concentration in PDF component 2.
+    if ( Ncm > Nc_tol ) then
+       sigma_Nc_2 = sqrt( Ncp2_on_Ncm2_cloud ) * mu_Nc_2
+    else
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There is not any cloud at this
+       ! grid level.  The standard deviation is simply 0 since cloud droplet
+       ! concentration does not vary at this grid level.
+       sigma_Nc_2 = zero
+    endif
+
+    ! Correlation between s and N_c in PDF component 1.
+    if ( Ncm > Nc_tol ) then
+       corr_sNc_1 = corr_sNc_NL_cloud
+    else
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There is not any cloud at this
+       ! grid level.  The correlations involving cloud droplet concentration
+       ! are 0 since cloud droplet concentration does not vary at this grid
+       ! level.
+       corr_sNc_1 = zero
+    endif
+
+    ! Correlation between s and N_c in PDF component 2.
+    if ( Ncm > Nc_tol ) then
+       corr_sNc_2 = corr_sNc_NL_cloud
+    else
+       ! Mean cloud droplet concentration is less than the tolerance amount.  It
+       ! is considered to have a value of 0.  There is not any cloud at this
+       ! grid level.  The correlations involving cloud droplet concentration
+       ! are 0 since cloud droplet concentration does not vary at this grid
+       ! level.
+       corr_sNc_2 = zero
+    endif
 
     ! Mean of in-precip rain water mixing ratio in PDF component 1.
     if ( rr1 > rr_tol ) then
@@ -2393,274 +2555,6 @@ module KK_microphys_module
        corr_rrNr_2 = zero
     endif
 
-
-    return    
-
-  end subroutine KK_in_precip_values
-
-  !=============================================================================
-  subroutine KK_upscaled_setup( rcm, rrainm, Nrm, Ncm, & ! Intent(in)
-                                rr1, rr2, Nr1, Nr2, &
-                                mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                sigma_rr_1, sigma_rr_2, &
-                                sigma_Nr_1, sigma_Nr_2, &
-                                wpsp, wprrp_ip, wpNrp_ip, &
-                                wpNcp, stdev_w, mixt_frac, &
-                                pdf_params, &
-                                corr_srr_1, corr_srr_2, corr_sNr_1, & ! Intent(inout)
-                                corr_sNr_2, corr_rrNr_1, corr_rrNr_2, &
-                                mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & ! Intent(out)
-                                mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
-                                sigma_s_1, sigma_s_2, &
-                                sigma_Nc_1, sigma_Nc_2, &
-                                sigma_rr_1_n, sigma_rr_2_n, &
-                                sigma_Nr_1_n, sigma_Nr_2_n, &
-                                sigma_Nc_1_n, sigma_Nc_2_n, &
-                                corr_sNc_1, corr_sNc_2, &
-                                corr_srr_1_n, corr_srr_2_n, &
-                                corr_sNr_1_n, corr_sNr_2_n, &
-                                corr_sNc_1_n, corr_sNc_2_n, &
-                                corr_rrNr_1_n, corr_rrNr_2_n, &
-                                corr_sw, corr_wrr, corr_wNr, corr_wNc )
-
-    ! Description:
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only:  &
-        rc_tol, & ! Constant(s)
-        rr_tol, & 
-        Nr_tol, & 
-        Nc_tol, &
-        zero
-
-    use KK_utilities, only: &
-        mean_L2N,   & ! Procedure(s)
-        stdev_L2N,  &
-        corr_NL2NN, &
-        corr_LL2NN
-
-    use pdf_parameter_module, only: &
-        pdf_parameter  ! Variable(s) type
-
-    use parameters_microphys, only: &
-        Ncp2_on_Ncm2_cloud  ! Variable(s)
-
-    use KK_fixed_correlations, only: &
-        corr_wrr_NL_cloud,  & ! Variable(s) 
-        corr_wNr_NL_cloud,  & 
-        corr_wNc_NL_cloud,  & 
-        corr_sw_NN_cloud,   & 
-        corr_sNc_NL_cloud,  &
-        corr_sNr_NL_cloud,  &
-        corr_srr_NL_cloud,  &
-        corr_rrNr_LL_cloud, &
-        corr_wrr_NL_below,  & 
-        corr_wNr_NL_below,  & 
-        corr_wNc_NL_below,  & 
-        corr_sw_NN_below,   & 
-        corr_sNc_NL_below,  &
-        corr_sNr_NL_below,  &
-        corr_srr_NL_below,  &
-        corr_rrNr_LL_below
-
-    use clubb_precision, only: &
-        core_rknd  ! Variable(s)
-
-    use model_flags, only: &
-        l_diagnose_correlations, & ! Variable(s)
-        l_calc_w_corr
-
-    use diagnose_correlations_module, only: &
-        diagnose_KK_corr, & ! Procedure(s)
-        calc_mean, &
-        calc_w_corr
-
-    use constants_clubb, only: &
-        w_tol,        & ! [m/s]
-        s_mellor_tol, & ! [kg/kg]
-        Nc_tol,       & ! [#/kg]
-        rr_tol,       & ! [kg/kg] 
-        Nr_tol          ! [#/kg]
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      rcm,        & ! Mean cloud water mixing ratio                      [kg/kg]
-      rrainm,     & ! Mean rain water mixing ratio                       [kg/kg]
-      Nrm,        & ! Mean rain drop concentration                      [num/kg]
-      Ncm,        & ! Mean cloud droplet concentration                  [num/kg]
-      rr1,        & ! Mean rain water mixing ratio (1st PDF component)   [kg/kg]
-      rr2,        & ! Mean rain water mixing ratio (2nd PDF component)   [kg/kg]
-      Nr1,        & ! Mean rain drop concentration (1st PDF component)  [num/kg]
-      Nr2,        & ! Mean rain drop concentration (2nd PDF component)  [num/kg]
-      mu_rr_1,    & ! Mean of rr (1st PDF component) in-precip (ip)      [kg/kg]
-      mu_rr_2,    & ! Mean of rr (2nd PDF component) ip                  [kg/kg]
-      mu_Nr_1,    & ! Mean of Nr (1st PDF component) ip                 [num/kg]
-      mu_Nr_2,    & ! Mean of Nr (2nd PDF component) ip                 [num/kg]
-      sigma_rr_1, & ! Standard deviation of rr (1st PDF component) ip    [kg/kg]
-      sigma_rr_2, & ! Standard deviation of rr (2nd PDF component) ip    [kg/kg]
-      sigma_Nr_1, & ! Standard deviation of Nr (1st PDF component) ip   [num/kg]
-      sigma_Nr_2, & ! Standard deviation of Nr (2nd PDF component) ip   [num/kg]
-      wpsp,       & ! Covariance of w and s                         [(m/s)kg/kg]
-      wprrp_ip,   & ! Covariance of w and r_r (overall) ip          [(m/s)kg/kg]
-      wpNrp_ip,   & ! Covariance of w and N_r (overall) ip         [(m/s)num/kg]
-      wpNcp,      & ! Covariance of w and N_c                      [(m/s)num/kg]
-      stdev_w,    & ! Standard deviation of w                              [m/s]
-      mixt_frac     ! Mixture fraction                                       [-]
-
-    type(pdf_parameter), intent(in) :: &
-      pdf_params    ! PDF parameters                                [units vary]
-
-    ! Input/Output Variables
-    real( kind = core_rknd ), intent(inout) :: &
-      corr_srr_1,  & ! Correlation between s and rr (1st PDF component) ip   [-]
-      corr_srr_2,  & ! Correlation between s and rr (2nd PDF component) ip   [-]
-      corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component) ip   [-]
-      corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component) ip   [-]
-      corr_rrNr_1, & ! Correlation between rr and Nr (1st PDF component) ip  [-]
-      corr_rrNr_2    ! Correlation between rr and Nr (2nd PDF component) ip  [-]
-
-    ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
-      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
-      mu_Nc_1,       & ! Mean of Nc (1st PDF component)                 [num/kg]
-      mu_Nc_2,       & ! Mean of Nc (2nd PDF component)                 [num/kg]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
-      mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)          [ln(num/kg)]
-      mu_Nc_2_n,     & ! Mean of ln Nc (2nd PDF component)          [ln(num/kg)]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-      sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
-      sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
-      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
-      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
-      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-      sigma_Nc_1_n,  & ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
-      sigma_Nc_2_n,  & ! Standard dev. of ln Nc (2nd PDF comp.)     [ln(num/kg)]
-      corr_sNc_1,    & ! Correlation between s and Nc (1st PDF component)    [-]
-      corr_sNc_2,    & ! Correlation between s and Nc (2nd PDF component)    [-]
-      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF comp.)     [-]
-      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF comp.)     [-]
-      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-      corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
-      corr_sw,       & ! Correlation between s & w (both components)         [-]
-      corr_wrr,      & ! Correlation between rr & w (both components)        [-]
-      corr_wNr,      & ! Correlation between Nr & w (both components)        [-]
-      corr_wNc         ! Correlation between Nc & w (both components)        [-]
-
-    ! Local Variables
-    real( kind = core_rknd ) :: &
-      rrp2_on_rrm2,    & ! Ratio of < r_r'^2 > to < r_r >^2              [-]
-      Nrp2_on_Nrm2,    & ! Ratio of < N_r'^2 > to < N_r >^2              [-]
-      Ncp2_on_Ncm2,    & ! Ratio of < N_c'^2 > to < N_c >^2              [-]
-      s_mellor_m,      & ! Mean of s_mellor                              [kg/kg]
-      stdev_s_mellor     ! Standard deviation of s_mellor                [kg/kg]
-
-
-    ! --- Begin Code ---
-
-    ! Enter the PDF parameters.
-    mu_s_1    = pdf_params%s1
-    mu_s_2    = pdf_params%s2
-    sigma_s_1 = pdf_params%stdev_s1
-    sigma_s_2 = pdf_params%stdev_s2
-
-    ! Mean of cloud droplet concentration in PDF component 1.
-    if ( Ncm > Nc_tol ) then
-       mu_Nc_1 = Ncm
-    else
-       ! Mean cloud droplet concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There is not any cloud at this
-       ! grid level.
-       mu_Nc_1 = zero
-    endif
-
-    ! Mean of cloud droplet concentration in PDF component 2.
-    if ( Ncm > Nc_tol ) then
-       mu_Nc_2 = Ncm
-    else
-       ! Mean cloud droplet concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There is not any cloud at this
-       ! grid level.
-       mu_Nc_2 = zero
-    endif
-
-    ! Set up the values of the statistical correlations and variances.  Since we
-    ! currently do not have enough variables to compute the correlations and
-    ! variances directly, we have obtained these values by analyzing LES runs of
-    ! certain cases.  We have divided those results into an inside-cloud average
-    ! and an outside-cloud (or below-cloud) average.  This coding leaves the
-    ! software architecture in place in case we ever have the variables in place
-    ! to compute these values directly.  It also allows us to use separate
-    ! inside-cloud and outside-cloud parameter values.
-    ! Brian Griffin; February 3, 2007.
-    !
-    ! Set the value of the parameters based on whether the altitude is above or
-    ! below cloud base.  Determine whether there is cloud at any given vertical
-    ! level.  In order for a vertical level to have cloud, the amount of cloud
-    ! water (rcm) must be greater than or equal to the tolerance level (rc_tol).
-    ! If there is cloud at a given vertical level, then the ###_cloud value is
-    ! used.  Otherwise, the ###_below value is used.
-
-    ! Standard deviation of cloud droplet concentration in PDF component 1.
-    if ( Ncm > Nc_tol ) then
-       sigma_Nc_1 = sqrt( Ncp2_on_Ncm2_cloud ) * mu_Nc_1
-    else
-       ! Mean cloud droplet concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There is not any cloud at this
-       ! grid level.  The standard deviation is simply 0 since cloud droplet
-       ! concentration does not vary at this grid level.
-       sigma_Nc_1 = zero
-    endif
-
-    ! Standard deviation of cloud droplet concentration in PDF component 2.
-    if ( Ncm > Nc_tol ) then
-       sigma_Nc_2 = sqrt( Ncp2_on_Ncm2_cloud ) * mu_Nc_2
-    else
-       ! Mean cloud droplet concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There is not any cloud at this
-       ! grid level.  The standard deviation is simply 0 since cloud droplet
-       ! concentration does not vary at this grid level.
-       sigma_Nc_2 = zero
-    endif
-
-    ! Correlation between s and N_c in PDF component 1.
-    if ( Ncm > Nc_tol ) then
-       corr_sNc_1 = corr_sNc_NL_cloud
-    else
-       ! Mean cloud droplet concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There is not any cloud at this
-       ! grid level.  The correlations involving cloud droplet concentration
-       ! are 0 since cloud droplet concentration does not vary at this grid
-       ! level.
-       corr_sNc_1 = zero
-    endif
-
-    ! Correlation between s and N_c in PDF component 2.
-    if ( Ncm > Nc_tol ) then
-       corr_sNc_2 = corr_sNc_NL_cloud
-    else
-       ! Mean cloud droplet concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There is not any cloud at this
-       ! grid level.  The correlations involving cloud droplet concentration
-       ! are 0 since cloud droplet concentration does not vary at this grid
-       ! level.
-       corr_sNc_2 = zero
-    endif
-
     if ( l_calc_w_corr ) then
 
       s_mellor_m &
@@ -2679,24 +2573,24 @@ module KK_microphys_module
           corr_wrr = calc_w_corr( wprrp_ip, stdev_w, sigma_rr_1, w_tol, rr_tol )
           corr_wNr = calc_w_corr( wpNrp_ip, stdev_w, sigma_Nr_1, w_tol, Nr_tol )
           corr_wNc = calc_w_corr( wpNcp, stdev_w, sigma_Nc_1, w_tol, Nc_tol )
-      
+
     else ! .not. l_calc_w_corr
 
        if ( rcm > rc_tol ) then
-  
+
           corr_sw  = corr_sw_NN_cloud
           corr_wrr = corr_wrr_NL_cloud
           corr_wNr = corr_wNr_NL_cloud
           corr_wNc = corr_wNc_NL_cloud
 
        else
-  
+
           corr_sw  = corr_sw_NN_below
           corr_wrr = corr_wrr_NL_below
           corr_wNr = corr_wNr_NL_below
           corr_wNc = corr_wNc_NL_below
 
-       endif 
+       endif
 
     endif ! l_calc_w_corr
 
@@ -2730,7 +2624,7 @@ module KK_microphys_module
                                 corr_sw, corr_wrr, corr_wNr, corr_wNc,  &
                                 pdf_params, &
                                 corr_rrNr_LL_cloud, corr_srr_NL_cloud, &
-                                corr_sNr_NL_cloud, corr_sNc_NL_cloud, & 
+                                corr_sNr_NL_cloud, corr_sNc_NL_cloud, &
                                 corr_rrNr_1, corr_srr_1, &
                                 corr_sNr_1, corr_sNc_1 )
        else
@@ -2739,7 +2633,7 @@ module KK_microphys_module
                                 corr_sw, corr_wrr, corr_wNr, corr_wNc,  &
                                 pdf_params, &
                                 corr_rrNr_LL_below, corr_srr_NL_below, &
-                                corr_sNr_NL_below, corr_sNc_NL_below, & 
+                                corr_sNr_NL_below, corr_sNc_NL_below, &
                                 corr_rrNr_1, corr_srr_1, &
                                 corr_sNr_1, corr_sNc_1 )
        endif
@@ -2751,6 +2645,127 @@ module KK_microphys_module
 
     endif
 
+    return
+
+  end subroutine KK_in_precip_values
+
+  !=============================================================================
+  subroutine KK_upscaled_setup( rcm, rrainm, Nrm, Ncm, & ! Intent(in)
+                                rr1, rr2, Nr1, Nr2, & ! Intent(in)
+                                mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & ! Intent(in)
+                                mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(in)
+                                sigma_s_1, sigma_s_2, & ! Intent(in)
+                                sigma_Nc_1, sigma_Nc_2, & ! Intent(in)
+                                sigma_rr_1, sigma_rr_2, & ! Intent(in)
+                                sigma_Nr_1, sigma_Nr_2, & ! Intent(in)
+                                corr_sw, corr_wrr, corr_wNr, corr_wNc, & ! Intent(in)
+                                corr_srr_1, corr_srr_2, corr_sNr_1, & ! Intent(in)
+                                corr_sNr_2, corr_sNc_1, corr_sNc_2, & ! Intent(in)
+                                corr_rrNr_1, corr_rrNr_2, & ! Intent(in)
+                                mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, & ! Intent(out)
+                                mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, & ! Intent(out)
+                                sigma_rr_1_n, sigma_rr_2_n, & ! Intent(out)
+                                sigma_Nr_1_n, sigma_Nr_2_n, & ! Intent(out)
+                                sigma_Nc_1_n, sigma_Nc_2_n, & ! Intent(out)
+                                corr_srr_1_n, corr_srr_2_n, & ! Intent(out)
+                                corr_sNr_1_n, corr_sNr_2_n, & ! Intent(out)
+                                corr_sNc_1_n, corr_sNc_2_n, & ! Intent(out)
+                                corr_rrNr_1_n, corr_rrNr_2_n ) ! Intent(out)
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        rc_tol, & ! Constant(s)
+        rr_tol, &
+        Nr_tol, &
+        Nc_tol, &
+        zero
+
+    use KK_utilities, only: &
+        mean_L2N,   & ! Procedure(s)
+        stdev_L2N,  &
+        corr_NL2NN, &
+        corr_LL2NN
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use constants_clubb, only: &
+        Nc_tol,       & ! [#/kg]
+        rr_tol,       & ! [kg/kg]
+        Nr_tol          ! [#/kg]
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      rcm,        & ! Mean cloud water mixing ratio                      [kg/kg]
+      rrainm,     & ! Mean rain water mixing ratio                       [kg/kg]
+      Nrm,        & ! Mean rain drop concentration                      [num/kg]
+      Ncm,        & ! Mean cloud droplet concentration                  [num/kg]
+      rr1,        & ! Mean rain water mixing ratio (1st PDF component)   [kg/kg]
+      rr2,        & ! Mean rain water mixing ratio (2nd PDF component)   [kg/kg]
+      Nr1,        & ! Mean rain drop concentration (1st PDF component)  [num/kg]
+      Nr2,        & ! Mean rain drop concentration (2nd PDF component)  [num/kg]
+      mu_rr_1,    & ! Mean of rr (1st PDF component) in-precip (ip)      [kg/kg]
+      mu_rr_2,    & ! Mean of rr (2nd PDF component) ip                  [kg/kg]
+      mu_Nr_1,    & ! Mean of Nr (1st PDF component) ip                 [num/kg]
+      mu_Nr_2,    & ! Mean of Nr (2nd PDF component) ip                 [num/kg]
+      mu_s_1,     & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,     & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_Nc_1,    & ! Mean of Nc (1st PDF component)                 [num/kg]
+      mu_Nc_2,    & ! Mean of Nc (2nd PDF component)                 [num/kg]
+      sigma_rr_1, & ! Standard deviation of rr (1st PDF component) ip    [kg/kg]
+      sigma_rr_2, & ! Standard deviation of rr (2nd PDF component) ip    [kg/kg]
+      sigma_Nr_1, & ! Standard deviation of Nr (1st PDF component) ip   [num/kg]
+      sigma_Nr_2, & ! Standard deviation of Nr (2nd PDF component) ip   [num/kg]
+      sigma_s_1,  & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,  & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_Nc_1, & ! Standard deviation of Nc (1st PDF component)   [num/kg]
+      sigma_Nc_2, & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
+      corr_sw,    & ! Correlation between s & w (both components)         [-]
+      corr_wrr,   & ! Correlation between rr & w (both components)        [-]
+      corr_wNr,   & ! Correlation between Nr & w (both components)        [-]
+      corr_wNc      ! Correlation between Nc & w (both components)        [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      corr_srr_1,  & ! Correlation between s and rr (1st PDF component) ip   [-]
+      corr_srr_2,  & ! Correlation between s and rr (2nd PDF component) ip   [-]
+      corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component) ip   [-]
+      corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component) ip   [-]
+      corr_sNc_1,  & ! Correlation between s and Nc (1st PDF component)    [-]
+      corr_sNc_2,  & ! Correlation between s and Nc (2nd PDF component)    [-]
+      corr_rrNr_1, & ! Correlation between rr and Nr (1st PDF component) ip  [-]
+      corr_rrNr_2    ! Correlation between rr and Nr (2nd PDF component) ip  [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
+      mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)          [ln(num/kg)]
+      mu_Nc_2_n,     & ! Mean of ln Nc (2nd PDF component)          [ln(num/kg)]
+      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
+      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
+      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
+      sigma_Nc_1_n,  & ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
+      sigma_Nc_2_n,  & ! Standard dev. of ln Nc (2nd PDF comp.)     [ln(num/kg)]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
+      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF comp.)     [-]
+      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF comp.)     [-]
+      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
+      corr_rrNr_2_n   ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+
+
+    ! --- Begin Code ---
 
     !!! Calculate the normalized mean of variables that have an assumed
     !!! lognormal distribution, given the mean and variance of those variables.

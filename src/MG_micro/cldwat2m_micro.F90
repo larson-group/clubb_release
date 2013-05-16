@@ -111,7 +111,7 @@ real(r8), private:: tmin_fsnow ! min temperature for transition to convective sn
 
 ! Flag to use CLUBB's PDF for upscaling KK autoconversion and accretion.
 logical, parameter, public :: &
-  l_use_CLUBB_pdf_in_mg = .false.
+  l_use_CLUBB_pdf_in_mg = .true.
 !----
 
 !needed for findsp
@@ -416,6 +416,7 @@ subroutine mmicro_pcond ( sub_column,           &
 
    use constants_clubb, only: &
        zero,       &  ! Constant(s)
+       one, &
        cm3_per_m3
 
    use parameters_microphys, only: &
@@ -1737,31 +1738,46 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
+                 call KK_in_precip_values( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                           zero, zero, & ! Intent(in)
+                                           real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                                           zero, zero, zero, zero, zero, &
+                                           zero, zero, zero, & ! Intent(in)
+                                           zero, zero, zero, & ! Intent(in)
+                                           zero, zero, mixt_frac, & ! Intent(in)
+                                           one, one, & ! Intent(in)
+                                           pdf_params(k), & ! Intent(in)
+                                           mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & !Intent(out)
+                                           dum_out1, dum_out2, dum_out3, dum_out4, & !Intent(out)
+                                           sigma_s_1, sigma_s_2, sigma_Nc_1, sigma_Nc_2, & !Intent(out)
+                                           dum_out5, dum_out6, dum_out7, & !Intent(out)
+                                           dum_out8, dum_out9, dum_out10, & !Intent(out)
+                                           dum_out11, dum_out12, dum_out13, & !Intent(out)
+                                           dum_out14, dum_out15, dum_out16, & !Intent(out)
+                                           dum_out17, dum_out18, dum_out19, dum_out20 ) !Intent(out)
+
                  call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                          zero, zero, &
                                          real( nc(i,k), kind = core_rknd ), &
                                          zero, zero, zero, zero, &
+                                         mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
+                                         zero, zero, zero, zero, &
+                                         sigma_s_1, sigma_s_2, &
+                                         sigma_Nc_1, sigma_Nc_2, &
                                          zero, zero, zero, zero, &
                                          zero, zero, zero, zero, &
                                          zero, zero, zero, &
-                                         zero, zero, mixt_frac, &
-                                         pdf_params(k), &
-                                         dum_inout1, dum_inout2, dum_inout3, & ! Intent(inout)
-                                         dum_inout4, dum_inout5, dum_inout6, &
-                                         mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & ! Intent(out)
-                                         dum_out1, dum_out2, dum_out3, &
+                                         zero, zero, zero, &
+                                         zero, zero, &
+                                         dum_out1, dum_out2, dum_out3, & ! Intent(out)
                                          dum_out4, mu_Nc_1_n, mu_Nc_2_n, &
-                                         sigma_s_1, sigma_s_2, &
-                                         sigma_Nc_1, sigma_Nc_2, &
                                          dum_out5, dum_out6, &
                                          dum_out7, dum_out8, &
                                          sigma_Nc_1_n, sigma_Nc_2_n, &
                                          dum_out9, dum_out10, &
                                          dum_out11, dum_out12, &
-                                         dum_out13, dum_out14, &
                                          corr_sNc_1_n, corr_sNc_2_n, &
-                                         dum_out15, dum_out16, &
-                                         dum_out17, dum_out18, dum_out19, dum_out20 )
+                                         dum_out13, dum_out14 )
 
                  KK_auto_coef &
                  = 1350.0_core_rknd &
@@ -2206,7 +2222,12 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! The level-mean rain water mixing ratio is found by
                  ! multiplying in-precip rain water mixing ratio (qric) by
                  ! the precipitation fraction (cldmax).
-                 call KK_in_precip_values( real( qric(i,k) * cldmax(i,k), &
+
+                 call KK_in_precip_values( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                           real( qric(i,k) * cldmax(i,k), &
+                                                 kind = core_rknd ), &
+                                           zero, zero, &
+                                           real( qric(i,k) * cldmax(i,k), &
                                                  kind = core_rknd ), &
                                            real( qric(i,k) * cldmax(i,k), &
                                                  kind = core_rknd ), &
@@ -2215,15 +2236,21 @@ subroutine mmicro_pcond ( sub_column,           &
                                            real( qc(i,k), kind = core_rknd ), &
                                            real( lcldm(i,k), kind = core_rknd ), &
                                            real( lcldm(i,k), kind = core_rknd ), &
+                                           zero, zero, zero, & ! Intent(in)
+                                           zero, zero, mixt_frac, & ! Intent(in)
                                            real( cldmax(i,k), &
                                                  kind = core_rknd ), &
                                            real( cldmax(i,k), &
                                                  kind = core_rknd ), &
-                                           dum_out1, dum_out2, dum_out3, dum_out4, &
-                                           sigma_rr_1, sigma_rr_2, dum_out5, &
-                                           dum_out6, corr_srr_1, corr_srr_2, &
-                                           dum_out7, dum_out8, dum_out9, &
-                                           dum_out10 )
+                                           pdf_params(k), & ! Intent(in)
+                                           mu_s_1, mu_s_2, dum_out1, dum_out2, & !Intent(out)
+                                           dum_out3, dum_out4, dum_out5, dum_out6, & !Intent(out)
+                                           sigma_s_1, sigma_s_2, dum_out7, dum_out8, & !Intent(out)
+                                           sigma_rr_1, sigma_rr_2, dum_out9, & !Intent(out)
+                                           dum_out10, corr_srr_1, corr_srr_2, & !Intent(out)
+                                           dum_out11, dum_out12, dum_out13, & !Intent(out)
+                                           dum_out14, dum_out15, dum_out16, & !Intent(out)
+                                           dum_out17, dum_out18, dum_out19, dum_out20 ) !Intent(out)
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
@@ -2236,30 +2263,27 @@ subroutine mmicro_pcond ( sub_column,           &
                                          real( qric(i,k) * cldmax(i,k), &
                                                kind = core_rknd ), &
                                          zero, zero, &
+                                         mu_s_1, mu_s_2, zero, zero, &
                                          real( qric(i,k), kind = core_rknd ), &
                                          real( qric(i,k), kind = core_rknd ), &
+                                         zero, zero, &
+                                         sigma_s_1, sigma_s_2, &
                                          zero, zero, &
                                          sigma_rr_1, sigma_rr_2, &
                                          zero, zero, &
+                                         zero, zero, zero, zero, &
+                                         corr_srr_1, corr_srr_2, zero, &
                                          zero, zero, zero, &
-                                         zero, zero, mixt_frac, &
-                                         pdf_params(k), &
-                                         corr_srr_1, corr_srr_2, dum_inout1, & ! Intent (inout)
-                                         dum_inout2, dum_inout3, dum_inout4, &
-                                         mu_s_1, mu_s_2, dum_out1, dum_out2, & ! Intent(out)
-                                         mu_rr_1_n, mu_rr_2_n, dum_out3, &
-                                         dum_out4, dum_out5, dum_out6, &
-                                         sigma_s_1, sigma_s_2, &
-                                         dum_out7, dum_out8, &
+                                         zero, zero, &
+                                         mu_rr_1_n, mu_rr_2_n, dum_out1, & ! Intent(out)
+                                         dum_out2, dum_out3, dum_out4, &
                                          sigma_rr_1_n, sigma_rr_2_n, &
-                                         dum_out9, dum_out10, &
-                                         dum_out11, dum_out12, &
-                                         dum_out13, dum_out14, &
+                                         dum_out5, dum_out6, &
+                                         dum_out7, dum_out8, &
                                          corr_srr_1_n, corr_srr_2_n, &
-                                         dum_out15, dum_out16, &
-                                         dum_out17, dum_out18, &
-                                         dum_out19, dum_out20, &
-                                         dum_out21, dum_out22, dum_out23, dum_out24 )
+                                         dum_out10, dum_out11, &
+                                         dum_out11, dum_out12, &
+                                         dum_out13, dum_out14 )
 
                  KK_accr_coef = 67.0_core_rknd
 
