@@ -20,18 +20,18 @@ module KK_upscaled_means
 
   !=============================================================================
   subroutine KK_upscaled_means_driver( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
-                                       mu_Nr_1, mu_Nr_2, mu_Nc_1, mu_Nc_2, &
+                                       mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
                                        mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                       mu_Nr_2_n, mu_Nc_1_n, mu_Nc_2_n, &
+                                       mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
                                        sigma_s_1, sigma_s_2, &
                                        sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                       sigma_Nr_2, sigma_Nc_1, sigma_Nc_2, &
+                                       sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
                                        sigma_rr_1_n, sigma_rr_2_n, &
                                        sigma_Nr_1_n, sigma_Nr_2_n, &
-                                       sigma_Nc_1_n, sigma_Nc_2_n, &
+                                       sigma_Ncn_1_n, sigma_Ncn_2_n, &
                                        corr_srr_1_n, corr_srr_2_n, &
                                        corr_sNr_1_n, corr_sNr_2_n, &
-                                       corr_sNc_1_n, corr_sNc_2_n, &
+                                       corr_sNcn_1_n, corr_sNcn_2_n, &
                                        corr_rrNr_1_n, corr_rrNr_2_n, &
                                        mixt_frac, precip_frac_1, &
                                        precip_frac_2, Nc0_in_cloud, &
@@ -59,34 +59,34 @@ module KK_upscaled_means
       mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
       mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
       mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
-      mu_Nc_1,       & ! Mean of Nc (1st PDF component)                 [num/kg]
-      mu_Nc_2,       & ! Mean of Nc (2nd PDF component)                 [num/kg]
+      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
+      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
       mu_rr_1_n,     & ! Mean of ln rr (1st PDF comp.) ip            [ln(kg/kg)]
       mu_rr_2_n,     & ! Mean of ln rr (2nd PDF comp.) ip            [ln(kg/kg)]
       mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
       mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
-      mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)          [ln(num/kg)]
-      mu_Nc_2_n,     & ! Mean of ln Nc (2nd PDF component)          [ln(num/kg)]
+      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
+      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
       sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
       sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
       sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
       sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
       sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
       sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
-      sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
-      sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
+      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
+      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
       sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
       sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
       sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
       sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-      sigma_Nc_1_n,  & ! Standard dev. of ln Nc (1st PDF comp.)     [ln(num/kg)]
-      sigma_Nc_2_n,  & ! Standard dev. of ln Nc (2nd PDF comp.)     [ln(num/kg)]
+      sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
+      sigma_Ncn_2_n, & ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
       corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
       corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
       corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
       corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF comp.) ip  [-]
-      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF comp.) ip  [-]
+      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
+      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
       corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
       corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
       mixt_frac,     & ! Mixture fraction                                    [-]
@@ -126,11 +126,11 @@ module KK_upscaled_means
 
     !!! Calculate the upscaled KK autoconversion tendency.
     KK_auto_tndcy  &
-    = KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
-                             mu_Nc_1_n, mu_Nc_2_n, sigma_s_1, &
-                             sigma_s_2, sigma_Nc_1, sigma_Nc_2, &
-                             sigma_Nc_1_n, sigma_Nc_2_n, corr_sNc_1_n, &
-                             corr_sNc_2_n, KK_auto_coef, mixt_frac, &
+    = KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, &
+                             mu_Ncn_1_n, mu_Ncn_2_n, sigma_s_1, &
+                             sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
+                             sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
+                             corr_sNcn_2_n, KK_auto_coef, mixt_frac, &
                              Nc0_in_cloud, l_const_Nc_in_cloud )
 
 
@@ -264,16 +264,20 @@ module KK_upscaled_means
   end function KK_evap_upscaled_mean
 
   !=============================================================================
-  function KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
-                                  mu_Nc_1_n, mu_Nc_2_n, sigma_s_1, &
-                                  sigma_s_2, sigma_Nc_1, sigma_Nc_2, &
-                                  sigma_Nc_1_n, sigma_Nc_2_n, corr_sNc_1_n, &
-                                  corr_sNc_2_n, KK_auto_coef, mixt_frac, &
+  function KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, &
+                                  mu_Ncn_1_n, mu_Ncn_2_n, sigma_s_1, &
+                                  sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
+                                  sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
+                                  corr_sNcn_2_n, KK_auto_coef, mixt_frac, &
                                   Nc0_in_cloud, l_const_Nc_in_cloud )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain water
     ! autoconversion tendency.
+    !
+    ! Note:  Cloud droplet concentration is based on cloud nuclei concentration.
+    !        Cloud nuclei concentration, N_cn, has replaced cloud droplet
+    !        concentration, N_c, in CLUBB's PDF.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -293,23 +297,23 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,       & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,       & ! Mean of s (2nd PDF component)                   [kg/kg]
-      mu_Nc_1,      & ! Mean of Nc (1st PDF component)                 [num/kg]
-      mu_Nc_2,      & ! Mean of Nc (2nd PDF component)                 [num/kg]
-      mu_Nc_1_n,    & ! Mean of ln Nc (1st PDF component)                   [-]
-      mu_Nc_2_n,    & ! Mean of ln Nc (2nd PDF component)                   [-]
-      sigma_s_1,    & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,    & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-      sigma_Nc_1,   & ! Standard deviation of Nc (1st PDF component)   [num/kg]
-      sigma_Nc_2,   & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
-      sigma_Nc_1_n, & ! Standard deviation of ln Nc (1st PDF component)     [-]
-      sigma_Nc_2_n, & ! Standard deviation of ln Nc (2nd PDF component)     [-]
-      corr_sNc_1_n, & ! Correlation between s and ln Nc (1st PDF component) [-]
-      corr_sNc_2_n, & ! Correlation between s and ln Nc (2nd PDF component) [-]
-      KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
-      mixt_frac,    & ! Mixture fraction                                    [-]
-      Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc. [num/kg]
+      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
+      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
+      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
+      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
+      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
+      sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF comp.) [ln(#/kg)]
+      sigma_Ncn_2_n, & ! Standard deviation of ln Ncn (2nd PDF comp.) [ln(#/kg)]
+      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
+      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
+      KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      Nc0_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
 
     logical, intent(in) :: &
       l_const_Nc_in_cloud  ! Flag to use a constant value of N_c within cloud
@@ -346,12 +350,12 @@ module KK_upscaled_means
        KK_auto_upscaled_mean  &
        = KK_auto_coef &
          * ( mixt_frac &
-             * bivar_NL_mean_eq( mu_s_1, mu_Nc_1, mu_Nc_1_n, sigma_s_1, &
-                                 sigma_Nc_1, sigma_Nc_1_n, corr_sNc_1_n, &
+             * bivar_NL_mean_eq( mu_s_1, mu_Ncn_1, mu_Ncn_1_n, sigma_s_1, &
+                                 sigma_Ncn_1, sigma_Ncn_1_n, corr_sNcn_1_n, &
                                  Nc_tol, alpha_exp, beta_exp ) &
            + ( one - mixt_frac ) &
-             * bivar_NL_mean_eq( mu_s_2, mu_Nc_2, mu_Nc_2_n, sigma_s_2, &
-                                 sigma_Nc_2, sigma_Nc_2_n, corr_sNc_2_n, &
+             * bivar_NL_mean_eq( mu_s_2, mu_Ncn_2, mu_Ncn_2_n, sigma_s_2, &
+                                 sigma_Ncn_2, sigma_Ncn_2_n, corr_sNcn_2_n, &
                                  Nc_tol, alpha_exp, beta_exp ) &
            )
 
@@ -797,7 +801,7 @@ module KK_upscaled_means
 
     ! Description:
     ! This function calculates the contribution by the ith PDF component to the
-    ! expression < x1^alpha x2^beta >, where x1 = s and x2 = N_ccn or r_r,
+    ! expression < x1^alpha x2^beta >, where x1 = s and x2 = N_cn or r_r,
     ! depending on whether this function is being called for autoconversion or
     ! accretion, respectively.  The total value of KK mean microphysics tendency
     ! is given by:
@@ -806,8 +810,8 @@ module KK_upscaled_means
     !             * ( mixt_frac < s^alpha y^beta (1) >
     !                 + ( 1 - mixt_frac ) < s^alpha y^beta (2) > );
     !
-    ! where y stands for either N_ccn or r_r.  One of two functions is called,
-    ! based on whether x1 (s) and/or x2 (N_ccn or r_r) varies.  Each one of
+    ! where y stands for either N_cn or r_r.  One of two functions is called,
+    ! based on whether x1 (s) and/or x2 (N_cn or r_r) varies.  Each one of
     ! these two functions is the result of an evaluated integral based on the
     ! specific situation.
 
@@ -875,19 +879,19 @@ module KK_upscaled_means
     ! Means for the ith PDF component. 
     mu_x1 = dble( mu_s_i )
     if ( beta_exp_in >= zero ) then
-       mu_x2 = dble( mu_y_i )   ! y is N_ccn (auto.) or r_r (accr.).
+       mu_x2 = dble( mu_y_i )   ! y is N_cn (auto.) or r_r (accr.).
     else ! exponent beta < 0
-       mu_x2 = dble( max( mu_y_i, y_tol ) )   ! y is N_ccn or r_r.
+       mu_x2 = dble( max( mu_y_i, y_tol ) )   ! y is N_cn or r_r.
     endif
-    mu_x2_n = dble( mu_y_i_n ) ! y is N_ccn (autoconversion) or r_r (accretion).
+    mu_x2_n = dble( mu_y_i_n ) ! y is N_cn (autoconversion) or r_r (accretion).
 
     ! Standard deviations for the ith PDF component.
     sigma_x1   = dble( sigma_s_i )
-    sigma_x2   = dble( sigma_y_i )   ! y is N_ccn (auto.) or r_r (accr.).
-    sigma_x2_n = dble( sigma_y_i_n ) ! y is N_ccn (auto.) or r_r (accr.).
+    sigma_x2   = dble( sigma_y_i )   ! y is N_cn (auto.) or r_r (accr.).
+    sigma_x2_n = dble( sigma_y_i_n ) ! y is N_cn (auto.) or r_r (accr.).
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = dble( corr_sy_i_n ) ! y is N_ccn (auto.) or r_r (accr.).
+    rho_x1x2_n = dble( corr_sy_i_n ) ! y is N_cn (auto.) or r_r (accr.).
 
     ! Exponents.
     alpha_exp = dble( alpha_exp_in )
@@ -898,7 +902,7 @@ module KK_upscaled_means
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
     x1_tol = dble( s_mellor_tol )
-    x2_tol = dble( y_tol )  ! y is N_ccn (auto.) or r_r (accr.).
+    x2_tol = dble( y_tol )  ! y is N_cn (auto.) or r_r (accr.).
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When
@@ -929,7 +933,7 @@ module KK_upscaled_means
     if ( ( sigma_x1 <= x1_tol .or. abs( s_c ) > dble( parab_cyl_max_input ) ) &
          .and. sigma_x2 <= x2_tol ) then
 
-       ! The ith PDF component variance of both s and y (r_r or N_ccn) is 0.
+       ! The ith PDF component variance of both s and y (r_r or N_cn) is 0.
        bivar_NL_mean_eq  &
        = real( bivar_NL_mean_const_all( mu_x1, mu_x2, alpha_exp, beta_exp ), &
                kind = core_rknd )
@@ -946,7 +950,7 @@ module KK_upscaled_means
 
     elseif ( sigma_x2 <= x2_tol ) then
 
-       ! The ith PDF component variance of y (r_r or N_ccn) is 0.
+       ! The ith PDF component variance of y (r_r or N_cn) is 0.
        bivar_NL_mean_eq  &
        = real( bivar_NL_mean_const_x2( mu_x1, mu_x2, sigma_x1, &
                                        alpha_exp, beta_exp ), kind = core_rknd )

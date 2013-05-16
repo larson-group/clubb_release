@@ -440,11 +440,11 @@ module KK_upscaled_covariances
   end function covar_thl_KK_evap
 
   !=============================================================================
-  function covar_x_KK_auto( mu_x_1, mu_x_2, mu_s_1, mu_s_2, mu_Nc_1_n, &
-                            mu_Nc_2_n, sigma_x_1, sigma_x_2, sigma_s_1, &
-                            sigma_s_2, sigma_Nc_1_n, sigma_Nc_2_n, &
-                            corr_xs_1, corr_xs_2, corr_xNc_1_n, &
-                            corr_xNc_2_n, corr_sNc_1_n, corr_sNc_2_n, &
+  function covar_x_KK_auto( mu_x_1, mu_x_2, mu_s_1, mu_s_2, mu_Ncn_1_n, &
+                            mu_Ncn_2_n, sigma_x_1, sigma_x_2, sigma_s_1, &
+                            sigma_s_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                            corr_xs_1, corr_xs_2, corr_xNcn_1_n, &
+                            corr_xNcn_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
                             x_mean, KK_auto_tndcy, KK_auto_coef, x_tol, &
                             mixt_frac, Nc0_in_cloud, l_const_Nc_in_cloud )
 
@@ -470,28 +470,28 @@ module KK_upscaled_covariances
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_x_1,        & ! Mean of x (1st PDF component)                       [-]
-      mu_x_2,        & ! Mean of x (2nd PDF component)                       [-]
-      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
-      mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)                   [-]
-      mu_Nc_2_n,     & ! Mean of ln Nc (2nd PDF component)                   [-]
-      sigma_x_1,     & ! Standard deviation of x (1st PDF component)         [-]
-      sigma_x_2,     & ! Standard deviation of x (2nd PDF component)         [-]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
-      sigma_Nc_1_n,  & ! Standard deviation of ln Nc (1st PDF component)     [-]
-      sigma_Nc_2_n,  & ! Standard deviation of ln Nc (2nd PDF component)     [-]
+      mu_x_1,        & ! Mean of x (1st PDF component)                [un. vary]
+      mu_x_2,        & ! Mean of x (2nd PDF component)                [un. vary]
+      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
+      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
+      sigma_x_1,     & ! Standard deviation of x (1st PDF component)  [un. vary]
+      sigma_x_2,     & ! Standard deviation of x (2nd PDF component)  [un. vary]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF comp.) [ln(#/kg)]
+      sigma_Ncn_2_n, & ! Standard deviation of ln Ncn (2nd PDF comp.) [ln(#/kg)]
       corr_xs_1,     & ! Correlation between x and s (1st PDF component)     [-]
       corr_xs_2,     & ! Correlation between x and s (2nd PDF component)     [-]
-      corr_xNc_1_n,  & ! Correlation between x and ln Nc (1st PDF component) [-]
-      corr_xNc_2_n,  & ! Correlation between x and ln Nc (2nd PDF component) [-]
-      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF component) [-]
-      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF component) [-]
-      x_mean,        & ! Mean of x (overall)                        [units vary]
+      corr_xNcn_1_n, & ! Correlation between x and ln Ncn (1st PDF comp.)    [-]
+      corr_xNcn_2_n, & ! Correlation between x and ln Ncn (2nd PDF comp.)    [-]
+      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
+      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
+      x_mean,        & ! Mean of x (overall)                          [un. vary]
       KK_auto_tndcy, & ! KK autoconversion tendency                  [(kg/kg)/s]
       KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
-      x_tol,         & ! Tolerance value of x                       [units vary]
+      x_tol,         & ! Tolerance value of x                         [un. vary]
       mixt_frac,     & ! Mixture fraction                                    [-]
       Nc0_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
 
@@ -534,15 +534,15 @@ module KK_upscaled_covariances
        covar_x_KK_auto  &
        = KK_auto_coef &
          * ( mixt_frac &
-             * trivar_NNL_covar_eq( mu_x_1, mu_s_1, mu_Nc_1_n, &
-                                    sigma_x_1, sigma_s_1, sigma_Nc_1_n, &
-                                    corr_xs_1, corr_xNc_1_n, corr_sNc_1_n, &
+             * trivar_NNL_covar_eq( mu_x_1, mu_s_1, mu_Ncn_1_n, &
+                                    sigma_x_1, sigma_s_1, sigma_Ncn_1_n, &
+                                    corr_xs_1, corr_xNcn_1_n, corr_sNcn_1_n, &
                                     x_mean, KK_auto_tndcy, KK_auto_coef, &
                                     x_tol, alpha_exp, beta_exp ) &
            + ( one - mixt_frac ) &
-             * trivar_NNL_covar_eq( mu_x_2, mu_s_2, mu_Nc_2_n, &
-                                    sigma_x_2, sigma_s_2, sigma_Nc_2_n, &
-                                    corr_xs_2, corr_xNc_2_n, corr_sNc_2_n, &
+             * trivar_NNL_covar_eq( mu_x_2, mu_s_2, mu_Ncn_2_n, &
+                                    sigma_x_2, sigma_s_2, sigma_Ncn_2_n, &
+                                    corr_xs_2, corr_xNcn_2_n, corr_sNcn_2_n, &
                                     x_mean, KK_auto_tndcy, KK_auto_coef, &
                                     x_tol, alpha_exp, beta_exp ) &
            )
@@ -555,12 +555,12 @@ module KK_upscaled_covariances
   end function covar_x_KK_auto
 
   !=============================================================================
-  function covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_1, &
-                             mu_Nc_2, mu_Nc_1_n, mu_Nc_2_n, sigma_t_1, &
-                             sigma_t_2, sigma_s_1, sigma_s_2, sigma_Nc_1, &
-                             sigma_Nc_2, sigma_Nc_1_n, sigma_Nc_2_n, &
-                             corr_ts_1, corr_ts_2, corr_tNc_1_n, &
-                             corr_tNc_2_n, corr_sNc_1_n, corr_sNc_2_n, &
+  function covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Ncn_1, &
+                             mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, sigma_t_1, &
+                             sigma_t_2, sigma_s_1, sigma_s_2, sigma_Ncn_1, &
+                             sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                             corr_ts_1, corr_ts_2, corr_tNcn_1_n, &
+                             corr_tNcn_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
                              KK_auto_tndcy, KK_auto_coef, t_tol, &
                              crt1, crt2, mixt_frac, Nc0_in_cloud, &
                              l_const_Nc_in_cloud )
@@ -594,27 +594,27 @@ module KK_upscaled_covariances
       mu_t_2,        & ! Mean of t (2nd PDF component)                   [kg/kg]
       mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
       mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
-      mu_Nc_1,       & ! Mean of Nc (1st PDF component)                 [num/kg]
-      mu_Nc_2,       & ! Mean of Nc (2nd PDF component)                 [num/kg]
-      mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)                   [-]
-      mu_Nc_2_n,     & ! Mean of ln Nc (2nd PDF component)                   [-]
+      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
+      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
+      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
+      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
       sigma_t_1,     & ! Standard deviation of t (1st PDF component)     [kg/kg]
       sigma_t_2,     & ! Standard deviation of t (2nd PDF component)     [kg/kg]
       sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
       sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-      sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
-      sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
-      sigma_Nc_1_n,  & ! Standard deviation of ln Nc (1st PDF component)     [-]
-      sigma_Nc_2_n,  & ! Standard deviation of ln Nc (2nd PDF component)     [-]
+      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
+      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
+      sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF comp.) [ln(#/kg)]
+      sigma_Ncn_2_n, & ! Standard deviation of ln Ncn (2nd PDF comp.) [ln(#/kg)]
       corr_ts_1,     & ! Correlation between t and s (1st PDF component)     [-]
       corr_ts_2,     & ! Correlation between t and s (2nd PDF component)     [-]
-      corr_tNc_1_n,  & ! Correlation between t and ln Nc (1st PDF component) [-]
-      corr_tNc_2_n,  & ! Correlation between t and ln Nc (2nd PDF component) [-]
-      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF component) [-]
-      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF component) [-]
+      corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
+      corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
+      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
+      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
       KK_auto_tndcy, & ! KK autoconversion tendency                  [(kg/kg)/s]
       KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
-      t_tol,         & ! Tolerance value of t                       [units vary]
+      t_tol,         & ! Tolerance value of t                            [kg/kg]
       crt1,          & ! Coefficient c_rt (1st PDF component)                [-]
       crt2,          & ! Coefficient c_rt (2nd PDF component)                [-]
       mixt_frac,     & ! Mixture fraction                                    [-]
@@ -671,31 +671,31 @@ module KK_upscaled_covariances
        covar_rt_KK_auto  &
        = KK_auto_coef  &
          * ( mixt_frac * ( one / ( two * crt1 ) )  &
-             * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_Nc_1_n, &
-                                      sigma_t_1, sigma_s_1, sigma_Nc_1_n, &
-                                      corr_ts_1, corr_tNc_1_n, corr_sNc_1_n, &
+             * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_Ncn_1_n, &
+                                      sigma_t_1, sigma_s_1, sigma_Ncn_1_n, &
+                                      corr_ts_1, corr_tNcn_1_n, corr_sNcn_1_n, &
                                       mu_t_1, KK_auto_tndcy, KK_auto_coef, &
                                       t_tol, alpha_exp, beta_exp )  &
-               + bivar_NL_mean_eq( mu_s_1, mu_Nc_1, mu_Nc_1_n, sigma_s_1, &
-                                   sigma_Nc_1, sigma_Nc_1_n, corr_sNc_1_n, &
+               + bivar_NL_mean_eq( mu_s_1, mu_Ncn_1, mu_Ncn_1_n, sigma_s_1, &
+                                   sigma_Ncn_1, sigma_Ncn_1_n, corr_sNcn_1_n, &
                                    Nc_tol, alpha_exp + one, beta_exp )  &
                - mu_s_1  &
-                 * bivar_NL_mean_eq( mu_s_1, mu_Nc_1, mu_Nc_1_n, sigma_s_1, &
-                                     sigma_Nc_1, sigma_Nc_1_n, corr_sNc_1_n, &
+                 * bivar_NL_mean_eq( mu_s_1, mu_Ncn_1, mu_Ncn_1_n, sigma_s_1, &
+                                     sigma_Ncn_1, sigma_Ncn_1_n, corr_sNcn_1_n,&
                                      Nc_tol, alpha_exp, beta_exp )  &
             )  &
            + ( one - mixt_frac ) * ( one / ( two * crt2 ) )  &
-             * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Nc_2_n, &
-                                      sigma_t_2, sigma_s_2, sigma_Nc_2_n, &
-                                      corr_ts_2, corr_tNc_2_n, corr_sNc_2_n, &
+             * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Ncn_2_n, &
+                                      sigma_t_2, sigma_s_2, sigma_Ncn_2_n, &
+                                      corr_ts_2, corr_tNcn_2_n, corr_sNcn_2_n, &
                                       mu_t_2, KK_auto_tndcy, KK_auto_coef, &
                                       t_tol, alpha_exp, beta_exp )  &
-               + bivar_NL_mean_eq( mu_s_2, mu_Nc_2, mu_Nc_2_n, sigma_s_2, &
-                                   sigma_Nc_2, sigma_Nc_2_n, corr_sNc_2_n, &
+               + bivar_NL_mean_eq( mu_s_2, mu_Ncn_2, mu_Ncn_2_n, sigma_s_2, &
+                                   sigma_Ncn_2, sigma_Ncn_2_n, corr_sNcn_2_n, &
                                    Nc_tol, alpha_exp + one, beta_exp )  &
                - mu_s_2  &
-                 * bivar_NL_mean_eq( mu_s_2, mu_Nc_2, mu_Nc_2_n, sigma_s_2, &
-                                     sigma_Nc_2, sigma_Nc_2_n, corr_sNc_2_n, &
+                 * bivar_NL_mean_eq( mu_s_2, mu_Ncn_2, mu_Ncn_2_n, sigma_s_2, &
+                                     sigma_Ncn_2, sigma_Ncn_2_n, corr_sNcn_2_n,&
                                      Nc_tol, alpha_exp, beta_exp )  &
                )  &
            )
@@ -708,12 +708,12 @@ module KK_upscaled_covariances
   end function covar_rt_KK_auto
 
   !=============================================================================
-  function covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Nc_1, &
-                              mu_Nc_2, mu_Nc_1_n, mu_Nc_2_n, sigma_t_1, &
-                              sigma_t_2, sigma_s_1, sigma_s_2, sigma_Nc_1, &
-                              sigma_Nc_2, sigma_Nc_1_n, sigma_Nc_2_n, &
-                              corr_ts_1, corr_ts_2, corr_tNc_1_n, &
-                              corr_tNc_2_n, corr_sNc_1_n, corr_sNc_2_n, &
+  function covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Ncn_1, &
+                              mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, sigma_t_1, &
+                              sigma_t_2, sigma_s_1, sigma_s_2, sigma_Ncn_1, &
+                              sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                              corr_ts_1, corr_ts_2, corr_tNcn_1_n, &
+                              corr_tNcn_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
                               KK_auto_tndcy, KK_auto_coef, t_tol, &
                               cthl1, cthl2, mixt_frac, Nc0_in_cloud, &
                               l_const_Nc_in_cloud )
@@ -747,27 +747,27 @@ module KK_upscaled_covariances
       mu_t_2,        & ! Mean of t (2nd PDF component)                   [kg/kg]
       mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
       mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
-      mu_Nc_1,       & ! Mean of Nc (1st PDF component)                 [num/kg]
-      mu_Nc_2,       & ! Mean of Nc (2nd PDF component)                 [num/kg]
-      mu_Nc_1_n,     & ! Mean of ln Nc (1st PDF component)                   [-]
-      mu_Nc_2_n,     & ! Mean of ln Nc (2nd PDF component)                   [-]
+      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
+      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
+      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
+      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
       sigma_t_1,     & ! Standard deviation of t (1st PDF component)     [kg/kg]
       sigma_t_2,     & ! Standard deviation of t (2nd PDF component)     [kg/kg]
       sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
       sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-      sigma_Nc_1,    & ! Standard deviation of Nc (1st PDF component)   [num/kg]
-      sigma_Nc_2,    & ! Standard deviation of Nc (2nd PDF component)   [num/kg]
-      sigma_Nc_1_n,  & ! Standard deviation of ln Nc (1st PDF component)     [-]
-      sigma_Nc_2_n,  & ! Standard deviation of ln Nc (2nd PDF component)     [-]
+      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
+      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
+      sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF comp.) [ln(#/kg)]
+      sigma_Ncn_2_n, & ! Standard deviation of ln Ncn (2nd PDF comp.) [ln(#/kg)]
       corr_ts_1,     & ! Correlation between t and s (1st PDF component)     [-]
       corr_ts_2,     & ! Correlation between t and s (2nd PDF component)     [-]
-      corr_tNc_1_n,  & ! Correlation between t and ln Nc (1st PDF component) [-]
-      corr_tNc_2_n,  & ! Correlation between t and ln Nc (2nd PDF component) [-]
-      corr_sNc_1_n,  & ! Correlation between s and ln Nc (1st PDF component) [-]
-      corr_sNc_2_n,  & ! Correlation between s and ln Nc (2nd PDF component) [-]
+      corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
+      corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
+      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
+      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
       KK_auto_tndcy, & ! KK autoconversion tendency                  [(kg/kg)/s]
       KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
-      t_tol,         & ! Tolerance value of t                       [units vary]
+      t_tol,         & ! Tolerance value of t                            [kg/kg]
       cthl1,         & ! Coefficient c_thl (1st PDF component)               [-]
       cthl2,         & ! Coefficient c_thl (2nd PDF component)               [-]
       mixt_frac,     & ! Mixture fraction                                    [-]
@@ -824,31 +824,31 @@ module KK_upscaled_covariances
        covar_thl_KK_auto  &
        = KK_auto_coef  &
          * ( mixt_frac * ( one / ( two * cthl1 ) )  &
-             * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_Nc_1_n, &
-                                      sigma_t_1, sigma_s_1, sigma_Nc_1_n, &
-                                      corr_ts_1, corr_tNc_1_n, corr_sNc_1_n, &
+             * ( trivar_NNL_covar_eq( mu_t_1, mu_s_1, mu_Ncn_1_n, &
+                                      sigma_t_1, sigma_s_1, sigma_Ncn_1_n, &
+                                      corr_ts_1, corr_tNcn_1_n, corr_sNcn_1_n, &
                                       mu_t_1, KK_auto_tndcy, KK_auto_coef, &
                                       t_tol, alpha_exp, beta_exp )  &
-               - bivar_NL_mean_eq( mu_s_1, mu_Nc_1, mu_Nc_1_n, sigma_s_1, &
-                                   sigma_Nc_1, sigma_Nc_1_n, corr_sNc_1_n, &
+               - bivar_NL_mean_eq( mu_s_1, mu_Ncn_1, mu_Ncn_1_n, sigma_s_1, &
+                                   sigma_Ncn_1, sigma_Ncn_1_n, corr_sNcn_1_n, &
                                    Nc_tol, alpha_exp + one, beta_exp )  &
                + mu_s_1  &
-                 * bivar_NL_mean_eq( mu_s_1, mu_Nc_1, mu_Nc_1_n, sigma_s_1, &
-                                     sigma_Nc_1, sigma_Nc_1_n, corr_sNc_1_n, &
+                 * bivar_NL_mean_eq( mu_s_1, mu_Ncn_1, mu_Ncn_1_n, sigma_s_1, &
+                                     sigma_Ncn_1, sigma_Ncn_1_n, corr_sNcn_1_n,&
                                      Nc_tol, alpha_exp, beta_exp )  &
                )  &
            + ( one - mixt_frac ) * ( one / ( two * cthl2 ) )  &
-             * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Nc_2_n, &
-                                      sigma_t_2, sigma_s_2, sigma_Nc_2_n, &
-                                      corr_ts_2, corr_tNc_2_n, corr_sNc_2_n, &
+             * ( trivar_NNL_covar_eq( mu_t_2, mu_s_2, mu_Ncn_2_n, &
+                                      sigma_t_2, sigma_s_2, sigma_Ncn_2_n, &
+                                      corr_ts_2, corr_tNcn_2_n, corr_sNcn_2_n, &
                                       mu_t_2, KK_auto_tndcy, KK_auto_coef, &
                                       t_tol, alpha_exp, beta_exp )  &
-               - bivar_NL_mean_eq( mu_s_2, mu_Nc_2, mu_Nc_2_n, sigma_s_2, &
-                                   sigma_Nc_2, sigma_Nc_2_n, corr_sNc_2_n, &
+               - bivar_NL_mean_eq( mu_s_2, mu_Ncn_2, mu_Ncn_2_n, sigma_s_2, &
+                                   sigma_Ncn_2, sigma_Ncn_2_n, corr_sNcn_2_n, &
                                    Nc_tol, alpha_exp + one, beta_exp )  &
                + mu_s_2  &
-                 * bivar_NL_mean_eq( mu_s_2, mu_Nc_2, mu_Nc_2_n, sigma_s_2, &
-                                     sigma_Nc_2, sigma_Nc_2_n, corr_sNc_2_n, &
+                 * bivar_NL_mean_eq( mu_s_2, mu_Ncn_2, mu_Ncn_2_n, sigma_s_2, &
+                                     sigma_Ncn_2, sigma_Ncn_2_n, corr_sNcn_2_n,&
                                      Nc_tol, alpha_exp, beta_exp )  &    
                )  &
            )
@@ -1436,7 +1436,7 @@ module KK_upscaled_covariances
     ! Description:
     ! This function calculates the contribution by the ith PDF component to the
     ! expression < y1'y2'_(i) >, where y1 = x1 ( = x, which is w or t), and
-    ! where y2 = x2^alpha x3^beta ( = s^alpha y^beta, where y is N_c or r_r for
+    ! where y2 = x2^alpha x3^beta ( = s^alpha y^beta, where y is N_cn or r_r for
     ! autoconversion or accretion, respectively, and which also equals
     ! KK_auto_tndcy / KK_auto_coef or KK_accr_tndcy / KK_accr_coef,
     ! respectively).  The value of covariance of x and the KK microphysics
@@ -1524,18 +1524,18 @@ module KK_upscaled_covariances
     ! Means for the ith PDF component. 
     mu_x1   = dble( mu_x_i ) ! x is w or t (ith component).
     mu_x2   = dble( mu_s_i )
-    mu_x3_n = dble( mu_y_i_n ) ! y is N_c (autoconversion) or r_r (accretion).
+    mu_x3_n = dble( mu_y_i_n ) ! y is N_cn (autoconversion) or r_r (accretion).
 
     ! Standard deviations for the ith PDF component.
     sigma_x1   = dble( sigma_x_i ) ! x is w or t (ith component).
     sigma_x2   = dble( sigma_s_i )
-    sigma_x3_n = dble( sigma_y_i_n ) ! y is N_c (auto.) or r_r (accr.).
+    sigma_x3_n = dble( sigma_y_i_n ) ! y is N_cn (auto.) or r_r (accr.).
 
     ! Correlations for the ith PDF component.
     rho_x1x2   = dble( corr_xs_i )    ! x is w or t (ith component).
     rho_x1x3_n = dble( corr_xy_i_n )  ! x is w or t (ith component).
-                                      ! y is N_c (auto.) or r_r (accr.).
-    rho_x2x3_n = dble( corr_sy_i_n )  ! y is N_c (auto.) or r_r (accr.).
+                                      ! y is N_cn (auto.) or r_r (accr.).
+    rho_x2x3_n = dble( corr_sy_i_n )  ! y is N_cn (auto.) or r_r (accr.).
 
     ! Overall means.
     x1_mean = dble( x_mean )  ! x is w or t.
