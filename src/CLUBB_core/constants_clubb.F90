@@ -320,10 +320,11 @@ module constants_clubb
   ! still officially have a cloud at that level.  This is figured to be about
   ! 1.0_core_rknd x 10^-7 kg/kg.  Brian; February 10, 2007.
   real( kind = core_rknd ), parameter, public :: & 
-    rc_tol = 1.0E-6_core_rknd,  & ! [kg/kg]
-    Nc_tol = 1.0E+2_core_rknd,  & ! [#/kg]
-    rr_tol = 1.0E-10_core_rknd, & ! [kg/kg]
-    Nr_tol = 1.0E-2_core_rknd     ! [#/kg]
+    rc_tol  = 1.0E-6_core_rknd,  & ! [kg/kg]
+    Nc_tol  = 1.0E+2_core_rknd,  & ! [#/kg]
+    Ncn_tol = 1.0E+2_core_rknd,  & ! [#/kg]
+    rr_tol  = 1.0E-10_core_rknd, & ! [kg/kg]
+    Nr_tol  = 1.0E-2_core_rknd     ! [#/kg]
 
   ! Minimum value for em (turbulence kinetic energy)
   ! If anisotropic TKE is enabled, em = (1/2) * ( up2 + vp2 + wp2 );

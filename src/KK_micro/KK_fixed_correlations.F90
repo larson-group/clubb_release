@@ -13,45 +13,46 @@ module KK_fixed_correlations
 
   ! Parameters for in-cloud (from SAM RF02 DO).
   real( kind = core_rknd ), public :: &  ! RF02 value
-    corr_wrr_NL_cloud,  & ! 
-    corr_wNr_NL_cloud,  & !
-    corr_wNc_NL_cloud,  & !
-    corr_sw_NN_cloud,   & !
-    corr_srr_NL_cloud,  & ! 0.242
-    corr_sNr_NL_cloud,  & ! 0.285
-    corr_sNc_NL_cloud,  & ! 0.433
-    corr_trr_NL_cloud,  & ! 0.260
-    corr_tNr_NL_cloud,  & ! 0.204
-    corr_tNc_NL_cloud,  & ! 0.165
-    corr_rrNr_LL_cloud    ! 0.786
+    corr_wrr_NL_cloud,  & ! Prescribed in-cloud correlation of w and rr     [-]
+    corr_wNr_NL_cloud,  & ! Prescribed in-cloud correlation of w and Nr     [-]
+    corr_wNcn_NL_cloud, & ! Prescribed in-cloud correlation of w and Ncn    [-]
+    corr_sw_NN_cloud,   & ! Prescribed in-cloud correlation of s and w      [-]
+    corr_srr_NL_cloud,  & ! Prescribed in-cloud correlation of s and rr     [-]
+    corr_sNr_NL_cloud,  & ! Prescribed in-cloud correlation of s and Nr     [-]
+    corr_sNcn_NL_cloud, & ! Prescribed in-cloud correlation of s and Ncn    [-]
+    corr_trr_NL_cloud,  & ! Prescribed in-cloud correlation of t and rr     [-]
+    corr_tNr_NL_cloud,  & ! Prescribed in-cloud correlation of t and Nr     [-]
+    corr_tNcn_NL_cloud, & ! Prescribed in-cloud correlation of t and Ncn    [-]
+    corr_rrNr_LL_cloud    ! Prescribed in-cloud correlation of rr and Nr    [-]
 
-!$omp threadprivate( corr_wrr_NL_cloud, corr_wNr_NL_cloud, corr_wNc_NL_cloud, &
-!$omp                corr_srr_NL_cloud, corr_sNr_NL_cloud, corr_sNc_NL_cloud, &
-!$omp                corr_trr_NL_cloud, corr_tNr_NL_cloud, corr_tNc_NL_cloud, &
+!$omp threadprivate( corr_wrr_NL_cloud, corr_wNr_NL_cloud, corr_wNcn_NL_cloud, &
+!$omp                corr_srr_NL_cloud, corr_sNr_NL_cloud, corr_sNcn_NL_cloud, &
+!$omp                corr_trr_NL_cloud, corr_tNr_NL_cloud, corr_tNcn_NL_cloud, &
 !$omp                corr_rrNr_LL_cloud, corr_sw_NN_cloud )
 
   ! Parameters for below-cloud (from SAM RF02 DO).
   real( kind = core_rknd ), public :: &  ! RF02 value
-    corr_wrr_NL_below,  & ! 
-    corr_wNr_NL_below,  & !
-    corr_wNc_NL_below,  & !
-    corr_sw_NN_below,   & ! 
-    corr_srr_NL_below,  & ! 0.056
-    corr_sNr_NL_below,  & ! 0.015
-    corr_sNc_NL_below,  & ! 0.00 ! Not applicable below cloud.
-    corr_trr_NL_below,  & ! -0.066
-    corr_tNr_NL_below,  & ! -0.094
-    corr_tNc_NL_below,  & ! 0.00 ! Not applicable below cloud.
-    corr_rrNr_LL_below    ! 0.886
+    corr_wrr_NL_below,  & ! Prescribed below-cloud correlation of w and rr  [-]
+    corr_wNr_NL_below,  & ! Prescribed below-cloud correlation of w and Nr  [-]
+    corr_wNcn_NL_below, & ! Prescribed below-cloud correlation of w and Ncn [-]
+    corr_sw_NN_below,   & ! Prescribed below-cloud correlation of s and w   [-]
+    corr_srr_NL_below,  & ! Prescribed below-cloud correlation of s and rr  [-]
+    corr_sNr_NL_below,  & ! Prescribed below-cloud correlation of s and Nr  [-]
+    corr_sNcn_NL_below, & ! Prescribed below-cloud correlation of s and Ncn [-]
+    corr_trr_NL_below,  & ! Prescribed below-cloud correlation of t and rr  [-]
+    corr_tNr_NL_below,  & ! Prescribed below-cloud correlation of t and Nr  [-]
+    corr_tNcn_NL_below, & ! Prescribed below-cloud correlation of t and Ncn [-]
+    corr_rrNr_LL_below    ! Prescribed below-cloud correlation of rr and Nr [-]
 
-!$omp threadprivate( corr_wrr_NL_below, corr_wNr_NL_below, corr_wNc_NL_below, &
-!$omp                corr_srr_NL_below, corr_sNr_NL_below, corr_sNc_NL_below, &
-!$omp                corr_trr_NL_below, corr_tNr_NL_below, corr_tNc_NL_below, &
+!$omp threadprivate( corr_wrr_NL_below, corr_wNr_NL_below, corr_wNcn_NL_below, &
+!$omp                corr_srr_NL_below, corr_sNr_NL_below, corr_sNcn_NL_below, &
+!$omp                corr_trr_NL_below, corr_tNr_NL_below, corr_tNcn_NL_below, &
 !$omp                corr_rrNr_LL_below, corr_sw_NN_below )
 
+  ! Only needed when l_fix_s_t_correlations is true
   real( kind = core_rknd ), public :: &
-    corr_st_NN_cloud, & ! Only needed when l_fix_s_t_correlations is true
-    corr_st_NN_below
+    corr_st_NN_cloud, & ! Prescribed in-cloud correlation of s and t        [-]
+    corr_st_NN_below    ! Prescribed below-cloud correlation of s and t     [-]
 
 !$omp threadprivate( corr_st_NN_cloud, corr_st_NN_below )
 
@@ -70,12 +71,12 @@ module KK_fixed_correlations
     !-----------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-        iiLH_s_mellor, & ! Variables
+        iiLH_w,        & ! Variables
+        iiLH_s_mellor, &
         iiLH_t_mellor, &
-        iiLH_w, &
         iiLH_rrain, &
-        iiLH_Nc, &
-        iiLH_Nr
+        iiLH_Nr, &
+        iiLH_Ncn => iiLH_Nc
 
     use parameters_microphys, only: &
         l_fix_s_t_correlations ! Variable(s)
@@ -121,7 +122,7 @@ module KK_fixed_correlations
     iiLH_t_mellor = 2
     iiLH_w        = 3
     iiLH_rrain    = 4
-    iiLH_Nc       = 5
+    iiLH_Ncn      = 5
     iiLH_Nr       = 6
 
     call read_correlation_matrix( iunit, input_file_cloud, d_variables, & ! In
@@ -132,17 +133,17 @@ module KK_fixed_correlations
     ! e.g. iiLH_s_mellor < iiLH_rrain.
     corr_wrr_NL_cloud  = corr_matrix(iiLH_rrain,iiLH_w)
     corr_wNr_NL_cloud  = corr_matrix(iiLH_Nr,iiLH_w)
-    corr_wNc_NL_cloud  = corr_matrix(iiLH_Nc,iiLH_w)
+    corr_wNcn_NL_cloud = corr_matrix(iiLH_Ncn,iiLH_w)
 
     corr_sw_NN_cloud   = corr_matrix(iiLH_w,iiLH_s_mellor)
 
     corr_srr_NL_cloud  = corr_matrix(iiLH_rrain,iiLH_s_mellor)
     corr_sNr_NL_cloud  = corr_matrix(iiLH_Nr,iiLH_s_mellor)
-    corr_sNc_NL_cloud  = corr_matrix(iiLH_Nc,iiLH_s_mellor)
+    corr_sNcn_NL_cloud = corr_matrix(iiLH_Ncn,iiLH_s_mellor)
 
     corr_trr_NL_cloud  = corr_matrix(iiLH_rrain,iiLH_t_mellor)
     corr_tNr_NL_cloud  = corr_matrix(iiLH_Nr,iiLH_t_mellor)
-    corr_tNc_NL_cloud  = corr_matrix(iiLH_Nc,iiLH_t_mellor)
+    corr_tNcn_NL_cloud = corr_matrix(iiLH_Ncn,iiLH_t_mellor)
 
     corr_rrNr_LL_cloud = corr_matrix(iiLH_Nr,iiLH_rrain)
 
@@ -158,17 +159,17 @@ module KK_fixed_correlations
 
     corr_wrr_NL_below  = corr_matrix(iiLH_rrain,iiLH_w)
     corr_wNr_NL_below  = corr_matrix(iiLH_Nr,iiLH_w)
-    corr_wNc_NL_below  = corr_matrix(iiLH_Nc,iiLH_w)
+    corr_wNcn_NL_below = corr_matrix(iiLH_Ncn,iiLH_w)
 
     corr_sw_NN_below   = corr_matrix(iiLH_w,iiLH_s_mellor)
 
     corr_srr_NL_below  = corr_matrix(iiLH_rrain,iiLH_s_mellor)
     corr_sNr_NL_below  = corr_matrix(iiLH_Nr,iiLH_s_mellor)
-    corr_sNc_NL_below  = corr_matrix(iiLH_Nc,iiLH_s_mellor)
+    corr_sNcn_NL_below = corr_matrix(iiLH_Ncn,iiLH_s_mellor)
 
     corr_trr_NL_below  = corr_matrix(iiLH_rrain,iiLH_t_mellor)
     corr_tNr_NL_below  = corr_matrix(iiLH_Nr,iiLH_t_mellor)
-    corr_tNc_NL_below  = corr_matrix(iiLH_Nc,iiLH_t_mellor)
+    corr_tNcn_NL_below = corr_matrix(iiLH_Ncn,iiLH_t_mellor)
 
     corr_rrNr_LL_below = corr_matrix(iiLH_Nr,iiLH_rrain)
 
@@ -184,7 +185,7 @@ module KK_fixed_correlations
     iiLH_t_mellor = -1
     iiLH_w = -1
     iiLH_rrain = -1
-    iiLH_Nc = -1
+    iiLH_Ncn= -1
     iiLH_Nr = -1
 
     ! Printing correlation values for debugging
@@ -206,7 +207,7 @@ module KK_fixed_correlations
                        l_write_to_file, iunit )
       call write_text( "corr_wNr_NL_below = ", corr_wNr_NL_below, &
                        l_write_to_file, iunit )
-      call write_text( "corr_wNc_NL_below = ", corr_wNc_NL_below, &
+      call write_text( "corr_wNcn_NL_below = ", corr_wNcn_NL_below, &
                        l_write_to_file, iunit )
       call write_text( "corr_sw_NN_below = ", corr_sw_NN_below, &
                        l_write_to_file, iunit )
@@ -214,13 +215,13 @@ module KK_fixed_correlations
                        l_write_to_file, iunit )
       call write_text( "corr_sNr_NL_below = ", corr_sNr_NL_below, &
                        l_write_to_file, iunit )
-      call write_text( "corr_sNc_NL_below = ", corr_sNc_NL_below, &
+      call write_text( "corr_sNcn_NL_below = ", corr_sNcn_NL_below, &
                        l_write_to_file, iunit )
       call write_text( "corr_trr_NL_below = ", corr_trr_NL_below, &
                        l_write_to_file, iunit )
       call write_text( "corr_tNr_NL_below = ", corr_tNr_NL_below, &
                        l_write_to_file, iunit )
-      call write_text( "corr_tNc_NL_below = ", corr_tNc_NL_below, &
+      call write_text( "corr_tNcn_NL_below = ", corr_tNcn_NL_below, &
                        l_write_to_file, iunit )
       call write_text( "corr_rrNr_LL_below = ", corr_rrNr_LL_below, &
                        l_write_to_file, iunit )
@@ -234,7 +235,7 @@ module KK_fixed_correlations
                        l_write_to_file, iunit )
       call write_text( "corr_wNr_NL_cloud = ", corr_wNr_NL_cloud, &
                        l_write_to_file, iunit )
-      call write_text( "corr_wNc_NL_cloud = ", corr_wNc_NL_cloud, &
+      call write_text( "corr_wNcn_NL_cloud = ", corr_wNcn_NL_cloud, &
                        l_write_to_file, iunit )
       call write_text( "corr_sw_NN_cloud = ", corr_sw_NN_below, &
                        l_write_to_file, iunit )
@@ -242,13 +243,13 @@ module KK_fixed_correlations
                        l_write_to_file, iunit )
       call write_text( "corr_sNr_NL_cloud = ", corr_sNr_NL_cloud, &
                        l_write_to_file, iunit )
-      call write_text( "corr_sNc_NL_cloud = ", corr_sNc_NL_cloud, &
+      call write_text( "corr_sNcn_NL_cloud = ", corr_sNcn_NL_cloud, &
                        l_write_to_file, iunit )
       call write_text( "corr_trr_NL_cloud = ", corr_trr_NL_cloud, &
                        l_write_to_file, iunit )
       call write_text( "corr_tNr_NL_cloud = ", corr_tNr_NL_cloud, &
                        l_write_to_file, iunit )
-      call write_text( "corr_tNc_NL_cloud = ", corr_tNc_NL_cloud, &
+      call write_text( "corr_tNcn_NL_cloud = ", corr_tNcn_NL_cloud, &
                        l_write_to_file, iunit )
       call write_text( "corr_rrNr_LL_cloud = ", corr_rrNr_LL_cloud, &
                        l_write_to_file, iunit )

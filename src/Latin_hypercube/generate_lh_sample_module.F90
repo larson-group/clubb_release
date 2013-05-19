@@ -2602,11 +2602,11 @@ module generate_lh_sample_module
         icorr_rrNr_1, & ! Variable(s)
         icorr_srr_1,  &
         icorr_sNr_1,  &
-        icorr_sNc_1,  &
+        icorr_sNc_1 => icorr_sNcn_1,  &
         icorr_sw,     &
         icorr_wrr,    &
         icorr_wNr,    &
-        icorr_wNc,    &
+        icorr_wNc => icorr_wNcn,    &
         zt
 
     implicit none

@@ -900,12 +900,12 @@ module diagnose_correlations_module
     use stats_variables, only : &
         icorr_srr,    & ! Variable(s)
         icorr_sNr,    &
-        icorr_sNc,    &
+        icorr_sNc => icorr_sNcn,    &
         icorr_rrNr,   &
         icorr_sw,     &
         icorr_wrr,    &
         icorr_wNr,    &
-        icorr_wNc,    &
+        icorr_wNc => icorr_wNcn,    &
         zt,           &
         l_stats_samp
 
