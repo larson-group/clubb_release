@@ -248,6 +248,11 @@ module parameters_tunable
 
     implicit none
 
+
+    ! Constant Parameters
+    real( kind = core_rknd ), parameter :: &
+      lmin_deltaz = 40.0_core_rknd ! Fixed value for minimum value for the length scale.
+
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
       deltaz  ! Change per height level        [m]
@@ -285,10 +290,6 @@ module parameters_tunable
     ! Output Variables
     integer, intent(out) ::  &
       err_code ! Error condition
-
-    ! Local Variables
-    real( kind = core_rknd ), parameter :: &
-      lmin_deltaz = 40.0_core_rknd ! Fixed value for minimum value for the length scale.
 
     !-------------------- Begin code --------------------
 
