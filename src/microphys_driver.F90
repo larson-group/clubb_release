@@ -1677,7 +1677,7 @@ module microphys_driver
 
           call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, thlm, wm_zt, &
                                          p_in_Pa, exner, rho, cloud_frac, &
-                                         pdf_params, wtmp, rcm, Ncm, &
+                                         pdf_params, wtmp, rcm, Ncnm, &
                                          s_mellor, Ncm_in_cloud, &
                                          hydromet, wphydrometp, &
                                          hydromet_mc, hydromet_vel_zt, &
