@@ -112,23 +112,23 @@ module parameters_microphys
 
   ! Statistical rain parameters        .
 
-  ! Parameters for in-cloud (from SAM RF02 DO).
-  real( kind = core_rknd ), public :: &       ! RF02 value
-    rrp2_on_rrm2_cloud, & ! 0.766
-    Nrp2_on_Nrm2_cloud,    & ! 0.429
-    Ncp2_on_Ncm2_cloud       ! 0.003
+  ! Parameters for in-cloud.
+  real( kind = core_rknd ), public :: &
+    rrp2_on_rrm2_cloud,   & ! Prescribed in-cloud ratio <r_r'^2> / <r_r>^2   [-]
+    Nrp2_on_Nrm2_cloud,   & ! Prescribed in-cloud ratio <N_r'^2> / <N_r>^2   [-]
+    Ncnp2_on_Ncnm2_cloud    ! Prescribed in-cloud ratio <N_cn'^2> / <N_cn>^2 [-]
 
 !$omp threadprivate( rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, &
-!$omp                Ncp2_on_Ncm2_cloud )
+!$omp                Ncnp2_on_Ncnm2_cloud )
 
-  ! Parameters for below-cloud (from SAM RF02 DO).
-  real( kind = core_rknd ), public :: &       ! RF02 value
-    rrp2_on_rrm2_below, & ! 8.97
-    Nrp2_on_Nrm2_below,    & ! 12.03
-    Ncp2_on_Ncm2_below       ! 0.00 ! Not applicable below cloud.
+  ! Parameters for below-cloud.
+  real( kind = core_rknd ), public :: &
+    rrp2_on_rrm2_below,   & ! Prescribed below-cl ratio <r_r'^2> / <r_r>^2   [-]
+    Nrp2_on_Nrm2_below,   & ! Prescribed below-cl ratio <N_r'^2> / <N_r>^2   [-]
+    Ncnp2_on_Ncnm2_below    ! Prescribed below-cl ratio <N_cn'^2> / <N_cn>^2 [-]
 
 !$omp threadprivate( rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
-!$omp                Ncp2_on_Ncm2_below )
+!$omp                Ncnp2_on_Ncnm2_below )
 
   ! Other needed parameters
   real( kind = core_rknd ), public :: C_evap ! 0.86    ! Khairoutdinov and Kogan (2000) ratio of

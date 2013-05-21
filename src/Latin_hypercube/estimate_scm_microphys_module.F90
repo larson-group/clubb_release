@@ -355,7 +355,7 @@ module estimate_scm_microphys_module
       iiLH_Nr, &
       iiLH_Nsnow, &
       iiLH_Ngraupel, &
-      iiLH_Nc, &
+      iiLH_Nc => iiLH_Ncn, &
       iiLH_Ni
 
     use clubb_precision, only: &

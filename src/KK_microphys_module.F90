@@ -2076,7 +2076,7 @@ module KK_microphys_module
         rrp2_on_rrm2_below,   &
         Nrp2_on_Nrm2_cloud,   &
         Nrp2_on_Nrm2_below,   &
-        Ncnp2_on_Ncnm2_cloud => Ncp2_on_Ncm2_cloud
+        Ncnp2_on_Ncnm2_cloud
 
     use KK_fixed_correlations, only: &
         corr_wrr_NL_cloud,  & ! Variable(s)

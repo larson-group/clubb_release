@@ -5,12 +5,12 @@
 ! column, the row at the same index is the same variable. For example, this
 ! matrix should look like the following:
 !
-!    | s | t | w | Nc |...|
-!  s | 1 | x | x | x  | x |
-!  t | * | 1 | x | x  | x |
-!  w | * | * | 1 | x  | x |
-!  Nc| * | * | * | 1  | x |
-! ...| * | * | * | *  | 1 |
+!     | s | t | w | Ncn |...|
+!   s | 1 | x | x |  x  | x |
+!   t | * | 1 | x |  x  | x |
+!   w | * | * | 1 |  x  | x |
+!  Ncn| * | * | * |  1  | x |
+!  ...| * | * | * |  *  | 1 |
 !
 ! Where x represents a value and * is an ignored cell. The bottom half of 
 ! the matrix can be ignored becasue the matrix is symmetrical. The main
@@ -19,7 +19,7 @@
 ! All unkown values are left at 0.0. All values in the bottom of
 ! the matrix are 0.0, but they can be set to any number because they are
 ! ignored.
-s         t         w       Nc      rrain    Nr      rice    Ni      rsnow    Nsnow
+s         t         w       Ncn     rrain    Nr      rice    Ni      rsnow    Nsnow
 1.0       0.3       0.0     0.0     0.056    0.015   0.0     0.0     0.0      0.0
 0.0       1.0       0.0     0.0    -0.066   -0.094   0.0     0.0     0.0      0.0
 0.0       0.0       1.0     0.0     0.0      0.0     0.0     0.0     0.0      0.0

@@ -67,8 +67,12 @@ module latin_hypercube_arrays
 !-------------------------------------------------------------------------------
 
     use parameters_microphys, only: &
-      rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncp2_on_Ncm2_cloud, & ! Variables
-      rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, Ncp2_on_Ncm2_below
+      rrp2_on_rrm2_cloud,   & ! Variables
+      Nrp2_on_Nrm2_cloud,   &
+      Ncp2_on_Ncm2_cloud => Ncnp2_on_Ncnm2_cloud, &
+      rrp2_on_rrm2_below,   &
+      Nrp2_on_Nrm2_below,   & 
+      Ncp2_on_Ncm2_below => Ncnp2_on_Ncnm2_below
 
     use parameters_microphys, only: &
       rsnowp2_on_rsnowm2_cloud, & ! Variables
@@ -105,7 +109,7 @@ module latin_hypercube_arrays
       iiLH_Nsnow, &
       iiLH_Ni, &
       iiLH_Ngraupel, &
-      iiLH_Nc
+      iiLH_Nc => iiLH_Ncn
 
     use corr_matrix_module, only: &
       read_correlation_matrix ! Procedure(s)

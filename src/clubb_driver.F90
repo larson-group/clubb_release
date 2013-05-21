@@ -242,7 +242,7 @@ module clubb_driver
         iiLH_w,                  & ! Variable(s)
         iiLH_s_mellor,           &
         iiLH_t_mellor,           &
-        iiLH_Nc,                 &
+        iiLH_Ncn,                &
         iiLH_rrain,              &
         iiLH_Nr
 
@@ -386,15 +386,15 @@ module clubb_driver
       radf     ! Buoyancy production at CL top due to LW radiative cooling [m^2/s^3]
                ! This is currently set to zero for CLUBB standalone
 
-    real( kind = core_rknd ) :: &
-      mu_rr_1,     & ! Mean of rr (1st PDF component) in-precip (ip)     [kg/kg]
-      mu_rr_2,     & ! Mean of rr (2nd PDF component) ip                 [kg/kg]
-      mu_Nr_1,     & ! Mean of Nr (1st PDF component) ip                [num/kg]
-      mu_Nr_2,     & ! Mean of Nr (2nd PDF component) ip                [num/kg]
-      sigma_rr_1,  & ! Standard deviation of rr (1st PDF component) ip   [kg/kg]
-      sigma_rr_2,  & ! Standard deviation of rr (2nd PDF component) ip   [kg/kg]
-      sigma_Nr_1,  & ! Standard deviation of Nr (1st PDF component) ip  [num/kg]
-      sigma_Nr_2     ! Standard deviation of Nr (2nd PDF component) ip  [num/kg]
+!    real( kind = core_rknd ) :: &
+!      mu_rr_1,     & ! Mean of rr (1st PDF component) in-precip (ip)     [kg/kg]
+!      mu_rr_2,     & ! Mean of rr (2nd PDF component) ip                 [kg/kg]
+!      mu_Nr_1,     & ! Mean of Nr (1st PDF component) ip                [num/kg]
+!      mu_Nr_2,     & ! Mean of Nr (2nd PDF component) ip                [num/kg]
+!      sigma_rr_1,  & ! Standard deviation of rr (1st PDF component) ip   [kg/kg]
+!      sigma_rr_2,  & ! Standard deviation of rr (2nd PDF component) ip   [kg/kg]
+!      sigma_Nr_1,  & ! Standard deviation of Nr (1st PDF component) ip  [num/kg]
+!      sigma_Nr_2     ! Standard deviation of Nr (2nd PDF component) ip  [num/kg]
 !      corr_srr_1,  & ! Correlation between s and rr (1st PDF component) ip   [-]
 !      corr_srr_2,  & ! Correlation between s and rr (2nd PDF component) ip   [-]
 !      corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component) ip   [-]
@@ -900,7 +900,7 @@ module clubb_driver
       iiLH_s_mellor = 1
       iiLH_t_mellor = 2
       iiLH_w = 3
-      iiLH_Nc = 4
+      iiLH_Ncn = 4
       iiLH_rrain = 5
       iiLH_Nr = 6
 

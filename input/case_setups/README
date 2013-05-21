@@ -290,11 +290,11 @@ rrp2_on_rrainm2_below | real, default precision
 
 Nrp2_on_Nrm2_cloud | real, default precision
 Nrp2_on_Nrm2_below | real, default precision
-  Variance of rain water num. conc. divided by the mean squared (K&K).
+  Variance of rain drop concentration divided by the mean squared (K&K).
 
-Ncp2_on_Ncm2_cloud | real, default precision
-Ncp2_on_Ncm2_below | real, default precision
-  Variance of cloud water num. conc. divided by the mean squared (K&K).
+Ncnp2_on_Ncnm2_cloud | real, default precision
+Ncnp2_on_Ncnm2_below | real, default precision
+  Variance of cloud nuclei concentration divided by the mean squared (K&K).
 
 C_evap | real, default precision
   Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric radius to

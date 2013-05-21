@@ -76,7 +76,7 @@ module KK_fixed_correlations
         iiLH_t_mellor, &
         iiLH_rrain, &
         iiLH_Nr, &
-        iiLH_Ncn => iiLH_Nc
+        iiLH_Ncn
 
     use parameters_microphys, only: &
         l_fix_s_t_correlations ! Variable(s)
@@ -185,7 +185,7 @@ module KK_fixed_correlations
     iiLH_t_mellor = -1
     iiLH_w = -1
     iiLH_rrain = -1
-    iiLH_Ncn= -1
+    iiLH_Ncn = -1
     iiLH_Nr = -1
 
     ! Printing correlation values for debugging

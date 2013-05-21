@@ -150,14 +150,13 @@ l_graupel = .false.,
 l_arctic_nucl = .true. ! Use MPACE observations for ice nucleation.
 
 ! Addition for using latin hypercube sampling
-! Variances / Corrlations from the RICO case
-rrp2_on_rrm2_cloud = 0.766  
-Nrp2_on_Nrm2_cloud    = 0.429  
-Ncp2_on_Ncm2_cloud    = 2.2  
+rrp2_on_rrm2_cloud   = 0.766  
+Nrp2_on_Nrm2_cloud   = 0.429  
+Ncnp2_on_Ncnm2_cloud = 2.2  
 
-rrp2_on_rrm2_below = 1.0  ! Reduced by a factor of 10
-Nrp2_on_Nrm2_below    = 1.0  ! Reduced
-Ncp2_on_Ncm2_below    = 0.0
+rrp2_on_rrm2_below   = 1.0
+Nrp2_on_Nrm2_below   = 1.0
+Ncnp2_on_Ncnm2_below = 0.0
 
 C_evap = 0.5
 r_0 = 100.0e-6

@@ -1,5 +1,5 @@
 !$Id$
-!---------------------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 module corr_matrix_module
 
   implicit none
@@ -23,8 +23,10 @@ module corr_matrix_module
    iiLH_Nsnow    = -1, &
    iiLH_Ni       = -1, &
    iiLH_Ngraupel = -1, &
-   iiLH_Nc       = -1
-!$omp threadprivate(iiLH_Nr, iiLH_Nsnow, iiLH_Ni, iiLH_Ngraupel, iiLH_Nc)
+   iiLH_Ncn      = -1, &
+   iiLH_Nc       = -1    ! N_c is not part of CLUBB's PDF.
+!$omp threadprivate(iiLH_Nr, iiLH_Nsnow, iiLH_Ni, iiLH_Ngraupel, iiLH_Ncn)
+!$omp threadprivate(iiLH_Nc)
 
   public :: read_correlation_matrix
 
@@ -152,8 +154,8 @@ module corr_matrix_module
     case( "w" )
       i = iiLH_w
 
-    case( "Nc" )
-      i = iiLH_Nc
+    case( "Ncn" )
+      i = iiLH_Ncn
 
     case( "rrain" )
       i = iiLH_rrain
@@ -172,6 +174,9 @@ module corr_matrix_module
 
     case( "Nsnow" )
       i = iiLH_Nsnow
+
+    case( "Nc" )
+      i = iiLH_Nc  ! N_c is not part of CLUBB's PDF.
 
     end select
 

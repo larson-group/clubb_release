@@ -151,13 +151,13 @@ micro_scheme = "khairoutdinov_kogan"
 !!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.
 !!!!!!! These constants are closer to the DYCOMS2 RF02 values and produce more rain. 
 ! See also: rico_corr_array_cloud/below.in for the values of correlations in RICO
-rrp2_on_rrm2_cloud = 1.0
-Nrp2_on_Nrm2_cloud = 1.0
-Ncp2_on_Ncm2_cloud = 2.2  
+rrp2_on_rrm2_cloud   = 1.0
+Nrp2_on_Nrm2_cloud   = 1.0
+Ncnp2_on_Ncnm2_cloud = 2.2  
 
-rrp2_on_rrm2_below = 1.0  ! Reduced by a factor of 10
-Nrp2_on_Nrm2_below = 1.0  ! Reduced
-Ncp2_on_Ncm2_below = 0.0
+rrp2_on_rrm2_below   = 1.0
+Nrp2_on_Nrm2_below   = 1.0
+Ncnp2_on_Ncnm2_below = 0.0
 
 !!!!!!! END RICO COMMENTS --modified by Leah Grant, Apr. 2010
 Ncm_initial = 70.e6 ! #/m^3
