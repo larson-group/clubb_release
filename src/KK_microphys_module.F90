@@ -348,7 +348,7 @@ module KK_microphys_module
   !=============================================================================
   subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, thlm, wm_zt, &
                                        p_in_Pa, exner, rho, cloud_frac, &
-                                       pdf_params, w_std_dev, rcm, Ncm, &
+                                       pdf_params, w_std_dev, rcm, Ncnm, &
                                        s_mellor, Nc0_in_cloud, &
                                        hydromet, wphydrometp, &
                                        hydromet_mc, hydromet_vel, &
@@ -371,11 +371,11 @@ module KK_microphys_module
         gr
 
     use constants_clubb, only: &
-        one,    & ! Constant(s)
-        zero,   &
-        rr_tol, &
-        Nr_tol, &
-        Nc_tol, &
+        one,     & ! Constant(s)
+        zero,    &
+        rr_tol,  &
+        Nr_tol,  &
+        Ncn_tol, &
         eps
 
     use parameters_microphys, only: &
@@ -458,7 +458,7 @@ module KK_microphys_module
       rho,        & ! Density                                         [kg/m^3]
       cloud_frac, & ! Cloud fraction                                  [-]
       rcm,        & ! Mean cloud water mixing ratio                   [kg/kg]
-      Ncm,        & ! Mean cloud droplet conc., < N_c >               [num/kg]
+      Ncnm,       & ! Mean cloud nuclei concentration < N_cn >        [num/kg]
       s_mellor      ! Mean extended liquid water mixing ratio         [kg/kg]
 
     type(pdf_parameter), dimension(nz), target, intent(in) :: &
@@ -620,11 +620,11 @@ module KK_microphys_module
     ! changes by janhft 10/04/12
     real( kind = core_rknd ), dimension(nz) ::  &
       wpsp_zm,     & ! Covariance of s and w (momentum levels)   [(m/s)(kg/kg)]
-      wpNcp_zm,    & ! Covariance of N_c and w (momentum levels) [(m/s)(num/kg)]
+      wpNcnp_zm,   & ! Covariance of N_cn and w (momentum levs.) [(m/s)(num/kg)]
       wpsp_zt,     & ! Covariance of s and w on t-levs           [(m/s)(kg/kg)]
       wprrp_ip_zt, & ! Covar. of r_r and w (in-precip) on t-levs [(m/s)(kg/kg)]
       wpNrp_ip_zt, & ! Covar. of N_r and w (in-precip) on t-levs [(m/s)(num/kg)]
-      wpNcp_zt       ! Covariance of N_c and w on t-levs         [(m/s)(num/kg)]
+      wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
     ! end changes by janhft 10/04/12
 
     logical :: &
@@ -740,17 +740,17 @@ module KK_microphys_module
                        * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
        enddo
 
-       wpNcp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncm(1:nz-1), &
-                                    Ncm(2:nz), gr%invrs_dzm(1:nz-1) )
+       wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncnm(1:nz-1), &
+                                     Ncnm(2:nz), gr%invrs_dzm(1:nz-1) )
 
        ! Boundary conditions; We are assuming zero flux at the top.
-       wpNcp_zm(nz) = zero
+       wpNcnp_zm(nz) = zero
 
        ! interpolate back to zt-grid
        wpsp_zt     = zm2zt(wpsp_zm)
        wprrp_ip_zt = zm2zt(wprrp) / max( precip_frac, eps )
        wpNrp_ip_zt = zm2zt(wpNrp) / max( precip_frac, eps )
-       wpNcp_zt    = zm2zt(wpNcp_zm)
+       wpNcnp_zt   = zm2zt(wpNcnp_zm)
 
        do k = 1, nz, 1
           if ( rrainm(k) <= rr_tol ) then
@@ -759,8 +759,8 @@ module KK_microphys_module
           if ( Nrm(k) <= Nr_tol ) then
              wpNrp_ip_zt(k) = zero
           endif
-          if ( Ncm(k) <= Nc_tol ) then
-             wpNcp_zt(k) = zero
+          if ( Ncnm(k) <= Ncn_tol ) then
+             wpNcnp_zt(k) = zero
           endif
        enddo
 
@@ -779,11 +779,11 @@ module KK_microphys_module
       !!! Calculate the means, standard deviations, and correlations involving
       !!! rain water mixing ratio and rain drop concentration for each PDF
       !!! component.
-      call KK_in_precip_values( rcm(k), rrainm(k), Nrm(k), Ncm(k), & ! Intent(in)
+      call KK_in_precip_values( rcm(k), rrainm(k), Nrm(k), Ncnm(k), & ! Intent(in)
                                 rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), & ! Intent(in)
                                 rc2(k), cloud_frac1(k), cloud_frac2(k), & ! Intent(in)
                                 wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
-                                wpNcp_zt(k), w_std_dev(k), mixt_frac(k), & ! Intent(in)
+                                wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), & ! Intent(in)
                                 precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
                                 pdf_params(k), & ! Intent(in)
                                 mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, & !Intent(out)
@@ -797,7 +797,7 @@ module KK_microphys_module
 
       !!! Calculate the mean, standard deviations, and correlations involving
       !!! ln r_r, ln N_r, and ln N_cn for each PDF component.
-      call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), Ncm(k), & ! Intent(in)
+      call KK_upscaled_setup( rcm(k), rrainm(k), Nrm(k), Ncnm(k), & ! Intent(in)
                               rr1(k), rr2(k), Nr1(k), Nr2(k), & ! Intent(in)
                               mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, & ! Intent(in)
                               mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(in)
@@ -858,7 +858,7 @@ module KK_microphys_module
       if ( l_var_covar_src ) then
 
         call KK_upscaled_covar_driver( wm_zt(k), exner(k), rcm(k),  &
-                                       rrainm(k), Nrm(k), Ncm(k), &
+                                       rrainm(k), Nrm(k), Ncnm(k), &
                                        mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
                                        mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
                                        mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &

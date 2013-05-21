@@ -43,6 +43,7 @@ module microphys_driver
     hydromet_list,                & ! Names of the hydrometeor species
     microphys_start_time,         & ! When to start the microphysics [s]
     sigma_g,                      & ! Parameter used in the cloud droplet sedimentation code
+    Ncnm_initial,                 & ! Initial value for Ncnm (K&K)
     Ncm_initial                     ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
 
   use parameters_microphys, only: &
@@ -272,7 +273,7 @@ module microphys_driver
       rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncnp2_on_Ncnm2_cloud, &
       rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
       Ncnp2_on_Ncnm2_below, C_evap, r_0, microphys_start_time, &
-      Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
+      Ncnm_initial, Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
 
     namelist /gfdl_activation_setting/ &
@@ -432,7 +433,8 @@ module microphys_driver
     !---------------------------------------------------------------------------
     ! Parameters for Morrison microphysics and Khairoutdinov & Kogan microphysics
     !---------------------------------------------------------------------------
-    Ncm_initial = 100.e6_core_rknd ! #/m^3
+    Ncnm_initial = 100.e6_core_rknd ! num/m^3
+    Ncm_initial  = 100.e6_core_rknd ! num/m^3
 
     ! In the Latin hypercube code, we can fix the correlations between s and t.
     ! The reasons for this are twofold:
@@ -534,6 +536,7 @@ module microphys_driver
       call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
       call write_text ( "microphys_start_time = ", real( microphys_start_time, kind = core_rknd ), &
         l_write_to_file, iunit )
+      call write_text ( "Ncnm_initial = ", Ncnm_initial, l_write_to_file, iunit )
       call write_text ( "Ncm_initial = ", Ncm_initial, l_write_to_file, iunit )
       call write_text ( "ccnconst = ", real(ccnconst, kind = core_rknd), l_write_to_file, iunit )
       call write_text ( "ccnexpnt = ", real(ccnexpnt, kind = core_rknd), l_write_to_file, iunit )
@@ -1204,10 +1207,10 @@ module microphys_driver
       LH_sample_point_weights ! Weights for cloud weighted sampling
 
     ! Note:
-    ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
-    ! and Nim & Ncm are computed within subroutine adjtg.
+    ! For COAMPS Ncnm is initialized and Nim & Ncm are computed within
+    ! subroutine adjtg.
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
-      Ncnm       ! Cloud nuclei number concentration     [count/m^3]
+      Ncnm    ! Cloud nuclei concentration     [num/m^3]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
@@ -1669,6 +1672,8 @@ module microphys_driver
                                       rrainm_auto, rrainm_accr )
 
         else
+
+          Ncnm = Ncnm_initial / rho
 
           call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, thlm, wm_zt, &
                                          p_in_Pa, exner, rho, cloud_frac, &
@@ -2261,7 +2266,7 @@ module microphys_driver
                             max( - ( zt2zm( hydromet(:,iirrainm) )  & 
                                      * hydromet_vel(:,iirrainm) &
                                      + hydromet_vel_covar(:,iirrainm) ), &
-                                zero ) &
+                                 zero ) &
                             * rho_zm * Lv, zm )
 
       ! Store values of surface fluxes for statistics

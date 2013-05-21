@@ -649,7 +649,7 @@ module latin_hypercube_driver_module
       iiLH_Ni, &
       iiLH_Nsnow, &
       iiLH_Ngraupel, &
-      iiLH_Nc
+      iiLH_Nc => iiLH_Ncn
 
     use parameters_microphys, only: &
       LH_microphys_calls ! Variable
@@ -1476,7 +1476,7 @@ module latin_hypercube_driver_module
     use corr_matrix_module, only: &
       iiLH_s_mellor, & ! Variable(s)
       iiLH_w, &
-      iiLH_Nc
+      iiLH_Nc => iiLH_Ncn
 
     use estimate_scm_microphys_module, only: &
       copy_X_nl_into_hydromet ! Procedure(s)
