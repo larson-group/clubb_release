@@ -1,10 +1,13 @@
 # $Id$
 # Configuration file for Mac computers in W434.  It may work on other Macs
-# as well but is not tested.
+# as well but has not been extensivelytested.
+
+# Set the path to GNU Fortran and GNU make
+export PATH=$PATH:/Developer/usr/bin
 
 # Fortran 95 compiler and linker
-FC=gfortran-4.7
-LD=gfortran-4.7
+FC=gfortran
+LD=gfortran
 
 # Define path to directories
 dir=`pwd` # dir where this script resides
@@ -80,4 +83,4 @@ SHAREDFLAGS="-fPIC -shared"
 mkmf=$dir/mkmf
 
 # gmake command to use and options: '-j 2' enables parallel compilation
-gmake="make -j2"
+gmake="make -j1"
