@@ -102,6 +102,33 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'V2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'mpace_a_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(TVFLUX) ./ ( RHO * 1004)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'mpace_a_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Contribution of Cloud Water Flux to wpthvp', 'axisLabel' => 'rc\_coef * wprcp   [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '((QCFLUX) ./ (RHO * 2.5104e+6)) .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'mpace_a_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* wprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud water contribution to thlpthvp', 'axisLabel' => 'rc\_coef * thlprcp   [K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mpace_a_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* thlprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud water contribution to rtpthvp', 'axisLabel' => 'rc\_coef * rtprcp   [K kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mpace_a_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* rtprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mpace_a_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Lscale', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'LW + SW radiative heating rate', 'axisLabel' => 'radht [K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RADQR / 86400', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'mpace_a_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QR ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
@@ -146,24 +173,6 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'mpace_a_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(TVFLUX) ./ ( RHO * 1004)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'mpace_a_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Contribution of Cloud Water Flux to wpthvp', 'axisLabel' => 'rc\_coef * wprcp   [K m/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '((QCFLUX) ./ (RHO * 2.5104e+6)) .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'mpace_a_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* wprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Cloud water contribution to thlpthvp', 'axisLabel' => 'rc\_coef * thlprcp   [K^2]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'mpace_a_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* thlprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Cloud water contribution to rtpthvp', 'axisLabel' => 'rc\_coef * rtprcp   [K kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'mpace_a_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* rtprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'CWP / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
@@ -188,15 +197,6 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'SWP / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'mpace_a_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'mpace_a_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Lscale', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'LW + SW radiative heating rate', 'axisLabel' => 'radht [K/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RADQR / 86400', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'mpace_a_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]}
     ],
     'nightlyOutput' =>
     {
