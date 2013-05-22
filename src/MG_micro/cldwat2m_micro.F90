@@ -839,73 +839,112 @@ subroutine mmicro_pcond ( sub_column,           &
   
       real(r8), parameter :: cdnl    = 0.e6_r8    ! cloud droplet number limiter
 
-   ! Upscaled KK for autoconversion and accretion
-   real( kind = core_rknd ) :: &
-     mu_s_1,       & ! Mean of s (1st PDF component)                   [kg/kg]
-     mu_s_2,       & ! Mean of s (2nd PDF component)                   [kg/kg]
-     mu_rr_1,      & ! Mean of r_r (1st PDF component) in-precip (ip)  [kg/kg]
-     mu_rr_2,      & ! Mean of r_r (2nd PDF component) ip              [kg/kg]
-     mu_Nc_1,      & ! Mean of N_c (1st PDF component)                [num/kg]
-     mu_Nc_2,      & ! Mean of N_c (2nd PDF component)                [num/kg]
-     mu_rr_1_n,    & ! Mean of ln r_r (1st PDF component) in-precip (ip)   [-]
-     mu_rr_2_n,    & ! Mean of ln r_r (2nd PDF component) ip               [-]
-     mu_Nc_1_n,    & ! Mean of ln N_c (1st PDF component)                  [-]
-     mu_Nc_2_n,    & ! Mean of ln N_c (2nd PDF component)                  [-]
-     sigma_s_1,    & ! Standard deviation of s (1st PDF component)     [kg/kg]
-     sigma_s_2,    & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-     sigma_rr_1,   & ! Standard deviation of r_r (1st PDF comp.) ip    [kg/kg]
-     sigma_rr_2,   & ! Standard deviation of r_r (2nd PDF comp.) ip    [kg/kg]
-     sigma_Nc_1,   & ! Standard deviation of N_c (1st PDF comp.)      [num/kg]
-     sigma_Nc_2,   & ! Standard deviation of N_c (2nd PDF comp.)      [num/kg]
-     sigma_rr_1_n, & ! Standard deviation of ln r_r (1st PDF component) ip [-]
-     sigma_rr_2_n, & ! Standard deviation of ln r_r (2nd PDF component) ip [-]
-     sigma_Nc_1_n, & ! Standard deviation of ln N_c (1st PDF component)    [-]
-     sigma_Nc_2_n, & ! Standard deviation of ln N_c (2nd PDF component)    [-]
-     corr_srr_1,   & ! Correlation between s and r_r (1st PDF comp.) ip    [-]
-     corr_srr_2,   & ! Correlation between s and r_r (2nd PDF comp.) ip    [-]
-     corr_srr_1_n, & ! Correlation between s and ln r_r (1st PDF comp.) ip [-]
-     corr_srr_2_n, & ! Correlation between s and ln r_r (2nd PDF comp.) ip [-]
-     corr_sNc_1_n, & ! Correlation between s and ln N_c (1st PDF comp.)    [-]
-     corr_sNc_2_n, & ! Correlation between s and ln N_c (2nd PDF comp.)    [-]
-     KK_auto_coef, & ! KK autoconversion coefficient               [(kg/kg)/s]
-     KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
-     mixt_frac       ! Mixture fraction                                    [-]
+    ! Upscaled KK for autoconversion and accretion
+    real( kind = core_rknd ) :: &
+      mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
+      mu_w_2,        & ! Mean of w (2nd PDF component)                     [m/s]
+      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_t_1,        & ! Mean of t (1st PDF component)                   [kg/kg]
+      mu_t_2,        & ! Mean of t (2nd PDF component)                   [kg/kg]
+      mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
+      mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
+      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
+      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
+      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
+      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+     !mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
+     !mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
+      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
+      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
+      sigma_w_1,     & ! Standard deviation of w (1st PDF component)       [m/s]
+      sigma_w_2,     & ! Standard deviation of w (2nd PDF component)       [m/s]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_t_1,     & ! Standard deviation of t (1st PDF component)     [kg/kg]
+      sigma_t_2,     & ! Standard deviation of t (2nd PDF component)     [kg/kg]
+      sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
+      sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
+      sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
+      sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
+      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
+      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
+      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
+     !sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
+     !sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
+      sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
+      sigma_Ncn_2_n    ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
 
-   ! Dummy input/output 
-   real( kind = core_rknd ) :: &
-     dum_inout1, &
-     dum_inout2, &
-     dum_inout3, &
-     dum_inout4, &
-     dum_inout5, &
-     dum_inout6
+    real( kind = core_rknd ) :: &
+      corr_ws_1,     & ! Correlation between w and s (1st PDF component)     [-]
+      corr_ws_2,     & ! Correlation between w and s (2nd PDF component)     [-]
+      corr_wrr_1,    & ! Correlation between w and rr (1st PDF component) ip [-]
+      corr_wrr_2,    & ! Correlation between w and rr (2nd PDF component) ip [-]
+      corr_wNr_1,    & ! Correlation between w and Nr (1st PDF component) ip [-]
+      corr_wNr_2,    & ! Correlation between w and Nr (2nd PDF component) ip [-]
+      corr_wNcn_1,   & ! Correlation between w and Ncn (1st PDF component)   [-]
+      corr_wNcn_2,   & ! Correlation between w and Ncn (2nd PDF component)   [-]
+      corr_st_1,     & ! Correlation between s and t (1st PDF component)     [-]
+      corr_st_2,     & ! Correlation between s and t (2nd PDF component)     [-]
+      corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
+      corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
+      corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
+      corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
+      corr_sNcn_1,   & ! Correlation between s and Ncn (1st PDF component)   [-]
+      corr_sNcn_2,   & ! Correlation between s and Ncn (2nd PDF component)   [-]
+      corr_trr_1,    & ! Correlation between t and rr (1st PDF component) ip [-]
+      corr_trr_2,    & ! Correlation between t and rr (2nd PDF component) ip [-]
+      corr_tNr_1,    & ! Correlation between t and Nr (1st PDF component) ip [-]
+      corr_tNr_2,    & ! Correlation between t and Nr (2nd PDF component) ip [-]
+      corr_tNcn_1,   & ! Correlation between t and Ncn (1st PDF component)   [-]
+      corr_tNcn_2,   & ! Correlation between t and Ncn (2nd PDF component)   [-]
+      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
+      corr_rrNr_2      ! Correlation between rr & Nr (2nd PDF component) ip  [-]
 
-   ! Dummy output 
-   real( kind = core_rknd ) :: &
-     dum_out1,  &
-     dum_out2,  &
-     dum_out3,  &
-     dum_out4,  &
-     dum_out5,  &
-     dum_out6,  &
-     dum_out7,  &
-     dum_out8,  &
-     dum_out9,  &
-     dum_out10, &
-     dum_out11, &
-     dum_out12, &
-     dum_out13, &
-     dum_out14, &
-     dum_out15, &
-     dum_out16, &
-     dum_out17, &
-     dum_out18, &
-     dum_out19, &
-     dum_out20, &
-     dum_out21, &
-     dum_out22, &
-     dum_out23, &
-     dum_out24
+    real( kind = core_rknd ) :: &
+     !corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
+     !corr_wrr_2_n,  & ! Correlation between w and ln rr (2nd PDF comp.) ip  [-]
+     !corr_wNr_1_n,  & ! Correlation between w and ln Nr (1st PDF comp.) ip  [-]
+     !corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
+     !corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
+     !corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
+     !corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
+     !corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
+      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
+      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
+     !corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
+     !corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
+     !corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
+     !corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
+     !corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
+     !corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
+     !corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
+     !corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+      KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
+      KK_accr_coef,  & ! KK accretion coefficient                    [(kg/kg)/s]
+      mixt_frac        ! Mixture fraction                                    [-]
+
+    ! Dummy output 
+    real( kind = core_rknd ) :: &
+      dum_out1,  &
+      dum_out2,  &
+      dum_out3,  &
+      dum_out4,  &
+      dum_out5,  &
+      dum_out6,  &
+      dum_out7,  &
+      dum_out8,  &
+      dum_out9,  &
+      dum_out10, &
+      dum_out11, &
+      dum_out12, &
+      dum_out13, &
+      dum_out14
    !----
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -1738,45 +1777,65 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 call KK_in_precip_values( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                           zero, zero, & ! Intent(in)
-                                           real( nc(i,k), kind = core_rknd ), & ! Intent(in)
-                                           zero, zero, zero, zero, zero, &
-                                           zero, zero, zero, & ! Intent(in)
-                                           zero, zero, zero, & ! Intent(in)
-                                           zero, zero, mixt_frac, & ! Intent(in)
-                                           one, one, & ! Intent(in)
-                                           pdf_params(k), & ! Intent(in)
-                                           mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, & !Intent(out)
-                                           dum_out1, dum_out2, dum_out3, dum_out4, & !Intent(out)
-                                           sigma_s_1, sigma_s_2, sigma_Nc_1, sigma_Nc_2, & !Intent(out)
-                                           dum_out5, dum_out6, dum_out7, & !Intent(out)
-                                           dum_out8, dum_out9, dum_out10, & !Intent(out)
-                                           dum_out11, dum_out12, dum_out13, & !Intent(out)
-                                           dum_out14, dum_out15, dum_out16, & !Intent(out)
-                                           dum_out17, dum_out18, dum_out19, dum_out20 ) !Intent(out)
+                 call KK_in_precip_values &
+                                ( real( qc(i,k), kind = core_rknd ), & ! In
+                                  real( qric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( nric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( nc(i,k), kind = core_rknd ), &
+                                  real( qric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( qric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( nric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( nric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( qc(i,k), kind = core_rknd ), &
+                                  real( qc(i,k), kind = core_rknd ), &
+                                  real( lcldm(i,k), kind = core_rknd ), &
+                                  real( lcldm(i,k), kind = core_rknd ), &
+                                  one, one, &
+                                  zero, zero, zero, &
+                                  zero, zero, mixt_frac, &
+                                  pdf_params(k), &
+                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &! Out
+                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                                  mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
+                                  sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
+                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
+                                  corr_ws_1, corr_ws_2, corr_wrr_1, &
+                                  corr_wrr_2, corr_wNr_1, corr_wNr_2, &
+                                  corr_wNcn_1, corr_wNcn_2, corr_st_1, &
+                                  corr_st_2, corr_srr_1, corr_srr_2, &
+                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
+                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
+                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
+                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
 
                  call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                          zero, zero, &
                                          real( nc(i,k), kind = core_rknd ), &
                                          zero, zero, zero, zero, &
-                                         mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
+                                         mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, &
                                          zero, zero, zero, zero, &
                                          sigma_s_1, sigma_s_2, &
-                                         sigma_Nc_1, sigma_Nc_2, &
+                                         sigma_Ncn_1, sigma_Ncn_2, &
                                          zero, zero, zero, zero, &
                                          zero, zero, zero, zero, &
                                          zero, zero, zero, &
                                          zero, zero, zero, &
                                          zero, zero, &
                                          dum_out1, dum_out2, dum_out3, & ! Intent(out)
-                                         dum_out4, mu_Nc_1_n, mu_Nc_2_n, &
+                                         dum_out4, mu_Ncn_1_n, mu_Ncn_2_n, &
                                          dum_out5, dum_out6, &
                                          dum_out7, dum_out8, &
-                                         sigma_Nc_1_n, sigma_Nc_2_n, &
+                                         sigma_Ncn_1_n, sigma_Ncn_2_n, &
                                          dum_out9, dum_out10, &
                                          dum_out11, dum_out12, &
-                                         corr_sNc_1_n, corr_sNc_2_n, &
+                                         corr_sNcn_1_n, corr_sNcn_2_n, &
                                          dum_out13, dum_out14 )
 
                  KK_auto_coef &
@@ -1788,11 +1847,11 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! autoconversion rate.  Divide the result by cloud fraction
                  ! (lcldm) to find the mean in-cloud rate.
                  prc(k) = real( &
-                 KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Nc_1, mu_Nc_2, &
-                                        mu_Nc_1_n, mu_Nc_2_n, sigma_s_1, &
-                                        sigma_s_2, sigma_Nc_1, sigma_Nc_2, &
-                                        sigma_Nc_1_n, sigma_Nc_2_n, corr_sNc_1_n, &
-                                        corr_sNc_2_n, KK_auto_coef, mixt_frac, &
+                 KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, &
+                                        mu_Ncn_1_n, mu_Ncn_2_n, sigma_s_1, &
+                                        sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
+                                        sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
+                                        corr_sNcn_2_n, KK_auto_coef, mixt_frac, &
                                         real( ncic(i,k), kind = core_rknd ), &
                                         l_const_Nc_in_cloud ), &
                           kind = r8 ) / lcldm(i,k)
@@ -2223,36 +2282,45 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! multiplying in-precip rain water mixing ratio (qric) by
                  ! the precipitation fraction (cldmax).
 
-                 call KK_in_precip_values( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                           real( qric(i,k) * cldmax(i,k), &
-                                                 kind = core_rknd ), &
-                                           zero, zero, &
-                                           real( qric(i,k) * cldmax(i,k), &
-                                                 kind = core_rknd ), &
-                                           real( qric(i,k) * cldmax(i,k), &
-                                                 kind = core_rknd ), &
-                                           zero, zero, &
-                                           real( qc(i,k), kind = core_rknd ), &
-                                           real( qc(i,k), kind = core_rknd ), &
-                                           real( lcldm(i,k), kind = core_rknd ), &
-                                           real( lcldm(i,k), kind = core_rknd ), &
-                                           zero, zero, zero, & ! Intent(in)
-                                           zero, zero, mixt_frac, & ! Intent(in)
-                                           real( cldmax(i,k), &
-                                                 kind = core_rknd ), &
-                                           real( cldmax(i,k), &
-                                                 kind = core_rknd ), &
-                                           pdf_params(k), & ! Intent(in)
-                                           mu_s_1, mu_s_2, dum_out1, dum_out2, & !Intent(out)
-                                           dum_out3, dum_out4, dum_out5, dum_out6, & !Intent(out)
-                                           sigma_s_1, sigma_s_2, dum_out7, dum_out8, & !Intent(out)
-                                           sigma_rr_1, sigma_rr_2, dum_out9, & !Intent(out)
-                                           dum_out10, corr_srr_1, corr_srr_2, & !Intent(out)
-                                           dum_out11, dum_out12, dum_out13, & !Intent(out)
-                                           dum_out14, dum_out15, dum_out16, & !Intent(out)
-                                           dum_out17, dum_out18, dum_out19, dum_out20 ) !Intent(out)
-
                  mixt_frac = pdf_params(k)%mixt_frac
+
+                 call KK_in_precip_values &
+                                ( real( qc(i,k), kind = core_rknd ), & ! In
+                                  real( qric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( nric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( nc(i,k), kind = core_rknd ), &
+                                  real( qric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( qric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( nric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( nric(i,k) * cldmax(i,k), &
+                                        kind = core_rknd ), &
+                                  real( qc(i,k), kind = core_rknd ), &
+                                  real( qc(i,k), kind = core_rknd ), &
+                                  real( lcldm(i,k), kind = core_rknd ), &
+                                  real( lcldm(i,k), kind = core_rknd ), &
+                                  one, one, &
+                                  zero, zero, zero, &
+                                  zero, zero, mixt_frac, &
+                                  pdf_params(k), &
+                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &! Out
+                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                                  mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
+                                  sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
+                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
+                                  corr_ws_1, corr_ws_2, corr_wrr_1, &
+                                  corr_wrr_2, corr_wNr_1, corr_wNr_2, &
+                                  corr_wNcn_1, corr_wNcn_2, corr_st_1, &
+                                  corr_st_2, corr_srr_1, corr_srr_2, &
+                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
+                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
+                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
+                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
 
                  call KK_upscaled_setup( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                          real( qric(i,k) * cldmax(i,k), &
