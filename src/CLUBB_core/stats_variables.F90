@@ -136,6 +136,12 @@ module stats_variables
      isigma_Ncn_2_n
 
   integer, public :: &
+     icorr_wrr_1,    &
+     icorr_wrr_2,    &
+     icorr_wNr_1,    &
+     icorr_wNr_2,    &
+     icorr_wNcn_1,   &
+     icorr_wNcn_2,   &
      icorr_srr_1,    &
      icorr_srr_2,    &
      icorr_sNr_1,    &
@@ -149,7 +155,15 @@ module stats_variables
      icorr_tNcn_1,   &
      icorr_tNcn_2,   &
      icorr_rrNr_1,   &
-     icorr_rrNr_2,   &
+     icorr_rrNr_2
+
+  integer, public :: &
+     icorr_wrr_1_n,  &
+     icorr_wrr_2_n,  &
+     icorr_wNr_1_n,  &
+     icorr_wNr_2_n,  &
+     icorr_wNcn_1_n, &
+     icorr_wNcn_2_n, &
      icorr_srr_1_n,  &
      icorr_srr_2_n,  &
      icorr_sNr_1_n,  &
@@ -221,10 +235,13 @@ module stats_variables
 !$omp   imu_Ncn_1_n, imu_Ncn_2_n, isigma_rr_1, isigma_rr_2, isigma_Nr_1, &
 !$omp   isigma_Nr_2, isigma_Ncn_1, isigma_Ncn_2, isigma_rr_1_n, isigma_rr_2_n, &
 !$omp   isigma_Nr_1_n, isigma_Nr_2_n, isigma_Ncn_1_n, isigma_Ncn_2_n, &
-!$omp   icorr_srr_1, icorr_srr_2, icorr_sNr_1, icorr_sNr_2, &
-!$omp   icorr_sNcn_1, icorr_sNcn_2, icorr_trr_1, icorr_trr_2, &
-!$omp   icorr_tNr_1, icorr_tNr_2, icorr_tNcn_1, icorr_tNcn_2, &
-!$omp   icorr_rrNr_1, icorr_rrNr_2, icorr_srr_1_n, icorr_srr_2_n, &
+!$omp   icorr_wrr_1, icorr_wrr_2, icorr_wNr_1, icorr_wNr_2, &
+!$omp   icorr_wNcn_1, icorr_wNcn_2, icorr_srr_1, icorr_srr_2, &
+!$omp   icorr_sNr_1, icorr_sNr_2, icorr_sNcn_1, icorr_sNcn_2, &
+!$omp   icorr_trr_1, icorr_trr_2, icorr_tNr_1, icorr_tNr_2, &
+!$omp   icorr_tNcn_1, icorr_tNcn_2, icorr_rrNr_1, icorr_rrNr_2, &
+!$omp   icorr_wrr_1_n, icorr_wrr_2_n, icorr_wNr_1_n, icorr_wNr_2_n, &
+!$omp   icorr_wNcn_1_n, icorr_wNcn_2_n, icorr_srr_1_n, icorr_srr_2_n, &
 !$omp   icorr_sNr_1_n, icorr_sNr_2_n, icorr_sNcn_1_n, icorr_sNcn_2_n, &
 !$omp   icorr_trr_1_n, icorr_trr_2_n, icorr_tNr_1_n, icorr_tNr_2_n, &
 !$omp   icorr_tNcn_1_n, icorr_tNcn_2_n, icorr_rrNr_1_n, icorr_rrNr_2_n )
