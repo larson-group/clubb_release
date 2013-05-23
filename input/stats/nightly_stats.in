@@ -4,7 +4,7 @@ vars_zt =
 'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
 'Ncm', 'Ncm_in_cloud', 'rgraupelm', 'ricem', 'Nim',
 'rsnowm', 'Nsnowm','Lscale', 'radht', 'corr_sw', 'corr_wrr', 'corr_wNr',
-'corr_wNc', 'corr_srr', 'corr_sNr', 'corr_sNc', 'corr_rrNr',
+'corr_wNcn', 'corr_srr', 'corr_sNr', 'corr_sNcn', 'corr_rrNr',
 ''
 
 vars_zm =
