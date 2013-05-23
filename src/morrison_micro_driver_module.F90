@@ -71,6 +71,39 @@ module morrison_micro_driver_module
       iLH_morr_rain_rate, &
       iLH_morr_snow_rate
 
+    use stats_variables, only: &
+      irrainm_PSMLT, & ! Variable(s)
+      iNicem_EVPMS, &
+      irrainm_PRACS, &
+      irgraupelm_EVPMG, &
+      irrainm_PRACG, &
+      irrainm_PGMLT, &
+      ircm_MNUCCC, &
+      ircm_PSACWS, &
+      ircm_PSACWI, &
+      ircm_QMULTS, &
+      ircm_QMULTG, &
+      ircm_PSACWG, &
+      ircm_PGSACW, &
+      iricem_PRD, &
+      iricem_PRCI, &
+      iricem_PRAI, &
+      irrainm_QMULTR, &
+      irrainm_QMULTRG, &
+      iricem_MNUCCD, &
+      iricem_PRACI, &
+      iricem_PRACIS, &
+      iricem_EPRD, &
+      irrainm_MNUCCR, &
+      irrainm_PIACR, &
+      irrainm_PIACRS, &
+      irrainm_PGRACS, &
+      iNicem_PRDS, &
+      iNicem_EPRDS, &
+      iNicem_PSACR, &
+      irgraupelm_PRDG, &
+      irgraupelm_EPRDG
+
     use stats_type, only:  & 
         stat_update_var, stat_update_var_pt  ! Procedure(s)
 
@@ -176,6 +209,72 @@ module morrison_micro_driver_module
       rrainm_auto_r4,& ! Autoconversion rate     [kg/kg/s]
       rrainm_accr_r4   ! Accretion rate         [kg/kg/s]
 
+    real, dimension(nz) :: &
+      rrainm_PSMLT_r4, &       ! Change Q melting snow to rain [kg/kg/s]
+      Nicem_EVPMS_r4, &        ! Change Q melting snow evaporating [kg/kg/s]
+      rrainm_PRACS_r4, &       ! Change Q rain-snow collection [kg/kg/s]
+      rgraupelm_EVPMG_r4, &    ! Change Q melting of graupel and evap [kg/kg/s]
+      rrainm_PRACG_r4, &       ! Change Q collection rain by graupel [kg/kg/s]
+      rrainm_PGMLT_r4, &       ! Change Q melting of graupel [kg/kg/s]
+      rcm_MNUCCC_r4, &         ! Change Q contact freeze droplets [kg/kg/s]
+      rcm_PSACWS_r4, &         ! Change Q droplet accretion by snow [kg/kg/s]
+      rcm_PSACWI_r4, &         ! Change Q droplet accretion by cloud ice [kg/kg/s]
+      rcm_QMULTS_r4, &         ! Change Q due to ice mult droplets/snow [kg/kg/s]
+      rcm_QMULTG_r4, &         ! Change Q due to ice mult droplets/graupel [kg/kg/s]
+      rcm_PSACWG_r4, &         ! Change Q collection droplets by graupel [kg/kg/s]
+      rcm_PGSACW_r4, & ! Conversion Q to graupel due to collection droplets by snow [kg/kg/s]
+      ricem_PRD_r4, &          ! Dep cloud ice [kg/kg/s]
+      ricem_PRCI_r4, &         ! Change Q autoconversion cloud ice by snow [kg/kg/s]
+      ricem_PRAI_r4, &         ! Change Q accretion cloud ice [kg/kg/s]
+      rrainm_QMULTR_r4, &      ! Change Q due to ice rain/snow [kg/kg/s]
+      rrainm_QMULTRG_r4, &     ! Change Q due to ice mult rain/graupel [kg/kg/s]
+      ricem_MNUCCD_r4, &       ! Change Q freezing areosol [kg/kg/s]
+      ricem_PRACI_r4, &        ! Change QI ice-rain collection [kg/kg/s]
+      ricem_PRACIS_r4, &       ! Change QI ice-rain collision, added to snow [kg/kg/s]
+      ricem_EPRD_r4, &         ! Sublimation cloud ice [kg/kg/s]
+      rrainm_MNUCCR_r4, &      ! Change Q due to contact freeze rain [kg/kg/s]
+      rrainm_PIACR_r4, &       ! Change QR ice-rain collection [kg/kg/s]
+      rrainm_PIACRS_r4, &      ! Change QR ice-rain collision, added to snow [kg/kg/s]
+      rrainm_PGRACS_r4, &      ! Conversion Q to graupel due to collection rain by snow [kg/kg/s]
+      Nicem_PRDS_r4, &         ! Dep of snow [kg/kg/s]
+      Nicem_EPRDS_r4, &        ! Sublimation of snow [kg/kg/s]
+      Nicem_PSACR_r4, &        ! Conversion due to coll of snow by rain [kg/kg/s]
+      rgraupelm_PRDG_r4, &     ! Dep of graupel [kg/kg/s]
+      rgraupelm_EPRDG_r4       ! Sublimation of graupel [kg/kg/s]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      rrainm_PSMLT, &       ! See above for units 
+      Nicem_EVPMS, &         
+      rrainm_PRACS, &        
+      rgraupelm_EVPMG, &     
+      rrainm_PRACG, &        
+      rrainm_PGMLT, &        
+      rcm_MNUCCC, &          
+      rcm_PSACWS, &          
+      rcm_PSACWI, &          
+      rcm_QMULTS, &          
+      rcm_QMULTG, &          
+      rcm_PSACWG, &           
+      rcm_PGSACW, &          
+      ricem_PRD, &           
+      ricem_PRCI, &          
+      ricem_PRAI, &          
+      rrainm_QMULTR, &       
+      rrainm_QMULTRG, &      
+      ricem_MNUCCD, &        
+      ricem_PRACI, &         
+      ricem_PRACIS, &        
+      ricem_EPRD, &          
+      rrainm_MNUCCR, &       
+      rrainm_PIACR, &        
+      rrainm_PIACRS, &       
+      rrainm_PGRACS, &       
+      Nicem_PRDS, &          
+      Nicem_EPRDS, &         
+      Nicem_PSACR, &         
+      rgraupelm_PRDG, &      
+      rgraupelm_EPRDG       
+
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
 
@@ -277,6 +376,39 @@ module morrison_micro_driver_module
     rrainm_accr_r4 = 0.0
     rrainm_evap_r4 = 0.0
 
+    ! Initialize Morrison budgets to zero
+    rrainm_PSMLT_r4 = 0.0
+    Nicem_EVPMS_r4 = 0.0 
+    rrainm_PRACS_r4 = 0.0
+    rgraupelm_EVPMG_r4 = 0.0
+    rrainm_PRACG_r4 = 0.0
+    rrainm_PGMLT_r4 = 0.0
+    rcm_MNUCCC_r4 = 0.0
+    rcm_PSACWS_r4 = 0.0
+    rcm_PSACWI_r4 = 0.0
+    rcm_QMULTS_r4 = 0.0
+    rcm_QMULTG_r4 = 0.0
+    rcm_PSACWG_r4 = 0.0 
+    rcm_PGSACW_r4 = 0.0
+    ricem_PRD_r4 = 0.0
+    ricem_PRCI_r4 = 0.0
+    ricem_PRAI_r4 = 0.0
+    rrainm_QMULTR_r4 = 0.0
+    rrainm_QMULTRG_r4 = 0.0
+    ricem_MNUCCD_r4 = 0.0
+    ricem_PRACI_r4 = 0.0
+    ricem_PRACIS_r4 = 0.0
+    ricem_EPRD_r4 = 0.0
+    rrainm_MNUCCR_r4 = 0.0
+    rrainm_PIACR_r4 = 0.0
+    rrainm_PIACRS_r4 = 0.0
+    rrainm_PGRACS_r4 = 0.0
+    Nicem_PRDS_r4 = 0.0
+    Nicem_EPRDS_r4 = 0.0
+    Nicem_PSACR_r4 = 0.0
+    rgraupelm_PRDG_r4 = 0.0
+    rgraupelm_EPRDG_r4 = 0.0
+
     hydromet_mc_r4 = real( hydromet_mc )
     rcm_mc_r4 = real( rcm_mc )
     rvm_mc_r4 = real( rvm_mc )
@@ -300,7 +432,17 @@ module morrison_micro_driver_module
            hydromet_r4(:,iirgraupelm), hydromet_r4(:,iiNgraupelm), effg, &
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
            hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
-           rcm_sten, cloud_frac_in, rrainm_auto_r4, rrainm_accr_r4, rrainm_evap_r4 )
+           rcm_sten, cloud_frac_in, &
+           rrainm_auto_r4, rrainm_accr_r4, &
+           rrainm_PSMLT_r4, Nicem_EVPMS_r4, rrainm_PRACS_r4, rgraupelm_EVPMG_r4, &
+           rrainm_PRACG_r4, rrainm_evap_r4,rrainm_PGMLT_r4,rcm_MNUCCC_r4, &
+           rcm_PSACWS_r4, rcm_PSACWI_r4, rcm_QMULTS_r4, rcm_QMULTG_r4, &
+           rcm_PSACWG_r4, rcm_PGSACW_r4, ricem_PRD_r4, ricem_PRCI_r4, &
+           ricem_PRAI_r4, rrainm_QMULTR_r4, rrainm_QMULTRG_r4, ricem_MNUCCD_r4, &
+           ricem_PRACI_r4, ricem_PRACIS_r4, ricem_EPRD_r4, rrainm_MNUCCR_r4, &
+           rrainm_PIACR_r4, rrainm_PIACRS_r4, rrainm_PGRACS_r4, Nicem_PRDS_r4, &
+           Nicem_EPRDS_r4, Nicem_PSACR_r4, rgraupelm_PRDG_r4, rgraupelm_EPRDG_r4 )
+           
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
@@ -309,6 +451,39 @@ module morrison_micro_driver_module
     rrainm_auto = real( rrainm_auto_r4, kind = core_rknd )
     rrainm_accr = real( rrainm_accr_r4, kind = core_rknd ) 
     rrainm_evap = real( rrainm_evap_r4, kind = core_rknd )
+
+    rrainm_PSMLT = real( rrainm_PSMLT_r4, kind = core_rknd )
+    Nicem_EVPMS = real( Nicem_EVPMS_r4, kind = core_rknd ) 
+    rrainm_PRACS = real( rrainm_PRACS_r4, kind = core_rknd )
+    rgraupelm_EVPMG = real( rgraupelm_EVPMG_r4, kind = core_rknd )
+    rrainm_PRACG = real( rrainm_PRACG_r4, kind = core_rknd )
+    rrainm_PGMLT = real( rrainm_PGMLT_r4, kind = core_rknd )
+    rcm_MNUCCC = real( rcm_MNUCCC_r4, kind = core_rknd )
+    rcm_PSACWS = real( rcm_PSACWS_r4, kind = core_rknd )
+    rcm_PSACWI = real( rcm_PSACWI_r4, kind = core_rknd )
+    rcm_QMULTS = real( rcm_QMULTS_r4, kind = core_rknd )
+    rcm_QMULTG = real( rcm_QMULTG_r4, kind = core_rknd )
+    rcm_PSACWG = real( rcm_PSACWG_r4, kind = core_rknd ) 
+    rcm_PGSACW = real( rcm_PGSACW_r4, kind = core_rknd )
+    ricem_PRD = real( ricem_PRD_r4, kind = core_rknd )
+    ricem_PRCI = real( ricem_PRCI_r4, kind = core_rknd )
+    ricem_PRAI = real( ricem_PRAI_r4, kind = core_rknd )
+    rrainm_QMULTR = real( rrainm_QMULTR_r4, kind = core_rknd )
+    rrainm_QMULTRG = real( rrainm_QMULTRG_r4, kind = core_rknd )
+    ricem_MNUCCD = real( ricem_MNUCCD_r4, kind = core_rknd )
+    ricem_PRACI = real( ricem_PRACI_r4, kind = core_rknd )
+    ricem_PRACIS = real( ricem_PRACIS_r4, kind = core_rknd )
+    ricem_EPRD = real( ricem_EPRD_r4, kind = core_rknd )
+    rrainm_MNUCCR = real( rrainm_MNUCCR_r4, kind = core_rknd )
+    rrainm_PIACR = real( rrainm_PIACR_r4, kind = core_rknd )
+    rrainm_PIACRS = real( rrainm_PIACRS_r4, kind = core_rknd )
+    rrainm_PGRACS = real( rrainm_PGRACS_r4, kind = core_rknd )
+    Nicem_PRDS = real( Nicem_PRDS_r4, kind = core_rknd )
+    Nicem_EPRDS = real( Nicem_EPRDS_r4, kind = core_rknd )
+    Nicem_PSACR = real( Nicem_PSACR_r4, kind = core_rknd )
+    rgraupelm_PRDG = real( rgraupelm_PRDG_r4, kind = core_rknd )
+    rgraupelm_EPRDG = real( rgraupelm_EPRDG_r4, kind = core_rknd )
+
 
     ! Update hydrometeor tendencies
     ! This done because the hydromet_mc arrays that are produced by
@@ -384,6 +559,38 @@ module morrison_micro_driver_module
       call stat_update_var( irrainm_auto, real( rrainm_auto, kind=core_rknd ), zt )
       call stat_update_var( irrainm_accr, real( rrainm_accr, kind=core_rknd ), zt )
       call stat_update_var( irrainm_cond, real( rrainm_evap, kind=core_rknd ), zt )
+
+      call stat_update_var( irrainm_PSMLT, real( rrainm_PSMLT, kind=core_rknd ), zt )
+      call stat_update_var( iNicem_EVPMS, real( Nicem_EVPMS, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_PRACS, real( rrainm_PRACS, kind=core_rknd ), zt )
+      call stat_update_var( irgraupelm_EVPMG, real( rgraupelm_EVPMG, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_PRACG, real( rrainm_PRACG, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_PGMLT, real( rrainm_PGMLT, kind=core_rknd ), zt )
+      call stat_update_var( ircm_MNUCCC, real( rcm_MNUCCC, kind=core_rknd ), zt )
+      call stat_update_var( ircm_PSACWS, real( rcm_PSACWS, kind=core_rknd ), zt )
+      call stat_update_var( ircm_PSACWI, real( rcm_PSACWI, kind=core_rknd ), zt )
+      call stat_update_var( ircm_QMULTS, real( rcm_QMULTS, kind=core_rknd ), zt )
+      call stat_update_var( ircm_QMULTG, real( rcm_QMULTG, kind=core_rknd ), zt )
+      call stat_update_var( ircm_PSACWG, real( rcm_PSACWG, kind=core_rknd ), zt )
+      call stat_update_var( ircm_PGSACW, real( rcm_PGSACW, kind=core_rknd ), zt )
+      call stat_update_var( iricem_PRD, real( ricem_PRD, kind=core_rknd ), zt )
+      call stat_update_var( iricem_PRCI, real( ricem_PRCI, kind=core_rknd ), zt )
+      call stat_update_var( iricem_PRAI, real( ricem_PRAI, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_QMULTR, real( rrainm_QMULTR, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_QMULTRG, real( rrainm_QMULTRG, kind=core_rknd ), zt )
+      call stat_update_var( iricem_MNUCCD, real( ricem_MNUCCD, kind=core_rknd ), zt )
+      call stat_update_var( iricem_PRACI, real( ricem_PRACI, kind=core_rknd ), zt )
+      call stat_update_var( iricem_PRACIS, real( ricem_PRACIS, kind=core_rknd ), zt )
+      call stat_update_var( iricem_EPRD, real( ricem_EPRD, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_MNUCCR, real( rrainm_MNUCCR, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_PIACR, real( rrainm_PIACR, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_PIACRS, real( rrainm_PIACRS, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_PGRACS, real( rrainm_PGRACS, kind=core_rknd ), zt )
+      call stat_update_var( iNicem_PRDS, real( Nicem_PRDS, kind=core_rknd ), zt )
+      call stat_update_var( iNicem_EPRDS, real( Nicem_EPRDS, kind=core_rknd ), zt )
+      call stat_update_var( iNicem_PSACR, real( Nicem_PSACR, kind=core_rknd ), zt )
+      call stat_update_var( irgraupelm_PRDG, real( rgraupelm_PRDG, kind=core_rknd ), zt )
+      call stat_update_var( irgraupelm_EPRDG, real( rgraupelm_EPRDG, kind=core_rknd ), zt )
 
       ! --- Number concentrations ---
       ! No budgets for sedimentation are output

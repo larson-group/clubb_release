@@ -81,6 +81,12 @@ vars_zt =
 's_mellor', 'C11_Skw_fnc',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
 'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt', 'rrp2_zt', 'Nrp2_zt',
+'rrainm_PSMLT', 'Nicem_EVPMS', 'rrainm_PRACS', 'rgraupelm_EVPMG', 'rrainm_PRACG',
+'rrainm_PGMLT', 'rcm_MNUCCC', 'rcm_PSACWS', 'rcm_PSACWI', 'rcm_QMULTS',
+'rcm_QMULTG', 'rcm_PSACWG', 'rcm_PGSACW', 'ricem_PRD', 'ricem_PRCI', 
+'ricem_PRAI', 'rrainm_QMULTR', 'rrainm_QMULTRG', 'ricem_MNUCCD', 'ricem_PRACI', 
+'ricem_PRACIS', 'ricem_EPRD', 'rrainm_MNUCCR', 'rrainm_PIACR', 'rrainm_PIACRS',
+'rrainm_PGRACS', 'Nicem_PRDS', 'Nicem_EPRDS', 'Nicem_PSACR', 'rgraupelm_PRDG', 'rgraupelm_EPRDG', 
 ''
 
 vars_LH_zt =
