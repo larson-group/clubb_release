@@ -109,7 +109,7 @@ while true ; do
 			# Check to make sure this is an integer
 			if [ $grid_nz -ne $grid_nz 2> /dev/null ];
 			then
-				echo "The number of levels specified are invalid!"
+				echo "The number of levels specified ($grid_nz) are invalid!"
 				exit 1;
 			fi
 			shift 2 ;;
@@ -120,7 +120,7 @@ while true ; do
 			# Check to make sure this is an integer
 			if [ $test_ts -ne $test_ts 2> /dev/null ];
 			then
-				echo "The timestep specified is invalid!"
+				echo "The timestep ($test_ts) is invalid!"
 				exit 1;
 			fi
 
@@ -130,7 +130,7 @@ while true ; do
 
 			if [ ! -f $stats_file ];
 			then
-				echo "The stats file does not exist!"
+				echo "The stats file $stats_file was not found!"
 				exit 1;
 			fi
 
@@ -140,7 +140,7 @@ while true ; do
 
 			if [ ! -f $parameter_file ];
 			then
-				echo "The parameter file does not exist!"
+				echo "The parameter file $parameter_file was not found!"
 				exit 1;
 			fi
 
