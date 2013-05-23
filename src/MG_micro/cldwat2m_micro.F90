@@ -111,7 +111,7 @@ real(r8), private:: tmin_fsnow ! min temperature for transition to convective sn
 
 ! Flag to use CLUBB's PDF for upscaling KK autoconversion and accretion.
 logical, parameter, public :: &
-  l_use_CLUBB_pdf_in_mg = .true.
+  l_use_CLUBB_pdf_in_mg = .false.
 !----
 
 !needed for findsp
@@ -2351,14 +2351,25 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! Function KK_accr_upscaled_mean provides the grid-level mean
                  ! accretion rate.  Divide the result by cloud fraction (lcldm)
                  ! to find the mean in-cloud rate.
+                 !pra(k) = real( &
+                 !KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
+                 !                       mu_rr_1_n, mu_rr_2_n, sigma_s_1, &
+                 !                       sigma_s_2, sigma_rr_1, sigma_rr_2, &
+                 !                       sigma_rr_1_n, sigma_rr_2_n, corr_srr_1_n, &
+                 !                       corr_srr_2_n, KK_accr_coef, mixt_frac, &
+                 !                       real( cldmax(i,k), kind = core_rknd ), &
+                 !                       real( cldmax(i,k), kind = core_rknd ) ), &
+                 !         kind = r8 ) / lcldm(i,k)
+                 ! Until the component means code (rr1, rr2, etc.) has been
+                 ! introduced to MG, use the code below that automatically
+                 ! has a precip_frac of 1 for each component.
                  pra(k) = real( &
                  KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
                                         mu_rr_1_n, mu_rr_2_n, sigma_s_1, &
                                         sigma_s_2, sigma_rr_1, sigma_rr_2, &
                                         sigma_rr_1_n, sigma_rr_2_n, corr_srr_1_n, &
                                         corr_srr_2_n, KK_accr_coef, mixt_frac, &
-                                        real( cldmax(i,k), kind = core_rknd ), &
-                                        real( cldmax(i,k), kind = core_rknd ) ), &
+                                        one, one ), &
                           kind = r8 ) / lcldm(i,k)
                  npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
 
