@@ -89,8 +89,10 @@ module clubb_driver
       cleanup_clubb_core, & 
       advance_clubb_core
 
-    use constants_clubb, only: fstdout, fstderr, & ! Variable(s)
-      rt_tol, thl_tol, w_tol, w_tol_sqd, zero, rc_tol, one
+    use constants_clubb, only: &
+      fstdout, fstderr, zero, one, eps, & ! Variable(s)
+      rt_tol, thl_tol, w_tol, w_tol_sqd, &
+      rr_tol, Nr_tol, Ncn_tol, rc_tol
 
     use error_code, only: &
       clubb_var_out_of_bounds,  & ! Variable(s)
@@ -253,8 +255,18 @@ module clubb_driver
 
     use array_index, only: &
         iiNcm, & ! Variable(s)
+        iiNcnm, &
         iirrainm, &
         iiNrm
+
+    use hydromet_pdf_parameter_module, only: &
+        hydromet_pdf_parameter
+
+    use parameters_tunable, only: &
+        c_Krrainm
+
+    use advance_windm_edsclrm_module, only: &
+        xpwp_fnc
 
     implicit none
 
@@ -265,7 +277,7 @@ module clubb_driver
     integer :: omp_get_thread_num ! Function
 #endif
     ! External
-    intrinsic :: mod, real, int, trim, floor, max
+    intrinsic :: mod, real, int, trim, floor, max, sqrt
 
     ! Constant Parameters
     logical, parameter :: &
@@ -386,22 +398,6 @@ module clubb_driver
       radf     ! Buoyancy production at CL top due to LW radiative cooling [m^2/s^3]
                ! This is currently set to zero for CLUBB standalone
 
-!    real( kind = core_rknd ) :: &
-!      mu_rr_1,     & ! Mean of rr (1st PDF component) in-precip (ip)     [kg/kg]
-!      mu_rr_2,     & ! Mean of rr (2nd PDF component) ip                 [kg/kg]
-!      mu_Nr_1,     & ! Mean of Nr (1st PDF component) ip                [num/kg]
-!      mu_Nr_2,     & ! Mean of Nr (2nd PDF component) ip                [num/kg]
-!      sigma_rr_1,  & ! Standard deviation of rr (1st PDF component) ip   [kg/kg]
-!      sigma_rr_2,  & ! Standard deviation of rr (2nd PDF component) ip   [kg/kg]
-!      sigma_Nr_1,  & ! Standard deviation of Nr (1st PDF component) ip  [num/kg]
-!      sigma_Nr_2     ! Standard deviation of Nr (2nd PDF component) ip  [num/kg]
-!      corr_srr_1,  & ! Correlation between s and rr (1st PDF component) ip   [-]
-!      corr_srr_2,  & ! Correlation between s and rr (2nd PDF component) ip   [-]
-!      corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component) ip   [-]
-!      corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component) ip   [-]
-!      corr_rrNr_1, & ! Correlation between rr and Nr (1st PDF component) ip  [-]
-!      corr_rrNr_2    ! Correlation between rr and Nr (2nd PDF component) ip  [-]
-
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rrainm,        & ! Overall mean rain water mixing ratio               [kg/kg]
       Nrm,           & ! Overall mean rain drop concentration               [num/kg]
@@ -418,6 +414,17 @@ module clubb_driver
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
 
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      wprrp,           & ! Covariance of w and r_r, < w'r_r' >   [(m/s)(kg/kg)]
+      wpNrp              ! Covariance of w and N_r, < w'N_r' >   [(m/s)(num/kg)]
+
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      wpsp_zm,     & ! Covariance of s and w (momentum levels)   [(m/s)(kg/kg)]
+      wpNcnp_zm,   & ! Covariance of N_cn and w (momentum levs.) [(m/s)(num/kg)]
+      wpsp_zt,     & ! Covariance of s and w on t-levs           [(m/s)(kg/kg)]
+      wprrp_ip_zt, & ! Covar. of r_r and w (in-precip) on t-levs [(m/s)(kg/kg)]
+      wpNrp_ip_zt, & ! Covar. of N_r and w (in-precip) on t-levs [(m/s)(num/kg)]
+      wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
 
     logical :: l_restart_input, corr_file_exist
 
@@ -433,6 +440,9 @@ module clubb_driver
     real( kind = core_rknd ), dimension(:, :), allocatable :: &
       corr_array_cloud, & ! Prescribed correlation matrix (in cloud)
       corr_array_below    ! Prescribed correlation matrix (below cloud)
+
+    type(hydromet_pdf_parameter), dimension(:), allocatable :: &
+      hydromet_pdf_params
 
     character(len=128) :: &
      corr_file_path_cloud,         &
@@ -876,6 +886,9 @@ module clubb_driver
     ! Allocate rvm_mc, rcm_mc, thlm_mc
     allocate( rvm_mc(gr%nz), rcm_mc(gr%nz), thlm_mc(gr%nz) )
 
+    ! Allocate hydromet_pdf_params
+    allocate( hydromet_pdf_params(gr%nz) )
+
     ! Allocate the correlation arrays
     allocate(corr_array_1(d_variables, d_variables, gr%nz))
     allocate(corr_array_2(d_variables, d_variables, gr%nz))
@@ -1229,6 +1242,7 @@ module clubb_driver
 
         rrainm = hydromet(:,iirrainm)
         Nrm = hydromet(:,iiNrm)
+        Ncnm = hydromet(:,iiNcnm)
 
         if ( l_use_precip_frac ) then
 
@@ -1253,20 +1267,82 @@ module clubb_driver
 
         endif
 
-!        do k = 1, gr%nz
-!          call KK_in_precip_values( rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
-!                                    rc2(k), cloud_frac1(k), cloud_frac2(k), &
-!                                    precip_frac_1(k), precip_frac_2(k), &
-!                                    mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-!                                    sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-!                                    sigma_Nr_2, &
-!                                    corr_array_1(iiLH_s_mellor, iiLH_rrain, k), &
-!                                    corr_array_2(iiLH_s_mellor, iiLH_rrain, k), &
-!                                    corr_array_1(iiLH_s_mellor, iiLH_Nr, k), &
-!                                    corr_array_2(iiLH_s_mellor, iiLH_Nr, k), &
-!                                    corr_array_1(iiLH_rrain, iiLH_Nr, k), &
-!                                    corr_array_2(iiLH_rrain, iiLH_Nr, k) )
-!        end do
+        ! Covariance of vertical velocity and a hydrometeor
+        ! (< w'r_r' > and < w'N_r' >).
+        wprrp = wphydrometp(:,iirrainm)
+        wpNrp = wphydrometp(:,iiNrm)
+
+        ! calculate the covariances of w with the hydrometeors
+        if ( l_calc_w_corr ) then
+
+           ! calculate the covariances of w with the hydrometeors
+           do k = 1, gr%nz
+              wpsp_zm(k) = pdf_params(k)%mixt_frac &
+                         * ( one - pdf_params(k)%mixt_frac ) &
+                         * ( pdf_params(k)%s1 - pdf_params(k)%s2 ) &
+                         * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
+           enddo
+
+           wpNcnp_zm(1:gr%nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:gr%nz-1), Ncnm(1:gr%nz-1), &
+                                         Ncnm(2:gr%nz), gr%invrs_dzm(1:gr%nz-1) )
+
+           ! Boundary conditions; We are assuming zero flux at the top.
+           wpNcnp_zm(gr%nz) = zero
+
+           ! interpolate back to zt-grid
+           wpsp_zt     = zm2zt(wpsp_zm)
+           wprrp_ip_zt = zm2zt(wprrp) / max( precip_frac, eps )
+           wpNrp_ip_zt = zm2zt(wpNrp) / max( precip_frac, eps )
+           wpNcnp_zt   = zm2zt(wpNcnp_zm)
+
+           do k = 1, gr%nz, 1
+              if ( rrainm(k) <= rr_tol ) then
+                 wprrp_ip_zt(k) = zero
+              endif
+              if ( Nrm(k) <= Nr_tol ) then
+                 wpNrp_ip_zt(k) = zero
+              endif
+              if ( Ncnm(k) <= Ncn_tol ) then
+                 wpNcnp_zt(k) = zero
+              endif
+           enddo
+
+        endif
+
+        do k = 1, gr%nz
+          call KK_in_precip_values( rcm(k), rrainm(k), Nrm(k), Ncnm(k), & ! Intent(in)
+                                    rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), & ! Intent(in)
+                                    rc2(k), cloud_frac1(k), cloud_frac2(k), & ! Intent(in)
+                                    precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
+                                    wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
+                                    wpNcnp_zt(k), sqrt(wp2_zt(k)), mixt_frac(k), & ! Intent(in)
+                                    pdf_params(k), & ! Intent(in)
+                                    hydromet_pdf_params(k), & ! Intent(inout)
+                                    corr_array_1(iiLH_s_mellor, iiLH_w, k), & ! Intent(out)
+                                    corr_array_2(iiLH_s_mellor, iiLH_w, k), & ! Intent(out)
+                                    corr_array_1(iiLH_w, iiLH_rrain, k), & ! Intent(out)
+                                    corr_array_2(iiLH_w, iiLH_rrain, k), & ! Intent(out)
+                                    corr_array_1(iiLH_w, iiLH_Nr, k), & ! Intent(out)
+                                    corr_array_2(iiLH_w, iiLH_Nr, k), & ! Intent(out)
+                                    corr_array_1(iiLH_w, iiLH_Ncn, k), & ! Intent(out)
+                                    corr_array_2(iiLH_w, iiLH_Ncn, k), & ! Intent(out)
+                                    corr_array_1(iiLH_s_mellor, iiLH_t_mellor, k), & ! Intent(out)
+                                    corr_array_2(iiLH_s_mellor, iiLH_t_mellor, k), & ! Intent(out)
+                                    corr_array_1(iiLH_s_mellor, iiLH_rrain, k), & ! Intent(out)
+                                    corr_array_2(iiLH_s_mellor, iiLH_rrain, k), & ! Intent(out)
+                                    corr_array_1(iiLH_s_mellor, iiLH_Nr, k), & ! Intent(out)
+                                    corr_array_2(iiLH_s_mellor, iiLH_Nr, k), & ! Intent(out)
+                                    corr_array_1(iiLH_s_mellor, iiLH_Ncn, k), & ! Intent(out)
+                                    corr_array_2(iiLH_s_mellor, iiLH_Ncn, k), & ! Intent(out)
+                                    corr_array_1(iiLH_t_mellor, iiLH_rrain, k), & ! Intent(out)
+                                    corr_array_2(iiLH_t_mellor, iiLH_rrain, k), & ! Intent(out)
+                                    corr_array_1(iiLH_t_mellor, iiLH_Nr, k), & ! Intent(out)
+                                    corr_array_2(iiLH_t_mellor, iiLH_Nr, k), & ! Intent(out)
+                                    corr_array_1(iiLH_t_mellor, iiLH_Ncn, k), & ! Intent(out)
+                                    corr_array_2(iiLH_t_mellor, iiLH_Ncn, k), & ! Intent(out)
+                                    corr_array_1(iiLH_rrain, iiLH_Nr, k), & ! Intent(out)
+                                    corr_array_2(iiLH_rrain, iiLH_Nr, k) ) ! Intent(out)
+        end do
       endif
 
       ! Determine correlations

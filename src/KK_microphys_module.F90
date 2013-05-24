@@ -398,6 +398,9 @@ module KK_microphys_module
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s)
 
+    use hydromet_pdf_parameter_module, only: &
+        hydromet_pdf_parameter  ! Variable(s)
+
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
 
@@ -663,6 +666,9 @@ module KK_microphys_module
       wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
     ! end changes by janhft 10/04/12
 
+    type(hydromet_pdf_parameter), dimension(:), allocatable :: &
+      hydromet_pdf_params
+
     logical :: &
       l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
       l_evap_adj_enabled    ! Flag to enable rrainm/Nrm evaporation adjustment
@@ -671,6 +677,9 @@ module KK_microphys_module
       cloud_top_level, & ! Vertical level index of cloud top 
       k                  ! Loop index
 
+    ! ---- Begin Code ----
+
+    allocate(hydromet_pdf_params(nz))
 
     !!! Initialize microphysics fields.
     call KK_micro_init( nz, hydromet, hydromet_mc, hydromet_vel, &
@@ -815,27 +824,49 @@ module KK_microphys_module
       !!! Calculate the means, standard deviations, and correlations involving
       !!! rain water mixing ratio and rain drop concentration for each PDF
       !!! component.
-      call KK_in_precip_values( rcm(k), rrainm(k), Nrm(k), Ncnm(k), &
-                                rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
-                                rc2(k), cloud_frac1(k), cloud_frac2(k), &
-                                precip_frac_1(k), precip_frac_2(k), &
-                                wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &
-                                wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), &
-                                pdf_params(k), &
-                                mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &
-                                mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
-                                sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
-                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                corr_ws_1, corr_ws_2, corr_wrr_1, &
-                                corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                                corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                                corr_st_2, corr_srr_1, corr_srr_2, &
-                                corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+      call KK_in_precip_values( rcm(k), rrainm(k), Nrm(k), Ncnm(k), & ! Intent(in)
+                                rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), & ! Intent(in)
+                                rc2(k), cloud_frac1(k), cloud_frac2(k), & ! Intent(in)
+                                precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
+                                wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
+                                wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), & ! Intent(in)
+                                pdf_params(k), & ! Intent(in)
+                                hydromet_pdf_params(k), & ! Intent(inout)
+                                corr_ws_1, corr_ws_2, corr_wrr_1, & ! Intent(out)
+                                corr_wrr_2, corr_wNr_1, corr_wNr_2, & ! Intent(out)
+                                corr_wNcn_1, corr_wNcn_2, corr_st_1, & ! Intent(out)
+                                corr_st_2, corr_srr_1, corr_srr_2, & ! Intent(out)
+                                corr_sNr_1, corr_sNr_2, corr_sNcn_1, & ! Intent(out)
+                                corr_sNcn_2, corr_trr_1, corr_trr_2, & ! Intent(out)
+                                corr_tNr_1, corr_tNr_2, corr_tNcn_1, & ! Intent(out)
+                                corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 ) ! Intent(out)
+
+      ! This code will soon be moved, since the hydromet_pdf_params will be
+      ! calculated in the clubb_driver and then fed through the code
+      mu_w_1 = hydromet_pdf_params(k)%mu_w_1
+      mu_w_2 = hydromet_pdf_params(k)%mu_w_2
+      mu_s_1 = hydromet_pdf_params(k)%mu_s_1
+      mu_s_2 = hydromet_pdf_params(k)%mu_s_2
+      mu_t_1 = hydromet_pdf_params(k)%mu_t_1
+      mu_t_2 = hydromet_pdf_params(k)%mu_t_2
+      mu_rr_1 = hydromet_pdf_params(k)%mu_rr_1
+      mu_rr_2 = hydromet_pdf_params(k)%mu_rr_2
+      mu_Nr_1 = hydromet_pdf_params(k)%mu_Nr_1
+      mu_Nr_2 = hydromet_pdf_params(k)%mu_Nr_2
+      mu_Ncn_1 = hydromet_pdf_params(k)%mu_Ncn_1
+      mu_Ncn_2 = hydromet_pdf_params(k)%mu_Ncn_2
+      sigma_w_1 = hydromet_pdf_params(k)%sigma_w_1
+      sigma_w_2 = hydromet_pdf_params(k)%sigma_w_2
+      sigma_s_1 = hydromet_pdf_params(k)%sigma_s_1
+      sigma_s_2 = hydromet_pdf_params(k)%sigma_s_2
+      sigma_t_1 = hydromet_pdf_params(k)%sigma_t_1
+      sigma_t_2 = hydromet_pdf_params(k)%sigma_t_2
+      sigma_rr_1 = hydromet_pdf_params(k)%sigma_rr_1
+      sigma_rr_2 = hydromet_pdf_params(k)%sigma_rr_2
+      sigma_Nr_1 = hydromet_pdf_params(k)%sigma_Nr_1
+      sigma_Nr_2 = hydromet_pdf_params(k)%sigma_Nr_2
+      sigma_Ncn_1 = hydromet_pdf_params(k)%sigma_Ncn_1
+      sigma_Ncn_2 = hydromet_pdf_params(k)%sigma_Ncn_2
        
 
       !!! Calculate the mean, standard deviations, and correlations involving
@@ -2093,27 +2124,22 @@ module KK_microphys_module
   end subroutine KK_tendency_coefs
 
   !=============================================================================
-  subroutine KK_in_precip_values( rcm, rrainm, Nrm, Ncnm, &
-                                  rr1, rr2, Nr1, Nr2, rc1, &
-                                  rc2, cloud_frac1, cloud_frac2, &
-                                  precip_frac_1, precip_frac_2, &
-                                  wpsp, wprrp_ip, wpNrp_ip, &
-                                  wpNcnp, stdev_w, mixt_frac, &
-                                  pdf_params, &
-                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &
-                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                  mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
-                                  sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
-                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                  corr_ws_1, corr_ws_2, corr_wrr_1, &
-                                  corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                                  corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                                  corr_st_2, corr_srr_1, corr_srr_2, &
-                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+  subroutine KK_in_precip_values( rcm, rrainm, Nrm, Ncnm, & ! Intent(in)
+                                  rr1, rr2, Nr1, Nr2, rc1, & ! Intent(in)
+                                  rc2, cloud_frac1, cloud_frac2, & ! Intent(in)
+                                  precip_frac_1, precip_frac_2, & ! Intent(in)
+                                  wpsp, wprrp_ip, wpNrp_ip, & ! Intent(in)
+                                  wpNcnp, stdev_w, mixt_frac, & ! Intent(in)
+                                  pdf_params, & ! Intent(in)
+                                  hydromet_pdf_params, & ! Intent(inout)
+                                  corr_ws_1, corr_ws_2, corr_wrr_1, & ! Intent(out)
+                                  corr_wrr_2, corr_wNr_1, corr_wNr_2, & ! Intent(out)
+                                  corr_wNcn_1, corr_wNcn_2, corr_st_1, & ! Intent(out)
+                                  corr_st_2, corr_srr_1, corr_srr_2, & ! Intent(out)
+                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, & ! Intent(out)
+                                  corr_sNcn_2, corr_trr_1, corr_trr_2, & ! Intent(out)
+                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, & ! Intent(out)
+                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 ) ! Intent(out)
        
     ! Description:
 
@@ -2181,6 +2207,9 @@ module KK_microphys_module
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
 
+    use hydromet_pdf_parameter_module, only: &
+        hydromet_pdf_parameter  ! Variable(s) type
+
     implicit none
 
     ! Input Variables
@@ -2209,33 +2238,11 @@ module KK_microphys_module
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
 
-    ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
-      mu_w_1,      & ! Mean of w (1st PDF component)                       [m/s]
-      mu_w_2,      & ! Mean of w (2nd PDF component)                       [m/s]
-      mu_s_1,      & ! Mean of s (1st PDF component)                     [kg/kg]
-      mu_s_2,      & ! Mean of s (2nd PDF component)                     [kg/kg]
-      mu_t_1,      & ! Mean of t (1st PDF component)                     [kg/kg]
-      mu_t_2,      & ! Mean of t (2nd PDF component)                     [kg/kg]
-      mu_rr_1,     & ! Mean of rr (1st PDF component) in-precip (ip)     [kg/kg]
-      mu_rr_2,     & ! Mean of rr (2nd PDF component) ip                 [kg/kg]
-      mu_Nr_1,     & ! Mean of Nr (1st PDF component) ip                [num/kg]
-      mu_Nr_2,     & ! Mean of Nr (2nd PDF component) ip                [num/kg]
-      mu_Ncn_1,    & ! Mean of Ncn (1st PDF component)                  [num/kg]
-      mu_Ncn_2,    & ! Mean of Ncn (2nd PDF component)                  [num/kg]
-      sigma_w_1,   & ! Standard deviation of w (1st PDF component)         [m/s]
-      sigma_w_2,   & ! Standard deviation of w (2nd PDF component)         [m/s]
-      sigma_s_1,   & ! Standard deviation of s (1st PDF component)       [kg/kg]
-      sigma_s_2,   & ! Standard deviation of s (2nd PDF component)       [kg/kg]
-      sigma_t_1,   & ! Standard deviation of t (1st PDF component)       [kg/kg]
-      sigma_t_2,   & ! Standard deviation of t (2nd PDF component)       [kg/kg]
-      sigma_rr_1,  & ! Standard deviation of rr (1st PDF component) ip   [kg/kg]
-      sigma_rr_2,  & ! Standard deviation of rr (2nd PDF component) ip   [kg/kg]
-      sigma_Nr_1,  & ! Standard deviation of Nr (1st PDF component) ip  [num/kg]
-      sigma_Nr_2,  & ! Standard deviation of Nr (2nd PDF component) ip  [num/kg]
-      sigma_Ncn_1, & ! Standard deviation of Ncn (1st PDF component)    [num/kg]
-      sigma_Ncn_2    ! Standard deviation of Ncn (2nd PDF component)    [num/kg]
+    ! Input/Output Variables
+    type(hydromet_pdf_parameter), intent(inout) :: &
+      hydromet_pdf_params    ! hydrometeor PDF parameters                [units vary]
 
+    ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
       corr_ws_1,   & ! Correlation between w and s (1st PDF component)       [-]
       corr_ws_2,   & ! Correlation between w and s (2nd PDF component)       [-]
@@ -2294,119 +2301,120 @@ module KK_microphys_module
       corr_wNr,        & ! Correlation between w and Nr ip               [-]
       corr_wNcn          ! Correlation between w and Ncn                 [-]
 
+    ! ---- Begin Code ----
 
     !!! Enter the PDF parameters.
 
     !!! Means.
 
     ! Mean of vertical velocity, w, in PDF component 1.
-    mu_w_1 = pdf_params%w1
+    hydromet_pdf_params%mu_w_1 = pdf_params%w1
 
     ! Mean of vertical velocity, w, in PDF component 2.
-    mu_w_2 = pdf_params%w2
+    hydromet_pdf_params%mu_w_2 = pdf_params%w2
 
     ! Mean of extended liquid water mixing ratio, s, in PDF component 1.
-    mu_s_1 = pdf_params%s1
+    hydromet_pdf_params%mu_s_1 = pdf_params%s1
 
     ! Mean of extended liquid water mixing ratio, s, in PDF component 2.
-    mu_s_2 = pdf_params%s2
+    hydromet_pdf_params%mu_s_2 = pdf_params%s2
 
     ! Mean of t in PDF component 1.
     ! Set the component mean values of t to 0.
     ! The component mean values of t are not important.  They can be set to
     ! anything.  They cancel out in the model code.  However, the best thing to
     ! do is to set them to 0 and avoid any kind of numerical error.
-    mu_t_1 = zero
+    hydromet_pdf_params%mu_t_1 = zero
 
     ! Mean of t in PDF component 2.
     ! Set the component mean values of t to 0.
     ! The component mean values of t are not important.  They can be set to
     ! anything.  They cancel out in the model code.  However, the best thing to
     ! do is to set them to 0 and avoid any kind of numerical error.
-    mu_t_2 = zero
+    hydromet_pdf_params%mu_t_2 = zero
 
     ! Mean of in-precip rain water mixing ratio in PDF component 1.
     if ( rr1 > rr_tol ) then
-       mu_rr_1 = rr1 / precip_frac_1
+       hydromet_pdf_params%mu_rr_1 = rr1 / precip_frac_1
     else
        ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
        ! the tolerance amount.  It is considered to have a value of 0.  There is
        ! not any rain in the 1st PDF component at this grid level.
-       mu_rr_1 = zero
+       hydromet_pdf_params%mu_rr_1 = zero
     endif
 
     ! Mean of in-precip rain water mixing ratio in PDF component 2.
     if ( rr2 > rr_tol ) then
-       mu_rr_2 = rr2 / precip_frac_2
+       hydromet_pdf_params%mu_rr_2 = rr2 / precip_frac_2
     else
        ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
        ! the tolerance amount.  It is considered to have a value of 0.  There is
        ! not any rain in the 2nd PDF component at this grid level.
-       mu_rr_2 = zero
+       hydromet_pdf_params%mu_rr_2 = zero
     endif
 
     ! Mean of in-precip rain drop concentration in PDF component 1.
     if ( Nr1 > Nr_tol ) then
-       mu_Nr_1 = Nr1 / precip_frac_1
+       hydromet_pdf_params%mu_Nr_1 = Nr1 / precip_frac_1
     else
        ! Mean in-precip rain drop concentration in PDF component 1 is less than
        ! the tolerance amount.  It is considered to have a value of 0.  There is
        ! not any rain in the 1st PDF component at this grid level.
-       mu_Nr_1 = zero
+       hydromet_pdf_params%mu_Nr_1 = zero
     endif
 
     ! Mean of in-precip rain drop concentration in PDF component 2.
     if ( Nr2 > Nr_tol ) then
-       mu_Nr_2 = Nr2 / precip_frac_2
+       hydromet_pdf_params%mu_Nr_2 = Nr2 / precip_frac_2
     else
        ! Mean in-precip rain drop concentration in PDF component 2 is less than
        ! the tolerance amount.  It is considered to have a value of 0.  There is
        ! not any rain in the 2nd PDF component at this grid level.
-       mu_Nr_2 = zero
+       hydromet_pdf_params%mu_Nr_2 = zero
     endif
 
     ! Mean of cloud nuclei concentration in PDF component 1.
     if ( Ncnm > Ncn_tol ) then
-       mu_Ncn_1 = Ncnm
+       hydromet_pdf_params%mu_Ncn_1 = Ncnm
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There are not any cloud nuclei or
        ! cloud at this grid level.
-       mu_Ncn_1 = zero
+       hydromet_pdf_params%mu_Ncn_1 = zero
     endif
 
     ! Mean of cloud nuclei concentration in PDF component 2.
     if ( Ncnm > Ncn_tol ) then
-       mu_Ncn_2 = Ncnm
+       hydromet_pdf_params%mu_Ncn_2 = Ncnm
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There are not any cloud nuclei or
        ! cloud at this grid level.
-       mu_Ncn_2 = zero
+       hydromet_pdf_params%mu_Ncn_2 = zero
     endif
 
 
     !!! Standard deviations.
 
     ! Standard deviation of vertical velocity, w, in PDF component 1.
-    sigma_w_1 = sqrt( pdf_params%varnce_w1 )
+    hydromet_pdf_params%sigma_w_1 = sqrt( pdf_params%varnce_w1 )
 
     ! Standard deviation of vertical velocity, w, in PDF component 2.
-    sigma_w_2 = sqrt( pdf_params%varnce_w2 )
+    hydromet_pdf_params%sigma_w_2 = sqrt( pdf_params%varnce_w2 )
 
     ! Standard deviation of extended liquid water mixing ratio, s,
     ! in PDF component 1.
-    sigma_s_1 = pdf_params%stdev_s1
+    hydromet_pdf_params%sigma_s_1 = pdf_params%stdev_s1
 
     ! Standard deviation of extended liquid water mixing ratio, s,
     ! in PDF component 2.
-    sigma_s_2 = pdf_params%stdev_s2
+    hydromet_pdf_params%sigma_s_2 = pdf_params%stdev_s2
 
     ! Standard deviation of t in PDF component 1.
-    sigma_t_1 = pdf_params%stdev_t1
+    hydromet_pdf_params%sigma_t_1 = pdf_params%stdev_t1
 
     ! Standard deviation of t in PDF component 2.
-    sigma_t_2 = pdf_params%stdev_t2
+    hydromet_pdf_params%sigma_t_2 = pdf_params%stdev_t2
 
     ! Set up the values of the statistical correlations and variances.  Since we
     ! currently do not have enough variables to compute the correlations and
@@ -2422,14 +2430,16 @@ module KK_microphys_module
     ! in PDF component 1.
     if ( rr1 > rr_tol ) then
        if ( l_interp_prescribed_params ) then
-          sigma_rr_1 = sqrt( cloud_frac1 * rrp2_on_rrm2_cloud &
-                             + ( one - cloud_frac1 ) * rrp2_on_rrm2_below ) &
-                       * mu_rr_1
+          hydromet_pdf_params%sigma_rr_1 = sqrt( cloud_frac1 * rrp2_on_rrm2_cloud &
+                                         + ( one - cloud_frac1 ) * rrp2_on_rrm2_below ) &
+                                         * hydromet_pdf_params%mu_rr_1
        else
           if ( rc1 > rc_tol ) then
-             sigma_rr_1 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_1
+             hydromet_pdf_params%sigma_rr_1 = sqrt( rrp2_on_rrm2_cloud ) &
+                                            * hydromet_pdf_params%mu_rr_1
           else
-             sigma_rr_1 = sqrt( rrp2_on_rrm2_below ) * mu_rr_1
+             hydromet_pdf_params%sigma_rr_1 = sqrt( rrp2_on_rrm2_below ) &
+                                            * hydromet_pdf_params%mu_rr_1
           endif
        endif
     else
@@ -2438,21 +2448,23 @@ module KK_microphys_module
        ! not any rain in the 1st PDF component at this grid level.  The standard
        ! deviation is simply 0 since rain water mixing ratio does not vary in
        ! this component at this grid level.
-       sigma_rr_1 = zero
+       hydromet_pdf_params%sigma_rr_1 = zero
     endif
 
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 2.
     if ( rr2 > rr_tol ) then
        if ( l_interp_prescribed_params ) then
-          sigma_rr_2 = sqrt( cloud_frac2 * rrp2_on_rrm2_cloud &
-                             + ( one - cloud_frac2 ) * rrp2_on_rrm2_below ) &
-                       * mu_rr_2
+          hydromet_pdf_params%sigma_rr_2 = sqrt( cloud_frac2 * rrp2_on_rrm2_cloud &
+                                         + ( one - cloud_frac2 ) * rrp2_on_rrm2_below ) &
+                                         * hydromet_pdf_params%mu_rr_2
        else
           if ( rc2 > rc_tol ) then
-             sigma_rr_2 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_2
+             hydromet_pdf_params%sigma_rr_2 = sqrt( rrp2_on_rrm2_cloud ) &
+                                            * hydromet_pdf_params%mu_rr_2
           else
-             sigma_rr_2 = sqrt( rrp2_on_rrm2_below ) * mu_rr_2
+             hydromet_pdf_params%sigma_rr_2 = sqrt( rrp2_on_rrm2_below ) &
+                                            * hydromet_pdf_params%mu_rr_2
           endif
        endif
     else
@@ -2461,21 +2473,23 @@ module KK_microphys_module
        ! not any rain in the 2nd PDF component at this grid level.  The standard
        ! deviation is simply 0 since rain water mixing ratio does not vary in
        ! this component at this grid level.
-       sigma_rr_2 = zero
+       hydromet_pdf_params%sigma_rr_2 = zero
     endif
 
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 1.
     if ( Nr1 > Nr_tol ) then
        if ( l_interp_prescribed_params ) then
-          sigma_Nr_1 = sqrt( cloud_frac1 * Nrp2_on_Nrm2_cloud &
-                             + ( one - cloud_frac1 ) * Nrp2_on_Nrm2_below ) &
-                       * mu_Nr_1
+          hydromet_pdf_params%sigma_Nr_1 = sqrt( cloud_frac1 * Nrp2_on_Nrm2_cloud &
+                                         + ( one - cloud_frac1 ) * Nrp2_on_Nrm2_below ) &
+                                         * hydromet_pdf_params%mu_Nr_1
        else
           if ( rc1 > rc_tol ) then
-             sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_1
+             hydromet_pdf_params%sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_cloud ) &
+                                            * hydromet_pdf_params%mu_Nr_1
           else
-             sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_1
+             hydromet_pdf_params%sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_below ) &
+                                            * hydromet_pdf_params%mu_Nr_1
           endif
        endif
     else
@@ -2484,21 +2498,23 @@ module KK_microphys_module
        ! not any rain in the 1st PDF component at this grid level.  The standard
        ! deviation is simply 0 since rain drop concentration does not vary in
        ! this component at this grid level.
-       sigma_Nr_1 = zero
+       hydromet_pdf_params%sigma_Nr_1 = zero
     endif
 
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 2.
     if ( Nr2 > Nr_tol ) then
        if ( l_interp_prescribed_params ) then
-          sigma_Nr_2 = sqrt( cloud_frac2 * Nrp2_on_Nrm2_cloud &
-                             + ( one - cloud_frac2 ) * Nrp2_on_Nrm2_below ) &
-                       * mu_Nr_2
+          hydromet_pdf_params%sigma_Nr_2 = sqrt( cloud_frac2 * Nrp2_on_Nrm2_cloud &
+                                         + ( one - cloud_frac2 ) * Nrp2_on_Nrm2_below ) &
+                                         * hydromet_pdf_params%mu_Nr_2
        else
           if ( rc2 > rc_tol ) then
-             sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_2
+             hydromet_pdf_params%sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_cloud ) &
+                                            * hydromet_pdf_params%mu_Nr_2
           else
-             sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_2
+             hydromet_pdf_params%sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_below ) &
+                                            * hydromet_pdf_params%mu_Nr_2
           endif
        endif
     else
@@ -2507,29 +2523,31 @@ module KK_microphys_module
        ! not any rain in the 2nd PDF component at this grid level.  The standard
        ! deviation is simply 0 since rain drop concentration does not vary in
        ! this component at this grid level.
-       sigma_Nr_2 = zero
+       hydromet_pdf_params%sigma_Nr_2 = zero
     endif
 
     ! Standard deviation of cloud nuclei concentration in PDF component 1.
     if ( Ncnm > Ncn_tol ) then
-       sigma_Ncn_1 = sqrt( Ncnp2_on_Ncnm2_cloud ) * mu_Ncn_1
+       hydromet_pdf_params%sigma_Ncn_1 = sqrt( Ncnp2_on_Ncnm2_cloud ) &
+                                       * hydromet_pdf_params%mu_Ncn_1
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There are not any cloud nuclei or
        ! cloud at this grid level.  The standard deviation is simply 0 since
        ! cloud nuclei concentration does not vary at this grid level.
-       sigma_Ncn_1 = zero
+       hydromet_pdf_params%sigma_Ncn_1 = zero
     endif
 
     ! Standard deviation of cloud nuclei concentration in PDF component 2.
     if ( Ncnm > Ncn_tol ) then
-       sigma_Ncn_2 = sqrt( Ncnp2_on_Ncnm2_cloud ) * mu_Ncn_2
+       hydromet_pdf_params%sigma_Ncn_2 = sqrt( Ncnp2_on_Ncnm2_cloud ) &
+                                       * hydromet_pdf_params%mu_Ncn_2
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There are not any cloud nuclei or
        ! cloud at this grid level.  The standard deviation is simply 0 since
        ! cloud nuclei concentration does not vary at this grid level.
-       sigma_Ncn_2 = zero
+       hydromet_pdf_params%sigma_Ncn_2 = zero
     endif
 
 
@@ -2554,11 +2572,11 @@ module KK_microphys_module
        corr_ws &
        = calc_w_corr( wpsp, stdev_w, stdev_s_mellor, w_tol, s_mellor_tol )
 
-       corr_wrr = calc_w_corr( wprrp_ip, stdev_w, sigma_rr_1, w_tol, rr_tol )
+       corr_wrr = calc_w_corr( wprrp_ip, stdev_w, hydromet_pdf_params%sigma_rr_1, w_tol, rr_tol )
 
-       corr_wNr = calc_w_corr( wpNrp_ip, stdev_w, sigma_Nr_1, w_tol, Nr_tol )
+       corr_wNr = calc_w_corr( wpNrp_ip, stdev_w, hydromet_pdf_params%sigma_Nr_1, w_tol, Nr_tol )
 
-       corr_wNcn = calc_w_corr( wpNcnp, stdev_w, sigma_Ncn_1, w_tol, Ncn_tol )
+       corr_wNcn = calc_w_corr( wpNcnp, stdev_w, hydromet_pdf_params%sigma_Ncn_1, w_tol, Ncn_tol )
 
     endif
 
@@ -3080,21 +3098,21 @@ module KK_microphys_module
     if ( l_diagnose_correlations ) then
 
        if ( rrainm > rr_tol ) then
-          rrp2_on_rrm2 = (sigma_rr_1/mu_rr_1)**2
+          rrp2_on_rrm2 = (hydromet_pdf_params%sigma_rr_1/hydromet_pdf_params%mu_rr_1)**2
        else
           ! The ratio is undefined; set it equal to 0.
           rrp2_on_rrm2 = zero
        endif
 
        if ( Nrm > Nr_tol ) then
-          Nrp2_on_Nrm2 = (sigma_Nr_1/mu_Nr_1)**2
+          Nrp2_on_Nrm2 = (hydromet_pdf_params%sigma_Nr_1/hydromet_pdf_params%mu_Nr_1)**2
        else
           ! The ratio is undefined; set it equal to 0.
           Nrp2_on_Nrm2 = zero
        endif
 
        if ( Ncnm > Ncn_tol ) then
-          Ncnp2_on_Ncnm2 = (sigma_Ncn_1/mu_Ncn_1)**2
+          Ncnp2_on_Ncnm2 = (hydromet_pdf_params%sigma_Ncn_1/hydromet_pdf_params%mu_Ncn_1)**2
        else
           ! The ratio is undefined; set it equal to 0.
           Ncnp2_on_Ncnm2 = zero
