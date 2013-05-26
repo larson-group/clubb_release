@@ -12,7 +12,7 @@ module setup_clubb_pdf_params
   private :: component_means_rain, &
              precip_fraction,      &
              comp_mean_stdev_corr, &
-             normalize_pdf_params  &
+             normalize_pdf_params, &
              pdf_param_hm_stats,   &
              pack_pdf_params
 
