@@ -125,8 +125,8 @@ module setup_clubb_pdf_params
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
-     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
-     intent(out) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
+    intent(out) :: &
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
@@ -3620,8 +3620,8 @@ module setup_clubb_pdf_params
       d_variables    ! Number of variables in the correlation array.
 
     ! Output Variables
-     real( kind = core_rknd ), dimension(d_variables,d_variables), &
-     intent(out) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), &
+    intent(out) :: &
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
@@ -3689,8 +3689,8 @@ module setup_clubb_pdf_params
   end subroutine pack_pdf_params
 
   !=============================================================================
-  subroutine unpack_pdf_params( d_variables, corr_array_1, corr_array_2, &
-                                hydromet_pdf_params, &
+  subroutine unpack_pdf_params( d_variables, corr_array_1, &
+                                corr_array_2, hydromet_pdf_params, &
                                 mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
                                 mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
                                 mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
@@ -3743,8 +3743,8 @@ module setup_clubb_pdf_params
     integer, intent(in) :: &
       d_variables    ! Number of variables in the correlation array.
 
-     real( kind = core_rknd ), dimension(d_variables,d_variables), &
-     intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), &
+    intent(in) :: &
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 

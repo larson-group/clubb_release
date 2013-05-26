@@ -367,21 +367,18 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        zt2zm, &  ! Procedure(s)
-        zm2zt, &
-        gr
+        zt2zm    ! Procedure(s)
 
     use constants_clubb, only: &
-        one,     & ! Constant(s)
-        zero,    &
-        rr_tol,  &
-        Nr_tol,  &
-        Ncn_tol, &
-        eps
+        zero    ! Constant(s)
 
     use parameters_microphys, only: &
         l_var_covar_src,     & ! Flag for using variance/covariance src terms
         l_const_Nc_in_cloud    ! Flag to use a const. value of N_c within cloud
+
+    use setup_clubb_pdf_params, only: &
+        setup_pdf_parameters, & ! Procedure(s)
+        unpack_pdf_params
 
     use KK_upscaled_means, only: &
         KK_upscaled_means_driver ! Procedure(s)
@@ -417,30 +414,9 @@ module KK_microphys_module
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &
-        irr1,             & ! Variable(s)
-        irr2,             &
-        iNr1,             &
-        iNr2,             &
-        iprecip_frac,     &
-        iprecip_frac_1,   &
-        iprecip_frac_2,   &
         iVrrprrp_expcalc, &
         iVNrpNrp_expcalc, &
-        zt,               &
         zm
-
-    use model_flags, only: &
-        l_use_precip_frac, & ! Flag(s)
-        l_calc_w_corr
-
-    use advance_windm_edsclrm_module, only: &
-        xpwp_fnc
-
-    use variables_diagnostic_module, only: &
-        Kh_zm
-
-    use parameters_tunable, only: &
-        c_Krrainm
 
     implicit none
 
@@ -509,8 +485,6 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(:), pointer ::  &
       rrainm,          & ! Mean rain water mixing ratio, < r_r > [kg/kg]
       Nrm,             & ! Mean rain drop concentration, < N_r > [num/kg]
-      wprrp,           & ! Covariance of w and r_r, < w'r_r' >   [(m/s)(kg/kg)]
-      wpNrp,           & ! Covariance of w and N_r, < w'N_r' >   [(m/s)(num/kg)]
       Vrr,             & ! Mean sedimentation velocity of r_r    [m/s]
       VNr,             & ! Mean sedimentation velocity of N_r    [m/s]
       rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics    [(kg/kg)/s]
@@ -530,12 +504,8 @@ module KK_microphys_module
       KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
 
-    real( kind = core_rknd ), dimension(nz) :: &
-      rc1,         & ! Mean of r_c (1st PDF component)              [kg/kg]
-      rc2,         & ! Mean of r_c (2nd PDF component)              [kg/kg]
-      cloud_frac1, & ! Cloud fraction (1st PDF component)           [-]
-      cloud_frac2, & ! Cloud fraction (2nd PDF component)           [-]
-      mixt_frac      ! Mixture fraction                             [-]
+     real( kind = core_rknd ), dimension(nz) :: &
+      mixt_frac   ! Mixture fraction                                [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
       rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
@@ -657,15 +627,12 @@ module KK_microphys_module
       rrainm_evap_net, & ! Net evaporation rate of <r_r>            [(kg/kg)/s]
       Nrm_evap_net       ! Net evaporation rate of <N_r>            [(num/kg)/s]
 
-    ! changes by janhft 10/04/12
-    real( kind = core_rknd ), dimension(nz) ::  &
-      wpsp_zm,     & ! Covariance of s and w (momentum levels)   [(m/s)(kg/kg)]
-      wpNcnp_zm,   & ! Covariance of N_cn and w (momentum levs.) [(m/s)(num/kg)]
-      wpsp_zt,     & ! Covariance of s and w on t-levs           [(m/s)(kg/kg)]
-      wprrp_ip_zt, & ! Covar. of r_r and w (in-precip) on t-levs [(m/s)(kg/kg)]
-      wpNrp_ip_zt, & ! Covar. of N_r and w (in-precip) on t-levs [(m/s)(num/kg)]
-      wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
-    ! end changes by janhft 10/04/12
+    integer, parameter :: &
+      d_variables = 10    ! Number of variables in the correlation array.
+
+    real( kind = core_rknd ), dimension(d_variables,d_variables,nz) :: &
+      corr_array_1, & ! Correlation array for the 1st PDF component   [-]
+      corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
     type(hydromet_pdf_parameter), dimension(:), allocatable :: &
       hydromet_pdf_params
@@ -691,11 +658,6 @@ module KK_microphys_module
                         KK_Nrm_auto_tndcy, &
                         l_src_adj_enabled, l_evap_adj_enabled )
 
-    ! Covariance of vertical velocity and a hydrometeor
-    ! (< w'r_r' > and < w'N_r' >).
-    wprrp => wphydrometp(:,iirrainm)
-    wpNrp => wphydrometp(:,iiNrm)
-
     ! The implicit and explicit components used to calculate the covariances of
     ! hydrometeor sedimentation velocities and their associated hydrometeors
     ! (<V_rr'r_r'> and <V_Nr'N_r'>).
@@ -704,113 +666,17 @@ module KK_microphys_module
     VNrpNrp_zt_impc => hydromet_vel_covar_zt_impc(:,iiNrm)
     VNrpNrp_zt_expc => hydromet_vel_covar_zt_expc(:,iiNrm)
 
-    ! Setup some of the PDF parameters
-    rc1         = pdf_params%rc1
-    rc2         = pdf_params%rc2
-    cloud_frac1 = pdf_params%cloud_frac1
-    cloud_frac2 = pdf_params%cloud_frac2
-    mixt_frac   = pdf_params%mixt_frac
+    ! Setup mixture fraction.
+    mixt_frac   = pdf_params%mixt_frac    
 
-    ! Precipitation fraction
-    if ( l_use_precip_frac ) then
-
-       call component_means_rain( nz, rrainm, Nrm, rho, rc1, rc2, &
-                                  mixt_frac, l_stats_samp, &
-                                  rr1, rr2, Nr1, Nr2 )
-
-       call precip_fraction( nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &
-                             cloud_frac, cloud_frac1, mixt_frac, &
-                             precip_frac, precip_frac_1, precip_frac_2 )
-
-    else
-
-       rr1 = rrainm
-       rr2 = rrainm
-       Nr1 = Nrm
-       Nr2 = Nrm
-
-       precip_frac   = one
-       precip_frac_1 = one
-       precip_frac_2 = one
-
-    endif
-
-    ! Statistics
-    if ( l_stats_samp ) then
-
-       if ( irr1 > 0 ) then
-          ! Mean rain water mixing ratio in PDF component 1.
-          call stat_update_var( irr1, rr1, zt )
-       endif
-
-       if ( irr2 > 0 ) then
-          ! Mean rain water mixing ratio in PDF component 2.
-          call stat_update_var( irr2, rr2, zt )
-       endif
-
-       if ( iNr1 > 0 ) then
-          ! Mean rain drop concentration in PDF component 1.
-          call stat_update_var( iNr1, Nr1, zt )
-       endif
-
-       if ( iNr2 > 0 ) then
-          ! Mean rain drop concentration in PDF component 2.
-          call stat_update_var( iNr2, Nr2, zt )
-       endif
-
-       if ( iprecip_frac > 0 ) then
-          ! Overall precipitation fraction.
-          call stat_update_var( iprecip_frac, precip_frac, zt )
-       endif
-
-       if ( iprecip_frac_1 > 0 ) then
-          ! Precipitation fraction in PDF component 1.
-          call stat_update_var( iprecip_frac_1, precip_frac_1, zt )
-       endif
-
-       if ( iprecip_frac_2 > 0 ) then
-          ! Precipitation fraction in PDF component 2.
-          call stat_update_var( iprecip_frac_2, precip_frac_2, zt )
-       endif
-
-    endif
-
-    ! calculate the covariances of w with the hydrometeors
-    if ( l_calc_w_corr ) then
-
-       ! calculate the covariances of w with the hydrometeors
-       do k = 1, nz
-          wpsp_zm(k) = pdf_params(k)%mixt_frac &
-                       * ( one - pdf_params(k)%mixt_frac ) &
-                       * ( pdf_params(k)%s1 - pdf_params(k)%s2 ) &
-                       * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
-       enddo
-
-       wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncnm(1:nz-1), &
-                                     Ncnm(2:nz), gr%invrs_dzm(1:nz-1) )
-
-       ! Boundary conditions; We are assuming zero flux at the top.
-       wpNcnp_zm(nz) = zero
-
-       ! interpolate back to zt-grid
-       wpsp_zt     = zm2zt(wpsp_zm)
-       wprrp_ip_zt = zm2zt(wprrp) / max( precip_frac, eps )
-       wpNrp_ip_zt = zm2zt(wpNrp) / max( precip_frac, eps )
-       wpNcnp_zt   = zm2zt(wpNcnp_zm)
-
-       do k = 1, nz, 1
-          if ( rrainm(k) <= rr_tol ) then
-             wprrp_ip_zt(k) = zero
-          endif
-          if ( Nrm(k) <= Nr_tol ) then
-             wpNrp_ip_zt(k) = zero
-          endif
-          if ( Ncnm(k) <= Ncn_tol ) then
-             wpNcnp_zt(k) = zero
-          endif
-       enddo
-
-    endif
+    !!! Setup the PDF parameters.
+    call setup_pdf_parameters( nz, rrainm, Nrm, Ncnm, rho, rcm, &
+                               cloud_frac, w_std_dev, wphydrometp, &
+                               pdf_params, l_stats_samp, d_variables, &
+                               rr1, rr2, Nr1, Nr2, precip_frac, &
+                               precip_frac_1, precip_frac_2, &
+                               corr_array_1, corr_array_2, &
+                               hydromet_pdf_params )
 
 
     !!! Microphysics tendency loop.
@@ -822,52 +688,36 @@ module KK_microphys_module
                               KK_evap_coef, KK_auto_coef, &
                               KK_accr_coef, KK_mvr_coef )
 
-      !!! Calculate the means, standard deviations, and correlations involving
-      !!! rain water mixing ratio and rain drop concentration for each PDF
-      !!! component.
-      call KK_in_precip_values( rcm(k), rrainm(k), Nrm(k), Ncnm(k), & ! Intent(in)
-                                rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), & ! Intent(in)
-                                rc2(k), cloud_frac1(k), cloud_frac2(k), & ! Intent(in)
-                                precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
-                                wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
-                                wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), & ! Intent(in)
-                                pdf_params(k), & ! Intent(in)
-                                hydromet_pdf_params(k), & ! Intent(inout)
-                                corr_ws_1, corr_ws_2, corr_wrr_1, & ! Intent(out)
-                                corr_wrr_2, corr_wNr_1, corr_wNr_2, & ! Intent(out)
-                                corr_wNcn_1, corr_wNcn_2, corr_st_1, & ! Intent(out)
-                                corr_st_2, corr_srr_1, corr_srr_2, & ! Intent(out)
-                                corr_sNr_1, corr_sNr_2, corr_sNcn_1, & ! Intent(out)
-                                corr_sNcn_2, corr_trr_1, corr_trr_2, & ! Intent(out)
-                                corr_tNr_1, corr_tNr_2, corr_tNcn_1, & ! Intent(out)
-                                corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 ) ! Intent(out)
 
-      ! This code will soon be moved, since the hydromet_pdf_params will be
-      ! calculated in the clubb_driver and then fed through the code
-      mu_w_1 = hydromet_pdf_params(k)%mu_w_1
-      mu_w_2 = hydromet_pdf_params(k)%mu_w_2
-      mu_s_1 = hydromet_pdf_params(k)%mu_s_1
-      mu_s_2 = hydromet_pdf_params(k)%mu_s_2
-      mu_t_1 = hydromet_pdf_params(k)%mu_t_1
-      mu_t_2 = hydromet_pdf_params(k)%mu_t_2
-      mu_rr_1 = hydromet_pdf_params(k)%mu_rr_1
-      mu_rr_2 = hydromet_pdf_params(k)%mu_rr_2
-      mu_Nr_1 = hydromet_pdf_params(k)%mu_Nr_1
-      mu_Nr_2 = hydromet_pdf_params(k)%mu_Nr_2
-      mu_Ncn_1 = hydromet_pdf_params(k)%mu_Ncn_1
-      mu_Ncn_2 = hydromet_pdf_params(k)%mu_Ncn_2
-      sigma_w_1 = hydromet_pdf_params(k)%sigma_w_1
-      sigma_w_2 = hydromet_pdf_params(k)%sigma_w_2
-      sigma_s_1 = hydromet_pdf_params(k)%sigma_s_1
-      sigma_s_2 = hydromet_pdf_params(k)%sigma_s_2
-      sigma_t_1 = hydromet_pdf_params(k)%sigma_t_1
-      sigma_t_2 = hydromet_pdf_params(k)%sigma_t_2
-      sigma_rr_1 = hydromet_pdf_params(k)%sigma_rr_1
-      sigma_rr_2 = hydromet_pdf_params(k)%sigma_rr_2
-      sigma_Nr_1 = hydromet_pdf_params(k)%sigma_Nr_1
-      sigma_Nr_2 = hydromet_pdf_params(k)%sigma_Nr_2
-      sigma_Ncn_1 = hydromet_pdf_params(k)%sigma_Ncn_1
-      sigma_Ncn_2 = hydromet_pdf_params(k)%sigma_Ncn_2
+      !!! Unpack the PDF parameters.
+      call unpack_pdf_params( d_variables, corr_array_1(:,:,k), &
+                              corr_array_2(:,:,k), hydromet_pdf_params(k), &
+                              mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
+                              mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
+                              mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
+                             !mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                             !mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                              sigma_w_1, sigma_w_2, sigma_s_1, &
+                              sigma_s_2, sigma_t_1, sigma_t_2, &
+                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                              sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
+                             !sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                             !sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                              corr_ws_1, corr_ws_2, corr_wrr_1, &
+                              corr_wrr_2, corr_wNr_1, corr_wNr_2, &
+                              corr_wNcn_1, corr_wNcn_2, corr_st_1, &
+                              corr_st_2, corr_srr_1, corr_srr_2, &
+                              corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
+                              corr_sNcn_2, corr_trr_1, corr_trr_2, &
+                              corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
+                              corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+                             !corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                             !corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                             !corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                             !corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                             !corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                             !corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                             !corr_rrNr_1_n, corr_rrNr_2_n )
        
 
       !!! Calculate the mean, standard deviations, and correlations involving
@@ -995,29 +845,6 @@ module KK_microphys_module
                                 rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
                                 rvm_mc(k), rcm_mc(k), thlm_mc(k) )
 
-
-      !!! Statistical output for hydrometeor PDF parameters.
-      call PDF_param_hm_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                               mu_Ncn_1, mu_Ncn_2, mu_rr_1_n, mu_rr_2_n, &
-                               mu_Nr_1_n, mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                               sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                               sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                               sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                               sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                               corr_wrr_1, corr_wrr_2, corr_wNr_1, &
-                               corr_wNr_2, corr_wNcn_1, corr_wNcn_2, &
-                               corr_srr_1, corr_srr_2, corr_sNr_1, &
-                               corr_sNr_2, corr_sNcn_1, corr_sNcn_2, &
-                               corr_trr_1, corr_trr_2, corr_tNr_1, &
-                               corr_tNr_2, corr_tNcn_1, corr_tNcn_2, &
-                               corr_rrNr_1, corr_rrNr_2, corr_wrr_1_n, &
-                               corr_wrr_2_n, corr_wNr_1_n, corr_wNr_2_n, &
-                               corr_wNcn_1_n, corr_wNcn_2_n, corr_srr_1_n, &
-                               corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
-                               corr_sNcn_1_n, corr_sNcn_2_n, corr_trr_1_n, &
-                               corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
-                               corr_tNcn_1_n, corr_tNcn_2_n, corr_rrNr_1_n, &
-                               corr_rrNr_2_n, k, l_stats_samp )
 
       !!! Statistical output for upscaled KK.
       call KK_upscaled_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
