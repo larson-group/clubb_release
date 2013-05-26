@@ -225,8 +225,7 @@ module clubb_driver
       l_rtm_nudge, &
       l_diagnose_correlations, &
       l_calc_w_corr, &
-      l_use_modified_corr, &
-      l_use_precip_frac
+      l_use_modified_corr
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
@@ -253,8 +252,7 @@ module clubb_driver
 
     use array_index, only: &
         iirrainm, & ! Variable(s)
-        iiNrm,    &
-        iiNcnm
+        iiNrm
 
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter
@@ -396,17 +394,17 @@ module clubb_driver
     real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
       params  ! Model parameters, C1, nu2, etc.
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(:), allocatable :: &
       rrainm, & ! Overall mean rain water mixing ratio               [kg/kg]
       Nrm       ! Overall mean rain drop concentration               [num/kg]
 
-     real( kind = core_rknd ), dimension(gr%nz) :: &
+     real( kind = core_rknd ), dimension(:), allocatable :: &
       rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
       rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
       Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
       Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(:), allocatable :: &
       precip_frac,   & ! Precipitation fraction (overall)           [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
@@ -864,6 +862,18 @@ module clubb_driver
     ! Allocate rvm_mc, rcm_mc, thlm_mc
     allocate( rvm_mc(gr%nz), rcm_mc(gr%nz), thlm_mc(gr%nz) )
 
+    ! Allocate hydrometeor variables.
+    allocate( rrainm(gr%nz) )
+    allocate( Nrm(gr%nz) )
+
+    allocate( rr1(gr%nz) )
+    allocate( rr2(gr%nz) )
+    allocate( Nr1(gr%nz) )
+    allocate( Nr2(gr%nz) )
+    allocate( precip_frac(gr%nz) )
+    allocate( precip_frac_1(gr%nz) )
+    allocate( precip_frac_2(gr%nz) )
+
     ! Allocate hydromet_pdf_params
     allocate( hydromet_pdf_params(gr%nz) )
 
@@ -1213,8 +1223,7 @@ module clubb_driver
       if ( l_use_modified_corr ) then
 
          rrainm = hydromet(:,iirrainm)
-         Nrm = hydromet(:,iiNrm)
-         Ncnm = hydromet(:,iiNcnm)
+         Nrm    = hydromet(:,iiNrm)
 
          !!! Setup the PDF parameters.
          call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
