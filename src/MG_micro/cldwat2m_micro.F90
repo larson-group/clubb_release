@@ -403,9 +403,9 @@ subroutine mmicro_pcond ( sub_column,           &
    use wv_saturation, only: vqsatd_water
 
    ! Upscaled KK for autoconversion and accretion
-   use KK_microphys_module, only: &
-       KK_in_precip_values,  & ! Procedure(s)
-       normalize_PDF_params
+   use setup_clubb_pdf_params, only: &
+       comp_mean_stdev_corr, & ! Procedure(s)
+       normalize_pdf_params
 
    use KK_upscaled_means, only: &
        KK_auto_upscaled_mean, & ! Procedure(s)
@@ -413,9 +413,6 @@ subroutine mmicro_pcond ( sub_column,           &
 
    use pdf_parameter_module, only: &
        pdf_parameter  ! Variable(s)
-
-   use hydromet_pdf_parameter_module, only: &
-       hydromet_pdf_parameter  ! Variable(s)
 
    use constants_clubb, only: &
        zero,       &  ! Constant(s)
@@ -843,9 +840,6 @@ subroutine mmicro_pcond ( sub_column,           &
       real(r8), parameter :: cdnl    = 0.e6_r8    ! cloud droplet number limiter
 
     ! Upscaled KK for autoconversion and accretion
-    type(hydromet_pdf_parameter), dimension(:), allocatable :: &
-      hydromet_pdf_params
-
     real( kind = core_rknd ) :: &
       mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
       mu_w_2,        & ! Mean of w (2nd PDF component)                     [m/s]
@@ -1469,8 +1463,6 @@ subroutine mmicro_pcond ( sub_column,           &
         qcsinksum_rate1ord(1:pver)=0._r8 
         qcsum_rate1ord(1:pver)=0._r8 
 
-! allocate hydromet_pdf_params (used for the upscaled KK code)
-     allocate(hydromet_pdf_params(pver))
 
 !!!!!!!!! begin sub-step!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !.....................................................................................................
@@ -1768,7 +1760,7 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 call KK_in_precip_values &
+                 call comp_mean_stdev_corr &
                                 ( real( qc(i,k), kind = core_rknd ), & ! In
                                   real( qric(i,k) * cldmax(i,k), &
                                         kind = core_rknd ), &
@@ -1791,8 +1783,13 @@ subroutine mmicro_pcond ( sub_column,           &
                                   zero, zero, zero, &
                                   zero, zero, mixt_frac, &
                                   pdf_params(k), &
-                                  hydromet_pdf_params(k), & ! In/Out
-                                  corr_ws_1, corr_ws_2, corr_wrr_1, & ! Out
+                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & !Out
+                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                                  mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
+                                  sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
+                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
+                                  corr_ws_1, corr_ws_2, corr_wrr_1, &
                                   corr_wrr_2, corr_wNr_1, corr_wNr_2, &
                                   corr_wNcn_1, corr_wNcn_2, corr_st_1, &
                                   corr_st_2, corr_srr_1, corr_srr_2, &
@@ -1801,32 +1798,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
 
-                 mu_w_1 = hydromet_pdf_params(k)%mu_w_1
-                 mu_w_2 = hydromet_pdf_params(k)%mu_w_2
-                 mu_s_1 = hydromet_pdf_params(k)%mu_s_1
-                 mu_s_2 = hydromet_pdf_params(k)%mu_s_2
-                 mu_t_1 = hydromet_pdf_params(k)%mu_t_1
-                 mu_t_2 = hydromet_pdf_params(k)%mu_t_2
-                 mu_rr_1 = hydromet_pdf_params(k)%mu_rr_1
-                 mu_rr_2 = hydromet_pdf_params(k)%mu_rr_2
-                 mu_Nr_1 = hydromet_pdf_params(k)%mu_Nr_1
-                 mu_Nr_2 = hydromet_pdf_params(k)%mu_Nr_2
-                 mu_Ncn_1 = hydromet_pdf_params(k)%mu_Ncn_1
-                 mu_Ncn_2 = hydromet_pdf_params(k)%mu_Ncn_2
-                 sigma_w_1 = hydromet_pdf_params(k)%sigma_w_1
-                 sigma_w_2 = hydromet_pdf_params(k)%sigma_w_2
-                 sigma_s_1 = hydromet_pdf_params(k)%sigma_s_1
-                 sigma_s_2 = hydromet_pdf_params(k)%sigma_s_2
-                 sigma_t_1 = hydromet_pdf_params(k)%sigma_t_1
-                 sigma_t_2 = hydromet_pdf_params(k)%sigma_t_2
-                 sigma_rr_1 = hydromet_pdf_params(k)%sigma_rr_1
-                 sigma_rr_2 = hydromet_pdf_params(k)%sigma_rr_2
-                 sigma_Nr_1 = hydromet_pdf_params(k)%sigma_Nr_1
-                 sigma_Nr_2 = hydromet_pdf_params(k)%sigma_Nr_2
-                 sigma_Ncn_1 = hydromet_pdf_params(k)%sigma_Ncn_1
-                 sigma_Ncn_2 = hydromet_pdf_params(k)%sigma_Ncn_2
-
-                 call normalize_PDF_params &
+                 call normalize_pdf_params &
                                 ( real( qric(i,k) * cldmax(i,k), & ! In
                                         kind = core_rknd ), &
                                   real( qric(i,k) * cldmax(i,k), &
@@ -2304,7 +2276,7 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 call KK_in_precip_values &
+                 call comp_mean_stdev_corr &
                                 ( real( qc(i,k), kind = core_rknd ), & ! In
                                   real( qric(i,k) * cldmax(i,k), &
                                         kind = core_rknd ), &
@@ -2327,7 +2299,12 @@ subroutine mmicro_pcond ( sub_column,           &
                                   zero, zero, zero, &
                                   zero, zero, mixt_frac, &
                                   pdf_params(k), &
-                                  hydromet_pdf_params(k), &
+                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & !Out
+                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                                  mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
+                                  sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
+                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
                                   corr_ws_1, corr_ws_2, corr_wrr_1, &
                                   corr_wrr_2, corr_wNr_1, corr_wNr_2, &
                                   corr_wNcn_1, corr_wNcn_2, corr_st_1, &
@@ -2336,31 +2313,6 @@ subroutine mmicro_pcond ( sub_column,           &
                                   corr_sNcn_2, corr_trr_1, corr_trr_2, &
                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
-
-                 mu_w_1 = hydromet_pdf_params(k)%mu_w_1
-                 mu_w_2 = hydromet_pdf_params(k)%mu_w_2
-                 mu_s_1 = hydromet_pdf_params(k)%mu_s_1
-                 mu_s_2 = hydromet_pdf_params(k)%mu_s_2
-                 mu_t_1 = hydromet_pdf_params(k)%mu_t_1
-                 mu_t_2 = hydromet_pdf_params(k)%mu_t_2
-                 mu_rr_1 = hydromet_pdf_params(k)%mu_rr_1
-                 mu_rr_2 = hydromet_pdf_params(k)%mu_rr_2
-                 mu_Nr_1 = hydromet_pdf_params(k)%mu_Nr_1
-                 mu_Nr_2 = hydromet_pdf_params(k)%mu_Nr_2
-                 mu_Ncn_1 = hydromet_pdf_params(k)%mu_Ncn_1
-                 mu_Ncn_2 = hydromet_pdf_params(k)%mu_Ncn_2
-                 sigma_w_1 = hydromet_pdf_params(k)%sigma_w_1
-                 sigma_w_2 = hydromet_pdf_params(k)%sigma_w_2
-                 sigma_s_1 = hydromet_pdf_params(k)%sigma_s_1
-                 sigma_s_2 = hydromet_pdf_params(k)%sigma_s_2
-                 sigma_t_1 = hydromet_pdf_params(k)%sigma_t_1
-                 sigma_t_2 = hydromet_pdf_params(k)%sigma_t_2
-                 sigma_rr_1 = hydromet_pdf_params(k)%sigma_rr_1
-                 sigma_rr_2 = hydromet_pdf_params(k)%sigma_rr_2
-                 sigma_Nr_1 = hydromet_pdf_params(k)%sigma_Nr_1
-                 sigma_Nr_2 = hydromet_pdf_params(k)%sigma_Nr_2
-                 sigma_Ncn_1 = hydromet_pdf_params(k)%sigma_Ncn_1
-                 sigma_Ncn_2 = hydromet_pdf_params(k)%sigma_Ncn_2
 
                  call normalize_PDF_params &
                                 ( real( qric(i,k) * cldmax(i,k), & ! In

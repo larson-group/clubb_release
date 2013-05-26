@@ -248,25 +248,16 @@ module clubb_driver
         iiLH_rrain,              &
         iiLH_Nr
 
-    use KK_microphys_module, only: &
-        KK_in_precip_values, &
-        component_means_rain, &
-        precip_fraction
+    use setup_clubb_pdf_params, only: &
+        setup_pdf_parameters    ! Procedure(s)
 
     use array_index, only: &
-        iiNcm, & ! Variable(s)
-        iiNcnm, &
-        iirrainm, &
-        iiNrm
+        iirrainm, & ! Variable(s)
+        iiNrm,    &
+        iiNcnm
 
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter
-
-    use parameters_tunable, only: &
-        c_Krrainm
-
-    use advance_windm_edsclrm_module, only: &
-        xpwp_fnc
 
     implicit none
 
@@ -398,34 +389,6 @@ module clubb_driver
       radf     ! Buoyancy production at CL top due to LW radiative cooling [m^2/s^3]
                ! This is currently set to zero for CLUBB standalone
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      rrainm,        & ! Overall mean rain water mixing ratio               [kg/kg]
-      Nrm,           & ! Overall mean rain drop concentration               [num/kg]
-      rc1,           & ! Mean cloud water mixing ratio (1st PDF component)  [kg/kg]
-      rc2,           & ! Mean cloud water mixing ratio (2nd PDF component)  [kg/kg]
-      mixt_frac,     & ! Mixture fraction                                   [-]
-      rr1,           & ! Mean rain water mixing ratio (1st PDF component) [kg/kg]
-      rr2,           & ! Mean rain water mixing ratio (2nd PDF component) [kg/kg]
-      Nr1,           & ! Mean rain drop concentration (1st PDF component) [num/kg]
-      Nr2,           & ! Mean rain drop concentration (2nd PDF component) [num/kg]
-      cloud_frac1,   & ! Cloud fraction (1st PDF component)               [-]
-      cloud_frac2,   & ! Cloud fraction (2nd PDF component)               [-]
-      precip_frac,   & ! Precipitation fraction (overall)               [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
-
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
-      wprrp,           & ! Covariance of w and r_r, < w'r_r' >   [(m/s)(kg/kg)]
-      wpNrp              ! Covariance of w and N_r, < w'N_r' >   [(m/s)(num/kg)]
-
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
-      wpsp_zm,     & ! Covariance of s and w (momentum levels)   [(m/s)(kg/kg)]
-      wpNcnp_zm,   & ! Covariance of N_cn and w (momentum levs.) [(m/s)(num/kg)]
-      wpsp_zt,     & ! Covariance of s and w on t-levs           [(m/s)(kg/kg)]
-      wprrp_ip_zt, & ! Covar. of r_r and w (in-precip) on t-levs [(m/s)(kg/kg)]
-      wpNrp_ip_zt, & ! Covar. of N_r and w (in-precip) on t-levs [(m/s)(num/kg)]
-      wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
-
     logical :: l_restart_input, corr_file_exist
 
     integer :: k ! Loop iterator
@@ -433,16 +396,31 @@ module clubb_driver
     real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
       params  ! Model parameters, C1, nu2, etc.
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      rrainm, & ! Overall mean rain water mixing ratio               [kg/kg]
+      Nrm       ! Overall mean rain drop concentration               [num/kg]
+
+     real( kind = core_rknd ), dimension(gr%nz) :: &
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+
     real( kind = core_rknd ), dimension(:, :, :), allocatable :: &
-      corr_array_1, & ! Correlation matrix for the first pdf component
-      corr_array_2    ! Correlation matrix for the second pdf component
+      corr_array_1, & ! Correlation matrix for the first pdf component    [-]
+      corr_array_2    ! Correlation matrix for the second pdf component   [-]
 
     real( kind = core_rknd ), dimension(:, :), allocatable :: &
-      corr_array_cloud, & ! Prescribed correlation matrix (in cloud)
-      corr_array_below    ! Prescribed correlation matrix (below cloud)
+      corr_array_cloud, & ! Prescribed correlation matrix (in cloud)      [-]
+      corr_array_below    ! Prescribed correlation matrix (below cloud)   [-]
 
     type(hydromet_pdf_parameter), dimension(:), allocatable :: &
-      hydromet_pdf_params
+      hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
 
     character(len=128) :: &
      corr_file_path_cloud,         &
@@ -1234,115 +1212,19 @@ module clubb_driver
 
       if ( l_use_modified_corr ) then
 
-        mixt_frac = pdf_params%mixt_frac
-        rc1 = pdf_params%rc1
-        rc2 = pdf_params%rc2
-        cloud_frac1 = pdf_params%cloud_frac1
-        cloud_frac2 = pdf_params%cloud_frac2
+         rrainm = hydromet(:,iirrainm)
+         Nrm = hydromet(:,iiNrm)
+         Ncnm = hydromet(:,iiNcnm)
 
-        rrainm = hydromet(:,iirrainm)
-        Nrm = hydromet(:,iiNrm)
-        Ncnm = hydromet(:,iiNcnm)
+         !!! Setup the PDF parameters.
+         call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
+                                    cloud_frac, sqrt(wp2_zt), wphydrometp, &
+                                    pdf_params, .false., d_variables, &
+                                    rr1, rr2, Nr1, Nr2, precip_frac, & ! Out
+                                    precip_frac_1, precip_frac_2, &
+                                    corr_array_1, corr_array_2, &
+                                    hydromet_pdf_params )
 
-        if ( l_use_precip_frac ) then
-
-          call component_means_rain( gr%nz, rrainm, Nrm, rho, rc1, rc2, &
-                                     mixt_frac, l_stats_samp, &
-                                     rr1, rr2, Nr1, Nr2 )
-
-          call precip_fraction( gr%nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &
-                                cloud_frac, cloud_frac1, mixt_frac, &
-                                precip_frac, precip_frac_1, precip_frac_2 )
-
-        else
-
-           rr1 = rrainm
-           rr2 = rrainm
-           Nr1 = Nrm
-           Nr2 = Nrm
-
-           precip_frac   = one
-           precip_frac_1 = one
-           precip_frac_2 = one
-
-        endif
-
-        ! Covariance of vertical velocity and a hydrometeor
-        ! (< w'r_r' > and < w'N_r' >).
-        wprrp = wphydrometp(:,iirrainm)
-        wpNrp = wphydrometp(:,iiNrm)
-
-        ! calculate the covariances of w with the hydrometeors
-        if ( l_calc_w_corr ) then
-
-           ! calculate the covariances of w with the hydrometeors
-           do k = 1, gr%nz
-              wpsp_zm(k) = pdf_params(k)%mixt_frac &
-                         * ( one - pdf_params(k)%mixt_frac ) &
-                         * ( pdf_params(k)%s1 - pdf_params(k)%s2 ) &
-                         * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
-           enddo
-
-           wpNcnp_zm(1:gr%nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:gr%nz-1), Ncnm(1:gr%nz-1), &
-                                         Ncnm(2:gr%nz), gr%invrs_dzm(1:gr%nz-1) )
-
-           ! Boundary conditions; We are assuming zero flux at the top.
-           wpNcnp_zm(gr%nz) = zero
-
-           ! interpolate back to zt-grid
-           wpsp_zt     = zm2zt(wpsp_zm)
-           wprrp_ip_zt = zm2zt(wprrp) / max( precip_frac, eps )
-           wpNrp_ip_zt = zm2zt(wpNrp) / max( precip_frac, eps )
-           wpNcnp_zt   = zm2zt(wpNcnp_zm)
-
-           do k = 1, gr%nz, 1
-              if ( rrainm(k) <= rr_tol ) then
-                 wprrp_ip_zt(k) = zero
-              endif
-              if ( Nrm(k) <= Nr_tol ) then
-                 wpNrp_ip_zt(k) = zero
-              endif
-              if ( Ncnm(k) <= Ncn_tol ) then
-                 wpNcnp_zt(k) = zero
-              endif
-           enddo
-
-        endif
-
-        do k = 1, gr%nz
-          call KK_in_precip_values( rcm(k), rrainm(k), Nrm(k), Ncnm(k), & ! Intent(in)
-                                    rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), & ! Intent(in)
-                                    rc2(k), cloud_frac1(k), cloud_frac2(k), & ! Intent(in)
-                                    precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
-                                    wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
-                                    wpNcnp_zt(k), sqrt(wp2_zt(k)), mixt_frac(k), & ! Intent(in)
-                                    pdf_params(k), & ! Intent(in)
-                                    hydromet_pdf_params(k), & ! Intent(inout)
-                                    corr_array_1(iiLH_s_mellor, iiLH_w, k), & ! Intent(out)
-                                    corr_array_2(iiLH_s_mellor, iiLH_w, k), & ! Intent(out)
-                                    corr_array_1(iiLH_w, iiLH_rrain, k), & ! Intent(out)
-                                    corr_array_2(iiLH_w, iiLH_rrain, k), & ! Intent(out)
-                                    corr_array_1(iiLH_w, iiLH_Nr, k), & ! Intent(out)
-                                    corr_array_2(iiLH_w, iiLH_Nr, k), & ! Intent(out)
-                                    corr_array_1(iiLH_w, iiLH_Ncn, k), & ! Intent(out)
-                                    corr_array_2(iiLH_w, iiLH_Ncn, k), & ! Intent(out)
-                                    corr_array_1(iiLH_s_mellor, iiLH_t_mellor, k), & ! Intent(out)
-                                    corr_array_2(iiLH_s_mellor, iiLH_t_mellor, k), & ! Intent(out)
-                                    corr_array_1(iiLH_s_mellor, iiLH_rrain, k), & ! Intent(out)
-                                    corr_array_2(iiLH_s_mellor, iiLH_rrain, k), & ! Intent(out)
-                                    corr_array_1(iiLH_s_mellor, iiLH_Nr, k), & ! Intent(out)
-                                    corr_array_2(iiLH_s_mellor, iiLH_Nr, k), & ! Intent(out)
-                                    corr_array_1(iiLH_s_mellor, iiLH_Ncn, k), & ! Intent(out)
-                                    corr_array_2(iiLH_s_mellor, iiLH_Ncn, k), & ! Intent(out)
-                                    corr_array_1(iiLH_t_mellor, iiLH_rrain, k), & ! Intent(out)
-                                    corr_array_2(iiLH_t_mellor, iiLH_rrain, k), & ! Intent(out)
-                                    corr_array_1(iiLH_t_mellor, iiLH_Nr, k), & ! Intent(out)
-                                    corr_array_2(iiLH_t_mellor, iiLH_Nr, k), & ! Intent(out)
-                                    corr_array_1(iiLH_t_mellor, iiLH_Ncn, k), & ! Intent(out)
-                                    corr_array_2(iiLH_t_mellor, iiLH_Ncn, k), & ! Intent(out)
-                                    corr_array_1(iiLH_rrain, iiLH_Nr, k), & ! Intent(out)
-                                    corr_array_2(iiLH_rrain, iiLH_Nr, k) ) ! Intent(out)
-        end do
       endif
 
       ! Determine correlations
