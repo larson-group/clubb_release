@@ -3326,9 +3326,13 @@ module advance_xp2_xpyp_module
     !assuming rain falls through the moist (cold) portion of the pdf.
     !This is accomplished by defining a precip_fraction and assuming a double
     !delta shaped pdf, such that the evaporation makes the moist component 
-    !moister and the colder component colder.  --storer
+    !moister and the colder component colder. Calculations are done using
+    !variables on the zt grid, and the outputs are on the zm grid --storer
 
     use pdf_parameter_module, only: pdf_parameter
+
+    use grid_class, only: &
+      zt2zm   ! Procedure(s)
 
     use constants_clubb, only: &
       cloud_frac_min, &  !Variables
@@ -3353,6 +3357,8 @@ module advance_xp2_xpyp_module
       thlm, &             !Liquid potential temperature          [K]
       exner, &            !Exner function                        [-]
       rrainm_evap         !Evaporation of rain                   [kg/kg/s]
+                          !It is expected that this variable is negative, as
+                          !that is the convention in Morrison microphysics
 
     type(pdf_parameter), target, dimension(nz), intent(in) :: &
       pdf_params ! PDF parameters
@@ -3364,10 +3370,12 @@ module advance_xp2_xpyp_module
 
     !local variables
     real( kind = core_rknd ), dimension(nz) :: &
-      temp_rtp2, &        !Used only to calculate rtp2_mc_tndcy  [(kg/kg)^2]
-      temp_thlp2, &       !Used to calculate thlp2_mc_tndcy      [K^2/s]
-      precip_frac, &      !Precipitation fraction                [-]
-      pf_const            ! ( 1 - pf )/( pf )                    [-]
+      temp_rtp2, &          !Used only to calculate rtp2_mc_tndcy  [(kg/kg)^2]
+      temp_thlp2, &         !Used to calculate thlp2_mc_tndcy      [K^2/s]
+      rtp2_mc_tndcy_zt, &   !Calculated on the zt grid             [(kg/kg)^2/s]
+      thlp2_mc_tndcy_zt, &  !Calculated on the zt grid             [(kg/kg)^2/s]
+      precip_frac, &        !Precipitation fraction                [-]
+      pf_const              ! ( 1 - pf )/( pf )                    [-]
 
     integer :: k
 
@@ -3398,10 +3406,11 @@ module advance_xp2_xpyp_module
                 + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
                     * ( ( pdf_params%rt2 - ( rcm + rvm ) )**2 + pdf_params%varnce_rt2 )
 
-    rtp2_mc_tndcy = rrainm_evap**2 * pf_const * dt &
-                    + 2.0_core_rknd * abs(rrainm_evap) * sqrt(temp_rtp2 * pf_const)
-                    !use absolute value of evaporation, as evaporation will add
-                    !to rt1
+    rtp2_mc_tndcy_zt = rrainm_evap**2 * pf_const * dt &
+                       + 2.0_core_rknd * abs(rrainm_evap) * sqrt(temp_rtp2 * pf_const)
+                       !use absolute value of evaporation, as evaporation will add
+                       !to rt1
+    rtp2_mc_tndcy = zt2zm( rtp2_mc_tndcy_zt )
 
     !Include the effects of rain evaporation on thlp2
     temp_thlp2 = pdf_params%mixt_frac &
@@ -3409,9 +3418,11 @@ module advance_xp2_xpyp_module
                  + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
                     * ( ( pdf_params%thl2 - thlm )**2 + pdf_params%varnce_thl2 )
 
-    thlp2_mc_tndcy = ( rrainm_evap * Lv / ( Cp * exner) )**2 * pf_const * dt & 
-                    + 2.0_core_rknd * abs(rrainm_evap) * Lv / ( Cp * exner ) &
-                    * sqrt(temp_thlp2 * pf_const)
+    thlp2_mc_tndcy_zt = ( rrainm_evap * Lv / ( Cp * exner) )**2 * pf_const * dt & 
+                       + 2.0_core_rknd * abs(rrainm_evap) * Lv / ( Cp * exner ) &
+                       * sqrt(temp_thlp2 * pf_const)
+    
+    thlp2_mc_tndcy = zt2zm( thlp2_mc_tndcy_zt )
 
   end subroutine update_xp2_mc_tndcy
 
