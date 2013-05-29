@@ -124,10 +124,10 @@ for i=1:numLines
 	elseif strcmp(plotType, 'timeseries')
 		%For timeseries, we want the start and end time indexes	
 		t_start_index = ceil(startTime / time_step_length);
-		t_end_index = round(endTime / time_step_length);
+		t_end_index = ceil(endTime / time_step_length);
 		
 		%Create a time array
-		times = startTime:time_step_length:endTime;
+		times = (t_start_index:t_end_index) * time_step_length;
 	end
 
 	%Now evaluate the expression using the read in values,
