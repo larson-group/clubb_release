@@ -28,7 +28,7 @@ DOUBLE_PRECISION="-real-size 64"
 
 # == Optimization ==
 # No optimization
-OPTIMIZE=""
+OPTIMIZE="-O0"
 #OPTIMIZE="-O3 -vec-report0"
 
 # == NetCDF Location ==
