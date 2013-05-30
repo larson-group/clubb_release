@@ -273,7 +273,26 @@ module morrison_micro_driver_module
       Nicem_EPRDS, &         
       Nicem_PSACR, &         
       rgraupelm_PRDG, &      
-      rgraupelm_EPRDG       
+      rgraupelm_EPRDG      
+
+    ! Added to match change to SAM in sam_clubb:r1121
+    real, dimension(nz) :: &
+      ng_sten, &
+      nr_sten, &
+      ni_sten, &
+      ns_sten, &
+      nc_sten, &
+      nprc1, &
+      nragg, &
+      npracg, &
+      nsubr, &
+      nsmltr, &
+      ngmltr, &
+      npracs, &
+      nnuccr, &
+      niacr, &
+      niacrs, &
+      ngracs
 
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
@@ -432,7 +451,9 @@ module morrison_micro_driver_module
            hydromet_r4(:,iirgraupelm), hydromet_r4(:,iiNgraupelm), effg, &
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
            hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
-           rcm_sten, cloud_frac_in, &
+           rcm_sten, &
+           ng_sten, nr_sten, ni_sten, ns_sten, nc_sten, &
+           cloud_frac_in, &
            rrainm_auto_r4, rrainm_accr_r4, &
            rrainm_PSMLT_r4, Nicem_EVPMS_r4, rrainm_PRACS_r4, rgraupelm_EVPMG_r4, &
            rrainm_PRACG_r4, rrainm_evap_r4,rrainm_PGMLT_r4,rcm_MNUCCC_r4, &
@@ -441,7 +462,9 @@ module morrison_micro_driver_module
            ricem_PRAI_r4, rrainm_QMULTR_r4, rrainm_QMULTRG_r4, ricem_MNUCCD_r4, &
            ricem_PRACI_r4, ricem_PRACIS_r4, ricem_EPRD_r4, rrainm_MNUCCR_r4, &
            rrainm_PIACR_r4, rrainm_PIACRS_r4, rrainm_PGRACS_r4, Nicem_PRDS_r4, &
-           Nicem_EPRDS_r4, Nicem_PSACR_r4, rgraupelm_PRDG_r4, rgraupelm_EPRDG_r4 )
+           Nicem_EPRDS_r4, Nicem_PSACR_r4, rgraupelm_PRDG_r4, rgraupelm_EPRDG_r4, &
+           nprc1, nragg, npracg, nsubr, nsmltr, ngmltr, npracs, nnuccr, niacr, &
+           niacrs, ngracs )
            
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
