@@ -12,3 +12,5 @@ snd_to_sounding.py - This script converts a SAM "snd" file to a "*_sounding.in" 
 sfc_to_surface.py  - This script converts a SAM "sfc" file to a "*_surface.in" file for use by CLUBB.
                      The input file ought to have the following columns:
                      day,  sst(K),  H(W/m2),  LE(W,m2),  TAU(m2/s2)
+
+common_utils.py    - This file contains functions used by all three of the above files. It should not be run.
