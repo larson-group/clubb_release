@@ -1578,8 +1578,7 @@ module microphys_driver
                delta_zt, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
-               wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,  &
+               rtp2_mc_tndcy, thlp2_mc_tndcy, &
                rrainm_auto, rrainm_accr )
 
         ! Output rain sedimentation velocity
@@ -1666,9 +1665,7 @@ module microphys_driver
                                       hydromet, &
                                       hydromet_mc, hydromet_vel_zt, &
                                       rcm_mc, rvm_mc, thlm_mc, &
-                                      wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                                       rtp2_mc_tndcy, thlp2_mc_tndcy, &
-                                      rtpthlp_mc_tndcy, &
                                       rrainm_auto, rrainm_accr )
 
         else
@@ -1686,8 +1683,7 @@ module microphys_driver
                                          hydromet_vel_covar_zt_expc, &
                                          wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                                          rtp2_mc_tndcy, thlp2_mc_tndcy, &
-                                         rtpthlp_mc_tndcy, &
-                                         rrainm_auto, rrainm_accr )
+                                         rtpthlp_mc_tndcy )
 
         endif
 
