@@ -197,96 +197,96 @@ module KK_microphys_module
     ! Loop over all model thermodynamic level above the model lower boundary.
     do k = 2, nz, 1
 
-      !!! Calculate the coefficients for the KK microphysics tendencies.
-      call KK_tendency_coefs( thlm(k), exner(k), p_in_Pa(k), rho(k), &
-                              KK_evap_coef, KK_auto_coef, &
-                              KK_accr_coef, KK_mvr_coef )
+       !!! Calculate the coefficients for the KK microphysics tendencies.
+       call KK_tendency_coefs( thlm(k), exner(k), p_in_Pa(k), rho(k), &
+                               KK_evap_coef, KK_auto_coef, &
+                               KK_accr_coef, KK_mvr_coef )
 
 
-      !!! Calculate the local KK rain drop mean volume radius.
-      if ( rrainm(k) > rr_tol ) then
+       !!! Calculate the local KK rain drop mean volume radius.
+       if ( rrainm(k) > rr_tol ) then
 
-         KK_mean_vol_rad(k)  &
-         = KK_mvr_local_mean( rrainm(k), Nrm(k), KK_mvr_coef )
+          KK_mean_vol_rad(k)  &
+          = KK_mvr_local_mean( rrainm(k), Nrm(k), KK_mvr_coef )
 
-      else  ! r_r or N_r = 0.
+       else  ! r_r or N_r = 0.
 
-         KK_mean_vol_rad(k) = zero
+          KK_mean_vol_rad(k) = zero
 
-      endif
+       endif
 
-      !!! Calculate the values of the local KK microphysics tendencies.
+       !!! Calculate the values of the local KK microphysics tendencies.
 
-      !!! Calculate the local KK evaporation tendency.
-      if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+       !!! Calculate the local KK evaporation tendency.
+       if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
-         KK_evap_tndcy(k)  &
-         = KK_evap_local_mean( s_mellor(k), rrainm(k), Nrm(k), &
-                               KK_evap_coef )
+          KK_evap_tndcy(k)  &
+          = KK_evap_local_mean( s_mellor(k), rrainm(k), Nrm(k), &
+                                 KK_evap_coef )
 
-      else  ! r_r or N_r = 0.
+       else  ! r_r or N_r = 0.
 
-         KK_evap_tndcy(k) = zero
+          KK_evap_tndcy(k) = zero
 
-      endif
+       endif
 
-      !!! Calculate the local KK autoconversion tendency.
-      if ( Ncm(k) > Nc_tol ) then
+       !!! Calculate the local KK autoconversion tendency.
+       if ( Ncm(k) > Nc_tol ) then
 
-         KK_auto_tndcy(k)  &
-         = KK_auto_local_mean( s_mellor(k), Ncm(k), KK_auto_coef )
+          KK_auto_tndcy(k)  &
+          = KK_auto_local_mean( s_mellor(k), Ncm(k), KK_auto_coef )
 
-      else  ! N_c = 0.
+       else  ! N_c = 0.
 
-         KK_auto_tndcy(k) = zero
+          KK_auto_tndcy(k) = zero
 
-      endif
+       endif
 
-      !!! Calculate the local KK accretion tendency.
-      if ( rrainm(k) > rr_tol ) then
+       !!! Calculate the local KK accretion tendency.
+       if ( rrainm(k) > rr_tol ) then
 
-         KK_accr_tndcy(k)  &
-         = KK_accr_local_mean( s_mellor(k), rrainm(k), KK_accr_coef )
+          KK_accr_tndcy(k)  &
+          = KK_accr_local_mean( s_mellor(k), rrainm(k), KK_accr_coef )
 
-      else  ! r_r = 0.
+       else  ! r_r = 0.
 
-         KK_accr_tndcy(k) = zero
+          KK_accr_tndcy(k) = zero
 
-      endif
+       endif
 
 
-      !!! KK rain drop concentration microphysics tendencies.
+       !!! KK rain drop concentration microphysics tendencies.
 
-      !!! Calculate the KK N_r evaporation tendency.
-      if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+       !!! Calculate the KK N_r evaporation tendency.
+       if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
-         KK_Nrm_evap_tndcy(k)  &
-         = KK_Nrm_evap_local_mean( KK_evap_tndcy(k), Nrm(k), rrainm(k), dt )
+          KK_Nrm_evap_tndcy(k)  &
+          = KK_Nrm_evap_local_mean( KK_evap_tndcy(k), Nrm(k), rrainm(k), dt )
 
-      else  ! r_r or N_r = 0.
+       else  ! r_r or N_r = 0.
 
           KK_Nrm_evap_tndcy(k) = zero
 
-      endif
+       endif
 
-      !!! Calculate the KK N_r autoconversion tendency.
-      KK_Nrm_auto_tndcy(k) = KK_Nrm_auto_mean( KK_auto_tndcy(k) )
+       !!! Calculate the KK N_r autoconversion tendency.
+       KK_Nrm_auto_tndcy(k) = KK_Nrm_auto_mean( KK_auto_tndcy(k) )
 
 
-      !!! Calculate any necessary adjustments to KK microphysics tendencies.
-      call KK_microphys_adjust( dt, exner(k), rcm(k), rrainm(k), Nrm(k), &
-                                KK_evap_tndcy(k), KK_auto_tndcy(k), &
-                                KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
-                                KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
-                                l_evap_adj_enabled, l_stats_samp_in_sub, k, &
-                                rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
-                                rvm_mc(k), rcm_mc(k), thlm_mc(k) )
+       !!! Calculate any necessary adjustments to KK microphysics tendencies.
+       call KK_microphys_adjust( dt, exner(k), rcm(k), rrainm(k), Nrm(k), &
+                                 KK_evap_tndcy(k), KK_auto_tndcy(k), &
+                                 KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
+                                 KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
+                                 l_evap_adj_enabled, l_stats_samp_in_sub, k, &
+                                 rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
+                                 rvm_mc(k), rcm_mc(k), thlm_mc(k) )
 
-      !!! Statistical output for mean microphysics tendenices.
-      call KK_stats_output( KK_evap_tndcy(k), KK_auto_tndcy(k), &
-                            KK_accr_tndcy(k), KK_mean_vol_rad(k), &
-                            KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
-                            l_stats_samp_in_sub, k )
+       !!! Statistical output for mean microphysics tendenices.
+       call KK_stats_output( KK_evap_tndcy(k), KK_auto_tndcy(k), &
+                             KK_accr_tndcy(k), KK_mean_vol_rad(k), &
+                             KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
+                             l_stats_samp_in_sub, k )
 
 
     enddo  ! Microphysics tendency loop: k = 2, nz, 1
@@ -670,189 +670,198 @@ module KK_microphys_module
     ! Loop over all model thermodynamic level above the model lower boundary.
     do k = 2, nz, 1
 
-      !!! Calculate the coefficients for the KK microphysics tendencies.
-      call KK_tendency_coefs( thlm(k), exner(k), p_in_Pa(k), rho(k), &
-                              KK_evap_coef, KK_auto_coef, &
-                              KK_accr_coef, KK_mvr_coef )
+       !!! Calculate the coefficients for the KK microphysics tendencies.
+       call KK_tendency_coefs( thlm(k), exner(k), p_in_Pa(k), rho(k), &
+                               KK_evap_coef, KK_auto_coef, &
+                               KK_accr_coef, KK_mvr_coef )
 
 
-      !!! Unpack the PDF parameters.
-      call unpack_pdf_params( d_variables, corr_array_1(:,:,k), &
-                              corr_array_2(:,:,k), hydromet_pdf_params(k), &
-                              mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
-                              mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
-                              mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                             !mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                             !mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                              sigma_w_1, sigma_w_2, sigma_s_1, &
-                              sigma_s_2, sigma_t_1, sigma_t_2, &
-                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                              sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                             !sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                             !sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                              corr_ws_1, corr_ws_2, corr_wrr_1, &
-                              corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                              corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                              corr_st_2, corr_srr_1, corr_srr_2, &
-                              corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                              corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                              corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                              corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
-                             !corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                             !corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                             !corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                             !corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                             !corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                             !corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                             !corr_rrNr_1_n, corr_rrNr_2_n )
+       !!! Unpack the PDF parameters.
+       call unpack_pdf_params( d_variables, corr_array_1(:,:,k), &
+                               corr_array_2(:,:,k), hydromet_pdf_params(k), &
+                               mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
+                               mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
+                               mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
+                              !mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                              !mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                               sigma_w_1, sigma_w_2, sigma_s_1, &
+                               sigma_s_2, sigma_t_1, sigma_t_2, &
+                               sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                               sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
+                              !sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                              !sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                               corr_ws_1, corr_ws_2, corr_wrr_1, &
+                               corr_wrr_2, corr_wNr_1, corr_wNr_2, &
+                               corr_wNcn_1, corr_wNcn_2, corr_st_1, &
+                               corr_st_2, corr_srr_1, corr_srr_2, &
+                               corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
+                               corr_sNcn_2, corr_trr_1, corr_trr_2, &
+                               corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
+                               corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+                              !corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                              !corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                              !corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                              !corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                              !corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                              !corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                              !corr_rrNr_1_n, corr_rrNr_2_n )
        
 
-      !!! Calculate the mean, standard deviations, and correlations involving
-      !!! ln r_r, ln N_r, and ln N_cn for each PDF component.
-      call normalize_pdf_params( rr1(k), rr2(k), Nr1(k), Nr2(k), Ncnm(k), &
-                                 mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                 mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, &
-                                 sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &
-                                 sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &
-                                 corr_wNr_1, corr_wNr_2, corr_wNcn_1, &
-                                 corr_wNcn_2, corr_srr_1, corr_srr_2, &
-                                 corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                 corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                 corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                 corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
-                                 mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                 mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                 sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                 sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                 corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                                 corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                                 corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                                 corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                                 corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                                 corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                                 corr_rrNr_1_n, corr_rrNr_2_n )
+       !!! Calculate the mean, standard deviations, and correlations involving
+       !!! ln r_r, ln N_r, and ln N_cn for each PDF component.
+       call normalize_pdf_params( rr1(k), rr2(k), Nr1(k), Nr2(k), Ncnm(k), &
+                                  mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                                  mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, &
+                                  sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &
+                                  sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &
+                                  corr_wNr_1, corr_wNr_2, corr_wNcn_1, &
+                                  corr_wNcn_2, corr_srr_1, corr_srr_2, &
+                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
+                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
+                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
+                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
+                                  mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                                  mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                                  sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                                  sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                                  corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                                  corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                                  corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                                  corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                                  corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                                  corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                                  corr_rrNr_1_n, corr_rrNr_2_n )
 
 
-      !!! Calculate the values of the upscaled KK microphysics tendencies.
-      call KK_upscaled_means_driver( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
-                                     mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                                     mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                     mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                     sigma_s_1, sigma_s_2, &
-                                     sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                     sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                     sigma_rr_1_n, sigma_rr_2_n, &
-                                     sigma_Nr_1_n, sigma_Nr_2_n, &
-                                     sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                     corr_srr_1_n, corr_srr_2_n, &
-                                     corr_sNr_1_n, corr_sNr_2_n, &
-                                     corr_sNcn_1_n, corr_sNcn_2_n, &
-                                     corr_rrNr_1_n, corr_rrNr_2_n, &
-                                     mixt_frac(k), precip_frac_1(k), &
-                                     precip_frac_2(k), Nc0_in_cloud(k), &
-                                     l_const_Nc_in_cloud, &
-                                     KK_evap_coef, KK_auto_coef, &
-                                     KK_accr_coef, KK_mvr_coef, &
-                                     KK_evap_tndcy(k), KK_auto_tndcy(k), &
-                                     KK_accr_tndcy(k), KK_mean_vol_rad(k) )
+       !!! Calculate the values of the upscaled KK microphysics tendencies.
+       call KK_upscaled_means_driver( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
+                                      mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
+                                      mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                                      mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                                      sigma_s_1, sigma_s_2, &
+                                      sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                      sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
+                                      sigma_rr_1_n, sigma_rr_2_n, &
+                                      sigma_Nr_1_n, sigma_Nr_2_n, &
+                                      sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                                      corr_srr_1_n, corr_srr_2_n, &
+                                      corr_sNr_1_n, corr_sNr_2_n, &
+                                      corr_sNcn_1_n, corr_sNcn_2_n, &
+                                      corr_rrNr_1_n, corr_rrNr_2_n, &
+                                      mixt_frac(k), precip_frac_1(k), &
+                                      precip_frac_2(k), Nc0_in_cloud(k), &
+                                      l_const_Nc_in_cloud, &
+                                      KK_evap_coef, KK_auto_coef, &
+                                      KK_accr_coef, KK_mvr_coef, &
+                                      KK_evap_tndcy(k), KK_auto_tndcy(k), &
+                                      KK_accr_tndcy(k), KK_mean_vol_rad(k) )
 
-      call KK_sed_vel_covars( rrainm(k), rr1(k), rr2(k), Nrm(k), &
-                              Nr1(k), Nr2(k), KK_mean_vol_rad(k), &
-                              mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, &
-                              mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1, &
-                              sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
-                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                              sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
-                              KK_mvr_coef, mixt_frac(k), precip_frac_1(k), &
-                              precip_frac_2(k), k, l_stats_samp, &
-                              Vrrprrp_zt_impc(k), Vrrprrp_zt_expc(k), &
-                              VNrpNrp_zt_impc(k), VNrpNrp_zt_expc(k) )
-
-
-      if ( l_var_covar_src ) then
-
-        call KK_upscaled_covar_driver( wm_zt(k), exner(k), rcm(k),  &
-                                       rrainm(k), Nrm(k), Ncnm(k), &
-                                       mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
-                                       mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                                       mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                       mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                       sigma_s_1, sigma_s_2, sigma_rr_1, &
-                                       sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
-                                       sigma_Ncn_1, sigma_Ncn_2, sigma_rr_1_n, &
-                                       sigma_rr_2_n, sigma_Nr_1_n, &
-                                       sigma_Nr_2_n, sigma_Ncn_1_n, &
-                                       sigma_Ncn_2_n, corr_srr_1_n, &
-                                       corr_srr_2_n, corr_sNr_1_n, &
-                                       corr_sNr_2_n, corr_sNcn_1_n, &
-                                       corr_sNcn_2_n, corr_rrNr_1_n, &
-                                       corr_rrNr_2_n, mixt_frac(k), &
-                                       precip_frac_1(k), precip_frac_2(k), &
-                                       Nc0_in_cloud(k), l_const_Nc_in_cloud, &
-                                       KK_evap_coef, KK_auto_coef, &
-                                       KK_accr_coef, KK_evap_tndcy(k), &
-                                       KK_auto_tndcy(k), KK_accr_tndcy(k), &
-                                       pdf_params(k), k, &
-                                       l_stats_samp, &
-                                       wprtp_mc_tndcy_zt(k), &
-                                       wpthlp_mc_tndcy_zt(k), &
-                                       rtp2_mc_tndcy_zt(k), &
-                                       thlp2_mc_tndcy_zt(k), &
-                                       rtpthlp_mc_tndcy_zt(k) )
-
-      endif
-
-      !!! KK rain drop concentration microphysics tendencies.
-
-      !!! Calculate the KK N_r evaporation tendency.
-      KK_Nrm_evap_tndcy(k) &
-      = KK_Nrm_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
-                                   mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, &
-                                   mu_Nr_1_n, mu_Nr_2_n, sigma_s_1, &
-                                   sigma_s_2, sigma_rr_1, sigma_rr_2, &
-                                   sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
-                                   sigma_rr_2_n, sigma_Nr_1_n, &
-                                   sigma_Nr_2_n, corr_srr_1_n, &
-                                   corr_srr_2_n, corr_sNr_1_n, &
-                                   corr_sNr_2_n, corr_rrNr_1_n, &
-                                   corr_rrNr_2_n, KK_evap_coef, mixt_frac(k), &
-                                   precip_frac_1(k), precip_frac_2(k), dt )
+       call KK_sed_vel_covars( rrainm(k), rr1(k), rr2(k), Nrm(k), &
+                               Nr1(k), Nr2(k), KK_mean_vol_rad(k), &
+                               mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, &
+                               mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1, &
+                               sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
+                               sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                               sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+                               KK_mvr_coef, mixt_frac(k), precip_frac_1(k), &
+                               precip_frac_2(k), k, l_stats_samp, &
+                               Vrrprrp_zt_impc(k), Vrrprrp_zt_expc(k), &
+                               VNrpNrp_zt_impc(k), VNrpNrp_zt_expc(k) )
 
 
-      !!! Calculate the KK N_r autoconversion tendency.
-      KK_Nrm_auto_tndcy(k) = KK_Nrm_auto_mean( KK_auto_tndcy(k) )
+       if ( l_var_covar_src ) then
+
+          call KK_upscaled_covar_driver( wm_zt(k), exner(k), &
+                                         rrainm(k), Nrm(k), Ncnm(k), &
+                                         mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
+                                         mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
+                                         mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
+                                         mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                                         mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                                         sigma_w_1, sigma_w_2, sigma_s_1, &
+                                         sigma_s_2, sigma_t_1, sigma_t_2, &
+                                         sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                         sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
+                                         sigma_rr_1_n, sigma_rr_2_n, &
+                                         sigma_Nr_1_n, sigma_Nr_2_n, &
+                                         sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                                         corr_ws_1, corr_ws_2, corr_wrr_1_n, &
+                                         corr_wrr_2_n, corr_wNr_1_n, &
+                                         corr_wNr_2_n, corr_wNcn_1_n, &
+                                         corr_wNcn_2_n, corr_st_1, corr_st_2, &
+                                         corr_srr_1_n, corr_srr_2_n, &
+                                         corr_sNr_1_n, corr_sNr_2_n, &
+                                         corr_sNcn_1_n, corr_sNcn_2_n, &
+                                         corr_trr_1_n, corr_trr_2_n, &
+                                         corr_tNr_1_n, corr_tNr_2_n, &
+                                         corr_tNcn_1_n, corr_tNcn_2_n, &
+                                         corr_rrNr_1_n, corr_rrNr_2_n, &
+                                         mixt_frac(k), precip_frac_1(k), &
+                                         precip_frac_2(k), Nc0_in_cloud(k), &
+                                         KK_evap_coef, KK_auto_coef, &
+                                         KK_accr_coef, KK_evap_tndcy(k), &
+                                         KK_auto_tndcy(k), KK_accr_tndcy(k), &
+                                         pdf_params(k), k, &
+                                         l_const_Nc_in_cloud, l_stats_samp, &
+                                         wprtp_mc_tndcy_zt(k), &
+                                         wpthlp_mc_tndcy_zt(k), &
+                                         rtp2_mc_tndcy_zt(k), &
+                                         thlp2_mc_tndcy_zt(k), &
+                                         rtpthlp_mc_tndcy_zt(k) )
+
+       endif
+
+       !!! KK rain drop concentration microphysics tendencies.
+
+       !!! Calculate the KK N_r evaporation tendency.
+       KK_Nrm_evap_tndcy(k) &
+       = KK_Nrm_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
+                                    mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, &
+                                    mu_Nr_1_n, mu_Nr_2_n, sigma_s_1, &
+                                    sigma_s_2, sigma_rr_1, sigma_rr_2, &
+                                    sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
+                                    sigma_rr_2_n, sigma_Nr_1_n, &
+                                    sigma_Nr_2_n, corr_srr_1_n, &
+                                    corr_srr_2_n, corr_sNr_1_n, &
+                                    corr_sNr_2_n, corr_rrNr_1_n, &
+                                    corr_rrNr_2_n, KK_evap_coef, mixt_frac(k), &
+                                    precip_frac_1(k), precip_frac_2(k), dt )
 
 
-      !!! Calculate any necessary adjustments to KK microphysics tendencies.
-      call KK_microphys_adjust( dt, exner(k), rcm(k), rrainm(k), Nrm(k), &
-                                KK_evap_tndcy(k), KK_auto_tndcy(k), &
-                                KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
-                                KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
-                                l_evap_adj_enabled, l_stats_samp, k, &
-                                rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
-                                rvm_mc(k), rcm_mc(k), thlm_mc(k) )
+       !!! Calculate the KK N_r autoconversion tendency.
+       KK_Nrm_auto_tndcy(k) = KK_Nrm_auto_mean( KK_auto_tndcy(k) )
 
 
-      !!! Statistical output for upscaled KK.
-      call KK_upscaled_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                              mu_Ncn_1, mu_Ncn_2, mu_rr_1_n, mu_rr_2_n, &
-                              mu_Nr_1_n, mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                              sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                              sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                              corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                              corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                              corr_rrNr_1_n, corr_rrNr_2_n, mixt_frac(k), &
-                              precip_frac_1(k), precip_frac_2(k), KK_mvr_coef, &
-                              KK_mean_vol_rad(k), rrainm(k), Nrm(k), k, &
-                              l_stats_samp )
+       !!! Calculate any necessary adjustments to KK microphysics tendencies.
+       call KK_microphys_adjust( dt, exner(k), rcm(k), rrainm(k), Nrm(k), &
+                                 KK_evap_tndcy(k), KK_auto_tndcy(k), &
+                                 KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
+                                 KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
+                                 l_evap_adj_enabled, l_stats_samp, k, &
+                                 rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
+                                 rvm_mc(k), rcm_mc(k), thlm_mc(k) )
 
-      !!! Statistical output for mean microphysics tendenices.
-      call KK_stats_output( KK_evap_tndcy(k), KK_auto_tndcy(k), &
-                            KK_accr_tndcy(k), KK_mean_vol_rad(k), &
-                            KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
-                            l_stats_samp, k )
+
+       !!! Statistical output for upscaled KK.
+       call KK_upscaled_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                               mu_Ncn_1, mu_Ncn_2, mu_rr_1_n, mu_rr_2_n, &
+                               mu_Nr_1_n, mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                               sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                               sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
+                               sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                               sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                               corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                               corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                               corr_rrNr_1_n, corr_rrNr_2_n, mixt_frac(k), &
+                               precip_frac_1(k), precip_frac_2(k), &
+                               KK_mvr_coef, KK_mean_vol_rad(k), rrainm(k), &
+                               Nrm(k), k, l_stats_samp )
+
+       !!! Statistical output for mean microphysics tendenices.
+       call KK_stats_output( KK_evap_tndcy(k), KK_auto_tndcy(k), &
+                             KK_accr_tndcy(k), KK_mean_vol_rad(k), &
+                             KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
+                             l_stats_samp, k )
 
 
     enddo  ! Microphysics tendency loop: k = 2, nz, 1
@@ -1399,9 +1408,9 @@ module KK_microphys_module
                                 corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                                 corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
                                 corr_rrNr_1_n, corr_rrNr_2_n, mixt_frac, &
-                                precip_frac_1, precip_frac_2, KK_mvr_coef, &
-                                KK_mean_vol_rad, rrainm, Nrm, level, &
-                                l_stats_samp )
+                                precip_frac_1, precip_frac_2, &
+                                KK_mvr_coef, KK_mean_vol_rad, rrainm, &
+                                Nrm, level, l_stats_samp )
 
     ! Description:
 
