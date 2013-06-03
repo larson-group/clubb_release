@@ -71,37 +71,55 @@ module morrison_micro_driver_module
       iLH_morr_snow_rate
 
     use stats_variables, only: &
-      irrainm_PSMLT, & ! Variable(s)
-      iNicem_EVPMS, &
-      irrainm_PRACS, &
-      irgraupelm_EVPMG, &
-      irrainm_PRACG, &
-      irrainm_PGMLT, &
-      ircm_MNUCCC, &
-      ircm_PSACWS, &
-      ircm_PSACWI, &
-      ircm_QMULTS, &
-      ircm_QMULTG, &
-      ircm_PSACWG, &
-      ircm_PGSACW, &
-      iricem_PRD, &
-      iricem_PRCI, &
-      iricem_PRAI, &
-      irrainm_QMULTR, &
-      irrainm_QMULTRG, &
-      iricem_MNUCCD, &
-      iricem_PRACI, &
-      iricem_PRACIS, &
-      iricem_EPRD, &
-      irrainm_MNUCCR, &
-      irrainm_PIACR, &
-      irrainm_PIACRS, &
-      irrainm_PGRACS, &
-      iNicem_PRDS, &
-      iNicem_EPRDS, &
-      iNicem_PSACR, &
-      irgraupelm_PRDG, &
-      irgraupelm_EPRDG
+      iPSMLT, & ! Variable(s)
+      iEVPMS, &
+      iPRACS, &
+      iEVPMG, &
+      iPRACG, &
+      iPGMLT, &
+      iMNUCCC, &
+      iPSACWS, &
+      iPSACWI, &
+      iQMULTS, &
+      iQMULTG, &
+      iPSACWG, &
+      iPGSACW, &
+      iPRD, &
+      iPRCI, &
+      iPRAI, &
+      iQMULTR, &
+      iQMULTRG, &
+      iMNUCCD, &
+      iPRACI, &
+      iPRACIS, &
+      iEPRD, &
+      iMNUCCR, &
+      iPIACR, &
+      iPIACRS, &
+      iPGRACS, &
+      iPRDS, &
+      iEPRDS, &
+      iPSACR, &
+      iPRDG, &
+      iEPRDG
+
+    use stats_variables, only: &
+      iNGSTEN, & ! Lots of variable(s)
+      iNRSTEN, &
+      iNISTEN, &
+      iNSSTEN, &
+      iNCSTEN, &
+      iNPRC1,  &
+      iNRAGG,  &
+      iNPRACG, &
+      iNSUBR,  &
+      iNSMLTR, &
+      iNGMLTR, &
+      iNPRACS, &
+      iNNUCCR, &
+      iNIACR,  &
+      iNIACRS, &
+      iNGRACS
 
     use stats_type, only:  & 
         stat_update_var, stat_update_var_pt  ! Procedure(s)
@@ -205,90 +223,93 @@ module morrison_micro_driver_module
       rrainm_auto_r4,& ! Autoconversion rate     [kg/kg/s]
       rrainm_accr_r4   ! Accretion rate         [kg/kg/s]
 
+    ! In the comments below, by "adds to" we mean that if the quantity is
+    ! positive, it adds positively to the prognostic variable, but if the
+    ! quantity is negative, it subtracts from the prognostic variable.
     real, dimension(nz) :: &
-      rrainm_PSMLT_r4, &       ! Change Q melting snow to rain [kg/kg/s]
-      Nicem_EVPMS_r4, &        ! Change Q melting snow evaporating [kg/kg/s]
-      rrainm_PRACS_r4, &       ! Change Q rain-snow collection [kg/kg/s]
-      rgraupelm_EVPMG_r4, &    ! Change Q melting of graupel and evap [kg/kg/s]
-      rrainm_PRACG_r4, &       ! Change Q collection rain by graupel [kg/kg/s]
-      rrainm_PGMLT_r4, &       ! Change Q melting of graupel [kg/kg/s]
-      rcm_MNUCCC_r4, &         ! Change Q contact freeze droplets [kg/kg/s]
-      rcm_PSACWS_r4, &         ! Change Q droplet accretion by snow [kg/kg/s]
-      rcm_PSACWI_r4, &         ! Change Q droplet accretion by cloud ice [kg/kg/s]
-      rcm_QMULTS_r4, &         ! Change Q due to ice mult droplets/snow [kg/kg/s]
-      rcm_QMULTG_r4, &         ! Change Q due to ice mult droplets/graupel [kg/kg/s]
-      rcm_PSACWG_r4, &         ! Change Q collection droplets by graupel [kg/kg/s]
-      rcm_PGSACW_r4, & ! Conversion Q to graupel due to collection droplets by snow [kg/kg/s]
-      ricem_PRD_r4, &          ! Dep cloud ice [kg/kg/s]
-      ricem_PRCI_r4, &         ! Change Q autoconversion cloud ice by snow [kg/kg/s]
-      ricem_PRAI_r4, &         ! Change Q accretion cloud ice [kg/kg/s]
-      rrainm_QMULTR_r4, &      ! Change Q due to ice rain/snow [kg/kg/s]
-      rrainm_QMULTRG_r4, &     ! Change Q due to ice mult rain/graupel [kg/kg/s]
-      ricem_MNUCCD_r4, &       ! Change Q freezing areosol [kg/kg/s]
-      ricem_PRACI_r4, &        ! Change QI ice-rain collection [kg/kg/s]
-      ricem_PRACIS_r4, &       ! Change QI ice-rain collision, added to snow [kg/kg/s]
-      ricem_EPRD_r4, &         ! Sublimation cloud ice [kg/kg/s]
-      rrainm_MNUCCR_r4, &      ! Change Q due to contact freeze rain [kg/kg/s]
-      rrainm_PIACR_r4, &       ! Change QR ice-rain collection [kg/kg/s]
-      rrainm_PIACRS_r4, &      ! Change QR ice-rain collision, added to snow [kg/kg/s]
-      rrainm_PGRACS_r4, &      ! Conversion Q to graupel due to collection rain by snow [kg/kg/s]
-      Nicem_PRDS_r4, &         ! Dep of snow [kg/kg/s]
-      Nicem_EPRDS_r4, &        ! Sublimation of snow [kg/kg/s]
-      Nicem_PSACR_r4, &        ! Conversion due to coll of snow by rain [kg/kg/s]
-      rgraupelm_PRDG_r4, &     ! Dep of graupel [kg/kg/s]
-      rgraupelm_EPRDG_r4       ! Sublimation of graupel [kg/kg/s]
+      PSMLT,  & ! Freezing of rain to form snow.
+                !    Adds to rsnowm, subtracts from rrainm [kg/kg/s]
+      EVPMS,  & ! Depositional growth of snow.
+                !    Adds to rsnowm, subtracts from rvm [kg/kg/s]
+      PRACS,  & ! Collection of rain by snow.
+                !    Adds to rsnowm, subtracts from rrainm [kg/kg/s]
+      EVPMG,  & ! Depositional growth of graupel.
+                !    Adds to rgraupelm, subtracts from rvm [kg/kg/s]
+      PRACG,  & ! Negative of collection of rain by graupel.
+                !    Adds to rrainm, subtracts from rgraupelm [kg/kg/s]
+      PGMLT,  & ! Negative of melting of graupel.
+                !    Adds to rgraupelm, subtracts from rrainm [kg/kg/s]
+      MNUCCC, & ! Contact freezing of cloud droplets.
+                !    Adds to ricem, subtracts from rcm [kg/kg/s]
+      PSACWS, & ! Collection of cloud water by snow.
+                !    Adds to rsnowm, subtracts from rcm [kg/kg/s]
+      PSACWI, & ! Collection of cloud water by cloud ice.
+                !    Adds to ricem, subtracts from rcm [kg/kg/s]
+      QMULTS, & ! Splintering from cloud droplets accreted onto snow.
+                !    Adds to ricem, subtracts from rcm [kg/kg/s]
+      QMULTG, & ! Splintering from droplets accreted onto graupel.
+                !    Adds to ricem, subtracts from rcm [kg/kg/s]
+      PSACWG, & ! Collection of cloud water by graupel.
+                !    Adds to rgraupelm, subtracts from rcm [kg/kg/s]
+      PGSACW, & ! Reclassification of rimed snow as graupel.
+                !    Adds to rgraupelm, subtracts from rcm [kg/kg/s]
+      PRD,    & ! Depositional growth of cloud ice.
+                !    Adds to ricem, subtracts from rcm [kg/kg/s]
+      PRCI,   & ! Autoconversion of cloud ice to snow.
+                !    Adds to rsnowm, subtracts from ricem [kg/kg/s]
+      PRAI,   & ! Collection of cloud ice by snow.
+                !    Adds to rsnowm, subtracts from ricem [kg/kg/s]
+      QMULTR, & ! Splintering from rain droplets accreted onto snow.
+                !    Adds to ricem, subtracts from rrainm [kg/kg/s]
+      QMULTRG,& ! Splintering from rain droplets accreted onto graupel.
+                !    Adds to ricem, subtracts from rrainm [kg/kg/s]
+      MNUCCD, & ! Freezing of aerosol.
+                !    Adds to ricem, subtracts from rvm [kg/kg/s]
+      PRACI,  & ! Collection of cloud ice by rain.
+                !    Adds to rgraupelm, subtracts from ricem [kg/kg/s]
+      PRACIS, & ! Collection of cloud ice by rain.
+                !    Adds to rsnowm, subtracts from ricem [kg/kg/s]
+      EPRD,   & ! Negative of sublimation of cloud ice.
+                !    Adds to ricem, subtracts from rvm [kg/kg/s]
+      MNUCCR, & ! Contact freezing of rain droplets.
+                !    Adds to rgraupelm, subtracts from rrainm [kg/kg/s]
+      PIACR,  & ! Collection of cloud ice by rain.
+                !    Adds to rgraupelm, subtracts from rrainm [kg/kg/s]
+      PIACRS, & ! Collection of cloud ice by rain.
+                !    Adds to rsnowm, subtracts from rrainm [kg/kg/s]
+      PGRACS, & ! Collection of rain by snow.
+                !    Adds to rgraupelm, subtracts from rrainm [kg/kg/s]
+      PRDS,   & ! Depositional growth of snow.
+                !    Adds to rsnowm, subtracts from rvm [kg/kg/s]
+      EPRDS,  & ! Negative of sublimation of snow.
+                !    Adds to rsnowm, subtracts from rvm [kg/kg/s]
+      PSACR,  & ! Collection of snow by rain.
+                !    Adds to rgraupelm, subtracts from rsnowm [kg/kg/s]
+      PRDG,   & ! Depositional growth of graupel.
+                !    Adds to rgraupelm, subtracts from rvm [kg/kg/s]
+      EPRDG     ! Negative of sublimation of graupel.
+                !    Adds to rgraupelm, subtracts from rvm [kg/kg/s]
 
-    real( kind = core_rknd ), dimension(nz) :: &
-      rrainm_PSMLT, &       ! See above for units 
-      Nicem_EVPMS, &         
-      rrainm_PRACS, &        
-      rgraupelm_EVPMG, &     
-      rrainm_PRACG, &        
-      rrainm_PGMLT, &        
-      rcm_MNUCCC, &          
-      rcm_PSACWS, &          
-      rcm_PSACWI, &          
-      rcm_QMULTS, &          
-      rcm_QMULTG, &          
-      rcm_PSACWG, &           
-      rcm_PGSACW, &          
-      ricem_PRD, &           
-      ricem_PRCI, &          
-      ricem_PRAI, &          
-      rrainm_QMULTR, &       
-      rrainm_QMULTRG, &      
-      ricem_MNUCCD, &        
-      ricem_PRACI, &         
-      ricem_PRACIS, &        
-      ricem_EPRD, &          
-      rrainm_MNUCCR, &       
-      rrainm_PIACR, &        
-      rrainm_PIACRS, &       
-      rrainm_PGRACS, &       
-      Nicem_PRDS, &          
-      Nicem_EPRDS, &         
-      Nicem_PSACR, &         
-      rgraupelm_PRDG, &      
-      rgraupelm_EPRDG      
-
-    ! Added to match change to SAM in sam_clubb:r1121
     real, dimension(nz) :: &
-      ng_sten, &
-      nr_sten, &
-      ni_sten, &
-      ns_sten, &
-      nc_sten, &
-      nprc1, &
-      nragg, &
-      npracg, &
-      nsubr, &
-      nsmltr, &
-      ngmltr, &
-      npracs, &
-      nnuccr, &
-      niacr, &
-      niacrs, &
-      ngracs
+      NGSTEN, & ! Graupel sedimentation tendency [#/kg/s]
+      NRSTEN, & ! Rain sedimentation tendency [#/kg/s]
+      NISTEN, & ! Cloud ice sedimentation tendency [#/kg/s]
+      NSSTEN, & ! Snow sedimentation tendency [#/kg/s]
+      NCSTEN, & ! Cloud water sedimentation tendency [#/kg/s]
+      NPRC1,  & ! Change in Nrm due to autoconversion of droplets. Adds to Nrm [#/kg/s]
+      NRAGG,  & ! Change in Nrm due to self-collection of raindrops. Adds to Nrm [#/kg/s]
+      NPRACG, & ! Collection of rainwater by graupel. Subtracts from Nrm [#/kg/s]
+      NSUBR,  & ! Loss of Nrm by evaporation. Adds to Nrm [#/kg/s]
+      NSMLTR, & ! Melting of snow to form rain. Subtracts from Nrm [#/kg/s]
+      NGMLTR, & ! Melting of graupel to form rain. Subtracts from Nrm [#/kg/s]
+      NPRACS, & ! Collection of rainwater by snow. Subtracts from Nrm [#/kg/s]
+      NNUCCR, & ! Contact freezing of rain. Adds to Ngraupelm, subtracts from Nrm [#/kg/s]
+      NIACR,  & ! Collection of cloud ice by rain.
+                !    Adds to Ngraupelm, subtracts from Nrm and Nim [#/kg/s] 
+      NIACRS, & ! Collection of cloud ice by rain.
+                !    Adds to Nsnowm, subtracts from Nrm and Nim [#/kg/s]
+      NGRACS    ! Collection of rain by snow.
+                !    Adds to Ngraupelm, subtracts from Nrm and Nsnowm [#/kg/s]
 
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
@@ -392,37 +413,56 @@ module morrison_micro_driver_module
     rrainm_evap_r4 = 0.0
 
     ! Initialize Morrison budgets to zero
-    rrainm_PSMLT_r4 = 0.0
-    Nicem_EVPMS_r4 = 0.0 
-    rrainm_PRACS_r4 = 0.0
-    rgraupelm_EVPMG_r4 = 0.0
-    rrainm_PRACG_r4 = 0.0
-    rrainm_PGMLT_r4 = 0.0
-    rcm_MNUCCC_r4 = 0.0
-    rcm_PSACWS_r4 = 0.0
-    rcm_PSACWI_r4 = 0.0
-    rcm_QMULTS_r4 = 0.0
-    rcm_QMULTG_r4 = 0.0
-    rcm_PSACWG_r4 = 0.0 
-    rcm_PGSACW_r4 = 0.0
-    ricem_PRD_r4 = 0.0
-    ricem_PRCI_r4 = 0.0
-    ricem_PRAI_r4 = 0.0
-    rrainm_QMULTR_r4 = 0.0
-    rrainm_QMULTRG_r4 = 0.0
-    ricem_MNUCCD_r4 = 0.0
-    ricem_PRACI_r4 = 0.0
-    ricem_PRACIS_r4 = 0.0
-    ricem_EPRD_r4 = 0.0
-    rrainm_MNUCCR_r4 = 0.0
-    rrainm_PIACR_r4 = 0.0
-    rrainm_PIACRS_r4 = 0.0
-    rrainm_PGRACS_r4 = 0.0
-    Nicem_PRDS_r4 = 0.0
-    Nicem_EPRDS_r4 = 0.0
-    Nicem_PSACR_r4 = 0.0
-    rgraupelm_PRDG_r4 = 0.0
-    rgraupelm_EPRDG_r4 = 0.0
+    PSMLT = 0.0
+    EVPMS = 0.0 
+    PRACS = 0.0
+    EVPMG = 0.0
+    PRACG = 0.0
+    PGMLT = 0.0
+    MNUCCC = 0.0
+    PSACWS = 0.0
+    PSACWI = 0.0
+    QMULTS = 0.0
+    QMULTG = 0.0
+    PSACWG = 0.0 
+    PGSACW = 0.0
+    PRD = 0.0
+    PRCI = 0.0
+    PRAI = 0.0
+    QMULTR = 0.0
+    QMULTRG = 0.0
+    MNUCCD = 0.0
+    PRACI = 0.0
+    PRACIS = 0.0
+    EPRD = 0.0
+    MNUCCR = 0.0
+    PIACR = 0.0
+    PIACRS = 0.0
+    PGRACS = 0.0
+    PRDS = 0.0
+    EPRDS = 0.0
+    PSACR = 0.0
+    PRDG = 0.0
+    EPRDG = 0.0
+
+    ! Initialize these Morrison budgets to zero too
+    NGSTEN = 0.0
+    NRSTEN = 0.0
+    NISTEN = 0.0
+    NSSTEN = 0.0
+    NCSTEN = 0.0
+    NPRC1 = 0.0
+    NRAGG = 0.0
+    NPRACG = 0.0
+    NSUBR = 0.0
+    NSMLTR = 0.0
+    NGMLTR = 0.0
+    NPRACS = 0.0
+    NNUCCR = 0.0
+    NIACR = 0.0
+    NIACRS = 0.0
+    NGRACS = 0.0
+
 
     hydromet_mc_r4 = real( hydromet_mc )
     rcm_mc_r4 = real( rcm_mc )
@@ -448,19 +488,19 @@ module morrison_micro_driver_module
            hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
            hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
            rcm_sten, &
-           ng_sten, nr_sten, ni_sten, ns_sten, nc_sten, &
+           NGSTEN, NRSTEN, NISTEN, NSSTEN, NCSTEN, &
            cloud_frac_in, &
            rrainm_auto_r4, rrainm_accr_r4, &
-           rrainm_PSMLT_r4, Nicem_EVPMS_r4, rrainm_PRACS_r4, rgraupelm_EVPMG_r4, &
-           rrainm_PRACG_r4, rrainm_evap_r4,rrainm_PGMLT_r4,rcm_MNUCCC_r4, &
-           rcm_PSACWS_r4, rcm_PSACWI_r4, rcm_QMULTS_r4, rcm_QMULTG_r4, &
-           rcm_PSACWG_r4, rcm_PGSACW_r4, ricem_PRD_r4, ricem_PRCI_r4, &
-           ricem_PRAI_r4, rrainm_QMULTR_r4, rrainm_QMULTRG_r4, ricem_MNUCCD_r4, &
-           ricem_PRACI_r4, ricem_PRACIS_r4, ricem_EPRD_r4, rrainm_MNUCCR_r4, &
-           rrainm_PIACR_r4, rrainm_PIACRS_r4, rrainm_PGRACS_r4, Nicem_PRDS_r4, &
-           Nicem_EPRDS_r4, Nicem_PSACR_r4, rgraupelm_PRDG_r4, rgraupelm_EPRDG_r4, &
-           nprc1, nragg, npracg, nsubr, nsmltr, ngmltr, npracs, nnuccr, niacr, &
-           niacrs, ngracs )
+           PSMLT, EVPMS, PRACS, EVPMG, &
+           PRACG, rrainm_evap_r4,PGMLT,MNUCCC, &
+           PSACWS, PSACWI, QMULTS, QMULTG, &
+           PSACWG, PGSACW, PRD, PRCI, &
+           PRAI, QMULTR, QMULTRG, MNUCCD, &
+           PRACI, PRACIS, EPRD, MNUCCR, &
+           PIACR, PIACRS, PGRACS, PRDS, &
+           EPRDS, PSACR, PRDG, EPRDG, &
+           NPRC1, NRAGG, NPRACG, NSUBR, NSMLTR, NGMLTR, NPRACS, NNUCCR, NIACR, &
+           NIACRS, NGRACS )
            
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
@@ -468,42 +508,8 @@ module morrison_micro_driver_module
     rvm_mc = real( rvm_mc_r4, kind = core_rknd )
 
     rrainm_auto = real( rrainm_auto_r4, kind = core_rknd )
-    rrainm_accr = real( rrainm_accr_r4, kind = core_rknd ) 
+    rrainm_accr = real( rrainm_accr_r4, kind = core_rknd )
     rrainm_evap = real( rrainm_evap_r4, kind = core_rknd )
-
-    rrainm_PSMLT = real( rrainm_PSMLT_r4, kind = core_rknd )
-    Nicem_EVPMS = real( Nicem_EVPMS_r4, kind = core_rknd ) 
-    rrainm_PRACS = real( rrainm_PRACS_r4, kind = core_rknd )
-    rgraupelm_EVPMG = real( rgraupelm_EVPMG_r4, kind = core_rknd )
-    rrainm_PRACG = real( rrainm_PRACG_r4, kind = core_rknd )
-    rrainm_PGMLT = real( rrainm_PGMLT_r4, kind = core_rknd )
-    rcm_MNUCCC = real( rcm_MNUCCC_r4, kind = core_rknd )
-    rcm_PSACWS = real( rcm_PSACWS_r4, kind = core_rknd )
-    rcm_PSACWI = real( rcm_PSACWI_r4, kind = core_rknd )
-    rcm_QMULTS = real( rcm_QMULTS_r4, kind = core_rknd )
-    rcm_QMULTG = real( rcm_QMULTG_r4, kind = core_rknd )
-    rcm_PSACWG = real( rcm_PSACWG_r4, kind = core_rknd ) 
-    rcm_PGSACW = real( rcm_PGSACW_r4, kind = core_rknd )
-    ricem_PRD = real( ricem_PRD_r4, kind = core_rknd )
-    ricem_PRCI = real( ricem_PRCI_r4, kind = core_rknd )
-    ricem_PRAI = real( ricem_PRAI_r4, kind = core_rknd )
-    rrainm_QMULTR = real( rrainm_QMULTR_r4, kind = core_rknd )
-    rrainm_QMULTRG = real( rrainm_QMULTRG_r4, kind = core_rknd )
-    ricem_MNUCCD = real( ricem_MNUCCD_r4, kind = core_rknd )
-    ricem_PRACI = real( ricem_PRACI_r4, kind = core_rknd )
-    ricem_PRACIS = real( ricem_PRACIS_r4, kind = core_rknd )
-    ricem_EPRD = real( ricem_EPRD_r4, kind = core_rknd )
-    rrainm_MNUCCR = real( rrainm_MNUCCR_r4, kind = core_rknd )
-    rrainm_PIACR = real( rrainm_PIACR_r4, kind = core_rknd )
-    rrainm_PIACRS = real( rrainm_PIACRS_r4, kind = core_rknd )
-    rrainm_PGRACS = real( rrainm_PGRACS_r4, kind = core_rknd )
-    Nicem_PRDS = real( Nicem_PRDS_r4, kind = core_rknd )
-    Nicem_EPRDS = real( Nicem_EPRDS_r4, kind = core_rknd )
-    Nicem_PSACR = real( Nicem_PSACR_r4, kind = core_rknd )
-    rgraupelm_PRDG = real( rgraupelm_PRDG_r4, kind = core_rknd )
-    rgraupelm_EPRDG = real( rgraupelm_EPRDG_r4, kind = core_rknd )
-
-
     ! Update hydrometeor tendencies
     ! This done because the hydromet_mc arrays that are produced by
     ! M2005MICRO_GRAUPEL don't include the clipping term.
@@ -579,37 +585,56 @@ module morrison_micro_driver_module
       call stat_update_var( irrainm_accr, real( rrainm_accr, kind=core_rknd ), zt )
       call stat_update_var( irrainm_cond, real( rrainm_evap, kind=core_rknd ), zt )
 
-      call stat_update_var( irrainm_PSMLT, real( rrainm_PSMLT, kind=core_rknd ), zt )
-      call stat_update_var( iNicem_EVPMS, real( Nicem_EVPMS, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_PRACS, real( rrainm_PRACS, kind=core_rknd ), zt )
-      call stat_update_var( irgraupelm_EVPMG, real( rgraupelm_EVPMG, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_PRACG, real( rrainm_PRACG, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_PGMLT, real( rrainm_PGMLT, kind=core_rknd ), zt )
-      call stat_update_var( ircm_MNUCCC, real( rcm_MNUCCC, kind=core_rknd ), zt )
-      call stat_update_var( ircm_PSACWS, real( rcm_PSACWS, kind=core_rknd ), zt )
-      call stat_update_var( ircm_PSACWI, real( rcm_PSACWI, kind=core_rknd ), zt )
-      call stat_update_var( ircm_QMULTS, real( rcm_QMULTS, kind=core_rknd ), zt )
-      call stat_update_var( ircm_QMULTG, real( rcm_QMULTG, kind=core_rknd ), zt )
-      call stat_update_var( ircm_PSACWG, real( rcm_PSACWG, kind=core_rknd ), zt )
-      call stat_update_var( ircm_PGSACW, real( rcm_PGSACW, kind=core_rknd ), zt )
-      call stat_update_var( iricem_PRD, real( ricem_PRD, kind=core_rknd ), zt )
-      call stat_update_var( iricem_PRCI, real( ricem_PRCI, kind=core_rknd ), zt )
-      call stat_update_var( iricem_PRAI, real( ricem_PRAI, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_QMULTR, real( rrainm_QMULTR, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_QMULTRG, real( rrainm_QMULTRG, kind=core_rknd ), zt )
-      call stat_update_var( iricem_MNUCCD, real( ricem_MNUCCD, kind=core_rknd ), zt )
-      call stat_update_var( iricem_PRACI, real( ricem_PRACI, kind=core_rknd ), zt )
-      call stat_update_var( iricem_PRACIS, real( ricem_PRACIS, kind=core_rknd ), zt )
-      call stat_update_var( iricem_EPRD, real( ricem_EPRD, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_MNUCCR, real( rrainm_MNUCCR, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_PIACR, real( rrainm_PIACR, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_PIACRS, real( rrainm_PIACRS, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_PGRACS, real( rrainm_PGRACS, kind=core_rknd ), zt )
-      call stat_update_var( iNicem_PRDS, real( Nicem_PRDS, kind=core_rknd ), zt )
-      call stat_update_var( iNicem_EPRDS, real( Nicem_EPRDS, kind=core_rknd ), zt )
-      call stat_update_var( iNicem_PSACR, real( Nicem_PSACR, kind=core_rknd ), zt )
-      call stat_update_var( irgraupelm_PRDG, real( rgraupelm_PRDG, kind=core_rknd ), zt )
-      call stat_update_var( irgraupelm_EPRDG, real( rgraupelm_EPRDG, kind=core_rknd ), zt )
+      call stat_update_var( iPSMLT, real( PSMLT, kind=core_rknd ), zt )
+      call stat_update_var( iEVPMS, real( EVPMS, kind=core_rknd ), zt )
+      call stat_update_var( iPRACS, real( PRACS, kind=core_rknd ), zt )
+      call stat_update_var( iEVPMG, real( EVPMG, kind=core_rknd ), zt )
+      call stat_update_var( iPRACG, real( PRACG, kind=core_rknd ), zt )
+      call stat_update_var( iPGMLT, real( PGMLT, kind=core_rknd ), zt )
+      call stat_update_var( iMNUCCC, real( MNUCCC, kind=core_rknd ), zt )
+      call stat_update_var( iPSACWS, real( PSACWS, kind=core_rknd ), zt )
+      call stat_update_var( iPSACWI, real( PSACWI, kind=core_rknd ), zt )
+      call stat_update_var( iQMULTS, real( QMULTS, kind=core_rknd ), zt )
+      call stat_update_var( iQMULTG, real( QMULTG, kind=core_rknd ), zt )
+      call stat_update_var( iPSACWG, real( PSACWG, kind=core_rknd ), zt )
+      call stat_update_var( iPGSACW, real( PGSACW, kind=core_rknd ), zt )
+      call stat_update_var( iPRD, real( PRD, kind=core_rknd ), zt )
+      call stat_update_var( iPRCI, real( PRCI, kind=core_rknd ), zt )
+      call stat_update_var( iPRAI, real( PRAI, kind=core_rknd ), zt )
+      call stat_update_var( iQMULTR, real( QMULTR, kind=core_rknd ), zt )
+      call stat_update_var( iQMULTRG, real( QMULTRG, kind=core_rknd ), zt )
+      call stat_update_var( iMNUCCD, real( MNUCCD, kind=core_rknd ), zt )
+      call stat_update_var( iPRACI, real( PRACI, kind=core_rknd ), zt )
+      call stat_update_var( iPRACIS, real( PRACIS, kind=core_rknd ), zt )
+      call stat_update_var( iEPRD, real( EPRD, kind=core_rknd ), zt )
+      call stat_update_var( iMNUCCR, real( MNUCCR, kind=core_rknd ), zt )
+      call stat_update_var( iPIACR, real( PIACR, kind=core_rknd ), zt )
+      call stat_update_var( iPIACRS, real( PIACRS, kind=core_rknd ), zt )
+      call stat_update_var( iPGRACS, real( PGRACS, kind=core_rknd ), zt )
+      call stat_update_var( iPRDS, real( PRDS, kind=core_rknd ), zt )
+      call stat_update_var( iEPRDS, real( EPRDS, kind=core_rknd ), zt )
+      call stat_update_var( iPSACR, real( PSACR, kind=core_rknd ), zt )
+      call stat_update_var( iPRDG, real( PRDG, kind=core_rknd ), zt )
+      call stat_update_var( iEPRDG, real( EPRDG, kind=core_rknd ), zt )
+      
+      ! Update more Morrison budgets
+      call stat_update_var( iNGSTEN, real( NGSTEN, kind=core_rknd ), zt )
+      call stat_update_var( iNRSTEN, real( NRSTEN, kind=core_rknd ), zt )
+      call stat_update_var( iNISTEN, real( NISTEN, kind=core_rknd ), zt )
+      call stat_update_var( iNSSTEN, real( NSSTEN, kind=core_rknd ), zt )
+      call stat_update_var( iNCSTEN, real( NCSTEN, kind=core_rknd ), zt )
+      call stat_update_var( iNPRC1, real( NPRC1, kind=core_rknd ), zt )
+      call stat_update_var( iNRAGG, real( NRAGG, kind=core_rknd ), zt )
+      call stat_update_var( iNPRACG, real( NPRACG, kind=core_rknd ), zt )
+      call stat_update_var( iNSUBR, real( NSUBR, kind=core_rknd ), zt )
+      call stat_update_var( iNSMLTR, real( NSMLTR, kind=core_rknd ), zt )
+      call stat_update_var( iNGMLTR, real( NGMLTR, kind=core_rknd ), zt )
+      call stat_update_var( iNPRACS, real( NPRACS, kind=core_rknd ), zt )
+      call stat_update_var( iNNUCCR, real( NNUCCR, kind=core_rknd ), zt )
+      call stat_update_var( iNIACR, real( NIACR, kind=core_rknd ), zt )
+      call stat_update_var( iNIACRS, real( NIACRS, kind=core_rknd ), zt )
+      call stat_update_var( iNGRACS, real( NGRACS, kind=core_rknd ), zt )
+
 
       ! --- Number concentrations ---
       ! No budgets for sedimentation are output

@@ -708,37 +708,56 @@ module stats_variables
 
   ! Indices for Morrison budgets
   integer, public :: &
-    irrainm_PSMLT, &
-    iNicem_EVPMS, &
-    irrainm_PRACS, &
-    irgraupelm_EVPMG, &
-    irrainm_PRACG, &
-    irrainm_PGMLT, &
-    ircm_MNUCCC, &
-    ircm_PSACWS, &
-    ircm_PSACWI, &
-    ircm_QMULTS, &
-    ircm_QMULTG, &
-    ircm_PSACWG, &
-    ircm_PGSACW, &
-    iricem_PRD, &
-    iricem_PRCI, &
-    iricem_PRAI, &
-    irrainm_QMULTR, &
-    irrainm_QMULTRG, &
-    iricem_MNUCCD, &
-    iricem_PRACI, &
-    iricem_PRACIS, &
-    iricem_EPRD, &
-    irrainm_MNUCCR, &
-    irrainm_PIACR, &
-    irrainm_PIACRS, &
-    irrainm_PGRACS, &
-    iNicem_PRDS, &
-    iNicem_EPRDS, &
-    iNicem_PSACR, &
-    irgraupelm_PRDG, &
-    irgraupelm_EPRDG
+    iPSMLT, &
+    iEVPMS, &
+    iPRACS, &
+    iEVPMG, &
+    iPRACG, &
+    iPGMLT, &
+    iMNUCCC, &
+    iPSACWS, &
+    iPSACWI, &
+    iQMULTS, &
+    iQMULTG, &
+    iPSACWG, &
+    iPGSACW, &
+    iPRD, &
+    iPRCI, &
+    iPRAI, &
+    iQMULTR, &
+    iQMULTRG, &
+    iMNUCCD, &
+    iPRACI, &
+    iPRACIS, &
+    iEPRD, &
+    iMNUCCR, &
+    iPIACR, &
+    iPIACRS, &
+    iPGRACS, &
+    iPRDS, &
+    iEPRDS, &
+    iPSACR, &
+    iPRDG, &
+    iEPRDG
+
+  ! More indices for Morrison budgets!!
+  integer, public :: &
+    iNGSTEN, &
+    iNRSTEN, &
+    iNISTEN, &
+    iNSSTEN, &
+    iNCSTEN, &
+    iNPRC1,  &
+    iNRAGG,  &
+    iNPRACG, &
+    iNSUBR,  &
+    iNSMLTR, &
+    iNGMLTR, &
+    iNPRACS, &
+    iNNUCCR, &
+    iNIACR,  &
+    iNIACRS, &
+    iNGRACS
 
 !$omp threadprivate(iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncp2_zt, iLH_rcp2_zt, iLH_rtp2_zt, &
 !$omp               iLH_thlp2_zt, iLH_rrainp2_zt)

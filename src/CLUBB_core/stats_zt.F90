@@ -10,7 +10,7 @@ module stats_zt
   public :: stats_init_zt
 
 ! Constant parameters
-  integer, parameter, public :: nvarmax_zt = 400 ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zt = 450 ! Maximum variables allowed
 
   contains
 
@@ -454,37 +454,55 @@ module stats_zt
       iLscale_pert_2
 
     use stats_variables, only: &
-      irrainm_PSMLT, & ! Variable(s)
-      iNicem_EVPMS, &
-      irrainm_PRACS, &
-      irgraupelm_EVPMG, &
-      irrainm_PRACG, &
-      irrainm_PGMLT, &
-      ircm_MNUCCC, &
-      ircm_PSACWS, &
-      ircm_PSACWI, &
-      ircm_QMULTS, &
-      ircm_QMULTG, &
-      ircm_PSACWG, &
-      ircm_PGSACW, &
-      iricem_PRD, &
-      iricem_PRCI, &
-      iricem_PRAI, &
-      irrainm_QMULTR, &
-      irrainm_QMULTRG, &
-      iricem_MNUCCD, &
-      iricem_PRACI, &
-      iricem_PRACIS, &
-      iricem_EPRD, &
-      irrainm_MNUCCR, &
-      irrainm_PIACR, &
-      irrainm_PIACRS, &
-      irrainm_PGRACS, &
-      iNicem_PRDS, &
-      iNicem_EPRDS, &
-      iNicem_PSACR, &
-      irgraupelm_PRDG, &
-      irgraupelm_EPRDG
+      iPSMLT,  & ! Variable(s)
+      iEVPMS,  &
+      iPRACS,  &
+      iEVPMG,  &
+      iPRACG,  &
+      iPGMLT,  &
+      iMNUCCC, &
+      iPSACWS, &
+      iPSACWI, &
+      iQMULTS, &
+      iQMULTG, &
+      iPSACWG, &
+      iPGSACW, &
+      iPRD,    &
+      iPRCI,   &
+      iPRAI,   &
+      iQMULTR, &
+      iQMULTRG,&
+      iMNUCCD, &
+      iPRACI,  &
+      iPRACIS, &
+      iEPRD,   &
+      iMNUCCR, &
+      iPIACR,  &
+      iPIACRS, &
+      iPGRACS, &
+      iPRDS,   &
+      iEPRDS,  &
+      iPSACR,  &
+      iPRDG,   &
+      iEPRDG
+
+    use stats_variables, only: &
+      iNGSTEN, & ! Lots of variable(s)
+      iNRSTEN, &
+      iNISTEN, &
+      iNSSTEN, &
+      iNCSTEN, &
+      iNPRC1,  &
+      iNRAGG,  &
+      iNPRACG, &
+      iNSUBR,  &
+      iNSMLTR, &
+      iNGMLTR, &
+      iNPRACS, &
+      iNNUCCR, &
+      iNIACR,  &
+      iNIACRS, &
+      iNGRACS
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -907,6 +925,53 @@ module stats_zt
     iedsclrm   = 0
 
     iedsclrm_f = 0
+
+
+    ! Eric Raut
+    iPSMLT = 0
+    iEVPMS = 0
+    iPRACS = 0
+    iEVPMG = 0
+    iPRACG = 0
+    iPGMLT = 0
+    iMNUCCC = 0
+    iPSACWS = 0
+    iPSACWI = 0
+    iQMULTS = 0
+    iQMULTG = 0
+    iPSACWG = 0
+    iPGSACW = 0
+    iPRD = 0
+    iPRCI = 0
+    iPRAI = 0
+    iQMULTR = 0
+    iQMULTRG = 0
+    iMNUCCD = 0
+    iPRACI = 0
+    iPRACIS = 0
+    iEPRD = 0
+    iMNUCCR = 0
+    iPIACR = 0
+    iPIACRS = 0
+    iPGRACS = 0
+    iPRDS = 0
+    iEPRDS = 0
+    iPSACR = 0
+    iPRDG = 0
+    iEPRDG = 0
+
+    iNGSTEN = 0
+    iNRSTEN = 0
+    iNISTEN = 0
+    iNSSTEN = 0
+    iNCSTEN = 0
+    iNPRC1 = 0
+    iNRAGG = 0
+    iNPRACG = 0
+    iNSUBR = 0
+    iNSMLTR = 0
+    iNGMLTR = 0
+
 
 !     Assign pointers for statistics variables zt
 
@@ -2240,222 +2305,334 @@ module stats_zt
              "Ncm budget: Ncm clipping term [(num/kg)/s]", "(num/kg)/s", zt )
         k = k + 1
 
-      case ('rrainm_PSMLT')
-        irrainm_PSMLT = k
+      case ('PSMLT')
+        iPSMLT = k
 
-        call stat_assign( irrainm_PSMLT, "rrainm_PSMLT", & 
-             "Change Q melting snow to rain [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPSMLT, "PSMLT", & 
+             "Freezing of rain to form snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('Nicem_EVPMS')
-        iNicem_EVPMS = k
+      case ('EVPMS')
+        iEVPMS = k
 
-        call stat_assign( iNicem_EVPMS, "Nicem_EVPMS", & 
-             "Change Q melting snow evaporating [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iEVPMS, "EVPMS", & 
+             "Depositional growth of snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rrainm_PRACS')
-        irrainm_PRACS = k
+      case ('PRACS')
+        iPRACS = k
 
-        call stat_assign( irrainm_PRACS, "rrainm_PRACS", & 
-             "Change Q rain-snow collection [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPRACS, "PRACS", & 
+             "Collection of rain by snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rgraupelm_EVPMG')
-        irgraupelm_EVPMG = k
+      case ('EVPMG')
+        iEVPMG = k
 
-        call stat_assign( irgraupelm_EVPMG, "rgraupelm_EVPMG", & 
-             "Change Q metling of graupel and evaporation [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iEVPMG, "EVPMG", & 
+             "Depositional growth of graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rrainm_PRACG')
-        irrainm_PRACG = k
+      case ('PRACG')
+        iPRACG = k
 
-        call stat_assign( irrainm_PRACG, "rrainm_PRACG", & 
-             "Change in Q collection rain by graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPRACG, "PRACG", & 
+             "Negative of collection of rain by graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rrainm_PGMLT')
-        irrainm_PGMLT = k
+      case ('PGMLT')
+        iPGMLT = k
 
-        call stat_assign( irrainm_PGMLT, "rrainm_PGMLT", & 
-             "Change Q melting of graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPGMLT, "PGMLT", & 
+             "Negative of melting of graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rcm_MNUCCC')
-        ircm_MNUCCC = k
+      case ('MNUCCC')
+        iMNUCCC = k
 
-        call stat_assign( ircm_MNUCCC, "rcm_MNUCCC", & 
-             "Change Q due to contact freeze droplets [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iMNUCCC, "MNUCCC", & 
+             "Contact freezing of cloud droplets [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rcm_PSACWS')
-        ircm_PSACWS = k
+      case ('PSACWS')
+        iPSACWS = k
 
-        call stat_assign( ircm_PSACWS, "rcm_PSACWS", & 
-             "Change Q droplet accreation by snow [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPSACWS, "PSACWS", & 
+             "Collection of cloud water by snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rcm_PSACWI')
-        ircm_PSACWI = k
+      case ('PSACWI')
+        iPSACWI = k
 
-        call stat_assign( ircm_PSACWI, "rcm_PSACWI", & 
-             "Change Q droplet accreation by cloud ice [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPSACWI, "PSACWI", & 
+             "Collection of cloud water by cloud ice [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rcm_QMULTS')
-        ircm_QMULTS = k
+      case ('QMULTS')
+        iQMULTS = k
 
-        call stat_assign( ircm_QMULTS, "rcm_QMULTS", & 
-             "Change Q due to ice mult droplets/snow [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iQMULTS, "QMULTS", & 
+             "Splintering from cloud droplets accreted onto snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rcm_QMULTG')
-        ircm_QMULTG = k
+      case ('QMULTG')
+        iQMULTG = k
 
-        call stat_assign( ircm_QMULTG, "rcm_QMULTG", & 
-             "Change Q due to ice mult droplets/graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iQMULTG, "QMULTG", & 
+             "Splintering from droplets accreted onto graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rcm_PSACWG')
-        ircm_PSACWG = k
+      case ('PSACWG')
+        iPSACWG = k
 
-        call stat_assign( ircm_PSACWG, "rcm_PSACWG", & 
-             "Change in Q collection droplets by graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPSACWG, "PSACWG", & 
+             "Collection of cloud water by graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rcm_PGSACW')
-        ircm_PGSACW = k
+      case ('PGSACW')
+        iPGSACW = k
 
-        call stat_assign( ircm_PGSACW, "rcm_PGSACW", & 
-             "Conversion Q to graupel due to collection droplets by snow [(kg/kg)/s]", &
+        call stat_assign( iPGSACW, "PGSACW", & 
+             "Reclassification of rimed snow as graupel [(kg/kg)/s]", &
              "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('ricem_PRD')
-        iricem_PRD = k
+      case ('PRD')
+        iPRD = k
 
-        call stat_assign( iricem_PRD, "ricem_PRD", & 
-             "DEP cloud ice [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPRD, "PRD", & 
+             "Depositional growth of cloud ice [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('ricem_PRCI')
-        iricem_PRCI = k
+      case ('PRCI')
+        iPRCI = k
 
-        call stat_assign( iricem_PRCI, "ricem_PRCI", & 
-             "Change Q autoconversion cloud ice by snow [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPRCI, "PRCI", & 
+             "Autoconversion of cloud ice to snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('ricem_PRAI')
-        iricem_PRAI = k
+      case ('PRAI')
+        iPRAI = k
 
-        call stat_assign( iricem_PRAI, "ricem_PRAI", & 
-             "Change Q accretion cloud ice [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPRAI, "PRAI", & 
+             "Collection of cloud ice by snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rrainm_QMULTR')
-        irrainm_QMULTR = k
+      case ('QMULTR')
+        iQMULTR = k
 
-        call stat_assign( irrainm_QMULTR, "rrainm_QMULTR", & 
-             "Change Q due to ice rain/snow [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iQMULTR, "QMULTR", & 
+             "Splintering from rain droplets accreted onto snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rrainm_QMULTRG')
-        irrainm_QMULTRG = k
+      case ('QMULTRG')
+        iQMULTRG = k
 
-        call stat_assign( irrainm_QMULTRG, "rrainm_QMULTRG", & 
-             "Change Q due to ice rain/graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iQMULTRG, "QMULTRG", & 
+             "Splintering from rain droplets accreted onto graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('ricem_MNUCCD')
-        iricem_MNUCCD = k
+      case ('MNUCCD')
+        iMNUCCD = k
 
-        call stat_assign( iricem_MNUCCD, "ricem_MNUCCD", & 
-             "Change Q freezing aerosol (prim ice nucleation) [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iMNUCCD, "MNUCCD", & 
+             "Freezing of aerosol [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('ricem_PRACI')
-        iricem_PRACI = k
+      case ('PRACI')
+        iPRACI = k
 
-        call stat_assign( iricem_PRACI, "ricem_PRACI", & 
-             "Change QI ice-rain collection [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPRACI, "PRACI", & 
+             "Collection of cloud ice by rain [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('ricem_PRACIS')
-        iricem_PRACIS = k
+      case ('PRACIS')
+        iPRACIS = k
 
-        call stat_assign( iricem_PRACIS, "ricem_PRACIS", & 
-             "Change QI ice-rain collision, added to snow [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPRACIS, "PRACIS", & 
+             "Collection of cloud ice by rain [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('ricem_EPRD')
-        iricem_EPRD = k
+      case ('EPRD')
+        iEPRD = k
 
-        call stat_assign( iricem_EPRD, "ricem_EPRD", & 
-             "Sublimation cloud ice [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iEPRD, "EPRD", & 
+             "Negative of sublimation of cloud ice [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rrainm_MNUCCR')
-        irrainm_MNUCCR = k
+      case ('MNUCCR')
+        iMNUCCR = k
 
-        call stat_assign( irrainm_MNUCCR, "rrainm_MNUCCR", & 
-             "Change Q due to contact freeze rain [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iMNUCCR, "MNUCCR", & 
+             "Contact freezing of rain droplets [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rrainm_PIACR')
-        irrainm_PIACR = k
+      case ('PIACR')
+        iPIACR = k
 
-        call stat_assign( irrainm_PIACR, "rrainm_PIACR", & 
-             "Change QR ice-rain collection [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPIACR, "PIACR", & 
+             "Collection of cloud ice by rain [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rrainm_PIACRS')
-        irrainm_PIACRS = k
+      case ('PIACRS')
+        iPIACRS = k
 
-        call stat_assign( irrainm_PIACRS, "rrainm_PIACRS", & 
-             "Change QR ice-rain collision, added to snow [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPIACRS, "PIACRS", & 
+             "Collection of cloud ice by rain [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rrainm_PGRACS')
-        irrainm_PGRACS = k
+      case ('PGRACS')
+        iPGRACS = k
 
-        call stat_assign( irrainm_PGRACS, "rrainm_PGRACS", & 
-             "Conversion Q to graupel due to collection rain by snow [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPGRACS, "PGRACS", & 
+             "Collection of rain by snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('Nicem_PRDS')
-        iNicem_PRDS = k
+      case ('PRDS')
+        iPRDS = k
 
-        call stat_assign( iNicem_PRDS, "Nicem_PRDS", & 
-             "Dep of snow [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPRDS, "PRDS", & 
+             "Depositional growth of snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('Nicem_EPRDS')
-        iNicem_EPRDS = k
+      case ('EPRDS')
+        iEPRDS = k
 
-        call stat_assign( iNicem_EPRDS, "Nicem_EPRDS", & 
-             "Sublimation of snow [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iEPRDS, "EPRDS", & 
+             "Negative of sublimation of snow [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('Nicem_PSACR')
-        iNicem_PSACR = k
+      case ('PSACR')
+        iPSACR = k
 
-        call stat_assign( iNicem_PSACR, "Nicem_PSACR", & 
-             "Conversion due to coll of snow by rain [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPSACR, "PSACR", & 
+             "Collection of snow by rain [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rgraupelm_PRDG')
-        irgraupelm_PRDG = k
+      case ('PRDG')
+        iPRDG = k
 
-        call stat_assign( irgraupelm_PRDG, "rgraupelm_PRDG", & 
-             "Dep of graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iPRDG, "PRDG", &
+             "Depositional growth of graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
         k = k + 1
 
-      case ('rgraupelm_EPRDG')
-        irgraupelm_EPRDG = k
+      case ('EPRDG')
+        iEPRDG = k
 
-        call stat_assign( irgraupelm_EPRDG, "rgraupelm_EPRDG", & 
-             "Sublimation of graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
+        call stat_assign( iEPRDG, "EPRDG", &
+             "Negative of sublimation of graupel [(kg/kg)/s]", "(kg/kg)/s", zt )
+        k = k + 1
+
+      case ('NGSTEN')
+        iNGSTEN = k
+
+        call stat_assign( iNGSTEN, "NGSTEN", & 
+             "Graupel sedimentation tendency [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+
+      case ('NRSTEN')
+        iNRSTEN = k
+
+        call stat_assign( iNRSTEN, "NRSTEN", &                    
+             "Rain sedimentation tendency [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+
+      case ('NISTEN')
+        iNISTEN = k
+
+        call stat_assign( iNISTEN, "NISTEN", &
+             "Cloud ice sedimentation tendency [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+
+      case ('NSSTEN')
+        iNSSTEN = k
+
+        call stat_assign( iNSSTEN, "NSSTEN", &
+             "Snow sedimentation tendency [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+
+      case ('NCSTEN')
+        iNCSTEN = k
+
+        call stat_assign( iNCSTEN, "NCSTEN", &
+             "Cloud water sedimentation tendency [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NPRC1')
+        iNPRC1 = k
+
+        call stat_assign( iNPRC1, "NPRC1", &
+             "Change in Nrm due to autoconversion of droplets [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NRAGG')
+        iNRAGG = k
+
+        call stat_assign( iNRAGG, "NRAGG", &
+             "Change in Nrm due to self-collection of raindrops [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NPRACG')
+        iNPRACG = k
+
+        call stat_assign( iNPRACG, "NPRACG", &
+             "Collection of rainwater by graupel [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NSUBR')
+        iNSUBR = k
+
+        call stat_assign( iNSUBR, "NSUBR", &
+             "Loss of Nrm by evaporation [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NSMLTR')
+        iNSMLTR = k
+
+        call stat_assign( iNSMLTR, "NSMLTR", &
+             "Melting of snow to form rain [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NGMLTR')
+        iNGMLTR = k
+
+        call stat_assign( iNGMLTR, "NGMLTR", &
+             "Melting of graupel to form rain [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NPRACS')
+        iNPRACS = k
+
+        call stat_assign( iNPRACS, "NPRACS", &
+             "Collection of rainwater by snow [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NNUCCR')
+        iNNUCCR = k
+
+        call stat_assign( iNNUCCR, "NNUCCR", &
+             "Contact freezing of rain [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NIACR')
+        iNIACR = k
+
+        call stat_assign( iNIACR, "NIACR", &
+             "Collection of cloud ice by rain [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NIACRS')
+        iNIACRS = k
+
+        call stat_assign( iNIACRS, "NIACRS", &
+             "Collection of cloud ice by rain [(#/kg/s)]", "(#/kg/s)", zt )
+        k = k + 1
+      
+      case ('NGRACS')
+        iNGRACS = k
+
+        call stat_assign( iNGRACS, "NGRACS", &
+             "Collection of rain by snow [(#/kg/s)]", "(#/kg/s)", zt )
         k = k + 1
 
       case ('w_KK_evap_covar_zt')

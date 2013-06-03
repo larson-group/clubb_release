@@ -86,12 +86,15 @@ vars_zt =
 'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt', 'rrp2_zt', 'Nrp2_zt',
 'sclr1m', 'sclr1m_f', 'sclr2m', 'sclr2m_f',
 'edsclr1m', 'edsclr2m', 'edsclr1m_f', 'edsclr2m_f',
-'rrainm_PSMLT', 'Nicem_EVPMS', 'rrainm_PRACS', 'rgraupelm_EVPMG', 'rrainm_PRACG',
-'rrainm_PGMLT', 'rcm_MNUCCC', 'rcm_PSACWS', 'rcm_PSACWI', 'rcm_QMULTS',
-'rcm_QMULTG', 'rcm_PSACWG', 'rcm_PGSACW', 'ricem_PRD', 'ricem_PRCI', 
-'ricem_PRAI', 'rrainm_QMULTR', 'rrainm_QMULTRG', 'ricem_MNUCCD', 'ricem_PRACI', 
-'ricem_PRACIS', 'ricem_EPRD', 'rrainm_MNUCCR', 'rrainm_PIACR', 'rrainm_PIACRS',
-'rrainm_PGRACS', 'Nicem_PRDS', 'Nicem_EPRDS', 'Nicem_PSACR', 'rgraupelm_PRDG', 'rgraupelm_EPRDG', 
+'PSMLT', 'EVPMS', 'PRACS', 'EVPMG', 'PRACG',
+'PGMLT', 'MNUCCC', 'PSACWS', 'PSACWI', 'QMULTS',
+'QMULTG', 'PSACWG', 'PGSACW', 'PRD', 'PRCI', 
+'PRAI', 'QMULTR', 'QMULTRG', 'MNUCCD', 'PRACI', 
+'PRACIS', 'EPRD', 'MNUCCR', 'PIACR', 'PIACRS',
+'PGRACS', 'PRDS', 'EPRDS', 'PSACR', 'PRDG', 'EPRDG',
+'NGSTEN', 'NRSTEN', 'NISTEN', 'NSSTEN', 'NCSTEN', 'NPRC1', 'NRAGG',
+'NPRACG', 'NSUBR', 'NSMLTR', 'NGMLTR', 'NPRACS', 'NNUCCR', 'NIACR',
+'NIACRS', 'NGRACS'
 ''
 
 vars_LH_zt =
