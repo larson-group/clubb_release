@@ -103,7 +103,8 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QILSADV', 'expression' => 'QILSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QIMPHY', 'expression' => '(QIMPHY-QISED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QISED', 'expression' => 'QISED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QI\_RES', 'expression' => '(-1.*(QIADV+QIDIFF+QILSADV+QIMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QISTO', 'expression' => 'QISTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QI\_RES', 'expression' => '(QISTO - 1.*(QIADV+QIDIFF+QILSADV+QIMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
 
     ]}, 
 
@@ -132,7 +133,8 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QRLSADV', 'expression' => 'QRLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QRMPHY', 'expression' => '(QRMPHY-QRSED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QRSED', 'expression' => 'QRSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QR\_RES', 'expression' => '(-1.*(QRADV+QRDIFF+QRLSADV+QRMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QRSTO', 'expression' => 'QRSTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QR\_RES', 'expression' => '(QRSTO - 1.*(QRADV+QRDIFF+QRLSADV+QRMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     ]},
 
        {'plotTitle' => 'QR3D Morrison Budget Terms', 'axisLabel' => 'QR3D [(kg/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -161,7 +163,8 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QSLSADV', 'expression' => 'QSLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QSMPHY', 'expression' => '(QSMPHY-QSSED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QSSED', 'expression' => 'QSSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QS\_RES', 'expression' => '(-1.*(QSADV+QSDIFF+QSLSADV+QSMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QSSTO', 'expression' => 'QSSTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QS\_RES', 'expression' => '(QSSTO - 1.*(QSADV+QSDIFF+QSLSADV+QSMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
 
     ]},
 
@@ -187,7 +190,8 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QGLSADV', 'expression' => 'QGLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QGMPHY', 'expression' => '(QGMPHY-QGSED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QGSED', 'expression' => 'QGSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QG\_RES', 'expression' => '(-1.*(QGADV+QGDIFF+QGLSADV+QGMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QGSTO', 'expression' => 'QGSTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QG\_RES', 'expression' => '(QGSTO - 1.*(QGADV+QGDIFF+QGLSADV+QGMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     
     ]}, 
 
