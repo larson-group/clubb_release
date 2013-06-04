@@ -331,19 +331,22 @@ module KK_microphys_module
   end subroutine KK_local_micro_driver
 
   !=============================================================================
-  subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, thlm, wm_zt, &
-                                       p_in_Pa, exner, rho, cloud_frac, &
-                                       pdf_params, w_std_dev, rcm, Ncnm, &
-                                       s_mellor, Nc0_in_cloud, &
-                                       hydromet, wphydrometp, &
-                                       hydromet_mc, hydromet_vel, &
-                                       rcm_mc, rvm_mc, thlm_mc, &
-                                       hydromet_vel_covar_zt_impc, &
-                                       hydromet_vel_covar_zt_expc, &
-                                       wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-                                       rtp2_mc_tndcy, thlp2_mc_tndcy, &
-                                       rtpthlp_mc_tndcy )
-
+  subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, thlm, wm_zt,       & ! Intent(in)
+                                       p_in_Pa, exner, rho, cloud_frac,         & ! Intent(in)
+                                       pdf_params, w_std_dev, rcm, Ncnm,        & ! Intent(in)
+                                       s_mellor, Nc0_in_cloud,                  & ! Intent(in)
+                                       hydromet, wphydrometp,                   & ! Intent(in)
+                                       rr1, rr2, Nr1, Nr2,                      & ! Intent(in)
+                                       precip_frac, precip_frac_1, precip_frac_2,  & ! Intent(in)
+                                       d_variables, corr_array_1, corr_array_2, & ! Intent(in)
+                                       hydromet_pdf_params,                     & ! Intent(in)
+                                       hydromet_mc, hydromet_vel,               & ! Intent(inout)
+                                       rcm_mc, rvm_mc, thlm_mc,                 & ! Intent(out)
+                                       hydromet_vel_covar_zt_impc,              & ! Intent(out)
+                                       hydromet_vel_covar_zt_expc,              & ! Intent(out)
+                                       wprtp_mc_tndcy, wpthlp_mc_tndcy,         & ! Intent(out)
+                                       rtp2_mc_tndcy, thlp2_mc_tndcy,           & ! Intent(out)
+                                       rtpthlp_mc_tndcy )                         ! Intent(out)
     ! Description:
 
     ! References:
@@ -362,7 +365,8 @@ module KK_microphys_module
     use setup_clubb_pdf_params, only: &
         setup_pdf_parameters, & ! Procedure(s)
         unpack_pdf_params, &
-        normalize_pdf_params
+        normalize_pdf_params, &
+        pdf_param_hm_stats
 
     use KK_upscaled_means, only: &
         KK_upscaled_means_driver ! Procedure(s)
@@ -412,7 +416,8 @@ module KK_microphys_module
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
-      nz          ! Number of model vertical grid levels
+      nz,         & ! Number of model vertical grid levels
+      d_variables   ! Number of variables in the correlation arrays
 
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
@@ -431,16 +436,34 @@ module KK_microphys_module
     type(pdf_parameter), dimension(nz), target, intent(in) :: &
       pdf_params    ! PDF parameters                         [units vary]
 
+    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+      hydromet_pdf_params
+
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       w_std_dev    ! Standard deviation of w (for LH interface)          [m/s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
 
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(in) :: &
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
+
+    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(in) :: &
+      corr_array_1, & ! Correlation array for the 1st PDF component   [-]
+      corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
     ! Input / Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
@@ -493,17 +516,6 @@ module KK_microphys_module
 
      real( kind = core_rknd ), dimension(nz) :: &
       mixt_frac   ! Mixture fraction                                [-]
-
-    real( kind = core_rknd ), dimension(nz) :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
-
-    real( kind = core_rknd ), dimension(nz) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
     real( kind = core_rknd ) :: &
       mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
@@ -614,16 +626,6 @@ module KK_microphys_module
       rrainm_evap_net, & ! Net evaporation rate of <r_r>            [(kg/kg)/s]
       Nrm_evap_net       ! Net evaporation rate of <N_r>            [(num/kg)/s]
 
-    integer, parameter :: &
-      d_variables = 10    ! Number of variables in the correlation array.
-
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz) :: &
-      corr_array_1, & ! Correlation array for the 1st PDF component   [-]
-      corr_array_2    ! Correlation array for the 2nd PDF component   [-]
-
-    type(hydromet_pdf_parameter), dimension(:), allocatable :: &
-      hydromet_pdf_params
-
     logical :: &
       l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
       l_evap_adj_enabled    ! Flag to enable rrainm/Nrm evaporation adjustment
@@ -633,8 +635,6 @@ module KK_microphys_module
       k                  ! Loop index
 
     ! ---- Begin Code ----
-
-    allocate(hydromet_pdf_params(nz))
 
     !!! Initialize microphysics fields.
     call KK_micro_init( nz, hydromet, hydromet_mc, hydromet_vel, &
@@ -655,16 +655,6 @@ module KK_microphys_module
 
     ! Setup mixture fraction.
     mixt_frac   = pdf_params%mixt_frac    
-
-    !!! Setup the PDF parameters.
-    call setup_pdf_parameters( nz, rrainm, Nrm, Ncnm, rho, rcm, &
-                               cloud_frac, w_std_dev, wphydrometp, &
-                               pdf_params, l_stats_samp, d_variables, &
-                               rr1, rr2, Nr1, Nr2, precip_frac, &
-                               precip_frac_1, precip_frac_2, &
-                               corr_array_1, corr_array_2, &
-                               hydromet_pdf_params )
-
 
     !!! Microphysics tendency loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
@@ -706,7 +696,6 @@ module KK_microphys_module
                               !corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
                               !corr_rrNr_1_n, corr_rrNr_2_n )
        
-
        !!! Calculate the mean, standard deviations, and correlations involving
        !!! ln r_r, ln N_r, and ln N_cn for each PDF component.
        call normalize_pdf_params( rr1(k), rr2(k), Nr1(k), Nr2(k), Ncnm(k), &
@@ -731,7 +720,6 @@ module KK_microphys_module
                                   corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
                                   corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
                                   corr_rrNr_1_n, corr_rrNr_2_n )
-
 
        !!! Calculate the values of the upscaled KK microphysics tendencies.
        call KK_upscaled_means_driver( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &

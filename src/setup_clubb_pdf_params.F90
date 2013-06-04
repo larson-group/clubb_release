@@ -9,13 +9,14 @@ module setup_clubb_pdf_params
   public :: setup_pdf_parameters, &
             unpack_pdf_params,    &
             comp_mean_stdev_corr, &
-            normalize_pdf_params
+            normalize_pdf_params, &
+            pdf_param_hm_stats
 
   private :: component_means_rain, &
              precip_fraction,      &
             !comp_mean_stdev_corr, &
             !normalize_pdf_params, &
-             pdf_param_hm_stats,   &
+            !pdf_param_hm_stats,   &
              pack_pdf_params
 
   contains
@@ -419,7 +420,6 @@ module setup_clubb_pdf_params
                                   corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
                                   corr_rrNr_1_n, corr_rrNr_2_n )
 
-
        !!! Statistical output for hydrometeor PDF parameters.
        call pdf_param_hm_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
                                 mu_Ncn_1, mu_Ncn_2, mu_rr_1_n, mu_rr_2_n, &
@@ -442,7 +442,6 @@ module setup_clubb_pdf_params
                                 corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
                                 corr_tNcn_1_n, corr_tNcn_2_n, corr_rrNr_1_n, &
                                 corr_rrNr_2_n, k, l_stats_samp )
-
 
        !!! Pack the PDF parameters
        call pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
@@ -3480,7 +3479,7 @@ module setup_clubb_pdf_params
   end subroutine pdf_param_hm_stats
 
   !=============================================================================
-  subroutine pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
+  subroutine pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, & ! In
                               mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
                               mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
                              !mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
@@ -3507,7 +3506,7 @@ module setup_clubb_pdf_params
                              !corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
                              !corr_rrNr_1_n, corr_rrNr_2_n, &
                               d_variables, &
-                              corr_array_1, corr_array_2, &
+                              corr_array_1, corr_array_2, & ! Out
                               hydromet_pdf_params )
 
     ! Description:

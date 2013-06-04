@@ -929,17 +929,21 @@ module microphys_driver
 
 !-------------------------------------------------------------------------------
   subroutine advance_microphys & 
-             ( iter, runtype, dt, time_current,  & 
-               thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & 
-               wm_zt, wm_zm, Kh_zm, pdf_params, & 
-               wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &
-               LH_sample_point_weights, &
-               X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &
-               Ncnm, hydromet, wphydrometp,  & 
-               rvm_mc, rcm_mc, thlm_mc, &
-               wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
-               err_code )
+             ( iter, runtype, dt, time_current,                         & ! Intent(in)
+               thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
+               wm_zt, wm_zm, Kh_zm, pdf_params,                         & ! Intent(in)
+               wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt,           & ! Intent(in)
+               LH_sample_point_weights,                                 & ! Intent(in)
+               X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl,      & ! Intent(in)
+               rr1, rr2, Nr1, Nr2,                                      & ! Intent(in)
+               precip_frac, precip_frac_1, precip_frac_2,               & ! Intent(in)
+               n_variables, corr_array_1, corr_array_2,                 & ! Intent(in)
+               hydromet_pdf_params,                                     & ! Intent(in)
+               Ncnm, hydromet, wphydrometp,                             & ! Intent(inout)
+               rvm_mc, rcm_mc, thlm_mc,                                 & ! Intent(inout)
+               wprtp_mc_tndcy, wpthlp_mc_tndcy,                         & ! Intent(inout)
+               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,         & ! Intent(inout)
+               err_code )                                                 ! Intent(out)
 
     ! Description:
     ! Compute pristine ice, snow, graupel, & rain hydrometeor fields.
@@ -1033,6 +1037,9 @@ module microphys_driver
 
     use pdf_parameter_module, only:  &
         pdf_parameter  ! Type
+
+    use hydromet_pdf_parameter_module, only:  &
+        hydromet_pdf_parameter  ! Type
 
     use array_index, only:  & 
         iirrainm, iirsnowm, iiricem, iirgraupelm, & ! Variable(s)
@@ -1161,7 +1168,9 @@ module microphys_driver
 
     ! Input Variables
 
-    integer, intent(in) :: iter ! Model iteration number
+    integer, intent(in) :: &
+    iter,       & ! Model iteration number
+    n_variables   ! Number of variables in the correlation arrays
 
     character(len=*), intent(in) :: & 
       runtype ! Name of the run, for case specific effects.
@@ -1185,8 +1194,22 @@ module microphys_driver
       wm_zm,      & ! w wind component on momentum levels       [m/s]
       Kh_zm         ! Kh Eddy diffusivity on momentum grid      [m^2/s]
 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+
     type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
       pdf_params     ! PDF parameters
+
+    type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
+      hydromet_pdf_params     ! PDF parameters
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       wp2_zt,          & ! w'^2 on the thermo. grid                 [m^2/s^2]
@@ -1205,6 +1228,12 @@ module microphys_driver
 
     real( kind = core_rknd ), dimension(LH_microphys_calls), intent(in) :: &
       LH_sample_point_weights ! Weights for cloud weighted sampling
+
+    real( kind = core_rknd ), dimension(n_variables, n_variables, gr%nz), intent(in) :: &
+      corr_array_1, & ! Correlation matrix for the first pdf component    [-]
+      corr_array_2    ! Correlation matrix for the second pdf component   [-]
+
+    ! Input/Output Variables
 
     ! Note:
     ! For COAMPS Ncnm is initialized and Nim & Ncm are computed within
@@ -1228,9 +1257,12 @@ module microphys_driver
       thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
       rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
+    ! Output Variables
+
     integer, intent(out) :: err_code ! Exit code returned from subroutine
 
     ! Local Variables
+
     real( kind = core_rknd ), dimension(3,gr%nz) :: & 
       lhs    ! Left hand side of tridiagonal matrix
 
@@ -1672,18 +1704,22 @@ module microphys_driver
 
           Ncnm = Ncnm_initial / rho
 
-          call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, thlm, wm_zt, &
-                                         p_in_Pa, exner, rho, cloud_frac, &
-                                         pdf_params, wtmp, rcm, Ncnm, &
-                                         s_mellor, Nc_in_cloud, &
-                                         hydromet, wphydrometp, &
-                                         hydromet_mc, hydromet_vel_zt, &
-                                         rcm_mc, rvm_mc, thlm_mc, &
-                                         hydromet_vel_covar_zt_impc, &
-                                         hydromet_vel_covar_zt_expc, &
-                                         wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-                                         rtp2_mc_tndcy, thlp2_mc_tndcy, &
-                                         rtpthlp_mc_tndcy )
+          call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, thlm, wm_zt,    & ! Intent(in)
+                                         p_in_Pa, exner, rho, cloud_frac,         & ! Intent(in)
+                                         pdf_params, wtmp, rcm, Ncnm,             & ! Intent(in)
+                                         s_mellor, Nc_in_cloud,                  & ! Intent(in)
+                                         hydromet, wphydrometp,                   & ! Intent(in)
+                                         rr1, rr2, Nr1, Nr2,                      & ! Intent(in)
+                                         precip_frac, precip_frac_1, precip_frac_2, & ! Intent(in)
+                                         n_variables, corr_array_1, corr_array_2, & ! Intent(in)
+                                         hydromet_pdf_params,                     & ! Intent(in)
+                                         hydromet_mc, hydromet_vel_zt,            & ! Intent(inout)
+                                         rcm_mc, rvm_mc, thlm_mc,                 & ! Intent(out)
+                                         hydromet_vel_covar_zt_impc,              & ! Intent(out)
+                                         hydromet_vel_covar_zt_expc,              & ! Intent(out)
+                                         wprtp_mc_tndcy, wpthlp_mc_tndcy,         & ! Intent(out)
+                                         rtp2_mc_tndcy, thlp2_mc_tndcy,           & ! Intent(out)
+                                         rtpthlp_mc_tndcy )                         ! Intent(out)
 
         endif
 

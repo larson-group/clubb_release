@@ -176,7 +176,8 @@ module clubb_driver
     use parameters_microphys, only: &
       LH_microphys_type, & ! Variable(s)
       LH_microphys_disabled, &
-      LH_seed
+      LH_seed, &
+      Ncnm_initial
 
     use latin_hypercube_driver_module, only: &
       latin_hypercube_2D_output, & ! Procedure(s)
@@ -1220,21 +1221,8 @@ module clubb_driver
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
-      if ( l_use_modified_corr ) then
-
-         rrainm = hydromet(:,iirrainm)
-         Nrm    = hydromet(:,iiNrm)
-
-         !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
-                                    cloud_frac, sqrt(wp2_zt), wphydrometp, &
-                                    pdf_params, .false., d_variables, &
-                                    rr1, rr2, Nr1, Nr2, precip_frac, & ! Out
-                                    precip_frac_1, precip_frac_2, &
-                                    corr_array_1, corr_array_2, &
-                                    hydromet_pdf_params )
-
-      endif
+      rrainm = hydromet(:,iirrainm)
+      Nrm    = hydromet(:,iiNrm)
 
       ! Determine correlations
       if ( l_diagnose_correlations ) then
@@ -1246,7 +1234,7 @@ module clubb_driver
         corr_array_2 = corr_array_1
 
       else ! Prescribed correlations
-
+      
         do k = 1, gr%nz
           if ( rcm(k) > rc_tol ) then
             corr_array_1(:,:,k) = corr_array_cloud
@@ -1257,6 +1245,16 @@ module clubb_driver
           endif
         end do
 
+        Ncnm = Ncnm_initial / rho
+
+        !!! Setup the PDF parameters.
+        call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
+                                   cloud_frac, sqrt(wp2_zt), wphydrometp, &
+                                   pdf_params, l_stats_samp, d_variables, &
+                                   rr1, rr2, Nr1, Nr2, precip_frac, & ! Out
+                                   precip_frac_1, precip_frac_2, &
+                                   corr_array_1, corr_array_2, &
+                                   hydromet_pdf_params )
       end if
 
       call corr_stat_output( d_variables, gr%nz, corr_array_1 )
@@ -1267,6 +1265,10 @@ module clubb_driver
              cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
              Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
              rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt,           & ! Intent(in)
+             rr1, rr2, Nr1, Nr2,                              & ! Intent(in)
+             precip_frac, precip_frac_1, precip_frac_2,       & ! Intent(in)
+             d_variables, corr_array_1, corr_array_2,         & ! Intent(in)
+             hydromet_pdf_params,                             & ! Intent(in)
              Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
              wprtp_mc_tndcy, wpthlp_mc_tndcy,                 & ! Intent(inout)
@@ -3679,15 +3681,19 @@ module clubb_driver
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_microphys &
-             ( iter, dt, rho, rho_zm, p_in_Pa, exner, &
-               cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm, &
-               Kh_zm, wp2_zt, Lscale, pdf_params, &
-               rho_ds_zt,  rho_ds_zm, invrs_rho_ds_zt, & 
-               Ncnm, hydromet, wphydrometp, &
-               rvm_mc, rcm_mc, thlm_mc, &
-               wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &
-               err_code )
+             ( iter, dt, rho, rho_zm, p_in_Pa, exner,           & ! Intent(in)
+               cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
+               Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
+               rho_ds_zt,  rho_ds_zm, invrs_rho_ds_zt,          & ! Intent(in)
+               rr1, rr2, Nr1, Nr2,                              & ! Intent(in)
+               precip_frac, precip_frac_1, precip_frac_2,       & ! Intent(in)
+               n_variables, corr_array_1, corr_array_2,         & ! Intent(in)
+               hydromet_pdf_params,                             & ! Intent(in)
+               Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
+               rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
+               wprtp_mc_tndcy, wpthlp_mc_tndcy,                 & ! Intent(inout)
+               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, & ! Intent(inout)
+               err_code )                                         ! Intent(inout)
 
 ! Description:
 !   Advance a microphysics scheme
@@ -3717,6 +3723,9 @@ module clubb_driver
 
     use pdf_parameter_module, only: &
         pdf_parameter ! Type
+
+    use hydromet_pdf_parameter_module, only: &
+        hydromet_pdf_parameter ! Type
 
     use error_code, only: &
         fatal_error, &  ! Procedure(s)
@@ -3769,7 +3778,8 @@ module clubb_driver
 
     ! Input Variables
     integer, intent(in) :: &
-      iter ! Model iteration number
+      iter,       & ! Model iteration number
+      n_variables   ! Number of variables in the correlation arrays
 
     real(kind=time_precision), intent(in) :: & 
       dt ! Model timestep                            [s]
@@ -3789,13 +3799,31 @@ module clubb_driver
       wp2_zt,     & ! w'^2 interpolated the thermo levels               [m^2/s^2]
       Lscale        ! Length scale                                      [m]
 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+
     type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
       pdf_params      ! PDF parameters   [units vary]
+
+    type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
+      hydromet_pdf_params      ! hydrometeor PDF parameters   [units vary]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+
+    real( kind = core_rknd ), dimension(n_variables, n_variables, gr%nz), intent(in) :: &
+      corr_array_1, & ! Correlation matrix for the first pdf component    [-]
+      corr_array_2    ! Correlation matrix for the second pdf component   [-]
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
@@ -3952,6 +3980,10 @@ module clubb_driver
            wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &           ! Intent(in)
            LH_sample_point_weights, &                                 ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
+           rr1, rr2, Nr1, Nr2, &                                      ! Intent(in)
+           precip_frac, precip_frac_1, precip_frac_2, &               ! Intent(in)
+           n_variables, corr_array_1, corr_array_2, &                 ! Intent(in)
+           hydromet_pdf_params, &                                     ! Intent(in)
            Ncnm, hydromet, wphydrometp, &                             ! Intent(inout)
            rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
            wprtp_mc_tndcy, wpthlp_mc_tndcy, &                         ! Intent(inout)
