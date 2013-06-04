@@ -13,7 +13,7 @@ module morrison_micro_driver_module
              ( dt, nz, l_stats_samp, &
                l_latin_hypercube, thlm, wm, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, w_std_dev, &
-               dzq, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
+               dzq, rcm, Ncm, s_mellor, rvm, Nc_in_cloud, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, &
@@ -182,7 +182,7 @@ module morrison_micro_driver_module
       Ncm,          & ! In cloud value for cloud droplet conc.    [#/kg]
       s_mellor,     & ! The variable 's' from Mellor              [kg/kg]
       rvm,          & ! Vapor water mixing ratio                  [kg/kg]
-      Ncm_in_cloud    ! Constant cloud droplet conc. within cloud [#/kg] 
+      Nc_in_cloud    ! Constant cloud droplet conc. within cloud [#/kg] 
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(in) :: &
@@ -356,7 +356,7 @@ module morrison_micro_driver_module
       rcm_in_cloud = dummy(:,1)
       rcm_in_cloud = s_mellor
       rcm_in_cloud = dummy_1D
-      rcm_in_cloud = Ncm_in_cloud
+      rcm_in_cloud = Nc_in_cloud
     end if
 
     ! Determine temperature

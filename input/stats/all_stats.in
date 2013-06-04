@@ -19,7 +19,7 @@ vars_zt =
 'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'Lscale_pert_1', 'Lscale_pert_2',
 'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
-'Ncm', 'Ncm_in_cloud', 'Nc_activated', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'Ngraupelm', 
+'Ncm', 'Nc_in_cloud', 'Nc_activated', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'Ngraupelm', 
 'sed_rcm', 'rsat', 'rsati', 'rfrzm',
 'rrainm', 'Nrm', 'm_vol_rad_rain', 'm_vol_rad_cloud',
 'eff_rad_cloud', 'eff_rad_ice', 'eff_rad_snow', 'eff_rad_rain', 'eff_rad_graupel',

@@ -1397,7 +1397,7 @@ module clubb_driver
       hydromet_dim
 
     use parameters_microphys, only: &
-      Ncm_initial,  & ! Variable(s)
+      Nc_in_cloud0,  & ! Variable(s)
       micro_scheme, &
       l_predictnc
 
@@ -1577,7 +1577,7 @@ module clubb_driver
     case ( "morrison", "morrison_gettelman" )
       if ( l_predictnc ) then
 
-        hydromet(2:gr%nz-1,iiNcm) = Ncm_initial / rho(2:gr%nz-1)
+        hydromet(2:gr%nz-1,iiNcm) = Nc_in_cloud0 / rho(2:gr%nz-1)
 
         ! Upper boundary condition
         hydromet(gr%nz,iiNcm) = 0._core_rknd
@@ -3703,7 +3703,7 @@ module clubb_driver
         pdf_parameter ! Derived type
 
     use parameters_microphys, only: &
-        micro_scheme, Ncm_initial, &  ! Variables
+        micro_scheme, Nc_in_cloud0, &  ! Variables
         LH_microphys_calls
 
     use constants_clubb, only: & 
@@ -3896,7 +3896,7 @@ module clubb_driver
       Ncm = hydromet(:,iiNcm)
     else
       where ( rcm >= rc_tol )
-        Ncm = ( Ncm_initial / rho ) * cloud_frac
+        Ncm = ( Nc_in_cloud0 / rho ) * cloud_frac
       else where
         Ncm = 0._core_rknd
       end where

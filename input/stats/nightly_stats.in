@@ -2,7 +2,7 @@
 vars_zt =
 'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3',
 'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
-'Ncm', 'Ncm_in_cloud', 'rgraupelm', 'ricem', 'Nim',
+'Ncm', 'Nc_in_cloud', 'rgraupelm', 'ricem', 'Nim',
 'rsnowm', 'Nsnowm','Lscale', 'radht', 'corr_sw', 'corr_wrr', 'corr_wNr',
 'corr_wNcn', 'corr_srr', 'corr_sNr', 'corr_sNcn', 'corr_rrNr',
 ''

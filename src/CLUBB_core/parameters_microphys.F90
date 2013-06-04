@@ -102,9 +102,9 @@ module parameters_microphys
 
   real( kind = core_rknd ), public :: &
     Ncnm_initial, & ! Initial cloud nuclei concentration   [num/m^3]
-    Ncm_initial     ! Initial cloud droplet concentration  [num/m^3]
+    Nc_in_cloud0     ! Initial cloud droplet concentration  [num/m^3]
 
-!$omp threadprivate( Ncnm_initial, Ncm_initial )
+!$omp threadprivate( Ncnm_initial, Nc_in_cloud0 )
 
   real( kind = core_rknd ), public :: &
     sigma_g  ! Geometric std. dev. of cloud droplets falling in a stokes regime.

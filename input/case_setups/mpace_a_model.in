@@ -160,7 +160,7 @@ Ncnp2_on_Ncnm2_below = 0.0
 
 C_evap = 0.5
 r_0 = 100.0e-6
-Ncm_initial = 70.e6 ! #/m3 
+Nc_in_cloud0 = 70.e6 ! #/m3 
 
 LH_microphys_type = "disabled",
 l_lh_vert_overlap = .true.,

@@ -192,7 +192,7 @@ module stats_variables
   integer, public :: & 
      iNcm,             & ! Brian
      iNcnm,            & 
-     iNcm_in_cloud,    &
+     iNc_in_cloud,    &
      iNc_activated,    &
      isnowslope,       & ! Adam Smith, 22 April 2008
      ised_rcm,         & ! Brian

@@ -166,7 +166,7 @@ module stats_zt
         irel_humidity, &
         irho, & 
         iNcm, &
-        iNcm_in_cloud, &
+        iNc_in_cloud, &
         iNc_activated, &
         iNcnm, & 
         isnowslope, & 
@@ -572,7 +572,7 @@ module stats_zt
     irho                = 0
     irel_humidity       = 0
     iNcm                = 0  ! Brian
-    iNcm_in_cloud       = 0
+    iNc_in_cloud       = 0
     iNc_activated       = 0
     iNcnm               = 0
     iNim                = 0
@@ -1341,10 +1341,10 @@ module stats_zt
              "num/kg", zt )
         k = k + 1
 
-      case ('Ncm_in_cloud')
-        iNcm_in_cloud = k
+      case ('Nc_in_cloud')
+        iNc_in_cloud = k
 
-        call stat_assign( iNcm_in_cloud, "Ncm_in_cloud", &
+        call stat_assign( iNc_in_cloud, "Nc_in_cloud", &
              "In cloud droplet concentration [num/kg]", "num/kg", zt )
 
         k = k + 1

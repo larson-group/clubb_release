@@ -134,7 +134,7 @@ l_calc_w_corr = .false.
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "khairoutdinov_kogan",
 l_predictnc = .false.,
-Ncm_initial  = 100.e6,
+Nc_in_cloud0  = 100.e6,
 Ncnm_initial = 100.e6,
 rrp2_on_rrm2_cloud   = 0.766,
 Nrp2_on_Nrm2_cloud   = 0.429, 

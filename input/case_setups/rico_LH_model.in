@@ -159,7 +159,7 @@ Ncnp2_on_Ncnm2_below = 0.0
 C_evap = 0.5
 r_0 = 100.0e-6
 !!!!!!! END RICO COMMENTS --modified by Leah Grant, Apr. 2010
-Ncm_initial = 70.e6 ! #/m^3 
+Nc_in_cloud0 = 70.e6 ! #/m^3 
 l_predictnc = .false.,
 
 ! Addition for using latin hypercube sampling

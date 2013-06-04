@@ -44,7 +44,7 @@ module microphys_driver
     microphys_start_time,         & ! When to start the microphysics [s]
     sigma_g,                      & ! Parameter used in the cloud droplet sedimentation code
     Ncnm_initial,                 & ! Initial value for Ncnm (K&K)
-    Ncm_initial                     ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
+    Nc_in_cloud0                     ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
 
   use parameters_microphys, only: &
     LH_microphys_interactive,     & ! Feed the subcolumns into the microphysics and allow feedback
@@ -273,7 +273,7 @@ module microphys_driver
       rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncnp2_on_Ncnm2_cloud, &
       rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
       Ncnp2_on_Ncnm2_below, C_evap, r_0, microphys_start_time, &
-      Ncnm_initial, Ncm_initial, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
+      Ncnm_initial, Nc_in_cloud0, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
 
     namelist /gfdl_activation_setting/ &
@@ -434,7 +434,7 @@ module microphys_driver
     ! Parameters for Morrison microphysics and Khairoutdinov & Kogan microphysics
     !---------------------------------------------------------------------------
     Ncnm_initial = 100.e6_core_rknd ! num/m^3
-    Ncm_initial  = 100.e6_core_rknd ! num/m^3
+    Nc_in_cloud0  = 100.e6_core_rknd ! num/m^3
 
     ! In the Latin hypercube code, we can fix the correlations between s and t.
     ! The reasons for this are twofold:
@@ -537,7 +537,7 @@ module microphys_driver
       call write_text ( "microphys_start_time = ", real( microphys_start_time, kind = core_rknd ), &
         l_write_to_file, iunit )
       call write_text ( "Ncnm_initial = ", Ncnm_initial, l_write_to_file, iunit )
-      call write_text ( "Ncm_initial = ", Ncm_initial, l_write_to_file, iunit )
+      call write_text ( "Nc_in_cloud0 = ", Nc_in_cloud0, l_write_to_file, iunit )
       call write_text ( "ccnconst = ", real(ccnconst, kind = core_rknd), l_write_to_file, iunit )
       call write_text ( "ccnexpnt = ", real(ccnexpnt, kind = core_rknd), l_write_to_file, iunit )
       call write_text ( "aer_rm1 = ", real(aer_rm1, kind = core_rknd), l_write_to_file, iunit )
@@ -616,8 +616,8 @@ module microphys_driver
         hydromet_list(iiNcm)     = "Ncm"
       endif
 
-      ! Set Nc0 in the Morrison code (module_MP_graupel) based on Ncm_initial
-      Nc0 = real( Ncm_initial / cm3_per_m3 ) ! Units on Nc0 are per cm^3
+      ! Set Nc0 in the Morrison code (module_MP_graupel) based on Nc_in_cloud0
+      Nc0 = real( Nc_in_cloud0 / cm3_per_m3 ) ! Units on Nc0 are per cm^3
 
       ! Set flags from the Morrison scheme as in GRAUPEL_INIT
       if ( l_predictnc ) then
@@ -1096,7 +1096,7 @@ module microphys_driver
         iNgraupelm_bt, &
         iNgraupelm_cl, &
         iNgraupelm_mc, &
-        iNcm_in_cloud, &
+        iNc_in_cloud, &
         iNc_activated, &
         iNcnm,         &
         iNcm_bt,       &
@@ -1298,7 +1298,7 @@ module microphys_driver
       aeromass ! ug/m^3
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Ncm_in_cloud ! cloud average droplet concentration [#/kg]
+      Nc_in_cloud ! cloud average droplet concentration [#/kg]
 
     character(len=10) :: hydromet_name
 
@@ -1416,7 +1416,7 @@ module microphys_driver
       end if  ! l_predictnc
     end if ! l_gfdl_activation
 
-    ! Determine how Ncm and Ncm_in_cloud will be computed
+    ! Determine how Ncm and Nc_in_cloud will be computed
     select case ( trim( micro_scheme ) )
 
     case ( "coamps", "morrison", "morrison_gettelman", "khairoutdinov_kogan" )
@@ -1429,18 +1429,18 @@ module microphys_driver
 
           if ( .not. l_const_Nc_in_cloud ) then
              where ( rcm >= rc_tol )
-                Ncm = cloud_frac * ( Ncm_initial / rho ) ! Convert to #/kg air
+                Ncm = cloud_frac * ( Nc_in_cloud0 / rho ) ! Convert to #/kg air
              else where
                 Ncm = zero
              end where
 
-             Ncm_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
+             Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
 
           else  ! Constant, specified value of Nc within cloud
 
-             Ncm_in_cloud = Ncm_initial / rho ! Convert to #/kg air.
+             Nc_in_cloud = Nc_in_cloud0 / rho ! Convert to #/kg air.
 
-             Ncm = cloud_frac * ( Ncm_initial / rho ) ! Convert to #/kg air
+             Ncm = cloud_frac * ( Nc_in_cloud0 / rho ) ! Convert to #/kg air
 
           endif
 
@@ -1450,16 +1450,16 @@ module microphys_driver
 
       if ( l_cloud_sed ) then
         where ( rcm >= rc_tol )
-          Ncm = cloud_frac * ( Ncm_initial / rho ) ! Convert to #/kg air
+          Ncm = cloud_frac * ( Nc_in_cloud0 / rho ) ! Convert to #/kg air
         else where
           Ncm = zero
         end where
-        Ncm_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
+        Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
 
       else
         ! These quantites are undefined
         Ncm = -999._core_rknd
-        Ncm_in_cloud = -999._core_rknd
+        Nc_in_cloud = -999._core_rknd
       end if
 
     end select ! micro_scheme
@@ -1575,7 +1575,7 @@ module microphys_driver
              ( dt, gr%nz, l_stats_samp, &
                l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, wtmp, &
-               delta_zt, rcm, Ncm, s_mellor, rvm, Ncm_in_cloud, hydromet, &
+               delta_zt, rcm, Ncm, s_mellor, rvm, Nc_in_cloud, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, &
@@ -1661,7 +1661,7 @@ module microphys_driver
                                       l_latin_hypercube_input, thlm, wm_zt, &
                                       p_in_Pa, exner, rho, cloud_frac, &
                                       pdf_params, wtmp, delta_zt, rcm, &
-                                      Ncm, s_mellor, rvm, Ncm_in_cloud, &
+                                      Ncm, s_mellor, rvm, Nc_in_cloud, &
                                       hydromet, &
                                       hydromet_mc, hydromet_vel_zt, &
                                       rcm_mc, rvm_mc, thlm_mc, &
@@ -1675,7 +1675,7 @@ module microphys_driver
           call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, thlm, wm_zt, &
                                          p_in_Pa, exner, rho, cloud_frac, &
                                          pdf_params, wtmp, rcm, Ncnm, &
-                                         s_mellor, Ncm_in_cloud, &
+                                         s_mellor, Nc_in_cloud, &
                                          hydromet, wphydrometp, &
                                          hydromet_mc, hydromet_vel_zt, &
                                          rcm_mc, rvm_mc, thlm_mc, &
@@ -1710,10 +1710,10 @@ module microphys_driver
     end select ! micro_scheme
 
 
-    ! Re-compute Ncm and Ncm_in_cloud if needed
+    ! Re-compute Ncm and Nc_in_cloud if needed
     if ( iiNcm > 0 ) then
       Ncm = hydromet(:,iiNcm)
-      Ncm_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
+      Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
     end if
 
 
@@ -1933,7 +1933,7 @@ module microphys_driver
       if ( trim( hydromet_list(i) ) == "Ncm" .and. l_in_cloud_Nc_diff ) then
 
          call microphys_rhs( trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
-                             Ncm_in_cloud, &
+                             Nc_in_cloud, &
                              hydromet_mc(:,i)/max(cloud_frac,cloud_frac_min), &
                              Kr, nu_r_vert_res_dep, cloud_frac, &
                              hydromet_vel_covar_zt_expc(:,i), &
@@ -1958,9 +1958,9 @@ module microphys_driver
          ! Ncm in cloud is computed above
          call microphys_solve( trim( hydromet_list(i) ), l_hydromet_sed(i), &
                                cloud_frac, &
-                               lhs, rhs, Ncm_in_cloud, err_code )
+                               lhs, rhs, Nc_in_cloud, err_code )
 
-         hydromet(:,iiNcm) = Ncm_in_cloud * max( cloud_frac, cloud_frac_min )
+         hydromet(:,iiNcm) = Nc_in_cloud * max( cloud_frac, cloud_frac_min )
 
       else
 
@@ -2221,7 +2221,7 @@ module microphys_driver
       ! In the case where Ncm is neither a fixed number nor predicted these will
       ! be set to -999.
       call stat_update_var( iNcm, Ncm, zt )
-      call stat_update_var( iNcm_in_cloud, Ncm_in_cloud, zt )
+      call stat_update_var( iNc_in_cloud, Nc_in_cloud, zt )
     end if ! l_stats_samp
 
     if ( l_stats_samp .and. iirrainm > 0 ) then
