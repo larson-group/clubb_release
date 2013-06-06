@@ -33,9 +33,15 @@ module anl_erf
 !     1969, pages 631-638.
 !
 !  Arguments:
-!    Input, real ( kind = 8 ) X, the argument of ERF.
-!    Output, real ( kind = 8 ) ERFX, the value of ERF(X).
+!    Input, real ( kind = dp ) X, the argument of ERF.
+!    Output, real ( kind = dp ) ERFX, the value of ERF(X).
+!
+! Modifications:
+!   kind = 8 was replaced by the more portable sp and dp by UWM.
 !-----------------------------------------------------------------------
+    use clubb_precision, only: &
+      dp ! Constants
+
 
     implicit none
 
@@ -46,18 +52,18 @@ module anl_erf
     intrinsic :: epsilon, exp, aint
 
     ! Local Constants
-    real( kind = 8 ), parameter, dimension( 5 ) ::  & 
+    real( kind = dp ), parameter, dimension( 5 ) ::  & 
     a = (/ 3.16112374387056560D+00, & 
            1.13864154151050156D+02, & 
            3.77485237685302021D+02, & 
            3.20937758913846947D+03, & 
            1.85777706184603153D-01 /)
-    real( kind = 8 ), parameter, dimension( 4 ) ::  & 
+    real( kind = dp ), parameter, dimension( 4 ) ::  & 
     b = (/ 2.36012909523441209D+01, & 
            2.44024637934444173D+02, & 
            1.28261652607737228D+03, & 
            2.84423683343917062D+03 /)
-    real( kind = 8 ), parameter, dimension( 9 ) ::  & 
+    real( kind = dp ), parameter, dimension( 9 ) ::  & 
     c = (/ 5.64188496988670089D-01, & 
            8.88314979438837594D+00, & 
            6.61191906371416295D+01, & 
@@ -67,7 +73,7 @@ module anl_erf
            2.05107837782607147D+03, & 
            1.23033935479799725D+03, & 
            2.15311535474403846D-08 /)
-    real( kind = 8 ), parameter, dimension( 8 ) :: & 
+    real( kind = dp ), parameter, dimension( 8 ) :: & 
     d = (/ 1.57449261107098347D+01, & 
            1.17693950891312499D+02, & 
            5.37181101862009858D+02,  & 
@@ -76,7 +82,7 @@ module anl_erf
            4.36261909014324716D+03, & 
            3.43936767414372164D+03, & 
            1.23033935480374942D+03 /)
-    real( kind = 8 ), parameter, dimension( 6 ) ::  & 
+    real( kind = dp ), parameter, dimension( 6 ) ::  & 
     p = (/ 3.05326634961232344D-01, & 
            3.60344899949804439D-01, & 
            1.25781726111229246D-01, & 
@@ -84,23 +90,23 @@ module anl_erf
            6.58749161529837803D-04, & 
            1.63153871373020978D-02 /)
 
-    real( kind = 8 ), parameter, dimension( 5 ) ::  & 
+    real( kind = dp ), parameter, dimension( 5 ) ::  & 
     q = (/ 2.56852019228982242D+00, & 
            1.87295284992346047D+00, & 
            5.27905102951428412D-01, & 
            6.05183413124413191D-02, & 
            2.33520497626869185D-03 /)
 
-    real( kind = 8 ), parameter ::  & 
+    real( kind = dp ), parameter ::  & 
     SQRPI  = 0.56418958354775628695D+00, & 
     THRESH = 0.46875D+00, & 
     XBIG   = 26.543D+00
 
     ! Return type
-    real( kind = 8 ) :: erfx
+    real( kind = dp ) :: erfx
 
     ! Local variables
-    real( kind = 8 ) ::  & 
+    real( kind = dp ) ::  & 
     del, & 
     xabs, & 
     xden, & 
@@ -209,18 +215,21 @@ module anl_erf
 !   None
 !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      sp, dp ! Constants
+
     implicit none
 
     ! External
     intrinsic :: real
 
     ! Input Variables
-    real( kind=4 ), intent(in) :: x
+    real( kind=sp ), intent(in) :: x
 
     ! Return type
-    real( kind=4 ) :: erfx
+    real( kind=sp ) :: erfx
 
-    erfx = real( dp_erf( real(x, kind=8) ), kind=4 )
+    erfx = real( dp_erf( real(x, kind=dp) ), kind=sp )
 
     return
   end function sp_erf
