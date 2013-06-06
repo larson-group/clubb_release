@@ -177,7 +177,8 @@ module clubb_driver
       LH_microphys_type, & ! Variable(s)
       LH_microphys_disabled, &
       LH_seed, &
-      Ncnm_initial
+      Ncnm_initial, &
+      micro_scheme
 
     use latin_hypercube_driver_module, only: &
       latin_hypercube_2D_output, & ! Procedure(s)
@@ -1221,43 +1222,48 @@ module clubb_driver
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
-      rrainm = hydromet(:,iirrainm)
-      Nrm    = hydromet(:,iiNrm)
+      if ( .not. trim( micro_scheme ) == "none" ) then
 
-      ! Determine correlations
-      if ( l_diagnose_correlations ) then
+         rrainm = hydromet(:,iirrainm)
+         Nrm    = hydromet(:,iiNrm)
+
+         ! Determine correlations
+         if ( l_diagnose_correlations ) then
  
-        call diagnose_correlations( gr%nz, d_variables, rcm, & ! intent(in)
-                                   corr_array_cloud, corr_array_below, &
-                                   corr_array_1 ) ! intent(inout)
+            call diagnose_correlations( gr%nz, d_variables, rcm, & ! intent(in)
+                                        corr_array_cloud, corr_array_below, &
+                                        corr_array_1 ) ! intent(inout)
 
-        corr_array_2 = corr_array_1
+            corr_array_2 = corr_array_1
 
-      else ! Prescribed correlations
+         else ! Prescribed correlations
       
-        do k = 1, gr%nz
-          if ( rcm(k) > rc_tol ) then
-            corr_array_1(:,:,k) = corr_array_cloud
-            corr_array_2(:,:,k) = corr_array_cloud
-          else
-            corr_array_1(:,:,k) = corr_array_below
-            corr_array_2(:,:,k) = corr_array_below
-          endif
-        end do
+            do k = 1, gr%nz
+               if ( rcm(k) > rc_tol ) then
+                  corr_array_1(:,:,k) = corr_array_cloud
+                  corr_array_2(:,:,k) = corr_array_cloud
+               else
+                  corr_array_1(:,:,k) = corr_array_below
+                  corr_array_2(:,:,k) = corr_array_below
+               endif
+            end do
 
-        Ncnm = Ncnm_initial / rho
+            Ncnm = Ncnm_initial / rho
 
-        !!! Setup the PDF parameters.
-        call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
-                                   cloud_frac, sqrt(wp2_zt), wphydrometp, &
-                                   pdf_params, l_stats_samp, d_variables, &
-                                   rr1, rr2, Nr1, Nr2, precip_frac, & ! Out
-                                   precip_frac_1, precip_frac_2, &
-                                   corr_array_1, corr_array_2, &
-                                   hydromet_pdf_params )
-      end if
+            !!! Setup the PDF parameters.
+            call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
+                                       cloud_frac, sqrt(wp2_zt), wphydrometp, &
+                                       pdf_params, l_stats_samp, d_variables, &
+                                       rr1, rr2, Nr1, Nr2, precip_frac, & ! Out
+                                       precip_frac_1, precip_frac_2, &
+                                       corr_array_1, corr_array_2, &
+                                       hydromet_pdf_params )
 
-      call corr_stat_output( d_variables, gr%nz, corr_array_1 )
+         endif ! l_diagnose_correlations
+
+      endif ! not micro_scheme == "none"
+
+!      call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
       ! Advance a microphysics scheme
       call advance_clubb_microphys &
