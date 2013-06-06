@@ -81,7 +81,8 @@ module cos_solar_zen_module
       zln, & 
       longang, & 
       latang, & 
-      hour,  & 
+      hour
+    real( kind = time_precision ) :: & 
       present_time
 
     integer :: & 
