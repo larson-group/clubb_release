@@ -7,7 +7,8 @@ module diagnose_correlations_module
   implicit none 
 
   public :: diagnose_KK_corr, diagnose_LH_corr, &
-            calc_mean, calc_varnce, calc_w_corr
+            calc_mean, calc_varnce, calc_w_corr, &
+            corr_stat_output
             
 
   private :: diagnose_corr 

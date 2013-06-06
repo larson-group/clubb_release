@@ -1248,6 +1248,8 @@ module clubb_driver
                endif
             end do
 
+            call corr_stat_output( d_variables, gr%nz, corr_array_1 )
+
             Ncnm = Ncnm_initial / rho
 
             !!! Setup the PDF parameters.
@@ -1262,8 +1264,6 @@ module clubb_driver
          endif ! l_diagnose_correlations
 
       endif ! not micro_scheme == "none"
-
-!      call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
       ! Advance a microphysics scheme
       call advance_clubb_microphys &

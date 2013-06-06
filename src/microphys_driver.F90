@@ -1702,8 +1702,6 @@ module microphys_driver
 
         else
 
-          Ncnm = Ncnm_initial / rho
-
           call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, thlm, wm_zt,    & ! Intent(in)
                                          p_in_Pa, exner, rho, cloud_frac,         & ! Intent(in)
                                          pdf_params, wtmp, rcm, Ncnm,             & ! Intent(in)
