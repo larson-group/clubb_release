@@ -10,7 +10,8 @@ module setup_clubb_pdf_params
             unpack_pdf_params,    &
             comp_mean_stdev_corr, &
             normalize_pdf_params, &
-            pdf_param_hm_stats
+            pdf_param_hm_stats, &
+            pdf_param_log_hm_stats
 
   private :: component_means_rain, &
              precip_fraction,      &
@@ -393,55 +394,19 @@ module setup_clubb_pdf_params
                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
 
-
-       !!! Calculate the mean, standard deviations, and necessary correlations
-       !!! involving ln r_r (in-precip), ln N_r (in-precip), and ln N_cn for
-       !!! each PDF component.
-       call normalize_pdf_params( rr1(k), rr2(k), Nr1(k), Nr2(k), Ncnm(k), &
-                                  mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                  mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, &
-                                  sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &
-                                  sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &
-                                  corr_wNr_1, corr_wNr_2, corr_wNcn_1, &
-                                  corr_wNcn_2, corr_srr_1, corr_srr_2, &
-                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
-                                  mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                  mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                  sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                  sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                  corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                                  corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                                  corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                                  corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                                  corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                                  corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                                  corr_rrNr_1_n, corr_rrNr_2_n )
-
-       !!! Statistical output for hydrometeor PDF parameters.
-       call pdf_param_hm_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                mu_Ncn_1, mu_Ncn_2, mu_rr_1_n, mu_rr_2_n, &
-                                mu_Nr_1_n, mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                corr_wrr_1, corr_wrr_2, corr_wNr_1, &
-                                corr_wNr_2, corr_wNcn_1, corr_wNcn_2, &
-                                corr_srr_1, corr_srr_2, corr_sNr_1, &
-                                corr_sNr_2, corr_sNcn_1, corr_sNcn_2, &
-                                corr_trr_1, corr_trr_2, corr_tNr_1, &
-                                corr_tNr_2, corr_tNcn_1, corr_tNcn_2, &
-                                corr_rrNr_1, corr_rrNr_2, corr_wrr_1_n, &
-                                corr_wrr_2_n, corr_wNr_1_n, corr_wNr_2_n, &
-                                corr_wNcn_1_n, corr_wNcn_2_n, corr_srr_1_n, &
-                                corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
-                                corr_sNcn_1_n, corr_sNcn_2_n, corr_trr_1_n, &
-                                corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
-                                corr_tNcn_1_n, corr_tNcn_2_n, corr_rrNr_1_n, &
-                                corr_rrNr_2_n, k, l_stats_samp )
+       !!! Statistics
+       call pdf_param_hm_stats(  mu_rr_1, mu_rr_2, mu_Nr_1, &
+                                 mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
+                                 sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                 sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
+                                 corr_wrr_1, corr_wrr_2, corr_wNr_1, &
+                                 corr_wNr_2, corr_wNcn_1, corr_wNcn_2, &
+                                 corr_srr_1, corr_srr_2, corr_sNr_1, &
+                                 corr_sNr_2, corr_sNcn_1, corr_sNcn_2, &
+                                 corr_trr_1, corr_trr_2, corr_tNr_1, &
+                                 corr_tNr_2, corr_tNcn_1, corr_tNcn_2, &
+                                 corr_rrNr_1, corr_rrNr_2, &
+                                 k, l_stats_samp )
 
        !!! Pack the PDF parameters
        call pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
@@ -2892,27 +2857,18 @@ module setup_clubb_pdf_params
   end subroutine normalize_pdf_params
 
   !=============================================================================
-  subroutine pdf_param_hm_stats( mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                 mu_Ncn_1, mu_Ncn_2, mu_rr_1_n, mu_rr_2_n, &
-                                 mu_Nr_1_n, mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+  subroutine pdf_param_hm_stats( mu_rr_1, mu_rr_2, mu_Nr_1, &
+                                 mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                 sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                 sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
                                  corr_wrr_1, corr_wrr_2, corr_wNr_1, &
                                  corr_wNr_2, corr_wNcn_1, corr_wNcn_2, &
                                  corr_srr_1, corr_srr_2, corr_sNr_1, &
                                  corr_sNr_2, corr_sNcn_1, corr_sNcn_2, &
                                  corr_trr_1, corr_trr_2, corr_tNr_1, &
                                  corr_tNr_2, corr_tNcn_1, corr_tNcn_2, &
-                                 corr_rrNr_1, corr_rrNr_2, corr_wrr_1_n, &
-                                 corr_wrr_2_n, corr_wNr_1_n, corr_wNr_2_n, &
-                                 corr_wNcn_1_n, corr_wNcn_2_n, corr_srr_1_n, &
-                                 corr_srr_2_n, corr_sNr_1_n, corr_sNr_2_n, &
-                                 corr_sNcn_1_n, corr_sNcn_2_n, corr_trr_1_n, &
-                                 corr_trr_2_n, corr_tNr_1_n, corr_tNr_2_n, &
-                                 corr_tNcn_1_n, corr_tNcn_2_n, corr_rrNr_1_n, &
-                                 corr_rrNr_2_n, level, l_stats_samp )
+                                 corr_rrNr_1, corr_rrNr_2, &
+                                 level, l_stats_samp )
 
     ! Description:
 
@@ -2932,24 +2888,13 @@ module setup_clubb_pdf_params
         imu_Nr_2,       &
         imu_Ncn_1,      &
         imu_Ncn_2,      &
-        imu_rr_1_n,     &
-        imu_rr_2_n,     &
-        imu_Nr_1_n,     &
-        imu_Nr_2_n,     &
-        imu_Ncn_1_n,    &
-        imu_Ncn_2_n,    &
         isigma_rr_1,    &
         isigma_rr_2,    &
         isigma_Nr_1,    &
         isigma_Nr_2,    &
         isigma_Ncn_1,   &
-        isigma_Ncn_2,   &
-        isigma_rr_1_n,  &
-        isigma_rr_2_n,  &
-        isigma_Nr_1_n,  &
-        isigma_Nr_2_n,  &
-        isigma_Ncn_1_n, &
-        isigma_Ncn_2_n
+        isigma_Ncn_2
+
 
     use stats_variables, only : &
         icorr_wrr_1,    & ! Variable(s)
@@ -2971,29 +2916,7 @@ module setup_clubb_pdf_params
         icorr_tNcn_1,   &
         icorr_tNcn_2,   &
         icorr_rrNr_1,   &
-        icorr_rrNr_2
-
-    use stats_variables, only : &
-        icorr_wrr_1_n,  & ! Variables
-        icorr_wrr_2_n,  &
-        icorr_wNr_1_n,  &
-        icorr_wNr_2_n,  &
-        icorr_wNcn_1_n, &
-        icorr_wNcn_2_n, &
-        icorr_srr_1_n,  &
-        icorr_srr_2_n,  &
-        icorr_sNr_1_n,  &
-        icorr_sNr_2_n,  &
-        icorr_sNcn_1_n, &
-        icorr_sNcn_2_n, &
-        icorr_trr_1_n,  &
-        icorr_trr_2_n,  &
-        icorr_tNr_1_n,  &
-        icorr_tNr_2_n,  &
-        icorr_tNcn_1_n, &
-        icorr_tNcn_2_n, &
-        icorr_rrNr_1_n, &
-        icorr_rrNr_2_n, &
+        icorr_rrNr_2, &
         zt
 
     implicit none
@@ -3006,24 +2929,13 @@ module setup_clubb_pdf_params
       mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
       mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
       mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
-      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
-      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
       sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
       sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
       sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
       sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
       sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
-      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
-      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
-      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
-      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-      sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
-      sigma_Ncn_2_n    ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
+      sigma_Ncn_2      ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
+
 
     real( kind = core_rknd ), intent(in) :: &
       corr_wrr_1,    & ! Correlation between w and rr (1st PDF component) ip [-]
@@ -3046,28 +2958,6 @@ module setup_clubb_pdf_params
       corr_tNcn_2,   & ! Correlation between t and Ncn (2nd PDF component)   [-]
       corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
       corr_rrNr_2      ! Correlation between rr & Nr (2nd PDF component) ip  [-]
-
-    real( kind = core_rknd ), intent(in) :: &
-      corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
-      corr_wrr_2_n,  & ! Correlation between w and ln rr (2nd PDF comp.) ip  [-]
-      corr_wNr_1_n,  & ! Correlation between w and ln Nr (1st PDF comp.) ip  [-]
-      corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
-      corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
-      corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
-      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
-      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
-      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
-      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
-      corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
-      corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
-      corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
-      corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
-      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-      corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
 
     integer, intent(in) :: &
       level   ! Vertical level index 
@@ -3111,102 +3001,6 @@ module setup_clubb_pdf_params
           call stat_update_var_pt( imu_Ncn_2, level, mu_Ncn_2, zt )
        endif
 
-       ! Mean (in-precip) of ln r_r in PDF component 1.
-       if ( imu_rr_1_n > 0 ) then
-          if ( mu_rr_1_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_rr_1_n, level, mu_rr_1_n, zt )
-          else
-             ! When rr1 is 0 (or below tolerance value), mu_rr_1_n is -inf, and
-             ! is set to -huge for the default CLUBB kind.  Some compilers have
-             ! issues outputting to stats files (in single precision) when the
-             ! default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_rr_1_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Mean (in-precip) of ln r_r in PDF component 2.
-       if ( imu_rr_2_n > 0 ) then
-          if ( mu_rr_2_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_rr_2_n, level, mu_rr_2_n, zt )
-          else
-             ! When rr2 is 0 (or below tolerance value), mu_rr_2_n is -inf, and
-             ! is set to -huge for the default CLUBB kind.  Some compilers have
-             ! issues outputting to stats files (in single precision) when the
-             ! default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_rr_2_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Mean (in-precip) of ln N_r in PDF component 1.
-       if ( imu_Nr_1_n > 0 ) then
-          if ( mu_Nr_1_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_Nr_1_n, level, mu_Nr_1_n, zt )
-          else
-             ! When Nr1 is 0 (or below tolerance value), mu_Nr_1_n is -inf, and
-             ! is set to -huge for the default CLUBB kind.  Some compilers have
-             ! issues outputting to stats files (in single precision) when the
-             ! default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_Nr_1_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Mean (in-precip) of ln N_r in PDF component 2.
-       if ( imu_Nr_2_n > 0 ) then
-          if ( mu_Nr_2_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_Nr_2_n, level, mu_Nr_2_n, zt )
-          else
-             ! When Nr2 is 0 (or below tolerance value), mu_Nr_2_n is -inf, and
-             ! is set to -huge for the default CLUBB kind.  Some compilers have
-             ! issues outputting to stats files (in single precision) when the
-             ! default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_Nr_2_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Mean of ln N_cn in PDF component 1.
-       if ( imu_Ncn_1_n > 0 ) then
-          if ( mu_Ncn_1_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_Ncn_1_n, level, mu_Ncn_1_n, zt )
-          else
-             ! When Ncnm is 0 (or below tolerance value), mu_Ncn_1_n is -inf,
-             ! and is set to -huge for the default CLUBB kind.  Some compilers
-             ! have issues outputting to stats files (in single precision) when
-             ! the default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_Ncn_1_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
-       ! Mean of ln N_cn in PDF component 2.
-       if ( imu_Ncn_2_n > 0 ) then
-          if ( mu_Ncn_2_n > -huge( 0.0 ) ) then
-             call stat_update_var_pt( imu_Ncn_2_n, level, mu_Ncn_2_n, zt )
-          else
-             ! When Ncnm is 0 (or below tolerance value), mu_Ncn_2_n is -inf,
-             ! and is set to -huge for the default CLUBB kind.  Some compilers
-             ! have issues outputting to stats files (in single precision) when
-             ! the default CLUBB kind is in double precision.
-             ! Set to -huge for single precision.
-             call stat_update_var_pt( imu_Ncn_2_n, level, &
-                                      real( -huge( 0.0 ), kind = core_rknd ), &
-                                      zt )
-          endif
-       endif
-
        ! Standard deviation of in-precip rain water mixing ratio
        ! in PDF component 1.
        if ( isigma_rr_1 > 0 ) then
@@ -3239,36 +3033,6 @@ module setup_clubb_pdf_params
        ! Standard deviation of cloud nuclei concentration in PDF component 2.
        if ( isigma_Ncn_2 > 0 ) then
           call stat_update_var_pt( isigma_Ncn_2, level, sigma_Ncn_2, zt )
-       endif
-
-       ! Standard deviation (in-precip) of ln r_r in PDF component 1.
-       if ( isigma_rr_1_n > 0 ) then
-          call stat_update_var_pt( isigma_rr_1_n, level, sigma_rr_1_n, zt )
-       endif
-
-       ! Standard deviation (in-precip) of ln r_r in PDF component 2.
-       if ( isigma_rr_2_n > 0 ) then
-          call stat_update_var_pt( isigma_rr_2_n, level, sigma_rr_2_n, zt )
-       endif
-
-       ! Standard deviation (in-precip) of ln N_r in PDF component 1.
-       if ( isigma_Nr_1_n > 0 ) then
-          call stat_update_var_pt( isigma_Nr_1_n, level, sigma_Nr_1_n, zt )
-       endif
-
-       ! Standard deviation (in-precip) of ln N_r in PDF component 2.
-       if ( isigma_Nr_2_n > 0 ) then
-          call stat_update_var_pt( isigma_Nr_2_n, level, sigma_Nr_2_n, zt )
-       endif
-
-       ! Standard deviation of ln N_cn in PDF component 1.
-       if ( isigma_Ncn_1_n > 0 ) then
-          call stat_update_var_pt( isigma_Ncn_1_n, level, sigma_Ncn_1_n, zt )
-       endif
-
-       ! Standard deviation of ln N_cn in PDF component 2.
-       if ( isigma_Ncn_2_n > 0 ) then
-          call stat_update_var_pt( isigma_Ncn_2_n, level, sigma_Ncn_2_n, zt )
        endif
 
        ! Correlation (in-precip) between w and r_r in PDF component 1.
@@ -3369,6 +3133,252 @@ module setup_clubb_pdf_params
        ! Correlation (in-precip) between r_r and N_r in PDF component 2.
        if ( icorr_rrNr_2 > 0 ) then
           call stat_update_var_pt( icorr_rrNr_2, level, corr_rrNr_2, zt )
+       endif
+
+    endif ! l_stats_samp
+
+    return
+
+
+  end subroutine pdf_param_hm_stats
+
+  !=============================================================================
+  subroutine pdf_param_log_hm_stats( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                                     mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                                     sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                                     sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                                     corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                                     corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                                     corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                                     corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                                     corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                                     corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                                     corr_rrNr_1_n, corr_rrNr_2_n, level, &
+                                     l_stats_samp )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd   ! Variable(s)
+
+    use stats_type, only: &
+        stat_update_var_pt  ! Procedure(s)
+
+    use stats_variables, only : &
+        imu_rr_1_n,     & ! Variable(s)
+        imu_rr_2_n,     &
+        imu_Nr_1_n,     &
+        imu_Nr_2_n,     &
+        imu_Ncn_1_n,    &
+        imu_Ncn_2_n,    &
+        isigma_rr_1_n,  &
+        isigma_rr_2_n,  &
+        isigma_Nr_1_n,  &
+        isigma_Nr_2_n,  &
+        isigma_Ncn_1_n, &
+        isigma_Ncn_2_n
+
+    use stats_variables, only : &
+        icorr_wrr_1_n,  & ! Variables
+        icorr_wrr_2_n,  &
+        icorr_wNr_1_n,  &
+        icorr_wNr_2_n,  &
+        icorr_wNcn_1_n, &
+        icorr_wNcn_2_n, &
+        icorr_srr_1_n,  &
+        icorr_srr_2_n,  &
+        icorr_sNr_1_n,  &
+        icorr_sNr_2_n,  &
+        icorr_sNcn_1_n, &
+        icorr_sNcn_2_n, &
+        icorr_trr_1_n,  &
+        icorr_trr_2_n,  &
+        icorr_tNr_1_n,  &
+        icorr_tNr_2_n,  &
+        icorr_tNcn_1_n, &
+        icorr_tNcn_2_n, &
+        icorr_rrNr_1_n, &
+        icorr_rrNr_2_n, &
+        zt
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
+      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
+      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
+      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
+      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
+      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
+      sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
+      sigma_Ncn_2_n    ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
+
+    real( kind = core_rknd ), intent(in) :: &
+      corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
+      corr_wrr_2_n,  & ! Correlation between w and ln rr (2nd PDF comp.) ip  [-]
+      corr_wNr_1_n,  & ! Correlation between w and ln Nr (1st PDF comp.) ip  [-]
+      corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
+      corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
+      corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
+      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
+      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
+      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
+      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
+      corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
+      corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
+      corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
+      corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
+      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
+      corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+
+    integer, intent(in) :: &
+      level   ! Vertical level index
+
+    logical, intent(in) :: &
+      l_stats_samp     ! Flag to record statistical output.
+
+
+    !!! Output the statistics for upscaled KK.
+
+    ! Statistics
+    if ( l_stats_samp ) then
+
+       ! Mean (in-precip) of ln r_r in PDF component 1.
+       if ( imu_rr_1_n > 0 ) then
+          if ( mu_rr_1_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_rr_1_n, level, mu_rr_1_n, zt )
+          else
+             ! When rr1 is 0 (or below tolerance value), mu_rr_1_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_rr_1_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Mean (in-precip) of ln r_r in PDF component 2.
+       if ( imu_rr_2_n > 0 ) then
+          if ( mu_rr_2_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_rr_2_n, level, mu_rr_2_n, zt )
+          else
+             ! When rr2 is 0 (or below tolerance value), mu_rr_2_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_rr_2_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Mean (in-precip) of ln N_r in PDF component 1.
+       if ( imu_Nr_1_n > 0 ) then
+          if ( mu_Nr_1_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Nr_1_n, level, mu_Nr_1_n, zt )
+          else
+             ! When Nr1 is 0 (or below tolerance value), mu_Nr_1_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Nr_1_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Mean (in-precip) of ln N_r in PDF component 2.
+       if ( imu_Nr_2_n > 0 ) then
+          if ( mu_Nr_2_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Nr_2_n, level, mu_Nr_2_n, zt )
+          else
+             ! When Nr2 is 0 (or below tolerance value), mu_Nr_2_n is -inf, and
+             ! is set to -huge for the default CLUBB kind.  Some compilers have
+             ! issues outputting to stats files (in single precision) when the
+             ! default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Nr_2_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Mean of ln N_cn in PDF component 1.
+       if ( imu_Ncn_1_n > 0 ) then
+          if ( mu_Ncn_1_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Ncn_1_n, level, mu_Ncn_1_n, zt )
+          else
+             ! When Ncnm is 0 (or below tolerance value), mu_Ncn_1_n is -inf,
+             ! and is set to -huge for the default CLUBB kind.  Some compilers
+             ! have issues outputting to stats files (in single precision) when
+             ! the default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Ncn_1_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Mean of ln N_cn in PDF component 2.
+       if ( imu_Ncn_2_n > 0 ) then
+          if ( mu_Ncn_2_n > -huge( 0.0 ) ) then
+             call stat_update_var_pt( imu_Ncn_2_n, level, mu_Ncn_2_n, zt )
+          else
+             ! When Ncnm is 0 (or below tolerance value), mu_Ncn_2_n is -inf,
+             ! and is set to -huge for the default CLUBB kind.  Some compilers
+             ! have issues outputting to stats files (in single precision) when
+             ! the default CLUBB kind is in double precision.
+             ! Set to -huge for single precision.
+             call stat_update_var_pt( imu_Ncn_2_n, level, &
+                                      real( -huge( 0.0 ), kind = core_rknd ), &
+                                      zt )
+          endif
+       endif
+
+       ! Standard deviation (in-precip) of ln r_r in PDF component 1.
+       if ( isigma_rr_1_n > 0 ) then
+          call stat_update_var_pt( isigma_rr_1_n, level, sigma_rr_1_n, zt )
+       endif
+
+       ! Standard deviation (in-precip) of ln r_r in PDF component 2.
+       if ( isigma_rr_2_n > 0 ) then
+          call stat_update_var_pt( isigma_rr_2_n, level, sigma_rr_2_n, zt )
+       endif
+
+       ! Standard deviation (in-precip) of ln N_r in PDF component 1.
+       if ( isigma_Nr_1_n > 0 ) then
+          call stat_update_var_pt( isigma_Nr_1_n, level, sigma_Nr_1_n, zt )
+       endif
+
+       ! Standard deviation (in-precip) of ln N_r in PDF component 2.
+       if ( isigma_Nr_2_n > 0 ) then
+          call stat_update_var_pt( isigma_Nr_2_n, level, sigma_Nr_2_n, zt )
+       endif
+
+       ! Standard deviation of ln N_cn in PDF component 1.
+       if ( isigma_Ncn_1_n > 0 ) then
+          call stat_update_var_pt( isigma_Ncn_1_n, level, sigma_Ncn_1_n, zt )
+       endif
+
+       ! Standard deviation of ln N_cn in PDF component 2.
+       if ( isigma_Ncn_2_n > 0 ) then
+          call stat_update_var_pt( isigma_Ncn_2_n, level, sigma_Ncn_2_n, zt )
        endif
 
        ! Correlation (in-precip) between w and ln r_r in PDF component 1.
@@ -3476,7 +3486,7 @@ module setup_clubb_pdf_params
     return
 
 
-  end subroutine pdf_param_hm_stats
+  end subroutine pdf_param_log_hm_stats
 
   !=============================================================================
   subroutine pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, & ! In

@@ -366,7 +366,8 @@ module KK_microphys_module
         setup_pdf_parameters, & ! Procedure(s)
         unpack_pdf_params, &
         normalize_pdf_params, &
-        pdf_param_hm_stats
+        pdf_param_hm_stats, &
+        pdf_param_log_hm_stats
 
     use KK_upscaled_means, only: &
         KK_upscaled_means_driver ! Procedure(s)
@@ -720,6 +721,20 @@ module KK_microphys_module
                                   corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
                                   corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
                                   corr_rrNr_1_n, corr_rrNr_2_n )
+
+       !!! Statistics
+       call pdf_param_log_hm_stats( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                                    mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                                    sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                                    sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                                    corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                                    corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                                    corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                                    corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                                    corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                                    corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                                    corr_rrNr_1_n, corr_rrNr_2_n, k, &
+                                    l_stats_samp )
 
        !!! Calculate the values of the upscaled KK microphysics tendencies.
        call KK_upscaled_means_driver( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
