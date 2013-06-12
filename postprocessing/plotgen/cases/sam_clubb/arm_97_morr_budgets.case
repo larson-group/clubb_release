@@ -13,19 +13,6 @@
     'plots' =>
     [
 
-       {'plotTitle' => 'QV3D Morrison Budget Terms', 'axisLabel' => 'QV3D [(kg/kg)/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PRE', 'expression' => '-PRE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PRD', 'expression' => '-PRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PRDS', 'expression' => '-PRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-MNUCCD', 'expression' => '-MNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-EPRD', 'expression' => '-EPRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-EPRDS', 'expression' => '-EPRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PRDG', 'expression' => '-PRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-EPRDG', 'expression' => '-EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QV3D\_RES', 'expression' => '-PRE - PRD - PRDS - MNUCCD - EPRD - EPRDS - PRDG - EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-       ]},
-
        {'plotTitle' => 'HL 2D SAM Budgets', 'axisLabel' => 'HL [K/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'HADV', 'expression' => 'HLADV/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -79,6 +66,33 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'PGRACS', 'expression' => '(PGRACS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'PIACR', 'expression' => '(PIACR * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'PIACRS', 'expression' => '(PIACRS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QTO 3D SAM Benchmark Budgets', 'axisLabel' => 'QTO [1/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QTOADV', 'expression' => 'QTOADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QTODIFF', 'expression' => 'QTODIFF/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QTOLSADV', 'expression' => 'QTOLSADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QTSTOR', 'expression' => 'QTSTOR/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QV\_TNDCY', 'expression' => 'QV_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QC\_TNDCY', 'expression' => 'QC_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(QTSTOR/(1000.*86400)) + ((-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED+QTEND) - QV_TNDCY - QC_TNDCY)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QV3D Morrison Budget Terms', 'axisLabel' => 'QV3D [(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PRE', 'expression' => '-PRE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PRD', 'expression' => '-PRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PRDS', 'expression' => '-PRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-MNUCCD', 'expression' => '-MNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-EPRD', 'expression' => '-EPRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-EPRDS', 'expression' => '-EPRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PRDG', 'expression' => '-PRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-EPRDG', 'expression' => '-EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QV3D\_RES', 'expression' => '-PRE - PRD - PRDS - MNUCCD - EPRD - EPRDS - PRDG - EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'QC3D Morrison Budget Terms', 'axisLabel' => 'QC3D [(kg/kg)/s]', 'type' => 'profile', 'lines' =>
