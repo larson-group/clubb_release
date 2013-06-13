@@ -914,7 +914,7 @@ function[] = plot_results( rho, mix_rat_qc, mix_rat_qr, heights, cldlow, cf, qv,
   colorbar()
   xlabel('Longitude [Degrees]')
   ylabel('Altitude [m]')
-  title(strcat('Liquid water content [g/m^3] (',num2str(lat),' S)'))
+  title(strcat('Liquid water content [kg/m^3] (',num2str(lat),' S)'))
 
   %put the info text
   ah=gca;
