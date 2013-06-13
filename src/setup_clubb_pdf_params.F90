@@ -23,12 +23,11 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( nz, rrainm, Nrm, Ncnm, rho, rcm, &
+  subroutine setup_pdf_parameters( nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
                                    cloud_frac, w_std_dev, wphydrometp, &
                                    pdf_params, l_stats_samp, d_variables, &
-                                   rr1, rr2, Nr1, Nr2, precip_frac, &
-                                   precip_frac_1, precip_frac_2, &
-                                   corr_array_1, corr_array_2, &
+                                   corr_array_1, corr_array_2, & ! Out
+                                   mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                                    hydromet_pdf_params )
 
     ! Description:
@@ -118,21 +117,16 @@ module setup_clubb_pdf_params
       d_variables    ! Number of variables in the correlation array.
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
-
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
-
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
     intent(out) :: &
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
+
+    real( kind = core_rknd ), dimension(d_variables, nz), intent(out) :: &
+      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
+      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
+      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
+      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
@@ -242,6 +236,17 @@ module setup_clubb_pdf_params
       wprrp_ip_zt, & ! Covar. of r_r and w (in-precip) on t-levs [(m/s)(kg/kg)]
       wpNrp_ip_zt, & ! Covar. of N_r and w (in-precip) on t-levs [(m/s)(num/kg)]
       wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
+
+     real( kind = core_rknd ), dimension(nz) :: &
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
     integer :: k  ! Loop index
 
@@ -394,6 +399,31 @@ module setup_clubb_pdf_params
                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
 
+       !!! Calculate the mean, standard deviations, and correlations involving
+       !!! ln r_r, ln N_r, and ln N_cn for each PDF component.
+       call normalize_pdf_params( rr1(k), rr2(k), Nr1(k), Nr2(k), Ncnm(k), & ! In
+                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                                   mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, &
+                                   sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &
+                                   sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &
+                                   corr_wNr_1, corr_wNr_2, corr_wNcn_1, &
+                                   corr_wNcn_2, corr_srr_1, corr_srr_2, &
+                                   corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
+                                   corr_sNcn_2, corr_trr_1, corr_trr_2, &
+                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
+                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
+                                   mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, & ! Out
+                                   mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                                   sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                                   sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                                   corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                                   corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                                   corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                                   corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                                   corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                                   corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                                   corr_rrNr_1_n, corr_rrNr_2_n )
+
        !!! Statistics
        call pdf_param_hm_stats(  mu_rr_1, mu_rr_2, mu_Nr_1, &
                                  mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
@@ -408,35 +438,44 @@ module setup_clubb_pdf_params
                                  corr_rrNr_1, corr_rrNr_2, &
                                  k, l_stats_samp )
 
+       call pdf_param_log_hm_stats( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                                    mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                                    sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                                    sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                                    corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                                    corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                                    corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                                    corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                                    corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                                    corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                                    corr_rrNr_1_n, corr_rrNr_2_n, k, &
+                                    l_stats_samp )
+
        !!! Pack the PDF parameters
-       call pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
+       call pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, & ! In
                              mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
                              mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                            !mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                            !mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                             mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                             mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
                              sigma_w_1, sigma_w_2, sigma_s_1, &
                              sigma_s_2, sigma_t_1, sigma_t_2, &
                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
                              sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                            !sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                            !sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                             corr_ws_1, corr_ws_2, corr_wrr_1, &
-                             corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                             corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                             corr_st_2, corr_srr_1, corr_srr_2, &
-                             corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                             corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                             corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                             corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
-                            !corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                            !corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                            !corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                            !corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                            !corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                            !corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                            !corr_rrNr_1_n, corr_rrNr_2_n, &
+                             sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                             sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                             corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, &
+                             corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                             corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                             corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                             corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                             corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                             corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                             corr_rrNr_1_n, corr_rrNr_2_n, &
+                             rr1(k), rr2(k), Nr1(k), Nr2(k), &
+                             precip_frac(k), precip_frac_1(k), precip_frac_2(k), &
                              d_variables, &
-                             corr_array_1(:,:,k), corr_array_2(:,:,k), &
+                             corr_array_1(:,:,k), corr_array_2(:,:,k), & ! Out
+                             mu_x_1(:,k), mu_x_2(:,k), sigma_x_1(:,k), sigma_x_2(:,k), &
                              hydromet_pdf_params(k) )
 
 
@@ -3492,31 +3531,27 @@ module setup_clubb_pdf_params
   subroutine pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, & ! In
                               mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
                               mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                             !mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                             !mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                              mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                              mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
                               sigma_w_1, sigma_w_2, sigma_s_1, &
                               sigma_s_2, sigma_t_1, sigma_t_2, &
                               sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
                               sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                             !sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                             !sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                              corr_ws_1, corr_ws_2, corr_wrr_1, &
-                              corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                              corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                              corr_st_2, corr_srr_1, corr_srr_2, &
-                              corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                              corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                              corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                              corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
-                             !corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                             !corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                             !corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                             !corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                             !corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                             !corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                             !corr_rrNr_1_n, corr_rrNr_2_n, &
+                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                              sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                              corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, &
+                              corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                              corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                              corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                              corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                              corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                              corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                              corr_rrNr_1_n, corr_rrNr_2_n, &
+                              rr1, rr2, Nr1, Nr2, &
+                              precip_frac, precip_frac_1, precip_frac_2, &
                               d_variables, &
                               corr_array_1, corr_array_2, & ! Out
+                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                               hydromet_pdf_params )
 
     ! Description:
@@ -3554,12 +3589,12 @@ module setup_clubb_pdf_params
       mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
       mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
       mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
-     !mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
-     !mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
-     !mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
-     !mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
-     !mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
-     !mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
+      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
+      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
       sigma_w_1,     & ! Standard deviation of w (1st PDF component)       [m/s]
       sigma_w_2,     & ! Standard deviation of w (2nd PDF component)       [m/s]
       sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
@@ -3571,61 +3606,53 @@ module setup_clubb_pdf_params
       sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
       sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
       sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
-      sigma_Ncn_2      ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
-     !sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-     !sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
-     !sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
-     !sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-     !sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
-     !sigma_Ncn_2_n    ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
+      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
+      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
+      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
+      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
+      sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
+      sigma_Ncn_2_n    ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
 
     real( kind = core_rknd ), intent(in) :: &
       corr_ws_1,     & ! Correlation between w and s (1st PDF component)     [-]
       corr_ws_2,     & ! Correlation between w and s (2nd PDF component)     [-]
-      corr_wrr_1,    & ! Correlation between w and rr (1st PDF component) ip [-]
-      corr_wrr_2,    & ! Correlation between w and rr (2nd PDF component) ip [-]
-      corr_wNr_1,    & ! Correlation between w and Nr (1st PDF component) ip [-]
-      corr_wNr_2,    & ! Correlation between w and Nr (2nd PDF component) ip [-]
-      corr_wNcn_1,   & ! Correlation between w and Ncn (1st PDF component)   [-]
-      corr_wNcn_2,   & ! Correlation between w and Ncn (2nd PDF component)   [-]
       corr_st_1,     & ! Correlation between s and t (1st PDF component)     [-]
-      corr_st_2,     & ! Correlation between s and t (2nd PDF component)     [-]
-      corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
-      corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
-      corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
-      corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
-      corr_sNcn_1,   & ! Correlation between s and Ncn (1st PDF component)   [-]
-      corr_sNcn_2,   & ! Correlation between s and Ncn (2nd PDF component)   [-]
-      corr_trr_1,    & ! Correlation between t and rr (1st PDF component) ip [-]
-      corr_trr_2,    & ! Correlation between t and rr (2nd PDF component) ip [-]
-      corr_tNr_1,    & ! Correlation between t and Nr (1st PDF component) ip [-]
-      corr_tNr_2,    & ! Correlation between t and Nr (2nd PDF component) ip [-]
-      corr_tNcn_1,   & ! Correlation between t and Ncn (1st PDF component)   [-]
-      corr_tNcn_2,   & ! Correlation between t and Ncn (2nd PDF component)   [-]
-      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
-      corr_rrNr_2      ! Correlation between rr & Nr (2nd PDF component) ip  [-]
+      corr_st_2        ! Correlation between s and t (2nd PDF component)     [-]
 
-   !real( kind = core_rknd ), intent(in) :: &
-     !corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
-     !corr_wrr_2_n,  & ! Correlation between w and ln rr (2nd PDF comp.) ip  [-]
-     !corr_wNr_1_n,  & ! Correlation between w and ln Nr (1st PDF comp.) ip  [-]
-     !corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
-     !corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
-     !corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
-     !corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-     !corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-     !corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-     !corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-     !corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
-     !corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
-     !corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
-     !corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
-     !corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
-     !corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
-     !corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
-     !corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
-     !corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-     !corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+    real( kind = core_rknd ), intent(in) :: &
+      corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
+      corr_wrr_2_n,  & ! Correlation between w and ln rr (2nd PDF comp.) ip  [-]
+      corr_wNr_1_n,  & ! Correlation between w and ln Nr (1st PDF comp.) ip  [-]
+      corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
+      corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
+      corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
+      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
+      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
+      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
+      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
+      corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
+      corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
+      corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
+      corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
+      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
+      corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+
+    real( kind = core_rknd ), intent(in) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+
 
     integer, intent(in) :: &
       d_variables    ! Number of variables in the correlation array.
@@ -3636,29 +3663,51 @@ module setup_clubb_pdf_params
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
+    real( kind = core_rknd ), dimension(d_variables), intent(out) :: &
+      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
+      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
+      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
+      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
+
+
     type(hydromet_pdf_parameter), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
+    ! ---- Begin Code ----
 
-    ! Pack Means and Standard Deviations into hydromet_pdf_params
-    hydromet_pdf_params%mu_w_1      = mu_w_1
-    hydromet_pdf_params%mu_w_2      = mu_w_2
-    hydromet_pdf_params%mu_s_1      = mu_s_1
-    hydromet_pdf_params%mu_s_2      = mu_s_2
-    hydromet_pdf_params%mu_t_1      = mu_t_1
-    hydromet_pdf_params%mu_t_2      = mu_t_2
+    ! Pack Means and Standard Deviations into arrays
+    mu_x_1(iiLh_w)        = mu_w_1
+    mu_x_2(iiLh_w)        = mu_w_2
+    mu_x_1(iiLh_s_mellor) = mu_s_1
+    mu_x_2(iiLh_s_mellor) = mu_s_2
+    mu_x_1(iiLh_t_mellor) = mu_t_1
+    mu_x_2(iiLh_t_mellor) = mu_t_2
+    mu_x_1(iiLh_rrain)    = mu_rr_1_n
+    mu_x_2(iiLh_rrain)    = mu_rr_2_n
+    mu_x_1(iiLh_Nr)       = mu_Nr_1_n
+    mu_x_2(iiLh_Nr)       = mu_Nr_2_n
+    mu_x_1(iiLh_Ncn)      = mu_Ncn_1_n
+    mu_x_2(iiLh_Ncn)      = mu_Ncn_2_n
+    sigma_x_1(iiLh_w)        = sigma_w_1
+    sigma_x_2(iiLh_w)        = sigma_w_2
+    sigma_x_1(iiLh_s_mellor) = sigma_s_1
+    sigma_x_2(iiLh_s_mellor) = sigma_s_2
+    sigma_x_1(iiLh_t_mellor) = sigma_t_1
+    sigma_x_2(iiLh_t_mellor) = sigma_t_2
+    sigma_x_1(iiLh_rrain)    = sigma_rr_1_n
+    sigma_x_2(iiLh_rrain)    = sigma_rr_2_n
+    sigma_x_1(iiLh_Nr)       = sigma_Nr_1_n
+    sigma_x_2(iiLh_Nr)       = sigma_Nr_2_n
+    sigma_x_1(iiLh_Ncn)      = sigma_Ncn_1_n
+    sigma_x_2(iiLh_Ncn)      = sigma_Ncn_2_n
+
+    ! Pack remaining variables into hydromet_pdf_params
     hydromet_pdf_params%mu_rr_1     = mu_rr_1
     hydromet_pdf_params%mu_rr_2     = mu_rr_2
     hydromet_pdf_params%mu_Nr_1     = mu_Nr_1
     hydromet_pdf_params%mu_Nr_2     = mu_Nr_2
     hydromet_pdf_params%mu_Ncn_1    = mu_Ncn_1
     hydromet_pdf_params%mu_Ncn_2    = mu_Ncn_2
-    hydromet_pdf_params%sigma_w_1   = sigma_w_1
-    hydromet_pdf_params%sigma_w_2   = sigma_w_2
-    hydromet_pdf_params%sigma_s_1   = sigma_s_1
-    hydromet_pdf_params%sigma_s_2   = sigma_s_2
-    hydromet_pdf_params%sigma_t_1   = sigma_t_1
-    hydromet_pdf_params%sigma_t_2   = sigma_t_2
     hydromet_pdf_params%sigma_rr_1  = sigma_rr_1
     hydromet_pdf_params%sigma_rr_2  = sigma_rr_2
     hydromet_pdf_params%sigma_Nr_1  = sigma_Nr_1
@@ -3666,33 +3715,41 @@ module setup_clubb_pdf_params
     hydromet_pdf_params%sigma_Ncn_1 = sigma_Ncn_1
     hydromet_pdf_params%sigma_Ncn_2 = sigma_Ncn_2
 
+    hydromet_pdf_params%rr1           = rr1
+    hydromet_pdf_params%rr2           = rr2
+    hydromet_pdf_params%Nr1           = Nr1
+    hydromet_pdf_params%Nr2           = Nr2
+    hydromet_pdf_params%precip_frac   = precip_frac
+    hydromet_pdf_params%precip_frac_1 = precip_frac_1
+    hydromet_pdf_params%precip_frac_2 = precip_frac_2
+
     ! Pack correlations (1st PDF component) into corr_array_1.
     corr_array_1(iiLH_s_mellor,iiLH_t_mellor) = corr_st_1
     corr_array_1(iiLH_s_mellor,iiLH_w)        = corr_ws_1
-    corr_array_1(iiLH_s_mellor,iiLH_rrain)    = corr_srr_1
-    corr_array_1(iiLH_s_mellor,iiLH_Nr)       = corr_sNr_1
-    corr_array_1(iiLH_s_mellor,iiLH_Ncn)      = corr_sNcn_1
-    corr_array_1(iiLH_t_mellor,iiLH_rrain)    = corr_trr_1
-    corr_array_1(iiLH_t_mellor,iiLH_Nr)       = corr_tNr_1
-    corr_array_1(iiLH_t_mellor,iiLH_Ncn)      = corr_tNcn_1
-    corr_array_1(iiLH_w,iiLH_rrain)           = corr_wrr_1
-    corr_array_1(iiLH_w,iiLH_Nr)              = corr_wNr_1
-    corr_array_1(iiLH_w,iiLH_Ncn)             = corr_wNcn_1
-    corr_array_1(iiLH_rrain,iiLH_Nr)          = corr_rrNr_1
+    corr_array_1(iiLH_s_mellor,iiLH_rrain)    = corr_srr_1_n
+    corr_array_1(iiLH_s_mellor,iiLH_Nr)       = corr_sNr_1_n
+    corr_array_1(iiLH_s_mellor,iiLH_Ncn)      = corr_sNcn_1_n
+    corr_array_1(iiLH_t_mellor,iiLH_rrain)    = corr_trr_1_n
+    corr_array_1(iiLH_t_mellor,iiLH_Nr)       = corr_tNr_1_n
+    corr_array_1(iiLH_t_mellor,iiLH_Ncn)      = corr_tNcn_1_n
+    corr_array_1(iiLH_w,iiLH_rrain)           = corr_wrr_1_n
+    corr_array_1(iiLH_w,iiLH_Nr)              = corr_wNr_1_n
+    corr_array_1(iiLH_w,iiLH_Ncn)             = corr_wNcn_1_n
+    corr_array_1(iiLH_rrain,iiLH_Nr)          = corr_rrNr_1_n
 
     ! Pack correlations (2nd PDF component) into corr_array_2.
     corr_array_2(iiLH_s_mellor,iiLH_t_mellor) = corr_st_2
     corr_array_2(iiLH_s_mellor,iiLH_w)        = corr_ws_2
-    corr_array_2(iiLH_s_mellor,iiLH_rrain)    = corr_srr_2
-    corr_array_2(iiLH_s_mellor,iiLH_Nr)       = corr_sNr_2
-    corr_array_2(iiLH_s_mellor,iiLH_Ncn)      = corr_sNcn_2
-    corr_array_2(iiLH_t_mellor,iiLH_rrain)    = corr_trr_2
-    corr_array_2(iiLH_t_mellor,iiLH_Nr)       = corr_tNr_2
-    corr_array_2(iiLH_t_mellor,iiLH_Ncn)      = corr_tNcn_2
-    corr_array_2(iiLH_w,iiLH_rrain)           = corr_wrr_2
-    corr_array_2(iiLH_w,iiLH_Nr)              = corr_wNr_2
-    corr_array_2(iiLH_w,iiLH_Ncn)             = corr_wNcn_2
-    corr_array_2(iiLH_rrain,iiLH_Nr)          = corr_rrNr_2
+    corr_array_2(iiLH_s_mellor,iiLH_rrain)    = corr_srr_2_n
+    corr_array_2(iiLH_s_mellor,iiLH_Nr)       = corr_sNr_2_n
+    corr_array_2(iiLH_s_mellor,iiLH_Ncn)      = corr_sNcn_2_n
+    corr_array_2(iiLH_t_mellor,iiLH_rrain)    = corr_trr_2_n
+    corr_array_2(iiLH_t_mellor,iiLH_Nr)       = corr_tNr_2_n
+    corr_array_2(iiLH_t_mellor,iiLH_Ncn)      = corr_tNcn_2_n
+    corr_array_2(iiLH_w,iiLH_rrain)           = corr_wrr_2_n
+    corr_array_2(iiLH_w,iiLH_Nr)              = corr_wNr_2_n
+    corr_array_2(iiLH_w,iiLH_Ncn)             = corr_wNcn_2_n
+    corr_array_2(iiLH_rrain,iiLH_Nr)          = corr_rrNr_2_n
 
 
     return
@@ -3700,34 +3757,30 @@ module setup_clubb_pdf_params
   end subroutine pack_pdf_params
 
   !=============================================================================
-  subroutine unpack_pdf_params( d_variables, corr_array_1, &
-                                corr_array_2, hydromet_pdf_params, &
-                                mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
+  subroutine unpack_pdf_params( d_variables, corr_array_1, corr_array_2, & ! In
+                                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
+                                hydromet_pdf_params, &
+                                mu_w_1, mu_w_2, mu_s_1, mu_s_2, & ! Out
                                 mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
                                 mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                               !mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                               !mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                                mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                                mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
                                 sigma_w_1, sigma_w_2, sigma_s_1, &
                                 sigma_s_2, sigma_t_1, sigma_t_2, &
                                 sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
                                 sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                               !sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                               !sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                corr_ws_1, corr_ws_2, corr_wrr_1, &
-                                corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                                corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                                corr_st_2, corr_srr_1, corr_srr_2, &
-                                corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
-                               !corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                               !corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                               !corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                               !corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                               !corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                               !corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                               !corr_rrNr_1_n, corr_rrNr_2_n )
+                                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                                sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                                corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, &
+                                corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                                corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                                corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                                corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                                corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                                corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                                corr_rrNr_1_n, corr_rrNr_2_n , &
+                                rr1, rr2, Nr1, Nr2, &
+                                precip_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
 
@@ -3759,6 +3812,12 @@ module setup_clubb_pdf_params
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
+      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
+      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
+      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
+
     type(hydromet_pdf_parameter), intent(in) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
@@ -3776,12 +3835,12 @@ module setup_clubb_pdf_params
       mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
       mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
       mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
-     !mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
-     !mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
-     !mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
-     !mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
-     !mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
-     !mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
+      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
+      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
       sigma_w_1,     & ! Standard deviation of w (1st PDF component)       [m/s]
       sigma_w_2,     & ! Standard deviation of w (2nd PDF component)       [m/s]
       sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
@@ -3793,82 +3852,87 @@ module setup_clubb_pdf_params
       sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
       sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
       sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
-      sigma_Ncn_2      ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
-     !sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-     !sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
-     !sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
-     !sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-     !sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
-     !sigma_Ncn_2_n    ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
+      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
+      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
+      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
+      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
+      sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
+      sigma_Ncn_2_n    ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
 
     real( kind = core_rknd ), intent(out) :: &
       corr_ws_1,     & ! Correlation between w and s (1st PDF component)     [-]
       corr_ws_2,     & ! Correlation between w and s (2nd PDF component)     [-]
-      corr_wrr_1,    & ! Correlation between w and rr (1st PDF component) ip [-]
-      corr_wrr_2,    & ! Correlation between w and rr (2nd PDF component) ip [-]
-      corr_wNr_1,    & ! Correlation between w and Nr (1st PDF component) ip [-]
-      corr_wNr_2,    & ! Correlation between w and Nr (2nd PDF component) ip [-]
-      corr_wNcn_1,   & ! Correlation between w and Ncn (1st PDF component)   [-]
-      corr_wNcn_2,   & ! Correlation between w and Ncn (2nd PDF component)   [-]
       corr_st_1,     & ! Correlation between s and t (1st PDF component)     [-]
-      corr_st_2,     & ! Correlation between s and t (2nd PDF component)     [-]
-      corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
-      corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
-      corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
-      corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
-      corr_sNcn_1,   & ! Correlation between s and Ncn (1st PDF component)   [-]
-      corr_sNcn_2,   & ! Correlation between s and Ncn (2nd PDF component)   [-]
-      corr_trr_1,    & ! Correlation between t and rr (1st PDF component) ip [-]
-      corr_trr_2,    & ! Correlation between t and rr (2nd PDF component) ip [-]
-      corr_tNr_1,    & ! Correlation between t and Nr (1st PDF component) ip [-]
-      corr_tNr_2,    & ! Correlation between t and Nr (2nd PDF component) ip [-]
-      corr_tNcn_1,   & ! Correlation between t and Ncn (1st PDF component)   [-]
-      corr_tNcn_2,   & ! Correlation between t and Ncn (2nd PDF component)   [-]
-      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
-      corr_rrNr_2      ! Correlation between rr & Nr (2nd PDF component) ip  [-]
+      corr_st_2        ! Correlation between s and t (2nd PDF component)     [-]
 
-   !real( kind = core_rknd ), intent(out) :: &
-     !corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
-     !corr_wrr_2_n,  & ! Correlation between w and ln rr (2nd PDF comp.) ip  [-]
-     !corr_wNr_1_n,  & ! Correlation between w and ln Nr (1st PDF comp.) ip  [-]
-     !corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
-     !corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
-     !corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
-     !corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-     !corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-     !corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-     !corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-     !corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
-     !corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
-     !corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
-     !corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
-     !corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
-     !corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
-     !corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
-     !corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
-     !corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-     !corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+   real( kind = core_rknd ), intent(out) :: &
+      corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
+      corr_wrr_2_n,  & ! Correlation between w and ln rr (2nd PDF comp.) ip  [-]
+      corr_wNr_1_n,  & ! Correlation between w and ln Nr (1st PDF comp.) ip  [-]
+      corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
+      corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
+      corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
+      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
+      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
+      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
+      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
+      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
+      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
+      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
+      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
+      corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
+      corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
+      corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
+      corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
+      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
+      corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+
+    real( kind = core_rknd ), intent(out) :: &
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+
+    real( kind = core_rknd ), intent(out) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
 
-    ! Unpack hydromet_pdf_params into Means and Standard Deviations.
-    mu_w_1      = hydromet_pdf_params%mu_w_1
-    mu_w_2      = hydromet_pdf_params%mu_w_2
-    mu_s_1      = hydromet_pdf_params%mu_s_1
-    mu_s_2      = hydromet_pdf_params%mu_s_2
-    mu_t_1      = hydromet_pdf_params%mu_t_1
-    mu_t_2      = hydromet_pdf_params%mu_t_2
+    ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
+    mu_w_1        = mu_x_1(iiLh_w)
+    mu_w_2        = mu_x_2(iiLh_w)
+    mu_s_1        = mu_x_1(iiLh_s_mellor)
+    mu_s_2        = mu_x_2(iiLh_s_mellor)
+    mu_t_1        = mu_x_1(iiLh_t_mellor)
+    mu_t_2        = mu_x_2(iiLh_t_mellor)
+    mu_rr_1_n     = mu_x_1(iiLh_rrain)
+    mu_rr_2_n     = mu_x_2(iiLh_rrain)
+    mu_Nr_1_n     = mu_x_1(iiLh_Nr)
+    mu_Nr_2_n     = mu_x_2(iiLh_Nr)
+    mu_Ncn_1_n    = mu_x_1(iiLh_Ncn)
+    mu_Ncn_2_n    = mu_x_2(iiLh_Ncn)
+    sigma_w_1     = sigma_x_1(iiLh_w)
+    sigma_w_2     = sigma_x_2(iiLh_w)
+    sigma_s_1     = sigma_x_1(iiLh_s_mellor)
+    sigma_s_2     = sigma_x_2(iiLh_s_mellor)
+    sigma_t_1     = sigma_x_1(iiLh_t_mellor)
+    sigma_t_2     = sigma_x_2(iiLh_t_mellor)
+    sigma_rr_1_n  = sigma_x_1(iiLh_rrain)
+    sigma_rr_2_n  = sigma_x_2(iiLh_rrain)
+    sigma_Nr_1_n  = sigma_x_1(iiLh_Nr)
+    sigma_Nr_2_n  = sigma_x_2(iiLh_Nr)
+    sigma_Ncn_1_n = sigma_x_1(iiLh_Ncn)
+    sigma_Ncn_2_n = sigma_x_2(iiLh_Ncn)
+
+    ! Unpack variables from hydromet_pdf_params
     mu_rr_1     = hydromet_pdf_params%mu_rr_1
     mu_rr_2     = hydromet_pdf_params%mu_rr_2
     mu_Nr_1     = hydromet_pdf_params%mu_Nr_1
     mu_Nr_2     = hydromet_pdf_params%mu_Nr_2
     mu_Ncn_1    = hydromet_pdf_params%mu_Ncn_1
     mu_Ncn_2    = hydromet_pdf_params%mu_Ncn_2
-    sigma_w_1   = hydromet_pdf_params%sigma_w_1
-    sigma_w_2   = hydromet_pdf_params%sigma_w_2
-    sigma_s_1   = hydromet_pdf_params%sigma_s_1
-    sigma_s_2   = hydromet_pdf_params%sigma_s_2
-    sigma_t_1   = hydromet_pdf_params%sigma_t_1
-    sigma_t_2   = hydromet_pdf_params%sigma_t_2
     sigma_rr_1  = hydromet_pdf_params%sigma_rr_1
     sigma_rr_2  = hydromet_pdf_params%sigma_rr_2
     sigma_Nr_1  = hydromet_pdf_params%sigma_Nr_1
@@ -3876,33 +3940,41 @@ module setup_clubb_pdf_params
     sigma_Ncn_1 = hydromet_pdf_params%sigma_Ncn_1
     sigma_Ncn_2 = hydromet_pdf_params%sigma_Ncn_2
 
+    rr1           = hydromet_pdf_params%rr1
+    rr2           = hydromet_pdf_params%rr2
+    Nr1           = hydromet_pdf_params%Nr1
+    Nr2           = hydromet_pdf_params%Nr2
+    precip_frac   = hydromet_pdf_params%precip_frac
+    precip_frac_1 = hydromet_pdf_params%precip_frac_1
+    precip_frac_2 = hydromet_pdf_params%precip_frac_2
+
     ! Unpack corr_array_1 into correlations (1st PDF component).
-    corr_st_1   = corr_array_1(iiLH_s_mellor,iiLH_t_mellor)
-    corr_ws_1   = corr_array_1(iiLH_s_mellor,iiLH_w)
-    corr_srr_1  = corr_array_1(iiLH_s_mellor,iiLH_rrain)
-    corr_sNr_1  = corr_array_1(iiLH_s_mellor,iiLH_Nr)
-    corr_sNcn_1 = corr_array_1(iiLH_s_mellor,iiLH_Ncn)
-    corr_trr_1  = corr_array_1(iiLH_t_mellor,iiLH_rrain)
-    corr_tNr_1  = corr_array_1(iiLH_t_mellor,iiLH_Nr)
-    corr_tNcn_1 = corr_array_1(iiLH_t_mellor,iiLH_Ncn)
-    corr_wrr_1  = corr_array_1(iiLH_w,iiLH_rrain)
-    corr_wNr_1  = corr_array_1(iiLH_w,iiLH_Nr)
-    corr_wNcn_1 = corr_array_1(iiLH_w,iiLH_Ncn)
-    corr_rrNr_1 = corr_array_1(iiLH_rrain,iiLH_Nr)
+    corr_st_1     = corr_array_1(iiLH_s_mellor,iiLH_t_mellor)
+    corr_ws_1     = corr_array_1(iiLH_s_mellor,iiLH_w)
+    corr_srr_1_n  = corr_array_1(iiLH_s_mellor,iiLH_rrain)
+    corr_sNr_1_n  = corr_array_1(iiLH_s_mellor,iiLH_Nr)
+    corr_sNcn_1_n = corr_array_1(iiLH_s_mellor,iiLH_Ncn)
+    corr_trr_1_n  = corr_array_1(iiLH_t_mellor,iiLH_rrain)
+    corr_tNr_1_n  = corr_array_1(iiLH_t_mellor,iiLH_Nr)
+    corr_tNcn_1_n = corr_array_1(iiLH_t_mellor,iiLH_Ncn)
+    corr_wrr_1_n  = corr_array_1(iiLH_w,iiLH_rrain)
+    corr_wNr_1_n  = corr_array_1(iiLH_w,iiLH_Nr)
+    corr_wNcn_1_n = corr_array_1(iiLH_w,iiLH_Ncn)
+    corr_rrNr_1_n = corr_array_1(iiLH_rrain,iiLH_Nr)
 
     ! Unpack corr_array_2 into correlations (2nd PDF component).
-    corr_st_2   = corr_array_2(iiLH_s_mellor,iiLH_t_mellor)
-    corr_ws_2   = corr_array_2(iiLH_s_mellor,iiLH_w)
-    corr_srr_2  = corr_array_2(iiLH_s_mellor,iiLH_rrain)
-    corr_sNr_2  = corr_array_2(iiLH_s_mellor,iiLH_Nr)
-    corr_sNcn_2 = corr_array_2(iiLH_s_mellor,iiLH_Ncn)
-    corr_trr_2  = corr_array_2(iiLH_t_mellor,iiLH_rrain)
-    corr_tNr_2  = corr_array_2(iiLH_t_mellor,iiLH_Nr)
-    corr_tNcn_2 = corr_array_2(iiLH_t_mellor,iiLH_Ncn)
-    corr_wrr_2  = corr_array_2(iiLH_w,iiLH_rrain)
-    corr_wNr_2  = corr_array_2(iiLH_w,iiLH_Nr)
-    corr_wNcn_2 = corr_array_2(iiLH_w,iiLH_Ncn)
-    corr_rrNr_2 = corr_array_2(iiLH_rrain,iiLH_Nr)
+    corr_st_2     = corr_array_2(iiLH_s_mellor,iiLH_t_mellor)
+    corr_ws_2     = corr_array_2(iiLH_s_mellor,iiLH_w)
+    corr_srr_2_n  = corr_array_2(iiLH_s_mellor,iiLH_rrain)
+    corr_sNr_2_n  = corr_array_2(iiLH_s_mellor,iiLH_Nr)
+    corr_sNcn_2_n = corr_array_2(iiLH_s_mellor,iiLH_Ncn)
+    corr_trr_2_n  = corr_array_2(iiLH_t_mellor,iiLH_rrain)
+    corr_tNr_2_n  = corr_array_2(iiLH_t_mellor,iiLH_Nr)
+    corr_tNcn_2_n = corr_array_2(iiLH_t_mellor,iiLH_Ncn)
+    corr_wrr_2_n  = corr_array_2(iiLH_w,iiLH_rrain)
+    corr_wNr_2_n  = corr_array_2(iiLH_w,iiLH_Nr)
+    corr_wNcn_2_n = corr_array_2(iiLH_w,iiLH_Ncn)
+    corr_rrNr_2_n = corr_array_2(iiLH_rrain,iiLH_Nr)
 
 
     return

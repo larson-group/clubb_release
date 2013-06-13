@@ -17,30 +17,30 @@ module hydromet_pdf_parameter_module
 
   type hydromet_pdf_parameter
     real( kind = core_rknd ) :: &
-      mu_w_1,      & ! Mean of w (1st PDF component)                       [m/s]
-      mu_w_2,      & ! Mean of w (2nd PDF component)                       [m/s]
-      mu_s_1,      & ! Mean of s (1st PDF component)                     [kg/kg]
-      mu_s_2,      & ! Mean of s (2nd PDF component)                     [kg/kg]
-      mu_t_1,      & ! Mean of t (1st PDF component)                     [kg/kg]
-      mu_t_2,      & ! Mean of t (2nd PDF component)                     [kg/kg]
       mu_rr_1,     & ! Mean of rr (1st PDF component) in-precip (ip)     [kg/kg]
       mu_rr_2,     & ! Mean of rr (2nd PDF component) ip                 [kg/kg]
       mu_Nr_1,     & ! Mean of Nr (1st PDF component) ip                [num/kg]
       mu_Nr_2,     & ! Mean of Nr (2nd PDF component) ip                [num/kg]
       mu_Ncn_1,    & ! Mean of Ncn (1st PDF component)                  [num/kg]
       mu_Ncn_2,    & ! Mean of Ncn (2nd PDF component)                  [num/kg]
-      sigma_w_1,   & ! Standard deviation of w (1st PDF component)         [m/s]
-      sigma_w_2,   & ! Standard deviation of w (2nd PDF component)         [m/s]
-      sigma_s_1,   & ! Standard deviation of s (1st PDF component)       [kg/kg]
-      sigma_s_2,   & ! Standard deviation of s (2nd PDF component)       [kg/kg]
-      sigma_t_1,   & ! Standard deviation of t (1st PDF component)       [kg/kg]
-      sigma_t_2,   & ! Standard deviation of t (2nd PDF component)       [kg/kg]
       sigma_rr_1,  & ! Standard deviation of rr (1st PDF component) ip   [kg/kg]
       sigma_rr_2,  & ! Standard deviation of rr (2nd PDF component) ip   [kg/kg]
       sigma_Nr_1,  & ! Standard deviation of Nr (1st PDF component) ip  [num/kg]
       sigma_Nr_2,  & ! Standard deviation of Nr (2nd PDF component) ip  [num/kg]
       sigma_Ncn_1, & ! Standard deviation of Ncn (1st PDF component)    [num/kg]
       sigma_Ncn_2    ! Standard deviation of Ncn (2nd PDF component)    [num/kg]
+
+    real( kind = core_rknd ) :: &
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+
+    real( kind = core_rknd ) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+
     end type hydromet_pdf_parameter
 
 end module hydromet_pdf_parameter_module

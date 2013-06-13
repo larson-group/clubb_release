@@ -336,9 +336,8 @@ module KK_microphys_module
                                        pdf_params, w_std_dev, rcm, Ncnm,        & ! Intent(in)
                                        s_mellor, Nc0_in_cloud,                  & ! Intent(in)
                                        hydromet, wphydrometp,                   & ! Intent(in)
-                                       rr1, rr2, Nr1, Nr2,                      & ! Intent(in)
-                                       precip_frac, precip_frac_1, precip_frac_2,  & ! Intent(in)
                                        d_variables, corr_array_1, corr_array_2, & ! Intent(in)
+                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,    & ! Intent(in)
                                        hydromet_pdf_params,                     & ! Intent(in)
                                        hydromet_mc, hydromet_vel,               & ! Intent(inout)
                                        rcm_mc, rvm_mc, thlm_mc,                 & ! Intent(out)
@@ -446,17 +445,6 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
-
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(in) :: &
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
@@ -465,6 +453,12 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(in) :: &
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
+
+    real( kind = core_rknd ), dimension(d_variables, nz), intent(in) :: &
+      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
+      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
+      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
+      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
     ! Input / Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
@@ -559,28 +553,28 @@ module KK_microphys_module
     real( kind = core_rknd ) :: &
       corr_ws_1,     & ! Correlation between w and s (1st PDF component)     [-]
       corr_ws_2,     & ! Correlation between w and s (2nd PDF component)     [-]
-      corr_wrr_1,    & ! Correlation between w and rr (1st PDF component) ip [-]
-      corr_wrr_2,    & ! Correlation between w and rr (2nd PDF component) ip [-]
-      corr_wNr_1,    & ! Correlation between w and Nr (1st PDF component) ip [-]
-      corr_wNr_2,    & ! Correlation between w and Nr (2nd PDF component) ip [-]
-      corr_wNcn_1,   & ! Correlation between w and Ncn (1st PDF component)   [-]
-      corr_wNcn_2,   & ! Correlation between w and Ncn (2nd PDF component)   [-]
+      !corr_wrr_1,    & ! Correlation between w and rr (1st PDF component) ip [-]
+      !corr_wrr_2,    & ! Correlation between w and rr (2nd PDF component) ip [-]
+      !corr_wNr_1,    & ! Correlation between w and Nr (1st PDF component) ip [-]
+      !corr_wNr_2,    & ! Correlation between w and Nr (2nd PDF component) ip [-]
+      !corr_wNcn_1,   & ! Correlation between w and Ncn (1st PDF component)   [-]
+      !corr_wNcn_2,   & ! Correlation between w and Ncn (2nd PDF component)   [-]
       corr_st_1,     & ! Correlation between s and t (1st PDF component)     [-]
-      corr_st_2,     & ! Correlation between s and t (2nd PDF component)     [-]
-      corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
-      corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
-      corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
-      corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
-      corr_sNcn_1,   & ! Correlation between s and Ncn (1st PDF component)   [-]
-      corr_sNcn_2,   & ! Correlation between s and Ncn (2nd PDF component)   [-]
-      corr_trr_1,    & ! Correlation between t and rr (1st PDF component) ip [-]
-      corr_trr_2,    & ! Correlation between t and rr (2nd PDF component) ip [-]
-      corr_tNr_1,    & ! Correlation between t and Nr (1st PDF component) ip [-]
-      corr_tNr_2,    & ! Correlation between t and Nr (2nd PDF component) ip [-]
-      corr_tNcn_1,   & ! Correlation between t and Ncn (1st PDF component)   [-]
-      corr_tNcn_2,   & ! Correlation between t and Ncn (2nd PDF component)   [-]
-      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
-      corr_rrNr_2      ! Correlation between rr & Nr (2nd PDF component) ip  [-]
+      corr_st_2!,     & ! Correlation between s and t (2nd PDF component)     [-]
+      !corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
+      !corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
+      !corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
+      !corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
+      !corr_sNcn_1,   & ! Correlation between s and Ncn (1st PDF component)   [-]
+      !corr_sNcn_2,   & ! Correlation between s and Ncn (2nd PDF component)   [-]
+      !corr_trr_1,    & ! Correlation between t and rr (1st PDF component) ip [-]
+      !corr_trr_2,    & ! Correlation between t and rr (2nd PDF component) ip [-]
+      !corr_tNr_1,    & ! Correlation between t and Nr (1st PDF component) ip [-]
+      !corr_tNr_2,    & ! Correlation between t and Nr (2nd PDF component) ip [-]
+      !corr_tNcn_1,   & ! Correlation between t and Ncn (1st PDF component)   [-]
+      !corr_tNcn_2,   & ! Correlation between t and Ncn (2nd PDF component)   [-]
+      !corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
+      !corr_rrNr_2      ! Correlation between rr & Nr (2nd PDF component) ip  [-]
 
     real( kind = core_rknd ) :: &
       corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
@@ -603,6 +597,17 @@ module KK_microphys_module
       corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
       corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
       corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+
+    real( kind = core_rknd ) :: &
+      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+
+    real( kind = core_rknd ) :: &
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
     real( kind = core_rknd ), dimension(:), pointer :: &
       Vrrprrp_zt_impc, & ! Imp. comp. of <V_rr'r_r'>: <r_r> eq.  [(m/s)]
@@ -668,73 +673,30 @@ module KK_microphys_module
 
 
        !!! Unpack the PDF parameters.
-       call unpack_pdf_params( d_variables, corr_array_1(:,:,k), &
-                               corr_array_2(:,:,k), hydromet_pdf_params(k), &
-                               mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
+       call unpack_pdf_params( d_variables, corr_array_1(:,:,k), corr_array_2(:,:,k), & ! In
+                               mu_x_1(:,k), mu_x_2(:,k), sigma_x_1(:,k), sigma_x_2(:,k), &
+                               hydromet_pdf_params(k), &
+                               mu_w_1, mu_w_2, mu_s_1, mu_s_2, & ! Out
                                mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
                                mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                              !mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                              !mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
+                               mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
+                               mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
                                sigma_w_1, sigma_w_2, sigma_s_1, &
                                sigma_s_2, sigma_t_1, sigma_t_2, &
                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
                                sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                              !sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                              !sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                               corr_ws_1, corr_ws_2, corr_wrr_1, &
-                               corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                               corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                               corr_st_2, corr_srr_1, corr_srr_2, &
-                               corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                               corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                               corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                               corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
-                              !corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                              !corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                              !corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                              !corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                              !corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                              !corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                              !corr_rrNr_1_n, corr_rrNr_2_n )
-       
-       !!! Calculate the mean, standard deviations, and correlations involving
-       !!! ln r_r, ln N_r, and ln N_cn for each PDF component.
-       call normalize_pdf_params( rr1(k), rr2(k), Nr1(k), Nr2(k), Ncnm(k), &
-                                  mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                  mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, &
-                                  sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &
-                                  sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &
-                                  corr_wNr_1, corr_wNr_2, corr_wNcn_1, &
-                                  corr_wNcn_2, corr_srr_1, corr_srr_2, &
-                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
-                                  mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                  mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                  sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                  sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                  corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                                  corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                                  corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                                  corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                                  corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                                  corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                                  corr_rrNr_1_n, corr_rrNr_2_n )
-
-       !!! Statistics
-       call pdf_param_log_hm_stats( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                    mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                    sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                    sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                    corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                                    corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                                    corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                                    corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                                    corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                                    corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                                    corr_rrNr_1_n, corr_rrNr_2_n, k, &
-                                    l_stats_samp )
+                               sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                               sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                               corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, &
+                               corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
+                               corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
+                               corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
+                               corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                               corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
+                               corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
+                               corr_rrNr_1_n, corr_rrNr_2_n, &
+                               rr1, rr2, Nr1, Nr2, &
+                               precip_frac, precip_frac_1, precip_frac_2 )
 
        !!! Calculate the values of the upscaled KK microphysics tendencies.
        call KK_upscaled_means_driver( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
@@ -751,23 +713,23 @@ module KK_microphys_module
                                       corr_sNr_1_n, corr_sNr_2_n, &
                                       corr_sNcn_1_n, corr_sNcn_2_n, &
                                       corr_rrNr_1_n, corr_rrNr_2_n, &
-                                      mixt_frac(k), precip_frac_1(k), &
-                                      precip_frac_2(k), Nc0_in_cloud(k), &
+                                      mixt_frac(k), precip_frac_1, &
+                                      precip_frac_2, Nc0_in_cloud(k), &
                                       l_const_Nc_in_cloud, &
                                       KK_evap_coef, KK_auto_coef, &
                                       KK_accr_coef, KK_mvr_coef, &
                                       KK_evap_tndcy(k), KK_auto_tndcy(k), &
                                       KK_accr_tndcy(k), KK_mean_vol_rad(k) )
 
-       call KK_sed_vel_covars( rrainm(k), rr1(k), rr2(k), Nrm(k), &
-                               Nr1(k), Nr2(k), KK_mean_vol_rad(k), &
+       call KK_sed_vel_covars( rrainm(k), rr1, rr2, Nrm(k), &
+                               Nr1, Nr2, KK_mean_vol_rad(k), &
                                mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, &
                                mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1, &
                                sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
                                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                                sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
-                               KK_mvr_coef, mixt_frac(k), precip_frac_1(k), &
-                               precip_frac_2(k), k, l_stats_samp, &
+                               KK_mvr_coef, mixt_frac(k), precip_frac_1, &
+                               precip_frac_2, k, l_stats_samp, &
                                Vrrprrp_zt_impc(k), Vrrprrp_zt_expc(k), &
                                VNrpNrp_zt_impc(k), VNrpNrp_zt_expc(k) )
 
@@ -799,8 +761,8 @@ module KK_microphys_module
                                          corr_tNr_1_n, corr_tNr_2_n, &
                                          corr_tNcn_1_n, corr_tNcn_2_n, &
                                          corr_rrNr_1_n, corr_rrNr_2_n, &
-                                         mixt_frac(k), precip_frac_1(k), &
-                                         precip_frac_2(k), Nc0_in_cloud(k), &
+                                         mixt_frac(k), precip_frac_1, &
+                                         precip_frac_2, Nc0_in_cloud(k), &
                                          KK_evap_coef, KK_auto_coef, &
                                          KK_accr_coef, KK_evap_tndcy(k), &
                                          KK_auto_tndcy(k), KK_accr_tndcy(k), &
@@ -828,7 +790,7 @@ module KK_microphys_module
                                     corr_srr_2_n, corr_sNr_1_n, &
                                     corr_sNr_2_n, corr_rrNr_1_n, &
                                     corr_rrNr_2_n, KK_evap_coef, mixt_frac(k), &
-                                    precip_frac_1(k), precip_frac_2(k), dt )
+                                    precip_frac_1, precip_frac_2, dt )
 
 
        !!! Calculate the KK N_r autoconversion tendency.
@@ -856,7 +818,7 @@ module KK_microphys_module
                                corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                                corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
                                corr_rrNr_1_n, corr_rrNr_2_n, mixt_frac(k), &
-                               precip_frac_1(k), precip_frac_2(k), &
+                               precip_frac_1, precip_frac_2, &
                                KK_mvr_coef, KK_mean_vol_rad(k), rrainm(k), &
                                Nrm(k), k, l_stats_samp )
 

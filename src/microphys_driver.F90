@@ -935,9 +935,8 @@ module microphys_driver
                wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt,           & ! Intent(in)
                LH_sample_point_weights,                                 & ! Intent(in)
                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl,      & ! Intent(in)
-               rr1, rr2, Nr1, Nr2,                                      & ! Intent(in)
-               precip_frac, precip_frac_1, precip_frac_2,               & ! Intent(in)
                n_variables, corr_array_1, corr_array_2,                 & ! Intent(in)
+               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,                    & ! Intent(in)
                hydromet_pdf_params,                                     & ! Intent(in)
                Ncnm, hydromet, wphydrometp,                             & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc,                                 & ! Intent(inout)
@@ -1194,17 +1193,6 @@ module microphys_driver
       wm_zm,      & ! w wind component on momentum levels       [m/s]
       Kh_zm         ! Kh Eddy diffusivity on momentum grid      [m^2/s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
-
     type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
       pdf_params     ! PDF parameters
 
@@ -1232,6 +1220,12 @@ module microphys_driver
     real( kind = core_rknd ), dimension(n_variables, n_variables, gr%nz), intent(in) :: &
       corr_array_1, & ! Correlation matrix for the first pdf component    [-]
       corr_array_2    ! Correlation matrix for the second pdf component   [-]
+
+    real( kind = core_rknd ), dimension(n_variables, gr%nz), intent(in) :: &
+      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
+      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
+      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
+      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
     ! Input/Output Variables
 
@@ -1705,11 +1699,10 @@ module microphys_driver
           call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, thlm, wm_zt,    & ! Intent(in)
                                          p_in_Pa, exner, rho, cloud_frac,         & ! Intent(in)
                                          pdf_params, wtmp, rcm, Ncnm,             & ! Intent(in)
-                                         s_mellor, Nc_in_cloud,                  & ! Intent(in)
+                                         s_mellor, Nc_in_cloud,                   & ! Intent(in)
                                          hydromet, wphydrometp,                   & ! Intent(in)
-                                         rr1, rr2, Nr1, Nr2,                      & ! Intent(in)
-                                         precip_frac, precip_frac_1, precip_frac_2, & ! Intent(in)
                                          n_variables, corr_array_1, corr_array_2, & ! Intent(in)
+                                         mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,    & ! Intent(in)
                                          hydromet_pdf_params,                     & ! Intent(in)
                                          hydromet_mc, hydromet_vel_zt,            & ! Intent(inout)
                                          rcm_mc, rvm_mc, thlm_mc,                 & ! Intent(out)

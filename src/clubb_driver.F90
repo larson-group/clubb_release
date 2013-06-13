@@ -400,20 +400,15 @@ module clubb_driver
       rrainm, & ! Overall mean rain water mixing ratio               [kg/kg]
       Nrm       ! Overall mean rain drop concentration               [num/kg]
 
-     real( kind = core_rknd ), dimension(:), allocatable :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
-
-    real( kind = core_rknd ), dimension(:), allocatable :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
-
     real( kind = core_rknd ), dimension(:, :, :), allocatable :: &
       corr_array_1, & ! Correlation matrix for the first pdf component    [-]
       corr_array_2    ! Correlation matrix for the second pdf component   [-]
+
+    real( kind = core_rknd ), dimension(:, :), allocatable :: &
+      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
+      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
+      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
+      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
     real( kind = core_rknd ), dimension(:, :), allocatable :: &
       corr_array_cloud, & ! Prescribed correlation matrix (in cloud)      [-]
@@ -868,14 +863,6 @@ module clubb_driver
     allocate( rrainm(gr%nz) )
     allocate( Nrm(gr%nz) )
 
-    allocate( rr1(gr%nz) )
-    allocate( rr2(gr%nz) )
-    allocate( Nr1(gr%nz) )
-    allocate( Nr2(gr%nz) )
-    allocate( precip_frac(gr%nz) )
-    allocate( precip_frac_1(gr%nz) )
-    allocate( precip_frac_2(gr%nz) )
-
     ! Allocate hydromet_pdf_params
     allocate( hydromet_pdf_params(gr%nz) )
 
@@ -884,6 +871,12 @@ module clubb_driver
     allocate(corr_array_2(d_variables, d_variables, gr%nz))
     allocate(corr_array_cloud(d_variables, d_variables))
     allocate(corr_array_below(d_variables, d_variables))
+
+    ! Allocate the mean and stddev arrays
+    allocate(mu_x_1(d_variables, gr%nz))
+    allocate(mu_x_2(d_variables, gr%nz))
+    allocate(sigma_x_1(d_variables, gr%nz))
+    allocate(sigma_x_2(d_variables, gr%nz))
 
     ! Initialize all variables for the diagnose correlations code
 
@@ -1222,6 +1215,10 @@ module clubb_driver
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
+      if ( itime == 50 ) then
+         print *, "Debugging ..."
+      endif
+
       if ( .not. trim( micro_scheme ) == "none" ) then
 
          rrainm = hydromet(:,iirrainm)
@@ -1256,9 +1253,8 @@ module clubb_driver
             call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
                                        cloud_frac, sqrt(wp2_zt), wphydrometp, &
                                        pdf_params, l_stats_samp, d_variables, &
-                                       rr1, rr2, Nr1, Nr2, precip_frac, & ! Out
-                                       precip_frac_1, precip_frac_2, &
-                                       corr_array_1, corr_array_2, &
+                                       corr_array_1, corr_array_2, & ! Out
+                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                                        hydromet_pdf_params )
 
          endif ! l_diagnose_correlations
@@ -1271,9 +1267,8 @@ module clubb_driver
              cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
              Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
              rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt,           & ! Intent(in)
-             rr1, rr2, Nr1, Nr2,                              & ! Intent(in)
-             precip_frac, precip_frac_1, precip_frac_2,       & ! Intent(in)
              d_variables, corr_array_1, corr_array_2,         & ! Intent(in)
+             mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
              hydromet_pdf_params,                             & ! Intent(in)
              Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
@@ -3691,9 +3686,8 @@ module clubb_driver
                cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
                Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
                rho_ds_zt,  rho_ds_zm, invrs_rho_ds_zt,          & ! Intent(in)
-               rr1, rr2, Nr1, Nr2,                              & ! Intent(in)
-               precip_frac, precip_frac_1, precip_frac_2,       & ! Intent(in)
                n_variables, corr_array_1, corr_array_2,         & ! Intent(in)
+               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
                hydromet_pdf_params,                             & ! Intent(in)
                Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
@@ -3805,17 +3799,6 @@ module clubb_driver
       wp2_zt,     & ! w'^2 interpolated the thermo levels               [m^2/s^2]
       Lscale        ! Length scale                                      [m]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
-
     type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
       pdf_params      ! PDF parameters   [units vary]
 
@@ -3830,6 +3813,12 @@ module clubb_driver
     real( kind = core_rknd ), dimension(n_variables, n_variables, gr%nz), intent(in) :: &
       corr_array_1, & ! Correlation matrix for the first pdf component    [-]
       corr_array_2    ! Correlation matrix for the second pdf component   [-]
+
+    real( kind = core_rknd ), dimension(n_variables, gr%nz), intent(in) :: &
+      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
+      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
+      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
+      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
@@ -3986,9 +3975,8 @@ module clubb_driver
            wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &           ! Intent(in)
            LH_sample_point_weights, &                                 ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
-           rr1, rr2, Nr1, Nr2, &                                      ! Intent(in)
-           precip_frac, precip_frac_1, precip_frac_2, &               ! Intent(in)
            n_variables, corr_array_1, corr_array_2, &                 ! Intent(in)
+           mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &                    ! Intent(in)
            hydromet_pdf_params, &                                     ! Intent(in)
            Ncnm, hydromet, wphydrometp, &                             ! Intent(inout)
            rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
