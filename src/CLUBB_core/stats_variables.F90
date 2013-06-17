@@ -1165,7 +1165,7 @@ module stats_variables
                                   rad_zm,  & ! rad_zm grid
                                   sfc        ! sfc
 
-!$omp   threadprivate(zt, zm, rad_zt, rad_zm, sfc)
+!$omp   threadprivate(zt, zm, LH_zt, LH_sfc, rad_zt, rad_zm, sfc)
 
   ! Scratch space
 
