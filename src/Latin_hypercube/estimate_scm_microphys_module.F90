@@ -59,7 +59,8 @@ module estimate_scm_microphys_module
     use stats_variables, only: & 
       LH_zt, & ! Variable(s)
       iLH_rrainm_auto, & 
-      iLH_rrainm_accr
+      iLH_rrainm_accr, &
+      iLH_rrainm_evap
 
     use stats_type, only: & 
       stat_update_var ! Procedure(s)
@@ -150,7 +151,8 @@ module estimate_scm_microphys_module
       lh_rtp2_mc_tndcy,  & ! LH micro. tendency for <rt'^2>   [(kg/kg)^2/s]
       lh_thlp2_mc_tndcy, & ! LH micro. tendency for <thl'^2>  [K^2/s]
       lh_rrainm_auto,    & ! Autoconversion budget for <rr>   [kg/kg/s]
-      lh_rrainm_accr       ! Accretion budget for <rr>        [kg/kg/s]
+      lh_rrainm_accr,    & ! Accretion budget for <rr>        [kg/kg/s]
+      lh_rrainm_evap
 
     real( kind = dp ), pointer, dimension(:,:) :: &
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
@@ -268,7 +270,7 @@ module estimate_scm_microphys_module
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
              lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
              lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, & ! Out
-             lh_rrainm_auto, lh_rrainm_accr ) ! Out
+             lh_rrainm_auto, lh_rrainm_accr, lh_rrainm_evap ) ! Out
 
       if ( l_lh_cloud_weighted_sampling ) then
         ! Weight the output results depending on whether we're calling the
@@ -280,11 +282,13 @@ module estimate_scm_microphys_module
         lh_thlm_mc(:) = lh_thlm_mc(:) * LH_sample_point_weights(sample)
         lh_rrainm_auto(:) = lh_rrainm_auto(:) * LH_sample_point_weights(sample)
         lh_rrainm_accr(:) = lh_rrainm_accr(:) * LH_sample_point_weights(sample)
+        lh_rrainm_evap(:) = lh_rrainm_evap(:) * LH_sample_point_weights(sample)
       end if
       if ( l_stats_samp ) then
         ! Save autoconversion and accretion rate for statistics
         call stat_update_var( iLH_rrainm_auto, lh_rrainm_auto, LH_zt )
         call stat_update_var( iLH_rrainm_accr, lh_rrainm_accr, LH_zt )
+        call stat_update_var( iLH_rrainm_evap, lh_rrainm_evap, LH_zt )
       end if
 
       do ivar = 1, hydromet_dim

@@ -81,7 +81,8 @@ module stats_LH_zt
       iLH_Ncp2_zt, &
       iLH_cloud_frac, &
       iLH_rrainm_auto, &
-      iLH_rrainm_accr
+      iLH_rrainm_accr, &
+      iLH_rrainm_evap
 
 
     use stats_type, only: & 
@@ -153,6 +154,7 @@ module stats_LH_zt
 
     iLH_rrainm_auto = 0
     iLH_rrainm_accr = 0
+    iLH_rrainm_evap = 0
 
     ! Assign pointers for statistics variables zt
 
@@ -460,6 +462,12 @@ module stats_LH_zt
         iLH_rrainm_accr = k
         call stat_assign( iLH_rrainm_accr, "LH_rrainm_accr", & 
              "Latin hypercube estimate of accretion [kg/kg/s]", "kg/kg/s", LH_zt )
+        k = k + 1
+
+      case ( 'LH_rrainm_evap' )
+        iLH_rrainm_evap = k
+        call stat_assign( iLH_rrainm_evap, "LH_rrainm_evap", &
+             "Latin hypercube estimate of evaporation [kg/kg/s]", "kg/kg/s", LH_zt )
         k = k + 1
 
       case default

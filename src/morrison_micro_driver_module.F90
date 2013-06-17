@@ -17,7 +17,7 @@ module morrison_micro_driver_module
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, &
-               rrainm_auto, rrainm_accr )
+               rrainm_auto, rrainm_accr, rrainm_evap )
 
 ! Description:
 !   Wrapper for the Morrison microphysics
@@ -339,7 +339,7 @@ module morrison_micro_driver_module
     integer :: i, k
 
     !variables needed to computer rtp2_mc_tndcy when l_morr_xp2_mc_tndcy = .true.
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       rrainm_evap         !Evaporation of rain   [kg/kg/s]
 
     real, dimension(nz) :: &
@@ -583,7 +583,7 @@ module morrison_micro_driver_module
 
       call stat_update_var( irrainm_auto, real( rrainm_auto, kind=core_rknd ), zt )
       call stat_update_var( irrainm_accr, real( rrainm_accr, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_cond, real( rrainm_evap, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_cond, rrainm_evap, zt )
 
       call stat_update_var( iPSMLT, real( PSMLT, kind=core_rknd ), zt )
       call stat_update_var( iEVPMS, real( EVPMS, kind=core_rknd ), zt )
@@ -634,7 +634,6 @@ module morrison_micro_driver_module
       call stat_update_var( iNIACR, real( NIACR, kind=core_rknd ), zt )
       call stat_update_var( iNIACRS, real( NIACRS, kind=core_rknd ), zt )
       call stat_update_var( iNGRACS, real( NGRACS, kind=core_rknd ), zt )
-
 
       ! --- Number concentrations ---
       ! No budgets for sedimentation are output

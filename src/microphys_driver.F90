@@ -1289,7 +1289,8 @@ module microphys_driver
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       rrainm_auto, & ! Autoconversion rate for rrainm [kg/kg/s]
-      rrainm_accr    ! Accretion rate for rrainm      [kg/kg/s]
+      rrainm_accr, & ! Accretion rate for rrainm      [kg/kg/s]
+      rrainm_evap    ! Evaporation rate for rrainm    [kg/kg/s]
 
     real( kind = core_rknd ), dimension(1,1,gr%nz) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
@@ -1605,7 +1606,7 @@ module microphys_driver
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, &
-               rrainm_auto, rrainm_accr )
+               rrainm_auto, rrainm_accr, rrainm_evap )
 
         ! Output rain sedimentation velocity
         if ( l_stats_samp ) then
@@ -1692,7 +1693,7 @@ module microphys_driver
                                       hydromet_mc, hydromet_vel_zt, &
                                       rcm_mc, rvm_mc, thlm_mc, &
                                       rtp2_mc_tndcy, thlp2_mc_tndcy, &
-                                      rrainm_auto, rrainm_accr )
+                                      rrainm_auto, rrainm_accr, rrainm_evap )
 
         else
 
