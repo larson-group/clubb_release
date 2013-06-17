@@ -163,15 +163,7 @@ Ncnp2_on_Ncnm2_below = 0.0
 Nc_in_cloud0  = 70.e6 ! num/m^3
 Ncnm_initial = 70.e6 ! num/m^3
 l_predictnc = .false.
-l_const_Nc_in_cloud = .false.
-
-LH_microphys_type = "non-interactive",
-l_local_kk = .false.,
-l_lh_vert_overlap = .true.,
-l_lh_cloud_weighted_sampling = .true.,
-l_fix_s_t_correlations = .false.,
-LH_microphys_calls = 2,
-LH_sequence_length = 1
+l_const_Nc_in_cloud = .true.
 /
 
 &radiation_setting
