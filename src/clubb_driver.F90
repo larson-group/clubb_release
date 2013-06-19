@@ -1215,10 +1215,6 @@ module clubb_driver
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
-      if ( itime == 50 ) then
-         print *, "Debugging ..."
-      endif
-
       if ( .not. trim( micro_scheme ) == "none" ) then
 
          rrainm = hydromet(:,iirrainm)

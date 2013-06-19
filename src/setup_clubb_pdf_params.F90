@@ -8,16 +8,15 @@ module setup_clubb_pdf_params
 
   public :: setup_pdf_parameters, &
             unpack_pdf_params,    &
-            comp_mean_stdev_corr, &
             normalize_pdf_params, &
-            pdf_param_hm_stats, &
-            pdf_param_log_hm_stats
+            comp_mean_stdev,      &
+            comp_corr
 
-  private :: component_means_rain, &
-             precip_fraction,      &
-            !comp_mean_stdev_corr, &
-            !normalize_pdf_params, &
-            !pdf_param_hm_stats,   &
+  private :: component_means_rain,   &
+             precip_fraction,        &
+            !comp_mean_stdev_corr,   &
+             pdf_param_hm_stats,     &
+             pdf_param_log_hm_stats, &
              pack_pdf_params
 
   contains
@@ -76,6 +75,13 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use parameters_microphys, only: &
+        rrp2_on_rrm2_cloud,     & ! Variable(s)
+        rrp2_on_rrm2_below,     &
+        Nrp2_on_Nrm2_cloud,     &
+        Nrp2_on_Nrm2_below,     &
+        Ncnp2_on_Ncnm2_cloud
+
     use stats_type, only: &
         stat_update_var ! Procedure(s)
 
@@ -88,6 +94,12 @@ module setup_clubb_pdf_params
         iprecip_frac_1,   &
         iprecip_frac_2,   &
         zt
+
+    use model_flags, only: &
+        l_diagnose_correlations ! Variable(s)
+
+    use diagnose_correlations_module, only: &
+        diagnose_correlations ! Procedure(s)
 
     implicit none
 
@@ -377,27 +389,70 @@ module setup_clubb_pdf_params
        !!! Calculate the means, standard deviations, and necessary correlations
        !!! involving w, s, t, r_r (in-precip), N_r (in-precip), and N_cn for
        !!! each PDF component.
-       call comp_mean_stdev_corr( rcm(k), rrainm(k), Nrm(k), Ncnm(k), &
-                                  rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
-                                  rc2(k), cloud_frac1(k), cloud_frac2(k), &
-                                  precip_frac_1(k), precip_frac_2(k), &
-                                  wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &
-                                  wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), &
-                                  pdf_params(k), &
-                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &
-                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                  mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
-                                  sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
-                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                  corr_ws_1, corr_ws_2, corr_wrr_1, &
-                                  corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                                  corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                                  corr_st_2, corr_srr_1, corr_srr_2, &
-                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+       call comp_mean_stdev( rcm(k), rrainm(k), Nrm(k), Ncnm(k), &
+                             rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
+                             rc2(k), cloud_frac1(k), cloud_frac2(k), &
+                             precip_frac_1(k), precip_frac_2(k), &
+                             wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &
+                             wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), &
+                             pdf_params(k), &
+                             mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &
+                             mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                             mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
+                             sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
+                             sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                             sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )
+
+       if ( l_diagnose_correlations ) then
+
+!          if ( rrainm > rr_tol ) then
+!             rrp2_on_rrm2 = (sigma_rr_1/mu_rr_1)**2
+!          else
+!             ! The ratio is undefined; set it equal to 0.
+!             rrp2_on_rrm2 = zero
+!          endif
+!
+!          if ( Nrm > Nr_tol ) then
+!             Nrp2_on_Nrm2 = (sigma_Nr_1/mu_Nr_1)**2
+!          else
+!             ! The ratio is undefined; set it equal to 0.
+!             Nrp2_on_Nrm2 = zero
+!          endif
+!
+!          if ( Ncnm > Ncn_tol ) then
+!             Ncnp2_on_Ncnm2 = (sigma_Ncn_1/mu_Ncn_1)**2
+!          else
+!             ! The ratio is undefined; set it equal to 0.
+!             Ncnp2_on_Ncnm2 = zero
+!          endif
+!
+!          call diagnose_correlations( gr%nz, d_variables, rcm, & ! intent(in)
+!                                      corr_array_cloud, corr_array_below, &
+!                                      corr_array_1 ) ! intent(inout)
+!
+!          corr_array_2 = corr_array_1
+
+       else ! if .not. l_diagnose_correlations
+
+
+          call comp_corr( rcm(k), rrainm(k), Nrm(k), Ncnm(k), & ! In 
+                          rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
+                          rc2(k), cloud_frac1(k), cloud_frac2(k), &
+                          precip_frac_1(k), precip_frac_2(k), &
+                          wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &
+                          wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), &
+                          sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &
+                          pdf_params(k), &
+                          corr_ws_1, corr_ws_2, corr_wrr_1, & ! Out
+                          corr_wrr_2, corr_wNr_1, corr_wNr_2, &
+                          corr_wNcn_1, corr_wNcn_2, corr_st_1, &
+                          corr_st_2, corr_srr_1, corr_srr_2, &
+                          corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
+                          corr_sNcn_2, corr_trr_1, corr_trr_2, &
+                          corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
+                          corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+
+       endif ! l_diagnose_correlations
 
        !!! Calculate the mean, standard deviations, and correlations involving
        !!! ln r_r, ln N_r, and ln N_cn for each PDF component.
@@ -1272,27 +1327,19 @@ module setup_clubb_pdf_params
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine comp_mean_stdev_corr( rcm, rrainm, Nrm, Ncnm, &
-                                   rr1, rr2, Nr1, Nr2, rc1, &
-                                   rc2, cloud_frac1, cloud_frac2, &
-                                   precip_frac_1, precip_frac_2, &
-                                   wpsp, wprrp_ip, wpNrp_ip, &
-                                   wpNcnp, stdev_w, mixt_frac, &
-                                   pdf_params, &
-                                   mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &
-                                   mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                   mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
-                                   sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
-                                   sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                   sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                   corr_ws_1, corr_ws_2, corr_wrr_1, &
-                                   corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                                   corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                                   corr_st_2, corr_srr_1, corr_srr_2, &
-                                   corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                   corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+  subroutine comp_mean_stdev( rcm, rrainm, Nrm, Ncnm, & ! In
+                              rr1, rr2, Nr1, Nr2, rc1, &
+                              rc2, cloud_frac1, cloud_frac2, &
+                              precip_frac_1, precip_frac_2, &
+                              wpsp, wprrp_ip, wpNrp_ip, &
+                              wpNcnp, stdev_w, mixt_frac, &
+                              pdf_params, &
+                              mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & ! Out
+                              mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                              mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
+                              sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
+                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                              sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )
        
     ! Description:
 
@@ -1316,43 +1363,6 @@ module setup_clubb_pdf_params
         Nrp2_on_Nrm2_below,     &
         Ncnp2_on_Ncnm2_cloud,   &
         l_fix_s_t_correlations
-
-    use KK_fixed_correlations, only: &
-        corr_sw_NN_cloud,   & ! Variable(s)
-        corr_wrr_NL_cloud,  &
-        corr_wNr_NL_cloud,  &
-        corr_wNcn_NL_cloud, &
-        corr_st_NN_cloud,   &
-        corr_srr_NL_cloud,  &
-        corr_sNr_NL_cloud,  &
-        corr_sNcn_NL_cloud, &
-        corr_trr_NL_cloud,  &
-        corr_tNr_NL_cloud,  &
-        corr_tNcn_NL_cloud, &
-        corr_rrNr_LL_cloud
-
-    use KK_fixed_correlations, only: &
-        corr_sw_NN_below,   & ! Variable(s)
-        corr_wrr_NL_below,  &
-        corr_wNr_NL_below,  &
-        corr_wNcn_NL_below, &
-        corr_st_NN_below,   &
-        corr_srr_NL_below,  &
-        corr_sNr_NL_below,  &
-        corr_sNcn_NL_below, &
-        corr_trr_NL_below,  &
-        corr_tNr_NL_below,  &
-        corr_tNcn_NL_below, &
-        corr_rrNr_LL_below
-
-    use model_flags, only: &
-        l_diagnose_correlations, & ! Variable(s)
-        l_calc_w_corr
-
-    use diagnose_correlations_module, only: &
-        diagnose_KK_corr, & ! Procedure(s)
-        calc_mean,        &
-        calc_w_corr
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1414,32 +1424,6 @@ module setup_clubb_pdf_params
       sigma_Nr_2,  & ! Standard deviation of Nr (2nd PDF component) ip  [num/kg]
       sigma_Ncn_1, & ! Standard deviation of Ncn (1st PDF component)    [num/kg]
       sigma_Ncn_2    ! Standard deviation of Ncn (2nd PDF component)    [num/kg]
-
-    real( kind = core_rknd ), intent(out) :: &
-      corr_ws_1,   & ! Correlation between w and s (1st PDF component)       [-]
-      corr_ws_2,   & ! Correlation between w and s (2nd PDF component)       [-]
-      corr_wrr_1,  & ! Correlation between w and rr (1st PDF component) ip   [-]
-      corr_wrr_2,  & ! Correlation between w and rr (2nd PDF component) ip   [-]
-      corr_wNr_1,  & ! Correlation between w and Nr (1st PDF component) ip   [-]
-      corr_wNr_2,  & ! Correlation between w and Nr (2nd PDF component) ip   [-]
-      corr_wNcn_1, & ! Correlation between w and Ncn (1st PDF component)     [-]
-      corr_wNcn_2, & ! Correlation between w and Ncn (2nd PDF component)     [-]
-      corr_st_1,   & ! Correlation between s and t (1st PDF component)       [-]
-      corr_st_2,   & ! Correlation between s and t (2nd PDF component)       [-]
-      corr_srr_1,  & ! Correlation between s and rr (1st PDF component) ip   [-]
-      corr_srr_2,  & ! Correlation between s and rr (2nd PDF component) ip   [-]
-      corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component) ip   [-]
-      corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component) ip   [-]
-      corr_sNcn_1, & ! Correlation between s and Ncn (1st PDF component)     [-]
-      corr_sNcn_2, & ! Correlation between s and Ncn (2nd PDF component)     [-]
-      corr_trr_1,  & ! Correlation between t and rr (1st PDF component) ip   [-]
-      corr_trr_2,  & ! Correlation between t and rr (2nd PDF component) ip   [-]
-      corr_tNr_1,  & ! Correlation between t and Nr (1st PDF component) ip   [-]
-      corr_tNr_2,  & ! Correlation between t and Nr (2nd PDF component) ip   [-]
-      corr_tNcn_1, & ! Correlation between t and Ncn (1st PDF component)     [-]
-      corr_tNcn_2, & ! Correlation between t and Ncn (2nd PDF component)     [-]
-      corr_rrNr_1, & ! Correlation between rr and Nr (1st PDF component) ip  [-]
-      corr_rrNr_2    ! Correlation between rr and Nr (2nd PDF component) ip  [-]
 
     ! Local Variables
 
@@ -1711,6 +1695,181 @@ module setup_clubb_pdf_params
        sigma_Ncn_2 = zero
     endif
 
+    return
+
+  end subroutine comp_mean_stdev
+
+!=============================================================================
+  subroutine comp_corr( rcm, rrainm, Nrm, Ncnm, & ! In 
+                        rr1, rr2, Nr1, Nr2, rc1, &
+                        rc2, cloud_frac1, cloud_frac2, &
+                        precip_frac_1, precip_frac_2, &
+                        wpsp, wprrp_ip, wpNrp_ip, &
+                        wpNcnp, stdev_w, mixt_frac, &
+                        sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &
+                        pdf_params, &
+                        corr_ws_1, corr_ws_2, corr_wrr_1, & ! Out
+                        corr_wrr_2, corr_wNr_1, corr_wNr_2, &
+                        corr_wNcn_1, corr_wNcn_2, corr_st_1, &
+                        corr_st_2, corr_srr_1, corr_srr_2, &
+                        corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
+                        corr_sNcn_2, corr_trr_1, corr_trr_2, &
+                        corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
+                        corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+       
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        rc_tol,       & ! Constant(s)
+        rr_tol,       &
+        Nr_tol,       &
+        Ncn_tol,      &
+        w_tol,        & ! [m/s]
+        s_mellor_tol, & ! [kg/kg]
+        one,          &
+        zero
+
+    use parameters_microphys, only: &
+        l_fix_s_t_correlations ! Variable(s)
+
+    use KK_fixed_correlations, only: &
+        corr_sw_NN_cloud,   & ! Variable(s)
+        corr_wrr_NL_cloud,  &
+        corr_wNr_NL_cloud,  &
+        corr_wNcn_NL_cloud, &
+        corr_st_NN_cloud,   &
+        corr_srr_NL_cloud,  &
+        corr_sNr_NL_cloud,  &
+        corr_sNcn_NL_cloud, &
+        corr_trr_NL_cloud,  &
+        corr_tNr_NL_cloud,  &
+        corr_tNcn_NL_cloud, &
+        corr_rrNr_LL_cloud
+
+    use KK_fixed_correlations, only: &
+        corr_sw_NN_below,   & ! Variable(s)
+        corr_wrr_NL_below,  &
+        corr_wNr_NL_below,  &
+        corr_wNcn_NL_below, &
+        corr_st_NN_below,   &
+        corr_srr_NL_below,  &
+        corr_sNr_NL_below,  &
+        corr_sNcn_NL_below, &
+        corr_trr_NL_below,  &
+        corr_tNr_NL_below,  &
+        corr_tNcn_NL_below, &
+        corr_rrNr_LL_below
+
+    use model_flags, only: &
+        l_calc_w_corr
+
+    use diagnose_correlations_module, only: &
+        calc_mean,        & ! Procedure(s)
+        calc_w_corr
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use pdf_parameter_module, only: &
+        pdf_parameter  ! Variable(s) type
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      rcm,           & ! Mean cloud water mixing ratio (overall)         [kg/kg]
+      rrainm,        & ! Mean rain water mixing ratio (overall)          [kg/kg]
+      Nrm,           & ! Mean rain drop concentration (overall)         [num/kg]
+      Ncnm,          & ! Mean cloud nuclei concentration                [num/kg]
+      rr1,           & ! Mean rain water mixing ratio (1st PDF comp.)    [kg/kg]
+      rr2,           & ! Mean rain water mixing ratio (2nd PDF comp.)    [kg/kg]
+      Nr1,           & ! Mean rain drop concentration (1st PDF comp.)   [num/kg]
+      Nr2,           & ! Mean rain drop concentration (2nd PDF comp.)   [num/kg]
+      rc1,           & ! Mean of r_c (1st PDF component)                 [kg/kg]
+      rc2,           & ! Mean of r_c (2nd PDF component)                 [kg/kg]
+      cloud_frac1,   & ! Cloud fraction (1st PDF component)                  [-]
+      cloud_frac2,   & ! Cloud fraction (2nd PDF component)                  [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
+      precip_frac_2, & ! Precipitation fraction (2nd PDF component)          [-]
+      wpsp,          & ! Covariance of w and s                      [(m/s)kg/kg]
+      wprrp_ip,      & ! Covariance of w and r_r (overall) ip       [(m/s)kg/kg]
+      wpNrp_ip,      & ! Covariance of w and N_r (overall) ip      [(m/s)num/kg]
+      wpNcnp,        & ! Covariance of w and N_cn                  [(m/s)num/kg]
+      stdev_w,       & ! Standard deviation of w                           [m/s]
+      mixt_frac        ! Mixture fraction                                    [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      sigma_rr_1, &
+      sigma_Nr_1, &
+      sigma_Ncn_1
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params    ! PDF parameters                                [units vary]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      corr_ws_1,   & ! Correlation between w and s (1st PDF component)       [-]
+      corr_ws_2,   & ! Correlation between w and s (2nd PDF component)       [-]
+      corr_wrr_1,  & ! Correlation between w and rr (1st PDF component) ip   [-]
+      corr_wrr_2,  & ! Correlation between w and rr (2nd PDF component) ip   [-]
+      corr_wNr_1,  & ! Correlation between w and Nr (1st PDF component) ip   [-]
+      corr_wNr_2,  & ! Correlation between w and Nr (2nd PDF component) ip   [-]
+      corr_wNcn_1, & ! Correlation between w and Ncn (1st PDF component)     [-]
+      corr_wNcn_2, & ! Correlation between w and Ncn (2nd PDF component)     [-]
+      corr_st_1,   & ! Correlation between s and t (1st PDF component)       [-]
+      corr_st_2,   & ! Correlation between s and t (2nd PDF component)       [-]
+      corr_srr_1,  & ! Correlation between s and rr (1st PDF component) ip   [-]
+      corr_srr_2,  & ! Correlation between s and rr (2nd PDF component) ip   [-]
+      corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component) ip   [-]
+      corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component) ip   [-]
+      corr_sNcn_1, & ! Correlation between s and Ncn (1st PDF component)     [-]
+      corr_sNcn_2, & ! Correlation between s and Ncn (2nd PDF component)     [-]
+      corr_trr_1,  & ! Correlation between t and rr (1st PDF component) ip   [-]
+      corr_trr_2,  & ! Correlation between t and rr (2nd PDF component) ip   [-]
+      corr_tNr_1,  & ! Correlation between t and Nr (1st PDF component) ip   [-]
+      corr_tNr_2,  & ! Correlation between t and Nr (2nd PDF component) ip   [-]
+      corr_tNcn_1, & ! Correlation between t and Ncn (1st PDF component)     [-]
+      corr_tNcn_2, & ! Correlation between t and Ncn (2nd PDF component)     [-]
+      corr_rrNr_1, & ! Correlation between rr and Nr (1st PDF component) ip  [-]
+      corr_rrNr_2    ! Correlation between rr and Nr (2nd PDF component) ip  [-]
+
+    ! Local Variables
+
+    ! The component correlations of w and r_t and the component correlations of
+    ! w and theta_l are both set to be 0 within the CLUBB model code.  In other
+    ! words, w and r_t (theta_l) have overall covariance w'r_t' (w'theta_l'),
+    ! but the single component covariance and correlation are defined to be 0.
+    ! Likewise, the single component correlation and covariance of w and s, as
+    ! well as w and t, are defined to be 0.
+    logical, parameter :: &
+      l_follow_CLUBB_PDF_standards = .true.
+
+    ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
+    ! values based on whether or not cloud water mixing ratio has a value of at
+    ! least rc_tol.  However, this does not take into account the amount of
+    ! cloudiness in a component, just whether or not there is any cloud in the
+    ! component.  The option l_interp_prescribed_params allows for an
+    ! interpolated value between the in-cloud and below-cloud parameter value
+    ! based on the component cloud fraction.
+    logical, parameter :: &
+      l_interp_prescribed_params = .false.
+
+    real( kind = core_rknd ) :: &
+      rrp2_on_rrm2,    & ! Ratio of < r_r'^2 > to < r_r >^2              [-]
+      Nrp2_on_Nrm2,    & ! Ratio of < N_r'^2 > to < N_r >^2              [-]
+      Ncnp2_on_Ncnm2,  & ! Ratio of < N_cn'^2 > to < N_cn >^2            [-]
+      s_mellor_m,      & ! Mean of s_mellor                              [kg/kg]
+      stdev_s_mellor,  & ! Standard deviation of s_mellor                [kg/kg]
+      corr_ws,         & ! Correlation between w and s                   [-]
+      corr_wrr,        & ! Correlation between w and rr ip               [-]
+      corr_wNr,        & ! Correlation between w and Nr ip               [-]
+      corr_wNcn          ! Correlation between w and Ncn                 [-]
+
+
+    !!! Enter the PDF parameters.
 
     !!! Correlations
 
@@ -2255,61 +2414,9 @@ module setup_clubb_pdf_params
        corr_rrNr_2 = zero
     endif
 
-
-    if ( l_diagnose_correlations ) then
-
-       if ( rrainm > rr_tol ) then
-          rrp2_on_rrm2 = (sigma_rr_1/mu_rr_1)**2
-       else
-          ! The ratio is undefined; set it equal to 0.
-          rrp2_on_rrm2 = zero
-       endif
-
-       if ( Nrm > Nr_tol ) then
-          Nrp2_on_Nrm2 = (sigma_Nr_1/mu_Nr_1)**2
-       else
-          ! The ratio is undefined; set it equal to 0.
-          Nrp2_on_Nrm2 = zero
-       endif
-
-       if ( Ncnm > Ncn_tol ) then
-          Ncnp2_on_Ncnm2 = (sigma_Ncn_1/mu_Ncn_1)**2
-       else
-          ! The ratio is undefined; set it equal to 0.
-          Ncnp2_on_Ncnm2 = zero
-       endif
-
-       if ( rcm > rc_tol ) then
-         call diagnose_KK_corr( Ncnm, rrainm, Nrm, &
-                                Ncnp2_on_Ncnm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
-                                corr_ws, corr_wrr, corr_wNr, corr_wNcn,  &
-                                pdf_params, &
-                                corr_rrNr_LL_cloud, corr_srr_NL_cloud, &
-                                corr_sNr_NL_cloud, corr_sNcn_NL_cloud, &
-                                corr_rrNr_1, corr_srr_1, &
-                                corr_sNr_1, corr_sNcn_1 )
-       else
-         call diagnose_KK_corr( Ncnm, rrainm, Nrm, &
-                                Ncnp2_on_Ncnm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
-                                corr_ws, corr_wrr, corr_wNr, corr_wNcn,  &
-                                pdf_params, &
-                                corr_rrNr_LL_below, corr_srr_NL_below, &
-                                corr_sNr_NL_below, corr_sNcn_NL_below, &
-                                corr_rrNr_1, corr_srr_1, &
-                                corr_sNr_1, corr_sNcn_1 )
-       endif
-
-       corr_srr_2  = corr_srr_1
-       corr_sNr_2  = corr_sNr_1
-       corr_sNcn_2 = corr_sNcn_1
-       corr_rrNr_2 = corr_rrNr_1
-
-    endif
-
-
     return
 
-  end subroutine comp_mean_stdev_corr
+  end subroutine comp_corr
 
   !=============================================================================
   subroutine normalize_pdf_params( rr1, rr2, Nr1, Nr2, Ncnm, &

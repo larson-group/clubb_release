@@ -362,11 +362,7 @@ module KK_microphys_module
         l_const_Nc_in_cloud    ! Flag to use a const. value of N_c within cloud
 
     use setup_clubb_pdf_params, only: &
-        setup_pdf_parameters, & ! Procedure(s)
-        unpack_pdf_params, &
-        normalize_pdf_params, &
-        pdf_param_hm_stats, &
-        pdf_param_log_hm_stats
+        unpack_pdf_params ! Procedure(s)
 
     use KK_upscaled_means, only: &
         KK_upscaled_means_driver ! Procedure(s)

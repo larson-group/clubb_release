@@ -404,7 +404,8 @@ subroutine mmicro_pcond ( sub_column,           &
 
    ! Upscaled KK for autoconversion and accretion
    use setup_clubb_pdf_params, only: &
-       comp_mean_stdev_corr, & ! Procedure(s)
+       comp_mean_stdev, & ! Procedure(s)
+       comp_corr, &
        normalize_pdf_params
 
    use KK_upscaled_means, only: &
@@ -1760,43 +1761,66 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 call comp_mean_stdev_corr &
-                                ( real( qc(i,k), kind = core_rknd ), & ! In
-                                  real( qric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( nc(i,k), kind = core_rknd ), &
-                                  real( qric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( qric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( qc(i,k), kind = core_rknd ), &
-                                  real( qc(i,k), kind = core_rknd ), &
-                                  real( lcldm(i,k), kind = core_rknd ), &
-                                  real( lcldm(i,k), kind = core_rknd ), &
-                                  one, one, &
-                                  zero, zero, zero, &
-                                  zero, zero, mixt_frac, &
-                                  pdf_params(k), &
-                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & !Out
-                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                  mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
-                                  sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
-                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                  corr_ws_1, corr_ws_2, corr_wrr_1, &
-                                  corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                                  corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                                  corr_st_2, corr_srr_1, corr_srr_2, &
-                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+                 call comp_mean_stdev( real( qc(i,k), kind = core_rknd ), & ! In
+                                       real( qric(i,k) * cldmax(i,k), &
+                                             kind = core_rknd ), &
+                                       real( nric(i,k) * cldmax(i,k), &
+                                             kind = core_rknd ), &
+                                       real( nc(i,k), kind = core_rknd ), &
+                                       real( qric(i,k) * cldmax(i,k), &
+                                             kind = core_rknd ), &
+                                       real( qric(i,k) * cldmax(i,k), &
+                                             kind = core_rknd ), &
+                                       real( nric(i,k) * cldmax(i,k), &
+                                             kind = core_rknd ), &
+                                       real( nric(i,k) * cldmax(i,k), &
+                                             kind = core_rknd ), &
+                                       real( qc(i,k), kind = core_rknd ), &
+                                       real( qc(i,k), kind = core_rknd ), &
+                                       real( lcldm(i,k), kind = core_rknd ), &
+                                       real( lcldm(i,k), kind = core_rknd ), &
+                                       one, one, &
+                                       zero, zero, zero, &
+                                       zero, zero, mixt_frac, &
+                                       pdf_params(k), &
+                                       mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & ! Out
+                                       mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
+                                       mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
+                                       sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
+                                       sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
+                                       sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )
+
+                 call comp_corr( real( qc(i,k), kind = core_rknd ), & ! In
+                                 real( qric(i,k) * cldmax(i,k), &
+                                       kind = core_rknd ), &
+                                 real( nric(i,k) * cldmax(i,k), &
+                                       kind = core_rknd ), &
+                                 real( nc(i,k), kind = core_rknd ), &
+                                 real( qric(i,k) * cldmax(i,k), &
+                                       kind = core_rknd ), &
+                                 real( qric(i,k) * cldmax(i,k), &
+                                       kind = core_rknd ), &
+                                 real( nric(i,k) * cldmax(i,k), &
+                                       kind = core_rknd ), &
+                                 real( nric(i,k) * cldmax(i,k), &
+                                       kind = core_rknd ), &
+                                 real( qc(i,k), kind = core_rknd ), &
+                                 real( qc(i,k), kind = core_rknd ), &
+                                 real( lcldm(i,k), kind = core_rknd ), &
+                                 real( lcldm(i,k), kind = core_rknd ), &
+                                 one, one, &
+                                 zero, zero, zero, &
+                                 zero, zero, mixt_frac, &
+                                 sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &
+                                 pdf_params(k), &
+                                 corr_ws_1, corr_ws_2, corr_wrr_1, & ! Out
+                                 corr_wrr_2, corr_wNr_1, corr_wNr_2, &
+                                 corr_wNcn_1, corr_wNcn_2, corr_st_1, &
+                                 corr_st_2, corr_srr_1, corr_srr_2, &
+                                 corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
+                                 corr_sNcn_2, corr_trr_1, corr_trr_2, &
+                                 corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
+                                 corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
 
                  call normalize_pdf_params &
                                 ( real( qric(i,k) * cldmax(i,k), & ! In
