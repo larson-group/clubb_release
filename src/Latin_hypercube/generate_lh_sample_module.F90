@@ -140,12 +140,6 @@ module generate_lh_sample_module
       dp, & ! double precision
       core_rknd
 
-    use model_flags, only: &
-        l_diagnose_correlations ! Variable(s)
-
-    use diagnose_correlations_module, only: &
-        diagnose_LH_corr ! Procedure(s)
-
     implicit none
 
     ! External
@@ -460,30 +454,11 @@ module generate_lh_sample_module
       corr_array => corr_array_cloud
       l_in_cloud = .true.
 
-      if ( l_diagnose_correlations ) then
-        corr_matrix_approx = corr_array_cloud
-        call diagnose_LH_corr ( xp2_on_xm2_array, d_variables, corr_array_cloud, & ! intent(in)
-                                corr_matrix_approx ) ! intent(inout)
-        corr_array => corr_matrix_approx
-      end if
-
     else
       xp2_on_xm2_array => xp2_on_xm2_array_below
       corr_array => corr_array_below
       l_in_cloud = .false.
 
-      if ( l_diagnose_correlations ) then
-         corr_matrix_approx = corr_array_below
-         call diagnose_LH_corr ( xp2_on_xm2_array, d_variables, corr_array_below, & ! intent(in)
-                                corr_matrix_approx ) ! intent(inout)
-         corr_array => corr_matrix_approx
-      end if
-
-    end if
-
-    ! Output the correlations to disk
-    if ( l_diagnose_correlations ) then
-      call LH_stat_output( corr_array, d_variables, hgt_level )
     end if
 
     ! Compute PDF parameters for Nc, rr.
@@ -2565,116 +2540,5 @@ module generate_lh_sample_module
   end function sigma_LN_to_sigma_gaus
 
 !-----------------------------------------------------------------------------
-
-
-  subroutine LH_stat_output( corr_array, d_variables, level )
-  ! Description:
-  ! Outputs the correlations to disk.
-  !
-  ! TODO: Output the rest of the correlations!
-  !
-  ! References:
-  !
-  ! clubb:ticket:514
-  !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use corr_matrix_module, only: &
-        iiLH_rrain, & ! Variables
-        iiLH_rsnow, &
-        iiLH_rice, &
-        iiLH_rgraupel, &
-        iiLH_Nr, &
-        iiLH_Nc => iiLH_Ncn, &
-        iiLH_Ni, &
-        iiLH_Nsnow, &
-        iiLH_Ngraupel, &
-        iiLH_s_mellor, &
-        iiLH_t_mellor, &
-        iiLH_w
-
-    use stats_type, only: &
-        stat_update_var_pt  ! Procedure(s)
-
-    use stats_variables, only : &
-        icorr_rrNr_1, & ! Variable(s)
-        icorr_srr_1,  &
-        icorr_sNr_1,  &
-        icorr_sNc_1 => icorr_sNcn_1, &
-        icorr_sw,     &
-        icorr_wrr,    &
-        icorr_wNr,    &
-        icorr_wNc => icorr_wNcn, &
-        zt
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-    d_variables,  & ! Number of correlations in the array
-    level           ! Current height level
-
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
-      corr_array
-
-    ! Local Variables
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    if ( iiLH_w > iiLH_s_mellor ) then
-      call stat_update_var_pt( icorr_sw, level, corr_array(iiLH_w, iiLH_s_mellor), zt )
-    else
-      call stat_update_var_pt( icorr_sw, level, corr_array(iiLH_s_mellor, iiLH_w), zt )
-    endif
-
-    if ( iiLH_w > iiLH_rrain ) then
-      call stat_update_var_pt( icorr_wrr, level, corr_array(iiLH_w, iiLH_rrain), zt )
-    else
-      call stat_update_var_pt( icorr_wrr, level, corr_array(iiLH_rrain, iiLH_w), zt )
-    endif
-
-    if ( iiLH_w > iiLH_Nr ) then
-      call stat_update_var_pt( icorr_wNr, level, corr_array(iiLH_w, iiLH_Nr), zt )
-    else
-      call stat_update_var_pt( icorr_wNr, level, corr_array(iiLH_Nr, iiLH_w), zt )
-    endif
-
-    if ( iiLH_w > iiLH_Nc ) then
-      call stat_update_var_pt( icorr_wNc, level, corr_array(iiLH_w, iiLH_Nc), zt )
-    else
-      call stat_update_var_pt( icorr_wNc, level, corr_array(iiLH_Nc, iiLH_w), zt )
-    endif
-
-    if ( iiLH_rrain > iiLH_Nr ) then
-      call stat_update_var_pt( icorr_rrNr_1, level, corr_array(iiLH_rrain, iiLH_Nr), zt )
-    else
-      call stat_update_var_pt( icorr_rrNr_1, level, corr_array(iiLH_Nr, iiLH_rrain), zt )
-    endif
-
-    if ( iiLH_s_mellor > iiLH_rrain ) then
-      call stat_update_var_pt( icorr_srr_1, level, corr_array(iiLH_s_mellor, iiLH_rrain), zt )
-    else
-      call stat_update_var_pt( icorr_srr_1, level, corr_array(iiLH_rrain, iiLH_s_mellor), zt )
-    endif
-
-    if ( iiLH_s_mellor > iiLH_Nr ) then
-      call stat_update_var_pt( icorr_sNr_1, level, corr_array(iiLH_s_mellor, iiLH_Nr), zt )
-    else
-      call stat_update_var_pt( icorr_sNr_1, level, corr_array(iiLH_Nr, iiLH_s_mellor), zt )
-    endif
-
-    if ( iiLH_s_mellor > iiLH_Nc ) then
-      call stat_update_var_pt( icorr_sNc_1, level, corr_array(iiLH_s_mellor, iiLH_Nc), zt )
-    else
-      call stat_update_var_pt( icorr_sNc_1, level, corr_array(iiLH_Nc, iiLH_s_mellor), zt )
-    endif
-
-    return
-  end subroutine LH_stat_output
-  !-----------------------------------------------------------------------
 
 end module generate_lh_sample_module

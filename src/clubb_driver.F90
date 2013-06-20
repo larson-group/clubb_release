@@ -237,8 +237,7 @@ module clubb_driver
       rtm_nudge_max_altitude
 
     use diagnose_correlations_module, only: &
-        diagnose_correlations, & ! Procedure(s)
-        corr_stat_output
+        corr_stat_output ! Procedure(s)
 
     use corr_matrix_module, only: &
         read_correlation_matrix, & ! Procedure(s)
@@ -1221,39 +1220,29 @@ module clubb_driver
          Nrm    = hydromet(:,iiNrm)
 
          ! Determine correlations
-         if ( l_diagnose_correlations ) then
- 
-            call diagnose_correlations( gr%nz, d_variables, rcm, & ! intent(in)
-                                        corr_array_cloud, corr_array_below, &
-                                        corr_array_1 ) ! intent(inout)
-
-            corr_array_2 = corr_array_1
-
-         else ! Prescribed correlations
       
-            do k = 1, gr%nz
-               if ( rcm(k) > rc_tol ) then
-                  corr_array_1(:,:,k) = corr_array_cloud
-                  corr_array_2(:,:,k) = corr_array_cloud
-               else
-                  corr_array_1(:,:,k) = corr_array_below
-                  corr_array_2(:,:,k) = corr_array_below
-               endif
-            end do
+         do k = 1, gr%nz
+            if ( rcm(k) > rc_tol ) then
+               corr_array_1(:,:,k) = corr_array_cloud
+               corr_array_2(:,:,k) = corr_array_cloud
+            else
+               corr_array_1(:,:,k) = corr_array_below
+               corr_array_2(:,:,k) = corr_array_below
+            endif
+         end do
 
-            call corr_stat_output( d_variables, gr%nz, corr_array_1 )
+         Ncnm = Ncnm_initial / rho
 
-            Ncnm = Ncnm_initial / rho
+         !!! Setup the PDF parameters.
+         call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
+                                    cloud_frac, sqrt(wp2_zt), wphydrometp, &
+                                    corr_array_cloud, corr_array_below, &
+                                    pdf_params, l_stats_samp, d_variables, &
+                                    corr_array_1, corr_array_2, & ! Out
+                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
+                                    hydromet_pdf_params )
 
-            !!! Setup the PDF parameters.
-            call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
-                                       cloud_frac, sqrt(wp2_zt), wphydrometp, &
-                                       pdf_params, l_stats_samp, d_variables, &
-                                       corr_array_1, corr_array_2, & ! Out
-                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
-                                       hydromet_pdf_params )
-
-         endif ! l_diagnose_correlations
+         call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
       endif ! not micro_scheme == "none"
 

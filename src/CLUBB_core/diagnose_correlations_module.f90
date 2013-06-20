@@ -280,9 +280,10 @@ module diagnose_correlations_module
   end subroutine diagnose_LH_corr
 
 !-----------------------------------------------------------------------
-  subroutine diagnose_correlations( nz, d_variables, rcm, & ! intent(in)
-                                    corr_array_cloud, corr_array_below, &
-                                    corr_array ) ! intent(inout)
+  subroutine diagnose_correlations( d_variables, corr_array_pre, & ! Intent(in)
+                                    corr_ws, corr_wrr, corr_wNr, corr_wNcn, &
+                                    corr_st, corr_srr, corr_sNr, corr_sNcn, &
+                                    corr_trr, corr_tNr, corr_tNcn, corr_rrNr )
     ! Description:
     !   This subroutine diagnoses the correlation matrix in order to feed it
     !   into SILHS microphysics.
@@ -299,7 +300,6 @@ module diagnose_correlations_module
         iiLH_w ! Variable(s)
 
     use constants_clubb, only: &
-        rc_tol, &
         zero
 
     use model_flags, only: &
@@ -311,96 +311,80 @@ module diagnose_correlations_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables, & ! number of diagnosed correlations
-      nz             ! number of vertical levels
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rcm
+      d_variables   ! number of diagnosed correlations
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
-      corr_array_cloud, & ! Prescribed correlations in cloud
-      corr_array_below    ! Prescribed correlations below cloud
+      corr_array_pre   ! Prescribed correlations
 
-    ! Input/Output variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables, nz), intent(inout) :: &
-      corr_array
+    ! Output variables
+    real( kind = core_rknd ), intent(out) :: &
+      corr_ws,     & ! Correlation between w and s (1st PDF component)     [-]
+      corr_wrr,    & ! Correlation between w and rr (1st PDF component) ip [-]
+      corr_wNr,    & ! Correlation between w and Nr (1st PDF component) ip [-]
+      corr_wNcn,   & ! Correlation between w and Ncn (1st PDF component)   [-]
+      corr_st,     & ! Correlation between s and t (1st PDF component)     [-]
+      corr_srr,    & ! Correlation between s and rr (1st PDF component) ip [-]
+      corr_sNr,    & ! Correlation between s and Nr (1st PDF component) ip [-]
+      corr_sNcn,   & ! Correlation between s and Ncn (1st PDF component)   [-]
+      corr_trr,    & ! Correlation between t and rr (1st PDF component) ip [-]
+      corr_tNr,    & ! Correlation between t and Nr (1st PDF component) ip [-]
+      corr_tNcn,   & ! Correlation between t and Ncn (1st PDF component)   [-]
+      corr_rrNr      ! Correlation between rr & Nr (1st PDF component) ip  [-]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
-      corr_array_cloud_swapped, &
-      corr_array_below_swapped
-
+      corr_array_pre_swapped
+      
     real( kind = core_rknd ), dimension(d_variables) :: &
       swap_array
 
+    real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
+      corr_array
+
     ! We actually don't need this right now
     real( kind = core_rknd ), dimension(d_variables) :: &
-      xp2_on_xm2_array_cloud, & ! ratios of x_variance over x_mean^2 in cloud
-      xp2_on_xm2_array_below    ! ratios of x_variance over x_mean^2 below cloud
+      xp2_on_xm2_array   ! ratios of x_variance over x_mean^2
 
-    integer :: k ! loop iterator
+    integer :: i ! Loop iterator
 
     !-------------------- Begin code --------------------
 
-    do k = 1, d_variables
-      xp2_on_xm2_array_cloud(k) = zero
-      xp2_on_xm2_array_below(k) = zero
-    end do
+    ! Initialize xp2_on_xm2_array
+    do i = 1, d_variables
+       xp2_on_xm2_array(i) = zero
+    end do 
 
-
-    ! Swap the w-correlations to the first row for the prescaribed correlations
-    corr_array_cloud_swapped = corr_array_cloud
-    swap_array = corr_array_cloud_swapped (:,1)
-    corr_array_cloud_swapped(1:iiLH_w, 1) = corr_array_cloud_swapped(iiLH_w, iiLH_w:1:-1)
-    corr_array_cloud_swapped((iiLH_w+1):d_variables, 1) = corr_array_cloud_swapped( &
+    ! Swap the w-correlations to the first row for the prescribed correlations
+    corr_array_pre_swapped = corr_array_pre
+    swap_array = corr_array_pre_swapped (:,1)
+    corr_array_pre_swapped(1:iiLH_w, 1) = corr_array_pre_swapped(iiLH_w, iiLH_w:1:-1)
+    corr_array_pre_swapped((iiLH_w+1):d_variables, 1) = corr_array_pre_swapped( &
                                                          (iiLH_w+1):d_variables, iiLH_w)
-    corr_array_cloud_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-    corr_array_cloud_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+    corr_array_pre_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+    corr_array_pre_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
 
-    corr_array_below_swapped = corr_array_below
-    swap_array = corr_array_below_swapped (:,1)
-    corr_array_below_swapped(1:iiLH_w, 1) = corr_array_below_swapped(iiLH_w, iiLH_w:1:-1)
-    corr_array_below_swapped((iiLH_w+1):d_variables, 1) = corr_array_below_swapped( &
-                                                         (iiLH_w+1):d_variables, iiLH_w)
-    corr_array_below_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-    corr_array_below_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+    ! diagnose correlations
+    
+    if ( .not. l_calc_w_corr ) then
+       corr_array = corr_array_pre_swapped
+    endif
 
-    do k = 1, nz
+    call diagnose_corr( d_variables, sqrt(xp2_on_xm2_array), corr_array_pre_swapped, &
+                        corr_array )
 
-      ! Swap the w-correlations to the first row
-!      swap_array = corr_array(:, 1, k)
-!      corr_array(1:iiLH_w, 1, k) = corr_array(iiLH_w, iiLH_w:1:-1, k)
-!      corr_array((iiLH_w+1):d_variables, 1, k) = corr_array((iiLH_w+1):d_variables, iiLH_w, k)
-!      corr_array(iiLH_w, 1:iiLH_w, k) = swap_array(iiLH_w:1:-1)
-!      corr_array((iiLH_w+1):d_variables, iiLH_w, k) = swap_array((iiLH_w+1):d_variables)
+    ! Swap rows back
+    swap_array = corr_array(:, 1)
+    corr_array(1:iiLH_w, 1) = corr_array(iiLH_w, iiLH_w:1:-1)
+    corr_array((iiLH_w+1):d_variables, 1) = corr_array((iiLH_w+1):d_variables, iiLH_w)
+    corr_array(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+    corr_array((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
 
-      ! diagnose correlations
-      if ( rcm(k) > rc_tol ) then
+    ! Unpack the corr_array to the corresponding variables
+    call unpack_correlations( d_variables, corr_array, & ! Intent(in)
+                              corr_ws, corr_wrr, corr_wNr, corr_wNcn, & ! Intent(out)
+                              corr_st, corr_srr, corr_sNr, corr_sNcn, &
+                              corr_trr, corr_tNr, corr_tNcn, corr_rrNr )  
 
-        if ( .not. l_calc_w_corr ) then
-          corr_array(:, :, k) = corr_array_cloud_swapped(:,:)
-        endif
-
-        call diagnose_corr( d_variables, sqrt(xp2_on_xm2_array_cloud), &
-                            corr_array_cloud_swapped(:,:), corr_array(:,:,k) )
-      else
-
-        if ( .not. l_calc_w_corr ) then
-          corr_array(:, :, k) = corr_array_below_swapped(:,:)
-        endif
-
-        call diagnose_corr( d_variables, sqrt(xp2_on_xm2_array_below), &
-                            corr_array_below_swapped(:,:), corr_array(:,:,k) )
-      endif
-
-      ! Swap rows back
-      swap_array = corr_array(:, 1, k)
-      corr_array(1:iiLH_w, 1, k) = corr_array(iiLH_w, iiLH_w:1:-1, k)
-      corr_array((iiLH_w+1):d_variables, 1, k) = corr_array((iiLH_w+1):d_variables, iiLH_w, k)
-      corr_array(iiLH_w, 1:iiLH_w, k) = swap_array(iiLH_w:1:-1)
-      corr_array((iiLH_w+1):d_variables, iiLH_w, k) = swap_array((iiLH_w+1):d_variables)
-
-    end do
 
   end subroutine diagnose_correlations
 
@@ -1026,6 +1010,71 @@ module diagnose_correlations_module
     return
 
   end subroutine corr_stat_output
+
+!-----------------------------------------------------------------------
+  subroutine unpack_correlations( d_variables, corr_array, & ! Intent(in)
+                                  corr_ws, corr_wrr, corr_wNr, corr_wNcn, &
+                                  corr_st, corr_srr, corr_sNr, corr_sNcn, &
+                                  corr_trr, corr_tNr, corr_tNcn, corr_rrNr )  
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use corr_matrix_module, only: &
+        iiLH_w,        & ! Variable(s)
+        iiLH_s_mellor, &
+        iiLH_t_mellor, &
+        iiLH_rrain,    &
+        iiLH_Nr,       &
+        iiLH_Ncn
+
+    implicit none
+
+    intrinsic :: max, sqrt, transpose
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables   ! number of diagnosed correlations
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+      corr_array   ! Prescribed correlations
+
+    ! Output variables
+    real( kind = core_rknd ), intent(out) :: &
+      corr_ws,     & ! Correlation between w and s (1st PDF component)     [-]
+      corr_wrr,    & ! Correlation between w and rr (1st PDF component) ip [-]
+      corr_wNr,    & ! Correlation between w and Nr (1st PDF component) ip [-]
+      corr_wNcn,   & ! Correlation between w and Ncn (1st PDF component)   [-]
+      corr_st,     & ! Correlation between s and t (1st PDF component)     [-]
+      corr_srr,    & ! Correlation between s and rr (1st PDF component) ip [-]
+      corr_sNr,    & ! Correlation between s and Nr (1st PDF component) ip [-]
+      corr_sNcn,   & ! Correlation between s and Ncn (1st PDF component)   [-]
+      corr_trr,    & ! Correlation between t and rr (1st PDF component) ip [-]
+      corr_tNr,    & ! Correlation between t and Nr (1st PDF component) ip [-]
+      corr_tNcn,   & ! Correlation between t and Ncn (1st PDF component)   [-]
+      corr_rrNr      ! Correlation between rr & Nr (1st PDF component) ip  [-]
+
+    ! ---- Begin Code ----
+
+    corr_ws   = corr_array(iiLH_w, iiLH_s_mellor)
+    corr_wrr  = corr_array(iiLH_w, iiLH_rrain)
+    corr_wNr  = corr_array(iiLH_w, iiLH_Nr)
+    corr_wNcn = corr_array(iiLH_w, iiLH_Ncn)
+    corr_st   = corr_array(iiLH_s_mellor, iiLH_t_mellor)
+    corr_srr  = corr_array(iiLH_s_mellor, iiLH_rrain)
+    corr_sNr  = corr_array(iiLH_s_mellor, iiLH_Nr)
+    corr_sNcn = corr_array(iiLH_s_mellor, iiLH_Ncn)
+    corr_trr  = corr_array(iiLH_t_mellor, iiLH_rrain)
+    corr_tNr  = corr_array(iiLH_t_mellor, iiLH_Nr)
+    corr_tNcn = corr_array(iiLH_t_mellor, iiLH_Ncn)
+    corr_rrNr = corr_array(iiLH_rrain, iiLH_Nr)
+
+  end subroutine unpack_correlations
 
 !===============================================================================
 

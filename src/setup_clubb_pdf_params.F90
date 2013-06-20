@@ -24,6 +24,7 @@ module setup_clubb_pdf_params
   !=============================================================================
   subroutine setup_pdf_parameters( nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
                                    cloud_frac, w_std_dev, wphydrometp, &
+                                   corr_array_cloud, corr_array_below, &
                                    pdf_params, l_stats_samp, d_variables, &
                                    corr_array_1, corr_array_2, & ! Out
                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
@@ -41,6 +42,7 @@ module setup_clubb_pdf_params
     use constants_clubb, only: &
         one,     & ! Constant(s)
         zero,    &
+        rc_tol,  &
         rr_tol,  &
         Nr_tol,  &
         Ncn_tol, &
@@ -105,7 +107,8 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     integer, intent(in) :: &
-      nz          ! Number of model vertical grid levels
+      nz,          & ! Number of model vertical grid levels
+      d_variables    ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rrainm,     & ! Mean rain water mixing ratio, < r_r >           [kg/kg]
@@ -119,14 +122,15 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
 
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
+      corr_array_cloud, & ! Prescribed correlation array in cloud      [-]
+      corr_array_below    ! Prescribed correlation array below cloud   [-]
+
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params    ! PDF parameters                               [units vary]
 
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
-
-    integer, intent(in) :: &
-      d_variables    ! Number of variables in the correlation array.
 
     ! Output Variables
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
@@ -425,12 +429,32 @@ module setup_clubb_pdf_params
 !             ! The ratio is undefined; set it equal to 0.
 !             Ncnp2_on_Ncnm2 = zero
 !          endif
-!
-!          call diagnose_correlations( gr%nz, d_variables, rcm, & ! intent(in)
-!                                      corr_array_cloud, corr_array_below, &
-!                                      corr_array_1 ) ! intent(inout)
-!
-!          corr_array_2 = corr_array_1
+
+          if ( rcm(k) > rc_tol ) then
+
+             call diagnose_correlations( d_variables, corr_array_cloud, & ! In
+                                         corr_ws_1, corr_wrr_1, corr_wNr_1, corr_wNcn_1, & ! Out
+                                         corr_st_1, corr_srr_1, corr_sNr_1, corr_sNcn_1, &
+                                         corr_trr_1, corr_tNr_1, corr_tNcn_1, corr_rrNr_1 )
+
+             call diagnose_correlations( d_variables, corr_array_cloud, & ! In
+                                         corr_ws_2, corr_wrr_2, corr_wNr_2, corr_wNcn_2, & ! Out
+                                         corr_st_2, corr_srr_2, corr_sNr_2, corr_sNcn_2, &
+                                         corr_trr_2, corr_tNr_2, corr_tNcn_2, corr_rrNr_2 )
+
+          else
+
+             call diagnose_correlations( d_variables, corr_array_below, & ! In
+                                         corr_ws_1, corr_wrr_1, corr_wNr_1, corr_wNcn_1, & ! Out
+                                         corr_st_1, corr_srr_1, corr_sNr_1, corr_sNcn_1, &
+                                         corr_trr_1, corr_tNr_1, corr_tNcn_1, corr_rrNr_1 )
+
+             call diagnose_correlations( d_variables, corr_array_below, & ! In
+                                         corr_ws_2, corr_wrr_2, corr_wNr_2, corr_wNcn_2, & ! Out
+                                         corr_st_2, corr_srr_2, corr_sNr_2, corr_sNcn_2, &
+                                         corr_trr_2, corr_tNr_2, corr_tNcn_2, corr_rrNr_2 )
+
+          endif
 
        else ! if .not. l_diagnose_correlations
 
