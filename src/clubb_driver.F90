@@ -1220,7 +1220,7 @@ module clubb_driver
          Nrm    = hydromet(:,iiNrm)
 
          ! Determine correlations
-      
+
          do k = 1, gr%nz
             if ( rcm(k) > rc_tol ) then
                corr_array_1(:,:,k) = corr_array_cloud

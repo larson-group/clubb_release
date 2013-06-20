@@ -2304,11 +2304,15 @@ module inputfields
       stop "Fatal error"
     end if
 
-    ! (restart time) - (initial time)
-    delta_time = time - (fread_var%time - fread_var%dtwrite)
-
+    if (l_grads_file) then
+      ! (restart time) - (initial time)
+      delta_time = time - (fread_var%time - fread_var%dtwrite)
+    else
+      !  Eric   Raut     June  2013
+      delta_time = time - fread_var%time
     !    Joshua Fasching March 2008
 !     .        time - fread_var%time
+    end if
 
     ! Reporting
     if ( l_restart ) then
