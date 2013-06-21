@@ -122,6 +122,11 @@ module input_netcdf
     do i = 1, ndims
 
       ierr = nf90_inquire_dimension( ncid=ncf%iounit, dimId=dimIds(i), name=dim_name, len=itmp )
+      if ( ierr /= NF90_NOERR ) then
+        write(fstderr,*) nf90_strerror( ierr )
+        l_error = .true.
+        return
+      end if
 
       select case ( trim( dim_name ) )
       case ( "Z", "z", "altitude", "height" )
@@ -164,15 +169,17 @@ module input_netcdf
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
+        return
       end if
 
 !     ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=ncf%AltVarId, & ! In
 !                                   ndims=itmp ) ! Out
 
-      if ( ierr /= NF90_NOERR ) then
-        write(fstderr,*) nf90_strerror( ierr )
-        l_error = .true.
-      end if
+!     if ( ierr /= NF90_NOERR ) then
+!       write(fstderr,*) nf90_strerror( ierr )
+!       l_error = .true.
+!       return
+!     end if
 
       ierr = nf90_get_var( ncid=ncf%iounit, varid=ncf%AltVarId, & ! In
                            start=(/1/), count=(/ncf%iz/), & ! In
@@ -181,12 +188,14 @@ module input_netcdf
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
+        return
       end if
 
       ierr = nf90_inq_varid( ncid=ncf%iounit, name=trim( time_name ), varid=ncf%TimeVarId )
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
+        return
       end if
 
 !     ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=ncf%TimeVarId, & ! In
@@ -195,8 +204,22 @@ module input_netcdf
       ierr = nf90_get_att( ncid=ncf%iounit, varid=ncf%TimeVarId, name="units", & ! In
                            values=time ) ! Out
 
+      if ( ierr /= NF90_NOERR ) then
+        write(fstderr,*) nf90_strerror( ierr )
+        l_error = .true.
+        return
+      end if
+
       time = trim( time )
       length = len( trim( time ) )
+      if ( length < 11 ) then
+        write(fstderr,*) "The NetCDF file does not have a proper time unit &
+                         &specification. The ""units"" attribute for the &
+                         &time variable must be in the form:"
+        write(fstderr,*) "TIMEUNITS since YYYY-MM-DD HH:MM:SS.S"
+        l_error = .true.
+        return
+      end if
       read(time( length-10:length-8 ), *) hours
       read(time( length-6:length-5 ), *) minutes
       read(time( length-3:length - 2 ), *) seconds
@@ -224,6 +247,13 @@ module input_netcdf
       ierr = nf90_get_var( ncid=ncf%iounit, varid=ncf%TimeVarId, & ! In
                            start=(/1/), count=(/2/), & ! In
                            values=write_times ) ! Out
+
+      if ( ierr /= NF90_NOERR ) then
+        write(fstderr,*) nf90_strerror( ierr )
+        l_error = .true.
+        return
+      end if
+
       ncf%dtwrite = real( (write_times(2) - write_times(1)) * multiplier, kind=time_precision )
 
     end if

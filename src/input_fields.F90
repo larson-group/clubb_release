@@ -2543,6 +2543,11 @@ module inputfields
 #endif
     end if
 
+    if (l_error) then
+      write(fstderr,*) "A fatal error occured while reading the input file."
+      stop "Fatal error in input_fields.get_input_variables_interp"
+    end if
+
     ! initialize to boundary values to determine min and max later
     min_ia = 9999
     max_iz = -1
