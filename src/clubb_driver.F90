@@ -1233,6 +1233,8 @@ module clubb_driver
 
          Ncnm = Ncnm_initial / rho
 
+         call corr_stat_output( d_variables, gr%nz, corr_array_1 )
+
          !!! Setup the PDF parameters.
          call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
                                     cloud_frac, sqrt(wp2_zt), wphydrometp, &
@@ -1241,8 +1243,6 @@ module clubb_driver
                                     corr_array_1, corr_array_2, & ! Out
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                                     hydromet_pdf_params )
-
-         call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
       endif ! not micro_scheme == "none"
 
