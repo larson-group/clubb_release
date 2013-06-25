@@ -42,7 +42,7 @@ module generate_lh_sample_module
 !   This subroutine generates a Latin Hypercube sample.
 
 ! Assumptions:
-!   The l_fix_s_t_correlationss = false code does not set the correlation 
+!   The l_fix_s_t_correlations = false code does not set the correlation 
 !   between Nc and the other variates (i.e. it assumes they are all zero).
 !   We do this is because while we have data for the 
 !   correlation of e.g. s & Nc and s & rr, we do not know the correlation of
@@ -51,7 +51,7 @@ module generate_lh_sample_module
 !   correlation between rr and Nc when the correlation between s and Nc is
 !   non-zero, and the code would have to halt.
 !
-!   One implication of this is that if l_fix_s_t_correlationss = false 
+!   One implication of this is that if l_fix_s_t_correlations = false 
 !   then the correlation of s and Nc must be set to 
 !   zero in the correlation file to check the convergence of a non-interactive
 !   SILHS solution against the analytic K&K solution.
