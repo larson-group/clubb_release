@@ -75,7 +75,7 @@ program clubb_thread_test
   err_code = clubb_no_error
   ! Run the model in parallel
 
-!$omp parallel do default(none), private(iter, params, iunit), &
+!$omp parallel do default(shared), private(iter, params, iunit), &
 !$omp   shared(err_code)
   do iter = 1, size( err_code )
 #ifdef _OPENMP
@@ -93,7 +93,7 @@ program clubb_thread_test
   if ( fatal_error( err_code(1) ) ) then
     stop "The first simulation failed (multi-threaded)"
   else if ( fatal_error( err_code(2) ) ) then
-    stop "The 2nd simulation failed (mult-threaded)"
+    stop "The 2nd simulation failed (multi-threaded)"
   end if
 
 end program clubb_thread_test
