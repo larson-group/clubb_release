@@ -1236,13 +1236,13 @@ module clubb_driver
          call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
-                                    cloud_frac, sqrt(wp2_zt), wphydrometp, &
-                                    corr_array_cloud, corr_array_below, &
-                                    pdf_params, l_stats_samp, d_variables, &
-                                    corr_array_1, corr_array_2, & ! Out
-                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
-                                    hydromet_pdf_params )
+         call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, &    ! Intent(in)
+                                    cloud_frac, sqrt(wp2_zt), wphydrometp, & ! Intent(in)
+                                    corr_array_cloud, corr_array_below, &    ! Intent(in)
+                                    pdf_params, l_stats_samp, d_variables, & ! Intent(in)
+                                    corr_array_1, corr_array_2, &            ! Intent(out)
+                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &  ! Intent(out)
+                                    hydromet_pdf_params )                    ! Intent(out)
 
       endif ! not micro_scheme == "none"
 

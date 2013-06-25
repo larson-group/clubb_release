@@ -404,8 +404,8 @@ subroutine mmicro_pcond ( sub_column,           &
 
    ! Upscaled KK for autoconversion and accretion
    use setup_clubb_pdf_params, only: &
-       comp_mean_stdev, & ! Procedure(s)
-       comp_corr, &
+       compute_mean_stdev, & ! Procedure(s)
+       compute_corr, &
        normalize_pdf_params
 
    use KK_upscaled_means, only: &
@@ -1761,98 +1761,98 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 call comp_mean_stdev( real( qc(i,k), kind = core_rknd ), & ! In
-                                       real( qric(i,k) * cldmax(i,k), &
-                                             kind = core_rknd ), &
-                                       real( nric(i,k) * cldmax(i,k), &
-                                             kind = core_rknd ), &
-                                       real( nc(i,k), kind = core_rknd ), &
-                                       real( qric(i,k) * cldmax(i,k), &
-                                             kind = core_rknd ), &
-                                       real( qric(i,k) * cldmax(i,k), &
-                                             kind = core_rknd ), &
-                                       real( nric(i,k) * cldmax(i,k), &
-                                             kind = core_rknd ), &
-                                       real( nric(i,k) * cldmax(i,k), &
-                                             kind = core_rknd ), &
-                                       real( qc(i,k), kind = core_rknd ), &
-                                       real( qc(i,k), kind = core_rknd ), &
-                                       real( lcldm(i,k), kind = core_rknd ), &
-                                       real( lcldm(i,k), kind = core_rknd ), &
-                                       one, one, &
-                                       zero, zero, zero, &
-                                       zero, zero, mixt_frac, &
-                                       pdf_params(k), &
-                                       mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & ! Out
-                                       mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                       mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
-                                       sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
-                                       sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                       sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )
+                 call compute_mean_stdev( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                          real( qric(i,k) * cldmax(i,k), & ! Intent(in)
+                                                kind = core_rknd ), &
+                                          real( nric(i,k) * cldmax(i,k), & ! Intent(in)
+                                                kind = core_rknd ), &
+                                          real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                                          real( qric(i,k) * cldmax(i,k), & ! Intent(in)
+                                                kind = core_rknd ), &
+                                          real( qric(i,k) * cldmax(i,k), & ! Intent(in)
+                                                kind = core_rknd ), &
+                                          real( nric(i,k) * cldmax(i,k), & ! Intent(in)
+                                                kind = core_rknd ), &
+                                          real( nric(i,k) * cldmax(i,k), & ! Intent(in)
+                                                kind = core_rknd ), &
+                                          real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                          real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                          real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                          real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                          one, one, & ! Intent(in)
+                                          zero, zero, zero, & ! Intent(in)
+                                          zero, zero, mixt_frac, & ! Intent(in)
+                                          pdf_params(k), & ! Intent(in)
+                                          mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & ! Intent(out)
+                                          mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(out)
+                                          mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, & ! Intent(out)
+                                          sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, & ! Intent(out)
+                                          sigma_rr_1, sigma_rr_2, sigma_Nr_1, & ! Intent(out)
+                                          sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 ) ! Intent(out)
 
-                 call comp_corr( real( qc(i,k), kind = core_rknd ), & ! In
-                                 real( qric(i,k) * cldmax(i,k), &
-                                       kind = core_rknd ), &
-                                 real( nric(i,k) * cldmax(i,k), &
-                                       kind = core_rknd ), &
-                                 real( nc(i,k), kind = core_rknd ), &
-                                 real( qric(i,k) * cldmax(i,k), &
-                                       kind = core_rknd ), &
-                                 real( qric(i,k) * cldmax(i,k), &
-                                       kind = core_rknd ), &
-                                 real( nric(i,k) * cldmax(i,k), &
-                                       kind = core_rknd ), &
-                                 real( nric(i,k) * cldmax(i,k), &
-                                       kind = core_rknd ), &
-                                 real( qc(i,k), kind = core_rknd ), &
-                                 real( qc(i,k), kind = core_rknd ), &
-                                 real( lcldm(i,k), kind = core_rknd ), &
-                                 real( lcldm(i,k), kind = core_rknd ), &
-                                 one, one, &
-                                 zero, zero, zero, &
-                                 zero, zero, mixt_frac, &
-                                 sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &
-                                 pdf_params(k), &
-                                 corr_ws_1, corr_ws_2, corr_wrr_1, & ! Out
-                                 corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                                 corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                                 corr_st_2, corr_srr_1, corr_srr_2, &
-                                 corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                 corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                 corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                 corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+                 call compute_corr( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                    real( qric(i,k) * cldmax(i,k), & ! Intent(in)
+                                          kind = core_rknd ), &
+                                    real( nric(i,k) * cldmax(i,k), & ! Intent(in)
+                                          kind = core_rknd ), &
+                                    real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                                    real( qric(i,k) * cldmax(i,k), & ! Intent(in)
+                                          kind = core_rknd ), &
+                                    real( qric(i,k) * cldmax(i,k), & ! Intent(in)
+                                          kind = core_rknd ), &
+                                    real( nric(i,k) * cldmax(i,k), & ! Intent(in)
+                                          kind = core_rknd ), &
+                                    real( nric(i,k) * cldmax(i,k), & ! Intent(in)
+                                          kind = core_rknd ), &
+                                    real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                    real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                    real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                    real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                    one, one, & ! Intent(in)
+                                    zero, zero, zero, & ! Intent(in)
+                                    zero, zero, mixt_frac, & ! Intent(in)
+                                    sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, & ! Intent(in)
+                                    pdf_params(k), & ! Intent(in)
+                                    corr_ws_1, corr_ws_2, corr_wrr_1, & ! Intent(out)
+                                    corr_wrr_2, corr_wNr_1, corr_wNr_2, & ! Intent(out)
+                                    corr_wNcn_1, corr_wNcn_2, corr_st_1, & ! Intent(out)
+                                    corr_st_2, corr_srr_1, corr_srr_2, & ! Intent(out)
+                                    corr_sNr_1, corr_sNr_2, corr_sNcn_1, & ! Intent(out)
+                                    corr_sNcn_2, corr_trr_1, corr_trr_2, & ! Intent(out)
+                                    corr_tNr_1, corr_tNr_2, corr_tNcn_1, & ! Intent(out)
+                                    corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 ) ! Intent(out)
 
                  call normalize_pdf_params &
-                                ( real( qric(i,k) * cldmax(i,k), & ! In
+                                ( real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( qric(i,k) * cldmax(i,k), &
+                                  real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
+                                  real( nric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
+                                  real( nric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( nc(i,k), kind = core_rknd ), &
-                                  mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                  mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, &
-                                  sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &
-                                  sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &
-                                  corr_wNr_1, corr_wNr_2, corr_wNcn_1, &
-                                  corr_wNcn_2, corr_srr_1, corr_srr_2, &
-                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
-                                  mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, & ! Out
-                                  mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                  sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                  sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                  corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                                  corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                                  corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                                  corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                                  corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                                  corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                                  corr_rrNr_1_n, corr_rrNr_2_n )
+                                  real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                                  mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(in)
+                                  mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, & ! Intent(in)
+                                  sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, & ! Intent(in)
+                                  sigma_Ncn_2, corr_wrr_1, corr_wrr_2, & ! Intent(in)
+                                  corr_wNr_1, corr_wNr_2, corr_wNcn_1, & ! Intent(in)
+                                  corr_wNcn_2, corr_srr_1, corr_srr_2, & ! Intent(in)
+                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, & ! Intent(in)
+                                  corr_sNcn_2, corr_trr_1, corr_trr_2, & ! Intent(in)
+                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, & ! Intent(in)
+                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, & ! Intent(in)
+                                  mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, & ! Intent(out)
+                                  mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, & ! Intent(out)
+                                  sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, & ! Intent(out)
+                                  sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, & ! Intent(out)
+                                  corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, & ! Intent(out)
+                                  corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, & ! Intent(out)
+                                  corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, & ! Intent(out)
+                                  corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, & ! Intent(out)
+                                  corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, & ! Intent(out)
+                                  corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, & ! Intent(out)
+                                  corr_rrNr_1_n, corr_rrNr_2_n ) ! Intent(out)
 
                  KK_auto_coef &
                  = 1350.0_core_rknd &
@@ -2300,99 +2300,99 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 call comp_mean_stdev &
-                                ( real( qc(i,k), kind = core_rknd ), & ! In
-                                  real( qric(i,k) * cldmax(i,k), &
+                 call compute_mean_stdev &
+                                ( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                  real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
+                                  real( nric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( nc(i,k), kind = core_rknd ), &
-                                  real( qric(i,k) * cldmax(i,k), &
+                                  real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                                  real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( qric(i,k) * cldmax(i,k), &
+                                  real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
+                                  real( nric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
+                                  real( nric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( qc(i,k), kind = core_rknd ), &
-                                  real( qc(i,k), kind = core_rknd ), &
-                                  real( lcldm(i,k), kind = core_rknd ), &
-                                  real( lcldm(i,k), kind = core_rknd ), &
-                                  one, one, &
-                                  zero, zero, zero, &
-                                  zero, zero, mixt_frac, &
-                                  pdf_params(k), &
-                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & !Out
-                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                  mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
-                                  sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
-                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )
+                                  real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                  real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                  real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                  real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                  one, one, & ! Intent(in)
+                                  zero, zero, zero, & ! Intent(in)
+                                  zero, zero, mixt_frac, & ! Intent(in)
+                                  pdf_params(k), & ! Intent(in)
+                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & ! Intent(out)
+                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(out)
+                                  mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, & ! Intent(out)
+                                  sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, & ! Intent(out)
+                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, & ! Intent(out)
+                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 ) ! Intent(out)
 
-                 call comp_corr ( real( qc(i,k), kind = core_rknd ), & ! In
-                                  real( qric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( nc(i,k), kind = core_rknd ), &
-                                  real( qric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( qric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
-                                        kind = core_rknd ), &
-                                  real( qc(i,k), kind = core_rknd ), &
-                                  real( qc(i,k), kind = core_rknd ), &
-                                  real( lcldm(i,k), kind = core_rknd ), &
-                                  real( lcldm(i,k), kind = core_rknd ), &
-                                  one, one, &
-                                  zero, zero, zero, &
-                                  zero, zero, mixt_frac, &
-                                  sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &
-                                  pdf_params(k), &
-                                  corr_ws_1, corr_ws_2, corr_wrr_1, &
-                                  corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                                  corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                                  corr_st_2, corr_srr_1, corr_srr_2, &
-                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+                 call compute_corr ( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                     real( qric(i,k) * cldmax(i,k), & ! Intent(in)
+                                           kind = core_rknd ), &
+                                     real( nric(i,k) * cldmax(i,k), & ! Intent(in)
+                                           kind = core_rknd ), &
+                                     real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                                     real( qric(i,k) * cldmax(i,k), & ! Intent(in)
+                                           kind = core_rknd ), &
+                                     real( qric(i,k) * cldmax(i,k), & ! Intent(in)
+                                           kind = core_rknd ), &
+                                     real( nric(i,k) * cldmax(i,k), & ! Intent(in)
+                                           kind = core_rknd ), &
+                                     real( nric(i,k) * cldmax(i,k), & ! Intent(in)
+                                           kind = core_rknd ), &
+                                     real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                     real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                     one, one, & ! Intent(in)
+                                     zero, zero, zero, & ! Intent(in)
+                                     zero, zero, mixt_frac, & ! Intent(in)
+                                     sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, & ! Intent(in)
+                                     pdf_params(k), & ! Intent(in)
+                                     corr_ws_1, corr_ws_2, corr_wrr_1, & ! Intent(out)
+                                     corr_wrr_2, corr_wNr_1, corr_wNr_2, & ! Intent(out)
+                                     corr_wNcn_1, corr_wNcn_2, corr_st_1, & ! Intent(out)
+                                     corr_st_2, corr_srr_1, corr_srr_2, & ! Intent(out)
+                                     corr_sNr_1, corr_sNr_2, corr_sNcn_1, & ! Intent(out)
+                                     corr_sNcn_2, corr_trr_1, corr_trr_2, & ! Intent(out)
+                                     corr_tNr_1, corr_tNr_2, corr_tNcn_1, & ! Intent(out)
+                                     corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 ) ! Intent(out)
 
                  call normalize_PDF_params &
-                                ( real( qric(i,k) * cldmax(i,k), & ! In
+                                ( real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( qric(i,k) * cldmax(i,k), &
+                                  real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
+                                  real( nric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), &
+                                  real( nric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
-                                  real( nc(i,k), kind = core_rknd ), &
-                                  mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                  mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, &
-                                  sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &
-                                  sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &
-                                  corr_wNr_1, corr_wNr_2, corr_wNcn_1, &
-                                  corr_wNcn_2, corr_srr_1, corr_srr_2, &
-                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                  corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
-                                  mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, & ! Out
-                                  mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                  sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                  sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                  corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                                  corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                                  corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                                  corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                                  corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                                  corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                                  corr_rrNr_1_n, corr_rrNr_2_n )
+                                  real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                                  mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(in)
+                                  mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, & ! Intent(in)
+                                  sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, & ! Intent(in)
+                                  sigma_Ncn_2, corr_wrr_1, corr_wrr_2, & ! Intent(in)
+                                  corr_wNr_1, corr_wNr_2, corr_wNcn_1, & ! Intent(in)
+                                  corr_wNcn_2, corr_srr_1, corr_srr_2, & ! Intent(in)
+                                  corr_sNr_1, corr_sNr_2, corr_sNcn_1, & ! Intent(in)
+                                  corr_sNcn_2, corr_trr_1, corr_trr_2, & ! Intent(in)
+                                  corr_tNr_1, corr_tNr_2, corr_tNcn_1, & ! Intent(in)
+                                  corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, & ! Intent(in)
+                                  mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, & ! Intent(out)
+                                  mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, & ! Intent(out)
+                                  sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, & ! Intent(out)
+                                  sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, & ! Intent(out)
+                                  corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, & ! Intent(out)
+                                  corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, & ! Intent(out)
+                                  corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, & ! Intent(out)
+                                  corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, & ! Intent(out)
+                                  corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, & ! Intent(out)
+                                  corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, & ! Intent(out)
+                                  corr_rrNr_1_n, corr_rrNr_2_n ) ! Intent(out)
 
                  KK_accr_coef = 67.0_core_rknd
 

@@ -281,9 +281,12 @@ module diagnose_correlations_module
 
 !-----------------------------------------------------------------------
   subroutine diagnose_correlations( d_variables, corr_array_pre, & ! Intent(in)
-                                    corr_ws, corr_wrr, corr_wNr, corr_wNcn, &
-                                    corr_st, corr_srr, corr_sNr, corr_sNcn, &
-                                    corr_trr, corr_tNr, corr_tNcn, corr_rrNr )
+                                    corr_ws, corr_wrr, &           ! Intent(out)
+                                    corr_wNr, corr_wNcn, &         ! Intent(out)
+                                    corr_st, corr_srr, &           ! Intent(out)
+                                    corr_sNr, corr_sNcn, &         ! Intent(out)
+                                    corr_trr, corr_tNr, &          ! Intent(out)
+                                    corr_tNcn, corr_rrNr )         ! Intent(out)
     ! Description:
     !   This subroutine diagnoses the correlation matrix in order to feed it
     !   into SILHS microphysics.

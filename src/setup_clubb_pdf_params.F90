@@ -9,8 +9,8 @@ module setup_clubb_pdf_params
   public :: setup_pdf_parameters, &
             unpack_pdf_params,    &
             normalize_pdf_params, &
-            comp_mean_stdev,      &
-            comp_corr
+            compute_mean_stdev,   &
+            compute_corr
 
   private :: component_means_rain,   &
              precip_fraction,        &
@@ -22,13 +22,13 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( nz, rrainm, Nrm, Ncnm, rho, rcm, & ! In
-                                   cloud_frac, w_std_dev, wphydrometp, &
-                                   corr_array_cloud, corr_array_below, &
-                                   pdf_params, l_stats_samp, d_variables, &
-                                   corr_array_1, corr_array_2, & ! Out
-                                   mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
-                                   hydromet_pdf_params )
+  subroutine setup_pdf_parameters( nz, rrainm, Nrm, Ncnm, rho, rcm, &       ! Intent(in)
+                                   cloud_frac, w_std_dev, wphydrometp, &    ! Intent(in)
+                                   corr_array_cloud, corr_array_below, &    ! Intent(in)
+                                   pdf_params, l_stats_samp, d_variables, & ! Intent(in)
+                                   corr_array_1, corr_array_2, &            ! Intent(out)
+                                   mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &  ! Intent(out)
+                                   hydromet_pdf_params )                    ! Intent(out)
 
     ! Description:
 
@@ -393,19 +393,19 @@ module setup_clubb_pdf_params
        !!! Calculate the means, standard deviations, and necessary correlations
        !!! involving w, s, t, r_r (in-precip), N_r (in-precip), and N_cn for
        !!! each PDF component.
-       call comp_mean_stdev( rcm(k), rrainm(k), Nrm(k), Ncnm(k), &
-                             rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
-                             rc2(k), cloud_frac1(k), cloud_frac2(k), &
-                             precip_frac_1(k), precip_frac_2(k), &
-                             wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &
-                             wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), &
-                             pdf_params(k), &
-                             mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &
-                             mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                             mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
-                             sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
-                             sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                             sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )
+       call compute_mean_stdev( rcm(k), rrainm(k), Nrm(k), Ncnm(k), &         ! Intent(in)
+                                rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &     ! Intent(in)
+                                rc2(k), cloud_frac1(k), cloud_frac2(k), &     ! Intent(in)
+                                precip_frac_1(k), precip_frac_2(k), &         ! Intent(in)
+                                wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
+                                wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), &   ! Intent(in)
+                                pdf_params(k), &                              ! Intent(in)
+                                mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &     ! Intent(out)
+                                mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(out)
+                                mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &   ! Intent(out)
+                                sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, & ! Intent(out)
+                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &         ! Intent(out)
+                                sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )        ! Intent(out)
 
        if ( l_diagnose_correlations ) then
 
@@ -432,76 +432,88 @@ module setup_clubb_pdf_params
 
           if ( rcm(k) > rc_tol ) then
 
-             call diagnose_correlations( d_variables, corr_array_cloud, & ! In
-                                         corr_ws_1, corr_wrr_1, corr_wNr_1, corr_wNcn_1, & ! Out
-                                         corr_st_1, corr_srr_1, corr_sNr_1, corr_sNcn_1, &
-                                         corr_trr_1, corr_tNr_1, corr_tNcn_1, corr_rrNr_1 )
+             call diagnose_correlations( d_variables, corr_array_cloud, & ! Intent(in)
+                                         corr_ws_1, corr_wrr_1, &         ! Intent(out)
+                                         corr_wNr_1, corr_wNcn_1, &       ! Intent(out)
+                                         corr_st_1, corr_srr_1, &         ! Intent(out)
+                                         corr_sNr_1, corr_sNcn_1, &       ! Intent(out)
+                                         corr_trr_1, corr_tNr_1, &        ! Intent(out)
+                                         corr_tNcn_1, corr_rrNr_1 )       ! Intent(out)
 
-             call diagnose_correlations( d_variables, corr_array_cloud, & ! In
-                                         corr_ws_2, corr_wrr_2, corr_wNr_2, corr_wNcn_2, & ! Out
-                                         corr_st_2, corr_srr_2, corr_sNr_2, corr_sNcn_2, &
-                                         corr_trr_2, corr_tNr_2, corr_tNcn_2, corr_rrNr_2 )
+             call diagnose_correlations( d_variables, corr_array_cloud, & ! Intent(in)
+                                         corr_ws_2, corr_wrr_2, &         ! Intent(out)
+                                         corr_wNr_2, corr_wNcn_2, &       ! Intent(out)
+                                         corr_st_2, corr_srr_2, &         ! Intent(out)
+                                         corr_sNr_2, corr_sNcn_2, &       ! Intent(out)
+                                         corr_trr_2, corr_tNr_2, &        ! Intent(out)
+                                         corr_tNcn_2, corr_rrNr_2 )       ! Intent(out)
 
           else
 
-             call diagnose_correlations( d_variables, corr_array_below, & ! In
-                                         corr_ws_1, corr_wrr_1, corr_wNr_1, corr_wNcn_1, & ! Out
-                                         corr_st_1, corr_srr_1, corr_sNr_1, corr_sNcn_1, &
-                                         corr_trr_1, corr_tNr_1, corr_tNcn_1, corr_rrNr_1 )
+             call diagnose_correlations( d_variables, corr_array_below, & ! Intent(in)
+                                         corr_ws_1, corr_wrr_1, &         ! Intent(out)
+                                         corr_wNr_1, corr_wNcn_1, &       ! Intent(out)
+                                         corr_st_1, corr_srr_1, &         ! Intent(out)
+                                         corr_sNr_1, corr_sNcn_1, &       ! Intent(out)
+                                         corr_trr_1, corr_tNr_1, &        ! Intent(out)
+                                         corr_tNcn_1, corr_rrNr_1 )       ! Intent(out)
 
-             call diagnose_correlations( d_variables, corr_array_below, & ! In
-                                         corr_ws_2, corr_wrr_2, corr_wNr_2, corr_wNcn_2, & ! Out
-                                         corr_st_2, corr_srr_2, corr_sNr_2, corr_sNcn_2, &
-                                         corr_trr_2, corr_tNr_2, corr_tNcn_2, corr_rrNr_2 )
+             call diagnose_correlations( d_variables, corr_array_below, & ! Intent(in)
+                                         corr_ws_2, corr_wrr_2, &         ! Intent(out)
+                                         corr_wNr_2, corr_wNcn_2, &       ! Intent(out)
+                                         corr_st_2, corr_srr_2, &         ! Intent(out)
+                                         corr_sNr_2, corr_sNcn_2, &       ! Intent(out)
+                                         corr_trr_2, corr_tNr_2, &        ! Intent(out)
+                                         corr_tNcn_2, corr_rrNr_2 )       ! Intent(out)
 
           endif
 
        else ! if .not. l_diagnose_correlations
 
 
-          call comp_corr( rcm(k), rrainm(k), Nrm(k), Ncnm(k), & ! In 
-                          rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &
-                          rc2(k), cloud_frac1(k), cloud_frac2(k), &
-                          precip_frac_1(k), precip_frac_2(k), &
-                          wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &
-                          wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), &
-                          sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &
-                          pdf_params(k), &
-                          corr_ws_1, corr_ws_2, corr_wrr_1, & ! Out
-                          corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                          corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                          corr_st_2, corr_srr_1, corr_srr_2, &
-                          corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                          corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                          corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                          corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+          call compute_corr( rcm(k), rrainm(k), Nrm(k), Ncnm(k), &         ! Intent(in)
+                             rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &     ! Intent(in)
+                             rc2(k), cloud_frac1(k), cloud_frac2(k), &     ! Intent(in)
+                             precip_frac_1(k), precip_frac_2(k), &         ! Intent(in)
+                             wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
+                             wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), &   ! Intent(in)
+                             sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &        ! Intent(in)
+                             pdf_params(k), &                              ! Intent(in)
+                             corr_ws_1, corr_ws_2, corr_wrr_1, &           ! Intent(out)
+                             corr_wrr_2, corr_wNr_1, corr_wNr_2, &         ! Intent(out)
+                             corr_wNcn_1, corr_wNcn_2, corr_st_1, &        ! Intent(out)
+                             corr_st_2, corr_srr_1, corr_srr_2, &          ! Intent(out)
+                             corr_sNr_1, corr_sNr_2, corr_sNcn_1, &        ! Intent(out)
+                             corr_sNcn_2, corr_trr_1, corr_trr_2, &        ! Intent(out)
+                             corr_tNr_1, corr_tNr_2, corr_tNcn_1, &        ! Intent(out)
+                             corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )       ! Intent(out)
 
        endif ! l_diagnose_correlations
 
        !!! Calculate the mean, standard deviations, and correlations involving
        !!! ln r_r, ln N_r, and ln N_cn for each PDF component.
-       call normalize_pdf_params( rr1(k), rr2(k), Nr1(k), Nr2(k), Ncnm(k), & ! In
-                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                   mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, &
-                                   sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &
-                                   sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &
-                                   corr_wNr_1, corr_wNr_2, corr_wNcn_1, &
-                                   corr_wNcn_2, corr_srr_1, corr_srr_2, &
-                                   corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                   corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
-                                   mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, & ! Out
-                                   mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                   sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                   sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                   corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                                   corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                                   corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                                   corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                                   corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                                   corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                                   corr_rrNr_1_n, corr_rrNr_2_n )
+       call normalize_pdf_params( rr1(k), rr2(k), Nr1(k), Nr2(k), Ncnm(k), &     ! Intent(in)
+                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &         ! Intent(in)
+                                   mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, & ! Intent(in)
+                                   sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &        ! Intent(in)
+                                   sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &        ! Intent(in)
+                                   corr_wNr_1, corr_wNr_2, corr_wNcn_1, &        ! Intent(in)
+                                   corr_wNcn_2, corr_srr_1, corr_srr_2, &        ! Intent(in)
+                                   corr_sNr_1, corr_sNr_2, corr_sNcn_1, &        ! Intent(in)
+                                   corr_sNcn_2, corr_trr_1, corr_trr_2, &        ! Intent(in)
+                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &        ! Intent(in)
+                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &      ! Intent(in)
+                                   mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &            ! Intent(out)
+                                   mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &          ! Intent(out)
+                                   sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &   ! Intent(out)
+                                   sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, & ! Intent(out)
+                                   corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &   ! Intent(out)
+                                   corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, & ! Intent(out)
+                                   corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &   ! Intent(out)
+                                   corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, & ! Intent(out)
+                                   corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &   ! Intent(out)
+                                   corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, & ! Intent(out)
+                                   corr_rrNr_1_n, corr_rrNr_2_n )                ! Intent(out)
 
        !!! Statistics
        call pdf_param_hm_stats(  mu_rr_1, mu_rr_2, mu_Nr_1, &
@@ -531,31 +543,32 @@ module setup_clubb_pdf_params
                                     l_stats_samp )
 
        !!! Pack the PDF parameters
-       call pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, & ! In
-                             mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
-                             mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                             mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                             mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                             sigma_w_1, sigma_w_2, sigma_s_1, &
-                             sigma_s_2, sigma_t_1, sigma_t_2, &
-                             sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                             sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                             sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                             sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                             corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, &
-                             corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                             corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                             corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                             corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                             corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                             corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                             corr_rrNr_1_n, corr_rrNr_2_n, &
-                             rr1(k), rr2(k), Nr1(k), Nr2(k), &
-                             precip_frac(k), precip_frac_1(k), precip_frac_2(k), &
-                             d_variables, &
-                             corr_array_1(:,:,k), corr_array_2(:,:,k), & ! Out
-                             mu_x_1(:,k), mu_x_2(:,k), sigma_x_1(:,k), sigma_x_2(:,k), &
-                             hydromet_pdf_params(k) )
+       call pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, &                     ! Intent(in)
+                             mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &                   ! Intent(in)
+                             mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &               ! Intent(in)
+                             mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &                    ! Intent(in)
+                             mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &                  ! Intent(in)
+                             sigma_w_1, sigma_w_2, sigma_s_1, &                    ! Intent(in)
+                             sigma_s_2, sigma_t_1, sigma_t_2, &                    ! Intent(in)
+                             sigma_rr_1, sigma_rr_2, sigma_Nr_1, &                 ! Intent(in)
+                             sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &               ! Intent(in)
+                             sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &           ! Intent(in)
+                             sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &         ! Intent(in)
+                             corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, &         ! Intent(in)
+                             corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &           ! Intent(in)
+                             corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &         ! Intent(in)
+                             corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &           ! Intent(in)
+                             corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &         ! Intent(in)
+                             corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &           ! Intent(in)
+                             corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &         ! Intent(in)
+                             corr_rrNr_1_n, corr_rrNr_2_n, &                       ! Intent(in)
+                             rr1(k), rr2(k), Nr1(k), Nr2(k), &                     ! Intent(in)
+                             precip_frac(k), precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
+                             d_variables, &                                        ! Intent(in)
+                             corr_array_1(:,:,k), corr_array_2(:,:,k), &           ! Intent(out)
+                             mu_x_1(:,k), mu_x_2(:,k), &                           ! Intent(out)
+                             sigma_x_1(:,k), sigma_x_2(:,k), &                     ! Intent(out)
+                             hydromet_pdf_params(k) )                              ! Intent(out)
 
 
     enddo  ! Setup PDF parameters loop: k = 2, nz, 1
@@ -1351,19 +1364,19 @@ module setup_clubb_pdf_params
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine comp_mean_stdev( rcm, rrainm, Nrm, Ncnm, & ! In
-                              rr1, rr2, Nr1, Nr2, rc1, &
-                              rc2, cloud_frac1, cloud_frac2, &
-                              precip_frac_1, precip_frac_2, &
-                              wpsp, wprrp_ip, wpNrp_ip, &
-                              wpNcnp, stdev_w, mixt_frac, &
-                              pdf_params, &
-                              mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & ! Out
-                              mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                              mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &
-                              sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &
-                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                              sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )
+  subroutine compute_mean_stdev( rcm, rrainm, Nrm, Ncnm, &                     ! Intent(in)
+                                 rr1, rr2, Nr1, Nr2, rc1, &                    ! Intent(in)
+                                 rc2, cloud_frac1, cloud_frac2, &              ! Intent(in)
+                                 precip_frac_1, precip_frac_2, &               ! Intent(in)
+                                 wpsp, wprrp_ip, wpNrp_ip, &                   ! Intent(in)
+                                 wpNcnp, stdev_w, mixt_frac, &                 ! Intent(in)
+                                 pdf_params, &                                 ! Intent(in)
+                                 mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &     ! Intent(out)
+                                 mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(out)
+                                 mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &   ! Intent(out)
+                                 sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, & ! Intent(out)
+                                 sigma_rr_1, sigma_rr_2, sigma_Nr_1, &         ! Intent(out)
+                                 sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )        ! Intent(out)
        
     ! Description:
 
@@ -1721,25 +1734,25 @@ module setup_clubb_pdf_params
 
     return
 
-  end subroutine comp_mean_stdev
+  end subroutine compute_mean_stdev
 
 !=============================================================================
-  subroutine comp_corr( rcm, rrainm, Nrm, Ncnm, & ! In 
-                        rr1, rr2, Nr1, Nr2, rc1, &
-                        rc2, cloud_frac1, cloud_frac2, &
-                        precip_frac_1, precip_frac_2, &
-                        wpsp, wprrp_ip, wpNrp_ip, &
-                        wpNcnp, stdev_w, mixt_frac, &
-                        sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &
-                        pdf_params, &
-                        corr_ws_1, corr_ws_2, corr_wrr_1, & ! Out
-                        corr_wrr_2, corr_wNr_1, corr_wNr_2, &
-                        corr_wNcn_1, corr_wNcn_2, corr_st_1, &
-                        corr_st_2, corr_srr_1, corr_srr_2, &
-                        corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                        corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                        corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                        corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )
+  subroutine compute_corr( rcm, rrainm, Nrm, Ncnm, &               ! Intent(in)
+                           rr1, rr2, Nr1, Nr2, rc1, &              ! Intent(in)
+                           rc2, cloud_frac1, cloud_frac2, &        ! Intent(in)
+                           precip_frac_1, precip_frac_2, &         ! Intent(in)
+                           wpsp, wprrp_ip, wpNrp_ip, &             ! Intent(in)
+                           wpNcnp, stdev_w, mixt_frac, &           ! Intent(in)
+                           sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &  ! Intent(in)
+                           pdf_params, &                           ! Intent(in)
+                           corr_ws_1, corr_ws_2, corr_wrr_1, &     ! Intent(out)
+                           corr_wrr_2, corr_wNr_1, corr_wNr_2, &   ! Intent(out)
+                           corr_wNcn_1, corr_wNcn_2, corr_st_1, &  ! Intent(out)
+                           corr_st_2, corr_srr_1, corr_srr_2, &    ! Intent(out)
+                           corr_sNr_1, corr_sNr_2, corr_sNcn_1, &  ! Intent(out)
+                           corr_sNcn_2, corr_trr_1, corr_trr_2, &  ! Intent(out)
+                           corr_tNr_1, corr_tNr_2, corr_tNcn_1, &  ! Intent(out)
+                           corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 ) ! Intent(out)
        
     ! Description:
 
@@ -2440,31 +2453,31 @@ module setup_clubb_pdf_params
 
     return
 
-  end subroutine comp_corr
+  end subroutine compute_corr
 
   !=============================================================================
-  subroutine normalize_pdf_params( rr1, rr2, Nr1, Nr2, Ncnm, &
-                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &
-                                   mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, &
-                                   sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &
-                                   sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &
-                                   corr_wNr_1, corr_wNr_2, corr_wNcn_1, &
-                                   corr_wNcn_2, corr_srr_1, corr_srr_2, &
-                                   corr_sNr_1, corr_sNr_2, corr_sNcn_1, &
-                                   corr_sNcn_2, corr_trr_1, corr_trr_2, &
-                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &
-                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &
-                                   mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                   mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                   sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                   sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                   corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                                   corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                                   corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                                   corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                                   corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                                   corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                                   corr_rrNr_1_n, corr_rrNr_2_n )
+  subroutine normalize_pdf_params( rr1, rr2, Nr1, Nr2, Ncnm, &                   ! Intent(in)
+                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &         ! Intent(in)
+                                   mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, & ! Intent(in)
+                                   sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &        ! Intent(in)
+                                   sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &        ! Intent(in)
+                                   corr_wNr_1, corr_wNr_2, corr_wNcn_1, &        ! Intent(in)
+                                   corr_wNcn_2, corr_srr_1, corr_srr_2, &        ! Intent(in)
+                                   corr_sNr_1, corr_sNr_2, corr_sNcn_1, &        ! Intent(in)
+                                   corr_sNcn_2, corr_trr_1, corr_trr_2, &        ! Intent(in)
+                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &        ! Intent(in)
+                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &      ! Intent(in)
+                                   mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &            ! Intent(out)
+                                   mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &          ! Intent(out)
+                                   sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &   ! Intent(out)
+                                   sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, & ! Intent(out)
+                                   corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &   ! Intent(out)
+                                   corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, & ! Intent(out)
+                                   corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &   ! Intent(out)
+                                   corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, & ! Intent(out)
+                                   corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &   ! Intent(out)
+                                   corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, & ! Intent(out)
+                                   corr_rrNr_1_n, corr_rrNr_2_n )                ! Intent(out)
 
     ! Description:
 
@@ -3659,31 +3672,31 @@ module setup_clubb_pdf_params
   end subroutine pdf_param_log_hm_stats
 
   !=============================================================================
-  subroutine pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, & ! In
-                              mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
-                              mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                              mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                              mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                              sigma_w_1, sigma_w_2, sigma_s_1, &
-                              sigma_s_2, sigma_t_1, sigma_t_2, &
-                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                              sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                              sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                              corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, &
-                              corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                              corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                              corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                              corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                              corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                              corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                              corr_rrNr_1_n, corr_rrNr_2_n, &
-                              rr1, rr2, Nr1, Nr2, &
-                              precip_frac, precip_frac_1, precip_frac_2, &
-                              d_variables, &
-                              corr_array_1, corr_array_2, & ! Out
-                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
-                              hydromet_pdf_params )
+  subroutine pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, &             ! Intent(in)
+                              mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &           ! Intent(in)
+                              mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &       ! Intent(in)
+                              mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &            ! Intent(in)
+                              mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &          ! Intent(in)
+                              sigma_w_1, sigma_w_2, sigma_s_1, &            ! Intent(in)
+                              sigma_s_2, sigma_t_1, sigma_t_2, &            ! Intent(in)
+                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &         ! Intent(in)
+                              sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &       ! Intent(in)
+                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &   ! Intent(in)
+                              sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, & ! Intent(in)
+                              corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, & ! Intent(in)
+                              corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &   ! Intent(in)
+                              corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, & ! Intent(in)
+                              corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &   ! Intent(in)
+                              corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, & ! Intent(in)
+                              corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &   ! Intent(in)
+                              corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, & ! Intent(in)
+                              corr_rrNr_1_n, corr_rrNr_2_n, &               ! Intent(in)
+                              rr1, rr2, Nr1, Nr2, &                         ! Intent(in)
+                              precip_frac, precip_frac_1, precip_frac_2, &  ! Intent(in)
+                              d_variables, &                                ! Intent(in)
+                              corr_array_1, corr_array_2, &                 ! Intent(out)
+                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &       ! Intent(out)
+                              hydromet_pdf_params )                         ! Intent(out)
 
     ! Description:
 
@@ -3888,30 +3901,30 @@ module setup_clubb_pdf_params
   end subroutine pack_pdf_params
 
   !=============================================================================
-  subroutine unpack_pdf_params( d_variables, corr_array_1, corr_array_2, & ! In
-                                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
-                                hydromet_pdf_params, &
-                                mu_w_1, mu_w_2, mu_s_1, mu_s_2, & ! Out
-                                mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
-                                mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                                mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                sigma_w_1, sigma_w_2, sigma_s_1, &
-                                sigma_s_2, sigma_t_1, sigma_t_2, &
-                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, &
-                                corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                                corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                                corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                                corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                                corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                                corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                                corr_rrNr_1_n, corr_rrNr_2_n , &
-                                rr1, rr2, Nr1, Nr2, &
-                                precip_frac, precip_frac_1, precip_frac_2 )
+  subroutine unpack_pdf_params( d_variables, corr_array_1, corr_array_2, &    ! Intent(in)
+                                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &       ! Intent(in)
+                                hydromet_pdf_params, &                        ! Intent(in)
+                                mu_w_1, mu_w_2, mu_s_1, mu_s_2, &             ! Intent(out)
+                                mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &           ! Intent(out)
+                                mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &       ! Intent(out)
+                                mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &            ! Intent(out)
+                                mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &          ! Intent(out)
+                                sigma_w_1, sigma_w_2, sigma_s_1, &            ! Intent(out)
+                                sigma_s_2, sigma_t_1, sigma_t_2, &            ! Intent(out)
+                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &         ! Intent(out)
+                                sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &       ! Intent(out)
+                                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &   ! Intent(out)
+                                sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, & ! Intent(out)
+                                corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, & ! Intent(out)
+                                corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &   ! Intent(out)
+                                corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, & ! Intent(out)
+                                corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &   ! Intent(out)
+                                corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, & ! Intent(out)
+                                corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &   ! Intent(out)
+                                corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, & ! Intent(out)
+                                corr_rrNr_1_n, corr_rrNr_2_n , &              ! Intent(out)
+                                rr1, rr2, Nr1, Nr2, &                         ! Intent(out)
+                                precip_frac, precip_frac_1, precip_frac_2 )   ! Intent(out)
 
     ! Description:
 
