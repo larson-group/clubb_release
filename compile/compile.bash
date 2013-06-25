@@ -4,7 +4,7 @@
 #
 # Compilation script for CLUBB using mkmf. It generates:
 #  - libraries: libclubb_bugsrad.a, libclubb_param.a, libclubb_coamps.a
-#  - executables: clubb_standalone clubb_tuner jacobian G_unit_tests int2txt
+#  - executables: clubb_standalone clubb_tuner clubb_thread_test jacobian G_unit_tests int2txt
 #
 # Sub-makefiles for each target are automatically generated using the 
 # 'mkmf' utility. Dependencies among source files are sorted out by 'mkmf'. 
@@ -17,8 +17,9 @@
 # files to be included in each target, which we need to maintain manually:
 # - file_list/bugsrad_files : files needed for libclubb_bugsrad.a
 # - file_list/model_files : files needed for clubb_standalone, clubb_tuner, 
-#                           jacobian, and G_unit_tests
+#              clubb_thread_test, jacobian, and G_unit_tests
 # - file_list/clubb_standalone_files : files needed for clubb_standalone
+# - file_list/clubb_thread_test_files : files needed for clubb_thread_test
 # - file_list/clubb_tuner_files : files needed for clubb_tuner
 # - file_list/jacobian_files : files needed for jacobian
 # - file_list/G_unit_tests_files : files needed for G_unit_tests
@@ -234,6 +235,11 @@ $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   $dir/file_list/clubb_standalone_files $dir/file_list/clubb_optional_files \
   $dir/file_list/clubb_model_files
 
+$mkmf -t $bindir/mkmf_template -p $bindir/clubb_thread_test \
+  -m Make.clubb_thread_test -c "${CPPDEFS} ${WARNINGS}" $clubb_standalone_mods \
+  $dir/file_list/clubb_thread_test_files $dir/file_list/clubb_optional_files \
+  $dir/file_list/clubb_model_files
+
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
 	-m Make.clubb_tuner -c "${CPPDEFS} ${WARNINGS}" $dir/file_list/clubb_tuner_files \
 	$dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files \
@@ -273,7 +279,7 @@ cat > Makefile << EOF
 # Edit 'compile.bash' to customize.
 
 all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
-	jacobian G_unit_tests int2txt
+	jacobian G_unit_tests int2txt clubb_thread_test
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/CLUBB_core/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/*.F90
@@ -309,6 +315,10 @@ clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMP
 	-rm -f $bindir/clubb_standalone
 	cd $objdir; $gmake -f Make.clubb_standalone
 
+clubb_thread_test: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB $LH_LIB
+	-rm -f $bindir/clubb_thread_test
+	cd $objdir; $gmake -f Make.clubb_thread_test
+
 clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB $LH_LIB
 	-rm -f $bindir/clubb_tuner
 	cd $objdir; $gmake -f Make.clubb_tuner
@@ -335,6 +345,7 @@ distclean:
 	$libdir/lib* \
 	$bindir/clubb_standalone \
 	$bindir/clubb_tuner \
+	$bindir/clubb_thread_test \
 	$bindir/int2txt \
 	$bindir/jacobian \
 	$bindir/G_unit_tests \
