@@ -1,9 +1,12 @@
 !$Id$
 module time_dependent_input
 !
-!  Description: This module is responsible for managing the reading in and
-!  storage of time dependent information for a case.
+!  Description:
+!    This module is responsible for managing the reading in and
+!    storage of time dependent information for a case.
 !
+!  References:
+!    None
 !--------------------------------------------------------------------------------------------------
 
   use input_reader, only: &
@@ -53,6 +56,7 @@ module time_dependent_input
                                                    ! dimension of the two_dim_read_var
 
 !$omp threadprivate( dimension_var )
+
   logical, public :: l_t_dependent ! Flag used to determine when
   !                                  time dependent information is read in.
   !                                  It is suggested that the flag be checked
@@ -82,9 +86,12 @@ module time_dependent_input
   !================================================================================================
   subroutine initialize_t_dependent_input( iunit, runtype, grid_size, grid, p_in_Pa )
     !
-    !  Description: This subroutine reads in time dependent information about a
-    !  case that is stored inside the module.
+    !  Description: 
+    !    This subroutine reads in time dependent information about a
+    !    case that is stored inside the module.
     !
+    !  References:
+    !    None
     !---------------------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -118,9 +125,12 @@ module time_dependent_input
   !================================================================================================
   subroutine finalize_t_dependent_input()
     !
-    ! Description: This subroutine frees memory stored after initilizing the
-    ! time dependent data of this module.
+    ! Description: 
+    !   This subroutine frees memory stored after initilizing the
+    !   time dependent data of this module.
     !
+    ! References:
+    !   None
     !-----------------------------------------------------------------------------
 
     implicit none
