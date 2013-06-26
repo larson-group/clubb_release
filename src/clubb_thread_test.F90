@@ -20,6 +20,8 @@ program clubb_thread_test
 
   use clubb_precision, only: core_rknd ! Variable(s)
 
+  use constants_clubb, only: fstderr ! Constant(s)
+
   implicit none
 
   ! External
@@ -31,11 +33,13 @@ program clubb_thread_test
 
   ! Constant Parameters
 
+  integer, parameter :: ncases = 4 ! Number of cases to run
+
   ! Text files containing namelists
   ! concatenated from various input files such as
   ! model.in, tunable_parameters.in, error....in.
-  character(len=13), dimension(2), parameter :: &
-    namelist_filename = (/"clubb_1.in", "clubb_2.in" /)
+  character(len=10), dimension(ncases), parameter :: &
+    namelist_filename = (/"clubb_1.in", "clubb_2.in", "clubb_3.in", "clubb_4.in" /)
 
   logical, parameter :: &
     l_stdout = .false.
@@ -46,7 +50,7 @@ program clubb_thread_test
     params  ! Array of the model constants
 
   ! Internal variables
-  integer, dimension(2) :: err_code
+  integer, dimension(ncases) :: err_code
 
   integer :: iter, iunit
 
@@ -55,29 +59,12 @@ program clubb_thread_test
   ! --- Begin Code ---
 
   ! Initialize status of run 
-! err_code = clubb_no_error
-
-! do iter = 1, size( err_code )
-!   iunit = 10
-!   ! Read in model parameter values
-!   call read_parameters( iunit, namelist_filename(iter), params )
-!   ! Run the model
-!   call run_clubb( params, namelist_filename(iter), err_code(iter), l_stdout )
-! end do
-
-! if ( fatal_error( err_code(1) ) ) then
-!   stop "The first simulation failed (single-threaded)"
-! else if ( fatal_error( err_code(2) ) ) then
-!   stop "The 2nd simulation failed (single-threaded)"
-! end if
-
-  ! Initialize status of run 
   err_code = clubb_no_error
-  ! Run the model in parallel
 
+  ! Run the model in parallel
 !$omp parallel do default(shared), private(iter, params, iunit), &
 !$omp   shared(err_code)
-  do iter = 1, size( err_code )
+  do iter = 1, ncases
 #ifdef _OPENMP
     iunit = omp_get_thread_num() + 10
 #else
@@ -87,13 +74,13 @@ program clubb_thread_test
     call read_parameters( iunit, namelist_filename(iter), params )
     ! Run the model
     call run_clubb( params, namelist_filename(iter), err_code(iter), l_stdout )
-  end do
+  end do ! 1 .. ncases
 !$omp end parallel do
 
-  if ( fatal_error( err_code(1) ) ) then
-    stop "The first simulation failed (multi-threaded)"
-  else if ( fatal_error( err_code(2) ) ) then
-    stop "The 2nd simulation failed (multi-threaded)"
-  end if
+  do iter = 1, ncases
+    if ( fatal_error( err_code(iter) ) ) then
+      write(fstderr,*) "Simulation ", iter, " failed (multi-threaded)"
+    end if
+  end do
 
 end program clubb_thread_test

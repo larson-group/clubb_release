@@ -33,7 +33,7 @@ module stats_variables
     l_netcdf, & ! Output to NetCDF format
     l_grads     ! Output to GrADS format
 
-!$omp   threadprivate(l_stats, l_netcdf, l_grads)
+!$omp   threadprivate(l_stats, l_output_rad_files, l_netcdf, l_grads)
 
   logical, public :: & 
     l_stats_samp,   & ! Sample flag for current time step
@@ -50,7 +50,7 @@ module stats_variables
     fname_rad_zm, & ! Name of the stats file for the zm radiation grid fields
     fname_sfc       ! Name of the stats file for surface only fields
 
-!$omp   threadprivate(fname_zt, fname_zm, fname_LH_zt, fname_LH_sfc, fname_rad_zt, &
+!$omp   threadprivate(fname_zt, fname_LH_zt, fname_LH_sfc, fname_zm, fname_rad_zt, &
 !$omp     fname_rad_zm, fname_sfc)
 
 !       Indices for statistics in zt file
@@ -84,7 +84,12 @@ module stats_variables
      iwp2thlp, & 
      iwprtp2, & 
      iwp2rtp
- 
+!$omp threadprivate(ithlm, ithvm, irtm, ircm, irvm, ium, ivm, ium_ref, ivm_ref, &
+!$omp   iwm_zt, iwm_zm, iug, ivg, icloud_frac, iice_supersat_frac, ircm_in_layer, &
+!$omp   ircm_in_cloud, icloud_cover, &
+!$omp   ip_in_Pa, iexner, irho_ds_zt, ithv_ds_zt, iLscale, iwp3, &
+!$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp )
+
   integer, public :: & 
      iLscale_up, & 
      iLscale_down, & 
@@ -97,6 +102,9 @@ module stats_variables
      iwprtpthlp, & 
      isigma_sqd_w_zt, & 
      irho
+!$omp threadprivate( iLscale_up, iLscale_down, &
+!$omp   iLscale_pert_1, iLscale_pert_2, &
+!$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho )
 
   integer, public :: & 
      irr1, &
@@ -108,6 +116,8 @@ module stats_variables
      iprecip_frac, &
      iprecip_frac_1, &
      iprecip_frac_2
+!$omp threadprivate(  irr1, irr2, iNr1, iNr2, iLWP1, iLWP2, &
+!$omp   iprecip_frac, iprecip_frac_1, iprecip_frac_2 )
 
   integer, public :: &
      imu_rr_1,       &
@@ -134,6 +144,11 @@ module stats_variables
      isigma_Nr_2_n,  &
      isigma_Ncn_1_n, &
      isigma_Ncn_2_n
+!$omp threadprivate( imu_rr_1, imu_rr_2, imu_Nr_1, imu_Nr_2, &
+!$omp   imu_Ncn_1, imu_Ncn_2, imu_rr_1_n, imu_rr_2_n, imu_Nr_1_n, imu_Nr_2_n, &
+!$omp   imu_Ncn_1_n, imu_Ncn_2_n, isigma_rr_1, isigma_rr_2, isigma_Nr_1, &
+!$omp   isigma_Nr_2, isigma_Ncn_1, isigma_Ncn_2, isigma_rr_1_n, isigma_rr_2_n, &
+!$omp   isigma_Nr_1_n, isigma_Nr_2_n, isigma_Ncn_1_n, isigma_Ncn_2_n )
 
   integer, public :: &
      icorr_wrr_1,    &
@@ -156,6 +171,11 @@ module stats_variables
      icorr_tNcn_2,   &
      icorr_rrNr_1,   &
      icorr_rrNr_2
+!$omp threadprivate( icorr_wrr_1, icorr_wrr_2, icorr_wNr_1, icorr_wNr_2, &
+!$omp   icorr_wNcn_1, icorr_wNcn_2, icorr_srr_1, icorr_srr_2, &
+!$omp   icorr_sNr_1, icorr_sNr_2, icorr_sNcn_1, icorr_sNcn_2, &
+!$omp   icorr_trr_1, icorr_trr_2, icorr_tNr_1, icorr_tNr_2, &
+!$omp   icorr_tNcn_1, icorr_tNcn_2, icorr_rrNr_1, icorr_rrNr_2 )
 
   integer, public :: &
      icorr_wrr_1_n,  &
@@ -178,6 +198,11 @@ module stats_variables
      icorr_tNcn_2_n, &
      icorr_rrNr_1_n, &
      icorr_rrNr_2_n
+!$omp threadprivate( icorr_wrr_1_n, icorr_wrr_2_n, icorr_wNr_1_n, icorr_wNr_2_n, &
+!$omp   icorr_wNcn_1_n, icorr_wNcn_2_n, icorr_srr_1_n, icorr_srr_2_n, &
+!$omp   icorr_sNr_1_n, icorr_sNr_2_n, icorr_sNcn_1_n, icorr_sNcn_2_n, &
+!$omp   icorr_trr_1_n, icorr_trr_2_n, icorr_tNr_1_n, icorr_tNr_2_n, &
+!$omp   icorr_tNcn_1_n, icorr_tNcn_2_n, icorr_rrNr_1_n, icorr_rrNr_2_n )
 
   integer, public :: & ! janhft 09/25/12
      icorr_sw,   &
@@ -188,6 +213,10 @@ module stats_variables
      icorr_wrr,  &
      icorr_wNr,  &
      icorr_wNcn
+!$omp threadprivate( icorr_sw, icorr_srr, icorr_sNr, icorr_sNcn, icorr_rrNr, &
+!$omp                icorr_wrr, icorr_wNr, icorr_wNcn )  
+
+
 
   integer, public :: & 
      iNcm,             & ! Brian
@@ -208,46 +237,20 @@ module stats_variables
      iradht_LW,        & !   "           "   Long-wave component
      iradht_SW,        & !   "           "   Short-wave component
      irel_humidity
+!$omp  threadprivate( iNcm, iNcnm, iNc_activated, isnowslope, &
+!$omp    ised_rcm, irsat, irsati, irrainm, &
+!$omp    im_vol_rad_rain, im_vol_rad_cloud, &
+!$omp    irain_rate_zt, iAKm, iLH_AKm, &
+!$omp    iradht, iradht_LW, iradht_SW, &
+!$omp    irel_humidity )
 
   integer, public :: & 
      iAKstd,     & 
      iAKstd_cld, & 
      iAKm_rcm, & 
      iAKm_rcc
+!$omp threadprivate( iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc )
 
-!$omp threadprivate(ithlm, ithvm, irtm, ircm, irvm, ium, ivm, ium_ref, ivm_ref, &
-!$omp   iwm_zt, iwm_zm, iug, ivg, icloud_frac, ircm_in_layer, ircm_in_cloud, icloud_cover, &
-!$omp   ip_in_Pa, iexner, irho_ds_zt, ithv_ds_zt, iLscale, iwp3, &
-!$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, &
-!$omp   iLscale_pert_1, iLscale_pert_2, &
-!$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho, &
-!$omp   irr1, irr2, iNr1, iNr2, iLWP1, iLWP2, &
-!$omp   iprecip_frac, iprecip_frac_1, iprecip_frac_2, &
-!$omp   irel_humidity, iNcm, iNcnm, isnowslope, &
-!$omp   ised_rcm, irsat, irsati, irrainm, &
-!$omp   im_vol_rad_rain, im_vol_rad_cloud, &
-!$omp   irain_rate_zt, iAKm, iLH_AKm, &
-!$omp   iradht, iradht_LW, iradht_SW, &
-!$omp   iAKstd, iAKstd_cld, iAKm_rcm, iAKm_rcc )
-
-!$omp threadprivate( imu_rr_1, imu_rr_2, imu_Nr_1, imu_Nr_2, &
-!$omp   imu_Ncn_1, imu_Ncn_2, imu_rr_1_n, imu_rr_2_n, imu_Nr_1_n, imu_Nr_2_n, &
-!$omp   imu_Ncn_1_n, imu_Ncn_2_n, isigma_rr_1, isigma_rr_2, isigma_Nr_1, &
-!$omp   isigma_Nr_2, isigma_Ncn_1, isigma_Ncn_2, isigma_rr_1_n, isigma_rr_2_n, &
-!$omp   isigma_Nr_1_n, isigma_Nr_2_n, isigma_Ncn_1_n, isigma_Ncn_2_n, &
-!$omp   icorr_wrr_1, icorr_wrr_2, icorr_wNr_1, icorr_wNr_2, &
-!$omp   icorr_wNcn_1, icorr_wNcn_2, icorr_srr_1, icorr_srr_2, &
-!$omp   icorr_sNr_1, icorr_sNr_2, icorr_sNcn_1, icorr_sNcn_2, &
-!$omp   icorr_trr_1, icorr_trr_2, icorr_tNr_1, icorr_tNr_2, &
-!$omp   icorr_tNcn_1, icorr_tNcn_2, icorr_rrNr_1, icorr_rrNr_2, &
-!$omp   icorr_wrr_1_n, icorr_wrr_2_n, icorr_wNr_1_n, icorr_wNr_2_n, &
-!$omp   icorr_wNcn_1_n, icorr_wNcn_2_n, icorr_srr_1_n, icorr_srr_2_n, &
-!$omp   icorr_sNr_1_n, icorr_sNr_2_n, icorr_sNcn_1_n, icorr_sNcn_2_n, &
-!$omp   icorr_trr_1_n, icorr_trr_2_n, icorr_tNr_1_n, icorr_tNr_2_n, &
-!$omp   icorr_tNcn_1_n, icorr_tNcn_2_n, icorr_rrNr_1_n, icorr_rrNr_2_n )
-
-!$omp threadprivate( icorr_sw, icorr_srr, icorr_sNr, icorr_sNcn, icorr_rrNr, &
-!$omp                icorr_wrr, icorr_wNr, icorr_wNcn )
 
   integer, public :: & 
    irfrzm
@@ -303,8 +306,8 @@ module stats_variables
     ircm_icedfs,     & ! Change in liquid water due to ice [kg/kg/s]
     iu_T_cm         ! Fallspeed of ice crystal in cm/s  [cm s^{-1}]
 
-!$omp   threadprivate(irsnowm, irgraupelm, iricem, idiam)
-!$omp   threadprivate(imass_ice_cryst, ircm_icedfs, iu_T_cm)
+!$omp threadprivate(irsnowm, irgraupelm, iricem, idiam, &
+!$omp   imass_ice_cryst, ircm_icedfs, iu_T_cm)
 
 
   ! thlm/rtm budget terms
@@ -585,6 +588,9 @@ module stats_variables
      irsl2, & 
      icloud_frac1, & 
      icloud_frac2
+!$omp  threadprivate(imixt_frac, iw1, iw2, ivarnce_w1, ivarnce_w2, ithl1, ithl2, ivarnce_thl1, &
+!$omp    ivarnce_thl2, irt1, irt2, ivarnce_rt1, ivarnce_rt2, irc1, irc2, &
+!$omp    irsl1, irsl2, icloud_frac1, icloud_frac2 )
 
   integer, public :: & 
      is1, & 
@@ -602,12 +608,9 @@ module stats_variables
      icrt2, &
      icthl1, &
      icthl2
-
-!$omp   threadprivate(imixt_frac, iw1, iw2, ivarnce_w1, ivarnce_w2, ithl1, ithl2, ivarnce_thl1, &
-!$omp     ivarnce_thl2, irt1, irt2, ivarnce_rt1, ivarnce_rt2, irc1, irc2, &
-!$omp     irsl1, irsl2, icloud_frac1, icloud_frac2, is1, is2, istdev_s1, istdev_s2, &
-!$omp     istdev_t1, istdev_t2, icovar_st_1, icovar_st_2, icorr_st_1, icorr_st_2, irrtthl, &
-!$omp     icrt1, icrt2, icthl1, icthl2 )
+!$omp  threadprivate( is1, is2, istdev_s1, istdev_s2, &
+!$omp    istdev_t1, istdev_t2, icovar_st_1, icovar_st_2, icorr_st_1, icorr_st_2, irrtthl, &
+!$omp    icrt1, icrt2, icthl1, icthl2 )
 
   integer, public :: & 
     iwp2_zt, & 
@@ -706,6 +709,9 @@ module stats_variables
     iLH_rtp2_zt, &
     iLH_thlp2_zt, &
     iLH_rrainp2_zt
+!$omp threadprivate(iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncp2_zt, iLH_rcp2_zt, iLH_rtp2_zt, &
+!$omp               iLH_thlp2_zt, iLH_rrainp2_zt)
+
 
   ! Indices for Morrison budgets
   integer, public :: &
@@ -741,6 +747,11 @@ module stats_variables
     iPRDG, &
     iEPRDG
 
+!$omp threadprivate( iPSMLT, iEVPMS, iPRACS, iEVPMG, iPRACG, iPGMLT, iMNUCCC, iPSACWS, iPSACWI, &
+!$omp   iQMULTS, iQMULTG, iPSACWG, iPGSACW, iPRD, iPRCI, iPRAI, iQMULTR, &
+!$omp   iQMULTRG, iMNUCCD, iPRACI, iPRACIS, iEPRD, iMNUCCR, iPIACR, iPIACRS, &
+!$omp   iPGRACS, iPRDS, iEPRDS, iPSACR, iPRDG, iEPRDG )
+
   ! More indices for Morrison budgets!!
   integer, public :: &
     iNGSTEN, &
@@ -759,9 +770,9 @@ module stats_variables
     iNIACR,  &
     iNIACRS, &
     iNGRACS
-
-!$omp threadprivate(iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncp2_zt, iLH_rcp2_zt, iLH_rtp2_zt, &
-!$omp               iLH_thlp2_zt, iLH_rrainp2_zt)
+!$omp threadprivate( iNGSTEN, iNRSTEN, iNISTEN, iNSSTEN, iNCSTEN, iNPRC1, iNRAGG, &
+!$omp   iNPRACG, iNSUBR,  iNSMLTR, iNGMLTR, iNPRACS, iNNUCCR, iNIACR, &
+!$omp   iNIACRS, iNGRACS )
 
   ! Indices for statistics in zm file
   integer, public :: & 
@@ -849,15 +860,15 @@ module stats_variables
     iVrice,  &
     iVrgraupel
 
+!$omp   threadprivate(iVNr, iVrr, iVNc, iVrc, iVNsnow, iVrsnow, iVNice, iVrice, iVrgraupel)
+
   ! Covariance of sedimentation velocity and hydrometeor, <V_xx'x_x'>.
   integer, public :: &
     iVrrprrp,         &
     iVNrpNrp,         &
     iVrrprrp_expcalc, &
     iVNrpNrp_expcalc
-    
 
-!$omp   threadprivate(iVNr, iVrr, iVNc, iVrc, iVNsnow, iVrsnow, iVNice, iVrice, iVrgraupel)
 !$omp   threadprivate(iVrrprrp, iVNrpNrp, iVrrprrp_expcalc, iVNrpNrp_expcalc)
 
   integer, public :: & 
@@ -879,7 +890,7 @@ module stats_variables
 !$omp   threadprivate(iwp2_bt, iwp2_ma, iwp2_ta, iwp2_ac, iwp2_bp)
 !$omp   threadprivate(iwp2_pr1, iwp2_pr2, iwp2_pr3)
 !$omp   threadprivate(iwp2_dp1, iwp2_dp2, iwp2_4hd)
-!$omp   threadprivate(iwp2_pd, iwp2_cl)
+!$omp   threadprivate(iwp2_pd, iwp2_cl, iwp2_sf)
 
   integer, public :: & 
      iwprtp_bt,      & 
@@ -1015,7 +1026,7 @@ module stats_variables
 !$omp   threadprivate(iup2_dp2, iup2_pr1, iup2_pr2, iup2_cl)
 !$omp   threadprivate(ivp2_bt, ivp2_ta, ivp2_tp, ivp2_ma, ivp2_dp1)
 !$omp   threadprivate(ivp2_dp2, ivp2_pr1, ivp2_pr2, ivp2_cl)
-!$omp   threadprivate(iup2_pd, ivp2_pd)
+!$omp   threadprivate(iup2_pd, ivp2_pd, ivp2_sf)
 
 !       Passive scalars.  Note that floating point roundoff may make
 !       mathematically equivalent variables different values.
@@ -1038,7 +1049,8 @@ module stats_variables
   integer, target, allocatable, dimension(:), public :: & 
      iwpedsclrp ! eddy sclr'(1)w'
 
-!$omp   threadprivate(iwpedsclrp)
+!$omp threadprivate(iwpedsclrp)
+
   ! Indices for statistics in rad_zt file
   integer, public :: &
     iT_in_K_rad, &
@@ -1090,6 +1102,10 @@ module stats_variables
     irain_flux_sfc,   &    ! Brian
     irrainm_sfc, & ! Brian
     iwpthlp_sfc
+!$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
+!$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, irwp, iz_cloud_base, iz_inversion, &
+!$omp   irain_rate_sfc, irain_flux_sfc, irrainm_sfc, &
+!$omp   iwpthlp_sfc )
 
   integer, public :: &
     iwprtp_sfc, &
@@ -1105,6 +1121,9 @@ module stats_variables
     irtp2_vert_avg, &
     ithlp2_vert_avg, &
     iT_sfc         ! kcwhite
+!$omp threadprivate(iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
+!$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &
+!$omp   iwp2_vert_avg, iup2_vert_avg, ivp2_vert_avg, irtp2_vert_avg, ithlp2_vert_avg, iT_sfc)
 
   integer, public :: & 
     iwp23_matrix_condt_num, & 
@@ -1115,24 +1134,21 @@ module stats_variables
     irtpthlp_matrix_condt_num, & 
     iup2_vp2_matrix_condt_num, & 
     iwindm_matrix_condt_num
+!$omp threadprivate(iwp23_matrix_condt_num, irtm_matrix_condt_num, ithlm_matrix_condt_num, &
+!$omp   irtp2_matrix_condt_num, ithlp2_matrix_condt_num, irtpthlp_matrix_condt_num, &
+!$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num)
 
   integer, public :: & 
     imorr_rain_rate, &
     imorr_snow_rate
 
+!$omp threadprivate(imorr_rain_rate, imorr_snow_rate)
+
   integer, public :: &
     irtm_spur_src,    &
     ithlm_spur_src
-!$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
-!$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, irwp, iz_cloud_base, iz_inversion, &
-!$omp   irain_rate_sfc, irain_flux_sfc, irrainm_sfc, &
-!$omp   iwpthlp_sfc, iwprtp_sfc, iupwp_sfc, ivpwp_sfc, &
-!$omp   ithlm_vert_avg, irtm_vert_avg, ium_vert_avg, ivm_vert_avg, &
-!$omp   iwp2_vert_avg, iup2_vert_avg, ivp2_vert_avg, irtp2_vert_avg, ithlp2_vert_avg, iT_sfc, &
-!$omp   iwp23_matrix_condt_num, irtm_matrix_condt_num, ithlm_matrix_condt_num, &
-!$omp   irtp2_matrix_condt_num, ithlp2_matrix_condt_num, irtpthlp_matrix_condt_num, &
-!$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num, &
-!$omp   imorr_rain_rate, imorr_snow_rate)
+
+!$omp threadprivate(irtm_spur_src, ithlm_spur_src)
 
   integer, public :: &
     iSkw_velocity, & ! Skewness velocity
@@ -1166,7 +1182,7 @@ module stats_variables
                                   rad_zm,  & ! rad_zm grid
                                   sfc        ! sfc
 
-!$omp   threadprivate(zt, zm, LH_zt, LH_sfc, rad_zt, rad_zm, sfc)
+!$omp threadprivate(zt, zm, LH_zt, LH_sfc, rad_zt, rad_zm, sfc)
 
   ! Scratch space
 
@@ -1179,11 +1195,11 @@ module stats_variables
     ztscr16, ztscr17, ztscr18, &
     ztscr19, ztscr20, ztscr21
 
-!$omp   threadprivate(ztscr01, ztscr02, ztscr03, ztscr04, ztscr05)
-!$omp   threadprivate(ztscr06, ztscr07, ztscr08, ztscr09, ztscr10)
-!$omp   threadprivate(ztscr11, ztscr12, ztscr13, ztscr14, ztscr15)
-!$omp   threadprivate(ztscr16, ztscr17, ztscr18, ztscr19, ztscr20)
-!$omp   threadprivate(ztscr21)
+!$omp threadprivate(ztscr01, ztscr02, ztscr03, ztscr04, ztscr05)
+!$omp threadprivate(ztscr06, ztscr07, ztscr08, ztscr09, ztscr10)
+!$omp threadprivate(ztscr11, ztscr12, ztscr13, ztscr14, ztscr15)
+!$omp threadprivate(ztscr16, ztscr17, ztscr18, ztscr19, ztscr20)
+!$omp threadprivate(ztscr21)
 
   real( kind = core_rknd ), dimension(:), allocatable, public :: &
     zmscr01, zmscr02, zmscr03, &
@@ -1197,18 +1213,5 @@ module stats_variables
 !$omp   threadprivate(zmscr06, zmscr07, zmscr08, zmscr09, zmscr10)
 !$omp   threadprivate(zmscr11, zmscr12, zmscr13, zmscr14, zmscr15)
 !$omp   threadprivate(zmscr16, zmscr17)
-
-  real( kind = core_rknd ), dimension(:), allocatable, public :: &
-    radscr01, radscr02, radscr03, &
-    radscr04, radscr05, radscr06, & 
-    radscr07, radscr08, radscr09, & 
-    radscr10, radscr11, radscr12, & 
-    radscr13, radscr14, radscr15, &
-    radscr16, radscr17
-
-!$omp   threadprivate(radscr01, radscr02, radscr03, radscr04, radscr05)
-!$omp   threadprivate(radscr06, radscr07, radscr08, radscr09, radscr10)
-!$omp   threadprivate(radscr11, radscr12, radscr13, radscr14, radscr15)
-!$omp   threadprivate(radscr16, radscr17)
 
 end module stats_variables

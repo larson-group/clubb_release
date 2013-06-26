@@ -747,7 +747,6 @@ module stats_subs
 
       rad_zt%nn = ntot
       rad_zt%kk = nnrad_zt
-
       allocate( rad_zt%z( rad_zt%kk ) )
       rad_zt%z = grad_zt
 
@@ -759,45 +758,6 @@ module stats_subs
 
       allocate( rad_zt%f%var( rad_zt%nn ) )
       allocate( rad_zt%f%z( rad_zt%kk ) )
-
-      ! Allocate scratch space
-
-      !allocate( radscr01(rad%kk) )
-      !allocate( radscr02(rad%kk) )
-      !allocate( radscr03(rad%kk) )
-      !allocate( radscr04(rad%kk) )
-      !allocate( radscr05(rad%kk) )
-      !allocate( radscr06(rad%kk) )
-      !allocate( radscr07(rad%kk) )
-      !allocate( radscr08(rad%kk) )
-      !allocate( radscr09(rad%kk) )
-      !allocate( radscr10(rad%kk) )
-      !allocate( radscr11(rad%kk) )
-      !allocate( radscr12(rad%kk) )
-      !allocate( radscr13(rad%kk) )
-      !allocate( radscr14(rad%kk) )
-      !allocate( radscr15(rad%kk) )
-      !allocate( radscr16(rad%kk) )
-      !allocate( radscr17(rad%kk) )
-
-      !radscr01 = 0.0_core_rknd
-      !radscr02 = 0.0_core_rknd
-      !radscr03 = 0.0_core_rknd
-      !radscr04 = 0.0_core_rknd
-      !radscr05 = 0.0_core_rknd
-      !radscr06 = 0.0_core_rknd
-      !radscr07 = 0.0_core_rknd
-      !radscr08 = 0.0_core_rknd
-      !radscr09 = 0.0_core_rknd
-      !radscr10 = 0.0_core_rknd
-      !radscr11 = 0.0_core_rknd
-      !radscr12 = 0.0_core_rknd
-      !radscr13 = 0.0_core_rknd
-      !radscr14 = 0.0_core_rknd
-      !radscr15 = 0.0_core_rknd
-      !radscr16 = 0.0_core_rknd
-      !radscr17 = 0.0_core_rknd
-
 
       fname = trim( fname_rad_zt )
       if ( l_grads ) then
@@ -2597,7 +2557,7 @@ module stats_subs
       deallocate ( zmscr16 )
       deallocate ( zmscr17 )
 
-      if (l_output_rad_files) then
+      if ( l_output_rad_files ) then
         ! De-allocate all rad_zt variables
         deallocate( rad_zt%z )
 
@@ -2620,23 +2580,6 @@ module stats_subs
         deallocate( rad_zm%f%z )
         deallocate( rad_zm%l_in_update )
 
-        !deallocate ( radscr01 )
-        !deallocate ( radscr02 )
-        !deallocate ( radscr03 )
-        !deallocate ( radscr04 )
-        !deallocate ( radscr05 )
-        !deallocate ( radscr06 )
-        !deallocate ( radscr07 )
-        !deallocate ( radscr08 )
-        !deallocate ( radscr09 )
-        !deallocate ( radscr10 )
-        !deallocate ( radscr11 )
-        !deallocate ( radscr12 )
-        !deallocate ( radscr13 )
-        !deallocate ( radscr14 )
-        !deallocate ( radscr15 )
-        !deallocate ( radscr16 )
-        !deallocate ( radscr17 )
       end if ! l_output_rad_files
 
       ! De-allocate all sfc variables
