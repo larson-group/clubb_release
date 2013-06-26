@@ -10,7 +10,11 @@ module soil_vegetation
 
   real( kind = core_rknd ), public :: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
+!$omp threadprivate(deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K)
+
   logical, public :: l_soil_veg
+
+!$omp threadprivate(l_soil_veg)
 
   private
 
