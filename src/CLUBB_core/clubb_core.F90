@@ -50,35 +50,36 @@ module clubb_core
   !#######################################################################
   !#######################################################################
   subroutine advance_clubb_core &
-             ( l_implemented, dt, fcor, sfc_elevation, &
-               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
-               sclrm_forcing, edsclrm_forcing, wprtp_forcing, &
-               wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
-               rtpthlp_forcing, wm_zm, wm_zt, &
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &
-               wpsclrp_sfc, wpedsclrp_sfc, &
-               p_in_Pa, rho_zm, rho, exner, &
-               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
-               rfrzm, radf, &
-               um, vm, upwp, vpwp, up2, vp2, &
-               thlm, rtm, wprtp, wpthlp, &
-               wp2, wp3, rtp2, thlp2, rtpthlp, &
+             ( l_implemented, dt, fcor, sfc_elevation, &            ! intent(in)
+               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
+               sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! intent(in)
+               wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! intent(in)
+               rtpthlp_forcing, wm_zm, wm_zt, &                     ! intent(in)
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! intent(in)
+               wpsclrp_sfc, wpedsclrp_sfc, &                        ! intent(in)
+               p_in_Pa, rho_zm, rho, exner, &                       ! intent(in)
+               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! intent(in)
+               rfrzm, radf, &                                       ! intent(in)
+               um, vm, upwp, vpwp, up2, vp2, &                      ! intent(inout)
+               thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
+               wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! intent(inout)
                sclrm,   &
 #ifdef GFDL
-               sclrm_trsport_only,  &  ! h1g, 2010-06-16
+               sclrm_trsport_only,  &  ! h1g, 2010-06-16            ! intent(inout)
 #endif
-               sclrp2, sclrprtp, sclrpthlp, &
-               wpsclrp, edsclrm, err_code, &
+               sclrp2, sclrprtp, sclrpthlp, &                       ! intent(inout)
+               wpsclrp, edsclrm, err_code, &                        ! intent(inout)
 #ifdef GFDL
-               RH_crit,  do_liquid_only_in_clubb, &  ! h1g, 2010-06-16
+               RH_crit, & !h1g, 2010-06-16                          ! intent(inout)
+               do_liquid_only_in_clubb, &                           ! intent(in)
 #endif
-               rcm, wprcp, cloud_frac, ice_supersat_frac, & 
-               rcm_in_layer, cloud_cover, &
+               rcm, wprcp, cloud_frac, ice_supersat_frac, &         ! intent(out)
+               rcm_in_layer, cloud_cover, &                         ! intent(out)
 #if defined(CLUBB_CAM) || defined(GFDL)
-               khzm, khzt, &
+               khzm, khzt, &                                        ! intent(out)
 #endif
-               pdf_params )
+               pdf_params )                                         ! intent(out)
 
     ! Description:
     !   Subroutine to advance the model one timestep
@@ -695,45 +696,45 @@ module clubb_core
              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
              sclrm_forcing, edsclrm, edsclrm_forcing,           & ! intent(in)
-             err_code ) ! Intent(inout)
+             err_code )                                           ! intent(inout)
     end if
     !-----------------------------------------------------------------------
 
     if ( l_stats_samp ) then
-      call stat_update_var( irfrzm, rfrzm, & ! In
-                            zt ) ! Out
+      call stat_update_var( irfrzm, rfrzm, & ! intent(in)
+                            zt ) ! intent(inout)
     end if
 
     ! Set up budget stats variables.
     if ( l_stats_samp ) then
 
-      call stat_begin_update( iwp2_bt, wp2 / real( dt , kind = core_rknd ), &          ! Intent(in)
-                              zm )                                  ! Intent(inout)
-      call stat_begin_update( ivp2_bt, vp2 / real( dt , kind = core_rknd ), &          ! Intent(in)
-                              zm )                                  ! Intent(inout)
-      call stat_begin_update( iup2_bt, up2 / real( dt , kind = core_rknd ),  &         ! Intent(in)
-                              zm )                                  ! Intent(inout)
-      call stat_begin_update( iwprtp_bt, wprtp / real( dt , kind = core_rknd ), &      ! Intent(in)
-                              zm )                                  ! Intent(inout)
-      call stat_begin_update( iwpthlp_bt, wpthlp / real( dt , kind = core_rknd ),  &   ! Intent(in)
-                              zm )                                  ! Intent(inout)
-      call stat_begin_update( irtp2_bt, rtp2 / real( dt , kind = core_rknd ), &        ! Intent(in)
-                              zm )                                  ! Intent(inout)
-      call stat_begin_update( ithlp2_bt, thlp2 / real( dt , kind = core_rknd ), &      ! Intent(in)
-                              zm )                                  ! Intent(inout)
-      call stat_begin_update( irtpthlp_bt, rtpthlp / real( dt , kind = core_rknd ), &  ! Intent(in)
-                              zm )                                  ! Intent(inout)
+      call stat_begin_update( iwp2_bt, wp2 / real( dt , kind = core_rknd ), &          ! intent(in)
+                              zm )                                  ! intent(inout)
+      call stat_begin_update( ivp2_bt, vp2 / real( dt , kind = core_rknd ), &          ! intent(in)
+                              zm )                                  ! intent(inout)
+      call stat_begin_update( iup2_bt, up2 / real( dt , kind = core_rknd ),  &         ! intent(in)
+                              zm )                                  ! intent(inout)
+      call stat_begin_update( iwprtp_bt, wprtp / real( dt , kind = core_rknd ), &      ! intent(in)
+                              zm )                                  ! intent(inout)
+      call stat_begin_update( iwpthlp_bt, wpthlp / real( dt , kind = core_rknd ),  &   ! intent(in)
+                              zm )                                  ! intent(inout)
+      call stat_begin_update( irtp2_bt, rtp2 / real( dt , kind = core_rknd ), &        ! intent(in)
+                              zm )                                  ! intent(inout)
+      call stat_begin_update( ithlp2_bt, thlp2 / real( dt , kind = core_rknd ), &      ! intent(in)
+                              zm )                                  ! intent(inout)
+      call stat_begin_update( irtpthlp_bt, rtpthlp / real( dt , kind = core_rknd ), &  ! intent(in)
+                              zm )                                  ! intent(inout)
 
-      call stat_begin_update( irtm_bt, rtm / real( dt , kind = core_rknd ), &          ! Intent(in)
-                              zt )                                  ! Intent(inout)
-      call stat_begin_update( ithlm_bt, thlm / real( dt , kind = core_rknd ), &        ! Intent(in)
-                              zt )                                  ! Intent(inout)
-      call stat_begin_update( ium_bt, um / real( dt , kind = core_rknd ), &            ! Intent(in)
-                              zt )                                  ! Intent(inout)
-      call stat_begin_update( ivm_bt, vm / real( dt , kind = core_rknd ), &            ! Intent(in)
-                              zt )                                  ! Intent(inout)
-      call stat_begin_update( iwp3_bt, wp3 / real( dt , kind = core_rknd ), &          ! Intent(in)
-                              zt )                                  ! Intent(inout)
+      call stat_begin_update( irtm_bt, rtm / real( dt , kind = core_rknd ), &          ! intent(in)
+                              zt )                                  ! intent(inout)
+      call stat_begin_update( ithlm_bt, thlm / real( dt , kind = core_rknd ), &        ! intent(in)
+                              zt )                                  ! intent(inout)
+      call stat_begin_update( ium_bt, um / real( dt , kind = core_rknd ), &            ! intent(in)
+                              zt )                                  ! intent(inout)
+      call stat_begin_update( ivm_bt, vm / real( dt , kind = core_rknd ), &            ! intent(in)
+                              zt )                                  ! intent(inout)
+      call stat_begin_update( iwp3_bt, wp3 / real( dt , kind = core_rknd ), &          ! intent(in)
+                              zt )                                  ! intent(inout)
 
     end if
 
@@ -806,7 +807,8 @@ module clubb_core
     sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, wpthlp, wprtp )
 
     if ( l_stats_samp ) then
-      call stat_update_var( igamma_Skw_fnc, gamma_Skw_fnc, zm )
+      call stat_update_var( igamma_Skw_fnc, gamma_Skw_fnc, & ! intent(in)
+                            zm )                             ! intent(inout)
     endif
 
     ! Smooth in the vertical
@@ -1285,15 +1287,15 @@ module clubb_core
           mu_pert_2  = mu * Lscale_mu_coef
         end if
 
-        call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, &        ! intent(in)
+        call compute_length( thvm, thlm_pert_1, rtm_pert_1, em,                   & ! intent(in)
                              p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
-                             err_code, &                                 ! intent(inout)
-                             Lscale_pert_1, Lscale_up, Lscale_down )     ! intent(out)
+                             err_code,                                            & ! intent(inout)
+                             Lscale_pert_1, Lscale_up, Lscale_down )                ! intent(out)
 
-        call compute_length( thvm, thlm_pert_2, rtm_pert_2, em,  &       ! intent(in)
+        call compute_length( thvm, thlm_pert_2, rtm_pert_2, em,                   & ! intent(in)
                              p_in_Pa, exner, thv_ds_zt, mu_pert_2, l_implemented, & ! intent(in)
-                             err_code, &                                 ! intent(inout)
-                             Lscale_pert_2, Lscale_up, Lscale_down )     ! intent(out)
+                             err_code,                                            & ! intent(inout)
+                             Lscale_pert_2, Lscale_up, Lscale_down )                ! intent(out)
 
       else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
         ! Take the values of thl and rt based one 1st or 2nd plume
@@ -1351,15 +1353,15 @@ module clubb_core
         mu_pert_neg_rt  = mu * Lscale_mu_coef
 
         ! Call length with perturbed values of thl and rt
-        call compute_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, em, &  ! intent(in)
+        call compute_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, em,            & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_pos_rt, l_implemented, & ! intent(in)
-                           err_code, &                             ! intent(inout)
-                           Lscale_pert_1, Lscale_up, Lscale_down ) ! intent(out)
+                           err_code, &                                             ! intent(inout)
+                           Lscale_pert_1, Lscale_up, Lscale_down )                 ! intent(out)
 
-        call compute_length( thvm, thlm_pert_neg_rt, rtm_pert_neg_rt, em,  & ! intent(in)
+        call compute_length( thvm, thlm_pert_neg_rt, rtm_pert_neg_rt, em,            & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_neg_rt, l_implemented, & ! intent(in)
-                           err_code, &                             ! intent(inout)
-                           Lscale_pert_2, Lscale_up, Lscale_down ) ! intent(out)
+                           err_code, &                                             ! intent(inout)
+                           Lscale_pert_2, Lscale_up, Lscale_down )                 ! intent(out)
       else
         Lscale_pert_1 = -999._core_rknd
         Lscale_pert_2 = -999._core_rknd
@@ -1367,18 +1369,20 @@ module clubb_core
       end if ! l_avg_Lscale
 
       if ( l_stats_samp ) then
-        call stat_update_var( iLscale_pert_1, Lscale_pert_1, zt )
-        call stat_update_var( iLscale_pert_2, Lscale_pert_2, zt )
+        call stat_update_var( iLscale_pert_1, Lscale_pert_1, & ! intent(in)
+                              zt )                             ! intent(inout)
+        call stat_update_var( iLscale_pert_2, Lscale_pert_2, & ! intent(in)
+                              zt )                             ! intent(inout)
       end if ! l_stats_samp
 
       ! ********** NOTE: **********
       ! This call to compute_length must be last.  Otherwise, the values of
       ! Lscale_up and Lscale_down in stats will be based on perturbation length scales
       ! rather than the mean length scale.
-      call compute_length( thvm, thlm, rtm, em, &                      ! intent(in)
+      call compute_length( thvm, thlm, rtm, em,                          & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu, l_implemented, & ! intent(in)
-                           err_code, &                                 ! intent(inout)
-                           Lscale, Lscale_up, Lscale_down )            ! intent(out)
+                           err_code,                                     & ! intent(inout)
+                           Lscale, Lscale_up, Lscale_down )                ! intent(out)
 
       if ( l_avg_Lscale ) then
         if ( l_Lscale_plume_centered ) then
@@ -1453,23 +1457,23 @@ module clubb_core
 
         ! Reflect surface varnce changes in budget
         if ( l_stats_samp ) then
-          call stat_begin_update_pt( ithlp2_sf, 1, &           ! intent(in)
-           thlp2(1) / real( dt , kind = core_rknd ), &         ! intent(in)
+          call stat_begin_update_pt( ithlp2_sf, 1,      &      ! intent(in)
+           thlp2(1) / real( dt , kind = core_rknd ),    &      ! intent(in)
                                      zm )                      ! intent(inout)
-          call stat_begin_update_pt( irtp2_sf, 1, &            ! intent(in)
-            rtp2(1) / real( dt , kind = core_rknd ), &         ! intent(in)
+          call stat_begin_update_pt( irtp2_sf, 1,       &      ! intent(in)
+            rtp2(1) / real( dt , kind = core_rknd ),    &      ! intent(in)
                                      zm )                      ! intent(inout)
-          call stat_begin_update_pt( irtpthlp_sf, 1, &         ! intent(in)
+          call stat_begin_update_pt( irtpthlp_sf, 1,    &      ! intent(in)
             rtpthlp(1) / real( dt , kind = core_rknd ), &      ! intent(in)
                                      zm )                      ! intent(inout)
-          call stat_begin_update_pt( iup2_sf, 1, &             ! intent(in)
-            up2(1) / real( dt , kind = core_rknd ), &          ! intent(in)
+          call stat_begin_update_pt( iup2_sf, 1,        &      ! intent(in)
+            up2(1) / real( dt , kind = core_rknd ),     &      ! intent(in)
                                      zm )                      ! intent(inout)
-          call stat_begin_update_pt( ivp2_sf, 1, &             ! intent(in)
-            vp2(1) / real( dt , kind = core_rknd ), &          ! intent(in)
+          call stat_begin_update_pt( ivp2_sf, 1,        &      ! intent(in)
+            vp2(1) / real( dt , kind = core_rknd ),     &      ! intent(in)
                                      zm )                      ! intent(inout)
-          call stat_begin_update_pt( iwp2_sf, 1, &             ! intent(in)
-            wp2(1) / real( dt , kind = core_rknd ), &          ! intent(in)
+          call stat_begin_update_pt( iwp2_sf, 1,        &      ! intent(in)
+            wp2(1) / real( dt , kind = core_rknd ),     &      ! intent(in)
                                      zm )                      ! intent(inout)
         end if
 
@@ -1482,7 +1486,7 @@ module clubb_core
                              sclrpthlp(1,1:sclr_dim) )                         ! intent(out)
 
         if ( fatal_error( err_code_surface ) ) then
-          call reportError( err_code_surface )
+          call reportError( err_code_surface ) ! intent(in)
           err_code = err_code_surface
         end if
 
@@ -1540,14 +1544,16 @@ module clubb_core
 
 
       if ( l_stats_samp ) then
-        call stat_update_var( irvm, rtm - rcm, zt )
+        call stat_update_var( irvm, rtm - rcm, & !intent(in)
+                              zt )               !intent(inout)
 
         ! Output relative humidity (q/q∗ where q∗ is the saturation mixing ratio over liquid)
         ! Added an extra check for irel_humidity > 0; otherwise, if both irsat = 0 and
         ! irel_humidity = 0, rsat is not computed, leading to a floating-point exception
         ! when stat_update_var is called for rel_humidity.  ldgrant
         if ( irel_humidity > 0 ) then
-          call stat_update_var( irel_humidity, (rtm - rcm) / rsat, zt)
+          call stat_update_var( irel_humidity, (rtm - rcm) / rsat, & !intent(in)
+                                zt)                                  !intent(inout)
         end if ! irel_humidity > 0
       end if ! l_stats_samp
 
@@ -1603,12 +1609,14 @@ module clubb_core
       ! This code won't work unless rtm >= 0 !!!
       ! We do not clip rcm_in_layer because rcm_in_layer only influences
       ! radiation, and we do not want to bother recomputing it.  6 Aug 2009
-      call clip_rcm( rtm, 'rtm < rcm in advance_xm_wpxp', & ! intent(in)
-                     rcm )                                  ! intent(inout)
+      call clip_rcm( rtm, 'rtm < rcm in advance_xm_wpxp',             & ! intent(in)
+                     rcm )                                              ! intent(inout)
 
 #ifdef GFDL
-      call advance_sclrm_Nd_diffusion_OG( dt,  sclrm,  &  ! h1g, 2010-06-16
-          sclrm_trsport_only,  Kh_zm,  cloud_frac,  err_code )
+      call advance_sclrm_Nd_diffusion_OG( dt, &  ! h1g, 2012-06-16     ! intent(in)
+                                          sclrm, sclrm_trsport_only, & ! intent(inout)
+                                          Kh_zm,  cloud_frac,        & ! intent(in)
+                                          err_code )                   ! intent(out)
 #endif
 
       !----------------------------------------------------------------
@@ -1682,7 +1690,7 @@ module clubb_core
              Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,         & ! intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, radf,       & ! intent(in)
              thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
-             wp2, wp3, wp3_zm, wp2_zt, err_code           ) ! intent(inout)
+             wp2, wp3, wp3_zm, wp2_zt, err_code           )  ! intent(inout)
       else
         call advance_wp2_wp3 &
            ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! intent(in)
@@ -1692,7 +1700,7 @@ module clubb_core
              Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,         & ! intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, radf,       & ! intent(in)
              thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
-             wp2, wp3, wp3_zm, wp2_zt, err_code           ) ! intent(inout)
+             wp2, wp3, wp3_zm, wp2_zt, err_code           )  ! intent(inout)
       end if
 
       !----------------------------------------------------------------
@@ -1719,14 +1727,14 @@ module clubb_core
 
       Km_zm = Kh_zm * c_K10
 
-      call advance_windm_edsclrm( dt, wm_zt, Km_zm, ug, vg, um_ref, vm_ref, & ! Intent(in)
-                                  wp2, up2, vp2, um_forcing, vm_forcing,    & ! Intent(in)
-                                  edsclrm_forcing,                          & ! Intent(in)
-                                  rho_ds_zm, invrs_rho_ds_zt,               & ! Intent(in)
-                                  fcor, l_implemented,                      & ! Intent(in)
-                                  um, vm, edsclrm,                          & ! Intent(inout)
-                                  upwp, vpwp, wpedsclrp,                    & ! Intent(inout)
-                                  err_code ) ! Intent(inout)
+      call advance_windm_edsclrm( dt, wm_zt, Km_zm, ug, vg, um_ref, vm_ref, & ! intent(in)
+                                  wp2, up2, vp2, um_forcing, vm_forcing,    & ! intent(in)
+                                  edsclrm_forcing,                          & ! intent(in)
+                                  rho_ds_zm, invrs_rho_ds_zt,               & ! intent(in)
+                                  fcor, l_implemented,                      & ! intent(in)
+                                  um, vm, edsclrm,                          & ! intent(inout)
+                                  upwp, vpwp, wpedsclrp,                    & ! intent(inout)
+                                  err_code )                                  ! intent(inout)
 
       !#######################################################################
       !#############            ACCUMULATE STATISTICS            #############
@@ -1734,33 +1742,33 @@ module clubb_core
 
       if ( l_stats_samp ) then
 
-        call stat_end_update( iwp2_bt, wp2 / real( dt , kind = core_rknd ), &        ! Intent(in)
-                              zm )                                ! Intent(inout)
-        call stat_end_update( ivp2_bt, vp2 / real( dt , kind = core_rknd ),&         ! Intent(in)
-                              zm )                                ! Intent(inout)
-        call stat_end_update( iup2_bt, up2 / real( dt , kind = core_rknd ), &        ! Intent(in)
-                              zm )                                ! Intent(inout)
-        call stat_end_update( iwprtp_bt, wprtp / real( dt , kind = core_rknd ), &    ! Intent(in)
-                              zm )                                ! Intent(inout)
-        call stat_end_update( iwpthlp_bt, wpthlp / real( dt , kind = core_rknd ), &  ! Intent(in)
-                              zm )                                ! Intent(inout)
-        call stat_end_update( irtp2_bt, rtp2 / real( dt , kind = core_rknd ), &      ! Intent(in)
-                              zm )                                ! Intent(inout)
-        call stat_end_update( ithlp2_bt, thlp2 / real( dt , kind = core_rknd ), &    ! Intent(in) 
-                              zm )                                ! Intent(inout)
-        call stat_end_update( irtpthlp_bt, rtpthlp / real( dt , kind = core_rknd ), &! Intent(in)
-                              zm )                                ! Intent(inout)
+        call stat_end_update( iwp2_bt, wp2 / real( dt , kind = core_rknd ), &        ! intent(in)
+                              zm )                                ! intent(inout)
+        call stat_end_update( ivp2_bt, vp2 / real( dt , kind = core_rknd ),&         ! intent(in)
+                              zm )                                ! intent(inout)
+        call stat_end_update( iup2_bt, up2 / real( dt , kind = core_rknd ), &        ! intent(in)
+                              zm )                                ! intent(inout)
+        call stat_end_update( iwprtp_bt, wprtp / real( dt , kind = core_rknd ), &    ! intent(in)
+                              zm )                                ! intent(inout)
+        call stat_end_update( iwpthlp_bt, wpthlp / real( dt , kind = core_rknd ), &  ! intent(in)
+                              zm )                                ! intent(inout)
+        call stat_end_update( irtp2_bt, rtp2 / real( dt , kind = core_rknd ), &      ! intent(in)
+                              zm )                                ! intent(inout)
+        call stat_end_update( ithlp2_bt, thlp2 / real( dt , kind = core_rknd ), &    ! intent(in) 
+                              zm )                                ! intent(inout)
+        call stat_end_update( irtpthlp_bt, rtpthlp / real( dt , kind = core_rknd ), &! intent(in)
+                              zm )                                ! intent(inout)
 
-        call stat_end_update( irtm_bt, rtm / real( dt , kind = core_rknd ), &        ! Intent(in)
-                              zt )                                ! Intent(inout)
-        call stat_end_update( ithlm_bt, thlm / real( dt , kind = core_rknd ), &      ! Intent(in)
-                              zt )                                ! Intent(inout)
-        call stat_end_update( ium_bt, um / real( dt , kind = core_rknd ), &          ! Intent(in)
-                              zt )                                ! Intent(inout)
-        call stat_end_update( ivm_bt, vm / real( dt , kind = core_rknd ), &          ! Intent(in)
-                              zt )                                ! Intent(inout)
-        call stat_end_update( iwp3_bt, wp3 / real( dt , kind = core_rknd ), &        ! Intent(in)
-                              zt )                                ! Intent(inout)
+        call stat_end_update( irtm_bt, rtm / real( dt , kind = core_rknd ), &        ! intent(in)
+                              zt )                                ! intent(inout)
+        call stat_end_update( ithlm_bt, thlm / real( dt , kind = core_rknd ), &      ! intent(in)
+                              zt )                                ! intent(inout)
+        call stat_end_update( ium_bt, um / real( dt , kind = core_rknd ), &          ! intent(in)
+                              zt )                                ! intent(inout)
+        call stat_end_update( ivm_bt, vm / real( dt , kind = core_rknd ), &          ! intent(in)
+                              zt )                                ! intent(inout)
+        call stat_end_update( iwp3_bt, wp3 / real( dt , kind = core_rknd ), &        ! intent(in)
+                              zt )                                ! intent(inout)
 
       end if ! l_stats_samp
 
@@ -1813,7 +1821,7 @@ module clubb_core
                um, upwp, vm, vpwp, up2, vp2,                      & ! intent(in)
                rtm, wprtp, thlm, wpthlp,                          & ! intent(in)
                wp2, wp3, rtp2, thlp2, rtpthlp,                    & ! intent(in)
-               "end of ",              & ! intent(in)
+               "end of ",                                  & ! intent(in)
                wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
                sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
                sclrm_forcing, edsclrm, edsclrm_forcing,           & ! intent(in)
@@ -1878,10 +1886,10 @@ module clubb_core
         end if
 
         ! Write the var to stats
-        call stat_update_var_pt( irtm_spur_src, 1, & 
-                                 rtm_spur_src, sfc )
-        call stat_update_var_pt( ithlm_spur_src, 1, & 
-                                 thlm_spur_src, sfc )
+        call stat_update_var_pt( irtm_spur_src, 1, rtm_spur_src,   & ! intent(in)
+                                 sfc )                               ! intent(inout)
+        call stat_update_var_pt( ithlm_spur_src, 1, thlm_spur_src, & ! intent(in)
+                                 sfc )                               ! intent(inout)
       end if
 
       return
@@ -1889,21 +1897,21 @@ module clubb_core
 
     !-----------------------------------------------------------------------
     subroutine setup_clubb_core & 
-               ( nzmax, T0_in, ts_nudge_in, & ! In
-                 hydromet_dim_in, sclr_dim_in, & ! In
-                 sclr_tol_in, edsclr_dim_in, params,  &  ! In
-                 l_host_applies_sfc_fluxes, & ! In
-                 l_uv_nudge, saturation_formula, & ! In
+               ( nzmax, T0_in, ts_nudge_in,              & ! intent(in)
+                 hydromet_dim_in, sclr_dim_in,           & ! intent(in)
+                 sclr_tol_in, edsclr_dim_in, params,     & ! intent(in)
+                 l_host_applies_sfc_fluxes,              & ! intent(in)
+                 l_uv_nudge, saturation_formula,         & ! intent(in)
 #ifdef GFDL
-      I_sat_sphum, &        ! intent(in)  h1g, 2010-06-16
+      I_sat_sphum,                                       & ! intent(in)  h1g, 2010-06-16
 #endif
-      l_implemented, grid_type, deltaz, zm_init, zm_top, &  ! In
-      momentum_heights, thermodynamic_heights,  &  ! In
-      host_dx, host_dy, sfc_elevation, & ! In
+      l_implemented, grid_type, deltaz, zm_init, zm_top, & ! intent(in)
+      momentum_heights, thermodynamic_heights,           & ! intent(in)
+      host_dx, host_dy, sfc_elevation,                   & ! intent(in)
 #ifdef GFDL
-      cloud_frac_min , &        ! intent(in)  h1g, 2010-06-16
+      cloud_frac_min ,                                   & ! intent(in)  h1g, 2010-06-16
 #endif
-      err_code ) ! Out
+      err_code )                                           ! intent(out)
       !
       ! Description:
       !   Subroutine to set up the model for execution.
@@ -1949,7 +1957,7 @@ module clubb_core
         gmres_init              ! Subroutine
 
       use gmres_cache, only: &
-        gmres_cache_temp_init, &   ! Subroutine
+        gmres_cache_temp_init, &! Subroutine
         gmres_idx_wp2wp3        ! Variable
 #endif /* MKL */
 
@@ -2082,36 +2090,36 @@ module clubb_core
       ! Setup flags
 #ifdef GFDL
       call setup_model_flags & 
-           ( l_host_applies_sfc_fluxes, & ! intent(in)
-             l_uv_nudge, saturation_formula, &  ! intent(in) 
-             I_sat_sphum )  ! intent(in)  h1g, 2010-06-16
+           ( l_host_applies_sfc_fluxes,      & ! intent(in)
+             l_uv_nudge, saturation_formula, & ! intent(in) 
+             I_sat_sphum )                     ! intent(in)  h1g, 2010-06-16
 
 #else
       call setup_model_flags & 
-           ( l_host_applies_sfc_fluxes, & ! intent(in)
+           ( l_host_applies_sfc_fluxes,      & ! intent(in)
              l_uv_nudge, saturation_formula )  ! intent(in)
 #endif
 
       ! Determine the maximum allowable value for Lscale (in meters).
-      call set_Lscale_max( l_implemented, host_dx, host_dy, & ! Intent(in)
+      call set_Lscale_max( l_implemented, host_dx, host_dy, & ! intent(in)
                            Lscale_max )                       ! Intent(out)
 
       ! Define model constant parameters
 #ifdef GFDL
-      call setup_parameters_model( T0_in, ts_nudge_in, &      ! In
-                                   hydromet_dim_in, &  ! in
-                                   sclr_dim_in, sclr_tol_in, edsclr_dim_in, &! In
-                                   Lscale_max,  cloud_frac_min )   ! In  h1g, 2010-06-16
+      call setup_parameters_model( T0_in, ts_nudge_in,                         & ! intent(in)
+                                   hydromet_dim_in,                            &  ! intent(in)
+                                   sclr_dim_in, sclr_tol_in, edsclr_dim_in,    &! intent(in)
+                                   Lscale_max,  cloud_frac_min )       ! intent(in)  h1g, 2010-06-16
 #else
-      call setup_parameters_model( T0_in, ts_nudge_in, &      ! In
-                                   hydromet_dim_in, &  ! in
-                                   sclr_dim_in, sclr_tol_in, edsclr_dim_in, &! In
-                                   Lscale_max )   ! In
+      call setup_parameters_model( T0_in, ts_nudge_in,                      &! intent(in)
+                                   hydromet_dim_in,                         &! intent(in)
+                                   sclr_dim_in, sclr_tol_in, edsclr_dim_in, &! intent(in)
+                                   Lscale_max )                              ! intent(in)
 #endif
 
       ! Define tunable constant parameters
       call setup_parameters & 
-           ( deltaz, params, gr%nz,                             & ! intent(in)
+           ( deltaz, params, gr%nz,                                & ! intent(in)
              grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
              thermodynamic_heights(begin_height:end_height),       & ! intent(in)
              err_code )                                              ! intent(out)
@@ -2150,7 +2158,7 @@ module clubb_core
       ! The diagnostic variables need to be
       ! declared, allocated, initialized, and deallocated whether CLUBB
       ! is part of a larger model or not.
-      call setup_diagnostic_variables( gr%nz )
+      call setup_diagnostic_variables( gr%nz )  ! intent(in)
 
 #ifdef MKL
       ! Initialize the CSR matrix class.
@@ -2159,8 +2167,8 @@ module clubb_core
       end if
 
       if ( l_gmres ) then
-        call gmres_cache_temp_init( gr%nz )
-        call gmres_init( (2 * gr%nz), intlc_5d_5d_ja_size )
+        call gmres_cache_temp_init( gr%nz ) ! intent(in)
+        call gmres_init( (2 * gr%nz), intlc_5d_5d_ja_size ) ! intent(in)
       end if
 #endif /* MKL */
 
