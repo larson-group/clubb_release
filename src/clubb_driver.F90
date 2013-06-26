@@ -154,7 +154,7 @@ module clubb_driver
       finalize_t_dependent_input ! Procedure(s)
 
     use sponge_layer_damping, only: &
-      thlm_sponge_damp_settings, &
+      thlm_sponge_damp_settings, & ! Variable(s)
       rtm_sponge_damp_settings, &
       uv_sponge_damp_settings, &
       thlm_sponge_damp_profile, &
@@ -163,7 +163,7 @@ module clubb_driver
       finalize_tau_sponge_damp
 
     use extend_atmosphere_module, only: &
-      total_atmos_dim, &
+      total_atmos_dim, & ! Variable(s)
       complete_alt, &
       complete_momentum, &
       finalize_extend_atm
@@ -256,7 +256,7 @@ module clubb_driver
         iiNrm
 
     use hydromet_pdf_parameter_module, only: &
-        hydromet_pdf_parameter
+      hydromet_pdf_parameter ! Type(s)
 
     implicit none
 
@@ -549,7 +549,7 @@ module clubb_driver
 #endif
 
     ! Read namelist file
-    open(unit=iunit, file=runfile, status='old')
+    open(unit=iunit, file=trim( runfile ), status='old')
     read(unit=iunit, nml=model_setting)
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
