@@ -3154,6 +3154,12 @@ module clubb_driver
     use bomex, only: bomex_tndcy, bomex_sfclyr ! Procedure(s)
 
 #ifdef UNRELEASED_CODE
+    use clex9_nov02, only: clex9_nov02_read_t_dependent ! Procedure(s)
+
+    use clex9_oct14, only: clex9_oct14_read_t_dependent ! Procedure(s)
+
+    use cloud_feedback, only: cloud_feedback_sfclyr ! Procedure(s)
+
     use cobra, only: cobra_sfclyr ! Procedure(s)
 #endif
 
@@ -3173,12 +3179,11 @@ module clubb_driver
 #ifdef UNRELEASED_CODE
     use gabls3_night, only: gabls3_night_sfclyr
 
+    use jun25, only: jun25_altocu_read_t_dependent ! Procedure(s)
+
     use lba, only: lba_tndcy, lba_sfclyr ! Procedure(s)
 
-    use cloud_feedback, only: cloud_feedback_sfclyr ! Procedure(s)
 #endif
-
-    use rico, only: rico_tndcy, rico_sfclyr ! Procedure(s)
 
     use mpace_a, only: mpace_a_tndcy, mpace_a_sfclyr ! Procedure(s)
 
@@ -3186,14 +3191,12 @@ module clubb_driver
 
 #ifdef UNRELEASED_CODE
     use nov11, only: nov11_altocu_rtm_adjust, nov11_altocu_read_t_dependent ! Procedure(s)
+#endif
 
+    use rico, only: rico_tndcy, rico_sfclyr ! Procedure(s)
+
+#ifdef UNRELEASED_CODE
     use twp_ice, only: twp_ice_sfclyr ! Procedure(s)
-
-    use clex9_nov02, only: clex9_nov02_read_t_dependent ! Procedure(s)
-
-    use clex9_oct14, only: clex9_oct14_read_t_dependent ! Procedure(s)
-
-    use jun25, only: jun25_altocu_read_t_dependent ! Procedure(s)
 #endif
 
     use wangara, only: wangara_tndcy, wangara_sfclyr ! Procedure(s)
@@ -3229,16 +3232,18 @@ module clubb_driver
 
     ! Flags to help avoid code duplication
     logical :: &
-      l_compute_momentum_flux = .false., &
-      l_set_sclr_sfc_rtm_thlm = .false., &
-      l_fixed_flux            = .false.
-
+      l_compute_momentum_flux, &
+      l_set_sclr_sfc_rtm_thlm, &
+      l_fixed_flux            
 
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
 !                    FIND ALL DIAGNOSTIC VARIABLES
 !-----------------------------------------------------------------------
+    l_compute_momentum_flux = .false.
+    l_set_sclr_sfc_rtm_thlm = .false.
+    l_fixed_flux            = .false.
 
     !----------------------------------------------------------------
     ! Set vertical velocity, w, and compute large-scale forcings
@@ -3525,22 +3530,12 @@ module clubb_driver
                         thlm(2), rtm(2), exner(1),   &  ! Intent(in)
                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
 
-#ifdef UNRELEASED_CODE
-
-    case ( "twp_ice" )
-      l_compute_momentum_flux = .true.
-      l_set_sclr_sfc_rtm_thlm = .true.
-      call twp_ice_sfclyr( time_current, gr%zt(2), exner(1), thlm(2), & ! Intent(in)
-                            ubar, rtm(2), p_sfc,               &    ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
-
-#endif
-
     case ( "bomex" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call bomex_sfclyr( time_current, rtm(2),                      &  ! Intent(in) 
                          wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
+
     case ( "dycoms2_rf01" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
@@ -3561,6 +3556,15 @@ module clubb_driver
                           gr%zt(2), p_sfc, &                         ! Intent(in)
                           ubar, thlm(2), rtm(2), exner(1), &        ! Intent(in)   
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )      ! Intent(out)
+#ifdef UNRELEASED_CODE
+    case ( "lba" )
+      l_compute_momentum_flux = .true.
+      l_set_sclr_sfc_rtm_thlm = .true.
+      call lba_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
+                        thlm(2), ubar, &                     ! Intent(in)
+                        wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
+#endif
+
     case ( "mpace_a" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
@@ -3573,13 +3577,12 @@ module clubb_driver
                             wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
 #ifdef UNRELEASED_CODE
-
-    case ( "lba" )
+    case ( "twp_ice" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call lba_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
-                        thlm(2), ubar, &                     ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
+      call twp_ice_sfclyr( time_current, gr%zt(2), exner(1), thlm(2), & ! Intent(in)
+                            ubar, rtm(2), p_sfc,               &    ! Intent(in)
+                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
 
 #endif
 
