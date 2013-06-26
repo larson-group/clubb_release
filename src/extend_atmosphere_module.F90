@@ -18,33 +18,42 @@ module extend_atmosphere_module
 
   ! Size of Extended Atmosphere
   integer, public :: extend_atmos_dim
+!$omp threadprivate(extend_atmos_dim)
 
   ! Total Atmosphere Size (grid + buffer + extended atmosphere)
   integer, public :: total_atmos_dim
+!$omp threadprivate(total_atmos_dim)
 
   ! Altitude of complete atmosphere in meters
   real( kind = core_rknd ), public, target, allocatable, dimension(:) :: complete_alt
+!$omp threadprivate(complete_alt)
 
   ! Altitude of complete momentum grid in meters
   real( kind = core_rknd ), public, target, allocatable, dimension(:) :: complete_momentum
+!$omp threadprivate(complete_momentum)
 
   ! Extended Atmosphere variables
 
   ! Altitude in meters
   real( kind = dp ), public, target, allocatable, dimension(:) :: extend_alt
+!$omp threadprivate(extend_alt)
 
   ! Temperature in degrees Kelvin
   real( kind = dp ), public, target, allocatable,dimension(:) :: extend_T_in_K
+!$omp threadprivate(extend_T_in_K)
 
   ! Specific Humidity ( Water Vapor / Density )
   real( kind = dp ), public, target, allocatable, dimension(:) ::  extend_sp_hmdty
+!$omp threadprivate(extend_sp_hmdty)
 
   ! Pressure in millibars
   real( kind = dp ), public, target, allocatable, dimension(:) :: extend_pinmb
+!$omp threadprivate(extend_pinmb)
 
 
   ! Ozone ( O_3 / Density )
   real( kind = dp ), public, target, allocatable, dimension(:) :: extend_o3l
+!$omp threadprivate(extend_o3l)
 
   contains
 
@@ -53,8 +62,8 @@ module extend_atmosphere_module
                                      sounding_profiles )
     !
     !  Description: This subroutine converts information retrieved from the
-    !  sounding files of a case into a format usable for an extended atmosphere.
-    !  The extended atmosphere profile is stored in module variables.
+    !    sounding files of a case into a format usable for an extended atmosphere.
+    !    The extended atmosphere profile is stored in module variables.
     !
     !  References:
     !    none
