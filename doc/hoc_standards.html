@@ -9,7 +9,7 @@
  span.roman {font-family: serif; font-style: normal; font-weight: normal;} 
 </style>
 
-  
+    
 <title> {Standards and Coding Practices for CLUBB} </title>
 </head>
 <body><div>
@@ -207,6 +207,30 @@ end&nbsp;subroutine&nbsp;mulmul
 !-----------------------------------------------------------------------
 
 </pre>
+<div class="p"><!----></div>
+</li>
+
+<li> Do not use implicitly saved variables in the scope of a subroutine.  E.g.
+
+<pre>
+&nbsp;&nbsp;subroutine&nbsp;set_fluxes(&nbsp;i&nbsp;)
+&nbsp;&nbsp;&nbsp;&nbsp;implicit&nbsp;none
+
+&nbsp;&nbsp;&nbsp;&nbsp;logical&nbsp;::&nbsp;l_use_fixed_fluxes&nbsp;=&nbsp;.false.
+
+&nbsp;&nbsp;&nbsp;&nbsp;!&nbsp;----&nbsp;Begin&nbsp;Code&nbsp;----
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(&nbsp;i&nbsp;&lt;&nbsp;9&nbsp;)&nbsp;then
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;l_use_fixed_fluxes&nbsp;=&nbsp;.true.
+&nbsp;&nbsp;&nbsp;&nbsp;end&nbsp;if
+
+&nbsp;&nbsp;&nbsp;&nbsp;return
+&nbsp;&nbsp;end&nbsp;subroutine&nbsp;set_fluxes
+
+</pre>
+In this example <tt>l_use_fixed_fluxes</tt> will be saved until the next call to <tt>set_fluxes</tt>,
+but it's not obvious this is the case unless a user looks at the declaration and knows that
+the variable will be implicitly saved.  If you wish to save a variable either declare it in the common
+block of the module, bring it in via a use statement, or make it an argument for the subroutine.
 <div class="p"><!----></div>
 </li>
 
@@ -646,6 +670,24 @@ E.g.
 <div class="p"><!----></div>
 </li>
 
+<li> In order to keep CLUBB threadsafe, all variables in a module prior to the <tt>contains</tt>
+statement (i.e. common block variables) should be declared as <tt>$omp threadprivate</tt> in
+a commented line just after the variable declaration.  The only exception to this rule is a 
+variable with the <tt>parameter</tt> attribute, since these hold a constant value.  Below is a code example: <br />
+
+<pre>
+module&nbsp;declination
+&nbsp;&nbsp;real,&nbsp;public&nbsp;::&nbsp;angle_in_deg&nbsp;=&nbsp;30.&nbsp;!&nbsp;Degree&nbsp;of&nbsp;the&nbsp;angle
+
+!$omp&nbsp;threadprivate(angle_in_deg)
+&nbsp;&nbsp;contains
+...
+end&nbsp;module&nbsp;declination
+
+</pre>
+<div class="p"><!----></div>
+</li>
+
 <li> Good use of whitespace can make code easier to read and debug.  
 One simple convention used in CLUBB is to put an extra space between 
 parenthesis for functions and subroutines to differentiate them from 
@@ -927,6 +969,11 @@ variable&nbsp;=&nbsp;0.0_core_rknd
 </pre>
 <div class="p"><!----></div>
 </li>
+
+<li>
+We should avoid adding new use of command line applications, e.g. mktemp, to our compile or run scripts unless we're certain they're portable between Linux/BSD/MacOS/Unix.  See <a href="http://carson.math.uwm.edu/trac/clubb/ticket/531#comment:24"><tt>http://carson.math.uwm.edu/trac/clubb/ticket/531#comment:24</tt></a>
+<div class="p"><!----></div>
+</li>
 </ol>
 
 <div class="p"><!----></div>
@@ -935,5 +982,5 @@ variable&nbsp;=&nbsp;0.0_core_rknd
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>M Unregistered</a>,
-version 4.02.<br />On 29 Jan 2013, 14:41.</small>
+version 4.02.<br />On 26 Jun 2013, 20:57.</small>
 </div></body></html>

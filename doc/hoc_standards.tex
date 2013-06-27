@@ -195,6 +195,26 @@ end subroutine mulmul
 !-----------------------------------------------------------------------
 \end{verbatim}
 
+\item Do not use implicitly saved variables in the scope of a subroutine.  E.g.
+\begin{verbatim}
+  subroutine set_fluxes( i )
+    implicit none
+
+    logical :: l_use_fixed_fluxes = .false.
+
+    ! ---- Begin Code ----
+    if ( i < 9 ) then
+      l_use_fixed_fluxes = .true.
+    end if
+
+    return
+  end subroutine set_fluxes
+\end{verbatim}
+In this example \verb|l_use_fixed_fluxes| will be saved until the next call to \verb|set_fluxes|,
+but it's not obvious this is the case unless a user looks at the declaration and knows that
+the variable will be implicitly saved.  If you wish to save a variable either declare it in the common
+block of the module, bring it in via a use statement, or make it an argument for the subroutine.
+
 \item The general convention in CLUBB is to have the dummy arguments of a subroutine 
 ordered with input first, input/output second, and output arguments third. 
 The exception to this is optional variables, which must occur last.  In that case,
