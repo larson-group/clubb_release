@@ -37,8 +37,10 @@ module stats_type
     ! Number of fields to sample
     integer :: nn
 
-    ! Vertical extent of variable
-    integer :: kk
+    integer :: &
+      ii, & ! Horizontal extent of the variables (currently 1)
+      jj, & ! Horizontal extent of the variables (currently 1)
+      kk    ! Vertical extent of the variables
 
     ! Vertical levels
     real( kind = core_rknd ), pointer, dimension(:) :: z
@@ -123,6 +125,9 @@ module stats_type
 
     implicit none
 
+    ! Constant Parameter(s)
+    integer, parameter :: i = 1, j = 1 ! Index of x and y
+
     ! Input Variables(s)
 
     integer, intent(in) ::  & 
@@ -142,10 +147,10 @@ module stats_type
 
     if ( var_index > 0 ) then
       do k = 1, grid_kind%kk
-        grid_kind%x(1,1,k,var_index) =  & 
-             grid_kind%x(1,1,k,var_index) + real( value(k), kind=stat_rknd )
-        grid_kind%n(1,1,k,var_index) =  & 
-             grid_kind%n(1,1,k,var_index) + 1
+        grid_kind%x(i,j,k,var_index) =  & 
+             grid_kind%x(i,j,k,var_index) + real( value(k), kind=stat_rknd )
+        grid_kind%n(i,j,k,var_index) =  & 
+             grid_kind%n(i,j,k,var_index) + 1
       end do
     endif
 
@@ -167,6 +172,9 @@ module stats_type
 
     implicit none
 
+    ! Constant Parameter(s)
+    integer, parameter :: i = 1, j = 1 ! Index of x and y
+
     ! Input Variables(s)
 
     integer, intent(in) ::  & 
@@ -182,10 +190,10 @@ module stats_type
 
     if ( var_index > 0 ) then
 
-      grid_kind%x(1,1,grid_level,var_index) = grid_kind%x(1,1,grid_level,var_index) &
+      grid_kind%x(i,j,grid_level,var_index) = grid_kind%x(i,j,grid_level,var_index) &
                                             + real( value, kind=stat_rknd )
 
-      grid_kind%n(1,1,grid_level,var_index) = grid_kind%n(1,1,grid_level,var_index) + 1
+      grid_kind%n(i,j,grid_level,var_index) = grid_kind%n(i,j,grid_level,var_index) + 1
 
     endif
 
@@ -279,6 +287,9 @@ module stats_type
 
     implicit none
 
+    ! Constant Parameter(s)
+    integer, parameter :: i = 1, j = 1 ! Index of x and y
+
     ! Input Variables(s)
 
     integer, intent(in) ::  & 
@@ -296,12 +307,12 @@ module stats_type
 
     if ( var_index > 0 ) then  ! Are we storing this variable?
 
-      if ( .not. grid_kind%l_in_update(1,1,grid_level,var_index) ) then ! Can we begin an update?
+      if ( .not. grid_kind%l_in_update(i,j,grid_level,var_index) ) then ! Can we begin an update?
 
-        grid_kind%x(1,1,grid_level, var_index) =  & 
-                grid_kind%x(1,1,grid_level, var_index) - real( value, kind=stat_rknd )
+        grid_kind%x(i,j,grid_level, var_index) =  & 
+                grid_kind%x(i,j,grid_level, var_index) - real( value, kind=stat_rknd )
 
-        grid_kind%l_in_update(1,1,grid_level, var_index) = .true.  ! Start Record
+        grid_kind%l_in_update(i,j,grid_level, var_index) = .true.  ! Start Record
 
       else
 
@@ -395,6 +406,9 @@ module stats_type
 
     implicit none
 
+    ! Constant Parameter(s)
+    integer, parameter :: i = 1, j = 1 ! Index of x and y
+
     ! Input Variables(s)
 
     integer, intent(in) ::  & 
@@ -412,12 +426,12 @@ module stats_type
 
     if ( var_index > 0 ) then ! Are we storing this variable?
 
-      if ( grid_kind%l_in_update(1,1,grid_level,var_index) ) then ! Can we end an update?
+      if ( grid_kind%l_in_update(i,j,grid_level,var_index) ) then ! Can we end an update?
 
         call stat_update_var_pt & 
                  ( var_index, grid_level, value, grid_kind )
 
-        grid_kind%l_in_update(1,1,grid_level,var_index) = .false. ! End Record
+        grid_kind%l_in_update(i,j,grid_level,var_index) = .false. ! End Record
 
       else
 
@@ -491,6 +505,9 @@ module stats_type
 
     implicit none
 
+    ! Constant Parameter(s)
+    integer, parameter :: i = 1, j = 1 ! Index of x and y
+
     ! Input Variables(s)
 
     integer, intent(in) ::  & 
@@ -511,8 +528,8 @@ module stats_type
 
     if ( var_index > 0 ) then
 
-      grid_kind%x(1,1,grid_level,var_index )  & 
-         = grid_kind%x(1,1,grid_level,var_index ) + real( value, kind=stat_rknd )
+      grid_kind%x(i,j,grid_level,var_index )  & 
+         = grid_kind%x(i,j,grid_level,var_index ) + real( value, kind=stat_rknd )
 
     end if
 

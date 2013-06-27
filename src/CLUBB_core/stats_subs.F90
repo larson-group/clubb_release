@@ -428,13 +428,15 @@ module stats_subs
 
     zt%nn = ntot
     zt%kk = nzmax
+    zt%ii = nlon
+    zt%jj = nlat
 
     allocate( zt%z( zt%kk ) )
     zt%z = gzt
 
-    allocate( zt%x( 1, 1, zt%kk, zt%nn ) )
-    allocate( zt%n( 1, 1, zt%kk, zt%nn ) )
-    allocate( zt%l_in_update( 1, 1, zt%kk, zt%nn ) )
+    allocate( zt%x( zt%ii, zt%jj, zt%kk, zt%nn ) )
+    allocate( zt%n( zt%ii, zt%jj, zt%kk, zt%nn ) )
+    allocate( zt%l_in_update( zt%ii, zt%jj, zt%kk, zt%nn ) )
     call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
 
     allocate( zt%f%var( zt%nn ) )
@@ -536,13 +538,15 @@ module stats_subs
 
       LH_zt%nn = ntot
       LH_zt%kk = nzmax
+      LH_zt%ii = nlon
+      LH_zt%jj = nlat
 
       allocate( LH_zt%z( LH_zt%kk ) )
       LH_zt%z = gzt
 
-      allocate( LH_zt%x( 1, 1, LH_zt%kk, LH_zt%nn ) )
-      allocate( LH_zt%n( 1, 1, LH_zt%kk, LH_zt%nn ) )
-      allocate( LH_zt%l_in_update( 1, 1, LH_zt%kk, LH_zt%nn ) )
+      allocate( LH_zt%x( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn ) )
+      allocate( LH_zt%n( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn ) )
+      allocate( LH_zt%l_in_update( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn ) )
       call stats_zero( LH_zt%kk, LH_zt%nn, LH_zt%x, LH_zt%n, LH_zt%l_in_update )
 
       allocate( LH_zt%f%var( LH_zt%nn ) )
@@ -592,13 +596,15 @@ module stats_subs
 
       LH_sfc%nn = ntot
       LH_sfc%kk = 1
+      LH_sfc%ii = nlon
+      LH_sfc%jj = nlat
 
       allocate( LH_sfc%z( LH_sfc%kk ) )
       LH_sfc%z = gzm(1)
 
-      allocate( LH_sfc%x( 1, 1, LH_sfc%kk, LH_sfc%nn ) )
-      allocate( LH_sfc%n( 1, 1, LH_sfc%kk, LH_sfc%nn ) )
-      allocate( LH_sfc%l_in_update( 1, 1, LH_sfc%kk, LH_sfc%nn ) )
+      allocate( LH_sfc%x( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn ) )
+      allocate( LH_sfc%n( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn ) )
+      allocate( LH_sfc%l_in_update( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn ) )
 
       call stats_zero( LH_sfc%kk, LH_sfc%nn, LH_sfc%x, LH_sfc%n, LH_sfc%l_in_update )
 
@@ -652,13 +658,15 @@ module stats_subs
 
     zm%nn = ntot
     zm%kk = nzmax
+    zm%ii = nlon
+    zm%jj = nlat
 
     allocate( zm%z( zm%kk ) )
     zm%z = gzm
 
-    allocate( zm%x( 1, 1, zm%kk, zm%nn ) )
-    allocate( zm%n( 1, 1, zm%kk, zm%nn ) )
-    allocate( zm%l_in_update( 1, 1, zm%kk, zm%nn ) )
+    allocate( zm%x( zm%ii, zm%jj, zm%kk, zm%nn ) )
+    allocate( zm%n( zm%ii, zm%jj, zm%kk, zm%nn ) )
+    allocate( zm%l_in_update( zm%ii, zm%jj, zm%kk, zm%nn ) )
 
     call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
 
@@ -751,12 +759,14 @@ module stats_subs
 
       rad_zt%nn = ntot
       rad_zt%kk = nnrad_zt
+      rad_zt%ii = nlon
+      rad_zt%jj = nlat
       allocate( rad_zt%z( rad_zt%kk ) )
       rad_zt%z = grad_zt
 
-      allocate( rad_zt%x( 1, 1, rad_zt%kk, rad_zt%nn ) )
-      allocate( rad_zt%n( 1, 1, rad_zt%kk, rad_zt%nn ) )
-      allocate( rad_zt%l_in_update( 1, 1, rad_zt%kk, rad_zt%nn ) )
+      allocate( rad_zt%x( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn ) )
+      allocate( rad_zt%n( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn ) )
+      allocate( rad_zt%l_in_update( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn ) )
 
       call stats_zero( rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n, rad_zt%l_in_update )
 
@@ -808,57 +818,20 @@ module stats_subs
 
       rad_zm%nn = ntot
       rad_zm%kk = nnrad_zm
+      rad_zm%ii = nlon
+      rad_zm%jj = nlat
 
       allocate( rad_zm%z( rad_zm%kk ) )
       rad_zm%z = grad_zm
 
-      allocate( rad_zm%x( 1, 1, rad_zm%kk, rad_zm%nn ) )
-      allocate( rad_zm%n( 1, 1, rad_zm%kk, rad_zm%nn ) )
-      allocate( rad_zm%l_in_update( 1, 1, rad_zm%kk, rad_zm%nn ) )
+      allocate( rad_zm%x( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn ) )
+      allocate( rad_zm%n( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn ) )
+      allocate( rad_zm%l_in_update( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn ) )
 
       call stats_zero( rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n, rad_zm%l_in_update )
 
       allocate( rad_zm%f%var( rad_zm%nn ) )
       allocate( rad_zm%f%z( rad_zm%kk ) )
-
-      ! Allocate scratch space
-
-      !allocate( radscr01(rad%kk) )
-      !allocate( radscr02(rad%kk) )
-      !allocate( radscr03(rad%kk) )
-      !allocate( radscr04(rad%kk) )
-      !allocate( radscr05(rad%kk) )
-      !allocate( radscr06(rad%kk) )
-      !allocate( radscr07(rad%kk) )
-      !allocate( radscr08(rad%kk) )
-      !allocate( radscr09(rad%kk) )
-      !allocate( radscr10(rad%kk) )
-      !allocate( radscr11(rad%kk) )
-      !allocate( radscr12(rad%kk) )
-      !allocate( radscr13(rad%kk) )
-      !allocate( radscr14(rad%kk) )
-      !allocate( radscr15(rad%kk) )
-      !allocate( radscr16(rad%kk) )
-      !allocate( radscr17(rad%kk) )
-
-      !radscr01 = 0.0_core_rknd
-      !radscr02 = 0.0_core_rknd
-      !radscr03 = 0.0_core_rknd
-      !radscr04 = 0.0_core_rknd
-      !radscr05 = 0.0_core_rknd
-      !radscr06 = 0.0_core_rknd
-      !radscr07 = 0.0_core_rknd
-      !radscr08 = 0.0_core_rknd
-      !radscr09 = 0.0_core_rknd
-      !radscr10 = 0.0_core_rknd
-      !radscr11 = 0.0_core_rknd
-      !radscr12 = 0.0_core_rknd
-      !radscr13 = 0.0_core_rknd
-      !radscr14 = 0.0_core_rknd
-      !radscr15 = 0.0_core_rknd
-      !radscr16 = 0.0_core_rknd
-      !radscr17 = 0.0_core_rknd
-
 
       fname = trim( fname_rad_zm )
       if ( l_grads ) then
@@ -907,13 +880,15 @@ module stats_subs
 
     sfc%nn = ntot
     sfc%kk = 1
+    sfc%ii = nlon
+    sfc%jj = nlat
 
     allocate( sfc%z( sfc%kk ) )
     sfc%z = gzm(1)
 
-    allocate( sfc%x( 1, 1, sfc%kk, sfc%nn ) )
-    allocate( sfc%n( 1, 1, sfc%kk, sfc%nn ) )
-    allocate( sfc%l_in_update( 1, 1, sfc%kk, sfc%nn ) )
+    allocate( sfc%x( sfc%ii, sfc%jj, sfc%kk, sfc%nn ) )
+    allocate( sfc%n( sfc%ii, sfc%jj, sfc%kk, sfc%nn ) )
+    allocate( sfc%l_in_update( sfc%ii, sfc%jj, sfc%kk, sfc%nn ) )
 
     call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%l_in_update )
 
