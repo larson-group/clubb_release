@@ -6,6 +6,12 @@ program clubb_thread_test
 ! Description:
 !   This is a unit test to CLUBB to determine whether clubb is threadsafe
 !
+! References:
+!   None
+!
+! Notes:
+!   This program doesn't work consistently with the version of PGI or GNU
+!   Fortran at UWM.  Use Intel Fortran to test it.
 !-------------------------------------------------------------------------------
 
   use clubb_driver, only: run_clubb ! Procedure(s)
@@ -23,9 +29,6 @@ program clubb_thread_test
   use constants_clubb, only: fstderr ! Constant(s)
 
   implicit none
-
-  ! External
-  intrinsic :: size
 
 #ifdef _OPENMP
   integer :: omp_get_thread_num
@@ -58,6 +61,10 @@ program clubb_thread_test
 
   ! --- Begin Code ---
 
+#ifndef _OPENMP
+  stop "This program needs to be compiled with OpenMP enabled to test if CLUBB is threadsafe"
+#endif
+
   ! Initialize status of run 
   err_code = clubb_no_error
 
@@ -84,3 +91,4 @@ program clubb_thread_test
   end do
 
 end program clubb_thread_test
+!-------------------------------------------------------------------------------
