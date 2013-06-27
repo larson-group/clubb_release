@@ -607,7 +607,8 @@ module stats_subs
       allocate( LH_sfc%n( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn ) )
       allocate( LH_sfc%l_in_update( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn ) )
 
-      call stats_zero( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn, LH_sfc%x, LH_sfc%n, LH_sfc%l_in_update )
+      call stats_zero( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn, &
+                       LH_sfc%x, LH_sfc%n, LH_sfc%l_in_update )
 
       allocate( LH_sfc%f%var( LH_sfc%nn ) )
       allocate( LH_sfc%f%z( LH_sfc%kk ) )
@@ -769,7 +770,8 @@ module stats_subs
       allocate( rad_zt%n( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn ) )
       allocate( rad_zt%l_in_update( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn ) )
 
-      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n, rad_zt%l_in_update )
+      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, rad_zt%x, &
+                       rad_zt%n, rad_zt%l_in_update )
 
       allocate( rad_zt%f%var( rad_zt%nn ) )
       allocate( rad_zt%f%z( rad_zt%kk ) )
@@ -829,7 +831,8 @@ module stats_subs
       allocate( rad_zm%n( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn ) )
       allocate( rad_zm%l_in_update( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn ) )
 
-      call stats_zero( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n, rad_zm%l_in_update )
+      call stats_zero( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn, &
+                       rad_zm%x, rad_zm%n, rad_zm%l_in_update )
 
       allocate( rad_zm%f%var( rad_zm%nn ) )
       allocate( rad_zm%f%z( rad_zm%kk ) )
@@ -1351,12 +1354,16 @@ module stats_subs
     call stats_zero( zt%ii, zt%jj, zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
     call stats_zero( zm%ii, zm%jj, zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
     if ( LH_microphys_type /= LH_microphys_disabled ) then
-      call stats_zero( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn, LH_zt%x, LH_zt%n, LH_zt%l_in_update )
-      call stats_zero( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn, LH_sfc%x, LH_sfc%n, LH_sfc%l_in_update )
+      call stats_zero( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn, &
+                       LH_zt%x, LH_zt%n, LH_zt%l_in_update )
+      call stats_zero( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn, &
+                       LH_sfc%x, LH_sfc%n, LH_sfc%l_in_update )
     end if
     if ( l_output_rad_files ) then
-      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n, rad_zt%l_in_update )
-      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n, rad_zm%l_in_update )
+      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, &
+                       rad_zt%x, rad_zt%n, rad_zt%l_in_update )
+      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zm%kk, rad_zm%nn, &
+                       rad_zm%x, rad_zm%n, rad_zm%l_in_update )
     end if
     call stats_zero( sfc%ii, sfc%jj, sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%l_in_update )
 
@@ -1723,7 +1730,7 @@ module stats_subs
 
     ! Local Variables
 
-    integer :: ivar, isclr, k
+    integer :: isclr, k
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       T_in_K, &  ! Absolute temperature         [K]
