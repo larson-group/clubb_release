@@ -574,8 +574,15 @@ module output_grads
 
     write(unit=grads_file%iounit,fmt='(a)') 'DSET ^'//trim( grads_file%fname )//'.dat'
     write(unit=grads_file%iounit,fmt='(a,e11.5)') 'UNDEF ',undef
-    write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'XDEF    1 LINEAR ', grads_file%rlon, ' 1.'
-    write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'YDEF    1 LINEAR ', grads_file%rlat, ' 1.'
+    if ( grads_file%nlon == 1 .and. grads_file%nlat == 1 ) then
+      write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'XDEF    1 LINEAR ', grads_file%rlon, ' 1.'
+      write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'YDEF    1 LINEAR ', grads_file%rlat, ' 1.'
+    else
+      write(unit=grads_file%iounit,fmt='(a,i5,a)') 'XDEF', grads_file%nlon,' LEVELS '
+      write(unit=grads_file%iounit,fmt='(6f13.4)') grads_file%rlon
+      write(unit=grads_file%iounit,fmt='(a,i5,a)') 'YDEF', grads_file%nlat,' LEVELS '
+      write(unit=grads_file%iounit,fmt='(6f13.4)') grads_file%rlat
+    end if
     if ( grads_file%ia == grads_file%iz ) then
       write(unit=grads_file%iounit,fmt='(a)') 'ZDEF    1 LEVELS 0.'
     else if ( grads_file%ia < grads_file%iz ) then

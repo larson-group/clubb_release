@@ -203,7 +203,7 @@ module stats_subs
 
     character(len=200) :: fname
 
-    integer :: i, ntot, read_status
+    integer :: ivar, ntot, read_status
 
     ! Namelist Variables
 
@@ -301,56 +301,56 @@ module stats_subs
 
       write(fstdout,*) "--------------------------------------------------"
       write(fstdout,*) "vars_zt = "
-      i = 1
-      do while ( vars_zt(i) /= '' )
-        write(fstdout,*) vars_zt(i)
-        i = i + 1
+      ivar = 1
+      do while ( vars_zt(ivar) /= '' )
+        write(fstdout,*) vars_zt(ivar)
+        ivar = ivar + 1
       end do
 
       write(fstdout,*) "vars_zm = "
-      i = 1
-      do while ( vars_zm(i) /= '' )
-        write(fstdout,*) vars_zm(i)
-        i = i + 1
+      ivar = 1
+      do while ( vars_zm(ivar) /= '' )
+        write(fstdout,*) vars_zm(ivar)
+        ivar = ivar + 1
       end do
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
         write(fstdout,*) "vars_LH_zt = "
-        i = 1
-        do while ( vars_LH_zt(i) /= '' )
-          write(fstdout,*) vars_LH_zt(i)
-          i = i + 1
+        ivar = 1
+        do while ( vars_LH_zt(ivar) /= '' )
+          write(fstdout,*) vars_LH_zt(ivar)
+          ivar = ivar + 1
         end do
 
         write(fstdout,*) "vars_LH_sfc = "
-        i = 1
-        do while ( vars_LH_sfc(i) /= '' )
-          write(fstdout,*) vars_LH_sfc(i)
-          i = i + 1
+        ivar = 1
+        do while ( vars_LH_sfc(ivar) /= '' )
+          write(fstdout,*) vars_LH_sfc(ivar)
+          ivar = ivar + 1
         end do
       end if ! LH_microphys_type /= LH_microphys_disabled
 
       if ( l_output_rad_files ) then
         write(fstdout,*) "vars_rad_zt = "
-        i = 1
-        do while ( vars_rad_zt(i) /= '' )
-          write(fstdout,*) vars_rad_zt(i)
-          i = i + 1
+        ivar = 1
+        do while ( vars_rad_zt(ivar) /= '' )
+          write(fstdout,*) vars_rad_zt(ivar)
+          ivar = ivar + 1
         end do
 
         write(fstdout,*) "vars_rad_zm = "
-        i = 1
-        do while ( vars_rad_zm(i) /= '' )
-          write(fstdout,*) vars_rad_zm(i)
-          i = i + 1
+        ivar = 1
+        do while ( vars_rad_zm(ivar) /= '' )
+          write(fstdout,*) vars_rad_zm(ivar)
+          ivar = ivar + 1
         end do
       end if ! l_output_rad_files
 
       write(fstdout,*) "vars_sfc = "
-      i = 1
-      do while ( vars_sfc(i) /= '' )
-        write(fstdout,*) vars_sfc(i)
-        i = i + 1
+      ivar = 1
+      do while ( vars_sfc(ivar) /= '' )
+        write(fstdout,*) vars_sfc(ivar)
+        ivar = ivar + 1
       end do
 
       write(fstdout,*) "--------------------------------------------------"
@@ -411,13 +411,13 @@ module stats_subs
 
     ! Initialize zt (mass points)
 
-    i = 1
-    do while ( ichar(vars_zt(i)(1:1)) /= 0  & 
-               .and. len_trim(vars_zt(i)) /= 0 & 
-               .and. i <= nvarmax_zt )
-      i = i + 1
+    ivar = 1
+    do while ( ichar(vars_zt(ivar)(1:1)) /= 0  & 
+               .and. len_trim(vars_zt(ivar)) /= 0 & 
+               .and. ivar <= nvarmax_zt )
+      ivar = ivar + 1
     end do
-    ntot = i - 1
+    ntot = ivar - 1
     if ( ntot == nvarmax_zt ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_zt than allowed for by nvarmax_zt."
@@ -521,13 +521,13 @@ module stats_subs
 
     if ( LH_microphys_type /= LH_microphys_disabled ) then
 
-      i = 1
-      do while ( ichar(vars_LH_zt(i)(1:1)) /= 0  & 
-                 .and. len_trim(vars_LH_zt(i)) /= 0 & 
-                 .and. i <= nvarmax_LH_zt )
-        i = i + 1
+      ivar = 1
+      do while ( ichar(vars_LH_zt(ivar)(1:1)) /= 0  & 
+                 .and. len_trim(vars_LH_zt(ivar)) /= 0 & 
+                 .and. ivar <= nvarmax_LH_zt )
+        ivar = ivar + 1
       end do
-      ntot = i - 1
+      ntot = ivar - 1
       if ( ntot == nvarmax_LH_zt ) then
         write(fstderr,*) "There are more statistical variables listed in ",  &
                          "vars_zt than allowed for by nvarmax_LH_zt."
@@ -579,13 +579,13 @@ module stats_subs
 
       call stats_init_LH_zt( vars_LH_zt, l_error )
 
-      i = 1
-      do while ( ichar(vars_LH_sfc(i)(1:1)) /= 0  & 
-                 .and. len_trim(vars_LH_sfc(i)) /= 0 & 
-                 .and. i <= nvarmax_LH_sfc )
-        i = i + 1
+      ivar = 1
+      do while ( ichar(vars_LH_sfc(ivar)(1:1)) /= 0  & 
+                 .and. len_trim(vars_LH_sfc(ivar)) /= 0 & 
+                 .and. ivar <= nvarmax_LH_sfc )
+        ivar = ivar + 1
       end do
-      ntot = i - 1
+      ntot = ivar - 1
       if ( ntot == nvarmax_LH_sfc ) then
         write(fstderr,*) "There are more statistical variables listed in ",  &
                          "vars_zt than allowed for by nvarmax_LH_sfc."
@@ -641,13 +641,13 @@ module stats_subs
 
     ! Initialize zm (momentum points)
 
-    i = 1
-    do while ( ichar(vars_zm(i)(1:1)) /= 0  & 
-               .and. len_trim(vars_zm(i)) /= 0 & 
-               .and. i <= nvarmax_zm )
-      i = i + 1
+    ivar = 1
+    do while ( ichar(vars_zm(ivar)(1:1)) /= 0  & 
+               .and. len_trim(vars_zm(ivar)) /= 0 & 
+               .and. ivar <= nvarmax_zm )
+      ivar = ivar + 1
     end do
-    ntot = i - 1
+    ntot = ivar - 1
     if ( ntot == nvarmax_zm ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_zm than allowed for by nvarmax_zm."
@@ -742,13 +742,13 @@ module stats_subs
 
     if (l_output_rad_files) then
 
-      i = 1
-      do while ( ichar(vars_rad_zt(i)(1:1)) /= 0  & 
-                 .and. len_trim(vars_rad_zt(i)) /= 0 & 
-                 .and. i <= nvarmax_rad_zt )
-        i = i + 1
+      ivar = 1
+      do while ( ichar(vars_rad_zt(ivar)(1:1)) /= 0  & 
+                 .and. len_trim(vars_rad_zt(ivar)) /= 0 & 
+                 .and. ivar <= nvarmax_rad_zt )
+        ivar = ivar + 1
       end do
-      ntot = i - 1
+      ntot = ivar - 1
       if ( ntot == nvarmax_rad_zt ) then
         write(fstderr,*) "There are more statistical variables listed in ",  &
                          "vars_rad_zt than allowed for by nvarmax_rad_zt."
@@ -801,13 +801,13 @@ module stats_subs
 
       ! Initialize rad_zm (radiation points)
 
-      i = 1
-      do while ( ichar(vars_rad_zm(i)(1:1)) /= 0  & 
-                 .and. len_trim(vars_rad_zm(i)) /= 0 & 
-                 .and. i <= nvarmax_rad_zm )
-        i = i + 1
+      ivar = 1
+      do while ( ichar(vars_rad_zm(ivar)(1:1)) /= 0  & 
+                 .and. len_trim(vars_rad_zm(ivar)) /= 0 & 
+                 .and. ivar <= nvarmax_rad_zm )
+        ivar = ivar + 1
       end do
-      ntot = i - 1
+      ntot = ivar - 1
       if ( ntot == nvarmax_rad_zm ) then
         write(fstderr,*) "There are more statistical variables listed in ",  &
                          "vars_rad_zm than allowed for by nvarmax_rad_zm."
@@ -863,13 +863,13 @@ module stats_subs
 
     ! Initialize sfc (surface point)
 
-    i = 1
-    do while ( ichar(vars_sfc(i)(1:1)) /= 0  & 
-               .and. len_trim(vars_sfc(i)) /= 0 & 
-               .and. i <= nvarmax_sfc )
-      i = i + 1
+    ivar = 1
+    do while ( ichar(vars_sfc(ivar)(1:1)) /= 0  & 
+               .and. len_trim(vars_sfc(ivar)) /= 0 & 
+               .and. ivar <= nvarmax_sfc )
+      ivar = ivar + 1
     end do
-    ntot = i - 1
+    ntot = ivar - 1
     if ( ntot == nvarmax_sfc ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_sfc than allowed for by nvarmax_sfc."
@@ -974,7 +974,7 @@ module stats_subs
   end subroutine stats_zero
 
   !-----------------------------------------------------------------------
-  subroutine stats_avg( kk, nn, x, n )
+  subroutine stats_avg( ii, jj, kk, nn, x, n )
 
     ! Description:
     !   Compute the average of stats fields
@@ -992,14 +992,16 @@ module stats_subs
 
     ! Input Variable(s)
     integer, intent(in) :: &
+      ii, & ! Number of points in X (i.e. latitude) dimension
+      jj, & ! Number of points in Y (i.e. longitude) dimension
       kk, & ! Number of levels in vertical (i.e. Z) dimension
       nn    ! Number of variables being sampled in x
 
-    integer(kind=stat_nknd), dimension(1,1,kk,nn), intent(in) :: &
+    integer(kind=stat_nknd), dimension(ii,jj,kk,nn), intent(in) :: &
       n ! The variable n is the number of samples per x per kk
 
     ! Output Variable(s)
-    real(kind=stat_rknd), dimension(1,1,kk,nn), intent(inout) :: &
+    real(kind=stat_rknd), dimension(ii,jj,kk,nn), intent(inout) :: &
       x ! The variable x is a set of nn variables being averaged over n
 
     ! ---- Begin Code ----
@@ -1118,7 +1120,7 @@ module stats_subs
 
     ! Local Variables
 
-    integer :: i, k
+    integer :: ivar, k
 
     logical :: l_error
 
@@ -1133,165 +1135,165 @@ module stats_subs
 
     ! Look for errors by checking the number of sampling points
     ! for each variable in the zt statistics at each vertical level.
-    do i = 1, zt%nn
+    do ivar = 1, zt%nn
       do k = 1, zt%kk
 
-        if ( zt%n(1,1,k,i) /= 0 .and.  &
-             zt%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
+        if ( zt%n(1,1,k,ivar) /= 0 .and.  &
+             zt%n(1,1,k,ivar) /= floor(stats_tout/stats_tsamp) ) then
 
           l_error = .true.  ! This will stop the run
 
           if ( clubb_at_least_debug_level( 1 ) ) then
             write(fstderr,*) 'Possible sampling error for variable ',  &
-                             trim(zt%f%var(i)%name), ' in zt ',  &
+                             trim(zt%f%var(ivar)%name), ' in zt ',  &
                              'at k = ', k,  &
-                             '; zt%n(',k,',',i,') = ', zt%n(1,1,k,i)
+                             '; zt%n(',k,',',ivar,') = ', zt%n(1,1,k,ivar)
           end if ! clubb_at_lest_debug_level 1
 
         end if ! n /= 0 and n /= stats_tout/stats_tsamp
 
       end do ! k = 1 .. zt%kk
-    end do ! i = 1 .. zt%nn
+    end do ! ivar = 1 .. zt%nn
 
     ! Look for errors by checking the number of sampling points
     ! for each variable in the zm statistics at each vertical level.
-    do i = 1, zm%nn
+    do ivar = 1, zm%nn
       do k = 1, zm%kk
 
-        if ( zm%n(1,1,k,i) /= 0 .and.  &
-             zm%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
+        if ( zm%n(1,1,k,ivar) /= 0 .and.  &
+             zm%n(1,1,k,ivar) /= floor(stats_tout/stats_tsamp) ) then
 
           l_error = .true.  ! This will stop the run
 
           if ( clubb_at_least_debug_level( 1 ) ) then
             write(fstderr,*) 'Possible sampling error for variable ',  &
-                             trim(zm%f%var(i)%name), ' in zm ',  &
+                             trim(zm%f%var(ivar)%name), ' in zm ',  &
                              'at k = ', k,  &
-                             '; zm%n(',k,',',i,') = ', zm%n(1,1,k,i)
+                             '; zm%n(',k,',',ivar,') = ', zm%n(1,1,k,ivar)
           end if ! clubb_at_least_debug_level 1
 
         end if ! n /= 0 and n /= stats_tout/stats_tsamp
 
       end do ! k = 1 .. zm%kk
-    end do ! i = 1 .. zm%nn
+    end do ! ivar = 1 .. zm%nn
 
     if ( LH_microphys_type /= LH_microphys_disabled ) then
       ! Look for errors by checking the number of sampling points
       ! for each variable in the LH_zt statistics at each vertical level.
-      do i = 1, LH_zt%nn
+      do ivar = 1, LH_zt%nn
         do k = 1, LH_zt%kk
 
-          if ( LH_zt%n(1,1,k,i) /= 0 .and.  &
-               LH_zt%n(1,1,k,i) /= floor( stats_tout/stats_tsamp ) .and. &
-               LH_zt%n(1,1,k,i) /= LH_microphys_calls * floor( stats_tout/stats_tsamp ) ) then
+          if ( LH_zt%n(1,1,k,ivar) /= 0 .and.  &
+               LH_zt%n(1,1,k,ivar) /= floor( stats_tout/stats_tsamp ) .and. &
+               LH_zt%n(1,1,k,ivar) /= LH_microphys_calls * floor( stats_tout/stats_tsamp ) ) then
 
             l_error = .true.  ! This will stop the run
 
             if ( clubb_at_least_debug_level( 1 ) ) then
               write(fstderr,*) 'Possible sampling error for variable ',  &
-                trim(LH_zt%f%var(i)%name), ' in LH_zt ',  &
+                trim(LH_zt%f%var(ivar)%name), ' in LH_zt ',  &
                 'at k = ', k,  &
-                '; LH_zt%n(',k,',',i,') = ', LH_zt%n(1,1,k,i)
+                '; LH_zt%n(',k,',',ivar,') = ', LH_zt%n(1,1,k,ivar)
             end if ! clubb_at_lest_debug_level 1
 
           end if ! n /= 0 and n /= LH_microphys_calls * stats_tout/stats_tsamp
 
         end do ! k = 1 .. LH_zt%kk
-      end do ! i = 1 .. LH_zt%nn
+      end do ! ivar = 1 .. LH_zt%nn
 
       ! Look for errors by checking the number of sampling points
       ! for each variable in the LH_zt statistics at each vertical level.
-      do i = 1, LH_sfc%nn
+      do ivar = 1, LH_sfc%nn
         do k = 1, LH_sfc%kk
 
-          if ( LH_sfc%n(1,1,k,i) /= 0 .and.  &
-               LH_sfc%n(1,1,k,i) /= floor( stats_tout/stats_tsamp ) .and. &
-               LH_sfc%n(1,1,k,i) /= LH_microphys_calls * floor( stats_tout/stats_tsamp ) ) then
+          if ( LH_sfc%n(1,1,k,ivar) /= 0 .and.  &
+               LH_sfc%n(1,1,k,ivar) /= floor( stats_tout/stats_tsamp ) .and. &
+               LH_sfc%n(1,1,k,ivar) /= LH_microphys_calls * floor( stats_tout/stats_tsamp ) ) then
 
             l_error = .true.  ! This will stop the run
 
             if ( clubb_at_least_debug_level( 1 ) ) then
               write(fstderr,*) 'Possible sampling error for variable ',  &
-                trim(LH_sfc%f%var(i)%name), ' in LH_sfc ',  &
+                trim(LH_sfc%f%var(ivar)%name), ' in LH_sfc ',  &
                 'at k = ', k,  &
-                '; LH_sfc%n(',k,',',i,') = ', LH_sfc%n(1,1,k,i)
+                '; LH_sfc%n(',k,',',ivar,') = ', LH_sfc%n(1,1,k,ivar)
             end if ! clubb_at_lest_debug_level 1
 
           end if ! n /= 0 and n /= LH_microphys_calls * stats_tout/stats_tsamp
 
         end do ! k = 1 .. LH_sfc%kk
-      end do ! i = 1 .. LH_sfc%nn
+      end do ! ivar = 1 .. LH_sfc%nn
     end if ! LH_microphys_type /= LH_microphys_disabled
 
 
     if ( l_output_rad_files ) then
       ! Look for errors by checking the number of sampling points
       ! for each variable in the rad_zt statistics at each vertical level.
-      do i = 1, rad_zt%nn
+      do ivar = 1, rad_zt%nn
         do k = 1, rad_zt%kk
 
-          if ( rad_zt%n(1,1,k,i) /= 0 .and.  &
-               rad_zt%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
+          if ( rad_zt%n(1,1,k,ivar) /= 0 .and.  &
+               rad_zt%n(1,1,k,ivar) /= floor(stats_tout/stats_tsamp) ) then
 
             l_error = .true.  ! This will stop the run
 
             if ( clubb_at_least_debug_level( 1 ) ) then
               write(fstderr,*) 'Possible sampling error for variable ',  &
-                               trim(rad_zt%f%var(i)%name), ' in rad_zt ',  &
+                               trim(rad_zt%f%var(ivar)%name), ' in rad_zt ',  &
                                'at k = ', k,  &
-                               '; rad_zt%n(',k,',',i,') = ', rad_zt%n(1,1,k,i)
+                               '; rad_zt%n(',k,',',ivar,') = ', rad_zt%n(1,1,k,ivar)
             end if ! clubb_at_lest_debug_level 1
 
           end if ! n /= 0 and n /= stats_tout/stats_tsamp
 
         end do ! k = 1 .. rad_zt%kk
-      end do !  i = 1 .. rad_zt%nn
+      end do !  ivar = 1 .. rad_zt%nn
 
       ! Look for errors by checking the number of sampling points
       ! for each variable in the rad_zm statistics at each vertical level.
-      do i = 1, rad_zm%nn
+      do ivar = 1, rad_zm%nn
         do k = 1, rad_zm%kk
 
-          if ( rad_zm%n(1,1,k,i) /= 0 .and.  &
-               rad_zm%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
+          if ( rad_zm%n(1,1,k,ivar) /= 0 .and.  &
+               rad_zm%n(1,1,k,ivar) /= floor(stats_tout/stats_tsamp) ) then
 
             l_error = .true.  ! This will stop the run
 
             if ( clubb_at_least_debug_level( 1 ) ) then
               write(fstderr,*) 'Possible sampling error for variable ',  &
-                               trim(rad_zm%f%var(i)%name), ' in rad_zm ',  &
+                               trim(rad_zm%f%var(ivar)%name), ' in rad_zm ',  &
                                'at k = ', k,  &
-                               '; rad_zm%n(',k,',',i,') = ', rad_zm%n(1,1,k,i)
+                               '; rad_zm%n(',k,',',ivar,') = ', rad_zm%n(1,1,k,ivar)
             end if ! clubb_at_lest_debug_level 1
 
           end if ! n /= 0 and n /= stats_tout/stats_tsamp
 
         end do ! k = 1 .. rad_zm%kk
-      end do !  i = 1 .. rad_zm%nn
+      end do !  ivar = 1 .. rad_zm%nn
 
     end if ! l_output_rad_files
 
     ! Look for errors by checking the number of sampling points
     ! for each variable in the sfc statistics at each vertical level.
-    do i = 1, sfc%nn
+    do ivar = 1, sfc%nn
       do k = 1, sfc%kk
 
-        if ( sfc%n(1,1,k,i) /= 0 .and.  &
-             sfc%n(1,1,k,i) /= floor(stats_tout/stats_tsamp) ) then
+        if ( sfc%n(1,1,k,ivar) /= 0 .and.  &
+             sfc%n(1,1,k,ivar) /= floor(stats_tout/stats_tsamp) ) then
 
           l_error = .true.  ! This will stop the run
 
           if ( clubb_at_least_debug_level( 1 ) ) then
             write(fstderr,*) 'Possible sampling error for variable ',  &
-                             trim(sfc%f%var(i)%name), ' in sfc ',  &
+                             trim(sfc%f%var(ivar)%name), ' in sfc ',  &
                              'at k = ', k,  &
-                             '; sfc%n(',k,',',i,') = ', sfc%n(1,1,k,i)
+                             '; sfc%n(',k,',',ivar,') = ', sfc%n(1,1,k,ivar)
           end if ! clubb_at_lest_debug_level 1
 
         end if ! n /= 0 and n /= stats_tout/stats_tsamp
 
       end do ! k = 1 .. sfc%kk
-    end do !  i = 1 .. sfc%nn
+    end do !  ivar = 1 .. sfc%nn
 
     ! Stop the run if errors are found.
     if ( l_error ) then
@@ -1302,17 +1304,17 @@ module stats_subs
     end if ! l_error
 
     ! Compute averages
-    call stats_avg( zt%kk, zt%nn, zt%x, zt%n )
-    call stats_avg( zm%kk, zm%nn, zm%x, zm%n )
+    call stats_avg( zt%ii, zt%jj, zt%kk, zt%nn, zt%x, zt%n )
+    call stats_avg( zm%ii, zm%jj, zm%kk, zm%nn, zm%x, zm%n )
     if ( LH_microphys_type /= LH_microphys_disabled ) then
-      call stats_avg( LH_zt%kk, LH_zt%nn, LH_zt%x, LH_zt%n )
-      call stats_avg( LH_sfc%kk, LH_sfc%nn, LH_sfc%x, LH_sfc%n )
+      call stats_avg( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn, LH_zt%x, LH_zt%n )
+      call stats_avg( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn, LH_sfc%x, LH_sfc%n )
     end if
     if ( l_output_rad_files ) then
-      call stats_avg( rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n )
-      call stats_avg( rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n )
+      call stats_avg( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n )
+      call stats_avg( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n )
     end if
-    call stats_avg( sfc%kk, sfc%nn, sfc%x, sfc%n )
+    call stats_avg( sfc%ii, sfc%jj, sfc%kk, sfc%nn, sfc%x, sfc%n )
 
     ! Write to file
     if ( l_grads ) then
@@ -1721,7 +1723,7 @@ module stats_subs
 
     ! Local Variables
 
-    integer :: i, k
+    integer :: ivar, isclr, k
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       T_in_K, &  ! Absolute temperature         [K]
@@ -1842,16 +1844,16 @@ module stats_subs
       end if
 
       if ( sclr_dim > 0 ) then
-        do i=1, sclr_dim
-          call stat_update_var( isclrm(i), sclrm(:,i), zt )
-          call stat_update_var( isclrm_f(i), sclrm_forcing(:,i),  zt )
+        do isclr=1, sclr_dim
+          call stat_update_var( isclrm(isclr), sclrm(:,isclr), zt )
+          call stat_update_var( isclrm_f(isclr), sclrm_forcing(:,isclr),  zt )
         end do
       end if
 
       if ( edsclr_dim > 0 ) then
-        do i=1, edsclr_dim
-          call stat_update_var( iedsclrm(i), edsclrm(:,i), zt )
-          call stat_update_var( iedsclrm_f(i), edsclrm_forcing(:,i), zt )
+        do isclr = 1, edsclr_dim
+          call stat_update_var( iedsclrm(isclr), edsclrm(:,isclr), zt )
+          call stat_update_var( iedsclrm_f(isclr), edsclrm_forcing(:,isclr), zt )
         end do
       end if
 
@@ -1897,22 +1899,22 @@ module stats_subs
       call stat_update_var( ithlm_zm, thlm_zm, zm )
 
       if ( sclr_dim > 0 ) then
-        do i=1, sclr_dim
-          call stat_update_var( isclrp2(i), sclrp2(:,i), zm )
-          call stat_update_var( isclrprtp(i), sclrprtp(:,i), zm )
-          call stat_update_var( isclrpthvp(i), sclrpthvp(:,i), zm )
-          call stat_update_var( isclrpthlp(i), sclrpthlp(:,i), zm )
-          call stat_update_var( isclrprcp(i), sclrprcp(:,i), zm )
-          call stat_update_var( iwpsclrp(i), wpsclrp(:,i), zm )
-          call stat_update_var( iwp2sclrp(i), wp2sclrp(:,i), zm )
-          call stat_update_var( iwpsclrp2(i), wpsclrp2(:,i), zm )
-          call stat_update_var( iwpsclrprtp(i), wpsclrprtp(:,i), zm )
-          call stat_update_var( iwpsclrpthlp(i), wpsclrpthlp(:,i), zm )
+        do isclr=1, sclr_dim
+          call stat_update_var( isclrp2(isclr), sclrp2(:,isclr), zm )
+          call stat_update_var( isclrprtp(isclr), sclrprtp(:,isclr), zm )
+          call stat_update_var( isclrpthvp(isclr), sclrpthvp(:,isclr), zm )
+          call stat_update_var( isclrpthlp(isclr), sclrpthlp(:,isclr), zm )
+          call stat_update_var( isclrprcp(isclr), sclrprcp(:,isclr), zm )
+          call stat_update_var( iwpsclrp(isclr), wpsclrp(:,isclr), zm )
+          call stat_update_var( iwp2sclrp(isclr), wp2sclrp(:,isclr), zm )
+          call stat_update_var( iwpsclrp2(isclr), wpsclrp2(:,isclr), zm )
+          call stat_update_var( iwpsclrprtp(isclr), wpsclrprtp(:,isclr), zm )
+          call stat_update_var( iwpsclrpthlp(isclr), wpsclrpthlp(:,isclr), zm )
         end do
       end if
       if ( edsclr_dim > 0 ) then
-        do i=1, edsclr_dim
-          call stat_update_var( iwpedsclrp(i), wpedsclrp(:,i), zm )
+        do isclr = 1, edsclr_dim
+          call stat_update_var( iwpedsclrp(isclr), wpedsclrp(:,isclr), zm )
         end do
       end if
 
