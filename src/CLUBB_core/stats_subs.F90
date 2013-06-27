@@ -148,8 +148,12 @@ module stats_subs
 
     implicit none
 
-    ! Input Variables
+    ! Constant Parameters
+    integer, parameter :: &
+      nlat = 1, &
+      nlon = 1
 
+    ! Input Variables
     integer, intent(in) :: iunit  ! File unit for fnamelist
 
     character(len=*), intent(in) ::  & 
@@ -488,14 +492,14 @@ module stats_subs
 
       ! Open GrADS file
       call open_grads( iunit, fdir, fname,  & 
-                       1, zt%kk, zt%z, & 
+                       1, zt%kk, nlat, nlon, zt%z, & 
                        day, month, year, rlat, rlon, & 
                        time_current+stats_tout, stats_tout, & 
                        zt%nn, zt%f )
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf( 1, 1, fdir, fname, 1, zt%kk, zt%z, &  ! In
+      call open_netcdf( nlat, nlon, fdir, fname, 1, zt%kk, zt%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
                         time_current+stats_tout, stats_tout, zt%nn, &  ! In
                         zt%f ) ! InOut
@@ -551,14 +555,14 @@ module stats_subs
 
         ! Open GrADS file
         call open_grads( iunit, fdir, fname,  & 
-                         1, LH_zt%kk, LH_zt%z, & 
+                         1, LH_zt%kk, nlat, nlon, LH_zt%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
                          LH_zt%nn, LH_zt%f )
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( 1, 1, fdir, fname, 1, LH_zt%kk, LH_zt%z, &  ! In
+        call open_netcdf( nlat, nlon, fdir, fname, 1, LH_zt%kk, LH_zt%z, &  ! In
                           day, month, year, rlat, rlon, &  ! In
                           time_current+stats_tout, stats_tout, LH_zt%nn, &  ! In
                           LH_zt%f ) ! InOut
@@ -607,14 +611,14 @@ module stats_subs
 
         ! Open GrADS file
         call open_grads( iunit, fdir, fname,  & 
-                         1, LH_sfc%kk, LH_sfc%z, & 
+                         1, LH_sfc%kk, nlat, nlon, LH_sfc%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
                          LH_sfc%nn, LH_sfc%f )
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( 1, 1, fdir, fname, 1, LH_sfc%kk, LH_sfc%z, &  ! In
+        call open_netcdf( nlat, nlon, fdir, fname, 1, LH_sfc%kk, LH_sfc%z, &  ! In
                           day, month, year, rlat, rlon, &  ! In
                           time_current+stats_tout, stats_tout, LH_sfc%nn, &  ! In
                           LH_sfc%f ) ! InOut
@@ -706,14 +710,14 @@ module stats_subs
 
       ! Open GrADS files
       call open_grads( iunit, fdir, fname,  & 
-                       1, zm%kk, zm%z, & 
+                       1, zm%kk, nlat, nlon, zm%z, & 
                        day, month, year, rlat, rlon, & 
                        time_current+stats_tout, stats_tout, & 
                        zm%nn, zm%f )
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf( 1, 1, fdir, fname, 1, zm%kk, zm%z, &  ! In
+      call open_netcdf( nlat, nlon, fdir, fname, 1, zm%kk, zm%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
                         time_current+stats_tout, stats_tout, zm%nn, &  ! In
                         zm%f ) ! InOut
@@ -764,14 +768,14 @@ module stats_subs
 
         ! Open GrADS files
         call open_grads( iunit, fdir, fname,  & 
-                         1, rad_zt%kk, rad_zt%z, & 
+                         1, rad_zt%kk, nlat, nlon, rad_zt%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
                          rad_zt%nn, rad_zt%f )
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( 1, 1, fdir, fname,  & 
+        call open_netcdf( nlat, nlon, fdir, fname,  & 
                           1, rad_zt%kk, rad_zt%z, & 
                           day, month, year, rlat, rlon, & 
                           time_current+stats_tout, stats_tout, & 
@@ -861,14 +865,14 @@ module stats_subs
 
         ! Open GrADS files
         call open_grads( iunit, fdir, fname,  & 
-                         1, rad_zm%kk, rad_zm%z, & 
+                         1, rad_zm%kk, nlat, nlon, rad_zm%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
                          rad_zm%nn, rad_zm%f )
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( 1, 1, fdir, fname,  & 
+        call open_netcdf( nlat, nlon, fdir, fname,  & 
                           1, rad_zm%kk, rad_zm%z, & 
                           day, month, year, rlat, rlon, & 
                           time_current+stats_tout, stats_tout, & 
@@ -922,14 +926,14 @@ module stats_subs
 
       ! Open GrADS files
       call open_grads( iunit, fdir, fname,  & 
-                       1, sfc%kk, sfc%z, & 
+                       1, sfc%kk, nlat, nlon, sfc%z, & 
                        day, month, year, rlat, rlon, & 
-                         time_current+stats_tout, stats_tout, & 
-                         sfc%nn, sfc%f )
+                       time_current+stats_tout, stats_tout, & 
+                       sfc%nn, sfc%f )
 
     else ! Open NetCDF files
 #ifdef NETCDF
-      call open_netcdf( 1, 1, fdir, fname, 1, sfc%kk, sfc%z, &  ! In
+      call open_netcdf( nlat, nlon, fdir, fname, 1, sfc%kk, sfc%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
                         time_current+stats_tout, stats_tout, sfc%nn, &  ! In
                         sfc%f ) ! InOut
@@ -2396,25 +2400,6 @@ module stats_subs
         zmscr15, & 
         zmscr16, & 
         zmscr17
-
-    !use stats_variables, only: &
-    !    radscr01, &  ! Variable(s)
-    !    radscr02, &
-    !    radscr03, &
-    !    radscr04, &
-    !    radscr05, &
-    !    radscr06, &
-    !    radscr07, &
-    !    radscr08, &
-    !    radscr09, &
-    !    radscr10, &
-    !    radscr11, &
-    !    radscr12, &
-    !    radscr13, &
-    !    radscr14, &
-    !    radscr15, &
-    !    radscr16, &
-    !    radscr17
 
     use stats_variables, only: & 
       isclrm, & 

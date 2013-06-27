@@ -37,7 +37,7 @@ module output_grads
 
 !-------------------------------------------------------------------------------
   subroutine open_grads( iunit, fdir, fname,  & 
-                         ia, iz, z, & 
+                         ia, iz, nlat, nlon, z, & 
                          day, month, year, rlat, rlon, & 
                          time, dtwrite, & 
                          nvar, grads_file )
@@ -69,18 +69,24 @@ module output_grads
       fname    ! Name of file                          [-]
 
     integer, intent(in) :: & 
-      ia,                    & ! Lower Bound of z      [-]
-      iz                       ! Upper Bound of z      [-]
+      ia,   & ! Lower Bound of z (altitude)                     [-]
+      iz,   & ! Upper Bound of z (altitude)                     [-]
+      nlat, & ! Number of points in the x direction (latitude)  [-]
+      nlon    ! Number of points in the y direction (longitude) [-]
 
-    real( kind = core_rknd ), dimension(:), intent(in) :: z
+    real( kind = core_rknd ), dimension(:), intent(in) :: &
+      z ! Vertical levels       [m]
 
     integer, intent(in) ::  & 
       day,           & ! Day of Month at Model Start    [dd]
       month,         & ! Month of Year at Model start   [mm]
       year             ! Year at Model Start            [yyyy]
 
-    real( kind = core_rknd ), dimension(1), intent(in) :: &
-      rlat, rlon ! Latitude and Longitude [Degrees N/E]
+    real( kind = core_rknd ), dimension(nlat), intent(in) :: &
+      rlat ! Latitude [Degrees E]
+
+    real( kind = core_rknd ), dimension(nlon), intent(in) :: &
+      rlon ! Longitude [Degrees N]
 
     real(kind=time_precision), intent(in) ::  & 
       time,     & ! Time since Model start          [s]
@@ -124,7 +130,10 @@ module output_grads
     grads_file%month = month
     grads_file%year  = year
 
-    allocate( grads_file%rlat(1), grads_file%rlon(1) )
+    grads_file%nlat  = nlat
+    grads_file%nlon  = nlon
+
+    allocate( grads_file%rlat(nlat), grads_file%rlon(nlon) )
 
     grads_file%rlat  = rlat
     grads_file%rlon  = rlon

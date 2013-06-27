@@ -138,7 +138,7 @@ module output_netcdf
       write(unit=fstderr,fmt=*) "Error opening file: ",  & 
         trim( fdir )//trim( fname )//'.nc', & 
         trim( nf90_strerror( stat ) )
-      stop
+      stop "Fatal Error"
     end if
 
     call define_netcdf( ncf%iounit, ncf%nlat, ncf%nlon, ncf%iz, & ! In
