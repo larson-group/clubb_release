@@ -17,9 +17,9 @@ module stats_subs
   !-----------------------------------------------------------------------
   subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, &
                          stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
-                         nzmax, gzt, gzm, nnrad_zt, &
+                         nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
-                         rlat, rlon, time_current, delt )
+                         rlon, rlat, time_current, delt )
     !
     ! Description:
     !   Initializes the statistics saving functionality of the CLUBB model.
@@ -148,11 +148,6 @@ module stats_subs
 
     implicit none
 
-    ! Constant Parameters
-    integer, parameter :: &
-      nlat = 1, &
-      nlon = 1
-
     ! Input Variables
     integer, intent(in) :: iunit  ! File unit for fnamelist
 
@@ -172,7 +167,10 @@ module stats_subs
     character(len=*), intent(in) :: &
       fnamelist          ! Filename holding the &statsnl
 
-    integer, intent(in) :: nzmax ! Grid points in the vertical [count]
+    integer, intent(in) :: &
+      nlon, & ! Number of points in the X direction [-]
+      nlat, & ! Number of points in the Y direction [-]
+      nzmax   ! Grid points in the vertical         [-]
 
     real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
       gzt, gzm  ! Thermodynamic and momentum levels           [m]
@@ -187,8 +185,11 @@ module stats_subs
 
     integer, intent(in) :: day, month, year  ! Time of year
 
-    real( kind = core_rknd ), dimension(1), intent(in) ::  & 
-      rlat, rlon   ! Latitude and Longitude             [Degrees N/E]
+    real( kind = core_rknd ), dimension(nlon), intent(in) ::  & 
+      rlon  ! Longitude(s) [Degrees E]
+
+    real( kind = core_rknd ), dimension(nlat), intent(in) ::  & 
+      rlat  ! Latitude(s)  [Degrees N]
 
     real(kind=time_precision), intent(in) ::  & 
       time_current ! Model time                         [s]

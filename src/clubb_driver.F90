@@ -284,6 +284,8 @@ module clubb_driver
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file
 
+    integer, parameter :: nlon = 1, nlat = 1 ! Number of points in the X/Y [-]
+
     ! Input Variables
     logical, intent(in) ::  & 
       l_stdout   ! Whether to print output per timestep
@@ -1046,19 +1048,17 @@ module clubb_driver
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
-                       gr%nz, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
+                       gr%nz, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
-                       complete_momentum(2:total_atmos_dim + 1), & ! Intent(in)
-                       day, month, year, & ! Intent(in)
-                       (/rlat/), (/rlon/), time_current, dt_main ) ! Intent(in)
+                       complete_momentum(2:total_atmos_dim + 1), day, month, year, & ! Intent(in)
+                       (/rlon/), (/rlat/), time_current, dt_main ) ! Intent(in)
     else
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
-                       gr%nz, gr%zt, gr%zm, 0, & ! Intent(in)
-                       rad_dummy, 0, rad_dummy, & ! Intent(in)
-                       day, month, year, & ! Intent(in)
-                       (/rlat/), (/rlon/), time_current, dt_main ) ! Intent(in)
+                       gr%nz, nlon, nlat, gr%zt, gr%zm, 0, & ! Intent(in)
+                       rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)
+                       (/rlon/), (/rlat/), time_current, dt_main ) ! Intent(in)
     end if
   
 
