@@ -22,7 +22,7 @@ DEBUG="-debug full -traceback -check bounds -check uninit -fpe0 -ftz -ftrapuv"
 WARNINGS="-warn -warn notruncated_source"
 
 # == Machine specific options ==
-ARCH="-xHost" # This should work on most modern AMD/Intel computers
+ARCH="-xHost -openmp" # This should work on most modern AMD/Intel computers
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-real-size 64"
 
@@ -44,7 +44,7 @@ LAPACK="-mkl=sequential"
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK"
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 
