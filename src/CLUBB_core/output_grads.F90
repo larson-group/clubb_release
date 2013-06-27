@@ -71,8 +71,8 @@ module output_grads
     integer, intent(in) :: & 
       ia,   & ! Lower Bound of z (altitude)                     [-]
       iz,   & ! Upper Bound of z (altitude)                     [-]
-      nlat, & ! Number of points in the x direction (latitude)  [-]
-      nlon    ! Number of points in the y direction (longitude) [-]
+      nlat, & ! Number of points in the y direction (latitude)  [-]
+      nlon    ! Number of points in the x direction (longitude) [-]
 
     real( kind = core_rknd ), dimension(:), intent(in) :: &
       z ! Vertical levels       [m]
