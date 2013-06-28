@@ -480,6 +480,9 @@ module output_grads
       time_precision, & ! Variable(s)
       core_rknd
 
+!   use stat_file_module, only: &
+!     clubb_i, clubb_j ! Variable(s)
+
     implicit none
 
     ! External
@@ -495,8 +498,8 @@ module output_grads
 
     ! Local Variables
     integer ::  & 
-      i,     & ! Loop indices
-      ios   ! I/O status
+      ivar, & ! Loop indices
+      ios     ! I/O status indicator
 
     character(len=15) :: date
 
@@ -514,7 +517,7 @@ module output_grads
     open( unit=grads_file%iounit, & 
           file=trim( grads_file%fdir )//trim( grads_file%fname )//'.dat', & 
           form='unformatted', access='direct', & 
-          recl=F_RECL*abs( grads_file%iz-grads_file%ia+1 ), & 
+          recl=F_RECL*abs( grads_file%iz-grads_file%ia+1 )*grads_file%nlon*grads_file%nlat, & 
           status='unknown', iostat=ios )
     if ( ios /= 0 ) then
       write(unit=fstderr,fmt=*)  & 
@@ -524,16 +527,18 @@ module output_grads
     end if
 
     if ( grads_file%ia <= grads_file%iz ) then
-      do i=1,grads_file%nvar
-        write(grads_file%iounit,rec=grads_file%nrecord)  & 
-          real( grads_file%var(i)%ptr(1,1,grads_file%ia:grads_file%iz), kind=r4)
+      do ivar=1,grads_file%nvar
+        write(grads_file%iounit,rec=grads_file%nrecord)  &
+          real( grads_file%var(ivar)%ptr(1:grads_file%nlon, &
+                                         1:grads_file%nlat,grads_file%ia:grads_file%iz), kind=r4)
         grads_file%nrecord = grads_file%nrecord + 1
       end do
 
     else
-      do i=1, grads_file%nvar
+      do ivar=1, grads_file%nvar
         write(grads_file%iounit,rec=grads_file%nrecord) & 
-          real( grads_file%var(i)%ptr(1,1,grads_file%ia:grads_file%iz:-1), kind=r4)
+          real( grads_file%var(ivar)%ptr(1:grads_file%nlon, &
+                                         1:grads_file%nlat,grads_file%ia:grads_file%iz:-1), kind=r4)
         grads_file%nrecord = grads_file%nrecord + 1
       end do
 
@@ -574,27 +579,33 @@ module output_grads
 
     write(unit=grads_file%iounit,fmt='(a)') 'DSET ^'//trim( grads_file%fname )//'.dat'
     write(unit=grads_file%iounit,fmt='(a,e11.5)') 'UNDEF ',undef
-    if ( grads_file%nlon == 1 .and. grads_file%nlat == 1 ) then
+
+    if ( grads_file%nlon == 1 ) then ! Use linear for a singleton X dimesion
       write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'XDEF    1 LINEAR ', grads_file%rlon, ' 1.'
-      write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'YDEF    1 LINEAR ', grads_file%rlat, ' 1.'
     else
       write(unit=grads_file%iounit,fmt='(a,i5,a)') 'XDEF', grads_file%nlon,' LEVELS '
       write(unit=grads_file%iounit,fmt='(6f13.4)') grads_file%rlon
+    end if
+
+    if ( grads_file%nlat == 1 ) then ! Use linear for a singleton Y dimension
+      write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'YDEF    1 LINEAR ', grads_file%rlat, ' 1.'
+    else
       write(unit=grads_file%iounit,fmt='(a,i5,a)') 'YDEF', grads_file%nlat,' LEVELS '
       write(unit=grads_file%iounit,fmt='(6f13.4)') grads_file%rlat
     end if
-    if ( grads_file%ia == grads_file%iz ) then
+
+    if ( grads_file%ia == grads_file%iz ) then ! If ia == iz, then Z is also singleton
       write(unit=grads_file%iounit,fmt='(a)') 'ZDEF    1 LEVELS 0.'
     else if ( grads_file%ia < grads_file%iz ) then
       write(unit=grads_file%iounit,fmt='(a,i5,a)')  & 
         'ZDEF', abs(grads_file%iz-grads_file%ia)+1,' LEVELS '
       write(unit=grads_file%iounit,fmt='(6f13.4)')  & 
-        (grads_file%z(i-grads_file%ia+1),i=grads_file%ia,grads_file%iz)
+        (grads_file%z(ivar-grads_file%ia+1),ivar=grads_file%ia,grads_file%iz)
     else
       write(unit=grads_file%iounit,fmt='(a,i5,a)')  & 
         'ZDEF',abs(grads_file%iz-grads_file%ia)+1,' LEVELS '
-      write(grads_file%iounit,'(6f13.4)') (grads_file%z(grads_file%ia-i+1), &
-        i=grads_file%ia,grads_file%iz,-1)
+      write(grads_file%iounit,'(6f13.4)') (grads_file%z(grads_file%ia-ivar+1), &
+        ivar=grads_file%ia,grads_file%iz,-1)
     end if
 
     call format_date( grads_file%day, grads_file%month, grads_file%year, grads_file%time, & ! In
@@ -609,11 +620,11 @@ module output_grads
     ! Variables description
     write(unit=grads_file%iounit,fmt='(a,i5)') 'VARS', grads_file%nvar
 
-    do i=1, grads_file%nvar, 1
+    do ivar=1, grads_file%nvar, 1
       write(unit=grads_file%iounit,fmt='(a,i5,a,a)') & 
-        grads_file%var(i)%name(1:len_trim(grads_file%var(i)%name)), & 
+        grads_file%var(ivar)%name(1:len_trim(grads_file%var(ivar)%name)), & 
         abs(grads_file%iz-grads_file%ia)+1,' 99 ', & 
-        grads_file%var(i)%description(1:len_trim(grads_file%var(i)%description))
+        grads_file%var(ivar)%description(1:len_trim(grads_file%var(ivar)%description))
     end do
 
     write(unit=grads_file%iounit,fmt='(a)') 'ENDVARS'

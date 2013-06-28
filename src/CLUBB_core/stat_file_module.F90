@@ -16,6 +16,12 @@ module stat_file_module
 
    public :: variable, stat_file
 
+   ! These are used in a 2D or 3D host model to output multiple columns
+   ! Set clubb_i and clubb_j according to the column within the host model;
+   ! The indices must not exceed nlon (for i) or nlat (for j).
+   integer, save, public :: clubb_i = 1, clubb_j = 1
+!$omp threadprivate(clubb_i, clubb_j)
+
    private ! Default scope
    
   ! Structure to hold the description of a variable

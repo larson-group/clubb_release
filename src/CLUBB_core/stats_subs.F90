@@ -985,8 +985,11 @@ module stats_subs
     !   None
     !-----------------------------------------------------------------------
     use clubb_precision, only: & 
-        stat_rknd,   & ! Variable(s)
-        stat_nknd
+      stat_rknd,   & ! Variable(s)
+      stat_nknd
+
+    use stat_file_module, only: &
+      clubb_i, clubb_j ! Variable(s)
 
     implicit none
 
@@ -1011,7 +1014,8 @@ module stats_subs
 
     ! Compute averages
     where ( n(1,1,1:kk,1:nn) > 0 )
-      x(1,1,1:kk,1:nn) = x(1,1,1:kk,1:nn) / real( n(1,1,1:kk,1:nn), kind=stat_rknd )
+      x(clubb_i,clubb_j,1:kk,1:nn) = x(clubb_i,clubb_j,1:kk,1:nn) &
+         / real( n(clubb_i,clubb_j,1:kk,1:nn), kind=stat_rknd )
     end where
 
     return
@@ -1110,6 +1114,10 @@ module stats_subs
     use parameters_microphys, only: &
       LH_microphys_type, & ! Variable(s)
       LH_microphys_calls
+
+    use stat_file_module, only: &
+      clubb_i, & ! Variable(s)
+      clubb_j
 
 #ifdef NETCDF
     use output_netcdf, only: & 
@@ -1319,53 +1327,58 @@ module stats_subs
     end if
     call stats_avg( sfc%ii, sfc%jj, sfc%kk, sfc%nn, sfc%x, sfc%n )
 
-    ! Write to file
-    if ( l_grads ) then
-      call write_grads( zt%f  )
-      call write_grads( zm%f  )
-      if ( LH_microphys_type /= LH_microphys_disabled ) then
-        call write_grads( LH_zt%f  )
-        call write_grads( LH_sfc%f  )
-      end if
-      if ( l_output_rad_files ) then
-        call write_grads( rad_zt%f  )
-        call write_grads( rad_zm%f  )
-      end if
-      call write_grads( sfc%f  )
-    else ! l_netcdf
+    ! Only write to the file and zero out the stats fields if we've reach the horizontal
+    ! limits of the domain (this is always true in the single-column case because it's 1x1).
+    if ( clubb_i == zt%ii .and. clubb_j == zt%jj ) then
+      ! Write to file
+      if ( l_grads ) then
+        call write_grads( zt%f  )
+        call write_grads( zm%f  )
+        if ( LH_microphys_type /= LH_microphys_disabled ) then
+          call write_grads( LH_zt%f  )
+          call write_grads( LH_sfc%f  )
+        end if
+        if ( l_output_rad_files ) then
+          call write_grads( rad_zt%f  )
+          call write_grads( rad_zm%f  )
+        end if
+        call write_grads( sfc%f  )
+      else ! l_netcdf
 #ifdef NETCDF
-      call write_netcdf( zt%f  )
-      call write_netcdf( zm%f  )
+        call write_netcdf( zt%f  )
+        call write_netcdf( zm%f  )
+        if ( LH_microphys_type /= LH_microphys_disabled ) then
+          call write_netcdf( LH_zt%f  )
+          call write_netcdf( LH_sfc%f  )
+        end if
+        if ( l_output_rad_files ) then
+          call write_netcdf( rad_zt%f  )
+          call write_netcdf( rad_zm%f  )
+        end if
+        call write_netcdf( sfc%f  )
+#else
+        stop "This program was not compiled with netCDF support"
+#endif /* NETCDF */
+      end if ! l_grads
+
+      ! Reset sample fields
+      call stats_zero( zt%ii, zt%jj, zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
+      call stats_zero( zm%ii, zm%jj, zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
       if ( LH_microphys_type /= LH_microphys_disabled ) then
-        call write_netcdf( LH_zt%f  )
-        call write_netcdf( LH_sfc%f  )
+        call stats_zero( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn, &
+                         LH_zt%x, LH_zt%n, LH_zt%l_in_update )
+        call stats_zero( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn, &
+                         LH_sfc%x, LH_sfc%n, LH_sfc%l_in_update )
       end if
       if ( l_output_rad_files ) then
-        call write_netcdf( rad_zt%f  )
-        call write_netcdf( rad_zm%f  )
+        call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, &
+                         rad_zt%x, rad_zt%n, rad_zt%l_in_update )
+        call stats_zero( rad_zt%ii, rad_zt%jj, rad_zm%kk, rad_zm%nn, &
+                         rad_zm%x, rad_zm%n, rad_zm%l_in_update )
       end if
-      call write_netcdf( sfc%f  )
-#else
-      stop "This program was not compiled with netCDF support"
-#endif /* NETCDF */
-    end if ! l_grads
+      call stats_zero( sfc%ii, sfc%jj, sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%l_in_update )
 
-    ! Reset sample fields
-    call stats_zero( zt%ii, zt%jj, zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
-    call stats_zero( zm%ii, zm%jj, zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
-    if ( LH_microphys_type /= LH_microphys_disabled ) then
-      call stats_zero( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn, &
-                       LH_zt%x, LH_zt%n, LH_zt%l_in_update )
-      call stats_zero( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn, &
-                       LH_sfc%x, LH_sfc%n, LH_sfc%l_in_update )
-    end if
-    if ( l_output_rad_files ) then
-      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, &
-                       rad_zt%x, rad_zt%n, rad_zt%l_in_update )
-      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zm%kk, rad_zm%nn, &
-                       rad_zm%x, rad_zm%n, rad_zm%l_in_update )
-    end if
-    call stats_zero( sfc%ii, sfc%jj, sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%l_in_update )
+    end if ! clubb_i = zt%ii .and. clubb_j == zt%jj
 
 
     return
