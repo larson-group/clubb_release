@@ -38,12 +38,12 @@ module stats_type
     integer :: nn
 
     integer :: &
-      ii, & ! Horizontal extent of the variables (currently 1)
-      jj, & ! Horizontal extent of the variables (currently 1)
-      kk    ! Vertical extent of the variables
+      ii, & ! Horizontal extent of the variables (Usually 1 for the single-column model)
+      jj, & ! Horizontal extent of the variables (Usually 1 for the single-column model)
+      kk    ! Vertical extent of the variables (Usually gr%nz from grid_class)
 
     ! Vertical levels
-    real( kind = core_rknd ), pointer, dimension(:) :: z
+    real( kind = core_rknd ), pointer, dimension(:) :: z ! [m]
 
     ! Array to store sampled fields
 
@@ -64,10 +64,13 @@ module stats_type
 
   !=============================================================================
   subroutine stat_assign( var_index, var_name,  & 
-                     var_description, var_units, grid_kind )
+                          var_description, var_units, grid_kind )
 
     ! Description: 
     !   Assigns pointers for statistics variables in grid.
+    !
+    ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     implicit none
