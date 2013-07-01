@@ -2223,7 +2223,8 @@ module inputfields
                                time, nearest_timestep )
 
     ! Description:
-    ! Given a time 'time', determines the closest output time in a GrADS file.
+    ! Given a time 'time', determines the closest output time in a GrADS (or
+    ! NetCDF) file.
 
     !-----------------------------------------------------------------------
 
@@ -2264,7 +2265,7 @@ module inputfields
 
     ! Output Variable(s)
     integer, intent(out) ::  & 
-      nearest_timestep ! Nearest GrADS output time to time [min]
+      nearest_timestep ! Nearest integer output time to time [units vary]
 
     ! Local Variables
     type (stat_file) :: fread_var
@@ -2532,7 +2533,7 @@ module inputfields
 
 #ifdef NETCDF
       do file_index=1, size(stat_files)
-        call open_netcdf_read( "THETAL", stat_files(file_index),  &
+        call open_netcdf_read( "U", stat_files(file_index),  &
                               fread_vars(file_index), l_internal_error )
         l_error = l_error .or. l_internal_error
       end do ! file_index=1, size(stat_files)

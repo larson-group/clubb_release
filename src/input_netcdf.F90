@@ -6,6 +6,7 @@ module input_netcdf
   use constants_clubb, only:  & 
     fstdout,    & ! Variable(s) 
     fstderr,    &
+    sec_per_day,&
     sec_per_hr, &
     sec_per_min 
 
@@ -46,6 +47,14 @@ module input_netcdf
       time_precision, &
       core_rknd
 
+    use calendar, only: &
+      gregorian2julian_date
+
+    use clubb_model_settings, only: &
+      clubb_day   => day, &
+      clubb_month => month, &
+      clubb_year  => year
+
     implicit none
 
     ! Input Variables
@@ -65,9 +74,10 @@ module input_netcdf
 
     integer :: xdim, ydim, ndims
     
-    real( kind = core_rknd ) :: hours, minutes, seconds, multiplier
+    real( kind = time_precision ) :: hours, minutes, seconds, multiplier, delta_d
 
-    integer :: length
+    integer :: length, netcdf_day, netcdf_month, netcdf_year, &
+               clubb_idate, netcdf_idate
     
     real( kind = core_rknd ), dimension(2) :: write_times
 
@@ -83,8 +93,6 @@ module input_netcdf
 
     ! Initialize l_error to false
     l_error = .false.
-
-    multiplier = 0._core_rknd  ! Initialized to eliminate g95 compiler warning -meyern
 
     ierr = nf90_open( path=trim( path ), mode=NF90_NOWRITE, ncid=ncf%iounit )
 
@@ -210,6 +218,7 @@ module input_netcdf
         return
       end if
 
+      ! Read starting time from the "units" attribute of the netcdf file
       time = trim( time )
       length = len( trim( time ) )
       if ( length < 11 ) then
@@ -220,25 +229,40 @@ module input_netcdf
         l_error = .true.
         return
       end if
+
+      read(time( length-20:length-17), *) netcdf_year
+      read(time( length-15:length-14), *) netcdf_month
+      read(time( length-12:length-11), *) netcdf_day
+
       read(time( length-10:length-8 ), *) hours
       read(time( length-6:length-5 ), *) minutes
       read(time( length-3:length - 2 ), *) seconds
-      ncf%time = real( hours * real( sec_per_hr, kind = core_rknd ) + minutes *&
-                       real( sec_per_min, kind = core_rknd ) + seconds, &
-                       kind=time_precision )
+
+      ! Compute delta_d, the difference in days between the netcdf file's start
+      ! date and CLUBB's start date (netcdf_date - clubb_date). This difference
+      ! should be added to ncf%time to fix an inconsistency that is caused when
+      ! the netcdf date differs from CLUBB's date.
+      ! July 2013 Eric Raut
+      clubb_idate = gregorian2julian_date( clubb_day, clubb_month, clubb_year)
+      netcdf_idate = gregorian2julian_date( netcdf_day, netcdf_month, netcdf_year)
+      delta_d = real( netcdf_idate - clubb_idate, kind=time_precision )
+
+      ncf%time = (hours * sec_per_hr) + (minutes * sec_per_min) + seconds + &
+                 (delta_d * sec_per_day)
 
       ! Figure out what units Time is in so dtwrite can be set correctly
       select case ( time( 1:index ( time, ' ' ) ) )
       case ( "hours" )
-        multiplier = real( sec_per_hr, kind = core_rknd )
+        multiplier = sec_per_hr
 
       case ( "minutes" )
-        multiplier = real( sec_per_min, kind = core_rknd )
+        multiplier = sec_per_min
 
       case ( "seconds" )
-        multiplier = 1._core_rknd
+        multiplier = 1._time_precision
 
       case default
+        multiplier = 0._time_precision  ! Initialized to eliminate g95 compiler warning -meyern
         l_error = .true.
         return
 
@@ -254,7 +278,7 @@ module input_netcdf
         return
       end if
 
-      ncf%dtwrite = real( (write_times(2) - write_times(1)) * multiplier, kind=time_precision )
+      ncf%dtwrite = real( (write_times(2) - write_times(1)), kind = time_precision) * multiplier
 
     end if
 
