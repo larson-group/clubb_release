@@ -23,10 +23,11 @@ module generate_lh_sample_module
 
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
-             ( n_micro_calls, d_variables, hydromet_dim, & 
+             ( d_variables, hydromet_dim, & 
                wm, rcm, Ncm, rvm, thlm, & 
                mixt_frac, &
-               w1_in, w2_in, varnce_w1_in, varnce_w2_in, &
+               w1_in, w2_in, rc1_in, rc2_in, &
+               varnce_w1_in, varnce_w2_in, &
                thl1_in, thl2_in, varnce_thl1_in, varnce_thl2_in, &
                rt1_in, rt2_in, varnce_rt1_in, varnce_rt2_in, &
                s1_in, s2_in, &
@@ -147,7 +148,6 @@ module generate_lh_sample_module
 
     ! Input Variables
     integer, intent(in) :: &
-      n_micro_calls, & ! `n' Number of calls to microphysics (normally=2)
       d_variables,   & ! `d' Number of variates (normally 3 + microphysics specific variables)
       hydromet_dim,  & ! Number of hydrometeor species
       hgt_level        ! current height level (for stats output)
@@ -163,7 +163,9 @@ module generate_lh_sample_module
       thlm          ! Mean liquid potential temperature   [K]
 
     real( kind = core_rknd ), intent(in) :: &
-      mixt_frac,      & ! Mixture fraction					[-]
+      mixt_frac,      & ! Mixture fraction                                        [-]
+      rc1_in,         & ! Mean of rc for 1st normal distribution              [kg/kg]
+      rc2_in,         & ! Mean of rc for 2nd normal distribution              [kg/kg]
       w1_in,          & ! Mean of w for 1st normal distribution                 [m/s]
       w2_in,          & ! Mean of w for 2nd normal distribution                 [m/s]
       varnce_w1_in,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
@@ -198,18 +200,18 @@ module generate_lh_sample_module
       corr_array_cloud, & ! Correlations in cloud for sampled variables  [-]
       corr_array_below    ! Correlations out of cloud                    [-]
 
-    real( kind = dp ), intent(in), dimension(n_micro_calls,d_variables+1) :: & 
+    real( kind = dp ), intent(in), dimension(d_variables+1) :: & 
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
 
-    integer, intent(in), dimension(n_micro_calls) :: &
+    integer, intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(n_micro_calls) :: &
+    real( kind = core_rknd ), intent(out) :: &
       LH_rt, & ! Total water mixing ratio          [kg/kg]
       LH_thl   ! Liquid potential temperature      [K]
 
-    real( kind = dp ), intent(out), dimension(n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
     ! Local Variables
@@ -448,12 +450,15 @@ module generate_lh_sample_module
     ! x'^2 /  xm^2 terms.
 
     ! We define in cloud to be those points where mean liquid water is greater
-    ! than rc_tol.  This is consistent with analytic K&K code.
-    if ( rcm > rc_tol ) then
+    ! than rc_tol.  This should be done consistently with analytic K&K code.
+    if ( X_mixt_comp_one_lev == 1 .and. rc1_in > rc_tol ) then
       xp2_on_xm2_array => xp2_on_xm2_array_cloud
       corr_array => corr_array_cloud
       l_in_cloud = .true.
-
+    else if ( X_mixt_comp_one_lev == 2 .and. rc2_in > rc_tol ) then
+      xp2_on_xm2_array => xp2_on_xm2_array_cloud
+      corr_array => corr_array_cloud
+      l_in_cloud = .true.
     else
       xp2_on_xm2_array => xp2_on_xm2_array_below
       corr_array => corr_array_below
@@ -812,12 +817,12 @@ module generate_lh_sample_module
       end if ! clubb_at_least_debug_level( 2 )
 
       ! Compute cholesky factorization Sigma_stw_1 / Sigma_stw_2
-      if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 1 ) ) then
+      if ( X_mixt_comp_one_lev == 1 ) then
         call Cholesky_factor( d_variables, Sigma_stw_1, & ! In
                               Sigma1_scaling, Sigma1_Cholesky, l_Sigma1_scaling ) ! Out
       end if
 
-      if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 2 ) ) then
+      if ( X_mixt_comp_one_lev == 2 ) then
         call Cholesky_factor( d_variables, real(Sigma_stw_2, kind = dp), & ! In
                               Sigma2_scaling, Sigma2_Cholesky, l_Sigma2_scaling ) ! Out
       end if
@@ -877,7 +882,7 @@ module generate_lh_sample_module
         Sigma2_scaling = corr_stw_below_scaling
       end if
 
-      if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 1 ) ) then
+      if ( X_mixt_comp_one_lev == 1 ) then
 
         Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
 
@@ -898,7 +903,7 @@ module generate_lh_sample_module
         end do
       end if ! any( X_mixt_comp_one_lev(1:n) == 1 )
 
-      if ( any( X_mixt_comp_one_lev(1:n_micro_calls) == 2 ) ) then
+      if ( X_mixt_comp_one_lev == 2 ) then
         Sigma2_Cholesky = 0._dp
 
         temp_3_elements = (/ dble( stdev_s2 ), dble( stdev_t2 ), sqrt( dble( varnce_w2 ) ) /)
@@ -922,7 +927,7 @@ module generate_lh_sample_module
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
-    call sample_points( n_micro_calls, d_variables, dble( mixt_frac ), &  ! In
+    call sample_points( d_variables, dble( mixt_frac ), &  ! In
                         dble( rt1 ), dble( thl1 ), &  ! In
                         dble( rt2 ), dble( thl2 ), &  ! In
                         dble( crt1 ), dble( cthl1 ), &  ! In
@@ -941,7 +946,7 @@ module generate_lh_sample_module
   end subroutine generate_lh_sample
 
 !---------------------------------------------------------------------------------------------------
-  subroutine sample_points( n_micro_calls, d_variables, mixt_frac, & 
+  subroutine sample_points( d_variables, mixt_frac, & 
                             rt1, thl1, rt2, thl2, & 
                             crt1, cthl1, crt2, cthl2, & 
                             mu1, mu2,  & 
@@ -979,7 +984,6 @@ module generate_lh_sample_module
 
     ! Input variables
     integer, intent(in) :: &
-      n_micro_calls, & ! `n'   Number of calls to microphysics (normally=2)
       d_variables      ! Number of variates (normally=5)
 
     ! Weight of 1st Gaussian, 0 <= mixt_frac <= 1
@@ -1007,10 +1011,10 @@ module generate_lh_sample_module
     logical, intent(in), dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
 
-    real( kind = dp ), intent(in), dimension(n_micro_calls,d_variables+1) :: &
+    real( kind = dp ), intent(in), dimension(d_variables+1) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from particular grid level [-]
 
-    integer, intent(in), dimension(n_micro_calls) :: &
+    integer, intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
     ! Columns of Sigma_Cholesky, X_nl_one_lev:  1   2   3   4 ... d_variables
@@ -1027,24 +1031,18 @@ module generate_lh_sample_module
 
     ! Output Variables
     ! Total water, theta_l: mean plus perturbations
-    real( kind = core_rknd ), intent(out), dimension(n_micro_calls) :: &
+    real( kind = core_rknd ), intent(out) :: &
       LH_rt,  & ! Total water   [kg/kg]
       LH_thl    ! Liquid potential temperature  [K]
 
-    real( kind = dp ), intent(out), dimension(n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
-
-    ! Local Variables
-    integer :: sample
 
     ! ---- Begin Code ----
 
-    sample = 1       ! These lines prevent a g95 compiler error for uninitialized variable and
-    sample = sample  ! unused variable. -meyern
-
     ! Generate n samples of a d-variate Gaussian mixture
     ! by transforming Latin hypercube points, X_u_one_lev.
-    call gaus_mixt_points( n_micro_calls, d_variables, mixt_frac, mu1, mu2, &  ! In
+    call gaus_mixt_points( d_variables, mixt_frac, mu1, mu2, &  ! In
                            Sigma1_Cholesky, Sigma2_Cholesky, & ! In
                            Sigma1_scaling, Sigma2_scaling, & ! In
                            l_Sigma1_scaling, l_Sigma2_scaling, & ! In
@@ -1055,25 +1053,23 @@ module generate_lh_sample_module
 ! Transform s (column 1) and t (column 2) back to rt and thl
 ! This is only needed if you need rt, thl in your microphysics.
 !     call sptp_2_rtpthlp &
-!          ( n_micro_calls, d_variables, mixt_frac, crt1, cthl1, crt2, cthl2, &
-!            cloud_frac1, cloud_frac2, X_nl_one_lev(1:n_micro_calls,1), &
-!            X_nl_one_lev(1:n_micro_calls,2), &
+!          ( 1, d_variables, mixt_frac, crt1, cthl1, crt2, cthl2, &
+!            cloud_frac1, cloud_frac2, X_nl_one_lev(1), &
+!            X_nl_one_lev(2), &
 !            X_u_one_lev, rtp, thlp )
-    call st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & ! In
+    call st_2_rtthl( mixt_frac, rt1, thl1, rt2, thl2, & ! In
                      crt1, cthl1, crt2, cthl2, & ! In
                      cloud_frac1, cloud_frac2, & ! In
                      dble( mu1(iiLH_s_mellor) ), dble( mu2(iiLH_s_mellor) ), & ! In
-                     X_nl_one_lev(1:n_micro_calls,iiLH_s_mellor), & ! In
-                     X_nl_one_lev(1:n_micro_calls,iiLH_t_mellor), & ! In
+                     X_nl_one_lev(iiLH_s_mellor), & ! In
+                     X_nl_one_lev(iiLH_t_mellor), & ! In
                      X_mixt_comp_one_lev, & ! In
                      LH_rt, LH_thl ) ! Out
 
     ! Convert lognormal variates (e.g. Nc and rr) to lognormal
-    forall ( sample = 1:n_micro_calls )
-      where ( l_d_variable_lognormal )
-        X_nl_one_lev(sample,:) = exp( X_nl_one_lev(sample,:) )
-      end where
-    end forall
+    where ( l_d_variable_lognormal )
+      X_nl_one_lev(:) = exp( X_nl_one_lev(:) )
+    end where
 
     return
   end subroutine sample_points
@@ -1252,7 +1248,7 @@ module generate_lh_sample_module
   end function choose_permuted_random
 
 !----------------------------------------------------------------------
-  subroutine gaus_mixt_points( n_micro_calls, d_variables, mixt_frac, mu1, mu2, &
+  subroutine gaus_mixt_points( d_variables, mixt_frac, mu1, mu2, &
                                Sigma1_Cholesky, Sigma2_Cholesky, &
                                Sigma1_scaling, Sigma2_scaling, &
                                l_Sigma1_scaling, l_Sigma2_scaling, &
@@ -1284,7 +1280,6 @@ module generate_lh_sample_module
     ! Input Variables
 
     integer, intent(in) :: &
-      n_micro_calls, &  ! Number of calls to microphysics (normally=2) 
       d_variables       ! Number of variates (normally=5)
 
     real( kind = dp ), intent(in) :: &
@@ -1295,7 +1290,7 @@ module generate_lh_sample_module
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
     ! Latin hypercube sample from uniform distribution from a particular grid level
-    real( kind = dp ), intent(in), dimension(n_micro_calls,d_variables+1) :: &
+    real( kind = dp ), intent(in), dimension(d_variables+1) :: &
       X_u_one_lev
 
     real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
@@ -1308,12 +1303,12 @@ module generate_lh_sample_module
     logical, intent(in) :: &
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
 
-    integer, intent(in), dimension(n_micro_calls) :: &
+    integer, intent(in) :: &
       X_mixt_comp_one_lev ! Which mixture component we're in
 
     ! Output Variables
 
-    real( kind = dp ), intent(out), dimension(n_micro_calls,d_variables) :: &
+    real( kind = dp ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! [n by d] matrix, each row of which is a d-dimensional sample
 
     ! Local Variables
@@ -1321,7 +1316,7 @@ module generate_lh_sample_module
     real( kind = dp ), dimension(d_variables) :: &
       std_normal  ! Standard normal multiplied by the factorized Sigma    [-]
 
-    integer :: ivar, sample ! Loop iterators
+    integer :: ivar ! Loop iterators
 
     ! ---- Begin Code ----
 
@@ -1351,38 +1346,34 @@ module generate_lh_sample_module
       end if
     end if
 
-    do sample = 1, n_micro_calls
 
-      ! From Latin hypercube sample, generate standard normal sample
-      do ivar = 1, d_variables
-        std_normal(ivar) = ltqnorm( X_u_one_lev(sample,ivar) )
-      end do
+    ! From Latin hypercube sample, generate standard normal sample
+    do ivar = 1, d_variables
+      std_normal(ivar) = ltqnorm( X_u_one_lev(ivar) )
+    end do
 
 
       ! Determine which mixture fraction we are in.
-      if ( X_mixt_comp_one_lev(sample) == 1 ) then
+    if ( X_mixt_comp_one_lev == 1 ) then
 
-        call multiply_Cholesky &
-            ( d_variables, std_normal, & ! In
-              mu1, Sigma1_Cholesky, &  ! In
-              Sigma1_scaling, l_Sigma1_scaling, & ! In
-              X_nl_one_lev(sample, 1:d_variables) ) ! Out
+      call multiply_Cholesky &
+          ( d_variables, std_normal, & ! In
+            mu1, Sigma1_Cholesky, &  ! In
+            Sigma1_scaling, l_Sigma1_scaling, & ! In
+            X_nl_one_lev(1:d_variables) ) ! Out
 
-      else if ( X_mixt_comp_one_lev(sample) == 2 ) then
+    else if ( X_mixt_comp_one_lev == 2 ) then
 
-        call multiply_Cholesky &
-             ( d_variables, std_normal, & ! In
-               mu2, Sigma2_Cholesky, &  ! In
-               Sigma2_scaling, l_Sigma2_scaling, & ! In
-               X_nl_one_lev(sample, 1:d_variables) ) ! Out
+      call multiply_Cholesky &
+           ( d_variables, std_normal, & ! In
+             mu2, Sigma2_Cholesky, &  ! In
+             Sigma2_scaling, l_Sigma2_scaling, & ! In
+             X_nl_one_lev(1:d_variables) ) ! Out
 
-      else
-        stop "Error determining mixture component in gaus_mixt_points"
+    else
+      stop "Error determining mixture component in gaus_mixt_points"
 
-      end if ! X_mixt_comp_one_lev(sample)
-
-      ! Loop to get new sample
-    end do
+    end if ! X_mixt_comp_one_lev
 
     return
   end subroutine gaus_mixt_points
@@ -1390,7 +1381,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine truncate_gaus_mixt( n_micro_calls, d_variables, col, mixt_frac, mu1, mu2, & 
+  subroutine truncate_gaus_mixt( d_variables, col, mixt_frac, mu1, mu2, & 
                   Sigma1, Sigma2, cloud_frac1, cloud_frac2, X_u_one_lev, &
                   X_mixt_comp_one_lev, truncated_column )
 ! Description:
@@ -1415,7 +1406,6 @@ module generate_lh_sample_module
     ! Input Variables
 
     integer, intent(in) :: &
-      n_micro_calls, &  ! Number of calls to microphysics (normally=2) 
       d_variables,   &  ! Number of variates (normally=5)
       col               ! Scalar indicated which column of X_nl_one_lev to truncate
 
@@ -1430,20 +1420,19 @@ module generate_lh_sample_module
       Sigma1, Sigma2 ! dxd dimensional covariance matrices
 
     ! Latin hypercube sample from uniform distribution from a particular grid level
-    real( kind = dp ), intent(in), dimension(n_micro_calls,d_variables+1) :: &
+    real( kind = dp ), intent(in), dimension(d_variables+1) :: &
       X_u_one_lev
 
-    integer, intent(in), dimension(n_micro_calls) :: &
+    integer, intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
 
     ! Output Variables
 
     ! A column vector of length n that is transformed from a Gaussian PDF to truncated Gaussian PDF.
-    real( kind = dp ), intent(out), dimension(n_micro_calls) :: truncated_column
+    real( kind = dp ), intent(out) :: truncated_column
 
     ! Local Variables
 
-    integer :: sample
     real( kind = dp ) :: s_std
 
     ! ---- Begin Code ----
@@ -1476,35 +1465,31 @@ module generate_lh_sample_module
 
     ! Make s PDF (1st column) a truncated Gaussian.
     ! This allows us to sample solely from the cloud points.
-    do sample = 1, n_micro_calls
 
-      ! Choose which mixture fraction we are in.
-      ! Account for cloud fraction.
-      ! Follow M. E. Johnson (1987), p. 56.
-      if  ( X_mixt_comp_one_lev(sample) == 1 ) then
-        ! Replace first dimension (s) with
-        !  sample from cloud (i.e. truncated standard Gaussian)
-        s_std = ltqnorm( X_u_one_lev( sample, col ) * cloud_frac1 &
-                   + (1._dp - cloud_frac1 ) )
-        ! Convert to nonstandard normal with mean mu1 and variance Sigma1
-        truncated_column(sample) =  & 
-                   s_std * sqrt( Sigma1(col,col) ) + dble( mu1(col) )
-      else if ( X_mixt_comp_one_lev(sample) == 2 ) then
+    ! Choose which mixture fraction we are in.
+    ! Account for cloud fraction.
+    ! Follow M. E. Johnson (1987), p. 56.
+    if  ( X_mixt_comp_one_lev == 1 ) then
+      ! Replace first dimension (s) with
+      !  sample from cloud (i.e. truncated standard Gaussian)
+      s_std = ltqnorm( X_u_one_lev(col) * cloud_frac1 &
+                 + (1._dp - cloud_frac1 ) )
+      ! Convert to nonstandard normal with mean mu1 and variance Sigma1
+      truncated_column =  & 
+                 s_std * sqrt( Sigma1(col,col) ) + dble( mu1(col) )
+    else if ( X_mixt_comp_one_lev == 2 ) then
 
-        ! Replace first dimension (s) with
-        !   sample from cloud (i.e. truncated Gaussian)
-        s_std = ltqnorm( (X_u_one_lev( sample, col ) * cloud_frac2) &
-                  + (1._dp - cloud_frac2) )
+      ! Replace first dimension (s) with
+      !   sample from cloud (i.e. truncated Gaussian)
+      s_std = ltqnorm( (X_u_one_lev(col) * cloud_frac2) &
+            + (1._dp - cloud_frac2) )
 
         ! Convert to nonstandard normal with mean mu2 and variance Sigma2
-        truncated_column(sample) =  & 
-                      s_std * sqrt( Sigma2(col,col) ) + dble( mu2(col) )
-      else
-        stop "Error in truncate_gaus_mixt"
-      end if
-
-      ! Loop to get new sample
-    end do
+      truncated_column =  & 
+                    s_std * sqrt( Sigma2(col,col) ) + dble( mu2(col) )
+    else
+      stop "Error in truncate_gaus_mixt"
+    end if
 
     return
   end subroutine truncate_gaus_mixt
@@ -1741,7 +1726,7 @@ module generate_lh_sample_module
     return
   end subroutine multiply_Cholesky
 !-----------------------------------------------------------------------
-  subroutine st_2_rtthl( n_micro_calls, mixt_frac, rt1, thl1, rt2, thl2, & 
+  subroutine st_2_rtthl( mixt_frac, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
                          cloud_frac1, cloud_frac2, &
                          mu_s1, mu_s2, &
@@ -1782,9 +1767,6 @@ module generate_lh_sample_module
 
     ! Input Variables
 
-    integer, intent(in) :: &
-      n_micro_calls   ! Number of calls to microphysics (normally=2)
-
     real( kind = dp ), intent(in) :: &
       mixt_frac,   & ! Mixture fraction of Gaussians 'mixt_frac' [-]
       rt1, rt2,    & ! n dimensional column vector of rt         [kg/kg]
@@ -1799,21 +1781,19 @@ module generate_lh_sample_module
       mu_s1, mu_s2 ! Mean for s1 and s2         [kg/kg]
 
     ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
-    real( kind = dp ), intent(in), dimension(n_micro_calls) :: &
+    real( kind = dp ), intent(in) :: &
       s_mellor, &  ! [kg/kg]
       t_mellor     ! [-]
 
-    integer, dimension(n_micro_calls), intent(in) :: &
+    integer, intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
 
     ! Output variables
 
-    real( kind = core_rknd ), dimension(n_micro_calls), intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       LH_rt, LH_thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
 
     ! Local Variables
-
-    integer :: sample ! Loop iterator
 
 !   real( kind= dp ) :: cthl1_clip, cthl2_clip, & ! Clipped values of cthl1,2 [kg/kg/K]
     real( kind= dp ) :: LH_dev_thl_lim ! Limited value of the deviation on thetal [K]
@@ -1853,53 +1833,49 @@ module generate_lh_sample_module
       end if
     end if
 
-    do sample = 1, n_micro_calls
 
-      ! Choose which mixture fraction we are in.
-      ! Account for cloud fraction.
-      ! Follow M. E. Johnson (1987), p. 56.
+    ! Choose which mixture fraction we are in.
+    ! Account for cloud fraction.
+    ! Follow M. E. Johnson (1987), p. 56.
 !     fraction_1     = mixt_frac*cloud_frac1 / &
 !                      (mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2)
 
-      if ( X_mixt_comp_one_lev(sample) == 1 ) then
-        LH_rt(sample)  = real( rt1 + (0.5_dp/crt1)*(s_mellor(sample)-mu_s1) +  & 
-                               (0.5_dp/crt1)*t_mellor(sample), kind=core_rknd )
+    if ( X_mixt_comp_one_lev == 1 ) then
+      LH_rt  = real( rt1 + (0.5_dp/crt1)*(s_mellor-mu_s1) +  & 
+                             (0.5_dp/crt1)*t_mellor, kind=core_rknd )
 
-        ! Limit the quantity that temperature can vary by (in K)
-        LH_dev_thl_lim = (-0.5_dp/cthl1)*(s_mellor(sample)-mu_s1) & 
-                       + (0.5_dp/cthl1)*t_mellor(sample)
+      ! Limit the quantity that temperature can vary by (in K)
+      LH_dev_thl_lim = (-0.5_dp/cthl1)*(s_mellor-mu_s1) & 
+                     + (0.5_dp/cthl1)*t_mellor
 
-        LH_dev_thl_lim = max( min( LH_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
+      LH_dev_thl_lim = max( min( LH_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
-        LH_thl(sample) = real( thl1 + LH_dev_thl_lim, kind=core_rknd )
+      LH_thl = real( thl1 + LH_dev_thl_lim, kind=core_rknd )
 
         ! Old code
-!       LH_thl(sample) = real( thl1 + (-0.5_dp/cthl1_clip)*(s_mellor(sample)-mu_s1) +  & 
-!                              (0.5_dp/cthl1_clip)*t_mellor(sample), kind=core_rknd )
+!       LH_thl = real( thl1 + (-0.5_dp/cthl1_clip)*(s_mellor-mu_s1) +  & 
+!                              (0.5_dp/cthl1_clip)*t_mellor, kind=core_rknd )
 
-      else if ( X_mixt_comp_one_lev(sample) == 2 ) then
+    else if ( X_mixt_comp_one_lev == 2 ) then
         ! mixture fraction 2
-        LH_rt(sample)  = real( rt2 + (0.5_dp/crt2)*(s_mellor(sample)-mu_s2) +  & 
-                               (0.5_dp/crt2)*t_mellor(sample), kind=core_rknd )
+      LH_rt = real( rt2 + (0.5_dp/crt2)*(s_mellor-mu_s2) +  & 
+                             (0.5_dp/crt2)*t_mellor, kind=core_rknd )
 
-        ! Limit the quantity that temperature can vary by (in K)
-        LH_dev_thl_lim = (-0.5_dp/cthl2)*(s_mellor(sample)-mu_s2) & 
-                         + (0.5_dp/cthl2)*t_mellor(sample)
+      ! Limit the quantity that temperature can vary by (in K)
+      LH_dev_thl_lim = (-0.5_dp/cthl2)*(s_mellor-mu_s2) & 
+                     + (0.5_dp/cthl2)*t_mellor
 
-        LH_dev_thl_lim = max( min( LH_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
+      LH_dev_thl_lim = max( min( LH_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
-        LH_thl(sample) = real( thl2 + LH_dev_thl_lim, kind=core_rknd )
+      LH_thl = real( thl2 + LH_dev_thl_lim, kind=core_rknd )
 
-        ! Old code
-!       LH_thl(sample) = real( thl2 + (-0.5_dp/cthl2_clip)*(s_mellor(sample)-mu_s2) +  & 
-!                             (0.5_dp/cthl2_clip)*t_mellor(sample), kind=core_rknd )
-      else
-        stop "Error determining mixture fraction in st_2_rtthl"
+      ! Old code
+!     LH_thl = real( thl2 + (-0.5_dp/cthl2_clip)*(s_mellor-mu_s2) +  & 
+!                           (0.5_dp/cthl2_clip)*t_mellor, kind=core_rknd )
+    else
+      stop "Error determining mixture fraction in st_2_rtthl"
 
-      end if
-
-      ! Loop to get new sample
-    end do ! 1..n_micro_calls
+    end if
 
     return
   end subroutine st_2_rtthl
