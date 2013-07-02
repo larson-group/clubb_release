@@ -16,12 +16,12 @@ srcdir="$dir/../src"  # dir where the source files reside
 # == Debugging ==
 # No Debug flags
 DEBUG=""
+# Debugging information and floating-point trapping
 #DEBUG="-g -C -Kieee -Ktrap=fp"
 
 # == Machine specific options ==
-#ARCH="-tp piii"# PGF90, Pentium III
-#ARCH="-tp p7"#	PGF90, Pentium IV
-ARCH="-tp amd64 -Mcache_align" # PGF90, amd64
+# The PGI Fortran compiler will select the native processor type by default
+ARCH="-Mcache_align" # -Mcache_align is included for the use of the ACML
 
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-r8"
@@ -34,12 +34,14 @@ OPTIMIZE="-O2"
 NETCDF="/usr/local/netcdf-pgi"
 
 # == LAPACK libraries ==
-# Portland group usually has static versions of these
+# The PGI directory contains static versions of LAPACK and BLAS
 #LAPACK="-llapack -lblas"
-LAPACK="-L/opt/acml5.0.0/pgi64 -lacml"
+# This will select the version of ACML that PGI provides, which is generally
+# faster than the reference BLAS and LAPACK (above)
+LAPACK="-lacml"
 
 # == Linking Flags ==
-LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK"
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash"
 
@@ -65,4 +67,3 @@ mkmf=$dir/mkmf
 
 # gmake command to use and options: '-j 2' enables parallel compilation
 gmake="make"
-
