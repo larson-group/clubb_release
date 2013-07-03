@@ -3753,7 +3753,8 @@ module clubb_driver
 
     use model_flags, only: &
         l_diagnose_correlations, & ! Variable(s)
-        l_morr_xp2_mc_tndcy
+        l_morr_xp2_mc_tndcy, &
+        l_evaporate_cold_rcm
 
 #else
 #define d_variables 0
@@ -3898,6 +3899,12 @@ module clubb_driver
                         // "(LH_microphys_type = interactive) are incompatible."
        stop
     endif
+
+    if ( l_morr_xp2_mc_tndcy .and. l_evaporate_cold_rcm ) then
+      write(fstderr,*) "Error: l_morr_xp2_mc_tndcy and l_evaporate_cold_rcm " &
+                       //  "are currently incompatible."
+      stop
+    end if
 
     !----------------------------------------------------------------
     ! Compute subcolumns if enabled

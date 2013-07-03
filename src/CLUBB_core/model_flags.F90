@@ -53,6 +53,10 @@ module model_flags
                                   !the morrison micro, and rain evaporation will
                                   !be allowed to increase variances
 
+  logical, parameter, public :: &
+    l_evaporate_cold_rcm = .false. ! Flag to evaporate cloud water at temperatures
+                                   ! colder than -37C.  This is to be used for 
+                                   ! Morrison microphysics, to prevent excess ice
 
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,

@@ -1017,6 +1017,7 @@ module microphys_driver
 
     use model_flags, only: &
         l_hole_fill, & ! Variable(s)
+        l_evaporate_cold_rcm, &
         l_morr_xp2_mc_tndcy
 
     use clubb_precision, only:  & 
@@ -1285,7 +1286,9 @@ module microphys_driver
       T_in_K, & ! Temperature              [K]
       Ncm,    & ! Mean cloud droplet number concentration [#/kg]
       rvm,    & ! Vapor water mixing ratio [kg/kg]
-      thlm_morr ! Thlm fed into morrison microphysics [K]
+      thlm_morr, & ! Thlm fed into morrison microphysics [K]
+      rcm_morr, &  ! rcm fed into morrison microphysics [kg/kg]
+      cloud_frac_morr  ! Cloud fraction fed into morrision microphysics []
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       rrainm_auto, & ! Autoconversion rate for rrainm [kg/kg/s]
@@ -1551,13 +1554,25 @@ module microphys_driver
       rvm_mc(:) = zero
       thlm_mc(:) = zero
 
+      rcm_morr(:) = rcm(:)
+      cloud_frac_morr(:) = cloud_frac(:)
+
+      if ( l_evaporate_cold_rcm  ) then
+        ! Convert liquid to vapor at temperatures colder than -37C
+        where ( T_in_K(:) < 236.15_core_rknd )
+          rcm_morr(:) = 0.0_core_rknd
+          cloud_frac_morr(:) = 0.0_core_rknd
+          hydromet(:,iiNcm) = 0.0_core_rknd
+        end where
+      end if
+ 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef LATIN_HYPERCUBE
         call LH_microphys_driver &
              ( dt, gr%nz, LH_microphys_calls, d_variables, & ! In
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
-               rcm, wtmp, delta_zt, cloud_frac, & ! In
+               rcm_morr, wtmp, delta_zt, cloud_frac_morr, & ! In
                hydromet, X_mixt_comp_all_levs, & !In 
                hydromet_mc, hydromet_vel_zt, & ! In/Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
@@ -1601,8 +1616,8 @@ module microphys_driver
         call morrison_micro_driver & 
              ( dt, gr%nz, l_stats_samp, &
                l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
-               exner, rho, cloud_frac, pdf_params, wtmp, &
-               delta_zt, rcm, Ncm, s_mellor, rvm, Nc_in_cloud, hydromet, &
+               exner, rho, cloud_frac_morr, pdf_params, wtmp, &
+               delta_zt, rcm_morr, Ncm, s_mellor, rvm, Nc_in_cloud, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, &
