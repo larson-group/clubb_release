@@ -153,7 +153,7 @@ micro_scheme = "khairoutdinov_kogan"
 ! See also: rico_corr_array_cloud/below.in for the values of correlations in RICO
 rrp2_on_rrm2_cloud   = 1.0
 Nrp2_on_Nrm2_cloud   = 1.0
-Ncnp2_on_Ncnm2_cloud = 2.2  
+Ncnp2_on_Ncnm2_cloud = 2.2
 
 rrp2_on_rrm2_below   = 1.0
 Nrp2_on_Nrm2_below   = 1.0
