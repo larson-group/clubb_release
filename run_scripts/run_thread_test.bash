@@ -81,6 +81,14 @@ run_parallel()
 	done
 }
 
+# Figure out the directory where the script is located
+scriptPath=`dirname $0`
+
+# Store the current directory location so it can be restored
+restoreDir=`pwd`
+
+# Change directories to the one the script is located in
+cd $scriptPath
 
 # Run in serial mode
 run_serial
@@ -111,5 +119,7 @@ fi
 rm -f 'diff.txt'
 rm -rf $SERIAL
 rm -rf $PARALLEL
+
+cd $restoreDir
 
 exit $RESULT
