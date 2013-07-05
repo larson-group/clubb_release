@@ -173,7 +173,16 @@ module latin_hypercube_driver_module
 
     integer :: ivar ! Loop iterator
 
+    real( kind = core_rknd ), parameter :: &
+      cloud_frac_max_weighted_smpl = 0.5_core_rknd ! Use cloud weighted sampling only if cloud
+                                                       ! fraction is less than
+                                                       ! cloud_frac_max_weighted_smpl
+
     logical :: l_cloudy_sample ! Whether a sample point is cloudy or clear air
+
+    logical :: &
+      l_small_nonzero_cloud_frac ! True if cloud fraction is greater than cloud_frac_thresh
+                                 ! and less than cloud_frac_max_weighted_smpl
 
     integer, dimension(1) :: tmp_loc
 
@@ -253,8 +262,8 @@ module latin_hypercube_driver_module
 
       ! Determine p_matrix at k_lh_start
       p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
-        height_time_matrix(k_lh_start, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
-                           1:d_variables+1)
+        height_time_matrix(k_lh_start, (n_micro_calls*i_rmd+1):(n_micro_calls*i_rmd+n_micro_calls), &
+                           1:(d_variables+1))
     else
       lh_start_cloud_frac = -9999.0_core_rknd  
          ! This assignment eliminates a g95 compiler warning for an uninitialized variable. 
@@ -266,8 +275,8 @@ module latin_hypercube_driver_module
 
       ! Choose which rows of LH sample to feed into closure at the k_lh_start level
       p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
-        height_time_matrix(k_lh_start, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
-                           1:d_variables+1)
+        height_time_matrix(k_lh_start, (n_micro_calls*i_rmd+1):(n_micro_calls*i_rmd+n_micro_calls), &
+                           1:(d_variables+1))
 
       ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level
       !  X_u has one extra dimension for the mixture component.
@@ -285,8 +294,9 @@ module latin_hypercube_driver_module
 
           ! Save the cloud fraction as a weight for averaging preferentially
           ! within cloud
-          if ( lh_start_cloud_frac >= 0.5_core_rknd .or. &
-               lh_start_cloud_frac <= cloud_frac_thresh ) then
+          l_small_nonzero_cloud_frac = (lh_start_cloud_frac < cloud_frac_max_weighted_smpl &
+                                  .and. lh_start_cloud_frac > cloud_frac_thresh)
+          if ( .not. l_small_nonzero_cloud_frac ) then
             LH_sample_point_weights(sample)  = 1.0_core_rknd
             ! There's no cloud or cloud fraction is >= 50%, so we do nothing
 
@@ -411,9 +421,7 @@ module latin_hypercube_driver_module
     ! This is for the uniform sample only.  Another assertion check is in the
     ! estimate_lh_micro_module for X_nl_all_levs.
     if ( l_lh_cloud_weighted_sampling ) then
-      if ( clubb_at_least_debug_level( 2 ) .and. &
-           lh_start_cloud_frac < 0.5_core_rknd .and. &
-           lh_start_cloud_frac > cloud_frac_thresh ) then
+      if ( clubb_at_least_debug_level( 2 ) .and. l_small_nonzero_cloud_frac ) then
         call assert_check_half_cloudy &
              ( n_micro_calls, pdf_params(k_lh_start)%cloud_frac1, &
                pdf_params(k_lh_start)%cloud_frac2, X_mixt_comp_all_levs(k_lh_start,:), &
