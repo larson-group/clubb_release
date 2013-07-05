@@ -113,7 +113,7 @@ module cos_solar_zen_module
     ! Determine the number of hours
     hour = present_time / sec_per_hr
 
-    t = 2._dp*pi_dp*dble( jul_day-1 )/dble( days_in_year )
+    t = 2._dp*pi_dp*real(jul_day-1, kind=dp) / real(days_in_year, kind=dp)
 
     delta = c0  & 
           + c1*cos( t ) + d1*sin( t ) & 
@@ -141,8 +141,8 @@ module cos_solar_zen_module
       stop " > 24 hours in cosine solar zenith code"
     end select
 
-    longang = abs( dble( lon_in_degrees ) - zln ) * radians_per_deg_dp
-    latang  = dble( lat_in_degrees ) * radians_per_deg_dp
+    longang = abs( real(lon_in_degrees, kind=dp) - zln ) * radians_per_deg_dp
+    latang  = real(lat_in_degrees, kind=dp) * radians_per_deg_dp
 
 
     ! Cosine of the solar zenith angle (sometimes denoted amu0).

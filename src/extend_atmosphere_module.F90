@@ -147,33 +147,32 @@ module extend_atmosphere_module
     call read_z_profile( n_snd_var, extend_atmos_dim, sounding_profiles, p_sfc, zm_init, &
                          alt , p_in_Pa, alt_type )
 
-    extend_alt = dble( alt )
+    extend_alt = real(alt, kind=dp)
 
     if ( alt_type == z_name ) then
       write(fstderr,*) "Fatal error in convert_snd2extend_atm."
       stop "Feature not implemented"
     end if
 
-    extend_pinmb = dble( p_in_Pa/ 100._core_rknd )
+    extend_pinmb = real(p_in_Pa/ 100._core_rknd, kind=dp)
 
     ! Convert to temperature from thlm or theta
 
     call read_theta_profile( n_snd_var, extend_atmos_dim, sounding_profiles, theta_type, theta  )
-    extend_T_in_K = dble( theta )
+    extend_T_in_K = real(theta, kind=dp)
 
     if( theta_type /= temperature_name ) then
       exner(1) = ( p_sfc/p0 ) ** kappa
       do i = 2, extend_atmos_dim
         exner(i) = (p_in_Pa(i)/p0) ** kappa
       end do
-      extend_T_in_K = extend_T_in_K * dble( exner )
+      extend_T_in_K = extend_T_in_K * real(exner, kind=dp)
     end if
 
     ! Convert rtm to specific humidity
 
-    extend_sp_hmdty = dble( read_x_profile( n_snd_var, extend_atmos_dim, rt_name, &
-                                            sounding_profiles ) )
-
+    extend_sp_hmdty = real(read_x_profile( n_snd_var, extend_atmos_dim, rt_name, &
+                                            sounding_profiles ), kind=dp)
     extend_sp_hmdty = extend_sp_hmdty / ( extend_sp_hmdty +1._dp )
 
     ! Read in radiation scalars sounding (currently it only holds O3)
@@ -182,9 +181,8 @@ module extend_atmosphere_module
       rad_scalars_sounding_profile ) ! Out
 
     ! Set the array holding the values of o3l (ozone)
-    extend_o3l = dble( read_x_profile( 1, extend_atmos_dim, ozone_name, &
-                                       rad_scalars_sounding_profile ) )
-
+    extend_o3l = real(read_x_profile( 1, extend_atmos_dim, ozone_name, &
+                                       rad_scalars_sounding_profile ), kind=dp)
     ! We would add the setting of new radiation scalar arrays like O3 right
     ! after this. New variable names would have to be added to input_names.
 
