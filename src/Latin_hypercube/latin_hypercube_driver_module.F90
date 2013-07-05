@@ -262,8 +262,9 @@ module latin_hypercube_driver_module
 
       ! Determine p_matrix at k_lh_start
       p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
-        height_time_matrix(k_lh_start, (n_micro_calls*i_rmd+1):(n_micro_calls*i_rmd+n_micro_calls), &
-                           1:(d_variables+1))
+        height_time_matrix(k_lh_start, &
+        (n_micro_calls*i_rmd+1):(n_micro_calls*i_rmd+n_micro_calls), &
+        1:(d_variables+1))
     else
       lh_start_cloud_frac = -9999.0_core_rknd  
          ! This assignment eliminates a g95 compiler warning for an uninitialized variable. 
@@ -275,8 +276,9 @@ module latin_hypercube_driver_module
 
       ! Choose which rows of LH sample to feed into closure at the k_lh_start level
       p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
-        height_time_matrix(k_lh_start, (n_micro_calls*i_rmd+1):(n_micro_calls*i_rmd+n_micro_calls), &
-                           1:(d_variables+1))
+        height_time_matrix(k_lh_start, &
+        (n_micro_calls*i_rmd+1):(n_micro_calls*i_rmd+n_micro_calls), &
+        1:(d_variables+1))
 
       ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level
       !  X_u has one extra dimension for the mixture component.
