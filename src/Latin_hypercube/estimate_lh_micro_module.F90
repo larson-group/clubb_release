@@ -223,8 +223,8 @@ module estimate_lh_micro_module
       ! Call microphysics, i.e. Kessler autoconversion.
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
       call autoconv_estimate &
-           ( n_micro_calls, dble( mixt_frac ), &
-             dble( cloud_frac1 ), dble( cloud_frac2 ), &
+           ( n_micro_calls, real(mixt_frac, kind = dp), &
+             real(cloud_frac1, kind = dp), real(cloud_frac2, kind = dp), &
              rcm_sample, & 
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
              X_mixt_comp_all_levs(level,:), LH_sample_point_weights, lh_AKm_dp )
@@ -234,8 +234,8 @@ module estimate_lh_micro_module
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       call rc_estimate &
-           ( n_micro_calls, dble( mixt_frac ), dble( cloud_frac1 ), &
-             dble( cloud_frac2 ), rcm_sample, & 
+           ( n_micro_calls, real(mixt_frac, kind = dp), real(cloud_frac1, kind = dp), &
+             real(cloud_frac2, kind = dp), rcm_sample, &
              ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
              X_mixt_comp_all_levs(level,: ), lh_rcm_avg_dp )
 

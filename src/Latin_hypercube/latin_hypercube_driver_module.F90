@@ -411,7 +411,7 @@ module latin_hypercube_driver_module
     do k = 1, nz
 
       where ( in_mixt_comp_1( X_u_all_levs(k,:,d_variables+1), &
-           dble(pdf_params(k)%mixt_frac) ) )
+           real(pdf_params(k)%mixt_frac, kind = dp) ) )
         X_mixt_comp_all_levs(k,:) = 1
       else where
         X_mixt_comp_all_levs(k,:) = 2
@@ -447,7 +447,8 @@ module latin_hypercube_driver_module
       ! when we're using 4 or 8 byte precision floats.
       ! -dschanen 19 Nov 2010
       if ( abs( mean_weight - 1.0_dp ) > &
-           dble( real( n_micro_calls, kind=core_rknd ) * epsilon( LH_sample_point_weights ) ) ) then
+          real(real( n_micro_calls, kind=core_rknd ) &
+          * epsilon( LH_sample_point_weights ), kind = dp) ) then
         write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
         stop
       end if
@@ -999,10 +1000,10 @@ module latin_hypercube_driver_module
 !       X_mixt_comp_one_lev = 2
       end if
 
-      if ( X_u_s_mellor_element >= 1._dp-dble( cloud_frac_n ) .and. l_cloudy_sample ) then
+      if ( X_u_s_mellor_element >= 1._dp-real(cloud_frac_n, kind = dp) .and. l_cloudy_sample ) then
         ! If we're looking for the cloudy part of the grid box, then exit this loop
         exit
-      else if ( X_u_s_mellor_element < ( 1._dp-dble( cloud_frac_n ) ) & 
+      else if ( X_u_s_mellor_element < ( 1._dp-real(cloud_frac_n, kind = dp) ) &
                 .and. .not. l_cloudy_sample ) then
         ! If we're looking for the clear part of the grid box, then exit this loop
         exit
@@ -1096,8 +1097,8 @@ module latin_hypercube_driver_module
     call genrand_real3( rand2 ) ! Determine a 2nd rand for the if ... then
 
     if ( l_cloudy_sample ) then
-      cloud_weighted_mixt_frac = dble( mixt_frac*cloud_frac1 ) / &
-                   dble( mixt_frac*cloud_frac1 + (1._core_rknd-mixt_frac)*cloud_frac2 )
+      cloud_weighted_mixt_frac = real(mixt_frac*cloud_frac1, kind = dp) / &
+                   real(mixt_frac*cloud_frac1 + (1._core_rknd-mixt_frac)*cloud_frac2, kind = dp)
 
       if ( in_mixt_comp_1( rand1, cloud_weighted_mixt_frac ) ) then
         ! Component 1
@@ -1127,20 +1128,22 @@ module latin_hypercube_driver_module
       end if
 
     else ! Clear air sample
-      clear_weighted_mixt_frac = ( ( 1._dp - dble( cloud_frac1 ) ) * dble( mixt_frac ) ) &
-        / ( ( 1._dp-dble( cloud_frac1 ) ) * dble( mixt_frac ) &
-             + ( 1._dp-dble( cloud_frac2 ) )*( 1._dp-dble( mixt_frac ) ) )
+      clear_weighted_mixt_frac = ( ( 1._dp - real(cloud_frac1, kind = dp) ) &
+        * real(mixt_frac, kind = dp) ) / ( ( 1._dp-real(cloud_frac1, kind = dp) ) &
+        * real(mixt_frac, kind = dp) + ( 1._dp-real(cloud_frac2, kind = dp) )&
+        *( 1._dp-real(mixt_frac, kind = dp) ) )
 
       if ( in_mixt_comp_1( rand1, clear_weighted_mixt_frac ) ) then
         ! Component 1
-        cloud_frac_n = dble( cloud_frac1 )
+        cloud_frac_n = real(cloud_frac1, kind = dp)
 !       X_mixt_comp_one_lev = 1
-        X_u_dp1_element = dble( mixt_frac ) * real(rand2, kind = dp)
+        X_u_dp1_element = real(mixt_frac, kind = dp) * real(rand2, kind = dp)
       else
         ! Component 2
-        cloud_frac_n = dble( cloud_frac2 )
+        cloud_frac_n = real(cloud_frac2, kind = dp)
 !       X_mixt_comp_one_lev = 2
-        X_u_dp1_element = dble( mixt_frac ) + (1._dp-dble( mixt_frac )) * real(rand2, kind = dp)
+        X_u_dp1_element = real(mixt_frac, kind = dp) &
+        + (1._dp-real(mixt_frac, kind = dp)) * real(rand2, kind = dp)
       end if
 
       call genrand_real3( rand ) ! Rand between (0,1)
@@ -1362,7 +1365,7 @@ module latin_hypercube_driver_module
       else
         cloud_frac_n = cloud_frac2
       end if
-      if ( X_u_s_mellor_k_lh_start(sample) >= dble( 1._core_rknd-cloud_frac_n ) ) then
+      if ( X_u_s_mellor_k_lh_start(sample) >= real(1._core_rknd-cloud_frac_n, kind = dp) ) then
         number_cloudy_samples = number_cloudy_samples + 1
       else
         ! Do nothing, the air is clear

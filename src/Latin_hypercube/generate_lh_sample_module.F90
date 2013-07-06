@@ -550,11 +550,11 @@ module generate_lh_sample_module
       = (/ s2, t2, w2 /)
 
     ! Define the variance of s and t
-    tp2_mellor_1 = dble( stdev_t1 )**2
-    tp2_mellor_2 = dble( stdev_t2 )**2
+    tp2_mellor_1 = real(stdev_t1, kind = dp)**2
+    tp2_mellor_2 = real(stdev_t2, kind = dp)**2
 
-    sp2_mellor_1 = dble( stdev_s1 )**2
-    sp2_mellor_2 = dble( stdev_s2 )**2
+    sp2_mellor_1 = real(stdev_s1, kind = dp)**2
+    sp2_mellor_2 = real(stdev_s2, kind = dp)**2
 
     ! An old subroutine, gaus_rotate, couldn't handle large correlations;
     !   I assume the replacement, gaus_condt, has equal trouble.
@@ -563,10 +563,10 @@ module generate_lh_sample_module
     !   a correlation of exactly 1 without using the modified method -dschanen 11 Oct 2012
     ! max_mag_correlation = 0.99_core_rknd in constants.F90
 
-    sptp_mellor_1 = dble( min( max( -max_mag_correlation * stdev_t1 * stdev_s1, covar_st_1 ), &
-      max_mag_correlation * stdev_t1 * stdev_s1 ) )
-    sptp_mellor_2 = dble( min( max( -max_mag_correlation * stdev_t2 * stdev_s2, covar_st_2 ), &
-      max_mag_correlation * stdev_t2 * stdev_s2 ) )
+    sptp_mellor_1 = real(min( max( -max_mag_correlation * stdev_t1 * stdev_s1, covar_st_1 ), &
+      max_mag_correlation * stdev_t1 * stdev_s1 ), kind = dp)
+    sptp_mellor_2 = real(min( max( -max_mag_correlation * stdev_t2 * stdev_s2, covar_st_2 ), &
+      max_mag_correlation * stdev_t2 * stdev_s2 ), kind = dp)
 
     if ( .not. l_fix_s_t_correlations ) then
 
@@ -886,7 +886,8 @@ module generate_lh_sample_module
 
         Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
 
-        temp_3_elements = (/ dble( stdev_s1 ), dble( stdev_t1 ), sqrt( dble( varnce_w1 ) ) /)
+        temp_3_elements = (/ real(stdev_s1, kind = dp), real(stdev_t1, kind = dp),&
+                             sqrt( real(varnce_w1, kind = dp) ) /)
 
         ! Multiply the first three elements of the variance matrix by the
         ! values of the standard deviation of s1, t1, and w1
@@ -906,7 +907,8 @@ module generate_lh_sample_module
       if ( X_mixt_comp_one_lev == 2 ) then
         Sigma2_Cholesky = 0._dp
 
-        temp_3_elements = (/ dble( stdev_s2 ), dble( stdev_t2 ), sqrt( dble( varnce_w2 ) ) /)
+        temp_3_elements = (/ real(stdev_s2, kind = dp), real(stdev_t2, kind = dp),&
+                             sqrt( real(varnce_w2, kind = dp) ) /)
 
         ! Multiply the first three elements of the variance matrix by the
         ! values of the standard deviation of s2, t2, and w2
@@ -927,20 +929,20 @@ module generate_lh_sample_module
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
-    call sample_points( d_variables, dble( mixt_frac ), &  ! In
-                        dble( rt1 ), dble( thl1 ), &  ! In
-                        dble( rt2 ), dble( thl2 ), &  ! In
-                        dble( crt1 ), dble( cthl1 ), &  ! In
-                        dble( crt2 ), dble( cthl2 ), &  ! In
-                        mu1, mu2, &  ! In
-                        cloud_frac1, cloud_frac2, & ! In 
-                        l_d_variable_lognormal, & ! In
-                        X_u_one_lev, & ! In
-                        X_mixt_comp_one_lev, & ! In
-                        Sigma1_Cholesky, Sigma2_Cholesky, & ! In
-                        Sigma1_scaling, Sigma2_scaling, & ! In
-                        l_Sigma1_scaling, l_Sigma2_scaling, & ! In
-                        LH_rt, LH_thl, X_nl_one_lev ) ! Out
+    call sample_points( d_variables, dble( mixt_frac ), &  ! intent(in
+                        real(rt1, kind = dp), real(thl1, kind = dp), &  ! intent(in)
+                        real(rt2, kind = dp), real(thl2, kind = dp), &  ! intent(in)
+                        real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
+                        real(crt2, kind = dp), real(cthl2, kind = dp), &  ! intent(in)
+                        mu1, mu2, &  ! intent(in)
+                        cloud_frac1, cloud_frac2, & ! intent(in)
+                        l_d_variable_lognormal, & ! intent(in)
+                        X_u_one_lev, & ! intent(in)
+                        X_mixt_comp_one_lev, & ! intent(in)
+                        Sigma1_Cholesky, Sigma2_Cholesky, & ! intent(in)
+                        Sigma1_scaling, Sigma2_scaling, & ! intent(in)
+                        l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
+                        LH_rt, LH_thl, X_nl_one_lev ) ! intent(out)
 
     return
   end subroutine generate_lh_sample
@@ -1042,13 +1044,13 @@ module generate_lh_sample_module
 
     ! Generate n samples of a d-variate Gaussian mixture
     ! by transforming Latin hypercube points, X_u_one_lev.
-    call gaus_mixt_points( d_variables, mixt_frac, mu1, mu2, &  ! In
-                           Sigma1_Cholesky, Sigma2_Cholesky, & ! In
-                           Sigma1_scaling, Sigma2_scaling, & ! In
-                           l_Sigma1_scaling, l_Sigma2_scaling, & ! In
-                           cloud_frac1, cloud_frac2, X_u_one_lev, & ! In
-                           X_mixt_comp_one_lev, & ! In
-                           X_nl_one_lev ) ! Out
+    call gaus_mixt_points( d_variables, mixt_frac, mu1, mu2, &  ! intent(in)
+                           Sigma1_Cholesky, Sigma2_Cholesky, & ! intent(in)
+                           Sigma1_scaling, Sigma2_scaling, & ! intent(in)
+                           l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
+                           cloud_frac1, cloud_frac2, X_u_one_lev, & ! intent(in)
+                           X_mixt_comp_one_lev, & ! intent(in)
+                           X_nl_one_lev ) ! intent(out)
 
 ! Transform s (column 1) and t (column 2) back to rt and thl
 ! This is only needed if you need rt, thl in your microphysics.
@@ -1057,14 +1059,15 @@ module generate_lh_sample_module
 !            cloud_frac1, cloud_frac2, X_nl_one_lev(1), &
 !            X_nl_one_lev(2), &
 !            X_u_one_lev, rtp, thlp )
-    call st_2_rtthl( mixt_frac, rt1, thl1, rt2, thl2, & ! In
-                     crt1, cthl1, crt2, cthl2, & ! In
-                     cloud_frac1, cloud_frac2, & ! In
-                     dble( mu1(iiLH_s_mellor) ), dble( mu2(iiLH_s_mellor) ), & ! In
-                     X_nl_one_lev(iiLH_s_mellor), & ! In
-                     X_nl_one_lev(iiLH_t_mellor), & ! In
-                     X_mixt_comp_one_lev, & ! In
-                     LH_rt, LH_thl ) ! Out
+    call st_2_rtthl( mixt_frac, rt1, thl1, rt2, thl2, & ! intent(in)
+                     crt1, cthl1, crt2, cthl2, & ! intent(in)
+                     cloud_frac1, cloud_frac2, & ! intent(in)
+                     real(mu1(iiLH_s_mellor), kind = dp), & ! intent(in)
+                     real(mu2(iiLH_s_mellor), kind = dp), & ! intent(in)
+                     X_nl_one_lev(iiLH_s_mellor), & ! intent(in)
+                     X_nl_one_lev(iiLH_t_mellor), & ! intent(in)
+                     X_mixt_comp_one_lev, & ! intent(in)
+                     LH_rt, LH_thl ) ! intent(out)
 
     ! Convert lognormal variates (e.g. Nc and rr) to lognormal
     where ( l_d_variable_lognormal )
@@ -1476,7 +1479,7 @@ module generate_lh_sample_module
                  + (1._dp - cloud_frac1 ) )
       ! Convert to nonstandard normal with mean mu1 and variance Sigma1
       truncated_column =  & 
-                 s_std * sqrt( Sigma1(col,col) ) + dble( mu1(col) )
+                 s_std * sqrt( Sigma1(col,col) ) + real(mu1(col), kind = dp)
     else if ( X_mixt_comp_one_lev == 2 ) then
 
       ! Replace first dimension (s) with
@@ -1486,7 +1489,7 @@ module generate_lh_sample_module
 
         ! Convert to nonstandard normal with mean mu2 and variance Sigma2
       truncated_column =  & 
-                    s_std * sqrt( Sigma2(col,col) ) + dble( mu2(col) )
+                    s_std * sqrt( Sigma2(col,col) ) + real(mu2(col), kind = dp)
     else
       stop "Error in truncate_gaus_mixt"
     end if
@@ -1559,27 +1562,27 @@ module generate_lh_sample_module
 ! Coefficients in rational approximations.
 ! equivalent: a(1)=a1, a(2)=a2, and etc, when a(1) is in Matlab.
 ! Similarly for b, c, and d's
-    parameter (a1 = -3.969683028665376d+01,  & 
-               a2 = 2.209460984245205d+02, & 
-               a3 = -2.759285104469687d+02,  & 
-               a4 = 1.383577518672690d+02, & 
-               a5 = -3.066479806614716d+01,  & 
-               a6 = 2.506628277459239d+00)
-    parameter (b1 = -5.447609879822406d+01,  & 
-               b2 = 1.615858368580409d+02, & 
-               b3 = -1.556989798598866d+02,  & 
-               b4 = 6.680131188771972d+01, & 
-               b5 = -1.328068155288572d+01)
-    parameter (c1 = -7.784894002430293d-03,  & 
-               c2 = -3.223964580411365d-01, & 
-               c3 = -2.400758277161838d+00,  & 
-               c4 = -2.549732539343734d+00, & 
-               c5 =  4.374664141464968d+00,  & 
-               c6 =  2.938163982698783d+00)
-    parameter (d1 =  7.784695709041462d-03,  & 
-               d2 =  3.224671290700398d-01, & 
-               d3 =  2.445134137142996d+00,  & 
-               d4 =  3.754408661907416d+00)
+    parameter (a1 = -3.969683028665376E+01_dp,  &
+               a2 = 2.209460984245205E+02_dp, &
+               a3 = -2.759285104469687E+02_dp,  &
+               a4 = 1.383577518672690E+02_dp, &
+               a5 = -3.066479806614716E+01_dp,  &
+               a6 = 2.506628277459239E+00_dp)
+    parameter (b1 = -5.447609879822406E+01_dp,  &
+               b2 = 1.615858368580409E+02_dp, &
+               b3 = -1.556989798598866E+02_dp,  &
+               b4 = 6.680131188771972E+01_dp, &
+               b5 = -1.328068155288572E+01_dp)
+    parameter (c1 = -7.784894002430293E-03_dp,  &
+               c2 = -3.223964580411365E-01_dp, &
+               c3 = -2.400758277161838E+00_dp,  &
+               c4 = -2.549732539343734E+00_dp, &
+               c5 =  4.374664141464968E+00_dp,  &
+               c6 =  2.938163982698783E+00_dp)
+    parameter (d1 =  7.784695709041462E-03_dp,  &
+               d2 =  3.224671290700398E-01_dp, &
+               d3 =  2.445134137142996E+00_dp,  &
+               d4 =  3.754408661907416E+00_dp)
 
     ! Default initialization
     z = 0.0_dp
@@ -2136,7 +2139,7 @@ module generate_lh_sample_module
 
     ! Compute the main diagonal for each lognormal variate
     forall ( i = LN_index:d_variables )
-      corr_stw_matrix(i,i) = dble( log( 1._core_rknd + Xp2_on_Xm2_array(i) ) )
+      corr_stw_matrix(i,i) = real(log( 1._core_rknd + Xp2_on_Xm2_array(i) ), kind = dp)
     end forall
 
     do index1 = LN_index, d_variables
@@ -2299,7 +2302,7 @@ module generate_lh_sample_module
     if ( corr_sx /= 0._core_rknd ) then
       ! Approximate the covariance of t and x
       ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
-      covar_tx = corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) * dble( covar_sx )
+      covar_tx = corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) * real(covar_sx, kind = dp)
     else
       covar_tx = 0._dp
     end if

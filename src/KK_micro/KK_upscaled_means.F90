@@ -637,44 +637,44 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1 = dble( mu_s_i )
+    mu_x1 = real(mu_s_i, kind=dp)
     if ( beta_exp_in >= zero ) then
-       mu_x2 = dble( mu_rr_i )
+       mu_x2 = real(mu_rr_i, kind=dp)
     else ! exponent beta < 0
-       mu_x2 = dble( max( mu_rr_i, rr_tol ) )
+       mu_x2 = real(max( mu_rr_i, rr_tol ), kind=dp)
     endif
     if ( gamma_exp_in >= zero ) then
-       mu_x3 = dble( mu_Nr_i )
+       mu_x3 = real(mu_Nr_i, kind=dp)
     else ! exponent gamma < 0
-       mu_x3 = dble( max( mu_Nr_i, Nr_tol ) )
+       mu_x3 = real(max( mu_Nr_i, Nr_tol ), kind=dp)
     endif
-    mu_x2_n = dble( mu_rr_i_n )
-    mu_x3_n = dble( mu_Nr_i_n )
+    mu_x2_n = real(mu_rr_i_n , kind=dp)
+    mu_x3_n = real(mu_Nr_i_n, kind=dp)
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = dble( sigma_s_i )
-    sigma_x2   = dble( sigma_rr_i )
-    sigma_x3   = dble( sigma_Nr_i )
-    sigma_x2_n = dble( sigma_rr_i_n )
-    sigma_x3_n = dble( sigma_Nr_i_n )
+    sigma_x1   =  real(sigma_s_i, kind=dp)
+    sigma_x2   = real(sigma_rr_i, kind=dp)
+    sigma_x3   =  real(sigma_Nr_i, kind=dp)
+    sigma_x2_n = real(sigma_rr_i_n, kind=dp)
+    sigma_x3_n = real(sigma_Nr_i_n, kind=dp)
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = dble( corr_srr_i_n )
-    rho_x1x3_n = dble( corr_sNr_i_n )
-    rho_x2x3_n = dble( corr_rrNr_i_n )
+    rho_x1x2_n = real(corr_srr_i_n, kind=dp)
+    rho_x1x3_n = real(corr_sNr_i_n, kind=dp)
+    rho_x2x3_n = real(corr_rrNr_i_n, kind=dp)
 
     ! Exponents.
-    alpha_exp = dble( alpha_exp_in )
-    beta_exp  = dble( beta_exp_in )
-    gamma_exp = dble( gamma_exp_in )
+    alpha_exp = real(alpha_exp_in, kind=dp)
+    beta_exp  = real(beta_exp_in, kind=dp)
+    gamma_exp = real(gamma_exp_in, kind=dp)
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( s_mellor_tol )
-    x2_tol = dble( rr_tol )
-    x3_tol = dble( Nr_tol )
+    x1_tol = real(s_mellor_tol, kind=dp)
+    x2_tol = real(rr_tol, kind=dp)
+    x3_tol = real(Nr_tol, kind=dp)
 
     ! Determine the value of the parabolic cylinder function input value, s_cc.
     ! The value s_cc is being fed into the parabolic cylinder function.  When
@@ -702,9 +702,9 @@ module KK_upscaled_means
 
     ! Based on the value of sigma_x1 (including the value of s_cc compared to
     ! parab_cyl_max_input), find the correct form of the trivariate equation to
-    ! use.
+    ! use. real(Nr_tol, kind=dp)
 
-    if ( ( sigma_x1 <= x1_tol .or. abs( s_cc ) > dble( parab_cyl_max_input ) ) &
+    if ( ( sigma_x1 <= x1_tol .or. abs( s_cc ) > real(parab_cyl_max_input, kind=dp) ) &
          .and. sigma_x2 <= x2_tol .and. sigma_x3 <= x3_tol ) then
 
        ! The ith PDF component variance of each of s, r_r, and N_r is 0.
@@ -715,7 +715,7 @@ module KK_upscaled_means
 
 
     elseif ( ( sigma_x1 <= x1_tol &
-               .or. abs( s_cc ) > dble( parab_cyl_max_input ) ) &
+               .or. abs( s_cc ) > real(parab_cyl_max_input, kind=dp) ) &
              .and. sigma_x2 <= x2_tol ) then
 
        ! The ith PDF component variance of both s and r_r is 0.
@@ -726,7 +726,7 @@ module KK_upscaled_means
 
 
     elseif ( ( sigma_x1 <= x1_tol &
-               .or. abs( s_cc ) > dble( parab_cyl_max_input ) ) &
+               .or. abs( s_cc ) > real(parab_cyl_max_input, kind=dp) ) &
              .and. sigma_x3 <= x3_tol ) then
 
        ! The ith PDF component variance of both s and N_r is 0.
@@ -746,7 +746,7 @@ module KK_upscaled_means
 
 
     elseif ( sigma_x1 <= x1_tol &
-             .or. abs( s_cc ) > dble( parab_cyl_max_input ) ) then
+             .or. abs( s_cc ) > real(parab_cyl_max_input, kind=dp) ) then
 
        ! The ith PDF component variance of s is 0.
        trivar_NLL_mean_eq  &
@@ -877,32 +877,32 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1 = dble( mu_s_i )
+    mu_x1 = real(mu_s_i, kind=dp)
     if ( beta_exp_in >= zero ) then
-       mu_x2 = dble( mu_y_i )   ! y is N_cn (auto.) or r_r (accr.).
+       mu_x2 = real(mu_y_i, kind=dp)   ! y is N_cn (auto.) or r_r (accr.).
     else ! exponent beta < 0
-       mu_x2 = dble( max( mu_y_i, y_tol ) )   ! y is N_cn or r_r.
+       mu_x2 = real(max( mu_y_i, y_tol ), kind=dp)   ! y is N_cn or r_r.
     endif
-    mu_x2_n = dble( mu_y_i_n ) ! y is N_cn (autoconversion) or r_r (accretion).
+    mu_x2_n = real(mu_y_i_n, kind=dp) ! y is N_cn (autoconversion) or r_r (accretion).
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = dble( sigma_s_i )
-    sigma_x2   = dble( sigma_y_i )   ! y is N_cn (auto.) or r_r (accr.).
-    sigma_x2_n = dble( sigma_y_i_n ) ! y is N_cn (auto.) or r_r (accr.).
+    sigma_x1   = real(sigma_s_i, kind=dp)
+    sigma_x2   = real(sigma_y_i, kind=dp)   ! y is N_cn (auto.) or r_r (accr.).
+    sigma_x2_n = real(sigma_y_i_n, kind=dp) ! y is N_cn (auto.) or r_r (accr.).
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = dble( corr_sy_i_n ) ! y is N_cn (auto.) or r_r (accr.).
+    rho_x1x2_n = real(corr_sy_i_n, kind=dp) ! y is N_cn (auto.) or r_r (accr.).
 
     ! Exponents.
-    alpha_exp = dble( alpha_exp_in )
-    beta_exp  = dble( beta_exp_in )
+    alpha_exp = real(alpha_exp_in, kind=dp)
+    beta_exp  = real(beta_exp_in, kind=dp)
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( s_mellor_tol )
-    x2_tol = dble( y_tol )  ! y is N_cn (auto.) or r_r (accr.).
+    x1_tol = real(s_mellor_tol, kind=dp)
+    x2_tol = real(y_tol, kind=dp)  ! y is N_cn (auto.) or r_r (accr.).
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When
@@ -930,7 +930,7 @@ module KK_upscaled_means
     ! parab_cyl_max_input) and sigma_x2, find the correct form of the bivariate
     ! equation to use.
 
-    if ( ( sigma_x1 <= x1_tol .or. abs( s_c ) > dble( parab_cyl_max_input ) ) &
+    if ( ( sigma_x1 <= x1_tol .or. abs( s_c ) > real(parab_cyl_max_input, kind=dp) ) &
          .and. sigma_x2 <= x2_tol ) then
 
        ! The ith PDF component variance of both s and y (r_r or N_cn) is 0.
@@ -940,7 +940,7 @@ module KK_upscaled_means
 
 
     elseif ( sigma_x1 <= x1_tol &
-             .or. abs( s_c ) > dble( parab_cyl_max_input ) ) then
+             .or. abs( s_c ) > real(parab_cyl_max_input, kind=dp) ) then
 
        ! The ith PDF component variance of s is 0.
        bivar_NL_mean_eq  &
@@ -1040,25 +1040,25 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1 = dble( mu_s_i )
+    mu_x1 = real(mu_s_i, kind=dp)
     if ( beta_exp_in >= zero ) then
-       Nc0 = dble( Nc0_in_cloud )
+       Nc0 = real(Nc0_in_cloud, kind=dp)
     else ! exponent beta < 0
-       Nc0 = dble( max( Nc0_in_cloud, Nc_tol ) )
+       Nc0 = real(max( Nc0_in_cloud, Nc_tol ), kind=dp)
     endif
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = dble( sigma_s_i )
+    sigma_x1   = real(sigma_s_i, kind=dp)
 
     ! Exponents.
-    alpha_exp = dble( alpha_exp_in )
-    beta_exp  = dble( beta_exp_in )
+    alpha_exp = real(alpha_exp_in, kind=dp)
+    beta_exp  = real(beta_exp_in, kind=dp)
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( s_mellor_tol )
+    x1_tol = real(s_mellor_tol, kind=dp)
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When
@@ -1086,7 +1086,7 @@ module KK_upscaled_means
     ! parab_cyl_max_input), find the correct form of the bivariate equation to
     ! use.
 
-    if ( sigma_x1 <= x1_tol .or. abs( s_c ) > dble( parab_cyl_max_input ) ) then
+    if ( sigma_x1 <= x1_tol .or. abs( s_c ) > real(parab_cyl_max_input, kind=dp) ) then
 
        ! The ith PDF component variance of s is 0.
        bivar_NL_mean_eq_Nc0  &
@@ -1187,37 +1187,37 @@ module KK_upscaled_means
 
     ! Means for the ith PDF component.
     if ( alpha_exp_in >= zero ) then
-       mu_x1 = dble( mu_rr_i )
+       mu_x1 = real(mu_rr_i, kind=dp)
     else ! exponent alpha < 0
-       mu_x1 = dble( max( mu_rr_i, rr_tol ) )
+       mu_x1 = real(max( mu_rr_i, rr_tol ), kind=dp)
     endif
     if ( beta_exp_in >= zero ) then
-       mu_x2 = dble( mu_Nr_i )
+       mu_x2 = real(mu_Nr_i, kind=dp)
     else ! exponent beta < 0
-       mu_x2 = dble( max( mu_Nr_i, Nr_tol ) )
+       mu_x2 = real(max( mu_Nr_i, Nr_tol ), kind=dp)
     endif
-    mu_x1_n = dble( mu_rr_i_n )
-    mu_x2_n = dble( mu_Nr_i_n )
+    mu_x1_n = real(mu_rr_i_n, kind=dp)
+    mu_x2_n = real(mu_Nr_i_n, kind=dp)
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = dble( sigma_rr_i )
-    sigma_x2   = dble( sigma_Nr_i )
-    sigma_x1_n = dble( sigma_rr_i_n )
-    sigma_x2_n = dble( sigma_Nr_i_n )
+    sigma_x1   = real(sigma_rr_i, kind=dp)
+    sigma_x2   = real(sigma_Nr_i, kind=dp)
+    sigma_x1_n = real(sigma_rr_i_n, kind=dp)
+    sigma_x2_n = real(sigma_Nr_i_n, kind=dp)
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = dble( corr_rrNr_i_n )
+    rho_x1x2_n = real(corr_rrNr_i_n, kind=dp)
 
     ! Exponents.
-    alpha_exp = dble( alpha_exp_in )
-    beta_exp  = dble( beta_exp_in )
+    alpha_exp = real(alpha_exp_in, kind=dp)
+    beta_exp  = real(beta_exp_in, kind=dp)
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( rr_tol )
-    x2_tol = dble( Nr_tol )
+    x1_tol = real(rr_tol, kind=dp)
+    x2_tol = real(Nr_tol, kind=dp)
 
 
     ! Calculate the mean of the bivariate lognormal equation.

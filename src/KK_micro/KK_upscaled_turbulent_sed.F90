@@ -1291,37 +1291,37 @@ module KK_upscaled_turbulent_sed
 
     ! Means for the ith PDF component.
     if ( alpha_exp_in >= zero ) then
-       mu_x1 = dble( mu_rr_i )
+       mu_x1 = real(mu_rr_i, kind=dp)
     else ! exponent alpha < 0
-       mu_x1 = dble( max( mu_rr_i, rr_tol ) )
+       mu_x1 = real(max( mu_rr_i, rr_tol ), kind=dp)
     endif
     if ( beta_exp_in >= zero ) then
-       mu_x2 = dble( mu_Nr_i )
+       mu_x2 = real(mu_Nr_i, kind=dp)
     else ! exponent beta < 0
-       mu_x2 = dble( max( mu_Nr_i, Nr_tol ) )
+       mu_x2 = real(max( mu_Nr_i, Nr_tol ), kind=dp)
     endif
-    mu_x1_n = dble( mu_rr_i_n )
-    mu_x2_n = dble( mu_Nr_i_n )
+    mu_x1_n = real(mu_rr_i_n, kind=dp)
+    mu_x2_n = real(mu_Nr_i_n, kind=dp)
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = dble( sigma_rr_i )
-    sigma_x2   = dble( sigma_Nr_i )
-    sigma_x1_n = dble( sigma_rr_i_n )
-    sigma_x2_n = dble( sigma_Nr_i_n )
+    sigma_x1   = real(sigma_rr_i, kind=dp)
+    sigma_x2   = real(sigma_Nr_i, kind=dp)
+    sigma_x1_n = real(sigma_rr_i_n, kind=dp)
+    sigma_x2_n = real(sigma_Nr_i_n, kind=dp)
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = dble( corr_rrNr_i_n )
+    rho_x1x2_n = real(corr_rrNr_i_n, kind=dp)
 
     ! Exponents.
-    alpha_exp = dble( alpha_exp_in )
-    beta_exp  = dble( beta_exp_in )
+    alpha_exp = real(alpha_exp_in, kind=dp)
+    beta_exp  = real(beta_exp_in, kind=dp)
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( rr_tol )
-    x2_tol = dble( Nr_tol )
+    x1_tol = real(rr_tol, kind=dp)
+    x2_tol = real(Nr_tol, kind=dp)
 
 
     ! Calculate (partially) the covariance of the bivariate lognormal equation.
@@ -1442,37 +1442,37 @@ module KK_upscaled_turbulent_sed
 
     ! Means for the ith PDF component.
     if ( beta_exp_in >= zero ) then
-       mu_x1 = dble( mu_Nr_i )
+       mu_x1 = real(mu_Nr_i, kind=dp)
     else ! exponent beta < 0
-       mu_x1 = dble( max( mu_Nr_i, Nr_tol ) )
+       mu_x1 = real(max( mu_Nr_i, Nr_tol ), kind=dp)
     endif
     if ( alpha_exp_in >= zero ) then
-       mu_x2 = dble( mu_rr_i )
+       mu_x2 = real(mu_rr_i, kind=dp)
     else ! exponent alpha < 0
-       mu_x2 = dble( max( mu_rr_i, rr_tol ) )
+       mu_x2 = real(max( mu_rr_i, rr_tol ), kind=dp)
     endif
-    mu_x1_n = dble( mu_Nr_i_n )
-    mu_x2_n = dble( mu_rr_i_n )
+    mu_x1_n = real(mu_Nr_i_n, kind=dp)
+    mu_x2_n = real(mu_rr_i_n, kind=dp)
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = dble( sigma_Nr_i )
-    sigma_x2   = dble( sigma_rr_i )
-    sigma_x1_n = dble( sigma_Nr_i_n )
-    sigma_x2_n = dble( sigma_rr_i_n )
+    sigma_x1   =  real(sigma_Nr_i, kind=dp)
+    sigma_x2   = real(sigma_rr_i, kind=dp)
+    sigma_x1_n = real(sigma_Nr_i_n, kind=dp)
+    sigma_x2_n = real(sigma_rr_i_n, kind=dp)
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = dble( corr_rrNr_i_n )
+    rho_x1x2_n = real(corr_rrNr_i_n, kind=dp)
 
     ! Exponents.
-    alpha_exp = dble( beta_exp_in )
-    beta_exp  = dble( alpha_exp_in )
+    alpha_exp = real(beta_exp_in, kind=dp)
+    beta_exp  = real(alpha_exp_in, kind=dp)
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( Nr_tol )
-    x2_tol = dble( rr_tol )
+    x1_tol = real(Nr_tol, kind=dp)
+    x2_tol = real(rr_tol, kind=dp)
 
 
     ! Calculate (partially) the covariance of the bivariate lognormal equation.

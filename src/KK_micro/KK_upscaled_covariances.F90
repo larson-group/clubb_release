@@ -1792,40 +1792,42 @@ module KK_upscaled_covariances
 
 
     ! Means for the ith PDF component. 
-    mu_x1   = dble( mu_x_i )  ! x is w or t (ith component).
-    mu_x2   = dble( mu_s_i )
-    mu_x3_n = dble( mu_rr_i_n )
-    mu_x4_n = dble( mu_Nr_i_n )
+    mu_x1   = real(mu_x_i, kind=dp)  ! x is w or t (ith component).
+    mu_x2   = real(mu_s_i, kind=dp)
+    mu_x3_n = real(mu_rr_i_n, kind=dp)
+    mu_x4_n = real(mu_Nr_i_n, kind=dp)
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = dble( sigma_x_i )  ! x is w or t (ith component).
-    sigma_x2   = dble( sigma_s_i )
-    sigma_x3_n = dble( sigma_rr_i_n )
-    sigma_x4_n = dble( sigma_Nr_i_n )
+    sigma_x1   = real(sigma_x_i, kind=dp)  ! x is w or t (ith component).
+    sigma_x2   = real(sigma_s_i, kind=dp)
+    sigma_x3_n = real(sigma_rr_i_n, kind=dp)
+    sigma_x4_n = real(sigma_Nr_i_n, kind=dp)
 
     ! Correlations for the ith PDF component.
-    rho_x1x2   = dble( corr_xs_i )    ! x is w or t (ith component).
-    rho_x1x3_n = dble( corr_xrr_i_n ) ! x is w or t (ith component).
-    rho_x1x4_n = dble( corr_xNr_i_n ) ! x is w or t (ith component).
-    rho_x2x3_n = dble( corr_srr_i_n )
-    rho_x2x4_n = dble( corr_sNr_i_n )
-    rho_x3x4_n = dble( corr_rrNr_i_n )
+    rho_x1x2   = real(corr_xs_i, kind=dp)    ! x is w or t (ith component).
+    rho_x1x3_n = real(corr_xrr_i_n, kind=dp) ! x is w or t (ith component).
+    rho_x1x4_n = real(corr_xNr_i_n, kind=dp) ! x is w or t (ith component).
+    rho_x2x3_n = real(corr_srr_i_n, kind=dp)
+    rho_x2x4_n = real(corr_sNr_i_n, kind=dp)
+    rho_x3x4_n = real(corr_rrNr_i_n, kind=dp)
+
+
 
     ! Overall means.
-    x1_mean = dble( x_mean )  ! x is w or t.
-    x2_alpha_x3_beta_x4_gamma_mean = dble( mc_tndcy_mean / mc_coef )
+    x1_mean = real(x_mean, kind=dp)  ! x is w or t.
+    x2_alpha_x3_beta_x4_gamma_mean = real(mc_tndcy_mean / mc_coef, kind=dp)
 
     ! Exponents.
-    alpha_exp = dble( alpha_exp_in )
-    beta_exp  = dble( beta_exp_in )
-    gamma_exp = dble( gamma_exp_in )
+    alpha_exp = real(alpha_exp_in, kind=dp)
+    beta_exp  = real(beta_exp_in, kind=dp)
+    gamma_exp = real(gamma_exp_in, kind=dp)
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( x_tol )  ! x is w or t.
-    x2_tol = dble( s_mellor_tol )
+    x1_tol = real(x_tol, kind=dp)  ! x is w or t.
+    x2_tol = real(s_mellor_tol, kind=dp)
 
     ! Determine the value of the parabolic cylinder function input value, s_cc.
     ! The value s_cc is being fed into the parabolic cylinder function.  When
@@ -1857,7 +1859,7 @@ module KK_upscaled_covariances
 
     if ( sigma_x1 <= x1_tol .and.  &
          ( sigma_x2 <= x2_tol .or.  &
-           abs( s_cc ) > dble( parab_cyl_max_input ) ) ) then
+           abs( s_cc ) > real(parab_cyl_max_input, kind=dp) ) ) then
 
        ! The ith PDF component variance of both x (w or t) and s is 0.
        quadrivar_NNLL_covar_eq  &
@@ -1885,7 +1887,7 @@ module KK_upscaled_covariances
 
 
     elseif ( sigma_x2 <= x2_tol .or.  &
-             abs( s_cc ) > dble( parab_cyl_max_input ) ) then
+             abs( s_cc ) > real(parab_cyl_max_input, kind=dp) ) then
 
        ! The ith PDF component variance of s is 0.
        quadrivar_NNLL_covar_eq  &
@@ -2017,35 +2019,35 @@ module KK_upscaled_covariances
 
 
     ! Means for the ith PDF component. 
-    mu_x1   = dble( mu_x_i ) ! x is w or t (ith component).
-    mu_x2   = dble( mu_s_i )
-    mu_x3_n = dble( mu_y_i_n ) ! y is N_cn (autoconversion) or r_r (accretion).
+    mu_x1   = real(mu_x_i, kind=dp) ! x is w or t (ith component).
+    mu_x2   = real(mu_s_i, kind=dp)
+    mu_x3_n = real(mu_y_i_n, kind=dp) ! y is N_cn (autoconversion) or r_r (accretion).
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = dble( sigma_x_i ) ! x is w or t (ith component).
-    sigma_x2   = dble( sigma_s_i )
-    sigma_x3_n = dble( sigma_y_i_n ) ! y is N_cn (auto.) or r_r (accr.).
+    sigma_x1   = real(sigma_x_i, kind=dp) ! x is w or t (ith component).
+    sigma_x2   = real(sigma_s_i, kind=dp)
+    sigma_x3_n = real(sigma_y_i_n, kind=dp) ! y is N_cn (auto.) or r_r (accr.).
 
     ! Correlations for the ith PDF component.
-    rho_x1x2   = dble( corr_xs_i )    ! x is w or t (ith component).
-    rho_x1x3_n = dble( corr_xy_i_n )  ! x is w or t (ith component).
+    rho_x1x2   = real(corr_xs_i, kind=dp)    ! x is w or t (ith component).
+    rho_x1x3_n = real(corr_xy_i_n, kind=dp) ! x is w or t (ith component).
                                       ! y is N_cn (auto.) or r_r (accr.).
-    rho_x2x3_n = dble( corr_sy_i_n )  ! y is N_cn (auto.) or r_r (accr.).
+    rho_x2x3_n = real(corr_sy_i_n, kind=dp)  ! y is N_cn (auto.) or r_r (accr.).
 
     ! Overall means.
-    x1_mean = dble( x_mean )  ! x is w or t.
-    x2_alpha_x3_beta_mean = dble( mc_tndcy_mean / mc_coef )
+    x1_mean = real(x_mean, kind=dp)  ! x is w or t.
+    x2_alpha_x3_beta_mean = real(mc_tndcy_mean / mc_coef, kind=dp)
 
     ! Exponents.
-    alpha_exp = dble( alpha_exp_in )
-    beta_exp  = dble( beta_exp_in )
+    alpha_exp = real(alpha_exp_in, kind=dp)
+    beta_exp  = real(beta_exp_in, kind=dp)
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( x_tol )  ! x is w or t.
-    x2_tol = dble( s_mellor_tol )
+    x1_tol = real(x_tol, kind=dp)  ! x is w or t.
+    x2_tol = real(s_mellor_tol, kind=dp)
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When
@@ -2075,7 +2077,7 @@ module KK_upscaled_covariances
 
     if ( sigma_x1 <= x1_tol .and.  &
          ( sigma_x2 <= x2_tol .or.  &
-           abs( s_c ) > dble( parab_cyl_max_input ) ) ) then
+           abs( s_c ) > real(parab_cyl_max_input, kind=dp) ) ) then
 
        ! The ith PDF component variance of both x (w or t) and s is 0.
        trivar_NNL_covar_eq  &
@@ -2098,7 +2100,7 @@ module KK_upscaled_covariances
 
 
     elseif ( sigma_x2 <= x2_tol .or.  &
-             abs( s_c ) > dble( parab_cyl_max_input ) ) then
+             abs( s_c ) > real(parab_cyl_max_input, kind=dp) ) then
 
        ! The ith PDF component variance of s is 0.
        trivar_NNL_covar_eq  &
@@ -2217,31 +2219,31 @@ module KK_upscaled_covariances
 
 
     ! Means for the ith PDF component. 
-    mu_x1 = dble( mu_x_i ) ! x is w or t (ith component).
-    mu_x2 = dble( mu_s_i )
-    Nc0   = dble( Nc0_in_cloud )
+    mu_x1 = real(mu_x_i, kind=dp) ! x is w or t (ith component).
+    mu_x2 = real(mu_s_i, kind=dp)
+    Nc0   = real(Nc0_in_cloud, kind=dp)
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1 = dble( sigma_x_i ) ! x is w or t (ith component).
-    sigma_x2 = dble( sigma_s_i )
+    sigma_x1 = real(sigma_x_i, kind=dp) ! x is w or t (ith component).
+    sigma_x2 = real(sigma_s_i, kind=dp)
 
     ! Correlations for the ith PDF component.
-    rho_x1x2 = dble( corr_xs_i )    ! x is w or t (ith component).
+    rho_x1x2 = real(corr_xs_i, kind=dp)    ! x is w or t (ith component).
 
     ! Overall means.
-    x1_mean = dble( x_mean )  ! x is w or t.
-    x2_alpha_x3_beta_mean = dble( mc_tndcy_mean / mc_coef )
+    x1_mean = real(x_mean, kind=dp)  ! x is w or t.
+    x2_alpha_x3_beta_mean = real(mc_tndcy_mean / mc_coef, kind=dp)
 
     ! Exponents.
-    alpha_exp = dble( alpha_exp_in )
-    beta_exp  = dble( beta_exp_in )
+    alpha_exp = real(alpha_exp_in, kind=dp)
+    beta_exp  = real(beta_exp_in, kind=dp)
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = dble( x_tol )  ! x is w or t.
-    x2_tol = dble( s_mellor_tol )
+    x1_tol = real(x_tol, kind=dp)  ! x is w or t.
+    x2_tol = real(s_mellor_tol, kind=dp)
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When
@@ -2271,7 +2273,7 @@ module KK_upscaled_covariances
 
     if ( sigma_x1 <= x1_tol .and.  &
          ( sigma_x2 <= x2_tol .or.  &
-           abs( s_c ) > dble( parab_cyl_max_input ) ) ) then
+           abs( s_c ) > real(parab_cyl_max_input, kind=dp) ) ) then
 
        ! The ith PDF component variance of both x (w or t) and s is 0.
        trivar_NNL_covar_eq_Nc0  &
@@ -2292,7 +2294,7 @@ module KK_upscaled_covariances
 
 
     elseif ( sigma_x2 <= x2_tol .or.  &
-             abs( s_c ) > dble( parab_cyl_max_input ) ) then
+             abs( s_c ) > real(parab_cyl_max_input, kind=dp) ) then
 
        ! The ith PDF component variance of s is 0.
        trivar_NNL_covar_eq_Nc0  &
