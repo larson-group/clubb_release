@@ -300,7 +300,7 @@ module latin_hypercube_driver_module
                                   .and. lh_start_cloud_frac > cloud_frac_thresh)
           if ( .not. l_small_nonzero_cloud_frac ) then
             LH_sample_point_weights(sample)  = 1.0_core_rknd
-            ! There's no cloud or cloud fraction is >= 50%, so we do nothing
+            ! There's no cloud or cloud fraction is >= cloud_frac_max_weighted_smpl, so we do nothing
 
           else ! If we're in a partly cloud gridbox then we continue to the code below
 
