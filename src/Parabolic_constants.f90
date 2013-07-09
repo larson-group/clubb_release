@@ -1,7 +1,11 @@
   MODULE Parabolic_constants
+
+  use clubb_precision, only: &
+        dp ! double precision
+
   IMPLICIT NONE
   public ! Default
-  INTEGER, PARAMETER  :: r8 = KIND(0.0d0)
+  INTEGER, PARAMETER  :: r8 = dp
 ! INCLUDE 'constants' 
     ! Begin file constants
     REAL(r8), PARAMETER :: lnsqrttwopi=0.9189385332046727418_r8     ! log(sqrt(2*pi))

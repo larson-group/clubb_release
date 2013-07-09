@@ -8,8 +8,12 @@
 !      VOL. 32, NO. 1,     March, 2006, P. 102--112.
 !-----------------------------------------------------------------------
   MODULE Parabolic
+
+  use clubb_precision, only: &
+        dp ! double precision
+
   IMPLICIT NONE
-  INTEGER, PARAMETER  :: r8 = KIND(0.0d0)
+  INTEGER, PARAMETER  :: r8 = dp
   PRIVATE
   PUBLIC  :: parab, gamma
   CONTAINS       

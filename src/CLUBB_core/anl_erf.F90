@@ -6,16 +6,16 @@ module anl_erf
   public :: erf
 
   interface erf
-    module procedure dp_erf, sp_erf
+    module procedure dp_erf
   end interface
 
-  private :: dp_erf, sp_erf
+  private :: dp_erf
 
   private ! Default Scope
 
   contains
 
-  function dp_erf( x ) result( erfx )
+  function dp_erf( x ) result( erfx_core_rknd )
 
 !-----------------------------------------------------------------------
 ! Description:
@@ -41,12 +41,13 @@ module anl_erf
 !   kind = 8 was replaced by the more portable sp and dp by UWM.
 !-----------------------------------------------------------------------
     use clubb_precision, only: &
-      dp ! Constants
+      dp, & ! Constants
+      core_rknd
 
     implicit none
 
     ! Input Variables(s)
-    real( kind = dp), intent(in) :: x
+    real( kind = core_rknd), intent(in) :: x
 
     ! External
     intrinsic :: epsilon, exp, aint
@@ -103,10 +104,11 @@ module anl_erf
     XBIG   = 26.543E+00_dp
 
     ! Return type
-    real( kind = dp ) :: erfx
+    real( kind = core_rknd ) :: erfx_core_rknd
 
     ! Local variables
     real( kind = dp ) ::  & 
+    erfx,&
     del, & 
     xabs, & 
     xden, & 
@@ -116,7 +118,8 @@ module anl_erf
     integer :: i ! Index
 
 !-------------------------------------------------------------------------------
-    xabs = abs( x )
+                !Cast the input (x) to be CLUBB's double precision weberjk 20130709
+    xabs = abs( real(x, kind = dp) )
 
     !
     !  Evaluate ERF(X) for |X| <= 0.46875.
@@ -136,7 +139,7 @@ module anl_erf
         xden = ( xden + b(i) ) * xsq
       end do
 
-      erfx = x * ( xnum + a(4) ) / ( xden + b(4) )
+      erfx = real(x, kind=dp) * ( xnum + a(4) ) / ( xden + b(4) )
       !
       !  Evaluate ERFC(X) for 0.46875 <= |X| <= 4.0.
       !
@@ -159,7 +162,7 @@ module anl_erf
 
       erfx = ( 0.5E+00_dp - erfx ) + 0.5E+00_dp
 
-      if ( x < 0.0E+00_dp ) then
+      if ( real(x, kind=dp) < 0.0E+00_dp ) then
         erfx = - erfx
       end if
       !
@@ -169,7 +172,7 @@ module anl_erf
 
       if ( XBIG <= xabs ) then
 
-        if ( 0.0E+00_dp < x ) then
+        if ( 0.0E+00_dp < real(x, kind=dp) ) then
           erfx = 1.0E+00_dp
         else
           erfx = -1.0E+00_dp
@@ -200,38 +203,9 @@ module anl_erf
       end if
 
     end if
-
+    erfx_core_rknd = real( erfx, kind=core_rknd) !Return erfx, but as core_rknd weberjk 20130708
     return
   end function dp_erf
 
-!-----------------------------------------------------------------------
-  function sp_erf( x ) result( erfx )
-
-! Description:
-!   Return a truncation of the 64bit approx. of the error function.
-!   Ideally we would probably use a 32bit table for our approx.
-
-! References:
-!   None
-!-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      sp, dp ! Constants
-
-    implicit none
-
-    ! External
-    intrinsic :: real
-
-    ! Input Variables
-    real( kind=sp ), intent(in) :: x
-
-    ! Return type
-    real( kind=sp ) :: erfx
-
-    erfx = real( dp_erf( real(x, kind=dp) ), kind=sp )
-
-    return
-  end function sp_erf
 
 end module anl_erf
