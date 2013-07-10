@@ -4102,7 +4102,7 @@ module clubb_driver
       rsnowm,   & ! Snow mixing ratio                   [kg/kg]
       ricem       ! Prisitine ice water mixing ratio    [kg/kg]
 
-    real( kind = core_rknd ) :: Fs0, amu0_sp
+    real( kind = core_rknd ) :: Fs0, amu0_core_rknd
 
     real( kind = dp ) :: amu0 ! Cosine of the solar zenith angle [-]
 
@@ -4266,14 +4266,14 @@ module clubb_driver
       ! The sunray_sw code cannot handle negative values of cosine
       ! so we check that the value of amu0 is positive here.
       if ( l_sw_radiation .and. amu0 > 0._dp ) then
-        amu0_sp = real( amu0, kind = core_rknd )
+        amu0_core_rknd = real( amu0, kind = core_rknd )
         if ( nparam > 1 ) then
           call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &
-                                    Fs_values(1:nparam), amu0_sp, Fs0 )
+                                    Fs_values(1:nparam), amu0_core_rknd, Fs0 )
         else
           Fs0 = Fs_values(1)
         end if
-        call sunray_sw_wrap( Fs0, amu0_sp, rho, rcm, & ! In
+        call sunray_sw_wrap( Fs0, amu0_core_rknd, rho, rcm, & ! In
                              Frad_SW, radht_SW ) ! Out
       else
         radht_SW = 0._core_rknd
