@@ -40,7 +40,7 @@ echo "-t -- average over <timeinterval>"
 echo "-l -- set latitude for cross section plots"
 echo "-b -- run the script in the background"
 echo "-m -- merge the eps-graphics to a pdf-file"
-echo "-n -- Jobname <name>"
+echo "-n -- job name of the hd1 job  <name>"
 echo "-H -- run the script on HD1"
 echo "------------------------------------------------------------------------------------"
 }
