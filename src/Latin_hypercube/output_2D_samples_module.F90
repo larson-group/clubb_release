@@ -126,7 +126,7 @@ module output_2D_samples_module
     use output_netcdf, only: write_netcdf ! Procedure(s)
 #endif
 
-    use clubb_precision, only: stat_rknd, core_rknd ! Constant(s)
+    use clubb_precision, only: stat_rknd, core_rknd, dp ! Constant(s)
 
     implicit none
 
@@ -160,12 +160,12 @@ module output_2D_samples_module
     ! Append rt, thl at the end of the variables
     j = d_variables+1
     do sample = 1, n_micro_calls
-      lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = LH_rt(1:nz,sample)
+      lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = real(LH_rt(1:nz,sample), kind=dp)
     end do
 
     j = d_variables+2
     do sample = 1, n_micro_calls
-      lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = LH_thl(1:nz,sample)
+      lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = real(LH_thl(1:nz,sample), kind=dp)
     end do
 
 #ifdef NETCDF
@@ -196,7 +196,9 @@ module output_2D_samples_module
 
     use mt95, only: genrand_real ! Constant(s)
 
-    use clubb_precision, only: core_rknd ! Constant(s)
+    use clubb_precision, only: &
+    core_rknd, &
+    dp ! Constant(s)
 
     implicit none
 
@@ -228,10 +230,10 @@ module output_2D_samples_module
         uniform_sample_file%var(j)%ptr(sample,1,1:nz) = X_u_all_levs(1:nz,sample,j)
       end do
       uniform_sample_file%var(dp1+1)%ptr(sample,1,1:nz) = &
-        real( X_mixt_comp_all_levs(1:nz,sample), kind=core_rknd )
+        real( X_mixt_comp_all_levs(1:nz,sample), kind=dp )
       do k = 1, nz 
         uniform_sample_file%var(dp1+2)%ptr(sample,1,k) = &
-          real( p_matrix_s_element(sample), kind=core_rknd )
+          real( p_matrix_s_element(sample), kind=dp )
       end do
     end do
 

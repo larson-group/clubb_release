@@ -256,12 +256,12 @@ module estimate_lh_micro_module
       sn1_crit          = (s1-r_crit)/max( stdev_s1, s_mellor_tol )
       cloud_frac1_crit  = 0.5_core_rknd*(1._core_rknd+erf(sn1_crit/sqrt(2.0_core_rknd)))
       AK1               = K_one * ( (s1-r_crit)*cloud_frac1_crit  & 
-                         + stdev_s1*exp(-0.5_core_rknd*sn1_crit**2)/(sqrt(2._dp*pi)) )
+                         + stdev_s1*exp(-0.5_core_rknd*sn1_crit**2)/(sqrt(2._core_rknd*pi)) )
       sn2_crit          = (s2-r_crit)/max( stdev_s2, s_mellor_tol )
       cloud_frac2_crit  = 0.5_core_rknd*(1._core_rknd+erf(sn2_crit/sqrt(2.0_core_rknd)))
       AK2               = K_one * ( (s2-r_crit)*cloud_frac2_crit  & 
-                         + stdev_s2*exp(-0.5_core_rknd*sn2_crit**2)/(sqrt(2._dp*pi)) )
-      AKm(level)        = mixt_frac * AK1 + (1._dp-mixt_frac) * AK2
+                         + stdev_s2*exp(-0.5_core_rknd*sn2_crit**2)/(sqrt(2._core_rknd*pi)) )
+      AKm(level)        = mixt_frac * AK1 + (1._core_rknd-mixt_frac) * AK2
 
       ! Exact Kessler standard deviation in units of (kg/kg)/s
       ! For some reason, sometimes AK1var, AK2var are negative
@@ -273,13 +273,13 @@ module estimate_lh_micro_module
                - AK2**2  )
       ! This formula is for a grid box average:
       AKstd(level)  = sqrt( mixt_frac * ( (AK1-AKm(level))**2 + AK1var ) & 
-                  + (1._dp-mixt_frac) * ( (AK2-AKm(level))**2 + AK2var ) & 
+                  + (1._core_rknd-mixt_frac) * ( (AK2-AKm(level))**2 + AK2var ) &
                   )
       ! This formula is for a within-cloud average:
-      if ( cloud_frac(level) > 0._dp ) then
-        AKstd_cld(level) = sqrt( max( real( zero_threshold, kind=dp ),   & 
-                  (1._dp/cloud_frac(level)) * ( mixt_frac * ( AK1**2 + AK1var ) & 
-                            + (1._dp-mixt_frac) * ( AK2**2 + AK2var )  & 
+      if ( cloud_frac(level) > 0._core_rknd ) then
+        AKstd_cld(level) = sqrt( max( real( zero_threshold, kind=core_rknd ),   &
+                  (1._core_rknd/cloud_frac(level)) * ( mixt_frac * ( AK1**2 + AK1var ) &
+                            + (1._core_rknd-mixt_frac) * ( AK2**2 + AK2var )  &
                             ) & 
                  - (AKm(level)/cloud_frac(level))**2  ) & 
                         )
@@ -461,9 +461,10 @@ module estimate_lh_micro_module
 ! This is the first of two lines where
 !      a user must add a new microphysics scheme.
         if ( l_lh_cloud_weighted_sampling ) then
-          ac_m1 = ac_m1 + coeff*max(0._dp,rc(sample)-r_crit) * LH_sample_point_weights(sample)
+          ac_m1 = ac_m1 + coeff*max(0._dp,rc(sample)-real(r_crit, kind=dp))&
+                  * real(LH_sample_point_weights(sample), kind=dp)
         else
-          ac_m1 = ac_m1 + coeff*max(0._dp,rc(sample)-r_crit)
+          ac_m1 = ac_m1 + coeff*max(0._dp,rc(sample)-real(r_crit, kind=dp))
         end if
         n1 = n1 + 1
       else
@@ -474,9 +475,10 @@ module estimate_lh_micro_module
 !      a user must add a new microphysics scheme.
 
         if ( l_lh_cloud_weighted_sampling ) then
-          ac_m2 = ac_m2 + coeff*max(0._dp,rc(sample)-r_crit) * LH_sample_point_weights(sample)
+          ac_m2 = ac_m2 + coeff*max(0._dp,rc(sample)-real(r_crit, kind=dp)) &
+                  * real(LH_sample_point_weights(sample), kind=dp)
         else
-          ac_m2 = ac_m2 + coeff*max(0._dp,rc(sample)-r_crit)
+          ac_m2 = ac_m2 + coeff*max(0._dp,rc(sample)-real(r_crit, kind=dp))
         end if
 
         n2 = n2 + 1

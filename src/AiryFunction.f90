@@ -1,8 +1,12 @@
   MODULE AiryFunction
   ! Computation of the real Airy functions
   ! Ai(x), Bi(x), Ai'(x), Bi'(x) using Chebyshev expansions
+  
+  use clubb_precision, only: &
+    dp
+
   IMPLICIT NONE
-  INTEGER, PARAMETER  :: r8 = KIND(0.0d0)
+  INTEGER, PARAMETER  :: r8 = dp
   PRIVATE
   PUBLIC  :: aibi, aibip, airsca, xpowy
   CONTAINS

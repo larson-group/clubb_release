@@ -2017,7 +2017,7 @@ module inputfields
       SAM_variables(k)%clubb_name = "radht"
       SAM_variables(k)%input_name = "RADQR"
       SAM_variables(k)%clubb_var => radht
-      SAM_variables(k)%adjustment = 1.0_core_rknd/sec_per_day
+      SAM_variables(k)%adjustment = 1.0_core_rknd/real(sec_per_day, kind=core_rknd)
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 

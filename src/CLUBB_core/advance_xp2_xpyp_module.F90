@@ -3341,6 +3341,7 @@ module advance_xp2_xpyp_module
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
+      dp, &
       time_precision
 
     implicit none
@@ -3406,7 +3407,7 @@ module advance_xp2_xpyp_module
                 + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
                     * ( ( pdf_params%rt2 - ( rcm + rvm ) )**2 + pdf_params%varnce_rt2 )
 
-    rtp2_mc_tndcy_zt = rrainm_evap**2 * pf_const * dt &
+    rtp2_mc_tndcy_zt = rrainm_evap**2 * pf_const * real(dt, kind=core_rknd) &
                        + 2.0_core_rknd * abs(rrainm_evap) * sqrt(temp_rtp2 * pf_const)
                        !use absolute value of evaporation, as evaporation will add
                        !to rt1
@@ -3418,7 +3419,8 @@ module advance_xp2_xpyp_module
                  + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
                     * ( ( pdf_params%thl2 - thlm )**2 + pdf_params%varnce_thl2 )
 
-    thlp2_mc_tndcy_zt = ( rrainm_evap * Lv / ( Cp * exner) )**2 * pf_const * dt & 
+    thlp2_mc_tndcy_zt = ( rrainm_evap * Lv / ( Cp * exner) )**2 &
+                       * pf_const * real(dt,kind=core_rknd) &
                        + 2.0_core_rknd * abs(rrainm_evap) * Lv / ( Cp * exner ) &
                        * sqrt(temp_thlp2 * pf_const)
     

@@ -196,7 +196,7 @@ module anl_erf
         erfx = exp( - xsq * xsq ) * exp( - del ) * erfx
 
         erfx = ( 0.5E+00_dp - erfx ) + 0.5E+00_dp
-        if ( x < 0.0E+00_dp ) then
+        if ( real(x, kind=dp) < 0.0E+00_dp ) then
           erfx = - erfx
         end if
 
