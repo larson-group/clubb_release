@@ -14,7 +14,6 @@ module setup_clubb_pdf_params
 
   private :: component_means_rain,   &
              precip_fraction,        &
-            !comp_mean_stdev_corr,   &
              pdf_param_hm_stats,     &
              pdf_param_log_hm_stats, &
              pack_pdf_params
@@ -63,7 +62,8 @@ module setup_clubb_pdf_params
 
     use model_flags, only: &
         l_use_precip_frac, & ! Flag(s)
-        l_calc_w_corr
+        l_calc_w_corr, &
+        l_use_modified_corr
 
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
@@ -101,7 +101,10 @@ module setup_clubb_pdf_params
         l_diagnose_correlations ! Variable(s)
 
     use diagnose_correlations_module, only: &
-        diagnose_correlations ! Procedure(s)
+        diagnose_correlations, & ! Procedure(s)
+        setup_corr_cholesky_mtx, &
+        cholesky_to_corr_mtx_approx, &
+        rearrange_corr_array
 
     implicit none
 
@@ -148,6 +151,14 @@ module setup_clubb_pdf_params
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(d_variables,d_variables,nz) :: &
+      corr_matrix_approx     ! correlation matrix                     [-]
+
+    real( kind = core_rknd ), dimension(d_variables,d_variables) :: &
+      corr_cholesky_mtx_t,     & ! transposed correlation cholesky matrix [-]
+      corr_matrix_approx_swap, & ! Swapped correlation matrix             [-]
+      corr_array_swap            ! Swapped correlation matrix             [-]
+
     real( kind = core_rknd ), dimension(nz) ::  &
       wprrp, & ! Covariance of w and r_r, < w'r_r' > (m-levs.)  [(m/s)(kg/kg)]
       wpNrp    ! Covariance of w and N_r, < w'N_r' > (m-levs.)  [(m/s)(num/kg)]
@@ -470,7 +481,6 @@ module setup_clubb_pdf_params
 
        else ! if .not. l_diagnose_correlations
 
-
           call compute_corr( rcm(k), rrainm(k), Nrm(k), Ncnm(k), &         ! Intent(in)
                              rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &     ! Intent(in)
                              rc2(k), cloud_frac1(k), cloud_frac2(k), &     ! Intent(in)
@@ -569,6 +579,22 @@ module setup_clubb_pdf_params
                              mu_x_1(:,k), mu_x_2(:,k), &                           ! Intent(out)
                              sigma_x_1(:,k), sigma_x_2(:,k), &                     ! Intent(out)
                              hydromet_pdf_params(k) )                              ! Intent(out)
+
+       if ( l_use_modified_corr ) then
+
+          call rearrange_corr_array( d_variables, corr_array_1(:,:,k), & ! Intent(in)
+                                     corr_array_swap)                    ! Intent(inout)
+
+          call setup_corr_cholesky_mtx( d_variables, corr_array_swap, & ! intent(in)
+                                        corr_cholesky_mtx_t )           ! intent(out)
+
+          call cholesky_to_corr_mtx_approx( d_variables, corr_cholesky_mtx_t, & ! intent(in)
+                                            corr_matrix_approx_swap )           ! intent(out)
+
+          call rearrange_corr_array( d_variables, corr_matrix_approx_swap, & ! Intent(in)
+                                     corr_matrix_approx(:,:,k))              ! Intent(inout)
+
+       endif
 
 
     enddo  ! Setup PDF parameters loop: k = 2, nz, 1
@@ -3868,33 +3894,32 @@ module setup_clubb_pdf_params
     hydromet_pdf_params%precip_frac_2 = precip_frac_2
 
     ! Pack correlations (1st PDF component) into corr_array_1.
-    corr_array_1(iiLH_s_mellor,iiLH_t_mellor) = corr_st_1
+    corr_array_1(iiLH_t_mellor, iiLH_s_mellor) = corr_st_1
     corr_array_1(iiLH_s_mellor,iiLH_w)        = corr_ws_1
-    corr_array_1(iiLH_s_mellor,iiLH_rrain)    = corr_srr_1_n
-    corr_array_1(iiLH_s_mellor,iiLH_Nr)       = corr_sNr_1_n
-    corr_array_1(iiLH_s_mellor,iiLH_Ncn)      = corr_sNcn_1_n
-    corr_array_1(iiLH_t_mellor,iiLH_rrain)    = corr_trr_1_n
-    corr_array_1(iiLH_t_mellor,iiLH_Nr)       = corr_tNr_1_n
-    corr_array_1(iiLH_t_mellor,iiLH_Ncn)      = corr_tNcn_1_n
-    corr_array_1(iiLH_w,iiLH_rrain)           = corr_wrr_1_n
-    corr_array_1(iiLH_w,iiLH_Nr)              = corr_wNr_1_n
-    corr_array_1(iiLH_w,iiLH_Ncn)             = corr_wNcn_1_n
+    corr_array_1(iiLH_rrain, iiLH_s_mellor)    = corr_srr_1_n
+    corr_array_1(iiLH_Nr, iiLH_s_mellor)       = corr_sNr_1_n
+    corr_array_1(iiLH_Ncn, iiLH_s_mellor)      = corr_sNcn_1_n
+    corr_array_1(iiLH_rrain, iiLH_t_mellor)    = corr_trr_1_n
+    corr_array_1(iiLH_Nr, iiLH_t_mellor)       = corr_tNr_1_n
+    corr_array_1(iiLH_Ncn, iiLH_t_mellor)      = corr_tNcn_1_n
+    corr_array_1(iiLH_rrain, iiLH_w)           = corr_wrr_1_n
+    corr_array_1(iiLH_Nr, iiLH_w)              = corr_wNr_1_n
+    corr_array_1(iiLH_Ncn, iiLH_w)             = corr_wNcn_1_n
     corr_array_1(iiLH_rrain,iiLH_Nr)          = corr_rrNr_1_n
 
     ! Pack correlations (2nd PDF component) into corr_array_2.
-    corr_array_2(iiLH_s_mellor,iiLH_t_mellor) = corr_st_2
+    corr_array_2(iiLH_t_mellor, iiLH_s_mellor) = corr_st_2
     corr_array_2(iiLH_s_mellor,iiLH_w)        = corr_ws_2
-    corr_array_2(iiLH_s_mellor,iiLH_rrain)    = corr_srr_2_n
-    corr_array_2(iiLH_s_mellor,iiLH_Nr)       = corr_sNr_2_n
-    corr_array_2(iiLH_s_mellor,iiLH_Ncn)      = corr_sNcn_2_n
-    corr_array_2(iiLH_t_mellor,iiLH_rrain)    = corr_trr_2_n
-    corr_array_2(iiLH_t_mellor,iiLH_Nr)       = corr_tNr_2_n
-    corr_array_2(iiLH_t_mellor,iiLH_Ncn)      = corr_tNcn_2_n
-    corr_array_2(iiLH_w,iiLH_rrain)           = corr_wrr_2_n
-    corr_array_2(iiLH_w,iiLH_Nr)              = corr_wNr_2_n
-    corr_array_2(iiLH_w,iiLH_Ncn)             = corr_wNcn_2_n
+    corr_array_2(iiLH_rrain, iiLH_s_mellor)    = corr_srr_2_n
+    corr_array_2(iiLH_Nr, iiLH_s_mellor)       = corr_sNr_2_n
+    corr_array_2(iiLH_Ncn, iiLH_s_mellor)      = corr_sNcn_2_n
+    corr_array_2(iiLH_rrain, iiLH_t_mellor)    = corr_trr_2_n
+    corr_array_2(iiLH_Nr, iiLH_t_mellor)       = corr_tNr_2_n
+    corr_array_2(iiLH_Ncn, iiLH_t_mellor)      = corr_tNcn_2_n
+    corr_array_2(iiLH_rrain, iiLH_w)           = corr_wrr_2_n
+    corr_array_2(iiLH_Nr, iiLH_w)              = corr_wNr_2_n
+    corr_array_2(iiLH_Ncn, iiLH_w)             = corr_wNcn_2_n
     corr_array_2(iiLH_rrain,iiLH_Nr)          = corr_rrNr_2_n
-
 
     return
 
@@ -4093,32 +4118,32 @@ module setup_clubb_pdf_params
     precip_frac_2 = hydromet_pdf_params%precip_frac_2
 
     ! Unpack corr_array_1 into correlations (1st PDF component).
-    corr_st_1     = corr_array_1(iiLH_s_mellor,iiLH_t_mellor)
+    corr_st_1     = corr_array_1(iiLH_t_mellor, iiLH_s_mellor)
     corr_ws_1     = corr_array_1(iiLH_s_mellor,iiLH_w)
-    corr_srr_1_n  = corr_array_1(iiLH_s_mellor,iiLH_rrain)
-    corr_sNr_1_n  = corr_array_1(iiLH_s_mellor,iiLH_Nr)
-    corr_sNcn_1_n = corr_array_1(iiLH_s_mellor,iiLH_Ncn)
-    corr_trr_1_n  = corr_array_1(iiLH_t_mellor,iiLH_rrain)
-    corr_tNr_1_n  = corr_array_1(iiLH_t_mellor,iiLH_Nr)
-    corr_tNcn_1_n = corr_array_1(iiLH_t_mellor,iiLH_Ncn)
-    corr_wrr_1_n  = corr_array_1(iiLH_w,iiLH_rrain)
-    corr_wNr_1_n  = corr_array_1(iiLH_w,iiLH_Nr)
-    corr_wNcn_1_n = corr_array_1(iiLH_w,iiLH_Ncn)
-    corr_rrNr_1_n = corr_array_1(iiLH_rrain,iiLH_Nr)
+    corr_srr_1_n  = corr_array_1(iiLH_rrain, iiLH_s_mellor)
+    corr_sNr_1_n  = corr_array_1(iiLH_Nr, iiLH_s_mellor)
+    corr_sNcn_1_n = corr_array_1(iiLH_Ncn, iiLH_s_mellor)
+    corr_trr_1_n  = corr_array_1(iiLH_rrain, iiLH_t_mellor)
+    corr_tNr_1_n  = corr_array_1(iiLH_Nr, iiLH_t_mellor)
+    corr_tNcn_1_n = corr_array_1(iiLH_Ncn, iiLH_t_mellor)
+    corr_wrr_1_n  = corr_array_1(iiLH_rrain, iiLH_w)
+    corr_wNr_1_n  = corr_array_1(iiLH_Nr, iiLH_w)
+    corr_wNcn_1_n = corr_array_1(iiLH_Ncn, iiLH_w)
+    corr_rrNr_1_n = corr_array_1(iiLH_Nr, iiLH_rrain)
 
     ! Unpack corr_array_2 into correlations (2nd PDF component).
-    corr_st_2     = corr_array_2(iiLH_s_mellor,iiLH_t_mellor)
+    corr_st_2     = corr_array_2(iiLH_t_mellor, iiLH_s_mellor)
     corr_ws_2     = corr_array_2(iiLH_s_mellor,iiLH_w)
-    corr_srr_2_n  = corr_array_2(iiLH_s_mellor,iiLH_rrain)
-    corr_sNr_2_n  = corr_array_2(iiLH_s_mellor,iiLH_Nr)
-    corr_sNcn_2_n = corr_array_2(iiLH_s_mellor,iiLH_Ncn)
-    corr_trr_2_n  = corr_array_2(iiLH_t_mellor,iiLH_rrain)
-    corr_tNr_2_n  = corr_array_2(iiLH_t_mellor,iiLH_Nr)
-    corr_tNcn_2_n = corr_array_2(iiLH_t_mellor,iiLH_Ncn)
-    corr_wrr_2_n  = corr_array_2(iiLH_w,iiLH_rrain)
-    corr_wNr_2_n  = corr_array_2(iiLH_w,iiLH_Nr)
-    corr_wNcn_2_n = corr_array_2(iiLH_w,iiLH_Ncn)
-    corr_rrNr_2_n = corr_array_2(iiLH_rrain,iiLH_Nr)
+    corr_srr_2_n  = corr_array_2(iiLH_rrain, iiLH_s_mellor)
+    corr_sNr_2_n  = corr_array_2(iiLH_Nr, iiLH_s_mellor)
+    corr_sNcn_2_n = corr_array_2(iiLH_Ncn, iiLH_s_mellor)
+    corr_trr_2_n  = corr_array_2(iiLH_rrain, iiLH_t_mellor)
+    corr_tNr_2_n  = corr_array_2(iiLH_Nr, iiLH_t_mellor)
+    corr_tNcn_2_n = corr_array_2(iiLH_Ncn, iiLH_t_mellor)
+    corr_wrr_2_n  = corr_array_2(iiLH_rrain, iiLH_w)
+    corr_wNr_2_n  = corr_array_2(iiLH_Nr, iiLH_w)
+    corr_wNcn_2_n = corr_array_2(iiLH_Ncn, iiLH_w)
+    corr_rrNr_2_n = corr_array_2(iiLH_Nr, iiLH_rrain)
 
 
     return

@@ -6,278 +6,16 @@ module diagnose_correlations_module
 
   implicit none 
 
-  public :: diagnose_KK_corr, diagnose_LH_corr, &
-            calc_mean, calc_varnce, calc_w_corr, &
-            corr_stat_output
+  public :: calc_mean, calc_varnce, calc_w_corr, &
+            corr_stat_output, setup_corr_cholesky_mtx, &
+            cholesky_to_corr_mtx_approx, &
+            rearrange_corr_array
             
 
   private :: diagnose_corr 
 
 
   contains 
-
-!-----------------------------------------------------------------------
-  subroutine diagnose_KK_corr( Ncnm, rrainm, Nrm, & ! intent(in)
-                               Ncnp2_on_Ncnm2, rrp2_on_rrm2, Nrp2_on_Nrm2, &
-                               corr_ws, corr_wrr, corr_wNr, corr_wNcn, &
-                               pdf_params, &
-                               corr_rrNr_p, corr_srr_p, corr_sNr_p, corr_sNcn_p, &
-                               corr_rrNr, corr_srr, corr_sNr, corr_sNcn ) ! intent(inout)
-
-    ! Description:
-    !   This subroutine diagnoses the correlation matrix in order to feed it 
-    !   into KK microphysics.   
-
-    ! References:
-    !   Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
-    !   (see CLUBB-Trac:ticket:514)
-    !-----------------------------------------------------------------------
-
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use pdf_parameter_module, only: &
-        pdf_parameter  ! Type
-
-    use constants_clubb, only: &
-        w_tol,         & ! [m/s]
-        s_mellor_tol,  & ! [kg/kg]
-        Ncn_tol,       & ! [num/kg]
-        rr_tol,        & ! [kg/kg] 
-        Nr_tol           ! [num/kg]
-
-    use stats_type, only: & 
-        stat_update_var_pt  ! Procedure(s)
-
-    implicit none
-
-    intrinsic :: sqrt
-
-    ! Local Constants
-    integer, parameter :: &
-      n_variables = 5
-
-    ! Input Variables
-
-    real( kind = core_rknd ), intent(in) :: &
-      Ncnm,           &  ! Mean cloud nuclei concentration             [num/kg]
-      rrainm,         &  ! Mean rain water mixing ratio (overall)      [kg/kg]
-      Nrm,            &  ! Mean rain drop concentration (overall)      [num/kg]
-      Ncnp2_on_Ncnm2, &  ! Variance of Ncn divided by Ncnm^2           [-]
-      rrp2_on_rrm2,   &  ! Variance of rr divided by rrm^2             [-]
-      Nrp2_on_Nrm2,   &  ! Variance of Nr divided by Nrm^2             [-]
-      corr_ws,        &  ! Correlation between s_mellor and w          [-]
-      corr_wrr,       &  ! Correlation between rrain and w             [-]
-      corr_wNr,       &  ! Correlation between Nr and w                [-]
-      corr_wNcn,      &  ! Correlation between Ncn and w               [-]
-      corr_rrNr_p,    &  ! Prescribed correlation between rr and Nr    [-]
-      corr_srr_p,     &  ! Prescribed correlation between s and rr     [-]
-      corr_sNr_p,     &  ! Prescribed correlation between s and Nr     [-]
-      corr_sNcn_p        ! Prescribed correlation between s and Ncn    [-]
-      
-    type(pdf_parameter), intent(in) :: &
-      pdf_params    ! PDF parameters  [units vary]
-
-    ! Input/Output Variables
-    real( kind = core_rknd ), intent(inout) :: &
-      corr_rrNr,   &  ! Correlation between rr and Nr    [-]
-      corr_srr,    &  ! Correlation between s and rr     [-]
-      corr_sNr,    &  ! Correlation between s and Nr     [-]
-      corr_sNcn       ! Correlation between s and Ncn    [-]
-
-
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(n_variables, n_variables) :: &
-      corr_matrix_approx, & ! [-]
-      corr_matrix_prescribed ! [-]
-
-    real( kind = core_rknd ), dimension(n_variables) :: &
-      sqrt_xp2_on_xm2, & ! sqrt of x_variance / x_mean^2          [units vary]
-      xm                 ! means of the hydrometeors              [units vary]
-
-    ! Indices of the hydrometeors
-    integer :: &
-      ii_w     = 1, &
-      ii_s     = 2, &
-      ii_rrain = 3, &
-      ii_Nr    = 4, &
-      ii_Ncn   = 5
-
-    integer :: i, j ! Loop Iterators
-
-
-    !-------------------- Begin code --------------------
-
-    ! Remove compiler warnings about unused variables.
-    if ( .false. ) then
-       xm(ii_rrain) = rrainm
-       xm(ii_Nr)    = Nrm
-       xm(ii_Ncn)   = Ncnm
-       print *, "pdf_params = ", pdf_params
-    endif
-
-    ! set up xp2_on_xm2
-
-    ! TODO Why is wp2_on_wm2=1
-    ! S_i is set to 1 for s_mellor and w, because s_mellorm could be 0
-    sqrt_xp2_on_xm2(ii_w) = 1._core_rknd
-    sqrt_xp2_on_xm2(ii_s) = 1._core_rknd
-
-    sqrt_xp2_on_xm2(ii_rrain) = sqrt(rrp2_on_rrm2)
-    sqrt_xp2_on_xm2(ii_Nr)    = sqrt(Nrp2_on_Nrm2)
-    sqrt_xp2_on_xm2(ii_Ncn)   = sqrt(Ncnp2_on_Ncnm2)
-
-    ! initialize the correlation matrix with 0
-    do i=1, n_variables
-       do j=1, n_variables
-          corr_matrix_approx(i,j) = 0._core_rknd
-          corr_matrix_prescribed(i,j) = 0._core_rknd
-       end do
-    end do
-
-    ! set diagonal of the correlation matrix to 1
-    do i = 1, n_variables
-       corr_matrix_approx(i,i) = 1._core_rknd
-       corr_matrix_prescribed(i,i) = 1._core_rknd
-    end do
-
-
-    ! set the first row to the corresponding prescribed correlations
-    corr_matrix_approx(ii_s,1)     = corr_ws
-    corr_matrix_approx(ii_rrain,1) = corr_wrr
-    corr_matrix_approx(ii_Nr,1)    = corr_wNr
-    corr_matrix_approx(ii_Ncn,1)   = corr_wNcn
-
-    !corr_matrix_prescribed = corr_matrix_approx
-
-    ! set up the prescribed correlation matrix
-    if( ii_rrain > ii_Nr ) then
-      corr_matrix_prescribed(ii_rrain, ii_Nr) = corr_rrNr_p
-    else
-      corr_matrix_prescribed(ii_Nr, ii_rrain) = corr_rrNr_p
-    end if
-
-    if ( ii_s > ii_rrain ) then
-      corr_matrix_prescribed(ii_s, ii_rrain) = corr_srr_p
-    else
-      corr_matrix_prescribed(ii_rrain, ii_s) = corr_srr_p
-    end if
-
-    if ( ii_s > ii_Nr ) then
-      corr_matrix_prescribed(ii_s, ii_Nr) = corr_sNr_p
-    else
-      corr_matrix_prescribed(ii_Nr, ii_s) = corr_sNr_p
-    end if
-
-    if ( ii_s > ii_Ncn ) then
-      corr_matrix_prescribed(ii_s, ii_Ncn) = corr_sNcn_p
-    else
-      corr_matrix_prescribed(ii_Ncn, ii_s) = corr_sNcn_p
-    end if
-    
-    call diagnose_corr( n_variables, sqrt_xp2_on_xm2, corr_matrix_prescribed, & !intent(in)
-                        corr_matrix_approx ) ! intent(inout)    
-
-    if( ii_rrain > ii_Nr ) then
-      corr_rrNr = corr_matrix_approx(ii_rrain, ii_Nr)
-    else
-      corr_rrNr = corr_matrix_approx(ii_Nr, ii_rrain)
-    end if
-
-    if ( ii_s > ii_rrain ) then
-      corr_srr = corr_matrix_approx(ii_s, ii_rrain)
-    else
-      corr_srr = corr_matrix_approx(ii_rrain, ii_s)
-    end if
-
-    if ( ii_s > ii_Nr ) then
-      corr_sNr = corr_matrix_approx(ii_s, ii_Nr)
-    else
-      corr_sNr = corr_matrix_approx(ii_Nr, ii_s)
-    end if
-
-    if ( ii_s > ii_Ncn ) then
-      corr_sNcn = corr_matrix_approx(ii_s, ii_Ncn)
-    else
-      corr_sNcn = corr_matrix_approx(ii_Ncn, ii_s)
-    end if
-
-  end subroutine diagnose_KK_corr
-
-!-----------------------------------------------------------------------
-  subroutine diagnose_LH_corr( xp2_on_xm2, d_variables, corr_matrix_prescribed, & !intent(in)
-                               corr_array ) ! intent(inout)
-
-    ! Description:
-    !   This subroutine diagnoses the correlation matrix in order to feed it 
-    !   into SILHS microphysics.   
-
-    ! References:
-    !   Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
-    !   (see CLUBB Trac ticket#514)
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use corr_matrix_module, only: &
-      iiLH_w ! Variable(s)
-
-    implicit none
-
-    intrinsic :: max, sqrt, transpose
-
-    ! Input Variables
-    integer, intent(in) :: d_variables
-
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
-      corr_matrix_prescribed
-
-    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      xp2_on_xm2 ! ratios of x_variance over x_mean^2
-
-    ! Input/Output variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(inout) :: &
-      corr_array
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
-      corr_matrix_pre_swapped
-
-    real( kind = core_rknd ), dimension(d_variables) :: &
-      swap_array
-
-    !-------------------- Begin code --------------------
-
-    ! Swap the w-correlations to the first row
-    swap_array = corr_array(:, 1)
-    corr_array(1:iiLH_w, 1) = corr_array(iiLH_w, iiLH_w:1:-1)
-    corr_array((iiLH_w+1):d_variables, 1) = corr_array((iiLH_w+1):d_variables, iiLH_w)
-    corr_array(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-    corr_array((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
-
-    corr_matrix_pre_swapped = corr_matrix_prescribed
-    swap_array = corr_matrix_pre_swapped (:,1)
-    corr_matrix_pre_swapped(1:iiLH_w, 1) = corr_matrix_pre_swapped(iiLH_w, iiLH_w:1:-1)
-    corr_matrix_pre_swapped((iiLH_w+1):d_variables, 1) = corr_matrix_pre_swapped( &
-                                                         (iiLH_w+1):d_variables, iiLH_w)
-    corr_matrix_pre_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-    corr_matrix_pre_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
-
-    ! diagnose correlations
-    call diagnose_corr( d_variables, sqrt(xp2_on_xm2), corr_matrix_pre_swapped, &
-                        corr_array)
-
-    ! Swap rows back
-    swap_array = corr_array(:, 1)
-    corr_array(1:iiLH_w, 1) = corr_array(iiLH_w, iiLH_w:1:-1)
-    corr_array((iiLH_w+1):d_variables, 1) = corr_array((iiLH_w+1):d_variables, iiLH_w)
-    corr_array(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-    corr_array((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
-
-  end subroutine diagnose_LH_corr
 
 !-----------------------------------------------------------------------
   subroutine diagnose_correlations( d_variables, corr_array_pre, & ! Intent(in)
@@ -336,7 +74,8 @@ module diagnose_correlations_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
-      corr_array_pre_swapped
+      corr_array_pre_swapped, &
+      corr_array_swapped
       
     real( kind = core_rknd ), dimension(d_variables) :: &
       swap_array
@@ -358,29 +97,35 @@ module diagnose_correlations_module
     end do 
 
     ! Swap the w-correlations to the first row for the prescribed correlations
-    corr_array_pre_swapped = corr_array_pre
-    swap_array = corr_array_pre_swapped (:,1)
-    corr_array_pre_swapped(1:iiLH_w, 1) = corr_array_pre_swapped(iiLH_w, iiLH_w:1:-1)
-    corr_array_pre_swapped((iiLH_w+1):d_variables, 1) = corr_array_pre_swapped( &
-                                                         (iiLH_w+1):d_variables, iiLH_w)
-    corr_array_pre_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-    corr_array_pre_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+    call rearrange_corr_array( d_variables, corr_array_pre, & ! Intent(in)
+                               corr_array_pre_swapped)        ! Intent(inout)
+
+!    corr_array_pre_swapped = corr_array_pre
+!    swap_array = corr_array_pre_swapped (:,1)
+!    corr_array_pre_swapped(1:iiLH_w, 1) = corr_array_pre_swapped(iiLH_w, iiLH_w:1:-1)
+!    corr_array_pre_swapped((iiLH_w+1):d_variables, 1) = corr_array_pre_swapped( &
+!                                                         (iiLH_w+1):d_variables, iiLH_w)
+!    corr_array_pre_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+!    corr_array_pre_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
 
     ! diagnose correlations
     
     if ( .not. l_calc_w_corr ) then
-       corr_array = corr_array_pre_swapped
+       corr_array_swapped = corr_array_pre_swapped
     endif
 
     call diagnose_corr( d_variables, sqrt(xp2_on_xm2_array), corr_array_pre_swapped, &
-                        corr_array )
+                        corr_array_swapped )
 
     ! Swap rows back
-    swap_array = corr_array(:, 1)
-    corr_array(1:iiLH_w, 1) = corr_array(iiLH_w, iiLH_w:1:-1)
-    corr_array((iiLH_w+1):d_variables, 1) = corr_array((iiLH_w+1):d_variables, iiLH_w)
-    corr_array(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-    corr_array((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+    call rearrange_corr_array( d_variables, corr_array_swapped, & ! Intent(in)
+                               corr_array)        ! Intent(inout)
+
+!    swap_array = corr_array(:, 1)
+!    corr_array(1:iiLH_w, 1) = corr_array(iiLH_w, iiLH_w:1:-1)
+!    corr_array((iiLH_w+1):d_variables, 1) = corr_array((iiLH_w+1):d_variables, iiLH_w)
+!    corr_array(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+!    corr_array((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
 
     ! Unpack the corr_array to the corresponding variables
     call unpack_correlations( d_variables, corr_array, & ! Intent(in)
@@ -388,10 +133,67 @@ module diagnose_correlations_module
                               corr_st, corr_srr, corr_sNr, corr_sNcn, &
                               corr_trr, corr_tNr, corr_tNcn, corr_rrNr )  
 
-
   end subroutine diagnose_correlations
 
 !-----------------------------------------------------------------------
+  subroutine rearrange_corr_array( d_variables, corr_array, & ! Intent(in)
+                                   corr_array_swapped)        ! Intent(inout)
+    ! Description:
+    !   This subroutine swaps the w-correlations to the first row if the input
+    !   matrix is in the same order as the *_corr_array_cloud.in files. It swaps
+    !   the rows back to the order of the *_corr_array_cloud.in files if the
+    !   input matrix is already swapped (first row w-correlations).
+    !
+    ! References:
+    !
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use corr_matrix_module, only: &
+        iiLH_w ! Variable(s)
+
+    implicit none
+
+    intrinsic :: max, sqrt, transpose
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables   ! number of diagnosed correlations
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+      corr_array   ! Correlation matrix
+
+    ! Input/Output variables
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(inout) :: &
+      corr_array_swapped   ! Swapped correlation matrix
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(d_variables) :: &
+      swap_array
+
+    integer :: i ! Loop iterator
+
+    !-------------------- Begin code --------------------
+
+
+    ! Swap the w-correlations to the first row for the prescribed correlations
+    corr_array_swapped = corr_array
+    swap_array = corr_array_swapped (:,1)
+    corr_array_swapped(1:iiLH_w, 1) = corr_array_swapped(iiLH_w, iiLH_w:1:-1)
+    corr_array_swapped((iiLH_w+1):d_variables, 1) = corr_array_swapped( &
+                                                    (iiLH_w+1):d_variables, iiLH_w)
+    corr_array_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+    corr_array_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+
+    return
+
+  end subroutine rearrange_corr_array
+  !-----------------------------------------------------------------------
+
+
+  !-----------------------------------------------------------------------
   subroutine diagnose_corr( n_variables, sqrt_xp2_on_xm2, corr_matrix_prescribed, & !intent(in)
                             corr_matrix_approx ) ! intent(inout)
 
@@ -835,6 +637,162 @@ module diagnose_correlations_module
     return
   end function calc_mean
 
+!-----------------------------------------------------------------------
+  subroutine setup_corr_cholesky_mtx( n_variables, corr_matrix, & ! intent(in)
+                                      corr_cholesky_mtx_t )       ! intent(out)
+
+    ! Description:
+    !   This subroutine calculates the transposed correlation cholesky matrix
+    !   from the correlation matrix
+    !
+    ! References:
+    !   1 Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
+    !   2 CLUBB Trac ticket#514
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        zero, & ! Variable(s)
+        one
+
+    implicit none
+
+    intrinsic :: sqrt
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_variables  ! number of variables in the correlation matrix [-]
+
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
+      corr_matrix ! correlation matrix [-]
+
+    ! Output Variables
+
+    ! correlation cholesky matrix transposed L', C = LL'; see reference 1 formula 10
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
+      corr_cholesky_mtx_t ! transposed correlation cholesky matrix [-]
+
+    ! Local Variables
+    integer :: i, j, k ! Loop iterators
+
+    real( kind = core_rknd ), dimension(n_variables, n_variables) :: &
+      s ! s(i,j) = sqrt(1-c(i,j)^2); see ref 1
+
+    !-------------------- Begin code --------------------
+
+    ! calculate all necessary square roots
+    do i = 1, n_variables-1
+       do j = i+1, n_variables
+
+          s(j,i) = sqrt(1._core_rknd-corr_matrix(j,i)**2)
+
+       end do
+    end do
+
+    !!! calculate transposed correlation cholesky matrix; ref 1 formula 10
+
+    ! initialize matrix to zero
+    do i = 1, n_variables
+       do j = 1, n_variables
+
+          corr_cholesky_mtx_t(j,i) = zero
+
+       end do
+    end do
+
+    ! initialize upper triangle and diagonal to one
+    do i = 1, n_variables
+       do j = i, n_variables
+
+          corr_cholesky_mtx_t(j,i) = one
+
+       end do
+    end do
+
+    ! set diagonal elements
+    do j = 2, n_variables
+       do i = 1, j-1
+
+          corr_cholesky_mtx_t(j,j) = corr_cholesky_mtx_t(j,j)*s(j,i)
+
+       end do
+    end do
+
+    ! set first row
+    do j = 2, n_variables
+
+       corr_cholesky_mtx_t(j,1) = corr_matrix(j,1)
+
+    end do
+
+    ! set upper triangle
+    do i = 2, n_variables-1
+       do j = i+1, n_variables
+          do k = 1, i-1
+
+             corr_cholesky_mtx_t(j,i) = corr_cholesky_mtx_t(j,i)*s(j,k)
+
+          end do
+
+          corr_cholesky_mtx_t(j,i) = corr_cholesky_mtx_t(j,i)*corr_matrix(j,i)
+
+       end do
+    end do
+
+    return
+
+  end subroutine setup_corr_cholesky_mtx
+  !-----------------------------------------------------------------------
+
+
+  !-----------------------------------------------------------------------
+  subroutine cholesky_to_corr_mtx_approx( n_variables, corr_cholesky_mtx_t, & ! intent(in)
+                                          corr_matrix_approx )                ! intent(out)
+
+    ! Description:
+    !   This subroutine approximates the correlation matrix from the correlation
+    !   cholesky matrix
+    !
+    ! References:
+    !   1 Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
+    !   2 CLUBB Trac ticket#514
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        zero, & ! Variable(s)
+        one
+
+    implicit none
+
+    intrinsic :: matmul, transpose
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_variables  ! number of variables in the correlation matrix [-]
+
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
+      corr_cholesky_mtx_t ! transposed correlation cholesky matrix [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
+      corr_matrix_approx ! correlation matrix [-]
+
+    !-------------------- Begin code --------------------
+
+    ! approximate the correlation matrix; see ref 1 formula (8)
+    corr_matrix_approx = matmul(transpose(corr_cholesky_mtx_t), corr_cholesky_mtx_t)
+
+    return
+
+  end subroutine cholesky_to_corr_mtx_approx
+  !-----------------------------------------------------------------------
+
+
   !-----------------------------------------------------------------------
   subroutine set_w_corr( nz, d_variables, & ! Intent(in)
                          corr_sw, corr_wrr, corr_wNr, corr_wNcn, &
@@ -1085,9 +1043,9 @@ module diagnose_correlations_module
     corr_srr  = corr_array(iiLH_rrain, iiLH_s_mellor)
     corr_sNr  = corr_array(iiLH_Nr, iiLH_s_mellor)
     corr_sNcn = corr_array(iiLH_Ncn, iiLH_s_mellor)
-    corr_trr  = corr_array(iiLH_rrain, iiLH_s_mellor)
-    corr_tNr  = corr_array(iiLH_Nr, iiLH_s_mellor)
-    corr_tNcn = corr_array(iiLH_Ncn, iiLH_s_mellor)
+    corr_trr  = corr_array(iiLH_rrain, iiLH_t_mellor)
+    corr_tNr  = corr_array(iiLH_Nr, iiLH_t_mellor)
+    corr_tNcn = corr_array(iiLH_Ncn, iiLH_t_mellor)
     corr_rrNr = corr_array(iiLH_rrain, iiLH_Nr)
 
   end subroutine unpack_correlations

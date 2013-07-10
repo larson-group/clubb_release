@@ -226,8 +226,7 @@ module clubb_driver
       read_model_flags_from_file, &
       l_rtm_nudge, &
       l_diagnose_correlations, &
-      l_calc_w_corr, &
-      l_use_modified_corr
+      l_calc_w_corr
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
