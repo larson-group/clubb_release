@@ -7,11 +7,13 @@ module KK_microphys_module
   private
 
   public :: KK_local_micro_driver, &
-            KK_upscaled_micro_driver
+            KK_upscaled_micro_driver, &
+            ! Now used in Latin hypercube
+            ! Eric Raut July 2013
+            KK_microphys_adjust
 
   private :: KK_micro_init, &
              KK_tendency_coefs, &
-             KK_microphys_adjust, &
              KK_upscaled_stats, &
              KK_stats_output, &
              KK_sedimentation
@@ -68,6 +70,9 @@ module KK_microphys_module
     use clubb_precision, only: &
         core_rknd,      & ! Variable(s)
         time_precision
+
+    use parameters_microphys, only: &
+        l_silhs_KK_convergence_adj_mean ! Variable
 
     implicit none
 
@@ -192,6 +197,15 @@ module KK_microphys_module
                         KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
                         KK_Nrm_auto_tndcy, &
                         l_src_adj_enabled, l_evap_adj_enabled )
+
+    ! Do not use l_src_adj or l_evap_adj when l_silhs_KK_convergence_adj_mean is
+    ! true. We need to do this to get Latin hypercube to converge to KK
+    ! analytic. The adjustment code will be called by Latin hypercube for the
+    ! means only. (ticket:558)
+    if (l_silhs_KK_convergence_adj_mean) then
+      l_src_adj_enabled = .false.
+      l_evap_adj_enabled = .false.
+    end if
 
     !!! Microphysics tendency loop.
     ! Loop over all model thermodynamic level above the model lower boundary.

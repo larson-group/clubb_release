@@ -44,12 +44,16 @@ module microphys_driver
     microphys_start_time,         & ! When to start the microphysics [s]
     sigma_g,                      & ! Parameter used in the cloud droplet sedimentation code
     Ncnm_initial,                 & ! Initial value for Ncnm (K&K)
-    Nc_in_cloud0                     ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
+    Nc_in_cloud0                    ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
 
   use parameters_microphys, only: &
     LH_microphys_interactive,     & ! Feed the subcolumns into the microphysics and allow feedback
     LH_microphys_non_interactive, & ! Feed the subcolumns into the microphysics with no feedback
     LH_microphys_disabled           ! Disable latin hypercube entirely
+
+  use parameters_microphys, only: &
+    l_silhs_KK_convergence_adj_mean ! Clip source adjustment terms on mean instead of individual
+                                    ! sample points to test convergence with KK analytic
 
   use constants_clubb, only: &
     cloud_frac_min
@@ -269,7 +273,7 @@ module microphys_driver
       l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       l_in_cloud_Nc_diff, LH_microphys_type, l_local_kk, LH_microphys_calls, &
       LH_sequence_length, LH_seed, l_lh_cloud_weighted_sampling, &
-      l_fix_s_t_correlations, l_lh_vert_overlap, &
+      l_fix_s_t_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
       rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncnp2_on_Ncnm2_cloud, &
       rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
       Ncnp2_on_Ncnm2_below, C_evap, r_0, microphys_start_time, &
@@ -312,6 +316,10 @@ module microphys_driver
     ! Parameters for Khairoutdinov and Kogan microphysics
     !---------------------------------------------------------------------------
     l_local_kk = .false. ! When true we use the local parameterization for K&K
+
+    ! When true, we clip source terms at the mean to facilitate convergence of
+    ! LH and KK analytic.
+    l_silhs_KK_convergence_adj_mean = .false.
 
     ! Exponent on Supersaturation (S) in the KK evaporation equation.
     ! The standard value is 1.
@@ -518,6 +526,8 @@ module microphys_driver
         l_lh_cloud_weighted_sampling, l_write_to_file, iunit )
       call write_text ( "l_fix_s_t_correlations = ", l_fix_s_t_correlations, &
         l_write_to_file, iunit )
+      call write_text ( "l_silhs_KK_convergence_adj_mean = ", l_silhs_KK_convergence_adj_mean, &
+        l_write_to_file, iunit)
       call write_text ( "l_lh_vert_overlap = ", l_lh_vert_overlap, &
         l_write_to_file, iunit )
       call write_text ( "rrp2_on_rrm2_cloud = ", rrp2_on_rrm2_cloud, &
@@ -907,6 +917,20 @@ module microphys_driver
     ) ) then
       stop "LH sampling can not be enabled when using coamps, morrison_gettelman, or &
            &simplified_ice microphysics types"
+    end if
+
+    ! Make sure user hasn't selected l_silhs_KK_convergence_adj_mean when SILHS is disabled
+    ! (ticket:558)
+    if ( l_silhs_KK_convergence_adj_mean .and. &
+      LH_microphys_type_int == LH_microphys_disabled) then
+      stop "l_silhs_KK_convergence_adj_mean requires LH microphysics to be enabled."
+    end if
+
+    ! Make sure user hasn't selected l_silhs_KK_convergence_adj_mean when using
+    ! a microphysics scheme other than khairoutdinov_kogan (KK)
+    if ( l_silhs_KK_convergence_adj_mean .and. &
+          trim( micro_scheme ) /= "khairoutdinov_kogan" ) then
+      stop "l_silhs_KK_convergence_adj_mean requires khairoutdinov_kogan microphysics"
     end if
 
     ! Setup index variables for latin hypercube sampling

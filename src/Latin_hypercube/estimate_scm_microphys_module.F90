@@ -15,7 +15,7 @@ module estimate_scm_microphys_module
                k_lh_start, LH_rt, LH_thl, &
                X_nl_all_levs, LH_sample_point_weights, &
                p_in_Pa, exner, rho, cloud_frac, w_std_dev, &
-               dzq, pdf_params, hydromet,  &
+               dzq, pdf_params, hydromet, rcm,  &
                lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                lh_hydromet_vel, lh_thlm_mc, &
                microphys_sub )
@@ -36,7 +36,8 @@ module estimate_scm_microphys_module
       hydromet_dim ! Variable
 
     use parameters_microphys, only: &
-      l_lh_cloud_weighted_sampling
+      l_lh_cloud_weighted_sampling, & ! Variable(s)
+      l_silhs_KK_convergence_adj_mean
 
     use corr_matrix_module, only: &
       iiLH_s_mellor, &
@@ -64,6 +65,10 @@ module estimate_scm_microphys_module
 
     use stats_type, only: & 
       stat_update_var ! Procedure(s)
+
+    use array_index, only: &
+      iiNrm, & ! Variable(s)
+      iirrainm
 
     implicit none
 
@@ -102,7 +107,8 @@ module estimate_scm_microphys_module
       rho,        & ! Density on thermo. grid  [kg/m^3]
       cloud_frac, & ! Cloud fraction           [-]
       w_std_dev,  & ! Standard deviation of w    [m/s]
-      dzq           ! Difference in height per gridbox   [m]
+      dzq,        & ! Difference in height per gridbox   [m]
+      rcm           ! Mean liquid water mixing ratio     [kg/kg] 
 
     type(pdf_parameter), dimension(nz), intent(in) :: pdf_params
 
@@ -318,8 +324,132 @@ module estimate_scm_microphys_module
     lh_rvm_mc = real( lh_rvm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
     lh_thlm_mc = real( lh_thlm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
 
+    ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
+    if ( l_silhs_KK_convergence_adj_mean ) then
+      call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrainm),           & ! intent(in)
+                                hydromet(:,iiNrm), lh_rrainm_evap, lh_rrainm_auto,  & ! intent(in)
+                                lh_rrainm_accr,                                     & ! intent(in)
+                                lh_hydromet_mc(:,iirrainm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
+                                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                    ! intent(out)
+    end if
+
     return
   end subroutine est_single_column_tndcy
+
+  !-----------------------------------------------------------------------------
+  subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrainm, Nrm,         &
+                                  rrainm_evap, rrainm_auto, rrainm_accr,   &
+                                  rrainm_mc, Nrm_mc,                       &
+                                  rvm_mc, rcm_mc, thlm_mc )
+    use KK_Nrm_tendencies, only: &
+      KK_Nrm_auto_mean, & ! Procedure(s)
+      KK_Nrm_evap_local_mean
+
+    use KK_microphys_module, only: &
+      KK_microphys_adjust ! Procedure
+
+    use clubb_precision, only: &
+      time_precision, &
+      core_rknd
+
+    use constants_clubb, only: &
+      rr_tol, & ! Constant(s)
+      Nr_tol, &
+      zero
+
+    implicit none
+
+    ! Input variables
+    real( kind = time_precision ), intent(in) :: &
+      dt   ! Model timestep
+
+    integer, intent(in) :: &
+      nz   ! Number of vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      exner,       & ! Exner function                            [-]
+      rcm,         & ! Mean liquid water mixing ratio            [kg/kg]
+      rrainm,      & ! Rain water mixing ration                  [kg/kg]
+      Nrm,         & ! Rain drop concentration                   [num/kg]
+      rrainm_evap, & ! Mean change in rain due to evap           [(kg/kg)/s]
+      rrainm_auto, & ! Mean change in rain due to autoconversion [(kg/kg)/s]
+      rrainm_accr    ! Mean change in rain due to accretion      [(kg/kg)/s]
+
+    ! Output variables
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      rrainm_mc, & ! Mean change in rain due to microphysics [(kg/kg)/s] 
+      Nrm_mc,    & ! Mean change in Nrm due to microphysics  [(kg/kg)/s]
+      rvm_mc,    & ! Time tendency of rvm                    [(kg/kg)/s]
+      rcm_mc,    & ! Time tendency of rcm                    [(kg/kg)/s]
+      thlm_mc      ! Time tendency of thlm                   [(kg/kg)/s]
+
+    ! Local variables
+    real( kind = core_rknd ) :: &
+      KK_Nrm_evap_tndcy, &
+      KK_Nrm_auto_tndcy
+
+    logical, parameter :: &
+      ! Whether to adjust rrainm_source to not over-deplete cloud water
+      l_src_adj_enabled = .true.,  &
+      ! Whether to adjust rrainm_evap to not over-evaporate rain
+      l_evap_adj_enabled = .true., &
+      ! We don't want KK_microphys_adjust to sample, because it is being called
+      ! from within SILHS.
+      l_stats_samp_in_sub = .false.
+
+    integer :: k
+
+    !----- Begin code -----
+
+    ! Initialize output
+    rrainm_mc = zero
+    Nrm_mc = zero
+    rvm_mc = zero
+    rcm_mc = zero
+    thlm_mc = zero
+
+    ! Loop over each vertical level above the lower boundary
+    do k = 2, nz, 1
+      ! Compute KK_Nrm_auto_tndcy, KK N_r autoconversion tendency, for this
+      ! vertical level
+      KK_Nrm_auto_tndcy = KK_Nrm_auto_mean(rrainm_auto(k))
+
+      ! Compute KK_Nrm_evap_tndcy, KK N_r evaporation tendency, for this
+      ! vertical level
+      if (rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol) then
+        KK_Nrm_evap_tndcy &
+        = KK_Nrm_evap_local_mean( rrainm_evap(k), Nrm(k), rrainm(k), dt )
+      else
+        KK_Nrm_evap_tndcy = zero
+      end if
+
+      ! Now we call KK_microphys_adjust to adjust the means of the mc terms
+      call KK_microphys_adjust(dt, exner(k), rcm(k), rrainm(k), Nrm(k),   & !intent(in)
+                               rrainm_evap(k), rrainm_auto(k),            & !intent(in)
+                               rrainm_accr(k), KK_Nrm_evap_tndcy,         & !intent(in)
+                               KK_Nrm_auto_tndcy, l_src_adj_enabled,      & !intent(in)
+                               l_evap_adj_enabled, l_stats_samp_in_sub, k,& !intent(in)
+                               rrainm_mc(k), Nrm_mc(k),                   & !intent(out)
+                               rvm_mc(k), rcm_mc(k), thlm_mc(k) )           !intent(out)
+    end do ! k = 2, nz, 1
+
+    ! Set boundary conditions
+    rrainm_mc(1) = zero
+    rrainm_mc(nz) = zero
+
+    Nrm_mc(1) = zero
+    Nrm_mc(nz) = zero
+
+    rvm_mc(1) = zero
+    rvm_mc(nz) = zero
+
+    rcm_mc(1) = zero
+    rcm_mc(nz) = zero
+
+    thlm_mc(1) = zero
+    thlm_mc(nz) = zero
+
+  end subroutine adjust_KK_src_means
 
   !-----------------------------------------------------------------------------
   subroutine copy_X_nl_into_hydromet( nz, d_variables, n_micro_calls, &

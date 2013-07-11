@@ -308,7 +308,7 @@ module estimate_lh_micro_module
                                 k_lh_start, LH_rt, LH_thl, & ! In
                                 X_nl_all_levs, LH_sample_point_weights, & ! In
                                 p_in_Pa, exner, rho, cloud_frac, w_std_dev, & ! In
-                                dzq, pdf_params, hydromet, & ! In
+                                dzq, pdf_params, hydromet, rcm, & ! In
                                 lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, & ! Out
                                 lh_hydromet_vel, lh_thlm_mc, &  ! Out
                                 microphys_sub ) ! Procedure
