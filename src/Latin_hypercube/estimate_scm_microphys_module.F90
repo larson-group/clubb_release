@@ -135,9 +135,12 @@ module estimate_scm_microphys_module
       lh_hydromet_vel_sum   ! LH est of hydrometeor sedimentation velocity [m/s]
 
     real( kind = dp ), dimension(nz) :: &
-      lh_rcm_mc_sum,  & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
-      lh_rvm_mc_sum,  & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
-      lh_thlm_mc_sum    ! LH est of time tendency of liquid potential temperature [K/s]
+      lh_rrainm_auto_sum, & ! LH est of time tendency of autoconversion               [kg/kg/s]
+      lh_rrainm_accr_sum, & ! LH est of time tendency of accretion                    [kg/kg/s]
+      lh_rrainm_evap_sum, & ! LH est of time tendency of evaporation                  [kg/kg/s]
+      lh_rcm_mc_sum,      & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
+      lh_rvm_mc_sum,      & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
+      lh_thlm_mc_sum        ! LH est of time tendency of liquid potential temperature [K/s]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       hydromet_columns ! Hydrometeor species                    [units vary]
@@ -158,7 +161,7 @@ module estimate_scm_microphys_module
       lh_thlp2_mc_tndcy, & ! LH micro. tendency for <thl'^2>  [K^2/s]
       lh_rrainm_auto,    & ! Autoconversion budget for <rr>   [kg/kg/s]
       lh_rrainm_accr,    & ! Accretion budget for <rr>        [kg/kg/s]
-      lh_rrainm_evap
+      lh_rrainm_evap       ! Evaporation budget for <rr>      [kg/kg/s]
 
     real( kind = dp ), pointer, dimension(:,:) :: &
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
@@ -222,6 +225,10 @@ module estimate_scm_microphys_module
     lh_rvm_mc_sum(:) = 0._dp
 
     lh_thlm_mc_sum(:) = 0._dp
+
+    lh_rrainm_auto_sum(:) = 0._dp
+    lh_rrainm_accr_sum(:) = 0._dp
+    lh_rrainm_evap_sum(:) = 0._dp
 
     do sample = 1, n_micro_calls
 
@@ -308,6 +315,10 @@ module estimate_scm_microphys_module
       lh_rvm_mc_sum(:) = lh_rvm_mc_sum(:) + real( lh_rvm_mc(:), kind=dp )
       lh_thlm_mc_sum(:) = lh_thlm_mc_sum(:) + real( lh_thlm_mc(:), kind=dp )
 
+      lh_rrainm_auto_sum(:) = lh_rrainm_auto_sum(:) + real( lh_rrainm_auto(:), kind=dp )
+      lh_rrainm_accr_sum(:) = lh_rrainm_accr_sum(:) + real( lh_rrainm_accr(:), kind=dp )
+      lh_rrainm_evap_sum(:) = lh_rrainm_evap_sum(:) + real( lh_rrainm_evap(:), kind=dp )
+
       ! Loop to get new sample
     end do ! sample = 1, n_micro_calls
 
@@ -323,6 +334,13 @@ module estimate_scm_microphys_module
     lh_rcm_mc = real( lh_rcm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
     lh_rvm_mc = real( lh_rvm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
     lh_thlm_mc = real( lh_thlm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
+
+    lh_rrainm_auto = real( lh_rrainm_auto_sum, kind=core_rknd ) / &
+                                     real( n_micro_calls, kind=core_rknd )
+    lh_rrainm_accr = real( lh_rrainm_accr_sum, kind=core_rknd ) / &
+                                     real( n_micro_calls, kind=core_rknd )
+    lh_rrainm_evap = real( lh_rrainm_evap_sum, kind=core_rknd ) / &
+                                     real( n_micro_calls, kind=core_rknd )
 
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
