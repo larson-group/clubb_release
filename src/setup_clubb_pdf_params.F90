@@ -135,12 +135,13 @@ module setup_clubb_pdf_params
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
 
-    ! Output Variables
+    ! Input/Output Variables
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
-    intent(out) :: &
+    intent(inout) :: &
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
+    ! Output Variables
     real( kind = core_rknd ), dimension(d_variables, nz), intent(out) :: &
       mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
       mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
@@ -277,6 +278,7 @@ module setup_clubb_pdf_params
 
     integer :: k  ! Loop index
 
+    ! ---- Begin Code ----
 
     ! Covariance of vertical velocity and a hydrometeor
     ! (< w'r_r' > and < w'N_r' >).
@@ -598,7 +600,6 @@ module setup_clubb_pdf_params
 
 
     enddo  ! Setup PDF parameters loop: k = 2, nz, 1
-
 
     return
 
@@ -3827,18 +3828,18 @@ module setup_clubb_pdf_params
     integer, intent(in) :: &
       d_variables    ! Number of variables in the correlation array.
 
-    ! Output Variables
+    ! Input/Output Variables
     real( kind = core_rknd ), dimension(d_variables,d_variables), &
-    intent(out) :: &
+    intent(inout) :: &
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
+    ! Output Variables
     real( kind = core_rknd ), dimension(d_variables), intent(out) :: &
       mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
       mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
       sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
       sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
-
 
     type(hydromet_pdf_parameter), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
