@@ -686,7 +686,7 @@ module diagnose_correlations_module
     do i = 1, n_variables-1
        do j = i+1, n_variables
 
-          s(j,i) = sqrt(1._core_rknd-corr_matrix(j,i)**2)
+          s(j,i) = sqrt(1._core_rknd - corr_matrix(j,i)**2)
 
        end do
     end do
@@ -716,6 +716,7 @@ module diagnose_correlations_module
        do i = 1, j-1
 
           corr_cholesky_mtx_t(j,j) = corr_cholesky_mtx_t(j,j)*s(j,i)
+         ! print *, "s(", j, ",", i, ") = ", s(j,i)
 
        end do
     end do
@@ -785,7 +786,7 @@ module diagnose_correlations_module
     !-------------------- Begin code --------------------
 
     ! approximate the correlation matrix; see ref 1 formula (8)
-    corr_matrix_approx = matmul(transpose(corr_cholesky_mtx_t), corr_cholesky_mtx_t)
+    corr_matrix_approx = matmul(corr_cholesky_mtx_t, transpose(corr_cholesky_mtx_t))
 
     return
 
