@@ -38,7 +38,7 @@ NETCDF="/usr/local/netcdf-pgi"
 # == LAPACK libraries ==
 # Portland group usually has static versions of these
 #LAPACK="-llapack -lblas"
-LAPACK="-L/opt/acml5.0.0/pgi64 -lacml"
+LAPACK="-lacml"
 
 # == Linking Flags ==
 LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
@@ -67,4 +67,3 @@ mkmf=$dir/mkmf
 
 # gmake command to use and options: '-j 2' enables parallel compilation
 gmake="make"
-
