@@ -31,7 +31,7 @@ run_serial()
  
 
 		# Set debug level to 0
-		sed -i 's/debug_level\s*=\s*.*/debug_level = 0/g' 'clubb.in'
+#		sed -i 's/debug_level\s*=\s*.*/debug_level = 0/g' 'clubb.in'
 
 		# This is a kluge for Fortran compilers that the can't handle comments in 
 		# a namelist by using the sed command to remove them.
@@ -59,7 +59,7 @@ run_parallel()
  
 
 		# Set debug level to 0
-		sed -i 's/debug_level\s*=\s*.*/debug_level = 0/g' "${NAMELISTS[$x]}"
+#		sed -i 's/debug_level\s*=\s*.*/debug_level = 0/g' "${NAMELISTS[$x]}"
 
 		# This is a kluge for Fortran compilers that the can't handle comments in 
 		# a namelist by using the sed command to remove them.
@@ -69,7 +69,7 @@ run_parallel()
 
 	# Run the CLUBB thread test
 	if [ -e ../bin/clubb_thread_test ]; then
-		../bin/clubb_thread_test
+		../bin/clubb_thread_test &> /dev/null
 	else
 		echo "clubb_thread_test not found (did you re-compile?)"
 		exit
@@ -96,11 +96,21 @@ run_serial
 mkdir $SERIAL
 mv ../output/*.??? $SERIAL
 
+setup_files=`ls $SERIAL/*_setup.txt |wc -l`
+if [ "${#RUN_CASES[@]}" -ne "$setup_files" ]; then
+	echo "One or more simulations failed to run in serial"
+fi
+
 # Run in parallel mode
 run_parallel
 
 mkdir $PARALLEL
 mv ../output/*.??? $PARALLEL
+
+setup_files=`ls $PARALLEL/*_setup.txt |wc -l`
+if [ "${#RUN_CASES[@]}" -ne "$setup_files" ]; then
+	echo "One or more simulations failed to run in parallel"
+fi
 
 for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
 	diff $SERIAL/"${RUN_CASES[$x]}"_zt.dat $PARALLEL/"${RUN_CASES[$x]}"_zt.dat > 'diff.txt'
