@@ -322,7 +322,9 @@ module clubb_driver
     logical :: &
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
-      l_input_fields    ! Whether to set model variables from a file
+      l_input_fields, & ! Whether to set model variables from a file
+      l_allow_small_dtout  ! Whether to allow output timestep lower than minimum
+                        ! required by format
 
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
@@ -443,7 +445,8 @@ module clubb_driver
 
 
     namelist /stats_setting/ & 
-      l_stats, fname_prefix, stats_tsamp, stats_tout, stats_fmt
+      l_stats, fname_prefix, stats_tsamp, stats_tout, stats_fmt, &
+         l_allow_small_dtout
 
 !-----------------------------------------------------------------------
 
@@ -769,7 +772,8 @@ module clubb_driver
              l_write_to_file, iunit )
       call write_text( "stats_tout = ", real( stats_tout, kind = core_rknd ), &
              l_write_to_file, iunit )
-
+      call write_text( "l_allow_small_dtout = ", l_allow_small_dtout, &
+             l_write_to_file, iunit)
       call write_text( "Constant flags:", l_write_to_file, iunit )
       call write_text( "l_pos_def = ", l_pos_def, l_write_to_file, iunit )
       call write_text( "l_hole_fill = ", l_hole_fill, l_write_to_file, iunit )
@@ -1045,7 +1049,7 @@ module clubb_driver
     ! not include CLUBB's ghost point. -nielsenb 20 Oct 2009
     if ( l_output_rad_files ) then
       ! Initialize statistics output
-      call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
+      call stats_init( iunit, fname_prefix, fdir, l_stats, l_allow_small_dtout, & ! Intent(in)
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
@@ -1053,7 +1057,7 @@ module clubb_driver
                        (/rlon/), (/rlat/), time_current, dt_main ) ! Intent(in)
     else
       ! Initialize statistics output
-      call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
+      call stats_init( iunit, fname_prefix, fdir, l_stats, l_allow_small_dtout, & ! Intent(in)
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, 0, & ! Intent(in)
                        rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)

@@ -15,7 +15,7 @@ module stats_subs
   contains
 
   !-----------------------------------------------------------------------
-  subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, &
+  subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, l_allow_small_dtout_in, &
                          stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
                          nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
@@ -94,7 +94,8 @@ module stats_subs
       fname_rad_zm, & 
       fname_sfc, & 
       l_netcdf, & 
-      l_grads
+      l_grads, &
+      l_allow_small_dtout
 
     use clubb_precision, only: & 
       time_precision, & ! Constant(s)
@@ -155,7 +156,9 @@ module stats_subs
       fname_prefix, & ! Start of the stats filenames
       fdir            ! Directory to output to
 
-    logical, intent(in) :: l_stats_in ! Stats on? T/F
+    logical, intent(in) :: &
+      l_stats_in, & ! Stats on? T/F
+      l_allow_small_dtout_in ! Allow output timestep lower than supported by format
 
     character(len=*), intent(in) :: &
       stats_fmt_in    ! Format of the stats file output
@@ -251,6 +254,8 @@ module stats_subs
     stats_tsamp = stats_tsamp_in
     stats_tout  = stats_tout_in
     stats_fmt   = trim( stats_fmt_in )
+
+    l_allow_small_dtout = l_allow_small_dtout_in
 
     if ( .not. l_stats ) then
       l_stats_samp  = .false.

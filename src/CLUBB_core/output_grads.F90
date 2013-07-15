@@ -49,14 +49,18 @@ module output_grads
 !   None
 !-------------------------------------------------------------------------------
     use constants_clubb, only:  & 
-        fstderr,  & ! Variable 
-        fstdout
+        fstderr,  & ! Constant(s)
+        fstdout, &
+        sec_per_min
 
     use stat_file_module, only: & 
         stat_file ! Type
 
     use clubb_precision, only:  & 
         time_precision ! Variable
+
+    use stats_variables, only: &
+        l_allow_small_dtout
 
     implicit none
 
@@ -141,6 +145,20 @@ module output_grads
     grads_file%dtwrite = dtwrite
 
     grads_file%nvar = nvar
+
+    ! Check to make sure the timestep is appropriate. GrADS does not support an
+    ! output timestep less than 1 minute.
+    if (dtwrite < sec_per_min) then
+      write(fstderr,*) "Warning: GrADS requires an output timestep of at least &
+                       &one minute, but the requested output timestep &
+                       &(stats_tout) is less than one minute."
+      if (.not. l_allow_small_dtout) then
+        write(fstderr,*) "To override this warning, set l_allow_small_dtout = &
+                         &.true. in the stats_setting namelist in the &
+                         &appropriate *_model.in file."
+        stop "Fatal error in determine_time_inc"
+      end if
+    end if
 
     ! Check whether GrADS files already exists
 
