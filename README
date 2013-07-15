@@ -224,7 +224,8 @@ follow the following steps:
   - ./compile.bash config/linux_x86_64_gfortran.bash
     (in the clubb/compile directory)
     (replace config/linux_x86_64_gfortran.bash to match the desired platform
-     and compiler)
+     and compiler.  You may need to edit these for your pariticular computer
+     setup if your paths are not the same as ours)
 - Run a benchmark case (e.g. BOMEX)
   - ./run_scm.bash bomex
     (in the clubb/run_scripts directory)
@@ -478,6 +479,8 @@ by CLUBB in a host model.  These include:
   It is probably best to avoid the current Sun Performance Library for 
   production simulations, since it appears to have a high OpenMP overhead 
   when solving the matrices in CLUBB.
+  On IBM AIX the includedlibrary ESSL lacks the band diagonal solvers that 
+  CLUBB uses, so regular LAPACK must be used.
 
 3. If the host model's timestep is less than a minute, then a time-saving option
   is to sub-cycle the CLUBB code so that CLUBB is being called at a 60 or 120
