@@ -120,7 +120,7 @@ module corr_cholesky_mtx_tests
       total_mismatches   ! Total number of mismatches
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(3,3) :: &
+    real( kind = core_rknd ), dimension(3,3), intent(out) :: &
       corr_cholesky_array_t_1,     &
       corr_cholesky_array_t_2,     &
       corr_cholesky_array_t_3
@@ -142,18 +142,23 @@ module corr_cholesky_mtx_tests
     ! ---- Begin Code ----
 
     ! Initialize the correlation arrays for the input
-    corr_array_1 = reshape( (/1., 0., 0., 0., 1., 0., 0., 0., 1./), (/3, 3/) )
-    corr_array_2 = reshape( (/1., 1., 1., 0., 1., 1., 0., 0., 1./), (/3, 3/) )
-    corr_array_3 = reshape( (/1.         , sqrt(0.75), sqrt(0.75), &
-                              0.         ,         1., sqrt(0.75), &
-                              0.         ,         0.,         1./), (/3, 3/) )
+    corr_array_1 = reshape( (/one, zero, zero, zero, one, zero, zero, zero, one/), (/3, 3/) )
+    corr_array_2 = reshape( (/one, one, one, zero, one, one, zero, zero, one/), (/3, 3/) )
+    corr_array_3 = reshape( (/one         , sqrt(0.75_core_rknd), sqrt(0.75_core_rknd), &
+                              zero         ,                 one, sqrt(0.75_core_rknd), &
+                              zero         ,                zero,                one/), &
+                            (/3, 3/) )
 
     ! Initialize the corresponding solutions for the correlation cholesky matrices
-    corr_cholesky_array_t_1_cmp = reshape( (/1., 0., 0., 0., 1., 0., 0., 0., 1./), (/3, 3/) )
-    corr_cholesky_array_t_2_cmp = reshape( (/1., 1., 1., 0., 0., 0., 0., 0., 0./), (/3, 3/) )
-    corr_cholesky_array_t_3_cmp = reshape( (/1.         , sqrt(0.75),   sqrt(0.75),    &
-                                             0.         ,        0.5, sqrt(0.75)/2., &
-                                             0.         ,         0.,         0.25/), (/3, 3/) )
+    corr_cholesky_array_t_1_cmp = reshape( (/one, zero, zero, zero, one, zero, zero, zero, one/), &
+                                           (/3, 3/) )
+    corr_cholesky_array_t_2_cmp = reshape( (/one, one, one, zero, zero, zero, zero, zero, zero/), &
+                                           (/3, 3/) )
+    corr_cholesky_array_t_3_cmp = reshape( &
+                                 (/one     , sqrt(0.75_core_rknd), sqrt(0.75_core_rknd), &
+                                   zero    ,       0.5_core_rknd, 0.433012702_core_rknd, &
+                                   zero    ,             zero,         0.25_core_rknd/), &
+                                 (/3, 3/) )
 
     print *, "correlation matrix :"
     call print_matrix(3, corr_array_1)
@@ -246,12 +251,15 @@ module corr_cholesky_mtx_tests
     ! ---- Begin Code ----
 
     ! Set the corresponding solutions for the approximated correlation matrices
-    corr_array_approx_1_cmp = reshape( (/1., 0., 0., 0., 1., 0., 0., 0., 1./), (/3, 3/) )
-    corr_array_approx_2_cmp = reshape( (/1., 1., 1., 1., 1., 1., 1., 1., 1./), (/3, 3/) )
-    corr_array_approx_3_cmp = reshape( (/1.         ,  sqrt(0.75),           sqrt(0.75), &
-                                          sqrt(0.75),          1., 0.75+0.25*sqrt(0.75), &
-                                          sqrt(0.75), 0.75+0.25*sqrt(0.75),        1./), &
+    corr_array_approx_1_cmp = reshape( (/one, zero, zero, zero, one, zero, zero, zero, one/), &
                                        (/3, 3/) )
+    corr_array_approx_2_cmp = reshape( (/one, one, one, one, one, one, one, one, one/), &
+                                       (/3, 3/) )
+    corr_array_approx_3_cmp = reshape( &
+                              (/one        ,  sqrt(0.75_core_rknd),  sqrt(0.75_core_rknd), &
+                                sqrt(0.75_core_rknd),          one, 0.966506351_core_rknd, &
+                                sqrt(0.75_core_rknd), 0.966506351_core_rknd,        one/), &
+                              (/3, 3/) )
 
     print *, "correlation cholesky matrix :"
     call print_matrix(3, corr_cholesky_array_t_1)
