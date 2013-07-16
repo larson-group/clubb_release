@@ -11,6 +11,9 @@ program int2txt
 !-----------------------------------------------------------------------
 #include "CLUBB_core/recl.inc"
 
+  use mt95, only: &
+    genrand_intg ! Integer precision
+
 #ifdef AbsoftUNIXFortran
   use unix_library, only: iargc, getarg
 #endif
@@ -31,12 +34,14 @@ program int2txt
   integer, external :: iargc
 #endif
 
+  intrinsic :: trim
+
   ! Parameter Constants
   integer, parameter ::  & 
-  fstderr = 0, fstdout = 6, seed_dim = 34
+    fstderr = 0, fstdout = 6, seed_dim = 34
 
   ! Local Variables
-  integer(kind=4), dimension(seed_dim) :: seed ! Our seed data
+  integer(kind=genrand_intg), dimension(seed_dim) :: seed ! Our seed data
 
   character(len=50) :: rand_source
 
