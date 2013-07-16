@@ -163,11 +163,11 @@ program jacobian
 
   clubb_params%name(1:nparams) = params_list(1:nparams)
 
-  write(unit=fstdout,fmt='(a12,2a12)')  & 
+  write(unit=fstdout,fmt='(a16,2a12)')  & 
     "Parameter   ", "Initial     ", "Varied      "
 
   do i = 1, clubb_params%entries, 1
-    write(unit=*,fmt='(a12,2f12.5)') clubb_params%name(i),  & 
+    write(unit=*,fmt='(a16,2f12.5)') clubb_params%name(i),  & 
       clubb_params%value(i), clubb_params%value(i) * delta_factor
   end do
 
