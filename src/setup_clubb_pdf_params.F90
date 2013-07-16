@@ -104,7 +104,8 @@ module setup_clubb_pdf_params
         diagnose_correlations, & ! Procedure(s)
         setup_corr_cholesky_mtx, &
         cholesky_to_corr_mtx_approx, &
-        rearrange_corr_array
+        rearrange_corr_array, &
+        corr_array_assertion_checks
 
     implicit none
 
@@ -596,8 +597,9 @@ module setup_clubb_pdf_params
           call rearrange_corr_array( d_variables, corr_matrix_approx_swap, & ! Intent(in)
                                      corr_matrix_approx(:,:,k))              ! Intent(inout)
 
-       endif
+          call corr_array_assertion_checks( d_variables, corr_matrix_approx(:, :, k) )
 
+       endif
 
     enddo  ! Setup PDF parameters loop: k = 2, nz, 1
 

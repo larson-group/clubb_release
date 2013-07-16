@@ -9,7 +9,7 @@ module diagnose_correlations_module
   public :: calc_mean, calc_varnce, calc_w_corr, &
             corr_stat_output, setup_corr_cholesky_mtx, &
             cholesky_to_corr_mtx_approx, &
-            rearrange_corr_array
+            rearrange_corr_array, corr_array_assertion_checks
             
 
   private :: diagnose_corr 
@@ -76,9 +76,6 @@ module diagnose_correlations_module
     real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
       corr_array_pre_swapped, &
       corr_array_swapped
-      
-    real( kind = core_rknd ), dimension(d_variables) :: &
-      swap_array
 
     real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
       corr_array
@@ -172,8 +169,6 @@ module diagnose_correlations_module
     ! Local Variables
     real( kind = core_rknd ), dimension(d_variables) :: &
       swap_array
-
-    integer :: i ! Loop iterator
 
     !-------------------- Begin code --------------------
 
@@ -297,6 +292,86 @@ module diagnose_correlations_module
     end do ! do i
     
   end subroutine diagnose_corr 
+
+  !-----------------------------------------------------------------------
+  subroutine corr_array_assertion_checks( n_variables, corr_array )
+
+    ! Description:
+    !   This subroutine does the assertion checks for the corr_array.
+
+    ! References:
+    !
+    !
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+      max_mag_correlation ! Variable(s)
+
+    use constants_clubb, only: &
+      one ! Variable(s)
+
+    use error_code, only: &
+      clubb_at_least_debug_level  ! Procedure(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_variables  ! number of variables in the correlation matrix [-]
+
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
+      corr_array ! correlation matrix [-]
+
+    ! Local Variables
+    integer :: i, j ! Loop iterator
+
+    real( kind = core_rknd ), parameter :: &
+    tol = 1.e-6 ! Maximum acceptable tolerance for the difference of the diagonal elements of
+                ! corr_array to one
+
+    !-------------------- Begin code --------------------
+
+    if ( clubb_at_least_debug_level( 1 ) ) then
+
+       do i = 1, n_variables - 1
+          do j = i+1, n_variables
+
+             ! Check if upper and lower triangle values are within the correlation boundaries
+             if ( ( corr_array(i,j) < -max_mag_correlation ) &
+                  .or. ( corr_array(i,j) > max_mag_correlation ) &
+                  .or. ( corr_array(j,i) < -max_mag_correlation ) &
+                  .or. ( corr_array(j,i) > max_mag_correlation ) ) &
+             then
+
+                stop "Error: A value in the correlation matrix is out of range."
+
+             endif
+
+          enddo
+       enddo
+
+    endif
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+       do i = 1, n_variables
+          ! Check if the diagonal elements are one (up to a tolerance)
+          if ( ( corr_array(i,i) > one + tol ) .or. (corr_array(i,i) < one - tol ) ) then
+
+             stop "Error: Diagonal element(s) of the correlation matrix are unequal to one."
+
+          endif
+       enddo
+
+    endif
+
+    return
+
+  end subroutine corr_array_assertion_checks
+
 
   !-----------------------------------------------------------------------
   subroutine approx_w_corr( nz, d_variables, pdf_params, & ! Intent(in)

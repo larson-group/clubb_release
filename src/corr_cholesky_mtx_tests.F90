@@ -382,7 +382,7 @@ module corr_cholesky_mtx_tests
        call print_matrix(3, obtained_result)
        print *, "Comparison result:  "
        call print_matrix(3, comparison_result)
-       print *, "Percent difference:  ", percent_diff*100., "%"
+       print *, "Percent difference:  ", percent_diff*100._core_rknd, "%"
        print *, "--"
        print *, " "
 
