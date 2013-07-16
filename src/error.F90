@@ -60,37 +60,36 @@ module error
   ! inv_count is a modular counter [1-3] used to determine
   ! which file to output to if l_stdout_on_invalid is true.
   integer, private ::  & 
-    inv_count
+    inv_count = 0
 
   !-----------------------------------------------------------------------
 
 
   real( kind = core_rknd ), public ::  & 
-    f_tol,        & ! The precision to tune for
-    anneal_temp ! Initial temperature for the simulated annealing algorithm
+    f_tol = 1e-5_core_rknd, &    ! The precision to tune for
+    anneal_temp = 100._core_rknd ! Initial temperature for the simulated annealing algorithm
 
   integer, public :: & 
-    anneal_iter, & ! Number of annealing iterations to perform
-    tune_type,   & ! Toggle for downhill simplex of simulated annealing
-    c_total,     & ! Total number of simulation cases to tune over
-    v_total     ! Total number of variables to tune over
+    anneal_iter = 0, &    ! Number of annealing iterations to perform
+    tune_type = iesa, & ! Toggle for downhill simplex of simulated annealing
+    c_total = 0, &      ! Total number of simulation cases to tune over
+    v_total = 0         ! Total number of variables to tune over
 
   logical, public :: & 
-    l_results_stdout, & ! Whether to print tuning results to the terminal
-    l_results_file,   & ! Whether to generate a new error.in based on 
+    l_results_stdout = .false., & ! Whether to print tuning results to the terminal
+    l_results_file = .false.,   & ! Whether to generate a new error.in based on 
                         ! the new tuning constants
-    l_stdout_on_invalid
+    l_stdout_on_invalid = .false. ! Generate a new error.in when the simulation crashes
 
   logical, parameter, public :: &
-    l_save_tuning_run = .true. 
-      ! If true, writes the results of the tuning run to a file
+    l_save_tuning_run = .true.  ! If true, writes the results of the tuning run to a file
 
   character(len=50), public :: &
-    tuning_filename ! File where results of tuning run are
-                    ! written if l_save_tuning_run = .true.
+    tuning_filename = '' ! File where results of tuning run are
+                         ! written if l_save_tuning_run = .true.
 
   integer, parameter, public :: &
-    file_unit = 15   ! File unit number connected with tuning_filename
+    file_unit = 15  ! File unit number connected with tuning_filename
 
 
   character(len=10), dimension(:), allocatable, private ::  & 
@@ -101,7 +100,7 @@ module error
     time ! Time intervals
 
   ! Additions for using imposed weights as scaling factors
-  logical :: l_initialize_sigma
+  logical :: l_initialize_sigma = .true.
 
   real( kind = core_rknd ), dimension(:,:), allocatable, private ::  & 
     err_terms, & 
@@ -125,17 +124,17 @@ module error
 
   ! Various Variables for returning results
   integer, public :: &
-    iter ! Total number of iterations amoeba spent calculating optimal values
+    iter = 0 ! Total number of iterations amoeba spent calculating optimal values
 
   real( kind = core_rknd ), public :: & 
-    init_err,  & ! error for the initial constants
-    min_err      ! the lowest the minimization algorithm could go
+    init_err = -999._core_rknd,  & ! Error for the initial constants
+    min_err  = -999._core_rknd     ! The lowest the minimization algorithm could go
 
   real( kind = core_rknd ), dimension(nparams), private :: & 
-    params  ! Vector of all possible CLUBB parameters
+    params = -999._core_rknd  ! Vector of all possible CLUBB parameters
 
   integer, dimension(nparams), private :: & 
-    params_index  ! Index of the params elements that are used in the simplex
+    params_index = 0  ! Index of the params elements that are used in the simplex
 
   real( kind = core_rknd ), allocatable, dimension(:,:), public ::  & 
     param_vals_matrix ! Holds 2D simplex the CLUBB constant parameters
