@@ -36,7 +36,8 @@ module stats_variables
                       ! requested format, e.g. l_grads = .true. and
                       ! stats_tout < 60.0
 
-!$omp   threadprivate(l_stats, l_output_rad_files, l_netcdf, l_grads)
+!$omp   threadprivate(l_stats, l_output_rad_files, l_netcdf, l_grads, &
+!$omp     l_allow_small_dtout)
 
   logical, public :: & 
     l_stats_samp,   & ! Sample flag for current time step
