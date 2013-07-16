@@ -87,10 +87,13 @@ module stats_sfc
 
     implicit none
 
+    ! External
+    intrinsic :: trim
+
     ! Input Variable
     character(len= * ), dimension(nvarmax_sfc), intent(in) :: vars_sfc
 
-    ! Output Variable        
+    ! Input / Output Variable        
     logical, intent(inout) :: l_error
 
     ! Local Varables
@@ -98,65 +101,15 @@ module stats_sfc
 
     ! ---- Begin Code ----
 
-    ! Default initialization for array indices for sfc
+    ! Default initialization for array indices for sfc is zero (see module
+    ! stats_variables)
 
-    isoil_heat_flux   = 0
-    iveg_T_in_K       = 0
-    isfc_soil_T_in_K  = 0
-    ideep_soil_T_in_K = 0
-
-    iustar          = 0
-    ilh             = 0
-    ish             = 0
-    icc             = 0
-    ilwp            = 0
-    irwp            = 0
-    ivwp            = 0   ! nielsenb
-    iiwp            = 0   ! nielsenb
-    iswp            = 0   ! nielsenb
-    iz_cloud_base   = 0
-    iz_inversion             = 0
-    irain_rate_sfc  = 0   ! Brian
-    irain_flux_sfc  = 0   ! Brian
-    irrainm_sfc     = 0   ! Brian
-    iwpthlp_sfc     = 0
-    iwprtp_sfc      = 0
-    iupwp_sfc       = 0
-    ivpwp_sfc       = 0
-    ithlm_vert_avg  = 0
-    irtm_vert_avg   = 0
-    ium_vert_avg    = 0
-    ivm_vert_avg    = 0
-    iwp2_vert_avg   = 0   ! nielsenb
-    iup2_vert_avg   = 0
-    ivp2_vert_avg   = 0
-    irtp2_vert_avg  = 0
-    ithlp2_vert_avg = 0
-    iT_sfc            = 0   ! kcwhite
-    
-    ! These are estimates of the condition number on each LHS
-    ! matrix, and not located at the surface of the domain.
-    iwp23_matrix_condt_num    = 0
-    irtm_matrix_condt_num     = 0
-    ithlm_matrix_condt_num    = 0
-    irtp2_matrix_condt_num    = 0
-    ithlp2_matrix_condt_num   = 0
-    irtpthlp_matrix_condt_num = 0
-    iup2_vp2_matrix_condt_num = 0
-    iwindm_matrix_condt_num   = 0
-
-    imorr_rain_rate = 0
-    imorr_snow_rate = 0
-
-    irtm_spur_src = 0
-    ithlm_spur_src = 0
-
-    ! Assign pointers for statistics variables sfc
+    ! Assign pointers for statistics variables sfc using stat_assign
 
     k = 1
-    do i=1,sfc%nn
+    do i = 1, sfc%nn
 
-      select case ( trim(vars_sfc(i)) )
+      select case ( trim( vars_sfc(i) ) )
       case ('soil_heat_flux')
         isoil_heat_flux = k
 
@@ -458,7 +411,7 @@ module stats_sfc
 
       end select
 
-    end do
+    end do ! 1 .. sfc%nn
 
     return
 

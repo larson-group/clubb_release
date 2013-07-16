@@ -539,13 +539,10 @@ module clubb_driver
 
     sclr_tol(1:sclr_max) = 1.e-2_core_rknd
 
-    ! Pick some default values for stats_setting
-    l_stats       = .false.
+    ! Pick some default values for stats_setting; other variables are set in
+    ! module stats_variables
     fname_prefix = ''
     stats_fmt    = ''
-    stats_tsamp  = 0._time_precision
-    stats_tout   = 0._time_precision
-    l_allow_small_stats_tout = .false.
 
     ! Figure out which I/O unit to use for OpenMP runs
 #ifdef _OPENMP

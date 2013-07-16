@@ -259,230 +259,29 @@ module stats_zm
         sclr_dim, &
         edsclr_dim
 
-!   use error_code, only: &
-!       clubb_at_least_debug_level ! Function
-
     implicit none
 
+    ! External
+    intrinsic :: trim
+
     ! Input Variable
-    ! zm variable names
+    character(len= * ), dimension(nvarmax_zm), intent(in) :: vars_zm ! zm variable names
 
-    character(len= * ), dimension(nvarmax_zm), intent(in) :: vars_zm
-
-    ! Output Variable
+    ! Input / Output Variable
     logical, intent(inout) :: l_error
 
     ! Local Varables
-    integer :: i,j, k
+    integer :: i, j, k
 
     logical :: l_found
 
     character(len=50) :: sclr_idx
 
-!     Default initialization for array indices for zm
+    ! The default initialization for array indices for zm is zero (see module
+    ! stats_variables)
 
-    iwp2          = 0
-    irtp2         = 0
-    ithlp2        = 0
-    irtpthlp      = 0
-    iwprtp        = 0
-    iwpthlp       = 0
-    iwp3_zm       = 0
-    iwp4          = 0
-    iwpthvp       = 0
-    irtpthvp      = 0
-    ithlpthvp     = 0
-    itau_zm       = 0
-    iKh_zm        = 0
-    iwprcp        = 0
-    irc_coef      = 0
-    ithlprcp      = 0
-    irtprcp       = 0
-    ircp2         = 0
-    iupwp         = 0
-    ivpwp         = 0
-    irho_zm       = 0
-    isigma_sqd_w  = 0
-    irho_ds_zm    = 0
-    ithv_ds_zm    = 0
-    iem           = 0
-    ishear        = 0  ! Brian
-    imean_w_up    = 0
-    imean_w_down  = 0
-    iFrad         = 0
-    iFrad_LW      = 0  ! Brian
-    iFrad_SW      = 0  ! Brian
-    iFrad_LW_up   = 0  ! Brian
-    iFrad_SW_up   = 0  ! Brian
-    iFrad_LW_down = 0  ! Brian
-    iFrad_SW_down = 0  ! Brian
-    iFprec        = 0  ! Brian
-    iFcsed        = 0  ! Brian
-
-
-    iup2 = 0
-    ivp2 = 0
-
-    iup2_bt  = 0
-    iup2_ta  = 0
-    iup2_tp  = 0
-    iup2_ma  = 0
-    iup2_dp1 = 0
-    iup2_dp2 = 0
-    iup2_pr1 = 0
-    iup2_pr2 = 0
-    iup2_cl  = 0
-    iup2_sf  = 0
-
-    ivp2_bt  = 0
-    ivp2_ta  = 0
-    ivp2_tp  = 0
-    ivp2_ma  = 0
-    ivp2_dp1 = 0
-    ivp2_dp2 = 0
-    ivp2_pr1 = 0
-    ivp2_pr2 = 0
-    ivp2_cl  = 0
-    ivp2_sf  = 0
-
-    ! Covariances of w and hydrometeors, < w'h_m' >
-    iwprrp = 0
-    iwprip = 0
-    iwprsp = 0
-    iwprgp = 0
-    iwpNrp = 0
-    iwpNip = 0
-    iwpNsp = 0
-    iwpNgp = 0
-    iwpNcp = 0
-
-    ! Sedimentation velocities
-    iVNr       = 0
-    iVrr       = 0
-    iVNc       = 0
-    iVrc       = 0
-    iVNice     = 0
-    iVrice     = 0
-    iVrgraupel = 0
-    iVNsnow    = 0
-    iVrsnow    = 0
-
-    ! Covariance of sedimentation velocity and hydrometeor, <V_xx'x_x'>
-    iVrrprrp         = 0
-    iVNrpNrp         = 0
-    iVrrprrp_expcalc = 0
-    iVNrpNrp_expcalc = 0
-
-    ! Vertical velocity budgets
-    iwp2_bt   = 0
-    iwp2_ma   = 0
-    iwp2_ta   = 0
-    iwp2_ac   = 0
-    iwp2_bp   = 0
-    iwp2_pr1  = 0
-    iwp2_pr2  = 0
-    iwp2_pr3  = 0
-    iwp2_dp1  = 0
-    iwp2_dp2  = 0
-    iwp2_4hd  = 0
-    iwp2_cl   = 0
-    iwp2_pd   = 0
-    iwp2_sf   = 0
-
-    ! Flux budgets
-    iwprtp_bt      = 0
-    iwprtp_ma      = 0
-    iwprtp_ta      = 0
-    iwprtp_tp      = 0
-    iwprtp_ac      = 0
-    iwprtp_bp      = 0
-    iwprtp_pr1     = 0
-    iwprtp_pr2     = 0
-    iwprtp_pr3     = 0
-    iwprtp_dp1     = 0
-    iwprtp_mfl     = 0
-    iwprtp_cl      = 0
-    iwprtp_sicl    = 0
-    iwprtp_pd      = 0
-    iwprtp_forcing = 0
-    iwprtp_mc      = 0
-
-    iwpthlp_bt      = 0
-    iwpthlp_ma      = 0
-    iwpthlp_ta      = 0
-    iwpthlp_tp      = 0
-    iwpthlp_ac      = 0
-    iwpthlp_bp      = 0
-    iwpthlp_pr1     = 0
-    iwpthlp_pr2     = 0
-    iwpthlp_pr3     = 0
-    iwpthlp_dp1     = 0
-    iwpthlp_mfl     = 0
-    iwpthlp_cl      = 0
-    iwpthlp_sicl    = 0
-    iwpthlp_forcing = 0
-    iwpthlp_mc      = 0
-
-    ! Variance budgets
-    irtp2_bt      = 0
-    irtp2_ma      = 0
-    irtp2_ta      = 0
-    irtp2_tp      = 0
-    irtp2_dp1     = 0
-    irtp2_dp2     = 0
-    irtp2_cl      = 0
-    irtp2_pd      = 0
-    irtp2_sf      = 0
-    irtp2_forcing = 0
-    irtp2_mc      = 0
-
-    ithlp2_bt      = 0
-    ithlp2_ma      = 0
-    ithlp2_ta      = 0
-    ithlp2_tp      = 0
-    ithlp2_dp1     = 0
-    ithlp2_dp2     = 0
-    ithlp2_cl      = 0
-    ithlp2_pd      = 0
-    ithlp2_sf      = 0
-    ithlp2_forcing = 0
-    ithlp2_mc      = 0
-
-    irtpthlp_bt      = 0
-    irtpthlp_ma      = 0
-    irtpthlp_ta      = 0
-    irtpthlp_tp1     = 0
-    irtpthlp_tp2     = 0
-    irtpthlp_dp1     = 0
-    irtpthlp_dp2     = 0
-    irtpthlp_cl      = 0
-    irtpthlp_sf      = 0
-    irtpthlp_forcing = 0
-    irtpthlp_mc      = 0
-
-    !Monatonic flux limiter diagnostic output
-    iwpthlp_mfl_min = 0
-    iwpthlp_mfl_max = 0
-    iwpthlp_entermfl = 0
-    iwpthlp_exit_mfl = 0
-    iwprtp_mfl_min = 0
-    iwprtp_mfl_max = 0
-    iwprtp_enter_mfl = 0
-    iwprtp_exit_mfl = 0
-
-    ! Skewness velocity
-    iSkw_velocity = 0
-
-    ! Skewness function
-    igamma_Skw_fnc = 0
-    iC6rt_Skw_fnc = 0
-    iC6thl_Skw_fnc = 0
-    iC7_Skw_fnc = 0
-    iC1_Skw_fnc = 0
-
-    ia3_coef = 0
-    iwp3_on_wp2 = 0
-
+    ! Allocate and then zero out passive scalar arrays on the zm grid (fluxes,
+    ! variances and other high-order moments)
     allocate(isclrprtp(1:sclr_dim))
     allocate(isclrp2(1:sclr_dim))
     allocate(isclrpthvp(1:sclr_dim))
@@ -496,27 +295,26 @@ module stats_zm
 
     allocate(iwpedsclrp(1:edsclr_dim))
 
-!     Assign pointers for statistics variables zm
+    isclrprtp(:)    = 0
+    isclrp2(:)      = 0
+    isclrpthvp(:)   = 0
+    isclrpthlp(:)   = 0
+    isclrprcp(:)    = 0
+    iwpsclrp(:)     = 0
+    iwp2sclrp(:)    = 0
+    iwpsclrp2(:)    = 0
+    iwpsclrprtp(:)  = 0
+    iwpsclrpthlp(:) = 0
 
-    isclrprtp    = 0
-    isclrp2      = 0
-    isclrpthvp   = 0
-    isclrpthlp   = 0
-    isclrprcp    = 0
-    iwpsclrp     = 0
-    iwp2sclrp    = 0
-    iwpsclrp2    = 0
-    iwpsclrprtp  = 0
-    iwpsclrpthlp = 0
+    iwpedsclrp(:)   = 0
 
-    iwpedsclrp   = 0
-
-!     Assign pointers for statistics variables zm
+    ! Assign pointers for statistics variables zm using stat_assign
 
     k = 1
-    do i=1,zm%nn
 
-      select case ( trim(vars_zm(i)) )
+    do i = 1, zm%nn
+
+      select case ( trim( vars_zm(i) ) )
 
       case ('wp2')
         iwp2 = k
@@ -1793,24 +1591,14 @@ module stats_zm
 
         end do
 
-        if( .not. l_found ) then
+        if ( .not. l_found ) then
           write(fstderr,*) 'Error:  unrecognized variable in vars_zm:  ',  trim(vars_zm(i))
           l_error = .true.  ! This will stop the run.
         end if
+
       end select
 
-    end do
-
-!   Non-interative diagnostics (zm)
-!   iwp4, ircp2
-
-!   if ( .not. clubb_at_least_debug_level( 1 ) ) then
-!     if ( iwp4 + ircp2 + ishear > 0 ) then
-!       write(fstderr,'(a)') &
-!         "Warning: at debug level 0.  Non-interactive diagnostics will not be computed, "
-!       write(fstderr,'(a)') "but some appear in the stats_zm namelist variable."
-!     end if
-!   end if
+    end do ! i = 1 .. zm%nn
 
     return
   end subroutine stats_init_zm

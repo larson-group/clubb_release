@@ -511,16 +511,15 @@ module stats_zt
         sclr_dim,& ! Variable(s)
         edsclr_dim
 
-!use error_code, only: &
-!    clubb_at_least_debug_level ! Function
-
-
     implicit none
+
+    ! External
+    intrinsic :: trim
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_zt), intent(in) :: vars_zt
 
-    ! Output Variable        
+    ! Input / Output Variable        
     logical, intent(inout) :: l_error
 
     ! Local Varables
@@ -530,455 +529,29 @@ module stats_zt
 
     character(len=50) :: sclr_idx
 
-! Default initialization for array indices for zt
+    ! The default initialization for array indices for zt is zero (see module
+    ! stats_variables)
 
-    ithlm               = 0
-    iT_in_K             = 0
-    ithvm               = 0
-    irtm                = 0
-    ircm                = 0
-    irfrzm              = 0
-    irvm                = 0
-    ium                 = 0
-    ivm                 = 0
-    iwm_zt              = 0
-    ium_ref             = 0
-    ivm_ref             = 0
-    iug                 = 0
-    ivg                 = 0
-    icloud_frac         = 0
-    iice_supersat_frac  = 0
-    ircm_in_layer       = 0
-    ircm_in_cloud       = 0
-    icloud_cover        = 0
-    ip_in_Pa            = 0
-    iexner              = 0
-    irho_ds_zt          = 0
-    ithv_ds_zt          = 0
-    iLscale             = 0
-    iwp3                = 0
-    iwpthlp2            = 0
-    iwp2thlp            = 0
-    iwprtp2             = 0
-    iwp2rtp             = 0
-    iLscale_up          = 0
-    iLscale_down        = 0
-    itau_zt             = 0
-    iKh_zt              = 0
-    iwp2thvp            = 0
-    iwp2rcp             = 0
-    iwprtpthlp          = 0
-    isigma_sqd_w_zt     = 0
-    irho                = 0
-    irel_humidity       = 0
-    iNcm                = 0  ! Brian
-    iNc_in_cloud       = 0
-    iNc_activated       = 0
-    iNcnm               = 0
-    iNim                = 0
-    isnowslope          = 0  ! Adam Smith, 22 April 2008
-    ised_rcm            = 0  ! Brian
-    irsat               = 0  ! Brian
-    irrainm             = 0  ! Brian
-    irain_rate_zt       = 0  ! Brian
-    iradht              = 0
-    iradht_LW           = 0
-    iradht_SW           = 0
-
-    ! Number concentrations
-    iNsnowm    = 0  ! Adam Smith, 22 April 2008
-    iNrm       = 0  ! Brian
-    iNgraupelm = 0
-    iNim       = 0
-
-    idiam           = 0
-    imass_ice_cryst = 0
-    ircm_icedfs     = 0
-    iu_T_cm         = 0
-
-    irr1           = 0
-    irr2           = 0
-    iNr1           = 0
-    iNr2           = 0
-    iLWP1          = 0
-    iLWP2          = 0
-    iprecip_frac   = 0
-    iprecip_frac_1 = 0
-    iprecip_frac_2 = 0
-
-    imu_rr_1       = 0
-    imu_rr_2       = 0
-    imu_Nr_1       = 0
-    imu_Nr_2       = 0
-    imu_Ncn_1      = 0
-    imu_Ncn_2      = 0
-    imu_rr_1_n     = 0
-    imu_rr_2_n     = 0
-    imu_Nr_1_n     = 0
-    imu_Nr_2_n     = 0
-    imu_Ncn_1_n    = 0
-    imu_Ncn_2_n    = 0
-    isigma_rr_1    = 0
-    isigma_rr_2    = 0
-    isigma_Nr_1    = 0
-    isigma_Nr_2    = 0
-    isigma_Ncn_1   = 0
-    isigma_Ncn_2   = 0
-    isigma_rr_1_n  = 0
-    isigma_rr_2_n  = 0
-    isigma_Nr_1_n  = 0
-    isigma_Nr_2_n  = 0
-    isigma_Ncn_1_n = 0
-    isigma_Ncn_2_n = 0
-    icorr_wrr_1    = 0
-    icorr_wrr_2    = 0
-    icorr_wNr_1    = 0
-    icorr_wNr_2    = 0
-    icorr_wNcn_1   = 0
-    icorr_wNcn_2   = 0
-    icorr_srr_1    = 0
-    icorr_srr_2    = 0
-    icorr_sNr_1    = 0
-    icorr_sNr_2    = 0
-    icorr_sNcn_1   = 0
-    icorr_sNcn_2   = 0
-    icorr_trr_1    = 0
-    icorr_trr_2    = 0
-    icorr_tNr_1    = 0
-    icorr_tNr_2    = 0
-    icorr_tNcn_1   = 0
-    icorr_tNcn_2   = 0
-    icorr_rrNr_1   = 0
-    icorr_rrNr_2   = 0
-    icorr_wrr_1_n  = 0
-    icorr_wrr_2_n  = 0
-    icorr_wNr_1_n  = 0
-    icorr_wNr_2_n  = 0
-    icorr_wNcn_1_n = 0
-    icorr_wNcn_2_n = 0
-    icorr_srr_1_n  = 0
-    icorr_srr_2_n  = 0
-    icorr_sNr_1_n  = 0
-    icorr_sNr_2_n  = 0
-    icorr_sNcn_1_n = 0
-    icorr_sNcn_2_n = 0
-    icorr_trr_1_n  = 0
-    icorr_trr_2_n  = 0
-    icorr_tNr_1_n  = 0
-    icorr_tNr_2_n  = 0
-    icorr_tNcn_1_n = 0
-    icorr_tNcn_2_n = 0
-    icorr_rrNr_1_n = 0
-    icorr_rrNr_2_n = 0
-
-    ! Correlations
-    icorr_sw   = 0
-    icorr_srr  = 0
-    icorr_sNr  = 0
-    icorr_sNcn = 0
-    icorr_rrNr = 0
-    icorr_wrr  = 0
-    icorr_wNr  = 0
-    icorr_wNcn = 0
-
-    ! From K&K microphysics
-    im_vol_rad_rain  = 0  ! Brian
-    im_vol_rad_cloud = 0
-
-    ! From Morrison microphysics
-    ieff_rad_cloud   = 0
-    ieff_rad_ice     = 0
-    ieff_rad_snow    = 0
-    ieff_rad_rain    = 0
-    ieff_rad_graupel = 0
-
-    irsnowm         = 0
-    irgraupelm      = 0
-    iricem          = 0
-
-    irtm_bt         = 0
-    irtm_ma         = 0
-    irtm_ta         = 0
-    irtm_forcing    = 0
-    irtm_sdmp       = 0
-    irtm_mc         = 0
-    ircm_mc         = 0 ! For the change due to COAMPS/Morrison microphysics
-    ircm_sd_mg_morr = 0
-    irvm_mc         = 0 ! For the change due to COAMPS/Morrison microphysics
-    irtm_mfl        = 0
-    irtm_tacl       = 0
-    irtm_cl         = 0 ! Josh
-    irtm_pd         = 0
-    ithlm_bt        = 0
-    ithlm_ma        = 0
-    ithlm_ta        = 0
-    ithlm_forcing   = 0
-    ithlm_mc        = 0
-    ithlm_sdmp      = 0
-    ithlm_mfl       = 0
-    ithlm_tacl      = 0
-    ithlm_cl        = 0 ! Josh
-
-    ithlm_mfl_min = 0
-    ithlm_mfl_max = 0
-    irtm_mfl_min = 0
-    irtm_mfl_max = 0
-    ithlm_enter_mfl = 0
-    ithlm_exit_mfl = 0
-    ithlm_old = 0
-    ithlm_without_ta = 0
-    irtm_enter_mfl = 0
-    irtm_exit_mfl = 0
-    irtm_old = 0
-    irtm_without_ta = 0
-
-    iwp3_bt       = 0
-    iwp3_ma       = 0
-    iwp3_ta       = 0
-    iwp3_tp       = 0
-    iwp3_ac       = 0
-    iwp3_bp1      = 0
-    iwp3_bp2      = 0
-    iwp3_pr1      = 0
-    iwp3_pr2      = 0
-    iwp3_dp1      = 0
-    iwp3_4hd      = 0
-    iwp3_cl       = 0
-
-    irrainm_bt       = 0
-    irrainm_ma       = 0
-    irrainm_ta       = 0
-    irrainm_sd       = 0
-    irrainm_ts       = 0
-    irrainm_sd_morr  = 0
-    irrainm_cond     = 0
-    irrainm_auto     = 0
-    irrainm_accr     = 0
-    irrainm_cond_adj = 0
-    irrainm_src_adj  = 0
-    irrainm_mc       = 0
-    irrainm_hf       = 0
-    irrainm_wvhf     = 0
-    irrainm_cl       = 0
-
-    iNrm_bt       = 0
-    iNrm_ma       = 0
-    iNrm_ta       = 0
-    iNrm_sd       = 0
-    iNrm_ts       = 0
-    iNrm_cond     = 0
-    iNrm_auto     = 0
-    iNrm_cond_adj = 0
-    iNrm_src_adj  = 0
-    iNrm_mc       = 0
-    iNrm_cl       = 0
-
-    iNsnowm_bt    = 0
-    iNsnowm_ma    = 0
-    iNsnowm_sd    = 0
-    iNsnowm_ta    = 0
-    iNsnowm_mc    = 0
-    iNsnowm_cl    = 0
-
-    iNim_bt    = 0
-    iNim_ma    = 0
-    iNim_sd    = 0
-    iNim_ta    = 0
-    iNim_mc    = 0
-    iNim_cl    = 0
-
-    iNcm_bt    = 0
-    iNcm_ma    = 0
-    iNcm_ta    = 0
-    iNcm_mc    = 0
-    iNcm_cl    = 0
-    iNcm_act   = 0
-
-    irsnowm_bt      = 0
-    irsnowm_ma      = 0
-    irsnowm_sd      = 0
-    irsnowm_sd_morr = 0
-    irsnowm_ta      = 0
-    irsnowm_mc      = 0
-    irsnowm_hf      = 0
-    irsnowm_wvhf    = 0
-    irsnowm_cl      = 0
-
-    irgraupelm_bt      = 0
-    irgraupelm_ma      = 0
-    irgraupelm_sd      = 0
-    irgraupelm_sd_morr = 0
-    irgraupelm_ta      = 0
-    irgraupelm_mc      = 0
-    irgraupelm_hf      = 0
-    irgraupelm_wvhf    = 0
-    irgraupelm_cl      = 0
-
-    iricem_bt         = 0
-    iricem_ma         = 0
-    iricem_sd         = 0
-    iricem_sd_mg_morr = 0
-    iricem_ta         = 0
-    iricem_mc         = 0
-    iricem_hf         = 0
-    iricem_wvhf       = 0
-    iricem_cl         = 0
-
-    iw_KK_evap_covar_zt   = 0
-    irt_KK_evap_covar_zt  = 0
-    ithl_KK_evap_covar_zt = 0
-    iw_KK_auto_covar_zt   = 0
-    irt_KK_auto_covar_zt  = 0
-    ithl_KK_auto_covar_zt = 0
-    iw_KK_accr_covar_zt   = 0
-    irt_KK_accr_covar_zt  = 0
-    ithl_KK_accr_covar_zt = 0
-    irr_KK_mvr_covar_zt   = 0
-    iNr_KK_mvr_covar_zt   = 0
-    iKK_mvr_variance_zt   = 0
-
-    ivm_bt   = 0
-    ivm_ma   = 0
-    ivm_gf   = 0
-    ivm_cf   = 0
-    ivm_ta   = 0
-    ivm_f    = 0
-    ivm_sdmp = 0
-    ivm_ndg   = 0
-
-    ium_bt   = 0
-    ium_ma   = 0
-    ium_gf   = 0
-    ium_cf   = 0
-    ium_ta   = 0
-    ium_f    = 0
-    ium_sdmp = 0
-    ium_ndg  = 0
-
-    imixt_frac    = 0
-    iw1           = 0
-    iw2           = 0
-    ivarnce_w1    = 0
-    ivarnce_w2    = 0
-    ithl1         = 0
-    ithl2         = 0
-    ivarnce_thl1  = 0
-    ivarnce_thl2  = 0
-    irt1          = 0
-    irt2          = 0
-    ivarnce_rt1   = 0
-    ivarnce_rt2   = 0
-    irc1          = 0
-    irc2          = 0
-    irsl1         = 0
-    irsl2         = 0
-    icloud_frac1  = 0
-    icloud_frac2  = 0
-    is1           = 0
-    is2           = 0
-    istdev_s1     = 0
-    istdev_s2     = 0
-    istdev_t1     = 0
-    istdev_t2     = 0
-    icovar_st_1   = 0
-    icovar_st_2   = 0
-    icorr_st_1    = 0
-    icorr_st_2    = 0
-    irrtthl       = 0
-    icrt1         = 0
-    icrt2         = 0
-    icthl1        = 0
-    icthl2        = 0
-
-    is_mellor = 0
-
-    iwp2_zt     = 0
-    ithlp2_zt   = 0
-    iwpthlp_zt  = 0
-    iwprtp_zt   = 0
-    irtp2_zt    = 0
-    irtpthlp_zt = 0
-    iup2_zt     = 0
-    ivp2_zt     = 0
-    iupwp_zt    = 0
-    ivpwp_zt    = 0
-
-    irrp2_zt = 0
-    iNrp2_zt = 0
-
-    iC11_Skw_fnc = 0
-    ia3_coef_zt = 0
-    iwp3_on_wp2_zt = 0
-
-    iLscale_pert_1 = 0
-    iLscale_pert_2 = 0
-
+    ! Allocate and then zero out passive scalar arrays
     allocate( isclrm(1:sclr_dim) )
     allocate( isclrm_f(1:sclr_dim) )
 
-    isclrm     = 0
-    isclrm_f   = 0
+    isclrm(:)     = 0
+    isclrm_f(:)   = 0
 
     allocate( iedsclrm(1:edsclr_dim) )
     allocate( iedsclrm_f(1:edsclr_dim) )
 
-    iedsclrm   = 0
+    iedsclrm(:)   = 0
+    iedsclrm_f(:) = 0
 
-    iedsclrm_f = 0
-
-
-    ! Eric Raut
-    iPSMLT = 0
-    iEVPMS = 0
-    iPRACS = 0
-    iEVPMG = 0
-    iPRACG = 0
-    iPGMLT = 0
-    iMNUCCC = 0
-    iPSACWS = 0
-    iPSACWI = 0
-    iQMULTS = 0
-    iQMULTG = 0
-    iPSACWG = 0
-    iPGSACW = 0
-    iPRD = 0
-    iPRCI = 0
-    iPRAI = 0
-    iQMULTR = 0
-    iQMULTRG = 0
-    iMNUCCD = 0
-    iPRACI = 0
-    iPRACIS = 0
-    iEPRD = 0
-    iMNUCCR = 0
-    iPIACR = 0
-    iPIACRS = 0
-    iPGRACS = 0
-    iPRDS = 0
-    iEPRDS = 0
-    iPSACR = 0
-    iPRDG = 0
-    iEPRDG = 0
-
-    iNGSTEN = 0
-    iNRSTEN = 0
-    iNISTEN = 0
-    iNSSTEN = 0
-    iNCSTEN = 0
-    iNPRC1 = 0
-    iNRAGG = 0
-    iNPRACG = 0
-    iNSUBR = 0
-    iNSMLTR = 0
-    iNGMLTR = 0
-
-
-!     Assign pointers for statistics variables zt
+    ! Assign pointers for statistics variables zt using stat_assign
 
     k = 1
-    do i=1,zt%nn
 
-      select case ( trim(vars_zt(i)) )
+    do i = 1, zt%nn
+
+      select case ( trim( vars_zt(i) ) )
       case ('thlm')
         ithlm = k
         call stat_assign( ithlm, "thlm",  & 
@@ -1002,12 +575,6 @@ module stats_zt
 
         call stat_assign( irtm, "rtm", & 
               "Total (vapor+liquid) water mixing ratio [kg/kg]", "kg/kg", zt )
-
-        !zt%f%var(irtm)%ptr => zt%x(:,k)
-        !zt%f%var(irtm)%name = "rtm"
-        !zt%f%var(irtm)%description
-        != "total water mixing ratio (kg/kg)"
-        !zt%f%var(irtm)%units = "kg/kg"
 
         k = k + 1
 
@@ -3729,9 +3296,9 @@ module stats_zt
 
       case default
 
-        l_found =.false.
+        l_found = .false.
 
-        j=1
+        j = 1
 
         do while( j <= sclr_dim .and. .not. l_found)
           write(sclr_idx, * ) j
@@ -3809,9 +3376,9 @@ module stats_zt
 
         end if
 
-      end select
+      end select ! trim( vars_zt )
 
-    end do
+    end do ! i=1,zt%nn
 
     return
   end subroutine stats_init_zt

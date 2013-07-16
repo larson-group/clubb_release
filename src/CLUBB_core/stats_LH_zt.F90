@@ -90,10 +90,13 @@ module stats_LH_zt
 
     implicit none
 
+    ! External
+    intrinsic :: trim
+
     ! Input Variable
     character(len= * ), dimension(nvarmax_LH_zt), intent(in) :: vars_LH_zt
 
-    ! Output Variable        
+    ! Input / Output Variable        
     logical, intent(inout) :: l_error
 
     ! Local Varables
@@ -101,67 +104,15 @@ module stats_LH_zt
 
     ! ---- Begin Code ----
 
-    ! Default initialization for array indices for LH_zt
-
-    iAKm            = 0  ! analytic Kessler.  Vince Larson 22 May 2005
-    iLH_AKm         = 0  ! LH Kessler.  Vince Larson 22 May 2005
-    iAKstd          = 0
-    iAKstd_cld      = 0
-    iAKm_rcm        = 0
-    iAKm_rcc        = 0
-
-    iLH_thlm_mc      = 0
-    iLH_rvm_mc       = 0
-    iLH_rcm_mc       = 0
-    iLH_Ncm_mc       = 0
-    iLH_rrainm_mc    = 0
-    iLH_Nrm_mc       = 0
-    iLH_rsnowm_mc    = 0
-    iLH_Nsnowm_mc    = 0   
-    iLH_rgraupelm_mc = 0 
-    iLH_Ngraupelm_mc = 0 
-    iLH_ricem_mc     = 0
-    iLH_Nim_mc       = 0
-
-    iLH_rcm_avg = 0
-
-    iLH_Vrr = 0
-    iLH_VNr = 0
-
-    iLH_rrainm = 0
-    iLH_ricem = 0
-    iLH_rsnowm = 0
-    iLH_rgraupelm = 0
-
-    iLH_Nrm = 0
-    iLH_Nim = 0
-    iLH_Nsnowm = 0
-    iLH_Ngraupelm = 0
-
-    iLH_thlm = 0
-    iLH_rcm = 0
-    iLH_rvm = 0
-    iLH_wm = 0
-    iLH_cloud_frac = 0
-
-    iLH_wp2_zt = 0
-    iLH_rcp2_zt = 0
-    iLH_rtp2_zt = 0
-    iLH_thlp2_zt = 0
-    iLH_rrainp2_zt = 0
-    iLH_Nrp2_zt = 0
-    iLH_Ncp2_zt = 0
-
-    iLH_rrainm_auto = 0
-    iLH_rrainm_accr = 0
-    iLH_rrainm_evap = 0
+    ! Default initialization for array indices for LH_zt is zero (see module
+    ! stats_variables)
 
     ! Assign pointers for statistics variables zt
 
     k = 1
-    do i=1,LH_zt%nn
+    do i = 1, LH_zt%nn
 
-      select case ( trim(vars_LH_zt(i)) )
+      select case ( trim( vars_LH_zt(i) ) )
       case ( 'AKm' )           ! Vince Larson 22 May 2005
         iAKm = k
         call stat_assign( iAKm, "AKm", & 
@@ -478,7 +429,7 @@ module stats_LH_zt
 
       end select
 
-    end do
+    end do ! i = 1, LH_zt%nn
 
     return
   end subroutine stats_init_LH_zt

@@ -41,10 +41,13 @@ module stats_LH_sfc
 
     implicit none
 
+    ! External
+    intrinsic :: trim
+
     ! Input Variable
     character(len= * ), dimension(nvarmax_LH_sfc), intent(in) :: vars_LH_sfc
 
-    ! Output Variable        
+    ! Input / Output Variable        
     logical, intent(inout) :: l_error
 
     ! Local Varables
@@ -52,17 +55,13 @@ module stats_LH_sfc
 
     ! ---- Begin Code ----
 
-    ! Default initialization for array indices for sfc
-
-    iLH_morr_rain_rate = 0
-    iLH_morr_snow_rate = 0
-    iLH_vwp = 0
-    iLH_lwp = 0
+    ! Default initialization for array indices for sfc is zero (see module
+    ! stats_variables)
 
     ! Assign pointers for statistics variables sfc
 
     k = 1
-    do i=1,LH_sfc%nn
+    do i = 1, LH_sfc%nn
 
       select case ( trim( vars_LH_sfc(i) ) )
 
@@ -97,7 +96,7 @@ module stats_LH_sfc
 
       end select
 
-    end do
+    end do ! i = 1, LH_sfc%nn
 
     return
   end subroutine stats_init_LH_sfc
