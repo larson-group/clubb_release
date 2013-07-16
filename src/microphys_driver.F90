@@ -933,6 +933,15 @@ module microphys_driver
       stop "l_silhs_KK_convergence_adj_mean requires khairoutdinov_kogan microphysics"
     end if
 
+    ! Stop the run if user has selected l_silhs_KK_convergence_adj_mean and not
+    ! included the preprocessor flag SILHS_KK_CONVERGENCE_TEST
+#ifndef SILHS_KK_CONVERGENCE_TEST
+    if (l_silhs_KK_convergence_adj_mean) then
+      stop "Use of the l_silhs_KK_convergence_adj_mean flag requires the &
+           &preprocessor flag SILHS_KK_CONVERGENCE_TEST"
+    end if
+#endif
+
     ! Setup index variables for latin hypercube sampling
     if ( LH_microphys_type_int /= LH_microphys_disabled ) then
 
