@@ -20,7 +20,7 @@ module output_netcdf
   ! This will truncate all timesteps smaller than 1 mn to a minute for 
   ! the purposes of viewing the data in grads
   logical, parameter, private :: &
-    l_grads_kludge = .true. 
+    l_grads_kludge = .false. 
 
   private ! Default scope
 
