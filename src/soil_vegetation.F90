@@ -8,11 +8,15 @@ module soil_vegetation
 
   public :: advance_soil_veg
 
-  real( kind = core_rknd ), public :: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
+  ! These default values are the values for gabls3
+  real( kind = core_rknd ), public :: &
+    deep_soil_T_in_K = 288.58_core_rknd, &
+    sfc_soil_T_in_K  = 300._core_rknd, &
+    veg_T_in_K       = 300._core_rknd
 
 !$omp threadprivate(deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K)
 
-  logical, public :: l_soil_veg
+  logical, public :: l_soil_veg = .false.
 
 !$omp threadprivate(l_soil_veg)
 
@@ -90,47 +94,52 @@ module soil_vegetation
     ! sfc_soil_T_in_K_in, &       ! Temperature of surface soil layer [K]
     ! deep_soil_T_in_K_in         ! Temperature of deep soil layer [K]
 
+    ! External
+
+    intrinsic :: sqrt, exp
+
     ! Input variables
 
     real( kind = core_rknd ), intent(in) :: dt ! Current model timestep (Must be < 60s) [s]
 
     real( kind = core_rknd ), intent(in) :: &
-    rho_sfc, &             ! Air density at the surface [kg/m^3]
-    Frad_SW_net, &         ! SW Net                     [W/m^3]
-    Frad_SW_down_sfc, &    ! SW downwelling flux        [W/m^3]
-    Frad_LW_down_sfc, &    ! LW downwelling flux        [W/m^2]
-    wpthep                 ! Turbulent Flux of equivalent potential temperature   [K]
+      rho_sfc, &             ! Air density at the surface [kg/m^3]
+      Frad_SW_net, &         ! SW Net                     [W/m^3]
+      Frad_SW_down_sfc, &    ! SW downwelling flux        [W/m^3]
+      Frad_LW_down_sfc, &    ! LW downwelling flux        [W/m^2]
+      wpthep                 ! Turbulent Flux of equivalent potential temperature   [K]
 
-
+    ! Output variable
     real( kind = core_rknd ), intent(out) :: soil_heat_flux ! Soil Heat flux [W/m^2]
+
     ! Local variables
 
     real( kind = core_rknd ) :: &
-         cs, &  ! soil heat capacity              [Jg/K]
-         ks, &  ! soil heat diffusivity           [m^2/s]
-         rs, &  ! soil density                    [g/m^3]
-         c1, &  ! coefficient in force restore 1
-         c2, &  ! coefficient in force restore 2
-         c3, &  ! coefficient in force restore 3
-         d1, &
-         veg_heat_flux, &                         
-         Frad_LW_up_sfc ! LW upwelling flux [W/m2]
+      cs, &  ! soil heat capacity              [Jg/K]
+      ks, &  ! soil heat diffusivity           [m^2/s]
+      rs, &  ! soil density                    [g/m^3]
+      c1, &  ! coefficient in force restore 1
+      c2, &  ! coefficient in force restore 2
+      c3, &  ! coefficient in force restore 3
+      d1, &
+      veg_heat_flux, &                         
+      Frad_LW_up_sfc ! LW upwelling flux [W/m2]
 
     !----------------------------
     !  Soil parameters
     !---------------------------
 
-    cs=2.00e3_core_rknd  ! cs
-    rs=1.00e3_core_rknd  ! ps 
-    ks=2.00e-7_core_rknd ! as
-    d1=sqrt(ks*3600.e0_core_rknd*24.e0_core_rknd) ! Known magic number
-    c1=2.e0_core_rknd*sqrt(pi)/(rs*cs*d1) 
-    c2=2.e0_core_rknd*pi/(3600.e0_core_rknd*24.e0_core_rknd) ! Omega - known magic number
-    c3=sqrt(pi*2.e0_core_rknd)/(exp(pi/4.e0_core_rknd)*rs*cs* &
-                     sqrt(ks*3600.e0_core_rknd*24.e0_core_rknd* &
-                     365.e0_core_rknd)) ! Known magic number
+    cs = 2.00e3_core_rknd  ! cs
+    rs = 1.00e3_core_rknd  ! ps 
+    ks = 2.00e-7_core_rknd ! as
+    d1 = sqrt( ks*3600.e0_core_rknd*24.e0_core_rknd ) ! Known magic number
+    c1 = 2.e0_core_rknd*sqrt( pi )/(rs*cs*d1) 
+    c2 = 2.e0_core_rknd*pi/(3600.e0_core_rknd*24.e0_core_rknd) ! Omega - known magic number
+    c3 = sqrt(pi*2.e0_core_rknd)/(exp( pi/4.e0_core_rknd )*rs*cs* &
+                     sqrt( ks*3600.e0_core_rknd*24.e0_core_rknd* &
+                     365.e0_core_rknd )) ! Known magic number
 
-    if( l_stats_samp ) then
+    if ( l_stats_samp ) then
       call stat_update_var_pt( iveg_T_in_K, 1, veg_T_in_K, sfc )
       call stat_update_var_pt( isfc_soil_T_in_K, 1, sfc_soil_T_in_K, sfc )
       call stat_update_var_pt( ideep_soil_T_in_K, 1, deep_soil_T_in_K, sfc )
@@ -147,7 +156,7 @@ module soil_vegetation
     ! Equation 19 p.328
     
     soil_heat_flux = 10.0_core_rknd * ( veg_T_in_K - sfc_soil_T_in_K ) &
-                     + 0.05_core_rknd * Frad_SW_down_sfc ! Known magic number
+                   + 0.05_core_rknd * Frad_SW_down_sfc ! Known magic number
 
     ! Update surf veg temp
     veg_T_in_K = veg_T_in_K + dt * 5.e-5_core_rknd * &
