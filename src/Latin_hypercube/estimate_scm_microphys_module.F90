@@ -341,7 +341,7 @@ module estimate_scm_microphys_module
                                      real( n_micro_calls, kind=core_rknd )
     lh_rrainm_evap = real( lh_rrainm_evap_sum, kind=core_rknd ) / &
                                      real( n_micro_calls, kind=core_rknd )
-
+#ifdef SILHS_KK_CONVERGENCE_TEST
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
       call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrainm),           & ! intent(in)
@@ -350,10 +350,16 @@ module estimate_scm_microphys_module
                                 lh_hydromet_mc(:,iirrainm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
                                 lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                    ! intent(out)
     end if
-
+#else
+    ! Eliminate the resulting compiler warning
+    if (.false.) then
+      Nc0(1) = rcm(1)
+    end if
+#endif
     return
   end subroutine est_single_column_tndcy
 
+#ifdef SILHS_KK_CONVERGENCE_TEST
   !-----------------------------------------------------------------------------
   subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrainm, Nrm,         &
                                   rrainm_evap, rrainm_auto, rrainm_accr,   &
@@ -468,7 +474,7 @@ module estimate_scm_microphys_module
     thlm_mc(nz) = zero
 
   end subroutine adjust_KK_src_means
-
+#endif
   !-----------------------------------------------------------------------------
   subroutine copy_X_nl_into_hydromet( nz, d_variables, n_micro_calls, &
                                       X_nl_all_levs, &
