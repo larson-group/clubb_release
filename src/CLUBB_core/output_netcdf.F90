@@ -20,7 +20,7 @@ module output_netcdf
   ! This will truncate all timesteps smaller than 1 mn to a minute for 
   ! the purposes of viewing the data in grads
   logical, parameter, private :: &
-    l_grads_kludge = .false. 
+    l_grads_netcdf_boost_ts = .false. 
 
   private ! Default scope
 
@@ -220,7 +220,7 @@ module output_netcdf
     end if
 
     allocate( stat( ncf%nvar ) )
-    if ( l_grads_kludge ) then
+    if ( l_grads_netcdf_boost_ts ) then
       time = real( nint( real( ncf%ntimes, kind=time_precision ) &
                        * ncf%dtwrite / sec_per_min ), kind=time_precision ) !  minutes(rounded)
     else
@@ -811,7 +811,7 @@ module output_netcdf
                                iyear, & 
                                st_time )
 
-    if ( .not. l_grads_kludge ) then
+    if ( .not. l_grads_netcdf_boost_ts ) then
       date = "seconds since YYYY-MM-DD HH:MM:00.0"
     else
       date = "minutes since YYYY-MM-DD HH:MM:00.0"
