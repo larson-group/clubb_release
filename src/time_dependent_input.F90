@@ -57,19 +57,19 @@ module time_dependent_input
 
 !$omp threadprivate( dimension_var )
 
-  logical, public :: l_t_dependent ! Flag used to determine when
-  !                                  time dependent information is read in.
-  !                                  It is suggested that the flag be checked
-  !                                  before using any of the variables stored
-  !                                  in the module.
+  ! Flag used to determine when time dependent information is read in.
+  ! It is suggested that the flag be checked before using any of the variables stored
+  ! in the module.
+  logical, public :: l_t_dependent = .false.
 !$omp threadprivate( l_t_dependent )
 
-  logical, public :: l_input_xpwp_sfc ! Flag used to determine whether or not to read 
-                                      ! in the surface momentum fluxes, upwp_sfc and vpwp_sfc.
+  ! Flag used to determine whether or not to read in the surface momentum fluxes, upwp_sfc
+  ! and vpwp_sfc.
+  logical, public :: l_input_xpwp_sfc = .false.
 !$omp threadprivate( l_input_xpwp_sfc )
 
-  logical, public :: l_ignore_forcings ! Flag used to determine if the forcings
-                                       ! should be ignored for this case.
+  ! Flag used to determine if the forcings should be ignored for this case.
+  logical, public :: l_ignore_forcings = .false.
 !$omp threadprivate( l_ignore_forcings )
 
   ! File path constants

@@ -453,32 +453,9 @@ module clubb_driver
 
     ! Initialize the model run
 
-    ! Pick some default values for model_setting
-    runtype   = "generic"
-    nzmax     = 100
-    grid_type = 1
-    deltaz    = 40._core_rknd
-    zm_init   = 0._core_rknd
-    zm_top    = 1000._core_rknd
-    zt_grid_fname = ''
-    zm_grid_fname = ''
+    ! Pick some default values for model_setting.  Some variables are initialized
+    ! at declaration in module clubb_model_settings.
 
-    day   = 1
-    month = 1
-    year  = 1900
-
-    rlat = 0._core_rknd
-    rlon = 0._core_rknd
-
-    sfc_elevation = 0._core_rknd
-
-    time_initial = 0._time_precision
-    time_final   = 3600._time_precision
-
-    dt_main = 30._time_precision
-    dt_rad  = 30._time_precision
-
-    sfctype   = 0
     T_sfc     = 288._core_rknd
     p_sfc     = 1000.e2_core_rknd
     sens_ht   = 0._core_rknd
@@ -488,10 +465,6 @@ module clubb_driver
     ts_nudge  = 86400._core_rknd
 
     forcings_file_path = ''
-
-    l_t_dependent   = .false.
-    l_input_xpwp_sfc = .false.
-    l_ignore_forcings = .false.
 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
@@ -509,7 +482,6 @@ module clubb_driver
     uv_sponge_damp_settings%tau_sponge_damp_max = 1800._core_rknd
     uv_sponge_damp_settings%sponge_damp_depth = 0.25_core_rknd
 
-    l_soil_veg     = .false.
     l_uv_nudge     = .false.
     l_restart      = .false.
     l_input_fields  = .false.
@@ -1544,10 +1516,7 @@ module clubb_driver
                                           lin_int_buffer )             ! Intent(out)
 
     else
-      extend_atmos_bottom_level = 0
-      extend_atmos_top_level    = 0
-      extend_atmos_range_size   = 0
-      lin_int_buffer            = 0
+      ! lin_int_buffer et al. are set to zero in clubb_model_settings.
     end if
 
 
