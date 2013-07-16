@@ -32,12 +32,12 @@ module stats_variables
     l_output_rad_files, & ! Flag to turn off radiation statistics output
     l_netcdf, & ! Output to NetCDF format
     l_grads, &  ! Output to GrADS format
-    l_allow_small_dtout  ! Do not stop if output timestep is too low for
+    l_allow_small_stats_tout  ! Do not stop if output timestep is too low for
                       ! requested format, e.g. l_grads = .true. and
                       ! stats_tout < 60.0
 
 !$omp   threadprivate(l_stats, l_output_rad_files, l_netcdf, l_grads, &
-!$omp     l_allow_small_dtout)
+!$omp     l_allow_small_stats_tout)
 
   logical, public :: & 
     l_stats_samp,   & ! Sample flag for current time step

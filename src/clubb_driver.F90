@@ -139,7 +139,7 @@ module clubb_driver
         irtpthlp_mc
 
     use stats_variables, only: &
-        l_allow_small_dtout
+        l_allow_small_stats_tout
 
     use stats_subs, only:  & 
       stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
@@ -447,7 +447,7 @@ module clubb_driver
 
     namelist /stats_setting/ & 
       l_stats, fname_prefix, stats_tsamp, stats_tout, stats_fmt, &
-         l_allow_small_dtout
+         l_allow_small_stats_tout
 
 !-----------------------------------------------------------------------
 
@@ -545,7 +545,7 @@ module clubb_driver
     stats_fmt    = ''
     stats_tsamp  = 0._time_precision
     stats_tout   = 0._time_precision
-    l_allow_small_dtout = .false.
+    l_allow_small_stats_tout = .false.
 
     ! Figure out which I/O unit to use for OpenMP runs
 #ifdef _OPENMP
@@ -774,7 +774,7 @@ module clubb_driver
              l_write_to_file, iunit )
       call write_text( "stats_tout = ", real( stats_tout, kind = core_rknd ), &
              l_write_to_file, iunit )
-      call write_text( "l_allow_small_dtout = ", l_allow_small_dtout, &
+      call write_text( "l_allow_small_stats_tout = ", l_allow_small_stats_tout, &
              l_write_to_file, iunit)
       call write_text( "Constant flags:", l_write_to_file, iunit )
       call write_text( "l_pos_def = ", l_pos_def, l_write_to_file, iunit )

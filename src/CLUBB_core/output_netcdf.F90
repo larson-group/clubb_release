@@ -54,7 +54,7 @@ module output_netcdf
       sec_per_min
 
     use stats_variables, only: &
-        l_allow_small_dtout
+        l_allow_small_stats_tout
 
     implicit none
 
@@ -123,8 +123,8 @@ module output_netcdf
       write(fstderr,*) "Warning: GrADS program requires an output timestep of at least &
                        &one minute, but the requested output timestep &
                        &(stats_tout) is less than one minute."
-      if ( .not. l_allow_small_dtout ) then
-        write(fstderr,*) "To override this warning, set l_allow_small_dtout = &
+      if ( .not. l_allow_small_stats_tout ) then
+        write(fstderr,*) "To override this warning, set l_allow_small_stats_tout = &
                          &.true. in the stats_setting namelist in the &
                          &appropriate *_model.in file."
         stop "Fatal error in open_netcdf"
