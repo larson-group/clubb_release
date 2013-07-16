@@ -96,21 +96,11 @@ run_serial
 mkdir $SERIAL
 mv ../output/*.??? $SERIAL
 
-setup_files=`ls $SERIAL/*_setup.txt |wc -l`
-if [ "${#RUN_CASES[@]}" -ne "$setup_files" ]; then
-	echo "One or more simulations failed to run in serial"
-fi
-
 # Run in parallel mode
 run_parallel
 
 mkdir $PARALLEL
 mv ../output/*.??? $PARALLEL
-
-setup_files=`ls $PARALLEL/*_setup.txt |wc -l`
-if [ "${#RUN_CASES[@]}" -ne "$setup_files" ]; then
-	echo "One or more simulations failed to run in parallel"
-fi
 
 for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
 	diff $SERIAL/"${RUN_CASES[$x]}"_zt.dat $PARALLEL/"${RUN_CASES[$x]}"_zt.dat > 'diff.txt'
@@ -124,6 +114,18 @@ if [[ -s 'diff.txt' ]]; then
 else
 	echo "No differences found"
 	RESULT=0
+fi
+
+setup_files=`ls $SERIAL/*_setup.txt |wc -l`
+if [ "${#RUN_CASES[@]}" -ne "$setup_files" ]; then
+	echo "One or more simulations failed to run in serial"
+	RESULT=1
+fi
+
+setup_files=`ls $PARALLEL/*_setup.txt |wc -l`
+if [ "${#RUN_CASES[@]}" -ne "$setup_files" ]; then
+	echo "One or more simulations failed to run in parallel"
+	RESULT=1
 fi
 
 rm -f 'diff.txt'
