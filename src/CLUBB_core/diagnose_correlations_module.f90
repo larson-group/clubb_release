@@ -329,8 +329,8 @@ module diagnose_correlations_module
     integer :: i, j ! Loop iterator
 
     real( kind = core_rknd ), parameter :: &
-    tol = 1.e-6 ! Maximum acceptable tolerance for the difference of the diagonal elements of
-                ! corr_array to one
+    tol = 1.e-6_core_rknd ! Maximum acceptable tolerance for the difference of the diagonal
+                          ! elements of corr_array to one
 
     !-------------------- Begin code --------------------
 
