@@ -114,10 +114,10 @@ module saturation
 
     ! GFDL uses specific humidity
     ! Formula for Saturation Specific Humidity
-     if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-           sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - (1.0_core_rknd-ep) * esatv ) )
+     if ( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
+       sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - (1.0_core_rknd-ep) * esatv ) )
      else
-           sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - esatv ) )
+       sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - esatv ) )
      endif                     ! h1g, 2010-06-18 end mod
 #else
     ! Formula for Saturation Mixing Ratio:
@@ -429,7 +429,7 @@ module saturation
     ! Output Variables
     real( kind = core_rknd ) :: esat  ! Saturation vapor pressure over water [Pa]
 
-! Goff Gatch equation, uncertain below -70 C
+    ! Goff Gatch equation, uncertain below -70 C
       
          esat = 10._core_rknd**(-7.90298_core_rknd*(373.16_core_rknd/T_in_K-1._core_rknd)+ &
              5.02808_core_rknd*log10(373.16_core_rknd/T_in_K)- &
@@ -682,9 +682,9 @@ module saturation
     ! Output Variables
     real( kind = core_rknd ) :: esati  ! Saturation vapor pressure over ice [Pa]
 
-! Goff Gatch equation (good down to -100 C)
+    ! Goff Gatch equation (good down to -100 C)
 
-          esati = 10._core_rknd**(-9.09718_core_rknd* &
+    esati = 10._core_rknd**(-9.09718_core_rknd* &
             (273.16_core_rknd/T_in_k-1._core_rknd)-3.56654_core_rknd* &
           log10(273.16_core_rknd/T_in_k)+0.876793_core_rknd* &
             (1._core_rknd-T_in_k/273.16_core_rknd)+ &
@@ -696,7 +696,7 @@ module saturation
 ! <--- h1g, 2010-06-16
 
 !-------------------------------------------------------------------------
-  FUNCTION rcm_sat_adj( thlm, rtm, p_in_Pa, exner ) result ( rcm )
+  function rcm_sat_adj( thlm, rtm, p_in_Pa, exner ) result ( rcm )
 
     ! Description:
     !
@@ -748,31 +748,31 @@ module saturation
     ! Default initialization
     theta = thlm
     too_high = 0.0_core_rknd
-    too_low = 0.0_core_rknd
+    too_low  = 0.0_core_rknd
 
-    DO iteration = 1, itermax, 1
+    do iteration = 1, itermax, 1
 
       answer = &
       theta - (Lv/(Cp*exner)) &
              *(MAX( rtm - sat_mixrat_liq(p_in_Pa,theta*exner), zero_threshold ))
 
-      IF ( ABS(answer - thlm) <= tolerance ) THEN
-        EXIT
-      ELSEIF ( answer - thlm > tolerance ) THEN
+      if ( ABS(answer - thlm) <= tolerance ) then
+        exit
+      else if ( answer - thlm > tolerance ) then
         too_high = theta
-      ELSEIF ( thlm - answer > tolerance ) THEN
+      else if ( thlm - answer > tolerance ) THEN
         too_low = theta
-      ENDIF
+      end if
 
       ! For the first timestep, be sure to set a "too_high"
       ! that is "way too high."
-      IF ( iteration == 1 ) THEN
+      if ( iteration == 1 ) then
         too_high = theta + 20.0_core_rknd
-      ENDIF
+      end if
 
       theta = (too_low + too_high)/2.0_core_rknd
 
-    END DO ! 1..itermax
+    end do ! 1..itermax
 
     if ( iteration == itermax ) then
       ! Magic Eric Raut added to remove compiler warning (clearly this value is not used)
@@ -784,6 +784,6 @@ module saturation
       return
     end if
 
-  END FUNCTION rcm_sat_adj
+  end function rcm_sat_adj
 
 end module saturation
