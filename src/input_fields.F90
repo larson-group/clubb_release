@@ -20,27 +20,32 @@ module inputfields
   character(len=10), public :: input_type
 
   logical, public :: &
-    l_input_um, l_input_vm, l_input_rtm, l_input_thlm, & 
-    l_input_wp2, l_input_wprtp, l_input_wpthlp,  & 
-    l_input_wp3, l_input_rtp2, l_input_thlp2,  & 
-    l_input_rtpthlp, l_input_upwp, l_input_vpwp, & 
-    l_input_ug, l_input_vg, l_input_rcm,  & 
-    l_input_wm_zt, l_input_exner, l_input_em, & 
-    l_input_p, l_input_rho, l_input_rho_zm, & 
-    l_input_rho_ds_zm, l_input_rho_ds_zt, &
-    l_input_thv_ds_zm, l_input_thv_ds_zt, &
-    l_input_Lscale, l_input_Lscale_up, l_input_Lscale_down, & 
-    l_input_Kh_zt, l_input_Kh_zm, l_input_tau_zm, l_input_tau_zt, & 
-    l_input_wpthvp, l_input_radht, &
-    l_input_thl1, l_input_thl2, l_input_mixt_frac, l_input_s1, l_input_s2, &
-    l_input_stdev_s1, l_input_stdev_s2, l_input_rc1, l_input_rc2, &
-    l_input_thvm, l_input_rrainm, l_input_Nrm,  l_input_Ncm,  & 
-    l_input_rsnowm, l_input_ricem, l_input_rgraupelm, l_input_Ncnm, l_input_Nim, & 
-    l_input_thlm_forcing, l_input_rtm_forcing, & 
-    l_input_up2, l_input_vp2, l_input_sigma_sqd_w, & 
-    l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
-    l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
-    l_input_sfc_soil_T_in_K
+    l_input_um = .false., l_input_vm = .false., l_input_rtm = .false., l_input_thlm = .false., & 
+    l_input_wp2 = .false., l_input_wprtp = .false., l_input_wpthlp = .false.,  & 
+    l_input_wp3 = .false., l_input_rtp2 = .false., l_input_thlp2 = .false.,  & 
+    l_input_rtpthlp = .false., l_input_upwp = .false., l_input_vpwp = .false., & 
+    l_input_ug = .false., l_input_vg = .false., l_input_rcm = .false.,  & 
+    l_input_wm_zt = .false., l_input_exner = .false., l_input_em = .false., & 
+    l_input_p = .false., l_input_rho = .false., l_input_rho_zm = .false., & 
+    l_input_rho_ds_zm = .false., l_input_rho_ds_zt = .false., &
+    l_input_thv_ds_zm = .false., l_input_thv_ds_zt = .false., &
+    l_input_Lscale = .false., l_input_Lscale_up = .false., l_input_Lscale_down = .false., & 
+    l_input_Kh_zt = .false., l_input_Kh_zm = .false., &
+    l_input_tau_zm = .false., l_input_tau_zt = .false., & 
+    l_input_wpthvp = .false., l_input_radht = .false., &
+    l_input_thl1 = .false., l_input_thl2 = .false., l_input_mixt_frac = .false., &
+    l_input_s1 = .false., l_input_s2 = .false., &
+    l_input_stdev_s1 = .false., l_input_stdev_s2 = .false., &
+    l_input_rc1 = .false., l_input_rc2 = .false., &
+    l_input_thvm = .false., l_input_rrainm = .false., &
+    l_input_Nrm = .false.,  l_input_Ncm = .false.,  & 
+    l_input_rsnowm = .false., l_input_ricem = .false., &
+    l_input_rgraupelm = .false., l_input_Ncnm = .false., l_input_Nim = .false., & 
+    l_input_thlm_forcing = .false., l_input_rtm_forcing = .false., & 
+    l_input_up2 = .false., l_input_vp2 = .false., l_input_sigma_sqd_w = .false., & 
+    l_input_cloud_frac = .false., l_input_sigma_sqd_w_zt = .false., &
+    l_input_veg_T_in_K = .false., l_input_deep_soil_T_in_K = .false., &
+    l_input_sfc_soil_T_in_K = .false.
 
   integer, parameter, private :: &
     coamps_input_type = 1, &
@@ -64,7 +69,7 @@ module inputfields
     num_rams_inputfields =  4 ! The number of input fields for the RAMS LES case
 
   integer, private :: &
-    stats_input_type
+    stats_input_type = -999
 
   ! Procedures
   public  :: stat_fields_reader, &
@@ -94,7 +99,7 @@ module inputfields
 
     real( kind = core_rknd ) :: &
       adjustment ! The SAM variable will be multiplied by this amount
-                       ! to convert the variable to the correct units.
+                 ! to convert the variable to the correct units.
 
   end type input_field
 
