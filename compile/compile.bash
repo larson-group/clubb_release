@@ -110,6 +110,10 @@ if [ -e $srcdir/Latin_hypercube ]; then
 	LH_LIB="liblatin_hypercube.a"
 fi
 
+# Add miscellaneous preprocessor definitions
+# -Dradoffline and -Dnooverlap (see bugsrad documentation)
+CPPDEFS="${CPPDEFS} -Dradoffline -Dnooverlap"
+
 # Add all flags together.  These must be linked by order of dependence, so 
 # So liblatin_hypercube comes before libclubb comes before liblapack.
 LDFLAGS="-L$libdir $OPT_LIBS $REQ_LIBS ${LDFLAGS}"

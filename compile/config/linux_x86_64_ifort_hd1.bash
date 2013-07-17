@@ -48,14 +48,13 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 #   -DMKL enables MKL solver (PARDISO/GMRES) support
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
 
-CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DMKL -DCLUBB_REAL_TYPE=4"
+CPPDEFS="-DNETCDF -DMKL -DCLUBB_REAL_TYPE=4"
 CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include"
 
 # == Static library processing ==

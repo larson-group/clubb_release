@@ -52,11 +52,10 @@ FFLAGS="$ARCH $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -Dradoffline and -Dnooverlap (see BUGSrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 NETCDF_INCLUDE="$NETCDF/include/" # Ubuntu 10 LTS location
-CPPDEFS="-DNETCDF -D__GFORTRAN__ -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=8"
+CPPDEFS="-DNETCDF -D__GFORTRAN__ -DCLUBB_REAL_TYPE=8"
 CPPFLAGS="-I$NETCDF_INCLUDE"
 
 # == Static library processing ==

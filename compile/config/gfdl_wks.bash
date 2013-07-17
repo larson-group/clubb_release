@@ -54,13 +54,12 @@ FFLAGS="$ARCH $OPTIMIZE"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
 
-CPPFLAGS="-DNETCDF -I$NETCDF/include -Dnooverlap -Dradoffline"
+CPPFLAGS="-DNETCDF -I$NETCDF/include"
 
 # == Static library processing ==
 AR=ar

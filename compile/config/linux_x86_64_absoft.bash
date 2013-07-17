@@ -47,10 +47,9 @@ FFLAGS="$ARCH $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
-CPPDEFS="-Dnooverlap -Dradoffline -DAbsoftUNIXFortran -DCLUBB_REAL_TYPE=8"
+CPPDEFS="-DAbsoftUNIXFortran -DCLUBB_REAL_TYPE=8"
 
 # == Static library processing ==
 AR=ar

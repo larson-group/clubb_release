@@ -62,13 +62,12 @@ FFLAGS="$ARCH $DEBUG"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -Dradoffline and -Dnooverlap (see BUGSrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 #NETCDF_INCLUDE="$NETCDF/include/" # netCDF v4
 #CPPFLAGS="-I$NETCDF_INCLUDE" # netCDF v4
-#CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DCLUBB_REAL_TYPE=8" # netCDF v4
-CPPDEFS="-Dradoffline -Dnooverlap -DCLUBB_REAL_TYPE=8" # MacOS X (no netCDF)
+#CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8" # netCDF v4
+CPPDEFS="-DCLUBB_REAL_TYPE=8" # MacOS X (no netCDF)
 
 # == Static library processing ==
 AR=ar

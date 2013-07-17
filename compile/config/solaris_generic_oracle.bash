@@ -58,10 +58,9 @@ LDFLAGS="$FFLAGS -L$NETCDF/lib -lnetcdf -xlibmopt $LAPACK"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
-#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -M<include path> to set a module file directory
-CPPDEFS="-DNETCDF -Dnooverlap -Dradoffline -DNO_LAPACK_ISNAN -DCLUBB_REAL_TYPE=8"
+CPPDEFS="-DNETCDF -DNO_LAPACK_ISNAN -DCLUBB_REAL_TYPE=8"
 CPPFLAGS="-M$NETCDF/include"
 
 # == Static library processing ==
