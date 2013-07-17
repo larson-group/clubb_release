@@ -16,6 +16,11 @@ module parameters_microphys
   use mt95, only: &
     genrand_intg
 
+  use constants_clubb, only: &
+    one, &
+    one_third, &
+    two_thirds
+
   implicit none
 
   ! Constant Parameters
@@ -71,7 +76,7 @@ module parameters_microphys
 !$omp threadprivate(l_cloud_edge_activation, l_local_kk)
 
   character(len=30), public :: &
-    specify_aerosol  ! Specify aerosol (Morrison)
+    specify_aerosol = "morrison_lognormal"  ! Specify aerosol (Morrison)
 
   ! Flags for the Latin Hypercube sampling code 
   logical, public :: &
@@ -144,10 +149,11 @@ module parameters_microphys
 !$omp                Ncnp2_on_Ncnm2_below )
 
   ! Other needed parameters
+  ! Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric
+  ! radius to drizzle drop mean volume radius.
+  ! Khairoutdinov and Kogan (2000); p. 233
   real( kind = core_rknd ), public :: C_evap = 0.86_core_rknd ! Khairoutdinov and Kogan (2000) 
-  ! ratio of drizzle drop mean geometric radius to
-  ! drizzle drop mean volume radius.
-  ! Khairoutdinov and Kogan (2000); p. 233.
+
   !real, public :: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
   !real, public :: C_evap = 0.55     ! KK 2000, Marshall-Palmer (1948) value.
 
@@ -164,16 +170,16 @@ module parameters_microphys
 
   ! Values of exponents in KK microphysics
   real( kind = core_rknd ), public :: &
-    KK_evap_Supersat_exp = 1.0_core_rknd, & ! Exponent on Supersaturation (S) in KK evap. eq.; 1
-    KK_evap_rr_exp = 1._core_rknd/3._core_rknd, & ! Exponent on r_r in KK evaporation eq.; 1/3
-    KK_evap_Nr_exp = 2._core_rknd/3._core_rknd, & ! Exponent on N_r in KK evaporation eq.; 2/3
+    KK_evap_Supersat_exp = one,  & ! Exponent on Supersaturation (S) in KK evap. eq.; 1
+    KK_evap_rr_exp = one_third,  & ! Exponent on r_r in KK evaporation eq.; 1/3
+    KK_evap_Nr_exp = two_thirds, & ! Exponent on N_r in KK evaporation eq.; 2/3
     KK_auto_rc_exp = 2.47_core_rknd, & ! Exponent on r_c in KK autoconversion eq.; 2.47
     KK_auto_Nc_exp = -1.79_core_rknd, & ! Exponent on N_c in KK autoconversion eq.; -1.79
     KK_accr_rc_exp = 1.15_core_rknd, & ! Exponent on r_c in KK accretion eq.; 1.15
     KK_accr_rr_exp = 1.15_core_rknd, & ! Exponent on r_r in KK accretion eq.; 1.15
-    KK_mvr_rr_exp  = 1._core_rknd/3._core_rknd, & ! Exponent on r_r in KK mean volume radius
-    KK_mvr_Nr_exp  = -1._core_rknd/3._core_rknd, & ! Exponent on N_r in KK mean volume radius
-    KK_Nrm_evap_nu = 1._core_rknd    ! Exponent (parameter) in <N_r> evaporation eq.; 1
+    KK_mvr_rr_exp  = one_third, & ! Exponent on r_r in KK mean volume radius
+    KK_mvr_Nr_exp  = -one_third, & ! Exponent on N_r in KK mean volume radius
+    KK_Nrm_evap_nu = one    ! Exponent (parameter) in <N_r> evaporation eq.; 1
 
 !$omp threadprivate( KK_evap_Supersat_exp, KK_evap_rr_exp, KK_evap_Nr_exp, &
 !$omp                KK_auto_rc_exp, KK_auto_Nc_exp, KK_accr_rc_exp, &

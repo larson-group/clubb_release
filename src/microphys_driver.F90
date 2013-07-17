@@ -289,9 +289,8 @@ module microphys_driver
 
     ! ---- Begin Code ----
 
-    ! Set default values, then read in the namelist
-
-    micro_scheme = "none"
+    ! Set default values, then read in the namelist.
+    ! Note: many parameters are set in the microphys_parameters module.
 
     l_gfdl_activation = .false.
 
@@ -311,117 +310,6 @@ module microphys_driver
     end select
     ! end change by Marc Pilon 11/16/11
 
-
-    !---------------------------------------------------------------------------
-    ! Parameters for Khairoutdinov and Kogan microphysics
-    !---------------------------------------------------------------------------
-    l_local_kk = .false. ! When true we use the local parameterization for K&K
-
-    ! When true, we clip source terms at the mean to facilitate convergence of
-    ! LH and KK analytic.
-    l_silhs_KK_convergence_adj_mean = .false.
-
-    ! Exponent on Supersaturation (S) in the KK evaporation equation.
-    ! The standard value is 1.
-    KK_evap_Supersat_exp = one
-    ! Exponent on r_r in the KK evaporation equation.
-    ! The standard value is 1/3.
-    KK_evap_rr_exp       = one_third
-    ! Exponent on N_r in the KK evaporation equation.
-    ! The standard value is 2/3.
-    KK_evap_Nr_exp       = two_thirds
-    ! Exponent on r_c in the KK autoconversion equation.
-    ! The standard value is 2.47.
-    KK_auto_rc_exp       = 2.47_core_rknd
-    ! Exponent on N_c in the KK autoconversion equation.
-    ! The standard value is -1.79.
-    KK_auto_Nc_exp       = -1.79_core_rknd
-    ! Exponent on r_c in the KK accretion equation.
-    ! The standard value is 1.15.
-    KK_accr_rc_exp       = 1.15_core_rknd
-    ! Exponent on r_r in the KK accretion equation.
-    ! The standard value is 1.15.
-    KK_accr_rr_exp       = 1.15_core_rknd
-    ! Exponent on r_r in the KK mean volume radius equation.
-    ! The standard value is 1/3.
-    KK_mvr_rr_exp        = one_third
-    ! Exponent on N_r in the KK mean volume radius equation.
-    ! The standard value is -1/3.
-    KK_mvr_Nr_exp        = -one_third
-    ! Exponent and parameter in the KK <N_r> evaporation equation.
-    ! The standard value is 1.
-    KK_Nrm_evap_nu       = one
-
-    ! Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric
-    ! radius to drizzle drop mean volume radius.
-    ! Khairoutdinov and Kogan (2000); p. 233
-    C_evap = 0.86_core_rknd
-    !C_evap = 0.86_core_rknd*0.2_core_rknd ! COAMPS value of KK C_evap
-    !C_evap = 0.55_core_rknd     ! KK 2000, Marshall-Palmer (1948) value.
-
-    r_0 = 25.0e-6_core_rknd   ! Assumed radius of all new drops; m.
-
-    !---------------------------------------------------------------------------
-    ! Parameters for Khairoutdinov and Kogan microphysics analytic solution
-    ! (local_kk = .false.), or latin hypercube sampling (using either Khairoutdinov
-    !  Kogan or Morrison microphysics).
-    !---------------------------------------------------------------------------
-    ! Parameters for in-cloud (default values are from SAM RF02 DO).
-    rrp2_on_rrm2_cloud   = 0.766_core_rknd
-    Nrp2_on_Nrm2_cloud   = 0.429_core_rknd
-    Ncnp2_on_Ncnm2_cloud = 0.003_core_rknd
-
-    ! Parameters for below-cloud (default values are from SAM RF02 DO).
-    rrp2_on_rrm2_below   = 8.97_core_rknd
-    Nrp2_on_Nrm2_below   = 12.03_core_rknd
-    Ncnp2_on_Ncnm2_below = zero
-
-    ! Other needed parameters
-
-    ! Made up values for the variance of ice/snow, since we currently lack data
-    ! for this.
-    rsnowp2_on_rsnowm2_cloud = 0.766_core_rknd
-    Nsnowp2_on_Nsnowm2_cloud = 0.429_core_rknd
-    ricep2_on_ricem2_cloud   = 1.0_core_rknd
-    Nicep2_on_Nicem2_cloud   = 1.0_core_rknd
-
-    rsnowp2_on_rsnowm2_below = 0.766_core_rknd
-    Nsnowp2_on_Nsnowm2_below = 0.429_core_rknd
-    ricep2_on_ricem2_below   = 1.0_core_rknd
-    Nicep2_on_Nicem2_below   = 1.0_core_rknd
-
-    l_var_covar_src = .false.
-
-    l_const_Nc_in_cloud = .false.
-
-    !---------------------------------------------------------------------------
-    ! Parameters for Morrison and COAMPS microphysics
-    !---------------------------------------------------------------------------
-    l_ice_micro = .false. ! Disable non-sedimenting ice and snow by default
-    l_graupel = .false.   ! Disable graupel formation by default
-
-    !---------------------------------------------------------------------------
-    ! Parameters for Khairoutdinov & Kogan and COAMPS microphysics
-    !---------------------------------------------------------------------------
-    ! Enable to use an upwind differencing approximation for sedimentation
-    ! rather than a 3 point difference approximation.
-    l_upwind_diff_sed = .false.
-
-    !---------------------------------------------------------------------------
-    ! Parameters for Morrison microphysics only
-    !---------------------------------------------------------------------------
-    l_hail = .false. ! Graupel will have properties of hail when true
-
-    ! Enable to Use Seifert and Beheng (2001) warm rain parameterization
-    ! rather than Khairoutdinov Kogan (2000)
-    l_seifert_beheng = .false.
-    l_predictnc = .true. ! Predict cloud droplet number concentration
-    specify_aerosol = "morrison_lognormal"
-    l_subgrid_w = .true.
-    l_arctic_nucl = .false.
-    l_fix_pgam  = .false.
-    l_cloud_edge_activation = .false.
-
     ! Aerosol for RF02 from Mikhail Ovtchinnikov
     aer_rm1  = 0.011e-6 ! Mean geometric radius  [m]
     aer_rm2  = 0.06e-6
@@ -437,36 +325,6 @@ module microphys_driver
     ccnexpnt = 0.4
 
     pgam_fixed = 5.
-
-    !---------------------------------------------------------------------------
-    ! Parameters for Morrison microphysics and Khairoutdinov & Kogan microphysics
-    !---------------------------------------------------------------------------
-    Ncnm_initial = 100.e6_core_rknd ! num/m^3
-    Nc_in_cloud0  = 100.e6_core_rknd ! num/m^3
-
-    ! In the Latin hypercube code, we can fix the correlations between s and t.
-    ! The reasons for this are twofold:
-    ! 1. It avoids the cost of factorizing the correlation matrices at every altitude and timestep.
-    ! 2. At higher altitudes decomposing a matrix of covariances directly becomes
-    !    unstable.  This makes that approach impractical for ice microphysics.
-    l_fix_s_t_correlations = .false.
-
-    l_lh_cloud_weighted_sampling = .false.
-    l_lh_vert_overlap = .false.
-    
-    ! Setting LH_microphys_calls here does only effect CLUBB-Standalone.
-    ! The number of LH sample points for WRF-CLUBB are set in the namelist.input file.
-    LH_microphys_calls = 2
-    LH_sequence_length = 1
-    LH_seed = 5489_genrand_intg ! Default seed from mt95.f90
-
-    LH_microphys_type = "disabled"
-    !---------------------------------------------------------------------------
-    ! Parameters for all microphysics schemes
-    !---------------------------------------------------------------------------
-    microphys_start_time = 0.0_time_precision ! [s]
-
-    l_in_cloud_Nc_diff = .true. ! Use in cloud values of Nc for diffusion
 
     ! The next three lines open the cases model.in file and replace values of
     ! the parameters if they exist in the file.
@@ -578,12 +436,12 @@ module microphys_driver
 
         ! Initialize the activation variables
         call aer_ccn_act_k_init                            &
-               ( real(droplets), real(droplets2), res, res2, nooc,     &
-                 real(sul_concen), real(low_concen), real(high_concen),      &
-                 real(lowup), real(highup), real(lowup2), real(highup2), real(lowmass2), &
-                 real(highmass2), real(lowmass3), real(highmass3),           &
-                 real(lowmass4), real(highmass4), real(lowmass5), real(highmass5), &
-                 real(lowT2),real( highT2) )
+               ( real( droplets ), real( droplets2 ), res, res2, nooc,     &
+                 real( sul_concen ), real( low_concen ), real( high_concen ),      &
+                 real( lowup ), real( highup ), real( lowup2 ), real( highup2 ), real( lowmass2 ), &
+                 real( highmass2 ), real( lowmass3 ), real( highmass3 ),           &
+                 real( lowmass4 ), real( highmass4 ), real( lowmass5 ), real( highmass5 ), &
+                 real( lowT2 ),real( highT2 ) )
       end if ! coamps .or. morrison .or. khairoutdinov_kogan
     end if ! l_gfdl_activation
 
