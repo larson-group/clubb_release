@@ -156,7 +156,7 @@ module output_grads
         write(fstderr,*) "To override this warning, set l_allow_small_stats_tout = &
                          &.true. in the stats_setting namelist in the &
                          &appropriate *_model.in file."
-        stop "Fatal error in determine_time_inc"
+        stop "Fatal error in open_grads"
       end if
     end if
 
