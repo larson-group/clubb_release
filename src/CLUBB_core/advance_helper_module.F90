@@ -30,19 +30,25 @@ module advance_helper_module
 
     implicit none
 
+    ! Exernal 
+    intrinsic :: present
+
+    ! Input Variables
     integer, intent(in) :: &
       diag_index, low_bound, high_bound ! boundary indexes for the first variable
 
-    integer, intent(in), optional :: &
-      diag_index2, low_bound2, high_bound2 ! boundary indexes for the second variable
-
+    ! Input / Output Variables
     real( kind = core_rknd ), dimension(:,:), intent(inout) :: &
       lhs ! left hand side of the LAPACK matrix equation
 
+    ! Optional Input Variables
+    integer, intent(in), optional :: &
+      diag_index2, low_bound2, high_bound2 ! boundary indexes for the second variable
+
     ! --------------------- BEGIN CODE ----------------------
 
-    if( ( present(low_bound2) .or. present(high_bound2) ) .and. &
-         ( .not. present(diag_index2) ) ) then
+    if ( ( present( low_bound2 ) .or. present( high_bound2 ) ) .and. &
+         ( .not. present( diag_index2 ) ) ) then
 
       stop "Boundary index provided without diag_index."
 
@@ -57,7 +63,7 @@ module advance_helper_module
     lhs(diag_index,high_bound) = 1.0_core_rknd
 
     ! Set the lower boundaries for the second variable, if it is provided
-    if( present(low_bound2) ) then
+    if ( present( low_bound2 ) ) then
 
       lhs(:,low_bound2) = 0.0_core_rknd
       lhs(diag_index2,low_bound2) = 1.0_core_rknd
@@ -65,13 +71,14 @@ module advance_helper_module
     end if
 
     ! Set the upper boundaries for the second variable, if it is provided
-    if( present(high_bound2) ) then
+    if ( present( high_bound2 ) ) then
 
       lhs(:,high_bound2) = 0.0_core_rknd
       lhs(diag_index2,high_bound2) = 1.0_core_rknd
 
     end if
 
+    return
   end subroutine set_boundary_conditions_lhs
 
   !--------------------------------------------------------------------------
@@ -92,11 +99,23 @@ module advance_helper_module
 
     implicit none
 
+    ! Exernal 
+    intrinsic :: present
+
+    ! Input Variables
+
     ! The values for the first variable
     real( kind = core_rknd ), intent(in) :: low_value, high_value
 
     ! The bounds for the first variable
     integer, intent(in) :: low_bound, high_bound
+
+    ! Input / Output Variables
+
+    ! The right-hand side vector
+    real( kind = core_rknd ), dimension(:), intent(inout) :: rhs
+
+    ! Optional Input Variables
 
     ! The values for the second variable
     real( kind = core_rknd ), intent(in), optional :: low_value2, high_value2
@@ -104,16 +123,14 @@ module advance_helper_module
     ! The bounds for the second variable
     integer, intent(in), optional :: low_bound2, high_bound2
 
-    ! The right-hand side vector
-    real( kind = core_rknd ), dimension(:), intent(inout) :: rhs
 
     ! -------------------- BEGIN CODE ------------------------
 
     ! Stop execution if a boundary was provided without a value
-    if( (present(low_bound2) .and. (.not. present(low_value2))) .or. &
-        (present(high_bound2) .and. (.not. present(high_value2))) ) then
+    if ( (present( low_bound2 ) .and. (.not. present( low_value2 ))) .or. &
+         (present( high_bound2 ) .and. (.not. present( high_value2 ))) ) then
 
-          stop "Boundary condition provided without value."
+      stop "Boundary condition provided without value."
 
     end if
 
@@ -122,15 +139,16 @@ module advance_helper_module
     rhs(high_bound) = high_value
 
     ! If a lower bound was given for the second variable, set it
-    if( present(low_bound2) ) then
+    if ( present( low_bound2 ) ) then
       rhs(low_bound2) = low_value2
     end if
 
     ! If an upper bound was given for the second variable, set it
-    if( present(high_bound2) ) then
+    if ( present( high_bound2 ) ) then
       rhs(high_bound2) = high_value2
     end if
 
+    return
   end subroutine set_boundary_conditions_rhs
 
 end module advance_helper_module
