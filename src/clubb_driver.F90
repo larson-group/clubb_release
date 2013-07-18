@@ -626,6 +626,11 @@ module clubb_driver
 #else
       call write_text( "-DBYTESWAP_IO disabled", l_write_to_file, iunit )
 #endif
+#ifdef SILHS_KK_CONVERGENCE_TEST
+      call write_text( "-DSILHS_KK_CONVERGENCE_TEST enabled", l_write_to_file, iunit )
+#else
+      call write_text( "-DSILHS_KK_CONVERGENCE_TEST disabled", l_write_to_file, iunit )
+#endif
 
       ! Pick some default values for model_setting
       call write_text( "--------------------------------------------------", &

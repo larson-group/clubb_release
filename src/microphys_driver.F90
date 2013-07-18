@@ -326,6 +326,8 @@ module microphys_driver
 
     pgam_fixed = 5.
 
+    LH_microphys_type = "disabled"
+
     ! The next three lines open the cases model.in file and replace values of
     ! the parameters if they exist in the file.
     open(unit=iunit, file=namelist_file, status='old', action='read')
