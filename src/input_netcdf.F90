@@ -221,7 +221,7 @@ module input_netcdf
       ! Read starting time from the "units" attribute of the netcdf file
       time = trim( time )
       length = len( trim( time ) )
-      if ( length < 11 ) then
+      if ( length < 21 ) then
         write(fstderr,*) "The NetCDF file does not have a proper time unit &
                          &specification. The ""units"" attribute for the &
                          &time variable must be in the form:"
