@@ -1239,6 +1239,8 @@ module parameters_tunable
     Lscale_pert_coef   = init_value
     alpha_corr         = init_value
     nu_hd_vert_res_dep = init_value
+    Skw_denom_coef     = init_value
+    c_K10              = init_value
 
     return
   end subroutine init_parameters_999
