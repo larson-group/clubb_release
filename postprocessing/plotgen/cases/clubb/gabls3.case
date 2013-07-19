@@ -120,7 +120,7 @@
        [
           {'filename' => 'gabls3_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Ncm\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Nc\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'gabls3_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nc_in_cloud', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},

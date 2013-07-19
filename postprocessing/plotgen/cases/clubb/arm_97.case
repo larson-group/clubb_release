@@ -144,7 +144,7 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Ncm\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Nc\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nc_in_cloud', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},

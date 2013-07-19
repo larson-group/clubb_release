@@ -144,7 +144,7 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s11_p2K/p2k_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(Nc * 1e+6) ./ RHO', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'cloud_feedback_s11_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Ncm\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Nc\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'cloud_feedback_s11_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nc_in_cloud', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
