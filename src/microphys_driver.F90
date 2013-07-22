@@ -1466,7 +1466,7 @@ module microphys_driver
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm_morr, wtmp, delta_zt, cloud_frac_morr, & ! In
-               hydromet, X_mixt_comp_all_levs, & !In 
+               hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
                hydromet_mc, hydromet_vel_zt, & ! In/Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                morrison_micro_driver )  ! Procedure
@@ -1510,7 +1510,7 @@ module microphys_driver
              ( dt, gr%nz, l_stats_samp, &
                l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac_morr, pdf_params, wtmp, &
-               delta_zt, rcm_morr, Ncm, s_mellor, rvm, Nc_in_cloud, hydromet, &
+               delta_zt, rcm_morr, Ncm, s_mellor, rvm, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, &
@@ -1563,7 +1563,7 @@ module microphys_driver
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, wtmp, delta_zt, cloud_frac, & ! In
-               hydromet, X_mixt_comp_all_levs, & !In 
+               hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
                hydromet_mc, hydromet_vel_zt, & ! In/Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                KK_local_micro_driver ) ! Procedure
@@ -1596,7 +1596,7 @@ module microphys_driver
                                       l_latin_hypercube_input, thlm, wm_zt, &
                                       p_in_Pa, exner, rho, cloud_frac, &
                                       pdf_params, wtmp, delta_zt, rcm, &
-                                      Ncm, s_mellor, rvm, Nc_in_cloud, &
+                                      Ncm, s_mellor, rvm, &
                                       hydromet, &
                                       hydromet_mc, hydromet_vel_zt, &
                                       rcm_mc, rvm_mc, thlm_mc, &

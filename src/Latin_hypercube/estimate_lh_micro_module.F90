@@ -26,6 +26,7 @@ module estimate_lh_micro_module
                rcm, w_std_dev, dzq, &        
                cloud_frac, hydromet, &
                X_mixt_comp_all_levs, LH_sample_point_weights, &
+               Nc_in_cloud, &
                LH_hydromet_mc, LH_hydromet_vel, &
                LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &
                LH_AKm, AKm, AKstd, AKstd_cld, & 
@@ -102,6 +103,10 @@ module estimate_lh_micro_module
 
     real( kind = core_rknd ), dimension(n_micro_calls), intent(in) :: &
       LH_sample_point_weights ! Weight for cloud weighted sampling
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
+      Nc_in_cloud
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
@@ -308,7 +313,7 @@ module estimate_lh_micro_module
                                 k_lh_start, LH_rt, LH_thl, & ! In
                                 X_nl_all_levs, LH_sample_point_weights, & ! In
                                 p_in_Pa, exner, rho, cloud_frac, w_std_dev, & ! In
-                                dzq, pdf_params, hydromet, rcm, & ! In
+                                dzq, pdf_params, hydromet, rcm, Nc_in_cloud, & ! In
                                 lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, & ! Out
                                 lh_hydromet_vel, lh_thlm_mc, &  ! Out
                                 microphys_sub ) ! Procedure

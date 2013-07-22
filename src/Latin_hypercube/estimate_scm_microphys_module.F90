@@ -3,7 +3,7 @@ module estimate_scm_microphys_module
 
   implicit none
 
-  public :: est_single_column_tndcy, copy_X_nl_into_hydromet
+  public :: est_single_column_tndcy, copy_X_nl_into_hydromet_all_pts
 
   private ! Default scope
 
@@ -15,7 +15,7 @@ module estimate_scm_microphys_module
                k_lh_start, LH_rt, LH_thl, &
                X_nl_all_levs, LH_sample_point_weights, &
                p_in_Pa, exner, rho, cloud_frac, w_std_dev, &
-               dzq, pdf_params, hydromet, rcm,  &
+               dzq, pdf_params, hydromet, rcm, Nc_in_cloud,  &
                lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
                lh_hydromet_vel, lh_thlm_mc, &
                microphys_sub )
@@ -37,7 +37,8 @@ module estimate_scm_microphys_module
 
     use parameters_microphys, only: &
       l_lh_cloud_weighted_sampling, & ! Variable(s)
-      l_silhs_KK_convergence_adj_mean
+      l_silhs_KK_convergence_adj_mean, &
+      l_const_Nc_in_cloud
 
     use corr_matrix_module, only: &
       iiLH_s_mellor, &
@@ -108,7 +109,11 @@ module estimate_scm_microphys_module
       cloud_frac, & ! Cloud fraction           [-]
       w_std_dev,  & ! Standard deviation of w    [m/s]
       dzq,        & ! Difference in height per gridbox   [m]
-      rcm           ! Mean liquid water mixing ratio     [kg/kg] 
+      rcm           ! Mean liquid water mixing ratio     [kg/kg]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
+      Nc_in_cloud 
 
     type(pdf_parameter), dimension(nz), intent(in) :: pdf_params
 
@@ -143,7 +148,7 @@ module estimate_scm_microphys_module
       lh_thlm_mc_sum        ! LH est of time tendency of liquid potential temperature [K/s]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
-      hydromet_columns ! Hydrometeor species                    [units vary]
+      hydromet_all_points ! Hydrometeor species                    [units vary]
 
     real( kind = core_rknd ), dimension(nz) :: &
       s_mellor_column    ! 's' (Mellor 1977)                    [kg/kg]
@@ -153,7 +158,7 @@ module estimate_scm_microphys_module
       thl_column, & ! Liquid potential temperature              [K]
       rc_column,  & ! Liquid water                              [kg/kg]
       w_column,   & ! Vertical velocity                         [m/s]
-      Ncm,        & ! Cloud droplet concentration               [#/kg]
+      Nc,         & ! Cloud droplet concentration               [#/kg]
       Nc0           ! Constant cloud droplet conc. within cloud [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
@@ -260,26 +265,30 @@ module estimate_scm_microphys_module
 
       thl_column = real( LH_thl(:,sample), kind = core_rknd )
 
-      call copy_X_nl_into_hydromet( nz, d_variables, 1, & ! In
+      call copy_X_nl_into_hydromet_all_pts( nz, d_variables, 1, & ! In
                                     X_nl_all_levs(:,sample,:), & ! In
                                     hydromet, & ! In
-                                    hydromet_columns, &  ! Out
-                                    Ncm ) ! Out
+                                    hydromet_all_points, &  ! Out
+                                    Nc ) ! Out
 
-      ! Nc0 is a constant cloud droplet concentration NcV0 (#/m^3) / rho.
-      ! This is normally used for cases that specify a constant cloud droplet
-      ! concentration within cloud.  Set it to 0 when this is not required.
-      ! Additionally, the flag l_const_Nc_in_cloud may have to be turned on to
-      ! use a constant cloud droplet concentration within cloud. 
-      Nc0(:) = 0.0_core_rknd
+      ! For l_const_Nc_in_cloud, we want to use the same value of Nc for all
+      ! sample points. Thus, we overwrite the sample value of Nc with
+      ! Nc_in_cloud.
+      if (l_const_Nc_in_cloud) then
+        where (s_mellor_column > 0.0_core_rknd)
+          Nc = Nc_in_cloud
+        else where
+          Nc = 0.0_core_rknd
+        end where
+      end if
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nz, l_stats_samp, & ! In
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
              exner, rho, cloud_frac, pdf_params, w_std_dev, & ! In
-             dzq, rc_column, Ncm, s_mellor_column, rv_column, Nc0, & ! In
-             hydromet_columns, & ! In
+             dzq, rc_column, Nc, s_mellor_column, rv_column, & ! In
+             hydromet_all_points, & ! In
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
              lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
              lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, & ! Out
@@ -476,11 +485,11 @@ module estimate_scm_microphys_module
   end subroutine adjust_KK_src_means
 #endif
   !-----------------------------------------------------------------------------
-  subroutine copy_X_nl_into_hydromet( nz, d_variables, n_micro_calls, &
+  subroutine copy_X_nl_into_hydromet_all_pts( nz, d_variables, n_micro_calls, &
                                       X_nl_all_levs, &
                                       hydromet, &
                                       hydromet_all_points, &
-                                      Ncm_all_points )
+                                      Nc_all_points )
 
   ! Description:
   !   Copy the points from the latin hypercube sample to an array with just the
@@ -533,7 +542,7 @@ module estimate_scm_microphys_module
       hydromet_all_points ! Hydrometeor species    [units vary]
 
     real( kind = core_rknd ), dimension(nz,n_micro_calls), intent(out) :: &
-      Ncm_all_points ! Cloud droplet number concentration [#/kg]
+      Nc_all_points ! Cloud droplet number concentration [#/kg]
 
     integer :: sample, ivar
 
@@ -587,13 +596,13 @@ module estimate_scm_microphys_module
 
         end if
       end do ! 1..hydromet_dim
-      ! Copy Ncm into Ncm all points
+      ! Copy Nc into Nc all points
       if ( iiLH_Nc > 0 ) then
-        Ncm_all_points(:,sample) = real( X_nl_all_levs(:,sample,iiLH_Nc), kind=core_rknd )
+        Nc_all_points(:,sample) = real( X_nl_all_levs(:,sample,iiLH_Nc), kind=core_rknd )
       end if
     end do ! 1..n_micro_calls
 
     return
-  end subroutine copy_X_nl_into_hydromet
+  end subroutine copy_X_nl_into_hydromet_all_pts
   !-----------------------------------------------------------------------------
 end module estimate_scm_microphys_module

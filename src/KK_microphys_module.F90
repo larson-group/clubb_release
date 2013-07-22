@@ -25,7 +25,7 @@ module KK_microphys_module
                                     l_latin_hypercube, thlm, wm_zt, &
                                     p_in_Pa, exner, rho, cloud_frac, &
                                     pdf_params, w_std_dev, dzq, rcm, &
-                                    Ncm, s_mellor, rvm, Nc_in_cloud, &
+                                    Ncm, s_mellor, rvm, &
                                     hydromet, &
                                     hydromet_mc, hydromet_vel, &
                                     rcm_mc, rvm_mc, thlm_mc, &
@@ -105,9 +105,6 @@ module KK_microphys_module
       w_std_dev, & ! Standard deviation of w (for LH interface)          [m/s]
       dzq,       & ! Thickness between thermo. levels (for LH interface) [m]
       rvm          ! Mean water vapor mixing ratio (for LH interface)    [kg/kg]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      Nc_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(in) :: &

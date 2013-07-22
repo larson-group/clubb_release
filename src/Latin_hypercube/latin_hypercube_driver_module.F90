@@ -540,7 +540,7 @@ module latin_hypercube_driver_module
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, &
                pdf_params, p_in_Pa, exner, rho, &
                rcm, w_std_dev, delta_zt, cloud_frac, &
-               hydromet, X_mixt_comp_all_levs, &
+               hydromet, X_mixt_comp_all_levs, Nc_in_cloud, &
                LH_hydromet_mc, LH_hydromet_vel, &
                LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &
                microphys_sub )
@@ -617,6 +617,10 @@ module latin_hypercube_driver_module
       exner,       & ! Exner function               [-]
       rho            ! Density on thermo. grid      [kg/m^3]
 
+    real( kind = core_rknd), dimension(nz), intent(in) :: &
+      ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
+      Nc_in_cloud
+
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
       LH_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
@@ -639,6 +643,7 @@ module latin_hypercube_driver_module
            rcm, w_std_dev, delta_zt, &              ! intent(in)
            cloud_frac, hydromet, &                  ! intent(in)
            X_mixt_comp_all_levs, LH_sample_point_weights, & ! intent(in)
+           Nc_in_cloud, &                           ! intent(in)
            LH_hydromet_mc, LH_hydromet_vel, &       ! intent(inout)
            LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &      ! intent(out)
            lh_AKm, AKm, AKstd, AKstd_cld, &         ! intent(out)
@@ -1497,7 +1502,7 @@ module latin_hypercube_driver_module
       iiLH_Nc => iiLH_Ncn
 
     use estimate_scm_microphys_module, only: &
-      copy_X_nl_into_hydromet ! Procedure(s)
+      copy_X_nl_into_hydromet_all_pts ! Procedure(s)
 
     use constants_clubb, only: &
       zero_threshold, & ! Constant(s)
@@ -1618,7 +1623,7 @@ module latin_hypercube_driver_module
            iLH_rgraupelm + iLH_Ngraupelm + iLH_Ncm > 0 ) then
 
         LH_hydromet = 0._core_rknd
-        call copy_X_nl_into_hydromet( nz, d_variables, n_micro_calls, & ! In
+        call copy_X_nl_into_hydromet_all_pts( nz, d_variables, n_micro_calls, & ! In
                                       X_nl_all_levs, &  ! In
                                       LH_hydromet, & ! In
                                       hydromet_all_points, &  ! Out
@@ -1634,7 +1639,7 @@ module latin_hypercube_driver_module
            iLH_rgraupelm + iLH_Ngraupelm + iLH_Ncm > 0 ) then
 
         LH_hydromet = 0._core_rknd
-        call copy_X_nl_into_hydromet( nz, d_variables, n_micro_calls, & ! In
+        call copy_X_nl_into_hydromet_all_pts( nz, d_variables, n_micro_calls, & ! In
                                       X_nl_all_levs, &  ! In
                                       LH_hydromet, & ! In
                                       hydromet_all_points, &  ! Out
