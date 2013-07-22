@@ -25,7 +25,7 @@ module KK_microphys_module
                                     l_latin_hypercube, thlm, wm_zt, &
                                     p_in_Pa, exner, rho, cloud_frac, &
                                     pdf_params, w_std_dev, dzq, rcm, &
-                                    Ncm, s_mellor, rvm, Nc0_in_cloud, &
+                                    Ncm, s_mellor, rvm, Nc_in_cloud, &
                                     hydromet, &
                                     hydromet_mc, hydromet_vel, &
                                     rcm_mc, rvm_mc, thlm_mc, &
@@ -107,7 +107,7 @@ module KK_microphys_module
       rvm          ! Mean water vapor mixing ratio (for LH interface)    [kg/kg]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
+      Nc_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(in) :: &
@@ -348,7 +348,7 @@ module KK_microphys_module
   subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, thlm, wm_zt,       & ! Intent(in)
                                        p_in_Pa, exner, rho, cloud_frac,         & ! Intent(in)
                                        pdf_params, w_std_dev, rcm, Ncnm,        & ! Intent(in)
-                                       s_mellor, Nc0_in_cloud,                  & ! Intent(in)
+                                       s_mellor, Nc_in_cloud,                  & ! Intent(in)
                                        hydromet, wphydrometp,                   & ! Intent(in)
                                        d_variables, corr_array_1, corr_array_2, & ! Intent(in)
                                        mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,    & ! Intent(in)
@@ -453,7 +453,7 @@ module KK_microphys_module
       w_std_dev    ! Standard deviation of w (for LH interface)          [m/s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
+      Nc_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(in) :: &
@@ -724,7 +724,7 @@ module KK_microphys_module
                                       corr_sNcn_1_n, corr_sNcn_2_n, &
                                       corr_rrNr_1_n, corr_rrNr_2_n, &
                                       mixt_frac(k), precip_frac_1, &
-                                      precip_frac_2, Nc0_in_cloud(k), &
+                                      precip_frac_2, Nc_in_cloud(k), &
                                       l_const_Nc_in_cloud, &
                                       KK_evap_coef, KK_auto_coef, &
                                       KK_accr_coef, KK_mvr_coef, &
@@ -772,7 +772,7 @@ module KK_microphys_module
                                          corr_tNcn_1_n, corr_tNcn_2_n, &
                                          corr_rrNr_1_n, corr_rrNr_2_n, &
                                          mixt_frac(k), precip_frac_1, &
-                                         precip_frac_2, Nc0_in_cloud(k), &
+                                         precip_frac_2, Nc_in_cloud(k), &
                                          KK_evap_coef, KK_auto_coef, &
                                          KK_accr_coef, KK_evap_tndcy(k), &
                                          KK_auto_tndcy(k), KK_accr_tndcy(k), &

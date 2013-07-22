@@ -1152,7 +1152,7 @@ Logical flag                 |  If true then:
     rather than Khairoutdinov and Kogan (2000).
 
   l_predictnc      = .true.   Prognose droplet number concentration
-    (rather than specify it with Nc_in_cloud0).
+    (rather than specify it with Nc0_in_cloud).
 
   l_specify_aerosol = .true.  Use lognormal aerosol size distribution to
     derive ccn spectra, rather than power-law.
@@ -1172,7 +1172,7 @@ Logical flag                 |  If true then:
 
   Other parameters:
 
-  Nc_in_cloud0      =  Either the initial value of cloud droplet number
+  Nc0_in_cloud      =  Either the initial value of cloud droplet number
     concentration, or the constant value if l_predictnc is true.   [num/m^3]
 
   pgam_fixed       =  Value to use for a fixed pgam [num]

@@ -280,7 +280,7 @@ microphys_start_time | real, minimum 12 digits of precision
   Useful for artificially creating a delayed onset of ice/rain in idealized
   cases.
 
-Nc_in_cloud0 
+Nc0_in_cloud 
   Initial value for Ncm (cloud droplet number concentration) in #/m^3.
   (K&K, l_cloud_sed = .true., Morrison).
 

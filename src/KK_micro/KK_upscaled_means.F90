@@ -34,7 +34,7 @@ module KK_upscaled_means
                                        corr_sNcn_1_n, corr_sNcn_2_n, &
                                        corr_rrNr_1_n, corr_rrNr_2_n, &
                                        mixt_frac, precip_frac_1, &
-                                       precip_frac_2, Nc0_in_cloud, &
+                                       precip_frac_2, Nc_in_cloud, &
                                        l_const_Nc_in_cloud, &
                                        KK_evap_coef, KK_auto_coef, &
                                        KK_accr_coef, KK_mvr_coef, &
@@ -92,7 +92,7 @@ module KK_upscaled_means
       mixt_frac,     & ! Mixture fraction                                    [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
       precip_frac_2, & ! Precipitation fraction (2nd PDF component)          [-]
-      Nc0_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
+      Nc_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
 
     logical, intent(in) :: &
       l_const_Nc_in_cloud  ! Flag to use a constant value of N_c within cloud
@@ -131,7 +131,7 @@ module KK_upscaled_means
                              sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
                              sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
                              corr_sNcn_2_n, KK_auto_coef, mixt_frac, &
-                             Nc0_in_cloud, l_const_Nc_in_cloud )
+                             Nc_in_cloud, l_const_Nc_in_cloud )
 
 
     !!! Calculate the upscaled KK accretion tendency.
@@ -269,7 +269,7 @@ module KK_upscaled_means
                                   sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
                                   sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
                                   corr_sNcn_2_n, KK_auto_coef, mixt_frac, &
-                                  Nc0_in_cloud, l_const_Nc_in_cloud )
+                                  Nc_in_cloud, l_const_Nc_in_cloud )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain water
@@ -313,7 +313,7 @@ module KK_upscaled_means
       corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
       KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
       mixt_frac,     & ! Mixture fraction                                    [-]
-      Nc0_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
+      Nc_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
 
     logical, intent(in) :: &
       l_const_Nc_in_cloud  ! Flag to use a constant value of N_c within cloud
@@ -338,10 +338,10 @@ module KK_upscaled_means
        KK_auto_upscaled_mean  &
        = KK_auto_coef &
          * ( mixt_frac &
-             * bivar_NL_mean_eq_Nc0( mu_s_1, Nc0_in_cloud, sigma_s_1, &
+             * bivar_NL_mean_eq_Nc0( mu_s_1, Nc_in_cloud, sigma_s_1, &
                                      alpha_exp, beta_exp ) &
            + ( one - mixt_frac ) &
-             * bivar_NL_mean_eq_Nc0( mu_s_2, Nc0_in_cloud, sigma_s_2, &
+             * bivar_NL_mean_eq_Nc0( mu_s_2, Nc_in_cloud, sigma_s_2, &
                                      alpha_exp, beta_exp ) &
            )
 
@@ -973,7 +973,7 @@ module KK_upscaled_means
   end function bivar_NL_mean_eq
 
   !=============================================================================
-  function bivar_NL_mean_eq_Nc0( mu_s_i, Nc0_in_cloud, sigma_s_i, &
+  function bivar_NL_mean_eq_Nc0( mu_s_i, Nc_in_cloud, sigma_s_i, &
                                  alpha_exp_in, beta_exp_in )
 
     ! Description:
@@ -1013,7 +1013,7 @@ module KK_upscaled_means
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       mu_s_i,       & ! Mean of s (ith PDF component)                   [kg/kg]
-      Nc0_in_cloud, & ! Constant in-cloud value of cloud droplet conc. [num/kg]
+      Nc_in_cloud, & ! Constant in-cloud value of cloud droplet conc. [num/kg]
       sigma_s_i       ! Standard deviation of s (ith PDF component)     [kg/kg]
 
     real( kind = core_rknd ), intent(in) :: &
@@ -1042,9 +1042,9 @@ module KK_upscaled_means
     ! Means for the ith PDF component. 
     mu_x1 = real(mu_s_i, kind=dp)
     if ( beta_exp_in >= zero ) then
-       Nc0 = real(Nc0_in_cloud, kind=dp)
+       Nc0 = real(Nc_in_cloud, kind=dp)
     else ! exponent beta < 0
-       Nc0 = real(max( Nc0_in_cloud, Nc_tol ), kind=dp)
+       Nc0 = real(max( Nc_in_cloud, Nc_tol ), kind=dp)
     endif
 
     ! Standard deviations for the ith PDF component.
