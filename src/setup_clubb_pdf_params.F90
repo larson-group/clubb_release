@@ -296,13 +296,13 @@ module setup_clubb_pdf_params
     ! Component mean values for r_r and N_r, and precipitation fraction.
     if ( l_use_precip_frac ) then
 
-       call component_means_rain( nz, rrainm, Nrm, rho, rc1, rc2, &
-                                  mixt_frac, l_stats_samp, &
-                                  rr1, rr2, Nr1, Nr2 )
+       call component_means_rain( nz, rrainm, Nrm, rho, rc1, rc2, & ! Intent(in)
+                                  mixt_frac, l_stats_samp, &        ! Intent(in)
+                                  rr1, rr2, Nr1, Nr2 )              ! Intent(out)
 
-       call precip_fraction( nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &
-                             cloud_frac, cloud_frac1, mixt_frac, &
-                             precip_frac, precip_frac_1, precip_frac_2 )
+       call precip_fraction( nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &     ! Intent(in)
+                             cloud_frac, cloud_frac1, mixt_frac, &      ! Intent(in)
+                             precip_frac, precip_frac_1, precip_frac_2 )! Intent(out)
 
     else
 
