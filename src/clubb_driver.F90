@@ -450,6 +450,7 @@ module clubb_driver
          l_allow_small_stats_tout
 
 !-----------------------------------------------------------------------
+    ! Begin code
 
     ! Initialize the model run
 
