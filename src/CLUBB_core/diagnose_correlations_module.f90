@@ -7,12 +7,12 @@ module diagnose_correlations_module
   implicit none 
 
   public :: calc_mean, calc_varnce, calc_w_corr, &
-            corr_stat_output, setup_corr_cholesky_mtx, &
-            cholesky_to_corr_mtx_approx, &
-            rearrange_corr_array, corr_array_assertion_checks
+            corr_stat_output, calc_cholesky_corr_mtx_approx, &
+            cholesky_to_corr_mtx_approx, setup_corr_cholesky_mtx
             
 
-  private :: diagnose_corr 
+  private :: diagnose_corr, rearrange_corr_array, &
+             corr_array_assertion_checks
 
 
   contains 
@@ -132,61 +132,6 @@ module diagnose_correlations_module
 
   end subroutine diagnose_correlations
 
-!-----------------------------------------------------------------------
-  subroutine rearrange_corr_array( d_variables, corr_array, & ! Intent(in)
-                                   corr_array_swapped)        ! Intent(inout)
-    ! Description:
-    !   This subroutine swaps the w-correlations to the first row if the input
-    !   matrix is in the same order as the *_corr_array_cloud.in files. It swaps
-    !   the rows back to the order of the *_corr_array_cloud.in files if the
-    !   input matrix is already swapped (first row w-correlations).
-    !
-    ! References:
-    !
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use corr_matrix_module, only: &
-        iiLH_w ! Variable(s)
-
-    implicit none
-
-    intrinsic :: max, sqrt, transpose
-
-    ! Input Variables
-    integer, intent(in) :: &
-      d_variables   ! number of diagnosed correlations
-
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
-      corr_array   ! Correlation matrix
-
-    ! Input/Output variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(inout) :: &
-      corr_array_swapped   ! Swapped correlation matrix
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(d_variables) :: &
-      swap_array
-
-    !-------------------- Begin code --------------------
-
-
-    ! Swap the w-correlations to the first row for the prescribed correlations
-    corr_array_swapped = corr_array
-    swap_array = corr_array_swapped (:,1)
-    corr_array_swapped(1:iiLH_w, 1) = corr_array_swapped(iiLH_w, iiLH_w:1:-1)
-    corr_array_swapped((iiLH_w+1):d_variables, 1) = corr_array_swapped( &
-                                                    (iiLH_w+1):d_variables, iiLH_w)
-    corr_array_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-    corr_array_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
-
-    return
-
-  end subroutine rearrange_corr_array
-  !-----------------------------------------------------------------------
-
 
   !-----------------------------------------------------------------------
   subroutine diagnose_corr( n_variables, sqrt_xp2_on_xm2, corr_matrix_prescribed, & !intent(in)
@@ -292,85 +237,6 @@ module diagnose_correlations_module
     end do ! do i
     
   end subroutine diagnose_corr 
-
-  !-----------------------------------------------------------------------
-  subroutine corr_array_assertion_checks( n_variables, corr_array )
-
-    ! Description:
-    !   This subroutine does the assertion checks for the corr_array.
-
-    ! References:
-    !
-    !
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    use constants_clubb, only: &
-      max_mag_correlation ! Variable(s)
-
-    use constants_clubb, only: &
-      one ! Variable(s)
-
-    use error_code, only: &
-      clubb_at_least_debug_level  ! Procedure(s)
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      n_variables  ! number of variables in the correlation matrix [-]
-
-    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
-      corr_array ! correlation matrix [-]
-
-    ! Local Variables
-    integer :: i, j ! Loop iterator
-
-    real( kind = core_rknd ), parameter :: &
-    tol = 1.e-6_core_rknd ! Maximum acceptable tolerance for the difference of the diagonal
-                          ! elements of corr_array to one
-
-    !-------------------- Begin code --------------------
-
-    if ( clubb_at_least_debug_level( 1 ) ) then
-
-       do i = 1, n_variables - 1
-          do j = i+1, n_variables
-
-             ! Check if upper and lower triangle values are within the correlation boundaries
-             if ( ( corr_array(i,j) < -max_mag_correlation ) &
-                  .or. ( corr_array(i,j) > max_mag_correlation ) &
-                  .or. ( corr_array(j,i) < -max_mag_correlation ) &
-                  .or. ( corr_array(j,i) > max_mag_correlation ) ) &
-             then
-
-                stop "Error: A value in the correlation matrix is out of range."
-
-             endif
-
-          enddo
-       enddo
-
-    endif
-
-    if ( clubb_at_least_debug_level( 2 ) ) then
-
-       do i = 1, n_variables
-          ! Check if the diagonal elements are one (up to a tolerance)
-          if ( ( corr_array(i,i) > one + tol ) .or. (corr_array(i,i) < one - tol ) ) then
-
-             stop "Error: Diagonal element(s) of the correlation matrix are unequal to one."
-
-          endif
-       enddo
-
-    endif
-
-    return
-
-  end subroutine corr_array_assertion_checks
 
 
   !-----------------------------------------------------------------------
@@ -712,7 +578,84 @@ module diagnose_correlations_module
     return
   end function calc_mean
 
-!-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  subroutine calc_cholesky_corr_mtx_approx &
+                     ( n_variables, corr_matrix, & ! intent(in)
+                       corr_cholesky_mtx, corr_mtx_approx ) ! intent(out)
+
+    ! Description:
+    !   This subroutine calculates the transposed correlation cholesky matrix
+    !   from the correlation matrix
+    !
+    ! References:
+    !   1 Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02
+    !   2 CLUBB Trac ticket#514
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        zero ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_variables  ! number of variables in the correlation matrix [-]
+
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
+      corr_matrix ! correlation matrix [-]
+
+    ! Output Variables
+
+    ! correlation cholesky matrix transposed L', C = LL'; see reference 1 formula 10
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
+      corr_cholesky_mtx, & ! Transposed correlation cholesky matrix    [-]
+      corr_mtx_approx      ! Approximated correlation matrix (C = LL') [-]
+
+    ! Local Variables
+    integer :: i, j ! Loop iterators
+
+    ! Swapped means that the w-correlations are swapped to the first row
+    real( kind = core_rknd ), dimension(n_variables,n_variables) :: &
+      corr_cholesky_mtx_swap, & ! Swapped correlation cholesky matrix    [-]
+      corr_mtx_approx_swap,   & ! Swapped correlation matrix (approx.)   [-]
+      corr_mtx_swap             ! Swapped correlation matrix             [-]
+
+    !-------------------- Begin code --------------------
+
+    call rearrange_corr_array( n_variables, corr_matrix, & ! Intent(in)
+                               corr_mtx_swap )             ! Intent(inout)
+
+    call setup_corr_cholesky_mtx( n_variables, corr_mtx_swap, & ! intent(in)
+                                  corr_cholesky_mtx_swap )      ! intent(out)
+
+    call rearrange_corr_array( n_variables, corr_cholesky_mtx_swap, & ! Intent(in)
+                               corr_cholesky_mtx )                    ! Intent(inout)
+
+    call cholesky_to_corr_mtx_approx( n_variables, corr_cholesky_mtx_swap, & ! intent(in)
+                                      corr_mtx_approx_swap )                 ! intent(out)
+
+    call rearrange_corr_array( n_variables, corr_mtx_approx_swap, &  ! Intent(in)
+                               corr_mtx_approx )                     ! Intent(inout)
+
+    call corr_array_assertion_checks( n_variables, corr_mtx_approx )
+
+    ! Set lower triangle to zero for conformity
+    do i = 2, n_variables
+       do j = 1, i-1
+          corr_mtx_approx(j,i) = zero
+       end do
+    end do
+
+    return
+
+  end subroutine calc_cholesky_corr_mtx_approx
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
   subroutine setup_corr_cholesky_mtx( n_variables, corr_matrix, & ! intent(in)
                                       corr_cholesky_mtx_t )       ! intent(out)
 
@@ -866,6 +809,142 @@ module diagnose_correlations_module
     return
 
   end subroutine cholesky_to_corr_mtx_approx
+  !-----------------------------------------------------------------------
+
+
+  !-----------------------------------------------------------------------
+  subroutine corr_array_assertion_checks( n_variables, corr_array )
+
+    ! Description:
+    !   This subroutine does the assertion checks for the corr_array.
+
+    ! References:
+    !
+    !
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+      max_mag_correlation ! Variable(s)
+
+    use constants_clubb, only: &
+      one ! Variable(s)
+
+    use error_code, only: &
+      clubb_at_least_debug_level  ! Procedure(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_variables  ! number of variables in the correlation matrix [-]
+
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
+      corr_array ! correlation matrix [-]
+
+    ! Local Variables
+    integer :: i, j ! Loop iterator
+
+    real( kind = core_rknd ), parameter :: &
+    tol = 1.e-6_core_rknd ! Maximum acceptable tolerance for the difference of the diagonal
+                          ! elements of corr_array to one
+
+    !-------------------- Begin code --------------------
+
+    if ( clubb_at_least_debug_level( 1 ) ) then
+
+       do i = 1, n_variables - 1
+          do j = i+1, n_variables
+
+             ! Check if upper and lower triangle values are within the correlation boundaries
+             if ( ( corr_array(i,j) < -max_mag_correlation ) &
+                  .or. ( corr_array(i,j) > max_mag_correlation ) &
+                  .or. ( corr_array(j,i) < -max_mag_correlation ) &
+                  .or. ( corr_array(j,i) > max_mag_correlation ) ) &
+             then
+
+                stop "Error: A value in the correlation matrix is out of range."
+
+             endif
+
+          enddo
+       enddo
+
+    endif
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+       do i = 1, n_variables
+          ! Check if the diagonal elements are one (up to a tolerance)
+          if ( ( corr_array(i,i) > one + tol ) .or. (corr_array(i,i) < one - tol ) ) then
+
+             stop "Error: Diagonal element(s) of the correlation matrix are unequal to one."
+
+          endif
+       enddo
+
+    endif
+
+    return
+
+  end subroutine corr_array_assertion_checks
+
+
+!-----------------------------------------------------------------------
+  subroutine rearrange_corr_array( d_variables, corr_array, & ! Intent(in)
+                                   corr_array_swapped)        ! Intent(inout)
+    ! Description:
+    !   This subroutine swaps the w-correlations to the first row if the input
+    !   matrix is in the same order as the *_corr_array_cloud.in files. It swaps
+    !   the rows back to the order of the *_corr_array_cloud.in files if the
+    !   input matrix is already swapped (first row w-correlations).
+    !
+    ! References:
+    !
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use corr_matrix_module, only: &
+        iiLH_w ! Variable(s)
+
+    implicit none
+
+    intrinsic :: max, sqrt, transpose
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables   ! number of diagnosed correlations
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+      corr_array   ! Correlation matrix
+
+    ! Input/Output variables
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(inout) :: &
+      corr_array_swapped   ! Swapped correlation matrix
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(d_variables) :: &
+      swap_array
+
+    !-------------------- Begin code --------------------
+
+
+    ! Swap the w-correlations to the first row for the prescribed correlations
+    corr_array_swapped = corr_array
+    swap_array = corr_array_swapped (:,1)
+    corr_array_swapped(1:iiLH_w, 1) = corr_array_swapped(iiLH_w, iiLH_w:1:-1)
+    corr_array_swapped((iiLH_w+1):d_variables, 1) = corr_array_swapped( &
+                                                    (iiLH_w+1):d_variables, iiLH_w)
+    corr_array_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
+    corr_array_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+
+    return
+
+  end subroutine rearrange_corr_array
   !-----------------------------------------------------------------------
 
 

@@ -407,6 +407,10 @@ module clubb_driver
       corr_array_1, & ! Correlation matrix for the first pdf component    [-]
       corr_array_2    ! Correlation matrix for the second pdf component   [-]
 
+    real( kind = core_rknd ), dimension(:, :, :), allocatable :: &
+      corr_cholesky_mtx_1, & ! Transposed correlation cholesky matrix, 1st comp.     [-]
+      corr_cholesky_mtx_2    ! Transposed correlation cholesky matrix, 2nd comp.     [-]
+
     real( kind = core_rknd ), dimension(:, :), allocatable :: &
       mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
       mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
@@ -852,6 +856,8 @@ module clubb_driver
     allocate(corr_array_2(d_variables, d_variables, gr%nz))
     allocate(corr_array_cloud(d_variables, d_variables))
     allocate(corr_array_below(d_variables, d_variables))
+    allocate(corr_cholesky_mtx_1(d_variables, d_variables, gr%nz))
+    allocate(corr_cholesky_mtx_2(d_variables, d_variables, gr%nz))
 
     ! Allocate the mean and stddev arrays
     allocate(mu_x_1(d_variables, gr%nz))
@@ -1216,13 +1222,14 @@ module clubb_driver
          call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, &    ! Intent(in)
-                                    cloud_frac, sqrt(wp2_zt), wphydrometp, & ! Intent(in)
-                                    corr_array_cloud, corr_array_below, &    ! Intent(in)
-                                    pdf_params, l_stats_samp, d_variables, & ! Intent(in)
-                                    corr_array_1, corr_array_2, &            ! Intent(inout)
-                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &  ! Intent(out)
-                                    hydromet_pdf_params )                    ! Intent(out)
+         call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, &       ! Intent(in)
+                                    cloud_frac, sqrt(wp2_zt), wphydrometp, &    ! Intent(in)
+                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
+                                    pdf_params, l_stats_samp, d_variables, &    ! Intent(in)
+                                    corr_array_1, corr_array_2, &               ! Intent(inout)
+                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &     ! Intent(out)
+                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
+                                    hydromet_pdf_params )                       ! Intent(out)
 
       endif ! not micro_scheme == "none"
 
@@ -1234,6 +1241,7 @@ module clubb_driver
              rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt,           & ! Intent(in)
              d_variables, corr_array_1, corr_array_2,         & ! Intent(in)
              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
+             corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
              hydromet_pdf_params,                             & ! Intent(in)
              Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
@@ -3653,6 +3661,7 @@ module clubb_driver
                rho_ds_zt,  rho_ds_zm, invrs_rho_ds_zt,          & ! Intent(in)
                n_variables, corr_array_1, corr_array_2,         & ! Intent(in)
                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
+               corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
                hydromet_pdf_params,                             & ! Intent(in)
                Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
@@ -3722,7 +3731,8 @@ module clubb_driver
         l_predictnc
 
     use latin_hypercube_driver_module, only: &
-        LH_subcolumn_generator, & ! Procedure(s)
+        LH_subcolumn_generator_mod, & ! Procedure(s)
+        LH_subcolumn_generator, &
         stats_accumulate_LH
 
     use fill_holes, only: &
@@ -3731,7 +3741,8 @@ module clubb_driver
     use model_flags, only: &
         l_diagnose_correlations, & ! Variable(s)
         l_morr_xp2_mc_tndcy, &
-        l_evaporate_cold_rcm
+        l_evaporate_cold_rcm, &
+        l_use_modified_corr
 
 #else
 #define d_variables 0
@@ -3786,6 +3797,10 @@ module clubb_driver
       sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
       sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
+    real( kind = core_rknd ), dimension(n_variables,n_variables,gr%nz), intent(in) :: &
+      corr_cholesky_mtx_1, & ! Transposed correlation cholesky matrix, 1st comp.     [-]
+      corr_cholesky_mtx_2    ! Transposed correlation cholesky matrix, 2nd comp.     [-]
+
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       Ncnm ! Cloud nuclei number concentration (COAMPS microphyics)     [#/kg]
@@ -3814,7 +3829,7 @@ module clubb_driver
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Ncm ! Cloud droplet number concentration
 
-    real( kind = dp ), dimension(gr%nz,LH_microphys_calls,d_variables) :: &
+    real( kind = dp ), dimension(gr%nz,LH_microphys_calls,n_variables) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
     integer, dimension(gr%nz,LH_microphys_calls) :: &
@@ -3913,14 +3928,24 @@ module clubb_driver
       end if
 
 !      print *, "In advance_clubb_microphys: Ncm = ", Ncm
-
-      call LH_subcolumn_generator &
-           ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
-             thlm, pdf_params, wm_zt, gr%dzt, rcm, Ncm, rtm-rcm, & ! In
-             hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
-             corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
-             X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out 
-             LH_sample_point_weights ) ! Out
+      if ( l_use_modified_corr ) then
+         call LH_subcolumn_generator_mod &
+              ( iter, n_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
+                pdf_params, gr%dzt, rcm, hydromet, Lscale_vert_avg, & ! In
+                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
+                real( corr_cholesky_mtx_1, kind = dp ), & ! In
+                real( corr_cholesky_mtx_2, kind = dp ), & ! In
+                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
+                LH_sample_point_weights ) ! Out
+      else
+         call LH_subcolumn_generator &
+              ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
+                thlm, pdf_params, wm_zt, gr%dzt, rcm, Ncm, rtm-rcm, & ! In
+                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
+                corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
+                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
+                LH_sample_point_weights ) ! Out
+      endif
 
       call stats_accumulate_LH &
            ( gr%nz, LH_microphys_calls, d_variables, rho_ds_zt, & ! In

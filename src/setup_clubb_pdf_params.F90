@@ -21,13 +21,14 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( nz, rrainm, Nrm, Ncnm, rho, rcm, &       ! Intent(in)
-                                   cloud_frac, w_std_dev, wphydrometp, &    ! Intent(in)
-                                   corr_array_cloud, corr_array_below, &    ! Intent(in)
-                                   pdf_params, l_stats_samp, d_variables, & ! Intent(in)
-                                   corr_array_1, corr_array_2, &            ! Intent(inout)
-                                   mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &  ! Intent(out)
-                                   hydromet_pdf_params )                    ! Intent(out)
+  subroutine setup_pdf_parameters( nz, rrainm, Nrm, Ncnm, rho, rcm, &          ! Intent(in)
+                                   cloud_frac, w_std_dev, wphydrometp, &       ! Intent(in)
+                                   corr_array_cloud, corr_array_below, &       ! Intent(in)
+                                   pdf_params, l_stats_samp, d_variables, &    ! Intent(in)
+                                   corr_array_1, corr_array_2, &               ! Intent(inout)
+                                   mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &     ! Intent(out)
+                                   corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
+                                   hydromet_pdf_params )                       ! Intent(out)
 
     ! Description:
 
@@ -102,10 +103,7 @@ module setup_clubb_pdf_params
 
     use diagnose_correlations_module, only: &
         diagnose_correlations, & ! Procedure(s)
-        setup_corr_cholesky_mtx, &
-        cholesky_to_corr_mtx_approx, &
-        rearrange_corr_array, &
-        corr_array_assertion_checks
+        calc_cholesky_corr_mtx_approx
 
     implicit none
 
@@ -152,14 +150,14 @@ module setup_clubb_pdf_params
     type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
-    ! Local Variables
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz) :: &
-      corr_matrix_approx     ! correlation matrix                     [-]
+    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(out) :: &
+      corr_cholesky_mtx_1, & ! Transposed correlation cholesky matrix, 1st comp.     [-]
+      corr_cholesky_mtx_2    ! Transposed correlation cholesky matrix, 2nd comp.     [-]
 
+    ! Local Variables
     real( kind = core_rknd ), dimension(d_variables,d_variables) :: &
-      corr_cholesky_mtx_t,     & ! transposed correlation cholesky matrix [-]
-      corr_matrix_approx_swap, & ! Swapped correlation matrix             [-]
-      corr_array_swap            ! Swapped correlation matrix             [-]
+      corr_mtx_approx_1,   & ! Approximated correlation matrix (C = LL'), 1st comp.  [-]
+      corr_mtx_approx_2      ! Approximated correlation matrix (C = LL'), 2nd comp.  [-]
 
     real( kind = core_rknd ), dimension(nz) ::  &
       wprrp, & ! Covariance of w and r_r, < w'r_r' > (m-levs.)  [(m/s)(kg/kg)]
@@ -399,6 +397,9 @@ module setup_clubb_pdf_params
 
     endif
 
+    ! Initialize the correlation Cholesky matrices
+    corr_cholesky_mtx_1 = zero
+    corr_cholesky_mtx_2 = zero
 
     !!! Setup PDF parameters loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
@@ -585,19 +586,16 @@ module setup_clubb_pdf_params
 
        if ( l_use_modified_corr ) then
 
-          call rearrange_corr_array( d_variables, corr_array_1(:,:,k), & ! Intent(in)
-                                     corr_array_swap)                    ! Intent(inout)
+          call calc_cholesky_corr_mtx_approx &
+                         ( d_variables, corr_array_1(:,:,k), &                    ! intent(in)
+                           corr_cholesky_mtx_1(:,:,k), corr_mtx_approx_1 ) ! intent(out)
 
-          call setup_corr_cholesky_mtx( d_variables, corr_array_swap, & ! intent(in)
-                                        corr_cholesky_mtx_t )           ! intent(out)
+          call calc_cholesky_corr_mtx_approx &
+                         ( d_variables, corr_array_2(:,:,k), &                    ! intent(in)
+                           corr_cholesky_mtx_2(:,:,k), corr_mtx_approx_2 ) ! intent(out)
 
-          call cholesky_to_corr_mtx_approx( d_variables, corr_cholesky_mtx_t, & ! intent(in)
-                                            corr_matrix_approx_swap )           ! intent(out)
-
-          call rearrange_corr_array( d_variables, corr_matrix_approx_swap, & ! Intent(in)
-                                     corr_matrix_approx(:,:,k))              ! Intent(inout)
-
-          call corr_array_assertion_checks( d_variables, corr_matrix_approx(:, :, k) )
+          corr_array_1(:,:,k) = corr_mtx_approx_1
+          corr_array_2(:,:,k) = corr_mtx_approx_2
 
        endif
 

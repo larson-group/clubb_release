@@ -7,7 +7,7 @@ module generate_lh_sample_module
   implicit none
 
   public :: generate_lh_sample, generate_uniform_sample, &
-     ltqnorm, multiply_Cholesky
+     ltqnorm, multiply_Cholesky, generate_lh_sample_mod
 
   private :: sample_points, gaus_mixt_points, & 
     truncate_gaus_mixt, &
@@ -946,6 +946,263 @@ module generate_lh_sample_module
 
     return
   end subroutine generate_lh_sample
+
+!-------------------------------------------------------------------------------
+  subroutine generate_lh_sample_mod &
+             ( d_variables, mixt_frac, & ! In
+               thl1, thl2, rt1, rt2, & ! In
+               crt1, crt2, cthl1, cthl2, & ! In
+               mu1, mu2, sigma1, sigma2, & ! In
+               corr_stw_matrix_Cholesky_1, & ! In
+               corr_stw_matrix_Cholesky_2, & ! In
+               X_u_one_lev, X_mixt_comp_one_lev, & ! In
+               LH_rt, LH_thl, X_nl_one_lev ) ! Out
+! Description:
+!   This subroutine generates a Latin Hypercube sample.
+
+! Assumptions:
+!   The l_fix_s_t_correlations = false code does not set the correlation
+!   between Nc and the other variates (i.e. it assumes they are all zero).
+!   We do this is because while we have data for the
+!   correlation of e.g. s & Nc and s & rr, we do not know the correlation of
+!   Nc and rr.
+!   It would not be possible to decompose a covariance matrix with zero
+!   correlation between rr and Nc when the correlation between s and Nc is
+!   non-zero, and the code would have to halt.
+!
+!   One implication of this is that if l_fix_s_t_correlations = false
+!   then the correlation of s and Nc must be set to
+!   zero in the correlation file to check the convergence of a non-interactive
+!   SILHS solution against the analytic K&K solution.
+!
+!   The l_fix_s_t_correlations = true code does not have the above limitation
+!   but will use a value for the covariance of the s and t that is not necessarily
+!   equal to the one computed by the PDF, so setting the correlation of
+!   s and Nc to zero is not needed.
+!   It will also fix the value of the correlation between s and t in the
+!   analytic K&K code, which should allow for convergence between the two solutions.
+!   If it does not, then there is probably a new bug in the code.
+
+! References:
+!   ``Supplying Local Microphysical Parameterizations with Information about
+!     Subgrid Variability: Latin Hypercube Sampling'', JAS Vol. 62,
+!     p. 4010--4026, Larson, et al. 2005
+!-------------------------------------------------------------------------------
+
+    use corr_matrix_module, only: &
+      iiLH_rrain, & ! Variables
+      iiLH_rsnow, &
+      iiLH_rice, &
+      iiLH_rgraupel, &
+      iiLH_Nr, &
+      iiLH_Nc => iiLH_Ncn, &
+      iiLH_Ni, &
+      iiLH_Nsnow, &
+      iiLH_Ngraupel, &
+      iiLH_s_mellor, &
+      iiLH_t_mellor, &
+      iiLH_w
+
+    use matrix_operations, only: &
+      row_mult_lower_tri_matrix ! Procedures
+
+
+    use constants_clubb, only:  &
+      max_mag_correlation, & ! Constant(s)
+      one
+
+    use clubb_precision, only: &
+      dp, & ! double precision
+      core_rknd
+
+    implicit none
+
+    ! External
+    intrinsic :: max
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables    ! `d' Number of variates (normally 3 + microphysics specific variables)
+
+    real( kind = core_rknd ), intent(in) :: &
+      mixt_frac,      & ! Mixture fraction                                        [-]
+      rt1,         & ! Mean of r_t for 1st normal distribution                 [kg/kg]
+      rt2,         & ! Mean of r_t for 2nd normal distribution                 [kg/kg]
+      thl1,           & ! Mean of th_l for 1st normal distribution                [K]
+      thl2,           & ! Mean of th_l for 2nd normal distribution                [K]
+      crt1,           & ! Coefficient for s'                                      [-]
+      crt2,           & ! Coefficient for s'                                      [-]
+      cthl1,          & ! Coefficient for s'                                    [1/K]
+      cthl2             ! Coefficient for s'                                    [1/K]
+
+    real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
+      corr_stw_matrix_Cholesky_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
+      corr_stw_matrix_Cholesky_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
+
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+      mu1,    & ! Means of the hydrometeors, 1st comp. (s, t, w, <hydrometeors>)  [units vary]
+      mu2,    & ! Means of the hydrometeors, 2nd comp. (s, t, w, <hydrometeors>)  [units vary]
+      sigma1, & ! Stdevs of the hydrometeors, 1st comp. (s, t, w, <hydrometeors>) [units vary]
+      sigma2    ! Stdevs of the hydrometeors, 2nd comp. (s, t, w, <hydrometeors>) [units vary]
+
+    real( kind = dp ), intent(in), dimension(d_variables+1) :: &
+      X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
+
+    integer, intent(in) :: &
+      X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      LH_rt, & ! Total water mixing ratio          [kg/kg]
+      LH_thl   ! Liquid potential temperature      [K]
+
+    real( kind = dp ), intent(out), dimension(d_variables) :: &
+      X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
+
+    ! Local Variables
+
+    logical, dimension(d_variables) :: &
+      l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
+
+    real( kind = core_rknd ) :: &
+      stdev_s1,    & ! Standard deviation of s for 1st normal distribution     [kg/kg]
+      stdev_s2,    & ! Standard deviation of s for 2nd normal distribution     [kg/kg]
+      stdev_w1,    & ! Standard deviation of w for the 1st normal distribution   [m/s]
+      stdev_w2,    & ! Standard deviation of w for 2nd normal distribution       [m/s]
+      stdev_t1,    & ! Standard deviation of t for the 1st normal distribution [kg/kg]
+      stdev_t2       ! Standard deviation of t for the 1st normal distribution [kg/kg]
+
+    real( kind = dp ) :: &
+      cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
+      cloud_frac2    ! Cloud fraction for 2nd normal distribution              [-]
+
+    real( kind = dp ), dimension(d_variables,d_variables) :: &
+      Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
+
+    real( kind = dp ), dimension(d_variables) :: &
+       Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
+       Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
+
+    logical :: &
+      l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
+
+    real( kind = dp ), dimension(3) :: &
+      temp_3_elements
+
+    integer :: i, ivar1, ivar2
+
+    ! ---- Begin Code ----
+
+    ! Determine which variables are a lognormal distribution
+    i = max( iiLH_s_mellor, iiLH_t_mellor, iiLH_w )
+    l_d_variable_lognormal(1:i) = .false. ! The 1st 3 variates
+    l_d_variable_lognormal(i+1:d_variables) = .true.  ! Hydrometeors
+
+    ! Set standard deviation of s1/s2
+    stdev_s1 = sigma1(iiLH_s_mellor)
+    stdev_s2 = sigma2(iiLH_s_mellor)
+
+    stdev_t1 = sigma1(iiLH_t_mellor)
+    stdev_t2 = sigma2(iiLH_t_mellor)
+
+    stdev_w1 = sigma1(iiLH_w)
+    stdev_w2 = sigma2(iiLH_w)
+
+!   cloud_frac1 = real( cloud_frac1_in, kind = dp )
+!   cloud_frac2 = real( cloud_frac2_in, kind = dp )
+
+    ! We sample non-cloudy grid boxes as well now in order to generalize for
+    ! microphysics schemes that normally work on subcolumns rather than points
+    ! in the atmosphere -dschanen 3 June 2009
+    cloud_frac1 = 1.0_dp
+    cloud_frac2 = 1.0_dp
+
+    !---------------------------------------------------------------------------
+    ! Generate a set of sample points for a microphysics scheme
+    !---------------------------------------------------------------------------
+
+    ! We prognose rt-thl-w,
+    !    but we set means, covariance of hydrometeors (e.g. rrain, Nc) to constants.
+
+
+    ! Standard sample for testing purposes when n=2
+    ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001_dp, 0.46711825945881_dp, &
+    !             0.58015016959859_dp, 0.61894015386778_dp, 0.1_dp, 0.1_dp  / )
+    ! X_u_one_lev(2,1:(d+1)) = ( / 0.999_dp, 0.63222458307464_dp, &
+    !             0.43642762850981_dp, 0.32291562498749_dp, 0.1_dp, 0.1_dp  / )
+
+    ! The old code was dealing with Covariance matrices. These were rescaled by
+    ! Sigma'(i,j) = 1/sqrt(Sigma(i,i)) * Sigma(i,j) * 1/Sigma(j,j)
+    ! to reduce the condition number of the matrices. Sigma' is the correlation
+    ! matrix. This code deals directly with the correlation matrix. Hence we don't
+    ! need any rescaling here.
+    l_Sigma1_scaling = .false.
+    l_Sigma2_scaling = .false.
+    Sigma1_scaling = one
+    Sigma2_scaling = one
+
+    if ( X_mixt_comp_one_lev == 1 ) then
+
+      Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
+
+      temp_3_elements = (/ real(stdev_s1, kind = dp), real(stdev_t1, kind = dp),&
+                           real(stdev_w1, kind = dp) /)
+
+      ! Multiply the first three elements of the variance matrix by the
+      ! values of the standard deviation of s1, t1, and w1
+      call row_mult_lower_tri_matrix &
+           ( 3, temp_3_elements, corr_stw_matrix_Cholesky_1(1:3,1:3), & ! In
+             Sigma1_Cholesky(1:3,1:3) ) ! Out
+
+      ! Set the remaining elements (the lognormal variates) to the value
+      ! contained in the matrix, since they don't vary in space in time
+      do ivar1 = 4, d_variables
+        do ivar2 = 4, ivar1
+          Sigma1_Cholesky(ivar1,ivar2) = corr_stw_matrix_Cholesky_1(ivar1,ivar2)
+        end do
+      end do
+    end if ! any( X_mixt_comp_one_lev(1:n) == 1 )
+
+    if ( X_mixt_comp_one_lev == 2 ) then
+      Sigma2_Cholesky = 0._dp
+
+      temp_3_elements = (/ real(stdev_s2, kind = dp), real(stdev_t2, kind = dp),&
+                           real(stdev_w2, kind = dp) /)
+
+      ! Multiply the first three elements of the variance matrix by the
+      ! values of the standard deviation of s2, t2, and w2
+      call row_mult_lower_tri_matrix &
+           ( 3, temp_3_elements, corr_stw_matrix_Cholesky_2(1:3,1:3), & ! In
+             Sigma2_Cholesky(1:3,1:3) ) ! Out
+
+      ! Set the remaining elements (the lognormal variates) to the value
+      ! contained in the matrix, since they don't vary in space in time
+      do ivar1 = 4, d_variables
+        do ivar2 = 4, ivar1
+          Sigma2_Cholesky(ivar1,ivar2) = corr_stw_matrix_Cholesky_2(ivar1,ivar2)
+        end do
+      end do
+    end if ! any( X_mixt_comp_one_lev(1:n) == 2 )
+
+    ! Compute the new set of sample points using the update variance matrices
+    ! for this level
+    call sample_points( d_variables, dble( mixt_frac ), &  ! intent(in
+                        real(rt1, kind = dp), real(thl1, kind = dp), &  ! intent(in)
+                        real(rt2, kind = dp), real(thl2, kind = dp), &  ! intent(in)
+                        real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
+                        real(crt2, kind = dp), real(cthl2, kind = dp), &  ! intent(in)
+                        mu1, mu2, &  ! intent(in)
+                        cloud_frac1, cloud_frac2, & ! intent(in)
+                        l_d_variable_lognormal, & ! intent(in)
+                        X_u_one_lev, & ! intent(in)
+                        X_mixt_comp_one_lev, & ! intent(in)
+                        Sigma1_Cholesky, Sigma2_Cholesky, & ! intent(in)
+                        Sigma1_scaling, Sigma2_scaling, & ! intent(in)
+                        l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
+                        LH_rt, LH_thl, X_nl_one_lev ) ! intent(out)
+
+    return
+  end subroutine generate_lh_sample_mod
 
 !---------------------------------------------------------------------------------------------------
   subroutine sample_points( d_variables, mixt_frac, & 

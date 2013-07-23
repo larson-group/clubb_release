@@ -81,7 +81,7 @@ module matrix_operations
       xvector ! Factors to be multiplied across a row [units vary]
 
     ! Input Variables
-    real( kind = dp ), dimension(ndim,ndim), intent(inout) :: &
+    real( kind = dp ), dimension(ndim,ndim), intent(in) :: &
       tmatrix_in ! nxn matrix (usually a correlation matrix) [units vary]
 
     ! Output Variables
