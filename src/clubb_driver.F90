@@ -3882,6 +3882,7 @@ module clubb_driver
       stop
     endif
 
+!!!Commented out because these effects are not yet calculated in SILHS - rstorer
 !    if ( l_morr_xp2_mc_tndcy .and. &
 !         ( LH_microphys_type == LH_microphys_interactive ) ) then
 !       write(fstderr,*) "Error:  The code to include the effects of rain " &
