@@ -1386,7 +1386,7 @@ module KK_microphys_module
     if ( l_stats_samp ) then
 
        irrainm_src_adj = (/ izt_rrainm_src_adj, iLH_rrainm_src_adj /)
-       irrainm_cond_adj = (/ izt_rrainm_cond_adj, iLH_rrainm_src_adj /)
+       irrainm_cond_adj = (/ izt_rrainm_cond_adj, iLH_rrainm_cond_adj /)
        iNrm_src_adj = (/ izt_Nrm_src_adj, iLH_Nrm_src_adj /)
        iNrm_cond_adj = (/ izt_Nrm_cond_adj, iLH_Nrm_cond_adj /)
 
