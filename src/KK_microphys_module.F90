@@ -162,9 +162,10 @@ module KK_microphys_module
       Nrm_evap_net       ! Net evaporation rate of <N_r>            [(num/kg)/s]
 
     logical :: &
-      l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
-      l_evap_adj_enabled, & ! Flag to enable rrainm/Nrm evaporation adjustment
-      l_stats_samp_in_sub   ! Used to disable stats when SILHS is enabled
+      l_src_adj_enabled,   & ! Flag to enable rrainm/Nrm source adjustment
+      l_evap_adj_enabled,  & ! Flag to enable rrainm/Nrm evaporation adjustment
+      l_stats_samp_in_sub, & ! Used to disable stats when SILHS is enabled
+      l_stats_samp_in_adj    ! Used to enable/disable stats in the adjustment code
 
     integer :: &
       cloud_top_level, & ! Vertical level index of cloud top 
@@ -199,9 +200,18 @@ module KK_microphys_module
     ! true. We need to do this to get Latin hypercube to converge to KK
     ! analytic. The adjustment code will be called by Latin hypercube for the
     ! means only. (ticket:558)
-    if (l_silhs_KK_convergence_adj_mean) then
+    if ( l_silhs_KK_convergence_adj_mean .and. l_latin_hypercube ) then
       l_src_adj_enabled = .false.
       l_evap_adj_enabled = .false.
+    end if
+
+    ! Do not sample in the adjustment code when l_silhs_KK_convergence_adj_mean
+    ! is true. We only want to sample when SILHS calls the adjustment subroutine
+    ! (KK_microphys_adjust).
+    if ( l_silhs_KK_convergence_adj_mean .and. l_latin_hypercube ) then
+      l_stats_samp_in_adj = .false.
+    else
+      l_stats_samp_in_adj = l_stats_samp
     end if
 
     !!! Microphysics tendency loop.
@@ -289,7 +299,7 @@ module KK_microphys_module
                                  KK_evap_tndcy(k), KK_auto_tndcy(k), &
                                  KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
                                  KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
-                                 l_evap_adj_enabled, l_stats_samp, &
+                                 l_evap_adj_enabled, l_stats_samp_in_adj, &
                                  l_latin_hypercube, k, &
                                  rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k) )
