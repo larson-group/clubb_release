@@ -654,7 +654,7 @@ module morrison_micro_driver_module
 
     end if ! .not. l_latin_hypercube .and l_stats_samp
 
-    if ( l_stats_samp ) then
+    if ( l_latin_hypercube .and. l_stats_samp ) then
       ! Snow and Rain rates at the bottom of the domain, in mm/day
       call stat_update_var_pt( iLH_morr_rain_rate, 1, &
         real( Morr_rain_rate, kind = core_rknd ) * &
@@ -664,7 +664,7 @@ module morrison_micro_driver_module
         real( Morr_snow_rate, kind = core_rknd ) * &
         real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), LH_sfc )
 
-    end if ! l_stats_samp
+    end if ! l_latin_hypercube .and. l_stats_samp
 
     return
 
