@@ -161,11 +161,14 @@ module estimate_scm_microphys_module
       Nc            ! Cloud droplet concentration               [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      lh_rtp2_mc_tndcy,  & ! LH micro. tendency for <rt'^2>   [(kg/kg)^2/s]
-      lh_thlp2_mc_tndcy, & ! LH micro. tendency for <thl'^2>  [K^2/s]
-      lh_rrainm_auto,    & ! Autoconversion budget for <rr>   [kg/kg/s]
-      lh_rrainm_accr,    & ! Accretion budget for <rr>        [kg/kg/s]
-      lh_rrainm_evap       ! Evaporation budget for <rr>      [kg/kg/s]
+      lh_rtp2_mc_tndcy,    & ! LH micro. tendency for <rt'^2>   [(kg/kg)^2/s]
+      lh_thlp2_mc_tndcy,   & ! LH micro. tendency for <thl'^2>  [K^2/s]
+      lh_wprtp_mc_tndcy,   & ! LH micro. tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      lh_wpthlp_mc_tndcy,  & ! LH micro. tendency for <w'thl'>  [m*K/s^2]
+      lh_rtpthlp_mc_tndcy, & ! LH micro. tendency for <rt'thl'> [K*(kg/kg)/s]
+      lh_rrainm_auto,      & ! Autoconversion budget for <rr>   [kg/kg/s]
+      lh_rrainm_accr,      & ! Accretion budget for <rr>        [kg/kg/s]
+      lh_rrainm_evap         ! Evaporation budget for <rr>      [kg/kg/s]
 
     real( kind = dp ), pointer, dimension(:,:) :: &
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
@@ -291,6 +294,8 @@ module estimate_scm_microphys_module
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
              lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
              lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, & ! Out
+             lh_wprtp_mc_tndcy, lh_wpthlp_mc_tndcy, & ! Out
+             lh_rtpthlp_mc_tndcy, &  ! Out
              lh_rrainm_auto, lh_rrainm_accr, lh_rrainm_evap ) ! Out
 
       if ( l_lh_cloud_weighted_sampling ) then

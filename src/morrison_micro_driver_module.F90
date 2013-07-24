@@ -17,6 +17,7 @@ module morrison_micro_driver_module
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, &
+               wprtp_mc_tndcy, wpthlp_mc_tndcy, rtpthlp_mc_tndcy, &
                rrainm_auto, rrainm_accr, rrainm_evap )
 
 ! Description:
@@ -200,10 +201,13 @@ module morrison_micro_driver_module
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      rtp2_mc_tndcy,  & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
-      thlp2_mc_tndcy, & ! Microphysics tendency for <thl'^2>  [K^2/s]
-      rrainm_auto,    & ! Autoconversion rate                 [kg/kg/s]
-      rrainm_accr       ! Accretion rate                      [kg/kg/s]
+      rtp2_mc_tndcy,   & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc_tndcy,  & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      wprtp_mc_tndcy,  & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy, & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtpthlp_mc_tndcy,& ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      rrainm_auto,     & ! Autoconversion rate                 [kg/kg/s]
+      rrainm_accr        ! Accretion rate                      [kg/kg/s]
 
     ! Local Variables
     real, dimension(nz) :: & 
@@ -538,15 +542,20 @@ module morrison_micro_driver_module
 
     if ( l_morr_xp2_mc_tndcy ) then
 
-       call update_xp2_mc_tndcy( nz, dt, cloud_frac, rcm, rvm, thlm, &
-                                 exner, rrainm_evap, pdf_params,     &
-                                 rtp2_mc_tndcy, thlp2_mc_tndcy       )
+       call update_xp2_mc_tndcy( nz, dt, cloud_frac, rcm, rvm, thlm, & !Intent(in)  
+                                 wm, exner, rrainm_evap, pdf_params, & !Intent(in)
+                                 rtp2_mc_tndcy, thlp2_mc_tndcy,      & !Intent(out)
+                                 wprtp_mc_tndcy, wpthlp_mc_tndcy,    & !Intent(out)
+                                 rtpthlp_mc_tndcy  )                   !Intent(out)
 
     else
 
        ! Set microphysics tendencies for model variances to 0.
        rtp2_mc_tndcy  = zero
        thlp2_mc_tndcy = zero
+       wprtp_mc_tndcy = zero
+       wpthlp_mc_tndcy = zero
+       rtpthlp_mc_tndcy = zero
 
     endif
 

@@ -3318,8 +3318,10 @@ module advance_xp2_xpyp_module
 
   !============================================================================
   subroutine update_xp2_mc_tndcy( nz, dt, cloud_frac, rcm, rvm, thlm, &
-                                  exner, rrainm_evap, pdf_params,     &
-                                  rtp2_mc_tndcy, thlp2_mc_tndcy       )
+                                  wm, exner, rrainm_evap, pdf_params, &
+                                  rtp2_mc_tndcy, thlp2_mc_tndcy,      &
+                                  wprtp_mc_tndcy, wpthlp_mc_tndcy,    &
+                                  rtpthlp_mc_tndcy                 )
     !Description:
     !This subroutine is for use when l_morr_xp2_mc_tndcy = .true.
     !The effects of rain evaporation on rtp2 and thlp2 are included by
@@ -3356,6 +3358,7 @@ module advance_xp2_xpyp_module
       rcm, &              !Cloud water mixing ratio              [kg/kg]
       rvm, &              !Vapor water mixing ratio              [kg/kg]
       thlm, &             !Liquid potential temperature          [K]
+      wm, &               !Mean vertical velocity                [m/s]
       exner, &            !Exner function                        [-]
       rrainm_evap         !Evaporation of rain                   [kg/kg/s]
                           !It is expected that this variable is negative, as
@@ -3366,15 +3369,22 @@ module advance_xp2_xpyp_module
 
     !input/output variables
     real( kind = core_rknd ), dimension(nz), intent(inout) :: &
-      rtp2_mc_tndcy, &    !Tendency of rtp2 due to evaporation   [(kg/kg)^2/s]
-      thlp2_mc_tndcy      !Tendency of thlp2 due to evaporation  [K^2/s]
+      rtp2_mc_tndcy, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
+      thlp2_mc_tndcy, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
+      wprtp_mc_tndcy, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
+      rtpthlp_mc_tndcy    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
 
     !local variables
     real( kind = core_rknd ), dimension(nz) :: &
       temp_rtp2, &          !Used only to calculate rtp2_mc_tndcy  [(kg/kg)^2]
       temp_thlp2, &         !Used to calculate thlp2_mc_tndcy      [K^2/s]
+      temp_wp2,  &          !Used to calculate wpxp_mc_tndcy       [m^2/s^2]
       rtp2_mc_tndcy_zt, &   !Calculated on the zt grid             [(kg/kg)^2/s]
       thlp2_mc_tndcy_zt, &  !Calculated on the zt grid             [(kg/kg)^2/s]
+      wprtp_mc_tndcy_zt, &  !Calculated on the zt grid             [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy_zt, & !Calcualted on the zt grid             [m*K/s^2]
+      rtpthlp_mc_tndcy_zt,& !Calculated on the zt grid             [K*(kg/kg)/s]
       precip_frac, &        !Precipitation fraction                [-]
       pf_const              ! ( 1 - pf )/( pf )                    [-]
 
@@ -3426,6 +3436,28 @@ module advance_xp2_xpyp_module
     
     thlp2_mc_tndcy = zt2zm( thlp2_mc_tndcy_zt )
 
+    ! Include effects of rain evaporation on other moments (wprtp, wpthlp, and 
+    ! rtpthlp - added 07/13 rstorer
+
+    temp_wp2 = pdf_params%mixt_frac &
+                  * ( ( pdf_params%w1 - wm )**2 + pdf_params%varnce_w1 ) &
+               + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
+                  * ( ( pdf_params%w2 - wm )**2 + pdf_params%varnce_w2 )
+
+    wprtp_mc_tndcy_zt = abs(rrainm_evap) * sqrt(pf_const) * sqrt(temp_wp2)
+
+    wpthlp_mc_tndcy_zt = -1.0_core_rknd * Lv / ( Cp * exner) * abs(rrainm_evap) &
+                                * sqrt(pf_const) * sqrt(temp_wp2)
+
+    rtpthlp_mc_tndcy_zt = -1.0_core_rknd * abs(rrainm_evap) * sqrt( pf_const ) &
+                              * ( ( Lv / (cp * exner ) ) * sqrt( temp_rtp2 ) &
+                                + sqrt( temp_thlp2 ) ) &
+                            - ( Lv / (cp * exner ) ) * pf_const &
+                                * ( rrainm_evap )**2 * real(dt,kind=core_rknd)
+
+    wprtp_mc_tndcy = zt2zm( wprtp_mc_tndcy_zt )
+    wpthlp_mc_tndcy = zt2zm( wpthlp_mc_tndcy_zt )
+    rtpthlp_mc_tndcy = zt2zm( rtpthlp_mc_tndcy_zt )
   end subroutine update_xp2_mc_tndcy
 
 !===============================================================================

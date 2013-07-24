@@ -9,6 +9,8 @@ interface
                             hydromet_mc, hydromet_vel, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             rtp2_mc_tndcy, thlp2_mc_tndcy, &
+                            wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+                            rtpthlp_mc_tndcy, & 
                             rrainm_auto, rrainm_accr, rrainm_evap )
 
     use pdf_parameter_module, only: pdf_parameter
@@ -59,8 +61,11 @@ interface
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
     real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
-      rtp2_mc_tndcy,  & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
-      thlp2_mc_tndcy    ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtp2_mc_tndcy,  &  ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc_tndcy, &  ! Microphysics tendency for <thl'^2>  [K^2/s]
+      wprtp_mc_tndcy, &  ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy, & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtpthlp_mc_tndcy   ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
       rrainm_auto, & ! Autoconversion budget for rain water mixing ratio [kg/kg/s]

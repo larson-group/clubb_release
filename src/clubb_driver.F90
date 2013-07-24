@@ -3882,15 +3882,15 @@ module clubb_driver
       stop
     endif
 
-    if ( l_morr_xp2_mc_tndcy .and. &
-         ( LH_microphys_type == LH_microphys_interactive ) ) then
-       write(fstderr,*) "Error:  The code to include the effects of rain " &
-                        // "evaporation on rtp2 and thlp2 in Morrison " &
-                        // "microphysics (l_morr_xp2_mc_tndcy = .true.) and " &
-                        // "interactive Latin Hypercube " &
-                        // "(LH_microphys_type = interactive) are incompatible."
-       stop
-    endif
+!    if ( l_morr_xp2_mc_tndcy .and. &
+!         ( LH_microphys_type == LH_microphys_interactive ) ) then
+!       write(fstderr,*) "Error:  The code to include the effects of rain " &
+!                        // "evaporation on rtp2 and thlp2 in Morrison " &
+!                        // "microphysics (l_morr_xp2_mc_tndcy = .true.) and " &
+!                        // "interactive Latin Hypercube " &
+!                        // "(LH_microphys_type = interactive) are incompatible."
+!       stop
+!    endif
 
     if ( l_morr_xp2_mc_tndcy .and. l_evaporate_cold_rcm ) then
       write(fstderr,*) "Error: l_morr_xp2_mc_tndcy and l_evaporate_cold_rcm " &

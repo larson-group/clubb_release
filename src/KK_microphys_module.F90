@@ -30,6 +30,8 @@ module KK_microphys_module
                                     hydromet_mc, hydromet_vel, &
                                     rcm_mc, rvm_mc, thlm_mc, &
                                     rtp2_mc_tndcy, thlp2_mc_tndcy, &
+                                    wprtp_mc_tndcy, wpthlp_mc_tndcy, &
+                                    rtpthlp_mc_tndcy, &
                                     KK_auto_tndcy, KK_accr_tndcy, KK_evap_tndcy )
 
     ! Description:
@@ -125,6 +127,9 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       rtp2_mc_tndcy,  & ! Microphysics tendency for <rt'^2>        [(kg/kg)^2/s]
       thlp2_mc_tndcy, & ! Microphysics tendency for <thl'^2>       [K^2/s]
+      wprtp_mc_tndcy, & ! Microphysics tendency for <w'rt'>        [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy,& ! Microphysics tendency for <w'thl'>       [m*K/s^2]
+      rtpthlp_mc_tndcy, & !Microphysics tendency for <rt'thl'>     [K*(kg/kg)/s]
       KK_auto_tndcy,  & ! Mean KK (dr_r/dt) due to autoconversion  [(kg/kg)/s]
       KK_accr_tndcy,  & ! Mean KK (dr_r/dt) due to accretion       [(kg/kg)/s]
       KK_evap_tndcy     ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
@@ -317,6 +322,9 @@ module KK_microphys_module
     ! Microphysics tendency terms for model variances are set to 0.
     rtp2_mc_tndcy  = zero
     thlp2_mc_tndcy = zero
+    wprtp_mc_tndcy = zero
+    wpthlp_mc_tndcy = zero
+    rtpthlp_mc_tndcy = zero
 
     !!! Boundary conditions for microphysics tendencies.
 
