@@ -575,6 +575,10 @@ module generate_lh_sample_module
       ! For now, assume no within-plume correlation of w with
       !    any other variables when the s and t correlations are not fixed.
 
+      ! If l_Sigma_scaling = .true., we are dealing with a correlation Cholesky
+      ! matrix here. But we need the covariance Cholesky matrix in sample_points.
+      ! Therefore the results are rescaled in sample_points.
+
       ! Sigma_stw_1,2
       Sigma_stw_1 = 0._dp ! Start with no covariance, and add matrix elements
       Sigma_stw_2 = 0._dp
@@ -829,6 +833,15 @@ module generate_lh_sample_module
 
     else ! Using fixed correlations
 
+      ! Here we are dealing with the correlation Cholesky matrix. Thus there is no scaling
+      ! involved here, since the condition number of a correlation matrix is always one.
+      ! Hence l_Sigma_scaling should always be .false. here. But since we need the covariance
+      ! Cholesky matrix for the sampling, we have to convert the correlation Cholesky matrix
+      ! before we feed it to sample points.
+      !
+      ! Attention: corr_stw_matrix_Cholesky is not a correlation matrix. It is rather a mixture
+      ! of a correlation and covariance matrix (see description of costruct_corr_stw_matrix).
+
       ! Compute the Cholesky factorization of the correlations if it's not
       ! already computed.
       if ( .not. l_fixed_corr_initialized ) then
@@ -849,6 +862,8 @@ module generate_lh_sample_module
                               corr_stw_cloud_scaling, corr_stw_cloud_Cholesky, & ! Out
                               l_corr_stw_cloud_scaling ) ! Out
 
+        ! This subroutine constructs a matrix where the first 3x3 elements are correlations
+        ! and the other elements are LN covariances
         call construct_corr_stw_matrix &
              ( d_variables, corr_array_below, & ! In
                xp2_on_xm2_array_below, & ! In
@@ -2300,6 +2315,20 @@ module generate_lh_sample_module
 !   Construct a correlation matrix containing s,t,w and the lognormal variates.
 !   This code is only called when l_fix_s_t_correlations is true.  It does not
 !   assume zero correlation between w and the other variates.
+!
+!   The matrix is i.e. a mixture, where the first 3 rows contain the correlations for s,t,w and
+!   the remaining elements are LN covariances. So the matrix looks like
+!
+!   --                     --
+!   |   1                   |
+!   |   c   1               |
+!   |   c   c   1           |
+!   |   k   k   k   v       |
+!   |   k   k   k   k   v   |
+!   |      [  . . .  ]      |
+!   --                     --
+!
+!   where c = correlation, k = covariance (LN) and v = variance (LN).
 !
 ! References:
 !   None.
