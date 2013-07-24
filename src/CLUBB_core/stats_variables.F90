@@ -678,7 +678,16 @@ module stats_variables
     iLH_rrainm_auto = 0, & ! Latin hypercube estimate of autoconversion
     iLH_rrainm_accr = 0, & ! Latin hypercube estimate of accretion
     iLH_rrainm_evap = 0    ! Latin hypercube estimate of evaporation
+
 !$omp   threadprivate( iLH_rrainm_auto, iLH_rrainm_accr, iLH_rrainm_evap )
+
+  integer, public :: &
+    iLH_rrainm_src_adj  = 0, & ! Latin hypercube estimate of source adjustment (KK only!)
+    iLH_rrainm_cond_adj = 0, & ! Latin hypercube estimate of evap adjustment (KK only!)
+    iLH_Nrm_src_adj     = 0, & ! Latin hypercube estimate of Nrm source adjustmet (KK only!)
+    iLH_Nrm_cond_adj    = 0    ! Latin hypercube estimate of Nrm evap adjustment (KK only!)
+!$omp   threadprivate( iLH_rrainm_src_adj, iLH_rrainm_cond_adj, iLH_Nrm_src_adj, &
+!$omp                  iLH_Nrm_cond_adj     )
 
   integer, public :: &
     iLH_Vrr = 0, & ! Latin hypercube estimate of rrainm sedimentation velocity

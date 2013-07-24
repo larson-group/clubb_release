@@ -80,7 +80,7 @@ module estimate_scm_microphys_module
 
     ! Constant parameters
     logical, parameter :: &
-      l_latin_hypercube = .true.
+      l_latin_hypercube = .true. ! We are the Latin hypercube
 
     logical, parameter :: &
       l_check_lh_cloud_weighting = .true. ! Verify every other sample point is out of cloud
@@ -158,8 +158,7 @@ module estimate_scm_microphys_module
       thl_column, & ! Liquid potential temperature              [K]
       rc_column,  & ! Liquid water                              [kg/kg]
       w_column,   & ! Vertical velocity                         [m/s]
-      Nc,         & ! Cloud droplet concentration               [#/kg]
-      Nc0           ! Constant cloud droplet conc. within cloud [#/kg]
+      Nc            ! Cloud droplet concentration               [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
       lh_rtp2_mc_tndcy,  & ! LH micro. tendency for <rt'^2>   [(kg/kg)^2/s]
@@ -355,14 +354,14 @@ module estimate_scm_microphys_module
     if ( l_silhs_KK_convergence_adj_mean ) then
       call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrainm),           & ! intent(in)
                                 hydromet(:,iiNrm), lh_rrainm_evap, lh_rrainm_auto,  & ! intent(in)
-                                lh_rrainm_accr,                                     & ! intent(in)
+                                lh_rrainm_accr, l_stats_samp,                       & ! intent(in)
                                 lh_hydromet_mc(:,iirrainm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
                                 lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                    ! intent(out)
     end if
 #else
     ! Eliminate the resulting compiler warning
     if (.false.) then
-      Nc0(1) = rcm(1)
+      Nc(1) = rcm(1)
     end if
 #endif
     return
@@ -372,6 +371,7 @@ module estimate_scm_microphys_module
   !-----------------------------------------------------------------------------
   subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrainm, Nrm,         &
                                   rrainm_evap, rrainm_auto, rrainm_accr,   &
+                                  l_stats_samp,                            &
                                   rrainm_mc, Nrm_mc,                       &
                                   rvm_mc, rcm_mc, thlm_mc )
     use KK_Nrm_tendencies, only: &
@@ -408,6 +408,9 @@ module estimate_scm_microphys_module
       rrainm_auto, & ! Mean change in rain due to autoconversion [(kg/kg)/s]
       rrainm_accr    ! Mean change in rain due to accretion      [(kg/kg)/s]
 
+    logical, intent(in) :: &
+      l_stats_samp   ! Whether to sample this timestep
+
     ! Output variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       rrainm_mc, & ! Mean change in rain due to microphysics [(kg/kg)/s] 
@@ -426,9 +429,8 @@ module estimate_scm_microphys_module
       l_src_adj_enabled = .true.,  &
       ! Whether to adjust rrainm_evap to not over-evaporate rain
       l_evap_adj_enabled = .true., &
-      ! We don't want KK_microphys_adjust to sample, because it is being called
-      ! from within SILHS.
-      l_stats_samp_in_sub = .false.
+      ! This subroutine is called from Latin hypercube.
+      l_latin_hypercube = .true.
 
     integer :: k
 
@@ -461,7 +463,8 @@ module estimate_scm_microphys_module
                                rrainm_evap(k), rrainm_auto(k),            & !intent(in)
                                rrainm_accr(k), KK_Nrm_evap_tndcy,         & !intent(in)
                                KK_Nrm_auto_tndcy, l_src_adj_enabled,      & !intent(in)
-                               l_evap_adj_enabled, l_stats_samp_in_sub, k,& !intent(in)
+                               l_evap_adj_enabled, l_stats_samp,          & !intent(in)
+                               l_latin_hypercube, k,                      & !intent(in)
                                rrainm_mc(k), Nrm_mc(k),                   & !intent(out)
                                rvm_mc(k), rcm_mc(k), thlm_mc(k) )           !intent(out)
     end do ! k = 2, nz, 1

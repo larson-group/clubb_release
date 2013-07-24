@@ -84,6 +84,11 @@ module stats_LH_zt
       iLH_rrainm_accr, &
       iLH_rrainm_evap
 
+    use stats_variables, only: &
+      iLH_rrainm_src_adj,  & ! Variable(s)
+      iLH_rrainm_cond_adj, &
+      iLH_Nrm_src_adj,     &
+      iLH_Nrm_cond_adj
 
     use stats_type, only: & 
       stat_assign ! Procedure
@@ -419,6 +424,34 @@ module stats_LH_zt
         iLH_rrainm_evap = k
         call stat_assign( iLH_rrainm_evap, "LH_rrainm_evap", &
              "Latin hypercube estimate of evaporation [kg/kg/s]", "kg/kg/s", LH_zt )
+        k = k + 1
+
+      case ( 'LH_rrainm_src_adj' )
+        iLH_rrainm_src_adj = k
+        call stat_assign( iLH_rrainm_src_adj, "LH_rrainm_src_adj", &
+             "Latin hypercube estimate of source adjustment (KK only!) [kg/kg/s]", &
+             "kg/kg/s", LH_zt )
+        k = k + 1
+
+      case ( 'LH_rrainm_cond_adj' )
+        iLH_rrainm_cond_adj = k
+        call stat_assign( iLH_rrainm_cond_adj, "LH_rrainm_cond_adj", &
+             "Latin hypercube estimate of evap adjustment (KK only!) [kg/kg/s]", &
+             "kg/kg/s", LH_zt )
+        k = k + 1
+
+      case ( 'LH_Nrm_src_adj' )
+        iLH_Nrm_src_adj = k
+        call stat_assign( iLH_Nrm_src_adj, "LH_Nrm_src_adj", &
+             "Latin hypercube estimate of Nrm source adjustment (KK only!) [kg/kg/s]", &
+             "kg/kg/s", LH_zt )
+        k = k + 1
+
+      case ( 'LH_Nrm_cond_adj' )
+        iLH_Nrm_cond_adj = k
+        call stat_assign( iLH_Nrm_cond_adj, "LH_Nrm_cond_adj", &
+             "Latin hypercube estimate of Nrm evap adjustment (KK only!) [kg/kg/s]", &
+             "kg/kg/s", LH_zt )
         k = k + 1
 
       case default
