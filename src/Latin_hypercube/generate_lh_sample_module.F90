@@ -1005,15 +1005,6 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiLH_rrain, & ! Variables
-      iiLH_rsnow, &
-      iiLH_rice, &
-      iiLH_rgraupel, &
-      iiLH_Nr, &
-      iiLH_Nc => iiLH_Ncn, &
-      iiLH_Ni, &
-      iiLH_Nsnow, &
-      iiLH_Ngraupel, &
       iiLH_s_mellor, &
       iiLH_t_mellor, &
       iiLH_w
@@ -1101,10 +1092,10 @@ module generate_lh_sample_module
     logical :: &
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
 
-    real( kind = dp ), dimension(3) :: &
-      temp_3_elements
+!    real( kind = dp ), dimension(3) :: &
+!      temp_3_elements
 
-    integer :: i, ivar1, ivar2
+    integer :: i !, ivar1, ivar2
 
     ! ---- Begin Code ----
 
@@ -1160,44 +1151,22 @@ module generate_lh_sample_module
 
       Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
 
-      temp_3_elements = (/ real(stdev_s1, kind = dp), real(stdev_t1, kind = dp),&
-                           real(stdev_w1, kind = dp) /)
-
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of s1, t1, and w1
       call row_mult_lower_tri_matrix &
-           ( 3, temp_3_elements, corr_stw_matrix_Cholesky_1(1:3,1:3), & ! In
-             Sigma1_Cholesky(1:3,1:3) ) ! Out
+           ( d_variables, real( sigma1, kind = dp ), corr_stw_matrix_Cholesky_1, & ! In
+             Sigma1_Cholesky ) ! Out
 
-      ! Set the remaining elements (the lognormal variates) to the value
-      ! contained in the matrix, since they don't vary in space in time
-      do ivar1 = 4, d_variables
-        do ivar2 = 4, ivar1
-          Sigma1_Cholesky(ivar1,ivar2) = corr_stw_matrix_Cholesky_1(ivar1,ivar2)
-        end do
-      end do
-    end if ! any( X_mixt_comp_one_lev(1:n) == 1 )
-
-    if ( X_mixt_comp_one_lev == 2 ) then
+    elseif ( X_mixt_comp_one_lev == 2 ) then
       Sigma2_Cholesky = 0._dp
-
-      temp_3_elements = (/ real(stdev_s2, kind = dp), real(stdev_t2, kind = dp),&
-                           real(stdev_w2, kind = dp) /)
 
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of s2, t2, and w2
       call row_mult_lower_tri_matrix &
-           ( 3, temp_3_elements, corr_stw_matrix_Cholesky_2(1:3,1:3), & ! In
-             Sigma2_Cholesky(1:3,1:3) ) ! Out
+           ( d_variables, real( sigma2, kind = dp ), corr_stw_matrix_Cholesky_2, & ! In
+             Sigma2_Cholesky ) ! Out
 
-      ! Set the remaining elements (the lognormal variates) to the value
-      ! contained in the matrix, since they don't vary in space in time
-      do ivar1 = 4, d_variables
-        do ivar2 = 4, ivar1
-          Sigma2_Cholesky(ivar1,ivar2) = corr_stw_matrix_Cholesky_2(ivar1,ivar2)
-        end do
-      end do
-    end if ! any( X_mixt_comp_one_lev(1:n) == 2 )
+    end if ! X_mixt_comp_one_lev == 1
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
