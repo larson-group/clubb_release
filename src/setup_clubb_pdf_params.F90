@@ -14,9 +14,21 @@ module setup_clubb_pdf_params
 
   private :: component_means_rain,   &
              precip_fraction,        &
+             component_mean_ip,      &
+             component_stdev_ip,     &
              pdf_param_hm_stats,     &
              pdf_param_log_hm_stats, &
              pack_pdf_params
+
+  ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
+  ! values based on whether or not cloud water mixing ratio has a value of at
+  ! least rc_tol.  However, this does not take into account the amount of
+  ! cloudiness in a component, just whether or not there is any cloud in the
+  ! component.  The option l_interp_prescribed_params allows for an interpolated
+  ! value between the in-cloud and below-cloud parameter value based on the
+  ! component cloud fraction.
+  logical, parameter :: &
+    l_interp_prescribed_params = .false.
 
   contains
 
@@ -1490,26 +1502,6 @@ module setup_clubb_pdf_params
       sigma_Ncn_2    ! Standard deviation of Ncn (2nd PDF component)    [num/kg]
 
     ! Local Variables
-
-    ! The component correlations of w and r_t and the component correlations of
-    ! w and theta_l are both set to be 0 within the CLUBB model code.  In other
-    ! words, w and r_t (theta_l) have overall covariance w'r_t' (w'theta_l'),
-    ! but the single component covariance and correlation are defined to be 0.
-    ! Likewise, the single component correlation and covariance of w and s, as
-    ! well as w and t, are defined to be 0.
-    logical, parameter :: &
-      l_follow_CLUBB_PDF_standards = .true.
-
-    ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
-    ! values based on whether or not cloud water mixing ratio has a value of at
-    ! least rc_tol.  However, this does not take into account the amount of
-    ! cloudiness in a component, just whether or not there is any cloud in the
-    ! component.  The option l_interp_prescribed_params allows for an
-    ! interpolated value between the in-cloud and below-cloud parameter value
-    ! based on the component cloud fraction.
-    logical, parameter :: &
-      l_interp_prescribed_params = .false.
-
     real( kind = core_rknd ) :: &
       rrp2_on_rrm2,    & ! Ratio of < r_r'^2 > to < r_r >^2              [-]
       Nrp2_on_Nrm2,    & ! Ratio of < N_r'^2 > to < N_r >^2              [-]
@@ -1553,44 +1545,16 @@ module setup_clubb_pdf_params
     mu_t_2 = zero
 
     ! Mean of in-precip rain water mixing ratio in PDF component 1.
-    if ( rr1 > rr_tol ) then
-       mu_rr_1 = rr1 / precip_frac_1
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.
-       mu_rr_1 = zero
-    endif
+    mu_rr_1 = component_mean_ip( rr1, precip_frac_1, rr_tol )
 
     ! Mean of in-precip rain water mixing ratio in PDF component 2.
-    if ( rr2 > rr_tol ) then
-       mu_rr_2 = rr2 / precip_frac_2
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.
-       mu_rr_2 = zero
-    endif
+    mu_rr_2 = component_mean_ip( rr2, precip_frac_2, rr_tol )
 
     ! Mean of in-precip rain drop concentration in PDF component 1.
-    if ( Nr1 > Nr_tol ) then
-       mu_Nr_1 = Nr1 / precip_frac_1
-    else
-       ! Mean in-precip rain drop concentration in PDF component 1 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.
-       mu_Nr_1 = zero
-    endif
+    mu_Nr_1 = component_mean_ip( Nr1, precip_frac_1, Nr_tol )
 
     ! Mean of in-precip rain drop concentration in PDF component 2.
-    if ( Nr2 > Nr_tol ) then
-       mu_Nr_2 = Nr2 / precip_frac_2
-    else
-       ! Mean in-precip rain drop concentration in PDF component 2 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.
-       mu_Nr_2 = zero
-    endif
+    mu_Nr_2 = component_mean_ip( Nr2, precip_frac_2, Nr_tol )
 
     ! Mean of cloud nuclei concentration in PDF component 1.
     if ( Ncnm > Ncn_tol ) then
@@ -1647,95 +1611,23 @@ module setup_clubb_pdf_params
 
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 1.
-    if ( rr1 > rr_tol ) then
-       if ( l_interp_prescribed_params ) then
-          sigma_rr_1 = sqrt( cloud_frac1 * rrp2_on_rrm2_cloud &
-                             + ( one - cloud_frac1 ) * rrp2_on_rrm2_below ) &
-                       * mu_rr_1
-       else
-          if ( rc1 > rc_tol ) then
-             sigma_rr_1 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_1
-          else
-             sigma_rr_1 = sqrt( rrp2_on_rrm2_below ) * mu_rr_1
-          endif
-       endif
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The standard
-       ! deviation is simply 0 since rain water mixing ratio does not vary in
-       ! this component at this grid level.
-       sigma_rr_1 = zero
-    endif
+    sigma_rr_1 = component_stdev_ip( rr1, mu_rr_1, rc1, cloud_frac1, rr_tol, &
+                                     rrp2_on_rrm2_cloud, rrp2_on_rrm2_below )
 
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 2.
-    if ( rr2 > rr_tol ) then
-       if ( l_interp_prescribed_params ) then
-          sigma_rr_2 = sqrt( cloud_frac2 * rrp2_on_rrm2_cloud &
-                             + ( one - cloud_frac2 ) * rrp2_on_rrm2_below ) &
-                       * mu_rr_2
-       else
-          if ( rc2 > rc_tol ) then
-             sigma_rr_2 = sqrt( rrp2_on_rrm2_cloud ) * mu_rr_2
-          else
-             sigma_rr_2 = sqrt( rrp2_on_rrm2_below ) * mu_rr_2
-          endif
-       endif
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The standard
-       ! deviation is simply 0 since rain water mixing ratio does not vary in
-       ! this component at this grid level.
-       sigma_rr_2 = zero
-    endif
+    sigma_rr_2 = component_stdev_ip( rr2, mu_rr_2, rc2, cloud_frac2, rr_tol, &
+                                     rrp2_on_rrm2_cloud, rrp2_on_rrm2_below )
 
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 1.
-    if ( Nr1 > Nr_tol ) then
-       if ( l_interp_prescribed_params ) then
-          sigma_Nr_1 = sqrt( cloud_frac1 * Nrp2_on_Nrm2_cloud &
-                             + ( one - cloud_frac1 ) * Nrp2_on_Nrm2_below ) &
-                       * mu_Nr_1
-       else
-          if ( rc1 > rc_tol ) then
-             sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_1
-          else
-             sigma_Nr_1 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_1
-          endif
-       endif
-    else
-       ! Mean in-precip rain drop concentration in PDF component 1 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The standard
-       ! deviation is simply 0 since rain drop concentration does not vary in
-       ! this component at this grid level.
-       sigma_Nr_1 = zero
-    endif
+    sigma_Nr_1 = component_stdev_ip( Nr1, mu_Nr_1, rc1, cloud_frac1, Nr_tol, &
+                                     Nrp2_on_Nrm2_cloud, Nrp2_on_Nrm2_below )
 
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 2.
-    if ( Nr2 > Nr_tol ) then
-       if ( l_interp_prescribed_params ) then
-          sigma_Nr_2 = sqrt( cloud_frac2 * Nrp2_on_Nrm2_cloud &
-                             + ( one - cloud_frac2 ) * Nrp2_on_Nrm2_below ) &
-                       * mu_Nr_2
-       else
-          if ( rc2 > rc_tol ) then
-             sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_cloud ) * mu_Nr_2
-          else
-             sigma_Nr_2 = sqrt( Nrp2_on_Nrm2_below ) * mu_Nr_2
-          endif
-       endif
-    else
-       ! Mean in-precip rain drop concentration in PDF component 2 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The standard
-       ! deviation is simply 0 since rain drop concentration does not vary in
-       ! this component at this grid level.
-       sigma_Nr_2 = zero
-    endif
+    sigma_Nr_2 = component_stdev_ip( Nr2, mu_Nr_2, rc2, cloud_frac2, Nr_tol, &
+                                     Nrp2_on_Nrm2_cloud, Nrp2_on_Nrm2_below )
 
     ! Standard deviation of cloud nuclei concentration in PDF component 1.
     if ( Ncnm > Ncn_tol ) then
@@ -1910,16 +1802,6 @@ module setup_clubb_pdf_params
     ! well as w and t, are defined to be 0.
     logical, parameter :: &
       l_follow_CLUBB_PDF_standards = .true.
-
-    ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
-    ! values based on whether or not cloud water mixing ratio has a value of at
-    ! least rc_tol.  However, this does not take into account the amount of
-    ! cloudiness in a component, just whether or not there is any cloud in the
-    ! component.  The option l_interp_prescribed_params allows for an
-    ! interpolated value between the in-cloud and below-cloud parameter value
-    ! based on the component cloud fraction.
-    logical, parameter :: &
-      l_interp_prescribed_params = .false.
 
     real( kind = core_rknd ) :: &
       rrp2_on_rrm2,    & ! Ratio of < r_r'^2 > to < r_r >^2              [-]
@@ -2481,6 +2363,120 @@ module setup_clubb_pdf_params
     return
 
   end subroutine compute_corr
+
+  !=============================================================================
+  function component_mean_ip( hmi, precip_frac_i, hm_tol )  &
+  result( mu_hm_i )
+
+    ! Description:
+    ! Calculates the in-precip mean of a hydrometeor species within the ith
+    ! PDF component.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        zero  ! Constant(s)
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      hmi,           & ! Mean of hydrometeor, hm (ith PDF component) [hm units]
+      precip_frac_i, & ! Precipitation fraction (ith PDF component)  [-]
+      hm_tol           ! Tolerance value for hydrometeor             [hm units]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      mu_hm_i    ! Mean of hm (ith PDF component) in-precip (ip)     [hm units]
+
+
+    ! Mean of the hydrometeor (in-precip) in the ith PDF component.
+    if ( hmi > hm_tol ) then
+       mu_hm_i = hmi / precip_frac_i
+    else
+       ! The mean of the hydrometeor in the ith PDF component is less than the
+       ! tolerance amount for the particular hydrometeor.  It is considered to
+       ! have a value of 0.  There is not any of this hydrometeor species in the
+       ! ith PDF component at this grid level.
+       mu_hm_i = zero
+    endif
+
+
+    return
+
+  end function component_mean_ip
+
+  !=============================================================================
+  function component_stdev_ip( hmi, mu_hm_i, rci, cloud_fraci, hm_tol, &
+                               hmp2_on_hmm2_cloud, hmp2_on_hmm2_below )  &
+  result( sigma_hm_i )
+
+    ! Description:
+    ! Calculates the in-precip standard deviation of a hydrometeor species
+    ! within the ith PDF component.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one,    & ! Constant(s)
+        zero,   &
+        rc_tol
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      hmi,         & ! Mean of hydrometeor, hm (ith PDF component)   [hm units]
+      mu_hm_i,     & ! Mean of hm (ith PDF component) in-precip (ip) [hm units]
+      rci,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
+      cloud_fraci, & ! Cloud fraction (ith PDF component)            [-]
+      hm_tol         ! Tolerance value for hydrometeor               [hm units]
+
+    real( kind = core_rknd ), intent(in) :: &
+      hmp2_on_hmm2_cloud, & ! Ratio <hm'^2>/<hm>^2 at cloudy grid levels  [-]
+      hmp2_on_hmm2_below    ! Ratio <hm'^2>/<hm>^2 at clear grid levels   [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      sigma_hm_i    ! Standard deviation of hm (ith PDF component) ip [hm units]
+
+
+    ! Standard deviation of the hydrometeor (in-precip) in the
+    ! ith PDF component.
+    if ( hmi > hm_tol ) then
+       if ( l_interp_prescribed_params ) then
+          sigma_hm_i = sqrt( cloud_fraci * hmp2_on_hmm2_cloud &
+                             + ( one - cloud_fraci ) * hmp2_on_hmm2_below ) &
+                       * mu_hm_i
+       else
+          if ( rci > rc_tol ) then
+             sigma_hm_i = sqrt( hmp2_on_hmm2_cloud ) * mu_hm_i
+          else
+             sigma_hm_i = sqrt( hmp2_on_hmm2_below ) * mu_hm_i
+          endif
+       endif
+    else
+       ! The mean of the hydrometeor in the ith PDF component is less than the
+       ! tolerance amount for the particular hydrometeor.  It is considered to
+       ! have a value of 0.  There is not any of this hydrometeor species in the
+       ! ith PDF component at this grid level.  The standard deviation is simply
+       ! 0 since the hydrometeor does not vary in this component at this grid
+       ! level.
+       sigma_hm_i = zero
+    endif
+
+
+  return
+
+  end function component_stdev_ip
 
   !=============================================================================
   subroutine normalize_pdf_params( rr1, rr2, Nr1, Nr2, Ncnm, &                   ! Intent(in)
