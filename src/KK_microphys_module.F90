@@ -32,7 +32,8 @@ module KK_microphys_module
                                     rtp2_mc_tndcy, thlp2_mc_tndcy, &
                                     wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                                     rtpthlp_mc_tndcy, &
-                                    KK_auto_tndcy, KK_accr_tndcy, KK_evap_tndcy )
+                                    KK_auto_tndcy, KK_accr_tndcy, KK_evap_tndcy, &
+                                    KK_Nrm_auto_tndcy, KK_Nrm_evap_tndcy )
 
     ! Description:
 
@@ -125,14 +126,17 @@ module KK_microphys_module
       thlm_mc    ! Time tendency of liquid potential temperature [K/s]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      rtp2_mc_tndcy,  & ! Microphysics tendency for <rt'^2>        [(kg/kg)^2/s]
-      thlp2_mc_tndcy, & ! Microphysics tendency for <thl'^2>       [K^2/s]
-      wprtp_mc_tndcy, & ! Microphysics tendency for <w'rt'>        [m*(kg/kg)/s^2]
-      wpthlp_mc_tndcy,& ! Microphysics tendency for <w'thl'>       [m*K/s^2]
-      rtpthlp_mc_tndcy, & !Microphysics tendency for <rt'thl'>     [K*(kg/kg)/s]
-      KK_auto_tndcy,  & ! Mean KK (dr_r/dt) due to autoconversion  [(kg/kg)/s]
-      KK_accr_tndcy,  & ! Mean KK (dr_r/dt) due to accretion       [(kg/kg)/s]
-      KK_evap_tndcy     ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
+      rtp2_mc_tndcy,  &    ! Microphysics tendency for <rt'^2>        [(kg/kg)^2/s]
+      thlp2_mc_tndcy, &    ! Microphysics tendency for <thl'^2>       [K^2/s]
+      wprtp_mc_tndcy, &    ! Microphysics tendency for <w'rt'>        [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy,&    ! Microphysics tendency for <w'thl'>       [m*K/s^2]
+      rtpthlp_mc_tndcy, &  ! Microphysics tendency for <rt'thl'>      [K*(kg/kg)/s]
+      KK_auto_tndcy,  &    ! Mean KK (dr_r/dt) due to autoconversion  [(kg/kg)/s]
+      KK_accr_tndcy,  &    ! Mean KK (dr_r/dt) due to accretion       [(kg/kg)/s]
+      KK_evap_tndcy, &     ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
+      KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation     [(num/kg)/s]
+      KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.       [(num/kg)/s]
+
 
     ! Local Variables
     real( kind = core_rknd ), dimension(:), pointer ::  &
@@ -145,10 +149,6 @@ module KK_microphys_module
 
     real( kind = core_rknd ), dimension(nz) :: &
       KK_mean_vol_rad    ! Mean KK rain drop mean volume radius     [m]
-
-    real( kind = core_rknd ), dimension(nz) :: &
-      KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation  [(num/kg)/s]
-      KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.    [(num/kg)/s]
 
     real( kind = core_rknd ) :: &
       KK_evap_coef, & ! KK evaporation coefficient                  [(kg/kg)/s]

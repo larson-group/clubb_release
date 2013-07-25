@@ -11,7 +11,8 @@ interface
                             rtp2_mc_tndcy, thlp2_mc_tndcy, &
                             wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                             rtpthlp_mc_tndcy, & 
-                            rrainm_auto, rrainm_accr, rrainm_evap )
+                            rrainm_auto, rrainm_accr, rrainm_evap, &
+                            Nrm_auto, Nrm_evap )
 
     use pdf_parameter_module, only: pdf_parameter
 
@@ -70,7 +71,9 @@ interface
     real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
       rrainm_auto, & ! Autoconversion budget for rain water mixing ratio [kg/kg/s]
       rrainm_accr, & ! Accretion budget for rain water mixing ratio      [kg/kg/s]
-      rrainm_evap    ! Evaporation budget for rain water mixing ratio    [kg/kg/s]
+      rrainm_evap, & ! Evaporation budget for rain water mixing ratio    [kg/kg/s]
+      Nrm_auto,    & ! Change in Nrm due to autoconversion               [num/kg/s]
+      Nrm_evap       ! Change in Nrm due to evaporation                  [num/kg/s]
 
   end subroutine microphys_sub
 end interface

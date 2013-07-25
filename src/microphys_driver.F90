@@ -1184,9 +1184,11 @@ module microphys_driver
       cloud_frac_morr  ! Cloud fraction fed into morrision microphysics []
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
-      rrainm_auto, & ! Autoconversion rate for rrainm [kg/kg/s]
-      rrainm_accr, & ! Accretion rate for rrainm      [kg/kg/s]
-      rrainm_evap    ! Evaporation rate for rrainm    [kg/kg/s]
+      rrainm_auto, & ! Autoconversion rate for rrainm      [kg/kg/s]
+      rrainm_accr, & ! Accretion rate for rrainm           [kg/kg/s]
+      rrainm_evap, & ! Evaporation rate for rrainm         [kg/kg/s]
+      Nrm_auto,    & ! Change in Nrm due to autoconversion [num/kg/s]
+      Nrm_evap       ! Change in Nrm due to evaporation    [num/kg/s]
 
     real( kind = core_rknd ), dimension(1,1,gr%nz) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
@@ -1515,7 +1517,8 @@ module microphys_driver
                rcm_mc, rvm_mc, thlm_mc, &
                rtp2_mc_tndcy, thlp2_mc_tndcy, &
                wprtp_mc_tndcy, wpthlp_mc_tndcy, rtpthlp_mc_tndcy, &
-               rrainm_auto, rrainm_accr, rrainm_evap )
+               rrainm_auto, rrainm_accr, rrainm_evap, &
+               Nrm_auto, Nrm_evap )
 
         ! Output rain sedimentation velocity
         if ( l_stats_samp ) then
@@ -1604,7 +1607,8 @@ module microphys_driver
                                       rtp2_mc_tndcy, thlp2_mc_tndcy, &
                                       wprtp_mc_tndcy, wpthlp_mc_tndcy, &
                                       rtpthlp_mc_tndcy,  &
-                                      rrainm_auto, rrainm_accr, rrainm_evap )
+                                      rrainm_auto, rrainm_accr, rrainm_evap, &
+                                      Nrm_auto, Nrm_evap )
 
         else
 

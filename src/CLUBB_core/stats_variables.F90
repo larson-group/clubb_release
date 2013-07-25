@@ -677,9 +677,12 @@ module stats_variables
   integer, public :: &
     iLH_rrainm_auto = 0, & ! Latin hypercube estimate of autoconversion
     iLH_rrainm_accr = 0, & ! Latin hypercube estimate of accretion
-    iLH_rrainm_evap = 0    ! Latin hypercube estimate of evaporation
+    iLH_rrainm_evap = 0, & ! Latin hypercube estimate of evaporation
+    iLH_Nrm_auto    = 0, & ! Latin hypercube estimate of Nrm autoconversion
+    iLH_Nrm_cond    = 0    ! Latin hypercube estimate of Nrm evaporation
 
-!$omp   threadprivate( iLH_rrainm_auto, iLH_rrainm_accr, iLH_rrainm_evap )
+!$omp   threadprivate( iLH_rrainm_auto, iLH_rrainm_accr, iLH_rrainm_evap, &
+!$omp                  iLH_Nrm_auto, iLH_Nrm_cond )
 
   integer, public :: &
     iLH_rrainm_src_adj  = 0, & ! Latin hypercube estimate of source adjustment (KK only!)

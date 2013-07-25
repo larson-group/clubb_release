@@ -62,7 +62,9 @@ module estimate_scm_microphys_module
       LH_zt, & ! Variable(s)
       iLH_rrainm_auto, & 
       iLH_rrainm_accr, &
-      iLH_rrainm_evap
+      iLH_rrainm_evap, &
+      iLH_Nrm_auto,    &
+      iLH_Nrm_cond
 
     use stats_type, only: & 
       stat_update_var ! Procedure(s)
@@ -161,14 +163,16 @@ module estimate_scm_microphys_module
       Nc            ! Cloud droplet concentration               [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      lh_rtp2_mc_tndcy,    & ! LH micro. tendency for <rt'^2>   [(kg/kg)^2/s]
-      lh_thlp2_mc_tndcy,   & ! LH micro. tendency for <thl'^2>  [K^2/s]
-      lh_wprtp_mc_tndcy,   & ! LH micro. tendency for <w'rt'>   [m*(kg/kg)/s^2]
-      lh_wpthlp_mc_tndcy,  & ! LH micro. tendency for <w'thl'>  [m*K/s^2]
-      lh_rtpthlp_mc_tndcy, & ! LH micro. tendency for <rt'thl'> [K*(kg/kg)/s]
-      lh_rrainm_auto,      & ! Autoconversion budget for <rr>   [kg/kg/s]
-      lh_rrainm_accr,      & ! Accretion budget for <rr>        [kg/kg/s]
-      lh_rrainm_evap         ! Evaporation budget for <rr>      [kg/kg/s]
+      lh_rtp2_mc_tndcy,    & ! LH micro. tendency for <rt'^2>      [(kg/kg)^2/s]
+      lh_thlp2_mc_tndcy,   & ! LH micro. tendency for <thl'^2>     [K^2/s]
+      lh_wprtp_mc_tndcy,   & ! LH micro. tendency for <w'rt'>      [m*(kg/kg)/s^2]
+      lh_wpthlp_mc_tndcy,  & ! LH micro. tendency for <w'thl'>     [m*K/s^2]
+      lh_rtpthlp_mc_tndcy, & ! LH micro. tendency for <rt'thl'>    [K*(kg/kg)/s]
+      lh_rrainm_auto,      & ! Autoconversion budget for <rr>      [kg/kg/s]
+      lh_rrainm_accr,      & ! Accretion budget for <rr>           [kg/kg/s]
+      lh_rrainm_evap,      & ! Evaporation budget for <rr>         [kg/kg/s]
+      lh_Nrm_auto,         & ! Change in Nrm due to autoconversion [num/kg/s]
+      lh_Nrm_evap            ! Change in Nrm due to evaporation    [num/kg/s]
 
     real( kind = dp ), pointer, dimension(:,:) :: &
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
@@ -296,7 +300,8 @@ module estimate_scm_microphys_module
              lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, & ! Out
              lh_wprtp_mc_tndcy, lh_wpthlp_mc_tndcy, & ! Out
              lh_rtpthlp_mc_tndcy, &  ! Out
-             lh_rrainm_auto, lh_rrainm_accr, lh_rrainm_evap ) ! Out
+             lh_rrainm_auto, lh_rrainm_accr, lh_rrainm_evap, &
+             lh_Nrm_auto, lh_Nrm_evap ) ! Out
 
       if ( l_lh_cloud_weighted_sampling ) then
         ! Weight the output results depending on whether we're calling the
@@ -311,10 +316,12 @@ module estimate_scm_microphys_module
         lh_rrainm_evap(:) = lh_rrainm_evap(:) * LH_sample_point_weights(sample)
       end if
       if ( l_stats_samp ) then
-        ! Save autoconversion and accretion rate for statistics
+        ! Save autoconversion, accretion, and evaporation rate for statistics!
         call stat_update_var( iLH_rrainm_auto, lh_rrainm_auto, LH_zt )
         call stat_update_var( iLH_rrainm_accr, lh_rrainm_accr, LH_zt )
         call stat_update_var( iLH_rrainm_evap, lh_rrainm_evap, LH_zt )
+        call stat_update_var( iLH_Nrm_auto, lh_Nrm_auto, LH_zt )
+        call stat_update_var( iLH_Nrm_cond, lh_Nrm_evap, LH_zt )
       end if
 
       do ivar = 1, hydromet_dim

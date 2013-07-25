@@ -106,8 +106,9 @@ vars_LH_zt =
 'LH_Nrp2_zt', 'LH_Ncp2_zt', 'LH_wp2_zt', 'LH_cloud_frac',
 'LH_rtp2_zt', 'LH_thlp2_zt',
 'LH_Nrm', 'LH_Nim', 'LH_Ncm', 'LH_Ngraupelm', 'LH_Nsnowm', 'LH_rcm_avg',
-'LH_rrainm_auto', 'LH_rrainm_accr', 'LH_rrainm_evap', 'LH_rrainm_src_adj', 'LH_rrainm_cond_adj',
-'LH_Nrm_src_adj', 'LH_Nrm_cond_adj'
+'LH_rrainm_auto', 'LH_rrainm_accr', 'LH_rrainm_evap', 'LH_Nrm_auto', 'LH_Nrm_cond',
+'LH_rrainm_src_adj', 'LH_rrainm_cond_adj',
+'LH_Nrm_src_adj', 'LH_Nrm_cond_adj',
 ''
 vars_LH_sfc =
 'LH_morr_rain_rate', 'LH_morr_snow_rate', 'LH_vwp', 'LH_lwp',

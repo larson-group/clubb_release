@@ -82,7 +82,9 @@ module stats_LH_zt
       iLH_cloud_frac, &
       iLH_rrainm_auto, &
       iLH_rrainm_accr, &
-      iLH_rrainm_evap
+      iLH_rrainm_evap, &
+      iLH_Nrm_auto, &
+      iLH_Nrm_cond
 
     use stats_variables, only: &
       iLH_rrainm_src_adj,  & ! Variable(s)
@@ -424,6 +426,18 @@ module stats_LH_zt
         iLH_rrainm_evap = k
         call stat_assign( iLH_rrainm_evap, "LH_rrainm_evap", &
              "Latin hypercube estimate of evaporation [kg/kg/s]", "kg/kg/s", LH_zt )
+        k = k + 1
+
+      case ( 'LH_Nrm_auto' )
+        iLH_Nrm_auto = k
+        call stat_assign( iLH_Nrm_auto, "LH_Nrm_auto", &
+             "Latin hypercube estimate of Nrm autoconversion [num/kg/s]", "num/kg/s", LH_zt )
+        k = k + 1
+
+      case ( 'LH_Nrm_cond' )
+        iLH_Nrm_cond = k
+        call stat_assign( iLH_Nrm_cond, "LH_Nrm_cond", &
+             "Latin hypercube estimate of Nrm evaporation [num/kg/s]", "num/kg/s", LH_zt )
         k = k + 1
 
       case ( 'LH_rrainm_src_adj' )
