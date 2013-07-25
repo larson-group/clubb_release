@@ -1446,6 +1446,9 @@ module setup_clubb_pdf_params
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
 
+    use model_flags, only: &
+        l_use_hydromet_tolerance
+
     implicit none
 
     ! Input Variables
@@ -1557,7 +1560,7 @@ module setup_clubb_pdf_params
     mu_Nr_2 = component_mean_ip( Nr2, precip_frac_2, Nr_tol )
 
     ! Mean of cloud nuclei concentration in PDF component 1.
-    if ( Ncnm > Ncn_tol ) then
+    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        mu_Ncn_1 = Ncnm
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
@@ -1567,7 +1570,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Mean of cloud nuclei concentration in PDF component 2.
-    if ( Ncnm > Ncn_tol ) then
+    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        mu_Ncn_2 = Ncnm
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
@@ -1630,7 +1633,7 @@ module setup_clubb_pdf_params
                                      Nrp2_on_Nrm2_cloud, Nrp2_on_Nrm2_below )
 
     ! Standard deviation of cloud nuclei concentration in PDF component 1.
-    if ( Ncnm > Ncn_tol ) then
+    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        sigma_Ncn_1 = sqrt( Ncnp2_on_Ncnm2_cloud ) * mu_Ncn_1
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
@@ -1641,7 +1644,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Standard deviation of cloud nuclei concentration in PDF component 2.
-    if ( Ncnm > Ncn_tol ) then
+    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        sigma_Ncn_2 = sqrt( Ncnp2_on_Ncnm2_cloud ) * mu_Ncn_2
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
@@ -1720,7 +1723,8 @@ module setup_clubb_pdf_params
         corr_rrNr_LL_below
 
     use model_flags, only: &
-        l_calc_w_corr
+        l_calc_w_corr, &
+        l_use_hydromet_tolerance
 
     use diagnose_correlations_module, only: &
         calc_mean,        & ! Procedure(s)
@@ -1905,7 +1909,7 @@ module setup_clubb_pdf_params
     endif ! l_follow_CLUBB_PDF_standards
 
     ! Correlation (in-precip) between w and r_r in PDF component 1.
-    if ( rr1 > rr_tol ) then
+    if ( ( rr1 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_calc_w_corr ) then
           corr_wrr_1 = corr_wrr
        else ! use prescribed parameter values
@@ -1931,7 +1935,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between w and r_r in PDF component 2.
-    if ( rr2 > rr_tol ) then
+    if ( ( rr2 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_calc_w_corr ) then
           corr_wrr_2 = corr_wrr
        else ! use prescribed parameter values
@@ -1957,7 +1961,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between w and N_r in PDF component 1.
-    if ( Nr1 > Nr_tol ) then
+    if ( ( Nr1 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_calc_w_corr ) then
           corr_wNr_1 = corr_wNr
        else ! use prescribed parameter values
@@ -1983,7 +1987,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between w and N_r in PDF component 2.
-    if ( Nr2 > Nr_tol ) then
+    if ( ( Nr2 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_calc_w_corr ) then
           corr_wNr_2 = corr_wNr
        else ! use prescribed parameter values
@@ -2009,7 +2013,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation between w and N_cn in PDF component 1.
-    if ( Ncnm > Ncn_tol ) then
+    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_calc_w_corr ) then
           corr_wNcn_1 = corr_wNcn
        else ! use prescribed parameter values
@@ -2025,7 +2029,7 @@ module setup_clubb_pdf_params
     endif
 
    ! Correlation between w and N_cn in PDF component 2.
-    if ( Ncnm > Ncn_tol ) then
+    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_calc_w_corr ) then
           corr_wNcn_2 = corr_wNcn
        else ! use prescribed parameter values
@@ -2093,7 +2097,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between s and r_r in PDF component 1.
-    if ( rr1 > rr_tol ) then
+    if ( ( rr1 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           corr_srr_1 = cloud_frac1 * corr_srr_NL_cloud &
                        + ( one - cloud_frac1 ) * corr_srr_NL_below
@@ -2115,7 +2119,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between s and r_r in PDF component 2.
-    if ( rr2 > rr_tol ) then
+    if ( ( rr2 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           corr_srr_2 = cloud_frac2 * corr_srr_NL_cloud &
                        + ( one - cloud_frac2 ) * corr_srr_NL_below
@@ -2137,7 +2141,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between s and N_r in PDF component 1.
-    if ( Nr1 > Nr_tol ) then
+    if ( ( Nr1 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           corr_sNr_1 = cloud_frac1 * corr_sNr_NL_cloud &
                        + ( one - cloud_frac1 ) * corr_sNr_NL_below
@@ -2159,7 +2163,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between s and N_r in PDF component 2.
-    if ( Nr2 > Nr_tol ) then
+    if ( ( Nr2 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           corr_sNr_2 = cloud_frac2 * corr_sNr_NL_cloud &
                        + ( one - cloud_frac2 ) * corr_sNr_NL_below
@@ -2181,7 +2185,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation between s and N_cn in PDF component 1.
-    if ( Ncnm > Ncn_tol ) then
+    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        corr_sNcn_1 = corr_sNcn_NL_cloud
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
@@ -2193,7 +2197,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation between s and N_cn in PDF component 2.
-    if ( Ncnm > Ncn_tol ) then
+    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        corr_sNcn_2 = corr_sNcn_NL_cloud
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
@@ -2205,7 +2209,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between t and r_r in PDF component 1.
-    if ( rr1 > rr_tol ) then
+    if ( ( rr1 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           corr_trr_1 = cloud_frac1 * corr_trr_NL_cloud &
                        + ( one - cloud_frac1 ) * corr_trr_NL_below
@@ -2227,7 +2231,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between t and r_r in PDF component 2.
-    if ( rr2 > rr_tol ) then
+    if ( ( rr2 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           corr_trr_2 = cloud_frac2 * corr_trr_NL_cloud &
                        + ( one - cloud_frac2 ) * corr_trr_NL_below
@@ -2249,7 +2253,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between t and N_r in PDF component 1.
-    if ( Nr1 > Nr_tol ) then
+    if ( ( Nr1 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           corr_tNr_1 = cloud_frac1 * corr_tNr_NL_cloud &
                        + ( one - cloud_frac1 ) * corr_tNr_NL_below
@@ -2271,7 +2275,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between t and N_r in PDF component 2.
-    if ( Nr2 > Nr_tol ) then
+    if ( ( Nr2 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           corr_tNr_2 = cloud_frac2 * corr_tNr_NL_cloud &
                        + ( one - cloud_frac2 ) * corr_tNr_NL_below
@@ -2293,7 +2297,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation between t and N_cn in PDF component 1.
-    if ( Ncnm > Ncn_tol ) then
+    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        corr_tNcn_1 = corr_tNcn_NL_cloud
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
@@ -2305,7 +2309,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation between t and N_cn in PDF component 2.
-    if ( Ncnm > Ncn_tol ) then
+    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        corr_tNcn_2 = corr_tNcn_NL_cloud
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
@@ -2317,7 +2321,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 1.
-    if ( rr1 > rr_tol .and. Nr1 > Nr_tol ) then
+    if ( ( ( rr1 > rr_tol ) .and. ( Nr1 > Nr_tol ) ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           corr_rrNr_1 = cloud_frac1 * corr_rrNr_LL_cloud &
                         + ( one - cloud_frac1 ) * corr_rrNr_LL_below
@@ -2339,7 +2343,7 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 2.
-    if ( rr2 > rr_tol .and. Nr2 > Nr_tol ) then
+    if ( ( ( rr2 > rr_tol ) .and. ( Nr2 > Nr_tol ) ) .or. ( .not. l_use_hydromet_tolerance )  ) then
        if ( l_interp_prescribed_params ) then
           corr_rrNr_2 = cloud_frac2 * corr_rrNr_LL_cloud &
                         + ( one - cloud_frac2 ) * corr_rrNr_LL_below
@@ -2381,6 +2385,9 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
+    use model_flags, only: &
+        l_use_hydromet_tolerance
+
     implicit none
 
     ! Input Variables
@@ -2395,7 +2402,7 @@ module setup_clubb_pdf_params
 
 
     ! Mean of the hydrometeor (in-precip) in the ith PDF component.
-    if ( hmi > hm_tol ) then
+    if ( ( hmi > hm_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        mu_hm_i = hmi / precip_frac_i
     else
        ! The mean of the hydrometeor in the ith PDF component is less than the
@@ -2430,6 +2437,9 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
+    use model_flags, only: &
+        l_use_hydromet_tolerance
+
     implicit none
 
     ! Input Variables
@@ -2451,7 +2461,7 @@ module setup_clubb_pdf_params
 
     ! Standard deviation of the hydrometeor (in-precip) in the
     ! ith PDF component.
-    if ( hmi > hm_tol ) then
+    if ( ( hmi > hm_tol ) .or. ( .not. l_use_hydromet_tolerance )) then
        if ( l_interp_prescribed_params ) then
           sigma_hm_i = sqrt( cloud_fraci * hmp2_on_hmm2_cloud &
                              + ( one - cloud_fraci ) * hmp2_on_hmm2_below ) &
