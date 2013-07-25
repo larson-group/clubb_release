@@ -114,8 +114,8 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sd', 'expression' => 'ricem_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_ta', 'expression' => 'ricem_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_fill\_clip', 'expression' => 'ricem_hf + ricem_wvhf + ricem_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_mc', 'expression' => 'ricem_mc-ricem_sd_mg_mor', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sd\_mg\_morr', 'expression' => 'ricem_sd_mg_mor', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_mc', 'expression' => 'ricem_mc-ricem_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sd\_mg\_morr', 'expression' => 'ricem_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_residual', 'expression' => ' ricem_bt - ( ricem_ma + ricem_sd + ricem_ta + ricem_hf + ricem_wvhf + ricem_cl + ricem_mc )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
@@ -203,8 +203,8 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sd', 'expression' => 'rgraupelm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_ta', 'expression' => 'rgraupelm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_fill\_clip', 'expression' => 'rgraupelm_hf + rgraupelm_wvhf + rgraupelm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_mc', 'expression' => 'rgraupelm_mc - rgraupelm_sd_mo', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sd\_morr', 'expression' => 'rgraupelm_sd_mo', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_mc', 'expression' => 'rgraupelm_mc - rgraupelm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sd\_morr', 'expression' => 'rgraupelm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_residual', 'expression' => 'rgraupelm_bt - (rgraupelm_ma + rgraupelm_sd + rgraupelm_ta  + rgraupelm_hf + rgraupelm_wvhf + rgraupelm_cl + rgraupelm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
