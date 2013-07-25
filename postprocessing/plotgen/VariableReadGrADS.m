@@ -47,7 +47,7 @@ varData(1:nzmax) = 0;
 
 for i = 1:numVars
 	%See if the variable we found is the variable we are interested in
-	if ( strcmp( strtrim(listofparams(i, :)), variableToRead ) )
+	if ( strcmp( deblank(listofparams(i, :)), variableToRead ) )
 		if strcmp(plotType, 'profile')
 			if strcmp(endianness, 'BIG_ENDIAN')
 				varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-be', nzmax, t_start, t_end, i, numVars);

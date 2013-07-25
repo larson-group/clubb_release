@@ -97,12 +97,7 @@ if (parsevars == 1)
         varsize    = size(remainder_1);
         varsize    = varsize(2);
 %        remainder_1 = [prefix remainder_1]
-        while (varsize < 15)
-            remainder_1(varsize+1) = ' ';
-            varsize    = size(remainder_1);
-            varsize    = varsize(2);
-        end
-        listofparams(counter,1:15) = remainder_1(1:15);
+        listofparams(counter,1:varsize) = remainder_1(1:varsize);
         counter = counter + 1;
     end
 % eMFc

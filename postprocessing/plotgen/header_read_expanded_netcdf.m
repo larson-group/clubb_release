@@ -94,10 +94,7 @@ time_step_length = dt;
 
 for i=5:numvars-1
 	[varname,xtype,dimids,natts] = netcdf.inqVar( nc_file , i );
-	while(size(varname,2) < 15 )
-        	varname(size(varname,2) + 1) = ' ';
-	end
-	listofparams(i-4,1:15) = varname(1:15);
+	listofparams(i-4,1:size(varname,2)) = varname(1:size(varname,2));
 end
 
 numvars = numvars - 5;
