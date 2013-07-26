@@ -243,10 +243,6 @@ module generate_lh_sample_module
       stdev_t1,    & ! Standard deviation of t for the 1st normal distribution [kg/kg]
       stdev_t2       ! Standard deviation of t for the 1st normal distribution [kg/kg]
 
-    real( kind = dp ) :: &
-      cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
-      cloud_frac2    ! Cloud fraction for 2nd normal distribution              [-]
-
     ! Means of s, t, w, & hydrometeors for plumes 1 and 2
     real( kind = core_rknd ), dimension(d_variables) :: &
       mu1, mu2
@@ -422,15 +418,6 @@ module generate_lh_sample_module
       stdev_t2 = max( stdev_t2_in, t_mellor_tol )
 
     end if ! l_fix_s_t_correlations
-
-!   cloud_frac1 = real( cloud_frac1_in, kind = dp )
-!   cloud_frac2 = real( cloud_frac2_in, kind = dp )
-
-    ! We sample non-cloudy grid boxes as well now in order to generalize for
-    ! microphysics schemes that normally work on subcolumns rather than points
-    ! in the atmosphere -dschanen 3 June 2009
-    cloud_frac1 = 1.0_dp
-    cloud_frac2 = 1.0_dp
 
     !---------------------------------------------------------------------------
     ! Generate a set of sample points for a microphysics scheme
@@ -950,7 +937,6 @@ module generate_lh_sample_module
                         real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
                         real(crt2, kind = dp), real(cthl2, kind = dp), &  ! intent(in)
                         mu1, mu2, &  ! intent(in)
-                        cloud_frac1, cloud_frac2, & ! intent(in)
                         l_d_variable_lognormal, & ! intent(in)
                         X_u_one_lev, & ! intent(in)
                         X_mixt_comp_one_lev, & ! intent(in)
@@ -1078,10 +1064,6 @@ module generate_lh_sample_module
       stdev_t1,    & ! Standard deviation of t for the 1st normal distribution [kg/kg]
       stdev_t2       ! Standard deviation of t for the 1st normal distribution [kg/kg]
 
-    real( kind = dp ) :: &
-      cloud_frac1, & ! Cloud fraction for 1st normal distribution              [-]
-      cloud_frac2    ! Cloud fraction for 2nd normal distribution              [-]
-
     real( kind = dp ), dimension(d_variables,d_variables) :: &
       Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
 
@@ -1113,15 +1095,6 @@ module generate_lh_sample_module
 
     stdev_w1 = sigma1(iiLH_w)
     stdev_w2 = sigma2(iiLH_w)
-
-!   cloud_frac1 = real( cloud_frac1_in, kind = dp )
-!   cloud_frac2 = real( cloud_frac2_in, kind = dp )
-
-    ! We sample non-cloudy grid boxes as well now in order to generalize for
-    ! microphysics schemes that normally work on subcolumns rather than points
-    ! in the atmosphere -dschanen 3 June 2009
-    cloud_frac1 = 1.0_dp
-    cloud_frac2 = 1.0_dp
 
     !---------------------------------------------------------------------------
     ! Generate a set of sample points for a microphysics scheme
@@ -1176,7 +1149,6 @@ module generate_lh_sample_module
                         real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
                         real(crt2, kind = dp), real(cthl2, kind = dp), &  ! intent(in)
                         mu1, mu2, &  ! intent(in)
-                        cloud_frac1, cloud_frac2, & ! intent(in)
                         l_d_variable_lognormal, & ! intent(in)
                         X_u_one_lev, & ! intent(in)
                         X_mixt_comp_one_lev, & ! intent(in)
@@ -1193,7 +1165,6 @@ module generate_lh_sample_module
                             rt1, thl1, rt2, thl2, & 
                             crt1, cthl1, crt2, cthl2, & 
                             mu1, mu2,  & 
-                            cloud_frac1, cloud_frac2, & 
                             l_d_variable_lognormal, &
                             X_u_one_lev, &
                             X_mixt_comp_one_lev, &
@@ -1247,10 +1218,6 @@ module generate_lh_sample_module
     real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
 
-    ! Cloud fractions for components 1 and 2
-    real( kind = dp ), intent(in) :: &
-      cloud_frac1, cloud_frac2 ! cloud fraction associated w/ 1st, 2nd mixture component
-
     logical, intent(in), dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
 
@@ -1289,8 +1256,7 @@ module generate_lh_sample_module
                            Sigma1_Cholesky, Sigma2_Cholesky, & ! intent(in)
                            Sigma1_scaling, Sigma2_scaling, & ! intent(in)
                            l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
-                           cloud_frac1, cloud_frac2, X_u_one_lev, & ! intent(in)
-                           X_mixt_comp_one_lev, & ! intent(in)
+                           X_u_one_lev, X_mixt_comp_one_lev, & ! intent(in)
                            X_nl_one_lev ) ! intent(out)
 
 ! Transform s (column 1) and t (column 2) back to rt and thl
@@ -1302,7 +1268,6 @@ module generate_lh_sample_module
 !            X_u_one_lev, rtp, thlp )
     call st_2_rtthl( mixt_frac, rt1, thl1, rt2, thl2, & ! intent(in)
                      crt1, cthl1, crt2, cthl2, & ! intent(in)
-                     cloud_frac1, cloud_frac2, & ! intent(in)
                      real(mu1(iiLH_s_mellor), kind = dp), & ! intent(in)
                      real(mu2(iiLH_s_mellor), kind = dp), & ! intent(in)
                      X_nl_one_lev(iiLH_s_mellor), & ! intent(in)
@@ -1492,13 +1457,12 @@ module generate_lh_sample_module
   end function choose_permuted_random
 
 !----------------------------------------------------------------------
-  subroutine gaus_mixt_points( d_variables, mixt_frac, mu1, mu2, &
-                               Sigma1_Cholesky, Sigma2_Cholesky, &
-                               Sigma1_scaling, Sigma2_scaling, &
-                               l_Sigma1_scaling, l_Sigma2_scaling, &
-                               cloud_frac1, cloud_frac2, X_u_one_lev, &
-                               X_mixt_comp_one_lev, &
-                               X_nl_one_lev )
+  subroutine gaus_mixt_points( d_variables, mixt_frac, mu1, mu2, & ! Intent(in)
+                               Sigma1_Cholesky, Sigma2_Cholesky, & ! Intent(in)
+                               Sigma1_scaling, Sigma2_scaling, & ! Intent(in)
+                               l_Sigma1_scaling, l_Sigma2_scaling, & ! Intent(in)
+                               X_u_one_lev, X_mixt_comp_one_lev, & ! Intent(in)
+                               X_nl_one_lev ) ! Intent(out)
 ! Description:
 !   Generates n random samples from a d-dimensional Gaussian-mixture PDF.
 !   Uses Latin hypercube method.
@@ -1527,8 +1491,7 @@ module generate_lh_sample_module
       d_variables       ! Number of variates (normally=5)
 
     real( kind = dp ), intent(in) :: &
-      mixt_frac,     & ! Mixture fraction of Gaussians
-      cloud_frac1, cloud_frac2   ! Cloud fraction associated w/ 1st, 2nd mixture component
+      mixt_frac ! Mixture fraction of Gaussians
 
     real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
@@ -1563,33 +1526,6 @@ module generate_lh_sample_module
     integer :: ivar ! Loop iterators
 
     ! ---- Begin Code ----
-
-    ! Handle some possible errors re: proper ranges of mixt_frac,
-    ! cloud_frac1, cloud_frac2.
-    if (mixt_frac > 1.0_dp .or. mixt_frac < 0.0_dp) then
-      write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
-                       'mixture fraction, mixt_frac, does not lie in [0,1].'
-      stop
-    end if
-    if (cloud_frac1 > 1.0_dp .or. cloud_frac1 < 0.0_dp) then
-      write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
-                       'cloud fraction 1, cloud_frac1, does not lie in [0,1].'
-      stop
-    end if
-    if (cloud_frac2 > 1.0_dp .or. cloud_frac2 < 0.0_dp) then
-      write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
-                       'cloud fraction 2, cloud_frac2, does not lie in [0,1].'
-      stop
-    end if
-
-    ! Make sure there is some cloud.
-    if (mixt_frac*cloud_frac1 < 0.001_dp .and. (1._dp-mixt_frac)*cloud_frac2 < 0.001_dp) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
-                         'there is no cloud or almost no cloud!'
-      end if
-    end if
-
 
     ! From Latin hypercube sample, generate standard normal sample
     do ivar = 1, d_variables
@@ -1972,7 +1908,6 @@ module generate_lh_sample_module
 !-----------------------------------------------------------------------
   subroutine st_2_rtthl( mixt_frac, rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
-                         cloud_frac1, cloud_frac2, &
                          mu_s1, mu_s2, &
                          s_mellor, t_mellor, X_mixt_comp_one_lev, &
                          LH_rt, LH_thl )
@@ -2019,9 +1954,6 @@ module generate_lh_sample_module
       cthl1, cthl2   ! Constants from plumes 1 & 2 of thetal
 
     real( kind = dp ), intent(in) :: &
-      cloud_frac1, cloud_frac2 ! Cloud fraction associated with 1st / 2nd mixture component
-
-    real( kind = dp ), intent(in) :: &
       mu_s1, mu_s2 ! Mean for s1 and s2         [kg/kg]
 
     ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
@@ -2049,34 +1981,6 @@ module generate_lh_sample_module
     ! See ticket #527 on the CLUBB TRAC
 !   cthl1_clip = max( cthl1, cthl_thresh )
 !   cthl2_clip = max( cthl2, cthl_thresh )
-
-    ! Handle some possible errors re: proper ranges of mixt_frac,
-    ! cloud_frac1, cloud_frac2.
-
-    if ( mixt_frac > 1.0_dp .or. mixt_frac < 0.0_dp ) then
-      write(fstderr,*) 'Error in st_2_rtthl:  ',  &
-                       'mixture fraction, mixt_frac, does not lie in [0,1].'
-      stop
-    end if
-    if ( cloud_frac1 > 1.0_dp .or. cloud_frac1 < 0.0_dp ) then
-      write(fstderr,*) 'Error in st_2_rtthl:  ',  &
-                       'cloud fraction 1, cloud_frac1, does not lie in [0,1].'
-      stop
-    end if
-    if ( cloud_frac2 > 1.0_dp .or. cloud_frac2 < 0.0_dp ) then
-      write(fstderr,*) 'Error in st_2_rtthl:  ',  &
-                       'cloud fraction 2, cloud_frac2, does not lie in [0,1].'
-      stop
-    end if
-
-    ! Make sure there is some cloud.
-    if ( mixt_frac*cloud_frac1 < 0.001_dp .and. (1._dp-mixt_frac)*cloud_frac2 < 0.001_dp ) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) 'Error in st_2_rtthl:  ',  &
-                         'there is no cloud or almost no cloud!'
-      end if
-    end if
-
 
     ! Choose which mixture fraction we are in.
     ! Account for cloud fraction.

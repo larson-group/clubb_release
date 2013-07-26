@@ -1207,6 +1207,17 @@ module clubb_driver
              rcm, wprcp, cloud_frac, ice_supersat_frac, &         ! Intent(out)
              rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
 
+
+      if ( clubb_at_least_debug_level( 2 ) ) then
+         do k = 1, gr%nz
+            if (pdf_params(k)%mixt_frac > 1.0_dp .or. pdf_params(k)%mixt_frac < 0.0_dp) then
+               write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
+                                'mixture fraction, mixt_frac, does not lie in [0,1].'
+               stop
+            end if
+         end do
+      end if
+
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
       if ( .not. trim( micro_scheme ) == "none" ) then
