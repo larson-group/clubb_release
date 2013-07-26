@@ -314,6 +314,8 @@ module estimate_scm_microphys_module
         lh_rrainm_auto(:) = lh_rrainm_auto(:) * LH_sample_point_weights(sample)
         lh_rrainm_accr(:) = lh_rrainm_accr(:) * LH_sample_point_weights(sample)
         lh_rrainm_evap(:) = lh_rrainm_evap(:) * LH_sample_point_weights(sample)
+        lh_Nrm_auto = lh_Nrm_auto(:) * LH_sample_point_weights(sample)
+        lh_Nrm_evap = lh_Nrm_evap(:) * LH_sample_point_weights(sample)
       end if
       if ( l_stats_samp ) then
         ! Save autoconversion, accretion, and evaporation rate for statistics!
@@ -367,6 +369,7 @@ module estimate_scm_microphys_module
       call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrainm),           & ! intent(in)
                                 hydromet(:,iiNrm), lh_rrainm_evap, lh_rrainm_auto,  & ! intent(in)
                                 lh_rrainm_accr, l_stats_samp,                       & ! intent(in)
+                                lh_Nrm_auto, lh_Nrm_evap                            & ! intent(in)
                                 lh_hydromet_mc(:,iirrainm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
                                 lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                    ! intent(out)
     end if
@@ -384,6 +387,7 @@ module estimate_scm_microphys_module
   subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrainm, Nrm,         &
                                   rrainm_evap, rrainm_auto, rrainm_accr,   &
                                   l_stats_samp,                            &
+                                  Nrm_auto, Nrm_evap,                      &
                                   rrainm_mc, Nrm_mc,                       &
                                   rvm_mc, rcm_mc, thlm_mc )
     use KK_Nrm_tendencies, only: &
@@ -418,7 +422,9 @@ module estimate_scm_microphys_module
       Nrm,         & ! Rain drop concentration                   [num/kg]
       rrainm_evap, & ! Mean change in rain due to evap           [(kg/kg)/s]
       rrainm_auto, & ! Mean change in rain due to autoconversion [(kg/kg)/s]
-      rrainm_accr    ! Mean change in rain due to accretion      [(kg/kg)/s]
+      rrainm_accr, & ! Mean change in rain due to accretion      [(kg/kg)/s]
+      Nrm_auto,    & ! Mean change in Nrm due to autoconversion  [(num/kg)/s]
+      Nrm_evap       ! Mean change in Nrm due to evaporation     [(num/kg)/s]
 
     logical, intent(in) :: &
       l_stats_samp   ! Whether to sample this timestep
@@ -457,24 +463,12 @@ module estimate_scm_microphys_module
 
     ! Loop over each vertical level above the lower boundary
     do k = 2, nz, 1
-      ! Compute KK_Nrm_auto_tndcy, KK N_r autoconversion tendency, for this
-      ! vertical level
-      KK_Nrm_auto_tndcy = KK_Nrm_auto_mean(rrainm_auto(k))
 
-      ! Compute KK_Nrm_evap_tndcy, KK N_r evaporation tendency, for this
-      ! vertical level
-      if (rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol) then
-        KK_Nrm_evap_tndcy &
-        = KK_Nrm_evap_local_mean( rrainm_evap(k), Nrm(k), rrainm(k), dt )
-      else
-        KK_Nrm_evap_tndcy = zero
-      end if
-
-      ! Now we call KK_microphys_adjust to adjust the means of the mc terms
+      ! We call KK_microphys_adjust to adjust the means of the mc terms
       call KK_microphys_adjust(dt, exner(k), rcm(k), rrainm(k), Nrm(k),   & !intent(in)
                                rrainm_evap(k), rrainm_auto(k),            & !intent(in)
-                               rrainm_accr(k), KK_Nrm_evap_tndcy,         & !intent(in)
-                               KK_Nrm_auto_tndcy, l_src_adj_enabled,      & !intent(in)
+                               rrainm_accr(k), Nrm_evap(k),               & !intent(in)
+                               Nrm_auto(k), l_src_adj_enabled,            & !intent(in)
                                l_evap_adj_enabled, l_stats_samp,          & !intent(in)
                                l_latin_hypercube, k,                      & !intent(in)
                                rrainm_mc(k), Nrm_mc(k),                   & !intent(out)
