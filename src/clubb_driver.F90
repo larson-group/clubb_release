@@ -774,8 +774,10 @@ module clubb_driver
     end if ! clubb_at_least_debug_level(1)
 
     if ( l_use_precip_frac .and. ( .not. l_use_hydromet_tolerance ) ) then
-       stop  "Error: You can not use l_use_precip_frac = .true. if" // &
-             "l_use_hydromet_tolerance = .false. ."
+       write(fstderr,*) &
+             "Error: You can not use l_use_precip_frac = .true. if"  &
+             // "l_use_hydromet_tolerance = .false. ."
+       stop
     endif
 
     !----------------------------------------------------------------------
