@@ -369,7 +369,7 @@ module estimate_scm_microphys_module
       call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrainm),           & ! intent(in)
                                 hydromet(:,iiNrm), lh_rrainm_evap, lh_rrainm_auto,  & ! intent(in)
                                 lh_rrainm_accr, l_stats_samp,                       & ! intent(in)
-                                lh_Nrm_auto, lh_Nrm_evap                            & ! intent(in)
+                                lh_Nrm_auto, lh_Nrm_evap,                           & ! intent(in)
                                 lh_hydromet_mc(:,iirrainm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
                                 lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                    ! intent(out)
     end if
