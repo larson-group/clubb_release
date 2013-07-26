@@ -38,7 +38,7 @@ module diagnose_correlations_module
         core_rknd ! Variable(s)
 
     use corr_matrix_module, only: &
-        iiLH_w ! Variable(s)
+        iiPDF_w ! Variable(s)
 
     use constants_clubb, only: &
         zero
@@ -99,11 +99,11 @@ module diagnose_correlations_module
 
 !    corr_array_pre_swapped = corr_array_pre
 !    swap_array = corr_array_pre_swapped (:,1)
-!    corr_array_pre_swapped(1:iiLH_w, 1) = corr_array_pre_swapped(iiLH_w, iiLH_w:1:-1)
-!    corr_array_pre_swapped((iiLH_w+1):d_variables, 1) = corr_array_pre_swapped( &
-!                                                         (iiLH_w+1):d_variables, iiLH_w)
-!    corr_array_pre_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-!    corr_array_pre_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+!    corr_array_pre_swapped(1:iiPDF_w, 1) = corr_array_pre_swapped(iiPDF_w, iiPDF_w:1:-1)
+!    corr_array_pre_swapped((iiPDF_w+1):d_variables, 1) = corr_array_pre_swapped( &
+!                                                         (iiPDF_w+1):d_variables, iiPDF_w)
+!    corr_array_pre_swapped(iiPDF_w, 1:iiPDF_w) = swap_array(iiPDF_w:1:-1)
+!    corr_array_pre_swapped((iiPDF_w+1):d_variables, iiPDF_w) = swap_array((iiPDF_w+1):d_variables)
 
     ! diagnose correlations
     
@@ -119,10 +119,10 @@ module diagnose_correlations_module
                                corr_array)        ! Intent(inout)
 
 !    swap_array = corr_array(:, 1)
-!    corr_array(1:iiLH_w, 1) = corr_array(iiLH_w, iiLH_w:1:-1)
-!    corr_array((iiLH_w+1):d_variables, 1) = corr_array((iiLH_w+1):d_variables, iiLH_w)
-!    corr_array(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-!    corr_array((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+!    corr_array(1:iiPDF_w, 1) = corr_array(iiPDF_w, iiPDF_w:1:-1)
+!    corr_array((iiPDF_w+1):d_variables, 1) = corr_array((iiPDF_w+1):d_variables, iiPDF_w)
+!    corr_array(iiPDF_w, 1:iiPDF_w) = swap_array(iiPDF_w:1:-1)
+!    corr_array((iiPDF_w+1):d_variables, iiPDF_w) = swap_array((iiPDF_w+1):d_variables)
 
     ! Unpack the corr_array to the corresponding variables
     call unpack_correlations( d_variables, corr_array, & ! Intent(in)
@@ -909,7 +909,7 @@ module diagnose_correlations_module
         core_rknd ! Variable(s)
 
     use corr_matrix_module, only: &
-        iiLH_w ! Variable(s)
+        iiPDF_w ! Variable(s)
 
     implicit none
 
@@ -936,11 +936,11 @@ module diagnose_correlations_module
     ! Swap the w-correlations to the first row for the prescribed correlations
     corr_array_swapped = corr_array
     swap_array = corr_array_swapped (:,1)
-    corr_array_swapped(1:iiLH_w, 1) = corr_array_swapped(iiLH_w, iiLH_w:1:-1)
-    corr_array_swapped((iiLH_w+1):d_variables, 1) = corr_array_swapped( &
-                                                    (iiLH_w+1):d_variables, iiLH_w)
-    corr_array_swapped(iiLH_w, 1:iiLH_w) = swap_array(iiLH_w:1:-1)
-    corr_array_swapped((iiLH_w+1):d_variables, iiLH_w) = swap_array((iiLH_w+1):d_variables)
+    corr_array_swapped(1:iiPDF_w, 1) = corr_array_swapped(iiPDF_w, iiPDF_w:1:-1)
+    corr_array_swapped((iiPDF_w+1):d_variables, 1) = corr_array_swapped( &
+                                                    (iiPDF_w+1):d_variables, iiPDF_w)
+    corr_array_swapped(iiPDF_w, 1:iiPDF_w) = swap_array(iiPDF_w:1:-1)
+    corr_array_swapped((iiPDF_w+1):d_variables, iiPDF_w) = swap_array((iiPDF_w+1):d_variables)
 
     return
 
@@ -964,11 +964,11 @@ module diagnose_correlations_module
       core_rknd ! Variable(s)
 
     use corr_matrix_module, only: &
-      iiLH_w,           & ! Variable(s)
-      iiLH_s_mellor,    &
-      iiLH_rrain,       &
-      iiLH_Nr,          &
-      iiLH_Ncn
+      iiPDF_w,           & ! Variable(s)
+      iiPDF_s_mellor,    &
+      iiPDF_rrain,       &
+      iiPDF_Nr,          &
+      iiPDF_Ncn
 
     implicit none
 
@@ -990,10 +990,10 @@ module diagnose_correlations_module
 
     ! ----- Begin Code -----
 
-      corr_array(iiLH_w, iiLH_s_mellor, :) = corr_sw
-      corr_array(iiLH_w, iiLH_rrain, :) = corr_wrr
-      corr_array(iiLH_w, iiLH_Nr, :) = corr_wNr
-      corr_array(iiLH_w, iiLH_Ncn, :) = corr_wNcn
+      corr_array(iiPDF_w, iiPDF_s_mellor, :) = corr_sw
+      corr_array(iiPDF_w, iiPDF_rrain, :) = corr_wrr
+      corr_array(iiPDF_w, iiPDF_Nr, :) = corr_wNr
+      corr_array(iiPDF_w, iiPDF_Ncn, :) = corr_wNcn
 
   end subroutine set_w_corr
 
@@ -1024,12 +1024,12 @@ module diagnose_correlations_module
         l_stats_samp
 
     use corr_matrix_module, only: &
-        iiLH_w,        & ! Variable(s)
-        iiLH_s_mellor, &
-        iiLH_t_mellor, &
-        iiLH_Ncn,      &
-        iiLH_rrain,    &
-        iiLH_Nr
+        iiPDF_w,        & ! Variable(s)
+        iiPDF_s_mellor, &
+        iiPDF_t_mellor, &
+        iiPDF_Ncn,      &
+        iiPDF_rrain,    &
+        iiPDF_Nr
 
     implicit none
 
@@ -1049,75 +1049,75 @@ module diagnose_correlations_module
     if ( l_stats_samp ) then
 
        ! Correlation between w and s.
-       if ( iiLH_s_mellor > iiLH_w ) then
+       if ( iiPDF_s_mellor > iiPDF_w ) then
           call stat_update_var( icorr_sw, &
-                                corr_array( iiLH_s_mellor, iiLH_w, : ), zt )
+                                corr_array( iiPDF_s_mellor, iiPDF_w, : ), zt )
        else
           call stat_update_var( icorr_sw, &
-                                corr_array( iiLH_w, iiLH_s_mellor, : ), zt )
+                                corr_array( iiPDF_w, iiPDF_s_mellor, : ), zt )
        endif
 
        ! Correlation (in-precip) between s and r_r.
-       if ( iiLH_s_mellor > iiLH_rrain ) then
+       if ( iiPDF_s_mellor > iiPDF_rrain ) then
           call stat_update_var( icorr_srr, &
-                                corr_array( iiLH_s_mellor, iiLH_rrain, : ), zt )
+                                corr_array( iiPDF_s_mellor, iiPDF_rrain, : ), zt )
        else
           call stat_update_var( icorr_srr, &
-                                corr_array( iiLH_rrain, iiLH_s_mellor, : ), zt )
+                                corr_array( iiPDF_rrain, iiPDF_s_mellor, : ), zt )
        endif
 
        ! Correlation (in-precip) between s and N_r.
-       if ( iiLH_s_mellor > iiLH_Nr ) then
+       if ( iiPDF_s_mellor > iiPDF_Nr ) then
           call stat_update_var( icorr_sNr, &
-                                corr_array( iiLH_s_mellor, iiLH_Nr, : ), zt )
+                                corr_array( iiPDF_s_mellor, iiPDF_Nr, : ), zt )
        else
           call stat_update_var( icorr_sNr, &
-                                corr_array( iiLH_Nr, iiLH_s_mellor, : ), zt )
+                                corr_array( iiPDF_Nr, iiPDF_s_mellor, : ), zt )
        endif
 
        ! Correlation between s and N_cn.
-       if ( iiLH_s_mellor > iiLH_Ncn ) then
+       if ( iiPDF_s_mellor > iiPDF_Ncn ) then
           call stat_update_var( icorr_sNcn, &
-                                corr_array( iiLH_s_mellor, iiLH_Ncn, : ), zt )
+                                corr_array( iiPDF_s_mellor, iiPDF_Ncn, : ), zt )
        else
           call stat_update_var( icorr_sNcn, &
-                                corr_array( iiLH_Ncn, iiLH_s_mellor, : ), zt )
+                                corr_array( iiPDF_Ncn, iiPDF_s_mellor, : ), zt )
        endif
 
        ! Correlation (in-precip) between r_r and N_r.
-       if ( iiLH_rrain > iiLH_Nr ) then
+       if ( iiPDF_rrain > iiPDF_Nr ) then
           call stat_update_var( icorr_rrNr, &
-                                corr_array( iiLH_rrain, iiLH_Nr, : ), zt )
+                                corr_array( iiPDF_rrain, iiPDF_Nr, : ), zt )
        else
           call stat_update_var( icorr_rrNr, &
-                                corr_array( iiLH_Nr, iiLH_rrain, : ), zt )
+                                corr_array( iiPDF_Nr, iiPDF_rrain, : ), zt )
        endif
 
        ! Correlation between w and r_r.
-       if ( iiLH_w > iiLH_rrain ) then
+       if ( iiPDF_w > iiPDF_rrain ) then
           call stat_update_var( icorr_wrr, &
-                                corr_array( iiLH_w, iiLH_rrain, : ), zt )
+                                corr_array( iiPDF_w, iiPDF_rrain, : ), zt )
        else
           call stat_update_var( icorr_wrr, &
-                                corr_array( iiLH_rrain, iiLH_w, : ), zt )
+                                corr_array( iiPDF_rrain, iiPDF_w, : ), zt )
        endif
 
        ! Correlation between w and N_r.
-       if ( iiLH_w > iiLH_Nr ) then
+       if ( iiPDF_w > iiPDF_Nr ) then
           call stat_update_var( icorr_wNr, &
-                                corr_array( iiLH_w, iiLH_Nr, : ), zt )
+                                corr_array( iiPDF_w, iiPDF_Nr, : ), zt )
        else
           call stat_update_var( icorr_wNr, &
-                                corr_array( iiLH_Nr, iiLH_w, : ), zt )
+                                corr_array( iiPDF_Nr, iiPDF_w, : ), zt )
        endif
 
        ! Correlation between w and N_cn.
-       if ( iiLH_w > iiLH_Ncn ) then
+       if ( iiPDF_w > iiPDF_Ncn ) then
           call stat_update_var( icorr_wNcn, &
-                                corr_array( iiLH_w, iiLH_Ncn, : ), zt )
+                                corr_array( iiPDF_w, iiPDF_Ncn, : ), zt )
        else
           call stat_update_var( icorr_wNcn, &
-                                corr_array( iiLH_Ncn, iiLH_w, : ), zt )
+                                corr_array( iiPDF_Ncn, iiPDF_w, : ), zt )
        endif
 
     endif ! l_stats_samp
@@ -1142,12 +1142,12 @@ module diagnose_correlations_module
         core_rknd ! Variable(s)
 
     use corr_matrix_module, only: &
-        iiLH_w,        & ! Variable(s)
-        iiLH_s_mellor, &
-        iiLH_t_mellor, &
-        iiLH_rrain,    &
-        iiLH_Nr,       &
-        iiLH_Ncn
+        iiPDF_w,        & ! Variable(s)
+        iiPDF_s_mellor, &
+        iiPDF_t_mellor, &
+        iiPDF_rrain,    &
+        iiPDF_Nr,       &
+        iiPDF_Ncn
 
     implicit none
 
@@ -1177,31 +1177,31 @@ module diagnose_correlations_module
 
     ! ---- Begin Code ----
 
-!    corr_ws   = corr_array(iiLH_w, iiLH_s_mellor)
-!    corr_wrr  = corr_array(iiLH_w, iiLH_rrain)
-!    corr_wNr  = corr_array(iiLH_w, iiLH_Nr)
-!    corr_wNcn = corr_array(iiLH_w, iiLH_Ncn)
-!    corr_st   = corr_array(iiLH_s_mellor, iiLH_t_mellor)
-!    corr_srr  = corr_array(iiLH_s_mellor, iiLH_rrain)
-!    corr_sNr  = corr_array(iiLH_s_mellor, iiLH_Nr)
-!    corr_sNcn = corr_array(iiLH_s_mellor, iiLH_Ncn)
-!    corr_trr  = corr_array(iiLH_t_mellor, iiLH_rrain)
-!    corr_tNr  = corr_array(iiLH_t_mellor, iiLH_Nr)
-!    corr_tNcn = corr_array(iiLH_t_mellor, iiLH_Ncn)
-!    corr_rrNr = corr_array(iiLH_rrain, iiLH_Nr)
+!    corr_ws   = corr_array(iiPDF_w, iiPDF_s_mellor)
+!    corr_wrr  = corr_array(iiPDF_w, iiPDF_rrain)
+!    corr_wNr  = corr_array(iiPDF_w, iiPDF_Nr)
+!    corr_wNcn = corr_array(iiPDF_w, iiPDF_Ncn)
+!    corr_st   = corr_array(iiPDF_s_mellor, iiPDF_t_mellor)
+!    corr_srr  = corr_array(iiPDF_s_mellor, iiPDF_rrain)
+!    corr_sNr  = corr_array(iiPDF_s_mellor, iiPDF_Nr)
+!    corr_sNcn = corr_array(iiPDF_s_mellor, iiPDF_Ncn)
+!    corr_trr  = corr_array(iiPDF_t_mellor, iiPDF_rrain)
+!    corr_tNr  = corr_array(iiPDF_t_mellor, iiPDF_Nr)
+!    corr_tNcn = corr_array(iiPDF_t_mellor, iiPDF_Ncn)
+!    corr_rrNr = corr_array(iiPDF_rrain, iiPDF_Nr)
 
-    corr_ws   = corr_array(iiLH_s_mellor, iiLH_w)
-    corr_wrr  = corr_array(iiLH_rrain, iiLH_w)
-    corr_wNr  = corr_array(iiLH_Nr, iiLH_w)
-    corr_wNcn = corr_array(iiLH_Ncn, iiLH_w)
-    corr_st   = corr_array(iiLH_t_mellor, iiLH_s_mellor)
-    corr_srr  = corr_array(iiLH_rrain, iiLH_s_mellor)
-    corr_sNr  = corr_array(iiLH_Nr, iiLH_s_mellor)
-    corr_sNcn = corr_array(iiLH_Ncn, iiLH_s_mellor)
-    corr_trr  = corr_array(iiLH_rrain, iiLH_t_mellor)
-    corr_tNr  = corr_array(iiLH_Nr, iiLH_t_mellor)
-    corr_tNcn = corr_array(iiLH_Ncn, iiLH_t_mellor)
-    corr_rrNr = corr_array(iiLH_rrain, iiLH_Nr)
+    corr_ws   = corr_array(iiPDF_s_mellor, iiPDF_w)
+    corr_wrr  = corr_array(iiPDF_rrain, iiPDF_w)
+    corr_wNr  = corr_array(iiPDF_Nr, iiPDF_w)
+    corr_wNcn = corr_array(iiPDF_Ncn, iiPDF_w)
+    corr_st   = corr_array(iiPDF_t_mellor, iiPDF_s_mellor)
+    corr_srr  = corr_array(iiPDF_rrain, iiPDF_s_mellor)
+    corr_sNr  = corr_array(iiPDF_Nr, iiPDF_s_mellor)
+    corr_sNcn = corr_array(iiPDF_Ncn, iiPDF_s_mellor)
+    corr_trr  = corr_array(iiPDF_rrain, iiPDF_t_mellor)
+    corr_tNr  = corr_array(iiPDF_Nr, iiPDF_t_mellor)
+    corr_tNcn = corr_array(iiPDF_Ncn, iiPDF_t_mellor)
+    corr_rrNr = corr_array(iiPDF_rrain, iiPDF_Nr)
 
   end subroutine unpack_correlations
 

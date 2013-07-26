@@ -38,7 +38,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiLH_s_mellor    ! Variables
+      iiPDF_s_mellor    ! Variables
 
     use latin_hypercube_arrays, only: &
       height_time_matrix ! Variables
@@ -290,7 +290,7 @@ module latin_hypercube_driver_module
         ! Get the uniform sample of d+1 (telling us if we're in component 1 or
         ! component 2), and the uniform sample for s_mellor
         X_u_dp1_k_lh_start(sample)      = X_u_all_levs(k_lh_start,sample,d_variables+1)
-        X_u_s_mellor_k_lh_start(sample) = X_u_all_levs(k_lh_start,sample,iiLH_s_mellor)
+        X_u_s_mellor_k_lh_start(sample) = X_u_all_levs(k_lh_start,sample,iiPDF_s_mellor)
 
         if ( l_lh_cloud_weighted_sampling ) then
 
@@ -307,7 +307,7 @@ module latin_hypercube_driver_module
 
             ! Detect which half of the sample points are in clear air and which half are in
             ! the cloudy air
-            if ( p_matrix(sample,iiLH_s_mellor) < ( n_micro_calls / 2 ) ) then
+            if ( p_matrix(sample,iiPDF_s_mellor) < ( n_micro_calls / 2 ) ) then
 
               l_cloudy_sample = .false.
               LH_sample_point_weights(sample) = 2._core_rknd* &
@@ -328,7 +328,7 @@ module latin_hypercube_driver_module
             else ! Transpose and scale the points to be in or out of cloud
               call choose_X_u_scaled &
                    ( l_cloudy_sample, & ! In
-                     p_matrix(sample,iiLH_s_mellor), n_micro_calls, & ! In 
+                     p_matrix(sample,iiPDF_s_mellor), n_micro_calls, & ! In 
                      pdf_params(k_lh_start)%cloud_frac1, pdf_params(k_lh_start)%cloud_frac2, & ! In
                      pdf_params(k_lh_start)%mixt_frac, & !In
                      X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! In/out
@@ -365,7 +365,7 @@ module latin_hypercube_driver_module
         call compute_arb_overlap &
              ( nz, k_lh_start, &  ! In
                X_u_s_mellor_k_lh_start(sample), X_vert_corr, & ! In
-               X_u_all_levs(:,sample,iiLH_s_mellor) ) ! Out
+               X_u_all_levs(:,sample,iiPDF_s_mellor) ) ! Out
         ! Correlate the d+1 variate vertically (used to compute the mixture
         ! component later)
         call compute_arb_overlap &
@@ -376,7 +376,7 @@ module latin_hypercube_driver_module
         ! Use these lines to make all variates vertically correlated, using the
         ! same correlation we used above for s_mellor and the d+1 variate
         do ivar = 1, d_variables
-          if ( ivar /= iiLH_s_mellor ) then
+          if ( ivar /= iiPDF_s_mellor ) then
             X_u_temp = X_u_all_levs(k_lh_start,sample,ivar)
             call compute_arb_overlap &
                  ( nz, k_lh_start, &  ! In
@@ -428,7 +428,7 @@ module latin_hypercube_driver_module
         call assert_check_half_cloudy &
              ( n_micro_calls, pdf_params(k_lh_start)%cloud_frac1, &
                pdf_params(k_lh_start)%cloud_frac2, X_mixt_comp_all_levs(k_lh_start,:), &
-               X_u_all_levs(k_lh_start,:,iiLH_s_mellor) )
+               X_u_all_levs(k_lh_start,:,iiPDF_s_mellor) )
 
       end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
     end if ! l_lh_cloud_weighted_sampling
@@ -552,7 +552,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiLH_s_mellor    ! Variables
+      iiPDF_s_mellor    ! Variables
 
     use latin_hypercube_arrays, only: &
       height_time_matrix ! Variables
@@ -801,7 +801,7 @@ module latin_hypercube_driver_module
         ! Get the uniform sample of d+1 (telling us if we're in component 1 or
         ! component 2), and the uniform sample for s_mellor
         X_u_dp1_k_lh_start(sample)      = X_u_all_levs(k_lh_start,sample,d_variables+1)
-        X_u_s_mellor_k_lh_start(sample) = X_u_all_levs(k_lh_start,sample,iiLH_s_mellor)
+        X_u_s_mellor_k_lh_start(sample) = X_u_all_levs(k_lh_start,sample,iiPDF_s_mellor)
 
         if ( l_lh_cloud_weighted_sampling ) then
 
@@ -818,7 +818,7 @@ module latin_hypercube_driver_module
 
             ! Detect which half of the sample points are in clear air and which half are in
             ! the cloudy air
-            if ( p_matrix(sample,iiLH_s_mellor) < ( n_micro_calls / 2 ) ) then
+            if ( p_matrix(sample,iiPDF_s_mellor) < ( n_micro_calls / 2 ) ) then
 
               l_cloudy_sample = .false.
               LH_sample_point_weights(sample) = 2._core_rknd* &
@@ -839,7 +839,7 @@ module latin_hypercube_driver_module
             else ! Transpose and scale the points to be in or out of cloud
               call choose_X_u_scaled &
                    ( l_cloudy_sample, & ! In
-                     p_matrix(sample,iiLH_s_mellor), n_micro_calls, & ! In
+                     p_matrix(sample,iiPDF_s_mellor), n_micro_calls, & ! In
                      pdf_params(k_lh_start)%cloud_frac1, pdf_params(k_lh_start)%cloud_frac2, & ! In
                      pdf_params(k_lh_start)%mixt_frac, & !In
                      X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! In/out
@@ -876,7 +876,7 @@ module latin_hypercube_driver_module
         call compute_arb_overlap &
              ( nz, k_lh_start, &  ! In
                X_u_s_mellor_k_lh_start(sample), X_vert_corr, & ! In
-               X_u_all_levs(:,sample,iiLH_s_mellor) ) ! Out
+               X_u_all_levs(:,sample,iiPDF_s_mellor) ) ! Out
         ! Correlate the d+1 variate vertically (used to compute the mixture
         ! component later)
         call compute_arb_overlap &
@@ -887,7 +887,7 @@ module latin_hypercube_driver_module
         ! Use these lines to make all variates vertically correlated, using the
         ! same correlation we used above for s_mellor and the d+1 variate
         do ivar = 1, d_variables
-          if ( ivar /= iiLH_s_mellor ) then
+          if ( ivar /= iiPDF_s_mellor ) then
             X_u_temp = X_u_all_levs(k_lh_start,sample,ivar)
             call compute_arb_overlap &
                  ( nz, k_lh_start, &  ! In
@@ -939,7 +939,7 @@ module latin_hypercube_driver_module
         call assert_check_half_cloudy &
              ( n_micro_calls, pdf_params(k_lh_start)%cloud_frac1, &
                pdf_params(k_lh_start)%cloud_frac2, X_mixt_comp_all_levs(k_lh_start,:), &
-               X_u_all_levs(k_lh_start,:,iiLH_s_mellor) )
+               X_u_all_levs(k_lh_start,:,iiPDF_s_mellor) )
 
       end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
     end if ! l_lh_cloud_weighted_sampling
@@ -1153,18 +1153,18 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiLH_s_mellor, & ! Variables
-      iiLH_t_mellor, &
-      iiLH_w, &
-      iiLH_rrain, & 
-      iiLH_rice, &
-      iiLH_rsnow, &
-      iiLH_rgraupel, &
-      iiLH_Nr, &
-      iiLH_Ni, &
-      iiLH_Nsnow, &
-      iiLH_Ngraupel, &
-      iiLH_Nc => iiLH_Ncn
+      iiPDF_s_mellor, & ! Variables
+      iiPDF_t_mellor, &
+      iiPDF_w, &
+      iiPDF_rrain, & 
+      iiPDF_rice, &
+      iiPDF_rsnow, &
+      iiPDF_rgraupel, &
+      iiPDF_Nr, &
+      iiPDF_Ni, &
+      iiPDF_Nsnow, &
+      iiPDF_Ngraupel, &
+      iiPDF_Nc => iiPDF_Ncn
 
     use parameters_microphys, only: &
       LH_microphys_calls ! Variable
@@ -1214,63 +1214,63 @@ module latin_hypercube_driver_module
       allocate( variable_names(d_variables+2), variable_descriptions(d_variables+2), &
                 variable_units(d_variables+2) )
 
-      variable_names(iiLH_s_mellor)        = "s_mellor"
-      variable_descriptions(iiLH_s_mellor) = "The variable 's' from Mellor 1977"
-      variable_units(iiLH_s_mellor)        = "kg/kg"
+      variable_names(iiPDF_s_mellor)        = "s_mellor"
+      variable_descriptions(iiPDF_s_mellor) = "The variable 's' from Mellor 1977"
+      variable_units(iiPDF_s_mellor)        = "kg/kg"
 
-      variable_names(iiLH_t_mellor)        = "t_mellor"
-      variable_descriptions(iiLH_t_mellor) = "The variable 't' from Mellor 1977"
-      variable_units(iiLH_t_mellor)        = "kg/kg"
+      variable_names(iiPDF_t_mellor)        = "t_mellor"
+      variable_descriptions(iiPDF_t_mellor) = "The variable 't' from Mellor 1977"
+      variable_units(iiPDF_t_mellor)        = "kg/kg"
 
-      variable_names(iiLH_w)        = "w"
-      variable_descriptions(iiLH_w) = "Vertical velocity"
-      variable_units(iiLH_w)        = "m/s"
+      variable_names(iiPDF_w)        = "w"
+      variable_descriptions(iiPDF_w) = "Vertical velocity"
+      variable_units(iiPDF_w)        = "m/s"
 
-      if ( iiLH_rrain > 0 ) then
-        variable_names(iiLH_rrain)        = "rrain"
-        variable_descriptions(iiLH_rrain) = "Rain water mixing ratio"
-        variable_units(iiLH_rrain)        = "kg/kg"
+      if ( iiPDF_rrain > 0 ) then
+        variable_names(iiPDF_rrain)        = "rrain"
+        variable_descriptions(iiPDF_rrain) = "Rain water mixing ratio"
+        variable_units(iiPDF_rrain)        = "kg/kg"
       end if
-      if ( iiLH_rice > 0 ) then
-        variable_names(iiLH_rice)        = "rice"
-        variable_descriptions(iiLH_rice) = "Ice water mixing ratio"
-        variable_units(iiLH_rice)        = "kg/kg"
+      if ( iiPDF_rice > 0 ) then
+        variable_names(iiPDF_rice)        = "rice"
+        variable_descriptions(iiPDF_rice) = "Ice water mixing ratio"
+        variable_units(iiPDF_rice)        = "kg/kg"
       end if
-      if ( iiLH_rsnow > 0 ) then
-        variable_names(iiLH_rsnow)        = "rsnow"
-        variable_descriptions(iiLH_rsnow) = "Snow water mixing ratio"
-        variable_units(iiLH_rsnow)        = "kg/kg"
+      if ( iiPDF_rsnow > 0 ) then
+        variable_names(iiPDF_rsnow)        = "rsnow"
+        variable_descriptions(iiPDF_rsnow) = "Snow water mixing ratio"
+        variable_units(iiPDF_rsnow)        = "kg/kg"
       end if
-      if ( iiLH_rgraupel > 0 ) then
-        variable_names(iiLH_rgraupel)        = "rgraupel"
-        variable_descriptions(iiLH_rgraupel) = "Graupel water mixing ratio"
-        variable_units(iiLH_rgraupel)        = "kg/kg"
+      if ( iiPDF_rgraupel > 0 ) then
+        variable_names(iiPDF_rgraupel)        = "rgraupel"
+        variable_descriptions(iiPDF_rgraupel) = "Graupel water mixing ratio"
+        variable_units(iiPDF_rgraupel)        = "kg/kg"
       end if
 
-      if ( iiLH_Nr > 0 ) then
-        variable_names(iiLH_Nr)        = "Nr"
-        variable_descriptions(iiLH_Nr) = "Rain droplet number concentration"
-        variable_units(iiLH_Nr)        = "count/kg"
+      if ( iiPDF_Nr > 0 ) then
+        variable_names(iiPDF_Nr)        = "Nr"
+        variable_descriptions(iiPDF_Nr) = "Rain droplet number concentration"
+        variable_units(iiPDF_Nr)        = "count/kg"
       end if
-      if ( iiLH_Nc > 0 ) then
-        variable_names(iiLH_Nc)        = "Nc"
-        variable_descriptions(iiLH_Nc) = "Cloud droplet number concentration"
-        variable_units(iiLH_Nc)        = "count/kg"
+      if ( iiPDF_Nc > 0 ) then
+        variable_names(iiPDF_Nc)        = "Nc"
+        variable_descriptions(iiPDF_Nc) = "Cloud droplet number concentration"
+        variable_units(iiPDF_Nc)        = "count/kg"
       end if
-      if ( iiLH_Ni > 0 ) then
-        variable_names(iiLH_Ni)        = "Ni"
-        variable_descriptions(iiLH_Ni) = "Ice number concentration"
-        variable_units(iiLH_Ni)        = "count/kg"
+      if ( iiPDF_Ni > 0 ) then
+        variable_names(iiPDF_Ni)        = "Ni"
+        variable_descriptions(iiPDF_Ni) = "Ice number concentration"
+        variable_units(iiPDF_Ni)        = "count/kg"
       end if
-      if ( iiLH_Nsnow > 0 ) then
-        variable_names(iiLH_Nsnow)        = "Nsnow"
-        variable_descriptions(iiLH_Nsnow) = "Snow number concentration"
-        variable_units(iiLH_Nsnow)        = "count/kg"
+      if ( iiPDF_Nsnow > 0 ) then
+        variable_names(iiPDF_Nsnow)        = "Nsnow"
+        variable_descriptions(iiPDF_Nsnow) = "Snow number concentration"
+        variable_units(iiPDF_Nsnow)        = "count/kg"
       end if
-      if ( iiLH_Ngraupel > 0 ) then
-        variable_names(iiLH_Ngraupel)        = "Ngraupel"
-        variable_descriptions(iiLH_Ngraupel) = "Graupel number concentration"
-        variable_units(iiLH_Ngraupel)        = "count/kg"
+      if ( iiPDF_Ngraupel > 0 ) then
+        variable_names(iiPDF_Ngraupel)        = "Ngraupel"
+        variable_descriptions(iiPDF_Ngraupel) = "Graupel number concentration"
+        variable_units(iiPDF_Ngraupel)        = "count/kg"
       end if
 
       i = d_variables + 1
@@ -1301,61 +1301,61 @@ module latin_hypercube_driver_module
       ! The uniform distribution corresponds to all the same variables as X_nl,
       ! except the d+1 component is the mixture component.
 
-      variable_names(iiLH_s_mellor)        = "s_mellor"
-      variable_descriptions(iiLH_s_mellor) = "Uniform dist of the variable 's' from Mellor 1977"
+      variable_names(iiPDF_s_mellor)        = "s_mellor"
+      variable_descriptions(iiPDF_s_mellor) = "Uniform dist of the variable 's' from Mellor 1977"
 
-      variable_names(iiLH_t_mellor)        = "t_mellor"
-      variable_descriptions(iiLH_t_mellor) = "Uniform dist of the variable 't' from Mellor 1977"
+      variable_names(iiPDF_t_mellor)        = "t_mellor"
+      variable_descriptions(iiPDF_t_mellor) = "Uniform dist of the variable 't' from Mellor 1977"
 
-      variable_names(iiLH_w)        = "w"
-      variable_descriptions(iiLH_w) = "Uniform dist of the vertical velocity"
+      variable_names(iiPDF_w)        = "w"
+      variable_descriptions(iiPDF_w) = "Uniform dist of the vertical velocity"
 
 
-      if ( iiLH_rrain > 0 ) then
-        variable_names(iiLH_rrain)        = "rrain"
-        variable_descriptions(iiLH_rrain) = "Rain water mixing ratio"
-        variable_units(iiLH_rrain)        = "kg/kg"
+      if ( iiPDF_rrain > 0 ) then
+        variable_names(iiPDF_rrain)        = "rrain"
+        variable_descriptions(iiPDF_rrain) = "Rain water mixing ratio"
+        variable_units(iiPDF_rrain)        = "kg/kg"
       end if
-      if ( iiLH_rice > 0 ) then
-        variable_names(iiLH_rice)        = "rice"
-        variable_descriptions(iiLH_rice) = "Ice water mixing ratio"
-        variable_units(iiLH_rice)        = "kg/kg"
+      if ( iiPDF_rice > 0 ) then
+        variable_names(iiPDF_rice)        = "rice"
+        variable_descriptions(iiPDF_rice) = "Ice water mixing ratio"
+        variable_units(iiPDF_rice)        = "kg/kg"
       end if
-      if ( iiLH_rsnow > 0 ) then
-        variable_names(iiLH_rsnow)        = "rsnow"
-        variable_descriptions(iiLH_rsnow) = "Snow water mixing ratio"
-        variable_units(iiLH_rsnow)        = "kg/kg"
+      if ( iiPDF_rsnow > 0 ) then
+        variable_names(iiPDF_rsnow)        = "rsnow"
+        variable_descriptions(iiPDF_rsnow) = "Snow water mixing ratio"
+        variable_units(iiPDF_rsnow)        = "kg/kg"
       end if
-      if ( iiLH_rgraupel > 0 ) then
-        variable_names(iiLH_rgraupel)        = "rgraupel"
-        variable_descriptions(iiLH_rgraupel) = "Graupel water mixing ratio"
-        variable_units(iiLH_rgraupel)        = "kg/kg"
+      if ( iiPDF_rgraupel > 0 ) then
+        variable_names(iiPDF_rgraupel)        = "rgraupel"
+        variable_descriptions(iiPDF_rgraupel) = "Graupel water mixing ratio"
+        variable_units(iiPDF_rgraupel)        = "kg/kg"
       end if
 
-      if ( iiLH_Nr > 0 ) then
-        variable_names(iiLH_Nr)        = "Nr"
-        variable_descriptions(iiLH_Nr) = "Rain droplet number concentration"
-        variable_units(iiLH_Nr)        = "count/kg"
+      if ( iiPDF_Nr > 0 ) then
+        variable_names(iiPDF_Nr)        = "Nr"
+        variable_descriptions(iiPDF_Nr) = "Rain droplet number concentration"
+        variable_units(iiPDF_Nr)        = "count/kg"
       end if
-      if ( iiLH_Nc > 0 ) then
-        variable_names(iiLH_Nc)        = "Nc"
-        variable_descriptions(iiLH_Nc) = "Cloud droplet number concentration"
-        variable_units(iiLH_Nc)        = "count/kg"
+      if ( iiPDF_Nc > 0 ) then
+        variable_names(iiPDF_Nc)        = "Nc"
+        variable_descriptions(iiPDF_Nc) = "Cloud droplet number concentration"
+        variable_units(iiPDF_Nc)        = "count/kg"
       end if
-      if ( iiLH_Ni > 0 ) then
-        variable_names(iiLH_Ni)        = "Ni"
-        variable_descriptions(iiLH_Ni) = "Ice number concentration"
-        variable_units(iiLH_Ni)        = "count/kg"
+      if ( iiPDF_Ni > 0 ) then
+        variable_names(iiPDF_Ni)        = "Ni"
+        variable_descriptions(iiPDF_Ni) = "Ice number concentration"
+        variable_units(iiPDF_Ni)        = "count/kg"
       end if
-      if ( iiLH_Nsnow > 0 ) then
-        variable_names(iiLH_Nsnow)        = "Nsnow"
-        variable_descriptions(iiLH_Nsnow) = "Snow number concentration"
-        variable_units(iiLH_Nsnow)        = "count/kg"
+      if ( iiPDF_Nsnow > 0 ) then
+        variable_names(iiPDF_Nsnow)        = "Nsnow"
+        variable_descriptions(iiPDF_Nsnow) = "Snow number concentration"
+        variable_units(iiPDF_Nsnow)        = "count/kg"
       end if
-      if ( iiLH_Ngraupel > 0 ) then
-        variable_names(iiLH_Ngraupel)        = "Ngraupel"
-        variable_descriptions(iiLH_Ngraupel) = "Graupel number concentration"
-        variable_units(iiLH_Ngraupel)        = "count/kg"
+      if ( iiPDF_Ngraupel > 0 ) then
+        variable_names(iiPDF_Ngraupel)        = "Ngraupel"
+        variable_descriptions(iiPDF_Ngraupel) = "Graupel number concentration"
+        variable_units(iiPDF_Ngraupel)        = "count/kg"
       end if
 
       i = d_variables + 1
@@ -1991,9 +1991,9 @@ module latin_hypercube_driver_module
       iiNgraupelm
 
     use corr_matrix_module, only: &
-      iiLH_s_mellor, & ! Variable(s)
-      iiLH_w, &
-      iiLH_Nc => iiLH_Ncn
+      iiPDF_s_mellor, & ! Variable(s)
+      iiPDF_w, &
+      iiPDF_Nc => iiPDF_Ncn
 
     use estimate_scm_microphys_module, only: &
       copy_X_nl_into_hydromet_all_pts ! Procedure(s)
@@ -2064,7 +2064,7 @@ module latin_hypercube_driver_module
     ! ---- Begin Code ----
 
     ! Clip 's' from Mellor to obtain cloud-water mixing ratio
-    rc_all_points = max( zero_threshold, real( X_nl_all_levs(:,:,iiLH_s_mellor), kind=core_rknd ) )
+    rc_all_points = max( zero_threshold, real( X_nl_all_levs(:,:,iiPDF_s_mellor), kind=core_rknd ) )
 
     if ( l_stats_samp ) then
 
@@ -2109,7 +2109,7 @@ module latin_hypercube_driver_module
 
       if ( iLH_wm + iLH_wp2_zt > 0 ) then
         LH_wm  = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
-                                      real( X_nl_all_levs(:,:,iiLH_w), kind = core_rknd) )
+                                      real( X_nl_all_levs(:,:,iiPDF_w), kind = core_rknd) )
         call stat_update_var( iLH_wm, LH_wm, LH_zt )
       end if
 
@@ -2154,7 +2154,7 @@ module latin_hypercube_driver_module
       if ( iLH_cloud_frac > 0 ) then
         LH_cloud_frac = 0._core_rknd
         do sample = 1, n_micro_calls
-          where ( X_nl_all_levs(:,sample,iiLH_s_mellor) > 0._dp )
+          where ( X_nl_all_levs(:,sample,iiPDF_s_mellor) > 0._dp )
             LH_cloud_frac(:) = LH_cloud_frac(:) + 1.0_core_rknd * LH_sample_point_weights(sample)
           end where
         end do
@@ -2166,7 +2166,7 @@ module latin_hypercube_driver_module
       if ( iLH_wp2_zt > 0 ) then
         ! Compute the variance of vertical velocity
         LH_wp2_zt = compute_sample_variance( nz, n_micro_calls, &
-                                             real( X_nl_all_levs(:,:,iiLH_w), kind = core_rknd ), &
+                                             real( X_nl_all_levs(:,:,iiPDF_w), kind = core_rknd ), &
                                              LH_sample_point_weights, LH_wm )
         call stat_update_var( iLH_wp2_zt, LH_wp2_zt, LH_zt )
       end if
@@ -2203,7 +2203,7 @@ module latin_hypercube_driver_module
       end if
 
       ! Compute the variance of cloud droplet number concentration
-      if ( iiLH_Nc > 0 .and. iLH_Ncp2_zt > 0 ) then
+      if ( iiPDF_Nc > 0 .and. iLH_Ncp2_zt > 0 ) then
         LH_Ncp2_zt = compute_sample_variance &
                      ( nz, n_micro_calls, Nc_all_points(:,:), &
                        LH_sample_point_weights, LH_Ncm(:) )

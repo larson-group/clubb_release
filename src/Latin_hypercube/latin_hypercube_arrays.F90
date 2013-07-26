@@ -98,18 +98,18 @@ module latin_hypercube_arrays
       core_rknd ! Variable(s)
 
     use corr_matrix_module, only: &
-      iiLH_s_mellor, & ! Variable(s)
-      iiLH_t_mellor, &
-      iiLH_w, &
-      iiLH_rrain, &
-      iiLH_rsnow, &
-      iiLH_rice, &
-      iiLH_rgraupel, &
-      iiLH_Nr, &
-      iiLH_Nsnow, &
-      iiLH_Ni, &
-      iiLH_Ngraupel, &
-      iiLH_Nc => iiLH_Ncn
+      iiPDF_s_mellor, & ! Variable(s)
+      iiPDF_t_mellor, &
+      iiPDF_w, &
+      iiPDF_rrain, &
+      iiPDF_rsnow, &
+      iiPDF_rice, &
+      iiPDF_rgraupel, &
+      iiPDF_Nr, &
+      iiPDF_Nsnow, &
+      iiPDF_Ni, &
+      iiPDF_Ngraupel, &
+      iiPDF_Nc => iiPDF_Ncn
 
     use corr_matrix_module, only: &
       read_correlation_matrix ! Procedure(s)
@@ -145,30 +145,30 @@ module latin_hypercube_arrays
 
     ! ---- Begin Code ----
 
-    iiLH_s_mellor = 1 ! Extended rcm
-    iiLH_t_mellor = 2 ! 't' orthogonal to 's'
-    iiLH_w        = 3 ! vertical velocity
-    iiLH_Nc       = 4 ! Cloud droplet number concentration
+    iiPDF_s_mellor = 1 ! Extended rcm
+    iiPDF_t_mellor = 2 ! 't' orthogonal to 's'
+    iiPDF_w        = 3 ! vertical velocity
+    iiPDF_Nc       = 4 ! Cloud droplet number concentration
 
-    i = iiLH_Nc
+    i = iiPDF_Nc
 
-    call return_LH_index( iirrainm, i, iiLH_rrain )
-    call return_LH_index( iiNrm, i, iiLH_Nr )
+    call return_LH_index( iirrainm, i, iiPDF_rrain )
+    call return_LH_index( iiNrm, i, iiPDF_Nr )
     if ( l_ice_micro ) then
-      call return_LH_index( iiricem, i, iiLH_rice )
-      call return_LH_index( iiNim, i, iiLH_Ni )
-      call return_LH_index( iirsnowm, i, iiLH_rsnow )
-      call return_LH_index( iiNsnowm, i, iiLH_Nsnow )
+      call return_LH_index( iiricem, i, iiPDF_rice )
+      call return_LH_index( iiNim, i, iiPDF_Ni )
+      call return_LH_index( iirsnowm, i, iiPDF_rsnow )
+      call return_LH_index( iiNsnowm, i, iiPDF_Nsnow )
     else
-      iiLH_rice = -1
-      iiLH_Ni = -1
-      iiLH_rsnow = -1
-      iiLH_Nsnow = -1
+      iiPDF_rice = -1
+      iiPDF_Ni = -1
+      iiPDF_rsnow = -1
+      iiPDF_Nsnow = -1
     end if
     ! Disabled until we have values for the correlations of graupel and
     ! other variates in the latin hypercube sampling.
-    iiLH_rgraupel = -1
-    iiLH_Ngraupel = -1
+    iiPDF_rgraupel = -1
+    iiPDF_Ngraupel = -1
 
     d_variables = i
 
@@ -188,12 +188,12 @@ module latin_hypercube_arrays
                                   corr_array_below ) ! Out
 
     ! Sanity check to avoid confusing non-convergence results.
-    if ( .not. l_fix_s_t_correlations .and. iiLH_Nc > 0 ) then
+    if ( .not. l_fix_s_t_correlations .and. iiPDF_Nc > 0 ) then
       l_warning = .false.
       do i = 1, d_variables
-        if ( ( corr_array_cloud(i,iiLH_Nc) /= zero .or.  &
-               corr_array_below(i,iiLH_Nc) /= zero ) .and. &
-             i /= iiLH_Nc ) then
+        if ( ( corr_array_cloud(i,iiPDF_Nc) /= zero .or.  &
+               corr_array_below(i,iiPDF_Nc) /= zero ) .and. &
+             i /= iiPDF_Nc ) then
           l_warning = .true.
         end if
       end do ! 1..d_variables
@@ -209,99 +209,99 @@ module latin_hypercube_arrays
       end if
     end if ! l_fix_s_t_correlations
 
-    if ( iiLH_Nc > 0 ) then
-      xp2_on_xm2_array_cloud(iiLH_Nc) = Ncp2_on_Ncm2_cloud
+    if ( iiPDF_Nc > 0 ) then
+      xp2_on_xm2_array_cloud(iiPDF_Nc) = Ncp2_on_Ncm2_cloud
     end if
 
-    if ( iiLH_rrain > 0 ) then
-      xp2_on_xm2_array_cloud(iiLH_rrain) = rrp2_on_rrm2_cloud
-      if ( iiLH_Nr > 0 ) then
-        xp2_on_xm2_array_cloud(iiLH_Nr) = Nrp2_on_Nrm2_cloud
-      end if ! iiLH_Nr > 0
-    end if ! iiLH_rrain > 0
+    if ( iiPDF_rrain > 0 ) then
+      xp2_on_xm2_array_cloud(iiPDF_rrain) = rrp2_on_rrm2_cloud
+      if ( iiPDF_Nr > 0 ) then
+        xp2_on_xm2_array_cloud(iiPDF_Nr) = Nrp2_on_Nrm2_cloud
+      end if ! iiPDF_Nr > 0
+    end if ! iiPDF_rrain > 0
 
-    if ( iiLH_rsnow > 0 ) then
-      xp2_on_xm2_array_cloud(iiLH_rsnow) = rsnowp2_on_rsnowm2_cloud
-
-
-      if ( iiLH_Nsnow > 0 ) then
-        xp2_on_xm2_array_cloud(iiLH_Nsnow) = Nsnowp2_on_Nsnowm2_cloud
+    if ( iiPDF_rsnow > 0 ) then
+      xp2_on_xm2_array_cloud(iiPDF_rsnow) = rsnowp2_on_rsnowm2_cloud
 
 
-      end if ! iiLH_Nsnow > 0
-    end if ! iiLH_rsnow > 0
-
-    if ( iiLH_rice > 0 ) then
-      xp2_on_xm2_array_cloud(iiLH_rice) = ricep2_on_ricem2_cloud
+      if ( iiPDF_Nsnow > 0 ) then
+        xp2_on_xm2_array_cloud(iiPDF_Nsnow) = Nsnowp2_on_Nsnowm2_cloud
 
 
-      if ( iiLH_Ni > 0 ) then
-        xp2_on_xm2_array_cloud(iiLH_Ni) = Nicep2_on_Nicem2_cloud
+      end if ! iiPDF_Nsnow > 0
+    end if ! iiPDF_rsnow > 0
 
-      end if ! iiLH_Ni > 0
-    end if ! iiLH_rice > 0
+    if ( iiPDF_rice > 0 ) then
+      xp2_on_xm2_array_cloud(iiPDF_rice) = ricep2_on_ricem2_cloud
+
+
+      if ( iiPDF_Ni > 0 ) then
+        xp2_on_xm2_array_cloud(iiPDF_Ni) = Nicep2_on_Nicem2_cloud
+
+      end if ! iiPDF_Ni > 0
+    end if ! iiPDF_rice > 0
 
     ! Sampling for graupel (disabled)
-    if ( iiLH_rgraupel > 0 ) then
-      xp2_on_xm2_array_cloud(iiLH_rgraupel) = -999._core_rknd
+    if ( iiPDF_rgraupel > 0 ) then
+      xp2_on_xm2_array_cloud(iiPDF_rgraupel) = -999._core_rknd
 
 
-      if ( iiLH_Ngraupel > 0 ) then
-        xp2_on_xm2_array_cloud(iiLH_Ngraupel) = -999._core_rknd
+      if ( iiPDF_Ngraupel > 0 ) then
+        xp2_on_xm2_array_cloud(iiPDF_Ngraupel) = -999._core_rknd
 
 
-      end if ! iiLH_Ngraupel > 0
-    end if ! iiLH_rgraupel > 0
+      end if ! iiPDF_Ngraupel > 0
+    end if ! iiPDF_rgraupel > 0
 
-    if ( iiLH_Nc > 0 ) then
+    if ( iiPDF_Nc > 0 ) then
       ! The epsilon is a kluge to prevent a singular matrix in generate_lh_sample
-      xp2_on_xm2_array_below(iiLH_Nc) = &
+      xp2_on_xm2_array_below(iiPDF_Nc) = &
         max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
 
     end if
 
-    if ( iiLH_rrain > 0 ) then
-      xp2_on_xm2_array_below(iiLH_rrain) = rrp2_on_rrm2_below
+    if ( iiPDF_rrain > 0 ) then
+      xp2_on_xm2_array_below(iiPDF_rrain) = rrp2_on_rrm2_below
 
 
 
-      if ( iiLH_Nr > 0 ) then
-        xp2_on_xm2_array_below(iiLH_Nr) = Nrp2_on_Nrm2_below
+      if ( iiPDF_Nr > 0 ) then
+        xp2_on_xm2_array_below(iiPDF_Nr) = Nrp2_on_Nrm2_below
 
 
-      end if ! iiLH_Nr > 0
-    end if ! iiLH_rrain > 0
+      end if ! iiPDF_Nr > 0
+    end if ! iiPDF_rrain > 0
 
-    if ( iiLH_rsnow > 0 ) then
-      xp2_on_xm2_array_below(iiLH_rsnow) = rsnowp2_on_rsnowm2_below
-
-
-      if ( iiLH_Nsnow > 0 ) then
-        xp2_on_xm2_array_below(iiLH_Nsnow) = Nsnowp2_on_Nsnowm2_below
-
-      end if ! iiLH_Nsnow > 0
-    end if ! iiLH_rsnow > 0
-
-    if ( iiLH_rice > 0 ) then
-      xp2_on_xm2_array_below(iiLH_rice) = ricep2_on_ricem2_below
+    if ( iiPDF_rsnow > 0 ) then
+      xp2_on_xm2_array_below(iiPDF_rsnow) = rsnowp2_on_rsnowm2_below
 
 
-      if ( iiLH_Ni > 0 ) then
-        xp2_on_xm2_array_below(iiLH_Ni) =  Nicep2_on_Nicem2_below
-      end if ! iiLH_Ni > 0
+      if ( iiPDF_Nsnow > 0 ) then
+        xp2_on_xm2_array_below(iiPDF_Nsnow) = Nsnowp2_on_Nsnowm2_below
 
-    end if ! iiLH_rice > 0
+      end if ! iiPDF_Nsnow > 0
+    end if ! iiPDF_rsnow > 0
 
-    if ( iiLH_rgraupel > 0 ) then
-      xp2_on_xm2_array_below(iiLH_rgraupel) = -999._core_rknd
-
-
-      if ( iiLH_Ngraupel > 0 ) then
-        xp2_on_xm2_array_below(iiLH_Ngraupel) = -999._core_rknd
+    if ( iiPDF_rice > 0 ) then
+      xp2_on_xm2_array_below(iiPDF_rice) = ricep2_on_ricem2_below
 
 
-      end if ! iiLH_Ngraupel > 0
-    end if ! iiLH_rgraupel > 0
+      if ( iiPDF_Ni > 0 ) then
+        xp2_on_xm2_array_below(iiPDF_Ni) =  Nicep2_on_Nicem2_below
+      end if ! iiPDF_Ni > 0
+
+    end if ! iiPDF_rice > 0
+
+    if ( iiPDF_rgraupel > 0 ) then
+      xp2_on_xm2_array_below(iiPDF_rgraupel) = -999._core_rknd
+
+
+      if ( iiPDF_Ngraupel > 0 ) then
+        xp2_on_xm2_array_below(iiPDF_Ngraupel) = -999._core_rknd
+
+
+      end if ! iiPDF_Ngraupel > 0
+    end if ! iiPDF_rgraupel > 0
 
     return
   end subroutine setup_corr_varnce_array

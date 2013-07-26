@@ -6,25 +6,25 @@ module corr_matrix_module
 
   ! Latin hypercube indices / Correlation array indices
   integer, public :: &
-    iiLH_s_mellor = -1, &
-    iiLH_t_mellor = -1, &
-    iiLH_w        = -1
-!$omp threadprivate(iiLH_s_mellor, iiLH_t_mellor, iiLH_w)
+    iiPDF_s_mellor = -1, &
+    iiPDF_t_mellor = -1, &
+    iiPDF_w        = -1
+!$omp threadprivate(iiPDF_s_mellor, iiPDF_t_mellor, iiPDF_w)
 
   integer, public :: &
-   iiLH_rrain    = -1, &
-   iiLH_rsnow    = -1, &
-   iiLH_rice     = -1, &
-   iiLH_rgraupel = -1
-!$omp threadprivate(iiLH_rrain, iiLH_rsnow, iiLH_rice, iiLH_rgraupel)
+   iiPDF_rrain    = -1, &
+   iiPDF_rsnow    = -1, &
+   iiPDF_rice     = -1, &
+   iiPDF_rgraupel = -1
+!$omp threadprivate(iiPDF_rrain, iiPDF_rsnow, iiPDF_rice, iiPDF_rgraupel)
 
   integer, public :: &
-   iiLH_Nr       = -1, &
-   iiLH_Nsnow    = -1, &
-   iiLH_Ni       = -1, &
-   iiLH_Ngraupel = -1, &
-   iiLH_Ncn      = -1
-!$omp threadprivate(iiLH_Nr, iiLH_Nsnow, iiLH_Ni, iiLH_Ngraupel, iiLH_Ncn)
+   iiPDF_Nr       = -1, &
+   iiPDF_Nsnow    = -1, &
+   iiPDF_Ni       = -1, &
+   iiPDF_Ngraupel = -1, &
+   iiPDF_Ncn      = -1
+!$omp threadprivate(iiPDF_Nr, iiPDF_Nsnow, iiPDF_Ni, iiPDF_Ngraupel, iiPDF_Ncn)
 
   public :: read_correlation_matrix
 
@@ -144,34 +144,34 @@ module corr_matrix_module
     select case( trim(var_name) )
 
     case( "s" )
-      i = iiLH_s_mellor
+      i = iiPDF_s_mellor
 
     case( "t" )
-      i = iiLH_t_mellor
+      i = iiPDF_t_mellor
 
     case( "w" )
-      i = iiLH_w
+      i = iiPDF_w
 
     case( "Ncn" )
-      i = iiLH_Ncn
+      i = iiPDF_Ncn
 
     case( "rrain" )
-      i = iiLH_rrain
+      i = iiPDF_rrain
 
     case( "Nr" )
-      i = iiLH_Nr
+      i = iiPDF_Nr
 
     case( "rice" )
-      i = iiLH_rice
+      i = iiPDF_rice
 
     case( "Ni" )
-      i = iiLH_Ni
+      i = iiPDF_Ni
 
     case( "rsnow" )
-      i = iiLH_rsnow
+      i = iiPDF_rsnow
 
     case( "Nsnow" )
-      i = iiLH_Nsnow
+      i = iiPDF_Nsnow
 
     end select
 

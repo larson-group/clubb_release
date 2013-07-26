@@ -3678,12 +3678,12 @@ module setup_clubb_pdf_params
         hydromet_pdf_parameter  ! Variable(s)
 
     use corr_matrix_module, only: &
-        iiLH_w,        & ! Variable(s)
-        iiLH_s_mellor, &
-        iiLH_t_mellor, &
-        iiLH_rrain,    &
-        iiLH_Nr,       &
-        iiLH_Ncn
+        iiPDF_w,        & ! Variable(s)
+        iiPDF_s_mellor, &
+        iiPDF_t_mellor, &
+        iiPDF_rrain,    &
+        iiPDF_Nr,       &
+        iiPDF_Ncn
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -3791,30 +3791,30 @@ module setup_clubb_pdf_params
     ! ---- Begin Code ----
 
     ! Pack Means and Standard Deviations into arrays
-    mu_x_1(iiLh_w)        = mu_w_1
-    mu_x_2(iiLh_w)        = mu_w_2
-    mu_x_1(iiLh_s_mellor) = mu_s_1
-    mu_x_2(iiLh_s_mellor) = mu_s_2
-    mu_x_1(iiLh_t_mellor) = mu_t_1
-    mu_x_2(iiLh_t_mellor) = mu_t_2
-    mu_x_1(iiLh_rrain)    = mu_rr_1_n
-    mu_x_2(iiLh_rrain)    = mu_rr_2_n
-    mu_x_1(iiLh_Nr)       = mu_Nr_1_n
-    mu_x_2(iiLh_Nr)       = mu_Nr_2_n
-    mu_x_1(iiLh_Ncn)      = mu_Ncn_1_n
-    mu_x_2(iiLh_Ncn)      = mu_Ncn_2_n
-    sigma_x_1(iiLh_w)        = sigma_w_1
-    sigma_x_2(iiLh_w)        = sigma_w_2
-    sigma_x_1(iiLh_s_mellor) = sigma_s_1
-    sigma_x_2(iiLh_s_mellor) = sigma_s_2
-    sigma_x_1(iiLh_t_mellor) = sigma_t_1
-    sigma_x_2(iiLh_t_mellor) = sigma_t_2
-    sigma_x_1(iiLh_rrain)    = sigma_rr_1_n
-    sigma_x_2(iiLh_rrain)    = sigma_rr_2_n
-    sigma_x_1(iiLh_Nr)       = sigma_Nr_1_n
-    sigma_x_2(iiLh_Nr)       = sigma_Nr_2_n
-    sigma_x_1(iiLh_Ncn)      = sigma_Ncn_1_n
-    sigma_x_2(iiLh_Ncn)      = sigma_Ncn_2_n
+    mu_x_1(iiPDF_w)        = mu_w_1
+    mu_x_2(iiPDF_w)        = mu_w_2
+    mu_x_1(iiPDF_s_mellor) = mu_s_1
+    mu_x_2(iiPDF_s_mellor) = mu_s_2
+    mu_x_1(iiPDF_t_mellor) = mu_t_1
+    mu_x_2(iiPDF_t_mellor) = mu_t_2
+    mu_x_1(iiPDF_rrain)    = mu_rr_1_n
+    mu_x_2(iiPDF_rrain)    = mu_rr_2_n
+    mu_x_1(iiPDF_Nr)       = mu_Nr_1_n
+    mu_x_2(iiPDF_Nr)       = mu_Nr_2_n
+    mu_x_1(iiPDF_Ncn)      = mu_Ncn_1_n
+    mu_x_2(iiPDF_Ncn)      = mu_Ncn_2_n
+    sigma_x_1(iiPDF_w)        = sigma_w_1
+    sigma_x_2(iiPDF_w)        = sigma_w_2
+    sigma_x_1(iiPDF_s_mellor) = sigma_s_1
+    sigma_x_2(iiPDF_s_mellor) = sigma_s_2
+    sigma_x_1(iiPDF_t_mellor) = sigma_t_1
+    sigma_x_2(iiPDF_t_mellor) = sigma_t_2
+    sigma_x_1(iiPDF_rrain)    = sigma_rr_1_n
+    sigma_x_2(iiPDF_rrain)    = sigma_rr_2_n
+    sigma_x_1(iiPDF_Nr)       = sigma_Nr_1_n
+    sigma_x_2(iiPDF_Nr)       = sigma_Nr_2_n
+    sigma_x_1(iiPDF_Ncn)      = sigma_Ncn_1_n
+    sigma_x_2(iiPDF_Ncn)      = sigma_Ncn_2_n
 
     ! Pack remaining variables into hydromet_pdf_params
     hydromet_pdf_params%mu_rr_1     = mu_rr_1
@@ -3839,32 +3839,32 @@ module setup_clubb_pdf_params
     hydromet_pdf_params%precip_frac_2 = precip_frac_2
 
     ! Pack correlations (1st PDF component) into corr_array_1.
-    corr_array_1(iiLH_t_mellor, iiLH_s_mellor) = corr_st_1
-    corr_array_1(iiLH_s_mellor,iiLH_w)        = corr_ws_1
-    corr_array_1(iiLH_rrain, iiLH_s_mellor)    = corr_srr_1_n
-    corr_array_1(iiLH_Nr, iiLH_s_mellor)       = corr_sNr_1_n
-    corr_array_1(iiLH_Ncn, iiLH_s_mellor)      = corr_sNcn_1_n
-    corr_array_1(iiLH_rrain, iiLH_t_mellor)    = corr_trr_1_n
-    corr_array_1(iiLH_Nr, iiLH_t_mellor)       = corr_tNr_1_n
-    corr_array_1(iiLH_Ncn, iiLH_t_mellor)      = corr_tNcn_1_n
-    corr_array_1(iiLH_rrain, iiLH_w)           = corr_wrr_1_n
-    corr_array_1(iiLH_Nr, iiLH_w)              = corr_wNr_1_n
-    corr_array_1(iiLH_Ncn, iiLH_w)             = corr_wNcn_1_n
-    corr_array_1(iiLH_rrain,iiLH_Nr)          = corr_rrNr_1_n
+    corr_array_1(iiPDF_t_mellor, iiPDF_s_mellor) = corr_st_1
+    corr_array_1(iiPDF_s_mellor,iiPDF_w)        = corr_ws_1
+    corr_array_1(iiPDF_rrain, iiPDF_s_mellor)    = corr_srr_1_n
+    corr_array_1(iiPDF_Nr, iiPDF_s_mellor)       = corr_sNr_1_n
+    corr_array_1(iiPDF_Ncn, iiPDF_s_mellor)      = corr_sNcn_1_n
+    corr_array_1(iiPDF_rrain, iiPDF_t_mellor)    = corr_trr_1_n
+    corr_array_1(iiPDF_Nr, iiPDF_t_mellor)       = corr_tNr_1_n
+    corr_array_1(iiPDF_Ncn, iiPDF_t_mellor)      = corr_tNcn_1_n
+    corr_array_1(iiPDF_rrain, iiPDF_w)           = corr_wrr_1_n
+    corr_array_1(iiPDF_Nr, iiPDF_w)              = corr_wNr_1_n
+    corr_array_1(iiPDF_Ncn, iiPDF_w)             = corr_wNcn_1_n
+    corr_array_1(iiPDF_rrain,iiPDF_Nr)          = corr_rrNr_1_n
 
     ! Pack correlations (2nd PDF component) into corr_array_2.
-    corr_array_2(iiLH_t_mellor, iiLH_s_mellor) = corr_st_2
-    corr_array_2(iiLH_s_mellor,iiLH_w)        = corr_ws_2
-    corr_array_2(iiLH_rrain, iiLH_s_mellor)    = corr_srr_2_n
-    corr_array_2(iiLH_Nr, iiLH_s_mellor)       = corr_sNr_2_n
-    corr_array_2(iiLH_Ncn, iiLH_s_mellor)      = corr_sNcn_2_n
-    corr_array_2(iiLH_rrain, iiLH_t_mellor)    = corr_trr_2_n
-    corr_array_2(iiLH_Nr, iiLH_t_mellor)       = corr_tNr_2_n
-    corr_array_2(iiLH_Ncn, iiLH_t_mellor)      = corr_tNcn_2_n
-    corr_array_2(iiLH_rrain, iiLH_w)           = corr_wrr_2_n
-    corr_array_2(iiLH_Nr, iiLH_w)              = corr_wNr_2_n
-    corr_array_2(iiLH_Ncn, iiLH_w)             = corr_wNcn_2_n
-    corr_array_2(iiLH_rrain,iiLH_Nr)          = corr_rrNr_2_n
+    corr_array_2(iiPDF_t_mellor, iiPDF_s_mellor) = corr_st_2
+    corr_array_2(iiPDF_s_mellor,iiPDF_w)        = corr_ws_2
+    corr_array_2(iiPDF_rrain, iiPDF_s_mellor)    = corr_srr_2_n
+    corr_array_2(iiPDF_Nr, iiPDF_s_mellor)       = corr_sNr_2_n
+    corr_array_2(iiPDF_Ncn, iiPDF_s_mellor)      = corr_sNcn_2_n
+    corr_array_2(iiPDF_rrain, iiPDF_t_mellor)    = corr_trr_2_n
+    corr_array_2(iiPDF_Nr, iiPDF_t_mellor)       = corr_tNr_2_n
+    corr_array_2(iiPDF_Ncn, iiPDF_t_mellor)      = corr_tNcn_2_n
+    corr_array_2(iiPDF_rrain, iiPDF_w)           = corr_wrr_2_n
+    corr_array_2(iiPDF_Nr, iiPDF_w)              = corr_wNr_2_n
+    corr_array_2(iiPDF_Ncn, iiPDF_w)             = corr_wNcn_2_n
+    corr_array_2(iiPDF_rrain,iiPDF_Nr)          = corr_rrNr_2_n
 
     return
 
@@ -3905,12 +3905,12 @@ module setup_clubb_pdf_params
         hydromet_pdf_parameter  ! Variable(s)
 
     use corr_matrix_module, only: &
-        iiLH_w,        & ! Variable(s)
-        iiLH_s_mellor, &
-        iiLH_t_mellor, &
-        iiLH_rrain,    &
-        iiLH_Nr,       &
-        iiLH_Ncn
+        iiPDF_w,        & ! Variable(s)
+        iiPDF_s_mellor, &
+        iiPDF_t_mellor, &
+        iiPDF_rrain,    &
+        iiPDF_Nr,       &
+        iiPDF_Ncn
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -4015,30 +4015,30 @@ module setup_clubb_pdf_params
 
 
     ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
-    mu_w_1        = mu_x_1(iiLh_w)
-    mu_w_2        = mu_x_2(iiLh_w)
-    mu_s_1        = mu_x_1(iiLh_s_mellor)
-    mu_s_2        = mu_x_2(iiLh_s_mellor)
-    mu_t_1        = mu_x_1(iiLh_t_mellor)
-    mu_t_2        = mu_x_2(iiLh_t_mellor)
-    mu_rr_1_n     = mu_x_1(iiLh_rrain)
-    mu_rr_2_n     = mu_x_2(iiLh_rrain)
-    mu_Nr_1_n     = mu_x_1(iiLh_Nr)
-    mu_Nr_2_n     = mu_x_2(iiLh_Nr)
-    mu_Ncn_1_n    = mu_x_1(iiLh_Ncn)
-    mu_Ncn_2_n    = mu_x_2(iiLh_Ncn)
-    sigma_w_1     = sigma_x_1(iiLh_w)
-    sigma_w_2     = sigma_x_2(iiLh_w)
-    sigma_s_1     = sigma_x_1(iiLh_s_mellor)
-    sigma_s_2     = sigma_x_2(iiLh_s_mellor)
-    sigma_t_1     = sigma_x_1(iiLh_t_mellor)
-    sigma_t_2     = sigma_x_2(iiLh_t_mellor)
-    sigma_rr_1_n  = sigma_x_1(iiLh_rrain)
-    sigma_rr_2_n  = sigma_x_2(iiLh_rrain)
-    sigma_Nr_1_n  = sigma_x_1(iiLh_Nr)
-    sigma_Nr_2_n  = sigma_x_2(iiLh_Nr)
-    sigma_Ncn_1_n = sigma_x_1(iiLh_Ncn)
-    sigma_Ncn_2_n = sigma_x_2(iiLh_Ncn)
+    mu_w_1        = mu_x_1(iiPDF_w)
+    mu_w_2        = mu_x_2(iiPDF_w)
+    mu_s_1        = mu_x_1(iiPDF_s_mellor)
+    mu_s_2        = mu_x_2(iiPDF_s_mellor)
+    mu_t_1        = mu_x_1(iiPDF_t_mellor)
+    mu_t_2        = mu_x_2(iiPDF_t_mellor)
+    mu_rr_1_n     = mu_x_1(iiPDF_rrain)
+    mu_rr_2_n     = mu_x_2(iiPDF_rrain)
+    mu_Nr_1_n     = mu_x_1(iiPDF_Nr)
+    mu_Nr_2_n     = mu_x_2(iiPDF_Nr)
+    mu_Ncn_1_n    = mu_x_1(iiPDF_Ncn)
+    mu_Ncn_2_n    = mu_x_2(iiPDF_Ncn)
+    sigma_w_1     = sigma_x_1(iiPDF_w)
+    sigma_w_2     = sigma_x_2(iiPDF_w)
+    sigma_s_1     = sigma_x_1(iiPDF_s_mellor)
+    sigma_s_2     = sigma_x_2(iiPDF_s_mellor)
+    sigma_t_1     = sigma_x_1(iiPDF_t_mellor)
+    sigma_t_2     = sigma_x_2(iiPDF_t_mellor)
+    sigma_rr_1_n  = sigma_x_1(iiPDF_rrain)
+    sigma_rr_2_n  = sigma_x_2(iiPDF_rrain)
+    sigma_Nr_1_n  = sigma_x_1(iiPDF_Nr)
+    sigma_Nr_2_n  = sigma_x_2(iiPDF_Nr)
+    sigma_Ncn_1_n = sigma_x_1(iiPDF_Ncn)
+    sigma_Ncn_2_n = sigma_x_2(iiPDF_Ncn)
 
     ! Unpack variables from hydromet_pdf_params
     mu_rr_1     = hydromet_pdf_params%mu_rr_1
@@ -4063,32 +4063,32 @@ module setup_clubb_pdf_params
     precip_frac_2 = hydromet_pdf_params%precip_frac_2
 
     ! Unpack corr_array_1 into correlations (1st PDF component).
-    corr_st_1     = corr_array_1(iiLH_t_mellor, iiLH_s_mellor)
-    corr_ws_1     = corr_array_1(iiLH_s_mellor,iiLH_w)
-    corr_srr_1_n  = corr_array_1(iiLH_rrain, iiLH_s_mellor)
-    corr_sNr_1_n  = corr_array_1(iiLH_Nr, iiLH_s_mellor)
-    corr_sNcn_1_n = corr_array_1(iiLH_Ncn, iiLH_s_mellor)
-    corr_trr_1_n  = corr_array_1(iiLH_rrain, iiLH_t_mellor)
-    corr_tNr_1_n  = corr_array_1(iiLH_Nr, iiLH_t_mellor)
-    corr_tNcn_1_n = corr_array_1(iiLH_Ncn, iiLH_t_mellor)
-    corr_wrr_1_n  = corr_array_1(iiLH_rrain, iiLH_w)
-    corr_wNr_1_n  = corr_array_1(iiLH_Nr, iiLH_w)
-    corr_wNcn_1_n = corr_array_1(iiLH_Ncn, iiLH_w)
-    corr_rrNr_1_n = corr_array_1(iiLH_Nr, iiLH_rrain)
+    corr_st_1     = corr_array_1(iiPDF_t_mellor, iiPDF_s_mellor)
+    corr_ws_1     = corr_array_1(iiPDF_s_mellor,iiPDF_w)
+    corr_srr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_s_mellor)
+    corr_sNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_s_mellor)
+    corr_sNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_s_mellor)
+    corr_trr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_t_mellor)
+    corr_tNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_t_mellor)
+    corr_tNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_t_mellor)
+    corr_wrr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_w)
+    corr_wNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_w)
+    corr_wNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_w)
+    corr_rrNr_1_n = corr_array_1(iiPDF_Nr, iiPDF_rrain)
 
     ! Unpack corr_array_2 into correlations (2nd PDF component).
-    corr_st_2     = corr_array_2(iiLH_t_mellor, iiLH_s_mellor)
-    corr_ws_2     = corr_array_2(iiLH_s_mellor,iiLH_w)
-    corr_srr_2_n  = corr_array_2(iiLH_rrain, iiLH_s_mellor)
-    corr_sNr_2_n  = corr_array_2(iiLH_Nr, iiLH_s_mellor)
-    corr_sNcn_2_n = corr_array_2(iiLH_Ncn, iiLH_s_mellor)
-    corr_trr_2_n  = corr_array_2(iiLH_rrain, iiLH_t_mellor)
-    corr_tNr_2_n  = corr_array_2(iiLH_Nr, iiLH_t_mellor)
-    corr_tNcn_2_n = corr_array_2(iiLH_Ncn, iiLH_t_mellor)
-    corr_wrr_2_n  = corr_array_2(iiLH_rrain, iiLH_w)
-    corr_wNr_2_n  = corr_array_2(iiLH_Nr, iiLH_w)
-    corr_wNcn_2_n = corr_array_2(iiLH_Ncn, iiLH_w)
-    corr_rrNr_2_n = corr_array_2(iiLH_Nr, iiLH_rrain)
+    corr_st_2     = corr_array_2(iiPDF_t_mellor, iiPDF_s_mellor)
+    corr_ws_2     = corr_array_2(iiPDF_s_mellor,iiPDF_w)
+    corr_srr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_s_mellor)
+    corr_sNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_s_mellor)
+    corr_sNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_s_mellor)
+    corr_trr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_t_mellor)
+    corr_tNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_t_mellor)
+    corr_tNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_t_mellor)
+    corr_wrr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_w)
+    corr_wNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_w)
+    corr_wNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_w)
+    corr_rrNr_2_n = corr_array_2(iiPDF_Nr, iiPDF_rrain)
 
 
     return

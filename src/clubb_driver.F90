@@ -245,12 +245,12 @@ module clubb_driver
 
     use corr_matrix_module, only: &
         read_correlation_matrix, & ! Procedure(s)
-        iiLH_w,                  & ! Variable(s)
-        iiLH_s_mellor,           &
-        iiLH_t_mellor,           &
-        iiLH_Ncn,                &
-        iiLH_rrain,              &
-        iiLH_Nr
+        iiPDF_w,                  & ! Variable(s)
+        iiPDF_s_mellor,           &
+        iiPDF_t_mellor,           &
+        iiPDF_Ncn,                &
+        iiPDF_rrain,              &
+        iiPDF_Nr
 
     use setup_clubb_pdf_params, only: &
         setup_pdf_parameters    ! Procedure(s)
@@ -889,12 +889,12 @@ module clubb_driver
     !       then *_corr_array_below.in also exists
     inquire( file = corr_file_path_cloud, exist = corr_file_exist )
 
-      iiLH_s_mellor = 1
-      iiLH_t_mellor = 2
-      iiLH_w = 3
-      iiLH_Ncn = 4
-      iiLH_rrain = 5
-      iiLH_Nr = 6
+      iiPDF_s_mellor = 1
+      iiPDF_t_mellor = 2
+      iiPDF_w = 3
+      iiPDF_Ncn = 4
+      iiPDF_rrain = 5
+      iiPDF_Nr = 6
 
     if ( corr_file_exist ) then
 

@@ -94,18 +94,18 @@ module generate_lh_sample_module
       iirgraupelm
 
     use corr_matrix_module, only: &
-      iiLH_rrain, & ! Variables
-      iiLH_rsnow, &
-      iiLH_rice, &
-      iiLH_rgraupel, &
-      iiLH_Nr, &
-      iiLH_Nc => iiLH_Ncn, &
-      iiLH_Ni, &
-      iiLH_Nsnow, &
-      iiLH_Ngraupel, &
-      iiLH_s_mellor, &
-      iiLH_t_mellor, &
-      iiLH_w
+      iiPDF_rrain, & ! Variables
+      iiPDF_rsnow, &
+      iiPDF_rice, &
+      iiPDF_rgraupel, &
+      iiPDF_Nr, &
+      iiPDF_Nc => iiPDF_Ncn, &
+      iiPDF_Ni, &
+      iiPDF_Nsnow, &
+      iiPDF_Ngraupel, &
+      iiPDF_s_mellor, &
+      iiPDF_t_mellor, &
+      iiPDF_w
 
     use latin_hypercube_arrays, only: &
       l_fixed_corr_initialized, & ! Variable(s)
@@ -328,7 +328,7 @@ module generate_lh_sample_module
     ! ---- Begin Code ----
 
     ! Determine which variables are a lognormal distribution
-    i = max( iiLH_s_mellor, iiLH_t_mellor, iiLH_w )
+    i = max( iiPDF_s_mellor, iiPDF_t_mellor, iiPDF_w )
     l_d_variable_lognormal(1:i) = .false. ! The 1st 3 variates
     l_d_variable_lognormal(i+1:d_variables) = .true.  ! Hydrometeors
 
@@ -463,9 +463,9 @@ module generate_lh_sample_module
     ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
     ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
 
-    if ( iiLH_Nc > 0 ) then
+    if ( iiPDF_Nc > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Nc, real(Ncm, kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_Nc, real(Ncm, kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
@@ -474,52 +474,52 @@ module generate_lh_sample_module
     ! rr1  = PDF parameter for mean of plume 1. [rr1] = (kg/kg)
     ! rr2  = PDF parameter for mean of plume 2. [rr2] = (kg/kg)
 
-    if ( iiLH_rrain > 0 ) then
+    if ( iiPDF_rrain > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_rrain, real(hydromet(iirrainm), kind = dp), xp2_on_xm2_array, &! In
+           ( d_variables, iiPDF_rrain, real(hydromet(iirrainm), kind = dp), xp2_on_xm2_array, &! In
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiLH_Nr > 0 ) then
+    if ( iiPDF_Nr > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Nr, real(hydromet(iiNrm), kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_Nr, real(hydromet(iiNrm), kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiLH_rsnow > 0 ) then
+    if ( iiPDF_rsnow > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_rsnow, real(hydromet(iirsnowm),kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_rsnow, real(hydromet(iirsnowm),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiLH_Nsnow > 0 ) then
+    if ( iiPDF_Nsnow > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Nsnow, real(hydromet(iiNsnowm),kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_Nsnow, real(hydromet(iiNsnowm),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiLH_rice > 0 ) then
+    if ( iiPDF_rice > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_rice, real(hydromet(iiricem),kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_rice, real(hydromet(iiricem),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiLH_Ni > 0 ) then
+    if ( iiPDF_Ni > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Ni, real(hydromet(iiNim),kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_Ni, real(hydromet(iiNim),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiLH_rgraupel > 0 ) then
+    if ( iiPDF_rgraupel > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_rgraupel, & ! In
+           ( d_variables, iiPDF_rgraupel, & ! In
              real(hydromet(iirgraupelm),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiLH_Ngraupel > 0 ) then
+    if ( iiPDF_Ngraupel > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiLH_Ngraupel, & ! In
+           ( d_variables, iiPDF_Ngraupel, & ! In
              real(hydromet(iiNgraupelm),kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
@@ -531,9 +531,9 @@ module generate_lh_sample_module
     t1 = 0._core_rknd
     t2 = 0._core_rknd
 
-    mu1((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
+    mu1((/iiPDF_s_mellor,iiPDF_t_mellor,iiPDF_w/)) &
       = (/ s1, t1, w1 /)
-    mu2((/iiLH_s_mellor,iiLH_t_mellor,iiLH_w/)) &
+    mu2((/iiPDF_s_mellor,iiPDF_t_mellor,iiPDF_w/)) &
       = (/ s2, t2, w2 /)
 
     ! Define the variance of s and t
@@ -573,51 +573,51 @@ module generate_lh_sample_module
       ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
 
       ! Setup the Sigma matrices for s,t
-      Sigma_stw_1(iiLH_s_mellor,iiLH_s_mellor) = sp2_mellor_1
-      Sigma_stw_1(iiLH_t_mellor,iiLH_t_mellor) = tp2_mellor_1
-      call set_lower_triangular_matrix_dp( 2, iiLH_s_mellor, iiLH_t_mellor, sptp_mellor_1, &
+      Sigma_stw_1(iiPDF_s_mellor,iiPDF_s_mellor) = sp2_mellor_1
+      Sigma_stw_1(iiPDF_t_mellor,iiPDF_t_mellor) = tp2_mellor_1
+      call set_lower_triangular_matrix_dp( 2, iiPDF_s_mellor, iiPDF_t_mellor, sptp_mellor_1, &
                                            Sigma_stw_1(1:2,1:2) )
 
-      Sigma_stw_2(iiLH_s_mellor,iiLH_s_mellor) = sp2_mellor_2
-      Sigma_stw_2(iiLH_t_mellor,iiLH_t_mellor) = tp2_mellor_2
-      call set_lower_triangular_matrix_dp( 2, iiLH_s_mellor, iiLH_t_mellor, sptp_mellor_2, &
+      Sigma_stw_2(iiPDF_s_mellor,iiPDF_s_mellor) = sp2_mellor_2
+      Sigma_stw_2(iiPDF_t_mellor,iiPDF_t_mellor) = tp2_mellor_2
+      call set_lower_triangular_matrix_dp( 2, iiPDF_s_mellor, iiPDF_t_mellor, sptp_mellor_2, &
                                            Sigma_stw_2(1:2,1:2) )
       ! Add the w element
-      Sigma_stw_1(iiLH_w,iiLH_w) = real(varnce_w1, kind = dp)
+      Sigma_stw_1(iiPDF_w,iiPDF_w) = real(varnce_w1, kind = dp)
 
-      Sigma_stw_2(iiLH_w,iiLH_w) = real(varnce_w2, kind = dp)
+      Sigma_stw_2(iiPDF_w,iiPDF_w) = real(varnce_w2, kind = dp)
 
-      if ( iiLH_Nc > 0 ) then
+      if ( iiPDF_Nc > 0 ) then
         ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
-        var_Nc1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiLH_Nc), kind=dp ) )
+        var_Nc1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiPDF_Nc), kind=dp ) )
         var_Nc2 = var_Nc1
-        Sigma_stw_1(iiLH_Nc,iiLH_Nc) = var_Nc1
-        Sigma_stw_2(iiLH_Nc,iiLH_Nc) = var_Nc2
+        Sigma_stw_1(iiPDF_Nc,iiPDF_Nc) = var_Nc1
+        Sigma_stw_2(iiPDF_Nc,iiPDF_Nc) = var_Nc2
       end if
 
-      if ( iiLH_Nr > 0 ) then
+      if ( iiPDF_Nr > 0 ) then
         ! var_Nr1,2 = PDF param for width of plume 1,2. [var_Nr1,2] = (#/kg)**2
-        var_Nr1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiLH_Nr), kind=dp ) )
+        var_Nr1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiPDF_Nr), kind=dp ) )
         var_Nr2 = var_Nr1
-        Sigma_stw_1(iiLH_Nr,iiLH_Nr) = var_Nr1
-        Sigma_stw_2(iiLH_Nr,iiLH_Nr) = var_Nr2
+        Sigma_stw_1(iiPDF_Nr,iiPDF_Nr) = var_Nr1
+        Sigma_stw_2(iiPDF_Nr,iiPDF_Nr) = var_Nr2
       end if
 
-      if ( iiLH_rrain > 0 ) then
+      if ( iiPDF_rrain > 0 ) then
         ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
-        var_rr1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiLH_rrain), kind=dp ) )
+        var_rr1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiPDF_rrain), kind=dp ) )
         var_rr2 = var_rr1
-        Sigma_stw_1(iiLH_rrain,iiLH_rrain) = var_rr1
-        Sigma_stw_2(iiLH_rrain,iiLH_rrain) = var_rr2
+        Sigma_stw_1(iiPDF_rrain,iiPDF_rrain) = var_rr1
+        Sigma_stw_2(iiPDF_rrain,iiPDF_rrain) = var_rr2
       end if
 
-      if ( iiLH_rrain > 0 .and. iiLH_Nr > 0 ) then
+      if ( iiPDF_rrain > 0 .and. iiPDF_Nr > 0 ) then
 
         rrainm = real(hydromet(iirrainm), kind = dp)
         Nrm = real(hydromet(iiNrm), kind = dp)
 
-        index1 = iiLH_rrain
-        index2 = iiLH_Nr
+        index1 = iiPDF_rrain
+        index2 = iiPDF_Nr
 
         ! Covariance between rain water mixing ratio rain number concentration
         if ( rrainm > real(rr_tol, kind = dp) .and. Nrm > real(Nr_tol, kind = dp) ) then
@@ -641,8 +641,8 @@ module generate_lh_sample_module
                  Sigma_stw_2 ) ! In/out
         end if
 
-        index1 = iiLH_s_mellor
-        index2 = iiLH_Nr
+        index1 = iiPDF_s_mellor
+        index2 = iiPDF_Nr
         ! Covariances involving s and Nr & rr
         if ( stdev_s1 > s_mellor_tol .and. Nrm > real(Nr_tol, kind = dp) ) then
           call get_lower_triangular_matrix &
@@ -659,12 +659,12 @@ module generate_lh_sample_module
                  Sigma_stw_1 ) ! In/out
 
           ! Approximate the covariance of t and Nr
-          ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
-          covar_tNr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
+          ! This formula relies on the fact that iiPDF_s_mellor < iiPDF_t_mellor
+          covar_tNr1 = ( Sigma_stw_1(iiPDF_t_mellor,iiPDF_s_mellor) &
             * real(covar_sNr1, kind = dp) ) / real(stdev_s1, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiLH_t_mellor, iiLH_Nr, real(covar_tNr1, kind=dp) , & ! In
+               ( d_variables, iiPDF_t_mellor, iiPDF_Nr, real(covar_tNr1, kind=dp) , & ! In
                  Sigma_stw_1 ) ! In/out
         end if
 
@@ -683,17 +683,17 @@ module generate_lh_sample_module
                  Sigma_stw_2 ) ! In/out
 
           ! Approximate the covariance of t and Nr
-          ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
-          covar_tNr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
+          ! This formula relies on the fact that iiPDF_s_mellor < iiPDF_t_mellor
+          covar_tNr2 = ( Sigma_stw_2(iiPDF_t_mellor,iiPDF_s_mellor) &
             * real(covar_sNr2, kind = dp) ) / real(stdev_s2, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiLH_t_mellor, iiLH_Nr, real(covar_tNr2, kind = dp), & ! In
+               ( d_variables, iiPDF_t_mellor, iiPDF_Nr, real(covar_tNr2, kind = dp), & ! In
                  Sigma_stw_2 ) ! In/out
         end if
 
-        index1 = iiLH_s_mellor
-        index2 = iiLH_rrain
+        index1 = iiPDF_s_mellor
+        index2 = iiPDF_rrain
         ! Covariances involving s and Nr & rr
         if ( stdev_s1 > s_mellor_tol .and. rrainm > real(rr_tol, kind = dp) ) then
 
@@ -707,16 +707,16 @@ module generate_lh_sample_module
                  covar_srr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiLH_s_mellor, iiLH_rrain, real(covar_srr1, kind=dp), & ! In
+               ( d_variables, iiPDF_s_mellor, iiPDF_rrain, real(covar_srr1, kind=dp), & ! In
                  Sigma_stw_1 ) ! In/out
 
           ! Approximate the covariance of t and rr
-          ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
-          covar_trr1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) &
+          ! This formula relies on the fact that iiPDF_s_mellor < iiPDF_t_mellor
+          covar_trr1 = ( Sigma_stw_1(iiPDF_t_mellor,iiPDF_s_mellor) &
             * real(covar_srr1, kind = dp) ) / real(stdev_s1, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiLH_t_mellor, iiLH_rrain, real(covar_trr1, kind = dp), & ! In
+               ( d_variables, iiPDF_t_mellor, iiPDF_rrain, real(covar_trr1, kind = dp), & ! In
                  Sigma_stw_1 ) ! In/out
         end if
 
@@ -735,38 +735,38 @@ module generate_lh_sample_module
                  Sigma_stw_2 ) ! In/out
 
           ! Approximate the covariance of t and rr
-          ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
-          covar_trr2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) &
+          ! This formula relies on the fact that iiPDF_s_mellor < iiPDF_t_mellor
+          covar_trr2 = ( Sigma_stw_2(iiPDF_t_mellor,iiPDF_s_mellor) &
             * real(covar_srr2, kind = dp) ) / real(stdev_s2, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiLH_t_mellor, iiLH_rrain, real(covar_trr2, kind = dp), & ! In
+               ( d_variables, iiPDF_t_mellor, iiPDF_rrain, real(covar_trr2, kind = dp), & ! In
                  Sigma_stw_2 ) ! In/out
         end if
 
-      end if ! if iiLH_rrain > 0 .and. iiLH_Nr > 0
+      end if ! if iiPDF_rrain > 0 .and. iiPDF_Nr > 0
 
-!     if ( iiLH_Nc > 0 ) then
+!     if ( iiPDF_Nc > 0 ) then
 
       ! Covariances involving s and Nc (currently disabled)
-!       corr_sNc = corr_array(iiLH_s_mellor,iiLH_Nc)
-!       stdev_Nc = real( Ncm, kind = core_rknd ) * sqrt( xp2_on_xm2_array(iiLH_Nc) )
+!       corr_sNc = corr_array(iiPDF_s_mellor,iiPDF_Nc)
+!       stdev_Nc = real( Ncm, kind = core_rknd ) * sqrt( xp2_on_xm2_array(iiPDF_Nc) )
 
 !       if ( stdev_s1 > s_mellor_tol .and. Ncm > real(Nc_tol, kind = dp) ) then
 !         ! The variable s is already Gaussian
 !         stdev_sNc1 = corr_gaus_LN_to_covar_gaus &
 !                 ( corr_sNc, &
 !                   stdev_s1, &
-!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nc) ) )
+!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiPDF_Nc) ) )
 
-!         Sigma_stw_1(iiLH_s_mellor,iiLH_Nc) = real(stdev_sNc1, kind = dp)
-!         Sigma_stw_1(iiLH_Nc,iiLH_s_mellor) = real(stdev_sNc1, kind = dp)
+!         Sigma_stw_1(iiPDF_s_mellor,iiPDF_Nc) = real(stdev_sNc1, kind = dp)
+!         Sigma_stw_1(iiPDF_Nc,iiPDF_s_mellor) = real(stdev_sNc1, kind = dp)
 
 !         ! Approximate the covariance of t and Nc
-!         covar_tNc1 = ( Sigma_stw_1(iiLH_t_mellor,iiLH_s_mellor) * covar_sNc1 ) / stdev_s1**2
+!         covar_tNc1 = ( Sigma_stw_1(iiPDF_t_mellor,iiPDF_s_mellor) * covar_sNc1 ) / stdev_s1**2
 
-!         Sigma_stw_1(iiLH_t_mellor,iiLH_Nc) = real(covar_tNc1, kind = dp)
-!         Sigma_stw_2(iiLH_Nc,iiLH_t_mellor) = real(covar_tNc2, kind = dp)
+!         Sigma_stw_1(iiPDF_t_mellor,iiPDF_Nc) = real(covar_tNc1, kind = dp)
+!         Sigma_stw_2(iiPDF_Nc,iiPDF_t_mellor) = real(covar_tNc2, kind = dp)
 
 !       end if
 
@@ -774,20 +774,20 @@ module generate_lh_sample_module
 !         stdev_sNc2 = corr_gaus_LN_to_covar_gaus &
 !                 ( corr_sNc, &
 !                   stdev_s2, &
-!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiLH_Nc) ) )
+!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiPDF_Nc) ) )
 
-!         Sigma_stw_2(iiLH_s_mellor,iiLH_Nc) = real(stdev_sNc2, kind = dp)
-!         Sigma_stw_2(iiLH_Nc,iiLH_s_mellor) = real(stdev_sNc2, kind = dp)
+!         Sigma_stw_2(iiPDF_s_mellor,iiPDF_Nc) = real(stdev_sNc2, kind = dp)
+!         Sigma_stw_2(iiPDF_Nc,iiPDF_s_mellor) = real(stdev_sNc2, kind = dp)
 
 !         ! Approximate the covariance of t and Nc
-!         covar_tNc2 = ( Sigma_stw_2(iiLH_t_mellor,iiLH_s_mellor) * covar_sNc2 ) / stdev_s2**2
+!         covar_tNc2 = ( Sigma_stw_2(iiPDF_t_mellor,iiPDF_s_mellor) * covar_sNc2 ) / stdev_s2**2
 
-!         Sigma_stw_2(iiLH_t_mellor,iiLH_Nc) = real(stNc2, kind = dp)
-!         Sigma_stw_2(iiLH_Nc,iiLH_t_mellor) = real(stNc2, kind = dp)
+!         Sigma_stw_2(iiPDF_t_mellor,iiPDF_Nc) = real(stNc2, kind = dp)
+!         Sigma_stw_2(iiPDF_Nc,iiPDF_t_mellor) = real(stNc2, kind = dp)
 
 !       end if
 
-!     end if ! iiLH_Nc > 0
+!     end if ! iiPDF_Nc > 0
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 
@@ -991,9 +991,9 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiLH_s_mellor, &
-      iiLH_t_mellor, &
-      iiLH_w
+      iiPDF_s_mellor, &
+      iiPDF_t_mellor, &
+      iiPDF_w
 
     use matrix_operations, only: &
       row_mult_lower_tri_matrix ! Procedures
@@ -1082,19 +1082,19 @@ module generate_lh_sample_module
     ! ---- Begin Code ----
 
     ! Determine which variables are a lognormal distribution
-    i = max( iiLH_s_mellor, iiLH_t_mellor, iiLH_w )
+    i = max( iiPDF_s_mellor, iiPDF_t_mellor, iiPDF_w )
     l_d_variable_lognormal(1:i) = .false. ! The 1st 3 variates
     l_d_variable_lognormal(i+1:d_variables) = .true.  ! Hydrometeors
 
     ! Set standard deviation of s1/s2
-    stdev_s1 = sigma1(iiLH_s_mellor)
-    stdev_s2 = sigma2(iiLH_s_mellor)
+    stdev_s1 = sigma1(iiPDF_s_mellor)
+    stdev_s2 = sigma2(iiPDF_s_mellor)
 
-    stdev_t1 = sigma1(iiLH_t_mellor)
-    stdev_t2 = sigma2(iiLH_t_mellor)
+    stdev_t1 = sigma1(iiPDF_t_mellor)
+    stdev_t2 = sigma2(iiPDF_t_mellor)
 
-    stdev_w1 = sigma1(iiLH_w)
-    stdev_w2 = sigma2(iiLH_w)
+    stdev_w1 = sigma1(iiPDF_w)
+    stdev_w2 = sigma2(iiPDF_w)
 
     !---------------------------------------------------------------------------
     ! Generate a set of sample points for a microphysics scheme
@@ -1187,8 +1187,8 @@ module generate_lh_sample_module
 !----------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiLH_s_mellor, & ! Variables
-      iiLH_t_mellor
+      iiPDF_s_mellor, & ! Variables
+      iiPDF_t_mellor
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
@@ -1268,10 +1268,10 @@ module generate_lh_sample_module
 !            X_u_one_lev, rtp, thlp )
     call st_2_rtthl( mixt_frac, rt1, thl1, rt2, thl2, & ! intent(in)
                      crt1, cthl1, crt2, cthl2, & ! intent(in)
-                     real(mu1(iiLH_s_mellor), kind = dp), & ! intent(in)
-                     real(mu2(iiLH_s_mellor), kind = dp), & ! intent(in)
-                     X_nl_one_lev(iiLH_s_mellor), & ! intent(in)
-                     X_nl_one_lev(iiLH_t_mellor), & ! intent(in)
+                     real(mu1(iiPDF_s_mellor), kind = dp), & ! intent(in)
+                     real(mu2(iiPDF_s_mellor), kind = dp), & ! intent(in)
+                     X_nl_one_lev(iiPDF_s_mellor), & ! intent(in)
+                     X_nl_one_lev(iiPDF_t_mellor), & ! intent(in)
                      X_mixt_comp_one_lev, & ! intent(in)
                      LH_rt, LH_thl ) ! intent(out)
 
@@ -2207,9 +2207,9 @@ module generate_lh_sample_module
 !   None.
 !-------------------------------------------------------------------------------
     use corr_matrix_module, only: &
-      iiLH_s_mellor, & ! Variable(s)
-      iiLH_t_mellor, &
-      iiLH_w
+      iiPDF_s_mellor, & ! Variable(s)
+      iiPDF_t_mellor, &
+      iiPDF_w
 
     use matrix_operations, only: &
       set_lower_triangular_matrix_dp, & ! Procedures
@@ -2249,7 +2249,7 @@ module generate_lh_sample_module
 
     ! LN_index is the location of the first variate which is lognormally
     ! distributed (e.g. rain water mixing ratio).
-    LN_index = max( iiLH_s_mellor, iiLH_t_mellor, iiLH_w )+1
+    LN_index = max( iiPDF_s_mellor, iiPDF_t_mellor, iiPDF_w )+1
 
     corr_stw_matrix = 0.0_dp ! Initialize to 0
 
@@ -2261,8 +2261,8 @@ module generate_lh_sample_module
     ! Set the correlation of s and t. For this part of the code we assume a
     ! fixed correlation in order to only compute the Cholesky factorization
     ! once per simulation.
-    index1 = iiLH_s_mellor
-    index2 = iiLH_t_mellor
+    index1 = iiPDF_s_mellor
+    index2 = iiPDF_t_mellor
 
     call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
@@ -2274,8 +2274,8 @@ module generate_lh_sample_module
 
     ! The correlation between w and s,t is typically not fixed either, but for
     ! the reasons listed above we compute it using a fixed value.
-    index1 = iiLH_s_mellor
-    index2 = iiLH_w
+    index1 = iiPDF_s_mellor
+    index2 = iiPDF_w
 
     call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
@@ -2285,8 +2285,8 @@ module generate_lh_sample_module
            corr_stw_matrix ) ! In/out
 
     ! Obtain the fixed value for the correlation between t and w.
-    index1 = iiLH_t_mellor
-    index2 = iiLH_w
+    index1 = iiPDF_t_mellor
+    index2 = iiPDF_w
     call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
             corr_tw ) ! Out
@@ -2314,8 +2314,8 @@ module generate_lh_sample_module
     ! Correlations involving s,t and the lognormal variates
     do index1 = LN_index, d_variables
       call add_corr_to_matrix_gaus_LN &
-           ( d_variables, iiLH_s_mellor, & ! In
-             iiLH_t_mellor, iiLH_w, index1, & ! In
+           ( d_variables, iiPDF_s_mellor, & ! In
+             iiPDF_t_mellor, iiPDF_w, index1, & ! In
              xp2_on_xm2_array, corr_array, & ! In
              corr_stw_matrix ) ! In/Out
     end do
@@ -2387,8 +2387,8 @@ module generate_lh_sample_module
   end subroutine add_corr_to_matrix_LN_LN
 
 !-------------------------------------------------------------------------------
-  subroutine add_corr_to_matrix_gaus_LN( d_variables, iiLH_s_mellor, &
-                                         iiLH_t_mellor, iiLH_w, index1, &
+  subroutine add_corr_to_matrix_gaus_LN( d_variables, iiPDF_s_mellor, &
+                                         iiPDF_t_mellor, iiPDF_w, index1, &
                                          xp2_on_xm2_array, corr_array, &
                                          corr_stw_matrix )
 ! Description:
@@ -2411,9 +2411,9 @@ module generate_lh_sample_module
     ! Input Variables
     integer, intent(in) :: &
       d_variables, & ! Total variates
-      iiLH_s_mellor, & ! Index of s_mellor
-      iiLH_t_mellor, & ! Index of t_mellor
-      iiLH_w, &        ! Index of w (vertical velocity)
+      iiPDF_s_mellor, & ! Index of s_mellor
+      iiPDF_t_mellor, & ! Index of t_mellor
+      iiPDF_w, &        ! Index of w (vertical velocity)
       index1           ! Index of the lognormal variate
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
@@ -2441,7 +2441,7 @@ module generate_lh_sample_module
     ! Correlations involving s and lognormal variate x
 
     call get_lower_triangular_matrix &
-         ( d_variables, iiLH_s_mellor, index1, corr_array, & ! In
+         ( d_variables, iiPDF_s_mellor, index1, corr_array, & ! In
            corr_sx ) ! Out
 
     if ( corr_sx /= 0._core_rknd ) then
@@ -2455,25 +2455,25 @@ module generate_lh_sample_module
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiLH_s_mellor, index1, real(covar_sx, kind = dp), & ! In
+         ( d_variables, iiPDF_s_mellor, index1, real(covar_sx, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
     if ( corr_sx /= 0._core_rknd ) then
       ! Approximate the covariance of t and x
-      ! This formula relies on the fact that iiLH_s_mellor < iiLH_t_mellor
-      covar_tx = corr_stw_matrix(iiLH_t_mellor,iiLH_s_mellor) * real(covar_sx, kind = dp)
+      ! This formula relies on the fact that iiPDF_s_mellor < iiPDF_t_mellor
+      covar_tx = corr_stw_matrix(iiPDF_t_mellor,iiPDF_s_mellor) * real(covar_sx, kind = dp)
     else
       covar_tx = 0._dp
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiLH_t_mellor, index1, covar_tx, & ! In
+         ( d_variables, iiPDF_t_mellor, index1, covar_tx, & ! In
            corr_stw_matrix ) ! In/out
 
     ! Correlations involving w and lognormal variate x
 
     call get_lower_triangular_matrix &
-         ( d_variables, iiLH_w, index1, corr_array, & ! In
+         ( d_variables, iiPDF_w, index1, corr_array, & ! In
            corr_wx ) ! Out
 
     if ( corr_wx /= 0._core_rknd ) then
@@ -2487,7 +2487,7 @@ module generate_lh_sample_module
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiLH_w, index1, real(covar_wx, kind = dp), & ! In
+         ( d_variables, iiPDF_w, index1, real(covar_wx, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
     return

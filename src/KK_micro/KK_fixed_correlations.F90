@@ -71,12 +71,12 @@ module KK_fixed_correlations
     !-----------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-        iiLH_w,        & ! Variables
-        iiLH_s_mellor, &
-        iiLH_t_mellor, &
-        iiLH_rrain, &
-        iiLH_Nr, &
-        iiLH_Ncn
+        iiPDF_w,        & ! Variables
+        iiPDF_s_mellor, &
+        iiPDF_t_mellor, &
+        iiPDF_rrain, &
+        iiPDF_Nr, &
+        iiPDF_Ncn
 
     use parameters_microphys, only: &
         l_fix_s_t_correlations ! Variable(s)
@@ -118,37 +118,37 @@ module KK_fixed_correlations
 
     ! Set the indices of the correlation array for the purpose of setting the
     ! variables (above)
-    iiLH_s_mellor = 1
-    iiLH_t_mellor = 2
-    iiLH_w        = 3
-    iiLH_rrain    = 4
-    iiLH_Ncn      = 5
-    iiLH_Nr       = 6
+    iiPDF_s_mellor = 1
+    iiPDF_t_mellor = 2
+    iiPDF_w        = 3
+    iiPDF_rrain    = 4
+    iiPDF_Ncn      = 5
+    iiPDF_Nr       = 6
 
     call read_correlation_matrix( iunit, input_file_cloud, d_variables, & ! In
                                   corr_matrix ) ! In/Out
 
     ! Note: Since corr_matrix contains only the lower elements of the matrix,
     ! the 2nd index must be the smaller of the 2 indices (set above)
-    ! e.g. iiLH_s_mellor < iiLH_rrain.
-    corr_wrr_NL_cloud  = corr_matrix(iiLH_rrain,iiLH_w)
-    corr_wNr_NL_cloud  = corr_matrix(iiLH_Nr,iiLH_w)
-    corr_wNcn_NL_cloud = corr_matrix(iiLH_Ncn,iiLH_w)
+    ! e.g. iiPDF_s_mellor < iiPDF_rrain.
+    corr_wrr_NL_cloud  = corr_matrix(iiPDF_rrain,iiPDF_w)
+    corr_wNr_NL_cloud  = corr_matrix(iiPDF_Nr,iiPDF_w)
+    corr_wNcn_NL_cloud = corr_matrix(iiPDF_Ncn,iiPDF_w)
 
-    corr_sw_NN_cloud   = corr_matrix(iiLH_w,iiLH_s_mellor)
+    corr_sw_NN_cloud   = corr_matrix(iiPDF_w,iiPDF_s_mellor)
 
-    corr_srr_NL_cloud  = corr_matrix(iiLH_rrain,iiLH_s_mellor)
-    corr_sNr_NL_cloud  = corr_matrix(iiLH_Nr,iiLH_s_mellor)
-    corr_sNcn_NL_cloud = corr_matrix(iiLH_Ncn,iiLH_s_mellor)
+    corr_srr_NL_cloud  = corr_matrix(iiPDF_rrain,iiPDF_s_mellor)
+    corr_sNr_NL_cloud  = corr_matrix(iiPDF_Nr,iiPDF_s_mellor)
+    corr_sNcn_NL_cloud = corr_matrix(iiPDF_Ncn,iiPDF_s_mellor)
 
-    corr_trr_NL_cloud  = corr_matrix(iiLH_rrain,iiLH_t_mellor)
-    corr_tNr_NL_cloud  = corr_matrix(iiLH_Nr,iiLH_t_mellor)
-    corr_tNcn_NL_cloud = corr_matrix(iiLH_Ncn,iiLH_t_mellor)
+    corr_trr_NL_cloud  = corr_matrix(iiPDF_rrain,iiPDF_t_mellor)
+    corr_tNr_NL_cloud  = corr_matrix(iiPDF_Nr,iiPDF_t_mellor)
+    corr_tNcn_NL_cloud = corr_matrix(iiPDF_Ncn,iiPDF_t_mellor)
 
-    corr_rrNr_LL_cloud = corr_matrix(iiLH_Nr,iiLH_rrain)
+    corr_rrNr_LL_cloud = corr_matrix(iiPDF_Nr,iiPDF_rrain)
 
     if ( l_fix_s_t_correlations ) then
-       corr_st_NN_cloud = corr_matrix(iiLH_t_mellor,iiLH_s_mellor)
+       corr_st_NN_cloud = corr_matrix(iiPDF_t_mellor,iiPDF_s_mellor)
     else
         ! Don't fix the value of the correlation
        corr_st_NN_cloud = -999._core_rknd
@@ -157,36 +157,36 @@ module KK_fixed_correlations
     call read_correlation_matrix( iunit, input_file_below, d_variables, & ! In
                                   corr_matrix ) ! In/Out
 
-    corr_wrr_NL_below  = corr_matrix(iiLH_rrain,iiLH_w)
-    corr_wNr_NL_below  = corr_matrix(iiLH_Nr,iiLH_w)
-    corr_wNcn_NL_below = corr_matrix(iiLH_Ncn,iiLH_w)
+    corr_wrr_NL_below  = corr_matrix(iiPDF_rrain,iiPDF_w)
+    corr_wNr_NL_below  = corr_matrix(iiPDF_Nr,iiPDF_w)
+    corr_wNcn_NL_below = corr_matrix(iiPDF_Ncn,iiPDF_w)
 
-    corr_sw_NN_below   = corr_matrix(iiLH_w,iiLH_s_mellor)
+    corr_sw_NN_below   = corr_matrix(iiPDF_w,iiPDF_s_mellor)
 
-    corr_srr_NL_below  = corr_matrix(iiLH_rrain,iiLH_s_mellor)
-    corr_sNr_NL_below  = corr_matrix(iiLH_Nr,iiLH_s_mellor)
-    corr_sNcn_NL_below = corr_matrix(iiLH_Ncn,iiLH_s_mellor)
+    corr_srr_NL_below  = corr_matrix(iiPDF_rrain,iiPDF_s_mellor)
+    corr_sNr_NL_below  = corr_matrix(iiPDF_Nr,iiPDF_s_mellor)
+    corr_sNcn_NL_below = corr_matrix(iiPDF_Ncn,iiPDF_s_mellor)
 
-    corr_trr_NL_below  = corr_matrix(iiLH_rrain,iiLH_t_mellor)
-    corr_tNr_NL_below  = corr_matrix(iiLH_Nr,iiLH_t_mellor)
-    corr_tNcn_NL_below = corr_matrix(iiLH_Ncn,iiLH_t_mellor)
+    corr_trr_NL_below  = corr_matrix(iiPDF_rrain,iiPDF_t_mellor)
+    corr_tNr_NL_below  = corr_matrix(iiPDF_Nr,iiPDF_t_mellor)
+    corr_tNcn_NL_below = corr_matrix(iiPDF_Ncn,iiPDF_t_mellor)
 
-    corr_rrNr_LL_below = corr_matrix(iiLH_Nr,iiLH_rrain)
+    corr_rrNr_LL_below = corr_matrix(iiPDF_Nr,iiPDF_rrain)
 
     if ( l_fix_s_t_correlations ) then
-       corr_st_NN_below = corr_matrix(iiLH_t_mellor,iiLH_s_mellor)
+       corr_st_NN_below = corr_matrix(iiPDF_t_mellor,iiPDF_s_mellor)
     else
        ! As above, we let this vary in space and time
        corr_st_NN_below = -999._core_rknd
     endif
 
     ! Set all indices back to -1, to avoid the introduction of bugs
-    iiLH_s_mellor = -1
-    iiLH_t_mellor = -1
-    iiLH_w = -1
-    iiLH_rrain = -1
-    iiLH_Ncn = -1
-    iiLH_Nr = -1
+    iiPDF_s_mellor = -1
+    iiPDF_t_mellor = -1
+    iiPDF_w = -1
+    iiPDF_rrain = -1
+    iiPDF_Ncn = -1
+    iiPDF_Nr = -1
 
     ! Printing correlation values for debugging
     if ( clubb_at_least_debug_level( 1 ) ) then

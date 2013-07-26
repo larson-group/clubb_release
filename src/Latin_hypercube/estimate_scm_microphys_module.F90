@@ -41,8 +41,8 @@ module estimate_scm_microphys_module
       l_const_Nc_in_cloud
 
     use corr_matrix_module, only: &
-      iiLH_s_mellor, &
-      iiLH_w
+      iiPDF_s_mellor, &
+      iiPDF_w
 
     use pdf_parameter_module, only: &
       pdf_parameter ! Type
@@ -187,8 +187,8 @@ module estimate_scm_microphys_module
     ! ---- Begin Code ----
 
     ! Mellor's 's' is hardwired elsewhere to be the first column
-    s_mellor_all_points => X_nl_all_levs(:,:,iiLH_s_mellor)
-    w_all_points        => X_nl_all_levs(:,:,iiLH_w)
+    s_mellor_all_points => X_nl_all_levs(:,:,iiPDF_s_mellor)
+    w_all_points        => X_nl_all_levs(:,:,iiPDF_w)
 
     ! Assertion check
     if ( l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling .and. &
@@ -520,15 +520,15 @@ module estimate_scm_microphys_module
       iiNgraupelm
 
     use corr_matrix_module, only: &
-      iiLH_rrain, &
-      iiLH_rsnow, &
-      iiLH_rice, &
-      iiLH_rgraupel, &
-      iiLH_Nr, &
-      iiLH_Nsnow, &
-      iiLH_Ngraupel, &
-      iiLH_Nc => iiLH_Ncn, &
-      iiLH_Ni
+      iiPDF_rrain, &
+      iiPDF_rsnow, &
+      iiPDF_rice, &
+      iiPDF_rgraupel, &
+      iiPDF_Nr, &
+      iiPDF_Nsnow, &
+      iiPDF_Ngraupel, &
+      iiPDF_Nc => iiPDF_Ncn, &
+      iiPDF_Ni
 
     use clubb_precision, only: &
       dp, & ! double precision
@@ -558,45 +558,45 @@ module estimate_scm_microphys_module
     do sample = 1, n_micro_calls
       ! Copy the sample points into the temporary arrays
       do ivar = 1, hydromet_dim, 1
-        if ( ivar == iirrainm .and. iiLH_rrain > 0 ) then
+        if ( ivar == iirrainm .and. iiPDF_rrain > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiLH_rrain), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_rrain), kind = core_rknd )
 
-        else if ( ivar == iirsnowm .and. iiLH_rsnow > 0 ) then
+        else if ( ivar == iirsnowm .and. iiPDF_rsnow > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiLH_rsnow), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_rsnow), kind = core_rknd )
 
-        else if ( ivar == iiricem .and. iiLH_rice > 0 ) then
+        else if ( ivar == iiricem .and. iiPDF_rice > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiLH_rice), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_rice), kind = core_rknd )
 
-        else if ( ivar == iirgraupelm .and. iiLH_rgraupel > 0 ) then
+        else if ( ivar == iirgraupelm .and. iiPDF_rgraupel > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiLH_rgraupel), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_rgraupel), kind = core_rknd )
 
-        else if ( ivar == iiNrm .and. iiLH_Nr > 0 ) then
+        else if ( ivar == iiNrm .and. iiPDF_Nr > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiLH_Nr), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_Nr), kind = core_rknd )
 
-        else if ( ivar == iiNsnowm .and. iiLH_Nsnow > 0 ) then
+        else if ( ivar == iiNsnowm .and. iiPDF_Nsnow > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiLH_Nsnow), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_Nsnow), kind = core_rknd )
 
-        else if ( ivar == iiNgraupelm .and. iiLH_Ngraupel > 0 ) then
+        else if ( ivar == iiNgraupelm .and. iiPDF_Ngraupel > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiLH_Ngraupel), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_Ngraupel), kind = core_rknd )
 
-        else if ( ivar == iiNim .and. iiLH_Ni > 0 ) then
+        else if ( ivar == iiNim .and. iiPDF_Ni > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiLH_Ni), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_Ni), kind = core_rknd )
 
         else ! Use the mean field, rather than a sample point
           ! This is the case for hail and graupel in the Morrison microphysics
@@ -606,8 +606,8 @@ module estimate_scm_microphys_module
         end if
       end do ! 1..hydromet_dim
       ! Copy Nc into Nc all points
-      if ( iiLH_Nc > 0 ) then
-        Nc_all_points(:,sample) = real( X_nl_all_levs(:,sample,iiLH_Nc), kind=core_rknd )
+      if ( iiPDF_Nc > 0 ) then
+        Nc_all_points(:,sample) = real( X_nl_all_levs(:,sample,iiPDF_Nc), kind=core_rknd )
       end if
     end do ! 1..n_micro_calls
 
