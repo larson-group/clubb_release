@@ -14,8 +14,9 @@ module setup_clubb_pdf_params
 
   private :: component_means_rain,   &
              precip_fraction,        &
-             component_mean_ip,      &
-             component_stdev_ip,     &
+             component_mean_hm_ip,   &
+             component_stdev_hm_ip,  &
+             component_corr_whm_ip,  &
              pdf_param_hm_stats,     &
              pdf_param_log_hm_stats, &
              pack_pdf_params
@@ -1548,16 +1549,16 @@ module setup_clubb_pdf_params
     mu_t_2 = zero
 
     ! Mean of in-precip rain water mixing ratio in PDF component 1.
-    mu_rr_1 = component_mean_ip( rr1, precip_frac_1, rr_tol )
+    mu_rr_1 = component_mean_hm_ip( rr1, precip_frac_1, rr_tol )
 
     ! Mean of in-precip rain water mixing ratio in PDF component 2.
-    mu_rr_2 = component_mean_ip( rr2, precip_frac_2, rr_tol )
+    mu_rr_2 = component_mean_hm_ip( rr2, precip_frac_2, rr_tol )
 
     ! Mean of in-precip rain drop concentration in PDF component 1.
-    mu_Nr_1 = component_mean_ip( Nr1, precip_frac_1, Nr_tol )
+    mu_Nr_1 = component_mean_hm_ip( Nr1, precip_frac_1, Nr_tol )
 
     ! Mean of in-precip rain drop concentration in PDF component 2.
-    mu_Nr_2 = component_mean_ip( Nr2, precip_frac_2, Nr_tol )
+    mu_Nr_2 = component_mean_hm_ip( Nr2, precip_frac_2, Nr_tol )
 
     ! Mean of cloud nuclei concentration in PDF component 1.
     if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
@@ -1614,23 +1615,27 @@ module setup_clubb_pdf_params
 
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 1.
-    sigma_rr_1 = component_stdev_ip( rr1, mu_rr_1, rc1, cloud_frac1, rr_tol, &
-                                     rrp2_on_rrm2_cloud, rrp2_on_rrm2_below )
+    sigma_rr_1 &
+    = component_stdev_hm_ip( rr1, mu_rr_1, rc1, cloud_frac1, rr_tol, &
+                             rrp2_on_rrm2_cloud, rrp2_on_rrm2_below )
 
     ! Standard deviation of in-precip rain water mixing ratio
     ! in PDF component 2.
-    sigma_rr_2 = component_stdev_ip( rr2, mu_rr_2, rc2, cloud_frac2, rr_tol, &
-                                     rrp2_on_rrm2_cloud, rrp2_on_rrm2_below )
+    sigma_rr_2 &
+    = component_stdev_hm_ip( rr2, mu_rr_2, rc2, cloud_frac2, rr_tol, &
+                             rrp2_on_rrm2_cloud, rrp2_on_rrm2_below )
 
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 1.
-    sigma_Nr_1 = component_stdev_ip( Nr1, mu_Nr_1, rc1, cloud_frac1, Nr_tol, &
-                                     Nrp2_on_Nrm2_cloud, Nrp2_on_Nrm2_below )
+    sigma_Nr_1 &
+    = component_stdev_hm_ip( Nr1, mu_Nr_1, rc1, cloud_frac1, Nr_tol, &
+                             Nrp2_on_Nrm2_cloud, Nrp2_on_Nrm2_below )
 
     ! Standard deviation of in-precip rain drop concentration
     ! in PDF component 2.
-    sigma_Nr_2 = component_stdev_ip( Nr2, mu_Nr_2, rc2, cloud_frac2, Nr_tol, &
-                                     Nrp2_on_Nrm2_cloud, Nrp2_on_Nrm2_below )
+    sigma_Nr_2 &
+    = component_stdev_hm_ip( Nr2, mu_Nr_2, rc2, cloud_frac2, Nr_tol, &
+                             Nrp2_on_Nrm2_cloud, Nrp2_on_Nrm2_below )
 
     ! Standard deviation of cloud nuclei concentration in PDF component 1.
     if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
@@ -1808,15 +1813,15 @@ module setup_clubb_pdf_params
       l_follow_CLUBB_PDF_standards = .true.
 
     real( kind = core_rknd ) :: &
-      rrp2_on_rrm2,    & ! Ratio of < r_r'^2 > to < r_r >^2              [-]
-      Nrp2_on_Nrm2,    & ! Ratio of < N_r'^2 > to < N_r >^2              [-]
-      Ncnp2_on_Ncnm2,  & ! Ratio of < N_cn'^2 > to < N_cn >^2            [-]
-      s_mellor_m,      & ! Mean of s_mellor                              [kg/kg]
-      stdev_s_mellor,  & ! Standard deviation of s_mellor                [kg/kg]
-      corr_ws,         & ! Correlation between w and s                   [-]
-      corr_wrr,        & ! Correlation between w and rr ip               [-]
-      corr_wNr,        & ! Correlation between w and Nr ip               [-]
-      corr_wNcn          ! Correlation between w and Ncn                 [-]
+      rrp2_on_rrm2,    & ! Ratio of < r_r'^2 > to < r_r >^2            [-]
+      Nrp2_on_Nrm2,    & ! Ratio of < N_r'^2 > to < N_r >^2            [-]
+      Ncnp2_on_Ncnm2,  & ! Ratio of < N_cn'^2 > to < N_cn >^2          [-]
+      s_mellor_m,      & ! Mean of s_mellor                            [kg/kg]
+      stdev_s_mellor,  & ! Standard deviation of s_mellor              [kg/kg]
+      corr_ws,         & ! Correlation between w and s (overall)       [-]
+      corr_wrr,        & ! Correlation between w and rr (overall) ip   [-]
+      corr_wNr,        & ! Correlation between w and Nr (overall) ip   [-]
+      corr_wNcn          ! Correlation between w and Ncn (overall)     [-]
 
 
     !!! Enter the PDF parameters.
@@ -1909,108 +1914,24 @@ module setup_clubb_pdf_params
     endif ! l_follow_CLUBB_PDF_standards
 
     ! Correlation (in-precip) between w and r_r in PDF component 1.
-    if ( ( rr1 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_calc_w_corr ) then
-          corr_wrr_1 = corr_wrr
-       else ! use prescribed parameter values
-          if ( l_interp_prescribed_params ) then
-             corr_wrr_1 = cloud_frac1 * corr_wrr_NL_cloud &
-                          + ( one - cloud_frac1 ) * corr_wrr_NL_below
-          else
-             if ( rc1 > rc_tol ) then
-                corr_wrr_1 = corr_wrr_NL_cloud
-             else
-                corr_wrr_1 = corr_wrr_NL_below
-             endif
-          endif ! l_interp_prescribed_params
-       endif ! ! l_calc_w_corr
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The
-       ! correlations involving rain water mixing ratio in the 1st PDF component
-       ! are 0 since rain water mixing ratio does not vary in this component at
-       ! this grid level.
-       corr_wrr_1 = zero
-    endif
+    corr_wrr_1  &
+    = component_corr_whm_ip( rr1, corr_wrr, rc1, cloud_frac1, rr_tol, &
+                             corr_wrr_NL_cloud, corr_wrr_NL_below )
 
     ! Correlation (in-precip) between w and r_r in PDF component 2.
-    if ( ( rr2 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_calc_w_corr ) then
-          corr_wrr_2 = corr_wrr
-       else ! use prescribed parameter values
-          if ( l_interp_prescribed_params ) then
-             corr_wrr_2 = cloud_frac2 * corr_wrr_NL_cloud &
-                          + ( one - cloud_frac2 ) * corr_wrr_NL_below
-          else
-             if ( rc2 > rc_tol ) then
-                corr_wrr_2 = corr_wrr_NL_cloud
-             else
-                corr_wrr_2 = corr_wrr_NL_below
-             endif
-          endif ! l_interp_prescribed_params
-       endif ! l_calc_w_corr
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The
-       ! correlations involving rain water mixing ratio in the 2nd PDF component
-       ! are 0 since rain water mixing ratio does not vary in this component at
-       ! this grid level.
-       corr_wrr_2 = zero
-    endif
+    corr_wrr_2  &
+    = component_corr_whm_ip( rr2, corr_wrr, rc2, cloud_frac2, rr_tol, &
+                             corr_wrr_NL_cloud, corr_wrr_NL_below )
 
     ! Correlation (in-precip) between w and N_r in PDF component 1.
-    if ( ( Nr1 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_calc_w_corr ) then
-          corr_wNr_1 = corr_wNr
-       else ! use prescribed parameter values
-          if ( l_interp_prescribed_params ) then
-             corr_wNr_1 = cloud_frac1 * corr_wNr_NL_cloud &
-                          + ( one - cloud_frac1 ) * corr_wNr_NL_below
-          else
-             if ( rc1 > rc_tol ) then
-                corr_wNr_1 = corr_wNr_NL_cloud
-             else
-                corr_wNr_1 = corr_wNr_NL_below
-             endif
-          endif ! l_interp_prescribed_params
-       endif ! l_calc_w_corr
-    else
-       ! Mean in-precip rain drop concentration in PDF component 1 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The
-       ! correlations involving rain drop concentration in the 1st PDF component
-       ! are 0 since rain drop concentration does not vary in this component at
-       ! this grid level.
-       corr_wNr_1 = zero
-    endif
+    corr_wNr_1  &
+    = component_corr_whm_ip( Nr1, corr_wNr, rc1, cloud_frac1, Nr_tol, &
+                             corr_wNr_NL_cloud, corr_wNr_NL_below )
 
     ! Correlation (in-precip) between w and N_r in PDF component 2.
-    if ( ( Nr2 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_calc_w_corr ) then
-          corr_wNr_2 = corr_wNr
-       else ! use prescribed parameter values
-          if ( l_interp_prescribed_params ) then
-             corr_wNr_2 = cloud_frac2 * corr_wNr_NL_cloud &
-                          + ( one - cloud_frac2 ) * corr_wNr_NL_below
-          else
-             if ( rc2 > rc_tol ) then
-                corr_wNr_2 = corr_wNr_NL_cloud
-             else
-                corr_wNr_2 = corr_wNr_NL_below
-             endif
-          endif ! l_interp_prescribed_params
-       endif ! l_calc_w_corr
-    else
-       ! Mean in-precip rain drop concentration in PDF component 2 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The
-       ! correlations involving rain drop concentration in the 2nd PDF component
-       ! are 0 since rain drop concentration does not vary in this component at
-       ! this grid level.
-       corr_wNr_2 = zero
-    endif
+    corr_wNr_2  &
+    = component_corr_whm_ip( Nr2, corr_wNr, rc2, cloud_frac2, Nr_tol, &
+                             corr_wNr_NL_cloud, corr_wNr_NL_below )
 
     ! Correlation between w and N_cn in PDF component 1.
     if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
@@ -2097,92 +2018,24 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between s and r_r in PDF component 1.
-    if ( ( rr1 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_interp_prescribed_params ) then
-          corr_srr_1 = cloud_frac1 * corr_srr_NL_cloud &
-                       + ( one - cloud_frac1 ) * corr_srr_NL_below
-       else
-          if ( rc1 > rc_tol ) then
-             corr_srr_1 = corr_srr_NL_cloud
-          else
-             corr_srr_1 = corr_srr_NL_below
-          endif
-       endif
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The
-       ! correlations involving rain water mixing ratio in the 1st PDF component
-       ! are 0 since rain water mixing ratio does not vary in this component at
-       ! this grid level.
-       corr_srr_1 = zero
-    endif
+    corr_srr_1 &
+    = component_corr_xhm_ip( rr1, rc1, cloud_frac1, rr_tol, &
+                             corr_srr_NL_cloud, corr_srr_NL_below )
 
     ! Correlation (in-precip) between s and r_r in PDF component 2.
-    if ( ( rr2 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_interp_prescribed_params ) then
-          corr_srr_2 = cloud_frac2 * corr_srr_NL_cloud &
-                       + ( one - cloud_frac2 ) * corr_srr_NL_below
-       else
-          if ( rc2 > rc_tol ) then
-             corr_srr_2 = corr_srr_NL_cloud
-          else
-             corr_srr_2 = corr_srr_NL_below
-          endif
-       endif
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The
-       ! correlations involving rain water mixing ratio in the 2nd PDF component
-       ! are 0 since rain water mixing ratio does not vary in this component at
-       ! this grid level.
-       corr_srr_2 = zero
-    endif
+    corr_srr_2 &
+    = component_corr_xhm_ip( rr2, rc2, cloud_frac2, rr_tol, &
+                             corr_srr_NL_cloud, corr_srr_NL_below )
 
     ! Correlation (in-precip) between s and N_r in PDF component 1.
-    if ( ( Nr1 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_interp_prescribed_params ) then
-          corr_sNr_1 = cloud_frac1 * corr_sNr_NL_cloud &
-                       + ( one - cloud_frac1 ) * corr_sNr_NL_below
-       else
-          if ( rc1 > rc_tol ) then
-             corr_sNr_1 = corr_sNr_NL_cloud
-          else
-             corr_sNr_1 = corr_sNr_NL_below
-          endif
-       endif
-    else
-       ! Mean in-precip rain drop concentration in PDF component 1 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The
-       ! correlations involving rain drop concentration in the 1st PDF component
-       ! are 0 since rain drop concentration does not vary in this component at
-       ! this grid level.
-       corr_sNr_1 = zero
-    endif
+    corr_sNr_1 &
+    = component_corr_xhm_ip( Nr1, rc1, cloud_frac1, Nr_tol, &
+                             corr_sNr_NL_cloud, corr_sNr_NL_below )
 
     ! Correlation (in-precip) between s and N_r in PDF component 2.
-    if ( ( Nr2 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_interp_prescribed_params ) then
-          corr_sNr_2 = cloud_frac2 * corr_sNr_NL_cloud &
-                       + ( one - cloud_frac2 ) * corr_sNr_NL_below
-       else
-          if ( rc2 > rc_tol ) then
-             corr_sNr_2 = corr_sNr_NL_cloud
-          else
-             corr_sNr_2 = corr_sNr_NL_below
-          endif
-       endif
-    else
-       ! Mean in-precip rain drop concentration in PDF component 2 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The
-       ! correlations involving rain drop concentration in the 2nd PDF component
-       ! are 0 since rain drop concentration does not vary in this component at
-       ! this grid level.
-       corr_sNr_2 = zero
-    endif
+    corr_sNr_2 &
+    = component_corr_xhm_ip( Nr2, rc2, cloud_frac2, Nr_tol, &
+                             corr_sNr_NL_cloud, corr_sNr_NL_below )
 
     ! Correlation between s and N_cn in PDF component 1.
     if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
@@ -2209,92 +2062,24 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between t and r_r in PDF component 1.
-    if ( ( rr1 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_interp_prescribed_params ) then
-          corr_trr_1 = cloud_frac1 * corr_trr_NL_cloud &
-                       + ( one - cloud_frac1 ) * corr_trr_NL_below
-       else
-          if ( rc1 > rc_tol ) then
-             corr_trr_1 = corr_trr_NL_cloud
-          else
-             corr_trr_1 = corr_trr_NL_below
-          endif
-       endif
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 1 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The
-       ! correlations involving rain water mixing ratio in the 1st PDF component
-       ! are 0 since rain water mixing ratio does not vary in this component at
-       ! this grid level.
-       corr_trr_1 = zero
-    endif
+    corr_trr_1 &
+    = component_corr_xhm_ip( rr1, rc1, cloud_frac1, rr_tol, &
+                             corr_trr_NL_cloud, corr_trr_NL_below )
 
     ! Correlation (in-precip) between t and r_r in PDF component 2.
-    if ( ( rr2 > rr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_interp_prescribed_params ) then
-          corr_trr_2 = cloud_frac2 * corr_trr_NL_cloud &
-                       + ( one - cloud_frac2 ) * corr_trr_NL_below
-       else
-          if ( rc2 > rc_tol ) then
-             corr_trr_2 = corr_trr_NL_cloud
-          else
-             corr_trr_2 = corr_trr_NL_below
-          endif
-       endif
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 2 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The
-       ! correlations involving rain water mixing ratio in the 2nd PDF component
-       ! are 0 since rain water mixing ratio does not vary in this component at
-       ! this grid level.
-       corr_trr_2 = zero
-    endif
+    corr_trr_2 &
+    = component_corr_xhm_ip( rr2, rc2, cloud_frac2, rr_tol, &
+                             corr_trr_NL_cloud, corr_trr_NL_below )
 
     ! Correlation (in-precip) between t and N_r in PDF component 1.
-    if ( ( Nr1 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_interp_prescribed_params ) then
-          corr_tNr_1 = cloud_frac1 * corr_tNr_NL_cloud &
-                       + ( one - cloud_frac1 ) * corr_tNr_NL_below
-       else
-          if ( rc1 > rc_tol ) then
-             corr_tNr_1 = corr_tNr_NL_cloud
-          else
-             corr_tNr_1 = corr_tNr_NL_below
-          endif
-       endif
-    else
-       ! Mean in-precip rain drop concentration in PDF component 1 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The
-       ! correlations involving rain drop concentration in the 1st PDF component
-       ! are 0 since rain drop concentration does not vary in this component at
-       ! this grid level.
-       corr_tNr_1 = zero
-    endif
+    corr_tNr_1 &
+    = component_corr_xhm_ip( Nr1, rc1, cloud_frac1, Nr_tol, &
+                             corr_tNr_NL_cloud, corr_tNr_NL_below )
 
     ! Correlation (in-precip) between t and N_r in PDF component 2.
-    if ( ( Nr2 > Nr_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_interp_prescribed_params ) then
-          corr_tNr_2 = cloud_frac2 * corr_tNr_NL_cloud &
-                       + ( one - cloud_frac2 ) * corr_tNr_NL_below
-       else
-          if ( rc2 > rc_tol ) then
-             corr_tNr_2 = corr_tNr_NL_cloud
-          else
-             corr_tNr_2 = corr_tNr_NL_below
-          endif
-       endif
-    else
-       ! Mean in-precip rain drop concentration in PDF component 2 is less than
-       ! the tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The
-       ! correlations involving rain drop concentration in the 2nd PDF component
-       ! are 0 since rain drop concentration does not vary in this component at
-       ! this grid level.
-       corr_tNr_2 = zero
-    endif
+    corr_tNr_2 &
+    = component_corr_xhm_ip( Nr2, rc2, cloud_frac2, Nr_tol, &
+                             corr_tNr_NL_cloud, corr_tNr_NL_below )
 
     ! Correlation between t and N_cn in PDF component 1.
     if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
@@ -2321,7 +2106,8 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 1.
-    if ( ( ( rr1 > rr_tol ) .and. ( Nr1 > Nr_tol ) ) .or. ( .not. l_use_hydromet_tolerance ) ) then
+    if ( ( ( rr1 > rr_tol ) .and. ( Nr1 > Nr_tol ) ) &
+         .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           corr_rrNr_1 = cloud_frac1 * corr_rrNr_LL_cloud &
                         + ( one - cloud_frac1 ) * corr_rrNr_LL_below
@@ -2343,7 +2129,8 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 2.
-    if ( ( ( rr2 > rr_tol ) .and. ( Nr2 > Nr_tol ) ) .or. ( .not. l_use_hydromet_tolerance )  ) then
+    if ( ( ( rr2 > rr_tol ) .and. ( Nr2 > Nr_tol ) ) &
+         .or. ( .not. l_use_hydromet_tolerance )  ) then
        if ( l_interp_prescribed_params ) then
           corr_rrNr_2 = cloud_frac2 * corr_rrNr_LL_cloud &
                         + ( one - cloud_frac2 ) * corr_rrNr_LL_below
@@ -2369,7 +2156,7 @@ module setup_clubb_pdf_params
   end subroutine compute_corr
 
   !=============================================================================
-  function component_mean_ip( hmi, precip_frac_i, hm_tol )  &
+  function component_mean_hm_ip( hmi, precip_frac_i, hm_tol )  &
   result( mu_hm_i )
 
     ! Description:
@@ -2415,11 +2202,11 @@ module setup_clubb_pdf_params
 
     return
 
-  end function component_mean_ip
+  end function component_mean_hm_ip
 
   !=============================================================================
-  function component_stdev_ip( hmi, mu_hm_i, rci, cloud_fraci, hm_tol, &
-                               hmp2_on_hmm2_cloud, hmp2_on_hmm2_below )  &
+  function component_stdev_hm_ip( hmi, mu_hm_i, rci, cloud_fraci, hm_tol, &
+                                  hmp2_on_hmm2_cloud, hmp2_on_hmm2_below )  &
   result( sigma_hm_i )
 
     ! Description:
@@ -2451,8 +2238,8 @@ module setup_clubb_pdf_params
       hm_tol         ! Tolerance value for hydrometeor               [hm units]
 
     real( kind = core_rknd ), intent(in) :: &
-      hmp2_on_hmm2_cloud, & ! Ratio <hm'^2>/<hm>^2 at cloudy grid levels  [-]
-      hmp2_on_hmm2_below    ! Ratio <hm'^2>/<hm>^2 at clear grid levels   [-]
+      hmp2_on_hmm2_cloud, & ! Ratio of <hm'^2> to <hm>^2: cloudy grid levels [-]
+      hmp2_on_hmm2_below    ! Ratio of <hm'^2> to <hm>^2: clear grid levels  [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -2477,16 +2264,167 @@ module setup_clubb_pdf_params
        ! The mean of the hydrometeor in the ith PDF component is less than the
        ! tolerance amount for the particular hydrometeor.  It is considered to
        ! have a value of 0.  There is not any of this hydrometeor species in the
-       ! ith PDF component at this grid level.  The standard deviation is simply
-       ! 0 since the hydrometeor does not vary in this component at this grid
-       ! level.
+       ! ith PDF component at this grid level.  The standard deviation of the
+       ! hydrometeor is simply 0 since the hydrometeor does not vary in this
+       ! component at this grid level.
        sigma_hm_i = zero
     endif
 
 
   return
 
-  end function component_stdev_ip
+  end function component_stdev_hm_ip
+
+  !=============================================================================
+  function component_corr_whm_ip( hmi, corr_whm, rci, cloud_fraci, hm_tol, &
+                                  corr_whm_NL_cloud, corr_whm_NL_below ) &
+  result( corr_whm_i )
+
+    ! Description:
+    ! Calculates the in-precip correlation between w and a hydrometeor species
+    ! within the ith PDF component.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one,    & ! Constant(s)
+        zero,   &
+        rc_tol
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+        l_calc_w_corr, &
+        l_use_hydromet_tolerance
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      hmi,         & ! Mean of hydrometeor, hm (ith PDF component)   [hm units]
+      corr_whm,    & ! Correlation between w and hm (overall) ip     [-]
+      rci,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
+      cloud_fraci, & ! Cloud fraction (ith PDF component)            [-]
+      hm_tol         ! Tolerance value for hydrometeor               [hm units]
+
+    real( kind = core_rknd ), intent(in) :: &
+      corr_whm_NL_cloud, & ! Corr. btwn. w and hm (ith PDF comp.) ip; cloudy [-]
+      corr_whm_NL_below    ! Corr. btwn. w and hm (ith PDF comp.) ip; clear  [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      corr_whm_i    ! Correlation between w and hm (ith PDF component) ip  [-]
+
+
+    ! Correlation (in-precip) between w and the hydrometeor in the ith
+    ! PDF component.
+    if ( ( hmi > hm_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
+       if ( l_calc_w_corr ) then
+          corr_whm_i = corr_whm
+       else ! use prescribed parameter values
+          if ( l_interp_prescribed_params ) then
+             corr_whm_i = cloud_fraci * corr_whm_NL_cloud &
+                          + ( one - cloud_fraci ) * corr_whm_NL_below
+          else
+             if ( rci > rc_tol ) then
+                corr_whm_i = corr_whm_NL_cloud
+             else
+                corr_whm_i = corr_whm_NL_below
+             endif
+          endif ! l_interp_prescribed_params
+       endif ! l_calc_w_corr
+    else
+       ! The mean of the hydrometeor in the ith PDF component is less than the
+       ! tolerance amount for the particular hydrometeor.  It is considered to
+       ! have a value of 0.  There is not any of this hydrometeor species in the
+       ! ith PDF component at this grid level.  Both the standard deviation of
+       ! the hydrometeor and the covariance of w and the hydrometeor are simply
+       ! 0 since the hydrometeor does not vary in this component at this grid
+       ! level.  The correlations involving w and the hydrometeor in the ith PDF
+       ! component are undefined (and will be set to 0) since the hydrometeor
+       ! does not vary in this component at this grid level.
+       corr_whm_i = zero
+    endif
+
+
+  return
+
+  end function component_corr_whm_ip
+
+  !=============================================================================
+  function component_corr_xhm_ip( hmi, rci, cloud_fraci, hm_tol, &
+                                  corr_xhm_NL_cloud, corr_xhm_NL_below ) &
+  result( corr_xhm_i )
+
+    ! Description:
+    ! Calculates the in-precip correlation between x and a hydrometeor species
+    ! within the ith PDF component.  Here, x is a variable with a normally
+    ! distributed individual marginal PDF, such as s or t.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one,    & ! Constant(s)
+        zero,   &
+        rc_tol
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+        l_use_hydromet_tolerance
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      hmi,         & ! Mean of hydrometeor, hm (ith PDF component)   [hm units]
+      rci,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
+      cloud_fraci, & ! Cloud fraction (ith PDF component)            [-]
+      hm_tol         ! Tolerance value for hydrometeor               [hm units]
+
+    real( kind = core_rknd ), intent(in) :: &
+      corr_xhm_NL_cloud, & ! Corr. btwn. x and hm (ith PDF comp.) ip; cloudy [-]
+      corr_xhm_NL_below    ! Corr. btwn. x and hm (ith PDF comp.) ip; clear  [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      corr_xhm_i    ! Correlation between x and hm (ith PDF component) ip  [-]
+
+
+    ! Correlation (in-precip) between x and the hydrometeor in the ith
+    ! PDF component.
+    if ( ( hmi > hm_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
+       if ( l_interp_prescribed_params ) then
+          corr_xhm_i = cloud_fraci * corr_xhm_NL_cloud &
+                       + ( one - cloud_fraci ) * corr_xhm_NL_below
+       else
+          if ( rci > rc_tol ) then
+             corr_xhm_i = corr_xhm_NL_cloud
+          else
+             corr_xhm_i = corr_xhm_NL_below
+          endif
+       endif
+    else
+       ! The mean of the hydrometeor in the ith PDF component is less than the
+       ! tolerance amount for the particular hydrometeor.  It is considered to
+       ! have a value of 0.  There is not any of this hydrometeor species in the
+       ! ith PDF component at this grid level.  Both the standard deviation of
+       ! the hydrometeor and the covariance of x and the hydrometeor are simply
+       ! 0 since the hydrometeor does not vary in this component at this grid
+       ! level.  The correlations involving x and the hydrometeor in the ith PDF
+       ! component are undefined (and will be set to 0) since the hydrometeor
+       ! does not vary in this component at this grid level.
+       corr_xhm_i = zero
+    endif
+
+
+  return
+
+  end function component_corr_xhm_ip
 
   !=============================================================================
   subroutine normalize_pdf_params( rr1, rr2, Nr1, Nr2, Ncnm, &                   ! Intent(in)
