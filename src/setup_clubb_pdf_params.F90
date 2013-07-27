@@ -1505,18 +1505,6 @@ module setup_clubb_pdf_params
       sigma_Ncn_1, & ! Standard deviation of Ncn (1st PDF component)    [num/kg]
       sigma_Ncn_2    ! Standard deviation of Ncn (2nd PDF component)    [num/kg]
 
-    ! Local Variables
-    real( kind = core_rknd ) :: &
-      rrp2_on_rrm2,    & ! Ratio of < r_r'^2 > to < r_r >^2              [-]
-      Nrp2_on_Nrm2,    & ! Ratio of < N_r'^2 > to < N_r >^2              [-]
-      Ncnp2_on_Ncnm2,  & ! Ratio of < N_cn'^2 > to < N_cn >^2            [-]
-      s_mellor_m,      & ! Mean of s_mellor                              [kg/kg]
-      stdev_s_mellor,  & ! Standard deviation of s_mellor                [kg/kg]
-      corr_ws,         & ! Correlation between w and s                   [-]
-      corr_wrr,        & ! Correlation between w and rr ip               [-]
-      corr_wNr,        & ! Correlation between w and Nr ip               [-]
-      corr_wNcn          ! Correlation between w and Ncn                 [-]
-
 
     !!! Enter the PDF parameters.
 
@@ -1561,24 +1549,10 @@ module setup_clubb_pdf_params
     mu_Nr_2 = component_mean_hm_ip( Nr2, precip_frac_2, Nr_tol )
 
     ! Mean of cloud nuclei concentration in PDF component 1.
-    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       mu_Ncn_1 = Ncnm
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.
-       mu_Ncn_1 = zero
-    endif
+    mu_Ncn_1 = component_mean_hm_ip( Ncnm, one, Ncn_tol )
 
     ! Mean of cloud nuclei concentration in PDF component 2.
-    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       mu_Ncn_2 = Ncnm
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.
-       mu_Ncn_2 = zero
-    endif
+    mu_Ncn_2 = component_mean_hm_ip( Ncnm, one, Ncn_tol )
 
 
     !!! Standard deviations.
@@ -1638,26 +1612,15 @@ module setup_clubb_pdf_params
                              Nrp2_on_Nrm2_cloud, Nrp2_on_Nrm2_below )
 
     ! Standard deviation of cloud nuclei concentration in PDF component 1.
-    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       sigma_Ncn_1 = sqrt( Ncnp2_on_Ncnm2_cloud ) * mu_Ncn_1
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The standard deviation is simply 0 since
-       ! cloud nuclei concentration does not vary at this grid level.
-       sigma_Ncn_1 = zero
-    endif
+    sigma_Ncn_1 &
+    = component_stdev_hm_ip( Ncnm, mu_Ncn_1, rc1, one, Ncn_tol, &
+                             Ncnp2_on_Ncnm2_cloud, Ncnp2_on_Ncnm2_cloud )
 
     ! Standard deviation of cloud nuclei concentration in PDF component 2.
-    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       sigma_Ncn_2 = sqrt( Ncnp2_on_Ncnm2_cloud ) * mu_Ncn_2
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The standard deviation is simply 0 since
-       ! cloud nuclei concentration does not vary at this grid level.
-       sigma_Ncn_2 = zero
-    endif
+    sigma_Ncn_2 &
+    = component_stdev_hm_ip( Ncnm, mu_Ncn_2, rc2, one, Ncn_tol, &
+                             Ncnp2_on_Ncnm2_cloud, Ncnp2_on_Ncnm2_cloud )
+
 
     return
 
@@ -1934,36 +1897,14 @@ module setup_clubb_pdf_params
                              corr_wNr_NL_cloud, corr_wNr_NL_below )
 
     ! Correlation between w and N_cn in PDF component 1.
-    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_calc_w_corr ) then
-          corr_wNcn_1 = corr_wNcn
-       else ! use prescribed parameter values
-          corr_wNcn_1 = corr_wNcn_NL_cloud
-       endif ! l_calc_w_corr
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_wNcn_1 = zero
-    endif
+    corr_wNcn_1  &
+    = component_corr_whm_ip( Ncnm, corr_wNcn, rc1, one, Ncn_tol, &
+                             corr_wNcn_NL_cloud, corr_wNcn_NL_cloud )
 
    ! Correlation between w and N_cn in PDF component 2.
-    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_calc_w_corr ) then
-          corr_wNcn_2 = corr_wNcn
-       else ! use prescribed parameter values
-          corr_wNcn_2 = corr_wNcn_NL_cloud
-       endif ! l_calc_w_corr
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_wNcn_2 = zero
-    endif
+    corr_wNcn_2  &
+    = component_corr_whm_ip( Ncnm, corr_wNcn, rc2, one, Ncn_tol, &
+                             corr_wNcn_NL_cloud, corr_wNcn_NL_cloud )
 
     ! Correlation between s and t in PDF component 1.
     ! The PDF variables s and t result from a transformation of the PDF
@@ -2038,28 +1979,14 @@ module setup_clubb_pdf_params
                              corr_sNr_NL_cloud, corr_sNr_NL_below )
 
     ! Correlation between s and N_cn in PDF component 1.
-    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       corr_sNcn_1 = corr_sNcn_NL_cloud
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_sNcn_1 = zero
-    endif
+    corr_sNcn_1 &
+    = component_corr_xhm_ip( Ncnm, rc1, one, Ncn_tol, &
+                             corr_sNcn_NL_cloud, corr_sNcn_NL_cloud )
 
     ! Correlation between s and N_cn in PDF component 2.
-    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       corr_sNcn_2 = corr_sNcn_NL_cloud
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_sNcn_2 = zero
-    endif
+    corr_sNcn_2 &
+    = component_corr_xhm_ip( Ncnm, rc2, one, Ncn_tol, &
+                             corr_sNcn_NL_cloud, corr_sNcn_NL_cloud )
 
     ! Correlation (in-precip) between t and r_r in PDF component 1.
     corr_trr_1 &
@@ -2082,28 +2009,14 @@ module setup_clubb_pdf_params
                              corr_tNr_NL_cloud, corr_tNr_NL_below )
 
     ! Correlation between t and N_cn in PDF component 1.
-    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       corr_tNcn_1 = corr_tNcn_NL_cloud
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_tNcn_1 = zero
-    endif
+    corr_tNcn_1 &
+    = component_corr_xhm_ip( Ncnm, rc1, one, Ncn_tol, &
+                             corr_tNcn_NL_cloud, corr_tNcn_NL_cloud )
 
     ! Correlation between t and N_cn in PDF component 2.
-    if ( ( Ncnm > Ncn_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
-       corr_tNcn_2 = corr_tNcn_NL_cloud
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_tNcn_2 = zero
-    endif
+    corr_tNcn_2 &
+    = component_corr_xhm_ip( Ncnm, rc2, one, Ncn_tol, &
+                             corr_tNcn_NL_cloud, corr_tNcn_NL_cloud )
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 1.
     if ( ( ( rr1 > rr_tol ) .and. ( Nr1 > Nr_tol ) ) &
@@ -2248,7 +2161,7 @@ module setup_clubb_pdf_params
 
     ! Standard deviation of the hydrometeor (in-precip) in the
     ! ith PDF component.
-    if ( ( hmi > hm_tol ) .or. ( .not. l_use_hydromet_tolerance )) then
+    if ( ( hmi > hm_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
        if ( l_interp_prescribed_params ) then
           sigma_hm_i = sqrt( cloud_fraci * hmp2_on_hmm2_cloud &
                              + ( one - cloud_fraci ) * hmp2_on_hmm2_below ) &
@@ -3840,7 +3753,7 @@ module setup_clubb_pdf_params
 
     ! Pack correlations (1st PDF component) into corr_array_1.
     corr_array_1(iiPDF_t_mellor, iiPDF_s_mellor) = corr_st_1
-    corr_array_1(iiPDF_s_mellor,iiPDF_w)        = corr_ws_1
+    corr_array_1(iiPDF_s_mellor,iiPDF_w)         = corr_ws_1
     corr_array_1(iiPDF_rrain, iiPDF_s_mellor)    = corr_srr_1_n
     corr_array_1(iiPDF_Nr, iiPDF_s_mellor)       = corr_sNr_1_n
     corr_array_1(iiPDF_Ncn, iiPDF_s_mellor)      = corr_sNcn_1_n
@@ -3850,11 +3763,11 @@ module setup_clubb_pdf_params
     corr_array_1(iiPDF_rrain, iiPDF_w)           = corr_wrr_1_n
     corr_array_1(iiPDF_Nr, iiPDF_w)              = corr_wNr_1_n
     corr_array_1(iiPDF_Ncn, iiPDF_w)             = corr_wNcn_1_n
-    corr_array_1(iiPDF_rrain,iiPDF_Nr)          = corr_rrNr_1_n
+    corr_array_1(iiPDF_rrain,iiPDF_Nr)           = corr_rrNr_1_n
 
     ! Pack correlations (2nd PDF component) into corr_array_2.
     corr_array_2(iiPDF_t_mellor, iiPDF_s_mellor) = corr_st_2
-    corr_array_2(iiPDF_s_mellor,iiPDF_w)        = corr_ws_2
+    corr_array_2(iiPDF_s_mellor,iiPDF_w)         = corr_ws_2
     corr_array_2(iiPDF_rrain, iiPDF_s_mellor)    = corr_srr_2_n
     corr_array_2(iiPDF_Nr, iiPDF_s_mellor)       = corr_sNr_2_n
     corr_array_2(iiPDF_Ncn, iiPDF_s_mellor)      = corr_sNcn_2_n
@@ -3864,7 +3777,7 @@ module setup_clubb_pdf_params
     corr_array_2(iiPDF_rrain, iiPDF_w)           = corr_wrr_2_n
     corr_array_2(iiPDF_Nr, iiPDF_w)              = corr_wNr_2_n
     corr_array_2(iiPDF_Ncn, iiPDF_w)             = corr_wNcn_2_n
-    corr_array_2(iiPDF_rrain,iiPDF_Nr)          = corr_rrNr_2_n
+    corr_array_2(iiPDF_rrain,iiPDF_Nr)           = corr_rrNr_2_n
 
     return
 
