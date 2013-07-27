@@ -90,7 +90,7 @@ module clubb_driver
       advance_clubb_core
 
     use constants_clubb, only: &
-      fstdout, fstderr, zero, one, eps, & ! Variable(s)
+      fstdout, fstderr, zero, one, eps, zero_dp, one_dp, & ! Constant(s)
       rt_tol, thl_tol, w_tol, w_tol_sqd, &
       rr_tol, Nr_tol, Ncn_tol, rc_tol
 
@@ -1210,13 +1210,16 @@ module clubb_driver
 
       if ( clubb_at_least_debug_level( 2 ) ) then
          do k = 1, gr%nz
-            if (pdf_params(k)%mixt_frac > 1.0_dp .or. pdf_params(k)%mixt_frac < 0.0_dp) then
-               write(fstderr,*) 'Error in gaus_mixt_points:  ',  &
-                                'mixture fraction, mixt_frac, does not lie in [0,1].'
+            if ( pdf_params(k)%mixt_frac > one_dp .or. &
+                 pdf_params(k)%mixt_frac < zero_dp ) then
+
+               write(fstderr,*) "Error in gaus_mixt_points:  mixture " &
+                                // "fraction, mixt_frac, does not lie in [0,1]."
                stop
-            end if
-         end do
-      end if
+
+            endif
+         enddo
+      endif
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
