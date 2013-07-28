@@ -12,13 +12,17 @@ module setup_clubb_pdf_params
             compute_mean_stdev,   &
             compute_corr
 
-  private :: component_means_rain,   &
-             precip_fraction,        &
-             component_mean_hm_ip,   &
-             component_stdev_hm_ip,  &
-             component_corr_whm_ip,  &
-             pdf_param_hm_stats,     &
-             pdf_param_log_hm_stats, &
+  private :: component_means_rain,     &
+             precip_fraction,          &
+             component_mean_hm_ip,     &
+             component_stdev_hm_ip,    &
+             component_corr_wx,        &
+             component_corr_st,        &
+             component_corr_whm_ip,    &
+             component_corr_xhm_ip,    &
+             component_corr_hmxhmy_ip, &
+             pdf_param_hm_stats,       &
+             pdf_param_log_hm_stats,   &
              pack_pdf_params
 
   ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
@@ -1765,16 +1769,6 @@ module setup_clubb_pdf_params
       corr_rrNr_2    ! Correlation between rr and Nr (2nd PDF component) ip  [-]
 
     ! Local Variables
-
-    ! The component correlations of w and r_t and the component correlations of
-    ! w and theta_l are both set to be 0 within the CLUBB model code.  In other
-    ! words, w and r_t (theta_l) have overall covariance w'r_t' (w'theta_l'),
-    ! but the single component covariance and correlation are defined to be 0.
-    ! Likewise, the single component correlation and covariance of w and s, as
-    ! well as w and t, are defined to be 0.
-    logical, parameter :: &
-      l_follow_CLUBB_PDF_standards = .true.
-
     real( kind = core_rknd ) :: &
       rrp2_on_rrm2,    & ! Ratio of < r_r'^2 > to < r_r >^2            [-]
       Nrp2_on_Nrm2,    & ! Ratio of < N_r'^2 > to < N_r >^2            [-]
@@ -1819,144 +1813,54 @@ module setup_clubb_pdf_params
     endif
 
     ! Correlation between w and s in PDF component 1.
-    ! The component correlations of w and r_t and the component correlations of
-    ! w and theta_l are both set to be 0 within the CLUBB model code.  In other
-    ! words, w and r_t (theta_l) have overall covariance w'r_t' (w'theta_l'),
-    ! but the single component covariance and correlation are defined to be 0.
-    ! Likewise, the single component correlation and covariance of w and s, as
-    ! well as w and t, are defined to be 0.
-    if ( l_follow_CLUBB_PDF_standards ) then
-       corr_ws_1 = zero
-    else ! not following CLUBB PDF standards
-       ! WARNING:  the standards used in the generation of the two-component
-       !           CLUBB PDF are not being obeyed.  The use of this code is
-       !           inconsistent with the rest of CLUBB's PDF.
-       if ( l_calc_w_corr ) then
-          corr_ws_1 = corr_ws
-       else ! use prescribed parameter values
-          if ( l_interp_prescribed_params ) then
-             corr_ws_1 = cloud_frac1 * corr_sw_NN_cloud &
-                         + ( one - cloud_frac1 ) * corr_sw_NN_below
-          else
-             if ( rc1 > rc_tol ) then
-                corr_ws_1 = corr_sw_NN_cloud
-             else
-                corr_ws_1 = corr_sw_NN_below
-             endif
-          endif ! l_interp_prescribed_params
-       endif ! l_calc_w_corr
-    endif ! l_follow_CLUBB_PDF_standards
+    corr_ws_1 &
+    = component_corr_wx( corr_ws, rc1, cloud_frac1, &
+                         corr_sw_NN_cloud, corr_sw_NN_below )
 
     ! Correlation between w and s in PDF component 2.
-    ! The component correlations of w and r_t and the component correlations of
-    ! w and theta_l are both set to be 0 within the CLUBB model code.  In other
-    ! words, w and r_t (theta_l) have overall covariance w'r_t' (w'theta_l'),
-    ! but the single component covariance and correlation are defined to be 0.
-    ! Likewise, the single component correlation and covariance of w and s, as
-    ! well as w and t, are defined to be 0.
-    if ( l_follow_CLUBB_PDF_standards ) then
-       corr_ws_2 = zero
-    else ! not following CLUBB PDF standards
-       ! WARNING:  the standards used in the generation of the two-component
-       !           CLUBB PDF are not being obeyed.  The use of this code is
-       !           inconsistent with the rest of CLUBB's PDF.
-       if ( l_calc_w_corr ) then
-          corr_ws_2 = corr_ws
-       else ! use prescribed parameter values
-          if ( l_interp_prescribed_params ) then
-             corr_ws_2 = cloud_frac2 * corr_sw_NN_cloud &
-                         + ( one - cloud_frac2 ) * corr_sw_NN_below
-          else
-             if ( rc2 > rc_tol ) then
-                corr_ws_2 = corr_sw_NN_cloud
-             else
-                corr_ws_2 = corr_sw_NN_below
-             endif
-          endif ! l_interp_prescribed_params
-       endif ! l_calc_w_corr
-    endif ! l_follow_CLUBB_PDF_standards
+    corr_ws_2 &
+    = component_corr_wx( corr_ws, rc2, cloud_frac2, &
+                         corr_sw_NN_cloud, corr_sw_NN_below )
 
     ! Correlation (in-precip) between w and r_r in PDF component 1.
-    corr_wrr_1  &
+    corr_wrr_1 &
     = component_corr_whm_ip( rr1, corr_wrr, rc1, cloud_frac1, rr_tol, &
                              corr_wrr_NL_cloud, corr_wrr_NL_below )
 
     ! Correlation (in-precip) between w and r_r in PDF component 2.
-    corr_wrr_2  &
+    corr_wrr_2 &
     = component_corr_whm_ip( rr2, corr_wrr, rc2, cloud_frac2, rr_tol, &
                              corr_wrr_NL_cloud, corr_wrr_NL_below )
 
     ! Correlation (in-precip) between w and N_r in PDF component 1.
-    corr_wNr_1  &
+    corr_wNr_1 &
     = component_corr_whm_ip( Nr1, corr_wNr, rc1, cloud_frac1, Nr_tol, &
                              corr_wNr_NL_cloud, corr_wNr_NL_below )
 
     ! Correlation (in-precip) between w and N_r in PDF component 2.
-    corr_wNr_2  &
+    corr_wNr_2 &
     = component_corr_whm_ip( Nr2, corr_wNr, rc2, cloud_frac2, Nr_tol, &
                              corr_wNr_NL_cloud, corr_wNr_NL_below )
 
     ! Correlation between w and N_cn in PDF component 1.
-    corr_wNcn_1  &
+    corr_wNcn_1 &
     = component_corr_whm_ip( Ncnm, corr_wNcn, rc1, one, Ncn_tol, &
                              corr_wNcn_NL_cloud, corr_wNcn_NL_cloud )
 
    ! Correlation between w and N_cn in PDF component 2.
-    corr_wNcn_2  &
+    corr_wNcn_2 &
     = component_corr_whm_ip( Ncnm, corr_wNcn, rc2, one, Ncn_tol, &
                              corr_wNcn_NL_cloud, corr_wNcn_NL_cloud )
 
     ! Correlation between s and t in PDF component 1.
-    ! The PDF variables s and t result from a transformation of the PDF
-    ! involving r_t and theta_l.  The correlation between s and t depends on the
-    ! correlation between r_t and theta_l, as well as the variances of r_t and
-    ! theta_l, and other factors.  The correlation between s and t is subject to
-    ! change at every vertical level and model time step, and is calculated as
-    ! part of the CLUBB PDF parameters.
-    if ( .not. l_fix_s_t_correlations ) then
-       corr_st_1 = pdf_params%corr_st_1
-    else ! fix the correlation between s and t.
-       ! WARNING:  this code is inconsistent with the rest of CLUBB's PDF.  This
-       !           code is necessary because SIHLS is lazy and wussy, and only
-       !           wants to declare correlation arrays at the start of the model
-       !           run, rather than updating them throughout the model run.
-       if ( l_interp_prescribed_params ) then
-          corr_st_1 = cloud_frac1 * corr_st_NN_cloud &
-                      + ( one - cloud_frac1 ) * corr_st_NN_below
-       else
-          if ( rc1 > rc_tol ) then
-             corr_st_1 = corr_st_NN_cloud
-          else
-             corr_st_1 = corr_st_NN_below
-          endif
-       endif
-    endif
+    corr_st_1 &
+    = component_corr_st( pdf_params%corr_st_1, rc1, cloud_frac1, &
+                         corr_st_NN_cloud, corr_st_NN_below )
 
     ! Correlation between s and t in PDF component 2.
-    ! The PDF variables s and t result from a transformation of the PDF
-    ! involving r_t and theta_l.  The correlation between s and t depends on the
-    ! correlation between r_t and theta_l, as well as the variances of r_t and
-    ! theta_l, and other factors.  The correlation between s and t is subject to
-    ! change at every vertical level and model time step, and is calculated as
-    ! part of the CLUBB PDF parameters.
-    if ( .not. l_fix_s_t_correlations ) then
-       corr_st_2 = pdf_params%corr_st_2
-    else ! fix the correlation between s and t.
-       ! WARNING:  this code is inconsistent with the rest of CLUBB's PDF.  This
-       !           code is necessary because SIHLS is lazy and wussy, and only
-       !           wants to declare correlation arrays at the start of the model
-       !           run, rather than updating them throughout the model run.
-       if ( l_interp_prescribed_params ) then
-          corr_st_2 = cloud_frac2 * corr_st_NN_cloud &
-                      + ( one - cloud_frac2 ) * corr_st_NN_below
-       else
-          if ( rc2 > rc_tol ) then
-             corr_st_2 = corr_st_NN_cloud
-          else
-             corr_st_2 = corr_st_NN_below
-          endif
-       endif
-    endif
+    corr_st_2 &
+    = component_corr_st( pdf_params%corr_st_2, rc2, cloud_frac2, &
+                         corr_st_NN_cloud, corr_st_NN_below )
 
     ! Correlation (in-precip) between s and r_r in PDF component 1.
     corr_srr_1 &
@@ -2019,50 +1923,19 @@ module setup_clubb_pdf_params
                              corr_tNcn_NL_cloud, corr_tNcn_NL_cloud )
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 1.
-    if ( ( ( rr1 > rr_tol ) .and. ( Nr1 > Nr_tol ) ) &
-         .or. ( .not. l_use_hydromet_tolerance ) ) then
-       if ( l_interp_prescribed_params ) then
-          corr_rrNr_1 = cloud_frac1 * corr_rrNr_LL_cloud &
-                        + ( one - cloud_frac1 ) * corr_rrNr_LL_below
-       else
-          if ( rc1 > rc_tol ) then
-             corr_rrNr_1 = corr_rrNr_LL_cloud
-          else
-             corr_rrNr_1 = corr_rrNr_LL_below
-          endif
-       endif
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 1 and (or) mean
-       ! in-precip rain drop concentration in PDF component 1 are (is) less than
-       ! their (its) respective tolerance amount(s), and are (is) considered to
-       ! have a value of 0.  There is not any rain in the 1st PDF component at
-       ! this grid level.  The correlation is 0 since rain does not vary in this
-       ! component at this grid level.
-       corr_rrNr_1 = zero
-    endif
+    corr_rrNr_1 &
+    = component_corr_hmxhmy_ip( rr1, Nr1, rc1, cloud_frac1, &
+                                rr_tol, Nr_tol, &
+                                corr_rrNr_LL_cloud, &
+                                corr_rrNr_LL_below )
 
     ! Correlation (in-precip) between r_r and N_r in PDF component 2.
-    if ( ( ( rr2 > rr_tol ) .and. ( Nr2 > Nr_tol ) ) &
-         .or. ( .not. l_use_hydromet_tolerance )  ) then
-       if ( l_interp_prescribed_params ) then
-          corr_rrNr_2 = cloud_frac2 * corr_rrNr_LL_cloud &
-                        + ( one - cloud_frac2 ) * corr_rrNr_LL_below
-       else
-          if ( rc2 > rc_tol ) then
-             corr_rrNr_2 = corr_rrNr_LL_cloud
-          else
-             corr_rrNr_2 = corr_rrNr_LL_below
-          endif
-       endif
-    else
-       ! Mean in-precip rain water mixing ratio in PDF component 2 and (or) mean
-       ! in-precip rain drop concentration in PDF component 2 are (is) less than
-       ! their (its) respective tolerance amount(s), and are (is) considered to
-       ! have a value of 0.  There is not any rain in the 2nd PDF component at
-       ! this grid level.  The correlation is 0 since rain does not vary in this
-       ! component at this grid level.
-       corr_rrNr_2 = zero
-    endif
+    corr_rrNr_2 &
+    = component_corr_hmxhmy_ip( rr2, Nr2, rc2, cloud_frac2, &
+                                rr_tol, Nr_tol, &
+                                corr_rrNr_LL_cloud, &
+                                corr_rrNr_LL_below )
+
 
     return
 
@@ -2184,9 +2057,179 @@ module setup_clubb_pdf_params
     endif
 
 
-  return
+    return
 
   end function component_stdev_hm_ip
+
+  !=============================================================================
+  function component_corr_wx( corr_wx, rci, cloud_fraci, &
+                              corr_wx_NN_cloud, corr_wx_NN_below ) &
+  result( corr_wx_i )
+
+    ! Description:
+    ! Calculates the correlation between w and x within the ith PDF component.
+    ! Here, x is a variable with a normally distributed individual marginal PDF,
+    ! such as s or t.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one,    & ! Constant(s)
+        zero,   &
+        rc_tol
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+        l_calc_w_corr
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      corr_wx,     & ! Correlation between w and x (overall)          [-]
+      rci,         & ! Mean cloud water mixing ratio (ith PDF comp.)  [kg/kg]
+      cloud_fraci    ! Cloud fraction (ith PDF component)             [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      corr_wx_NN_cloud, & ! Corr. btwn. w and x (ith PDF comp.); cloudy levs [-]
+      corr_wx_NN_below    ! Corr. btwn. w and x (ith PDF comp.); clear levs  [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      corr_wx_i    ! Correlation between w and x (ith PDF component)  [-]
+
+    ! Local Variables
+
+    ! The component correlations of w and r_t and the component correlations of
+    ! w and theta_l are both set to be 0 within the CLUBB model code.  In other
+    ! words, w and r_t (theta_l) have overall covariance w'r_t' (w'theta_l'),
+    ! but the single component covariance and correlation are defined to be 0.
+    ! Since the component covariances (or correlations) between w and s and
+    ! between w and t are based on the covariances (or correlations) between w
+    ! and r_t and between w and theta_l, the single component correlation and
+    ! covariance of w and s, as well as w and t, are defined to be 0.
+    logical, parameter :: &
+      l_follow_CLUBB_PDF_standards = .true.
+
+
+    ! Correlation between w and x in the ith PDF component.
+    if ( l_follow_CLUBB_PDF_standards ) then
+
+       ! The component correlations of w and r_t and the component correlations
+       ! of w and theta_l are both set to be 0 within the CLUBB model code.  In
+       ! other words, w and r_t (theta_l) have overall covariance w'r_t'
+       ! (w'theta_l'), but the single component covariance and correlation are
+       ! defined to be 0.  Since the component covariances (or correlations)
+       ! between w and s and between w and t are based on the covariances (or
+       ! correlations) between w and r_t and between w and theta_l, the single
+       ! component correlation and covariance of w and s, as well as w and t,
+       ! are defined to be 0.
+       corr_wx_i = zero
+
+    else ! not following CLUBB PDF standards
+
+       ! WARNING:  the standards used in the generation of the two-component
+       !           CLUBB PDF are not being obeyed.  The use of this code is
+       !           inconsistent with the rest of CLUBB's PDF.
+       if ( l_calc_w_corr ) then
+          corr_wx_i = corr_wx
+       else ! use prescribed parameter values
+          if ( l_interp_prescribed_params ) then
+             corr_wx_i = cloud_fraci * corr_wx_NN_cloud &
+                         + ( one - cloud_fraci ) * corr_wx_NN_below
+          else
+             if ( rci > rc_tol ) then
+                corr_wx_i = corr_wx_NN_cloud
+             else
+                corr_wx_i = corr_wx_NN_below
+             endif
+          endif ! l_interp_prescribed_params
+       endif ! l_calc_w_corr
+
+    endif ! l_follow_CLUBB_PDF_standards
+
+
+    return
+
+  end function component_corr_wx
+
+  !=============================================================================
+  function component_corr_st( pdf_corr_st_i, rci, cloud_fraci, &
+                              corr_st_NN_cloud, corr_st_NN_below ) &
+  result( corr_st_i )
+
+    ! Description:
+    ! Calculates the correlation between s and t within the ith PDF component.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one,    & ! Constant(s)
+        rc_tol
+
+    use parameters_microphys, only: &
+        l_fix_s_t_correlations  ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      pdf_corr_st_i, & ! Correlation between s and t (ith PDF component)     [-]
+      rci,           & ! Mean cloud water mixing ratio (ith PDF comp.)   [kg/kg]
+      cloud_fraci      ! Cloud fraction (ith PDF component)                  [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      corr_st_NN_cloud, & ! Corr. btwn. s and t (ith PDF comp.); cloudy levs [-]
+      corr_st_NN_below    ! Corr. btwn. s and t (ith PDF comp.); clear levs  [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      corr_st_i    ! Correlation between s and t (ith PDF component)         [-]
+
+
+    ! Correlation between s and t in the ith PDF component.
+
+    ! The PDF variables s and t result from a transformation of the PDF
+    ! involving r_t and theta_l.  The correlation between s and t depends on the
+    ! correlation between r_t and theta_l, as well as the variances of r_t and
+    ! theta_l, and other factors.  The correlation between s and t is subject to
+    ! change at every vertical level and model time step, and is calculated as
+    ! part of the CLUBB PDF parameters.
+    if ( .not. l_fix_s_t_correlations ) then
+
+       ! Preferred, more accurate version.
+       corr_st_i = pdf_corr_st_i
+
+    else ! fix the correlation between s and t.
+
+       ! WARNING:  this code is inconsistent with the rest of CLUBB's PDF.  This
+       !           code is necessary because SIHLS is lazy and wussy, and only
+       !           wants to declare correlation arrays at the start of the model
+       !           run, rather than updating them throughout the model run.
+       if ( l_interp_prescribed_params ) then
+          corr_st_i = cloud_fraci * corr_st_NN_cloud &
+                      + ( one - cloud_fraci ) * corr_st_NN_below
+       else
+          if ( rci > rc_tol ) then
+             corr_st_i = corr_st_NN_cloud
+          else
+             corr_st_i = corr_st_NN_below
+          endif
+       endif
+
+    endif
+
+
+    return
+
+  end function component_corr_st
 
   !=============================================================================
   function component_corr_whm_ip( hmi, corr_whm, rci, cloud_fraci, hm_tol, &
@@ -2255,14 +2298,14 @@ module setup_clubb_pdf_params
        ! ith PDF component at this grid level.  Both the standard deviation of
        ! the hydrometeor and the covariance of w and the hydrometeor are simply
        ! 0 since the hydrometeor does not vary in this component at this grid
-       ! level.  The correlations involving w and the hydrometeor in the ith PDF
-       ! component are undefined (and will be set to 0) since the hydrometeor
+       ! level.  The correlation involving w and the hydrometeor in the ith PDF
+       ! component is undefined (and will be set to 0) since the hydrometeor
        ! does not vary in this component at this grid level.
        corr_whm_i = zero
     endif
 
 
-  return
+    return
 
   end function component_corr_whm_ip
 
@@ -2328,16 +2371,95 @@ module setup_clubb_pdf_params
        ! ith PDF component at this grid level.  Both the standard deviation of
        ! the hydrometeor and the covariance of x and the hydrometeor are simply
        ! 0 since the hydrometeor does not vary in this component at this grid
-       ! level.  The correlations involving x and the hydrometeor in the ith PDF
-       ! component are undefined (and will be set to 0) since the hydrometeor
+       ! level.  The correlation involving x and the hydrometeor in the ith PDF
+       ! component is undefined (and will be set to 0) since the hydrometeor
        ! does not vary in this component at this grid level.
        corr_xhm_i = zero
     endif
 
 
-  return
+    return
 
   end function component_corr_xhm_ip
+
+  !=============================================================================
+  function component_corr_hmxhmy_ip( hmxi, hmyi, rci, cloud_fraci, &
+                                     hmx_tol, hmy_tol, &
+                                     corr_hmxhmy_LL_cloud, &
+                                     corr_hmxhmy_LL_below ) &
+  result( corr_hmxhmy_i )
+
+    ! Description:
+    ! Calculates the in-precip correlation between hydrometeor x and
+    ! hydrometeor y within the ith PDF component.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one,    & ! Constant(s)
+        zero,   &
+        rc_tol
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+        l_use_hydromet_tolerance
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      hmxi,        & ! Mean of hydrometeor x, hmx (ith PDF comp.)    [hmx units]
+      hmyi,        & ! Mean of hydrometeor y, hmy (ith PDF comp.)    [hmy units]
+      rci,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
+      cloud_fraci, & ! Cloud fraction (ith PDF component)            [-]
+      hmx_tol,     & ! Tolerance value for hydrometeor x             [hmx units]
+      hmy_tol        ! Tolerance value for hydrometeor y             [hmy units]
+
+    real( kind = core_rknd ), intent(in) :: &
+      corr_hmxhmy_LL_cloud, & ! Corr.: hmx & hmy (ith PDF comp.) ip; cloudy [-]
+      corr_hmxhmy_LL_below    ! Corr.: hmx & hmy (ith PDF comp.) ip; clear  [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      corr_hmxhmy_i   ! Correlation between hmx & hmy (ith PDF component) ip [-]
+
+
+    ! Correlation (in-precip) between hydrometeor x and hydrometeor y in the
+    ! ith PDF component.
+    if ( ( ( hmxi > hmx_tol ) .and. ( hmyi > hmy_tol ) ) &
+         .or. ( .not. l_use_hydromet_tolerance ) ) then
+       if ( l_interp_prescribed_params ) then
+          corr_hmxhmy_i = cloud_fraci * corr_hmxhmy_LL_cloud &
+                          + ( one - cloud_fraci ) * corr_hmxhmy_LL_below
+       else
+          if ( rci > rc_tol ) then
+             corr_hmxhmy_i = corr_hmxhmy_LL_cloud
+          else
+             corr_hmxhmy_i = corr_hmxhmy_LL_below
+          endif
+       endif
+    else
+       ! The mean(s) of both/either hydrometeor x and/or hydrometeor y in the
+       ! ith PDF component are/is less than the tolerance amount for the
+       ! particular hydrometeor(s), and are/is considered to have a value of 0.
+       ! There are/is not any of these/this hydrometeor species in the ith PDF
+       ! component at this grid level.  Both the standard deviation of the
+       ! hydrometeor(s) and the covariance of hydrometeor x and hydrometeor y
+       ! are simply 0 since the hydrometeor(s) do/does not vary in this
+       ! component at this grid level.  The correlation involving hydrometeor x
+       ! hydrometeor y in the ith PDF component is undefined (and will be set
+       ! to 0) since the hydrometeor(s) do/does not vary in this component at
+       ! this grid level.
+       corr_hmxhmy_i = zero
+    endif
+
+
+    return
+
+  end function component_corr_hmxhmy_ip
 
   !=============================================================================
   subroutine normalize_pdf_params( rr1, rr2, Nr1, Nr2, Ncnm, &                   ! Intent(in)
