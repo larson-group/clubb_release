@@ -12,7 +12,7 @@ module setup_clubb_pdf_params
             compute_mean_stdev,   &
             compute_corr
 
-  private :: component_means_rain,     &
+  private :: component_means_hydromet, &
              precip_fraction,          &
              component_mean_hm_ip,     &
              component_stdev_hm_ip,    &
@@ -281,6 +281,17 @@ module setup_clubb_pdf_params
       wpNrp_ip_zt, & ! Covar. of N_r and w (in-precip) on t-levs [(m/s)(num/kg)]
       wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
 
+    integer, parameter :: &
+      num_hydromet = 2    ! Number of hydrometeor species (excluding Ncn)
+
+    real( kind = core_rknd ), dimension(num_hydromet,nz) :: &
+      hmm, & ! Mean of hydrometeor, hm (overall)                [units vary]
+      hm1, & ! Mean of hydrometeor (1st PDF component)          [units vary]
+      hm2    ! Mean of hydrometeor (2nd PDF component)          [units vary]
+
+    real( kind = core_rknd ), dimension(num_hydromet) :: &
+      hm_tol    ! Tolerance value for the hydrometeor           [units vary]
+
      real( kind = core_rknd ), dimension(nz) :: &
       rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
       rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
@@ -311,9 +322,19 @@ module setup_clubb_pdf_params
     ! Component mean values for r_r and N_r, and precipitation fraction.
     if ( l_use_precip_frac ) then
 
-       call component_means_rain( nz, rrainm, Nrm, rho, rc1, rc2, & ! Intent(in)
-                                  mixt_frac, l_stats_samp, &        ! Intent(in)
-                                  rr1, rr2, Nr1, Nr2 )              ! Intent(out)
+       hmm(1,:) = rrainm
+       hmm(2,:) = Nrm
+       hm_tol(1) = rr_tol
+       hm_tol(2) = Nr_tol
+
+       call component_means_hydromet( nz, num_hydromet, hmm, rho, rc1, rc2, &
+                                      mixt_frac, hm_tol, l_stats_samp, &
+                                      hm1, hm2 )
+
+       rr1 = hm1(1,:)
+       rr2 = hm2(1,:)
+       Nr1 = hm1(2,:)
+       Nr2 = hm2(2,:)
 
        call precip_fraction( nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &     ! Intent(in)
                              cloud_frac, cloud_frac1, mixt_frac, &      ! Intent(in)
@@ -623,17 +644,18 @@ module setup_clubb_pdf_params
   end subroutine setup_pdf_parameters
 
   !=============================================================================
-  subroutine component_means_rain( nz, rrainm, Nrm, rho, rc1, rc2, &
-                                   mixt_frac, l_stats_samp, &
-                                   rr1, rr2, Nr1, Nr2 )
+  subroutine component_means_hydromet( nz, num_hydromet, hmm, rho, rc1, rc2, &
+                                       mixt_frac, hm_tol, l_stats_samp, &
+                                       hm1, hm2 )
 
     ! Description:
-    ! The values of grid-level mean rain water mixing ratio, <r_r>, and
-    ! grid-level mean rain drop concentration, <N_r>, are solved as part of the
-    ! CLUBB model's predictive equation set.  However, CLUBB has a two component
-    ! PDF.  The grid-level means of r_r and N_r must be subdivided into
+    ! The values of grid-level mean hydrometeor fields, <hm>, (for example,
+    ! grid-level mean rain water mixing ratio, <r_r>, and grid-level mean rain
+    ! drop concentration, <N_r>) are solved as part of the predictive equation
+    ! set, based on the microphysics scheme.  However, CLUBB has a two component
+    ! PDF.  The grid-level means of all hydrometeors must be subdivided into
     ! component means for each PDF component.  The equations relating the
-    ! overall means to the component means are:
+    ! overall means to the component means (written for r_r and N_r here) are:
     !
     ! <r_r> = a * rr1 + (1-a) * rr2, and
     ! <N_r> = a * Nr1 + (1-a) * Nr2;
@@ -761,9 +783,7 @@ module setup_clubb_pdf_params
     use constants_clubb, only: &
         one,      & ! Constant(s)
         one_half, &
-        zero,     &
-        rr_tol,   &
-        Nr_tol
+        zero
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -780,32 +800,35 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     integer, intent(in) :: &
-      nz           ! Number of model vertical grid levels
+      nz,           & ! Number of model vertical grid levels
+      num_hydromet    ! Number of hydrometeor species (excluding Ncn)
+
+    real( kind = core_rknd ), dimension(num_hydromet,nz), intent(in) :: &
+      hmm    ! Mean of hydrometeor, hm (overall)                [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rrainm,    & ! Overall mean rain water mixing ratio               [kg/kg]
-      Nrm,       & ! Overall mean rain drop concentration               [num/kg]
       rho,       & ! Air density                                        [kg/m^3]
       rc1,       & ! Mean cloud water mixing ratio (1st PDF component)  [kg/kg]
       rc2,       & ! Mean cloud water mixing ratio (2nd PDF component)  [kg/kg]
       mixt_frac    ! Mixture fraction                                   [-]
 
+    real( kind = core_rknd ), dimension(num_hydromet), intent(in) :: &
+      hm_tol    ! Tolerance value for the hydrometeor           [units vary]
+
     logical, intent(in) :: &
       l_stats_samp     ! Flag to record statistical output.
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+    real( kind = core_rknd ), dimension(num_hydromet,nz), intent(out) :: &
+      hm1, & ! Mean of hydrometeor (1st PDF component)          [units vary]
+      hm2    ! Mean of hydrometeor (2nd PDF component)          [units vary]
 
     ! Local Variable
     real( kind = core_rknd ), dimension(nz) :: &
       LWP1, & ! Liquid water path (1st PDF component) on thermo. levs.  [kg/m^2]
       LWP2    ! Liquid water path (2nd PDF component) on thermo. levs.  [kg/m^2]
 
-    integer :: k  ! Array index
+    integer :: i, k  ! Array index
 
     real( kind = core_rknd ), parameter :: &
       LWP_tol = 5.0e-7_core_rknd  ! Tolerance value for component LWP
@@ -862,141 +885,83 @@ module setup_clubb_pdf_params
     enddo ! k = nz-1, 1, -1
 
 
-    !!! Find rr1, rr2, Nr1, and Nr2 based on the ratio of LWP2/LWP1, such that:
-    !!! rr2/rr1 = Nr2/Nr1 = LWP2/LWP1.
-    do k = 1, nz, 1
+    !!! Find hm1 and hm2 based on the ratio of LWP2/LWP1, such that:
+    !!! hm2/hm1 ( = rr2/rr1 = Nr2/Nr1, etc. ) = LWP2/LWP1.
+    do i = 1, num_hydromet, 1
 
-       !!! Calculate the component means for rain water mixing ratio.
-       if ( rrainm(k) > rr_tol ) then
+       do k = 1, nz, 1
 
-          if ( LWP1(k) <= LWP_tol .and. LWP2(k) <= LWP_tol ) then
+          !!! Calculate the component means for the hydrometeor.
+          if ( hmm(i,k) > hm_tol(i) ) then
 
-             ! Both LWP1 and LWP2 are 0 (or an insignificant amount).
-             !
-             ! There is rain at this level, yet no cloud at or above the
-             ! current level.  This is usually due to a numerical artifact.
-             ! For example, rain is diffused above cloud top.  Simply set
-             ! each component mean equal to the overall mean.
-             rr1(k) = rrainm(k)
-             rr2(k) = rrainm(k)
+             if ( LWP1(k) <= LWP_tol .and. LWP2(k) <= LWP_tol ) then
 
-          elseif ( LWP1(k) > LWP_tol .and. LWP2(k) <= LWP_tol ) then
+                ! Both LWP1 and LWP2 are 0 (or an insignificant amount).
+                !
+                ! The hydrometeor is found at this level, yet there is no cloud
+                ! at or above the current level.  This is usually due to a
+                ! numerical artifact.  For example, the hydrometeor is diffused
+                ! above cloud top.  Simply set each component mean equal to the
+                ! overall mean.
+                hm1(i,k) = hmm(i,k)
+                hm2(i,k) = hmm(i,k)
 
-             ! LWP1 is (significantly) greater than 0, while LWP2 is 0 (or an
-             ! insignificant amount).
-             !
-             ! There is rain at this level, and all cloud water at or above
-             ! this level is found in the 1st PDF component.  All rain water
-             ! mixing ratio is found in the 1st PDF component.
-             rr1(k) = rrainm(k) / mixt_frac(k)
-             rr2(k) = zero
+             elseif ( LWP1(k) > LWP_tol .and. LWP2(k) <= LWP_tol ) then
 
-          elseif ( LWP2(k) > LWP_tol .and. LWP1(k) <= LWP_tol ) then
+                ! LWP1 is (significantly) greater than 0, while LWP2 is 0 (or an
+                ! insignificant amount).
+                !
+                ! The hydrometeor is found at this level, and all cloud water at
+                ! or above this level is found in the 1st PDF component.  All of
+                ! the hydrometeor is found in the 1st PDF component.
+                hm1(i,k) = hmm(i,k) / mixt_frac(k)
+                hm2(i,k) = zero
 
-             ! LWP2 is (significantly) greater than 0, while LWP1 is 0 (or an
-             ! insignificant amount).
-             !
-             ! There is rain at this level, and all cloud water at or above
-             ! this level is found in the 2nd PDF component.  All rain water
-             ! mixing ratio is found in the 2nd PDF component.
-             rr1(k) = zero
-             rr2(k) = rrainm(k) / ( one - mixt_frac(k) )
+             elseif ( LWP2(k) > LWP_tol .and. LWP1(k) <= LWP_tol ) then
 
-          else ! LWP1(k) > LWP_tol and LWP2(k) > LWP_tol
+                ! LWP2 is (significantly) greater than 0, while LWP1 is 0 (or an
+                ! insignificant amount).
+                !
+                ! The hydrometeor is found at this level, and all cloud water at
+                ! or above this level is found in the 2nd PDF component.  All of
+                ! the hydrometeor is found in the 2nd PDF component.
+                hm1(i,k) = zero
+                hm2(i,k) = hmm(i,k) / ( one - mixt_frac(k) )
 
-             ! Both LWP1 and LWP2 are (significantly) greater than 0.
-             !
-             ! There is rain at this level, and there is sufficient cloud water
-             ! at or above this level in both PDF components to find rain in
-             ! both PDF components.  Delegate rain water mixing ratio between
-             ! the 1st and 2nd PDF components according to the above equations.
-             rr1(k) &
-             = rrainm(k) &
-               / ( mixt_frac(k) + ( one - mixt_frac(k) ) * LWP2(k)/LWP1(k) )
+             else ! LWP1(k) > LWP_tol and LWP2(k) > LWP_tol
 
-             rr2(k) &
-             = ( rrainm(k) - mixt_frac(k) * rr1(k) ) / ( one - mixt_frac(k) )
+                ! Both LWP1 and LWP2 are (significantly) greater than 0.
+                !
+                ! The hydrometeor is found at this level, and there is
+                ! sufficient cloud water at or above this level in both PDF
+                ! components to find the hydrometeor in both PDF components.
+                ! Delegate the hydrometeor between the 1st and 2nd PDF
+                ! components according to the above equations.
+                hm1(i,k) &
+                = hmm(i,k) &
+                  / ( mixt_frac(k) + ( one - mixt_frac(k) ) * LWP2(k)/LWP1(k) )
 
-          endif
+                hm2(i,k) &
+                = ( hmm(i,k) - mixt_frac(k) * hm1(i,k) ) &
+                  / ( one - mixt_frac(k) )
 
-
-       else ! rrainm(k) <= rr_tol
-
-          ! Overall mean rain water mixing ratio is either 0 or below tolerance
-          ! value (any postive value is considered to be a numerical artifact).
-          ! Simply set each component mean equal to the overall mean.
-           rr1(k) = rrainm(k)
-           rr2(k) = rrainm(k)
-
-       endif
+             endif
 
 
-       !!! Calculate the component means for rain drop concentration.
-       if ( Nrm(k) > Nr_tol ) then
+          else ! hmm(k) <= hm_tol
 
-          if ( LWP1(k) <= LWP_tol .and. LWP2(k) <= LWP_tol ) then
-
-             ! Both LWP1 and LWP2 are 0 (or an insignificant amount).
-             !
-             ! There is rain at this level, yet no cloud at or above the
-             ! current level.  This is usually due to a numerical artifact.
-             ! For example, rain is diffused above cloud top.  Simply set
-             ! each component mean equal to the overall mean.
-             Nr1(k) = Nrm(k)
-             Nr2(k) = Nrm(k)
-
-          elseif ( LWP1(k) > LWP_tol .and. LWP2(k) <= LWP_tol ) then
-
-             ! LWP1 is (significantly) greater than 0, while LWP2 is 0 (or an
-             ! insignificant amount).
-             !
-             ! There is rain at this level, and all cloud water at or above
-             ! this level is found in the 1st PDF component.  All rain drop
-             ! concentration is found in the 1st PDF component.
-             Nr1(k) = Nrm(k) / mixt_frac(k)
-             Nr2(k) = zero
-
-          elseif ( LWP2(k) > LWP_tol .and. LWP1(k) <= LWP_tol ) then
-
-             ! LWP2 is (significantly) greater than 0, while LWP1 is 0 (or an
-             ! insignificant amount).
-             !
-             ! There is rain at this level, and all cloud water at or above
-             ! this level is found in the 2nd PDF component.  All rain drop
-             ! concentration is found in the 2nd PDF component.
-             Nr1(k) = zero
-             Nr2(k) = Nrm(k) / ( one - mixt_frac(k) )
-
-          else ! LWP1(k) > LWP_tol and LWP2(k) > LWP_tol
-
-             ! Both LWP1 and LWP2 are (significantly) greater than 0.
-             !
-             ! There is rain at this level, and there is sufficient cloud water
-             ! at or above this level in both PDF components to find rain in
-             ! both PDF components.  Delegate rain drop concentration between
-             ! the 1st and 2nd PDF components according to the above equations.
-             Nr1(k) &
-             = Nrm(k) &
-               / ( mixt_frac(k) + ( one - mixt_frac(k) ) * LWP2(k)/LWP1(k) )
-
-             Nr2(k) &
-             = ( Nrm(k) - mixt_frac(k) * Nr1(k) ) / ( one - mixt_frac(k) )
+             ! The overall hydrometeor is either 0 or below tolerance value (any
+             ! postive value is considered to be a numerical artifact).  Simply
+             ! set each component mean equal to the overall mean.
+             hm1(i,k) = hmm(i,k)
+             hm2(i,k) = hmm(i,k)
 
           endif
 
+       enddo ! k = 1, nz, 1
 
-       else ! Nrm(k) <= Nr_tol
+    enddo ! i = 1, num_hydromet, 1
 
-          ! Overall mean rain drop concentration is either 0 or below tolerance
-          ! value (any postive value is considered to be a numerical artifact).
-          ! Simply set each component mean equal to the overall mean.
-           Nr1(k) = Nrm(k)
-           Nr2(k) = Nrm(k)
-
-       endif
-
-
-    enddo ! k = 1, nz, 1
 
     ! Statistics
     if ( l_stats_samp ) then
@@ -1016,7 +981,7 @@ module setup_clubb_pdf_params
 
     return
 
-  end subroutine component_means_rain
+  end subroutine component_means_hydromet
 
   !=============================================================================
   subroutine precip_fraction( nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &
