@@ -1225,9 +1225,6 @@ module clubb_driver
 
       if ( .not. trim( micro_scheme ) == "none" ) then
 
-         rrainm = hydromet(:,iirrainm)
-         Nrm    = hydromet(:,iiNrm)
-
          ! Determine correlations
 
          do k = 1, gr%nz
@@ -1245,7 +1242,7 @@ module clubb_driver
          call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, rrainm, Nrm, Ncnm, rho, rcm, &       ! Intent(in)
+         call setup_pdf_parameters( gr%nz, hydromet, Ncnm, rho, rcm, &          ! Intent(in)
                                     cloud_frac, sqrt(wp2_zt), wphydrometp, &    ! Intent(in)
                                     corr_array_cloud, corr_array_below, &       ! Intent(in)
                                     pdf_params, l_stats_samp, d_variables, &    ! Intent(in)

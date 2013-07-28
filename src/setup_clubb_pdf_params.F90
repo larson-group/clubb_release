@@ -38,7 +38,7 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( nz, rrainm, Nrm, Ncnm, rho, rcm, &          ! Intent(in)
+  subroutine setup_pdf_parameters( nz, hydromet, Ncnm, rho, rcm, &             ! Intent(in)
                                    cloud_frac, w_std_dev, wphydrometp, &       ! Intent(in)
                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
                                    pdf_params, l_stats_samp, d_variables, &    ! Intent(in)
@@ -130,8 +130,6 @@ module setup_clubb_pdf_params
       d_variables    ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rrainm,     & ! Mean rain water mixing ratio, < r_r >           [kg/kg]
-      Nrm,        & ! Mean rain drop concentration, < N_r >           [num/kg]
       Ncnm,       & ! Mean cloud nuclei concentration, < N_cn >       [num/kg]
       rho,        & ! Density                                         [kg/m^3]
       rcm,        & ! Mean cloud water mixing ratio, < r_c >          [kg/kg]
@@ -139,9 +137,11 @@ module setup_clubb_pdf_params
       w_std_dev     ! Standard deviation of vertical velocity, w      [m/s]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet,    & ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), &
+    intent(in) :: &
       corr_array_cloud, & ! Prescribed correlation array in cloud      [-]
       corr_array_below    ! Prescribed correlation array below cloud   [-]
 
@@ -177,8 +177,10 @@ module setup_clubb_pdf_params
       corr_mtx_approx_2      ! Approximated correlation matrix (C = LL'), 2nd comp.  [-]
 
     real( kind = core_rknd ), dimension(nz) ::  &
-      wprrp, & ! Covariance of w and r_r, < w'r_r' > (m-levs.)  [(m/s)(kg/kg)]
-      wpNrp    ! Covariance of w and N_r, < w'N_r' > (m-levs.)  [(m/s)(num/kg)]
+      rrainm, & ! Mean rain water mixing ratio, <r_r> (t-levs.)  [kg/kg]
+      Nrm,    & ! Mean rain drop concentration, <N_r> (t-levs.)  [num/kg]
+      wprrp,  & ! Covariance of w and r_r, <w'r_r'> (m-levs.)    [(m/s)(kg/kg)]
+      wpNrp     ! Covariance of w and N_r, <w'N_r'> (m-levs.)    [(m/s)(num/kg)]
 
     real( kind = core_rknd ), dimension(nz) :: &
       rc1,         & ! Mean of r_c (1st PDF component)              [kg/kg]
@@ -281,15 +283,12 @@ module setup_clubb_pdf_params
       wpNrp_ip_zt, & ! Covar. of N_r and w (in-precip) on t-levs [(m/s)(num/kg)]
       wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
 
-    integer, parameter :: &
-      num_hydromet = 2    ! Number of hydrometeor species (excluding Ncn)
-
-    real( kind = core_rknd ), dimension(num_hydromet,nz) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       hmm, & ! Mean of hydrometeor, hm (overall)                [units vary]
       hm1, & ! Mean of hydrometeor (1st PDF component)          [units vary]
       hm2    ! Mean of hydrometeor (2nd PDF component)          [units vary]
 
-    real( kind = core_rknd ), dimension(num_hydromet) :: &
+    real( kind = core_rknd ), dimension(hydromet_dim) :: &
       hm_tol    ! Tolerance value for the hydrometeor           [units vary]
 
      real( kind = core_rknd ), dimension(nz) :: &
@@ -307,6 +306,10 @@ module setup_clubb_pdf_params
 
     ! ---- Begin Code ----
 
+    ! Mean of hydrometeor (overall)
+    rrainm = hydromet(:,iirrainm)
+    Nrm    = hydromet(:,iiNrm)
+
     ! Covariance of vertical velocity and a hydrometeor
     ! (< w'r_r' > and < w'N_r' >).
     wprrp = wphydrometp(:,iirrainm)
@@ -322,19 +325,17 @@ module setup_clubb_pdf_params
     ! Component mean values for r_r and N_r, and precipitation fraction.
     if ( l_use_precip_frac ) then
 
-       hmm(1,:) = rrainm
-       hmm(2,:) = Nrm
-       hm_tol(1) = rr_tol
-       hm_tol(2) = Nr_tol
+       hm_tol(iirrainm) = rr_tol
+       hm_tol(iiNrm)    = Nr_tol
 
-       call component_means_hydromet( nz, num_hydromet, hmm, rho, rc1, rc2, &
+       call component_means_hydromet( nz, hydromet, rho, rc1, rc2, &
                                       mixt_frac, hm_tol, l_stats_samp, &
                                       hm1, hm2 )
 
-       rr1 = hm1(1,:)
-       rr2 = hm2(1,:)
-       Nr1 = hm1(2,:)
-       Nr2 = hm2(2,:)
+       rr1 = hm1(:,iirrainm)
+       rr2 = hm2(:,iirrainm)
+       Nr1 = hm1(:,iiNrm)
+       Nr2 = hm2(:,iiNrm)
 
        call precip_fraction( nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &     ! Intent(in)
                              cloud_frac, cloud_frac1, mixt_frac, &      ! Intent(in)
@@ -644,7 +645,7 @@ module setup_clubb_pdf_params
   end subroutine setup_pdf_parameters
 
   !=============================================================================
-  subroutine component_means_hydromet( nz, num_hydromet, hmm, rho, rc1, rc2, &
+  subroutine component_means_hydromet( nz, hmm, rho, rc1, rc2, &
                                        mixt_frac, hm_tol, l_stats_samp, &
                                        hm1, hm2 )
 
@@ -785,6 +786,9 @@ module setup_clubb_pdf_params
         one_half, &
         zero
 
+    use parameters_model, only: &
+        hydromet_dim  ! Variable(s)
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
@@ -800,10 +804,9 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,           & ! Number of model vertical grid levels
-      num_hydromet    ! Number of hydrometeor species (excluding Ncn)
+      nz    ! Number of model vertical grid levels
 
-    real( kind = core_rknd ), dimension(num_hydromet,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hmm    ! Mean of hydrometeor, hm (overall)                [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -812,14 +815,14 @@ module setup_clubb_pdf_params
       rc2,       & ! Mean cloud water mixing ratio (2nd PDF component)  [kg/kg]
       mixt_frac    ! Mixture fraction                                   [-]
 
-    real( kind = core_rknd ), dimension(num_hydromet), intent(in) :: &
+    real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       hm_tol    ! Tolerance value for the hydrometeor           [units vary]
 
     logical, intent(in) :: &
       l_stats_samp     ! Flag to record statistical output.
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(num_hydromet,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hm1, & ! Mean of hydrometeor (1st PDF component)          [units vary]
       hm2    ! Mean of hydrometeor (2nd PDF component)          [units vary]
 
@@ -828,7 +831,7 @@ module setup_clubb_pdf_params
       LWP1, & ! Liquid water path (1st PDF component) on thermo. levs.  [kg/m^2]
       LWP2    ! Liquid water path (2nd PDF component) on thermo. levs.  [kg/m^2]
 
-    integer :: i, k  ! Array index
+    integer :: k, i  ! Array index
 
     real( kind = core_rknd ), parameter :: &
       LWP_tol = 5.0e-7_core_rknd  ! Tolerance value for component LWP
@@ -887,12 +890,12 @@ module setup_clubb_pdf_params
 
     !!! Find hm1 and hm2 based on the ratio of LWP2/LWP1, such that:
     !!! hm2/hm1 ( = rr2/rr1 = Nr2/Nr1, etc. ) = LWP2/LWP1.
-    do i = 1, num_hydromet, 1
+    do i = 1, hydromet_dim, 1
 
        do k = 1, nz, 1
 
           !!! Calculate the component means for the hydrometeor.
-          if ( hmm(i,k) > hm_tol(i) ) then
+          if ( hmm(k,i) > hm_tol(i) ) then
 
              if ( LWP1(k) <= LWP_tol .and. LWP2(k) <= LWP_tol ) then
 
@@ -903,8 +906,8 @@ module setup_clubb_pdf_params
                 ! numerical artifact.  For example, the hydrometeor is diffused
                 ! above cloud top.  Simply set each component mean equal to the
                 ! overall mean.
-                hm1(i,k) = hmm(i,k)
-                hm2(i,k) = hmm(i,k)
+                hm1(k,i) = hmm(k,i)
+                hm2(k,i) = hmm(k,i)
 
              elseif ( LWP1(k) > LWP_tol .and. LWP2(k) <= LWP_tol ) then
 
@@ -914,8 +917,8 @@ module setup_clubb_pdf_params
                 ! The hydrometeor is found at this level, and all cloud water at
                 ! or above this level is found in the 1st PDF component.  All of
                 ! the hydrometeor is found in the 1st PDF component.
-                hm1(i,k) = hmm(i,k) / mixt_frac(k)
-                hm2(i,k) = zero
+                hm1(k,i) = hmm(k,i) / mixt_frac(k)
+                hm2(k,i) = zero
 
              elseif ( LWP2(k) > LWP_tol .and. LWP1(k) <= LWP_tol ) then
 
@@ -925,8 +928,8 @@ module setup_clubb_pdf_params
                 ! The hydrometeor is found at this level, and all cloud water at
                 ! or above this level is found in the 2nd PDF component.  All of
                 ! the hydrometeor is found in the 2nd PDF component.
-                hm1(i,k) = zero
-                hm2(i,k) = hmm(i,k) / ( one - mixt_frac(k) )
+                hm1(k,i) = zero
+                hm2(k,i) = hmm(k,i) / ( one - mixt_frac(k) )
 
              else ! LWP1(k) > LWP_tol and LWP2(k) > LWP_tol
 
@@ -937,12 +940,12 @@ module setup_clubb_pdf_params
                 ! components to find the hydrometeor in both PDF components.
                 ! Delegate the hydrometeor between the 1st and 2nd PDF
                 ! components according to the above equations.
-                hm1(i,k) &
-                = hmm(i,k) &
+                hm1(k,i) &
+                = hmm(k,i) &
                   / ( mixt_frac(k) + ( one - mixt_frac(k) ) * LWP2(k)/LWP1(k) )
 
-                hm2(i,k) &
-                = ( hmm(i,k) - mixt_frac(k) * hm1(i,k) ) &
+                hm2(k,i) &
+                = ( hmm(k,i) - mixt_frac(k) * hm1(k,i) ) &
                   / ( one - mixt_frac(k) )
 
              endif
@@ -953,14 +956,14 @@ module setup_clubb_pdf_params
              ! The overall hydrometeor is either 0 or below tolerance value (any
              ! postive value is considered to be a numerical artifact).  Simply
              ! set each component mean equal to the overall mean.
-             hm1(i,k) = hmm(i,k)
-             hm2(i,k) = hmm(i,k)
+             hm1(k,i) = hmm(k,i)
+             hm2(k,i) = hmm(k,i)
 
           endif
 
        enddo ! k = 1, nz, 1
 
-    enddo ! i = 1, num_hydromet, 1
+    enddo ! i = 1, hydromet_dim, 1
 
 
     ! Statistics
