@@ -11,7 +11,7 @@ module morrison_micro_driver_module
 !-------------------------------------------------------------------------------
   subroutine morrison_micro_driver &
              ( dt, nz, l_stats_samp, &
-               l_latin_hypercube, thlm, wm, p_in_Pa, &
+               l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, w_std_dev, &
                dzq, rcm, Ncm, s_mellor, rvm, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
@@ -175,7 +175,7 @@ module morrison_micro_driver_module
       pdf_params ! PDF parameters
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      wm, &        ! Mean vertial velocity               [m/s]
+      wm_zt, &     ! Mean vertical velocity on the thermo grid     [m/s]
       w_std_dev, & ! Standard deviation of vertical vel. [m/s]
       dzq          ! Change in altitude                  [m]
 
@@ -337,7 +337,7 @@ module morrison_micro_driver_module
       P_in_pa_r4, &
       rho_r4, &
       dzq_r4, &
-      wm_r4, &     ! Mean vertical velocity   [m/s]
+      wm_zt_r4, &     ! Mean vertical velocity on the thermo grid   [m/s]
       w_std_dev_r4 ! Standard deviation of w  [m/s]
 
     integer :: i, k
@@ -373,14 +373,14 @@ module morrison_micro_driver_module
       ! Don't use sgs cloud fraction to weight the tendencies
       cloud_frac_in(1:nz) = 0.0
 
-      wm_r4 = real( max( wm, w_thresh ) ) ! Impose a minimum value on w
+      wm_zt_r4 = real( max( wm_zt, w_thresh ) ) ! Impose a minimum value on w
       w_std_dev_r4 = 0. ! Don't add in a standard deviation for aerosol activation
 
     else 
       ! Use sgs cloud fraction to weight tendencies
       cloud_frac_in(1:nz) = real( cloud_frac(1:nz) )
 
-      wm_r4 = real( wm ) ! Use the mean value without a threshold
+      wm_zt_r4 = real( wm_zt ) ! Use the mean value without a threshold
       w_std_dev_r4 = real( w_std_dev ) ! Add in a standard deviation
     end if
 
@@ -487,7 +487,7 @@ module morrison_micro_driver_module
            hydromet_r4(:,iirsnowm), hydromet_r4(:,iirrainm), Ncm_r4(:), &
            hydromet_r4(:,iiNim), hydromet_r4(:,iiNsnowm), hydromet_r4(:,iiNrm), &
            T_in_K_mc, rvm_mc_r4, T_in_K, rvm_r4, P_in_pa_r4, rho_r4, dzq_r4, &
-           wm_r4, w_std_dev_r4, morr_rain_vel_r4, &
+           wm_zt_r4, w_std_dev_r4, morr_rain_vel_r4, &
            Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, real( dt ), &
            1,1, 1,1, 1,nz, 1,1, 1,1, 2,nz, &
            hydromet_mc_r4(:,iirgraupelm), hydromet_mc_r4(:,iiNgraupelm), &
@@ -550,11 +550,11 @@ module morrison_micro_driver_module
 
     if ( l_morr_xp2_mc_tndcy ) then
 
-       call update_xp2_mc_tndcy( nz, dt, cloud_frac, rcm, rvm, thlm, & !Intent(in)  
-                                 wm, exner, rrainm_evap, pdf_params, & !Intent(in)
-                                 rtp2_mc_tndcy, thlp2_mc_tndcy,      & !Intent(out)
-                                 wprtp_mc_tndcy, wpthlp_mc_tndcy,    & !Intent(out)
-                                 rtpthlp_mc_tndcy  )                   !Intent(out)
+       call update_xp2_mc_tndcy( nz, dt, cloud_frac, rcm, rvm, thlm,    & !Intent(in)  
+                                 wm_zt, exner, rrainm_evap, pdf_params, & !Intent(in)
+                                 rtp2_mc_tndcy, thlp2_mc_tndcy,         & !Intent(out)
+                                 wprtp_mc_tndcy, wpthlp_mc_tndcy,       & !Intent(out)
+                                 rtpthlp_mc_tndcy  )                      !Intent(out)
 
     else
 
