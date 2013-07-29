@@ -1,40 +1,29 @@
 !$Id$
 
-module estimate_lh_micro_module
+module est_kessler_microphys_module
 
   implicit none
 
-  public :: estimate_lh_micro
+  public :: est_kessler_microphys
 
   private :: autoconv_estimate, rc_estimate
 
   private ! Default Scope
 
-  integer, public :: k_lh_start ! For an assertion check
-
-!$omp threadprivate(k_lh_start)
-
   contains
 
 !------------------------------------------------------------------------
 
-  subroutine estimate_lh_micro &
-             ( dt, nz, n_micro_calls, d_variables, &
-               X_nl_all_levs, & 
-               LH_rt, LH_thl, pdf_params, & 
-               p_in_Pa, exner, rho, &
-               rcm, w_std_dev, dzq, &        
-               cloud_frac, hydromet, &
+  subroutine est_kessler_microphys &
+             ( nz, n_micro_calls, d_variables, &
+               X_nl_all_levs, pdf_params, rcm, cloud_frac, &
                X_mixt_comp_all_levs, LH_sample_point_weights, &
-               Nc_in_cloud, &
-               LH_hydromet_mc, LH_hydromet_vel, &
-               LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &
-               LH_AKm, AKm, AKstd, AKstd_cld, & 
-               AKm_rcm, AKm_rcc, LH_rcm_avg, &
-               microphys_sub )
+               LH_AKm, AKm, AKstd, AKstd_cld, &
+               AKm_rcm, AKm_rcc, LH_rcm_avg )
 ! Description:
-!   This subroutine computes microphysical grid box averages,
-!   given a Latin Hypercube sample.
+!   This subroutine computes microphysical grid box averages of the
+!   Kessler autoconversion scheme, using both Latin hypercube sampling
+!   and analytic integration, given a Latin Hypercube sample.
 ! References:
 !   None
 !------------------------------------------------------------------------
@@ -63,12 +52,7 @@ module estimate_lh_micro_module
 
     implicit none
 
-    ! External
-#include "microphys_interface.inc"
-
     ! Input Variables
-
-    real( kind = time_precision ), intent(in) :: dt ! Model timestep     [s]
 
     integer, intent(in) :: &
       nz, &          ! Number of vertical levels
@@ -78,45 +62,20 @@ module estimate_lh_micro_module
     real( kind = dp ), dimension(nz,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real( kind = core_rknd ), dimension(nz,n_micro_calls), intent(in) :: &
-      LH_rt, LH_thl ! Total water / Liquid potential temperature      [kg/kg] / [K]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      cloud_frac    ! Cloud fraction           [-]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      cloud_frac, & ! Cloud fraction           [-]
-      p_in_Pa,    & ! Pressure                 [Pa]
-      exner,      & ! Exner function           [-]
-      rho           ! Density on thermo. grid  [kg/m^3]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rcm,       & ! Liquid water mixing ratio                [kg/kg]
-      w_std_dev, & ! Standard deviation of vertical velocity  [m/s]
-      dzq          ! Difference in height per gridbox         [m]
+      rcm          ! Liquid water mixing ratio                [kg/kg]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
-
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
-      hydromet ! Hydrometeor species    [units vary]
 
     integer, dimension(nz,n_micro_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
     real( kind = core_rknd ), dimension(n_micro_calls), intent(in) :: &
       LH_sample_point_weights ! Weight for cloud weighted sampling
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
-      Nc_in_cloud
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
-      lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
-      lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
-
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      lh_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
-      lh_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
-      lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
@@ -308,18 +267,8 @@ module estimate_lh_micro_module
 
     end do ! level = 2, nz
 
-    ! Call the latin hypercube microphysics driver for microphys_sub
-    call est_single_column_tndcy( dt, nz, n_micro_calls, d_variables, & ! In
-                                k_lh_start, LH_rt, LH_thl, & ! In
-                                X_nl_all_levs, LH_sample_point_weights, & ! In
-                                p_in_Pa, exner, rho, cloud_frac, w_std_dev, & ! In
-                                dzq, pdf_params, hydromet, rcm, Nc_in_cloud, & ! In
-                                lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, & ! Out
-                                lh_hydromet_vel, lh_thlm_mc, &  ! Out
-                                microphys_sub ) ! Procedure
-
     return
-  end subroutine estimate_lh_micro
+  end subroutine est_kessler_microphys
 !-----------------------------------------------------------------------
   subroutine autoconv_estimate( n_micro_calls, mixt_frac, &
                               cloud_frac1, cloud_frac2, rc, &
@@ -715,4 +664,4 @@ module estimate_lh_micro_module
   end subroutine rc_estimate
 !---------------------------------------------------------------
 
-end module estimate_lh_micro_module
+end module est_kessler_microphys_module

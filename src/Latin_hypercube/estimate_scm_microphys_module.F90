@@ -16,8 +16,8 @@ module estimate_scm_microphys_module
                X_nl_all_levs, LH_sample_point_weights, &
                p_in_Pa, exner, rho, cloud_frac, w_std_dev, &
                dzq, pdf_params, hydromet, rcm, Nc_in_cloud,  &
-               lh_rvm_mc, lh_rcm_mc, lh_hydromet_mc, &
-               lh_hydromet_vel, lh_thlm_mc, &
+               lh_hydromet_mc, lh_hydromet_vel, &
+               lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
                microphys_sub )
 ! Description:
 !   Estimate the tendency of a microphysics scheme via latin hypercube sampling
@@ -436,11 +436,6 @@ module estimate_scm_microphys_module
       rvm_mc,    & ! Time tendency of rvm                    [(kg/kg)/s]
       rcm_mc,    & ! Time tendency of rcm                    [(kg/kg)/s]
       thlm_mc      ! Time tendency of thlm                   [(kg/kg)/s]
-
-    ! Local variables
-    real( kind = core_rknd ) :: &
-      KK_Nrm_evap_tndcy, &
-      KK_Nrm_auto_tndcy
 
     logical, parameter :: &
       ! Whether to adjust rrainm_source to not over-deplete cloud water

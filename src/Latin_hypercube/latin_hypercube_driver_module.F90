@@ -12,6 +12,11 @@ module latin_hypercube_driver_module
 
   integer, private :: &
     prior_iter ! Prior iteration number (for diagnostic purposes)
+!$omp threadprivate( prior_iter )
+
+  integer, public :: k_lh_start ! For an assertion check
+!$omp threadprivate( k_lh_start )
+
 
   private ! Default scope
 
@@ -51,9 +56,6 @@ module latin_hypercube_driver_module
     use generate_lh_sample_module, only: & 
       generate_lh_sample, & ! Procedure
       generate_uniform_sample
-
-    use estimate_lh_micro_module, only: & 
-      k_lh_start ! Variable
 
     use output_2D_samples_module, only: &
       output_2D_lognormal_dist_file, & ! Procedure(s)
@@ -422,7 +424,7 @@ module latin_hypercube_driver_module
 
     ! Assertion check for whether half of sample points are cloudy.
     ! This is for the uniform sample only.  Another assertion check is in the
-    ! estimate_lh_micro_module for X_nl_all_levs.
+    ! estimate_kessler_microphys_module for X_nl_all_levs.
     if ( l_lh_cloud_weighted_sampling ) then
       if ( clubb_at_least_debug_level( 2 ) .and. l_small_nonzero_cloud_frac ) then
         call assert_check_half_cloudy &
@@ -565,9 +567,6 @@ module latin_hypercube_driver_module
     use generate_lh_sample_module, only: &
       generate_lh_sample_mod, & ! Procedure
       generate_uniform_sample
-
-    use estimate_lh_micro_module, only: &
-      k_lh_start ! Variable
 
     use output_2D_samples_module, only: &
       output_2D_lognormal_dist_file, & ! Procedure(s)
@@ -933,7 +932,7 @@ module latin_hypercube_driver_module
 
     ! Assertion check for whether half of sample points are cloudy.
     ! This is for the uniform sample only.  Another assertion check is in the
-    ! estimate_lh_micro_module for X_nl_all_levs.
+    ! estimate_kessler_microphys_module for X_nl_all_levs.
     if ( l_lh_cloud_weighted_sampling ) then
       if ( clubb_at_least_debug_level( 2 ) .and. l_small_nonzero_cloud_frac ) then
         call assert_check_half_cloudy &
@@ -1061,13 +1060,19 @@ module latin_hypercube_driver_module
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
 
-    use estimate_lh_micro_module, only: & 
-      estimate_lh_micro ! Procedure(s)
+    use est_kessler_microphys_module, only: &
+      est_kessler_microphys
 
     use clubb_precision, only: &
       dp, & ! double precision
       core_rknd, &
       time_precision
+
+    use error_code, only: &
+      clubb_at_least_debug_level ! Procedure
+
+    use estimate_scm_microphys_module, only: &
+      est_single_column_tndcy
 
     implicit none
 
@@ -1129,20 +1134,26 @@ module latin_hypercube_driver_module
     ! ---- Begin Code ----
 
     ! Perform LH and analytic microphysical calculations
-    call estimate_lh_micro &
-         ( dt, nz, n_micro_calls, d_variables, &  ! intent(in)
-           X_nl_all_levs, &                         ! intent(in)
-           LH_rt, LH_thl, pdf_params, &             ! intent(in)
-           p_in_Pa, exner, rho, &                   ! intent(in)
-           rcm, w_std_dev, delta_zt, &              ! intent(in)
-           cloud_frac, hydromet, &                  ! intent(in)
-           X_mixt_comp_all_levs, LH_sample_point_weights, & ! intent(in)
-           Nc_in_cloud, &                           ! intent(in)
-           LH_hydromet_mc, LH_hydromet_vel, &       ! intent(inout)
-           LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &      ! intent(out)
-           lh_AKm, AKm, AKstd, AKstd_cld, &         ! intent(out)
-           AKm_rcm, AKm_rcc, LH_rcm_avg, &          ! intent(out)
-           microphys_sub )  ! Procedure
+    ! As a test of SILHS, compute an estimate of Kessler microphysics
+    if ( clubb_at_least_debug_level( 2 ) ) then
+       call est_kessler_microphys &
+            ( nz, n_micro_calls, d_variables, &                  ! Intent(in)
+              X_nl_all_levs, pdf_params, rcm, cloud_frac, &      ! Intent(in)
+              X_mixt_comp_all_levs, LH_sample_point_weights, &   ! Intent(in)
+              LH_AKm, AKm, AKstd, AKstd_cld, &                   ! Intent(out)
+              AKm_rcm, AKm_rcc, LH_rcm_avg )                     ! Intent(out)
+    end if
+
+    ! Call the latin hypercube microphysics driver for microphys_sub
+    call est_single_column_tndcy &
+         ( dt, nz, n_micro_calls, d_variables, &               ! Intent(in)
+           k_lh_start, LH_rt, LH_thl, &                        ! Intent(in)
+           X_nl_all_levs, LH_sample_point_weights, &           ! Intent(in) 
+           p_in_Pa, exner, rho, cloud_frac, w_std_dev, &       ! Intent(in)
+           delta_zt, pdf_params, hydromet, rcm, Nc_in_cloud, & ! Intent(in)
+           lh_hydromet_mc, lh_hydromet_vel, &                  ! Intent(inout)
+           lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                 ! Intent(out)
+           microphys_sub )                                     ! Intent(Procedure)
 
     return
   end subroutine LH_microphys_driver
