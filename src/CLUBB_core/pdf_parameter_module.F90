@@ -66,7 +66,7 @@ module pdf_parameter_module
   !-------
 
   subroutine pack_pdf_params(pdf_params, nz, r_param_array)
-
+    implicit none
     ! Input a pdf_parameter array with nz instances of pdf_parameter
     integer, intent(in) :: nz ! Num Vert Model Levs
     type (pdf_parameter), dimension(nz), intent(in) :: pdf_params
@@ -89,7 +89,7 @@ module pdf_parameter_module
   end subroutine pack_pdf_params
 
   subroutine unpack_pdf_params(r_param_array, nz, pdf_params)
-
+    implicit none
     ! Input a two dimensional real array with pdf values
     integer, intent(in) :: nz ! Num Vert Model Levs
     real (kind = core_rknd), dimension(nz,num_pdf_params), intent(in) :: &
@@ -115,7 +115,7 @@ module pdf_parameter_module
   end subroutine unpack_pdf_params
 
   real function get_param_at_ind(pp_struct, ind)
-
+    implicit none
     type (pdf_parameter), intent(in) :: pp_struct
     integer, intent(in) :: ind
 
@@ -200,7 +200,7 @@ module pdf_parameter_module
   end function get_param_at_ind
 
   subroutine set_param_at_ind(pp_struct, ind, val)
-
+    implicit none
     type (pdf_parameter), intent(inout) :: pp_struct
     integer, intent(in) :: ind
     real (kind = core_rknd), intent(in) :: val
