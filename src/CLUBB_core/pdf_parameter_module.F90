@@ -13,7 +13,7 @@ module pdf_parameter_module
 
   private ! Default scope
 
-  public :: pdf_parameter, num_pdf_params, pack_pdf_params, unpack_pdf_params
+  public :: pdf_parameter
 
   type pdf_parameter
     real( kind = core_rknd ) :: &
@@ -57,7 +57,9 @@ module pdf_parameter_module
 
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
 
-  integer, parameter :: num_pdf_params = 36
+  public :: pack_pdf_params, unpack_pdf_params
+
+  integer, public, parameter :: num_pdf_params = 36
 
   !-------
   contains
