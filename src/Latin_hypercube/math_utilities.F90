@@ -5,7 +5,8 @@ module math_utilities
 !-----------------------------------------------------------------------
   implicit none
 
-  public :: corrcoef, std, covar, compute_sample_mean, compute_sample_variance
+  public :: corrcoef, std, covar, compute_sample_mean, & 
+            compute_sample_variance, compute_sample_covariance
 
   private
 
@@ -209,5 +210,57 @@ module math_utilities
 
     return
   end function compute_sample_variance
+
+!-----------------------------------------------------------------------
+  pure function compute_sample_covariance( n_levels, n_samples, weight, &
+                   x_sample, x_mean, y_sample, y_mean ) &
+    result( covariance )
+
+! Description:
+!   Compute the covariance of a set of sample points of 2 variables
+!-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_levels, & ! Number of sample levels in the mean / variance
+      n_samples   ! Number of sample points compute the variance of
+
+    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
+      x_sample, & ! Collection of sample points    [units vary]
+      y_sample
+
+    real( kind = core_rknd ),dimension(n_samples), intent(in) :: &
+      weight ! Coefficient to weight the nth sample point by [-]
+
+    real( kind = core_rknd ),dimension(n_levels), intent(in) :: &
+      x_mean, & ! Mean sample points [units vary]
+      y_mean
+
+    ! Output Variable
+    real( kind = core_rknd ),dimension(n_levels) :: &
+      covariance ! Coariance of x and y [(units vary)^2]
+
+    ! Local Variable(s)
+    integer :: sample ! Loop iterator
+
+    ! ---- Begin Code ----
+
+    covariance(1:n_levels) = 0.0_core_rknd
+
+    do sample=1, n_samples
+      covariance(1:n_levels) = covariance(1:n_levels) &
+        + weight(sample) * ( x_sample(1:n_levels,sample) - x_mean(1:n_levels) ) &
+           * ( y_sample(1:n_levels,sample) - y_mean(1:n_levels) )
+    end do
+
+    covariance(1:n_levels) = covariance(1:n_levels) / real( n_samples, kind=core_rknd )
+
+    return
+  end function compute_sample_covariance
 
 end module math_utilities

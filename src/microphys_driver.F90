@@ -1471,6 +1471,8 @@ module microphys_driver
                hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
                hydromet_mc, hydromet_vel_zt, & ! In/Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
+               rtp2_mc_tndcy, thlp2_mc_tndcy, wprtp_mc_tndcy, & ! Out
+               wpthlp_mc_tndcy, rtpthlp_mc_tndcy, & ! Out
                morrison_micro_driver )  ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
@@ -1570,6 +1572,8 @@ module microphys_driver
                hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
                hydromet_mc, hydromet_vel_zt, & ! In/Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
+               rtp2_mc_tndcy, thlp2_mc_tndcy, wprtp_mc_tndcy, & ! Out
+               wpthlp_mc_tndcy, rtpthlp_mc_tndcy, & ! Out               
                KK_local_micro_driver ) ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"

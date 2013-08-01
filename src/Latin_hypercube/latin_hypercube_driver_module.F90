@@ -1036,6 +1036,8 @@ module latin_hypercube_driver_module
                hydromet, X_mixt_comp_all_levs, Nc_in_cloud, &
                LH_hydromet_mc, LH_hydromet_vel, &
                LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &
+               LH_rtp2_mc_tndcy, LH_thlp2_mc_tndcy, LH_wprtp_mc_tndcy, &
+               LH_wpthlp_mc_tndcy, LH_rtpthlp_mc_tndcy, &
                microphys_sub )
 
     ! Description:
@@ -1127,9 +1129,14 @@ module latin_hypercube_driver_module
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      LH_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
-      LH_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
-      LH_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
+      LH_rcm_mc,    & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
+      LH_rvm_mc,    & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
+      LH_thlm_mc,   & ! LH estimate of time tendency of liquid potential temperature [K/s]
+      LH_rtp2_mc_tndcy,    & ! LH micro. tendency for <rt'^2>                    [(kg/kg)^2/s]
+      LH_thlp2_mc_tndcy,   & ! LH micro. tendency for <thl'^2>                   [K^2/s]
+      LH_wprtp_mc_tndcy,   & ! LH micro. tendency for <w'rt'>                    [m*(kg/kg)/s^2]
+      LH_wpthlp_mc_tndcy,  & ! LH micro. tendency for <w'thl'>                   [m*K/s^2]
+      LH_rtpthlp_mc_tndcy    ! LH micro. tendency for <rt'thl'>                  [K*(kg/kg)/s]
 
     ! ---- Begin Code ----
 
@@ -1146,13 +1153,15 @@ module latin_hypercube_driver_module
 
     ! Call the latin hypercube microphysics driver for microphys_sub
     call est_single_column_tndcy &
-         ( dt, nz, n_micro_calls, d_variables, &               ! Intent(in)
-           k_lh_start, LH_rt, LH_thl, &                        ! Intent(in)
-           X_nl_all_levs, LH_sample_point_weights, &           ! Intent(in) 
-           p_in_Pa, exner, rho, cloud_frac, w_std_dev, &       ! Intent(in)
-           delta_zt, pdf_params, hydromet, rcm, Nc_in_cloud, & ! Intent(in)
-           lh_hydromet_mc, lh_hydromet_vel, &                  ! Intent(inout)
-           lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                 ! Intent(out)
+         ( dt, nz, n_micro_calls, d_variables, &                     ! Intent(in)
+           k_lh_start, LH_rt, LH_thl, &                              ! Intent(in)
+           X_nl_all_levs, LH_sample_point_weights, &                 ! Intent(in) 
+           p_in_Pa, exner, rho, cloud_frac, w_std_dev, &             ! Intent(in)
+           delta_zt, pdf_params, hydromet, rcm, Nc_in_cloud, &       ! Intent(in)
+           lh_hydromet_mc, lh_hydromet_vel, &                        ! Intent(inout)
+           lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                       ! Intent(out)
+           LH_rtp2_mc_tndcy, LH_thlp2_mc_tndcy, LH_wprtp_mc_tndcy, & ! Intent(out)
+           LH_wpthlp_mc_tndcy, LH_rtpthlp_mc_tndcy, &                ! Intent(out)
            microphys_sub )                                     ! Intent(Procedure)
 
     return

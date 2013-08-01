@@ -18,6 +18,8 @@ module estimate_scm_microphys_module
                dzq, pdf_params, hydromet, rcm, Nc_in_cloud,  &
                lh_hydromet_mc, lh_hydromet_vel, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
+               lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, lh_wprtp_mc_tndcy, &
+               lh_wpthlp_mc_tndcy, lh_rtpthlp_mc_tndcy, &
                microphys_sub )
 ! Description:
 !   Estimate the tendency of a microphysics scheme via latin hypercube sampling
@@ -132,9 +134,15 @@ module estimate_scm_microphys_module
       lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      lh_rcm_mc, & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
-      lh_rvm_mc, & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
-      lh_thlm_mc   ! LH estimate of time tendency of liquid potential temperature [K/s]
+      lh_rcm_mc,  & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
+      lh_rvm_mc,  & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
+      lh_thlm_mc, & ! LH estimate of time tendency of liquid potential temperature [K/s]
+      lh_rtp2_mc_tndcy,    & ! LH micro. tendency for <rt'^2>                  [(kg/kg)^2/s]
+      lh_thlp2_mc_tndcy,   & ! LH micro. tendency for <thl'^2>                 [K^2/s]
+      lh_wprtp_mc_tndcy,   & ! LH micro. tendency for <w'rt'>                  [m*(kg/kg)/s^2]
+      lh_wpthlp_mc_tndcy,  & ! LH micro. tendency for <w'thl'>                 [m*K/s^2]
+      lh_rtpthlp_mc_tndcy    ! LH micro. tendency for <rt'thl'>                [K*(kg/kg)/s]
+
 
     ! Local Variables
     real( kind = dp ), dimension(nz,hydromet_dim) :: &
@@ -142,12 +150,12 @@ module estimate_scm_microphys_module
       lh_hydromet_vel_sum   ! LH est of hydrometeor sedimentation velocity [m/s]
 
     real( kind = dp ), dimension(nz) :: &
-      lh_rrainm_auto_sum, & ! LH est of time tendency of autoconversion               [kg/kg/s]
-      lh_rrainm_accr_sum, & ! LH est of time tendency of accretion                    [kg/kg/s]
-      lh_rrainm_evap_sum, & ! LH est of time tendency of evaporation                  [kg/kg/s]
-      lh_rcm_mc_sum,      & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
-      lh_rvm_mc_sum,      & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
-      lh_thlm_mc_sum        ! LH est of time tendency of liquid potential temperature [K/s]
+      lh_rrainm_auto_sum,  & ! LH est of time tendency of autoconversion               [kg/kg/s]
+      lh_rrainm_accr_sum,  & ! LH est of time tendency of accretion                    [kg/kg/s]
+      lh_rrainm_evap_sum,  & ! LH est of time tendency of evaporation                  [kg/kg/s]
+      lh_rcm_mc_sum,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
+      lh_rvm_mc_sum,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
+      lh_thlm_mc_sum         ! LH est of time tendency of liquid potential temperature     [K/s]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species                    [units vary]
@@ -163,16 +171,33 @@ module estimate_scm_microphys_module
       Nc            ! Cloud droplet concentration               [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      lh_rtp2_mc_tndcy,    & ! LH micro. tendency for <rt'^2>      [(kg/kg)^2/s]
-      lh_thlp2_mc_tndcy,   & ! LH micro. tendency for <thl'^2>     [K^2/s]
-      lh_wprtp_mc_tndcy,   & ! LH micro. tendency for <w'rt'>      [m*(kg/kg)/s^2]
-      lh_wpthlp_mc_tndcy,  & ! LH micro. tendency for <w'thl'>     [m*K/s^2]
-      lh_rtpthlp_mc_tndcy, & ! LH micro. tendency for <rt'thl'>    [K*(kg/kg)/s]
+      rtp2_mc_tndcy,       & ! Micro. tendency for <rt'^2>         [(kg/kg)^2/s]
+      thlp2_mc_tndcy,      & ! Micro. tendency for <thl'^2>        [K^2/s]
+      wprtp_mc_tndcy,      & ! Micro. tendency for <w'rt'>         [m*(kg/kg)/s^2]
+      wpthlp_mc_tndcy,     & ! Micro. tendency for <w'thl'>        [m*K/s^2]
+      rtpthlp_mc_tndcy,    & ! Micro. tendency for <rt'thl'>       [K*(kg/kg)/s]
       lh_rrainm_auto,      & ! Autoconversion budget for <rr>      [kg/kg/s]
       lh_rrainm_accr,      & ! Accretion budget for <rr>           [kg/kg/s]
       lh_rrainm_evap,      & ! Evaporation budget for <rr>         [kg/kg/s]
       lh_Nrm_auto,         & ! Change in Nrm due to autoconversion [num/kg/s]
       lh_Nrm_evap            ! Change in Nrm due to evaporation    [num/kg/s]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      rtp2_before_micro,    & ! <rt'^2> before microphys_sub    [(kg/kg)^2]
+      rtp2_after_micro,     & ! <rt'^2> after microphys_sub     [(kg/kg)^2]
+      thlp2_before_micro,   & ! <thl'^2> before microphys_sub   [K^2]
+      thlp2_after_micro,    & ! <thl'^2> after microphys_sub    [K^2]
+      wprtp_before_micro,   & ! <w'rt'> before microphys_sub    [m*(kg/kg)/s]
+      wprtp_after_micro,    & ! <w'rt'> after microphys_sub     [m*(kg/kg)/s]
+      wpthlp_before_micro,  & ! <w'thl'> before microphys_sub   [m*K/s]
+      wpthlp_after_micro,   & ! <w'thl'> after microphys_sub    [m*K/s]
+      rtpthlp_before_micro, & ! <rt'thl'> before microphys_sub  [K*(kg/kg)/s]
+      rtpthlp_after_micro     ! <rt'thl'> after microphys_sub   [K*(kg/kg)/s]
+
+    real( kind = core_rknd ), dimension(nz,n_micro_calls) :: &
+      rt_all_samples,  & ! Columns used to calculate covariances [kg/kg]
+      thl_all_samples, & ! Columns used to calculate covariances [K]
+      w_all_samples      ! Columns used to calculate covariances [m/s] 
 
     real( kind = dp ), pointer, dimension(:,:) :: &
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
@@ -241,6 +266,33 @@ module estimate_scm_microphys_module
     lh_rrainm_accr_sum(:) = 0._dp
     lh_rrainm_evap_sum(:) = 0._dp
 
+    lh_rtp2_mc_tndcy(:) = 0.0_core_rknd
+    lh_thlp2_mc_tndcy(:) = 0.0_core_rknd
+    lh_wprtp_mc_tndcy(:) = 0.0_core_rknd
+    lh_wpthlp_mc_tndcy(:) = 0.0_core_rknd
+    lh_rtpthlp_mc_tndcy(:) = 0.0_core_rknd
+
+    rtp2_before_micro(:) = 0.0_core_rknd
+    thlp2_before_micro(:) = 0.0_core_rknd
+    wprtp_before_micro(:) = 0.0_core_rknd
+    wpthlp_before_micro(:) = 0.0_core_rknd
+    rtpthlp_before_micro(:) = 0.0_core_rknd
+    rtp2_after_micro(:) = 0.0_core_rknd
+    thlp2_after_micro(:) = 0.0_core_rknd
+    wprtp_after_micro(:) = 0.0_core_rknd
+    wpthlp_after_micro(:) = 0.0_core_rknd
+    rtpthlp_after_micro(:) = 0.0_core_rknd
+
+
+    rt_all_samples = LH_rt
+    thl_all_samples = LH_thl
+    w_all_samples = w_all_points
+
+    call LH_moments ( n_micro_calls, LH_sample_point_weights, nz, & 
+                     rt_all_samples, thl_all_samples, w_all_samples, &
+                     rtp2_before_micro, thlp2_before_micro, wprtp_before_micro, & 
+                     wpthlp_before_micro, rtpthlp_before_micro )
+
     do sample = 1, n_micro_calls
 
       s_mellor_column = real( s_mellor_all_points(:,sample), kind = core_rknd )
@@ -297,11 +349,14 @@ module estimate_scm_microphys_module
              hydromet_all_points, & ! In
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
              lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
-             lh_rtp2_mc_tndcy, lh_thlp2_mc_tndcy, & ! Out
-             lh_wprtp_mc_tndcy, lh_wpthlp_mc_tndcy, & ! Out
-             lh_rtpthlp_mc_tndcy, &  ! Out
+             rtp2_mc_tndcy, thlp2_mc_tndcy, & ! Out
+             wprtp_mc_tndcy, wpthlp_mc_tndcy, & ! Out
+             rtpthlp_mc_tndcy, &  ! Out
              lh_rrainm_auto, lh_rrainm_accr, lh_rrainm_evap, &
              lh_Nrm_auto, lh_Nrm_evap ) ! Out
+
+      rt_all_samples(:,sample) = rc_column + lh_rcm_mc + rv_column + lh_rvm_mc
+      thl_all_samples(:,sample) = thl_column + lh_thlm_mc
 
       if ( l_lh_cloud_weighted_sampling ) then
         ! Weight the output results depending on whether we're calling the
@@ -344,6 +399,17 @@ module estimate_scm_microphys_module
       ! Loop to get new sample
     end do ! sample = 1, n_micro_calls
 
+    call LH_moments ( n_micro_calls, LH_sample_point_weights, nz, &
+                       rt_all_samples, thl_all_samples, w_all_samples, &
+                       rtp2_after_micro, thlp2_after_micro, wprtp_after_micro, & 
+                       wpthlp_after_micro, rtpthlp_after_micro )
+
+    lh_wpthlp_mc_tndcy = ( wpthlp_after_micro - wpthlp_before_micro ) / dt
+    lh_wprtp_mc_tndcy = ( wprtp_after_micro - wprtp_before_micro ) / dt
+    lh_rtp2_mc_tndcy = ( rtp2_after_micro - rtp2_before_micro ) / dt 
+    lh_thlp2_mc_tndcy = ( thlp2_after_micro - thlp2_before_micro) / dt
+    lh_rtpthlp_mc_tndcy = ( rtpthlp_after_micro - rtpthlp_before_micro) / dt
+
 
     ! Grid box average.
     forall( ivar = 1:hydromet_dim )
@@ -363,6 +429,8 @@ module estimate_scm_microphys_module
                                      real( n_micro_calls, kind=core_rknd )
     lh_rrainm_evap = real( lh_rrainm_evap_sum, kind=core_rknd ) / &
                                      real( n_micro_calls, kind=core_rknd )
+
+
 #ifdef SILHS_KK_CONVERGENCE_TEST
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
@@ -608,5 +676,85 @@ module estimate_scm_microphys_module
 
     return
   end subroutine copy_X_nl_into_hydromet_all_pts
+  !-----------------------------------------------------------------------------
+
+  subroutine LH_moments ( n_samples, LH_weights, nz, & 
+                 rt_all_samples, thl_all_samples, w_all_samples, &
+                 lh_rtp2, lh_thlp2, lh_wprtp, & 
+                 lh_wpthlp, lh_rtpthlp )
+
+  ! Description:
+  !   Calculates variances and covariances using LH sample columns
+
+  !-----------------------------------------------------------------------------
+
+    use grid_class, only: &
+      zt2zm    ! Procedures
+
+    use math_utilities, only: &
+      compute_sample_mean, & ! functions
+      compute_sample_variance, &
+      compute_sample_covariance
+
+    use clubb_precision, only: &
+      core_rknd 
+
+    implicit none
+
+    !! Define variables
+    integer, intent(in) :: &
+      nz,            & ! Number of vertical levels
+      n_samples        ! Number of sample columns from latin hypercube
+
+    real( kind = core_rknd ), dimension(n_samples), intent(in) :: &
+      LH_weights   ! Sample weights                          [-]
+
+    real( kind = core_rknd ), dimension(nz,n_samples), intent(in) :: &
+      rt_all_samples, &  ! rt columns from latin hypercube   [kg/kg]
+      thl_all_samples, & ! thl columns from latin hypercube  [K]
+      w_all_samples      ! w columns from latin hypercube    [m/s]
+
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      lh_rtp2, &    ! Latin hypercube estimate of <rt'^2>     [(kg/kg)^2]
+      lh_thlp2, &   ! Latin hypercube estimate of <thl'^2>    [K^2]
+      lh_wprtp, &   ! Latin hypercube estimate of <w'rt'>     [m*(kg/kg)/s]
+      lh_wpthlp, &  ! Latin hypercube estimate of <w'thl'>    [m*K/s]
+      lh_rtpthlp    ! Latin hypercube estimate of <rt'thl'>   [K*(kg/kg)]
+
+    real( kind = core_rknd ), dimension(nz) :: &  !local variables
+      rt_mean, &    ! Latin hypercube estimate of rtm         [kg/kg]
+      thl_mean, &   ! Latin hypercube estimate of thlm        [K]
+      w_mean, &     ! Latin hypercube estimate of wm          [m/s]
+      rtp2_zt, &    ! Estimate of <rt'^2> on the zt grid      [(kg/kg)^2]
+      thlp2_zt, &   ! Estimate of <thl'^2> on the zt grid     [K^2]
+      wprtp_zt, &   ! Estimate of <w'rt'> on the zt grid      [m*(kg/kg)/s]
+      wpthlp_zt, &  ! Estimate of <w'thl'> on the zt grid     [m*K/s]
+      rtpthlp_zt    ! Estimate of <rt'thl'> on the zt grid    [K*(kg/kg)]
+
+
+    ! --Begin code--
+
+    rt_mean = compute_sample_mean( nz, n_samples, LH_weights, rt_all_samples )
+    thl_mean = compute_sample_mean( nz, n_samples, LH_weights, thl_all_samples )
+    w_mean = compute_sample_mean( nz, n_samples, LH_weights, w_all_samples )
+
+    rtp2_zt = compute_sample_variance( nz, n_samples, rt_all_samples, LH_weights, rt_mean )
+    thlp2_zt = compute_sample_variance( nz, n_samples, thl_all_samples, LH_weights, thl_mean )
+  
+    wprtp_zt = compute_sample_covariance( nz, n_samples, LH_weights, &
+                   w_all_samples, w_mean, rt_all_samples, rt_mean ) 
+    wpthlp_zt = compute_sample_covariance( nz, n_samples, LH_weights, &
+                   w_all_samples, w_mean, thl_all_samples, thl_mean )
+    rtpthlp_zt = compute_sample_covariance( nz, n_samples, LH_weights, &
+                   rt_all_samples, rt_mean, thl_all_samples, thl_mean ) 
+
+    lh_rtp2 = zt2zm( rtp2_zt )
+    lh_thlp2 = zt2zm( thlp2_zt )
+    lh_wprtp = zt2zm( wprtp_zt )
+    lh_wpthlp = zt2zm( wpthlp_zt )
+    lh_rtpthlp = zt2zm( rtpthlp_zt )
+
+    return
+  end subroutine LH_moments
   !-----------------------------------------------------------------------------
 end module estimate_scm_microphys_module
