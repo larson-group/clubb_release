@@ -96,11 +96,12 @@ module setup_clubb_pdf_params
         core_rknd    ! Variable(s)
 
     use parameters_microphys, only: &
-        rrp2_on_rrm2_cloud,     & ! Variable(s)
-        rrp2_on_rrm2_below,     &
-        Nrp2_on_Nrm2_cloud,     &
-        Nrp2_on_Nrm2_below,     &
-        Ncnp2_on_Ncnm2_cloud
+        rrp2_on_rrm2_cloud,   & ! Variable(s)
+        rrp2_on_rrm2_below,   &
+        Nrp2_on_Nrm2_cloud,   &
+        Nrp2_on_Nrm2_below,   &
+        Ncnp2_on_Ncnm2_cloud, &
+        hydromet_list
 
     use stats_type, only: &
         stat_update_var ! Procedure(s)
@@ -337,9 +338,9 @@ module setup_clubb_pdf_params
        Nr1 = hm1(:,iiNrm)
        Nr2 = hm2(:,iiNrm)
 
-       call precip_fraction( nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &     ! Intent(in)
-                             cloud_frac, cloud_frac1, mixt_frac, &      ! Intent(in)
-                             precip_frac, precip_frac_1, precip_frac_2 )! Intent(out)
+       call precip_fraction( nz, hydromet, hm1, hm2, hydromet_list, hm_tol, &
+                             cloud_frac, cloud_frac1, mixt_frac, &
+                             precip_frac, precip_frac_1, precip_frac_2 )
 
     else
 
@@ -987,7 +988,7 @@ module setup_clubb_pdf_params
   end subroutine component_means_hydromet
 
   !=============================================================================
-  subroutine precip_fraction( nz, rrainm, rr1, rr2, Nrm, Nr1, Nr2, &
+  subroutine precip_fraction( nz, hmm, hm1, hm2, hm_list, hm_tol, &
                               cloud_frac, cloud_frac1, mixt_frac, &
                               precip_frac, precip_frac_1, precip_frac_2 )
 
@@ -1002,9 +1003,10 @@ module setup_clubb_pdf_params
     use constants_clubb, only: &
         one,            & ! Constant(s)
         zero,           &
-        rr_tol,         &
-        Nr_tol,         &
         cloud_frac_min
+
+    use parameters_model, only: &
+        hydromet_dim  ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1015,13 +1017,18 @@ module setup_clubb_pdf_params
     integer, intent(in) :: &
       nz          ! Number of model vertical grid levels
 
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hmm, & ! Mean of hydrometeor, hm (overall)                [units vary]
+      hm1, & ! Mean of hydrometeor (1st PDF component)          [units vary]
+      hm2    ! Mean of hydrometeor (2nd PDF component)          [units vary]
+
+    character(len=10), dimension(hydromet_dim), intent(in) :: &
+      hm_list    ! Names of all hydrometeors
+
+    real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
+      hm_tol    ! Tolerance value for the hydrometeor           [units vary]
+
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rrainm,      & ! Mean rain water mixing ratio (overall)           [kg/kg]
-      rr1,         & ! Mean rain water mixing ratio (1st PDF component) [kg/kg]
-      rr2,         & ! Mean rain water mixing ratio (2nd PDF component) [kg/kg]
-      Nrm,         & ! Mean rain drop concentration (overall)           [num/kg]
-      Nr1,         & ! Mean rain drop concentration (1st PDF component) [num/kg]
-      Nr2,         & ! Mean rain drop concentration (2nd PDF component) [num/kg]
       cloud_frac,  & ! Cloud fraction (overall)                         [-] 
       cloud_frac1, & ! Cloud fraction (1st PDF component)               [-]
       mixt_frac      ! Mixture fraction                                 [-]
@@ -1036,11 +1043,23 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(nz) :: &
       weighted_pfrac1    ! Product of mixt_frac and precip_frac_1       [-]
 
+    real( kind = core_rknd ) :: &
+      r_tot_hm_1, & ! Mean total hydromet mixing ratio (1st PDF comp.)  [kg/kg]
+      r_tot_hm_2, & ! Mean total hydromet mixing ratio (2nd PDF comp.)  [kg/kg]
+      N_tot_hm_1, & ! Mean total hydromet concentration (1st PDF comp.) [num/kg]
+      N_tot_hm_2    ! Mean total hydromet concentration (2nd PDF comp.) [num/kg]
+
+    real( kind = core_rknd ) :: &
+      r_tot_hm_tol    ! Tolerance value for total hydromet mixing ratio [kg/kg]
+
+    character(len=10) :: &
+      hydromet_name    ! Name of a hydrometeor
+
     real( kind = core_rknd ), parameter :: &
       precip_frac_tol = cloud_frac_min  ! Minimum precip. frac.         [-]
     
     integer :: &
-      k   ! Loop index
+      k, i   ! Loop indices
 
 
     !!! Find overall precipitation fraction.
@@ -1054,21 +1073,21 @@ module setup_clubb_pdf_params
           precip_frac(k) = cloud_frac(k)
        endif
 
-       if ( ( rrainm(k) > rr_tol .or. Nrm(k) > Nr_tol ) &
+       if ( any( hmm(k,:) > hm_tol(:) ) &
             .and. precip_frac(k) < precip_frac_tol ) then
 
-          ! In a scenario where we find rain at this grid level, but no cloud at
-          ! or above this grid level, set precipitation fraction to a minimum
-          ! threshold value.
+          ! In a scenario where we find any hydrometeor at this grid level, but
+          ! no cloud at or above this grid level, set precipitation fraction to
+          ! a minimum threshold value.
           precip_frac(k) = precip_frac_tol
 
-       elseif ( ( rrainm(k) < rr_tol .and. Nrm(k) < Nr_tol ) &
+       elseif ( all( hmm(k,:) <= hm_tol(:) ) &
                 .and. precip_frac(k) < precip_frac_tol ) then
 
-          ! Mean (overall) rain water mixing ratio and mean (overall) rain drop
-          ! concentration are both less than their respective tolerance amounts.
-          ! They are both considered to have values of 0.  There is not any rain
-          ! at this grid level.  There is also no cloud at or above this grid
+          ! The means (overall) of every precipitating hydrometeor are all less
+          ! than their respective tolerance amounts.  They are all considered to
+          ! have values of 0.  There is not any hydrometeor species found at
+          ! this grid level.  There is also no cloud at or above this grid
           ! level, so set precipitation fraction to 0.
           precip_frac(k) = zero
 
@@ -1124,22 +1143,22 @@ module setup_clubb_pdf_params
              ! component 1 between the levels) is applied to PDF component 2.
              precip_frac_1(k) = one
 
-          elseif ( ( rr1(k) > rr_tol .or. Nr1(k) > Nr_tol ) &
+          elseif ( any( hm1(k,:) > hm_tol(:) ) &
                    .and. precip_frac_1(k) <= precip_frac_tol ) then
 
-             ! In a scenario where we find rain in the 1st PDF component at this
-             ! grid level, but no cloud in the 1st PDF component at or above
-             ! this grid level, set precipitation fraction (in the 1st PDF
-             ! component) to a minimum threshold value.
+             ! In a scenario where we find any hydrometeor in the 1st PDF
+             ! component at this grid level, but no cloud in the 1st PDF
+             ! component at or above this grid level, set precipitation fraction
+             ! (in the 1st PDF component) to a minimum threshold value.
              precip_frac_1(k) = precip_frac_tol
 
-          elseif ( ( rr1(k) <= rr_tol .and. Nr1(k) <= Nr_tol ) &
+          elseif ( all( hm1(k,:) <= hm_tol(:) ) &
                    .and. precip_frac_1(k) <= precip_frac_tol ) then
 
-             ! Mean rain water mixing ratio and mean rain drop concentration in
-             ! the 1st PDF component are both less than their respective
-             ! tolerance amounts.  They are both considered to have values of 0.
-             ! There is not any rain in the 1st PDF component at this grid
+             ! The means of every precipitating hydrometeor in the 1st PDF
+             ! component are all less than their respective tolerance amounts.
+             ! They are all considered to have values of 0.  There is not any
+             ! hydrometeor species found in the 1st PDF component at this grid
              ! level.  There is also no cloud at or above this grid level, so
              ! set precipitation fraction (in the 1st PDF component) to 0.
              precip_frac_1(k) = zero
@@ -1189,30 +1208,30 @@ module setup_clubb_pdf_params
              ! Double check for errors in PDF component 1.
              if ( precip_frac_1(k) > one ) then
                 precip_frac_1(k) = one
-             elseif ( ( rr1(k) > rr_tol .or. Nr1(k) > Nr_tol ) &
+             elseif ( any( hm1(k,:) > hm_tol(:) ) &
                       .and. precip_frac_1(k) <= precip_frac_tol ) then
                 precip_frac_1(k) = precip_frac_tol
-             elseif ( ( rr1(k) <= rr_tol .and. Nr1(k) <= Nr_tol ) &
+             elseif ( all( hm1(k,:) <= hm_tol(:) ) &
                       .and. precip_frac_1(k) <= precip_frac_tol ) then
                 precip_frac_1(k) = zero
              endif
 
-          elseif ( ( rr2(k) > rr_tol .or. Nr2(k) > Nr_tol ) &
+          elseif ( any( hm2(k,:) > hm_tol(:) ) &
                    .and. precip_frac_2(k) <= precip_frac_tol ) then
 
-             ! In a scenario where we find rain in the 2nd PDF component at this
-             ! grid level, but no cloud in the 2nd PDF component at or above
-             ! this grid level, set precipitation fraction (in the 2nd PDF
-             ! component) to a minimum threshold value.
+             ! In a scenario where we find any hydrometeor in the 2nd PDF
+             ! component at this grid level, but no cloud in the 2nd PDF
+             ! component at or above this grid level, set precipitation fraction
+             ! (in the 2nd PDF component) to a minimum threshold value.
              precip_frac_2(k) = precip_frac_tol
 
-          elseif ( ( rr2(k) <= rr_tol .and. Nr2(k) <= Nr_tol ) &
+          elseif ( all( hm2(k,:) <= hm_tol(:) ) &
                    .and. precip_frac_2(k) <= precip_frac_tol ) then
 
-             ! Mean rain water mixing ratio and mean rain drop concentration in
-             ! the 2nd PDF component are both less than their respective
-             ! tolerance amounts.  They are both considered to have values of 0.
-             ! There is not any rain in the 2nd PDF component at this grid
+             ! The means of every precipitating hydrometeor in the 2nd PDF
+             ! component are all less than their respective tolerance amounts.
+             ! They are all considered to have values of 0.  There is not any
+             ! hydrometeor species found in the 2nd PDF component at this grid
              ! level.  There is also no cloud at or above this grid level, so
              ! set precipitation fraction (in the 2nd PDF component) to 0.
              precip_frac_2(k) = zero
@@ -1224,14 +1243,25 @@ module setup_clubb_pdf_params
 
     else  ! .true.
 
-       ! Precipitation fraction in each PDF component is based on mean rain
-       ! water mixing ratio in each PDF component.  The ratio it is based on is:
+       ! Precipitation fraction in each PDF component is based on the mean total
+       ! hydrometeor mixing ratio in each PDF component, where total hydrometeor
+       ! mixing ratio, r_Thm, is the sum of all precipitating hydrometeor
+       ! species mixing ratios (which doesn't include cloud water), such that:
        !
-       ! rr1/f_p(1) = rr2/f_p(2);
+       ! r_Thm = r_r + r_i + r_s + r_g;
        !
-       ! which can be rewritten as:
+       ! where r_r is rain water mixing ratio, r_i is ice mixing ratio, r_s is
+       ! snow mixing ratio, and r_g is graupel mixing ratio.
        !
-       ! f_p(2)/f_p(1) = rr2/rr1.
+       ! Precipitation fraction in each PDF component is based on the ratio:
+       !
+       ! r_Thm_1/f_p(1) = r_Thm_2/f_p(2);
+       !
+       ! where r_Thm_1 is mean total hydrometeor mixing ratio is the 1st PDF
+       ! component and r_Thm_2 is mean total hydrometeor mixing ratio in the 2nd
+       ! PDF component.  The equation can be rewritten as:
+       !
+       ! f_p(2)/f_p(1) = r_Thm_2/r_Thm_1.
        !
        ! Since overall precipitation fraction is given by the equation:
        !
@@ -1241,52 +1271,89 @@ module setup_clubb_pdf_params
        !
        ! f_p = f_p(1) ( a + (1-a) f_p(2)/f_p(1) ).
        !
-       ! Substituting the ratio rr2/rr1 for the ratio f_p(2)/f_p(1), the above
-       ! equation can be solved for f_p(1):
+       ! Substituting the ratio r_Thm_2/r_Thm_1 for the ratio f_p(2)/f_p(1), the
+       ! above equation can be solved for f_p(1):
        !
-       ! f_p(1) = f_p / ( a + (1-a) rr2/rr1 ).
+       ! f_p(1) = f_p / ( a + (1-a) r_Thm_2/r_Thm_1 ).
        !
        ! Then, f_p(2) can be solved for according to the equation:
        !
        ! f_p(2) = ( f_p - a f_p(1) ) / (1-a).
+       !
+       ! In the event where hydrometeor concentrations are found at a given
+       ! vertical level, but not hydrometeor mixing ratios (due to numerical
+       ! artifacts), the mean total hydrometeor concentrations in each PDF
+       ! component will be used in place of mean total hydrometeor mixing ratios
+       ! in the above equations to solve for component precipitation fractions.
        do k = 1, nz, 1
 
-          if ( ( rr1(k) <= rr_tol .and. Nr1(k) <= Nr_tol ) &
-               .and. ( rr2(k) <= rr_tol .and. Nr2(k) <= Nr_tol ) ) then
+          if ( all( hm1(k,:) <= hm_tol(:) ) &
+               .and. all( hm2(k,:) <= hm_tol(:) ) ) then
 
-             ! There is no rain in each PDF component.  Precipitation fraction
-             ! within each component is set to 0.
+             ! There are no hydrometeors found in each PDF component.
+             ! Precipitation fraction within each component is set to 0.
              precip_frac_1(k) = zero
              precip_frac_2(k) = zero
 
-          elseif ( ( rr1(k) > rr_tol .or. Nr1(k) > Nr_tol ) &
-                   .and. ( rr2(k) <= rr_tol .and. Nr2(k) <= Nr_tol ) ) then
+          elseif ( any( hm1(k,:) > hm_tol(:) ) &
+                   .and. all( hm2(k,:) <= hm_tol(:) ) ) then
 
-             ! All the rain is within the 1st PDF component.
+             ! All the hydrometeors are found within the 1st PDF component.
              precip_frac_1(k) = precip_frac(k) / mixt_frac(k)
              precip_frac_2(k) = zero
 
-          elseif ( ( rr2(k) > rr_tol .or. Nr2(k) > Nr_tol ) &
-                   .and. ( rr1(k) <= rr_tol .and. Nr1(k) <= Nr_tol ) ) then
+          elseif ( any( hm2(k,:) > hm_tol(:) ) &
+                   .and. all( hm1(k,:) <= hm_tol(:) ) ) then
 
-             ! All the rain is within the 2nd PDF component.
+             ! All the hydrometeors are found within the 2nd PDF component.
              precip_frac_1(k) = zero
              precip_frac_2(k) = precip_frac(k) / ( one - mixt_frac(k) )
 
-          else ! rr1(k) > rr_tol or Nr1(k) > Nr_tol
-               ! AND rr2(k) > rr_tol or Nr2(k) > Nr_tol
+          else ! any( hm1(k,:) > hm_tol(:) ) AND any( hm2(k,:) > hm_tol(:) )
 
-             ! Rain within both PDF components.
+             ! Hydrometeors are found within both PDF components.
+             r_tot_hm_1 = zero
+             r_tot_hm_2 = zero
+             N_tot_hm_1 = zero
+             N_tot_hm_2 = zero
+             r_tot_hm_tol = one
+             do i = 1, hydromet_dim, 1
+
+                hydromet_name = hm_list(i)
+
+                if ( hydromet_name(1:1) == "r" ) then
+
+                   ! The hydrometeor is a mixing ratio.
+                   ! Find total hydrometeor mixing ratio in each PDF component.
+                   r_tot_hm_1 = r_tot_hm_1 + hm1(k,i)
+                   r_tot_hm_2 = r_tot_hm_2 + hm2(k,i)
+
+                   if ( hm1(k,i) > hm_tol(i) ) then
+                      r_tot_hm_tol = min( r_tot_hm_tol, hm_tol(i) )
+                   endif
+
+                elseif ( hydromet_name(1:1) == "N" ) then
+
+                   ! The hydrometeor is a concentration.
+                   ! Find total hydrometeor concentration in each PDF component.
+                   N_tot_hm_1 = N_tot_hm_1 + hm1(k,i)
+                   N_tot_hm_2 = N_tot_hm_2 + hm2(k,i)
+
+                endif
+
+             enddo ! i = 1, hydromet_dim, 1
 
              !!! Find precipitation fraction within PDF component 1.
-             if ( rr1(k) > rr_tol ) then
+             if ( r_tot_hm_1 > r_tot_hm_tol ) then
                 precip_frac_1(k) &
                 = precip_frac(k) &
-                  / ( mixt_frac(k) + ( one - mixt_frac(k) ) * rr2(k)/rr1(k) )
-             else ! Nr1 > Nr_tol
+                  / ( mixt_frac(k) &
+                      + ( one - mixt_frac(k) ) * r_tot_hm_2/r_tot_hm_1 )
+             else ! N_tot_hm_1 > N_tot_hm_tol
                 precip_frac_1(k) &
                 = precip_frac(k) &
-                  / ( mixt_frac(k) + ( one - mixt_frac(k) ) * Nr2(k)/Nr1(k) )
+                  / ( mixt_frac(k) &
+                      + ( one - mixt_frac(k) ) * N_tot_hm_2/N_tot_hm_1 )
              endif
 
              ! Using the above method, it is possible for precip_frac_1 to be
@@ -1318,22 +1385,22 @@ module setup_clubb_pdf_params
 
 
           ! Special cases for PDF component 1.
-          if ( ( rr1(k) > rr_tol .or. Nr1(k) > Nr_tol ) &
+          if ( any( hm1(k,:) > hm_tol(:) ) &
                .and. precip_frac_1(k) <= precip_frac_tol ) then
 
-             ! In a scenario where we find rain in the 1st PDF component at this
-             ! grid level, but no cloud in the 1st PDF component at or above
-             ! this grid level, set precipitation fraction (in the 1st PDF
-             ! component) to a minimum threshold value.
+             ! In a scenario where we find any hydrometeor in the 1st PDF
+             ! component at this grid level, but no cloud in the 1st PDF
+             ! component at or above this grid level, set precipitation fraction
+             ! (in the 1st PDF component) to a minimum threshold value.
              precip_frac_1(k) = precip_frac_tol
 
-          elseif ( ( rr1(k) <= rr_tol .and. Nr1(k) <= Nr_tol ) &
+          elseif ( all( hm1(k,:) <= hm_tol(:) ) &
                    .and. precip_frac_1(k) <= precip_frac_tol ) then
 
-             ! Mean rain water mixing ratio and mean rain drop concentration in
-             ! the 1st PDF component are both less than their respective
-             ! tolerance amounts.  They are both considered to have values of 0.
-             ! There is not any rain in the 1st PDF component at this grid
+             ! The means of every precipitating hydrometeor in the 1st PDF
+             ! component are all less than their respective tolerance amounts.
+             ! They are all considered to have values of 0.  There is not any
+             ! hydrometeor species found in the 1st PDF component at this grid
              ! level.  There is also no cloud at or above this grid level, so
              ! set precipitation fraction (in the 1st PDF component) to 0.
              precip_frac_1(k) = zero
@@ -1342,22 +1409,22 @@ module setup_clubb_pdf_params
 
 
           ! Special cases for PDF component 2.
-          if ( ( rr2(k) > rr_tol .or. Nr2(k) > Nr_tol ) &
+          if ( any( hm2(k,:) > hm_tol(:) ) &
                .and. precip_frac_2(k) <= precip_frac_tol ) then
 
-             ! In a scenario where we find rain in the 2nd PDF component at this
-             ! grid level, but no cloud in the 2nd PDF component at or above
-             ! this grid level, set precipitation fraction (in the 2nd PDF
-             ! component) to a minimum threshold value.
+             ! In a scenario where we find any hydrometeor in the 2nd PDF
+             ! component at this grid level, but no cloud in the 2nd PDF
+             ! component at or above this grid level, set precipitation fraction
+             ! (in the 2nd PDF component) to a minimum threshold value.
              precip_frac_2(k) = precip_frac_tol
 
-          elseif ( ( rr2(k) <= rr_tol .and. Nr2(k) <= Nr_tol ) &
+          elseif ( all( hm2(k,:) <= hm_tol(:) ) &
                    .and. precip_frac_2(k) <= precip_frac_tol ) then
 
-             ! Mean rain water mixing ratio and mean rain drop concentration in
-             ! the 2nd PDF component are both less than their respective
-             ! tolerance amounts.  They are both considered to have values of 0.
-             ! There is not any rain in the 2nd PDF component at this grid
+             ! The means of every precipitating hydrometeor in the 2nd PDF
+             ! component are all less than their respective tolerance amounts.
+             ! They are all considered to have values of 0.  There is not any
+             ! hydrometeor species found in the 2nd PDF component at this grid
              ! level.  There is also no cloud at or above this grid level, so
              ! set precipitation fraction (in the 2nd PDF component) to 0.
              precip_frac_2(k) = zero
@@ -1815,7 +1882,7 @@ module setup_clubb_pdf_params
     = component_corr_whm_ip( Ncnm, corr_wNcn, rc1, one, Ncn_tol, &
                              corr_wNcn_NL_cloud, corr_wNcn_NL_cloud )
 
-   ! Correlation between w and N_cn in PDF component 2.
+    ! Correlation between w and N_cn in PDF component 2.
     corr_wNcn_2 &
     = component_corr_whm_ip( Ncnm, corr_wNcn, rc2, one, Ncn_tol, &
                              corr_wNcn_NL_cloud, corr_wNcn_NL_cloud )
