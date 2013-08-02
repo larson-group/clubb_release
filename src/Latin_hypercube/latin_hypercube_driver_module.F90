@@ -977,8 +977,8 @@ module latin_hypercube_driver_module
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
                pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
                mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
-               transpose( corr_stw_matrix_Cholesky_1(:,:,k) ), & ! In
-               transpose( corr_stw_matrix_Cholesky_2(:,:,k) ), & ! In
+               corr_stw_matrix_Cholesky_1(:,:,k), & ! In
+               corr_stw_matrix_Cholesky_2(:,:,k), & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, n_micro_calls, 1
@@ -994,8 +994,8 @@ module latin_hypercube_driver_module
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
                pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
                mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
-               transpose( corr_stw_matrix_Cholesky_1(:,:,k) ), & ! In
-               transpose( corr_stw_matrix_Cholesky_2(:,:,k) ), & ! In
+               corr_stw_matrix_Cholesky_1(:,:,k), & ! In
+               corr_stw_matrix_Cholesky_2(:,:,k), & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, n_micro_calls, 1
