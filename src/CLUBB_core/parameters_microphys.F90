@@ -205,6 +205,9 @@ module parameters_microphys
 
 !$omp threadprivate( rsnowp2_on_rsnowm2_below, Nsnowp2_on_Nsnowm2_below, & 
 !$omp                ricep2_on_ricem2_below, Nicep2_on_Nicem2_below )
+
+  real( kind = core_rknd ), dimension(:), allocatable, public :: &
+    hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
    
   private ! Default Scope
 

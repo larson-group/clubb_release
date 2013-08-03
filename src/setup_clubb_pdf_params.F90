@@ -101,7 +101,8 @@ module setup_clubb_pdf_params
         Nrp2_on_Nrm2_cloud,   &
         Nrp2_on_Nrm2_below,   &
         Ncnp2_on_Ncnm2_cloud, &
-        hydromet_list
+        hydromet_list,        &
+        hydromet_tol
 
     use stats_type, only: &
         stat_update_var ! Procedure(s)
@@ -323,11 +324,11 @@ module setup_clubb_pdf_params
     cloud_frac2 = pdf_params%cloud_frac2
     mixt_frac   = pdf_params%mixt_frac
 
+    ! Hydrometeor tolerance values
+    hm_tol(:) = hydromet_tol(:)
+
     ! Component mean values for r_r and N_r, and precipitation fraction.
     if ( l_use_precip_frac ) then
-
-       hm_tol(iirrainm) = rr_tol
-       hm_tol(iiNrm)    = Nr_tol
 
        call component_means_hydromet( nz, hydromet, rho, rc1, rc2, &
                                       mixt_frac, hm_tol, l_stats_samp, &

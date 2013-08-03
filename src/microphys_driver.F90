@@ -159,12 +159,24 @@ module microphys_driver
     use parameters_microphys, only: &
         LH_microphys_type_int => LH_microphys_type ! Determines how the LH samples are used
 
+    use parameters_microphys, only: &
+        hydromet_tol  ! Variable(s)
+
     use constants_clubb, only: &
         one,        & ! Constant(s)
         two_thirds, &
         one_third,  &
-        zero, &
-        cm3_per_m3
+        zero,       &
+        cm3_per_m3, &
+        rr_tol,     &
+        ri_tol,     &
+        rs_tol,     &
+        rg_tol,     &
+        Nr_tol,     &
+        Ni_tol,     &
+        Ns_tol,     &
+        Ng_tol,     &
+        Nc_tol
 
     use KK_fixed_correlations, only: &
         setup_KK_corr ! Procedure(s)
@@ -744,6 +756,36 @@ module microphys_driver
       stop
 
     end select
+
+    ! Set up hydrometeor tolerance array.
+    allocate( hydromet_tol(hydromet_dim) )
+    if ( iirrainm > 0 ) then
+      hydromet_tol(iirrainm) = rr_tol
+    endif
+    if ( iiricem > 0 ) then
+      hydromet_tol(iiricem) = ri_tol
+    endif
+    if ( iirsnowm > 0 ) then
+      hydromet_tol(iirsnowm) = rs_tol
+    endif
+    if ( iirgraupelm > 0 ) then
+      hydromet_tol(iirgraupelm) = rg_tol
+    endif
+    if ( iiNrm > 0 ) then
+      hydromet_tol(iiNrm) = Nr_tol
+    endif
+    if ( iiNim > 0 ) then
+      hydromet_tol(iiNim) = Ni_tol
+    endif
+    if ( iiNsnowm > 0 ) then
+      hydromet_tol(iiNsnowm) = Ns_tol
+    endif
+    if ( iiNgraupelm > 0 ) then
+      hydromet_tol(iiNgraupelm) = Ng_tol
+    endif
+    if ( iiNcm > 0 ) then
+      hydromet_tol(iiNcm) = Nc_tol
+    endif
 
     ! Sanity check
     if ( l_lh_cloud_weighted_sampling .and. .not.  l_lh_vert_overlap ) then
@@ -4261,6 +4303,9 @@ module microphys_driver
     ! None
     !-----------------------------------------------------------------------
 
+    use parameters_microphys, only: &
+        hydromet_tol  ! Variable(s)
+
     implicit none
 
     intrinsic :: allocated
@@ -4274,6 +4319,10 @@ module microphys_driver
     if ( allocated( l_hydromet_sed ) ) then
       deallocate( l_hydromet_sed )
     end if
+
+    if ( allocated( hydromet_tol ) ) then
+       deallocate( hydromet_tol )
+    endif
 
     if ( trim( micro_scheme ) == "morrison_gettelman" ) then
       call pbuf_deallocate()
