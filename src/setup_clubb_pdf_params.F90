@@ -93,7 +93,11 @@ module setup_clubb_pdf_params
         c_Krrainm
 
     use clubb_precision, only: &
-        core_rknd    ! Variable(s)
+        core_rknd, &    ! Variable(s)
+        dp
+
+    use matrix_operations, only: &
+        Cholesky_factor ! Procedure(s)
 
     use parameters_microphys, only: &
         rrp2_on_rrm2_cloud,   & ! Variable(s)
@@ -303,6 +307,11 @@ module setup_clubb_pdf_params
       precip_frac,   & ! Precipitation fraction (overall)           [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+
+    real( kind = core_rknd ), dimension(d_variables) :: &
+      corr_array_scaling
+
+    logical :: l_corr_array_scaling
 
     integer :: k  ! Loop index
 
@@ -627,16 +636,31 @@ module setup_clubb_pdf_params
 
        if ( l_use_modified_corr ) then
 
-          call calc_cholesky_corr_mtx_approx &
-                         ( d_variables, corr_array_1(:,:,k), &                    ! intent(in)
-                           corr_cholesky_mtx_1(:,:,k), corr_mtx_approx_1 ) ! intent(out)
+          if ( l_diagnose_correlations ) then
 
-          call calc_cholesky_corr_mtx_approx &
-                         ( d_variables, corr_array_2(:,:,k), &                    ! intent(in)
-                           corr_cholesky_mtx_2(:,:,k), corr_mtx_approx_2 ) ! intent(out)
+             call calc_cholesky_corr_mtx_approx &
+                            ( d_variables, corr_array_1(:,:,k), &                    ! intent(in)
+                              corr_cholesky_mtx_1(:,:,k), corr_mtx_approx_1 ) ! intent(out)
 
-          corr_array_1(:,:,k) = corr_mtx_approx_1
-          corr_array_2(:,:,k) = corr_mtx_approx_2
+             call calc_cholesky_corr_mtx_approx &
+                            ( d_variables, corr_array_2(:,:,k), &                    ! intent(in)
+                              corr_cholesky_mtx_2(:,:,k), corr_mtx_approx_2 ) ! intent(out)
+
+             corr_array_1(:,:,k) = corr_mtx_approx_1
+             corr_array_2(:,:,k) = corr_mtx_approx_2
+
+          else
+
+             ! Compute choleksy factorization for the correlation matrix (out of cloud)
+             call Cholesky_factor( d_variables, real(corr_array_1(:,:,k), kind = dp), & ! In
+                                   corr_array_scaling, corr_cholesky_mtx_1(:,:,k), &  ! Out
+                                   l_corr_array_scaling ) ! Out
+
+             call Cholesky_factor( d_variables, real(corr_array_2(:,:,k), kind = dp), & ! In
+                                   corr_array_scaling, corr_cholesky_mtx_2(:,:,k), &  ! Out
+                                   l_corr_array_scaling ) ! Out
+
+          endif
 
        endif
 
