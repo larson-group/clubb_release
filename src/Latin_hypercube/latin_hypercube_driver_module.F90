@@ -543,6 +543,7 @@ module latin_hypercube_driver_module
                pdf_params, delta_zm, rcm, hydromet, Lscale_vert_avg, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
                corr_stw_matrix_Cholesky_1, corr_stw_matrix_Cholesky_2, & ! In
+               precip_frac_1, precip_frac_2, & ! In
                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
                LH_sample_point_weights ) ! Out
 
@@ -643,6 +644,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), intent(out), dimension(n_micro_calls) :: &
       LH_sample_point_weights
 
+    ! More input variables!
     real( kind = dp ), dimension(d_variables,d_variables,nz), intent(in) :: &
       corr_stw_matrix_Cholesky_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
       corr_stw_matrix_Cholesky_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
@@ -653,6 +655,9 @@ module latin_hypercube_driver_module
       sigma1, & ! Stdevs of the hydrometeors, 1st comp. (s, t, w, <hydrometeors>) [units vary]
       sigma2    ! Stdevs of the hydrometeors, 2nd comp. (s, t, w, <hydrometeors>) [units vary]
 
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      precip_frac_1, & ! Precipitation fraction in PDF component 1       [-]
+      precip_frac_2    ! Precipitation fraction in PDF component 2       [-]
 
     ! Local variables
 
@@ -980,6 +985,7 @@ module latin_hypercube_driver_module
                corr_stw_matrix_Cholesky_1(:,:,k), & ! In
                corr_stw_matrix_Cholesky_2(:,:,k), & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
+               precip_frac_1(k), precip_frac_2(k), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, n_micro_calls, 1
     end do ! k = k_lh_start..nz
@@ -997,6 +1003,7 @@ module latin_hypercube_driver_module
                corr_stw_matrix_Cholesky_1(:,:,k), & ! In
                corr_stw_matrix_Cholesky_2(:,:,k), & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
+               precip_frac_1(k), precip_frac_2(k), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, n_micro_calls, 1
     end do ! k_lh_start-1..1

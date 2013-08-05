@@ -957,6 +957,7 @@ module generate_lh_sample_module
                corr_stw_matrix_Cholesky_1, & ! In
                corr_stw_matrix_Cholesky_2, & ! In
                X_u_one_lev, X_mixt_comp_one_lev, & ! In
+               precip_frac_1, precip_frac_2, & ! In
                LH_rt, LH_thl, X_nl_one_lev ) ! Out
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
@@ -993,7 +994,9 @@ module generate_lh_sample_module
     use corr_matrix_module, only: &
       iiPDF_s_mellor, &
       iiPDF_t_mellor, &
-      iiPDF_w
+      iiPDF_w, &
+      iiPDF_rrain, &
+      iiPDF_Nr
 
     use matrix_operations, only: &
       row_mult_lower_tri_matrix ! Procedures
@@ -1001,11 +1004,15 @@ module generate_lh_sample_module
 
     use constants_clubb, only:  &
       max_mag_correlation, & ! Constant(s)
-      one
+      one, &
+      zero
 
     use clubb_precision, only: &
       dp, & ! double precision
       core_rknd
+
+    use model_flags, only: &
+      l_use_precip_frac
 
     implicit none
 
@@ -1043,6 +1050,10 @@ module generate_lh_sample_module
     integer, intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
+    real( kind = core_rknd ), intent(in) :: &
+      precip_frac_1, & ! Precipitation fraction in PDF component 1       [-]
+      precip_frac_2    ! Precipitation fraction in PDF component 2       [-]
+
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
       LH_rt, & ! Total water mixing ratio          [kg/kg]
@@ -1073,6 +1084,19 @@ module generate_lh_sample_module
 
     logical :: &
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
+
+    logical :: &
+      l_in_precip ! Used with l_use_precip_frac == .true., this flag is
+                  ! .true. iff we are in precipitation
+
+    real( kind = core_rknd ), dimension(d_variables) :: &
+      mu1_precip, &    ! Hydrometeor means in component 1, adjusted for precipitation
+      mu2_precip, &    ! Hydrometeor means in component 2, adjusted for precipitation
+      sigma1_precip, & ! Hydrometeor standard deviations in component 1, adjusted for precipitation
+      sigma2_precip    ! Hydrometeor standard deviations in component 2, adjusted for precipitation
+
+    logical, dimension(d_variables) :: &
+      l_rain_hydromet  ! Specifies which of the hydrometeors are rain variables
 
 !    real( kind = dp ), dimension(3) :: &
 !      temp_3_elements
@@ -1120,6 +1144,41 @@ module generate_lh_sample_module
     Sigma1_scaling = one
     Sigma2_scaling = one
 
+    mu1_precip = mu1
+    mu2_precip = mu2
+    sigma1_precip = sigma1
+    sigma2_precip = sigma2
+
+    if ( l_use_precip_frac ) then
+      ! Set means and standard deviations of rain variables (rr and Nr) to zero
+      ! if not in precipitation
+
+      do i=1, d_variables
+        if ( i == iiPDF_rrain .or. i == iiPDF_Nr ) then
+          l_rain_hydromet(i) = .true.
+        else
+          l_rain_hydromet(i) = .false.
+        end if
+      end do
+
+      if ( X_mixt_comp_one_lev == 1 ) then
+        l_in_precip = gen_rand_in_precip( precip_frac_1 )
+      else if ( X_mixt_comp_one_lev == 2 ) then
+        l_in_precip = gen_rand_in_precip( precip_frac_2 )
+      end if
+
+      if ( .not. l_in_precip ) then
+        ! Zero out only rain hydrometeors
+        where ( l_rain_hydromet )
+          mu1_precip = zero
+          mu2_precip = zero
+          sigma1_precip = zero
+          sigma2_precip = zero
+        end where
+      end if ! l_in_precip
+
+    end if ! l_use_precip_frac
+
     if ( X_mixt_comp_one_lev == 1 ) then
 
       Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
@@ -1127,7 +1186,7 @@ module generate_lh_sample_module
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of s1, t1, and w1
       call row_mult_lower_tri_matrix &
-           ( d_variables, real( sigma1, kind = dp ), corr_stw_matrix_Cholesky_1, & ! In
+           ( d_variables, real( sigma1_precip, kind = dp ), corr_stw_matrix_Cholesky_1, & ! In
              Sigma1_Cholesky ) ! Out
 
     elseif ( X_mixt_comp_one_lev == 2 ) then
@@ -1136,7 +1195,7 @@ module generate_lh_sample_module
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of s2, t2, and w2
       call row_mult_lower_tri_matrix &
-           ( d_variables, real( sigma2, kind = dp ), corr_stw_matrix_Cholesky_2, & ! In
+           ( d_variables, real( sigma2_precip, kind = dp ), corr_stw_matrix_Cholesky_2, & ! In
              Sigma2_Cholesky ) ! Out
 
     end if ! X_mixt_comp_one_lev == 1
@@ -1148,7 +1207,7 @@ module generate_lh_sample_module
                         real(rt2, kind = dp), real(thl2, kind = dp), &  ! intent(in)
                         real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
                         real(crt2, kind = dp), real(cthl2, kind = dp), &  ! intent(in)
-                        mu1, mu2, &  ! intent(in)
+                        mu1_precip, mu2_precip, &  ! intent(in)
                         l_d_variable_lognormal, & ! intent(in)
                         X_u_one_lev, & ! intent(in)
                         X_mixt_comp_one_lev, & ! intent(in)
@@ -2677,6 +2736,47 @@ module generate_lh_sample_module
     return
   end function sigma_LN_to_sigma_gaus
 
+  !-----------------------------------------------------------------------------
+  function gen_rand_in_precip( precip_frac ) result( l_in_precip )
+
+  ! Description:
+  !   This logical function uses the Mersenne twister algorithm to randomly
+  !   choose whether a sample is in precipitation or out of precipitation.
+  !
+  ! References:
+  ! 
+  !-----------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
+
+    use mt95, only: &
+      genrand_real2
+
+    implicit none
+
+    ! Input Variable
+    real( kind = core_rknd ), intent(in) :: &
+      precip_frac  ! Precipitation fraction in the PDF component
+
+    ! Output Variable
+    logical :: l_in_precip ! True if the sample is in precipitation
+
+    ! Local Variable
+    real( kind = core_rknd ) :: &
+      rand   ! Random number, with range: 0 <= rand < 1
+
+    ! ---- Begin Code ----
+    call genrand_real2(rand) ! rand has range [0,1)
+
+    if ( rand < precip_frac ) then
+      l_in_precip = .true.
+    else
+      l_in_precip = .false.
+    end if
+
+    return
+  end function gen_rand_in_precip
 !-----------------------------------------------------------------------------
 
 end module generate_lh_sample_module

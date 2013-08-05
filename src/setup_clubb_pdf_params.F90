@@ -45,6 +45,7 @@ module setup_clubb_pdf_params
                                    corr_array_1, corr_array_2, &               ! Intent(inout)
                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &     ! Intent(out)
                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
+                                   precip_frac_1, precip_frac_2, &             ! Intent(out)
                                    hydromet_pdf_params )                       ! Intent(out)
 
     ! Description:
@@ -169,6 +170,10 @@ module setup_clubb_pdf_params
       mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
       sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
       sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
+
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
@@ -304,9 +309,7 @@ module setup_clubb_pdf_params
       Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+      precip_frac      ! Precipitation fraction (overall)           [-]
 
     real( kind = core_rknd ), dimension(d_variables) :: &
       corr_array_scaling
