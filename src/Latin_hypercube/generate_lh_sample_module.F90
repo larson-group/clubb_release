@@ -2751,6 +2751,7 @@ module generate_lh_sample_module
       core_rknd ! Variable(s)
 
     use mt95, only: &
+      genrand_real, &
       genrand_real2
 
     implicit none
@@ -2763,13 +2764,13 @@ module generate_lh_sample_module
     logical :: l_in_precip ! True if the sample is in precipitation
 
     ! Local Variable
-    real( kind = core_rknd ) :: &
+    real( kind = genrand_real ) :: &
       rand   ! Random number, with range: 0 <= rand < 1
 
     ! ---- Begin Code ----
     call genrand_real2(rand) ! rand has range [0,1)
 
-    if ( rand < precip_frac ) then
+    if ( real(rand, kind = core_rknd) < precip_frac ) then
       l_in_precip = .true.
     else
       l_in_precip = .false.
