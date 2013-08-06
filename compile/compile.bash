@@ -112,7 +112,7 @@ fi
 
 # Add miscellaneous preprocessor definitions
 # -Dradoffline and -Dnooverlap (see bugsrad documentation)
-CPPDEFS="${CPPDEFS} -Dradoffline -Dnooverlap"
+CPPDEFS="${CPPDEFS} -Dradoffline -Dnooverlap -DCLUBB"
 
 # Add all flags together.  These must be linked by order of dependence, so 
 # So liblatin_hypercube comes before libclubb comes before liblapack.
@@ -220,14 +220,14 @@ $mkmf -t $bindir/mkmf_template \
   $dir/file_list/clubb_coamps_files
 
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_morrison.a -m Make.clubb_morrison -c "${CPPDEFS} -DCLUBB" \
+  -p $libdir/libclubb_morrison.a -m Make.clubb_morrison -c "${CPPDEFS}" \
   $dir/file_list/clubb_morrison_files
   
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_mg.a -m Make.clubb_mg -c "${CPPDEFS} -DCLUBB" $dir/file_list/clubb_mg_files
+  -p $libdir/libclubb_mg.a -m Make.clubb_mg -c "${CPPDEFS}" $dir/file_list/clubb_mg_files
 
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_gfdlact.a -m Make.clubb_gfdlact -c "${CPPDEFS} -DCLUBB" \
+  -p $libdir/libclubb_gfdlact.a -m Make.clubb_gfdlact -c "${CPPDEFS}" \
   $dir/file_list/clubb_gfdl_activation_files
 
 $mkmf -t $bindir/mkmf_template \
@@ -235,26 +235,26 @@ $mkmf -t $bindir/mkmf_template \
   $dir/file_list/latin_hypercube_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
-  -m Make.clubb_standalone -c "${CPPDEFS} ${WARNINGS}" $clubb_standalone_mods \
+  -m Make.clubb_standalone -c "${CPPDEFS}" -o "${WARNINGS}" $clubb_standalone_mods \
   $dir/file_list/clubb_standalone_files $dir/file_list/clubb_optional_files \
   $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_thread_test \
-  -m Make.clubb_thread_test -c "${CPPDEFS} ${WARNINGS}" $clubb_standalone_mods \
+  -m Make.clubb_thread_test -c "${CPPDEFS}" -o "${WARNINGS}" $clubb_standalone_mods \
   $dir/file_list/clubb_thread_test_files $dir/file_list/clubb_optional_files \
   $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
-	-m Make.clubb_tuner -c "${CPPDEFS} ${WARNINGS}" $dir/file_list/clubb_tuner_files \
+	-m Make.clubb_tuner -c "${CPPDEFS}" $dir/file_list/clubb_tuner_files \
 	$dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files \
 	$dir/file_list/numerical_recipes_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/jacobian \
-  -m Make.jacobian -c "${CPPDEFS} ${WARNINGS}" $dir/file_list/jacobian_files \
+  -m Make.jacobian -c "${CPPDEFS}" -o "${WARNINGS}" $dir/file_list/jacobian_files \
   $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/G_unit_tests \
-  -m Make.G_unit_tests -c "${CPPDEFS} ${WARNINGS}" $dir/file_list/G_unit_tests_files \
+  -m Make.G_unit_tests -c "${CPPDEFS}" -o "${WARNINGS}" $dir/file_list/G_unit_tests_files \
   $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/int2txt -m Make.int2txt \
