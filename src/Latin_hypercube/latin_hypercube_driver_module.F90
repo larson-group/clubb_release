@@ -1627,7 +1627,7 @@ module latin_hypercube_driver_module
       cloud_weighted_mixt_frac = real(mixt_frac*cloud_frac1, kind = dp) / &
                    real(mixt_frac*cloud_frac1 + (1._core_rknd-mixt_frac)*cloud_frac2, kind = dp)
 
-      if ( in_mixt_comp_1( rand1, cloud_weighted_mixt_frac ) ) then
+      if ( in_mixt_comp_1( real( rand1, kind=dp ), cloud_weighted_mixt_frac ) ) then
         ! Component 1
         cloud_frac_n = real( cloud_frac1, kind=dp )
 !       X_mixt_comp_one_lev = 1
@@ -1660,7 +1660,7 @@ module latin_hypercube_driver_module
         * real(mixt_frac, kind = dp) + ( 1._dp-real(cloud_frac2, kind = dp) )&
         *( 1._dp-real(mixt_frac, kind = dp) ) )
 
-      if ( in_mixt_comp_1( rand1, clear_weighted_mixt_frac ) ) then
+      if ( in_mixt_comp_1( real( rand1, kind=dp ), clear_weighted_mixt_frac ) ) then
         ! Component 1
         cloud_frac_n = real(cloud_frac1, kind = dp)
 !       X_mixt_comp_one_lev = 1
