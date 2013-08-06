@@ -83,7 +83,7 @@ module bugsrad_driver
 
     implicit none
 
-    intrinsic :: dble, real
+    intrinsic :: real
 
     ! Input Variables
     real( kind = dp ), intent(in) :: &
@@ -156,16 +156,16 @@ module bugsrad_driver
     buffer = lin_int_buffer + extend_atmos_range_size
 
     ! Convert to millibars
-    pinmb(1,1:(nz-1))  = dble( p_in_Pa(2:nz) / pascal_per_mb ) ! t grid in CLUBB
+    pinmb(1,1:(nz-1))  = real( p_in_Pa(2:nz) / pascal_per_mb, kind=dp ) ! t grid in CLUBB
 
-    playerinmb(1,1:nz) = dble( p_in_Pam / pascal_per_mb ) ! m grid in CLUBB
+    playerinmb(1,1:nz) = real( p_in_Pam / pascal_per_mb, kind=dp ) ! m grid in CLUBB
 
     ! Determine rcm in cloud
     rcm_in_cloud = rcm / max( cloud_frac, cloud_frac_min )
 
     ! Convert theta_l to temperature
 
-    T_in_K(1,1:(nz-1)) = dble( thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) ) )
+    T_in_K(1,1:(nz-1)) = real( thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) ),kind=dp )
 
     ! Derive Specific humidity from rc & rt.
     do z = 2, nz
@@ -176,7 +176,7 @@ module bugsrad_driver
         endif
       else
         sp_humidity(1,z-1) &
-          = dble( rtm(z) - rcm(z) ) / dble( 1.0_core_rknd+rtm(z) )
+          = real( rtm(z) - rcm(z),kind=dp ) / real( 1.0_core_rknd+rtm(z),kind=dp )
       end if
     end do
 
@@ -184,15 +184,16 @@ module bugsrad_driver
 
     ! Ozone at < 1 km = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976.
     !   Convert from g to kg.
-    o3l(1,1:(nz-1)) = dble( ( 5.4e-5_core_rknd / rho_zm(1:(nz-1)) ) / &
-       g_per_kg ) !Known magic number
+    o3l(1,1:(nz-1)) = real( ( 5.4e-5_core_rknd / rho_zm(1:(nz-1)) ) / &
+       g_per_kg, kind=dp ) !Known magic number
 
     ! Convert and transpose as needed
-    rcil(1,buffer+1:(nz-1)+buffer)            = flip( dble( rim(2:nz) ), nz-1 )
-    rsnowm_2d(1,buffer+1:(nz-1)+buffer)       = flip( dble( rsnowm(2:nz) ), nz-1 )
-    rcm_in_cloud_2d(1,buffer+1:(nz-1)+buffer) = flip( dble( rcm_in_cloud(2:nz) ), nz-1 )
-    cloud_frac_2d(1,buffer+1:(nz-1)+buffer)   = flip( dble( cloud_frac(2:nz) ), nz-1 )
-    ice_supersat_frac_2d(1,buffer+1:(nz-1)+buffer)   = flip( dble( ice_supersat_frac(2:nz) ), nz-1 )
+    rcil(1,buffer+1:(nz-1)+buffer)            = flip( real( rim(2:nz),kind=dp ), nz-1 )
+    rsnowm_2d(1,buffer+1:(nz-1)+buffer)       = flip( real( rsnowm(2:nz),kind=dp ), nz-1 )
+    rcm_in_cloud_2d(1,buffer+1:(nz-1)+buffer) = flip( real( rcm_in_cloud(2:nz),kind=dp ), nz-1 )
+    cloud_frac_2d(1,buffer+1:(nz-1)+buffer)   = flip( real( cloud_frac(2:nz),kind=dp ), nz-1 )
+    ice_supersat_frac_2d(1,buffer+1:(nz-1)+buffer)   = flip( real( ice_supersat_frac(2:nz), &
+                                                                   kind=dp ), nz-1 )
 
     T_in_K(1,buffer+1:(nz-1)+buffer) = flip( T_in_K(1,1:(nz-1)), nz-1 )
 
@@ -210,7 +211,7 @@ module bugsrad_driver
     cloud_frac_2d(1,1:buffer)         = 0.0_dp
     ice_supersat_frac_2d(1,1:buffer)  = 0.0_dp
 
-    if ( dble( alt(nz) ) > extend_alt(extend_atmos_dim) ) then
+    if ( real( alt(nz), kind=dp ) > extend_alt(extend_atmos_dim) ) then
 
       write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
                        "altitude above the top of the extended atmosphere ",  &
@@ -249,8 +250,8 @@ module bugsrad_driver
     z1 = buffer + 1
     z2 = extend_atmos_range_size
     do z = buffer, extend_atmos_range_size+1, -1
-      z1_fact = dble( z2 - z ) / dble( z2 - z1 )
-      z2_fact = dble( z - z1 ) / dble( z2 - z1 )
+      z1_fact = real( z2 - z, kind=dp ) / real( z2 - z1,kind=dp )
+      z2_fact = real( z - z1,kind=dp ) / real( z2 - z1, kind=dp )
 
       T_in_K(1,z) = z1_fact * T_in_K(1,z1) + z2_fact * T_in_K(1,z2)
 
@@ -306,7 +307,7 @@ module bugsrad_driver
                    rcm_in_cloud_2d, rcil, rsnowm_2d, o3l,              &
                    ts, amu0, slr, alvdf,                               &
                    alndf, alvdr, alndr, sol_const,                     &
-                   dble( grav ), dble( Cp ), radht_SW_2d, radht_LW_2d, &
+                   real( grav, kind=dp ), real( Cp, kind=dp ), radht_SW_2d, radht_LW_2d, &
                    Frad_dSW, Frad_uSW, Frad_dLW, Frad_uLW,             &
                    cloud_frac_2d )
 

@@ -111,6 +111,7 @@ module mg_micro_driver_module
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
+      dp, &
       time_precision
 
     use fill_holes, only: &
@@ -351,16 +352,16 @@ module mg_micro_driver_module
     
     ! MG's grid is flipped with respect to CLUBB.
     ! Flip CLUBB variables before inputting them into MG.
-    Kh_zm_flip(icol,1:nz) = real( flip( dble(Kh_zm(1:nz) ), nz ), kind=r8 )
-    em_flip(icol,1:nz) = real( flip( dble(em(1:nz) ), nz ), kind=r8 )
+    Kh_zm_flip(icol,1:nz) = real( flip( real(Kh_zm(1:nz), kind=dp ), nz ), kind=r8 )
+    em_flip(icol,1:nz) = real( flip( real(em(1:nz), kind=dp ), nz ), kind=r8 )
 
     ! MG does not include zt(1) as CLUBB does, so it is removed during the flip
-    T_in_K_flip(icol,1:nz-1) = real( flip( dble(T_in_K(2:nz) ), nz-1 ), kind=r8 )
-    rvm_flip(icol,1:nz-1) = real( flip( dble(rvm(2:nz) ), nz-1 ), kind=r8 )
-    rcm_flip(icol,1:nz-1) = real( flip( dble(rcm(2:nz) ), nz-1 ), kind=r8 )
-    Ncm_flip(icol,1:nz-1) = real( flip( dble(Ncm(2:nz) ), nz-1 ), kind=r8 )
-    p_in_Pa_flip(icol,1:nz-1) = real( flip( dble(p_in_Pa(2:nz) ), nz-1 ), kind=r8 )
-    liqcldf_flip(icol,1:nz-1) = real( flip( dble(cloud_frac(2:nz) ), nz-1 ), kind=r8 )
+    T_in_K_flip(icol,1:nz-1) = real( flip( real(T_in_K(2:nz),kind=dp ), nz-1 ), kind=r8 )
+    rvm_flip(icol,1:nz-1) = real( flip( real(rvm(2:nz),kind=dp ), nz-1 ), kind=r8 )
+    rcm_flip(icol,1:nz-1) = real( flip( real(rcm(2:nz),kind=dp ), nz-1 ), kind=r8 )
+    Ncm_flip(icol,1:nz-1) = real( flip( real(Ncm(2:nz),kind=dp ), nz-1 ), kind=r8 )
+    p_in_Pa_flip(icol,1:nz-1) = real( flip( real(p_in_Pa(2:nz),kind=dp ), nz-1 ), kind=r8 )
+    liqcldf_flip(icol,1:nz-1) = real( flip( real(cloud_frac(2:nz),kind=dp ), nz-1 ), kind=r8 )
 
     ! Hydromet is 2 dimensional, so flip function doesn't work
     do i = 1, hydromet_dim, 1
@@ -437,13 +438,13 @@ module mg_micro_driver_module
 
     else
 
-      rho_flip(icol,1:nz-1) = real( flip( dble(rho(2:nz) ), nz-1 ), kind=r8 )
-      npccn_flip(icol,1:nz-1) = real( flip( dble(Ncnm(2:nz) ), nz-1 ), kind=r8 )
+      rho_flip(icol,1:nz-1) = real( flip( real(rho(2:nz),kind=dp ), nz-1 ), kind=r8 )
+      npccn_flip(icol,1:nz-1) = real( flip( real(Ncnm(2:nz),kind=dp ), nz-1 ), kind=r8 )
 
       ! Determine ice nulceation number using Meyers formula found in the Morrison microphysics
       do k = 1, nz-1
-        naai_flip(icol,k) = exp( -2.80_r8 + 0.262_r8 * (  dble( T_freeze_K )  &
-                                                        - dble( T_in_K_flip(icol,k) ) ) &
+        naai_flip(icol,k) = exp( -2.80_r8 + 0.262_r8 * (  real( T_freeze_K,kind=dp )  &
+                                                        - real( T_in_K_flip(icol,k),kind=dp ) ) &
                                ) &
                        * 1000.0_r8 / rho_flip(icol,k)
       end do ! k = 1 ... nz-1
@@ -503,19 +504,22 @@ module mg_micro_driver_module
            uns_flip, ums_flip, unr_flip, umr_flip, unc, umc, cldmax )                          ! out
 
     ! Flip MG variables into CLUBB grid
-    rcm_mc(2:nz) = real( flip( dble(rcm_mc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    rcm_mc(2:nz) = real( flip( real(rcm_mc_flip(icol,1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
     ! Since we fix Ncm the change in Ncm isn't needed
-!   Ncm_mc(2:nz) = real( flip( dble(Ncm_mc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
-    rvm_mc(2:nz) = real( flip( dble(rvm_mc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
-    rcm_new(2:nz) = real( flip( dble(rcm_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
-    effc(2:nz) = real( flip( dble(effc_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
-    effi(2:nz) = real( flip( dble(effi_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
-    reff_rain(2:nz) = real( flip( dble(reff_rain_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
-    reff_snow(2:nz) = real( flip( dble(reff_snow_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
-    rsnowm(2:nz) = real( flip( dble(qsout_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
-    rrainm(2:nz) = real( flip( dble(qrout_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
-    rcm_sten(2:nz) = real( flip( dble(qcsedten_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd )
-    ricem_sten(2:nz) = real( flip( dble(qisedten_flip(icol, 1:nz-1) ), nz-1 ), &
+!   Ncm_mc(2:nz) = real( flip( real(Ncm_mc_flip(icol,1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
+    rvm_mc(2:nz) = real( flip( real(rvm_mc_flip(icol,1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
+    rcm_new(2:nz) = real( flip( real(rcm_flip(icol,1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
+    effc(2:nz) = real( flip( real(effc_flip(icol,1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
+    effi(2:nz) = real( flip( real(effi_flip(icol,1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
+    reff_rain(2:nz) = real( flip( real(reff_rain_flip(icol,1:nz-1),kind=dp ), nz-1 ), &
+                            kind = core_rknd )
+    reff_snow(2:nz) = real( flip( real(reff_snow_flip(icol,1:nz-1),kind=dp ), nz-1 ), &
+                            kind = core_rknd )
+    rsnowm(2:nz) = real( flip( real(qsout_flip(icol,1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
+    rrainm(2:nz) = real( flip( real(qrout_flip(icol,1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
+    rcm_sten(2:nz) = real( flip( real(qcsedten_flip(icol, 1:nz-1),kind=dp ), nz-1 ), &
+                            kind = core_rknd )
+    ricem_sten(2:nz) = real( flip( real(qisedten_flip(icol, 1:nz-1),kind=dp ), nz-1 ), &
                                kind = core_rknd )
     
     do i = 1, hydromet_dim, 1      
@@ -532,7 +536,8 @@ module mg_micro_driver_module
     
     ! Update thetal based on absolute temperature. We use this rather than tlat
     ! because using the latter seemed to cause spurious heating effects.
-    T_in_K_new(2:nz) = real( flip( dble(T_in_K_flip_out(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+    T_in_K_new(2:nz) = real( flip( real(T_in_K_flip_out(icol,1:nz-1),kind=dp ), nz-1 ), &
+                             kind = core_rknd )
     T_in_K_new(1) = T_in_K(1)
    
     ! Compute total change in thlm using ( thlm_new - thlm_old ) / dt
@@ -553,7 +558,7 @@ module mg_micro_driver_module
     !
     ! dthlm/dt|_mc = ( 1 / ( Cp * exner ) ) * ( tlat - Lv * drcm/dt )
 
-!    T_in_K_mc(2:nz) = real( flip( dble( tlat_flip(icol,1:nz-1) ), nz-1 ), &
+!    T_in_K_mc(2:nz) = real( flip( real( tlat_flip(icol,1:nz-1),kind=dp ), nz-1 ), &
 !                            kind = core_rknd ) / Cp
 !    T_in_K_mc(1) = 0.0_core_rknd
 !
@@ -581,50 +586,53 @@ module mg_micro_driver_module
      !                          pdel_flip(nz-1) / gravit ), sfc )
 
       ! Compute autoconversion
-      rrainm_auto(2:nz) = real( flip( dble( prco_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+      rrainm_auto(2:nz) = real( flip( real( prco_flip(icol,1:nz-1),kind=dp ), nz-1 ), &
+                                kind = core_rknd )
       rrainm_auto(1) = 0.0_core_rknd
       call stat_update_var( irrainm_auto, rrainm_auto, zt )
 
       ! Compute accretion
-      rrainm_accr(2:nz) = real( flip( dble( prao_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+      rrainm_accr(2:nz) = real( flip( real( prao_flip(icol,1:nz-1),kind=dp ), nz-1 ), &
+                                kind = core_rknd )
       rrainm_accr(1) = 0.0_core_rknd
       call stat_update_var( irrainm_accr, rrainm_accr, zt )
 
       ! Compute cloud water mixing ratio in cloud (based on a threshold in the
       ! MG microphysics)
-      rcm_in_cloud(2:nz) = real( flip( dble( qcic_flip(icol,1:nz-1) ), nz-1 ), kind = core_rknd )
+      rcm_in_cloud(2:nz) = real( flip( real( qcic_flip(icol,1:nz-1),kind=dp ), nz-1 ), &
+                                 kind = core_rknd )
       rcm_in_cloud(1) = 0.0_core_rknd
       call stat_update_var( ircm_in_cloud, rcm_in_cloud, zt )
 
       ! Compute in-precipitation snow number concentration
-      Nsnowm(2:nz) = real( flip( dble( nsic_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd ) &
-                     * real( cldmax(icol, 1:nz-1), kind = core_rknd )
+      Nsnowm(2:nz) = real( flip( real( nsic_flip(icol, 1:nz-1),kind=dp ), nz-1 ), &
+                           kind = core_rknd ) * real( cldmax(icol, 1:nz-1), kind = core_rknd )
       Nsnowm(1) = 0.0_core_rknd
       call stat_update_var( iNsnowm, Nsnowm, zt )
 
       ! Compute in precipitation rain number concentration
-      Nrm(2:nz) = real( flip( dble( nric_flip(icol, 1:nz-1) ), nz-1 ), kind = core_rknd ) &
+      Nrm(2:nz) = real( flip( real( nric_flip(icol, 1:nz-1),kind=dp ), nz-1 ), kind = core_rknd ) &
                   * real( cldmax(icol, 1:nz-1), kind = core_rknd )
       Nrm(1) = 0.0_core_rknd
       call stat_update_var( iNrm, Nrm, zt )
 
       ! Compute snow sedimentation velocity
       ! Using number concentration
-      VNsnow(2:nz) = real( flip( dble( uns_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      VNsnow(2:nz) = real( flip( real( uns_flip(1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
       VNsnow(1) = 0.0_core_rknd
       call stat_update_var( iVNsnow, VNsnow, zm )
       ! Using mixing ratio
-      Vrsnow(2:nz) = real( flip( dble( ums_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      Vrsnow(2:nz) = real( flip( real( ums_flip(1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
       Vrsnow(1) = 0.0_core_rknd
       call stat_update_var( iVrsnow, Vrsnow, zm )
 
       ! Compute rain sedimentation velocity
       ! Using number concentration
-      VNr(2:nz) = real( flip( dble( unr_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      VNr(2:nz) = real( flip( real( unr_flip(1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
       VNr(1) = 0.0_core_rknd
       call stat_update_var( iVNr, VNr, zm )
       ! Using mixing ratio
-      Vrr(2:nz) = real( flip( dble( umr_flip(1:nz-1) ), nz-1 ), kind = core_rknd )
+      Vrr(2:nz) = real( flip( real( umr_flip(1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
       Vrr(1) = 0.0_core_rknd
       call stat_update_var( iVrr, Vrr, zm )
 

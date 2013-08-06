@@ -518,7 +518,7 @@ module latin_hypercube_driver_module
     end if
     if ( l_output_2D_uniform_dist ) then
       call output_2D_uniform_dist_file( nz, n_micro_calls, d_variables+1, &
-                                        real(X_u_all_levs, kind = stat_rknd), &
+                                        real(X_u_all_levs, kind = genrand_real), &
                                         X_mixt_comp_all_levs, p_matrix )
     end if
 
@@ -1015,7 +1015,7 @@ module latin_hypercube_driver_module
     end if
     if ( l_output_2D_uniform_dist ) then
       call output_2D_uniform_dist_file( nz, n_micro_calls, d_variables+1, &
-                                        real(X_u_all_levs, kind = stat_rknd), &
+                                        real(X_u_all_levs, kind = genrand_real), &
                                         X_mixt_comp_all_levs, p_matrix )
     end if
 

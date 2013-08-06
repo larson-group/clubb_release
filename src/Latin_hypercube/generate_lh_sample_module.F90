@@ -931,7 +931,7 @@ module generate_lh_sample_module
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
-    call sample_points( d_variables, dble( mixt_frac ), &  ! intent(in
+    call sample_points( d_variables, real( mixt_frac, kind=dp ), &  ! intent(in
                         real(rt1, kind = dp), real(thl1, kind = dp), &  ! intent(in)
                         real(rt2, kind = dp), real(thl2, kind = dp), &  ! intent(in)
                         real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
@@ -1202,7 +1202,7 @@ module generate_lh_sample_module
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
-    call sample_points( d_variables, dble( mixt_frac ), &  ! intent(in
+    call sample_points( d_variables, real( mixt_frac, kind = dp ), &  ! intent(in
                         real(rt1, kind = dp), real(thl1, kind = dp), &  ! intent(in)
                         real(rt2, kind = dp), real(thl2, kind = dp), &  ! intent(in)
                         real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
@@ -2744,15 +2744,15 @@ module generate_lh_sample_module
   !   choose whether a sample is in precipitation or out of precipitation.
   !
   ! References:
-  ! 
+  !   See clubb:ticket:597
   !-----------------------------------------------------------------------------
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
     use mt95, only: &
-      genrand_real, &
-      genrand_real2
+      genrand_real2, & ! Procedure
+      genrand_real     ! Constant
 
     implicit none
 
@@ -2768,9 +2768,9 @@ module generate_lh_sample_module
       rand   ! Random number, with range: 0 <= rand < 1
 
     ! ---- Begin Code ----
-    call genrand_real2(rand) ! rand has range [0,1)
+    call genrand_real2( rand ) ! rand has range [0,1)
 
-    if ( real(rand, kind = core_rknd) < precip_frac ) then
+    if ( real( rand, kind=core_rknd ) < precip_frac ) then
       l_in_precip = .true.
     else
       l_in_precip = .false.

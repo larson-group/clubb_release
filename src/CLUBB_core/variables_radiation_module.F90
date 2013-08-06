@@ -8,7 +8,8 @@ module variables_radiation_module
 !---------------------------------------------------------------
 
   use clubb_precision, only: &
-    core_rknd ! Variable(s)
+    core_rknd, & ! Variable(s)
+    dp
 
   implicit none
 
@@ -18,8 +19,6 @@ module variables_radiation_module
     cleanup_radiation_variables
 
   private ! Set Default Scoping
-
-  integer, private, parameter :: dp = selected_real_kind( p=12 )
 
   real( kind = core_rknd ), public, dimension(:), allocatable :: &
     radht_LW, & ! LW heating rate   [K/s]

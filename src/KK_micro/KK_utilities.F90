@@ -445,7 +445,7 @@ module KK_utilities
 
 
     ! Calculate the factorial of integer num using the gamma function.
-    factorial = gamma( dble( num+1 ) )
+    factorial = gamma( real( num+1, kind=dp ) )
 
 
     return
