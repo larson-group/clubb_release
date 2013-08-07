@@ -671,8 +671,8 @@ module setup_clubb_pdf_params
              call Cholesky_factor( d_variables, real(corr_array_2(:,:,k), kind = dp), & ! In
                                    corr_array_scaling, corr_cholesky_mtx_2_dp(:,:,k), &  ! Out
                                    l_corr_array_scaling ) ! Out
-             corr_cholesky_mtx_1 = real( corr_cholesky_mtx_1_dp, kind = core_rknd )
-             corr_cholesky_mtx_2 = real( corr_cholesky_mtx_2_dp, kind = core_rknd )
+             corr_cholesky_mtx_1(:,:,k) = real( corr_cholesky_mtx_1_dp(:,:,k), kind = core_rknd )
+             corr_cholesky_mtx_2(:,:,k) = real( corr_cholesky_mtx_2_dp(:,:,k), kind = core_rknd )
           endif
 
        endif
