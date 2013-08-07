@@ -251,6 +251,12 @@ module lapack_wrap
 
     ! Local Variables
 
+    real( kind = dp ), dimension(ndim) :: &
+      subd_dp, supd_dp, diag_dp
+
+    real( kind = dp ), dimension(ndim,nrhs) :: &
+      rhs_dp
+
     integer :: info ! Diagnostic output
 
 !-----------------------------------------------------------------------
@@ -267,8 +273,18 @@ module lapack_wrap
                   rhs, ndim, info )
 
     else
-      stop "tridag_solve: Cannot resolve the precision of real datatype"
-
+      !stop "tridag_solve: Cannot resolve the precision of real datatype"
+      ! Eric Raut Aug 2013: Force double precision
+      subd_dp = real( subd, kind=dp )
+      diag_dp = real( diag, kind=dp )
+      supd_dp = real( supd, kind=dp )
+      rhs_dp = real( rhs, kind=dp )
+      call dgtsv( ndim, nrhs, subd_dp(2:ndim), diag_dp, supd_dp(1:ndim-1),  &
+                  rhs_dp, ndim, info )
+      subd = real( subd_dp, kind=core_rknd )
+      diag = real( diag_dp, kind=core_rknd )
+      supd = real( supd_dp, kind=core_rknd )
+      rhs = real( rhs_dp, kind=core_rknd )
     end if
 
     select case( info )
@@ -567,6 +583,12 @@ module lapack_wrap
     real( kind = core_rknd ), dimension(2*nsub+nsup+1,ndim) :: & 
       lulhs ! LU Decomposition of the LHS
 
+    real( kind = dp ), dimension(2*nsub+nsup+1,ndim) :: &
+      lulhs_dp
+
+    real( kind = dp ), dimension(ndim,nrhs) :: &
+      rhs_dp
+
     integer, dimension(ndim) ::  & 
       ipivot
 
@@ -576,7 +598,7 @@ module lapack_wrap
       imain  ! Main diagonal of the matrix
 
     ! Copy LHS into Decomposition scratch space
-
+    lulhs = 0.0_core_rknd
     lulhs(nsub+1:2*nsub+nsup+1, 1:ndim) = lhs(1:nsub+nsup+1, 1:ndim)
 
 !-----------------------------------------------------------------------
@@ -634,10 +656,15 @@ module lapack_wrap
                   ipivot, rhs, ndim, info )
 
     else
-      stop "band_solve: Cannot resolve the precision of real datatype"
+      !stop "band_solve: Cannot resolve the precision of real datatype"
       ! One implication of this is that CLUBB cannot be used with quad
       ! precision variables without a quad precision band diagonal solver
-
+      ! Eric Raut Aug 2013: force double precision
+      lulhs_dp = real( lulhs, kind=dp )
+      rhs_dp = real( rhs, kind=dp )
+      call dgbsv( ndim, nsub, nsup, nrhs, lulhs_dp, nsub*2+nsup+1,  &
+                  ipivot, rhs_dp, ndim, info )
+      rhs = real( rhs_dp, kind=core_rknd )
     end if
 
     select case( info )
