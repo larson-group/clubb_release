@@ -208,7 +208,9 @@ module parameters_microphys
 
   real( kind = core_rknd ), dimension(:), allocatable, public :: &
     hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
-   
+
+!$omp threadprivate( hydromet_tol )   
+
   private ! Default Scope
 
 
