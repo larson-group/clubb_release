@@ -687,6 +687,7 @@ module clubb_driver
       call write_text( "forcings_file_path = " // forcings_file_path, l_write_to_file, iunit )
 
       call write_text( "l_t_dependent = ", l_t_dependent, l_write_to_file, iunit )
+      call write_text( "l_ignore_forcings = ", l_ignore_forcings, l_write_to_file, iunit )
       call write_text( "l_input_xpwp_sfc = ", l_input_xpwp_sfc, l_write_to_file, iunit )
 
       call write_text( "saturation_formula = " // saturation_formula, &
