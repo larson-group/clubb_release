@@ -3954,9 +3954,11 @@ module setup_clubb_pdf_params
     hydromet_pdf_params%precip_frac_1 = precip_frac_1
     hydromet_pdf_params%precip_frac_2 = precip_frac_2
 
+
+    !!! The corr_arrays are assumed to be lower triangular matrices
     ! Pack correlations (1st PDF component) into corr_array_1.
     corr_array_1(iiPDF_t_mellor, iiPDF_s_mellor) = corr_st_1
-    corr_array_1(iiPDF_s_mellor,iiPDF_w)         = corr_ws_1
+    corr_array_1(iiPDF_w,iiPDF_s_mellor)         = corr_ws_1
     corr_array_1(iiPDF_rrain, iiPDF_s_mellor)    = corr_srr_1_n
     corr_array_1(iiPDF_Nr, iiPDF_s_mellor)       = corr_sNr_1_n
     corr_array_1(iiPDF_Ncn, iiPDF_s_mellor)      = corr_sNcn_1_n
@@ -3966,11 +3968,11 @@ module setup_clubb_pdf_params
     corr_array_1(iiPDF_rrain, iiPDF_w)           = corr_wrr_1_n
     corr_array_1(iiPDF_Nr, iiPDF_w)              = corr_wNr_1_n
     corr_array_1(iiPDF_Ncn, iiPDF_w)             = corr_wNcn_1_n
-    corr_array_1(iiPDF_rrain,iiPDF_Nr)           = corr_rrNr_1_n
+    corr_array_1(iiPDF_Nr,iiPDF_rrain)           = corr_rrNr_1_n
 
     ! Pack correlations (2nd PDF component) into corr_array_2.
     corr_array_2(iiPDF_t_mellor, iiPDF_s_mellor) = corr_st_2
-    corr_array_2(iiPDF_s_mellor,iiPDF_w)         = corr_ws_2
+    corr_array_2(iiPDF_w,iiPDF_s_mellor)         = corr_ws_2
     corr_array_2(iiPDF_rrain, iiPDF_s_mellor)    = corr_srr_2_n
     corr_array_2(iiPDF_Nr, iiPDF_s_mellor)       = corr_sNr_2_n
     corr_array_2(iiPDF_Ncn, iiPDF_s_mellor)      = corr_sNcn_2_n
@@ -3980,7 +3982,7 @@ module setup_clubb_pdf_params
     corr_array_2(iiPDF_rrain, iiPDF_w)           = corr_wrr_2_n
     corr_array_2(iiPDF_Nr, iiPDF_w)              = corr_wNr_2_n
     corr_array_2(iiPDF_Ncn, iiPDF_w)             = corr_wNcn_2_n
-    corr_array_2(iiPDF_rrain,iiPDF_Nr)           = corr_rrNr_2_n
+    corr_array_2(iiPDF_Nr,iiPDF_rrain)           = corr_rrNr_2_n
 
     return
 
@@ -4180,7 +4182,7 @@ module setup_clubb_pdf_params
 
     ! Unpack corr_array_1 into correlations (1st PDF component).
     corr_st_1     = corr_array_1(iiPDF_t_mellor, iiPDF_s_mellor)
-    corr_ws_1     = corr_array_1(iiPDF_s_mellor,iiPDF_w)
+    corr_ws_1     = corr_array_1(iiPDF_w,iiPDF_s_mellor)
     corr_srr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_s_mellor)
     corr_sNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_s_mellor)
     corr_sNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_s_mellor)
@@ -4194,7 +4196,7 @@ module setup_clubb_pdf_params
 
     ! Unpack corr_array_2 into correlations (2nd PDF component).
     corr_st_2     = corr_array_2(iiPDF_t_mellor, iiPDF_s_mellor)
-    corr_ws_2     = corr_array_2(iiPDF_s_mellor,iiPDF_w)
+    corr_ws_2     = corr_array_2(iiPDF_w,iiPDF_s_mellor)
     corr_srr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_s_mellor)
     corr_sNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_s_mellor)
     corr_sNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_s_mellor)
