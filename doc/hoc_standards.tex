@@ -566,21 +566,23 @@ E.g.
          + dble( g ) * mod( f, 5 )
 \end{verbatim}
 
-\item Code should not make use of explicit precision variables unless there is 
-an unique reason for it (e.g. writing 4 byte records to disk).  This allows for 
-compile time promotion of reals and doubles on different computer architectures.
-Also, do not use the asterisks notation to specify precision, because it
-is an extension of the Fortran standard.  E.g.
-\begin{verbatim}
-  ! This does not allow for compile time promotion.
-  real(kind=8) :: x  
-
-  ! This is not standard Fortran and may break.
-  real*8 :: x
-
-  ! Everyone will be happy if you keep it like this.
-  real :: x ! Marks the spot [deg_E]
-\end{verbatim}
+% This is no longer true.  We now use core_rknd to define precision. 
+% -dschanen 7 Aug 2013
+%\item Code should not make use of explicit precision variables unless there is 
+%an unique reason for it (e.g. writing 4 byte records to disk).  This allows for 
+%compile time promotion of reals and doubles on different computer architectures.
+%Also, do not use the asterisks notation to specify precision, because it
+%is an extension of the Fortran standard.  E.g.
+%\begin{verbatim}
+%  ! This does not allow for compile time promotion.
+%  real(kind=8) :: x  
+%
+%  ! This is not standard Fortran and may break.
+%  real*8 :: x
+%
+%  ! Everyone will be happy if you keep it like this.
+%  real :: x ! Marks the spot [deg_E]
+%\end{verbatim}
 
 \item For clarity, functions, subroutines, modules, and programs should end 
 with their proper Fortran 90 style end statement. \newline

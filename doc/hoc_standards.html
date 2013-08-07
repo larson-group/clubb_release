@@ -717,26 +717,6 @@ E.g.
 <div class="p"><!----></div>
 </li>
 
-<li> Code should not make use of explicit precision variables unless there is 
-an unique reason for it (e.g. writing 4 byte records to disk).  This allows for 
-compile time promotion of reals and doubles on different computer architectures.
-Also, do not use the asterisks notation to specify precision, because it
-is an extension of the Fortran standard.  E.g.
-
-<pre>
-&nbsp;&nbsp;!&nbsp;This&nbsp;does&nbsp;not&nbsp;allow&nbsp;for&nbsp;compile&nbsp;time&nbsp;promotion.
-&nbsp;&nbsp;real(kind=8)&nbsp;::&nbsp;x&nbsp;&nbsp;
-
-&nbsp;&nbsp;!&nbsp;This&nbsp;is&nbsp;not&nbsp;standard&nbsp;Fortran&nbsp;and&nbsp;may&nbsp;break.
-&nbsp;&nbsp;real*8&nbsp;::&nbsp;x
-
-&nbsp;&nbsp;!&nbsp;Everyone&nbsp;will&nbsp;be&nbsp;happy&nbsp;if&nbsp;you&nbsp;keep&nbsp;it&nbsp;like&nbsp;this.
-&nbsp;&nbsp;real&nbsp;::&nbsp;x&nbsp;!&nbsp;Marks&nbsp;the&nbsp;spot&nbsp;[deg_E]
-
-</pre>
-<div class="p"><!----></div>
-</li>
-
 <li> For clarity, functions, subroutines, modules, and programs should end 
 with their proper Fortran 90 style end statement. 
 <div class="p"><!----></div>
@@ -982,5 +962,5 @@ We should avoid adding new use of command line applications, e.g. mktemp, to our
 T<sub><font size="-1">E</font></sub>X
 by <a href="http://hutchinson.belmont.ma.us/tth/">
 T<sub><font size="-1">T</font></sub>M Unregistered</a>,
-version 4.02.<br />On 26 Jun 2013, 20:57.</small>
+version 4.02.<br />On  7 Aug 2013, 17:20.</small>
 </div></body></html>
