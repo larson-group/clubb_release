@@ -319,6 +319,11 @@ module setup_clubb_pdf_params
     integer :: k  ! Loop index
 
     ! ---- Begin Code ----
+    ! Boundary conditions
+    mu_x_1(:,1) = zero
+    mu_x_2(:,1) = zero
+    sigma_x_1(:,1) = zero
+    sigma_x_2(:,1) = zero
 
     ! Mean of hydrometeor (overall)
     rrainm = hydromet(:,iirrainm)
@@ -3786,6 +3791,9 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use constants_clubb, only: &
+        zero         ! Constant
+
     implicit none
 
     ! Input Variables
@@ -3887,6 +3895,11 @@ module setup_clubb_pdf_params
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     ! ---- Begin Code ----
+    ! Initialize output variables
+    mu_x_1 = zero
+    mu_x_2 = zero
+    sigma_x_1 = zero
+    sigma_x_2 = zero
 
     ! Pack Means and Standard Deviations into arrays
     mu_x_1(iiPDF_w)        = mu_w_1
