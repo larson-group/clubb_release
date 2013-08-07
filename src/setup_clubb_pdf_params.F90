@@ -183,6 +183,10 @@ module setup_clubb_pdf_params
       corr_cholesky_mtx_2    ! Transposed correlation cholesky matrix, 2nd comp.     [-]
 
     ! Local Variables
+    real( kind = dp ), dimension(d_variables,d_variables,nz) :: &
+      corr_cholesky_mtx_1_dp, & ! Used for call to Cholesky_factor, which requires dp
+      corr_cholesky_mtx_2_dp
+
     real( kind = core_rknd ), dimension(d_variables,d_variables) :: &
       corr_mtx_approx_1,   & ! Approximated correlation matrix (C = LL'), 1st comp.  [-]
       corr_mtx_approx_2      ! Approximated correlation matrix (C = LL'), 2nd comp.  [-]
@@ -311,7 +315,7 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(nz) :: &
       precip_frac      ! Precipitation fraction (overall)           [-]
 
-    real( kind = core_rknd ), dimension(d_variables) :: &
+    real( kind = dp ), dimension(d_variables) :: &
       corr_array_scaling
 
     logical :: l_corr_array_scaling
@@ -661,13 +665,14 @@ module setup_clubb_pdf_params
 
              ! Compute choleksy factorization for the correlation matrix (out of cloud)
              call Cholesky_factor( d_variables, real(corr_array_1(:,:,k), kind = dp), & ! In
-                                   corr_array_scaling, corr_cholesky_mtx_1(:,:,k), &  ! Out
+                                   corr_array_scaling, corr_cholesky_mtx_1_dp(:,:,k), &  ! Out
                                    l_corr_array_scaling ) ! Out
 
              call Cholesky_factor( d_variables, real(corr_array_2(:,:,k), kind = dp), & ! In
-                                   corr_array_scaling, corr_cholesky_mtx_2(:,:,k), &  ! Out
+                                   corr_array_scaling, corr_cholesky_mtx_2_dp(:,:,k), &  ! Out
                                    l_corr_array_scaling ) ! Out
-
+             corr_cholesky_mtx_1 = real( corr_cholesky_mtx_1_dp, kind = core_rknd )
+             corr_cholesky_mtx_2 = real( corr_cholesky_mtx_2_dp, kind = core_rknd )
           endif
 
        endif

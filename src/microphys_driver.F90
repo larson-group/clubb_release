@@ -273,7 +273,7 @@ module microphys_driver
     character(len=30) :: LH_microphys_type
     integer, parameter :: res = 20   ! Used for lookup tables with GFDL activation
     integer, parameter :: res2 = 20  ! Used for lookup tables with GFDL activation
-    real( kind = core_rknd ), dimension( res, res, res, res, res ) :: &
+    real( kind = core_rknd ), dimension( :, :, :, :, : ), allocatable :: &
       droplets, droplets2            ! Used for lookup tables with GFDL activation
 
     character(len=128) :: corr_file_path_cloud, corr_file_path_below
@@ -447,7 +447,7 @@ module microphys_driver
 
         ! Read in the lookup tables
         call Loading( droplets, droplets2 )
-
+        allocate( droplets(res,res,res,res,res), droplets2(res,res,res,res,res) )
         ! Initialize the activation variables
         call aer_ccn_act_k_init                            &
                ( real( droplets ), real( droplets2 ), res, res2, nooc,     &
@@ -456,6 +456,7 @@ module microphys_driver
                  real( highmass2 ), real( lowmass3 ), real( highmass3 ),           &
                  real( lowmass4 ), real( highmass4 ), real( lowmass5 ), real( highmass5 ), &
                  real( lowT2 ),real( highT2 ) )
+        deallocate( droplets, droplets2 )
       end if ! coamps .or. morrison .or. khairoutdinov_kogan
     end if ! l_gfdl_activation
 
