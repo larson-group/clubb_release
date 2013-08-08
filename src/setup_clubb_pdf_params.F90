@@ -2283,7 +2283,7 @@ module setup_clubb_pdf_params
     else ! fix the correlation between s and t.
 
        ! WARNING:  this code is inconsistent with the rest of CLUBB's PDF.  This
-       !           code is necessary because SIHLS is lazy and wussy, and only
+       !           code is necessary because SILHS is lazy and wussy, and only
        !           wants to declare correlation arrays at the start of the model
        !           run, rather than updating them throughout the model run.
        if ( l_interp_prescribed_params ) then
