@@ -694,45 +694,40 @@ module setup_clubb_pdf_params
     ! drop concentration, <N_r>) are solved as part of the predictive equation
     ! set, based on the microphysics scheme.  However, CLUBB has a two component
     ! PDF.  The grid-level means of all hydrometeors must be subdivided into
-    ! component means for each PDF component.  The equations relating the
-    ! overall means to the component means (written for r_r and N_r here) are:
+    ! component means for each PDF component.  The equation relating the overall
+    ! mean to the component means (for any hydrometeor, hm) is:
     !
-    ! <r_r> = a * rr1 + (1-a) * rr2, and
-    ! <N_r> = a * Nr1 + (1-a) * Nr2;
+    ! <hm> = a * hm1 + (1-a) * hm2;
     !
-    ! where "a" is the mixture fraction (weight of the 1st PDF component), rr1
-    ! is the mean rain water mixing ratio in PDF component 1, rr2 is the mean
-    ! rain water mixing ratio in PDF component 2, Nr1 is the mean rain drop
-    ! concentration in PDF component 1, and Nr2 is the mean rain drop
-    ! concentration in PDF component 2.  These equations can be rewritten as:
+    ! where "a" is the mixture fraction (weight of the 1st PDF component), hm1
+    ! is the mean of the hydrometeor in PDF component 1, and hm2 is the mean of
+    ! the hydrometeor in PDF component 2.  This equation can be rewritten as:
     !
-    ! <r_r> = rr1 * ( a + (1-a) * rr2/rr1 ), and
-    ! <N_r> = Nr1 * ( a + (1-a) * Nr2/Nr1 ).
+    ! <hm> = hm1 * ( a + (1-a) * hm2/hm1 ).
     !
-    ! One way to solve for a component mean is to relate the ratios rr2/rr1 and
-    ! Nr2/Nr1 to other factors.  For now, these ratios based on other factors
-    ! will be called rr2_rr1_ratio (for rr2/rr1) and Nr2_Nr1_ratio
-    ! (for Nr2/Nr1).  These ratios are entered into the above equations,
-    ! allowing the equations to be solved for rr1 and Nr1:
+    ! One way to solve for a component mean is to relate the ratio hm2/hm1 to
+    ! other factors.  For now, this ratio based on other factors will be called
+    ! hm2_hm1_ratio.  This ratio is entered into the above equation, allowing
+    ! the equation to be solved for hm1:
     !
-    ! rr1 = <r_r> / ( a + (1-a) * rr2_rr1_ratio ), and
-    ! Nr1 = <N_r> / ( a + (1-a) * Nr2_Nr1_ratio ).
+    ! hm1 = <hm> / ( a + (1-a) * hm2_hm1_ratio ).
     !
-    ! Once that rr1 and Nr1 have been solved, rr2 and Nr2 can be solved by:
+    ! Once hm1 has been solved for, hm2 can be solved by:
     !
-    ! rr2 = ( <r_r> - a * rr1 ) / (1-a); and
-    ! Nr2 = ( <N_r> - a * Nr1 ) / (1-a).
+    ! hm2 = ( <hm> - a * hm1 ) / (1-a).
     !
     ! At a grid level that is at least mostly cloudy, the simplest way to handle
-    ! the ratios rr2/rr1 and Nr2/Nr1 is to set them equal to the ratio rc2/rc1,
-    ! where rc1 is the mean cloud water mixing ratio in PDF component 1 and rc2
-    ! is the mean cloud water mixing ratio in PDF component 2.  However, rain
-    ! sediments, falling from higher altitudes downwards.  The values of cloud
-    ! water mixing ratio at a given grid level are not necessarily indicative
-    ! of the amount of cloud water at higher levels, which has already produced
-    ! rain which has fallen downwards to the given grid level.  Additionally,
-    ! using grid-level cloud water mixing ratio especially does not work for
-    ! rain below cloud base (near the ground).
+    ! the ratio hm2/hm1 is to set it equal to the ratio rc2/rc1, where rc1 is
+    ! the mean cloud water mixing ratio in PDF component 1 and rc2 is the mean
+    ! cloud water mixing ratio in PDF component 2.  However, a precipitating
+    ! hydrometeor sediments, falling from higher altitudes downwards.  The
+    ! values of cloud water mixing ratio at a given grid level are not
+    ! necessarily indicative of the amount of cloud water at higher levels.  A
+    ! precipitating hydrometeor may have been already produced from cloud water
+    ! at a higher altitude (vertical level) and fallen downwards to the given
+    ! grid level.  Additionally, using grid-level cloud water mixing ratio
+    ! especially does not work for a precipitating hydrometeor below cloud base
+    ! (near the ground).
     !
     ! However, an alternative to component cloud water mixing ratio is component
     ! liquid water path.  Liquid water path accounts for the cloud water mixing
@@ -752,30 +747,32 @@ module setup_clubb_pdf_params
     ! above, with similar cloud water mixing ratio and liquid water path
     ! results.  However, below the base of the stratocumulus clouds, where the
     ! cumulus clouds are found, the horizontal domain at each vertical level is
-    ! only partially cloudy.  At these levels, rain produced in the
-    ! stratocumulus clouds above is evaporating in the clear-air portions, while
-    ! rain is not evaporating in the cloudy portions.  Additionally, more rain
-    ! is being produced in the cloudy portions.  The rain in the cloudy portions
-    ! becomes significantly larger than the rain in the clear portions.  The
-    ! partiallly cloudy levels usually have a PDF where one component is
-    ! significantly more saturated than the other component.  By the time the
-    ! cloud base of the cumulus clouds is reached, the liquid water path for one
-    ! PDF component should be significantly greater than the liquid water path
-    ! for the other PDF component.
+    ! only partially cloudy.  At these levels, any precipitating hydrometeor
+    ! that was produced in the stratocumulus clouds above and fallen downwards
+    ! is evaporating in the clear-air portions, while not evaporating in the
+    ! cloudy portions.  Additionally, new amounts of a hydrometeor are being
+    ! produced in the cloudy portions.  The amount of a hydrometeor in the
+    ! cloudy portions becomes significantly larger than the amount of a
+    ! hydrometeor in the clear portions.  The partially cloudy levels usually
+    ! have a PDF where one component is significantly more saturated than the
+    ! other component.  By the time the cloud base of the cumulus clouds is
+    ! reached, the liquid water path for one PDF component should be
+    ! significantly greater than the liquid water path for the other PDF
+    ! component.
     ! 
     ! In a cumulus case, the horizontal domain at each level is usually partly
     ! cloudy.  Throughout the entire vertical domain, at every vertical level,
     ! one component usually is much more saturated than the other component.
     ! The liquid water path for one component is much greater than the liquid
-    ! water path in the other component.  Likewise, rain that is formed in cloud
-    ! and falls preferentially through cloud will have large values in a portion
-    ! of the horizontal domain and very small or 0 values over the rest of the 
-    ! horizontal domain.
+    ! water path in the other component.  Likewise, a precipitating hydrometeor
+    ! that is formed in cloud and falls preferentially through cloud will have
+    ! large values in a portion of the horizontal domain and very small or 0
+    ! values over the rest of the horizontal domain.
     !
-    ! In order to estimate the amount of rain in each PDF component, the ratios
-    ! rr2/rr1 and Nr2/Nr1 are going to be set equal to the ratio LWP2/LWP1,
-    ! where LWP1 is the liquid water path in PDF component 1 and LWP2 is the
-    ! liquid water path in PDF component 2.  LWP1 will be computed by taking the
+    ! In order to estimate the amount of a hydrometeor in each PDF component,
+    ! the ratio hm2/hm1 is going to be set equal to the ratio LWP2/LWP1, where
+    ! LWP1 is the liquid water path in PDF component 1 and LWP2 is the liquid
+    ! water path in PDF component 2.  LWP1 will be computed by taking the
     ! vertical integral of cloud water (see equation below) through the 1st PDF
     ! component from the given vertical level all the way to the top of the
     ! model.  LWP2 will be computed in the same manner.   It should be noted
