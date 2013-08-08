@@ -904,7 +904,7 @@ module generate_lh_sample_module
             Sigma1_Cholesky(ivar1,ivar2) = corr_stw_matrix_Cholesky(ivar1,ivar2)
           end do
         end do
-      end if ! any( X_mixt_comp_one_lev(1:n) == 1 )
+      end if ! X_mixt_comp_one_lev == 1
 
       if ( X_mixt_comp_one_lev == 2 ) then
         Sigma2_Cholesky = 0._dp
@@ -925,7 +925,7 @@ module generate_lh_sample_module
             Sigma2_Cholesky(ivar1,ivar2) = corr_stw_matrix_Cholesky(ivar1,ivar2)
           end do
         end do
-      end if ! any( X_mixt_comp_one_lev(1:n) == 2 )
+      end if ! X_mixt_comp_one_lev == 2
 
     end if ! l_fix_s_t_correlations
 
