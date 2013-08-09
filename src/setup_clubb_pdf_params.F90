@@ -329,15 +329,6 @@ module setup_clubb_pdf_params
     sigma_x_1(:,1) = zero
     sigma_x_2(:,1) = zero
 
-    ! Mean of hydrometeor (overall)
-    rrainm = hydromet(:,iirrainm)
-    Nrm    = hydromet(:,iiNrm)
-
-    ! Covariance of vertical velocity and a hydrometeor
-    ! (< w'r_r' > and < w'N_r' >).
-    wprrp = wphydrometp(:,iirrainm)
-    wpNrp = wphydrometp(:,iiNrm)
-
     ! Setup some of the PDF parameters
     rc1         = pdf_params%rc1
     rc2         = pdf_params%rc2
@@ -355,27 +346,35 @@ module setup_clubb_pdf_params
                                       mixt_frac, hm_tol, l_stats_samp, &
                                       hm1, hm2 )
 
-       rr1 = hm1(:,iirrainm)
-       rr2 = hm2(:,iirrainm)
-       Nr1 = hm1(:,iiNrm)
-       Nr2 = hm2(:,iiNrm)
-
        call precip_fraction( nz, hydromet, hm1, hm2, hydromet_list, hm_tol, &
                              cloud_frac, cloud_frac1, mixt_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
     else
 
-       rr1 = rrainm
-       rr2 = rrainm
-       Nr1 = Nrm
-       Nr2 = Nrm
+       hm1 = hydromet
+       hm2 = hydromet
 
        precip_frac   = one
        precip_frac_1 = one
        precip_frac_2 = one
 
     endif
+
+    ! Mean of hydrometeor (overall)
+    rrainm = hydromet(:,iirrainm)
+    Nrm    = hydromet(:,iiNrm)
+
+    ! Mean of hydrometeor (each PDF component)
+    rr1 = hm1(:,iirrainm)
+    rr2 = hm2(:,iirrainm)
+    Nr1 = hm1(:,iiNrm)
+    Nr2 = hm2(:,iiNrm)
+
+    ! Covariance of vertical velocity and a hydrometeor
+    ! (< w'r_r' > and < w'N_r' >).
+    wprrp = wphydrometp(:,iirrainm)
+    wpNrp = wphydrometp(:,iiNrm)
 
     ! Statistics
     if ( l_stats_samp ) then
