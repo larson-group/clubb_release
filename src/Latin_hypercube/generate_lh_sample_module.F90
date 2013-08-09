@@ -1165,6 +1165,10 @@ module generate_lh_sample_module
         l_in_precip = gen_rand_in_precip( precip_frac_1 )
       else if ( X_mixt_comp_one_lev == 2 ) then
         l_in_precip = gen_rand_in_precip( precip_frac_2 )
+      else
+        ! Something very bad has happened
+        l_in_precip = .false.
+        stop "Fatal error choosing component in generate_lh_sample"
       end if
 
       if ( .not. l_in_precip ) then
@@ -1174,8 +1178,8 @@ module generate_lh_sample_module
           mu2_precip = zero
           sigma1_precip = zero
           sigma2_precip = zero
-        end where
-      end if ! l_in_precip
+        end where ! l_rain_hydromet
+      end if ! .not. l_in_precip
 
     end if ! l_use_precip_frac
 

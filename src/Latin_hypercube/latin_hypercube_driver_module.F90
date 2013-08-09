@@ -1984,7 +1984,9 @@ module latin_hypercube_driver_module
       iLH_Ncm, &
       iLH_rvm, &
       iLH_wm, &
-      iLH_cloud_frac
+      iLH_cloud_frac, &
+      iLH_s_mellor, &
+      iLH_t_mellor
 
     use stats_variables, only: &
       iLH_wp2_zt, &  ! Variable(s)
@@ -2019,6 +2021,7 @@ module latin_hypercube_driver_module
 
     use corr_matrix_module, only: &
       iiPDF_s_mellor, & ! Variable(s)
+      iiPDF_t_mellor, &
       iiPDF_w, &
       iiPDF_Nc => iiPDF_Ncn
 
@@ -2082,7 +2085,9 @@ module latin_hypercube_driver_module
       LH_thlp2_zt,   & ! Average value of the variance of the LH est. of thetal         [K^2]
       LH_Nrp2_zt,    & ! Average value of the variance of the LH est. of Nr.            [#^2/kg^2]
       LH_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
-      LH_cloud_frac    ! Average value of the latin hypercube est. of cloud fraction    [-]
+      LH_cloud_frac, & ! Average value of the latin hypercube est. of cloud fraction    [-]
+      LH_s_mellor,   & ! Average value of the latin hypercube est. of Mellor's s        [kg/kg]
+      LH_t_mellor      ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
 
     real(kind=core_rknd) :: xtmp
 
@@ -2148,7 +2153,7 @@ module latin_hypercube_driver_module
                                       X_nl_all_levs, &  ! In
                                       LH_hydromet, & ! In
                                       hydromet_all_points, &  ! Out
-                                      Nc_all_points )
+                                      Nc_all_points ) ! Out
 
         forall ( ivar = 1:hydromet_dim )
           LH_hydromet(:,ivar) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights,&
@@ -2179,7 +2184,7 @@ module latin_hypercube_driver_module
 
       ! Latin hypercube estimate of cloud fraction
       if ( iLH_cloud_frac > 0 ) then
-        LH_cloud_frac = 0._core_rknd
+        LH_cloud_frac(:) = 0._core_rknd
         do sample = 1, n_micro_calls
           where ( X_nl_all_levs(:,sample,iiPDF_s_mellor) > 0._dp )
             LH_cloud_frac(:) = LH_cloud_frac(:) + 1.0_core_rknd * LH_sample_point_weights(sample)
@@ -2188,6 +2193,20 @@ module latin_hypercube_driver_module
         LH_cloud_frac(:) = LH_cloud_frac(:) / real( n_micro_calls, kind = core_rknd )
 
         call stat_update_var( iLH_cloud_frac, LH_cloud_frac, LH_zt )
+      end if
+
+      ! Latin hypercube estimate of s_mellor
+      if ( iLH_s_mellor > 0 ) then
+        LH_s_mellor(1:nz) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
+                                           X_nl_all_levs(1:nz, 1:n_micro_calls, iiPDF_s_mellor) )
+        call stat_update_var( iLH_s_mellor, LH_s_mellor, LH_zt )
+      end if
+
+      ! Latin hypercube estimate of t_mellor
+      if ( iLH_t_mellor > 0 ) then
+        LH_t_mellor(1:nz) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
+                                           X_nl_all_levs(1:nz, 1:n_micro_calls, iiPDF_t_mellor) )
+        call stat_update_var( iLH_t_mellor, LH_t_mellor, LH_zt )
       end if
 
       if ( iLH_wp2_zt > 0 ) then

@@ -80,6 +80,8 @@ module stats_LH_zt
       iLH_Nrp2_zt, &
       iLH_Ncp2_zt, &
       iLH_cloud_frac, &
+      iLH_s_mellor, &
+      iLH_t_mellor, &
       iLH_rrainm_auto, &
       iLH_rrainm_accr, &
       iLH_rrainm_evap, &
@@ -366,6 +368,18 @@ module stats_LH_zt
         ! Note: count is the udunits compatible unit
         call stat_assign( iLH_cloud_frac, "LH_cloud_frac", & 
              "Latin hypercube estimate of cloud fraction [count]", "count", LH_zt )
+        k = k + 1
+
+      case ( 'LH_s_mellor' )
+        iLH_s_mellor = k
+        call stat_assign( iLH_s_mellor, "LH_s_mellor", &
+             "Latin hypercube estimate of Mellor's s (extended liq) [kg/kg]", "kg/kg", LH_zt )
+        k = k + 1
+
+      case ( 'LH_t_mellor' )
+        iLH_t_mellor = k
+        call stat_assign( iLH_t_mellor, "LH_t_mellor", &
+             "Latin hypercube estimate of Mellor's t [kg/kg]", "kg/kg", LH_zt )
         k = k + 1
 
       case ( 'LH_wp2_zt' )
