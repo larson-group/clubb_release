@@ -23,7 +23,27 @@ module setup_clubb_pdf_params
              component_corr_hmxhmy_ip, &
              pdf_param_hm_stats,       &
              pdf_param_log_hm_stats,   &
+             precip_hm_arrays,         &
              pack_pdf_params
+
+  ! New hydrometeor arrays are needed which are made out of only the
+  ! precipitating hydrometeors, which do not include N_c or N_cn.  CLUBB's PDF
+  ! does not include N_c, but rather N_cn.  However, N_cn is handled in the PDF
+  ! in a different manner than the rest of the hydrometeors.  The remaining
+  ! hydrometeors (the precipitating hydrometeors -- rain, ice, snow, etc.) need
+  ! their own array for use in the PDF parameter setup.
+  integer, private :: &
+    iirr, & ! Index of rain water mixing ratio: precipitating hydrometeor arrays
+    iiNr, & ! Index of rain drop concentration: precipitating hydrometeor arrays
+    iirs, & ! Index of snow mixing ratio: precipitating hydrometeor arrays
+    iiri, & ! Index of ice mixing ratio: precipitating hydrometeor arrays
+    iirg, & ! Index of graupel mixing ratio: precipitating hydrometeor arrays
+    iiNs, & ! Index of snow concentration: precipitating hydrometeor arrays
+    iiNi, & ! Index of ice concentration: precipitating hydrometeor arrays
+    iiNg    ! Index of graupel concentration: precipitating hydrometeor arrays
+
+  integer, private :: &
+    num_hm    ! Number of precipitating hydrometeors
 
   ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
   ! values based on whether or not cloud water mixing ratio has a value of at
@@ -74,10 +94,6 @@ module setup_clubb_pdf_params
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-
-    use array_index, only: &
-        iirrainm, & ! Constant(s)
-        iiNrm
 
     use model_flags, only: &
         l_use_precip_frac, & ! Flag(s)
@@ -298,12 +314,13 @@ module setup_clubb_pdf_params
       wpNrp_ip_zt, & ! Covar. of N_r and w (in-precip) on t-levs [(m/s)(num/kg)]
       wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
-      hmm, & ! Mean of hydrometeor, hm (overall)                [units vary]
-      hm1, & ! Mean of hydrometeor (1st PDF component)          [units vary]
-      hm2    ! Mean of hydrometeor (2nd PDF component)          [units vary]
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      hmm,   & ! Mean of a precipitating hydrometeor, hm (overall)  [units vary]
+      hm1,   & ! Mean of a precip. hydrometeor (1st PDF component)  [units vary]
+      hm2,   & ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
+      wphmp    ! Covariance of w and a precipitating hydrometeor    [(m/s)units]
 
-    real( kind = core_rknd ), dimension(hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(:), allocatable :: &
       hm_tol    ! Tolerance value for the hydrometeor           [units vary]
 
      real( kind = core_rknd ), dimension(nz) :: &
@@ -329,6 +346,15 @@ module setup_clubb_pdf_params
     sigma_x_1(:,1) = zero
     sigma_x_2(:,1) = zero
 
+    ! Setup hydrometeor arrays out of precipitating hydrometeors, which do not
+    ! include N_c or N_cn.
+    call precip_hm_arrays( nz, hydromet, wphydrometp, &
+                           hmm, wphmp, hm_tol )
+
+    ! Allocate arrays for component mean precipitating hydrometeors.
+    allocate( hm1(1:nz,1:num_hm) )    ! Mean of Hydrometeor (1st PDF component)
+    allocate( hm2(1:nz,1:num_hm) )    ! Mean of Hydrometeor (2nd PDF component)
+
     ! Setup some of the PDF parameters
     rc1         = pdf_params%rc1
     rc2         = pdf_params%rc2
@@ -336,24 +362,21 @@ module setup_clubb_pdf_params
     cloud_frac2 = pdf_params%cloud_frac2
     mixt_frac   = pdf_params%mixt_frac
 
-    ! Hydrometeor tolerance values
-    hm_tol(:) = hydromet_tol(:)
-
     ! Component mean values for r_r and N_r, and precipitation fraction.
     if ( l_use_precip_frac ) then
 
-       call component_means_hydromet( nz, hydromet, rho, rc1, rc2, &
+       call component_means_hydromet( nz, hmm, rho, rc1, rc2, &
                                       mixt_frac, hm_tol, l_stats_samp, &
                                       hm1, hm2 )
 
-       call precip_fraction( nz, hydromet, hm1, hm2, hydromet_list, hm_tol, &
+       call precip_fraction( nz, hmm, hm1, hm2, hydromet_list, hm_tol, &
                              cloud_frac, cloud_frac1, mixt_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
     else
 
-       hm1 = hydromet
-       hm2 = hydromet
+       hm1 = hmm
+       hm2 = hmm
 
        precip_frac   = one
        precip_frac_1 = one
@@ -362,19 +385,19 @@ module setup_clubb_pdf_params
     endif
 
     ! Mean of hydrometeor (overall)
-    rrainm = hydromet(:,iirrainm)
-    Nrm    = hydromet(:,iiNrm)
+    rrainm = hmm(:,iirr)
+    Nrm    = hmm(:,iiNr)
 
     ! Mean of hydrometeor (each PDF component)
-    rr1 = hm1(:,iirrainm)
-    rr2 = hm2(:,iirrainm)
-    Nr1 = hm1(:,iiNrm)
-    Nr2 = hm2(:,iiNrm)
+    rr1 = hm1(:,iirr)
+    rr2 = hm2(:,iirr)
+    Nr1 = hm1(:,iiNr)
+    Nr2 = hm2(:,iiNr)
 
     ! Covariance of vertical velocity and a hydrometeor
     ! (< w'r_r' > and < w'N_r' >).
-    wprrp = wphydrometp(:,iirrainm)
-    wpNrp = wphydrometp(:,iiNrm)
+    wprrp = wphmp(:,iirr)
+    wpNrp = wphmp(:,iiNr)
 
     ! Statistics
     if ( l_stats_samp ) then
@@ -678,6 +701,15 @@ module setup_clubb_pdf_params
 
     enddo  ! Setup PDF parameters loop: k = 2, nz, 1
 
+
+    ! Deallocate arrays for precipitating hydrometeors.
+    deallocate( hmm )    ! Mean of Hydrometeor (overall)
+    deallocate( wphmp )  ! Covariance of w and a hydrometeor
+    deallocate( hm_tol ) ! Tolerance value for a hydrometeor
+    deallocate( hm1 )    ! Mean of Hydrometeor (1st PDF component)
+    deallocate( hm2 )    ! Mean of Hydrometeor (2nd PDF component)
+
+
     return
 
   end subroutine setup_pdf_parameters
@@ -821,9 +853,6 @@ module setup_clubb_pdf_params
         one_half, &
         zero
 
-    use parameters_model, only: &
-        hydromet_dim  ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
@@ -841,7 +870,7 @@ module setup_clubb_pdf_params
     integer, intent(in) :: &
       nz    ! Number of model vertical grid levels
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_hm), intent(in) :: &
       hmm    ! Mean of hydrometeor, hm (overall)                [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -850,14 +879,14 @@ module setup_clubb_pdf_params
       rc2,       & ! Mean cloud water mixing ratio (2nd PDF component)  [kg/kg]
       mixt_frac    ! Mixture fraction                                   [-]
 
-    real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
       hm_tol    ! Tolerance value for the hydrometeor           [units vary]
 
     logical, intent(in) :: &
       l_stats_samp     ! Flag to record statistical output.
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,num_hm), intent(out) :: &
       hm1, & ! Mean of hydrometeor (1st PDF component)          [units vary]
       hm2    ! Mean of hydrometeor (2nd PDF component)          [units vary]
 
@@ -925,7 +954,7 @@ module setup_clubb_pdf_params
 
     !!! Find hm1 and hm2 based on the ratio of LWP2/LWP1, such that:
     !!! hm2/hm1 ( = rr2/rr1 = Nr2/Nr1, etc. ) = LWP2/LWP1.
-    do i = 1, hydromet_dim, 1
+    do i = 1, num_hm, 1
 
        do k = 1, nz, 1
 
@@ -998,7 +1027,7 @@ module setup_clubb_pdf_params
 
        enddo ! k = 1, nz, 1
 
-    enddo ! i = 1, hydromet_dim, 1
+    enddo ! i = 1, num_hm, 1
 
 
     ! Statistics
@@ -1039,9 +1068,6 @@ module setup_clubb_pdf_params
         zero,           &
         cloud_frac_min
 
-    use parameters_model, only: &
-        hydromet_dim  ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
@@ -1051,15 +1077,15 @@ module setup_clubb_pdf_params
     integer, intent(in) :: &
       nz          ! Number of model vertical grid levels
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_hm), intent(in) :: &
       hmm, & ! Mean of hydrometeor, hm (overall)                [units vary]
       hm1, & ! Mean of hydrometeor (1st PDF component)          [units vary]
       hm2    ! Mean of hydrometeor (2nd PDF component)          [units vary]
 
-    character(len=10), dimension(hydromet_dim), intent(in) :: &
+    character(len=10), dimension(num_hm), intent(in) :: &
       hm_list    ! Names of all hydrometeors
 
-    real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
       hm_tol    ! Tolerance value for the hydrometeor           [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -1351,7 +1377,7 @@ module setup_clubb_pdf_params
              N_tot_hm_1 = zero
              N_tot_hm_2 = zero
              r_tot_hm_tol = one
-             do i = 1, hydromet_dim, 1
+             do i = 1, num_hm, 1
 
                 hydromet_name = hm_list(i)
 
@@ -1375,7 +1401,7 @@ module setup_clubb_pdf_params
 
                 endif
 
-             enddo ! i = 1, hydromet_dim, 1
+             enddo ! i = 1, num_hm, 1
 
              !!! Find precipitation fraction within PDF component 1.
              if ( r_tot_hm_1 > r_tot_hm_tol ) then
@@ -3745,6 +3771,144 @@ module setup_clubb_pdf_params
 
 
   end subroutine pdf_param_log_hm_stats
+
+  !=============================================================================
+  subroutine precip_hm_arrays( nz, hydromet, wphydrometp, &
+                               hmm, wphmp, hm_tol )
+
+    ! Description:
+    ! Makes new hydrometeor arrays out of only the precipitating hydrometeors,
+    ! which do not include N_c or N_cn.  CLUBB's PDF does not include N_c, but
+    ! rather N_cn.  However, N_cn is handled in the PDF in a different manner
+    ! than the rest of the hydrometeors.  The remaining hydrometeors (the
+    ! precipitating hydrometeors -- rain, ice, snow, etc.) need their own array
+    ! for use in the PDF parameter setup.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use array_index, only: & 
+        iirrainm,    & ! Variables
+        iiNrm,       &
+        iirsnowm,    &
+        iiricem,     &
+        iirgraupelm, &
+        iiNcnm,      &
+        iiNsnowm,    & 
+        iiNim,       &
+        iiNgraupelm, &
+        iiNcm          ! Note: Ncm is not part of CLUBB's PDF.
+
+    use parameters_model, only: &
+        hydromet_dim  ! Variable(s)
+
+    use parameters_microphys, only: &
+        hydromet_tol  ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd     ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz    ! Number of model vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet,    & ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
+      wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      hmm,   & ! Mean of a precipitating hydrometeor, hm (overall) [units vary]
+      wphmp    ! Covariance of w and a precipitating hydrometeor   [(m/s)units]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      hm_tol    ! Tolerance value for a precipitating hydrometeor  [units vary]
+
+    ! Local Variables
+    integer :: &
+      idx, & ! Precipitating hydrometeor index
+      i      ! Hydrometeor index
+
+    ! Initialize precipitating hydrometeor index to 0.
+    idx = 0
+
+    ! Count the number of precipitating hydrometeors.
+    do i = 1, hydromet_dim, 1
+       if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) ) then
+
+          ! The hydrometeor is a precipitating hydrometeor, which does not
+          ! include N_c or N_cn.
+
+          ! Iterate the precipitating hydrometeor index.
+          idx = idx + 1
+
+       endif ! i /= iiNcm and i /= iiNcnm
+    enddo ! i = 1, hydromet_dim, 1
+
+    ! Total number of precipitating hydrometeors
+    num_hm = idx
+
+
+    ! Allocate Precipitating Hydrometeor Arrays
+    allocate( hmm(1:nz,1:num_hm) )    ! Mean of Hydrometeor (overall)
+    allocate( wphmp(1:nz,1:num_hm) )  ! Covariance of w and a hydrometeor
+    allocate( hm_tol(1:num_hm) )      ! Tolerance value for a hydrometeor
+
+
+    ! Reinitialize precipitating hydrometeor index to 0.
+    idx = 0
+
+    ! Loop over all hydrometeors, setup precipitating hydrometeor arrays, and
+    ! setup array indices for precipitating hydrometeors.
+    do i = 1, hydromet_dim, 1
+
+       if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) ) then
+
+          ! The hydrometeor is a precipitating hydrometeor, which does not
+          ! include N_c or N_cn. 
+
+          ! Iterate the precipitating hydrometeor index.
+          idx = idx + 1
+
+          ! Mean of hydrometeor (overall)
+          hmm(:,idx) = hydromet(:,i)
+
+          ! Covariance of vertical velocity and a hydrometeor
+          wphmp(:,idx) = wphydrometp(:,i)
+
+          ! Hydrometeor tolerance values
+          hm_tol(idx) = hydromet_tol(i)
+
+          ! Assign indices to each hydrometeor in the precipitating hydrometeor
+          ! arrays.
+          if ( i == iirrainm ) then
+             iirr = idx
+          elseif ( i == iiNrm ) then
+             iiNr = idx
+          elseif ( i == iirsnowm ) then
+             iirs = idx
+          elseif ( i == iiricem ) then
+             iiri = idx
+          elseif ( i == iirgraupelm ) then
+             iirg = idx
+          elseif ( i == iiNsnowm ) then
+             iiNs = idx
+          elseif ( i == iiNim ) then
+             iiNi = idx
+          elseif ( i == iiNgraupelm ) then
+             iiNg = idx
+          endif
+
+       endif ! i /= iiNcm and i /= iiNcnm
+
+    enddo ! i = 1, hydromet_dim, 1
+
+
+    return
+
+  end subroutine precip_hm_arrays
 
   !=============================================================================
   subroutine pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, &             ! Intent(in)
