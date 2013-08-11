@@ -2197,15 +2197,19 @@ module latin_hypercube_driver_module
 
       ! Latin hypercube estimate of s_mellor
       if ( iLH_s_mellor > 0 ) then
-        LH_s_mellor(1:nz) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
-                                           X_nl_all_levs(1:nz, 1:n_micro_calls, iiPDF_s_mellor) )
+        LH_s_mellor(1:nz) &
+        = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
+                               real( X_nl_all_levs(1:nz, 1:n_micro_calls, iiPDF_s_mellor), &
+                                     kind = core_rknd ) )
         call stat_update_var( iLH_s_mellor, LH_s_mellor, LH_zt )
       end if
 
       ! Latin hypercube estimate of t_mellor
       if ( iLH_t_mellor > 0 ) then
-        LH_t_mellor(1:nz) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
-                                           X_nl_all_levs(1:nz, 1:n_micro_calls, iiPDF_t_mellor) )
+        LH_t_mellor(1:nz) &
+        = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
+                               real( X_nl_all_levs(1:nz, 1:n_micro_calls, iiPDF_t_mellor), &
+                                     kind = core_rknd ) )
         call stat_update_var( iLH_t_mellor, LH_t_mellor, LH_zt )
       end if
 
