@@ -876,8 +876,8 @@ module microphys_driver
                hydromet_pdf_params,                                     & ! Intent(in)
                Ncnm, hydromet, wphydrometp,                             & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc,                                 & ! Intent(inout)
-               wprtp_mc_tndcy, wpthlp_mc_tndcy,                         & ! Intent(inout)
-               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,         & ! Intent(inout)
+               wprtp_mc, wpthlp_mc,                                     & ! Intent(inout)
+               rtp2_mc, thlp2_mc, rtpthlp_mc,                           & ! Intent(inout)
                err_code )                                                 ! Intent(out)
 
     ! Description:
@@ -1182,11 +1182,11 @@ module microphys_driver
       thlm_mc    ! Microphysics contributions to liquid potential temp. [K/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
-      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
-      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
-      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
-      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      wprtp_mc,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     ! Output Variables
 
@@ -1514,8 +1514,8 @@ module microphys_driver
                hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
                hydromet_mc, hydromet_vel_zt, & ! In/Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
-               rtp2_mc_tndcy, thlp2_mc_tndcy, wprtp_mc_tndcy, & ! Out
-               wpthlp_mc_tndcy, rtpthlp_mc_tndcy, & ! Out
+               rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
+               wpthlp_mc, rtpthlp_mc, & ! Out
                morrison_micro_driver )  ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
@@ -1560,8 +1560,8 @@ module microphys_driver
                delta_zt, rcm_morr, Ncm, s_mellor, rvm, hydromet, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
-               rtp2_mc_tndcy, thlp2_mc_tndcy, &
-               wprtp_mc_tndcy, wpthlp_mc_tndcy, rtpthlp_mc_tndcy, &
+               rtp2_mc, thlp2_mc, &
+               wprtp_mc, wpthlp_mc, rtpthlp_mc, &
                rrainm_auto, rrainm_accr, rrainm_evap, &
                Nrm_auto, Nrm_evap )
 
@@ -1615,8 +1615,8 @@ module microphys_driver
                hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
                hydromet_mc, hydromet_vel_zt, & ! In/Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
-               rtp2_mc_tndcy, thlp2_mc_tndcy, wprtp_mc_tndcy, & ! Out
-               wpthlp_mc_tndcy, rtpthlp_mc_tndcy, & ! Out               
+               rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
+               wpthlp_mc, rtpthlp_mc, & ! Out               
                KK_local_micro_driver ) ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
@@ -1651,9 +1651,9 @@ module microphys_driver
                                       hydromet, &
                                       hydromet_mc, hydromet_vel_zt, &
                                       rcm_mc, rvm_mc, thlm_mc, &
-                                      rtp2_mc_tndcy, thlp2_mc_tndcy, &
-                                      wprtp_mc_tndcy, wpthlp_mc_tndcy, &
-                                      rtpthlp_mc_tndcy,  &
+                                      rtp2_mc, thlp2_mc, &
+                                      wprtp_mc, wpthlp_mc, &
+                                      rtpthlp_mc,  &
                                       rrainm_auto, rrainm_accr, rrainm_evap, &
                                       Nrm_auto, Nrm_evap )
 
@@ -1671,9 +1671,9 @@ module microphys_driver
                                          rcm_mc, rvm_mc, thlm_mc,                 & ! Intent(out)
                                          hydromet_vel_covar_zt_impc,              & ! Intent(out)
                                          hydromet_vel_covar_zt_expc,              & ! Intent(out)
-                                         wprtp_mc_tndcy, wpthlp_mc_tndcy,         & ! Intent(out)
-                                         rtp2_mc_tndcy, thlp2_mc_tndcy,           & ! Intent(out)
-                                         rtpthlp_mc_tndcy )                         ! Intent(out)
+                                         wprtp_mc, wpthlp_mc,         & ! Intent(out)
+                                         rtp2_mc, thlp2_mc,           & ! Intent(out)
+                                         rtpthlp_mc )                         ! Intent(out)
 
         endif
 

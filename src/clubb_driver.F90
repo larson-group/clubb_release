@@ -381,11 +381,11 @@ module clubb_driver
       thlm_mc   ! Tendecy of liquid pot. temp. due to microphysics [K/s]
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
-      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
-      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
-      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
-      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
-      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      wprtp_mc,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
       rfrzm    ! Total ice-phase water mixing ratio        [kg/kg]
@@ -930,18 +930,18 @@ module clubb_driver
 
     ! Allocate microphysics tendencies for <w'rt'>, <w'thl'>,
     ! <rt'^2>, <thl'^2>, and <rt'thl'>.
-    allocate( wprtp_mc_tndcy(gr%nz) )
-    allocate( wpthlp_mc_tndcy(gr%nz) )
-    allocate( rtp2_mc_tndcy(gr%nz) )
-    allocate( thlp2_mc_tndcy(gr%nz) )
-    allocate( rtpthlp_mc_tndcy(gr%nz) )
+    allocate( wprtp_mc(gr%nz) )
+    allocate( wpthlp_mc(gr%nz) )
+    allocate( rtp2_mc(gr%nz) )
+    allocate( thlp2_mc(gr%nz) )
+    allocate( rtpthlp_mc(gr%nz) )
 
     ! Initialize to 0.
-    wprtp_mc_tndcy   = zero
-    wpthlp_mc_tndcy  = zero
-    rtp2_mc_tndcy    = zero
-    thlp2_mc_tndcy   = zero
-    rtpthlp_mc_tndcy = zero
+    wprtp_mc   = zero
+    wpthlp_mc  = zero
+    rtp2_mc    = zero
+    thlp2_mc   = zero
+    rtpthlp_mc = zero
 
     allocate( rfrzm(gr%nz) )
     rfrzm = zero
@@ -1162,11 +1162,11 @@ module clubb_driver
         call stat_update_var( ircm_mc, rcm_mc, zt ) ! kg/kg/s
         call stat_update_var( irtm_mc, rvm_mc+rcm_mc, zt ) ! kg/kg/s
         call stat_update_var( ithlm_mc, thlm_mc, zt ) ! K/s
-        call stat_update_var( iwprtp_mc, wprtp_mc_tndcy, zm ) ! m*(kg/kg)/s^2
-        call stat_update_var( iwpthlp_mc, wpthlp_mc_tndcy, zm ) ! K*m/s^2
-        call stat_update_var( irtp2_mc, rtp2_mc_tndcy, zm ) ! (kg/kg)^2/s
-        call stat_update_var( ithlp2_mc, thlp2_mc_tndcy, zm ) ! K^2/s
-        call stat_update_var( irtpthlp_mc, rtpthlp_mc_tndcy, zm ) ! K*(kg/kg)/s
+        call stat_update_var( iwprtp_mc, wprtp_mc, zm ) ! m*(kg/kg)/s^2
+        call stat_update_var( iwpthlp_mc, wpthlp_mc, zm ) ! K*m/s^2
+        call stat_update_var( irtp2_mc, rtp2_mc, zm ) ! (kg/kg)^2/s
+        call stat_update_var( ithlp2_mc, thlp2_mc, zm ) ! K^2/s
+        call stat_update_var( irtpthlp_mc, rtpthlp_mc, zm ) ! K*(kg/kg)/s
       endif
 
       ! Add microphysical tendencies to rtm_forcing
@@ -1177,11 +1177,11 @@ module clubb_driver
 
       ! Add microphysical tendencies to the forcings for the predictive
       ! variances and covariances.
-      wprtp_forcing(:)   = wprtp_forcing(:) + wprtp_mc_tndcy(:)
-      wpthlp_forcing(:)  = wpthlp_forcing(:) + wpthlp_mc_tndcy(:)
-      rtp2_forcing(:)    = rtp2_forcing(:) + rtp2_mc_tndcy(:)
-      thlp2_forcing(:)   = thlp2_forcing(:) + thlp2_mc_tndcy(:)
-      rtpthlp_forcing(:) = rtpthlp_forcing(:) + rtpthlp_mc_tndcy(:)
+      wprtp_forcing(:)   = wprtp_forcing(:) + wprtp_mc(:)
+      wpthlp_forcing(:)  = wpthlp_forcing(:) + wpthlp_mc(:)
+      rtp2_forcing(:)    = rtp2_forcing(:) + rtp2_mc(:)
+      thlp2_forcing(:)   = thlp2_forcing(:) + thlp2_mc(:)
+      rtpthlp_forcing(:) = rtpthlp_forcing(:) + rtpthlp_mc(:)
 
       ! Compute total water in ice phase mixing ratio
       rfrzm = zero
@@ -1275,8 +1275,8 @@ module clubb_driver
              hydromet_pdf_params, precip_frac_1, precip_frac_2, & ! Intent(in)
              Ncnm, hydromet, wphydrometp,                       & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc,                           & ! Intent(inout)
-             wprtp_mc_tndcy, wpthlp_mc_tndcy,                   & ! Intent(inout)
-             rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,   & ! Intent(inout)
+             wprtp_mc, wpthlp_mc,                   & ! Intent(inout)
+             rtp2_mc, thlp2_mc, rtpthlp_mc,   & ! Intent(inout)
              err_code )                                           ! Intent(inout)
 
       ! Radiation is always called on the first timestep in order to ensure
@@ -3697,8 +3697,8 @@ module clubb_driver
                hydromet_pdf_params, precip_frac_1, precip_frac_2, & ! Intent(in)
                Ncnm, hydromet, wphydrometp,                       & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc,                           & ! Intent(inout)
-               wprtp_mc_tndcy, wpthlp_mc_tndcy,                   & ! Intent(inout)
-               rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy,   & ! Intent(inout)
+               wprtp_mc, wpthlp_mc,                               & ! Intent(inout)
+               rtp2_mc, thlp2_mc, rtpthlp_mc,                     & ! Intent(inout)
                err_code )                                           ! Intent(inout)
 
 ! Description:
@@ -3851,11 +3851,11 @@ module clubb_driver
       rvm_mc       ! r_v microphysical tendency     [(kg/kg)/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
-      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
-      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
-      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
-      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      wprtp_mc,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     integer, intent(inout) :: & 
       err_code ! Error code from the microphysics
@@ -3891,11 +3891,11 @@ module clubb_driver
     rvm_mc  = zero
     thlm_mc = zero
 
-    wprtp_mc_tndcy   = zero
-    wpthlp_mc_tndcy  = zero
-    rtp2_mc_tndcy    = zero
-    thlp2_mc_tndcy   = zero
-    rtpthlp_mc_tndcy = zero
+    wprtp_mc   = zero
+    wpthlp_mc  = zero
+    rtp2_mc    = zero
+    thlp2_mc   = zero
+    rtpthlp_mc = zero
 
 #ifdef LATIN_HYPERCUBE
     !The algorithm for diagnosing the correlations only works with the KK microphysics by now. 
@@ -4015,8 +4015,8 @@ module clubb_driver
            hydromet_pdf_params, &                                     ! Intent(in)
            Ncnm, hydromet, wphydrometp, &                             ! Intent(inout)
            rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
-           wprtp_mc_tndcy, wpthlp_mc_tndcy, &                         ! Intent(inout)
-           rtp2_mc_tndcy, thlp2_mc_tndcy, rtpthlp_mc_tndcy, &         ! Intent(inout)
+           wprtp_mc, wpthlp_mc, &                         ! Intent(inout)
+           rtp2_mc, thlp2_mc, rtpthlp_mc, &         ! Intent(inout)
            err_code_microphys )                                       ! Intent(out)
 
     if ( fatal_error( err_code_microphys ) ) then
