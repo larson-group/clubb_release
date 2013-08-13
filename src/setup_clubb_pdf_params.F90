@@ -2371,7 +2371,7 @@ module setup_clubb_pdf_params
     ! throw a fit.
     if ( l_limit_corr_st ) then
 
-       corr_st_i = max( min( corr_st_i, max_mag_correlation ), max_mag_correlation )
+       corr_st_i = max( min( corr_st_i, max_mag_correlation ), -max_mag_correlation )
 
     end if
 
