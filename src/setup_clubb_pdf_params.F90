@@ -1791,7 +1791,8 @@ module setup_clubb_pdf_params
 
     use model_flags, only: &
         l_calc_w_corr, &
-        l_use_hydromet_tolerance
+        l_use_hydromet_tolerance, &
+        l_use_modified_corr
 
     use diagnose_correlations_module, only: &
         calc_mean,        & ! Procedure(s)
@@ -1875,6 +1876,8 @@ module setup_clubb_pdf_params
       corr_wNr,        & ! Correlation between w and Nr (overall) ip   [-]
       corr_wNcn          ! Correlation between w and Ncn (overall)     [-]
 
+    logical :: &
+      l_limit_corr_st    ! If true, we limit the correlation between s and t [-]
 
     !!! Enter the PDF parameters.
 
@@ -1947,15 +1950,26 @@ module setup_clubb_pdf_params
     = component_corr_whm_ip( Ncnm, corr_wNcn, rc2, one, Ncn_tol, &
                              corr_wNcn_NL_cloud, corr_wNcn_NL_cloud )
 
+    ! In order to decompose the correlation matrix that we may or may not make
+    ! (l_use_modified_corr), we must not have a perfect correlation between s
+    ! and t. Thus, we impose a limitation.
+    if ( l_use_modified_corr ) then
+      l_limit_corr_st = .true.
+    else
+      l_limit_corr_st = .false.
+    end if
+
     ! Correlation between s and t in PDF component 1.
     corr_st_1 &
     = component_corr_st( pdf_params%corr_st_1, rc1, cloud_frac1, &
-                         corr_st_NN_cloud, corr_st_NN_below )
+                         corr_st_NN_cloud, corr_st_NN_below, &
+                         l_limit_corr_st )
 
     ! Correlation between s and t in PDF component 2.
     corr_st_2 &
     = component_corr_st( pdf_params%corr_st_2, rc2, cloud_frac2, &
-                         corr_st_NN_cloud, corr_st_NN_below )
+                         corr_st_NN_cloud, corr_st_NN_below, &
+                         l_limit_corr_st )
 
     ! Correlation (in-precip) between s and r_r in PDF component 1.
     corr_srr_1 &
@@ -1987,25 +2001,47 @@ module setup_clubb_pdf_params
     = component_corr_xhm_ip( Ncnm, rc2, one, Ncn_tol, &
                              corr_sNcn_NL_cloud, corr_sNcn_NL_cloud )
 
-    ! Correlation (in-precip) between t and r_r in PDF component 1.
-    corr_trr_1 &
-    = component_corr_xhm_ip( rr1, rc1, cloud_frac1, rr_tol, &
-                             corr_trr_NL_cloud, corr_trr_NL_below )
+    if ( l_use_modified_corr ) then
 
-    ! Correlation (in-precip) between t and r_r in PDF component 2.
-    corr_trr_2 &
-    = component_corr_xhm_ip( rr2, rc2, cloud_frac2, rr_tol, &
-                             corr_trr_NL_cloud, corr_trr_NL_below )
+      ! Correlation (in-precip) between t and r_r in PDF component 1.
+      corr_trr_1 &
+      = component_corr_thm_ip( corr_st_1, corr_srr_1 )
 
-    ! Correlation (in-precip) between t and N_r in PDF component 1.
-    corr_tNr_1 &
-    = component_corr_xhm_ip( Nr1, rc1, cloud_frac1, Nr_tol, &
-                             corr_tNr_NL_cloud, corr_tNr_NL_below )
+      ! Correlation (in-precip) between t and r_r in PDF component 2.
+      corr_trr_2 &
+      = component_corr_thm_ip( corr_st_2, corr_srr_2 )
 
-    ! Correlation (in-precip) between t and N_r in PDF component 2.
-    corr_tNr_2 &
-    = component_corr_xhm_ip( Nr2, rc2, cloud_frac2, Nr_tol, &
-                             corr_tNr_NL_cloud, corr_tNr_NL_below )
+      ! Correlation (in-precip) between t and N_r in PDF component 1.
+      corr_tNr_1 &
+      = component_corr_thm_ip( corr_st_1, corr_sNr_1 )
+
+      ! Correlation (in-precip) between t and N_r in PDF component 2.
+      corr_tNr_2 &
+      = component_corr_thm_ip( corr_st_2, corr_sNr_2 )
+
+    else ! .not. l_use_modified_corr
+
+      ! Correlation (in-precip) between t and r_r in PDF component 1.
+      corr_trr_1 &
+      = component_corr_xhm_ip( rr1, rc1, cloud_frac1, rr_tol, &
+                               corr_trr_NL_cloud, corr_trr_NL_below )
+
+      ! Correlation (in-precip) between t and r_r in PDF component 2.
+      corr_trr_2 &
+      = component_corr_xhm_ip( rr2, rc2, cloud_frac2, rr_tol, &
+                               corr_trr_NL_cloud, corr_trr_NL_below )
+
+      ! Correlation (in-precip) between t and N_r in PDF component 1.
+      corr_tNr_1 &
+      = component_corr_xhm_ip( Nr1, rc1, cloud_frac1, Nr_tol, &
+                               corr_tNr_NL_cloud, corr_tNr_NL_below )
+
+      ! Correlation (in-precip) between t and N_r in PDF component 2.
+      corr_tNr_2 &
+      = component_corr_xhm_ip( Nr2, rc2, cloud_frac2, Nr_tol, &
+                               corr_tNr_NL_cloud, corr_tNr_NL_below )
+
+    end if ! l_use_modified_corr
 
     ! Correlation between t and N_cn in PDF component 1.
     corr_tNcn_1 &
@@ -2253,7 +2289,8 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   function component_corr_st( pdf_corr_st_i, rci, cloud_fraci, &
-                              corr_st_NN_cloud, corr_st_NN_below ) &
+                              corr_st_NN_cloud, corr_st_NN_below, &
+                              l_limit_corr_st ) &
   result( corr_st_i )
 
     ! Description:
@@ -2264,13 +2301,14 @@ module setup_clubb_pdf_params
 
     use constants_clubb, only:  &
         one,    & ! Constant(s)
-        rc_tol
+        rc_tol, &
+        max_mag_correlation
 
     use parameters_microphys, only: &
         l_fix_s_t_correlations  ! Variable(s)
 
     use clubb_precision, only: &
-        core_rknd  ! Variable(s)
+        core_rknd  ! Constant
 
     implicit none
 
@@ -2283,6 +2321,13 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), intent(in) :: &
       corr_st_NN_cloud, & ! Corr. btwn. s and t (ith PDF comp.); cloudy levs [-]
       corr_st_NN_below    ! Corr. btwn. s and t (ith PDF comp.); clear levs  [-]
+
+    logical, intent(in) :: &
+      l_limit_corr_st    ! We must limit the correlation between s and t if we
+                          ! are to take the Cholesky decomposition of the
+                          ! resulting correlation matrix. This is because a
+                          ! perfect correlation between s and t was found to be
+                          ! unrealizable.
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -2320,6 +2365,15 @@ module setup_clubb_pdf_params
        endif
 
     endif
+
+    ! We cannot have a perfect correlation between s and t if we plan to
+    ! decompose this matrix and we don't want the Cholesky_factor code to
+    ! throw a fit.
+    if ( l_limit_corr_st ) then
+
+       corr_st_i = max( min( corr_st_i, max_mag_correlation ), max_mag_correlation )
+
+    end if
 
 
     return
@@ -2555,6 +2609,43 @@ module setup_clubb_pdf_params
     return
 
   end function component_corr_hmxhmy_ip
+
+  !=============================================================================
+  pure function component_corr_thm_ip( corr_st_i, corr_shm_i ) result( corr_thm_i )
+
+    ! Description:
+    !   Estimates the correlation between t_mellor and a hydrometeor species
+    !   using the correlation between s_mellor and t_mellor, and between
+    !   s_mellor and the hydrometeor. This facilities the Cholesky
+    !   decomposability of the correlation array that will inevitably be
+    !   decomposed for SILHS purposes. Without this estimation, we have found
+    !   that the resulting correlation matrix cannot be decomposed.
+
+    ! References:
+    !   See clubb:ticket:514
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd       ! Constant
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      corr_st_i,    & ! Component correlation of s and t                [-]
+      corr_shm_i      ! Component correlation of s and the hydrometeor  [-]
+
+    ! Output Variables
+    real( kind = core_rknd ) :: &
+      corr_thm_i      ! Component correlation of t and the hydrometeor  [-]
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    corr_thm_i = corr_st_i * corr_shm_i
+
+    return
+  end function component_corr_thm_ip
 
   !=============================================================================
   subroutine normalize_pdf_params( rr1, rr2, Nr1, Nr2, Ncnm, &                   ! Intent(in)
