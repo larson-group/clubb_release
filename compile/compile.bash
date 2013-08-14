@@ -195,7 +195,7 @@ else
 fi
 
 all_files_list="$dir/file_list/clubb_all_files"
-rm $all_files_list
+rm -f $all_files_list
 cat $dir/file_list/*_files > $all_files_list
 
 # ------------------------------------------------------------------------------
