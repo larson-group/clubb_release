@@ -121,9 +121,7 @@ module setup_clubb_pdf_params
         rrp2_on_rrm2_below,   &
         Nrp2_on_Nrm2_cloud,   &
         Nrp2_on_Nrm2_below,   &
-        Ncnp2_on_Ncnm2_cloud, &
-        hydromet_list,        &
-        hydromet_tol
+        Ncnp2_on_Ncnm2_cloud
 
     use stats_type, only: &
         stat_update_var ! Procedure(s)
@@ -320,6 +318,9 @@ module setup_clubb_pdf_params
       hm2,   & ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
       wphmp    ! Covariance of w and a precipitating hydrometeor    [(m/s)units]
 
+    character(len=10), dimension(:), allocatable :: &
+      hm_list    ! Names of all precipitating hydrometeors
+
     real( kind = core_rknd ), dimension(:), allocatable :: &
       hm_tol    ! Tolerance value for the hydrometeor           [units vary]
 
@@ -348,8 +349,9 @@ module setup_clubb_pdf_params
 
     ! Setup hydrometeor arrays out of precipitating hydrometeors, which do not
     ! include N_c or N_cn.
+    ! Note:  num_hm is set is this subroutine.
     call precip_hm_arrays( nz, hydromet, wphydrometp, &
-                           hmm, wphmp, hm_tol )
+                           hmm, wphmp, hm_list, hm_tol )
 
     ! Allocate arrays for component mean precipitating hydrometeors.
     allocate( hm1(1:nz,1:num_hm) )    ! Mean of Hydrometeor (1st PDF component)
@@ -369,7 +371,7 @@ module setup_clubb_pdf_params
                                       mixt_frac, hm_tol, l_stats_samp, &
                                       hm1, hm2 )
 
-       call precip_fraction( nz, hmm, hm1, hm2, hydromet_list, hm_tol, &
+       call precip_fraction( nz, hmm, hm1, hm2, hm_list, hm_tol, &
                              cloud_frac, cloud_frac1, mixt_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
@@ -703,11 +705,12 @@ module setup_clubb_pdf_params
 
 
     ! Deallocate arrays for precipitating hydrometeors.
-    deallocate( hmm )    ! Mean of Hydrometeor (overall)
-    deallocate( wphmp )  ! Covariance of w and a hydrometeor
-    deallocate( hm_tol ) ! Tolerance value for a hydrometeor
-    deallocate( hm1 )    ! Mean of Hydrometeor (1st PDF component)
-    deallocate( hm2 )    ! Mean of Hydrometeor (2nd PDF component)
+    deallocate( hmm )     ! Mean of Hydrometeor (overall)
+    deallocate( wphmp )   ! Covariance of w and a hydrometeor
+    deallocate( hm_list ) ! Name of hydrometeor
+    deallocate( hm_tol )  ! Tolerance value for a hydrometeor
+    deallocate( hm1 )     ! Mean of Hydrometeor (1st PDF component)
+    deallocate( hm2 )     ! Mean of Hydrometeor (2nd PDF component)
 
 
     return
@@ -3865,7 +3868,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine precip_hm_arrays( nz, hydromet, wphydrometp, &
-                               hmm, wphmp, hm_tol )
+                               hmm, wphmp, hm_list, hm_tol )
 
     ! Description:
     ! Makes new hydrometeor arrays out of only the precipitating hydrometeors,
@@ -3894,7 +3897,8 @@ module setup_clubb_pdf_params
         hydromet_dim  ! Variable(s)
 
     use parameters_microphys, only: &
-        hydromet_tol  ! Variable(s)
+        hydromet_list, & ! Variable(s)
+        hydromet_tol
 
     use clubb_precision, only: &
         core_rknd     ! Variable(s)
@@ -3910,11 +3914,14 @@ module setup_clubb_pdf_params
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+    real( kind = core_rknd ), dimension(:,:), allocatable, intent(out) :: &
       hmm,   & ! Mean of a precipitating hydrometeor, hm (overall) [units vary]
       wphmp    ! Covariance of w and a precipitating hydrometeor   [(m/s)units]
 
-    real( kind = core_rknd ), dimension(:), allocatable :: &
+    character(len=10), dimension(:), allocatable, intent(out) :: &
+      hm_list    ! Names of all precipitating hydrometeors
+
+    real( kind = core_rknd ), dimension(:), allocatable, intent(out) :: &
       hm_tol    ! Tolerance value for a precipitating hydrometeor  [units vary]
 
     ! Local Variables
@@ -3945,6 +3952,7 @@ module setup_clubb_pdf_params
     ! Allocate Precipitating Hydrometeor Arrays
     allocate( hmm(1:nz,1:num_hm) )    ! Mean of Hydrometeor (overall)
     allocate( wphmp(1:nz,1:num_hm) )  ! Covariance of w and a hydrometeor
+    allocate( hm_list(1:num_hm) )     ! Name of hydrometeor
     allocate( hm_tol(1:num_hm) )      ! Tolerance value for a hydrometeor
 
 
@@ -3968,6 +3976,9 @@ module setup_clubb_pdf_params
 
           ! Covariance of vertical velocity and a hydrometeor
           wphmp(:,idx) = wphydrometp(:,i)
+
+          ! Hydrometeor name from hydrometeor list
+          hm_list(idx) = hydromet_list(i)
 
           ! Hydrometeor tolerance values
           hm_tol(idx) = hydromet_tol(i)
