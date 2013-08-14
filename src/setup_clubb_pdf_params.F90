@@ -62,7 +62,7 @@ module setup_clubb_pdf_params
                                    cloud_frac, w_std_dev, wphydrometp, &       ! Intent(in)
                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
                                    pdf_params, l_stats_samp, d_variables, &    ! Intent(in)
-                                   corr_array_1, corr_array_2, &               ! Intent(inout)
+                                   corr_array_1, corr_array_2, &               ! Intent(out)
                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &     ! Intent(out)
                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
                                    precip_frac_1, precip_frac_2, &             ! Intent(out)
@@ -174,7 +174,7 @@ module setup_clubb_pdf_params
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
-    intent(inout) :: &
+    intent(out) :: &
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
@@ -665,7 +665,7 @@ module setup_clubb_pdf_params
                              rr1(k), rr2(k), Nr1(k), Nr2(k), &                     ! Intent(in)
                              precip_frac(k), precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
                              d_variables, &                                        ! Intent(in)
-                             corr_array_1(:,:,k), corr_array_2(:,:,k), &           ! Intent(inout)
+                             corr_array_1(:,:,k), corr_array_2(:,:,k), &           ! Intent(out)
                              mu_x_1(:,k), mu_x_2(:,k), &                           ! Intent(out)
                              sigma_x_1(:,k), sigma_x_2(:,k), &                     ! Intent(out)
                              hydromet_pdf_params(k) )                              ! Intent(out)
@@ -4035,7 +4035,7 @@ module setup_clubb_pdf_params
                               rr1, rr2, Nr1, Nr2, &                         ! Intent(in)
                               precip_frac, precip_frac_1, precip_frac_2, &  ! Intent(in)
                               d_variables, &                                ! Intent(in)
-                              corr_array_1, corr_array_2, &                 ! Intent(inout)
+                              corr_array_1, corr_array_2, &                 ! Intent(out)
                               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &       ! Intent(out)
                               hydromet_pdf_params )                         ! Intent(out)
 
@@ -4056,10 +4056,11 @@ module setup_clubb_pdf_params
         iiPDF_Ncn
 
     use clubb_precision, only: &
-        core_rknd    ! Variable(s)
+        core_rknd    ! Constant
 
     use constants_clubb, only: &
-        zero         ! Constant
+        zero, &      ! Constant(s)
+        one
 
     implicit none
 
@@ -4146,8 +4147,7 @@ module setup_clubb_pdf_params
       d_variables    ! Number of variables in the correlation array.
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(d_variables,d_variables), &
-    intent(inout) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(out) :: &
       corr_array_1, & ! Correlation array for the 1st PDF component   [-]
       corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
@@ -4161,12 +4161,17 @@ module setup_clubb_pdf_params
     type(hydromet_pdf_parameter), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
+    ! Local variables
+    integer :: i ! Loop variable
+
     ! ---- Begin Code ----
     ! Initialize output variables
     mu_x_1 = zero
     mu_x_2 = zero
     sigma_x_1 = zero
     sigma_x_2 = zero
+    corr_array_1 = zero
+    corr_array_2 = zero
 
     ! Pack Means and Standard Deviations into arrays
     mu_x_1(iiPDF_w)        = mu_w_1
@@ -4218,6 +4223,12 @@ module setup_clubb_pdf_params
 
 
     !!! The corr_arrays are assumed to be lower triangular matrices
+    ! Set diagonal elements to 1
+    do i=1, d_variables
+      corr_array_1(i, i) = one
+      corr_array_2(i, i) = one
+    end do
+
     ! Pack correlations (1st PDF component) into corr_array_1.
     corr_array_1(iiPDF_t_mellor, iiPDF_s_mellor) = corr_st_1
     corr_array_1(iiPDF_w,iiPDF_s_mellor)         = corr_ws_1
