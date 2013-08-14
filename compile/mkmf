@@ -32,7 +32,7 @@ use strict;
 use File::Basename;
 use Getopt::Std;
 use Config;			# use to put in platform-specific stuff
-use vars qw( $opt_a $opt_c $opt_d $opt_f $opt_l $opt_m $opt_o $opt_p $opt_t $opt_v $opt_x ); # declare these global to be shared with Getopt:Std
+use vars qw( $opt_a $opt_c $opt_d $opt_e $opt_f $opt_l $opt_m $opt_o $opt_p $opt_t $opt_v $opt_x ); # declare these global to be shared with Getopt:Std
 
 #subroutines
 sub ensureTrailingSlash {
@@ -43,7 +43,7 @@ sub ensureTrailingSlash {
 my $version = '$Id$ ';
 
 # initialize variables: use getopts for these
-getopts( 'a:c:dfm:o:p:t:vx' ) || die "\aSyntax: $0 [-a abspath] [-c cppdefs] [-d] [-f] [-m makefile] [-o otherflags] ][-p program] [-t template] [-v] [-x] [targets]\n";
+getopts( 'a:c:de:fm:o:p:t:vx' ) || die "\aSyntax: $0 [-a abspath] [-c cppdefs] [-d] [-e dependencies_file] [-f] [-m makefile] [-o otherflags] ][-p program] [-t template] [-v] [-x] [targets]\n";
 $opt_v = 1 if $opt_d;	# debug flag turns on verbose flag also
 print "$0 $version\n" if $opt_v;
 
@@ -160,6 +160,7 @@ delete $chgdefs{''};
 # get a list of sourcefiles to be treated from targets
 # (a sourcefile is any regular file with a suffix matching src_suffixes)
 # if target is a sourcefile, add to list
+
 # if target is a directory, get all sourcefiles there
 # if target is a regular file that is not a sourcefile, look for a
 #    sourcefile on last work of each line, rest of line (if present) is the
@@ -273,6 +274,35 @@ foreach $target ( @targets ) {
    }
 }
 delete $actual_source_of{''};
+
+# Eric Raut says: generate a list of dependency modules
+my @dependency_modules;
+if( $opt_e ) {
+    open DEP_FILE, $opt_e or die "\aERROR opening dependency file $opt_e: $!\n";
+    while ( <DEP_FILE> ) {
+      # Each line of the dependency file is a file that may or may not be a source file
+      next if ( $_ eq "\n" );
+      $file = $_;
+      ( $name, $path, $suffix ) = fileparse( $file, @src_suffixes );
+      if ( $suffix ) {
+        open DEP_SRC_FILE, $file or die "\aERROR opening source file: $file: $!\n";
+        while ( <DEP_SRC_FILE> ) {
+          next if ( $_ eq "\n" );
+          $line = $_;
+          if ( $line =~ /^\s*module\s+(\w*)/ix ) {
+            if ( $1 ) {
+              my $module_name = $1;
+              if ( $module_name ne "procedure" ) {
+                push @dependency_modules, $module_name;
+                last;
+              }
+            }
+          }
+        }
+      }
+    }
+    close DEP_FILE;
+}
 # sort scanned directories by scan order
 sub ascendingScanOrder { $scanned{$a} <=> $scanned{$b}; }
 my @dirs = sort ascendingScanOrder keys %scanned;
@@ -362,6 +392,18 @@ foreach $object ( sort @objects ) {
       $target = $obj_of_module{$module};
 #we need to check target ne '' also below, since it is not mkmf's privilege
 #to complain about modules not found. That should be left to the compiler.
+#
+#     Eric says: check for dependencies elsewhere if not found above
+      if ( $module and ! $target ) {
+         my $dep_module;
+         foreach $dep_module ( @dependency_modules ) {
+           if ( $module =~/$dep_module/i ) {
+              $target = $dep_module . ".o";
+              last;
+           }
+         }
+      }
+
       if( $target and !$is_used{$target} ) {
 	 $is_used{$target} = 1;
 	 push @cmdline, $target;

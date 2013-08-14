@@ -194,6 +194,10 @@ else
 	echo "" > $dir/file_list/numerical_recipes_files
 fi
 
+all_files_list="$dir/file_list/clubb_all_files"
+rm $all_files_list
+cat $dir/file_list/*_files > $all_files_list
+
 # ------------------------------------------------------------------------------
 # Generate makefiles using 'mkmf'
 # Note: I have done a maleficium thing and put ${WARNINGS} as a preprocessor
@@ -205,34 +209,35 @@ fi
 
 cd $objdir
 $mkmf -t $bindir/mkmf_template -p $libdir/libclubb_param.a -m Make.clubb_param -c "${CPPDEFS}" \
-  -o "${WARNINGS}" $clubb_param_mods $dir/file_list/clubb_param_files
+  -o "${WARNINGS}" -e $all_files_list $clubb_param_mods $dir/file_list/clubb_param_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_bugsrad.a -m Make.clubb_bugsrad -c "${CPPDEFS}" \
-  $dir/file_list/clubb_bugsrad_files
+  -e $all_files_list $dir/file_list/clubb_bugsrad_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_KK_micro.a -m Make.clubb_KK_micro -c "${CPPDEFS}" \
-  $dir/file_list/clubb_KK_micro_files
+  -e $all_files_list $dir/file_list/clubb_KK_micro_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_coamps.a -m Make.clubb_coamps -c "${CPPDEFS}" \
-  $dir/file_list/clubb_coamps_files
+  -e $all_files_list $dir/file_list/clubb_coamps_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_morrison.a -m Make.clubb_morrison -c "${CPPDEFS}" \
-  $dir/file_list/clubb_morrison_files
+  -e $all_files_list $dir/file_list/clubb_morrison_files
   
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_mg.a -m Make.clubb_mg -c "${CPPDEFS}" $dir/file_list/clubb_mg_files
+  -p $libdir/libclubb_mg.a -m Make.clubb_mg -c "${CPPDEFS}" \
+  -e $all_files_list $dir/file_list/clubb_mg_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_gfdlact.a -m Make.clubb_gfdlact -c "${CPPDEFS}" \
-  $dir/file_list/clubb_gfdl_activation_files
+  -e $all_files_list $dir/file_list/clubb_gfdl_activation_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/liblatin_hypercube.a -m Make.latin_hypercube -c "${CPPDEFS}" -o "${WARNINGS}" \
-  $dir/file_list/latin_hypercube_files
+  -e $all_files_list $dir/file_list/latin_hypercube_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   -m Make.clubb_standalone -c "${CPPDEFS}" -o "${WARNINGS}" $clubb_standalone_mods \
