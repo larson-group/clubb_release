@@ -1255,7 +1255,7 @@ module clubb_driver
                                     cloud_frac, sqrt(wp2_zt), wphydrometp, &    ! Intent(in)
                                     corr_array_cloud, corr_array_below, &       ! Intent(in)
                                     pdf_params, l_stats_samp, d_variables, &    ! Intent(in)
-                                    corr_array_1, corr_array_2, &               ! Intent(inout)
+                                    corr_array_1, corr_array_2, &               ! Intent(out)
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &     ! Intent(out)
                                     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
                                     precip_frac_1, precip_frac_2, &             ! Intent(out)
