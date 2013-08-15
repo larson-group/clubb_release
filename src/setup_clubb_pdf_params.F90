@@ -318,6 +318,9 @@ module setup_clubb_pdf_params
       hm2,   & ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
       wphmp    ! Covariance of w and a precipitating hydrometeor    [(m/s)units]
 
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      wphmp_ip_zt    ! Covar. of hm and w (in-precip) on t-levs   [(m/s)(kg/kg)]
+
     character(len=10), dimension(:), allocatable :: &
       hm_list    ! Names of all precipitating hydrometeors
 
@@ -338,7 +341,7 @@ module setup_clubb_pdf_params
 
     logical :: l_corr_array_scaling
 
-    integer :: k  ! Loop index
+    integer :: k, i  ! Loop indices
 
     ! ---- Begin Code ----
     ! Boundary conditions
@@ -356,6 +359,7 @@ module setup_clubb_pdf_params
     ! Allocate arrays for component mean precipitating hydrometeors.
     allocate( hm1(1:nz,1:num_hm) )    ! Mean of Hydrometeor (1st PDF component)
     allocate( hm2(1:nz,1:num_hm) )    ! Mean of Hydrometeor (2nd PDF component)
+    allocate( wphmp_ip_zt(1:nz,1:num_hm) ) ! Covar. of w and hm (in-precip.)
 
     ! Setup some of the PDF parameters
     rc1         = pdf_params%rc1
@@ -386,60 +390,6 @@ module setup_clubb_pdf_params
 
     endif
 
-    ! Mean of hydrometeor (overall)
-    rrainm = hmm(:,iirr)
-    Nrm    = hmm(:,iiNr)
-
-    ! Mean of hydrometeor (each PDF component)
-    rr1 = hm1(:,iirr)
-    rr2 = hm2(:,iirr)
-    Nr1 = hm1(:,iiNr)
-    Nr2 = hm2(:,iiNr)
-
-    ! Covariance of vertical velocity and a hydrometeor
-    ! (< w'r_r' > and < w'N_r' >).
-    wprrp = wphmp(:,iirr)
-    wpNrp = wphmp(:,iiNr)
-
-    ! Statistics
-    if ( l_stats_samp ) then
-
-       if ( irr1 > 0 ) then
-          ! Mean rain water mixing ratio in PDF component 1.
-          call stat_update_var( irr1, rr1, zt )
-       endif
-
-       if ( irr2 > 0 ) then
-          ! Mean rain water mixing ratio in PDF component 2.
-          call stat_update_var( irr2, rr2, zt )
-       endif
-
-       if ( iNr1 > 0 ) then
-          ! Mean rain drop concentration in PDF component 1.
-          call stat_update_var( iNr1, Nr1, zt )
-       endif
-
-       if ( iNr2 > 0 ) then
-          ! Mean rain drop concentration in PDF component 2.
-          call stat_update_var( iNr2, Nr2, zt )
-       endif
-
-       if ( iprecip_frac > 0 ) then
-          ! Overall precipitation fraction.
-          call stat_update_var( iprecip_frac, precip_frac, zt )
-       endif
-
-       if ( iprecip_frac_1 > 0 ) then
-          ! Precipitation fraction in PDF component 1.
-          call stat_update_var( iprecip_frac_1, precip_frac_1, zt )
-       endif
-
-       if ( iprecip_frac_2 > 0 ) then
-          ! Precipitation fraction in PDF component 2.
-          call stat_update_var( iprecip_frac_2, precip_frac_2, zt )
-       endif
-
-    endif
 
     ! Calculate correlations involving w by first calculating total covariances
     ! involving w (<w'r_r'>, etc.) using the down-gradient approximation.
@@ -460,32 +410,101 @@ module setup_clubb_pdf_params
        wpNcnp_zm(nz) = zero
 
        ! Interpolate the covariances to thermodynamic grid levels.
-       wpsp_zt     = zm2zt(wpsp_zm)
-       wprrp_ip_zt = zm2zt(wprrp) / max( precip_frac, eps )
-       wpNrp_ip_zt = zm2zt(wpNrp) / max( precip_frac, eps )
-       wpNcnp_zt   = zm2zt(wpNcnp_zm)
+       wpsp_zt = zm2zt( wpsp_zm )
+       do i = 1, num_hm, 1
+          wphmp_ip_zt(:,i) = zm2zt( wphmp(:,i) ) / max( precip_frac, eps )
+       enddo ! i = 1, num_hm, 1
+       wpNcnp_zt = zm2zt( wpNcnp_zm )
 
        ! When the mean value of a hydrometeor is below tolerance value, it is
        ! considered to have a value of 0, and does not vary over the grid level.
        ! Any covariance involving that hydrometeor also has a value of 0 at that
        ! grid level.
        do k = 1, nz, 1
-          if ( rrainm(k) <= rr_tol ) then
-             wprrp_ip_zt(k) = zero
-          endif
-          if ( Nrm(k) <= Nr_tol ) then
-             wpNrp_ip_zt(k) = zero
-          endif
+          do i = 1, num_hm, 1
+             if ( hmm(k,i) <= hm_tol(i) ) then
+                wphmp_ip_zt(k,i) = zero
+             endif
+          enddo ! i = 1, num_hm, 1
           if ( Ncnm(k) <= Ncn_tol ) then
              wpNcnp_zt(k) = zero
           endif
-       enddo
+       enddo ! k = 1, nz, 1
 
-    endif
+    endif ! l_calc_w_corr
 
     ! Initialize the correlation Cholesky matrices
     corr_cholesky_mtx_1 = zero
     corr_cholesky_mtx_2 = zero
+
+
+    ! Mean of hydrometeor (overall)
+    rrainm = hmm(:,iirr)
+    Nrm    = hmm(:,iiNr)
+
+    ! Mean of hydrometeor (each PDF component)
+    rr1 = hm1(:,iirr)
+    rr2 = hm2(:,iirr)
+    Nr1 = hm1(:,iiNr)
+    Nr2 = hm2(:,iiNr)
+
+    ! Covariance of vertical velocity and a hydrometeor
+    ! (< w'r_r' > and < w'N_r' >).
+    wprrp = wphmp(:,iirr)
+    wpNrp = wphmp(:,iiNr)
+
+    wprrp_ip_zt = wphmp_ip_zt(:,iirr)
+    wpNrp_ip_zt = wphmp_ip_zt(:,iiNr)
+
+
+    ! Statistics
+    if ( l_stats_samp ) then
+
+       if ( iirr > 0 ) then
+
+          if ( irr1 > 0 ) then
+             ! Mean rain water mixing ratio in PDF component 1.
+             call stat_update_var( irr1, rr1, zt )
+          endif
+
+          if ( irr2 > 0 ) then
+             ! Mean rain water mixing ratio in PDF component 2.
+             call stat_update_var( irr2, rr2, zt )
+          endif
+
+       endif ! iirr > 0
+
+       if ( iiNr > 0 ) then
+
+          if ( iNr1 > 0 ) then
+             ! Mean rain drop concentration in PDF component 1.
+             call stat_update_var( iNr1, Nr1, zt )
+          endif
+
+          if ( iNr2 > 0 ) then
+             ! Mean rain drop concentration in PDF component 2.
+             call stat_update_var( iNr2, Nr2, zt )
+          endif
+
+       endif ! iiNr > 0
+
+       if ( iprecip_frac > 0 ) then
+          ! Overall precipitation fraction.
+          call stat_update_var( iprecip_frac, precip_frac, zt )
+       endif
+
+       if ( iprecip_frac_1 > 0 ) then
+          ! Precipitation fraction in PDF component 1.
+          call stat_update_var( iprecip_frac_1, precip_frac_1, zt )
+       endif
+
+       if ( iprecip_frac_2 > 0 ) then
+          ! Precipitation fraction in PDF component 2.
+          call stat_update_var( iprecip_frac_2, precip_frac_2, zt )
+       endif
+
+    endif
+
 
     !!! Setup PDF parameters loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
@@ -705,12 +724,13 @@ module setup_clubb_pdf_params
 
 
     ! Deallocate arrays for precipitating hydrometeors.
-    deallocate( hmm )     ! Mean of Hydrometeor (overall)
-    deallocate( wphmp )   ! Covariance of w and a hydrometeor
-    deallocate( hm_list ) ! Name of hydrometeor
-    deallocate( hm_tol )  ! Tolerance value for a hydrometeor
-    deallocate( hm1 )     ! Mean of Hydrometeor (1st PDF component)
-    deallocate( hm2 )     ! Mean of Hydrometeor (2nd PDF component)
+    deallocate( hmm )         ! Mean of Hydrometeor (overall)
+    deallocate( wphmp )       ! Covariance of w and a hydrometeor
+    deallocate( hm_list )     ! Name of hydrometeor
+    deallocate( hm_tol )      ! Tolerance value for a hydrometeor
+    deallocate( hm1 )         ! Mean of Hydrometeor (1st PDF component)
+    deallocate( hm2 )         ! Mean of Hydrometeor (2nd PDF component)
+    deallocate( wphmp_ip_zt ) ! Covar. of w and hm (in-precip.)
 
 
     return
@@ -3928,6 +3948,17 @@ module setup_clubb_pdf_params
     integer :: &
       idx, & ! Precipitating hydrometeor index
       i      ! Hydrometeor index
+
+
+    ! Initialize indices of precipitating hydrometeors to -1.
+    iirr = -1
+    iiNr = -1
+    iirs = -1
+    iiri = -1
+    iirg = -1
+    iiNs = -1
+    iiNi = -1
+    iiNg = -1
 
     ! Initialize precipitating hydrometeor index to 0.
     idx = 0
