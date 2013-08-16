@@ -33,7 +33,7 @@ optargin = size(varargin,2);
 budgetFontSize = 20;
 
 %This means we can easily figure out the number of lines on the plot by dividing by the number of arguments per line
-argsPerLine = 6;
+argsPerLine = 7;
 numLines = optargin / argsPerLine;
 
 %Create a blank plot of the proper type so we have somewhere to draw lines
@@ -61,60 +61,37 @@ clear legendText;
 
 %Loop through each line on the plot
 for i=1:numLines
-	filePath = varargin{1 + ((i - 1) * argsPerLine)};
-	varExpression = varargin{2 + ((i - 1) * argsPerLine)};
+	filePath1 = varargin{1 + ((i - 1) * argsPerLine)};
+	filePath2 = varargin{2 + ((i - 1) * argsPerLine)};
+	varExpression = varargin{3 + ((i - 1) * argsPerLine)};
 
-	lineName = ['\fontsize{6}', varargin{3 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
+	lineName = ['\fontsize{6}', varargin{4 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
 	if strcmp(caseType, 'budget') || strcmp(caseType, 'morrbudget')
-		lineName = ['\fontsize{10}', varargin{3 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
+		lineName = ['\fontsize{10}', varargin{4 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
 	end
-	lineWidth = varargin{4 + ((i - 1) * argsPerLine)};
-	lineType = varargin{5 + ((i - 1) * argsPerLine)};
-	lineColor = varargin{6 + ((i - 1) * argsPerLine)};
+	lineWidth = varargin{5 + ((i - 1) * argsPerLine)};
+	lineType = varargin{6 + ((i - 1) * argsPerLine)};
+	lineColor = varargin{7 + ((i - 1) * argsPerLine)};
+
+	%If filePath1 != filePath2, than this is a difference run
+	if strcmp(filePath1, filePath2)
+		diffRun = false;
+	else
+		diffRun = true;
+	end
 
 	%If the color is passed in as one of the MATLAB defined strings, we need to
 	%convert it to its corresponding RGB array
 	lineColor = ParseColorFromExpression(lineColor);
 
-	%Determine the type of file being read in
-	extension = DetermineExtension(filePath);
-
-	%Determine the variables that need to be read in
-	varsToRead = ParseVariablesFromExpression(varExpression);
-
-	%Read in the necessary variables
-	for j=1:size(varsToRead,2);
-		%We need to convert the variable name to read from a cell array to a string
-		varString = cell2mat(varsToRead(j));
-        	ConsoleOutput.message(['Reading variable ' varString]);
-		
-		try
-			if strcmp(extension, '.ctl')
-				[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime, plotType);
-			elseif strcmp(extension, '.nc')
-				[variableData, levels] = VariableReadNC(filePath, varString, startTime, endTime, plotType);
-			end
-
-			%Store the read in values to the proper variable name (ex. variable rtm will be read in to the variable named rtm,
-			%this allows the expression to be used as is).
-			eval([varString, '= variableData;']);
-		catch
-			ConsoleOutput.warning(['Variable ' varString ' not found!']);
-
-			%If levels is defined, don't set it to 0
-			if exist('levels') == 0
-				levels = [startHeight; endHeight];
-			end
-
-			eval([varString, '= 0;']);
-		end
-	end
+        extension = DetermineExtension(filePath1);
+	[levels, valueToPlot1] = readExpression( varExpression, filePath1, extension, startTime, endTime, startHeight, endHeight, plotType );
 
 	%Load timestep information
 	if strcmp(extension, '.ctl')
-		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded(filePath);
+		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded(filePath1);
 	elseif strcmp(extension, '.nc')
-		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath);
+		[dummy, dummy , dummy, t_time_steps, time_step_length, dummy, dummy] = header_read_expanded_netcdf(filePath1);
 	end
 
 	%Figure out indicies for start and end height
@@ -130,9 +107,16 @@ for i=1:numLines
 		times = (t_start_index:t_end_index) * time_step_length;
 	end
 
-	%Now evaluate the expression using the read in values,
-	eval(['valueToPlot =', varExpression, ';']);
-	
+	if (diffRun)
+		%Read them in again!
+		extension = DetermineExtension(filePath2);
+		[levels2, valueToPlot2] = readExpression( varExpression, filePath2, extension, startTime, endTime, startHeight, endHeight, plotType );
+		%Now find the difference
+		valueToPlot = valueToPlot2 - valueToPlot1;
+	else
+		valueToPlot = valueToPlot1;
+	end
+
 	%Plot zeroes if data is missing
 	if endTime > (t_time_steps * time_step_length)
         	ConsoleOutput.severe('ERROR: End time of plot greater than end time of data');
@@ -214,3 +198,39 @@ end
 output_file_name = [ '/tmp/', 'output_', int2str(tickCount), '/', caseName, '_', int2str(plotNum), '.eps' ];
 print( '-depsc2', output_file_name );
 close;
+end
+
+function [levels, valueToPlot] = readExpression( varExpression, filePath, extension, startTime, endTime, startHeight, endHeight, plotType )
+
+	%Determine the variables that need to be read in
+	varsToRead = ParseVariablesFromExpression(varExpression);
+
+	%Read in the necessary variables
+	for j=1:size(varsToRead,2);
+		%We need to convert the variable name to read from a cell array to a string
+		varString = cell2mat(varsToRead(j));
+		ConsoleOutput.message(['Reading variable ' varString]);
+		
+		try
+			if strcmp(extension, '.ctl')
+				[variableData, levels] = VariableReadGrADS(filePath, varString, startTime, endTime, plotType);
+			elseif strcmp(extension, '.nc')
+				[variableData, levels] = VariableReadNC(filePath, varString, startTime, endTime, plotType);
+			end
+
+			%Store the read in values to the proper variable name (ex. variable rtm will be read in to the variable named rtm,
+			%this allows the expression to be used as is).
+			eval([varString, '= variableData;']);
+		catch
+			ConsoleOutput.warning(['Variable ' varString ' not found!']);
+
+			%If levels is defined, don't set it to 0
+			if exist('levels') == 0
+				levels = [startHeight; endHeight];
+			end
+
+			eval([varString, '= 0;']);
+		end
+	end
+	eval(['valueToPlot =', varExpression, ';']);
+end

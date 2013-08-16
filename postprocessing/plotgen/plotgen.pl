@@ -65,6 +65,9 @@ my $caseCount = 0;
 # If running in nightly mode, this value should be set to 1
 my $nightly = 0;
 
+# If we are doing a "difference" run, this value will become a 1.
+my $diffRun = 0;
+
 # Which mode to run in. Default to plotgen (CLUBB). This will specify 
 # what directory to look for .case files in. 
 # Valid modes: 
@@ -786,72 +789,125 @@ sub buildMatlabStringStd()
 
             if($type eq "auto")
             {
-                foreach (@inputDirs)
+                if ($diffRun == 0)
                 {
-                    my $file = "$_/$lines[$lineNum]{'filename'}";
+		        foreach (@inputDirs)
+		        {
+		            my $file = "$_/$lines[$lineNum]{'filename'}";
+			    #Ticket 543
+			    #If a CaseName_LH_sfc file is found in the output, the LH_morr_rain_rate should be output
+			    #for the Surface rainfall rate plot
+			    my $lhSfcFile = $_ . "/" . $caseName . "_LH_sfc.ctl";
+			    if($plotTitle eq "Surface rainfall rate" && -e $lhSfcFile)
+			    {
+				$file = $lhSfcFile;
+				$expression = "LH_morr_rain_rate";
+			    }
+
+		            if($dataFileType eq "netcdf")
+		            {
+		                # Replace all .ctl file extensions with .nc
+		                # By default, the case files have .ctl extensions
+		                $file =~ s/.ctl/.nc/g;
+		            }
+
+		            if(-e $file)
+		            {
+		                my $title;
+		                my $folderName = basename($_);
+		                $folderName =~ s/_/\\_/g; # Replace all '_' with '\_' for MATLAB
+
+		                if($name eq "auto")
+		                {
+		                    $title = $folderName;
+		                }
+		                else
+		                {
+		                    $title = $name;
+
+		                    # Replace any '{0}' with the folder name
+		                    $title =~ s/\{0\}/$folderName/;
+		                }
+
+		                my $lineWidth = $lineWidths[$lineWidthCounter];
+		                my $lineStyle = $lineStyles[$lineStyleCounter];
+		                my $lineColor = $lineColors[$lineColorCounter];
+		                
+		                $matlabArgs = "$matlabArgs, \'$file\', \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+
+				# Used for ensemble runs to make a group of plots all the same color
+				# The five(5) is used to set the number of files per group
+				if($ensembleTuner == 1){
+				    if(((($fileCounter+1) % 10) == 0) && ($fileCounter != 0)){
+					incrementLineTypes();
+				    }
+	    	                    $fileCounter++;
+				}
+				else{
+					incrementLineTypes();
+				}
+			    }
+			    else{		
+			    	if($ensembleTuner == 1){
+				    if(((($fileCounter+1) % 10) == 0) && ($fileCounter != 0)){
+					incrementLineTypes();
+				    }
+	    	                    $fileCounter++;
+				}
+			    }	
+			}
+		}
+		else # This is a "difference run"
+		{
+		    my $file1 = "$inputDirs[0]/$lines[$lineNum]{'filename'}";
+		    my $file2 = "$inputDirs[1]/$lines[$lineNum]{'filename'}";
 		    #Ticket 543
 		    #If a CaseName_LH_sfc file is found in the output, the LH_morr_rain_rate should be output
 		    #for the Surface rainfall rate plot
-		    my $lhSfcFile = $_ . "/" . $caseName . "_LH_sfc.ctl";
-		    if($plotTitle eq "Surface rainfall rate" && -e $lhSfcFile)
+		    my $lhSfcFile1 = $inputDirs[0] . "/" . $caseName . "_LH_sfc.ctl";
+		    my $lhSfcFile2 = $inputDirs[1] . "/" . $caseName . "_LH_sfc.ctl";
+		    if($plotTitle eq "Surface rainfall rate" && -e $lhSfcFile1 && -e $lhSfcFile2)
 		    {
-			$file = $lhSfcFile;
+			$file1 = $lhSfcFile1;
+			$file2 = $lhSfcFile2;
 			$expression = "LH_morr_rain_rate";
 		    }
 
-                    if($dataFileType eq "netcdf")
-                    {
-                        # Replace all .ctl file extensions with .nc
-                        # By default, the case files have .ctl extensions
-                        $file =~ s/.ctl/.nc/g;
-                    }
+	            if($dataFileType eq "netcdf")
+	            {
+	                # Replace all .ctl file extensions with .nc
+	                # By default, the case files have .ctl extensions
+	                $file1 =~ s/.ctl/.nc/g;
+	                $file2 =~ s/.ctl/.nc/g;
+	            }
 
-                    if(-e $file)
-                    {
-                        my $title;
-                        my $folderName = basename($_);
-                        $folderName =~ s/_/\\_/g; # Replace all '_' with '\_' for MATLAB
+	            if(-e $file1 && -e $file2)
+	            {
+	                my $title;
+	                my $folderName1 = basename($inputDirs[0]);
+	                my $folderName2 = basename($inputDirs[1]);
+	                my $folderName = $folderName2 . "-" . $folderName1;
+	                $folderName =~ s/_/\\_/g; # Replace all '_' with '\_' for MATLAB
 
-                        if($name eq "auto")
-                        {
-                            $title = $folderName;
-                        }
-                        else
-                        {
-                            $title = $name;
+	                if($name eq "auto")
+	                {
+	                    $title = $folderName;
+	                }
+	                else
+	                {
+	                    $title = $name;
 
-                            # Replace any '{0}' with the folder name
-                            $title =~ s/\{0\}/$folderName/;
-                        }
+	                    # Replace any '{0}' with the folder name
+	                    $title =~ s/\{0\}/$folderName/;
+	                }
 
-                        my $lineWidth = $lineWidths[$lineWidthCounter];
-                        my $lineStyle = $lineStyles[$lineStyleCounter];
-                        my $lineColor = $lineColors[$lineColorCounter];
-                        
-                        $matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
-
-			# Used for ensemble runs to make a group of plots all the same color
-			# The five(5) is used to set the number of files per group
-			if($ensembleTuner == 1){
-			    if(((($fileCounter+1) % 10) == 0) && ($fileCounter != 0)){
-				incrementLineTypes();
-			    }
-    	                    $fileCounter++;
-			}
-			else{
-				incrementLineTypes();
-			}
+	                my $lineWidth = $lineWidths[$lineWidthCounter];
+	                my $lineStyle = $lineStyles[$lineStyleCounter];
+	                my $lineColor = $lineColors[$lineColorCounter];
+	                $matlabArgs = "$matlabArgs, \'$file1\', \'$file2\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
 		    }
-		    else{		
-		    	if($ensembleTuner == 1){
-			    if(((($fileCounter+1) % 10) == 0) && ($fileCounter != 0)){
-				incrementLineTypes();
-			    }
-    	                    $fileCounter++;
-		        }
-		    }	
-		 }
-            }  
+		}
+            }
             elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
             {
                 my $file = "$lines[$lineNum]{'filename'}";
@@ -882,7 +938,7 @@ sub buildMatlabStringStd()
 			incrementLineTypes();
 		    }
 
-                    $matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+                    $matlabArgs = "$matlabArgs, \'$file\', \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
                 }                
             }
         }
@@ -1133,6 +1189,7 @@ sub readArgs()
        $outputAsMaff = 1;
     }
     case 'thin' { $thinLines = 1; }      
+    case 'dfrnce' { $diffRun = 1; }
     case 'ensemble' { $ensembleTuner = 1; }      
     case 'nolegend' { $displayLegend = 0; }      
     case 's' { $plotgenMode = "splotgen"; }
@@ -1271,6 +1328,7 @@ sub main::HELP_MESSAGE()
     print("  -g\tUses GrADS data files. [DEFAULT]\n");
     print("  -t\tUses NetCDF data files.\n");
     print("  -thin\tUses thin solid lines\n");
+    print("  -dfrnce\tPerforms a 'difference' plot of two output folders\n");
     print("  -nolegend\tPlot without legends\n");
     print("  -ensemble\tUsed for plotting ensemble tuner runs\n");
     print("  -bu\tUsed to plot standard budget plots\n");
