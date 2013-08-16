@@ -120,9 +120,10 @@
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'thlp2\_dp1', 'expression' => 'thlp2_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'thlp2\_dp2', 'expression' => 'thlp2_dp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'thlp2\_cl', 'expression' => 'thlp2_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'thlp2\_pd', 'expression' => 'thlp2_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'thlp2\_sf', 'expression' => 'thlp2_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'thlp2\_forcing', 'expression' => 'thlp2_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'thlp2\_residual', 'expression' => 'thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_sf + thlp2_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'thlp2\_residual', 'expression' => 'thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd + thlp2_sf + thlp2_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'rtp2 budgets', 'axisLabel' => '[(kg^2)/(kg^2 s)]', 'type' => 'profile', 'lines' =>
@@ -134,9 +135,10 @@
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'rtp2\_dp1', 'expression' => 'rtp2_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'rtp2\_dp2', 'expression' => 'rtp2_dp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'rtp2\_cl', 'expression' => 'rtp2_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'rtp2\_pd', 'expression' => 'rtp2_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'rtp2\_sf', 'expression' => 'rtp2_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'rtp2\_forcing', 'expression' => 'rtp2_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'rtp2\_residual', 'expression' => 'rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_sf + rtp2_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cgils_s6_p2k_zm.ctl', 'type' => 'auto', 'name' => 'rtp2\_residual', 'expression' => 'rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_pd + rtp2_sf + rtp2_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'rtpthlp budgets', 'axisLabel' => '[(kg K)/(kg s)]', 'type' => 'profile', 'lines' =>
