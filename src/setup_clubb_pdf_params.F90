@@ -1784,7 +1784,7 @@ module setup_clubb_pdf_params
     use parameters_microphys, only: &
         l_fix_s_t_correlations ! Variable(s)
 
-    use KK_fixed_correlations, only: &
+    use fixed_correlations, only: &
         corr_sw_NN_cloud,   & ! Variable(s)
         corr_wrr_NL_cloud,  &
         corr_wNr_NL_cloud,  &
@@ -1798,7 +1798,7 @@ module setup_clubb_pdf_params
         corr_tNcn_NL_cloud, &
         corr_rrNr_LL_cloud
 
-    use KK_fixed_correlations, only: &
+    use fixed_correlations, only: &
         corr_sw_NN_below,   & ! Variable(s)
         corr_wrr_NL_below,  &
         corr_wNr_NL_below,  &
